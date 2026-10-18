@@ -1,4 +1,5 @@
 import { Button, Group, Loader } from '@mantine/core'
+import { LibraryBig } from 'lucide-react'
 import { lazy, Suspense, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -89,6 +90,7 @@ export function ReportCatalogueControl({ enabled, disabled = false, presentation
     <Group>
       <Button ref={trigger} type="button" variant={quiet ? 'subtle' : dialog ? 'filled' : 'subtle'} color={quiet ? 'gray' : undefined}
         className={quiet ? 'workbook-quiet-action' : undefined} disabled={!enabled || disabled}
+        leftSection={quiet ? <LibraryBig size={15} aria-hidden="true" /> : undefined}
         aria-haspopup={dialog ? 'dialog' : undefined} aria-expanded={enabled && opened}
         onClick={() => setOpened(value => !value)}>
         {!dialog && opened ? t('Сховати каталог звітів 1С') : t(consoleScope && BUG_1274_ONLY_REPORT_SURFACE ? 'Каталог звітів 1С' : 'Каталог усіх звітів 1С')}

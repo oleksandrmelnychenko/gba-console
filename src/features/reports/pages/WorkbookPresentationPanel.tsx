@@ -64,7 +64,7 @@ function WorkbookFieldItem({ field, selection, disabled, fenix, onChange }: {
 }) {
   const fields = selection?.additionalFields ?? []
   const locked = disabled || [60, 61].includes(field.type) && !fenix
-  return <Checkbox label={field.caption.replace('(Вместе,', '(Разом,')} checked={fields.includes(field.type)} disabled={locked}
+  return <Checkbox label={field.caption.replace(/^Номенклатура\./, '').replace(/\s*\((?:Окремо|Вместе|Разом),.*\)$/, '')} checked={fields.includes(field.type)} disabled={locked}
     onChange={event => onChange({ version: 1, ordering: selection?.ordering ?? null,
       additionalFields: event.currentTarget.checked ? [...fields, field.type] : fields.filter(type => type !== field.type) })} />
 }
@@ -79,12 +79,12 @@ function WorkbookOrderingControl({ selection, disabled, onChange }: {
   }
   return <Select label="Сортування" disabled={disabled} allowDeselect={false}
     value={selection?.ordering ?? 'default'} data={[{ value: 'default', label: 'За днями' },
-      { value: 'MonthAscending', label: 'По місяцях (за зростанням), як у книзі 1С' }]} onChange={changeOrdering} />
+      { value: 'MonthAscending', label: 'За місяцями, за зростанням' }]} onChange={changeOrdering} />
 }
 
 function WorkbookFieldsNote({ dataSource }: { dataSource: number | undefined }) {
   if (dataSource === 35) return <Text size="xs" c="dimmed">
-    Як і в 1С, Артикул і Топ у рядках «день / організація» не заповнюються.
+    У рядках «день / організація» Артикул і Топ порожні.
   </Text>
-  return <Text size="xs" c="dimmed">Додаткові поля лише підписують рядки, як у 1С; суми від них не змінюються. Невідоме значення показано як «—».</Text>
+  return null
 }

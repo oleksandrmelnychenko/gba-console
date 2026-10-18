@@ -23,9 +23,9 @@ function RegionalTable({ result }: { result: CurrentVparivanieRegionalResult }) 
   const first = currentPage * 50
   const visible = result.Rows.slice(first, first + 50)
   return <Stack gap="xs"><Group>
-    <Button size="xs" variant="light" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>Попередні рядки</Button>
+    <Button size="xs" variant="default" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>Попередні рядки</Button>
     <Text size="xs">{result.Rows.length ? first + 1 : 0}–{first + visible.length} / {result.Rows.length}</Text>
-    <Button size="xs" variant="light" disabled={first + visible.length >= result.Rows.length} onClick={() => setPage(currentPage + 1)}>Наступні рядки</Button>
+    <Button size="xs" variant="default" disabled={first + visible.length >= result.Rows.length} onClick={() => setPage(currentPage + 1)}>Наступні рядки</Button>
   </Group><div className="report-inline-preview__scroll" tabIndex={0} role="region" aria-label="Регіональна форма Впарювання">
     <table><thead><tr>{CURRENT_VPARIVANIE_PRODUCT_CAPTIONS.map(caption => <th scope="col" key={caption}>{caption}</th>)}
       {columns.map(key => <th scope="col" key={key}>{currentRegionalColumnCaption(key)}</th>)}</tr></thead>
@@ -46,7 +46,6 @@ function RegionalFullScopeCheckbox({ dataset, checked, disabled, onChange }: {
 }) {
   if (!onChange || !currentVparivanieFullScopeAvailable(dataset)) return null
   return <Checkbox label="Повний вибраний набір товарів"
-    description="Читаються всі рядки вибраної групи або товарів. Якщо форма завелика, звузьте відбір."
     checked={checked ?? false} disabled={disabled}
     onChange={event => onChange(event.currentTarget.checked)} />
 }
@@ -103,10 +102,9 @@ export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disa
     <Stack gap="sm"><Text component="h2" fw={600} size="sm">{CURRENT_REGIONAL_TITLE}</Text>
       <RegionalFullScopeCheckbox dataset={dataset} checked={fullScope}
         disabled={!enabled || disabled || busy || exporting} onChange={onFullScopeChange} />
-      <Text size="sm">Період і відбори — ті самі, що у формі вище. Окремо показано підсумок контрагентів і колонки кодів регіонів, як на аркуші книги.</Text>
       <Group><Button loading={busy} disabled={!enabled || disabled || !!rejected || exporting} onClick={() => void read()}>
         Показати регіональну форму</Button>
-        {(['csv', 'xlsx', 'pdf'] as const).map(format => <Button key={format} variant="light"
+        {(['csv', 'xlsx', 'pdf'] as const).map(format => <Button key={format} variant="default"
           disabled={!result || !enabled || disabled || exporting || busy} onClick={() => void exportDocument(format)}>
           {`Завантажити ${format.toUpperCase()}`}</Button>)}</Group>
       {error ? <Alert color="red">{error}</Alert> : null}

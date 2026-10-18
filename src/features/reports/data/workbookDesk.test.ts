@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import type { ReportRequestBody, ReportSelection } from '../types'
-import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from './dayOrganizationGrossProfit'
+import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from './dayOrganizationGrossProfit'
 import { FENIX_BUYERS_ROOT_ID } from './nativeExactFilters'
 import { SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS } from './sourceCounterpartyGroups'
 import { deskDownloadName, deskPeriodKind, deskPeriodText, deskPlural, deskRowsText, organizationFilterField,
-  typicalRunText, workbookDefaultPeriod, workbookDeskEntries, workbookDeskTitle, workbookRequestSummary } from './workbookDesk'
+  typicalRunText, workbookDefaultPeriod, workbookDeskEntries, workbookDeskTitle, workbookOrganizationScope, workbookRequestSummary } from './workbookDesk'
 
 const today = '2026-10-18'
 
@@ -87,6 +87,29 @@ describe('row counts', () => {
 })
 
 describe('request summary', () => {
+  it('counts saved organizations regardless of case and leaves out organizations outside report scope', () => {
+    expect(workbookOrganizationScope(request({ dataSource: 35,
+      sourceOrganizations: { Version: 1, SourceWorld: 'fenix', OrganizationIds: [
+        ...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS.map(id => id.toLowerCase()),
+        ...DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS,
+      ] } }))).toBe(`Вибрано: ${DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS.length}`)
+  })
+
+  it('distinguishes selected and excluded organizations without counting combined conditions as organizations', () => {
+    expect(workbookOrganizationScope(request({ dataSource: 38 }))).toBe('Усі')
+    expect(workbookOrganizationScope(request({ dataSource: 38, selections: [
+      selection(0, 'Організація', 2, ['Фенікс', 'Конкорд']),
+      selection(0, 'Організація', 0, ['Вимкнена'], false),
+    ] }))).toBe('Вибрано: 2')
+    expect(workbookOrganizationScope(request({ dataSource: 40, selections: [
+      selection(32, 'Організація рахунку', 3, ['Фенікс']),
+    ] }))).toBe('Виключено: 1')
+    expect(workbookOrganizationScope(request({ dataSource: 38, selections: [
+      selection(0, 'Організація', 2, ['Фенікс', 'Конкорд']),
+      selection(0, 'Організація', 3, ['Фенікс']),
+    ] }))).toBe('З відбором')
+  })
+
   it('shortens long names and lists up to three values in a chip', () => {
     const summary = workbookRequestSummary(request({ dataSource: 38, selections: [
       selection(17, 'Постачальник', 2, ['AYDINSAN FREN CIRCIRLARI OTOMOTIV YED. PARCALARI IMALATI [1]', 'REMI [2]', 'KARATAS [3]']),

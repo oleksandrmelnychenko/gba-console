@@ -1,6 +1,6 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { beforeEach, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { getOriginalCashCapability } from '../api/originalCashStatementApi'
 import { getReportCatalogue, getReportDatasets } from '../api/reportWorkspaceApi'
@@ -31,7 +31,9 @@ function mount(disabled = false, callerKey: string | null = 'approved-caller') {
     <ReportCataloguePanel consoleScope disabled={disabled} callerKey={callerKey} />
   </I18nProvider></MantineProvider>)
 }
+afterEach(() => vi.restoreAllMocks())
 beforeEach(() => {
+  vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(1280)
   vi.clearAllMocks(); auth.allowed = true; surface.only = false; configure()
   vi.mocked(getReportDatasets).mockResolvedValue([])
   vi.mocked(getOriginalCashCapability).mockResolvedValue(cashCapabilityFixture())
@@ -39,7 +41,7 @@ beforeEach(() => {
 it('the BUG-1274-only console catalogue keeps the cash report row without the original cash form', async () => {
   surface.only = true
   mount()
-  await screen.findByRole('button', { name: 'Покриття звіту: Відомість коштів' })
+  await screen.findByText('Відомість по коштах')
   expect(screen.queryByRole('button', { name: 'Fenix · відомість коштів за період' })).toBeNull()
   expect(getOriginalCashCapability).not.toHaveBeenCalled()
 })

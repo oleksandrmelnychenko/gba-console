@@ -39,10 +39,10 @@ describe.each([
     expect(onChange).toHaveBeenCalledWith(1)
   })
 
-  it('hides the single current GBA documents source under the BUG-1274 surface but keeps its explanation', () => {
+  it('hides the single current GBA documents source under the BUG-1274 surface and its technical explanation', () => {
     show(0, true)
     expect(screen.queryByRole('combobox', { name: 'Джерело розрахунку' })).toBeNull()
-    expect(screen.getByText(currentNote)).toBeTruthy()
+    expect(screen.queryByText(currentNote)).toBeNull()
   })
 
   it('keeps the current GBA documents source selectable outside the BUG-1274 surface', () => {

@@ -1,4 +1,4 @@
-import { Card, SegmentedControl, Select, Text } from '@mantine/core'
+import { Card, SegmentedControl, Select } from '@mantine/core'
 import type { ReportDataset, ReportGroupingItem } from '../types'
 import { cashPeriodSupportsManagement, type CashPeriodScope } from '../data/cashPeriod'
 import { groupedCashSupported, groupedCashWorkbookSupported, CASH_WORKBOOK_ROWS } from '../data/groupedCashPeriod'
@@ -42,7 +42,6 @@ export function CashPeriodModePanel({ dataset, grouped, exact, disabled, enabled
           const next = types.flatMap(type => available.filter(row => row.type === type))
           if (next.length === types.length) onRowsChange(next)
         }} /> : null}
-      {multiple ? <Text size="sm" mt="sm">Банківські рахунки та каси можна відібрати за рахунком, організацією, валютою й видом. Як в 1С, підсумки у валюті рахунку додають суми різних валют без перерахунку; підсумки в EUR — в одній валюті. Недоступні суми залишаються порожніми.</Text> : null}
     </Card> : null}
     {!multiple ? <CashPeriodLegPicker value={exact} disabled={disabled} enabled={enabled}
       managementSupported={cashPeriodSupportsManagement(dataset)} onChange={onExactChange} /> : null}

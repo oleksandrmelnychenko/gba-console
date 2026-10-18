@@ -13,7 +13,7 @@ import { ReportsStocksPage } from './ReportsStocksPage'
 import { previousKyivDay } from '../data/cashPeriod'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { WORKBOOK_FILES } from '../testing/workbookFiles'
-import { expandWorkbookSettings, findWorkbookLanding, openOtherWaysToOpen, openWorkbookAdvanced } from '../testing/workbookDesk'
+import { expandWorkbookSettings, findWorkbookLanding, openWorkbookSettingsSection, openOtherWaysToOpen, openWorkbookAdvanced } from '../testing/workbookDesk'
 
 vi.mock('../reportSurfacePolicy', () => ({ BUG_1274_ONLY_REPORT_SURFACE: true }))
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
@@ -67,7 +67,8 @@ it.each([
 
 it('opens the product matrix form without the original matrix', async () => {
   await openWorkbook('Матриця товарів')
-  expect(screen.getByText(/Товар → сім атрибутів/)).toBeTruthy()
+  openWorkbookSettingsSection('Групування')
+  expect(screen.getByText('Товари у рядках; залишки, продажі й контрагенти у стовпцях.')).toBeTruthy()
   expect(screen.queryByRole('button', { name: 'Переглянути оригінальну матрицю' })).toBeNull()
   expect(screen.queryByText('Відкрийте звіт 1С за зразком Excel вище або оберіть звіт у полі «Звіт».')).toBeNull()
 })
@@ -98,19 +99,17 @@ it('opens the product matrix workbook with the AL-KO group and АФРАКО reso
     selection.FilterCondition.Type, selection.Values.map(value => value.Data.Id)])).toEqual([[4, 6, ['3996']], [5, 0, ['613989']]])
 })
 
-it('lists the six workbooks under their 1C report names and keeps one switcher row after opening one', async () => {
+it('lists the six workbooks by name and keeps one switcher row after opening one', async () => {
   render(page())
   await findWorkbookLanding()
-  const list = screen.getByRole('region', { name: 'Звіти 1С' })
-  for (const [name, report] of [['ВП', 'Валовий прибуток'], ['ВП по постачальниках', 'Валовий прибуток по постачальниках'],
-    ['Впарювання', 'Впарювання'], ['Відомість по коштах', 'Відомість по коштах'],
-    ['Взаєморозрахунки всі', 'Взаєморозрахунки з контрагентами'], ['ДБіторка', 'Відомість по взаєморозрахунках з контрагентами']])
-    expect(within(within(list).getByRole('article', { name })).getAllByText(report).length).toBeGreaterThan(0)
+  const list = screen.getByRole('region', { name: 'Звіти' })
+  for (const name of ['ВП', 'ВП по постачальниках', 'Впарювання', 'Відомість по коштах', 'Взаєморозрахунки всі', 'ДБіторка'])
+    expect(within(within(list).getByRole('article', { name })).getByRole('button', { name: /^Відкрити / })).toBeTruthy()
   expect(within(list).queryByText(/Часткова|набір даних|режим/)).toBeNull()
   fireEvent.click(within(list).getByRole('button', { name: 'Відкрити ВП.xls' }))
   expect(await screen.findByRole('heading', { name: 'Валовий прибуток' })).toBeTruthy()
   expect(screen.getByText('ВП.xls')).toBeTruthy()
-  const switcher = screen.getByRole('navigation', { name: 'Звіти 1С' })
+  const switcher = screen.getByRole('navigation', { name: 'Звіти' })
   expect(within(switcher).getByRole('button', { name: 'Відкрити ВП.xls' }).getAttribute('aria-current')).toBe('true')
   expect(within(switcher).getAllByRole('button', { name: /^Відкрити / })).toHaveLength(6)
   expect(within(switcher).queryByText('Валовий прибуток по постачальниках')).toBeNull()
@@ -125,6 +124,7 @@ it('opens ВП.xls on the current month, says why a too long period is refused a
   fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-01-01' } })
   fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-09-30' } })
   await waitFor(() => expect(document.getElementById('report-constructor-blocked-reason')?.textContent).toMatch(/\d+/))
+  openWorkbookSettingsSection('Відбори')
   fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }))
   fireEvent.click(screen.getByRole('button', { name: 'Скинути' }))
   await waitFor(() => expect(from()).toBe(`${yesterday.slice(0, 7)}-01`))

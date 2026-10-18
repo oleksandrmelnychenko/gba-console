@@ -1,11 +1,12 @@
 import { Alert, Anchor, Loader, ThemeIcon } from '@mantine/core'
-import { CircleAlert, Download, FileText } from 'lucide-react'
+import { CircleAlert, Download } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { ExportDocument } from '../../documents/exportDocument'
 import { useI18n } from '../../i18n/useI18n'
 import { getDocumentHref } from '../../url/getDocumentHref'
 import { AppModal } from '../AppModal'
 import { ExcelIcon } from '../ExcelIcon'
+import { PdfIcon } from '../PdfIcon'
 import { WordIcon } from '../WordIcon'
 import './document-export-modal.css'
 
@@ -231,7 +232,7 @@ function DocumentCardContent({
         ) : format === 'word' ? (
           <WordIcon size={24} />
         ) : (
-          <FileText size={24} strokeWidth={1.8} />
+          <PdfIcon size={24} />
         )}
       </span>
       <span className="document-export-card-text">

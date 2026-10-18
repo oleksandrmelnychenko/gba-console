@@ -10,7 +10,7 @@ type State = {
   envelope: ReportWorkspaceDraft | null; previousSnapshot: ReportWorkspaceSnapshot | null
   status: WorkspaceDraftStatus; savedAt: string | null; message: string | null
 }
-type Options = { ownerId: string | null; enabled: boolean; ready: boolean; snapshot: ReportWorkspaceSnapshot }
+type Options = { ownerId: string | null; enabled: boolean; ready: boolean; snapshot: ReportWorkspaceSnapshot; backgroundRecovery?: boolean }
 type Apply = (snapshot: ReportWorkspaceSnapshot) => boolean
 export type ReportWorkspaceDraftRecovery = {
   recovery: Recovery; pendingSnapshot: ReportWorkspaceSnapshot | null; previousSnapshot: ReportWorkspaceSnapshot | null
@@ -60,8 +60,15 @@ function persist(state: State, snapshot: ReportWorkspaceSnapshot, previousSnapsh
   } catch { return { ...next, status: 'unavailable', message: unavailable } }
 }
 
-function synchronize(state: State, ready: boolean, snapshot: ReturnType<typeof encodeReportWorkspaceSnapshot>): State {
+function synchronize(state: State, ready: boolean, snapshot: ReturnType<typeof encodeReportWorkspaceSnapshot>, backgroundRecovery: boolean): State {
   if (state.recovery === 'loading') return readStorage(state)
+  // A new edit can proceed while the earlier draft remains recoverable as undo.
+  // Keep the stored bytes intact until the initialized workspace actually changes.
+  if (backgroundRecovery && state.recovery === 'pending' && ready && snapshot.ok) {
+    if (state.observedKey === null) return { ...state, initialKey: snapshot.value, observedKey: snapshot.value }
+    if (state.observedKey === snapshot.value) return state
+    return persist({ ...state, observedKey: snapshot.value, hasDraft: true }, snapshot.data, state.envelope!.snapshot)
+  }
   if (state.recovery !== 'none' || !ready) return state
   if (!snapshot.ok) {
     const next = failureState(state, snapshot)
@@ -83,11 +90,11 @@ function createStorageScope(ownerId: string | null, enabled: boolean) {
     listeners.forEach(listener => listener())
   }
   return { get, set, subscribe: (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener) } },
-    synchronize: (ready: boolean, snapshot: ReturnType<typeof encodeReportWorkspaceSnapshot>) => set(synchronize(current, ready, snapshot)) }
+    synchronize: (ready: boolean, snapshot: ReturnType<typeof encodeReportWorkspaceSnapshot>, backgroundRecovery: boolean) => set(synchronize(current, ready, snapshot, backgroundRecovery)) }
 }
 
 /** Tab-local recovery only. No report generation, saved-template mutation or result persistence. */
-export function useReportWorkspaceDraft({ ownerId, enabled, ready, snapshot }: Options): ReportWorkspaceDraftRecovery {
+export function useReportWorkspaceDraft({ ownerId, enabled, ready, snapshot, backgroundRecovery = false }: Options): ReportWorkspaceDraftRecovery {
   const store = useMemo(() => createStorageScope(ownerId, enabled), [ownerId, enabled])
   const state = useSyncExternalStore(store.subscribe, store.get, store.get)
   const setStored = store.set
@@ -102,8 +109,8 @@ export function useReportWorkspaceDraft({ ownerId, enabled, ready, snapshot }: O
   }, [scope, ready])
   useEffect(() => {
     if (!ownerId || !enabled) return
-    store.synchronize(ready, encoded)
-  }, [ownerId, enabled, ready, encoded, state, store])
+    store.synchronize(ready, encoded, backgroundRecovery)
+  }, [ownerId, enabled, ready, encoded, state, store, backgroundRecovery])
 
   const permitted = () => Boolean(ownerId && enabled && liveScope.current === scope)
   const applicable = () => permitted() && ready && liveReady.current

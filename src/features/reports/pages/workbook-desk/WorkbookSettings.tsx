@@ -1,21 +1,32 @@
-import { Button, TextInput } from '@mantine/core'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { Button, Select, TextInput } from '@mantine/core'
+import { ChevronDown, ChevronRight, ChevronUp } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { ReportPeriodPreset } from '../../data/bug1274WorkbookGuide'
 
-export type WorkbookSettingsSection = { id: string; title: string; summary: string; content: ReactNode }
-
-type Props = {
-  period: ReactNode
-  sections: readonly WorkbookSettingsSection[]
-  advanced: ReactNode
+export type WorkbookSettingsSection = {
+  id: string
+  title: string
+  summary: string
+  compactSummary?: string
+  content: ReactNode
 }
 
-export function WorkbookSettings({ period, sections, advanced }: Props) {
+type Props = {
+  sections: readonly WorkbookSettingsSection[]
+  advanced: ReactNode
+  disabled?: boolean
+}
+
+export function WorkbookSettings({ sections, advanced, disabled = false }: Props) {
   const { t } = useI18n()
   const [expanded, setExpanded] = useState(false)
+  const [selectedSection, setSelectedSection] = useState<string | null>(null)
+  const activeSection = selectedSection === 'advanced' || sections.some(section => section.id === selectedSection)
+    ? selectedSection : sections[0]?.id ?? 'advanced'
+  const panes = [...sections, { id: 'advanced', title: 'Додатково', content: advanced }]
   function reveal(id: string) {
+    setSelectedSection(id)
     setExpanded(true)
     window.requestAnimationFrame(() => {
       const heading = document.getElementById(`workbook-settings-${id}`)
@@ -33,37 +44,42 @@ export function WorkbookSettings({ period, sections, advanced }: Props) {
         {expanded ? t('Згорнути налаштування') : t('Змінити налаштування')}
       </Button>
     </div>
-    <div className="workbook-settings__row is-period" role="group" aria-labelledby="workbook-settings-period">
-      <div className="workbook-settings__label"><h3 id="workbook-settings-period" tabIndex={-1}>{t('Період')}</h3></div>
-      <div className="workbook-settings__control">{period}</div>
-    </div>
     {!expanded ? <ul className="workbook-settings__summary" aria-label={t('Коротко про налаштування')}>
       {sections.map(section => <li key={section.id}>
         <button type="button" className="workbook-settings__summary-item" onClick={() => reveal(section.id)}
-          aria-label={`${t(section.title)}: ${section.summary}`}>
+          aria-label={`${t(section.title)}: ${section.summary}`}
+          aria-expanded={false} aria-controls="workbook-settings-body">
           <span className="workbook-settings__summary-title">{t(section.title)}</span>
-          <span className="workbook-settings__summary-text">{section.summary}</span>
+          <span className="workbook-settings__summary-text">{section.compactSummary ?? section.summary}</span>
+          <ChevronDown size={14} aria-hidden="true" />
         </button>
       </li>)}
     </ul> : null}
     <div id="workbook-settings-body" className="workbook-settings__body" hidden={!expanded}>
-      {sections.map(section => <div key={section.id} className="workbook-settings__row" role="group"
-        aria-labelledby={`workbook-settings-${section.id}`}>
-        <div className="workbook-settings__label">
-          <h3 id={`workbook-settings-${section.id}`} tabIndex={-1}>{t(section.title)}</h3>
-          <p>{section.summary}</p>
-        </div>
-        <div className="workbook-settings__control">{section.content}</div>
-      </div>)}
-      <details className="workbook-settings__advanced">
-        <summary><span>{t('Додатково')}</span><small>{t('джерело розрахунку, логіка умов, інші форми')}</small></summary>
-        <div className="workbook-settings__advanced-body">{advanced}</div>
-      </details>
+      <nav className="workbook-settings__nav" aria-label={t('Розділи налаштувань звіту')}>
+        {panes.map(section => <button key={section.id} type="button"
+          className="workbook-settings__nav-item" aria-current={activeSection === section.id ? 'true' : undefined}
+          aria-controls={`workbook-settings-pane-${section.id}`} onClick={() => setSelectedSection(section.id)}>
+          {t(section.title)}
+          {activeSection === section.id ? <ChevronRight size={14} aria-hidden="true" /> : null}
+        </button>)}
+      </nav>
+      <div className="workbook-settings__panes">
+        {panes.map(section => <section key={section.id} id={`workbook-settings-pane-${section.id}`}
+          className="workbook-settings__pane" hidden={activeSection !== section.id}
+          role="group" aria-labelledby={`workbook-settings-${section.id}`}>
+          <h3 id={`workbook-settings-${section.id}`} className="workbook-settings__pane-title" tabIndex={-1}>{t(section.title)}</h3>
+          <fieldset className="workbook-settings__control" disabled={disabled}>
+            {section.content}
+          </fieldset>
+        </section>)}
+      </div>
     </div>
   </section>
 }
 
 type PeriodProps = {
+  disabled?: boolean
   from: string
   to: string
   minDate: string
@@ -74,24 +90,25 @@ type PeriodProps = {
   onToChange: (value: string) => void
 }
 
-export function WorkbookPeriodField({ from, to, minDate, maxDate, presets, error, onFromChange, onToChange }: PeriodProps) {
+export function WorkbookPeriodField({ from, to, minDate, maxDate, presets, error, disabled, onFromChange, onToChange }: PeriodProps) {
   const { t } = useI18n()
+  const activePreset = presets.find(preset => preset.from === from && preset.to === to)
   return <div className="workbook-period">
-    <div className="workbook-period__dates">
+    {presets.length ? <Select className="workbook-period__presets" label={t('Період')} placeholder={t('Довільний період')}
+      data={presets.map(preset => ({ value: preset.label, label: t(preset.label) }))}
+      value={activePreset?.label ?? null} allowDeselect={false} disabled={disabled}
+      onChange={value => {
+        const preset = presets.find(item => item.label === value)
+        if (preset) { onFromChange(preset.from); onToChange(preset.to) }
+      }} /> : null}
+    <div className="app-filter-date-range">
       <TextInput label={t('Від')} type="date" min={minDate} max={to || maxDate} value={from}
-        error={Boolean(error)} onChange={event => onFromChange(event.currentTarget.value)} />
-      <span className="workbook-period__dash" aria-hidden="true">–</span>
+        disabled={disabled} error={Boolean(error)} aria-describedby={error ? 'workbook-period-error' : undefined}
+        onChange={event => onFromChange(event.currentTarget.value)} />
       <TextInput label={t('До')} type="date" min={from || minDate} max={maxDate} value={to}
-        error={Boolean(error)} onChange={event => onToChange(event.currentTarget.value)} />
+        disabled={disabled} error={Boolean(error)} aria-describedby={error ? 'workbook-period-error' : undefined}
+        onChange={event => onToChange(event.currentTarget.value)} />
     </div>
-    {presets.length ? <div className="workbook-period__presets" role="group" aria-label={t('Швидкий період')}>
-      {presets.map(preset => {
-        const active = preset.from === from && preset.to === to
-        return <Button key={preset.label} type="button" size="compact-sm" variant={active ? 'light' : 'default'}
-          className={`workbook-period__preset${active ? ' is-active' : ''}`} aria-pressed={active}
-          onClick={() => { onFromChange(preset.from); onToChange(preset.to) }}>{t(preset.label)}</Button>
-      })}
-    </div> : null}
-    {error ? <p className="workbook-period__error">{error}</p> : null}
+    {error ? <p id="workbook-period-error" className="workbook-period__error" role="alert">{error}</p> : null}
   </div>
 }

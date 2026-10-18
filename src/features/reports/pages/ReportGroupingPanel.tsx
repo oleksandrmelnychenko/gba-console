@@ -25,7 +25,6 @@ export function ReportGroupingPanel({ layout, axis, allowed, onOpenPicker, onRem
     <div className="reports-stocks-legacy-panel__header">
       <Group className="reports-stocks-legacy-panel__title" gap={6} wrap="nowrap">
         <Text className="reports-stocks-grouping-label" component="h3" fw={600} size="sm">{t(isRows ? 'Рядки' : 'Стовпці')}</Text>
-        <Text className="reports-stocks-grouping-requirement" size="xs">{isRows ? t('Обов’язково') : t('Необов’язково')}</Text>
       </Group>
       <Button aria-label={`Додати поле: ${title}`} className="reports-stocks-legacy-panel__add" color={CREATE_ACTION_COLOR}
         leftSection={<Plus size={14} />} size="xs" type="button" onClick={onOpenPicker}>Додати</Button>

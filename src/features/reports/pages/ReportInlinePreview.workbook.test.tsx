@@ -24,15 +24,15 @@ it('renders only selected manager columns, preserves padded descriptions and dis
   expect(screen.queryByRole('columnheader', { name: 'Код по региону' })).toBeNull()
   expect(screen.getByRole('rowheader', { name: '∅' })).toBeTruthy()
 })
-it('keeps retained day settings outside row product columns and displays the explicit month ordering', () => {
+it('keeps retained day settings outside row product columns without rendering technical metadata', () => {
   const raw = workbookPreview(); raw.Request.DataSource = 'NativeDayOrganizationGrossProfit'
   raw.RowSchema = [{ Identity: 'Day', Caption: 'День' }, { Identity: 'Organization', Caption: 'Організація' }]
   raw.Rows[0].Values = [{ Caption: '01.10.2026' }, { Caption: 'Організація' }]
   raw.workbookPresentation.selection = { version: 1, additionalFields: [2], ordering: 'MonthAscending' }
   raw.workbookPresentation.fields = [{ type: 2, caption: 'Артикул', placement: 'retainedSetting' }]; raw.workbookPresentation.rows = []
   render(<MantineProvider env="test"><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: raw })} /></MantineProvider>)
-  expect(screen.getByText(/Додаткові поля книги: Артикул\. Як і в 1С, у рядках «день \/ організація» вони не заповнюються/)).toBeTruthy()
-  expect(screen.getByText('Сортування: по місяцях (за зростанням), як у книзі 1С.')).toBeTruthy()
+  expect(screen.queryByText(/Додаткові поля книги:/)).toBeNull()
+  expect(screen.queryByText('Сортування: по місяцях (за зростанням), як у книзі 1С.')).toBeNull()
   expect(screen.queryByRole('columnheader', { name: 'Артикул' })).toBeNull()
 })
 it('prints each cash desk in its own currency without the id unless two records would print the same caption', () => {

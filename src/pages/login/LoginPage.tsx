@@ -1,17 +1,6 @@
-import {
-  Alert,
-  Box,
-  Button,
-  Card,
-  Group,
-  PasswordInput,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from '@mantine/core'
+import { Alert, Button, PasswordInput, Stack, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { CircleAlert } from 'lucide-react'
+import { ArrowRight, CircleAlert } from 'lucide-react'
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import logoUrl from '../../assets/brand/gba-logo.svg'
@@ -24,10 +13,12 @@ export function LoginPage() {
   const { t } = useI18n()
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setSubmitting] = useState(false)
+  const [passwordVisible, setPasswordVisible] = useState(false)
   const form = useForm({
-    initialValues: {
-      username: '',
-      password: '',
+    initialValues: { username: '', password: '' },
+    validate: {
+      username: value => value.trim() ? null : t('Вкажіть логін'),
+      password: value => value ? null : t('Вкажіть пароль'),
     },
   })
 
@@ -36,49 +27,28 @@ export function LoginPage() {
   }
 
   return (
-    <Box className="login-page">
-      <Card withBorder radius="md" shadow="sm" p="xl" className="login-card">
-        <Stack gap="lg">
-          <Group gap="sm" align="center" wrap="nowrap">
-            <Box className="login-logo-mark">
-              <img src={logoUrl} alt="GBA" />
-            </Box>
-            <Box>
-              <Title order={1} size="h2">
-                GBA CONSOLE
-              </Title>
-              <Text size="sm" fw={600} c="gray.7" className="login-subtitle">
-                {t('Вхід у систему')}
-              </Text>
-            </Box>
-          </Group>
+    <main className="login-page">
+      <div className="login-content">
+        <header className="login-brand">
+          <img className="login-logo" src={logoUrl} alt="GBA" width={128} height={128} />
+          <p className="login-brand-caption">Global Business Assistant</p>
+        </header>
 
-          {error && (
-            <Alert
-              key={error}
-              className="login-alert"
-              color="red"
-              variant="light"
-              icon={<CircleAlert size={18} />}
-              title={t('Перевірте дані')}
-            >
-              {error}
-            </Alert>
-          )}
+        <section className="login-card" aria-labelledby="login-title">
+          <div className="login-heading">
+            <h1 id="login-title">{t('Вхід у систему')}</h1>
+            <p>{t('Введіть логін і пароль, щоб розпочати роботу.')}</p>
+          </div>
 
           <form
-            onSubmit={form.onSubmit(async (values) => {
+            aria-label={t('Вхід у систему')}
+            aria-busy={isSubmitting}
+            onSubmit={form.onSubmit(async values => {
+              if (isSubmitting || isLoading) return
               setError(null)
-
-              if (!values.username.trim() || !values.password) {
-                setError(t('Вкажіть логін і пароль'))
-                return
-              }
-
               setSubmitting(true)
-
               try {
-                await login(values.username, values.password)
+                await login(values.username.trim(), values.password)
               } catch (loginError) {
                 setError(loginError instanceof Error ? loginError.message : t('Не вдалося увійти'))
               } finally {
@@ -86,21 +56,56 @@ export function LoginPage() {
               }
             })}
           >
-            <Stack gap="md">
+            <Stack gap={14}>
               <TextInput
-                label={t('Логін')}
-                placeholder={t('ел. пошта або телефон')}
-                autoFocus
+                aria-label={t('Логін')}
+                placeholder={t('Електронна пошта або телефон')}
+                name="username"
+                autoComplete="username"
+                autoCapitalize="none"
+                spellCheck={false}
+                disabled={isSubmitting}
+                aria-required="true"
                 {...form.getInputProps('username')}
               />
-              <PasswordInput label={t('Пароль')} placeholder={t('пароль')} {...form.getInputProps('password')} />
-              <Button type="submit" color="violet" loading={isSubmitting} mt="xs">
+              <PasswordInput
+                aria-label={t('Пароль')}
+                placeholder={t('Пароль')}
+                name="password"
+                autoComplete="current-password"
+                disabled={isSubmitting}
+                visibilityToggleFocusable
+                visible={passwordVisible}
+                onVisibilityChange={setPasswordVisible}
+                visibilityToggleButtonProps={{ 'aria-label': t(passwordVisible ? 'Приховати пароль' : 'Показати пароль') }}
+                aria-required="true"
+                {...form.getInputProps('password')}
+              />
+              {error && (
+                <Alert className="login-alert" role="alert" color="red" variant="light" icon={<CircleAlert size={18} />}>
+                  {error}
+                </Alert>
+              )}
+              <Button
+                className="login-submit"
+                type="submit"
+                color="dark"
+                fullWidth
+                loading={isSubmitting}
+                disabled={isLoading}
+                rightSection={<ArrowRight size={20} strokeWidth={1.7} aria-hidden="true" />}
+              >
                 {t('Увійти')}
               </Button>
             </Stack>
           </form>
-        </Stack>
-      </Card>
-    </Box>
+
+          <div className="login-help">
+            <p>{t('Потрібен доступ?')}</p>
+            <span>{t('Зверніться до адміністратора вашої команди.')}</span>
+          </div>
+        </section>
+      </div>
+    </main>
   )
 }

@@ -49,15 +49,12 @@ describe('1C-like totals and blank zeros in the report preview', () => {
     const footer = view.container.querySelector('tfoot tr')
     expect(footer?.textContent).toBe('Загальний підсумок7,50∅')
     expect(within(table).queryByRole('cell', { name: '0,00' })).toBeNull()
-    expect(view.container.textContent).toContain('Порожня клітинка — нуль, як у 1С.')
-    expect(view.container.textContent).toContain('Підсумки груп показано над їхніми рядками, як у 1С; загальний підсумок — унизу таблиці.')
     expect(view.container.textContent).not.toContain('На екрані показано рядки без підсумків')
   })
 
-  it('keeps the old legend and no totals when the server did not materialize them', () => {
+  it('does not invent totals when the server did not materialize them', () => {
     const view = render(<MantineProvider env="test"><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: settlementPreview({ State: 'notMaterialized', Values: [] }) })} /></MantineProvider>)
     expect(view.container.querySelector('tfoot')).toBeNull()
-    expect(view.container.textContent).toContain('На екрані показано рядки без підсумків')
   })
 
   it('rejects totals that do not belong to the returned page', () => {

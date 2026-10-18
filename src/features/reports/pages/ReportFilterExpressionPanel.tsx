@@ -17,10 +17,9 @@ function selectionLabel(selection: ReportSelection | undefined, index: number, d
 export function ReportFilterExpressionPanel({ data, dataset, disabled, notice, onChange }: Props) {
   const raw = requestFilterExpression(data), tree = readReportFilterExpression(raw), cap = readFilterExpressionCapabilities(dataset)
   const error = reportFilterExpressionError(data, dataset)
+  if (!cap && raw == null && !notice) return null
   return <Stack component="section" aria-label="Логіка умов відбору" gap="xs" p="sm">
     <Text component="h3" className="app-section-title" fw={600}>Логіка умов відбору</Text>
-    <Text size="xs" c="dimmed">Без груп усі увімкнені умови поєднано через І. У групі І мають виконуватися всі умови; у групі АБО — хоча б одна. Значення й прапорці змінюйте в «Умовах відбору» вище.</Text>
-    <Text size="xs" c="dimmed">Вимкнені умови та порожні групи не впливають на відбір. Якщо увімкнених умов немає, логіка не обмежує звіт.</Text>
     {error ? <Alert color="red">{error}</Alert> : null}
     {notice ? <Alert color="blue">{notice}</Alert> : null}
     {!cap ? <Text size="sm" c="dimmed">Сервер не надав підтримку груп І/АБО. Звіти без дерева використовують усі увімкнені умови через І.</Text> : null}
@@ -50,10 +49,10 @@ function FilterTreeEditor({ tree, cap, data, dataset, disabled, onChange }: Edit
     if (next !== tree) onChange(next)
   }
   return <Stack gap="xs">
-    <Text size="xs" c="dimmed">Переносьте вузол кнопкою-перетягуванням або виберіть цільову групу з клавіатури. Зміна групи змінює логіку відбору. Межі: {cap.MaximumDepth} рівнів, {cap.MaximumLeaves} умов.</Text>
+    <Text size="xs" c="gray.8">І — усі умови, АБО — будь-яка з них.</Text>
     {editNotice ? <Alert color="blue">{editNotice}</Alert> : null}
     {unassigned.length ? <Alert color="yellow">Поза деревом: {unassigned.map(item => item.label).join(' • ')}. Увімкнені умови потрібно додати до групи перед запуском.</Alert> : null}
-    {tree.Root.Kind === 3 ? <Button type="button" variant="light" size="compact-sm" disabled={disabled || !cap.Operators.includes(1)}
+    {tree.Root.Kind === 3 ? <Button type="button" variant="filled" color="brand" size="compact-sm" disabled={disabled || !cap.Operators.includes(1)}
       onClick={() => onChange({ Version: 1, Root: { Kind: 1, Children: [tree.Root] } })}>Об’єднати кореневу умову в групу І</Button> : null}
     <DndContext sensors={sensors} onDragStart={() => { dragTree.current = tree }} onDragCancel={() => { dragTree.current = null }}
       onDragEnd={({ active, over }) => {
@@ -78,7 +77,7 @@ function FilterTreeNode(props: NodeProps) {
   const { setNodeRef: setDragRef, listeners, attributes, isDragging } = useDraggable({ id, disabled: disabled || !path.length })
   const { setNodeRef: setDropRef, isOver } = useDroppable({ id: `target:${id}`, disabled: disabled || node.Kind === 3 })
   return <Stack ref={setDropRef} component="section" aria-label={title} gap="xs" p="xs" ml={path.length ? 'sm' : 0}
-    style={{ borderInlineStart: `2px solid ${isOver ? 'var(--mantine-color-blue-5)' : 'var(--mantine-color-default-border)'}`, opacity: isDragging ? 0.5 : 1 }}>
+    style={{ borderInlineStart: `2px solid ${isOver ? 'var(--mantine-color-brand-6)' : 'var(--mantine-color-default-border)'}`, opacity: isDragging ? 0.5 : 1 }}>
     <Group gap="xs" align="end">
       <FilterNodeHeading {...props} title={title} />
       {path.length ? <>
@@ -108,7 +107,7 @@ function FilterNodeHeading({ node, path, selections, dataset, cap, disabled, onE
 function FilterGroupChildren({ node, path, groups, unassigned, selections, dataset, cap, disabled, onEdit, title }: NodeProps & { node: Extract<ReportFilterNode, { Kind: 1 | 2 }>; title: string }) {
   return <>
     <Group gap="xs" align="end">
-      <Button type="button" size="compact-sm" variant="light" disabled={disabled || path.length + 1 >= cap.MaximumDepth}
+      <Button type="button" size="compact-sm" variant="filled" color="brand" disabled={disabled || path.length + 1 >= cap.MaximumDepth}
         onClick={() => onEdit({ kind: 'add-group', path })}>Додати групу в {pathLabel(path)}</Button>
       {unassigned.length ? <Select label={`Додати умову — ${title}`} data={unassigned} value={null} placeholder="Умова поза деревом" disabled={disabled}
         onChange={value => { if (value !== null) onEdit({ kind: 'add-selection', path, index: Number(value) }) }} /> : null}

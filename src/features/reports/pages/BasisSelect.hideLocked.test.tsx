@@ -22,7 +22,7 @@ describe.each([
 
   it('hides the locked one-value calculation under the BUG-1274 surface', () => {
     expect(show(true, true)).toBeNull()
-    if (note) expect(screen.getByText(note)).toBeTruthy()
+    if (note) expect(screen.queryByText(note)).toBeNull()
   })
 
   it('keeps the locked calculation visible and disabled outside the BUG-1274 surface', () => {

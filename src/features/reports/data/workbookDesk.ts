@@ -174,6 +174,27 @@ function organizationsText(request: ReportRequestBody, selections: readonly Repo
   return parts.length ? parts.join('; ') : 'Усі'
 }
 
+export function workbookOrganizationScope(request: ReportRequestBody): string {
+  const field = organizationFilterField(request.dataSource ?? 0)
+  if (field === null) return 'Усі'
+  const fixedAxes = hasFixedReportAxes(request.dataSource ?? 0)
+  const selections = (request.selections ?? []).filter(selection =>
+    selection.SelectedField.Type === field && applied(selection, fixedAxes))
+  const saved = sourceOrganizations(requestSourceOrganizations(request))
+  if (saved && selections.length === 0) {
+    const ids = saved.OrganizationIds.map(id => id.toUpperCase())
+      .filter(id => !(DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS as readonly string[]).includes(id))
+    return `Вибрано: ${ids.length}`
+  }
+  if (!saved && selections.length === 0) return 'Усі'
+  if (!saved && selections.length === 1) {
+    const selection = selections[0]
+    if (PLAIN_CONDITIONS.has(selection.FilterCondition.Type)) return `Вибрано: ${selection.Values.length}`
+    if (EXCLUDING_CONDITIONS.has(selection.FilterCondition.Type)) return `Виключено: ${selection.Values.length}`
+  }
+  return 'З відбором'
+}
+
 function fieldShortCaption(caption: string): string {
   const head = caption.replace(/\s*\(.*$/, '').trim()
   return head.includes('.') ? head.slice(head.lastIndexOf('.') + 1) : head

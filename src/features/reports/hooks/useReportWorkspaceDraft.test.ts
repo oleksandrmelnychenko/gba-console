@@ -175,3 +175,30 @@ describe('per-tab workspace draft recovery', () => {
     expect(next.result.current.pendingSnapshot).toEqual(changed)
   })
 })
+
+describe('background recovery', () => {
+  beforeEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); sessionStorage.clear() })
+  it('keeps the earlier draft while the new workspace is idle, then saves edits with the earlier draft available to undo', () => {
+    const earlier = { ...workspaceSnapshot(), name: 'Earlier work' }
+    const raw = stored(earlier)
+    const view = renderHook(useReportWorkspaceDraft, { initialProps: { ...options(), backgroundRecovery: true } })
+    expect(view.result.current.recovery).toBe('pending')
+    expect(sessionStorage.getItem(key)).toBe(raw)
+    const edited = { ...fresh(), name: 'New work' }
+    view.rerender({ ...options(edited), backgroundRecovery: true })
+    expect(read().snapshot).toEqual(edited)
+    expect(read().previousSnapshot).toEqual(earlier)
+    expect(view.result.current.recovery).toBe('none')
+    view.rerender({ ...options({ ...edited, name: 'Next edit' }), backgroundRecovery: true })
+    expect(read().previousSnapshot).toEqual(earlier)
+    act(() => { view.result.current.undo(candidate => { view.rerender({ ...options(candidate), backgroundRecovery: true }); return true }) })
+    expect(read().snapshot).toEqual(earlier)
+  })
+  it('does not overwrite a pending draft during dataset initialization', () => {
+    const raw = stored()
+    const view = renderHook(useReportWorkspaceDraft, { initialProps: { ...options(), ready: false, backgroundRecovery: true } })
+    view.rerender({ ...options({ ...fresh(), name: 'Initialized' }), backgroundRecovery: true })
+    expect(sessionStorage.getItem(key)).toBe(raw)
+    expect(view.result.current.recovery).toBe('pending')
+  })
+})

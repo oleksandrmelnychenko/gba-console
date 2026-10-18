@@ -5,7 +5,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../../shared/i18n/I18nProvider'
 import { WorkbookActionBar } from './WorkbookActionBar'
 import { WorkbookResult } from './WorkbookResult'
-import { WorkbookSettings } from './WorkbookSettings'
+import { WorkbookPeriodField, WorkbookSettings } from './WorkbookSettings'
 
 const wrap = (children: ReactNode) => <MantineProvider env="test"><I18nProvider>{children}</I18nProvider></MantineProvider>
 const bar = (props: Partial<Parameters<typeof WorkbookActionBar>[0]> = {}) => wrap(<WorkbookActionBar canSubmit isLoading={false}
@@ -29,7 +29,7 @@ it('forms the files before a run and downloads them directly once the run has th
   view.rerender(bar({ ran: true, excelUrl: '/Data/a.xlsx', pdfUrl: '/Data/a.pdf' }))
   expect(screen.getByRole('link', { name: 'Завантажити Excel' }).getAttribute('download')).toBe('ВП 01.09.2026-30.09.2026.xlsx')
   expect(screen.getByRole('link', { name: 'Завантажити PDF' }).getAttribute('download')).toBe('ВП 01.09.2026-30.09.2026.pdf')
-  expect(screen.getByText('Файли готові — натисніть «Excel» або «PDF», щоб завантажити.')).toBeTruthy()
+  expect(screen.queryByText('Файли готові — натисніть «Excel» або «PDF», щоб завантажити.')).toBeNull()
 })
 
 it('says which file the server did not return and does not offer to form it again', () => {
@@ -50,25 +50,26 @@ it('names the blocking reason once and only while the actions are blocked', () =
   expect(document.getElementById('report-constructor-blocked-reason')).toBeNull()
 })
 
-it('walks through the run stages by time and says when the run takes longer than usual', () => {
+it('shows elapsed time and a slow-run status without inventing server progress', () => {
   vi.useFakeTimers()
-  render(result({ isLoading: true }))
-  const status = () => screen.getByText(/^(Зараз|Довше)/).textContent
-  expect(status()).toBe('Зараз: надсилаємо запит на сервер звітів.')
+  const view = render(result({ isLoading: true }))
+  const progress = screen.getByRole('progressbar', { name: 'Формування звіту' })
+  expect(progress.hasAttribute('aria-valuenow')).toBe(false)
+  expect(screen.getByText('0 с')).toBeTruthy()
+  expect(screen.queryByRole('list')).toBeNull()
   act(() => { vi.advanceTimersByTime(5000) })
-  expect(status()).toBe('Зараз: сервер читає документи за період.')
   expect(screen.getByText('5 с')).toBeTruthy()
-  act(() => { vi.advanceTimersByTime(10000) })
-  expect(status()).toBe('Зараз: рахуємо суми й підсумки.')
-  act(() => { vi.advanceTimersByTime(11000) })
-  expect(status()).toBe('Довше, ніж зазвичай: сервер ще працює. Зачекайте — сторінку не закривайте.')
+  act(() => { vi.advanceTimersByTime(21000) })
+  expect(screen.getByRole('status').textContent).toBe('Формування триває довше, ніж зазвичай…')
   expect(screen.getByRole('region', { name: 'Результат' }).getAttribute('aria-busy')).toBe('true')
+  view.rerender(result({ generated: true }))
+  expect(screen.queryByRole('progressbar')).toBeNull()
 })
 
 it('tells the states of the result apart in words', () => {
   const view = render(result())
   expect(screen.getByText('Таблиці ще немає')).toBeTruthy()
-  expect(screen.getByText(/Зазвичай це займає 15–25 с\./)).toBeTruthy()
+  expect(screen.queryByText(/Зазвичай це займає/)).toBeNull()
   view.rerender(result({ stale: true }))
   expect(screen.getByText('Налаштування змінено')).toBeTruthy()
   view.rerender(result({ generated: true }))
@@ -78,23 +79,54 @@ it('tells the states of the result apart in words', () => {
   view.rerender(result({ error: 'Сервер звітів недоступний. Спробуйте ще раз пізніше.' }))
   const alert = screen.getByRole('alert')
   expect(within(alert).getByText('Звіт не сформовано')).toBeTruthy()
-  expect(within(alert).getByText(/Натисніть «Показати на екрані» ще раз/)).toBeTruthy()
+  expect(within(alert).getByText('Сервер звітів недоступний. Спробуйте ще раз пізніше.')).toBeTruthy()
   view.rerender(result({ table: <table aria-label="Таблиця" />, excelUrl: '/Data/a.xlsx', pdfUrl: '/Data/a.pdf', fileBaseName: 'ВП' }))
   expect(screen.getByRole('table', { name: 'Таблиця' })).toBeTruthy()
-  expect(screen.getByText('Усі рядки та підсумки — у файлах:')).toBeTruthy()
+  expect(screen.getByRole('link', { name: 'Excel' })).toBeTruthy()
+  expect(screen.queryByText('Усі рядки та підсумки — у файлах:')).toBeNull()
 })
 
-it('keeps the period open, folds the other sections behind a summary and opens them at the chosen one', () => {
-  render(wrap(<WorkbookSettings period={<input aria-label="Від" />} advanced={<p>Джерело</p>} sections={[
-    { id: 'filters', title: 'Відбори', summary: 'Товари без послуг', content: <label>Група «Покупці»<input type="checkbox" /></label> },
-    { id: 'measures', title: 'Показники', summary: '10 показників', content: <p>Таблиця показників</p> },
+it('folds settings behind a summary and opens them at the chosen section', () => {
+  render(wrap(<WorkbookSettings advanced={<p>Джерело</p>} sections={[
+    { id: 'filters', title: 'Відбори', summary: 'Товари без послуг', compactSummary: '1', content: <label>Група «Покупці»<input type="checkbox" /></label> },
+    { id: 'measures', title: 'Показники', summary: '10 показників', compactSummary: '10', content: <p>Таблиця показників</p> },
   ]} />))
-  expect(screen.getByRole('textbox', { name: 'Від' })).toBeTruthy()
   expect(screen.queryByRole('checkbox', { name: 'Група «Покупці»' })).toBeNull()
+  expect(screen.getByRole('button', { name: 'Відбори: Товари без послуг' }).textContent).toBe('Відбори1')
+  expect(screen.queryByText('Товари без послуг')).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: 'Показники: 10 показників' }))
   expect(screen.getByRole('button', { name: 'Згорнути налаштування' }).getAttribute('aria-expanded')).toBe('true')
-  expect(screen.getByRole('checkbox', { name: 'Група «Покупці»' })).toBeTruthy()
+  expect(screen.queryByRole('checkbox', { name: 'Група «Покупці»' })).toBeNull()
+  expect(screen.getByRole('group', { name: 'Показники' })).toBeTruthy()
+  fireEvent.click(screen.getByRole('button', { name: 'Відбори' }))
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці»' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Додатково' }))
+  expect(screen.queryByRole('checkbox', { name: 'Група «Покупці»' })).toBeNull()
+  expect(screen.getByText('Джерело').closest('[hidden]')).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Відбори' }))
+  expect((screen.getByRole('checkbox', { name: 'Група «Покупці»' }) as HTMLInputElement).checked).toBe(true)
   expect(screen.getByRole('group', { name: 'Відбори' })).toBeTruthy()
   fireEvent.click(screen.getByRole('button', { name: 'Згорнути налаштування' }))
   expect(screen.queryByRole('checkbox', { name: 'Група «Покупці»' })).toBeNull()
+})
+
+it('changes both dates from the period selector without submitting a report', () => {
+  const onFromChange = vi.fn(), onToChange = vi.fn()
+  render(wrap(<WorkbookPeriodField from="2026-09-01" to="2026-09-30" minDate="2025-01-01" maxDate="2026-10-18"
+    presets={[{ label: 'Вчора', from: '2026-10-17', to: '2026-10-17' }]} error={null}
+    onFromChange={onFromChange} onToChange={onToChange} />))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Період' }))
+  fireEvent.click(screen.getByRole('option', { name: 'Вчора' }))
+  expect(onFromChange).toHaveBeenCalledExactlyOnceWith('2026-10-17')
+  expect(onToChange).toHaveBeenCalledExactlyOnceWith('2026-10-17')
+})
+
+it('disables settings while retaining section navigation during a run', () => {
+  render(wrap(<WorkbookSettings disabled advanced={<button type="button">Додати групу</button>} sections={[
+    { id: 'filters', title: 'Відбори', summary: 'Товари', content: <input aria-label="Товар" /> },
+  ]} />))
+  fireEvent.click(screen.getByRole('button', { name: 'Змінити налаштування' }))
+  expect(screen.getByRole('textbox', { name: 'Товар' }).closest('fieldset')?.disabled).toBe(true)
+  fireEvent.click(screen.getByRole('button', { name: 'Додатково' }))
+  expect(screen.getByRole('button', { name: 'Додати групу' }).closest('fieldset')?.disabled).toBe(true)
 })

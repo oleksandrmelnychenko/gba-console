@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Alert, Button, Group, MultiSelect, Stack, Text } from '@mantine/core'
+import { Alert, Button, Group, MultiSelect, Stack } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { getSettlementCounterpartyGroups } from '../api/counterpartyGroupsApi'
 import { changeCounterpartyGroupList, SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS, sourceCounterpartyGroups, type CounterpartyGroupChoice } from '../data/sourceCounterpartyGroups'
@@ -53,7 +53,7 @@ export function CounterpartyGroupFilters({ value, disabled, onChange }: {
   return <Stack gap="xs">
     {(['IncludeGroupIds', 'ExcludeGroupIds'] as const).map(list => <MultiSelect key={list}
       label={list === 'IncludeGroupIds' ? 'Включити групи контрагентів (Fenix)' : 'Виключити групи контрагентів (Fenix)'}
-      description="Групи або окремі контрагенти довідника Fenix; пошук за назвою показує й контрагентів"
+      placeholder="Пошук групи або контрагента"
       data={[...options.values()]} value={selected?.[list].map(id => id.toUpperCase()) ?? []}
       disabled={disabled} searchable clearable searchValue={search}
       maxValues={64 - count + (selected?.[list].length ?? 0)}
@@ -67,7 +67,6 @@ export function CounterpartyGroupFilters({ value, disabled, onChange }: {
     </Group>
     {error && <Alert color="orange">{error}</Alert>}
     {value != null && !selected && <Alert color="orange">Збережений відбір груп некоректний. Оберіть групи з поточного списку.</Alert>}
-    <Text size="xs" c="dimmed">Включення охоплює будь-яку вибрану групу та її підгрупи або вибраного контрагента; виключення має пріоритет.
-      Порожній список включення не звужує вибір. Контрагенти без вузла в довіднику Fenix (нові клієнти GBA з роллю «Покупці») належать лише до групи «Покупці», не до її підгруп.</Text>
+    <p className="workbook-settings__field-note">Включає підгрупи. Виключення має пріоритет.</p>
   </Stack>
 }

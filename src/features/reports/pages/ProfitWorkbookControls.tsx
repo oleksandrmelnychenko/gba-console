@@ -64,7 +64,6 @@ export function DayProfitControls({ part, dataset, disabled, hideRegister, profi
         onChange={event => setProductClassification(event.currentTarget.checked
           ? { Version: 1, SourceWorld: 0, ProductKindId: DAY_ORGANIZATION_GOODS_KIND_ID, IsService: false }
           : undefined)} />
-      <Text size="xs" c="dimmed">{t('Як у книзі: Номенклатура.Послуга = Ні, Вид номенклатури = Товар. Продажі товару з невідомим видом залишають залежні суми порожніми.')}</Text>
       {productClassification != null && !isSavedGoods(productClassification)
         ? <Text size="xs" c="orange">{t('Шаблон містить інший вид товару Fenix. Увімкнення перемикача замінить цей відбір на «Товар».')}</Text> : null}
     </> : null}
@@ -75,7 +74,7 @@ export function DayProfitControls({ part, dataset, disabled, hideRegister, profi
         onChange={event => setSourceOrganizations(event.currentTarget.checked
           ? { Version: 1, SourceWorld: 'fenix', OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] }
           : undefined)} />
-      <Text size="xs" c="dimmed">{t('ТОВ «АМГ «КОНКОРД», Фенікс, ФОП Самолюк А.Д. і ФОП Самолюк Ю.М. ФОП Пархоменко з налаштування 1С не синхронізується в GBA і не додає продажів.')}</Text>
+      <Text size="sm">ТОВ «АМГ «КОНКОРД», Фенікс, ФОП Самолюк А.Д., ФОП Самолюк Ю.М.</Text>
       {sourceOrganizations != null && !usesSavedFenixOrganizations(sourceOrganizations)
         ? <Text size="xs" c="orange">{t('Шаблон містить інші організації Fenix. Увімкнення перемикача замінить цей відбір на організації налаштування 1С.')}</Text> : null}
     </> : null}
@@ -86,7 +85,6 @@ export function DayProfitControls({ part, dataset, disabled, hideRegister, profi
         onChange={event => setSourceBuyerSubtree(event.currentTarget.checked
           ? { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID }
           : undefined)} />
-      <Text size="xs" c="dimmed">{t('Як у книзі: Покупець у групі «Покупці» довідника контрагентів 1С (поточний склад групи).')}</Text>
       {sourceBuyerSubtree != null && !parseSourceBuyerSubtree(sourceBuyerSubtree)
         ? <Text size="xs" c="orange">{t('Шаблон містить інше піддерево Fenix; цей набір приймає тільки групу «Покупці».')}</Text> : null}
     </> : null}
@@ -140,9 +138,6 @@ export function SupplierProfitControls({ part, dataset, disabled, hideRegister, 
           setSupplierSourceWorld(world)
           if (world !== 0) setSourceBuyerSubtree(undefined)
         }} />
-      <Text size="xs" c="dimmed">{t(supplierBasis === 0
-        ? '«Усі документи» — продажі обох баз 1С і нові документи GBA, як у книзі; Fenix або AMG — лише продажі цієї бази.'
-        : 'Окремий зріз формується лише за однозначної лінії кожного продажу в періоді. Неповна партія вибраної бази зупинить звіт.')}</Text>
     </> : null}
     {shows('filters') && dataset?.sourceBuyerSubtree != null ? <>
       <Checkbox mt="sm" label={t('Група «Покупці» Fenix')}
@@ -154,9 +149,6 @@ export function SupplierProfitControls({ part, dataset, disabled, hideRegister, 
             ? { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID }
             : undefined)
         }} />
-      <Text size="xs" c="dimmed">{t(supplierBasis === 0
-        ? 'Як у книзі: Покупець у групі «Покупці» довідника контрагентів 1С (поточний склад групи). Повернення, покупця яких не визначено, залишаються у звіті.'
-        : 'Вимагає базу Fenix, повну лінію покупців усіх продажів періоду і чинний захоплений граф. За неповних даних звіт покаже помилку покриття.')}</Text>
       {sourceBuyerSubtree != null && !parseSourceBuyerSubtree(sourceBuyerSubtree)
         ? <Text size="xs" c="orange">{t('Шаблон містить інше піддерево Fenix; цей набір приймає тільки групу «Покупці».')}</Text> : null}
     </> : null}

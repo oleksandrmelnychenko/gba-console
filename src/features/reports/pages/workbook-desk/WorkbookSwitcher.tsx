@@ -15,10 +15,14 @@ type Props = {
 
 export function WorkbookSwitcher({ launches, active, disabled, extra, onOpen, onBack }: Props) {
   const { t } = useI18n()
-  return <nav className="workbook-switcher" aria-label={t('Звіти 1С')}>
-    <button type="button" className="workbook-switcher__back" onClick={onBack}>
-      <ArrowLeft size={15} aria-hidden="true" />{t('Усі звіти')}
-    </button>
+  return <nav className="workbook-switcher" aria-label={t('Звіти')}>
+    <div className="workbook-switcher__toolbar">
+      <button type="button" className="workbook-switcher__back" onClick={onBack}>
+        <span className="workbook-switcher__back-icon"><ArrowLeft size={16} aria-hidden="true" /></span>
+        {t('Усі звіти')}
+      </button>
+      <div className="workbook-switcher__extra">{extra}</div>
+    </div>
     <div className="workbook-switcher__tabs pill-tabs">
       {launches.map(launch => {
         const current = launch.fileName === active
@@ -29,6 +33,5 @@ export function WorkbookSwitcher({ launches, active, disabled, extra, onOpen, on
         </button>
       })}
     </div>
-    <div className="workbook-switcher__extra">{extra}</div>
   </nav>
 }

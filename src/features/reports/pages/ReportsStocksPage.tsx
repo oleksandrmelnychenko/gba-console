@@ -126,6 +126,7 @@ import { useReportWorkspaceDraft } from '../hooks/useReportWorkspaceDraft'
 import type { ReportWorkspaceSnapshot } from '../data/reportWorkspaceDraft'
 import { reportWorkspaceDraftCompatibility } from '../data/reportWorkspaceDraftCompatibility'
 import { ReportDraftRecoveryPanel, ReportDraftStatus } from './ReportDraftRecoveryPanel'
+import { ReportDraftControl } from './ReportDraftControl'
 import { ValuationAgreementPicker } from './ValuationAgreementPicker'
 import { ReportDatasetPicker, ReportDatasetSummary } from './ReportDatasetPicker'
 import { ReportConstructorHeader, ReportConstructorNavigation, ReportConstructorResultEmpty, ReportSectionPanel, type ReportConstructorSection } from './ReportConstructorNavigation'
@@ -202,7 +203,7 @@ import { requestTopGroups } from '../data/reportTopGroups'
 import { useReportGroupingOrdering } from '../hooks/useReportGroupingOrdering'
 import type { ReportGroupingLayout } from '../data/reportGroupingLayout'
 import { DayProfitControls, SupplierProfitControls, type ProfitControlsPart } from './ProfitWorkbookControls'
-import { deskPlural, organizationFilterField, workbookDeskTitle, workbookRequestSummary } from '../data/workbookDesk'
+import { deskPlural, organizationFilterField, workbookDeskTitle, workbookOrganizationScope, workbookRequestSummary } from '../data/workbookDesk'
 import { WorkbookLanding } from './workbook-desk/WorkbookLanding'
 import { WorkbookSwitcher } from './workbook-desk/WorkbookSwitcher'
 import { WorkbookHeader } from './workbook-desk/WorkbookHeader'
@@ -470,7 +471,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const currentLiquidityConstructor = useCurrentLiquidityConstructor({ enabled: canGenerateReport, disabled: isLoading,
     callerKey: ownerId, today })
   const plannedCashConstructor = usePlannedCashConstructor({ enabled: canGenerateReport, disabled: isLoading, callerKey: ownerId, today })
-  const comparisonSettingsDisabled = isLoading || !canGenerateReport
+  const comparisonSettingsDisabled = isLoading || workbookResolving || !canGenerateReport
   const templateBody = useMemo(() => retainedData
     ? retainStoredTemplateFields(retainedData, { ...reportBody, selections })
     : { ...reportBody, selections }, [retainedData, reportBody, selections])
@@ -478,7 +479,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     name: templateName, data: templateBody, measurements: selectedMeasurements, activeTemplate, previousPeriod,
   }), [activeTemplate, previousPeriod, selectedMeasurements, templateBody, templateName])
   const workspaceDraft = useReportWorkspaceDraft({ ownerId, enabled: canGenerateReport,
-    ready: datasetStorage.loaded && !datasetStorage.error, snapshot: draftSnapshot })
+    ready: datasetStorage.loaded && !datasetStorage.error, snapshot: draftSnapshot, backgroundRecovery: bug1274Only })
   const configurationError = (consoleScope && !BUG_1274_ACTIVE_DATA_SOURCES.has(dataSource) ? BUG_1274_DISABLED_MESSAGE : null) ?? datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset, 'workspace'))
     ?? (requiresValuationAgreement(dataSource) && valuation.agreement?.Id !== valuationClientAgreementId ? 'Підтвердіть доступний договір оцінки.' : null)
   const checkedMeasurements = reportBody.sorted.Measurements.length
@@ -965,7 +966,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     groupingOptions={groupingOptions} setProfitReadMode={setProfitReadMode} setSupplierBasis={setSupplierBasis}
     setSupplierSourceWorld={setSupplierSourceWorld} setSourceBuyerSubtree={setSourceBuyerSubtree} setRowGroups={setRowGroups} />
 
-  if (canGenerateReport && ownerId && workspaceDraft.recovery !== 'none'
+  if (!bug1274Only && canGenerateReport && ownerId && workspaceDraft.recovery !== 'none'
     && (workspaceDraft.recovery !== 'loading' || !datasetStorage.loaded)) {
     return <ReportDraftRecoveryPanel savedAt={workspaceDraft.savedAt}
       loading={!datasetStorage.loaded && !datasetStorage.error}
@@ -1117,9 +1118,9 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     const groupingContent = <>
       {dataSource === 40 || dataSource === 41 ? cashSettlementPanels('form') : null}
       <LegacyReportBuilder part="grouping" {...builder} />
-      {workbook.panel(dataset, reportBody, comparisonSettingsDisabled)}
     </>
     const advancedContent = <>
+      {workbook.panel(dataset, reportBody, comparisonSettingsDisabled)}
       {dataSource === 35 ? <div className="workbook-desk__group">{dayProfitControls('source')}</div> : null}
       {supplierControls ? <div className="workbook-desk__group">{supplierProfitControls('source')}</div> : null}
       {dataSource === 40 || dataSource === 41 ? cashSettlementPanels('source') : null}
@@ -1138,17 +1139,29 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     const filterChips = deskSummary.chips.filter(chip => chip.kind === 'filter')
     const groupingLabels = (groups: ReportGroupingItem[]) => groups.map(group => group.label || getReportFieldLabel(group.key)).join(' → ')
     const deskSections: WorkbookSettingsSection[] = [
-      ...(organizationsContent ? [{ id: 'organizations', title: 'Організації', summary: deskSummary.organizations ?? t('Усі'), content: organizationsContent }] : []),
-      { id: 'filters', title: 'Відбори', summary: filterChips.length ? filterChips.map(chip => chip.label).join('; ') : t('Відборів немає'), content: filtersContent },
+      ...(organizationsContent ? [{ id: 'organizations', title: 'Організації', summary: deskSummary.organizations ?? t('Усі'),
+        compactSummary: t(workbookOrganizationScope(reportBody)), content: organizationsContent }] : []),
+      { id: 'filters', title: 'Відбори', summary: filterChips.length ? filterChips.map(chip => chip.label).join('; ') : t('Відборів немає'),
+        compactSummary: String(filterChips.length), content: filtersContent },
       { id: 'measures', title: 'Показники', summary: checkedMeasurements
         ? `${checkedMeasurements} ${deskPlural(checkedMeasurements, ['показник', 'показники', 'показників'])}` : t('Не вибрано жодного'),
-        content: <LegacyReportBuilder part="measures" {...builder} /> },
+        compactSummary: String(checkedMeasurements), content: <LegacyReportBuilder part="measures" {...builder} /> },
       { id: 'grouping', title: 'Групування', summary: hasFixedReportAxes(dataSource) ? t('Як у книзі 1С')
         : rowGroups.length ? `${groupingLabels(rowGroups)}${colGroups.length ? ` · ${t('стовпці')}: ${groupingLabels(colGroups)}` : ''}` : t('Не вибрано'),
+        compactSummary: hasFixedReportAxes(dataSource) ? t('За формою')
+          : colGroups.length ? `${rowGroups.length} ${t('ряд.')} · ${colGroups.length} ${t('стовп.')}`
+          : rowGroups.length ? `${rowGroups.length} ${deskPlural(rowGroups.length, ['рівень', 'рівні', 'рівнів'])}` : t('Немає'),
         content: groupingContent },
     ]
     const guide = activeWorkbook ? bug1274WorkbookGuide(activeWorkbook) : undefined
     const quietActions = <>
+      {canGenerateReport && ownerId ? <ReportDraftControl
+        pending={workspaceDraft.recovery === 'pending' || workspaceDraft.recovery === 'blocked'}
+        canRestore={workspaceDraft.recovery === 'pending' && datasetStorage.loaded && !datasetStorage.error}
+        canUndo={Boolean(workspaceDraft.previousSnapshot)} disabled={isLoading || !datasetStorage.loaded}
+        savedAt={workspaceDraft.savedAt} error={draftRestoreError ?? workspaceDraft.message}
+        onRestore={() => workspaceDraft.restore(restoreWorkspace)} onUndo={() => workspaceDraft.undo(restoreWorkspace)}
+        onDiscard={() => { const discarded = workspaceDraft.discardRecovery(); if (discarded) setDraftRestoreError(null); return discarded }} /> : null}
       <Button type="button" variant="subtle" color="gray" className="workbook-quiet-action" leftSection={<LayoutTemplate size={15} />}
         disabled={!canGenerateReport || isLoading} onClick={() => setDeskTemplatesOpened(true)}>{t('Шаблони')}</Button>
       {catalogueControl(true)}
@@ -1157,7 +1170,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     const excelUrl = result?.document.DocumentURL || null
     const pdfUrl = result?.document.PdfDocumentURL || null
     return (
-      <Stack className="reports-stocks-page workbook-desk" gap={12}>
+      <Stack className="reports-stocks-page workbook-desk" gap={6}>
         {dialogs}
         {canGenerateReport && catalogueNotice?.failed ? <Alert color="red" className="workbook-desk__notice" icon={<CircleAlert size={18} />}
           title={catalogueNotice.title ?? t('Не вдалося відкрити звіт')}
@@ -1180,27 +1193,22 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
               resolving={workbookResolving} warning={catalogueNotice?.warning ?? null}
               about={guide ? t(guide.summary) : catalogueNotice && !catalogueNotice.failed && !activeWorkbook ? catalogueNotice.text : null} />
             <WorkbookActionBar canSubmit={canSubmit && !workbookResolving} isLoading={isLoading}
+              period={periodSupported ? <WorkbookPeriodField from={from} to={to}
+                minDate={supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE} maxDate={maxDate}
+                presets={reportPeriodPresets(dataSource, today)} error={periodError} disabled={isLoading || workbookResolving}
+                onFromChange={setFrom} onToChange={setTo} />
+                : <Text size="sm">{t('Поточний стан на час читання даних. Історичний період не застосовується.')}</Text>}
               blockedReason={workbookResolving ? t('Зачекайте: застосовуються відбори книги…') : submitBlockedReason || null}
               ran={Boolean(result)} excelUrl={excelUrl} pdfUrl={pdfUrl} fileBaseName={lastRun?.fileName ?? null}
               resetDisabled={!canGenerateReport || isLoading} onPreview={() => void runReport(true)}
               onGenerate={() => void runReport(false)} onReset={resetReport} />
-            <WorkbookSettings period={periodSupported ? <WorkbookPeriodField from={from} to={to}
-              minDate={supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE} maxDate={maxDate}
-              presets={reportPeriodPresets(dataSource, today)} error={periodError} onFromChange={setFrom} onToChange={setTo} />
-              : <Text size="sm">{t('Поточний стан на час читання даних. Історичний період не застосовується.')}</Text>}
-              sections={deskSections} advanced={advancedContent} />
+            <WorkbookSettings sections={deskSections} advanced={advancedContent} disabled={comparisonSettingsDisabled} />
             <WorkbookResult dataSource={dataSource} title={deskTitle} period={deskSummary.period} isLoading={isLoading}
               error={error} emptyRun={emptyRunNotice} generated={Boolean(lastRun?.hasDocument && !preview)}
               stale={!preview && !lastRun && !isLoading && !error && shownReport === deskReportKey}
-              table={preview ? <MemoizedReportInlinePreview preview={preview} /> : null}
+              table={preview ? <MemoizedReportInlinePreview preview={preview} embedded /> : null}
               excelUrl={excelUrl} pdfUrl={pdfUrl} fileBaseName={lastRun?.fileName ?? null} />
           </form>}
-        {canGenerateReport && ownerId ? <div className="workbook-desk__footer">
-          <ReportDraftStatus savedAt={workspaceDraft.status === 'saved' ? workspaceDraft.savedAt : null}
-            notice={draftRestoreError ?? workspaceDraft.message} canUndo={Boolean(workspaceDraft.previousSnapshot)}
-            disabled={isLoading || !datasetStorage.loaded || Boolean(datasetStorage.error)}
-            onUndo={() => workspaceDraft.undo(restoreWorkspace)} />
-        </div> : null}
         <AppModal centered classNames={{ body: 'reports-stocks-template-modal__body', title: 'reports-stocks-modal-title' }}
           opened={deskTemplatesOpened} closeOnClickOutside={!templateStorage.busy} closeOnEscape={!templateStorage.busy}
           closeButtonProps={{ disabled: templateStorage.busy }} size="lg" title={t('Шаблони звіту')}
@@ -1983,7 +1991,9 @@ function LegacyReportBuilder({
   const groupingSection = (
     <section className="app-section-card reports-stocks-structure">
       <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Групування')}</Text>
-      {fixedAxesDescription[dataSource] ? <Text size="sm">{dataSource === 39
+      {fixedAxesDescription[dataSource] ? part === 'grouping' ? (dataSource === 39
+        ? <Text size="sm">Товари у рядках; залишки, продажі й контрагенти у стовпцях.</Text> : null)
+        : <Text size="sm">{dataSource === 39
         ? `Товар → сім атрибутів. Колонки: Остатки, Продажи та Контрагенты; один показник «Результат». ${currentVparivanieNotice(filterFieldOptions.some(option => option.field.Type === 60))}`
         : dataSource === 41 ? settlementAxesDescription(rowGroups) : fixedAxesDescription[dataSource]}</Text> : <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={dataSource !== 13}
         onOpenPicker={() => setGroupingPickerTarget('rows')}

@@ -87,7 +87,7 @@ it('keeps the day form on current documents after a reset', async () => {
   openWorkbookAdvanced()
   expect(screen.queryByRole('combobox', { name: 'Джерело розрахунку' })).toBeNull()
   expect(screen.queryByRole('combobox', { name: 'Розрахунок валового прибутку' })).toBeNull()
-  expect(screen.getByText(/^Продажі та повернення з документів GBA/)).toBeTruthy()
+  expect(screen.queryByText(/^Продажі та повернення з документів GBA/)).toBeNull()
   expect(await submitted(view)).toMatchObject({ dataSource: 35, profitReadMode: 0, dayOrganizationBasis: 0 })
 })
 
@@ -103,7 +103,7 @@ it('applies a compatible template without a mode on current documents and refuse
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
   expandWorkbookSettings()
   openWorkbookAdvanced()
-  expect(await screen.findByText(/^Документи GBA .* контрагентів групи «Покупці»/)).toBeTruthy()
+  expect(screen.queryByText(/^Документи GBA .* контрагентів групи «Покупці»/)).toBeNull()
   expect(screen.queryByRole('combobox', { name: 'Джерело розрахунку' })).toBeNull()
   expect((await submitted(view)).settlementReadMode).toBe(0)
 })

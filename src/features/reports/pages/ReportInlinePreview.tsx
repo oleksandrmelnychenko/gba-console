@@ -1,9 +1,6 @@
 import { settlementAttributeText, type SettlementCounterpartyAttribute } from '../data/settlementSourceAttributes'
 import { Fragment } from 'react'
-import { Alert, Stack, Text } from '@mantine/core'
-import { profitReadModeLabel } from '../data/profitReadMode'
-import { settlementReadModeLabel } from '../data/settlementReadMode'
-import { cashReadModeLabel } from '../data/cashReadMode'
+import { Alert, Text } from '@mantine/core'
 import { isZeroPreviewScalar, previewAmountText, previewBlanksZero, previewCaptionText, previewCellText, previewNumberText, previewSharedNames, type CurrentVparivanieProduct, type NativeReportPreview, type NativeReportPreviewAxis, type NativeReportPreviewCell, type NativeReportPreviewFilter, type NativeReportPreviewRequest, type NativeReportPreviewScalar } from '../data/nativeReportPreview'
 import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, CURRENT_VPARIVANIE_PRODUCT_FIELDS, currentVparivanieQuantityText } from '../data/currentVparivanie'
 import { currentVparivanieSecondTier } from '../data/currentVparivanieColumns'
@@ -11,7 +8,7 @@ import './report-inline-preview.css'
 import { workbookAttributeText, type WorkbookRow } from '../data/workbookPreview'
 import { deskRowsText } from '../data/workbookDesk'
 
-export function ReportInlinePreview({ preview }: { preview: NativeReportPreview }) {
+export function ReportInlinePreview({ preview, embedded = false }: { preview: NativeReportPreview; embedded?: boolean }) {
   const cells = new Map(preview.Cells.map(cell => [`${cell.RowSourceIndex}:${cell.ColumnSourceIndex}`, cell.Value]))
   const products = preview.CurrentVparivanieProducts
   const regions = preview.ClientDiscountRecipientRegions
@@ -57,15 +54,10 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
     || rowIndex > 0 && preview.RowSchema.slice(0, level + 1).every((__, upper) => rowCaption(row, upper) === rowCaption(preview.Rows[rowIndex - 1], upper)))))
   return <section className="app-section-card report-inline-preview" aria-label="Попередній перегляд звіту">
     <div className="report-inline-preview__heading">
-      <Text component="h2" fw={600} size="sm" className="report-inline-preview__title">Таблиця на екрані</Text>
+      {!embedded ? <Text component="h2" fw={600} size="sm" className="report-inline-preview__title">Таблиця на екрані</Text> : null}
       <Text size="sm" className="report-inline-preview__count">{deskRowsText(preview.Page.ReturnedRows, preview.Page.TotalVisibleRows, preview.Page.HasMore)}</Text>
     </div>
     <ReportAttributionWarnings request={preview.Request} />
-    <WorkbookMetadata workbook={workbook} />
-    <Text size="xs" c="dimmed" className="report-inline-preview__legend">{['«—» — значення немає; «∅» — суму не визначено, бо в документах бракує даних.',
-      ...(blanksZero ? ['Порожня клітинка — нуль, як у 1С.'] : []),
-      totals ? 'Підсумки груп показано над їхніми рядками, як у 1С; загальний підсумок — унизу таблиці.'
-        : 'На екрані показано рядки без підсумків; підсумки є у файлах Excel і PDF.'].join(' ')}</Text>
     <div className="report-inline-preview__scroll" tabIndex={0} role="region" aria-label="Таблиця попереднього перегляду">
       <table>
         <thead><tr>
@@ -106,19 +98,9 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
     </div>
     {preview.Page.HasMore ? <Text size="xs" c="dimmed" className="report-inline-preview__more">Показано перші {preview.Page.ReturnedRows} рядків. Повний результат доступний у Excel або PDF.{totals
       ? ` Загальний підсумок — за всіма ${preview.Page.TotalVisibleRows} рядками звіту.` : ''}</Text> : null}
-    <ReportAttribution request={preview.Request} />
   </section>
 }
 
-function WorkbookMetadata({ workbook }: { workbook: NativeReportPreview['WorkbookPresentation'] }) {
-  if (!workbook) return null
-  return <>
-    {workbook.fields.some(field => field.placement === 'retainedSetting') ? <Text size="xs" c="dimmed">
-      Додаткові поля книги: {workbook.fields.map(field => workbookFieldCaption(field.caption)).join('; ')}. Як і в 1С, у рядках «день / організація» вони не заповнюються.
-    </Text> : null}
-    {workbook.selection.ordering === 'MonthAscending' ? <Text size="xs">Сортування: по місяцях (за зростанням), як у книзі 1С.</Text> : null}
-  </>
-}
 function rowHeaderText({ index, row, preview, products, product, regions, region, attributes, workbookRow, workbookColumns, sharedNames, caption }: {
   index: number; row: NativeReportPreviewAxis; preview: NativeReportPreview; products: boolean
   product?: CurrentVparivanieProduct; regions: boolean; region?: string | null; attributes?: SettlementCounterpartyAttribute
@@ -140,16 +122,12 @@ function workbookRowCaption(caption: string, last: boolean, row: WorkbookRow | u
     .map(field => workbookAttributeText(row.values.find(value => value.type === field.type)))].join(', ')
 }
 
-function workbookFieldCaption(caption: string): string {
-  return caption.replace(/\(Вместе,/g, '(Разом,')
-}
-
 function isAmountColumn(column: NativeReportPreviewAxis): boolean {
   const field = column.Values.at(-1)?.Identity
   return field?.Kind === 'reportField' && typeof field.Value === 'string' && !/Quantity|Count/i.test(field.Value)
 }
 
-// Repeated server notes/filters remain separate and ordered. Their stable text
+// Repeated ignored filters remain separate and ordered. Their stable text
 // plus occurrence identifies entries without dropping duplicates.
 function entries(values: readonly string[]) {
   const occurrences = new Map<string, number>()
@@ -180,19 +158,6 @@ function ReportAttributionWarnings({ request }: { request: NativeReportPreviewRe
   </>
 }
 
-function ReportAttribution({ request }: { request: NativeReportPreviewRequest | null | undefined }) {
-  if (!request) return null
-  return <Stack gap="xs" component="section" aria-label="Про дані звіту" className="report-inline-preview__about">
-    <Text component="h3" fw={600} size="sm">Про дані звіту</Text>
-    {request.ProfitReadMode != null ? <Text size="sm">Джерело розрахунку: {profitReadModeLabel(request.ProfitReadMode)}</Text> : null}
-    {request.SettlementReadMode != null ? <Text size="sm">Джерело розрахунку: {settlementReadModeLabel(request.SettlementReadMode)}</Text> : null}
-    {request.CashReadMode != null ? <Text size="sm">Джерело розрахунку: {cashReadModeLabel(request.CashReadMode)}</Text> : null}
-    <PeriodAttribution request={request} />
-    <AppliedFilterAttribution filters={request.Filters} />
-    <NoteAttribution notes={request.Notes} />
-  </Stack>
-}
-
 function SnapshotAttribution({ request }: { request: NativeReportPreviewRequest }) {
   if (request.DataSource === 'NativeCurrentVparivanie') return <Alert color="blue" title="Залишки на кінець періоду та період продажів">
     Залишки показують вільний залишок GBA на кінець вибраного періоду; до останньої синхронізації залишків з 1С вони порожні. Вибраний період стосується продажів.
@@ -209,21 +174,6 @@ function SnapshotAttribution({ request }: { request: NativeReportPreviewRequest 
   </Alert>
 }
 
-function PeriodAttribution({ request }: { request: NativeReportPreviewRequest }) {
-  let period = 'Період розрахунку сервер не зазначив.'
-  if (request.HasPeriod) {
-    period = request.PeriodFrom && request.PeriodTo
-      ? `Період розрахунку: ${request.PeriodFrom} — ${request.PeriodTo}`
-      : 'Сервер не передав повні дати періоду розрахунку.'
-  }
-  return <>
-    <Text size="sm">{period}</Text>
-    {request.ComparisonPeriodFrom || request.ComparisonPeriodTo ? <Text size="sm">
-      Період порівняння: {request.ComparisonPeriodFrom ?? 'не зазначено'} — {request.ComparisonPeriodTo ?? 'не зазначено'}
-    </Text> : null}
-  </>
-}
-
 function IgnoredFilterAttribution({ filters }: { filters: NativeReportPreviewFilter[] | null }) {
   if (filters === null) return <Alert color="yellow" title="Відомості про незастосовані фільтри відсутні">
     Сервер не передав перелік незастосованих фільтрів.
@@ -232,24 +182,6 @@ function IgnoredFilterAttribution({ filters }: { filters: NativeReportPreviewFil
   return <Alert color="yellow" title="Увага: фільтри не застосовано">
     <ul>{entries(filters.map(filterText)).map(item => <li key={item.key}>{item.text}</li>)}</ul>
   </Alert>
-}
-
-function AppliedFilterAttribution({ filters }: { filters: NativeReportPreviewFilter[] | null }) {
-  if (filters === null) return <Text size="sm">Сервер не передав відомості про застосовані фільтри.</Text>
-  if (filters.length === 0) return <Text size="sm">Відборів немає.</Text>
-  return <div>
-    <Text size="sm" fw={600}>Застосовані фільтри</Text>
-    <ul>{entries(filters.map(filterText)).map(item => <li key={item.key}>{item.text}</li>)}</ul>
-  </div>
-}
-
-function NoteAttribution({ notes }: { notes: string[] | null }) {
-  if (notes === null) return <Text size="sm">Сервер не передав примітки до розрахунку.</Text>
-  if (notes.length === 0) return <Text size="sm">Додаткових приміток сервера немає.</Text>
-  return <div>
-    <Text size="sm" fw={600}>Як розраховано</Text>
-    <ul>{entries(notes).map(item => <li key={item.key}>{item.text}</li>)}</ul>
-  </div>
 }
 
 function kyivTimestamp(value: string): string {

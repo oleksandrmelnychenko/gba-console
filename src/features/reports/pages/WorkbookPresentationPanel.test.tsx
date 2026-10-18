@@ -17,9 +17,9 @@ it('keeps retained Article/Top labels as settings and explicitly selects MonthAs
   const request = defaultDatasetRequest(presentedDayDataset, '2026-10-01', '2026-10-04'), onChange = vi.fn()
   render(<MantineProvider env="test"><WorkbookPresentationPanel dataset={presentedDayDataset} request={request}
     value={undefined} disabled={false} onChange={onChange} /></MantineProvider>)
-  expect(screen.getByText(/Як і в 1С, Артикул і Топ у рядках «день \/ організація» не заповнюються/)).toBeTruthy()
+  expect(screen.getByText('У рядках «день / організація» Артикул і Топ порожні.')).toBeTruthy()
   fireEvent.click(screen.getByRole('combobox', { name: 'Сортування' }))
-  fireEvent.click(screen.getByRole('option', { name: 'По місяцях (за зростанням), як у книзі 1С' }))
+  fireEvent.click(screen.getByRole('option', { name: 'За місяцями, за зростанням' }))
   expect(onChange).toHaveBeenCalledExactlyOnceWith({ version: 1, additionalFields: [], ordering: 'MonthAscending' })
 })
 it('keeps manager and region visibly disabled for AMG while allowing its currency field', () => {

@@ -21,7 +21,8 @@ import { findWorkbookLanding } from '../testing/workbookDesk'
 import { ReportsStocksPage } from './ReportsStocksPage'
 
 vi.mock('../reportSurfacePolicy', () => ({ BUG_1274_ONLY_REPORT_SURFACE: true }))
-vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
+const auth = vi.hoisted(() => ({ owner: null as string | null }))
+vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ user: auth.owner ? { NetUid: auth.owner } : null, hasPermission: () => true }) }))
 vi.mock('../../../shared/ui/document-export-modal/DocumentExportModal', () => ({ DocumentExportModal: vi.fn(() => null) }))
 vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(),
   createStockReport: vi.fn(), previewStockReport: vi.fn(), searchDatasetReportValues: vi.fn() }))
@@ -40,7 +41,7 @@ const preview: NativeReportPreview = {
 const files = { DocumentURL: '/Data/reports/day.xlsx', PdfDocumentURL: '/Data/reports/day.pdf' }
 
 beforeEach(() => {
-  vi.clearAllMocks(); localStorage.clear(); sessionStorage.clear()
+  vi.clearAllMocks(); localStorage.clear(); sessionStorage.clear(); auth.owner = null
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, profitDayDataset, profitSupplierDataset,
     currentVparivanieDataset, cashModeDataset, settlementModeDataset])
@@ -70,7 +71,7 @@ it('opens every workbook on the period its card promises', async () => {
     fireEvent.click(within(card).getByRole('button', { name: `Відкрити ${file}` }))
     await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/i)).toBeNull())
     expect(deskPeriodText(dateInput('Від').value, dateInput('До').value)).toBe(promised)
-    expect(within(screen.getByRole('navigation', { name: 'Звіти 1С' })).getByRole('button', { name: `Відкрити ${file}` })
+    expect(within(screen.getByRole('navigation', { name: 'Звіти' })).getByRole('button', { name: `Відкрити ${file}` })
       .getAttribute('aria-current')).toBe('true')
     fireEvent.click(screen.getByRole('button', { name: 'Усі звіти' }))
     await findWorkbookLanding()
@@ -127,7 +128,7 @@ it('shows what is happening while the report is formed and the server reason whe
   fireEvent.click(screen.getByRole('button', { name: 'Показати на екрані' }))
   expect(await screen.findByText(/^Формуємо «Валовий прибуток» за /)).toBeTruthy()
   expect(screen.getByText('Звіт формується…')).toBeTruthy()
-  expect(screen.getByText(/зазвичай 15–25 с/)).toBeTruthy()
+  expect(screen.getByText('0 с')).toBeTruthy()
   expect((screen.getByRole('button', { name: 'Показати на екрані' }) as HTMLButtonElement).disabled).toBe(true)
   expect((screen.getByRole('button', { name: 'Скинути' }) as HTMLButtonElement).disabled).toBe(true)
   await act(async () => fail(new ApiError('Internal', 500, null)))
@@ -157,16 +158,38 @@ it('keeps the settings collapsed behind a summary and opens them at the clicked 
   fireEvent.click(screen.getByRole('button', { name: /^Відбори/ }))
   expect(screen.getByRole('button', { name: 'Згорнути налаштування' }).getAttribute('aria-expanded')).toBe('true')
   expect((screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }) as HTMLInputElement).checked).toBe(true)
-  expect(screen.getByRole('group', { name: 'Організації' })).toBeTruthy()
+  expect(screen.queryByRole('group', { name: 'Організації' })).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Показники' }))
   expect(screen.getByRole('group', { name: 'Показники' })).toBeTruthy()
 })
 
-it('reads the period, organizations and filters of the open workbook in its header', async () => {
+it('keeps report details available in the collapsed header', async () => {
   await openDayWorkbook()
   const header = within(screen.getByRole('region', { name: 'Валовий прибуток' }))
+  fireEvent.click(header.getByText('Про звіт'))
   expect(header.getByText('ВП.xls')).toBeTruthy()
   expect(header.getByText(deskPeriodText(dateInput('Від').value, dateInput('До').value))).toBeTruthy()
   expect(header.getByText('ТОВ «АМГ «КОНКОРД», Фенікс, ФОП Самолюк А.Д., ФОП Самолюк Ю.М.')).toBeTruthy()
   const chips = within(header.getByRole('list', { name: 'Застосовані відбори' }))
   expect(chips.getAllByRole('listitem').map(item => item.textContent)).toEqual(['Товари без послуг', 'Покупці з групи «Покупці»'])
+})
+
+it('opens reports immediately while an earlier draft remains an optional recovery action', async () => {
+  auth.owner = 'background-draft-owner'
+  const first = render(page())
+  await findWorkbookLanding()
+  fireEvent.click(screen.getByRole('button', { name: 'Відкрити ВП.xls' }))
+  await waitFor(() => expect((screen.getByRole('button', { name: 'Показати на екрані' }) as HTMLButtonElement).disabled).toBe(false))
+  fireEvent.change(dateInput('Від'), { target: { value: '2026-09-02' } })
+  first.unmount()
+  render(page())
+  await findWorkbookLanding()
+  expect(screen.queryByRole('region', { name: 'Незбережена чернетка' })).toBeNull()
+  expect(screen.queryByRole('button', { name: 'Відновити чернетку' })).toBeNull()
+  expect(previewStockReport).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button', { name: 'Чернетка' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Відновити чернетку' }))
+  await waitFor(() => expect(dateInput('Від').value).toBe('2026-09-02'))
+  expect(screen.queryByRole('dialog', { name: 'Чернетка звіту' })).toBeNull()
+  expect(createStockReport).not.toHaveBeenCalled()
 })

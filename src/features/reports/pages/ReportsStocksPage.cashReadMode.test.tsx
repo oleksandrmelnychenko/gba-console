@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
@@ -91,11 +91,12 @@ it('hides the selector and the notice without a confirmed capability', async () 
   expect(screen.queryByRole('combobox', { name: 'Джерело розрахунку' })).toBeNull()
   expect(screen.queryByText(new RegExp(CASH_READ_MODE_NOTICE.slice(0, 40)))).toBeNull()
 })
-it.each([[0, 'Поточні документи GBA'], [1, 'Збережені регістри 1С']] as const)('shows the echoed cash source %s in the report description', (echo, label) => {
+it.each([[0, 'Поточні документи GBA'], [1, 'Збережені регістри 1С']] as const)('does not expose the echoed cash source %s as technical metadata', (echo, label) => {
   const preview = normalizeNativeReportPreview({ Preview: { Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true,
     Request: { DataSource: 'NativeCashPeriod', IsCurrentSnapshot: false, HasPeriod: true, CashReadMode: echo },
     Page: { Offset: 0, Limit: 50, TotalVisibleRows: 0, ReturnedRows: 0, HasMore: false },
     RowSchema: [], ColumnSchema: [], Rows: [], Columns: [], Cells: [] } })
   render(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>)
-  expect(within(screen.getByRole('region', { name: 'Про дані звіту' })).getByText(`Джерело розрахунку: ${label}`)).toBeTruthy()
+  expect(screen.queryByText(`Джерело розрахунку: ${label}`)).toBeNull()
+  expect(screen.getByRole('table')).toBeTruthy()
 })

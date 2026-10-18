@@ -76,6 +76,7 @@ import { availableBug1274WorkbookLaunches, BUG_1274_WORKBOOK_REPORT_IDS, type Wo
 import { originalBuyerSalesShareCatalogueVariant, type OriginalBuyerSalesShareCapabilities } from '../data/originalBuyerSalesShare'
 import { OriginalBuyerSalesShareCatalogueLaunch } from './OriginalBuyerSalesShareCatalogueLaunch'
 import { BUG_1274_ONLY_REPORT_SURFACE } from '../reportSurfacePolicy'
+import { WorkbookCatalogue } from './WorkbookCatalogue'
 
 const kindLabels: Record<string, string> = {
   builtin: 'Вбудовані', regulated: 'Регламентовані', external: 'Зовнішні',
@@ -162,6 +163,10 @@ export function ReportCataloguePanel({ onOpen, onOpenDebtToSalesRatio, onOpenCol
   const headline = bug1274Scope ? summarizeConsoleCatalogue(catalogue, inspection) : summary
   const workbookCount = Object.values(BUG_1274_WORKBOOK_REPORT_IDS)
     .filter(id => catalogue.Reports.some(report => report.Id === id)).length
+  if (bug1274Scope) return <WorkbookCatalogue catalogue={catalogue} inspection={inspection} datasets={availableDatasets}
+    canGenerate={canGenerate} disabled={disabled} onOpenWorkbook={onOpenWorkbook}
+    renderDetails={report => <ReportMigrationDetails report={report} migrations={inspection.migrations}
+      datasets={availableDatasets} canGenerate={canGenerate} launchEnabled={supportsLaunch} />} />
   return <div className="report-catalogue">
     <Stack gap="md">
       <DocumentDetailSummary eyebrow={t('Звіти · Fenix / AMG')} title={t('Каталог звітів')}

@@ -37,3 +37,18 @@
 }
 
 .report-catalogue__table td, .report-catalogue__table .mantine-Text-root { white-space: normal; overflow-wrap: anywhere; }
+
+.workbook-catalogue {
+  --mantine-color-dimmed: var(--mantine-color-gray-7);
+  display: grid;
+  gap: 14px;
+}
+.workbook-catalogue__list { border: 1px solid var(--mantine-color-gray-2); border-radius: 10px; overflow: hidden; min-width: 0; }
+.workbook-catalogue__filter-scroll { overflow-x: auto; }
+.workbook-catalogue__filters { display: flex; min-width: 680px; }
+.workbook-catalogue__filters > .mantine-TextInput-root { flex: 1 1 240px; }
+.workbook-catalogue__filters > .mantine-Select-root { width: 160px; flex-shrink: 0; }
+.workbook-catalogue__count { color: var(--mantine-color-gray-8); font: 500 12px var(--font-mono); white-space: nowrap; }
+.workbook-catalogue__name { color: var(--mantine-color-gray-8); font-weight: 600; }
+.workbook-catalogue__details { display: grid; gap: 12px; }
+.workbook-catalogue .mantine-Button-root { font-family: var(--font-mono); font-weight: 600; }

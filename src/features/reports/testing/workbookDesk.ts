@@ -1,7 +1,7 @@
 import { fireEvent, screen } from '@testing-library/react'
 
 export function findWorkbookLanding() {
-  return screen.findByRole('heading', { name: 'Звіти 1С' })
+  return screen.findByRole('heading', { name: 'Звіти' })
 }
 
 export function expandWorkbookSettings() {
@@ -15,9 +15,14 @@ function openDetails(label: string) {
 }
 
 export function openWorkbookAdvanced() {
-  openDetails('Додатково')
+  openWorkbookSettingsSection('Додатково')
 }
 
 export function openOtherWaysToOpen() {
   openDetails('Інші способи відкрити звіт')
+}
+
+export function openWorkbookSettingsSection(name: string) {
+  expandWorkbookSettings()
+  fireEvent.click(screen.getByRole('button', { name }))
 }

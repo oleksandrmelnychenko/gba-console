@@ -1,10 +1,13 @@
-import { Alert, Badge, Button, Loader, Text } from '@mantine/core'
-import { IconFileSpreadsheet } from '@tabler/icons-react'
-import { ArrowRight, CalendarDays, CircleAlert } from 'lucide-react'
+import { Alert, Button, Loader, Text } from '@mantine/core'
+import { ArrowLeftRight, ArrowRight, CalendarDays, ChartNoAxesCombined, CircleAlert, PackageSearch, ReceiptText, Truck, WalletCards, type LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { WorkbookLaunch } from '../../data/bug1274WorkbookLaunch'
-import { deskPeriodKind, deskPeriodText, workbookDefaultPeriod, workbookDeskEntry } from '../../data/workbookDesk'
+import { deskPeriodText, workbookDefaultPeriod, workbookDeskEntry } from '../../data/workbookDesk'
+
+const REPORT_ICONS: Record<number, LucideIcon> = {
+  35: ChartNoAxesCombined, 38: Truck, 39: PackageSearch, 40: WalletCards, 41: ArrowLeftRight,
+}
 
 type Props = {
   launches: readonly WorkbookLaunch[]
@@ -26,15 +29,7 @@ export function WorkbookLanding({ launches, today, disabled, loading, error, can
   const { t } = useI18n()
   return <section className="workbook-landing" aria-labelledby="workbook-landing-title">
     <div className="workbook-landing__head">
-      <div className="workbook-landing__heading">
-        <span className="workbook-landing__icon" aria-hidden="true"><IconFileSpreadsheet size={24} /></span>
-        <div>
-          <h2 id="workbook-landing-title" className="workbook-landing__title">{t('Звіти 1С')}</h2>
-          <Text className="workbook-landing__lead">
-            {t('Оберіть звіт, перевірте період і відбори, перегляньте таблицю на екрані або завантажте Excel чи PDF.')}
-          </Text>
-        </div>
-      </div>
+      <h2 id="workbook-landing-title" className="app-section-title workbook-landing__title">{t('Звіти')}</h2>
       <div className="workbook-landing__actions">{actions}</div>
     </div>
     {openReport ? <button type="button" className="workbook-landing__return" onClick={onReturn}>
@@ -47,7 +42,7 @@ export function WorkbookLanding({ launches, today, disabled, loading, error, can
       <Button size="xs" variant="default" mt="xs" type="button" onClick={onRetry}>{t('Спробувати ще раз')}</Button>
     </Alert> : loading ? <div className="workbook-landing__loading" role="status">
       <Loader size="sm" /><Text size="sm">{t('Завантаження звітів…')}</Text>
-    </div> : launches.length === 0 ? <Alert color="gray" icon={<CircleAlert size={18} />} title={t('Звіти 1С зараз недоступні')}>
+    </div> : launches.length === 0 ? <Alert color="gray" icon={<CircleAlert size={18} />} title={t('Звіти зараз недоступні')}>
       {t('Сервер звітів не підтвердив жодної книги. Спробуйте оновити сторінку пізніше.')}
     </Alert> : <div className="workbook-landing__grid">
       {launches.map(launch => <WorkbookCard key={launch.fileName} launch={launch} today={today} disabled={disabled} onOpen={onOpen} />)}
@@ -67,24 +62,22 @@ function WorkbookCard({ launch, today, disabled, onOpen }: {
   const name = entry?.name ?? launch.label
   const titleId = `workbook-card-${launch.fileName.replace(/[^\p{L}\p{N}]+/gu, '-')}`
   const period = workbookDefaultPeriod(launch.fileName, launch.dataset.DataSource, today)
-  const kind = period ? deskPeriodKind(period, today) : null
+  const Icon = launch.fileName === 'ДБіторка.xls' ? ReceiptText : REPORT_ICONS[launch.dataset.DataSource] ?? ChartNoAxesCombined
   return <article className="workbook-card" aria-labelledby={titleId}>
-    <div className="workbook-card__top">
-      <span className="workbook-card__icon" aria-hidden="true"><IconFileSpreadsheet size={20} /></span>
-      <Badge className="app-role-pill is-gray workbook-card__file" variant="light" tt="none">{launch.fileName}</Badge>
-    </div>
     <div className="workbook-card__body">
-      <h3 id={titleId} className="workbook-card__title">{t(name)}</h3>
-      {entry && entry.reportName !== entry.name ? <Text className="workbook-card__report">{t(entry.reportName)}</Text> : null}
+      <div className="workbook-card__top">
+        <span className="workbook-card__icon"><Icon size={20} strokeWidth={1.7} aria-hidden="true" /></span>
+        <h3 id={titleId} className="workbook-card__title">{t(name)}</h3>
+      </div>
       <Text className="workbook-card__description">{t(entry?.description ?? launch.notice)}</Text>
     </div>
     <div className="workbook-card__foot">
       {period ? <div className="workbook-card__period">
         <CalendarDays size={15} aria-hidden="true" />
-        <span><span className="workbook-card__period-label">{t('Період за замовчуванням')}: </span>
-          {kind ? `${t(kind)} · ` : ''}<span className="workbook-card__dates">{deskPeriodText(period.from, period.to)}</span></span>
+        <span className="workbook-card__dates">{deskPeriodText(period.from, period.to)}</span>
       </div> : null}
-      <Button type="button" className="workbook-card__open" disabled={disabled}
+      <Button type="button" variant="default" className="workbook-card__open" disabled={disabled}
+        rightSection={<ArrowRight size={15} aria-hidden="true" />}
         aria-label={t('Відкрити {file}', { file: launch.fileName })} onClick={() => onOpen(launch)}>{t('Відкрити')}</Button>
     </div>
   </article>

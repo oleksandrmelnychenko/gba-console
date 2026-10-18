@@ -6,19 +6,19 @@ type Props = { capability: unknown; value: unknown; disabled: boolean; hideLocke
 
 export function SupplierBasisSelect({ capability, value, disabled, hideLocked = false, onChange }: Props) {
   const { t } = useI18n()
-  if (!isSupplierBasisCapability(capability)) return null
+  if (!isSupplierBasisCapability(capability) || hideLocked && disabled) return null
   const options = [
     ...(value == null ? [{ value: 'saved', label: t('Збережений спосіб розрахунку') }] : []),
     { value: '0', label: t('Продажі мінус повернення') },
     { value: '1', label: t('Продажі за партіями без повернень') },
   ]
   return <>
-    {hideLocked && disabled ? null : <Select label={t('Розрахунок за постачальниками')} data={options}
+    <Select label={t('Розрахунок за постачальниками')} data={options}
       value={value === 0 ? '0' : value === 1 ? '1' : 'saved'}
       disabled={disabled} allowDeselect={false}
       onChange={next => {
         if (next === '0' || next === '1') onChange(next === '0' ? 0 : 1)
-      }} />}
+      }} />
     {value === 0 ? <Text size="xs" c="dimmed">
       {t('Невизначені постачальник або склад показуються окремо. Недоступні собівартість і прибуток залишаються порожніми, зокрема у підсумках.')}
     </Text> : <Text size="xs" c="dimmed">

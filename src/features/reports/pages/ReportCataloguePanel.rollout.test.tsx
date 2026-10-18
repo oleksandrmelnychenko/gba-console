@@ -1,6 +1,6 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { beforeEach, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { getReportCatalogue, getReportDatasets } from '../api/reportWorkspaceApi'
 import { groupedCashWorkbookDataset } from '../data/groupedCashPeriod.test-fixtures'
@@ -31,7 +31,9 @@ function mount(onOpenWorkbook = vi.fn<(launch: WorkbookLaunch) => boolean>(() =>
   render(<MantineProvider env="test"><I18nProvider><ReportCataloguePanel consoleScope onOpenWorkbook={onOpenWorkbook} /></I18nProvider></MantineProvider>)
   return onOpenWorkbook
 }
+afterEach(() => vi.restoreAllMocks())
 beforeEach(() => {
+  vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(1280)
   vi.clearAllMocks(); auth.allowed = true; surface.only = true
   vi.mocked(getReportCatalogue).mockResolvedValue(fixture())
   vi.mocked(getReportDatasets).mockResolvedValue([groupedCashWorkbookDataset, groupedSettlementDataset, currentVparivanieDataset])
@@ -53,9 +55,11 @@ it('launches the period cash, both settlement variants and the current product m
 it('lists only the five BUG-1274 reports and hides ready, captured and unassessed reports', async () => {
   const open = mount()
   await screen.findByRole('button', { name: 'ДБіторка.xls' })
-  expect(screen.getAllByRole('button', { name: /^Покриття звіту:/ }).map(button => button.textContent))
+  expect(Array.from(document.querySelectorAll('.workbook-catalogue__name')).map(name => name.textContent))
     .toEqual(['Валовий прибуток', 'Валовий прибуток по постачальниках', 'Впарювання', 'Відомість по коштах',
       'Відомість по взаєморозрахунках з контрагентами'])
+  expect(screen.queryByText('Назва в конфігурації 1С: builtin:ВаловаяПрибыль')).toBeNull()
+  fireEvent.click(screen.getAllByRole('button', { name: 'Відомості про звіт' })[0])
   expect(screen.getByText('Назва в конфігурації 1С: builtin:ВаловаяПрибыль')).toBeTruthy()
   expect(screen.getByRole('button', { name: 'Взаємороз всі.xls' })).toBeTruthy()
   expect(screen.queryByText('Готово')).toBeNull()
@@ -65,11 +69,11 @@ it('lists only the five BUG-1274 reports and hides ready, captured and unassesse
   expect(screen.queryByRole('button', { name: 'Покриття звіту: Конструктор запиту' })).toBeNull()
   expect(open).not.toHaveBeenCalled()
 })
-it('states the 1C reconciliation of the five BUG-1274 reports instead of migration states and a zero verified count', async () => {
+it('keeps the catalogue free of repeated reconciliation labels and migration metrics', async () => {
   mount()
   await screen.findByRole('button', { name: 'ДБіторка.xls' })
-  expect(screen.getAllByText('Розраховано з документів GBA; звірено з 1С')).toHaveLength(5)
-  expect(screen.getByText('Розраховано з документів GBA; звірено з 1С.')).toBeTruthy()
+  expect(screen.queryByText('Розраховано з документів GBA; звірено з 1С')).toBeNull()
+  expect(screen.queryByText('Розраховано з документів GBA; звірено з 1С.')).toBeNull()
   expect(screen.queryByText('Перевірених позицій')).toBeNull()
   expect(within(screen.getByRole('table')).queryByText(/Частково доступно в GBA|Джерело зафіксовано|Відповідність підтверджено/)).toBeNull()
 })
@@ -94,18 +98,19 @@ it('shows ready reports disabled with a chip and hides captured and unassessed r
 it('does not launch workbook forms without generation permission or with unavailable capabilities', async () => {
   auth.allowed = false
   mount()
-  await screen.findByRole('button', { name: 'Покриття звіту: builtin:ВаловаяПрибыль' })
+  await screen.findByText('Валовий прибуток')
   expect(getReportDatasets).not.toHaveBeenCalled()
   expect(screen.queryByRole('button', { name: 'ДБіторка.xls' })).toBeNull()
 })
-it('counts only the BUG-1274 reports and workbook forms in the catalogue header of the 1274-only surface', async () => {
-  const metric = (label: string) => screen.getByText(label).closest('.document-detail-metric')?.querySelector('strong')?.textContent
+it('shows the compact filtered report count without duplicate metrics', async () => {
   mount()
   await screen.findByRole('button', { name: 'ДБіторка.xls' })
-  expect(metric('Звітів 1С')).toBe('5')
+  expect(screen.getByText('Звітів: 5')).toBeTruthy()
+  fireEvent.change(screen.getByLabelText('Пошук звіту'), { target: { value: 'Впарювання' } })
+  expect(screen.getByText('Звітів: 1')).toBeTruthy()
   expect(screen.queryByText('Джерельних реалізацій')).toBeNull()
   expect(screen.queryByText('Стан перенесення та джерела')).toBeNull()
-  expect(metric('Форм за зразками Excel')).toBe('6')
+  expect(screen.queryByText('Форм за зразками Excel')).toBeNull()
   expect(screen.queryByText('Звітів у каталозі')).toBeNull()
 })
 it('keeps the whole-inventory header outside the 1274-only surface', async () => {

@@ -41,7 +41,7 @@ it('shows only BUG-1274 entry points, then accepts the actual cash workbook', as
   fireEvent.keyDown(screen.getByRole('combobox', { name: 'Звіт' }), { key: 'Escape' })
   expect(createStockReport).not.toHaveBeenCalled()
   fireEvent.click(screen.getByRole('button', { name: 'Відкрити Ведомость по денежным средствам.xls' }))
-  expect(screen.queryByRole('heading', { name: 'Звіти 1С' })).toBeNull()
+  expect(screen.queryByRole('heading', { name: 'Звіти' })).toBeNull()
   fireEvent.submit(view.container.querySelector('form')!)
   await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
   expect(vi.mocked(createStockReport).mock.calls[0][0].dataSource).toBe(40)

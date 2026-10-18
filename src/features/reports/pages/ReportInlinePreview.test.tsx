@@ -28,12 +28,13 @@ function show(Request: unknown = request, Value: unknown = { Kind: 'null', Value
   return render(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>)
 }
 
-it('shows actual display period and real dataset35 coverage notes without hidden disclosure', () => {
+it('shows the result without technical report descriptions or tutorials', () => {
   const view = show()
-  const about = within(screen.getByRole('region', { name: 'Про дані звіту' }))
-  expect(about.getByText('Період розрахунку: 12.09.2026 — 12.09.2026')).toBeTruthy()
-  for (const note of request.Notes!) expect(about.getByText(note)).toBeTruthy()
-  expect(about.getByText('Послуга Fenix Дорівнює: Ні')).toBeTruthy()
+  expect(screen.queryByText('Про дані звіту')).toBeNull()
+  expect(screen.queryByText('Як розраховано')).toBeNull()
+  expect(screen.queryByText('Застосовані фільтри')).toBeNull()
+  expect(screen.queryByText(/Період розрахунку:/)).toBeNull()
+  for (const note of request.Notes!) expect(screen.queryByText(note)).toBeNull()
   expect(view.container.querySelector('details')).toBeNull()
   expect(view.container.textContent).not.toContain('NativeDayOrganizationGrossProfit')
   expect(view.container.textContent).not.toContain('a'.repeat(64))
@@ -47,13 +48,13 @@ it('warns explicitly about ignored filters and their server reason', () => {
   expect(within(warning).getByText('Договір Дорівнює: Обраний договір (Цей відбір не застосовано до результату.)')).toBeTruthy()
 })
 
-it('renders server HTML as text in notes, periods and filter descriptions', () => {
+it('renders server HTML as text in ignored-filter warnings', () => {
   const html = '<img src=x onerror=alert(1)>'
   const view = show({ ...request, PeriodFrom: html, Notes: [html],
     IgnoredFilters: [{ Field: html, Condition: 'Дорівнює', Values: [html], IgnoredReason: html }] })
-  expect(screen.getByText(html)).toBeTruthy()
+  expect(screen.getByRole('alert').textContent).toContain(html)
   expect(view.container.querySelectorAll('img,script')).toHaveLength(0)
-  expect(view.container.textContent).toContain(`Період розрахунку: ${html} — 12.09.2026`)
+  expect(view.container.textContent).not.toContain(`Період розрахунку: ${html}`)
 })
 
 it('keeps missing legacy attribution explicit rather than inventing dates or completeness', () => {
@@ -63,13 +64,11 @@ it('keeps missing legacy attribution explicit rather than inventing dates or com
   expect(screen.queryByText('Відборів немає.')).toBeNull()
 })
 
-it('distinguishes unknown lists from explicit empty lists', () => {
+it('keeps a missing ignored-filter list explicit without showing technical metadata', () => {
   show({ ...request, HasPeriod: false, Filters: null, IgnoredFilters: null, Notes: null })
-  expect(screen.getByText('Період розрахунку сервер не зазначив.')).toBeTruthy()
-  expect(screen.getByText('Сервер не передав відомості про застосовані фільтри.')).toBeTruthy()
   expect(screen.getByText('Відомості про незастосовані фільтри відсутні')).toBeTruthy()
-  expect(screen.getByText('Сервер не передав примітки до розрахунку.')).toBeTruthy()
-  expect(screen.queryByText('Додаткових приміток сервера немає.')).toBeNull()
+  expect(screen.queryByText('Сервер не передав примітки до розрахунку.')).toBeNull()
+  expect(screen.queryByText('Сервер не передав відомості про застосовані фільтри.')).toBeNull()
 })
 
 it('describes current stock only when the server marks it current', () => {
@@ -82,15 +81,15 @@ it('describes current stock only when the server marks it current', () => {
   expect(screen.getByText('Дані прочитано: 27.09.2026 13:00')).toBeTruthy()
 })
 
-it('retains repeated notes and hides exact technical filter identities by default', () => {
+it('retains repeated ignored filters and hides exact technical identities', () => {
   const guid = '11111111222233334444555555555555'
   const view = show({ ...request, Notes: ['Повторена примітка', 'Повторена примітка'],
-    Filters: [{ Field: 'Вид товару Fenix', Condition: 'У списку', Values: [guid, '[Id=42]', 'Назва товару [Id=64]'], IgnoredReason: null }] })
-  expect(screen.getAllByText('Повторена примітка')).toHaveLength(2)
+    IgnoredFilters: [0, 1].map(() => ({ Field: 'Вид товару Fenix', Condition: 'У списку', Values: [guid, '[Id=42]', 'Назва товару [Id=64]'], IgnoredReason: null })) })
+  expect(screen.queryByText('Повторена примітка')).toBeNull()
   expect(view.container.textContent).not.toContain(guid)
   expect(view.container.textContent).not.toContain('[Id=42]')
   expect(view.container.textContent).not.toContain('[Id=64]')
-  expect(screen.getByText('Вид товару Fenix У списку: Обране точне значення, Обране точне значення, Назва товару')).toBeTruthy()
+  expect(screen.getAllByText('Вид товару Fenix У списку: Обране точне значення, Обране точне значення, Назва товару')).toHaveLength(2)
 })
 
 it('prints decimal cells with 1C thousands separators and a decimal comma', () => {
