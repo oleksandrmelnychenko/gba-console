@@ -10,6 +10,7 @@ import { reportDatasets } from '../data/reportDatasets.test-fixtures'
 import { matrixCapability } from '../testing/originalVparivanieFixtures'
 import { originalScopeBinding, originalScopeWireTemplate, scopedMatrixFixture } from '../testing/originalVparivanieScopeFixtures'
 import { ReportsStocksPage } from './ReportsStocksPage'
+import { findWorkbookLanding } from '../testing/workbookDesk'
 
 const surface = vi.hoisted(() => ({ only: false }))
 vi.mock('../reportSurfacePolicy', () => ({ get BUG_1274_ONLY_REPORT_SURFACE() { return surface.only } }))
@@ -49,7 +50,7 @@ it('opens the exact full-period saved form and runs its mounted original matrix 
 it('opens the saved form 39 without the original matrix in the BUG-1274-only surface', async () => {
   surface.only = true
   const { container } = render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>)
-  await screen.findByText('Звіти 1С за зразками Excel')
+  await findWorkbookLanding()
   fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
   fireEvent.click(await screen.findByRole('button', { name: /Відкрити для редагування: Оригінальна повна матриця/ }))
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())

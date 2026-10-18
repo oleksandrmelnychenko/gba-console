@@ -28,9 +28,10 @@ import type { ReportCatalogue } from '../types'
 
 const ReportCataloguePanel = lazy(() => import('./ReportCataloguePanel').then(module => ({ default: module.ReportCataloguePanel })))
 
-export function ReportCatalogueControl({ enabled, disabled = false, presentation = 'inline', consoleScope = true, onOpenWorkbook, onOpen, onOpenDebtToSalesRatio, onOpenCollectionCoefficient, onOpenSalesMargin, onOpenCashMovement, onOpenSupplierDebt, onOpenEmployeeGrossProfit, onOpenOverdueReceivables, onOpenManagementReturns, onOpenManagementBalance, onOpenManagementOrders, onOpenDefectProduction, onOpenInventoryTurnover, onOpenCurrentLiquidity, onOpenPlannedCash, callerKey = null, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue, onOpenOriginalBuyerSalesShare }: {
+export function ReportCatalogueControl({ enabled, disabled = false, presentation = 'inline', consoleScope = true, quiet = false, onOpenWorkbook, onOpen, onOpenDebtToSalesRatio, onOpenCollectionCoefficient, onOpenSalesMargin, onOpenCashMovement, onOpenSupplierDebt, onOpenEmployeeGrossProfit, onOpenOverdueReceivables, onOpenManagementReturns, onOpenManagementBalance, onOpenManagementOrders, onOpenDefectProduction, onOpenInventoryTurnover, onOpenCurrentLiquidity, onOpenPlannedCash, callerKey = null, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue, onOpenOriginalBuyerSalesShare }: {
   enabled: boolean
   consoleScope?: boolean
+  quiet?: boolean
   onOpenWorkbook?: (launch: WorkbookLaunch) => boolean
   disabled?: boolean
   presentation?: 'inline' | 'dialog'
@@ -86,7 +87,8 @@ export function ReportCatalogueControl({ enabled, disabled = false, presentation
   </Suspense> : null
   return <>
     <Group>
-      <Button ref={trigger} type="button" variant={dialog ? 'filled' : 'subtle'} disabled={!enabled || disabled}
+      <Button ref={trigger} type="button" variant={quiet ? 'subtle' : dialog ? 'filled' : 'subtle'} color={quiet ? 'gray' : undefined}
+        className={quiet ? 'workbook-quiet-action' : undefined} disabled={!enabled || disabled}
         aria-haspopup={dialog ? 'dialog' : undefined} aria-expanded={enabled && opened}
         onClick={() => setOpened(value => !value)}>
         {!dialog && opened ? t('Сховати каталог звітів 1С') : t(consoleScope && BUG_1274_ONLY_REPORT_SURFACE ? 'Каталог звітів 1С' : 'Каталог усіх звітів 1С')}

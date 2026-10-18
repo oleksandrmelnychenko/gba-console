@@ -13,6 +13,7 @@ import { ReportsStocksPage } from './ReportsStocksPage'
 import { previousKyivDay } from '../data/cashPeriod'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { WORKBOOK_FILES } from '../testing/workbookFiles'
+import { expandWorkbookSettings, findWorkbookLanding, openOtherWaysToOpen, openWorkbookAdvanced } from '../testing/workbookDesk'
 
 vi.mock('../reportSurfacePolicy', () => ({ BUG_1274_ONLY_REPORT_SURFACE: true }))
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
@@ -32,17 +33,20 @@ beforeEach(() => {
 const page = () => <MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>
 async function openWorkbook(label: string) {
   const view = render(page())
-  await screen.findByText('Звіти 1С за зразками Excel')
+  await findWorkbookLanding()
   fireEvent.click(screen.getByRole('button', { name: `Відкрити ${WORKBOOK_FILES[label] ?? label}` }))
   await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/i)).toBeNull())
+  expandWorkbookSettings()
+  openWorkbookAdvanced()
   return view
 }
 it('offers the six workbook forms of the five BUG-1274 reports and only their datasets', async () => {
   render(page())
-  await screen.findByText('Звіти 1С за зразками Excel')
+  await findWorkbookLanding()
   for (const label of ['Валовий прибуток за днем', 'Валовий прибуток за постачальниками', 'Матриця товарів',
     'Рух коштів за період', 'Взаєморозрахунки за період', 'Дебіторка за період'])
     expect(screen.getByRole('button', { name: `Відкрити ${WORKBOOK_FILES[label] ?? label}` })).toBeTruthy()
+  openOtherWaysToOpen()
   fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
   expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(['Валовий прибуток', 'Валовий прибуток по постачальниках', 'Впарювання', 'Відомість по коштах', 'Взаєморозрахунки з контрагентами'])
 })
@@ -94,19 +98,22 @@ it('opens the product matrix workbook with the AL-KO group and АФРАКО reso
     selection.FilterCondition.Type, selection.Values.map(value => value.Data.Id)])).toEqual([[4, 6, ['3996']], [5, 0, ['613989']]])
 })
 
-it('lists the six workbooks under their 1C report names and keeps one compact row after opening one', async () => {
+it('lists the six workbooks under their 1C report names and keeps one switcher row after opening one', async () => {
   render(page())
-  const list = await screen.findByRole('region', { name: 'Звіти 1С за зразками Excel' })
-  for (const title of ['Валовий прибуток', 'Валовий прибуток по постачальниках', 'Впарювання', 'Відомість по коштах',
-    'Взаєморозрахунки з контрагентами', 'Відомість по взаєморозрахунках з контрагентами'])
-    expect(within(list).getByText(title)).toBeTruthy()
+  await findWorkbookLanding()
+  const list = screen.getByRole('region', { name: 'Звіти 1С' })
+  for (const [name, report] of [['ВП', 'Валовий прибуток'], ['ВП по постачальниках', 'Валовий прибуток по постачальниках'],
+    ['Впарювання', 'Впарювання'], ['Відомість по коштах', 'Відомість по коштах'],
+    ['Взаєморозрахунки всі', 'Взаєморозрахунки з контрагентами'], ['ДБіторка', 'Відомість по взаєморозрахунках з контрагентами']])
+    expect(within(within(list).getByRole('article', { name })).getAllByText(report).length).toBeGreaterThan(0)
   expect(within(list).queryByText(/Часткова|набір даних|режим/)).toBeNull()
   fireEvent.click(within(list).getByRole('button', { name: 'Відкрити ВП.xls' }))
-  expect(await screen.findByText('ВП.xls — Валовий прибуток')).toBeTruthy()
-  const compact = screen.getByRole('region', { name: 'Звіти 1С за зразками Excel' })
-  expect(within(compact).getByRole('button', { name: 'Відкрити ВП.xls' }).getAttribute('aria-current')).toBe('true')
-  expect(within(compact).getAllByRole('button')).toHaveLength(6)
-  expect(within(compact).queryByText('Валовий прибуток по постачальниках')).toBeNull()
+  expect(await screen.findByRole('heading', { name: 'Валовий прибуток' })).toBeTruthy()
+  expect(screen.getByText('ВП.xls')).toBeTruthy()
+  const switcher = screen.getByRole('navigation', { name: 'Звіти 1С' })
+  expect(within(switcher).getByRole('button', { name: 'Відкрити ВП.xls' }).getAttribute('aria-current')).toBe('true')
+  expect(within(switcher).getAllByRole('button', { name: /^Відкрити / })).toHaveLength(6)
+  expect(within(switcher).queryByText('Валовий прибуток по постачальниках')).toBeNull()
 })
 
 it('opens ВП.xls on the current month, says why a too long period is refused and «Скинути» restores the workbook', async () => {

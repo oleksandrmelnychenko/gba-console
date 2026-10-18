@@ -16,6 +16,7 @@ import { settlementPeriodRequest } from '../data/settlementPeriod.test-fixtures'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { ReportsStocksPage } from './ReportsStocksPage'
 import { WORKBOOK_FILES } from '../testing/workbookFiles'
+import { expandWorkbookSettings, findWorkbookLanding, openWorkbookAdvanced } from '../testing/workbookDesk'
 
 vi.mock('../reportSurfacePolicy', () => ({ BUG_1274_ONLY_REPORT_SURFACE: true }))
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
@@ -40,8 +41,10 @@ afterEach(() => { cleanup(); localStorage.clear(); sessionStorage.clear() })
 const page = () => <MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>
 async function openWorkbook(label: string) {
   const view = render(page())
-  await screen.findByText('Звіти 1С за зразками Excel')
+  await findWorkbookLanding()
   fireEvent.click(screen.getByRole('button', { name: `Відкрити ${WORKBOOK_FILES[label] ?? label}` }))
+  expandWorkbookSettings()
+  openWorkbookAdvanced()
   return view
 }
 async function submitted(view: ReturnType<typeof render>, count = 1) {
@@ -81,6 +84,7 @@ it('hides the single currency record of the cash form', async () => {
 it('keeps the day form on current documents after a reset', async () => {
   const view = await openWorkbook('Валовий прибуток за днем')
   fireEvent.click(screen.getByRole('button', { name: 'Скинути' }))
+  openWorkbookAdvanced()
   expect(screen.queryByRole('combobox', { name: 'Джерело розрахунку' })).toBeNull()
   expect(screen.queryByRole('combobox', { name: 'Розрахунок валового прибутку' })).toBeNull()
   expect(screen.getByText(/^Продажі та повернення з документів GBA/)).toBeTruthy()
@@ -96,6 +100,9 @@ it('applies a compatible template without a mode on current documents and refuse
   fireEvent.click(await screen.findByRole('button', { name: `Відкрити для редагування: ${exact.Name}` }))
   expect(await screen.findByText(TEMPLATE_WITHOUT_READ_MODE_ERROR)).toBeTruthy()
   fireEvent.click(screen.getByRole('button', { name: `Відкрити для редагування: ${compatible.Name}` }))
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  expandWorkbookSettings()
+  openWorkbookAdvanced()
   expect(await screen.findByText(/^Документи GBA .* контрагентів групи «Покупці»/)).toBeTruthy()
   expect(screen.queryByRole('combobox', { name: 'Джерело розрахунку' })).toBeNull()
   expect((await submitted(view)).settlementReadMode).toBe(0)

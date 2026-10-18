@@ -1,0 +1,1142 @@
+.workbook-desk {
+  --desk-border: var(--mantine-color-gray-2);
+  --desk-muted: var(--mantine-color-gray-6);
+  --desk-text: var(--mantine-color-gray-8);
+  --desk-strong: var(--mantine-color-gray-9);
+  --desk-radius: 10px;
+  background: var(--mantine-color-gray-0);
+  padding: 12px 12px 24px;
+  gap: 12px !important;
+}
+
+.workbook-desk > *,
+.workbook-desk__form > * {
+  flex-shrink: 0;
+}
+
+.workbook-desk h2,
+.workbook-desk h3 {
+  margin: 0;
+}
+
+.workbook-desk__form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.workbook-desk__footer {
+  display: flex;
+  justify-content: flex-end;
+  min-height: 0;
+}
+
+.workbook-desk__footer:empty {
+  display: none;
+}
+
+.workbook-desk__notice {
+  border-radius: var(--desk-radius);
+}
+
+/* Landing */
+.workbook-landing {
+  display: grid;
+  gap: 16px;
+}
+
+.workbook-landing__head {
+  align-items: flex-start;
+  background: var(--mantine-color-white);
+  border: 1px solid var(--desk-border);
+  border-radius: var(--desk-radius);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  justify-content: space-between;
+  padding: 16px 18px;
+}
+
+.workbook-landing__heading {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+  min-width: 0;
+}
+
+.workbook-landing__icon,
+.workbook-card__icon {
+  align-items: center;
+  background: var(--mantine-color-orange-0);
+  border: 1px solid var(--mantine-color-orange-1);
+  border-radius: 10px;
+  color: var(--mantine-color-orange-6);
+  display: inline-flex;
+  flex-shrink: 0;
+  justify-content: center;
+}
+
+.workbook-landing__icon {
+  height: 44px;
+  width: 44px;
+}
+
+.workbook-landing__title {
+  color: var(--desk-strong);
+  font: 600 20px/1.3 var(--font-mono);
+  letter-spacing: 0;
+}
+
+.workbook-landing__lead {
+  color: var(--mantine-color-gray-7);
+  font-size: 13.5px;
+  margin-top: 2px;
+}
+
+.workbook-landing__actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.workbook-landing__return {
+  align-items: center;
+  align-self: start;
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-orange-2);
+  border-radius: 8px;
+  color: var(--mantine-color-orange-8);
+  cursor: pointer;
+  display: inline-flex;
+  font: 600 13px var(--font-mono);
+  gap: 8px;
+  justify-self: start;
+  padding: 8px 12px;
+}
+
+.workbook-landing__return:hover {
+  border-color: var(--brand-orange);
+}
+
+.workbook-landing__loading {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  padding: 24px;
+}
+
+.workbook-landing__grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.workbook-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--desk-border);
+  border-radius: var(--desk-radius);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px 18px;
+  transition: border-color 160ms ease;
+}
+
+.workbook-card:hover,
+.workbook-card:focus-within {
+  border-color: var(--mantine-color-orange-3);
+}
+
+.workbook-card__top {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.workbook-card__icon {
+  height: 36px;
+  width: 36px;
+}
+
+.workbook-card__file {
+  max-width: 70%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.workbook-card__body {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 4px;
+  min-width: 0;
+}
+
+.workbook-card__title {
+  color: var(--desk-strong);
+  font: 600 17px/1.3 var(--font-mono);
+  letter-spacing: 0;
+}
+
+.workbook-card__report {
+  color: var(--mantine-color-gray-7);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.workbook-card__description {
+  color: var(--desk-text);
+  font-size: 13.5px;
+  line-height: 1.45;
+  margin-top: 2px;
+}
+
+.workbook-card__foot {
+  align-items: center;
+  border-top: 1px solid var(--desk-border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+  padding-top: 12px;
+}
+
+.workbook-card__period {
+  align-items: flex-start;
+  color: var(--mantine-color-gray-7);
+  display: flex;
+  font-size: 12.5px;
+  gap: 6px;
+  line-height: 1.4;
+  min-width: 0;
+}
+
+.workbook-card__period svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.workbook-card__period-label {
+  color: var(--desk-muted);
+}
+
+.workbook-card__dates {
+  color: var(--desk-text);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.workbook-card__open {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.workbook-landing__more {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--desk-border);
+  border-radius: var(--desk-radius);
+  padding: 0 16px;
+}
+
+.workbook-landing__more > summary,
+.workbook-settings__advanced > summary,
+.workbook-header__about > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.workbook-landing__more > summary::-webkit-details-marker,
+.workbook-settings__advanced > summary::-webkit-details-marker,
+.workbook-header__about > summary::-webkit-details-marker {
+  display: none;
+}
+
+.workbook-landing__more > summary,
+.workbook-settings__advanced > summary {
+  align-items: baseline;
+  color: var(--mantine-color-gray-7);
+  display: flex;
+  flex-wrap: wrap;
+  font: 600 13px var(--font-mono);
+  gap: 4px 10px;
+  padding: 12px 0;
+}
+
+.workbook-landing__more > summary::before,
+.workbook-settings__advanced > summary::before,
+.workbook-header__about > summary::before {
+  border-bottom: 1.5px solid currentColor;
+  border-right: 1.5px solid currentColor;
+  content: '';
+  display: inline-block;
+  height: 6px;
+  margin-right: 2px;
+  transform: rotate(-45deg) translateY(-1px);
+  transition: transform 160ms ease;
+  width: 6px;
+}
+
+.workbook-landing__more[open] > summary::before,
+.workbook-settings__advanced[open] > summary::before,
+.workbook-header__about[open] > summary::before {
+  transform: rotate(45deg) translateY(-2px);
+}
+
+.workbook-landing__more-body {
+  display: grid;
+  gap: 10px;
+  max-width: 460px;
+  padding: 0 0 16px;
+}
+
+/* Switcher */
+.workbook-switcher {
+  align-items: stretch;
+  background: #f8f9fa;
+  border: 1px solid var(--desk-border);
+  border-radius: var(--desk-radius);
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 6px 0 4px;
+}
+
+.workbook-switcher__back {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-right: 1px solid var(--desk-border);
+  color: var(--mantine-color-gray-7);
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+  font: 600 13px var(--font-mono);
+  gap: 6px;
+  padding: 0 12px 0 8px;
+}
+
+.workbook-switcher__back:hover {
+  color: var(--brand-orange);
+}
+
+.workbook-switcher__tabs.pill-tabs {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  flex: 1 1 auto;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+.workbook-switcher__tabs .pill-tab {
+  margin-bottom: 0;
+}
+
+.workbook-switcher__tabs .pill-tab:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.workbook-switcher__extra {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  gap: 4px;
+}
+
+.workbook-quiet-action.mantine-Button-root {
+  color: var(--mantine-color-gray-7);
+  font-weight: 600;
+}
+
+/* Header */
+.workbook-header {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--desk-border);
+  border-radius: var(--desk-radius);
+  display: grid;
+  gap: 10px;
+  padding: 16px 18px;
+}
+
+.workbook-header__eyebrow {
+  align-items: center;
+  color: var(--brand-orange);
+  display: flex;
+  flex-wrap: wrap;
+  font: 600 11.5px var(--font-mono);
+  gap: 8px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.workbook-header__eyebrow .app-role-pill {
+  text-transform: none;
+}
+
+.workbook-header__title {
+  color: var(--desk-strong);
+  font: 600 21px/1.25 var(--font-mono);
+  letter-spacing: 0;
+}
+
+.workbook-header__template {
+  color: var(--mantine-color-gray-7);
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: -4px;
+}
+
+.workbook-header__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 28px;
+  margin: 0;
+}
+
+.workbook-header__fact {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.workbook-header__fact dt,
+.workbook-header__filters-label {
+  color: var(--desk-muted);
+  flex-shrink: 0;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.workbook-header__fact dd {
+  color: var(--desk-strong);
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  min-width: 0;
+}
+
+.workbook-header__fact:first-child dd {
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.workbook-header__filters {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+}
+
+.workbook-header__resolving {
+  align-items: center;
+  color: var(--mantine-color-gray-7);
+  display: inline-flex;
+  font-size: 13px;
+  gap: 8px;
+}
+
+.workbook-header__none {
+  color: var(--mantine-color-gray-7);
+  font-size: 13px;
+}
+
+.workbook-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.workbook-chip {
+  background: var(--mantine-color-orange-0);
+  border: 1px solid var(--mantine-color-orange-2);
+  border-radius: 7px;
+  color: var(--mantine-color-orange-9);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  padding: 3px 9px;
+}
+
+.workbook-chip.is-view {
+  background: var(--mantine-color-gray-0);
+  border-color: var(--mantine-color-gray-3);
+  color: var(--mantine-color-gray-7);
+}
+
+.workbook-header__warning {
+  align-items: flex-start;
+  background: var(--mantine-color-yellow-0);
+  border: 1px solid var(--mantine-color-yellow-3);
+  border-radius: 8px;
+  color: var(--mantine-color-yellow-9);
+  display: flex;
+  font-size: 13px;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 10px;
+}
+
+.workbook-header__warning svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.workbook-header__about > summary {
+  align-items: center;
+  color: var(--mantine-color-gray-7);
+  display: inline-flex;
+  font: 600 12.5px var(--font-mono);
+  gap: 6px;
+}
+
+.workbook-header__about > .mantine-Text-root {
+  color: var(--desk-text);
+  line-height: 1.5;
+  margin-top: 6px;
+  max-width: 1100px;
+}
+
+/* Sticky action bar */
+.workbook-actions::before {
+  background: var(--mantine-color-gray-0);
+  content: '';
+  height: 13px;
+  left: -13px;
+  position: absolute;
+  right: -13px;
+  top: -14px;
+}
+
+.workbook-actions {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid var(--desk-border);
+  border-radius: var(--desk-radius);
+  box-shadow: 0 6px 18px rgba(20, 28, 38, 0.06);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 10px 12px;
+  position: sticky;
+  top: 0;
+  z-index: 6;
+}
+
+.workbook-actions__buttons {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.workbook-actions__file.is-ready {
+  border-color: var(--mantine-color-green-3);
+}
+
+.workbook-actions__divider {
+  align-self: stretch;
+  background: var(--desk-border);
+  margin: 4px 2px;
+  width: 1px;
+}
+
+.workbook-actions__status {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.workbook-actions__note {
+  align-items: flex-start;
+  display: inline-flex;
+  font-size: 13px;
+  gap: 8px;
+  line-height: 1.4;
+}
+
+.workbook-actions__note svg,
+.workbook-actions__note .mantine-Loader-root {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.workbook-actions__note.is-busy {
+  color: var(--mantine-color-gray-7);
+}
+
+.workbook-actions__note.is-blocked {
+  color: var(--mantine-color-orange-9);
+  font-weight: 600;
+}
+
+.workbook-actions__note.is-ready {
+  color: var(--mantine-color-green-9);
+}
+
+/* Settings */
+.workbook-settings {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--desk-border);
+  border-radius: var(--desk-radius);
+  display: grid;
+  padding: 4px 18px 6px;
+}
+
+.workbook-settings__head {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 10px 0 8px;
+}
+
+.workbook-settings__title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.workbook-settings__toggle.mantine-Button-root {
+  color: var(--mantine-color-gray-8);
+}
+
+.workbook-settings__row {
+  border-top: 1px solid var(--desk-border);
+  column-gap: 24px;
+  display: grid;
+  grid-template-columns: minmax(150px, 200px) minmax(0, 1fr);
+  padding: 14px 0;
+}
+
+.workbook-settings__label h3 {
+  color: var(--desk-strong);
+  font: 600 13px/1.4 var(--font-mono);
+  letter-spacing: 0;
+  outline: none;
+  scroll-margin-top: 90px;
+}
+
+.workbook-settings__label p {
+  color: var(--desk-muted);
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.workbook-settings__control {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.workbook-settings__control > :is(.mantine-Card-root, section, .app-section-card) {
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.workbook-settings__control .mantine-Checkbox-root[style*='margin-top'],
+.workbook-settings__control > .mantine-Checkbox-root:first-child {
+  margin-top: 0 !important;
+}
+
+.workbook-settings__control .reports-stocks-legacy-panel__add.mantine-Button-root {
+  --button-bg: var(--mantine-color-white);
+  --button-hover: var(--mantine-color-orange-0);
+  --button-color: var(--mantine-color-orange-8);
+  --button-bd: 1px solid var(--mantine-color-orange-3);
+}
+
+.workbook-settings__control .reports-stocks-selection-card .reports-stocks-legacy-panel__header {
+  align-items: center;
+  border-bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  padding: 0;
+}
+
+.workbook-settings__control .reports-stocks-selection-card .app-section-title {
+  color: var(--mantine-color-gray-7);
+  font-size: 12.5px;
+}
+
+.workbook-settings__control .reports-stocks-legacy__selections {
+  background: transparent;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.workbook-settings__control .reports-stocks-selection-card {
+  border: 0 !important;
+  padding: 0 !important;
+}
+
+.workbook-settings__control .reports-stocks-structure > .app-section-title,
+.workbook-settings__control .reports-stocks-legacy-measurements .reports-stocks-legacy-panel__title {
+  display: none;
+}
+
+.workbook-settings__control .reports-stocks-legacy-measurements .reports-stocks-legacy-panel__header {
+  border-bottom: 0;
+  justify-content: flex-end;
+  margin: 0;
+  padding: 0;
+}
+
+.workbook-settings__control .reports-stocks-legacy-measurements {
+  max-width: 760px;
+}
+
+.workbook-settings__summary {
+  border-top: 1px solid var(--desk-border);
+  display: grid;
+  gap: 0 24px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 10px 0 8px;
+}
+
+.workbook-settings__summary-item {
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  display: grid;
+  gap: 2px;
+  padding: 6px 8px;
+  text-align: left;
+  width: 100%;
+}
+
+.workbook-settings__summary-item:hover {
+  background: var(--mantine-color-gray-0);
+}
+
+.workbook-settings__summary-title {
+  color: var(--mantine-color-gray-7);
+  font: 600 12px var(--font-mono);
+}
+
+.workbook-settings__summary-text {
+  color: var(--desk-text);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workbook-settings__advanced {
+  border-top: 1px solid var(--desk-border);
+}
+
+.workbook-settings__advanced > summary small {
+  color: var(--desk-muted);
+  font: 400 12px var(--font-sans);
+}
+
+.workbook-settings__advanced-body {
+  display: grid;
+  gap: 12px;
+  max-width: 900px;
+  padding: 0 0 16px;
+}
+
+.workbook-settings__advanced-body > :is(.mantine-Card-root, section, .app-section-card) {
+  border: 1px solid var(--desk-border) !important;
+  box-shadow: none !important;
+}
+
+.workbook-desk__group {
+  display: grid;
+  gap: 4px;
+}
+
+.workbook-desk__group > .mantine-Checkbox-root {
+  margin-top: 6px !important;
+}
+
+.workbook-desk__group > .mantine-Checkbox-root:first-child {
+  margin-top: 0 !important;
+}
+
+/* Period */
+.workbook-period {
+  display: grid;
+  gap: 10px;
+}
+
+.workbook-period__dates {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.workbook-period__dates .mantine-TextInput-root {
+  width: 160px;
+}
+
+.workbook-period__dates input {
+  font-family: var(--font-mono);
+}
+
+.workbook-period__dash {
+  color: var(--desk-muted);
+  padding-bottom: 8px;
+}
+
+.workbook-period__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.workbook-period__preset.mantine-Button-root {
+  font-family: var(--font-sans);
+  font-weight: 500;
+}
+
+.workbook-period__preset.is-active.mantine-Button-root {
+  border: 1px solid var(--mantine-color-orange-3);
+  font-weight: 600;
+}
+
+.workbook-period__error {
+  color: var(--mantine-color-red-8);
+  font-size: 13px;
+  margin: 0;
+}
+
+/* Result */
+.workbook-result {
+  scroll-margin-top: 84px;
+  background: var(--mantine-color-white);
+  border: 1px solid var(--desk-border);
+  border-radius: var(--desk-radius);
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px 18px 18px;
+}
+
+.workbook-result__head {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  justify-content: space-between;
+}
+
+.workbook-result__title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.workbook-result__files {
+  align-items: center;
+  color: var(--mantine-color-gray-7);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 13px;
+  gap: 6px 12px;
+}
+
+.workbook-result__file {
+  align-items: center;
+  border: 1px solid var(--desk-border);
+  border-radius: 8px;
+  color: var(--desk-strong);
+  display: inline-flex;
+  font: 600 12.5px var(--font-mono);
+  gap: 6px;
+  padding: 4px 10px;
+  text-decoration: none;
+}
+
+.workbook-result__file:hover {
+  border-color: var(--brand-orange);
+}
+
+.workbook-result > .report-inline-preview {
+  border: 0 !important;
+  padding: 0 !important;
+}
+
+.workbook-message {
+  align-items: flex-start;
+  border: 1px dashed var(--mantine-color-gray-3);
+  border-radius: var(--desk-radius);
+  display: flex;
+  gap: 12px;
+  padding: 18px;
+}
+
+.workbook-message__icon {
+  color: var(--mantine-color-gray-6);
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.workbook-message__body {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.workbook-message__body strong {
+  color: var(--desk-strong);
+  font-size: 14px;
+}
+
+.workbook-message__body p {
+  color: var(--desk-text);
+  font-size: 13.5px;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 900px;
+  overflow-wrap: anywhere;
+}
+
+.workbook-message__next {
+  color: var(--mantine-color-gray-7) !important;
+}
+
+.workbook-message.is-info {
+  background: var(--mantine-color-blue-0);
+  border: 1px solid var(--mantine-color-blue-2);
+}
+
+.workbook-message.is-info .workbook-message__icon {
+  color: var(--mantine-color-blue-7);
+}
+
+.workbook-message.is-success {
+  background: var(--mantine-color-green-0);
+  border: 1px solid var(--mantine-color-green-3);
+}
+
+.workbook-message.is-success .workbook-message__icon {
+  color: var(--mantine-color-green-8);
+}
+
+.workbook-message.is-warning {
+  background: var(--mantine-color-yellow-0);
+  border: 1px solid var(--mantine-color-yellow-3);
+}
+
+.workbook-message.is-warning .workbook-message__icon {
+  color: var(--mantine-color-yellow-9);
+}
+
+.workbook-message.is-error {
+  background: var(--mantine-color-red-0);
+  border: 1px solid var(--mantine-color-red-3);
+}
+
+.workbook-message.is-error .workbook-message__icon {
+  color: var(--mantine-color-red-8);
+}
+
+/* Progress */
+.workbook-progress {
+  border: 1px solid var(--mantine-color-orange-2);
+  border-radius: var(--desk-radius);
+  display: grid;
+  gap: 10px;
+  padding: 16px 18px;
+}
+
+.workbook-progress__head {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.workbook-progress__head strong {
+  color: var(--desk-strong);
+  font-size: 14px;
+}
+
+.workbook-progress__bar {
+  background: var(--mantine-color-gray-1);
+  border-radius: 999px;
+  height: 6px;
+  overflow: hidden;
+}
+
+.workbook-progress__bar span {
+  background: var(--brand-orange);
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+  transition: width 900ms ease;
+}
+
+.workbook-progress__meta {
+  color: var(--desk-muted);
+  display: flex;
+  font-size: 12.5px;
+  gap: 12px;
+}
+
+.workbook-progress__elapsed {
+  color: var(--desk-text);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.workbook-progress__stages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.workbook-progress__stages li {
+  align-items: center;
+  color: var(--mantine-color-gray-6);
+  display: inline-flex;
+  font-size: 12.5px;
+  gap: 6px;
+}
+
+.workbook-progress__stages li::before {
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  content: '';
+  height: 8px;
+  width: 8px;
+}
+
+.workbook-progress__stages li.is-done {
+  color: var(--mantine-color-green-8);
+}
+
+.workbook-progress__stages li.is-done::before {
+  background: currentColor;
+}
+
+.workbook-progress__stages li.is-current {
+  color: var(--desk-strong);
+  font-weight: 600;
+}
+
+.workbook-progress__stages li.is-current::before {
+  border-color: var(--brand-orange);
+  box-shadow: 0 0 0 3px rgba(var(--brand-orange-rgb), 0.18);
+}
+
+.workbook-progress__status {
+  color: var(--mantine-color-gray-7);
+  font-size: 13px;
+  margin: 0;
+}
+
+/* Focus */
+.workbook-desk :is(button, a, summary, [tabindex='0']):focus-visible {
+  outline: 2px solid rgba(var(--brand-orange-rgb), 0.7);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1280px) {
+  .workbook-landing__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1100px) {
+  .workbook-settings__row {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 8px;
+  }
+
+  .workbook-switcher {
+    flex-wrap: wrap;
+    padding: 4px 6px;
+  }
+
+  .workbook-switcher__back {
+    border-right: 0;
+    padding: 6px 8px;
+  }
+
+  .workbook-switcher__tabs.pill-tabs {
+    flex-basis: 100%;
+    order: 3;
+  }
+
+  .workbook-switcher__extra {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .workbook-desk {
+    padding: 8px 8px 16px;
+  }
+
+  .workbook-landing__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .workbook-landing__head,
+  .workbook-header,
+  .workbook-settings,
+  .workbook-result,
+  .workbook-card {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .workbook-header__title {
+    font-size: 18px;
+  }
+
+  .workbook-actions__buttons {
+    width: 100%;
+  }
+
+  .workbook-actions__buttons > .mantine-Button-root {
+    flex: 1 1 calc(50% - 8px);
+  }
+
+  .workbook-actions__buttons > .workbook-actions__preview.mantine-Button-root {
+    flex-basis: 100%;
+  }
+
+  .workbook-settings__head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .workbook-actions__divider {
+    display: none;
+  }
+
+  .workbook-period__dates .mantine-TextInput-root {
+    flex: 1 1 140px;
+    width: auto;
+  }
+
+  .workbook-period__dash {
+    display: none;
+  }
+}

@@ -1,0 +1,172 @@
+import { MantineProvider } from '@mantine/core'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { beforeEach, expect, it, vi } from 'vitest'
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import { ApiError } from '../../../shared/api/apiClient'
+import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
+import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
+import { createStockReport, previewStockReport, searchDatasetReportValues } from '../api/reportsApi'
+import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
+import { getSettlementCounterpartyGroups } from '../api/counterpartyGroupsApi'
+import { reportDatasets } from '../data/reportDatasets.test-fixtures'
+import { profitDayDataset, profitSupplierDataset } from '../data/profitReadMode.test-fixtures'
+import { cashModeDataset } from '../data/cashReadMode.test-fixtures'
+import { settlementModeDataset } from '../data/settlementReadMode.test-fixtures'
+import { currentVparivanieDataset } from '../data/currentVparivanie.test-fixtures'
+import { previousKyivDay } from '../data/cashPeriod'
+import type { NativeReportPreview } from '../data/nativeReportPreview'
+import { deskPeriodText } from '../data/workbookDesk'
+import { WORKBOOK_FILES } from '../testing/workbookFiles'
+import { findWorkbookLanding } from '../testing/workbookDesk'
+import { ReportsStocksPage } from './ReportsStocksPage'
+
+vi.mock('../reportSurfacePolicy', () => ({ BUG_1274_ONLY_REPORT_SURFACE: true }))
+vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
+vi.mock('../../../shared/ui/document-export-modal/DocumentExportModal', () => ({ DocumentExportModal: vi.fn(() => null) }))
+vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(),
+  createStockReport: vi.fn(), previewStockReport: vi.fn(), searchDatasetReportValues: vi.fn() }))
+vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(),
+  getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn() }))
+vi.mock('../api/counterpartyGroupsApi', () => ({ getSettlementCounterpartyGroups: vi.fn() }))
+
+const preview: NativeReportPreview = {
+  Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true, Request: null,
+  Page: { Offset: 0, Limit: 50, TotalVisibleRows: 1, ReturnedRows: 1, HasMore: false },
+  RowSchema: [{ Caption: 'Дата' }], ColumnSchema: [{ Caption: 'Сума' }],
+  Rows: [{ Ordinal: 0, SourceIndex: 1, Values: [{ Caption: '01.09.2026' }] }],
+  Columns: [{ Ordinal: 0, SourceIndex: 2, Values: [{ Caption: 'Продажі' }] }],
+  Cells: [{ RowSourceIndex: 1, ColumnSourceIndex: 2, Value: { Kind: 'decimal', Value: '12.50', Provenance: 'producerCell' } }],
+}
+const files = { DocumentURL: '/Data/reports/day.xlsx', PdfDocumentURL: '/Data/reports/day.pdf' }
+
+beforeEach(() => {
+  vi.clearAllMocks(); localStorage.clear(); sessionStorage.clear()
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
+  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, profitDayDataset, profitSupplierDataset,
+    currentVparivanieDataset, cashModeDataset, settlementModeDataset])
+  vi.mocked(getServerReportTemplates).mockResolvedValue([])
+  vi.mocked(searchDatasetReportValues).mockResolvedValue([])
+  vi.mocked(getSettlementCounterpartyGroups).mockResolvedValue([])
+  vi.mocked(previewStockReport).mockResolvedValue({ result: { document: files, raw: {} }, preview })
+  vi.mocked(createStockReport).mockResolvedValue({ document: files, raw: {} })
+})
+
+const page = () => <MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>
+const dateInput = (label: string) => screen.getByLabelText(label) as HTMLInputElement
+
+async function openDayWorkbook() {
+  render(page())
+  await findWorkbookLanding()
+  fireEvent.click(screen.getByRole('button', { name: 'Відкрити ВП.xls' }))
+  await waitFor(() => expect((screen.getByRole('button', { name: 'Показати на екрані' }) as HTMLButtonElement).disabled).toBe(false))
+}
+
+it('opens every workbook on the period its card promises', async () => {
+  render(page())
+  await findWorkbookLanding()
+  for (const file of Object.values(WORKBOOK_FILES)) {
+    const card = screen.getByRole('button', { name: `Відкрити ${file}` }).closest('article')!
+    const promised = card.querySelector('.workbook-card__dates')!.textContent
+    fireEvent.click(within(card).getByRole('button', { name: `Відкрити ${file}` }))
+    await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/i)).toBeNull())
+    expect(deskPeriodText(dateInput('Від').value, dateInput('До').value)).toBe(promised)
+    expect(within(screen.getByRole('navigation', { name: 'Звіти 1С' })).getByRole('button', { name: `Відкрити ${file}` })
+      .getAttribute('aria-current')).toBe('true')
+    fireEvent.click(screen.getByRole('button', { name: 'Усі звіти' }))
+    await findWorkbookLanding()
+  }
+})
+
+it('shows the table with its row count and turns Excel and PDF into direct downloads of the same run', async () => {
+  await openDayWorkbook()
+  expect(screen.getByRole('button', { name: 'Сформувати Excel' })).toBeTruthy()
+  expect(screen.getByText('Таблиці ще немає')).toBeTruthy()
+  fireEvent.click(screen.getByRole('button', { name: 'Показати на екрані' }))
+  await screen.findByRole('region', { name: 'Таблиця попереднього перегляду' })
+  expect(vi.mocked(previewStockReport).mock.calls[0][0]).toMatchObject({ dataSource: 35, profitReadMode: 0 })
+  expect(createStockReport).not.toHaveBeenCalled()
+  expect(screen.getByText('1 рядок')).toBeTruthy()
+  const excel = screen.getByRole('link', { name: 'Завантажити Excel' })
+  expect(excel.getAttribute('href')).toContain('/Data/reports/day.xlsx')
+  expect(excel.getAttribute('download')).toMatch(/^ВП \d\d\.\d\d\.\d{4}-\d\d\.\d\d\.\d{4}\.xlsx$/)
+  expect(screen.getByRole('link', { name: 'Завантажити PDF' }).getAttribute('download')).toMatch(/\.pdf$/)
+  fireEvent.change(dateInput('Від'), { target: { value: dateInput('До').value } })
+  await waitFor(() => expect(screen.queryByRole('region', { name: 'Таблиця попереднього перегляду' })).toBeNull())
+  expect(screen.getByText('Налаштування змінено')).toBeTruthy()
+  expect(screen.getByRole('button', { name: 'Сформувати Excel' })).toBeTruthy()
+})
+
+it('forms a file with the request of the former «Сформувати» and opens the export dialog', async () => {
+  await openDayWorkbook()
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати PDF' }))
+  await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+  expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({ dataSource: 35, profitReadMode: 0, dayOrganizationBasis: 0 })
+  expect(previewStockReport).not.toHaveBeenCalled()
+  await waitFor(() => expect(vi.mocked(DocumentExportModal).mock.calls.at(-1)?.[0]).toMatchObject({ opened: true }))
+  expect(screen.getByText('Файли сформовано')).toBeTruthy()
+})
+
+it('says why the actions are blocked and points the buttons at that reason', async () => {
+  await openDayWorkbook()
+  const yesterday = previousKyivDay(formatKyivBusinessDate())
+  fireEvent.change(dateInput('До'), { target: { value: previousKyivDay(yesterday) } })
+  fireEvent.change(dateInput('Від'), { target: { value: yesterday } })
+  await waitFor(() => expect(document.getElementById('report-constructor-blocked-reason')?.textContent).toMatch(/період/))
+  expect(screen.getByText('Дата початку не може бути пізніше дати завершення')).toBeTruthy()
+  for (const name of ['Показати на екрані', 'Сформувати Excel', 'Сформувати PDF']) {
+    const button = screen.getByRole('button', { name }) as HTMLButtonElement
+    expect(button.disabled).toBe(true)
+    expect(button.getAttribute('aria-describedby')).toBe('report-constructor-blocked-reason')
+  }
+})
+
+it('shows what is happening while the report is formed and the server reason when it fails', async () => {
+  let fail: (error: unknown) => void = () => {}
+  vi.mocked(previewStockReport).mockImplementation(() => new Promise((_, reject) => { fail = reject }))
+  await openDayWorkbook()
+  fireEvent.click(screen.getByRole('button', { name: 'Показати на екрані' }))
+  expect(await screen.findByText(/^Формуємо «Валовий прибуток» за /)).toBeTruthy()
+  expect(screen.getByText('Звіт формується…')).toBeTruthy()
+  expect(screen.getByText(/зазвичай 15–25 с/)).toBeTruthy()
+  expect((screen.getByRole('button', { name: 'Показати на екрані' }) as HTMLButtonElement).disabled).toBe(true)
+  expect((screen.getByRole('button', { name: 'Скинути' }) as HTMLButtonElement).disabled).toBe(true)
+  await act(async () => fail(new ApiError('Internal', 500, null)))
+  expect(await screen.findByText('Звіт не сформовано')).toBeTruthy()
+  expect(screen.getByText('Сервер звітів недоступний. Спробуйте ще раз пізніше.')).toBeTruthy()
+  expect((screen.getByRole('button', { name: 'Показати на екрані' }) as HTMLButtonElement).disabled).toBe(false)
+})
+
+it('keeps the open report behind «Усі звіти» and returns to it unchanged', async () => {
+  await openDayWorkbook()
+  const day = previousKyivDay(formatKyivBusinessDate())
+  fireEvent.change(dateInput('Від'), { target: { value: day } })
+  fireEvent.click(screen.getByRole('button', { name: 'Усі звіти' }))
+  await findWorkbookLanding()
+  expect(screen.queryByRole('button', { name: 'Показати на екрані' })).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Повернутися до звіту «Валовий прибуток»' }))
+  expect(dateInput('Від').value).toBe(day)
+  expect(screen.getByRole('region', { name: 'Валовий прибуток' })).toBeTruthy()
+})
+
+it('keeps the settings collapsed behind a summary and opens them at the clicked section', async () => {
+  await openDayWorkbook()
+  const toggle = screen.getByRole('button', { name: 'Змінити налаштування' })
+  expect(toggle.getAttribute('aria-expanded')).toBe('false')
+  expect(screen.queryByRole('checkbox', { name: 'Група «Покупці» Fenix' })).toBeNull()
+  expect(dateInput('Від')).toBeTruthy()
+  fireEvent.click(screen.getByRole('button', { name: /^Відбори/ }))
+  expect(screen.getByRole('button', { name: 'Згорнути налаштування' }).getAttribute('aria-expanded')).toBe('true')
+  expect((screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }) as HTMLInputElement).checked).toBe(true)
+  expect(screen.getByRole('group', { name: 'Організації' })).toBeTruthy()
+  expect(screen.getByRole('group', { name: 'Показники' })).toBeTruthy()
+})
+
+it('reads the period, organizations and filters of the open workbook in its header', async () => {
+  await openDayWorkbook()
+  const header = within(screen.getByRole('region', { name: 'Валовий прибуток' }))
+  expect(header.getByText('ВП.xls')).toBeTruthy()
+  expect(header.getByText(deskPeriodText(dateInput('Від').value, dateInput('До').value))).toBeTruthy()
+  expect(header.getByText('ТОВ «АМГ «КОНКОРД», Фенікс, ФОП Самолюк А.Д., ФОП Самолюк Ю.М.')).toBeTruthy()
+  const chips = within(header.getByRole('list', { name: 'Застосовані відбори' }))
+  expect(chips.getAllByRole('listitem').map(item => item.textContent)).toEqual(['Товари без послуг', 'Покупці з групи «Покупці»'])
+})

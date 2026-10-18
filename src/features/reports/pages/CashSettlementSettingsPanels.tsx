@@ -15,14 +15,15 @@ type Props = {
   onExactCashChange: (value: unknown) => void
   onCashMeasurementsChange: (value: ReportMeasurementGroup[]) => void
   onClearCashFilters: () => void
+  part?: 'source' | 'filters' | 'form'
 }
 
 export function CashSettlementSettingsPanels({ dataSource, cash, settlement, onGroupedCashChange,
-  onExactCashChange, onCashMeasurementsChange, onClearCashFilters }: Props) {
-  if (dataSource === 41) return <SettlementPeriodModePanel {...settlement} />
-  if (dataSource !== 40) return null
+  onExactCashChange, onCashMeasurementsChange, onClearCashFilters, part }: Props) {
+  if (dataSource === 41) return <SettlementPeriodModePanel {...settlement} part={part} />
+  if (dataSource !== 40 || part === 'filters') return null
   const { dataset, available, onRowsChange } = cash
-  return <CashPeriodModePanel {...cash}
+  return <CashPeriodModePanel {...cash} part={part}
     onModeChange={multiple => {
       onGroupedCashChange(multiple ? defaultGroupedCashPeriod() : undefined)
       cash.onReadModeChange?.(multiple && isCashReadModeCapability(dataset?.cashReadMode) ? 0 : undefined)

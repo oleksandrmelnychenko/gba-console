@@ -9,6 +9,7 @@ import { groupedCashWorkbookDataset } from '../data/groupedCashPeriod.test-fixtu
 import { defaultDatasetRequest } from '../data/reportDatasets'
 import { BUG_1274_DISABLED_MESSAGE } from '../data/reportMigration'
 import { ReportsStocksPage } from './ReportsStocksPage'
+import { findWorkbookLanding, openOtherWaysToOpen } from '../testing/workbookDesk'
 
 const surface = vi.hoisted(() => ({ only: true }))
 vi.mock('../reportSurfacePolicy', () => ({ get BUG_1274_ONLY_REPORT_SURFACE() { return surface.only } }))
@@ -27,18 +28,20 @@ const page = () => <MantineProvider env="test"><I18nProvider><ReportsStocksPage 
 
 it('shows only BUG-1274 entry points, then accepts the actual cash workbook', async () => {
   const view = render(page())
-  await screen.findByText('Звіти 1С за зразками Excel')
+  await findWorkbookLanding()
   expect(screen.queryByRole('button', { name: 'Валовий прибуток — як у 1С' })).toBeNull()
   expect(screen.queryByText('Готово')).toBeNull()
   expect(view.container.querySelector('a[href="/reports/registers"]')).toBeNull()
   expect(screen.queryByRole('button', { name: 'Продажі за днями' })).toBeNull()
-  expect(screen.getByText('Відкрийте звіт 1С за зразком Excel вище або оберіть звіт у полі «Звіт».')).toBeTruthy()
+  expect(view.container.querySelector('form')).toBeNull()
+  expect(screen.queryByRole('button', { name: 'Показати на екрані' })).toBeNull()
+  openOtherWaysToOpen()
   fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
   expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(['Відомість по коштах'])
-  fireEvent.submit(view.container.querySelector('form')!)
+  fireEvent.keyDown(screen.getByRole('combobox', { name: 'Звіт' }), { key: 'Escape' })
   expect(createStockReport).not.toHaveBeenCalled()
   fireEvent.click(screen.getByRole('button', { name: 'Відкрити Ведомость по денежным средствам.xls' }))
-  expect(screen.queryByText('Відкрийте звіт 1С за зразком Excel вище або оберіть звіт у полі «Звіт».')).toBeNull()
+  expect(screen.queryByRole('heading', { name: 'Звіти 1С' })).toBeNull()
   fireEvent.submit(view.container.querySelector('form')!)
   await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
   expect(vi.mocked(createStockReport).mock.calls[0][0].dataSource).toBe(40)
@@ -50,7 +53,7 @@ it('lists only BUG-1274 templates and hides the full-list template order', async
     { Id: '10000000-0000-0000-0000-000000000002', Revision: 1, Name: 'Шаблон коштів', Data: defaultDatasetRequest(groupedCashWorkbookDataset, '2026-09-01', '2026-09-03') },
   ])
   render(page())
-  await screen.findByText('Звіти 1С за зразками Excel')
+  await findWorkbookLanding()
   fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
   expect(await screen.findByRole('button', { name: /Шаблон коштів/ })).toBeTruthy()
   expect(screen.queryByRole('button', { name: /Шаблон надходжень/ })).toBeNull()

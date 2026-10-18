@@ -44,7 +44,6 @@ import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowActi
 import { requestProfitReadMode } from '../data/profitReadMode'
 import { isSettlementReadModeCapability, requestSettlementReadMode } from '../data/settlementReadMode'
 import { requestCashReadMode } from '../data/cashReadMode'
-import { ProfitReadModeSelect } from './ProfitReadModeSelect'
 import { type FormEvent, memo, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
@@ -182,7 +181,7 @@ import { isOneCTurnoverCatalogueChoice, resolveCatalogueLaunch, type CatalogueLa
 import { ReportOrderingPanel } from './ReportOrderingPanel'
 import { requestOrdering } from '../data/reportOrdering'
 import { requestFilterExpression } from '../data/reportFilterExpression'
-import { CLIENT_COMPARISON_MAX_DATE, comparisonWindow, isComparisonDate, requestComparison } from '../data/clientPeriodComparison'
+import { CLIENT_COMPARISON_MAX_DATE, CLIENT_COMPARISON_MIN_DATE, comparisonWindow, isComparisonDate, requestComparison } from '../data/clientPeriodComparison'
 import { ClientComparisonPeriodPanel } from './ClientComparisonPeriodPanel'
 import { buildReportBuilderRequest } from '../data/reportBuilderRequest'
 import { ReportInlinePreview } from './ReportInlinePreview'
@@ -202,12 +201,18 @@ import { useReportAbcClassification } from '../hooks/useReportAbcClassification'
 import { requestTopGroups } from '../data/reportTopGroups'
 import { useReportGroupingOrdering } from '../hooks/useReportGroupingOrdering'
 import type { ReportGroupingLayout } from '../data/reportGroupingLayout'
-import { DayOrganizationBasisSelect } from './DayOrganizationBasisSelect'
+import { DayProfitControls, SupplierProfitControls, type ProfitControlsPart } from './ProfitWorkbookControls'
+import { deskPlural, organizationFilterField, workbookDeskTitle, workbookRequestSummary } from '../data/workbookDesk'
+import { WorkbookLanding } from './workbook-desk/WorkbookLanding'
+import { WorkbookSwitcher } from './workbook-desk/WorkbookSwitcher'
+import { WorkbookHeader } from './workbook-desk/WorkbookHeader'
+import { WorkbookActionBar } from './workbook-desk/WorkbookActionBar'
+import { WorkbookPeriodField, WorkbookSettings, type WorkbookSettingsSection } from './workbook-desk/WorkbookSettings'
+import { WorkbookResult } from './workbook-desk/WorkbookResult'
+import './workbook-desk/workbook-desk.css'
 import { requestDayOrganizationBasis } from '../data/dayOrganizationBasis'
-import { requestSupplierBasis, rowGroupsForSupplierBasis, supplierBasisFormDataset } from '../data/supplierBasis'
-import { SupplierBasisSelect } from './SupplierBasisSelect'
-import { productClassification as parseProductClassification, sourceOrganizations as parseSourceOrganizations, sourceBuyerSubtree as parseSourceBuyerSubtree, requestProductClassification, requestSourceOrganizations, requestSourceBuyerSubtree, FENIX_BUYERS_ROOT_ID } from '../data/nativeExactFilters'
-import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from '../data/dayOrganizationGrossProfit'
+import { requestSupplierBasis, supplierBasisFormDataset } from '../data/supplierBasis'
+import { requestProductClassification, requestSourceOrganizations, requestSourceBuyerSubtree } from '../data/nativeExactFilters'
 import { isSupplierSourceWorldCapability, requestSupplierSourceWorld } from '../data/supplierBatchGrossProfit'
 import PriceTypeSalesComparisonPanel from './PriceTypeSalesComparisonPanel'
 import AgreementPriceComparisonPanel from './AgreementPriceComparisonPanel'
@@ -294,13 +299,6 @@ function shouldLoadDatasetDefaults(dataSource: number, periodSupported: boolean)
     || supportsFullReportDateRange(dataSource)
     || dataSource === PRICE_TYPE_SALES_COMPARISON_SOURCE
     || BUG_1274_ONLY_REPORT_SURFACE && dataSource === 35
-}
-
-function usesSavedFenixOrganizations(value: unknown): boolean {
-  const ids = parseSourceOrganizations(value)?.OrganizationIds.map(id => id.toUpperCase())
-    .filter(id => !(DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS as readonly string[]).includes(id))
-  if (ids?.length !== DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS.length) return false
-  return DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS.every(id => ids.includes(id))
 }
 
 function reportLookupSourceWorld(dataSource: number, groupedSettlement: unknown, specialSettings: unknown): 1 | 2 | undefined {
@@ -406,9 +404,12 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const templateStorage = useServerReportTemplates(canGenerateReport, datasetStorage.datasets, ownerId)
   const [draftRestoreError, setDraftRestoreError] = useState<string | null>(null)
   const [templateNotice, setTemplateNotice] = useValueState<string | null>(null)
-  const [catalogueNotice, setCatalogueNotice] = useState<{ text: string; failed: boolean; title?: string } | null>(null)
+  const [catalogueNotice, setCatalogueNotice] = useState<{ text: string; failed: boolean; title?: string; warning?: string } | null>(null)
   const [activeWorkbook, setActiveWorkbook] = useState<string | null>(null)
   const [workbookResolving, setWorkbookResolving] = useState(false)
+  const [landingRequested, setLandingRequested] = useState(false)
+  const [deskTemplatesOpened, setDeskTemplatesOpened] = useState(false)
+  const [shownReport, setShownReport] = useState<string | null>(null)
   const workbookLaunchToken = useRef(0)
   const groupingOptions = useMemo(() => datasetGroupings(priceTypeDataset).filter(field => field.type !== ABC_CLASS_GROUPING || abcClassification != null), [abcClassification, priceTypeDataset])
   const workbook = useWorkbookPresentation({ dataSource, groupingOptions, setRowGroups, setGroupedCashPeriod })
@@ -559,6 +560,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
 
       updateAttempt({ result: nextResult, preview: previewResult?.preview ?? null, lastRun: outcome,
         downloadModalOpened: !showPreview && outcome.hasDocument })
+      if (previewResult) setShownReport(`${activeWorkbook ?? ''}|${dataSource}`)
     } catch (submitError) {
       updateAttempt({ result: null, error: describeReportError(submitError, t) })
     } finally {
@@ -682,6 +684,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     applyConfiguration({ ...template, Data: data }, nextDataset)
     setActiveWorkbook(null)
     setActiveTemplate(structuredClone(template))
+    setLandingRequested(false)
     return true
   }
 
@@ -824,6 +827,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     }
     applyConfiguration(launch.template, launch.dataset)
     setCatalogueNotice({ text: launch.notice, failed: false })
+    setLandingRequested(false)
     return true
   }
 
@@ -876,6 +880,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     workbookLaunchToken.current += 1
     setWorkbookResolving(false)
     setActiveWorkbook(null)
+    setLandingRequested(false)
     changeDataset(nextDataset)
   }
 
@@ -885,6 +890,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     const guide = bug1274WorkbookGuide(item.fileName)
     const title = guide ? `${item.fileName} — ${t(guide.title)}` : undefined
     const notice = guide ? t(guide.summary) : `${item.fileName}: ${item.notice}`
+    setLandingRequested(false)
     if (!resolvesWorkbookFilters(item.fileName)) {
       changeDataset(item.dataset, item)
       setActiveWorkbook(item.fileName)
@@ -901,7 +907,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         if (token !== workbookLaunchToken.current) return
         changeDataset(item.dataset, item, resolved)
         setActiveWorkbook(item.fileName)
-        setCatalogueNotice({ text: `${notice}${workbookFiltersNotice(resolved)}`, title, failed: false })
+        setCatalogueNotice({ text: `${notice}${workbookFiltersNotice(resolved)}`, title, failed: false,
+          warning: workbookFiltersNotice(resolved).trim() || undefined })
       })
       .finally(() => { if (token === workbookLaunchToken.current) setWorkbookResolving(false) })
     return true
@@ -917,6 +924,46 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const mountsDialog = (open: boolean) => !consoleScope || open
   const analysisRules = bug1274Only ? supportedAnalysisRules(templateBody, dataset, settlementDataset)
     : { topGroups: true, threshold: true, abc: true, ordering: true, filterExpression: true }
+  const lookup: { from: string; to: string; profitReadMode: 0 | 1 | undefined; profitUnavailable: boolean
+    providedDiscountBasis: 0 | undefined; salesBasis: 0 | undefined; sourceWorld: number | undefined } = {
+    from: hasLookupPeriod ? debouncedFrom : '',
+    to: hasLookupPeriod ? debouncedTo : '',
+    profitReadMode: (dataSource === 35 || dataSource === 38) && dataset?.profitReadModeLookup === true
+      && (profitReadMode === 0 || profitReadMode === 1) ? profitReadMode : undefined,
+    profitUnavailable: dataSource === 38 && profitReadMode === 0 && dataset?.profitReadModeLookup !== true,
+    providedDiscountBasis: currentProvidedDiscountLookupBasis(dataSource, oneCSpecialSettings, dataset),
+    salesBasis: currentPriceTypeSalesLookupBasis(dataSource, priceTypeSalesComparison, dataset?.priceTypeSalesComparison),
+    sourceWorld: reportLookupSourceWorld(dataSource, groupedSettlementPeriod, oneCSpecialSettings),
+  }
+  const cashSettlementPanels = (part?: 'source' | 'filters' | 'form') => <CashSettlementSettingsPanels dataSource={dataSource} part={part}
+    cash={{ dataset, grouped: groupedCashPeriod, exact: cashPeriod, rows: rowGroups,
+      available: groupingOptions, onRowsChange: workbook.changeCashRows, disabled: comparisonSettingsDisabled, enabled: canGenerateReport,
+      readMode: cashReadMode, onReadModeChange: setCashReadMode, hideRegisterReadMode: bug1274Only }}
+    settlement={{ dataset, grouped: groupedSettlementPeriod, exact: settlementPeriod,
+      buyer: sourceBuyerSubtree, groups: sourceCounterpartyGroups, rows: rowGroups,
+      available: groupingOptions, from, to, disabled: comparisonSettingsDisabled, enabled: canGenerateReport,
+      onModeChange: changeSettlementMode, onGroupedChange: setGroupedSettlementPeriod,
+      onExactChange: setSettlementPeriod, onBuyerChange: setSourceBuyerSubtree,
+      onRowsChange: setRowGroups, onGroupsChange: setSourceCounterpartyGroups,
+      readMode: settlementReadMode, hideRegisterReadMode: bug1274Only, onReadModeChange: mode => {
+        setSettlementReadMode(mode)
+        if (mode == null) return
+        setGroupedSettlementPeriod(defaultGroupedSettlementPeriod())
+        setSourceBuyerSubtree(defaultGroupedSettlementBuyer())
+      } }}
+    onGroupedCashChange={workbook.changeGroupedCash} onExactCashChange={setCashPeriod}
+    onCashMeasurementsChange={setMeasurements} onClearCashFilters={() => filterLogic.load([])} />
+  const dayProfitControls = (part?: ProfitControlsPart) => <DayProfitControls part={part} dataset={dataset}
+    disabled={comparisonSettingsDisabled} hideRegister={bug1274Only} profitReadMode={profitReadMode}
+    dayOrganizationBasis={dayOrganizationBasis} productClassification={productClassification}
+    sourceOrganizations={sourceOrganizations} sourceBuyerSubtree={sourceBuyerSubtree} setProfitReadMode={setProfitReadMode}
+    setDayOrganizationBasis={setDayOrganizationBasis} setProductClassification={setProductClassification}
+    setSourceOrganizations={setSourceOrganizations} setSourceBuyerSubtree={setSourceBuyerSubtree} />
+  const supplierProfitControls = (part?: ProfitControlsPart) => <SupplierProfitControls part={part} dataset={dataset}
+    disabled={comparisonSettingsDisabled} hideRegister={bug1274Only} profitReadMode={profitReadMode}
+    supplierBasis={supplierBasis} supplierSourceWorld={supplierSourceWorld} sourceBuyerSubtree={sourceBuyerSubtree}
+    groupingOptions={groupingOptions} setProfitReadMode={setProfitReadMode} setSupplierBasis={setSupplierBasis}
+    setSupplierSourceWorld={setSupplierSourceWorld} setSourceBuyerSubtree={setSourceBuyerSubtree} setRowGroups={setRowGroups} />
 
   if (canGenerateReport && ownerId && workspaceDraft.recovery !== 'none'
     && (workspaceDraft.recovery !== 'loading' || !datasetStorage.loaded)) {
@@ -927,6 +974,248 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       onRestore={() => workspaceDraft.restore(restoreWorkspace)}
       onDiscard={() => { if (workspaceDraft.discardRecovery()) setDraftRestoreError(null) }}
       onRetry={datasetStorage.retry} />
+  }
+
+  const analysisPanels = {
+    abc: !analysisRules.abc ? null : <ReportAbcClassificationPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} notice={abc.notice} onChange={abc.change}
+      onConfigureGrouping={constructorMode ? () => navigateConstructorSection('structure') : undefined}
+      onConfigureMeasures={constructorMode ? () => navigateConstructorSection('structure') : undefined} />,
+    hideZero: <ReportHideZeroPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setHideZero} />,
+    threshold: !analysisRules.threshold ? null : <ReportThresholdPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setThreshold} />,
+    topGroups: !analysisRules.topGroups ? null : <ReportTopGroupsPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setTopGroups}
+      onConfigureGrouping={constructorMode ? () => navigateConstructorSection('structure') : undefined}
+      onConfigureMeasures={constructorMode ? () => navigateConstructorSection('structure') : undefined} />,
+    filterExpression: !analysisRules.filterExpression ? null : <ReportFilterExpressionPanel data={templateBody} dataset={settlementDataset} disabled={comparisonSettingsDisabled}
+      notice={filterLogic.notice} onChange={filterLogic.change} />,
+    ordering: !analysisRules.ordering ? null : <ReportOrderingPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled}
+      notice={groupingOrdering.notice} onChange={groupingOrdering.changeOrdering} />,
+  }
+  const dialogs = <>
+    {mountsDialog(oneCReportOpen) ? <AppModal opened={oneCReportOpen} title={t('Валовий прибуток — як у 1С')} size={960}
+      onClose={() => { if (!oneCReportGenerating) setOneCReportOpen(false) }}
+      closeOnClickOutside={!oneCReportGenerating} closeOnEscape={!oneCReportGenerating}
+      closeButtonProps={{ disabled: oneCReportGenerating, 'aria-label': t('Закрити звіт 1С') }}>
+      {oneCReportOpen ? <OneCTurnoverReportPanel canGenerate={canGenerateReport} from={from} to={to}
+        onFromChange={setFrom} onToChange={setTo} onLoadingChange={setOneCReportGenerating}
+        onClose={() => setOneCReportOpen(false)} /> : null}
+    </AppModal> : null}
+    {mountsDialog(debtRatioCapability !== null) ? <AppModal opened={canGenerateReport && debtRatioCapability !== null} title={debtRatioCapability?.Title ?? ''} size={960}
+      onClose={() => { if (!debtRatioGenerating) setDebtRatioCapability(null) }}
+      closeOnClickOutside={!debtRatioGenerating} closeOnEscape={!debtRatioGenerating}
+      closeButtonProps={{ disabled: debtRatioGenerating, 'aria-label': t('Закрити оригінальний конструктор') }}>
+      {canGenerateReport && debtRatioCapability ? <DebtToSalesRatioReportPanel capability={debtRatioCapability}
+        initialMonth={(from || today).slice(0, 7)} canGenerate={canGenerateReport} onLoadingChange={setDebtRatioGenerating} /> : null}
+    </AppModal> : null}
+    {mountsDialog(activeClientsCapability !== null) ? <AppModal opened={canGenerateReport && activeClientsCapability !== null} title={activeClientsCapability?.Title ?? ''} size={960}
+      onClose={() => { if (!activeClientsGenerating) setActiveClientsCapability(null) }}
+      closeOnClickOutside={!activeClientsGenerating} closeOnEscape={!activeClientsGenerating}
+      closeButtonProps={{ disabled: activeClientsGenerating, 'aria-label': t('Закрити конструктор активних клієнтів') }}>
+      {canGenerateReport && activeClientsCapability ? <ActiveClientsReportPanel capability={activeClientsCapability}
+        initialMonth={(from || today).slice(0, 7)} canGenerate={canGenerateReport} callerKey={ownerId}
+        onLoadingChange={setActiveClientsGenerating} /> : null}
+    </AppModal> : null}
+    {mountsDialog(collectionConstructor.modalProps.capability !== null) ? <CollectionCoefficientConstructorModal {...collectionConstructor.modalProps} /> : null}
+    {mountsDialog(salesMarginConstructor.modalProps.capability !== null) ? <SalesMarginConstructorModal {...salesMarginConstructor.modalProps} /> : null}
+    {mountsDialog(cashMovementConstructor.modalProps.capability !== null) ? <CashMovementConstructorModal {...cashMovementConstructor.modalProps} /> : null}
+    {mountsDialog(supplierDebtConstructor.modalProps.capability !== null) ? <SupplierDebtConstructorModal {...supplierDebtConstructor.modalProps} /> : null}
+    {mountsDialog(employeeGrossProfitConstructor.modalProps.capability !== null) ? <EmployeeGrossProfitConstructorModal {...employeeGrossProfitConstructor.modalProps} /> : null}
+    {mountsDialog(overdueReceivablesConstructor.modalProps.capability !== null) ? <OverdueReceivablesConstructorModal {...overdueReceivablesConstructor.modalProps} /> : null}
+    {mountsDialog(managementReturnsConstructor.modalProps.capability !== null) ? <ManagementReturnsConstructorModal {...managementReturnsConstructor.modalProps} /> : null}
+    {mountsDialog(managementBalanceConstructor.modalProps.capability !== null) ? <ManagementBalanceConstructorModal {...managementBalanceConstructor.modalProps} /> : null}
+    {mountsDialog(managementOrdersConstructor.modalProps.capability !== null) ? <ManagementOrdersConstructorModal {...managementOrdersConstructor.modalProps} /> : null}
+    {mountsDialog(defectProductionConstructor.modalProps.capability !== null) ? <DefectProductionConstructorModal {...defectProductionConstructor.modalProps} /> : null}
+    {mountsDialog(inventoryTurnoverConstructor.modalProps.capability !== null) ? <InventoryTurnoverConstructorModal {...inventoryTurnoverConstructor.modalProps} /> : null}
+    {mountsDialog(currentLiquidityConstructor.modalProps.capability !== null) ? <CurrentLiquidityConstructorModal {...currentLiquidityConstructor.modalProps} /> : null}
+    {mountsDialog(plannedCashConstructor.modalProps.capability !== null) ? <PlannedCashConstructorModal {...plannedCashConstructor.modalProps} /> : null}
+    {mountsDialog(currencyDynamicsCapability !== null) ? <AppModal opened={canGenerateReport && currencyDynamicsCapability !== null} title={currencyDynamicsCapability?.Title ?? ''} size={960}
+      onClose={() => { if (!currencyDynamicsGenerating) setCurrencyDynamicsCapability(null) }}
+      closeOnClickOutside={!currencyDynamicsGenerating} closeOnEscape={!currencyDynamicsGenerating}
+      closeButtonProps={{ disabled: currencyDynamicsGenerating, 'aria-label': t('Закрити конструктор динаміки курсу') }}>
+      {canGenerateReport && currencyDynamicsCapability ? <CurrencyRateDynamicsReportPanel capability={currencyDynamicsCapability}
+        initialMonth={defaultCurrencyRateDynamicsMonth(today)} canGenerate={canGenerateReport} callerKey={ownerId}
+        onLoadingChange={setCurrencyDynamicsGenerating} /> : null}
+    </AppModal> : null}
+    {mountsDialog(originalBuyerSalesShareCapability !== null) ? <AppModal opened={canGenerateReport && originalBuyerSalesShareCapability !== null} title={originalBuyerSalesShareCapability?.Title ?? ''} size={960}
+      onClose={() => { if (!originalBuyerSalesShareGenerating) setOriginalBuyerSalesShareCapability(null) }}
+      closeOnClickOutside={!originalBuyerSalesShareGenerating} closeOnEscape={!originalBuyerSalesShareGenerating}
+      closeButtonProps={{ disabled: originalBuyerSalesShareGenerating, 'aria-label': t('Закрити конструктор частки продажів') }}>
+      {canGenerateReport && originalBuyerSalesShareCapability ? <OriginalBuyerSalesShareReportPanel capability={originalBuyerSalesShareCapability}
+        initialMonth={defaultCurrencyRateDynamicsMonth(today)} canGenerate={canGenerateReport} callerKey={ownerId}
+        onLoadingChange={setOriginalBuyerSalesShareGenerating} /> : null}
+    </AppModal> : null}
+    {mountsDialog(originalRevenueCapability !== null) ? <AppModal opened={canGenerateReport && originalRevenueCapability !== null} title={originalRevenueCapability?.Title ?? ''} size={1100}
+      onClose={() => { if (!originalRevenueGenerating) setOriginalRevenueCapability(null) }}
+      closeOnClickOutside={!originalRevenueGenerating} closeOnEscape={!originalRevenueGenerating}
+      closeButtonProps={{ disabled: originalRevenueGenerating, 'aria-label': t('Закрити конструктор виручки') }}>
+      {canGenerateReport && originalRevenueCapability ? <OriginalRevenueReportPanel capability={originalRevenueCapability}
+        initialMonth={defaultCurrencyRateDynamicsMonth(today)} canGenerate={canGenerateReport} callerKey={ownerId}
+        onLoadingChange={setOriginalRevenueGenerating} /> : null}
+    </AppModal> : null}
+    {mountsDialog(cashAggregateCapability !== null) ? <AppModal opened={canGenerateReport && cashAggregateCapability !== null} title={cashAggregateCapability?.Title ?? ''} size={1100}
+      onClose={() => { if (!cashAggregateGenerating) setCashAggregateCapability(null) }}
+      closeOnClickOutside={!cashAggregateGenerating} closeOnEscape={!cashAggregateGenerating}
+      closeButtonProps={{ disabled: cashAggregateGenerating, 'aria-label': t('Закрити конструктор залишків коштів') }}>
+      {canGenerateReport && cashAggregateCapability ? <CashAggregateBalanceReportPanel capability={cashAggregateCapability}
+        initialPeriod={previousKyivDay(today)} canGenerate={canGenerateReport} callerKey={ownerId}
+        onLoadingChange={setCashAggregateGenerating} /> : null}
+    </AppModal> : null}
+  </>
+  const exportModal = (
+    <DocumentExportModal
+      document={result?.document}
+      notice={
+        lastRun ? (
+          <Text c="gray.9" size="xs">
+            {describeReportRun(lastRun, t)}
+          </Text>
+        ) : null
+      }
+      opened={downloadModalOpened}
+      fileBaseName={lastRun?.fileName}
+      title={lastRun?.name || lastRun?.title || dataset?.Name || t('Звіт')}
+      onClose={() => updateRun({ downloadModalOpened: false })}
+    />
+  )
+
+  const catalogueControl = (quiet: boolean) => <ReportCatalogueControl consoleScope={consoleScope} presentation="dialog" enabled={canGenerateReport}
+    quiet={quiet} onOpenWorkbook={openWorkbook}
+    disabled={isLoading || workbookResolving} onOpen={openCatalogueReport}
+    onOpenDebtToSalesRatio={openDebtToSalesRatio} onOpenCollectionCoefficient={collectionConstructor.open} onOpenSalesMargin={salesMarginConstructor.open} onOpenCashMovement={cashMovementConstructor.open} onOpenSupplierDebt={supplierDebtConstructor.open} onOpenEmployeeGrossProfit={employeeGrossProfitConstructor.open} onOpenOverdueReceivables={overdueReceivablesConstructor.open} onOpenManagementReturns={managementReturnsConstructor.open} onOpenManagementBalance={managementBalanceConstructor.open} onOpenManagementOrders={managementOrdersConstructor.open} onOpenDefectProduction={defectProductionConstructor.open} onOpenInventoryTurnover={inventoryTurnoverConstructor.open} onOpenCurrentLiquidity={currentLiquidityConstructor.open} onOpenPlannedCash={plannedCashConstructor.open} callerKey={ownerId} onOpenActiveClients={openActiveClients}
+    onOpenCurrencyRateDynamics={openCurrencyRateDynamics} onOpenCashAggregateBalance={openCashAggregateBalance} onOpenOriginalRevenue={openOriginalRevenue} onOpenOriginalBuyerSalesShare={openOriginalBuyerSalesShare} />
+
+  if (bug1274Only) {
+    const deskTitle = workbookDeskTitle(activeWorkbook, dataSource)
+    const deskReportKey = `${activeWorkbook ?? ''}|${dataSource}`
+    const deskSummary = workbookRequestSummary(reportBody, dataset, selection => getSelectionFieldSummary(selection, filterFieldOptions, t))
+    const organizationField = organizationFilterField(dataSource)
+    const organizationOption = organizationField === null ? undefined : filterFieldOptions.find(option => option.field.Type === organizationField)
+    const isOrganizationSelection = (selection: ReportSelection) => organizationOption !== undefined && selection.SelectedField.Type === organizationField
+    const builder = {
+      dataSource, colGroups, filterFieldOptions, groupingOptions, groupingSelectData, measurements, rowGroups, selections,
+      lookupFrom: lookup.from, lookupTo: lookup.to, lookupProfitReadMode: lookup.profitReadMode,
+      lookupProfitUnavailable: lookup.profitUnavailable, lookupSourceWorld: lookup.sourceWorld, lookupSalesBasis: lookup.salesBasis,
+      lookupProvidedDiscountBasis: lookup.providedDiscountBasis,
+      onColGroupsChange: (value: ReportGroupingItem[] | ((current: ReportGroupingItem[]) => ReportGroupingItem[])) => groupingOrdering.changeAxis('Col', value),
+      onRowGroupsChange: (value: ReportGroupingItem[] | ((current: ReportGroupingItem[]) => ReportGroupingItem[])) => groupingOrdering.changeAxis('Row', value),
+      onMeasurementsChange: setMeasurements, onSelectionsChange: filterLogic.editSelection, onGroupingLayoutChange: groupingOrdering.changeLayout,
+    }
+    const supplierControls = dataSource === 38 && isSupplierSourceWorldCapability(dataset?.supplierSourceWorld)
+    const organizationsContent = dataSource === 35 || organizationOption ? <>
+      {dataSource === 35 ? <div className="workbook-desk__group">{dayProfitControls('organizations')}</div> : null}
+      {organizationOption ? <LegacyReportBuilder part="selections" {...builder} selectionFilter={isOrganizationSelection}
+        newSelection={() => ({ ...createEmptySelection(), SelectedField: { ...organizationOption.field },
+          FilterCondition: { ...REPORT_FILTER_CONDITIONS[2] } })}
+        selectionTitle={t('Відбір організацій')} addSelectionLabel={t('Додати організацію')} /> : null}
+    </> : null
+    const filtersContent = <>
+      {dataSource === 35 ? <div className="workbook-desk__group">{dayProfitControls('filters')}</div> : null}
+      {supplierControls ? <div className="workbook-desk__group">{supplierProfitControls('filters')}</div> : null}
+      {dataSource === 41 ? cashSettlementPanels('filters') : null}
+      <LegacyReportBuilder part="selections" {...builder}
+        selectionFilter={organizationOption ? selection => !isOrganizationSelection(selection) : undefined} />
+    </>
+    const groupingContent = <>
+      {dataSource === 40 || dataSource === 41 ? cashSettlementPanels('form') : null}
+      <LegacyReportBuilder part="grouping" {...builder} />
+      {workbook.panel(dataset, reportBody, comparisonSettingsDisabled)}
+    </>
+    const advancedContent = <>
+      {dataSource === 35 ? <div className="workbook-desk__group">{dayProfitControls('source')}</div> : null}
+      {supplierControls ? <div className="workbook-desk__group">{supplierProfitControls('source')}</div> : null}
+      {dataSource === 40 || dataSource === 41 ? cashSettlementPanels('source') : null}
+      {dataSource === 39 ? <CurrentVparivanieRegionalPanel dataset={dataset ?? null} request={reportBody}
+        enabled={canGenerateReport} disabled={comparisonSettingsDisabled}
+        fullScope={fullCurrentVparivanie} onFullScopeChange={setFullCurrentVparivanie} /> : null}
+      {dataSource !== 19 ? analysisPanels.filterExpression : null}
+      {!hasFixedReportAxes(dataSource) ? <>
+        {analysisPanels.topGroups}
+        {analysisPanels.threshold}
+        {analysisPanels.hideZero}
+        {analysisPanels.abc}
+        {analysisPanels.ordering}
+      </> : dataSource === 26 ? analysisPanels.abc : null}
+    </>
+    const filterChips = deskSummary.chips.filter(chip => chip.kind === 'filter')
+    const groupingLabels = (groups: ReportGroupingItem[]) => groups.map(group => group.label || getReportFieldLabel(group.key)).join(' → ')
+    const deskSections: WorkbookSettingsSection[] = [
+      ...(organizationsContent ? [{ id: 'organizations', title: 'Організації', summary: deskSummary.organizations ?? t('Усі'), content: organizationsContent }] : []),
+      { id: 'filters', title: 'Відбори', summary: filterChips.length ? filterChips.map(chip => chip.label).join('; ') : t('Відборів немає'), content: filtersContent },
+      { id: 'measures', title: 'Показники', summary: checkedMeasurements
+        ? `${checkedMeasurements} ${deskPlural(checkedMeasurements, ['показник', 'показники', 'показників'])}` : t('Не вибрано жодного'),
+        content: <LegacyReportBuilder part="measures" {...builder} /> },
+      { id: 'grouping', title: 'Групування', summary: hasFixedReportAxes(dataSource) ? t('Як у книзі 1С')
+        : rowGroups.length ? `${groupingLabels(rowGroups)}${colGroups.length ? ` · ${t('стовпці')}: ${groupingLabels(colGroups)}` : ''}` : t('Не вибрано'),
+        content: groupingContent },
+    ]
+    const guide = activeWorkbook ? bug1274WorkbookGuide(activeWorkbook) : undefined
+    const quietActions = <>
+      <Button type="button" variant="subtle" color="gray" className="workbook-quiet-action" leftSection={<LayoutTemplate size={15} />}
+        disabled={!canGenerateReport || isLoading} onClick={() => setDeskTemplatesOpened(true)}>{t('Шаблони')}</Button>
+      {catalogueControl(true)}
+    </>
+    const showLanding = datasetHidden || landingRequested
+    const excelUrl = result?.document.DocumentURL || null
+    const pdfUrl = result?.document.PdfDocumentURL || null
+    return (
+      <Stack className="reports-stocks-page workbook-desk" gap={12}>
+        {dialogs}
+        {canGenerateReport && catalogueNotice?.failed ? <Alert color="red" className="workbook-desk__notice" icon={<CircleAlert size={18} />}
+          title={catalogueNotice.title ?? t('Не вдалося відкрити звіт')}
+          withCloseButton closeButtonLabel={t('Закрити повідомлення')} onClose={() => setCatalogueNotice(null)}>{catalogueNotice.text}</Alert> : null}
+        {showLanding ? <WorkbookLanding launches={workbookLaunches} today={today} disabled={isLoading || workbookResolving}
+          loading={!datasetStorage.loaded && !datasetStorage.error} error={datasetStorage.error} canGenerate={canGenerateReport}
+          openReport={!datasetHidden ? deskTitle : null} actions={quietActions}
+          more={<>
+            <Text size="sm" c="gray.7">{t('Звіт без відборів і налаштувань книги 1С — для перевірки або власного шаблону.')}</Text>
+            <ReportDatasetPicker compact activeDataSources={BUG_1274_ACTIVE_DATA_SOURCES}
+              datasets={datasetStorage.datasets.filter(item => BUG_1274_ACTIVE_DATA_SOURCES.has(item.DataSource))} selected={dataSource}
+              disabled={!canGenerateReport || isLoading} loaded={datasetStorage.loaded} error={datasetStorage.error}
+              onChange={pickDataset} onRetry={datasetStorage.retry} />
+          </>}
+          onOpen={item => { openWorkbook(item) }} onReturn={() => setLandingRequested(false)} onRetry={datasetStorage.retry} />
+          : <form className="reports-stocks-form workbook-desk__form" onSubmit={submitReport}>
+            <WorkbookSwitcher launches={workbookLaunches} active={activeWorkbook} disabled={isLoading || workbookResolving}
+              extra={quietActions} onOpen={item => { openWorkbook(item) }} onBack={() => setLandingRequested(true)} />
+            <WorkbookHeader title={deskTitle} fileName={activeWorkbook} templateName={activeTemplate?.Name ?? ''} summary={deskSummary}
+              resolving={workbookResolving} warning={catalogueNotice?.warning ?? null}
+              about={guide ? t(guide.summary) : catalogueNotice && !catalogueNotice.failed && !activeWorkbook ? catalogueNotice.text : null} />
+            <WorkbookActionBar canSubmit={canSubmit && !workbookResolving} isLoading={isLoading}
+              blockedReason={workbookResolving ? t('Зачекайте: застосовуються відбори книги…') : submitBlockedReason || null}
+              ran={Boolean(result)} excelUrl={excelUrl} pdfUrl={pdfUrl} fileBaseName={lastRun?.fileName ?? null}
+              resetDisabled={!canGenerateReport || isLoading} onPreview={() => void runReport(true)}
+              onGenerate={() => void runReport(false)} onReset={resetReport} />
+            <WorkbookSettings period={periodSupported ? <WorkbookPeriodField from={from} to={to}
+              minDate={supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE} maxDate={maxDate}
+              presets={reportPeriodPresets(dataSource, today)} error={periodError} onFromChange={setFrom} onToChange={setTo} />
+              : <Text size="sm">{t('Поточний стан на час читання даних. Історичний період не застосовується.')}</Text>}
+              sections={deskSections} advanced={advancedContent} />
+            <WorkbookResult dataSource={dataSource} title={deskTitle} period={deskSummary.period} isLoading={isLoading}
+              error={error} emptyRun={emptyRunNotice} generated={Boolean(lastRun?.hasDocument && !preview)}
+              stale={!preview && !lastRun && !isLoading && !error && shownReport === deskReportKey}
+              table={preview ? <MemoizedReportInlinePreview preview={preview} /> : null}
+              excelUrl={excelUrl} pdfUrl={pdfUrl} fileBaseName={lastRun?.fileName ?? null} />
+          </form>}
+        {canGenerateReport && ownerId ? <div className="workbook-desk__footer">
+          <ReportDraftStatus savedAt={workspaceDraft.status === 'saved' ? workspaceDraft.savedAt : null}
+            notice={draftRestoreError ?? workspaceDraft.message} canUndo={Boolean(workspaceDraft.previousSnapshot)}
+            disabled={isLoading || !datasetStorage.loaded || Boolean(datasetStorage.error)}
+            onUndo={() => workspaceDraft.undo(restoreWorkspace)} />
+        </div> : null}
+        <AppModal centered classNames={{ body: 'reports-stocks-template-modal__body', title: 'reports-stocks-modal-title' }}
+          opened={deskTemplatesOpened} closeOnClickOutside={!templateStorage.busy} closeOnEscape={!templateStorage.busy}
+          closeButtonProps={{ disabled: templateStorage.busy }} size="lg" title={t('Шаблони звіту')}
+          onClose={() => setDeskTemplatesOpened(false)}>
+          <ReportTemplatesPanel ordering={templateStorage.ordering} storage={templateStorage} datasets={datasetStorage.datasets}
+            dataSources={BUG_1274_ACTIVE_DATA_SOURCES} callerKey={ownerId} requireReadMode configurationReady={!configurationError}
+            notice={templateNotice ?? templateStorage.notice} templateName={templateName} activeTemplate={activeTemplate}
+            disabled={!canGenerateReport || isLoading} onRenamed={renamedTemplate} onClearNotice={() => setTemplateNotice(null)}
+            onApply={template => { if (applyTemplate(template)) setDeskTemplatesOpened(false) }}
+            onDeleted={deletedTemplate} onNameChange={setTemplateName} onRefresh={loadTemplates}
+            onSave={saveTemplate} onUpdate={updateTemplate} />
+        </AppModal>
+        {exportModal}
+      </Stack>
+    )
   }
 
   return (
@@ -955,74 +1244,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       {!constructorMode && canGenerateReport && datasetStorage.loaded && !datasetStorage.error && workbookLaunches.length > 0
         ? <Bug1274WorkbookShortcuts launches={workbookLaunches} active={activeWorkbook && !datasetHidden ? activeWorkbook : null}
           disabled={isLoading || workbookResolving} onOpen={item => { openWorkbook(item) }} /> : null}
-      {mountsDialog(oneCReportOpen) ? <AppModal opened={oneCReportOpen} title={t('Валовий прибуток — як у 1С')} size={960}
-        onClose={() => { if (!oneCReportGenerating) setOneCReportOpen(false) }}
-        closeOnClickOutside={!oneCReportGenerating} closeOnEscape={!oneCReportGenerating}
-        closeButtonProps={{ disabled: oneCReportGenerating, 'aria-label': t('Закрити звіт 1С') }}>
-        {oneCReportOpen ? <OneCTurnoverReportPanel canGenerate={canGenerateReport} from={from} to={to}
-          onFromChange={setFrom} onToChange={setTo} onLoadingChange={setOneCReportGenerating}
-          onClose={() => setOneCReportOpen(false)} /> : null}
-      </AppModal> : null}
-      {mountsDialog(debtRatioCapability !== null) ? <AppModal opened={canGenerateReport && debtRatioCapability !== null} title={debtRatioCapability?.Title ?? ''} size={960}
-        onClose={() => { if (!debtRatioGenerating) setDebtRatioCapability(null) }}
-        closeOnClickOutside={!debtRatioGenerating} closeOnEscape={!debtRatioGenerating}
-        closeButtonProps={{ disabled: debtRatioGenerating, 'aria-label': t('Закрити оригінальний конструктор') }}>
-        {canGenerateReport && debtRatioCapability ? <DebtToSalesRatioReportPanel capability={debtRatioCapability}
-          initialMonth={(from || today).slice(0, 7)} canGenerate={canGenerateReport} onLoadingChange={setDebtRatioGenerating} /> : null}
-      </AppModal> : null}
-      {mountsDialog(activeClientsCapability !== null) ? <AppModal opened={canGenerateReport && activeClientsCapability !== null} title={activeClientsCapability?.Title ?? ''} size={960}
-        onClose={() => { if (!activeClientsGenerating) setActiveClientsCapability(null) }}
-        closeOnClickOutside={!activeClientsGenerating} closeOnEscape={!activeClientsGenerating}
-        closeButtonProps={{ disabled: activeClientsGenerating, 'aria-label': t('Закрити конструктор активних клієнтів') }}>
-        {canGenerateReport && activeClientsCapability ? <ActiveClientsReportPanel capability={activeClientsCapability}
-          initialMonth={(from || today).slice(0, 7)} canGenerate={canGenerateReport} callerKey={ownerId}
-          onLoadingChange={setActiveClientsGenerating} /> : null}
-      </AppModal> : null}
-      {mountsDialog(collectionConstructor.modalProps.capability !== null) ? <CollectionCoefficientConstructorModal {...collectionConstructor.modalProps} /> : null}
-      {mountsDialog(salesMarginConstructor.modalProps.capability !== null) ? <SalesMarginConstructorModal {...salesMarginConstructor.modalProps} /> : null}
-      {mountsDialog(cashMovementConstructor.modalProps.capability !== null) ? <CashMovementConstructorModal {...cashMovementConstructor.modalProps} /> : null}
-      {mountsDialog(supplierDebtConstructor.modalProps.capability !== null) ? <SupplierDebtConstructorModal {...supplierDebtConstructor.modalProps} /> : null}
-      {mountsDialog(employeeGrossProfitConstructor.modalProps.capability !== null) ? <EmployeeGrossProfitConstructorModal {...employeeGrossProfitConstructor.modalProps} /> : null}
-      {mountsDialog(overdueReceivablesConstructor.modalProps.capability !== null) ? <OverdueReceivablesConstructorModal {...overdueReceivablesConstructor.modalProps} /> : null}
-      {mountsDialog(managementReturnsConstructor.modalProps.capability !== null) ? <ManagementReturnsConstructorModal {...managementReturnsConstructor.modalProps} /> : null}
-      {mountsDialog(managementBalanceConstructor.modalProps.capability !== null) ? <ManagementBalanceConstructorModal {...managementBalanceConstructor.modalProps} /> : null}
-      {mountsDialog(managementOrdersConstructor.modalProps.capability !== null) ? <ManagementOrdersConstructorModal {...managementOrdersConstructor.modalProps} /> : null}
-      {mountsDialog(defectProductionConstructor.modalProps.capability !== null) ? <DefectProductionConstructorModal {...defectProductionConstructor.modalProps} /> : null}
-      {mountsDialog(inventoryTurnoverConstructor.modalProps.capability !== null) ? <InventoryTurnoverConstructorModal {...inventoryTurnoverConstructor.modalProps} /> : null}
-      {mountsDialog(currentLiquidityConstructor.modalProps.capability !== null) ? <CurrentLiquidityConstructorModal {...currentLiquidityConstructor.modalProps} /> : null}
-      {mountsDialog(plannedCashConstructor.modalProps.capability !== null) ? <PlannedCashConstructorModal {...plannedCashConstructor.modalProps} /> : null}
-      {mountsDialog(currencyDynamicsCapability !== null) ? <AppModal opened={canGenerateReport && currencyDynamicsCapability !== null} title={currencyDynamicsCapability?.Title ?? ''} size={960}
-        onClose={() => { if (!currencyDynamicsGenerating) setCurrencyDynamicsCapability(null) }}
-        closeOnClickOutside={!currencyDynamicsGenerating} closeOnEscape={!currencyDynamicsGenerating}
-        closeButtonProps={{ disabled: currencyDynamicsGenerating, 'aria-label': t('Закрити конструктор динаміки курсу') }}>
-        {canGenerateReport && currencyDynamicsCapability ? <CurrencyRateDynamicsReportPanel capability={currencyDynamicsCapability}
-          initialMonth={defaultCurrencyRateDynamicsMonth(today)} canGenerate={canGenerateReport} callerKey={ownerId}
-          onLoadingChange={setCurrencyDynamicsGenerating} /> : null}
-      </AppModal> : null}
-      {mountsDialog(originalBuyerSalesShareCapability !== null) ? <AppModal opened={canGenerateReport && originalBuyerSalesShareCapability !== null} title={originalBuyerSalesShareCapability?.Title ?? ''} size={960}
-        onClose={() => { if (!originalBuyerSalesShareGenerating) setOriginalBuyerSalesShareCapability(null) }}
-        closeOnClickOutside={!originalBuyerSalesShareGenerating} closeOnEscape={!originalBuyerSalesShareGenerating}
-        closeButtonProps={{ disabled: originalBuyerSalesShareGenerating, 'aria-label': t('Закрити конструктор частки продажів') }}>
-        {canGenerateReport && originalBuyerSalesShareCapability ? <OriginalBuyerSalesShareReportPanel capability={originalBuyerSalesShareCapability}
-          initialMonth={defaultCurrencyRateDynamicsMonth(today)} canGenerate={canGenerateReport} callerKey={ownerId}
-          onLoadingChange={setOriginalBuyerSalesShareGenerating} /> : null}
-      </AppModal> : null}
-      {mountsDialog(originalRevenueCapability !== null) ? <AppModal opened={canGenerateReport && originalRevenueCapability !== null} title={originalRevenueCapability?.Title ?? ''} size={1100}
-        onClose={() => { if (!originalRevenueGenerating) setOriginalRevenueCapability(null) }}
-        closeOnClickOutside={!originalRevenueGenerating} closeOnEscape={!originalRevenueGenerating}
-        closeButtonProps={{ disabled: originalRevenueGenerating, 'aria-label': t('Закрити конструктор виручки') }}>
-        {canGenerateReport && originalRevenueCapability ? <OriginalRevenueReportPanel capability={originalRevenueCapability}
-          initialMonth={defaultCurrencyRateDynamicsMonth(today)} canGenerate={canGenerateReport} callerKey={ownerId}
-          onLoadingChange={setOriginalRevenueGenerating} /> : null}
-      </AppModal> : null}
-      {mountsDialog(cashAggregateCapability !== null) ? <AppModal opened={canGenerateReport && cashAggregateCapability !== null} title={cashAggregateCapability?.Title ?? ''} size={1100}
-        onClose={() => { if (!cashAggregateGenerating) setCashAggregateCapability(null) }}
-        closeOnClickOutside={!cashAggregateGenerating} closeOnEscape={!cashAggregateGenerating}
-        closeButtonProps={{ disabled: cashAggregateGenerating, 'aria-label': t('Закрити конструктор залишків коштів') }}>
-        {canGenerateReport && cashAggregateCapability ? <CashAggregateBalanceReportPanel capability={cashAggregateCapability}
-          initialPeriod={previousKyivDay(today)} canGenerate={canGenerateReport} callerKey={ownerId}
-          onLoadingChange={setCashAggregateGenerating} /> : null}
-      </AppModal> : null}
+      {dialogs}
       {!constructorMode && canGenerateReport && templateName.trim() ? <Text fw={600} aria-label={t('Назва поточного звіту')}>{templateName}</Text> : null}
       {canGenerateReport && catalogueNotice ? <Alert color={catalogueNotice.failed ? 'red' : 'blue'} style={{ flexShrink: 0 }}
         title={catalogueNotice.title ?? t(catalogueNotice.failed ? 'Не вдалося відкрити звіт' : 'Звіт відкрито')}
@@ -1042,11 +1264,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           datasets={bug1274Only ? datasetStorage.datasets.filter(item => BUG_1274_ACTIVE_DATA_SOURCES.has(item.DataSource)) : datasetStorage.datasets} selected={dataSource}
           disabled={!canGenerateReport || isLoading} loaded={datasetStorage.loaded} error={datasetStorage.error}
           onChange={pickDataset} onRetry={datasetStorage.retry} />}
-        catalogueControl={<ReportCatalogueControl consoleScope={consoleScope} presentation="dialog" enabled={canGenerateReport}
-          onOpenWorkbook={openWorkbook}
-          disabled={isLoading || workbookResolving} onOpen={openCatalogueReport}
-          onOpenDebtToSalesRatio={openDebtToSalesRatio} onOpenCollectionCoefficient={collectionConstructor.open} onOpenSalesMargin={salesMarginConstructor.open} onOpenCashMovement={cashMovementConstructor.open} onOpenSupplierDebt={supplierDebtConstructor.open} onOpenEmployeeGrossProfit={employeeGrossProfitConstructor.open} onOpenOverdueReceivables={overdueReceivablesConstructor.open} onOpenManagementReturns={managementReturnsConstructor.open} onOpenManagementBalance={managementBalanceConstructor.open} onOpenManagementOrders={managementOrdersConstructor.open} onOpenDefectProduction={defectProductionConstructor.open} onOpenInventoryTurnover={inventoryTurnoverConstructor.open} onOpenCurrentLiquidity={currentLiquidityConstructor.open} onOpenPlannedCash={plannedCashConstructor.open} callerKey={ownerId} onOpenActiveClients={openActiveClients}
-          onOpenCurrencyRateDynamics={openCurrencyRateDynamics} onOpenCashAggregateBalance={openCashAggregateBalance} onOpenOriginalRevenue={openOriginalRevenue} onOpenOriginalBuyerSalesShare={openOriginalBuyerSalesShare} />}
+        catalogueControl={catalogueControl(false)}
         datasetSummary={bug1274Only ? null : <><ReportDatasetSummary dataset={dataset} />
           {!constructorMode ? <details className="stocks-workspace-dataset-help"><summary>{t('Що змінює вибір набору даних')}</summary>
             <Text size="xs" c="dimmed">{t('Зміна набору застосує початкові групування й показники та очистить відбори, групи І/АБО, TOP, ABC-класифікацію і правила сортування. Набори поточного стану очищують період; після повернення до набору з періодом попередні дати відновляться.')}</Text>
@@ -1068,110 +1286,11 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
             disabled={comparisonSettingsDisabled} callerKey={ownerId} /> : null}
           <CurrentVparivanieRegionalPanel dataset={dataset ?? null} request={reportBody}
           enabled={canGenerateReport} disabled={comparisonSettingsDisabled}
-          fullScope={fullCurrentVparivanie} onFullScopeChange={setFullCurrentVparivanie} /></> : dataSource === 41 || dataSource === 40 ? <CashSettlementSettingsPanels dataSource={dataSource}
-          cash={{ dataset, grouped: groupedCashPeriod, exact: cashPeriod, rows: rowGroups,
-            available: groupingOptions, onRowsChange: workbook.changeCashRows, disabled: comparisonSettingsDisabled, enabled: canGenerateReport,
-            readMode: cashReadMode, onReadModeChange: setCashReadMode, hideRegisterReadMode: bug1274Only }}
-          settlement={{ dataset, grouped: groupedSettlementPeriod, exact: settlementPeriod,
-            buyer: sourceBuyerSubtree, groups: sourceCounterpartyGroups, rows: rowGroups,
-            available: groupingOptions, from, to, disabled: comparisonSettingsDisabled, enabled: canGenerateReport,
-            onModeChange: changeSettlementMode, onGroupedChange: setGroupedSettlementPeriod,
-            onExactChange: setSettlementPeriod, onBuyerChange: setSourceBuyerSubtree,
-            onRowsChange: setRowGroups, onGroupsChange: setSourceCounterpartyGroups,
-            readMode: settlementReadMode, hideRegisterReadMode: bug1274Only, onReadModeChange: mode => {
-              setSettlementReadMode(mode)
-              if (mode == null) return
-              setGroupedSettlementPeriod(defaultGroupedSettlementPeriod())
-              setSourceBuyerSubtree(defaultGroupedSettlementBuyer())
-            } }}
-          onGroupedCashChange={workbook.changeGroupedCash} onExactCashChange={setCashPeriod}
-          onCashMeasurementsChange={setMeasurements} onClearCashFilters={() => filterLogic.load([])} /> : dataSource === 35 ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
-          <ProfitReadModeSelect capability={dataset?.profitReadMode} value={profitReadMode}
-            disabled={comparisonSettingsDisabled} hideRegister={bug1274Only} onChange={mode => {
-              setProfitReadMode(mode)
-              if (mode != null) setDayOrganizationBasis(0)
-            }} />
-          <DayOrganizationBasisSelect capability={dataset?.dayOrganizationBasis} value={dayOrganizationBasis}
-            disabled={comparisonSettingsDisabled || profitReadMode != null} hideLocked={bug1274Only && profitReadMode != null} onChange={setDayOrganizationBasis} />
-          <Checkbox mt="sm" label={t('Товар без послуг (Fenix)')}
-            checked={parseProductClassification(productClassification)?.ProductKindId.toUpperCase() === DAY_ORGANIZATION_GOODS_KIND_ID
-              && parseProductClassification(productClassification)?.IsService === false}
-            disabled={comparisonSettingsDisabled}
-            onChange={event => setProductClassification(event.currentTarget.checked
-              ? { Version: 1, SourceWorld: 0, ProductKindId: DAY_ORGANIZATION_GOODS_KIND_ID, IsService: false }
-              : undefined)} />
-          <Text size="xs" c="dimmed">{t('Як у книзі: Номенклатура.Послуга = Ні, Вид номенклатури = Товар. Продажі товару з невідомим видом залишають залежні суми порожніми.')}</Text>
-          {productClassification != null
-            && !(parseProductClassification(productClassification)?.ProductKindId.toUpperCase() === DAY_ORGANIZATION_GOODS_KIND_ID
-              && parseProductClassification(productClassification)?.IsService === false)
-            ? <Text size="xs" c="orange">{t('Шаблон містить інший вид товару Fenix. Увімкнення перемикача замінить цей відбір на «Товар».')}</Text> : null}
-          <Checkbox mt="sm" label={t('Організації зі збереженого налаштування 1С')}
-            checked={usesSavedFenixOrganizations(sourceOrganizations)}
-            disabled={comparisonSettingsDisabled}
-            onChange={event => setSourceOrganizations(event.currentTarget.checked
-              ? { Version: 1, SourceWorld: 'fenix', OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] }
-              : undefined)} />
-          <Text size="xs" c="dimmed">{t('ТОВ «АМГ «КОНКОРД», Фенікс, ФОП Самолюк А.Д. і ФОП Самолюк Ю.М. ФОП Пархоменко з налаштування 1С не синхронізується в GBA і не додає продажів.')}</Text>
-          {sourceOrganizations != null
-            && !usesSavedFenixOrganizations(sourceOrganizations)
-            ? <Text size="xs" c="orange">{t('Шаблон містить інші організації Fenix. Увімкнення перемикача замінить цей відбір на організації налаштування 1С.')}</Text> : null}
-          <Checkbox mt="sm" label={t('Група «Покупці» Fenix')}
-            checked={parseSourceBuyerSubtree(sourceBuyerSubtree) != null}
-            disabled={comparisonSettingsDisabled}
-            onChange={event => setSourceBuyerSubtree(event.currentTarget.checked
-              ? { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID }
-              : undefined)} />
-          <Text size="xs" c="dimmed">{t('Як у книзі: Покупець у групі «Покупці» довідника контрагентів 1С (поточний склад групи).')}</Text>
-          {sourceBuyerSubtree != null && !parseSourceBuyerSubtree(sourceBuyerSubtree)
-            ? <Text size="xs" c="orange">{t('Шаблон містить інше піддерево Fenix; цей набір приймає тільки групу «Покупці».')}</Text> : null}
+          fullScope={fullCurrentVparivanie} onFullScopeChange={setFullCurrentVparivanie} /></> : dataSource === 41 || dataSource === 40 ? cashSettlementPanels() : dataSource === 35 ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
+          {dayProfitControls()}
         </Card> : dataSource === 38 && isSupplierSourceWorldCapability(dataset?.supplierSourceWorld)
           ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
-            <ProfitReadModeSelect capability={dataset?.profitReadMode} value={profitReadMode}
-              disabled={comparisonSettingsDisabled} hideRegister={bug1274Only} onChange={mode => {
-                setProfitReadMode(mode)
-                if (mode === 0) setSupplierSourceWorld(undefined)
-                if (mode === 1) setSupplierSourceWorld(0)
-                if (mode != null) {
-                  setSupplierBasis(0)
-                  setRowGroups(rows => rowGroupsForSupplierBasis(0, rows, groupingOptions))
-                }
-              }} />
-            <SupplierBasisSelect capability={dataset?.supplierBasis} value={supplierBasis}
-              disabled={comparisonSettingsDisabled || profitReadMode != null} hideLocked={bug1274Only && profitReadMode != null} onChange={basis => {
-                setSupplierBasis(basis)
-                setRowGroups(rows => rowGroupsForSupplierBasis(basis, rows, groupingOptions))
-              }} />
-            <Select label={t('База продажів для прибутку за постачальниками')}
-              data={[{ value: '0', label: 'Fenix' }, { value: '1', label: 'AMG' },
-                { value: 'all', label: t(profitReadMode === 0 ? 'Усі документи, включно з GBA' : 'Обидві бази') }]}
-              value={supplierSourceWorld === 0 ? '0' : supplierSourceWorld === 1 ? '1' : 'all'}
-              disabled={comparisonSettingsDisabled}
-              onChange={value => {
-                const world = value === '0' ? 0 : value === '1' ? 1 : undefined
-                setSupplierSourceWorld(world)
-                if (world !== 0) setSourceBuyerSubtree(undefined)
-              }} />
-            <Text size="xs" c="dimmed">{t(supplierBasis === 0
-              ? '«Усі документи» — продажі обох баз 1С і нові документи GBA, як у книзі; Fenix або AMG — лише продажі цієї бази.'
-              : 'Окремий зріз формується лише за однозначної лінії кожного продажу в періоді. Неповна партія вибраної бази зупинить звіт.')}</Text>
-            {dataset?.sourceBuyerSubtree != null ? <>
-              <Checkbox mt="sm" label={t('Група «Покупці» Fenix')}
-                checked={parseSourceBuyerSubtree(sourceBuyerSubtree) != null}
-                disabled={comparisonSettingsDisabled}
-                onChange={event => {
-                  if (event.currentTarget.checked) setSupplierSourceWorld(0)
-                  setSourceBuyerSubtree(event.currentTarget.checked
-                    ? { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID }
-                    : undefined)
-                }} />
-              <Text size="xs" c="dimmed">{t(supplierBasis === 0
-                ? 'Як у книзі: Покупець у групі «Покупці» довідника контрагентів 1С (поточний склад групи). Повернення, покупця яких не визначено, залишаються у звіті.'
-                : 'Вимагає базу Fenix, повну лінію покупців усіх продажів періоду і чинний захоплений граф. За неповних даних звіт покаже помилку покриття.')}</Text>
-              {sourceBuyerSubtree != null && !parseSourceBuyerSubtree(sourceBuyerSubtree)
-                ? <Text size="xs" c="orange">{t('Шаблон містить інше піддерево Fenix; цей набір приймає тільки групу «Покупці».')}</Text> : null}
-            </> : null}
-            {supplierSourceWorld !== undefined && supplierSourceWorld !== 0 && supplierSourceWorld !== 1
-              ? <Text size="xs" c="orange">{t('Шаблон містить невідому базу джерела; виберіть Fenix або AMG.')}</Text> : null}
+            {supplierProfitControls()}
           </Card> : null}</>}
         dataSource={dataSource}
         rateComparisonPanel={<RateComparisonPanel dataSource={dataSource} value={rateComparison} disabled={comparisonSettingsDisabled} onChange={setRateComparison} />}
@@ -1199,14 +1318,13 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         incompleteSelectionMessage={incompleteSelectionMessage}
         isLoading={isLoading}
         lastRun={lastRun}
-        lookupFrom={hasLookupPeriod ? debouncedFrom : ''}
-        lookupTo={hasLookupPeriod ? debouncedTo : ''}
-        lookupProfitReadMode={(dataSource === 35 || dataSource === 38) && dataset?.profitReadModeLookup === true
-          && (profitReadMode === 0 || profitReadMode === 1) ? profitReadMode : undefined}
-        lookupProfitUnavailable={dataSource === 38 && profitReadMode === 0 && dataset?.profitReadModeLookup !== true}
-        lookupProvidedDiscountBasis={currentProvidedDiscountLookupBasis(dataSource, oneCSpecialSettings, dataset)}
-        lookupSalesBasis={currentPriceTypeSalesLookupBasis(dataSource, priceTypeSalesComparison, dataset?.priceTypeSalesComparison)}
-        lookupSourceWorld={reportLookupSourceWorld(dataSource, groupedSettlementPeriod, oneCSpecialSettings)}
+        lookupFrom={lookup.from}
+        lookupTo={lookup.to}
+        lookupProfitReadMode={lookup.profitReadMode}
+        lookupProfitUnavailable={lookup.profitUnavailable}
+        lookupProvidedDiscountBasis={lookup.providedDiscountBasis}
+        lookupSalesBasis={lookup.salesBasis}
+        lookupSourceWorld={lookup.sourceWorld}
         maxDate={maxDate}
         measurements={measurements}
         notices={{ emptyRun: emptyRunNotice, error, period: periodError }}
@@ -1237,18 +1355,12 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         onRowGroupsChange={value => groupingOrdering.changeAxis('Row', value)}
         onColGroupsChange={value => groupingOrdering.changeAxis('Col', value)}
         onGroupingLayoutChange={groupingOrdering.changeLayout}
-        abcPanel={!analysisRules.abc ? null : <ReportAbcClassificationPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} notice={abc.notice} onChange={abc.change}
-          onConfigureGrouping={constructorMode ? () => navigateConstructorSection('structure') : undefined}
-          onConfigureMeasures={constructorMode ? () => navigateConstructorSection('structure') : undefined} />}
-        hideZeroPanel={<ReportHideZeroPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setHideZero} />}
-        thresholdPanel={!analysisRules.threshold ? null : <ReportThresholdPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setThreshold} />}
-        topGroupsPanel={!analysisRules.topGroups ? null : <ReportTopGroupsPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setTopGroups}
-          onConfigureGrouping={constructorMode ? () => navigateConstructorSection('structure') : undefined}
-          onConfigureMeasures={constructorMode ? () => navigateConstructorSection('structure') : undefined} />}
-        filterExpressionPanel={!analysisRules.filterExpression ? null : <ReportFilterExpressionPanel data={templateBody} dataset={settlementDataset} disabled={comparisonSettingsDisabled}
-          notice={filterLogic.notice} onChange={filterLogic.change} />}
-        orderingPanel={!analysisRules.ordering ? null : <ReportOrderingPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled}
-          notice={groupingOrdering.notice} onChange={groupingOrdering.changeOrdering} />}
+        abcPanel={analysisPanels.abc}
+        hideZeroPanel={analysisPanels.hideZero}
+        thresholdPanel={analysisPanels.threshold}
+        topGroupsPanel={analysisPanels.topGroups}
+        filterExpressionPanel={analysisPanels.filterExpression}
+        orderingPanel={analysisPanels.ordering}
         onSaveTemplate={saveTemplate}
         onSelectionsChange={filterLogic.editSelection}
         onSubmit={submitReport}
@@ -1257,20 +1369,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         onUpdateTemplate={updateTemplate}
       />
 
-      <DocumentExportModal
-        document={result?.document}
-        notice={
-          lastRun ? (
-            <Text c="gray.9" size="xs">
-              {describeReportRun(lastRun, t)}
-            </Text>
-          ) : null
-        }
-        opened={downloadModalOpened}
-        fileBaseName={lastRun?.fileName}
-        title={lastRun?.name || lastRun?.title || dataset?.Name || t('Звіт')}
-        onClose={() => updateRun({ downloadModalOpened: false })}
-      />
+      {exportModal}
     </Stack>
   )
 }
@@ -1701,7 +1800,14 @@ function ReportBuilderNotices(props: ReportBuilderFormProps) {
   )
 }
 
+type LegacyReportBuilderPart = 'measures' | 'grouping' | 'selections'
+
 type LegacyReportBuilderProps = {
+  part?: LegacyReportBuilderPart
+  selectionFilter?: (selection: ReportSelection) => boolean
+  newSelection?: () => ReportSelection
+  selectionTitle?: string
+  addSelectionLabel?: string
   constructorSection?: ReportConstructorSection
   filterExpressionPanel?: ReactNode
   onGroupingLayoutChange: (layout: ReportGroupingLayout) => void
@@ -1741,6 +1847,11 @@ const fixedAxesDescription: Partial<Record<number, string>> = {
 }
 
 function LegacyReportBuilder({
+  part,
+  selectionFilter,
+  newSelection,
+  selectionTitle,
+  addSelectionLabel,
   constructorSection,
   filterExpressionPanel,
   onGroupingLayoutChange,
@@ -1795,95 +1906,118 @@ function LegacyReportBuilder({
 
   const selectionPanel = dataSource === 19 ? null : <section className="reports-stocks-legacy__selections">
     <ReportSelectionsCard dataSource={dataSource} description={null} filterFieldOptions={filterFieldOptions}
-      from={lookupFrom} lookupProfitReadMode={lookupProfitReadMode} lookupProfitUnavailable={lookupProfitUnavailable} lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis} selections={selections} title={t('Умови відбору')} to={lookupTo} onChange={onSelectionsChange} />
+      from={lookupFrom} lookupProfitReadMode={lookupProfitReadMode} lookupProfitUnavailable={lookupProfitUnavailable} lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis} selections={selections} title={selectionTitle ?? t('Умови відбору')} to={lookupTo} onChange={onSelectionsChange}
+      filter={selectionFilter} newSelection={newSelection} addLabel={addSelectionLabel} />
   </section>
+
+  const measuresSection = (
+    <section className="app-section-card reports-stocks-legacy-panel reports-stocks-legacy-measurements">
+      <div className="reports-stocks-legacy-panel__header">
+        <Group className="reports-stocks-legacy-panel__title" gap={6} wrap="nowrap">
+          <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Показники')}</Text>
+          <Text className="reports-stocks-count" size="xs">{checkedMeasurements || ''}</Text>
+        </Group>
+        <Group gap={4} wrap="nowrap">
+          <Button
+            color={CREATE_ACTION_COLOR}
+            size="compact-xs"
+            type="button"
+            variant="subtle"
+            onClick={() => setAllMeasurements(onMeasurementsChange, true)}
+          >
+            Усі
+          </Button>
+          <Button
+            color="gray"
+            size="compact-xs"
+            type="button"
+            variant="subtle"
+            onClick={() => setAllMeasurements(onMeasurementsChange, false)}
+          >
+            Очистити
+          </Button>
+        </Group>
+      </div>
+
+      <div className="reports-stocks-legacy-measurements__list">
+        {!hasFixedReportAxes(dataSource) || measurements.some(group => group.SubList.length > 1) ? <div className="reports-stocks-measurement-columns" aria-hidden="true">
+          <span>{t('Показник')}</span>
+          <span>{t('Без ПДВ')}</span>
+          <span>{t('ПДВ')}</span>
+          <span>{t('З ПДВ')}</span>
+        </div> : null}
+        {measurements.map((group, groupIndex) => {
+          const groupLabel = group.Label || grossProfitMeasureGroupLabel(dataSource, group.Name) || getReportFieldLabel(group.Name)
+          const hasDistinctChildren =
+            group.SubList.length > 1
+            || (group.SubList[0]?.Label || getReportFieldLabel(group.SubList[0]?.Name ?? '')) !== groupLabel
+
+          return (
+            <div className="reports-stocks-legacy-measurement" key={group.Name}>
+              <Checkbox
+                checked={group.IsChecked}
+                indeterminate={!group.IsChecked && group.SubList.some((item) => item.IsChecked)}
+                aria-label={groupLabel}
+                label={measurementGroupCaption(group.Name, groupLabel)}
+                onChange={() => toggleMeasurementGroup(measurements, groupIndex, onMeasurementsChange)}
+              />
+              {hasDistinctChildren ? group.SubList.map((item, itemIndex) => (
+                <Checkbox
+                  className="reports-stocks-measurement-value"
+                  style={{ gridColumn: item.Name.endsWith('WithoutVAT') ? 2 : item.Name.endsWith('WithVAT') ? 4 : 3 }}
+                  aria-label={(item.Label || getReportFieldLabel(item.Name))}
+                  title={(item.Label || getReportFieldLabel(item.Name))}
+                  checked={item.IsChecked}
+                  key={item.Name}
+                  size="sm"
+                  onChange={() => toggleMeasurementItem(measurements, groupIndex, itemIndex, onMeasurementsChange)}
+                />
+              )) : <Text className="reports-stocks-measurement-unit" size="xs">{nativeReportMeasurementUnit(dataSource, groupLabel) ?? t('Без поділу за ПДВ')}</Text>}
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+
+  const groupingSection = (
+    <section className="app-section-card reports-stocks-structure">
+      <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Групування')}</Text>
+      {fixedAxesDescription[dataSource] ? <Text size="sm">{dataSource === 39
+        ? `Товар → сім атрибутів. Колонки: Остатки, Продажи та Контрагенты; один показник «Результат». ${currentVparivanieNotice(filterFieldOptions.some(option => option.field.Type === 60))}`
+        : dataSource === 41 ? settlementAxesDescription(rowGroups) : fixedAxesDescription[dataSource]}</Text> : <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={dataSource !== 13}
+        onOpenPicker={() => setGroupingPickerTarget('rows')}
+        onRemove={(index) => onRowGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+        onReorder={(type, direction) => onRowGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
+        onTransfer={type => transferGrouping('Row', type)} />}
+      {hasFixedReportAxes(dataSource) ? null : dataSource !== 13 ? <ReportGroupingPanel layout={groupingLayout} axis="Col" allowed={allowedGroupingTypes}
+        onOpenPicker={() => setGroupingPickerTarget('columns')}
+        onRemove={(index) => onColGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+        onReorder={(type, direction) => onColGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
+        onTransfer={type => transferGrouping('Col', type)} /> : <Text size="sm" c="dimmed">Порівняння періодів показує вибрані показники у стовпцях.</Text>}
+    </section>
+  )
+
+  const groupingPicker = (
+    <LegacyGroupingPickerModal
+      opened={groupingPickerTarget !== null}
+      options={groupingSelectData.filter(item => !selectedGroupingTypes.has(Number(item.value)) && (groupingPickerTarget !== 'columns' || Number(item.value) !== ABC_CLASS_GROUPING))}
+      target={groupingPickerTarget}
+      title={groupingPickerTarget === 'rows' ? 'Групування рядків' : 'Групування стовпців'}
+      onAdd={addGroupingFromPicker}
+      onClose={closeGroupingPicker}
+    />
+  )
+
+  if (part === 'measures') return measuresSection
+  if (part === 'grouping') return <>{groupingSection}{groupingPicker}</>
+  if (part === 'selections') return selectionPanel
 
   return (
     <section className="reports-stocks-legacy" aria-label="Налаштування звіту">
       <ReportSectionPanel className="reports-stocks-legacy__columns" active={constructorSection} section="structure">
-        <section className="app-section-card reports-stocks-legacy-panel reports-stocks-legacy-measurements">
-          <div className="reports-stocks-legacy-panel__header">
-            <Group className="reports-stocks-legacy-panel__title" gap={6} wrap="nowrap">
-              <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Показники')}</Text>
-              <Text className="reports-stocks-count" size="xs">{checkedMeasurements || ''}</Text>
-            </Group>
-            <Group gap={4} wrap="nowrap">
-              <Button
-                color={CREATE_ACTION_COLOR}
-                size="compact-xs"
-                type="button"
-                variant="subtle"
-                onClick={() => setAllMeasurements(onMeasurementsChange, true)}
-              >
-                Усі
-              </Button>
-              <Button
-                color="gray"
-                size="compact-xs"
-                type="button"
-                variant="subtle"
-                onClick={() => setAllMeasurements(onMeasurementsChange, false)}
-              >
-                Очистити
-              </Button>
-            </Group>
-          </div>
-
-          <div className="reports-stocks-legacy-measurements__list">
-            {!hasFixedReportAxes(dataSource) || measurements.some(group => group.SubList.length > 1) ? <div className="reports-stocks-measurement-columns" aria-hidden="true">
-              <span>{t('Показник')}</span>
-              <span>{t('Без ПДВ')}</span>
-              <span>{t('ПДВ')}</span>
-              <span>{t('З ПДВ')}</span>
-            </div> : null}
-            {measurements.map((group, groupIndex) => {
-              const groupLabel = group.Label || grossProfitMeasureGroupLabel(dataSource, group.Name) || getReportFieldLabel(group.Name)
-              const hasDistinctChildren =
-                group.SubList.length > 1
-                || (group.SubList[0]?.Label || getReportFieldLabel(group.SubList[0]?.Name ?? '')) !== groupLabel
-
-              return (
-                <div className="reports-stocks-legacy-measurement" key={group.Name}>
-                  <Checkbox
-                    checked={group.IsChecked}
-                    indeterminate={!group.IsChecked && group.SubList.some((item) => item.IsChecked)}
-                    aria-label={groupLabel}
-                    label={measurementGroupCaption(group.Name, groupLabel)}
-                    onChange={() => toggleMeasurementGroup(measurements, groupIndex, onMeasurementsChange)}
-                  />
-                  {hasDistinctChildren ? group.SubList.map((item, itemIndex) => (
-                    <Checkbox
-                      className="reports-stocks-measurement-value"
-                      style={{ gridColumn: item.Name.endsWith('WithoutVAT') ? 2 : item.Name.endsWith('WithVAT') ? 4 : 3 }}
-                      aria-label={(item.Label || getReportFieldLabel(item.Name))}
-                      title={(item.Label || getReportFieldLabel(item.Name))}
-                      checked={item.IsChecked}
-                      key={item.Name}
-                      size="sm"
-                      onChange={() => toggleMeasurementItem(measurements, groupIndex, itemIndex, onMeasurementsChange)}
-                    />
-                  )) : <Text className="reports-stocks-measurement-unit" size="xs">{nativeReportMeasurementUnit(dataSource, groupLabel) ?? t('Без поділу за ПДВ')}</Text>}
-                </div>
-              )
-            })}
-          </div>
-        </section>
-
-        <section className="app-section-card reports-stocks-structure">
-          <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Групування')}</Text>
-          {fixedAxesDescription[dataSource] ? <Text size="sm">{dataSource === 39
-            ? `Товар → сім атрибутів. Колонки: Остатки, Продажи та Контрагенты; один показник «Результат». ${currentVparivanieNotice(filterFieldOptions.some(option => option.field.Type === 60))}`
-            : dataSource === 41 ? settlementAxesDescription(rowGroups) : fixedAxesDescription[dataSource]}</Text> : <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={dataSource !== 13}
-            onOpenPicker={() => setGroupingPickerTarget('rows')}
-            onRemove={(index) => onRowGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
-            onReorder={(type, direction) => onRowGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
-            onTransfer={type => transferGrouping('Row', type)} />}
-          {hasFixedReportAxes(dataSource) ? null : dataSource !== 13 ? <ReportGroupingPanel layout={groupingLayout} axis="Col" allowed={allowedGroupingTypes}
-            onOpenPicker={() => setGroupingPickerTarget('columns')}
-            onRemove={(index) => onColGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
-            onReorder={(type, direction) => onColGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
-            onTransfer={type => transferGrouping('Col', type)} /> : <Text size="sm" c="dimmed">Порівняння періодів показує вибрані показники у стовпцях.</Text>}
-        </section>
+        {measuresSection}
+        {groupingSection}
         {!constructorSection ? selectionPanel : null}
       </ReportSectionPanel>
 
@@ -1892,14 +2026,7 @@ function LegacyReportBuilder({
         {dataSource === 19 ? <Text size="sm" c="gray.7">Для історичних курсів валютна пара та дати задаються в параметрах звіту. Додаткові умови відбору не застосовуються.</Text> : filterExpressionPanel}
       </ReportSectionPanel> : null}
 
-      <LegacyGroupingPickerModal
-        opened={groupingPickerTarget !== null}
-        options={groupingSelectData.filter(item => !selectedGroupingTypes.has(Number(item.value)) && (groupingPickerTarget !== 'columns' || Number(item.value) !== ABC_CLASS_GROUPING))}
-        target={groupingPickerTarget}
-        title={groupingPickerTarget === 'rows' ? 'Групування рядків' : 'Групування стовпців'}
-        onAdd={addGroupingFromPicker}
-        onClose={closeGroupingPicker}
-      />
+      {groupingPicker}
 
     </section>
   )
@@ -2028,9 +2155,15 @@ type ReportSelectionsCardProps = {
   title?: string
   to: string
   onChange: (edit: ReportSelectionEdit) => void
+  filter?: (selection: ReportSelection) => boolean
+  newSelection?: () => ReportSelection
+  addLabel?: string
 }
 
 function ReportSelectionsCard({
+  filter,
+  newSelection,
+  addLabel,
   dataSource,
   lookupProfitReadMode,
   lookupProfitUnavailable,
@@ -2049,6 +2182,7 @@ function ReportSelectionsCard({
   const [editorIndex, setEditorIndex] = useState<number | null>(null)
   const [draftSelection, setDraftSelection] = useState<ReportSelection | null>(null)
   const filterConditions = dataSource === 39 ? currentVparivanieFilterConditions(draftSelection?.SelectedField.Type ?? 0) : REPORT_FILTER_CONDITIONS
+  const visibleCount = filter ? selections.filter(filter).length : selections.length
   const resolvedDescription = description === undefined
     ? t('Необов’язково: звузьте звіт до клієнта, товару, документа або іншої ознаки.')
     : description
@@ -2087,7 +2221,7 @@ function ReportSelectionsCard({
               <Text className="app-section-title" component="h2" fw={600} size="sm">
                 {title ?? t('Умови відбору')}
               </Text>
-              {selections.length ? <Badge className="app-role-pill is-gray" variant="light">{selections.length}</Badge> : null}
+              {visibleCount ? <Badge className="app-role-pill is-gray" variant="light">{visibleCount}</Badge> : null}
             </Group>
           </div>
           <Button
@@ -2096,16 +2230,17 @@ function ReportSelectionsCard({
             leftSection={<Plus size={14} />}
             size="xs"
             type="button"
-            onClick={() => openEditor(-1, createEmptySelection())}
+            onClick={() => openEditor(-1, newSelection ? newSelection() : createEmptySelection())}
           >
-            {t('Додати умову')}
+            {addLabel ?? t('Додати умову')}
           </Button>
         </div>
 
         {resolvedDescription ? <Text className="reports-stocks-panel-description">{resolvedDescription}</Text> : null}
-        {selections.length ? (
+        {visibleCount ? (
           <div className="reports-stocks-selection-list">
             {selections.map((selection, index) => {
+              if (filter && !filter(selection)) return null
               const fieldLabel = getSelectionFieldSummary(selection, filterFieldOptions, t)
 
               return (

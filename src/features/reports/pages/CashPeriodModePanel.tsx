@@ -6,23 +6,28 @@ import { CashPeriodLegPicker } from './CashPeriodLegPicker'
 import { cashCurrencyRecordWorkbookSupported, cashWorkbookPresentationSupported } from '../data/workbookPresentation'
 import { CashReadModeSelect } from './CashReadModeSelect'
 
+export type CashPeriodPanelPart = 'source' | 'form'
+
 export function CashPeriodModePanel({ dataset, grouped, exact, disabled, enabled, onModeChange, onExactChange, rows, available, onRowsChange,
-  readMode, onReadModeChange, hideRegisterReadMode = false }: {
+  readMode, onReadModeChange, hideRegisterReadMode = false, part }: {
   dataset?: ReportDataset; grouped: unknown; exact: unknown; disabled: boolean; enabled: boolean
   rows: ReportGroupingItem[]; available: readonly ReportGroupingItem[]
   onRowsChange: (rows: ReportGroupingItem[]) => void
   onModeChange: (grouped: boolean) => void; onExactChange: (scope: CashPeriodScope | undefined) => void
   readMode?: unknown; onReadModeChange?: (value: 0 | 1 | undefined) => void; hideRegisterReadMode?: boolean
+  part?: CashPeriodPanelPart
 }) {
   const multiple = grouped != null
+  const source = multiple && onReadModeChange ? <CashReadModeSelect capability={dataset?.cashReadMode} value={readMode}
+    disabled={disabled} hideRegister={hideRegisterReadMode} onChange={onReadModeChange} /> : null
+  if (part === 'source') return groupedCashSupported(dataset) ? source : null
   return <>
     {groupedCashSupported(dataset) ? <Card withBorder radius="md" padding="md">
       {hideRegisterReadMode && multiple ? null : <SegmentedControl fullWidth aria-label="Рахунки звіту коштів" disabled={disabled}
         value={multiple ? 'accounts' : 'account'} data={[
           { value: 'accounts', label: 'Усі / вибрані рахунки' }, { value: 'account', label: 'Один валютний запис' },
         ]} onChange={value => onModeChange(value === 'accounts')} />}
-      {multiple && onReadModeChange ? <CashReadModeSelect capability={dataset?.cashReadMode} value={readMode}
-        disabled={disabled} hideRegister={hideRegisterReadMode} onChange={onReadModeChange} /> : null}
+      {part === 'form' ? null : source}
       {multiple && (groupedCashWorkbookSupported(dataset) || cashWorkbookPresentationSupported(dataset)) ? <Select mt="sm" label="Форма руху коштів" disabled={disabled}
         allowDeselect={false} value={rows.map(row => row.type).join(',')} data={[
           { value: '43,40,42,41', label: 'Організація / Рахунок / Запис / Валюта' },
