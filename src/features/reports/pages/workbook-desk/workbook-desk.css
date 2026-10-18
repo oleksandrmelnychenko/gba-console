@@ -41,7 +41,6 @@
   border-radius: var(--desk-radius);
 }
 
-/* Landing */
 .workbook-landing {
   display: grid;
   gap: 16px;
@@ -295,7 +294,6 @@
   padding: 0 0 16px;
 }
 
-/* Switcher */
 .workbook-switcher {
   align-items: stretch;
   background: #f8f9fa;
@@ -355,7 +353,6 @@
   font-weight: 600;
 }
 
-/* Header */
 .workbook-header {
   background: var(--mantine-color-white);
   border: 1px solid var(--desk-border);
@@ -510,7 +507,6 @@
   max-width: 1100px;
 }
 
-/* Sticky action bar */
 .workbook-actions::before {
   background: var(--mantine-color-gray-0);
   content: '';
@@ -586,7 +582,6 @@
   color: var(--mantine-color-green-9);
 }
 
-/* Settings */
 .workbook-settings {
   background: var(--mantine-color-white);
   border: 1px solid var(--desk-border);
@@ -778,7 +773,6 @@
   margin-top: 0 !important;
 }
 
-/* Period */
 .workbook-period {
   display: grid;
   gap: 10px;
@@ -826,7 +820,6 @@
   margin: 0;
 }
 
-/* Result */
 .workbook-result {
   scroll-margin-top: 84px;
   background: var(--mantine-color-white);
@@ -956,7 +949,6 @@
   color: var(--mantine-color-red-8);
 }
 
-/* Progress */
 .workbook-progress {
   border: 1px solid var(--mantine-color-orange-2);
   border-radius: var(--desk-radius);
@@ -1053,7 +1045,6 @@
   margin: 0;
 }
 
-/* Focus */
 .workbook-desk :is(button, a, summary, [tabindex='0']):focus-visible {
   outline: 2px solid rgba(var(--brand-orange-rgb), 0.7);
   outline-offset: 2px;
