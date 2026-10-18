@@ -31,6 +31,8 @@ export function SettlementPeriodModePanel({ dataset, grouped, exact, buyer, grou
   const selector = groupedSettlementPeriod(grouped)
   const isGroup = grouped != null
   const explicitSource = readMode != null
+  const worlds = [{ value: 'Fenix', label: 'Fenix' }, ...(hideRegisterReadMode && selector?.SourceWorld !== 'Amg' ? [] : [{ value: 'Amg', label: 'AMG' }])]
+  const lockedSource = hideRegisterReadMode && explicitSource
   return <Stack gap="sm">
     {supported && !(hideRegisterReadMode && isGroup) && <Select label={t('Обсяг взаєморозрахунків')} disabled={disabled} allowDeselect={false}
       value={isGroup ? 'buyers' : 'agreement'} data={[
@@ -40,15 +42,14 @@ export function SettlementPeriodModePanel({ dataset, grouped, exact, buyer, grou
     {isGroup && supported ? <>
       {onReadModeChange && <SettlementReadModeSelect capability={dataset.settlementReadMode} value={readMode}
         disabled={disabled} hideRegister={hideRegisterReadMode} onChange={onReadModeChange} />}
-      <Select label={t('База взаєморозрахунків')} disabled={disabled || explicitSource} allowDeselect={false}
-        value={selector?.SourceWorld ?? null} data={[{ value: 'Fenix', label: 'Fenix' },
-          ...(hideRegisterReadMode && selector?.SourceWorld !== 'Amg' ? [] : [{ value: 'Amg', label: 'AMG' }])]}
+      {lockedSource && worlds.length <= 1 ? null : <Select label={t('База взаєморозрахунків')} disabled={disabled || explicitSource} allowDeselect={false}
+        value={selector?.SourceWorld ?? null} data={worlds}
         onChange={world => {
           if (world !== 'Fenix' && world !== 'Amg') return
           onGroupedChange({ Version: 1, SourceWorld: world, CurrencyBasis: 'SettlementCurrency' })
           onBuyerChange(world === 'Fenix' ? defaultGroupedSettlementBuyer() : undefined)
           if (world === 'Amg') onGroupsChange(undefined)
-        }} />
+        }} />}
       <Select label={t('Форма взаєморозрахунків')} disabled={disabled} allowDeselect={false}
         value={rows.map(row => row.type).join(',')} data={[
           { value: '4,41,76', label: t('Організація → валюта → контрагент') },
@@ -56,7 +57,7 @@ export function SettlementPeriodModePanel({ dataset, grouped, exact, buyer, grou
         ]} onChange={layout => {
           if (layout === '4,41,76' || layout === '4,76') onRowsChange(groupedSettlementRows(available, layout === '4,41,76'))
         }} />
-      {selector?.SourceWorld === 'Fenix' && <Checkbox label={t('Контрагенти у групі «Покупці» (Fenix)')}
+      {selector?.SourceWorld === 'Fenix' && !lockedSource && <Checkbox label={t('Контрагенти у групі «Покупці» (Fenix)')}
         disabled={disabled || explicitSource} checked={sourceBuyerSubtree(buyer) !== null}
         onChange={event => onBuyerChange(event.currentTarget.checked ? defaultGroupedSettlementBuyer() : undefined)} />}
       {selector?.SourceWorld === 'Fenix' && sourceCounterpartyGroupCapability(dataset.sourceCounterpartyGroups)

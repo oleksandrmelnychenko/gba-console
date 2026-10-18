@@ -2,11 +2,11 @@ import { Select } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { isDayOrganizationBasisCapability } from '../data/dayOrganizationBasis'
 
-type Props = { capability: unknown; value: unknown; disabled: boolean; onChange: (value: 0 | 1) => void }
+type Props = { capability: unknown; value: unknown; disabled: boolean; hideLocked?: boolean; onChange: (value: 0 | 1) => void }
 
-export function DayOrganizationBasisSelect({ capability, value, disabled, onChange }: Props) {
+export function DayOrganizationBasisSelect({ capability, value, disabled, hideLocked = false, onChange }: Props) {
   const { t } = useI18n()
-  if (!isDayOrganizationBasisCapability(capability)) return null
+  if (!isDayOrganizationBasisCapability(capability) || hideLocked && disabled) return null
   const options = [
     ...(value == null ? [{ value: 'saved', label: t('Збережений спосіб розрахунку') }] : []),
     { value: '0', label: t('Продажі мінус повернення за період') },

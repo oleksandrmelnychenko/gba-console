@@ -1092,7 +1092,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
               if (mode != null) setDayOrganizationBasis(0)
             }} />
           <DayOrganizationBasisSelect capability={dataset?.dayOrganizationBasis} value={dayOrganizationBasis}
-            disabled={comparisonSettingsDisabled || profitReadMode != null} onChange={setDayOrganizationBasis} />
+            disabled={comparisonSettingsDisabled || profitReadMode != null} hideLocked={bug1274Only && profitReadMode != null} onChange={setDayOrganizationBasis} />
           <Checkbox mt="sm" label={t('Товар без послуг (Fenix)')}
             checked={parseProductClassification(productClassification)?.ProductKindId.toUpperCase() === DAY_ORGANIZATION_GOODS_KIND_ID
               && parseProductClassification(productClassification)?.IsService === false}
@@ -1137,7 +1137,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
                 }
               }} />
             <SupplierBasisSelect capability={dataset?.supplierBasis} value={supplierBasis}
-              disabled={comparisonSettingsDisabled || profitReadMode != null} onChange={basis => {
+              disabled={comparisonSettingsDisabled || profitReadMode != null} hideLocked={bug1274Only && profitReadMode != null} onChange={basis => {
                 setSupplierBasis(basis)
                 setRowGroups(rows => rowGroupsForSupplierBasis(basis, rows, groupingOptions))
               }} />

@@ -63,9 +63,8 @@ function modeless(dataset: ReportDataset, extra: Partial<ReportRequestBody> = {}
 it('opens «Взаємороз всі.xls» on current documents with the workbook exclusions and no legacy scope controls', async () => {
   const view = await openWorkbook('Взаєморозрахунки за період')
   expect(screen.queryByRole('combobox', { name: 'Обсяг взаєморозрахунків' })).toBeNull()
-  const world = screen.getByRole('combobox', { name: 'База взаєморозрахунків' }) as HTMLInputElement
-  expect(world.value).toBe('Fenix')
-  expect(world.disabled).toBe(true)
+  expect(screen.queryByRole('combobox', { name: 'База взаєморозрахунків' })).toBeNull()
+  expect(screen.queryByRole('checkbox', { name: 'Контрагенти у групі «Покупці» (Fenix)' })).toBeNull()
   for (const name of ['Харків Скляр', 'Ніжин - ФОП Гречківська О.І.', 'НЕВІДОМІ']) expect(screen.getAllByText(name).length).toBeGreaterThan(0)
   const request = await submitted(view)
   expect(request).toMatchObject({ dataSource: 41, settlementReadMode: 0,
@@ -82,7 +81,9 @@ it('hides the single currency record of the cash form', async () => {
 it('keeps the day form on current documents after a reset', async () => {
   const view = await openWorkbook('Валовий прибуток за днем')
   fireEvent.click(screen.getByRole('button', { name: 'Скинути' }))
-  expect((screen.getByRole('combobox', { name: 'Джерело розрахунку' }) as HTMLInputElement).value).toBe('Поточні документи GBA')
+  expect(screen.queryByRole('combobox', { name: 'Джерело розрахунку' })).toBeNull()
+  expect(screen.queryByRole('combobox', { name: 'Розрахунок валового прибутку' })).toBeNull()
+  expect(screen.getByText(/^Продажі та повернення з документів GBA/)).toBeTruthy()
   expect(await submitted(view)).toMatchObject({ dataSource: 35, profitReadMode: 0, dayOrganizationBasis: 0 })
 })
 
@@ -95,7 +96,8 @@ it('applies a compatible template without a mode on current documents and refuse
   fireEvent.click(await screen.findByRole('button', { name: `Відкрити для редагування: ${exact.Name}` }))
   expect(await screen.findByText(TEMPLATE_WITHOUT_READ_MODE_ERROR)).toBeTruthy()
   fireEvent.click(screen.getByRole('button', { name: `Відкрити для редагування: ${compatible.Name}` }))
-  await waitFor(() => expect((screen.getByRole('combobox', { name: 'Джерело розрахунку' }) as HTMLInputElement).value).toBe('Поточні документи GBA'))
+  expect(await screen.findByText(/^Документи GBA .* контрагентів групи «Покупці»/)).toBeTruthy()
+  expect(screen.queryByRole('combobox', { name: 'Джерело розрахунку' })).toBeNull()
   expect((await submitted(view)).settlementReadMode).toBe(0)
 })
 

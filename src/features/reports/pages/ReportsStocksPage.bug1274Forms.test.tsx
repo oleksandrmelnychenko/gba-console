@@ -37,14 +37,6 @@ async function openWorkbook(label: string) {
   await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/i)).toBeNull())
   return view
 }
-function sourceOptions() {
-  const select = screen.getByRole('combobox', { name: 'Джерело розрахунку' }) as HTMLInputElement
-  fireEvent.click(select)
-  const options = screen.getAllByRole('option').map(option => option.textContent)
-  fireEvent.keyDown(select, { key: 'Escape' })
-  return { value: select.value, options }
-}
-
 it('offers the six workbook forms of the five BUG-1274 reports and only their datasets', async () => {
   render(page())
   await screen.findByText('Звіти 1С за зразками Excel')
@@ -56,14 +48,14 @@ it('offers the six workbook forms of the five BUG-1274 reports and only their da
 })
 
 it.each([
-  ['Валовий прибуток за днем', 35, 'profitReadMode'],
-  ['Валовий прибуток за постачальниками', 38, 'profitReadMode'],
-  ['Рух коштів за період', 40, 'cashReadMode'],
-  ['Взаєморозрахунки за період', 41, 'settlementReadMode'],
-  ['Дебіторка за період', 41, 'settlementReadMode'],
-] as const)('opens «%s» on current GBA documents without the 1C register source', async (label, dataSource, modeKey) => {
+  ['Валовий прибуток за днем', 35, 'profitReadMode', ['Розрахунок валового прибутку']],
+  ['Валовий прибуток за постачальниками', 38, 'profitReadMode', ['Розрахунок за постачальниками']],
+  ['Рух коштів за період', 40, 'cashReadMode', []],
+  ['Взаєморозрахунки за період', 41, 'settlementReadMode', ['База взаєморозрахунків']],
+  ['Дебіторка за період', 41, 'settlementReadMode', ['База взаєморозрахунків']],
+] as const)('opens «%s» on current GBA documents without the 1C register source or locked one-value selects', async (label, dataSource, modeKey, locked) => {
   const view = await openWorkbook(label)
-  expect(sourceOptions()).toEqual({ value: 'Поточні документи GBA', options: ['Поточні документи GBA'] })
+  for (const name of ['Джерело розрахунку', ...locked]) expect(screen.queryByRole('combobox', { name })).toBeNull()
   fireEvent.submit(view.container.querySelector('form')!)
   await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
   expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({ dataSource, [modeKey]: 0 })
