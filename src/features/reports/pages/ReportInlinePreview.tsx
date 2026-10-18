@@ -52,8 +52,9 @@ export function ReportInlinePreview({ preview }: { preview: NativeReportPreview 
     ...(attributes ? ['Основний менеджер покупця', 'Код по региону'] : []), ...(regions ? ['Код по региону'] : []),
     ...workbookColumns.map(field => field.caption)]
   const levelCount = products ? 0 : preview.RowSchema.length
-  const repeated = preview.Rows.map((row, rowIndex) => preview.RowSchema.map((_, level) => level < levelCount - 1 && rowIndex > 0
-    && preview.RowSchema.slice(0, level + 1).every((__, upper) => rowCaption(row, upper) === rowCaption(preview.Rows[rowIndex - 1], upper))))
+  const totalledLevels = new Set(totals?.Groups.map(group => group.Level))
+  const repeated = preview.Rows.map((row, rowIndex) => preview.RowSchema.map((_, level) => level < levelCount - 1 && (totalledLevels.has(level)
+    || rowIndex > 0 && preview.RowSchema.slice(0, level + 1).every((__, upper) => rowCaption(row, upper) === rowCaption(preview.Rows[rowIndex - 1], upper)))))
   return <section className="app-section-card report-inline-preview" aria-label="Попередній перегляд звіту">
     <div className="report-inline-preview__heading">
       <Text component="h2" fw={600} size="sm" className="report-inline-preview__title">Таблиця на екрані</Text>

@@ -125,9 +125,17 @@ function applied(selection: ReportSelection, fixedAxes: boolean): boolean {
   return (fixedAxes ? selection.IsChecked !== false : selection.IsChecked) && selection.Values.length > 0
 }
 
+function shortName(name: string): string {
+  return name.length > 40 ? `${name.slice(0, 38).trimEnd()}…` : name
+}
+
 function valuesText(names: readonly string[]): string {
-  if (names.length <= 2) return names.join(', ')
-  return `${names[0]}, ${names[1]} та ще ${names.length - 2}`
+  if (names.length <= 2) return names.map(shortName).join(', ')
+  return `${shortName(names[0])}, ${shortName(names[1])} та ще ${names.length - 2}`
+}
+
+function chipValuesText(names: readonly string[]): string {
+  return names.length > 3 ? `${names.length} зі списку` : valuesText(names)
 }
 
 function selectionNames(selection: ReportSelection): string[] {
@@ -141,7 +149,7 @@ function selectionChip(selection: ReportSelection, label: string): DeskChip {
   const names = selectionNames(selection)
   const type = selection.FilterCondition.Type
   const condition = PLAIN_CONDITIONS.has(type) ? '' : EXCLUDING_CONDITIONS.has(type) ? 'крім ' : `${selection.FilterCondition.Name.toLocaleLowerCase('uk-UA')} `
-  return { kind: 'filter', label: `${label}: ${condition}${valuesText(names)}`, title: `${label} — ${selection.FilterCondition.Name}: ${names.join('; ')}` }
+  return { kind: 'filter', label: `${label}: ${condition}${chipValuesText(names)}`, title: `${label} — ${selection.FilterCondition.Name}: ${names.join('; ')}` }
 }
 
 function organizationsText(request: ReportRequestBody, selections: readonly ReportSelection[], fixedAxes: boolean): string | null {

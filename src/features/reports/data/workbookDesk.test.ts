@@ -86,6 +86,13 @@ describe('row counts', () => {
 })
 
 describe('request summary', () => {
+  it('shortens long names and lists up to three values in a chip', () => {
+    const summary = workbookRequestSummary(request({ dataSource: 38, selections: [
+      selection(17, 'Постачальник', 2, ['AYDINSAN FREN CIRCIRLARI OTOMOTIV YED. PARCALARI IMALATI [1]', 'REMI [2]', 'KARATAS [3]']),
+    ] }), undefined, label)
+    expect(summary.chips.map(chip => chip.label)).toEqual(['Постачальник: AYDINSAN FREN CIRCIRLARI OTOMOTIV YED.…, REMI та ще 1'])
+  })
+
   it('reads the day workbook filters as plain chips and its saved organizations by name', () => {
     const summary = workbookRequestSummary(request({ dataSource: 35,
       productClassification: { Version: 1, SourceWorld: 0, ProductKindId: DAY_ORGANIZATION_GOODS_KIND_ID, IsService: false },
@@ -108,7 +115,7 @@ describe('request summary', () => {
       selection(1, 'Товар', 0, ['Вимкнений товар'], false),
     ] }), undefined, label)
     expect(summary.organizations).toBe('ТОВ «АМГ «КОНКОРД», Фенікс та ще 1')
-    expect(summary.chips.map(chip => chip.label)).toEqual(['Постачальник: BENEFIT, YPS GLOBAL та ще 2'])
+    expect(summary.chips.map(chip => chip.label)).toEqual(['Постачальник: 4 зі списку'])
     expect(summary.chips[0].title).toBe('Постачальник — У списку: BENEFIT; YPS GLOBAL; KARATAS; REMI')
   })
 
