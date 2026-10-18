@@ -25,7 +25,7 @@ function StatementTable({ result }: { result: StatementResult }) {
     <Button variant="light" size="xs" disabled={current === 0} onClick={() => setPage(current - 1)}>{t('Попередні рядки')}</Button>
     <Text size="xs">{lines.length ? offset + 1 : 0}–{Math.min(lines.length, offset + 50)} / {lines.length}</Text>
     <Button variant="light" size="xs" disabled={offset + 50 >= lines.length} onClick={() => setPage(current + 1)}>{t('Наступні рядки')}</Button>
-  </Group><Table.ScrollContainer minWidth={1300}><Table striped><Table.Thead><Table.Tr>
+  </Group><Table.ScrollContainer minWidth={1300}><Table className="app-static-table" striped><Table.Thead><Table.Tr>
     {statementHeaders.map(h => <Table.Th key={h}>{t(h)}</Table.Th>)}
   </Table.Tr></Table.Thead><Table.Tbody>{lines.slice(offset, offset + 50).map(line => <Table.Tr key={line.key} fw={line.subtotal ? 600 : undefined}>
     {line.cells.map((cell, i) => <Table.Td key={statementHeaders[i]} className={i >= 3 ? 'app-money' : undefined}>{cell}</Table.Td>)}

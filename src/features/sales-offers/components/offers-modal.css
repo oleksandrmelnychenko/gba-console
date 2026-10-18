@@ -27,21 +27,7 @@
   overflow: hidden;
 }
 
-.offers-modal-lines-table .mantine-Table-th {
-  background: var(--mantine-color-gray-0);
-  border-bottom: 1px solid var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-7);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0;
-}
 
-.offers-modal-lines-table .mantine-Table-td {
-  border-bottom: 1px solid var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-8);
-  font-size: 13px;
-  font-weight: 500;
-}
 
 .offers-modal-lines-table .mantine-Table-tr:last-child .mantine-Table-td {
   border-bottom: 0;

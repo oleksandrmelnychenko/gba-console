@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -510,7 +511,7 @@ function StorageAvailabilityHistory({
     >
       <Popover.Target>
         <Badge
-          className="app-role-pill product-history-placement-trigger"
+          className="app-role-pill product-history-placement-trigger is-storage"
           variant="light"
           onClick={() => setOpened((current) => !current)}
         >
@@ -659,7 +660,7 @@ function useProductHistoryColumns(
         width: 160,
         minWidth: 132,
         accessor: (historyItem) => historyItem.Product?.VendorCode,
-        cell: (historyItem) => <Text fw={700}>{displayValue(historyItem.Product?.VendorCode)}</Text>,
+        cell: (historyItem) => <TableChip tone="product" value={displayValue(historyItem.Product?.VendorCode)} />,
       },
       {
         id: 'productName',

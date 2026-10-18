@@ -416,7 +416,6 @@
 }
 
 .payment-account-section-heading .mantine-Badge-root {
-  border: 1px solid var(--mantine-color-gray-2);
   font-family: var(--font-mono);
   font-weight: 600;
 }

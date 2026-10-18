@@ -8,6 +8,8 @@
     "npm": ">=11"
   },
   "scripts": {
+    "audit:tables": "node scripts/audit-table-patterns.mjs",
+    "audit:tables:check": "node scripts/audit-table-patterns.mjs --check",
     "audit:event-permissions": "node scripts/event-permission-candidates.mjs",
     "audit:event-permissions:check": "node scripts/event-permission-candidates.mjs --check",
     "audit:event-permissions:matrix": "node scripts/classify-event-permission-matrix.mjs",

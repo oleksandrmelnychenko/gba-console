@@ -42,6 +42,7 @@ export async function browserTemplateImportId(template: ReportTemplate): Promise
 export function useServerReportTemplates(enabled: boolean, datasets: ReportDataset[] = [], callerKey: string | null = null) {
   const [templates, setTemplates] = useState<ReportTemplate[]>([])
   const [notice, setNotice] = useState<string | null>(null)
+  const [noticeKind, setNoticeKind] = useState<'success' | 'error' | null>(null)
   const [busy, setBusy] = useState(false)
   const [ready, setReady] = useState(false)
   const [orderingOpened, setOrderingOpened] = useState(false)
@@ -62,7 +63,7 @@ export function useServerReportTemplates(enabled: boolean, datasets: ReportDatas
     setOrderingOpened(false)
     setOrderState(null)
     setLoadedScope(null)
-    setNotice(null)
+    setNotice(null); setNoticeKind(null)
   }
 
   const loadList = useCallback(async (signal: AbortSignal) => {
@@ -93,13 +94,13 @@ export function useServerReportTemplates(enabled: boolean, datasets: ReportDatas
         setOrderState(result.order)
         setReady(true)
         setLoadedScope(scope)
-        setNotice(null)
+        setNotice(null); setNoticeKind(null)
       }
     }).catch((error: unknown) => {
       if (alive.current && current === generation.current && !signal?.aborted) {
         setReady(false)
         setOrderState(null)
-        setNotice(error instanceof Error ? error.message : 'Не вдалося завантажити шаблони.')
+        setNotice(error instanceof Error ? error.message : 'Не вдалося завантажити шаблони.'); setNoticeKind('error')
       }
     })
   }, [loadList, scope])
@@ -137,11 +138,11 @@ export function useServerReportTemplates(enabled: boolean, datasets: ReportDatas
       try {
         const list = await loadList(controller.signal)
         if (!isCurrent()) return { ok: false }
-        setTemplates(list.definitions); setOrderState(list.order); setReady(true); setLoadedScope(scope); setNotice(message)
+        setTemplates(list.definitions); setOrderState(list.order); setReady(true); setLoadedScope(scope); setNotice(message); setNoticeKind('success')
       } catch {
         if (!isCurrent()) return { ok: false }
         setReady(false); setOrderState(null)
-        setNotice(`${message} Не вдалося оновити список. Оновіть його перед наступною дією.`)
+        setNotice(`${message} Не вдалося оновити список. Оновіть його перед наступною дією.`); setNoticeKind('error')
       }
       // The mutation is committed even if the following read failed. Never retry the write.
       return template ? { ok: true, template } : { ok: true }
@@ -152,7 +153,7 @@ export function useServerReportTemplates(enabled: boolean, datasets: ReportDatas
         orderingRequested.current = true; setOrderingOpened(true); setOrderState(null)
         const list = await loadList(controller.signal)
         if (!isCurrent()) return { ok: false }
-        setTemplates(list.definitions); setOrderState(list.order); setReady(true); setNotice(null)
+        setTemplates(list.definitions); setOrderState(list.order); setReady(true); setNotice(null); setNoticeKind(null)
         return { ok: true }
       } else if (operation.kind === 'order') {
         const session = readSession()
@@ -221,14 +222,15 @@ export function useServerReportTemplates(enabled: boolean, datasets: ReportDatas
         if (!isCurrent()) return { ok: false }
         const saved = await saveServerReportTemplate(request, controller.signal)
         if (isCurrent()) {
-          const message = operation.kind === 'import' ? 'Шаблон імпортовано. Копія в браузері збережена.'
+          const message = operation.kind === 'import' ? 'Шаблон імпортовано.'
             : operation.kind === 'rename' ? 'Назву шаблону змінено.'
-              : operation.kind === 'copy' ? 'Створено незалежну копію збереженого шаблону.'
-                : 'Шаблон збережено на сервері у вашому обліковому записі.'
+              : operation.kind === 'copy' ? 'Копію шаблону створено.'
+                : 'Шаблон збережено.'
           return await refreshCommitted(message, saved)
         }
       }
     } catch (error) {
+      if (isCurrent()) setNoticeKind('error')
       if (isCurrent() && operation.kind === 'order' && error instanceof ApiError && error.status === 409) {
         try {
           const list = await loadList(controller.signal)
@@ -262,6 +264,6 @@ export function useServerReportTemplates(enabled: boolean, datasets: ReportDatas
     change: (command: ReportTemplateOrderCommand) => runTemplateOperation({ kind: 'order', command }),
   }
 
-  return { templates: enabled && loadedScope === scope ? templates : [], notice: enabled ? notice : null, busy, ready: enabled && loadedScope === scope && ready, browserTemplates: enabled ? browserTemplates : [], update, rename, copy,
-    reload: () => { if (!locked.current && enabled) { setReady(false); void reload(new AbortController()) } }, save, remove, importBrowserTemplate, ordering }
+  return { noticeKind, clearNotice: () => { if (ready) { setNotice(null); setNoticeKind(null) } }, templates: enabled && loadedScope === scope ? templates : [], notice: enabled ? notice : null, busy, ready: enabled && loadedScope === scope && ready, browserTemplates: enabled ? browserTemplates : [], update, rename, copy,
+    reload: () => { if (!locked.current && enabled) { setReady(false); setNotice(null); setNoticeKind(null); void reload(new AbortController()) } }, save, remove, importBrowserTemplate, ordering }
 }

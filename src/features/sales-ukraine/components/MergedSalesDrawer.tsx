@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import { ActionIcon, Alert, Anchor, Badge, Button, Card, Checkbox, Chip, Group, NumberInput, Stack, Table, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Pencil, ReceiptText } from 'lucide-react'
@@ -665,7 +666,7 @@ function MergedSaleCard({
           </Group>
         </Group>
 
-        <Table className="sales-drawer-table" withRowBorders={false}>
+        <Table className="app-static-table sales-drawer-table" withRowBorders={false}>
           <Table.Thead>
             <Table.Tr>
               <Table.Th w={44} />
@@ -691,7 +692,7 @@ function MergedSaleCard({
                       onChange={(event) => onItemToggle(sale, index, key, event.currentTarget.checked)}
                     />
                   </Table.Td>
-                  <Table.Td>{displayValue(item.Product?.VendorCode || item.Product?.MainOriginalNumber)}</Table.Td>
+                  <Table.Td><TableChip tone="product" value={displayValue(item.Product?.VendorCode || item.Product?.MainOriginalNumber)} /></Table.Td>
                   <Table.Td>{displayValue(item.Product?.NameUA || item.Product?.Name)}</Table.Td>
                   <Table.Td className="app-table-number" ta="right">
                     <NumberInput

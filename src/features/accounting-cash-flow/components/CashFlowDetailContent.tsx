@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import { Anchor, Badge, Button, Divider, Group, Stack, Text } from '@mantine/core'
 import { ExternalLink, FileText } from 'lucide-react'
 import { useMemo } from 'react'
@@ -120,7 +121,7 @@ function useDetailColumns(columnKind: CashFlowDetailViewModel['columnKind']): Da
           width: 170,
           minWidth: 130,
           accessor: (row) => row.ServiceNumber,
-          cell: (row) => displayValue(row.ServiceNumber),
+          cell: (row) => <TableChip tone="document" value={displayValue(row.ServiceNumber)} />,
         },
         {
           id: 'number',
@@ -128,7 +129,7 @@ function useDetailColumns(columnKind: CashFlowDetailViewModel['columnKind']): Da
           width: 130,
           minWidth: 110,
           accessor: (row) => row.Number,
-          cell: (row) => displayValue(row.Number),
+          cell: (row) => <TableChip tone="document" value={displayValue(row.Number)} />,
         },
         {
           id: 'containerNumber',
@@ -136,7 +137,7 @@ function useDetailColumns(columnKind: CashFlowDetailViewModel['columnKind']): Da
           width: 160,
           minWidth: 130,
           accessor: (row) => row.ContainerNumber,
-          cell: (row) => displayValue(row.ContainerNumber),
+          cell: (row) => <TableChip tone="neutral" value={displayValue(row.ContainerNumber)} />,
         },
         {
           id: 'currency',
@@ -144,7 +145,7 @@ function useDetailColumns(columnKind: CashFlowDetailViewModel['columnKind']): Da
           width: 90,
           minWidth: 80,
           accessor: (row) => row.Currency,
-          cell: (row) => displayValue(row.Currency),
+          cell: (row) => <TableChip tone="neutral" value={displayValue(row.Currency)} />,
         },
         {
           id: 'paymentStatus',
@@ -181,7 +182,7 @@ function useDetailColumns(columnKind: CashFlowDetailViewModel['columnKind']): Da
         width: 160,
         minWidth: 130,
         accessor: (row) => row.ServiceNumber,
-        cell: (row) => displayValue(row.ServiceNumber),
+        cell: (row) => <TableChip tone="document" value={displayValue(row.ServiceNumber)} />,
       },
       {
         id: 'number',
@@ -189,7 +190,7 @@ function useDetailColumns(columnKind: CashFlowDetailViewModel['columnKind']): Da
         width: 130,
         minWidth: 110,
         accessor: (row) => row.Number,
-        cell: (row) => displayValue(row.Number),
+        cell: (row) => <TableChip tone="document" value={displayValue(row.Number)} />,
       },
       {
         id: 'name',
@@ -213,7 +214,7 @@ function useDetailColumns(columnKind: CashFlowDetailViewModel['columnKind']): Da
         width: 80,
         minWidth: 70,
         accessor: (row) => row.Currency,
-        cell: (row) => displayValue(row.Currency),
+        cell: (row) => <TableChip tone="neutral" value={displayValue(row.Currency)} />,
       },
       {
         id: 'paymentStatus',

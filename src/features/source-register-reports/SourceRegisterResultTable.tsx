@@ -60,7 +60,7 @@ function RegisterResult({ descriptor, registerLabel, result, referenceCaptions }
     {measurePages > 1 ? <Pagination role="navigation" aria-label="Сторінки показників результату" getControlProps={registerPaginationControlProps} value={measurePage} onChange={setMeasurePage} total={measurePages} /> : null}
     {!result.groups.length ? <Text role="status">У результаті немає груп. Нижче наведено лише переданий загальний підсумок.</Text> : null}
     <div className="source-register-table-scroll" tabIndex={0} role="region" aria-label="Точні значення регістрового звіту">
-      <table className="source-register-result-table"><caption className="source-register-table-caption">Групи та загальний підсумок. Суми показані без округлення.</caption>
+      <table className="app-static-table source-register-result-table"><caption className="source-register-table-caption">Групи та загальний підсумок. Суми показані без округлення.</caption>
         <thead><tr>{axisFields.length ? axisFields.map((id, index) => <th scope="col" key={id}>{dimensions.get(id)!.caption}<Text size="xs" c="dimmed">{index < rowFieldCount ? 'Рядки' : 'Колонки'}</Text><details><summary>Ідентифікатор виміру</summary><code>{id}</code></details></th>) : <th scope="col">Група</th>}
           {selections.map(item => <th scope="col" key={`${item.resourceUuid}:${item.stage}`}>{resources.get(item.resourceUuid)!.caption} — {REGISTER_STAGE_LABELS[item.stage]}<details><summary>Ідентифікатор ресурсу</summary><code>{item.resourceUuid}</code></details></th>)}
         </tr></thead>

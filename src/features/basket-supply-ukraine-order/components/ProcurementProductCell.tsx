@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import { ImageOff } from 'lucide-react'
 import { useState } from 'react'
 import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
@@ -62,7 +63,7 @@ export function ProcurementProductCell({ row, t }: ProcurementProductCellProps) 
         {(showVendorCode || row.oe_number) && (
           <span className="procure-cockpit-product__meta">
             {showVendorCode && (
-              <span className="procure-cockpit-product__code">{row.vendor_code}</span>
+              <span className="procure-cockpit-product__code"><TableChip tone="product" value={row.vendor_code} /></span>
             )}
             {row.oe_number && (
               <span

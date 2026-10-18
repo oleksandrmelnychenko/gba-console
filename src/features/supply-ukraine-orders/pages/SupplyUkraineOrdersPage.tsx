@@ -1106,7 +1106,7 @@ function OrderMainGridCell({ row }: { row: SupplyUkraineOrderRow }) {
   }
 
   if (row.source) {
-    metaItems.push({ label: t('джерело'), tag: true, tagTone: 'neutral', value: row.source })
+    metaItems.push({ label: t('джерело'), tag: true, tagTone: 'cyan', value: row.source })
   }
 
   if (row.storage) {
@@ -1197,7 +1197,7 @@ function InvoiceMainCell({ row }: { row: SupplyUkraineOrderRow }) {
       <div className="supply-invoice-copy">
         <div className="supply-invoice-main-line">
           <span className="supply-invoice-label">{t('Інвойс')}</span>
-          <span className="supply-invoice-number" title={nativeTitle(invoiceNumber)}>{invoiceNumber}</span>
+          <span className="app-table-chip is-document supply-invoice-number" title={nativeTitle(invoiceNumber)}>{invoiceNumber}</span>
         </div>
         <div className="supply-invoice-meta">
           <span className="supply-order-meta-value is-strong" title={nativeTitle(orderNumber)}>
@@ -1215,7 +1215,7 @@ function InvoiceMainCell({ row }: { row: SupplyUkraineOrderRow }) {
   )
 }
 
-type OrderMetaTagTone = 'blue' | 'green' | 'neutral' | 'orange' | 'red' | 'yellow'
+type OrderMetaTagTone = 'blue' | 'cyan' | 'teal' | 'neutral' | 'orange' | 'red' | 'yellow'
 
 type OrderMetaItem = {
   label: string
@@ -1255,7 +1255,7 @@ function OrderMetaLine({
       {items.map((item, index) => (
         <Fragment key={item.label}>
           {index > 0 && !item.tag ? <OrderMetaSeparator /> : null}
-          <OrderMetaValue label={item.label} strong={item.strong} tag={item.tag} value={item.value} />
+          <OrderMetaValue {...item} />
         </Fragment>
       ))}
     </div>
@@ -1281,7 +1281,7 @@ function getStorageTagTone(storage: string): OrderMetaTagTone {
     return 'orange'
   }
 
-  return 'green'
+  return 'teal'
 }
 
 function OrderMetaSeparator() {
@@ -1333,97 +1333,101 @@ export function OrdersFilterToolbar({
 }) {
   const { t } = useI18n()
   return (
-    <div className="app-filter-bar supply-ukraine-orders-filter-bar">
-      <div className="app-filter-date-range">
+    <div className="app-filter-bar app-filter-bar--stacked supply-ukraine-orders-filter-bar">
+      <div className="supply-ukraine-orders-filter-fields">
+        <div className="app-filter-date-range">
+          <TextInput
+            className="supply-ukraine-orders-date-input"
+            label={t('Від')}
+            max={filterDraft.to || undefined}
+            type="date"
+            value={filterDraft.from}
+            onChange={(event) => onApplyFilterPatch({ from: event.currentTarget.value })}
+          />
+          <TextInput
+            className="supply-ukraine-orders-date-input"
+            label={t('До')}
+            min={filterDraft.from || undefined}
+            type="date"
+            value={filterDraft.to}
+            onChange={(event) => onApplyFilterPatch({ to: event.currentTarget.value })}
+          />
+        </div>
         <TextInput
-          className="supply-ukraine-orders-date-input"
-          label={t('Від')}
-          max={filterDraft.to || undefined}
-          type="date"
-          value={filterDraft.from}
-          onChange={(event) => onApplyFilterPatch({ from: event.currentTarget.value })}
+          className="supply-ukraine-orders-search-input"
+          leftSection={<Search size={16} />}
+          label={t('Постачальник')}
+          placeholder={t('Назва постачальника')}
+          value={filterDraft.supplier}
+          onChange={(event) => onFilterDraftChange({ supplier: event.currentTarget.value })}
+          onKeyDown={(event) => {
+            // Text filters apply on refresh; a search box should also run on Enter, otherwise
+            // typing a supplier name does nothing until the user finds the refresh button.
+            if (event.key === 'Enter') {
+              event.preventDefault()
+              onRefresh()
+            }
+          }}
         />
-        <TextInput
-          className="supply-ukraine-orders-date-input"
-          label={t('До')}
-          min={filterDraft.from || undefined}
-          type="date"
-          value={filterDraft.to}
-          onChange={(event) => onApplyFilterPatch({ to: event.currentTarget.value })}
+        <Select
+          clearable
+          className="supply-ukraine-orders-currency-filter"
+          data={currencyOptions}
+          label={t('Валюта')}
+          placeholder={t('Усі')}
+          searchable
+          value={filterDraft.currencyId || null}
+          onChange={(value) => onApplyFilterPatch({ currencyId: value || '' })}
+        />
+        <Select
+          allowDeselect={false}
+          className="supply-ukraine-orders-type-filter"
+          data={TYPE_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
+          label={t('Тип')}
+          value={filterDraft.type}
+          onChange={(value) => onApplyType((value as SupplyUkraineOrderKind) || 'all')}
         />
       </div>
-      <TextInput
-        className="supply-ukraine-orders-search-input"
-        leftSection={<Search size={16} />}
-        label={t('Постачальник')}
-        placeholder={t('Назва постачальника')}
-        value={filterDraft.supplier}
-        onChange={(event) => onFilterDraftChange({ supplier: event.currentTarget.value })}
-        onKeyDown={(event) => {
-          // Text filters apply on refresh; a search box should also run on Enter, otherwise
-          // typing a supplier name does nothing until the user finds the refresh button.
-          if (event.key === 'Enter') {
-            event.preventDefault()
-            onRefresh()
-          }
-        }}
-      />
-      <Select
-        clearable
-        className="supply-ukraine-orders-currency-filter"
-        data={currencyOptions}
-        label={t('Валюта')}
-        placeholder={t('Усі')}
-        searchable
-        value={filterDraft.currencyId || null}
-        onChange={(value) => onApplyFilterPatch({ currencyId: value || '' })}
-      />
-      <Select
-        allowDeselect={false}
-        className="supply-ukraine-orders-type-filter"
-        data={TYPE_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
-        label={t('Тип')}
-        value={filterDraft.type}
-        onChange={(value) => onApplyType((value as SupplyUkraineOrderKind) || 'all')}
-      />
-      <div className="app-filter-actions">
-        <Tooltip label={t('Скинути фільтри')}>
-          <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути фільтри')} onClick={onResetFilters}>
-            <RotateCcw size={17} />
-          </ActionIcon>
-        </Tooltip>
-        {canPrint && (
-          <Tooltip label={t('Завантажити')}>
-            <ActionIcon variant="light" color="gray" size={34} aria-label={t('Завантажити')} loading={isDownloading} onClick={onDownload}>
-              <Download size={18} />
+      <div className="app-filter-command-row">
+        <div className="app-filter-actions">
+          <Tooltip label={t('Скинути фільтри')}>
+            <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути фільтри')} onClick={onResetFilters}>
+              <RotateCcw size={17} />
             </ActionIcon>
           </Tooltip>
-        )}
-        <Paginator
-          isLoading={isLoading}
-          page={page}
-          pageSize={pageSize}
-          totalPages={totalPages}
-          onPageChange={onChangePage}
-          onPageSizeChange={(nextPageSize) => onChangePageSize(String(nextPageSize))}
-          onRefresh={onRefresh}
+          {canPrint && (
+            <Tooltip label={t('Завантажити')}>
+              <ActionIcon variant="light" color="gray" size={34} aria-label={t('Завантажити')} loading={isDownloading} onClick={onDownload}>
+                <Download size={18} />
+              </ActionIcon>
+            </Tooltip>
+          )}
+          <Paginator
+            isLoading={isLoading}
+            page={page}
+            pageSize={pageSize}
+            totalPages={totalPages}
+            onPageChange={onChangePage}
+            onPageSizeChange={(nextPageSize) => onChangePageSize(String(nextPageSize))}
+            onRefresh={onRefresh}
+          />
+        </div>
+        <div
+          ref={onTableToolbarSlotMount}
+          className="app-filter-table-toolbar-slot supply-ukraine-orders-table-toolbar-slot"
         />
-      </div>
-      <div
-        ref={onTableToolbarSlotMount}
-        className="app-filter-table-toolbar-slot supply-ukraine-orders-table-toolbar-slot"
-      />
-      <div className="supply-ukraine-orders-create-actions">
-        {createPermissions.canCreateDirect && (
-          <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} onClick={onCreateDirect}>
-            {t('Нове замовлення')}
-          </Button>
-        )}
-        {createPermissions.canCreateToUkraine && (
-          <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" leftSection={<Plus size={16} />} onClick={onCreateToUkraine}>
-            {t('Поставка')}
-          </Button>
-        )}
+        <div className="supply-ukraine-orders-create-actions">
+          {createPermissions.canCreateDirect && (
+            <Button color={CREATE_ACTION_COLOR} size="sm" className="app-filter-primary-action" leftSection={<Plus size={16} />} onClick={onCreateDirect}>
+              {t('Нове замовлення')}
+            </Button>
+          )}
+          {createPermissions.canCreateToUkraine && (
+            <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" leftSection={<Plus size={16} />} onClick={onCreateToUkraine}>
+              {t('Поставка')}
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   )

@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -12,6 +13,7 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import {
+  DocumentDetailChip,
   DocumentDetailLayout,
   DocumentDetailMetric,
   DocumentDetailRow,
@@ -583,7 +585,7 @@ export function ProductCapitalizationDetailDrawer({
             <DocumentDetailSummary
               eyebrow={t('Оприбуткування')}
               title={displayValue(capitalization.Number)}
-              meta={formatDateTime(capitalization.FromDate)}
+              meta={<DocumentDetailChip tone="info">{formatDateTime(capitalization.FromDate)}</DocumentDetailChip>}
               metrics={
                 <>
                   <DocumentDetailMetric label={t('Кількість')} value={formatAmount(totals.qty)} />
@@ -684,7 +686,7 @@ function useProductCapitalizationColumns(
         width: 180,
         minWidth: 150,
         accessor: (capitalization) => capitalization.Number,
-        cell: (capitalization) => <Text fw={700}>{displayValue(capitalization.Number)}</Text>,
+        cell: (capitalization) => <TableChip tone="document" value={displayValue(capitalization.Number)} />,
       },
       {
         id: 'amount',
@@ -700,7 +702,7 @@ function useProductCapitalizationColumns(
         header: 'Валюта',
         width: 92,
         minWidth: 84,
-        cell: () => 'EUR',
+        cell: () => <TableChip tone="neutral" value={'EUR'} />,
       },
       {
         id: 'storage',
@@ -708,7 +710,7 @@ function useProductCapitalizationColumns(
         width: 220,
         minWidth: 170,
         accessor: (capitalization) => capitalization.Storage?.Name,
-        cell: (capitalization) => displayValue(capitalization.Storage?.Name),
+        cell: (capitalization) => <TableChip tone="storage" value={displayValue(capitalization.Storage?.Name)} />,
       },
       {
         id: 'organization',
@@ -791,7 +793,7 @@ function useProductCapitalizationItemColumns(
         width: 150,
         minWidth: 124,
         accessor: getItemVendorCode,
-        cell: (item) => <Text fw={700}>{displayValue(getItemVendorCode(item))}</Text>,
+        cell: (item) => <TableChip tone="product" value={displayValue(getItemVendorCode(item))} />,
       },
       {
         id: 'productName',

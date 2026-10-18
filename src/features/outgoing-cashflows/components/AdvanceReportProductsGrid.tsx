@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import { Group } from '@mantine/core'
 import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -32,7 +33,7 @@ export function AdvanceReportProductsGrid({
         width: 180,
         minWidth: 140,
         accessor: (row) => row.organizationFromNumber,
-        cell: (row) => displayValue(row.organizationFromNumber),
+        cell: (row) => <TableChip tone="document" value={displayValue(row.organizationFromNumber)} />,
       },
       {
         id: 'vendorCode',
@@ -40,7 +41,7 @@ export function AdvanceReportProductsGrid({
         width: 110,
         minWidth: 80,
         accessor: (row) => row.vendorCode,
-        cell: (row) => displayValue(row.vendorCode),
+        cell: (row) => <TableChip tone="product" value={displayValue(row.vendorCode)} />,
       },
       {
         id: 'name',
@@ -117,7 +118,7 @@ export function AdvanceReportProductsGrid({
         width: 200,
         minWidth: 150,
         accessor: (row) => row.agreementName,
-        cell: (row) => displayValue(row.agreementName),
+        cell: (row) => <TableChip tone="neutral" value={displayValue(row.agreementName)} />,
       },
       {
         id: 'storageName',
@@ -125,7 +126,7 @@ export function AdvanceReportProductsGrid({
         width: 200,
         minWidth: 150,
         accessor: (row) => row.storageName,
-        cell: (row) => displayValue(row.storageName),
+        cell: (row) => <TableChip tone="storage" value={displayValue(row.storageName)} />,
       },
       {
         id: 'totalAmount',

@@ -450,10 +450,11 @@
 }
 
 .workbook-chip {
-  background: var(--mantine-color-orange-0);
-  border: 1px solid var(--mantine-color-orange-2);
-  border-radius: 7px;
-  color: var(--mantine-color-brand-9);
+  font-family: var(--font-mono);
+  background: var(--app-chip-document-bg);
+  border: 1px solid var(--app-chip-document-border);
+  border-radius: 999px;
+  color: var(--app-chip-document-text);
   font-size: 12.5px;
   font-weight: 600;
   line-height: 1.35;
@@ -463,9 +464,9 @@
 }
 
 .workbook-chip.is-view {
-  background: var(--mantine-color-gray-0);
-  border-color: var(--mantine-color-gray-3);
-  color: var(--mantine-color-gray-7);
+  background: var(--app-chip-neutral-bg);
+  border-color: var(--app-chip-neutral-border);
+  color: var(--app-chip-neutral-text);
 }
 
 .workbook-header__warning {

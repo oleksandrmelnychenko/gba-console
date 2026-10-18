@@ -1,3 +1,4 @@
+import { TableChip } from '../../../../shared/ui/TableChip'
 import { Box, Group, Text } from '@mantine/core'
 import { Package } from 'lucide-react'
 import { memo, useMemo } from 'react'
@@ -112,7 +113,7 @@ export const WizardShoppingCartGrid = memo(function WizardShoppingCartGrid({
         id: 'originalNumber',
         header: t('Ориг. номер'),
         accessor: (item) => item.Product?.MainOriginalNumber || '',
-        cell: (item) => <WizardCartTextCell value={displayValue(item.Product?.MainOriginalNumber)} />,
+        cell: (item) => <TableChip tone="product" value={displayValue(item.Product?.MainOriginalNumber)} />,
         width: 138,
         minWidth: 118,
       },
@@ -120,7 +121,7 @@ export const WizardShoppingCartGrid = memo(function WizardShoppingCartGrid({
         id: 'specificationCode',
         header: t('Митний код'),
         accessor: (item) => item.AssignedSpecification?.SpecificationCode || '',
-        cell: (item) => <WizardCartTextCell value={displayValue(item.AssignedSpecification?.SpecificationCode)} />,
+        cell: (item) => <TableChip tone="neutral" value={displayValue(item.AssignedSpecification?.SpecificationCode)} />,
         width: 116,
         minWidth: 100,
       },
@@ -288,7 +289,7 @@ function WizardCartProductCell({
       )}
       <Box className="new-sale-cart__product-copy">
         <Text className="new-sale-cart__product-code" title={code} truncate>
-          {code}
+          <TableChip tone="product" value={code} />
         </Text>
         <Text className="new-sale-cart__product-name" title={name} truncate>
           {name}

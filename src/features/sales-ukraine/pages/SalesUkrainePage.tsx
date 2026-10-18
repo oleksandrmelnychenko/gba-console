@@ -1308,7 +1308,7 @@ function SalesUkrainePageContent() {
 
           <div
             aria-busy={isLoading || undefined}
-            className={`sales-grid sales-ukraine-grid${isLoading && sales.length > 0 ? ' is-reloading' : ''}`}
+            className={`sales-grid sales-ukraine-grid app-table-chips${isLoading && sales.length > 0 ? ' is-reloading' : ''}`}
             style={{ '--sales-grid-columns': gridColumnsTemplate } as CSSProperties}
           >
             {/* Skeleton only while there is nothing to show — reloads keep the
@@ -1774,32 +1774,11 @@ const SaleGridRow = memo(function SaleGridRow({
           ) : (
             <span className="sg-action-slot is-empty" aria-hidden="true" />
           )}
-          {showBang ? (
-            <span className="sg-action-slot is-bang">
-              {bangClickable ? (
-                <TableRowAction
-                  action="will-not-ship"
-                  label={t('Розблокувати для відвантаження')}
-                  onClick={() => onWillNotShip(sale)}
-                />
-              ) : (
-                <Tooltip label={t('Розблокувати для відвантаження')}>
-                  <span className="sg-bang" style={{ opacity: sale.ChangedToInvoice ? 1 : 0.55 }}>
-                    <TriangleAlert size={14} />
-                  </span>
-                </Tooltip>
-              )}
-            </span>
-          ) : (
-            <span className="sg-action-slot is-bang" aria-hidden="true">
-              <span className="sg-bang sg-bang-placeholder"><TriangleAlert size={14} /></span>
-            </span>
-          )}
         </div>
 
         <div className="sg-client-body">
           <div className="sg-client-name">
-            {code && <span className="sg-client-code">{code}</span>}
+            {code && <span className="app-table-chip sg-client-code">{code}</span>}
             {client?.IsTemporaryClient && (
               <Text span c="red" fw={700}>
                 !
@@ -1826,8 +1805,27 @@ const SaleGridRow = memo(function SaleGridRow({
           </div>
 
           <div className="sg-meta">
-            <SaleSourceIcon sale={sale} />
-            <span className="sg-meta-sale-number">{displayValue(sale.SaleNumber?.Value)}</span>
+            <span className="app-table-chip sg-meta-sale-number is-document">
+              <SaleSourceIcon sale={sale} />
+              {displayValue(sale.SaleNumber?.Value)}
+            </span>
+            {showBang ? (
+              <span className="sg-action-slot is-bang" data-row-stop="true">
+                {bangClickable ? (
+                  <TableRowAction
+                    action="will-not-ship"
+                    label={t('Розблокувати для відвантаження')}
+                    onClick={() => onWillNotShip(sale)}
+                  />
+                ) : (
+                  <Tooltip label={t('Розблокувати для відвантаження')}>
+                    <span className="sg-bang" style={{ opacity: sale.ChangedToInvoice ? 1 : 0.55 }}>
+                      <TriangleAlert size={14} />
+                    </span>
+                  </Tooltip>
+                )}
+              </span>
+            ) : null}
             {date && (
               <>
                 <span className="sg-meta-sep">·</span>
@@ -1840,14 +1838,14 @@ const SaleGridRow = memo(function SaleGridRow({
               <>
                 <span className="sg-meta-sep">·</span>
                 <span
-                  className="app-role-pill is-yellow sg-manager-pill"
+                  className="app-table-chip sg-manager-pill is-neutral"
                   title={`${t('Відповідальний')}: ${manager}`}
                 >
                   {manager}
                 </span>
               </>
             )}
-            {contract && <span className="sg-meta-contract">{contract}</span>}
+            {contract && <span className="app-table-chip sg-meta-contract" title={contract}>{contract}</span>}
             {isEdited && (
               <Tooltip label={t('Рахунок редаговано')}>
                 <Pencil size={12} style={{ color: 'var(--mantine-color-orange-6)' }} />
@@ -2651,7 +2649,7 @@ function SaleSourceIcon({ sale }: { sale: SalesUkraineSale }) {
 
   return (
     <Tooltip label={indicator.label}>
-      <Box c="gray.6" style={{ display: 'inline-flex' }}>
+      <Box className="sg-source-icon" style={{ display: 'inline-flex' }}>
         {indicator.icon}
       </Box>
     </Tooltip>

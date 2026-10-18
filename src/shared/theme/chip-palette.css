@@ -1,0 +1,27 @@
+/* Shared colour tokens for table chips, legacy badges and document sheets. */
+:root {
+  --app-chip-neutral-bg: var(--mantine-color-gray-0);
+  --app-chip-neutral-border: var(--mantine-color-gray-3);
+  --app-chip-neutral-text: var(--mantine-color-gray-8);
+  --app-chip-document-bg: var(--mantine-color-blue-0);
+  --app-chip-document-border: var(--mantine-color-blue-2);
+  --app-chip-document-text: var(--mantine-color-blue-9);
+  --app-chip-product-bg: var(--mantine-color-violet-0);
+  --app-chip-product-border: var(--mantine-color-violet-2);
+  --app-chip-product-text: var(--mantine-color-violet-9);
+  --app-chip-source-bg: var(--mantine-color-cyan-0);
+  --app-chip-source-border: var(--mantine-color-cyan-3);
+  --app-chip-source-text: var(--mantine-color-cyan-9);
+  --app-chip-storage-bg: var(--mantine-color-teal-0);
+  --app-chip-storage-border: var(--mantine-color-teal-3);
+  --app-chip-storage-text: var(--mantine-color-teal-9);
+  --app-chip-success-bg: var(--mantine-color-green-0);
+  --app-chip-success-border: var(--mantine-color-green-3);
+  --app-chip-success-text: var(--mantine-color-green-9);
+  --app-chip-warning-bg: var(--mantine-color-yellow-0);
+  --app-chip-warning-border: var(--mantine-color-yellow-4);
+  --app-chip-warning-text: color-mix(in srgb, var(--mantine-color-yellow-9) 65%, #000);
+  --app-chip-danger-bg: var(--mantine-color-red-0);
+  --app-chip-danger-border: var(--mantine-color-red-3);
+  --app-chip-danger-text: var(--mantine-color-red-9);
+}

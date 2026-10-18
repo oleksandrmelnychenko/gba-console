@@ -7,22 +7,26 @@
 }
 
 .app-modal:not(.app-modal--workspace) .mantine-Modal-header {
-  min-height: auto;
-  padding: 16px 20px 8px;
+  min-height: 50px;
+  padding: 9px 16px;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
 }
 
 .app-modal:not(.app-modal--workspace) .mantine-Modal-body {
-  padding: 8px 20px 20px;
+  padding: 12px;
 }
 
 .app-modal .mantine-Modal-title {
   color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.25;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .app-modal .mantine-Modal-title > * {
@@ -91,11 +95,10 @@
   border-color: var(--mantine-color-gray-2);
 }
 
-.app-modal.app-form-sheet .mantine-Alert-root,
 .app-modal.app-form-sheet .mantine-Card-root,
 .app-modal.app-form-sheet .mantine-Paper-root {
   border-color: var(--mantine-color-gray-2);
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow: none;
 }
 
@@ -145,7 +148,7 @@
 .app-modal-footer > .mantine-Button-root[data-variant='subtle'][data-color='gray'],
 .app-modal-footer > .mantine-Group-root > .mantine-Button-root[data-variant='light'][data-color='gray'],
 .app-modal-footer > .mantine-Group-root > .mantine-Button-root[data-variant='subtle'][data-color='gray'] {
-  background: var(--mantine-color-white);
+  background: var(--mantine-color-gray-2);
   border: 1px solid var(--mantine-color-gray-3);
   color: var(--mantine-color-gray-8);
 }
@@ -257,4 +260,71 @@
 .app-modal .mantine-Table-table:not(.data-table-table) .mantine-Table-td .mantine-ActionIcon-root svg {
   height: 15px;
   width: 15px;
+}
+
+/* Shared compact action chooser (UI patterns §7.1). */
+.app-modal-action-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+
+.app-modal-action-reference {
+  display: inline-flex;
+  padding: 4px 8px;
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: 999px;
+  background: var(--mantine-color-gray-0);
+  color: var(--mantine-color-gray-8);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.app-modal .app-modal-actions { gap: 8px; }
+.app-modal .app-modal-actions .mantine-Button-root {
+  height: auto;
+  min-height: 46px;
+  padding: 8px 12px;
+  border: 1px solid var(--mantine-color-gray-2);
+  background: var(--mantine-color-gray-0);
+  color: var(--mantine-color-gray-8);
+  font-size: 13px;
+  font-weight: 500;
+}
+.app-modal .app-modal-actions .mantine-Button-inner { justify-content: flex-start; }
+.app-modal .app-modal-actions .mantine-Button-label {
+  white-space: normal;
+  text-align: left;
+  line-height: 1.4;
+  flex: 1;
+}
+.app-modal .app-modal-actions .mantine-Button-section[data-position='right'] {
+  margin-left: 12px;
+  color: var(--mantine-color-gray-7);
+}
+.app-modal .app-modal-actions .app-action-icon {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 0;
+}
+.app-modal .app-modal-actions .app-action-icon svg { width: 18px; height: 18px; }
+.app-modal .app-modal-actions .mantine-Button-root:not(:disabled):hover {
+  background: var(--mantine-color-gray-1) !important;
+  border-color: var(--mantine-color-gray-4);
+}
+.app-modal .app-modal-actions .mantine-Button-root:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.app-modal .app-modal-actions .mantine-Button-root:disabled:hover {
+  background: var(--mantine-color-gray-0) !important;
+}
+.app-modal .app-modal-actions .mantine-Button-root:disabled:hover .mantine-Button-label {
+  color: inherit;
+}
+.app-modal .app-modal-actions .mantine-Button-root:disabled:hover .app-action-icon svg {
+  stroke: var(--mantine-color-gray-7);
 }

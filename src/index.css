@@ -162,51 +162,61 @@ select {
   color: var(--brand-orange);
 }
 
-/* Role/type pill — the analysts-list badge pattern (blue outlined, mono):
-   used for role badges in tables and page headers. Apply to a Mantine <Badge>. */
+/* Legacy role badges use the same semantic palette as TableChip. */
 .app-role-pill {
-  --badge-bg: var(--mantine-color-blue-0);
-  --badge-bd: 1px solid var(--mantine-color-blue-2);
-  --badge-color: var(--mantine-color-blue-8);
-
-  background: var(--mantine-color-blue-0);
-  border: 1px solid var(--mantine-color-blue-2);
-  border-radius: 7px;
-  color: var(--mantine-color-blue-8);
+  --badge-bg: var(--app-chip-document-bg);
+  --badge-bd: 1px solid var(--app-chip-document-border);
+  --badge-color: var(--app-chip-document-text);
+  background: var(--app-chip-document-bg);
+  border: 1px solid var(--app-chip-document-border);
+  border-radius: 999px;
+  color: var(--app-chip-document-text);
   font-family: var(--font-mono);
   font-weight: 600;
   letter-spacing: 0;
 }
 
-/* Colour variants of the same outlined-pill pattern (semantic badges). */
 .app-role-pill.is-gray {
-  background: var(--mantine-color-gray-0);
-  border-color: var(--mantine-color-gray-3);
-  color: var(--mantine-color-gray-7);
+  background: var(--app-chip-neutral-bg);
+  border-color: var(--app-chip-neutral-border);
+  color: var(--app-chip-neutral-text);
 }
 
-.app-role-pill.is-orange {
-  background: var(--mantine-color-orange-0);
-  border-color: var(--mantine-color-orange-2);
-  color: var(--mantine-color-orange-8);
+.app-role-pill.is-orange,
+.app-role-pill.is-yellow {
+  background: var(--app-chip-warning-bg);
+  border-color: var(--app-chip-warning-border);
+  color: var(--app-chip-warning-text);
 }
 
 .app-role-pill.is-green {
-  background: var(--mantine-color-green-0);
-  border-color: var(--mantine-color-green-3);
-  color: var(--mantine-color-green-8);
-}
-
-.app-role-pill.is-yellow {
-  background: var(--mantine-color-yellow-0);
-  border-color: var(--mantine-color-yellow-4);
-  color: var(--mantine-color-yellow-9);
+  background: var(--app-chip-success-bg);
+  border-color: var(--app-chip-success-border);
+  color: var(--app-chip-success-text);
 }
 
 .app-role-pill.is-red {
-  background: var(--mantine-color-red-0);
-  border-color: var(--mantine-color-red-3);
-  color: var(--mantine-color-red-8);
+  background: var(--app-chip-danger-bg);
+  border-color: var(--app-chip-danger-border);
+  color: var(--app-chip-danger-text);
+}
+
+.app-role-pill.is-product {
+  background: var(--app-chip-product-bg);
+  border-color: var(--app-chip-product-border);
+  color: var(--app-chip-product-text);
+}
+
+.app-role-pill.is-source {
+  background: var(--app-chip-source-bg);
+  border-color: var(--app-chip-source-border);
+  color: var(--app-chip-source-text);
+}
+
+.app-role-pill.is-storage {
+  background: var(--app-chip-storage-bg);
+  border-color: var(--app-chip-storage-border);
+  color: var(--app-chip-storage-text);
 }
 
 /* Text inputs / selects focus in the brand orange (not the violet theme color). */

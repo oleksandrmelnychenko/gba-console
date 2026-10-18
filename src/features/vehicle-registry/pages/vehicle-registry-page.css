@@ -170,10 +170,10 @@
 
 .vehicle-registry-data-pill {
   align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-3);
-  border-radius: 6px;
-  color: var(--mantine-color-gray-8);
+  background: var(--app-chip-neutral-bg);
+  border: 1px solid var(--app-chip-neutral-border);
+  border-radius: 999px;
+  color: var(--app-chip-neutral-text);
   display: inline-flex;
   flex: 0 1 auto;
   font-family: var(--font-mono);
@@ -191,18 +191,18 @@
 }
 
 .vehicle-registry-data-pill.is-plate {
-  background: var(--mantine-color-yellow-0);
-  border-color: var(--mantine-color-yellow-4);
-  color: var(--mantine-color-yellow-9);
+  background: var(--app-chip-document-bg);
+  border-color: var(--app-chip-document-border);
+  color: var(--app-chip-document-text);
   flex: 0 0 auto;
 }
 
 .vehicle-registry-data-pill.is-vin {
-  color: var(--mantine-color-gray-7);
+  color: var(--app-chip-neutral-text);
 }
 
 .vehicle-registry-data-pill.is-vin > span {
-  color: var(--mantine-color-gray-6);
+  color: inherit;
   font-size: 9px;
 }
 

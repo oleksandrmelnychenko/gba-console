@@ -1,10 +1,10 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
   Card,
   Group,
   Stack,
-  Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
@@ -217,7 +217,7 @@ function useAdvancePaymentColumns(): DataTableColumn<AdvancePayment>[] {
         width: 210,
         minWidth: 170,
         accessor: (payment) => payment.Number,
-        cell: (payment) => <Text fw={600}>{displayValue(payment.Number)}</Text>,
+        cell: (payment) => <TableChip tone="document" value={displayValue(payment.Number)} />,
       },
       {
         id: 'amount',

@@ -355,7 +355,7 @@ function ProductDeliveryProtocolLogisticPathPageContent() {
         <span className="app-sheet-title-mono">
           {t('Протокол доставки товару')}
           {model.protocol?.DeliveryProductProtocolNumber?.Number && (
-            <Badge className="app-role-pill is-yellow" variant="light">
+            <Badge className="app-role-pill is-document" variant="light">
               {model.protocol.DeliveryProductProtocolNumber.Number}
             </Badge>
           )}

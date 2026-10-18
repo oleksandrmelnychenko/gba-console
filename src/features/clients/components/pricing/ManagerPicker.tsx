@@ -147,7 +147,7 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
           <Title className="manager-pick-title client-section-title" order={5}>
             {t('Аналітики')}
           </Title>
-          <Badge className="manager-pick-pill" color="gray" variant="light">
+          <Badge className="app-role-pill is-gray manager-pick-pill" color="gray" variant="light">
             {filteredManagers.length}
           </Badge>
         </Group>
@@ -212,7 +212,7 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
                           </Text>
                           {isMainManager && (
                             <Badge
-                              className="manager-pick-pill"
+                              className="app-role-pill manager-pick-pill"
                               color="yellow"
                               size="xs"
                               variant="light"
@@ -223,7 +223,7 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
                         </Group>
                         {manager.UserRole?.Name && (
                           <Badge
-                            className="manager-pick-pill manager-pick-role"
+                            className="app-role-pill manager-pick-pill manager-pick-role"
                             color="gray"
                             radius="sm"
                             size="sm"

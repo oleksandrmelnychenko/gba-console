@@ -122,7 +122,7 @@ function ProductCardContent({
     }, mainImage?.ImageUrl ? [mainImage.ImageUrl] : []) || []
 
   return (
-    <Stack gap="md" className="product-card-content">
+    <Stack gap="md" className="product-card-content document-detail-drawer document-detail-drawer--compact">
       <Group className="product-card-summary" justify="space-between" align="flex-start" wrap="nowrap">
         <Stack gap={2}>
           <Group gap={8} wrap="wrap">
@@ -130,7 +130,7 @@ function ProductCardContent({
               {displayValue(product.VendorCode)}
             </Text>
             {product.MainOriginalNumber && (
-              <Badge className="app-role-pill is-gray product-card-original-pill" variant="light">
+              <Badge className="app-role-pill product-card-original-pill is-product" variant="light">
                 {product.MainOriginalNumber}
               </Badge>
             )}

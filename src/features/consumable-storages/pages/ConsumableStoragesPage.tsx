@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -23,7 +24,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { DocumentDetailLayout, DocumentDetailMetric, DocumentDetailRow, DocumentDetailSection, DocumentDetailSummary } from '../../../shared/ui/document-detail/DocumentDetail'
+import { DocumentDetailChip, DocumentDetailLayout, DocumentDetailRow, DocumentDetailSection, DocumentDetailSummary } from '../../../shared/ui/document-detail/DocumentDetail'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -521,8 +522,8 @@ function ConsumableStorageDetailDrawer({
             <DocumentDetailSummary
               eyebrow={t('Склад')}
               title={displayValue(storage.Name)}
-              meta={displayValue(getEntityName(storage.ResponsibleUser))}
-              metrics={<DocumentDetailMetric label={t('Позицій у залишках')} value={formatAmount(products.length)} />}
+              meta={<><DocumentDetailChip>{t('Відповідальний')}: {displayValue(getEntityName(storage.ResponsibleUser))}</DocumentDetailChip><DocumentDetailChip>{t('Позицій у залишках')}: {formatAmount(products.length)}</DocumentDetailChip></>}
+              metrics={null}
             />
           }
         >
@@ -721,7 +722,7 @@ function useStorageRemnantColumns(): DataTableColumn<ConsumableProduct>[] {
         width: 130,
         minWidth: 112,
         accessor: (product) => getStorageRemnantCurrency(product),
-        cell: (product) => displayValue(getStorageRemnantCurrency(product)),
+        cell: (product) => <TableChip tone="neutral" value={displayValue(getStorageRemnantCurrency(product))} />,
       },
     ],
     [t],
@@ -1042,7 +1043,7 @@ function useDeprecatedConsumableOrderColumns({
         width: 120,
         minWidth: 104,
         accessor: (row) => row.item?.Currency?.Name || row.item?.Currency?.Code,
-        cell: (row) => displayValue(row.item?.Currency?.Name || row.item?.Currency?.Code),
+        cell: (row) => <TableChip tone="neutral" value={displayValue(row.item?.Currency?.Name || row.item?.Currency?.Code)} />,
       },
       {
         id: 'costMovement',
@@ -1428,7 +1429,7 @@ function ConsumablesOrderItemsPicker({
 
   return (
     <Table.ScrollContainer minWidth={980}>
-      <Table highlightOnHover withColumnBorders withTableBorder>
+      <Table className="app-static-table" highlightOnHover withColumnBorders withTableBorder>
         <Table.Thead>
           <Table.Tr>
             <Table.Th>{t('Накладна')}</Table.Th>
@@ -1449,9 +1450,9 @@ function ConsumablesOrderItemsPicker({
 
             return (
               <Table.Tr key={id}>
-                <Table.Td>{displayValue(order.OrganizationNumber || order.Number)}</Table.Td>
+                <Table.Td><TableChip tone="document" value={displayValue(order.OrganizationNumber || order.Number)} /></Table.Td>
                 <Table.Td>{formatDateTime(order.OrganizationFromDate || order.Created)}</Table.Td>
-                <Table.Td>{displayValue(product?.VendorCode || product?.Article)}</Table.Td>
+                <Table.Td><TableChip tone="product" value={displayValue(product?.VendorCode || product?.Article)} /></Table.Td>
                 <Table.Td>
                   <Text fw={600} size="sm">
                     {displayValue(product?.Name)}
@@ -1460,7 +1461,7 @@ function ConsumablesOrderItemsPicker({
                 <Table.Td className="app-table-number">{formatAmount(item.Qty)}</Table.Td>
                 <Table.Td className="app-table-number">{formatMoney(item.PricePerItem)}</Table.Td>
                 <Table.Td className="app-table-number">{formatMoney(item.TotalPrice)}</Table.Td>
-                <Table.Td>{displayValue(getConsumablesOrderItemCurrency(item, order)?.Name || getConsumablesOrderItemCurrency(item, order)?.Code)}</Table.Td>
+                <Table.Td><TableChip tone="neutral" value={displayValue(getConsumablesOrderItemCurrency(item, order)?.Name || getConsumablesOrderItemCurrency(item, order)?.Code)} /></Table.Td>
                 <Table.Td>
                   <Button
                     disabled={isSaving || selected}
@@ -1510,7 +1511,7 @@ function DeprecatedConsumableOrderItemsTable({
 
   return (
     <Table.ScrollContainer minWidth={980}>
-      <Table highlightOnHover withColumnBorders withTableBorder>
+      <Table className="app-static-table" highlightOnHover withColumnBorders withTableBorder>
         <Table.Thead>
           <Table.Tr>
             <Table.Th>{t('Артикул')}</Table.Th>
@@ -1531,7 +1532,7 @@ function DeprecatedConsumableOrderItemsTable({
 
             return (
               <Table.Tr key={getDeprecatedOrderItemKey(item, index)}>
-                <Table.Td>{displayValue(product?.VendorCode || product?.Article)}</Table.Td>
+                <Table.Td><TableChip tone="product" value={displayValue(product?.VendorCode || product?.Article)} /></Table.Td>
                 <Table.Td>
                   <Text fw={600} size="sm">
                     {displayValue(product?.Name)}
@@ -1551,7 +1552,7 @@ function DeprecatedConsumableOrderItemsTable({
                 </Table.Td>
                 <Table.Td className="app-table-number">{formatMoney(getDeprecatedItemPrice(item))}</Table.Td>
                 <Table.Td className="app-table-number">{formatMoney(getDeprecatedItemTotal(item))}</Table.Td>
-                <Table.Td>{displayValue(getDeprecatedItemCurrency(item)?.Name || getDeprecatedItemCurrency(item)?.Code)}</Table.Td>
+                <Table.Td><TableChip tone="neutral" value={displayValue(getDeprecatedItemCurrency(item)?.Name || getDeprecatedItemCurrency(item)?.Code)} /></Table.Td>
                 <Table.Td>
                   <Select
                     clearable

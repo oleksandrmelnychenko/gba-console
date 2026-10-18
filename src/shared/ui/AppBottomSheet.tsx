@@ -14,6 +14,8 @@ import {
   resolveAppBottomSheetRelease,
   type AppBottomSheetSnap,
 } from './appBottomSheetModel'
+import './sheet-surfaces.css'
+import './overlay-tabs.css'
 import './app-bottom-sheet.css'
 
 type AppBottomSheetProps = {

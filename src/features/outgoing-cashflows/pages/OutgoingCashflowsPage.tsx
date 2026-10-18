@@ -1,4 +1,5 @@
-﻿import {
+import { TableChip } from '../../../shared/ui/TableChip'
+import {
   ActionIcon,
   Alert,
   Badge,
@@ -31,6 +32,7 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import {
   DocumentDetailFlag,
+  DocumentDetailChip,
   DocumentDetailLayout,
   DocumentDetailMetric,
   DocumentDetailRow,
@@ -916,9 +918,7 @@ function useOutgoingCashflowColumns({
         accessor: (row) => row.number,
         cell: (row) => (
           <Group gap={6} wrap="nowrap">
-            <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0, textTransform: 'uppercase' }}>
-              {displayValue(row.number)}
-            </Text>
+            <TableChip tone="document" value={displayValue(row.number)} />
             {row.isCanceled && (
               <Badge className="app-role-pill is-red" size="xs" variant="light">
                 {t('Скасовано')}
@@ -946,7 +946,7 @@ function useOutgoingCashflowColumns({
         width: 90,
         minWidth: 80,
         accessor: (row) => row.currency,
-        cell: (row) => displayValue(row.currency),
+        cell: (row) => <TableChip tone="neutral" value={displayValue(row.currency)} />,
       },
       {
         id: 'payedTo',
@@ -1113,7 +1113,7 @@ function OutgoingCashflowDetailDrawer({ row, onClose }: { row: OutgoingCashflowR
             <DocumentDetailSummary
               eyebrow={t('Документ')}
               title={displayValue(row.number)}
-              meta={<>{formatDateTime(row.fromDate)} · {displayValue(row.operationType)}</>}
+              meta={<><DocumentDetailChip tone="info">{formatDateTime(row.fromDate)}</DocumentDetailChip><DocumentDetailChip>{displayValue(row.operationType)}</DocumentDetailChip></>}
               metrics={
                 <>
                   <DocumentDetailMetric label={t('Сума')} value={formatMoney(row.amount)} suffix={row.currency} />

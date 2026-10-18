@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import { Card, Stack, Text } from '@mantine/core'
 import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -69,7 +70,7 @@ function useAppliedActionColumns(
         width: 200,
         minWidth: 150,
         accessor: (item) => getRowData(item).documentNumber,
-        cell: (item) => displayValue(getRowData(item).documentNumber),
+        cell: (item) => <TableChip tone="document" value={displayValue(getRowData(item).documentNumber)} />,
       },
       {
         id: 'documentDate',
@@ -84,11 +85,7 @@ function useAppliedActionColumns(
         header: t('Склад'),
         minWidth: 200,
         accessor: (item) => getRowData(item).storage,
-        cell: (item) => (
-          <Text size="sm" lineClamp={2}>
-            {displayValue(getRowData(item).storage)}
-          </Text>
-        ),
+        cell: (item) => <TableChip tone="storage" value={displayValue(getRowData(item).storage)} />,
       },
       {
         id: 'qty',

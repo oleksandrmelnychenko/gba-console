@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -1132,7 +1133,7 @@ function useSupplierColumns() {
         width: 120,
         minWidth: 96,
         accessor: (supplier) => supplier.RegionCode?.Value,
-        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.RegionCode?.Value)} />,
+        cell: (supplier) => <TableChip value={displayValue(supplier.RegionCode?.Value)} />,
       },
       {
         id: 'location',
@@ -1217,7 +1218,7 @@ function useSupplierColumns() {
         minWidth: 150,
         accessor: (supplier) => getSupplierAgreementName(getPrimarySupplierAgreement(supplier)),
         cell: (supplier) => (
-          <SupplierTableValue value={displayValue(getSupplierAgreementName(getPrimarySupplierAgreement(supplier)))} />
+          <TableChip value={displayValue(getSupplierAgreementName(getPrimarySupplierAgreement(supplier)))} />
         ),
       },
       {
@@ -1227,7 +1228,7 @@ function useSupplierColumns() {
         minWidth: 80,
         accessor: (supplier) => getSupplierAgreementCurrency(getPrimarySupplierAgreement(supplier)),
         cell: (supplier) => (
-          <SupplierTableValue value={displayValue(getSupplierAgreementCurrency(getPrimarySupplierAgreement(supplier)))} />
+          <TableChip value={displayValue(getSupplierAgreementCurrency(getPrimarySupplierAgreement(supplier)))} />
         ),
       },
       {

@@ -29,7 +29,7 @@ function CashTable({ result }: { result: CashResult }) {
   return <Stack gap="xs"><Group><Button size="xs" variant="light" disabled={current === 0} onClick={() => setPage(current - 1)}>{t('Попередні рядки')}</Button>
     <Text size="xs">{result.Rows.length ? first + 1 : 0}–{Math.min(first + 50, result.Rows.length)} / {result.Rows.length}</Text>
     <Button size="xs" variant="light" disabled={first + 50 >= result.Rows.length} onClick={() => setPage(current + 1)}>{t('Наступні рядки')}</Button></Group>
-    <Table.ScrollContainer minWidth={1400}><Table><Table.Thead><Table.Tr>{headers.map(header => <Table.Th key={header}>{t(header)}</Table.Th>)}</Table.Tr></Table.Thead>
+    <Table.ScrollContainer minWidth={1400}><Table className="app-static-table"><Table.Thead><Table.Tr>{headers.map(header => <Table.Th key={header}>{t(header)}</Table.Th>)}</Table.Tr></Table.Thead>
       <Table.Tbody>{result.Rows.slice(first, first + 50).map(row => <Table.Tr key={cashAccountKey(row.Account)}><Table.Td>{cashRowCaption(row) ?? t('Назва недоступна')}</Table.Td>
         {cashValues(row.Amounts, result.IncludeTurnover).map((value, column) => <Table.Td key={headers[column + 1]} className="app-money">{value}</Table.Td>)}</Table.Tr>)}</Table.Tbody>
       {result.Totals ? <Table.Tfoot><Table.Tr><Table.Th>{t('Разом')}</Table.Th>{cashValues(result.Totals, result.IncludeTurnover).map((value, column) => <Table.Td key={headers[column + 1]} className="app-money">{value}</Table.Td>)}</Table.Tr></Table.Tfoot> : null}

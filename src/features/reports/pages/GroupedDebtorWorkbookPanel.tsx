@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { Alert, Button, Card, Group, Stack, Table, Text } from '@mantine/core'
 import { getGroupedDebtorCapability, getGroupedDebtorStatement } from '../api/groupedDebtorApi'
@@ -97,7 +98,7 @@ function GroupedDebtorWorkbookBody({ from, to, enabled, disabled }: {
             onClick={() => void download('pdf')}>Завантажити PDF · чернетка</Button>
         </Group>
       </> : null}
-      {statement ? <div style={{ overflowX: 'auto' }}><Table striped highlightOnHover>
+      {statement ? <div style={{ overflowX: 'auto' }}><Table className="app-static-table" striped highlightOnHover>
         <Table.Thead><Table.Tr><Table.Th>Організація / контрагент</Table.Th><Table.Th>Валюта</Table.Th>
           <Table.Th>Початок</Table.Th><Table.Th>Надходження</Table.Th>
           <Table.Th>Витрати</Table.Th><Table.Th>Кінець</Table.Th></Table.Tr></Table.Thead>
@@ -107,7 +108,7 @@ function GroupedDebtorWorkbookBody({ from, to, enabled, disabled }: {
             || previous.OrganizationNetUid !== row.OrganizationNetUid
           return <Fragment key={`${row.OrganizationId}:${row.CounterpartyId}:${row.CurrencyId}`}>
             {firstOrganization ? <Table.Tr><Table.Td colSpan={6}><Text fw={600}>{row.OrganizationName}</Text></Table.Td></Table.Tr> : null}
-            <Table.Tr><Table.Td>{row.CounterpartyName}</Table.Td><Table.Td>{row.CurrencyCode}</Table.Td>
+            <Table.Tr><Table.Td>{row.CounterpartyName}</Table.Td><Table.Td><TableChip tone="neutral" value={row.CurrencyCode} /></Table.Td>
               <Table.Td>{formatGroupedDebtorMoney(row.Opening)}</Table.Td>
               <Table.Td>{formatGroupedDebtorMoney(row.Incoming)}</Table.Td>
               <Table.Td>{formatGroupedDebtorMoney(row.Outgoing)}</Table.Td>

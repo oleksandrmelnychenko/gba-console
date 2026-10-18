@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -494,7 +495,7 @@ function ConsumableOrderDocumentCell({ row }: { row: ConsumableOrderRow }) {
   return (
     <span className="consumable-orders-document-cell" title={nativeTitle(tooltip)}>
       <span className="consumable-orders-document-copy">
-        {title ? <span className="consumable-orders-document-title">{title}</span> : null}
+        {title ? <TableChip tone="document" value={title} /> : null}
         {meta ? <small className="consumable-orders-document-meta">{meta}</small> : null}
       </span>
     </span>
@@ -521,7 +522,7 @@ function ConsumableOrderStorageCell({ row }: { row: ConsumableOrderRow }) {
 
   return (
     <span className="consumable-orders-two-line-cell" title={nativeTitle(tooltip)}>
-      {title ? <span>{title}</span> : null}
+      {title ? <TableChip tone="storage" value={title} /> : null}
       <small>{meta}</small>
     </span>
   )
@@ -557,7 +558,7 @@ function ConsumableOrderResponsibleCell({ row }: { row: ConsumableOrderRow }) {
 
   return (
     <span className="consumable-orders-responsible-cell" title={nativeTitle(tooltip)}>
-      {title ? <span>{title}</span> : null}
+      {title ? <TableChip tone="storage" value={title} /> : null}
     </span>
   )
 }

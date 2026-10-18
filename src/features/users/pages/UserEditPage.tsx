@@ -14,7 +14,7 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from "../../../shared/ui/page-header-actions/PageHeaderActions"
 import { notifications } from '@mantine/notifications'
-import { Check, CircleAlert, Key, Save, Trash2 } from 'lucide-react'
+import { Check, CircleAlert, Key, Save, Trash2, UserRound } from 'lucide-react'
 import { type FormEvent, useEffect, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -445,6 +445,7 @@ function UserEditContent({
           aria-pressed={activeTab === 'profile'}
           onClick={() => setActiveTab('profile')}
         >
+          <UserRound size={16} aria-hidden="true" />
           {t('Загальна інформація')}
         </button>
         {canResetPassword && (
@@ -454,6 +455,7 @@ function UserEditContent({
             aria-pressed={activeTab === 'password'}
             onClick={() => setActiveTab('password')}
           >
+            <Key size={16} aria-hidden="true" />
             {t('Зміна пароля')}
           </button>
         )}

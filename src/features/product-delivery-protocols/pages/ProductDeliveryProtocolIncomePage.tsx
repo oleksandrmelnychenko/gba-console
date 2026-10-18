@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -1272,11 +1273,7 @@ function useProductIncomeColumns({
         id: 'vendorCode',
         header: t('Код Виробника'),
         width: 160,
-        cell: (gridRow) => (
-          <span className="app-role-pill is-gray product-income-code-pill">
-            {gridRow.item.SupplyInvoiceOrderItem?.Product?.VendorCode || '-'}
-          </span>
-        ),
+        cell: (gridRow) => <TableChip tone="product" value={gridRow.item.SupplyInvoiceOrderItem?.Product?.VendorCode || '-'} />,
       },
       {
         id: 'qty',
@@ -1313,7 +1310,7 @@ function useProductIncomeColumns({
         id: 'specificationCode',
         header: t('Митний код'),
         width: 140,
-        cell: (gridRow) => lastSpecificationProp(gridRow.item, 'SpecificationCode') || '-',
+        cell: (gridRow) => <TableChip tone="neutral" value={lastSpecificationProp(gridRow.item, 'SpecificationCode') || '-'} />,
       },
       {
         id: 'customsRate',

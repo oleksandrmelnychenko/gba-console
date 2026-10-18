@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -460,7 +461,7 @@ function AccountableExpenseProductCell({ row }: { row: AccountableExpenseRow }) 
     <span className="accountable-expenses-product-cell" title={nativeTitle(nativeTooltip)}>
       <span className="accountable-expenses-product-copy">
         <span className="accountable-expenses-product-title">{title}</span>
-        {vendorCode ? <span className="accountable-expenses-product-code">{vendorCode}</span> : null}
+        {vendorCode ? <span className="accountable-expenses-product-code"><TableChip tone="product" value={vendorCode} /></span> : null}
       </span>
     </span>
   )

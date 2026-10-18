@@ -1,8 +1,9 @@
-import { ActionIcon, Alert, Badge, Button, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
-import { CircleAlert, Copy, LayoutTemplate, Pencil, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react'
+import { ActionIcon, Alert, Badge, Button, Group, Menu, Skeleton, Stack, Text, TextInput } from '@mantine/core'
+import { ArrowLeft, ArrowRight, CalendarDays, Check, CircleAlert, Copy, Eye, LayoutTemplate, Pencil, Plus, RefreshCw, Save, Search, Trash2, X } from 'lucide-react'
 import { useId, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
 import { isCurrentReportSource } from '../data/nativeReportProfiles'
 import type { TemplateMutationResult, useServerReportTemplates } from '../hooks/useServerReportTemplates'
 import type { ReportDataset, ReportTemplate } from '../types'
@@ -15,8 +16,10 @@ const emptyDatasets: readonly ReportDataset[] = []
 type Props = {
   storage: Pick<ReturnType<typeof useServerReportTemplates>, 'templates' | 'busy' | 'ready' | 'notice' | 'browserTemplates'
     | 'reload' | 'save' | 'update' | 'rename' | 'copy' | 'remove' | 'importBrowserTemplate'>
+    & Partial<Pick<ReturnType<typeof useServerReportTemplates>, 'noticeKind'>>
   ordering?: ReturnType<typeof useServerReportTemplates>['ordering']
   configurationReady: boolean
+  configurationName?: string
   disabled?: boolean
   datasets?: readonly ReportDataset[]
   dataSources?: ReadonlySet<number>
@@ -35,58 +38,92 @@ type Props = {
   onRefresh: () => void
 }
 
-export function ReportTemplatesPanel({ storage, ordering, configurationReady, disabled = false, datasets = emptyDatasets, dataSources, callerKey = null, requireReadMode = false, notice, templateName,
+export function ReportTemplatesPanel({ storage, ordering, configurationReady, configurationName, disabled = false, datasets = emptyDatasets, dataSources, callerKey = null, requireReadMode = false, notice, templateName,
   activeTemplate, onNameChange, onApply, onSave, onUpdate, onRenamed, onDeleted, onClearNotice, onRefresh }: Props) {
   const { t } = useI18n()
   const [action, setAction] = useState<Action | null>(null)
+  const [creating, setCreating] = useState(false)
+  const [search, setSearch] = useState('')
   const [savedVariant, setSavedVariant] = useState<ReportTemplate | null>(null)
   const actionTitleId = useId()
   const blocked = disabled || storage.busy || !storage.ready
   const current = activeTemplate ? storage.templates.find(item => item.Id === activeTemplate.Id) : undefined
   const stale = Boolean(activeTemplate && (!current || current.Revision !== activeTemplate.Revision))
   const listed = (template: ReportTemplate) => !dataSources || dataSources.has(template.Data.dataSource ?? 0)
-  const listedStorage = dataSources ? { ...storage, templates: storage.templates.filter(listed) } : storage
+  const templates = storage.templates.filter(listed)
   const browserTemplates = storage.browserTemplates.filter(listed)
+  const success = notice === storage.notice && storage.noticeKind === 'success'
+  const toList = () => { setCreating(false); setAction(null); setSavedVariant(null) }
 
+  async function save() {
+    if (blocked || !configurationReady || !templateName.trim()) return
+    const result = await onSave()
+    if (result.ok) { setCreating(false); setSearch('') }
+  }
 
-  return <div className="reports-stocks-template-card">
-    {notice ? <Alert color="yellow" icon={<CircleAlert size={18} />}>{notice}</Alert> : null}
-    <Text size="xs" c="dimmed">{t('Особисті шаблони зберігаються на сервері та доступні з інших браузерів.')}</Text>
-    {activeTemplate ? <ActiveTemplateCard template={activeTemplate} stale={stale}
-      blocked={blocked || !configurationReady} onUpdate={() => void onUpdate()} /> : null}
-    {savedVariant ? <SavedNativeReportPanel template={savedVariant} datasets={datasets} callerKey={callerKey}
+  return <div className="reports-stocks-template-card" aria-busy={storage.busy}>
+    {notice ? <Alert color={success ? 'green' : 'red'} variant="outline" role={success ? 'status' : 'alert'}
+      icon={success ? <Check size={18} /> : <CircleAlert size={18} />}>{notice}</Alert> : null}
+    {creating ? <section className="reports-stocks-template-editor" aria-label={t('Новий шаблон')}>
+      <TemplateBack disabled={storage.busy} onClick={toList} />
+      <Text className="app-section-title">{t('Зберегти поточні налаштування')}</Text>
+      {configurationName ? <Text size="sm" c="gray.8">{configurationName}</Text> : null}
+      <TextInput className="reports-stocks-template-name" label={t('Назва шаблону')} value={templateName}
+        autoFocus placeholder={t('Наприклад, продажі за регіонами')} disabled={blocked}
+        onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void save() } }}
+        onChange={event => onNameChange(event.currentTarget.value)} />
+      <Group justify="flex-end">
+        <Button className="reports-stocks-template-secondary" variant="default" disabled={storage.busy} onClick={toList}>{t('Скасувати')}</Button>
+        <Button color={CREATE_ACTION_COLOR} disabled={blocked || !configurationReady || !templateName.trim()} loading={storage.busy}
+          leftSection={<Save size={16} />} type="button" onClick={() => void save()}>{t('Зберегти')}</Button>
+      </Group>
+    </section> : action ? <TemplateActionController action={action} titleId={actionTitleId} blocked={blocked} storage={storage}
+      onNameChange={name => setAction({ ...action, name })} onRenamed={onRenamed} onDeleted={onDeleted}
+      onComplete={toList} /> : savedVariant ? <SavedNativeReportPanel template={savedVariant} datasets={datasets} callerKey={callerKey}
       requireReadMode={requireReadMode} enabled={!blocked} current={storage.templates.some(item => item.Id === savedVariant.Id
         && item.Revision === savedVariant.Revision && JSON.stringify(item.Data) === JSON.stringify(savedVariant.Data))}
-      onClose={() => setSavedVariant(null)} /> : null}
-    <section className="reports-stocks-template-create">
-      <Text className="reports-stocks-template-section-title" fw={600} size="sm" mb="sm">{t('Новий шаблон із поточних налаштувань')}</Text>
-      <Group className="reports-stocks-template-form" align="end" gap={10}>
-        <TextInput className="reports-stocks-template-name" label={t('Назва шаблону')} value={templateName}
-          placeholder={t('Наприклад, продажі за регіонами')} disabled={blocked}
-          onChange={event => onNameChange(event.currentTarget.value)} />
-        <Button color={CREATE_ACTION_COLOR} disabled={blocked || !configurationReady || !templateName.trim()}
-          leftSection={<Save size={16} />} type="button" onClick={() => void onSave()}>{t('Зберегти')}</Button>
-      </Group>
-    </section>
-    {action ? <TemplateActionController action={action} titleId={actionTitleId} blocked={blocked} storage={storage}
-      onNameChange={name => setAction({ ...action, name })} onRenamed={onRenamed} onDeleted={onDeleted}
-      onComplete={() => setAction(null)} /> : null}
-    {ordering && !dataSources ? <ReportTemplateOrderingControls key={callerKey} ordering={ordering} blocked={blocked} busy={storage.busy} /> : null}
-    <SavedTemplatesSection storage={listedStorage} blocked={blocked} disabled={disabled} onRefresh={onRefresh} onApply={onApply}
-      onRunSaved={template => setSavedVariant(structuredClone(template))}
-      onAction={(template, kind) => {
-        onClearNotice()
-        setAction({ kind, template, name: kind === 'copy' ? `${template.Name} — ${t('копія')}` : template.Name })
-      }} />
-    {browserTemplates.length ? <Stack gap="xs">
-      <Text fw={600} size="sm">{t('Шаблони цього браузера')}</Text>
-      <Text size="xs" c="dimmed">{t('Імпортуйте потрібні шаблони у свій обліковий запис. Оригінали залишаться в браузері.')}</Text>
-      {browserTemplates.map(template => <Group key={JSON.stringify({ Name: template.Name, Data: template.Data })} justify="space-between">
-        <Text size="sm">{template.Name}</Text><Button type="button" size="xs" variant="light" disabled={blocked}
-          onClick={() => { onClearNotice(); void storage.importBrowserTemplate(template) }}>{t('Імпортувати на сервер')}</Button>
-      </Group>)}
-    </Stack> : null}
+      onClose={toList} /> : <>
+      <div className="reports-stocks-template-toolbar">
+        <TextInput aria-label={t('Пошук шаблонів')} placeholder={t('Знайти шаблон')} value={search} leftSection={<Search size={16} />}
+          rightSection={search ? <ActionIcon variant="subtle" color="gray" aria-label={t('Очистити пошук')} onClick={() => setSearch('')}><X size={14} /></ActionIcon> : null}
+          onChange={event => setSearch(event.currentTarget.value)} />
+        <ActionIcon className="reports-stocks-template-secondary" aria-label={t('Оновити список')} title={t('Оновити список')} size={36}
+          type="button" variant="default" disabled={disabled || storage.busy} onClick={onRefresh}><RefreshCw size={16} /></ActionIcon>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} disabled={blocked || !configurationReady}
+          onClick={() => { onClearNotice(); setCreating(true) }}>{t('Новий шаблон')}</Button>
+      </div>
+      {activeTemplate ? <div className="reports-stocks-template-active">
+        <div><Text size="xs" c="gray.7">{t('Відкритий шаблон')}</Text><Text fw={600} size="sm">{activeTemplate.Name}</Text></div>
+        <Button type="button" className="reports-stocks-template-secondary" variant="default" leftSection={<Save size={16} />}
+          disabled={blocked || !configurationReady || stale} onClick={() => void onUpdate()}>{t('Оновити шаблон')}</Button>
+        {stale && storage.ready ? <Text className="reports-stocks-template-active__notice" size="sm" c="red.8">
+          {t('Шаблон змінився або видалений. Відкрийте його знову перед збереженням змін.')}</Text> : null}
+      </div> : null}
+      {ordering && !dataSources ? <ReportTemplateOrderingControls key={callerKey} ordering={ordering} blocked={blocked} busy={storage.busy} /> : null}
+      <SavedTemplatesSection templates={templates} datasets={datasets} activeId={activeTemplate?.Id} search={search}
+        loading={!storage.ready && !notice} failed={!storage.ready && Boolean(notice)} blocked={blocked} onApply={onApply}
+        onRunSaved={template => { onClearNotice(); setSavedVariant(structuredClone(template)) }}
+        onAction={(template, kind) => {
+          onClearNotice()
+          setAction({ kind, template, name: kind === 'copy' ? `${template.Name} — ${t('копія')}` : template.Name })
+        }} />
+      {browserTemplates.length ? <details className="reports-stocks-template-import">
+        <summary>{t('Шаблони цього браузера')} <span>{browserTemplates.length}</span></summary>
+        <Stack gap="xs" mt="sm">
+          {browserTemplates.map(template => <Group key={JSON.stringify({ Name: template.Name, Data: template.Data })} justify="space-between">
+            <Text size="sm">{template.Name}</Text><Button type="button" size="xs" variant="default" disabled={blocked}
+              onClick={() => { onClearNotice(); void storage.importBrowserTemplate(template) }}>{t('Імпортувати')}</Button>
+          </Group>)}
+        </Stack>
+      </details> : null}
+    </>}
   </div>
+}
+
+function TemplateBack({ disabled, onClick }: { disabled: boolean; onClick: () => void }) {
+  const { t } = useI18n()
+  return <Button type="button" variant="default" className="reports-stocks-template-secondary reports-stocks-template-back"
+    leftSection={<ArrowLeft size={16} />} disabled={disabled} onClick={onClick}>{t('До шаблонів')}</Button>
 }
 
 function TemplateActionConfirmation({ action, titleId, blocked, busy, onNameChange, onConfirm, onCancel }: {
@@ -96,62 +133,55 @@ function TemplateActionConfirmation({ action, titleId, blocked, busy, onNameChan
   const { t } = useI18n()
   const actionTitle = action.kind === 'rename' ? t('Перейменувати шаблон')
     : action.kind === 'copy' ? t('Створити копію шаблону') : t('Видалити шаблон')
-  return <Stack role="region" aria-labelledby={titleId} gap="xs" p="sm"
-      style={{ border: '1px solid var(--mantine-color-default-border)', borderRadius: 8 }}>
-      <Text id={titleId} fw={600}>{actionTitle}</Text>
-      <Text size="sm">{t('Шаблон')}: {action.template.Name}</Text>
-      <Text size="xs" c="dimmed">{action.kind === 'delete'
-        ? t('Збережений шаблон буде видалено. Поточні налаштування конструктора залишаться.')
-        : t('Використовуються збережені налаштування цього шаблону. Поточний звіт у конструкторі не зміниться.')}</Text>
-      {action.kind !== 'delete' ? <TextInput label={action.kind === 'copy' ? t('Назва копії') : t('Нова назва')}
-        value={action.name} disabled={blocked} onChange={event => onNameChange(event.currentTarget.value)} /> : null}
-      <Group>
-        <Button type="button" color={action.kind === 'delete' ? 'red' : CREATE_ACTION_COLOR} disabled={blocked || (action.kind !== 'delete' && !action.name.trim())}
-          onClick={onConfirm}>{action.kind === 'delete' ? t('Підтвердити видалення') : t('Підтвердити')}</Button>
-        <Button type="button" variant="default" disabled={busy} onClick={onCancel}>{t('Скасувати')}</Button>
-      </Group>
-    </Stack>
+  return <Stack className="reports-stocks-template-editor" role="region" aria-labelledby={titleId} gap="md">
+    <TemplateBack disabled={busy} onClick={onCancel} />
+    <Text id={titleId} className="app-section-title">{actionTitle}</Text>
+    <Text fw={600}>{action.template.Name}</Text>
+    {action.kind === 'delete' ? <Text size="sm" c="gray.8">{t('Видалити цей шаблон? Поточний звіт залишиться без змін.')}</Text>
+      : <TextInput label={action.kind === 'copy' ? t('Назва копії') : t('Нова назва')}
+        autoFocus value={action.name} disabled={blocked} onChange={event => onNameChange(event.currentTarget.value)} />}
+    <Group justify="flex-end">
+      <Button type="button" className="reports-stocks-template-secondary" variant="default" disabled={busy} onClick={onCancel}>{t('Скасувати')}</Button>
+      <Button type="button" color={action.kind === 'delete' ? 'red' : CREATE_ACTION_COLOR} loading={busy}
+        disabled={blocked || (action.kind !== 'delete' && !action.name.trim())} onClick={onConfirm}>
+        {action.kind === 'delete' ? t('Підтвердити видалення') : t('Підтвердити')}
+      </Button>
+    </Group>
+  </Stack>
 }
 
-function SavedTemplateRow({ template, blocked, onApply, onRunSaved, onAction }: {
-  template: ReportTemplate; blocked: boolean; onApply: () => void; onRunSaved: () => void; onAction: (kind: Action['kind']) => void
+function SavedTemplateRow({ template, dataset, active, blocked, onApply, onRunSaved, onAction }: {
+  template: ReportTemplate; dataset?: ReportDataset; active: boolean; blocked: boolean
+  onApply: () => void; onRunSaved: () => void; onAction: (kind: Action['kind']) => void
 }) {
   const { t } = useI18n()
+  const period = isCurrentReportSource(template.Data.dataSource) && !template.Data.from && !template.Data.to
+    ? t('Поточний стан') : template.Data.from || template.Data.to
+      ? [template.Data.from, template.Data.to].filter(Boolean).map(formatDate).filter((value, index, values) => values.indexOf(value) === index).join(' – ') : null
   return <div className="reports-stocks-template-item" role="group" aria-label={template.Name}>
-          <Button className="reports-stocks-template-open" leftSection={<RotateCcw size={15} />} justify="flex-start"
-            aria-label={t('Відкрити для редагування: {name}', { name: template.Name })}
-            type="button" variant="subtle" disabled={blocked} onClick={onApply}>
-            <span className="reports-stocks-template-open__content">
-              <span className="reports-stocks-template-open__name">{template.Name}</span>
-              <span className="reports-stocks-template-open__period">{isCurrentReportSource(template.Data.dataSource) && !template.Data.from && !template.Data.to
-                ? t('Поточний стан') : `${formatDate(template.Data.from)}–${formatDate(template.Data.to)}`}</span>
-            </span>
-          </Button>
-          <Group className="reports-stocks-template-item__actions" gap={2} wrap="nowrap">
-            <Button type="button" size="xs" variant="light" disabled={blocked || !template.Id || !template.Revision}
-              onClick={onRunSaved}>{t('Збережений варіант')}</Button>
-            <Tooltip label={t('Перейменувати')}><ActionIcon aria-label={t('Перейменувати')}
-              type="button" variant="subtle" disabled={blocked || !template.Id} onClick={() => onAction('rename')}><Pencil size={16} /></ActionIcon></Tooltip>
-            <Tooltip label={t('Створити копію')}><ActionIcon aria-label={t('Створити копію')}
-              type="button" variant="subtle" disabled={blocked || !template.Id} onClick={() => onAction('copy')}><Copy size={16} /></ActionIcon></Tooltip>
-            <Tooltip label={t('Видалити')}><ActionIcon aria-label={t('Видалити')} color="red"
-              type="button" variant="subtle" disabled={blocked || !template.Id} onClick={() => onAction('delete')}><Trash2 size={16} /></ActionIcon></Tooltip>
-          </Group>
-        </div>
-}
-
-function ActiveTemplateCard({ template, stale, blocked, onUpdate }: {
-  template: ReportTemplate; stale: boolean; blocked: boolean; onUpdate: () => void
-}) {
-  const { t } = useI18n()
-  return <Stack gap="xs" p="sm" style={{ border: '1px solid var(--mantine-color-default-border)', borderRadius: 8 }}>
-      <Text fw={600}>{t('Відкритий шаблон')}: {template.Name}</Text>
-      <Text size="xs" c="dimmed">{t('У формі редагується чернетка. Для збережених налаштувань оберіть «Збережений варіант» у списку.')}</Text>
-      <Text size="sm">{t('Поточні налаштування буде збережено в шаблоні «{name}».', { name: template.Name })}</Text>
-      {stale ? <Text c="orange" size="sm">{t('Шаблон змінився або видалений. Відкрийте його знову перед збереженням змін.')}</Text> : null}
-      <Button type="button" variant="light" leftSection={<Save size={16} />} disabled={blocked || stale}
-        onClick={onUpdate}>{t('Оновити шаблон')}</Button>
-    </Stack>
+    <span className="reports-stocks-template-item__icon"><LayoutTemplate size={20} aria-hidden="true" /></span>
+    <div className="reports-stocks-template-item__content">
+      <Group gap={8}><Text className="reports-stocks-template-item__name">{template.Name}</Text>
+        {active ? <Badge variant="outline" color="gray">{t('Відкрито')}</Badge> : null}</Group>
+      {dataset ? <Text size="xs" c="gray.7">{t(dataset.Name)}</Text> : null}
+      {period ? <span className="reports-stocks-template-period"><CalendarDays size={13} aria-hidden="true" />{period}</span> : null}
+    </div>
+    <Group className="reports-stocks-template-item__actions" gap={8} wrap="nowrap">
+      <Button type="button" size="xs" color={CREATE_ACTION_COLOR} rightSection={<ArrowRight size={15} />}
+        aria-label={t('Відкрити для редагування: {name}', { name: template.Name })} disabled={blocked} onClick={onApply}>{t('Відкрити')}</Button>
+      <Menu position="bottom-end" withinPortal>
+        <Menu.Target><TableRowAction action="more" label={t('Дії шаблону: {name}', { name: template.Name })} disabled={blocked} /></Menu.Target>
+        <Menu.Dropdown>
+          <Menu.Item leftSection={<Eye size={16} />} disabled={blocked || !template.Id || !template.Revision} onClick={onRunSaved}>{t('Збережений варіант')}</Menu.Item>
+          <Menu.Divider />
+          <Menu.Item leftSection={<Pencil size={16} />} disabled={blocked || !template.Id} onClick={() => onAction('rename')}>{t('Перейменувати')}</Menu.Item>
+          <Menu.Item leftSection={<Copy size={16} />} disabled={blocked || !template.Id} onClick={() => onAction('copy')}>{t('Створити копію')}</Menu.Item>
+          <Menu.Divider />
+          <Menu.Item color="red" leftSection={<Trash2 size={16} />} disabled={blocked || !template.Id} onClick={() => onAction('delete')}>{t('Видалити')}</Menu.Item>
+        </Menu.Dropdown>
+      </Menu>
+    </Group>
+  </div>
 }
 
 function TemplateActionController({ action, titleId, blocked, storage, onNameChange, onRenamed, onDeleted, onComplete }: {
@@ -168,35 +198,28 @@ function TemplateActionController({ action, titleId, blocked, storage, onNameCha
     if (action.kind === 'rename' && result.template) onRenamed(result.template, action.template)
     onComplete()
   }
-
   return <TemplateActionConfirmation action={action} titleId={titleId} blocked={blocked} busy={storage.busy}
     onNameChange={onNameChange} onConfirm={() => void confirmAction()} onCancel={onComplete} />
 }
 
-function SavedTemplatesSection({ storage, blocked, disabled, onRefresh, onApply, onRunSaved, onAction }: {
-  storage: Props['storage']; blocked: boolean; disabled: boolean; onRefresh: Props['onRefresh']; onApply: Props['onApply']
-  onAction: (template: ReportTemplate, kind: Action['kind']) => void
-  onRunSaved: (template: ReportTemplate) => void
+function SavedTemplatesSection({ templates, datasets, activeId, search, loading, failed, blocked, onApply, onRunSaved, onAction }: {
+  templates: ReportTemplate[]; datasets: readonly ReportDataset[]; activeId?: string; search: string; loading: boolean; failed: boolean; blocked: boolean
+  onApply: Props['onApply']; onAction: (template: ReportTemplate, kind: Action['kind']) => void; onRunSaved: (template: ReportTemplate) => void
 }) {
   const { t } = useI18n()
-  const [search, setSearch] = useState('')
-  const visible = storage.templates.filter(template => template.Name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()))
-  return <section className="reports-stocks-template-saved">
-      <Group justify="space-between" mb="xs">
-        <Group gap="xs"><Text className="reports-stocks-template-section-title" fw={600}>{t('Збережені шаблони')}</Text><Badge className="reports-stocks-template-count" variant="light">{storage.templates.length}</Badge></Group>
-        <Tooltip label={t('Оновити список')}><ActionIcon aria-label={t('Оновити список')} size={32} type="button"
-          variant="light" color="gray" disabled={disabled || storage.busy} onClick={onRefresh}><RefreshCw size={16} /></ActionIcon></Tooltip>
-      </Group>
-      {storage.templates.length ? <TextInput mb="xs" label={t('Пошук шаблонів')} value={search} leftSection={<Search size={16} />}
-        onChange={event => setSearch(event.currentTarget.value)} /> : null}
-      {visible.length ? <div className="reports-stocks-template-list">
+  const visible = templates.filter(template => template.Name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()))
+  return <section className="reports-stocks-template-saved" aria-label={t('Збережені шаблони')}>
+    <Group gap={8}><Text className="reports-stocks-template-section-title" fw={600}>{t('Збережені шаблони')}</Text>
+      {loading || failed ? null : <Badge className="app-role-pill is-gray" variant="light">{search.trim() ? `${visible.length} / ${templates.length}` : templates.length}</Badge>}
+    </Group>
+    {loading ? <Stack role="status" aria-label={t('Завантаження шаблонів')} mt="md"><Skeleton height={82} radius="md" /><Skeleton height={82} radius="md" /></Stack>
+      : failed ? null : visible.length ? <div className="reports-stocks-template-list">
         {visible.map(template => <SavedTemplateRow key={template.Id ?? template.Name} template={template} blocked={blocked}
-          onRunSaved={() => onRunSaved(template)}
-          onApply={() => onApply(template)} onAction={kind => onAction(template, kind)} />)}
+          dataset={datasets.find(dataset => dataset.DataSource === (template.Data.dataSource ?? 0))} active={template.Id === activeId}
+          onRunSaved={() => onRunSaved(template)} onApply={() => onApply(template)} onAction={kind => onAction(template, kind)} />)}
       </div> : <div className="reports-stocks-template-empty">
-        <span className="reports-stocks-template-empty__icon"><LayoutTemplate size={22} aria-hidden="true" /></span>
-        <Text size="sm">{storage.templates.length ? t('Шаблонів за цим пошуком немає') : t('Збережених шаблонів ще немає')}</Text>
-        <Text c="dimmed" size="xs">{storage.templates.length ? t('Спробуйте іншу назву.') : t('Збережіть поточні налаштування, щоб використати їх знову.')}</Text>
+        <span className="reports-stocks-template-empty__icon"><LayoutTemplate size={24} aria-hidden="true" /></span>
+        <Text size="sm">{templates.length ? t('Шаблонів за цим пошуком немає') : t('Збережених шаблонів ще немає')}</Text>
       </div>}
-    </section>
+  </section>
 }

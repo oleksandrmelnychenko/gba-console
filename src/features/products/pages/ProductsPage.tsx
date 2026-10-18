@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -1767,11 +1768,7 @@ function ProductOriginalNumbersTab({
       header: t('Оригінальний номер'),
       minWidth: 200,
       accessor: (item) => getOriginalNumberText(item),
-      cell: (item) => (
-        <Text size="sm" fw={650}>
-          {displayValue(getOriginalNumberText(item))}
-        </Text>
-      ),
+      cell: (item) => <TableChip tone="product" value={displayValue(getOriginalNumberText(item))} />,
     },
     {
       id: 'main',
@@ -2435,7 +2432,7 @@ function ProductPlacementStorageUploadModal({
               <Stack gap="md">
                 <Text className="app-section-title" fw={600} size="sm">{t('Не пройшли позиції')}</Text>
                 <ScrollArea mah={420}>
-                  <Table withTableBorder miw={760}>
+                  <Table className="app-static-table" withTableBorder miw={760}>
                 <Table.Thead>
                   <Table.Tr>
                     <Table.Th>{t('Назва')}</Table.Th>
@@ -2449,7 +2446,7 @@ function ProductPlacementStorageUploadModal({
                   {notPassedRows.map((row, index) => (
                     <Table.Tr key={`${row.NetUid || row.VendorCode || index}`}>
                       <Table.Td>{displayValue(row.Product?.NameUA || row.Product?.Name)}</Table.Td>
-                      <Table.Td>{displayValue(row.VendorCode)}</Table.Td>
+                      <Table.Td><TableChip tone="product" value={displayValue(row.VendorCode)} /></Table.Td>
                       <Table.Td>
                         <TextInput size="xs" value={row.Placement || ''} onChange={(event) => updateNotPassedRow(index, 'Placement', event.currentTarget.value)} />
                       </Table.Td>
@@ -3235,7 +3232,7 @@ function ProductIncomeMovementsGrid({
         header: t('Склад'),
         width: 110,
         accessor: (row) => row.StorageName,
-        cell: (row) => renderMovementText(row.StorageName),
+        cell: (row) => <TableChip tone="storage" value={formatMovementCellValue(row.StorageName)} />,
       },
       {
         id: 'supplier',
@@ -3265,7 +3262,7 @@ function ProductIncomeMovementsGrid({
         accessor: (row) => row.IncomeToStorageNumber,
         cell: (row) => row.ImportedSourceMetadataResolved === false
           ? renderMovementText(t('Дані AMG не визначені'))
-          : renderMovementMono(row.IncomeToStorageNumber),
+          : <TableChip tone="document" value={formatMovementCellValue(row.IncomeToStorageNumber)} />,
       },
       {
         id: 'invoice',
@@ -3383,7 +3380,7 @@ function ProductIncomeMovementsGrid({
         header: t('З інвойсу'),
         width: 120,
         accessor: (row) => row.FromInvoiceNumber,
-        cell: (row) => renderMovementMono(row.FromInvoiceNumber),
+        cell: (row) => <TableChip tone="document" value={formatMovementCellValue(row.FromInvoiceNumber)} />,
       },
       {
         id: 'fromInvoiceDate',
@@ -3461,7 +3458,7 @@ function ProductOutcomeMovementsGrid({
         header: t('Склад'),
         width: 140,
         accessor: (row) => row.StorageName,
-        cell: (row) => renderMovementText(row.StorageName),
+        cell: (row) => <TableChip tone="storage" value={formatMovementCellValue(row.StorageName)} />,
       },
       {
         id: 'organization',
@@ -3475,7 +3472,7 @@ function ProductOutcomeMovementsGrid({
         header: t('Номер'),
         width: 140,
         accessor: (row) => row.DocumentNumber,
-        cell: (row) => renderMovementMono(row.DocumentNumber),
+        cell: (row) => <TableChip tone="document" value={formatMovementCellValue(row.DocumentNumber)} />,
       },
       {
         id: 'client',
@@ -3729,7 +3726,7 @@ function renderMovementText(value?: number | string | null) {
 function renderMovementMono(value?: number | string | null) {
   const text = formatMovementCellValue(value)
 
-  return <span className="app-money" title={text}>{text}</span>
+  return <TableChip tone="document" value={text} />
 }
 
 function renderMovementDate(value?: Date | string | null) {
@@ -3767,7 +3764,7 @@ function renderMovementUnitPrice(value?: number | null) {
 function renderMovementCurrency(value?: string | null) {
   const text = formatMovementCellValue(value)
 
-  return text ? <Badge className="app-role-pill is-gray" variant="light">{text}</Badge> : null
+  return text ? <TableChip value={text} /> : null
 }
 
 function renderOutcomeMovementDate(row: ProductOutcomeMovement, t: (value: string) => string) {

@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Box,
   Button,
@@ -100,7 +101,7 @@ function PlacementUnorderedProductsContent({
   return (
     <Stack gap="md">
       <Box style={{ overflowX: 'auto' }}>
-        <Table withColumnBorders highlightOnHover horizontalSpacing="sm" stickyHeader verticalSpacing={6}>
+        <Table className="app-static-table" withColumnBorders highlightOnHover horizontalSpacing="sm" stickyHeader verticalSpacing={6}>
           <Table.Thead>
             <Table.Tr>
               <Table.Th w={48}>#</Table.Th>
@@ -125,7 +126,7 @@ function PlacementUnorderedProductsContent({
               unorderedItems.map((item, index) => (
                 <Table.Tr key={String(item.NetUid || item.Id || index)}>
                   <Table.Td>{index + 1}</Table.Td>
-                  <Table.Td>{displayValue(item.Product?.VendorCode)}</Table.Td>
+                  <Table.Td><TableChip tone="product" value={displayValue(item.Product?.VendorCode)} /></Table.Td>
                   <Table.Td>{displayValue(item.Product?.NameUA || item.Product?.Name)}</Table.Td>
                   <Table.Td className="app-table-number" ta="right">{formatNumber(item.Qty)}</Table.Td>
                   <Table.Td className="app-table-number" ta="right">{formatNumber(item.UnitPrice)}</Table.Td>

@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -662,7 +663,7 @@ function useDepreciatedOrderColumns(
         width: 168,
         minWidth: 140,
         accessor: (order) => order.Number || order.NetUid,
-        cell: (order) => <Text fw={700}>{displayValue(order.Number)}</Text>,
+        cell: (order) => <TableChip tone="document" value={displayValue(order.Number)} />,
       },
       {
         id: 'organization',
@@ -678,7 +679,7 @@ function useDepreciatedOrderColumns(
         width: 300,
         minWidth: 200,
         accessor: (order) => order.Storage?.Name,
-        cell: (order) => displayValue(order.Storage?.Name),
+        cell: (order) => <TableChip tone="storage" value={displayValue(order.Storage?.Name)} />,
       },
       {
         id: 'responsible',

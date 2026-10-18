@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -2043,7 +2044,7 @@ function CashFlowTab({
         accessor: (item) => item.Number,
         width: 135,
         minWidth: 108,
-        cell: (item) => displayValue(item.Number),
+        cell: (item) => <TableChip tone="document" value={displayValue(item.Number)} />,
       },
       {
         id: 'paymentStatus',

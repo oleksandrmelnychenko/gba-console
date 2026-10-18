@@ -50,7 +50,7 @@ export function OriginalRevenueReportPanel({ capability, initialMonth, canGenera
     </Group>
     {report ? <section aria-label={t('Результат виручки')}>
       <Text size="sm">{t('Поточний місяць')}: {report.CurrentPeriod.From.slice(0, 7)} · {t('Попередній місяць')}: {report.PreviousPeriod.From.slice(0, 7)} · EUR</Text>
-      <Table.ScrollContainer minWidth={800}><Table>
+      <Table.ScrollContainer minWidth={800}><Table className="app-static-table">
         <Table.Thead><Table.Tr><Table.Th>{report.RowCaption}</Table.Th>{report.Columns.map(column =>
           <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
         <Table.Tbody>{report.Rows.map(row => <RevenueRow key={row.ClientId ?? 'unattributed'} label={row.Caption} row={row} report={report} />)}</Table.Tbody>

@@ -8,6 +8,7 @@ import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate }
 import { previewSavedNativeReport } from '../api/savedNativeReportApi'
 import { createSalesReportPreset } from '../data/reportPresets'
 import { reportDatasets } from '../data/reportDatasets.test-fixtures'
+import { chooseTemplateAction } from '../testing/templateActions'
 import { ReportsStocksPage } from './ReportsStocksPage'
 
 const caller = { userNetUid: 'caller-a', csrfToken: 'csrf-a' }
@@ -52,18 +53,22 @@ describe('saved variant and dirty constructor draft are explicit independent act
     await ready()
     fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-09-02' } })
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Новий шаблон' }))
     fireEvent.change(screen.getByLabelText('Назва шаблону'), { target: { value: 'Моя незбережена чернетка' } })
-    fireEvent.click(within(screen.getByRole('group', { name: template.Name })).getByRole('button', { name: 'Збережений варіант' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Скасувати' }))
+    chooseTemplateAction(template.Name, 'Збережений варіант')
     fireEvent.click(screen.getByRole('button', { name: 'Показати збережений варіант' }))
     await screen.findByRole('button', { name: 'Файли збереженого звіту' })
     expect(vi.mocked(previewSavedNativeReport).mock.calls[0][0]).toEqual({ id: template.Id, revision: 4, dataSource: 0 })
-    expect((screen.getByLabelText('Назва шаблону') as HTMLInputElement).value).toBe('Моя незбережена чернетка')
     expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-09-02')
     expect(saveServerReportTemplate).not.toHaveBeenCalled()
     expect(createStockReport).not.toHaveBeenCalled(); expect(previewStockReport).not.toHaveBeenCalled()
     expect(template.Data.from).toBe('2026-09-01')
     fireEvent.click(screen.getByRole('button', { name: 'Закрити перегляд варіанта' }))
     expect(screen.queryByRole('button', { name: 'Файли збереженого звіту' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Новий шаблон' }))
+    expect((screen.getByLabelText('Назва шаблону') as HTMLInputElement).value).toBe('Моя незбережена чернетка')
+    fireEvent.click(screen.getByRole('button', { name: 'Скасувати' }))
     fireEvent.click(within(screen.getByRole('group', { name: template.Name })).getByRole('button', { name: `Відкрити для редагування: ${template.Name}` }))
     expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-09-01')
   })

@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -915,18 +916,14 @@ function usePaymentShopColumns(
         width: 160,
         minWidth: 120,
         accessor: (item) => item.Sale?.SaleNumber?.Value,
-        cell: (item) => displayValue(item.Sale?.SaleNumber?.Value),
+        cell: (item) => <TableChip tone="document" value={displayValue(item.Sale?.SaleNumber?.Value)} />,
       },
       {
         id: 'agreement',
         header: t('Договір'),
         minWidth: 220,
         accessor: (item) => formatAgreement(item),
-        cell: (item) => (
-          <Text size="sm" lineClamp={2}>
-            {displayValue(formatAgreement(item))}
-          </Text>
-        ),
+        cell: (item) => <TableChip tone="neutral" value={displayValue(formatAgreement(item))} />,
       },
       {
         id: 'retailClient',

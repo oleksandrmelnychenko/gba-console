@@ -747,7 +747,7 @@ export function CarrierHistory({ current, entries }: { current: SalesUkraineUpda
     <section className="sale-carrier-section sale-carrier-history-section">
       <Text className="app-section-title sale-carrier-section-title">{t('Історія змін перевізника')}</Text>
       <ScrollArea offsetScrollbars="x" type="auto">
-        <Table className="sales-drawer-table sale-carrier-history-table" withColumnBorders withRowBorders striped>
+        <Table className="app-static-table sales-drawer-table sale-carrier-history-table" withColumnBorders withRowBorders striped>
           <Table.Thead>
             <Table.Tr>
               <Table.Th />

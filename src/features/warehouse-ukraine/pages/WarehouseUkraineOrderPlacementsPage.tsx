@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import { ActionIcon, Alert, Badge, Button, Card, Group, NumberInput, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { BetweenVerticalEnd, CircleAlert, Plus, Trash2 } from 'lucide-react'
@@ -719,7 +720,7 @@ function WarehouseUkraineOrderPlacementsPageContent() {
         header: t('Код товару'),
         width: 160,
         accessor: (gridRow) => getVendorCode(gridRow.item),
-        cell: (gridRow) => renderMonoCell(getVendorCode(gridRow.item)),
+        cell: (gridRow) => <TableChip tone="product" value={displayValue(getVendorCode(gridRow.item))} />,
       },
       {
         id: 'name',
@@ -733,7 +734,7 @@ function WarehouseUkraineOrderPlacementsPageContent() {
         header: t('Код УКТЗЕД'),
         width: 150,
         accessor: (gridRow) => getSpecificationCode(gridRow.item),
-        cell: (gridRow) => renderMonoCell(getSpecificationCode(gridRow.item)),
+        cell: (gridRow) => <TableChip value={displayValue(getSpecificationCode(gridRow.item))} />,
       },
       {
         id: 'qty',

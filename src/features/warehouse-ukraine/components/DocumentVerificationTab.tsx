@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -509,7 +510,7 @@ function useVerificationColumns(indexMap: Map<DocumentVerificationItem, number>)
         width: 160,
         minWidth: 120,
         accessor: (item) => item.Product?.VendorCode,
-        cell: (item) => <Text fw={700}>{displayValue(item.Product?.VendorCode)}</Text>,
+        cell: (item) => <TableChip tone="product" value={displayValue(item.Product?.VendorCode)} />,
       },
       {
         id: 'productStorage',
@@ -517,7 +518,7 @@ function useVerificationColumns(indexMap: Map<DocumentVerificationItem, number>)
         width: 160,
         minWidth: 120,
         accessor: (item) => buildLocation(item),
-        cell: (item) => displayValue(buildLocation(item)),
+        cell: (item) => <TableChip tone="storage" value={displayValue(buildLocation(item))} />,
       },
       {
         id: 'storage',
@@ -525,7 +526,7 @@ function useVerificationColumns(indexMap: Map<DocumentVerificationItem, number>)
         width: 260,
         minWidth: 180,
         accessor: (item) => item.Storage?.Name,
-        cell: (item) => displayValue(item.Storage?.Name),
+        cell: (item) => <TableChip tone="storage" value={displayValue(item.Storage?.Name)} />,
       },
       {
         id: 'name',

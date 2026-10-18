@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import { ActionIcon, Alert, Anchor, Badge, Button, Checkbox, Group, SimpleGrid, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, RotateCcw } from 'lucide-react'
@@ -422,11 +423,7 @@ function useEditingColumns({ canProcess, indexMap, kind, onProcess }: EditingCol
         width: 200,
         minWidth: 150,
         accessor: (item) => item.Sale?.SaleNumber?.Value,
-        cell: (item) => (
-          <Text className="warehouse-ukraine-editing-cell-mono is-strong">
-            {displayValue(item.Sale?.SaleNumber?.Value).toLocaleUpperCase('uk-UA')}
-          </Text>
-        ),
+        cell: (item) => <TableChip tone="document" value={displayValue(item.Sale?.SaleNumber?.Value).toLocaleUpperCase('uk-UA')} />,
       },
       {
         id: 'buyer',

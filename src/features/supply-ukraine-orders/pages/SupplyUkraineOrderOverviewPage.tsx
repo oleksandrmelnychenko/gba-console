@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
   Anchor,
@@ -818,10 +819,10 @@ function useOverviewColumns({
                 onOpenProductCard(row.productNetId as string)
               }}
             >
-              {displayValue(row.vendorCode)}
+              <TableChip tone="product" value={displayValue(row.vendorCode)} />
             </Anchor>
           ) : (
-            <Text className="supply-order-overview-code-link">{displayValue(row.vendorCode)}</Text>
+            <TableChip tone="product" value={displayValue(row.vendorCode)} />
           ),
       },
       {
@@ -851,7 +852,7 @@ function useOverviewColumns({
         header: t('Код УКТЗЕД'),
         width: 150,
         accessor: (row) => row.specificationCode,
-        cell: (row) => displayValue(row.specificationCode),
+        cell: (row) => <TableChip tone="neutral" value={displayValue(row.specificationCode)} />,
       },
       {
         id: 'qty',

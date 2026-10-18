@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { ActionIcon, Checkbox, Group, Menu, Tooltip } from '@mantine/core'
+import { Button, Checkbox, Group, Menu, Tooltip } from '@mantine/core'
 import { Check, Columns3, RotateCcw, Rows3, Rows4 } from 'lucide-react'
 import type { Column, Table as TableInstance } from '@tanstack/react-table'
 import type { DataTableDensity, DataTableLabels } from './types'
@@ -75,9 +75,9 @@ export function DataTableToolbar<TData>({
           >
             <Menu.Target>
               <Tooltip label={labels.columns} withArrow>
-                <ActionIcon aria-label={labels.columns} size="sm" variant="subtle" color="gray">
-                  <Columns3 size={17} strokeWidth={1.8} />
-                </ActionIcon>
+                <Button aria-label={labels.columns} size="compact-xs" variant="default" className="data-table-layout-control" leftSection={<Columns3 size={16} strokeWidth={1.8} />}>
+                  {labels.columns}
+                </Button>
               </Tooltip>
             </Menu.Target>
             <Menu.Dropdown className="data-table-columns-dropdown" style={{ maxHeight: 'min(62vh, 440px)', overflowY: 'auto' }}>
@@ -124,27 +124,25 @@ export function DataTableToolbar<TData>({
             </Menu.Dropdown>
           </Menu>
         ) : null}
+        {showDensityToggle ? (
+          <Tooltip label={density === 'compact' ? labels.normalDensity : labels.compactDensity} withArrow>
+            <Button
+              aria-label={labels.density}
+              leftSection={density === 'compact' ? <Rows4 size={16} strokeWidth={1.8} /> : <Rows3 size={16} strokeWidth={1.8} />}
+              size="compact-xs"
+              variant="default"
+              className="data-table-layout-control"
+              onClick={() => onDensityChange(density === 'compact' ? 'normal' : 'compact')}
+            >
+              {labels.density}
+            </Button>
+          </Tooltip>
+        ) : null}
         {toolbarLeft}
       </Group>
       <Group className="data-table-toolbar-right" gap={6} wrap="nowrap">
         {toolbarRight}
-        {showDensityToggle ? (
-          <Tooltip label={density === 'compact' ? labels.normalDensity : labels.compactDensity} withArrow>
-            <ActionIcon
-              aria-label={labels.density}
-              size="sm"
-              variant="subtle"
-              color="gray"
-              onClick={() => onDensityChange(density === 'compact' ? 'normal' : 'compact')}
-            >
-              {density === 'compact' ? (
-                <Rows4 size={17} strokeWidth={1.8} />
-              ) : (
-                <Rows3 size={17} strokeWidth={1.8} />
-              )}
-            </ActionIcon>
-          </Tooltip>
-        ) : null}
+
       </Group>
     </Group>
   )

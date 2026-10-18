@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -998,7 +999,7 @@ function useProductPlacementColumns(
         width: 190,
         minWidth: 150,
         accessor: (row) => row.Storage?.Name,
-        cell: (row) => displayValue(row.Storage?.Name),
+        cell: (row) => <TableChip tone="storage" value={displayValue(row.Storage?.Name)} />,
       },
       {
         id: 'responsible',
@@ -1105,10 +1106,10 @@ function renderVendorCodeCell(row: ProductPlacementRow, onOpenProductCard: (prod
         onOpenProductCard(netId)
       }}
     >
-      {code}
+      <TableChip tone="product" value={code} />
     </Anchor>
   ) : (
-    <Text fw={600} style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{code}</Text>
+    <TableChip tone="product" value={code} />
   )
 }
 

@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
   Badge,
@@ -529,7 +530,7 @@ function createSaleEditColumns({
       id: 'vendorCode',
       header: t('Код Виробника'),
       accessor: (row) => getOrderItemProductCode(row.item),
-      cell: (row) => <span className="sale-edit-code-pill">{displayValue(getOrderItemProductCode(row.item)) || '-'}</span>,
+      cell: (row) => <TableChip tone="document" value={displayValue(getOrderItemProductCode(row.item)) || '-'} />,
       width: 140,
       minWidth: 120,
       enableSorting: false,
@@ -538,7 +539,7 @@ function createSaleEditColumns({
       id: 'originalNumber',
       header: t('Ориг. номер'),
       accessor: (row) => row.item.Product?.MainOriginalNumber || '',
-      cell: (row) => <span className="sale-edit-muted-value">{displayValue(row.item.Product?.MainOriginalNumber) || '-'}</span>,
+      cell: (row) => <TableChip tone="product" value={displayValue(row.item.Product?.MainOriginalNumber) || '-'} />,
       width: 150,
       minWidth: 132,
       enableSorting: false,
@@ -573,7 +574,7 @@ function createSaleEditColumns({
       id: 'currency',
       header: t('Валюта'),
       accessor: () => 'EUR',
-      cell: () => <span className="sale-edit-currency">EUR</span>,
+      cell: () => <TableChip value="EUR" />,
       width: 76,
       minWidth: 72,
       enableSorting: false,

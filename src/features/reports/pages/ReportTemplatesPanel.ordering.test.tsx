@@ -63,6 +63,7 @@ it('uses full-list positions under search and leaves the edited draft untouched 
   await waitFor(() => expect(orderReportTemplates).toHaveBeenCalledWith({ Operation: 'move_up', Id: second.Id }, 9, expect.any(Object)))
   await waitFor(() => expect((screen.getByRole('combobox', { name: 'Шаблон у повному списку' }) as HTMLInputElement).value).toBe('1. За днями'))
   expect((screen.getByRole('button', { name: 'Підняти' }) as HTMLButtonElement).disabled).toBe(true)
+  fireEvent.click(screen.getByRole('button', { name: 'Новий шаблон' }))
   expect((screen.getByLabelText('Назва шаблону') as HTMLInputElement).value).toBe('Моя чернетка')
   expect(screen.getByLabelText('Налаштування чернетки').textContent).toBe(JSON.stringify(draft))
   expect(saveServerReportTemplate).not.toHaveBeenCalled(); expect(deleteServerReportTemplate).not.toHaveBeenCalled(); expect(apply).not.toHaveBeenCalled()

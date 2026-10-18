@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport, searchDatasetReportValues } from '../api/reportsApi'
@@ -14,6 +14,7 @@ import { groupCapability } from '../data/sourceCounterpartyGroups.test-fixtures'
 import { SAVED_VARIANT_WITHOUT_READ_MODE_ERROR, TEMPLATE_WITHOUT_READ_MODE_ERROR } from '../data/currentReadModePolicy'
 import { settlementPeriodRequest } from '../data/settlementPeriod.test-fixtures'
 import type { ReportDataset, ReportRequestBody } from '../types'
+import { chooseTemplateAction } from '../testing/templateActions'
 import { ReportsStocksPage } from './ReportsStocksPage'
 import { WORKBOOK_FILES } from '../testing/workbookFiles'
 import { expandWorkbookSettings, findWorkbookLanding, openWorkbookAdvanced } from '../testing/workbookDesk'
@@ -113,7 +114,8 @@ it('refuses a saved variant without a mode instead of posting its legacy body', 
   vi.mocked(getServerReportTemplates).mockResolvedValue([stored])
   render(page())
   fireEvent.click(await screen.findByRole('button', { name: 'Шаблони' }))
-  fireEvent.click(within(await screen.findByRole('group', { name: stored.Name })).getByRole('button', { name: 'Збережений варіант' }))
+  await screen.findByRole('group', { name: stored.Name })
+  chooseTemplateAction(stored.Name, 'Збережений варіант')
   expect(await screen.findByText(SAVED_VARIANT_WITHOUT_READ_MODE_ERROR)).toBeTruthy()
   expect((screen.getByRole('button', { name: 'Показати збережений варіант' }) as HTMLButtonElement).disabled).toBe(true)
 })

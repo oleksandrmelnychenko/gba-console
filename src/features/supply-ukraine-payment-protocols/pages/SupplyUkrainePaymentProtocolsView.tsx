@@ -334,7 +334,7 @@ function SupplyUkrainePaymentProtocolsContent() {
           <div>
             <small>{t('Замовлення на Україну')}</small>
             {orderNumber && (
-              <Badge className="app-role-pill is-yellow supply-payment-sheet-order-pill" variant="light">
+              <Badge className="app-role-pill is-document supply-payment-sheet-order-pill" variant="light">
                 {orderNumber}
               </Badge>
             )}

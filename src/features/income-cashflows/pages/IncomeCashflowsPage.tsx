@@ -1,3 +1,5 @@
+import { TableChip } from '../../../shared/ui/TableChip'
+import '../../../shared/ui/document-detail/document-detail.css'
 import {
   ActionIcon,
   Alert,
@@ -993,9 +995,7 @@ function useIncomeCashflowColumns({
         accessor: (row) => row.number,
         cell: (row) => (
           <Group gap={6} wrap="nowrap">
-            <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0, textTransform: 'uppercase' }}>
-              {displayValue(row.number)}
-            </Text>
+            <TableChip tone="document" value={displayValue(row.number)} />
             {row.isCanceled && (
               <Badge className="app-role-pill is-red" size="xs" variant="light">
                 {t('Скасовано')}
@@ -1039,7 +1039,7 @@ function useIncomeCashflowColumns({
         width: 90,
         minWidth: 80,
         accessor: (row) => row.currency,
-        cell: (row) => displayValue(row.currency),
+        cell: (row) => <TableChip tone="neutral" value={displayValue(row.currency)} />,
       },
       {
         id: 'paymentMovement',
@@ -1207,7 +1207,7 @@ export function IncomeCashflowDetailDrawer({
           {error}
         </Alert>
       ) : row && income ? (
-        <Stack className="income-cashflow-detail" gap="md">
+        <Stack className="document-detail-drawer document-detail-drawer--compact income-cashflow-detail" gap="md">
           {onReassign && isClientPaymentReassignable(income) && (
             <Group className="income-cashflow-detail__actions" justify="flex-end">
               <Button
@@ -1221,11 +1221,11 @@ export function IncomeCashflowDetailDrawer({
             </Group>
           )}
 
-          <section className="income-cashflow-detail__hero">
-            <div className="income-cashflow-detail__identity">
-              <span className="income-cashflow-detail__eyebrow">{getIncomePaymentOrderTitle(income, t)}</span>
-              <strong className="income-cashflow-detail__number">{displayValue(income.Number)}</strong>
-              <span className="income-cashflow-detail__date">{formatDateTime(income.FromDate)}</span>
+          <section className="document-detail-summary income-cashflow-detail__hero">
+            <div className="document-detail-summary__main income-cashflow-detail__identity">
+              <span className="document-detail-eyebrow income-cashflow-detail__eyebrow">{getIncomePaymentOrderTitle(income, t)}</span>
+              <strong className="document-detail-summary__title income-cashflow-detail__number">{displayValue(income.Number)}</strong>
+              <span className="document-detail-summary__meta income-cashflow-detail__date">{formatDateTime(income.FromDate)}</span>
               <div className="income-cashflow-detail__payer">
                 <strong>
                   {displayValue(
@@ -1249,7 +1249,7 @@ export function IncomeCashflowDetailDrawer({
               </div>
             </div>
 
-            <div className="income-cashflow-detail__summary">
+            <div className="document-detail-summary__metrics income-cashflow-detail__summary">
               <IncomeDetailMetric
                 label={t('Сума')}
                 meta={currency}
@@ -1269,11 +1269,11 @@ export function IncomeCashflowDetailDrawer({
             </div>
           </section>
 
-          <div className="income-cashflow-detail__tree">
-            <section className="income-cashflow-detail__tree-section">
-              <div className="income-cashflow-detail__tree-head">
-                <span className="income-cashflow-detail__tree-title">{t('Деталі ордера')}</span>
-                <span className="income-cashflow-detail__tree-subtitle">{displayValue(income.Number)}</span>
+          <div className="document-detail-tree income-cashflow-detail__tree">
+            <section className="document-detail-section income-cashflow-detail__tree-section">
+              <div className="document-detail-section__head income-cashflow-detail__tree-head">
+                <span className="document-detail-section__title income-cashflow-detail__tree-title">{t('Деталі ордера')}</span>
+                <span className="document-detail-section__subtitle income-cashflow-detail__tree-subtitle">{displayValue(income.Number)}</span>
               </div>
 
               <div className="income-cashflow-detail__sections">
@@ -1300,9 +1300,9 @@ export function IncomeCashflowDetailDrawer({
             </section>
 
             {income.Comment ? (
-              <section className="income-cashflow-detail__tree-section">
-                <div className="income-cashflow-detail__tree-head">
-                  <span className="income-cashflow-detail__tree-title">{t('Коментар')}</span>
+              <section className="document-detail-section income-cashflow-detail__tree-section">
+                <div className="document-detail-section__head income-cashflow-detail__tree-head">
+                  <span className="document-detail-section__title income-cashflow-detail__tree-title">{t('Коментар')}</span>
                 </div>
                 <div className="income-cashflow-detail__comment">
                   <Text size="sm">{income.Comment}</Text>
@@ -1342,7 +1342,7 @@ function IncomeDetailMetric({
   value: string
 }) {
   return (
-    <div className={`income-cashflow-detail__metric${accent ? ' is-accent' : ''}`}>
+    <div className={`document-detail-metric income-cashflow-detail__metric${accent ? ' is-accent' : ''}`}>
       <span>{label}</span>
       <strong>{value}</strong>
       <small>{meta}</small>

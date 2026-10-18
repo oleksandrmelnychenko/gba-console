@@ -208,7 +208,7 @@ describe('ProductAvailabilitiesPage date range', () => {
     fireEvent.click(screen.getByLabelText('Друк PDF'))
 
     const dialog = await screen.findByRole('dialog', { name: /Друк PDF/ })
-    expect(await within(dialog).findByText('Файл не сформовано')).toBeTruthy()
+    expect(await within(dialog).findByText('Документ недоступний для завантаження')).toBeTruthy()
     expect(within(dialog).queryByRole('link')).toBeNull()
     expect(window.open).not.toHaveBeenCalled()
   })

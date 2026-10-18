@@ -51,7 +51,7 @@ export function CashAggregateBalanceReportPanel({ capability, initialPeriod, can
     </Group>
     {report ? <section aria-label={t('Результат сукупного залишку коштів')}>
       <Text size="sm">{t('Поточна дата')}: {report.CurrentPeriod.Day} · {t('Попередня дата')}: {report.PreviousPeriod.Day}</Text>
-      <Table.ScrollContainer minWidth={800}><Table>
+      <Table.ScrollContainer minWidth={800}><Table className="app-static-table">
         <Table.Thead><Table.Tr><Table.Th>{t('БанковскийСчетКасса')}</Table.Th>{report.Columns.map(column =>
           <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
         <Table.Tbody>{report.Rows.map(row => <CashBalanceRow key={`${row.Account.Id}:${row.Account.NetUid}`}

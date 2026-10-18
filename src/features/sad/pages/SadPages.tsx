@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -247,7 +248,7 @@ export function AllSadsPage() {
         id: 'number',
         header: t('Номер'),
         accessor: (sad) => sad.Number,
-        cell: (sad) => <SadListTableValue mono value={displayValue(sad.Number)} />,
+        cell: (sad) => <TableChip tone="document" value={displayValue(sad.Number)} />,
         width: 170,
       },
       {
@@ -1934,7 +1935,7 @@ export function SadSpecificationsPage() {
         id: 'specCode',
         header: t('Код специфікації'),
         accessor: (item) => getLastSpecification(getItemProduct(item))?.SpecificationCode,
-        cell: (item) => getLastSpecification(getItemProduct(item))?.SpecificationCode || '',
+        cell: (item) => <TableChip tone="neutral" value={getLastSpecification(getItemProduct(item))?.SpecificationCode || ''} />,
         width: 180,
       },
       {

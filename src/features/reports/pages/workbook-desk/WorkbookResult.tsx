@@ -76,7 +76,7 @@ function ResultMessage({ tone, title, text }: { tone: Tone; title: string; text:
   </div>
 }
 
-function RunProgress({ dataSource, title, period }: { dataSource: number; title: string; period: string }) {
+export function RunProgress({ dataSource, title, period }: { dataSource: number; title: string; period: string }) {
   const { t } = useI18n()
   const [seconds, setSeconds] = useState(0)
   useEffect(() => {

@@ -483,7 +483,7 @@ function ServiceMatrix({ rows }: { rows: AiFleetReadinessRow[] }) {
         role="region"
         tabIndex={0}
       >
-        <table className="ai-fleet-matrix">
+        <table className="app-static-table ai-fleet-matrix">
           <caption className="ai-fleet-visually-hidden">
             {t('Стан API, 05:00 warmup, свіжість та кількість пройдених перевірок для кожного AI-сервісу')}
           </caption>

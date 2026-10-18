@@ -249,7 +249,7 @@ function BuyerPriceTypeEvidenceSection({ structure, t }: ClientCommercialStructu
         <>
           <Text size="xs" c="dimmed">{t('Зріз Fenix')}: {formatDateTime(evidence.capturedAt)}</Text>
           <div className="client-buyer-price-types__scroll">
-            <table className="client-buyer-price-types__table">
+            <table className="app-static-table client-buyer-price-types__table">
               <thead><tr>
                 <th>{t('Договір')}</th>
                 <th>{t('Стандартний тип ціни')}</th>
@@ -607,17 +607,17 @@ function ClientCard({
             </Group>
             <Group className="client-source-card__meta" gap={5} wrap="wrap">
               {roleLabel ? (
-                <Badge className="client-card-role-chip" color="teal" size="xs" variant="light">
+                <Badge className="app-role-pill client-card-role-chip" color="teal" size="xs" variant="light">
                   {roleLabel}
                 </Badge>
               ) : null}
               {regionCode ? (
-                <Badge className="client-card-code-chip" color="blue" size="xs" variant="light">
+                <Badge className="app-role-pill is-gray client-card-code-chip" color="blue" size="xs" variant="light">
                   {regionCode}
                 </Badge>
               ) : null}
               {legalCode ? (
-                <Badge className="client-card-code-chip" color="gray" size="xs" variant="outline">
+                <Badge className="app-role-pill is-gray client-card-code-chip" color="gray" size="xs" variant="outline">
                   {t('код')} {legalCode}
                 </Badge>
               ) : null}
@@ -697,7 +697,7 @@ function ClientSourceTreeNode({
       data-source-system={snapshot.SourceSystem.toLowerCase()}
     >
       <div className="client-source-card__source-header">
-        <Badge className="app-role-pill is-gray" size="xs" variant="light">
+        <Badge className="app-role-pill is-source" size="xs" variant="light">
           {getSourceLabel(snapshot.SourceSystem)}
         </Badge>
         {snapshot.SourceMarkedDeleted ? (
@@ -1088,7 +1088,7 @@ function SourceSnapshot({ snapshot, t }: { snapshot: ClientSourceCardSnapshot; t
   return (
     <div className="client-source-snapshot">
       <Group justify="space-between" gap="xs" wrap="wrap">
-        <Badge className={`app-role-pill ${sourceLabel === 'AMG' ? 'is-orange' : 'is-gray'}`} size="sm" variant="light">{sourceLabel}</Badge>
+        <Badge className="app-role-pill is-source" size="sm" variant="light">{sourceLabel}</Badge>
         <Text className="client-source-snapshot__date">{formatDateTime(snapshot.LastSeenAtUtc)}</Text>
       </Group>
       <EvidenceRow label={t('Код у 1С')} value={snapshot.SourceCode > 0 ? snapshot.SourceCode : t('пошкоджений')} />

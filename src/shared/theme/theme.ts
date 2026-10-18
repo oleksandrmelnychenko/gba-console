@@ -1,4 +1,7 @@
-import { createTheme, Drawer, Loader, Modal, Tooltip, type MantineColorsTuple } from '@mantine/core'
+import { Alert, Badge, createTheme, Drawer, Loader, Modal, Tooltip, parseThemeColor, type MantineColorsTuple } from '@mantine/core'
+import './alerts.css'
+import './table-chips.css'
+import './static-tables.css'
 import { IosLoader } from '../ui/IosLoader'
 
 const violet: MantineColorsTuple = [
@@ -44,6 +47,30 @@ export const theme = createTheme({
   primaryShade: 6,
   defaultRadius: 'md',
   components: {
+    Badge: Badge.extend({
+      styles: (theme, props) => {
+        // Keep the badge's semantic colour even when its caller uses a filled
+        // variant. These tokens are applied inside tables, expanded rows and work sheets.
+        const color = parseThemeColor({ color: props.color ?? 'gray', theme })
+        const palette = color.isThemeColor ? theme.colors[color.color] : undefined
+        const chipTones: Record<string, string> = {
+          gray: 'neutral', dark: 'neutral', blue: 'document', cyan: 'source',
+          teal: 'storage', green: 'success', yellow: 'warning', orange: 'warning',
+          brand: 'warning', red: 'danger', violet: 'product',
+        }
+        const chipTone = color.isThemeColor ? chipTones[color.color] : undefined
+        return {
+          root: {
+            '--table-chip-bg': chipTone ? `var(--app-chip-${chipTone}-bg)` : palette?.[0] ?? `color-mix(in srgb, ${color.value} 8%, white)`,
+            '--table-chip-border': chipTone ? `var(--app-chip-${chipTone}-border)` : palette?.[3] ?? `color-mix(in srgb, ${color.value} 30%, white)`,
+            '--table-chip-text': chipTone ? `var(--app-chip-${chipTone}-text)` : palette?.[9] ?? `color-mix(in srgb, ${color.value} 65%, black)`,
+          },
+        }
+      },
+    }),
+    Alert: Alert.extend({
+      classNames: { root: 'app-alert' },
+    }),
     Loader: Loader.extend({
       defaultProps: {
         loaders: { ...Loader.defaultLoaders, ios: IosLoader },

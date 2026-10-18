@@ -1,0 +1,313 @@
+/* Shared surface rules for forms and entity details, including older local
+   field renderers. Scoped to overlays; page layouts and DataTable are unchanged. */
+:is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.app-detail-field, .app-leader-row, .product-card-field, .consumable-orders-detail-field, .act-service-detail-field, .accountable-expense-detail-field, .sale-detail-row, .sale-carrier-row, .supply-order-field) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 5px;
+  align-content: start;
+  align-items: start;
+  min-width: 0;
+  padding-block: 6px;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.app-detail-field, .app-leader-row, .product-card-field, .consumable-orders-detail-field, .act-service-detail-field, .accountable-expense-detail-field, .sale-detail-row, .sale-carrier-row, .supply-order-field)::before { display: none; }
+:is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.app-detail-field, .app-leader-row, .product-card-field, .consumable-orders-detail-field, .act-service-detail-field, .accountable-expense-detail-field, .sale-detail-row, .sale-carrier-row, .supply-order-field) > :is(span, strong, .app-leader-row-label, .app-leader-row-value) {
+  grid-column: auto;
+  grid-row: auto;
+  order: initial;
+  max-width: 100%;
+  min-width: 0;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.app-detail-field, .app-leader-row, .product-card-field, .consumable-orders-detail-field, .act-service-detail-field, .accountable-expense-detail-field, .sale-detail-row, .sale-carrier-row, .supply-order-field) > :is(span:first-child, .app-leader-row-label) {
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.app-detail-field, .app-leader-row, .product-card-field, .consumable-orders-detail-field, .act-service-detail-field, .accountable-expense-detail-field, .sale-detail-row, .sale-carrier-row, .supply-order-field) > :is(strong, .app-leader-row-value, .sale-carrier-row__value, .supply-order-field-value) {
+  color: var(--mantine-color-gray-8);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.app-drawer .app-sheet-scroll > :is(.mantine-Stack-root, form, .sale-detail-sheet, .client-edit-sheet, .supply-order-overview-sheet) {
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--mantine-color-gray-0);
+}
+.app-drawer .app-sheet-scroll > .document-detail-drawer { padding: 8px; }
+:is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.app-section-card, .app-detail-hero, .sale-detail-hero, .sale-detail-info-section, .sale-carrier-section, .accountable-expense-detail-hero, .accountable-expense-detail-section, .income-cashflow-detail__section) {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 12px;
+  background: var(--mantine-color-white);
+  box-shadow: none;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.app-detail-title strong, .sale-detail-title) {
+  font-size: 20px;
+  font-weight: 600;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.app-detail-metric, .sale-detail-metric, .accountable-expense-detail-metric, .supply-detail-metric) {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  min-width: 0;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.app-detail-metric span, .sale-detail-metric span, .supply-detail-metric)::before { display: none; }
+:is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.app-detail-metric strong, .sale-detail-metric strong) {
+  font-size: 20px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.app-role-pill, .sale-detail-pill, .document-detail-flag) {
+  border-radius: 999px;
+  font-size: 12px;
+  text-transform: none;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .mantine-Button-root[data-variant='default'] {
+  background: var(--mantine-color-gray-2);
+  border-color: var(--mantine-color-gray-3);
+  color: var(--mantine-color-gray-8);
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .mantine-Button-root[data-variant='default']:not(:disabled):hover {
+  background: var(--mantine-color-gray-3);
+}
+/* Local wrappers that previously supplied their own rail/leader decoration. */
+.document-detail-drawer--compact .income-cashflow-detail__tree-head::before { display: none; }
+.document-detail-drawer--compact .income-cashflow-detail__identity { padding-left: 0; }
+.document-detail-drawer--compact .income-cashflow-detail__field-list { gap: 8px; }
+.document-detail-drawer--compact .income-cashflow-detail__section { padding: 12px; }
+.document-detail-drawer--compact .document-detail-section__body > :is(.sales-debtor-detail-related-list, .sales-debtor-detail-state, .new-sale-return-detail-table, .advance-report-detail-section__table) { grid-column: 1 / -1; }
+.document-detail-drawer--compact .document-detail-metric small { font: 500 12px var(--font-mono); color: var(--mantine-color-gray-7); }
+/* Keep semantic change markers and exceptional money values visible. */
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .sale-carrier-row.is-changed .sale-carrier-row__value { color: var(--mantine-color-red-9); }
+@media (max-width: 760px) {
+  :is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.app-detail-hero, .sale-detail-hero, .accountable-expense-detail-hero) { grid-template-columns: minmax(0, 1fr); }
+  :is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.sale-detail-metrics, .income-cashflow-detail__sections) { grid-template-columns: minmax(0, 1fr); }
+}
+
+.app-drawer .product-remains-detail__tree { padding-left: 0; gap: 12px; }
+.app-drawer .product-remains-detail__tree::before,
+.app-drawer .product-remains-detail__section::before { display: none; }
+.app-drawer .product-remains-detail__section {
+  padding: 12px;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 12px;
+  background: var(--mantine-color-white);
+}
+.app-drawer .product-remains-detail__section-head {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  margin-bottom: 10px;
+}
+.app-drawer .product-remains-detail__section-body { border: 0; padding: 0; }
+
+/* Entity forms that predate DocumentDetailLayout use the same card surfaces.
+   Keep their grids, editing controls and semantic changed/error states intact. */
+:is(.app-drawer, .app-modal, .app-bottom-sheet) :is(
+  .user-sheet-card, .supply-detail-header, .supply-detail-card,
+  .sale-edit-hero, .consignment-note-settings-hero, .consignment-note-settings-section,
+  .new-sale-product-summary__hero, .new-sale-product-detail__section,
+  .product-card-summary, .assort-product-hero, .assort-ai-action, .assort-score-card
+) {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 12px;
+  box-shadow: none;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) :is(
+  .new-sale-product-summary__hero, .new-sale-product-detail__tree,
+  .new-sale-product-detail__tree-head, .role-tree-module + .role-tree-module
+)::before,
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .role-tree-module + .role-tree-module::after { display: none; }
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .new-sale-product-detail__tree {
+  padding: 0;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .new-sale-product-detail__tree-head {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  margin-bottom: 10px;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .new-sale-product-detail__field-list .app-detail-field::before {
+  display: none;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .new-sale-product-summary__identity { padding-left: 0; }
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .new-sale-product-summary__facts { gap: 6px; }
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .new-sale-product-summary__facts > div {
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: 999px;
+  padding: 4px 9px;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .new-sale-product-summary__metric {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 4px 8px;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .new-sale-product-summary__metric > strong {
+  font-size: 20px;
+  line-height: 1.25;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.new-sale-product-summary__code, .sale-edit-hero__number) {
+  font-size: 20px;
+  font-weight: 600;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.sale-edit-hero__icon, .supply-detail-icon) {
+  background: var(--mantine-color-gray-1);
+  border-color: var(--mantine-color-gray-3);
+  color: var(--mantine-color-gray-8);
+  width: 32px;
+  height: 32px;
+  flex-basis: 32px;
+  border-radius: 8px;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.sale-edit-hero__eyebrow, .supply-detail-subtitle, .user-sheet .mantine-InputWrapper-label) {
+  color: var(--mantine-color-gray-8);
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .user-sheet-card-head {
+  background: var(--mantine-color-white);
+  font: 600 14px / 1.4 var(--font-mono);
+  color: var(--mantine-color-gray-8);
+  padding: 10px 12px;
+  text-transform: none;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .user-sheet-card-body { padding: 12px; }
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .role-tree-modules { gap: 12px; padding-right: 0; }
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .role-tree-module {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 12px;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .role-tree-module-header { min-height: 40px; }
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .supply-detail-toolbar {
+  background: var(--mantine-color-gray-0);
+  border-radius: 8px;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .supply-detail-number { border-radius: 999px; }
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .supply-detail-back.mantine-ActionIcon-root:hover {
+  background: var(--mantine-color-gray-2);
+  border-color: var(--mantine-color-gray-3);
+  color: var(--mantine-color-gray-9);
+}
+/* Product inspectors can live in either a modal or a right sheet. */
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .product-card-content { gap: 12px; }
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .product-card-summary {
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 12px;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .product-card-vendor-code { font-size: 20px; }
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .assort-stat__label::before { display: none; }
+
+@media (max-width: 760px) {
+  :is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.sale-edit-hero, .supply-detail-header) {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  :is(.app-drawer, .app-modal, .app-bottom-sheet) .new-sale-product-summary__metrics {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .new-sale-product-detail__field-list .app-detail-field > :is(span, strong) {
+  max-width: 100%;
+  text-align: left;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .new-sale-product-detail__field-list .app-detail-field > span {
+  font: 500 12px / 1.4 var(--font-sans);
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .new-sale-product-detail__field-list .app-detail-field > strong {
+  font-size: 14px;
+}
+
+/* Sales workspaces: retain the selection and debt cues, remove ornamental
+   gradients/rails and use the same quiet surfaces as document sheets. */
+:is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.new-sale-client-step, .new-sale-cart, .new-sale-products-step) {
+  background: var(--mantine-color-gray-0);
+  box-shadow: none;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) :is(
+  .new-sale-hero-agreement, .new-sale-agreement-card,
+  .new-sale-product-picker-card, .new-sale-product-card,
+  .new-sale-products-step__related-panel, .new-sale-register-expanded__panel
+) {
+  background: var(--mantine-color-white);
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 12px;
+  box-shadow: none;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.new-sale-client-hero, .new-sale-cart__head, .new-sale-register-head) {
+  background: var(--mantine-color-white);
+  box-shadow: none;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.new-sale-client-drum-panel__glow, .new-sale-product-card__rail) { display: none; }
+:is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.new-sale-client-hero, .new-sale-products-step__search-controls)::before { display: none; }
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .new-sale-client-hero__side { --new-sale-header-separator: none; }
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .new-sale-client-hero { min-height: 76px; }
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .new-sale-client-hero__close {
+  top: 50%;
+  transform: translateY(-50%);
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .new-sale-client-drum-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--brand-orange);
+  box-shadow: none;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .new-sale-client-drum-card.has-debt {
+  background: var(--mantine-color-red-0);
+  border-color: var(--mantine-color-red-3);
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.new-sale-hero-agreement.is-active, .new-sale-agreement-card.is-selected) {
+  background: var(--mantine-color-white);
+  border-color: var(--brand-orange);
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.new-sale-products-step__search-controls, .new-sale-products-step__search-select-input, .new-sale-cart__body) {
+  background: var(--mantine-color-gray-0);
+  box-shadow: none;
+}
+
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .assort-sales-stat { border-left: 0; padding: 4px 0; }
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .assort-sales-stat > span { color: var(--mantine-color-gray-8); }
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .assort-product-hero__code { color: var(--mantine-color-gray-8); }
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .assort-sales-insight {
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: 18px;
+  background: var(--mantine-color-gray-0);
+  padding: 8px 12px;
+  font-size: 13px;
+  line-height: 20px;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .assort-sales-insight.is-positive {
+  background: var(--mantine-color-teal-0);
+  border-color: var(--mantine-color-teal-3);
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .assort-sales-insight.is-negative {
+  background: var(--mantine-color-red-0);
+  border-color: var(--mantine-color-red-3);
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .app-role-pill.is-orange {
+  background: var(--mantine-color-yellow-0);
+  border-color: var(--mantine-color-yellow-3);
+  color: var(--mantine-color-yellow-9);
+}
+
+/* The expense inspector uses the shared scroll region, including on short
+   screens. Its summary follows document typography rather than a second hero. */
+.app-drawer .accountable-expense-detail-title__copy strong {
+  font-size: 20px;
+  font-weight: 600;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.app-drawer .accountable-expense-detail-title__copy span {
+  color: var(--mantine-color-gray-7);
+  white-space: normal;
+}
+.app-drawer .accountable-expense-detail-metric span::before { display: none; }
+.app-drawer .accountable-expense-detail-metric strong { font-size: 24px; }

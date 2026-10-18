@@ -437,7 +437,7 @@ function NewOfferForm({
       />
 
       {lines.length > 0 && (
-        <Table className="offers-modal-lines-table" striped>
+        <Table className="app-static-table offers-modal-lines-table" striped>
           <Table.Thead>
             <Table.Tr>
               <Table.Th>{t('Товар')}</Table.Th>

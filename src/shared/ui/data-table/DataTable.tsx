@@ -828,7 +828,7 @@ function createDefaultLabels(t: TranslateFunction): Required<DataTableLabels> {
   return {
     columns: t('Колонки'),
     compactDensity: t('Компактно'),
-    density: t('Щільність'),
+    density: t('Висота рядків'),
     dragColumn: t('Перетягнути колонку'),
     emptyValue: '—',
     hideColumn: t('Приховати колонку'),

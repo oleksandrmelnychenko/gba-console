@@ -36,7 +36,7 @@ function MonetaryTable({ result }: { result: WarehouseMonetaryResult }) {
   return <Stack gap="xs"><Group><Button variant="light" size="xs" disabled={current === 0} onClick={() => setPage(current - 1)}>{t('Попередні рядки')}</Button>
     <Text size="xs">{rows.length ? first + 1 : 0}–{Math.min(first + 50, rows.length)} / {rows.length}</Text>
     <Button variant="light" size="xs" disabled={first + 50 >= rows.length} onClick={() => setPage(current + 1)}>{t('Наступні рядки')}</Button></Group>
-    <Table.ScrollContainer minWidth={1900}><Table><Table.Thead><Table.Tr>{warehouseMonetaryHeaders.map(label => <Table.Th key={label}>{t(label)}</Table.Th>)}</Table.Tr></Table.Thead>
+    <Table.ScrollContainer minWidth={1900}><Table className="app-static-table"><Table.Thead><Table.Tr>{warehouseMonetaryHeaders.map(label => <Table.Th key={label}>{t(label)}</Table.Th>)}</Table.Tr></Table.Thead>
       <Table.Tbody>{rows.slice(first, first + 50).map(row => <Table.Tr key={row.key}>{row.cells.map((cell, column) => <Table.Td className={column >= 2 ? 'app-money' : undefined} key={warehouseMonetaryHeaders[column]}>{cell}</Table.Td>)}</Table.Tr>)}</Table.Tbody>
       {result.Totals ? <Table.Tfoot><Table.Tr><Table.Th colSpan={2}>{t('Разом')}</Table.Th>{warehouseMonetaryValues(result.Totals).map((value, i) => <Table.Td className="app-money" key={warehouseMonetaryHeaders[i + 2]}>{value}</Table.Td>)}</Table.Tr></Table.Tfoot> : null}
     </Table></Table.ScrollContainer>{!rows.length ? <Text>{t('У повністю перевіреному періоді рядків немає.')}</Text> : null}</Stack>

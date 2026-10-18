@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -809,7 +810,7 @@ function useAgreementColumns(onEdit?: (agreement: SupplyOrganizationAgreement) =
         width: 150,
         minWidth: 120,
         accessor: (agreement) => agreement.Number,
-        cell: (agreement) => displayValue(agreement.Number),
+        cell: (agreement) => <TableChip tone="document" value={displayValue(agreement.Number)} />,
       },
       {
         id: 'organization',
@@ -825,7 +826,7 @@ function useAgreementColumns(onEdit?: (agreement: SupplyOrganizationAgreement) =
         width: 110,
         minWidth: 90,
         accessor: (agreement) => agreement.Currency?.Code,
-        cell: (agreement) => displayValue(agreement.Currency?.Code || agreement.Currency?.Name),
+        cell: (agreement) => <TableChip tone="neutral" value={displayValue(agreement.Currency?.Code || agreement.Currency?.Name)} />,
       },
       {
         id: 'amount',

@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import { Anchor, Box, Text, Tooltip } from '@mantine/core'
 import { Box as BoxIcon } from 'lucide-react'
 import { memo, useState } from 'react'
@@ -185,7 +186,7 @@ function SaleExpandContentItem({
                   type="button"
                   onClick={openProductCard}
                 >
-                  {displayValue(getOrderItemProductCode(orderItem))}
+                  <TableChip tone="product" value={displayValue(getOrderItemProductCode(orderItem))} />
                 </Anchor>
                 <Anchor
                   className="sale-expand-product-name"
@@ -200,7 +201,7 @@ function SaleExpandContentItem({
             ) : (
               <>
                 <span className="sale-expand-product-code" title={displayValue(getOrderItemProductCode(orderItem))}>
-                  {displayValue(getOrderItemProductCode(orderItem))}
+                  <TableChip tone="product" value={displayValue(getOrderItemProductCode(orderItem))} />
                 </span>
                 <span className="sale-expand-product-name" title={displayValue(getOrderItemProductName(orderItem))}>
                   {displayValue(getOrderItemProductName(orderItem))}
@@ -210,7 +211,7 @@ function SaleExpandContentItem({
           </div>
           <div className="sale-expand-product-meta">
             {orderItem.Product?.MainOriginalNumber && (
-              <span className="sale-expand-product-meta-value is-number" title={orderItem.Product.MainOriginalNumber}>
+              <span className="app-table-chip sale-expand-product-meta-value is-number is-product" title={orderItem.Product.MainOriginalNumber}>
                 <strong>{orderItem.Product.MainOriginalNumber}</strong>
               </span>
             )}
@@ -221,13 +222,13 @@ function SaleExpandContentItem({
               </span>
             )}
             {responsible && (
-              <span className="sale-expand-product-meta-value" title={responsible}>
+              <span className="app-table-chip sale-expand-product-meta-value" title={responsible}>
                 <span>{t('Менеджер')}</span>
                 <strong>{responsible}</strong>
               </span>
             )}
             {specificationCode && (
-              <span className="sale-expand-product-meta-value is-strong">
+              <span className="app-table-chip sale-expand-product-meta-value is-strong">
                 <span>{t('Митний код')}</span>
                 <strong>{specificationCode}</strong>
               </span>
@@ -251,17 +252,17 @@ function SaleExpandContentItem({
           <span>{t('База')}</span>
           {baseDiscountSuppressionReason ? (
             <Tooltip label={getBaseDiscountSuppressionTooltip(baseDiscountSuppressionReason, t)}>
-              <strong className="is-suppressed">{formatPercent(baseDiscount)}</strong>
+              <strong className={baseDiscount == null ? 'is-suppressed' : 'app-table-chip is-suppressed'}>{formatPercent(baseDiscount)}</strong>
             </Tooltip>
           ) : (
-            <strong>{formatPercent(baseDiscount)}</strong>
+            <strong className={baseDiscount == null ? undefined : 'app-table-chip is-info'}>{formatPercent(baseDiscount)}</strong>
           )}
         </div>
         <div className="sale-expand-discount-line">
           <span>{t('Разова')}</span>
           {!hasUniformDiscount && canEditDiscountPercentage ? (
             <Anchor
-              className="sale-expand-discount-action"
+              className="app-table-chip sale-expand-discount-action"
               c="dark.8"
               component="button"
               title={t('Знижка')}
@@ -274,7 +275,7 @@ function SaleExpandContentItem({
               {formatPercent(oneTimeDiscount ?? 0)}
             </Anchor>
           ) : (
-            <strong>{formatPercent(oneTimeDiscount ?? 0)}</strong>
+            <strong className="app-table-chip">{formatPercent(oneTimeDiscount ?? 0)}</strong>
           )}
           {canEditDiscountCommentOnly && (
             <TableRowAction

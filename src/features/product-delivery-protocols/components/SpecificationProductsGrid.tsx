@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import { Anchor, Badge, Text } from '@mantine/core'
 import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -130,10 +131,10 @@ export function SpecificationProductsGrid({
                 onOpenProductCard(row.productNetId)
               }}
             >
-              {displayText(row.vendorCode)}
+              <TableChip tone="product" value={displayText(row.vendorCode)} />
             </Anchor>
           ) : (
-            <Text fw={600} style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{displayText(row.vendorCode)}</Text>
+            <TableChip tone="product" value={displayText(row.vendorCode)} />
           ),
       },
       {
@@ -166,11 +167,7 @@ export function SpecificationProductsGrid({
         width: 140,
         minWidth: 110,
         accessor: (row) => row.specificationCode,
-        cell: (row) => (
-          <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
-            {displayText(row.specificationCode)}
-          </Text>
-        ),
+        cell: (row) => <TableChip tone="neutral" value={displayText(row.specificationCode)} />,
       },
       {
         id: 'qty',

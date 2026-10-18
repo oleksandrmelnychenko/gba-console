@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -861,7 +862,7 @@ function useOrganisationServicesColumns(): DataTableColumn<PaymentTaskRow>[] {
         width: 160,
         minWidth: 120,
         accessor: (row) => row.number,
-        cell: (row) => displayValue(row.number),
+        cell: (row) => <TableChip tone="document" value={displayValue(row.number)} />,
       },
       {
         id: 'serviceType',

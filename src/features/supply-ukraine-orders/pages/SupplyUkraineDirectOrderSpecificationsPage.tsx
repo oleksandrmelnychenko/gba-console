@@ -16,7 +16,7 @@ import './supply-order-detail.css'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { DocumentDetailLayout, DocumentDetailSummary, DocumentDetailMetric, DocumentDetailSection } from '../../../shared/ui/document-detail/DocumentDetail'
+import { DocumentDetailChip, DocumentDetailLayout, DocumentDetailSummary, DocumentDetailSection } from '../../../shared/ui/document-detail/DocumentDetail'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -852,11 +852,8 @@ function DirectOrderSpecificationsBody({ model }: { model: DirectOrderSpecificat
           <DocumentDetailSummary
             eyebrow={t('Замовлення')}
             title={getOrderNumber(model.order) || '-'}
-            meta={t('Специфікації')}
-            metrics={<>
-              <DocumentDetailMetric label={t('Інвойси')} value={String(model.invoices.length)} />
-              <DocumentDetailMetric label={t('Пак листи')} value={String(model.selectedInvoice?.PackingLists?.length || 0)} />
-            </>}
+            meta={<><DocumentDetailChip>{t('Інвойси')}: {model.invoices.length}</DocumentDetailChip><DocumentDetailChip>{t('Пак листи')}: {model.selectedInvoice?.PackingLists?.length || 0}</DocumentDetailChip></>}
+            metrics={null}
           />
         }
         actions={<SpecificationActionButtons model={model} />}

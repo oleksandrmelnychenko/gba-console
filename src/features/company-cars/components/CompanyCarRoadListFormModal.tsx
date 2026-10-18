@@ -15,7 +15,7 @@ import { useDebouncedValue } from '@mantine/hooks'
 import { CircleAlert, Save, X } from 'lucide-react'
 import { useEffect, useMemo, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { DocumentDetailLayout, DocumentDetailSummary, DocumentDetailMetric, DocumentDetailSection, DocumentDetailRow } from '../../../shared/ui/document-detail/DocumentDetail'
+import { DocumentDetailChip, DocumentDetailLayout, DocumentDetailSummary, DocumentDetailMetric, DocumentDetailSection, DocumentDetailRow } from '../../../shared/ui/document-detail/DocumentDetail'
 import './company-car-road-list-form.css'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { useAuth } from '../../auth/useAuth'
@@ -150,7 +150,7 @@ export function CompanyCarRoadListFormModal({
           summary={<DocumentDetailSummary
             eyebrow={t('Автомобіль')}
             title={effectiveCompanyCar.LicensePlate || '—'}
-            meta={effectiveCompanyCar.CarBrand}
+            meta={effectiveCompanyCar.CarBrand ? <DocumentDetailChip>{effectiveCompanyCar.CarBrand}</DocumentDetailChip> : null}
             metrics={<>
               <DocumentDetailMetric label={t('Загальний кілометраж')} value={calculated ? formatNumber(calculated.TotalKilometers) : '—'} suffix="км" />
               <DocumentDetailMetric label={t('Кількість пального')} value={calculated ? formatNumber(calculated.FuelAmount) : '—'} suffix="л" />

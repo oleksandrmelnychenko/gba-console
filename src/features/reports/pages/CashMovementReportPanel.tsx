@@ -53,7 +53,7 @@ function CashMovementResult({ report }: { report: CashMovementReport }) {
     <Text size="sm">{t('Валюта поточного періоду')}: {currencyName(report.Inputs.Current)}; {t('Валюта попереднього періоду')}: {currencyName(report.Inputs.Previous)}</Text>
     {report.Complete && !report.HasRows ? <Alert color="blue">{t('У вибраних періодах немає руху коштів.')}</Alert> : null}
     <Table.ScrollContainer minWidth={800}>
-      <Table>
+      <Table className="app-static-table">
         <Table.Thead><Table.Tr><Table.Th>{t('Контрагент')}</Table.Th>{report.Columns.map(column => <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
         <Table.Tbody>{report.Rows.map(row => <Table.Tr key={row.GroupKey}><Table.Td>{row.NameAvailable ? row.Name : t('Назва контрагента недоступна')}</Table.Td>
           {renderCells(row.Cells)}</Table.Tr>)}

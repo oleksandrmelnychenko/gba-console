@@ -1,25 +1,12 @@
-import { ActionIcon, Anchor, Badge, Box, Card, Collapse, Group, Stack, Text, Tooltip } from '@mantine/core'
-import { ChevronDown, ChevronRight, Link, MessageSquare, RotateCcw, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { Anchor, Card, Collapse, Group, Stack, Table, Text } from '@mantine/core'
+import { useId, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { TableChip } from '../../../shared/ui/TableChip'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import type { ClientShoppingCart, OfferOrderItem } from '../types'
 import { OFFER_PROCESSING_STATUS } from '../types'
-import {
-  formatDate,
-  formatDateTime,
-  formatMoney,
-  getDaysToEnd,
-  getItemNotProcessed,
-  getNotProcessedCount,
-  getReasonStatus,
-} from './offerHelpers'
-
-const STATUS_CLASS: Record<number, string> = {
-  [OFFER_PROCESSING_STATUS.FullyProcessed]: 'is-green',
-  [OFFER_PROCESSING_STATUS.NotProcessed]: 'is-red',
-  [OFFER_PROCESSING_STATUS.PartiallyProcessed]: 'is-yellow',
-}
+import { formatDate, formatDateTime, formatMoney, getDaysToEnd, getItemNotProcessed, getNotProcessedCount, getReasonStatus } from './offerHelpers'
 
 export function OfferCard({
   canDelete,
@@ -47,6 +34,7 @@ export function OfferCard({
   onToggle: (offer: ClientShoppingCart) => void
 }) {
   const { t } = useI18n()
+  const detailsId = useId()
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
   const status = offer.OfferProcessingStatus ?? OFFER_PROCESSING_STATUS.NotProcessed
   const notProcessedCount = getNotProcessedCount(offer)
@@ -57,111 +45,73 @@ export function OfferCard({
   const canOpenReason = status === OFFER_PROCESSING_STATUS.FullyProcessed && notProcessedCount !== 0
 
   return (
-    <Card className="offer-card" padding="sm" radius="md" withBorder>
-      <Group align="flex-start" gap="sm" justify="space-between" wrap="nowrap">
-        <Group align="flex-start" gap="sm" wrap="nowrap">
-          <ActionIcon className="offer-card-toggle" aria-label={t('Розгорнути')} variant="subtle" onClick={() => onToggle(offer)}>
-            {expanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-          </ActionIcon>
-          <Tooltip label={statusLabel(status, t)}>
-            <Box className={`offer-card-status-dot ${STATUS_CLASS[status] ?? 'is-gray'}`} />
-          </Tooltip>
-          <Stack gap={2}>
-            <Text className="offer-card-client">{offer.ClientAgreement?.Client?.FullName ?? ''}</Text>
-            <Text className="offer-card-meta">
-              {offer.Number ?? ''} {t('Від')} {formatDateTime(offer.Created)}
-            </Text>
-            <Text className="offer-card-secondary">
-              {offer.CreatedBy?.LastName ?? ''}
-              {offer.ClientAgreement?.Agreement?.Name
-                ? ` : ${t('На договір')} ${offer.ClientAgreement.Agreement.Name}`
-                : ''}
-            </Text>
-          </Stack>
-        </Group>
-
-        <Group align="center" gap="xs" wrap="nowrap">
-          {status === OFFER_PROCESSING_STATUS.NotProcessed && (
-            <Badge className="app-role-pill is-red" variant="light">
-              {t('Не опрацьовано клієнтом')}
-            </Badge>
-          )}
-          {showNotProcessed && (
-            <Badge className="app-role-pill is-orange" variant="light">
-              {t('Неопрацьовано')}: {notProcessedCount}
-            </Badge>
-          )}
-
+    <Card className="offer-card app-table-chips" padding={10} radius="md" withBorder>
+      <div className="offer-card-header">
+        <TableRowAction
+          action={expanded ? 'collapse' : 'expand'}
+          label={t(expanded ? 'Згорнути' : 'Розгорнути')}
+          aria-expanded={expanded}
+          aria-controls={detailsId}
+          onClick={() => onToggle(offer)}
+        />
+        <div className="offer-card-identity">
+          <Text className="offer-card-client">{offer.ClientAgreement?.Client?.FullName || '—'}</Text>
+          <div className="offer-card-meta">
+            <TableChip tone="document" value={offer.Number} />
+            <span>{formatDateTime(offer.Created)}</span>
+            {offer.CreatedBy?.LastName && <TableChip value={offer.CreatedBy.LastName} />}
+            {offer.ClientAgreement?.Agreement?.Name && <TableChip value={offer.ClientAgreement.Agreement.Name} />}
+          </div>
+        </div>
+        <div className="offer-card-state">
+          <TableChip
+            tone={status === OFFER_PROCESSING_STATUS.FullyProcessed ? 'success' : 'warning'}
+            value={statusLabel(status, t)}
+          />
+          {showNotProcessed && <TableChip tone="warning" value={`${t('Неопрацьовано')}: ${notProcessedCount}`} />}
           {status === OFFER_PROCESSING_STATUS.PartiallyProcessed && (
-            <Badge className="app-role-pill is-yellow" variant="light">
-              {daysToEnd} {dayUnitLabel(daysToEnd, t)} ({formatDate(offer.ValidUntil)})
-            </Badge>
+            <TableChip tone="warning" value={`${daysToEnd} ${dayUnitLabel(daysToEnd, t)} (${formatDate(offer.ValidUntil)})`} />
           )}
-
           {showNotProcessed && <ReasonBadge status={reasonStatus} />}
-
-          {canEdit && canOpenReason && (
-            <Tooltip label={t('Причини')}>
-              <ActionIcon aria-label={t('Причини')} color="blue" variant="subtle" onClick={() => onOpenReason(offer)}>
-                <MessageSquare size={18} />
-              </ActionIcon>
-            </Tooltip>
-          )}
-
-          {status === OFFER_PROCESSING_STATUS.PartiallyProcessed && (
-            <Tooltip label={t('Копіювати посилання')}>
-              <ActionIcon aria-label={t('Копіювати посилання')} color="orange" variant="subtle" onClick={() => onCopyLink(offer)}>
-                <Link size={18} />
-              </ActionIcon>
-            </Tooltip>
-          )}
-
-          {canExtendValidity && status === OFFER_PROCESSING_STATUS.NotProcessed && (
-            <Tooltip label={t('Перезапустити')}>
-              <ActionIcon aria-label={t('Перезапустити')} color="teal" variant="subtle" onClick={() => onRestart(offer)}>
-                <RotateCcw size={18} />
-              </ActionIcon>
-            </Tooltip>
-          )}
-
-          {canDelete && status === OFFER_PROCESSING_STATUS.PartiallyProcessed && (
-            <Tooltip label={t('Видалити')}>
-              <ActionIcon aria-label={t('Видалити')} color="red" variant="subtle" onClick={() => onDelete(offer)}>
-                <Trash2 size={18} />
-              </ActionIcon>
-            </Tooltip>
-          )}
-        </Group>
-      </Group>
-
-      <Collapse expanded={expanded}>
-        <Stack gap="xs" mt="sm">
-          {(offer.OrderItems ?? []).map((item) => (
-            <OfferLine
-              key={item.NetUid}
-              currencyCode={currencyCode}
-              isOfferProcessed={offer.IsOfferProcessed === true}
-              item={item}
-              canEdit={canEdit}
-              onOpenProductCard={setProductCardNetId}
-              onOpenReason={() => onOpenItemReason(offer, item)}
-            />
-          ))}
-        </Stack>
+        </div>
+        <div className="offer-card-actions">
+          {canEdit && canOpenReason && <TableRowAction action="status" label={t('Причини')} onClick={() => onOpenReason(offer)} />}
+          {status === OFFER_PROCESSING_STATUS.PartiallyProcessed && <TableRowAction action="copy" label={t('Копіювати посилання')} onClick={() => onCopyLink(offer)} />}
+          {canExtendValidity && status === OFFER_PROCESSING_STATUS.NotProcessed && <TableRowAction action="restore" label={t('Перезапустити')} onClick={() => onRestart(offer)} />}
+          {canDelete && status === OFFER_PROCESSING_STATUS.PartiallyProcessed && <TableRowAction action="delete" label={t('Видалити')} onClick={() => onDelete(offer)} />}
+        </div>
+      </div>
+      <Collapse expanded={expanded} id={detailsId}>
+        <div className="offer-card-lines">
+          <Table className="app-static-table" aria-label={t('Товари оферти')} miw={720}>
+            <Table.Thead><Table.Tr>
+              <Table.Th>{t('Товар')}</Table.Th>
+              <Table.Th className="app-table-cell-number">{t('Кількість')}</Table.Th>
+              <Table.Th className="app-table-cell-number">{t('Сума')}</Table.Th>
+              <Table.Th>{t('Стан')}</Table.Th>
+              <Table.Th>{t('Коментар')}</Table.Th>
+            </Table.Tr></Table.Thead>
+            <Table.Tbody>
+              {(offer.OrderItems ?? []).map((item, index) => <OfferLine
+                key={item.NetUid ?? item.Id ?? index}
+                currencyCode={currencyCode}
+                isOfferProcessed={offer.IsOfferProcessed === true}
+                item={item}
+                canEdit={canEdit}
+                onOpenProductCard={setProductCardNetId}
+                onOpenReason={() => onOpenItemReason(offer, item)}
+              />)}
+              {!offer.OrderItems?.length && <Table.Tr><Table.Td colSpan={5}>{t('Немає даних')}</Table.Td></Table.Tr>}
+            </Table.Tbody>
+          </Table>
+        </div>
       </Collapse>
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </Card>
   )
 }
 
-function OfferLine({
-  canEdit,
-  currencyCode,
-  isOfferProcessed,
-  item,
-  onOpenProductCard,
-  onOpenReason,
-}: {
+function OfferLine({ canEdit, currencyCode, isOfferProcessed, item, onOpenProductCard, onOpenReason }: {
   canEdit: boolean
   currencyCode: string
   isOfferProcessed: boolean
@@ -172,86 +122,41 @@ function OfferLine({
   const { t } = useI18n()
   const notProcessed = getItemNotProcessed(item)
   const canOpenReason = canEdit && isOfferProcessed && notProcessed > 0
+  const name = item.Product?.Name || item.Product?.VendorCode || '—'
 
   return (
-    <Box className="offer-line">
-      <Stack gap={2}>
-        {item.Product?.NetUid ? (
-          <Anchor
-            className="offer-line-product-link"
-            component="button"
-            type="button"
-            underline="always"
-            onClick={(event) => {
-              event.stopPropagation()
-              onOpenProductCard(item.Product?.NetUid as string)
-            }}
-          >
-            {[item.Product?.VendorCode, item.Product?.MainOriginalNumber, item.Product?.Name]
-              .filter(Boolean)
-              .join(' ')}
-          </Anchor>
-        ) : (
-          <Text className="offer-line-product-name">
-            {[item.Product?.VendorCode, item.Product?.MainOriginalNumber, item.Product?.Name]
-              .filter(Boolean)
-              .join(' ')}
-          </Text>
-        )}
-        <Text c="dimmed" size="xs">
-          {t('Від')} {formatDateTime(item.Created)} {item.User?.LastName ?? ''}
-        </Text>
-      </Stack>
-
-      <Stack gap={2}>
-        <Text className="offer-line-money">
-          <span className="app-money">{formatMoney(item.TotalAmount)}</span>
-          <span className="app-money-meta">{currencyCode}</span>
-        </Text>
-        <Text className="offer-line-qty">
-          {t('Кількість')}: {item.Qty ?? 0}
-        </Text>
-      </Stack>
-
-      <Box>
-        {canOpenReason && (
-          <Badge className="app-role-pill is-orange offer-line-reason-pill" variant="light" onClick={onOpenReason}>
-            {t('Неопрацьовано')}: {notProcessed}
-          </Badge>
-        )}
-      </Box>
-
-      <Text className="offer-line-comment">
-        {item.Comment ?? ''}
-      </Text>
-    </Box>
+    <Table.Tr>
+      <Table.Td>
+        <Stack gap={2}>
+          {item.Product?.NetUid ? <Anchor className="offer-line-product-link" component="button" type="button" underline="hover"
+            onClick={() => onOpenProductCard(item.Product!.NetUid!)}>{name}</Anchor>
+            : <Text className="offer-line-product-name">{name}</Text>}
+          <Group gap={6}>
+            {item.Product?.VendorCode && <TableChip tone="product" value={item.Product.VendorCode} />}
+            {item.Product?.MainOriginalNumber && <TableChip tone="product" value={item.Product.MainOriginalNumber} />}
+            <span className="offer-line-meta">{formatDateTime(item.Created)} {item.User?.LastName ?? ''}</span>
+          </Group>
+        </Stack>
+      </Table.Td>
+      <Table.Td className="app-table-cell-number">{item.Qty ?? 0}</Table.Td>
+      <Table.Td className="app-table-cell-number">
+        <span className="app-money">{formatMoney(item.TotalAmount)}</span>
+        <div className="app-money-meta">{currencyCode}</div>
+      </Table.Td>
+      <Table.Td>
+        {canOpenReason && <Group gap={4} wrap="nowrap">
+          <TableChip tone="warning" value={`${t('Неопрацьовано')}: ${notProcessed}`} />
+          <TableRowAction action="status" label={t('Причини')} onClick={onOpenReason} />
+        </Group>}
+      </Table.Td>
+      <Table.Td>{item.Comment || '—'}</Table.Td>
+    </Table.Tr>
   )
 }
 
 function ReasonBadge({ status }: { status: 'all' | 'none' | 'partial' }) {
   const { t } = useI18n()
-
-  if (status === 'all') {
-    return (
-      <Badge className="app-role-pill is-green" variant="light">
-        {t('Причину вказано')}
-      </Badge>
-    )
-  }
-
-  if (status === 'partial') {
-    return (
-      <Badge className="app-role-pill is-red" variant="light">
-        {t('Причину вказано частково')}
-      </Badge>
-    )
-  }
-
-  return (
-    <Badge className="app-role-pill is-red" variant="light">
-      {t('Причину не вказано')}
-    </Badge>
-  )
+  return <TableChip tone={status === 'all' ? 'success' : 'warning'} value={t(status === 'all' ? 'Причину вказано' : status === 'partial' ? 'Причину вказано частково' : 'Причину не вказано')} />
 }
 
 function dayUnitLabel(days: number, t: (key: string) => string): string {

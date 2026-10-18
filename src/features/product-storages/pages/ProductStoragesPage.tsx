@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -1174,7 +1175,7 @@ function ProductStoragePreviewDrawer({
         width: 150,
         minWidth: 130,
         accessor: (row) => getProductCode(row.availability),
-        cell: (row) => <Text fw={700}>{displayValue(getProductCode(row.availability))}</Text>,
+        cell: (row) => <TableChip tone="document" value={displayValue(getProductCode(row.availability))} />,
       },
       {
         id: 'productName',
@@ -1206,7 +1207,7 @@ function ProductStoragePreviewDrawer({
         width: 200,
         minWidth: 160,
         accessor: (row) => getStorageName(row.availability),
-        cell: (row) => displayValue(getStorageName(row.availability)),
+        cell: (row) => <TableChip tone="storage" value={displayValue(getStorageName(row.availability))} />,
       },
       {
         id: 'availableQty',
@@ -1417,7 +1418,7 @@ function ProductStorageActionModal({
           <Badge className="app-role-pill is-orange" variant="light">
             {t('Кількість')}: {formatAmount(Number.isFinite(displayedQty) ? displayedQty : 0)}
           </Badge>
-          <Badge className="app-role-pill is-gray product-storages-action-storage-pill" variant="light">
+          <Badge className="app-role-pill product-storages-action-storage-pill is-storage" variant="light">
             {t('Склад')}: {displayValue(fromStorage?.Name)}
           </Badge>
         </div>
@@ -1697,7 +1698,7 @@ function useProductStoragesColumns({
         width: 160,
         minWidth: 132,
         accessor: getProductCode,
-        cell: (availability) => <Text fw={700}>{displayValue(getProductCode(availability))}</Text>,
+        cell: (availability) => <TableChip tone="document" value={displayValue(getProductCode(availability))} />,
       },
       {
         id: 'productName',
@@ -1738,7 +1739,7 @@ function useProductStoragesColumns({
         width: 240,
         minWidth: 180,
         accessor: getStorageName,
-        cell: (availability) => displayValue(getStorageName(availability)),
+        cell: (availability) => <TableChip tone="storage" value={displayValue(getStorageName(availability))} />,
       },
       {
         id: 'actions',

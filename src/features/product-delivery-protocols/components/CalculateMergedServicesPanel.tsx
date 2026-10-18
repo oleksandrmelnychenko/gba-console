@@ -182,7 +182,7 @@ function CalculateMergedServicesPanelContent({
               className={`calculate-service-invoice-card${item.isSelected || isAuto ? ' is-selected' : ''}`}
             >
               <Group align="center" className="calculate-service-invoice-head" gap={8} wrap="nowrap">
-                <Badge className="app-role-pill is-yellow calculate-service-invoice-number" size="sm" variant="light">
+                <Badge className="app-role-pill calculate-service-invoice-number is-document" size="sm" variant="light">
                   № {item.number || '-'}
                 </Badge>
                 <Text

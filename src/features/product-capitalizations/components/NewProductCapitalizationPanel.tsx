@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
   Button,
@@ -1030,11 +1031,7 @@ function useItemColumns(
         width: 160,
         minWidth: 124,
         accessor: (item) => item.Product?.VendorCode,
-        cell: (item) => (
-          <span className="product-capitalization-cell-code">
-            {displayValue(item.Product?.VendorCode || item.ProductVendorCode)}
-          </span>
-        ),
+        cell: (item) => <TableChip tone="product" value={displayValue(item.Product?.VendorCode || item.ProductVendorCode)} />,
       },
       {
         id: 'name',

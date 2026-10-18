@@ -15,7 +15,7 @@ import { CircleAlert } from 'lucide-react'
 import { useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { DocumentDetailLayout, DocumentDetailSummary, DocumentDetailMetric, DocumentDetailSection, DocumentDetailRow } from '../../../shared/ui/document-detail/DocumentDetail'
+import { DocumentDetailChip, DocumentDetailLayout, DocumentDetailSummary, DocumentDetailMetric, DocumentDetailSection, DocumentDetailRow } from '../../../shared/ui/document-detail/DocumentDetail'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { PaymentImageList } from './PaymentImageList'
 import { PaymentShopOrderItemsTable } from './PaymentShopOrderItemsTable'
@@ -136,7 +136,7 @@ export function PaymentShopDetailDrawer({
         <DocumentDetailSummary
           eyebrow={t('Документ')}
           title={sale?.SaleNumber?.Value || '—'}
-          meta={<>{date ? formatDateTime(date) : '—'} · {item?.RetailClient?.Name || '—'}</>}
+          meta={<>{date ? <DocumentDetailChip tone="info">{formatDateTime(date)}</DocumentDetailChip> : null}{item?.RetailClient?.Name ? <DocumentDetailChip>{item.RetailClient.Name}</DocumentDetailChip> : null}</>}
           metrics={<>
             <DocumentDetailMetric label={t('Підтверджено менеджером')} value={formatAmount(item?.RetailPaymentStatus?.Amount)} suffix="UAH" />
             <DocumentDetailMetric label={t('Проведено бухгалтерією')} value={formatAmount(item?.RetailPaymentStatus?.PaidAmount)} suffix="UAH" />

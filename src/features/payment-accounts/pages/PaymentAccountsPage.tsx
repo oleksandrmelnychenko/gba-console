@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -364,7 +365,7 @@ function usePaymentAccountColumns(onOpen: (account: PaymentAccount) => void): Da
         width: 120,
         minWidth: 104,
         accessor: (account) => getPrimaryCurrencyCode(account),
-        cell: (account) => displayValue(getPrimaryCurrencyCode(account)),
+        cell: (account) => <TableChip tone="neutral" value={displayValue(getPrimaryCurrencyCode(account))} />,
       },
       {
         id: 'organization',

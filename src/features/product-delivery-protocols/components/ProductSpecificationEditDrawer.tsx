@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import { Alert, Button, Group, NumberInput, Stack, Table, Text, TextInput } from '@mantine/core'
 import { Check, CircleAlert } from 'lucide-react'
 import { useMemo } from 'react'
@@ -176,7 +177,7 @@ function ProductSpecificationEditDrawerContent({
                 {t('Немає даних')}
               </Text>
             ) : (
-              <Table striped withTableBorder withColumnBorders>
+              <Table className="app-static-table" striped withTableBorder withColumnBorders>
                 <Table.Thead>
                   <Table.Tr>
                     <Table.Th>{t('Митний код')}</Table.Th>
@@ -188,7 +189,7 @@ function ProductSpecificationEditDrawerContent({
                 <Table.Tbody>
                   {history.map((specification, index) => (
                     <Table.Tr key={specification.NetUid || specification.Id || index}>
-                      <Table.Td>{specification.SpecificationCode || '-'}</Table.Td>
+                      <Table.Td><TableChip tone="document" value={specification.SpecificationCode || '-'} /></Table.Td>
                       <Table.Td className="app-table-number">{specification.DutyPercent ?? 0}</Table.Td>
                       <Table.Td>{getUserName(specification)}</Table.Td>
                       <Table.Td>{formatDate(specification.Created)}</Table.Td>

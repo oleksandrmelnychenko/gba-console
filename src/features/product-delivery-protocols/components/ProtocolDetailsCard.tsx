@@ -16,7 +16,7 @@ export function ProtocolDetailsCard({ protocol }: { protocol: ProtocolDetail }) 
             {t('Протокол')}
           </Text>
           {protocol.DeliveryProductProtocolNumber?.Number && (
-            <Badge className="app-role-pill is-yellow" variant="light">
+            <Badge className="app-role-pill is-document" variant="light">
               {protocol.DeliveryProductProtocolNumber.Number}
             </Badge>
           )}

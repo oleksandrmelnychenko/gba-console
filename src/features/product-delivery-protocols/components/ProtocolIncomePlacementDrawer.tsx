@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import { Button, Checkbox, Group, NumberInput, Select, Stack, Table, Text, TextInput } from '@mantine/core'
 import { useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -266,7 +267,7 @@ function ProtocolIncomePlacementDrawerContent({
         </Text>
 
         <Table.ScrollContainer minWidth={484}>
-        <Table className="protocol-income-placement-table" withTableBorder withColumnBorders>
+        <Table className="app-static-table protocol-income-placement-table" withTableBorder withColumnBorders>
           <colgroup>
             <col style={{ width: PLACEMENT_INDEX_COLUMN_WIDTH }} />
             <col />
@@ -293,7 +294,7 @@ function ProtocolIncomePlacementDrawerContent({
                 onClick={() => !placement.IsApplied && openDraft(placement)}
               >
                 <Table.Td>{index + 1}</Table.Td>
-                <Table.Td>{placement.StorageNumber}</Table.Td>
+                <Table.Td><TableChip tone="storage" value={placement.StorageNumber} /></Table.Td>
                 <Table.Td>{placement.RowNumber}</Table.Td>
                 <Table.Td>{placement.CellNumber}</Table.Td>
                 <Table.Td className="protocol-income-placement-qty-cell app-table-number">{placement.Qty ?? 0}</Table.Td>

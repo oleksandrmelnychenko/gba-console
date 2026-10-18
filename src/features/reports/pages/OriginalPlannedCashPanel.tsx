@@ -46,7 +46,7 @@ function PlannedTable({ report }: { report: OriginalPlannedResult }) {
   return <Stack gap="xs"><Group><Button size="xs" variant="light" disabled={current === 0} onClick={() => setPage(current - 1)}>{t('Попередні рядки')}</Button>
     <Text size="xs">{body.length ? start + 1 : 0}–{Math.min(start + 50, body.length)} / {body.length}</Text>
     <Button size="xs" variant="light" disabled={start + 50 >= body.length} onClick={() => setPage(current + 1)}>{t('Наступні рядки')}</Button></Group>
-    <Table.ScrollContainer minWidth={1500}><Table><Table.Thead><Table.Tr>{matrix[0].map(label => <Table.Th key={label}>{t(label)}</Table.Th>)}</Table.Tr></Table.Thead>
+    <Table.ScrollContainer minWidth={1500}><Table className="app-static-table"><Table.Thead><Table.Tr>{matrix[0].map(label => <Table.Th key={label}>{t(label)}</Table.Th>)}</Table.Tr></Table.Thead>
       <Table.Tbody>{body.slice(start, start + 50).map(row => <Table.Tr key={row[0]}>{row.map((value, column) => <Table.Td key={matrix[0][column]}>{value}</Table.Td>)}</Table.Tr>)}</Table.Tbody>
       {report.Totals ? <Table.Tfoot><Table.Tr>{matrix.at(-1)?.map((value, column) => <Table.Th key={matrix[0][column]}>{value}</Table.Th>)}</Table.Tr></Table.Tfoot> : null}
     </Table></Table.ScrollContainer>{!body.length ? <Text>{t('У повністю перевіреному періоді рядків немає.')}</Text> : null}</Stack>

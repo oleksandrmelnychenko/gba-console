@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -544,7 +545,7 @@ function usePackListColumns({
         header: t('Номер'),
         width: 150,
         accessor: (packList) => packList.Number,
-        cell: (packList) => <PackListTableValue fw={600} value={displayValue(packList.Number)} />,
+        cell: (packList) => <TableChip tone="document" value={displayValue(packList.Number)} />,
       },
       {
         id: 'organization',
@@ -565,7 +566,7 @@ function usePackListColumns({
         header: t('Договір'),
         width: 170,
         accessor: getPackListAgreementName,
-        cell: (packList) => <PackListTableValue value={displayValue(getPackListAgreementName(packList))} />,
+        cell: (packList) => <TableChip value={displayValue(getPackListAgreementName(packList))} />,
       },
       {
         id: 'taxFreeCount',

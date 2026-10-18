@@ -10,7 +10,7 @@ export function ServerReportCellsTable({ columns, cells }: {
 }) {
   const { t } = useI18n()
   return <Table.ScrollContainer minWidth={640}>
-    <Table>
+    <Table className="app-static-table">
       <Table.Thead><Table.Tr>{columns.map(column => <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
       <Table.Tbody><Table.Tr>{cells.map(cell => <Table.Td key={cell.Key}
         title={!cell.Available ? t('Недоступні дані') : cell.Value === null ? t('У періоді немає даних') : undefined}>

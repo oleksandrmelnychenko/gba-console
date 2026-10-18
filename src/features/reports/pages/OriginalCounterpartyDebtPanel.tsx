@@ -30,7 +30,7 @@ function DebtTable({ result }: { result: DebtResult }) {
     <Button variant="light" size="xs" disabled={current === 0} onClick={() => setPage(current - 1)}>{t('Попередні рядки')}</Button>
     <Text size="xs">{lines.length ? offset + 1 : 0}–{Math.min(lines.length, offset + 50)} / {lines.length}</Text>
     <Button variant="light" size="xs" disabled={offset + 50 >= lines.length} onClick={() => setPage(current + 1)}>{t('Наступні рядки')}</Button>
-  </Group><Table.ScrollContainer minWidth={800}><Table striped><Table.Thead><Table.Tr>
+  </Group><Table.ScrollContainer minWidth={800}><Table className="app-static-table" striped><Table.Thead><Table.Tr>
     {headers.map(h => <Table.Th key={h}>{t(h)}</Table.Th>)}
   </Table.Tr></Table.Thead><Table.Tbody>{lines.slice(offset, offset + 50).map(line => <Table.Tr key={line.key} fw={line.subtotal ? 600 : undefined}>
     {line.cells.map((cell, i) => <Table.Td key={headers[i]} className={i >= 2 ? 'app-money' : undefined}>{cell}</Table.Td>)}

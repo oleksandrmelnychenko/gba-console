@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
   Badge,
@@ -815,7 +816,7 @@ function useItemColumns({
       header: t('Код Виробника'),
       width: 140,
       accessor: (item) => item.Product?.VendorCode || item.Product?.Articul,
-      cell: (item) => displayValue(item.Product?.VendorCode || item.Product?.Articul),
+      cell: (item) => <TableChip tone="product" value={displayValue(item.Product?.VendorCode || item.Product?.Articul)} />,
     },
     {
       id: 'name',
@@ -1218,7 +1219,7 @@ function AddProductForm({
                 >
                   <Group justify="space-between" wrap="nowrap" gap="md">
                     <div className="sale-add-product__description">
-                      <Text className="sale-add-product__code" fw={600} size="sm">{displayValue(product.VendorCode || product.Articul)}</Text>
+                      <Text className="sale-add-product__code" fw={600} size="sm"><TableChip tone="product" value={displayValue(product.VendorCode || product.Articul)} /></Text>
                       <Text c="dimmed" size="xs">{displayValue(product.NameUA || product.Name)}</Text>
                     </div>
                     <Stack gap={2} align="flex-end" style={{ flexShrink: 0 }}>
@@ -1236,7 +1237,7 @@ function AddProductForm({
       </div>
       </DocumentDetailSection>
       <DocumentDetailSection title={t('Кількість')} stacked>
-      {selected && <Text size="sm" className="sale-add-product__code">{displayValue(selected.VendorCode || selected.Articul)}</Text>}
+      {selected && <Text size="sm" className="sale-add-product__code"><TableChip tone="product" value={displayValue(selected.VendorCode || selected.Articul)} /></Text>}
       <NumberInput
         allowNegative={false}
         decimalScale={2}

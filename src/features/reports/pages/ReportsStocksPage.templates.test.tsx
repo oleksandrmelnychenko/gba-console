@@ -1,16 +1,17 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from '../api/reportWorkspaceApi'
 import { createSalesReportPreset } from '../data/reportPresets'
 import { reportDatasets, stockDataset } from '../data/reportDatasets.test-fixtures'
+import { chooseTemplateAction } from '../testing/templateActions'
 import { ReportsStocksPage } from './ReportsStocksPage'
 
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(), getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn(), saveServerReportTemplate: vi.fn() }))
 const template = { ...createSalesReportPreset('agreements', '2026-09-01', '2026-09-07', []), Id: crypto.randomUUID(), Revision: 4, Name: 'Збережені договори' }
-async function openTemplate() { fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: /Збережені договори/ })) }
+async function openTemplate() { fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: `Відкрити для редагування: ${template.Name}` })) }
 
 describe('constructor opened-template identity', () => {
   beforeEach(() => {
@@ -39,7 +40,9 @@ describe('constructor opened-template identity', () => {
     await screen.findByRole('button', { name: 'Продажі за днями' }); await openTemplate()
     fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-09-02' } })
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Новий шаблон' }))
     fireEvent.change(screen.getByLabelText('Назва шаблону'), { target: { value: 'Назва нового draft' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Скасувати' }))
     fireEvent.click(screen.getByRole('button', { name: 'Оновити шаблон' }))
     await waitFor(() => expect(saveServerReportTemplate).toHaveBeenCalledOnce())
     expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0]).toMatchObject({ Id: template.Id, Revision: 4, Name: template.Name, Data: { from: '2026-09-02', to: template.Data.to } })
@@ -58,7 +61,7 @@ describe('constructor opened-template identity', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(screen.getByRole('button', { name: 'Оновити список' }))
     await waitFor(() => expect((screen.getByRole('button', { name: 'Оновити шаблон' }) as HTMLButtonElement).disabled).toBe(true))
-    fireEvent.click(within(screen.getByRole('group', { name: template.Name })).getByRole('button', { name: 'Перейменувати' }))
+    chooseTemplateAction(template.Name, 'Перейменувати')
     fireEvent.change(screen.getByLabelText('Нова назва'), { target: { value: 'Нова назва договорів' } })
     fireEvent.click(screen.getByRole('button', { name: 'Підтвердити' }))
     await screen.findByRole('group', { name: 'Нова назва договорів' })

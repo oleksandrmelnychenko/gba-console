@@ -59,7 +59,7 @@ export function ReportInlinePreview({ preview, embedded = false }: { preview: Na
     </div>
     <ReportAttributionWarnings request={preview.Request} />
     <div className="report-inline-preview__scroll" tabIndex={0} role="region" aria-label="Таблиця попереднього перегляду">
-      <table>
+      <table className="app-static-table">
         <thead><tr>
           {rowHeaders.map((header, index) => <th scope="col" rowSpan={products ? 2 : undefined} key={`row-${index}`}>{header}</th>)}
           {preview.Columns.map(column => <th scope="col" key={column.SourceIndex}>

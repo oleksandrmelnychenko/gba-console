@@ -20,7 +20,7 @@ function AcceptedMatrix({ result }: { result: MatrixResult }) {
       <Text size="xs">{result.Rows.length ? first + 1 : 0}–{Math.min(first + 50, result.Rows.length)} / {result.Rows.length}</Text>
       <Button size="xs" variant="light" disabled={first + 50 >= result.Rows.length} onClick={() => setPage(current + 1)}>{t('Наступні рядки')}</Button></Group>
     <Table.ScrollContainer minWidth={Math.max(640, 260 + result.Columns.length * 110)}>
-      <Table captionSide="top"><Table.Caption>{t('Матриця товарів')} · {result.From} – {result.Through}</Table.Caption>
+      <Table className="app-static-table" captionSide="top"><Table.Caption>{t('Матриця товарів')} · {result.From} – {result.Through}</Table.Caption>
         <Table.Thead><Table.Tr><Table.Th scope="col">{t('Номенклатура')}</Table.Th>
           {result.Columns.map(column => <Table.Th key={matrixColumnKey(column)} scope="col">
             <div>{column.Caption}</div>{column.RegionCode === null ? <div>{t('Разом')}</div> : <><div>{column.RegionCode || '\u00a0'}</div><div>{column.MeasureCaption}</div></>}

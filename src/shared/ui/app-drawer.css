@@ -1,14 +1,19 @@
 /* Every right-side work window uses the same visual language. AppDrawer adds
    `.app-drawer.app-form-sheet` itself, so feature code cannot accidentally
    skip the shared title/control/button pattern. */
+.app-drawer {
+  --app-sheet-gutter: 8px;
+}
+
 .app-drawer .mantine-Drawer-title {
   color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.25;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .app-drawer .mantine-Drawer-title > * {
@@ -57,11 +62,10 @@
   border-radius: 8px;
 }
 
-.app-drawer.app-form-sheet .mantine-Alert-root,
 .app-drawer.app-form-sheet .mantine-Card-root,
 .app-drawer.app-form-sheet .mantine-Paper-root {
   border-color: var(--mantine-color-gray-2);
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow: none;
 }
 
@@ -138,23 +142,22 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--mantine-spacing-xs) var(--mantine-spacing-lg) var(--mantine-spacing-lg);
+  padding: 0 var(--app-sheet-gutter) 12px;
 }
 
-/* Shared right-sheet action bar. Same hairline + soft elevation + subtle brand
-   wash as the roster command bar, mirrored to read as a footer. Layout is
+/* Shared right-sheet action bar: flat white surface and a thin divider. Layout is
    space-between, so pass a leading node (e.g. Cancel) and a trailing group
    (e.g. Delete + Save). */
 .app-sheet-footer {
   align-items: center;
   background: var(--mantine-color-white);
   border-top: 1px solid var(--mantine-color-gray-2);
-  box-shadow: 0 -8px 24px rgba(20, 28, 38, 0.05);
+  box-shadow: none;
   display: flex;
   flex: 0 0 auto;
   gap: 10px;
   justify-content: space-between;
-  padding: 12px var(--mantine-spacing-lg);
+  padding: 12px var(--app-sheet-gutter);
 }
 
 /* When a sheet only has trailing actions, keep them flush to the right. */

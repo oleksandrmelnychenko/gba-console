@@ -81,7 +81,7 @@ function CollectionCoefficientResult({ report }: { report: CollectionCoefficient
       <Text size="sm">{t('Період')}: {report.Month}</Text>
       {report.Complete && !report.HasRows ? <Alert color="blue">{t('У вибраних періодах немає оборотів покупців.')}</Alert> : null}
       <Table.ScrollContainer minWidth={640}>
-        <Table>
+        <Table className="app-static-table">
           <Table.Thead><Table.Tr>{report.Columns.map(column => <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
           <Table.Tbody>{report.HasRows || !report.Complete ? <Table.Tr>{report.Cells.map((cell, index) => <Table.Td key={cell.Key}
             title={cell.Available ? undefined : t('Недоступні дані')}>

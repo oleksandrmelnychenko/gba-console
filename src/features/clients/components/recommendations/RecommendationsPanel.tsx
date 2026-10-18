@@ -1,3 +1,4 @@
+import { TableChip } from '../../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -478,7 +479,7 @@ function RecommendationsList({
 
   if (isGrid) {
     return (
-      <Table striped highlightOnHover withTableBorder withColumnBorders>
+      <Table className="app-static-table" striped highlightOnHover withTableBorder withColumnBorders>
         <Table.Thead>
           <Table.Tr>
             {selectable && <Table.Th w={40} />}
@@ -505,9 +506,9 @@ function RecommendationsList({
                   />
                 </Table.Td>
               )}
-              <Table.Td>{displayValue(product.VendorCode)}</Table.Td>
+              <Table.Td><TableChip tone="product" value={displayValue(product.VendorCode)} /></Table.Td>
               <Table.Td>{displayValue(product.Name)}</Table.Td>
-              <Table.Td>{displayValue(product.MainOriginalNumber)}</Table.Td>
+              <Table.Td><TableChip tone="product" value={displayValue(product.MainOriginalNumber)} /></Table.Td>
               <Table.Td>
                 <RecommendationSourceBadge product={product} />
               </Table.Td>

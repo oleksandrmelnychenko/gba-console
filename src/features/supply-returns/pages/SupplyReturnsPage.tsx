@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -605,7 +606,7 @@ function useSupplyReturnColumns(
         width: 160,
         minWidth: 132,
         accessor: (supplyReturn) => supplyReturn.Number || supplyReturn.NetUid,
-        cell: (supplyReturn) => <Text fw={600}>{displayValue(supplyReturn.Number)}</Text>,
+        cell: (supplyReturn) => <TableChip tone="document" value={displayValue(supplyReturn.Number)} />,
       },
       {
         id: 'organization',
@@ -646,7 +647,7 @@ function useSupplyReturnColumns(
         width: 220,
         minWidth: 180,
         accessor: (supplyReturn) => supplyReturn.Storage?.Name,
-        cell: (supplyReturn) => displayValue(supplyReturn.Storage?.Name),
+        cell: (supplyReturn) => <TableChip tone="storage" value={displayValue(supplyReturn.Storage?.Name)} />,
       },
       {
         id: 'responsible',

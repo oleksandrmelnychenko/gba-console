@@ -115,6 +115,50 @@
   min-height: 0;
 }
 
+/* Dense registries use two compact rows instead of shrinking action groups
+   into overlapping grid tracks. Layout controls retain their visible labels. */
+.app-filter-bar.app-filter-bar--stacked {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex: 0 0 auto;
+  min-width: 0;
+  background: var(--mantine-color-gray-0);
+}
+
+.app-filter-command-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  min-width: 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--mantine-color-gray-2);
+}
+
+.app-filter-command-row > .app-filter-actions {
+  margin-left: 0;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.app-filter-command-row > .app-filter-table-toolbar-slot {
+  flex: 0 1 auto;
+  max-width: 100%;
+}
+
+.app-filter-command-row .data-table-toolbar-left {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.app-filter-command-row .app-filter-primary-action {
+  padding-inline: 12px;
+  font-size: 13px;
+}
+.app-filter-command-row .app-filter-primary-action .mantine-Button-label { font-size: inherit; }
+
 /* Keep paired date filters identical across console pages regardless of the
    surrounding flex/grid layout. */
 .app-filter-date-range {

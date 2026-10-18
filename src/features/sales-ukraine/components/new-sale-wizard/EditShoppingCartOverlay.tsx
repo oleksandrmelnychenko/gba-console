@@ -1,3 +1,4 @@
+import { TableChip } from '../../../../shared/ui/TableChip'
 import { ActionIcon, Box, Group, Text } from '@mantine/core'
 import { X } from 'lucide-react'
 import { useEffect, useRef } from 'react'
@@ -177,7 +178,7 @@ function CartTable({
       id: 'vendorCode',
       header: t('Код товару'),
       accessor: (row) => row.vendorCode,
-      cell: (row) => <CartTextCell strong value={displayValue(row.vendorCode)} />,
+      cell: (row) => <TableChip tone="product" value={displayValue(row.vendorCode)} />,
       width: 132,
       minWidth: 112,
     },
@@ -202,7 +203,7 @@ function CartTable({
       id: 'originalNumber',
       header: t('Ориг. номер'),
       accessor: (row) => row.originalNumber,
-      cell: (row) => <CartTextCell value={displayValue(row.originalNumber)} />,
+      cell: (row) => <TableChip tone="neutral" value={displayValue(row.originalNumber)} />,
       width: 160,
       minWidth: 128,
     },

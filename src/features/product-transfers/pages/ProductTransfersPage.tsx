@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -21,6 +22,7 @@ import {
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import {
   DocumentDetailFlag,
+  DocumentDetailChip,
   DocumentDetailLayout,
   DocumentDetailMetric,
   DocumentDetailRow,
@@ -969,7 +971,7 @@ function useProductTransferColumns(
         width: 150,
         minWidth: 132,
         accessor: (transfer) => transfer.Number || transfer.NetUid,
-        cell: (transfer) => <Text fw={600}>{displayValue(transfer.Number)}</Text>,
+        cell: (transfer) => <TableChip tone="document" value={displayValue(transfer.Number)} />,
       },
       {
         id: 'management',
@@ -1003,7 +1005,7 @@ function useProductTransferColumns(
         width: 240,
         minWidth: 190,
         accessor: (transfer) => transfer.FromStorage?.Name,
-        cell: (transfer) => displayValue(transfer.FromStorage?.Name),
+        cell: (transfer) => <TableChip tone="storage" value={displayValue(transfer.FromStorage?.Name)} />,
       },
       {
         id: 'toStorage',
@@ -1011,7 +1013,7 @@ function useProductTransferColumns(
         width: 240,
         minWidth: 190,
         accessor: (transfer) => transfer.ToStorage?.Name,
-        cell: (transfer) => displayValue(transfer.ToStorage?.Name),
+        cell: (transfer) => <TableChip tone="storage" value={displayValue(transfer.ToStorage?.Name)} />,
       },
       {
         id: 'responsible',
@@ -1174,7 +1176,7 @@ export function TransferDetail({
         <DocumentDetailSummary
           eyebrow={t('Переміщення')}
           title={displayValue(transfer.Number)}
-          meta={[transferDate, routeLine].filter(Boolean).join(' · ')}
+          meta={<>{transferDate ? <DocumentDetailChip tone="info">{transferDate}</DocumentDetailChip> : null}{routeLine ? <DocumentDetailChip tone="storage">{routeLine}</DocumentDetailChip> : null}</>}
           metrics={
             <>
               <DocumentDetailMetric label={t('Позицій')} value={String(items.length)} />

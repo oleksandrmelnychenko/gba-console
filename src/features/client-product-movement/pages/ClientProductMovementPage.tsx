@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -523,7 +524,7 @@ function useColumns({
         minWidth: 120,
         enableSorting: false,
         accessor: (row) => row.document.DocumentNumber,
-        cell: (row) => (row.kind === MOVEMENT_ROW.DETAIL ? null : <MovementMonoCell value={displayValue(row.document.DocumentNumber)} />),
+        cell: (row) => (row.kind === MOVEMENT_ROW.DETAIL ? null : <TableChip tone="document" value={displayValue(row.document.DocumentNumber)} />),
       },
       {
         id: 'fromDate',
@@ -617,7 +618,7 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
                     setProductCardNetId(netId)
                   }}
                 >
-                  {code}
+                  <TableChip tone="product" value={code} />
                 </Anchor>
               ) : (
                 <MovementMonoCell value={code} />
@@ -651,7 +652,7 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
         width: 200,
         minWidth: 140,
         accessor: (item) => item.ProductSpecificationCode,
-        cell: (item) => <MovementMonoCell value={displayValue(item.ProductSpecificationCode)} />,
+        cell: (item) => <TableChip tone="neutral" value={displayValue(item.ProductSpecificationCode)} />,
       },
       {
         id: 'responsible',

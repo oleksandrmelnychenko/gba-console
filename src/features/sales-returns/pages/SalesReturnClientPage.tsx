@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -816,7 +817,7 @@ function useDirectReturnColumns({
         id: 'vendorCode',
         header: t('Артикул'),
         accessor: (item) => item.product.VendorCode,
-        cell: (item) => <MonoCell value={displayValue(item.product.VendorCode)} />,
+        cell: (item) => <TableChip tone="product" value={displayValue(item.product.VendorCode)} />,
         width: 140,
       },
       {
@@ -876,7 +877,7 @@ function useBatchColumns(t: (value: string) => string): DataTableColumn<SalesRet
         id: 'number',
         header: t('Номер приходу'),
         accessor: (batch) => batch.IncomeToStorageNumber,
-        cell: (batch) => <MonoCell value={displayValue(batch.IncomeToStorageNumber)} />,
+        cell: (batch) => <TableChip tone="document" value={displayValue(batch.IncomeToStorageNumber)} />,
         width: 180,
       },
       {

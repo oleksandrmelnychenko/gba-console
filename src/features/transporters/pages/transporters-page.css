@@ -284,32 +284,8 @@
   object-fit: contain;
 }
 
-.transporters-status-tag {
-  align-items: center;
-  border-radius: 7px;
-  display: inline-flex;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  height: 22px;
-  justify-content: center;
-  letter-spacing: 0;
-  line-height: 1;
-  padding: 0 8px;
-  white-space: nowrap;
-}
 
-.transporters-status-tag.is-active {
-  background: var(--mantine-color-green-0);
-  border: 1px solid var(--mantine-color-green-2);
-  color: var(--mantine-color-green-8);
-}
 
-.transporters-status-tag.is-archived {
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-7);
-}
 
 .transporters-empty-state {
   align-items: center;

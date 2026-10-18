@@ -47,6 +47,7 @@ const page = (consoleScope?: boolean) => <MantineProvider env="test"><I18nProvid
 it('does not mount the constructor dialogs the console catalogue cannot open', async () => {
   render(page())
   await findWorkbookLanding()
+  expect(screen.queryByRole('button', { name: /Каталог.*звітів/ })).toBeNull()
   expect(CollectionCoefficientConstructorModal).not.toHaveBeenCalled()
   expect(PlannedCashConstructorModal).not.toHaveBeenCalled()
 })
@@ -66,8 +67,9 @@ it('does not re-render the finished preview while the template name is typed', a
   fireEvent.click(screen.getByRole('button', { name: 'Показати на екрані' }))
   await screen.findByRole('region', { name: 'Попередній перегляд звіту' })
   const renders = vi.mocked(ReportInlinePreview).mock.calls.length
-  expect(vi.mocked(ReportInlinePreview).mock.calls.at(-1)?.[0]).toEqual({ preview })
+  expect(vi.mocked(ReportInlinePreview).mock.calls.at(-1)?.[0]).toEqual({ preview, embedded: true })
   fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Новий шаблон' }))
   const name = await screen.findByRole('textbox', { name: 'Назва шаблону' })
   for (const value of ['П', 'Пр', 'Пре']) fireEvent.change(name, { target: { value } })
   expect((name as HTMLInputElement).value).toBe('Пре')

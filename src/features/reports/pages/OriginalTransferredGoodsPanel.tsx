@@ -34,7 +34,7 @@ function TransferredTable({ result }: { result: TransferredResult }) {
     <Group justify="space-between"><Button variant="light" size="xs" disabled={current === 0} onClick={() => setPage(current - 1)}>{t('Попередні рядки')}</Button>
       <Text size="xs">{lines.length ? offset + 1 : 0}–{Math.min(offset + 50, lines.length)} / {lines.length}</Text>
       <Button variant="light" size="xs" disabled={offset + 50 >= lines.length} onClick={() => setPage(current + 1)}>{t('Наступні рядки')}</Button></Group>
-    <Table.ScrollContainer minWidth={1900}><Table striped highlightOnHover>
+    <Table.ScrollContainer minWidth={1900}><Table className="app-static-table" striped highlightOnHover>
       <Table.Thead><Table.Tr>{transferredHeaders.map(label => <Table.Th key={label}>{t(label)}</Table.Th>)}</Table.Tr></Table.Thead>
       <Table.Tbody>{lines.slice(offset, offset + 50).map(line => <Table.Tr key={line.key} style={line.subtotal ? { fontWeight: 600 } : undefined}>
         {line.cells.map((cell, i) => <Table.Td key={transferredHeaders[i]} className={i >= 2 ? 'app-money' : undefined}>{cell}</Table.Td>)}

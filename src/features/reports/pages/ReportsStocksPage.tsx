@@ -1163,8 +1163,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         onRestore={() => workspaceDraft.restore(restoreWorkspace)} onUndo={() => workspaceDraft.undo(restoreWorkspace)}
         onDiscard={() => { const discarded = workspaceDraft.discardRecovery(); if (discarded) setDraftRestoreError(null); return discarded }} /> : null}
       <Button type="button" variant="subtle" color="gray" className="workbook-quiet-action" leftSection={<LayoutTemplate size={15} />}
-        disabled={!canGenerateReport || isLoading} onClick={() => setDeskTemplatesOpened(true)}>{t('Шаблони')}</Button>
-      {catalogueControl(true)}
+        disabled={!canGenerateReport || isLoading} onClick={() => { setTemplateNotice(null); templateStorage.clearNotice(); setDeskTemplatesOpened(true) }}>{t('Шаблони')}</Button>
     </>
     const showLanding = datasetHidden || landingRequested
     const excelUrl = result?.document.DocumentURL || null
@@ -1210,12 +1209,13 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           </form>}
         <AppModal centered classNames={{ body: 'reports-stocks-template-modal__body', title: 'reports-stocks-modal-title' }}
           opened={deskTemplatesOpened} closeOnClickOutside={!templateStorage.busy} closeOnEscape={!templateStorage.busy}
-          closeButtonProps={{ disabled: templateStorage.busy }} size="lg" title={t('Шаблони звіту')}
+          closeButtonProps={{ disabled: templateStorage.busy }} size={820} title={t('Шаблони звіту')}
           onClose={() => setDeskTemplatesOpened(false)}>
           <ReportTemplatesPanel ordering={templateStorage.ordering} storage={templateStorage} datasets={datasetStorage.datasets}
-            dataSources={BUG_1274_ACTIVE_DATA_SOURCES} callerKey={ownerId} requireReadMode configurationReady={!configurationError}
+            dataSources={BUG_1274_ACTIVE_DATA_SOURCES} callerKey={ownerId} requireReadMode configurationReady={!configurationError && !workbookResolving}
+            configurationName={deskTitle} key={ownerId}
             notice={templateNotice ?? templateStorage.notice} templateName={templateName} activeTemplate={activeTemplate}
-            disabled={!canGenerateReport || isLoading} onRenamed={renamedTemplate} onClearNotice={() => setTemplateNotice(null)}
+            disabled={!canGenerateReport || isLoading} onRenamed={renamedTemplate} onClearNotice={() => { setTemplateNotice(null); templateStorage.clearNotice() }}
             onApply={template => { if (applyTemplate(template)) setDeskTemplatesOpened(false) }}
             onDeleted={deletedTemplate} onNameChange={setTemplateName} onRefresh={loadTemplates}
             onSave={saveTemplate} onUpdate={updateTemplate} />
@@ -1349,7 +1349,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         activeTemplate={activeTemplate}
         templatesDisabled={!canGenerateReport || isLoading}
         onRenamedTemplate={renamedTemplate}
-        onClearTemplateNotice={() => setTemplateNotice(null)}
+        onClearTemplateNotice={() => { setTemplateNotice(null); templateStorage.clearNotice() }}
         to={to}
         onApplyTemplate={applyTemplate}
         onDeleteTemplate={deletedTemplate}
@@ -1568,7 +1568,7 @@ function ReportBuilderForm(props: ReportBuilderFormProps) {
               disabled={templatesDisabled}
               leftSection={<LayoutTemplate size={16} />}
               type="button"
-              onClick={() => setTemplatesOpened(true)}
+              onClick={() => { onClearTemplateNotice(); setTemplatesOpened(true) }}
             >
               {t('Шаблони')}
             </Button>
@@ -1614,11 +1614,12 @@ function ReportBuilderForm(props: ReportBuilderFormProps) {
           closeOnClickOutside={!templateStorage.busy}
           closeOnEscape={!templateStorage.busy}
           closeButtonProps={{ disabled: templateStorage.busy }}
-          size="lg"
+          size={820}
           title={t('Шаблони звіту')}
           onClose={() => setTemplatesOpened(false)}
         >
           <ReportTemplatesPanel
+            key={props.templateCallerKey}
             ordering={props.templateStorage.ordering}
             storage={templateStorage}
             datasets={props.templateDatasets}

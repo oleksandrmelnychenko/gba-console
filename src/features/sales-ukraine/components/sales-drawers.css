@@ -209,33 +209,9 @@
   border-spacing: 0;
 }
 
-.sales-drawer-table .mantine-Table-th {
-  background: var(--mantine-color-gray-0);
-  border-bottom: 1px solid var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-7);
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0;
-  padding: 8px;
-  white-space: nowrap;
-}
 
-.sales-drawer-table .mantine-Table-td {
-  border-bottom: 1px solid var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-8);
-  font-size: 13px;
-  font-weight: 500;
-  padding: 8px;
-}
 
-.sales-drawer-table .mantine-Table-tbody .mantine-Table-tr:nth-child(even) .mantine-Table-td {
-  background: var(--mantine-color-gray-0);
-}
 
-.sales-drawer-table .mantine-Table-tbody .mantine-Table-tr:hover .mantine-Table-td {
-  background: var(--mantine-color-gray-1);
-}
 
 .sales-drawer-table .mantine-NumberInput-input {
   font-family: var(--font-mono);
@@ -448,26 +424,7 @@
   box-shadow: none !important;
 }
 
-.sale-edit-code-pill {
-  color: var(--mantine-color-gray-8);
-  display: inline-block;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0;
-  line-height: 1.2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
-.sale-edit-currency {
-  color: var(--mantine-color-gray-6);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0;
-}
 
 .sale-edit-muted-value,
 .sale-edit-user-name {

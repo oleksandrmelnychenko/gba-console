@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
   Badge,
@@ -10,6 +11,7 @@ import { useMemo } from 'react'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import {
   DocumentDetailFlag,
+  DocumentDetailChip,
   DocumentDetailLayout,
   DocumentDetailMetric,
   DocumentDetailRow,
@@ -87,7 +89,7 @@ export function DepreciatedOrderDetailDrawer({
             <DocumentDetailSummary
               eyebrow={t('Акт списання')}
               title={displayValue(order.Number)}
-              meta={[formatDate(order.FromDate), order.Storage?.Name].filter(Boolean).join(' · ')}
+              meta={<><DocumentDetailChip tone="info">{formatDate(order.FromDate)}</DocumentDetailChip>{order.Storage?.Name ? <DocumentDetailChip tone="storage">{order.Storage.Name}</DocumentDetailChip> : null}</>}
               metrics={
                 <>
                   <DocumentDetailMetric label={t('Позицій')} value={String(items.length)} />
@@ -190,7 +192,7 @@ function useDepreciatedOrderItemColumns(items: DepreciatedOrderItem[]): DataTabl
         width: 160,
         minWidth: 124,
         accessor: (item) => item.Product?.VendorCode,
-        cell: (item) => <Text fw={700}>{displayValue(item.Product?.VendorCode)}</Text>,
+        cell: (item) => <TableChip tone="product" value={displayValue(item.Product?.VendorCode)} />,
       },
       {
         id: 'name',

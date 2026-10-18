@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import { Alert, Badge, Button, Card, Group, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
@@ -339,7 +340,7 @@ function usePlacementColumns(
         width: 150,
         minWidth: 120,
         accessor: (row) => row.vendorCode,
-        cell: (row) => <Text fw={700}>{displayValue(row.vendorCode)}</Text>,
+        cell: (row) => <TableChip tone="product" value={displayValue(row.vendorCode)} />,
       },
       {
         id: 'productName',
@@ -359,7 +360,7 @@ function usePlacementColumns(
         width: 150,
         minWidth: 130,
         accessor: (row) => row.specificationCode,
-        cell: (row) => displayValue(row.specificationCode),
+        cell: (row) => <TableChip tone="neutral" value={displayValue(row.specificationCode)} />,
       },
       {
         id: 'orderedQty',

@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import { Alert, Badge, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useMemo } from 'react'
@@ -122,7 +123,7 @@ function useDispositionHistoryColumns(
         width: 150,
         minWidth: 120,
         accessor: (event) => event.ProductVendorCode,
-        cell: (event) => <Text fw={700}>{displayValue(event.ProductVendorCode)}</Text>,
+        cell: (event) => <TableChip tone="product" value={displayValue(event.ProductVendorCode)} />,
       },
       {
         id: 'productName',
@@ -181,7 +182,7 @@ function useHistoryColumns(
         width: 160,
         minWidth: 124,
         accessor: (action) => action.ActReconciliationItem?.Product?.VendorCode,
-        cell: (action) => <Text fw={700}>{displayValue(action.ActReconciliationItem?.Product?.VendorCode)}</Text>,
+        cell: (action) => <TableChip tone="product" value={displayValue(action.ActReconciliationItem?.Product?.VendorCode)} />,
       },
       {
         id: 'name',

@@ -93,7 +93,7 @@ function OverdueReceivablesResult({ report }: { report: OverdueReceivablesReport
 
 function OverdueReceivablesGroups({ report }: { report: OverdueReceivablesReport }) {
   const { t } = useI18n()
-  return <Table.ScrollContainer minWidth={760}><Table aria-label={t('Контрагенти')}>
+  return <Table.ScrollContainer minWidth={760}><Table className="app-static-table" aria-label={t('Контрагенти')}>
     <Table.Thead><Table.Tr><Table.Th>Контрагент</Table.Th>{report.Columns.map(column => <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
     <Table.Tbody>{report.Rows.map(row => <Table.Tr key={row.CounterpartyReference}>
       <Table.Td>{row.CounterpartyName ?? t('Назва недоступна')}</Table.Td>

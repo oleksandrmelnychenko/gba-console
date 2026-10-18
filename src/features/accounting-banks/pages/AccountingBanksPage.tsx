@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -498,7 +499,7 @@ function useAccountingBankColumns(
         width: 140,
         minWidth: 120,
         accessor: (bank) => bank.MfoCode,
-        cell: (bank) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{displayValue(bank.MfoCode)}</Text>,
+        cell: (bank) => <TableChip value={displayValue(bank.MfoCode)} />,
       },
       {
         id: 'edrpouCode',
@@ -506,7 +507,7 @@ function useAccountingBankColumns(
         width: 150,
         minWidth: 132,
         accessor: (bank) => bank.EdrpouCode,
-        cell: (bank) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{displayValue(bank.EdrpouCode)}</Text>,
+        cell: (bank) => <TableChip value={displayValue(bank.EdrpouCode)} />,
       },
       {
         id: 'city',

@@ -256,20 +256,15 @@
   overflow: hidden;
 }
 
-.accountable-expense-detail-drawer__body .app-sheet-scroll {
-  overflow: hidden;
-}
-
 .accountable-expense-detail {
   display: grid;
-  gap: var(--mantine-spacing-md);
-  height: calc(100vh - 112px);
+  gap: 12px;
   min-height: 0;
   min-width: 0;
   overflow-x: hidden;
-  overflow-y: scroll;
-  padding-right: 8px;
-  scrollbar-gutter: stable;
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--mantine-color-gray-0);
   width: 100%;
 }
 

@@ -88,9 +88,6 @@
   height: 20px;
 }
 
-.outgoing-cashflows-card .data-table-density-compact .data-table-th {
-  padding: 5px 8px;
-}
 
 .outgoing-cashflows-card .data-table-cell {
   white-space: nowrap;

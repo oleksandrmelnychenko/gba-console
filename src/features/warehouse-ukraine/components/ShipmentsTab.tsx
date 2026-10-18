@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -2287,11 +2288,7 @@ function useAllShipmentColumns(indexMap: Map<ShipmentList, number>): DataTableCo
         width: 150,
         minWidth: 120,
         accessor: (item) => item.Number,
-        cell: (item) => (
-          <Text className="warehouse-shipment-cell-mono is-strong" fw={700}>
-            {displayValue(item.Number).toLocaleUpperCase('uk-UA')}
-          </Text>
-        ),
+        cell: (item) => <TableChip tone="document" value={displayValue(item.Number).toLocaleUpperCase('uk-UA')} />,
       },
       {
         id: 'qtyPlaces',
@@ -2889,11 +2886,7 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
         width: 120,
         minWidth: 90,
         accessor: (item) => item.Sale.SaleNumber?.Value,
-        cell: (item) => (
-          <Text className="warehouse-shipment-cell-mono is-strong" fw={700}>
-            {displayValue(item.Sale.SaleNumber?.Value).toLocaleUpperCase('uk-UA')}
-          </Text>
-        ),
+        cell: (item) => <TableChip tone="document" value={displayValue(item.Sale.SaleNumber?.Value).toLocaleUpperCase('uk-UA')} />,
       },
       {
         id: 'totalAmount',
@@ -2914,7 +2907,7 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
         width: 80,
         minWidth: 60,
         accessor: (item) => item.Sale.ClientAgreement?.Agreement?.Currency?.Code,
-        cell: (item) => <span className="warehouse-shipment-cell-currency">{displayValue(item.Sale.ClientAgreement?.Agreement?.Currency?.Code)}</span>,
+        cell: (item) => <TableChip tone="neutral" value={displayValue(item.Sale.ClientAgreement?.Agreement?.Currency?.Code)} />,
       },
       {
         id: 'responsible',
@@ -2966,7 +2959,7 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
         width: 130,
         minWidth: 100,
         accessor: (item) => getTtnNumber(item.Sale),
-        cell: (item) => <span className="warehouse-shipment-cell-mono">{displayValue(getTtnNumber(item.Sale)).toLocaleUpperCase('uk-UA')}</span>,
+        cell: (item) => <TableChip tone="document" value={displayValue(getTtnNumber(item.Sale)).toLocaleUpperCase('uk-UA')} />,
       },
       {
         id: 'actions',

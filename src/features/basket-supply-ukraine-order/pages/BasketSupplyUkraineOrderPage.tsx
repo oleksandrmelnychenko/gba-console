@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -1610,7 +1611,7 @@ function useBasketSalesColumns({
         id: 'number',
         header: t('Номер'),
         accessor: (sale) => sale.SaleNumber?.Value || sale.NetUid || '',
-        cell: (sale) => <span style={MONO_STYLE}>{sale.SaleNumber?.Value || sale.NetUid || ''}</span>,
+        cell: (sale) => <TableChip tone="document" value={sale.SaleNumber?.Value || sale.NetUid || ''} />,
         width: 140,
       },
       {
@@ -1712,7 +1713,7 @@ function useCartSourceColumns({
         id: 'vendorCode',
         header: t('Код Виробника'),
         accessor: (item) => item.Product?.VendorCode || '',
-        cell: (item) => <span style={MONO_STYLE}>{item.Product?.VendorCode || ''}</span>,
+        cell: (item) => <TableChip tone="product" value={item.Product?.VendorCode || ''} />,
         width: 140,
       },
       {
@@ -1800,7 +1801,7 @@ function useCartDestinationColumns({
         id: 'vendorCode',
         header: t('Код Виробника'),
         accessor: (item) => item.Product?.VendorCode || '',
-        cell: (item) => <span style={MONO_STYLE}>{item.Product?.VendorCode || ''}</span>,
+        cell: (item) => <TableChip tone="product" value={item.Product?.VendorCode || ''} />,
         width: 140,
       },
       {

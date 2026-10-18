@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -371,7 +372,7 @@ function useBalancesColumns() {
         width: 200,
         minWidth: 140,
         accessor: (document) => document.Number,
-        cell: (document) => <Text fw={600}>{displayValue(document.Number)}</Text>,
+        cell: (document) => <TableChip tone="document" value={displayValue(document.Number)} />,
       },
       {
         id: 'type',
@@ -395,7 +396,7 @@ function useBalancesColumns() {
         width: 80,
         minWidth: 70,
         accessor: (document) => document.Currency?.Name,
-        cell: (document) => displayValue(document.Currency?.Name),
+        cell: (document) => <TableChip tone="neutral" value={displayValue(document.Currency?.Name)} />,
       },
       {
         id: 'contractorType',
@@ -422,11 +423,7 @@ function useBalancesColumns() {
         header: t('Договір'),
         minWidth: 220,
         accessor: (document) => getAgreement(document),
-        cell: (document) => (
-          <Text size="sm" lineClamp={2}>
-            {displayValue(getAgreement(document))}
-          </Text>
-        ),
+        cell: (document) => <TableChip tone="neutral" value={displayValue(getAgreement(document))} />,
       },
       {
         id: 'organization',

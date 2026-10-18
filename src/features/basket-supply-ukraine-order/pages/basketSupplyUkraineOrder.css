@@ -964,23 +964,39 @@
   min-width: 0;
 }
 
-.procure-cockpit-bar {
-  align-items: end;
+.procure-cockpit-bar__filters {
   display: flex;
-  flex: 0 0 auto;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  align-items: end;
   gap: 10px;
-  overflow-x: auto;
-}
-
-.procure-cockpit-bar__actions {
-  flex: 0 0 auto;
-  margin-left: auto;
+  min-width: 0;
 }
 
 .procure-cockpit-bar__lens {
-  flex: 0 0 270px;
-  width: 270px;
+  flex: 0 1 270px;
+  min-width: 0;
+  width: 100%;
+}
+
+.procure-cockpit-bar__search,
+.procure-cockpit-bar__producer {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.procure-cockpit-bar__actions { flex: 0 1 auto; }
+
+.procure-cockpit-bar__sessions {
+  height: var(--app-filter-control-height);
+  border-radius: 8px;
+  background: var(--mantine-color-gray-2);
+  border-color: var(--mantine-color-gray-3);
+  color: var(--mantine-color-gray-8);
+}
+
+.procure-cockpit-bar__submit {
+  margin-left: auto;
+  max-width: 100%;
 }
 
 .procure-cockpit-bar__lens .mantine-SegmentedControl-root {
@@ -1192,10 +1208,10 @@
 
 .procure-cockpit-product__oe {
   align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-3);
-  border-radius: 6px;
-  color: var(--mantine-color-gray-8);
+  background: var(--app-chip-product-bg);
+  border: 1px solid var(--app-chip-product-border);
+  border-radius: 999px;
+  color: var(--app-chip-product-text);
   display: inline-flex;
   font-family: var(--font-mono);
   font-size: 10px;
@@ -1208,7 +1224,7 @@
 }
 
 .procure-cockpit-product__oe-label {
-  color: var(--mantine-color-gray-6);
+  color: inherit;
   font-family: Onest, sans-serif;
   font-size: 9px;
   font-weight: 600;
@@ -1666,25 +1682,11 @@
 }
 
 .procure-proof-history th {
-  background: var(--mantine-color-gray-0);
-  border-bottom: 1px solid var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-7);
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  font-weight: 600;
-  padding: 7px 9px;
   position: sticky;
-  text-align: left;
   top: 0;
   z-index: 1;
 }
 
-.procure-proof-history td {
-  border-bottom: 1px solid var(--mantine-color-gray-1);
-  color: var(--mantine-color-gray-8);
-  font-size: 11.5px;
-  padding: 6px 9px;
-}
 
 .procure-proof-history tr:last-child td {
   border-bottom: 0;

@@ -101,18 +101,6 @@
   min-width: 0;
 }
 
-.manager-pick-pill {
-  --badge-bg: var(--mantine-color-blue-0);
-  --badge-bd: 1px solid var(--mantine-color-blue-2);
-  --badge-color: var(--mantine-color-blue-8);
-
-  background: var(--mantine-color-blue-0);
-  border: 1px solid var(--mantine-color-blue-2);
-  color: var(--mantine-color-blue-8);
-  font-family: var(--font-mono);
-  font-weight: 600;
-  letter-spacing: 0;
-}
 
 .manager-pick-role {
   justify-content: flex-start;

@@ -1,3 +1,4 @@
+import { TableChip } from '../../../../shared/ui/TableChip'
 import { Box, Button, Group, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { Package } from 'lucide-react'
 import { useMemo } from 'react'
@@ -294,7 +295,7 @@ function WizardSaleDocumentCell({ sale }: { sale: SalesUkraineSale }) {
   return (
     <Box className="new-sale-register-document-cell">
       <Text className="new-sale-register-document-number" title={String(sale.SaleNumber?.Value || '')} truncate>
-        {sale.SaleNumber?.Value || '-'}
+        <TableChip tone="document" value={sale.SaleNumber?.Value || '-'} />
       </Text>
     </Box>
   )
@@ -474,7 +475,7 @@ function WizardSaleRegistryRowContent({ sale }: { sale: SalesUkraineSale }) {
         id: 'vendorCode',
         header: t('\u041a\u043e\u0434 \u0432\u0438\u0440\u043e\u0431\u043d\u0438\u043a\u0430'),
         accessor: (item) => item.Product?.VendorCode || '',
-        cell: (item) => <WizardSaleItemTextCell value={item.Product?.VendorCode || '-'} />,
+        cell: (item) => <TableChip tone="product" value={item.Product?.VendorCode || '-'} />,
         width: 150,
         minWidth: 132,
         enableHiding: false,
@@ -487,7 +488,7 @@ function WizardSaleRegistryRowContent({ sale }: { sale: SalesUkraineSale }) {
         id: 'originalNumber',
         header: t('\u041e\u0440\u0438\u0433. \u043d\u043e\u043c\u0435\u0440'),
         accessor: (item) => item.Product?.MainOriginalNumber || '',
-        cell: (item) => <WizardSaleItemTextCell value={item.Product?.MainOriginalNumber || '-'} />,
+        cell: (item) => <TableChip tone="product" value={item.Product?.MainOriginalNumber || '-'} />,
         width: 160,
         minWidth: 142,
         enableHiding: false,

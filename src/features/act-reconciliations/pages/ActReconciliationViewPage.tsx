@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -622,7 +623,7 @@ function useItemColumns({
         width: 140,
         minWidth: 120,
         accessor: (item) => item.Product?.VendorCode,
-        cell: (item) => <Text fw={700}>{displayValue(item.Product?.VendorCode)}</Text>,
+        cell: (item) => <TableChip tone="product" value={displayValue(item.Product?.VendorCode)} />,
       },
       {
         id: 'name',

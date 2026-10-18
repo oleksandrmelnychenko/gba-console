@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -166,11 +167,7 @@ export function MyOffersPanel() {
         id: 'number',
         header: t('Номер'),
         accessor: (offer) => offer.Number ?? '',
-        cell: (offer) => (
-          <Text ff="var(--font-mono)" size="sm">
-            {offer.Number ?? ''}
-          </Text>
-        ),
+        cell: (offer) => <TableChip tone="document" value={offer.Number ?? ''} />,
         width: 130,
       },
       {

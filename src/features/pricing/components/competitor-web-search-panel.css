@@ -54,10 +54,10 @@
 
 .competitor-radar__market-pill {
   align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-3);
-  border-radius: 7px;
-  color: var(--mantine-color-gray-7);
+  background: var(--app-chip-neutral-bg);
+  border: 1px solid var(--app-chip-neutral-border);
+  border-radius: 999px;
+  color: var(--app-chip-neutral-text);
   display: flex;
   flex: 0 0 auto;
   font-family: var(--font-mono);

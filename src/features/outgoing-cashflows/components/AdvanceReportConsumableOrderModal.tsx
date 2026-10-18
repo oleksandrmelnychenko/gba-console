@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -720,7 +721,7 @@ export function AdvanceReportConsumableOrderModal({
         </Group>
 
         <Table.ScrollContainer minWidth={980}>
-          <Table highlightOnHover verticalSpacing="xs">
+          <Table className="app-static-table" highlightOnHover verticalSpacing="xs">
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>{t('Артикул')}</Table.Th>
@@ -739,7 +740,7 @@ export function AdvanceReportConsumableOrderModal({
               {visibleItemRows.length > 0 ? (
                 visibleItemRows.map(({ index, item }) => (
                   <Table.Tr key={getItemKey(item, index)}>
-                    <Table.Td>{displayValue(item.ConsumableProduct?.VendorCode)}</Table.Td>
+                    <Table.Td><TableChip tone="product" value={displayValue(item.ConsumableProduct?.VendorCode)} /></Table.Td>
                     <Table.Td>{displayValue(item.ConsumableProduct?.Name)}</Table.Td>
                     <Table.Td>
                       {displayValue(item.ConsumableProductCategory?.Name || item.ConsumableProduct?.ConsumableProductCategory?.Name)}

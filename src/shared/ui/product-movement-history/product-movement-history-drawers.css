@@ -1,7 +1,7 @@
 .product-movement-history-shell {
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2) !important;
-  box-shadow: var(--app-card-shadow) !important;
+  box-shadow: none !important;
   flex: 0 0 auto;
   min-width: 0;
   overflow: hidden;
@@ -69,8 +69,8 @@
   min-height: var(--app-filter-control-height);
 }
 
-.product-movement-history-types-row {
-  min-width: max-content;
+.product-movement-history-filter-bar--extended .product-movement-history-filter-row {
+  min-width: 0;
 }
 
 .product-movement-history-panel__body {

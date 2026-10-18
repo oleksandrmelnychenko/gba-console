@@ -9,6 +9,8 @@ import {
   type ReactNode,
 } from 'react'
 import { createPortal } from 'react-dom'
+import './sheet-surfaces.css'
+import './overlay-tabs.css'
 import './app-drawer.css'
 
 export type AppDrawerProps = Omit<DrawerProps, 'title'> & {
@@ -175,6 +177,7 @@ export function AppDrawer({
   return (
     <Drawer
       {...props}
+      closeButtonProps={{ 'aria-label': 'Закрити', ...props.closeButtonProps }}
       className={drawerClassName}
       closeOnClickOutside={(props.closeOnClickOutside ?? true) && outsideCloseArmed}
       padding="lg"
@@ -198,7 +201,7 @@ export function AppDrawer({
         },
         // Tighten the header so the title sits close to the content (no tall
         // fixed header bar and no large bottom gap).
-        header: { minHeight: 'auto', paddingBottom: 'var(--mantine-spacing-xs)' },
+        header: { minHeight: 50, padding: '9px 16px', alignItems: 'center', flexShrink: 0 },
         // Keep one stable child tree whether a contextual footer is currently
         // visible or not. This preserves local form state when tabs switch
         // between sections that do and do not expose primary actions.

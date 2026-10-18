@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import { useMemo, useState } from 'react'
 import { Anchor, Badge, Stack, Text } from '@mantine/core'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -279,7 +280,7 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
         width: 180,
         minWidth: 140,
         accessor: (item) => item.Product?.MainOriginalNumber || '',
-        cell: (item) => <Text className="cart-reserve-mono-cell" title={item.Product?.MainOriginalNumber || ''}>{item.Product?.MainOriginalNumber || ''}</Text>,
+        cell: (item) => <TableChip tone="product" value={item.Product?.MainOriginalNumber || ''} />,
       },
       {
         id: 'created',
@@ -308,7 +309,7 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
         width: 160,
         minWidth: 130,
         accessor: (item) => item.AssignedSpecification?.SpecificationCode || '',
-        cell: (item) => <Text className="cart-reserve-mono-cell" title={item.AssignedSpecification?.SpecificationCode || ''}>{item.AssignedSpecification?.SpecificationCode || ''}</Text>,
+        cell: (item) => <TableChip tone="neutral" value={item.AssignedSpecification?.SpecificationCode || ''} />,
       },
       {
         id: 'qty',

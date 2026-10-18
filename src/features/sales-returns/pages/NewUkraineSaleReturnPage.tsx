@@ -1,3 +1,5 @@
+import { TableChip } from '../../../shared/ui/TableChip'
+import '../../../shared/ui/document-detail/document-detail.css'
 import {
   ActionIcon,
   Alert,
@@ -1239,7 +1241,7 @@ function ReturnDocumentCell({ saleReturn }: { saleReturn: SalesReturn }) {
     <div className="new-sale-return-document-cell">
       <span className="new-sale-return-document-copy">
         <span className="new-sale-return-title-line">
-          <span className="new-sale-return-document-number" title={number}>{number}</span>
+          <TableChip tone="document" value={number} />
           {saleReturn.IsCanceled ? <span className="app-role-pill is-red new-sale-return-canceled-tag">{t('Скасовано')}</span> : null}
         </span>
         <span className="new-sale-return-muted-line is-mono" title={date}>{date}</span>
@@ -1279,7 +1281,7 @@ function ReturnOrganizationCell({ saleReturn }: { saleReturn: SalesReturn }) {
       <span className="new-sale-return-main-line" title={organization}>{organization}</span>
       {storage ? (
         <span className="new-sale-return-organization-meta">
-          <span className="app-role-pill is-gray new-sale-return-storage-pill" title={storage}>
+          <span className="app-role-pill new-sale-return-storage-pill is-storage" title={storage}>
             {storage}
           </span>
         </span>
@@ -1297,7 +1299,7 @@ function ReturnSalesCell({ saleReturn }: { saleReturn: SalesReturn }) {
       {saleNumbers.length ? (
         <span className="new-sale-return-sales-pills">
           {saleNumbers.map((number) => (
-            <span className="app-role-pill is-gray new-sale-return-sale-pill" key={number}>
+            <span className="app-role-pill new-sale-return-sale-pill is-document" key={number}>
               {number}
             </span>
           ))}
@@ -1317,7 +1319,7 @@ function ReturnResponsibleCell({ saleReturn }: { saleReturn: SalesReturn }) {
     <div className="new-sale-return-responsible-cell">
       {userName ? (
         <span
-          className="app-role-pill is-yellow new-sale-return-responsible-pill"
+          className="app-role-pill new-sale-return-responsible-pill is-gray"
           title={`${t('Відповідальний')}: ${userName}`}
         >
           {userName}
@@ -1406,7 +1408,7 @@ function useSaleItemColumns({
         id: 'saleNumber',
         header: t('Продаж'),
         accessor: (row) => row.sale.SaleNumber?.Value,
-        cell: (row) => <Text fw={600}>{displayValue(row.sale.SaleNumber?.Value)}</Text>,
+        cell: (row) => <TableChip tone="document" value={displayValue(row.sale.SaleNumber?.Value)} />,
         width: 150,
       },
       {
@@ -1613,14 +1615,14 @@ function useDetailColumns({
         id: 'status',
         header: t('Причина'),
         accessor: (item) => getStatusLabel(item.SaleReturnItemStatus, t),
-        cell: (item) => getStatusLabel(item.SaleReturnItemStatus, t),
+        cell: (item) => <TableChip value={getStatusLabel(item.SaleReturnItemStatus, t)} />,
         width: 220,
       },
       {
         id: 'storage',
         header: t('Склад'),
         accessor: (item) => item.Storage?.Name,
-        cell: (item) => displayValue(item.Storage?.Name),
+        cell: (item) => <TableChip tone="storage" value={displayValue(item.Storage?.Name)} />,
         width: 180,
       },
       {
@@ -1657,24 +1659,24 @@ function ReturnDetails({
   const status = saleReturn.IsCanceled ? t('Скасовано') : t('Активне')
 
   return (
-    <div className="new-sale-return-detail">
-      <section className="new-sale-return-detail-summary">
-        <div className="new-sale-return-detail-summary__main">
-          <span className="new-sale-return-detail-eyebrow">{t('Документ повернення')}</span>
-          <Text className="new-sale-return-detail-summary__title">{displayValue(saleReturn.Number)}</Text>
-          <Text className="new-sale-return-detail-summary__meta">
+    <div className="document-detail-drawer document-detail-drawer--compact new-sale-return-detail">
+      <section className="document-detail-summary new-sale-return-detail-summary">
+        <div className="document-detail-summary__main new-sale-return-detail-summary__main">
+          <span className="document-detail-eyebrow new-sale-return-detail-eyebrow">{t('Документ повернення')}</span>
+          <Text className="document-detail-summary__title new-sale-return-detail-summary__title">{displayValue(saleReturn.Number)}</Text>
+          <Text className="document-detail-summary__meta new-sale-return-detail-summary__meta">
             {formatDateTime(saleReturn.FromDate)} · {clientName}
           </Text>
         </div>
 
-        <div className="new-sale-return-detail-summary__metrics">
+        <div className="document-detail-summary__metrics new-sale-return-detail-summary__metrics">
           <ReturnDetailMetric label={t('Сума')} value={formatMoney(saleReturn.TotalAmountLocal)} />
           <ReturnDetailMetric label={t('Позицій')} value={String(items.length)} />
           <ReturnDetailMetric label={t('Статус')} tone={saleReturn.IsCanceled ? 'danger' : undefined} value={status} />
         </div>
       </section>
 
-      <div className="new-sale-return-detail-tree">
+      <div className="document-detail-tree new-sale-return-detail-tree">
         <ReturnDetailSection subtitle={displayValue(saleReturn.Number)} title={t('Документ')}>
           <ReturnDetailRow label={t('Номер')} value={saleReturn.Number} />
           <ReturnDetailRow label={t('Дата')} value={formatDateTime(saleReturn.FromDate)} />
@@ -1718,7 +1720,7 @@ function ReturnDetailMetric({
   value: string
 }) {
   return (
-    <div className={`new-sale-return-detail-metric${tone ? ` is-${tone}` : ''}`}>
+    <div className={`document-detail-metric new-sale-return-detail-metric${tone ? ` is-${tone}` : ''}`}>
       <span>{label}</span>
       <strong>{displayValue(value)}</strong>
     </div>
@@ -1727,12 +1729,12 @@ function ReturnDetailMetric({
 
 function ReturnDetailSection({ children, subtitle, title }: { children: ReactNode; subtitle?: string; title: string }) {
   return (
-    <section className="new-sale-return-detail-section">
-      <div className="new-sale-return-detail-section__head">
-        <span className="new-sale-return-detail-section__title">{title}</span>
-        {subtitle ? <span className="new-sale-return-detail-section__subtitle">{subtitle}</span> : null}
+    <section className="document-detail-section new-sale-return-detail-section">
+      <div className="document-detail-section__head new-sale-return-detail-section__head">
+        <span className="document-detail-section__title new-sale-return-detail-section__title">{title}</span>
+        {subtitle ? <span className="document-detail-section__subtitle new-sale-return-detail-section__subtitle">{subtitle}</span> : null}
       </div>
-      <div className="new-sale-return-detail-section__body">{children}</div>
+      <div className="document-detail-section__body new-sale-return-detail-section__body">{children}</div>
     </section>
   )
 }
@@ -1751,10 +1753,10 @@ function ReturnDetailRow({
   wide?: boolean
 }) {
   return (
-    <div className={`new-sale-return-detail-row${wide ? ' is-wide' : ''}`}>
-      <span className="new-sale-return-detail-row__label">{label}</span>
-      <span className="new-sale-return-detail-row__line" aria-hidden />
-      <span className={`new-sale-return-detail-row__value${mono ? ' app-money' : ''}${tone ? ` is-${tone}` : ''}`}>{displayValue(value)}</span>
+    <div className={`document-detail-row new-sale-return-detail-row${wide ? ' is-wide' : ''}`}>
+      <span className="document-detail-row__label new-sale-return-detail-row__label">{label}</span>
+      <span className="document-detail-row__line new-sale-return-detail-row__line" aria-hidden />
+      <span className={`document-detail-row__value new-sale-return-detail-row__value${mono ? ' app-money' : ''}${tone ? ` is-${tone}` : ''}`}>{displayValue(value)}</span>
     </div>
   )
 }

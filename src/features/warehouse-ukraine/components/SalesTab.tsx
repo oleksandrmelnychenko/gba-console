@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import { ActionIcon, Alert, Anchor, Badge, Button, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CircleAlert, Pencil, Plus, RotateCcw } from 'lucide-react'
@@ -634,9 +635,7 @@ function useSalesColumns({
         width: 150,
         minWidth: 120,
         accessor: (sale) => sale.SaleNumber?.Value,
-        cell: (sale) => (
-          <span className="sales-tab-cell-num">{displayValue(sale.SaleNumber?.Value)}</span>
-        ),
+        cell: (sale) => <TableChip tone="document" value={displayValue(sale.SaleNumber?.Value)} />,
       },
       {
         id: 'client',
@@ -670,11 +669,7 @@ function useSalesColumns({
         width: 90,
         minWidth: 80,
         accessor: (sale) => sale.ClientAgreement?.Agreement?.Currency?.Code,
-        cell: (sale) => (
-          <span className="sales-tab-cell-currency">
-            {displayValue(sale.ClientAgreement?.Agreement?.Currency?.Code)}
-          </span>
-        ),
+        cell: (sale) => <TableChip tone="neutral" value={displayValue(sale.ClientAgreement?.Agreement?.Currency?.Code)} />,
       },
       {
         id: 'responsible',

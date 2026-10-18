@@ -362,7 +362,7 @@ function ActionQuantityPreview({
         {t('Кількість до операції')}
       </Text>
       <Table.ScrollContainer mah={260} mb="md" minWidth={640}>
-        <Table highlightOnHover verticalSpacing="xs">
+        <Table className="app-static-table" highlightOnHover verticalSpacing="xs">
           <Table.Thead>
             <Table.Tr>
               <Table.Th w={52}>#</Table.Th>

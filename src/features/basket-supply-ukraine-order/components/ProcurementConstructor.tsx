@@ -613,136 +613,140 @@ function ProcurementConstructorContent() {
   return (
     <div className="procure-cockpit">
       <Card className="app-data-card basket-supply-primary-card" padding={0} radius="md" withBorder>
-        <div className="app-filter-bar procure-cockpit-bar">
-          <div className="app-filter-field procure-cockpit-bar__lens">
-            <Text className="app-filter-label">{t('План закупівлі')}</Text>
-            <SegmentedControl
-              color="orange"
-              data={[
-                { label: t('Увесь склад'), value: 'warehouse' },
-                { label: t('За виробником'), value: 'producer' },
-              ]}
-              value={lens}
-              onChange={(value) => setLens(value as Lens)}
+        <div className="app-filter-bar app-filter-bar--stacked procure-cockpit-bar">
+          <div className="procure-cockpit-bar__filters">
+            <div className="app-filter-field procure-cockpit-bar__lens">
+              <Text className="app-filter-label">{t('План закупівлі')}</Text>
+              <SegmentedControl
+                color="orange"
+                data={[
+                  { label: t('Увесь склад'), value: 'warehouse' },
+                  { label: t('За виробником'), value: 'producer' },
+                ]}
+                value={lens}
+                onChange={(value) => setLens(value as Lens)}
+              />
+            </div>
+            <TextInput
+              aria-label={t('Пошук у плані')}
+              label={t('Пошук у плані')}
+              leftSection={<Search size={15} />}
+              onChange={(event) => setSearchQuery(event.currentTarget.value)}
+              placeholder={t('Товар, код або виробник')}
+              value={searchQuery}
+              className="procure-cockpit-bar__search"
             />
-          </div>
-          <TextInput
-            aria-label={t('Пошук у плані')}
-            label={t('Пошук у плані')}
-            leftSection={<Search size={15} />}
-            onChange={(event) => setSearchQuery(event.currentTarget.value)}
-            placeholder={t('Товар, код або виробник')}
-            value={searchQuery}
-            w={250}
-          />
-          {lens === 'producer' && (
-            <Select
-              clearable
-              data={producerOptions}
-              label={t('Виробник')}
-              placeholder={t('Оберіть виробника')}
-              searchable
-              value={selectedProducerId}
-              w={300}
-              onChange={setSelectedProducerId}
-            />
-          )}
-
-          <div className="app-filter-actions procure-cockpit-bar__actions">
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon
-                aria-label={t('Скинути')}
-                color="gray"
-                size={34}
-                variant="light"
-                onClick={() => {
-                  setLens('warehouse')
-                  setSelectedProducerId(null)
-                  setSearchQuery('')
-                }}
-              >
-                <RotateCcw size={17} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                color="gray"
-                loading={isLoading}
-                size={34}
-                variant="light"
-                onClick={() => reload()}
-              >
-                <RefreshCw size={17} />
-              </ActionIcon>
-            </Tooltip>
-            <Menu position="bottom-end" shadow="md" width={280}>
-              <Menu.Target>
-                <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" leftSection={<Bookmark size={15} />}>
-                  {t('Сесії')}
-                </Button>
-              </Menu.Target>
-              <Menu.Dropdown>
-                <Menu.Item leftSection={<Save size={14} />} onClick={persistSession}>
-                  {t('Зберегти поточний стан')}
-                </Menu.Item>
-                {sessions.length > 0 && <Menu.Divider />}
-                {sessions.map((session) => (
-                  <Menu.Item
-                    key={session.id}
-                    rightSection={
-                      <ActionIcon
-                        color="red"
-                        component="div"
-                        size="sm"
-                        variant="subtle"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          deleteSession(session.id)
-                        }}
-                      >
-                        <Trash2 size={13} />
-                      </ActionIcon>
-                    }
-                    onClick={() => restoreSession(session.id)}
-                  >
-                    <Text size="sm" truncate>
-                      {session.name}
-                    </Text>
-                    <Text c="dimmed" size="xs">
-                      {new Date(session.savedAt).toLocaleString('uk-UA')} · {session.basket.length} {t('поз.')}
-                    </Text>
-                  </Menu.Item>
-                ))}
-              </Menu.Dropdown>
-            </Menu>
-            {canExport && (
-              <Tooltip label={t('Експорт в Excel')}>
-                <ActionIcon
-                  aria-label={t('Експорт в Excel')}
-                  disabled={visibleRows.length === 0}
-                  size={34}
-                  variant="default"
-                  onClick={() => {
-                    if (can(PermissionKeys.PurchaseCockpit.Document.Export)) {
-                      void exportRowsToXlsx(visibleRows, lens, t, orderQtyFor)
-                    }
-                  }}
-                >
-                  <ExcelIcon size={22} />
-                </ActionIcon>
-              </Tooltip>
+            {lens === 'producer' && (
+              <Select
+                clearable
+                data={producerOptions}
+                label={t('Виробник')}
+                placeholder={t('Оберіть виробника')}
+                searchable
+                value={selectedProducerId}
+                className="procure-cockpit-bar__producer"
+                onChange={setSelectedProducerId}
+              />
             )}
           </div>
-          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
-          <Button
-            color={CREATE_ACTION_COLOR}
-            disabled={urgentRowsToAdd.length === 0}
-            leftSection={<Sparkles size={15} />}
-            onClick={addAllCritical}
-          >
-            {t('Термінові в кошик')} · {qty.format(urgentRowsToAdd.length)}
-          </Button>
+          <div className="app-filter-command-row">
+            <div className="app-filter-actions procure-cockpit-bar__actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon
+                  aria-label={t('Скинути')}
+                  color="gray"
+                  size={34}
+                  variant="light"
+                  onClick={() => {
+                    setLens('warehouse')
+                    setSelectedProducerId(null)
+                    setSearchQuery('')
+                  }}
+                >
+                  <RotateCcw size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon
+                  aria-label={t('Оновити')}
+                  color="gray"
+                  loading={isLoading}
+                  size={34}
+                  variant="light"
+                  onClick={() => reload()}
+                >
+                  <RefreshCw size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Menu position="bottom-end" shadow="md" width={280}>
+                <Menu.Target>
+                  <Button color="gray" variant="default" size="sm" className="procure-cockpit-bar__sessions" leftSection={<Bookmark size={15} />}>
+                    {t('Сесії')}
+                  </Button>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Item leftSection={<Save size={14} />} onClick={persistSession}>
+                    {t('Зберегти поточний стан')}
+                  </Menu.Item>
+                  {sessions.length > 0 && <Menu.Divider />}
+                  {sessions.map((session) => (
+                    <Menu.Item
+                      key={session.id}
+                      rightSection={
+                        <ActionIcon
+                          color="red"
+                          component="div"
+                          size="sm"
+                          variant="subtle"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            deleteSession(session.id)
+                          }}
+                        >
+                          <Trash2 size={13} />
+                        </ActionIcon>
+                      }
+                      onClick={() => restoreSession(session.id)}
+                    >
+                      <Text size="sm" truncate>
+                        {session.name}
+                      </Text>
+                      <Text c="dimmed" size="xs">
+                        {new Date(session.savedAt).toLocaleString('uk-UA')} · {session.basket.length} {t('поз.')}
+                      </Text>
+                    </Menu.Item>
+                  ))}
+                </Menu.Dropdown>
+              </Menu>
+              {canExport && (
+                <Tooltip label={t('Експорт в Excel')}>
+                  <ActionIcon
+                    aria-label={t('Експорт в Excel')}
+                    disabled={visibleRows.length === 0}
+                    size={34}
+                    variant="default"
+                    onClick={() => {
+                      if (can(PermissionKeys.PurchaseCockpit.Document.Export)) {
+                        void exportRowsToXlsx(visibleRows, lens, t, orderQtyFor)
+                      }
+                    }}
+                  >
+                    <ExcelIcon size={22} />
+                  </ActionIcon>
+                </Tooltip>
+              )}
+            </div>
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
+            <Button
+              className="app-filter-primary-action procure-cockpit-bar__submit"
+              color={CREATE_ACTION_COLOR}
+              disabled={urgentRowsToAdd.length === 0}
+              leftSection={<Sparkles size={15} />}
+              onClick={addAllCritical}
+            >
+              {t('Термінові в кошик')} · {qty.format(urgentRowsToAdd.length)}
+            </Button>
+          </div>
         </div>
 
         {costContext && <ProcurementCostSnapshot context={costContext} />}
@@ -1480,7 +1484,7 @@ export function ProcurementProofPanel({
             <p className="procure-proof__empty">{t('За цей період продажів немає')}</p>
           ) : (
             <div className="procure-proof-history-wrap">
-              <table className="procure-proof-history">
+              <table className="app-static-table procure-proof-history">
                 <thead>
                   <tr>
                     <th>{t('Місяць')}</th>

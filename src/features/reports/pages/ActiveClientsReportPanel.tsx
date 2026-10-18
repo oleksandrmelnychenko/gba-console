@@ -63,7 +63,7 @@ export function ActiveClientsReportPanel({ capability, initialMonth, canGenerate
     {report ? <section aria-label={t('Результат кількості активних клієнтів')}>
       <Text size="sm">{t('Період')}: {report.Month}</Text>
       <Table.ScrollContainer minWidth={640}>
-        <Table>
+        <Table className="app-static-table">
           <Table.Thead><Table.Tr>{report.Columns.map(column => <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
           <Table.Tbody><Table.Tr>{report.Cells.map((cell, index) => <Table.Td key={cell.Key}
             title={cell.Available ? undefined : t('Недоступні дані')}>

@@ -1,0 +1,50 @@
+/* Static tables share DataTable's compact geometry. Only direct cells are
+   targeted: nested tables, controls, subtotals and heat-map cells keep ownership
+   of their own layout and state. Column borders and sticky positioning remain
+   with the consumer. */
+.app-static-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  color: var(--mantine-color-gray-8);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  width: 100%;
+}
+
+.app-static-table > :is(thead, tbody, tfoot) > tr > :is(th, td) {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  height: 35px;
+  padding: 6px 10px;
+  vertical-align: middle;
+}
+
+.app-static-table > thead > tr > th {
+  background: var(--mantine-color-white);
+  color: var(--mantine-color-gray-7);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.app-static-table > tbody > tr:nth-child(even) {
+  background: var(--mantine-color-gray-0);
+}
+
+.app-static-table > tbody > tr:hover {
+  background: var(--mantine-color-gray-1);
+}
+
+.app-static-table > tfoot > tr {
+  background: var(--mantine-color-gray-0);
+  font-weight: 600;
+}
+
+.app-static-table .app-table-cell-number {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+:where(.app-static-table) > thead > tr > th { text-align: start; }

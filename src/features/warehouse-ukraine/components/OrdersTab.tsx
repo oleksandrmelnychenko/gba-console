@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import { ActionIcon, Alert, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { CircleAlert, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
@@ -334,7 +335,7 @@ function useOrdersColumns(indexMap: Map<SupplyOrderUkraine, number>) {
         width: 200,
         minWidth: 150,
         accessor: (order) => getSupplyUkraineOrderDisplayNumber(order),
-        cell: (order) => <Text fw={700}>{displayValue(getSupplyUkraineOrderDisplayNumber(order))}</Text>,
+        cell: (order) => <TableChip tone="document" value={displayValue(getSupplyUkraineOrderDisplayNumber(order))} />,
       },
       {
         id: 'supplier',
@@ -349,7 +350,7 @@ function useOrdersColumns(indexMap: Map<SupplyOrderUkraine, number>) {
         width: 200,
         minWidth: 150,
         accessor: (order) => order.ClientAgreement?.Agreement?.Name,
-        cell: (order) => displayValue(order.ClientAgreement?.Agreement?.Name),
+        cell: (order) => <TableChip tone="neutral" value={displayValue(order.ClientAgreement?.Agreement?.Name)} />,
       },
       {
         id: 'qty',

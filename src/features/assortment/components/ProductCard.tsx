@@ -379,7 +379,7 @@ function ProductHero({
           {producerId !== null && (
             <Group gap={6} wrap="nowrap">
               <Factory size={14} />
-              <Text c="dimmed" size="xs" truncate>
+              <Text c="gray.8" size="xs" truncate>
                 {producerName || `#${producerId}`}
               </Text>
             </Group>
@@ -643,7 +643,7 @@ function ScoreCard({
   )
 }
 
-/* §7.2 metric: gray mono label with the orange dot + a large mono value —
+/* §7.2 metric: compact mono label and an unboxed mono value —
    no boxes around each number. */
 function Stat({ label, value }: { label: string; value: string }) {
   return (

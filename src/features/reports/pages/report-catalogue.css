@@ -20,7 +20,7 @@
 .report-catalogue .report-catalogue__report-title:hover { color: var(--mantine-color-orange-7); background: transparent; }
 .report-catalogue__report-title[aria-expanded="true"] svg { transform: rotate(90deg); }
 .report-catalogue__statuses { align-items: flex-start; }
-.report-catalogue__statuses .mantine-Badge-root { max-width: 100%; height: auto; min-height: 22px; padding: 4px 8px; border-radius: 6px; }
+.report-catalogue__statuses .mantine-Badge-root { max-width: 100%; height: auto; min-height: 18px; padding: 2px 8px; border-radius: 999px; }
 .report-catalogue__statuses .mantine-Badge-label { white-space: normal; text-transform: none; line-height: 1.4; font-family: var(--font-mono); font-size: 10px; text-align: left; }
 .report-catalogue__launch { border: 1px solid var(--mantine-color-gray-2); background: var(--mantine-color-gray-0); border-radius: 8px; padding: 10px; }
 .report-catalogue__launch .mantine-InputWrapper-label { font-size: 11px; }

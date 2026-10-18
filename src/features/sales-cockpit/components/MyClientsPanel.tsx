@@ -505,7 +505,7 @@ function ClientRecommendationsForAgreement({
             </Group>
           </Group>
 
-          <Table verticalSpacing={4} withRowBorders={false}>
+          <Table className="app-static-table" verticalSpacing={4} withRowBorders={false}>
             <Table.Tbody>
               {state.products.map((product, index) => {
                 const key = getProductKey(product, index)

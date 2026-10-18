@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -629,7 +630,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
       cell: (client) => (
         <SeoTablePrimaryCell
           subtitle={displayValue(getOnlineShopClientAgreementOrganizationName(client))}
-          title={displayValue(getOnlineShopClientAgreementName(client))}
+          title={<TableChip value={displayValue(getOnlineShopClientAgreementName(client))} />}
         />
       ),
     },
@@ -2042,7 +2043,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             )}
             <div className="seo-general-sheet-context">
               <div className="seo-matrix-editor-context">
-                <Badge className="seo-matrix-locale-pill" variant="light">
+                <Badge className="app-role-pill is-gray seo-matrix-locale-pill" variant="light">
                   {getLocaleLabel(generalEditorEntry.locale)}
                 </Badge>
                 <span>
@@ -2661,7 +2662,7 @@ function SeoTableStorageCell({ storage }: { storage: OnlineShopStorage }) {
   return (
     <SeoTablePrimaryCell
       subtitle={displayValue(getCompactOrganizationName(storage.Organization))}
-      title={displayValue(storage.Name)}
+      title={<TableChip tone="storage" value={displayValue(storage.Name)} />}
     />
   )
 }
@@ -2695,11 +2696,11 @@ function SeoTableRoleLikeCell({
   )
 }
 
-function SeoTableTag({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'accent' | 'locale' | 'neutral' }) {
-  return <span className={`seo-table-tag is-${tone}`}>{children}</span>
+function SeoTableTag({ children, tone = 'neutral' }: { children: string; tone?: 'accent' | 'locale' | 'neutral' }) {
+  return <TableChip tone={tone === 'locale' ? 'source' : 'neutral'} value={children} />
 }
 
-function SeoTableLocaleTag({ children }: { children: ReactNode }) {
+function SeoTableLocaleTag({ children }: { children: string }) {
   return <SeoTableTag tone="locale">{children}</SeoTableTag>
 }
 
@@ -2715,9 +2716,7 @@ function SeoTableStatusPill({
   const { t } = useI18n()
 
   return (
-    <span className={`seo-table-status-pill ${active ? 'is-active' : 'is-inactive'}`}>
-      {active ? t(activeLabel) : t(inactiveLabel)}
-    </span>
+    <TableChip tone={active ? 'success' : 'neutral'} value={active ? t(activeLabel) : t(inactiveLabel)} />
   )
 }
 

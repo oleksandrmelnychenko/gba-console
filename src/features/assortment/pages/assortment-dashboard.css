@@ -469,10 +469,10 @@
 
 .assort-mix__chip {
   align-items: baseline;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-3);
-  border-radius: 6px;
-  color: var(--mantine-color-gray-7);
+  background: var(--app-chip-neutral-bg);
+  border: 1px solid var(--app-chip-neutral-border);
+  border-radius: 999px;
+  color: var(--app-chip-neutral-text);
   display: inline-flex;
   font-family: var(--font-mono);
   font-size: 10.5px;
@@ -482,7 +482,7 @@
 }
 
 .assort-mix__chip b {
-  color: var(--mantine-color-gray-8);
+  color: inherit;
   font-weight: 600;
 }
 

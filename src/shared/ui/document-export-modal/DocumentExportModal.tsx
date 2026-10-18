@@ -1,5 +1,5 @@
 import { Alert, Anchor, Loader, ThemeIcon } from '@mantine/core'
-import { CircleAlert, Download } from 'lucide-react'
+import { CircleAlert } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { ExportDocument } from '../../documents/exportDocument'
 import { useI18n } from '../../i18n/useI18n'
@@ -78,29 +78,6 @@ export function DocumentExportModal({
   const isFormatPicker = Boolean(onSelectFormat) && !hasDocument && !error
   const isBusy = isLoading || Boolean(loadingFormat)
 
-  const heroLabel = isBusy
-    ? t('Формування документа')
-    : isFormatPicker || hasDocument
-      ? t('Готово до завантаження')
-      : error
-        ? t('Помилка формування')
-        : t('Документ недоступний')
-  const heroTitle = isBusy
-    ? t('Зачекайте, файл формується')
-    : isFormatPicker || hasDocument
-      ? t('Виберіть формат файлу')
-      : error
-        ? t('Не вдалося сформувати файл')
-        : t('Файл не сформовано')
-  const heroDescription = isBusy
-    ? isFormatPicker
-      ? t('Після формування файл відкриється у новій вкладці.')
-      : t('Посилання відкриються у новій вкладці.')
-    : isFormatPicker
-      ? t('Файл буде сформовано після вибору формату.')
-      : hasDocument
-        ? t('Посилання відкриються у новій вкладці.')
-        : t('Сервер не повернув посилання для завантаження.')
 
   return (
     <AppModal
@@ -127,16 +104,12 @@ export function DocumentExportModal({
       <div className="document-export-modal">
         {notice}
 
-        <div className="document-export-hero">
-          <ThemeIcon className="document-export-hero-icon" color="orange" radius="xl" size={42} variant="light">
-            {isBusy ? <Loader color="orange" size={20} /> : <Download size={20} />}
-          </ThemeIcon>
-          <div>
-            <span>{heroLabel}</span>
-            <strong>{heroTitle}</strong>
-            <small>{heroDescription}</small>
+        {isBusy && (
+          <div className="document-export-progress" role="status">
+            <Loader color="orange" size={18} />
+            <span>{t('Зачекайте, файл формується')}</span>
           </div>
-        </div>
+        )}
 
         {error ? (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">

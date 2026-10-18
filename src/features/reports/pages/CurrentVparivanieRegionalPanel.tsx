@@ -27,7 +27,7 @@ function RegionalTable({ result }: { result: CurrentVparivanieRegionalResult }) 
     <Text size="xs">{result.Rows.length ? first + 1 : 0}–{first + visible.length} / {result.Rows.length}</Text>
     <Button size="xs" variant="default" disabled={first + visible.length >= result.Rows.length} onClick={() => setPage(currentPage + 1)}>Наступні рядки</Button>
   </Group><div className="report-inline-preview__scroll" tabIndex={0} role="region" aria-label="Регіональна форма Впарювання">
-    <table><thead><tr>{CURRENT_VPARIVANIE_PRODUCT_CAPTIONS.map(caption => <th scope="col" key={caption}>{caption}</th>)}
+    <table className="app-static-table"><thead><tr>{CURRENT_VPARIVANIE_PRODUCT_CAPTIONS.map(caption => <th scope="col" key={caption}>{caption}</th>)}
       {columns.map(key => <th scope="col" key={key}>{currentRegionalColumnCaption(key)}</th>)}</tr></thead>
       <tbody>{visible.map(row => {
         const cells = new Map(row.Cells.map(cell => [currentVparivanieV2CellKey(cell), cell]))

@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -832,9 +833,7 @@ function TransporterStatusTag({ transporter }: { transporter: Transporter }) {
   const isArchived = transporter.Deleted === true
 
   return (
-    <span className={`transporters-status-tag${isArchived ? ' is-archived' : ' is-active'}`}>
-      {isArchived ? translate('Архів') : translate('Активний')}
-    </span>
+    <TableChip tone={isArchived ? 'neutral' : 'success'} value={isArchived ? translate('Архів') : translate('Активний')} />
   )
 }
 

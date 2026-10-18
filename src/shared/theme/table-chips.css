@@ -1,0 +1,95 @@
+@import './chip-palette.css';
+
+/* One badge treatment for data tables, native tables and their expanded rows.
+   Legacy role pills consume the same palette through index.css. */
+:is(.data-table, .app-table-chips, table, [role='table'], [role='grid'], .app-sheet-body, .app-modal, .document-detail-drawer) .mantine-Badge-root {
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  --badge-padding-x: 8px;
+}
+
+:is(.data-table, .app-table-chips, table, [role='table'], [role='grid'], .app-sheet-body, .app-modal, .document-detail-drawer) .mantine-Badge-root:not(.app-role-pill) {
+  background: var(--table-chip-bg);
+  border: 1px solid var(--table-chip-border);
+  color: var(--table-chip-text);
+}
+
+/* Bare spans use the same geometry without changing row density or turning
+   numbers, links and controls into chips implicitly. */
+.app-table-chip {
+  align-items: center;
+  background: var(--app-chip-neutral-bg);
+  border: 1px solid var(--app-chip-neutral-border);
+  border-radius: 999px;
+  color: var(--app-chip-neutral-text);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  gap: 4px;
+  letter-spacing: 0;
+  line-height: 16px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0 8px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.app-table-chip-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-table-chip.is-neutral {
+  background: var(--app-chip-neutral-bg);
+  border-color: var(--app-chip-neutral-border);
+  color: var(--app-chip-neutral-text);
+}
+
+.app-table-chip.is-document,
+.app-table-chip.is-info {
+  background: var(--app-chip-document-bg);
+  border-color: var(--app-chip-document-border);
+  color: var(--app-chip-document-text);
+}
+
+.app-table-chip.is-product {
+  background: var(--app-chip-product-bg);
+  border-color: var(--app-chip-product-border);
+  color: var(--app-chip-product-text);
+}
+
+.app-table-chip.is-source {
+  background: var(--app-chip-source-bg);
+  border-color: var(--app-chip-source-border);
+  color: var(--app-chip-source-text);
+}
+
+.app-table-chip.is-storage {
+  background: var(--app-chip-storage-bg);
+  border-color: var(--app-chip-storage-border);
+  color: var(--app-chip-storage-text);
+}
+
+.app-table-chip.is-success {
+  background: var(--app-chip-success-bg);
+  border-color: var(--app-chip-success-border);
+  color: var(--app-chip-success-text);
+}
+
+.app-table-chip.is-warning {
+  background: var(--app-chip-warning-bg);
+  border-color: var(--app-chip-warning-border);
+  color: var(--app-chip-warning-text);
+}
+
+.app-table-chip.is-danger {
+  background: var(--app-chip-danger-bg);
+  border-color: var(--app-chip-danger-border);
+  color: var(--app-chip-danger-text);
+}

@@ -1,0 +1,44 @@
+.movement-document-types-trigger {
+  background: var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-9);
+  border: 1px solid var(--mantine-color-gray-3);
+  flex-shrink: 0;
+}
+
+.movement-document-types-count {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 6px;
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: 6px;
+  background: white;
+  font-variant-numeric: tabular-nums;
+}
+
+.movement-document-types-popover {
+  max-width: calc(100vw - 24px);
+  padding: 12px;
+}
+
+.movement-document-types-list {
+  max-height: min(340px, 45dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-top: 1px solid var(--mantine-color-gray-2);
+  padding-top: 4px;
+}
+
+.movement-document-types-list .mantine-Checkbox-root {
+  padding: 8px 4px;
+  border-radius: 6px;
+}
+
+.movement-document-types-list .mantine-Checkbox-root:hover {
+  background: var(--mantine-color-gray-0);
+}
+
+.movement-document-types-list .mantine-Checkbox-label {
+  color: var(--mantine-color-gray-9);
+  font-size: 13px;
+  cursor: pointer;
+}

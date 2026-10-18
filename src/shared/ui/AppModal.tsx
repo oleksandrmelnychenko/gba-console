@@ -1,6 +1,8 @@
 import { Modal, type ModalProps } from '@mantine/core'
 import type { PropsWithChildren, ReactNode } from 'react'
 import { SmoothResize } from '../transitions/SmoothResize'
+import './sheet-surfaces.css'
+import './overlay-tabs.css'
 import './app-modal.css'
 
 const DEFAULT_MODAL_SIZE = 496
@@ -47,6 +49,7 @@ export function AppModal({
   return (
     <Modal
       {...props}
+      closeButtonProps={{ 'aria-label': 'Закрити', ...props.closeButtonProps }}
       centered={centered ?? !isWorkspace}
       className={modalClassName}
       size={size ?? (isWorkspace ? '100%' : DEFAULT_MODAL_SIZE)}

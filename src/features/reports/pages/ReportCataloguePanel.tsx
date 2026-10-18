@@ -167,7 +167,7 @@ export function ReportCataloguePanel({ onOpen, onOpenDebtToSalesRatio, onOpenCol
     canGenerate={canGenerate} disabled={disabled} onOpenWorkbook={onOpenWorkbook}
     renderDetails={report => <ReportMigrationDetails report={report} migrations={inspection.migrations}
       datasets={availableDatasets} canGenerate={canGenerate} launchEnabled={supportsLaunch} />} />
-  return <div className="report-catalogue">
+  return <div className="report-catalogue document-detail-drawer--compact">
     <Stack gap="md">
       <DocumentDetailSummary eyebrow={t('Звіти · Fenix / AMG')} title={t('Каталог звітів')}
         meta={t('Оберіть звіт, щоб переглянути покриття та доступні налаштування.')}
@@ -247,7 +247,7 @@ function CatalogueTable({ consoleScope = false, onOpenWorkbook, visibleRows, cat
   const { t } = useI18n()
   return (
       <Table.ScrollContainer minWidth={720}>
-        <Table className="report-catalogue__table" highlightOnHover>
+        <Table className="app-static-table report-catalogue__table" highlightOnHover>
           <colgroup><col style={{ width: '46%' }} /><col style={{ width: '15%' }} /><col style={{ width: '39%' }} /></colgroup>
           <Table.Thead><Table.Tr><Table.Th>{t('Звіт')}</Table.Th><Table.Th>{t('Тип')}</Table.Th><Table.Th>{t('Стан за базами')}</Table.Th></Table.Tr></Table.Thead>
           <Table.Tbody>{visibleRows.map(({ report, options, matchingSources }) => <Fragment key={report.Id}>

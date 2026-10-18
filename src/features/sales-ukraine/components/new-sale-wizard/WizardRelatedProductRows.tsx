@@ -1,3 +1,4 @@
+import { TableChip } from '../../../../shared/ui/TableChip'
 import { Box, HoverCard, Stack, Text } from '@mantine/core'
 import { Package } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -97,7 +98,7 @@ function WizardRelatedProductRow({
         <Box className="new-sale-related-row__copy">
           <Box className="new-sale-related-row__headline">
             <Text c={color} className="new-sale-related-row__code" truncate>
-              {code}
+              <TableChip tone="product" value={code} />
             </Text>
             <RelatedInlineFacts product={product} />
           </Box>

@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -104,7 +105,7 @@ export function ProductGroupProductsPanel({ canOpenProduct, productGroupNetId }:
         width: 140,
         minWidth: 120,
         accessor: (productLink) => productLink.Product?.VendorCode,
-        cell: (productLink) => displayValue(productLink.Product?.VendorCode),
+        cell: (productLink) => <TableChip tone="product" value={displayValue(productLink.Product?.VendorCode)} />,
       },
       {
         id: 'name',
@@ -138,7 +139,7 @@ export function ProductGroupProductsPanel({ canOpenProduct, productGroupNetId }:
         width: 170,
         minWidth: 140,
         accessor: (productLink) => productLink.Product?.MainOriginalNumber,
-        cell: (productLink) => displayValue(productLink.Product?.MainOriginalNumber),
+        cell: (productLink) => <TableChip tone="product" value={displayValue(productLink.Product?.MainOriginalNumber)} />,
       },
       {
         id: 'description',

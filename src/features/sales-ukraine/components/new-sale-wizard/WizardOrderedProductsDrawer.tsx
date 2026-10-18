@@ -1,3 +1,4 @@
+import { TableChip } from '../../../../shared/ui/TableChip'
 import { Alert, Group, Loader, Table, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -87,7 +88,7 @@ function WizardOrderedProductsContent({ clientNetId }: { clientNetId: string }) 
   }
 
   return (
-    <Table highlightOnHover stickyHeader verticalSpacing={6} withColumnBorders>
+    <Table className="app-static-table" highlightOnHover stickyHeader verticalSpacing={6} withColumnBorders>
       <Table.Thead>
         <Table.Tr>
           <Table.Th w={140}>{t('Код товару')}</Table.Th>
@@ -100,7 +101,7 @@ function WizardOrderedProductsContent({ clientNetId }: { clientNetId: string }) 
       <Table.Tbody>
         {products.map((product, index) => (
           <Table.Tr key={`${product.ProductVendorCode || ''}-${index}`}>
-            <Table.Td>{product.ProductVendorCode}</Table.Td>
+            <Table.Td><TableChip tone="product" value={product.ProductVendorCode} /></Table.Td>
             <Table.Td>{product.ProductName}</Table.Td>
             <Table.Td className="app-table-number" ta="right">{product.Qty ?? 0}</Table.Td>
           </Table.Tr>

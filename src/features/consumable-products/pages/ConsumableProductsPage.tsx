@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -585,7 +586,7 @@ function ConsumableProductCodeCell({ value }: { value: string }) {
     return null
   }
 
-  return <span className="consumable-product-code-cell" title={nativeTitle(value)}>{value}</span>
+  return <TableChip tone="product" value={value} />
 }
 
 function ConsumableProductNameCell({ product }: { product: ConsumableProduct }) {

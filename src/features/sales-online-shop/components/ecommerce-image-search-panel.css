@@ -324,23 +324,6 @@
   gap: 7px;
 }
 
-.image-search-detail-chip-list span,
-.image-search-detail-code-list code {
-  padding: 5px 9px;
-  border: 1px solid #efa163;
-  border-radius: 7px;
-  background: #fff8f2;
-  color: #9d470d;
-  font-family: "JetBrains Mono Variable", "JetBrains Mono", monospace;
-  font-size: 12px;
-  font-weight: 650;
-}
-
-.image-search-detail-chip-list.is-blue span {
-  border-color: #91caff;
-  background: #f1f8ff;
-  color: #1769aa;
-}
 
 .image-search-detail-two-column {
   display: grid;

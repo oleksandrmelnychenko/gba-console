@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import { ActionIcon, Alert, Badge, Button, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CircleAlert, Download, RotateCcw } from 'lucide-react'
@@ -395,7 +396,7 @@ function useInvoiceRegisterColumns(indexMap: Map<Sale, number>) {
         width: 220,
         minWidth: 170,
         accessor: (invoice) => invoice.SaleNumber?.Value,
-        cell: (invoice) => <Text className="sales-tab-cell-num">{displayValue(invoice.SaleNumber?.Value)}</Text>,
+        cell: (invoice) => <TableChip tone="document" value={displayValue(invoice.SaleNumber?.Value)} />,
       },
       {
         id: 'printedStatus',
@@ -440,7 +441,7 @@ function useInvoiceRegisterColumns(indexMap: Map<Sale, number>) {
         width: 200,
         minWidth: 150,
         accessor: (invoice) => invoice.ClientAgreement?.Client?.OriginalRegionCode,
-        cell: (invoice) => displayValue(invoice.ClientAgreement?.Client?.OriginalRegionCode),
+        cell: (invoice) => <TableChip value={displayValue(invoice.ClientAgreement?.Client?.OriginalRegionCode)} />,
       },
       {
         id: 'clientName',

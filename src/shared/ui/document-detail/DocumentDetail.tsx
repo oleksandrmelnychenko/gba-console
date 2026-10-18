@@ -6,15 +6,19 @@ export function DocumentDetailLayout({
   actions,
   children,
   summary,
+  variant = 'compact',
 }: {
   actions?: ReactNode
   children: ReactNode
   summary: ReactNode
+  variant?: 'default' | 'compact'
 }) {
   return (
-    <div className="document-detail-drawer">
-      {summary}
-      {actions}
+    <div className={`document-detail-drawer${variant === 'compact' ? ' document-detail-drawer--compact' : ''}`}>
+      {variant === 'compact' ? (summary || actions ? <div className="document-detail-top">
+        {summary}
+        {actions ? <div className="document-detail-top__actions">{actions}</div> : null}
+      </div> : null) : <>{summary}{actions}</>}
       <div className="document-detail-tree">{children}</div>
     </div>
   )
@@ -25,7 +29,9 @@ export function DocumentDetailSummary({
   meta,
   metrics,
   title,
+  status,
 }: {
+  status?: ReactNode
   eyebrow: string
   meta?: ReactNode
   metrics: ReactNode
@@ -35,8 +41,8 @@ export function DocumentDetailSummary({
     <section className="document-detail-summary">
       <div className="document-detail-summary__main">
         <span className="document-detail-eyebrow">{eyebrow}</span>
-        <Text className="document-detail-summary__title">{title}</Text>
-        {meta ? <Text className="document-detail-summary__meta">{meta}</Text> : null}
+        <div className="document-detail-summary__identity"><Text className="document-detail-summary__title">{title}</Text>{status}</div>
+        {meta ? <div className="document-detail-summary__meta">{meta}</div> : null}
       </div>
       <div className="document-detail-summary__metrics">{metrics}</div>
     </section>
@@ -120,4 +126,13 @@ export function DocumentDetailFlag({ active, label }: { active: boolean; label: 
       {label}
     </span>
   )
+}
+
+/** Compact metadata for the approved document sheet pattern (UI patterns §7.3). */
+export function DocumentDetailChip({ children, icon, tone = 'neutral' }: {
+  children: ReactNode; icon?: ReactNode; tone?: 'neutral' | 'info' | 'document' | 'product' | 'source' | 'storage' | 'success' | 'danger' | 'warning'
+}) {
+  return <span className={`document-detail-chip is-${tone}`}>
+    {icon ? <span className="document-detail-chip__icon" aria-hidden="true">{icon}</span> : null}{children}
+  </span>
 }

@@ -1,3 +1,4 @@
+import { TableChip } from '../../../../shared/ui/TableChip'
 import { Box, Group, Loader, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { memo, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
@@ -216,7 +217,7 @@ const ProductViewerRow = memo(function ProductViewerRow({
         <Box className="new-sale-product-picker-row__copy">
           {code && (
             <Text className="new-sale-product-picker-row__code" title={code} truncate>
-              {code}
+              <TableChip tone="product" value={code} />
             </Text>
           )}
           <Text className="new-sale-product-picker-row__name" title={name} truncate>

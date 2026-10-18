@@ -1243,7 +1243,7 @@ export const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
 
           <div className="sg-meta">
             <SaleSourceIcon sale={sale} />
-            <span className="sg-meta-sale-number">{displayValue(sale.SaleNumber?.Value)}</span>
+            <span className="app-table-chip sg-meta-sale-number is-document">{displayValue(sale.SaleNumber?.Value)}</span>
             {date && (
               <>
                 <span className="sg-meta-sep">·</span>

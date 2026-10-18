@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import { ActionIcon, Anchor, Button, Center, Stack, Text, Tooltip } from '@mantine/core'
 import { RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -184,11 +185,11 @@ function PreordersInterestPageContent() {
                 setProductCardNetId(netId)
               }}
             >
-              {code}
+              <TableChip tone="product" value={code} />
             </Anchor>
           ) : (
             <Text className="preorders-interest-product-code" title={code}>
-              {code}
+              <TableChip tone="product" value={code} />
             </Text>
           )
         },

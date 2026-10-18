@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -1174,7 +1175,7 @@ function useSourceColumns({
         header: t('Код'),
         width: 130,
         accessor: (row) => getSourceProduct(row.entity)?.VendorCode,
-        cell: (row) => displayValue(getSourceProduct(row.entity)?.VendorCode),
+        cell: (row) => <TableChip tone="product" value={displayValue(getSourceProduct(row.entity)?.VendorCode)} />,
       },
       {
         id: 'productName',
@@ -1307,7 +1308,7 @@ function useTaxFreeItemColumns({
         header: t('Код'),
         width: 120,
         accessor: (item) => getTaxFreeItemProduct(item)?.VendorCode,
-        cell: (item) => displayValue(getTaxFreeItemProduct(item)?.VendorCode),
+        cell: (item) => <TableChip tone="product" value={displayValue(getTaxFreeItemProduct(item)?.VendorCode)} />,
       },
       {
         id: 'productName',

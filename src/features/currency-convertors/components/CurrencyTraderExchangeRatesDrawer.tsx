@@ -151,7 +151,7 @@ export function CurrencyTraderExchangeRatesDrawer({
         {!isLoading && rates.length === 0 ? (
           <Text c="dimmed">{t('Курсів валют не знайдено')}</Text>
         ) : (
-          <Table highlightOnHover>
+          <Table className="app-static-table" highlightOnHover>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>{t('Дата курсу валют')}</Table.Th>

@@ -12,7 +12,7 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert, Save, Trash2 } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo, useReducer } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { DocumentDetailLayout, DocumentDetailSummary, DocumentDetailMetric, DocumentDetailSection } from '../../../shared/ui/document-detail/DocumentDetail'
+import { DocumentDetailChip, DocumentDetailLayout, DocumentDetailSummary, DocumentDetailMetric, DocumentDetailSection } from '../../../shared/ui/document-detail/DocumentDetail'
 import './company-car-form-page.css'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -307,7 +307,7 @@ function CompanyCarFormPageContent() {
               <DocumentDetailSummary
                 eyebrow={t('Автомобіль компанії')}
                 title={form.licensePlate || t('Нове авто')}
-                meta={form.carBrand || t('Марка автомобіля')}
+                meta={form.carBrand ? <DocumentDetailChip>{form.carBrand}</DocumentDetailChip> : null}
                 metrics={<>
                   <DocumentDetailMetric label={t('Показники одометра')} value={form.mileage || '—'} suffix="км" />
                   <DocumentDetailMetric label={t('Кількість пального')} value={form.fuelAmount || '—'} suffix="л" />

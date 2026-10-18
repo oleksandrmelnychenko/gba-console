@@ -49,7 +49,7 @@ function PlannedCashResult({ report }: { report: PlannedCashReport }) {
     {report.PlanEndpoint ? <Text size="sm">{t('Дата планового залишку')}: {report.PlanEndpoint.slice(0, 10)}</Text> : null}
     {report.AvailabilityMessage ? <Alert color={report.Complete && !report.HasRows ? 'blue' : 'yellow'}>{t(report.AvailabilityMessage)}</Alert> : null}
     {report.GroupLabelsAvailabilityMessage ? <Alert color="yellow">{t(report.GroupLabelsAvailabilityMessage)}</Alert> : null}
-    <Table.ScrollContainer minWidth={800}><Table>
+    <Table.ScrollContainer minWidth={800}><Table className="app-static-table">
       <Table.Thead><Table.Tr><Table.Th>{t(report.Grouping === 'Контрагент' ? 'Контрагент' : 'Стаття руху коштів')}</Table.Th>
         {report.Columns.map(column => <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
       <Table.Tbody>{report.Rows.map(row => <Table.Tr key={row.Key}><Table.Td>{row.NameAvailable ? row.Name : t('Назва групи ще недоступна')}</Table.Td><PlannedCashCells cells={row.Cells} /></Table.Tr>)}

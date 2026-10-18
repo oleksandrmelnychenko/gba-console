@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -509,9 +510,7 @@ function useProductAvailabilityColumns(): DataTableColumn<ConsignmentAvailabilit
         width: 160,
         minWidth: 132,
         accessor: (availability) => availability.VendorCode,
-        cell: (availability) => (
-          <Text fw={700}>{displayValue(availability.VendorCode)}</Text>
-        ),
+        cell: (availability) => <TableChip tone="product" value={displayValue(availability.VendorCode)} />,
       },
       {
         id: 'productName',
@@ -597,7 +596,7 @@ function useProductAvailabilityColumns(): DataTableColumn<ConsignmentAvailabilit
         width: 220,
         minWidth: 170,
         accessor: (availability) => availability.StorageName,
-        cell: (availability) => displayValue(availability.StorageName),
+        cell: (availability) => <TableChip tone="storage" value={displayValue(availability.StorageName)} />,
       },
     ],
     [],

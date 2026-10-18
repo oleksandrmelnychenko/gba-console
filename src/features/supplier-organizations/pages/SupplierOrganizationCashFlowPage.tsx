@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -297,7 +298,7 @@ function SupplierOrganizationCashFlowPageContent() {
         minWidth: 120,
         width: 130,
         accessor: (row) => row.Number,
-        cell: (row) => displayValue(row.Number),
+        cell: (row) => <TableChip tone="document" value={displayValue(row.Number)} />,
       },
       {
         id: 'debit',

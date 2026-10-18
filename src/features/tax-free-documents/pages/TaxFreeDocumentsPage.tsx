@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -891,14 +892,14 @@ function useTaxFreeDocumentColumns({
     () => [
       {
         accessor: (row) => row.packListNumber,
-        cell: (row) => <TaxFreeTableValue mono value={displayValue(row.packListNumber)} />,
+        cell: (row) => <TableChip tone="document" value={displayValue(row.packListNumber)} />,
         header: t('Номер пакувального'),
         id: 'packListNumber',
         width: 150,
       },
       {
         accessor: (row) => row.document.Number,
-        cell: (row) => <TaxFreeTableValue mono value={displayValue(row.document.Number)} />,
+        cell: (row) => <TableChip tone="document" value={displayValue(row.document.Number)} />,
         header: t('Номер Tax Free'),
         id: 'number',
         width: 150,
@@ -1642,7 +1643,7 @@ function TaxFreePrintPreviewModal({
           </Group>
 
           <Table.ScrollContainer minWidth={620} mah={420}>
-            <Table striped highlightOnHover withColumnBorders>
+            <Table className="app-static-table" striped highlightOnHover withColumnBorders>
               <Table.Thead>
                 <Table.Tr>
                   <Table.Th>{t('Назва')}</Table.Th>

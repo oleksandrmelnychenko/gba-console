@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -10,7 +11,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { CircleAlert, Download, ExternalLink, Eye, Layers, RotateCcw, Search } from 'lucide-react'
+import { CalendarDays, Check, ChevronRight, CircleAlert, Download, ExternalLink, Eye, Layers, RotateCcw, Search, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatLocalDate, toDateTimeQuery } from '../../../shared/date/dateTime'
@@ -21,6 +22,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import {
+  DocumentDetailChip,
   DocumentDetailLayout,
   DocumentDetailMetric,
   DocumentDetailRow,
@@ -856,15 +858,20 @@ function ProductIncomeOptionsModal({
 }) {
   const { t } = useI18n()
   const row = document ? mapDocumentRow(document) : null
-  const title = document ? `${displayValue(row?.type)} ${displayValue(document.Number)}`.trim() : ''
   const primarySourceLink = document ? getPrimaryProductIncomeSourceLink(document) : null
 
   return (
     <AppModal
       centered
+      className="app-modal--actions"
       opened={Boolean(document)}
       size={496}
-      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{title || t('Виберіть опцію')}</span>}
+      title={document ? (
+        <div className="app-modal-action-title">
+          <span>{displayValue(row?.type)}</span>
+          <span className="app-modal-action-reference">№ {displayValue(document.Number)}</span>
+        </div>
+      ) : t('Виберіть опцію')}
       onClose={onClose}
     >
       {document && (
@@ -882,6 +889,7 @@ function ProductIncomeOptionsModal({
                 </span>
               }
               to={primarySourceLink}
+              rightSection={<ChevronRight size={16} />}
               variant="subtle"
             >
               {t('Відкрити джерело')}
@@ -900,6 +908,7 @@ function ProductIncomeOptionsModal({
               }
               variant="subtle"
               onClick={() => onOverview(document)}
+              rightSection={<ChevronRight size={16} />}
             >
               {t('Деталі документа')}
             </Button>
@@ -918,6 +927,7 @@ function ProductIncomeOptionsModal({
               }
               variant="subtle"
               onClick={() => onRemainings(document)}
+              rightSection={<ChevronRight size={16} />}
             >
               {t('Залишки по партіям')}
             </Button>
@@ -991,16 +1001,21 @@ export function ProductIncomeDocumentDrawer({
     >
       {document && row && (
         <DocumentDetailLayout
+          variant="compact"
           summary={
             <DocumentDetailSummary
               eyebrow={t('Документ')}
-              title={displayValue(document.Number)}
-              meta={<>{formatDateTime(document.FromDate)} · {displayValue(row.type)}</>}
+              title={document.Number ? `№ ${document.Number}` : displayValue(document.Number)}
+              status={row.docState ? <DocumentDetailChip tone={row.docState === t('Виконано') ? 'success' : 'danger'}
+                icon={row.docState === t('Виконано') ? <Check size={13} /> : <X size={13} />}>{row.docState}</DocumentDetailChip> : null}
+              meta={<>
+                {document.FromDate ? <DocumentDetailChip tone="info" icon={<CalendarDays size={13} />}>{formatDateTime(document.FromDate)}</DocumentDetailChip> : null}
+                {row.type ? <DocumentDetailChip>{row.type}</DocumentDetailChip> : null}
+                <DocumentDetailChip>{t('Кількість')}: {formatAmount(row.qty)}</DocumentDetailChip>
+              </>}
               metrics={
                 <>
                   <DocumentDetailMetric label={t('Сума')} suffix={row.currency} value={formatMoney(row.amount)} />
-                  <DocumentDetailMetric label={t('Кількість')} value={formatAmount(row.qty)} />
-                  <DocumentDetailMetric label={t('Стан')} value={displayValue(row.docState)} />
                 </>
               }
             />
@@ -1012,7 +1027,8 @@ export function ProductIncomeDocumentDrawer({
                   component={Link}
                   leftSection={<ExternalLink size={16} />}
                   to={sourceLink}
-                  variant="outline"
+                  variant="default"
+                  className="document-detail-secondary-action"
                 >
                   {t('Джерело')}
                 </Button>
@@ -1022,7 +1038,8 @@ export function ProductIncomeDocumentDrawer({
                   disabled={!document.NetUid}
                   leftSection={<Download size={16} />}
                   loading={exportingNetId === document.NetUid}
-                  variant="outline"
+                  variant="default"
+                  className="document-detail-secondary-action"
                   onClick={() => onExport(document)}
                 >
                   {t('Експорт')}
@@ -1041,22 +1058,21 @@ export function ProductIncomeDocumentDrawer({
             </Group>
           }
         >
-          <DocumentDetailSection subtitle={displayValue(document.Number)} title={t('Документ')}>
-            <DocumentDetailRow label={t('Дата')} mono value={formatDateTime(document.FromDate)} />
-            <DocumentDetailRow label={t('Номер')} mono value={document.Number} />
-            <DocumentDetailRow label={t('Номер інвойсу')} mono value={row.invNumber} />
-            <DocumentDetailRow label={t('Дата інвойсу')} mono value={formatDateTime(row.invDate)} />
-            <DocumentDetailRow label={t('Дата МД')} mono value={formatDateTime(row.specificationDate)} />
-            <DocumentDetailRow label={t('Валюта')} mono value={row.currency} />
-            <DocumentDetailRow label={t('Коментар')} value={row.comment || document.Comment} wide />
-          </DocumentDetailSection>
+          <div className="document-detail-columns">
+            <DocumentDetailSection title={t('Документ')}>
+              <DocumentDetailRow label={t('Номер інвойсу')} mono value={row.invNumber} wide />
+              <DocumentDetailRow label={t('Дата інвойсу')} mono value={formatDateTime(row.invDate)} />
+              <DocumentDetailRow label={t('Дата МД')} mono value={formatDateTime(row.specificationDate)} />
+              {row.comment || document.Comment ? <DocumentDetailRow label={t('Коментар')} value={row.comment || document.Comment} wide /> : null}
+            </DocumentDetailSection>
 
-          <DocumentDetailSection title={t('Учасники та склад')}>
-            <DocumentDetailRow label={t('Постачальник / клієнт')} value={row.client} wide />
-            <DocumentDetailRow label={t('Організація')} value={row.organization} wide />
-            <DocumentDetailRow label={t('Склад')} value={document.Storage?.Name} />
-            <DocumentDetailRow label={t('Відповідальний')} value={getEntityName(document.User)} />
-          </DocumentDetailSection>
+            <DocumentDetailSection title={t('Учасники та склад')}>
+              <DocumentDetailRow label={t('Постачальник / клієнт')} value={row.client} wide />
+              <DocumentDetailRow label={t('Організація')} value={row.organization} />
+              <DocumentDetailRow label={t('Склад')} value={document.Storage?.Name} />
+              <DocumentDetailRow label={t('Відповідальний')} value={getEntityName(document.User)} />
+            </DocumentDetailSection>
+          </div>
 
           {detailMode === 'view' && deferredOverviewNote && (
             <Alert color={CREATE_ACTION_COLOR} icon={<CircleAlert size={18} />} variant="light">
@@ -1200,7 +1216,7 @@ function useCapitalizationOverviewColumns(): DataTableColumn<CapitalizationOverv
         width: 140,
         minWidth: 120,
         accessor: (item) => item.Product?.VendorCode || item.ProductVendorCode,
-        cell: (item) => <Text fw={700}>{displayValue(item.Product?.VendorCode || item.ProductVendorCode)}</Text>,
+        cell: (item) => <TableChip tone="product" value={displayValue(item.Product?.VendorCode || item.ProductVendorCode)} />,
       },
       {
         id: 'productName',
@@ -1339,7 +1355,7 @@ function getSaleReturnOverviewColumns(
       width: 140,
       minWidth: 120,
       accessor: (item) => item.SaleReturnItem?.OrderItem?.Product?.VendorCode,
-      cell: (item) => <Text fw={700}>{displayValue(item.SaleReturnItem?.OrderItem?.Product?.VendorCode)}</Text>,
+      cell: (item) => <TableChip tone="product" value={displayValue(item.SaleReturnItem?.OrderItem?.Product?.VendorCode)} />,
     },
     {
       id: 'name',
@@ -1424,7 +1440,7 @@ function ActReconciliationOverview({
         width: 140,
         minWidth: 120,
         accessor: (row) => row.vendorCode,
-        cell: (row) => <Text fw={700}>{displayValue(row.vendorCode)}</Text>,
+        cell: (row) => <TableChip tone="product" value={displayValue(row.vendorCode)} />,
       },
       {
         id: 'productName',
@@ -1574,7 +1590,7 @@ function useProductIncomeDocumentColumns({
         width: 132,
         minWidth: 112,
         accessor: (row) => row.document.Number,
-        cell: (row) => <Text fw={700}>{displayValue(row.document.Number)}</Text>,
+        cell: (row) => <TableChip tone="document" value={displayValue(row.document.Number)} />,
       },
       {
         id: 'type',
@@ -1599,7 +1615,7 @@ function useProductIncomeDocumentColumns({
         width: 96,
         minWidth: 82,
         accessor: (row) => row.currency,
-        cell: (row) => displayValue(row.currency),
+        cell: (row) => <TableChip tone="neutral" value={displayValue(row.currency)} />,
       },
       {
         id: 'client',
@@ -1619,7 +1635,7 @@ function useProductIncomeDocumentColumns({
         width: 180,
         minWidth: 140,
         accessor: (row) => row.document.Storage?.Name,
-        cell: (row) => displayValue(row.document.Storage?.Name),
+        cell: (row) => <TableChip tone="storage" value={displayValue(row.document.Storage?.Name)} />,
       },
       {
         id: 'invoiceNumber',
@@ -1627,7 +1643,7 @@ function useProductIncomeDocumentColumns({
         width: 150,
         minWidth: 120,
         accessor: (row) => row.invNumber,
-        cell: (row) => displayValue(row.invNumber),
+        cell: (row) => <TableChip tone="document" value={displayValue(row.invNumber)} />,
       },
       {
         id: 'invoiceDate',
@@ -1731,7 +1747,7 @@ function useProductIncomeItemColumns({
         width: 140,
         minWidth: 120,
         accessor: getItemProductCode,
-        cell: (item) => <Text fw={700}>{displayValue(getItemProductCode(item))}</Text>,
+        cell: (item) => <TableChip tone="document" value={displayValue(getItemProductCode(item))} />,
       },
       {
         id: 'productName',
@@ -1808,7 +1824,7 @@ function useRemainingConsignmentColumns({
         width: 150,
         minWidth: 120,
         accessor: (item) => item.StorageName,
-        cell: (item) => displayValue(item.StorageName),
+        cell: (item) => <TableChip tone="storage" value={displayValue(item.StorageName)} />,
       },
       {
         id: 'productCode',
@@ -1816,7 +1832,7 @@ function useRemainingConsignmentColumns({
         width: 120,
         minWidth: 104,
         accessor: (item) => item.Product?.VendorCode,
-        cell: (item) => <Text fw={700}>{displayValue(item.Product?.VendorCode)}</Text>,
+        cell: (item) => <TableChip tone="product" value={displayValue(item.Product?.VendorCode)} />,
       },
       {
         id: 'productName',
@@ -1852,7 +1868,7 @@ function useRemainingConsignmentColumns({
         width: 150,
         minWidth: 120,
         accessor: (item) => item.InvoiceNumber,
-        cell: (item) => displayValue(item.InvoiceNumber),
+        cell: (item) => <TableChip tone="document" value={displayValue(item.InvoiceNumber)} />,
       },
       {
         id: 'remainingQty',
@@ -1905,7 +1921,7 @@ function useRemainingConsignmentColumns({
         width: 94,
         minWidth: 82,
         accessor: (item) => item.CurrencyName,
-        cell: (item) => displayValue(item.CurrencyName),
+        cell: (item) => <TableChip tone="neutral" value={displayValue(item.CurrencyName)} />,
       },
       {
         id: 'incomeInvoiceNumber',
@@ -1913,7 +1929,7 @@ function useRemainingConsignmentColumns({
         width: 150,
         minWidth: 130,
         accessor: (item) => item.ProductIncomeNumber,
-        cell: (item) => displayValue(item.ProductIncomeNumber),
+        cell: (item) => <TableChip tone="document" value={displayValue(item.ProductIncomeNumber)} />,
       },
       {
         id: 'organization',

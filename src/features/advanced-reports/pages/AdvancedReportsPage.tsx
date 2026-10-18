@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -597,16 +598,7 @@ function useAdvancedReportColumns({
         width: 130,
         minWidth: 110,
         accessor: (row) => row.number,
-        cell: (row) => (
-          <Text
-            fw={600}
-            size="sm"
-            style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0, textTransform: 'uppercase' }}
-            title={displayValue(row.number)}
-          >
-            {displayValue(row.number)}
-          </Text>
-        ),
+        cell: (row) => <TableChip tone="document" value={displayValue(row.number)} />,
       },
       {
         id: 'organization',
@@ -622,7 +614,7 @@ function useAdvancedReportColumns({
         width: 145,
         minWidth: 115,
         accessor: (row) => row.storage,
-        cell: (row) => renderSingleLineText(row.storage),
+        cell: (row) => <TableChip tone="storage" value={displayValue(row.storage)} />,
       },
       {
         id: 'amount',
@@ -643,7 +635,7 @@ function useAdvancedReportColumns({
         width: 90,
         minWidth: 80,
         accessor: (row) => row.currency,
-        cell: (row) => renderSingleLineText(row.currency),
+        cell: (row) => <TableChip value={displayValue(row.currency)} />,
       },
       {
         id: 'payedTo',

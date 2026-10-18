@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import { Button, Checkbox, Group, NumberInput, Select, Stack, Table, Text, TextInput } from '@mantine/core'
 import { useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -246,7 +247,7 @@ export function PlacementEditDrawer({
             <Text c="dimmed" fw={600} size="xs">
               {t('Наявні розміщення товару')}
             </Text>
-            <Table withTableBorder withColumnBorders>
+            <Table className="app-static-table" withTableBorder withColumnBorders>
               <Table.Thead>
                 <Table.Tr>
                   <Table.Th>{t('Склад')}</Table.Th>
@@ -257,7 +258,7 @@ export function PlacementEditDrawer({
               <Table.Tbody>
                 {(product?.ProductPlacements || []).map((placement, index) => (
                   <Table.Tr key={placement.Id ?? index}>
-                    <Table.Td>{placement.StorageNumber || placement.Storage?.Name || ''}</Table.Td>
+                    <Table.Td><TableChip tone="storage" value={placement.StorageNumber || placement.Storage?.Name || ''} /></Table.Td>
                     <Table.Td>{placement.RowNumber || ''}</Table.Td>
                     <Table.Td>{placement.CellNumber || ''}</Table.Td>
                   </Table.Tr>
@@ -267,7 +268,7 @@ export function PlacementEditDrawer({
           </Stack>
         )}
 
-        <Table withTableBorder withColumnBorders>
+        <Table className="app-static-table" withTableBorder withColumnBorders>
           <Table.Thead>
             <Table.Tr>
               <Table.Th>#</Table.Th>
@@ -286,7 +287,7 @@ export function PlacementEditDrawer({
                 onClick={() => !placement.IsApplied && openDraft(placement)}
               >
                 <Table.Td>{index + 1}</Table.Td>
-                <Table.Td>{placement.StorageNumber}</Table.Td>
+                <Table.Td><TableChip tone="storage" value={placement.StorageNumber} /></Table.Td>
                 <Table.Td>{placement.RowNumber}</Table.Td>
                 <Table.Td>{placement.CellNumber}</Table.Td>
                 <Table.Td className="app-table-number">{placement.Qty}</Table.Td>

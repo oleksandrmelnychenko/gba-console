@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -14,6 +15,7 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import {
+  DocumentDetailChip,
   DocumentDetailLayout,
   DocumentDetailMetric,
   DocumentDetailRow,
@@ -990,7 +992,7 @@ function useProductRemainBatchColumns() {
       width: 170,
       minWidth: 140,
       accessor: (batch) => batch.ProductIncomeNumber,
-      cell: (batch) => displayValue(batch.ProductIncomeNumber),
+      cell: (batch) => <TableChip tone="document" value={displayValue(batch.ProductIncomeNumber)} />,
     },
     {
       id: 'invoiceNumber',
@@ -998,7 +1000,7 @@ function useProductRemainBatchColumns() {
       width: 160,
       minWidth: 132,
       accessor: (batch) => batch.InvoiceNumber,
-      cell: (batch) => displayValue(batch.InvoiceNumber),
+      cell: (batch) => <TableChip tone="document" value={displayValue(batch.InvoiceNumber)} />,
     },
     {
       id: 'supplierName',
@@ -1090,7 +1092,7 @@ function useProductRemainProductColumns(onOpenMovement?: (row: RemainingConsignm
       width: 160,
       minWidth: 132,
       accessor: (row) => getVendorCode(row.Product),
-      cell: (row) => <Text fw={700}>{getVendorCode(row.Product)}</Text>,
+      cell: (row) => <TableChip tone="product" value={getVendorCode(row.Product)} />,
     },
     {
       id: 'productName',
@@ -1155,7 +1157,7 @@ function useProductRemainProductColumns(onOpenMovement?: (row: RemainingConsignm
       width: 104,
       minWidth: 92,
       accessor: (row) => row.CurrencyName,
-      cell: (row) => displayValue(row.CurrencyName),
+      cell: (row) => <TableChip tone="neutral" value={displayValue(row.CurrencyName)} />,
     },
     {
       id: 'weight',
@@ -1172,7 +1174,7 @@ function useProductRemainProductColumns(onOpenMovement?: (row: RemainingConsignm
       width: 220,
       minWidth: 170,
       accessor: (row) => row.StorageName,
-      cell: (row) => displayValue(row.StorageName),
+      cell: (row) => <TableChip tone="storage" value={displayValue(row.StorageName)} />,
     },
     ...(onOpenMovement ? [{
       id: 'actions',
@@ -1204,7 +1206,7 @@ function useProductRemainBatchDetailColumns() {
       width: 160,
       minWidth: 132,
       accessor: (item) => getVendorCode(item.Product),
-      cell: (item) => <Text fw={700}>{getVendorCode(item.Product)}</Text>,
+      cell: (item) => <TableChip tone="product" value={getVendorCode(item.Product)} />,
     },
     {
       id: 'productName',
@@ -1381,9 +1383,7 @@ export function BatchDetails({
         <DocumentDetailSummary
           eyebrow={t('Деталі партії')}
           title={displayValue(visibleBatch.ProductIncomeNumber)}
-          meta={[formatDate(visibleBatch.FromDate), visibleBatch.SupplierName, visibleBatch.OrganizationName]
-            .filter(Boolean)
-            .join(' · ')}
+          meta={<><DocumentDetailChip tone="info">{formatDate(visibleBatch.FromDate)}</DocumentDetailChip>{[visibleBatch.SupplierName, visibleBatch.OrganizationName].filter(Boolean).map((name, index) => <DocumentDetailChip key={index}>{name}</DocumentDetailChip>)}</>}
           metrics={
             <>
               <DocumentDetailMetric label={t('Сума gross')} value={formatMoney(visibleBatch.TotalGrossPrice)} />
@@ -1659,7 +1659,7 @@ function useProductRemainMovementColumns() {
         width: 140,
         minWidth: 120,
         accessor: (row) => row.IncomeDocumentNumber,
-        cell: (row) => displayValue(row.IncomeDocumentNumber),
+        cell: (row) => <TableChip tone="document" value={displayValue(row.IncomeDocumentNumber)} />,
       },
       {
         id: 'incomeDocumentDate',
@@ -1683,7 +1683,7 @@ function useProductRemainMovementColumns() {
         width: 140,
         minWidth: 112,
         accessor: (row) => row.DocumentNumber,
-        cell: (row) => displayValue(row.DocumentNumber),
+        cell: (row) => <TableChip tone="document" value={displayValue(row.DocumentNumber)} />,
       },
       {
         id: 'documentDate',
@@ -1707,7 +1707,7 @@ function useProductRemainMovementColumns() {
         width: 180,
         minWidth: 140,
         accessor: (row) => row.StorageName,
-        cell: (row) => displayValue(row.StorageName),
+        cell: (row) => <TableChip tone="storage" value={displayValue(row.StorageName)} />,
       },
       {
         id: 'organizationName',

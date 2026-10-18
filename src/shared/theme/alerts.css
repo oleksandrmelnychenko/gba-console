@@ -1,0 +1,28 @@
+.mantine-Alert-root.app-alert {
+  width: fit-content;
+  max-width: 100%;
+  align-self: flex-start;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--alert-color) 45%, transparent);
+  border-radius: 18px;
+}
+
+.app-alert .mantine-Alert-wrapper { align-items: flex-start; }
+.app-alert .mantine-Alert-icon {
+  width: 18px;
+  height: 20px;
+  margin-inline-end: 8px;
+  flex: 0 0 18px;
+}
+.app-alert .mantine-Alert-icon svg { width: 18px; height: 18px; }
+.app-alert .mantine-Alert-body { min-width: 0; }
+.app-alert .mantine-Alert-title,
+.app-alert .mantine-Alert-message {
+  color: color-mix(in srgb, var(--alert-color) 65%, #171717);
+  font-size: 13px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+.app-alert .mantine-Alert-title { margin-bottom: 2px; }
+.app-alert[data-variant='filled'] .mantine-Alert-title,
+.app-alert[data-variant='filled'] .mantine-Alert-message { color: white; }

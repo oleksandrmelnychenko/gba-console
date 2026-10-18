@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -380,11 +381,7 @@ function useProductSpecificationColumns(
         width: 200,
         minWidth: 150,
         accessor: (specification) => specification.Product?.VendorCode,
-        cell: (specification) => (
-          <span className="product-specification-code-cell">
-            {displayValue(specification.Product?.VendorCode)}
-          </span>
-        ),
+        cell: (specification) => <TableChip tone="product" value={displayValue(specification.Product?.VendorCode)} />,
       },
       {
         id: 'specificationCode',
@@ -392,11 +389,7 @@ function useProductSpecificationColumns(
         width: 200,
         minWidth: 150,
         accessor: (specification) => specification.SpecificationCode,
-        cell: (specification) => (
-          <span className="product-specification-code-cell">
-            {displayValue(specification.SpecificationCode)}
-          </span>
-        ),
+        cell: (specification) => <TableChip tone="neutral" value={displayValue(specification.SpecificationCode)} />,
       },
       {
         id: 'specificationName',
@@ -452,11 +445,7 @@ function useProductSpecificationColumns(
         width: 250,
         minWidth: 180,
         accessor: (specification) => getInvoiceNumber(specification),
-        cell: (specification) => (
-          <span className="product-specification-plain-cell">
-            {displayValue(getInvoiceNumber(specification))}
-          </span>
-        ),
+        cell: (specification) => <TableChip tone="document" value={displayValue(getInvoiceNumber(specification))} />,
       },
     ],
     [specifications],

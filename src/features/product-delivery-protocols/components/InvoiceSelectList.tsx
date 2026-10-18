@@ -57,7 +57,7 @@ export function InvoiceSelectList({
               />
               <Stack className="invoice-select-card__content" gap={8}>
                 <Group align="center" className="invoice-select-card__head" gap={8} wrap="nowrap">
-                  <Badge className="app-role-pill is-yellow invoice-select-card__number" size="sm" variant="light">
+                  <Badge className="app-role-pill invoice-select-card__number is-document" size="sm" variant="light">
                     № {invoice.Number || '-'}
                   </Badge>
                   <Text className="invoice-select-card__supplier" title={supplier}>

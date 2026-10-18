@@ -1,3 +1,4 @@
+import '../../../shared/ui/document-detail/document-detail.css'
 import { ActionIcon, Alert, Badge, Select, Stack, Text, Tooltip } from '@mantine/core'
 import { CircleAlert, FileDown } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState, type ReactNode } from 'react'
@@ -449,7 +450,7 @@ function DebtorManagerCell({ value }: { value: string }) {
   return (
     <div className="sales-debtors-manager-cell">
       {value ? (
-        <span className="app-role-pill is-yellow sales-debtors-manager-pill" title={value}>
+        <span className="app-role-pill sales-debtors-manager-pill is-gray" title={value}>
           {value}
         </span>
       ) : null}
@@ -580,23 +581,23 @@ function DebtorDetailDrawer({
       onClose={onClose}
     >
       {debtor ? (
-        <div className="sales-debtor-detail">
-          <section className="sales-debtor-detail-summary">
-            <div className="sales-debtor-detail-summary__main">
-              <span className="sales-debtor-detail-eyebrow">{t('Клієнт')}</span>
-              <Text className="sales-debtor-detail-summary__title">{displayValue(debtor.ClientName)}</Text>
-              <Text className="sales-debtor-detail-summary__meta">
+        <div className="document-detail-drawer document-detail-drawer--compact sales-debtor-detail">
+          <section className="document-detail-summary sales-debtor-detail-summary">
+            <div className="document-detail-summary__main sales-debtor-detail-summary__main">
+              <span className="document-detail-eyebrow sales-debtor-detail-eyebrow">{t('Клієнт')}</span>
+              <Text className="document-detail-summary__title sales-debtor-detail-summary__title">{displayValue(debtor.ClientName)}</Text>
+              <Text className="document-detail-summary__meta sales-debtor-detail-summary__meta">
                 {displayValue(debtor.RegionCode)} · {displayValue(debtor.UserName)}
               </Text>
             </div>
-            <div className="sales-debtor-detail-summary__metrics">
+            <div className="document-detail-summary__metrics sales-debtor-detail-summary__metrics">
               <DebtorDetailMetric label={t('Залишок')} tone="neutral" unit={currencyCode} value={debtor.RemainderDebt} />
               <DebtorDetailMetric label={t('Прострочено')} tone="danger" unit={currencyCode} value={debtor.OverdueDebt} />
               <DebtorDetailMetric format="integer" label={t('Днів')} tone={(debtor.MissedDays ?? 0) < 0 ? 'danger' : 'neutral'} value={debtor.MissedDays} />
             </div>
           </section>
 
-          <div className="sales-debtor-detail-tree">
+          <div className="document-detail-tree sales-debtor-detail-tree">
             <DebtorDetailSection subtitle={currencyCode} title={t('Загальна заборгованість')}>
               <DebtorDetailRow mono label="EUR" value={`${moneyFormatter.format(total?.TotalEuro ?? 0)} EUR`} />
               <DebtorDetailRow mono label="UAH" value={`${moneyFormatter.format(total?.TotalLocal ?? 0)} UAH`} />
@@ -617,7 +618,7 @@ function DebtorDetailDrawer({
               ) : items.length === 0 ? (
                 <div className="sales-debtor-detail-state">{t('Боргових документів не знайдено')}</div>
               ) : (
-                <div className="sales-debtor-detail-related-list">
+                <div className="document-detail-related-list sales-debtor-detail-related-list">
                   {items.map((item, index) => (
                     <DebtorDebtCard key={item.NetUid || `${item.Id || 'debt'}-${index}`} currencyCode={currencyCode} item={item} />
                   ))}
@@ -641,22 +642,22 @@ function DebtorDetailSection({
   title: string
 }) {
   return (
-    <section className="sales-debtor-detail-section">
-      <div className="sales-debtor-detail-section__head">
-        <span className="sales-debtor-detail-section__title">{title}</span>
-        {subtitle ? <span className="sales-debtor-detail-section__subtitle">{subtitle}</span> : null}
+    <section className="document-detail-section sales-debtor-detail-section">
+      <div className="document-detail-section__head sales-debtor-detail-section__head">
+        <span className="document-detail-section__title sales-debtor-detail-section__title">{title}</span>
+        {subtitle ? <span className="document-detail-section__subtitle sales-debtor-detail-section__subtitle">{subtitle}</span> : null}
       </div>
-      <div className="sales-debtor-detail-section__body">{children}</div>
+      <div className="document-detail-section__body sales-debtor-detail-section__body">{children}</div>
     </section>
   )
 }
 
 function DebtorDetailRow({ label, mono, value }: { label: string; mono?: boolean; value: string }) {
   return (
-    <div className="sales-debtor-detail-row">
-      <span className="sales-debtor-detail-row__label">{label}</span>
-      <span className="sales-debtor-detail-row__line" aria-hidden />
-      <span className={`sales-debtor-detail-row__value${mono ? ' app-money' : ''}`}>{value}</span>
+    <div className="document-detail-row sales-debtor-detail-row">
+      <span className="document-detail-row__label sales-debtor-detail-row__label">{label}</span>
+      <span className="document-detail-row__line sales-debtor-detail-row__line" aria-hidden />
+      <span className={`document-detail-row__value sales-debtor-detail-row__value${mono ? ' app-money' : ''}`}>{value}</span>
     </div>
   )
 }
@@ -677,7 +678,7 @@ function DebtorDetailMetric({
   const formattedValue = format === 'integer' ? String(value ?? 0) : moneyFormatter.format(value ?? 0)
 
   return (
-    <span className={`sales-debtor-detail-metric${tone === 'danger' ? ' is-danger' : ''}`}>
+    <span className={`document-detail-metric sales-debtor-detail-metric${tone === 'danger' ? ' is-danger' : ''}`}>
       <span>{label}</span>
       <strong>{formattedValue}</strong>
       {unit ? <small>{unit}</small> : null}
@@ -697,14 +698,14 @@ function DebtorDebtCard({ currencyCode: fallbackCurrencyCode, item }: { currency
   const days = item.Debt?.Days ?? 0
 
   return (
-    <article className="sales-debtor-detail-related-card">
-      <div className="sales-debtor-detail-related-card__head">
+    <article className="document-detail-related-card sales-debtor-detail-related-card">
+      <div className="document-detail-related-card__head sales-debtor-detail-related-card__head">
         <Tooltip label={documentNumber}>
           <span>{documentNumber || '-'}</span>
         </Tooltip>
         <span>{documentDate || '-'}</span>
       </div>
-      <div className="sales-debtor-detail-related-card__grid">
+      <div className="document-detail-related-card__grid sales-debtor-detail-related-card__grid">
         <DebtorDetailRow label={t('Договір')} value={agreement || '-'} />
         <DebtorDetailRow label={t('Статус')} value={status || '-'} />
         <DebtorDetailRow

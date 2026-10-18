@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -1977,7 +1978,7 @@ function useResalesColumns({
         width: 130,
         minWidth: 108,
         accessor: (resale) => resale.SaleNumber?.Value,
-        cell: (resale) => <Text fw={700}>{displayValue(resale.SaleNumber?.Value)}</Text>,
+        cell: (resale) => <TableChip tone="document" value={displayValue(resale.SaleNumber?.Value)} />,
       },
       {
         id: 'client',
@@ -1993,7 +1994,7 @@ function useResalesColumns({
         width: 220,
         minWidth: 180,
         accessor: (resale) => getAgreementName(resale.ClientAgreement?.Agreement),
-        cell: (resale) => displayValue(getAgreementName(resale.ClientAgreement?.Agreement)),
+        cell: (resale) => <TableChip tone="neutral" value={displayValue(getAgreementName(resale.ClientAgreement?.Agreement))} />,
       },
       {
         id: 'organization',
@@ -2032,7 +2033,7 @@ function useResalesColumns({
         width: 94,
         minWidth: 82,
         accessor: (resale) => resale.ClientAgreement?.Agreement?.Currency?.Code,
-        cell: (resale) => displayValue(resale.ClientAgreement?.Agreement?.Currency?.Code || 'UAH'),
+        cell: (resale) => <TableChip tone="neutral" value={displayValue(resale.ClientAgreement?.Agreement?.Currency?.Code || 'UAH')} />,
       },
       {
         id: 'amountLocal',
@@ -2213,7 +2214,7 @@ function useResaleAvailabilityColumns({
         width: 180,
         minWidth: 140,
         accessor: (row) => row.FromStorage?.Name,
-        cell: (row) => displayValue(row.FromStorage?.Name),
+        cell: (row) => <TableChip tone="storage" value={displayValue(row.FromStorage?.Name)} />,
       },
       {
         id: 'group',
@@ -2744,7 +2745,7 @@ function ProcessSelectionConfirmDrawer({
         width: 180,
         minWidth: 140,
         accessor: (row) => row.FromStorage?.Name,
-        cell: (row) => displayValue(row.FromStorage?.Name),
+        cell: (row) => <TableChip tone="storage" value={displayValue(row.FromStorage?.Name)} />,
       },
       {
         id: 'specification',

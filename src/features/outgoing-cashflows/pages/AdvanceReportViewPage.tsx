@@ -529,7 +529,7 @@ function AdvanceReportViewPageContent() {
       title={t('Авансовий звіт')}
       onClose={model.goBack}
     >
-    <div className="document-detail-drawer advance-report-detail-drawer">
+    <div className="document-detail-drawer document-detail-drawer--compact advance-report-detail-drawer">
       <Group className="advance-report-detail-actions" gap="xs" justify="flex-end">
         {!model.isDone && model.canEdit && (
           <>
@@ -626,7 +626,7 @@ function AdvanceReportContent({ model }: { model: ReturnType<typeof useAdvanceRe
   const responsible = order.Colleague?.FullName || order.Colleague?.Name || order.Colleague?.LastName
 
   return (
-    <>
+    <div className="document-detail-drawer document-detail-drawer--compact">
       <section className="document-detail-summary">
         <div className="document-detail-summary__main">
           <span className="document-detail-eyebrow">{t('Авансовий звіт')}</span>
@@ -718,7 +718,7 @@ function AdvanceReportContent({ model }: { model: ReturnType<typeof useAdvanceRe
           </AdvanceReportDetailSection>
         ) : null}
       </div>
-    </>
+    </div>
   )
 }
 

@@ -1,0 +1,110 @@
+/* Wide overlay tabs: filled active action; narrow containers retain the
+   compact scrollable underline style. Width is measured inside the overlay. */
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .mantine-Tabs-root {
+  container-type: inline-size;
+  container-name: overlay-tabs;
+  min-width: 0;
+}
+
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .mantine-Tabs-root > .mantine-Tabs-list {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  justify-content: safe center;
+  scrollbar-width: thin;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .mantine-Tabs-root > .mantine-Tabs-list > .mantine-Tabs-tab {
+  flex-shrink: 0;
+}
+
+@container overlay-tabs (min-width: 900px) {
+  :is(.app-drawer, .app-modal, .app-bottom-sheet) .mantine-Tabs-root > .mantine-Tabs-list {
+    background: var(--mantine-color-white);
+    border-bottom: 1px solid var(--mantine-color-gray-2);
+    border-radius: 0;
+    gap: 8px;
+    padding: 8px;
+    justify-content: safe center;
+  }
+  :is(.app-drawer, .app-modal, .app-bottom-sheet) .mantine-Tabs-root > .mantine-Tabs-list::before { border: 0; }
+  :is(.app-drawer, .app-modal, .app-bottom-sheet) .mantine-Tabs-root > .mantine-Tabs-list > .mantine-Tabs-tab {
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--mantine-color-gray-8);
+    margin: 0;
+    min-height: 40px;
+    padding: 8px 14px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+  :is(.app-drawer, .app-modal, .app-bottom-sheet) .mantine-Tabs-root > .mantine-Tabs-list > .mantine-Tabs-tab:not([data-active]):not(:disabled):hover {
+    background: var(--mantine-color-gray-1);
+  }
+  :is(.app-drawer, .app-modal, .app-bottom-sheet) .mantine-Tabs-root > .mantine-Tabs-list > .mantine-Tabs-tab[data-active] {
+    background: var(--brand-orange);
+    border-color: var(--brand-orange);
+    color: var(--mantine-color-white);
+    font-weight: 600;
+  }
+  :is(.app-drawer, .app-modal, .app-bottom-sheet) .mantine-Tabs-root > .mantine-Tabs-list > .mantine-Tabs-tab[data-active] .mantine-Badge-root {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: transparent;
+    color: inherit;
+  }
+  :is(.app-drawer, .app-modal, .app-bottom-sheet) .mantine-Tabs-root > .mantine-Tabs-list > .mantine-Tabs-tab .mantine-Tabs-tabSection { color: inherit; }
+}
+
+/* Older forms render native buttons rather than Mantine Tabs. Apply the same
+   responsive presentation without changing their selection or permission logic. */
+.app-sheet-scroll,
+.app-modal .mantine-Modal-body,
+.app-bottom-sheet__body {
+  container-name: overlay-surface;
+  container-type: inline-size;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .pill-tabs:not(.mantine-Tabs-list) {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  justify-content: safe center;
+  gap: 12px;
+  max-width: 100%;
+  scrollbar-width: thin;
+}
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .pill-tabs > .pill-tab {
+  align-items: center;
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 8px;
+  white-space: nowrap;
+}
+@container overlay-surface (min-width: 900px) {
+  :is(.app-drawer, .app-modal, .app-bottom-sheet) .pill-tabs:not(.mantine-Tabs-list) {
+    background: var(--mantine-color-white);
+    padding: 8px;
+    gap: 8px;
+    border-radius: 0;
+    border-bottom: 1px solid var(--mantine-color-gray-2);
+  }
+  :is(.app-drawer, .app-modal, .app-bottom-sheet) .pill-tabs > .pill-tab {
+    border: 1px solid transparent;
+    border-radius: 8px;
+    min-height: 40px;
+    margin: 0;
+    padding: 8px 14px;
+    color: var(--mantine-color-gray-8);
+    background: transparent;
+    font: 500 13px / 1.4 var(--font-mono);
+  }
+  :is(.app-drawer, .app-modal, .app-bottom-sheet) .pill-tabs > .pill-tab.is-active {
+    color: white;
+    background: var(--brand-orange);
+    border-color: var(--brand-orange);
+    font-weight: 600;
+  }
+  :is(.app-drawer, .app-modal, .app-bottom-sheet) .pill-tabs > .pill-tab:not(.is-active):not(:disabled):hover {
+    background: var(--mantine-color-gray-1);
+  }
+}

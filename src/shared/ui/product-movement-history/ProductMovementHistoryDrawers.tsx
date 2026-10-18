@@ -1,10 +1,10 @@
+import { TableChip } from '../TableChip'
 import {
   ActionIcon,
   Alert,
   Badge,
   Button,
   Card,
-  Checkbox,
   Group,
   Select,
   Stack,
@@ -13,7 +13,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { Archive, ChevronLeft, ChevronRight, CircleAlert, Download, LockKeyhole, Minus, Plus, RefreshCw, TriangleAlert } from 'lucide-react'
+import { ArrowDownToLine, ArrowRightLeft, ArrowUpFromLine, Archive, ChevronLeft, ChevronRight, CircleAlert, Download, LockKeyhole, Minus, Plus, RefreshCw, TriangleAlert } from 'lucide-react'
 import { DocumentExportModal } from '../document-export-modal/DocumentExportModal'
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -50,6 +50,7 @@ import {
   legacyMovementRequestPaths,
   type ProductMovementHistoryRequestPaths,
 } from './productMovementHistoryRequestPaths'
+import { MovementDocumentTypeFilter } from './MovementDocumentTypeFilter'
 import './product-movement-history-drawers.css'
 
 export type MovementHistoryProduct = {
@@ -218,11 +219,10 @@ type ProductMovementFilterState = {
 }
 
 type ProductMovementFilterAction =
-  | { type: 'reset-selected-types' }
+  | { type: 'set-selected-types'; value: number[] }
   | { type: 'set-date-from'; value: string }
   | { type: 'set-date-to'; value: string }
   | { type: 'set-movement-type'; value: string }
-  | { type: 'toggle-selected-type'; value: number }
 
 type MovementDateState = {
   dateFrom: string
@@ -409,10 +409,10 @@ function productMovementFilterReducer(
   action: ProductMovementFilterAction,
 ): ProductMovementFilterState {
   switch (action.type) {
-    case 'reset-selected-types':
+    case 'set-selected-types':
       return {
         ...state,
-        selectedTypes: movementItemTypes,
+        selectedTypes: action.value,
       }
     case 'set-date-from':
       return {
@@ -429,13 +429,7 @@ function productMovementFilterReducer(
         ...state,
         movementType: action.value,
       }
-    case 'toggle-selected-type':
-      return {
-        ...state,
-        selectedTypes: state.selectedTypes.includes(action.value)
-          ? state.selectedTypes.filter((type) => type !== action.value)
-          : state.selectedTypes.concat(action.value),
-      }
+
   }
 }
 
@@ -612,9 +606,9 @@ function ProductMovementHistoryDrawerContent({
           onChange={(value) => setActiveTab((value as ProductMovementHistoryTab) || 'movement')}
         >
           <Tabs.List className="pill-tabs product-movement-history-tabs">
-            <Tabs.Tab value="movement">{t('Рух')}</Tabs.Tab>
-            <Tabs.Tab value="income">{t('Прихід')}</Tabs.Tab>
-            <Tabs.Tab value="outcome">{t('Вихід')}</Tabs.Tab>
+            <Tabs.Tab leftSection={<ArrowRightLeft size={16} />} value="movement">{t('Рух')}</Tabs.Tab>
+            <Tabs.Tab leftSection={<ArrowDownToLine size={16} />} value="income">{t('Прихід')}</Tabs.Tab>
+            <Tabs.Tab leftSection={<ArrowUpFromLine size={16} />} value="outcome">{t('Вихід')}</Tabs.Tab>
             <Tabs.Tab leftSection={<Archive size={15} />} value="historical-source">
               {t('Архівні партії 1С')}
             </Tabs.Tab>
@@ -851,7 +845,6 @@ function ProductMovementPanel({
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const exportRequestRef = useRef(0)
   const columns = useProductMovementColumns()
-  const selectedTypeSet = useMemo(() => new Set(selectedTypes), [selectedTypes])
   const filterError = getDateRangeError(dateFrom, dateTo, t)
   const missingNetUidError = productNetUid ? null : t('У товару немає NetUid для завантаження руху товару')
   const typesError = selectedTypes.length === 0 ? t('Оберіть хоча б один тип руху') : null
@@ -904,10 +897,6 @@ function ProductMovementPanel({
     }
   }, [active, dateFrom, dateTo, filterError, movementType, productNetUid, reloadKey, requestPath, selectedTypes, t, typesError])
 
-  function toggleMovementItemType(value: number) {
-    dispatchFilterState({ type: 'toggle-selected-type', value })
-  }
-
   async function exportMovements() {
     if (!canExport || !productNetUid || filterError || typesError || isExporting) {
       return
@@ -948,7 +937,7 @@ function ProductMovementPanel({
   return (
     <Stack className="product-movement-history-panel" gap={0}>
       <div className="app-filter-bar product-movement-history-filter-bar product-movement-history-filter-bar--extended">
-      <Group align="end" gap={10} wrap="nowrap" className="product-movement-history-filter-row">
+      <Group align="end" gap={10} wrap="wrap" className="product-movement-history-filter-row">
         <TextInput
           label={t('З')}
           type="date"
@@ -969,6 +958,11 @@ function ProductMovementPanel({
           value={movementType}
           w={220}
           onChange={(value) => dispatchFilterState({ type: 'set-movement-type', value: value || '0' })}
+        />
+        <MovementDocumentTypeFilter
+          options={movementItemTypeOptions}
+          value={selectedTypes}
+          onChange={(value) => dispatchFilterState({ type: 'set-selected-types', value })}
         />
         <div className="app-filter-actions">
         <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
@@ -991,20 +985,7 @@ function ProductMovementPanel({
         ) : null}
         </div>
       </Group>
-      <Group gap="md" wrap="wrap" align="center" className="product-movement-history-types-row">
-        {movementItemTypeOptions.map((option) => (
-          <Checkbox
-            key={option.value}
-            checked={selectedTypeSet.has(option.value)}
-            label={t(option.label)}
-            size="xs"
-            onChange={() => toggleMovementItemType(option.value)}
-          />
-        ))}
-        <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" onClick={() => dispatchFilterState({ type: 'reset-selected-types' })}>
-          {t('Скинути')}
-        </Button>
-      </Group>
+
       </div>
       <Stack className="product-movement-history-panel__body" gap="md">
       {activeError ? (
@@ -1431,7 +1412,7 @@ function useInformationalMovementColumns(): DataTableColumn<InformationalMovemen
       width: 165,
       minWidth: 140,
       accessor: (row) => row.DocumentNumber,
-      cell: (row) => displayValue(row.DocumentNumber),
+      cell: (row) => <TableChip tone="document" value={displayValue(row.DocumentNumber)} />,
     },
     {
       id: 'documentDate',
@@ -1489,7 +1470,7 @@ function useInformationalMovementColumns(): DataTableColumn<InformationalMovemen
       minWidth: 96,
       align: 'right',
       accessor: (row) => row.SourceItemId,
-      cell: (row) => String(row.SourceItemId),
+      cell: (row) => <TableChip tone="neutral" value={String(row.SourceItemId)} />,
     },
   ], [navigate, t])
 }
@@ -1630,7 +1611,7 @@ function useHistoricalSourceAnchorColumns(): DataTableColumn<HistoricalSourceAnc
       accessor: (row) => row.SourceBatchDocumentNumber,
       cell: (row) => (
         <Stack gap={0}>
-          <Text size="sm">{displayValue(row.SourceBatchDocumentNumber)}</Text>
+          <TableChip tone="document" value={displayValue(row.SourceBatchDocumentNumber)} />
           <Text c="dimmed" size="xs">{t('Тип')}: {row.SourceBatchDocumentType}</Text>
         </Stack>
       ),
@@ -1649,7 +1630,7 @@ function useHistoricalSourceAnchorColumns(): DataTableColumn<HistoricalSourceAnc
       width: 210,
       minWidth: 170,
       accessor: (row) => row.SourceStorageName,
-      cell: (row) => displayValue(row.SourceStorageName),
+      cell: (row) => <TableChip tone="storage" value={displayValue(row.SourceStorageName)} />,
     },
     {
       id: 'organization',
@@ -1702,9 +1683,9 @@ function useHistoricalSourceDocumentColumns(): DataTableColumn<HistoricalSourceM
 
   return useMemo<DataTableColumn<HistoricalSourceMovement>[]>(() => [
     { id: 'allocation', header: 'Allocation ID', width: 110, minWidth: 96, accessor: (row) => row.AllocationId, cell: (row) => String(row.AllocationId) },
-    { id: 'saleNumber', header: t('Продаж 1С'), width: 160, minWidth: 135, accessor: (row) => row.SourceSaleNumber || row.SourceOrderNumber, cell: (row) => displayValue(row.SourceSaleNumber || row.SourceOrderNumber) },
+    { id: 'saleNumber', header: t('Продаж 1С'), width: 160, minWidth: 135, accessor: (row) => row.SourceSaleNumber || row.SourceOrderNumber, cell: (row) => <TableChip tone="document" value={displayValue(row.SourceSaleNumber || row.SourceOrderNumber)} /> },
     { id: 'saleDate', header: t('Дата продажу'), width: 150, minWidth: 130, accessor: (row) => row.SaleDocumentDate, cell: (row) => formatDateTime(row.SaleDocumentDate) },
-    { id: 'orderNumber', header: t('Замовлення 1С'), width: 160, minWidth: 135, accessor: (row) => row.SourceOrderNumber, cell: (row) => displayValue(row.SourceOrderNumber) },
+    { id: 'orderNumber', header: t('Замовлення 1С'), width: 160, minWidth: 135, accessor: (row) => row.SourceOrderNumber, cell: (row) => <TableChip tone="document" value={displayValue(row.SourceOrderNumber)} /> },
     { id: 'client', header: t('Клієнт'), width: 220, minWidth: 170, accessor: (row) => row.ClientName, cell: (row) => displayValue(row.ClientName) },
     { id: 'qty', header: t('Кількість'), width: 110, minWidth: 96, align: 'right', accessor: (row) => row.Qty, cell: (row) => formatAmount(row.Qty) },
     { id: 'amount', header: t('Сума EUR'), width: 120, minWidth: 104, align: 'right', accessor: (row) => row.SourceAmountEur, cell: (row) => formatMoney(row.SourceAmountEur) },
@@ -2168,7 +2149,7 @@ function useProductMovementColumns(): DataTableColumn<ProductMovement>[] {
         width: 150,
         minWidth: 130,
         accessor: (row) => row.IncomeDocumentNumber,
-        cell: (row) => displayValue(row.IncomeDocumentNumber),
+        cell: (row) => <TableChip tone="document" value={displayValue(row.IncomeDocumentNumber)} />,
       },
       {
         id: 'incomeDocumentDate',
@@ -2192,7 +2173,7 @@ function useProductMovementColumns(): DataTableColumn<ProductMovement>[] {
         width: 140,
         minWidth: 112,
         accessor: (row) => row.DocumentNumber,
-        cell: (row) => formatEditedValue(row.DocumentNumber, row.IsEdited),
+        cell: (row) => <TableChip tone={row.IsEdited ? "warning" : "document"} value={displayValue(row.DocumentNumber)} />,
       },
       {
         id: 'documentDate',
@@ -2216,7 +2197,7 @@ function useProductMovementColumns(): DataTableColumn<ProductMovement>[] {
         width: 180,
         minWidth: 140,
         accessor: (row) => row.StorageName,
-        cell: (row) => displayValue(row.StorageName),
+        cell: (row) => <TableChip tone="storage" value={displayValue(row.StorageName)} />,
       },
       {
         id: 'organizationName',
@@ -2316,7 +2297,7 @@ function useProductIncomeMovementColumns(): DataTableColumn<ProductIncomeMovemen
         width: 160,
         minWidth: 130,
         accessor: (row) => row.StorageName,
-        cell: (row) => displayValue(row.StorageName),
+        cell: (row) => <TableChip tone="storage" value={displayValue(row.StorageName)} />,
       },
       {
         id: 'supplierName',
@@ -2350,7 +2331,7 @@ function useProductIncomeMovementColumns(): DataTableColumn<ProductIncomeMovemen
         accessor: (row) => row.IncomeToStorageNumber,
         cell: (row) => row.ImportedSourceMetadataResolved === false
           ? t('Дані AMG не визначені')
-          : displayValue(row.IncomeToStorageNumber),
+          : <TableChip tone="document" value={displayValue(row.IncomeToStorageNumber)} />,
       },
       {
         id: 'incomeInvoiceNumber',
@@ -2358,7 +2339,7 @@ function useProductIncomeMovementColumns(): DataTableColumn<ProductIncomeMovemen
         width: 160,
         minWidth: 140,
         accessor: (row) => row.IncomeInvoiceNumber,
-        cell: (row) => displayValue(row.IncomeInvoiceNumber),
+        cell: (row) => <TableChip tone="document" value={displayValue(row.IncomeInvoiceNumber)} />,
       },
       {
         id: 'incomeInvoiceDate',
@@ -2374,7 +2355,7 @@ function useProductIncomeMovementColumns(): DataTableColumn<ProductIncomeMovemen
         width: 110,
         minWidth: 96,
         accessor: (row) => row.Currency,
-        cell: (row) => displayValue(row.Currency),
+        cell: (row) => <TableChip tone="neutral" value={displayValue(row.Currency)} />,
       },
       {
         id: 'exchangeRate',
@@ -2483,7 +2464,7 @@ function useProductIncomeMovementColumns(): DataTableColumn<ProductIncomeMovemen
         width: 130,
         minWidth: 112,
         accessor: (row) => row.FromInvoiceNumber,
-        cell: (row) => displayValue(row.FromInvoiceNumber),
+        cell: (row) => <TableChip tone="document" value={displayValue(row.FromInvoiceNumber)} />,
       },
       {
         id: 'fromInvoiceDate',
@@ -2573,7 +2554,7 @@ function useProductOutcomeMovementColumns(): DataTableColumn<ProductOutcomeMovem
         width: 200,
         minWidth: 160,
         accessor: (row) => row.StorageName,
-        cell: (row) => displayValue(row.StorageName),
+        cell: (row) => <TableChip tone="storage" value={displayValue(row.StorageName)} />,
       },
       {
         id: 'organizationName',
@@ -2589,7 +2570,7 @@ function useProductOutcomeMovementColumns(): DataTableColumn<ProductOutcomeMovem
         width: 170,
         minWidth: 150,
         accessor: (row) => row.DocumentNumber,
-        cell: (row) => formatEditedValue(row.DocumentNumber, row.HasUpdateDataCarrier),
+        cell: (row) => <TableChip tone={row.HasUpdateDataCarrier ? "warning" : "document"} value={displayValue(row.DocumentNumber)} />,
       },
       {
         id: 'clientName',
@@ -2657,7 +2638,7 @@ function useStorageLocationHistoryColumns(): DataTableColumn<ProductStorageLocat
         width: 180,
         minWidth: 140,
         accessor: (row) => row.Storage?.Name,
-        cell: (row) => displayValue(row.Storage?.Name),
+        cell: (row) => <TableChip tone="storage" value={displayValue(row.Storage?.Name)} />,
       },
       {
         id: 'placement',

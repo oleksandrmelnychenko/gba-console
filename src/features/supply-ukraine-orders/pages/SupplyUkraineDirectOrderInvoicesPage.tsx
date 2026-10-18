@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -2163,10 +2164,10 @@ function ProductCodeCell({
         onOpenProductCard(netId)
       }}
     >
-      {code}
+      <TableChip tone="product" value={code} />
     </Anchor>
   ) : (
-    <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{code}</Text>
+    <TableChip tone="product" value={code} />
   )
 }
 

@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -433,7 +434,7 @@ function ImageSearchAuditDetail({ detail }: { detail: EcommerceImageSearchDetail
             <div className="image-search-detail-chip-list">
               {[analysis.category, analysis.subcategory, analysis.system, analysis.material, analysis.dimensions]
                 .filter(Boolean)
-                .map((value) => <span key={value as string}>{value}</span>)}
+                .map((value) => <TableChip key={value as string} value={value as string} />)}
             </div>
           </section>
 
@@ -441,7 +442,7 @@ function ImageSearchAuditDetail({ detail }: { detail: EcommerceImageSearchDetail
             <section className="image-search-detail-section">
               <Text className="image-search-detail-section-title">{t('Застосування')}</Text>
               <div className="image-search-detail-chip-list is-blue">
-                {application.map((value) => <span key={value}>{value}</span>)}
+                {application.map((value) => <TableChip key={value} value={value} />)}
               </div>
             </section>
           )}
@@ -451,13 +452,13 @@ function ImageSearchAuditDetail({ detail }: { detail: EcommerceImageSearchDetail
               <section className="image-search-detail-section">
                 <Text className="image-search-detail-section-title">{t('OEM номери')}</Text>
                 <div className="image-search-detail-code-list">
-                  {oem.length > 0 ? oem.map((value) => <code key={value}>{value}</code>) : <Text c="dimmed">—</Text>}
+                  {oem.length > 0 ? oem.map((value) => <TableChip key={value} tone="product" value={value} />) : <Text c="dimmed">—</Text>}
                 </div>
               </section>
               <section className="image-search-detail-section">
                 <Text className="image-search-detail-section-title">{t('Пошукові запити')}</Text>
                 <div className="image-search-detail-code-list">
-                  {queries.map((value) => <code key={value}>{value}</code>)}
+                  {queries.map((value) => <TableChip key={value} value={value} />)}
                 </div>
               </section>
             </div>
