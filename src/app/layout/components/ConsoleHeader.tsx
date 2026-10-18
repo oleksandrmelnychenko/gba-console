@@ -1,5 +1,6 @@
 import { ActionIcon, AppShell, Badge, Box, Group, Title, Text } from '@mantine/core'
 import { LogOut } from 'lucide-react'
+import { useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../features/auth/useAuth'
 import { HeaderActionBar } from '../../../features/header-actions/components/HeaderActionBar'
@@ -7,6 +8,42 @@ import gbaLogo from '../../../assets/brand/gba-logo.svg'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { ConsoleNav } from './ConsoleNav'
 import { NotificationCenter } from './NotificationCenter'
+
+const SIDE_SELECTORS = ['.console-header-brand', '.console-header-date', '.console-header-actions', '.console-header-user-panel'] as const
+
+function pixels(value: string): number {
+  const parsed = Number.parseFloat(value)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+function useHeaderNavWidth(main: RefObject<HTMLDivElement | null>) {
+  const [width, setWidth] = useState<number>()
+
+  useLayoutEffect(() => {
+    const node = main.current
+    if (!node) return
+    const sides = SIDE_SELECTORS.map(selector => node.querySelector<HTMLElement>(selector))
+    const read = () => {
+      if (!node.clientWidth) return
+      const style = getComputedStyle(node)
+      if (style.gridTemplateColumns.trim().split(/\s+/).length !== 3) {
+        setWidth(undefined)
+        return
+      }
+      const [brand, date, actions, user] = sides.map(side => side?.getBoundingClientRect().width ?? 0)
+      const next = Math.max(0, Math.floor(node.clientWidth - pixels(style.paddingLeft) - pixels(style.paddingRight)
+        - 2 * pixels(style.columnGap) - Math.max(brand, date) - Math.max(actions, user)))
+      setWidth(current => current === next ? current : next)
+    }
+    read()
+    const observer = new ResizeObserver(read)
+    observer.observe(node)
+    for (const side of sides) if (side) observer.observe(side)
+    return () => observer.disconnect()
+  }, [main])
+
+  return width
+}
 
 const headerDateFormatter = new Intl.DateTimeFormat('uk-UA', {
   weekday: 'long',
@@ -26,10 +63,12 @@ export function ConsoleHeader() {
     t('Робочий простір')
   const roleName = user?.UserRole?.Name?.trim()
   const currentDateLabel = headerDateFormatter.format(new Date())
+  const headerRef = useRef<HTMLDivElement>(null)
+  const navWidth = useHeaderNavWidth(headerRef)
 
   return (
     <AppShell.Header className="console-header">
-      <Box className="console-header-main">
+      <Box ref={headerRef} className="console-header-main">
         <Group gap="xs" wrap="nowrap" className="console-header-brand">
           <button type="button" className="console-brand-button" onClick={() => navigate('/dashboard')}>
             <img className="console-brand-logo" src={gbaLogo} alt="GBA" />
@@ -43,7 +82,7 @@ export function ConsoleHeader() {
         </Group>
 
         <Box className="console-header-top-nav">
-          <ConsoleNav mode="modules" />
+          <ConsoleNav mode="modules" availableWidth={navWidth} />
         </Box>
 
         <Group gap="xs" wrap="nowrap" className="console-header-actions">
@@ -59,7 +98,7 @@ export function ConsoleHeader() {
         </Group>
 
         <Box className="console-header-bottom-nav">
-          <ConsoleNav mode="items" />
+          <ConsoleNav mode="items" availableWidth={navWidth} />
         </Box>
 
         <Group gap="xs" wrap="nowrap" className="console-header-user-panel">

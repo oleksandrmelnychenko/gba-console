@@ -6,6 +6,7 @@ import type { NavigationModule, NavigationNode } from '../../../features/navigat
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { hasAiFeatureDescendant, isAiFeatureTarget } from '../../../shared/ai/aiFeature'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { ConsoleNavRow, type ConsoleNavEntry } from './ConsoleNavRow'
 
 type ConsoleNavMode = 'all' | 'items' | 'modules'
 
@@ -56,9 +57,10 @@ function findPreferredDefaultNode(
 
 type ConsoleNavProps = {
   mode?: ConsoleNavMode
+  availableWidth?: number
 }
 
-export function ConsoleNav({ mode = 'all' }: ConsoleNavProps) {
+export function ConsoleNav({ mode = 'all', availableWidth }: ConsoleNavProps) {
   const { error, getNodePath, isLoading, modules, selectedModule, selectedNode } = useNavigation()
   const navigate = useNavigate()
   const { t } = useI18n()
@@ -112,52 +114,41 @@ export function ConsoleNav({ mode = 'all' }: ConsoleNavProps) {
     navigate(getNodePath(node), { state: { nodeTitle: node.Module, moduleTitle: selectedModule?.Module } })
   }
 
+  const moduleEntries: ConsoleNavEntry[] = modules.map((module) => {
+    const key = module.NetUid || String(module.Id)
+    const hasAi = isAiFeatureTarget(module) || hasAiFeatureDescendant(module)
+
+    return {
+      key,
+      label: module.Module,
+      active: key === activeModuleKey,
+      badge: hasAi ? <AiFeatureBadge compact tooltip={t('У модулі є AI-функції')} /> : null,
+      onSelect: () => openModule(module),
+    }
+  })
+  const itemEntries: ConsoleNavEntry[] = items.map((node) => {
+    const key = node.NetUid || String(node.Id)
+    const hasAi = isAiFeatureTarget(node) || hasAiFeatureDescendant(node)
+
+    return {
+      key,
+      label: node.Module,
+      active: activeNodeKey != null && key === activeNodeKey,
+      badge: hasAi ? <AiFeatureBadge compact tooltip={t('AI-функція')} /> : null,
+      onSelect: () => openNode(node),
+    }
+  })
+
   return (
     <nav className={`console-subnav console-subnav-mode-${mode}`} aria-label={t('Навігація')}>
       {mode !== 'items' ? (
-        <div className="console-subnav-row console-subnav-modules">
-          {modules.map((module) => {
-            const key = module.NetUid || String(module.Id)
-            const active = key === activeModuleKey
-            const hasAi = isAiFeatureTarget(module) || hasAiFeatureDescendant(module)
-
-            return (
-              <button
-                key={key}
-                type="button"
-                className={`console-subnav-pill console-subnav-module${active ? ' is-active' : ''}`}
-                aria-pressed={active}
-                onClick={() => openModule(module)}
-              >
-                <span>{module.Module}</span>
-                {hasAi && <AiFeatureBadge compact tooltip={t('У модулі є AI-функції')} />}
-              </button>
-            )
-          })}
-        </div>
+        <ConsoleNavRow kind="module" className="console-subnav-row console-subnav-modules" entries={moduleEntries}
+          availableWidth={mode === 'modules' ? availableWidth : undefined} />
       ) : null}
 
       {mode !== 'modules' && items.length > 0 && (
-        <div className="console-subnav-row console-subnav-items">
-          {items.map((node) => {
-            const key = node.NetUid || String(node.Id)
-            const active = activeNodeKey != null && key === activeNodeKey
-            const hasAi = isAiFeatureTarget(node) || hasAiFeatureDescendant(node)
-
-            return (
-              <button
-                key={key}
-                type="button"
-                className={`console-subnav-pill console-subnav-item${active ? ' is-active' : ''}`}
-                aria-pressed={active}
-                onClick={() => openNode(node)}
-              >
-                <span>{node.Module}</span>
-                {hasAi && <AiFeatureBadge compact tooltip={t('AI-функція')} />}
-              </button>
-            )
-          })}
-        </div>
+        <ConsoleNavRow kind="item" className="console-subnav-row console-subnav-items" entries={itemEntries}
+          availableWidth={mode === 'items' ? availableWidth : undefined} />
       )}
     </nav>
   )
