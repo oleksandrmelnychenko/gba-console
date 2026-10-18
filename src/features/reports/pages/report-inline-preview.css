@@ -19,7 +19,7 @@
 .report-inline-preview td { color: var(--mantine-color-gray-9); font-family: var(--font-mono); font-size: 12.5px; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
 .report-inline-preview tbody th { color: var(--mantine-color-gray-9); font-weight: 500; }
 .report-inline-preview tbody th[data-level="0"] { font-weight: 600; }
-.report-inline-preview tbody th.is-repeat { color: var(--mantine-color-gray-6); font-weight: 400; }
+.report-inline-preview tbody th.is-repeat { color: var(--mantine-color-gray-7); font-weight: 400; }
 .report-inline-preview thead tr > :first-child, .report-inline-preview tbody tr:not(.report-inline-preview__group-total) > th:first-child { position: sticky; left: 0; box-shadow: inset -1px 0 0 var(--mantine-color-gray-3); }
 .report-inline-preview tbody tr:not(.report-inline-preview__group-total) > th:first-child { z-index: 1; }
 .report-inline-preview thead tr > :first-child { z-index: 3; }

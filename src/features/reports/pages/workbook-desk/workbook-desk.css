@@ -1,6 +1,7 @@
 .workbook-desk {
   --desk-border: var(--mantine-color-gray-2);
-  --desk-muted: var(--mantine-color-gray-6);
+  --desk-muted: var(--mantine-color-gray-7);
+  --mantine-color-dimmed: var(--mantine-color-gray-7);
   --desk-text: var(--mantine-color-gray-8);
   --desk-strong: var(--mantine-color-gray-9);
   --desk-radius: 10px;
@@ -107,7 +108,7 @@
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-orange-2);
   border-radius: 8px;
-  color: var(--mantine-color-orange-8);
+  color: var(--mantine-color-brand-8);
   cursor: pointer;
   display: inline-flex;
   font: 600 13px var(--font-mono);
@@ -366,7 +367,7 @@
 
 .workbook-header__eyebrow {
   align-items: center;
-  color: var(--brand-orange);
+  color: var(--mantine-color-brand-8);
   display: flex;
   flex-wrap: wrap;
   font: 600 11.5px var(--font-mono);
@@ -461,7 +462,7 @@
   background: var(--mantine-color-orange-0);
   border: 1px solid var(--mantine-color-orange-2);
   border-radius: 7px;
-  color: var(--mantine-color-orange-9);
+  color: var(--mantine-color-brand-9);
   font-size: 12.5px;
   font-weight: 600;
   line-height: 1.35;
@@ -577,7 +578,7 @@
 }
 
 .workbook-actions__note.is-blocked {
-  color: var(--mantine-color-orange-9);
+  color: var(--mantine-color-brand-9);
   font-weight: 600;
 }
 
@@ -653,10 +654,13 @@
 }
 
 .workbook-settings__control .reports-stocks-legacy-panel__add.mantine-Button-root {
-  --button-bg: var(--mantine-color-white);
-  --button-hover: var(--mantine-color-orange-0);
-  --button-color: var(--mantine-color-orange-8);
-  --button-bd: 1px solid var(--mantine-color-orange-3);
+  background: var(--mantine-color-white) !important;
+  border: 1px solid var(--mantine-color-orange-3) !important;
+  color: var(--mantine-color-brand-8) !important;
+}
+
+.workbook-settings__control .reports-stocks-legacy-panel__add.mantine-Button-root:hover {
+  background: var(--mantine-color-orange-0) !important;
 }
 
 .workbook-settings__control .reports-stocks-selection-card .reports-stocks-legacy-panel__header {
@@ -1011,7 +1015,7 @@
 
 .workbook-progress__stages li {
   align-items: center;
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-7);
   display: inline-flex;
   font-size: 12.5px;
   gap: 6px;
