@@ -1179,7 +1179,6 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           loading={!datasetStorage.loaded && !datasetStorage.error} error={datasetStorage.error} canGenerate={canGenerateReport}
           openReport={!datasetHidden ? deskTitle : null} actions={quietActions}
           more={<>
-            <Text size="sm" c="gray.7">{t('Звіт без відборів і налаштувань книги 1С — для перевірки або власного шаблону.')}</Text>
             <ReportDatasetPicker compact activeDataSources={BUG_1274_ACTIVE_DATA_SOURCES}
               datasets={datasetStorage.datasets.filter(item => BUG_1274_ACTIVE_DATA_SOURCES.has(item.DataSource))} selected={dataSource}
               disabled={!canGenerateReport || isLoading} loaded={datasetStorage.loaded} error={datasetStorage.error}
