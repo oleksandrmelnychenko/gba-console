@@ -41,6 +41,7 @@ describe('workbook desk names', () => {
   it('says how long a run usually takes', () => {
     expect(typicalRunText(35)).toBe('Зазвичай це займає 15–25 с.')
     expect(typicalRunText(40)).toBe('Зазвичай це займає 5–15 с.')
+    expect(typicalRunText(41)).toBe('Зазвичай це займає 10–30 с.')
   })
 })
 
