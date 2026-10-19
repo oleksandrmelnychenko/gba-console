@@ -34,7 +34,7 @@ import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
-import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
+import { TransporterIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { usePermissions } from '../../auth/usePermissions'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
@@ -4585,7 +4585,13 @@ function TransporterTable({
                   title={displayValue(transporter.Name) || undefined}
                   wrap="nowrap"
                 >
-                  <Avatar src={toProxiedAssetUrl(transporter.ImageUrl)} alt={displayValue(transporter.Name)} size="sm" radius="sm" />
+                  <TransporterIcon
+                    cssClass={transporter.CssClass}
+                    fallback={<Avatar alt={displayValue(transporter.Name)} size="sm" radius="sm" />}
+                    imageUrl={transporter.ImageUrl}
+                    name={displayValue(transporter.Name)}
+                    size={26}
+                  />
                   <Text fw={600} className="client-resources-truncated-cell">
                     {displayValue(transporter.Name)}
                   </Text>
