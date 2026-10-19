@@ -113,7 +113,6 @@ type SeoRosterColumn<TData> = {
 
 const SEO_TABS: { value: SeoTab; label: TranslationKey }[] = [
   { value: 'info-payment', label: 'Загальна інформація та оплата' },
-  // { value: 'pages', label: 'Сторінки' },
   { value: 'contacts', label: 'Персонал' },
   { value: 'shop-data', label: 'Дані магазину' },
   { value: 'shop-clients', label: 'Інтернет клієнти' },

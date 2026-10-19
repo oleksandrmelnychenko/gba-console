@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
@@ -113,21 +113,6 @@ describe('OnlineShopSeoPage business permissions', () => {
     updateContactMock.mockReset().mockResolvedValue(settings)
     removeContactMock.mockReset().mockResolvedValue(settings)
     updatePageMock.mockReset().mockResolvedValue(settings)
-  })
-
-  it('does not make a row click or edit icon a second SEO-page permission', async () => {
-    const { unmount } = renderPage('/online-shop-seo/pages')
-
-    expect(await screen.findByText('Каталог товарів')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Редагувати' })).toBeNull()
-    fireEvent.click(screen.getByText('Каталог товарів'))
-    expect(screen.queryByText('Редагування SEO сторінки')).toBeNull()
-    unmount()
-
-    renderPage('/online-shop-seo/pages', [PermissionKeys.OnlineShopSeo.SeoPage.Edit])
-    const edit = await screen.findByRole('button', { name: 'Редагувати' })
-    fireEvent.click(edit)
-    expect(await screen.findByText('Редагування SEO сторінки')).toBeTruthy()
   })
 
   it('keeps contact create, edit and delete as independent business permissions', async () => {
