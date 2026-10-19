@@ -2,6 +2,7 @@ import { ActionIcon, Badge, Box, Group, Paper, Popover, Stack, Text, Tooltip } f
 import { notifications } from '@mantine/notifications'
 import { ArrowLeftRight, Copy, FileText, Network, TriangleAlert, X } from 'lucide-react'
 import { memo, useEffect, useState } from 'react'
+import { TableChip } from '../../../../shared/ui/TableChip'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { PermissionKeys } from '../../../../shared/auth/permissionKeys'
 import { usePermissions } from '../../../auth/usePermissions'
@@ -367,7 +368,7 @@ function WizardSaleHeaderContent({
         </Tooltip>
       )}
 
-      <Group gap="xs" wrap="wrap">
+      <Group className="new-sale-wizard-header-balances" gap="xs" wrap="wrap">
         {(client.Id ?? 0) > 0 && groupedDebts.length === 0 && (
           <WizardHeaderBadge
             color="green"
@@ -382,7 +383,7 @@ function WizardSaleHeaderContent({
               unit: item.Agreement?.Currency?.Code ?? '',
               value: amountFormatter.format(getWizardClientDebtTotal(item)),
             }))}
-            label={t('Борг по договорам')}
+            label={t('Борг за договорами')}
           />
         )}
         {groupedDebts.length > 0 && maxOverdueDays > 0 && (
@@ -457,9 +458,9 @@ function WizardHeaderBadge({
             <Text c={color} fw={600} size="sm">
               {item.value}
             </Text>
-            <Text className="new-sale-wizard-header-badge__unit">
-              {item.unit}
-            </Text>
+            {/^[A-Z]{3}$/.test(item.unit) ? <TableChip tone="source" value={item.unit} /> : (
+              <Text className="new-sale-wizard-header-badge__unit">{item.unit}</Text>
+            )}
           </Group>
         ))}
       </Group>

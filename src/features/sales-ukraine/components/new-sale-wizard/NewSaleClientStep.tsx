@@ -17,6 +17,7 @@ import type { SaleAuditStatistic } from '../../../../shared/sale-audit/saleAudit
 import { AppDrawer } from '../../../../shared/ui/AppDrawer'
 import { DocumentExportModal } from '../../../../shared/ui/document-export-modal/DocumentExportModal'
 import { getClientSubClients } from '../../../clients/api/clientCabinetApi'
+import { getClientFolderChildren } from '../../../clients/clientFolder'
 import type { Client, ClientAgreement, ClientInDebt } from '../../../clients/types'
 import {
   getSaleActProtocolEditDocument,
@@ -126,6 +127,7 @@ export function NewSaleClientStep({
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [groupedDebts, setGroupedDebts] = useState<ClientInDebt[]>([])
   const [agreements, setAgreements] = useState<ClientAgreement[]>([])
+  const [agreementsLoading, setAgreementsLoading] = useState(false)
   const [selectedAgreementKey, setSelectedAgreementKey] = useState('')
   const [registryItems, setRegistryItems] = useState<WizardSaleRegisterStatistic[]>([])
   const [isRegistryLoading, setRegistryLoading] = useState(false)
@@ -268,6 +270,10 @@ export function NewSaleClientStep({
           setSelectedAgreementKey('')
           onAgreementChange(null, null)
         }
+      } finally {
+        if (requestId === undefined || clientDetailsRequestRef.current === requestId) {
+          setAgreementsLoading(false)
+        }
       }
     },
     [onAgreementChange],
@@ -306,6 +312,7 @@ export function NewSaleClientStep({
         onClientResolved?.(null)
         setGroupedDebts([])
         setAgreements([])
+        setAgreementsLoading(false)
         setSelectedAgreementKey('')
         setRegistryItems([])
         setRegistryLoading(false)
@@ -333,14 +340,19 @@ export function NewSaleClientStep({
       onClientResolved?.(client)
       setGroupedDebts([])
       setAgreements([])
+      setAgreementsLoading(Boolean(client.NetUid))
       setSelectedAgreementKey('')
+      onAgreementChange(null, null)
       setRegistryItems([])
-      setRegistryLoading(false)
+      setRegistryLoading(true)
       registryRequestRef.current += 1
       registryInFlightKeyRef.current = null
       setKeyboardState('ClientSelection')
 
       if (debounceDetails) {
+        // Do not allow the previous client's agreement to remain actionable while
+        // the new selection waits for the trailing debounce.
+        onClientChange(null)
         clientDetailsTimerRef.current = window.setTimeout(() => {
           clientDetailsTimerRef.current = null
 
@@ -385,6 +397,7 @@ export function NewSaleClientStep({
     onClientResolved?.(null)
     setGroupedDebts([])
     setAgreements([])
+    setAgreementsLoading(false)
     setSelectedAgreementKey('')
     setRegistryItems([])
     setRegistryLoading(false)
@@ -500,10 +513,7 @@ export function NewSaleClientStep({
       void runVirtualLoad()
     }
 
-    // Arrow navigation only previews the row in the centre of the drum. Committing here
-    // used to make structural `...00` results immediately replace the whole search result
-    // set with their children, so a user could not keep moving to the intended city. The
-    // highlighted client is committed explicitly with Enter (or by clicking a row).
+    previewClientDetails(item)
   }
 
   function selectFromBottom() {
@@ -520,7 +530,18 @@ export function NewSaleClientStep({
 
     setCarousel({ dataBottom: carousel.dataBottom.slice(1), dataTop, selected: item, showDetails: true })
 
-    // Keep navigation side-effect free; Enter or a click confirms the highlighted row.
+    previewClientDetails(item)
+  }
+
+  function previewClientDetails(client: Client) {
+    // Structural folders expand only on Enter. Passing through one must cancel
+    // any pending details without replacing the drum with that folder's children.
+    if (!isWizardSaleClientSelectable(client)) {
+      unselectClient()
+      return
+    }
+
+    confirmClient(client, { debounceDetails: true })
   }
 
   async function runVirtualLoad() {
@@ -653,8 +674,9 @@ export function NewSaleClientStep({
       const isArrow = event.key === 'ArrowUp' || event.key === 'ArrowDown'
       const isAgreementArrow = event.key === 'ArrowLeft' || event.key === 'ArrowRight'
       const isEscape = event.key === 'Escape'
+      const isEnter = event.key === 'Enter' && !event.ctrlKey && !event.metaKey && !event.altKey
 
-      if (!isArrow && !isAgreementArrow && !isEscape) {
+      if (!isArrow && !isAgreementArrow && !isEscape && !isEnter) {
         return
       }
 
@@ -666,6 +688,21 @@ export function NewSaleClientStep({
         isOrderedProductsOpen ||
         printState
       ) {
+        return
+      }
+
+      if (isEnter) {
+        // The highlighted card is non-focusable; Enter must also work after focus
+        // lands on the body instead of relying solely on the wizard's React bubbling.
+        const target = event.target
+        const inDrum = target instanceof HTMLElement && Boolean(target.closest('.new-sale-client-drum'))
+        const onButton = target instanceof HTMLElement && Boolean(target.closest('button'))
+        if (!carousel.selected || onButton || (target !== document.body && target !== searchInputRef.current && !inDrum)) {
+          return
+        }
+        event.preventDefault()
+        event.stopPropagation()
+        if (!event.repeat) enterSelectClient()
         return
       }
 
@@ -1152,20 +1189,25 @@ export function NewSaleClientStep({
     [],
   )
 
+  const focusedGroup = !selectedClient && carousel.selected && !isWizardSaleClientSelectable(carousel.selected)
+    ? carousel.selected
+    : null
+  const headerClient = selectedClient ?? focusedGroup
   const selectedAgreement = agreements.find((item) => getWizardAgreementKey(item) === selectedAgreementKey) ?? null
   const selectedAgreementClientId = selectedAgreement?.ClientId ?? selectedAgreement?.Client?.Id
 
   return (
     <>
       <Box className="new-sale-client-step">
-        {selectedClient && (
+        {headerClient && (
           <WizardClientHeroHeader
             activeAgreementNetId={selectedAgreementKey}
             agreements={agreements}
-            client={selectedClient}
+            client={headerClient}
+            groupSize={focusedGroup ? getClientFolderChildren(focusedGroup).length : undefined}
             debts={groupedDebts}
             headerClose={headerClose}
-            headerTools={headerTools}
+            headerTools={focusedGroup ? undefined : headerTools}
             permissionFlow={permissionFlow}
             registryCount={registryItems.length}
           />
@@ -1193,6 +1235,7 @@ export function NewSaleClientStep({
             <>
               <Box className="new-sale-client-agreements-zone">
                 <WizardClientAgreementsStrip
+                  isLoading={agreementsLoading}
                   agreements={agreements}
                   selectedKey={selectedAgreementKey}
                   onSelect={selectAgreement}
@@ -1229,12 +1272,12 @@ export function NewSaleClientStep({
           ) : (
             <Stack align="center" className="new-sale-client-empty" gap={10} justify="center">
               <span className="new-sale-client-empty__icon">
-                <UserSearch size={30} strokeWidth={1.55} />
+                <UserSearch size={20} strokeWidth={1.7} />
               </span>
               <Stack align="center" gap={3}>
-                <Text className="new-sale-client-empty__title">{t('Клієнт ще не вибраний')}</Text>
+                <Text className="new-sale-client-empty__title">{t(focusedGroup ? 'Оберіть картку групи' : 'Оберіть клієнта')}</Text>
                 <Text className="new-sale-client-empty__description">
-                  {t('Оберіть клієнта у списку зліва, щоб відкрити договори, борги та реєстр документів.')}
+                  {t(focusedGroup ? 'Натисніть Enter, щоб відкрити групу, та оберіть потрібну картку стрілками.' : 'Оберіть клієнта у списку зліва, щоб відкрити договори, борги та реєстр документів.')}
                 </Text>
               </Stack>
             </Stack>
@@ -1258,6 +1301,7 @@ export function NewSaleClientStep({
         onClose={closeAudit}
       >
         <SaleAuditDetail
+          documentNumber={auditSale?.SaleNumber?.Value}
           documentApi={permissionScopedSalesUkraineApi ? SALES_UKRAINE_AUDIT_DOCUMENT_API : undefined}
           error={auditError}
           isLoading={isAuditLoading}

@@ -1,4 +1,5 @@
 import { Box, Group, Text, Tooltip } from '@mantine/core'
+import { TableChip } from '../../../../shared/ui/TableChip'
 import { CircleHelp } from 'lucide-react'
 import type { ClientAgreement } from '../../../clients/types'
 import { getWizardAgreementDebtPresentation } from './wizardClientStepModel'
@@ -55,14 +56,12 @@ export function WizardAgreementItem({
       <Box className="new-sale-hero-agreement__body">
         <Box className="new-sale-hero-agreement__top">
           <Box className="new-sale-hero-agreement__identity">
-            <Text className="new-sale-hero-agreement__organization" title={organizationName}>
-              {organizationName || 'Організація не вказана'}
-            </Text>
+            <TableChip tone="product" value={organizationName || 'Організація не вказана'} />
             <Group gap={7} wrap="nowrap">
               <Text className="new-sale-hero-agreement__name" title={agreementName} truncate>
                 {agreementName}
               </Text>
-              {currencyCode && <span className="new-sale-hero-agreement__currency">{currencyCode}</span>}
+              {currencyCode && <TableChip tone="source" value={currencyCode} />}
             </Group>
           </Box>
 

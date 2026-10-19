@@ -10,7 +10,8 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert, Save } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo, useReducer } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
+import { TableChip } from '../../../shared/ui/TableChip'
 import './consumable-storages-page.css'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -260,26 +261,9 @@ function ConsumableStorageFormPageContent() {
   }
 
   return (
-    <AppDrawer
-      opened
-      position="right"
-      size="compact"
-      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{isEditMode ? t('Редагування складу') : t('Новий склад')}</span>}
-      onClose={handleCancel}
-      footer={
-        <Button
-          color={CREATE_ACTION_COLOR}
-          disabled={isLoading || !canSave}
-          form="consumable-storage-form"
-          leftSection={<Save size={16} />}
-          styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-          loading={isSaving}
-          type="submit"
-        >
-          {t('Зберегти')}
-        </Button>
-      }
-    >
+    <AppModal opened size={640} className="consumable-storage-form-modal"
+      title={isEditMode ? t('Редагування складу') : t('Новий склад')}
+      onClose={handleCancel}>
       <form className="consumable-storage-form" id="consumable-storage-form" onSubmit={handleSubmit}>
         <Stack gap="md">
           {error && (
@@ -294,6 +278,8 @@ function ConsumableStorageFormPageContent() {
             </Alert>
           )}
 
+            <section className="consumable-storage-form-section">
+            <h3 className="app-section-title">{t('Основне')}</h3>
             <TextInput
               disabled={isLoading || isSaving}
               label={t('Назва')}
@@ -317,6 +303,10 @@ function ConsumableStorageFormPageContent() {
                 })
               }
             />
+            </section>
+            <section className="consumable-storage-form-section">
+            <h3 className="app-section-title">{t('Організація та відповідальний')}</h3>
+            <div className="consumable-storage-form-grid">
             <Select
               clearable
               searchable
@@ -334,7 +324,7 @@ function ConsumableStorageFormPageContent() {
               }
               onSearchChange={setUserSearchValue}
             />
-            <Select
+            {isEditMode ? <div className="consumable-storage-organization-readonly"><span>{t('Організація')}</span><TableChip value={selectedOrganization?.Name || selectedOrganization?.FullName} tone="product" /></div> : <Select
               data={organizationOptions}
               disabled={isLoading || isSaving || isEditMode}
               label={t('Організація')}
@@ -346,10 +336,16 @@ function ConsumableStorageFormPageContent() {
                   form: { ...form, organizationNetUid: value || '' },
                 })
               }
-            />
+            />}
+            </div>
+            </section>
           </Stack>
+          <AppModalFooter>
+            <Button variant="default" type="button" disabled={isSaving} onClick={handleCancel}>{t('Скасувати')}</Button>
+            <Button color={CREATE_ACTION_COLOR} disabled={isLoading || !canSave} leftSection={<Save size={16} />} loading={isSaving} type="submit">{t('Зберегти')}</Button>
+          </AppModalFooter>
         </form>
-    </AppDrawer>
+    </AppModal>
   )
 }
 

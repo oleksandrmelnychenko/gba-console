@@ -35,9 +35,9 @@ export type AppDrawerProps = Omit<DrawerProps, 'title'> & {
  * a call site passes.
  */
 const SHEET_WIDTHS = {
-  compact: 'min(560px, 100vw)',
-  standard: 'min(1200px, 100vw)',
-  wide: 'min(1240px, 100vw)',
+  compact: 'min(560px, calc(100vw - 16px))',
+  standard: 'min(1200px, calc(100vw - 16px))',
+  wide: 'min(1240px, calc(100vw - 16px))',
   full: 'calc(100vw - 16px)',
 } as const
 
@@ -186,11 +186,11 @@ export function AppDrawer({
       styles={{
         // Floating-sheet chrome applied inline so it always wins over Mantine's
         // own content styles regardless of CSS import order: a small gap on
-        // top/right/bottom and rounded corners.
+        // every side and rounded corners.
         content: {
-          margin: '8px 8px 8px 0',
+          margin: '8px',
           height: 'calc(100% - 16px)',
-          maxWidth: 'calc(100vw - 8px)',
+          maxWidth: 'calc(100vw - 16px)',
           borderRadius: 14,
           overflow: 'hidden',
           // Always a flex column so the body owns the available height and can scroll its own

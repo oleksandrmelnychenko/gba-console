@@ -19,12 +19,12 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Plus, RefreshCw, RotateCcw, Save, Search, Trash2, X } from 'lucide-react'
+import { Boxes, CircleAlert, PackageMinus, Plus, RefreshCw, RotateCcw, Save, Search, Trash2, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { DocumentDetailChip, DocumentDetailLayout, DocumentDetailRow, DocumentDetailSection, DocumentDetailSummary } from '../../../shared/ui/document-detail/DocumentDetail'
+import { DocumentDetailLayout, DocumentDetailMetric, DocumentDetailRow, DocumentDetailSection, DocumentDetailSummary } from '../../../shared/ui/document-detail/DocumentDetail'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -501,6 +501,7 @@ function ConsumableStorageDetailDrawer({
   const { t } = useI18n()
   const products = storage?.ConsumableProducts || []
   const totals = storage?.PriceTotals || []
+  const [activeProductsTab, setActiveProductsTab] = useState<string | null>('remnants')
 
   const handleChanged = useCallback(() => {
     onChanged()
@@ -517,32 +518,27 @@ function ConsumableStorageDetailDrawer({
   return (
     <AppDrawer opened={Boolean(storage)} padding="md" size="xl" title={t('Склад')} onClose={onClose}>
       {storage && (
-        <DocumentDetailLayout
+        <DocumentDetailLayout variant="inventory"
           summary={
             <DocumentDetailSummary
               eyebrow={t('Склад')}
               title={displayValue(storage.Name)}
-              meta={<><DocumentDetailChip>{t('Відповідальний')}: {displayValue(getEntityName(storage.ResponsibleUser))}</DocumentDetailChip><DocumentDetailChip>{t('Позицій у залишках')}: {formatAmount(products.length)}</DocumentDetailChip></>}
-              metrics={null}
+              metrics={<DocumentDetailMetric label={t('Позицій у залишках')} value={formatAmount(products.length)} />}
             />
           }
         >
-          <DocumentDetailSection title={t('Склад')}>
-            <DocumentDetailRow label={t('Назва')} value={storage.Name} wide />
-            <DocumentDetailRow label={t('Опис')} value={storage.Description} wide />
-          </DocumentDetailSection>
-
-          <DocumentDetailSection title={t('Організація та відповідальний')}>
-            <DocumentDetailRow label={t('Організація')} value={getEntityName(storage.Organization)} wide />
-            <DocumentDetailRow label={t('Відповідальний')} value={getEntityName(storage.ResponsibleUser)} wide />
+          <DocumentDetailSection title={t('Реквізити складу')}>
+            <DocumentDetailRow label={t('Організація')} value={<TableChip value={storage.Organization?.Name || getEntityName(storage.Organization)} tone="product" />} />
+            <DocumentDetailRow label={t('Відповідальний')} value={getEntityName(storage.ResponsibleUser)} />
+            {storage.Description?.trim() ? <DocumentDetailRow label={t('Опис')} value={storage.Description} wide /> : null}
           </DocumentDetailSection>
 
           <DocumentDetailSection title={t('Товари')} stacked>
             <div className="consumable-storage-detail-registry">
-              <Tabs className="consumable-storage-detail-tabs-root" defaultValue="remnants" keepMounted={false}>
-                <Tabs.List className="pill-tabs consumable-storage-detail-tabs">
-                  <Tabs.Tab value="remnants">{t('Залишки')}</Tabs.Tab>
-                  <Tabs.Tab value="writtenGoods">{t('Списані товари')}</Tabs.Tab>
+              <Tabs className="consumable-storage-detail-tabs-root" value={activeProductsTab} onChange={setActiveProductsTab} keepMounted={false}>
+                <Tabs.List className="app-screen-tabs consumable-storage-detail-tabs">
+                  <Tabs.Tab className={`app-screen-tab${activeProductsTab === 'remnants' ? ' is-active' : ''}`} leftSection={<Boxes size={16} />} value="remnants">{t('Залишки')}</Tabs.Tab>
+                  <Tabs.Tab className={`app-screen-tab${activeProductsTab === 'writtenGoods' ? ' is-active' : ''}`} leftSection={<PackageMinus size={16} />} value="writtenGoods">{t('Списані товари')}</Tabs.Tab>
                 </Tabs.List>
                 <Tabs.Panel pt={0} value="remnants">
                   <StorageRemnantsPanel products={products} />
@@ -558,7 +554,7 @@ function ConsumableStorageDetailDrawer({
             <DocumentDetailSection title={t('Підсумки за валютами')} stacked>
               {totals.map((total) => (
                 <div className="consumable-storage-detail-total" key={getPriceTotalKey(total)}>
-                  <DocumentDetailRow label={t('Валюта')} value={total.Currency?.Code || total.Currency?.Name} />
+                  <DocumentDetailRow label={t('Валюта')} value={<TableChip value={total.Currency?.Code || total.Currency?.Name} tone="source" />} />
                   <DocumentDetailRow label={t('Кількість')} mono value={formatAmount(total.Qty)} />
                   <DocumentDetailRow label={t('Сума')} mono value={formatMoney(total.TotalPrice ?? total.Amount)} />
                 </div>

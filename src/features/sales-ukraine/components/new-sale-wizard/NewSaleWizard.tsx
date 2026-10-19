@@ -1,7 +1,7 @@
 import { ActionIcon, Alert, Box, Button, Center, FileInput, Group, Loader, Stack, Text, UnstyledButton } from '@mantine/core'
-import { X } from 'lucide-react'
+import { ArrowRight, Check, ChevronRight, Keyboard, X } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
-import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { AppModal } from '../../../../shared/ui/AppModal'
@@ -475,15 +475,16 @@ function WizardKeyboardStateLabel() {
   const keyboard = useWizardKeyboardSnapshot()
 
   return (
-    <Group className="new-sale-wizard-keyboard-state" gap={6} wrap="nowrap">
-      <Text className="new-sale-wizard-keyboard-state__label">
-        {t('Стан режиму клавіатури')}:
+    <Group
+      className="new-sale-wizard-keyboard-state"
+      gap={8}
+      wrap="nowrap"
+      title={`${t('Стан режиму клавіатури')}: ${keyboard.label || t('Клавіатура')}`}
+    >
+      <Keyboard size={16} aria-hidden="true" />
+      <Text className="new-sale-wizard-keyboard-state__value">
+        {keyboard.label || t('Клавіатура')}
       </Text>
-      {keyboard.label && (
-        <Text className="new-sale-wizard-keyboard-state__value">
-          {keyboard.label}
-        </Text>
-      )}
     </Group>
   )
 }
@@ -1428,22 +1429,26 @@ function NewSaleWizardContent({
       <Box className="new-sale-wizard-footer">
         <WizardKeyboardStateLabel />
 
-        <Group className="new-sale-wizard-step-list" gap={4} justify="center" wrap="nowrap">
+        <Group component="nav" aria-label={t('Етапи продажу')} className="new-sale-wizard-step-list" gap={4} justify="center" wrap="nowrap">
           {WIZARD_STEPS.map((step, index) => {
             const title = t(WIZARD_STEP_TITLES[step.index])
             const isActive = index === active
             const isDone = index < active
 
             return (
+              <Fragment key={step.index}>
               <UnstyledButton
+                type="button"
                 aria-current={isActive ? 'step' : undefined}
                 aria-label={title}
                 className={`new-sale-wizard-step ${isActive ? 'is-active' : ''} ${isDone ? 'is-done' : ''}`}
-                key={step.index}
                 onClick={() => onStepClick(index)}
               >
+                {isDone && <Check size={15} aria-hidden="true" />}
                 <span className="new-sale-wizard-step__label">{title}</span>
               </UnstyledButton>
+              {index < WIZARD_STEPS.length - 1 && <ChevronRight className="new-sale-wizard-step-separator" size={14} aria-hidden="true" />}
+              </Fragment>
             )
           })}
         </Group>
@@ -1464,6 +1469,7 @@ function NewSaleWizardContent({
               color={CREATE_ACTION_COLOR}
               disabled={nextDisabled}
               loading={busy}
+              rightSection={<ArrowRight size={16} aria-hidden="true" />}
               onClick={handleNext}
             >
               {nextLabel}

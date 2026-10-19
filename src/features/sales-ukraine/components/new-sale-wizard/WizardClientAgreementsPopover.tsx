@@ -15,6 +15,8 @@ export function WizardClientAgreementsPopover({
   agreements: ClientAgreement[]
 }) {
   const { t } = useI18n()
+  const countForm = new Intl.PluralRules('uk').select(agreements.length)
+  const countLabel = t(countForm === 'one' ? 'Договір' : countForm === 'few' ? 'Договори' : 'Договорів')
 
   return (
     <Popover position="bottom-end" shadow="md" width={500} withinPortal>
@@ -26,7 +28,7 @@ export function WizardClientAgreementsPopover({
           type="button"
         >
           <strong>{metricCountFormatter.format(agreements.length)}</strong>
-          <span>{t('Договори')}</span>
+          <span>{countLabel}</span>
         </Box>
       </Popover.Target>
       <Popover.Dropdown className="new-sale-hero-agreements-dropdown">

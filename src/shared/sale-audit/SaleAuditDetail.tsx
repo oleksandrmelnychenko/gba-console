@@ -1,6 +1,6 @@
-import { ActionIcon, Alert, Box, Button, Card, Divider, Group, Loader, Stack, Text, ThemeIcon, Tooltip } from '@mantine/core'
+import { Alert, Button, Group, Skeleton, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeftRight, CircleAlert, FileChartColumn, ReceiptText } from 'lucide-react'
+import { ChevronRight, CircleAlert, FileText, History, Package, PackageCheck, ReceiptText, Truck } from 'lucide-react'
 import { DocumentExportModal } from '../ui/document-export-modal/DocumentExportModal'
 import { useRef } from 'react'
 import { useValueState } from '../hooks/useValueState'
@@ -8,6 +8,13 @@ import { useI18n } from '../i18n/useI18n'
 import { usePersistentSaleJsonMutationRunner } from '../../features/sales-ukraine/usePersistentSaleJsonMutation'
 import type { SalesMutationOperationOptions } from '../../features/sales-ukraine/salesMutationOperation'
 import { AppModal } from '../ui/AppModal'
+import { DataTable } from '../ui/data-table/DataTable'
+import type { DataTableColumn } from '../ui/data-table/types'
+import { DocumentDetailChip, DocumentDetailLayout, DocumentDetailSection, DocumentDetailSummary } from '../ui/document-detail/DocumentDetail'
+import { TableChip } from '../ui/TableChip'
+import { TableRowAction } from '../ui/table-row-action'
+import { CREATE_ACTION_COLOR } from '../ui/page-header-actions/PageHeaderActions'
+import './sale-audit-detail.css'
 import {
   getWarehouseUkraineAuditInvoiceDocument,
   getWarehouseUkraineAuditShiftedDocument,
@@ -45,6 +52,7 @@ async function rejectUnscopedAuditConfirmation(): Promise<void> {
 
 type SaleAuditDetailProps = {
   documentApi?: SaleAuditDocumentApi
+  documentNumber?: string
   error: string | null
   isLoading: boolean
   onConfirmed?: () => void
@@ -54,6 +62,7 @@ type SaleAuditDetailProps = {
 
 export function SaleAuditDetail({
   documentApi = DEFAULT_SALE_AUDIT_DOCUMENT_API,
+  documentNumber,
   error,
   isLoading,
   onConfirmed,
@@ -169,71 +178,96 @@ export function SaleAuditDetail({
   const confirmableHistoryNetId =
     (sale?.HistoryInvoiceEdit || []).find((item) => item.NetUid && item.ApproveUpdate && !item.IsDevelopment)?.NetUid || null
 
+  const orderItems = sale?.Order?.OrderItems || []
+  const movementCount = orderItems.reduce((total, item) => total + (item.ShiftStatuses?.length || 0), 0)
+  const rows: AuditMovementRow[] = orderItems.flatMap<AuditMovementRow>((item, index) => {
+    const key = String(item.NetUid || item.Id || index)
+    const statuses = item.ShiftStatuses || []
+    return statuses.length
+      ? statuses.map((status, statusIndex) => ({ item, status, first: statusIndex === 0, key: `${key}:${status.NetUid || status.Id || statusIndex}` }))
+      : [{ item, first: true, key }]
+  })
+  const columns: DataTableColumn<AuditMovementRow>[] = [
+    { id: 'product', header: t('Товар'), accessor: (row) => row.item.Product?.Name || '', fill: true, width: 300, minWidth: 240,
+      cell: (row) => <div className="sale-audit-product"><Package size={16} aria-hidden="true" /><span>{row.item.Product?.Name}</span></div> },
+    { id: 'vendor', header: t('Код виробника'), accessor: (row) => row.item.Product?.VendorCode || '', width: 160, minWidth: 144,
+      cell: (row) => <TableChip tone="document" value={row.item.Product?.VendorCode} /> },
+    { id: 'original', header: t('Ориг. номер'), accessor: (row) => row.item.Product?.MainOriginalNumber || '', width: 168, minWidth: 140,
+      cell: (row) => <TableChip tone="product" value={row.item.Product?.MainOriginalNumber} /> },
+  ]
+  if (movementCount) {
+    columns.push(
+      { id: 'target', header: t('Напрямок'), accessor: (row) => getShiftTarget(row.status, t), width: 132, minWidth: 120,
+        cell: (row) => <TableChip tone={row.status?.ShiftStatus === SaleAuditShiftStatusType.Store ? 'storage' : 'document'} value={getShiftTarget(row.status, t)} /> },
+      { id: 'qty', header: t('К-сть'), accessor: (row) => row.status?.Qty, align: 'right', width: 88, minWidth: 84,
+        cell: (row) => <span className="app-money">{row.status?.Qty ?? ''}</span> },
+      { id: 'created', header: t('Дата'), accessor: (row) => getDateTime(row.status?.Created) ?? 0, width: 168, minWidth: 156,
+        cell: (row) => <span className="sale-audit-date">{formatDateTime(row.status?.Created)}</span> },
+      { id: 'user', header: t('Відповідальний'), accessor: (row) => [row.status?.User?.FirstName, row.status?.User?.LastName].filter(Boolean).join(' '), width: 180, minWidth: 160 },
+    )
+  }
+  if (orderItems.some((item) => Boolean(resolveHistoryNetId(item)))) {
+    columns.push({ id: 'actions', header: t('Документи'), accessor: () => '', width: 104, minWidth: 104, enableSorting: false,
+      cell: (row) => row.first && resolveHistoryNetId(row.item) ? <Group gap={4} wrap="nowrap">
+        <TableRowAction action="receipt" label={t('Видаткова накладна')} onClick={() => printDocumentFor('invoice', row.item)} />
+        <TableRowAction action="document" label={t('Акт редагування')} onClick={() => printDocumentFor('act', row.item)} />
+      </Group> : null })
+  }
+
   return (
-    <Stack gap="md">
-      {error && (
-        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
-
-      {isLoading && (
-        <Group gap="xs">
-          <Loader color="violet" size="sm" />
-          <Text c="dimmed" size="sm">
-            {t('Завантаження')}
-          </Text>
-        </Group>
-      )}
-
-      <Card withBorder padding="md" radius="md">
-        <Group justify="space-between" align="center">
-          <Text fw={600}>{t('Логістика')}</Text>
-          <Group gap="sm">
-            {(statistic?.SaleExchangeRates || []).map((rate, index) => (
-              <Group key={rate.NetUid || rate.Id || index} gap={4}>
-                <Text c="dimmed" size="xs">
-                  {displayValue(rate.ExchangeRate?.Code)}
-                </Text>
-                <Text fw={600} size="xs">
-                  {rate.ExchangeRate?.Amount ?? ''}
-                </Text>
-              </Group>
-            ))}
-          </Group>
-        </Group>
-
-        <Divider my="sm" />
-
-        <Stack gap="xs">
-          {(statistic?.LifeCycleLine || []).map((line) => (
-            <LifeCycleRow key={getLifeCycleLineKey(line)} line={line} />
-          ))}
-        </Stack>
-      </Card>
-
-      <Card withBorder padding="md" radius="md">
-        <Group justify="space-between" align="center">
-          <Text fw={600}>{t('Переміщено')}</Text>
-          {showConfirm && confirmableHistoryNetId && (
-            <Button size="xs" variant="outline" onClick={() => setConfirmHistoryNetId(confirmableHistoryNetId)}>
-              {t('Підтвердити обробку')}
-            </Button>
-          )}
-        </Group>
-        <Divider my="sm" />
-        <Stack gap="sm">
-          {(sale?.Order?.OrderItems || []).map((orderItem, index) => (
-            <AuditOrderItem
-              key={orderItem.NetUid || orderItem.Id || index}
-              canPrint={Boolean(resolveHistoryNetId(orderItem))}
-              orderItem={orderItem}
-              onPrintAct={() => printDocumentFor('act', orderItem)}
-              onPrintInvoice={() => printDocumentFor('invoice', orderItem)}
+    <Stack className="sale-audit-detail" gap="md">
+      {error && <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>}
+      {isLoading ? <Stack gap="sm" aria-label={t('Завантаження')}>
+        <Skeleton height={76} radius="md" />
+        <Skeleton height={112} radius="md" />
+        <Skeleton height={180} radius="md" />
+      </Stack> : statistic && <DocumentDetailLayout
+        summary={<DocumentDetailSummary
+          variant="inventory"
+          eyebrow={t('Рух товарно-матеріальних цінностей')}
+          title={documentNumber ? `№ ${documentNumber}` : t('Рух товару')}
+          meta={<>
+            <DocumentDetailChip icon={<Package size={14} />}>{t('Позицій')}: {orderItems.length}</DocumentDetailChip>
+            <DocumentDetailChip icon={<History size={14} />}>{t('Переміщень')}: {movementCount}</DocumentDetailChip>
+          </>}
+          metrics={(statistic.SaleExchangeRates || []).length ? <div className="sale-audit-rates">
+            <span className="sale-audit-rates__label">{t('Курси валют')}</span>
+            <Group gap="md" wrap="wrap">{(statistic.SaleExchangeRates || []).map((rate, index) => <Group key={rate.NetUid || rate.Id || index} gap={6} wrap="nowrap">
+              <TableChip tone="source" value={rate.ExchangeRate?.Code} />
+              <span className="app-money">{rate.ExchangeRate?.Amount ?? ''}</span>
+            </Group>)}</Group>
+          </div> : null}
+        />}
+      >
+        <div className="sale-audit-logistics">
+          <DocumentDetailSection title={t('Логістика')} stacked>
+            {(statistic.LifeCycleLine || []).length ? <ol className="sale-audit-lifecycle">
+              {(statistic.LifeCycleLine || []).map((line, index, lines) => (
+                <LifeCycleRow
+                  key={getLifeCycleLineKey(line)}
+                  line={line}
+                  index={index}
+                  connected={Boolean(line.IsActive && lines[index + 1]?.IsActive)}
+                />
+              ))}
+            </ol> : <Text size="sm" c="gray.6">{t('Історія логістики відсутня')}</Text>}
+          </DocumentDetailSection>
+        </div>
+        <DocumentDetailSection title={t('Переміщення товарів')} subtitle={String(orderItems.length)} stacked
+          actions={showConfirm && confirmableHistoryNetId ? <Button size="xs" color={CREATE_ACTION_COLOR} onClick={() => setConfirmHistoryNetId(confirmableHistoryNetId)}>{t('Підтвердити обробку')}</Button> : null}
+        >
+          {!movementCount && Boolean(orderItems.length) && <Text size="xs" c="gray.7">{t('Переміщень не зафіксовано')}</Text>}
+          <div className="sale-audit-table-shell">
+            <DataTable<AuditMovementRow>
+              columns={columns} data={rows} getRowId={(row) => row.key}
+              tableId="sale-audit-movements" layoutVersion={movementCount ? 'movements-1' : 'products-1'}
+              defaultLayout={{ density: 'compact' }} distributeAvailableWidth
+              minWidth={movementCount ? 1120 : 560} showToolbar={false} showDensityToggle={false}
+              emptyText={t('Товарів не знайдено')}
             />
-          ))}
-        </Stack>
-      </Card>
+          </div>
+        </DocumentDetailSection>
+      </DocumentDetailLayout>}
 
       <DocumentExportModal
         document={printDocument}
@@ -267,116 +301,44 @@ export function SaleAuditDetail({
   )
 }
 
-function LifeCycleRow({ line }: { line: SaleAuditLifeCycleLineItem }) {
-  const { t } = useI18n()
+type AuditMovementRow = {
+  key: string
+  item: SaleAuditOrderItem
+  status?: SaleAuditShiftStatus
+  first: boolean
+}
 
-  return (
-    <Group justify="space-between" align="center">
-      <Group gap="xs">
-        <ThemeIcon color={line.IsActive ? 'violet' : 'gray'} radius="xl" size="sm" variant="light">
-          <ArrowLeftRight size={12} />
-        </ThemeIcon>
-        <Text fw={line.IsActive ? 600 : 400} size="sm">
-          {getLifeCycleLineLabel(line.Value, t)}
-        </Text>
-      </Group>
-      {line.IsActive && line.Updated && (
-        <Text c="dimmed" size="xs">
-          {formatDateTime(line.Updated)}
-        </Text>
-      )}
-    </Group>
-  )
+function LifeCycleRow({ line, index, connected }: {
+  line: SaleAuditLifeCycleLineItem
+  index: number
+  connected: boolean
+}) {
+  const { t } = useI18n()
+  const Icon = line.Value === 'New' ? ReceiptText
+    : line.Value === 'Shipping' ? Truck
+    : line.Value === 'Received' ? PackageCheck
+    : line.Value === 'Packaging' || line.Value === 'Packaged' ? Package
+    : line.Value === 'InvoiceChanged' ? FileText : History
+  return <li
+    className={`sale-audit-lifecycle__step${line.IsActive ? ' is-active' : ''}${connected ? ' is-connected' : ''}`}
+    style={{ animationDelay: `${Math.min(index, 8) * 70}ms` }}
+  >
+    <span className="sale-audit-lifecycle__icon"><Icon size={18} aria-hidden="true" /></span>
+    <div>
+      <span className="sale-audit-lifecycle__label">{getLifeCycleLineLabel(line.Value, t)}</span>
+      {line.IsActive && line.Updated && <time className="sale-audit-date">{formatDateTime(line.Updated)}</time>}
+    </div>
+    <ChevronRight className="sale-audit-lifecycle__connector" size={16} aria-hidden="true" />
+  </li>
 }
 
 function getLifeCycleLineKey(line: SaleAuditLifeCycleLineItem): string {
   return [line.Value, line.Updated, line.IsActive ? 'active' : 'inactive'].filter(Boolean).join('|')
 }
 
-function AuditOrderItem({
-  canPrint,
-  orderItem,
-  onPrintAct,
-  onPrintInvoice,
-}: {
-  canPrint: boolean
-  orderItem: SaleAuditOrderItem
-  onPrintAct: () => void
-  onPrintInvoice: () => void
-}) {
-  const { t } = useI18n()
-  const product = orderItem.Product
-
-  return (
-    <Box>
-      <Group justify="space-between" align="flex-start" wrap="nowrap">
-        <Box miw={0}>
-          <Text fw={600} size="sm">
-            {displayValue(product?.Name)}
-          </Text>
-          <Group gap="xs">
-            <Text c="dimmed" size="xs">
-              {displayValue(product?.VendorCode)}
-            </Text>
-            <Text c="dimmed" size="xs">
-              {displayValue(product?.MainOriginalNumber)}
-            </Text>
-          </Group>
-        </Box>
-        {canPrint && (
-          <Group gap={4} wrap="nowrap">
-            <Tooltip label={t('Видаткова накладна')} position="top">
-              <ActionIcon aria-label={t('Видаткова накладна')} color="gray" variant="subtle" onClick={onPrintInvoice}>
-                <ReceiptText size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Акт редагування')} position="top">
-              <ActionIcon aria-label={t('Акт редагування')} color="gray" variant="subtle" onClick={onPrintAct}>
-                <FileChartColumn size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-        )}
-      </Group>
-      <Stack gap={4} mt={4}>
-        {(orderItem.ShiftStatuses || []).map((status, index) => (
-          <ShiftStatusRow key={status.NetUid || status.Id || index} status={status} />
-        ))}
-      </Stack>
-    </Box>
-  )
-}
-
-function ShiftStatusRow({ status }: { status: SaleAuditShiftStatus }) {
-  const { t } = useI18n()
-  const target =
-    status.ShiftStatus === SaleAuditShiftStatusType.Store
-      ? t('На склад')
-      : status.ShiftStatus === SaleAuditShiftStatusType.Bill
-        ? t('В рахунок')
-        : ''
-  const fullName = [status.User?.FirstName, status.User?.LastName].filter(Boolean).join(' ')
-
-  return (
-    <Group justify="space-between" align="center">
-      <Group gap="xs">
-        <Text c="dimmed" size="xs">
-          {formatDateTime(status.Created)}
-        </Text>
-        <Text size="xs">
-          {t('Переміщено')} {target}
-        </Text>
-        {fullName && (
-          <Text c="dimmed" size="xs">
-            {fullName}
-          </Text>
-        )}
-      </Group>
-      <Text fw={600} size="xs">
-        {status.Qty ?? 0} {t('Кількість')}
-      </Text>
-    </Group>
-  )
+function getShiftTarget(status: SaleAuditShiftStatus | undefined, t: (key: string) => string): string {
+  return status?.ShiftStatus === SaleAuditShiftStatusType.Store ? t('На склад')
+    : status?.ShiftStatus === SaleAuditShiftStatusType.Bill ? t('В рахунок') : ''
 }
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
@@ -433,14 +395,4 @@ function getDateTime(value?: Date | string): number | null {
   const time = Date.parse(value)
 
   return Number.isNaN(time) ? null : time
-}
-
-function displayValue(value?: number | string | null): string {
-  if (typeof value === 'number') {
-    return String(value)
-  }
-
-  const normalized = value?.trim()
-
-  return normalized || '-'
 }

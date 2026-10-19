@@ -265,9 +265,12 @@
 .inventory-document-detail .document-detail-top { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; padding: 12px; }
 .inventory-document-detail .document-detail-summary { flex: 1 1 480px; padding: 0; gap: 16px; }
 .inventory-document-detail .document-detail-top__actions { padding: 0; border: 0; }
-.inventory-document-detail .document-detail-summary__title { display: inline-flex; border: 1px solid var(--app-chip-document-border); border-radius: 999px; padding: 2px 8px; background: var(--app-chip-document-bg); color: var(--app-chip-document-text); font: 500 13px/1.4 var(--font-mono); }
-.inventory-document-detail .document-detail-summary__meta { margin-top: 6px; }
-.inventory-document-detail .document-detail-metric strong { font: 500 16px/1.4 var(--font-mono); }
+.inventory-document-detail .document-detail-summary__title,
+.document-detail-summary--inventory .document-detail-summary__title { display: inline-flex; border: 1px solid var(--app-chip-document-border); border-radius: 999px; padding: 2px 8px; background: var(--app-chip-document-bg); color: var(--app-chip-document-text); font: 500 13px/1.4 var(--font-mono); }
+.inventory-document-detail .document-detail-summary__meta,
+.document-detail-summary--inventory .document-detail-summary__meta { margin-top: 6px; }
+.inventory-document-detail .document-detail-metric strong,
+.document-detail-summary--inventory .document-detail-metric strong { font: 500 16px/1.4 var(--font-mono); }
 .inventory-document-detail .document-detail-section { padding: 12px; }
 .inventory-document-detail .document-detail-section__head { padding-bottom: 0; margin-bottom: 10px; border: 0; }
 .inventory-document-detail .document-detail-section__title { font: 500 14px/1.4 var(--font-mono); }
@@ -281,3 +284,8 @@
 @media (max-width: 420px) {
   .inventory-document-detail .document-detail-section__body:not(.is-stacked) { grid-template-columns: minmax(0, 1fr); }
 }
+
+.document-detail-section__actions { margin-left: auto; min-width: 0; }
+
+/* The compact inventory header can also be used without changing the document body. */
+.document-detail-summary--inventory { padding: 12px; }

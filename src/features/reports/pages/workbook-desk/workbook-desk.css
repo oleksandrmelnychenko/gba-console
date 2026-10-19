@@ -784,3 +784,18 @@
   .workbook-settings__control .reports-stocks-selection-summary__copy { grid-template-columns: minmax(0, 1fr); gap: 6px; }
   .workbook-settings__control .reports-stocks-selection-summary__copy > span { border: 0; padding: 0; }
 }
+
+.workbook-advanced { display: grid; gap: 12px; min-width: 0; }
+.workbook-advanced > :is(section, .mantine-Card-root, .workbook-desk__group:not(:empty)) { border: 1px solid var(--desk-border); border-radius: 8px; padding: 12px; margin: 0; }
+.workbook-advanced > .workbook-desk__group:empty { display: none; }
+.workbook-advanced > .workbook-presentation { border: 0; padding: 0; background: transparent; }
+.workbook-presentation__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 12px; }
+.workbook-advanced-card { border: 1px solid var(--desk-border); border-radius: 8px; padding: 12px; display: grid; align-content: start; gap: 12px; min-width: 0; }
+.workbook-advanced-card__heading { color: var(--desk-strong); }
+.workbook-advanced-card__heading h4 { margin: 0; font: 600 13px/1.4 var(--font-mono); }
+.workbook-presentation__fields { display: grid; gap: 6px; }
+.workbook-presentation__option { border: 1px solid var(--desk-border); border-radius: 8px; padding: 10px 12px 10px 16px; }
+.workbook-presentation__option[data-disabled='true'] { opacity: .65; }
+.workbook-presentation__option .mantine-Checkbox-label { font-size: 13px; font-weight: 500; }
+.workbook-presentation__reset { align-self: flex-start; }
+.workbook-advanced .mantine-Button-root { width: fit-content; max-width: 100%; min-height: 32px; }

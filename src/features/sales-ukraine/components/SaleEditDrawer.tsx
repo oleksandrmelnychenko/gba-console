@@ -1,7 +1,6 @@
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
-  Badge,
   Box,
   Button,
   Group,
@@ -15,6 +14,7 @@ import { ArrowLeftRight, CircleAlert, Package, Receipt, Warehouse } from 'lucide
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { DocumentDetailChip, DocumentDetailLayout, DocumentDetailMetric, DocumentDetailSection, DocumentDetailSummary } from '../../../shared/ui/document-detail/DocumentDetail'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -35,21 +35,21 @@ const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const SALE_EDIT_FORM_ID = 'sale-edit-shift-form'
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 const qtyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2 })
-const SALE_EDIT_TABLE_MIN_WIDTH = 1120
+const SALE_EDIT_TABLE_MIN_WIDTH = 1180
 const SALE_EDIT_TABLE_LAYOUT: DataTableDefaultLayout = {
   columnSizing: {
-    amount: 120,
-    bill: 124,
-    created: 128,
-    currency: 76,
-    originalNumber: 150,
-    product: 300,
-    qty: 86,
-    store: 124,
-    user: 180,
-    vendorCode: 140,
+    amount: 88,
+    bill: 112,
+    created: 104,
+    currency: 96,
+    originalNumber: 120,
+    product: 200,
+    qty: 84,
+    store: 104,
+    user: 152,
+    vendorCode: 144,
   },
-  density: 'normal',
+  density: 'compact',
 }
 
 type ShiftDraftEntry = { bill: number | string; billTouched: boolean; store: number | string; storeTouched: boolean }
@@ -111,11 +111,10 @@ export function SaleEditDrawer({
 
   return (
     <AppDrawer
-      classNames={{ body: 'sale-edit-drawer-body' }}
       footer={
         sale && activeFooterState.visible ? (
           <Group gap="sm" justify="flex-end">
-            <Button color="gray" disabled={activeFooterState.isSaving} type="button" variant="subtle" onClick={onClose}>
+            <Button color="gray" disabled={activeFooterState.isSaving} type="button" variant="default" onClick={onClose}>
               {t('Скасувати')}
             </Button>
             <Button
@@ -418,27 +417,27 @@ function SaleEditContent({
         }
       }}
     >
-      <Box className="sale-edit-hero">
-        <Box className="sale-edit-hero__main">
-          <span className="sale-edit-hero__icon">
-            <ArrowLeftRight size={23} strokeWidth={1.8} />
-          </span>
-          <Box className="sale-edit-hero__copy">
-            <Badge className="app-role-pill" size="sm" variant="light">
-              {isNew ? t('Рахунок') : t('Накладна')}
-            </Badge>
-            <Text className="sale-edit-hero__number">{sale.SaleNumber?.Value || '-'}</Text>
-          </Box>
-        </Box>
-        <Group className="sale-edit-metrics" gap={8} wrap="nowrap">
-          <SaleEditMetric label={t('позицій')} value={orderItems.length} />
-          <SaleEditMetric label={t('к-сть')} value={qtyFormatter.format(totalQty)} />
-          <SaleEditMetric label="EUR" value={amountFormatter.format(totalAmount)} />
-          {!isNew && <SaleEditMetric label={t('в рахунок')} value={qtyFormatter.format(billShiftTotal)} />}
-          <SaleEditMetric label={t('на склад')} value={qtyFormatter.format(storeShiftTotal)} />
-        </Group>
-      </Box>
-
+      <DocumentDetailLayout
+        summary={
+          <DocumentDetailSummary
+            variant="inventory"
+            eyebrow={isNew ? t('Рахунок') : t('Накладна')}
+            title={`№ ${sale.SaleNumber?.Value || '—'}`}
+            meta={<>
+              <DocumentDetailChip icon={<Package size={14} />}>{t('Позицій')}: {orderItems.length}</DocumentDetailChip>
+              <DocumentDetailChip>{t('Кількість')}: {qtyFormatter.format(totalQty)}</DocumentDetailChip>
+            </>}
+            metrics={<>
+              <div className="document-detail-metric">
+                <span>{t('Сума')}</span>
+                <strong>{amountFormatter.format(totalAmount)} <TableChip tone="source" value="EUR" /></strong>
+              </div>
+              {!isNew && <DocumentDetailMetric label={t('В рахунок')} value={qtyFormatter.format(billShiftTotal)} />}
+              <DocumentDetailMetric label={t('На склад')} value={qtyFormatter.format(storeShiftTotal)} />
+            </>}
+          />
+        }
+      >
       {shiftMutation.pendingError && (
         <Alert color="orange" icon={<CircleAlert size={18} />} m="md" variant="light">
           <Stack gap="xs">
@@ -457,42 +456,35 @@ function SaleEditContent({
         </Alert>
       )}
 
-      <Box className="sale-edit-command">
-        <Box className="sale-edit-command__copy">
-          <Group gap={8} wrap="nowrap">
-            <Package size={17} strokeWidth={1.8} />
-            <Text className="sale-edit-command__title">{t('Склад накладної')}</Text>
-            <Badge className="sale-edit-command__badge" variant="light">
-              {orderItems.length}
-            </Badge>
-          </Group>
-          <Text className="sale-edit-command__description">
-            {t('Вкажіть кількість для зсуву позицій між рахунком та складом')}
-          </Text>
-        </Box>
-        <Group className="sale-edit-bulk-actions" gap={8}>
+      <DocumentDetailSection
+        title={isNew ? t('Склад рахунку') : t('Склад накладної')}
+        subtitle={String(orderItems.length)}
+        actions={
+        <Group className="sale-edit-bulk-actions" gap={8} wrap="nowrap">
           {!isNew && (
             <Button
-              className="sale-edit-bulk-action"
               disabled={isMutationLocked || !hasShiftableItems}
               leftSection={<Receipt size={16} />}
-              variant="outline"
+              color={CREATE_ACTION_COLOR}
+              variant="filled"
               onClick={allToBill}
             >
               {t('Все в рахунок')}
             </Button>
           )}
           <Button
-            className="sale-edit-bulk-action"
             disabled={isMutationLocked || !hasShiftableItems}
             leftSection={<Warehouse size={16} />}
-            variant="outline"
+            color={CREATE_ACTION_COLOR}
+            variant="filled"
             onClick={allToStore}
           >
             {t('Все на склад')}
           </Button>
         </Group>
-      </Box>
+        }
+        stacked
+      >
 
       <Box className="sale-edit-table-shell">
         <DataTable
@@ -503,13 +495,15 @@ function SaleEditContent({
           emptyText={t('Товарів не знайдено')}
           getRowId={(row) => row.key}
           height="100%"
-          layoutVersion={isNew ? 'sale-edit-new-1' : 'sale-edit-invoice-1'}
+          layoutVersion={isNew ? 'sale-edit-new-6' : 'sale-edit-invoice-6'}
           minWidth={SALE_EDIT_TABLE_MIN_WIDTH}
           showDensityToggle={false}
           showToolbar={false}
           tableId={isNew ? 'sale-edit-new' : 'sale-edit-invoice'}
         />
       </Box>
+      </DocumentDetailSection>
+      </DocumentDetailLayout>
     </Stack>
   )
 }
@@ -528,11 +522,11 @@ function createSaleEditColumns({
   const columns: DataTableColumn<SaleEditOrderItemRow>[] = [
     {
       id: 'vendorCode',
-      header: t('Код Виробника'),
+      header: t('Код виробника'),
       accessor: (row) => getOrderItemProductCode(row.item),
       cell: (row) => <TableChip tone="document" value={displayValue(getOrderItemProductCode(row.item)) || '-'} />,
-      width: 140,
-      minWidth: 120,
+      width: 144,
+      minWidth: 144,
       enableSorting: false,
     },
     {
@@ -540,8 +534,8 @@ function createSaleEditColumns({
       header: t('Ориг. номер'),
       accessor: (row) => row.item.Product?.MainOriginalNumber || '',
       cell: (row) => <TableChip tone="product" value={displayValue(row.item.Product?.MainOriginalNumber) || '-'} />,
-      width: 150,
-      minWidth: 132,
+      width: 120,
+      minWidth: 120,
       enableSorting: false,
     },
     {
@@ -549,12 +543,15 @@ function createSaleEditColumns({
       header: t('Назва товару'),
       accessor: (row) => getOrderItemProductName(row.item),
       cell: (row) => (
-        <Text className="sale-edit-product-name" title={displayValue(getOrderItemProductName(row.item))} truncate>
-          {displayValue(getOrderItemProductName(row.item)) || '-'}
-        </Text>
+        <Group className="sale-edit-product" gap={8} wrap="nowrap">
+          <span className="sale-edit-product__icon"><Package size={16} aria-hidden="true" /></span>
+          <Text className="sale-edit-product-name" title={displayValue(getOrderItemProductName(row.item))}>
+            {displayValue(getOrderItemProductName(row.item)) || '-'}
+          </Text>
+        </Group>
       ),
-      width: 300,
-      minWidth: 240,
+      width: 200,
+      minWidth: 200,
       fill: true,
       enableSorting: false,
     },
@@ -566,17 +563,18 @@ function createSaleEditColumns({
       cell: (row) => (
         <span className="sale-edit-money">{amountFormatter.format(getNumber(row.item.TotalAmount) ?? 0)}</span>
       ),
-      width: 120,
-      minWidth: 108,
+      width: 88,
+      minWidth: 88,
       enableSorting: false,
     },
     {
       id: 'currency',
       header: t('Валюта'),
       accessor: () => 'EUR',
-      cell: () => <TableChip value="EUR" />,
-      width: 76,
-      minWidth: 72,
+      cell: () => <TableChip tone="source" value="EUR" />,
+      align: 'center',
+      width: 96,
+      minWidth: 96,
       enableSorting: false,
     },
     {
@@ -585,8 +583,8 @@ function createSaleEditColumns({
       align: 'right',
       accessor: (row) => row.qty,
       cell: (row) => <span className="sale-edit-qty">{displayValue(row.qty)}</span>,
-      width: 86,
-      minWidth: 76,
+      width: 84,
+      minWidth: 84,
       enableSorting: false,
     },
     {
@@ -607,6 +605,8 @@ function createSaleEditColumns({
               max={Math.max(0, row.qty - (isNew ? 0 : row.billNum))}
               min={0}
               className="sale-edit-shift-input"
+              aria-label={`${t('На склад')}: ${getOrderItemProductName(row.item)}`}
+              placeholder="0"
               disabled={isSaving}
               size="xs"
               value={row.entry.store}
@@ -615,8 +615,8 @@ function createSaleEditColumns({
           </Tooltip>
         )
       },
-      width: 124,
-      minWidth: 112,
+      width: 104,
+      minWidth: 104,
       className: 'sale-edit-input-column',
       enableSorting: false,
     },
@@ -625,8 +625,8 @@ function createSaleEditColumns({
       header: t('Дата'),
       accessor: (row) => row.item.Created || '',
       cell: (row) => <span className="sale-edit-muted-value">{formatDateTime(row.item.Created) || '-'}</span>,
-      width: 128,
-      minWidth: 118,
+      width: 104,
+      minWidth: 104,
       enableSorting: false,
     },
     {
@@ -634,8 +634,8 @@ function createSaleEditColumns({
       header: t('Відповідальний'),
       accessor: (row) => getUserName(row.item.User),
       cell: (row) => <span className="sale-edit-user-name">{displayValue(getUserName(row.item.User)) || '-'}</span>,
-      width: 180,
-      minWidth: 150,
+      width: 152,
+      minWidth: 152,
       enableSorting: false,
     },
   ]
@@ -655,6 +655,8 @@ function createSaleEditColumns({
             max={Math.max(0, row.qty - row.storeNum)}
             min={0}
             className="sale-edit-shift-input"
+            aria-label={`${t('В рахунок')}: ${getOrderItemProductName(row.item)}`}
+            placeholder="0"
             disabled={isSaving}
             size="xs"
             value={row.entry.bill}
@@ -662,7 +664,7 @@ function createSaleEditColumns({
           />
         </Tooltip>
       ),
-      width: 124,
+      width: 112,
       minWidth: 112,
       className: 'sale-edit-input-column',
       enableSorting: false,
@@ -670,15 +672,6 @@ function createSaleEditColumns({
   }
 
   return columns
-}
-
-function SaleEditMetric({ label, value }: { label: string; value: number | string }) {
-  return (
-    <Box className="sale-edit-metric">
-      <Text>{value}</Text>
-      <Text>{label}</Text>
-    </Box>
-  )
 }
 
 function sumShiftQty(

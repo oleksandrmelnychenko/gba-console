@@ -1,4 +1,6 @@
 import { Box, Group, Text, Tooltip, UnstyledButton } from '@mantine/core'
+import { useLayoutEffect, useRef } from 'react'
+import { TableChip } from '../../../../shared/ui/TableChip'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { ClientAgreement } from '../../../clients/types'
 import {
@@ -13,16 +15,46 @@ const agreementAmountFormatter = new Intl.NumberFormat('uk-UA', {
 
 export function WizardClientAgreementsStrip({
   agreements,
+  isLoading = false,
   selectedKey,
   onSelect,
 }: {
   agreements: ClientAgreement[]
+  isLoading?: boolean
   selectedKey: string
   onSelect: (agreement: ClientAgreement) => void
 }) {
+  const { t } = useI18n()
+  const stripRef = useRef<HTMLDivElement>(null)
+  // Keep the previous cards' height through the debounce and network request.
+  useLayoutEffect(() => {
+    const strip = stripRef.current
+    if (!strip || isLoading) return
+    const measure = () => {
+      const card = strip.querySelector('.new-sale-agreement-card')
+      if (card) strip.style.setProperty('--agreement-loading-height', `${card.getBoundingClientRect().height}px`)
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(strip)
+    return () => observer.disconnect()
+  }, [isLoading, agreements])
+
   return (
-    <Box className="new-sale-agreements-strip">
-      {agreements.map((clientAgreement) => (
+    <Box className="new-sale-agreements-strip" ref={stripRef} aria-busy={isLoading}>
+      {isLoading ? (
+        <Box className="new-sale-agreement-card new-sale-agreement-skeleton" role="status" aria-label={t('Завантаження договорів')}>
+          <div className="new-sale-agreement-card__content" aria-hidden="true">
+            <div className="new-sale-agreement-shimmer is-title" />
+            <div className="new-sale-agreement-shimmer is-chip" />
+            <div className="new-sale-agreement-card__limits">
+              {Array.from({ length: 5 }, (_, index) => <div key={index} className="new-sale-agreement-shimmer is-metric" />)}
+            </div>
+          </div>
+        </Box>
+      ) : agreements.length === 0 ? (
+        <Text className="new-sale-agreements-empty">{t('Договорів не знайдено')}</Text>
+      ) : agreements.map((clientAgreement) => (
         <WizardAgreementCard
           key={getWizardAgreementKey(clientAgreement)}
           clientAgreement={clientAgreement}
@@ -63,14 +95,16 @@ function WizardAgreementCard({
   return (
     <UnstyledButton
       className={[
-        'new-sale-agreement-card',
+        'new-sale-agreement-card app-selection-surface',
         isSelected ? 'is-selected' : '',
         hasDebtAlert ? 'is-overdue' : '',
         isInactive ? 'is-inactive' : '',
       ].filter(Boolean).join(' ')}
+      data-selected={isSelected || undefined}
+      aria-pressed={isSelected}
       onClick={() => onSelect(clientAgreement)}
     >
-      <span className="new-sale-agreement-card__status">{statusLabel}</span>
+      <span className="app-selection-surface__marker" aria-hidden="true" />
       <Box className="new-sale-agreement-card__content">
         <Box className="new-sale-agreement-card__head">
           <Box className="new-sale-agreement-card__identity">
@@ -78,11 +112,12 @@ function WizardAgreementCard({
               <Text className="new-sale-agreement-card__name" title={agreementName} truncate>
                 {agreementName}
               </Text>
-              {currencyCode && <span className="new-sale-agreement-card__currency">{currencyCode}</span>}
+              <TableChip tone={hasDebtAlert ? "danger" : isInactive ? "neutral" : "success"} value={statusLabel} />
             </Group>
-            <Text className="new-sale-agreement-card__organization" title={organizationName} truncate>
-              {organizationName || t('Організація не вказана')}
-            </Text>
+            <Group gap={6} wrap="nowrap" className="new-sale-agreement-card__chips">
+              <TableChip tone="product" value={organizationName || t('Організація не вказана')} />
+              <TableChip tone="source" value={currencyCode} />
+            </Group>
           </Box>
 
         </Box>
@@ -114,7 +149,7 @@ function WizardAgreementCard({
           </Box>
           <Box className={`new-sale-agreement-card__metric ${amountLimitExceeded ? 'is-danger' : ''}`}>
             <span>{t('Кредитний ліміт')}</span>
-            <strong>
+            <strong title={debt.creditLimit === null ? t('Ліміт не налаштовано') : undefined}>
               {debt.creditLimit === null
                 ? t('Ліміт не налаштовано')
                 : formatAgreementAmount(debt.creditLimit)}

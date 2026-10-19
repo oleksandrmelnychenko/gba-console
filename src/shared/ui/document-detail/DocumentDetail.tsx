@@ -30,7 +30,9 @@ export function DocumentDetailSummary({
   metrics,
   title,
   status,
+  variant = 'default',
 }: {
+  variant?: 'default' | 'inventory'
   status?: ReactNode
   eyebrow: string
   meta?: ReactNode
@@ -38,7 +40,7 @@ export function DocumentDetailSummary({
   title: string
 }) {
   return (
-    <section className="document-detail-summary">
+    <section className={`document-detail-summary${variant === 'inventory' ? ' document-detail-summary--inventory' : ''}`}>
       <div className="document-detail-summary__main">
         <span className="document-detail-eyebrow">{eyebrow}</span>
         <div className="document-detail-summary__identity"><Text className="document-detail-summary__title">{title}</Text>{status}</div>
@@ -72,6 +74,7 @@ export function DocumentDetailMetric({
 }
 
 export function DocumentDetailSection({
+  actions,
   children,
   stacked,
   subtitle,
@@ -81,6 +84,7 @@ export function DocumentDetailSection({
   stacked?: boolean
   subtitle?: ReactNode
   title: string
+  actions?: ReactNode
 }) {
   const titleId = useId()
 
@@ -89,6 +93,7 @@ export function DocumentDetailSection({
       <div className="document-detail-section__head">
         <span className="document-detail-section__title" id={titleId}>{title}</span>
         {subtitle ? <span className="document-detail-section__subtitle">{subtitle}</span> : null}
+        {actions ? <div className="document-detail-section__actions">{actions}</div> : null}
       </div>
       <div className={`document-detail-section__body${stacked ? ' is-stacked' : ''}`}>{children}</div>
     </section>

@@ -1,5 +1,6 @@
 import { Box, Group, Popover, Stack, Text } from '@mantine/core'
 import { TriangleAlert } from 'lucide-react'
+import { TableChip } from '../../../../shared/ui/TableChip'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { ClientIdentityAttentionSummary } from '../../../clients/types'
 import { getLegalPartyRiskLabel } from './wizardLegalPartyRisk'
@@ -18,7 +19,7 @@ export function WizardLegalPartyRiskPopover({
   const isCritical = risk.AttentionLevel === 'critical'
 
   return (
-    <Popover position="bottom-start" shadow="md" width={430} withinPortal>
+    <Popover position="bottom-start" shadow="md" width={360} withinPortal>
       <Popover.Target>
         <Box
           aria-label={t('Дані клієнта потребують уваги')}
@@ -30,18 +31,18 @@ export function WizardLegalPartyRiskPopover({
           {getLegalPartyRiskLabel(risk, t)}
         </Box>
       </Popover.Target>
-      <Popover.Dropdown className="new-sale-client-legal-risk">
+      <Popover.Dropdown className={`new-sale-client-legal-risk ${isCritical ? 'is-critical' : 'is-warning'}`}>
         <Stack gap={10}>
-          <Box>
-            <Text fw={700} size="sm">
-              {t('Що потребує уваги')}
-            </Text>
-            <Text c="dimmed" size="xs">
-              {getLegalCodeDescription(risk, t)}
-            </Text>
+          <Box className="new-sale-client-legal-risk__header">
+            <Group gap={7} wrap="nowrap">
+              <TriangleAlert size={16} aria-hidden="true" />
+              <Text className="new-sale-client-legal-risk__title">{t('Що потребує уваги')}</Text>
+            </Group>
+            <TableChip tone={risk.NormalizedLegalCode ? 'neutral' : 'warning'} value={getLegalCodeDescription(risk, t)} />
           </Box>
           {risk.OverdueByCurrency.map((currency) => (
             <Group
+              className="new-sale-client-legal-risk__overdue"
               justify="space-between"
               key={`${currency.CurrencyNetUid || currency.CurrencyId || 'none'}:${currency.CurrencyCode || 'unknown'}`}
             >
@@ -50,24 +51,26 @@ export function WizardLegalPartyRiskPopover({
               </Text>
               <Text className="app-money" fw={700} size="sm">
                 {moneyFormatter.format(currency.OverdueAmount)}{' '}
-                {currency.CurrencyCode || t('валюта не вказана')}
+                <TableChip tone="source" value={currency.CurrencyCode || t('валюта не вказана')} />
               </Text>
             </Group>
           ))}
           {risk.AttentionReasons.length > 0 && (
-            <Stack gap={3}>
+            <Box component="ul" className="new-sale-client-legal-risk__reasons">
               {risk.AttentionReasons.map((reason) => (
-                <Text key={reason} size="xs">
-                  {getAttentionReasonLabel(reason, t)}
-                </Text>
+                <Box component="li" key={reason}>
+                  <span className="new-sale-client-legal-risk__bullet" aria-hidden="true" />
+                  <Text>{getAttentionReasonLabel(reason, t)}</Text>
+                </Box>
               ))}
-            </Stack>
+            </Box>
           )}
           {risk.Candidates.length > 1 && (
-            <Box>
-              <Text fw={700} size="xs">
-                {t('Картки для перевірки')}: {risk.Candidates.length}
-              </Text>
+            <Box className="new-sale-client-legal-risk__candidates">
+              <Group gap={6}>
+                <Text className="new-sale-client-legal-risk__section-title">{t('Картки для перевірки')}</Text>
+                <TableChip value={risk.Candidates.length} />
+              </Group>
               {risk.Candidates.map((item) => (
                 <Text c={item.IsBlocked ? 'red' : 'dimmed'} key={item.ClientNetUid} size="xs">
                   {item.FullName || item.ClientNumber || item.ClientNetUid}

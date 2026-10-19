@@ -1,6 +1,7 @@
 import { Box, Group, Text } from '@mantine/core'
 import { Mail, Phone, TriangleAlert } from 'lucide-react'
 import { memo, useEffect, useState, type ReactNode } from 'react'
+import { TableChip } from '../../../../shared/ui/TableChip'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type {
@@ -30,6 +31,7 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
   client,
   clientNetId,
   debts,
+  groupSize,
   headerClose,
   headerTools,
   permissionFlow = 'create',
@@ -40,6 +42,7 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
   client?: Client | null
   clientNetId?: string | null
   debts?: ClientInDebt[]
+  groupSize?: number
   headerClose?: ReactNode
   headerTools?: ReactNode
   permissionFlow?: WizardSalesPermissionFlow
@@ -59,7 +62,7 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
   const resolvedNetId = clientNetId ?? resolvedClient?.NetUid ?? null
 
   useEffect(() => {
-    if (!resolvedNetId) {
+    if (!resolvedNetId || groupSize !== undefined) {
       return
     }
 
@@ -79,7 +82,7 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
     return () => {
       cancelled = true
     }
-  }, [resolvedNetId])
+  }, [resolvedNetId, groupSize])
 
   useEffect(() => {
     if (client || !clientNetId) {
@@ -241,62 +244,57 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
   const clientContacts = clientContactCandidates.filter((item): item is { key: string; icon: ReactNode; value: string } =>
     Boolean(item.value),
   )
-  const clientKind = resolvedClient.IsTradePoint
-    ? t('Торгова точка')
-    : resolvedClient.IsSubClient
-      ? t('Підклієнт')
-      : t('Клієнт')
-  const isActive = resolvedClient.IsActive !== false
 
   return (
-    <Box className="new-sale-client-hero">
+    <Box className="new-sale-client-hero new-sale-client-hero--refined">
       {headerClose && <Box className="new-sale-client-hero__close">{headerClose}</Box>}
       <Box className="new-sale-client-hero__identity">
         <Box className="new-sale-client-hero__copy">
           <Box className="new-sale-client-hero__name" title={clientCode ? `${clientCode} ${clientTitle}` : clientTitle}>
-            <span className={`new-sale-client-hero__name-status ${isActive ? 'is-active' : 'is-inactive'}`} />
-            {clientCode && <span className="new-sale-client-hero__code">{clientCode}</span>}
+            {clientCode && <TableChip tone="document" value={clientCode} />}
             <span className="new-sale-client-hero__title">{clientTitle}</span>
           </Box>
-          <Group className="new-sale-client-hero__chips" gap={6} wrap="nowrap">
-            <span className={`new-sale-client-hero__status ${isActive ? 'is-active' : 'is-inactive'}`}>
-              <span className="new-sale-client-hero__status-dot" />
-              <span className="new-sale-client-hero__status-copy">
-                <strong>{isActive ? t('Активний') : t('Не активний')}</strong>
-                <span>{clientKind}</span>
-              </span>
-            </span>
-            {clientDebtTotal > 0 && (
-              <span className="new-sale-client-hero__debt">
-                <TriangleAlert size={12} />
-                {t('Є борг')}
-              </span>
+          <Box className="new-sale-client-hero__details">
+            {(clientContacts.length > 0 || (resolvedClient.USREOU && clientCode !== resolvedClient.USREOU)) && (
+              <Group className="new-sale-client-hero__contacts" gap={6} wrap="wrap">
+                {clientContacts.map((item) => (
+                  <a key={item.key} title={item.value} href={item.key === 'phone' ? `tel:${item.value.replace(/[^+\d]/g, '')}` : `mailto:${item.value}`}>
+                    {item.icon}
+                    {item.value}
+                  </a>
+                ))}
+                {resolvedClient.USREOU && clientCode !== resolvedClient.USREOU && (
+                  <Text component="span" className="new-sale-client-hero__legal-code" size="xs">
+                    <TableChip value={`${t('ЄДРПОУ')} · ${resolvedClient.USREOU}`} />
+                  </Text>
+                )}
+              </Group>
             )}
-            {identityAttention && identityAttention.AttentionLevel !== 'none' && (
-                <WizardLegalPartyRiskPopover risk={identityAttention} />
-              )}
-          </Group>
-          {clientContacts.length > 0 && (
-            <Group className="new-sale-client-hero__contacts" gap={8} wrap="nowrap">
-              {clientContacts.map((item) => (
-                <span key={item.key} title={item.value}>
-                  {item.icon}
-                  {item.value}
-                </span>
-              ))}
-            </Group>
-          )}
-          {resolvedClient.USREOU && clientCode !== resolvedClient.USREOU && (
-            <Text className="new-sale-client-hero__legal-code" size="xs">
-              {t('ЄДРПОУ')} {resolvedClient.USREOU}
-            </Text>
-          )}
+            {(clientDebtTotal > 0 || (identityAttention && identityAttention.AttentionLevel !== 'none')) && (
+              <Group className="new-sale-client-hero__chips" gap={6} wrap="wrap">
+                {clientDebtTotal > 0 && (
+                  <span className="new-sale-client-hero__debt">
+                    <TriangleAlert size={12} />
+                    {t('Є борг')}
+                  </span>
+                )}
+                {identityAttention && identityAttention.AttentionLevel !== 'none' && (
+                  <WizardLegalPartyRiskPopover risk={identityAttention} />
+                )}
+              </Group>
+            )}
+          </Box>
         </Box>
       </Box>
 
       <Box className="new-sale-client-hero__side">
         <Box className="new-sale-client-hero__metrics">
-          {visibleAgreements.length > 0 ? (
+          {groupSize !== undefined ? (
+            <Box className="new-sale-client-metric">
+              <strong>{metricCountFormatter.format(groupSize)}</strong>
+              <span>{t('Картки у групі')}</span>
+            </Box>
+          ) : visibleAgreements.length > 0 ? (
             <WizardClientAgreementsPopover
               activeAgreementNetId={activeAgreementNetId}
               agreements={visibleAgreements}
@@ -304,13 +302,15 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
           ) : (
             <Box className="new-sale-client-metric">
               <strong>{metricCountFormatter.format(visibleAgreements.length)}</strong>
-              <span>{t('Договори')}</span>
+              <span>{t('Договорів')}</span>
             </Box>
           )}
-          <Box className="new-sale-client-metric">
-            <strong>{metricCountFormatter.format(visibleRegistryCount)}</strong>
-            <span>{getDocumentCountLabel(visibleRegistryCount, t)}</span>
-          </Box>
+          {groupSize === undefined && (
+            <Box className="new-sale-client-metric">
+              <strong>{metricCountFormatter.format(visibleRegistryCount)}</strong>
+              <span>{getDocumentCountLabel(visibleRegistryCount, t)}</span>
+            </Box>
+          )}
         </Box>
         {headerTools && <Box className="new-sale-client-hero__tools">{headerTools}</Box>}
       </Box>
@@ -319,5 +319,6 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
 })
 
 function getDocumentCountLabel(count: number, t: (value: string) => string): string {
-  return count === 1 ? t('Документ') : t('Документів')
+  const form = new Intl.PluralRules('uk').select(count)
+  return t(form === 'one' ? 'Документ' : form === 'few' ? 'Документи' : 'Документів')
 }

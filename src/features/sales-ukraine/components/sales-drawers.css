@@ -219,266 +219,54 @@
   height: 32px;
 }
 
-.sale-edit-drawer-body {
-  background: var(--mantine-color-gray-0);
-  padding: 0 !important;
-}
-
-.sale-edit-sheet {
-  background: var(--mantine-color-gray-0);
-  box-sizing: border-box;
-  min-height: 100%;
-  padding: 0;
-}
-
-.sale-edit-hero {
-  align-items: center;
-  background: var(--mantine-color-white);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
-  display: flex;
-  gap: 16px;
-  justify-content: space-between;
-  min-height: 78px;
-  margin-bottom: 12px;
-  padding: 14px 18px;
-}
-
-.sale-edit-hero__main {
-  align-items: center;
-  display: flex;
-  gap: 12px;
-  min-width: 0;
-}
-
-.sale-edit-hero__icon {
-  align-items: center;
-  background: var(--mantine-color-orange-0);
-  border: 1px solid var(--mantine-color-orange-2);
-  border-radius: 12px;
-  color: var(--brand-orange);
-  display: inline-flex;
-  flex: 0 0 auto;
-  height: 44px;
-  justify-content: center;
-  width: 44px;
-}
-
-.sale-edit-hero__copy {
-  min-width: 0;
-}
-
-.sale-edit-hero__eyebrow {
-  color: var(--mantine-color-gray-5);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1.1;
-  text-transform: uppercase;
-}
-
-.sale-edit-hero__number {
-  color: var(--mantine-color-gray-9);
-  font-family: var(--font-mono);
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1.2;
-  text-transform: uppercase; /* invoice numbers read as codes: ИЛ00629922, not Ил00629922 */
-}
-
-/* Invoice number inside composed titles («Накладна <№ > від …») — uppercase just the number. */
-.consignment-note-settings-document-number {
-  text-transform: uppercase;
-}
-
-.sale-edit-metrics {
-  flex: 0 0 auto;
-  overflow-x: auto;
-  padding-bottom: 1px;
-}
-
-.sale-edit-metric {
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  min-width: 92px;
-  padding: 7px 10px;
-}
-
-.sale-edit-metric .mantine-Text-root:first-child {
-  color: var(--mantine-color-gray-9);
-  font-family: var(--font-mono);
-  font-size: 14px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.15;
-}
-
-.sale-edit-metric .mantine-Text-root:nth-child(2) {
-  color: var(--mantine-color-gray-5);
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1.15;
-  text-transform: uppercase;
-}
-
-.sale-edit-command {
-  align-items: center;
-  background: var(--mantine-color-white);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
-  display: flex;
-  gap: 14px;
-  justify-content: space-between;
-  margin: 0 0 10px;
-  padding: 11px 12px;
-}
-
-.sale-edit-command__copy {
-  min-width: 0;
-}
-
-.sale-edit-command__copy svg {
-  color: var(--mantine-color-gray-6);
-  flex: 0 0 auto;
-}
-
-.sale-edit-command__title {
-  color: var(--mantine-color-gray-9);
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-.sale-edit-command__badge {
-  background: var(--mantine-color-orange-0);
-  color: var(--brand-orange);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0;
-}
-
-.sale-edit-command__description {
-  color: var(--mantine-color-gray-5);
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 1.25;
-  margin-top: 3px;
-}
-
-.sale-edit-bulk-actions {
-  flex: 0 0 auto;
-}
-
-.sale-edit-bulk-action {
-  min-height: 32px;
-}
-
-.sale-edit-bulk-action .mantine-Button-label {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0;
-}
+/* The adjustment form uses the shared document sheet; only table sizing and
+   editable cell content belong to this feature. */
+.consignment-note-settings-document-number { text-transform: uppercase; }
 
 .sale-edit-table-shell {
-  background: var(--mantine-color-white);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
-  height: min(560px, calc(100vh - 320px));
-  margin: 0 0 12px;
-  min-height: 280px;
+  min-width: 0;
   overflow: hidden;
-  padding-top: 10px;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 12px;
 }
+.sale-edit-table-shell .data-table-scroll { max-height: max(220px, calc(100dvh - 360px)); }
+.sale-edit-bulk-actions { flex-shrink: 0; }
+.sale-edit-sheet .document-detail-summary__main { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.sale-edit-sheet .document-detail-summary__meta { margin-top: 0; }
+.sale-edit-sheet .document-detail-summary__metrics { gap: 0; padding-left: 0; border-left: 0; align-items: stretch; }
+.sale-edit-sheet .document-detail-metric { min-width: 104px; padding: 4px 16px; text-align: left; display: grid; gap: 6px; }
+.sale-edit-sheet .document-detail-metric + .document-detail-metric { border-left: 1px solid var(--mantine-color-gray-2); }
+.sale-edit-sheet .document-detail-metric > span { font-size: 12px; font-weight: 500; }
+.sale-edit-sheet .document-detail-metric > strong { justify-content: flex-start; font-weight: 600; gap: 6px; }
 
-.sale-edit-table-shell .data-table {
-  height: 100%;
-}
-
-.sale-edit-table-shell .data-table-scroll {
-  height: 100%;
-}
-
-.sale-edit-table-shell .data-table-th {
-  color: var(--mantine-color-gray-8);
-  font-family: var(--font-mono);
-  text-align: left !important;
-}
-
-.sale-edit-table-shell .data-table-th .data-table-header-inner,
-.sale-edit-table-shell .data-table-th .data-table-header-button,
-.sale-edit-table-shell .data-table-th .data-table-header-label {
-  justify-content: flex-start !important;
-  text-align: left !important;
-}
-
-.sale-edit-table-shell .data-table-cell {
-  text-align: left !important;
-}
-
-.sale-edit-table-shell .data-table-cell[style*='right:'],
-.sale-edit-table-shell .data-table-th[style*='right:'] {
-  box-shadow: none !important;
-}
-
-
-
-.sale-edit-muted-value,
-.sale-edit-user-name {
-  color: var(--mantine-color-gray-6);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0;
-  white-space: nowrap;
-}
-
-.sale-edit-user-name {
-  color: var(--mantine-color-gray-7);
-}
-
-.sale-edit-product-name {
-  color: var(--mantine-color-gray-9);
-  font-size: 13px;
-  font-weight: 650;
-  max-width: 330px;
-}
-
-.sale-edit-money,
-.sale-edit-qty {
-  /* §5.1 — money/qty read mono 600, like the sales grid */
-  color: var(--mantine-color-gray-8);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0;
-  white-space: nowrap;
-}
-
-.sale-edit-qty {
-  color: var(--mantine-color-gray-8);
-}
-
-.sale-edit-shift-input .mantine-NumberInput-input {
+.sale-edit-sheet .document-detail-section__head { border-bottom: 0; padding-bottom: 0; }
+.sale-edit-product { min-width: 0; }
+.sale-edit-product__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--mantine-color-gray-2);
   background: var(--mantine-color-white);
-  border-color: var(--mantine-color-gray-2);
-  border-radius: 8px;
-  color: var(--mantine-color-gray-9);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 700;
-  height: 32px;
-  text-align: right;
+  color: var(--mantine-color-gray-6);
 }
-
-.sale-edit-shift-input .mantine-NumberInput-input:focus {
-  border-color: var(--brand-orange);
-  box-shadow: 0 0 0 2px rgba(247, 103, 7, 0.12);
+.sale-edit-product-name {
+  color: var(--mantine-color-gray-8);
+  font: 600 13px / 1.4 var(--font-sans);
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
+.sale-edit-money, .sale-edit-qty, .sale-edit-muted-value, .sale-edit-user-name {
+  color: var(--mantine-color-gray-8);
+  font: 600 13px / 1.4 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.sale-edit-muted-value { color: var(--mantine-color-gray-7); }
+.sale-edit-sheet .sale-edit-shift-input .mantine-NumberInput-input { height: 28px; min-height: 28px; text-align: right; }
+.sale-edit-sheet .sale-edit-shift-input .mantine-NumberInput-input::placeholder { color: var(--mantine-color-gray-6); }
 
 .sale-carrier-drawer-title {
   color: var(--mantine-color-gray-9);

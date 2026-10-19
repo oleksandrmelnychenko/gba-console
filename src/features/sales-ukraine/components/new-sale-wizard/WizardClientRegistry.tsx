@@ -37,8 +37,8 @@ const PAYMENT_LABELS: Record<string, string> = {
   3: 'Оплачено частково',
 }
 
-const WIZARD_REGISTER_TABLE_MIN_WIDTH = 1084
-const WIZARD_REGISTER_ITEMS_TABLE_MIN_WIDTH = 900
+const WIZARD_REGISTER_TABLE_MIN_WIDTH = 1196
+const WIZARD_REGISTER_ITEMS_TABLE_MIN_WIDTH = 1012
 
 const WIZARD_REGISTER_TABLE_LAYOUT: DataTableDefaultLayout = {
   columnPinning: {
@@ -47,6 +47,7 @@ const WIZARD_REGISTER_TABLE_LAYOUT: DataTableDefaultLayout = {
   columnSizing: {
     actions: 112,
     amount: 118,
+    currency: 112,
     created: 166,
     document: 260,
     documentType: 116,
@@ -59,6 +60,7 @@ const WIZARD_REGISTER_TABLE_LAYOUT: DataTableDefaultLayout = {
 const WIZARD_REGISTER_ITEMS_TABLE_LAYOUT: DataTableDefaultLayout = {
   columnSizing: {
     amount: 120,
+    currency: 112,
     created: 160,
     originalNumber: 160,
     product: 320,
@@ -157,8 +159,18 @@ export function WizardClientRegistry({
         header: t('\u0421\u0443\u043c\u0430'),
         accessor: (sale) => sale.TotalAmountLocal ?? 0,
         cell: (sale) => <WizardSaleAmountCell sale={sale} />,
+        align: 'right',
         width: 118,
         minWidth: 104,
+      },
+      {
+        id: 'currency',
+        header: t('Валюта'),
+        accessor: getSaleCurrencyCode,
+        cell: (sale) => <TableChip tone="source" value={getSaleCurrencyCode(sale)} />,
+        align: 'center',
+        width: 112,
+        minWidth: 112,
       },
       {
         id: 'qty',
@@ -322,22 +334,21 @@ function WizardSalePaymentCell({ sale }: { sale: SalesUkraineSale }) {
     : t(getSaleDotLabel(sale))
 
   return (
-    <Group className="new-sale-register-payment-cell" gap={8} wrap="nowrap">
-      <Tooltip label={dotLabel}>
-        <span className={`new-sale-register-status-dot ${isEdited ? 'is-edited' : getSaleRowStateClass(sale)}`} />
-      </Tooltip>
-      <Text className={`new-sale-register-payment ${getSaleRowStateClass(sale)}`} title={label ? t(label) : ''} truncate>
-        {label ? t(label) : ''}
-      </Text>
-    </Group>
+    <Tooltip label={dotLabel}>
+      <span className="new-sale-register-payment-cell">
+        <TableChip
+          tone={getSalePaymentKey(sale) === '3' ? 'warning' : getSaleRowStateClass(sale) === 'is-success' ? 'success' : getSaleRowStateClass(sale) === 'is-danger' ? 'danger' : 'neutral'}
+          value={label ? t(label) : t('Статус не визначено')}
+        />
+      </span>
+    </Tooltip>
   )
 }
 
 function WizardSaleAmountCell({ sale }: { sale: SalesUkraineSale }) {
   return (
-    <Box className="new-sale-register-value-cell is-inline">
+    <Box className="new-sale-register-value-cell is-amount">
       <Text>{amountFormatter.format(sale.TotalAmountLocal ?? 0)}</Text>
-      <Text>{getSaleCurrencyCode(sale)}</Text>
     </Box>
   )
 }
@@ -501,6 +512,7 @@ function WizardSaleRegistryRowContent({ sale }: { sale: SalesUkraineSale }) {
         id: 'amount',
         header: t('\u0421\u0443\u043c\u0430'),
         accessor: (item) => getOrderItemAmount(item),
+        align: 'right',
         cell: (item) => {
           const amount = getOrderItemAmount(item)
 
@@ -508,13 +520,26 @@ function WizardSaleRegistryRowContent({ sale }: { sale: SalesUkraineSale }) {
             <WizardSaleItemValueCell
               money
               negative={amount < 0}
-              unit={currencyCode}
               value={itemAmountFormatter.format(amount)}
             />
           )
         },
         width: 120,
         minWidth: 108,
+        enableHiding: false,
+        enablePinning: false,
+        enableReorder: false,
+        enableResizing: false,
+        enableSorting: false,
+      },
+      {
+        id: 'currency',
+        header: t('Валюта'),
+        accessor: () => currencyCode,
+        cell: () => <TableChip tone="source" value={currencyCode} />,
+        align: 'center',
+        width: 112,
+        minWidth: 112,
         enableHiding: false,
         enablePinning: false,
         enableReorder: false,
@@ -595,7 +620,7 @@ function WizardSaleItemProductCell({
       <Box className="new-sale-item-product-icon">
         <Package size={16} />
       </Box>
-      <Text className="new-sale-item-product-name" title={productName} truncate>
+      <Text className="new-sale-item-product-name" title={productName}>
         {productName}
       </Text>
     </Group>
@@ -626,7 +651,7 @@ function WizardSaleItemValueCell({
   return (
     <Box className={`new-sale-item-value-cell ${money ? 'is-money' : ''} ${negative ? 'is-negative' : ''} ${quantity ? 'is-quantity' : ''}`}>
       <Text>{value}</Text>
-      {unit && <Text>{unit}</Text>}
+      {unit && (money ? <TableChip tone="source" value={unit} /> : <Text>{unit}</Text>)}
     </Box>
   )
 }

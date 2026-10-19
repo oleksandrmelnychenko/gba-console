@@ -1,0 +1,76 @@
+.sale-audit-detail { min-width: 0; }
+.sale-audit-rates { display: grid; gap: 8px; }
+.sale-audit-rates__label { color: var(--mantine-color-gray-7); font: 500 12px / 1.4 var(--font-mono); }
+.sale-audit-detail .document-detail-summary__main { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.sale-audit-detail .document-detail-summary__meta { margin-top: 0; }
+.sale-audit-logistics .document-detail-section__head { border-bottom: 0; padding-bottom: 0; }
+.sale-audit-lifecycle {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(220px, 1fr);
+  gap: 28px;
+  overflow-x: auto;
+  padding: 4px 0;
+  margin: 0;
+  list-style: none;
+}
+.sale-audit-lifecycle__step {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 80px;
+  padding: 12px 14px;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 12px;
+  background: var(--mantine-color-gray-0);
+  animation: sale-audit-stage-in 360ms ease-out both;
+}
+.sale-audit-lifecycle__step.is-active { background: var(--mantine-color-white); border-color: var(--mantine-color-gray-3); }
+.sale-audit-lifecycle__step.is-active::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--brand-orange);
+}
+.sale-audit-lifecycle__connector {
+  position: absolute;
+  right: -23px;
+  top: calc(50% - 8px);
+  color: var(--mantine-color-gray-5);
+  animation: sale-audit-link-in 450ms ease-out both;
+  animation-delay: inherit;
+}
+.sale-audit-lifecycle__step:last-child .sale-audit-lifecycle__connector { display: none; }
+.sale-audit-lifecycle__step.is-connected .sale-audit-lifecycle__connector { color: var(--brand-orange); }
+.sale-audit-lifecycle__step > div { display: grid; min-width: 0; gap: 5px; }
+.sale-audit-lifecycle__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: 50%;
+  color: var(--mantine-color-gray-6);
+  background: var(--mantine-color-white);
+}
+.sale-audit-lifecycle__label { color: var(--mantine-color-gray-7); font: 500 13px / 1.4 var(--font-mono); }
+.sale-audit-lifecycle__step.is-active .sale-audit-lifecycle__icon { border-color: var(--brand-orange); color: var(--brand-orange); }
+.sale-audit-lifecycle__step.is-active .sale-audit-lifecycle__label { color: var(--mantine-color-gray-9); font-weight: 600; }
+@keyframes sale-audit-stage-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes sale-audit-link-in { from { opacity: 0; transform: translateX(-3px); } to { opacity: 1; transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .sale-audit-lifecycle__step, .sale-audit-lifecycle__connector { animation: none; }
+}
+.sale-audit-date { color: var(--mantine-color-gray-7); font: 500 12px / 1.4 var(--font-mono); white-space: nowrap; }
+.sale-audit-table-shell { border: 1px solid var(--mantine-color-gray-2); border-radius: 12px; overflow: hidden; min-width: 0; }
+.sale-audit-product { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.sale-audit-product > svg { flex-shrink: 0; color: var(--mantine-color-gray-6); }
+.sale-audit-product > span { font-family: var(--font-sans); font-weight: 600; white-space: normal; overflow-wrap: anywhere; }

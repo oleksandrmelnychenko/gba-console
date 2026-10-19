@@ -4,29 +4,24 @@
   overflow: hidden;
 }
 
-/* Filter strip pinned at the top of the card; the table below it scrolls. */
-.company-car-road-lists-filter-bar {
-  flex: 0 0 auto;
-  overflow-x: auto;
-}
-
-/* Keep the car identity on the left; push the date filters + actions cluster to the trailing edge. */
 .company-car-road-lists-identity {
+  flex: 0 0 auto;
   min-width: 0;
+  padding: 12px;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
 }
 
-.company-car-road-lists-filter-row .app-filter-actions {
-  grid-column: 4;
-  margin-left: auto;
+.company-car-road-lists-identity__name { flex: 1 1 240px; overflow-wrap: anywhere; }
+.company-car-road-lists-identity .app-table-chip { max-width: 100%; }
+.company-car-road-lists-filter-bar { flex: 0 0 auto; }
+.company-car-road-lists-filter-row.app-filter-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
 }
-
-.company-car-road-lists-filter-row > .mantine-Button-root {
-  font-family: var(--font-mono);
-  font-weight: 600;
-  grid-column: 5;
-  letter-spacing: 0;
-  white-space: nowrap;
-}
+.company-car-road-lists-filter-row.app-filter-fields > .mantine-InputWrapper-root { flex: 0 1 170px; min-width: 145px; }
+.company-car-road-lists-filter-row .app-filter-actions { margin-left: auto; }
+.company-car-road-lists-filter-row > .mantine-Button-root { flex: 0 0 auto; }
 
 .company-car-road-lists-page__table {
   flex: 1 1 auto;

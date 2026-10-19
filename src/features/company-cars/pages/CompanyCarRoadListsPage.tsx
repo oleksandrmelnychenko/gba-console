@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Badge,
   Button,
   Card,
   Group,
@@ -17,6 +16,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { formatDateInputForQuery, formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
@@ -250,31 +250,25 @@ function CompanyCarRoadListsPageContent() {
   return (
     <Stack className="company-car-road-lists-page" gap={6}>
       <Card className="app-data-card company-car-road-lists-card" withBorder radius="md" padding={0}>
+        <Group gap="sm" wrap="wrap" className="company-car-road-lists-identity">
+          <Button variant="default" size="sm" leftSection={<ArrowLeft size={16} />} onClick={() => navigate(returnPath)}>
+            {t('Назад')}
+          </Button>
+          <TableChip tone="document" value={displayValue(companyCar?.LicensePlate)} />
+          <Text className="company-car-road-lists-identity__name" fw={600}>{displayValue(companyCar?.CarBrand)}</Text>
+          {companyCar?.Organization && <TableChip tone="product" value={companyCar.Organization.Name} />}
+        </Group>
         <div className="app-filter-bar company-car-road-lists-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields company-car-road-lists-filter-row">
-            <Group gap="xs" wrap="nowrap" className="company-car-road-lists-identity">
-              <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" leftSection={<ArrowLeft size={16} />} onClick={() => navigate(returnPath)}>
-                {t('Назад')}
-              </Button>
-              <Badge className="app-role-pill" variant="light">
-                {displayValue(companyCar?.LicensePlate)}
-              </Badge>
-              <Text fw={700}>{displayValue(companyCar?.CarBrand)}</Text>
-              {companyCar?.Organization && (
-                <Text c="dimmed" size="sm">
-                  {displayValue(companyCar.Organization.Name)}
-                </Text>
-              )}
-            </Group>
+          <Group align="end" gap={10} wrap="wrap" className="app-filter-fields company-car-road-lists-filter-row">
             <TextInput
-              label={t('Від якої дати')}
+              label={t('Від')}
               type="date"
               value={fromDate}
               w={170}
               onChange={(event) => setFromDate(event.currentTarget.value)}
             />
             <TextInput
-              label={t('До якої дати')}
+              label={t('До')}
               type="date"
               value={toDate}
               w={170}
@@ -303,7 +297,7 @@ function CompanyCarRoadListsPageContent() {
                 styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
                 onClick={openCreateForm}
               >
-                {t('Створення шляхового листа')}
+                {t('Створити шляховий лист')}
               </Button>
             )}
           </Group>

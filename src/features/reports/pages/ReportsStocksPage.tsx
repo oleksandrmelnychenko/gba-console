@@ -1131,7 +1131,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       {dataSource === 40 || dataSource === 41 ? cashSettlementPanels('form') : null}
       <LegacyReportBuilder part="grouping" {...builder} />
     </>
-    const advancedContent = <>
+    const advancedContent = <div className="workbook-advanced">
       {workbook.panel(dataset, reportBody, comparisonSettingsDisabled)}
       {dataSource === 35 ? <div className="workbook-desk__group">{dayProfitControls('source')}</div> : null}
       {supplierControls ? <div className="workbook-desk__group">{supplierProfitControls('source')}</div> : null}
@@ -1147,7 +1147,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         {analysisPanels.abc}
         {analysisPanels.ordering}
       </> : dataSource === 26 ? analysisPanels.abc : null}
-    </>
+    </div>
     const filterChips = deskSummary.chips.filter(chip => chip.kind === 'filter')
     const groupingLabels = (groups: ReportGroupingItem[]) => groups.map(group => group.label || getReportFieldLabel(group.key)).join(' → ')
     const deskSections: WorkbookSettingsSection[] = [
