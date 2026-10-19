@@ -157,6 +157,7 @@ describe('ProductsPage inline movement table width', () => {
     expect(productStyles).toMatch(/\.product-inline-movements\s*\{[^}]*max-width:\s*100%\s*;/)
     expect(productStyles).toMatch(/\.product-inline-movement-body\s*\{[^}]*max-width:\s*100%\s*;/)
     expect(table?.textContent).toContain(tab === 'Прихід' ? 'Ціна нетто за одиницю, EUR' : 'Кількість')
+    expect(scrollArea?.parentElement?.querySelector(':scope > .data-table-sticky-scrollbar')).not.toBeNull()
   })
 
   it.each([

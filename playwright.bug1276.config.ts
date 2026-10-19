@@ -7,7 +7,7 @@ export default defineConfig({
   use: {
     baseURL: 'http://127.0.0.1:4176',
     browserName: 'chromium',
-    launchOptions: { channel: 'chrome' },
+    launchOptions: { channel: 'chrome', ignoreDefaultArgs: ['--hide-scrollbars'] },
   },
   webServer: {
     command: 'npm run dev -- --host 127.0.0.1 --port 4176 --strictPort',

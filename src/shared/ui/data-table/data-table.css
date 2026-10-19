@@ -89,6 +89,42 @@
   background: transparent;
 }
 
+.data-table-sticky-scrollbar {
+  background: var(--mantine-color-white);
+  height: 10px;
+  left: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  position: fixed;
+  scrollbar-color: var(--mantine-color-gray-4) transparent;
+  scrollbar-width: thin;
+  top: 0;
+  visibility: hidden;
+  width: 0;
+  z-index: 10;
+}
+
+.data-table-sticky-scrollbar[data-visible='true'] {
+  visibility: visible;
+}
+
+.data-table-sticky-scrollbar-content {
+  height: 1px;
+}
+
+.data-table-sticky-scrollbar::-webkit-scrollbar {
+  height: 10px;
+}
+
+.data-table-sticky-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.data-table-sticky-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--mantine-color-gray-4);
+  border-radius: 999px;
+}
+
 .data-table .data-table-table {
   border-collapse: separate;
   border-spacing: 0;

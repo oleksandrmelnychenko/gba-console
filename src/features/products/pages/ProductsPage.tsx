@@ -3393,6 +3393,7 @@ function ProductIncomeMovementsGrid({
       minWidth={2500}
       showDensityToggle={false}
       showLayoutControls
+      stickyHorizontalScrollbar
       tableId="product-income-movements"
     />
   )
@@ -3497,6 +3498,7 @@ function ProductOutcomeMovementsGrid({
       minWidth={1900}
       showDensityToggle={false}
       showLayoutControls
+      stickyHorizontalScrollbar
       tableId="product-outcome-movements"
     />
   )

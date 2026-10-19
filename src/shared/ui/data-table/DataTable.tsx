@@ -53,6 +53,7 @@ import {
   preserveRenderedColumnResize,
 } from './dataTableSizing'
 import { DataTableToolbar } from './DataTableToolbar'
+import { DataTableStickyScrollbar } from './DataTableStickyScrollbar'
 import { isDataTableNumericColumn } from './dataTableNumeric'
 import { createPortal } from 'react-dom'
 import { useElementClientWidth } from './useElementClientWidth'
@@ -98,6 +99,7 @@ export function DataTable<TData>({
   footer,
   summaryCells,
   toolbarPortalTarget,
+  stickyHorizontalScrollbar = false,
   onRowClick,
   rowClassName,
   manualSorting = false,
@@ -681,6 +683,7 @@ export function DataTable<TData>({
           </div>
         ) : null}
       </div>
+      {stickyHorizontalScrollbar ? <DataTableStickyScrollbar scrollElement={scrollNode} /> : null}
       {footer ? <div className="data-table-footer">{footer}</div> : null}
     </div>
   )
