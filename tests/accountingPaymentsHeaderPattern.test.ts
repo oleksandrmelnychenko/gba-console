@@ -35,7 +35,7 @@ describe('accounting payments filter-header pattern', () => {
 
   it.each(datedPages)('$path starts with the shared paired-date geometry', ({ path, rowClass }) => {
     const source = pageSources[path]
-    const rowStart = source.indexOf(`className="${rowClass}"`)
+    const rowStart = source.indexOf(`className="app-filter-fields ${rowClass}"`)
     const rowContentStart = source.indexOf('>', rowStart) + 1
     const firstChild = source.slice(rowContentStart).trimStart()
 
@@ -56,7 +56,7 @@ describe('accounting payments filter-header pattern', () => {
 
   it('starts the currency traders header with search', () => {
     const source = pageSources[pagePaths[5]]
-    const rowStart = source.indexOf('className="currency-convertors-filter-row"')
+    const rowStart = source.indexOf('className="app-filter-fields currency-convertors-filter-row"')
     const rowContentStart = source.indexOf('>', rowStart) + 1
     const firstChild = source.slice(rowContentStart).trimStart()
 

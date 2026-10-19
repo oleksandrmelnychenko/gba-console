@@ -1,18 +1,20 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { cwd } from 'node:process'
-import postcss, { type Root, type Rule } from 'postcss'
+import postcss, { type AtRule, type Root, type Rule } from 'postcss'
 import { describe, expect, it } from 'vitest'
 
 const filterBarCss = readFileSync(join(cwd(), 'src/shared/ui/filter-bar.css'), 'utf8')
 const consoleTablePageCss = readFileSync(join(cwd(), 'src/shared/ui/console-table-page.css'), 'utf8')
 const clientsPageCss = readFileSync(join(cwd(), 'src/features/clients/pages/clients-page.css'), 'utf8')
+const clientsPageSource = readFileSync(join(cwd(), 'src/features/clients/pages/ClientsPage.tsx'), 'utf8')
 const featureStyles = readCssFiles(join(cwd(), 'src/features'))
 
 const BAR_CLASS_PATTERN = /^(?:app-filter-bar|sales-filter-bar|console-table-command-bar|[\w-]+-filter-bar|[\w-]+-command-bar|assort-filter)$/
 const FILTER_ROW_CLASS_PATTERN = /(?:filter-content|filter-form|filter-row)$/
 const FIELD_GEOMETRY_SELECTOR_PATTERN = /mantine-(?:Input-wrapper|Input-input|InputWrapper-label|Select-input|TextInput-input)/
 const CANONICAL_GEOMETRY_LITERALS = new Set(['4px', '17px', '36px'])
+const SHARED_BAR_SCOPE = ':is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar)'
 const FORBIDDEN_FEATURE_BAR_PROPERTIES = new Set([
   'height',
   'max-height',
@@ -33,9 +35,15 @@ const FORBIDDEN_FEATURE_BAR_PROPERTIES = new Set([
 describe('filter-bar CSS contract', () => {
   const root = postcss.parse(filterBarCss)
 
-  it('owns the canonical 74px one-row geometry', () => {
+  it('owns the canonical 74px bar geometry and wraps instead of clipping', () => {
     const tokenRule = findRule(root, '--app-filter-bar-height', ':root')
     const barRule = findRule(root, 'min-height', '.app-filter-bar', '.sales-filter-bar', '.console-table-command-bar')
+    const stackedBarRule = findRule(root, 'flex-direction', '.app-filter-bar.app-filter-bar--stacked')
+    const labelFreeBarRule = findRule(
+      root,
+      'min-height',
+      `${SHARED_BAR_SCOPE}:not(:has(.mantine-InputWrapper-label, .app-filter-label, .sales-filter-label))`,
+    )
 
     expect(declarations(tokenRule)).toMatchObject({
       '--app-filter-bar-height': '74px',
@@ -46,10 +54,21 @@ describe('filter-bar CSS contract', () => {
     expect(declarations(barRule)).toMatchObject({
       'align-items': 'end',
       'box-sizing': 'border-box',
-      'flex-wrap': 'nowrap',
+      display: 'flex',
+      flex: '0 0 auto',
+      'flex-wrap': 'wrap',
       gap: '10px',
       'min-height': 'var(--app-filter-bar-height)',
+      'min-width': '0',
       padding: '8px',
+    })
+    expect(declarations(stackedBarRule)).toMatchObject({
+      display: 'flex',
+      'flex-direction': 'column',
+      'flex-wrap': 'nowrap',
+    })
+    expect(declarations(labelFreeBarRule)).toMatchObject({
+      'min-height': '53px',
     })
   })
 
@@ -127,16 +146,29 @@ describe('filter-bar CSS contract', () => {
     })
   })
 
-  it('owns the exact paired-date geometry', () => {
+  it('owns the exact paired-date geometry and lets it fill stacked or narrow bars', () => {
     const dateRangeRule = findRule(root, 'grid-template-columns', '.app-filter-date-range')
+    const stackedDateRangeRule = findRule(root, 'width', '.app-filter-bar--stacked > .app-filter-date-range')
+    const narrowDateRangeRule = findRule(root, 'flex', `${SHARED_BAR_SCOPE} .app-filter-date-range`)
 
     expect(declarations(dateRangeRule)).toMatchObject({
       'align-items': 'end',
       display: 'grid',
       flex: '0 0 310px',
       gap: '10px',
-      'grid-template-columns': 'repeat(2, 150px)',
+      'grid-template-columns': 'repeat(2, minmax(0, 1fr))',
+      'max-width': '100%',
       width: '310px',
+    })
+    expect(declarations(stackedDateRangeRule)).toMatchObject({
+      flex: '0 0 auto',
+      width: '100%',
+    })
+    expect(containerQuery(narrowDateRangeRule)).toBe('registry (max-width: 600px)')
+    expect(declarations(narrowDateRangeRule)).toMatchObject({
+      flex: '1 1 100%',
+      'min-width': '0',
+      width: '100%',
     })
   })
 
@@ -206,19 +238,33 @@ describe('filter-bar CSS contract', () => {
     expect(conflicts).toEqual([])
   })
 
-  it('keeps the clients create action visible while only its filter row scrolls', () => {
+  it('keeps the clients create action visible by wrapping the shared field row', () => {
     const clientsRoot = postcss.parse(clientsPageCss)
-    const barRule = findRule(clientsRoot, 'overflow-x', '.clients-filter-bar')
-    const rowRule = findRule(clientsRoot, 'min-width', '.clients-filter-bar .clients-filter-row')
+    const fieldsRule = findRule(root, 'flex-wrap', `${SHARED_BAR_SCOPE} .app-filter-fields`)
+    const clientsBarOverrides: string[] = []
 
-    expect(declarations(barRule)).toMatchObject({
-      'overflow-x': 'hidden',
+    clientsRoot.walkRules((rule) => {
+      if (!rule.selectors.some((selector) => /\.clients-filter-(?:bar|row)$/.test(selector.trim()))) {
+        return
+      }
+
+      rule.walkDecls((declaration) => {
+        if (['flex-wrap', 'min-width', 'overflow', 'overflow-x'].includes(declaration.prop)) {
+          clientsBarOverrides.push(`${rule.selector} -> ${declaration.prop}:${declaration.value}`)
+        }
+      })
     })
-    expect(declarations(rowRule)).toMatchObject({
-      flex: '1 1 0',
+
+    expect(clientsPageSource).toContain('className="app-filter-fields clients-filter-row"')
+    expect(declarations(fieldsRule)).toMatchObject({
+      display: 'flex',
+      flex: '1 1 auto',
+      'flex-wrap': 'wrap',
+      'max-width': '100%',
       'min-width': '0',
-      width: 'auto',
+      overflow: 'visible',
     })
+    expect(clientsBarOverrides).toEqual([])
   })
 })
 
@@ -253,6 +299,12 @@ function findRule(root: Root, requiredProperty: string, ...selectors: string[]):
 
   expect(match, `Missing CSS rule for ${selectors.join(', ')} with ${requiredProperty}`).toBeDefined()
   return match as Rule
+}
+
+function containerQuery(rule: Rule): string | undefined {
+  const parent = rule.parent as AtRule | undefined
+
+  return parent?.type === 'atrule' && parent.name === 'container' ? parent.params : undefined
 }
 
 function declarations(rule: Rule): Record<string, string> {
