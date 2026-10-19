@@ -1,7 +1,6 @@
 import { notifications } from '@mantine/notifications'
 import {
   HubConnectionBuilder,
-  HubConnectionState,
   HttpTransportType,
   LogLevel,
   type HubConnection,
@@ -9,7 +8,6 @@ import {
 } from '@microsoft/signalr'
 import { useEffect, type PropsWithChildren } from 'react'
 import { useAuth } from '../../features/auth/useAuth'
-import { apiRequest } from '../api/apiClient'
 import { PermissionKeys } from '../auth/permissionKeys'
 import { useI18n } from '../i18n/useI18n'
 import {
@@ -24,16 +22,14 @@ import {
 } from './events'
 import { getNumberValue, getStringValue, parseRealtimePayload } from './payload'
 import { realtimeUrl } from './realtimeUrl'
-import { applyDataSyncNotification, reconcileDataSyncProgress } from './dataSyncProgressStore'
+import { applyDataSyncNotification } from './dataSyncProgressStore'
+import { DATA_SYNC_ERROR_NOTIFICATION_ID, getDataSyncToastAction } from './dataSyncNotificationToast'
+import { reconcileDataSyncProgressWithServer, useDataSyncProgressWatchdog } from './dataSyncStatusReconciler'
+import { manageConnections } from './hubConnectionManager'
 import { createEcommerceOrderNotification } from '../notification-center/ecommerceOrderNotification'
 import { createEcommerceInterestNotification } from '../notification-center/ecommerceInterestNotification'
 import { createEcommerceImageSearchNotification } from '../notification-center/ecommerceImageSearchNotification'
 import { addConsoleNotification } from '../notification-center/store'
-
-type DataSyncStatus = {
-  IsInProgress?: boolean
-  isInProgress?: boolean
-}
 
 const hubPaths = {
   dataSync: '/hubs/data/sync',
@@ -45,7 +41,6 @@ const hubPaths = {
 } as const
 
 const reconnectDelays = [0, 2_000, 5_000, 10_000, 30_000]
-const startRetryDelays = [2_000, 5_000, 10_000, 30_000]
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
@@ -60,23 +55,32 @@ export function RealtimeProvider({ children }: PropsWithChildren) {
     PermissionKeys.OnlineShopSeo.Synchronization.Run,
   )
 
+  useDataSyncProgressWatchdog(isAuthenticated && !isLoading && canViewDataSyncErrors)
+
   useEffect(() => {
     if (!isAuthenticated || isLoading) {
       return undefined
     }
 
     let disposed = false
+    const dataSyncConnection = createDataSyncConnection(t, canViewDataSyncErrors)
     const connections = [
       createProductReservationConnection(userKey, t),
       createSupplyOrdersConnection(t),
       createExchangeRatesConnection(),
       createResaleConnection(),
       createSalesCockpitConnection(),
-      createDataSyncConnection(t, canViewDataSyncErrors),
+      dataSyncConnection,
     ]
-    const stopManagedConnections = manageConnections(connections, () => disposed)
+    const stopManagedConnections = manageConnections(connections, () => disposed, (connection) => {
+      if (connection === dataSyncConnection && canViewDataSyncErrors) {
+        void reconcileDataSyncProgressWithServer()
+      }
+    })
 
-    void reconcileDataSyncProgressWithServer()
+    if (canViewDataSyncErrors) {
+      void reconcileDataSyncProgressWithServer()
+    }
 
     return () => {
       disposed = true
@@ -226,33 +230,21 @@ function createDataSyncConnection(
   canViewDataSyncErrors: boolean,
 ): HubConnection {
   const connection = createConnection(hubPaths.dataSync)
+  const showDataSyncNotification = createDataSyncNotificationPresenter(canViewDataSyncErrors, t)
 
   connection.on('ProcessNotificationMessage', (payload: unknown) => {
     const notification = parseRealtimePayload<DataSyncNotification>(payload)
     applyDataSyncNotification(notification)
     realtimeBus.emit(realtimeEvents.dataSyncNotification, notification)
-    showDataSyncNotification(notification, canViewDataSyncErrors, t)
+    showDataSyncNotification(notification)
   })
   connection.onreconnected(() => {
-    void reconcileDataSyncProgressWithServer()
+    if (canViewDataSyncErrors) {
+      void reconcileDataSyncProgressWithServer()
+    }
   })
 
   return connection
-}
-
-async function reconcileDataSyncProgressWithServer(): Promise<void> {
-  try {
-    const status = await apiRequest<DataSyncStatus>('/data/sync/status', {
-      errorMessages: {
-        default: 'Не вдалося перевірити статус синхронізації',
-        network: 'Сервер синхронізації недоступний',
-      },
-    })
-
-    reconcileDataSyncProgress(Boolean(status?.IsInProgress ?? status?.isInProgress))
-  } catch {
-    // Keep the local progress visible when status cannot be verified.
-  }
 }
 
 function createConnection(path: string): HubConnection {
@@ -277,85 +269,6 @@ function createConnection(path: string): HubConnection {
   connection.keepAliveIntervalInMilliseconds = 15_000
 
   return connection
-}
-
-function manageConnections(connections: HubConnection[], isDisposed: () => boolean): () => void {
-  const retryTimers = new Set<ReturnType<typeof window.setTimeout>>()
-
-  const clearRetryTimers = () => {
-    retryTimers.forEach((timer) => window.clearTimeout(timer))
-    retryTimers.clear()
-  }
-
-  const scheduleStart = (connection: HubConnection, retryCount = 0) => {
-    if (isDisposed()) {
-      return
-    }
-
-    const timer = window.setTimeout(() => {
-      retryTimers.delete(timer)
-      void startConnection(connection, isDisposed, retryCount)
-    }, getStartRetryDelay(retryCount))
-
-    retryTimers.add(timer)
-  }
-
-  const handleOnline = () => {
-    connections.forEach((connection) => {
-      if (connection.state === HubConnectionState.Disconnected) {
-        void startConnection(connection, isDisposed)
-      }
-    })
-  }
-
-  connections.forEach((connection) => {
-    connection.onclose(() => {
-      if (!isDisposed()) {
-        scheduleStart(connection)
-      }
-    })
-
-    void startConnection(connection, isDisposed)
-  })
-  window.addEventListener('online', handleOnline)
-
-  return () => {
-    clearRetryTimers()
-    window.removeEventListener('online', handleOnline)
-    connections.forEach((connection) => {
-      void connection.stop().catch(() => undefined)
-    })
-  }
-}
-
-async function startConnection(connection: HubConnection, isDisposed: () => boolean, retryCount = 0): Promise<void> {
-  if (isDisposed()) {
-    return
-  }
-
-  if (connection.state !== HubConnectionState.Disconnected) {
-    return
-  }
-
-  try {
-    await connection.start()
-  } catch {
-    if (isDisposed()) {
-      return
-    }
-
-    window.setTimeout(() => {
-      void startConnection(connection, isDisposed, retryCount + 1)
-    }, getStartRetryDelay(retryCount))
-  }
-}
-
-function getStartRetryDelay(retryCount: number): number {
-  if (!navigator.onLine) {
-    return startRetryDelays[startRetryDelays.length - 1]
-  }
-
-  return startRetryDelays[retryCount] ?? startRetryDelays[startRetryDelays.length - 1]
 }
 
 function showSupplyOrderNotification(notification: SupplyOrderNotification, t: (key: string) => string): void {
@@ -388,23 +301,37 @@ function showPaymentTaskNotification(notification: SupplyPaymentTaskNotification
   })
 }
 
-function showDataSyncNotification(
-  notification: DataSyncNotification,
+function createDataSyncNotificationPresenter(
   canViewDataSyncErrors: boolean,
   t: (key: string) => string,
-): void {
-  if (!notification.IsError || !canViewDataSyncErrors) {
-    return
+): (notification: DataSyncNotification) => void {
+  let shownErrorRunId: string | undefined
+
+  return (notification) => {
+    const action = getDataSyncToastAction(notification, shownErrorRunId)
+
+    if (action.type === 'hide-error') {
+      notifications.hide(DATA_SYNC_ERROR_NOTIFICATION_ID)
+      shownErrorRunId = undefined
+      return
+    }
+
+    if (action.type !== 'show-error' || !canViewDataSyncErrors) {
+      return
+    }
+
+    const { description, title } = splitDataSyncMessage(notification.DisplayMessage, t)
+
+    notifications.hide(DATA_SYNC_ERROR_NOTIFICATION_ID)
+    notifications.show({
+      autoClose: false,
+      color: 'red',
+      id: DATA_SYNC_ERROR_NOTIFICATION_ID,
+      message: description || title,
+      title,
+    })
+    shownErrorRunId = action.runId
   }
-
-  const { description, title } = splitDataSyncMessage(notification.DisplayMessage, t)
-
-  notifications.show({
-    autoClose: false,
-    color: 'red',
-    message: description || title,
-    title,
-  })
 }
 
 function splitDataSyncMessage(message: string | undefined, t: (key: string) => string) {

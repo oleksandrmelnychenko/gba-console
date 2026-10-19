@@ -43,6 +43,8 @@ export type RealtimeEventName = keyof RealtimeEventPayloads
 export type DataSyncNotification = {
   DisplayMessage?: string
   IsError?: boolean
+  IsTerminal?: boolean
+  PipelineRunId?: string | null
   StopProgressBar?: boolean
 }
 
