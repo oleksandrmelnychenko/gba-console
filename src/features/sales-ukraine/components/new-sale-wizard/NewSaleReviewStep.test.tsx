@@ -294,6 +294,36 @@ describe('NewSaleReviewStep persistent file reconciliation', () => {
     expect(mocks.createSalesUkraineSaleFromData).not.toHaveBeenCalled()
   })
 
+  it('creates a local sale on the third step without a document warehouse field or value', async () => {
+    mocks.createSalesUkraineSaleFromData.mockResolvedValue({ message: 'created', sale: null })
+    renderStep({
+      saleValue: { ...sale, Order: { OrderSource: 1, OrderItems: [] }, RegistrarStorageId: null },
+      submitFlow: 'create',
+      value: { ...reviewValue(), registrarStorageId: null },
+    })
+
+    expect(screen.queryByRole('combobox', { name: 'Склад документа' })).toBeNull()
+    expect(screen.getByText('Доставка')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Створити накладну' }))
+
+    await waitFor(() => expect(mocks.createSalesUkraineSaleFromData).toHaveBeenCalledTimes(1))
+    expect(mocks.createSalesUkraineSaleFromData.mock.calls[0]?.[0].RegistrarStorageId).toBeNull()
+    expect(mocks.notificationsShow).not.toHaveBeenCalledWith(expect.objectContaining({ message: 'Оберіть склад документа' }))
+  })
+
+  it('keeps warehouse selection mandatory for a storefront sale on the third step', async () => {
+    renderStep({
+      saleValue: { ...sale, Order: { OrderSource: 0, OrderItems: [] }, RegistrarStorageId: null },
+      submitFlow: 'create',
+      value: { ...reviewValue(), registrarStorageId: null },
+    })
+
+    expect(screen.getByRole('combobox', { name: 'Склад документа' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Створити накладну' }))
+    await waitFor(() => expect(mocks.notificationsShow).toHaveBeenCalledWith(expect.objectContaining({ message: 'Оберіть склад документа' })))
+    expect(mocks.createSalesUkraineSaleFromData).not.toHaveBeenCalled()
+  })
+
   it.each([0, 5])('saves draft metadata without choosing a warehouse at lifecycle %s', async (lifecycle) => {
     const draft = { ...sale, RegistrarStorageId: null, BaseLifeCycleStatus: { SaleLifeCycleType: lifecycle } }
     mocks.updateSaleFromData.mockResolvedValue({ message: 'saved', sale: draft })

@@ -96,6 +96,7 @@ import { createWizardEnterLatch } from './wizardEnterLatch'
 import { SaleDocumentWarehouseSelect } from './SaleDocumentWarehouseSelect'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
+const LOCAL_ORDER_SOURCE = 1
 const SALE_LIFE_CYCLE_STATUS_NAMES: Record<number, string> = {
   0: 'Рахунок',
   1: 'Накладна',
@@ -220,6 +221,7 @@ export function NewSaleReviewStep({
   const splitItems = useWizardSplitOrderItems()
   const mergedSale = useWizardMergedSale()
   const isMergedMode = Boolean(mergedSale)
+  const needsDocumentWarehouse = sale?.Order?.OrderSource !== LOCAL_ORDER_SOURCE
   const mergedConversionDenied = submitFlow === 'edit' && isMergedMode && !canConvertMergedToBill
   const submitPermissionDenied = !canSubmit || mergedConversionDenied
   const effectiveSubmitDeniedReason = mergedConversionDenied
@@ -869,7 +871,7 @@ export function NewSaleReviewStep({
     const savesPendingDraft = intent === 'save'
       && [0, 5].includes(Number(payload.BaseLifeCycleStatus?.SaleLifeCycleType))
       && !('SaleInvoiceDocument' in payload && payload.SaleInvoiceDocument != null)
-    if (!savesPendingDraft && (!payload.ChangedToInvoice || splitItems.length > 0 || isMergedMode) && (!Number.isSafeInteger(payload.RegistrarStorageId) || Number(payload.RegistrarStorageId) <= 0)) {
+    if (payload.Order?.OrderSource !== LOCAL_ORDER_SOURCE && !savesPendingDraft && (!payload.ChangedToInvoice || splitItems.length > 0 || isMergedMode) && (!Number.isSafeInteger(payload.RegistrarStorageId) || Number(payload.RegistrarStorageId) <= 0)) {
       notifications.show({ color: 'red', message: t('Оберіть склад документа') })
       return false
     }
@@ -1678,14 +1680,16 @@ export function NewSaleReviewStep({
                 </Box>
               )}
 
-              <Box className="new-sale-review-section">
-                <SaleDocumentWarehouseSelect
-                  value={value.registrarStorageId ?? sale?.RegistrarStorageId ?? null}
-                  flow={submitFlow}
-                  disabled={(Boolean(sale?.ChangedToInvoice) && splitItems.length === 0 && !isMergedMode) || submitting || saving || !canSubmit}
-                  onChange={(registrarStorageId) => onChange({ registrarStorageId })}
-                />
-              </Box>
+              {needsDocumentWarehouse && (
+                <Box className="new-sale-review-section">
+                  <SaleDocumentWarehouseSelect
+                    value={value.registrarStorageId ?? sale?.RegistrarStorageId ?? null}
+                    flow={submitFlow}
+                    disabled={(Boolean(sale?.ChangedToInvoice) && splitItems.length === 0 && !isMergedMode) || submitting || saving || !canSubmit}
+                    onChange={(registrarStorageId) => onChange({ registrarStorageId })}
+                  />
+                </Box>
+              )}
 
               <Box className="new-sale-review-section">
                 <Box className="new-sale-review-section__head">
