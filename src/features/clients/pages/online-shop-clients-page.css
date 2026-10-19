@@ -16,7 +16,6 @@
   display: flex;
   flex: 0 0 auto;
   flex-wrap: nowrap;
-  gap: 10px;
   overflow-x: auto;
 }
 

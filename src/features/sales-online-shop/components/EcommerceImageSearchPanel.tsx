@@ -206,7 +206,7 @@ export function EcommerceImageSearchPanel({
     <Stack className="ecommerce-image-search-panel" gap={6}>
       <Card className="app-filter-card image-search-audit-toolbar" withBorder radius="md" padding={0}>
         <div className="app-filter-bar">
-          <div className="image-search-audit-filter-row">
+          <div className="app-filter-fields image-search-audit-filter-row">
             <TextInput
               className="image-search-audit-search"
               label={t('Пошук')}

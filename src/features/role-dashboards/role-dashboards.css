@@ -22,7 +22,6 @@
 .role-dashboard-toolbar {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) 300px auto;
-  min-height: 74px;
   overflow-x: auto;
   border: 0;
   border-radius: 0;
@@ -514,7 +513,6 @@
 
   .role-dashboard-toolbar {
     display: flex;
-    min-height: 74px;
   }
 
   .role-dashboard-title {

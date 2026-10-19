@@ -24,11 +24,6 @@
   overflow-x: auto;
 }
 
-.product-history-filter-bar .product-history-filter-row {
-  min-width: max-content;
-  width: 100%;
-}
-
 .product-history-filter-row .app-filter-actions {
   margin-left: auto;
 }

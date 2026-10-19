@@ -807,7 +807,7 @@ function SalesOnlineShopOrdersPage() {
       <Card className="sales-ukraine-card" withBorder radius="md" padding={0}>
         <Stack className="sales-ukraine-content" gap={0}>
           <div className="sales-filter-bar">
-            <div className="sales-filter-row sales-online-filter-row">
+            <div className="app-filter-fields sales-filter-row sales-online-filter-row">
               <div className="app-filter-date-range">
                 <TextInput
                   className="sales-filter-date"

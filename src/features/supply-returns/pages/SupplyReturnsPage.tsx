@@ -419,7 +419,7 @@ function SupplyReturnsTableCard({ model }: { model: ReturnType<typeof useSupplyR
   return (
     <Card className="app-data-card supply-returns-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar supply-returns-filter-bar">
-        <Group align="end" gap={10} wrap="nowrap" className="supply-returns-filter-row">
+        <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields supply-returns-filter-row">
           <div className="app-filter-date-range">
             <TextInput
               label={t('Від')}

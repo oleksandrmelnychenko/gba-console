@@ -610,7 +610,7 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
   return (
     <Card className="app-filter-card product-transfers-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar product-transfers-filter-bar">
-        <Group align="end" gap={10} wrap="nowrap" className="product-transfers-filter-row">
+        <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-transfers-filter-row">
           <div className="app-filter-date-range">
             <TextInput
               label={t('Від')}

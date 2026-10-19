@@ -1,0 +1,56 @@
+.client-recommendations { min-width: 0; }
+.client-edit-sheet .client-recommendations-agreement,
+.client-edit-sheet .client-recommendations-card { padding: 10px 12px; }
+.client-recommendations-agreement-field { display: flex; align-items: center; gap: 12px; }
+.client-recommendations-agreement-field > .mantine-InputWrapper-label { margin: 0; flex-shrink: 0; font-size: 13px; }
+.client-recommendations-agreement-field > .mantine-Input-wrapper { flex: 1; min-width: 0; }
+.client-recommendations-actions .mantine-Button-root { height: 32px; padding-inline: 10px; font-size: 12px; }
+.client-recommendations-term { display: flex; align-items: center; gap: 6px; }
+.client-recommendations-term > .mantine-InputWrapper-label { margin: 0; font-size: 12px; color: var(--mantine-color-gray-7); }
+.client-recommendations-term > .mantine-Input-wrapper { width: 76px; }
+.client-edit-sheet .client-recommendations-term .mantine-Select-input,
+.client-edit-sheet .client-recommendations-agreement-field .mantine-Select-input { height: 32px; min-height: 32px; font-size: 12px; }
+.client-recommendations-toolbar > .mantine-Group-root { min-width: 0; }
+
+@container registry (max-width: 600px) {
+  .client-recommendations-agreement-field { align-items: stretch; flex-direction: column; gap: 4px; }
+}
+.client-recommendations-empty { padding: 28px 12px; color: var(--mantine-color-gray-6); }
+
+.client-recommendations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+  gap: 12px;
+}
+
+.recommendation-product {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 16px;
+  background: white;
+}
+
+.recommendation-product.is-selected { border-color: var(--brand-orange); }
+.recommendation-product-media { position: relative; border-bottom: 1px solid var(--mantine-color-gray-1); }
+.recommendation-product-media > button { display: block; }
+.recommendation-product-media img { border-radius: 0; }
+.recommendation-product-stock { position: absolute; top: 10px; right: 10px; pointer-events: none; }
+.recommendation-product-stock .mantine-Badge-root { background: white; }
+
+.recommendation-product-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  overflow-wrap: anywhere;
+}
+.recommendation-product-code { font-family: var(--font-mono); font-size: 14px; }
+.recommendation-product-oem { max-width: 100%; height: auto; min-height: 22px; }
+.recommendation-product-oem .mantine-Badge-label { white-space: normal; overflow-wrap: anywhere; }
+.recommendation-product-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; padding-top: 18px; }
+.recommendation-product-footer .app-money { font-size: 17px; }
+.recommendation-product-select { border-radius: 8px; }

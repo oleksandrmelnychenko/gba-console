@@ -755,7 +755,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
         </div>
 
         <div className="app-filter-bar product-remains-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="product-remains-filter-row">
+          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-remains-filter-row">
             <div className="app-filter-date-range">
               <TextInput
                 label={t('Від')}
@@ -1560,7 +1560,7 @@ function ProductRemainMovementsPanel({ row }: { row: RemainingConsignment }) {
             <Text>{t('Рух товару')}</Text>
           </div>
           <Stack className="product-remains-detail__section-body" gap="sm">
-            <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row product-remains-detail__filter-row">
+            <Group align="end" gap="sm" wrap="nowrap" className="app-filter-fields clients-filter-row product-remains-detail__filter-row">
               <TextInput
                 label={t('Від')}
                 type="date"

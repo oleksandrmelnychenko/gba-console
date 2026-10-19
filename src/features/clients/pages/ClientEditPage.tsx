@@ -3,7 +3,6 @@ import {
   Badge,
   Button,
   Card,
-  Grid,
   Group,
   Loader,
   Stack,
@@ -15,7 +14,7 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from "../../../shared/ui/page-header-actions/PageHeaderActions"
 import { notifications } from '@mantine/notifications'
-import { BookUser, Building2, ChartBar, Check, ChevronRight, CircleAlert, CircleDot, Gauge, Globe, Info, Landmark, Network, Pencil, Save, Star, Tag, Target, Trash2, type LucideProps } from 'lucide-react'
+import { BookUser, Building2, ChartBar, Check, ChevronRight, CircleAlert, CircleDot, Gauge, Globe, Info, FileText, Users, Sparkles, Landmark, Network, Pencil, Save, Star, Tag, Target, Trash2, type LucideProps } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { type FormEvent, useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -91,6 +90,11 @@ const STEP_ICON: Record<string, ComponentType<LucideProps>> = {
   'general-information': Info,
   'contact-information': BookUser,
   pricing: Tag,
+  analysts: ChartBar,
+  agreements: FileText,
+  'structural-units': Building2,
+  subclients: Users,
+  recommendations: Sparkles,
   sales: ChartBar,
   'perfect-client': Target,
   'client-types': Network,
@@ -265,11 +269,6 @@ export function ClientEditPage() {
     sourceManaged
     && contentClient?.NetUid
     && manualSourceOverrideClientNetId === contentClient.NetUid,
-  )
-  const sourceNotice = useAutoDismissNotice(
-    sourceManaged && contentClient?.NetUid
-      ? `source:${contentClient.NetUid}:${sourceOverrideEnabled ? 'override' : 'locked'}`
-      : null,
   )
   const identityNotice = useAutoDismissNotice(
     identityAttention && identityAttention.AttentionLevel !== 'none'
@@ -1054,28 +1053,6 @@ export function ClientEditPage() {
         </Alert>
       )}
 
-      {sourceManaged && sourceNotice.visible ? (
-        <Alert
-          closeButtonLabel={t('Закрити повідомлення')}
-          color={sourceOverrideEnabled ? 'orange' : 'blue'}
-          icon={<CircleAlert size={18} />}
-          variant="light"
-          withCloseButton
-          onClose={sourceNotice.dismiss}
-        >
-          <Text fw={600} size="sm">
-            {sourceOverrideEnabled
-              ? t('Ручне редагування 1С-даних увімкнено')
-              : t('Картка синхронізується з 1С')}
-          </Text>
-          <Text size="sm">
-            {sourceOverrideEnabled
-              ? t('Назву, реквізити, контакти, регіон, банк, менеджерів і договори можна змінювати. Наступна синхронізація 1С може перезаписати ці значення.')
-              : t('Дані 1С захищені від випадкових змін. Натисніть «Редагувати вручну», якщо потрібно їх змінити; наступна синхронізація може повернути значення Fenix/AMG.')}
-          </Text>
-        </Alert>
-      ) : null}
-
       {identityAttention && identityAttention.AttentionLevel !== 'none' && identityNotice.visible ? (
         <ClientIdentityAttentionBanner
           attention={identityAttention}
@@ -1221,10 +1198,10 @@ export function ClientEditActions({
     <Group gap="xs" className="client-edit-footer-actions">
       {sourceManaged && canEdit && (
         <Button
-          color="orange"
+          color="gray"
           disabled={sourceOverrideEnabled}
           leftSection={<Pencil size={16} />}
-          variant="light"
+          variant="default"
           onClick={onEnableSourceOverride}
         >
           {sourceOverrideEnabled
@@ -1279,14 +1256,14 @@ function ClientEditTitle({
 
   return (
     <div className="client-edit-title">
-      <Group gap="sm" align="center" wrap="nowrap">
+      <Group gap="xs" align="center" wrap="wrap">
         {regionCodeValue && (
-          <Text className="client-edit-title-code" fw={700} size="sm">
+          <Badge className="app-role-pill is-gray client-edit-title-code" variant="light">
             {regionCodeValue}
-          </Text>
+          </Badge>
         )}
         {titleName && (
-          <Text fw={700} size="md" lineClamp={1}>
+          <Text fw={700} size="md" className="client-edit-title-name">
             {titleName}
           </Text>
         )}
@@ -1299,7 +1276,7 @@ function ClientEditTitle({
             onChange={(event) => onToggleActive(event.currentTarget.checked)}
           />
         ) : (
-          <Badge color={client.IsActive === false ? 'gray' : 'green'} variant="light">
+          <Badge className={`app-role-pill ${client.IsActive === false ? 'is-gray' : 'is-green'}`} variant="light">
             {client.IsActive === false ? t('Неактивний') : t('Активний')}
           </Badge>
         )}
@@ -1442,10 +1419,10 @@ function ClientEditBody({
 
   return (
     <form id="client-edit-form" onSubmit={onSubmit}>
-      <Grid gap="md">
-        <Grid.Col span={{ base: 12, lg: 3 }}>
+      <div className="client-edit-layout">
+        <aside className="client-edit-sidebar">
           <Card className="app-section-card client-edit-shell-card" withBorder radius="md" padding="md">
-            <Stack gap={6} className="client-edit-nav" component="nav">
+            <Stack gap={6} className="client-edit-nav" component="nav" aria-label={t('Розділи картки клієнта')}>
               <ClientEditNavigation
                 folderTree={folderTree}
                 selectedFolderClientNetUid={selectedFolderClientNetUid}
@@ -1457,8 +1434,8 @@ function ClientEditBody({
               />
             </Stack>
           </Card>
-        </Grid.Col>
-        <Grid.Col span={{ base: 12, lg: 9 }}>
+        </aside>
+        <div className="client-edit-content">
           <Card className="app-section-card client-edit-shell-card" withBorder radius="md" padding="md">
             <Stack gap="md">
               {folderTree && !isRootSharedEditStep(selectedStepValue) && selectedFolderItem ? (
@@ -1527,8 +1504,8 @@ function ClientEditBody({
               )}
             </Stack>
           </Card>
-        </Grid.Col>
-      </Grid>
+        </div>
+      </div>
     </form>
   )
 }
@@ -1838,11 +1815,7 @@ function EditStepContent({
   }
 
   if (step === 'solvency') {
-    return (
-      <Card className="app-section-card" withBorder radius="md" padding="md">
-        <SolvencyPanel clientNetId={client.NetUid} />
-      </Card>
-    )
+    return <SolvencyPanel clientNetId={client.NetUid} />
   }
 
   if (step !== 'general-information') {

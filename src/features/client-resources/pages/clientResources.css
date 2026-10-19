@@ -202,15 +202,8 @@
   width: 100%;
 }
 
-.client-resources-filter-fields {
-  align-items: end;
-  display: flex;
-  gap: 10px;
-  min-width: 280px;
-}
-
 .client-resources-filter-fields > * {
-  min-width: 220px;
+  min-width: 0;
 }
 
 .client-resources-create-actions {
@@ -223,7 +216,8 @@
 
 .client-resources-create-actions > .mantine-Group-root {
   align-items: end;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .client-resources-filter-bar .mantine-Button-root {
@@ -236,8 +230,8 @@
 
 .client-resources-filter-bar .client-resources-search {
   flex: 1 1 320px;
-  max-width: none;
-  min-width: 280px;
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* Panel top bar: actions right; the step title already lives in the nav (§8а). */

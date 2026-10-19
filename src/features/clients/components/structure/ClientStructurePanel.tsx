@@ -1,5 +1,5 @@
-import { ActionIcon, Alert, Card, Grid, Group, Stack, Tabs, Tooltip } from '@mantine/core'
-import { CircleAlert, UserPlus, Users } from 'lucide-react'
+import { Alert, Button, Card, Group, Stack, Tabs } from '@mantine/core'
+import { Building2, CircleAlert, FolderTree, Monitor, UserPlus, Users } from 'lucide-react'
 import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../../shared/hooks/useValueState'
@@ -200,7 +200,7 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
   }
 
   return (
-    <Stack gap="lg">
+    <Stack className="client-structure-editor" gap="sm">
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
@@ -210,34 +210,22 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
       <Card className="app-section-card client-structure-card" withBorder padding={0} radius="md">
         <Tabs className="client-structure-tabs-root" defaultValue="structuralUnits" keepMounted={false}>
           <Tabs.List className="pill-tabs client-structure-tabs">
-            <Tabs.Tab value="structuralUnits">{t('Структурні підрозділи')}</Tabs.Tab>
-            <Tabs.Tab value="subClients">{t('Сабклієнти')}</Tabs.Tab>
-            <Tabs.Tab value="workplaces">{t('Робочі місця')}</Tabs.Tab>
+            <Tabs.Tab leftSection={<Building2 size={16} />} value="structuralUnits">{t('Структурні підрозділи')}</Tabs.Tab>
+            <Tabs.Tab leftSection={<Users size={16} />} value="subClients">{t('Сабклієнти')}</Tabs.Tab>
+            <Tabs.Tab leftSection={<Monitor size={16} />} value="workplaces">{t('Робочі місця')}</Tabs.Tab>
           </Tabs.List>
 
-          <Group className="client-structure-toolbar" justify="flex-end" align="center">
-            {canManageGroups && <Tooltip label={t('Підгрупи')}>
-              <ActionIcon
-                aria-label={t('Підгрупи')}
-                color="gray"
-                size="lg"
-                variant="light"
-                onClick={() => setGroupsModalOpened(true)}
-              >
-                <Users size={18} />
-              </ActionIcon>
-            </Tooltip>}
-            {canCreateClient && <Tooltip label={t('Новий користувач')}>
-              <ActionIcon
-                aria-label={t('Новий користувач')}
-                color={CREATE_ACTION_COLOR}
-                size="lg"
-                variant="light"
-                onClick={openNewUser}
-              >
-                <UserPlus size={18} />
-              </ActionIcon>
-            </Tooltip>}
+          <Group className="app-filter-bar client-structure-toolbar" justify="flex-end" align="center">
+            {canManageGroups && (
+              <Button color="gray" variant="default" leftSection={<FolderTree size={16} />} onClick={() => setGroupsModalOpened(true)}>
+                {t('Підгрупи')}
+              </Button>
+            )}
+            {canCreateClient && (
+              <Button color={CREATE_ACTION_COLOR} leftSection={<UserPlus size={16} />} onClick={openNewUser}>
+                {t('Новий клієнт')}
+              </Button>
+            )}
           </Group>
 
           <Tabs.Panel className="client-structure-panel" value="structuralUnits">
@@ -277,27 +265,23 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
         </Tabs>
       </Card>
 
-      <Grid gap="lg">
-        <Grid.Col span={{ base: 12, md: 6 }}>
-          <Card className="app-section-card" withBorder padding="md" radius="md">
+      <div className="client-structure-related">
+        <div>
             <ServicePayersPanel
               disabled={!canEditClient}
               payers={client.ServicePayers || []}
               onChange={handleServicePayersChange}
             />
-          </Card>
-        </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 6 }}>
-          <Card className="app-section-card" withBorder padding="md" radius="md">
+        </div>
+        <div>
             <DeliveryRecipientsPanel
               canCreate={canCreateDeliveryRecipient}
               canDelete={canDeleteDeliveryRecipient}
               clientId={clientId}
               clientNetId={netId || ''}
             />
-          </Card>
-        </Grid.Col>
-      </Grid>
+        </div>
+      </div>
 
       <GroupsModal
         canManage={canManageGroups}

@@ -12,23 +12,11 @@
 
 .act-reconciliations-filter-bar {
   align-items: end;
-  background: #f8f9fa;
   border-bottom-color: var(--mantine-color-gray-2);
   box-sizing: border-box;
   display: flex;
   flex: 0 0 auto;
-  gap: 10px;
   overflow-x: auto;
-}
-
-.act-reconciliations-filter-row {
-  align-items: end;
-  display: grid;
-  flex: 1 1 auto;
-  gap: 10px;
-  grid-template-columns: 310px 220px auto;
-  min-width: max-content;
-  width: 100%;
 }
 
 .act-reconciliations-date-input {

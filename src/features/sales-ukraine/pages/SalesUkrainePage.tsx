@@ -1128,7 +1128,7 @@ function SalesUkrainePageContent() {
       <div className="sales-dashboard-tab-content sales-ukraine-card">
         <Stack className="sales-ukraine-content" gap={0}>
           <div className="sales-filter-bar">
-            <div className="sales-filter-row has-create">
+            <div className="app-filter-fields sales-filter-row has-create">
               <div className="app-filter-date-range">
                 <TextInput
                   className="sales-filter-date"

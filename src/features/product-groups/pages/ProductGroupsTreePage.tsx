@@ -128,7 +128,7 @@ function ProductGroupsTreePageContent() {
         list={
           <Stack className="product-groups-tree-list-pane" gap={6}>
             <div className="app-filter-bar product-groups-tree-filter-bar">
-              <Group align="end" gap={10} wrap="nowrap" className="product-groups-tree-filter-row">
+              <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-groups-tree-filter-row">
                 <TextInput
                   label={t('Пошук групи')}
                   leftSection={<Search size={16} />}

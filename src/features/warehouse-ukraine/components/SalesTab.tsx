@@ -474,7 +474,7 @@ export function SalesTab({ canCreateShipment, canPrintEditAct, canPrintInvoice, 
             />
           </div>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot warehouse-ukraine-table-toolbar-slot" />
-          <div className="warehouse-ukraine-command-actions">
+          <div className="app-filter-control-group warehouse-ukraine-command-actions">
             <Button
               color={CREATE_ACTION_COLOR}
               disabled={!canCreateShipment}

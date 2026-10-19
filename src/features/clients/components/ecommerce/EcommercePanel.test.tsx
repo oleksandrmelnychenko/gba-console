@@ -44,8 +44,7 @@ describe('EcommercePanel', () => {
     )
 
     expect(screen.getByRole('textbox', { name: 'Мобільний телефон' })).toHaveProperty('disabled', true)
-    expect(screen.getByRole('textbox', { name: 'Резервація корзини інтернет магазина (днів)' })).toHaveProperty('disabled', false)
-    expect(screen.getByText('Телефон керується синхронізацією з 1С; тут змінюється лише пароль')).toBeTruthy()
+    expect(screen.getByRole('textbox', { name: 'Резерв кошика, днів' })).toHaveProperty('disabled', false)
   })
 
   it('keeps password and shop settings fail-closed without their independent permissions', () => {
@@ -63,8 +62,8 @@ describe('EcommercePanel', () => {
     expect(screen.getByRole('textbox', { name: 'Мобільний телефон' })).toHaveProperty('disabled', true)
     expect(screen.getByLabelText('Пароль')).toHaveProperty('disabled', true)
     expect(screen.getByLabelText('Підтвердити пароль')).toHaveProperty('disabled', true)
-    expect(screen.getByRole('button', { name: 'Змінити' })).toHaveProperty('disabled', true)
-    expect(screen.getByRole('textbox', { name: 'Резервація корзини інтернет магазина (днів)' })).toHaveProperty('disabled', true)
+    expect(screen.getByRole('button', { name: 'Змінити пароль' })).toHaveProperty('disabled', true)
+    expect(screen.getByRole('textbox', { name: 'Резерв кошика, днів' })).toHaveProperty('disabled', true)
   })
 
   it('rejects a weak client password before calling the password API', async () => {
@@ -82,7 +81,7 @@ describe('EcommercePanel', () => {
 
     fireEvent.change(screen.getByLabelText('Пароль'), { target: { value: 'Password1' } })
     fireEvent.change(screen.getByLabelText('Підтвердити пароль'), { target: { value: 'Password1' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Змінити' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Змінити пароль' }))
 
     expect(changeClientPasswordMock).not.toHaveBeenCalled()
     expect(notificationsShowMock).toHaveBeenCalledWith({
@@ -108,7 +107,7 @@ describe('EcommercePanel', () => {
 
     fireEvent.change(screen.getByLabelText('Пароль'), { target: { value: 'Password_1' } })
     fireEvent.change(screen.getByLabelText('Підтвердити пароль'), { target: { value: 'Password_1' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Змінити' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Змінити пароль' }))
 
     await waitFor(() => {
       expect(changeClientPasswordMock).toHaveBeenCalledWith('client-1', 'Password_1', '+380-source')

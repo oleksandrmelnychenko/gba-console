@@ -17,11 +17,9 @@
   --supplier-organizations-command-label-height: var(--app-filter-label-height);
 
   align-items: end;
-  background: #f8f9fa;
   border-bottom-color: var(--mantine-color-gray-2);
   display: grid;
   flex: 0 0 auto;
-  gap: 10px;
   grid-template-columns: 310px minmax(300px, 1fr) auto auto auto;
   overflow-x: auto;
 }

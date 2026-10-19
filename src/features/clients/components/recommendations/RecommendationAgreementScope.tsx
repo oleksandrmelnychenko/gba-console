@@ -1,4 +1,4 @@
-import { Alert, Loader, Select, Stack, Text } from '@mantine/core'
+import { Alert, Card, Loader, Select, Stack, Text } from '@mantine/core'
 import { Fragment, useEffect, useState, type ReactNode } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getWizardClientAgreements } from '../../../sales-ukraine/components/new-sale-wizard/wizardClientStepApi'
@@ -51,19 +51,21 @@ function AgreementScope({ clientNetId, children }: Props) {
   const agreement = state.agreements.find((row) => row.NetUid === selectedId)
   return (
     <Stack gap="sm">
-      <Select
-        allowDeselect={false}
-        label={t('Договір')}
-        description={t('Історія покупок, наявність і ціни за вибраним договором')}
-        data={state.agreements.map((row) => ({
-          value: row.NetUid!,
-          label: [row.Agreement?.Name || row.AgreementName || row.NetUid,
-            row.Agreement?.Organization?.Name,
-            t(row.Agreement?.WithVATAccounting ? 'З ПДВ' : 'Без ПДВ')].filter(Boolean).join(' · '),
-        }))}
-        value={selectedId}
-        onChange={setSelectedId}
-      />
+      <Card className="app-section-card client-recommendations-agreement" withBorder padding="md" radius="md">
+        <Select
+          classNames={{ root: 'client-recommendations-agreement-field', label: 'client-section-title' }}
+          allowDeselect={false}
+          label={t('Договір')}
+          data={state.agreements.map((row) => ({
+            value: row.NetUid!,
+            label: [row.Agreement?.Name || row.AgreementName || row.NetUid,
+              row.Agreement?.Organization?.Name,
+              t(row.Agreement?.WithVATAccounting ? 'З ПДВ' : 'Без ПДВ')].filter(Boolean).join(' · '),
+          }))}
+          value={selectedId}
+          onChange={setSelectedId}
+        />
+      </Card>
       {agreement && <Fragment key={agreement.NetUid}>{children(agreement)}</Fragment>}
     </Stack>
   )

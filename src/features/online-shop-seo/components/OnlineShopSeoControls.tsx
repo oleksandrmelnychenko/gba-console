@@ -44,7 +44,7 @@ export function SearchToolbar({ action, placeholder, value, onChange, onReset }:
   const { t } = useI18n()
 
   return (
-    <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+    <Group align="end" gap="sm" wrap="nowrap" className="app-filter-fields clients-filter-row">
       <TextInput
         leftSection={<Search size={16} />}
         label={t('Пошук')}

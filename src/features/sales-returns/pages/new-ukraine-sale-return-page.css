@@ -27,7 +27,6 @@
   align-items: end;
   display: grid;
   flex: 0 0 auto;
-  gap: 10px;
   grid-template-columns: 310px minmax(320px, 1fr) auto auto auto;
   min-width: 0;
   overflow-x: auto;

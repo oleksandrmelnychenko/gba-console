@@ -391,7 +391,7 @@ export function ResalesPage() {
     <Stack className="resales-page" gap={0}>
       <div className="sales-dashboard-tab-content resales-card">
         <div className="app-filter-bar resales-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="resales-filter-row">
+          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields resales-filter-row">
             <div className="app-filter-date-range">
               <TextInput
                 label={t('Від')}
@@ -1029,7 +1029,7 @@ function NewResalePageContent({
                 onChange={(value) => setForm((currentForm) => ({ ...currentForm, specificationCodes: value }))}
               />
             </div>
-            <Group align="end" gap="sm" wrap="nowrap" className="resales-new-filter-row">
+            <Group align="end" gap="sm" wrap="nowrap" className="app-filter-fields resales-new-filter-row">
               <TextInput
                 className="resales-new-control resales-new-search-control"
                 leftSection={<Search size={16} />}
@@ -1804,7 +1804,7 @@ export function ResalePage() {
             value={itemSpecification}
             onChange={setItemSpecification}
           />
-          <div className="resale-detail-command-bar__actions">
+          <div className="app-filter-actions resale-detail-command-bar__actions">
             <Tooltip label={t('Скинути фільтри')}>
               <ActionIcon
                 aria-label={t('Скинути фільтри')}
@@ -1820,7 +1820,7 @@ export function ResalePage() {
                 <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
-            <div ref={setDetailTableToolbarSlot} className="resale-detail-table-toolbar-slot" />
+            <div ref={setDetailTableToolbarSlot} className="app-filter-table-toolbar-slot resale-detail-table-toolbar-slot" />
           </div>
         </div>
         <div className="console-table-body resale-detail-table-body">

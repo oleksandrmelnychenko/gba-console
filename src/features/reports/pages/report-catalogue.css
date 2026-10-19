@@ -7,9 +7,9 @@
 .report-catalogue__overview[open] > summary svg { transform: rotate(90deg); }
 .report-catalogue__overview-body { padding: 0 14px 14px; overflow-wrap: anywhere; }
 .report-catalogue__list { border: 1px solid var(--mantine-color-gray-2); border-radius: 10px; overflow: hidden; min-width: 0; }
-.report-catalogue__filters { display: grid; grid-template-columns: minmax(180px, 1.4fr) repeat(4, minmax(135px, 1fr)) 36px; align-items: end; gap: 10px; padding: 12px; background: var(--mantine-color-gray-0); border-bottom: 1px solid var(--mantine-color-gray-2); }
+.report-catalogue__filters { display: grid; grid-template-columns: minmax(180px, 1.4fr) repeat(4, minmax(135px, 1fr)) 36px; align-items: end; border-bottom: 1px solid var(--mantine-color-gray-2); }
 .report-catalogue__filters > * { min-width: 0; }
-.report-catalogue__filters .mantine-InputWrapper-label { font-family: var(--font-mono); font-size: 11px; margin-bottom: 4px; }
+
 .report-catalogue__results { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 14px; }
 .report-catalogue__results .mantine-Pagination-root { flex-shrink: 0; font-family: var(--font-mono); }
 .report-catalogue__table { table-layout: fixed; }

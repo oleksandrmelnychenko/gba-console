@@ -894,7 +894,7 @@ function AssortmentDetailTable({
         </span>
       </div>
       <div className="app-filter-bar assort-filter">
-        <Group align="end" gap={10} wrap="nowrap" className="assort-filter-row">
+        <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields assort-filter-row">
           <Select
             clearable
             comboboxProps={ASSORT_COMBOBOX_PROPS}

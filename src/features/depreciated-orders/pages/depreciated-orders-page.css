@@ -30,7 +30,6 @@
 .depreciated-orders-filter-bar {
   align-items: end;
   display: grid;
-  gap: 10px;
   grid-template-columns: 310px minmax(0, 1fr) auto auto;
   min-width: 0;
   overflow-x: auto;

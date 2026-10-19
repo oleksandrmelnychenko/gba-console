@@ -1,0 +1,7 @@
+.client-groups-form .mantine-TextInput-root { min-width: 0; }
+.client-groups-modal .client-groups-form .mantine-Button-root { flex-shrink: 0; padding-inline: 12px; font-size: 12px; }
+.client-groups-empty { padding: 12px; border-radius: 8px; background: var(--mantine-color-gray-0); color: var(--mantine-color-gray-6); }
+.client-groups-list { max-height: min(360px, 50vh); overflow-y: auto; }
+.client-groups-row { padding: 5px 8px; border-radius: 6px; }
+.client-groups-row:hover, .client-groups-row.is-editing { background: var(--mantine-color-gray-0); }
+.client-groups-row .mantine-ActionIcon-root { flex-shrink: 0; }

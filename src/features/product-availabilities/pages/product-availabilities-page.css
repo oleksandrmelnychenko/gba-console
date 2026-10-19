@@ -20,15 +20,10 @@
 
 /* Filter strip pinned at the top of the card; the table below it scrolls. */
 .product-availabilities-filter-bar {
-  background: #f8f9fa;
   border-bottom-color: var(--mantine-color-gray-2);
   box-sizing: border-box;
   flex: 0 0 auto;
   overflow-x: auto;
-}
-
-.product-availabilities-filter-bar .product-availabilities-filter-row {
-  width: 100%;
 }
 
 .product-availabilities-page__table {

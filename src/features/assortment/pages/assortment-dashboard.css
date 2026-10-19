@@ -608,11 +608,6 @@
   overflow-x: auto;
 }
 
-.assort-filter-row {
-  min-width: max-content;
-  width: 100%;
-}
-
 .assort-filter-row .app-filter-table-toolbar-slot {
   margin-left: auto;
 }

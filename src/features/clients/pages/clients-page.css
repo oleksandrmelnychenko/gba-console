@@ -17,25 +17,13 @@
   box-shadow: var(--app-card-shadow) !important;
 }
 
-/* Filter strip pinned at the top of the card; the table below it scrolls.
-   One flex row: [filter controls (grows)] [DataTable ▦/☰ slot] [create button]. */
+/* Filter strip pinned at the top of the card; shared field rows wrap above
+   table controls and the create action when the panel gets narrower. */
 .clients-filter-bar {
   align-items: end;
-  background: #f8f9fa;
   border-bottom-color: var(--mantine-color-gray-2);
   display: flex;
   flex: 0 0 auto;
-  gap: 10px;
-  /* Keep the page-level actions visible. Only the filter-control row should
-     scroll horizontally on narrower workspaces; scrolling the whole bar put
-     the create action beyond the right viewport edge. */
-  overflow-x: hidden;
-}
-
-.clients-filter-bar .clients-filter-row {
-  flex: 1 1 0;
-  min-width: 0;
-  width: auto;
 }
 
 .clients-table-toolbar-slot {
@@ -117,6 +105,11 @@
   font-family: var(--font-mono);
   max-width: 100%;
   text-transform: none;
+}
+
+.client-actions-modal .app-modal-actions .mantine-Button-root {
+  min-height: 40px;
+  padding: 6px 10px;
 }
 
 .client-source-quality-badge .mantine-Badge-label {

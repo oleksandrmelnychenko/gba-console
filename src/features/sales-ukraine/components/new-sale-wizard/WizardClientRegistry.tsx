@@ -211,8 +211,8 @@ export function WizardClientRegistry({
 
   return (
     <Stack className="new-sale-register" gap={0}>
-      <Box className="new-sale-register-toolbar">
-        <Group align="end" className="new-sale-register-toolbar__controls" gap={8} wrap="wrap">
+      <Box className="app-filter-bar new-sale-register-toolbar">
+        <Group align="end" className="app-filter-fields new-sale-register-toolbar__controls" gap={8} wrap="wrap">
           <Select
             allowDeselect={false}
             className="new-sale-register-control"

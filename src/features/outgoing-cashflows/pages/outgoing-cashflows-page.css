@@ -10,24 +10,6 @@
   overflow-x: auto;
 }
 
-.outgoing-cashflows-filter-row {
-  align-items: end;
-  display: grid;
-  gap: 10px;
-  grid-template-columns:
-    310px
-    minmax(160px, 170px)
-    minmax(108px, 120px)
-    minmax(145px, 160px)
-    minmax(155px, 170px)
-    220px
-    auto
-    auto
-    auto;
-  min-width: max-content;
-  width: 100%;
-}
-
 .outgoing-cashflows-organization-filter {
   --app-multi-select-width: 220px;
 }

@@ -1649,19 +1649,9 @@
 
 .new-sale-register-toolbar {
   align-items: end;
-  background: var(--app-filter-glow), var(--mantine-color-white);
   border-bottom: 1px solid var(--mantine-color-gray-3);
   display: grid;
-  gap: 10px;
   grid-template-columns: minmax(0, 1fr) auto;
-  padding: 9px 10px 10px;
-}
-
-.new-sale-register-toolbar__controls {
-  display: flex;
-  flex-wrap: nowrap;
-  min-width: 0;
-  width: 100%;
 }
 
 .new-sale-register-search {
@@ -4907,7 +4897,6 @@
 }
 
 .new-sale-register-toolbar {
-  background: #f8f9fa;
   border-bottom: 1px solid var(--mantine-color-gray-2);
 }
 
@@ -5512,13 +5501,6 @@
 
 .new-sale-register-toolbar {
   align-items: end;
-  background: #f8f9fa;
-  gap: 8px;
-  padding: 10px 8px 12px;
-}
-
-.new-sale-register-toolbar__controls {
-  gap: 8px;
 }
 
 .new-sale-register-orders-button {

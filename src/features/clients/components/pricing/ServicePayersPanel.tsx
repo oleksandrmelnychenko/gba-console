@@ -65,7 +65,7 @@ export function ServicePayersPanel({ payers, disabled = false, onChange }: Servi
       <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
           <Group justify="space-between" align="center">
-            <Text fw={600}>{t('Платники')}</Text>
+            <Text className="client-section-title" fw={600}>{t('Платники')}</Text>
             <Button
               color={CREATE_ACTION_COLOR}
               disabled={disabled}

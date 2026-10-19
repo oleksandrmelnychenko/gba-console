@@ -1670,10 +1670,8 @@
 
 .exchange-rates-filter {
   flex: 0 0 auto;
-  padding: 7px 9px 9px;
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 10px;
-  background: var(--mantine-color-gray-0);
 }
 
 .exchange-rates-section-heading {
@@ -1688,7 +1686,6 @@
 
 .exchange-rates-filter .mantine-InputWrapper-label {
   font-family: var(--font-mono);
-  font-size: 11px;
   font-weight: 600;
 }
 

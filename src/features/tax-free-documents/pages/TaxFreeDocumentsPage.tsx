@@ -625,7 +625,7 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
     <Stack className="tax-free-documents-page" gap={6}>
       <Card className="app-data-card tax-free-documents-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar tax-free-documents-filter-bar">
-          <Group align="flex-end" gap={10} wrap="nowrap" className="tax-free-documents-filter-row">
+          <Group align="flex-end" gap={10} wrap="nowrap" className="app-filter-fields tax-free-documents-filter-row">
             <div className="app-filter-date-range">
               <TextInput
                 label={t('Від')}

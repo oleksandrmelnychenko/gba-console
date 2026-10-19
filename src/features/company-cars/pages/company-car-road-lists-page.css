@@ -10,20 +10,6 @@
   overflow-x: auto;
 }
 
-.company-car-road-lists-filter-row {
-  align-items: end;
-  display: grid;
-  gap: 10px;
-  grid-template-columns:
-    minmax(360px, 1fr)
-    minmax(160px, 170px)
-    minmax(160px, 170px)
-    auto
-    auto;
-  min-width: max-content;
-  width: 100%;
-}
-
 /* Keep the car identity on the left; push the date filters + actions cluster to the trailing edge. */
 .company-car-road-lists-identity {
   min-width: 0;

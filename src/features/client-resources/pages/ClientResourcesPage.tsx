@@ -4713,7 +4713,7 @@ function PanelToolbar({
 
   return (
     <div className="app-filter-bar client-resources-filter-bar">
-      <div className="client-resources-filter-fields">
+      <div className="app-filter-fields client-resources-filter-fields">
         {filter}
         {onSearchChange ? (
           <TextInput

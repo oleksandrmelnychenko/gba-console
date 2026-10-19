@@ -227,7 +227,7 @@ function BudgetCartTabContent() {
     <Stack className="budget-cart-tab" gap={6}>
       <Card className="app-data-card basket-supply-primary-card" padding={0} radius="md" withBorder>
         <div className="app-filter-bar budget-cart-filter-bar">
-          <Group align="flex-end" gap={10} wrap="nowrap" className="budget-cart-filter-row">
+          <Group align="flex-end" gap={10} wrap="nowrap" className="app-filter-fields budget-cart-filter-row">
             <Tooltip label={t('Дата історії попиту; поточні запаси та спостереження закупівель мають окремий стан')}>
               <TextInput
                 label={t('Дата зрізу')}

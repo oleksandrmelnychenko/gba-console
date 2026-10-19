@@ -226,7 +226,7 @@ export function ProductGroupProductsPanel({ canOpenProduct, productGroupNetId }:
   return (
     <Stack className="product-group-detail-panel" gap={0}>
       <div className="app-filter-bar product-group-detail-filter-bar">
-        <Group align="end" gap={10} wrap="nowrap" className="product-group-detail-filter-row">
+        <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-group-detail-filter-row">
         <TextInput
           leftSection={<Search size={16} />}
           label={t('Пошук')}

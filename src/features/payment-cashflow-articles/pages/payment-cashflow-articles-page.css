@@ -6,10 +6,6 @@
   padding: 6px 4px 0;
 }
 
-.payment-cashflow-articles-filter-row {
-  width: 100%;
-}
-
 /* Push the reset / refresh / density cluster to the trailing edge of the row. */
 .payment-cashflow-articles-filter-row .app-filter-actions {
   margin-left: auto;

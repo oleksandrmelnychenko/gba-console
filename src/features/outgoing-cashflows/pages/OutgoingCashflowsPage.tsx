@@ -679,7 +679,7 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
     <Stack className="outgoing-cashflows-page console-table-page" gap={6}>
       <div className="console-table-shell outgoing-cashflows-card">
         <div className="app-filter-bar outgoing-cashflows-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="outgoing-cashflows-filter-row">
+          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields outgoing-cashflows-filter-row">
             <div className="app-filter-date-range">
               <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => onSetFromDate(event.currentTarget.value)} />
               <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => onSetToDate(event.currentTarget.value)} />

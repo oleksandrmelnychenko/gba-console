@@ -315,7 +315,7 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
     <Stack className="act-providing-services-page console-table-page" gap={6}>
       <div className="console-table-shell">
         <div className="app-filter-bar act-services-filter-bar">
-          <div className="act-services-filter-row">
+          <div className="app-filter-fields act-services-filter-row">
             <div className="app-filter-date-range">
               <TextInput
                 className="act-services-date-input"

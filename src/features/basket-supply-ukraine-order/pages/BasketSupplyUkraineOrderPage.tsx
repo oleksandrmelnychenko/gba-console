@@ -729,7 +729,7 @@ function BasketCartWorkflow() {
       <Card className="app-data-card basket-supply-primary-card" padding={0} radius="md" withBorder>
         {!isCartEmpty && (
           <div className="app-filter-bar basket-supply-command-bar is-split">
-            <SimpleGrid className="basket-supply-filters" cols={3} spacing={10}>
+            <SimpleGrid className="app-filter-fields basket-supply-filters" cols={3} spacing={10}>
               <TextInput
                 label={t('Пошук по товару')}
                 leftSection={SEARCH_ICON}

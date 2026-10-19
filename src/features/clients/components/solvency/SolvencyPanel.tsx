@@ -6,19 +6,19 @@ import {
   Card,
   Divider,
   Group,
+  Loader,
   Progress,
   RingProgress,
   SimpleGrid,
   Stack,
   Text,
-  Title,
 } from '@mantine/core'
 import { CircleAlert, Info } from 'lucide-react'
 import { useEffect, useReducer } from 'react'
 import { AiFeatureBadge } from '../../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getClientSolvencyCharts, getClientSolvencyScore } from '../../api/clientSolvencyApi'
-import { OrbSplash } from '../../../../shared/ui/orb/Orb'
+import './solvency-panel.css'
 import type {
   Contribution,
   Risk90d,
@@ -175,7 +175,7 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
   }
 
   if (isLoading) {
-    return <OrbSplash label={t('Завантаження оцінки')} size={40} variant="thinking" />
+    return <Group role="status" gap="xs" py="md"><Loader size="sm" color="orange" /><Text size="sm" c="dimmed">{t('Завантаження оцінки')}</Text></Group>
   }
 
   if (error || !score) {
@@ -213,16 +213,16 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
   }
 
   return (
-    <Stack gap="lg">
+    <Stack className="client-solvency" gap="sm">
       <Card className="app-section-card" padding="lg" radius="md" withBorder>
-        <Stack gap="lg">
+        <Stack gap="sm">
           <ScoreHeader score={score} />
-          <Text c="dimmed" size="sm">
+          <Text c="dimmed" size="xs">
             {t('Оцінка за поточними записами станом на')} {formatIsoDate(score.as_of_date)}
             {' · '}{score.business_timezone}{' · '}
             {t('Курс валют на')} {formatIsoDate(score.fx_date)}
           </Text>
-          <Group align="flex-start" gap="xs" wrap="wrap">
+          <Group className="client-solvency-risk" align="center" gap="xs" wrap="wrap">
             <Text c="dimmed" fw={600} size="sm">
               {t('Контроль боргу на 90 днів')}:
             </Text>
@@ -285,7 +285,7 @@ function Risk90dSummary({ risk }: { risk: Risk90d }) {
 
   return (
     <Group gap="xs" wrap="wrap">
-      <Badge color={color} size="lg" variant="filled">
+      <Badge color={color} size="md" variant="light">
         {t(label)}
       </Badge>
       <Text size="sm">
@@ -335,22 +335,24 @@ function ContributionsList({ contributions }: { contributions: Contribution[] })
 
   return (
     <Stack gap="sm">
-      <Text fw={600} size="sm">
+      <Text className="client-section-title" fw={600} size="sm">
         {t('Чинники оцінки')}
       </Text>
-      {top.map((item) => {
-        const label = CONTRIBUTION_LABELS[item.feature] ?? item.feature
-        const raisesRisk = item.points > 0
-        return (
-          <Group gap="xs" justify="space-between" key={item.feature} wrap="nowrap">
-            <Text size="sm">{t(label)}</Text>
-            <Badge color={raisesRisk ? 'red' : 'green'} size="sm" variant="light">
-              {raisesRisk ? '+' : ''}
-              {formatNumber(item.points)}
-            </Badge>
-          </Group>
-        )
-      })}
+      <div className="client-solvency-factors">
+        {top.map((item) => {
+          const label = CONTRIBUTION_LABELS[item.feature] ?? item.feature
+          const raisesRisk = item.points > 0
+          return (
+            <Group gap="xs" className="client-solvency-factor" justify="space-between" key={item.feature} wrap="nowrap">
+              <Text size="sm">{t(label)}</Text>
+              <Badge color={raisesRisk ? 'red' : 'green'} size="sm" variant="light">
+                {raisesRisk ? '+' : ''}
+                {formatNumber(item.points)}
+              </Badge>
+            </Group>
+          )
+        })}
+      </div>
     </Stack>
   )
 }
@@ -362,7 +364,7 @@ function ScoreHeader({ score }: { score: SolvencyScore }) {
   const scoreValue = score.score ?? 0
 
   return (
-    <Group align="center" gap="lg" wrap="wrap">
+    <Group align="center" gap="sm" wrap="wrap">
       <RingProgress
         label={
           <Stack align="center" gap={0}>
@@ -376,16 +378,16 @@ function ScoreHeader({ score }: { score: SolvencyScore }) {
         }
         roundCaps
         sections={[{ color: ratingColor, value: clampPercent(scoreValue) }]}
-        size={120}
-        thickness={12}
+        size={88}
+        thickness={8}
       />
       <Stack gap={4}>
         <Group gap="xs">
-          <Title order={4} size="h4">
+          <Text className="client-section-title" fw={600}>
             {t('Платоспроможність')}
-          </Title>
+          </Text>
           <AiFeatureBadge tooltip={t('AI-модель платоспроможності')} />
-          <Badge color={ratingColor} size="lg" variant="filled">
+          <Badge color={ratingColor} size="md" variant="light">
             {score.rating}
           </Badge>
         </Group>
@@ -395,9 +397,9 @@ function ScoreHeader({ score }: { score: SolvencyScore }) {
           </Text>
         )}
         {score.pd != null && (
-          <Text c="dimmed" fw={600} size="sm">
+          <Badge color="blue" variant="light" size="md">
             PD {formatPercent1(score.pd)}
-          </Text>
+          </Badge>
         )}
         <Text c="dimmed" size="xs">
           {t('Версія моделі')}: {score.model_version}
@@ -412,7 +414,7 @@ function SubFactorBars({ subFactors }: { subFactors: SubFactors }) {
 
   return (
     <Stack gap="sm">
-      <Text fw={600} size="sm">
+      <Text className="client-section-title" fw={600} size="sm">
         {t('Складові оцінки')}
       </Text>
       {SUB_FACTOR_ORDER.map(({ key, label }) => (
@@ -453,7 +455,7 @@ function ScoreNotes({ score }: { score: SolvencyScore }) {
           {t('Вікно операцій')}: {score.window_months} {t('міс.')}
         </Badge>
       )}
-      <Badge color="gray" size="sm" variant="light">
+      <Badge color="blue" size="sm" variant="light">
         {t('Дані з')}: {formatIsoDate(score.source_history_start)}
       </Badge>
       {!score.history_complete && (
@@ -508,23 +510,22 @@ function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
   }))
 
   return (
-    <Stack gap="lg">
-      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
+    <Stack gap="sm">
+      <SimpleGrid className="client-solvency-charts-grid" cols={{ base: 1, md: 2 }} spacing="sm">
         <Card className="app-section-card" padding="md" radius="md" withBorder>
-          <Stack align="center" gap="xs">
-            <Text fw={600} size="sm">
+          <Stack gap="sm">
+            <Text className="client-section-title" fw={600} size="sm">
               {t('Використання ліміту')}
             </Text>
-            <RingProgress
-              label={
-                <Text fw={700} ta="center">
-                  {utilizationPercent.toFixed(0)}%
-                </Text>
-              }
-              roundCaps
-              sections={[{ color: GAUGE_ZONE_COLOR[gaugeZone], value: utilizationPercent }]}
-              size={140}
-              thickness={14}
+            <Text className="client-solvency-value" fw={700} size="xl">
+              {utilizationPercent.toFixed(0)}%
+            </Text>
+            <Progress
+              aria-label={t('Використання ліміту')}
+              color={GAUGE_ZONE_COLOR[gaugeZone]}
+              radius="xl"
+              size={8}
+              value={utilizationPercent}
             />
             <Text c="dimmed" size="xs">
               {t('Поріг')}: {formatPercent(gauge.threshold_soft)} / {formatPercent(gauge.threshold_hard)}
@@ -533,12 +534,12 @@ function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
         </Card>
 
         <Card className="app-section-card" padding="md" radius="md" withBorder>
-          <Stack align="center" gap="xs">
-            <Text fw={600} size="sm">
+          <Stack gap="sm">
+            <Text className="client-section-title" fw={600} size="sm">
               {t('Платіжна дисципліна')}
             </Text>
             {donutData.length > 0 ? (
-              <DonutChart data={donutData} size={140} thickness={20} withTooltip />
+              <DonutChart data={donutData} size={112} thickness={14} withTooltip />
             ) : (
               <Text c="dimmed" py="md" size="sm">
                 {t('Дані відсутні')}
@@ -550,7 +551,7 @@ function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
 
       <Card className="app-section-card" padding="md" radius="md" withBorder>
         <Stack gap="xs">
-          <Text fw={600} size="sm">
+          <Text className="client-section-title" fw={600} size="sm">
             {t('Прострочені рахунки')}
           </Text>
           {agingData.length > 0 ? (
@@ -568,10 +569,10 @@ function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
         </Stack>
       </Card>
 
-      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
+      <SimpleGrid className="client-solvency-charts-grid" cols={{ base: 1, md: 2 }} spacing="sm">
         <Card className="app-section-card" padding="md" radius="md" withBorder>
           <Stack gap="xs">
-            <Text fw={600} size="sm">
+            <Text className="client-section-title" fw={600} size="sm">
               {t('Динаміка оцінки')}
             </Text>
             <Text c="dimmed" size="sm">
@@ -582,7 +583,7 @@ function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
 
         <Card className="app-section-card" padding="md" radius="md" withBorder>
           <Stack gap="xs">
-            <Text fw={600} size="sm">
+            <Text className="client-section-title" fw={600} size="sm">
               {t('Оборот, EUR')}
             </Text>
             {turnoverData.length > 0 ? (

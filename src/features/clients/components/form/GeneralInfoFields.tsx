@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   ActionIcon,
+  Badge,
   Button,
   Card,
   Checkbox,
@@ -15,7 +16,7 @@ import {
   Text,
   TextInput,
 } from '@mantine/core'
-import { Plus, Trash2, X } from 'lucide-react'
+import { Plus, Trash2, Upload, X } from 'lucide-react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import type {
@@ -72,6 +73,10 @@ export function GeneralInfoFields(props: GeneralInfoFieldsProps) {
   const { t } = useI18n()
   const { client, errors, role } = props
 
+  if (props.sourceManaged && role.isBuyer && !role.isSubClient) {
+    return <BuyerInformationSummary {...props} />
+  }
+
   return (
     <Stack gap="md">
       <Card className="app-section-card" withBorder radius="md" padding="md">
@@ -112,6 +117,63 @@ export function GeneralInfoFields(props: GeneralInfoFieldsProps) {
       {role.isProvider && <ProviderFields {...props} />}
       {role.isBuyer && <BuyerFields {...props} />}
     </Stack>
+  )
+}
+
+function BuyerInformationSummary(props: GeneralInfoFieldsProps) {
+  const { t } = useI18n()
+  const { client } = props
+  const sections = [
+    { title: 'Основна інформація', wide: true, fields: [
+      ['Повна назва', client.FullName], ['Назва', client.Name],
+    ] },
+    { title: 'Реквізити покупця', wide: true, fields: [
+      ['Прізвище', client.LastName], ["Ім'я", client.FirstName], ['По батькові', client.MiddleName],
+      ['Номер платника ПДВ', client.SROI], ['ІПН (ІНН)', client.TIN], ['ЄДРПОУ', client.USREOU],
+    ] },
+    { title: 'Регіон', fields: [
+      ['Регіон', client.Region?.Name], ['Код по регіону', client.RegionCode?.Value],
+      ['Місто', client.RegionCode?.City], ['Район', client.RegionCode?.District],
+    ] },
+  ]
+
+  return (
+    <div className="client-info-summary">
+      {sections.map((section) => (
+        <section className={`client-info-section${section.wide ? ' is-wide' : ''}`} key={section.title}>
+          <Text component="h3" className="client-section-title" fw={600}>{t(section.title)}</Text>
+          <dl className={`client-info-fields${section.fields.length === 6 ? ' has-three-columns' : ''}`}>
+            {section.fields.map(([label, value]) => (
+              <div key={label}>
+                <dt>{t(label || '')}</dt>
+                <dd>{value || '—'}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      ))}
+      <section className="client-info-section">
+        <Text component="h3" className="client-section-title" fw={600}>{t('Тип клієнта')}</Text>
+        <Group gap="xs" mt="sm">
+          <Badge className="app-role-pill" variant="light">{t(client.IsIndividual ? 'Фізична особа' : 'Юридична особа')}</Badge>
+          {client.ClientInRole?.ClientTypeRole?.Name && (
+            <Badge className="app-role-pill is-gray" variant="light">{client.ClientInRole.ClientTypeRole.Name}</Badge>
+          )}
+        </Group>
+      </section>
+      <section className="client-info-section is-wide">
+        <Text component="h3" className="client-section-title" fw={600} mb="sm">{t('Документи договору')}</Text>
+        <ContractDocuments
+          canSave={props.canSaveDocuments !== false}
+          disabled={props.canEditDocuments === false}
+          documents={client.ClientContractDocuments || []}
+          isUploading={props.isUploadingDocuments}
+          onAdd={props.onAddDocuments}
+          onRemove={props.onRemoveDocument}
+          onSave={props.onSaveDocuments}
+        />
+      </section>
+    </div>
   )
 }
 
@@ -261,7 +323,7 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
     <Stack gap="md">
       <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
-          <Text fw={600}>{t('Реквізити покупця')}</Text>
+          <Text className="client-section-title" fw={600}>{t('Реквізити покупця')}</Text>
           <SimpleGrid cols={{ base: 1, md: 3 }} spacing="sm">
             <TextInput
               disabled={props.sourceManaged}
@@ -315,7 +377,7 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
       {(!role.isSubClient || !client.IsSubClient) && (
         <Card className="app-section-card" withBorder radius="md" padding="md">
           <Stack gap="md">
-            <Text fw={600}>{t('Регіон')}</Text>
+            <Text className="client-section-title" fw={600}>{t('Регіон')}</Text>
             <Group align="flex-end" gap="xs" wrap="nowrap">
               <Select
                 clearable
@@ -378,7 +440,7 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
 
       <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
-          <Text fw={600}>{t('Тип клієнта')}</Text>
+          <Text className="client-section-title" fw={600}>{t('Тип клієнта')}</Text>
           {role.isSubClient ? (
             <SegmentedControl
               disabled={props.sourceStructureManaged ?? props.sourceManaged}
@@ -406,7 +468,7 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
 
       <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
-          <Text fw={600}>{t('Документи договору')}</Text>
+          <Text className="client-section-title" fw={600}>{t('Документи договору')}</Text>
           <ContractDocuments
             canSave={props.canSaveDocuments !== false}
             disabled={props.canEditDocuments === false}
@@ -446,7 +508,15 @@ function ContractDocuments({
     <Stack gap="xs">
       <FileButton disabled={disabled} multiple onChange={(files) => files.length > 0 && onAdd(files)}>
         {(buttonProps) => (
-          <Button color="gray" disabled={disabled} variant="light" {...buttonProps}>
+          <Button
+            color={CREATE_ACTION_COLOR}
+            disabled={disabled}
+            leftSection={<Upload size={16} />}
+            size="sm"
+            style={{ alignSelf: 'flex-start', maxWidth: '100%' }}
+            variant="outline"
+            {...buttonProps}
+          >
             {t('Завантажити документи договору')}
           </Button>
         )}

@@ -23,14 +23,6 @@
   overflow-x: auto;
 }
 
-.advance-payments-filter-row {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: 310px minmax(16px, 1fr) max-content max-content;
-  min-width: max-content;
-  width: 100%;
-}
-
 /* Push reset/paginator before the dedicated DataTable toolbar slot. */
 .advance-payments-filter-row .app-filter-actions {
   grid-column: 3;

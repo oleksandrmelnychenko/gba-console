@@ -8,6 +8,7 @@ import {
   Text,
   TextInput,
 } from '@mantine/core'
+import './ecommerce-panel.css'
 import { notifications } from '@mantine/notifications'
 import { Key } from 'lucide-react'
 import { type KeyboardEvent } from 'react'
@@ -97,23 +98,19 @@ export function EcommercePanel({
   }
 
   return (
-    <Stack gap="lg">
+    <Stack className="client-ecommerce" gap="sm">
       <Card className="app-section-card" withBorder padding="md" radius="md">
-        <Stack gap="md">
-          <Text fw={600}>{t('Зміна пароля')}</Text>
+        <Stack gap="sm">
+          <Text className="client-section-title" fw={600} size="sm">{t('Зміна пароля')}</Text>
           <TextInput
-            autoFocus
+            className="client-ecommerce-phone"
             disabled={sourceManaged || !canChangePassword}
             label={t('Мобільний телефон')}
             value={mobileNumber}
             onChange={(event) => setMobileNumber(event.currentTarget.value)}
             onKeyDown={handleFieldKeyDown}
           />
-          {sourceManaged && (
-            <Text c="dimmed" size="xs">
-              {t('Телефон керується синхронізацією з 1С; тут змінюється лише пароль')}
-            </Text>
-          )}
+          <div className="client-ecommerce-passwords">
           <PasswordInput
             autoComplete="new-password"
             disabled={!canChangePassword}
@@ -130,27 +127,30 @@ export function EcommercePanel({
             onChange={(event) => setConfirmPassword(event.currentTarget.value)}
             onKeyDown={handleFieldKeyDown}
           />
+          </div>
           <Group justify="flex-end">
             <Button
+              size="sm"
               color={CREATE_ACTION_COLOR}
               disabled={isChanging || !canChangePassword}
               leftSection={<Key size={16} />}
               loading={isChanging}
               onClick={() => void handleChangePassword()}
             >
-              {t('Змінити')}
+              {t('Змінити пароль')}
             </Button>
           </Group>
         </Stack>
       </Card>
 
       <Card className="app-section-card" withBorder padding="md" radius="md">
-        <Stack gap="md">
-          <Text fw={600}>{t('Налаштування магазину')}</Text>
+        <Stack gap="sm">
+          <Text className="client-section-title" fw={600} size="sm">{t('Налаштування магазину')}</Text>
           <NumberInput
+            className="client-ecommerce-reserve"
             allowNegative={false}
             disabled={!canEditSettings}
-            label={t('Резервація корзини інтернет магазина (днів)')}
+            label={t('Резерв кошика, днів')}
             min={0}
             value={client.ClearCartAfterDays ?? ''}
             onChange={handleClearCartAfterDaysChange}

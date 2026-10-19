@@ -1015,10 +1015,10 @@ function WarehouseUkraineOrderPlacementsPageContent() {
           className="app-section-card warehouse-order-placement-card warehouse-order-placement-toolbar-card"
           withBorder
           radius="md"
-          padding="md"
+          padding={0}
         >
-          <Group justify="space-between" align="end" wrap="wrap">
-            <Group gap="sm" align="end">
+          <Group className="app-filter-bar" justify="space-between" align="end" wrap="wrap">
+            <Group className="app-filter-control-group" gap={8} align="end">
               {isOpenOrder && (
                 <Select
                   className="warehouse-order-placement-control"
@@ -1052,7 +1052,7 @@ function WarehouseUkraineOrderPlacementsPageContent() {
                 </Button>
               )}
             </Group>
-            <Group gap="sm" align="end">
+            <Group className="app-filter-control-group" gap={8} align="end">
               {isOpenOrder && (canCarryOut || canGetUp) && (
                 <TextInput
                   className="warehouse-order-placement-control"

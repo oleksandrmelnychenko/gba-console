@@ -228,7 +228,7 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
     <Stack className="act-reconciliations-page console-table-page" gap={6}>
       <div className="console-table-shell act-reconciliations-shell">
         <div className="app-filter-bar act-reconciliations-filter-bar">
-          <div className="act-reconciliations-filter-row">
+          <div className="app-filter-fields act-reconciliations-filter-row">
             <div className="app-filter-date-range">
               <TextInput
                 className="act-reconciliations-date-input"

@@ -783,7 +783,7 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
   return (
     <Card className="app-data-card payment-online-shop-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar payment-online-shop-filter-bar">
-        <Group align="end" gap={10} wrap="nowrap" className="payment-online-shop-filter-row">
+        <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields payment-online-shop-filter-row">
           <div className="app-filter-date-range">
             <TextInput
               size="sm"

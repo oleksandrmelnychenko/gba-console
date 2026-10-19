@@ -2183,7 +2183,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                 onChange={(event) => setContactField('MiddleName', event.currentTarget.value)}
               />
             </SimpleGrid>
-            <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+            <Group align="end" gap="sm" wrap="nowrap" className="app-filter-fields clients-filter-row">
               <Avatar color="gray" name={getSeoContactDisplayName(contactFormValues) || undefined} radius="md" size={72} src={contactFormValues.ImgUrl || undefined}>
                 {getContactInitials(contactFormValues)}
               </Avatar>
@@ -2366,7 +2366,7 @@ function SeoShopDataSection({
         <div className="seo-shop-data-section-meta">
           {!hideCount ? <Text className="seo-shop-data-section-count">{count}</Text> : null}
           {typeof children === 'function' ? (
-            <div ref={setToolbarPortalTarget} className="seo-shop-data-section-table-toolbar" />
+            <div ref={setToolbarPortalTarget} className="app-filter-table-toolbar-slot seo-shop-data-section-table-toolbar" />
           ) : null}
           {action ? <div className="seo-shop-data-section-actions">{action}</div> : null}
         </div>

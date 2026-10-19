@@ -18,11 +18,6 @@
   overflow-x: auto;
 }
 
-.tax-free-documents-filter-bar .tax-free-documents-filter-row {
-  min-width: max-content;
-  width: 100%;
-}
-
 .tax-free-documents-filter-row .app-filter-actions {
   margin-left: auto;
 }

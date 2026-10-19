@@ -3,6 +3,7 @@ import {
   Alert,
   Badge,
   Box,
+  Button,
   Collapse,
   Group,
   Loader,
@@ -444,7 +445,7 @@ export const EventPermissionsCatalog = forwardRef<
 
   return (
     <Box className="role-tree event-permissions-editor">
-      <div className="event-permissions-filters">
+      <div className="app-filter-bar event-permissions-filters">
         <TextInput
           aria-label={t('Пошук права')}
           leftSection={<Search size={15} />}
@@ -519,10 +520,10 @@ export const EventPermissionsCatalog = forwardRef<
         </Alert>
       ) : null}
 
-      <Group className="role-tree-toolbar" justify="space-between" wrap="nowrap">
-        <Group gap="xs" wrap="nowrap">
-          <button
-            className="role-tree-text-action"
+      <Group className="app-filter-bar role-tree-toolbar" justify="space-between" wrap="nowrap">
+        <Group className="app-filter-control-group" gap="xs" wrap="wrap">
+          <Button
+            variant="default"
             disabled={
               readOnly ||
               activeKeys.length === 0 ||
@@ -533,18 +534,18 @@ export const EventPermissionsCatalog = forwardRef<
             onClick={() => selectKeys(activeKeys)}
           >
             {t('Вибрати все')}
-          </button>
-          <button
-            className="role-tree-text-action"
+          </Button>
+          <Button
+            variant="default"
             disabled={readOnly || selectedKeys.size === 0 || isSaving}
             type="button"
             onClick={clearKeys}
           >
             {t('Очистити')}
-          </button>
+          </Button>
           {hasActiveFilters ? (
-            <button
-              className="role-tree-text-action"
+            <Button
+              variant="default"
               disabled={
                 readOnly ||
                 visibleKeys.length === 0 ||
@@ -555,7 +556,7 @@ export const EventPermissionsCatalog = forwardRef<
               onClick={() => selectKeys(visibleKeys)}
             >
               {t('Вибрати показані')}
-            </button>
+            </Button>
           ) : null}
         </Group>
         <Group className="role-tree-toolbar-stats" gap="xs" justify="flex-end" wrap="wrap">

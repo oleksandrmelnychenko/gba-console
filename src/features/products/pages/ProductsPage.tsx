@@ -1004,7 +1004,7 @@ function ProductAssortmentFilterBar({
 
   return (
     <Box className="app-filter-bar product-assortment-filter-scroll">
-      <Group align="end" gap={10} wrap="nowrap" className="product-assortment-filter-row">
+      <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-assortment-filter-row">
         <Select
           aria-label={t('Поле пошуку')}
           allowDeselect={false}
@@ -1826,7 +1826,7 @@ function ProductOriginalNumbersTab({
         </Alert>
       )}
 
-      <div className="product-original-number-toolbar">
+      <div className="app-filter-bar product-original-number-toolbar">
         <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
           <Group className="product-original-number-form" align="end" gap="sm" wrap="nowrap">
             <TextInput

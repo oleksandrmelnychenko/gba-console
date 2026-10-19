@@ -572,7 +572,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
 
       <Card className="app-data-card product-placements-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-placements-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="product-placements-filter-row">
+          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-placements-filter-row">
             <TextInput
               label={t('До')}
               type="date"

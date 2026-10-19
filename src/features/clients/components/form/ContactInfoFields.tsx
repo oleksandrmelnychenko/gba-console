@@ -77,7 +77,7 @@ export function ContactInfoFields({ client, errors, role, sourceManaged, onChang
       {role.isBuyer && (
         <Card className="app-section-card" withBorder padding="md" radius="md">
           <Stack gap="md">
-            <Text fw={600}>{t('Контакти керівництва')}</Text>
+            <Text className="client-section-title" fw={600}>{t('Контакти керівництва')}</Text>
             <SimpleGrid cols={{ base: 1, md: 3 }} spacing="sm">
               <TextInput
                 disabled={sourceManaged}

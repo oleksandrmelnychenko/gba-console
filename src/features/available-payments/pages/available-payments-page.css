@@ -22,20 +22,6 @@
   overflow-x: auto;
 }
 
-.available-payments-filter-row {
-  display: grid;
-  gap: 10px;
-  grid-template-columns:
-    310px
-    minmax(260px, 1.4fr)
-    minmax(190px, 0.7fr)
-    minmax(16px, 1fr)
-    max-content
-    max-content;
-  min-width: max-content;
-  width: 100%;
-}
-
 .available-payments-filter-row > .app-filter-actions {
   grid-column: 5;
 }

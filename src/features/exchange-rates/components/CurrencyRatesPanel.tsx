@@ -403,7 +403,7 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style }: Currenc
         </ActionIcon>
       </Group>
 
-      <Box className="exchange-rates-filter">
+      <Box className="app-filter-bar app-filter-bar--stacked exchange-rates-filter">
         <Group justify="space-between" align="center" className="exchange-rates-section-heading">
           <Text className="exchange-rates-section-title">{t('Період')}</Text>
           <Tooltip label={t('Скинути')}>
@@ -412,7 +412,7 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style }: Currenc
             </ActionIcon>
           </Tooltip>
         </Group>
-        <Group gap="sm" wrap="nowrap" className="exchange-rates-filter-fields">
+        <Group gap="sm" wrap="nowrap" className="app-filter-date-range exchange-rates-filter-fields">
           <TextInput
             label={t('Від')}
             type="date"

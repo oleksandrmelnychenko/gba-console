@@ -165,7 +165,7 @@ function PaymentCashflowArticlesPageContent({ inSharedShell = false }: PaymentCa
   const content = (
     <>
       <div className="app-filter-bar payment-cashflow-articles-filter-bar">
-        <Group align="end" gap={10} wrap="nowrap" className="payment-cashflow-articles-filter-row">
+        <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields payment-cashflow-articles-filter-row">
           <TextInput
             className="console-table-search-input"
             size="sm"

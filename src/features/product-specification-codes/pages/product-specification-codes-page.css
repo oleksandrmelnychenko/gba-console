@@ -20,27 +20,11 @@
 
 .product-specification-codes-filter-bar {
   align-items: end;
-  background: #f8f9fa;
   border-bottom-color: var(--mantine-color-gray-2);
   box-sizing: border-box;
   display: flex;
   flex: 0 0 auto;
-  gap: 10px;
   overflow-x: auto;
-}
-
-.product-specification-codes-filter-row {
-  align-items: end;
-  display: grid;
-  flex: 1 1 auto;
-  gap: 10px;
-  grid-template-columns:
-    minmax(280px, 1fr)
-    minmax(240px, 0.9fr)
-    auto
-    auto;
-  min-width: 0;
-  width: 100%;
 }
 
 .product-specification-codes-filter-row .app-filter-actions {
@@ -206,13 +190,6 @@
 }
 
 @media (max-width: 1200px) {
-  .product-specification-codes-filter-row {
-    grid-template-columns:
-      minmax(220px, 1fr)
-      minmax(220px, 1fr)
-      auto
-      auto;
-  }
 
   .product-specification-codes-filter-row .app-filter-actions {
     grid-column: 3;

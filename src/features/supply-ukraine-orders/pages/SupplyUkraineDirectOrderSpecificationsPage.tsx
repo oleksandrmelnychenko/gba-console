@@ -1059,7 +1059,7 @@ function SpecificationGridArea({ model }: { model: DirectOrderSpecificationsPage
       )}
 
       {model.packingList && (model.packingList.PackingListPackageOrderItems?.length || 0) > 0 && (
-        <div className="supply-order-spec-grid-toolbar">
+        <div className="app-filter-bar supply-order-spec-grid-toolbar">
           <TextInput
             className="supply-detail-search supply-order-spec-search"
             label={t('Пошук')}

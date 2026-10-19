@@ -1932,7 +1932,7 @@ function ProductIncomeGridCard({
 
   return (
     <Box className="product-income-grid-panel">
-      <div className="product-income-grid-toolbar">
+      <div className="app-filter-bar product-income-grid-toolbar">
         <Text className="app-section-title product-income-grid-title" fw={600} size="sm">
           {t('Товари')}
         </Text>

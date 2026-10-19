@@ -24,12 +24,7 @@
 }
 
 .advanced-reports-filter-content {
-  min-width: max-content;
-  width: 100%;
-}
-
-.advanced-reports-filter-bar .advanced-reports-filter-row {
-  min-width: max-content;
+  min-width: 0;
   width: 100%;
 }
 

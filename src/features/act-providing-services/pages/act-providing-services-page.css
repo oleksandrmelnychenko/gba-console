@@ -13,11 +13,9 @@
 
 .act-services-filter-bar {
   align-items: end;
-  background: #f8f9fa;
   border-bottom-color: var(--mantine-color-gray-2);
   display: flex;
   flex: 0 0 auto;
-  gap: 10px;
   overflow-x: auto;
 }
 
@@ -25,14 +23,6 @@
   --act-services-command-control-height: var(--app-filter-control-height);
   --act-services-command-label-gap: var(--app-filter-label-gap);
   --act-services-command-label-height: var(--app-filter-label-height);
-
-  align-items: end;
-  display: grid;
-  flex: 1 1 auto;
-  gap: 10px;
-  grid-template-columns: 310px minmax(280px, 1fr) auto;
-  min-width: max-content;
-  width: 100%;
 }
 
 .act-services-period-filter,

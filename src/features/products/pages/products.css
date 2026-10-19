@@ -746,7 +746,6 @@
 .product-original-number-toolbar {
   align-items: flex-end;
   display: flex;
-  gap: 12px;
   justify-content: flex-end;
   width: 100%;
 }
@@ -789,7 +788,6 @@
 .product-movement-toolbar {
   align-items: flex-end;
   flex: 0 0 auto;
-  gap: 10px;
   overflow-x: auto;
   overflow-y: hidden;
 }
@@ -1073,11 +1071,6 @@
   overflow-x: auto;
   overflow-y: hidden;
   z-index: 3;
-}
-
-.product-assortment-filter-row {
-  min-width: max-content;
-  width: 100%;
 }
 
 .product-assortment-search-input {

@@ -19,11 +19,6 @@
   overflow-x: auto;
 }
 
-.product-placements-filter-bar .product-placements-filter-row {
-  min-width: max-content;
-  width: 100%;
-}
-
 .product-placements-filter-row .app-filter-actions {
   margin-left: auto;
 }

@@ -1,99 +1,64 @@
+.client-new-form {
+  display: flex;
+  flex-direction: column;
+  height: min(680px, calc(100dvh - 220px));
+  min-height: 240px;
+  gap: 12px;
+}
+
 .client-new-step-nav {
-  display: grid;
-  gap: 4px;
-  min-width: 0;
-  padding-right: 4px;
+  display: flex;
+  justify-content: safe center;
+  gap: 6px;
+  overflow-x: auto;
+  flex-shrink: 0;
+  padding: 2px;
 }
 
 .client-new-step-nav__item {
+  display: inline-flex;
   align-items: center;
-  background: transparent;
-  border: 1px solid transparent;
+  gap: 7px;
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 0;
   border-radius: 8px;
-  box-shadow: none;
+  background: transparent;
   color: var(--mantine-color-gray-7);
-  cursor: pointer;
-  display: grid;
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
-  gap: 8px;
-  grid-template-columns: minmax(0, 1fr) 6px;
-  letter-spacing: 0;
-  min-height: 40px;
-  padding: 0 12px;
-  position: relative;
-  text-align: left;
-  transition:
-    color 140ms var(--tx-ease-smooth),
-    transform 140ms var(--tx-ease-smooth);
-  width: 100%;
-}
-
-.client-new-step-nav__item:hover:not(:disabled),
-.client-new-step-nav__item:focus-visible {
-  color: var(--mantine-color-gray-9);
-  transform: translateX(3px);
-}
-
-.client-new-step-nav__item.is-active {
-  border-color: var(--brand-orange);
-  color: var(--brand-orange);
-  font-weight: 600;
-}
-
-.client-new-step-nav__item:disabled {
-  color: var(--mantine-color-gray-5);
-  cursor: not-allowed;
-  opacity: 0.72;
-}
-
-.client-new-step-nav__main {
-  align-items: center;
-  display: flex;
-  gap: 4px;
-  min-width: 0;
-}
-
-.client-new-step-nav__label {
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  cursor: pointer;
   white-space: nowrap;
 }
 
-.client-new-step-nav__chevron {
-  color: var(--mantine-color-gray-4);
+.client-new-step-nav__item:hover:not(:disabled) { background: var(--mantine-color-gray-0); }
+.client-new-step-nav__item.is-active { background: var(--brand-orange); color: white; }
+.client-new-step-nav__item.is-active:hover { background: var(--brand-orange); }
+.client-new-step-nav__item:disabled { color: var(--mantine-color-gray-5); cursor: default; }
+.client-new-step-nav__item:focus-visible { outline: 2px solid var(--brand-orange); outline-offset: 1px; }
+.client-new-step-nav__number { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--mantine-color-gray-1); font-size: 11px; }
+.client-new-step-nav__item.is-active .client-new-step-nav__number { background: rgb(255 255 255 / 20%); }
+
+.client-new-wizard .client-new-step-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  background: var(--mantine-color-gray-0);
+  border: 0;
+  padding: 12px;
+}
+
+.client-new-wizard .client-new-footer {
   flex: 0 0 auto;
-  opacity: 0;
-  transition:
-    color 140ms var(--tx-ease-smooth),
-    opacity 140ms var(--tx-ease-smooth);
+  margin: 0;
+  padding: 10px 0 0;
+  justify-content: space-between;
 }
 
-.client-new-step-nav__item:hover:not(:disabled) .client-new-step-nav__chevron,
-.client-new-step-nav__item:focus-visible .client-new-step-nav__chevron {
-  opacity: 1;
-}
-
-.client-new-step-nav__marker {
-  align-self: start;
-  background: transparent;
-  border-radius: 999px;
-  height: 6px;
-  margin-top: 7px;
-  width: 6px;
-}
-
-.client-new-step-nav__item.is-active .client-new-step-nav__chevron {
-  color: var(--brand-orange);
-  opacity: 1;
-}
-
-.client-new-step-nav__item.is-active .client-new-step-nav__marker {
-  background: var(--brand-orange);
-}
+.client-new-wizard .client-new-section-title { font-family: var(--font-mono); font-size: 14px; font-weight: 600; color: var(--mantine-color-gray-8); }
 
 .client-new-role-grid {
   align-items: stretch;
@@ -174,11 +139,4 @@
 
 .client-new-role-card.is-selected .client-new-role-card__marker {
   background: var(--brand-orange);
-}
-
-@media (max-width: 61.99em) {
-  .client-new-step-nav {
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    padding-right: 0;
-  }
 }

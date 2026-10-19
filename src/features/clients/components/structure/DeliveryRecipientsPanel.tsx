@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Avatar,
   Button,
   Card,
   Group,
@@ -11,7 +10,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { CircleAlert, Plus, Trash2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { AppModal } from '../../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../../shared/hooks/useValueState'
@@ -177,7 +176,7 @@ export function DeliveryRecipientsPanel({
       <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
           <Group justify="space-between" align="center">
-            <Text fw={600}>{t('Отримувачі доставки')}</Text>
+            <Text className="client-section-title" fw={600}>{t('Отримувачі доставки')}</Text>
             {canCreate && <Button
               color={CREATE_ACTION_COLOR}
               disabled={isBusy}
@@ -269,28 +268,12 @@ function RecipientItem({
   onRemove?: () => void
 }) {
   const fullName = recipient.FullName?.trim()
-  const [isHovered, setHovered] = useState(false)
+  const { t } = useI18n()
 
   return (
-    <Card
-      withBorder
-      padding="sm"
-      radius="md"
-      style={{
-        backgroundColor: isHovered ? 'var(--mantine-color-orange-0)' : undefined,
-        borderColor: isHovered ? 'var(--mantine-color-orange-3)' : undefined,
-        boxShadow: isHovered ? 'var(--mantine-shadow-xs)' : undefined,
-        opacity: recipient.Deleted ? 0.55 : 1,
-        transition: 'background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease',
-      }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
+    <div className={`client-recipient-row${recipient.Deleted ? ' is-deleted' : ''}`}>
       <Group justify="space-between" align="center" wrap="nowrap">
         <Group gap="sm" align="center" wrap="nowrap" style={{ minWidth: 0 }}>
-          <Avatar color={recipient.Deleted ? 'gray' : CREATE_ACTION_COLOR} radius="xl">
-            {fullName ? fullName.slice(0, 2).toUpperCase() : 'OO'}
-          </Avatar>
           <Tooltip
             disabled={!fullName}
             label={fullName}
@@ -299,7 +282,7 @@ function RecipientItem({
             withArrow
             withinPortal
           >
-            <Text fw={500} size="sm" truncate style={{ minWidth: 0 }}>
+            <Text fw={500} size="sm" style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
               {fullName}
             </Text>
           </Tooltip>
@@ -307,6 +290,7 @@ function RecipientItem({
 
         {!recipient.Deleted && onRemove && (
           <ActionIcon
+            aria-label={`${t('Видалити отримувача')}: ${fullName || '—'}`}
             color="red"
             loading={isDeleting}
             variant="subtle"
@@ -319,6 +303,6 @@ function RecipientItem({
           </ActionIcon>
         )}
       </Group>
-    </Card>
+    </div>
   )
 }

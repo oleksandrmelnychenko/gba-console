@@ -29,14 +29,6 @@
   overflow-x: auto;
 }
 
-.sales-chart-filter-row {
-  align-items: end;
-  display: grid;
-  gap: 10px;
-  min-width: max-content;
-  width: 100%;
-}
-
 .sales-chart-filter-row.is-topnx {
   grid-template-columns: 310px 150px minmax(34px, 1fr) auto;
 }

@@ -110,8 +110,8 @@ describe('ClientStructurePanel permissions', () => {
 
     await waitFor(() => expect(getClientGroups).toHaveBeenCalled())
 
-    expect(screen.queryByLabelText('Підгрупи')).toBeNull()
-    expect(screen.queryByLabelText('Новий користувач')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Підгрупи' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Новий клієнт' })).toBeNull()
     expect(screen.getByTestId('groups-permission').getAttribute('data-allowed')).toBe('false')
     expect(screen.getByTestId('recipients-permission').getAttribute('data-create')).toBe('false')
     expect(screen.getByTestId('recipients-permission').getAttribute('data-delete')).toBe('false')
@@ -148,8 +148,8 @@ describe('ClientStructurePanel permissions', () => {
 
     await waitFor(() => expect(getClientGroups).toHaveBeenCalled())
 
-    expect(screen.getByLabelText('Підгрупи')).toBeTruthy()
-    expect(screen.getByLabelText('Новий користувач')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Підгрупи' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Новий клієнт' })).toBeTruthy()
     expect(screen.getByTestId('groups-permission').getAttribute('data-allowed')).toBe('true')
     expect(screen.getByTestId('recipients-permission').getAttribute('data-create')).toBe('true')
     expect(screen.getByTestId('recipients-permission').getAttribute('data-delete')).toBe('true')

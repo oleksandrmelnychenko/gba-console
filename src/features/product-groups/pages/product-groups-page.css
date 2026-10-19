@@ -20,16 +20,10 @@
 
 /* Filter strip pinned at the top of the card; the table below it scrolls. */
 .product-groups-filter-bar {
-  background: #f8f9fa;
   border-bottom-color: var(--mantine-color-gray-2);
   box-sizing: border-box;
   flex: 0 0 auto;
   overflow-x: auto;
-}
-
-.product-groups-filter-bar .product-groups-filter-row {
-  min-width: max-content;
-  width: 100%;
 }
 
 .product-groups-filter-row .app-filter-actions {
@@ -96,11 +90,6 @@
 .product-groups-tree-filter-bar {
   flex: 0 0 auto;
   overflow-x: auto;
-}
-
-.product-groups-tree-filter-row {
-  min-width: max-content;
-  width: 100%;
 }
 
 .product-groups-tree-filter-row .app-filter-actions {

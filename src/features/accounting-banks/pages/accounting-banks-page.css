@@ -22,15 +22,6 @@
   overflow-x: auto;
 }
 
-.accounting-banks-filter-bar .accounting-banks-filter-row {
-  align-items: end;
-  display: grid;
-  gap: 10px;
-  grid-template-columns: minmax(180px, 1fr) max-content max-content max-content;
-  min-width: max-content;
-  width: 100%;
-}
-
 .accounting-banks-filter-row > .app-filter-actions {
   grid-column: 2;
 }

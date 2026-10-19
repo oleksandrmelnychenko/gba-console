@@ -393,7 +393,7 @@ function PredictionFilters({
   return (
     <div className="sales-prediction-filter-card">
       <div className="app-filter-bar sales-prediction-filter-bar">
-        <div className="sales-prediction-filter-row">
+        <div className="app-filter-fields sales-prediction-filter-row">
           <Select
             clearable
             searchable

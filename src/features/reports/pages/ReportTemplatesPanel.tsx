@@ -83,7 +83,7 @@ export function ReportTemplatesPanel({ storage, ordering, configurationReady, co
       requireReadMode={requireReadMode} enabled={!blocked} current={storage.templates.some(item => item.Id === savedVariant.Id
         && item.Revision === savedVariant.Revision && JSON.stringify(item.Data) === JSON.stringify(savedVariant.Data))}
       onClose={toList} /> : <>
-      <div className="reports-stocks-template-toolbar">
+      <div className="app-filter-bar reports-stocks-template-toolbar">
         <TextInput aria-label={t('Пошук шаблонів')} placeholder={t('Знайти шаблон')} value={search} leftSection={<Search size={16} />}
           rightSection={search ? <ActionIcon variant="subtle" color="gray" aria-label={t('Очистити пошук')} onClick={() => setSearch('')}><X size={14} /></ActionIcon> : null}
           onChange={event => setSearch(event.currentTarget.value)} />

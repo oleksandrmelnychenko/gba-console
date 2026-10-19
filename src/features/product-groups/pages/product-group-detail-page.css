@@ -21,11 +21,6 @@
   overflow-y: hidden;
 }
 
-.product-group-detail-filter-row {
-  min-width: max-content;
-  width: 100%;
-}
-
 .product-group-detail-filter-row > .mantine-InputWrapper-root {
   min-width: 240px;
 }

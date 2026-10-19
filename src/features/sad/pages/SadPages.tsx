@@ -383,7 +383,7 @@ export function AllSadsPage() {
     <Stack className="sad-list-page console-table-page" gap={6}>
       <div className="console-table-shell sad-list-page__shell">
         <div className="app-filter-bar sad-list-page__toolbar">
-          <Group align="flex-end" className="sad-list-page__filters" gap={10} wrap="nowrap">
+          <Group align="flex-end" className="app-filter-fields sad-list-page__filters" gap={10} wrap="nowrap">
             <div className="app-filter-date-range">
               <TextInput
                 label={t('Від')}

@@ -335,7 +335,7 @@ export function ClientProductMovementPage() {
     <Stack className="client-product-movement-page" gap={0}>
       <div className="sales-dashboard-tab-content client-product-movement-card">
         <div className="app-filter-bar client-product-movement-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="client-product-movement-filter-row">
+          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields client-product-movement-filter-row">
             <div className="app-filter-date-range">
               <TextInput
                 label={t('Від')}

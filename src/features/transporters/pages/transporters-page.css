@@ -19,11 +19,9 @@
 
 .transporters-command-bar {
   align-items: end;
-  background: #f8f9fa;
   border-bottom-color: var(--mantine-color-gray-2);
   display: flex;
   flex: 0 0 auto;
-  gap: 10px;
   overflow-x: auto;
 }
 

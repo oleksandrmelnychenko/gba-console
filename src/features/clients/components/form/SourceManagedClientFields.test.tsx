@@ -70,7 +70,11 @@ describe('source-managed client fields', () => {
       </MantineProvider>,
     )
 
-    for (const label of ['Повна назва', 'Назва', 'ЄДРПОУ', 'Email', 'Телефон', 'Банк та відділення', 'Номер рахунку', 'IBAN']) {
+    for (const [label, value] of [['Повна назва', 'ТОВ МАГРОМ'], ['Назва', 'МАГРОМ ТОВ'], ['ЄДРПОУ', '37263688']]) {
+      expect(screen.getByText(label, { selector: 'dt' }).nextElementSibling?.textContent).toBe(value)
+      expect(screen.queryByRole('textbox', { name: label, exact: true })).toBeNull()
+    }
+    for (const label of ['Email', 'Телефон', 'Банк та відділення', 'Номер рахунку', 'IBAN']) {
       expect((screen.getByLabelText(label) as HTMLInputElement).disabled).toBe(true)
     }
     for (const label of ['SWIFT', 'Код відділення', 'Адреса банку']) {

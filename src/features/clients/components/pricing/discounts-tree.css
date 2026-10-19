@@ -1,15 +1,25 @@
-/* Discount-hierarchy rows aligned to the shared <TreeView> look
-   (src/shared/ui/tree/tree.css): depth indentation via --discounts-tree-indent,
-   gray-0 hover, and an orange "selected" highlight matching .app-tree-node.is-active.
-   Visual-only — the discount editing logic in DiscountsTree.tsx is untouched. */
+.client-discounts__toolbar {
+  padding: 8px 10px;
+  background: var(--mantine-color-gray-0);
+  border-radius: 8px;
+}
+
+.client-discounts__toolbar .mantine-Checkbox-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.client-discounts__percent-input {
+  width: 110px;
+  margin-left: auto;
+}
+
 .discounts-tree-row {
   align-items: center;
   border-radius: 6px;
-  min-height: 42px;
-  padding: 6px 10px 6px calc(10px + var(--discounts-tree-indent, 0px));
-  transition:
-    background-color 110ms var(--tx-ease-smooth),
-    box-shadow 110ms var(--tx-ease-smooth);
+  min-height: 32px;
+  padding: 3px 8px 3px calc(8px + var(--discounts-tree-indent, 0px));
+  transition: background-color 110ms var(--tx-ease-smooth);
 }
 
 .discounts-tree-row:hover {
@@ -17,6 +27,46 @@
 }
 
 .discounts-tree-row.is-selected {
-  background: #fff7ef;
-  box-shadow: inset 2px 0 0 var(--mantine-color-orange-6);
+  background: var(--mantine-color-gray-0);
+}
+
+.discounts-tree-row__name,
+.discounts-tree-row__percent {
+  border: 0;
+  background: transparent;
+  color: var(--mantine-color-text);
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.discounts-tree-row__name {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  font-size: 13px;
+  line-height: 22px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.discounts-tree-row__percent {
+  flex-shrink: 0;
+  display: inline-flex;
+}
+
+.discounts-tree-row__percent .app-table-chip {
+  min-width: 50px;
+  justify-content: center;
+}
+
+.discounts-tree-row button:disabled {
+  cursor: default;
+}
+
+.discounts-tree-row button:focus-visible {
+  outline: 2px solid var(--mantine-color-orange-6);
+  outline-offset: 2px;
+  border-radius: 4px;
 }

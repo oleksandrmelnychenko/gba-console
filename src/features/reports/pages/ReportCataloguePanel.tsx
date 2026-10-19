@@ -206,7 +206,7 @@ export function ReportCataloguePanel({ onOpen, onOpenDebtToSalesRatio, onOpenCol
       {!inspection.valid && <Alert color="yellow">{t(inspection.supplied ? 'Дані стану перенесення не узгоджені з каталогом. Завершеність не підтверджена; усі позиції каталогу збережені.'
         : 'Стан перенесення ще не надано сервером. Наявність джерела не підтверджує готовність розрахунку.')}</Alert>}
       <div className="report-catalogue__list">
-      <div className="report-catalogue__filters">
+      <div className="app-filter-bar report-catalogue__filters">
         <TextInput label={t('Пошук звіту')} placeholder={t('Назва звіту')} leftSection={<Search size={16} />} value={search} onChange={event => { setSearch(event.currentTarget.value); setPage(1) }} />
         <Select label={t('Тип звіту')} placeholder={t('Усі типи')} clearable value={kind} data={Object.entries(kindLabels).map(([value, label]) => ({ value, label: t(label) }))} onChange={value => { setKind(value); setPage(1) }} />
         <Select label={t('База')} placeholder={t('Усі бази')} clearable value={world} data={[...new Set(catalogue.Reports.flatMap(report => report.Sources.map(source => source.World)))].map(value => ({ value, label: worldLabel(value) }))} onChange={value => { setWorld(value); setPage(1) }} />

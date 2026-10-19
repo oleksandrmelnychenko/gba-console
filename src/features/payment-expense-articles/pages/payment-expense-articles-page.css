@@ -8,6 +8,5 @@
 
 .payment-expense-articles-filter-bar {
   display: grid;
-  gap: 10px;
   grid-template-columns: minmax(320px, 1fr) auto auto auto;
 }

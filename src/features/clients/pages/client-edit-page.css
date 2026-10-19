@@ -63,130 +63,37 @@
 
 /* The shell wrappers are invisible containers — their own padding only added
    to the inner blocks' padding, producing oversized side gutters. */
-.client-edit-sheet .client-edit-shell-card {
+.app-drawer .client-edit-sheet .client-edit-shell-card {
   border: 0;
   padding: 0;
-}
-
-/* Left step-nav (rail) styled as the «Ролі» list: numbered list items with a
-   per-step icon, a hover lift and an orange-accented selected state. */
-.client-edit-nav {
   background: transparent;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding-right: 4px;
 }
 
-/* Plain-text step nav: no borders, no fills — just the label and a chevron.
-   The active step gets the same orange dot the section headings use, so the
-   dot visually "leads" from the menu to the matching content block. */
-.client-edit-nav-item {
-  position: relative;
-  background: transparent !important;
-  border: 0 !important;
-  border-radius: 8px;
-  box-shadow: none;
-  color: var(--mantine-color-gray-7) !important;
-  font-size: 13px;
-  font-weight: 500;
-  min-height: 40px;
-  overflow: hidden;
-  padding-left: 18px;
-  padding-right: 6px;
-  transition:
-    color 110ms var(--tx-ease-smooth),
-    transform 140ms var(--tx-ease-smooth);
-}
-
-/* The left Button section only holds the (hidden) index/icon — its residual
-   margin eats label width in the narrow rail, so drop it entirely. */
-.client-edit-nav-item .mantine-Button-section[data-position='left'] {
-  display: none;
-}
-
-.client-edit-nav-item::before {
-  content: '';
-  position: absolute;
-  left: 8px;
-  top: 50%;
-  height: 7px;
-  width: 7px;
-  border-radius: 999px;
-  background: transparent;
-  transform: translateY(-50%);
-  transition: background-color 120ms var(--tx-ease-smooth);
-}
-
-.client-edit-nav-item:hover {
-  color: var(--mantine-color-gray-9) !important;
-  transform: translateX(3px);
-}
-
-/* Keep the label at its natural width so the chevron hugs the text instead of
-   being pushed to the far edge of the row. */
-.client-edit-nav-item .mantine-Button-label {
-  flex: 0 1 auto;
-}
-
-.client-edit-nav-lead {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-}
-
-.client-edit-nav-index {
-  display: none;
-}
-
-.client-edit-nav-icon {
-  display: none;
-}
-
-.client-edit-nav-label {
-  display: block;
-  flex: 1 1 auto;
-  font-family: var(--font-mono);
-  overflow: hidden;
-  text-align: left;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.client-edit-nav-chevron {
-  color: var(--mantine-color-gray-4);
-  opacity: 0;
-  transition: opacity 110ms var(--tx-ease-smooth);
-}
-
-.client-edit-nav-item:hover .client-edit-nav-chevron {
-  opacity: 1;
-}
-
-.client-edit-nav-item.is-active {
-  background: transparent !important;
-  color: var(--mantine-color-orange-8) !important;
-  font-weight: 600;
-}
-
-.client-edit-nav-item.is-active::before {
-  background: var(--brand-orange);
-}
-
-.client-edit-nav-item.is-active .client-edit-nav-chevron {
-  color: var(--brand-orange);
-  opacity: 1;
-}
-
-.client-edit-nav-item.is-active .client-edit-nav-index {
-  border-right-color: var(--mantine-color-orange-2);
-  color: var(--mantine-color-orange-7);
-}
-
-.client-edit-nav-item.is-active .client-edit-nav-icon,
-.client-edit-nav-item.is-active .client-edit-nav-chevron {
-  color: var(--mantine-color-orange-6);
-  opacity: 1;
+/* Navigation stays beside the content at sheet widths, independently of viewport breakpoints. */
+.client-edit-layout { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 12px; align-items: start; }
+.client-edit-sidebar { position: sticky; top: 0; min-width: 0; }
+.client-edit-content { min-width: 0; }
+.client-edit-nav { gap: 4px; padding: 6px; background: white; border: 1px solid var(--mantine-color-gray-2); border-radius: 12px; }
+.client-edit-nav-item { min-height: 36px; height: auto; padding: 8px 10px; border: 0; border-radius: 8px; color: var(--mantine-color-gray-8); background: transparent; font-size: 12px; }
+.client-edit-nav-item:hover { background: var(--mantine-color-gray-1); }
+.client-edit-nav-item.is-active, .client-edit-nav-item.is-active:hover { background: var(--brand-orange); color: white; }
+.client-edit-nav-item .mantine-Button-label { white-space: normal; text-align: left; }
+.client-edit-nav-lead, .client-edit-nav-icon { display: flex; align-items: center; }
+.client-edit-nav-index, .client-edit-nav-chevron { display: none; }
+.client-edit-nav-label { font-family: var(--font-mono); line-height: 1.4; }
+.client-edit-nav-item .mantine-Button-section[data-position='right'] { display: none; }
+.client-edit-title-name { overflow-wrap: anywhere; }
+.client-edit-title-code { flex-shrink: 0; }
+.client-edit-sheet :is(.mantine-Input-input, .mantine-Textarea-input):disabled { color: var(--mantine-color-gray-8); -webkit-text-fill-color: var(--mantine-color-gray-8); opacity: 1; background: var(--mantine-color-gray-0); border-color: var(--mantine-color-gray-3); }
+.client-edit-sheet .mantine-InputWrapper-label { color: var(--mantine-color-gray-7); font-size: 12px; margin-bottom: 5px; }
+.client-edit-sheet .mantine-Input-input { font-size: 14px; }
+.client-edit-sheet .mantine-Switch-label { color: var(--mantine-color-gray-8); }
+@container registry (max-width: 800px) {
+  .client-edit-layout { grid-template-columns: minmax(0, 1fr); }
+  .client-edit-sidebar { position: static; }
+  .client-edit-nav { flex-direction: row; flex-wrap: wrap; }
+  .client-edit-nav-item { width: auto; flex: 0 0 auto; }
+  .client-edit-folder-tree, .client-edit-nav-group-title { width: 100%; }
 }
 
 .client-edit-nav-group-title {
@@ -280,55 +187,46 @@
   white-space: nowrap;
 }
 
-/* Structure navigation is a real content tab strip, so it mirrors the
-   full-width page tabs instead of using filled pills. */
-.client-edit-sheet .client-structure-card {
-  overflow: hidden;
-  padding: 0;
-}
-
-.client-structure-tabs-root {
-  min-width: 0;
-}
-
-.client-structure-tabs {
-  border-radius: 0;
-}
-
-.client-structure-tabs::before {
-  display: none;
-}
-
-.client-structure-tabs .mantine-Tabs-tab {
-  background: transparent;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  color: var(--mantine-color-gray-7);
-  flex: 0 0 auto;
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0;
-  margin-bottom: -1px;
-  padding: 9px 2px 10px;
-  white-space: nowrap;
-}
-
-.client-structure-tabs .mantine-Tabs-tab:hover {
-  background: transparent;
-  color: var(--mantine-color-gray-9);
-}
-
-.client-structure-tabs .mantine-Tabs-tab[data-active] {
-  border-bottom-color: var(--brand-orange);
-  color: var(--mantine-color-gray-9);
-  font-weight: 600;
-}
-
-.client-structure-toolbar {
-  padding: 12px 14px 0;
-}
+/* Structure tabs share the overlay pattern, with content width deciding the layout. */
+.client-edit-sheet .client-structure-card { overflow: hidden; padding: 0; }
+.client-structure-tabs-root { min-width: 0; }
+.client-structure-tabs { border-radius: 0; }
+.client-structure-related { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.client-structure-related > div { min-width: 0; }
+@container registry (max-width: 800px) { .client-structure-related { grid-template-columns: minmax(0, 1fr); } }
 
 .client-structure-panel {
-  padding: 14px;
+  height: clamp(180px, 28vh, 280px);
+  padding: 12px;
+  overflow: auto;
+  scrollbar-gutter: stable;
+  overflow-anchor: none;
 }
+
+.client-info-summary { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 12px; }
+.client-info-section { min-width: 0; padding: 16px; border: 1px solid var(--mantine-color-gray-2); border-radius: 12px; background: white; }
+.client-info-section.is-wide { grid-column: 1 / -1; }
+.client-info-section h3 { margin: 0; font-size: 14px; color: var(--mantine-color-gray-9); }
+.client-info-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 14px 0 0; }
+.client-info-fields.has-three-columns { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.client-info-fields dt { font-size: 12px; color: var(--mantine-color-gray-7); margin-bottom: 5px; }
+.client-info-fields dd { margin: 0; color: var(--mantine-color-gray-9); font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
+@container registry (max-width: 600px) {
+  .client-info-summary, .client-info-fields, .client-info-fields.has-three-columns { grid-template-columns: minmax(0, 1fr); }
+}
+
+.client-recipient-row { padding: 10px 0; border-bottom: 1px solid var(--mantine-color-gray-2); }
+.client-recipient-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.client-recipient-row.is-deleted { opacity: .6; }
+.client-recipient-row .mantine-ActionIcon-root { flex-shrink: 0; }
+
+/* Client structure uses the filled tab treatment at every sheet width. */
+.app-drawer .client-structure-tabs-root > .client-structure-tabs {
+  justify-content: flex-start; gap: 6px; padding: 8px; background: white; border-bottom: 1px solid var(--mantine-color-gray-2);
+}
+.app-drawer .client-structure-tabs::before { display: none; }
+.app-drawer .client-structure-tabs-root > .client-structure-tabs > .mantine-Tabs-tab {
+  min-height: 38px; padding: 8px 12px; margin: 0; border: 0; border-radius: 8px; background: transparent; color: var(--mantine-color-gray-8); font-family: var(--font-mono); font-size: 13px; font-weight: 500;
+}
+.app-drawer .client-structure-tabs-root > .client-structure-tabs > .mantine-Tabs-tab[data-active] { background: var(--brand-orange); color: white; }
+.app-drawer .client-structure-tabs-root > .client-structure-tabs > .mantine-Tabs-tab:not([data-active]):hover { background: var(--mantine-color-gray-1); }

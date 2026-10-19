@@ -26,11 +26,6 @@
   overflow-x: auto;
 }
 
-.product-storages-filter-row {
-  min-width: max-content;
-  width: 100%;
-}
-
 .product-storages-filter-row .app-filter-actions {
   margin-left: auto;
 }

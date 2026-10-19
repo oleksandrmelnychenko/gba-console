@@ -18,11 +18,6 @@
   overflow-x: auto;
 }
 
-.tax-free-pack-lists-filter-bar .tax-free-pack-lists-filter-row {
-  min-width: max-content;
-  width: 100%;
-}
-
 .tax-free-pack-lists-alert {
   margin: 12px 12px 0;
 }

@@ -19,11 +19,9 @@
 /* ── Filter bar (§5.3): filters → actions → table toolbar → right buttons. ── */
 .users-filter-bar {
   align-items: end;
-  background: #f8f9fa;
   border-bottom-color: var(--mantine-color-gray-2);
   display: grid;
   flex: 0 0 auto;
-  gap: 10px;
   grid-template-columns: minmax(220px, 1fr) 168px 168px auto auto auto;
   overflow-x: auto;
 }

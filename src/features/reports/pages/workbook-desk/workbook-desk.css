@@ -940,7 +940,7 @@
 .workbook-header__details { display: grid; gap: 12px; padding-top: 12px; }
 .workbook-header__warning, .workbook-header__resolving { flex-basis: 100%; }
 .workbook-actions__scroll { overflow-x: auto; }
-.workbook-toolbar { display: flex; min-width: max-content; }
+.workbook-toolbar { display: flex; min-width: 0; }
 .workbook-actions__status:empty { display: none; }
 .workbook-actions__status:not(:empty) { padding: 8px; border-top: 1px solid var(--desk-border); }
 .workbook-actions__buttons > .mantine-Button-root { height: var(--app-filter-control-height); border-radius: 8px; }

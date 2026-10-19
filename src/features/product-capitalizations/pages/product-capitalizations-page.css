@@ -21,10 +21,6 @@
   flex: 0 0 auto;
 }
 
-.product-capitalizations-filter-row {
-  width: 100%;
-}
-
 /* Pushes the reset/paginator cluster, table controls and create button flush to
    the trailing edge of the bar (no search field here to grow and do it). */
 .product-capitalizations-filter-spacer {

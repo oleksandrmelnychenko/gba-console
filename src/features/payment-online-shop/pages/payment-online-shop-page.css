@@ -22,14 +22,6 @@
   overflow-x: auto;
 }
 
-.payment-online-shop-filter-row {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: 310px minmax(180px, 1fr) max-content minmax(16px, 1fr) max-content max-content;
-  min-width: max-content;
-  width: 100%;
-}
-
 /* Push search/reset/paginator before the dedicated DataTable toolbar slot. */
 .payment-online-shop-filter-row .app-filter-actions {
   grid-column: 5;

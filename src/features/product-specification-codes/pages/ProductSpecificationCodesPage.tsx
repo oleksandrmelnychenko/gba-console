@@ -204,7 +204,7 @@ function ProductSpecificationCodesPageContent() {
     <Stack className="product-specification-codes-page" gap={6}>
       <Card className="app-data-card product-specification-codes-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-specification-codes-filter-bar">
-          <div className="product-specification-codes-filter-row">
+          <div className="app-filter-fields product-specification-codes-filter-row">
             <TextInput
               className="product-specification-codes-search"
               label={t('Код товару')}

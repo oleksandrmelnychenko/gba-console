@@ -64,7 +64,10 @@
   background: var(--app-filter-glow), #f8f9fa;
   border-bottom: 1px solid var(--mantine-color-gray-2);
   align-items: end;
-  flex-wrap: nowrap;
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  min-width: 0;
   gap: 10px;
   /* The pattern padding (docs/ui-patterns.md §5.3) — pages must NOT override.
      Horizontal 8px lines the bar content up with the table text (th/td padding
@@ -120,6 +123,7 @@
 .app-filter-bar.app-filter-bar--stacked {
   display: flex;
   flex-direction: column;
+  flex-wrap: nowrap;
   align-items: stretch;
   flex: 0 0 auto;
   min-width: 0;
@@ -166,8 +170,14 @@
   display: grid;
   flex: 0 0 310px;
   gap: 10px;
-  grid-template-columns: repeat(2, 150px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 100%;
   width: 310px;
+}
+
+.app-filter-bar--stacked > .app-filter-date-range {
+  flex: 0 0 auto;
+  width: 100%;
 }
 
 /* Fixed two-row field for compound controls (for example one "Period" label
@@ -329,4 +339,140 @@
 .mantine-Button-root.app-filter-primary-action:not(:disabled):not([data-disabled]):hover {
   background: var(--button-hover);
   color: var(--button-hover-color, var(--button-color));
+}
+
+/* Shared field rows wrap as groups instead of clipping controls horizontally.
+   Page classes may choose column widths, but not the control chrome or gaps. */
+:is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar) .app-filter-fields {
+  align-items: end;
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+  padding: 0;
+}
+
+:is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar) .app-filter-fields > :is(.mantine-InputWrapper-root, .app-filter-field) {
+  flex: 1 1 170px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+:is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar) :is(.app-filter-actions, .sales-filter-actions, .console-table-actions) {
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.app-filter-table-toolbar-slot:empty { display: none; }
+
+/* Compound filter/action groups keep their own contents together while
+   allowing long groups to wrap inside a drawer or narrow registry. */
+:is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar) .app-filter-control-group {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+:is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar) .app-filter-control-group > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+:is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar) .mantine-Button-root {
+  border-radius: 8px;
+  height: var(--app-filter-control-height);
+  min-height: var(--app-filter-control-height);
+  flex-shrink: 0;
+  padding-inline: 12px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+:is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar) .mantine-Button-label {
+  font: inherit;
+}
+
+/* The paginator is one 36px control; its inputs must not each inherit 36px
+   plus the surrounding frame. Small arrows keep the existing hit targets. */
+:is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar) .app-paginator {
+  --app-filter-control-height: 28px;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  height: 36px;
+  padding: 3px;
+}
+
+:is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar) .mantine-ActionIcon-root:not(.app-paginator *, .mantine-Input-section *) {
+  border-radius: 8px;
+  flex: 0 0 auto;
+  height: 36px;
+  width: 36px;
+  min-height: 36px;
+  min-width: 36px;
+}
+
+:is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar):not(:has(.mantine-InputWrapper-label, .app-filter-label, .sales-filter-label)) {
+  min-height: 53px;
+}
+
+/* Query the available panel width, including narrow drawers on wide displays. */
+.console-content,
+.app-data-card,
+.app-filter-card,
+.console-table-shell,
+.sales-ukraine-card,
+.app-sheet-body,
+.app-modal .mantine-Modal-body {
+  container-name: registry;
+  container-type: inline-size;
+}
+
+@container registry (max-width: 1440px) {
+  :is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar):not(.app-filter-bar--stacked) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    min-width: 0;
+    overflow: visible;
+  }
+
+  :is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar) > .mantine-InputWrapper-root {
+    flex: 1 1 180px;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  :is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar) > .app-filter-fields {
+    flex-basis: 100%;
+  }
+
+  :is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar) :is(.app-filter-table-toolbar-slot, .data-table-toolbar, .data-table-toolbar-left) {
+    flex-wrap: wrap;
+    max-width: 100%;
+    gap: 8px;
+  }
+}
+
+@container registry (max-width: 600px) {
+  :is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar) .app-filter-date-range {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+  }
+
+  :is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar) :is(.app-filter-actions, .sales-filter-actions, .console-table-actions) {
+    justify-content: flex-start;
+    margin-left: 0;
+  }
 }

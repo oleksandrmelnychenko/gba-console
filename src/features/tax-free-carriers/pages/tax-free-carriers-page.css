@@ -13,10 +13,6 @@
 }
 
 /* Tax-free carriers registry — chrome aligned with the «Продажі» reference. */
-.tax-free-carriers-filter-row {
-  min-width: max-content;
-  width: 100%;
-}
 
 .tax-free-carriers-filter-bar {
   overflow-x: auto;

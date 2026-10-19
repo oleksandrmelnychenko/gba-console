@@ -117,7 +117,7 @@ export function ManagerSalesByTopNXView() {
   return (
     <div className="sales-dashboard-tab-content sales-chart-card">
       <div className="app-filter-bar">
-        <div className="sales-chart-filter-row is-topnx">
+        <div className="app-filter-fields sales-chart-filter-row is-topnx">
           <div className="app-filter-date-range">
             <TextInput
               className="sales-chart-filter-control"

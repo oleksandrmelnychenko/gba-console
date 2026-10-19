@@ -22,7 +22,6 @@
 .reports-stocks-workspace .reports-stocks-form { gap: 14px; }
 .reports-stocks-workspace .reports-stocks-filter-scroll { border: 1px solid var(--mantine-color-gray-2); border-radius: 10px; overflow: visible; position: relative; }
 .reports-stocks-workspace .reports-stocks-filter-bar { min-width: 0; flex-wrap: wrap; border: 0; }
-.reports-stocks-workspace .reports-stocks-toolbar-fields { display: flex; flex: 1 1 auto; align-items: end; gap: 10px; min-width: 0; flex-wrap: wrap; }
 .reports-stocks-workspace .report-dataset-picker--compact { flex: 1 1 250px; max-width: 440px; min-width: 0; }
 .reports-stocks-workspace .reports-stocks-actions { margin-left: auto; gap: 8px; }
 .reports-stocks-workspace .report-quick-presets { background: var(--mantine-color-white); border: 1px solid var(--mantine-color-gray-2); border-radius: 10px; padding: 12px; gap: 8px; }
@@ -44,7 +43,6 @@
 .stocks-workspace-analysis { display: grid; gap: 14px; margin-top: 14px; }
 .stocks-workspace-analysis:empty { display: none; }
 @media (max-width: 1100px) {
-  .reports-stocks-workspace .reports-stocks-toolbar-fields { display: contents; }
   .reports-stocks-workspace .reports-stocks-generate { margin-left: 0; }
 }
 @media (max-width: 760px) {

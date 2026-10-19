@@ -672,7 +672,7 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
   return (
     <Card className="app-data-card available-payments-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar available-payments-filter-bar">
-        <Group align="end" gap={10} wrap="nowrap" className="available-payments-filter-row">
+        <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields available-payments-filter-row">
           <div className="app-filter-date-range">
             <TextInput
               label={t('Від')}

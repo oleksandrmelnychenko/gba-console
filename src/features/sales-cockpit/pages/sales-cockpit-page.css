@@ -26,7 +26,6 @@
 .cockpit-command-bar {
   align-items: end;
   display: grid;
-  gap: 10px;
   grid-template-columns: 170px 450px max-content minmax(390px, 1fr);
   min-width: 0;
   overflow-x: auto;
@@ -843,7 +842,6 @@
 .cockpit-board-filter {
   align-items: end;
   display: grid;
-  gap: 10px;
   grid-template-columns: minmax(180px, 220px) minmax(170px, 200px) minmax(0, 1fr);
   min-width: 0;
   overflow-x: auto;

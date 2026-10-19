@@ -235,7 +235,7 @@ function ConsumableStoragesPageContent() {
     <Stack className="consumable-storages-page" gap={6}>
       <Card className="app-data-card consumable-storages-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar consumable-storages-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="consumable-storages-filter-row">
+          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields consumable-storages-filter-row">
             <TextInput
               label={t('Пошук')}
               leftSection={<Search size={16} />}
@@ -584,7 +584,7 @@ function StorageRemnantsPanel({ products }: { products: ConsumableProduct[] }) {
   return (
     <Stack className="consumable-storage-detail-panel" gap={0}>
       <div className="app-filter-bar consumable-storage-detail-filter-bar">
-        <Group align="end" gap={10} wrap="nowrap" className="consumable-storage-detail-filter-row">
+        <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields consumable-storage-detail-filter-row">
       <TextInput
         leftSection={<Search size={16} />}
         label={t('Пошук')}
@@ -868,7 +868,7 @@ function DeprecatedConsumableOrdersPanel({
   return (
     <Stack className="consumable-storage-detail-panel" gap={0}>
       <div className="app-filter-bar consumable-storage-detail-filter-bar consumable-storage-detail-filter-bar--two-row">
-      <Group align="end" justify="space-between" gap={10} wrap="nowrap" className="consumable-storage-detail-filter-row">
+      <Group align="end" justify="space-between" gap={10} wrap="nowrap" className="app-filter-fields consumable-storage-detail-filter-row">
         <Group align="end" gap="sm" wrap="wrap">
           <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => setFromDate(event.currentTarget.value)} />
           <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => setToDate(event.currentTarget.value)} />

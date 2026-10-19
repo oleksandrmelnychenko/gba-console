@@ -58,10 +58,6 @@
   border-bottom: 1px solid var(--mantine-color-gray-2);
 }
 
-.basket-supply-filters {
-  flex: 1 1 680px;
-}
-
 .basket-supply-document-controls {
   flex: 1 1 420px;
   max-width: 620px;
@@ -205,17 +201,11 @@
   align-items: end;
   display: flex;
   flex-wrap: nowrap;
-  gap: 10px;
   overflow-x: auto;
 }
 
 .basket-supply-command-bar.is-split {
   justify-content: flex-start;
-}
-
-.basket-supply-command-bar .basket-supply-filters {
-  flex: 1 1 auto;
-  min-width: 620px;
 }
 
 .basket-supply-command-bar:not(.is-split) > .app-filter-actions {
@@ -285,10 +275,6 @@
 
 /* «Закупівля під бюджет» filter strip — inputs left, refresh cluster pushed to
    the trailing edge, «Сформувати план» as the create-slot CTA. */
-.budget-cart-filter-row {
-  min-width: max-content;
-  width: 100%;
-}
 
 .budget-cart-filter-bar {
   min-width: 0;

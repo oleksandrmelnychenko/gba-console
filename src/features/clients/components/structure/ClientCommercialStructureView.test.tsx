@@ -15,6 +15,35 @@ const mutateClientIdentityMock = vi.mocked(mutateClientIdentity)
 const t = (value: string) => value
 
 describe('ClientCommercialStructureView', () => {
+  it('explains review conflicts with source names without showing a snapshot timestamp', () => {
+    const structure = createStructure()
+    structure.Reasons = ['conflicting_source_group_name', 'explicit_hierarchy']
+    const snapshots = structure.LegalParties[0].Cards[0].SourceSnapshots
+    snapshots[0].DirectClientGroupName = 'Група А'
+    snapshots[1].DirectClientGroupName = 'Група Б'
+    render(<MantineProvider env="test" theme={theme}>
+      <ClientCommercialStructureView structure={structure} t={t} />
+    </MantineProvider>)
+    expect(screen.getByText('Назви груп у джерелах не збігаються')).toBeTruthy()
+    expect(screen.getByText('Fenix: Група А; AMG: Група Б')).toBeTruthy()
+    expect(screen.queryByText(/Зріз даних/)).toBeNull()
+    expect(screen.queryByText('Є дані, які треба перевірити')).toBeNull()
+  })
+
+  it('labels agreement metadata and converts numeric currency codes for display', () => {
+    const structure = createStructure()
+    const agreement = structure.LegalParties[0].Cards[0].SourceSnapshots[0].Agreements[0]
+    agreement.CurrencyCode = '978'
+    const { container } = render(<MantineProvider env="test" theme={theme}>
+      <ClientCommercialStructureView structure={structure} t={t} />
+    </MantineProvider>)
+    const source = container.querySelector<HTMLElement>('[data-source-system="fenix"]')!
+    expect(within(source).getByText('Валюта: EUR')).toBeTruthy()
+    expect(within(source).getByText('Організація: ТОВ «АМГ «КОНКОРД»')).toBeTruthy()
+    expect(within(source).getByText('Тип ціни: ЦР')).toBeTruthy()
+    expect(within(source).getByText('Період: з 01.01.2026')).toBeTruthy()
+  })
+
   it('shows only a complete current buyer price type from the opened Fenix card', () => {
     const structure = createStructure()
     const snapshot = structure.LegalParties[0].Cards[0].SourceSnapshots[0]
@@ -82,7 +111,7 @@ describe('ClientCommercialStructureView', () => {
     expect(screen.getByText('Дати одного з договорів Fenix некоректні.')).toBeTruthy()
   })
 
-  it('shows the business hierarchy first and keeps raw 1C evidence collapsed', () => {
+  it('shows the business hierarchy without the technical audit', () => {
     const { container } = render(
       <MantineProvider env="test" theme={theme}>
         <ClientCommercialStructureView structure={createStructure()} t={t} />
@@ -90,11 +119,9 @@ describe('ClientCommercialStructureView', () => {
     )
 
     expect(screen.getByText('Комерційна група · ХМ052')).toBeTruthy()
-    expect(screen.getByText('Є дані, які треба перевірити')).toBeTruthy()
-    expect(screen.getByText(/Однозначні картки об’єднуються автоматично зі збереженням договорів/)).toBeTruthy()
-    expect(screen.getByText(/Сумнівні зв’язки не об’єднуються й залишаються на перевірку/)).toBeTruthy()
+    expect(screen.getByText('Що потрібно перевірити')).toBeTruthy()
     expect(screen.getByText('Структура клієнта')).toBeTruthy()
-    expect(screen.getAllByText('ТОВ МАГРОМ').length).toBeGreaterThanOrEqual(3)
+    expect(screen.getAllByText('ТОВ МАГРОМ').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('Покупець')).toBeTruthy()
     expect(screen.queryByText('Buyer')).toBeNull()
     const regionCodeValues = screen.getAllByText('BXM05202')
@@ -102,19 +129,10 @@ describe('ClientCommercialStructureView', () => {
     expect(screen.getByText('код 01234567')).toBeTruthy()
     expect(regionCodeValues.some((value) => Boolean(value.closest('.client-card-code-chip')))).toBe(true)
     expect(screen.getAllByText('AMG').length).toBeGreaterThanOrEqual(1)
-    expect(screen.getByText('Марія Іваненко')).toBeTruthy()
-    expect(screen.getByText('UA123456789 · UAH')).toBeTruthy()
-    expect(screen.getByText('client@example.test')).toBeTruthy()
-    expect(screen.getByText('Договори та кредитні умови 1С · 1')).toBeTruthy()
-    expect(screen.getByText('50 000 UAH')).toBeTruthy()
-    expect(screen.getByText('Пошкоджений ідентифікатор джерела — потрібна перевірка')).toBeTruthy()
-    expect(screen.getByText('Картку позначено видаленою у 1С — не використовуйте без перевірки')).toBeTruthy()
-    expect(screen.getByText('Пошкоджене або надмірно довге значення з 1С нормалізовано — перевірте оригінал')).toBeTruthy()
+    expect(screen.queryByText('Деталі перевірки 1С')).toBeNull()
 
     const selectedParty = container.querySelector<HTMLDetailsElement>('.client-legal-party')
-    const technicalAudit = screen.getByText('Деталі перевірки 1С').closest('details')
     expect(selectedParty?.open).toBe(true)
-    expect(technicalAudit?.open).toBe(false)
   })
 
   it('makes a truncated candidate set impossible to mistake for a complete group', () => {

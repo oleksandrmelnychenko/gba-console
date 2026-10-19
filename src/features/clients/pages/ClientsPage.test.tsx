@@ -129,7 +129,7 @@ describe('ClientActionsModal', () => {
     )
 
     expect(screen.queryByRole('button', { name: 'Позначити неактивним' })).toBeNull()
-    expect(screen.getByText('Статус керується синхронізацією з 1С')).toBeTruthy()
+    expect(screen.queryByText('Статус керується синхронізацією з 1С')).toBeNull()
   })
 
   it('does not load or expose independent actions when their permissions are absent', () => {

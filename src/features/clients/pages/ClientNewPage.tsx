@@ -2,7 +2,6 @@ import {
   Alert,
   Button,
   Card,
-  Grid,
   Group,
   Loader,
   SimpleGrid,
@@ -798,6 +797,7 @@ export function ClientNewPage() {
 
   return (
     <AppModal
+      className="client-new-wizard"
       centered
       closeOnClickOutside={!isSaving}
       opened
@@ -824,39 +824,28 @@ export function ClientNewPage() {
             </Group>
           </Card>
         ) : (
-          <form onSubmit={handleSubmit}>
-            <Grid gap="md">
-              <Grid.Col span={{ base: 12, md: 3 }}>
+          <form className="client-new-form" onSubmit={handleSubmit}>
                 <nav className="client-new-step-nav" aria-label={t('Кроки створення клієнта')}>
-                  {visibleSteps.map((item) => {
+                  {visibleSteps.map((item, index) => {
                     const isActive = item === currentStep
 
                     return (
                       <button
                         key={item}
+                        aria-current={isActive ? 'step' : undefined}
                         aria-pressed={isActive}
                         className={`client-new-step-nav__item${isActive ? ' is-active' : ''}`}
                         disabled={item !== 'role' && !draft.ClientInRole.ClientTypeRole}
                         type="button"
                         onClick={() => goToStep(item)}
                       >
-                        <span className="client-new-step-nav__main">
-                          <span className="client-new-step-nav__label">{getNewStepLabel(item)}</span>
-                          <ChevronRight
-                            aria-hidden="true"
-                            className="client-new-step-nav__chevron"
-                            size={14}
-                            strokeWidth={2}
-                          />
-                        </span>
-                        <span aria-hidden="true" className="client-new-step-nav__marker" />
+                        <span className="client-new-step-nav__number" aria-hidden="true">{index + 1}</span>
+                        <span className="client-new-step-nav__label">{getNewStepLabel(item)}</span>
                       </button>
                     )
                   })}
                 </nav>
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, md: 9 }}>
-                <Card withBorder radius="md" padding="md">
+                <Card className="client-new-step-content" radius="md" padding="md" key={currentStep}>
                   <NewStepContent
                     clientTypes={clientTypes}
                     draft={draft}
@@ -887,10 +876,8 @@ export function ClientNewPage() {
                     }}
                   />
                 </Card>
-              </Grid.Col>
-            </Grid>
 
-            <Group justify="space-between" mt="md">
+            <Group className="client-new-footer" justify="space-between">
               <Button
                 variant="light"
                 color="gray"
@@ -960,10 +947,10 @@ function NewStepContent({
   if (step === 'role') {
     return (
       <Stack gap="md">
-        <Title order={3} size="h4">
-          {t('Роль')}
+        <Title className="client-new-section-title" order={3} size="h4">
+          {t('Оберіть роль клієнта')}
         </Title>
-        <SimpleGrid className="client-new-role-grid" cols={{ base: 1, md: 2 }} spacing="xs">
+        <SimpleGrid className="client-new-role-grid" cols={{ base: 1, sm: 2, lg: 3 }} spacing="xs">
           {clientTypes.flatMap((clientType) =>
             (clientType.ClientTypeRoles || []).flatMap((clientRole) => {
               if (!canSelectRole(clientType, clientRole, hasPermission)) {

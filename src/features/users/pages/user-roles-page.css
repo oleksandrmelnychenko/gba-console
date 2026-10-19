@@ -13,11 +13,9 @@
 /* ── Filter bar (§5.3) ── */
 .user-roles-filter-bar {
   align-items: end;
-  background: #f8f9fa;
   border-bottom-color: var(--mantine-color-gray-2);
   display: grid;
   flex: 0 0 auto;
-  gap: 10px;
   grid-template-columns: minmax(260px, 1fr) auto auto;
   overflow-x: auto;
 }

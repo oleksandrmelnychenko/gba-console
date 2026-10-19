@@ -15,7 +15,6 @@
   box-sizing: border-box;
   display: grid;
   flex: 0 0 auto;
-  gap: 10px;
   grid-template-columns: minmax(280px, 1fr) auto auto auto;
   overflow-x: auto;
 }

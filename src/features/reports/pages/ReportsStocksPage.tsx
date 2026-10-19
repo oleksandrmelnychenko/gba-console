@@ -1557,7 +1557,7 @@ function ReportBuilderForm(props: ReportBuilderFormProps) {
       <form className="reports-stocks-form" onSubmit={onSubmit}>
         <div className="reports-stocks-filter-scroll">
         <div className="app-filter-bar reports-stocks-filter-bar">
-          <div className="reports-stocks-toolbar-fields">
+          <div className="app-filter-fields reports-stocks-toolbar-fields">
           {datasetPanel}
           <ReportPeriodInputs dataSource={dataSource} supported={periodSupported} from={from} to={to} maxDate={maxDate} disabled={constructorMode && isLoading}
             presets={props.periodPresets} onFromChange={onFromChange} onToChange={onToChange} />

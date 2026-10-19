@@ -25,15 +25,6 @@
   overflow-x: auto;
 }
 
-.consumable-storages-filter-row {
-  align-items: end;
-  display: grid;
-  gap: 10px;
-  grid-template-columns: minmax(260px, 360px) minmax(0, 1fr) auto auto auto;
-  min-width: max-content;
-  width: 100%;
-}
-
 /* Пошук: фіксована висота лейбла + контрола — поля рівняються по низу (§5.3). */
 /* Дії + кнопка створення — в один рядок, праворуч тулбара. */
 .consumable-storages-filter-actions {
@@ -154,11 +145,6 @@
   flex: 0 0 auto;
   overflow-x: auto;
   overflow-y: hidden;
-}
-
-.consumable-storage-detail-filter-row {
-  min-width: max-content;
-  width: 100%;
 }
 
 .consumable-storage-detail-panel__body {

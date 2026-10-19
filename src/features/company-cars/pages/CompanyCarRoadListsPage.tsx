@@ -251,7 +251,7 @@ function CompanyCarRoadListsPageContent() {
     <Stack className="company-car-road-lists-page" gap={6}>
       <Card className="app-data-card company-car-road-lists-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar company-car-road-lists-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="company-car-road-lists-filter-row">
+          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields company-car-road-lists-filter-row">
             <Group gap="xs" wrap="nowrap" className="company-car-road-lists-identity">
               <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" leftSection={<ArrowLeft size={16} />} onClick={() => navigate(returnPath)}>
                 {t('Назад')}

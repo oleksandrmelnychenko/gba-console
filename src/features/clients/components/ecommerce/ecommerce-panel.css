@@ -1,0 +1,16 @@
+.client-edit-sheet .client-ecommerce .app-section-card { padding: 12px; }
+.client-ecommerce-phone { max-width: 360px; }
+.client-ecommerce-passwords { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.client-ecommerce .mantine-InputWrapper-label { font-size: 13px; }
+.client-ecommerce .mantine-InputWrapper-description { font-size: 11px; }
+.client-ecommerce .mantine-Input-input { min-height: 36px; height: 36px; font-size: 13px; }
+.client-ecommerce .mantine-PasswordInput-innerInput { font-size: 13px; }
+.client-ecommerce .mantine-Button-root { height: 32px; font-size: 12px; }
+.client-ecommerce-reserve { display: flex; align-items: center; gap: 12px; }
+.client-ecommerce-reserve > .mantine-InputWrapper-label { margin: 0; }
+.client-ecommerce-reserve > .mantine-Input-wrapper { width: 96px; flex-shrink: 0; }
+
+@container registry (max-width: 600px) {
+  .client-ecommerce-passwords { grid-template-columns: minmax(0, 1fr); }
+  .client-ecommerce-reserve { flex-wrap: wrap; gap: 6px; }
+}

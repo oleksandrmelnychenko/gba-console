@@ -2,6 +2,7 @@ import { Alert, Badge, Button, Group, Menu, SimpleGrid, Stack, Text, Textarea, T
 import { notifications } from '@mantine/notifications'
 import { Ban, Building2, ChevronRight, CircleAlert, Copy, Landmark, Link2, MoreHorizontal, Star, Store, Unlink } from 'lucide-react'
 import { useState } from 'react'
+import { TableChip } from '../../../../shared/ui/TableChip'
 import { AppModal, AppModalFooter } from '../../../../shared/ui/AppModal'
 import { mutateClientIdentity } from '../../api/clientsApi'
 import type {
@@ -12,7 +13,6 @@ import type {
   ClientIdentityMutationKind,
   ClientSourceAgreementSnapshot,
   ClientSourceCardSnapshot,
-  ClientSourceContactSnapshot,
 } from '../../types'
 import { selectBuyerPriceTypeEvidence } from './buyerPriceTypeEvidence'
 import './client-commercial-structure-view.css'
@@ -34,13 +34,6 @@ type PendingIdentityDecision = {
   description: string
 }
 
-const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
-  dateStyle: 'short',
-  timeStyle: 'short',
-})
-const sourceAmountFormatter = new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: 2,
-})
 const dateOnlyFormatter = new Intl.DateTimeFormat('uk-UA')
 
 export function ClientCommercialStructureView({
@@ -54,6 +47,7 @@ export function ClientCommercialStructureView({
   const [comment, setComment] = useState('')
   const [isSaving, setSaving] = useState(false)
   const groupTitle = getCommercialGroupTitle(structure, t)
+  const reviewIssues = getStructureReviewIssues(structure, t)
   const { activeParties, rejectedCards } = partitionStructureCards(structure)
   const partyHierarchy = buildLegalPartyHierarchy(activeParties)
   const activeCardsById = indexActiveCards(activeParties)
@@ -66,9 +60,6 @@ export function ClientCommercialStructureView({
       <Group className="client-commercial-hero" align="flex-start" justify="space-between" gap="sm" wrap="wrap">
         <div className="client-commercial-hero__identity">
           <Text className="app-section-title client-commercial-title">{groupTitle}</Text>
-          <Text className="client-commercial-as-of">
-            {t('Зріз даних')}: <span>{formatDateTime(structure.AsOfUtc)}</span>
-          </Text>
         </div>
         <StateBadge state={structure.State} t={t} />
       </Group>
@@ -83,11 +74,14 @@ export function ClientCommercialStructureView({
           <Text className="client-commercial-alert__title">
             {structure.IsPartial
               ? t('Показано не всю групу')
-              : t('Є дані, які треба перевірити')}
+              : t('Що потрібно перевірити')}
           </Text>
-          <Text className="client-commercial-alert__description">
-            {t('Однозначні картки об’єднуються автоматично зі збереженням договорів та їхніх організацій. Сумнівні зв’язки не об’єднуються й залишаються на перевірку.')}
-          </Text>
+          <ul className="client-commercial-review-issues">
+            {reviewIssues.map((issue) => <li key={issue.label}>
+              <span>{issue.label}</span>
+              {issue.details && <Text size="xs" className="client-commercial-review-details">{issue.details}</Text>}
+            </li>)}
+          </ul>
         </Alert>
       ) : null}
 
@@ -112,7 +106,6 @@ export function ClientCommercialStructureView({
         <SummaryMetric label={t('Продажів')} value={structure.SaleCount} />
       </SimpleGrid>
 
-      <BuyerPriceTypeEvidenceSection structure={structure} t={t} />
 
       <Stack className="client-commercial-parties" gap={7}>
         <Text className="app-section-title">{t('Структура клієнта')}</Text>
@@ -162,7 +155,7 @@ export function ClientCommercialStructureView({
         </details>
       ) : null}
 
-      <TechnicalAudit structure={structure} t={t} />
+      <BuyerPriceTypeEvidenceSection structure={structure} t={t} />
 
       <AppModal
         centered
@@ -230,15 +223,60 @@ export function ClientCommercialStructureView({
   )
 }
 
+function getStructureReviewIssues(structure: ClientCommercialStructure, t: (value: string) => string) {
+  const cards = structure.LegalParties.flatMap((party) => party.Cards)
+  const snapshots = cards.flatMap((card) => card.SourceSnapshots)
+  const reasons = new Set([
+    ...structure.Reasons,
+    ...structure.LegalParties.flatMap((party) => party.Reasons),
+    ...cards.flatMap((card) => card.Reasons),
+  ])
+  const labels: Record<string, string> = {
+    conflicting_source_group_name: 'Назви груп у джерелах не збігаються',
+    conflicting_source_hierarchy: 'У джерелах вказані різні головні клієнти або підпорядкування',
+    conflicting_region_code_family: 'Коди регіону не узгоджені',
+    conflicting_legal_code: 'Юридичні коди у джерелах не збігаються',
+    missing_legal_code: 'Не вказано ЄДРПОУ / ІПН',
+    invalid_legal_code: 'Некоректний ЄДРПОУ / ІПН',
+    invalid_region_code: 'Некоректний код регіону',
+    invalid_source_identity: 'Некоректний ідентифікатор картки у джерелі',
+    source_marked_deleted: 'Картку позначено видаленою у джерелі',
+    source_snapshot_missing: 'Не отримано дані картки з джерела',
+    candidate_limit_exceeded: 'Не всі можливі пов’язані картки потрапили до структури',
+    truncated_source_evidence: 'Частину даних джерела скорочено',
+    normalized_source_evidence: 'Пошкоджені значення джерела потребують перевірки',
+  }
+  const issues = [...reasons].filter((reason) => labels[reason]).map((reason) => {
+    let values: string[]
+    if (reason === 'conflicting_source_group_name' || reason === 'conflicting_source_hierarchy') {
+      values = snapshots.flatMap((snapshot) => {
+        const value = reason === 'conflicting_source_group_name'
+          ? snapshot.DirectClientGroupName || snapshot.ClientGroupName
+          : snapshot.MainClientName
+        return value?.trim() ? [`${getSourceLabel(snapshot.SourceSystem)}: ${value.trim()}`] : []
+      })
+    } else {
+      values = cards.filter((card) => card.Reasons.includes(reason)).map((card) =>
+        [card.CurrentRegionCode, card.DisplayName].filter(Boolean).join(' · '))
+    }
+    return { label: t(labels[reason]), details: [...new Set(values.filter(Boolean))].join('; ') }
+  })
+  if (issues.length === 0) {
+    issues.push({
+      label: t(structure.IsPartial ? 'Частина карток або даних джерел відсутня у відповіді' : 'Джерело позначило структуру для перевірки, але не уточнило причину'),
+      details: '',
+    })
+  }
+  return issues
+}
+
 function BuyerPriceTypeEvidenceSection({ structure, t }: ClientCommercialStructureViewProps) {
   const evidence = selectBuyerPriceTypeEvidence(structure)
 
   return (
     <section className="client-buyer-price-types" aria-label={t('Типи цін покупця з договорів Fenix')}>
-      <Text className="app-section-title">{t('Типи цін покупця з договорів Fenix')}</Text>
-      <Text c="dimmed" size="xs">
-        {t('Поточні типи цін із синхронізованих договорів відкритого клієнта.')}
-      </Text>
+      <details className="client-structure-disclosure" open={evidence.state !== 'ready'}>
+        <summary><ChevronRight size={16} /><span>{t('Типи цін покупця з договорів Fenix')}</span></summary>
       {evidence.state !== 'ready' ? (
         <Alert color={evidence.state === 'incomplete' ? 'orange' : 'blue'} variant="light">
           {t(evidence.reason)}
@@ -247,7 +285,6 @@ function BuyerPriceTypeEvidenceSection({ structure, t }: ClientCommercialStructu
         <Text size="sm">{t('На дату синку чинних договорів покупця з типом ціни немає.')}</Text>
       ) : (
         <>
-          <Text size="xs" c="dimmed">{t('Зріз Fenix')}: {formatDateTime(evidence.capturedAt)}</Text>
           <div className="client-buyer-price-types__scroll">
             <table className="app-static-table client-buyer-price-types__table">
               <thead><tr>
@@ -259,8 +296,8 @@ function BuyerPriceTypeEvidenceSection({ structure, t }: ClientCommercialStructu
               <tbody>{evidence.rows.map((row) => (
                 <tr key={row.reference}>
                   <td>{row.agreement}</td>
-                  <td>{row.standard}</td>
-                  <td>{row.promotional ?? '—'}</td>
+                  <td><Badge className="app-role-pill" variant="light">{row.standard}</Badge></td>
+                  <td>{row.promotional ? <Badge className="app-role-pill is-green" variant="light">{row.promotional}</Badge> : '—'}</td>
                   <td>{t(row.validity)}</td>
                 </tr>
               ))}</tbody>
@@ -268,6 +305,7 @@ function BuyerPriceTypeEvidenceSection({ structure, t }: ClientCommercialStructu
           </div>
         </>
       )}
+      </details>
     </section>
   )
 }
@@ -572,6 +610,9 @@ function ClientCard({
   const legalCode = card.Usreou || card.Tin
   const sourceSnapshots = getCardSourceSnapshots(card)
   const displayName = getPreferredCardDisplayName(card, t)
+  const repeatsPartyName = structure.LegalParties.some((party) =>
+    party.DisplayName?.trim() === displayName && party.Cards.some((item) => item.ClientId === card.ClientId),
+  )
 
   return (
     <div className={`client-source-card${card.IsTarget ? ' client-source-card--target' : ''}`}>
@@ -588,7 +629,7 @@ function ClientCard({
           </ThemeIcon>
           <div className="client-source-card__identity">
             <Group gap={5} wrap="wrap">
-              <Text className="client-source-card__name">{displayName}</Text>
+              <Text className="client-source-card__name" title={displayName}>{repeatsPartyName ? t('Картка клієнта') : displayName}</Text>
               {card.IsTarget ? <Badge className="app-role-pill is-orange" size="xs" variant="light">{t('Обрана')}</Badge> : null}
               {card.IsTradePoint ? <Badge className="app-role-pill is-gray" size="xs" variant="light">{t('Торгова точка')}</Badge> : null}
               {card.IsSubClient && !card.IsTradePoint ? <Badge className="app-role-pill is-gray" size="xs" variant="light">{t('Підклієнт')}</Badge> : null}
@@ -691,35 +732,31 @@ function ClientSourceTreeNode({
   const agreements = snapshot.Agreements || []
 
   return (
-    <div
+    <details
       className={`client-source-card__source-node${snapshot.SourceMarkedDeleted ? ' is-deleted' : ''}`}
       data-source-code={snapshot.SourceCode}
       data-source-system={snapshot.SourceSystem.toLowerCase()}
     >
+      <summary className="client-source-card__source-toggle">
+        <ChevronRight size={16} />
+        <Badge className="app-role-pill is-source" variant="light">{getSourceLabel(snapshot.SourceSystem)}</Badge>
+        <span className="client-source-card__source-code">{snapshot.RegionCode?.trim() || `#${snapshot.SourceCode}`}</span>
+        <span className="client-source-card__source-count">{t('Договори 1С')} · {agreements.length}</span>
+        {snapshot.SourceMarkedDeleted && <Badge className="app-role-pill is-red" variant="light">{t('видалений у 1С')}</Badge>}
+      </summary>
       <div className="client-source-card__source-header">
-        <Badge className="app-role-pill is-source" size="xs" variant="light">
-          {getSourceLabel(snapshot.SourceSystem)}
-        </Badge>
-        {snapshot.SourceMarkedDeleted ? (
-          <Badge className="app-role-pill is-red" size="xs" variant="light">
-            {t('видалений у 1С')}
-          </Badge>
-        ) : null}
         <div className="client-source-card__source-identity">
           <Text className="client-source-card__source-name">{sourceName}</Text>
           {shortName && shortName !== sourceName ? (
             <Text className="client-source-card__source-short-name">{shortName}</Text>
           ) : null}
-          <Text className="client-source-card__source-code">
-            #{snapshot.SourceCode}
-            {snapshot.RegionCode?.trim() ? ` · ${snapshot.RegionCode.trim()}` : ''}
-          </Text>
+          <Group gap={6} mt={4}>
+            <TableChip tone="source" value={`${t('Код 1С')}: ${snapshot.SourceCode}`} />
+            {snapshot.RegionCode?.trim() && <TableChip value={`${t('Код регіону')}: ${snapshot.RegionCode.trim()}`} />}
+          </Group>
         </div>
       </div>
       <div className="client-source-card__agreements">
-        <Text className="client-source-card__agreements-title">
-          {t('Договори 1С')} · {agreements.length}
-        </Text>
         {agreements.length > 0 ? (
           <div className="client-source-card__agreement-list">
             {agreements.map((agreement) => {
@@ -729,20 +766,16 @@ function ClientSourceTreeNode({
                 snapshot.SourceMarkedDeleted,
               )
               return (
-                <span
+                <div
                   className={`client-source-card__agreement is-${activity.kind}`}
                   key={`${snapshot.SourceSystem}-${snapshot.SourceCode}-${agreement.SourceCode}-${agreement.AgreementType || ''}-${agreement.Number || ''}-${agreement.FromDate || ''}-${agreement.ToDate || ''}`}
                 >
                   <span>{getSourceAgreementTitle(agreement)}</span>
-                  {getSourceAgreementDetails(agreement) ? (
-                    <span className="client-source-card__agreement-details">
-                      {getSourceAgreementDetails(agreement)}
-                    </span>
-                  ) : null}
+                  <SourceAgreementDetails agreement={agreement} t={t} />
                   <span className={`client-source-card__agreement-state is-${activity.kind}`}>
                     {t(activity.label)}
                   </span>
-                </span>
+                </div>
               )
             })}
           </div>
@@ -750,7 +783,7 @@ function ClientSourceTreeNode({
           <Text className="client-source-card__source-empty">{t('Немає договорів у 1С')}</Text>
         )}
       </div>
-    </div>
+    </details>
   )
 }
 
@@ -1026,167 +1059,6 @@ function ClientCardMetric({ label, value }: { label: string; value: number | str
   )
 }
 
-function TechnicalAudit({ structure, t }: ClientCommercialStructureViewProps) {
-  const cards = structure.LegalParties.flatMap((party) => party.Cards)
-
-  return (
-    <details className="client-structure-audit">
-      <summary>
-        <span className="client-structure-audit__summary">
-          <ChevronRight className="client-structure-audit__chevron" size={15} />
-          <span>{t('Деталі перевірки 1С')}</span>
-          <Badge className="app-role-pill is-gray" size="xs" variant="light">{cards.length}</Badge>
-        </span>
-      </summary>
-      <Stack gap="sm" mt="sm">
-        <Text className="client-structure-audit__description">
-          {t('Тут зібрані службові ознаки та сирі значення Fenix/AMG. Вони потрібні лише для розбору розбіжностей.')}
-        </Text>
-        <ReasonList reasons={structure.Reasons} t={t} />
-        {cards.map((card) => (
-          <details className="client-source-evidence" key={card.ClientId}>
-            <summary>
-              <span className="client-source-evidence__summary">
-                <ChevronRight className="client-source-evidence__chevron" size={14} />
-                <span>{card.DisplayName || t('Картка без назви')}</span>
-                <Badge className="app-role-pill is-gray" size="xs" variant="light">
-                  {card.SourceSnapshots.length} {t('джерел')}
-                </Badge>
-              </span>
-            </summary>
-            <ReasonList reasons={card.Reasons} t={t} />
-            {card.SourceSnapshots.length > 0 ? (
-              <SimpleGrid cols={{ base: 1, xl: 2 }} mt="xs" spacing="xs">
-                {card.SourceSnapshots.map((snapshot) => (
-                  <SourceSnapshot
-                    key={`${snapshot.SourceSystem}-${snapshot.SourceCode}`}
-                    snapshot={snapshot}
-                    t={t}
-                  />
-                ))}
-              </SimpleGrid>
-            ) : (
-              <Text c="dimmed" mt="xs" size="xs">
-                {t('Дані джерела з’являться після синку клієнтів')}
-              </Text>
-            )}
-          </details>
-        ))}
-      </Stack>
-    </details>
-  )
-}
-
-function SourceSnapshot({ snapshot, t }: { snapshot: ClientSourceCardSnapshot; t: (value: string) => string }) {
-  const sourceLabel = getSourceLabel(snapshot.SourceSystem)
-  const groupName = snapshot.DirectClientGroupName || snapshot.MainClientName || snapshot.ClientGroupName
-  const contacts = snapshot.Contacts || []
-  const agreements = snapshot.Agreements || []
-  const bankAccount = [snapshot.BankAccountNumber, snapshot.BankCurrencyCode].filter(Boolean).join(' · ')
-  const mainContact = [snapshot.MainContactPersonName, snapshot.MainContactPersonPosition].filter(Boolean).join(' · ')
-
-  return (
-    <div className="client-source-snapshot">
-      <Group justify="space-between" gap="xs" wrap="wrap">
-        <Badge className="app-role-pill is-source" size="sm" variant="light">{sourceLabel}</Badge>
-        <Text className="client-source-snapshot__date">{formatDateTime(snapshot.LastSeenAtUtc)}</Text>
-      </Group>
-      <EvidenceRow label={t('Код у 1С')} value={snapshot.SourceCode > 0 ? snapshot.SourceCode : t('пошкоджений')} />
-      <EvidenceRow label={t('Назва у 1С')} value={snapshot.FullName || snapshot.ClientName} />
-      <EvidenceRow label={t('Код регіону')} value={snapshot.RegionCode} />
-      <EvidenceRow label={t('Головний клієнт')} value={snapshot.MainClientCode ? `${snapshot.MainClientCode}${snapshot.MainClientName ? ` · ${snapshot.MainClientName}` : ''}` : null} />
-      <EvidenceRow label={t('Група у 1С')} value={groupName} />
-      <EvidenceRow label={t('ЄДРПОУ / ІПН')} value={snapshot.Usreou || snapshot.Tin} />
-      <EvidenceRow label={t('Менеджер у 1С')} value={snapshot.ManagerName} />
-      <EvidenceRow label={t('Головна контактна особа')} value={mainContact} />
-      <EvidenceRow label={t('Банк')} value={snapshot.BankName} />
-      <EvidenceRow label={t('Рахунок / валюта')} value={bankAccount} />
-      <EvidenceRow
-        label={t('Контроль строку боргу')}
-        value={snapshot.IsControlDayDebt == null
-          ? null
-          : snapshot.IsControlDayDebt
-            ? `${t('увімкнено')} · ${snapshot.QuantityDayDebt ?? 0} ${t('дн.')}`
-            : t('вимкнено')}
-      />
-
-      {contacts.length > 0 ? (
-        <div className="client-source-evidence-group">
-          <Text className="client-source-evidence-group__title">{t('Контакти та адреси 1С')}</Text>
-          {contacts.map((contact) => (
-            <EvidenceRow
-              key={`${contact.AddressType}-${contact.InfoType}-${contact.SourceAddressKindCode}-${contact.Value}`}
-              label={sourceContactLabel(contact, t)}
-              value={contact.Value}
-            />
-          ))}
-        </div>
-      ) : null}
-
-      {agreements.length > 0 ? (
-        <div className="client-source-evidence-group">
-          <Text className="client-source-evidence-group__title">
-            {t('Договори та кредитні умови 1С')} · {agreements.length}
-          </Text>
-          <Stack gap={6}>
-            {agreements.map((agreement) => (
-              <SourceAgreement
-                key={`${agreement.SourceCode}-${agreement.AgreementType || ''}`}
-                agreement={agreement}
-                t={t}
-              />
-            ))}
-          </Stack>
-        </div>
-      ) : null}
-
-      {!snapshot.SourceIdentityValid ? (
-        <Text c="red" mt={5} size="xs">{t('Пошкоджений ідентифікатор джерела — потрібна перевірка')}</Text>
-      ) : null}
-      {snapshot.SourceMarkedDeleted ? (
-        <Text c="red" mt={5} size="xs">{t('Картку позначено видаленою у 1С — не використовуйте без перевірки')}</Text>
-      ) : null}
-      {snapshot.EvidenceTruncated ? (
-        <Text c="orange" mt={5} size="xs">{t('Пошкоджене або надмірно довге значення з 1С нормалізовано — перевірте оригінал')}</Text>
-      ) : null}
-    </div>
-  )
-}
-
-function SourceAgreement({
-  agreement,
-  t,
-}: {
-  agreement: ClientSourceAgreementSnapshot
-  t: (value: string) => string
-}) {
-  const title = getSourceAgreementTitle(agreement)
-  const validity = [formatDateOnly(agreement.FromDate), formatDateOnly(agreement.ToDate)].filter(Boolean).join(' — ')
-  const accountKinds = [
-    agreement.IsManagementAccounting ? t('управлінський') : null,
-    agreement.IsAccounting ? t('бухгалтерський') : null,
-  ].filter(Boolean).join(', ')
-
-  return (
-    <div className="client-source-agreement">
-      <Group gap="xs" justify="space-between" wrap="wrap">
-        <Text className="client-source-agreement__title">{title}</Text>
-        {agreement.SourceMarkedDeleted ? (
-          <Badge className="app-role-pill is-red" size="xs" variant="light">{t('видалений у 1С')}</Badge>
-        ) : null}
-      </Group>
-      <EvidenceRow label={t('Код договору')} value={agreement.SourceCode} />
-      <EvidenceRow label={t('Організація')} value={agreement.OrganizationName} />
-      <EvidenceRow label={t('Валюта')} value={agreement.CurrencyCode} />
-      <EvidenceRow label={t('Тип ціни')} value={agreement.TypePriceName} />
-      <EvidenceRow label={t('Ліміт боргу')} value={formatSourceAmount(agreement.PermissibleDebtAmount, agreement.CurrencyCode)} />
-      <EvidenceRow label={t('Відстрочка платежу')} value={`${agreement.DebtDaysAllowedNumber || 0} ${t('дн.')}`} />
-      <EvidenceRow label={t('Період дії')} value={validity} />
-      <EvidenceRow label={t('Облік')} value={accountKinds} />
-    </div>
-  )
-}
-
 function getSourceLabel(sourceSystem: string): string {
   return sourceSystem.toLowerCase() === 'amg' ? 'AMG' : 'Fenix'
 }
@@ -1199,60 +1071,27 @@ function getSourceAgreementTitle(agreement: ClientSourceAgreementSnapshot): stri
   return name || number || `#${agreement.SourceCode}`
 }
 
-function getSourceAgreementDetails(agreement: ClientSourceAgreementSnapshot): string {
-  const validity = [formatDateOnly(agreement.FromDate), formatDateOnly(agreement.ToDate)]
-    .filter(Boolean)
-    .join(' — ')
+function SourceAgreementDetails({ agreement, t }: { agreement: ClientSourceAgreementSnapshot; t: (value: string) => string }) {
+  const currency = agreement.CurrencyCode?.trim()
+  const currencies: Record<string, string> = { '980': 'UAH', '978': 'EUR', '840': 'USD', '985': 'PLN' }
+  const from = formatDateOnly(agreement.FromDate)
+  const to = formatDateOnly(agreement.ToDate)
+  const period = from && to ? `${from} — ${to}` : from ? `${t('з')} ${from}` : to ? `${t('до')} ${to}` : null
 
-  return [
-    agreement.CurrencyCode?.trim(),
-    agreement.OrganizationName?.trim(),
-    agreement.TypePriceName?.trim(),
-    validity,
-  ].filter(Boolean).join(' · ')
-}
-
-function sourceContactLabel(
-  contact: ClientSourceContactSnapshot,
-  t: (value: string) => string,
-): string {
-  const labels: Record<string, string> = {
-    AccountingNumber: t('Телефон бухгалтера'),
-    ActualAddress: t('Фактична адреса'),
-    DeliveryAddress: t('Адреса доставки'),
-    DeliveryNumber: t('Телефон доставки'),
-    DirectorName: t('Керівник'),
-    Email: 'Email',
-    FaxNumber: t('Факс'),
-    Icq: 'ICQ',
-    LegalAddress: t('Юридична адреса'),
-    ManagerNumber: t('Телефон менеджера'),
-    MobileNumber: t('Мобільний телефон'),
-    PhoneNumber: t('Телефон'),
-    Website: t('Сайт'),
-  }
-  const label = contact.InfoType ? labels[contact.InfoType] || contact.InfoType : contact.AddressType || t('Контакт')
-  return contact.IsUnclassified ? `${label} · ${t('не класифіковано')}` : label
-}
-
-function formatSourceAmount(value: number, currencyCode?: string | null): string | null {
-  if (!Number.isFinite(value)) return null
-  return `${sourceAmountFormatter.format(value)}${currencyCode ? ` ${currencyCode}` : ''}`
+  return (
+    <div className="client-source-card__agreement-details">
+      {agreement.OrganizationName?.trim() && <TableChip tone="source" value={`${t('Організація')}: ${agreement.OrganizationName.trim()}`} />}
+      {currency && <TableChip value={`${t('Валюта')}: ${currencies[currency] || currency}`} />}
+      {agreement.TypePriceName?.trim() && <TableChip tone="product" value={`${t('Тип ціни')}: ${agreement.TypePriceName.trim()}`} />}
+      {period && <TableChip tone="document" value={`${t('Період')}: ${period}`} />}
+    </div>
+  )
 }
 
 function formatDateOnly(value?: string | null): string | null {
   if (!value) return null
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? null : dateOnlyFormatter.format(date)
-}
-
-function EvidenceRow({ label, value }: { label: string; value?: string | number | null }) {
-  return (
-    <Group className="client-evidence-row" gap="xs" justify="space-between" wrap="nowrap">
-      <Text c="dimmed" size="xs">{label}</Text>
-      <Text className="client-evidence-value" size="xs">{value ?? '—'}</Text>
-    </Group>
-  )
 }
 
 function SummaryMetric({ label, value }: { label: string; value: number | string }) {
@@ -1265,6 +1104,14 @@ function SummaryMetric({ label, value }: { label: string; value: number | string
 }
 
 function StateBadge({ state, t }: { state: ClientCommercialStructureState; t: (value: string) => string }) {
+  if (state === 'review_required') {
+    return (
+      <Alert className="client-commercial-alert client-commercial-state-warning" color="orange" icon={<CircleAlert size={13} />} variant="light">
+        <Text className="client-commercial-alert__title">{t('Потрібна перевірка')}</Text>
+      </Alert>
+    )
+  }
+
   const config: Record<ClientCommercialStructureState, { className: string; label: string }> = {
     self: { className: 'is-gray', label: t('Окрема картка') },
     confirmed: { className: 'is-green', label: t('Підтверджено') },
@@ -1277,61 +1124,4 @@ function StateBadge({ state, t }: { state: ClientCommercialStructureState; t: (v
       {config[state].label}
     </Badge>
   )
-}
-
-function ReasonList({ reasons, t }: { reasons: string[]; t: (value: string) => string }) {
-  if (reasons.length === 0) {
-    return null
-  }
-
-  return (
-    <Group className="client-structure-reasons" gap={5} mt="xs" wrap="wrap">
-      {reasons.map((reason) => {
-        const isCritical = reason.includes('conflicting') || reason.includes('invalid') || reason === 'source_marked_deleted'
-        const needsAttention = reason.includes('missing') || reason.includes('truncated') || reason === 'candidate_limit_exceeded'
-
-        return (
-          <Badge
-            className={`app-role-pill ${isCritical ? 'is-red' : needsAttention ? 'is-orange' : 'is-gray'}`}
-            key={reason}
-            size="xs"
-            variant="light"
-          >
-            {reasonLabel(reason, t)}
-          </Badge>
-        )
-      })}
-    </Group>
-  )
-}
-
-function reasonLabel(reason: string, t: (value: string) => string): string {
-  const labels: Record<string, string> = {
-    explicit_hierarchy: t('Явний зв’язок'),
-    manual_confirmation: t('Підтверджено вручну'),
-    manual_rejection: t('Зв’язок відхилено вручну'),
-    identity_resolution_unavailable: t('Рішення щодо зв’язків недоступні'),
-    source_hierarchy: t('Ієрархія 1С'),
-    conflicting_source_hierarchy: t('Конфлікт ієрархій 1С'),
-    region_code_family: t('Схожий код регіону'),
-    conflicting_region_code_family: t('Конфлікт кодів регіону'),
-    source_group_name: t('Назва групи з 1С'),
-    conflicting_source_group_name: t('Конфлікт назв груп'),
-    same_legal_code: t('Однаковий юркод'),
-    conflicting_legal_code: t('Конфлікт юркодів'),
-    missing_legal_code: t('Немає юркоду'),
-    invalid_source_identity: t('Пошкоджений ID джерела'),
-    source_marked_deleted: t('Позначено видаленим у 1С'),
-    candidate_limit_exceeded: t('Забагато кандидатів'),
-    truncated_source_evidence: t('Нормалізоване значення з 1С'),
-  }
-  return labels[reason] || reason
-}
-
-function formatDateTime(value?: string | null): string {
-  if (!value) {
-    return '—'
-  }
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? '—' : dateTimeFormatter.format(date)
 }

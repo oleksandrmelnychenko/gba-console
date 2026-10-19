@@ -11,11 +11,6 @@
   overflow-x: auto;
 }
 
-.sad-list-page__filters {
-  min-width: max-content;
-  width: 100%;
-}
-
 .sad-list-page__actions {
   margin-left: auto;
 }

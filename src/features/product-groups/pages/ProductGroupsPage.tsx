@@ -252,7 +252,7 @@ function ProductGroupsPageContent() {
     <Stack className="product-groups-page" gap={6}>
       <Card className="app-data-card product-groups-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-groups-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="product-groups-filter-row">
+          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-groups-filter-row">
             <TextInput
               leftSection={<Search size={16} />}
               label={t('Пошук')}

@@ -10,7 +10,7 @@ import {
   UnstyledButton,
 } from '@mantine/core'
 import { AppModal } from '../../../../shared/ui/AppModal'
-import { CircleAlert, Plus, Trash2, X } from 'lucide-react'
+import { CircleAlert, FolderTree, Plus, Save, Trash2, X } from 'lucide-react'
 import { useEffect } from 'react'
 import { useValueState } from '../../../../shared/hooks/useValueState'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -22,6 +22,7 @@ import {
 } from '../../api/clientCabinetApi'
 import type { ClientGroup } from '../../types'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
+import './groups-modal.css'
 
 export type GroupsModalProps = {
   canManage: boolean
@@ -184,22 +185,31 @@ export function GroupsModal({ canManage, opened, clientId, clientNetId, onClose,
     <>
     <AppModal
       centered
+      className="client-groups-modal"
+      size={420}
       closeOnClickOutside={!isBusy}
       opened={opened}
       title={t('Підгрупи')}
       onClose={handleClose}
     >
-      <Stack gap="md">
+      <Stack gap={12}>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
-        <Group align="flex-end" gap="xs" wrap="nowrap">
+        <Group className="client-groups-form" align="flex-end" gap={8} wrap="nowrap">
           <TextInput
             disabled={!canManage || isBusy}
             maxLength={100}
+            aria-label={t('Назва групи')}
+            size="sm"
+            rightSection={name || isEditing ? (
+              <ActionIcon aria-label={t('Очистити назву групи')} color="gray" disabled={!canManage || isBusy} size="sm" variant="subtle" onClick={resetForm}>
+                <X size={14} />
+              </ActionIcon>
+            ) : null}
             placeholder={t('Назва групи')}
             style={{ flex: 1 }}
             value={name}
@@ -211,19 +221,11 @@ export function GroupsModal({ canManage, opened, clientId, clientNetId, onClose,
               }
             }}
           />
-          <ActionIcon
-            color="gray"
-            disabled={!canManage || !trimmedName || isBusy}
-            size="lg"
-            variant="light"
-            onClick={resetForm}
-          >
-            <X size={18} />
-          </ActionIcon>
           <Button
             color={CREATE_ACTION_COLOR}
-            disabled={!canManage || !trimmedName}
-            leftSection={<Plus size={16} />}
+            disabled={!canManage || !trimmedName || Boolean(deletingNetUid)}
+            size="sm"
+            leftSection={isEditing ? <Save size={15} /> : <Plus size={15} />}
             loading={isSubmitting}
             onClick={() => void handleSubmit()}
           >
@@ -236,11 +238,12 @@ export function GroupsModal({ canManage, opened, clientId, clientNetId, onClose,
             <Loader color="orange" size="sm" />
           </Group>
         ) : groups.length === 0 ? (
-          <Text c="dimmed" size="sm">
-            {t('Груп не додано')}
-          </Text>
+          <Group className="client-groups-empty" gap={8}>
+            <FolderTree size={18} aria-hidden="true" />
+            <Text size="sm">{t('Груп не додано')}</Text>
+          </Group>
         ) : (
-          <Stack gap="xs">
+          <Stack className="client-groups-list" gap={4}>
             {groups.map((group) => (
               <Group
                 key={group.NetUid || group.Id}
@@ -248,15 +251,7 @@ export function GroupsModal({ canManage, opened, clientId, clientNetId, onClose,
                 gap="xs"
                 justify="space-between"
                 wrap="nowrap"
-                p="xs"
-                style={{
-                  border: '1px solid var(--mantine-color-default-border)',
-                  borderRadius: 'var(--mantine-radius-sm)',
-                  background:
-                    editingGroup && editingGroup.NetUid === group.NetUid
-                      ? 'var(--mantine-color-orange-0)'
-                      : undefined,
-                }}
+                className={`client-groups-row${editingGroup?.NetUid === group.NetUid ? ' is-editing' : ''}`}
               >
                 <UnstyledButton
                   disabled={!canManage || isBusy}
@@ -268,6 +263,7 @@ export function GroupsModal({ canManage, opened, clientId, clientNetId, onClose,
                   </Text>
                 </UnstyledButton>
                 {canManage && <ActionIcon
+                  aria-label={`${t('Видалити групу')}: ${group.Name}`}
                   color="red"
                   disabled={isBusy}
                   loading={deletingNetUid === group.NetUid}

@@ -52,7 +52,7 @@ export function DocumentTargetControls({
 
   return (
     <Stack gap="sm">
-      <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+      <Group align="end" gap="sm" wrap="nowrap" className="app-filter-fields clients-filter-row">
         <SegmentedControl
           data={documentTypeOptions}
           disabled={disabled}

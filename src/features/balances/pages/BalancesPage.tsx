@@ -250,7 +250,7 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
   return (
     <div className="balances-card console-table-shell">
       <div className="app-filter-bar balances-filter-bar">
-        <Group align="end" gap={10} wrap="nowrap" className="balances-filter-row">
+        <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields balances-filter-row">
           <div className="app-filter-date-range">
             <TextInput
               label={t('Від')}

@@ -25,15 +25,6 @@
   overflow-x: auto;
 }
 
-.currency-convertors-filter-bar .currency-convertors-filter-row {
-  display: grid;
-  flex: 1 1 auto;
-  gap: 10px;
-  grid-template-columns: minmax(180px, 1fr) max-content max-content max-content;
-  min-width: max-content;
-  width: 100%;
-}
-
 .currency-convertors-filter-row > .app-filter-actions {
   grid-column: 2;
 }

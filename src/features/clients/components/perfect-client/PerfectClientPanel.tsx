@@ -1,22 +1,20 @@
 import {
   Alert,
-  Box,
   Button,
   Card,
   Checkbox,
-  Grid,
   Group,
   Select,
   SimpleGrid,
   Stack,
-  Switch,
+  SegmentedControl,
   Text,
   TextInput,
   Textarea,
 } from '@mantine/core'
 import { AppModal } from '../../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
-import { CircleAlert, Plus } from 'lucide-react'
+import { CircleAlert, Plus, Search } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { useValueState } from '../../../../shared/hooks/useValueState'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -27,6 +25,7 @@ import {
 import type { ClientResourcePerfectClient } from '../../../client-resources/types'
 import { PerfectClientType } from '../../types'
 import type { Client, ClientPerfectClientValue, PerfectClient } from '../../types'
+import './perfect-client-panel.css'
 import { OrbSplash } from '../../../../shared/ui/orb/Orb'
 
 const PERFECT_CLIENT_CULTURE = 'uk'
@@ -157,6 +156,7 @@ export function PerfectClientPanel({
 }: PerfectClientPanelProps) {
   const { t } = useI18n()
   const roleId = getRoleId(client)
+  const [search, setSearch] = useValueState('')
   const [perfectClients, setPerfectClients] = useValueState<PerfectClient[]>([])
   const [isLoading, setLoading] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
@@ -205,8 +205,9 @@ export function PerfectClientPanel({
     }
   }, [roleId, setPerfectClients, setLoading, setError, t])
 
-  const checkboxClients = perfectClients.filter((item) => item.Type === PerfectClientType.Checkbox)
-  const toggleClients = perfectClients.filter((item) => item.Type === PerfectClientType.Toggle)
+  const visibleClients = perfectClients.filter((item) => (item.Lable || '').toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()))
+  const checkboxClients = visibleClients.filter((item) => item.Type === PerfectClientType.Checkbox)
+  const toggleClients = visibleClients.filter((item) => item.Type === PerfectClientType.Toggle)
 
   function commit(next: PerfectClient[]) {
     if (disabled) {
@@ -236,10 +237,10 @@ export function PerfectClientPanel({
     updateClientAt(target, (current) => ({ ...current, IsSelected: isSelected }))
   }
 
-  function handleToggleSideChange(target: PerfectClient) {
+  function handleToggleSideChange(target: PerfectClient, side: string) {
     updateClientAt(target, (current) => ({
       ...current,
-      Values: (current.Values || []).map((value) => ({ ...value, IsSelected: !value.IsSelected })),
+      Values: (current.Values || []).map((value, index) => ({ ...value, IsSelected: index === (side === 'left' ? 0 : 1) })),
     }))
   }
 
@@ -295,10 +296,10 @@ export function PerfectClientPanel({
 
   return (
     <>
-      <Card className="app-section-card" withBorder padding="md" radius="md">
+      <Card className="app-section-card perfect-client-panel" withBorder padding="md" radius="md">
         <Stack gap="md">
           <Group justify="space-between" align="center">
-            <Text fw={600}>{t('Ідеальний клієнт')}</Text>
+            <Text className="client-section-title" fw={600}>{t('Ідеальний клієнт')}</Text>
             {canCreateDefinition && (
               <Button
                 color={CREATE_ACTION_COLOR}
@@ -318,6 +319,18 @@ export function PerfectClientPanel({
             </Alert>
           )}
 
+          {!isLoading && perfectClients.length > 0 && (
+            <TextInput
+              aria-label={t('Пошук параметра')}
+              placeholder={t('Пошук параметра')}
+              leftSection={<Search size={16} />}
+              value={search}
+              onChange={(event) => setSearch(event.currentTarget.value)}
+            />
+          )}
+          {!isLoading && perfectClients.length > 0 && visibleClients.length === 0 && (
+            <Text size="sm" c="dimmed">{t('Параметрів не знайдено')}</Text>
+          )}
           {isLoading ? (
             <OrbSplash label={t('Завантаження ідеального клієнта')} size={40} variant="thinking" />
           ) : perfectClients.length === 0 ? (
@@ -325,17 +338,8 @@ export function PerfectClientPanel({
               {t('Параметрів не додано')}
             </Text>
           ) : (
-            <Box
-              style={{
-                maxHeight: 'calc(100vh - 320px)',
-                overflowX: 'hidden',
-                overflowY: 'auto',
-                paddingRight: 8,
-              }}
-            >
-              <Grid gap="lg">
-                <Grid.Col span={{ base: 12, md: 6 }}>
-                  <Stack gap="sm">
+            <div className="perfect-client-columns">
+              <div className="perfect-client-list">
                     {checkboxClients.map((perfectClient, index) => (
                       <CheckboxRow
                         disabled={disabled}
@@ -345,10 +349,8 @@ export function PerfectClientPanel({
                         onValueChange={(value) => handleCheckboxValueChange(perfectClient, value)}
                       />
                     ))}
-                  </Stack>
-                </Grid.Col>
-                <Grid.Col span={{ base: 12, md: 6 }}>
-                  <Stack gap="sm">
+              </div>
+              <div className="perfect-client-list">
                     {toggleClients.map((perfectClient, index) => (
                       <ToggleRow
                         disabled={disabled}
@@ -356,13 +358,11 @@ export function PerfectClientPanel({
                         perfectClient={perfectClient}
                         onCommentChange={(value) => handleToggleCommentChange(perfectClient, value)}
                         onSelectedChange={(isSelected) => handleToggleSelectedChange(perfectClient, isSelected)}
-                        onSideChange={() => handleToggleSideChange(perfectClient)}
+                        onSideChange={(side) => handleToggleSideChange(perfectClient, side)}
                       />
                     ))}
-                  </Stack>
-                </Grid.Col>
-              </Grid>
-            </Box>
+              </div>
+            </div>
           )}
         </Stack>
       </Card>
@@ -392,22 +392,24 @@ function CheckboxRow({
   const isSelected = Boolean(perfectClient.IsSelected)
 
   return (
-    <Card withBorder padding="sm" radius="md">
+    <div className={`perfect-client-field${isSelected ? ' is-selected' : ''}`}>
       <Stack gap="xs">
         <Checkbox
           checked={isSelected}
           color={CREATE_ACTION_COLOR}
           disabled={disabled}
-          label={perfectClient.Lable}
+          label={perfectClient.Lable || '—'}
           onChange={(event) => onSelectedChange(event.currentTarget.checked)}
         />
         <TextInput
+          aria-label={perfectClient.Lable || '—'}
+          size="sm"
           disabled={disabled || !isSelected}
           value={perfectClient.Value || ''}
           onChange={(event) => onValueChange(event.currentTarget.value)}
         />
       </Stack>
-    </Card>
+    </div>
   )
 }
 
@@ -422,8 +424,9 @@ function ToggleRow({
   perfectClient: PerfectClient
   onCommentChange: (value: string) => void
   onSelectedChange: (isSelected: boolean) => void
-  onSideChange: () => void
+  onSideChange: (side: string) => void
 }) {
+  const { t } = useI18n()
   const isSelected = Boolean(perfectClient.IsSelected)
   const values: ClientPerfectClientValue[] = perfectClient.Values || []
   const leftValue = values[0]
@@ -431,38 +434,37 @@ function ToggleRow({
   const isRightSelected = !leftValue?.IsSelected
 
   return (
-    <Card withBorder padding="sm" radius="md">
+    <div className={`perfect-client-field${isSelected ? ' is-selected' : ''}`}>
       <Stack gap="xs">
         <Checkbox
           checked={isSelected}
           color={CREATE_ACTION_COLOR}
           disabled={disabled}
-          label={perfectClient.Lable}
+          label={perfectClient.Lable || '—'}
           onChange={(event) => onSelectedChange(event.currentTarget.checked)}
         />
-        <Group gap="sm" align="center" wrap="nowrap">
-          <Text c={isRightSelected ? 'dimmed' : undefined} size="sm">
-            {leftValue?.Value}
-          </Text>
-          <Switch
-            checked={isRightSelected}
-            color={CREATE_ACTION_COLOR}
-            disabled={disabled || !isSelected}
-            onChange={onSideChange}
-          />
-          <Text c={isRightSelected ? undefined : 'dimmed'} size="sm">
-            {rightValue?.Value}
-          </Text>
-        </Group>
-        <Textarea
+        <SegmentedControl
+          aria-label={perfectClient.Lable || '—'}
+          className="perfect-client-options"
+          disabled={disabled || !isSelected}
+          value={isRightSelected ? 'right' : 'left'}
+          data={[
+            { value: 'left', label: leftValue?.Value || '—' },
+            { value: 'right', label: rightValue?.Value || '—' },
+          ]}
+          onChange={onSideChange}
+        />
+        {(isSelected || Boolean(perfectClient.Value)) && <Textarea
           autosize
           disabled={disabled || !isSelected}
-          minRows={2}
+          aria-label={`${perfectClient.Lable || '—'} — ${t('Коментар')}`}
+          placeholder={t('Коментар')}
+          minRows={1}
           value={perfectClient.Value || ''}
           onChange={(event) => onCommentChange(event.currentTarget.value)}
-        />
+        />}
       </Stack>
-    </Card>
+    </div>
   )
 }
 

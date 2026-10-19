@@ -1071,7 +1071,7 @@ function AutoShipmentsPanel({ onCarriedOut, permissions }: AutoShipmentsPanelPro
               </Tooltip>
             </div>
             <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot warehouse-ukraine-table-toolbar-slot" />
-            <div className="warehouse-ukraine-command-actions">
+            <div className="app-filter-control-group warehouse-ukraine-command-actions">
               {hasShipmentList && (
                 <Badge className={model.shipmentList.IsSent ? 'app-role-pill is-green' : 'app-role-pill is-gray'} variant="light">
                   {model.shipmentList.IsSent ? t('Проведено') : t('Не проведено')}
@@ -1966,7 +1966,7 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
               />
             </div>
             <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot warehouse-ukraine-table-toolbar-slot" />
-            <div className="warehouse-ukraine-command-actions">
+            <div className="app-filter-control-group warehouse-ukraine-command-actions">
               <Button color={CREATE_ACTION_COLOR} disabled={!permissions.canCreate} size="sm" leftSection={<Plus size={18} />} onClick={onCreate}>
                 {t('Створити')}
               </Button>
@@ -2028,7 +2028,7 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
         onClose={requestCloseShipment}
       >
         <Stack className="warehouse-shipment-edit-shell" gap={12}>
-          <div className="warehouse-shipment-edit-toolbar">
+          <div className="app-filter-bar warehouse-shipment-edit-toolbar">
             {shipmentDraft && (
               <Badge
                 className={`app-role-pill warehouse-shipment-status-pill ${shipmentDraft.IsSent ? 'is-green' : 'is-gray'}`}
@@ -2052,7 +2052,7 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
               value={toDateTimeLocalValue(shipmentDraft?.FromDate)}
               onChange={(event) => updateDraftField('FromDate', event.currentTarget.value)}
             />
-            <div className="warehouse-shipment-edit-actions">
+            <div className="app-filter-actions warehouse-shipment-edit-actions">
               <Button
                 color={CREATE_ACTION_COLOR}
                 leftSection={<Plus size={16} />}

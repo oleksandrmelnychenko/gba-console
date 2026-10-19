@@ -19,7 +19,7 @@ import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Clock, ExternalLink, Network, Plus, RotateCcw, Search, ToggleLeft, ToggleRight, Wallet } from 'lucide-react'
+import { ChevronRight, CircleAlert, Clock, ExternalLink, Network, Plus, RotateCcw, Search, ToggleLeft, ToggleRight, Wallet } from 'lucide-react'
 import { useDebouncedValue } from '@mantine/hooks'
 import { type FormEvent, type RefObject, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { ClientTypeRoleFilter } from '../components/ClientTypeRoleFilter'
@@ -1089,30 +1089,22 @@ export function ClientActionsModal({
       centered
       size={496}
       opened={Boolean(client)}
-      title={
-        <span style={{ alignItems: 'center', display: 'inline-flex', fontFamily: 'var(--font-mono)', gap: 8 }}>
-          <span
-            style={{
-              background: isActive ? 'var(--mantine-color-green-6)' : 'var(--mantine-color-gray-4)',
-              borderRadius: 999,
-              boxShadow: isActive ? '0 0 0 3px rgba(64, 192, 87, 0.16)' : 'none',
-              flex: '0 0 auto',
-              height: 9,
-              width: 9,
-            }}
-          />
-          {client ? getClientDisplayName(client) : t('Клієнт')}
-        </span>
-      }
+      className="client-actions-modal"
+      title={client ? getClientDisplayName(client) : t('Клієнт')}
       onClose={onClose}
     >
       {client && (
-        <Stack gap="md">
-          {displayValue(client.RegionCode?.Value) && (
-            <Text size="sm" c="dimmed" style={{ fontFamily: 'var(--font-mono)' }}>
-              {displayValue(client.RegionCode?.Value)}
-            </Text>
-          )}
+        <Stack gap={10}>
+          <Group gap={6}>
+            {displayValue(client.RegionCode?.Value) && (
+              <Badge className="app-role-pill is-blue" variant="light">
+                {displayValue(client.RegionCode?.Value)}
+              </Badge>
+            )}
+            <Badge className={`app-role-pill ${isActive ? 'is-green' : 'is-gray'}`} variant="light">
+              {isActive ? t('Активний') : t('Неактивний')}
+            </Badge>
+          </Group>
 
           <Stack className="app-modal-actions" gap="xs">
             {canViewClient && (
@@ -1126,6 +1118,7 @@ export function ClientActionsModal({
                     <ExternalLink size={20} color="var(--mantine-color-gray-7)" />
                   </span>
                 }
+                rightSection={<ChevronRight size={16} aria-hidden="true" />}
                 variant="subtle"
                 onClick={() => onEdit(client)}
               >
@@ -1143,6 +1136,7 @@ export function ClientActionsModal({
                     <Wallet size={20} color="var(--mantine-color-gray-7)" />
                   </span>
                 }
+                rightSection={<ChevronRight size={16} aria-hidden="true" />}
                 variant="subtle"
                 onClick={() => onCashFlow(client)}
               >
@@ -1160,6 +1154,7 @@ export function ClientActionsModal({
                     <Clock size={20} color="var(--mantine-color-gray-7)" />
                   </span>
                 }
+                rightSection={<ChevronRight size={16} aria-hidden="true" />}
                 variant="subtle"
                 onClick={() => onReserveDays(client)}
               >
@@ -1177,10 +1172,17 @@ export function ClientActionsModal({
                     <Network size={20} color="var(--mantine-color-gray-7)" />
                   </span>
                 }
+                aria-label={`${t('Структура клієнта')}${structureCardCount == null ? '' : ` (${structureCardCount})`}`}
+                rightSection={
+                  <Group gap={8} wrap="nowrap" aria-hidden="true">
+                    {structureCardCount != null && <Badge className="app-role-pill is-gray" variant="light">{structureCardCount}</Badge>}
+                    <ChevronRight size={16} />
+                  </Group>
+                }
                 variant="subtle"
                 onClick={() => onStructure(client)}
               >
-                {t('Структура клієнта')}{structureCardCount == null ? '' : ` (${structureCardCount})`}
+                {t('Структура клієнта')}
               </Button>
             )}
           </Stack>
@@ -1200,10 +1202,6 @@ export function ClientActionsModal({
                 {isActive ? t('Позначити неактивним') : t('Позначити активним')}
               </Button>
             </>
-          ) : canToggleActive ? (
-            <Text c="dimmed" size="xs">
-              {t('Статус керується синхронізацією з 1С')}
-            </Text>
           ) : null}
         </Stack>
       )}
@@ -1261,7 +1259,7 @@ function ClientsFilterToolbar({
   const { t } = useI18n()
 
   return (
-    <Group align="end" gap={10} wrap="nowrap" className="clients-filter-row">
+    <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields clients-filter-row">
       <TextInput
         ref={searchInputRef}
         size="sm"

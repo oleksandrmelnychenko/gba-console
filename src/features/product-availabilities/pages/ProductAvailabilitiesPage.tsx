@@ -360,7 +360,7 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
     <Stack className="product-availabilities-page" gap={6}>
       <Card className="app-data-card product-availabilities-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-availabilities-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="product-availabilities-filter-row">
+          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-availabilities-filter-row">
             <div className="app-filter-date-range">
               <TextInput
                 label={t('Від')}

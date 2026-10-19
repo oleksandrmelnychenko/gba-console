@@ -4,7 +4,6 @@
 
 .event-permissions-filters {
   display: grid;
-  gap: 8px;
   grid-template-columns: minmax(220px, 1fr) minmax(130px, 170px) minmax(130px, 170px);
   margin-bottom: 10px;
 }

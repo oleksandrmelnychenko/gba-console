@@ -1221,7 +1221,7 @@ export function PaymentAccountActivityPanel({
             </Badge>
           </Group>
 
-          <Group align="end" className="payment-account-activity__toolbar" justify="space-between" wrap="wrap">
+          <Group align="end" className="app-filter-bar payment-account-activity__toolbar" justify="space-between" wrap="wrap">
             <Group align="end" className="payment-account-activity__dates" gap="sm" wrap="nowrap">
               <TextInput label={t('З')} type="date" value={from} w={150} onChange={(event) => onFromChange(event.currentTarget.value)} />
               <TextInput label={t('По')} type="date" value={to} w={150} onChange={(event) => onToChange(event.currentTarget.value)} />

@@ -360,7 +360,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
     <Stack className="product-history-page" gap={6}>
       <Card className="app-data-card product-history-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-history-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="product-history-filter-row">
+          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-history-filter-row">
             <TextInput
               label={t('Дата')}
               type="date"

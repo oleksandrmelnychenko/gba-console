@@ -36,11 +36,6 @@
   overflow-x: auto;
 }
 
-.product-transfers-filter-row {
-  min-width: max-content;
-  width: 100%;
-}
-
 .product-transfers-filter-row > .app-filter-actions {
   margin-left: auto;
 }

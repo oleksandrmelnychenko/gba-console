@@ -20,7 +20,6 @@
   align-items: end;
   display: grid;
   flex: 0 0 auto;
-  gap: 10px;
   grid-template-columns:
     minmax(170px, 220px)
     minmax(190px, 250px)

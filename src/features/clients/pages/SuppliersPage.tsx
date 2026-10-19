@@ -929,7 +929,7 @@ function SuppliersFilterToolbar({
   const { t } = useI18n()
 
   return (
-    <div className="sales-filter-row suppliers-filter-row">
+    <div className="app-filter-fields sales-filter-row suppliers-filter-row">
       <TextInput
         ref={searchInputRef}
         className="sales-filter-search suppliers-filter-search-input"

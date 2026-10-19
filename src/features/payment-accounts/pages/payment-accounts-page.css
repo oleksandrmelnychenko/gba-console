@@ -25,12 +25,6 @@
   overflow-x: auto;
 }
 
-.payment-accounts-filter-row {
-  gap: 10px;
-  min-width: max-content;
-  width: 100%;
-}
-
 .payment-accounts-type-filter {
   flex: 0 0 auto;
 }
@@ -375,7 +369,6 @@
 
 .payment-account-activity__toolbar {
   align-items: end;
-  gap: 12px 18px;
 }
 
 .payment-account-activity__actions {

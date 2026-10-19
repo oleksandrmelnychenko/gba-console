@@ -391,7 +391,6 @@
 .supply-order-spec-grid-toolbar {
   align-items: flex-end;
   display: flex;
-  gap: 10px;
   justify-content: space-between;
   min-width: 0;
 }

@@ -69,7 +69,12 @@
 }
 
 /* Section blocks: gray border, no shadow (the flat sheet pattern). */
+.app-modal .mantine-Modal-body.agreement-form-modal-body {
+  background: var(--mantine-color-gray-0);
+}
+
 .agreement-form-modal-body .mantine-Card-root {
+  background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   box-shadow: none;
 }

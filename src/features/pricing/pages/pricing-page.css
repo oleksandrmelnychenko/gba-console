@@ -4,7 +4,6 @@
 
 .pricing-page__filter-bar {
   display: grid;
-  gap: 10px;
   grid-template-columns:
     minmax(260px, 1fr)
     minmax(240px, 0.85fr)

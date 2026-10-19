@@ -432,7 +432,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
     <Stack className="product-capitalizations-page" gap={6}>
       <Card className="app-data-card product-capitalizations-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-capitalizations-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="product-capitalizations-filter-row">
+          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-capitalizations-filter-row">
             <div className="app-filter-date-range">
               <TextInput
                 label={t('Від')}

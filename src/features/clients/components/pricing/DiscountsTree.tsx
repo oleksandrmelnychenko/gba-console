@@ -11,6 +11,7 @@ import {
 } from '../../permissions'
 import type { ProductGroupDiscount } from '../../types'
 import { compactChangedProductGroupDiscounts } from '../../productGroupDiscountPayload'
+import { TableChip } from '../../../../shared/ui/TableChip'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 
 type DiscountNode = {
@@ -396,25 +397,22 @@ export function DiscountsTree({
   }
 
   return (
-    <Stack gap="sm">
-      <Group align="center" gap="sm" wrap="nowrap">
+    <Stack className="client-discounts" gap={10}>
+      <Group gap={8} justify="space-between">
+        <Text className="client-section-title">{t('Знижки за групами')}</Text>
+        <TableChip tone="document" value={selectedAgreementName} />
+      </Group>
+      <Group className="client-discounts__toolbar" align="center" gap={8} wrap="wrap">
         {canSelectAll && (
           <>
-            <Checkbox checked={isAllSelected} disabled={disabled} onChange={handleSelectAll} />
-            <Tooltip label={selectedLabel}>
-              <Text
-                fw={600}
-                lineClamp={1}
-                style={{ cursor: disabled ? 'default' : 'pointer', flex: 1 }}
-                onClick={() => {
-                  if (!disabled) {
-                    handleSelectAll()
-                  }
-                }}
-              >
-                {selectedLabel}
-              </Text>
-            </Tooltip>
+            <Checkbox
+              size="xs"
+              checked={isAllSelected}
+              disabled={disabled}
+              label={t('Вибрати всі')}
+              onChange={handleSelectAll}
+            />
+            {currentNode && <TableChip tone="neutral" value={selectedLabel} />}
             {isAnySelected && (
               <Group gap="xs" wrap="nowrap">
                 <Button color="red" disabled={disabled} size="xs" variant="light" onClick={() => handleChangeActiveInSelected(false)}>
@@ -430,17 +428,16 @@ export function DiscountsTree({
         {canEditPercent && (
           <TextInput
             disabled={disabled}
-            placeholder={t('Введіть знижку')}
-            style={{ width: 120 }}
+            aria-label={t('Знижка, %')}
+            placeholder={t('Знижка, %')}
+            size="xs"
+            className="client-discounts__percent-input"
+            inputMode="decimal"
             value={percent}
             onChange={(event) => handlePercentChange(event.currentTarget.value)}
           />
         )}
       </Group>
-
-      <Text c="dimmed" lineClamp={1} size="sm" title={selectedAgreementName}>
-        {selectedAgreementName}
-      </Text>
 
       {isDirty && (
         <Group align="center" gap="sm" justify="space-between">
@@ -463,13 +460,13 @@ export function DiscountsTree({
       ) : (
         <Box
           style={{
-            maxHeight: 'calc(100vh - 320px)',
+            maxHeight: 'min(480px, 60vh)',
             overflowX: 'hidden',
             overflowY: 'auto',
             paddingRight: 8,
           }}
         >
-          <Stack gap={4}>
+          <Stack gap={0}>
             {rootNodes.map((node) => renderDiscountNode(node))}
           </Stack>
         </Box>
@@ -512,37 +509,40 @@ function GroupRow({ node, depth, disabled, canCheck, t, onSelect, onCheck, onTog
     <Group
       align="center"
       className={`discounts-tree-row${node.isSelected ? ' is-selected' : ''}`}
-      gap="sm"
-      style={{ '--discounts-tree-indent': `${depth * 18}px` } as CSSProperties}
+      gap={8}
+      style={{ '--discounts-tree-indent': `${depth * 16}px` } as CSSProperties}
       wrap="nowrap"
     >
-      <Text
-        lineClamp={1}
-        style={{ cursor: disabled ? 'default' : 'pointer', flex: 1 }}
-        onClick={() => {
-          if (!disabled) {
-            onSelect(node.netId)
-          }
-        }}
+      {canCheck && (
+        <Checkbox
+          size="xs"
+          aria-label={`${t('Вибрати')}: ${node.name}`}
+          checked={node.isSelected}
+          disabled={disabled}
+          onChange={() => onCheck(node.netId)}
+        />
+      )}
+      <button
+        type="button"
+        className="discounts-tree-row__name"
+        title={node.name}
+        disabled={disabled}
+        aria-pressed={node.isSelected}
+        onClick={() => onSelect(node.netId)}
       >
         {node.name}
-      </Text>
-      {canCheck && (
-        <Checkbox checked={node.isSelected} disabled={disabled} onChange={() => onCheck(node.netId)} />
-      )}
+      </button>
       <Tooltip label={`${node.isActive ? t('Активна знижка') : t('Неактивна знижка')} ${node.percent}%`}>
-        <Text
-          c={node.isActive ? 'orange.9' : 'dimmed'}
-          fw={node.isActive ? 600 : 400}
-          style={{ cursor: disabled ? 'default' : 'pointer', minWidth: 56, textAlign: 'right' }}
-          onClick={() => {
-            if (!disabled) {
-              onToggleActive(node.netId)
-            }
-          }}
+        <button
+          type="button"
+          className="discounts-tree-row__percent"
+          disabled={disabled}
+          aria-label={`${node.name}: ${node.isActive ? t('Активна знижка') : t('Неактивна знижка')} ${node.percent}%`}
+          aria-pressed={node.isActive}
+          onClick={() => onToggleActive(node.netId)}
         >
-          {node.percent} %
-        </Text>
+          <TableChip tone={node.isActive ? 'document' : 'neutral'} value={`${node.percent} %`} />
+        </button>
       </Tooltip>
     </Group>
   )
