@@ -6,6 +6,7 @@ import type { ProductGroup } from '../types'
 import { getProductGroupName } from '../utils'
 
 type ProductGroupFormProps = {
+  compact?: boolean
   disabled?: boolean
   isLoadingRootGroups?: boolean
   productGroup: ProductGroup
@@ -16,6 +17,7 @@ type ProductGroupFormProps = {
 }
 
 export function ProductGroupForm({
+  compact = false,
   disabled = false,
   isLoadingRootGroups = false,
   productGroup,
@@ -63,8 +65,8 @@ export function ProductGroupForm({
   }
 
   return (
-    <Stack gap="md">
-      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+    <Stack className={`product-group-form${compact ? ' is-compact' : ''}`} gap={12}>
+      <SimpleGrid className="product-group-form-names" cols={{ base: 1, xs: 2 }} spacing={12} verticalSpacing={12}>
         <TextInput
           label={t('Назва')}
           maxLength={100}
@@ -96,16 +98,19 @@ export function ProductGroupForm({
       />
 
       <Textarea
+        className="product-group-form-description"
         autosize
         disabled={disabled}
         label={t('Опис')}
         maxLength={1000}
-        minRows={3}
+        minRows={compact ? 2 : 3}
+        maxRows={compact ? 4 : 6}
         value={productGroup.Description || ''}
         onChange={(event) => onFieldChange('Description', event.currentTarget.value)}
       />
 
       <Switch
+        className="product-group-form-active"
         checked={productGroup.IsActive !== false}
         color="green"
         disabled={disabled}

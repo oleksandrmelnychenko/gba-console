@@ -4,6 +4,7 @@ import {
   Badge,
   Button,
   Checkbox,
+  Card,
   FileInput,
   Group,
   NumberInput,
@@ -16,10 +17,11 @@ import {
   TextInput,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, FileSpreadsheet, Upload } from 'lucide-react'
+import { Calculator, CircleAlert, FileSpreadsheet, Plane, Ship, Tag, Truck, Upload } from 'lucide-react'
 import { useEffect, useMemo, useReducer, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import './supply-order-create.css'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { formatLocalDateTime } from '../../../shared/date/dateTime'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
@@ -114,10 +116,10 @@ type CreatePageAction =
   | { type: 'setUploadResponse', uploadResponse: UploadResponse | null }
 
 const TARGET_ORGANIZATION_CULTURE_PREFIX = 'uk'
-const SUPPLY_TRANSPORTATION_TYPES: Array<{ label: string, value: string }> = [
-  { label: 'Авто', value: '0' },
-  { label: 'Море', value: '1' },
-  { label: 'Авіа', value: '2' },
+const SUPPLY_TRANSPORTATION_TYPES = [
+  { label: 'Авто', value: '0', icon: Truck },
+  { label: 'Море', value: '1', icon: Ship },
+  { label: 'Авіа', value: '2', icon: Plane },
 ]
 
 const INITIAL_CREATE_PAGE_STATE: CreatePageState = {
@@ -460,6 +462,7 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
   return (
     <AppDrawer
       opened
+      className="supply-order-create-sheet"
       position="right"
       size="wide"
       title={<span className="app-sheet-title-mono">{isToUkraineMode ? t('Нова поставка в Україну') : t('Нове замовлення Україна')}</span>}
@@ -488,7 +491,7 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
             <UploadErrorsAlert response={uploadResponse} />
           )}
 
-          <SimpleGrid cols={isToUkraineMode ? 1 : { base: 1, md: 2 }} spacing="md">
+          <SimpleGrid cols={isToUkraineMode ? 1 : { base: 1, md: 2 }} spacing={12} style={{ alignItems: 'start' }}>
             <OrderDetailsSection
               agreementOptions={agreementOptions}
               commentValidationError={commentValidationError}
@@ -613,48 +616,53 @@ function OrderDetailsSection({
   )
 
   return (
-    <Stack gap={isToUkraineMode ? 'sm' : 'md'}>
-      <Text className="app-section-title" fw={600} size="sm">{t('Замовлення')}</Text>
-      {isToUkraineMode ? (
-        <>
-          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm" verticalSpacing="sm">
+    <Card className="app-section-card supply-order-create-section" withBorder radius="md" padding="sm">
+      <Stack gap={12}>
+        <Text className="app-section-title" fw={600} size="sm">{t('Замовлення')}</Text>
+        {isToUkraineMode ? (
+          <>
+            <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm" verticalSpacing="sm">
+              {dateField}
+              <TextInput
+                disabled={isLoading || isSaving}
+                label={t('Номер накладної')}
+                value={form.invNumber}
+                onChange={(event) => onFormChange({ invNumber: event.currentTarget.value })}
+              />
+              <TextInput
+                disabled={isLoading || isSaving}
+                label={t('Дата накладної')}
+                type="datetime-local"
+                value={form.invDate}
+                onChange={(event) => onFormChange({ invDate: event.currentTarget.value })}
+              />
+              {supplierField}
+              {organizationField}
+              {agreementField}
+            </SimpleGrid>
+            {commentField}
+          </>
+        ) : (
+          <>
             {dateField}
-            <TextInput
+            <SegmentedControl
+              className="supply-order-create-tabs"
+              data={SUPPLY_TRANSPORTATION_TYPES.map(({ label, value, icon: Icon }) => ({
+                value,
+                label: <Group gap={6} wrap="nowrap"><Icon size={15} aria-hidden="true" /><span>{t(label)}</span></Group>,
+              }))}
               disabled={isLoading || isSaving}
-              label={t('Номер накладної')}
-              value={form.invNumber}
-              onChange={(event) => onFormChange({ invNumber: event.currentTarget.value })}
-            />
-            <TextInput
-              disabled={isLoading || isSaving}
-              label={t('Дата накладної')}
-              type="datetime-local"
-              value={form.invDate}
-              onChange={(event) => onFormChange({ invDate: event.currentTarget.value })}
+              value={form.transportationType}
+              onChange={(value) => onFormChange({ transportationType: value })}
             />
             {supplierField}
             {organizationField}
             {agreementField}
-          </SimpleGrid>
-          {commentField}
-        </>
-      ) : (
-        <>
-          {dateField}
-          <SegmentedControl
-            data={SUPPLY_TRANSPORTATION_TYPES.map((item) => ({ ...item, label: t(item.label) }))}
-            disabled={isLoading || isSaving}
-            fullWidth
-            value={form.transportationType}
-            onChange={(value) => onFormChange({ transportationType: value })}
-          />
-          {supplierField}
-          {organizationField}
-          {agreementField}
-          {commentField}
-        </>
-      )}
-    </Stack>
+            {commentField}
+          </>
+        )}
+      </Stack>
+    </Card>
   )
 }
 
@@ -676,156 +684,158 @@ function ImportConfigurationSection({
   const { t } = useI18n()
 
   return (
-    <Stack gap={isToUkraineMode ? 'sm' : 'md'}>
-      <Text className="app-section-title" fw={600} size="sm">{t('Імпорт')}</Text>
-      <Group align="flex-end" gap="sm" grow wrap="wrap">
-        <div style={{ flex: '2 1 480px' }}>
-          <FileInput
-            clearable
-            accept={EXCEL_FILE_ACCEPT}
-            disabled={isSaving}
-            label={t('Файл')}
-            leftSection={<FileSpreadsheet size={16} />}
-            placeholder={t('Оберіть файл')}
-            value={file}
-            onChange={onFileChange}
-          />
-        </div>
-        <div style={{ flex: '1 1 280px' }}>
-          <SegmentedControl
-            data={[
-              { label: t('Ціна'), value: 'unit' },
-              { label: t('Сума'), value: 'total' },
-            ]}
-            disabled={isSaving}
-            fullWidth
-            value={parseForm.withTotalAmount ? 'total' : 'unit'}
-            onChange={(value) => onParseFormChange({ withTotalAmount: value === 'total' })}
-          />
-        </div>
-      </Group>
-      <SimpleGrid
-        cols={{ base: 1, sm: 2, lg: isToUkraineMode ? 6 : 3 }}
-        spacing="sm"
-        verticalSpacing="sm"
-      >
-        <NumberInput
-          allowDecimal={false}
-          disabled={isSaving}
-          label={t('Код товару')}
-          min={1}
-          value={parseForm.vendorCodeColumnNumber}
-          onChange={(value) => onParseFormChange({ vendorCodeColumnNumber: toPositiveNumber(value) })}
-        />
-        <NumberInput
-          allowDecimal={false}
-          disabled={isSaving}
-          label={t('Кількість')}
-          min={1}
-          value={parseForm.qtyColumnNumber}
-          onChange={(value) => onParseFormChange({ qtyColumnNumber: toPositiveNumber(value) })}
-        />
-        <NumberInput
-          allowDecimal={false}
-          disabled={isSaving}
-          label={t('З рядка')}
-          min={1}
-          value={parseForm.startRow}
-          onChange={(value) => onParseFormChange({ startRow: toPositiveNumber(value) })}
-        />
-        <NumberInput
-          allowDecimal={false}
-          disabled={isSaving}
-          label={t('До рядка')}
-          min={1}
-          value={parseForm.endRow}
-          onChange={(value) => onParseFormChange({ endRow: toPositiveNumber(value) })}
-        />
-        <NumberInput
-          allowDecimal={false}
-          disabled={isSaving || parseForm.withTotalAmount}
-          label={t('Колонка ціни')}
-          min={1}
-          value={parseForm.unitPriceColumnNumber}
-          onChange={(value) => onParseFormChange({ unitPriceColumnNumber: toPositiveNumber(value) })}
-        />
-        <NumberInput
-          allowDecimal={false}
-          disabled={isSaving || !parseForm.withTotalAmount}
-          label={t('Колонка суми')}
-          min={1}
-          value={parseForm.totalAmountColumnNumber}
-          onChange={(value) => onParseFormChange({ totalAmountColumnNumber: toPositiveNumber(value) })}
-        />
-      </SimpleGrid>
-      {isToUkraineMode && (
-        <SupplierImportExtraFields
-          isSaving={isSaving}
-          parseForm={parseForm}
-          onParseFormChange={onParseFormChange}
-        />
-      )}
-      <Stack gap="sm">
+    <Card className="app-section-card supply-order-create-section" withBorder radius="md" padding="sm">
+      <Stack gap={12}>
+        <Text className="app-section-title" fw={600} size="sm">{t('Імпорт')}</Text>
+        <Group align="flex-end" gap="sm" grow wrap="wrap">
+          <div style={{ flex: '2 1 480px' }}>
+            <FileInput
+              clearable
+              accept={EXCEL_FILE_ACCEPT}
+              disabled={isSaving}
+              label={t('Файл')}
+              leftSection={<FileSpreadsheet size={16} />}
+              placeholder={t('Оберіть файл')}
+              value={file}
+              onChange={onFileChange}
+            />
+          </div>
+          <div className="supply-order-create-pricing-tabs">
+            <SegmentedControl
+              className="supply-order-create-tabs"
+              data={[
+                { label: <Group gap={6} wrap="nowrap"><Tag size={15} aria-hidden="true" /><span>{t('Ціна')}</span></Group>, value: 'unit' },
+                { label: <Group gap={6} wrap="nowrap"><Calculator size={15} aria-hidden="true" /><span>{t('Сума')}</span></Group>, value: 'total' },
+              ]}
+              disabled={isSaving}
+              value={parseForm.withTotalAmount ? 'total' : 'unit'}
+              onChange={(value) => onParseFormChange({ withTotalAmount: value === 'total' })}
+            />
+          </div>
+        </Group>
         <SimpleGrid
-          cols={{ base: 1, lg: isToUkraineMode ? 2 : 1 }}
+          cols={{ base: 1, xs: 2, sm: 3, lg: isToUkraineMode ? 6 : 3 }}
           spacing="sm"
           verticalSpacing="sm"
         >
-          <Group align="flex-end" gap="sm" wrap="nowrap">
-            <Group align="center" h={36} miw={IMPORT_OPTION_LABEL_WIDTH} w={IMPORT_OPTION_LABEL_WIDTH}>
-              <Checkbox
-                checked={parseForm.withWeight}
-                disabled={isSaving}
-                label={t('Вага нетто')}
-                onChange={(event) => onParseFormChange({
-                  isWeightPerItem: event.currentTarget.checked ? parseForm.isWeightPerItem : false,
-                  weightColumnNumber: event.currentTarget.checked ? parseForm.weightColumnNumber : '',
-                  withWeight: event.currentTarget.checked,
-                })}
-              />
-            </Group>
-            <NumberInput
-              allowDecimal={false}
-              disabled={isSaving || !parseForm.withWeight}
-              label={t('Колонка ваги нетто')}
-              min={1}
-              style={{ flex: 1 }}
-              value={parseForm.weightColumnNumber}
-              onChange={(value) => onParseFormChange({ weightColumnNumber: toPositiveNumber(value) })}
-            />
-          </Group>
-          <Group align="flex-end" gap="sm" wrap="nowrap">
-            <Group align="center" h={36} miw={IMPORT_OPTION_LABEL_WIDTH} w={IMPORT_OPTION_LABEL_WIDTH}>
-              <Checkbox
-                checked={parseForm.withGrossWeight}
-                disabled={isSaving}
-                label={t('Вага брутто')}
-                onChange={(event) => onParseFormChange({
-                  grossWeightColumnNumber: event.currentTarget.checked ? parseForm.grossWeightColumnNumber : '',
-                  isWeightPerItem: event.currentTarget.checked ? parseForm.isWeightPerItem : false,
-                  withGrossWeight: event.currentTarget.checked,
-                })}
-              />
-            </Group>
-            <NumberInput
-              allowDecimal={false}
-              disabled={isSaving || !parseForm.withGrossWeight}
-              label={t('Колонка ваги брутто')}
-              min={1}
-              style={{ flex: 1 }}
-              value={parseForm.grossWeightColumnNumber}
-              onChange={(value) => onParseFormChange({ grossWeightColumnNumber: toPositiveNumber(value) })}
-            />
-          </Group>
+          <NumberInput
+            allowDecimal={false}
+            disabled={isSaving}
+            label={t('Код товару')}
+            min={1}
+            value={parseForm.vendorCodeColumnNumber}
+            onChange={(value) => onParseFormChange({ vendorCodeColumnNumber: toPositiveNumber(value) })}
+          />
+          <NumberInput
+            allowDecimal={false}
+            disabled={isSaving}
+            label={t('Кількість')}
+            min={1}
+            value={parseForm.qtyColumnNumber}
+            onChange={(value) => onParseFormChange({ qtyColumnNumber: toPositiveNumber(value) })}
+          />
+          <NumberInput
+            allowDecimal={false}
+            disabled={isSaving}
+            label={t('З рядка')}
+            min={1}
+            value={parseForm.startRow}
+            onChange={(value) => onParseFormChange({ startRow: toPositiveNumber(value) })}
+          />
+          <NumberInput
+            allowDecimal={false}
+            disabled={isSaving}
+            label={t('До рядка')}
+            min={1}
+            value={parseForm.endRow}
+            onChange={(value) => onParseFormChange({ endRow: toPositiveNumber(value) })}
+          />
+          <NumberInput
+            allowDecimal={false}
+            disabled={isSaving || parseForm.withTotalAmount}
+            label={t('Колонка ціни')}
+            min={1}
+            value={parseForm.unitPriceColumnNumber}
+            onChange={(value) => onParseFormChange({ unitPriceColumnNumber: toPositiveNumber(value) })}
+          />
+          <NumberInput
+            allowDecimal={false}
+            disabled={isSaving || !parseForm.withTotalAmount}
+            label={t('Колонка суми')}
+            min={1}
+            value={parseForm.totalAmountColumnNumber}
+            onChange={(value) => onParseFormChange({ totalAmountColumnNumber: toPositiveNumber(value) })}
+          />
         </SimpleGrid>
-        <Checkbox
-          checked={parseForm.isWeightPerItem}
-          disabled={isSaving || (!parseForm.withWeight && !parseForm.withGrossWeight)}
-          label={parseForm.isWeightPerItem ? t('Вага за одиницю') : t('Вага загальна')}
-          onChange={(event) => onParseFormChange({ isWeightPerItem: event.currentTarget.checked })}
-        />
+        {isToUkraineMode && (
+          <SupplierImportExtraFields
+            isSaving={isSaving}
+            parseForm={parseForm}
+            onParseFormChange={onParseFormChange}
+          />
+        )}
+        <Stack gap="sm">
+          <SimpleGrid
+            cols={{ base: 1, lg: isToUkraineMode ? 2 : 1 }}
+            spacing="sm"
+            verticalSpacing="sm"
+          >
+            <Group className="supply-order-create-option" align="flex-end" gap="sm" wrap="nowrap">
+              <Group align="center" h={36} miw={IMPORT_OPTION_LABEL_WIDTH} w={IMPORT_OPTION_LABEL_WIDTH}>
+                <Checkbox
+                  checked={parseForm.withWeight}
+                  disabled={isSaving}
+                  label={t('Вага нетто')}
+                  onChange={(event) => onParseFormChange({
+                    isWeightPerItem: event.currentTarget.checked ? parseForm.isWeightPerItem : false,
+                    weightColumnNumber: event.currentTarget.checked ? parseForm.weightColumnNumber : '',
+                    withWeight: event.currentTarget.checked,
+                  })}
+                />
+              </Group>
+              <NumberInput
+                allowDecimal={false}
+                disabled={isSaving || !parseForm.withWeight}
+                label={t('Колонка ваги нетто')}
+                min={1}
+                style={{ flex: 1 }}
+                value={parseForm.weightColumnNumber}
+                onChange={(value) => onParseFormChange({ weightColumnNumber: toPositiveNumber(value) })}
+              />
+            </Group>
+            <Group className="supply-order-create-option" align="flex-end" gap="sm" wrap="nowrap">
+              <Group align="center" h={36} miw={IMPORT_OPTION_LABEL_WIDTH} w={IMPORT_OPTION_LABEL_WIDTH}>
+                <Checkbox
+                  checked={parseForm.withGrossWeight}
+                  disabled={isSaving}
+                  label={t('Вага брутто')}
+                  onChange={(event) => onParseFormChange({
+                    grossWeightColumnNumber: event.currentTarget.checked ? parseForm.grossWeightColumnNumber : '',
+                    isWeightPerItem: event.currentTarget.checked ? parseForm.isWeightPerItem : false,
+                    withGrossWeight: event.currentTarget.checked,
+                  })}
+                />
+              </Group>
+              <NumberInput
+                allowDecimal={false}
+                disabled={isSaving || !parseForm.withGrossWeight}
+                label={t('Колонка ваги брутто')}
+                min={1}
+                style={{ flex: 1 }}
+                value={parseForm.grossWeightColumnNumber}
+                onChange={(value) => onParseFormChange({ grossWeightColumnNumber: toPositiveNumber(value) })}
+              />
+            </Group>
+          </SimpleGrid>
+          <Checkbox
+            checked={parseForm.isWeightPerItem}
+            disabled={isSaving || (!parseForm.withWeight && !parseForm.withGrossWeight)}
+            label={parseForm.isWeightPerItem ? t('Вага за одиницю') : t('Вага загальна')}
+            onChange={(event) => onParseFormChange({ isWeightPerItem: event.currentTarget.checked })}
+          />
+        </Stack>
       </Stack>
-    </Stack>
+    </Card>
   )
 }
 
@@ -842,7 +852,7 @@ function SupplierImportExtraFields({
 
   return (
     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm" verticalSpacing="sm">
-      <Group align="flex-end" gap="sm" wrap="nowrap">
+      <Group className="supply-order-create-option" align="flex-end" gap="sm" wrap="nowrap">
         <Group align="center" h={36} miw={IMPORT_OPTION_LABEL_WIDTH} w={IMPORT_OPTION_LABEL_WIDTH}>
           <Checkbox
             checked={parseForm.withSpecificationCode}
@@ -864,7 +874,7 @@ function SupplierImportExtraFields({
           onChange={(value) => onParseFormChange({ specificationCodeColumnNumber: toPositiveNumber(value) })}
         />
       </Group>
-      <Group align="flex-end" gap="sm" wrap="nowrap">
+      <Group className="supply-order-create-option" align="flex-end" gap="sm" wrap="nowrap">
         <Group align="center" h={36} miw={IMPORT_OPTION_LABEL_WIDTH} w={IMPORT_OPTION_LABEL_WIDTH}>
           <Checkbox
             checked={parseForm.withImportedProduct}

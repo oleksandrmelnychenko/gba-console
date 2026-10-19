@@ -12,7 +12,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CircleAlert, RefreshCw, RotateCcw, Search } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -56,6 +56,7 @@ export function ProductGroupSubGroupsPanel({ productGroupNetId }: ProductGroupSu
     `product-group-subgroups-${productGroupNetId}`,
     SUB_GROUPS_TABLE_DEFAULT_LAYOUT.density,
   )
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const loadSequenceRef = useRef(0)
   const canLoadMore = subGroups.length < totalFilteredQty
   const openSubGroup = useCallback(
@@ -137,15 +138,6 @@ export function ProductGroupSubGroupsPanel({ productGroupNetId }: ProductGroupSu
     ],
     [openSubGroup, t],
   )
-  const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {searchValue ? `${t('пошук')}: ${searchValue}` : ''}
-      </Text>
-    ),
-    [searchValue, t],
-  )
-
   const loadSubGroups = useCallback(
     async (offset: number, append: boolean) => {
       const loadSequence = loadSequenceRef.current + 1
@@ -213,17 +205,17 @@ export function ProductGroupSubGroupsPanel({ productGroupNetId }: ProductGroupSu
         <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-group-detail-filter-row">
         <TextInput
           leftSection={<Search size={16} />}
-          label={t('Пошук')}
+          aria-label={t('Пошук')}
+          className="product-group-detail-search"
           placeholder={t('Назва або опис')}
           value={searchDraft}
           onChange={(event) => updateSearch(event.currentTarget.value)}
-          style={{ flex: '1 1 auto', minWidth: 160 }}
         />
         <Select
           aria-label={t('Кількість')}
+          className="product-group-detail-page-size"
           data={PAGE_LIMIT_OPTIONS}
           value={String(limit)}
-          w={96}
           onChange={(value) => setLimit(Number(value || DEFAULT_PAGE_LIMIT))}
         />
         <Tooltip label={t('Скинути')}>
@@ -251,6 +243,7 @@ export function ProductGroupSubGroupsPanel({ productGroupNetId }: ProductGroupSu
             <RefreshCw size={18} />
           </ActionIcon>
         </Tooltip>
+        <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot product-group-detail-table-tools" />
         <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
         </Group>
       </div>
@@ -272,14 +265,14 @@ export function ProductGroupSubGroupsPanel({ productGroupNetId }: ProductGroupSu
         isLoading={isLoading}
         layoutVersion="product-group-subgroups-table-1"
         loadingText="Завантаження підгруп"
-        maxHeight="calc(100vh - 420px)"
+        height="100%"
         minWidth={980}
         tableId={`product-group-subgroups-${productGroupNetId}`}
-        toolbarLeft={toolbarLeft}
+        toolbarPortalTarget={tableToolbarSlot}
         onRowClick={(subGroup) => openSubGroup(subGroup.SubProductGroup)}
       />
 
-      <Group justify="space-between">
+      <Group className="product-group-detail-panel-footer" justify="space-between">
         <Text size="xs" c="dimmed">
           {t('Показано')}: {totalFilteredQty}; {t('Усього')}: {totalQty}
         </Text>

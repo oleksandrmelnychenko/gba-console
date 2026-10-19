@@ -1,4 +1,4 @@
-import { TableChip } from '../../../shared/ui/TableChip'
+import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -13,8 +13,8 @@ import {
   UnstyledButton,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { BetweenVerticalEnd, CircleAlert, Trash2 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { BetweenVerticalEnd, CircleAlert, Search, Trash2 } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
@@ -1347,9 +1347,7 @@ function useProductIncomeColumns({
         width: 120,
         align: 'center',
         cell: (gridRow) => (
-          <span className={`app-role-pill ${gridRow.item.IsPlaced ? 'is-green' : 'is-gray'}`}>
-            {gridRow.item.IsPlaced ? t('Так') : t('Ні')}
-          </span>
+          <TableChip tone={gridRow.item.IsPlaced ? 'success' : 'danger'} value={gridRow.item.IsPlaced ? t('Так') : t('Ні')} />
         ),
       },
       {
@@ -1567,45 +1565,52 @@ function PackingListProductIncomePageContent({
 
   const content = (
     <Stack className={`product-income-page${embedded ? ' is-sheet' : ''}`} gap={6}>
-      {showHeader && <ProductIncomePageHeader model={model} source={source} />}
-      <ProtocolIncomeSummaryCard model={model} source={source} />
+      <Stack className="product-income-page-body" gap={6}>
+        {showHeader && <ProductIncomePageHeader model={model} source={source} />}
+        <ProtocolIncomeSummaryCard model={model} source={source} />
 
-      {!model.isLoading && model.protocol && !canUseIncome && (
-        <Alert className="product-income-alert" color="yellow" icon={<CircleAlert size={18} />} variant="light">
-          {t('Оприходування доступне після того, як протокол доставки має статус «Прибув»')}
-        </Alert>
-      )}
+        {!model.isLoading && model.protocol && !canUseIncome && (
+          <Alert className="product-income-alert" color="yellow" icon={<CircleAlert size={18} />} variant="light">
+            {t('Оприходування доступне після того, як протокол доставки має статус «Прибув»')}
+          </Alert>
+        )}
 
-      <PlacedProductIncomeCard isPlaced={isPlaced} model={model} />
-      <ProductIncomeControlsCard
+        <PlacedProductIncomeCard isPlaced={isPlaced} model={model} />
+        <ProductIncomeControlsCard
+          model={model}
+          permissions={{
+            canCapitalizeDynamicIncome,
+            canCarryOutDynamicIncome,
+            canEditPlacements,
+            canUpdateReadiness,
+          }}
+          state={{
+            canUseIncome,
+            hasColumns,
+            hasItemsNotReadyToPlace,
+            isPlaced,
+          }}
+        />
+
+        {model.error && (
+          <Alert className="product-income-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
+            {model.error}
+          </Alert>
+        )}
+
+        <ProductIncomeGridCard
+          columns={columns}
+          filteredGridRows={filteredGridRows}
+          model={model}
+          setVendorCodeFilter={setVendorCodeFilter}
+          vendorCodeFilter={vendorCodeFilter}
+        />
+      </Stack>
+      <ProductIncomePageFooter
+        canEditPlacements={canEditPlacements}
+        canUseIncome={canUseIncome}
+        model={model}
         useDrawerFooter={embedded}
-        model={model}
-        permissions={{
-          canCapitalizeDynamicIncome,
-          canCarryOutDynamicIncome,
-          canEditPlacements,
-          canUpdateReadiness,
-        }}
-        state={{
-          canUseIncome,
-          hasColumns,
-          hasItemsNotReadyToPlace,
-          isPlaced,
-        }}
-      />
-
-      {model.error && (
-        <Alert className="product-income-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
-          {model.error}
-        </Alert>
-      )}
-
-      <ProductIncomeGridCard
-        columns={columns}
-        filteredGridRows={filteredGridRows}
-        model={model}
-        setVendorCodeFilter={setVendorCodeFilter}
-        vendorCodeFilter={vendorCodeFilter}
       />
       <ProductIncomeDialogs
         canCarryOutDynamicIncome={canCarryOutDynamicIncome}
@@ -1622,6 +1627,7 @@ function PackingListProductIncomePageContent({
 
   return (
     <AppDrawer
+      className="product-income-sheet"
       closeOnClickOutside={false}
       opened
       size="full"
@@ -1671,9 +1677,12 @@ function ProductIncomeSheetTitle({ model, source }: ProductIncomePageSectionProp
 
   return (
     <span className="product-delivery-protocol-income-sheet-title">
-      <span>{sourceNumber ? `${title}: ${sourceNumber}` : title}</span>
+      <span className="product-delivery-protocol-income-sheet-heading">
+        <span>{sourceNumber ? `${title}:` : title}</span>{' '}
+        {sourceNumber && <TableChip tone="document" value={sourceNumber} />}
+      </span>
       <span className="product-delivery-protocol-income-sheet-supplier">
-        {t('Постачальник')}: {supplierName}
+        {t('Постачальник')}: <TableChip tone="document" value={supplierName} />
       </span>
     </span>
   )
@@ -1689,12 +1698,12 @@ function ProtocolIncomeSummaryCard({ model }: ProductIncomePageSectionProps) {
         {t('Дані протоколу')}
       </Text>
       <div className="product-income-summary-grid">
-        <ProductIncomeDetailItem label={t('Статус')} value={model.placementStatus} tone="orange" />
+        <ProductIncomeDetailItem label={t('Статус')} value={model.placementStatus} tone={getProductIncomePlacementState(model.invoice, model.packingList) === 'received' ? 'success' : 'warning'} />
         <ProductIncomeDetailItem label={t('Від')} value={formatDate(model.protocol?.FromDate)} />
-        <ProductIncomeDetailItem label={t('Організація')} value={model.protocol?.Organization?.Name || '-'} />
-        <ProductIncomeDetailItem label={t('Постачальник')} value={supplierName} />
+        <ProductIncomeDetailItem label={t('Організація')} tone="product" value={model.protocol?.Organization?.Name || '-'} />
+        <ProductIncomeDetailItem label={t('Постачальник')} tone="document" value={supplierName} />
         <ProductIncomeDetailItem label={t('Договір')} value={agreementName} />
-        <ProductIncomeDetailItem label={t('Валюта')} value={currencyCode} tone="green" />
+        <ProductIncomeDetailItem label={t('Валюта')} value={currencyCode} tone="source" />
       </div>
     </Box>
   )
@@ -1710,12 +1719,12 @@ function PlacedProductIncomeCard({ isPlaced, model }: { isPlaced: boolean; model
   return (
     <Box className="product-income-summary-panel is-placed">
       <Text className="app-section-title" fw={600} size="sm">
-        {t('Оприбуткування')}
+        {t('Оприходування')}
       </Text>
       <div className="product-income-summary-grid">
-        <ProductIncomeDetailItem label={t('Номер')} value={model.productIncome.Number || '-'} tone="yellow" />
+        <ProductIncomeDetailItem label={t('Номер')} value={model.productIncome.Number || '-'} tone="document" />
         <ProductIncomeDetailItem label={t('Дата оприходування')} value={formatDate(model.productIncome.FromDate)} />
-        <ProductIncomeDetailItem label={t('Склад')} value={model.productIncome.Storage?.Name || '-'} />
+        <ProductIncomeDetailItem label={t('Склад')} tone="storage" value={model.productIncome.Storage?.Name || '-'} />
         <ProductIncomeDetailItem label={t('Відповідальний')} value={getIncomeUserName(model.productIncome.User)} />
       </div>
     </Box>
@@ -1728,14 +1737,14 @@ function ProductIncomeDetailItem({
   value,
 }: {
   label: string
-  tone?: 'green' | 'orange' | 'yellow'
+  tone?: TableChipTone
   value: string
 }) {
   return (
     <div className="product-income-detail-item">
       <span className="product-income-detail-label">{label}</span>
       {tone ? (
-        <span className={`app-role-pill is-${tone} product-income-detail-pill`}>{value}</span>
+        <span className="product-income-detail-chip"><TableChip tone={tone} value={value} /></span>
       ) : (
         <span className="product-income-detail-value">{value}</span>
       )}
@@ -1761,14 +1770,12 @@ type ProductIncomeControlsCardProps = {
   model: ProtocolIncomeModel
   permissions: ProductIncomeControlsPermissions
   state: ProductIncomeControlsState
-  useDrawerFooter: boolean
 }
 
 function ProductIncomeControlsCard({
   model,
   permissions,
   state,
-  useDrawerFooter,
 }: ProductIncomeControlsCardProps) {
   const { t } = useI18n()
   const {
@@ -1778,41 +1785,9 @@ function ProductIncomeControlsCard({
     canUpdateReadiness,
   } = permissions
   const { canUseIncome, hasColumns, hasItemsNotReadyToPlace, isPlaced } = state
-  const saveActions = (
-    <>
-      {model.isDirty && (
-        <Text c="orange" size="sm">
-          {t('Є незбережені зміни')}
-        </Text>
-      )}
-      {model.isDirty && (
-        <Button color="gray" disabled={model.isSaving} variant="light" onClick={model.reloadFromServer}>
-          {t('Скасувати')}
-        </Button>
-      )}
-      {canEditPlacements && (
-        <Button
-          color={CREATE_ACTION_COLOR}
-          disabled={!canUseIncome || !model.isDirty || model.isSaving}
-          loading={model.isSaving}
-          onClick={model.handleSave}
-        >
-          {t('Зберегти')}
-        </Button>
-      )}
-    </>
-  )
 
   return (
     <Box className="product-income-controls-panel">
-      {useDrawerFooter && (
-        <AppDrawerFooter>
-          <Group gap="sm" justify="flex-end" wrap="wrap">
-            {saveActions}
-          </Group>
-        </AppDrawerFooter>
-      )}
-
       <Text className="app-section-title" fw={600} size="sm">
         {t('Параметри приходу')}
       </Text>
@@ -1906,7 +1881,6 @@ function ProductIncomeControlsCard({
               {t('Провести')}
             </Button>
           )}
-          {!useDrawerFooter && saveActions}
         </Group>
       </Group>
     </Box>
@@ -1929,6 +1903,7 @@ function ProductIncomeGridCard({
   vendorCodeFilter,
 }: ProductIncomeGridCardProps) {
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   return (
     <Box className="product-income-grid-panel">
@@ -1938,19 +1913,15 @@ function ProductIncomeGridCard({
         </Text>
         <TextInput
           className="product-income-search"
-          label={t('Пошук')}
+          aria-label={t('Пошук')}
+          leftSection={<Search size={16} />}
           placeholder={t('Код товару')}
           value={vendorCodeFilter}
           onChange={(event) => setVendorCodeFilter(event.currentTarget.value)}
         />
-        <Group className="product-income-grid-summary" gap={10} justify="flex-end" wrap="wrap">
-          <ProductIncomeSummaryMetric label={t('К-сть')} value={formatIncomeQty(model.totalQty)} />
-          <ProductIncomeSummaryMetric label={t('Митна вартість')} value={formatIncomeNumber(model.packingList?.TotalCustomValue || 0, 2)} />
-          <ProductIncomeSummaryMetric label={t('Заг. вартість нетто')} value={formatIncomeNumber(model.packingList?.TotalNetPrice || 0, 2)} />
-          <ProductIncomeSummaryMetric label={t('Заг. вага нетто')} value={formatIncomeNumber(model.packingList?.TotalNetWeight || 0, 3)} />
-          <ProductIncomeSummaryMetric label={t('Заг. вага брутто')} value={formatIncomeNumber(model.packingList?.TotalGrossWeight || 0, 3)} />
-        </Group>
+        <div className="product-income-table-toolbar-slot" ref={setTableToolbarSlot} />
       </div>
+
       <Box className="income-grid-fill">
         <DataTable
           columns={columns}
@@ -1962,6 +1933,7 @@ function ProductIncomeGridCard({
           layoutVersion="protocol-product-income-3"
           minWidth={1400}
           showLayoutControls
+          toolbarPortalTarget={tableToolbarSlot}
           tableId="protocol-product-income"
         />
       </Box>
@@ -1969,11 +1941,62 @@ function ProductIncomeGridCard({
   )
 }
 
-function ProductIncomeSummaryMetric({ label, value }: { label: string; value: string }) {
+function ProductIncomePageFooter({ canEditPlacements, canUseIncome, model, useDrawerFooter }: {
+  canEditPlacements: boolean
+  canUseIncome: boolean
+  model: ProtocolIncomeModel
+  useDrawerFooter: boolean
+}) {
+  const { t } = useI18n()
+  const { currencyCode } = getIncomeCommercialContext(model)
+  const saveActions = (
+    <>
+      {model.isDirty && (
+        <Text c="orange" size="sm">
+          {t('Є незбережені зміни')}
+        </Text>
+      )}
+      {model.isDirty && (
+        <Button color="gray" disabled={model.isSaving} variant="light" onClick={model.reloadFromServer}>
+          {t('Скасувати')}
+        </Button>
+      )}
+      {canEditPlacements && (
+        <Button
+          color={CREATE_ACTION_COLOR}
+          disabled={!canUseIncome || !model.isDirty || model.isSaving}
+          loading={model.isSaving}
+          onClick={model.handleSave}
+        >
+          {t('Зберегти')}
+        </Button>
+      )}
+    </>
+  )
+
+  const footer = (
+    <div className="product-income-footer">
+      <div className="product-income-grid-summary">
+        <ProductIncomeSummaryMetric label={t('К-сть')} value={formatIncomeQty(model.totalQty)} />
+        <ProductIncomeSummaryMetric label={t('Митна вартість')} value={formatIncomeNumber(model.packingList?.TotalCustomValue || 0, 2)} />
+        <ProductIncomeSummaryMetric label={t('Заг. вартість нетто')} value={formatIncomeNumber(model.packingList?.TotalNetPrice || 0, 2)} currency={currencyCode !== '-' ? currencyCode : undefined} />
+        <ProductIncomeSummaryMetric label={t('Заг. вага нетто')} value={formatIncomeNumber(model.packingList?.TotalNetWeight || 0, 3)} />
+        <ProductIncomeSummaryMetric label={t('Заг. вага брутто')} value={formatIncomeNumber(model.packingList?.TotalGrossWeight || 0, 3)} />
+      </div>
+      <Group className="product-income-footer-actions" gap={8} justify="flex-end" wrap="wrap">
+        {saveActions}
+      </Group>
+    </div>
+  )
+
+  return useDrawerFooter ? <AppDrawerFooter>{footer}</AppDrawerFooter> : footer
+}
+
+function ProductIncomeSummaryMetric({ label, value, currency }: { label: string; value: string; currency?: string }) {
   return (
     <span className="product-income-summary-metric">
       <span>{label}</span>
-      <strong>{value}</strong>
+      <span className="product-income-summary-metric-value"><strong>{value}</strong>{currency && <TableChip tone="source" value={currency} />}</span>
     </span>
   )
 }

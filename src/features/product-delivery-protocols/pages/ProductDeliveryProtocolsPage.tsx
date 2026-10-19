@@ -20,6 +20,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { useAuth } from '../../auth/useAuth'
@@ -513,105 +514,109 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
 
   return (
     <div className="console-table-shell">
-      <div className="app-filter-bar product-delivery-protocols-command-bar">
-        <div className="app-filter-date-range">
+      <div className="app-filter-bar app-filter-bar--stacked product-delivery-protocols-command-bar">
+        <div className="app-filter-fields product-delivery-protocols-filter-fields">
+          <div className="app-filter-date-range">
+            <TextInput
+              className="product-delivery-protocols-date-input"
+              label={t('Від')}
+              max={filterDraft.to || undefined}
+              type="date"
+              value={filterDraft.from}
+              onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
+            />
+            <TextInput
+              className="product-delivery-protocols-date-input"
+              label={t('До')}
+              min={filterDraft.from || undefined}
+              type="date"
+              value={filterDraft.to}
+              onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
+            />
+          </div>
+
           <TextInput
-            className="product-delivery-protocols-date-input"
-            label={t('Від')}
-            max={filterDraft.to || undefined}
-            type="date"
-            value={filterDraft.from}
-            onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
+            className="product-delivery-protocols-search-input"
+            leftSection={<Search size={16} />}
+            label={t('Постачальник')}
+            placeholder={t('Пошук постачальника')}
+            value={filterDraft.supplier}
+            onChange={(event) => setSupplierFilter(event.currentTarget.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                applyFilters(filterDraft)
+              }
+            }}
           />
-          <TextInput
-            className="product-delivery-protocols-date-input"
-            label={t('До')}
-            min={filterDraft.from || undefined}
-            type="date"
-            value={filterDraft.to}
-            onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
+
+          <Select
+            className="product-delivery-protocols-organization-select"
+            data={organizationOptions}
+            label={t('Організація')}
+            searchable
+            value={filterDraft.organization}
+            onChange={(value) => applyFilters({ ...filterDraft, organization: value || '' })}
           />
         </div>
 
-        <TextInput
-          className="product-delivery-protocols-search-input"
-          leftSection={<Search size={16} />}
-          label={t('Постачальник')}
-          placeholder={t('Пошук постачальника')}
-          value={filterDraft.supplier}
-          onChange={(event) => setSupplierFilter(event.currentTarget.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              applyFilters(filterDraft)
-            }
-          }}
-        />
-
-        <Select
-          className="product-delivery-protocols-organization-select"
-          data={organizationOptions}
-          label={t('Організація')}
-          searchable
-          value={filterDraft.organization}
-          onChange={(value) => applyFilters({ ...filterDraft, organization: value || '' })}
-        />
-
-        <div className="app-filter-actions product-delivery-protocols-command-actions">
-          <Tooltip label={t('Скинути')}>
-            <ActionIcon
-              aria-label={t('Скинути')}
-              color="gray"
-              disabled={!hasActiveFilters}
-              size={34}
-              variant="light"
-              onClick={resetFilters}
-            >
-              <RotateCcw size={17} />
-            </ActionIcon>
-          </Tooltip>
-          {canExport && (
-            <Tooltip label={t('Завантажити')}>
+        <div className="app-filter-command-row product-delivery-protocols-command-row">
+          <div className="app-filter-actions product-delivery-protocols-command-actions">
+            <Tooltip label={t('Скинути')}>
               <ActionIcon
-                aria-label={t('Завантажити')}
+                aria-label={t('Скинути')}
                 color="gray"
-                disabled={Boolean(filterError) || isDownloading}
-                loading={isDownloading}
+                disabled={!hasActiveFilters}
                 size={34}
                 variant="light"
-                onClick={exportDocument}
+                onClick={resetFilters}
               >
-                <Download size={18} />
+                <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
-          )}
-          <Paginator
-            isLoading={isLoading}
-            page={page}
-            pageSize={pageSize}
-            totalPages={totalPages}
-            onPageChange={setPage}
-            onPageSizeChange={(nextPageSize) => {
-              setPage(1)
-              setPageSize(nextPageSize)
-            }}
-            onRefresh={() => reload()}
+            {canExport && (
+              <Tooltip label={t('Завантажити')}>
+                <ActionIcon
+                  aria-label={t('Завантажити')}
+                  color="gray"
+                  disabled={Boolean(filterError) || isDownloading}
+                  loading={isDownloading}
+                  size={34}
+                  variant="light"
+                  onClick={exportDocument}
+                >
+                  <Download size={18} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+            <Paginator
+              isLoading={isLoading}
+              page={page}
+              pageSize={pageSize}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              onPageSizeChange={(nextPageSize) => {
+                setPage(1)
+                setPageSize(nextPageSize)
+              }}
+              onRefresh={() => reload()}
+            />
+          </div>
+          <div
+            ref={setTableToolbarSlot}
+            className="app-filter-table-toolbar-slot product-delivery-protocols-table-toolbar-slot"
           />
-        </div>
-        <div
-          ref={setTableToolbarSlot}
-          className="app-filter-table-toolbar-slot product-delivery-protocols-table-toolbar-slot"
-        />
-        <div className="product-delivery-protocols-create-actions">
-          {canCreate && (
-            <Button
-              color={CREATE_ACTION_COLOR}
-              leftSection={<Plus size={16} />}
-              size="sm"
-              onClick={openCreateModal}
-            >
-              {t('Додати')}
-            </Button>
-          )}
+          <div className="product-delivery-protocols-create-actions">
+            {canCreate && (
+              <Button
+                color={CREATE_ACTION_COLOR}
+                leftSection={<Plus size={16} />}
+                size="sm"
+                onClick={openCreateModal}
+              >
+                {t('Додати')}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -717,10 +722,10 @@ function ProtocolMainCell({ protocol }: { protocol: DeliveryProductProtocol }) {
   return (
     <span className="product-delivery-protocols-main-cell" title={title}>
       <span className="product-delivery-protocols-main-copy">
-        <span className="product-delivery-protocols-main-title">{number}</span>
+        <TableChip tone="document" value={number} />
         {date && (
           <span className="product-delivery-protocols-main-subtitle">
-            {t('від')} {date}
+            <span>{t('від')}</span> <strong>{date}</strong>
           </span>
         )}
       </span>
@@ -760,8 +765,7 @@ function ProtocolOrganizationCell({ protocol }: { protocol: DeliveryProductProto
   return (
     <span className="product-delivery-protocols-icon-cell" title={nativeTitle(tooltip)}>
       <span className="product-delivery-protocols-two-line-cell">
-        <span>{title}</span>
-        <small>{subtitle}</small>
+        <TableChip tone="product" value={title} />
       </span>
     </span>
   )
@@ -795,7 +799,7 @@ function ProtocolSuppliersCell({ protocol }: { protocol: DeliveryProductProtocol
   return (
     <span className="product-delivery-protocols-icon-cell" title={nativeTitle(tooltip)}>
       <span className="product-delivery-protocols-two-line-cell">
-        <span>{title}</span>
+        <TableChip tone="document" value={title} />
         <small>{subtitle}</small>
       </span>
     </span>

@@ -549,7 +549,7 @@ export function DataTable<TData>({
         isColumnDragActive={isColumnDragActive}
         labels={labels}
         showLayoutControls={showLayoutControls}
-        showDensityToggle={showDensityToggle && controlledDensity === undefined}
+        showDensityToggle={showDensityToggle && (controlledDensity === undefined || onDensityChange !== undefined)}
         table={table}
         toolbarLeft={toolbarLeft}
         toolbarRight={toolbarRight}

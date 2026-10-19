@@ -1,4 +1,4 @@
-import { TableChip } from '../../../shared/ui/TableChip'
+import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 import { Alert, Badge, Button, Card, Group, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
@@ -27,6 +27,7 @@ import type {
   ProductIncomePackingList,
   ProductIncomePlacement,
 } from '../types'
+import './supply-order-product-placement.css'
 
 const ITEMS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -210,93 +211,22 @@ function SupplyOrderProductPlacementContent({
 
   return (
     <AppDrawer
+      className="supply-placement-drawer"
       closeOnClickOutside={false}
       opened
       position="right"
       size="full"
       title={
-        <Group gap="sm" wrap="nowrap">
+        <Group gap={8} wrap="wrap">
           <span>{t(title)}</span>
+          <TableChip tone="document" value={order?.SupplyOrderNumber?.Number || ukraineOrder?.Number || income?.Number} />
           <Badge color={status.color} variant="light">
             {status.label}
           </Badge>
         </Group>
       }
-      onClose={handleClose}
-    >
-      <Stack gap="lg">
-        <Group justify="space-between" align="center">
-          {order?.SupplyOrderNumber?.Number || ukraineOrder?.Number || income?.Number ? (
-            <Text c="dimmed" size="sm">
-              {order?.SupplyOrderNumber?.Number || ukraineOrder?.Number || income?.Number}
-            </Text>
-          ) : (
-            <span />
-          )}
-          {firstUkraineItem && income?.NetUid && canExport() && (
-            <Button color={CREATE_ACTION_COLOR} loading={isExporting} onClick={() => void handleExport()}>
-              {t('Експорт')}
-            </Button>
-          )}
-        </Group>
-
-      {error && (
-        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
-
-      <Card className="app-section-card" withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Text className="app-section-title" fw={600} size="sm">
-            {firstUkraineItem ? t('Замовлення Україна') : t('Замовлення постачальника')}
-          </Text>
-
-          <div className="app-detail-grid">
-            <DetailValue label={t('Номер замовлення')} value={order?.SupplyOrderNumber?.Number || ukraineOrder?.Number} />
-            <DetailValue label={t('Постачальник')} value={getEntityName(order?.Client || ukraineOrder?.Supplier)} />
-            <DetailValue label={t('Від')} value={formatDate(order?.DateFrom || ukraineOrder?.FromDate)} />
-            <DetailValue label={t('Організація')} value={getEntityName(order?.Organization || ukraineOrder?.Organization || income?.Organization)} />
-            <DetailValue label={t('Валюта')} value={currencyCode} />
-            <DetailValue label={t('Договір')} value={order?.ClientAgreement?.Agreement?.Name || ukraineOrder?.ClientAgreement?.Agreement?.Name} />
-            <DetailValue label={t('Інвойс')} value={invoice?.Number || ukraineOrder?.InvNumber} />
-            <DetailValue label={t('Дата інвойсу')} value={formatDate(invoice?.DateFrom || ukraineOrder?.InvDate)} />
-            <DetailValue label={t('Пакувальний лист')} value={packingList?.InvNo || packingList?.Number} />
-            <DetailValue label={t('Номер приходу')} value={income?.Number} />
-            <DetailValue label={t('Дата розміщення')} value={formatDate(income?.FromDate)} />
-            <DetailValue label={t('Склад')} value={income?.Storage?.Name} />
-            <DetailValue label={t('Відповідальний')} value={getEntityName(income?.User)} />
-            <DetailValue
-              label={`${t('Курс')} ${currencyCode ? `${currencyCode} ${t('до')} UAH` : ''}`.trim()}
-              value={formatRate(exchangeRate)}
-            />
-          </div>
-        </Stack>
-      </Card>
-
-      <Card className="app-section-card" withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Text className="app-section-title" fw={600} size="sm">{t('Позиції')}</Text>
-
-          <DataTable
-            columns={columns}
-            data={rows}
-            defaultLayout={ITEMS_TABLE_DEFAULT_LAYOUT}
-            emptyText={t('Позицій не знайдено')}
-            getRowId={(row) => String(row.item.NetUid || row.item.Id || row.index)}
-            isLoading={isLoading}
-            layoutVersion="supply-order-product-placement-1"
-            loadingText={t('Завантаження розміщення')}
-            maxHeight="calc(100vh - 430px)"
-            minWidth={1780}
-            showToolbar={false}
-            tableId="supply-order-product-placement"
-          />
-        </Stack>
-      </Card>
-
-      <Card className="app-section-card" withBorder radius="md" padding="md">
-        <Group gap="xl" justify="flex-end" wrap="wrap">
+      footer={
+        <div className="supply-placement-totals">
           <TotalValue label={t('Всього товарів')} value={rows.length} />
           <TotalValue label={t('Всього кількість')} value={formatAmount(packingList?.TotalQuantity || income?.TotalQty)} />
           <TotalValue mono label={t('Всього нетто')} value={formatMoney(packingList?.TotalNetPrice || income?.TotalNetPrice)} />
@@ -304,17 +234,81 @@ function SupplyOrderProductPlacementContent({
           <TotalValue mono label={t('ПДВ')} value={formatMoney(packingList?.TotalVatAmount || income?.TotalVatAmount)} />
           <TotalValue label={t('Вага нетто')} value={formatAmount(packingList?.TotalNetWeight || income?.TotalNetWeight)} />
           <TotalValue label={t('Вага брутто')} value={formatAmount(packingList?.TotalGrossWeight || income?.TotalGrossWeight)} />
-        </Group>
-      </Card>
+        </div>
+      }
+      onClose={handleClose}
+    >
+      <Stack className="supply-placement-content" gap={10}>
+        {error && (
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
 
-      <PlacementDetailsDrawer row={placementDetailsRow} onClose={() => setPlacementDetailsRow(null)} />
+        <Card className="app-section-card supply-placement-summary" withBorder radius="md" padding="sm">
+          <Stack gap={10}>
+            <Group justify="space-between" gap={10}>
+              <Text className="app-section-title" fw={600} size="sm">
+                {firstUkraineItem ? t('Замовлення Україна') : t('Замовлення постачальника')}
+              </Text>
+            {firstUkraineItem && income?.NetUid && canExport() && (
+              <Button color={CREATE_ACTION_COLOR} loading={isExporting} onClick={() => void handleExport()}>
+                {t('Експорт')}
+              </Button>
+            )}
+            </Group>
 
-      <DocumentExportModal
-        document={downloadDocument}
-        opened={downloadModalOpened}
-        title={t('Документ приходу')}
-        onClose={() => setDownloadModalOpened(false)}
-      />
+            <div className="supply-placement-detail-grid">
+              <DetailValue tone="document" label={t('Номер замовлення')} value={order?.SupplyOrderNumber?.Number || ukraineOrder?.Number} />
+              <DetailValue tone="document" label={t('Постачальник')} value={getEntityName(order?.Client || ukraineOrder?.Supplier)} />
+              <DetailValue label={t('Від')} value={formatDate(order?.DateFrom || ukraineOrder?.FromDate)} />
+              <DetailValue tone="product" label={t('Організація')} value={getEntityName(order?.Organization || ukraineOrder?.Organization || income?.Organization)} />
+              <DetailValue tone="source" label={t('Валюта')} value={currencyCode} />
+              <DetailValue label={t('Договір')} value={order?.ClientAgreement?.Agreement?.Name || ukraineOrder?.ClientAgreement?.Agreement?.Name} />
+              <DetailValue tone="document" label={t('Інвойс')} value={invoice?.Number || ukraineOrder?.InvNumber} />
+              <DetailValue label={t('Дата інвойсу')} value={formatDate(invoice?.DateFrom || ukraineOrder?.InvDate)} />
+              <DetailValue tone="document" label={t('Пакувальний лист')} value={packingList?.InvNo || packingList?.Number} />
+              <DetailValue tone="document" label={t('Номер приходу')} value={income?.Number} />
+              <DetailValue label={t('Дата розміщення')} value={formatDate(income?.FromDate)} />
+              <DetailValue tone="storage" label={t('Склад')} value={income?.Storage?.Name} />
+              <DetailValue label={t('Відповідальний')} value={getEntityName(income?.User)} />
+              <DetailValue
+                label={`${t('Курс')} ${currencyCode ? `${currencyCode} ${t('до')} UAH` : ''}`.trim()}
+                value={formatRate(exchangeRate)}
+              />
+            </div>
+          </Stack>
+        </Card>
+
+        <Card className="app-section-card supply-placement-table-card" withBorder radius="md" padding={0}>
+            <div className="supply-placement-table-toolbar">
+              <Text className="app-section-title" fw={600} size="sm">{t('Позиції')}</Text>
+              <TableChip value={rows.length} />
+            </div>
+            <DataTable
+              columns={columns}
+              data={rows}
+              defaultLayout={ITEMS_TABLE_DEFAULT_LAYOUT}
+              emptyText={t('Позицій не знайдено')}
+              getRowId={(row) => String(row.item.NetUid || row.item.Id || row.index)}
+              isLoading={isLoading}
+              layoutVersion="supply-order-product-placement-1"
+              loadingText={t('Завантаження розміщення')}
+              maxHeight="100%"
+              minWidth={1780}
+              showToolbar={false}
+              tableId="supply-order-product-placement"
+            />
+        </Card>
+
+        <PlacementDetailsDrawer row={placementDetailsRow} onClose={() => setPlacementDetailsRow(null)} />
+
+        <DocumentExportModal
+          document={downloadDocument}
+          opened={downloadModalOpened}
+          title={t('Документ приходу')}
+          onClose={() => setDownloadModalOpened(false)}
+        />
       </Stack>
     </AppDrawer>
   )
@@ -516,25 +510,25 @@ function usePlacementColumns(
   )
 }
 
-function DetailValue({ label, value }: { label: string; value?: string | number }) {
+function DetailValue({ label, tone, value }: { label: string; tone?: TableChipTone; value?: string | number }) {
   return (
-    <div className="app-detail-field">
-      <span>{label}</span>
-      <strong>{displayValue(value)}</strong>
+    <div className="supply-placement-detail-field">
+      <span className="supply-placement-detail-label">{label}</span>
+      <div className="supply-placement-detail-value">
+        {tone ? <TableChip tone={tone} value={displayValue(value)} /> : displayValue(value)}
+      </div>
     </div>
   )
 }
 
 function TotalValue({ label, mono, value }: { label: string; mono?: boolean; value?: string | number }) {
   return (
-    <Stack gap={2} miw={120}>
-      <Text c="dimmed" size="xs">
-        {label}
-      </Text>
-      <Text className={mono ? 'app-money' : undefined} fw={700} size="sm">
+    <div className="supply-placement-total">
+      <Text className="supply-placement-total-label">{label}</Text>
+      <Text className={mono ? 'supply-placement-total-value app-money' : 'supply-placement-total-value'}>
         {displayValue(value)}
       </Text>
-    </Stack>
+    </div>
   )
 }
 

@@ -1,9 +1,10 @@
-import { Alert, Anchor, Badge, Group, Image, Loader, Stack, Text } from '@mantine/core'
+import { Alert, Anchor, Group, Image, Loader, Stack, Text } from '@mantine/core'
 import { CircleAlert, ExternalLink } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DocumentDetailRow, DocumentDetailSection } from '../../../shared/ui/document-detail/DocumentDetail'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 import { getProductByNetId } from '../api/productsApi'
 import type { Product } from '../types'
 import { getProductMainImage, getProductTitle } from '../utils'
@@ -122,28 +123,27 @@ function ProductCardContent({
     }, mainImage?.ImageUrl ? [mainImage.ImageUrl] : []) || []
 
   return (
-    <Stack gap="md" className="product-card-content document-detail-drawer document-detail-drawer--compact">
+    <Stack gap={10} className="product-card-content">
       <Group className="product-card-summary" justify="space-between" align="flex-start" wrap="nowrap">
         <Stack gap={2}>
           <Group gap={8} wrap="wrap">
-            <Text className="product-card-vendor-code" fw={600} size="lg">
-              {displayValue(product.VendorCode)}
-            </Text>
+            <TableChip tone="product" value={product.VendorCode} />
             {product.MainOriginalNumber && (
-              <Badge className="app-role-pill product-card-original-pill is-product" variant="light">
-                {product.MainOriginalNumber}
-              </Badge>
+              <span className="product-card-original">
+                <span>OEM</span>
+                <TableChip tone="warning" value={product.MainOriginalNumber} />
+              </span>
             )}
           </Group>
-          <Text>{name}</Text>
+          <Text className="product-card-name" fw={600} size="md">{name}</Text>
           {product.ProductGroupNames && (
-            <Text c="dimmed" size="xs">
+            <Text c="gray.7" size="xs">
               {product.ProductGroupNames}
             </Text>
           )}
         </Stack>
         {product.NetUid && (
-          <Anchor c="dark.6" fw={600} href={`/products?netId=${encodeURIComponent(product.NetUid)}`} rel="noopener noreferrer" target="_blank" underline="always">
+          <Anchor className="product-card-open-link" c="dark.6" fw={600} href={`/products?netId=${encodeURIComponent(product.NetUid)}`} rel="noopener noreferrer" target="_blank" underline="always">
             <Group gap={4} wrap="nowrap">
               <ExternalLink size={14} />
               <Text size="sm">{t('Відкрити')}</Text>
@@ -152,44 +152,54 @@ function ProductCardContent({
         )}
       </Group>
 
-      {mainImage?.ImageUrl ? (
-        <button
-          type="button"
-          className="product-inline-image"
-          onClick={() => window.open(mainImage.ImageUrl, '_blank', 'noopener,noreferrer')}
-        >
-          <Image src={mainImage.ImageUrl} alt={getProductTitle(product)} fit="contain" h="100%" w="100%" />
-        </button>
-      ) : null}
-
-      {persistedImageUrls.length > 1 ? (
-        <Group gap={6} className="product-inline-thumbs">
-          {persistedImageUrls.slice(0, 8).map((imageUrl, index) => (
+      <div className={`product-card-overview${mainImage?.ImageUrl ? ' has-image' : ''}`}>
+        {mainImage?.ImageUrl ? (
+          <div className="product-card-media">
             <button
               type="button"
-              className="product-inline-thumb"
-              key={imageUrl}
-              onClick={() => window.open(imageUrl, '_blank', 'noopener,noreferrer')}
+              aria-label={`${t('Відкрити зображення')}: ${name}`}
+              className="product-card-main-image"
+              onClick={() => window.open(mainImage.ImageUrl, '_blank', 'noopener,noreferrer')}
             >
-              <Image src={imageUrl} alt={`${getProductTitle(product)} ${index + 1}`} fit="cover" h="100%" w="100%" />
+              <Image src={mainImage.ImageUrl} alt={name} fit="contain" h="100%" w="100%" />
             </button>
-          ))}
-        </Group>
+            {persistedImageUrls.length > 1 ? (
+              <Group gap={6} className="product-inline-thumbs">
+                {persistedImageUrls.slice(0, 8).map((imageUrl, index) => (
+                  <button
+                    type="button"
+                    aria-label={`${t('Відкрити зображення')} ${index + 1}`}
+                    className="product-inline-thumb"
+                    key={imageUrl}
+                    onClick={() => window.open(imageUrl, '_blank', 'noopener,noreferrer')}
+                  >
+                    <Image src={imageUrl} alt={`${name} ${index + 1}`} fit="cover" h="100%" w="100%" />
+                  </button>
+                ))}
+              </Group>
+            ) : null}
+            <ShopImageGallery
+              vendorCode={product.VendorCode}
+              onImageClick={(url) => window.open(url, '_blank', 'noopener,noreferrer')}
+            />
+          </div>
+        ) : null}
+        <DocumentDetailSection title={t('Наявність')}>
+          <DetailRow label={t('Доступно (UA)')} mono value={formatNumber(product.AvailableQtyUk)} />
+          <DetailRow label={t('В дорозі')} mono value={formatNumber(product.AvailableQtyRoad)} />
+          <DetailRow label={t('Доступно (ПДВ)')} mono value={formatNumber(product.AvailableQtyUkVAT)} />
+          <DetailRow label={t('Доступно (перепродаж)')} mono value={formatNumber(product.AvailableQtyUkReSale)} />
+          <DetailRow label={t('Браковані')} mono value={formatNumber(product.AvailableDefectiveQtyUk)} />
+        </DocumentDetailSection>
+      </div>
+      {!mainImage?.ImageUrl ? (
+        <ShopImageGallery
+          vendorCode={product.VendorCode}
+          onImageClick={(url) => window.open(url, '_blank', 'noopener,noreferrer')}
+        />
       ) : null}
 
-      <ShopImageGallery
-        vendorCode={product.VendorCode}
-        onImageClick={(url) => window.open(url, '_blank', 'noopener,noreferrer')}
-      />
-
       <div className="document-detail-tree">
-      <DocumentDetailSection title={t('Наявність')}>
-        <DetailRow label={t('Доступно (UA)')} mono value={formatNumber(product.AvailableQtyUk)} />
-        <DetailRow label={t('В дорозі')} mono value={formatNumber(product.AvailableQtyRoad)} />
-        <DetailRow label={t('Доступно (ПДВ)')} mono value={formatNumber(product.AvailableQtyUkVAT)} />
-        <DetailRow label={t('Доступно (перепродаж)')} mono value={formatNumber(product.AvailableQtyUkReSale)} />
-        <DetailRow label={t('Браковані')} mono value={formatNumber(product.AvailableDefectiveQtyUk)} />
-      </DocumentDetailSection>
       {salePrices ? <Text size="xs" c="dimmed">{t('Ціна за одиницю з урахуванням знижок у вибраному продажі.')}</Text> : null}
       <DocumentDetailSection title={t('Ціни та характеристики')}>
         {salePrices ? salePrices.map((price, index) => (
@@ -201,7 +211,7 @@ function ProductCardContent({
         </>}
         <DetailRow label={t('Од. виміру')} mono value={product.MeasureUnit?.Name} />
         <DetailRow label={t('Вага')} mono value={formatNumber(product.Weight)} />
-        <DetailRow label={t('Розмір')} mono value={product.Size} />
+        <DetailRow label={t('Розмір')} chip="warning" value={product.Size} />
         <DetailRow label={t("Об'єм")} mono value={product.Volume} />
       </DocumentDetailSection>
 
@@ -221,7 +231,7 @@ function ProductCardContent({
   )
 }
 
-function DetailRow({ label, money = false, mono = false, value }: { label: string; money?: boolean; mono?: boolean; value: unknown }) {
+function DetailRow({ chip, label, money = false, mono = false, value }: { chip?: TableChipTone; label: string; money?: boolean; mono?: boolean; value: unknown }) {
   const text = displayValue(value)
 
   if (!text) {
@@ -230,7 +240,12 @@ function DetailRow({ label, money = false, mono = false, value }: { label: strin
 
   return (
     <div className={money ? 'product-card-money-row' : undefined}>
-      <DocumentDetailRow label={label} mono={mono} value={text} />
+      {chip ? (
+        <div className="document-detail-row">
+          <span className="document-detail-row__label">{label}</span>
+          <span className="document-detail-row__value"><TableChip tone={chip} value={text} /></span>
+        </div>
+      ) : <DocumentDetailRow label={label} mono={mono} value={text} />}
     </div>
   )
 }

@@ -19,7 +19,7 @@
 }
 
 /* Filter strip pinned at the top of the card; the table below it scrolls. */
-.product-history-filter-bar {
+.product-history-page .product-history-filter-bar.app-filter-bar {
   flex: 0 0 auto;
   overflow-x: auto;
 }
@@ -228,6 +228,7 @@
 }
 
 .product-history-page__table {
+  position: relative;
   box-sizing: border-box;
   flex: 1 1 auto;
   min-height: 0;
@@ -244,4 +245,47 @@
 .product-history-page__table .data-table-scroll {
   flex: 1 1 auto;
   min-height: 0;
+}
+
+.product-history-page .product-history-filter-row {
+  --app-multi-select-width: 200px;
+  display: grid;
+  grid-template-columns: 130px 200px minmax(190px, 240px) max-content max-content;
+  gap: 8px;
+  width: 100%;
+}
+
+.product-history-page .product-history-filter-row > * {
+  grid-row: 1;
+  min-width: 0;
+  width: auto;
+}
+
+.product-history-page .product-history-filter-row .app-filter-actions,
+.product-history-page .product-history-filter-row .app-filter-table-toolbar-slot,
+.product-history-page .product-history-filter-row .data-table-toolbar,
+.product-history-page .product-history-filter-row .data-table-toolbar-left {
+  flex-wrap: nowrap;
+  min-width: max-content;
+}
+
+.product-history-table-state {
+  position: absolute;
+  inset: 40px 8px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  pointer-events: none;
+  z-index: 8;
+}
+
+.product-history-table-state-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: min(100%, 480px);
+  text-align: center;
+  pointer-events: auto;
 }

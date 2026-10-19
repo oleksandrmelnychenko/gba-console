@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -32,7 +33,7 @@ vi.mock('../../../shared/documents/openExportDocument', () => ({
 }))
 
 vi.mock('../../../shared/ui/data-table/DataTable', () => ({
-  DataTable: () => <div>Таблиця історії</div>,
+  DataTable: ({ emptyText, isLoading }: { emptyText?: ReactNode; isLoading?: boolean }) => <div><span>Таблиця історії</span>{!isLoading && <div>{emptyText}</div>}</div>,
 }))
 
 vi.mock('../../../shared/ui/paginator/Paginator', () => ({
@@ -97,4 +98,19 @@ describe('ProductHistoryPage canonical permission guards', () => {
     fireEvent.click(exportButton)
     await waitFor(() => expect(exportProductHistory).toHaveBeenCalledTimes(1))
   })
+
+  it('shows a request failure in the table body without a misleading empty result and allows retry', async () => {
+    allowedPermissions.add(PermissionKeys.ProductHistory.Page.View)
+    vi.mocked(getProductHistory).mockRejectedValueOnce(new Error('Не вдалося виконати запит'))
+    renderPage()
+
+    const message = await screen.findByText('Не вдалося виконати запит')
+    expect(message.closest('.product-history-page__table')).not.toBeNull()
+    expect(screen.queryByText('Історію товарів не знайдено')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Повторити запит' }))
+    await screen.findByText('Історію товарів не знайдено')
+    expect(screen.queryByText('Не вдалося виконати запит')).toBeNull()
+  })
+
 })

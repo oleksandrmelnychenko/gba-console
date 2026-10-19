@@ -346,7 +346,7 @@ function ProductDeliveryProtocolLogisticPathPageContent() {
 
   return (
     <AppDrawer
-      className="app-form-sheet"
+      className="app-form-sheet product-delivery-protocol-detail"
       closeOnEscape={false}
       opened
       position="right"
@@ -363,7 +363,7 @@ function ProductDeliveryProtocolLogisticPathPageContent() {
       }
       onClose={() => navigate('/product-delivery-protocols')}
     >
-      <Stack gap="lg">
+      <Stack gap={12}>
       {model.error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {model.error}
@@ -375,7 +375,7 @@ function ProductDeliveryProtocolLogisticPathPageContent() {
           {t('Завантаження')}
         </Text>
       ) : model.protocol ? (
-        <Stack gap="lg" className="product-delivery-protocol-logistic-path-sections">
+        <Stack gap={12} className="product-delivery-protocol-logistic-path-sections">
           <ProtocolDetailsCard protocol={model.protocol} />
 
           {(model.protocol.SupplyInvoices?.length || 0) > 0 && (

@@ -135,6 +135,9 @@ describe('ProductsPage', () => {
     expect(copyButton.title).toBe('Скопіювати код')
     expect(container.querySelector('[data-code-missing]')).toBeNull()
     expect(screen.queryByText('Код відсутній')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Оновити' }))
+    await waitFor(() => expect(getProductByNetIdMock).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(container.querySelector('.product-inline-code')?.textContent).toBe('TEST-42'))
   })
 
   it('keeps the assortment search inside the product drum', () => {

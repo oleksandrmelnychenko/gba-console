@@ -117,7 +117,7 @@ describe('BUG-1193 protocol customs-code window', () => {
     renderPage()
 
     expect(await screen.findByText('P000000001')).toBeTruthy()
-    expect(await screen.findByRole('button', { name: 'Друк PDF' })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: 'Друк' })).toBeTruthy()
     expect(screen.getByRole('textbox', { name: 'Пошук' }).getAttribute('placeholder')).toBe('Код товару')
     expect(screen.getByTestId('specification-products-grid')).toBeTruthy()
     expect(screen.getByTestId('specification-totals')).toBeTruthy()

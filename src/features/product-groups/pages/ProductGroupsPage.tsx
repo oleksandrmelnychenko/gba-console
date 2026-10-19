@@ -11,7 +11,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { AppModal } from "../../../shared/ui/AppModal"
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
 import { useDebouncedValue } from '@mantine/hooks'
@@ -494,33 +494,42 @@ function ProductGroupCreateModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={opened} size="lg" title={t('Нова група товарів')} onClose={onClose}>
+    <AppModal
+      className="product-group-create-modal"
+      centered
+      opened={opened}
+      size={640}
+      title={t('Нова група товарів')}
+      onClose={onClose}
+    >
       <form id="product-group-create-form" onSubmit={onSubmit}>
-        <Stack gap="md">
+        <Stack gap={12}>
           {createError && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {createError}
             </Alert>
           )}
 
-          <ProductGroupForm
-            disabled={isCreating}
-            isLoadingRootGroups={isLoadingRootGroups}
-            productGroup={createDraft}
-            rootGroups={rootGroups}
-            selectedRootNetUid={selectedRootNetUid}
-            onFieldChange={onFieldChange}
-            onRootGroupChange={onRootGroupChange}
-          />
+          <Card className="app-section-card product-group-create-section" withBorder radius="md" padding="sm">
+            <ProductGroupForm
+              disabled={isCreating}
+              isLoadingRootGroups={isLoadingRootGroups}
+              productGroup={createDraft}
+              rootGroups={rootGroups}
+              selectedRootNetUid={selectedRootNetUid}
+              onFieldChange={onFieldChange}
+              onRootGroupChange={onRootGroupChange}
+            />
+          </Card>
 
-          <Group justify="flex-end">
-            <Button color="gray" type="button" variant="subtle" onClick={onClose}>
+          <AppModalFooter>
+            <Button color="gray" type="button" variant="default" onClick={onClose}>
               {t('Скасувати')}
             </Button>
-            <Button color={CREATE_ACTION_COLOR} loading={isCreating} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} type="submit">
+            <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} loading={isCreating} type="submit">
               {t('Створити')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </form>
     </AppModal>

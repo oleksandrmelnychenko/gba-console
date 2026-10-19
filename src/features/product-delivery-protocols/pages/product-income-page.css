@@ -27,10 +27,32 @@
   flex-direction: column;
   height: 100%;
   min-height: 0;
+  overflow: hidden;
+}
+
+.product-income-page-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
 }
 
 .product-income-page.is-sheet {
+  height: 100%;
+  min-height: 0;
   margin: -2px 0 0;
+}
+
+.product-income-page.is-sheet .product-income-grid-panel {
+  flex: 1 0 220px;
+  min-height: 220px;
+}
+
+.product-income-sheet .app-sheet-scroll {
+  display: flex;
+  flex-direction: column;
 }
 
 .product-income-page-header {
@@ -40,22 +62,36 @@
 
 .product-income-page-title,
 .product-delivery-protocol-income-sheet-title {
-  color: var(--mantine-color-gray-9);
-  font-family: var(--font-mono);
-  letter-spacing: 0;
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
 }
 
 .product-delivery-protocol-income-sheet-title {
-  align-items: baseline;
+  align-items: flex-start;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.product-delivery-protocol-income-sheet-heading {
+  align-items: center;
   display: inline-flex;
   flex-wrap: wrap;
-  gap: 8px clamp(24px, 4vw, 72px);
+  gap: 4px 8px;
 }
 
 .product-delivery-protocol-income-sheet-supplier {
-  color: var(--mantine-color-gray-7);
-  font-size: 13px;
-  font-weight: 600;
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .product-income-page-title {
@@ -102,50 +138,37 @@
 
 .product-income-summary-grid {
   display: grid;
-  gap: 9px 22px;
+  gap: 12px 18px;
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  margin-top: 10px;
+  margin-top: 12px;
 }
 
 .product-income-detail-item {
-  align-items: baseline;
   display: flex;
-  gap: 8px;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 5px;
   min-width: 0;
 }
 
 .product-income-detail-item::before {
-  border-bottom: 1px solid var(--mantine-color-gray-3);
-  content: '';
-  flex: 1 1 auto;
-  min-width: 18px;
-  order: 2;
-  transform: translateY(-3px);
+  display: none;
 }
 
 .product-income-detail-label {
   color: var(--mantine-color-gray-8);
-  flex: 0 0 auto;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0;
-  line-height: 1.25;
-  order: 1;
+  font-weight: 500;
+  line-height: 1.3;
 }
 
 .product-income-detail-value {
   color: var(--mantine-color-gray-9);
-  flex: 0 1 auto;
   font-size: 13px;
   font-weight: 600;
-  line-height: 1.25;
-  max-width: 58%;
-  order: 3;
-  overflow: hidden;
-  text-align: right;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .product-income-detail-pill,
@@ -171,7 +194,7 @@
 }
 
 .product-income-controls {
-  flex: 1 1 auto;
+  flex: 1 0 220px;
   min-width: 0;
 }
 
@@ -221,16 +244,17 @@
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  min-height: 0;
+  min-height: 220px;
   overflow: hidden;
 }
 
 .product-income-grid-toolbar {
-  align-items: end;
+  align-items: center;
   border-bottom: 1px solid var(--mantine-color-gray-2);
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
   flex: 0 0 auto;
-  grid-template-columns: auto minmax(180px, 260px) minmax(0, 1fr);
 }
 
 .product-income-grid-title {
@@ -240,40 +264,70 @@
 }
 
 .product-income-search {
-  min-width: 0;
+  flex: 0 1 240px;
+  min-width: 160px;
 }
 
 .product-income-grid-summary {
+  display: grid;
+  flex: 1 1 650px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+  min-width: 0;
+  padding: 0;
+  background: white;
+}
+
+.product-income-footer {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
   min-width: 0;
 }
 
+.product-income-page > .product-income-footer {
+  padding: 10px 12px;
+  border-top: 1px solid var(--mantine-color-gray-2);
+  background: var(--mantine-color-white);
+}
+
+.product-income-footer-actions {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.product-income-footer-actions:empty {
+  display: none;
+}
+
 .product-income-summary-metric {
-  align-items: baseline;
+  align-items: flex-start;
   background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 6px;
-  color: var(--mantine-color-gray-6);
-  display: inline-flex;
-  gap: 6px;
-  min-height: 28px;
-  padding: 5px 8px;
-  white-space: nowrap;
+  border-radius: 8px;
+  color: var(--mantine-color-gray-8);
+  display: flex;
+  flex: 1 1 140px;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
 }
 
 .product-income-summary-metric span {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0;
-  text-transform: uppercase;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
 }
 
 .product-income-summary-metric strong {
   color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .product-income-number-cell {
@@ -292,9 +346,6 @@
 }
 
 @media (max-width: 1180px) {
-  .product-income-grid-toolbar {
-    grid-template-columns: minmax(0, 1fr);
-  }
 
   .product-income-grid-title {
     margin-right: 0;
@@ -306,6 +357,10 @@
 }
 
 @media (max-width: 720px) {
+  .product-income-grid-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .product-income-control,
   .product-income-control.is-date,
   .product-income-control.is-vat {
@@ -313,3 +368,20 @@
     max-width: none;
   }
 }
+
+.product-income-detail-chip { min-width: 0; max-width: 100%; }
+.product-income-detail-chip .app-table-chip,
+.product-delivery-protocol-income-sheet-supplier .app-table-chip {
+  height: auto;
+  max-width: 100%;
+  white-space: normal;
+}
+.product-income-detail-chip .app-table-chip-label,
+.product-delivery-protocol-income-sheet-supplier .app-table-chip-label {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.product-income-summary-metric-value { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.product-income-table-toolbar-slot { display: flex; flex-wrap: wrap; margin-left: auto; }
+.product-income-table-toolbar-slot .data-table-toolbar { padding: 0; margin: 0; }
+.product-income-page .app-section-title { color: var(--mantine-color-gray-9); }

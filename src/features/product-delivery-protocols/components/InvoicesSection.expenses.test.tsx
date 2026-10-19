@@ -126,7 +126,7 @@ describe('BUG-1196 invoice expenses information', () => {
 
     expect(await screen.findByText('послуги брокера')).toBeTruthy()
     expect(screen.getByText('Білий Віктор Васильович ФОП')).toBeTruthy()
-    expect(screen.getByText('4 000,00 UAH')).toBeTruthy()
-    expect(screen.getByText('52,13 UAH')).toBeTruthy()
+    expect(screen.getByText((_, element) => element?.textContent?.replace(/\s+/g, ' ').trim() === '4 000,00 UAH' && element.children.length === 2)).toBeTruthy()
+    expect(screen.getByText((_, element) => element?.textContent?.replace(/\s+/g, ' ').trim() === '52,13 UAH' && element.children.length === 2)).toBeTruthy()
   })
 })

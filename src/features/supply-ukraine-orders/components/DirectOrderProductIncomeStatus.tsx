@@ -1,10 +1,12 @@
-import { Alert, Group, Loader, Stack, Text } from '@mantine/core'
+import { Alert, Loader, Text } from '@mantine/core'
 import { CircleAlert, PackageCheck } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { getSupplyOrderProductIncome, type SupplyOrderProductIncomeSource } from '../api/directOrderProductIncomeApi'
 import type { DirectOrderProductIncome, User } from '../types'
+import './direct-order-income-status.css'
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
@@ -90,36 +92,23 @@ export function DirectOrderProductIncomeStatus({
   }
 
   return (
-    <Alert color="green" icon={<PackageCheck size={18} />} title={t('Оприходування')} variant="light">
-      {compact ? (
-        <Text size="sm">
-          {formatIncomeLabel(state.income)}
-        </Text>
-      ) : (
-        <Stack gap={6}>
-          <Group gap={8} wrap="wrap">
-            <StatusValue label={t('Номер')} value={state.income.Number || '-'} />
-            <StatusValue label={t('Дата')} value={formatDateTime(state.income.FromDate)} />
-            <StatusValue label={t('Склад')} value={state.income.Storage?.Name || '-'} />
-            <StatusValue label={t('Відповідальний')} value={getUserName(state.income.User)} />
-          </Group>
-        </Stack>
-      )}
-    </Alert>
+    <div className="direct-order-income-summary">
+      <div className="direct-order-income-summary__heading">
+        <PackageCheck size={16} aria-hidden="true" />
+        <span>{t('Оприходування')}</span>
+        <span className="direct-order-income-summary__date">{formatDateTime(state.income.FromDate)}</span>
+      </div>
+      <div className="direct-order-income-summary__values">
+        <TableChip tone="document" value={state.income.Number || '-'} />
+        <TableChip tone="storage" value={state.income.Storage?.Name || '-'} />
+        {!compact && (
+          <span className="direct-order-income-summary__owner">
+            {t('Відповідальний')}: <strong>{getUserName(state.income.User)}</strong>
+          </span>
+        )}
+      </div>
+    </div>
   )
-}
-
-function StatusValue({ label, value }: { label: string; value: string }) {
-  return (
-    <Text size="sm">
-      <Text component="span" c="dimmed" size="sm">{label}: </Text>
-      <Text component="span" fw={600} size="sm">{value}</Text>
-    </Text>
-  )
-}
-
-function formatIncomeLabel(income: DirectOrderProductIncome): string {
-  return [income.Number, formatDateTime(income.FromDate), income.Storage?.Name].filter(Boolean).join(' · ') || '-'
 }
 
 function formatDateTime(value?: Date | string): string {

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Button, Group, Stack, Text } from '@mantine/core'
 import { Plus } from 'lucide-react'
 import { formatLocalDateTime } from '../../../shared/date/dateTime'
@@ -130,6 +131,7 @@ export function MergedServicesSection({
   onSaveService: (payload: SaveMergedServicePayload) => Promise<void>
   protocol: ProtocolDetail
 }) {
+  const [actionsTarget, setActionsTarget] = useState<HTMLDivElement | null>(null)
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const [isNewOpen, setNewOpen] = useValueState(false)
@@ -253,6 +255,8 @@ export function MergedServicesSection({
         <Text className="app-section-title" fw={600} size="sm">
           {t('Об’єднані сервіси')}
         </Text>
+        <Group gap="sm">
+          {services.length === 1 && <div ref={setActionsTarget} />}
         {canAddService && (
           <Button
             color={CREATE_ACTION_COLOR}
@@ -263,6 +267,7 @@ export function MergedServicesSection({
             {t('Додати')}
           </Button>
         )}
+        </Group>
       </Group>
 
       {services.length === 0 ? (
@@ -274,6 +279,7 @@ export function MergedServicesSection({
           {services.map((service) => (
             <MergedServiceViewCard
               key={service.NetUid}
+              actionsTarget={services.length === 1 ? actionsTarget : undefined}
               canEdit={canEdit}
               isSaving={isSaving}
               service={service}

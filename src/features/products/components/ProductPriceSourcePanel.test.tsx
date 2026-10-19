@@ -70,6 +70,26 @@ describe('ProductPriceSourcePanel', () => {
     expect(await view.findByText('1,54')).toBeTruthy()
   })
 
+  it('loads fresh prices when the page refresh generation changes', async () => {
+    const productNetId = 'product-source-panel-refresh'
+    getProductSourcePriceComparison.mockResolvedValue({
+      ProductNetId: productNetId,
+      Amg: { IsAvailable: true, IsLinked: true, Prices: [{ PriceEur: 10, PricingName: 'ЦО2' }] },
+      Fenix: { IsAvailable: true, IsLinked: true, Prices: [] },
+    })
+    const firstView = renderPanel(productNetId)
+    await firstView.findByText('10,00')
+    firstView.unmount()
+    getProductSourcePriceComparison.mockResolvedValue({
+      ProductNetId: productNetId,
+      Amg: { IsAvailable: true, IsLinked: true, Prices: [{ PriceEur: 12, PricingName: 'ЦО2' }] },
+      Fenix: { IsAvailable: true, IsLinked: true, Prices: [] },
+    })
+    const refreshedView = renderPanel(productNetId, 1)
+    await refreshedView.findByText('12,00')
+    expect(getProductSourcePriceComparison).toHaveBeenCalledTimes(2)
+  })
+
   it('orders prices as base/VAT pairs following the effective price order', async () => {
     getProductSourcePriceComparison.mockResolvedValue({
       Amg: {
@@ -106,7 +126,7 @@ describe('ProductPriceSourcePanel', () => {
   })
 })
 
-function renderPanel(productNetId: string) {
+function renderPanel(productNetId: string, refreshKey = 0) {
   return render(
     <MantineProvider theme={theme}>
       <I18nProvider>
@@ -117,6 +137,7 @@ function renderPanel(productNetId: string) {
             { Pricing: { Name: 'ЦО2' }, RetailPriceEUR: 1.4, RetailPriceLocal: 71.61 },
           ]}
           productNetId={productNetId}
+          refreshKey={refreshKey}
         />
       </I18nProvider>
     </MantineProvider>,

@@ -34,6 +34,7 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import '../../../shared/ui/console-table-page.css'
 import './new-ukraine-sale-return-page.css'
+import './new-sale-return-create.css'
 import {
   cancelSaleReturn,
   createSaleReturn,
@@ -152,6 +153,7 @@ export function NewUkraineSaleReturnPage() {
   const [cancelCandidate, setCancelCandidate] = useState<SalesReturn | null>(null)
   const [isCanceling, setCanceling] = useState(false)
   const [createOpened, setCreateOpened] = useState(false)
+  const [createTableToolbarSlot, setCreateTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [organizations, setOrganizations] = useState<SalesReturnOrganization[]>([])
   const [organizationId, setOrganizationId] = useState<string | null>(null)
   const [clients, setClients] = useState<SalesReturnClient[]>([])
@@ -196,6 +198,7 @@ export function NewUkraineSaleReturnPage() {
     [clientId, clients],
   )
   const selectedClientNetUid = selectedClient?.NetUid
+  const hasReturnSearch = Boolean(saleSearch.trim() || selectedClientNetUid)
   const selectedOrganizationNetUid = selectedOrganization?.NetUid
   const clientOptions = useMemo(() => mergeSelectedClient(clients, selectedClient), [clients, selectedClient])
   const saleItemRows = useMemo(() => flattenSaleItemRows(salesState.sales), [salesState.sales])
@@ -806,6 +809,7 @@ export function NewUkraineSaleReturnPage() {
       </AppDrawer>
 
       <AppDrawer
+        className="new-sale-return-create-sheet"
         footer={
           <Button disabled={!drafts.length} leftSection={<Eye size={16} />} onClick={openReview}>
             {t('Перегляд')} ({drafts.length})
@@ -817,57 +821,74 @@ export function NewUkraineSaleReturnPage() {
         title={t('Нове повернення')}
         onClose={() => setCreateOpened(false)}
       >
-        <Stack gap="md">
+        <Stack className="new-sale-return-create-workspace" gap={10}>
           {createError ? (
             <Alert color="red" icon={<CircleAlert size={16} />} title={t('Помилка')}>
               {createError}
             </Alert>
           ) : null}
-          {createWarning ? (
-            <Alert color="yellow" icon={<CircleAlert size={16} />} title={t('Увага')}>
+          {createWarning && hasReturnSearch && createWarning !== t('Продажі для повернення не знайдено') ? (
+            <Alert className="new-sale-return-create-warning" color="yellow" icon={<CircleAlert size={16} />}>
               {createWarning}
             </Alert>
           ) : null}
 
-          <SimpleGrid cols={{ base: 1, md: 5 }}>
-            <Select
-              clearable
-              data={organizations.map((organization) => ({
-                label: getEntityName(organization) || t('Без назви'),
-                value: getEntityKey(organization),
-              }))}
-              label={t('Організація')}
-              onChange={setOrganizationId}
-              searchable
-              value={organizationId}
-            />
-            <Select
-              clearable
-              data={clientOptions.map((client) => ({
-                label: getClientOptionLabel(client),
-                value: getEntityKey(client),
-              }))}
-              label={t('Клієнт')}
-              onChange={setClientId}
-              onSearchChange={setClientSearch}
-              searchable
-              searchValue={clientSearch}
-              value={clientId}
-            />
-            <TextInput label={t('Артикул')} onChange={(event) => setSaleSearch(event.currentTarget.value)} value={saleSearch} />
-            <TextInput label={t('З дати')} onChange={(event) => setSaleFromDate(event.currentTarget.value)} type="date" value={saleFromDate} />
-            <TextInput label={t('По дату')} onChange={(event) => setSaleToDate(event.currentTarget.value)} type="date" value={saleToDate} />
-          </SimpleGrid>
-          <DataTable
-            columns={saleItemColumns}
-            data={saleItemRows}
-            defaultLayout={SALE_ITEMS_TABLE_LAYOUT}
-            emptyText={t('Продажі або позиції не знайдено')}
-            getRowId={(row, index) => `${getOrderItemKey(row.item)}-${index}`}
-            isLoading={salesState.isLoading}
-            minWidth={1280}
-            tableId="sales-return-new-sale-items"
-          />
+          <section className="new-sale-return-create-filters" aria-label={t('Пошук продажів')}>
+            <div className="new-sale-return-create-fields">
+              <Select
+                clearable
+                data={organizations.map((organization) => ({
+                  label: getEntityName(organization) || t('Без назви'),
+                  value: getEntityKey(organization),
+                }))}
+                label={t('Організація')}
+                onChange={setOrganizationId}
+                searchable
+                value={organizationId}
+              />
+              <Select
+                clearable
+                data={clientOptions.map((client) => ({
+                  label: getClientOptionLabel(client),
+                  value: getEntityKey(client),
+                }))}
+                label={t('Клієнт')}
+                onChange={setClientId}
+                onSearchChange={setClientSearch}
+                searchable
+                searchValue={clientSearch}
+                value={clientId}
+              />
+              <TextInput leftSection={<Search size={16} />} label={t('Артикул')} onChange={(event) => setSaleSearch(event.currentTarget.value)} value={saleSearch} />
+              <TextInput label={t('З дати')} onChange={(event) => setSaleFromDate(event.currentTarget.value)} type="date" value={saleFromDate} />
+              <TextInput label={t('По дату')} onChange={(event) => setSaleToDate(event.currentTarget.value)} type="date" value={saleToDate} />
+            </div>
+          </section>
+          <section className="new-sale-return-create-results" aria-label={t('Продажі для повернення')}>
+            <div className="new-sale-return-create-results__toolbar">
+              <Text className="app-section-title">{t('Продажі для повернення')}</Text>
+              <div className="new-sale-return-create-results__controls" ref={setCreateTableToolbarSlot} />
+            </div>
+            <div className="new-sale-return-create-results__table">
+              <DataTable
+                columns={saleItemColumns}
+                data={saleItemRows}
+                defaultLayout={SALE_ITEMS_TABLE_LAYOUT}
+                emptyText={(
+                  <div className="new-sale-return-create-empty">
+                    <Search size={22} aria-hidden="true" />
+                    <Text>{hasReturnSearch ? t('Продажі або позиції не знайдено') : t('Введіть артикул або виберіть клієнта')}</Text>
+                  </div>
+                )}
+                getRowId={(row, index) => `${getOrderItemKey(row.item)}-${index}`}
+                height="100%"
+                isLoading={salesState.isLoading}
+                minWidth={1280}
+                tableId="sales-return-new-sale-items"
+                toolbarPortalTarget={createTableToolbarSlot}
+              />
+            </div>
+          </section>
         </Stack>
       </AppDrawer>
 

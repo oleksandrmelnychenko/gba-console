@@ -1,0 +1,116 @@
+.supply-invoices-sheet .supply-detail-header.is-sheet {
+  background: var(--mantine-color-gray-0);
+  border: 0;
+  padding: 8px;
+}
+.supply-invoices-sheet .supply-detail-header-actions { flex-wrap: wrap; }
+.supply-invoices-workspace .supply-invoices-tabs > .mantine-Tabs-list {
+  align-self: center;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  gap: 6px;
+  padding: 0;
+  width: fit-content;
+  max-width: 100%;
+}
+.supply-invoices-workspace .supply-invoices-tabs > .mantine-Tabs-list::before { border: 0; }
+.supply-invoices-workspace .supply-invoices-tabs > .mantine-Tabs-list > .mantine-Tabs-tab {
+  border: 0;
+  border-radius: 8px;
+  min-height: 34px;
+  padding: 7px 12px;
+  margin: 0;
+  font: 600 12px/20px var(--font-mono);
+  color: var(--mantine-color-gray-8);
+}
+.supply-invoices-workspace .supply-invoices-tabs > .mantine-Tabs-list > .mantine-Tabs-tab[data-active] {
+  color: white;
+  background: var(--brand-orange);
+}
+.supply-invoices-workspace .supply-invoices-tabs > .mantine-Tabs-list > .mantine-Tabs-tab:disabled { opacity: .45; }
+.supply-invoices-workspace .supply-invoices-table-card { padding: 10px; }
+.supply-invoices-workspace .supply-invoice-product-link {
+  color: var(--mantine-color-gray-9);
+  text-align: left;
+  line-height: 1.45;
+  font-weight: 500;
+}
+.supply-invoices-totals { flex-shrink: 0; }
+.supply-invoices-totals .supply-invoices-total {
+  background: var(--mantine-color-gray-0);
+  border-radius: 8px;
+  padding: 8px 12px;
+  min-width: 140px;
+  flex: 1 1 140px;
+}
+.supply-invoices-total .app-section-title { color: var(--mantine-color-gray-8); }
+.supply-invoice-upload-modal.app-modal .mantine-Modal-body { background: var(--mantine-color-gray-0); }
+.supply-invoice-upload-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: max(160px, calc(100dvh - 300px));
+  min-height: 0;
+  overflow-y: auto;
+}
+.supply-invoice-upload-scroll .app-section-card { flex-shrink: 0; padding: 12px; }
+.supply-invoice-upload-modal .app-modal-footer .mantine-Button-root[data-variant="default"] { background: white; }
+.supply-invoice-upload-tabs.mantine-SegmentedControl-root {
+  align-self: center;
+  background: white;
+  padding: 0;
+  border: 0;
+}
+.supply-invoice-upload-tabs .mantine-SegmentedControl-control::before { display: none; }
+.supply-invoice-upload-tabs .mantine-SegmentedControl-indicator {
+  background: var(--brand-orange);
+  border-radius: 8px;
+  box-shadow: none;
+}
+.supply-invoice-upload-tabs .mantine-SegmentedControl-label {
+  padding: 7px 14px;
+  font: 600 12px/20px var(--font-mono);
+  color: var(--mantine-color-gray-8);
+}
+.supply-invoice-upload-tabs .mantine-SegmentedControl-label[data-active] { color: white; }
+
+.supply-invoice-selector-row { flex-shrink: 0; }
+.supply-invoice-selector-group { max-width: 100%; min-width: 0; }
+.supply-invoices-workspace .supply-invoice-selector.mantine-Button-root {
+  position: relative;
+  min-height: 34px;
+  height: auto;
+  max-width: 100%;
+  padding: 5px 8px 5px 11px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--mantine-color-gray-8);
+}
+.supply-invoice-selector .mantine-Button-label {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  justify-content: flex-start;
+  white-space: normal;
+  line-height: 20px;
+}
+.supply-invoice-selector .app-table-chip { font-size: 12px; }
+.supply-invoice-selector-kind { font: 500 12px/20px var(--font-sans); }
+.supply-invoice-selector-date { font: 500 12px/20px var(--font-mono); }
+.supply-invoices-workspace .supply-invoice-selector-group .mantine-ActionIcon-root {
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  min-width: 28px;
+}
+.supply-invoices-balance {
+  flex-shrink: 0;
+  background: var(--mantine-color-gray-0);
+  border-radius: 8px;
+  padding: 7px 10px;
+  color: var(--mantine-color-gray-8);
+  font: 400 12px/20px var(--font-sans);
+}
+.supply-invoices-balance .app-table-chip { font-size: 12px; }
+.supply-invoices-balance-item { display: inline-flex; align-items: center; gap: 6px; }

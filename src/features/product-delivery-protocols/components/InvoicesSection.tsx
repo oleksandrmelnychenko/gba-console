@@ -5,7 +5,6 @@ import {
   Badge,
   Button,
   Card,
-  Divider,
   FileInput,
   Group,
   SimpleGrid,
@@ -14,12 +13,16 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, ListTree, Save, Trash2, Undo2, Upload } from 'lucide-react'
-import { useEffect } from 'react'
+import { CircleAlert, ListChecks, ListTree, Paperclip, Save, Trash2, Undo2, Upload } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
+import { ProtocolMoneyValue } from './ProtocolMoneyValue'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../auth/useAuth'
@@ -68,12 +71,14 @@ function getInvoiceCardKey(invoice: SupplyInvoice): string {
 }
 
 function InvoiceViewCard({
+  actionsTarget,
   invoice,
   canOpenExpenses,
   canEditDeliveryDocuments,
   isSaving,
   onSaveDocuments,
 }: {
+  actionsTarget?: HTMLDivElement | null
   canEditDeliveryDocuments: boolean
   canOpenExpenses: boolean
   invoice: SupplyInvoice
@@ -139,48 +144,52 @@ function InvoiceViewCard({
     }
   }
 
+  const actions = (
+    <Group justify="flex-end" gap="sm">
+      {canOpenExpenses && (
+        <Button
+          disabled={isSaving}
+          leftSection={<ListTree size={16} />}
+          variant="default"
+          onClick={() => setExpensesOpened(true)}
+        >
+          {t('Детальні витрати')}
+        </Button>
+      )}
+      {canEditDeliveryDocuments && (
+        <Button
+          color={CREATE_ACTION_COLOR}
+          disabled={isSaving}
+          leftSection={<Save size={16} />}
+          loading={isSaving}
+          onClick={handleSaveDocuments}
+        >
+          {t('Зберегти')}
+        </Button>
+      )}
+    </Group>
+  )
+
   return (
-    <Card withBorder radius="md" padding="md">
-      <Stack gap="xs">
-        <Group justify="flex-end" gap="sm">
-          {canOpenExpenses && (
-            <Button
-              disabled={isSaving}
-              leftSection={<ListTree size={16} />}
-              size="xs"
-              variant="default"
-              onClick={() => setExpensesOpened(true)}
-            >
-              {t('Детальні витрати')}
-            </Button>
-          )}
-          {canEditDeliveryDocuments && (
-            <Button
-              color={CREATE_ACTION_COLOR}
-              disabled={isSaving}
-              leftSection={<Save size={16} />}
-              loading={isSaving}
-              size="xs"
-              onClick={handleSaveDocuments}
-            >
-              {t('Зберегти')}
-            </Button>
-          )}
-        </Group>
-        <LabelValueRow label={t('Номер документу')} mono>{invoice.ServiceNumber || ''}</LabelValueRow>
-        <LabelValueRow label={t('Номер інвойса')} mono>{invoiceNumber || ''}</LabelValueRow>
-        <LabelValueRow label={t('Дата інвойса')} mono>{formatDateTime(invoice.DateFrom)}</LabelValueRow>
-        <LabelValueRow label={t('Постачальник')}>{invoice.SupplyOrder?.Client?.FullName || ''}</LabelValueRow>
-        <LabelValueRow label={t('Заг. вартість нетто')} mono>{formatMoney(invoiceNetPrice, currencyCode)}</LabelValueRow>
-        <LabelValueRow label={t('Сума доставки')} mono>{formatMoney(invoice.DeliveryAmount, currencyCode)}</LabelValueRow>
-        <LabelValueRow label={t('Сума знижки')} mono>{formatMoney(invoice.DiscountAmount, currencyCode)}</LabelValueRow>
-        <LabelValueRow label={t('Кінцева вартість Нетто')} mono>{formatMoney(totalNetPrice, currencyCode)}</LabelValueRow>
-        <LabelValueRow label={t('Витрати')} mono>{formatMoney(invoice.TotalSpending, 'EUR')}</LabelValueRow>
-        <LabelValueRow label={`${t('Витрати')} (${t('Бух.')})`} mono>
-          {formatMoney(invoice.AccountingTotalSpending, 'EUR')}
-        </LabelValueRow>
-        <LabelValueRow label={t('Номер митної декларації')} mono>{invoice.NumberCustomDeclaration || ''}</LabelValueRow>
-        <LabelValueRow label={t('Дата митної декларації')} mono>{formatDateTime(invoice.DateCustomDeclaration)}</LabelValueRow>
+    <Card className="protocol-invoice-card" withBorder radius="md" padding={12}>
+      <Stack gap={10}>
+        {actionsTarget ? createPortal(actions, actionsTarget) : actions}
+        <div className="protocol-detail-grid">
+          <LabelValueRow label={t('Номер документу')} mono><TableChip tone="document" value={invoice.ServiceNumber || '—'} /></LabelValueRow>
+          <LabelValueRow label={t('Номер інвойса')} mono><TableChip tone="document" value={invoiceNumber || '—'} /></LabelValueRow>
+          <LabelValueRow label={t('Дата інвойса')} mono>{formatDateTime(invoice.DateFrom)}</LabelValueRow>
+          <LabelValueRow label={t('Постачальник')}><TableChip tone="document" value={invoice.SupplyOrder?.Client?.FullName} /></LabelValueRow>
+          <LabelValueRow label={t('Заг. вартість нетто')} mono><ProtocolMoneyValue value={invoiceNetPrice} currency={currencyCode} /></LabelValueRow>
+          <LabelValueRow label={t('Сума доставки')} mono><ProtocolMoneyValue value={invoice.DeliveryAmount} currency={currencyCode} /></LabelValueRow>
+          <LabelValueRow label={t('Сума знижки')} mono><ProtocolMoneyValue value={invoice.DiscountAmount} currency={currencyCode} /></LabelValueRow>
+          <LabelValueRow label={t('Кінцева вартість Нетто')} mono><ProtocolMoneyValue value={totalNetPrice} currency={currencyCode} /></LabelValueRow>
+          <LabelValueRow label={t('Витрати')} mono><ProtocolMoneyValue value={invoice.TotalSpending} currency={'EUR'} /></LabelValueRow>
+          <LabelValueRow label={`${t('Витрати')} (${t('Бух.')})`} mono>
+            <ProtocolMoneyValue value={invoice.AccountingTotalSpending} currency={'EUR'} />
+          </LabelValueRow>
+          <LabelValueRow label={t('Номер митної декларації')} mono><TableChip tone="document" value={invoice.NumberCustomDeclaration} /></LabelValueRow>
+          <LabelValueRow label={t('Дата митної декларації')} mono>{formatDateTime(invoice.DateCustomDeclaration)}</LabelValueRow>
+        </div>
         <LabelValueRow label={t('Документи доставки')}>
           {deliveryDocuments.length > 0 ? (
             <Stack gap={6}>
@@ -231,22 +240,29 @@ function InvoiceViewCard({
               ))}
             </Stack>
           ) : (
-            ''
+            <Text c="dimmed" size="xs">{t('Документи ще не додані')}</Text>
           )}
         </LabelValueRow>
         {canEditDeliveryDocuments && (
-          <>
-            <Divider />
+          <div className="protocol-document-upload">
+            <div className="protocol-document-upload__copy">
+              <Paperclip size={18} aria-hidden="true" />
+              <div>
+                <Text className="protocol-document-upload__title">{t('Додати документи доставки')}</Text>
+                <Text className="protocol-document-upload__hint">{t('Оберіть один або кілька файлів. Вони додадуться після збереження.')}</Text>
+              </div>
+            </div>
             <FileInput
               clearable
+              aria-label={t('Додати документи доставки')}
+              placeholder={t('Обрати файли')}
               leftSection={<Upload size={16} />}
-              label={t('Додати документи доставки')}
               multiple
               disabled={isSaving}
               value={files}
               onChange={handleChangeFiles}
             />
-          </>
+          </div>
         )}
       </Stack>
       <InvoiceExpensesDrawer
@@ -363,11 +379,11 @@ function InvoiceExpenseSummary({ invoice }: { invoice: SupplyInvoice }) {
   return (
     <Card aria-label={t('Інформація про інвойс')} withBorder radius="md" padding="md">
       <SimpleGrid cols={{ base: 1, sm: 2, lg: 5 }} spacing="xs">
-        <LabelValueRow label={t('Постачальник')}>{invoice.SupplyOrder?.Client?.FullName || ''}</LabelValueRow>
+        <LabelValueRow label={t('Постачальник')}><TableChip tone="document" value={invoice.SupplyOrder?.Client?.FullName} /></LabelValueRow>
         <LabelValueRow label={t('Номер інвойса')} mono>{invoice.Number || ''}</LabelValueRow>
         <LabelValueRow label={t('Дата інвойса')} mono>{formatDateTime(invoice.DateFrom)}</LabelValueRow>
         <LabelValueRow label={t('Сума інвойса')} mono>{formatMoney(getInvoiceTotalNetPrice(invoice))}</LabelValueRow>
-        <LabelValueRow label={t('Валюта інвойса')} mono>{currencyCode}</LabelValueRow>
+        <LabelValueRow label={t('Валюта інвойса')} mono><TableChip tone="source" value={currencyCode} /></LabelValueRow>
       </SimpleGrid>
     </Card>
   )
@@ -382,9 +398,9 @@ function BillOfLadingExpenseCard({ service }: { service: SupplyInvoiceBillOfLadi
     <Card withBorder radius="md" padding="md">
       <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
         <LabelValueRow label={t('Коносамент')}>{organization}</LabelValueRow>
-        <LabelValueRow label={t('Витрати')} mono>{formatMoney(service.Value, currencyCode)}</LabelValueRow>
+        <LabelValueRow label={t('Витрати')} mono><ProtocolMoneyValue value={service.Value} currency={currencyCode} /></LabelValueRow>
         <LabelValueRow label={`${t('Витрати')} (${t('Бух.')})`} mono>
-          {formatMoney(service.AccountingValue, currencyCode)}
+          <ProtocolMoneyValue value={service.AccountingValue} currency={currencyCode} />
         </LabelValueRow>
       </SimpleGrid>
     </Card>
@@ -401,15 +417,15 @@ function MergedServiceExpenseCard({ service }: { service: SupplyInvoiceMergedSer
       <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
         <LabelValueRow label={t('Сервіс')}>{mergedService?.ConsumableProduct?.Name || ''}</LabelValueRow>
         <LabelValueRow label={t('Постачальник')}>{mergedService?.SupplyOrganization?.Name || ''}</LabelValueRow>
-        <LabelValueRow label={t('Витрати')} mono>{formatMoney(service.Value, currencyCode)}</LabelValueRow>
+        <LabelValueRow label={t('Витрати')} mono><ProtocolMoneyValue value={service.Value} currency={currencyCode} /></LabelValueRow>
         <LabelValueRow label={`${t('Витрати')} (${t('Бух.')})`} mono>
-          {formatMoney(service.AccountingValue, currencyCode)}
+          <ProtocolMoneyValue value={service.AccountingValue} currency={currencyCode} />
         </LabelValueRow>
         <LabelValueRow label={`${t('Курс')} EUR -> ${currencyCode || ''}`} mono>
-          {formatMoney(service.ExchangeRateEurToAgreementCurrency, currencyCode)}
+          <ProtocolMoneyValue value={service.ExchangeRateEurToAgreementCurrency} currency={currencyCode} />
         </LabelValueRow>
         <LabelValueRow label={`${t('Курс')} EUR -> UAH`} mono>
-          {formatMoney(service.ExchangeRateEurToUah, 'UAH')}
+          <ProtocolMoneyValue value={service.ExchangeRateEurToUah} currency={'UAH'} />
         </LabelValueRow>
       </SimpleGrid>
     </Card>
@@ -505,22 +521,19 @@ function AssignInvoicesDrawer({
   }
 
   return (
-    <AppDrawer
+    <AppModal className="invoice-assignment-modal"
       opened={opened}
-      size="md"
+      size={800}
       title={`${t('Додати')} ${t('Інвойси').toLowerCase()}`}
       onClose={() => {
         if (!isSaving) {
           onClose()
         }
       }}
-      footer={
-        <Button color={CREATE_ACTION_COLOR} disabled={isLoading || isSaving} loading={isSaving} onClick={handleAssign}>
-          {t('Зберегти')}
-        </Button>
-      }
+
     >
-      <Stack gap="md">
+      <Stack gap={12}>
+      <div className="invoice-assignment-modal__list">
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
@@ -533,8 +546,13 @@ function AssignInvoicesDrawer({
         ) : (
           <InvoiceSelectList disabled={isSaving} invoices={invoices} selected={selected} onToggle={toggle} />
         )}
+      </div>
+      <AppModalFooter>
+        <Button variant="default" disabled={isSaving} onClick={onClose}>{t('Скасувати')}</Button>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} disabled={isLoading || isSaving} loading={isSaving} onClick={handleAssign}>{t('Зберегти')}</Button>
+      </AppModalFooter>
       </Stack>
-    </AppDrawer>
+    </AppModal>
   )
 }
 
@@ -554,9 +572,22 @@ export function InvoicesSection({
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const [drawerOpened, setDrawerOpened] = useValueState(false)
+  const [actionsTarget, setActionsTarget] = useState<HTMLDivElement | null>(null)
   const invoices = protocol.SupplyInvoices || []
   const canOpenInvoices = hasPermission(MANAGE_INVOICES_PERMISSION)
   const canManageInvoices = permissions.canEditAssignments && canOpenInvoices
+
+  const managementAction = canManageInvoices ? (
+          <Button
+            color={CREATE_ACTION_COLOR}
+            disabled={status.isAssigning}
+            variant="default"
+            leftSection={<ListChecks size={16} />}
+            onClick={() => setDrawerOpened(true)}
+          >
+            {t('Управління інвойсами')}
+          </Button>
+  ) : null
 
   async function handleAssign(selectedInvoices: SupplyInvoice[]) {
     if (!canManageInvoices) {
@@ -572,21 +603,15 @@ export function InvoicesSection({
   }
 
   return (
-    <Stack gap="md">
+    <Stack className="protocol-invoices-section" gap={10}>
       <Group justify="space-between" align="center">
         <Text className="app-section-title" fw={600} size="sm">
           {t('Інвойси')}
         </Text>
-        {canManageInvoices && (
-          <Button
-            color={CREATE_ACTION_COLOR}
-            disabled={status.isAssigning}
-            variant="outline"
-            onClick={() => setDrawerOpened(true)}
-          >
-            {t('Управління інвойсами')}
-          </Button>
-        )}
+        <Group gap="sm">
+          {managementAction}
+          {invoices.length === 1 && <div ref={setActionsTarget} />}
+        </Group>
       </Group>
 
       {invoices.length === 0 ? (
@@ -594,13 +619,14 @@ export function InvoicesSection({
           {t('Інвойсів не знайдено')}
         </Text>
       ) : (
-        <Stack gap="md">
+        <Stack gap={10}>
           {invoices.map((invoice) => (
             <InvoiceViewCard
               key={getInvoiceCardKey(invoice)}
               canEditDeliveryDocuments={permissions.canEditDeliveryDocuments}
               canOpenExpenses={canOpenInvoices}
               invoice={invoice}
+              actionsTarget={invoices.length === 1 ? actionsTarget : undefined}
               isSaving={status.isSavingInvoiceDocuments}
               onSaveDocuments={onSaveInvoiceDocuments}
             />

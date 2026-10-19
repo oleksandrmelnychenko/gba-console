@@ -1,11 +1,10 @@
 import { TableChip } from '../../../shared/ui/TableChip'
-import { Alert, Button, Group, NumberInput, Stack, Table, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Card, getDefaultZIndex, Group, NumberInput, SimpleGrid, Stack, Table, Text, TextInput } from '@mantine/core'
 import { Check, CircleAlert } from 'lucide-react'
 import { useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import type {
   PackingListPackageOrderItem,
   ProductSpecificationEntity,
@@ -13,6 +12,7 @@ import type {
 } from '../specificationTypes'
 import { getLatestProductSpecification, getProductSpecificationDateTime } from '../productSpecificationLatest'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import './product-specification-edit-modal.css'
 
 export type ProductSpecificationDraft = {
   customsValue: number | ''
@@ -101,11 +101,110 @@ function ProductSpecificationEditDrawerContent({
   }
 
   return (
-    <AppDrawer
-      footer={
-        product ? (
-          <>
-            <Button color="gray" disabled={isSaving} variant="light" onClick={requestClose}>
+    <AppModal
+      opened={Boolean(item)}
+      size={800}
+      className="product-specification-edit-modal"
+      title={t('Митний код')}
+      closeOnClickOutside={!confirmCloseOpen}
+      closeOnEscape={!confirmCloseOpen}
+      trapFocus={!confirmCloseOpen}
+      zIndex={getDefaultZIndex('modal') + 1}
+      onClose={requestClose}
+    >
+      {product && (
+        <Stack gap={10}>
+          {error && (
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+              {error}
+            </Alert>
+          )}
+
+          <Group className="product-specification-identity" gap={8} wrap="wrap">
+            <TableChip tone="product" value={product.VendorCode} />
+            <Text fw={600} c="gray.9" size="sm">{product.Name || '-'}</Text>
+          </Group>
+
+          <Card className="product-specification-form" withBorder radius="md" padding="sm">
+            <Stack gap={10}>
+              <Text className="app-section-title">{t('Митні дані')}</Text>
+              <SimpleGrid cols={{ base: 1, xs: 2, sm: 4 }} spacing={12}>
+                <TextInput
+                  disabled={isSaving || !canSave}
+                  label={t('Митний код')}
+                  required
+                  value={draft.specificationCode}
+                  onChange={(event) => {
+                    const nextValue = event.currentTarget.value
+                    setDraft((current) => ({ ...current, specificationCode: nextValue }))
+                  }}
+                />
+                <NumberInput
+                  hideControls
+                  decimalScale={2}
+                  disabled={isSaving || !canSave}
+                  label={t('Митна вартість')}
+                  value={draft.customsValue}
+                  onChange={(value) => setDraft((current) => ({ ...current, customsValue: toNumberOrEmpty(value) }))}
+                />
+                <NumberInput
+                  hideControls
+                  decimalScale={2}
+                  disabled={isSaving || !canSave}
+                  label={t('Мито')}
+                  value={draft.duty}
+                  onChange={(value) => setDraft((current) => ({ ...current, duty: toNumberOrEmpty(value) }))}
+                />
+                <NumberInput
+                  hideControls
+                  decimalScale={2}
+                  disabled={isSaving || !canSave}
+                  label={t('ПДВ')}
+                  value={draft.vatValue}
+                  onChange={(value) => setDraft((current) => ({ ...current, vatValue: toNumberOrEmpty(value) }))}
+                />
+              </SimpleGrid>
+            </Stack>
+          </Card>
+
+          <Card className="product-specification-history" withBorder radius="md" padding="sm">
+            <Stack gap={10}>
+              <Group gap={8}>
+                <Text className="app-section-title">{t('Історія митних кодів')}</Text>
+                <TableChip value={history.length} />
+              </Group>
+              {history.length === 0 ? (
+                <Text className="product-specification-empty" c="gray.7" size="sm">
+                  {t('Немає даних')}
+                </Text>
+              ) : (
+                <div className="product-specification-history-table" role="region" aria-label={t('Історія митних кодів')} tabIndex={0}>
+                  <Table className="app-static-table" striped>
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>{t('Митний код')}</Table.Th>
+                        <Table.Th>{t('% Мита')}</Table.Th>
+                        <Table.Th>{t('Користувач')}</Table.Th>
+                        <Table.Th>{t('Дата')}</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {history.map((specification, index) => (
+                        <Table.Tr key={specification.NetUid || specification.Id || index}>
+                          <Table.Td><TableChip tone="document" value={specification.SpecificationCode || '-'} /></Table.Td>
+                          <Table.Td className="app-table-number">{specification.DutyPercent ?? 0}</Table.Td>
+                          <Table.Td>{getUserName(specification)}</Table.Td>
+                          <Table.Td>{formatDate(specification.Created)}</Table.Td>
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                </div>
+              )}
+            </Stack>
+          </Card>
+          <AppModalFooter>
+            <Button color="gray" disabled={isSaving} variant="default" onClick={requestClose}>
               {t('Скасувати')}
             </Button>
             {canSave && (
@@ -113,115 +212,31 @@ function ProductSpecificationEditDrawerContent({
                 {t('Змінити')}
               </Button>
             )}
-          </>
-        ) : undefined
-      }
-      opened={Boolean(item)}
-      position="right"
-      size="standard"
-      className="app-form-sheet"
-      title={`${t('Митний код')} ${product?.VendorCode || ''}`.trim()}
-      onClose={requestClose}
-    >
-      {product && (
-        <Stack gap="md">
-          {error && (
-            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-              {error}
-            </Alert>
-          )}
-
-          <Stack gap={2}>
-            <Text fw={700}>{product.VendorCode || '-'}</Text>
-            <Text c="dimmed" size="sm">
-              {product.Name || '-'}
-            </Text>
-          </Stack>
-
-          <TextInput
-            disabled={isSaving || !canSave}
-            label={t('Митний код')}
-            required
-            value={draft.specificationCode}
-            onChange={(event) => {
-              const nextValue = event.currentTarget.value
-              setDraft((current) => ({ ...current, specificationCode: nextValue }))
-            }}
-          />
-          <NumberInput
-            decimalScale={2}
-            disabled={isSaving || !canSave}
-            label={t('Митна вартість')}
-            value={draft.customsValue}
-            onChange={(value) => setDraft((current) => ({ ...current, customsValue: toNumberOrEmpty(value) }))}
-          />
-          <NumberInput
-            decimalScale={2}
-            disabled={isSaving || !canSave}
-            label={t('Мито')}
-            value={draft.duty}
-            onChange={(value) => setDraft((current) => ({ ...current, duty: toNumberOrEmpty(value) }))}
-          />
-          <NumberInput
-            decimalScale={2}
-            disabled={isSaving || !canSave}
-            label={t('ПДВ')}
-            value={draft.vatValue}
-            onChange={(value) => setDraft((current) => ({ ...current, vatValue: toNumberOrEmpty(value) }))}
-          />
-
-          <Stack gap="xs">
-            <Text fw={700}>{t('Історія митних кодів')}</Text>
-            {history.length === 0 ? (
-              <Text c="dimmed" size="sm">
-                {t('Немає даних')}
-              </Text>
-            ) : (
-              <Table className="app-static-table" striped withTableBorder withColumnBorders>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>{t('Митний код')}</Table.Th>
-                    <Table.Th>{t('% Мита')}</Table.Th>
-                    <Table.Th>{t('Користувач')}</Table.Th>
-                    <Table.Th>{t('Дата')}</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {history.map((specification, index) => (
-                    <Table.Tr key={specification.NetUid || specification.Id || index}>
-                      <Table.Td><TableChip tone="document" value={specification.SpecificationCode || '-'} /></Table.Td>
-                      <Table.Td className="app-table-number">{specification.DutyPercent ?? 0}</Table.Td>
-                      <Table.Td>{getUserName(specification)}</Table.Td>
-                      <Table.Td>{formatDate(specification.Created)}</Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            )}
-          </Stack>
+          </AppModalFooter>
         </Stack>
       )}
 
       <AppModal
         centered
         opened={confirmCloseOpen}
-        className="app-form-sheet"
+        className="product-specification-confirm-modal"
+        zIndex={getDefaultZIndex('modal') + 2}
         title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Є незбережені зміни')}</span>}
         onClose={() => setConfirmCloseOpen(false)}
       >
-        <Stack gap="md">
+        <Stack gap={10}>
           <Text>{t('Якщо закрити вікно, зміни митного коду не будуть збережені.')}</Text>
-          <Group justify="flex-end">
+          <AppModalFooter>
             <Button variant="default" onClick={() => setConfirmCloseOpen(false)}>
               {t('Залишитися')}
             </Button>
             <Button color="red" onClick={confirmClose}>
               {t('Закрити без збереження')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
-    </AppDrawer>
+    </AppModal>
   )
 }
 

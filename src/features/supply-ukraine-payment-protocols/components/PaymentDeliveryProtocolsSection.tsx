@@ -18,6 +18,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type {
   NewPaymentProtocolFormValues,
@@ -27,6 +28,7 @@ import type {
 } from '../types'
 import { formatDate, formatMoney, responsibleName } from './helpers'
 import { fromDateInput, toDateInput } from './helpers'
+import './payment-delivery-protocols-section.css'
 
 type SelectOption = {
   label: string
@@ -285,11 +287,14 @@ export function PaymentDeliveryProtocolsSection({
   }
 
   return (
-    <Stack className="supply-payment-section" gap="md">
-      <Group justify="space-between" align="center">
-        <Text className="app-section-title" fw={600} size="sm">
-          {t('Протоколи доставки')}
-        </Text>
+    <Stack className="supply-payment-section supply-delivery-protocols" gap={10}>
+      <Group justify="space-between" align="center" gap={8}>
+        <Group gap={8} className="supply-delivery-protocols-heading">
+          <Text className="app-section-title" fw={600} size="sm">
+            {t('Протоколи доставки')}
+          </Text>
+          <TableChip value={visibleProtocols.length} />
+        </Group>
         {canCreateProtocol && (
           <Button className="supply-payment-action-button" color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} onClick={() => setFormOpen(true)}>
             {t('Створити платіжну задачу')}
@@ -298,9 +303,9 @@ export function PaymentDeliveryProtocolsSection({
       </Group>
 
       {visibleProtocols.length === 0 ? (
-        <Text className="supply-payment-empty-state">
-          {t('Протоколи доставки')}: 0
-        </Text>
+        <div className="supply-delivery-protocols-empty">
+          <Text size="sm" c="gray.8">{t('Протоколів доставки ще немає')}</Text>
+        </div>
       ) : (
         <Stack gap="md">
           {visibleProtocols.map((protocol, index) => (

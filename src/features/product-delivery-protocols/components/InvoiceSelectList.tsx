@@ -1,8 +1,10 @@
-import { Badge, Card, Checkbox, Group, Stack, Text } from '@mantine/core'
+import { Card, Checkbox, Group, Stack, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { SupplyInvoice } from '../detailTypes'
 import { getProtocolInvoiceAssignmentKey } from '../protocolInvoiceAssignment'
 import { formatDateTime, getInvoiceCurrencyCode, getInvoiceTotalNetPrice } from './protocolDetailHelpers'
+import { TableChip } from '../../../shared/ui/TableChip'
+import '../../../shared/ui/selection-surface.css'
 import './invoice-select-list.css'
 
 const invoiceAmountFormatter = new Intl.NumberFormat('uk-UA', {
@@ -43,13 +45,16 @@ export function InvoiceSelectList({
         return (
           <Card
             key={key || `invoice-${index}`}
-            className={`invoice-select-card${isSelected ? ' is-selected' : ''}`}
+            className="invoice-select-card app-selection-surface"
+            data-selected={isSelected}
             withBorder
             padding="sm"
             radius="sm"
           >
+            <span className="app-selection-surface__marker" aria-hidden="true" />
             <Group align="flex-start" gap="sm" wrap="nowrap">
               <Checkbox
+                aria-label={`${t('Інвойс')} ${invoice.Number || '-'}`}
                 checked={isSelected}
                 className="invoice-select-card__checkbox"
                 disabled={disabled || !key}
@@ -57,12 +62,8 @@ export function InvoiceSelectList({
               />
               <Stack className="invoice-select-card__content" gap={8}>
                 <Group align="center" className="invoice-select-card__head" gap={8} wrap="nowrap">
-                  <Badge className="app-role-pill invoice-select-card__number is-document" size="sm" variant="light">
-                    № {invoice.Number || '-'}
-                  </Badge>
-                  <Text className="invoice-select-card__supplier" title={supplier}>
-                    {supplier}
-                  </Text>
+                  <TableChip tone="document" value={`№ ${invoice.Number || '-'}`} />
+                  <span className="invoice-select-card__supplier"><TableChip tone="document" value={supplier} /></span>
                 </Group>
                 <div className="invoice-select-card__meta">
                   <span>
@@ -73,9 +74,7 @@ export function InvoiceSelectList({
                     <Text component="span">{t('Загальна сума інвойса')}</Text>
                     <strong>{amount}</strong>
                     {currencyCode && (
-                      <Badge className="app-role-pill is-gray invoice-select-card__currency" size="sm" variant="light">
-                        {currencyCode}
-                      </Badge>
+                      <TableChip tone="source" value={currencyCode} />
                     )}
                   </span>
                 </div>

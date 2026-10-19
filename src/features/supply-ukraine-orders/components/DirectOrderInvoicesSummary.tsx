@@ -1,6 +1,7 @@
-import { Button, Card, Group, NumberInput, SimpleGrid, Stack, Text } from '@mantine/core'
-import { FileText, ReceiptText, Save } from 'lucide-react'
+import { Button, Card, Group, NumberInput, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
+import { Save } from 'lucide-react'
 import { useState } from 'react'
+import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -14,6 +15,8 @@ import type {
   SupplyInvoice,
   SupplyInvoiceDeliveryDocument,
 } from '../types'
+
+import './supply-order-document-summary.css'
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
@@ -44,7 +47,7 @@ export function DirectOrderInvoicesSummary({
   }
 
   return (
-    <Stack gap="md">
+    <Stack gap={10}>
       {invoices.map((invoice, index) => (
         <InvoiceSummaryCard
           canEditDiscount={canEditDiscount}
@@ -95,29 +98,34 @@ function InvoiceSummaryCard({
     <Card
       aria-label={`${t('Інвойс')} ${invoiceNumber || index + 1}`}
       className="supply-detail-card supply-order-invoice-summary"
-      padding="lg"
+      padding={12}
       radius="md"
       role="group"
       withBorder
     >
-      <Stack gap="md">
+      <Stack gap={10}>
         <Group gap="xs" wrap="nowrap">
-          <ReceiptText aria-hidden size={18} />
           <Text className="app-section-title" fw={600} size="sm">
             {t('Інвойс')}
           </Text>
         </Group>
 
-        <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
-          <InvoiceField label={t('Номер')} value={invoiceNumber} />
-          <InvoiceField label={t('Сума нетто')} value={formatMoney(amounts.net)} />
+        <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} spacing={12} verticalSpacing={10}>
+          <InvoiceField label={t('Номер')} value={invoiceNumber} chip="document" />
           <InvoiceField label={t('Дата')} value={formatDateTime(invoice.DateFrom)} />
-          <InvoiceField label={t('Валюта')} value={currency} />
+          <InvoiceField label={t('Валюта')} value={currency} chip="source" />
           <InvoiceField label={t('Кількість')} value={formatNumber(invoice.TotalQuantity)} />
+        </SimpleGrid>
+
+        <SimpleGrid className="supply-order-invoice-financials" cols={{ base: 1, xs: 2, md: 3 }} spacing={12} verticalSpacing={10}>
+          <InvoiceField label={t('Сума нетто')} value={formatMoney(amounts.net)} />
+          <InvoiceField label={t('ПДВ')} value={formatMoney(amounts.vat)} />
+          <InvoiceField label={t('Сума з ПДВ')} value={formatMoney(amounts.withVat)} />
           <InvoiceField label={t('Доставка')} value={formatMoney(invoice.DeliveryAmount)} />
           {canEditDiscount && onSaveDiscount ? (
-            <Stack gap="xs">
+            <div className="supply-order-invoice-discount">
               <NumberInput
+                hideControls
                 allowNegative={false}
                 clampBehavior="none"
                 decimalScale={2}
@@ -130,35 +138,36 @@ function InvoiceSummaryCard({
                 value={discountValue}
                 onChange={(value) => setDiscountValue(toNonNegativeAmount(value))}
               />
-              <Button
-                color={CREATE_ACTION_COLOR}
-                disabled={!discountChanged || invalidDiscount}
-                leftSection={<Save size={15} />}
-                loading={isSaving}
-                size="xs"
-                variant="light"
-                onClick={() => void onSaveDiscount(invoice, enteredDiscount)}
-              >
-                {t('Зберегти знижку')}
-              </Button>
-            </Stack>
+              <Tooltip label={t('Зберегти знижку')}>
+                <Button
+                  aria-label={t('Зберегти знижку')}
+                  className="supply-order-invoice-discount__save"
+                  color={CREATE_ACTION_COLOR}
+                  disabled={!discountChanged || invalidDiscount}
+                  loading={isSaving}
+                  size="xs"
+                  variant="light"
+                  onClick={() => void onSaveDiscount(invoice, enteredDiscount)}
+                >
+                  <Save size={16} />
+                </Button>
+              </Tooltip>
+            </div>
           ) : (
             <InvoiceField label={t('Знижка')} value={formatMoney(invoice.DiscountAmount)} />
           )}
           <InvoiceField label={t('До сплати')} value={formatMoney(paymentAmount)} />
-          <InvoiceField label={t('ПДВ')} value={formatMoney(amounts.vat)} />
-          <InvoiceField label={t('Сума з ПДВ')} value={formatMoney(amounts.withVat)} />
         </SimpleGrid>
 
-        <Stack gap="xs">
-          <Group gap="xs" wrap="nowrap">
-            <FileText aria-hidden size={16} />
+        <Stack className={`supply-order-documents${documents.length === 0 ? ' is-empty' : ''}`} gap={8}>
+          <Group gap={6} wrap="nowrap">
             <Text className="app-section-title" fw={600} size="sm">
               {t('Документи')}
             </Text>
+            <TableChip tone="neutral" value={documents.length} />
           </Group>
           {documents.length === 0 ? (
-            <Text c="dimmed" size="sm">
+            <Text className="supply-order-documents__empty" size="xs">
               {t('Документів немає')}
             </Text>
           ) : (
@@ -195,15 +204,17 @@ function InvoiceSummaryCard({
   )
 }
 
-function InvoiceField({ label, value }: { label: string, value: string }) {
+function InvoiceField({ chip, label, value }: { chip?: TableChipTone, label: string, value: string }) {
   return (
     <Stack aria-label={label} gap={2} role="group">
-      <Text c="dimmed" size="xs">
+      <Text c="gray.8" size="xs">
         {label}
       </Text>
-      <Text className="supply-order-invoice-value" size="sm">
-        {value}
-      </Text>
+      {chip ? <TableChip tone={chip} value={value} /> : (
+        <Text className="supply-order-invoice-value" size="sm">
+          {value}
+        </Text>
+      )}
     </Stack>
   )
 }

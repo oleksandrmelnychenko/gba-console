@@ -4,7 +4,7 @@ import {
   Badge,
   Button,
   Checkbox,
-  Divider,
+  Card,
   FileInput,
   Group,
   NumberInput,
@@ -15,7 +15,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { CircleAlert } from 'lucide-react'
+import { CircleAlert, Save } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -42,6 +42,7 @@ import { toMergedServiceDateTimeInput } from '../mergedServiceDateInput'
 import type { ProtocolUser } from '../types'
 import { getMergedServiceExchangeRatePresentation } from './mergedServiceExchangeRatePresentation'
 import { responsibleName } from './protocolDetailHelpers'
+import './merged-service-edit.css'
 
 const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
 
@@ -375,15 +376,16 @@ export function MergedServiceEditCard({
 
   return (
     <AppDrawer
+      className="merged-service-edit-drawer"
       opened={opened}
-      size="lg"
-      title={t('Редагувати')}
+      size="standard"
+      title={t('Редагувати сервіс')}
       onClose={() => {
         if (!isSaving) {
           onClose()
         }
       }}
-      footer={<MergedServiceFormActions isSaving={isSaving} onSave={handleSave} />}
+      footer={<MergedServiceFormActions isSaving={isSaving} onClose={onClose} onSave={handleSave} />}
     >
       <Stack gap="sm">
         <MergedServiceAlerts loadError={loadError} validationError={validationError} />
@@ -421,8 +423,6 @@ export function MergedServiceEditCard({
           setDeletedInvoiceDocuments={setDeletedInvoiceDocuments}
           setFiles={setFiles}
         />
-
-        <Divider />
 
         <MergedServiceTaskSections
           accountingTaskDocuments={accountingTaskDocuments}
@@ -576,36 +576,39 @@ function MergedServiceDocumentSections({
   const { t } = useI18n()
 
   return (
-    <>
-      <DocumentFileSection
-        deletedDocuments={deletedAccountDocuments}
-        disabled={disabled}
-        documents={service.SupplyServiceAccountDocument ? [service.SupplyServiceAccountDocument] : []}
-        files={accountDocuments}
-        label={t('Рахунок')}
-        onChangeFiles={setAccountDocuments}
-        onToggleDeleted={(document, index) => toggleDeletedDocument(document, index, setDeletedAccountDocuments)}
-      />
-      <DocumentFileSection
-        deletedDocuments={deletedActDocuments}
-        disabled={disabled}
-        documents={service.ActProvidingServiceDocument ? [service.ActProvidingServiceDocument] : []}
-        files={actDocuments}
-        label={t('Акт надання послуг')}
-        onChangeFiles={setActDocuments}
-        onToggleDeleted={(document, index) => toggleDeletedDocument(document, index, setDeletedActDocuments)}
-      />
-      <DocumentFileSection
-        deletedDocuments={deletedInvoiceDocuments}
-        disabled={disabled}
-        documents={service.InvoiceDocuments || []}
-        files={files}
-        label={t('Документи інвойса')}
-        uploadLabel={t('Інші файли')}
-        onChangeFiles={setFiles}
-        onToggleDeleted={(document, index) => toggleDeletedDocument(document, index, setDeletedInvoiceDocuments)}
-      />
-    </>
+    <Card className="app-section-card merged-service-edit-section" withBorder radius="md" padding="sm">
+      <Text className="app-section-title" fw={600} size="sm">{t('Документи')}</Text>
+      <div className="merged-service-edit-document-grid">
+        <DocumentFileSection
+          deletedDocuments={deletedAccountDocuments}
+          disabled={disabled}
+          documents={service.SupplyServiceAccountDocument ? [service.SupplyServiceAccountDocument] : []}
+          files={accountDocuments}
+          label={t('Рахунок')}
+          onChangeFiles={setAccountDocuments}
+          onToggleDeleted={(document, index) => toggleDeletedDocument(document, index, setDeletedAccountDocuments)}
+        />
+        <DocumentFileSection
+          deletedDocuments={deletedActDocuments}
+          disabled={disabled}
+          documents={service.ActProvidingServiceDocument ? [service.ActProvidingServiceDocument] : []}
+          files={actDocuments}
+          label={t('Акт надання послуг')}
+          onChangeFiles={setActDocuments}
+          onToggleDeleted={(document, index) => toggleDeletedDocument(document, index, setDeletedActDocuments)}
+        />
+        <DocumentFileSection
+          deletedDocuments={deletedInvoiceDocuments}
+          disabled={disabled}
+          documents={service.InvoiceDocuments || []}
+          files={files}
+          label={t('Документи інвойса')}
+          uploadLabel={t('Інші файли')}
+          onChangeFiles={setFiles}
+          onToggleDeleted={(document, index) => toggleDeletedDocument(document, index, setDeletedInvoiceDocuments)}
+        />
+      </div>
+    </Card>
   )
 }
 
@@ -645,7 +648,9 @@ function MergedServiceTaskSections({
   const { t } = useI18n()
 
   return (
-    <>
+    <Card className="app-section-card merged-service-edit-section" withBorder radius="md" padding="sm">
+      <Stack gap={10}>
+      <Text className="app-section-title" fw={600} size="sm">{t('Платіжні задачі')}</Text>
       {!service.SupplyPaymentTask && (
         <Checkbox
           checked={draft.createTask}
@@ -703,7 +708,8 @@ function MergedServiceTaskSections({
         onChangeTaskUser={(netUid) => selectUser('accountingTaskUser', netUid)}
         onToggleDeleted={(document, index) => toggleDeletedDocument(document, index, setDeletedAccountingTaskDocuments)}
       />
-    </>
+      </Stack>
+    </Card>
   )
 }
 
@@ -916,141 +922,147 @@ function MergedServicePrimaryFields({
 
   return (
     <>
-      <Select
-        aria-invalid={Boolean(fieldErrors.supplyOrganization)}
-        aria-required="true"
-        data={organizationOptions}
-        disabled={isSaving}
-        error={fieldErrors.supplyOrganization}
-        label={t('Постачальник послуг')}
-        nothingFoundMessage={t('Нічого не знайдено')}
-        searchable
-        searchValue={organizationSearch}
-        value={draft.supplyOrganization?.NetUid || null}
-        withAsterisk
-        onChange={(value) => {
-          selectOrganization(value)
-          setOrganizationSearch('')
-        }}
-        onSearchChange={setOrganizationSearch}
-      />
-      <Select
-        aria-invalid={Boolean(fieldErrors.agreement)}
-        aria-required="true"
-        data={agreementOptions}
-        disabled={isSaving}
-        error={fieldErrors.agreement}
-        label={t('Договір')}
-        searchable
-        value={draft.agreement?.NetUid || null}
-        withAsterisk
-        onChange={selectAgreement}
-      />
-      <Select
-        clearable
-        data={productOptions}
-        disabled={isSaving}
-        label={t('Тип')}
-        searchable
-        value={draft.consumableProduct?.NetUid || null}
-        onChange={selectProduct}
-      />
-      <TextInput
-        aria-invalid={Boolean(fieldErrors.invoiceNumber)}
-        aria-required="true"
-        disabled={isSaving}
-        error={fieldErrors.invoiceNumber}
-        label={t('Номер інвойса')}
-        value={draft.invoiceNumber}
-        withAsterisk
-        onChange={(event) => update('invoiceNumber', event.currentTarget.value)}
-      />
-      <TextInput
-        disabled={isSaving}
-        label={t('Назва')}
-        value={draft.name}
-        onChange={(event) => update('name', event.currentTarget.value)}
-      />
+      <Card className="app-section-card merged-service-edit-section" withBorder radius="md" padding="sm">
+        <Text className="app-section-title" fw={600} size="sm">{t('Основне')}</Text>
+        <div className="merged-service-edit-basic-grid">
+          <Select
+            aria-invalid={Boolean(fieldErrors.supplyOrganization)}
+            aria-required="true"
+            data={organizationOptions}
+            disabled={isSaving}
+            error={fieldErrors.supplyOrganization}
+            label={t('Постачальник послуг')}
+            nothingFoundMessage={t('Нічого не знайдено')}
+            searchable
+            searchValue={organizationSearch}
+            value={draft.supplyOrganization?.NetUid || null}
+            withAsterisk
+            onChange={(value) => {
+              selectOrganization(value)
+              setOrganizationSearch('')
+            }}
+            onSearchChange={setOrganizationSearch}
+          />
+          <Select
+            aria-invalid={Boolean(fieldErrors.agreement)}
+            aria-required="true"
+            data={agreementOptions}
+            disabled={isSaving}
+            error={fieldErrors.agreement}
+            label={t('Договір')}
+            searchable
+            value={draft.agreement?.NetUid || null}
+            withAsterisk
+            onChange={selectAgreement}
+          />
+          <Select
+            clearable
+            data={productOptions}
+            disabled={isSaving}
+            label={t('Тип')}
+            searchable
+            value={draft.consumableProduct?.NetUid || null}
+            onChange={selectProduct}
+          />
+          <TextInput
+            aria-invalid={Boolean(fieldErrors.invoiceNumber)}
+            aria-required="true"
+            disabled={isSaving}
+            error={fieldErrors.invoiceNumber}
+            label={t('Номер інвойса')}
+            value={draft.invoiceNumber}
+            withAsterisk
+            onChange={(event) => update('invoiceNumber', event.currentTarget.value)}
+          />
+          <TextInput
+            disabled={isSaving}
+            label={t('Назва')}
+            value={draft.name}
+            onChange={(event) => update('name', event.currentTarget.value)}
+          />
 
-      <Group grow>
-        <TextInput
-          aria-invalid={Boolean(fieldErrors.grossPrice)}
-          classNames={{ input: 'app-money' }}
-          description={t('Заповніть хоча б одну вартість: управлінську або бухгалтерську')}
-          disabled={isSaving}
-          error={fieldErrors.grossPrice}
-          label={t('Вартість Брутто')}
-          type="number"
-          value={draft.grossPrice}
-          onChange={(event) => update('grossPrice', event.currentTarget.value)}
-        />
-        <TextInput
-          disabled={isSaving}
-          label={t('ПДВ %')}
-          type="number"
-          value={draft.percent}
-          onChange={(event) => update('percent', event.currentTarget.value)}
-        />
-      </Group>
+          <TextInput
+            aria-invalid={Boolean(fieldErrors.fromDate)}
+            disabled={isSaving}
+            error={fieldErrors.fromDate}
+            label={t('Від якої дати')}
+            type="datetime-local"
+            value={draft.fromDate}
+            onChange={(event) => update('fromDate', event.currentTarget.value)}
+          />
 
-      <Group grow>
-        <TextInput
-          aria-invalid={Boolean(fieldErrors.accountingGrossPrice)}
-          classNames={{ input: 'app-money' }}
-          disabled={isSaving}
-          error={fieldErrors.accountingGrossPrice}
-          label={t('Вартість Брутто (Бух.)')}
-          type="number"
-          value={draft.accountingGrossPrice}
-          onChange={(event) => update('accountingGrossPrice', event.currentTarget.value)}
-        />
-        <TextInput
-          disabled={isSaving}
-          label={`${t('ПДВ %')} (${t('Бух.')})`}
-          type="number"
-          value={draft.accountingPercent}
-          onChange={(event) => update('accountingPercent', event.currentTarget.value)}
-        />
-      </Group>
-
-      <Group grow>
-        <TextInput
-          description={exchangeRatePresentation.description}
-          disabled={isSaving}
-          label={`${t('Курс управлінських витрат')}${exchangeRatePresentation.labelSuffix}`}
-          placeholder={t('Автоматично за офіційним курсом')}
-          type="number"
-          value={draft.exchangeRate}
-          onChange={(event) => update('exchangeRate', event.currentTarget.value)}
-        />
-        <TextInput
-          description={exchangeRatePresentation.description}
-          disabled={isSaving}
-          label={`${t('Курс бухгалтерських витрат')}${exchangeRatePresentation.labelSuffix}`}
-          placeholder={t('Автоматично за офіційним курсом')}
-          type="number"
-          value={draft.accountingExchangeRate}
-          onChange={(event) => update('accountingExchangeRate', event.currentTarget.value)}
-        />
-      </Group>
-
+        </div>
+      </Card>
+      <Card className="app-section-card merged-service-edit-section" withBorder radius="md" padding="sm">
+        <Stack gap={10}>
+          <Text className="app-section-title" fw={600} size="sm">{t('Витрати')}</Text>
+          <div className="merged-service-edit-cost-grid">
+            <TextInput
+              aria-invalid={Boolean(fieldErrors.grossPrice)}
+              classNames={{ input: 'app-money' }}
+              disabled={isSaving}
+              error={fieldErrors.grossPrice}
+              label={t('Вартість Брутто')}
+              type="number"
+              value={draft.grossPrice}
+              onChange={(event) => update('grossPrice', event.currentTarget.value)}
+            />
+            <TextInput
+              aria-invalid={Boolean(fieldErrors.accountingGrossPrice)}
+              classNames={{ input: 'app-money' }}
+              disabled={isSaving}
+              error={fieldErrors.accountingGrossPrice}
+              label={t('Вартість Брутто (Бух.)')}
+              type="number"
+              value={draft.accountingGrossPrice}
+              onChange={(event) => update('accountingGrossPrice', event.currentTarget.value)}
+            />
+            <TextInput
+              description={exchangeRatePresentation.description}
+              descriptionProps={{ className: 'merged-service-edit-sr-description' }}
+              disabled={isSaving}
+              label={`${t('Курс управлінських витрат')}${exchangeRatePresentation.labelSuffix}`}
+              placeholder={t('Автоматично за офіційним курсом')}
+              type="number"
+              value={draft.exchangeRate}
+              onChange={(event) => update('exchangeRate', event.currentTarget.value)}
+            />
+            <TextInput
+              disabled={isSaving}
+              label={t('ПДВ %')}
+              type="number"
+              value={draft.percent}
+              onChange={(event) => update('percent', event.currentTarget.value)}
+            />
+            <TextInput
+              disabled={isSaving}
+              label={`${t('ПДВ %')} (${t('Бух.')})`}
+              type="number"
+              value={draft.accountingPercent}
+              onChange={(event) => update('accountingPercent', event.currentTarget.value)}
+            />
+            <TextInput
+              description={exchangeRatePresentation.description}
+              descriptionProps={{ className: 'merged-service-edit-sr-description' }}
+              disabled={isSaving}
+              label={`${t('Курс бухгалтерських витрат')}${exchangeRatePresentation.labelSuffix}`}
+              placeholder={t('Автоматично за офіційним курсом')}
+              type="number"
+              value={draft.accountingExchangeRate}
+              onChange={(event) => update('accountingExchangeRate', event.currentTarget.value)}
+            />
+          </div>
       <Checkbox
         checked={draft.isIncludeAccountingValue}
         disabled={isSaving}
         label={t('Включати бух. вартість у ціну брутто')}
         onChange={(event) => update('isIncludeAccountingValue', event.currentTarget.checked)}
       />
-
-      <TextInput
-        aria-invalid={Boolean(fieldErrors.fromDate)}
-        disabled={isSaving}
-        error={fieldErrors.fromDate}
-        label={t('Від якої дати')}
-        type="datetime-local"
-        value={draft.fromDate}
-        onChange={(event) => update('fromDate', event.currentTarget.value)}
-      />
-
+        </Stack>
+      </Card>
+      <Card className="app-section-card merged-service-edit-section" withBorder radius="md" padding="sm">
+        <Stack gap={10}>
+          <Text className="app-section-title" fw={600} size="sm">{t('Доставка')}</Text>
       <Checkbox
         checked={draft.createInformationTask}
         disabled={isSaving}
@@ -1059,7 +1071,7 @@ function MergedServicePrimaryFields({
       />
 
       {draft.createInformationTask && (
-        <Stack gap="sm">
+        <div className="merged-service-edit-domestic-grid">
           <NumberInput
             disabled={isSaving}
             label={t('Вартість доставки в межах країни')}
@@ -1093,25 +1105,32 @@ function MergedServicePrimaryFields({
             value={draft.supplyInformationTaskComment}
             onChange={(event) => update('supplyInformationTaskComment', event.currentTarget.value)}
           />
-        </Stack>
+        </div>
       )}
+        </Stack>
+      </Card>
     </>
   )
 }
 
 function MergedServiceFormActions({
   isSaving,
+  onClose,
   onSave,
 }: {
   isSaving: boolean
+  onClose: () => void
   onSave: () => void
 }) {
   const { t } = useI18n()
 
   return (
-    <Button color={CREATE_ACTION_COLOR} disabled={isSaving} loading={isSaving} onClick={onSave}>
+    <Group gap={8}>
+    <Button variant="default" disabled={isSaving} onClick={onClose}>{t('Скасувати')}</Button>
+    <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} disabled={isSaving} loading={isSaving} onClick={onSave}>
       {t('Зберегти')}
     </Button>
+    </Group>
   )
 }
 
@@ -1135,7 +1154,7 @@ function DocumentFileSection({
   uploadLabel?: string
 }) {
   return (
-    <>
+    <Stack gap={8}>
       <DocumentToggleList
         disabled={disabled}
         deletedDocuments={deletedDocuments}
@@ -1144,7 +1163,7 @@ function DocumentFileSection({
         onToggleDeleted={onToggleDeleted}
       />
       <FileInput clearable disabled={disabled} label={uploadLabel} multiple value={files} onChange={onChangeFiles} />
-    </>
+    </Stack>
   )
 }
 
@@ -1195,7 +1214,7 @@ function TaskDocumentsEditor({
 
   return (
     <Stack gap="xs">
-      <Text fw={700} size="sm">
+      <Text className="merged-service-edit-subtitle" fw={600} size="sm">
         {label}
       </Text>
       <Group grow>
@@ -1287,7 +1306,7 @@ function DocumentToggleList({
 
   return (
     <Stack gap={4}>
-      <Text fw={700} size="sm">
+      <Text className="merged-service-edit-subtitle" fw={600} size="sm">
         {label}
       </Text>
       {documents.map((document, index) => {

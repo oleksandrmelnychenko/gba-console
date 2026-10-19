@@ -16,7 +16,7 @@
   box-sizing: border-box;
   display: flex;
   flex: 0 0 auto;
-  overflow-x: auto;
+  overflow: visible;
 }
 
 .act-reconciliations-date-input {
@@ -33,8 +33,17 @@
   row-gap: var(--app-filter-label-gap);
 }
 
-.act-reconciliations-status-filter {
-  min-width: 200px;
+.act-reconciliations-page .act-reconciliations-filter-row > .act-reconciliations-status-filter {
+  flex: 0 1 230px;
+  min-width: 190px;
+  width: 230px;
+}
+
+.act-reconciliations-page .act-reconciliations-filter-row > .app-filter-date-range {
+  flex: 0 1 330px;
+  grid-template-columns: repeat(2, minmax(140px, 1fr));
+  width: 330px;
+  min-width: 290px;
 }
 
 .act-reconciliations-filter-bar .mantine-InputWrapper-label {
@@ -74,6 +83,25 @@
   display: flex;
   flex: 0 0 auto;
   min-height: var(--app-filter-control-height);
+}
+
+.act-reconciliations-page .act-reconciliations-table-toolbar-slot .data-table-toolbar {
+  margin: 0;
+  min-height: 0;
+}
+
+@media (max-width: 600px) {
+  .act-reconciliations-page .act-reconciliations-filter-row > .app-filter-date-range {
+    flex-basis: 100%;
+    min-width: 0;
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .act-reconciliations-page .act-reconciliations-filter-row > .act-reconciliations-status-filter {
+    flex: 1 1 190px;
+    min-width: 0;
+  }
 }
 
 .act-reconciliations-page__table {

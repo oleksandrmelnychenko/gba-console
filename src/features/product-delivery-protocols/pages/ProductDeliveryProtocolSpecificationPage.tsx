@@ -1,6 +1,5 @@
 import {
   Alert,
-  Badge,
   Button,
   Card,
   Group,
@@ -11,8 +10,8 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, FileDown, FileInput, FileX, Layers } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { Banknote, Calculator, ChartNoAxesCombined, CircleAlert, Euro, FileInput, Layers, Search } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
@@ -20,7 +19,9 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { PdfIcon } from '../../../shared/ui/PdfIcon'
+import { TableChip } from '../../../shared/ui/TableChip'
+import '../../../shared/ui/selection-surface.css'
 import { useAuth } from '../../auth/useAuth'
 import { getProtocolForSpecification } from '../api/productDeliveryProtocolsApi'
 import { searchDirectSupplyOrderSpecificationOrganizations } from '../api/protocolDetailApi'
@@ -72,12 +73,12 @@ const PERMISSION_OPEN_SPECIFICATION_CODE = PermissionKeys.ProductDeliveryProtoco
 const PERMISSION_SAVE_SPECIFICATION_CODE = PermissionKeys.OrdersUkraine.SpecificationCodes.Edit
 const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
 const SPECIFICATION_CURRENCY_OPTIONS = [
-  { label: 'EUR', value: CURRENCY_EUR },
-  { label: 'UAH', value: CURRENCY_UAH },
+  { label: 'EUR', value: CURRENCY_EUR, icon: Euro },
+  { label: 'UAH', value: CURRENCY_UAH, icon: Banknote },
 ]
 const SERVICE_MODE_OPTIONS = [
-  { label: 'УО', value: SERVICES_MANAGEMENT },
-  { label: 'БО', value: SERVICES_ACCOUNTING },
+  { label: 'Управлінський облік', value: SERVICES_MANAGEMENT, icon: ChartNoAxesCombined },
+  { label: 'Бухгалтерський облік', value: SERVICES_ACCOUNTING, icon: Calculator },
 ]
 
 type ProtocolSelectionState = {
@@ -905,6 +906,7 @@ function ProductDeliveryProtocolSpecificationPageContent() {
   const navigate = useNavigate()
   const model = useSpecificationModel(id)
   const [vendorCodeFilter, setVendorCodeFilter] = useValueState('')
+  const [toolbarTarget, setToolbarTarget] = useState<HTMLDivElement | null>(null)
   const invoices = model.protocol?.SupplyInvoices || []
   const canMutateSpecification = Boolean(model.protocol?.IsShipped)
   const canMutateProtocolStructure = Boolean(model.protocol?.IsShipped && !model.protocol?.IsCompleted)
@@ -926,18 +928,16 @@ function ProductDeliveryProtocolSpecificationPageContent() {
 
   return (
     <AppDrawer
-      className="app-form-sheet"
+      className="product-specification-drawer"
       opened
       keepMounted={false}
       position="right"
       size="full"
       title={
-        <span className="app-sheet-title-mono">
+        <span className="app-sheet-title-mono product-specification-title">
           {t('Митні коди згідно протоколу')}
           {model.protocol?.DeliveryProductProtocolNumber?.Number && (
-            <Badge className="app-role-pill is-document" variant="light">
-              {model.protocol.DeliveryProductProtocolNumber.Number}
-            </Badge>
+            <TableChip tone="document" value={model.protocol.DeliveryProductProtocolNumber.Number} />
           )}
         </span>
       }
@@ -953,33 +953,115 @@ function ProductDeliveryProtocolSpecificationPageContent() {
       }
       onClose={() => navigate('/product-delivery-protocols')}
     >
-      <Stack className="product-specification-sheet" gap="md">
+      <Stack className="product-specification-sheet" gap={10}>
         {model.error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {model.error}
           </Alert>
         )}
 
-        {model.isLoading ? (
+        {model.isLoading && !model.protocol ? (
           <Text c="dimmed" size="sm">
             {t('Завантаження')}
           </Text>
         ) : model.protocol ? (
-          <Stack gap="md">
+          <Stack className="product-specification-content" gap={10}>
             {specificationUnavailableMessage && (
               <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
                 {specificationUnavailableMessage}
               </Alert>
             )}
 
-            <Card className="app-section-card product-specification-sheet-card" withBorder radius="md" padding="md">
+            <div className="product-specification-sheet-header">
+              <div className="product-specification-sheet-switches">
+                <div className="product-specification-switch-group">
+                  <Text className="product-specification-tab-label">{t('Валюта')}</Text>
+                  <SegmentedControl
+                    aria-label={t('Валюта')}
+                    className="product-specification-sheet-segment"
+                    data={SPECIFICATION_CURRENCY_OPTIONS.map(({ label, value, icon: Icon }) => ({
+                      value,
+                      label: <Group gap={6} wrap="nowrap"><Icon size={15} aria-hidden="true" /><span>{label}</span></Group>,
+                    }))}
+                    disabled={model.isActionBusy}
+                    size="xs"
+                    value={model.currencyIsEur ? CURRENCY_EUR : CURRENCY_UAH}
+                    onChange={(value) => model.setCurrencyIsEur(value === CURRENCY_EUR)}
+                  />
+                </div>
+                <div className="product-specification-switch-group">
+                  <Text className="product-specification-tab-label">{t('Облік')}</Text>
+                  <SegmentedControl
+                    aria-label={t('Тип обліку')}
+                    className="product-specification-sheet-segment"
+                    data={SERVICE_MODE_OPTIONS.map(({ label, value, icon: Icon }) => ({
+                      value,
+                      label: <Group gap={6} wrap="nowrap"><Icon size={15} aria-hidden="true" /><span>{t(label)}</span></Group>,
+                    }))}
+                    disabled={model.isActionBusy}
+                    size="xs"
+                    value={model.withManagementServices ? SERVICES_MANAGEMENT : SERVICES_ACCOUNTING}
+                    onChange={(value) => model.setWithManagementServices(value === SERVICES_MANAGEMENT)}
+                  />
+                </div>
+              </div>
+
+              <Group className="product-specification-sheet-actions" justify="flex-end" gap="xs" wrap="wrap">
+                {canUpload && (
+                  <Button
+                    variant="default"
+                    disabled={model.isActionBusy}
+                    leftSection={<FileInput size={16} />}
+                    loading={model.isUploading}
+                    onClick={() => model.setUploadOpen(true)}
+                  >
+                    {t('Завантаження митних кодів')}
+                  </Button>
+                )}
+                {canUploadDocuments && (
+                  <Button
+                    disabled={!canOpenDeliveryDocuments || model.isActionBusy}
+                    leftSection={<FileInput size={16} />}
+                    loading={model.isSavingDocuments}
+                    variant="default"
+                    onClick={model.openDocuments}
+                  >
+                    {t(CUSTOMS_DECLARATION_UPLOAD_LABEL)}
+                  </Button>
+                )}
+                {canMerge && (
+                  <Button
+                    disabled={model.isActionBusy}
+                    leftSection={<Layers size={16} />}
+                    loading={model.isMerging}
+                    variant="default"
+                    onClick={model.openMerge}
+                  >
+                    {t("Об'єднати інвойси?")}
+                  </Button>
+                )}
+                {canDownload && (
+                  <Button
+                    disabled={model.isActionBusy}
+                    leftSection={<PdfIcon size={20} />}
+                    loading={model.isDownloading}
+                    variant="default"
+                    onClick={model.openDownload}
+                  >
+                    {t('Друк')}
+                  </Button>
+                )}
+              </Group>
+            </div>
+
+            <Card className="app-section-card product-specification-documents-card" withBorder radius="md" padding="sm">
               <Stack gap="md">
                 <div className="product-specification-tabs">
                   <div className="product-specification-tab-row">
                     <Text className="product-specification-tab-label" component="div">
                       {t('Інвойси')}
                     </Text>
-                    <div className="product-specification-tab-list pill-tabs" role="tablist" aria-label={t('Інвойси')}>
+                    <div className="product-specification-tab-list" role="tablist" aria-label={t('Інвойси')}>
                       {invoices.map((invoice) => {
                         const isSelected = invoice.NetUid === model.selectedInvoiceNetId
                         const mergedInvoices = (invoice.MergedSupplyInvoices || [])
@@ -990,18 +1072,22 @@ function ProductDeliveryProtocolSpecificationPageContent() {
                           <button
                             key={invoice.NetUid || invoice.Id}
                             aria-selected={isSelected}
-                            className={`product-specification-tab pill-tab${isSelected ? ' is-active' : ''}`}
+                            className="product-specification-tab app-selection-surface"
+                            data-selected={isSelected}
                             disabled={model.isActionBusy}
                             role="tab"
                             type="button"
                             onClick={() => model.selectInvoice(invoice)}
                           >
+                            <span className="app-selection-surface__marker" aria-hidden="true" />
                             <span className="product-specification-tab-title">
-                              {t('Інвойс')} {invoice.Number} {t('Від')} {invoiceDate(invoice.DateFrom)}
-                              {mergedInvoices ? ` ${mergedInvoices}` : ''}
+                              <TableChip tone="document" value={invoice.Number} />
+                              <span>{invoiceDate(invoice.DateFrom)}</span>
+                              {mergedInvoices && <span>{mergedInvoices}</span>}
                             </span>
                             <span className="product-specification-tab-subtitle">
-                              {t('Постачальник')}: {invoice.SupplyOrder?.Client?.FullName || t('Не вказано')}
+                              <span>{t('Постачальник')}:</span>
+                              <TableChip tone="document" value={invoice.SupplyOrder?.Client?.FullName || t('Не вказано')} />
                             </span>
                           </button>
                         )
@@ -1014,7 +1100,7 @@ function ProductDeliveryProtocolSpecificationPageContent() {
                       <Text className="product-specification-tab-label" component="div">
                         {t('Пак листи')}
                       </Text>
-                      <div className="product-specification-tab-list pill-tabs is-compact" role="tablist" aria-label={t('Пак листи')}>
+                      <div className="product-specification-tab-list" role="tablist" aria-label={t('Пак листи')}>
                         {(model.selectedInvoice.PackingLists || []).map((packList) => {
                           const isSelected = packList.NetUid === model.selectedPackListNetId
                           const mergedPackLists = (packList.MergedPackingLists || [])
@@ -1025,14 +1111,16 @@ function ProductDeliveryProtocolSpecificationPageContent() {
                             <button
                               key={packList.NetUid || packList.Id}
                               aria-selected={isSelected}
-                              className={`product-specification-tab pill-tab is-pack-list${isSelected ? ' is-active' : ''}`}
+                              className="product-specification-tab app-selection-surface is-pack-list"
+                              data-selected={isSelected}
                               disabled={model.isActionBusy}
                               role="tab"
                               type="button"
                               onClick={() => model.selectPackList(packList)}
                             >
+                              <span className="app-selection-surface__marker" aria-hidden="true" />
                               <span className="product-specification-tab-title">
-                                {t('Пак ліст')} № {packList.InvNo}
+                                <TableChip tone="document" value={packList.InvNo} />
                               </span>
                               <span className="product-specification-tab-subtitle">
                                 {t('Від')} {invoiceDate(packList.FromDate)}
@@ -1045,116 +1133,43 @@ function ProductDeliveryProtocolSpecificationPageContent() {
                     </div>
                   )}
                 </div>
+              </Stack>
+            </Card>
 
-                <div className="product-specification-sheet-header">
-                  <div className="product-specification-sheet-switches">
-                    <SegmentedControl
-                      className="product-specification-sheet-segment"
-                      data={SPECIFICATION_CURRENCY_OPTIONS}
-                      disabled={model.isActionBusy}
-                      size="xs"
-                      value={model.currencyIsEur ? CURRENCY_EUR : CURRENCY_UAH}
-                      onChange={(value) => model.setCurrencyIsEur(value === CURRENCY_EUR)}
-                    />
-                    <SegmentedControl
-                      className="product-specification-sheet-segment"
-                      data={SERVICE_MODE_OPTIONS}
-                      disabled={model.isActionBusy}
-                      size="xs"
-                      value={model.withManagementServices ? SERVICES_MANAGEMENT : SERVICES_ACCOUNTING}
-                      onChange={(value) => model.setWithManagementServices(value === SERVICES_MANAGEMENT)}
-                    />
-                  </div>
-
-                  <Group className="product-specification-sheet-actions" justify="flex-end" gap="xs" wrap="wrap">
-                    {canUpload && (
-                      <Button
-                        color={CREATE_ACTION_COLOR}
-                        disabled={model.isActionBusy}
-                        leftSection={<FileInput size={16} />}
-                        loading={model.isUploading}
-                        onClick={() => model.setUploadOpen(true)}
-                      >
-                        {t('Завантаження митних кодів')}
-                      </Button>
-                    )}
-                    {canUploadDocuments && (
-                      <Button
-                        disabled={!canOpenDeliveryDocuments || model.isActionBusy}
-                        leftSection={<FileInput size={16} />}
-                        loading={model.isSavingDocuments}
-                        variant="default"
-                        onClick={model.openDocuments}
-                      >
-                        {t(CUSTOMS_DECLARATION_UPLOAD_LABEL)}
-                      </Button>
-                    )}
-                    {canMerge && (
-                      <Button
-                        disabled={model.isActionBusy}
-                        leftSection={<Layers size={16} />}
-                        loading={model.isMerging}
-                        variant="default"
-                        onClick={model.openMerge}
-                      >
-                        {t("Об'єднати інвойси?")}
-                      </Button>
-                    )}
-                    {canDownload && (
-                      <Button
-                        disabled={model.isActionBusy}
-                        leftSection={<FileDown size={16} />}
-                        loading={model.isDownloading}
-                        variant="default"
-                        onClick={model.openDownload}
-                      >
-                        {t('Друк PDF')}
-                      </Button>
-                    )}
-                  </Group>
-                </div>
-
+            <Card className="app-section-card product-specification-products-card" withBorder radius="md" padding={0}>
                 {model.packingListError && (
                   <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                     {model.packingListError}
                   </Alert>
                 )}
 
-                {model.packingList && (model.packingList.PackingListPackageOrderItems?.length || 0) > 0 && (
-                  <div className="product-specification-search-row">
-                    <TextInput
-                      className="product-specification-search-input"
-                      label={t('Пошук')}
-                      placeholder={t('Код товару')}
-                      disabled={model.isActionBusy}
-                      value={vendorCodeFilter}
-                      onChange={(event) => setVendorCodeFilter(event.currentTarget.value)}
-                    />
-                  </div>
-                )}
-
-                <div className="product-specification-grid-slot">
-                  {model.isPackingListLoading ? (
-                    <Text c="dimmed" size="sm">
-                      {t('Завантаження')}
-                    </Text>
-                  ) : filteredPackingList && (filteredPackingList.PackingListPackageOrderItems?.length || 0) > 0 ? (
-                    <SpecificationProductsGrid
-                      canEditSpecification={canEditSpecification}
-                      currencyIsEur={model.currencyIsEur}
-                      invoiceDeliveryAmount={model.selectedInvoice?.DeliveryAmount}
-                      packingList={filteredPackingList}
-                      withManagementServices={model.withManagementServices}
-                      onEditSpecification={model.openSpecificationEditor}
-                    />
-                  ) : (
-                    <Group gap="xs" c="dimmed">
-                      <FileX size={18} />
-                      <Text size="sm">{t('Немає даних')}</Text>
-                    </Group>
-                  )}
+                <div className="product-specification-search-row">
+                  <Text className="app-section-title" fw={600} size="sm">{t('Товари')}</Text>
+                  <TextInput
+                    className="product-specification-search-input"
+                    aria-label={t('Пошук')}
+                    leftSection={<Search size={16} />}
+                    placeholder={t('Код товару')}
+                    disabled={model.isActionBusy}
+                    value={vendorCodeFilter}
+                    onChange={(event) => setVendorCodeFilter(event.currentTarget.value)}
+                  />
+                  <div className="product-specification-table-toolbar" ref={setToolbarTarget} />
                 </div>
-              </Stack>
+                <div className="product-specification-grid-slot">
+                  <SpecificationProductsGrid
+                    canEditSpecification={canEditSpecification}
+                    currencyIsEur={model.currencyIsEur}
+                    invoiceDeliveryAmount={model.selectedInvoice?.DeliveryAmount}
+                    packingList={filteredPackingList || { PackingListPackageOrderItems: [] }}
+                    isLoading={model.isLoading || model.isPackingListLoading}
+                    toolbarPortalTarget={toolbarTarget}
+                    maxHeight="100%"
+                    compact
+                    withManagementServices={model.withManagementServices}
+                    onEditSpecification={model.openSpecificationEditor}
+                  />
+                </div>
             </Card>
 
           </Stack>

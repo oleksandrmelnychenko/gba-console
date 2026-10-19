@@ -111,7 +111,7 @@ describe('ProductIncomeDocumentDrawer', () => {
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Експорт' }))
     expect(props.onExport).toHaveBeenCalledWith(capitalizationDocument)
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Залишки по партіям' }))
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Залишки за партіями' }))
     expect(props.onLoadRemainings).toHaveBeenCalledWith(capitalizationDocument)
   })
 
@@ -138,7 +138,7 @@ describe('ProductIncomeDocumentDrawer', () => {
       isLoadingRemainings: true,
     })
     await screen.findByRole('dialog', { name: 'Документ приходу' })
-    const remainingSection = screen.getByRole('region', { name: 'Залишки по партіям' })
+    const remainingSection = screen.getByRole('region', { name: 'Залишки за партіями' })
     const table = within(remainingSection).getByTestId('product-income-document-remainings')
     expect(table.textContent).toBe('1')
     expect(table.getAttribute('data-layout')).toBe('product-income-document-remainings-2')
@@ -146,7 +146,7 @@ describe('ProductIncomeDocumentDrawer', () => {
     expect(within(remainingSection).getByText('Помилка залишків')).toBeTruthy()
     expect(screen.queryByRole('region', { name: 'Позиції документа' })).toBeNull()
     expect(screen.queryByRole('region', { name: 'Прихідна накладна (Оприходування)' })).toBeNull()
-    expect(screen.getByRole('button', { name: 'Залишки по партіям' }).hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('button', { name: 'Залишки за партіями' }).hasAttribute('disabled')).toBe(true)
   })
 
   it.each([
@@ -165,7 +165,7 @@ describe('ProductIncomeDocumentDrawer', () => {
     await screen.findByRole('dialog', { name: 'Документ приходу' })
     expect(screen.queryByRole('link', { name: 'Джерело' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Експорт' }).hasAttribute('disabled')).toBe(true)
-    expect(screen.getByRole('button', { name: 'Залишки по партіям' }).hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('button', { name: 'Залишки за партіями' }).hasAttribute('disabled')).toBe(true)
     expect(screen.getByTestId('product-income-document-items').textContent).toBe('0')
   })
 })

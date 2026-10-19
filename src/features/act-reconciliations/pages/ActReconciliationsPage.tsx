@@ -279,8 +279,8 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
                 </ActionIcon>
               </Tooltip>
             </div>
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot act-reconciliations-table-toolbar-slot" />
           </div>
-          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot act-reconciliations-table-toolbar-slot" />
         </div>
 
         {(error || filterError) && (

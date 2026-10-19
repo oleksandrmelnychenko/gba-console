@@ -184,11 +184,9 @@ describe('ProductsPage inline movement table width', () => {
     expect(Number.parseInt(table.style.width, 10) > scrollArea.clientWidth).toBe(shouldScroll)
     expect(table.textContent).toContain('Кількість')
 
-    expect(scrollArea.closest('.product-outcome-scroll-frame')).not.toBeNull()
+    expect(scrollArea.closest('.product-outcome-scroll-frame')).toBeNull()
     expect(scrollArea.closest('.product-inline-movement-body')?.classList.contains('is-outcome')).toBe(true)
-    expect(productStyles).toMatch(/\.product-inline-movement-body\.is-outcome \.data-table-scroll\s*\{[^}]*scrollbar-width:\s*auto\s*;/)
     expect(table.querySelector('tbody tr td:last-child')?.textContent).toBe('1')
-    expect(productStyles).toMatch(/\.product-inline-movement-body\.is-outcome \.data-table-scroll\s*\{[^}]*scrollbar-gutter:\s*auto\s*;/)
   })
 })
 
@@ -227,8 +225,9 @@ describe('ProductsPage movement exports', () => {
       resolveRows = resolve
     }))
     const toolbar = screen.getByRole('button', { name: 'Друк PDF' }).closest('.product-movement-toolbar') as HTMLElement
-    fireEvent.click(within(toolbar).getByRole('button', { name: 'Оновити' }))
+    fireEvent.change(within(toolbar).getByLabelText('З'), { target: { value: '2026-08-01' } })
     await waitFor(() => expect(getProductIncomeMovementsMock).toHaveBeenCalledTimes(2))
+    expect(within(toolbar).getByRole('button', { name: 'Колонки' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Друк PDF' }))
 
     await act(async () => resolveRows([incomeMovement]))

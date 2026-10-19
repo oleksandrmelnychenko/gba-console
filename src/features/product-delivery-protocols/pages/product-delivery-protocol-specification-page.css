@@ -1,196 +1,166 @@
-.product-specification-sheet {
+.product-specification-drawer .app-sheet-scroll {
+  display: flex;
+  flex-direction: column;
+}
+
+.product-specification-drawer :is(.product-specification-sheet, .product-specification-content) {
+  flex: 1;
+  min-height: 0;
   min-width: 0;
 }
 
-.product-specification-sheet-card {
-  overflow: visible;
+.product-specification-title {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.product-specification-sheet-header {
-  align-items: start;
-  border-bottom: 1px solid var(--mantine-color-gray-2);
-  display: grid;
-  gap: 10px 16px;
-  grid-template-columns: auto minmax(0, 1fr);
-  padding-bottom: 12px;
+.product-specification-drawer .product-specification-sheet-header {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  gap: 10px 20px;
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 12px;
+  padding: 8px 10px;
 }
 
 .product-specification-sheet-switches {
-  align-items: center;
   display: flex;
+  align-items: flex-end;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px 20px;
   min-width: 0;
 }
 
-.product-specification-sheet-segment.mantine-SegmentedControl-root {
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 9px;
-  padding: 3px;
-}
-
-.product-specification-sheet-segment .mantine-SegmentedControl-label {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0;
-  min-width: 46px;
-}
-
-.product-specification-sheet-segment .mantine-SegmentedControl-indicator {
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 7px;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
-}
-
-.product-specification-sheet-actions {
+.product-specification-switch-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
   min-width: 0;
 }
 
-.product-specification-sheet-actions .mantine-Button-root {
+.product-specification-drawer .product-specification-tab-label {
+  color: var(--mantine-color-gray-8);
+  font: 600 12px/1.3 var(--font-sans);
+}
+
+.product-specification-drawer .product-specification-sheet-segment {
+  align-self: flex-start;
+  background: transparent;
+  border: 0;
   border-radius: 8px;
+  padding: 0;
+}
+
+.product-specification-drawer .product-specification-sheet-segment .mantine-SegmentedControl-label {
+  color: var(--mantine-color-gray-8);
+  font: 600 12px/20px var(--font-mono);
+  padding: 7px 10px;
+  border-radius: 8px;
+}
+
+.product-specification-drawer .product-specification-sheet-segment .mantine-SegmentedControl-label[data-active] {
+  color: var(--mantine-color-white);
+}
+
+.product-specification-drawer .product-specification-sheet-segment .mantine-SegmentedControl-indicator {
+  background: var(--brand-orange);
+  border: 0;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.product-specification-drawer .product-specification-sheet-segment .mantine-SegmentedControl-control::before {
+  display: none;
+}
+
+.product-specification-sheet-actions { margin-left: auto; min-width: 0; }
+.product-specification-drawer .product-specification-sheet-actions .mantine-Button-root {
   height: 36px;
   min-height: 36px;
-  padding-inline: 13px;
+  padding-inline: 10px;
+  background: var(--mantine-color-white);
 }
-
 .product-specification-sheet-actions .mantine-Button-label {
-  font-size: 12.5px;
-  line-height: 1;
-  white-space: nowrap;
+  font: 600 12.5px/1.2 var(--font-mono);
 }
 
-.product-specification-tabs {
-  display: grid;
-  gap: 10px;
-  min-width: 0;
-}
-
-.product-specification-tab-row {
-  display: grid;
-  gap: 4px;
-  grid-template-columns: minmax(0, 1fr);
-  min-width: 0;
-}
-
-.product-specification-tab-label {
-  color: var(--mantine-color-gray-7);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 1.2;
-  padding-inline: 8px;
-}
-
-.product-specification-tab-list {
-  min-width: 0;
-  width: 100%;
-}
-
-.product-specification-tab.pill-tab {
+.product-specification-drawer .product-specification-documents-card { flex-shrink: 0; padding: 10px 12px; }
+.product-specification-tabs { display: flex; flex-wrap: wrap; gap: 8px 20px; min-width: 0; }
+.product-specification-tab-row { display: flex; flex-direction: column; gap: 6px; min-width: 0; max-width: 100%; }
+.product-specification-tab-list { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.product-specification-tab {
   appearance: none;
-  align-items: center;
   display: flex;
-  flex: 0 0 auto;
   flex-direction: column;
-  gap: 2px;
+  align-items: flex-start;
   justify-content: center;
-  max-width: min(420px, 70vw);
-  min-height: 48px;
-  min-width: 220px;
-  padding: 7px 2px 8px;
-  text-align: center;
+  gap: 4px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  min-height: 34px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 6px 8px 6px 12px;
+  text-align: left;
+  cursor: pointer;
 }
-
-.product-specification-tab.pill-tab:focus-visible {
-  border-color: var(--app-focus-border);
-  box-shadow: var(--app-focus-ring);
-  outline: none;
-}
-
-.product-specification-tab.pill-tab:disabled {
-  cursor: not-allowed;
-  opacity: 0.58;
-}
-
-.product-specification-tab.pill-tab.is-pack-list {
-  min-height: 44px;
-}
-
+.product-specification-tab:focus-visible { outline: 2px solid var(--app-focus-border); outline-offset: 2px; }
+.product-specification-tab:disabled { cursor: not-allowed; opacity: 0.58; }
 .product-specification-tab-title,
 .product-specification-tab-subtitle {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  width: 100%;
-}
-
-.product-specification-tab-title {
-  color: var(--mantine-color-gray-9);
-  font-family: var(--font-mono);
-  font-size: 12.8px;
-  font-weight: 700;
-  line-height: 1.25;
-}
-
-.product-specification-tab-subtitle {
-  color: var(--mantine-color-gray-6);
-  font-family: var(--font-mono);
-  font-size: 11.5px;
-  font-weight: 500;
-  line-height: 1.25;
-}
-
-.product-specification-search-row {
-  border-top: 1px solid var(--mantine-color-gray-2);
   display: flex;
-  justify-content: flex-start;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
   min-width: 0;
-  padding-top: 12px;
-}
-
-.product-specification-search-input {
   max-width: 100%;
-  width: 280px;
+  color: var(--mantine-color-gray-8);
+  font: 500 12px/1.4 var(--font-mono);
+  overflow-wrap: anywhere;
 }
+.product-specification-tab-subtitle > span:first-child { font-family: var(--font-sans); }
+.product-specification-tab .app-table-chip,
+.product-specification-tab .app-table-chip-label { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
 
-.product-specification-search-input .mantine-InputWrapper-label {
-  color: var(--mantine-color-gray-9);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0;
+.product-specification-drawer .product-specification-products-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 180px;
+  min-width: 0;
+  overflow: hidden;
 }
-
-.product-specification-search-input .mantine-TextInput-input,
-.product-specification-search-input .mantine-TextInput-input::placeholder {
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  letter-spacing: 0;
+.product-specification-search-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px 10px;
+  background: var(--mantine-color-gray-0);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
 }
-
-.product-specification-grid-slot {
+.product-specification-drawer .product-specification-search-row .app-section-title { font: 600 14px/1.4 var(--font-mono); }
+.product-specification-search-input { flex: 0 1 240px; min-width: 160px; max-width: 100%; }
+.product-specification-search-input .mantine-Input-input { font: 500 12.5px/1.4 var(--font-mono); }
+.product-specification-table-toolbar { display: flex; flex-wrap: wrap; margin-left: auto; }
+.product-specification-table-toolbar .data-table-toolbar { margin: 0; padding: 0; }
+.product-specification-drawer :is(.product-specification-grid-slot, .specification-products-grid, .specification-products-grid > .data-table) {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   min-width: 0;
 }
+.product-specification-drawer .data-table-scroll { flex: 1; min-height: 0; }
 
-.product-specification-grid-slot > .data-table {
-  width: 100%;
-}
-
-@media (max-width: 980px) {
-  .product-specification-sheet-header,
-  .product-specification-tab-row {
-    grid-template-columns: 1fr;
-  }
-
-  .product-specification-sheet-actions {
-    justify-content: flex-start;
-  }
-
-  .product-specification-tab-label {
-    padding-top: 0;
-  }
+@media (max-width: 600px) {
+  .product-specification-sheet-actions { margin-left: 0; justify-content: flex-start; }
+  .product-specification-drawer .product-specification-sheet-segment .mantine-SegmentedControl-label { padding-inline: 7px; font-size: 11px; }
 }

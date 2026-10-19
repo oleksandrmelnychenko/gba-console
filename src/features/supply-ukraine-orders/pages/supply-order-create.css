@@ -1,0 +1,83 @@
+.supply-order-create-sheet .supply-order-create-section {
+  min-width: 0;
+  padding: 14px;
+}
+
+.supply-order-create-sheet .supply-order-create-section .app-section-title {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0;
+  margin-bottom: 2px;
+}
+
+.supply-order-create-sheet .supply-order-create-section .mantine-Checkbox-label {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.supply-order-create-sheet .supply-order-create-section :is(.mantine-InputWrapper-description, .mantine-InputWrapper-error) {
+  font-family: var(--font-sans);
+  font-size: 12px;
+}
+
+.supply-order-create-sheet .supply-order-create-tabs {
+  align-self: center;
+  background: var(--mantine-color-white);
+  border: 0;
+  border-radius: 8px;
+  flex: 0 0 auto;
+  padding: 0;
+}
+
+.supply-order-create-sheet .supply-order-create-tabs .mantine-SegmentedControl-indicator {
+  background: var(--brand-orange);
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.supply-order-create-sheet .supply-order-create-tabs .mantine-SegmentedControl-control::before {
+  display: none;
+}
+
+.supply-order-create-sheet .supply-order-create-tabs .mantine-SegmentedControl-label {
+  border-radius: 8px;
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 20px;
+  padding: 7px 14px;
+}
+
+.supply-order-create-sheet .supply-order-create-tabs .mantine-SegmentedControl-label[data-active] {
+  color: var(--mantine-color-white);
+}
+
+.supply-order-create-sheet .supply-order-create-pricing-tabs {
+  display: flex;
+  flex: 0 1 auto !important;
+  justify-content: center;
+  margin-inline: auto;
+  padding-bottom: 1px;
+}
+
+.supply-order-create-sheet .supply-order-create-option {
+  min-width: 0;
+}
+
+.supply-order-create-sheet .supply-order-create-option > .mantine-InputWrapper-root {
+  min-width: 0;
+}
+
+@media (max-width: 600px) {
+  .supply-order-create-sheet .supply-order-create-option {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 4px;
+  }
+}

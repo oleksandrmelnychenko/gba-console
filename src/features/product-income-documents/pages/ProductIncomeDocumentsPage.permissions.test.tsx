@@ -124,7 +124,7 @@ describe('ProductIncomeDocumentsPage canonical permission guards', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Відкрити рядок' }))
 
     expect(screen.queryByRole('button', { name: 'Деталі документа' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Залишки по партіям' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Залишки за партіями' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Експорт' })).toBeNull()
   })
 
@@ -147,7 +147,7 @@ describe('ProductIncomeDocumentsPage canonical permission guards', () => {
     renderPage()
 
     fireEvent.click(await screen.findByRole('button', { name: 'Відкрити рядок' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Залишки по партіям' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Залишки за партіями' }))
 
     await waitFor(() => expect(getProductIncomeInfoForRemainings).toHaveBeenCalledWith('income-1'))
     expect(getProductIncomeRemainings).toHaveBeenCalledWith('income-1')
@@ -163,7 +163,7 @@ describe('ProductIncomeDocumentsPage canonical permission guards', () => {
 
     await waitFor(() => expect(exportProductIncomeDocument).toHaveBeenCalledWith('income-1'))
     expect(screen.queryByRole('button', { name: 'Деталі документа' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Залишки по партіям' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Залишки за партіями' })).toBeNull()
   })
 
   it('keeps movement and storage-history buttons independently guarded', async () => {

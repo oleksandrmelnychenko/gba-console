@@ -1,16 +1,14 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
-  Badge,
   Box,
   Group,
   SegmentedControl,
   Skeleton,
   Stack,
   Text,
-  Tooltip,
 } from '@mantine/core'
-import { CircleAlert, RefreshCw } from 'lucide-react'
+import { Building2, CircleAlert, Warehouse } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getProductSourcePriceComparison } from '../api/productsApi'
@@ -41,20 +39,22 @@ const sourcePriceCache = new Map<string, SourcePriceCacheEntry>()
 export function ProductPriceSourcePanel({
   effectivePrices,
   productNetId,
+  refreshKey = 0,
 }: {
   effectivePrices: CalculatedProductPrice[]
   productNetId?: string
+  refreshKey?: number
 }) {
   const { t } = useI18n()
   const [viewMode, setViewMode] = useState<PriceViewMode>('amg')
   const [comparison, setComparison] = useState<ProductSourcePriceComparison | null>(null)
   const [failedProductNetId, setFailedProductNetId] = useState<string | null>(null)
-  const [reloadVersion, setReloadVersion] = useState(0)
+  const cacheKey = `${productNetId}:${refreshKey}`
   const shouldLoadSources = Boolean(productNetId)
   const currentComparison = comparison?.ProductNetId === productNetId
     ? comparison
     : productNetId
-      ? getCachedSourcePrices(productNetId)
+      ? getCachedSourcePrices(cacheKey)
       : null
   const hasError = failedProductNetId === productNetId
   const isLoading = shouldLoadSources && !currentComparison && !hasError
@@ -64,7 +64,7 @@ export function ProductPriceSourcePanel({
       return
     }
 
-    const cached = getCachedSourcePrices(productNetId)
+    const cached = getCachedSourcePrices(cacheKey)
 
     if (cached) {
       return
@@ -79,7 +79,7 @@ export function ProductPriceSourcePanel({
           return
         }
 
-        cacheSourcePrices(productNetId, result)
+        cacheSourcePrices(cacheKey, result)
         setComparison({ ...result })
         setFailedProductNetId(null)
       })
@@ -90,20 +90,11 @@ export function ProductPriceSourcePanel({
       })
 
     return () => controller.abort()
-  }, [productNetId, reloadVersion, shouldLoadSources])
+  }, [cacheKey, productNetId, shouldLoadSources])
 
   // Keep the established GBA price-type order while showing only source data.
   const effectiveOrder = useMemo(() => buildEffectivePricingOrder(effectivePrices), [effectivePrices])
 
-  const refreshSourcePrices = () => {
-    if (productNetId) {
-      sourcePriceCache.delete(productNetId)
-    }
-
-    setComparison(null)
-    setFailedProductNetId(null)
-    setReloadVersion((current) => current + 1)
-  }
 
   return (
     <Stack gap={8}>
@@ -112,26 +103,16 @@ export function ProductPriceSourcePanel({
           aria-label={t('Джерело цін')}
           className="product-price-source-control"
           data={[
-            { label: 'AMG', value: 'amg' },
-            { label: t('Контех'), value: 'fenix' },
+            { label: <span className="product-price-source-label"><Building2 size={14} aria-hidden /><span>AMG</span></span>, value: 'amg' },
+            { label: <span className="product-price-source-label"><Warehouse size={14} aria-hidden /><span>{t('Контех')}</span></span>, value: 'fenix' },
           ]}
           fullWidth
+          color="brand"
           size="xs"
           value={viewMode}
           onChange={(value) => setViewMode(value as PriceViewMode)}
         />
-        <Tooltip label={t('Оновити ціни з джерел')}>
-          <ActionIcon
-            aria-label={t('Оновити ціни з джерел')}
-            color="gray"
-            loading={isLoading}
-            size="sm"
-            variant="subtle"
-            onClick={refreshSourcePrices}
-          >
-            <RefreshCw size={15} />
-          </ActionIcon>
-        </Tooltip>
+
       </Group>
 
       <div className="product-price-source-pane">
@@ -194,7 +175,7 @@ function SourcePricesView({
         {prices.length > 0 ? (
           prices.map((price) => <SourcePriceRow key={price.PricingName} price={price} />)
         ) : (
-          <Text c="dimmed" size="sm">{t('Цін не знайдено')}</Text>
+          <Text c="gray.8" size="sm">{t('Цін не знайдено')}</Text>
         )}
       </Stack>
     </>
@@ -216,13 +197,11 @@ function SourcePriceRow({ price }: { price: ProductSourcePrice }) {
       </Group>
       {showDetails ? (
         <Group gap={6} mt={1} wrap="wrap">
-          <Text c="dimmed" lh={1.1} style={{ fontSize: 12 }}>
+          <Text c="gray.8" lh={1.1} style={{ fontSize: 12 }}>
             {t('База EUR')}: <span className="app-money app-money-meta">{formatPrice(price.BasePriceEur)}</span>
           </Text>
           {typeof price.ExtraChargePercent === 'number' ? (
-            <Badge color="gray" size="xs" variant="light">
-              {formatSignedPercent(price.ExtraChargePercent)}
-            </Badge>
+            <TableChip tone="document" value={formatSignedPercent(price.ExtraChargePercent)} />
           ) : null}
         </Group>
       ) : null}
@@ -236,8 +215,8 @@ function PriceHeader({ localCurrencyCode }: { localCurrencyCode: string }) {
   return (
     <Group gap="sm" wrap="nowrap">
       <Text className="app-section-title" fw={600} size="sm" style={{ flex: 1, minWidth: 0 }}>{t('Тип ціни')}</Text>
-      <Text c="gray.9" fw={600} size="sm" ta="right" style={{ flexShrink: 0, width: 80 }}>EUR</Text>
-      <Text c="gray.9" fw={600} size="sm" ta="right" style={{ flexShrink: 0, width: 80 }}>{localCurrencyCode}</Text>
+      <Text c="gray.9" fw={600} size="sm" ta="right" style={{ flexShrink: 0, width: 80 }}><TableChip tone="source" value="EUR" /></Text>
+      <Text c="gray.9" fw={600} size="sm" ta="right" style={{ flexShrink: 0, width: 80 }}><TableChip tone="source" value={localCurrencyCode} /></Text>
     </Group>
   )
 }

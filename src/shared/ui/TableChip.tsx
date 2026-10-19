@@ -3,14 +3,15 @@ export type TableChipTone = 'neutral' | 'document' | 'product' | 'source' | 'sto
 type TableChipProps = {
   value: string | number | null | undefined
   tone?: TableChipTone
+  showEmpty?: boolean
 }
 
 /** A short table value, including values inside expanded rows. */
-export function TableChip({ value, tone = 'neutral' }: TableChipProps) {
-  const text = value == null ? '' : String(value).trim()
+export function TableChip({ value, tone = 'neutral', showEmpty = false }: TableChipProps) {
+  const text = (value == null ? '' : String(value).trim()) || (showEmpty ? '-' : '')
 
   // Preserve existing empty-value notation without creating an empty capsule.
-  if (!text || text === '-' || text === '—') {
+  if (!showEmpty && (!text || text === '-' || text === '—')) {
     return <span>{text}</span>
   }
 

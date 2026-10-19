@@ -1,13 +1,14 @@
-import { Anchor, Button, Checkbox, Group, Select, Stack, Text, TextInput } from '@mantine/core'
+import { Anchor, Button, Card, Checkbox, Group, Select, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
 import { FileChartColumn, FileText } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { exportSaleReturnsReport, searchSalesReturnReportClients } from '../api/salesReturnsApi'
 import type { SalesReturnClient, SalesReturnDocument } from '../types'
 import { getEntityName } from '../utils'
+import './client-returns-report.css'
 
 type ClientReturnsReportPanelProps = {
   opened: boolean
@@ -112,76 +113,76 @@ export function ClientReturnsReportPanel({ opened, onClose }: ClientReturnsRepor
   }
 
   return (
-    <AppDrawer
-      footer={
-        <Button leftSection={<FileChartColumn size={16} />} loading={isGenerating} onClick={handleGenerate}>
-          {t('Сформувати звіт')}
-        </Button>
-      }
+    <AppModal
+      className="client-returns-report-modal"
       opened={opened}
-      position="right"
-      size="min(460px, 100vw)"
+      size={640}
       title={t('Сформувати звіт')}
       onClose={handleClose}
     >
-      <Stack gap="md">
-        <Group grow>
-          <TextInput
-            label={t('Від')}
-            type="date"
-            value={fromDate}
-            onChange={(event) => setFromDate(event.currentTarget.value)}
-          />
-          <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => setToDate(event.currentTarget.value)} />
-        </Group>
+      <Stack className="client-returns-report-scroll" gap={12}>
+        <Card className="app-section-card client-returns-report-section" withBorder padding="sm" radius="md">
+          <Stack gap={12}>
+            <Text className="app-section-title" size="sm" fw={600}>{t('Параметри звіту')}</Text>
+            <SimpleGrid cols={{ base: 1, xs: 2 }} spacing={12}>
+              <TextInput
+                label={t('Від')}
+                type="date"
+                value={fromDate}
+                onChange={(event) => setFromDate(event.currentTarget.value)}
+              />
+              <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => setToDate(event.currentTarget.value)} />
+            </SimpleGrid>
 
-        <Select
-          clearable
-          searchable
-          data={clientOptions}
-          label={t('Клієнт')}
-          placeholder={t('Пошук клієнта')}
-          value={selectedClient?.NetUid ?? null}
-          onChange={(value) => {
-            if (!value) {
-              setSelectedClient(null)
-              return
-            }
+            <Select
+              clearable
+              searchable
+              data={clientOptions}
+              label={t('Клієнт')}
+              placeholder={t('Пошук клієнта')}
+              value={selectedClient?.NetUid ?? null}
+              onChange={(value) => {
+                if (!value) {
+                  setSelectedClient(null)
+                  return
+                }
 
-            const found = clients.find((client) => client.NetUid === value)
+                const found = clients.find((client) => client.NetUid === value)
 
-            if (found) {
-              setSelectedClient(found)
-            }
+                if (found) {
+                  setSelectedClient(found)
+                }
 
-            setOnlyMy(false)
-          }}
-          onSearchChange={setClientSearch}
-        />
+                setOnlyMy(false)
+              }}
+              onSearchChange={setClientSearch}
+            />
 
-        <Checkbox
-          checked={onlyMy}
-          label={t('Тільки мої клієнти')}
-          onChange={(event) => {
-            const checked = event.currentTarget.checked
+            <Checkbox
+              checked={onlyMy}
+              label={t('Тільки мої клієнти')}
+              onChange={(event) => {
+                const checked = event.currentTarget.checked
 
-            setOnlyMy(checked)
+                setOnlyMy(checked)
 
-            if (checked) {
-              resetSelectedClient()
-            }
-          }}
-        />
+                if (checked) {
+                  resetSelectedClient()
+                }
+              }}
+            />
 
-        <Select
-          data={[
-            { label: t('Згруповано'), value: '0' },
-            { label: t('Деталізовано'), value: '1' },
-          ]}
-          label={t('Тип')}
-          value={reportType}
-          onChange={(value) => setReportType(value === '1' ? '1' : '0')}
-        />
+            <Select
+              data={[
+                { label: t('Згруповано'), value: '0' },
+                { label: t('Деталізовано'), value: '1' },
+              ]}
+              label={t('Тип')}
+              value={reportType}
+              onChange={(value) => setReportType(value === '1' ? '1' : '0')}
+            />
+          </Stack>
+        </Card>
 
         {error ? (
           <Text c="red" size="sm">
@@ -204,7 +205,13 @@ export function ClientReturnsReportPanel({ opened, onClose }: ClientReturnsRepor
           </Group>
         ) : null}
       </Stack>
-    </AppDrawer>
+      <AppModalFooter>
+        <Button variant="default" onClick={handleClose}>{t('Скасувати')}</Button>
+        <Button leftSection={<FileChartColumn size={16} />} loading={isGenerating} onClick={handleGenerate}>
+          {t('Сформувати звіт')}
+        </Button>
+      </AppModalFooter>
+    </AppModal>
   )
 }
 

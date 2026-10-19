@@ -17,6 +17,7 @@ import { Pencil, Save, Trash2, Upload } from 'lucide-react'
 import { useEffect, useReducer } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
@@ -28,6 +29,8 @@ import {
 import { useAuth } from '../../auth/useAuth'
 import { hasSupplyProForm } from '../proFormHelpers'
 import type { DirectSupplyOrder, SupplyProForm, SupplyProFormDocument } from '../types'
+
+import './supply-order-document-summary.css'
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
@@ -159,8 +162,8 @@ export function DirectSupplyOrderProFormCard({
   }
 
   return (
-    <Card className="supply-detail-card" withBorder radius="md" padding="lg">
-      <Stack gap="md">
+    <Card className="supply-detail-card" withBorder radius="md" padding={12}>
+      <Stack gap={10}>
         <Group justify="space-between" gap="sm" wrap="wrap">
           <Group gap="xs">
             <Text className="app-section-title" fw={600} size="sm">
@@ -194,7 +197,7 @@ export function DirectSupplyOrderProFormCard({
           ) : null}
         </Group>
 
-        <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
+        <SimpleGrid cols={{ base: 1, xs: 2, md: 3 }} spacing={12} verticalSpacing={10}>
           {isEditing ? (
             <>
               <TextInput
@@ -204,6 +207,7 @@ export function DirectSupplyOrderProFormCard({
                 onChange={(event) => dispatch({ type: 'setDraft', patch: { Number: event.currentTarget.value } })}
               />
               <NumberInput
+                hideControls
                 allowNegative={false}
                 decimalScale={2}
                 label={t('Сума нетто')}
@@ -222,18 +226,21 @@ export function DirectSupplyOrderProFormCard({
             </>
           ) : (
             <>
-              <InfoBlock label={t('Номер')} mono value={draft.Number || ''} />
+              <InfoBlock label={t('Номер')} document value={draft.Number || ''} />
               <InfoBlock label={t('Сума нетто')} mono value={formatMoney(draft.NetPrice)} />
               <InfoBlock label={t('Дата')} mono value={formatDateTime(draft.DateFrom)} />
             </>
           )}
         </SimpleGrid>
 
-        <Stack gap="xs">
+        <Stack className={`supply-order-documents${documents.length === 0 ? ' is-empty' : ''}`} gap={8}>
           <Group justify="space-between" gap="xs" wrap="wrap">
-            <Text className="app-section-title" fw={600} size="sm">
-              {t('Документи')}
-            </Text>
+            <Group gap={6} wrap="nowrap">
+              <Text className="app-section-title" fw={600} size="sm">
+                {t('Документи')}
+              </Text>
+              <TableChip tone="neutral" value={documents.length} />
+            </Group>
             {isEditing && (
               <FileButton multiple onChange={(nextFiles) => dispatch({ type: 'addFiles', files: nextFiles || [] })}>
                 {(fileProps) => (
@@ -246,7 +253,7 @@ export function DirectSupplyOrderProFormCard({
           </Group>
 
           {documents.length === 0 ? (
-            <Text c="dimmed" size="sm">
+            <Text className="supply-order-documents__empty" size="xs">
               {t('Документів немає')}
             </Text>
           ) : (
@@ -480,13 +487,15 @@ function formatFileSize(size: number): string {
   return `${Math.round(size / 1024 / 102.4) / 10} MB`
 }
 
-function InfoBlock({ label, mono, value }: { label: string, mono?: boolean, value: string }) {
+function InfoBlock({ document, label, mono, value }: { document?: boolean, label: string, mono?: boolean, value: string }) {
   return (
     <Stack gap={2}>
-      <Text c="dimmed" size="xs">{label}</Text>
-      <Text ff={mono ? 'var(--font-mono)' : undefined} fw={600} size="sm">
-        {value}
-      </Text>
+      <Text c="gray.8" size="xs">{label}</Text>
+      {document ? <TableChip tone="document" value={value} /> : (
+        <Text ff={mono ? 'var(--font-mono)' : undefined} fw={600} size="sm">
+          {value}
+        </Text>
+      )}
     </Stack>
   )
 }

@@ -1,0 +1,69 @@
+.product-specification-edit-modal.app-modal .mantine-Modal-body,
+.product-specification-confirm-modal.app-modal .mantine-Modal-body {
+  background: var(--mantine-color-gray-0);
+}
+
+.product-specification-identity {
+  padding: 2px 4px;
+}
+
+.product-specification-identity .app-table-chip {
+  font-size: 12px;
+}
+
+.product-specification-edit-modal :is(.product-specification-form, .product-specification-history) {
+  background: var(--mantine-color-white);
+  padding: 12px;
+}
+
+.product-specification-edit-modal .app-section-title {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.product-specification-edit-modal .mantine-Input-input {
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.product-specification-edit-modal .mantine-Input-input:disabled {
+  color: var(--mantine-color-gray-8);
+}
+
+.product-specification-history-table {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  max-height: 240px;
+  overflow: auto;
+}
+
+.product-specification-history-table .mantine-Table-table {
+  min-width: 560px;
+}
+
+.product-specification-history-table .mantine-Table-thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.product-specification-history-table .mantine-Table-tr:last-child .mantine-Table-td {
+  border-bottom: 0;
+}
+
+.product-specification-history-table:focus-visible {
+  outline: 2px solid var(--brand-orange);
+  outline-offset: 2px;
+}
+
+.product-specification-empty {
+  padding-block: 12px;
+  text-align: center;
+}
+
+.product-specification-edit-modal .app-modal-footer .mantine-Button-root[data-variant='default'] {
+  background: var(--mantine-color-white);
+}

@@ -205,6 +205,19 @@
   min-height: 0;
 }
 
+/* Expanded invoices fit the visible roster viewport, not its wider table. */
+.supply-ukraine-orders-table > .data-table > .data-table-scroll {
+  container-type: inline-size;
+}
+
+.supply-ukraine-orders-page .supply-orders-table-row.data-table-row-clickable:hover > .data-table-expand-cell {
+  --data-table-cell-bg: #fffaf5;
+}
+
+.supply-ukraine-orders-page .supply-orders-table-row.is-selected.data-table-row-clickable:hover > .data-table-expand-cell {
+  --data-table-cell-bg: var(--mantine-color-orange-0);
+}
+
 /* Table typography/zebra/kebab/icons intentionally have NO page overrides:
    the pattern table styles are the shared defaults in data-table.css
    (docs/ui-patterns.md — the table is identical on every screen). */
@@ -215,7 +228,12 @@
 }
 
 .supply-ukraine-orders-page .data-table-expanded-content {
-  padding: 10px 14px 12px 52px;
+  box-sizing: border-box;
+  left: 0;
+  max-width: 100%;
+  padding: 10px 12px 12px;
+  position: sticky;
+  width: 100cqw;
 }
 
 .supply-invoices-expand {
@@ -227,6 +245,14 @@
 
 .supply-invoices-expand .data-table {
   height: auto;
+}
+
+.supply-invoices-expand .data-table-scroll {
+  flex: 0 0 auto;
+  overflow-x: auto;
+  scrollbar-gutter: auto;
+  scrollbar-color: var(--mantine-color-gray-5) var(--mantine-color-gray-1);
+  width: 100%;
 }
 
 
@@ -288,20 +314,27 @@
   white-space: nowrap;
 }
 
-/* The agreement rendered as a small gray pill (app-role-pill on a bare span
-   needs its own box sizing). */
-.supply-invoice-agreement-pill {
-  align-items: center;
-  display: inline-flex;
+.supply-invoice-agreement-chip {
   flex: 0 1 auto;
-  font-size: 10.5px;
-  line-height: 1.2;
   max-width: 220px;
   min-width: 0;
-  overflow: hidden;
-  padding: 2px 8px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+.supply-order-organization-cell {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+:is(.supply-order-organization-cell, .supply-invoice-agreement-chip) .app-table-chip {
+  border-radius: 10px;
+  white-space: normal;
+}
+
+:is(.supply-order-organization-cell, .supply-invoice-agreement-chip) .app-table-chip-label {
+  overflow-wrap: anywhere;
 }
 
 .supply-invoice-meta {
@@ -607,15 +640,8 @@
 }
 
 .supply-order-money-currency {
-  color: var(--mantine-color-gray-6);
   display: block;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0;
-  line-height: 1;
   margin-top: 4px;
-  text-transform: uppercase;
 }
 
 .supply-order-metric-value {

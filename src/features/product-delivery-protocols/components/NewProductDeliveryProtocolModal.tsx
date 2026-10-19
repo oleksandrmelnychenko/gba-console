@@ -1,13 +1,14 @@
-import { Alert, Button, Group, Select, Stack, Textarea, TextInput } from '@mantine/core'
-import { CircleAlert } from 'lucide-react'
+import { Alert, Button, Card, Select, SimpleGrid, Stack, Textarea, TextInput } from '@mantine/core'
+import { CircleAlert, Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { isBusinessOrganizationVisible } from '../../client-resources/clientResourcePolicies'
 import { formatLocalDateTime, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { CreateProtocolPayload, ProtocolOrganization } from '../types'
 import { SupplyTransportationType } from '../types'
+import './new-product-delivery-protocol-modal.css'
 
 export type NewProductDeliveryProtocolModalProps = {
   createError: string | null
@@ -51,14 +52,10 @@ export function NewProductDeliveryProtocolModal({
   return (
     <AppModal
       centered
-      classNames={{ body: 'protocol-create-modal-body' }}
+      className="new-product-delivery-protocol-modal"
       opened={opened}
-      size="md"
-      title={
-        <span style={{ fontFamily: 'var(--font-mono)' }}>
-          {`${t('Додати')} ${t('Протокол доставки товару').toLowerCase()}`}
-        </span>
-      }
+      size={640}
+      title={`${t('Додати')} ${t('Протокол доставки товару').toLowerCase()}`}
       onClose={onClose}
     >
       {opened ? (
@@ -134,62 +131,65 @@ function NewProductDeliveryProtocolForm({
   }
 
   return (
-    <Stack gap="md">
+    <Stack gap={12}>
       {(createError || organizationsError) && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {createError || organizationsError}
         </Alert>
       )}
 
-      <Select
-        searchable
-        data={organizationOptions}
-        error={organizationMissing ? t('Вкажіть організацію') : undefined}
-        label={t('Організація')}
-        nothingFoundMessage={t('Нічого не знайдено')}
-        placeholder={t('Організація')}
-        value={organizationId}
-        onChange={(value) => setForm((current) => ({ ...current, organizationId: value }))}
-      />
+      <Card withBorder padding="sm" radius="md">
+        <Stack gap={12}>
+          <Select
+            searchable
+            data={organizationOptions}
+            error={organizationMissing ? t('Вкажіть організацію') : undefined}
+            label={t('Організація')}
+            nothingFoundMessage={t('Нічого не знайдено')}
+            placeholder={t('Організація')}
+            value={organizationId}
+            onChange={(value) => setForm((current) => ({ ...current, organizationId: value }))}
+          />
 
-      <Group grow align="start">
-        <Select
-          allowDeselect={false}
-          data={transportationOptions}
-          label={t('Тип')}
-          value={transportationType}
-          onChange={(value) =>
-            setForm((current) => ({
-              ...current,
-              transportationType: value || String(SupplyTransportationType.Vehicle),
-            }))
-          }
-        />
-        <TextInput
-          error={dateMissing ? t('Вкажіть дату') : undefined}
-          label={t('Від якої дати')}
-          type="datetime-local"
-          value={fromDate}
-          onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, fromDate: nextValue })) }}
-        />
-      </Group>
+          <SimpleGrid cols={{ base: 1, xs: 2 }} spacing={12}>
+            <Select
+              allowDeselect={false}
+              data={transportationOptions}
+              label={t('Тип')}
+              value={transportationType}
+              onChange={(value) =>
+                setForm((current) => ({
+                  ...current,
+                  transportationType: value || String(SupplyTransportationType.Vehicle),
+                }))
+              }
+            />
+            <TextInput
+              error={dateMissing ? t('Вкажіть дату') : undefined}
+              label={t('Від якої дати')}
+              type="datetime-local"
+              value={fromDate}
+              onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, fromDate: nextValue })) }}
+            />
+          </SimpleGrid>
 
-      <Textarea
-        autosize
-        label={t('Коментар')}
-        minRows={2}
-        value={comment}
-        onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, comment: nextValue })) }}
-      />
-
-      <Group justify="flex-end" gap="sm">
-        <Button color="gray" disabled={isCreating} variant="subtle" onClick={onClose}>
+          <Textarea
+            autosize
+            label={t('Коментар')}
+            minRows={2}
+            value={comment}
+            onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, comment: nextValue })) }}
+          />
+        </Stack>
+      </Card>
+      <AppModalFooter>
+        <Button color="gray" disabled={isCreating} variant="default" onClick={onClose}>
           {t('Скасувати')}
         </Button>
-        <Button color={CREATE_ACTION_COLOR} loading={isCreating} onClick={handleSubmit}>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} loading={isCreating} onClick={handleSubmit}>
           {t('Створити')}
         </Button>
-      </Group>
+      </AppModalFooter>
     </Stack>
   )
 }

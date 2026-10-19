@@ -1,14 +1,15 @@
+import { createPortal } from 'react-dom'
 import { ActionIcon, Anchor, Alert, Badge, Button, Card, Group, Stack, Text, Tooltip } from '@mantine/core'
-import { CircleAlert, SquarePen, Trash2 } from 'lucide-react'
+import { Calculator, CircleAlert, ListPlus, SquarePen, Trash2 } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
-import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableChip } from '../../../shared/ui/TableChip'
+import { ProtocolMoneyValue } from './ProtocolMoneyValue'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../auth/useAuth'
 import type { MergedService, SupplyDocument, SupplyPaymentTask } from '../detailTypes'
-import { getMergedServiceCalculationLabel } from '../mergedServiceCalculationLabel'
 import { LabelValueRow } from './LabelValueRow'
-import { formatDate, formatMoney, responsibleName } from './protocolDetailHelpers'
+import { formatDate, responsibleName } from './protocolDetailHelpers'
 
 const DELETE_PERMISSION = PermissionKeys.ProductDeliveryProtocols.UnifiedService.Delete
 const CALCULATE_PERMISSION = PermissionKeys.ProductDeliveryProtocols.UnifiedService.Calculate
@@ -59,7 +60,7 @@ function PaymentTaskBlock({
             </Badge>
           )}
         </Group>
-        <LabelValueRow mono label={t('Сума')}>{formatMoney(task.GrossPrice, currencyCode)}</LabelValueRow>
+        <LabelValueRow mono label={t('Сума')}><ProtocolMoneyValue value={task.GrossPrice} currency={currencyCode} /></LabelValueRow>
         <LabelValueRow label={t('Відповідальний')}>{responsibleName(task.User) || '-'}</LabelValueRow>
         <LabelValueRow label={t('Сплатити до')}>{formatDate(task.PayToDate)}</LabelValueRow>
         <LabelValueRow label={t('Коментар')}>{task.Comment || '-'}</LabelValueRow>
@@ -79,6 +80,7 @@ function PaymentTaskBlock({
 }
 
 export function MergedServiceViewCard({
+  actionsTarget,
   service,
   canEdit,
   isSaving,
@@ -87,6 +89,7 @@ export function MergedServiceViewCard({
   onEdit,
   onRemove,
 }: {
+  actionsTarget?: HTMLDivElement | null
   canEdit: boolean
   isSaving?: boolean
   onAssignInvoices: () => void
@@ -99,44 +102,45 @@ export function MergedServiceViewCard({
   const { hasPermission } = useAuth()
   const currencyCode = service.SupplyOrganizationAgreement?.Currency?.Code || ''
   const invoiceCount = service.SupplyInvoiceMergedServices?.length || 0
-  const calculationLabel = getMergedServiceCalculationLabel(service, t)
   const canCalculate = canEdit && hasPermission(CALCULATE_PERMISSION)
   const canAssignInvoices = canEdit && hasPermission(ASSIGN_INVOICES_PERMISSION)
   const canUpdate = canEdit && hasPermission(EDIT_PERMISSION)
   const canRemove = canEdit && hasPermission(DELETE_PERMISSION)
   const hasActions = canCalculate || canAssignInvoices || canUpdate || canRemove
 
+  const actions = hasActions ? (
+    <Group justify="flex-end" gap="xs">
+      {invoiceCount > 0 && canCalculate && (
+        <Button disabled={isSaving} variant="default" leftSection={<Calculator size={16} />} onClick={onCalculate}>
+          {t('Розрахувати')}
+        </Button>
+      )}
+      {canAssignInvoices && (
+        <Button disabled={isSaving} variant="default" leftSection={<ListPlus size={16} />} onClick={onAssignInvoices}>
+          {t('Додати')} {t('Інвойси')}
+        </Button>
+      )}
+      {canUpdate && (
+        <Tooltip label={t('Редагувати')}>
+          <ActionIcon aria-label={t('Редагувати')} size={36} color="gray" disabled={isSaving} variant="subtle" onClick={onEdit}>
+            <SquarePen size={18} />
+          </ActionIcon>
+        </Tooltip>
+      )}
+      {canRemove && (
+        <Tooltip label={t('Видалити')}>
+          <ActionIcon aria-label={t('Видалити')} size={36} color="red" disabled={isSaving} variant="subtle" onClick={onRemove}>
+            <Trash2 size={18} />
+          </ActionIcon>
+        </Tooltip>
+      )}
+    </Group>
+  ) : null
+
   return (
-    <Card withBorder radius="md" padding="md">
-      <Stack gap="xs">
-        {hasActions && (
-          <Group justify="flex-end" gap="xs">
-            {invoiceCount > 0 && canCalculate && (
-              <Button color={CREATE_ACTION_COLOR} disabled={isSaving} size="xs" variant="outline" onClick={onCalculate}>
-                {t('Розрахувати')}
-              </Button>
-            )}
-            {canAssignInvoices && (
-              <Button color={CREATE_ACTION_COLOR} disabled={isSaving} size="xs" onClick={onAssignInvoices}>
-                {t('Додати')} {t('Інвойси')}
-              </Button>
-            )}
-            {canUpdate && (
-              <Tooltip label={t('Редагувати')}>
-                <ActionIcon color="gray" disabled={isSaving} variant="subtle" onClick={onEdit}>
-                  <SquarePen size={18} />
-                </ActionIcon>
-              </Tooltip>
-            )}
-            {canRemove && (
-              <Tooltip label={t('Видалити')}>
-                <ActionIcon color="red" disabled={isSaving} variant="subtle" onClick={onRemove}>
-                  <Trash2 size={18} />
-                </ActionIcon>
-              </Tooltip>
-            )}
-          </Group>
-        )}
+    <Card className="protocol-service-card" withBorder radius="md" padding={12}>
+      <Stack className="protocol-service-grid" gap={10}>
+        {actionsTarget ? createPortal(actions, actionsTarget) : actions}
 
         {!service.IsCalculatedValue && (
           <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
@@ -148,24 +152,24 @@ export function MergedServiceViewCard({
         <LabelValueRow label={t('Постачальник послуг')}>{service.SupplyOrganization?.Name || '-'}</LabelValueRow>
         <LabelValueRow label={t('Тип')}>{service.ConsumableProduct?.Name || '-'}</LabelValueRow>
         <LabelValueRow label={t('Договір')}>
-          {service.SupplyOrganizationAgreement?.Name || '-'} ({currencyCode})
+          {service.SupplyOrganizationAgreement?.Name || '-'} <TableChip tone="source" value={currencyCode} />
         </LabelValueRow>
         <LabelValueRow label={t('Номер інвойса')}>{service.Number || '-'}</LabelValueRow>
         <LabelValueRow label={t('Назва')}>{service.Name || '-'}</LabelValueRow>
 
-        <LabelValueRow mono label={t('Вартість Брутто')}>{formatMoney(service.GrossPrice, currencyCode)}</LabelValueRow>
-        <LabelValueRow mono label={t('Вартість Нетто')}>{formatMoney(service.NetPrice, currencyCode)}</LabelValueRow>
+        <LabelValueRow mono label={t('Вартість Брутто')}><ProtocolMoneyValue value={service.GrossPrice} currency={currencyCode} /></LabelValueRow>
+        <LabelValueRow mono label={t('Вартість Нетто')}><ProtocolMoneyValue value={service.NetPrice} currency={currencyCode} /></LabelValueRow>
         <LabelValueRow label={t('ПДВ %')}>{service.VatPercent ?? 0}</LabelValueRow>
-        <LabelValueRow mono label={t('ПДВ')}>{formatMoney(service.Vat, currencyCode)}</LabelValueRow>
+        <LabelValueRow mono label={t('ПДВ')}><ProtocolMoneyValue value={service.Vat} currency={currencyCode} /></LabelValueRow>
 
         <LabelValueRow mono label={t('Вартість Брутто (Бух.)')}>
-          {formatMoney(service.AccountingGrossPrice, currencyCode)}
+          <ProtocolMoneyValue value={service.AccountingGrossPrice} currency={currencyCode} />
         </LabelValueRow>
         <LabelValueRow mono label={`${t('Вартість Нетто')} (${t('Бух.')})`}>
-          {formatMoney(service.AccountingNetPrice, currencyCode)}
+          <ProtocolMoneyValue value={service.AccountingNetPrice} currency={currencyCode} />
         </LabelValueRow>
         <LabelValueRow label={`${t('ПДВ %')} (${t('Бух.')})`}>{service.AccountingVatPercent ?? 0}</LabelValueRow>
-        <LabelValueRow mono label={`${t('ПДВ')} (${t('Бух.')})`}>{formatMoney(service.AccountingVat, currencyCode)}</LabelValueRow>
+        <LabelValueRow mono label={`${t('ПДВ')} (${t('Бух.')})`}><ProtocolMoneyValue value={service.AccountingVat} currency={currencyCode} /></LabelValueRow>
 
         {service.IsIncludeAccountingValue && (
           <Badge className="app-role-pill" variant="light">
@@ -179,7 +183,7 @@ export function MergedServiceViewCard({
         {service.SupplyInformationTask && (
           <>
             <LabelValueRow mono label={t('Доставка в межах країни')}>
-              {formatMoney(service.SupplyInformationTask.GrossPrice, currencyCode)}
+              <ProtocolMoneyValue value={service.SupplyInformationTask.GrossPrice} currency={currencyCode} />
             </LabelValueRow>
             <LabelValueRow label={t('Відповідальний за оплату')}>
               {responsibleName(service.SupplyInformationTask.User) || '-'}
@@ -188,11 +192,7 @@ export function MergedServiceViewCard({
           </>
         )}
 
-        {calculationLabel && (
-          <Text c="dimmed" size="sm">
-            {calculationLabel}
-          </Text>
-        )}
+
 
         {service.SupplyServiceAccountDocument && (
           <Group gap="xs">

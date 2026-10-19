@@ -36,7 +36,7 @@ describe('ProductsPage upload toolbar', () => {
   it('offers product and related-product uploads before a product is selected', async () => {
     renderProductsPage()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Завантаження' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Імпорт Excel' }))
 
     const menu = await screen.findByRole('menu')
 

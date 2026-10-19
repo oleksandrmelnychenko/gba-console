@@ -1,0 +1,8 @@
+.new-product-delivery-protocol-modal .mantine-Modal-body {
+  background: var(--mantine-color-gray-0);
+}
+
+.new-product-delivery-protocol-modal .mantine-Card-root,
+.new-product-delivery-protocol-modal .mantine-Button-root[data-variant='default'] {
+  background: var(--mantine-color-white);
+}

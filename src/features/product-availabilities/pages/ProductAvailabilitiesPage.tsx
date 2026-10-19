@@ -1,6 +1,6 @@
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
+  Button,
   Alert,
   Card,
   Group,
@@ -8,10 +8,9 @@ import {
   Stack,
   Text,
   TextInput,
-  Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { CircleAlert, FileDown, RotateCcw, Search } from 'lucide-react'
+import { CircleAlert, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -23,7 +22,7 @@ import { DocumentExportModal } from '../../../shared/ui/document-export-modal/Do
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
-import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { PdfIcon } from '../../../shared/ui/PdfIcon'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useAuth } from '../../auth/useAuth'
 import {
@@ -389,7 +388,6 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
               label={t('Склад')}
               placeholder={isLoadingStorages ? t('Завантаження') : t('Оберіть склад')}
               value={selectedStorageNetId || null}
-              w={280}
               onChange={(value) => {
                 setPage(1)
                 setSelectedStorageNetId(value || '')
@@ -400,7 +398,6 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
               label={t('Код товару')}
               placeholder={t('Пошук за кодом')}
               value={searchDraft}
-              style={{ flex: '1 1 220px' }}
               onChange={(event) => updateSearch(event.currentTarget.value)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
@@ -409,25 +406,29 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
               }}
             />
             <div className="app-filter-actions">
-              <Tooltip label={t('Скинути')}>
-                <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetFilters}>
-                  <RotateCcw size={17} />
-                </ActionIcon>
-              </Tooltip>
+              <Button
+                variant="default"
+                color="gray"
+                size="sm"
+                aria-label={t('Скинути')}
+                leftSection={<RotateCcw size={16} />}
+                onClick={resetFilters}
+              >
+                {t('Скинути')}
+              </Button>
               {canExport && (
-                <Tooltip label={t('Друк PDF')}>
-                  <ActionIcon
-                    aria-label={t('Друк PDF')}
-                    color={CREATE_ACTION_COLOR}
-                    disabled={!selectedStorageNetId || Boolean(filterError)}
-                    loading={isExporting}
-                    size={34}
-                    variant="light"
-                    onClick={() => void handleExport()}
-                  >
-                    <FileDown size={18} />
-                  </ActionIcon>
-                </Tooltip>
+                <Button
+                  aria-label={t('Друк PDF')}
+                  color="gray"
+                  disabled={!selectedStorageNetId || Boolean(filterError)}
+                  loading={isExporting}
+                  size="sm"
+                  variant="default"
+                  leftSection={<PdfIcon size={20} />}
+                  onClick={() => void handleExport()}
+                >
+                  {t('Друк PDF')}
+                </Button>
               )}
               <Paginator
                 isLoading={isLoading || isLoadingStorages}

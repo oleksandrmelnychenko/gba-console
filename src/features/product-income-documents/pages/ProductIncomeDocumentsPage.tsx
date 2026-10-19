@@ -1,4 +1,4 @@
-import { TableChip } from '../../../shared/ui/TableChip'
+import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -24,7 +24,6 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import {
   DocumentDetailChip,
   DocumentDetailLayout,
-  DocumentDetailMetric,
   DocumentDetailRow,
   DocumentDetailSection,
   DocumentDetailSummary,
@@ -71,6 +70,7 @@ import type {
   RemainingConsignment,
 } from '../types'
 import './product-income-documents-page.css'
+import './product-income-document-detail.css'
 
 const FILTER_STORAGE_KEY = 'documentsFilters'
 const PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
@@ -869,7 +869,7 @@ function ProductIncomeOptionsModal({
       title={document ? (
         <div className="app-modal-action-title">
           <span>{displayValue(row?.type)}</span>
-          <span className="app-modal-action-reference">№ {displayValue(document.Number)}</span>
+          <TableChip tone="document" value={`№ ${displayValue(document.Number)}`} />
         </div>
       ) : t('Виберіть опцію')}
       onClose={onClose}
@@ -929,7 +929,7 @@ function ProductIncomeOptionsModal({
               onClick={() => onRemainings(document)}
               rightSection={<ChevronRight size={16} />}
             >
-              {t('Залишки по партіям')}
+              {t('Залишки за партіями')}
             </Button>
           ) : null}
         </Stack>
@@ -942,6 +942,15 @@ function getPrimaryProductIncomeSourceLink(document: ProductIncomeDocument): str
   const sourceLink = getProductIncomeDocumentSourceLink(document)
 
   return sourceLink && sourceLink !== '/sales/return/client' ? sourceLink : null
+}
+
+function IncomeMetadataChip({ label, value, tone }: { label: string; value?: string | null; tone: TableChipTone }) {
+  return (
+    <div className="document-detail-row">
+      <span className="document-detail-row__label">{label}</span>
+      <span className="document-detail-row__value"><TableChip tone={tone} value={value || '—'} /></span>
+    </div>
+  )
 }
 
 export function ProductIncomeDocumentDrawer({
@@ -996,10 +1005,11 @@ export function ProductIncomeDocumentDrawer({
       opened={Boolean(document)}
       position="right"
       size="wide"
-      title={t('Документ приходу')}
+      title={<span className="product-income-document-title">{t('Документ приходу')}</span>}
       onClose={onClose}
     >
       {document && row && (
+        <div className="product-income-document-detail">
         <DocumentDetailLayout
           variant="compact"
           summary={
@@ -1015,7 +1025,10 @@ export function ProductIncomeDocumentDrawer({
               </>}
               metrics={
                 <>
-                  <DocumentDetailMetric label={t('Сума')} suffix={row.currency} value={formatMoney(row.amount)} />
+                  <div className="document-detail-metric">
+                    <span>{t('Сума')}</span>
+                    <strong>{formatMoney(row.amount)} <TableChip tone="source" value={row.currency} /></strong>
+                  </div>
                 </>
               }
             />
@@ -1050,9 +1063,10 @@ export function ProductIncomeDocumentDrawer({
                   disabled={!document.NetUid || isLoadingRemainings}
                   loading={isLoadingRemainings}
                   variant="filled"
+                  leftSection={<Layers size={16} />}
                   onClick={() => onLoadRemainings(document)}
                 >
-                  {t('Залишки по партіям')}
+                  {t('Залишки за партіями')}
                 </Button>
               ) : null}
             </Group>
@@ -1060,16 +1074,16 @@ export function ProductIncomeDocumentDrawer({
         >
           <div className="document-detail-columns">
             <DocumentDetailSection title={t('Документ')}>
-              <DocumentDetailRow label={t('Номер інвойсу')} mono value={row.invNumber} wide />
+              <IncomeMetadataChip label={t('Номер інвойсу')} tone="document" value={row.invNumber} />
               <DocumentDetailRow label={t('Дата інвойсу')} mono value={formatDateTime(row.invDate)} />
               <DocumentDetailRow label={t('Дата МД')} mono value={formatDateTime(row.specificationDate)} />
               {row.comment || document.Comment ? <DocumentDetailRow label={t('Коментар')} value={row.comment || document.Comment} wide /> : null}
             </DocumentDetailSection>
 
             <DocumentDetailSection title={t('Учасники та склад')}>
-              <DocumentDetailRow label={t('Постачальник / клієнт')} value={row.client} wide />
-              <DocumentDetailRow label={t('Організація')} value={row.organization} />
-              <DocumentDetailRow label={t('Склад')} value={document.Storage?.Name} />
+              <IncomeMetadataChip label={t('Постачальник / клієнт')} tone="document" value={row.client} />
+              <IncomeMetadataChip label={t('Організація')} tone="product" value={row.organization} />
+              <IncomeMetadataChip label={t('Склад')} tone="storage" value={document.Storage?.Name} />
               <DocumentDetailRow label={t('Відповідальний')} value={getEntityName(document.User)} />
             </DocumentDetailSection>
           </div>
@@ -1120,7 +1134,7 @@ export function ProductIncomeDocumentDrawer({
           )}
 
           {detailMode === 'remainings' && (
-            <DocumentDetailSection stacked subtitle={String(remainings.length)} title={t('Залишки по партіям')}>
+            <DocumentDetailSection stacked subtitle={String(remainings.length)} title={t('Залишки за партіями')}>
               {documentInfoError && (
                 <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                   {documentInfoError}
@@ -1150,6 +1164,7 @@ export function ProductIncomeDocumentDrawer({
             </DocumentDetailSection>
           )}
         </DocumentDetailLayout>
+        </div>
       )}
     </AppDrawer>
   )
@@ -1298,9 +1313,9 @@ function SaleReturnOverview({ document }: { document: ProductIncomeDocument }) {
       title={t('Прихідна накладна (повернення)')}
     >
 
-      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={28} verticalSpacing={12}>
+      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12} verticalSpacing={10}>
         <DocumentDetailRow label={t('Угода')} value={agreement?.Name} />
-        <DocumentDetailRow label={t('Валюта')} mono value={currencyCode} />
+        <IncomeMetadataChip label={t('Валюта')} tone="source" value={currencyCode} />
         <DocumentDetailRow label={t('Дата інвойсу')} mono value={formatDateTime(firstItem?.SaleReturn?.FromDate)} />
         <DocumentDetailRow label={t('Коментар')} value={firstItem?.Comment || document.Comment} />
       </SimpleGrid>
@@ -1323,7 +1338,7 @@ function SaleReturnOverview({ document }: { document: ProductIncomeDocument }) {
         />
       )}
 
-      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={28} verticalSpacing={12}>
+      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12} verticalSpacing={10}>
         <DocumentDetailRow label={t('Всього позицій')} mono value={String(items.length)} />
         <DocumentDetailRow label={t('Вся кількість')} mono value={formatAmount(document.TotalQty || sumRows(items, (item) => item.SaleReturnItem?.Qty ?? item.Qty))} />
         <DocumentDetailRow label={t('Загальна сума')} mono value={formatMoney(totalAmount)} />

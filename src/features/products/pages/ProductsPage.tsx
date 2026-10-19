@@ -1,4 +1,4 @@
-import { TableChip } from '../../../shared/ui/TableChip'
+import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -7,7 +7,6 @@ import {
   Button,
   Card,
   Checkbox,
-  Divider,
   FileInput,
   Group,
   Image,
@@ -26,12 +25,12 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeftRight, Box as BoxIcon, ChevronDown, CircleAlert, ClipboardList, FileDown, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, RotateCcw, Save, Settings, Sparkles, SquarePen, Trash2, TriangleAlert, Upload } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { PdfIcon } from '../../../shared/ui/PdfIcon'
+import { ArrowDownLeft, ArrowUpRight, Hash, Layers, ArrowLeftRight, Box as BoxIcon, ChevronDown, CircleAlert, ClipboardList, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, Save, Settings, Sparkles, SquarePen, Trash2, TriangleAlert, Upload } from 'lucide-react'
 import { lazy, Suspense, type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { ProductOutcomeHorizontalScroll } from '../components/ProductOutcomeHorizontalScroll'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -130,6 +129,7 @@ import {
   PRODUCT_WRITE_OFF_PERMISSION,
 } from '../permissions'
 import './products.css'
+import '../../../shared/ui/selection-surface.css'
 
 const InformationalMovementPanel = lazy(() =>
   import('../../../shared/ui/product-movement-history/ProductMovementHistoryDrawers').then((module) => ({
@@ -912,14 +912,20 @@ function ProductsPageContent() {
 
       <Box className="product-assortment-shell console-table-shell" onKeyDown={handleCarouselKeyDown}>
         <ProductAssortmentFilterBar
-          isLoading={isLoading}
+          isLoading={isLoading || detailState.isLoading}
           searchMode={searchMode}
           sortMode={sortMode}
-          onRefresh={commitSearch}
-          onReset={resetSearch}
+          onRefresh={selectedProductNetUid ? reloadProductDetail : commitSearch}
           onOpenInformationalData={() => setInformationalDataOpened(true)}
           onSearchModeChange={setSearchMode}
           onSortModeChange={setSortMode}
+          productActions={productForView ? (
+            <ProductInlineActions
+              analyticsDisabled={getProductAnalyticsId(productForView) === null}
+              disabled={detailState.isLoading}
+              onOpenPanel={setActivePanel}
+            />
+          ) : null}
         />
 
         <Box className="product-assortment-workspace console-table-body">
@@ -944,7 +950,7 @@ function ProductsPageContent() {
             reservationError={detailState.reservationError}
             onOpenPanel={setActivePanel}
             onProductChanged={handleProductSaved}
-            onReload={reloadProductDetail}
+            priceRefreshKey={detailReloadKey}
             onSelectRelatedProduct={selectRelatedProduct}
           />
         </Box>
@@ -985,18 +991,18 @@ function ProductAssortmentFilterBar({
   isLoading,
   onOpenInformationalData,
   onRefresh,
-  onReset,
   onSearchModeChange,
   onSortModeChange,
+  productActions,
   searchMode,
   sortMode,
 }: {
   isLoading: boolean
   onOpenInformationalData: () => void
   onRefresh: () => void
-  onReset: () => void
   onSearchModeChange: (mode: ProductSearchMode) => void
   onSortModeChange: (mode: ProductSortMode) => void
+  productActions: ReactNode
   searchMode: ProductSearchMode
   sortMode: ProductSortMode
 }) {
@@ -1011,7 +1017,7 @@ function ProductAssortmentFilterBar({
           className="product-assortment-filter-select"
           classNames={{ option: 'product-assortment-filter-option' }}
           data={SEARCH_MODE_OPTION_VALUES.map((value) => ({ label: t(SEARCH_MODE_LABELS[value]), value }))}
-          label={t('Місце вводу для пошуку')}
+          label={t('Поле пошуку')}
           value={searchMode}
           onChange={(value) => onSearchModeChange((value as ProductSearchMode) || DEFAULT_SEARCH_MODE)}
         />
@@ -1021,35 +1027,22 @@ function ProductAssortmentFilterBar({
           className="product-assortment-filter-select"
           classNames={{ option: 'product-assortment-filter-option' }}
           data={SORT_MODE_OPTION_VALUES.map((value) => ({ label: t(SORT_MODE_LABELS[value]), value }))}
-          label={t('Сортувати За')}
+          label={t('Сортування')}
           value={sortMode}
           onChange={(value) => onSortModeChange((value as ProductSortMode) || DEFAULT_SORT_MODE)}
         />
         <div className="app-filter-actions">
           <PermissionGate permissionKey={PRODUCT_MOVEMENT_PERMISSION}>
-            <Tooltip label={t('Контроль складських даних')}>
-              <ActionIcon
-                aria-label={t('Контроль складських даних')}
-                color="yellow"
-                size={34}
-                variant="light"
-                onClick={onOpenInformationalData}
-              >
-                <TriangleAlert size={17} />
-              </ActionIcon>
-            </Tooltip>
+            <Button aria-label={t('Контроль складських даних')} variant="default" size="sm" leftSection={<TriangleAlert size={16} />} onClick={onOpenInformationalData}>
+              {t('Контроль даних')}
+            </Button>
           </PermissionGate>
-          <Tooltip label={t('Скинути')}>
-            <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={onReset}>
-              <RotateCcw size={17} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={onRefresh}>
-              <RefreshCw size={17} />
-            </ActionIcon>
-          </Tooltip>
+
+          <Button aria-label={t('Оновити')} variant="default" size="sm" leftSection={<RefreshCw size={16} />} loading={isLoading} onClick={onRefresh}>
+            {t('Оновити')}
+          </Button>
         </div>
+        <div className="product-assortment-primary-actions">{productActions}</div>
       </Group>
     </Box>
   )
@@ -1115,7 +1108,8 @@ function ProductAssortmentCarousel({
             aria-label={selectedProduct.VendorCode?.trim()
               ? `${t('Скопіювати код')}: ${getProductCode(selectedProduct)}`
               : `${getProductCode(selectedProduct)}: ${getProductTitle(selectedProduct)}`}
-            className={`product-assortment-selected ${getProductRowToneClass(selectedProduct)}`}
+            className="product-assortment-selected app-selection-surface"
+            data-selected="true"
             disabled={!selectedProduct.VendorCode?.trim()}
             title={selectedProduct.VendorCode?.trim() ? t('Скопіювати код') : undefined}
             onClick={() => {
@@ -1123,10 +1117,17 @@ function ProductAssortmentCarousel({
               if (vendorCode) copyToClipboard(vendorCode)
             }}
           >
-            <span className="product-assortment-selected-code" data-code-missing={!selectedProduct.VendorCode?.trim() || undefined}>
-              {getProductCode(selectedProduct)}
+            <span className="app-selection-surface__marker" aria-hidden="true" />
+            <BoxIcon className="product-carousel-product-icon" size={18} strokeWidth={1.7} aria-hidden="true" />
+            <span className="product-carousel-row-body">
+              <span className="product-assortment-selected-code" data-code-missing={!selectedProduct.VendorCode?.trim() || undefined}>
+                <TableChip tone="product" value={getProductCode(selectedProduct)} />
+              </span>
+              <span className="product-carousel-name-line">
+                <span className="product-assortment-selected-name">{getProductTitle(selectedProduct)}</span>
+                {isCriticalProductTop(selectedProduct.Top) && <TableChip tone="danger" value={selectedProduct.Top} />}
+              </span>
             </span>
-            <span className="product-assortment-selected-name">{getProductTitle(selectedProduct)}</span>
           </button>
         ) : (
           <TextInput
@@ -1171,17 +1172,18 @@ function ProductCarouselRow({
   return (
     <button
       type="button"
-      className={`product-carousel-row ${getProductRowToneClass(product)}`}
+      className="product-carousel-row app-selection-surface"
       onClick={() => onSelect(product)}
     >
-      <span className="product-carousel-row-status" aria-hidden="true">
-        <span className="product-carousel-row-dot" />
-      </span>
+      <BoxIcon className="product-carousel-product-icon" size={18} strokeWidth={1.7} aria-hidden="true" />
       <span className="product-carousel-row-body">
         <span className="product-carousel-row-code" data-code-missing={!product.VendorCode?.trim() || undefined}>
-          {getProductCode(product)}
+          <TableChip tone="product" value={getProductCode(product)} />
         </span>
-        <span className="product-carousel-row-name">{getProductTitle(product)}</span>
+        <span className="product-carousel-name-line">
+          <span className="product-carousel-row-name">{getProductTitle(product)}</span>
+          {isCriticalProductTop(product.Top) && <TableChip tone="danger" value={product.Top} />}
+        </span>
       </span>
     </button>
   )
@@ -1192,7 +1194,7 @@ function ProductInlineView({
   isLoading,
   onOpenPanel,
   onProductChanged,
-  onReload,
+  priceRefreshKey,
   onSelectRelatedProduct,
   product,
   reservation,
@@ -1202,7 +1204,7 @@ function ProductInlineView({
   isLoading: boolean
   onOpenPanel: (panel: ProductDetailPanel) => void
   onProductChanged: (product: Product | null) => void
-  onReload: () => void
+  priceRefreshKey: number
   onSelectRelatedProduct: (product: Partial<Product>) => void
   product: Product | null
   reservation: ProductReservation
@@ -1239,18 +1241,7 @@ function ProductInlineView({
             <Text component="span" fw={650} truncate className="product-inline-name">{getProductTitle(product)}</Text>
           </Tooltip>
         </Box>
-        <Group gap="xs" justify="flex-end" wrap="nowrap" className="product-inline-title-actions">
-          <ProductInlineActions
-            analyticsDisabled={getProductAnalyticsId(product) === null}
-            disabled={isLoading}
-            onOpenPanel={onOpenPanel}
-          />
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} variant="light" onClick={onReload}>
-              <RefreshCw size={18} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
+
       </Group>
 
       {detailError && (
@@ -1299,22 +1290,21 @@ function ProductInlineView({
         <Box className="product-inline-description">
           <InfoBlock label="Опис" value={product.DescriptionUA || product.Description} wide />
           <InfoBlock label="Нотатки" value={product.NotesUA || product.Notes} wide />
-          <InfoBlock danger={isCriticalProductTop(product.Top)} label="Top" value={product.Top} />
+          <InfoBlock chip={isCriticalProductTop(product.Top) ? 'danger' : undefined} label="Top" value={product.Top} />
           <InfoBlock mono label="Вага" value={formatAmount(product.Weight)} />
-          <InfoBlock label="Розмір" value={product.Size} />
+          <InfoBlock chip="warning" chipEmpty label="Розмір" value={product.Size} />
           <InfoBlock mono label="Об'єм" value={product.Volume} />
           <InfoBlock mono label="Норма пакування" value={product.OrderStandard} />
           <InfoBlock mono label="Пакування" value={product.PackingStandard} />
-          <InfoBlock mono label="Оригінальний номер" value={getProductMainOriginalNumber(product)} />
+          <InfoBlock chip="warning" mono label="Оригінальний номер" value={getProductMainOriginalNumber(product)} />
           <InfoBlock label="Синоніми UA" value={product.SynonymsUA} />
-          <InfoBlock label="Група товару" value={getProductGroupNames(product)} />
-          <InfoBlock label="Одиниця" value={product.MeasureUnit?.Name} />
+          <InfoBlock chip="product" label="Група товару" value={getProductGroupNames(product)} />
+          <InfoBlock chip="neutral" label="Одиниця" value={product.MeasureUnit?.Name} />
         </Box>
 
         <Box className="product-inline-prices">
-          <ProductPriceSourcePanel effectivePrices={prices} productNetId={product.NetUid} />
-          <Divider my={8} />
-          <Group gap="xs">
+          <ProductPriceSourcePanel key={`${product.NetUid}:${priceRefreshKey}`} effectivePrices={prices} productNetId={product.NetUid} refreshKey={priceRefreshKey} />
+          <Group gap="xs" mt={8}>
             <Badge className={`app-role-pill ${product.IsForZeroSale ? 'is-green' : 'is-gray'}`} variant="light">{t('Нульовий продаж')}</Badge>
             <Badge className={`app-role-pill ${product.IsForSale ? 'is-green' : 'is-gray'}`} variant="light">{t('Продаж')}</Badge>
             <Badge className={`app-role-pill ${product.IsForWeb ? 'is-green' : 'is-gray'}`} variant="light">{t('Сайт')}</Badge>
@@ -1423,7 +1413,6 @@ function ProductInlineActions({
         <Button
           aria-label={t('AI-аналітика товару')}
           disabled={disabled || analyticsDisabled}
-          h={38}
           leftSection={<Sparkles fill="currentColor" size={16} strokeWidth={0} />}
           px="sm"
           size="xs"
@@ -1433,62 +1422,47 @@ function ProductInlineActions({
           {t('AI-аналітика')}
         </Button>
       </PermissionGate>
-      <PermissionGate permissionKey={PRODUCT_STORAGE_HISTORY_PERMISSION}>
-        <Tooltip label={t('Історія місця зберігання')}>
-          <ActionIcon aria-label={t('Історія місця зберігання')} color="gray" size={38} variant="light" disabled={disabled} onClick={() => onOpenPanel('storage-history')}>
-            <History size={18} />
-          </ActionIcon>
-        </Tooltip>
-      </PermissionGate>
-      <Tooltip label={t('Специфікація')}>
-        <ActionIcon aria-label={t('Специфікація')} color="gray" size={38} variant="light" disabled={disabled} onClick={() => onOpenPanel('specification')}>
-          <FileText size={18} />
-        </ActionIcon>
-      </Tooltip>
-      <Tooltip label={t('Зображення')}>
-        <ActionIcon aria-label={t('Зображення')} color="gray" size={38} variant="light" disabled={disabled} onClick={() => onOpenPanel('images')}>
-          <ImageIcon size={18} />
-        </ActionIcon>
-      </Tooltip>
-      <PermissionGate permissionKey={PRODUCT_BALANCES_PERMISSION}>
-        <Tooltip label={t('Залишки по партіям')}>
-          <ActionIcon aria-label={t('Залишки по партіям')} color="gray" size={38} variant="light" disabled={disabled} onClick={() => onOpenPanel('remains')}>
-            <Package size={18} />
-          </ActionIcon>
-        </Tooltip>
-      </PermissionGate>
       <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
-        <Tooltip label={t('Редагувати')}>
-          <ActionIcon aria-label={t('Редагувати')} color="gray" size={38} variant="light" disabled={disabled} onClick={() => onOpenPanel('edit')}>
-            <SquarePen size={18} />
-          </ActionIcon>
-        </Tooltip>
+        <Button aria-label={t('Редагувати')} variant="default" size="sm" leftSection={<SquarePen size={16} />} disabled={disabled} onClick={() => onOpenPanel('edit')}>
+          {t('Редагувати')}
+        </Button>
       </PermissionGate>
-      <PermissionGate permissionKey={PRODUCT_MOVEMENT_PERMISSION}>
-        <Tooltip label={t('Рух товару')}>
-          <ActionIcon aria-label={t('Рух товару')} color="gray" size={38} variant="light" disabled={disabled} onClick={() => onOpenPanel('movement')}>
-            <ArrowLeftRight size={18} />
-          </ActionIcon>
-        </Tooltip>
-      </PermissionGate>
-      <PermissionGate permissionKey={PRODUCT_WRITE_OFF_PERMISSION}>
-        <Tooltip label={t('Правила списання')}>
-          <ActionIcon aria-label={t('Правила списання')} color="gray" size={38} variant="light" disabled={disabled} onClick={() => onOpenPanel('writeoff')}>
-            <ClipboardList size={18} />
-          </ActionIcon>
-        </Tooltip>
-      </PermissionGate>
+      <Menu position="bottom-end" withinPortal>
+        <Menu.Target>
+          <Button variant="default" size="sm" rightSection={<ChevronDown size={16} />} disabled={disabled}>{t('Ще')}</Button>
+        </Menu.Target>
+        <Menu.Dropdown>
+          <PermissionGate permissionKey={PRODUCT_STORAGE_HISTORY_PERMISSION}>
+            <Menu.Item leftSection={<History size={16} />} onClick={() => onOpenPanel('storage-history')}>{t('Історія місця зберігання')}</Menu.Item>
+          </PermissionGate>
+          <Menu.Item leftSection={<FileText size={16} />} onClick={() => onOpenPanel('specification')}>{t('Специфікація')}</Menu.Item>
+          <Menu.Item leftSection={<ImageIcon size={16} />} onClick={() => onOpenPanel('images')}>{t('Зображення')}</Menu.Item>
+          <PermissionGate permissionKey={PRODUCT_BALANCES_PERMISSION}>
+            <Menu.Item leftSection={<Package size={16} />} onClick={() => onOpenPanel('remains')}>{t('Залишки по партіям')}</Menu.Item>
+          </PermissionGate>
+          <PermissionGate permissionKey={PRODUCT_MOVEMENT_PERMISSION}>
+            <Menu.Item leftSection={<ArrowLeftRight size={16} />} onClick={() => onOpenPanel('movement')}>{t('Рух товару')}</Menu.Item>
+          </PermissionGate>
+          <PermissionGate permissionKey={PRODUCT_WRITE_OFF_PERMISSION}>
+            <Menu.Item leftSection={<ClipboardList size={16} />} onClick={() => onOpenPanel('writeoff')}>{t('Правила списання')}</Menu.Item>
+          </PermissionGate>
+        </Menu.Dropdown>
+      </Menu>
     </Group>
   )
 }
 
 function InfoBlock({
+  chip,
+  chipEmpty,
   danger,
   label,
   mono,
   value,
   wide,
 }: {
+  chip?: TableChipTone
+  chipEmpty?: boolean
   danger?: boolean
   label: string
   mono?: boolean
@@ -1501,8 +1475,10 @@ function InfoBlock({
 
   return (
     <Box className={`product-inline-info-block ${wide ? 'is-wide' : ''}`}>
-      <Text c="dimmed" size="xs">{t(label)}</Text>
-      {isPrimitive ? (
+      <Text c="gray.8" size="xs">{t(label)}</Text>
+      {chip && (chipEmpty || ((typeof value === 'string' || typeof value === 'number') && String(value).trim())) ? (
+        <TableChip tone={chip} showEmpty={chipEmpty} value={typeof value === 'string' || typeof value === 'number' ? value : null} />
+      ) : isPrimitive ? (
         <Text className={mono ? 'app-money' : undefined} c={danger ? 'red.7' : undefined} size="sm" fw={600}>{displayValue(value as boolean | number | string)}</Text>
       ) : (
         <Text c={danger ? 'red.7' : undefined} size="sm" fw={600} component="div">{value ?? '-'}</Text>
@@ -1527,25 +1503,26 @@ function ProductInlineTabs({
 
   return (
     <div className="product-inline-tabs">
-      <div className="product-inline-tabs__tabs pill-tabs">
+      <div className="product-inline-tabs__tabs pill-tabs app-screen-tabs">
         {([
-          { value: 'numbers', label: t('Оригінальні номери') },
-          { value: 'analogues', label: t('Аналоги') },
-          { value: 'components', label: t('Комплектуючі') },
+          { value: 'numbers', icon: Hash, label: t('Оригінальні номери') },
+          { value: 'analogues', icon: ArrowLeftRight, label: t('Аналоги') },
+          { value: 'components', icon: Layers, label: t('Комплектуючі') },
           ...(canViewMovement
             ? [
-                { value: 'income', label: t('Прихід') },
-                { value: 'outcome', label: t('Розхід') },
+                { value: 'income', icon: ArrowDownLeft, label: t('Прихід') },
+                { value: 'outcome', icon: ArrowUpRight, label: t('Розхід') },
               ] as const
             : []),
         ] as const).map((tab) => (
           <button
             key={tab.value}
             type="button"
-            className={`pill-tab${activeTab === tab.value ? ' is-active' : ''}`}
+            className={`pill-tab app-screen-tab${activeTab === tab.value ? ' is-active' : ''}`}
             aria-pressed={activeTab === tab.value}
             onClick={() => setActiveTab(tab.value)}
           >
+            <tab.icon size={16} strokeWidth={1.8} />
             {tab.label}
           </button>
         ))}
@@ -1768,7 +1745,7 @@ function ProductOriginalNumbersTab({
       header: t('Оригінальний номер'),
       minWidth: 200,
       accessor: (item) => getOriginalNumberText(item),
-      cell: (item) => <TableChip tone="product" value={displayValue(getOriginalNumberText(item))} />,
+      cell: (item) => <TableChip tone="warning" value={displayValue(getOriginalNumberText(item))} />,
     },
     {
       id: 'main',
@@ -1819,7 +1796,7 @@ function ProductOriginalNumbersTab({
   ]
 
   return (
-    <Stack gap="sm" tabIndex={0} onKeyDown={handleOriginalNumbersKeyDown}>
+    <Stack className="product-inline-table-frame" gap={0} tabIndex={0} onKeyDown={handleOriginalNumbersKeyDown}>
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
@@ -2063,7 +2040,7 @@ function ProductRelatedProductsTab({
   ]
 
   return (
-    <Stack gap="sm">
+    <Stack className="product-inline-table-frame product-related-table-frame" gap={0}>
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
@@ -2146,33 +2123,28 @@ function ProductUploadDocumentToolbar({
   return (
     <>
       <PermissionGate permissionKey={PRODUCT_UPLOAD_DOCUMENT_PERMISSION}>
-        <Menu position="bottom-start" shadow="md" width={260} withinPortal>
+        <Menu position="bottom-start" shadow="md" width={240} withinPortal>
           <Menu.Target>
-            <Button fullWidth variant="default" size="xs" leftSection={<ExcelIcon size={16} />} rightSection={<ChevronDown size={14} />}>
-              {t('Завантаження')}
+            <Button className="product-import-button" variant="default" size="xs" leftSection={<ExcelIcon size={18} />} rightSection={<ChevronDown size={13} />}>
+              {t('Імпорт Excel')}
             </Button>
           </Menu.Target>
-          <Menu.Dropdown>
-            <Menu.Label>{t('Асортимент')}</Menu.Label>
-            <Menu.Item leftSection={<Upload size={15} />} onClick={() => setProductUploadOpened(true)}>
+          <Menu.Dropdown className="product-import-menu">
+            <Menu.Item leftSection={<Package size={16} strokeWidth={1.8} />} onClick={() => setProductUploadOpened(true)}>
               {t('Товари')}
             </Menu.Item>
-            <Menu.Divider />
-            <Menu.Label>{t('Повʼязані товари')}</Menu.Label>
-            <Menu.Item leftSection={<Upload size={15} />} onClick={() => setUploadType('analogues')}>
+            <Menu.Item leftSection={<ArrowLeftRight size={16} strokeWidth={1.8} />} onClick={() => setUploadType('analogues')}>
               {t('Аналоги')}
             </Menu.Item>
-            <Menu.Item leftSection={<Upload size={15} />} onClick={() => setUploadType('components')}>
+            <Menu.Item leftSection={<Layers size={16} strokeWidth={1.8} />} onClick={() => setUploadType('components')}>
               {t('Комплектуючі')}
             </Menu.Item>
-            <Menu.Item leftSection={<Upload size={15} />} onClick={() => setUploadType('originalNumbers')}>
+            <Menu.Item leftSection={<Hash size={16} strokeWidth={1.8} />} onClick={() => setUploadType('originalNumbers')}>
               {t('Оригінальні номери')}
             </Menu.Item>
-            <Menu.Divider />
-            <Menu.Label>{t('Розміщення')}</Menu.Label>
-            <Menu.Item leftSection={<Upload size={15} />} onClick={() => setStorageUploadOpened(true)}>
+            <Menu.Item leftSection={<BoxIcon size={16} strokeWidth={1.8} />} onClick={() => setStorageUploadOpened(true)}>
               <Group gap="xs" justify="space-between" wrap="nowrap">
-                <Text size="sm">{t('Місце зберігання')}</Text>
+                <span>{t('Місце зберігання')}</span>
                 {storageCorrectionRowsCount > 0 ? (
                   <Badge className="app-role-pill is-yellow" size="xs" variant="light">
                     {storageCorrectionRowsCount}
@@ -3067,6 +3039,7 @@ function ProductInlineMovementsTab({
 }) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const productNetUid = product.NetUid?.trim()
   // Both directions default to the last 30 days — outcome (sales) previously defaulted to
   // today-only, so the tab was almost always empty out of the box (no sales today).
@@ -3155,19 +3128,16 @@ function ProductInlineMovementsTab({
   }
 
   return (
-    <Stack className="product-inline-movements" gap={0}>
+    <Stack className="product-inline-movements product-inline-table-frame" gap={0}>
       <Group className="app-filter-bar product-movement-toolbar" align="end" gap={10} wrap="nowrap">
         <TextInput className="product-movement-toolbar__control" label={t('З')} type="date" value={dateFrom} onChange={(event) => setDateFrom(event.currentTarget.value)} />
         <TextInput className="product-movement-toolbar__control" label={t('По')} type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
         <div className="app-filter-actions">
-          <Button color="brand" variant="filled" size="sm" className="product-movement-toolbar__button app-filter-primary-action" leftSection={<RefreshCw size={16} />} loading={state.isLoading} onClick={() => reload()}>
-            {t('Оновити')}
-          </Button>
           <PermissionGate permissionKey={PRODUCT_MOVEMENT_EXPORT_PERMISSION}>
-            <Button color="brand" variant="filled" size="sm"
-              className="product-movement-toolbar__button app-filter-primary-action"
+            <Button color="gray" variant="default" size="sm"
+              className="product-movement-toolbar__button"
               disabled={!productNetUid}
-              leftSection={<FileDown size={16} />}
+              leftSection={<PdfIcon size={20} />}
               loading={state.isExporting}
               onClick={() => void exportRows()}
             >
@@ -3175,32 +3145,30 @@ function ProductInlineMovementsTab({
             </Button>
           </PermissionGate>
         </div>
+        <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
       </Group>
 
       <Stack className={`product-inline-movement-body${direction === 'outcome' ? ' is-outcome' : ''}`} gap="sm">
-      {!productNetUid ? (
+      {!productNetUid && (
         <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
           {t('У товару немає NetUid для завантаження руху товару')}
         </Alert>
-      ) : state.error ? (
-        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-          {state.error}
-        </Alert>
-      ) : state.exportError ? (
-        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-          {state.exportError}
-        </Alert>
-      ) : state.isLoading ? (
-        <Stack gap={10} py={4}>
-          {Array.from({ length: 8 }, (_, index) => (
-            <Skeleton height={26} key={index} radius="sm" />
-          ))}
-        </Stack>
-      ) : direction === 'income' ? (
-        <ProductIncomeMovementsGrid emptyText={t(labels.empty)} isLoading={false} rows={state.rows as ProductIncomeMovement[]} />
-      ) : (
-        <ProductOutcomeMovementsGrid emptyText={t(labels.empty)} isLoading={false} rows={state.rows as ProductOutcomeMovement[]} />
       )}
+      {state.error && (
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+          <Stack gap="xs" align="flex-start">
+            <span>{state.error}</span>
+            <Button variant="default" size="xs" leftSection={<RefreshCw size={14} />} onClick={() => reload()}>
+              {t('Спробувати ще раз')}
+            </Button>
+          </Stack>
+        </Alert>
+      )}
+      {productNetUid && (direction === 'income' ? (
+        <ProductIncomeMovementsGrid toolbarPortalTarget={tableToolbarSlot} emptyText={state.error ? '' : t(labels.empty)} isLoading={state.isLoading} rows={state.rows as ProductIncomeMovement[]} />
+      ) : (
+        <ProductOutcomeMovementsGrid toolbarPortalTarget={tableToolbarSlot} emptyText={state.error ? '' : t(labels.empty)} isLoading={state.isLoading} rows={state.rows as ProductOutcomeMovement[]} />
+      ))}
 
       <DocumentExportModal
         document={state.document}
@@ -3219,7 +3187,9 @@ function ProductIncomeMovementsGrid({
   emptyText,
   isLoading,
   rows,
+  toolbarPortalTarget,
 }: {
+  toolbarPortalTarget?: Element | null
   emptyText: string
   isLoading: boolean
   rows: ProductIncomeMovement[]
@@ -3411,6 +3381,7 @@ function ProductIncomeMovementsGrid({
 
   return (
     <DataTable
+      toolbarPortalTarget={toolbarPortalTarget}
       columns={columns}
       data={rows}
       density="normal"
@@ -3431,7 +3402,9 @@ function ProductOutcomeMovementsGrid({
   emptyText,
   isLoading,
   rows,
+  toolbarPortalTarget,
 }: {
+  toolbarPortalTarget?: Element | null
   emptyText: string
   isLoading: boolean
   rows: ProductOutcomeMovement[]
@@ -3510,23 +3483,22 @@ function ProductOutcomeMovementsGrid({
   )
 
   return (
-    <ProductOutcomeHorizontalScroll label={t('Горизонтальна прокрутка таблиці')}>
-      <DataTable
-        columns={columns}
-        data={rows}
-        density="normal"
-        emptyText={emptyText}
-        fillAvailableWidth
-        getRowId={getOutcomeMovementRowKey}
-        isLoading={isLoading}
-        layoutVersion="product-outcome-movements-1"
-        maxHeight={360}
-        minWidth={1900}
-        showDensityToggle={false}
-        showLayoutControls
-        tableId="product-outcome-movements"
-      />
-    </ProductOutcomeHorizontalScroll>
+    <DataTable
+      toolbarPortalTarget={toolbarPortalTarget}
+      columns={columns}
+      data={rows}
+      density="normal"
+      emptyText={emptyText}
+      fillAvailableWidth
+      getRowId={getOutcomeMovementRowKey}
+      isLoading={isLoading}
+      layoutVersion="product-outcome-movements-1"
+      maxHeight={360}
+      minWidth={1900}
+      showDensityToggle={false}
+      showLayoutControls
+      tableId="product-outcome-movements"
+    />
   )
 }
 
@@ -3662,22 +3634,6 @@ function getProductRowKey(product: Product): string {
 
 function getProductIdentity(product: Product): string {
   return String(product.NetUid || product.Id || product.VendorCode || product.Name || 'product')
-}
-
-function getProductRowToneClass(product: Product): string {
-  if (isCriticalProductTop(product.Top)) {
-    return 'is-critical'
-  }
-
-  if (product.IsForSale) {
-    return 'is-sale'
-  }
-
-  if (product.IsForZeroSale) {
-    return 'is-zero-sale'
-  }
-
-  return ''
 }
 
 function getNextSearchedProducts(product: Product): Product[] {

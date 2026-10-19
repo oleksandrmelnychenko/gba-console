@@ -11,20 +11,30 @@
   --protocols-command-label-gap: var(--app-filter-label-gap);
   --protocols-command-label-height: var(--app-filter-label-height);
 
-  align-items: end;
   border-bottom-color: var(--mantine-color-gray-2);
   box-sizing: border-box;
-  display: grid;
   flex: 0 0 auto;
-  grid-template-columns:
-    310px
-    minmax(220px, 1fr)
-    minmax(220px, 270px)
-    auto
-    auto
-    auto;
   min-width: 0;
-  overflow-x: auto;
+  overflow: visible;
+}
+
+.product-delivery-protocols-page .product-delivery-protocols-filter-fields > .product-delivery-protocols-search-input {
+  flex: 1 1 260px;
+  max-width: 420px;
+}
+
+.product-delivery-protocols-page .product-delivery-protocols-filter-fields > .product-delivery-protocols-organization-select {
+  flex: 1 1 240px;
+  max-width: 360px;
+}
+
+.product-delivery-protocols-page .product-delivery-protocols-command-row > .product-delivery-protocols-command-actions {
+  margin-left: 0;
+  justify-content: flex-start;
+}
+
+.product-delivery-protocols-command-row > .product-delivery-protocols-create-actions {
+  margin-left: auto;
 }
 
 .product-delivery-protocols-period-filter,
@@ -183,7 +193,7 @@
 
 .product-delivery-protocols-main-title,
 .product-delivery-protocols-main-subtitle,
-.product-delivery-protocols-two-line-cell > span,
+.product-delivery-protocols-two-line-cell > span:not(.app-table-chip),
 .product-delivery-protocols-two-line-cell > small,
 .product-delivery-protocols-comment-cell,
 .product-delivery-protocols-date-cell > span,
@@ -196,7 +206,7 @@
 }
 
 .product-delivery-protocols-main-title,
-.product-delivery-protocols-two-line-cell > span {
+.product-delivery-protocols-two-line-cell > span:not(.app-table-chip) {
   color: var(--mantine-color-gray-8);
   font-size: 12.5px;
   font-weight: 600;
@@ -224,6 +234,11 @@
 .product-delivery-protocols-main-subtitle {
   font-family: var(--font-mono);
   letter-spacing: 0;
+}
+
+.product-delivery-protocols-main-subtitle strong {
+  color: var(--mantine-color-gray-7);
+  font-weight: 600;
 }
 
 .product-delivery-protocols-state-cell {

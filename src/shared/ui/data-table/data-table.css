@@ -278,6 +278,14 @@
   vertical-align: middle;
 }
 
+/* Table data has one medium weight, including feature-owned renderers and
+   Mantine inline weights. Keep this scoped to data cells, outside toolbars,
+   headers, and expanded detail forms. */
+.data-table .data-table-cell,
+.data-table .data-table-cell :where(*) {
+  font-weight: 500 !important;
+}
+
 /* Prices, monetary totals and currencies share the project's tabular number
    treatment. Quantities and other operational metrics intentionally keep the
    regular UI font. The class follows column metadata instead of nth-child. */

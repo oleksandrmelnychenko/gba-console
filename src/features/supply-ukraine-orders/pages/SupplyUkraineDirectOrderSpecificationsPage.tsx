@@ -9,17 +9,19 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, FileDown, FileInput, FileX } from 'lucide-react'
+import { Banknote, Calculator, ChartNoAxesCombined, CircleAlert, Euro, FileInput, Search } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import './supply-order-detail.css'
+import './supply-order-specifications.css'
+import '../../../shared/ui/selection-surface.css'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { DocumentDetailChip, DocumentDetailLayout, DocumentDetailSummary, DocumentDetailSection } from '../../../shared/ui/document-detail/DocumentDetail'
+import { TableChip } from '../../../shared/ui/TableChip'
+import { PdfIcon } from '../../../shared/ui/PdfIcon'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
-import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   addOrUpdateProductSpecification,
   getPackingListSpecificationProducts,
@@ -808,7 +810,7 @@ function SupplyUkraineDirectOrderSpecificationsView({ model }: { model: DirectOr
       title={
         <span className="supply-order-spec-title">
           <span>{t('Специфікації')}</span>
-          {orderNumber && <span className="app-role-pill is-yellow supply-order-spec-title-number">{orderNumber}</span>}
+          {orderNumber && <TableChip tone="document" value={orderNumber} />}
         </span>
       }
       onClose={model.goBack}
@@ -837,7 +839,7 @@ function SupplyUkraineDirectOrderSpecificationsView({ model }: { model: DirectOr
 function DirectOrderSpecificationsBody({ model }: { model: DirectOrderSpecificationsPageModel }) {
   const { t } = useI18n()
 
-  if (model.isLoading) {
+  if (model.isLoading && !model.order) {
     return <Group justify="center" py="xl"><Loader /></Group>
   }
 
@@ -847,27 +849,16 @@ function DirectOrderSpecificationsBody({ model }: { model: DirectOrderSpecificat
 
   return (
     <div className="supply-order-specifications-body">
-      <DocumentDetailLayout
-        summary={
-          <DocumentDetailSummary
-            eyebrow={t('Замовлення')}
-            title={getOrderNumber(model.order) || '-'}
-            meta={<><DocumentDetailChip>{t('Інвойси')}: {model.invoices.length}</DocumentDetailChip><DocumentDetailChip>{t('Пак листи')}: {model.selectedInvoice?.PackingLists?.length || 0}</DocumentDetailChip></>}
-            metrics={null}
-          />
-        }
-        actions={<SpecificationActionButtons model={model} />}
-      >
-        <DocumentDetailSection title={t('Документи')} stacked>
-          <div className="supply-order-spec-documents">
-            <InvoiceButtons model={model} />
-            <PackListButtons model={model} />
-          </div>
-        </DocumentDetailSection>
-        <DocumentDetailSection title={t('Товари')} stacked>
-          <SpecificationGridArea model={model} />
-        </DocumentDetailSection>
-      </DocumentDetailLayout>
+      <SpecificationActionButtons model={model} />
+      <section className="app-section-card supply-order-spec-documents-card">
+        <div className="supply-order-spec-documents">
+          <InvoiceButtons model={model} />
+          <PackListButtons model={model} />
+        </div>
+      </section>
+      <section className="app-section-card supply-order-spec-products-card">
+        <SpecificationGridArea model={model} />
+      </section>
     </div>
   )
 }
@@ -886,12 +877,11 @@ function SpecificationActionButtons({ model }: { model: DirectOrderSpecification
       <Group className="supply-order-spec-action-buttons" justify="flex-end" gap="xs" wrap="wrap">
         {model.canUploadSpecifications && (
           <Button
-            color={CREATE_ACTION_COLOR}
             className="supply-order-spec-action-button"
             disabled={model.isActionBusy}
             leftSection={<FileInput size={16} />}
             loading={model.isUploading}
-            variant="filled"
+            variant="default"
             onClick={model.openUpload}
           >
             {t('Завантаження митних кодів')}
@@ -899,12 +889,11 @@ function SpecificationActionButtons({ model }: { model: DirectOrderSpecification
         )}
         {model.canUploadDocuments && (
           <Button
-            color={CREATE_ACTION_COLOR}
             className="supply-order-spec-action-button"
             disabled={!model.selectedInvoice || model.isActionBusy}
             leftSection={<FileInput size={16} />}
             loading={model.isSavingDocuments}
-            variant="filled"
+            variant="default"
             onClick={model.openDocuments}
           >
             {t(CUSTOMS_DECLARATION_UPLOAD_LABEL)}
@@ -912,15 +901,14 @@ function SpecificationActionButtons({ model }: { model: DirectOrderSpecification
         )}
         {model.canDownload && (
           <Button
-            color={CREATE_ACTION_COLOR}
-            className="supply-order-spec-action-button"
+            className="supply-order-spec-action-button supply-order-spec-pdf"
             disabled={model.isActionBusy}
-            leftSection={<FileDown size={16} />}
+            leftSection={<PdfIcon size={20} />}
             loading={model.isDownloading}
-            variant="filled"
+            variant="default"
             onClick={model.openDownload}
           >
-            {t('Друк PDF')}
+            {t('Друк')}
           </Button>
         )}
       </Group>
@@ -933,49 +921,59 @@ function SpecificationViewTabs({ model }: { model: DirectOrderSpecificationsPage
 
   return (
     <Group className="supply-order-spec-tabs" gap="sm" wrap="nowrap">
-      <div aria-label={t('Валюта')} className="supply-order-spec-tab-group" role="tablist">
-        <button
-          aria-selected={model.currencyIsEur}
-          className={`supply-order-spec-tab${model.currencyIsEur ? ' is-active' : ''}`}
-          disabled={model.isActionBusy}
-          role="tab"
-          type="button"
-          onClick={() => model.setCurrencyIsEur(true)}
-        >
-          {t('EUR')}
-        </button>
-        <button
-          aria-selected={!model.currencyIsEur}
-          className={`supply-order-spec-tab${!model.currencyIsEur ? ' is-active' : ''}`}
-          disabled={model.isActionBusy}
-          role="tab"
-          type="button"
-          onClick={() => model.setCurrencyIsEur(false)}
-        >
-          {t('UAH')}
-        </button>
+      <div className="supply-order-spec-tab-set">
+        <span className="supply-order-spec-tab-label">{t('Валюта')}</span>
+        <div aria-label={t('Валюта')} className="supply-order-spec-tab-group" role="tablist">
+          <button
+            aria-selected={model.currencyIsEur}
+            className={`supply-order-spec-tab${model.currencyIsEur ? ' is-active' : ''}`}
+            disabled={model.isActionBusy}
+            role="tab"
+            type="button"
+            onClick={() => model.setCurrencyIsEur(true)}
+          >
+            <Euro size={15} aria-hidden="true" />
+            {t('EUR')}
+          </button>
+          <button
+            aria-selected={!model.currencyIsEur}
+            className={`supply-order-spec-tab${!model.currencyIsEur ? ' is-active' : ''}`}
+            disabled={model.isActionBusy}
+            role="tab"
+            type="button"
+            onClick={() => model.setCurrencyIsEur(false)}
+          >
+            <Banknote size={15} aria-hidden="true" />
+            {t('UAH')}
+          </button>
+        </div>
       </div>
-      <div aria-label={t('Тип обліку')} className="supply-order-spec-tab-group" role="tablist">
-        <button
-          aria-selected={model.withManagementServices}
-          className={`supply-order-spec-tab${model.withManagementServices ? ' is-active' : ''}`}
-          disabled={model.isActionBusy}
-          role="tab"
-          type="button"
-          onClick={() => model.setWithManagementServices(true)}
-        >
-          УО
-        </button>
-        <button
-          aria-selected={!model.withManagementServices}
-          className={`supply-order-spec-tab${!model.withManagementServices ? ' is-active' : ''}`}
-          disabled={model.isActionBusy}
-          role="tab"
-          type="button"
-          onClick={() => model.setWithManagementServices(false)}
-        >
-          БО
-        </button>
+      <div className="supply-order-spec-tab-set">
+        <span className="supply-order-spec-tab-label">{t('Облік')}</span>
+        <div aria-label={t('Тип обліку')} className="supply-order-spec-tab-group" role="tablist">
+          <button
+            aria-selected={model.withManagementServices}
+            className={`supply-order-spec-tab${model.withManagementServices ? ' is-active' : ''}`}
+            disabled={model.isActionBusy}
+            role="tab"
+            type="button"
+            onClick={() => model.setWithManagementServices(true)}
+          >
+            <ChartNoAxesCombined size={15} aria-hidden="true" />
+            {t('Управлінський облік')}
+          </button>
+          <button
+            aria-selected={!model.withManagementServices}
+            className={`supply-order-spec-tab${!model.withManagementServices ? ' is-active' : ''}`}
+            disabled={model.isActionBusy}
+            role="tab"
+            type="button"
+            onClick={() => model.setWithManagementServices(false)}
+          >
+            <Calculator size={15} aria-hidden="true" />
+            {t('Бухгалтерський облік')}
+          </button>
+        </div>
       </div>
     </Group>
   )
@@ -990,7 +988,7 @@ function InvoiceButtons({ model }: { model: DirectOrderSpecificationsPageModel }
 
   return (
     <div className="supply-order-spec-selector">
-      <Text className="supply-order-spec-selector-title" fw={600}>{t('Інвойси')}</Text>
+      <Text className="supply-order-spec-selector-title" fw={600}>{t('Інвойси')} <TableChip value={model.invoices.length} /></Text>
       <Group gap="xs" wrap="wrap">
         {model.invoices.map((invoice) => {
           const isActive = invoice.NetUid === model.selectedInvoiceNetId
@@ -999,13 +997,16 @@ function InvoiceButtons({ model }: { model: DirectOrderSpecificationsPageModel }
             <Button
               key={invoice.NetUid || invoice.Id}
               aria-pressed={isActive}
-              className={`supply-order-spec-chip${isActive ? ' is-selected' : ''}`}
+              className="supply-order-spec-chip app-selection-surface"
+              data-selected={isActive || undefined}
               disabled={model.isActionBusy}
               loading={model.isInvoiceLoading && isActive}
               variant="default"
               onClick={() => model.selectInvoice(invoice)}
             >
-              <span className="supply-order-spec-document-label"><strong>{t('Інвойс')} № {invoice.Number || '-'}</strong><span>{t('Від')} {formatDate(invoice.DateFrom)}</span></span>
+              <span className="app-selection-surface__marker" aria-hidden="true" />
+              <TableChip tone="document" value={invoice.Number || '-'} />
+              <span className="supply-order-spec-document-date">{formatDate(invoice.DateFrom)}</span>
             </Button>
           )
         })}
@@ -1023,7 +1024,7 @@ function PackListButtons({ model }: { model: DirectOrderSpecificationsPageModel 
 
   return (
     <div className="supply-order-spec-selector">
-      <Text className="supply-order-spec-selector-title" fw={600}>{t('Пак листи')}</Text>
+      <Text className="supply-order-spec-selector-title" fw={600}>{t('Пак листи')} <TableChip value={model.selectedInvoice.PackingLists?.length || 0} /></Text>
       <Group gap="xs" wrap="wrap">
         {(model.selectedInvoice.PackingLists || []).map((packList) => {
           const isActive = packList.NetUid === model.selectedPackListNetId
@@ -1032,13 +1033,16 @@ function PackListButtons({ model }: { model: DirectOrderSpecificationsPageModel 
             <Button
               key={packList.NetUid || packList.Id}
               aria-pressed={isActive}
-              className={`supply-order-spec-chip${isActive ? ' is-selected' : ''}`}
+              className="supply-order-spec-chip app-selection-surface"
+              data-selected={isActive || undefined}
               disabled={model.isActionBusy}
               size="xs"
               variant="default"
               onClick={() => model.selectPackList(packList)}
             >
-              <span className="supply-order-spec-document-label"><strong>{t('Пак лист')} № {packList.InvNo || packList.No || '-'}</strong><span>{t('Від')} {formatDate(packList.FromDate)}</span></span>
+              <span className="app-selection-surface__marker" aria-hidden="true" />
+              <TableChip tone="document" value={packList.InvNo || packList.No || '-'} />
+              <span className="supply-order-spec-document-date">{formatDate(packList.FromDate)}</span>
             </Button>
           )
         })}
@@ -1049,46 +1053,40 @@ function PackListButtons({ model }: { model: DirectOrderSpecificationsPageModel 
 
 function SpecificationGridArea({ model }: { model: DirectOrderSpecificationsPageModel }) {
   const { t } = useI18n()
+  const [toolbarTarget, setToolbarTarget] = useState<HTMLDivElement | null>(null)
 
   return (
     <div className="supply-order-spec-grid-block">
+      <div className="app-filter-bar supply-order-spec-grid-toolbar">
+        <Text className="app-section-title" fw={600} size="sm">{t('Товари')}</Text>
+        <TextInput
+          className="supply-order-spec-search"
+          aria-label={t('Пошук')}
+          leftSection={<Search size={16} />}
+          placeholder={t('Код товару')}
+          disabled={model.isActionBusy}
+          value={model.vendorCodeFilter}
+          onChange={(event) => model.setVendorCodeFilter(event.currentTarget.value)}
+        />
+        <div className="supply-order-spec-table-toolbar" ref={setToolbarTarget} />
+      </div>
       {model.packingListError && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {model.packingListError}
         </Alert>
       )}
-
-      {model.packingList && (model.packingList.PackingListPackageOrderItems?.length || 0) > 0 && (
-        <div className="app-filter-bar supply-order-spec-grid-toolbar">
-          <TextInput
-            className="supply-detail-search supply-order-spec-search"
-            label={t('Пошук')}
-            placeholder={t('Код товару')}
-            disabled={model.isActionBusy}
-            value={model.vendorCodeFilter}
-            w={260}
-            onChange={(event) => model.setVendorCodeFilter(event.currentTarget.value)}
-          />
-        </div>
-      )}
-
-      {model.isPackingListLoading ? (
-        <Group justify="center" py="lg"><Loader /></Group>
-      ) : model.filteredPackingList && (model.filteredPackingList.PackingListPackageOrderItems?.length || 0) > 0 ? (
-        <SpecificationProductsGrid
-          canEditSpecification={model.canEditSpecification}
-          currencyIsEur={model.currencyIsEur}
-          packingList={model.filteredPackingList}
-          withManagementServices={model.withManagementServices}
-          onEditSpecification={model.openSpecificationEditor}
-          onOpenProductCard={model.canOpenProductCard ? model.openProductCard : undefined}
-        />
-      ) : (
-        <div className="supply-detail-state">
-          <FileX size={18} />
-          <span>{t('Немає даних')}</span>
-        </div>
-      )}
+      <SpecificationProductsGrid
+        canEditSpecification={model.canEditSpecification}
+        currencyIsEur={model.currencyIsEur}
+        packingList={model.filteredPackingList || { PackingListPackageOrderItems: [] }}
+        isLoading={model.isLoading || model.isInvoiceLoading || model.isPackingListLoading}
+        toolbarPortalTarget={toolbarTarget}
+        maxHeight="100%"
+        compact
+        withManagementServices={model.withManagementServices}
+        onEditSpecification={model.openSpecificationEditor}
+        onOpenProductCard={model.canOpenProductCard ? model.openProductCard : undefined}
+      />
     </div>
   )
 }

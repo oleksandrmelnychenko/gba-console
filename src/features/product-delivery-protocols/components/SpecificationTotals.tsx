@@ -1,5 +1,6 @@
 import { Group, Paper, Stack, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { TableChip } from '../../../shared/ui/TableChip'
 import type { SpecificationPackingList, SpecificationSupplyInvoice } from '../specificationTypes'
 import './specification-totals.css'
 
@@ -80,7 +81,9 @@ export function SpecificationTotals({ currencyIsEur, flat, invoice, packingList 
           </Text>
           <Text className="app-money specification-total-value" component="strong">
             <span>{total.value}</span>
-            {total.meta && <span className="app-money-meta specification-total-meta">{total.meta}</span>}
+            {total.meta && (flat
+              ? <TableChip tone="source" value={total.meta} />
+              : <span className="app-money-meta specification-total-meta">{total.meta}</span>)}
           </Text>
         </Stack>
       ))}

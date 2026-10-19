@@ -34,6 +34,19 @@
   margin: 10px 10px 0;
 }
 
+.product-group-create-modal.app-modal .mantine-Modal-body {
+  background: var(--mantine-color-gray-0);
+}
+
+.product-group-create-modal .product-group-create-section {
+  background: var(--mantine-color-white);
+  padding: 12px;
+}
+
+.product-group-create-modal .app-modal-footer .mantine-Button-root[data-variant='default'] {
+  background: var(--mantine-color-white);
+}
+
 .product-groups-page__table {
   flex: 1 1 auto;
   min-height: 0;

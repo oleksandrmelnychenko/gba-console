@@ -5,8 +5,71 @@
   width: 100%;
 }
 
+.supply-order-spec-footer:has(> .specification-totals.is-flat),
+.app-sheet-footer:has(> .specification-totals.is-flat) {
+  container-name: specification-summary;
+  container-type: inline-size;
+}
+
 .specification-totals.is-flat {
   flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+@container specification-summary (min-width: 440px) {
+  .specification-totals.is-flat {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@container specification-summary (min-width: 850px) {
+  .specification-totals.is-flat {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@container specification-summary (min-width: 1500px) {
+  .specification-totals.is-flat {
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+  }
+}
+
+.specification-totals.is-flat .specification-total-item {
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--mantine-color-gray-0);
+  text-align: left;
+}
+
+.specification-totals.is-flat .specification-total-label {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+  text-transform: none;
+  white-space: normal;
+}
+
+.specification-totals.is-flat .specification-total-label::before {
+  display: none;
+}
+
+.specification-totals.is-flat .specification-total-value {
+  color: var(--mantine-color-gray-9);
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin-top: 2px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.specification-totals.is-flat .specification-total-value .app-table-chip {
+  font-size: 10px;
 }
 
 .specification-totals-paper.mantine-Paper-root {

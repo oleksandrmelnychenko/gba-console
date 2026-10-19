@@ -1,0 +1,27 @@
+.specification-products-grid {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.specification-product-name-link.mantine-Anchor-root {
+  text-align: left;
+  line-height: 1.35;
+  text-decoration-color: var(--mantine-color-orange-6);
+  text-underline-offset: 3px;
+}
+
+.specification-product-code-link.mantine-Anchor-root {
+  border-radius: 999px;
+}
+
+:is(.specification-product-code-link, .specification-product-name-link):focus-visible {
+  outline: 2px solid var(--mantine-color-orange-6);
+  outline-offset: 3px;
+}
+
+.specification-product-code-link:hover .app-table-chip {
+  border-color: var(--mantine-color-violet-4);
+}

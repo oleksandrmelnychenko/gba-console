@@ -2,19 +2,19 @@ import {
   ActionIcon,
   Anchor,
   Button,
-  Divider,
   FileButton,
   Group,
   Select,
+  SimpleGrid,
   Stack,
   Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { FileText, Trash2, Undo2, Upload } from 'lucide-react'
+import { FileText, Save, Trash2, Undo2, Upload } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { CUSTOMS_DECLARATION_UPLOAD_LABEL } from '../customsDeclarationLabels'
 import type { SupplyOrganization } from '../detailTypes'
@@ -42,6 +42,8 @@ type UploadDeliveryDocumentsModalProps = {
   onRemoveNewDocument: (document: DeliveryDocumentDraft) => void
   onSave: () => void
 }
+
+import './customs-import-modals.css'
 
 const EMPTY_SUPPLY_ORGANIZATIONS: SupplyOrganization[] = []
 
@@ -99,144 +101,166 @@ export function UploadDeliveryDocumentsModal({
     <AppModal
       centered
       opened={opened}
-      size="lg"
-      className="app-form-sheet"
-      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t(CUSTOMS_DECLARATION_UPLOAD_LABEL)}</span>}
+      size={680}
+      className="customs-import-modal customs-declaration-import-modal"
+      title={<span>{t(CUSTOMS_DECLARATION_UPLOAD_LABEL)}</span>}
       onClose={() => {
         if (!isSaving) {
           onClose()
         }
       }}
     >
-      <Stack gap="md">
-        {canSelectSupplier && (
-          <Group grow align="flex-end">
-            <Select
-              clearable
-              data={organizationOptions}
-              disabled={isSaving}
-              label={t('Постачальник послуг')}
-              nothingFoundMessage={t('Нічого не знайдено')}
-              searchable
-              searchValue={supplyOrganizationSearchValue}
-              value={selectedSupplyOrganizationNetId || null}
-              onChange={(value) => {
-                onChangeSupplyOrganization?.(value)
-              }}
-              onSearchChange={onSearchSupplyOrganizations}
-            />
-            <Select
-              clearable
-              data={agreementOptions}
-              disabled={isSaving || !selectedSupplyOrganization}
-              label={t('Договір')}
-              searchable
-              value={selectedSupplyOrganizationAgreementNetId || null}
-              onChange={(value) => {
-                onChangeSupplyOrganizationAgreement?.(value)
-              }}
-            />
-          </Group>
-        )}
+      <Stack className="customs-import-layout" gap={10}>
+        <Stack className="customs-import-fields" gap={10}>
+          {canSelectSupplier && (
+            <section className="customs-import-section" aria-label={t('Постачальник послуг')}>
+              <Text className="app-section-title">{t('Постачальник послуг')}</Text>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10}>
+                <Select
+                  clearable
+                  data={organizationOptions}
+                  disabled={isSaving}
+                  label={t('Постачальник послуг')}
+                  nothingFoundMessage={t('Нічого не знайдено')}
+                  searchable
+                  searchValue={supplyOrganizationSearchValue}
+                  value={selectedSupplyOrganizationNetId || null}
+                  onChange={(value) => {
+                    onChangeSupplyOrganization?.(value)
+                  }}
+                  onSearchChange={onSearchSupplyOrganizations}
+                />
+                <Select
+                  clearable
+                  data={agreementOptions}
+                  disabled={isSaving || !selectedSupplyOrganization}
+                  label={t('Договір')}
+                  searchable
+                  value={selectedSupplyOrganizationAgreementNetId || null}
+                  onChange={(value) => {
+                    onChangeSupplyOrganizationAgreement?.(value)
+                  }}
+                />
+              </SimpleGrid>
+            </section>
+          )}
 
-        <TextInput
-          disabled={isSaving}
-          label={t('Номер митної декларації')}
-          maxLength={20}
-          value={numberCustomDeclaration}
-          onChange={(event) => onChangeNumberCustomDeclaration(event.currentTarget.value)}
-        />
-        <TextInput
-          disabled={isSaving}
-          label={t('Дата митної декларації')}
-          type="date"
-          value={dateCustomDeclaration}
-          onChange={(event) => onChangeDateCustomDeclaration(event.currentTarget.value)}
-        />
+          <section className="customs-import-section" aria-label={t('Митна декларація')}>
+            <Text className="app-section-title">{t('Митна декларація')}</Text>
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10}>
+              <TextInput
+                disabled={isSaving}
+                label={t('Номер митної декларації')}
+                maxLength={20}
+                value={numberCustomDeclaration}
+                onChange={(event) => onChangeNumberCustomDeclaration(event.currentTarget.value)}
+              />
+              <TextInput
+                disabled={isSaving}
+                label={t('Дата митної декларації')}
+                type="date"
+                value={dateCustomDeclaration}
+                onChange={(event) => onChangeDateCustomDeclaration(event.currentTarget.value)}
+              />
 
-        {newDocuments.length > 0 && (
-          <Stack gap={4}>
-            <Text fw={600} size="sm">
-              {t('Нові документи доставки')}
-            </Text>
-            {newDocuments.map((document) => (
-              <Group key={document.id} justify="space-between" wrap="nowrap">
-                <Text size="sm" lineClamp={1}>
-                  {document.fileName}
+            </SimpleGrid>
+          </section>
+
+          <section className="customs-import-section" aria-label={t('Файли')}>
+            <Group justify="space-between" gap="xs">
+              <Text className="app-section-title">{t('Файли')}</Text>
+              <FileButton multiple accept=".xls,.xlsx,.pdf" onChange={(files) => !isSaving && files && onAddFiles(files)}>
+                {(props) => (
+                  <Button {...props} disabled={isSaving} leftSection={<Upload size={16} />} size="xs" variant="default">
+                    {t('Завантажити')}
+                  </Button>
+                )}
+              </FileButton>
+            </Group>
+            {newDocuments.length === 0 && existingDocuments.length === 0 && (
+              <Text className="customs-import-hint">{t('Оберіть файли XLS, XLSX або PDF')}</Text>
+            )}
+
+            {newDocuments.length > 0 && (
+              <Stack gap={4}>
+                <Text fw={600} size="sm">
+                  {t('Нові документи доставки')}
                 </Text>
-                <Tooltip label={t('Видалити')}>
-                  <ActionIcon
-                    aria-label={t('Видалити')}
-                    color="red"
-                    disabled={isSaving}
-                    variant="subtle"
-                    onClick={() => onRemoveNewDocument(document)}
-                  >
-                    <Trash2 size={16} />
-                  </ActionIcon>
-                </Tooltip>
-              </Group>
-            ))}
-          </Stack>
-        )}
+                {newDocuments.map((document) => (
+                  <Group className="customs-import-file" key={document.id} justify="space-between" wrap="nowrap">
+                    <Text size="sm" lineClamp={1}>
+                      {document.fileName}
+                    </Text>
+                    <Tooltip label={t('Видалити')}>
+                      <ActionIcon
+                        aria-label={t('Видалити')}
+                        color="red"
+                        disabled={isSaving}
+                        variant="subtle"
+                        onClick={() => onRemoveNewDocument(document)}
+                      >
+                        <Trash2 size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Group>
+                ))}
+              </Stack>
+            )}
 
-        {existingDocuments.length > 0 && (
-          <Stack gap={4}>
-            <Text fw={600} size="sm">
-              {t('Завантаженні документи доставки')}
-            </Text>
-            {existingDocuments.map((document) => (
-              <Group key={document.id} justify="space-between" wrap="nowrap">
-                <Group gap={6} wrap="nowrap">
-                  {document.documentUrl ? (
-                    <Anchor href={upgradeHttpToHttps(document.documentUrl)} target="_blank" rel="noreferrer">
-                      <Group gap={4} wrap="nowrap">
-                        {document.contentType === 'xls' || document.contentType === 'xlsx' ? (
-                          <ExcelIcon size={18} />
-                        ) : (
-                          <FileText size={18} />
-                        )}
+            {existingDocuments.length > 0 && (
+              <Stack gap={4}>
+                <Text fw={600} size="sm">
+                  {t('Завантаженні документи доставки')}
+                </Text>
+                {existingDocuments.map((document) => (
+                  <Group className="customs-import-file" key={document.id} justify="space-between" wrap="nowrap">
+                    <Group gap={6} wrap="nowrap">
+                      {document.documentUrl ? (
+                        <Anchor href={upgradeHttpToHttps(document.documentUrl)} target="_blank" rel="noreferrer">
+                          <Group gap={4} wrap="nowrap">
+                            {document.contentType === 'xls' || document.contentType === 'xlsx' ? (
+                              <ExcelIcon size={18} />
+                            ) : (
+                              <FileText size={18} />
+                            )}
+                            <Text size="sm" lineClamp={1} td={document.deleted ? 'line-through' : undefined}>
+                              {document.fileName}
+                            </Text>
+                          </Group>
+                        </Anchor>
+                      ) : (
                         <Text size="sm" lineClamp={1} td={document.deleted ? 'line-through' : undefined}>
                           {document.fileName}
                         </Text>
-                      </Group>
-                    </Anchor>
-                  ) : (
-                    <Text size="sm" lineClamp={1} td={document.deleted ? 'line-through' : undefined}>
-                      {document.fileName}
-                    </Text>
-                  )}
-                </Group>
-                <Tooltip label={document.deleted ? t('Відновити') : t('Видалити')}>
-                  <ActionIcon
-                    aria-label={document.deleted ? t('Відновити') : t('Видалити')}
-                    color={document.deleted ? 'gray' : 'red'}
-                    disabled={isSaving}
-                    variant="subtle"
-                    onClick={() => onRemoveExistingDocument(document)}
-                  >
-                    {document.deleted ? <Undo2 size={16} /> : <Trash2 size={16} />}
-                  </ActionIcon>
-                </Tooltip>
-              </Group>
-            ))}
-          </Stack>
-        )}
-
-        <Divider />
-
-        <Group justify="flex-end">
-          <FileButton multiple accept=".xls,.xlsx,.pdf" onChange={(files) => !isSaving && files && onAddFiles(files)}>
-            {(props) => (
-              <Button {...props} disabled={isSaving} leftSection={<Upload size={16} />} variant="outline">
-                {t('Завантажити')}
-              </Button>
+                      )}
+                    </Group>
+                    <Tooltip label={document.deleted ? t('Відновити') : t('Видалити')}>
+                      <ActionIcon
+                        aria-label={document.deleted ? t('Відновити') : t('Видалити')}
+                        color={document.deleted ? 'gray' : 'red'}
+                        disabled={isSaving}
+                        variant="subtle"
+                        onClick={() => onRemoveExistingDocument(document)}
+                      >
+                        {document.deleted ? <Undo2 size={16} /> : <Trash2 size={16} />}
+                      </ActionIcon>
+                    </Tooltip>
+                  </Group>
+                ))}
+              </Stack>
             )}
-          </FileButton>
-          <Button disabled={isSaving} loading={isSaving} onClick={onSave}>
+
+          </section>
+        </Stack>
+
+        <AppModalFooter>
+          <Button disabled={isSaving} variant="default" onClick={onClose}>
+            {t('Скасувати')}
+          </Button>
+          <Button disabled={isSaving} leftSection={<Save size={16} />} loading={isSaving} onClick={onSave}>
             {t('Зберегти')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

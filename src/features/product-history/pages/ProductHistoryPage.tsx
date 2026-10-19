@@ -1,6 +1,6 @@
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
+  Button,
   Alert,
   Badge,
   Card,
@@ -10,10 +10,9 @@ import {
   Stack,
   Text,
   TextInput,
-  Tooltip,
 } from '@mantine/core'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
-import { CircleAlert, FileDown, RotateCcw, Search } from 'lucide-react'
+import { CircleAlert, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useDebouncedValue } from '@mantine/hooks'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -24,7 +23,7 @@ import { DocumentExportModal } from '../../../shared/ui/document-export-modal/Do
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { PdfIcon } from '../../../shared/ui/PdfIcon'
 import { toDateTimeQuery } from '../../../shared/date/dateTime'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { usePermissions } from '../../auth/usePermissions'
@@ -355,6 +354,8 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
     updateSearch,
   } = model
   const noStorages = !isLoadingStorages && storageOptions.length === 0
+  const stateMessage = error || (noStorages ? t('Складів не знайдено') : filterError)
+  const showStateMessage = !isLoading && !isLoadingStorages && Boolean(stateMessage)
 
   return (
     <Stack className="product-history-page" gap={6}>
@@ -365,7 +366,6 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
               label={t('Дата')}
               type="date"
               value={dateTo}
-              w={150}
               onChange={(event) => {
                 setPage(1)
                 setDateTo(event.currentTarget.value)
@@ -389,29 +389,26 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
               label={t('Пошук')}
               placeholder={t('Код або назва товару')}
               value={searchDraft}
-              style={{ flex: '1 1 220px' }}
               onChange={(event) => updateSearch(event.currentTarget.value)}
             />
             <div className="app-filter-actions">
-              <Tooltip label={t('Скинути')}>
-                <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetFilters}>
-                  <RotateCcw size={17} />
-                </ActionIcon>
-              </Tooltip>
+              <Button variant="default" color="gray" size="sm" aria-label={t('Скинути')}
+                leftSection={<RotateCcw size={16} />} onClick={resetFilters}>
+                {t('Скинути')}
+              </Button>
               {canExport && (
-                <Tooltip label={t('Друк PDF')}>
-                  <ActionIcon
-                    aria-label={t('Друк PDF')}
-                    color={CREATE_ACTION_COLOR}
-                    variant="light"
-                    size={34}
-                    disabled={Boolean(filterError)}
-                    loading={isExporting}
-                    onClick={() => void handleExport()}
-                  >
-                    <FileDown size={18} />
-                  </ActionIcon>
-                </Tooltip>
+                <Button
+                  aria-label={t('Друк PDF')}
+                  color="gray"
+                  variant="default"
+                  size="sm"
+                  disabled={Boolean(filterError)}
+                  loading={isExporting}
+                  leftSection={<PdfIcon size={20} />}
+                  onClick={() => void handleExport()}
+                >
+                  {t('Друк PDF')}
+                </Button>
               )}
               <Paginator
                 isLoading={isLoading || isLoadingStorages}
@@ -430,23 +427,12 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
           </Group>
         </div>
 
-        {(error || filterError || noStorages) && (
-          <Alert
-            className="product-history-page__alert"
-            color={filterError && !noStorages ? 'yellow' : 'red'}
-            icon={<CircleAlert size={18} />}
-            variant="light"
-          >
-            {noStorages ? t('Складів не знайдено') : filterError || error}
-          </Alert>
-        )}
-
         <div className="product-history-page__table">
           <DataTable
             columns={columns}
             data={historyItems}
             defaultLayout={PRODUCT_HISTORY_TABLE_DEFAULT_LAYOUT}
-            emptyText={t('Історію товарів не знайдено')}
+            emptyText={stateMessage ? '' : t('Історію товарів не знайдено')}
             getRowId={(historyItem, index) =>
               String(historyItem.NetUid || historyItem.Id || `${historyItem.Product?.VendorCode || 'product'}-${index}`)
             }
@@ -460,6 +446,20 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
             toolbarLeft={toolbarLeft}
             toolbarPortalTarget={tableToolbarSlot}
           />
+          {showStateMessage && (
+            <div className="product-history-table-state">
+              <div className="product-history-table-state-content">
+                <Alert color={error || noStorages ? 'red' : 'yellow'} icon={<CircleAlert size={18} />} variant="light">
+                  {stateMessage}
+                </Alert>
+                {(error || noStorages) && (
+                  <Button variant="default" size="sm" leftSection={<RefreshCw size={16} />} onClick={() => reload()}>
+                    {t('Повторити запит')}
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </Card>
 

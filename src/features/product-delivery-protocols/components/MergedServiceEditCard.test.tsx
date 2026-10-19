@@ -77,6 +77,8 @@ describe('MergedServiceEditCard validation', () => {
     expect(managementRate.getAttribute('placeholder')).toBe('Автоматично за офіційним курсом')
     expect(accountingRate.getAttribute('placeholder')).toBe('Автоматично за офіційним курсом')
     expect(screen.getAllByText(/Договір у гривні: автоматичний курс дорівнює 1/)).toHaveLength(2)
+    expect(document.getElementById(managementRate.getAttribute('aria-describedby') || '')?.textContent).toContain('Договір у гривні')
+    expect(document.getElementById(accountingRate.getAttribute('aria-describedby') || '')?.textContent).toContain('Договір у гривні')
   })
 
   it('blocks save and identifies a conditionally required task user', () => {
@@ -93,7 +95,7 @@ describe('MergedServiceEditCard validation', () => {
       </MantineProvider>,
     )
 
-    expect(screen.getByText('Заповніть хоча б одну вартість: управлінську або бухгалтерську')).toBeTruthy()
+    expect(screen.queryByText('Заповніть хоча б одну вартість: управлінську або бухгалтерську')).toBeNull()
     const responsible = getInput('Відповідальний')
     expect(responsible.getAttribute('aria-required')).toBe('true')
 

@@ -10,7 +10,7 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
-import { ChevronLeft, CircleAlert, RotateCcw, Save } from 'lucide-react'
+import { CircleAlert, FolderTree, Package, RotateCcw, Save } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
@@ -34,6 +34,7 @@ import {
   validateProductGroup,
 } from '../utils'
 import './product-group-detail-page.css'
+import '../../../shared/ui/screen-tabs.css'
 
 type ProductGroupContentTab = 'products' | 'subGroups'
 
@@ -226,21 +227,11 @@ function ProductGroupDetailPageContent() {
 
   return (
     <AppDrawer
+      className="product-group-detail-sheet"
       opened
       closeOnClickOutside={!isSaving}
-      footer={
-        <>
-          <Button
-            color="gray"
-            disabled={isSaving}
-            leftSection={<ChevronLeft size={16} />}
-            type="button"
-            variant="light"
-            onClick={closeSheet}
-          >
-            {t('Закрити')}
-          </Button>
-          {canEdit && <Group gap="xs">
+      footer={canEdit ? (
+          <Group gap="xs">
             <Button
               color="gray"
               disabled={!isEdited || isSaving}
@@ -261,16 +252,15 @@ function ProductGroupDetailPageContent() {
             >
               {t('Зберегти')}
             </Button>
-          </Group>}
-        </>
-      }
+          </Group>
+      ) : undefined}
       keepMounted={false}
       position="right"
       size="min(900px, 100vw)"
-      title={productGroup?.Name || t('Товарна група')}
+      title={<span className="product-group-detail-title">{productGroup?.Name || t('Товарна група')}</span>}
       onClose={closeSheet}
     >
-    <Stack gap="lg">
+    <Stack className="product-group-detail-content" gap={10}>
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
@@ -288,8 +278,10 @@ function ProductGroupDetailPageContent() {
         </Card>
       ) : formProductGroup ? (
         <form id="product-group-edit-form" onSubmit={handleSubmit}>
-          <Card className="app-section-card" withBorder radius="md" padding="md">
+          <Card className="app-section-card product-group-detail-form-card" withBorder radius="md" padding={12}>
+            <Text className="app-section-title" mb={10}>{t('Товарна група')}</Text>
             <ProductGroupForm
+              compact
               disabled={!canEdit || isSaving}
               isLoadingRootGroups={isLoadingRootGroups}
               productGroup={formProductGroup}
@@ -315,21 +307,22 @@ function ProductGroupDetailPageContent() {
         >
           <div
             aria-label={t('Розділи товарної групи')}
-            className="pill-tabs product-group-detail-tabs"
+            className="app-screen-tabs product-group-detail-tabs"
             role="tablist"
           >
             {([
-              { value: 'subGroups', label: t('Підгрупи') },
-              { value: 'products', label: t('Товари') },
+              { value: 'subGroups', label: t('Підгрупи'), icon: FolderTree },
+              { value: 'products', label: t('Товари'), icon: Package },
             ] as const).map((tab) => (
               <button
                 key={tab.value}
                 type="button"
-                className={`pill-tab${activeTab === tab.value ? ' is-active' : ''}`}
+                className={`app-screen-tab${activeTab === tab.value ? ' is-active' : ''}`}
                 aria-selected={activeTab === tab.value}
                 role="tab"
                 onClick={() => setActiveTab(tab.value)}
               >
+                <tab.icon size={16} aria-hidden />
                 {tab.label}
               </button>
             ))}

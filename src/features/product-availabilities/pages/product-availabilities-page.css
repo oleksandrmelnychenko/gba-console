@@ -19,7 +19,7 @@
 }
 
 /* Filter strip pinned at the top of the card; the table below it scrolls. */
-.product-availabilities-filter-bar {
+.product-availabilities-page .product-availabilities-filter-bar.app-filter-bar {
   border-bottom-color: var(--mantine-color-gray-2);
   box-sizing: border-box;
   flex: 0 0 auto;
@@ -42,4 +42,32 @@
 .product-availabilities-page__table .data-table-scroll {
   flex: 1 1 auto;
   min-height: 0;
+}
+
+/* Keep filters and table controls on one baseline; overflow stays in the strip. */
+.product-availabilities-page .product-availabilities-filter-row {
+  display: grid;
+  grid-template-columns: 260px minmax(210px, 240px) minmax(170px, 200px) max-content max-content;
+  flex-wrap: nowrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.product-availabilities-page .product-availabilities-filter-row > * {
+  grid-row: 1;
+  min-width: 0;
+}
+
+.product-availabilities-page .product-availabilities-filter-row .app-filter-date-range {
+  width: 260px;
+  min-width: 260px;
+  gap: 8px;
+}
+
+.product-availabilities-page .product-availabilities-filter-row .app-filter-actions,
+.product-availabilities-page .product-availabilities-filter-row .app-filter-table-toolbar-slot,
+.product-availabilities-page .product-availabilities-filter-row .data-table-toolbar,
+.product-availabilities-page .product-availabilities-filter-row .data-table-toolbar-left {
+  flex-wrap: nowrap;
+  min-width: max-content;
 }

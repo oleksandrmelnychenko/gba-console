@@ -23,10 +23,12 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeft, CircleAlert, FileInput as FileInputIcon, FileUp, Package, RefreshCw, Save, Trash2, X } from 'lucide-react'
+import { ArrowLeft, CircleAlert, ClipboardList, ReceiptText, Tag, Calculator, FileInput as FileInputIcon, FileUp, Package, RefreshCw, Save, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState, type CSSProperties, type Dispatch, type SetStateAction, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import './supply-order-detail.css'
+import './supply-order-invoices.css'
+import '../../../shared/ui/selection-surface.css'
 import { formatLocalDateTime } from '../../../shared/date/dateTime'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatExcelArticleColumnError } from '../../../shared/excel/excelImportError'
@@ -34,7 +36,8 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { SUPPLY_ORDER_INCOME_STATUS_LABEL } from '../../../shared/supplyOrderIncomeStatus'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -270,14 +273,14 @@ function SupplyUkraineDirectOrderInvoicesPageContent() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const orderNumber = getOrderNumber(model.order)
-  const sheetTitle = orderNumber ? `${t('Інвойси і пак листи')} ${orderNumber}` : t('Інвойси і пак листи')
 
   return (
     <AppDrawer
+      className="supply-invoices-sheet"
       closeOnClickOutside={false}
       opened
       size="full"
-      title={<span className="supply-direct-invoices-sheet-title">{sheetTitle}</span>}
+      title={<Group gap={10} wrap="wrap"><span className="supply-direct-invoices-sheet-title">{t('Інвойси і пак листи')}</span>{orderNumber && <TableChip tone="document" value={orderNumber} />}</Group>}
       onClose={() => navigate(-1)}
     >
       <SupplyUkraineDirectOrderInvoicesView embedded model={model} />
@@ -1091,7 +1094,7 @@ function SupplyUkraineDirectOrderInvoicesView({
 
   return (
     // Fixed-height flex frame: grids scroll internally, no page-level scroll.
-    <Stack gap={embedded ? 6 : 'lg'} h="100%" style={{ minHeight: 0, overflow: 'hidden' }}>
+    <Stack className="supply-invoices-workspace" gap={8} h="100%" style={{ minHeight: 0, overflow: 'hidden' }}>
       <DirectOrderInvoicesHeader embedded={embedded} model={model} />
       {model.error && (
         <Alert color="red" icon={<CircleAlert size={18} />} style={{ flexShrink: 0 }} variant="light">
@@ -1150,7 +1153,7 @@ function DirectOrderInvoicesHeader({
           leftSection={<RefreshCw size={16} />}
           loading={model.isLoading}
           styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-          variant="light"
+          variant="default"
           onClick={() => model.reloadOrder()}
         >
           {t('Оновити')}
@@ -1198,16 +1201,16 @@ function DirectOrderInvoicesBody({ model }: { model: DirectOrderInvoicesPageMode
       {/* Controlled: the reload spinner unmounts this subtree, so an uncontrolled
           Tabs would snap back to «Товари замовлення» after add-invoice/pack-list. */}
       <Tabs
-        className="app-drawer-tabs"
+        className="supply-invoices-tabs"
         keepMounted={false}
         style={{ display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0 }}
         value={model.activeTab}
         onChange={(value) => model.setPageState({ activeTab: value || 'products' })}
       >
         <Tabs.List style={{ flexShrink: 0 }}>
-          <Tabs.Tab value="products">{t('Товари замовлення')}</Tabs.Tab>
-          <Tabs.Tab value="invoices">{t('Інвойси')}</Tabs.Tab>
-          <Tabs.Tab value="packlists" disabled={!model.selectedInvoice}>{t('Пак листи')}</Tabs.Tab>
+          <Tabs.Tab value="products" leftSection={<Package size={15} />}>{t('Товари замовлення')}</Tabs.Tab>
+          <Tabs.Tab value="invoices" leftSection={<ReceiptText size={15} />}>{t('Інвойси')}</Tabs.Tab>
+          <Tabs.Tab value="packlists" leftSection={<ClipboardList size={15} />} disabled={!model.selectedInvoice}>{t('Пак листи')}</Tabs.Tab>
         </Tabs.List>
         <ProductsPanel model={model} />
         <InvoicesPanel model={model} />
@@ -1223,8 +1226,8 @@ function ProductsPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
   const totalSum = model.orderItems.reduce((sum, item) => sum + (getOrderItemTotal(item) || 0), 0)
 
   return (
-    <Tabs.Panel style={PANEL_FILL_STYLE} value="products" pt="md">
-      <Card className="app-section-card" withBorder radius="md" padding="md" style={CARD_FILL_STYLE}>
+    <Tabs.Panel style={PANEL_FILL_STYLE} value="products" pt={8}>
+      <Card className="app-section-card supply-invoices-table-card" withBorder radius="md" padding="sm" style={CARD_FILL_STYLE}>
         <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
           <Box className="supply-grid-fill" style={{ flex: 1, minHeight: 0 }}>
             <DataTable
@@ -1245,7 +1248,7 @@ function ProductsPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
             items={[
               [t('Всього товарів'), formatNumber(model.orderItems.length)],
               [t('Вся кількість'), formatNumber(totalQuantity)],
-              [t('Вся сума'), formatMoney(totalSum)],
+              [t('Вся сума'), formatMoney(totalSum), getOrderCurrencyCode(model.order)],
             ]}
           />
         </Stack>
@@ -1258,11 +1261,11 @@ function InvoicesPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
   const { t } = useI18n()
 
   return (
-    <Tabs.Panel style={PANEL_FILL_STYLE} value="invoices" pt="md">
-      <Card className="app-section-card" withBorder radius="md" padding="md" style={CARD_FILL_STYLE}>
-        <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
+    <Tabs.Panel style={PANEL_FILL_STYLE} value="invoices" pt={8}>
+      <Card className="app-section-card supply-invoices-table-card" withBorder radius="md" padding="sm" style={CARD_FILL_STYLE}>
+        <Stack gap={8} style={{ flex: 1, minHeight: 0 }}>
           <InvoiceSelector model={model} />
-          <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
+          <Stack gap={8} style={{ flex: 1, minHeight: 0 }}>
             {!model.isInvoiceLoading && (
               <QuantityBalanceSummary
                 actualLabel={t('В інвойсах')}
@@ -1307,17 +1310,19 @@ function InvoiceSelector({
   const { t } = useI18n()
 
   return (
-    <Group gap={4} wrap="wrap">
+    <Group className="supply-invoice-selector-row" gap={6} wrap="wrap">
       {model.invoices.map((invoice) => {
         const currencyCode = getInvoiceCurrencyCode(invoice, model.order)
 
         return (
-          <Group key={invoice.NetUid || invoice.Id} gap={4} wrap="nowrap">
+          <Group className="supply-invoice-selector-group" key={invoice.NetUid || invoice.Id} gap={4} wrap="nowrap">
             <Button
-              color={invoice.NetUid === model.selectedInvoiceNetId ? CREATE_ACTION_COLOR : 'gray'}
+              className="supply-invoice-selector app-selection-surface"
+              data-selected={invoice.NetUid === model.selectedInvoiceNetId || undefined}
+              aria-pressed={invoice.NetUid === model.selectedInvoiceNetId}
               disabled={model.isBusy}
               styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-              variant={invoice.NetUid === model.selectedInvoiceNetId ? 'light' : 'subtle'}
+              variant="default"
               onClick={() => {
                 const invoiceNetId = invoice.NetUid || null
                 const nextInvoice = getSelectedInvoice(invoiceNetId, model.invoiceDetailsByNetId, model.invoices)
@@ -1339,7 +1344,11 @@ function InvoiceSelector({
                 })
               }}
             >
-              {invoice.Number || t('Інвойс')} ({formatDate(invoice.DateFrom)}){currencyCode ? ` ${currencyCode}` : ''}
+              {invoice.NetUid === model.selectedInvoiceNetId && <span className="app-selection-surface__marker" aria-hidden="true" />}
+              <span className="supply-invoice-selector-kind">{t('Інвойс')}</span>
+              <TableChip tone="document" value={invoice.Number || t('Інвойс')} />
+              <span className="supply-invoice-selector-date">{formatDate(invoice.DateFrom)}</span>
+              {currencyCode && <TableChip tone="source" value={currencyCode} />}
             </Button>
             {showDelete && model.canRemoveInvoice && (
               <Can permission={PERMISSION_REMOVE_INVOICE}>
@@ -1362,13 +1371,13 @@ function PackListsPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
   const { t } = useI18n()
 
   return (
-    <Tabs.Panel style={PANEL_FILL_STYLE} value="packlists" pt="md">
-      <Card className="app-section-card" withBorder radius="md" padding="md" style={CARD_FILL_STYLE}>
-        <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
+    <Tabs.Panel style={PANEL_FILL_STYLE} value="packlists" pt={8}>
+      <Card className="app-section-card supply-invoices-table-card" withBorder radius="md" padding="sm" style={CARD_FILL_STYLE}>
+        <Stack gap={8} style={{ flex: 1, minHeight: 0 }}>
           {/* Legacy contract: pack lists are bound to an invoice, so the invoice
               selector is available here too (without the delete controls). */}
           <InvoiceSelector model={model} showDelete={false} />
-          <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
+          <Stack gap={8} style={{ flex: 1, minHeight: 0 }}>
             {!model.isInvoiceLoading && <PackListSelector model={model} />}
             {!model.isInvoiceLoading && (
               <QuantityBalanceSummary
@@ -1408,16 +1417,21 @@ function PackListSelector({ model }: { model: DirectOrderInvoicesPageModel }) {
   const { t } = useI18n()
 
   return (
-    <Group gap={4} wrap="wrap">
+    <Group className="supply-invoice-selector-row" gap={6} wrap="wrap">
       {(model.selectedInvoice?.PackingLists || []).map((packList) => (
-        <Group key={packList.NetUid || packList.Id} gap={4} wrap="nowrap">
+        <Group className="supply-invoice-selector-group" key={packList.NetUid || packList.Id} gap={4} wrap="nowrap">
           <Button
-            className={`app-selector-chip${packList.NetUid === model.selectedPackListNetId ? ' is-selected' : ''}`}
+            aria-pressed={packList.NetUid === model.selectedPackListNetId}
+            className="supply-invoice-selector app-selection-surface"
+            data-selected={packList.NetUid === model.selectedPackListNetId || undefined}
             disabled={model.isBusy}
             variant="default"
             onClick={() => model.setPageState({ selectedPackListNetId: packList.NetUid || null })}
           >
-            {packList.No || packList.InvNo || t('Пак лист')} ({formatDate(packList.FromDate)})
+            {packList.NetUid === model.selectedPackListNetId && <span className="app-selection-surface__marker" aria-hidden="true" />}
+            <span className="supply-invoice-selector-kind">{t('Пак лист')}</span>
+            <TableChip tone="document" value={packList.No || packList.InvNo || t('Пак лист')} />
+            <span className="supply-invoice-selector-date">{formatDate(packList.FromDate)}</span>
           </Button>
           {model.canAddPackList && (
             <Can permission={PERMISSION_ADD_PACK_LIST}>
@@ -1519,57 +1533,74 @@ function InvoiceUploadModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Додати інвойс')}</span>} onClose={close}>
-      <Stack gap="md">
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <TextInput
-            disabled={isSaving}
-            label={t('Номер')}
-            value={form.number}
-            onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, number: nextValue })) }}
-          />
-          <TextInput
-            disabled={isSaving}
-            label={t('Дата')}
-            type="datetime-local"
-            value={form.dateFrom}
-            onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, dateFrom: nextValue })) }}
-          />
-        </SimpleGrid>
-        <Textarea
-          autosize
-          disabled={isSaving}
-          label={t('Коментар')}
-          minRows={2}
-          value={form.comment}
-          onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, comment: nextValue })) }}
-        />
-        <FileInput
-          clearable
-          accept={EXCEL_FILE_ACCEPT}
-          disabled={isSaving}
-          label={t('Файл')}
-          placeholder={t('Оберіть файл')}
-          value={form.file}
-          onChange={(file) => setForm((current) => ({ ...current, file }))}
-        />
-        <SegmentedControl
-          data={[{ label: t('Ціна'), value: 'unit' }, { label: t('Сума'), value: 'total' }]}
-          disabled={isSaving}
-          value={form.withTotalAmount ? 'total' : 'unit'}
-          onChange={(value) => setForm((current) => ({ ...current, withTotalAmount: value === 'total' }))}
-        />
-        <ParseGrid form={form} isSaving={isSaving} onChange={setForm} />
-        <Checkbox
-          checked={form.productIsImported}
-          disabled={isSaving}
-          label={t('Імпортний товар')}
-          onChange={(event) => { const nextValue = event.currentTarget.checked; setForm((current) => ({ ...current, productIsImported: nextValue })) }}
-        />
-        <Group justify="flex-end">
-          <Button disabled={isSaving} variant="subtle" onClick={close}>{t('Скасувати')}</Button>
+    <AppModal className="supply-invoice-upload-modal" centered opened={opened} size={760} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Додати інвойс')}</span>} onClose={close}>
+      <Stack gap={12}>
+        <div className="supply-invoice-upload-scroll">
+          <Card className="app-section-card" withBorder radius="md" padding="sm">
+            <Stack gap={10}>
+              <Text className="app-section-title" fw={600} size="sm">{t('Документ')}</Text>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                <TextInput
+                  disabled={isSaving}
+                  label={t('Номер')}
+                  value={form.number}
+                  onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, number: nextValue })) }}
+                />
+                <TextInput
+                  disabled={isSaving}
+                  label={t('Дата')}
+                  type="datetime-local"
+                  value={form.dateFrom}
+                  onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, dateFrom: nextValue })) }}
+                />
+              </SimpleGrid>
+              <Textarea
+                autosize
+                disabled={isSaving}
+                label={t('Коментар')}
+                minRows={2}
+                value={form.comment}
+                onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, comment: nextValue })) }}
+              />
+            </Stack>
+          </Card>
+          <Card className="app-section-card" withBorder radius="md" padding="sm">
+            <Stack gap={10}>
+              <Text className="app-section-title" fw={600} size="sm">{t('Імпорт')}</Text>
+              <FileInput
+                leftSection={<ExcelIcon size={18} />}
+                clearable
+                accept={EXCEL_FILE_ACCEPT}
+                disabled={isSaving}
+                label={t('Файл')}
+                placeholder={t('Оберіть файл')}
+                value={form.file}
+                onChange={(file) => setForm((current) => ({ ...current, file }))}
+              />
+              <SegmentedControl
+                className="supply-invoice-upload-tabs"
+                data={[
+                  { label: <Group gap={6} wrap="nowrap"><Tag size={15} aria-hidden="true" /><span>{t('Ціна')}</span></Group>, value: 'unit' },
+                  { label: <Group gap={6} wrap="nowrap"><Calculator size={15} aria-hidden="true" /><span>{t('Сума')}</span></Group>, value: 'total' },
+                ]}
+                disabled={isSaving}
+                value={form.withTotalAmount ? 'total' : 'unit'}
+                onChange={(value) => setForm((current) => ({ ...current, withTotalAmount: value === 'total' }))}
+              />
+              <ParseGrid form={form} isSaving={isSaving} onChange={setForm} />
+              <Checkbox
+                checked={form.productIsImported}
+                disabled={isSaving}
+                label={t('Імпортний товар')}
+                onChange={(event) => { const nextValue = event.currentTarget.checked; setForm((current) => ({ ...current, productIsImported: nextValue })) }}
+              />
+            </Stack>
+          </Card>
+        </div>
+        <AppModalFooter>
+          <Button disabled={isSaving} variant="default" onClick={close}>{t('Скасувати')}</Button>
           <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={() => onSubmit(form)}>{t('Створити')}</Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )
@@ -1595,59 +1626,72 @@ function PackListUploadModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Додати пак лист')}</span>} onClose={close}>
-      <Stack gap="md">
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <TextInput
-            disabled={isSaving}
-            label={t('Номер')}
-            value={form.number}
-            onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, number: nextValue })) }}
-          />
-          <TextInput
-            disabled={isSaving}
-            label={t('Дата')}
-            type="datetime-local"
-            value={form.dateFrom}
-            onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, dateFrom: nextValue })) }}
-          />
-        </SimpleGrid>
-        <Textarea
-          autosize
-          disabled={isSaving}
-          label={t('Коментар')}
-          minRows={2}
-          value={form.comment}
-          onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, comment: nextValue })) }}
-        />
-        <FileInput
-          clearable
-          accept={EXCEL_FILE_ACCEPT}
-          disabled={isSaving}
-          label={t('Файл')}
-          placeholder={t('Оберіть файл')}
-          value={form.file}
-          onChange={(file) => setForm((current) => ({ ...current, file }))}
-        />
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <NumberInput allowDecimal={false} disabled={isSaving} label={t('Код товару')} min={1} value={form.vendorCodeColumnNumber} onChange={(value) => setForm((current) => ({ ...current, vendorCodeColumnNumber: toPositiveNumber(value) }))} />
-          <NumberInput allowDecimal={false} disabled={isSaving} label={t('Кількість')} min={1} value={form.qtyColumnNumber} onChange={(value) => setForm((current) => ({ ...current, qtyColumnNumber: toPositiveNumber(value) }))} />
-          <NumberInput allowDecimal={false} disabled={isSaving} label={t('З рядка')} min={1} value={form.startRow} onChange={(value) => setForm((current) => ({ ...current, startRow: toPositiveNumber(value) }))} />
-          <NumberInput allowDecimal={false} disabled={isSaving} label={t('До рядка')} min={1} value={form.endRow} onChange={(value) => setForm((current) => ({ ...current, endRow: toPositiveNumber(value) }))} />
-          <NumberInput allowDecimal={false} disabled={isSaving} label={t('Ціна')} min={1} value={form.unitPriceColumnNumber} onChange={(value) => setForm((current) => ({ ...current, unitPriceColumnNumber: toPositiveNumber(value) }))} />
-          <NumberInput allowDecimal={false} disabled={isSaving} label={t('Нетто')} min={1} value={form.netWeightColumnNumber} onChange={(value) => setForm((current) => ({ ...current, netWeightColumnNumber: toPositiveNumber(value) }))} />
-          <NumberInput allowDecimal={false} disabled={isSaving} label={t('Брутто')} min={1} value={form.grossWeightColumnNumber} onChange={(value) => setForm((current) => ({ ...current, grossWeightColumnNumber: toPositiveNumber(value) }))} />
-        </SimpleGrid>
-        <Checkbox
-          checked={form.isWeightPerUnit}
-          disabled={isSaving}
-          label={t('Вага на одиницю')}
-          onChange={(event) => { const nextValue = event.currentTarget.checked; setForm((current) => ({ ...current, isWeightPerUnit: nextValue })) }}
-        />
-        <Group justify="flex-end">
-          <Button disabled={isSaving} variant="subtle" onClick={close}>{t('Скасувати')}</Button>
+    <AppModal className="supply-invoice-upload-modal" centered opened={opened} size={760} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Додати пак лист')}</span>} onClose={close}>
+      <Stack gap={12}>
+        <div className="supply-invoice-upload-scroll">
+          <Card className="app-section-card" withBorder radius="md" padding="sm">
+            <Stack gap={10}>
+              <Text className="app-section-title" fw={600} size="sm">{t('Документ')}</Text>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                <TextInput
+                  disabled={isSaving}
+                  label={t('Номер')}
+                  value={form.number}
+                  onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, number: nextValue })) }}
+                />
+                <TextInput
+                  disabled={isSaving}
+                  label={t('Дата')}
+                  type="datetime-local"
+                  value={form.dateFrom}
+                  onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, dateFrom: nextValue })) }}
+                />
+              </SimpleGrid>
+              <Textarea
+                autosize
+                disabled={isSaving}
+                label={t('Коментар')}
+                minRows={2}
+                value={form.comment}
+                onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, comment: nextValue })) }}
+              />
+            </Stack>
+          </Card>
+          <Card className="app-section-card" withBorder radius="md" padding="sm">
+            <Stack gap={10}>
+              <Text className="app-section-title" fw={600} size="sm">{t('Імпорт')}</Text>
+              <FileInput
+                leftSection={<ExcelIcon size={18} />}
+                clearable
+                accept={EXCEL_FILE_ACCEPT}
+                disabled={isSaving}
+                label={t('Файл')}
+                placeholder={t('Оберіть файл')}
+                value={form.file}
+                onChange={(file) => setForm((current) => ({ ...current, file }))}
+              />
+              <SimpleGrid cols={{ base: 1, xs: 2, sm: 3 }} spacing="sm">
+                <NumberInput allowDecimal={false} disabled={isSaving} label={t('Код товару')} min={1} value={form.vendorCodeColumnNumber} onChange={(value) => setForm((current) => ({ ...current, vendorCodeColumnNumber: toPositiveNumber(value) }))} />
+                <NumberInput allowDecimal={false} disabled={isSaving} label={t('Кількість')} min={1} value={form.qtyColumnNumber} onChange={(value) => setForm((current) => ({ ...current, qtyColumnNumber: toPositiveNumber(value) }))} />
+                <NumberInput allowDecimal={false} disabled={isSaving} label={t('З рядка')} min={1} value={form.startRow} onChange={(value) => setForm((current) => ({ ...current, startRow: toPositiveNumber(value) }))} />
+                <NumberInput allowDecimal={false} disabled={isSaving} label={t('До рядка')} min={1} value={form.endRow} onChange={(value) => setForm((current) => ({ ...current, endRow: toPositiveNumber(value) }))} />
+                <NumberInput allowDecimal={false} disabled={isSaving} label={t('Ціна')} min={1} value={form.unitPriceColumnNumber} onChange={(value) => setForm((current) => ({ ...current, unitPriceColumnNumber: toPositiveNumber(value) }))} />
+                <NumberInput allowDecimal={false} disabled={isSaving} label={t('Нетто')} min={1} value={form.netWeightColumnNumber} onChange={(value) => setForm((current) => ({ ...current, netWeightColumnNumber: toPositiveNumber(value) }))} />
+                <NumberInput allowDecimal={false} disabled={isSaving} label={t('Брутто')} min={1} value={form.grossWeightColumnNumber} onChange={(value) => setForm((current) => ({ ...current, grossWeightColumnNumber: toPositiveNumber(value) }))} />
+              </SimpleGrid>
+              <Checkbox
+                checked={form.isWeightPerUnit}
+                disabled={isSaving}
+                label={t('Вага на одиницю')}
+                onChange={(event) => { const nextValue = event.currentTarget.checked; setForm((current) => ({ ...current, isWeightPerUnit: nextValue })) }}
+              />
+            </Stack>
+          </Card>
+        </div>
+        <AppModalFooter>
+          <Button disabled={isSaving} variant="default" onClick={close}>{t('Скасувати')}</Button>
           <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={() => onSubmit(form)}>{t('Створити')}</Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )
@@ -1814,7 +1858,7 @@ function PackListMetadataModal({
   const opened = Boolean(editor)
 
   return (
-    <AppModal centered opened={opened} size="lg" title={editor?.packList ? t('Редагувати пак лист') : t('Новий пак лист')} onClose={onClose}>
+    <AppModal className="supply-invoice-upload-modal" centered opened={opened} size={760} title={editor?.packList ? t('Редагувати пак лист') : t('Новий пак лист')} onClose={onClose}>
       {editor && (
         <PackListMetadataModalBody
           key={editor.packList?.NetUid || editor.packList?.Id || 'new'}
@@ -1895,42 +1939,53 @@ export function PackListMetadataModalBody({
   }
 
   return (
-    <Stack gap="md">
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <TextInput disabled={isSaving} label="INV.NO" value={form.invNo} onChange={(event) => updateTextField('invNo', event.currentTarget.value)} />
-          <TextInput disabled={isSaving} label="REF.NO" value={form.refNo} onChange={(event) => updateTextField('refNo', event.currentTarget.value)} />
-          <TextInput disabled={isSaving} label="PL.NO" value={form.plNo} onChange={(event) => updateTextField('plNo', event.currentTarget.value)} />
-          <TextInput disabled={isSaving} label="Mark" value={form.markNumber} onChange={(event) => updateTextField('markNumber', event.currentTarget.value)} />
-          <TextInput disabled={isSaving} label="No" value={form.no} onChange={(event) => updateTextField('no', event.currentTarget.value)} />
-          <TextInput disabled={isSaving} label={t('Дата')} type="datetime-local" value={form.dateFrom} onChange={(event) => updateTextField('dateFrom', event.currentTarget.value)} />
-        </SimpleGrid>
-        <Textarea
-          autosize
-          disabled={isSaving}
-          label={t('Коментар')}
-          minRows={2}
-          value={form.comment}
-          onChange={(event) => updateTextField('comment', event.currentTarget.value)}
-        />
-        <FileInput
-          clearable
-          multiple
-          disabled={isSaving}
-          label={t('Документи')}
-          leftSection={<FileUp size={16} />}
-          value={[]}
-          onChange={addFiles}
-        />
-        <PackListDocumentsList
-          documents={form.documents}
-          onRemove={removeDocument}
-          onRestore={restoreDocument}
-        />
-        <Divider />
-        <Group justify="flex-end">
-          <Button disabled={isSaving} leftSection={<X size={16} />} variant="subtle" onClick={onClose}>{t('Скасувати')}</Button>
+    <Stack gap={12}>
+      <div className="supply-invoice-upload-scroll">
+        <Card className="app-section-card" withBorder radius="md" padding="sm">
+          <Stack gap={10}>
+            <Text className="app-section-title" fw={600} size="sm">{t('Реквізити')}</Text>
+            <SimpleGrid cols={{ base: 1, xs: 2, sm: 3 }} spacing="sm">
+              <TextInput disabled={isSaving} label="INV.NO" value={form.invNo} onChange={(event) => updateTextField('invNo', event.currentTarget.value)} />
+              <TextInput disabled={isSaving} label="REF.NO" value={form.refNo} onChange={(event) => updateTextField('refNo', event.currentTarget.value)} />
+              <TextInput disabled={isSaving} label="PL.NO" value={form.plNo} onChange={(event) => updateTextField('plNo', event.currentTarget.value)} />
+              <TextInput disabled={isSaving} label="Mark" value={form.markNumber} onChange={(event) => updateTextField('markNumber', event.currentTarget.value)} />
+              <TextInput disabled={isSaving} label="No" value={form.no} onChange={(event) => updateTextField('no', event.currentTarget.value)} />
+              <TextInput disabled={isSaving} label={t('Дата')} type="datetime-local" value={form.dateFrom} onChange={(event) => updateTextField('dateFrom', event.currentTarget.value)} />
+            </SimpleGrid>
+            <Textarea
+              autosize
+              disabled={isSaving}
+              label={t('Коментар')}
+              minRows={2}
+              value={form.comment}
+              onChange={(event) => updateTextField('comment', event.currentTarget.value)}
+            />
+          </Stack>
+        </Card>
+        <Card className="app-section-card" withBorder radius="md" padding="sm">
+          <Stack gap={10}>
+            <Text className="app-section-title" fw={600} size="sm">{t('Документи')}</Text>
+            <FileInput
+              clearable
+              multiple
+              disabled={isSaving}
+              label={t('Документи')}
+              leftSection={<FileUp size={16} />}
+              value={[]}
+              onChange={addFiles}
+            />
+            <PackListDocumentsList
+              documents={form.documents}
+              onRemove={removeDocument}
+              onRestore={restoreDocument}
+            />
+          </Stack>
+        </Card>
+      </div>
+      <AppModalFooter>
+          <Button disabled={isSaving} leftSection={<X size={16} />} variant="default" onClick={onClose}>{t('Скасувати')}</Button>
           <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} onClick={() => onSubmit(form)}>{t('Зберегти')}</Button>
-        </Group>
+      </AppModalFooter>
     </Stack>
   )
 }
@@ -2049,7 +2104,7 @@ function useOrderItemColumns(onOpenProductCard: (productNetId: string) => void):
       { id: 'leftToInvoice', header: t('Залишок'), width: 120, align: 'right', accessor: (item) => item.QtyDifference, cell: (item) => <BalanceBadge value={item.QtyDifference || 0} /> },
       { id: 'price', header: t('Ціна'), width: 120, align: 'right', accessor: (item) => item.UnitPrice, cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatMoney(item.UnitPrice)}</Text> },
       { id: 'total', header: t('Сума нетто'), width: 130, align: 'right', accessor: (item) => getOrderItemTotal(item), cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatMoney(getOrderItemTotal(item))}</Text> },
-      { id: 'placed', header: t(SUPPLY_ORDER_INCOME_STATUS_LABEL), width: 120, accessor: (item) => item.IsPlaced, cell: (item) => <Badge className={item.IsPlaced ? 'app-role-pill is-green' : 'app-role-pill is-gray'} variant="light">{item.IsPlaced ? t('Так') : t('Ні')}</Badge> },
+      { id: 'placed', header: t(SUPPLY_ORDER_INCOME_STATUS_LABEL), width: 120, accessor: (item) => item.IsPlaced, cell: (item) => <TableChip tone={item.IsPlaced ? 'success' : 'danger'} value={item.IsPlaced ? t('Так') : t('Ні')} /> },
     ],
     [onOpenProductCard, t],
   )
@@ -2154,11 +2209,12 @@ function ProductCodeCell({
   return netId ? (
     <Anchor
       c="dark.6"
+      className="supply-invoice-product-link"
       component="button"
       fw={600}
       style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}
       type="button"
-      underline="always"
+      underline="hover"
       onClick={(event) => {
         event.stopPropagation()
         onOpenProductCard(netId)
@@ -2184,10 +2240,11 @@ function ProductNameCell({
   return netId ? (
     <Anchor
       c="dark.6"
+      className="supply-invoice-product-link"
       component="button"
       size="sm"
       type="button"
-      underline="always"
+      underline="hover"
       onClick={(event) => {
         event.stopPropagation()
         onOpenProductCard(netId)
@@ -2216,9 +2273,9 @@ function InvoiceTotals({
       items={[
         [t('Позицій у пак листах'), formatNumber(countPackingListItems(invoice))],
         [t('Кількість у пак листах'), formatNumber(sumPackingListQty(invoice))],
-        [t('Сума нетто'), formatMoney(amounts.net, currencyCode)],
-        [t('ПДВ'), formatMoney(amounts.vat, currencyCode)],
-        [t('Сума з ПДВ'), formatMoney(amounts.withVat, currencyCode)],
+        [t('Сума нетто'), formatMoney(amounts.net), currencyCode],
+        [t('ПДВ'), formatMoney(amounts.vat), currencyCode],
+        [t('Сума з ПДВ'), formatMoney(amounts.withVat), currencyCode],
         [t('Вага нетто'), formatNumber(invoice.TotalNetWeight)],
         [t('Вага брутто'), formatNumber(invoice.TotalGrossWeight)],
       ]}
@@ -2246,9 +2303,9 @@ function PackListTotals({
         items={[
           [t('Позицій'), formatNumber(packList.PackingListPackageOrderItems?.length || 0)],
           [t('Кількість'), formatNumber(packList.TotalQuantity)],
-          [t('Сума нетто'), formatMoney(amounts.net, currencyCode)],
-          [t('ПДВ'), formatMoney(amounts.vat, currencyCode)],
-          [t('Сума з ПДВ'), formatMoney(amounts.withVat, currencyCode)],
+          [t('Сума нетто'), formatMoney(amounts.net), currencyCode],
+          [t('ПДВ'), formatMoney(amounts.vat), currencyCode],
+          [t('Сума з ПДВ'), formatMoney(amounts.withVat), currencyCode],
           [t('Вага нетто'), formatNumber(packList.TotalNetWeight)],
           [t('Вага брутто'), formatNumber(packList.TotalGrossWeight)],
         ]}
@@ -2267,9 +2324,9 @@ function PackListTotals({
       items={[
         [t('Позицій у пак листах'), formatNumber(countPackingListItems(invoice))],
         [t('Кількість'), formatNumber(invoice.TotalQuantity)],
-        [t('Сума нетто'), formatMoney(amounts.net, currencyCode)],
-        [t('ПДВ'), formatMoney(amounts.vat, currencyCode)],
-        [t('Сума з ПДВ'), formatMoney(amounts.withVat, currencyCode)],
+        [t('Сума нетто'), formatMoney(amounts.net), currencyCode],
+        [t('ПДВ'), formatMoney(amounts.vat), currencyCode],
+        [t('Сума з ПДВ'), formatMoney(amounts.withVat), currencyCode],
         [t('Вага нетто'), formatNumber(invoice.TotalNetWeight)],
         [t('Вага брутто'), formatNumber(invoice.TotalGrossWeight)],
       ]}
@@ -2277,13 +2334,16 @@ function PackListTotals({
   )
 }
 
-function SummaryLine({ items }: { items: Array<[string, string]> }) {
+function SummaryLine({ items }: { items: Array<[string, string, string?]> }) {
   return (
-    <Group gap="lg" wrap="wrap">
-      {items.map(([label, value]) => (
-        <Stack key={label} gap={2}>
+    <Group className="supply-invoices-totals" gap={8} wrap="wrap">
+      {items.map(([label, value, currency]) => (
+        <Stack className="supply-invoices-total" key={label} gap={3}>
           <Text className="app-section-title" fw={600} size="xs">{label}</Text>
-          <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{value}</Text>
+          <Group gap={6} wrap="wrap">
+            <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{value}</Text>
+            {currency && value && <TableChip tone="source" value={currency} />}
+          </Group>
         </Stack>
       ))}
     </Group>
@@ -2311,15 +2371,13 @@ function QuantityBalanceSummary({
   const invalidRows = rows.filter((row) => row.isError).length
 
   return (
-    <Alert color={invalidRows ? 'yellow' : 'green'} icon={<CircleAlert size={18} />} variant="light">
-      <Group gap="lg" wrap="wrap">
-        <Text fw={600}>{invalidRows ? t('Є розбіжності') : t('Кількості збігаються')}</Text>
-        <Text size="sm">{expectedLabel}: <Text span fw={600} style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatNumber(expectedQty)}</Text></Text>
-        <Text size="sm">{actualLabel}: <Text span fw={600} style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatNumber(actualQty)}</Text></Text>
-        <Text size="sm">{currentDifferenceLabel}: <Text span fw={600} style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatNumber(differenceValue)}</Text></Text>
-        {invalidRows > 0 && <Badge className="app-role-pill is-yellow" variant="light">{invalidRows}</Badge>}
-      </Group>
-    </Alert>
+    <Group className="supply-invoices-balance" gap={12} wrap="wrap" role="status">
+      <TableChip tone={invalidRows ? 'warning' : 'success'} value={invalidRows ? t('Є розбіжності') : t('Кількості збігаються')} />
+      <span className="supply-invoices-balance-item"><span>{expectedLabel}:</span><TableChip tone="neutral" value={formatNumber(expectedQty)} /></span>
+      <span className="supply-invoices-balance-item"><span>{actualLabel}:</span><TableChip tone="neutral" value={formatNumber(actualQty)} /></span>
+      <span className="supply-invoices-balance-item"><span>{currentDifferenceLabel}:</span><TableChip tone="neutral" value={formatNumber(differenceValue)} /></span>
+      {invalidRows > 0 && <TableChip tone="warning" value={invalidRows} />}
+    </Group>
   )
 }
 

@@ -27,6 +27,7 @@ import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/event
 import { SUPPLY_ORDER_INCOME_STATUS_LABEL } from '../../../shared/supplyOrderIncomeStatus'
 import { getSupplyUkraineOrderDisplayNumber, normalizeDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -1141,12 +1142,10 @@ function OrderOrganizationGridCell({ row }: { row: SupplyUkraineOrderRow }) {
   const agreement = displayTableValue(row.agreement)
 
   return (
-    <span className="supply-order-two-line-cell">
-      <span className="supply-order-two-line-primary" title={nativeTitle(organization)}>{organization}</span>
+    <span className="supply-order-organization-cell">
+      <TableChip tone="product" value={organization} />
       {agreement ? (
-        <span className="app-role-pill is-gray supply-order-agreement-pill" title={nativeTitle(agreement)}>
-          {agreement}
-        </span>
+        <TableChip tone="document" value={agreement} />
       ) : null}
     </span>
   )
@@ -1177,6 +1176,7 @@ function SupplyOrderInvoicesExpand({ order }: { order: DirectSupplyOrder }) {
         layoutVersion="supply-order-invoices-table-3"
         minWidth={ORDER_INVOICES_TABLE_MIN_WIDTH}
         showDensityToggle={false}
+        showToolbar={false}
         tableId="supply-order-invoices"
       />
     </div>
@@ -1205,8 +1205,8 @@ function InvoiceMainCell({ row }: { row: SupplyUkraineOrderRow }) {
             <strong>{orderNumber}</strong>
           </span>
           {agreement ? (
-            <span className="app-role-pill is-gray supply-invoice-agreement-pill" title={nativeTitle(agreement)}>
-              {agreement}
+            <span className="supply-invoice-agreement-chip">
+              <TableChip tone="document" value={agreement} />
             </span>
           ) : null}
         </div>
@@ -1521,9 +1521,15 @@ export function OrderActionsModal({
   return (
     <AppModal
       centered
+      className="supply-order-actions-modal"
       size={496}
       opened={Boolean(row)}
-      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{getRowTitle(row)}</span>}
+      title={(
+        <span className="supply-order-actions-title">
+          <TableChip tone="document" value={row?.number || row?.netUid || '-'} />
+          {row?.supplier && <span className="supply-order-actions-title__supplier">{row.supplier}</span>}
+        </span>
+      )}
       onClose={onClose}
     >
       {row && (
@@ -1650,7 +1656,7 @@ function OrderMoneyCell({ currency, value }: { currency?: string; value?: number
   return (
     <span className="supply-order-money-cell">
       <span className="supply-order-money-amount" title={nativeTitle(amount)}>{amount}</span>
-      <span className="supply-order-money-currency" title={nativeTitle(currencyLabel)}>{currencyLabel}</span>
+      <span className="supply-order-money-currency"><TableChip tone="source" value={currencyLabel} /></span>
     </span>
   )
 }
@@ -2221,14 +2227,6 @@ function getDirectOrderDisplayNumber(order: DirectSupplyOrder): string | undefin
 
 function getToUkraineOrderDisplayNumber(order: SupplyOrderUkraine): string | undefined {
   return getSupplyUkraineOrderDisplayNumber(order)
-}
-
-function getRowTitle(row: SupplyUkraineOrderRow | null): string {
-  if (!row) {
-    return '-'
-  }
-
-  return [row.number, row.supplier].filter(Boolean).join(' - ') || row.netUid || '-'
 }
 
 function getKindBadge(row: SupplyUkraineOrderRow, t: (key: string) => string) {

@@ -13,7 +13,7 @@ import {
 import { notifications } from '@mantine/notifications'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CircleAlert, RefreshCw, RotateCcw, Search } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -57,6 +57,7 @@ export function ProductGroupProductsPanel({ canOpenProduct, productGroupNetId }:
     `product-group-products-${productGroupNetId}`,
     PRODUCTS_TABLE_DEFAULT_LAYOUT.density,
   )
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const loadSequenceRef = useRef(0)
   const canLoadMore = productLinks.length < totalFilteredQty
   const openProduct = useCallback(
@@ -152,16 +153,6 @@ export function ProductGroupProductsPanel({ canOpenProduct, productGroupNetId }:
     ],
     [],
   )
-  const toolbarLeft = useMemo(
-    () =>
-      searchValue ? (
-        <Text size="xs" c="dimmed">
-          {t('Пошук')}: {searchValue}
-        </Text>
-      ) : null,
-    [searchValue, t],
-  )
-
   const loadProducts = useCallback(
     async (offset: number, append: boolean) => {
       const loadSequence = loadSequenceRef.current + 1
@@ -229,17 +220,17 @@ export function ProductGroupProductsPanel({ canOpenProduct, productGroupNetId }:
         <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-group-detail-filter-row">
         <TextInput
           leftSection={<Search size={16} />}
-          label={t('Пошук')}
+          aria-label={t('Пошук')}
+          className="product-group-detail-search"
           placeholder={t('Назва, артикул або опис')}
           value={searchDraft}
           onChange={(event) => updateSearch(event.currentTarget.value)}
-          style={{ flex: '1 1 auto', minWidth: 160 }}
         />
         <Select
           aria-label={t('Кількість')}
+          className="product-group-detail-page-size"
           data={PAGE_LIMIT_OPTIONS}
           value={String(limit)}
-          w={96}
           onChange={(value) => setLimit(Number(value || DEFAULT_PAGE_LIMIT))}
         />
         <Tooltip label={t('Скинути')}>
@@ -267,6 +258,7 @@ export function ProductGroupProductsPanel({ canOpenProduct, productGroupNetId }:
             <RefreshCw size={18} />
           </ActionIcon>
         </Tooltip>
+        <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot product-group-detail-table-tools" />
         <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
         </Group>
       </div>
@@ -288,14 +280,14 @@ export function ProductGroupProductsPanel({ canOpenProduct, productGroupNetId }:
         isLoading={isLoading}
         layoutVersion="product-group-products-table-1"
         loadingText="Завантаження товарів"
-        maxHeight="calc(100vh - 420px)"
+        height="100%"
         minWidth={1220}
         tableId={`product-group-products-${productGroupNetId}`}
-        toolbarLeft={toolbarLeft}
+        toolbarPortalTarget={tableToolbarSlot}
         onRowClick={canOpenProduct ? (productLink) => void openProduct(productLink) : undefined}
       />
 
-      <Group justify="space-between">
+      <Group className="product-group-detail-panel-footer" justify="space-between">
         <Text size="xs" c="dimmed">
           {t('Показано')}: {totalFilteredQty}; {t('Усього')}: {totalQty}
         </Text>

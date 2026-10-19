@@ -27,6 +27,10 @@ export function StatusSection({
   const canChangeStatus = canEdit && hasPermission(CHANGE_STATUS_PERMISSION) && !protocol.IsCompleted
   const actionLabel = getProtocolStatusActionLabel(protocol, t)
 
+  if (protocol.IsCompleted) {
+    return null
+  }
+
   return (
     <>
       <Card className="product-delivery-protocol-status-card" withBorder radius="md" padding="md">

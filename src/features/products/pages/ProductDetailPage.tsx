@@ -1,4 +1,5 @@
 import { TableChip } from '../../../shared/ui/TableChip'
+import { PdfIcon } from '../../../shared/ui/PdfIcon'
 import {
   ActionIcon,
   Alert,
@@ -7,7 +8,6 @@ import {
   Button,
   Card,
   Checkbox,
-  Divider,
   FileInput,
   Group,
   Image,
@@ -19,7 +19,6 @@ import {
   SegmentedControl,
   SimpleGrid,
   Stack,
-  Switch,
   Table,
   Tabs,
   Text,
@@ -28,18 +27,20 @@ import {
   Title,
   Tooltip,
 } from '@mantine/core'
-import { AppDrawer, AppDrawerFooter } from "../../../shared/ui/AppDrawer"
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
+import { DocumentDetailChip, DocumentDetailLayout, DocumentDetailRow, DocumentDetailSection } from '../../../shared/ui/document-detail/DocumentDetail'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { MovementDocumentTypeFilter } from '../../../shared/ui/product-movement-history/MovementDocumentTypeFilter'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { notifications } from '@mantine/notifications'
-import { Archive, ArrowLeft, ArrowLeftRight, Check, ChevronLeft, ChevronRight, CircleAlert, ClipboardList, FileDown, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, Save, Sparkles, SquarePen, Trash2, TriangleAlert } from 'lucide-react'
+import { Archive, ArrowLeft, ArrowLeftRight, CalendarDays, Check, ChevronRight, CircleAlert, ClipboardList, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, Save, Sparkles, SquarePen, Trash2, TriangleAlert } from 'lucide-react'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
-import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import './products.css'
 import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
@@ -736,6 +737,7 @@ function ProductAvailabilityPlacementRow({
   availability: ProductAvailability
   onProductSaved?: (product: Product | null) => void
 }) {
+  const { t } = useI18n()
   const [opened, setOpened] = useState(false)
   const placements = availability.Storage?.ProductPlacements || []
   const hasPlacements = placements.length > 0
@@ -746,12 +748,17 @@ function ProductAvailabilityPlacementRow({
         <Text className="app-money" size="xl" fw={700} lh={1.05}>
           {formatAmount(availability.Amount)}
         </Text>
-        {amount > 1 && <span className="product-stock-dot" aria-hidden="true" />}
+        {amount > 0 && <span className="product-stock-dot" aria-hidden="true" />}
       </Group>
       <Text size="xs" c="dimmed" lh={1.2} lineClamp={2} title={displayValue(availability.Storage?.Name)}>
         {displayValue(availability.Storage?.Name)}
-        {hasPlacements ? ' ▾' : ''}
       </Text>
+      {hasPlacements && (
+        <Group className="product-stock-warehouse-hint" gap={4} wrap="nowrap">
+          <Text size="xs">{t('Місця зберігання')}</Text>
+          <ChevronRight size={13} aria-hidden="true" />
+        </Group>
+      )}
     </Stack>
   )
 
@@ -762,7 +769,7 @@ function ProductAvailabilityPlacementRow({
   return (
     <Popover offset={2} opened={opened} position="bottom-start" shadow="md" width={760} withinPortal onChange={setOpened}>
       <Popover.Target>
-        <Box role="button" tabIndex={0} style={{ height: '100%' }} onClick={() => setOpened((currentOpened) => !currentOpened)} onKeyDown={(event) => {
+        <Box className="product-stock-warehouse" role="button" tabIndex={0} aria-expanded={opened} aria-haspopup="dialog" aria-label={`${displayValue(availability.Storage?.Name)}: ${t('Місця зберігання')}`} onClick={() => setOpened((currentOpened) => !currentOpened)} onKeyDown={(event) => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault()
             setOpened((currentOpened) => !currentOpened)
@@ -771,7 +778,7 @@ function ProductAvailabilityPlacementRow({
           {content}
         </Box>
       </Popover.Target>
-      <Popover.Dropdown className="product-placement-popover">
+      <Popover.Dropdown className="product-placement-popover" role="dialog" aria-label={t('Місця зберігання')}>
         <ProductPlacementEditor
           availability={availability}
           key={getProductPlacementsKey(placements)}
@@ -884,17 +891,15 @@ function ProductPlacementEditor({
   return (
     <Stack className="product-placement-editor" gap="sm">
       <Group className="product-placement-editor__header" justify="space-between" gap="sm" wrap="nowrap">
-        <Box style={{ minWidth: 0 }}>
-          <Text className="product-placement-editor__title" lineClamp={1}>{displayValue(availability.Storage?.Name)}</Text>
-          <Text className="product-placement-editor__subtitle" lineClamp={1}>{displayValue(availability.Storage?.Organization?.Name)}</Text>
-        </Box>
+        <Group gap={6} style={{ minWidth: 0 }}>
+          <TableChip tone="storage" value={displayValue(availability.Storage?.Name)} />
+          <TableChip tone="product" value={displayValue(availability.Storage?.Organization?.Name)} />
+        </Group>
         <Group gap="xs" wrap="nowrap">
-          <Badge className="product-placement-editor__total" color={Math.abs(draftTotal - originalTotal) > 0.00001 ? 'red' : 'green'} variant="light">
-            {formatAmount(draftTotal)} / {formatAmount(originalTotal)}
-          </Badge>
+          <TableChip tone={Math.abs(draftTotal - originalTotal) > 0.00001 ? 'danger' : 'success'} value={`${formatAmount(draftTotal)} / ${formatAmount(originalTotal)}`} />
           {!isEditing ? (
             <PermissionGate permissionKey={PRODUCT_PLACEMENT_EDIT_PERMISSION}>
-              <Button color={CREATE_ACTION_COLOR} size="xs" variant="outline" leftSection={<SquarePen size={14} />} onClick={startEditing}>
+              <Button color={CREATE_ACTION_COLOR} size="xs" variant="default" leftSection={<SquarePen size={14} />} onClick={startEditing}>
                 {t('Редагувати')}
               </Button>
             </PermissionGate>
@@ -1023,7 +1028,7 @@ function TotalQtyTile({ label, value }: { label: string; value?: number | null }
         <Text className="app-money" size="xl" fw={700} lh={1.05}>
           {formatAmount(value)}
         </Text>
-        {numeric > 1 && <span className="product-stock-dot" aria-hidden="true" />}
+        {numeric > 0 && <span className="product-stock-dot" aria-hidden="true" />}
       </Group>
       <Text size="xs" c="dimmed" lh={1.2} lineClamp={2}>
         {label}
@@ -1047,16 +1052,41 @@ export function ProductActionDrawer({
 }) {
   const { t } = useI18n()
 
+  if (activePanel === 'edit') {
+    return (
+      <AppModal opened title={t('Редагувати товар')} size={860} onClose={onClose} className="product-edit-modal" closeOnClickOutside={false}>
+        <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION} fallback={<ProductPermissionDeniedAlert />}>
+          <ProductEditPanel key={getProductPanelKey(product)} product={product} onProductSaved={onProductSaved} onClose={onClose} />
+        </PermissionGate>
+      </AppModal>
+    )
+  }
+
+  if (activePanel === 'images') {
+    return (
+      <AppModal opened title={t('Зображення')} size={860} onClose={onClose} className="product-images-modal" closeOnClickOutside={false}>
+        <ProductImagesPanel key={getProductPanelKey(product)} product={product} onProductSaved={onProductSaved} />
+      </AppModal>
+    )
+  }
+
+  if (activePanel === 'specification') {
+    return (
+      <AppModal opened title={t('Специфікація')} size={860} onClose={onClose} className="product-specification-modal" closeOnClickOutside={false}>
+        <ProductSpecificationPanel key={getProductPanelKey(product)} product={product} onProductSaved={onProductSaved} onClose={onClose} />
+      </AppModal>
+    )
+  }
+
   return (
     <AppDrawer
       opened={Boolean(activePanel)}
       position="right"
-      // The edit form is a narrow single/two-column form — give it a compact sheet (~half width);
-      // Product Intelligence is designed for the standard analytics sheet; data grids stay wide.
-      size={activePanel === 'edit' ? 'compact' : activePanel === 'analytics' ? 'standard' : 'min(1180px, 100vw)'}
+      size={activePanel === 'analytics' ? 'standard' : 'min(1180px, 100vw)'}
       // Shared form/detail-sheet scope: mono button captions, §9 field chrome,
       // orange checkboxes, mono combos/numbers/dates, borderless-shadow cards.
       classNames={{ body: 'app-form-sheet' }}
+      className={activePanel === 'storage-history' || activePanel === 'remains' || activePanel === 'movement' || activePanel === 'writeoff' ? 'product-data-drawer' : undefined}
       title={activePanel ? <span className="app-sheet-title-mono">{getPanelTitle(activePanel, t)}</span> : ''}
       onClose={onClose}
     >
@@ -1070,31 +1100,32 @@ export function ProductActionDrawer({
           <ProductAuditPanel key={getProductPanelKey(product)} product={product} />
         </PermissionGate>
       )}
-      {activePanel === 'edit' && (
-        <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION} fallback={<ProductPermissionDeniedAlert />}>
-          <ProductEditPanel key={getProductPanelKey(product)} product={product} onProductSaved={onProductSaved} />
-        </PermissionGate>
-      )}
-      {activePanel === 'images' && <ProductImagesPanel key={getProductPanelKey(product)} product={product} onProductSaved={onProductSaved} />}
       {activePanel === 'movement' && (
         <PermissionGate permissionKey={PRODUCT_MOVEMENT_PERMISSION} fallback={<ProductPermissionDeniedAlert />}>
-          <ProductMovementPanel product={product} />
+          <ProductDataSheet className="product-movement-sheet" product={product}>
+            <ProductMovementPanel product={product} />
+          </ProductDataSheet>
         </PermissionGate>
       )}
       {activePanel === 'remains' && (
         <PermissionGate permissionKey={PRODUCT_BALANCES_PERMISSION} fallback={<ProductPermissionDeniedAlert />}>
-          <ProductConsignmentRemainingsPanel product={product} />
+          <ProductDataSheet product={product}>
+            <ProductConsignmentRemainingsPanel product={product} />
+          </ProductDataSheet>
         </PermissionGate>
       )}
-      {activePanel === 'specification' && <ProductSpecificationPanel product={product} onProductSaved={onProductSaved} />}
       {activePanel === 'storage-history' && (
         <PermissionGate permissionKey={PRODUCT_STORAGE_HISTORY_PERMISSION} fallback={<ProductPermissionDeniedAlert />}>
-          <ProductStorageHistoryPanel product={product} />
+          <ProductDataSheet product={product}>
+            <ProductStorageHistoryPanel product={product} />
+          </ProductDataSheet>
         </PermissionGate>
       )}
       {activePanel === 'writeoff' && (
         <PermissionGate permissionKey={PRODUCT_WRITE_OFF_PERMISSION} fallback={<ProductPermissionDeniedAlert />}>
-          <ProductWriteOffRulesPanel product={product} onChanged={onReload} />
+          <ProductDataSheet className="product-writeoff-sheet" product={product}>
+            <ProductWriteOffRulesPanel product={product} onChanged={onReload} />
+          </ProductDataSheet>
         </PermissionGate>
       )}
     </AppDrawer>
@@ -1111,7 +1142,7 @@ function ProductPermissionDeniedAlert() {
   )
 }
 
-function ProductEditPanel({ onProductSaved, product }: { onProductSaved: (product: Product | null) => void; product: Product }) {
+function ProductEditPanel({ onClose, onProductSaved, product }: { onClose: () => void; onProductSaved: (product: Product | null) => void; product: Product }) {
   const { t } = useI18n()
   const [form, setForm] = useState<ProductEditForm>(() => createProductEditForm(product))
   const canEditClassification = canEditNativeProductClassification(product)
@@ -1160,63 +1191,69 @@ function ProductEditPanel({ onProductSaved, product }: { onProductSaved: (produc
 
   return (
     <form id="product-edit-drawer-form" onSubmit={submitForm}>
-      <Stack gap="md">
-        <AppDrawerFooter>
-          <Group justify="flex-end">
-            <Button
-              color={CREATE_ACTION_COLOR}
-              form="product-edit-drawer-form"
-              leftSection={<Save size={18} />}
-              loading={isSaving}
-              type="submit"
-            >
-              {t('Зберегти')}
-            </Button>
-          </Group>
-        </AppDrawerFooter>
-
-        {error && (
-          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-            {error}
-          </Alert>
-        )}
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
-          {canEditClassification && (
-            <Select
-              label={t('Тип позиції')}
-              data={[
-                ...(form.NativeIsService === null ? [{ value: 'unknown', label: t('Не визначено') }] : []),
-                { value: 'goods', label: t('Товар') },
-                { value: 'service', label: t('Послуга') },
-              ]}
-              value={form.NativeIsService === null ? 'unknown' : form.NativeIsService ? 'service' : 'goods'}
-              allowDeselect={false}
-              disabled={isSaving}
-              onChange={(value) => {
-                if (value === 'goods' || value === 'service') setField('NativeIsService', value === 'service')
-              }}
-            />
-          )}
-          <TextInput label={t('Top')} value={form.Top} maxLength={3} onChange={(event) => setField('Top', event.currentTarget.value)} />
-          <TextInput label={t('Розмір')} value={form.Size} onChange={(event) => setField('Size', event.currentTarget.value)} />
-          <TextInput label={t("Об'єм")} value={form.Volume} onChange={(event) => setField('Volume', event.currentTarget.value)} />
-          <NumberInput label={t('Вага')} value={form.Weight ?? ''} min={0} onChange={(value) => setField('Weight', typeof value === 'number' ? value : null)} />
-          <TextInput label={t('Норма пакування')} value={form.OrderStandard} onChange={(event) => setField('OrderStandard', event.currentTarget.value)} />
-          <TextInput label={t('Пакування')} value={form.PackingStandard} onChange={(event) => setField('PackingStandard', event.currentTarget.value)} />
-          <TextInput label={t('Синоніми UA')} value={form.SynonymsUA} onChange={(event) => setField('SynonymsUA', event.currentTarget.value)} />
-        </SimpleGrid>
-        <Textarea autosize minRows={3} label={t('Опис')} value={form.Description} onChange={(event) => setField('Description', event.currentTarget.value)} />
-        <Textarea autosize minRows={3} label={t('Опис UA')} value={form.DescriptionUA} onChange={(event) => setField('DescriptionUA', event.currentTarget.value)} />
-        <Textarea autosize minRows={3} label={t('Нотатки')} value={form.Notes} onChange={(event) => setField('Notes', event.currentTarget.value)} />
-        <Textarea autosize minRows={3} label={t('Нотатки UA')} value={form.NotesUA} onChange={(event) => setField('NotesUA', event.currentTarget.value)} />
-        <Group gap="lg">
-          <Switch checked={form.IsForZeroSale} label={t('Нульовий продаж')} onChange={(event) => setField('IsForZeroSale', event.currentTarget.checked)} />
-          <Switch checked={form.IsForSale} label={t('Для продажу')} onChange={(event) => setField('IsForSale', event.currentTarget.checked)} />
+      <Stack gap={12}>
+        <Group className="product-edit-identity" gap={8} wrap="wrap">
+          <TableChip tone="product" value={getProductCode(product)} />
+          <Text size="sm" fw={600}>{getProductTitle(product)}</Text>
         </Group>
+        <div className="product-edit-fields">
+
+          {error && (
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+              {error}
+            </Alert>
+          )}
+          <Card className="app-section-card product-edit-section" withBorder radius="md" padding="sm">
+            <Text className="app-section-title" mb={12}>{t('Характеристики')}</Text>
+            <SimpleGrid cols={{ base: 1, xs: 2, sm: 3 }} spacing={12} verticalSpacing={10} style={{ alignItems: 'end' }}>
+              {canEditClassification && (
+                <Select
+                  label={t('Тип позиції')}
+                  data={[
+                    ...(form.NativeIsService === null ? [{ value: 'unknown', label: t('Не визначено') }] : []),
+                    { value: 'goods', label: t('Товар') },
+                    { value: 'service', label: t('Послуга') },
+                  ]}
+                  value={form.NativeIsService === null ? 'unknown' : form.NativeIsService ? 'service' : 'goods'}
+                  allowDeselect={false}
+                  disabled={isSaving}
+                  onChange={(value) => {
+                    if (value === 'goods' || value === 'service') setField('NativeIsService', value === 'service')
+                  }}
+                />
+              )}
+              <TextInput label={t('Top')} value={form.Top} maxLength={3} onChange={(event) => setField('Top', event.currentTarget.value)} />
+              <TextInput label={t('Розмір')} value={form.Size} onChange={(event) => setField('Size', event.currentTarget.value)} />
+              <TextInput label={t("Об'єм")} value={form.Volume} onChange={(event) => setField('Volume', event.currentTarget.value)} />
+              <NumberInput hideControls label={t('Вага')} value={form.Weight ?? ''} min={0} onChange={(value) => setField('Weight', typeof value === 'number' ? value : null)} />
+              <TextInput label={t('Норма пакування')} value={form.OrderStandard} onChange={(event) => setField('OrderStandard', event.currentTarget.value)} />
+              <TextInput label={t('Пакування')} value={form.PackingStandard} onChange={(event) => setField('PackingStandard', event.currentTarget.value)} />
+              <TextInput label={t('Синоніми UA')} value={form.SynonymsUA} onChange={(event) => setField('SynonymsUA', event.currentTarget.value)} />
+            </SimpleGrid>
+          </Card>
+          <Card className="app-section-card product-edit-section" withBorder radius="md" padding="sm">
+            <Text className="app-section-title" mb={12}>{t('Опис та нотатки')}</Text>
+            <SimpleGrid cols={{ base: 1, xs: 2 }} spacing={12} verticalSpacing={10} style={{ alignItems: 'end' }}>
+              <Textarea autosize minRows={2} maxRows={5} label={t('Опис')} value={form.Description} onChange={(event) => setField('Description', event.currentTarget.value)} />
+              <Textarea autosize minRows={2} maxRows={5} label={t('Опис UA')} value={form.DescriptionUA} onChange={(event) => setField('DescriptionUA', event.currentTarget.value)} />
+              <Textarea autosize minRows={2} maxRows={5} label={t('Нотатки')} value={form.Notes} onChange={(event) => setField('Notes', event.currentTarget.value)} />
+              <Textarea autosize minRows={2} maxRows={5} label={t('Нотатки UA')} value={form.NotesUA} onChange={(event) => setField('NotesUA', event.currentTarget.value)} />
+            </SimpleGrid>
+          </Card>
+          <Group className="product-edit-flags" gap="lg">
+            <Checkbox checked={form.IsForZeroSale} label={t('Нульовий продаж')} onChange={(event) => setField('IsForZeroSale', event.currentTarget.checked)} />
+            <Checkbox checked={form.IsForSale} label={t('Для продажу')} onChange={(event) => setField('IsForSale', event.currentTarget.checked)} />
+          </Group>
+        </div>
+        <AppModalFooter>
+          <Button variant="default" onClick={onClose} disabled={isSaving}>{t('Скасувати')}</Button>
+          <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">{t('Зберегти')}</Button>
+        </AppModalFooter>
       </Stack>
     </form>
   )
 }
+
 
 function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (product: Product | null) => void; product: Product }) {
   const { t } = useI18n()
@@ -1321,74 +1358,67 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
   }
 
   return (
-    <Stack gap="md">
-      <AppDrawerFooter>
-        <Group gap="xs" wrap="nowrap">
-          <Button variant="light" color="gray" leftSection={<RefreshCw size={18} />} disabled={!hasChanges || isSaving} onClick={resetImageChanges}>
-            {t('Скасувати')}
-          </Button>
-          <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={18} />} loading={isSaving} disabled={!hasChanges || !canSaveChanges} onClick={saveImages}>
-            {t('Зберегти')}
-          </Button>
-        </Group>
-      </AppDrawerFooter>
+    <Stack className="product-images-panel" gap="sm">
+      <Group className="product-images-identity" gap="sm" wrap="wrap">
+        <TableChip tone="product" value={getProductCode(product)} />
+        <Text fw={600} c="dark">{getProductTitle(product)}</Text>
+      </Group>
 
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
-      <Group align="end" gap="md">
-        <PermissionGate permissionKey={PRODUCT_IMAGE_ADD_PERMISSION}>
+      <PermissionGate permissionKey={PRODUCT_IMAGE_ADD_PERMISSION}>
+        <Card className="app-section-card product-images-upload" withBorder radius="md" p="sm">
+          <Text className="app-section-title" mb={10}>{t('Додати зображення')}</Text>
           <FileInput
             multiple
             clearable
             accept="image/*"
-            label={t('Додати зображення')}
+            aria-label={t('Додати зображення')}
+            leftSection={<ImageIcon size={18} />}
+            disabled={isSaving}
             placeholder={t('Оберіть файли')}
             value={files}
-            style={{ flex: '1 1 280px' }}
             onChange={(nextFiles) => updateSelectedFiles(nextFiles || [])}
           />
-        </PermissionGate>
-      </Group>
+        </Card>
+      </PermissionGate>
       {displayedImages.length === 0 && filePreviews.length === 0 ? (
-        <Text c="dimmed" size="sm">
-          {t('Зображень не знайдено')}
-        </Text>
+        <div className="product-images-empty">
+          <ImageIcon size={32} strokeWidth={1.5} aria-hidden="true" />
+          <Text fw={600}>{t('Зображень не знайдено')}</Text>
+          {hasPermission(PRODUCT_IMAGE_ADD_PERMISSION) && <Text size="sm">{t('Оберіть файли, щоб додати фото товару')}</Text>}
+        </div>
       ) : (
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
+        <SimpleGrid className="product-images-gallery" cols={{ base: 1, xs: 2, md: 3 }} spacing="sm">
           {displayedImages.map(({ image, index }) => (
             <Box
               key={`${image.NetUid || image.FileName || index}`}
-              style={{
-                border: '1px solid var(--mantine-color-gray-2)',
-                borderRadius: 6,
-                opacity: image.Deleted ? 0.55 : 1,
-                padding: 10,
-              }}
+              className="product-image-card"
+              data-deleted={image.Deleted || undefined}
             >
               <Stack gap="sm">
                 <button
                   type="button"
-                  style={{ background: 'transparent', border: 0, cursor: 'zoom-in', padding: 0 }}
+                  className="product-image-preview"
+                  aria-label={t('Переглянути зображення')}
                   onClick={() => setPreviewImageUrl(toProxiedAssetUrl(image.ImageUrl) || null)}
                 >
                   <Image src={toProxiedAssetUrl(image.ImageUrl)} alt={image.FileName || getProductTitle(product)} h={190} fit="contain" radius="sm" />
                 </button>
                 <Group justify="space-between" gap="xs" wrap="nowrap">
-                  <Badge color={image.Deleted ? 'red' : image.IsMainImage ? 'green' : 'gray'} variant="light">
-                    {image.Deleted ? t('Буде видалено') : image.IsMainImage ? t('Головне') : t('Зображення')}
-                  </Badge>
+                  <TableChip tone={image.Deleted ? 'danger' : image.IsMainImage ? 'success' : 'neutral'} value={image.Deleted ? t('Буде видалено') : image.IsMainImage ? t('Головне') : t('Зображення')} />
                   <PermissionGate permissionKey={PRODUCT_IMAGE_DELETE_PERMISSION}>
                     <Group gap={4} wrap="nowrap">
                       <Tooltip label={t('Зробити головним')}>
-                        <ActionIcon color="gray" variant="light" disabled={image.Deleted || image.IsMainImage} onClick={() => makeMain(image)}>
+                        <ActionIcon aria-label={t('Зробити головним')} color="gray" variant="subtle" disabled={isSaving || image.Deleted || image.IsMainImage} onClick={() => makeMain(image)}>
                           <Check size={16} />
                         </ActionIcon>
                       </Tooltip>
                       <Tooltip label={t('Видалити')}>
-                        <ActionIcon color="red" variant="light" disabled={image.Deleted} onClick={() => removeImage(image)}>
+                        <ActionIcon aria-label={t('Видалити')} color="red" variant="subtle" disabled={isSaving || image.Deleted} onClick={() => removeImage(image)}>
                           <Trash2 size={16} />
                         </ActionIcon>
                       </Tooltip>
@@ -1401,21 +1431,20 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
           {filePreviews.map((preview) => (
             <Box
               key={preview.url}
-              style={{ border: '1px solid var(--mantine-color-gray-2)', borderRadius: 6, padding: 10 }}
+              className="product-image-card"
             >
               <Stack gap="sm">
                 <button
                   type="button"
-                  style={{ background: 'transparent', border: 0, cursor: 'zoom-in', padding: 0 }}
+                  className="product-image-preview"
+                  aria-label={t('Переглянути зображення')}
                   onClick={() => setPreviewImageUrl(preview.url)}
                 >
                   <Image src={preview.url} alt={preview.file.name || getProductTitle(product)} h={190} fit="contain" radius="sm" />
                 </button>
                 <Group justify="space-between" gap="xs" wrap="nowrap">
-                  <Badge className="app-role-pill" variant="light">
-                    {t('Нове')}
-                  </Badge>
-                  <Text size="sm" c="dimmed" truncate="end">
+                  <TableChip tone="document" value={t('Нове')} />
+                  <Text size="xs" c="dark" truncate="end">
                     {preview.file.name}
                   </Text>
                 </Group>
@@ -1424,6 +1453,16 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
           ))}
         </SimpleGrid>
       )}
+      <AppModalFooter>
+        <Group gap="xs" wrap="nowrap">
+          <Button variant="default" color="gray" disabled={!hasChanges || isSaving} onClick={resetImageChanges}>
+            {t('Скасувати')}
+          </Button>
+          <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={18} />} loading={isSaving} disabled={!hasChanges || !canSaveChanges} onClick={saveImages}>
+            {t('Зберегти')}
+          </Button>
+        </Group>
+      </AppModalFooter>
       <ProductImageViewerModal
         imageUrl={previewImageUrl}
         title={getProductTitle(product)}
@@ -1520,9 +1559,11 @@ function ProductAuditPanel({ product }: { product: Product }) {
 }
 
 function ProductSpecificationPanel({
+  onClose,
   onProductSaved,
   product,
 }: {
+  onClose: () => void
   onProductSaved: (product: Product | null) => void
   product: Product
 }) {
@@ -1592,123 +1633,125 @@ function ProductSpecificationPanel({
   }
 
   return (
-    <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
-      <PermissionGate permissionKey={PRODUCT_SPECIFICATION_CHANGE_PERMISSION}>
-        <AppDrawerFooter>
-          <Group justify="flex-end">
-            <Button
-              color={CREATE_ACTION_COLOR}
-              leftSection={<Save size={16} />}
-              loading={isSaving}
-              onClick={() => void saveSpecification()}
-            >
-              {t('Зберегти')}
-            </Button>
+    <>
+      <DocumentDetailLayout
+        summary={(
+          <Group className="product-specification-summary" gap={8}>
+            <TableChip tone="product" value={getProductCode(product)} />
+            <Text size="sm" fw={600}>{getProductTitle(product)}</Text>
           </Group>
-        </AppDrawerFooter>
-      </PermissionGate>
-
-      <Card className="app-section-card" withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Stack gap="xs">
-            <Text className="app-section-title" fw={600} size="sm">{t('Поточний')}</Text>
-            {currentSpecification ? (
-              <Stack gap={4}>
-                <Text className="app-money" fw={700} size="sm">{displayValue(formatSpecificationCodeWithRate(currentSpecification))}</Text>
-                <SimpleGrid cols={3} spacing={6} mt={4}>
-                  <InfoBlock label="Митна вартість" mono value={displayValue(currentSpecification.CustomsValue)} />
-                  <InfoBlock label="Мито" mono value={displayValue(currentSpecification.Duty)} />
-                  <InfoBlock label="ПДВ" mono value={displayValue(currentSpecification.VATValue)} />
-                </SimpleGrid>
-                {(() => {
-                  const author = formatSpecificationAuthor(currentSpecification)
-                  const created = formatDate(currentSpecification.Created)
-                  const showAuthor = Boolean(author && author !== '-')
-                  const showCreated = Boolean(created && created !== '-')
-                  if (!showAuthor && !showCreated) return null
-                  return (
-                    <Text c="dimmed" size="xs" mt={4}>
-                      {showAuthor ? author : null}
-                      {showAuthor && showCreated ? ' · ' : null}
-                      {showCreated ? <span style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{created}</span> : null}
-                    </Text>
-                  )
-                })()}
-              </Stack>
-            ) : (
-              <Text c="dimmed" size="sm">{t('Немає поточного коду')}</Text>
-            )}
+        )}
+      >
+        <div className="product-specification-content">
+          <Stack gap={12}>
+            <DocumentDetailSection title={t('Поточна специфікація')} stacked>
+              {currentSpecification ? (
+                <>
+                  <SpecificationCodeChips specification={currentSpecification} />
+                  <div className="product-specification-values">
+                    {([
+                      ['Митна вартість', currentSpecification.CustomsValue],
+                      ['Мито', currentSpecification.Duty],
+                      ['ПДВ', currentSpecification.VATValue],
+                    ] as const).map(([label, value]) => (
+                      <DocumentDetailRow key={label} label={t(label)} mono value={displayValue(value)} />
+                    ))}
+                  </div>
+                  <SpecificationMetadata specification={currentSpecification} />
+                </>
+              ) : (
+                <Text size="sm" c="gray.7">{t('Немає поточного коду')}</Text>
+              )}
+            </DocumentDetailSection>
+            <PermissionGate permissionKey={PRODUCT_SPECIFICATION_CHANGE_PERMISSION}>
+              <DocumentDetailSection title={t('Змінити специфікацію')} stacked>
+                {error && <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>}
+                <TextInput
+                  classNames={{ input: 'app-money' }}
+                  label={t('Код специфікації')}
+                  value={draft.SpecificationCode}
+                  onChange={(event) => updateDraft('SpecificationCode', event.currentTarget.value)}
+                />
+                <div className="product-specification-values">
+                  <NumberInput classNames={{ input: 'app-money' }} decimalScale={2} label={t('Митна вартість')} min={0} hideControls
+                    value={draft.CustomsValue}
+                    onChange={(value) => updateDraft('CustomsValue', typeof value === 'number' ? value : '')} />
+                  <NumberInput classNames={{ input: 'app-money' }} decimalScale={2} label={t('Мито')} min={0} hideControls
+                    value={draft.Duty}
+                    onChange={(value) => updateDraft('Duty', typeof value === 'number' ? value : '')} />
+                  <NumberInput classNames={{ input: 'app-money' }} decimalScale={2} label={t('ПДВ')} min={0} hideControls
+                    value={draft.VATValue}
+                    onChange={(value) => updateDraft('VATValue', typeof value === 'number' ? value : '')} />
+                </div>
+              </DocumentDetailSection>
+            </PermissionGate>
           </Stack>
-
-          <PermissionGate permissionKey={PRODUCT_SPECIFICATION_CHANGE_PERMISSION}>
-            <Divider />
-            <Stack gap="sm">
-              <Text className="app-section-title" fw={600} size="sm">{t('Змінити специфікацію')}</Text>
-              {error && <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>}
-              <TextInput
-                label={t('Код специфікації')}
-                value={draft.SpecificationCode}
-                onChange={(event) => updateDraft('SpecificationCode', event.currentTarget.value)}
-              />
-              <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
-                <NumberInput
-                  decimalScale={2}
-                  label={t('Митна вартість')}
-                  min={0}
-                  value={draft.CustomsValue}
-                  onChange={(value) => updateDraft('CustomsValue', typeof value === 'number' ? value : '')}
-                />
-                <NumberInput
-                  decimalScale={2}
-                  label={t('Мито')}
-                  min={0}
-                  value={draft.Duty}
-                  onChange={(value) => updateDraft('Duty', typeof value === 'number' ? value : '')}
-                />
-                <NumberInput
-                  decimalScale={2}
-                  label={t('ПДВ')}
-                  min={0}
-                  value={draft.VATValue}
-                  onChange={(value) => updateDraft('VATValue', typeof value === 'number' ? value : '')}
-                />
-              </SimpleGrid>
-            </Stack>
-          </PermissionGate>
-        </Stack>
-      </Card>
-
-      <Card className="app-section-card" withBorder radius="md" padding="md">
-        <Stack gap="xs">
-          <Text className="app-section-title" fw={600} size="sm">{t('Історія')}</Text>
-          {specifications.length === 0 ? (
-            <Text c="dimmed" size="sm">{t('Специфікацій не знайдено')}</Text>
-          ) : (
-            <ScrollArea mah={420}>
-              <Stack gap="xs">
-                {historySpecifications.length === 0 && <Text c="dimmed" size="sm">{t('Історію не знайдено')}</Text>}
+          <DocumentDetailSection title={t('Історія')} subtitle={String(historySpecifications.length)} stacked>
+            {historySpecifications.length === 0 ? (
+              <div className="product-specification-empty">
+                <Text size="sm">{t(specifications.length === 0 ? 'Специфікацій не знайдено' : 'Історію не знайдено')}</Text>
+              </div>
+            ) : (
+              <Stack gap={12}>
                 {historySpecifications.map((specification, index) => (
-                  <Box
-                    key={`${specification.NetUid || specification.Id || index}`}
-                    style={{
-                      border: '1px solid var(--mantine-color-gray-2)',
-                      borderRadius: 6,
-                      padding: '8px 10px',
-                    }}
-                  >
-                    <Group justify="space-between" gap="xs" wrap="nowrap">
-                      <Text className="app-money" fw={600} size="sm">{displayValue(formatSpecificationCodeWithRate(specification))}</Text>
-                      <Text c="dimmed" size="xs"><span style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatDate(specification.Created)}</span></Text>
-                    </Group>
-                    <Text c="dimmed" size="xs">{formatSpecificationAuthor(specification)}</Text>
-                  </Box>
+                  <Stack className="product-specification-history-item" gap={8} key={specification.NetUid || specification.Id || index}>
+                    <SpecificationCodeChips specification={specification} />
+                    <SpecificationMetadata specification={specification} />
+                  </Stack>
                 ))}
               </Stack>
-            </ScrollArea>
-          )}
-        </Stack>
-      </Card>
-    </SimpleGrid>
+            )}
+          </DocumentDetailSection>
+        </div>
+      </DocumentDetailLayout>
+      <AppModalFooter>
+        <Button variant="default" disabled={isSaving} onClick={onClose}>{t('Скасувати')}</Button>
+        <PermissionGate permissionKey={PRODUCT_SPECIFICATION_CHANGE_PERMISSION}>
+          <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} onClick={() => void saveSpecification()}>
+            {t('Зберегти')}
+          </Button>
+        </PermissionGate>
+      </AppModalFooter>
+    </>
+  )
+}
+
+function SpecificationCodeChips({ specification }: { specification: ProductSpecification }) {
+  const { t } = useI18n()
+  const code = specification.SpecificationCode?.trim()
+  return (
+    <Group gap={6}>
+      <TableChip tone="warning" value={code || t('Код не вказано')} />
+      {code && <TableChip tone="document" value={`${roundSpecificationPercent(getSpecificationDutyPercent(specification))}%`} />}
+    </Group>
+  )
+}
+
+function SpecificationMetadata({ specification }: { specification: ProductSpecification }) {
+  const author = formatSpecificationAuthor(specification)
+  const created = formatDate(specification.Created)
+  return (
+    <Group gap={8}>
+      {author && author !== '-' && <Text className="product-specification-author" size="xs" c="gray.7">{author}</Text>}
+      {created && created !== '-' && (
+        <DocumentDetailChip tone="document" icon={<CalendarDays size={13} />}>{created}</DocumentDetailChip>
+      )}
+    </Group>
+  )
+}
+
+function ProductDataSheet({ children, className = '', product }: { children: ReactNode; className?: string; product: Product }) {
+  return (
+    <div className={`product-data-sheet ${className}`}>
+      <DocumentDetailLayout summary={(
+        <Group className="product-data-summary" gap={8}>
+          <TableChip tone="product" value={getProductCode(product)} />
+          <Text size="sm" fw={600}>{getProductTitle(product)}</Text>
+        </Group>
+      )}>
+        {children}
+      </DocumentDetailLayout>
+    </div>
   )
 }
 
@@ -1716,6 +1759,8 @@ function ProductConsignmentRemainingsPanel({ product }: { product: Product }) {
   const { t } = useI18n()
   const productNetUid = product.NetUid?.trim()
   const missingNetUidError = productNetUid ? null : t('У товару немає NetUid для завантаження залишків по партіям')
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
+  const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [rows, setRows] = useState<ProductConsignmentRemaining[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(Boolean(productNetUid))
@@ -1755,14 +1800,14 @@ function ProductConsignmentRemainingsPanel({ product }: { product: Product }) {
     return () => {
       cancelled = true
     }
-  }, [productNetUid, t])
+  }, [productNetUid, reloadKey, t])
 
   const remainingsColumns = useMemo<DataTableColumn<ProductConsignmentRemaining>[]>(() => [
     { id: 'storage', header: t('Склад'), accessor: (row) => row.StorageName, cell: (row) => <TableChip tone="storage" value={displayValue(row.StorageName)} /> },
     { id: 'supplier', header: t('Постачальник'), accessor: (row) => row.SupplierName, cell: (row) => displayValue(row.SupplierName) },
     { id: 'date', header: t('Дата'), accessor: (row) => row.FromDate, cell: (row) => <span className="app-money">{formatDate(row.FromDate)}</span> },
-    { id: 'invoice', header: t('Інвойс'), accessor: (row) => row.InvoiceNumber, cell: (row) => <span className="app-money">{displayValue(row.InvoiceNumber)}</span> },
-    { id: 'income', header: t('Прихід'), accessor: (row) => row.ProductIncomeNumber, cell: (row) => <span className="app-money">{displayValue(row.ProductIncomeNumber)}</span> },
+    { id: 'invoice', header: t('Інвойс'), accessor: (row) => row.InvoiceNumber, cell: (row) => <TableChip tone="document" value={displayValue(row.InvoiceNumber)} /> },
+    { id: 'income', header: t('Прихід'), accessor: (row) => row.ProductIncomeNumber, cell: (row) => <TableChip tone="document" value={displayValue(row.ProductIncomeNumber)} /> },
     { id: 'remaining', header: t('Залишок'), align: 'right', accessor: (row) => row.RemainingQty, cell: (row) => <span className="app-money">{formatAmount(row.RemainingQty)}</span> },
     { id: 'netPrice', header: t('Нетто'), align: 'right', accessor: (row) => row.NetPrice, cell: (row) => <span className="app-money">{formatPrice(row.NetPrice)}</span> },
     { id: 'totalNetPrice', header: t('Загальна нетто'), align: 'right', accessor: (row) => row.TotalNetPrice, cell: (row) => <span className="app-money">{formatPrice(row.TotalNetPrice)}</span> },
@@ -1773,28 +1818,44 @@ function ProductConsignmentRemainingsPanel({ product }: { product: Product }) {
     { id: 'weight', header: t('Вага'), align: 'right', accessor: (row) => row.Weight, cell: (row) => <span className="app-money">{formatAmount(row.Weight)}</span> },
   ], [t])
 
-  if (missingNetUidError) {
-    return <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">{missingNetUidError}</Alert>
-  }
-
-  if (error) {
-    return <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>
-  }
-
   return (
-    <DataTable
-      columns={remainingsColumns}
-      data={rows}
-      emptyText={t('Залишків по партіям не знайдено')}
-      getRowId={(row, index) => String(row.NetUid || row.Id || row.InvoiceNumber || index)}
-      isLoading={isLoading}
-      layoutVersion="product-consignment-remainings-1"
-      loadingText={t('Завантаження залишків')}
-      maxHeight="calc(100vh - 320px)"
-      minWidth={1480}
-      showToolbar={false}
-      tableId="product-consignment-remainings"
-    />
+    <div className="console-table-shell product-data-table-shell">
+      <div className="app-filter-bar">
+        <div className="app-filter-fields">
+          <Text className="app-section-title" fw={600} size="sm">{t('Партії')}</Text>
+          <div className="app-filter-actions">
+            <Button variant="default" color="gray" leftSection={<RefreshCw size={16} />}
+              disabled={Boolean(missingNetUidError)} loading={isLoading} onClick={() => reload()}>
+              {t('Оновити')}
+            </Button>
+          </div>
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
+        </div>
+      </div>
+      {(missingNetUidError || error) && (
+        <Alert className="product-data-alert" color={missingNetUidError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
+          {missingNetUidError || error}
+        </Alert>
+      )}
+      {!missingNetUidError && !error && (
+        <div className="product-data-table-body">
+          <DataTable
+            columns={remainingsColumns}
+            data={rows}
+            emptyText={t('Залишків по партіям не знайдено')}
+            getRowId={(row, index) => String(row.NetUid || row.Id || row.InvoiceNumber || index)}
+            height="100%"
+            isLoading={isLoading}
+            layoutVersion="product-consignment-remainings-1"
+            loadingText={t('Завантаження залишків')}
+            minWidth={1480}
+            showLayoutControls
+            tableId="product-consignment-remainings"
+            toolbarPortalTarget={tableToolbarSlot}
+          />
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -1808,21 +1869,23 @@ function ProductStorageHistoryPanel({ product }: { product: Product }) {
   const [rows, setRows] = useState<ProductStorageLocationHistory[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(false)
-  const { density, toggleDensity } = useDataTableDensity('product-storage-history', 'normal')
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
+  const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const { density, setDensity } = useDataTableDensity('product-storage-history', 'normal')
   const filterError = getDateRangeError(dateFrom, dateTo, t)
   const missingNetUidError = productNetUid ? null : t('У товару немає NetUid для завантаження історії місця зберігання')
   const activeError = filterError || missingNetUidError || error
   const total = rows[0]?.TotalRowsQty
-  const canMoveBack = page > 1
+  const totalPages = typeof total === 'number' ? Math.max(1, Math.ceil(total / pageSize)) : undefined
   const canMoveForward = typeof total === 'number' ? page * pageSize < total : rows.length === pageSize
 
   const storageHistoryColumns = useMemo<DataTableColumn<ProductStorageLocationHistory>[]>(() => [
-    { id: 'date', header: t('Дата'), accessor: (row) => row.Created, cell: (row) => formatDateTime(row.Created) },
-    { id: 'product', header: t('Товар'), accessor: (row) => row.Product?.VendorCode || row.Product?.NameUA || row.Product?.Name, cell: (row) => displayValue(row.Product?.VendorCode || row.Product?.NameUA || row.Product?.Name) },
+    { id: 'date', header: t('Дата'), accessor: (row) => row.Created, cell: (row) => <span className="app-money">{formatDateTime(row.Created)}</span> },
+    { id: 'product', header: t('Товар'), accessor: (row) => row.Product?.VendorCode || row.Product?.NameUA || row.Product?.Name, cell: (row) => row.Product?.VendorCode ? <TableChip tone="product" value={row.Product.VendorCode} /> : displayValue(row.Product?.NameUA || row.Product?.Name) },
     { id: 'storage', header: t('Склад'), accessor: (row) => row.Storage?.Name, cell: (row) => <TableChip tone="storage" value={displayValue(row.Storage?.Name)} /> },
     { id: 'placement', header: t('Місце'), accessor: (row) => row.Placement, cell: (row) => displayValue(row.Placement) },
     { id: 'status', header: t('Статус'), accessor: (row) => row.StorageLocationType, cell: (row) => <TableChip value={formatStorageLocationType(row.StorageLocationType, t)} /> },
-    { id: 'qty', header: t('Кількість'), align: 'right', accessor: (row) => formatStorageLocationQty(row), cell: (row) => formatStorageLocationQty(row) },
+    { id: 'qty', header: t('Кількість'), align: 'right', accessor: (row) => formatStorageLocationQty(row), cell: (row) => <span className="app-money">{formatStorageLocationQty(row)}</span> },
     { id: 'responsible', header: t('Відповідальний'), accessor: (row) => [row.User?.FirstName, row.User?.LastName].filter(Boolean).join(' '), cell: (row) => displayValue([row.User?.FirstName, row.User?.LastName].filter(Boolean).join(' ')) },
   ], [t])
 
@@ -1868,45 +1931,58 @@ function ProductStorageHistoryPanel({ product }: { product: Product }) {
     return () => {
       cancelled = true
     }
-  }, [dateFrom, dateTo, filterError, page, pageSize, productNetUid, t])
+  }, [dateFrom, dateTo, filterError, page, pageSize, productNetUid, reloadKey, t])
 
   return (
-    <Stack gap="md">
-      <Group align="end" gap="sm" wrap="nowrap" className="app-filter-fields clients-filter-row">
-        <TextInput label={t('З')} type="date" value={dateFrom} onChange={(event) => { setPage(1); setDateFrom(event.currentTarget.value) }} />
-        <TextInput label={t('По')} type="date" value={dateTo} onChange={(event) => { setPage(1); setDateTo(event.currentTarget.value) }} />
-        <Select label={t('Розмір сторінки')} data={pageSizeOptions} value={String(pageSize)} w={140} onChange={(value) => { setPage(1); setPageSize(Number(value || 20)) }} />
-        <Group gap="xs">
-          <ActionIcon aria-label={t('Попередня сторінка')} color="gray" disabled={!canMoveBack || isLoading || Boolean(filterError)} variant="light" onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}>
-            <ChevronLeft size={18} />
-          </ActionIcon>
-          <ActionIcon aria-label={t('Наступна сторінка')} color="gray" disabled={!canMoveForward || isLoading || Boolean(filterError)} variant="light" onClick={() => setPage((currentPage) => currentPage + 1)}>
-            <ChevronRight size={18} />
-          </ActionIcon>
-          <DataTableDensityToggle density={density} onToggle={toggleDensity} size="md" />
-        </Group>
-      </Group>
-      {activeError && <Alert color={filterError || missingNetUidError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">{activeError}</Alert>}
-      {!activeError ? (
-        <DataTable
-          columns={storageHistoryColumns}
-          data={rows}
-          density={density}
-          emptyText={t('Історію місця зберігання не знайдено')}
-          getRowId={(row, index) => String(row.NetUid || row.Id || index)}
-          isLoading={isLoading}
-          layoutVersion="product-storage-history-1"
-          loadingText={t('Завантаження історії')}
-          maxHeight="calc(100vh - 320px)"
-          minWidth={980}
-          tableId="product-storage-history"
-        />
-      ) : null}
-    </Stack>
+    <div className="console-table-shell product-data-table-shell">
+      <div className="app-filter-bar">
+        <div className="app-filter-fields">
+          <div className="app-filter-date-range">
+            <TextInput label={t('З')} type="date" value={dateFrom} onChange={(event) => { setPage(1); setDateFrom(event.currentTarget.value) }} />
+            <TextInput label={t('По')} type="date" value={dateTo} onChange={(event) => { setPage(1); setDateTo(event.currentTarget.value) }} />
+          </div>
+          <div className="app-filter-actions">
+            <Paginator
+              page={page}
+              pageSize={pageSize}
+              pageSizeOptions={pageSizeOptions}
+              totalPages={totalPages}
+              hasNext={canMoveForward}
+              isLoading={isLoading || Boolean(filterError || missingNetUidError)}
+              onPageChange={setPage}
+              onPageSizeChange={(value) => { setPage(1); setPageSize(value) }}
+              onRefresh={filterError || missingNetUidError ? undefined : reload}
+            />
+          </div>
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
+        </div>
+      </div>
+      {activeError && <Alert className="product-data-alert" color={filterError || missingNetUidError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">{activeError}</Alert>}
+      {!activeError && (
+        <div className="product-data-table-body">
+          <DataTable
+            columns={storageHistoryColumns}
+            data={rows}
+            density={density}
+            onDensityChange={setDensity}
+            emptyText={t('Історію місця зберігання не знайдено')}
+            getRowId={(row, index) => String(row.NetUid || row.Id || index)}
+            height="100%"
+            isLoading={isLoading}
+            layoutVersion="product-storage-history-1"
+            loadingText={t('Завантаження історії')}
+            minWidth={980}
+            showLayoutControls
+            tableId="product-storage-history"
+            toolbarPortalTarget={tableToolbarSlot}
+          />
+        </div>
+      )}
+    </div>
   )
 }
 
-// Same grid design as the clients table: pinned key columns + hidden density/layout controls.
+// Keep document identity pinned while the shared toolbar manages columns and density.
 const PRODUCT_MOVEMENT_DEFAULT_LAYOUT = {
   columnPinning: { left: ['document', 'number'] },
   density: 'normal',
@@ -1918,14 +1994,14 @@ function ProductMovementPanel({ product }: { product: Product }) {
 
   return (
     <Tabs
-      className="product-movement-history-tabs-root"
+      className="product-movement-history-tabs-root product-data-tabs"
       value={activeTab}
       onChange={(value) => {
         setActiveTab(value === 'historical-source' || value === 'informational' ? value : 'movement')
       }}
     >
-      <Tabs.List className="pill-tabs product-movement-history-tabs">
-        <Tabs.Tab value="movement">{t('Рух')}</Tabs.Tab>
+      <Tabs.List className="product-movement-history-tabs">
+        <Tabs.Tab leftSection={<ArrowLeftRight size={15} />} value="movement">{t('Рух')}</Tabs.Tab>
         <Tabs.Tab leftSection={<Archive size={15} />} value="historical-source">
           {t('Архівні партії 1С')}
         </Tabs.Tab>
@@ -1933,17 +2009,17 @@ function ProductMovementPanel({ product }: { product: Product }) {
           {t('Контроль даних')}
         </Tabs.Tab>
       </Tabs.List>
-      <Tabs.Panel value="movement" pt="md">
+      <Tabs.Panel className="product-data-tab-panel" value="movement" pt={0}>
         <CurrentProductMovementPanel product={product} />
       </Tabs.Panel>
-      <Tabs.Panel value="historical-source" pt={0}>
+      <Tabs.Panel className="product-data-tab-panel" value="historical-source" pt={0}>
         <HistoricalSourceMovementPanel
           active={activeTab === 'historical-source'}
           product={product}
           requestPath="/consignments/info/assortment/movement/historical-source/filtered"
         />
       </Tabs.Panel>
-      <Tabs.Panel value="informational" pt={0}>
+      <Tabs.Panel className="product-data-tab-panel" value="informational" pt={0}>
         <InformationalMovementPanel
           active={activeTab === 'informational'}
           product={product}
@@ -1969,20 +2045,13 @@ function CurrentProductMovementPanel({ product }: { product: Product }) {
   const [exportDocument, setExportDocument] = useState<ProductMovementExportDocument | null>(null)
   const [exportError, setExportError] = useState<string | null>(null)
   const [isExporting, setExporting] = useState(false)
-  const { density } = useDataTableDensity('product-movement', 'normal')
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
+  const { density, setDensity } = useDataTableDensity('product-movement', 'normal')
   const filterError = getDateRangeError(dateFrom, dateTo, t)
   const missingNetUidError = productNetUid ? null : t('У товару немає NetUid для завантаження руху товару')
   const typesError = selectedTypes.length === 0 ? t('Оберіть хоча б один тип руху') : null
   const activeError = filterError || missingNetUidError || typesError || error
   const canExportMovements = hasPermission(PRODUCT_MOVEMENT_EXPORT_PERMISSION)
-
-  function toggleMovementItemType(value: number) {
-    setSelectedTypes((currentTypes) => (
-      currentTypes.includes(value)
-        ? currentTypes.filter((type) => type !== value)
-        : currentTypes.concat(value)
-    ))
-  }
 
   useEffect(() => {
     if (filterError || typesError || !productNetUid) {
@@ -2069,7 +2138,7 @@ function CurrentProductMovementPanel({ product }: { product: Product }) {
     ) },
     { id: 'client', header: t('Клієнт'), minWidth: 220, accessor: (row) => row.ClientName, cell: (row) => displayValue(row.ClientName) },
     { id: 'storage', header: t('Склад'), minWidth: 120, accessor: (row) => row.StorageName, cell: (row) => <TableChip tone="storage" value={displayValue(row.StorageName)} /> },
-    { id: 'organization', header: t('Організація'), minWidth: 160, accessor: (row) => row.OrganizationName, cell: (row) => displayValue(row.OrganizationName) },
+    { id: 'organization', header: t('Організація'), minWidth: 160, accessor: (row) => row.OrganizationName, cell: (row) => <TableChip tone="product" value={displayValue(row.OrganizationName)} /> },
     { id: 'responsible', header: t('Відповідальний'), minWidth: 150, accessor: (row) => row.Responsible || row.UserName, cell: (row) => displayValue(row.Responsible || row.UserName) },
     { id: 'price', header: t('Собівартість'), minWidth: 120, align: 'right', accessor: (row) => row.Price, cell: (row) => <span className="app-money">{formatPrice(row.Price)}</span> },
     { id: 'accountingPrice', header: t('Облікова собівартість'), minWidth: 160, align: 'right', accessor: (row) => row.AccountingPrice, cell: (row) => <span className="app-money">{formatPrice(row.AccountingPrice)}</span> },
@@ -2080,54 +2149,49 @@ function CurrentProductMovementPanel({ product }: { product: Product }) {
   ], [t])
 
   return (
-    <Stack gap="md">
-      <Group align="end" gap="sm" wrap="nowrap" className="app-filter-fields clients-filter-row">
-        <TextInput label={t('З')} type="date" value={dateFrom} onChange={(event) => setDateFrom(event.currentTarget.value)} />
-        <TextInput label={t('По')} type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
-        <Select label={t('Тип руху')} data={movementTypeOptions.map((option) => ({ ...option, label: t(option.label) }))} value={movementType} w={220} onChange={(value) => setMovementType(value || '0')} />
-        <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" disabled={Boolean(filterError) || Boolean(typesError)} leftSection={<RefreshCw size={18} />} loading={isLoading} onClick={() => reload()}>
-          {t('Оновити')}
-        </Button>
-        <PermissionGate permissionKey={PRODUCT_MOVEMENT_EXPORT_PERMISSION}>
-          <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" disabled={!productNetUid || Boolean(filterError) || Boolean(typesError)} leftSection={<FileDown size={18} />} loading={isExporting} onClick={() => void exportMovements()}>
-            {t('Друк PDF')}
-          </Button>
-        </PermissionGate>
-      </Group>
-      <div className="product-movement-type-filters">
-        <div className="product-movement-type-grid">
-          {movementItemTypeOptions.map((option) => (
-            <Checkbox
-              key={option.value}
-              checked={selectedTypes.includes(option.value)}
-              label={t(option.label)}
-              size="sm"
-              onChange={() => toggleMovementItemType(option.value)}
-            />
-          ))}
+    <div className="console-table-shell product-data-table-shell">
+      <div className="app-filter-bar product-movement-sheet-toolbar">
+        <div className="app-filter-fields product-movement-sheet-filters">
+          <div className="app-filter-date-range">
+            <TextInput label={t('З')} type="date" value={dateFrom} onChange={(event) => setDateFrom(event.currentTarget.value)} />
+            <TextInput label={t('По')} type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
+          </div>
+          <Select label={t('Тип руху')} data={movementTypeOptions.map((option) => ({ ...option, label: t(option.label) }))} value={movementType} onChange={(value) => setMovementType(value || '0')} />
+          <MovementDocumentTypeFilter options={movementItemTypeOptions} value={selectedTypes} onChange={setSelectedTypes} />
         </div>
-        <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" onClick={() => setSelectedTypes(movementItemTypes)}>
-          {t('Скинути')}
-        </Button>
+        <div className="app-filter-actions">
+          <Button color="gray" variant="default" size="sm" disabled={Boolean(filterError || typesError || missingNetUidError)} leftSection={<RefreshCw size={16} />} loading={isLoading} onClick={() => reload()}>
+            {t('Оновити')}
+          </Button>
+          <PermissionGate permissionKey={PRODUCT_MOVEMENT_EXPORT_PERMISSION}>
+            <Button color="gray" variant="default" size="sm" disabled={!productNetUid || Boolean(filterError) || Boolean(typesError)} leftSection={<PdfIcon size={20} />} loading={isExporting} onClick={() => void exportMovements()}>
+              {t('Друк PDF')}
+            </Button>
+          </PermissionGate>
+        </div>
+        <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
       </div>
-      {activeError && <Alert color={filterError || missingNetUidError || typesError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">{activeError}</Alert>}
+      {activeError && <Alert className="product-data-alert" color={filterError || missingNetUidError || typesError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">{activeError}</Alert>}
       {!activeError && (
-        <DataTable
-          columns={movementColumns}
-          data={rows}
-          defaultLayout={PRODUCT_MOVEMENT_DEFAULT_LAYOUT}
-          density={density}
-          emptyText={t('Рух товару не знайдено')}
-          getRowId={(row, index) => String(row.NetUid || row.Id || row.DocumentNumber || index)}
-          isLoading={isLoading}
-          layoutVersion="product-movement-2"
-          loadingText={t('Завантаження руху товару')}
-          height="calc(100vh - 320px)"
-          minWidth={1640}
-          showDensityToggle={false}
-          showLayoutControls
-          tableId="product-movement"
-        />
+        <div className="product-data-table-body">
+          <DataTable
+            columns={movementColumns}
+            data={rows}
+            defaultLayout={PRODUCT_MOVEMENT_DEFAULT_LAYOUT}
+            density={density}
+            onDensityChange={setDensity}
+            emptyText={t('Рух товару не знайдено')}
+            getRowId={(row, index) => String(row.NetUid || row.Id || row.DocumentNumber || index)}
+            height="100%"
+            isLoading={isLoading}
+            layoutVersion="product-movement-2"
+            loadingText={t('Завантаження руху товару')}
+            minWidth={1640}
+            showLayoutControls
+            tableId="product-movement"
+            toolbarPortalTarget={tableToolbarSlot}
+          />
+        </div>
       )}
       <DocumentExportModal
         document={exportDocument}
@@ -2140,14 +2204,15 @@ function CurrentProductMovementPanel({ product }: { product: Product }) {
           setExportError(null)
         }}
       />
-    </Stack>
+    </div>
   )
 }
 
 function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => void; product: Product }) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
-  const { density, toggleDensity } = useDataTableDensity('product-writeoff-rules', 'normal')
+  const { density, setDensity } = useDataTableDensity('product-writeoff-rules', 'normal')
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const productNetUid = product.NetUid?.trim()
   const fallbackProductGroups = useMemo(() => getProductGroupsFromProduct(product), [product])
   const [rows, setRows] = useState<ProductWriteOffRule[]>([])
@@ -2396,10 +2461,10 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
   )
 
   const writeOffColumns = useMemo<DataTableColumn<ProductWriteOffRule>[]>(() => [
-    { id: 'date', header: t('Дата'), accessor: (row) => row.Created, cell: (row) => formatDate(row.Created) },
-    { id: 'locale', header: t('Регіон'), accessor: (row) => row.RuleLocale, cell: (row) => formatRuleLocale(row.RuleLocale) },
-    { id: 'rule', header: t('Правило'), accessor: (row) => row.RuleType, cell: (row) => formatRuleType(row.RuleType) },
-    { id: 'source', header: t('Джерело'), accessor: (row) => row.Product?.VendorCode || getProductGroupLabel(row.ProductGroup), cell: (row) => displayValue(row.Product?.VendorCode || getProductGroupLabel(row.ProductGroup)) },
+    { id: 'date', header: t('Дата'), width: 156, accessor: (row) => row.Created, cell: (row) => <span className="app-money">{formatDate(row.Created)}</span> },
+    { id: 'locale', header: t('Регіон'), width: 150, accessor: (row) => row.RuleLocale, cell: (row) => <TableChip tone="source" value={formatRuleLocale(row.RuleLocale)} /> },
+    { id: 'rule', header: t('Правило'), width: 220, accessor: (row) => row.RuleType, cell: (row) => <TableChip tone="document" value={formatRuleType(row.RuleType)} /> },
+    { id: 'source', header: t('Джерело'), width: 220, fill: true, accessor: (row) => row.Product?.VendorCode || getProductGroupLabel(row.ProductGroup), cell: (row) => row.Product?.VendorCode ? <TableChip tone="product" value={row.Product.VendorCode} /> : displayValue(getProductGroupLabel(row.ProductGroup)) },
     {
       id: 'actions',
       header: '',
@@ -2420,50 +2485,62 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
   ], [removingNetUid, removeRule, t])
 
   return (
-    <Stack gap="md">
-      <Group align="end" gap="sm" wrap="nowrap" className="app-filter-fields clients-filter-row">
-        <SegmentedControl
-          data={writeOffScopeOptions.map((option) => ({ ...option, label: t(option.label) }))}
-          disabled={isSaving || Boolean(removingNetUid)}
-          value={scope}
-          onChange={(value) => setScope(value as ProductWriteOffRuleScope)}
-        />
-        {scope === 'group' ? (
-          <Select
-            data={productGroupOptions}
-            disabled={isLoadingGroups || isSaving || Boolean(removingNetUid) || productGroupOptions.length === 0}
-            label={t('Група товарів')}
-            placeholder={isLoadingGroups ? t('Завантаження') : t('Оберіть групу')}
-            value={selectedProductGroupNetUid || null}
-            w={260}
-            onChange={(value) => setSelectedProductGroupNetUid(value || '')}
-          />
-        ) : null}
-        <Select label={t('Правило')} data={writeOffRuleTypeOptions.map((option) => ({ ...option, label: t(option.label) }))} value={ruleType} w={220} onChange={(value) => setRuleType(value || '0')} />
-        <Select label={t('Регіон')} data={writeOffLocaleOptions.map((option) => ({ ...option, label: t(option.label) }))} value={locale} w={180} onChange={(value) => setLocale(value || 'uk')} />
-        <PermissionGate permissionKey={PRODUCT_WRITE_OFF_CREATE_PERMISSION}>
-          <Button disabled={!productNetUid || isLoading || (scope === 'group' && (isLoadingGroups || !selectedProductGroupNetId))} color={CREATE_ACTION_COLOR} leftSection={<Plus size={18} />} loading={isSaving} onClick={addRule}>
-            {t('Додати')}
-          </Button>
-        </PermissionGate>
-        <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
-      </Group>
-      {activeError && <Alert color={missingNetUidError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">{activeError}</Alert>}
+    <div className="console-table-shell product-data-table-shell">
+      <div className="app-filter-bar product-writeoff-toolbar">
+        <div className="app-filter-fields product-writeoff-fields">
+          <div className="app-filter-field" style={{ flexBasis: 210 }}>
+            <span className="app-filter-label" id="product-writeoff-scope-label">{t('Джерело')}</span>
+            <SegmentedControl
+              aria-labelledby="product-writeoff-scope-label"
+              data={writeOffScopeOptions.map((option) => ({ ...option, label: t(option.label) }))}
+              disabled={isSaving || Boolean(removingNetUid)}
+              value={scope}
+              onChange={(value) => setScope(value as ProductWriteOffRuleScope)}
+            />
+          </div>
+          {scope === 'group' ? (
+            <Select
+              data={productGroupOptions}
+              disabled={isLoadingGroups || isSaving || Boolean(removingNetUid) || productGroupOptions.length === 0}
+              label={t('Група товарів')}
+              placeholder={isLoadingGroups ? t('Завантаження') : t('Оберіть групу')}
+              value={selectedProductGroupNetUid || null}
+              onChange={(value) => setSelectedProductGroupNetUid(value || '')}
+            />
+          ) : null}
+          <Select label={t('Правило')} data={writeOffRuleTypeOptions.map((option) => ({ ...option, label: t(option.label) }))} value={ruleType} onChange={(value) => setRuleType(value || '0')} />
+          <Select label={t('Регіон')} data={writeOffLocaleOptions.map((option) => ({ ...option, label: t(option.label) }))} value={locale} onChange={(value) => setLocale(value || 'uk')} />
+        </div>
+        <div className="app-filter-actions">
+          <PermissionGate permissionKey={PRODUCT_WRITE_OFF_CREATE_PERMISSION}>
+            <Button className="app-filter-primary-action" disabled={!productNetUid || isLoading || (scope === 'group' && (isLoadingGroups || !selectedProductGroupNetId))} color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} loading={isSaving} onClick={addRule}>
+              {t('Додати')}
+            </Button>
+          </PermissionGate>
+        </div>
+        <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
+      </div>
+      {activeError && <Alert className="product-data-alert" color={missingNetUidError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">{activeError}</Alert>}
       {!activeError ? (
-        <DataTable
-          columns={writeOffColumns}
-          data={rows}
-          density={density}
-          emptyText={t('Правил списання не знайдено')}
-          getRowId={(row, index) => String(row.NetUid || row.Id || index)}
-          isLoading={isLoading}
-          layoutVersion="product-writeoff-rules-1"
-          loadingText={t('Завантаження правил списання')}
-          maxHeight="calc(100vh - 320px)"
-          tableId="product-writeoff-rules"
-        />
+        <div className="product-data-table-body">
+          <DataTable
+            columns={writeOffColumns}
+            data={rows}
+            density={density}
+            emptyText={t('Правил списання не знайдено')}
+            getRowId={(row, index) => String(row.NetUid || row.Id || index)}
+            height="100%"
+            isLoading={isLoading}
+            layoutVersion="product-writeoff-rules-1"
+            loadingText={t('Завантаження правил списання')}
+            minWidth={760}
+            onDensityChange={setDensity}
+            tableId="product-writeoff-rules"
+            toolbarPortalTarget={tableToolbarSlot}
+          />
+        </div>
       ) : null}
-    </Stack>
+    </div>
   )
 }
 
@@ -2504,21 +2581,6 @@ function InfoRow({ dimmed, label, mono, multiline, value }: { dimmed?: boolean; 
   )
 }
 
-function InfoBlock({ label, mono, value }: { label: string; mono?: boolean; value?: number | string | null }) {
-  const { t } = useI18n()
-
-  return (
-    <Box>
-      <Text c="dimmed" size="xs" lineClamp={1}>
-        {t(label)}
-      </Text>
-      <Text className={mono ? 'app-money' : undefined} size="sm" fw={600} style={{ overflowWrap: 'anywhere' }}>
-        {displayValue(value)}
-      </Text>
-    </Box>
-  )
-}
-
 function sortSpecificationsByCreatedDesc(specifications: ProductSpecification[]): ProductSpecification[] {
   return specifications.toSorted((first, second) => {
     const firstTime = first.Created ? new Date(first.Created).getTime() : 0
@@ -2545,17 +2607,6 @@ function getSpecificationDutyPercent(specification: ProductSpecification): numbe
 
 function roundSpecificationPercent(value: number): number {
   return Math.round(value * 100) / 100
-}
-
-// "{code} - {rate}%" like the legacy customs-code history line (e.g. "4016995290 - 10%").
-function formatSpecificationCodeWithRate(specification: ProductSpecification): string {
-  const code = (specification.SpecificationCode || '').trim()
-
-  if (!code) {
-    return ''
-  }
-
-  return `${code} - ${roundSpecificationPercent(getSpecificationDutyPercent(specification))}%`
 }
 
 // The legacy history keeps only the latest entry per distinct (code, duty %) pair. The input is

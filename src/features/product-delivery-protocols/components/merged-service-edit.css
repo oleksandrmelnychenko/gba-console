@@ -1,0 +1,82 @@
+.merged-service-edit-drawer .merged-service-edit-section {
+  padding: 12px;
+  background: var(--mantine-color-white);
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.merged-service-edit-drawer .app-section-title,
+.merged-service-edit-drawer .merged-service-edit-subtitle {
+  color: var(--mantine-color-gray-9);
+  font: 600 14px/1.4 var(--font-mono);
+  letter-spacing: 0;
+}
+
+.merged-service-edit-basic-grid,
+.merged-service-edit-document-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 12px;
+  margin-top: 10px;
+}
+
+.merged-service-edit-cost-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.merged-service-edit-domestic-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 12px;
+}
+
+.merged-service-edit-domestic-grid > .mantine-Textarea-root { grid-column: 1 / -1; }
+
+.merged-service-edit-drawer.app-form-sheet .mantine-Input-input {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.merged-service-edit-drawer.app-form-sheet :is(.mantine-InputWrapper-label, .mantine-InputBase-label, .mantine-Checkbox-label) {
+  color: var(--mantine-color-gray-9);
+  font: 500 12px/1.3 var(--font-sans);
+  letter-spacing: 0;
+}
+
+.merged-service-edit-drawer :is(.mantine-InputWrapper-description, .mantine-InputWrapper-error, .merged-service-edit-hint) {
+  font: 400 12px/1.4 var(--font-sans);
+}
+
+.merged-service-edit-drawer .merged-service-edit-hint { color: var(--mantine-color-gray-7); }
+.merged-service-edit-drawer textarea.mantine-Input-input { min-height: 64px; }
+.merged-service-edit-drawer .app-sheet-footer .mantine-Button-root[data-variant='default'] { background: var(--mantine-color-white); }
+
+@media (max-width: 900px) {
+  .merged-service-edit-basic-grid,
+  .merged-service-edit-document-grid,
+  .merged-service-edit-domestic-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 600px) {
+  .merged-service-edit-basic-grid,
+  .merged-service-edit-document-grid,
+  .merged-service-edit-cost-grid,
+  .merged-service-edit-domestic-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+.merged-service-edit-sr-description {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

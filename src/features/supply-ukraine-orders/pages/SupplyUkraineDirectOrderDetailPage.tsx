@@ -8,26 +8,30 @@ import {
   Checkbox,
   FileButton,
   Group,
+  getDefaultZIndex,
   Loader,
   NumberInput,
   SegmentedControl,
+  SimpleGrid,
   Stack,
   Text,
   Textarea,
   TextInput,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { Check, CircleAlert, PackagePlus, Pencil, Plus, ReceiptText, Trash2, Upload } from 'lucide-react'
+import { Check, CircleAlert, PackagePlus, Pencil, Plane, Plus, ReceiptText, Save, Ship, Trash2, Truck, Upload } from 'lucide-react'
 import { useEffect, useReducer, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import './supply-order-detail.css'
+import './supply-order-logistics.css'
 import { formatLocalDate, formatLocalDateTime } from '../../../shared/date/dateTime'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { SUPPLY_ORDER_INCOME_STATUS_LABEL } from '../../../shared/supplyOrderIncomeStatus'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -58,10 +62,10 @@ import type {
 } from '../types'
 import { hasSupplyProForm } from '../proFormHelpers'
 
-const TRANSPORTATION_OPTIONS: Array<{ label: string, value: string }> = [
-  { label: 'Авто', value: '0' },
-  { label: 'Море', value: '1' },
-  { label: 'Авіа', value: '2' },
+const TRANSPORTATION_OPTIONS = [
+  { icon: Truck, label: 'Авто', value: '0' },
+  { icon: Ship, label: 'Море', value: '1' },
+  { icon: Plane, label: 'Авіа', value: '2' },
 ]
 const PERMISSION_APPROVE_ORDER = PermissionKeys.OrdersUkraine.LogisticWay.ApproveOrder
 const PERMISSION_CREDIT_NOTES = PermissionKeys.OrdersUkraine.LogisticWay.CreateCreditNote
@@ -728,7 +732,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
 
   return (
     <AppDrawer
-      className="supply-order-sheet"
+      className="supply-order-sheet supply-order-logistics"
       closeOnEscape={false}
       footer={creditNotesButton || approveButton ? (
         <>
@@ -743,15 +747,13 @@ function SupplyUkraineDirectOrderDetailPageContent() {
         <span className="supply-order-sheet-title">
           {t('Логістика замовлення')}
           {getOrderNumber(order) && (
-            <Badge className="app-role-pill is-yellow" variant="light">
-              {getOrderNumber(order)}
-            </Badge>
+            <TableChip tone="document" value={getOrderNumber(order)} />
           )}
         </span>
       }
       onClose={() => navigate('/orders/ukraine/all')}
     >
-      <Stack gap="lg">
+      <Stack gap={10}>
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
@@ -763,7 +765,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
           <Loader />
         </Group>
       ) : order ? (
-        <Stack gap="lg">
+        <Stack gap={10}>
           <Group gap="xs" wrap="wrap">
             {statusPill(t('Погоджено'), t, order.IsApproved)}
             {statusPill(t('Відправлено'), t, order.IsOrderShipped)}
@@ -775,8 +777,8 @@ function SupplyUkraineDirectOrderDetailPageContent() {
           <DirectOrderProductIncomeStatus key={order.NetUid} orderNetId={order.NetUid} />
 
           {/* Block 1 — Вибір постачальника */}
-          <Card className="supply-detail-card" withBorder radius="md" padding="lg">
-            <Stack gap="md">
+          <Card className="supply-detail-card" withBorder radius="md" padding={12}>
+            <Stack gap={10}>
               <Text className="app-section-title" fw={600} size="sm">
                 {t('Вибір постачальника')}
               </Text>
@@ -787,7 +789,12 @@ function SupplyUkraineDirectOrderDetailPageContent() {
               <Stack gap={4} align="flex-start">
                 <Text fw={600} size="sm">{t('Тип доставки')}</Text>
                 <SegmentedControl
-                  data={TRANSPORTATION_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
+                  className="supply-logistics-transport"
+                  size="xs"
+                  data={TRANSPORTATION_OPTIONS.map(({ icon: Icon, label, value }) => ({
+                    value,
+                    label: <span className="supply-logistics-transport-label"><Icon size={15} aria-hidden />{t(label)}</span>,
+                  }))}
                   disabled
                   value={transportationType}
                 />
@@ -796,20 +803,19 @@ function SupplyUkraineDirectOrderDetailPageContent() {
           </Card>
 
           {/* Block 2 — Замовлення */}
-          <Card className="supply-detail-card" withBorder radius="md" padding="lg">
-            <Stack gap="md">
+          <Card className="supply-detail-card" withBorder radius="md" padding={12}>
+            <Stack gap={10}>
               <Group gap="xs">
                 <Text className="app-section-title" fw={600} size="sm">
                   {t('Замовлення')}
                 </Text>
                 {getOrderNumber(order) && (
-                  <Text c="gray.7" className="supply-order-number-meta" size="sm">
-                    {getOrderNumber(order)}
-                  </Text>
+                  <TableChip tone="document" value={getOrderNumber(order)} />
                 )}
               </Group>
-              <Group align="flex-end" gap="sm" wrap="wrap">
+              <Group className="supply-logistics-order-controls" align="flex-end" gap={8} wrap="wrap">
                 <NumberInput
+                  hideControls
                   allowNegative={false}
                   decimalScale={2}
                   disabled={!isEditingAmount || isSaving}
@@ -884,8 +890,8 @@ function SupplyUkraineDirectOrderDetailPageContent() {
           <DirectOrderPaymentTasksCard disabled={isLocked} order={order} onError={setError} />
 
           {/* Order metrics — kept below the three primary blocks */}
-          <Card className="supply-detail-card" withBorder radius="md" padding="lg">
-            <Stack gap="md">
+          <Card className="supply-detail-card" withBorder radius="md" padding={12}>
+            <Stack gap={10}>
               <Text className="app-section-title" fw={600} size="sm">
                 {t('Підсумок замовлення')}
               </Text>
@@ -904,7 +910,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
             </Stack>
           </Card>
 
-          <Card className="supply-detail-card" withBorder radius="md" padding="lg">
+          <Card className="supply-detail-card" withBorder radius="md" padding={12}>
             <Group gap="xs" wrap="wrap">
               {canOpenInvoices && (
                 <Button
@@ -927,8 +933,8 @@ function SupplyUkraineDirectOrderDetailPageContent() {
             </Group>
           </Card>
 
-          <Card className="supply-detail-card" withBorder radius="md" padding="lg">
-            <Stack gap="md">
+          <Card className="supply-detail-card" withBorder radius="md" padding={12}>
+            <Stack gap={10}>
               <Text className="app-section-title" fw={600} size="sm">
                 {t('Документи доставки')}
               </Text>
@@ -950,35 +956,41 @@ function SupplyUkraineDirectOrderDetailPageContent() {
       )}
       </Stack>
 
-      <AppDrawer
-        className="supply-order-sheet"
+      <AppModal
+        className="supply-order-sheet supply-credit-notes-modal"
+        closeOnEscape={!creditNoteModalOpen}
+        closeOnClickOutside={!creditNoteModalOpen}
         opened={creditNotesOpen}
-        size="md"
+        size={640}
         title={t('Кредит ноти')}
+        trapFocus={!creditNoteModalOpen}
+        zIndex={getDefaultZIndex('modal') + 1}
         onClose={() => dispatchCreditNote({ type: 'setDrawerOpen', open: false })}
       >
-        <Stack gap="md">
-          <Group justify="flex-end">
-            <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={openCreditNoteModal}>
+        <Stack gap={10}>
+          <Group className="supply-credit-notes-toolbar" justify="space-between" gap={8}>
+            <Group gap={8}>
+              <Text fw={600} size="sm">{t('Документи')}</Text>
+              <TableChip value={(order?.CreditNoteDocuments || []).length} />
+            </Group>
+            <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} loading={isSaving} onClick={openCreditNoteModal}>
               {t('Створити')}
             </Button>
           </Group>
           {(order?.CreditNoteDocuments || []).length === 0 ? (
-            <Text c="dimmed" size="sm">
-              {t('Кредит нот немає')}
-            </Text>
+            <Card className="supply-credit-notes-empty" withBorder radius="md" padding="lg">
+              <Text c="gray.8" size="sm">{t('Кредит нот немає')}</Text>
+            </Card>
           ) : (
-            <Stack gap="xs">
+            <Stack gap={8}>
               {(order?.CreditNoteDocuments || []).map((creditNote, index) => (
                 <Box
                   className="supply-order-credit-note"
                   key={creditNote.NetUid || creditNote.Id || `${creditNote.Number || 'credit-note'}-${index}`}
                 >
-                  <Group justify="space-between" gap="xs" wrap="nowrap">
-                    <Text className="supply-order-credit-note-number" size="sm">
-                      {creditNote.Number || ''}
-                    </Text>
-                    <Text c="dimmed" className="supply-order-credit-note-date" size="xs">
+                  <Group justify="space-between" gap={8} wrap="wrap">
+                    <TableChip tone="document" value={creditNote.Number} />
+                    <Text c="gray.7" className="supply-order-credit-note-date" size="xs">
                       {formatDateTime(creditNote.FromDate)}
                     </Text>
                   </Group>
@@ -986,7 +998,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
                     {t('Сума')}: <span className="app-money">{formatMoney(creditNote.Amount)}</span>
                   </Text>
                   {creditNote.Comment && (
-                    <Text c="dimmed" size="sm" style={{ overflowWrap: 'anywhere' }}>
+                    <Text c="gray.8" size="sm" style={{ overflowWrap: 'anywhere' }}>
                       {creditNote.Comment}
                     </Text>
                   )}
@@ -1000,72 +1012,82 @@ function SupplyUkraineDirectOrderDetailPageContent() {
             </Stack>
           )}
         </Stack>
-      </AppDrawer>
+      </AppModal>
 
       <AppModal
-        className="supply-order-sheet"
+        className="supply-order-sheet supply-credit-note-edit-modal"
         opened={creditNoteModalOpen}
-        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Кредит нота')}</span>}
+        size={640}
+        title={t('Кредит нота')}
+        zIndex={getDefaultZIndex('modal') + 2}
         onClose={closeCreditNoteModal}
       >
-        <Stack gap="md">
-          <TextInput
-            label={t('Номер')}
-            value={creditNoteNumber}
-            onChange={(event) => dispatchCreditNote({ type: 'setNumber', value: event.currentTarget.value })}
-          />
-          <NumberInput
-            decimalScale={2}
-            label={t('Сума')}
-            min={0}
-            value={creditNoteAmount}
-            onChange={(value) => dispatchCreditNote({ type: 'setAmount', value })}
-          />
-          <TextInput
-            label={t('Дата')}
-            type="date"
-            value={creditNoteDate}
-            onChange={(event) => dispatchCreditNote({ type: 'setDate', value: event.currentTarget.value })}
-          />
-          <Textarea
-            autosize
-            label={t('Коментар')}
-            minRows={3}
-            value={creditNoteComment}
-            onChange={(event) => dispatchCreditNote({ type: 'setComment', value: event.currentTarget.value })}
-          />
-          <Group gap="xs">
-            <FileButton onChange={(file) => dispatchCreditNote({ type: 'setFile', value: file })}>
-              {(fileProps) => (
-                <Button {...fileProps} leftSection={<Upload size={16} />} variant="default">
-                  {t('Завантажити файл')}
-                </Button>
-              )}
-            </FileButton>
-            {creditNoteFile && (
-              <Group gap={4} wrap="nowrap">
-                <Text size="sm">{creditNoteFile.name}</Text>
-                <ActionIcon
-                  aria-label={t('Видалити')}
-                  color="red"
-                  size="sm"
-                  title={t('Видалити')}
-                  variant="subtle"
-                  onClick={() => dispatchCreditNote({ type: 'setFile', value: null })}
-                >
-                  <Trash2 size={16} />
-                </ActionIcon>
+        <Stack gap={10}>
+          <Card className="supply-credit-note-form" withBorder radius="md" padding="sm">
+            <Stack gap={12}>
+              <SimpleGrid cols={{ base: 1, xs: 3 }} spacing={12}>
+                <TextInput
+                  label={t('Номер')}
+                  value={creditNoteNumber}
+                  onChange={(event) => dispatchCreditNote({ type: 'setNumber', value: event.currentTarget.value })}
+                />
+                <NumberInput
+                  hideControls
+                  decimalScale={2}
+                  label={t('Сума')}
+                  min={0}
+                  value={creditNoteAmount}
+                  onChange={(value) => dispatchCreditNote({ type: 'setAmount', value })}
+                />
+                <TextInput
+                  label={t('Дата')}
+                  type="date"
+                  value={creditNoteDate}
+                  onChange={(event) => dispatchCreditNote({ type: 'setDate', value: event.currentTarget.value })}
+                />
+              </SimpleGrid>
+              <Textarea
+                autosize
+                label={t('Коментар')}
+                minRows={3}
+                maxRows={6}
+                value={creditNoteComment}
+                onChange={(event) => dispatchCreditNote({ type: 'setComment', value: event.currentTarget.value })}
+              />
+              <Group gap={8}>
+                <FileButton onChange={(file) => dispatchCreditNote({ type: 'setFile', value: file })}>
+                  {(fileProps) => (
+                    <Button {...fileProps} leftSection={<Upload size={16} />} variant="default">
+                      {t('Завантажити файл')}
+                    </Button>
+                  )}
+                </FileButton>
+                {creditNoteFile && (
+                  <Group className="supply-credit-note-file" gap={4} wrap="nowrap">
+                    <Text size="sm" style={{ overflowWrap: 'anywhere', minWidth: 0 }}>{creditNoteFile.name}</Text>
+                    <ActionIcon
+                      aria-label={t('Видалити')}
+                      color="red"
+                      size="sm"
+                      title={t('Видалити')}
+                      variant="subtle"
+                      onClick={() => dispatchCreditNote({ type: 'setFile', value: null })}
+                    >
+                      <Trash2 size={16} />
+                    </ActionIcon>
+                  </Group>
+                )}
               </Group>
-            )}
-          </Group>
-          <Group justify="flex-end" gap="xs">
+            </Stack>
+          </Card>
+          <AppModalFooter>
             <Button disabled={isSaving} variant="default" onClick={closeCreditNoteModal}>
               {t('Скасувати')}
             </Button>
-            <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={() => void saveCreditNote()}>
+            <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} onClick={() => void saveCreditNote()}>
               {t('Зберегти')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
 
@@ -1075,7 +1097,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
         title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Зміна статуса документа')}</span>}
         onClose={closeStatusModal}
       >
-        <Stack gap="md">
+        <Stack gap={10}>
           <Text fw={600} size="sm">
             {statusDocument?.Name || statusDocument?.FileName || t('Документ')}
           </Text>

@@ -1,0 +1,64 @@
+.customs-import-modal.app-modal .mantine-Modal-body {
+  background: var(--mantine-color-gray-0);
+}
+
+.customs-import-section {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  background: var(--mantine-color-white);
+}
+
+.customs-import-section .app-section-title {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.customs-import-layout {
+  max-height: calc(100dvh - 200px);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.customs-import-fields {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.customs-import-modal.app-modal.app-form-sheet .mantine-Input-input {
+  font-size: 13px;
+}
+
+.customs-import-section .mantine-SimpleGrid-root {
+  align-items: end;
+}
+
+.customs-import-modal .customs-import-hint {
+  color: var(--mantine-color-gray-7);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.customs-import-file {
+  padding: 6px 8px;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+}
+
+.customs-import-modal .mantine-Button-root[data-variant="default"] {
+  background: var(--mantine-color-white);
+}
+
+.customs-import-modal .app-modal-footer {
+  flex-shrink: 0;
+  margin-top: 0;
+}

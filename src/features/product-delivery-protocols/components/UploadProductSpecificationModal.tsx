@@ -1,8 +1,10 @@
-import { Alert, Button, FileInput, Group, NumberInput, SimpleGrid, Stack, TextInput } from '@mantine/core'
-import { CircleAlert, FileSpreadsheet, Upload } from 'lucide-react'
+import { Alert, Button, FileInput, NumberInput, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
+import { CircleAlert, Upload } from 'lucide-react'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import './customs-import-modals.css'
 import type { ProductSpecificationParseConfiguration } from '../specificationTypes'
 
 type UploadProductSpecificationModalProps = {
@@ -92,126 +94,152 @@ export function UploadProductSpecificationModal({
   return (
     <AppModal
       centered
-      className="app-form-sheet"
+      className="customs-import-modal customs-codes-import-modal"
       opened={opened}
-      size="lg"
-      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Завантаження митних кодів')}</span>}
+      size={800}
+      title={<span>{t('Завантаження митних кодів')}</span>}
       onClose={closeModal}
     >
-      <Stack gap="md">
-        {validationError && (
-          <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
-            {validationError}
-          </Alert>
-        )}
+      <Stack className="customs-import-layout" gap={10}>
+        <Stack className="customs-import-fields" gap={10}>
+          {validationError && (
+            <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
+              {validationError}
+            </Alert>
+          )}
 
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <TextInput
-            aria-required="true"
-            disabled={isLoading}
-            label={t('Дата митної декларації')}
-            type="date"
-            value={dateCustomDeclaration}
-            withAsterisk
-            onChange={(event) => setDateCustomDeclaration(event.currentTarget.value)}
-          />
-          <NumberInput
-            allowDecimal={false}
-            disabled={isLoading}
-            label={t('Код')}
-            min={1}
-            value={form.VendorCode}
-            onChange={(value) => setField('VendorCode', value)}
-          />
-          <NumberInput
-            allowDecimal={false}
-            disabled={isLoading}
-            label={t('Митна вартість')}
-            min={1}
-            value={form.CustomsValue}
-            onChange={(value) => setField('CustomsValue', value)}
-          />
-          <NumberInput
-            allowDecimal={false}
-            disabled={isLoading}
-            label={t('Митний код')}
-            min={1}
-            value={form.SpecificationCode}
-            onChange={(value) => setField('SpecificationCode', value)}
-          />
-          <NumberInput
-            allowDecimal={false}
-            disabled={isLoading}
-            label={t('Мито')}
-            min={1}
-            value={form.Duty}
-            onChange={(value) => setField('Duty', value)}
-          />
-          <NumberInput
-            allowDecimal={false}
-            disabled={isLoading}
-            label={t('Ціна')}
-            min={1}
-            value={form.Price}
-            onChange={(value) => setField('Price', value)}
-          />
-          <NumberInput
-            allowDecimal={false}
-            disabled={isLoading}
-            label={t('К-сть')}
-            min={1}
-            value={form.Qty}
-            onChange={(value) => setField('Qty', value)}
-          />
-          <NumberInput
-            allowDecimal={false}
-            disabled={isLoading}
-            label={t('Сума ПДВ')}
-            min={1}
-            value={form.VATValue}
-            onChange={(value) => setField('VATValue', value)}
-          />
-          <NumberInput
-            allowDecimal={false}
-            disabled={isLoading}
-            label={t('Від')}
-            min={1}
-            value={form.StartRow}
-            onChange={(value) => setField('StartRow', value)}
-          />
-          <NumberInput
-            allowDecimal={false}
-            disabled={isLoading}
-            label={t('До')}
-            min={1}
-            value={form.EndRow}
-            onChange={(value) => setField('EndRow', value)}
-          />
-        </SimpleGrid>
+          <section className="customs-import-section" aria-label={t('Файл та дата')}>
+            <Text className="app-section-title">{t('Файл та дата')}</Text>
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10}>
+              <TextInput
+                aria-required="true"
+                disabled={isLoading}
+                label={t('Дата митної декларації')}
+                type="date"
+                value={dateCustomDeclaration}
+                withAsterisk
+                onChange={(event) => setDateCustomDeclaration(event.currentTarget.value)}
+              />
+              <FileInput
+                clearable
+                accept=".xls,.xlsx"
+                disabled={isLoading}
+                label={t('Завантажити')}
+                leftSection={<ExcelIcon size={18} />}
+                placeholder={t('Оберіть файл')}
+                value={file}
+                onChange={(nextFile) => {
+                  if (!isLoading) {
+                    setFile(nextFile)
+                  }
+                }}
+              />
+            </SimpleGrid>
+          </section>
 
-        <FileInput
-          clearable
-          accept=".xls,.xlsx"
-          disabled={isLoading}
-          label={t('Завантажити')}
-          leftSection={<FileSpreadsheet size={16} />}
-          placeholder={t('Оберіть файл')}
-          value={file}
-          onChange={(nextFile) => {
-            if (!isLoading) {
-              setFile(nextFile)
-            }
-          }}
-        />
+          <section className="customs-import-section" aria-label={t('Колонки імпорту')}>
+            <Text className="app-section-title">{t('Колонки імпорту')}</Text>
+            <Text className="customs-import-hint">{t('Номери колонок у файлі')}</Text>
+            <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={10}>
+              <NumberInput
+                hideControls
+                allowDecimal={false}
+                disabled={isLoading}
+                label={t('Код')}
+                min={1}
+                value={form.VendorCode}
+                onChange={(value) => setField('VendorCode', value)}
+              />
+              <NumberInput
+                hideControls
+                allowDecimal={false}
+                disabled={isLoading}
+                label={t('Митна вартість')}
+                min={1}
+                value={form.CustomsValue}
+                onChange={(value) => setField('CustomsValue', value)}
+              />
+              <NumberInput
+                hideControls
+                allowDecimal={false}
+                disabled={isLoading}
+                label={t('Митний код')}
+                min={1}
+                value={form.SpecificationCode}
+                onChange={(value) => setField('SpecificationCode', value)}
+              />
+              <NumberInput
+                hideControls
+                allowDecimal={false}
+                disabled={isLoading}
+                label={t('Мито')}
+                min={1}
+                value={form.Duty}
+                onChange={(value) => setField('Duty', value)}
+              />
+              <NumberInput
+                hideControls
+                allowDecimal={false}
+                disabled={isLoading}
+                label={t('Ціна')}
+                min={1}
+                value={form.Price}
+                onChange={(value) => setField('Price', value)}
+              />
+              <NumberInput
+                hideControls
+                allowDecimal={false}
+                disabled={isLoading}
+                label={t('К-сть')}
+                min={1}
+                value={form.Qty}
+                onChange={(value) => setField('Qty', value)}
+              />
+              <NumberInput
+                hideControls
+                allowDecimal={false}
+                disabled={isLoading}
+                label={t('Сума ПДВ')}
+                min={1}
+                value={form.VATValue}
+                onChange={(value) => setField('VATValue', value)}
+              />
+            </SimpleGrid>
+          </section>
 
-        <Group justify="flex-end">
-          <Button disabled={isLoading} variant="subtle" onClick={closeModal}>
+          <section className="customs-import-section" aria-label={t('Рядки імпорту')}>
+            <Text className="app-section-title">{t('Рядки імпорту')}</Text>
+            <SimpleGrid cols={2} spacing={10}>
+              <NumberInput
+                hideControls
+                allowDecimal={false}
+                disabled={isLoading}
+                label={t('Від')}
+                min={1}
+                value={form.StartRow}
+                onChange={(value) => setField('StartRow', value)}
+              />
+              <NumberInput
+                hideControls
+                allowDecimal={false}
+                disabled={isLoading}
+                label={t('До')}
+                min={1}
+                value={form.EndRow}
+                onChange={(value) => setField('EndRow', value)}
+              />
+            </SimpleGrid>
+          </section>
+        </Stack>
+
+        <AppModalFooter>
+          <Button disabled={isLoading} variant="default" onClick={closeModal}>
             {t('Скасувати')}
           </Button>
           <Button disabled={isLoading} leftSection={<Upload size={16} />} loading={isLoading} onClick={submitForm}>
             {t('Завантажити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

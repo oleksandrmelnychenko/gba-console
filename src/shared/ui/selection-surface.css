@@ -1,0 +1,40 @@
+/* Shared list/selector selection. Tabs use their own navigation treatment.
+   Add data-selected="true" and an aria-hidden marker span to the selected item. */
+.app-selection-surface {
+  position: relative;
+  background: transparent;
+  transition: background-color 160ms ease;
+}
+
+/* Overlay default-button rules are more specific than plain list rows.
+   Keep their surface override here so each feature inherits the same state. */
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .app-selection-surface.mantine-Button-root[data-variant] {
+  background: transparent;
+}
+
+.app-selection-surface::before,
+.app-selection-surface.mantine-Button-root::before { display: none; }
+
+.app-selection-surface[data-selected='true'],
+.app-selection-surface:hover:not(:disabled),
+.app-selection-surface:focus-visible:not(:disabled),
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .app-selection-surface.mantine-Button-root[data-variant][data-selected='true'],
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .app-selection-surface.mantine-Button-root[data-variant]:hover:not(:disabled),
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .app-selection-surface.mantine-Button-root[data-variant]:focus-visible:not(:disabled) {
+  background: var(--mantine-color-gray-0);
+}
+
+.app-selection-surface .app-selection-surface__marker {
+  display: none;
+  pointer-events: none;
+  position: absolute;
+  inset-block: 8px;
+  inset-inline-start: 0;
+  width: 4px;
+  border-radius: 0 4px 4px 0;
+  background: var(--brand-orange);
+}
+
+.app-selection-surface[data-selected='true'] .app-selection-surface__marker {
+  display: block;
+}

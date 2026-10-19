@@ -11,6 +11,7 @@ import type {
   SpecificationPackingList,
 } from '../specificationTypes'
 import { getLatestProductSpecificationFromList } from '../productSpecificationLatest'
+import './specification-products-grid.css'
 
 type SpecificationRow = {
   customsValue: number
@@ -47,12 +48,16 @@ type ServiceColumn = {
 
 type SpecificationProductsGridProps = {
   canEditSpecification?: boolean
+  compact?: boolean
   currencyIsEur: boolean
   invoiceCurrencyCode?: string
   invoiceDeliveryAmount?: number
+  isLoading?: boolean
+  maxHeight?: string | number
   onEditSpecification?: (item: PackingListPackageOrderItem) => void
   onOpenProductCard?: (productNetId: string) => void
   packingList: SpecificationPackingList
+  toolbarPortalTarget?: Element | null
   withManagementServices: boolean
 }
 
@@ -70,12 +75,16 @@ const NUMERIC_CELL_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 } 
 
 export function SpecificationProductsGrid({
   canEditSpecification = false,
+  compact = false,
   currencyIsEur,
   invoiceCurrencyCode,
   invoiceDeliveryAmount,
+  isLoading = false,
+  maxHeight = 'calc(100vh - 420px)',
   onEditSpecification,
   onOpenProductCard,
   packingList,
+  toolbarPortalTarget,
   withManagementServices,
 }: SpecificationProductsGridProps) {
   const { t } = useI18n()
@@ -121,11 +130,12 @@ export function SpecificationProductsGrid({
           onOpenProductCard && row.productNetId ? (
             <Anchor
               c="dark.6"
+              className="specification-product-code-link"
               component="button"
               fw={600}
               style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}
               type="button"
-              underline="always"
+              underline="never"
               onClick={(event) => {
                 event.stopPropagation()
                 onOpenProductCard(row.productNetId)
@@ -145,9 +155,13 @@ export function SpecificationProductsGrid({
         cell: (row) =>
           onOpenProductCard && row.productNetId ? (
             <Anchor
+              c="gray.9"
+              className="specification-product-name-link"
               component="button"
+              fw={500}
               size="sm"
               type="button"
+              underline="hover"
               onClick={(event) => {
                 event.stopPropagation()
                 onOpenProductCard(row.productNetId)
@@ -156,7 +170,7 @@ export function SpecificationProductsGrid({
               {displayText(row.name)}
             </Anchor>
           ) : (
-            <Text size="sm" lineClamp={2}>
+            <Text c="gray.9" size="sm" lineClamp={2}>
               {displayText(row.name)}
             </Text>
           ),
@@ -364,16 +378,21 @@ export function SpecificationProductsGrid({
   ])
 
   return (
-    <DataTable
-      columns={columns}
-      data={rows}
-      emptyText={t('Немає даних')}
-      getRowId={(row) => String(row.item.NetUid || row.item.Id || row.index)}
-      layoutVersion="protocol-specification-grid-1"
-      maxHeight="calc(100vh - 420px)"
-      minWidth={1600}
-      tableId="protocol-specification-grid"
-    />
+    <div className={`specification-products-grid${compact ? ' is-compact' : ''}`}>
+      <DataTable
+        columns={columns}
+        data={rows}
+        defaultLayout={compact ? { density: 'compact' } : undefined}
+        emptyText={t('Немає даних')}
+        getRowId={(row) => String(row.item.NetUid || row.item.Id || row.index)}
+        isLoading={isLoading}
+        layoutVersion="protocol-specification-grid-1"
+        maxHeight={maxHeight}
+        minWidth={1600}
+        tableId="protocol-specification-grid"
+        toolbarPortalTarget={toolbarPortalTarget}
+      />
+    </div>
   )
 }
 
