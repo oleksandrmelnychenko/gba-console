@@ -23,6 +23,9 @@ import type {
   ProductRelatedUploadType,
   ProductReservation,
   ProductSearchParams,
+  ProductSiblingCard,
+  ProductSiblingCount,
+  ProductSiblingGroup,
   ProductSpecification,
   ProductSourcePriceComparison,
   ProductStorageLocationHistory,
@@ -399,6 +402,7 @@ export async function getProductMovements(params: ProductMovementsParams): Promi
       productNetId: params.productNetId,
       to: params.to,
       types: params.types,
+      ...(params.includeSiblings ? { includeSiblings: true } : {}),
     },
     errorMessages: {
       default: 'Не вдалося завантажити рух товару',
@@ -417,6 +421,7 @@ export async function getProductIncomeMovements(
       from: params.from,
       productNetId: params.productNetId,
       to: params.to,
+      ...(params.includeSiblings ? { includeSiblings: true } : {}),
     },
     errorMessages: {
       default: 'Не вдалося завантажити прихід товару',
@@ -435,6 +440,7 @@ export async function getProductOutcomeMovements(
       from: params.from,
       productNetId: params.productNetId,
       to: params.to,
+      ...(params.includeSiblings ? { includeSiblings: true } : {}),
     },
     errorMessages: {
       default: 'Не вдалося завантажити вихід товару',
@@ -443,6 +449,61 @@ export async function getProductOutcomeMovements(
   })
 
   return normalizeArray(result) as ProductOutcomeMovement[]
+}
+
+export async function getProductSiblings(
+  productNetId: string,
+  signal?: AbortSignal,
+): Promise<ProductSiblingGroup> {
+  const result = await apiRequest<unknown>('/products/assortment/siblings', {
+    query: {
+      productNetId,
+    },
+    signal,
+    errorMessages: {
+      default: 'Не вдалося завантажити картки артикула',
+      network: 'Сервер карток артикула недоступний',
+    },
+  })
+
+  return normalizeProductSiblingGroup(result, productNetId)
+}
+
+const PRODUCT_SIBLING_COUNTS_BATCH_SIZE = 200
+
+export async function getProductSiblingCounts(
+  productNetIds: string[],
+  signal?: AbortSignal,
+): Promise<ProductSiblingCount[]> {
+  const uniqueNetIds = Array.from(new Set(productNetIds.map((netId) => (netId || '').trim()).filter(Boolean)))
+  const batches: string[][] = []
+
+  for (let index = 0; index < uniqueNetIds.length; index += PRODUCT_SIBLING_COUNTS_BATCH_SIZE) {
+    batches.push(uniqueNetIds.slice(index, index + PRODUCT_SIBLING_COUNTS_BATCH_SIZE))
+  }
+
+  const results = await Promise.all(batches.map((batch) => apiRequest<unknown>('/products/assortment/siblings/counts', {
+    query: {
+      productNetIds: batch,
+    },
+    signal,
+    errorMessages: {
+      default: 'Не вдалося завантажити кількість карток артикула',
+      network: 'Сервер карток артикула недоступний',
+    },
+  })))
+
+  return results.flatMap((result) => normalizeArray(result)).reduce<ProductSiblingCount[]>((counts, item) => {
+    const record = item && typeof item === 'object' ? item as Record<string, unknown> : null
+    const productNetId = typeof record?.ProductNetId === 'string' ? record.ProductNetId.trim() : ''
+    const siblingCount = Number(record?.SiblingCount)
+
+    if (productNetId && Number.isFinite(siblingCount) && siblingCount > 0) {
+      counts.push({ ProductNetId: productNetId, SiblingCount: siblingCount })
+    }
+
+    return counts
+  }, [])
 }
 
 export async function exportProductIncomeMovementsDocument(
@@ -1036,6 +1097,37 @@ function normalizeProducts(result: unknown): Product[] {
   }
 
   return []
+}
+
+function normalizeProductSiblingGroup(result: unknown, productNetId: string): ProductSiblingGroup {
+  const payload = result && typeof result === 'object' && !Array.isArray(result)
+    ? result as Record<string, unknown>
+    : {}
+  const cards = Array.isArray(payload.Cards) ? payload.Cards : []
+
+  return {
+    Cards: cards.reduce<ProductSiblingCard[]>((items, card) => {
+      if (!card || typeof card !== 'object') {
+        return items
+      }
+
+      const record = card as ProductSiblingCard
+
+      if (typeof record.ProductNetId !== 'string' || !record.ProductNetId.trim()) {
+        return items
+      }
+
+      items.push({
+        ...record,
+        Availabilities: Array.isArray(record.Availabilities) ? record.Availabilities : [],
+      })
+
+      return items
+    }, []),
+    ProductNetId: typeof payload.ProductNetId === 'string' && payload.ProductNetId.trim()
+      ? payload.ProductNetId
+      : productNetId,
+  }
 }
 
 function normalizeArray(result: unknown): unknown[] {

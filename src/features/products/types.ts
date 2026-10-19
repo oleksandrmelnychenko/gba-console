@@ -286,6 +286,7 @@ export type ProductConsignmentRemaining = EntityFields & {
 export type ProductMovement = EntityFields & {
   AccountingGrossPrice?: number
   AccountingPrice?: number
+  Card?: ProductSiblingCardRef | null
   ClientName?: string
   Comment?: string
   Discount?: number
@@ -312,6 +313,7 @@ export type ProductMovement = EntityFields & {
 export type ProductIncomeMovement = EntityFields & {
   AccountingEurUnitPrice?: number
   AccountingGrossPrice?: number
+  Card?: ProductSiblingCardRef | null
   Currency?: string
   ExchangeRate?: number
   FromInvoiceDate?: Date | string
@@ -337,6 +339,7 @@ export type ProductIncomeMovement = EntityFields & {
 }
 
 export type ProductOutcomeMovement = EntityFields & {
+  Card?: ProductSiblingCardRef | null
   ClientName?: string
   DocumentNumber?: string | number
   DocumentTypeName?: string
@@ -351,6 +354,7 @@ export type ProductOutcomeMovement = EntityFields & {
 
 export type ProductMovementsParams = {
   from: string
+  includeSiblings?: boolean
   movementType: number
   productNetId: string
   to: string
@@ -391,8 +395,45 @@ export type ProductPlacementStorage = EntityFields & {
 
 export type ProductIncomeOutcomeMovementParams = {
   from: string
+  includeSiblings?: boolean
   productNetId: string
   to: string
+}
+
+export type ProductSiblingCardRef = {
+  IsCurrent?: boolean
+  Name?: string | null
+  ProductId?: number
+  ProductNetId?: string
+  SourceAmgCode?: number | null
+  SourceFenixCode?: number | null
+  VendorCode?: string | null
+}
+
+export type ProductSiblingAvailability = {
+  Amount?: number
+  OrganizationName?: string | null
+  StorageId?: number
+  StorageName?: string | null
+  StorageNetId?: string
+}
+
+export type ProductSiblingCard = ProductSiblingCardRef & {
+  Availabilities: ProductSiblingAvailability[]
+  LastActivityAt?: string | null
+  SalesCount?: number
+  SoldQty?: number
+  StockQty?: number
+}
+
+export type ProductSiblingGroup = {
+  Cards: ProductSiblingCard[]
+  ProductNetId: string
+}
+
+export type ProductSiblingCount = {
+  ProductNetId: string
+  SiblingCount: number
 }
 
 export type ProductMovementExportDocument = {
