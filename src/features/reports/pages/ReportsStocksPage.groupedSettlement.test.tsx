@@ -67,7 +67,7 @@ it('keeps a saved source filter intact but refuses generation and source lookup 
   fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Saved source region' }))
   fireEvent.click(screen.getByRole('combobox', { name: 'База взаєморозрахунків' }))
   fireEvent.click(screen.getByRole('option', { name: 'AMG' }))
-  expect(screen.getByText('B', { selector: '.reports-stocks-selection-summary__value' })).toBeTruthy()
+  expect(screen.getByText('B', { selector: '.reports-stocks-selection-summary__value .app-table-chip.is-document .app-table-chip-label' })).toBeTruthy()
   fireEvent.submit(container.querySelector('form')!)
   expect(createStockReport).not.toHaveBeenCalled()
   fireEvent.click(screen.getByRole('button', { name: 'Додати умову' }))

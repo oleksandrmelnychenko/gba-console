@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { cwd } from 'node:process'
-import postcss, { type AtRule, type Root, type Rule } from 'postcss'
+import postcss, { type AtRule, type Declaration, type Root, type Rule } from 'postcss'
 import { describe, expect, it } from 'vitest'
 
 const filterBarCss = readFileSync(join(cwd(), 'src/shared/ui/filter-bar.css'), 'utf8')
@@ -15,20 +15,15 @@ const FILTER_ROW_CLASS_PATTERN = /(?:filter-content|filter-form|filter-row)$/
 const FIELD_GEOMETRY_SELECTOR_PATTERN = /mantine-(?:Input-wrapper|Input-input|InputWrapper-label|Select-input|TextInput-input)/
 const CANONICAL_GEOMETRY_LITERALS = new Set(['4px', '17px', '36px'])
 const SHARED_BAR_SCOPE = ':is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar)'
-const FORBIDDEN_FEATURE_BAR_PROPERTIES = new Set([
+const CANONICAL_BAR_BLOCK_PADDING = '8px'
+const VERTICAL_GEOMETRY_PROPERTIES = new Set([
   'height',
   'max-height',
   'min-height',
-  'padding',
   'padding-block',
   'padding-block-end',
   'padding-block-start',
   'padding-bottom',
-  'padding-inline',
-  'padding-inline-end',
-  'padding-inline-start',
-  'padding-left',
-  'padding-right',
   'padding-top',
 ])
 
@@ -182,7 +177,7 @@ describe('filter-bar CSS contract', () => {
         }
 
         rule.walkDecls((declaration) => {
-          if (FORBIDDEN_FEATURE_BAR_PROPERTIES.has(declaration.prop)) {
+          if (changesVerticalGeometry(declaration)) {
             conflicts.push(`${file}:${rule.source?.start?.line ?? 0} ${rule.selector} -> ${declaration.prop}`)
           }
         })
@@ -315,6 +310,20 @@ function declarations(rule: Rule): Record<string, string> {
   })
 
   return result
+}
+
+function changesVerticalGeometry(declaration: Declaration): boolean {
+  if (VERTICAL_GEOMETRY_PROPERTIES.has(declaration.prop)) {
+    return true
+  }
+
+  if (declaration.prop !== 'padding') {
+    return false
+  }
+
+  const [top, , bottom = top] = declaration.value.trim().split(/\s+/)
+
+  return top !== CANONICAL_BAR_BLOCK_PADDING || bottom !== CANONICAL_BAR_BLOCK_PADDING
 }
 
 function targetsFilterBar(rule: Rule): boolean {

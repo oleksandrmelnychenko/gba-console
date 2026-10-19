@@ -90,7 +90,7 @@ describe('server-computed ABC constructor', () => {
     expect(screen.getByText(/ABC: поле «ABC-клас» має бути вибране/)).toBeTruthy()
     fireEvent.submit(container.querySelector('form')!); expect(createStockReport).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Додати поле: Групування рядків' }))
-    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'ABC-класABC-клас' }))
+    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'ABC-клас' }))
     fireEvent.submit(container.querySelector('form')!); await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0].abcClassification).toEqual(accountAbc)
   })

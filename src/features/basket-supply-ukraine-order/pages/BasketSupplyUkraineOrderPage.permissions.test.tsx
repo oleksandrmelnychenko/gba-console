@@ -60,6 +60,7 @@ vi.mock('../api/basketSupplyUkraineOrderApi', () => ({
 
 vi.mock('../../../shared/ui/AppModal', () => ({
   AppModal: ({ children, opened }: { children: ReactNode; opened: boolean }) => opened ? <section>{children}</section> : null,
+  AppModalFooter: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }))
 
 vi.mock('../../../shared/ui/AppDrawer', () => ({

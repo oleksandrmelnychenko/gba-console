@@ -1,7 +1,15 @@
-import { fireEvent, screen } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { expect } from 'vitest'
 
 export function findWorkbookLanding() {
   return screen.findByRole('heading', { name: 'Звіти' })
+}
+
+export async function findOpenedWorkbook(fileName: string) {
+  const switcher = await screen.findByRole('navigation', { name: 'Звіти' })
+  await waitFor(() => expect(within(switcher).getByRole('button', { name: `Відкрити ${fileName}` })
+    .getAttribute('aria-current')).toBe('true'))
+  return switcher
 }
 
 export function expandWorkbookSettings() {
@@ -9,17 +17,8 @@ export function expandWorkbookSettings() {
   if (toggle) fireEvent.click(toggle)
 }
 
-function openDetails(label: string) {
-  const details = screen.getByText(label).closest('details')
-  if (details) details.open = true
-}
-
 export function openWorkbookAdvanced() {
   openWorkbookSettingsSection('Додатково')
-}
-
-export function openOtherWaysToOpen() {
-  openDetails('Інші способи відкрити звіт')
 }
 
 export function openWorkbookSettingsSection(name: string) {

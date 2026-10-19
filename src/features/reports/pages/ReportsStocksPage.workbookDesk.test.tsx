@@ -15,9 +15,9 @@ import { settlementModeDataset } from '../data/settlementReadMode.test-fixtures'
 import { currentVparivanieDataset } from '../data/currentVparivanie.test-fixtures'
 import { previousKyivDay } from '../data/cashPeriod'
 import type { NativeReportPreview } from '../data/nativeReportPreview'
-import { deskPeriodText } from '../data/workbookDesk'
+import { deskPeriodText, workbookDefaultPeriod } from '../data/workbookDesk'
 import { WORKBOOK_FILES } from '../testing/workbookFiles'
-import { findWorkbookLanding } from '../testing/workbookDesk'
+import { findOpenedWorkbook } from '../testing/workbookDesk'
 import { ReportsStocksPage } from './ReportsStocksPage'
 
 vi.mock('../reportSurfacePolicy', () => ({ BUG_1274_ONLY_REPORT_SURFACE: true }))
@@ -54,27 +54,26 @@ beforeEach(() => {
 
 const page = () => <MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>
 const dateInput = (label: string) => screen.getByLabelText(label) as HTMLInputElement
+const workbookDataSources: Readonly<Record<string, number>> = {
+  'ВП.xls': 35, 'ВП по постачальниках.xls': 38, 'Впарювання.xls': 39,
+  'Ведомость по денежным средствам.xls': 40, 'Взаємороз всі.xls': 41, 'ДБіторка.xls': 41,
+}
 
 async function openDayWorkbook() {
   render(page())
-  await findWorkbookLanding()
-  fireEvent.click(screen.getByRole('button', { name: 'Відкрити ВП.xls' }))
+  await findOpenedWorkbook('ВП.xls')
   await waitFor(() => expect((screen.getByRole('button', { name: 'Показати на екрані' }) as HTMLButtonElement).disabled).toBe(false))
 }
 
-it('opens every workbook on the period its card promises', async () => {
+it('opens every workbook from the switcher on its default period', async () => {
   render(page())
-  await findWorkbookLanding()
+  const switcher = await findOpenedWorkbook('ВП.xls')
   for (const file of Object.values(WORKBOOK_FILES)) {
-    const card = screen.getByRole('button', { name: `Відкрити ${file}` }).closest('article')!
-    const promised = card.querySelector('.workbook-card__dates')!.textContent
-    fireEvent.click(within(card).getByRole('button', { name: `Відкрити ${file}` }))
+    const period = workbookDefaultPeriod(file, workbookDataSources[file], formatKyivBusinessDate())!
+    fireEvent.click(within(switcher).getByRole('button', { name: `Відкрити ${file}` }))
+    await findOpenedWorkbook(file)
     await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/i)).toBeNull())
-    expect(deskPeriodText(dateInput('Від').value, dateInput('До').value)).toBe(promised)
-    expect(within(screen.getByRole('navigation', { name: 'Звіти' })).getByRole('button', { name: `Відкрити ${file}` })
-      .getAttribute('aria-current')).toBe('true')
-    fireEvent.click(screen.getByRole('button', { name: 'Усі звіти' }))
-    await findWorkbookLanding()
+    expect(deskPeriodText(dateInput('Від').value, dateInput('До').value)).toBe(deskPeriodText(period.from, period.to))
   }
 })
 
@@ -137,14 +136,16 @@ it('shows what is happening while the report is formed and the server reason whe
   expect((screen.getByRole('button', { name: 'Показати на екрані' }) as HTMLButtonElement).disabled).toBe(false)
 })
 
-it('keeps the open report behind «Усі звіти» and returns to it unchanged', async () => {
+it('keeps the report list beside the open report instead of hiding the report behind «Усі звіти»', async () => {
   await openDayWorkbook()
   const day = previousKyivDay(formatKyivBusinessDate())
   fireEvent.change(dateInput('Від'), { target: { value: day } })
-  fireEvent.click(screen.getByRole('button', { name: 'Усі звіти' }))
-  await findWorkbookLanding()
-  expect(screen.queryByRole('button', { name: 'Показати на екрані' })).toBeNull()
-  fireEvent.click(screen.getByRole('button', { name: 'Повернутися до звіту «Валовий прибуток»' }))
+  const switcher = screen.getByRole('navigation', { name: 'Звіти' })
+  expect(within(switcher).getAllByRole('button', { name: /^Відкрити / })).toHaveLength(6)
+  expect(within(switcher).getByRole('button', { name: 'Відкрити ВП.xls' }).getAttribute('aria-current')).toBe('true')
+  expect(screen.queryByRole('button', { name: 'Усі звіти' })).toBeNull()
+  expect(screen.queryByRole('button', { name: /^Повернутися до звіту/ })).toBeNull()
+  expect(screen.getByRole('button', { name: 'Показати на екрані' })).toBeTruthy()
   expect(dateInput('Від').value).toBe(day)
   expect(screen.getByRole('region', { name: 'Валовий прибуток' })).toBeTruthy()
 })
@@ -177,18 +178,19 @@ it('keeps report details available in the collapsed header', async () => {
 it('opens reports immediately while an earlier draft remains an optional recovery action', async () => {
   auth.owner = 'background-draft-owner'
   const first = render(page())
-  await findWorkbookLanding()
-  fireEvent.click(screen.getByRole('button', { name: 'Відкрити ВП.xls' }))
+  await findOpenedWorkbook('ВП.xls')
   await waitFor(() => expect((screen.getByRole('button', { name: 'Показати на екрані' }) as HTMLButtonElement).disabled).toBe(false))
   fireEvent.change(dateInput('Від'), { target: { value: '2026-09-02' } })
   first.unmount()
   render(page())
-  await findWorkbookLanding()
+  await findOpenedWorkbook('ВП.xls')
+  await waitFor(() => expect((screen.getByRole('button', { name: 'Показати на екрані' }) as HTMLButtonElement).disabled).toBe(false))
+  expect(dateInput('Від').value).not.toBe('2026-09-02')
   expect(screen.queryByRole('region', { name: 'Незбережена чернетка' })).toBeNull()
   expect(screen.queryByRole('button', { name: 'Відновити чернетку' })).toBeNull()
   expect(previewStockReport).not.toHaveBeenCalled()
   fireEvent.click(screen.getByRole('button', { name: 'Чернетка' }))
-  fireEvent.click(await screen.findByRole('button', { name: 'Відновити чернетку' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Повернути попередні налаштування' }))
   await waitFor(() => expect(dateInput('Від').value).toBe('2026-09-02'))
   expect(screen.queryByRole('dialog', { name: 'Чернетка звіту' })).toBeNull()
   expect(createStockReport).not.toHaveBeenCalled()

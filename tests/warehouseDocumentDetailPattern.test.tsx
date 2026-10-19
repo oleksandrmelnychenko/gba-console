@@ -144,6 +144,10 @@ function expectSectionTable(tableId: string, layoutVersion: string, count: numbe
   return table
 }
 
+function expectChip(region: HTMLElement, tone: string, text: string) {
+  expect([...region.querySelectorAll(`.app-table-chip.is-${tone}`)].map(chip => chip.textContent)).toContain(text)
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
 })
@@ -151,12 +155,16 @@ beforeEach(() => {
 describe('warehouse document detail pattern', () => {
   it('keeps capitalization totals, fields, PDF action and table settings', async () => {
     const props = renderCapitalization()
-    const dialog = await screen.findByRole('dialog', { name: 'Оприбуткування' })
+    const dialog = await screen.findByRole('dialog', { name: 'Оприховування' })
     const summary = dialog.querySelector('.document-detail-summary')!
     expect(summary.querySelectorAll('.document-detail-metric')).toHaveLength(3)
     expect(summary.textContent).toContain('Кількість2Сума13,95Вага6')
-    expect(within(screen.getByRole('region', { name: 'Документ' })).getByText('Коментар оприбуткування')).toBeTruthy()
-    expect(screen.getByRole('region', { name: 'Учасники та склад' }).textContent).toContain('Фенікс')
+    expect(dialog.querySelector('.inventory-document-detail')).toBeTruthy()
+    const requisites = screen.getByRole('region', { name: 'Реквізити документа' })
+    expect(within(requisites).getByText('Коментар оприбуткування')).toBeTruthy()
+    expectChip(requisites, 'product', 'Фенікс')
+    expectChip(requisites, 'storage', 'СКЛАД -1')
+    expect(requisites.textContent).toContain('Сума документа13,95')
     const table = expectSectionTable('product-capitalization-items', 'product-capitalization-items-table-1', 1)
     expect(JSON.parse(table.getAttribute('data-default-layout')!)).toMatchObject({ columnPinning: { left: ['index', 'vendorCode', 'productName'] } })
     fireEvent.click(screen.getByRole('button', { name: 'Друк PDF' }))
@@ -165,7 +173,7 @@ describe('warehouse document detail pattern', () => {
 
   it('keeps capitalization loading, errors and the missing-ID export guard', async () => {
     renderCapitalization({ capitalization: { Number: 'EMPTY' }, detailError: 'Помилка оприбуткування', isLoading: true })
-    await screen.findByRole('dialog', { name: 'Оприбуткування' })
+    await screen.findByRole('dialog', { name: 'Оприховування' })
     expect(screen.getByText('Помилка оприбуткування')).toBeTruthy()
     expect(screen.getByTestId('product-capitalization-items').getAttribute('aria-busy')).toBe('true')
     expect(screen.getByRole('button', { name: 'Друк PDF' }).hasAttribute('disabled')).toBe(true)
@@ -177,8 +185,12 @@ describe('warehouse document detail pattern', () => {
     expect(document.querySelector('.document-detail-summary')?.textContent).toContain('СКЛАД -1 → СКЛАД -3')
     expect(document.querySelector('.document-detail-summary')?.textContent).toContain('Позицій1Кількість3')
     expect(screen.getByText('Управлінське').classList.contains('is-active')).toBe(true)
-    expect(screen.getByRole('region', { name: 'Учасники та склади' }).textContent).toContain('Відповідальна особа')
-    expect(screen.getByRole('region', { name: 'Документ' }).textContent).toContain('Коментар переміщення')
+    expect(document.querySelector('.inventory-document-detail')).toBeTruthy()
+    const requisites = screen.getByRole('region', { name: 'Реквізити переміщення' })
+    expect(requisites.textContent).toContain('Відповідальна особа')
+    expect(requisites.textContent).toContain('Коментар переміщення')
+    expectChip(requisites, 'product', 'Фенікс')
+    expect([...requisites.querySelectorAll('.app-table-chip.is-storage')].map(chip => chip.textContent)).toEqual(['СКЛАД -1', 'СКЛАД -3'])
     expectSectionTable('product-transfer-items', 'product-transfer-items-table-2', 1)
     fireEvent.click(screen.getByRole('button', { name: 'Завантажити' }))
     expect(props.onDownload).toHaveBeenCalledOnce()
@@ -198,8 +210,12 @@ describe('warehouse document detail pattern', () => {
     expect(dialog.querySelectorAll('.document-detail-metric')).toHaveLength(2)
     expect(dialog.querySelector('.document-detail-summary')?.textContent).toContain('Позицій1К-сть20')
     expect(screen.getByText('Управ.').classList.contains('is-active')).toBe(true)
-    expect(screen.getByRole('region', { name: 'Документ' }).textContent).toContain('продаж на АМГ')
-    expect(screen.getByRole('region', { name: 'Учасники та склад' }).textContent).toContain('Melnychenko')
+    expect(dialog.querySelector('.inventory-document-detail')).toBeTruthy()
+    const requisites = screen.getByRole('region', { name: 'Реквізити документа' })
+    expect(requisites.textContent).toContain('продаж на АМГ')
+    expect(requisites.textContent).toContain('Melnychenko')
+    expectChip(requisites, 'product', 'Фенікс')
+    expectChip(requisites, 'storage', 'СКЛАД -1')
     expectSectionTable('depreciated-order-items', 'depreciated-order-items-table-1', 1)
     fireEvent.click(screen.getByRole('button', { name: 'Завантажити' }))
     expect(props.onExport).toHaveBeenCalledWith(props.order)

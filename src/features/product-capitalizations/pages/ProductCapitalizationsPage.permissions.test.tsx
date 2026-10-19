@@ -40,8 +40,8 @@ vi.mock('../../../shared/documents/openExportDocument', () => ({
   openPendingExportDocumentWindow: vi.fn(() => ({})),
 }))
 
-vi.mock('../../../shared/ui/AppDrawer', () => ({
-  AppDrawer: ({ children, opened }: { children: ReactNode; opened: boolean }) => (
+vi.mock('../../../shared/ui/AppModal', () => ({
+  AppModal: ({ children, opened }: { children: ReactNode; opened: boolean }) => (
     opened ? <section>{children}</section> : null
   ),
 }))
@@ -124,7 +124,7 @@ describe('Product capitalization canonical permission guards', () => {
 
     const row = await screen.findByRole('button', { name: 'CAP-1' })
     expect((row as HTMLButtonElement).disabled).toBe(true)
-    expect(screen.queryByRole('button', { name: 'Нове оприбуткування' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Оприховування' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Деталі' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Друк PDF' })).toBeNull()
     expect(getProductCapitalization).not.toHaveBeenCalled()
@@ -138,6 +138,7 @@ describe('Product capitalization canonical permission guards', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'CAP-1' }))
 
     await waitFor(() => expect(getProductCapitalization).toHaveBeenCalledWith('capitalization-1'))
+    expect(await screen.findByRole('region', { name: 'Реквізити документа' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Друк PDF' })).toBeNull()
   })
 
@@ -157,7 +158,7 @@ describe('Product capitalization canonical permission guards', () => {
     allowedPermissions.add(PermissionKeys.WarehouseAccounting.Capitalization.Capitalization.Create)
     renderPage()
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Нове оприбуткування' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Оприховування' }))
 
     expect(screen.getByText('Форма нового оприбуткування')).toBeTruthy()
   })

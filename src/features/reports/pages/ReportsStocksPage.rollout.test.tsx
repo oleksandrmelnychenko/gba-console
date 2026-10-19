@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport, searchDatasetReportValues } from '../api/reportsApi'
@@ -9,7 +9,7 @@ import { groupedCashWorkbookDataset } from '../data/groupedCashPeriod.test-fixtu
 import { defaultDatasetRequest } from '../data/reportDatasets'
 import { BUG_1274_DISABLED_MESSAGE } from '../data/reportMigration'
 import { ReportsStocksPage } from './ReportsStocksPage'
-import { findWorkbookLanding, openOtherWaysToOpen } from '../testing/workbookDesk'
+import { findOpenedWorkbook, findWorkbookLanding } from '../testing/workbookDesk'
 
 const surface = vi.hoisted(() => ({ only: true }))
 vi.mock('../reportSurfacePolicy', () => ({ get BUG_1274_ONLY_REPORT_SURFACE() { return surface.only } }))
@@ -28,20 +28,15 @@ const page = () => <MantineProvider env="test"><I18nProvider><ReportsStocksPage 
 
 it('shows only BUG-1274 entry points, then accepts the actual cash workbook', async () => {
   const view = render(page())
-  await findWorkbookLanding()
+  const switcher = await findOpenedWorkbook('Ведомость по денежным средствам.xls')
   expect(screen.queryByRole('button', { name: 'Валовий прибуток — як у 1С' })).toBeNull()
   expect(screen.queryByText('Готово')).toBeNull()
   expect(view.container.querySelector('a[href="/reports/registers"]')).toBeNull()
   expect(screen.queryByRole('button', { name: 'Продажі за днями' })).toBeNull()
-  expect(view.container.querySelector('form')).toBeNull()
-  expect(screen.queryByRole('button', { name: 'Показати на екрані' })).toBeNull()
-  openOtherWaysToOpen()
-  fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
-  expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(['Відомість по коштах'])
-  fireEvent.keyDown(screen.getByRole('combobox', { name: 'Звіт' }), { key: 'Escape' })
+  expect(within(switcher).getAllByRole('button', { name: /^Відкрити / }).map(tab => tab.getAttribute('aria-label')))
+    .toEqual(['Відкрити Ведомость по денежным средствам.xls'])
+  expect(screen.queryByRole('combobox', { name: 'Звіт' })).toBeNull()
   expect(createStockReport).not.toHaveBeenCalled()
-  fireEvent.click(screen.getByRole('button', { name: 'Відкрити Ведомость по денежным средствам.xls' }))
-  expect(screen.queryByRole('heading', { name: 'Звіти' })).toBeNull()
   fireEvent.submit(view.container.querySelector('form')!)
   await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
   expect(vi.mocked(createStockReport).mock.calls[0][0].dataSource).toBe(40)
