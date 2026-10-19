@@ -81,6 +81,7 @@ import type {
   ProductMovementExportDocument,
   ProductPlacement,
   ProductReservation,
+  ProductSiblingCard,
   ProductSpecification,
   ProductStorageLocationHistory,
   ProductWriteOffRule,
@@ -114,6 +115,9 @@ import {
   PRODUCT_WRITE_OFF_PERMISSION,
 } from '../permissions'
 import { getProductAnalyticsId, ProductAnalyticsPanel } from '../components/ProductAnalyticsPanel'
+import { ProductSiblingScopeControl } from '../components/ProductSiblingCards'
+import { createProductSiblingCardColumn } from '../components/productSiblingCardColumn'
+import { getProductSiblingRowKey, hasProductSiblingCards, type ProductSiblingScope } from '../productSiblings'
 import {
   HistoricalSourceMovementPanel,
   InformationalMovementPanel,
@@ -232,6 +236,7 @@ const movementTypeOptions = [
   { label: 'Управлінський рух', value: '2' },
 ]
 const PRODUCT_INCOME_DEFAULT_LOOKBACK_DAYS = 30
+const noProductSiblingCards: ProductSiblingCard[] = []
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', {
   day: '2-digit',
@@ -686,11 +691,13 @@ export function ProductImageViewerModal({
 }
 
 export function ProductStockSummary({
+  combinedStockQty,
   onProductSaved,
   product,
   reservation,
   reservationError,
 }: {
+  combinedStockQty?: number | null
   onProductSaved?: (product: Product | null) => void
   product: Product
   reservation: ProductReservation
@@ -725,6 +732,9 @@ export function ProductStockSummary({
         ))}
         {/* Total = sum of the warehouse amounts (legacy "Всього"). */}
         <TotalQtyTile label={t('Всього')} value={warehousesTotal} />
+        {typeof combinedStockQty === 'number' ? (
+          <TotalQtyTile label={t('Разом на складах')} value={combinedStockQty} />
+        ) : null}
       </div>
     </Stack>
   )
@@ -1043,12 +1053,14 @@ export function ProductActionDrawer({
   onProductSaved,
   onReload,
   product,
+  siblingCards = noProductSiblingCards,
 }: {
   activePanel: ProductDetailPanel | null
   onClose: () => void
   onProductSaved: (product: Product | null) => void
   onReload: () => void
   product: Product
+  siblingCards?: ProductSiblingCard[]
 }) {
   const { t } = useI18n()
 
@@ -1103,7 +1115,7 @@ export function ProductActionDrawer({
       {activePanel === 'movement' && (
         <PermissionGate permissionKey={PRODUCT_MOVEMENT_PERMISSION} fallback={<ProductPermissionDeniedAlert />}>
           <ProductDataSheet className="product-movement-sheet" product={product}>
-            <ProductMovementPanel product={product} />
+            <ProductMovementPanel product={product} siblingCards={siblingCards} />
           </ProductDataSheet>
         </PermissionGate>
       )}
@@ -1988,7 +2000,7 @@ const PRODUCT_MOVEMENT_DEFAULT_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
-function ProductMovementPanel({ product }: { product: Product }) {
+function ProductMovementPanel({ product, siblingCards }: { product: Product; siblingCards: ProductSiblingCard[] }) {
   const { t } = useI18n()
   const [activeTab, setActiveTab] = useState<'movement' | 'historical-source' | 'informational'>('movement')
 
@@ -2010,7 +2022,7 @@ function ProductMovementPanel({ product }: { product: Product }) {
         </Tabs.Tab>
       </Tabs.List>
       <Tabs.Panel className="product-data-tab-panel" value="movement" pt={0}>
-        <CurrentProductMovementPanel product={product} />
+        <CurrentProductMovementPanel product={product} siblingCards={siblingCards} />
       </Tabs.Panel>
       <Tabs.Panel className="product-data-tab-panel" value="historical-source" pt={0}>
         <HistoricalSourceMovementPanel
@@ -2030,7 +2042,7 @@ function ProductMovementPanel({ product }: { product: Product }) {
   )
 }
 
-function CurrentProductMovementPanel({ product }: { product: Product }) {
+function CurrentProductMovementPanel({ product, siblingCards }: { product: Product; siblingCards: ProductSiblingCard[] }) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const productNetUid = product.NetUid?.trim()
@@ -2038,6 +2050,9 @@ function CurrentProductMovementPanel({ product }: { product: Product }) {
   const [dateTo, setDateTo] = useState(getTodayDate)
   const [movementType, setMovementType] = useState('0')
   const [selectedTypes, setSelectedTypes] = useState<number[]>(movementItemTypes)
+  const [siblingScope, setSiblingScope] = useState<ProductSiblingScope>('card')
+  const hasSiblings = hasProductSiblingCards(siblingCards)
+  const includeSiblings = hasSiblings && siblingScope === 'all'
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [rows, setRows] = useState<ProductMovement[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -2073,6 +2088,7 @@ function CurrentProductMovementPanel({ product }: { product: Product }) {
           productNetId: netUid,
           to: dateTo,
           types,
+          ...(includeSiblings ? { includeSiblings: true } : {}),
         })
 
         if (!cancelled) {
@@ -2095,10 +2111,10 @@ function CurrentProductMovementPanel({ product }: { product: Product }) {
     return () => {
       cancelled = true
     }
-  }, [dateFrom, dateTo, filterError, movementType, productNetUid, reloadKey, selectedTypes, t, typesError])
+  }, [dateFrom, dateTo, filterError, includeSiblings, movementType, productNetUid, reloadKey, selectedTypes, t, typesError])
 
   async function exportMovements() {
-    if (!canExportMovements || !productNetUid || filterError || typesError || isExporting) {
+    if (!canExportMovements || !productNetUid || filterError || typesError || isExporting || includeSiblings) {
       return
     }
 
@@ -2125,7 +2141,7 @@ function CurrentProductMovementPanel({ product }: { product: Product }) {
     }
   }
 
-  const movementColumns = useMemo<DataTableColumn<ProductMovement>[]>(() => [
+  const cardMovementColumns = useMemo<DataTableColumn<ProductMovement>[]>(() => [
     { id: 'incomeNumber', header: t('Номер прихідної накладної'), minWidth: 160, accessor: (row) => row.IncomeDocumentNumber, cell: (row) => <TableChip tone="document" value={displayValue(row.IncomeDocumentNumber)} /> },
     { id: 'incomeDate', header: t('Дата прихідної накладної'), minWidth: 160, accessor: (row) => row.IncomeDocumentFromDate, cell: (row) => <span className="app-money">{formatDateTime(row.IncomeDocumentFromDate)}</span> },
     { id: 'document', header: t('Документ'), minWidth: 150, accessor: (row) => row.DocumentType || row.MovementType, cell: (row) => displayValue(row.DocumentType || row.MovementType) },
@@ -2147,6 +2163,12 @@ function CurrentProductMovementPanel({ product }: { product: Product }) {
     { id: 'outcome', header: t('Розхід'), minWidth: 110, align: 'right', accessor: (row) => row.OutcomeQty, cell: (row) => <span className="app-money">{formatAmount(row.OutcomeQty)}</span> },
     { id: 'comment', header: t('Коментар'), minWidth: 220, accessor: (row) => row.Comment, cell: (row) => displayValue(row.Comment) },
   ], [t])
+  const movementColumns = useMemo<DataTableColumn<ProductMovement>[]>(
+    () => includeSiblings
+      ? [createProductSiblingCardColumn<ProductMovement>(t('Картка')), ...cardMovementColumns]
+      : cardMovementColumns,
+    [cardMovementColumns, includeSiblings, t],
+  )
 
   return (
     <div className="console-table-shell product-data-table-shell">
@@ -2158,13 +2180,16 @@ function CurrentProductMovementPanel({ product }: { product: Product }) {
           </div>
           <Select label={t('Тип руху')} data={movementTypeOptions.map((option) => ({ ...option, label: t(option.label) }))} value={movementType} onChange={(value) => setMovementType(value || '0')} />
           <MovementDocumentTypeFilter options={movementItemTypeOptions} value={selectedTypes} onChange={setSelectedTypes} />
+          {hasSiblings ? (
+            <ProductSiblingScopeControl id="product-movement-sibling-scope" value={siblingScope} onChange={setSiblingScope} />
+          ) : null}
         </div>
         <div className="app-filter-actions">
           <Button color="gray" variant="default" size="sm" disabled={Boolean(filterError || typesError || missingNetUidError)} leftSection={<RefreshCw size={16} />} loading={isLoading} onClick={() => reload()}>
             {t('Оновити')}
           </Button>
           <PermissionGate permissionKey={PRODUCT_MOVEMENT_EXPORT_PERMISSION}>
-            <Button color="gray" variant="default" size="sm" disabled={!productNetUid || Boolean(filterError) || Boolean(typesError)} leftSection={<PdfIcon size={20} />} loading={isExporting} onClick={() => void exportMovements()}>
+            <Button color="gray" variant="default" size="sm" disabled={!productNetUid || Boolean(filterError) || Boolean(typesError) || includeSiblings} leftSection={<PdfIcon size={20} />} loading={isExporting} onClick={() => void exportMovements()}>
               {t('Друк PDF')}
             </Button>
           </PermissionGate>
@@ -2181,7 +2206,7 @@ function CurrentProductMovementPanel({ product }: { product: Product }) {
             density={density}
             onDensityChange={setDensity}
             emptyText={t('Рух товару не знайдено')}
-            getRowId={(row, index) => String(row.NetUid || row.Id || row.DocumentNumber || index)}
+            getRowId={(row, index) => getProductSiblingRowKey(row.Card, String(row.NetUid || row.Id || row.DocumentNumber || index))}
             height="100%"
             isLoading={isLoading}
             layoutVersion="product-movement-2"

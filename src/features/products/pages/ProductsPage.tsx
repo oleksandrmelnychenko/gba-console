@@ -48,6 +48,8 @@ import {
   getProductIncomeMovements,
   getProductOutcomeMovements,
   getProductReservationByNetId,
+  getProductSiblingCounts,
+  getProductSiblings,
   getProductUploadPricings,
   getProducts,
   removeProductAnalogue,
@@ -76,6 +78,7 @@ import type {
   ProductRelatedUploadType,
   ProductReservation,
   ProductSearchMode,
+  ProductSiblingCard,
   ProductSortMode,
   ProductUploadDocumentPayload,
   Pricing,
@@ -114,6 +117,18 @@ import { ShopImageGallery } from '../components/ShopImageGallery'
 import { ProductPriceSourcePanel } from '../components/ProductPriceSourcePanel'
 import { getProductAnalyticsId } from '../components/ProductAnalyticsPanel'
 import {
+  ProductSiblingCardsNotice,
+  ProductSiblingCountMarker,
+  ProductSiblingScopeControl,
+} from '../components/ProductSiblingCards'
+import { createProductSiblingCardColumn } from '../components/productSiblingCardColumn'
+import {
+  getProductSiblingCardsTotals,
+  getProductSiblingRowKey,
+  hasProductSiblingCards,
+  type ProductSiblingScope,
+} from '../productSiblings'
+import {
   ProductActionDrawer,
   ProductImageViewerModal,
   ProductStockSummary,
@@ -147,6 +162,7 @@ const SEARCH_DEBOUNCE_MS = 250
 const DETAIL_LOAD_DEBOUNCE_MS = 250
 const DEFAULT_SEARCH_MODE: ProductSearchMode = '5'
 const DEFAULT_SORT_MODE: ProductSortMode = '2'
+const noProductSiblingCards: ProductSiblingCard[] = []
 
 const SEARCH_MODE_OPTION_VALUES: ProductSearchMode[] = ['0', '1', '2', '3', '4', '5']
 const SORT_MODE_OPTION_VALUES: ProductSortMode[] = ['0', '1', '2']
@@ -267,6 +283,10 @@ type RelatedProductRow = {
   quantity?: number | string
   source: unknown
 }
+type ProductSiblingCardsState = {
+  cards: ProductSiblingCard[]
+  productNetId: string
+}
 type ProductPlacementStorageCorrectionState = {
   rows: ProductPlacementStorage[]
   storageId: string | null
@@ -317,6 +337,8 @@ function ProductsPageContent() {
   const [sortMode, setSortMode] = useValueState<ProductSortMode>(DEFAULT_SORT_MODE)
   const [activePanel, setActivePanel] = useValueState<ProductDetailPanel | null>(null)
   const [informationalDataOpened, setInformationalDataOpened] = useState(false)
+  const [siblingCardsState, setSiblingCardsState] = useState<ProductSiblingCardsState>({ cards: noProductSiblingCards, productNetId: '' })
+  const [siblingCounts, setSiblingCounts] = useState<Record<string, number>>({})
   const [detailState, dispatchDetail] = useReducer(inlineDetailReducer, {
     error: null,
     isLoading: false,
@@ -332,6 +354,9 @@ function ProductsPageContent() {
   const hasRouteSeededProductsRef = useRef(false)
   const selectedProductNetUid = selectedProduct?.NetUid?.trim() || ''
   const productForView = detailState.product || selectedProduct
+  const siblingCards = siblingCardsState.productNetId && siblingCardsState.productNetId === selectedProductNetUid
+    ? siblingCardsState.cards
+    : noProductSiblingCards
 
   const clearRouteProductParam = useCallback(() => {
     routeProductRequestRef.current += 1
@@ -348,6 +373,57 @@ function ProductsPageContent() {
       return nextParams
     }, { replace: true })
   }, [routeProductNetId, setUrlSearchParams])
+
+  const openProductCard = useCallback((productNetId: string) => {
+    const nextProductNetId = productNetId.trim()
+
+    if (!nextProductNetId) {
+      return
+    }
+
+    setUrlSearchParams((currentParams) => {
+      const nextParams = new URLSearchParams(currentParams)
+
+      nextParams.set('netId', nextProductNetId)
+
+      return nextParams
+    })
+  }, [setUrlSearchParams])
+
+  const loadSiblingCounts = useCallback((products: Product[]) => {
+    const productNetIds = products.map((product) => product.NetUid?.trim() || '').filter(Boolean)
+    const productKeys = productNetIds.map(getSiblingCountKey)
+
+    if (productNetIds.length === 0) {
+      return
+    }
+
+    getProductSiblingCounts(productNetIds)
+      .then((counts) => {
+        const countsByKey = new Map(counts.map((count) => [getSiblingCountKey(count.ProductNetId), count.SiblingCount]))
+
+        setSiblingCounts((currentCounts) => {
+          const nextCounts = { ...currentCounts }
+
+          productKeys.forEach((productKey) => {
+            nextCounts[productKey] = countsByKey.get(productKey) ?? 0
+          })
+
+          return nextCounts
+        })
+      })
+      .catch(() => {
+        setSiblingCounts((currentCounts) => {
+          const nextCounts = { ...currentCounts }
+
+          productKeys.forEach((productKey) => {
+            delete nextCounts[productKey]
+          })
+
+          return nextCounts
+        })
+      })
+  }, [])
 
   const applySearchResults = useCallback(
     (nextProducts: Product[]) => {
@@ -435,6 +511,8 @@ function ProductsPageContent() {
           } else {
             applySearchResults(nextProducts)
           }
+
+          loadSiblingCounts(nextProducts)
         }
       } catch (loadError) {
         if (requestId === searchRequestRef.current) {
@@ -456,6 +534,7 @@ function ProductsPageContent() {
     },
     [
       applySearchResults,
+      loadSiblingCounts,
       setBottomProducts,
       setCarouselMode,
       setError,
@@ -543,6 +622,7 @@ function ProductsPageContent() {
             setSearchDraft('')
             setSearchValue('')
             setError(null)
+            loadSiblingCounts(nextSearchedProducts)
           }
         }
       } catch (loadError) {
@@ -569,6 +649,7 @@ function ProductsPageContent() {
 
     void loadRouteProduct()
   }, [
+    loadSiblingCounts,
     routeProductNetId,
     setActivePanel,
     setBottomProducts,
@@ -652,6 +733,31 @@ function ProductsPageContent() {
     selectedProductNetUid,
     t,
   ])
+
+  useEffect(() => {
+    if (!selectedProductNetUid) {
+      return
+    }
+
+    const productNetId = selectedProductNetUid
+    const controller = new AbortController()
+    const timeoutId = window.setTimeout(() => {
+      getProductSiblings(productNetId, controller.signal)
+        .then((group) => {
+          setSiblingCardsState({ cards: group.Cards, productNetId })
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) {
+            setSiblingCardsState({ cards: noProductSiblingCards, productNetId })
+          }
+        })
+    }, DETAIL_LOAD_DEBOUNCE_MS)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+      controller.abort()
+    }
+  }, [detailReloadKey, selectedProductNetUid])
 
   function updateSearchDraft(nextValue: string) {
     clearRouteProductParam()
@@ -936,6 +1042,7 @@ function ProductsPageContent() {
             isVirtualLoad={isVirtualLoad}
             searchDraft={searchDraft}
             selectedProduct={selectedProduct}
+            siblingCounts={siblingCounts}
             topProducts={topProducts}
             onSearchDraftChange={updateSearchDraft}
             onSelectProduct={selectProduct}
@@ -952,6 +1059,8 @@ function ProductsPageContent() {
             onProductChanged={handleProductSaved}
             priceRefreshKey={detailReloadKey}
             onSelectRelatedProduct={selectRelatedProduct}
+            siblingCards={siblingCards}
+            onOpenProductCard={openProductCard}
           />
         </Box>
       </Box>
@@ -960,6 +1069,7 @@ function ProductsPageContent() {
         <ProductActionDrawer
           activePanel={activePanel}
           product={productForView}
+          siblingCards={siblingCards}
           onClose={() => setActivePanel(null)}
           onProductSaved={handleProductSaved}
           onReload={reloadProductDetail}
@@ -1058,6 +1168,7 @@ function ProductAssortmentCarousel({
   onUploadSuccess,
   searchDraft,
   selectedProduct,
+  siblingCounts,
   topProducts,
 }: {
   bottomProducts: Product[]
@@ -1069,6 +1180,7 @@ function ProductAssortmentCarousel({
   onUploadSuccess: () => void
   searchDraft: string
   selectedProduct: Product | null
+  siblingCounts: Record<string, number>
   topProducts: Product[]
 }) {
   const { t } = useI18n()
@@ -1095,6 +1207,7 @@ function ProductAssortmentCarousel({
             <ProductCarouselRow
               key={getProductRowKey(product)}
               product={product}
+              siblingCount={siblingCounts[getSiblingCountKey(product.NetUid)]}
               onSelect={onSelectProduct}
             />
           ))
@@ -1147,6 +1260,7 @@ function ProductAssortmentCarousel({
           <ProductCarouselRow
             key={getProductRowKey(product)}
             product={product}
+            siblingCount={siblingCounts[getSiblingCountKey(product.NetUid)]}
             onSelect={onSelectProduct}
           />
         ))}
@@ -1165,9 +1279,11 @@ function ProductAssortmentCarousel({
 function ProductCarouselRow({
   onSelect,
   product,
+  siblingCount,
 }: {
   onSelect: (product: Product) => void
   product: Product
+  siblingCount?: number
 }) {
   return (
     <button
@@ -1183,6 +1299,7 @@ function ProductCarouselRow({
         <span className="product-carousel-name-line">
           <span className="product-carousel-row-name">{getProductTitle(product)}</span>
           {isCriticalProductTop(product.Top) && <TableChip tone="danger" value={product.Top} />}
+          <ProductSiblingCountMarker siblingCount={siblingCount} />
         </span>
       </span>
     </button>
@@ -1193,22 +1310,26 @@ function ProductInlineView({
   detailError,
   isLoading,
   onOpenPanel,
+  onOpenProductCard,
   onProductChanged,
   priceRefreshKey,
   onSelectRelatedProduct,
   product,
   reservation,
   reservationError,
+  siblingCards,
 }: {
   detailError: string | null
   isLoading: boolean
   onOpenPanel: (panel: ProductDetailPanel) => void
+  onOpenProductCard: (productNetId: string) => void
   onProductChanged: (product: Product | null) => void
   priceRefreshKey: number
   onSelectRelatedProduct: (product: Partial<Product>) => void
   product: Product | null
   reservation: ProductReservation
   reservationError: string | null
+  siblingCards: ProductSiblingCard[]
 }) {
   const { t } = useI18n()
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null)
@@ -1243,6 +1364,8 @@ function ProductInlineView({
         </Box>
 
       </Group>
+
+      <ProductSiblingCardsNotice cards={siblingCards} currentProductNetId={product.NetUid} onSelectCard={onOpenProductCard} />
 
       {detailError && (
         <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
@@ -1314,6 +1437,7 @@ function ProductInlineView({
 
       <Box className="product-inline-stock-bar">
         <ProductStockSummary
+          combinedStockQty={hasProductSiblingCards(siblingCards) ? getProductSiblingCardsTotals(siblingCards).stockQty : undefined}
           product={product}
           reservation={reservation}
           reservationError={reservationError}
@@ -1321,7 +1445,7 @@ function ProductInlineView({
         />
       </Box>
 
-      <ProductInlineTabs product={product} onProductChanged={onProductChanged} onSelectRelatedProduct={onSelectRelatedProduct} />
+      <ProductInlineTabs product={product} siblingCards={siblingCards} onProductChanged={onProductChanged} onSelectRelatedProduct={onSelectRelatedProduct} />
       <ProductImageViewerModal
         imageUrl={previewImageUrl}
         title={getProductTitle(product)}
@@ -1491,10 +1615,12 @@ function ProductInlineTabs({
   onProductChanged,
   onSelectRelatedProduct,
   product,
+  siblingCards,
 }: {
   onProductChanged: (product: Product | null) => void
   onSelectRelatedProduct: (product: Partial<Product>) => void
   product: Product
+  siblingCards: ProductSiblingCard[]
 }) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
@@ -1558,12 +1684,12 @@ function ProductInlineTabs({
         )}
         {canViewMovement && activeTab === 'income' && (
           <Box pt={0}>
-            <ProductInlineMovementsTab direction="income" product={product} />
+            <ProductInlineMovementsTab direction="income" product={product} siblingCards={siblingCards} />
           </Box>
         )}
         {canViewMovement && activeTab === 'outcome' && (
           <Box pt={0}>
-            <ProductInlineMovementsTab direction="outcome" product={product} />
+            <ProductInlineMovementsTab direction="outcome" product={product} siblingCards={siblingCards} />
           </Box>
         )}
       </div>
@@ -3033,9 +3159,11 @@ function isTextLikeKeyboardTarget(target: EventTarget | null): boolean {
 function ProductInlineMovementsTab({
   direction,
   product,
+  siblingCards,
 }: {
   direction: InlineMovementDirection
   product: Product
+  siblingCards: ProductSiblingCard[]
 }) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
@@ -3054,6 +3182,9 @@ function ProductInlineMovementsTab({
     isLoading: Boolean(productNetUid),
     rows: [],
   })
+  const [siblingScope, setSiblingScope] = useState<ProductSiblingScope>('card')
+  const hasSiblings = hasProductSiblingCards(siblingCards)
+  const includeSiblings = hasSiblings && siblingScope === 'all'
   const labels = inlineMovementLabels[direction]
   const canExportMovements = hasPermission(PRODUCT_MOVEMENT_EXPORT_PERMISSION)
 
@@ -3073,6 +3204,7 @@ function ProductInlineMovementsTab({
           from: dateFrom,
           productNetId: netUid,
           to: dateTo,
+          ...(includeSiblings ? { includeSiblings: true } : {}),
         }
         const nextRows = direction === 'income'
           ? await getProductIncomeMovements(params)
@@ -3099,10 +3231,10 @@ function ProductInlineMovementsTab({
     return () => {
       cancelled = true
     }
-  }, [dateFrom, dateTo, direction, productNetUid, reloadKey, t])
+  }, [dateFrom, dateTo, direction, includeSiblings, productNetUid, reloadKey, t])
 
   async function exportRows() {
-    if (!canExportMovements || !productNetUid || state.isExporting) {
+    if (!canExportMovements || !productNetUid || state.isExporting || includeSiblings) {
       return
     }
 
@@ -3132,11 +3264,14 @@ function ProductInlineMovementsTab({
       <Group className="app-filter-bar product-movement-toolbar" align="end" gap={10} wrap="nowrap">
         <TextInput className="product-movement-toolbar__control" label={t('З')} type="date" value={dateFrom} onChange={(event) => setDateFrom(event.currentTarget.value)} />
         <TextInput className="product-movement-toolbar__control" label={t('По')} type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
+        {hasSiblings ? (
+          <ProductSiblingScopeControl id={`product-inline-${direction}-sibling-scope`} value={siblingScope} onChange={setSiblingScope} />
+        ) : null}
         <div className="app-filter-actions">
           <PermissionGate permissionKey={PRODUCT_MOVEMENT_EXPORT_PERMISSION}>
             <Button color="gray" variant="default" size="sm"
               className="product-movement-toolbar__button"
-              disabled={!productNetUid}
+              disabled={!productNetUid || includeSiblings}
               leftSection={<PdfIcon size={20} />}
               loading={state.isExporting}
               onClick={() => void exportRows()}
@@ -3165,9 +3300,9 @@ function ProductInlineMovementsTab({
         </Alert>
       )}
       {productNetUid && (direction === 'income' ? (
-        <ProductIncomeMovementsGrid toolbarPortalTarget={tableToolbarSlot} emptyText={state.error ? '' : t(labels.empty)} isLoading={state.isLoading} rows={state.rows as ProductIncomeMovement[]} />
+        <ProductIncomeMovementsGrid toolbarPortalTarget={tableToolbarSlot} emptyText={state.error ? '' : t(labels.empty)} includeSiblings={includeSiblings} isLoading={state.isLoading} rows={state.rows as ProductIncomeMovement[]} />
       ) : (
-        <ProductOutcomeMovementsGrid toolbarPortalTarget={tableToolbarSlot} emptyText={state.error ? '' : t(labels.empty)} isLoading={state.isLoading} rows={state.rows as ProductOutcomeMovement[]} />
+        <ProductOutcomeMovementsGrid toolbarPortalTarget={tableToolbarSlot} emptyText={state.error ? '' : t(labels.empty)} includeSiblings={includeSiblings} isLoading={state.isLoading} rows={state.rows as ProductOutcomeMovement[]} />
       ))}
 
       <DocumentExportModal
@@ -3185,17 +3320,19 @@ function ProductInlineMovementsTab({
 
 function ProductIncomeMovementsGrid({
   emptyText,
+  includeSiblings,
   isLoading,
   rows,
   toolbarPortalTarget,
 }: {
   toolbarPortalTarget?: Element | null
   emptyText: string
+  includeSiblings: boolean
   isLoading: boolean
   rows: ProductIncomeMovement[]
 }) {
   const { t } = useI18n()
-  const columns = useMemo<DataTableColumn<ProductIncomeMovement>[]>(
+  const cardColumns = useMemo<DataTableColumn<ProductIncomeMovement>[]>(
     () => [
       {
         id: 'storage',
@@ -3378,6 +3515,12 @@ function ProductIncomeMovementsGrid({
     ],
     [t],
   )
+  const columns = useMemo<DataTableColumn<ProductIncomeMovement>[]>(
+    () => includeSiblings
+      ? [createProductSiblingCardColumn<ProductIncomeMovement>(t('Картка')), ...cardColumns]
+      : cardColumns,
+    [cardColumns, includeSiblings, t],
+  )
 
   return (
     <DataTable
@@ -3386,7 +3529,7 @@ function ProductIncomeMovementsGrid({
       data={rows}
       density="normal"
       emptyText={emptyText}
-      getRowId={getIncomeMovementRowKey}
+      getRowId={getIncomeMovementGridRowId}
       isLoading={isLoading}
       layoutVersion="product-income-movements-1"
       maxHeight={360}
@@ -3401,17 +3544,19 @@ function ProductIncomeMovementsGrid({
 
 function ProductOutcomeMovementsGrid({
   emptyText,
+  includeSiblings,
   isLoading,
   rows,
   toolbarPortalTarget,
 }: {
   toolbarPortalTarget?: Element | null
   emptyText: string
+  includeSiblings: boolean
   isLoading: boolean
   rows: ProductOutcomeMovement[]
 }) {
   const { t } = useI18n()
-  const columns = useMemo<DataTableColumn<ProductOutcomeMovement>[]>(
+  const cardColumns = useMemo<DataTableColumn<ProductOutcomeMovement>[]>(
     () => [
       {
         id: 'date',
@@ -3482,6 +3627,12 @@ function ProductOutcomeMovementsGrid({
     ],
     [t],
   )
+  const columns = useMemo<DataTableColumn<ProductOutcomeMovement>[]>(
+    () => includeSiblings
+      ? [createProductSiblingCardColumn<ProductOutcomeMovement>(t('Картка')), ...cardColumns]
+      : cardColumns,
+    [cardColumns, includeSiblings, t],
+  )
 
   return (
     <DataTable
@@ -3491,7 +3642,7 @@ function ProductOutcomeMovementsGrid({
       density="normal"
       emptyText={emptyText}
       fillAvailableWidth
-      getRowId={getOutcomeMovementRowKey}
+      getRowId={getOutcomeMovementGridRowId}
       isLoading={isLoading}
       layoutVersion="product-outcome-movements-1"
       maxHeight={360}
@@ -3768,6 +3919,18 @@ function getIncomeMovementRowKey(row: ProductIncomeMovement, index: number): str
 
 function getOutcomeMovementRowKey(row: ProductOutcomeMovement, index: number): string {
   return String(row.NetUid || row.Id || `${row.DocumentNumber || 'outcome'}-${row.FromDate || index}`)
+}
+
+function getIncomeMovementGridRowId(row: ProductIncomeMovement, index: number): string {
+  return getProductSiblingRowKey(row.Card, getIncomeMovementRowKey(row, index))
+}
+
+function getOutcomeMovementGridRowId(row: ProductOutcomeMovement, index: number): string {
+  return getProductSiblingRowKey(row.Card, getOutcomeMovementRowKey(row, index))
+}
+
+function getSiblingCountKey(productNetId?: string | null): string {
+  return productNetId?.trim().toLowerCase() || ''
 }
 
 function getRelatedProductKey(item: unknown): string {

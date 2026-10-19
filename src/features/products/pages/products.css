@@ -819,6 +819,7 @@
   overflow-y: hidden;
   display: grid;
   grid-template-columns: 150px 150px max-content max-content;
+  grid-auto-columns: max-content;
   justify-content: start;
 }
 
