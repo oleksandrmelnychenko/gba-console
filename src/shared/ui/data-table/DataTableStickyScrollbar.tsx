@@ -8,7 +8,7 @@ import {
   getVisibleClipRect,
   getWheelDeltaPixels,
   measureMaxScrollLeft,
-} from './dataTableStickyScrollbar'
+} from './stickyScrollbarGeometry'
 
 const INTERSECTION_THRESHOLDS = Array.from({ length: 11 }, (_, index) => index / 10)
 

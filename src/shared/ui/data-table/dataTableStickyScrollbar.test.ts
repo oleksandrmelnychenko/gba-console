@@ -10,7 +10,7 @@ import {
   getWheelDeltaPixels,
   measureMaxScrollLeft,
   type StickyScrollbarMetrics,
-} from './dataTableStickyScrollbar'
+} from './stickyScrollbarGeometry'
 
 const workspaceClip = { bottom: 861, left: 268, right: 1425, top: 195 }
 
