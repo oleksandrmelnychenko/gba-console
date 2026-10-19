@@ -60,6 +60,7 @@ export function createSyncOperationId(): string {
 
 export function getSyncStatus(): Promise<DataSyncStatus> {
   return apiRequest<DataSyncStatus>('/data/sync/online-shop-seo/status', {
+    dedupe: false,
     errorMessages: {
       default: 'Не вдалося отримати статус синхронізації',
       network: 'Сервер синхронізації недоступний',

@@ -14,6 +14,7 @@ import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
+  getDataSyncProgressRevision,
   markDataSyncStarted,
   reconcileDataSyncProgress,
   useDataSyncProgress,
@@ -65,10 +66,15 @@ export function SyncControl() {
       dispatch({ type: 'statusRefreshStarted' })
     }
 
+    const revision = getDataSyncProgressRevision()
+
     try {
       const status = await getSyncStatus()
       syncStartOperation.reconcile(status)
-      reconcileDataSyncProgress(status.IsInProgress || status.IsGlobalLockHeld)
+      reconcileDataSyncProgress(status.IsInProgress || status.IsGlobalLockHeld, {
+        revision,
+        runId: status.PipelineRunId ?? status.RunId,
+      })
       dispatch({ type: 'statusSucceeded', status })
     } catch (error) {
       const message = error instanceof Error ? error.message : t('Не вдалося отримати статус синхронізації')
@@ -78,9 +84,11 @@ export function SyncControl() {
 
   const handleRealtimeSyncNotification = useCallback(
     () => {
-      void loadStatus(false)
+      if (state.opened) {
+        void loadStatus(false)
+      }
     },
-    [loadStatus],
+    [loadStatus, state.opened],
   )
 
   useRealtimeEvent(realtimeEvents.dataSyncNotification, handleRealtimeSyncNotification)
@@ -188,7 +196,7 @@ export function SyncControl() {
       const response = await request(operationId)
       syncStartOperation.complete(operationId)
       const message = response?.Message || t('Синхронізацію запущено')
-      markDataSyncStarted(message)
+      markDataSyncStarted(message, response?.PipelineRunId)
       notifications.show({ color: 'green', message })
       await loadStatus(false)
     } catch (error) {

@@ -44,6 +44,7 @@ describe('sync API contracts', () => {
     await expect(getSyncStatus()).resolves.toEqual({ IsInProgress: false })
 
     expect(apiRequestMock).toHaveBeenCalledWith('/data/sync/online-shop-seo/status', {
+      dedupe: false,
       errorMessages: {
         default: 'Не вдалося отримати статус синхронізації',
         network: 'Сервер синхронізації недоступний',
