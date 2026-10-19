@@ -99,15 +99,8 @@ describe('OnlineShopCitiesPage rail', () => {
 
     expect(allCities.classList.contains('is-active')).toBe(true)
     expect(allCities.getAttribute('aria-pressed')).toBe('true')
-    expect(
-      allCities.querySelector('.online-shop-cities-filter-label')?.lastElementChild?.classList.contains(
-        'online-shop-cities-filter-chevron',
-      ),
-    ).toBe(true)
-    expect(allCities.querySelector('.online-shop-cities-filter-count')).not.toBeNull()
-    expect(
-      allCities.lastElementChild?.classList.contains('online-shop-cities-filter-marker'),
-    ).toBe(true)
+    expect(allCities.querySelector('.online-shop-cities-filter-label svg')).not.toBeNull()
+    expect(allCities.querySelector('.online-shop-cities-filter-count .app-table-chip')).not.toBeNull()
     expect(allCities.querySelector('.online-shop-cities-filter-count')?.textContent).toBe('3')
 
     fireEvent.click(archived)

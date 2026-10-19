@@ -3,7 +3,6 @@ import {
   ActionIcon,
   Alert,
   Avatar,
-  Badge,
   Box,
   Button,
   Checkbox,
@@ -22,7 +21,7 @@ import {
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { Building, ChevronRight, CircleAlert, Coins, DatabaseX, MapPin, Package, Plus, ReceiptText, RefreshCw, RotateCcw, Ruler, Save, Search, Star, Trash2, Truck, Upload, Users } from 'lucide-react'
+import { Building, CircleAlert, Coins, DatabaseX, MapPin, Package, Plus, ReceiptText, RefreshCw, RotateCcw, Ruler, Save, Search, Star, Trash2, Truck, Upload, Users } from 'lucide-react'
 import { createContext, type ComponentType, type ReactNode, useCallback, useContext, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
@@ -34,6 +33,7 @@ import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
+import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
 import { TransporterIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { usePermissions } from '../../auth/usePermissions'
@@ -212,6 +212,7 @@ type ResourceDataTableProps<TData extends ClientResourceEntity> = {
   layoutVersion?: number | string
   minWidth?: number
   showLayoutControls?: boolean
+  portalToolbar?: boolean
   tableId: string
 }
 
@@ -223,6 +224,7 @@ function ResourceDataTable<TData extends ClientResourceEntity>({
   layoutVersion = 'client-resources-table-3',
   minWidth = 760,
   showLayoutControls = true,
+  portalToolbar = true,
   tableId,
 }: ResourceDataTableProps<TData>) {
   const usesFilterPattern = useContext(ClientResourcesFilterPatternContext)
@@ -245,7 +247,7 @@ function ResourceDataTable<TData extends ClientResourceEntity>({
       minWidth={minWidth}
       showLayoutControls={showLayoutControls}
       tableId={`client-resources-${normalizeTableIdPart(tableId)}`}
-      toolbarPortalTarget={usesFilterPattern ? tableToolbar?.target : undefined}
+      toolbarPortalTarget={usesFilterPattern && portalToolbar ? tableToolbar?.target : undefined}
     />
   )
 
@@ -613,27 +615,25 @@ function ClientResourcesNav({
   const { t } = useI18n()
 
   return (
-    <Stack gap={2} className="client-resources-nav" component="nav">
+    <Box className="client-resources-nav app-screen-tabs" component="nav" aria-label={t('Ресурси клієнтів')}>
       {RESOURCE_SECTIONS.map((section) => {
         const isActive = section.step === activeStep
+        const Icon = section.icon
 
         return (
           <button
             key={section.step}
             aria-current={isActive ? 'page' : undefined}
-            className={`client-resources-nav-item${isActive ? ' is-active' : ''}`}
+            className={`client-resources-nav-item app-screen-tab${isActive ? ' is-active' : ''}`}
             type="button"
             onClick={() => onNavigate(section.step)}
           >
-            <span className="client-resources-nav-item-main">
-              <span className="client-resources-nav-item-name">{t(section.label)}</span>
-              <ChevronRight aria-hidden="true" className="client-resources-nav-item-chevron" size={14} strokeWidth={2} />
-            </span>
-            <span aria-hidden="true" className="client-resources-nav-item-marker" />
+            <Icon size={16} strokeWidth={1.8} />
+            <span>{t(section.label)}</span>
           </button>
         )
       })}
-    </Stack>
+    </Box>
   )
 }
 
@@ -880,13 +880,16 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
         onRefresh={state.reload}
         onSearchChange={setSearch}
         pagination={pagination}
-        searchFullWidth
         searchValue={search}
       />
       <Loadable state={state} emptyTitle="Регіонів не знайдено">
         {filteredRegions.length ? (
           <Box className="client-resources-regions-grid">
-            <Stack gap={6} className="client-resources-region-master">
+            <Box className="client-resources-region-master">
+              <div className="client-resources-region-list-heading">
+                <span>{translate('Регіони')}</span>
+                <span>{translate('Кодів')}</span>
+              </div>
               <Stack gap={2} className="client-resources-region-list">
                 {pagination.data.map((region, index) => {
                   const key = getEntityKey(region, index)
@@ -895,75 +898,49 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                   return (
                     <button
                       type="button"
+                      aria-pressed={isActive}
                       className={`client-resources-region-row${isActive ? ' is-active' : ''}`}
                       key={key}
                       onClick={() => setSelectedRegionId(key)}
                     >
-                      <span>
-                        <Text fw={600}>{displayValue(region.Name)}</Text>
-                      </span>
-                      <Group gap={4} wrap="nowrap">
-                        <Badge className={`app-role-pill ${isActive ? 'is-orange' : 'is-gray'}`} variant="light">
-                          {region.RegionCodes?.length || 0}
-                        </Badge>
-                        <PermissionGate permissionKey={REGION_CODE_CREATE_PERMISSION}>
-                          <TableRowAction
-                            action="add"
-                            label={translate("Додати код регіону")}
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              openCreateRegionCode(region)
-                            }}
-                          />
-                        </PermissionGate>
-                        <PermissionGate permissionKey={REGION_EDIT_PERMISSION}>
-                          <TableRowAction
-                            action="edit"
-                            label={translate("Редагувати регіон")}
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              openEditRegion(region)
-                            }}
-                          />
-                        </PermissionGate>
-                        <PermissionGate permissionKey={REGION_DELETE_PERMISSION}>
-                          <TableRowAction
-                            action="delete"
-                            disabled={!region.NetUid}
-                            label={translate("Видалити регіон")}
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              setFormError(null)
-                              setDeleteTarget({ type: 'region', region })
-                            }}
-                          />
-                        </PermissionGate>
-                      </Group>
+                      <span className="client-resources-region-name">{displayValue(region.Name)}</span>
+                      <TableChip value={region.RegionCodes?.length || 0} tone={isActive ? 'document' : 'neutral'} />
                     </button>
                   )
                 })}
               </Stack>
-            </Stack>
+            </Box>
             <Box className="client-resources-region-detail">
-              <Group justify="space-between" mb="sm">
-                <div>
+              <Group className="client-resources-region-detail-heading" justify="space-between">
+                <Group gap={8}>
                   <Text className="app-section-title" fw={600} size="sm">
                     {translate('Коди регіону')}
                   </Text>
-                  <Text fw={600} mt={2} size="sm">{displayValue(selectedRegion?.Name)}</Text>
-                </div>
+                  <TableChip tone="document" value={selectedRegion?.Name} />
+                  <TableChip value={selectedRegionCodes.length} />
+                </Group>
                 {selectedRegion ? (
-                  <PermissionGate permissionKey={REGION_CODE_CREATE_PERMISSION}>
-                    <Button
-                      color={CREATE_ACTION_COLOR}
-                      leftSection={<Plus size={15} />}
-                      size="xs"
-                      styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-                      onClick={() => openCreateRegionCode(selectedRegion)}
-                    >
-                      {translate('Додати код')}
-                    </Button>
-                  </PermissionGate>
+                  <Group gap={6}>
+                    <PermissionGate permissionKey={REGION_EDIT_PERMISSION}>
+                      <TableRowAction action="edit" label={translate('Редагувати регіон')} onClick={() => openEditRegion(selectedRegion)} />
+                    </PermissionGate>
+                    <PermissionGate permissionKey={REGION_DELETE_PERMISSION}>
+                      <TableRowAction
+                        action="delete"
+                        disabled={!selectedRegion.NetUid}
+                        label={translate('Видалити регіон')}
+                        onClick={() => {
+                          setFormError(null)
+                          setDeleteTarget({ type: 'region', region: selectedRegion })
+                        }}
+                      />
+                    </PermissionGate>
+                    <PermissionGate permissionKey={REGION_CODE_CREATE_PERMISSION}>
+                      <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={15} />} size="xs" onClick={() => openCreateRegionCode(selectedRegion)}>
+                        {translate('Додати код')}
+                      </Button>
+                    </PermissionGate>
+                  </Group>
                 ) : null}
               </Group>
               <ResourceDataTable
@@ -972,7 +949,8 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                     id: 'code',
                     header: 'Код',
                     accessor: (code) => code.Value,
-                    width: 140,
+                    cell: (code) => <TableChip tone="document" value={code.Value} />,
+                    width: 160,
                   },
                   {
                     id: 'city',
@@ -1160,7 +1138,7 @@ function RegionCodeEditorModal({
   }
 
   return (
-    <AppModal centered className="client-resources-modal" opened={opened} title={<span style={RESOURCE_MONO_STYLE}>{title}</span>} onClose={onClose}>
+    <AppModal centered className="client-resources-modal client-resources-compact-editor" size={520} opened={opened} title={<span style={RESOURCE_MONO_STYLE}>{title}</span>} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -1173,6 +1151,7 @@ function RegionCodeEditorModal({
               {error}
             </Alert>
           ) : null}
+          <div className="client-resources-form-card client-resources-form-grid is-region-code">
           <TextInput
             autoFocus
             label={translate("Код")}
@@ -1191,14 +1170,8 @@ function RegionCodeEditorModal({
             value={values.District}
             onChange={(event) => setField('District', event.currentTarget.value)}
           />
-          <Group justify="flex-end">
-            <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
-              Скасувати
-            </Button>
-            <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
-              Зберегти
-            </Button>
-          </Group>
+          </div>
+          <ModalActions isSaving={isSaving} onClose={onClose} />
         </Stack>
       </form>
     </AppModal>
@@ -1420,7 +1393,6 @@ function PerfectClientsPanel({ section }: { section: ClientResourceSection }) {
         }}
         onSearchChange={setSearch}
         pagination={pagination}
-        searchFullWidth
         searchValue={search}
       />
       <Loadable state={clientTypesState} emptyTitle="Ролей клієнтів не знайдено">
@@ -1496,53 +1468,50 @@ function PerfectClientGroup({
 }) {
   return (
     <Box className="client-resources-perfect-client-column" aria-label={title}>
-      <Text className="client-resources-perfect-client-heading">{title}</Text>
-      {items.length ? (
-        <Stack className="client-resources-perfect-client-list" gap={0}>
-          {items.map((item) => {
-            const baseName = displayTranslatedEntity(item.Name, item.PerfectClientTranslations)
-            const baseDescription = item.Description?.trim() || displayValue(item.Lable)
-            const name = baseName || baseDescription
-            const description = baseDescription.toLocaleLowerCase() === name.toLocaleLowerCase() ? '' : baseDescription
-
-            return (
-              <Box className="client-resources-perfect-client-row" key={getEntityKey(item)}>
-                <Box className="client-resources-perfect-client-text">
+      <Group className="client-resources-perfect-client-heading" gap={8}>
+        <Text className="app-section-title" size="sm">{title}</Text>
+        <TableChip value={items.length} />
+      </Group>
+      <ResourceDataTable
+        tableId={`perfect-client-${title === translate('Прапорці') ? 'checkboxes' : 'toggles'}`}
+        showLayoutControls={false}
+        minWidth={320}
+        data={items}
+        emptyText={translate('Записів немає')}
+        columns={[
+          {
+            id: 'name',
+            header: translate('Параметр'),
+            accessor: (item) => displayTranslatedEntity(item.Name, item.PerfectClientTranslations) || item.Description || item.Lable,
+            cell: (item) => {
+              const baseName = displayTranslatedEntity(item.Name, item.PerfectClientTranslations)
+              const baseDescription = item.Description?.trim() || displayValue(item.Lable)
+              const name = baseName || baseDescription
+              const description = baseDescription.toLocaleLowerCase() === name.toLocaleLowerCase() ? '' : baseDescription
+              return (
+                <div className="client-resources-perfect-client-text">
                   <Text className="client-resources-perfect-client-name" title={name || undefined}>{name}</Text>
-                  {description ? (
-                    <Badge
-                      className="app-role-pill is-gray client-resources-perfect-client-description"
-                      title={description}
-                      variant="light"
-                    >
-                      {description}
-                    </Badge>
-                  ) : null}
-                </Box>
-                <Group gap={4} justify="flex-end" wrap="nowrap">
-                  <PermissionGate permissionKey={PERFECT_CLIENT_EDIT_PERMISSION}>
-                    <TableRowAction
-                      action="edit"
-                      label={translate("Редагувати параметр")}
-                      onClick={() => onEdit(item)}
-                    />
-                  </PermissionGate>
-                  <PermissionGate permissionKey={PERFECT_CLIENT_DELETE_PERMISSION}>
-                    <TableRowAction
-                      action="delete"
-                      disabled={!item.NetUid}
-                      label={translate("Видалити параметр")}
-                      onClick={() => onDelete(item)}
-                    />
-                  </PermissionGate>
-                </Group>
-              </Box>
-            )
-          })}
-        </Stack>
-      ) : (
-        <EmptyState title={translate("Записів немає")} />
-      )}
+                  {description ? <Text className="client-resources-perfect-client-description">{description}</Text> : null}
+                </div>
+              )
+            },
+          },
+          {
+            id: 'actions', header: '', width: 80, align: 'right',
+            enableSorting: false, enableHiding: false, enableReorder: false, enableResizing: false,
+            cell: (item) => (
+              <Group gap={4} justify="flex-end" wrap="nowrap">
+                <PermissionGate permissionKey={PERFECT_CLIENT_EDIT_PERMISSION}>
+                  <TableRowAction action="edit" label={translate('Редагувати параметр')} onClick={() => onEdit(item)} />
+                </PermissionGate>
+                <PermissionGate permissionKey={PERFECT_CLIENT_DELETE_PERMISSION}>
+                  <TableRowAction action="delete" disabled={!item.NetUid} label={translate('Видалити параметр')} onClick={() => onDelete(item)} />
+                </PermissionGate>
+              </Group>
+            ),
+          },
+        ]}
+      />
     </Box>
   )
 }
@@ -1574,7 +1543,7 @@ function PerfectClientEditorModal({
   }
 
   return (
-    <AppModal centered className="client-resources-modal" opened={opened} title={<span style={RESOURCE_MONO_STYLE}>{title}</span>} onClose={onClose}>
+    <AppModal centered className="client-resources-modal client-resources-compact-editor" size={580} opened={opened} title={<span style={RESOURCE_MONO_STYLE}>{title}</span>} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -1587,6 +1556,8 @@ function PerfectClientEditorModal({
               {error}
             </Alert>
           ) : null}
+          <div className="client-resources-form-card">
+            <Text className="app-section-title" size="sm">{translate('Параметр')}</Text>
           <TextInput
             autoFocus
             label={translate("Назва")}
@@ -1594,6 +1565,7 @@ function PerfectClientEditorModal({
             value={values.Name}
             onChange={(event) => setField('Name', event.currentTarget.value)}
           />
+          <div className="client-resources-form-grid is-parameter">
           <Select
             allowDeselect={false}
             data={[
@@ -1609,6 +1581,10 @@ function PerfectClientEditorModal({
             value={values.Lable}
             onChange={(event) => setField('Lable', event.currentTarget.value)}
           />
+          </div>
+          </div>
+          <div className="client-resources-form-card">
+            <Text className="app-section-title" size="sm">{translate('Значення та опис')}</Text>
           {Number(values.Type) === PERFECT_CLIENT_TOGGLE_TYPE ? (
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
               <TextInput
@@ -1636,6 +1612,7 @@ function PerfectClientEditorModal({
             value={values.Description}
             onChange={(event) => setField('Description', event.currentTarget.value)}
           />
+          </div>
           <ModalActions isSaving={isSaving} onClose={onClose} />
         </Stack>
       </form>
@@ -1691,27 +1668,27 @@ function TaxInspectionEditorModal({
               onChange={(event) => setField('InspectionName', event.currentTarget.value)}
             />
             <TextInput
-              label={translate("Код ГНИ")}
+              label={translate("Код ДПІ")}
               value={values.InspectionNumber}
               onChange={(event) => setField('InspectionNumber', event.currentTarget.value)}
             />
             <TextInput
-              label={translate("Тип ГНИ")}
+              label={translate("Тип")}
               value={values.InspectionType}
               onChange={(event) => setField('InspectionType', event.currentTarget.value)}
             />
             <TextInput
-              label={translate("Назва адм.района")}
+              label={translate("Район")}
               value={values.InspectionRegionName}
               onChange={(event) => setField('InspectionRegionName', event.currentTarget.value)}
             />
             <TextInput
-              label={translate("Код адм.района")}
+              label={translate("Код району")}
               value={values.InspectionRegionCode}
               onChange={(event) => setField('InspectionRegionCode', event.currentTarget.value)}
             />
             <TextInput
-              label={translate("Код по ЄДРПОУ")}
+              label={translate("ЄДРПОУ")}
               value={values.InspectionUSREOU}
               onChange={(event) => setField('InspectionUSREOU', event.currentTarget.value)}
             />
@@ -1766,7 +1743,7 @@ function PricingEditorModal({
   }
 
   return (
-    <AppModal centered className="client-resources-modal" opened={opened} size="lg" title={<span style={RESOURCE_MONO_STYLE}>{title}</span>} onClose={onClose}>
+    <AppModal centered className="client-resources-modal client-resources-compact-editor" opened={opened} size="lg" title={<span style={RESOURCE_MONO_STYLE}>{title}</span>} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -1780,11 +1757,11 @@ function PricingEditorModal({
             </Alert>
           ) : null}
           {isSourceManaged ? (
-            <Alert color="blue" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
-              {translate('Правило синхронізується з 1С. Можна змінити націнку; інші параметри оновлюються синхронізацією.')}
-            </Alert>
+            <Text c="gray.8" size="xs">{translate('Можна змінити лише націнку')}</Text>
           ) : null}
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+          <div className="client-resources-form-card">
+          <Text className="app-section-title" size="sm">{translate('Параметри ціни')}</Text>
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
             <TextInput
               autoFocus
               disabled={isSourceManaged}
@@ -1854,6 +1831,7 @@ function PricingEditorModal({
             label={translate("Для ПДВ")}
             onChange={(event) => setField('ForVat', event.currentTarget.checked)}
           />
+          </div>
           <ModalActions isSaving={isSaving} onClose={onClose} />
         </Stack>
       </form>
@@ -1957,7 +1935,7 @@ function StorageEditorModal({
   }
 
   return (
-    <AppModal centered className="client-resources-modal" opened={opened} size="lg" title={<span style={RESOURCE_MONO_STYLE}>{title}</span>} onClose={onClose}>
+    <AppModal centered className="client-resources-modal client-resources-compact-editor" opened={opened} size={680} title={<span style={RESOURCE_MONO_STYLE}>{title}</span>} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -1970,7 +1948,9 @@ function StorageEditorModal({
               {error}
             </Alert>
           ) : null}
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+          <div className="client-resources-form-card">
+            <Text className="app-section-title" size="sm">{translate('Загальні дані')}</Text>
+            <div className="client-resources-form-grid is-storage">
             <TextInput
               autoFocus
               label={translate("Назва")}
@@ -1993,8 +1973,11 @@ function StorageEditorModal({
               value={values.RetailPriority}
               onChange={(event) => setField('RetailPriority', event.currentTarget.value)}
             />
-          </SimpleGrid>
-          <Group gap="xl">
+          </div>
+          </div>
+          <div className="client-resources-form-card">
+            <Text className="app-section-title" size="sm">{translate('Використання складу')}</Text>
+            <div className="client-resources-storage-options">
             <Checkbox
               checked={values.ForDefective}
               label={translate("Не для продажу (брак, вияснення)")}
@@ -2022,7 +2005,8 @@ function StorageEditorModal({
               label={translate("Склад повернень")}
               onChange={(event) => setField('IsResale', event.currentTarget.checked)}
             />
-          </Group>
+            </div>
+          </div>
           <ModalActions isSaving={isSaving} onClose={onClose} />
         </Stack>
       </form>
@@ -2057,7 +2041,7 @@ function MeasureUnitEditorModal({
   }
 
   return (
-    <AppModal centered className="client-resources-modal" opened={opened} title={<span style={RESOURCE_MONO_STYLE}>{title}</span>} onClose={onClose}>
+    <AppModal centered className="client-resources-modal client-resources-compact-editor" size={480} opened={opened} title={<span style={RESOURCE_MONO_STYLE}>{title}</span>} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -2070,6 +2054,7 @@ function MeasureUnitEditorModal({
               {error}
             </Alert>
           ) : null}
+          <div className="client-resources-form-card client-resources-form-grid is-measure-unit">
           <TextInput
             autoFocus
             label={translate("Код 1С")}
@@ -2088,6 +2073,7 @@ function MeasureUnitEditorModal({
             value={values.Description}
             onChange={(event) => setField('Description', event.currentTarget.value)}
           />
+          </div>
           <ModalActions isSaving={isSaving} onClose={onClose} />
         </Stack>
       </form>
@@ -2113,7 +2099,7 @@ function ReserveEditorModal({
   const [days, setDays] = useValueState(() => String(role?.OrderExpireDays ?? 0))
 
   return (
-    <AppModal centered className="client-resources-modal" opened={opened} title={<span style={RESOURCE_MONO_STYLE}>{translate("Редагувати резерв")}</span>} onClose={onClose}>
+    <AppModal centered className="client-resources-modal client-resources-compact-editor" size={420} opened={opened} title={<span style={RESOURCE_MONO_STYLE}>{translate("Редагувати резерв")}</span>} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -2126,9 +2112,8 @@ function ReserveEditorModal({
               {error}
             </Alert>
           ) : null}
-          <Text size="sm" fw={600}>
-            {displayValue(role?.Name)}
-          </Text>
+          <div className="client-resources-form-card client-resources-form-grid is-reserve">
+          <Group gap={8}><Text size="sm" fw={600}>{translate('Роль')}</Text><TableChip tone="document" value={role?.Name} /></Group>
           <TextInput
             autoFocus
             label={translate("Днів резерву")}
@@ -2138,6 +2123,7 @@ function ReserveEditorModal({
             value={days}
             onChange={(event) => setDays(event.currentTarget.value)}
           />
+          </div>
           <ModalActions isSaving={isSaving} onClose={onClose} />
         </Stack>
       </form>
@@ -2172,7 +2158,7 @@ function TransporterEditorModal({
   }
 
   return (
-    <AppModal centered className="client-resources-modal" opened={opened} title={<span style={RESOURCE_MONO_STYLE}>{title}</span>} onClose={onClose}>
+    <AppModal centered className="client-resources-modal client-resources-compact-editor" size={580} opened={opened} title={<span style={RESOURCE_MONO_STYLE}>{title}</span>} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -2185,6 +2171,9 @@ function TransporterEditorModal({
               {error}
             </Alert>
           ) : null}
+          <div className="client-resources-form-card">
+            <Text className="app-section-title" size="sm">{translate('Загальні дані')}</Text>
+            <div className="client-resources-form-grid is-carrier">
           <TextInput
             autoFocus
             label={translate("Назва")}
@@ -2198,11 +2187,14 @@ function TransporterEditorModal({
             value={values.Priority}
             onChange={(event) => setField('Priority', event.currentTarget.value)}
           />
-          <TextInput
-            label={translate("CSS клас")}
-            value={values.CssClass}
-            onChange={(event) => setField('CssClass', event.currentTarget.value)}
-          />
+            </div>
+          </div>
+          <div className="client-resources-form-card">
+            <Group gap={8}>
+              <Avatar src={toProxiedAssetUrl(values.ImageUrl)} size={36} radius="sm"><Truck size={20} /></Avatar>
+              <Text className="app-section-title" size="sm">{translate('Зображення')}</Text>
+              <TableChip value="40 × 40" />
+            </Group>
           <TextInput
             label={translate("URL зображення")}
             value={values.ImageUrl}
@@ -2211,11 +2203,13 @@ function TransporterEditorModal({
           <FileInput
             accept="image/*"
             clearable
-            label={translate("Зображення 40x40")}
+            label={translate("Файл зображення")}
+            placeholder={translate("Обрати файл")}
             leftSection={<Upload size={16} />}
             value={values.ImageFile}
             onChange={(file) => setField('ImageFile', file)}
           />
+          </div>
           <ModalActions isSaving={isSaving} onClose={onClose} />
         </Stack>
       </form>
@@ -2368,7 +2362,6 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
         }}
         onSearchChange={setSearch}
         pagination={pagination}
-        searchFullWidth
         searchValue={search}
       />
       {supportError ? (
@@ -2384,7 +2377,7 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
               header: 'Назва',
               accessor: (organization) => displayTranslatedEntity(organization.Name, organization.OrganizationTranslations),
               cell: (organization) => (
-                <TruncatedCell value={displayTranslatedEntity(organization.Name, organization.OrganizationTranslations)} />
+                <TableChip tone="product" value={displayTranslatedEntity(organization.Name, organization.OrganizationTranslations)} />
               ),
               maxWidth: 190,
               width: 190,
@@ -2402,14 +2395,14 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
               header: 'Код',
               accessor: (organization) => organization.Code,
               cell: (organization) => <TableChip value={organization.Code} />,
-              maxWidth: 80,
-              width: 80,
+              maxWidth: 100,
+              width: 100,
             },
             {
               id: 'usreou',
               header: 'ЄДРПОУ',
               accessor: (organization) => organization.USREOU,
-              cell: (organization) => <TruncatedCell mono value={organization.USREOU} />,
+              cell: (organization) => <TableChip value={organization.USREOU} />,
               maxWidth: 120,
               width: 120,
             },
@@ -2417,7 +2410,7 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
               id: 'tin',
               header: 'ІПН',
               accessor: (organization) => organization.TIN,
-              cell: (organization) => <TruncatedCell mono value={organization.TIN} />,
+              cell: (organization) => <TableChip value={organization.TIN} />,
               maxWidth: 120,
               width: 120,
             },
@@ -2425,7 +2418,7 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
               id: 'currency',
               header: 'Валюта',
               accessor: (organization) => displayCurrency(organization.Currency),
-              cell: (organization) => <TableChip value={displayCurrency(organization.Currency)} />,
+              cell: (organization) => <TableChip tone="source" value={displayCurrency(organization.Currency)} />,
               maxWidth: 120,
               width: 120,
             },
@@ -2892,7 +2885,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
     <Group gap="xs" wrap="nowrap">
       <PermissionGate permissionKey={TAX_INSPECTION_CREATE_PERMISSION}>
         <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} size="xs" onClick={openCreateTaxInspection}>
-          Нова налогова інспекція
+          Нова інспекція
         </Button>
       </PermissionGate>
     </Group>
@@ -2905,7 +2898,6 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
         onRefresh={state.reload}
         onSearchChange={setSearch}
         pagination={pagination}
-        searchFullWidth
         searchValue={search}
       />
       <Loadable renderWhenEmpty state={state} emptyTitle="Налогових інспекцій не знайдено">
@@ -2921,7 +2913,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
             },
             {
               id: 'number',
-              header: 'Код ГНИ',
+              header: 'Код ДПІ',
               accessor: (inspection) => inspection.InspectionNumber,
               cell: (inspection) => <TableChip value={inspection.InspectionNumber} />,
               maxWidth: 110,
@@ -2929,15 +2921,15 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
             },
             {
               id: 'regionCode',
-              header: 'Код адм.района',
+              header: 'Код району',
               accessor: (inspection) => inspection.InspectionRegionCode,
-              cell: (inspection) => <TableChip value={inspection.InspectionRegionCode} />,
+              cell: (inspection) => <TableChip tone="document" value={inspection.InspectionRegionCode} />,
               maxWidth: 130,
               width: 130,
             },
             {
               id: 'region',
-              header: 'Назва адм.района',
+              header: 'Район',
               accessor: (inspection) => inspection.InspectionRegionName,
               cell: (inspection) => <TruncatedCell value={inspection.InspectionRegionName} />,
               maxWidth: 180,
@@ -2945,17 +2937,17 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
             },
             {
               id: 'type',
-              header: 'Тип ГНИ',
+              header: 'Тип',
               accessor: (inspection) => inspection.InspectionType,
-              cell: (inspection) => <TruncatedCell value={inspection.InspectionType} />,
+              cell: (inspection) => <TableChip tone="document" value={inspection.InspectionType} />,
               maxWidth: 120,
               width: 120,
             },
             {
               id: 'usreou',
-              header: 'Код по ЄДРПОУ',
+              header: 'ЄДРПОУ',
               accessor: (inspection) => inspection.InspectionUSREOU,
-              cell: (inspection) => <TruncatedCell value={inspection.InspectionUSREOU} />,
+              cell: (inspection) => <TableChip value={inspection.InspectionUSREOU} />,
               maxWidth: 130,
               width: 130,
             },
@@ -2981,7 +2973,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
                   <PermissionGate permissionKey={TAX_INSPECTION_EDIT_PERMISSION}>
                     <TableRowAction
                       action="edit"
-                      label={translate("Редагувати налогову інспекцію")}
+                      label={translate("Редагувати податкову інспекцію")}
                       onClick={() => openEditTaxInspection(inspection)}
                     />
                   </PermissionGate>
@@ -3013,7 +3005,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
         isSaving={isSaving}
         opened={Boolean(editor)}
         taxInspection={editor?.taxInspection}
-        title={editor?.mode === 'edit' ? translate('Редагувати налогову інспекцію') : translate('Нова налогова інспекція')}
+        title={editor?.mode === 'edit' ? translate('Редагувати податкову інспекцію') : translate('Нова інспекція')}
         onClose={() => {
           if (!isSaving) {
             setEditor(null)
@@ -3232,7 +3224,6 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
         }}
         onSearchChange={setSearch}
         pagination={pagination}
-        searchFullWidth
         searchValue={search}
       />
       {supportError ? (
@@ -3327,9 +3318,9 @@ function PricingResourceTable({
         accessor: (pricing) => pricing.ExtraCharge,
         cell: (pricing) => (
           <Group gap={6} wrap="nowrap">
-            <Text size="sm">{formatPercent(pricing.ExtraCharge)}</Text>
+            <TableChip tone="document" value={formatPercent(pricing.ExtraCharge)} />
             {pricing.IsSourceManaged ? (
-              <Badge color="blue" size="xs" variant="light">1С</Badge>
+              <TableChip tone="source" value="1С" />
             ) : null}
           </Group>
         ),
@@ -3340,7 +3331,7 @@ function PricingResourceTable({
         id: 'currency',
         header: 'Валюта',
         accessor: (pricing) => displayCurrency(pricing.Currency),
-        cell: (pricing) => <TableChip value={displayCurrency(pricing.Currency)} />,
+        cell: (pricing) => <TableChip tone="source" value={displayCurrency(pricing.Currency)} />,
         maxWidth: 120,
         width: 120,
       },
@@ -3348,7 +3339,7 @@ function PricingResourceTable({
         id: 'priceType',
         header: 'Тип ціни',
         accessor: (pricing) => pricing.PriceType?.Name,
-        cell: (pricing) => <TruncatedCell value={pricing.PriceType?.Name} />,
+        cell: (pricing) => <TableChip tone="product" value={pricing.PriceType?.Name} />,
         maxWidth: 150,
         width: 150,
       },
@@ -3357,7 +3348,7 @@ function PricingResourceTable({
         header: 'База',
         accessor: (pricing) => displayTranslatedEntity(pricing.BasePricing?.Name, pricing.BasePricing?.PricingTranslations),
         cell: (pricing) => (
-          <TruncatedCell value={displayTranslatedEntity(pricing.BasePricing?.Name, pricing.BasePricing?.PricingTranslations)} />
+          <TableChip tone="product" value={displayTranslatedEntity(pricing.BasePricing?.Name, pricing.BasePricing?.PricingTranslations)} />
         ),
         maxWidth: 170,
         width: 170,
@@ -3540,7 +3531,6 @@ function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
         onRefresh={state.reload}
         onSearchChange={setSearch}
         pagination={pagination}
-        searchFullWidth
         searchValue={search}
       />
       <Loadable renderWhenEmpty state={state} emptyTitle="Валют не знайдено">
@@ -3550,7 +3540,7 @@ function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
                 id: 'code',
                 header: 'Код',
                 accessor: (currency) => currency.Code,
-                cell: (currency) => <TableChip value={currency.Code} />,
+                cell: (currency) => <TableChip tone="source" value={currency.Code} />,
                 maxWidth: 90,
                 width: 90,
               },
@@ -3759,7 +3749,6 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
         }}
         onSearchChange={setSearch}
         pagination={pagination}
-        searchFullWidth
         searchValue={search}
       />
       {organizationsState.error ? (
@@ -3792,7 +3781,7 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
                 id: 'organization',
                 header: 'Облікова організація',
                 accessor: (storage) => storage.Organization?.Name,
-                cell: (storage) => <TruncatedCell value={storage.Organization?.Name} />,
+                cell: (storage) => <TableChip tone="product" value={storage.Organization?.Name} />,
                 maxWidth: 190,
                 width: 190,
               },
@@ -3809,8 +3798,8 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
                     : []
 
                   return names.length > 0
-                    ? <TruncatedCell value={names.join(', ')} />
-                    : <Text c="dimmed" size="xs">Не основний</Text>
+                    ? <Group gap={4}>{names.map((name) => <TableChip key={name} tone="product" value={name} />)}</Group>
+                    : <Text c="gray.8" size="xs">Не основний</Text>
                 },
                 maxWidth: 240,
                 width: 240,
@@ -4037,7 +4026,6 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
         onRefresh={state.reload}
         onSearchChange={setSearch}
         pagination={pagination}
-        searchFullWidth
         searchValue={search}
       />
       <Loadable renderWhenEmpty state={state} emptyTitle="Одиниць виміру не знайдено">
@@ -4055,7 +4043,7 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
                 id: 'name',
                 header: 'Назва',
                 accessor: (measureUnit) => measureUnit.Name,
-                cell: (measureUnit) => <TruncatedCell value={measureUnit.Name} />,
+                cell: (measureUnit) => <TableChip tone="source" value={measureUnit.Name} />,
                 maxWidth: 180,
                 width: 180,
               },
@@ -4196,7 +4184,6 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
         onRefresh={state.reload}
         onSearchChange={setSearch}
         pagination={pagination}
-        searchFullWidth
         searchValue={search}
       />
       <Loadable renderWhenEmpty state={state} emptyTitle="Ролей клієнтів не знайдено">
@@ -4225,7 +4212,7 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
                     type="button"
                     onClick={() => openClientsForRole(role)}
                   >
-                    {displayValue(role.Name)}
+                    <TableChip tone="document" value={role.Name} />
                   </button>
                 ),
               },
@@ -4243,7 +4230,7 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
                 accessor: (role) => role.OrderExpireDays,
                 maxWidth: 120,
                 width: 120,
-                cell: (role) => <TruncatedCell mono value={role.OrderExpireDays} />,
+                cell: (role) => <TableChip value={role.OrderExpireDays} />,
               },
               {
                 id: 'actions',
@@ -4276,6 +4263,7 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
         />
       </Loadable>
       <ReserveEditorModal
+        key={editor ? `reserve-${getEntityKey(editor.role)}` : 'reserve-closed'}
         error={formError}
         isSaving={isSaving}
         opened={Boolean(editor)}
@@ -4503,6 +4491,7 @@ function CarrierPanel({ section }: { section: ClientResourceSection }) {
               onEdit={openEditTransporter}
             />
             <TransporterTable
+              showLayoutControls={false}
               title={translate("Архівні")}
               transporters={archivedTransporters}
               onDelete={(transporter) => {
@@ -4566,10 +4555,11 @@ function TransporterTable({
   onEdit: (transporter: ClientResourceTransporter) => void
 }) {
   return (
-    <Box>
-      <Text fw={700} mb="xs">
-        {title}
-      </Text>
+    <Box className="client-resources-carrier-section">
+      <Group className="client-resources-carrier-heading" gap={8}>
+        <Text className="app-section-title" size="sm">{title}</Text>
+        <TableChip tone={showActions ? 'success' : 'neutral'} value={transporters.length} />
+      </Group>
       <ResourceDataTable
         columns={[
             {
@@ -4587,7 +4577,7 @@ function TransporterTable({
                 >
                   <TransporterIcon
                     cssClass={transporter.CssClass}
-                    fallback={<Avatar alt={displayValue(transporter.Name)} size="sm" radius="sm" />}
+                    fallback={<Avatar alt={displayValue(transporter.Name)} size="sm" radius="sm"><Truck size={16} /></Avatar>}
                     imageUrl={transporter.ImageUrl}
                     name={displayValue(transporter.Name)}
                     size={26}
@@ -4602,7 +4592,7 @@ function TransporterTable({
               id: 'type',
               header: 'Тип',
               accessor: (transporter) => transporter.TransporterType?.Name,
-              cell: (transporter) => <TruncatedCell value={transporter.TransporterType?.Name} />,
+              cell: (transporter) => <TableChip tone="document" value={transporter.TransporterType?.Name} />,
               maxWidth: 180,
               width: 180,
             },
@@ -4658,6 +4648,7 @@ function TransporterTable({
         layoutVersion="client-resources-transporters-table-2"
         minWidth={showActions ? 602 : 530}
         showLayoutControls={showLayoutControls}
+        portalToolbar={showActions}
         tableId={`transporters-${title}`}
       />
     </Box>
@@ -4700,7 +4691,6 @@ function PanelToolbar({
   onRefresh,
   onSearchChange,
   pagination,
-  searchFullWidth = false,
   searchValue,
 }: {
   action?: ReactNode
@@ -4709,7 +4699,6 @@ function PanelToolbar({
   onRefresh?: () => void
   onSearchChange?: (value: string) => void
   pagination?: ClientResourcePagination
-  searchFullWidth?: boolean
   searchValue?: string
 }) {
   const { t } = useI18n()
@@ -4719,11 +4708,11 @@ function PanelToolbar({
 
   return (
     <div className="app-filter-bar client-resources-filter-bar">
-      <div className="app-filter-fields client-resources-filter-fields">
+      <div className={`app-filter-fields client-resources-filter-fields${filter ? ' has-filter' : ''}`}>
         {filter}
         {onSearchChange ? (
           <TextInput
-            className={`client-resources-search${searchFullWidth ? ' client-resources-search-full' : ''}`}
+            className="client-resources-search"
             label={t('Пошук')}
             leftSection={<Search size={16} strokeWidth={1.8} />}
             onChange={(event) => {
@@ -4888,9 +4877,7 @@ function BooleanBadge({ value }: { value?: boolean }) {
   const { t } = useI18n()
 
   return (
-    <Badge className={value ? 'app-role-pill is-green' : 'app-role-pill is-gray'} variant="light">
-      {value ? t('Так') : t('Ні')}
-    </Badge>
+    <TableChip tone={value ? 'success' : 'neutral'} value={value ? t('Так') : t('Ні')} />
   )
 }
 
@@ -5762,9 +5749,7 @@ function displayTranslationBadges(translations?: ClientResourceTranslation[]) {
   return (
     <Group gap={6}>
       {names.map((name) => (
-        <Badge className="app-role-pill is-gray" variant="light" key={name}>
-          {name}
-        </Badge>
+        <TableChip key={name} value={name} />
       ))}
     </Group>
   )

@@ -359,7 +359,7 @@ function BankEditorModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={isOpen} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{bank?.Id ? t('Редагування банку') : t('Новий банк')}</span>} onClose={onClose}>
+    <AppModal centered className="accounting-bank-editor" opened={isOpen} size={680} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{bank?.Id ? t('Редагування банку') : t('Новий банк')}</span>} onClose={onClose}>
       <form onSubmit={onSubmit}>
         <Stack gap="md">
           {error && (
@@ -367,6 +367,8 @@ function BankEditorModal({
               {error}
             </Alert>
           )}
+          <div className="accounting-bank-editor-card">
+            <Text className="app-section-title" size="sm">{t('Реквізити банку')}</Text>
           <TextInput
             disabled={isSaving || !canSubmit}
             label={t('Назва')}
@@ -393,6 +395,9 @@ function BankEditorModal({
               onChange={(event) => onFieldChange('edrpouCode', event.currentTarget.value)}
             />
           </SimpleGrid>
+          </div>
+          <div className="accounting-bank-editor-card">
+            <Text className="app-section-title" size="sm">{t('Контактні дані')}</Text>
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
             <TextInput
               disabled={isSaving || !canSubmit}
@@ -416,6 +421,7 @@ function BankEditorModal({
             value={values.address}
             onChange={(event) => onFieldChange('address', event.currentTarget.value)}
           />
+          </div>
           <Group justify="space-between">
             <Box>
               {bank?.Id && (

@@ -1,0 +1,66 @@
+/* Screen navigation reference: Company Resources. Keep page and nested screen tabs identical. */
+.app-screen-tabs.app-screen-tabs {
+  flex: 0 0 auto;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: var(--mantine-radius-md);
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+  justify-content: safe center;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding: 6px;
+}
+
+.app-screen-tabs > .app-screen-tab {
+  box-sizing: border-box;
+  margin: 0;
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--mantine-color-gray-8);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 1 0 auto;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  gap: 6px;
+  letter-spacing: 0;
+  line-height: 1.2;
+  min-height: 36px;
+  padding: 8px 10px;
+  white-space: nowrap;
+  transition: background-color 140ms var(--tx-ease-smooth), color 140ms var(--tx-ease-smooth);
+}
+
+.app-screen-tabs > .app-screen-tab svg {
+  flex: 0 0 auto;
+}
+
+.app-screen-tabs > .app-screen-tab:hover {
+  background: var(--mantine-color-gray-1);
+}
+
+.app-screen-tabs > .app-screen-tab:focus-visible {
+  outline: 2px solid var(--brand-orange);
+  outline-offset: 2px;
+}
+
+.app-screen-tabs > .app-screen-tab.is-active {
+  background: var(--brand-orange);
+  color: var(--mantine-color-white);
+}
+
+.app-screen-tab.is-active .app-table-chip {
+  background: rgb(255 255 255 / 18%);
+  border-color: rgb(255 255 255 / 28%);
+  color: white;
+}

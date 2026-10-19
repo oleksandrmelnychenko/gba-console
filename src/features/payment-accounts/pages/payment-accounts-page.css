@@ -20,20 +20,37 @@
   min-width: 0;
 }
 
-.payment-accounts-filter-bar {
+.payment-accounts-page .payment-accounts-filter-bar.app-filter-bar {
   flex: 0 0 auto;
   overflow-x: auto;
 }
 
-.payment-accounts-type-filter {
-  flex: 0 0 auto;
+.payment-accounts-page .payment-accounts-filter-row {
+  display: grid;
+  grid-template-columns: minmax(170px, 220px) max-content minmax(170px, 220px) max-content max-content max-content;
+  width: 100%;
+  min-width: max-content;
+  gap: 8px;
+}
+
+.payment-accounts-page .payment-accounts-filter-row > * {
+  grid-row: 1;
+  min-width: 0;
+}
+
+.payment-accounts-page .payment-accounts-filter-row .app-filter-actions,
+.payment-accounts-page .payment-accounts-filter-row .data-table-toolbar,
+.payment-accounts-page .payment-accounts-filter-row .data-table-toolbar-left {
+  flex-wrap: nowrap;
 }
 
 .payment-accounts-type-filter .mantine-SegmentedControl-root {
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 9px;
+  border-radius: 8px;
   background: var(--mantine-color-white);
   padding: 3px;
+  height: 36px;
+  width: max-content;
 }
 
 .payment-accounts-type-filter .mantine-SegmentedControl-indicator {
@@ -42,30 +59,35 @@
   box-shadow: none;
 }
 
+.payment-accounts-type-filter .mantine-SegmentedControl-control::before {
+  display: none;
+}
+
 .payment-accounts-type-filter .mantine-SegmentedControl-label {
   border-radius: 6px;
   color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 12px;
   font-weight: 600;
-  min-height: 28px;
-  padding-inline: 14px;
-  transition:
-    background-color 140ms var(--tx-ease-spring),
-    color 140ms var(--tx-ease-spring);
+  height: 28px;
+  padding: 0 10px;
 }
 
-.payment-accounts-type-filter .mantine-SegmentedControl-control:not([data-active]) .mantine-SegmentedControl-label:hover {
-  background: var(--mantine-color-white);
-  color: var(--mantine-color-gray-9);
+.payment-accounts-type-label {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  height: 100%;
+  white-space: nowrap;
 }
 
-.payment-accounts-type-filter .mantine-SegmentedControl-label[data-active='true'] {
-  color: var(--mantine-color-white);
-  font-weight: 700;
+.payment-accounts-type-filter .mantine-SegmentedControl-label[data-active] {
+  color: white;
 }
 
 .payment-accounts-type-filter .mantine-SegmentedControl-control:focus-within {
   border-radius: 6px;
-  outline: 2px solid rgba(var(--brand-orange-rgb), 0.18);
+  outline: 2px solid var(--brand-orange);
   outline-offset: -1px;
 }
 

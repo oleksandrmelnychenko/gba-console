@@ -54,7 +54,7 @@ describe('UserRolesPage canonical permission editor', () => {
 
     await waitFor(() => expect(getRoleManagementRoles).toHaveBeenCalledTimes(1))
 
-    expect(screen.getByRole('tab', { name: 'Подієві права' })).not.toBeNull()
+    expect(screen.queryByRole('tab')).toBeNull()
     expect(screen.queryByRole('tab', { name: 'Права сторінок' })).toBeNull()
     expect(screen.getByTestId('event-permissions-catalog')).not.toBeNull()
   })

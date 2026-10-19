@@ -1,5 +1,6 @@
-import { Alert, Badge, Box, Group, Stack } from '@mantine/core'
-import { CircleAlert } from 'lucide-react'
+import { Alert, Box, Group, Stack } from '@mantine/core'
+import { CircleAlert, ClipboardCheck, ClipboardList, FilePenLine, Files, FileText, Truck, type LucideIcon } from 'lucide-react'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { useCallback, useEffect, useMemo, type ReactNode } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { PermissionGate } from '../../auth/components/PermissionGate'
@@ -30,6 +31,11 @@ const TAB_ORDERS = 'orders'
 const TAB_EDITING = 'editing'
 const TAB_INVOICE_REGISTER = 'invoice-register'
 const TAB_VERIFICATION = 'verification'
+
+const TAB_ICONS: Record<string, LucideIcon> = {
+  sales: FileText, shipments: Truck, orders: ClipboardList, editing: FilePenLine,
+  'invoice-register': Files, verification: ClipboardCheck,
+}
 
 type WarehouseUkraineTab = {
   value: string
@@ -186,24 +192,24 @@ function WarehouseUkrainePageContent() {
   return (
     <Stack className="warehouse-ukraine-page console-table-page" gap={6}>
       <div className="warehouse-ukraine-shell console-table-shell">
-        <div className="warehouse-ukraine-tabs pill-tabs">
+        <div className="warehouse-ukraine-tabs pill-tabs app-screen-tabs">
           {visibleTabs.map((tab) => {
             const isActive = tab.value === activeTabItem?.value
+            const Icon = TAB_ICONS[tab.value]
 
             return (
               <button
                 key={tab.value}
                 type="button"
-                className={`pill-tab${isActive ? ' is-active' : ''}`}
+                className={`pill-tab app-screen-tab${isActive ? ' is-active' : ''}`}
                 aria-pressed={isActive}
                 onClick={() => setActiveTab(tab.value)}
               >
                 <Group gap={6} wrap="nowrap" align="center">
+                  <Icon size={16} strokeWidth={1.8} aria-hidden="true" />
                   {tab.label}
                   {tab.showBadge && editingTotal > 0 && (
-                    <Badge className="app-role-pill is-orange" size="sm" variant="light">
-                      {editingTotal}
-                    </Badge>
+                    <TableChip value={editingTotal} />
                   )}
                 </Group>
               </button>

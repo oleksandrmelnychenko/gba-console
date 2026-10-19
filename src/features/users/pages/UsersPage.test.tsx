@@ -77,14 +77,14 @@ beforeEach(() => {
   vi.mocked(getUsers).mockResolvedValue(USERS)
 })
 
-describe('UsersPage role rail', () => {
-  it('keeps the headerless patterned rail and framed roster in one grid workspace', async () => {
+describe('UsersPage role tabs', () => {
+  it('keeps role filters with icons and counts above the framed roster', async () => {
     const { container } = renderPage()
 
     await screen.findByRole('button', { name: /Адміністратор/ })
 
     const workspace = container.querySelector('.users-workspace')
-    const rail = workspace?.querySelector(':scope > .users-role-rail')
+    const rail = workspace?.querySelector(':scope > .users-role-tabs')
     const roster = workspace?.querySelector(':scope > .users-roster')
     const scroll = rail?.querySelector(':scope > .users-role-scroll')
 
@@ -102,11 +102,11 @@ describe('UsersPage role rail', () => {
     expect(allUsers.querySelector('.users-role-option-count')?.textContent).toBe('3')
     expect(adminRole.querySelector('.users-role-option-count')?.textContent).toBe('2')
     expect(
-      adminRole.querySelector('.users-role-option-main > .users-role-option-chevron'),
+      adminRole.querySelector('.users-role-option-main > .user-role-icon'),
     ).not.toBeNull()
   })
 
-  it('preserves role filtering while moving the active rail state', async () => {
+  it('preserves role filtering while moving the active role state', async () => {
     renderPage()
 
     const adminRole = await screen.findByRole('button', { name: /Адміністратор/ })

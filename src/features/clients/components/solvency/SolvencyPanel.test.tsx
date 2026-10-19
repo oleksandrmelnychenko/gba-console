@@ -209,14 +209,15 @@ describe('current-state display', () => {
     aging_over_time_heatmap: 'pending',
   }
 
-  it.each([0, 46])('shows true score %i, captured date and the explicit history reason without a sparkline', async (value) => {
+  it.each([0, 46])('shows true score %i and the explicit history reason without technical metadata or a sparkline', async (value) => {
     getClientSolvencyScore.mockResolvedValue({ ...v3Score, score: value })
     getClientSolvencyCharts.mockResolvedValue(currentCharts)
-    const { findByText, container } = renderPanel(<SolvencyPanel clientNetId="abc" />)
+    const { findByText, queryByText, container } = renderPanel(<SolvencyPanel clientNetId="abc" />)
     expect(await findByText(String(value))).toBeTruthy()
     expect(await findByText(explanation)).toBeTruthy()
-    expect(await findByText(/Оцінка за поточними записами станом на 25.06.2026/)).toBeTruthy()
-    expect(await findByText(/Europe\/Kyiv.*Курс валют на 25.06.2026/)).toBeTruthy()
+    expect(queryByText(/Оцінка за поточними записами станом на/)).toBeNull()
+    expect(queryByText(/Версія моделі/)).toBeNull()
+    expect(queryByText(/Курс валют на/)).toBeNull()
     expect(await findByText(/Вікно операцій.*12/)).toBeTruthy()
     expect(await findByText('0%')).toBeTruthy()
     expect(container.querySelector('.mantine-Sparkline-root')).toBeNull()

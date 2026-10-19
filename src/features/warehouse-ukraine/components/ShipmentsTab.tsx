@@ -1,6 +1,5 @@
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
   Badge,
   Button,
@@ -15,7 +14,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, FileDown, Plus, RefreshCw, RotateCcw, Save, SquarePen, X } from 'lucide-react'
+import { CircleAlert, FileDown, ListFilter, List, Plus, RefreshCw, RotateCcw, Save, SquarePen, X } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -957,22 +956,24 @@ export function ShipmentsTab({ createRequest = 0, permissions }: ShipmentsTabPro
 
   return (
     <Stack className="warehouse-ukraine-tab" gap={0}>
-      <div className="pill-tabs">
+      <div className="pill-tabs app-screen-tabs">
         <button
           type="button"
-          className={`pill-tab${activeTab === SHIPMENTS_TAB_ALL ? ' is-active' : ''}`}
+          className={`pill-tab app-screen-tab${activeTab === SHIPMENTS_TAB_ALL ? ' is-active' : ''}`}
           aria-pressed={activeTab === SHIPMENTS_TAB_ALL}
           onClick={() => setActiveTab(SHIPMENTS_TAB_ALL)}
         >
+          <List size={16} strokeWidth={1.8} aria-hidden="true" />
           {t('Усі')}
         </button>
         {permissions.canCreate && (
           <button
             type="button"
-            className={`pill-tab${activeTab === SHIPMENTS_TAB_AUTO ? ' is-active' : ''}`}
+            className={`pill-tab app-screen-tab${activeTab === SHIPMENTS_TAB_AUTO ? ' is-active' : ''}`}
             aria-pressed={activeTab === SHIPMENTS_TAB_AUTO}
             onClick={() => setActiveTab(SHIPMENTS_TAB_AUTO)}
           >
+            <ListFilter size={16} strokeWidth={1.8} aria-hidden="true" />
             {t('Підбір')}
           </button>
         )}
@@ -1039,7 +1040,6 @@ function AutoShipmentsPanel({ onCarriedOut, permissions }: AutoShipmentsPanelPro
               label={t('Перевізники')}
               placeholder={t('Перевізники')}
               value={model.selectedTypeNetId}
-              w={220}
               onChange={(value) => model.setSelectedTypeNetId(value)}
             />
             <Select
@@ -1048,27 +1048,16 @@ function AutoShipmentsPanel({ onCarriedOut, permissions }: AutoShipmentsPanelPro
               label={t('Перевізники')}
               placeholder={t('Перевізники')}
               value={model.selectedTransporterNetId}
-              w={220}
               onChange={(value) => model.setSelectedTransporterNetId(value)}
             />
             <div className="app-filter-actions warehouse-ukraine-filter-actions">
-              <Tooltip label={t('Скинути')}>
-                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
-                  <RotateCcw size={17} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon
-                  aria-label={t('Оновити')}
-                  color="gray"
-                  loading={model.isLoading}
-                  size={34}
-                  variant="light"
-                  onClick={() => model.refreshList()}
-                >
-                  <RefreshCw size={17} />
-                </ActionIcon>
-              </Tooltip>
+              <Button variant="default" size="sm" leftSection={<RotateCcw size={16} />} onClick={model.resetFilters}>
+                {t('Скинути')}
+              </Button>
+              <Button variant="default" size="sm" leftSection={<RefreshCw size={16} />}
+                loading={model.isLoading} onClick={() => model.refreshList()}>
+                {t('Оновити')}
+              </Button>
             </div>
             <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot warehouse-ukraine-table-toolbar-slot" />
             <div className="app-filter-control-group warehouse-ukraine-command-actions">
@@ -1936,7 +1925,6 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
               label={t('Тип перевізника')}
               placeholder={t('Тип перевізника')}
               value={selectedTypeNetId}
-              w={220}
               onChange={changeTransporterType}
             />
             <Select
@@ -1949,11 +1937,9 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
               onChange={changeTransporter}
             />
             <div className="app-filter-actions warehouse-ukraine-filter-actions">
-              <Tooltip label={t('Скинути')}>
-                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetListFilters}>
-                  <RotateCcw size={17} />
-                </ActionIcon>
-              </Tooltip>
+              <Button variant="default" size="sm" leftSection={<RotateCcw size={16} />} onClick={resetListFilters}>
+                {t('Скинути')}
+              </Button>
               <Paginator
                 hasNext={canMoveForward}
                 isLoading={isLoading}

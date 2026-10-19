@@ -1,4 +1,6 @@
-import { Badge, Box, Group, Stack } from '@mantine/core'
+import { FilePenLine, History } from 'lucide-react'
+import { TableChip } from '../../../shared/ui/TableChip'
+import { Box, Group, Stack } from '@mantine/core'
 import { useCallback, useEffect, useReducer } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -58,31 +60,29 @@ export function EditingTab({ canProcess, onCountChanged }: { canProcess: boolean
 
   return (
     <Stack className="warehouse-ukraine-tab" gap={0}>
-      <div className="pill-tabs">
+      <div className="pill-tabs app-screen-tabs">
         <button
           type="button"
-          className={`pill-tab${activeTab === ACT_TAB ? ' is-active' : ''}`}
+          className={`pill-tab app-screen-tab${activeTab === ACT_TAB ? ' is-active' : ''}`}
           aria-pressed={activeTab === ACT_TAB}
           onClick={() => setActiveTab(ACT_TAB)}
         >
           <Group gap={6} wrap="nowrap" align="center">
+            <FilePenLine size={16} strokeWidth={1.8} aria-hidden="true" />
             {t('Акт редагування накладної')}
-            <Badge className="app-role-pill is-orange" size="sm" variant="light">
-              {actQty}
-            </Badge>
+            <TableChip value={actQty} />
           </Group>
         </button>
         <button
           type="button"
-          className={`pill-tab${activeTab === CARRIER_TAB ? ' is-active' : ''}`}
+          className={`pill-tab app-screen-tab${activeTab === CARRIER_TAB ? ' is-active' : ''}`}
           aria-pressed={activeTab === CARRIER_TAB}
           onClick={() => setActiveTab(CARRIER_TAB)}
         >
           <Group gap={6} wrap="nowrap" align="center">
+            <History size={16} strokeWidth={1.8} aria-hidden="true" />
             {t('Історія змін перевізника')}
-            <Badge className="app-role-pill is-orange" size="sm" variant="light">
-              {carrierQty}
-            </Badge>
+            <TableChip value={carrierQty} />
           </Group>
         </button>
       </div>

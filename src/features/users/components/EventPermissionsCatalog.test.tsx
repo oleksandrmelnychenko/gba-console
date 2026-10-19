@@ -77,6 +77,34 @@ describe('EventPermissionsCatalog', () => {
     })
   })
 
+  it.each(['catalog', 'role'] as const)('waits for both responses when %s arrives first', async (first) => {
+    const catalog = await mockedGetCatalog()
+    const rolePermissions = await mockedGetRolePermissions('role-1')
+    let resolveCatalog!: (value: typeof catalog) => void
+    let resolveRole!: (value: typeof rolePermissions) => void
+    mockedGetCatalog.mockReturnValue(new Promise((resolve) => { resolveCatalog = resolve }))
+    mockedGetRolePermissions.mockReturnValue(new Promise((resolve) => { resolveRole = resolve }))
+    render(
+      <MantineProvider env="test"><I18nProvider>
+        <EventPermissionsCatalog role={{ Name: 'Менеджер', NetUid: 'role-1' }} />
+      </I18nProvider></MantineProvider>,
+    )
+    await act(async () => {
+      if (first === 'catalog') resolveCatalog(catalog)
+      else resolveRole(rolePermissions)
+    })
+    expect(screen.getByRole('status')).not.toBeNull()
+    expect(screen.queryByText('Каталог прав доступу порожній')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Оновити' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Вибрати все' })).toBeNull()
+    await act(async () => {
+      if (first === 'catalog') resolveRole(rolePermissions)
+      else resolveCatalog(catalog)
+    })
+    expect(await screen.findByRole('button', { name: 'Вибрати все' })).not.toBeNull()
+    expect(screen.queryByRole('status')).toBeNull()
+  })
+
   it('selects and clears the full catalog independently, then saves the server readback', async () => {
     const editorRef = createRef<EventPermissionsCatalogHandle>()
     const onDirtyChange = vi.fn()

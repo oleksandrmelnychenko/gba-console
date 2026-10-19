@@ -1,6 +1,4 @@
 import {
-  Badge,
-  ActionIcon,
   Alert,
   Box,
   Button,
@@ -10,16 +8,16 @@ import {
   Stack,
   Text,
   TextInput,
-  Tooltip,
 } from '@mantine/core'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { notifications } from '@mantine/notifications'
-import { ChevronRight, CircleAlert, Plus, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react'
+import { Archive, CheckCircle2, CircleAlert, Globe, MapPin, Plus, RefreshCw, RotateCcw, Save, Search, Wallet, type LucideIcon } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -42,6 +40,10 @@ type CityFilter =
   | typeof CITY_FILTER_ARCHIVED
   | typeof CITY_FILTER_GLOBAL
   | typeof CITY_FILTER_LOCAL
+
+const CITY_FILTER_ICONS: Record<CityFilter, LucideIcon> = {
+  all: MapPin, active: CheckCircle2, archived: Archive, local: Wallet, global: Globe,
+}
 
 type CityFormValues = {
   IsLocalPayment: boolean
@@ -365,32 +367,10 @@ function OnlineShopCitiesRegistry({
         />
 
         <div className="app-filter-actions">
-          <Tooltip label={t('Очистити')}>
-            <ActionIcon
-              aria-label={t('Очистити')}
-              color="gray"
-              disabled={!hasActiveFilters}
-              size={34}
-              type="button"
-              variant="light"
-              onClick={onResetSearch}
-            >
-              <RotateCcw size={17} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={isLoading}
-              size={34}
-              type="button"
-              variant="light"
-              onClick={onReload}
-            >
-              <RefreshCw size={17} />
-            </ActionIcon>
-          </Tooltip>
+          <Button variant="default" color="gray" size="sm" disabled={!hasActiveFilters}
+            leftSection={<RotateCcw size={16} />} onClick={onResetSearch}>{t('Скинути')}</Button>
+          <Button variant="default" color="gray" size="sm" loading={isLoading}
+            leftSection={<RefreshCw size={16} />} onClick={onReload}>{t('Оновити')}</Button>
         </div>
         <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot online-shop-cities-table-toolbar-slot" />
         {onCreateCity && <div className="online-shop-cities-create-actions">
@@ -416,7 +396,9 @@ function OnlineShopCitiesRegistry({
         <aside className="online-shop-cities-rail" aria-label={t('Міста')}>
           <div className="online-shop-cities-filter-scroll">
             <div className="online-shop-cities-filter-list">
-              {cityNavigationItems.map((item) => (
+              {cityNavigationItems.map((item) => {
+                const Icon = CITY_FILTER_ICONS[item.value]
+                return (
                 <button
                   key={item.value}
                   aria-pressed={cityFilter === item.value}
@@ -425,13 +407,12 @@ function OnlineShopCitiesRegistry({
                   onClick={() => onCityFilterChange(item.value)}
                 >
                   <span className="online-shop-cities-filter-label">
+                    <Icon aria-hidden="true" size={17} strokeWidth={1.8} />
                     <span className="online-shop-cities-filter-name">{item.label}</span>
-                    <ChevronRight aria-hidden="true" className="online-shop-cities-filter-chevron" size={14} />
                   </span>
-                  <span className="online-shop-cities-filter-count">{item.count}</span>
-                  <span aria-hidden="true" className="online-shop-cities-filter-marker" />
+                  <span className="online-shop-cities-filter-count"><TableChip value={item.count} /></span>
                 </button>
-              ))}
+              )})}
             </div>
           </div>
         </aside>
@@ -441,6 +422,7 @@ function OnlineShopCitiesRegistry({
             columns={columns}
             data={visibleCities}
             defaultLayout={CITIES_TABLE_DEFAULT_LAYOUT}
+            distributeAvailableWidth
             emptyText={hasActiveFilters ? t('Міст за цими фільтрами не знайдено') : t('Міст не знайдено')}
             getRowId={(city, index) => String(city.NetUid || city.Id || index)}
             height="100%"
@@ -501,11 +483,7 @@ function useCityColumns({
           const isLocalPayment = city.IsLocalPayment === true
 
           return (
-            <div className={`online-shop-cities-payment-cell${isLocalPayment ? ' is-local' : ' is-global'}`}>
-              <Badge className={isLocalPayment ? 'app-role-pill' : 'app-role-pill is-gray'} variant="light">
-                {isLocalPayment ? t('Локальна') : t('Загальна')}
-              </Badge>
-            </div>
+            <TableChip tone={isLocalPayment ? 'source' : 'neutral'} value={isLocalPayment ? t('Локальна') : t('Загальна')} />
           )
         },
       },
@@ -519,29 +497,22 @@ function useCityColumns({
           const isArchived = city.Deleted === true
 
           return (
-            <Badge className={isArchived ? 'app-role-pill is-gray' : 'app-role-pill is-green'} variant="light">
-              {isArchived ? t('Архів') : t('Активне')}
-            </Badge>
+            <TableChip tone={isArchived ? 'neutral' : 'success'} value={isArchived ? t('Архів') : t('Активне')} />
           )
         },
       },
       {
         id: 'updated',
         header: t('Оновлено'),
-        width: 150,
-        minWidth: 130,
+        width: 190,
+        minWidth: 180,
         accessor: (city) => formatDateTime(city.Updated),
         cell: (city) => {
           const dateParts = formatDateParts(city.Updated)
 
           return (
             <div className="online-shop-cities-date-cell">
-              <Text className="online-shop-cities-date-primary">
-                {dateParts.date}
-              </Text>
-              <Text className="online-shop-cities-date-secondary">
-                {dateParts.time}
-              </Text>
+              <TableChip value={[dateParts.date, dateParts.time !== '00:00' ? dateParts.time : ''].filter(Boolean).join(' · ') || '—'} />
             </div>
           )
         },
@@ -601,7 +572,7 @@ function CityEditorModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={isOpen} title={city?.Id ? t('Редагування міста') : t('Нове місто')} onClose={onClose}>
+    <AppModal className="online-shop-cities-editor" size={520} centered opened={isOpen} title={city?.Id ? t('Редагування міста') : t('Нове місто')} onClose={onClose}>
       <form onSubmit={onSubmit}>
         <Stack gap="md">
           {error && (
@@ -609,7 +580,7 @@ function CityEditorModal({
               {error}
             </Alert>
           )}
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+          <SimpleGrid className="online-shop-cities-form-fields" cols={{ base: 1, sm: 2 }} spacing="sm">
             <TextInput
               disabled={isSaving}
               label={t('Назва [UA]')}
@@ -628,18 +599,21 @@ function CityEditorModal({
             />
           </SimpleGrid>
           <Checkbox
+            className="online-shop-cities-payment-option"
+            color="orange"
             checked={values.IsLocalPayment}
             disabled={isSaving}
             label={t('Локальна оплата')}
             onChange={(event) => onFieldChange('IsLocalPayment', event.currentTarget.checked)}
           />
-          <Group justify="space-between">
+          <AppModalFooter>
+          <Group justify="space-between" w="100%">
             <Box>
               {city?.Id && onArchive && (
                 <Button
                   color="red"
                   disabled={isSaving}
-                  leftSection={<Trash2 size={16} />}
+                  leftSection={<Archive size={16} />}
                   type="button"
                   variant="subtle"
                   onClick={() => onArchive(city)}
@@ -649,7 +623,7 @@ function CityEditorModal({
               )}
             </Box>
             <Group gap="xs">
-              <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
+              <Button color="gray" disabled={isSaving} type="button" variant="default" onClick={onClose}>
                 {t('Скасувати')}
               </Button>
               <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
@@ -657,6 +631,7 @@ function CityEditorModal({
               </Button>
             </Group>
           </Group>
+          </AppModalFooter>
         </Stack>
       </form>
     </AppModal>

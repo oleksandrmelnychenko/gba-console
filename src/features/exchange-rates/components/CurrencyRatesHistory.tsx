@@ -1,6 +1,7 @@
 import { Box, Group, Loader, ScrollArea, Stack, Text } from '@mantine/core'
-import { ArrowDown, ArrowUp, ChartNoAxesColumnIncreasing, CircleAlert } from 'lucide-react'
+import { ArrowDown, ArrowUp, Minus, ChartNoAxesColumnIncreasing, CircleAlert } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { TableChip } from '../../../shared/ui/TableChip'
 import type { ExchangeRate } from '../types'
 import { formatHistoryDate, formatRate } from '../utils'
 
@@ -65,17 +66,17 @@ function EmptyHistoryState({ title }: { title: string }) {
 }
 
 function HistoryRow({ previous, rate }: { previous?: ExchangeRate; rate: ExchangeRate }) {
-  const isIncrease = !previous || previous.Amount < rate.Amount
-  const Icon = isIncrease ? ArrowUp : ArrowDown
+  const direction = !previous || previous.Amount === rate.Amount ? 'flat' : previous.Amount < rate.Amount ? 'up' : 'down'
+  const Icon = direction === 'up' ? ArrowUp : direction === 'down' ? ArrowDown : Minus
   const [date, time] = formatHistoryDate(rate.Created).split(',').map((part) => part.trim())
 
   return (
     <Group gap="sm" wrap="nowrap" className="exchange-rates-history-row">
       <Box className="exchange-rates-history-date">
-        <Text component="span" className="exchange-rates-history-date-day">{date}</Text>
-        {time && <Text component="span" className="exchange-rates-history-date-time">{time}</Text>}
+        <TableChip value={date} />
+        {time && time !== '00:00' && <Text component="span" className="exchange-rates-history-date-time">{time}</Text>}
       </Box>
-      <Box className={`exchange-rates-history-trend ${isIncrease ? 'is-up' : 'is-down'}`}>
+      <Box className={`exchange-rates-history-trend is-${direction}`}>
         <Icon size={11} strokeWidth={2} aria-hidden />
         <Text component="span" className="exchange-rates-history-amount-value">{formatRate(rate.Amount)}</Text>
         {rate.Code && <Text component="span" className="exchange-rates-history-amount-code">{rate.Code}</Text>}

@@ -1,5 +1,5 @@
-/* User roles on the ui-patterns.md system: §5.3 filter bar, §6 selection list
-   on the left, the permissions editor (role-tree-*) untouched on the right.
+/* User roles on the ui-patterns.md system: §5.3 filter bar, horizontal role tabs
+   above the permissions editor.
    Page gutters/height come from .console-table-page; bar chrome from
    filter-bar.css. */
 
@@ -68,26 +68,25 @@
   white-space: nowrap;
 }
 
-/* ── Two panes ── */
+/* Horizontal role selector above the full-width permissions workspace. */
 .user-roles-layout {
   display: flex;
+  flex-direction: column;
   flex: 1 1 auto;
-  gap: 12px;
+  gap: 10px;
   min-height: 0;
+  min-width: 0;
   overflow: hidden;
   padding: 10px 8px 8px;
 }
 
 .user-roles-list-pane {
-  background: var(--mantine-color-white);
+  background: var(--mantine-color-gray-0);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 10px;
-  display: flex;
-  flex: 0 0 320px;
-  flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
-  padding: 8px;
+  flex: 0 0 auto;
+  min-width: 0;
+  padding: 6px;
 }
 
 .user-roles-editor-pane {
@@ -96,125 +95,86 @@
   flex: 1 1 auto;
   min-height: 0;
   min-width: 0;
-  overflow: auto;
+  overflow: hidden;
 }
 
-/* Checkboxes inside the permissions editor follow the orange accent. */
 .user-roles-editor-pane .mantine-Checkbox-input:checked {
   background-color: var(--brand-orange);
   border-color: var(--brand-orange);
 }
 
-/* ── Role list (§6 selection pattern) ── */
-.user-roles-list-panel {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-height: 0;
-}
-
 .user-role-list-scroll {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  padding-right: 4px;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 .user-roles-list {
   display: flex;
-  flex-direction: column;
   gap: 4px;
+  min-width: 100%;
+  width: max-content;
 }
 
 .user-role-list-item {
   align-items: center;
-  background: var(--mantine-color-white);
-  /* transparent (not 0) so the selected ring doesn't shift the layout */
-  border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
-  gap: 4px;
-  min-width: 0;
-  padding: 2px 6px 2px 0;
-  position: relative;
-  transition:
-    border-color 110ms var(--tx-ease-smooth),
-    transform 140ms var(--tx-ease-smooth);
-}
-
-/* Keep the selection dot in its own slot before the edit action. */
-.user-role-list-item::before {
-  background: transparent;
-  border-radius: 999px;
-  content: '';
-  height: 6px;
-  position: absolute;
-  right: 36px;
-  top: 50%;
-  transform: translateY(-50%);
-  transition: background-color 120ms var(--tx-ease-smooth);
-  width: 6px;
+  flex: 1 0 auto;
+  gap: 2px;
+  padding-right: 6px;
 }
 
 .user-role-list-item:hover {
-  border-color: var(--mantine-color-gray-3);
-  transform: translateX(3px);
+  background: var(--mantine-color-gray-1);
 }
 
 .user-role-list-item.is-selected {
-  border-color: var(--brand-orange);
-}
-
-.user-role-list-item.is-selected::before {
   background: var(--brand-orange);
+  color: var(--mantine-color-white);
 }
 
 .user-role-list-select {
   background: transparent;
   border: 0;
+  border-radius: 8px;
+  color: inherit;
   cursor: pointer;
-  display: block;
   flex: 1 1 auto;
-  min-width: 0;
+  min-height: 36px;
   padding: 8px 10px;
-  text-align: left;
+}
+
+.user-role-list-select:focus-visible {
+  outline: 2px solid var(--brand-orange);
+  outline-offset: -2px;
 }
 
 .user-role-list-main {
-  display: block;
-  min-width: 0;
+  align-items: center;
+  display: flex;
+  gap: 6px;
 }
 
 .user-role-list-name {
-  color: var(--mantine-color-gray-8);
-  font-size: 13px;
+  color: inherit;
+  font-family: var(--font-mono);
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.2;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.user-role-list-metrics {
-  color: var(--mantine-color-gray-6);
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0;
-  line-height: 1.2;
-  margin-top: 3px;
-}
-
 .user-role-list-edit {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-7);
   flex: 0 0 auto;
 }
 
+.user-role-list-item.is-selected .user-role-list-edit {
+  color: var(--mantine-color-white);
+}
+
 .user-role-list-edit:hover {
-  background: transparent;
-  color: var(--brand-orange);
+  background: rgb(128 128 128 / 12%);
 }
 
 .user-roles-list-empty {
@@ -229,22 +189,23 @@
   padding: 8px 10px;
 }
 
-.user-roles-workspace-tabs {
+.user-roles-permissions-panel {
+  height: 100%;
+  min-height: 0;
+}
+
+.user-roles-permissions-panel > .event-permissions-editor {
   display: flex;
-  flex: 1 1 auto;
   flex-direction: column;
-  min-height: 0;
+  height: 100%;
 }
 
-.user-roles-workspace-tabs-list {
-  flex: 0 0 auto;
-  padding: 0 8px;
+.user-roles-permissions-panel .event-permissions-filters,
+.user-roles-permissions-panel .event-permissions-alert {
+  flex-shrink: 0;
 }
 
-.user-roles-workspace-tab-panel {
-  min-height: 0;
-}
-
-.user-roles-workspace-tabs > .user-roles-layout {
+.user-roles-permissions-panel .event-permissions-tree-scroll {
   flex: 1 1 auto;
+  height: auto;
 }

@@ -1,6 +1,5 @@
 import {
   Accordion,
-  ActionIcon,
   Alert,
   Badge,
   Button,
@@ -10,7 +9,6 @@ import {
   Text,
   TextInput,
   Textarea,
-  Tooltip,
 } from '@mantine/core'
 import { CircleAlert, RotateCcw, Save, Search } from 'lucide-react'
 import { type FormEvent, type ReactNode } from 'react'
@@ -53,19 +51,8 @@ export function SearchToolbar({ action, placeholder, value, onChange, onReset }:
         onChange={(event) => onChange(event.currentTarget.value)}
         style={{ flex: '1 1 auto', minWidth: 180 }}
       />
-      <Tooltip label={t('Скинути')}>
-        <ActionIcon
-          aria-label={t('Скинути')}
-          color="gray"
-          size={36}
-          style={{ flex: '0 0 auto' }}
-          type="button"
-          variant="light"
-          onClick={onReset}
-        >
-          <RotateCcw size={18} />
-        </ActionIcon>
-      </Tooltip>
+      <Button variant="default" color="gray" size="sm" leftSection={<RotateCcw size={16} />}
+        onClick={onReset} style={{ flexShrink: 0 }}>{t('Скинути')}</Button>
       {action}
     </Group>
   )

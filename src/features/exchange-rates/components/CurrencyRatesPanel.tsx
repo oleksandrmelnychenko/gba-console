@@ -5,10 +5,9 @@ import {
   Group,
   Text,
   TextInput,
-  Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { CircleDollarSign, PencilLine, RotateCcw, X } from 'lucide-react'
+import { ChevronDown, CircleDollarSign, PencilLine, RotateCcw, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, type CSSProperties, type FormEvent } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getExchangeRateHistory, updateExchangeRates } from '../api/exchangeRatesApi'
@@ -25,6 +24,7 @@ import {
 } from '../utils'
 import { CurrencyRatesHistory } from './CurrencyRatesHistory'
 import { CurrencyRatesUpdateForm } from './CurrencyRatesUpdateForm'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 
 type CurrencyRatesPanelProps = {
@@ -375,7 +375,7 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style }: Currenc
   }
 
   return (
-    <Box className="exchange-rates-panel tx-panel-reveal" style={style || undefined}>
+    <Box className="exchange-rates-panel tx-panel-reveal" role="dialog" aria-label={t('Курси валют')} style={style || undefined}>
       <Group justify="space-between" align="center" className="exchange-rates-panel-header">
         <Group gap="sm" wrap="nowrap">
           <Box className="exchange-rates-panel-heading-icon">
@@ -384,9 +384,7 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style }: Currenc
           <Box className="exchange-rates-panel-heading-copy">
             <Text className="exchange-rates-panel-eyebrow">{t('Курси валют')}</Text>
             <Group gap={8} wrap="nowrap">
-              <Text fw={700} lh={1.1} className="exchange-rates-panel-title">
-                {group.title}
-              </Text>
+              <TableChip value={group.title} tone="document" />
               <Text size="xs" c="dimmed" className="exchange-rates-panel-current">
                 {selectedRateTitle}
               </Text>
@@ -403,15 +401,7 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style }: Currenc
         </ActionIcon>
       </Group>
 
-      <Box className="app-filter-bar app-filter-bar--stacked exchange-rates-filter">
-        <Group justify="space-between" align="center" className="exchange-rates-section-heading">
-          <Text className="exchange-rates-section-title">{t('Період')}</Text>
-          <Tooltip label={t('Скинути')}>
-            <ActionIcon variant="subtle" color="gray" aria-label={t('Скинути')} onClick={resetFilter}>
-              <RotateCcw size={16} strokeWidth={1.8} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
+      <Box className="app-filter-bar exchange-rates-filter">
         <Group gap="sm" wrap="nowrap" className="app-filter-date-range exchange-rates-filter-fields">
           <TextInput
             label={t('Від')}
@@ -436,6 +426,9 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style }: Currenc
             }
           />
         </Group>
+        <Button variant="default" color="gray" size="sm" leftSection={<RotateCcw size={16} />} onClick={resetFilter}>
+          {t('Скинути')}
+        </Button>
       </Box>
 
       <Box className="exchange-rates-currency-section">
@@ -446,6 +439,7 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style }: Currenc
               key={getRateKey(rate)}
               type="button"
               className={`exchange-rates-panel-rate${panelState.selectedRate?.NetUid === rate.NetUid ? ' is-selected' : ''}`}
+              aria-pressed={panelState.selectedRate?.NetUid === rate.NetUid}
               onClick={() => dispatchPanel({ type: 'rateSelected', rate })}
             >
               <span className="exchange-rates-panel-rate-code">{rate.Code}</span>
@@ -455,21 +449,22 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style }: Currenc
         </Group>
       </Box>
 
-      <CurrencyRatesHistory
+      {!panelState.isFormOpen && <CurrencyRatesHistory
         error={historyState.error}
         isLoading={historyState.isLoading}
         items={historyState.items}
         selectedRate={panelState.selectedRate}
-      />
+      />}
 
-      <Group gap="xs" justify={historyState.canLoadMore ? 'space-between' : 'flex-end'} className="exchange-rates-panel-controls">
-        {historyState.canLoadMore && (
-          <Button variant="default" color="gray" onClick={loadMore} loading={historyState.isMoreLoading}>
+      {!panelState.isFormOpen && <Group gap="xs" justify={historyState.canLoadMore ? 'space-between' : 'flex-end'} className="exchange-rates-panel-controls">
+        {historyState.canLoadMore && !historyState.isLoading && (
+          <Button size="sm" variant="default" color="gray" leftSection={<ChevronDown size={16} />} onClick={loadMore} loading={historyState.isMoreLoading}>
             {t('Завантажити ще')}
           </Button>
         )}
         {!isReadOnly && !panelState.isFormOpen && (
           <Button
+            size="sm"
             color={CREATE_ACTION_COLOR}
             leftSection={<PencilLine size={16} />}
             variant="filled"
@@ -478,7 +473,7 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style }: Currenc
             {t('Оновити курси')}
           </Button>
         )}
-      </Group>
+      </Group>}
 
       {!isReadOnly && panelState.isFormOpen && (
         <CurrencyRatesUpdateForm

@@ -2,10 +2,35 @@
   min-width: 0;
 }
 
-.event-permissions-filters {
-  display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(130px, 170px) minmax(130px, 170px);
+.app-filter-bar.event-permissions-filters {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 10px;
+}
+
+.app-filter-bar.event-permissions-filters > .event-permissions-search {
+  flex: 1 1 200px;
+  min-width: 160px;
+}
+
+.app-filter-bar.event-permissions-filters > .event-permissions-risk {
+  flex: 0 0 150px;
+}
+
+.app-filter-bar.event-permissions-filters > .event-permissions-selection {
+  flex: 0 0 130px;
+}
+
+.event-permissions-actions,
+.event-permissions-stats {
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.event-permissions-stats {
+  margin-left: auto;
 }
 
 .event-permissions-alert {
@@ -31,22 +56,141 @@
   opacity: 0.55;
 }
 
-@media (max-width: 900px) {
-  .event-permissions-filters {
-    grid-template-columns: 1fr 1fr;
+@media (max-width: 560px) {
+  .app-filter-bar.event-permissions-filters > .event-permissions-search {
+    flex-basis: 100%;
   }
 
-  .event-permissions-filters > :first-child {
-    grid-column: 1 / -1;
+  .app-filter-bar.event-permissions-filters > .event-permissions-risk,
+  .app-filter-bar.event-permissions-filters > .event-permissions-selection {
+    flex: 1 1 140px;
+  }
+
+  .event-permissions-stats {
+    margin-left: 0;
   }
 }
 
-@media (max-width: 560px) {
-  .event-permissions-filters {
-    grid-template-columns: 1fr;
-  }
+/* Compact tree: keep the hierarchy, remove ornamental separators. */
+.event-permissions-editor .role-tree-modules {
+  gap: 0;
+  padding-right: 6px;
+}
 
-  .event-permissions-filters > :first-child {
-    grid-column: auto;
-  }
+.event-permissions-editor .role-tree-module {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  border-radius: 0;
+}
+
+.event-permissions-editor .role-tree-module + .role-tree-module::before,
+.event-permissions-editor .role-tree-module + .role-tree-module::after,
+.event-permissions-editor .role-tree-permission-body-line {
+  display: none;
+}
+
+.event-permissions-editor .role-tree-module-header {
+  gap: 6px;
+  min-height: 38px;
+  padding: 4px 6px;
+}
+
+.event-permissions-editor .role-tree-module-header:hover {
+  background: var(--mantine-color-gray-0);
+}
+
+.event-permissions-editor .role-tree-node-row {
+  gap: 6px;
+  padding-left: calc(28px + var(--role-tree-indent, 0px));
+  min-height: 36px;
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+.event-permissions-editor .role-tree-permission {
+  gap: 6px;
+  padding-left: calc(52px + var(--role-tree-indent, 0px));
+  min-height: 34px;
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+.event-permissions-editor .role-tree-permission-body {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+.event-permissions-editor .role-tree-permissions {
+  padding-top: 0;
+  padding-bottom: 2px;
+}
+
+.event-permissions-tree-scroll {
+  height: calc(100vh - 340px);
+  min-height: 0;
+}
+
+.event-permissions-editor .role-tree-check {
+  background: var(--mantine-color-white);
+  border-color: var(--mantine-color-gray-4);
+  border-radius: 5px;
+  height: 20px;
+  width: 20px;
+}
+
+.event-permissions-editor .role-tree-check.is-selected,
+.event-permissions-editor .role-tree-check.is-indeterminate {
+  background: var(--brand-orange);
+  border-color: var(--brand-orange);
+  color: var(--mantine-color-white);
+}
+
+.event-permissions-editor .role-tree-check:not(:disabled):hover {
+  border-color: var(--brand-orange);
+}
+
+.event-permissions-editor .role-tree-check:focus-visible {
+  outline: 2px solid var(--brand-orange);
+  outline-offset: 2px;
+}
+
+.event-permissions-editor .role-tree-check:disabled {
+  opacity: 0.55;
+}
+
+.event-permissions-editor .role-tree-permission-meta {
+  flex-wrap: wrap;
+  gap: 3px 8px;
+}
+
+.event-permission-description {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.event-permission-description .app-table-chip-label {
+  font-family: var(--font-sans);
+  font-weight: 400;
+}
+
+.permission-tree-icon {
+  align-items: center;
+  color: var(--mantine-color-gray-7);
+  display: inline-flex;
+  height: 24px;
+  justify-content: center;
+  width: 24px;
+}
+
+.permission-tree-icon.is-section {
+  color: var(--brand-orange);
+}
+
+.permission-tree-icon.is-group,
+.permission-tree-icon.is-action {
+  color: var(--mantine-color-gray-6);
+}
+
+.event-permissions-editor .role-tree-disclosure {
+  color: var(--mantine-color-gray-7);
 }

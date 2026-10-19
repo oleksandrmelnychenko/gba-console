@@ -66,3 +66,22 @@
   flex: 1 1 auto;
   min-height: 0;
 }
+
+.accounting-bank-editor .mantine-Modal-body {
+  background: var(--mantine-color-gray-0);
+}
+
+.accounting-bank-editor-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+}
+
+.accounting-bank-editor .mantine-InputWrapper-label,
+.accounting-bank-editor .mantine-Button-label {
+  font-family: var(--font-mono);
+}

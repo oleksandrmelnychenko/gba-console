@@ -1,5 +1,6 @@
-import { Box, Button, Group, Paper, Stack, Text } from '@mantine/core'
-import { FileSpreadsheet, FileText } from 'lucide-react'
+import { Button, Group, Paper, Stack, Text } from '@mantine/core'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { PdfIcon } from '../../../shared/ui/PdfIcon'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 
 export type SaleDocumentDownload = {
@@ -14,46 +15,34 @@ export function SaleDocumentDownloads({ documents }: { documents: SaleDocumentDo
       {documents.map((document, index) => (
         <Paper key={`${document.label}-${index}`} withBorder p="md" radius="md">
           <Stack gap="sm">
-            <Group gap="xs" wrap="nowrap">
-              <Box
-                style={{
-                  width: 8,
-                  height: 8,
-                  flex: '0 0 auto',
-                  borderRadius: 999,
-                  background: '#e8782e',
-                  boxShadow: '0 0 0 3px rgba(232, 120, 46, 0.14)',
-                }}
-              />
-              <Text fw={600} size="sm">
-                {document.label}
-              </Text>
-            </Group>
+            <Text className="app-section-title" fw={600} size="sm">
+              {document.label}
+            </Text>
             <Group gap="xs">
               {document.pdfUrl && (
                 <Button
-                  color="red"
+                  color="gray"
                   component="a"
                   href={getDocumentHref(document.pdfUrl)}
-                  leftSection={<FileText size={16} />}
+                  leftSection={<PdfIcon size={20} />}
                   rel="noopener noreferrer"
-                  size="xs"
+                  size="sm"
                   target="_blank"
-                  variant="light"
+                  variant="default"
                 >
                   PDF
                 </Button>
               )}
               {document.excelUrl && (
                 <Button
-                  color="teal"
+                  color="gray"
                   component="a"
                   href={getDocumentHref(document.excelUrl)}
-                  leftSection={<FileSpreadsheet size={16} />}
+                  leftSection={<ExcelIcon size={20} />}
                   rel="noopener noreferrer"
-                  size="xs"
+                  size="sm"
                   target="_blank"
-                  variant="outline"
+                  variant="default"
                 >
                   Excel
                 </Button>

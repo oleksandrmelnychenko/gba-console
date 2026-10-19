@@ -1,6 +1,5 @@
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
   Badge,
   Button,
@@ -11,10 +10,9 @@ import {
   Stack,
   Text,
   TextInput,
-  Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { CircleAlert, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react'
+import { CircleAlert, CreditCard, Landmark, List, Wallet, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -228,16 +226,16 @@ function PaymentAccountsPageContent() {
               placeholder={t('Введіть значення')}
               value={searchValue}
               onChange={(event) => setSearchValue(event.currentTarget.value)}
-              style={{ flex: '1 1 auto', minWidth: 180 }}
+              className="payment-accounts-search"
             />
             <div className="app-filter-field payment-accounts-type-filter">
               <span className="app-filter-label">{t('Тип')}</span>
               <SegmentedControl
                 data={[
-                  { label: t('Усі'), value: 'all' },
-                  { label: t('Каса'), value: String(PaymentRegisterType.Cash) },
-                  { label: t('Банківська картка'), value: String(PaymentRegisterType.Card) },
-                  { label: t('Банк'), value: String(PaymentRegisterType.Bank) },
+                  { label: <span className="payment-accounts-type-label"><List size={15} aria-hidden="true" />{t('Усі')}</span>, value: 'all' },
+                  { label: <span className="payment-accounts-type-label"><Wallet size={15} aria-hidden="true" />{t('Каса')}</span>, value: String(PaymentRegisterType.Cash) },
+                  { label: <span className="payment-accounts-type-label"><CreditCard size={15} aria-hidden="true" />{t('Банківська картка')}</span>, value: String(PaymentRegisterType.Card) },
+                  { label: <span className="payment-accounts-type-label"><Landmark size={15} aria-hidden="true" />{t('Банк')}</span>, value: String(PaymentRegisterType.Bank) },
                 ]}
                 value={typeFilter}
                 onChange={(value) => setTypeFilter((value as TypeFilter | null) || 'all')}
@@ -250,27 +248,17 @@ function PaymentAccountsPageContent() {
               label={t('Організація')}
               placeholder={t('Усі')}
               value={organizationNetId || null}
-              style={{ flex: '0 0 240px' }}
+              className="payment-accounts-organization"
               onChange={(value) => setOrganizationNetId(value || '')}
             />
             <div className="app-filter-actions">
-              <Tooltip label={t('Скинути фільтри')}>
-                <ActionIcon aria-label={t('Скинути фільтри')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                  <RotateCcw size={17} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon
-                  aria-label={t('Оновити')}
-                  color="gray"
-                  loading={isLoading || isLoadingLookups}
-                  size={34}
-                  variant="light"
-                  onClick={reload}
-                >
-                  <RefreshCw size={17} />
-                </ActionIcon>
-              </Tooltip>
+              <Button variant="default" size="sm" leftSection={<RotateCcw size={16} />} onClick={resetFilters}>
+                {t('Скинути')}
+              </Button>
+              <Button variant="default" size="sm" leftSection={<RefreshCw size={16} />}
+                loading={isLoading || isLoadingLookups} onClick={reload}>
+                {t('Оновити')}
+              </Button>
             </div>
             <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
             <PermissionGate permissionKey={PAYMENT_ACCOUNT_CREATE_PERMISSION}>
@@ -341,7 +329,7 @@ function usePaymentAccountColumns(onOpen: (account: PaymentAccount) => void): Da
         width: 130,
         minWidth: 110,
         accessor: (account) => getPaymentRegisterTypeLabel(account.Type, t),
-        cell: (account) => getPaymentRegisterTypeLabel(account.Type, t),
+        cell: (account) => <TableChip value={getPaymentRegisterTypeLabel(account.Type, t)} />,
       },
       {
         id: 'name',
@@ -365,7 +353,7 @@ function usePaymentAccountColumns(onOpen: (account: PaymentAccount) => void): Da
         width: 120,
         minWidth: 104,
         accessor: (account) => getPrimaryCurrencyCode(account),
-        cell: (account) => <TableChip tone="neutral" value={displayValue(getPrimaryCurrencyCode(account))} />,
+        cell: (account) => <TableChip tone="source" value={displayValue(getPrimaryCurrencyCode(account))} />,
       },
       {
         id: 'organization',
@@ -373,7 +361,7 @@ function usePaymentAccountColumns(onOpen: (account: PaymentAccount) => void): Da
         width: 220,
         minWidth: 180,
         accessor: (account) => account.Organization?.Name || account.Organization?.FullName,
-        cell: (account) => displayValue(account.Organization?.Name || account.Organization?.FullName),
+        cell: (account) => <TableChip tone="product" value={displayValue(account.Organization?.Name || account.Organization?.FullName)} />,
       },
       {
         id: 'isActive',

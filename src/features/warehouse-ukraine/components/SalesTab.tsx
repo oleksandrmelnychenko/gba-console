@@ -1,5 +1,5 @@
 import { TableChip } from '../../../shared/ui/TableChip'
-import { ActionIcon, Alert, Anchor, Badge, Button, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { Alert, Anchor, Badge, Button, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CircleAlert, Pencil, Plus, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
@@ -457,11 +457,9 @@ export function SalesTab({ canCreateShipment, canPrintEditAct, canPrintInvoice, 
             onChange={(event) => model.setFilterDraft({ ...model.filterDraft, value: event.currentTarget.value })}
           />
           <div className="app-filter-actions warehouse-ukraine-filter-actions">
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
-                <RotateCcw size={17} />
-              </ActionIcon>
-            </Tooltip>
+            <Button variant="default" size="sm" leftSection={<RotateCcw size={16} />} onClick={model.resetFilters}>
+                {t('Скинути')}
+              </Button>
             <Paginator
               hasNext={model.canMoveForward}
               isLoading={model.isLoading}

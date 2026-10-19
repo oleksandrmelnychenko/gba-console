@@ -217,11 +217,6 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
       <Card className="app-section-card" padding="lg" radius="md" withBorder>
         <Stack gap="sm">
           <ScoreHeader score={score} />
-          <Text c="dimmed" size="xs">
-            {t('Оцінка за поточними записами станом на')} {formatIsoDate(score.as_of_date)}
-            {' · '}{score.business_timezone}{' · '}
-            {t('Курс валют на')} {formatIsoDate(score.fx_date)}
-          </Text>
           <Group className="client-solvency-risk" align="center" gap="xs" wrap="wrap">
             <Text c="dimmed" fw={600} size="sm">
               {t('Контроль боргу на 90 днів')}:
@@ -401,9 +396,6 @@ function ScoreHeader({ score }: { score: SolvencyScore }) {
             PD {formatPercent1(score.pd)}
           </Badge>
         )}
-        <Text c="dimmed" size="xs">
-          {t('Версія моделі')}: {score.model_version}
-        </Text>
       </Stack>
     </Group>
   )

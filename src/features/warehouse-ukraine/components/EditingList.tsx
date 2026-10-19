@@ -1,5 +1,5 @@
 import { TableChip } from '../../../shared/ui/TableChip'
-import { ActionIcon, Alert, Anchor, Badge, Button, Checkbox, Group, SimpleGrid, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { Alert, Anchor, Badge, Button, Checkbox, Group, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, RotateCcw } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useReducer, useRef, useState } from 'react'
@@ -295,16 +295,15 @@ export function EditingList({ canProcess, kind, layoutVersion, loader, onLoaded,
             />
           </div>
           <Checkbox
+            color="orange"
             checked={filterDraft.isDevelopment}
             label={t('Опрацьовані')}
             onChange={(event) => applyFilters({ ...filterDraft, isDevelopment: event.currentTarget.checked })}
           />
           <div className="app-filter-actions warehouse-ukraine-filter-actions">
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                <RotateCcw size={17} />
-              </ActionIcon>
-            </Tooltip>
+            <Button variant="default" size="sm" leftSection={<RotateCcw size={16} />} onClick={resetFilters}>
+                {t('Скинути')}
+              </Button>
             <Paginator
               hasNext={hasNext}
               isLoading={isLoading}

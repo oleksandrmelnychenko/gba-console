@@ -1,5 +1,5 @@
 import { TableChip } from '../../../shared/ui/TableChip'
-import { ActionIcon, Alert, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { Button, Alert, Select, Stack, Text, TextInput } from '@mantine/core'
 import { CircleAlert, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -253,11 +253,9 @@ export function OrdersTab({ canOpenPlacement }: { canOpenPlacement: boolean }) {
               onChange={(value) => model.applyFilters({ ...model.filterDraft, placed: value === 'true' })}
             />
             <div className="app-filter-actions warehouse-ukraine-filter-actions">
-              <Tooltip label={t('Скинути')}>
-                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
-                  <RotateCcw size={17} />
-                </ActionIcon>
-              </Tooltip>
+              <Button variant="default" size="sm" leftSection={<RotateCcw size={16} />} onClick={model.resetFilters}>
+                {t('Скинути')}
+              </Button>
               <Paginator
                 hasNext={model.hasNext}
                 isLoading={model.isLoading}

@@ -18,6 +18,33 @@
   overflow-x: auto;
 }
 
+.app-filter-bar.suppliers-filter-bar {
+  overflow: visible;
+}
+
+.app-filter-bar.suppliers-filter-bar > .suppliers-filter-row {
+  flex: 1 1 760px;
+  flex-wrap: nowrap;
+  width: auto;
+}
+
+.app-filter-bar.suppliers-filter-bar .suppliers-filter-search-input {
+  flex: 1 1 180px;
+  max-width: 320px;
+}
+
+.app-filter-bar.suppliers-filter-bar .suppliers-filter-field {
+  flex: 0 1 140px;
+}
+
+.app-filter-bar.suppliers-filter-bar .suppliers-filter-status {
+  flex: 0 1 110px;
+}
+
+.app-filter-bar.suppliers-filter-bar .suppliers-filter-actions {
+  flex: 0 0 auto;
+}
+
 /* Everything on one row: filter controls grow, DataTable tools stay compact,
    and the create button closes the toolbar on the right. */
 .suppliers-create-button {
@@ -1194,4 +1221,10 @@
 .suppliers-amount-cell small,
 .suppliers-amount-cell.is-muted strong {
   color: var(--mantine-color-gray-9);
+}
+
+@media (max-width: 1100px) {
+  .app-filter-bar.suppliers-filter-bar > .suppliers-filter-row {
+    flex-wrap: wrap;
+  }
 }

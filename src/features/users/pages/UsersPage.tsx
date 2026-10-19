@@ -1,5 +1,4 @@
 import {
-  ActionIcon,
   Alert,
   Badge,
   Button,
@@ -7,11 +6,10 @@ import {
   Stack,
   Text,
   TextInput,
-  Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import {
-  ChevronRight,
+  Users,
   CircleAlert,
   Plus,
   RefreshCw,
@@ -37,6 +35,7 @@ import {
   getUserRegionName,
   getUserRoleName,
 } from '../utils'
+import { UserRoleIcon } from '../components/UserRoleIcon'
 import './users-page.css'
 import '../../../shared/ui/console-table-page.css'
 
@@ -238,30 +237,26 @@ function UsersPageContent() {
             onChange={(value) => setStatusFilter(value as UserStatus | null)}
           />
           <div className="app-filter-actions users-filter-actions">
-            <Tooltip label={t('Очистити')}>
-              <ActionIcon
-                aria-label={t('Очистити')}
-                color="gray"
-                disabled={!hasActiveFilters}
-                size={34}
-                variant="light"
-                onClick={resetFilters}
-              >
-                <RotateCcw size={17} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                color="gray"
-                loading={isBusy}
-                size={34}
-                variant="light"
-                onClick={() => reload()}
-              >
-                <RefreshCw size={17} />
-              </ActionIcon>
-            </Tooltip>
+            <Button
+              color="gray"
+              disabled={!hasActiveFilters}
+              leftSection={<RotateCcw size={16} />}
+              size="sm"
+              variant="default"
+              onClick={resetFilters}
+            >
+              {t('Скинути')}
+            </Button>
+            <Button
+              color="gray"
+              leftSection={<RefreshCw size={16} />}
+              loading={isBusy}
+              size="sm"
+              variant="default"
+              onClick={() => reload()}
+            >
+              {t('Оновити')}
+            </Button>
           </div>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot users-table-toolbar-slot" />
           <div className="users-create-actions">
@@ -302,7 +297,7 @@ function UsersPageContent() {
         )}
 
         <div className="users-workspace">
-          <aside className="users-role-rail" aria-label={t('Ролі')}>
+          <nav className="users-role-tabs" aria-label={t('Ролі')}>
             <div className="users-role-scroll">
               <div className="users-role-list">
                 <button
@@ -312,16 +307,11 @@ function UsersPageContent() {
                   onClick={() => setRoleFilter(null)}
                 >
                   <span className="users-role-option-main">
+                    <Users aria-hidden="true" size={16} strokeWidth={1.8} />
                     <span className="users-role-option-name">{t('Всі користувачі')}</span>
-                    <ChevronRight
-                      aria-hidden="true"
-                      className="users-role-option-chevron"
-                      size={14}
-                      strokeWidth={2}
-                    />
+
                   </span>
                   <span className="users-role-option-count">{users.length}</span>
-                  <span aria-hidden="true" className="users-role-option-marker" />
                 </button>
 
                 {roleNavItems.map((item) => (
@@ -333,21 +323,16 @@ function UsersPageContent() {
                     onClick={() => setRoleFilter(item.value)}
                   >
                     <span className="users-role-option-main">
+                      <UserRoleIcon name={item.label} />
                       <span className="users-role-option-name">{item.label}</span>
-                      <ChevronRight
-                        aria-hidden="true"
-                        className="users-role-option-chevron"
-                        size={14}
-                        strokeWidth={2}
-                      />
+
                     </span>
                     <span className="users-role-option-count">{item.count}</span>
-                    <span aria-hidden="true" className="users-role-option-marker" />
-                  </button>
+                    </button>
                 ))}
               </div>
             </div>
-          </aside>
+          </nav>
 
           <section className="users-roster console-table-body">
             <DataTable

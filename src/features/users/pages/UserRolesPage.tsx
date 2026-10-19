@@ -7,7 +7,6 @@ import {
   Group,
   Skeleton,
   Stack,
-  Tabs,
   Text,
   TextInput,
   Tooltip,
@@ -33,6 +32,7 @@ import {
   EventPermissionsCatalog,
   type EventPermissionsCatalogHandle,
 } from '../components/EventPermissionsCatalog'
+import { UserRoleIcon } from '../components/UserRoleIcon'
 import { RoleFormModal } from '../components/RoleFormModal'
 import type { UserRole } from '../types'
 import {
@@ -336,29 +336,25 @@ function UserRolesPageContent() {
             onChange={(event) => updateSearch(event.currentTarget.value)}
           />
           <div className="app-filter-actions user-roles-filter-actions">
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon
-                aria-label={t('Скинути')}
-                color="gray"
-                size={34}
-                variant="light"
-                onClick={resetSearch}
-              >
-                <RotateCcw size={17} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                color="gray"
-                loading={isLoading || eventPermissionsSaving}
-                size={34}
-                variant="light"
-                onClick={requestReload}
-              >
-                <RefreshCw size={17} />
-              </ActionIcon>
-            </Tooltip>
+            <Button
+              color="gray"
+              leftSection={<RotateCcw size={16} />}
+              size="sm"
+              variant="default"
+              onClick={resetSearch}
+            >
+              {t('Скинути')}
+            </Button>
+            <Button
+              color="gray"
+              leftSection={<RefreshCw size={16} />}
+              loading={isLoading || eventPermissionsSaving}
+              size="sm"
+              variant="default"
+              onClick={requestReload}
+            >
+              {t('Оновити')}
+            </Button>
             {canEditEventPermissions && selectedRole ? (
               <>
                 <Button color="brand" variant="filled" size="sm"
@@ -400,11 +396,6 @@ function UserRolesPageContent() {
           </Alert>
         ) : null}
 
-        <Tabs className="user-roles-workspace-tabs" defaultValue="events">
-          <Tabs.List className="user-roles-workspace-tabs-list">
-            <Tabs.Tab value="events">{t('Подієві права')}</Tabs.Tab>
-          </Tabs.List>
-
           <Box className="user-roles-layout">
             <div className="user-roles-list-pane">
               <RoleList
@@ -423,11 +414,7 @@ function UserRolesPageContent() {
               radius="md"
               padding="md"
             >
-              <Tabs.Panel
-                className="user-roles-workspace-tab-panel"
-                value="events"
-                keepMounted
-              >
+              <div className="user-roles-permissions-panel" aria-label={t('Права доступу')}>
                 <EventPermissionsCatalog
                   key={selectedRole?.NetUid || 'no-role'}
                   ref={eventPermissionsRef}
@@ -436,10 +423,9 @@ function UserRolesPageContent() {
                   onDirtyChange={setEventPermissionsDirty}
                   onSavingChange={setEventPermissionsSaving}
                 />
-              </Tabs.Panel>
+              </div>
             </Card>
           </Box>
-        </Tabs>
       </div>
 
       {roleModalState.open ? (
@@ -547,16 +533,16 @@ function RoleList({
   const { t } = useI18n()
 
   return (
-    <Box className="user-roles-list-panel">
+    <Box component="nav" aria-label={t('Ролі')} className="user-roles-list-panel">
       <div className="user-role-list-scroll">
         {isLoading ? (
-          <Stack gap="xs" className="user-roles-list">
+          <div className="user-roles-list">
             {Array.from({ length: 6 }, (_, index) => (
               <RoleListSkeleton key={index} />
             ))}
-          </Stack>
+          </div>
         ) : roles.length > 0 ? (
-          <Stack gap="xs" className="user-roles-list">
+          <div className="user-roles-list">
             {roles.map((role, index) => {
               const roleKey = getUserRoleKey(role) || String(role.Id || index)
               const isSelected = roleKey === selectedRoleKey
@@ -573,6 +559,7 @@ function RoleList({
                     onClick={() => onSelectRole(role)}
                   >
                     <span className="user-role-list-main">
+                      <UserRoleIcon name={getUserRoleName(role)} />
                       <Text className="user-role-list-name">
                         {getUserRoleName(role)}
                       </Text>
@@ -595,7 +582,7 @@ function RoleList({
                 </div>
               )
             })}
-          </Stack>
+          </div>
         ) : (
           <Box className="user-roles-list-empty">
             <Text c="dimmed" size="sm">

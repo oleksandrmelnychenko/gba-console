@@ -1,12 +1,10 @@
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
   Button,
   Stack,
   Text,
   TextInput,
-  Tooltip,
 } from '@mantine/core'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { CalendarClock, CircleAlert, Download, RotateCcw } from 'lucide-react'
@@ -416,11 +414,9 @@ export function DocumentVerificationTab({ canExport }: { canExport: boolean }) {
               </div>
             </div>
             <div className="app-filter-actions warehouse-ukraine-filter-actions">
-              <Tooltip label={t('Скинути')}>
-                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
-                  <RotateCcw size={17} />
-                </ActionIcon>
-              </Tooltip>
+              <Button variant="default" size="sm" leftSection={<RotateCcw size={16} />} onClick={model.resetFilters}>
+                {t('Скинути')}
+              </Button>
               <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
                 leftSection={<Download size={16} />}
                 disabled={!canExport || Boolean(model.exportError) || !model.storagesReady}

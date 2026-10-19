@@ -6,24 +6,22 @@ import {
   Button,
   Collapse,
   Group,
-  Loader,
+  Skeleton,
   ScrollArea,
   Select,
   Stack,
   Text,
   TextInput,
-  ThemeIcon,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import {
   ChevronRight,
   CircleAlert,
-  FileText,
-  Folder,
+  Eraser,
   ListChecks,
   Route,
+  RefreshCw,
   Search,
-  ShieldCheck,
 } from 'lucide-react'
 import {
   forwardRef,
@@ -35,6 +33,7 @@ import {
   useState,
   type CSSProperties,
 } from 'react'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { ApiError } from '../../../shared/api/apiClient'
 import { notifyAuthPermissionsChanged } from '../../../shared/auth/permissionEvents'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -62,6 +61,7 @@ import {
   type EventPermissionStateFilter,
 } from '../eventPermissionsTree'
 import type { UserRole } from '../types'
+import { PermissionTreeIcon } from './PermissionTreeIcon'
 import { SelectionMark } from './SelectionMark'
 import './role-permissions-editor.css'
 import './event-permissions-catalog.css'
@@ -406,14 +406,11 @@ export const EventPermissionsCatalog = forwardRef<
     )
   }
 
-  if (isLoading && !catalog && !rolePermissions) {
+  if (isLoading && (!catalog || !rolePermissions)) {
     return (
-      <Group className="event-permissions-state" justify="center" gap="xs">
-        <Loader color="orange" size="sm" />
-        <Text c="dimmed" size="sm">
-          {t('Завантаження подієвих прав')}
-        </Text>
-      </Group>
+      <Stack className="event-permissions-state" gap="sm" role="status" aria-label={t('Завантаження прав доступу')} aria-busy="true">
+        {[0, 1, 2, 3, 4].map((row) => <Skeleton key={row} height={32} radius="sm" />)}
+      </Stack>
     )
   }
 
@@ -423,9 +420,9 @@ export const EventPermissionsCatalog = forwardRef<
         <Text c="red" size="sm" ta="center">
           {catalogError || roleError}
         </Text>
-        <button className="role-tree-text-action" type="button" onClick={reload}>
+        <Button variant="default" size="sm" leftSection={<RefreshCw size={16} />} onClick={reload}>
           {t('Спробувати ще раз')}
-        </button>
+        </Button>
       </Stack>
     )
   }
@@ -434,11 +431,8 @@ export const EventPermissionsCatalog = forwardRef<
     return (
       <Stack className="event-permissions-state" align="center" justify="center" gap="sm">
         <Text c="dimmed" size="sm">
-          {t('Каталог подієвих прав порожній')}
+          {t('Каталог прав доступу порожній')}
         </Text>
-        <button className="role-tree-text-action" type="button" onClick={reload}>
-          {t('Оновити')}
-        </button>
       </Stack>
     )
   }
@@ -447,6 +441,7 @@ export const EventPermissionsCatalog = forwardRef<
     <Box className="role-tree event-permissions-editor">
       <div className="app-filter-bar event-permissions-filters">
         <TextInput
+          className="event-permissions-search"
           aria-label={t('Пошук права')}
           leftSection={<Search size={15} />}
           placeholder={t('Назва дії, сторінка або ключ')}
@@ -454,6 +449,7 @@ export const EventPermissionsCatalog = forwardRef<
           onChange={(event) => setQuery(event.currentTarget.value)}
         />
         <Select
+          className="event-permissions-risk"
           aria-label={t('Ризик')}
           allowDeselect={false}
           data={[
@@ -466,6 +462,7 @@ export const EventPermissionsCatalog = forwardRef<
           onChange={(value) => setRiskFilter((value || 'all') as EventPermissionRiskFilter)}
         />
         <Select
+          className="event-permissions-selection"
           aria-label={t('Стан права')}
           allowDeselect={false}
           data={[
@@ -476,6 +473,54 @@ export const EventPermissionsCatalog = forwardRef<
           value={stateFilter}
           onChange={(value) => setStateFilter((value || 'all') as EventPermissionStateFilter)}
         />
+        <Group className="event-permissions-actions" gap="xs" wrap="wrap">
+          <Button
+            size="sm"
+            leftSection={<ListChecks size={15} />}
+            variant="default"
+            disabled={
+              readOnly ||
+              activeKeys.length === 0 ||
+              activeKeys.every((key) => selectedKeys.has(key)) ||
+              isSaving
+            }
+            type="button"
+            onClick={() => selectKeys(activeKeys)}
+          >
+            {t('Вибрати все')}
+          </Button>
+          <Button
+            size="sm"
+            leftSection={<Eraser size={15} />}
+            variant="default"
+            disabled={readOnly || selectedKeys.size === 0 || isSaving}
+            type="button"
+            onClick={clearKeys}
+          >
+            {t('Очистити')}
+          </Button>
+          {hasActiveFilters ? (
+            <Button
+              size="sm"
+              variant="default"
+              disabled={
+                readOnly ||
+                visibleKeys.length === 0 ||
+                visibleKeys.every((key) => selectedKeys.has(key)) ||
+                isSaving
+              }
+              type="button"
+              onClick={() => selectKeys(visibleKeys)}
+            >
+              {t('Вибрати показані')}
+            </Button>
+          ) : null}
+        </Group>
+        <Group className="event-permissions-stats" gap="xs" justify="flex-end" wrap="wrap">
+          <TableChip value={`${t('Знайдено')}: ${filteredPermissions.length}/${activePermissions.length}`} />
+          <TableChip tone="document" value={`${t('Права')}: ${assignedKnownCount}/${activePermissions.length}`} />
+        </Group>
+
       </div>
 
       {roleError ? (
@@ -499,9 +544,9 @@ export const EventPermissionsCatalog = forwardRef<
                 ? ` ${t('Актуальна версія')}: ${conflict.currentVersion}.`
                 : ''}
             </Text>
-            <button className="role-tree-text-action" type="button" onClick={reload}>
+            <Button variant="default" size="sm" leftSection={<RefreshCw size={16} />} onClick={reload}>
               {t('Завантажити актуальні права')}
-            </button>
+            </Button>
           </Group>
         </Alert>
       ) : null}
@@ -520,56 +565,8 @@ export const EventPermissionsCatalog = forwardRef<
         </Alert>
       ) : null}
 
-      <Group className="app-filter-bar role-tree-toolbar" justify="space-between" wrap="nowrap">
-        <Group className="app-filter-control-group" gap="xs" wrap="wrap">
-          <Button
-            variant="default"
-            disabled={
-              readOnly ||
-              activeKeys.length === 0 ||
-              activeKeys.every((key) => selectedKeys.has(key)) ||
-              isSaving
-            }
-            type="button"
-            onClick={() => selectKeys(activeKeys)}
-          >
-            {t('Вибрати все')}
-          </Button>
-          <Button
-            variant="default"
-            disabled={readOnly || selectedKeys.size === 0 || isSaving}
-            type="button"
-            onClick={clearKeys}
-          >
-            {t('Очистити')}
-          </Button>
-          {hasActiveFilters ? (
-            <Button
-              variant="default"
-              disabled={
-                readOnly ||
-                visibleKeys.length === 0 ||
-                visibleKeys.every((key) => selectedKeys.has(key)) ||
-                isSaving
-              }
-              type="button"
-              onClick={() => selectKeys(visibleKeys)}
-            >
-              {t('Вибрати показані')}
-            </Button>
-          ) : null}
-        </Group>
-        <Group className="role-tree-toolbar-stats" gap="xs" justify="flex-end" wrap="wrap">
-          <Badge className="app-role-pill is-gray" variant="light">
-            {t('Знайдено')}: {filteredPermissions.length}/{activePermissions.length}
-          </Badge>
-          <Badge className="app-role-pill is-gray" variant="light">
-            {t('Права')}: {assignedKnownCount}/{activePermissions.length}
-          </Badge>
-        </Group>
-      </Group>
 
-      <ScrollArea.Autosize mah="calc(100vh - 430px)" type="auto">
+      <ScrollArea className="event-permissions-tree-scroll" type="auto">
         {tree.length > 0 ? (
           <Box className="role-tree-modules">
             {tree.map((section) => (
@@ -587,10 +584,10 @@ export const EventPermissionsCatalog = forwardRef<
           </Box>
         ) : (
           <Text className="event-permissions-empty" c="dimmed" size="sm" ta="center">
-            {t('Подієвих прав не знайдено')}
+            {t('Прав доступу не знайдено')}
           </Text>
         )}
-      </ScrollArea.Autosize>
+      </ScrollArea>
     </Box>
   )
 })
@@ -635,20 +632,13 @@ function SectionRow({
           label={`${t('Вибрати розділ')}: ${section.label}`}
           onChange={() => onToggleKeys(keys)}
         />
-        <ThemeIcon className="role-tree-module-icon" color="gray" size={28} variant="light">
-          <Folder size={16} />
-        </ThemeIcon>
+        <PermissionTreeIcon level="section" id={section.id} />
         <button className="role-tree-module-title" type="button" onClick={() => onToggleExpanded(expandedKey)}>
           <Text className="role-tree-module-name">{section.label}</Text>
-          <Text className="role-tree-module-description">{section.id}</Text>
         </button>
         <div className="role-tree-module-stats">
-          <Badge className="app-role-pill is-gray" variant="light">
-            {section.pages.length} {t('стор.')}
-          </Badge>
-          <Badge className="app-role-pill is-gray" variant="light">
-            {selectedCount}/{keys.length}
-          </Badge>
+          <TableChip value={`${section.pages.length} ${t('стор.')}`} />
+          <TableChip tone="document" value={`${selectedCount}/${keys.length} ${t('прав')}`} />
         </div>
       </div>
 
@@ -707,25 +697,20 @@ function PageRow({
           label={`${t('Вибрати сторінку')}: ${page.label}`}
           onChange={() => onToggleKeys(keys)}
         />
-        <ThemeIcon className="role-tree-node-icon" color="gray" size={26} variant="light">
-          <FileText size={15} />
-        </ThemeIcon>
+        <PermissionTreeIcon level="page" />
         <button className="role-tree-node-title" type="button" onClick={() => onToggleExpanded(expandedKey)}>
           <Text className="role-tree-node-name">{page.label}</Text>
           <span className="role-tree-node-meta">
             {page.route ? (
               <span className="role-tree-route">
                 <Route size={12} />
-                {page.route}
+                <TableChip value={page.route} />
               </span>
             ) : null}
-            <span>{selectedCount}/{keys.length} {t('прав')}</span>
           </span>
         </button>
         <div className="role-tree-node-actions">
-          <Badge className="app-role-pill is-gray" variant="light">
-            {page.groups.length}
-          </Badge>
+          <TableChip tone="document" value={`${selectedCount}/${keys.length} ${t('прав')}`} />
         </div>
       </div>
 
@@ -794,16 +779,14 @@ function GroupRow({
           label={`${t('Вибрати групу')}: ${group.label}`}
           onChange={() => onToggleKeys(keys)}
         />
-        <ThemeIcon className="role-tree-node-icon" color="gray" size={26} variant="light">
-          <ListChecks size={15} />
-        </ThemeIcon>
+        <PermissionTreeIcon level="group" />
         <button className="role-tree-node-title" type="button" onClick={() => onToggleExpanded(expandedKey)}>
           <Text className="role-tree-node-name">{group.label}</Text>
-          <span className="role-tree-node-meta">
-            <span>{selectedCount}/{keys.length} {t('прав')}</span>
-          </span>
+
         </button>
-        <div className="role-tree-node-actions" />
+        <div className="role-tree-node-actions">
+          <TableChip value={`${selectedCount}/${keys.length} ${t('прав')}`} />
+        </div>
       </div>
 
       <Collapse expanded={expanded}>
@@ -852,16 +835,14 @@ function PermissionRow({
         size="sm"
         onChange={onToggle}
       />
-      <ThemeIcon className="role-tree-permission-icon" color="gray" size={24} variant="light">
-        <ShieldCheck size={14} />
-      </ThemeIcon>
+      <PermissionTreeIcon level="action" id={permission.key} />
       <div className="role-tree-permission-body">
         <div className="role-tree-permission-copy">
           <div className="role-tree-permission-title-row">
             <Text className="role-tree-permission-name">{permission.name}</Text>
           </div>
           <div className="role-tree-permission-meta">
-            {permission.description ? <span>{permission.description}</span> : null}
+            {permission.description ? <span className="event-permission-description"><TableChip value={permission.description} /></span> : null}
             <code>{permission.key}</code>
           </div>
         </div>

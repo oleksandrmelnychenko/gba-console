@@ -1,6 +1,5 @@
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
   Avatar,
   Badge,
@@ -15,12 +14,11 @@ import {
   Text,
   TextInput,
   Textarea,
-  Tooltip,
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { ChevronRight, CircleAlert, CreditCard, Hash, Image, Link, Pencil, Phone, Plus, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react'
+import { FileText, Info, Store, Users, Warehouse, type LucideIcon, CircleAlert, CreditCard, Hash, Image, Link, Pencil, Phone, Plus, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react'
 import { type CSSProperties, type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -115,13 +113,18 @@ type SeoRosterColumn<TData> = {
 
 const SEO_TABS: { value: SeoTab; label: TranslationKey }[] = [
   { value: 'info-payment', label: 'Загальна інформація та оплата' },
-  { value: 'pages', label: 'Сторінки' },
+  // { value: 'pages', label: 'Сторінки' },
   { value: 'contacts', label: 'Персонал' },
   { value: 'shop-data', label: 'Дані магазину' },
   { value: 'shop-clients', label: 'Інтернет клієнти' },
   { value: 'bank-cards', label: 'Банківські картки' },
   { value: 'warehouses', label: 'Склади' },
 ]
+
+const SEO_TAB_ICONS: Record<SeoTab, LucideIcon> = {
+  'info-payment': Info, pages: FileText, contacts: Users, 'shop-data': Store,
+  'shop-clients': Users, 'bank-cards': CreditCard, warehouses: Warehouse,
+}
 
 const SEO_VISIBLE_TABS = SEO_TABS.filter((tab) => !['shop-clients', 'bank-cards', 'warehouses'].includes(tab.value))
 
@@ -629,7 +632,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
       accessor: (client) => getOnlineShopClientAgreementName(client),
       cell: (client) => (
         <SeoTablePrimaryCell
-          subtitle={displayValue(getOnlineShopClientAgreementOrganizationName(client))}
+          subtitle={<TableChip tone="product" value={displayValue(getOnlineShopClientAgreementOrganizationName(client))} />}
           title={<TableChip value={displayValue(getOnlineShopClientAgreementName(client))} />}
         />
       ),
@@ -641,9 +644,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
       minWidth: 68,
       accessor: (client) => getOnlineShopClientAgreementCurrencyCode(client),
       cell: (client) => (
-        <SeoTableTag tone="accent">
-          {displayValue(getOnlineShopClientAgreementCurrencyCode(client))}
-        </SeoTableTag>
+        <TableChip tone="source" value={displayValue(getOnlineShopClientAgreementCurrencyCode(client))} />
       ),
     },
     {
@@ -732,7 +733,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 112,
         minWidth: 92,
         accessor: (register) => getPaymentRegisterCurrency(register),
-        cell: (register) => <SeoTableTag tone="accent">{displayValue(getPaymentRegisterCurrency(register))}</SeoTableTag>,
+        cell: (register) => <TableChip tone="source" value={displayValue(getPaymentRegisterCurrency(register))} />,
       },
       {
         id: 'name',
@@ -756,7 +757,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 280,
         minWidth: 220,
         accessor: (register) => getOrganizationName(register.Organization),
-        cell: (register) => <SeoTableMutedCell>{displayValue(getOrganizationName(register.Organization))}</SeoTableMutedCell>,
+        cell: (register) => <TableChip tone="product" value={displayValue(getOrganizationName(register.Organization))} />,
       },
       {
         id: 'registerActive',
@@ -1697,32 +1698,11 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             )}
             <div className="app-filter-actions seo-page-toolbar-actions">
               {commandSearch && (
-                <Tooltip label={t('Скинути')}>
-                  <ActionIcon
-                    aria-label={t('Скинути')}
-                    color="gray"
-                    disabled={!commandSearch.value}
-                    size={34}
-                    type="button"
-                    variant="light"
-                    onClick={commandSearch.onReset}
-                  >
-                    <RotateCcw size={17} />
-                  </ActionIcon>
-                </Tooltip>
+                <Button variant="default" color="gray" size="sm" leftSection={<RotateCcw size={16} />}
+                  disabled={!commandSearch.value} onClick={commandSearch.onReset}>{t('Скинути')}</Button>
               )}
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon
-                  aria-label={t('Оновити')}
-                  color="gray"
-                  loading={isActiveTabRefreshing}
-                  size={34}
-                  variant="light"
-                  onClick={() => reload()}
-                >
-                  <RefreshCw size={17} />
-                </ActionIcon>
-              </Tooltip>
+              <Button variant="default" color="gray" size="sm" leftSection={<RefreshCw size={16} />}
+                loading={isActiveTabRefreshing} onClick={() => reload()}>{t('Оновити')}</Button>
               {headerAction}
             </div>
           </div>
@@ -1737,7 +1717,9 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
         <div className="seo-page-workspace">
           <aside className="seo-page-rail" aria-label={t('Розділи')}>
             <div className="seo-page-nav">
-              {SEO_VISIBLE_TABS.map((tab) => (
+              {SEO_VISIBLE_TABS.map((tab) => {
+                const Icon = SEO_TAB_ICONS[tab.value]
+                return (
                 <button
                   key={tab.value}
                   type="button"
@@ -1745,11 +1727,10 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                   aria-pressed={activeTab === tab.value}
                   onClick={() => setActiveTab(tab.value)}
                 >
+                  <Icon size={18} strokeWidth={1.8} aria-hidden />
                   <span className="online-shop-seo-nav-item-label">{t(tab.label)}</span>
-                  <ChevronRight className="online-shop-seo-nav-item-chevron" size={16} strokeWidth={2} aria-hidden />
-                  <span aria-hidden="true" className="online-shop-seo-nav-item-marker" />
                 </button>
-              ))}
+              )})}
             </div>
           </aside>
 
@@ -1787,22 +1768,13 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                         >
                           <div className="seo-settings-tree-module-header">
                             <div className="seo-settings-tree-module-title">
-                              <Text className="app-section-title seo-settings-tree-module-name" fw={600} size="sm">{entry.locale}</Text>
+                              <TableChip value={getLocaleLabel(entry.locale)} tone="document" />
                             </div>
-                            {(canEditGeneralInfo || canEditPaymentInfo) && <Tooltip label={t('Редагувати')}>
-                              <ActionIcon
-                                aria-label={`${t('Редагувати')} ${entry.locale}`}
-                                className="seo-settings-tree-action"
-                                color="gray"
-                                disabled={isSaving}
-                                size={26}
-                                type="button"
-                                variant="subtle"
-                                onClick={() => openGeneralLocaleEditor(entry)}
-                              >
-                                <Pencil size={14} />
-                              </ActionIcon>
-                            </Tooltip>}
+                            {(canEditGeneralInfo || canEditPaymentInfo) && (
+                              <Button size="xs" variant="default" color="gray" leftSection={<Pencil size={14} />}
+                                aria-label={`${t('Редагувати')} ${entry.locale}`} disabled={isSaving}
+                                onClick={() => openGeneralLocaleEditor(entry)}>{t('Редагувати')}</Button>
+                            )}
                           </div>
 
                           <div className="seo-settings-tree-node-list">
@@ -1832,9 +1804,8 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                                             <div className="seo-settings-tree-field-body">
                                               <Text className="seo-settings-tree-field-name">{t(field.label)}</Text>
                                             </div>
-                                            <span className="seo-settings-tree-field-line" aria-hidden />
                                             <span className={`seo-settings-tree-field-value${isMoney ? ' app-money' : ''}`}>
-                                              {isMissingRecord ? t('Запис відсутній') : displayValue(value, t('Не заповнено'))}
+                                              {value ? value : <TableChip value={t(isMissingRecord ? 'Запис відсутній' : 'Не заповнено')} />}
                                             </span>
                                           </div>
                                         </div>
@@ -2448,14 +2419,12 @@ function SeoShopCardList({
                     </Text>
 
                     <div className="seo-shop-bank-card-bottom">
-                      <Text className="seo-shop-bank-card-organization">{organizationName}</Text>
+                      <TableChip tone="product" value={organizationName} />
                       <span className="seo-shop-bank-card-badges">
                         <span className={`seo-shop-bank-card-state${isSelected ? ' is-active' : ' is-inactive'}`}>
                           {isSelected ? 'Вибрана' : 'Не вибрана'}
                         </span>
-                        <span className="seo-shop-bank-card-currency">
-                          {displayValue(getPaymentRegisterCurrency(register))}
-                        </span>
+                        <TableChip tone="source" value={displayValue(getPaymentRegisterCurrency(register))} />
                       </span>
                     </div>
                   </div>
@@ -2463,7 +2432,10 @@ function SeoShopCardList({
               )
             })
           ) : (
-            <div className="seo-shop-data-list-empty">{emptyText}</div>
+            <div className="seo-shop-data-list-empty">
+              <CreditCard size={20} strokeWidth={1.6} aria-hidden />
+              <span>{emptyText}</span>
+            </div>
           )}
         </div>
       </ScrollArea.Autosize>
@@ -2661,7 +2633,7 @@ function SeoTableDateCell({ value }: { value?: Date | string }) {
 function SeoTableStorageCell({ storage }: { storage: OnlineShopStorage }) {
   return (
     <SeoTablePrimaryCell
-      subtitle={displayValue(getCompactOrganizationName(storage.Organization))}
+      subtitle={<TableChip tone="product" value={displayValue(getCompactOrganizationName(storage.Organization))} />}
       title={<TableChip tone="storage" value={displayValue(storage.Name)} />}
     />
   )
