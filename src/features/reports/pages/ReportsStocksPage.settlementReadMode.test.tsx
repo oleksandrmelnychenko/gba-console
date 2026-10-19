@@ -56,7 +56,7 @@ it.each([['Взаєморозрахунки за період', [4, 41, 76]], ['
     expect(await submitted(view, 2)).toEqual({ ...current, settlementReadMode: 1 })
     mode('За налаштуваннями звіту')
     expect(world().disabled).toBe(false)
-    expect(screen.getByText(/Період — до 31 дня/)).toBeTruthy()
+    expect(screen.getByText(/^Джерело не передається: звіт визначає його за налаштуваннями/)).toBeTruthy()
     const unmarked = await submitted(view, 3)
     expect(Object.keys(unmarked).some(key => key.toLowerCase() === 'settlementreadmode')).toBe(false)
     const { settlementReadMode: _mode, ...rest } = current

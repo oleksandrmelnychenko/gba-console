@@ -79,7 +79,7 @@ async function ready() {
 
 async function applySaved() {
   fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
-  fireEvent.click(await screen.findByRole('button', { name: /Daily exact/ }))
+  fireEvent.click(await screen.findByRole('button', { name: /^Відкрити для редагування: Daily exact/ }))
 }
 
 describe('exact Fenix filters in the report constructor', () => {

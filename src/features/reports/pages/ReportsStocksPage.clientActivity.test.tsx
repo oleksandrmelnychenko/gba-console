@@ -61,7 +61,7 @@ describe('native distinct sale-client constructor', () => {
   it('round-trips private template revision, OR tree, disabled filter, distinct agreement IDs and union ordering intact', async () => {
     const data = clientActivityRequest(), template = { Id: crypto.randomUUID(), Revision: 3, Name: 'Клієнти за двома договорами', Data: data }
     vi.mocked(getServerReportTemplates).mockResolvedValue([template]); const { container } = await ready()
-    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: /Клієнти за двома договорами/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Клієнти за двома договорами' }))
     fireEvent.submit(container.querySelector('form')!); await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toEqual(data)
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(screen.getByRole('button', { name: 'Оновити шаблон' }))
@@ -71,7 +71,7 @@ describe('native distinct sale-client constructor', () => {
   it('refuses incomplete-period saved source12 before changing the current form', async () => {
     const data = { ...clientActivityRequest(), from: '' }
     vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: crypto.randomUUID(), Revision: 3, Name: 'Клієнти без періоду', Data: data }]); await ready()
-    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: /Клієнти без періоду/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Клієнти без періоду' }))
     expect(screen.getByText(/потрібні обидві дати періоду/)).toBeTruthy()
     expect((screen.getByRole('combobox', { name: 'Звіт' }) as HTMLInputElement).value).toBe(reportDatasets[0].Name)
     expect(createStockReport).not.toHaveBeenCalled()

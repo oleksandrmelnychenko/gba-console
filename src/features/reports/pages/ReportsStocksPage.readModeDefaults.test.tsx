@@ -36,7 +36,7 @@ async function apply(template: ReturnType<typeof saved>) {
   const view = render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage consoleScope={false} /></I18nProvider></MantineProvider>)
   await screen.findByRole('button', { name: 'Продажі за днями' })
   fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
-  fireEvent.click(await screen.findByRole('button', { name: /Saved source variant/ }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Saved source variant' }))
   return view
 }
 const source = () => (screen.getByRole('combobox', { name: 'Джерело розрахунку' }) as HTMLInputElement).value

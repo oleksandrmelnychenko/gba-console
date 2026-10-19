@@ -65,7 +65,7 @@ describe('constructor typed group ordering', () => {
   it('restores and updates exact ordering with all filter flags and private template identity unchanged', async () => {
     const template = { Id: crypto.randomUUID(), Revision: 3, Name: 'Впорядковані рахунки', Data: { ...orderedAccountRequest(), selections: structuredClone(accountBalanceSelections) } }
     vi.mocked(getServerReportTemplates).mockResolvedValue([template]); await ready()
-    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: /Впорядковані рахунки/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Впорядковані рахунки' }))
     expect((screen.getByRole('combobox', { name: 'Напрямок — Рядки: Рахунок' }) as HTMLInputElement).value).toBe('За спаданням')
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(screen.getByRole('button', { name: 'Оновити шаблон' }))
     await waitFor(() => expect(saveServerReportTemplate).toHaveBeenCalledOnce())
@@ -74,7 +74,7 @@ describe('constructor typed group ordering', () => {
   it.each([{ ...accountOrdering, Version: 9 }, { ...accountOrdering, Sql: 'ORDER BY Amount' }])('refuses unknown imported ordering before changing the current form %#', async ordering => {
     const template = { Id: crypto.randomUUID(), Revision: 1, Name: 'Невідоме сортування', Data: { ...orderedAccountRequest(), ordering } }, original = structuredClone(template)
     vi.mocked(getServerReportTemplates).mockResolvedValue([template]); await ready()
-    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: /Невідоме сортування/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Невідоме сортування' }))
     expect(screen.getByText(/Невідома версія або некоректні правила сортування/)).toBeTruthy()
     expect((screen.getByRole('combobox', { name: 'Звіт' }) as HTMLInputElement).value).toBe(reportDatasets[0].Name)
     expect(template).toEqual(original); expect(createStockReport).not.toHaveBeenCalled(); expect(saveServerReportTemplate).not.toHaveBeenCalled()

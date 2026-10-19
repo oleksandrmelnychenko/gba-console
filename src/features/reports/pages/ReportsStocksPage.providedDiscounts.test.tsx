@@ -72,7 +72,7 @@ describe('current24 constructor', () => {
     const { container } = render(<Providers><ReportsStocksPage consoleScope={false} constructorMode /></Providers>)
     await screen.findByRole('button', { name: 'Продажі за днями' })
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
-    fireEvent.click(await screen.findByRole('button', { name: /Старі знижки/ }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Старі знижки' }))
     expect((screen.getByRole('combobox', { name: 'Основа наданих знижок' }) as HTMLInputElement).value).toBe('Збережений знімок 1С')
     expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(false)
     fireEvent.submit(container.querySelector('form')!)

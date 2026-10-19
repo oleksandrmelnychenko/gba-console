@@ -16,7 +16,7 @@ function Providers({ children }: { children: ReactNode }) { return <MantineProvi
 async function select(name: string, option: string) { fireEvent.click(screen.getByRole('combobox', { name })); fireEvent.click(await screen.findByRole('option', { name: option })) }
 const saved = () => ({ Id: crypto.randomUUID(), Revision: 3, Name: 'Приховані нулі рахунків', Data: hideZeroRequest() })
 async function ready() { const view = render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>); await screen.findByRole('button', { name: 'Продажі за днями' }); return view }
-async function applySaved() { fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: /Приховані нулі рахунків/ })) }
+async function applySaved() { fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Приховані нулі рахунків' })) }
 const disable = () => fireEvent.click(screen.getByRole('button', { name: 'Показувати підтверджені нулі' }))
 
 describe('server-proven HideZero constructor', () => {

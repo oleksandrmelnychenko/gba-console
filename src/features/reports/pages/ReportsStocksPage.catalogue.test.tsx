@@ -146,7 +146,7 @@ describe('named catalogue report to constructor', () => {
     } }
     vi.mocked(getServerReportTemplates).mockResolvedValue([previous])
     const view = await ready()
-    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }));fireEvent.click(await screen.findByRole('button', { name: new RegExp(previous.Name) }))
+    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }));fireEvent.click(await screen.findByRole('button', { name: `Відкрити для редагування: ${previous.Name}` }))
     fireEvent.click(screen.getByRole('combobox', { name: 'Договір для оцінки' }));fireEvent.click(await screen.findByRole('option', { name: 'Договір 43' }))
     await waitFor(() => expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(false))
     fireEvent.submit(view.container.querySelector('form')!);await screen.findByRole('dialog', { name: 'Файли звіту' })

@@ -569,7 +569,7 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
     const view = renderStep({ onCartChanged: vi.fn(async () => createSale(1)), sale: emptySale })
 
     fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: '381' } })
-    fireEvent.click(await screen.findByText('38118103 NR', { selector: '.new-sale-product-picker-row__code' }))
+    fireEvent.click(await screen.findByText('38118103 NR', { selector: '.new-sale-product-picker-row__code .app-table-chip-label' }))
     await screen.findByRole('button', { name: 'Скопіювати код: 38118103 NR' })
     expect(view.container.querySelector('.new-sale-product-picker-card__qty')?.textContent).toBe('59')
     await waitFor(() => expect(apiMocks.searchSaleProductsWithAvailability).toHaveBeenCalledTimes(2))

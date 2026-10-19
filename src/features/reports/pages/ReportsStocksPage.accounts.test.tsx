@@ -61,13 +61,15 @@ describe('recorded account balance constructor', () => {
     const data = { ...defaultDatasetRequest(accountBalanceDataset, '', ''), selections: structuredClone(accountBalanceSelections) }
     const template = { Id: crypto.randomUUID(), Revision: 1, Name: 'Мої записані рахунки', Data: data }
     vi.mocked(getServerReportTemplates).mockResolvedValue([template]); const { container } = await ready()
-    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: /Мої записані рахунки/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Мої записані рахунки' }))
     expect(screen.queryByLabelText('Від')).toBeNull()
     fireEvent.submit(container.querySelector('form')!); await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toEqual({ ...data, selections: data.selections.slice(0, 2) })
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(screen.getByRole('button', { name: 'Оновити шаблон' }))
     await waitFor(() => expect(saveServerReportTemplate).toHaveBeenCalledOnce())
     expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0]).toEqual(template)
+    await waitFor(() => expect((screen.getByRole('button', { name: 'Новий шаблон' }) as HTMLButtonElement).disabled).toBe(false))
+    fireEvent.click(screen.getByRole('button', { name: 'Новий шаблон' }))
     await waitFor(() => expect((screen.getByRole('button', { name: 'Зберегти' }) as HTMLButtonElement).disabled).toBe(false))
     fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
     await waitFor(() => expect(saveServerReportTemplate).toHaveBeenCalledTimes(2))
@@ -77,7 +79,7 @@ describe('recorded account balance constructor', () => {
   it('refuses a historical account template before changing the current constructor', async () => {
     const data = { ...defaultDatasetRequest(accountBalanceDataset, '', ''), from: '2026-06-01' }
     vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: crypto.randomUUID(), Revision: 1, Name: 'Історичні рахунки', Data: data }]); await ready()
-    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: /Історичні рахунки/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Історичні рахунки' }))
     expect(screen.getByText(/Записані залишки рахунків не підтримують період/)).toBeTruthy(); expect(screen.getByLabelText('Від')).toBeTruthy()
     expect(createStockReport).not.toHaveBeenCalled()
   })

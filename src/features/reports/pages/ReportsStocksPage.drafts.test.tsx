@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { clearSession, saveSession } from '../../../shared/auth/session'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -38,7 +38,7 @@ async function restored() {
 }
 async function openTemplate(name: string) {
   fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
-  fireEvent.click(await screen.findByRole('button', { name: new RegExp(name) }))
+  fireEvent.click(await screen.findByRole('button', { name: `Відкрити для редагування: ${name}` }))
 }
 const template = { ...createSalesReportPreset('agreements', '2026-09-01', '2026-09-07', []),
   Id: '10000000-0000-4000-8000-000000000004', Revision: 4, Name: 'Договори для чернетки' }
@@ -136,7 +136,7 @@ describe('constructor draft recovery', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Повернути попередні налаштування' }))
     expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-09-02')
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
-    expect(screen.getByText(`Відкритий шаблон: ${template.Name}`)).toBeTruthy()
+    expect(within(screen.getByText('Відкритий шаблон').parentElement!).getByText(template.Name)).toBeTruthy()
     expect(saveServerReportTemplate).not.toHaveBeenCalled()
   })
 

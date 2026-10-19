@@ -142,7 +142,7 @@ it('preserves full TOP, ABC, filters and ordering through every tab and a same-d
   vi.mocked(getServerReportTemplates).mockResolvedValue([template])
   await ready()
   fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
-  fireEvent.click(await screen.findByRole('button', { name: /Повний TOP і ABC/ }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Повний TOP і ABC' }))
   expect((screen.getByRole('combobox', { name: 'Звіт' }) as HTMLInputElement).value).toBe(abcDataset.Name)
   moveTo('Умови відбору')
   const analysis = moveTo('Аналіз і сортування')

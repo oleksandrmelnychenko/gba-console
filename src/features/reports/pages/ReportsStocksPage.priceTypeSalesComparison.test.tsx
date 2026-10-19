@@ -107,7 +107,7 @@ describe('source27 report constructor wire', () => {
     const { container } = render(<Providers><ReportsStocksPage consoleScope={false} constructorMode /></Providers>)
     await screen.findByRole('button', { name: 'Продажі за днями' })
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
-    fireEvent.click(await screen.findByRole('button', { name: /Старе порівняння/ }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Старе порівняння' }))
     expect((screen.getByRole('combobox', { name: 'Основа продажів' }) as HTMLInputElement).value).toBe('Збережені рухи 1С')
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())

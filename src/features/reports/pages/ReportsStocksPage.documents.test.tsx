@@ -66,17 +66,17 @@ describe('native supplier-return documents and current debt',()=>{
       {IsChecked:false,SelectedField:{Name:'SupplierContract',Type:18},FilterCondition:{Name:'Дорівнює',Type:0},Values:[{Data:{Id:99},Name:'Договір99',Value:99}]}]
     const template:ReportTemplate={Id:crypto.randomUUID(),Revision:1,Name:'Мій борг',Data:data}
     vi.mocked(getServerReportTemplates).mockResolvedValue([template]);const {container}=await ready()
-    fireEvent.click(screen.getByRole('button',{name:'Шаблони'}));fireEvent.click(await screen.findByRole('button',{name:/Мій борг/}))
+    fireEvent.click(screen.getByRole('button',{name:'Шаблони'}));fireEvent.click(await screen.findByRole('button',{name:'Відкрити для редагування: Мій борг'}))
     expect(screen.queryByLabelText('Від')).toBeNull();expect(screen.queryByRole('combobox',{name:'Договір для оцінки'})).toBeNull()
     fireEvent.submit(container.querySelector('form')!);await waitFor(()=>expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toEqual({...data,selections:data.selections.slice(0,2)})
-    fireEvent.click(screen.getByRole('button',{name:'Шаблони'}));fireEvent.click(screen.getByRole('button',{name:'Зберегти'}))
+    fireEvent.click(screen.getByRole('button',{name:'Шаблони'}));fireEvent.click(screen.getByRole('button',{name:'Новий шаблон'}));fireEvent.click(screen.getByRole('button',{name:'Зберегти'}))
     await waitFor(()=>expect(saveServerReportTemplate).toHaveBeenCalledOnce());expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data).toEqual(data)
   })
   it('refuses a dated debt template before changing the selected periodic dataset',async()=>{
     const data={...defaultDatasetRequest(currentDebtDataset,'',''),from:'2026-06-01',to:'2026-06-30'}
     vi.mocked(getServerReportTemplates).mockResolvedValue([{Id:crypto.randomUUID(),Revision:1,Name:'Історичний борг',Data:data}]);await ready()
-    fireEvent.click(screen.getByRole('button',{name:'Шаблони'}));fireEvent.click(await screen.findByRole('button',{name:/Історичний борг/}))
+    fireEvent.click(screen.getByRole('button',{name:'Шаблони'}));fireEvent.click(await screen.findByRole('button',{name:'Відкрити для редагування: Історичний борг'}))
     expect(screen.getByText(/Поточна заборгованість не підтримує період/)).toBeTruthy();expect(screen.getByLabelText('Від')).toBeTruthy()
   })
 })

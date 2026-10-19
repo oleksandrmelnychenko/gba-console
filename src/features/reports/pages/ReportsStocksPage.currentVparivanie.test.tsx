@@ -46,7 +46,7 @@ it('refuses a saved selected-manager variant before replacing an existing ordina
   const Data={...currentVparivanieRequest(),selections:[exactSelection(1),exactSelection(60)]}
   vi.mocked(getServerReportTemplates).mockResolvedValue([{Id:'synthetic',Revision:1,Name:'Unsupported manager',Data}])
   render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>);await screen.findByRole('button',{name:'Продажі за днями'})
-  fireEvent.click(screen.getByRole('button',{name:'Шаблони'}));fireEvent.click(await screen.findByRole('button',{name:/Unsupported manager/}))
+  fireEvent.click(screen.getByRole('button',{name:'Шаблони'}));fireEvent.click(await screen.findByRole('button',{name:'Відкрити для редагування: Unsupported manager'}))
   expect(screen.getByText(/Відбір за менеджером покупця поки недоступний/)).toBeTruthy()
   expect((screen.getByRole('combobox',{name:'Звіт'}) as HTMLInputElement).value).not.toBe(dataset.Name)
   expect(createStockReport).not.toHaveBeenCalled()

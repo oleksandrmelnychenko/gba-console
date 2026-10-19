@@ -76,13 +76,13 @@ describe('source16 builder and precise contract templates', () => {
     const template = { Id: crypto.randomUUID(), Revision: 3, Name: 'Виручка точні періоди', Data: data }
     const invalid = { ...template, Id: crypto.randomUUID(), Name: 'Виручка непідтримана', Data: { ...data, ordering: { Version: 1 } } }
     vi.mocked(getServerReportTemplates).mockResolvedValue([template, invalid]); const { container } = await ready()
-    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: /Виручка точні періоди/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Виручка точні періоди' }))
     expect((screen.getByRole('checkbox', { name: 'Умова відбору 1' }) as HTMLInputElement).checked).toBe(true)
     fireEvent.submit(container.querySelector('form')!); await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toEqual(data)
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(screen.getAllByRole('button', { name: 'Оновити шаблон' })[0])
     await waitFor(() => expect(saveServerReportTemplate).toHaveBeenCalledOnce()); expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0]).toEqual(template)
-    fireEvent.click(screen.getByRole('button', { name: /Виручка непідтримана/ })); expect(screen.getByText(/Перевірте порівняння виручки/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Відкрити для редагування: Виручка непідтримана' })); expect(screen.getByText(/Перевірте порівняння виручки/)).toBeTruthy()
     expect((screen.getByLabelText('Виручка: порівняння від') as HTMLInputElement).value).toBe('2026-06-01')
   })
 })
