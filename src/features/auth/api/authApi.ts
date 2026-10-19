@@ -1,4 +1,4 @@
-import { apiRequest } from '../../../shared/api/apiClient'
+import { apiRequest, expiresAtFromNow } from '../../../shared/api/apiClient'
 import { translate } from '../../../shared/i18n/translate'
 import type { AuthSession, AuthUser, ServerSessionResponse, SignInResponse } from '../types'
 
@@ -27,6 +27,7 @@ export async function signIn(username: string, password: string): Promise<AuthSe
   return {
     csrfToken: token.CsrfToken,
     userNetUid: token.UserNetUid,
+    accessTokenExpiresAt: expiresAtFromNow(token.AccessTokenExpiresIn),
   }
 }
 
@@ -45,6 +46,7 @@ export async function getServerSession(): Promise<AuthSession | null> {
   return {
     csrfToken: session.CsrfToken,
     userNetUid: session.UserNetUid,
+    accessTokenExpiresAt: expiresAtFromNow(session.AccessTokenExpiresIn),
   }
 }
 

@@ -18,7 +18,12 @@ type TokenResponse = {
   userNetUid?: string
   CsrfToken?: string
   csrfToken?: string
+  AccessTokenExpiresIn?: number | null
+  accessTokenExpiresIn?: number | null
 }
+
+const SESSION_REFRESH_LOCK = 'gba-console-session-refresh'
+const REFRESHED_ELSEWHERE_MARGIN_MS = 5_000
 
 type InFlightGetRequest = {
   abortTimer: ReturnType<typeof setTimeout> | null
@@ -243,6 +248,7 @@ async function sendApiRequest<T>(path: string, options: ApiRequestOptions, allow
   void _auth
 
   let response: Response
+  const observedExpiresAt = readSession()?.accessTokenExpiresAt
 
   try {
     response = await fetch(apiUrl(path, language || getApiLanguage(), query), {
@@ -260,7 +266,7 @@ async function sendApiRequest<T>(path: string, options: ApiRequestOptions, allow
   }
 
   if (response.status === 401 && auth && allowRefresh) {
-    const refreshedSession = await refreshStoredSession()
+    const refreshedSession = await refreshStoredSession(observedExpiresAt)
 
     if (refreshedSession) {
       return sendApiRequest<T>(path, options, false)
@@ -348,16 +354,55 @@ function withCallerSignal<T>(
 
 let refreshPromise: Promise<AuthSession | null> | null = null
 
-async function refreshStoredSession(): Promise<AuthSession | null> {
+export function expiresAtFromNow(seconds: number | null | undefined, now = Date.now()): string | undefined {
+  return typeof seconds === 'number' && Number.isFinite(seconds) && seconds >= 0
+    ? new Date(now + seconds * 1000).toISOString()
+    : undefined
+}
+
+export function refreshAuthSession(observedExpiresAt?: string): Promise<AuthSession | null> {
+  return refreshStoredSession(observedExpiresAt)
+}
+
+async function refreshStoredSession(observedExpiresAt?: string): Promise<AuthSession | null> {
   if (refreshPromise) {
     return refreshPromise
   }
 
-  refreshPromise = refreshStoredSessionCore().finally(() => {
+  refreshPromise = withSessionRefreshLock(() => {
+    const current = readSession()
+
+    if (current && wasRefreshedElsewhere(current, observedExpiresAt)) {
+      return Promise.resolve(current)
+    }
+
+    return refreshStoredSessionCore()
+  }).finally(() => {
     refreshPromise = null
   })
 
   return refreshPromise
+}
+
+function wasRefreshedElsewhere(session: AuthSession, observedExpiresAt?: string): boolean {
+  const expiresAt = session.accessTokenExpiresAt
+
+  if (!expiresAt || expiresAt === observedExpiresAt) {
+    return false
+  }
+
+  const expiresAtMs = Date.parse(expiresAt)
+  return Number.isFinite(expiresAtMs) && expiresAtMs - Date.now() > REFRESHED_ELSEWHERE_MARGIN_MS
+}
+
+function withSessionRefreshLock<T>(work: () => Promise<T>): Promise<T> {
+  const locks = typeof navigator === 'undefined' ? undefined : navigator.locks
+
+  if (!locks?.request) {
+    return work()
+  }
+
+  return locks.request(SESSION_REFRESH_LOCK, work) as Promise<T>
 }
 
 async function refreshStoredSessionCore(): Promise<AuthSession | null> {
@@ -369,16 +414,22 @@ async function refreshStoredSessionCore(): Promise<AuthSession | null> {
     return null
   }
 
-  const response = await fetch(apiUrl('/usermanagement/token/refresh', getApiLanguage()), {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      [CSRF_HEADER_NAME]: session.csrfToken,
-      ...getTimeZoneHeader(),
-    },
-    body: JSON.stringify({}),
-  })
+  let response: Response
+
+  try {
+    response = await fetch(apiUrl('/usermanagement/token/refresh', getApiLanguage()), {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        [CSRF_HEADER_NAME]: session.csrfToken,
+        ...getTimeZoneHeader(),
+      },
+      body: JSON.stringify({}),
+    })
+  } catch {
+    throw new ApiError(translate('Сервер недоступний. Спробуйте ще раз пізніше.'), 0, null)
+  }
 
   const payload = await readPayload(response)
 
@@ -399,6 +450,7 @@ function toAuthSession(token: TokenResponse | null, previous?: AuthSession): Aut
   return {
     userNetUid: token?.UserNetUid || token?.userNetUid || previous?.userNetUid,
     csrfToken: token?.CsrfToken || token?.csrfToken || previous?.csrfToken,
+    accessTokenExpiresAt: expiresAtFromNow(token?.AccessTokenExpiresIn ?? token?.accessTokenExpiresIn),
     user: previous?.user,
   }
 }

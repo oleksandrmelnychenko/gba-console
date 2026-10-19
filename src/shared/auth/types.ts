@@ -38,6 +38,7 @@ export type AuthUser = {
 export type AuthSession = {
   userNetUid?: string
   csrfToken?: string
+  accessTokenExpiresAt?: string
   user?: AuthUser
 }
 

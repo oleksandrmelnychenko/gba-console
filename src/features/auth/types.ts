@@ -19,9 +19,11 @@ export type SignInResponse = {
   RefreshToken?: string
   UserNetUid?: string
   CsrfToken?: string
+  AccessTokenExpiresIn?: number | null
 }
 
 export type ServerSessionResponse = {
   UserNetUid?: string
   CsrfToken?: string
+  AccessTokenExpiresIn?: number | null
 }

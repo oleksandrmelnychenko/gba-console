@@ -1,4 +1,4 @@
-import { ApiError, apiUrl, getApiLanguage } from './apiClient'
+import { ApiError, apiUrl, expiresAtFromNow, getApiLanguage } from './apiClient'
 import { clearSession, notifyUnauthorized, readSession, saveSession } from '../auth/session'
 import type { AuthSession } from '../auth/types'
 import { getTimeZoneHeader } from '../date/dateTime'
@@ -72,7 +72,13 @@ async function refreshSession(captured: ApiStreamSession, language: string, time
     const owner = token?.UserNetUid ?? token?.userNetUid ?? captured.userNetUid
     const csrf = token?.CsrfToken ?? token?.csrfToken
     if (owner !== captured.userNetUid || typeof csrf !== 'string' || !csrf) unauthorized(key, signal)
-    const next = { ...previous, userNetUid: captured.userNetUid, csrfToken: csrf }
+    const expiresIn = token?.AccessTokenExpiresIn ?? token?.accessTokenExpiresIn
+    const next = {
+      ...previous,
+      userNetUid: captured.userNetUid,
+      csrfToken: csrf,
+      accessTokenExpiresAt: expiresAtFromNow(typeof expiresIn === 'number' ? expiresIn : undefined),
+    }
     signal.throwIfAborted(); requireGeneration(key)
     saveSession(next)
     return next

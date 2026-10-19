@@ -13,6 +13,7 @@ import {
   readSession,
   saveSession,
 } from '../../shared/auth/session'
+import { startSessionRefreshScheduler } from '../../shared/api/sessionRefreshScheduler'
 import { getCurrentUserProfile, getServerSession, signIn, signOut } from './api/authApi'
 import { getMyPermissions } from './api/permissionsApi'
 import {
@@ -114,19 +115,23 @@ export function AuthProvider({ children }: PropsWithChildren) {
       getCurrentUserProfile(baseSession),
       refreshPermissions({ blocking: true, clearOnError: true }),
     ])
+    const latestExpiry = readSession()?.accessTokenExpiresAt ?? baseSession.accessTokenExpiresAt
     const nextSession = user
       ? {
           ...baseSession,
+          accessTokenExpiresAt: latestExpiry,
           user,
           userNetUid: baseSession.userNetUid || user.NetUid,
         }
-      : baseSession
+      : { ...baseSession, accessTokenExpiresAt: latestExpiry }
 
     saveSession(nextSession)
     setSession(nextSession)
 
     return nextSession
   }, [refreshPermissions])
+
+  useEffect(() => startSessionRefreshScheduler(), [])
 
   useEffect(() => {
     const handleSessionChanged = () => syncSessionRef.current()
