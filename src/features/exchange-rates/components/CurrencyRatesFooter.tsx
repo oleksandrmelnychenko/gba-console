@@ -1,4 +1,6 @@
-import { Badge, Group, Loader, Text } from '@mantine/core'
+import { Group, Loader, Portal, Text, Transition } from '@mantine/core'
+import { useReducedMotion } from '@mantine/hooks'
+import './currency-rates.css'
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useExchangeRates } from '../hooks/useExchangeRates'
@@ -6,12 +8,14 @@ import type { ExchangeRate, ExchangeRateGroup } from '../types'
 import { buildExchangeRateGroups, formatRate, getRateKey } from '../utils'
 import { CurrencyRatesPanel } from './CurrencyRatesPanel'
 
-const PANEL_WIDTH = 480
+const PANEL_WIDTH = 520
 const PANEL_GAP = 10
 
 export function CurrencyRatesFooter() {
   const { data, error, isLoading, refresh } = useExchangeRates()
   const { t } = useI18n()
+  const reduceMotion = useReducedMotion()
+  const [isPanelOpen, setIsPanelOpen] = useState(false)
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
   const buttonRefsRef = useRef<Map<string, HTMLButtonElement> | null>(null)
   if (buttonRefsRef.current === null) buttonRefsRef.current = new Map()
@@ -33,6 +37,11 @@ export function CurrencyRatesFooter() {
     [data, t],
   )
 
+  const closePanel = useCallback(() => {
+    if (selectedGroupId) buttonRefs.get(selectedGroupId)?.focus()
+    setIsPanelOpen(false)
+  }, [buttonRefs, selectedGroupId])
+
   const selectedGroup = groups.find((group) => group.id === selectedGroupId) || null
 
   const computePanelStyle = useCallback((id: string): CSSProperties | null => {
@@ -50,15 +59,15 @@ export function CurrencyRatesFooter() {
 
   const toggleGroup = useCallback(
     (group: ExchangeRateGroup) => {
-      if (selectedGroupId === group.id) {
-        setSelectedGroupId(null)
-        setPanelStyle(null)
+      if (selectedGroupId === group.id && isPanelOpen) {
+        closePanel()
         return
       }
       setPanelStyle(computePanelStyle(group.id))
       setSelectedGroupId(group.id)
+      setIsPanelOpen(true)
     },
-    [computePanelStyle, selectedGroupId],
+    [computePanelStyle, selectedGroupId, isPanelOpen, closePanel],
   )
 
   useEffect(() => {
@@ -74,9 +83,9 @@ export function CurrencyRatesFooter() {
 
   if (isLoading) {
     return (
-      <Group gap="xs" wrap="nowrap">
-        <Loader size="xs" color="orange" />
-        <Text size="xs" c="dimmed">
+      <Group className="rates-footer-state" gap="xs" wrap="nowrap">
+        <Loader size={14} color="white" />
+        <Text size="xs" className="rates-footer-state">
           {t('Завантаження')}
         </Text>
       </Group>
@@ -85,7 +94,7 @@ export function CurrencyRatesFooter() {
 
   if (error) {
     return (
-      <Text size="xs" c="red">
+      <Text size="xs" className="rates-footer-state is-error">
         {t('Курси недоступні')}
       </Text>
     )
@@ -93,7 +102,7 @@ export function CurrencyRatesFooter() {
 
   if (!data || groups.length === 0) {
     return (
-      <Text size="xs" c="dimmed">
+      <Text size="xs" className="rates-footer-state">
         {t('Немає даних')}
       </Text>
     )
@@ -101,12 +110,12 @@ export function CurrencyRatesFooter() {
 
   return (
     <>
-      <Group gap="xs" wrap="nowrap" className="rates-footer-groups">
+      <Group gap={0} wrap="nowrap" className="rates-footer-groups" aria-label={t('Курси валют')}>
         {groups.map((group) => (
           <RateGroup
             key={group.id}
             group={group}
-            isSelected={selectedGroupId === group.id}
+            isSelected={isPanelOpen && selectedGroupId === group.id}
             onClick={() => toggleGroup(group)}
             buttonRef={(el) => {
               if (el) buttonRefs.set(group.id, el)
@@ -116,13 +125,19 @@ export function CurrencyRatesFooter() {
         ))}
       </Group>
       {selectedGroup && (
-        <CurrencyRatesPanel
-          key={selectedGroup.id}
-          group={selectedGroup}
-          onClose={() => setSelectedGroupId(null)}
-          onRefresh={refresh}
-          style={panelStyle}
-        />
+        <Portal>
+          <Transition mounted={isPanelOpen} transition="slide-up" duration={reduceMotion ? 0 : 180}
+            onExited={() => { setSelectedGroupId(null); setPanelStyle(null) }}>
+            {(transitionStyle) => <CurrencyRatesPanel
+              key={selectedGroup.id}
+              group={selectedGroup}
+              opened={isPanelOpen}
+              onClose={closePanel}
+              onRefresh={refresh}
+              style={{ ...panelStyle, ...transitionStyle, pointerEvents: isPanelOpen ? 'auto' : 'none' }}
+            />}
+          </Transition>
+        </Portal>
       )}
     </>
   )
@@ -139,17 +154,27 @@ function RateGroup({
   onClick: () => void
   buttonRef: (el: HTMLButtonElement | null) => void
 }) {
+  const baseCurrency = group.id.endsWith('-uah') ? 'UAH' : group.id.endsWith('-pln') ? 'PLN' : null
+  const source = group.id.startsWith('government-') ? group.title.split(' ')[0] : null
+  const label = `${group.title}: ${group.rates.map((rate) => `${rate.Code} ${formatRate(rate.Amount)}`).join(', ')}`
+
   return (
     <button
       ref={buttonRef}
       type="button"
       className={`rate-group-button${isSelected ? ' is-selected' : ''}`}
       onClick={onClick}
-      aria-pressed={isSelected}
+      aria-expanded={isSelected}
+      aria-haspopup="dialog"
+      aria-label={label}
+      title={group.title}
     >
-      <Badge className="rate-group-badge app-role-pill" variant={isSelected ? 'filled' : 'light'} size="xs" radius="xl">
-        {group.title}
-      </Badge>
+      {(baseCurrency || source) && (
+        <span className="rate-group-label" aria-hidden="true">
+          {source && <small>{source}</small>}
+          {baseCurrency && <span>{baseCurrency}</span>}
+        </span>
+      )}
       {group.rates.map((rate) => (
         <RateValue key={getRateKey(rate)} rate={rate} />
       ))}
@@ -160,7 +185,7 @@ function RateGroup({
 function RateValue({ rate }: { rate: ExchangeRate }) {
   return (
     <span className="rate-item">
-      <span className="rate-item-code">{rate.Code}</span>
+      <span className="rate-item-code">{rate.Code.replace(/\s+TO\s+/gi, '/')}</span>
       <span className="rate-item-value">{formatRate(rate.Amount)}</span>
     </span>
   )

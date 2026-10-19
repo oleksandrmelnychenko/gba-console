@@ -1,7 +1,8 @@
 import { ActionIcon, Button, Group, Text, Tooltip } from '@mantine/core'
-import { ArrowDown, ArrowLeftRight, ArrowUp, Plus } from 'lucide-react'
+import { ArrowDown, ArrowLeftRight, ArrowUp, Columns3, Plus, Rows3 } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
 import { canTransferReportGrouping, type ReportGroupingAxis, type ReportGroupingLayout } from '../data/reportGroupingLayout'
 import { getReportFieldLabel } from '../data/reportOptions'
@@ -24,7 +25,9 @@ export function ReportGroupingPanel({ layout, axis, allowed, onOpenPicker, onRem
   return <section className="reports-stocks-grouping-field" aria-label={t(title)}>
     <div className="reports-stocks-legacy-panel__header">
       <Group className="reports-stocks-legacy-panel__title" gap={6} wrap="nowrap">
+        <span className="reports-stocks-grouping-icon" aria-hidden="true">{isRows ? <Rows3 size={16} /> : <Columns3 size={16} />}</span>
         <Text className="reports-stocks-grouping-label" component="h3" fw={600} size="sm">{t(isRows ? 'Рядки' : 'Стовпці')}</Text>
+        <TableChip value={groups.length} />
       </Group>
       <Button aria-label={`Додати поле: ${title}`} className="reports-stocks-legacy-panel__add" color={CREATE_ACTION_COLOR}
         leftSection={<Plus size={14} />} size="xs" type="button" onClick={onOpenPicker}>Додати</Button>
@@ -35,7 +38,7 @@ export function ReportGroupingPanel({ layout, axis, allowed, onOpenPicker, onRem
         const uniqueSupported = allowed.has(group.type) && groups.filter(item => item.type === group.type).length === 1
         const transferLabel = t(isRows ? 'Перенести {field} до стовпців' : 'Перенести {field} до рядків', { field: label })
         return <div className="reports-stocks-legacy-group-row" key={`${group.type}-${groups.slice(0, index).filter(item => item.type === group.type).length}`}>
-          <span className="reports-stocks-group-position" aria-label={t('Рівень {level}', { level: index + 1 })}>{index + 1}</span>
+          <span className="reports-stocks-group-position" aria-label={t('Рівень {level}', { level: index + 1 })}><TableChip value={index + 1} /></span>
           <Text size="sm">{label}</Text>
           <Group gap={0} wrap="nowrap">
             <Tooltip label={t('Перемістити {field} вище', { field: label })}><ActionIcon type="button" variant="subtle" color="gray" size={28}

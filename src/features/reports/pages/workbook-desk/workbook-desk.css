@@ -40,199 +40,8 @@
   border-radius: var(--desk-radius);
 }
 
-.workbook-landing {
-  display: grid;
-  gap: 12px;
-  padding: 14px 8px;
-}
-
-.workbook-landing__head {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 20px;
-  justify-content: space-between;
-}
-
-.workbook-card__icon {
-  align-items: center;
-  background: var(--mantine-color-gray-1);
-  border: 1px solid var(--desk-border);
-  border-radius: 8px;
-  color: var(--desk-text);
-  display: inline-flex;
-  flex-shrink: 0;
-  justify-content: center;
-}
-
-.workbook-landing__title {
-  font-size: 17px;
-  letter-spacing: 0;
-}
-
-.workbook-landing__actions {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.workbook-landing__return {
-  align-items: center;
-  align-self: start;
-  background: var(--mantine-color-gray-2);
-  border: 1px solid transparent;
-  border-radius: 8px;
-  color: var(--desk-strong);
-  cursor: pointer;
-  display: inline-flex;
-  font: 600 13px var(--font-mono);
-  gap: 8px;
-  justify-self: start;
-  padding: 8px 12px;
-}
-
-.workbook-landing__return:hover {
-  background: var(--mantine-color-gray-3);
-}
-
-.workbook-landing__loading {
-  align-items: center;
-  display: flex;
-  gap: 10px;
-  padding: 24px;
-}
-
-.workbook-landing__grid {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.workbook-card {
-  background: var(--mantine-color-white);
-  border: 1px solid var(--desk-border);
-  border-radius: var(--desk-radius);
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-width: 0;
-  padding: 16px;
-  transition: border-color 160ms ease;
-}
-
-.workbook-card:hover,
-.workbook-card:focus-within {
-  border-color: var(--mantine-color-gray-4);
-}
-
-.workbook-card__top {
-  align-items: center;
-  display: flex;
-  gap: 10px;
-  min-height: 40px;
-  min-width: 0;
-}
-
-.workbook-card__icon {
-  height: 40px;
-  width: 40px;
-}
-
-.workbook-card__body {
-  display: grid;
-  align-content: start;
-  flex: 1 1 auto;
-  gap: 12px;
-  min-width: 0;
-}
-
-.workbook-card__title {
-  color: var(--desk-text);
-  font: 600 14px/1.4 var(--font-mono);
-  letter-spacing: 0;
-}
-
-.workbook-card__description {
-  color: var(--desk-text);
-  font-size: 13px;
-  line-height: 1.5;
-  margin: 0;
-}
-
-.workbook-card__foot {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: space-between;
-  margin-top: auto;
-  border-top: 1px solid var(--desk-border);
-  padding-top: 12px;
-}
-
-.workbook-card__period {
-  align-items: center;
-  background: var(--mantine-color-blue-0);
-  border: 1px solid var(--mantine-color-blue-2);
-  border-radius: 999px;
-  color: var(--mantine-color-blue-9);
-  display: flex;
-  font-size: 12px;
-  gap: 6px;
-  line-height: 1.4;
-  min-width: 0;
-  padding: 5px 9px;
-}
-
-.workbook-card__period svg {
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-
-.workbook-card__dates {
-  color: inherit;
-  font-family: var(--font-mono);
-  font-weight: 600;
-}
-
-.workbook-card__open.mantine-Button-root {
-  flex-shrink: 0;
-  height: 34px;
-  font-size: 12px;
-  margin-left: auto;
-  padding-inline: 12px;
-}
-
-.workbook-landing__more {
-  background: var(--mantine-color-white);
-  border: 1px solid var(--desk-border);
-  border-radius: var(--desk-radius);
-  padding: 0 16px;
-}
-
-.workbook-landing__more > summary,
-.workbook-header__about > summary {
-  cursor: pointer;
-  list-style: none;
-}
-
-.workbook-landing__more > summary::-webkit-details-marker,
-.workbook-header__about > summary::-webkit-details-marker {
-  display: none;
-}
-
-.workbook-landing__more > summary {
-  align-items: baseline;
-  color: var(--mantine-color-gray-7);
-  display: flex;
-  flex-wrap: wrap;
-  font: 600 13px var(--font-mono);
-  gap: 4px 10px;
-  padding: 12px 0;
-}
-
-.workbook-landing__more > summary::before,
+.workbook-header__about > summary { cursor: pointer; list-style: none; }
+.workbook-header__about > summary::-webkit-details-marker { display: none; }
 .workbook-header__about > summary::before {
   border-bottom: 1.5px solid currentColor;
   border-right: 1.5px solid currentColor;
@@ -244,18 +53,7 @@
   transition: transform 160ms ease;
   width: 6px;
 }
-
-.workbook-landing__more[open] > summary::before,
-.workbook-header__about[open] > summary::before {
-  transform: rotate(45deg) translateY(-2px);
-}
-
-.workbook-landing__more-body {
-  display: grid;
-  gap: 10px;
-  max-width: 460px;
-  padding: 0 0 16px;
-}
+.workbook-header__about[open] > summary::before { transform: rotate(45deg) translateY(-2px); }
 
 .workbook-switcher {
   background: var(--mantine-color-white);
@@ -272,47 +70,9 @@
   padding: 8px;
 }
 
-.workbook-switcher__back {
-  align-items: center;
-  background: var(--mantine-color-gray-2);
-  border: 0;
-  border-radius: 8px;
-  color: var(--desk-strong);
-  cursor: pointer;
-  display: inline-flex;
-  flex-shrink: 0;
-  font: 600 13px var(--font-mono);
-  gap: 8px;
-  height: 34px;
-  padding: 0 12px;
-  transition: background-color 150ms ease;
-}
+.workbook-switcher__title { font-size: 17px; }
 
-.workbook-switcher__back-icon { display: inline-flex; }
-.workbook-switcher__back:hover { background: var(--mantine-color-gray-3); }
-
-.workbook-switcher__tabs.pill-tabs {
-  background: var(--mantine-color-white);
-  border-bottom: 1px solid var(--desk-border);
-  border-radius: 0;
-  gap: 12px;
-  justify-content: safe center;
-  min-width: 0;
-  padding: 0 12px;
-}
-
-.workbook-switcher__tabs .pill-tab {
-  color: var(--desk-text);
-  min-height: 46px;
-  min-width: 56px;
-  padding: 12px 10px;
-  transition: color 150ms ease, border-color 150ms ease;
-}
-
-.workbook-switcher__tabs .pill-tab:hover,
-.workbook-switcher__tabs .pill-tab.is-active { color: var(--desk-strong); }
-.workbook-switcher__tabs .pill-tab.is-active { border-bottom-color: var(--brand-orange); font-weight: 600; }
-.workbook-switcher__tabs .pill-tab:disabled { cursor: not-allowed; opacity: 0.55; }
+.workbook-switcher__tabs .app-screen-tab:disabled { cursor: not-allowed; opacity: 0.55; }
 
 .workbook-switcher__extra {
   align-items: center;
@@ -324,7 +84,7 @@
   margin-left: auto;
 }
 
-:is(.workbook-switcher__extra, .workbook-landing__actions) .workbook-quiet-action.mantine-Button-root {
+.workbook-switcher__extra .workbook-quiet-action.mantine-Button-root {
   background: var(--mantine-color-gray-2);
   border: 1px solid transparent;
   border-radius: 8px;
@@ -334,11 +94,11 @@
   padding-inline: 12px;
 }
 
-:is(.workbook-switcher__extra, .workbook-landing__actions) .workbook-quiet-action.mantine-Button-root:not(:disabled):hover {
+.workbook-switcher__extra .workbook-quiet-action.mantine-Button-root:not(:disabled):hover {
   background: var(--mantine-color-gray-3);
 }
 
-:is(.workbook-switcher__extra, .workbook-landing__actions) .workbook-quiet-action.mantine-Button-root:disabled {
+.workbook-switcher__extra .workbook-quiet-action.mantine-Button-root:disabled {
   color: var(--mantine-color-gray-5);
   background: var(--mantine-color-gray-1);
 }
@@ -579,26 +339,23 @@
   background: var(--mantine-color-gray-3);
 }
 
-.workbook-settings__nav { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.workbook-settings__nav { display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
 .workbook-settings__nav-item {
-  position: relative; display: flex; align-items: center; gap: 6px; min-height: 40px;
-  padding: 8px 10px 8px 18px; border: 0; background: transparent; cursor: pointer;
-  color: var(--mantine-color-gray-7); font: 500 13px/1.4 var(--font-mono); text-align: left;
-  transition: color 150ms ease, transform 150ms ease;
+  display: flex; align-items: center; gap: 8px; min-height: 36px;
+  padding: 8px 10px 8px 14px; border: 0; border-radius: 8px; cursor: pointer;
+  color: var(--mantine-color-gray-8); font: 500 13px/1.4 var(--font-mono); text-align: left;
 }
-.workbook-settings__nav-item:hover { color: var(--mantine-color-gray-9); transform: translateX(3px); }
-.workbook-settings__nav-item[aria-current='true'] { color: var(--mantine-color-brand-6); }
-.workbook-settings__nav-item[aria-current='true']::before {
-  content: ''; position: absolute; left: 0; width: 7px; height: 7px; border-radius: 50%; background: currentColor;
-}
+.workbook-settings__nav-item > svg { flex-shrink: 0; }
+.workbook-settings__nav-label { flex: 1; }
+.workbook-settings__nav-item:focus-visible { outline: 2px solid var(--brand-orange); outline-offset: 2px; }
 .workbook-settings__panes { min-width: 0; }
 .workbook-settings__pane:not([hidden]) {
-  display: grid; align-content: start; gap: 16px; border: 1px solid var(--desk-border);
-  border-radius: 8px; padding: 16px; min-height: 240px;
+  display: grid; align-content: start; gap: 12px; border: 1px solid var(--desk-border);
+  border-radius: 8px; padding: 12px; background: var(--mantine-color-white);
 }
 .workbook-settings__pane[hidden] { display: none; }
 .workbook-settings__pane-title { margin: 0; color: var(--desk-strong); font: 600 13px/1.4 var(--font-mono); scroll-margin-top: 90px; }
-.workbook-settings__control { display: grid; align-content: start; gap: 16px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.workbook-settings__control { display: grid; align-content: start; gap: 12px; min-width: 0; margin: 0; padding: 0; border: 0; }
 .workbook-settings__control .mantine-InputWrapper-label,
 .workbook-settings__control .mantine-Checkbox-label { color: var(--desk-strong); }
 .workbook-settings__control .mantine-InputWrapper-description { color: var(--desk-text); }
@@ -654,7 +411,7 @@
 }
 
 .workbook-settings__control .reports-stocks-legacy-measurements {
-  max-width: 760px;
+  width: 100%;
 }
 
 .workbook-settings__summary {
@@ -944,15 +701,11 @@
 .workbook-actions__status:empty { display: none; }
 .workbook-actions__status:not(:empty) { padding: 8px; border-top: 1px solid var(--desk-border); }
 .workbook-actions__buttons > .mantine-Button-root { height: var(--app-filter-control-height); border-radius: 8px; }
-.workbook-settings__body:not([hidden]) { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 24px; margin-top: 16px; }
+.workbook-settings__body:not([hidden]) { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 12px; margin-top: 12px; align-items: start; }
 .workbook-settings__summary-item > svg { color: var(--desk-text); }
 
 .workbook-message.is-idle { min-height: 160px; align-items: center; justify-content: center; border: 0; }
 .workbook-message.is-idle .workbook-message__body { max-width: 560px; }
-
-@media (max-width: 1280px) {
-  .workbook-landing__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
 
 @media (max-width: 900px) {
   .workbook-period__presets { display: none; }
@@ -962,14 +715,13 @@
 
 @media (max-width: 800px) {
   .workbook-settings__body:not([hidden]) { grid-template-columns: minmax(0, 1fr); }
-  .workbook-settings__nav { flex-direction: row; flex-wrap: wrap; gap: 0 12px; }
+  .workbook-settings__nav { flex-direction: row; flex-wrap: wrap; gap: 4px; }
   .workbook-settings__body:not([hidden]) { gap: 12px; }
   .workbook-settings__head { align-items: flex-start; flex-wrap: wrap; gap: 8px; }
   .workbook-header__title { font-size: 15px; }
 }
 
 @media (max-width: 600px) {
-  .workbook-landing__grid { grid-template-columns: minmax(0, 1fr); }
   .workbook-switcher__extra { gap: 6px; }
   .workbook-switcher__extra .workbook-quiet-action.mantine-Button-root { padding-inline: 8px; }
   .workbook-quiet-action.mantine-Button-root { font-size: 11px; padding-inline: 8px; }
@@ -985,3 +737,50 @@
 .workbook-settings__field-note { margin: 0; color: var(--desk-text); font-size: 12px; }
 .workbook-settings__control .reports-stocks-selection-card .reports-stocks-legacy-panel__title { display: none; }
 .workbook-settings__control .reports-stocks-structure:empty { display: none; }
+
+.workbook-settings__control .reports-stocks-legacy-panel__add { height: 32px; padding-inline: 12px; font-size: 12.5px; }
+
+/* Report controls share the same selected surface as the document selectors. */
+.workbook-filter-option {
+  border: 1px solid var(--desk-border);
+  border-radius: 8px;
+  padding: 10px 12px 10px 16px;
+}
+.workbook-filter-option .mantine-Checkbox-label { font-size: 13px; font-weight: 500; }
+.workbook-settings__control .workbook-desk__group:has(.workbook-filter-option) { gap: 8px; }
+.workbook-settings__control .reports-stocks-selection-summary {
+  background: transparent;
+  padding: 8px 6px 8px 16px;
+}
+.workbook-settings__control .reports-stocks-selection-summary[data-selected='true'] { background: var(--mantine-color-gray-0); }
+.workbook-settings__control .reports-stocks-selection-summary__copy { grid-template-columns: minmax(120px, 1fr) minmax(100px, .7fr) minmax(140px, 1.4fr); }
+.workbook-settings__control .reports-stocks-selection-summary__copy > span { white-space: normal; overflow-wrap: anywhere; }
+.workbook-settings__control .reports-stocks-selection-summary__condition { color: var(--desk-text); }
+.workbook-settings__control .reports-stocks-legacy-measurements__list {
+  border: 1px solid var(--desk-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.workbook-settings__control :is(.reports-stocks-measurement-columns, .reports-stocks-legacy-measurement) { padding: 8px 12px 8px 16px; }
+.workbook-settings__control .reports-stocks-measurement-columns { background: var(--mantine-color-gray-1); font-weight: 600; }
+.workbook-settings__control .reports-stocks-legacy-measurement { min-height: 44px; }
+.workbook-settings__control .reports-stocks-legacy-measurement .app-selection-surface__marker { inset-block: 10px; }
+.workbook-settings__control .reports-stocks-structure { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.workbook-settings__control .reports-stocks-grouping-field {
+  align-content: start;
+  border: 1px solid var(--desk-border);
+  border-radius: 8px;
+  padding: 12px;
+  min-width: 0;
+}
+.workbook-settings__control .reports-stocks-grouping-field + .reports-stocks-grouping-field { padding-top: 12px; }
+.reports-stocks-grouping-icon { display: inline-flex; color: var(--mantine-color-gray-7); }
+.workbook-settings__control .reports-stocks-legacy-group-row { grid-template-columns: 28px minmax(0, 1fr) auto; padding: 6px 4px 6px 8px; }
+.workbook-settings__control .reports-stocks-legacy-group-list__empty { padding: 16px 12px; background: var(--mantine-color-gray-0); border-radius: 8px; text-align: center; }
+@media (max-width: 1100px) {
+  .workbook-settings__control .reports-stocks-structure { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 700px) {
+  .workbook-settings__control .reports-stocks-selection-summary__copy { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .workbook-settings__control .reports-stocks-selection-summary__copy > span { border: 0; padding: 0; }
+}

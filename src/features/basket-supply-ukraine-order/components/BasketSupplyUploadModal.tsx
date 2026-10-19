@@ -1,7 +1,8 @@
-import { Alert, Button, Checkbox, FileInput, Group, NumberInput, SimpleGrid, Stack, Text } from '@mantine/core'
-import { AppModal } from "../../../shared/ui/AppModal"
+import { Alert, Button, Checkbox, FileInput, NumberInput, SimpleGrid, Stack, Text } from '@mantine/core'
+import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { CircleAlert, FileSpreadsheet, Upload } from 'lucide-react'
 import { useState } from 'react'
+import './basket-supply-upload-modal.css'
 import type {
   BasketSupplyFileUploadMode,
   BasketSupplyUploadForm,
@@ -71,87 +72,93 @@ export function BasketSupplyUploadModal({
   return (
     <AppModal
       centered
+      className="basket-supply-upload-modal"
       opened={opened}
-      size="lg"
+      size={720}
       title={isPreview ? t('Завантаження для експорту') : t('Завантаження замовлення')}
       onClose={closeModal}
     >
-      <Stack gap="md">
+      <Stack gap={12}>
         {(validationError || submitError) && (
           <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
             {validationError || submitError}
           </Alert>
         )}
 
-        <FileInput
-          clearable
-          accept=".xls,.xlsx,.csv"
-          disabled={isSubmitting}
-          label={t('Завантажити файли')}
-          leftSection={<FileSpreadsheet size={16} />}
-          placeholder={t('Оберіть файл')}
-          value={form.file}
-          onChange={(file) => setForm((current) => ({ ...current, file }))}
-        />
+        <section className="basket-upload-section basket-upload-file">
+          <FileInput
+            clearable
+            accept=".xls,.xlsx,.csv"
+            disabled={isSubmitting}
+            label={t('Файл замовлення')}
+            leftSection={<FileSpreadsheet size={16} />}
+            placeholder={t('Оберіть файл')}
+            value={form.file}
+            onChange={(file) => setForm((current) => ({ ...current, file }))}
+          />
 
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <NumberInput
-            allowDecimal={false}
-            disabled={isSubmitting}
-            label={t('Код Виробника')}
-            min={1}
-            value={form.vendorCodeColumnNumber}
-            onChange={(value) => setForm((current) => ({ ...current, vendorCodeColumnNumber: toPositiveNumber(value) }))}
-          />
-          <NumberInput
-            allowDecimal={false}
-            disabled={isSubmitting}
-            label={t('К-сть')}
-            min={1}
-            value={form.qtyColumnNumber}
-            onChange={(value) => setForm((current) => ({ ...current, qtyColumnNumber: toPositiveNumber(value) }))}
-          />
-          <NumberInput
-            allowDecimal={false}
-            disabled={isSubmitting}
-            label={t('Від')}
-            min={1}
-            value={form.startRow}
-            onChange={(value) => setForm((current) => ({ ...current, startRow: toPositiveNumber(value) }))}
-          />
-          <NumberInput
-            allowDecimal={false}
-            disabled={isSubmitting}
-            label={t('До')}
-            min={1}
-            value={form.endRow}
-            onChange={(value) => setForm((current) => ({ ...current, endRow: toPositiveNumber(value) }))}
-          />
-          {!isPreview && (
-            <>
-              <NumberInput
-                allowDecimal={false}
-                disabled={isSubmitting}
-                label={t('Від якої дати')}
-                min={1}
-                value={form.fromDateColumnNumber}
-                onChange={(value) => setForm((current) => ({ ...current, fromDateColumnNumber: toPositiveNumber(value) }))}
-              />
-              <NumberInput
-                allowDecimal={false}
-                disabled={isSubmitting}
-                label={t('Приорітет')}
-                min={1}
-                value={form.priorityColumnNumber}
-                onChange={(value) => setForm((current) => ({ ...current, priorityColumnNumber: toPositiveNumber(value) }))}
-              />
-            </>
-          )}
-        </SimpleGrid>
+        </section>
+        <section className="basket-upload-section">
+          <Text className="app-section-title">{t('Налаштування імпорту')}</Text>
+          <SimpleGrid cols={{ base: 1, xs: 2, sm: 3 }} spacing={12} mt={12}>
+            <NumberInput
+              allowDecimal={false}
+              disabled={isSubmitting}
+              label={t('Колонка коду виробника')}
+              min={1}
+              value={form.vendorCodeColumnNumber}
+              onChange={(value) => setForm((current) => ({ ...current, vendorCodeColumnNumber: toPositiveNumber(value) }))}
+            />
+            <NumberInput
+              allowDecimal={false}
+              disabled={isSubmitting}
+              label={t('Колонка кількості')}
+              min={1}
+              value={form.qtyColumnNumber}
+              onChange={(value) => setForm((current) => ({ ...current, qtyColumnNumber: toPositiveNumber(value) }))}
+            />
+            <NumberInput
+              allowDecimal={false}
+              disabled={isSubmitting}
+              label={t('З рядка')}
+              min={1}
+              value={form.startRow}
+              onChange={(value) => setForm((current) => ({ ...current, startRow: toPositiveNumber(value) }))}
+            />
+            <NumberInput
+              allowDecimal={false}
+              disabled={isSubmitting}
+              label={t('До рядка')}
+              min={1}
+              value={form.endRow}
+              onChange={(value) => setForm((current) => ({ ...current, endRow: toPositiveNumber(value) }))}
+            />
+            {!isPreview && (
+              <>
+                <NumberInput
+                  allowDecimal={false}
+                  disabled={isSubmitting}
+                  label={t('Колонка дати')}
+                  min={1}
+                  value={form.fromDateColumnNumber}
+                  onChange={(value) => setForm((current) => ({ ...current, fromDateColumnNumber: toPositiveNumber(value) }))}
+                />
+                <NumberInput
+                  allowDecimal={false}
+                  disabled={isSubmitting}
+                  label={t('Колонка пріоритету')}
+                  min={1}
+                  value={form.priorityColumnNumber}
+                  onChange={(value) => setForm((current) => ({ ...current, priorityColumnNumber: toPositiveNumber(value) }))}
+                />
+              </>
+            )}
+          </SimpleGrid>
+        </section>
 
         {!isPreview && (
-          <Stack gap="xs">
-            <Text fw={600} size="sm">
+          <Stack className="basket-upload-section" gap={12}>
+            <Text className="app-section-title">
               {t('Додаткові колонки')}
             </Text>
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
@@ -259,20 +266,14 @@ export function BasketSupplyUploadModal({
           </Stack>
         )}
 
-        <Text c="dimmed" size="xs">
-          {isPreview
-            ? t('Файл буде перевірено перед додаванням у підбірку експорту.')
-            : t('Файл буде завантажено у кошик переміщення до України.')}
-        </Text>
-
-        <Group justify="flex-end">
-          <Button disabled={isSubmitting} variant="subtle" onClick={closeModal}>
+        <AppModalFooter>
+          <Button disabled={isSubmitting} variant="default" onClick={closeModal}>
             {t('Скасувати')}
           </Button>
           <Button leftSection={<Upload size={16} />} loading={isSubmitting} onClick={submitForm}>
             {t('Завантажити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

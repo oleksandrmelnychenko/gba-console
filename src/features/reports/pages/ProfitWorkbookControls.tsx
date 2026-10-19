@@ -1,6 +1,7 @@
-import { Checkbox, Select, Text } from '@mantine/core'
-import type { Dispatch, SetStateAction } from 'react'
+import { Checkbox, Group, Select, Text } from '@mantine/core'
+import type { Dispatch, ReactNode, SetStateAction } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { TableChip } from '../../../shared/ui/TableChip'
 import type { ReportDataset, ReportGroupingItem } from '../types'
 import { productClassification as parseProductClassification, sourceOrganizations as parseSourceOrganizations,
   sourceBuyerSubtree as parseSourceBuyerSubtree, FENIX_BUYERS_ROOT_ID } from '../data/nativeExactFilters'
@@ -14,6 +15,13 @@ import { SupplierBasisSelect } from './SupplierBasisSelect'
 export type ProfitControlsPart = 'source' | 'organizations' | 'filters'
 
 type Setter = Dispatch<SetStateAction<unknown>>
+
+function FilterOption({ selected, children }: { selected: boolean; children: ReactNode }) {
+  return <div className="workbook-filter-option app-selection-surface" data-selected={selected}>
+    <span className="app-selection-surface__marker" aria-hidden="true" />
+    {children}
+  </div>
+}
 
 function usesSavedFenixOrganizations(value: unknown): boolean {
   const ids = parseSourceOrganizations(value)?.OrganizationIds.map(id => id.toUpperCase())
@@ -58,12 +66,14 @@ export function DayProfitControls({ part, dataset, disabled, hideRegister, profi
         disabled={disabled || profitReadMode != null} hideLocked={hideRegister && profitReadMode != null} onChange={setDayOrganizationBasis} />
     </> : null}
     {shows('filters') ? <>
-      <Checkbox mt="sm" label={t('Товар без послуг (Fenix)')}
+      <FilterOption selected={isSavedGoods(productClassification)}>
+      <Checkbox label={t('Товар без послуг (Fenix)')}
         checked={isSavedGoods(productClassification)}
         disabled={disabled}
         onChange={event => setProductClassification(event.currentTarget.checked
           ? { Version: 1, SourceWorld: 0, ProductKindId: DAY_ORGANIZATION_GOODS_KIND_ID, IsService: false }
           : undefined)} />
+      </FilterOption>
       {productClassification != null && !isSavedGoods(productClassification)
         ? <Text size="xs" c="orange">{t('Шаблон містить інший вид товару Fenix. Увімкнення перемикача замінить цей відбір на «Товар».')}</Text> : null}
     </> : null}
@@ -74,17 +84,22 @@ export function DayProfitControls({ part, dataset, disabled, hideRegister, profi
         onChange={event => setSourceOrganizations(event.currentTarget.checked
           ? { Version: 1, SourceWorld: 'fenix', OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] }
           : undefined)} />
-      <Text size="sm">ТОВ «АМГ «КОНКОРД», Фенікс, ФОП Самолюк А.Д., ФОП Самолюк Ю.М.</Text>
+      <Group gap={6} mt={8} aria-label={t('Організації зі збереженого налаштування 1С')}>
+        {['ТОВ «АМГ «КОНКОРД»', 'Фенікс', 'ФОП Самолюк А.Д.', 'ФОП Самолюк Ю.М.'].map(name =>
+          <TableChip key={name} value={name} tone="product" />)}
+      </Group>
       {sourceOrganizations != null && !usesSavedFenixOrganizations(sourceOrganizations)
         ? <Text size="xs" c="orange">{t('Шаблон містить інші організації Fenix. Увімкнення перемикача замінить цей відбір на організації налаштування 1С.')}</Text> : null}
     </> : null}
     {shows('filters') ? <>
-      <Checkbox mt="sm" label={t('Група «Покупці» Fenix')}
+      <FilterOption selected={parseSourceBuyerSubtree(sourceBuyerSubtree) != null}>
+      <Checkbox label={t('Група «Покупці» Fenix')}
         checked={parseSourceBuyerSubtree(sourceBuyerSubtree) != null}
         disabled={disabled}
         onChange={event => setSourceBuyerSubtree(event.currentTarget.checked
           ? { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID }
           : undefined)} />
+      </FilterOption>
       {sourceBuyerSubtree != null && !parseSourceBuyerSubtree(sourceBuyerSubtree)
         ? <Text size="xs" c="orange">{t('Шаблон містить інше піддерево Fenix; цей набір приймає тільки групу «Покупці».')}</Text> : null}
     </> : null}
@@ -140,7 +155,8 @@ export function SupplierProfitControls({ part, dataset, disabled, hideRegister, 
         }} />
     </> : null}
     {shows('filters') && dataset?.sourceBuyerSubtree != null ? <>
-      <Checkbox mt="sm" label={t('Група «Покупці» Fenix')}
+      <FilterOption selected={parseSourceBuyerSubtree(sourceBuyerSubtree) != null}>
+      <Checkbox label={t('Група «Покупці» Fenix')}
         checked={parseSourceBuyerSubtree(sourceBuyerSubtree) != null}
         disabled={disabled}
         onChange={event => {
@@ -149,6 +165,7 @@ export function SupplierProfitControls({ part, dataset, disabled, hideRegister, 
             ? { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID }
             : undefined)
         }} />
+      </FilterOption>
       {sourceBuyerSubtree != null && !parseSourceBuyerSubtree(sourceBuyerSubtree)
         ? <Text size="xs" c="orange">{t('Шаблон містить інше піддерево Fenix; цей набір приймає тільки групу «Покупці».')}</Text> : null}
     </> : null}

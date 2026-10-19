@@ -3,12 +3,14 @@ import {
   Box,
   Button,
   Group,
+  FocusTrap,
   Text,
   TextInput,
+  Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ChevronDown, CircleDollarSign, PencilLine, RotateCcw, X } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useReducer, type CSSProperties, type FormEvent } from 'react'
+import { ChevronDown, PencilLine, RotateCcw, Save, X } from 'lucide-react'
+import { useCallback, useEffect, useId, useMemo, useReducer, useRef, type CSSProperties, type FormEvent, type MouseEvent } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getExchangeRateHistory, updateExchangeRates } from '../api/exchangeRatesApi'
 import type { ExchangeRate, ExchangeRateGroup } from '../types'
@@ -24,12 +26,16 @@ import {
 } from '../utils'
 import { CurrencyRatesHistory } from './CurrencyRatesHistory'
 import { CurrencyRatesUpdateForm } from './CurrencyRatesUpdateForm'
+import { AppModalFooter } from '../../../shared/ui/AppModal'
+import { DocumentDetailLayout } from '../../../shared/ui/document-detail/DocumentDetail'
 import { TableChip } from '../../../shared/ui/TableChip'
+import '../../../shared/ui/selection-surface.css'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 
 type CurrencyRatesPanelProps = {
   group: ExchangeRateGroup
   onClose: () => void
+  opened?: boolean
   onRefresh: () => Promise<void>
   style?: CSSProperties | null
 }
@@ -232,8 +238,10 @@ function historyReducer(state: HistoryState, action: HistoryAction): HistoryStat
   }
 }
 
-export function CurrencyRatesPanel({ group, onClose, onRefresh, style }: CurrencyRatesPanelProps) {
+export function CurrencyRatesPanel({ group, onClose, onRefresh, style, opened = true }: CurrencyRatesPanelProps) {
   const { t } = useI18n()
+  const formId = useId()
+  const editButtonRef = useRef<HTMLButtonElement>(null)
   const [panelState, dispatchPanel] = useReducer(panelReducer, group, createInitialPanelState)
   const [historyState, dispatchHistory] = useReducer(historyReducer, initialHistoryState)
   const fromDateTime = panelState.fromDate.getTime()
@@ -284,9 +292,6 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style }: Currenc
   ])
 
   const isReadOnly = group.id === 'government-cross'
-  const selectedRateTitle = panelState.selectedRate
-    ? `${panelState.selectedRate.Code}: ${formatRate(panelState.selectedRate.Amount)}`
-    : t('Оберіть валюту')
   const selectedRateUpdatedAt = formatHistoryDate(panelState.selectedRate?.Updated)
   const amountEntries = useMemo(() => group.rates.map((rate) => ({ key: getRateKey(rate), rate })), [group.rates])
 
@@ -365,130 +370,144 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style }: Currenc
     dispatchPanel({ type: 'filterReset' })
   }
 
-  function toggleForm() {
+  function toggleForm(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault()
     if (!panelState.isFormOpen) {
       dispatchPanel({ type: 'formOpened', groupId: group.id, rates: group.rates })
       return
     }
 
     dispatchPanel({ type: 'formClosed' })
+    requestAnimationFrame(() => editButtonRef.current?.focus())
   }
 
   return (
-    <Box className="exchange-rates-panel tx-panel-reveal" role="dialog" aria-label={t('Курси валют')} style={style || undefined}>
-      <Group justify="space-between" align="center" className="exchange-rates-panel-header">
-        <Group gap="sm" wrap="nowrap">
-          <Box className="exchange-rates-panel-heading-icon">
-            <CircleDollarSign size={19} strokeWidth={1.8} />
-          </Box>
-          <Box className="exchange-rates-panel-heading-copy">
-            <Text className="exchange-rates-panel-eyebrow">{t('Курси валют')}</Text>
-            <Group gap={8} wrap="nowrap">
-              <TableChip value={group.title} tone="document" />
-              <Text size="xs" c="dimmed" className="exchange-rates-panel-current">
-                {selectedRateTitle}
-              </Text>
-            </Group>
-            {selectedRateUpdatedAt && (
-              <Text size="xs" c="dimmed" className="exchange-rates-panel-current">
-                {t('Оновлено')}: {selectedRateUpdatedAt}
-              </Text>
+    <FocusTrap active={opened}>
+      <Box
+        className="exchange-rates-panel app-modal app-form-sheet"
+        role="dialog"
+        aria-label={t('Курси валют')}
+        style={style || undefined}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape' && !panelState.isSaving) {
+            event.stopPropagation()
+            onClose()
+          }
+        }}
+      >
+        <Group justify="space-between" wrap="nowrap" className="exchange-rates-panel-header">
+          <Group gap={10} wrap="nowrap">
+            <Text className="exchange-rates-panel-title">{t('Курси валют')}</Text>
+            {/^(?:НБУ )?(UAH|PLN)$/.test(group.title) ? <>
+              {group.title.startsWith('НБУ ') && <Text size="xs">{t('НБУ')}</Text>}
+              <TableChip value={group.title.replace('НБУ ', '')} tone="source" />
+            </> : <TableChip value={group.title} tone="neutral" />}
+          </Group>
+          <ActionIcon className="mantine-Modal-close" size={32} variant="subtle" color="gray" aria-label={t('Закрити')} disabled={panelState.isSaving} onClick={onClose}>
+            <X size={18} />
+          </ActionIcon>
+        </Group>
+
+        <div className="exchange-rates-panel-body">
+          <DocumentDetailLayout summary={(
+            <div className="exchange-rates-current">
+              <div>
+                <Text size="xs" c="dimmed">{t('Поточний курс')}</Text>
+                <Group gap={8} align="baseline" wrap="wrap">
+                  <strong className="exchange-rates-current-value app-money">{panelState.selectedRate ? formatRate(panelState.selectedRate.Amount) : '—'}</strong>
+                  <TableChip value={panelState.selectedRate?.Code.replace(/\s+TO\s+/gi, ' / ')} tone="source" />
+                </Group>
+              </div>
+              {selectedRateUpdatedAt && (
+                <div className="exchange-rates-current-updated">
+                  <Text size="xs" c="dimmed">{t('Оновлено')}</Text>
+                  <span>{selectedRateUpdatedAt}</span>
+                </div>
+              )}
+            </div>
+          )}>
+            {!panelState.isFormOpen && (
+              <>
+                {group.rates.length > 1 && (
+                  <div className="exchange-rates-panel-list" role="group" aria-label={t('Валюта')}>
+                    {group.rates.map((rate) => (
+                      <Button
+                        key={getRateKey(rate)}
+                        type="button"
+                        variant="default"
+                        className="app-selection-surface exchange-rates-panel-rate"
+                        data-selected={panelState.selectedRate ? getRateKey(panelState.selectedRate) === getRateKey(rate) : false}
+                        aria-pressed={panelState.selectedRate ? getRateKey(panelState.selectedRate) === getRateKey(rate) : false}
+                        onClick={() => dispatchPanel({ type: 'rateSelected', rate })}
+                      >
+                        <span className="app-selection-surface__marker" aria-hidden="true" />
+                        <span className="exchange-rates-panel-rate-code">{rate.Code.replace(/\s+TO\s+/gi, ' / ')}</span>
+                        <span className="exchange-rates-panel-rate-value">{formatRate(rate.Amount)}</span>
+                      </Button>
+                    ))}
+                  </div>
+                )}
+                <div className="console-table-shell exchange-rates-history-card">
+                  <div className="exchange-rates-history-heading">
+                    <span className="app-section-title">{t('Історія')}</span>
+                  </div>
+                  <div className="app-filter-bar">
+                    <div className="app-filter-fields">
+                      <div className="app-filter-date-range">
+                        <TextInput label={t('Від')} type="date" value={toDateInputValue(panelState.fromDate)}
+                          onChange={(event) => dispatchPanel({ type: 'fromDateChanged', date: parseDateInputValue(event.currentTarget.value, panelState.fromDate) })} />
+                        <TextInput label={t('До')} type="date" value={toDateInputValue(panelState.toDate)}
+                          onChange={(event) => dispatchPanel({ type: 'toDateChanged', date: parseDateInputValue(event.currentTarget.value, panelState.toDate, true) })} />
+                      </div>
+                      <Tooltip label={t('Скинути')}>
+                        <ActionIcon variant="default" size={32} aria-label={t('Скинути')} onClick={resetFilter}>
+                          <RotateCcw size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+                    </div>
+                  </div>
+                  <CurrencyRatesHistory error={historyState.error} isLoading={historyState.isLoading} items={historyState.items} selectedRate={panelState.selectedRate} />
+                </div>
+              </>
             )}
-          </Box>
-        </Group>
-        <ActionIcon variant="subtle" color="gray" aria-label={t('Закрити')} onClick={onClose}>
-          <X size={18} strokeWidth={1.8} />
-        </ActionIcon>
-      </Group>
-
-      <Box className="app-filter-bar exchange-rates-filter">
-        <Group gap="sm" wrap="nowrap" className="app-filter-date-range exchange-rates-filter-fields">
-          <TextInput
-            label={t('Від')}
-            type="date"
-            value={toDateInputValue(panelState.fromDate)}
-            onChange={(event) =>
-              dispatchPanel({
-                type: 'fromDateChanged',
-                date: parseDateInputValue(event.currentTarget.value, panelState.fromDate),
-              })
-            }
-          />
-          <TextInput
-            label={t('До')}
-            type="date"
-            value={toDateInputValue(panelState.toDate)}
-            onChange={(event) =>
-              dispatchPanel({
-                type: 'toDateChanged',
-                date: parseDateInputValue(event.currentTarget.value, panelState.toDate, true),
-              })
-            }
-          />
-        </Group>
-        <Button variant="default" color="gray" size="sm" leftSection={<RotateCcw size={16} />} onClick={resetFilter}>
-          {t('Скинути')}
-        </Button>
+            {!isReadOnly && panelState.isFormOpen && (
+              <CurrencyRatesUpdateForm
+                id={formId}
+                amountEntries={amountEntries}
+                formDate={panelState.formDate}
+                formError={panelState.formError}
+                isSaving={panelState.isSaving}
+                onFormDateChange={(date) => dispatchPanel({ type: 'formDateChanged', date })}
+                onRateAmountChange={(key, value) => dispatchPanel({ type: 'formRateChanged', key, value })}
+                onSubmit={handleSubmit}
+                rateAmounts={panelState.rateAmounts}
+              />
+            )}
+          </DocumentDetailLayout>
+        </div>
+        <AppModalFooter className="exchange-rates-panel-controls">
+          {panelState.isFormOpen ? (
+            <>
+              <Button key="cancel" type="button" variant="default" color="gray" disabled={panelState.isSaving} onClick={toggleForm}>{t('Скасувати')}</Button>
+              <Button key="save" type="submit" form={formId} color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={panelState.isSaving}>{t('Зберегти')}</Button>
+            </>
+          ) : (
+            <>
+            {historyState.canLoadMore && !historyState.isLoading && (
+              <Button key="more" type="button" size="sm" variant="default" color="gray" leftSection={<ChevronDown size={16} />} onClick={loadMore} loading={historyState.isMoreLoading}>
+                {t('Завантажити ще')}
+              </Button>
+            )}
+            {!isReadOnly && (
+              <Button key="edit" type="button" ref={editButtonRef} size="sm" color={CREATE_ACTION_COLOR} leftSection={<PencilLine size={16} />} onClick={toggleForm}>
+                {t('Оновити курси')}
+              </Button>
+            )}
+            </>
+          )}
+        </AppModalFooter>
       </Box>
-
-      <Box className="exchange-rates-currency-section">
-        <Text className="exchange-rates-section-title">{t('Валюта')}</Text>
-        <Group gap={6} wrap="wrap" className="exchange-rates-panel-list">
-          {group.rates.map((rate) => (
-            <button
-              key={getRateKey(rate)}
-              type="button"
-              className={`exchange-rates-panel-rate${panelState.selectedRate?.NetUid === rate.NetUid ? ' is-selected' : ''}`}
-              aria-pressed={panelState.selectedRate?.NetUid === rate.NetUid}
-              onClick={() => dispatchPanel({ type: 'rateSelected', rate })}
-            >
-              <span className="exchange-rates-panel-rate-code">{rate.Code}</span>
-              <span className="exchange-rates-panel-rate-value">{formatRate(rate.Amount)}</span>
-            </button>
-          ))}
-        </Group>
-      </Box>
-
-      {!panelState.isFormOpen && <CurrencyRatesHistory
-        error={historyState.error}
-        isLoading={historyState.isLoading}
-        items={historyState.items}
-        selectedRate={panelState.selectedRate}
-      />}
-
-      {!panelState.isFormOpen && <Group gap="xs" justify={historyState.canLoadMore ? 'space-between' : 'flex-end'} className="exchange-rates-panel-controls">
-        {historyState.canLoadMore && !historyState.isLoading && (
-          <Button size="sm" variant="default" color="gray" leftSection={<ChevronDown size={16} />} onClick={loadMore} loading={historyState.isMoreLoading}>
-            {t('Завантажити ще')}
-          </Button>
-        )}
-        {!isReadOnly && !panelState.isFormOpen && (
-          <Button
-            size="sm"
-            color={CREATE_ACTION_COLOR}
-            leftSection={<PencilLine size={16} />}
-            variant="filled"
-            onClick={toggleForm}
-          >
-            {t('Оновити курси')}
-          </Button>
-        )}
-      </Group>}
-
-      {!isReadOnly && panelState.isFormOpen && (
-        <CurrencyRatesUpdateForm
-          amountEntries={amountEntries}
-          formDate={panelState.formDate}
-          formError={panelState.formError}
-          isSaving={panelState.isSaving}
-          onCancel={toggleForm}
-          onFormDateChange={(date) => dispatchPanel({ type: 'formDateChanged', date })}
-          onRateAmountChange={(key, value) => dispatchPanel({ type: 'formRateChanged', key, value })}
-          onSubmit={handleSubmit}
-          rateAmounts={panelState.rateAmounts}
-        />
-      )}
-    </Box>
+    </FocusTrap>
   )
 }
 

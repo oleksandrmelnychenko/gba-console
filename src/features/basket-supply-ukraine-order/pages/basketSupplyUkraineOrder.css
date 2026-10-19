@@ -2034,3 +2034,15 @@
 @media (max-width: 100em) {
   .procure-dashboard__analysis.has-forecast { grid-template-columns: minmax(0, 1fr); }
 }
+
+.basket-sales-workspace { padding: 0 0 8px; }
+.basket-sales-section-heading { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--mantine-color-gray-0); border-bottom: 1px solid var(--mantine-color-gray-2); }
+.basket-sales-section-heading .app-section-title { font: 500 13px/1.4 var(--font-mono); }
+.basket-sales-selection { margin: 0 8px; }
+.basket-sales-workspace .basket-supply-total-item { min-height: 0; padding: 8px 10px; }
+.basket-sales-workspace .mantine-Checkbox-label { font: 500 12px/1.4 var(--font-sans); }
+
+.basket-sales-section-heading { flex-wrap: wrap; padding: 8px; }
+.basket-sales-section-heading > .app-filter-table-toolbar-slot { flex: 1 1 580px; min-width: 0; }
+.basket-sales-section-heading > .app-section-title { white-space: nowrap; }
+.basket-sales-section-heading > .app-filter-table-toolbar-slot > .data-table-toolbar { flex: 1; width: 100%; }

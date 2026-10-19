@@ -1,8 +1,7 @@
 import { Alert, Button, Group, NumberInput, Radio, Stack, Text, TextInput } from '@mantine/core'
 import { Check, CircleAlert } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -10,6 +9,7 @@ import { useAuth } from '../../auth/useAuth'
 import { changeProductSpecification } from '../api/productSpecificationCodesApi'
 import { ProductSpecificationChangeMode, type ProductSpecification } from '../types'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { TableChip } from '../../../shared/ui/TableChip'
 import './change-product-specification-panel.css'
 
 const CHANGE_PERMISSION = PermissionKeys.ProductSpecificationCodes.Code.Edit
@@ -120,39 +120,18 @@ export function ChangeProductSpecificationPanel({
   const vendorCode = productSpecification?.Product?.VendorCode || ''
   const title = vendorCode ? (
     <span className="product-specification-change-title">
-      <span>{t('Зміна митного коду для')}</span>
-      <span className="product-specification-change-title-code">{vendorCode}</span>
+      <span>{t('Зміна митного коду')}</span>
+      <TableChip tone="product" value={vendorCode} />
     </span>
   ) : (
     <span className="product-specification-change-title">{t('Зміна митного коду')}</span>
   )
 
   return (
-    <AppDrawer
+    <AppModal
       className="product-specification-change-sheet"
-      footer={
-        productSpecification ? (
-          <>
-            <Button color="gray" disabled={isSubmitting} variant="light" onClick={requestClose}>
-              {t('Скасувати')}
-            </Button>
-            {canChange && (
-              <Button
-                color={CREATE_ACTION_COLOR}
-                leftSection={<Check size={16} />}
-                loading={isSubmitting}
-                onClick={submit}
-              >
-                {t('Змінити')}
-              </Button>
-            )}
-          </>
-        ) : null
-      }
       opened={Boolean(productSpecification)}
-      padding="lg"
-      position="right"
-      size="32rem"
+      size={720}
       title={title}
       onClose={requestClose}
     >
@@ -217,6 +196,7 @@ export function ChangeProductSpecificationPanel({
               }}
             />
 
+            <div className="product-specification-change-amounts">
             <NumberInput
               decimalScale={2}
               disabled={isSubmitting}
@@ -240,7 +220,23 @@ export function ChangeProductSpecificationPanel({
               value={form.vat}
               onChange={(value) => setForm((current) => ({ ...current, vat: toNumberOrEmpty(value) }))}
             />
+            </div>
           </div>
+          <AppModalFooter>
+            <Button disabled={isSubmitting} variant="default" onClick={requestClose}>
+              {t('Скасувати')}
+            </Button>
+            {canChange && (
+              <Button
+                color={CREATE_ACTION_COLOR}
+                leftSection={<Check size={16} />}
+                loading={isSubmitting}
+                onClick={submit}
+              >
+                {t('Змінити')}
+              </Button>
+            )}
+          </AppModalFooter>
         </Stack>
       )}
 
@@ -262,7 +258,7 @@ export function ChangeProductSpecificationPanel({
           </Group>
         </Stack>
       </AppModal>
-    </AppDrawer>
+    </AppModal>
   )
 }
 

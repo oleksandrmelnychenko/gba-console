@@ -259,3 +259,25 @@
 .document-detail-chip.is-product { background: var(--app-chip-product-bg); border-color: var(--app-chip-product-border); color: var(--app-chip-product-text); }
 .document-detail-chip.is-source { background: var(--app-chip-source-bg); border-color: var(--app-chip-source-border); color: var(--app-chip-source-text); }
 .document-detail-chip.is-storage { background: var(--app-chip-storage-bg); border-color: var(--app-chip-storage-border); color: var(--app-chip-storage-text); }
+
+/* Compact inventory documents keep identity, actions and metadata together. */
+.inventory-document-detail, .inventory-document-detail .document-detail-tree { gap: 10px; }
+.inventory-document-detail .document-detail-top { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; padding: 12px; }
+.inventory-document-detail .document-detail-summary { flex: 1 1 480px; padding: 0; gap: 16px; }
+.inventory-document-detail .document-detail-top__actions { padding: 0; border: 0; }
+.inventory-document-detail .document-detail-summary__title { display: inline-flex; border: 1px solid var(--app-chip-document-border); border-radius: 999px; padding: 2px 8px; background: var(--app-chip-document-bg); color: var(--app-chip-document-text); font: 500 13px/1.4 var(--font-mono); }
+.inventory-document-detail .document-detail-summary__meta { margin-top: 6px; }
+.inventory-document-detail .document-detail-metric strong { font: 500 16px/1.4 var(--font-mono); }
+.inventory-document-detail .document-detail-section { padding: 12px; }
+.inventory-document-detail .document-detail-section__head { padding-bottom: 0; margin-bottom: 10px; border: 0; }
+.inventory-document-detail .document-detail-section__title { font: 500 14px/1.4 var(--font-mono); }
+.inventory-document-detail .document-detail-row { gap: 4px; }
+.inventory-document-detail .document-detail-row__value { font-size: 13px; font-weight: 500; }
+.inventory-document-detail .document-detail-section__body:not(.is-stacked) { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.inventory-document-detail .app-table-chip-label { white-space: normal; overflow-wrap: anywhere; }
+@media (max-width: 760px) {
+  .inventory-document-detail .document-detail-section__body:not(.is-stacked) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 420px) {
+  .inventory-document-detail .document-detail-section__body:not(.is-stacked) { grid-template-columns: minmax(0, 1fr); }
+}

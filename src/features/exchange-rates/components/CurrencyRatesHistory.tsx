@@ -1,5 +1,5 @@
-import { Box, Group, Loader, ScrollArea, Stack, Text } from '@mantine/core'
-import { ArrowDown, ArrowUp, Minus, ChartNoAxesColumnIncreasing, CircleAlert } from 'lucide-react'
+import { Alert, Group, Loader, Text } from '@mantine/core'
+import { ArrowDown, ArrowUp, CircleAlert, Minus } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { TableChip } from '../../../shared/ui/TableChip'
 import type { ExchangeRate } from '../types'
@@ -16,71 +16,57 @@ export function CurrencyRatesHistory({ error, isLoading, items, selectedRate }: 
   const { t } = useI18n()
 
   return (
-    <ScrollArea className="exchange-rates-history-scroll" type="auto">
-      {isLoading && (
-        <Group gap="xs" justify="center" className="exchange-rates-history-state">
-          <Loader size="xs" color="orange" />
-          <Text size="sm" c="dimmed">
-            {t('Завантаження')}
-          </Text>
+    <div className="exchange-rates-history-scroll">
+      {isLoading ? (
+        <Group gap="xs" justify="center" className="exchange-rates-history-state" role="status">
+          <Loader size="xs" />
+          <Text size="sm" c="dimmed">{t('Завантаження')}</Text>
         </Group>
+      ) : error ? (
+        <Alert color="red" icon={<CircleAlert size={18} />} m="sm">{t('Історія недоступна')}</Alert>
+      ) : !selectedRate || items.length === 0 ? (
+        <div className="exchange-rates-history-state">
+          <Text size="sm" c="dimmed">{t(selectedRate ? 'Немає історії' : 'Оберіть валюту')}</Text>
+        </div>
+      ) : (
+        <table className="app-static-table" aria-label={t('Історія курсів валют')}>
+          <thead>
+            <tr>
+              <th scope="col">{t('Дата')}</th>
+              <th scope="col" className="app-table-cell-number">{t('Курс')}</th>
+              <th scope="col" className="app-table-cell-number">{t('Зміна')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((rate, index) => (
+              <HistoryRow key={`${rate.NetUid || rate.Code}-${rate.Created || index}-${index}`} rate={rate} previous={items[index - 1]} />
+            ))}
+          </tbody>
+        </table>
       )}
-
-      {!isLoading && error && (
-        <Stack align="center" gap={5} className="exchange-rates-history-state">
-          <Box className="exchange-rates-history-state-icon is-error">
-            <CircleAlert size={18} strokeWidth={1.8} />
-          </Box>
-          <Text size="sm" c="red">{t('Історія недоступна')}</Text>
-        </Stack>
-      )}
-
-      {!isLoading && !error && !selectedRate && (
-        <EmptyHistoryState title={t('Оберіть валюту')} />
-      )}
-
-      {!isLoading && !error && selectedRate && items.length === 0 && (
-        <EmptyHistoryState title={t('Немає історії')} />
-      )}
-
-      {!isLoading && !error && items.length > 0 && (
-        <Stack gap={5} className="exchange-rates-history-list">
-          {items.map((rate, index) => (
-            <HistoryRow key={rate.NetUid || `${rate.Code}-${rate.Created || index}`} rate={rate} previous={items[index - 1]} />
-          ))}
-        </Stack>
-      )}
-    </ScrollArea>
-  )
-}
-
-function EmptyHistoryState({ title }: { title: string }) {
-  return (
-    <Stack align="center" gap={5} className="exchange-rates-history-state">
-      <Box className="exchange-rates-history-state-icon">
-        <ChartNoAxesColumnIncreasing size={18} strokeWidth={1.8} />
-      </Box>
-      <Text size="sm" c="dimmed">{title}</Text>
-    </Stack>
+    </div>
   )
 }
 
 function HistoryRow({ previous, rate }: { previous?: ExchangeRate; rate: ExchangeRate }) {
-  const direction = !previous || previous.Amount === rate.Amount ? 'flat' : previous.Amount < rate.Amount ? 'up' : 'down'
+  const difference = previous ? rate.Amount - previous.Amount : 0
+  const direction = difference > 0 ? 'up' : difference < 0 ? 'down' : 'flat'
   const Icon = direction === 'up' ? ArrowUp : direction === 'down' ? ArrowDown : Minus
   const [date, time] = formatHistoryDate(rate.Created).split(',').map((part) => part.trim())
 
   return (
-    <Group gap="sm" wrap="nowrap" className="exchange-rates-history-row">
-      <Box className="exchange-rates-history-date">
-        <TableChip value={date} />
-        {time && time !== '00:00' && <Text component="span" className="exchange-rates-history-date-time">{time}</Text>}
-      </Box>
-      <Box className={`exchange-rates-history-trend is-${direction}`}>
-        <Icon size={11} strokeWidth={2} aria-hidden />
-        <Text component="span" className="exchange-rates-history-amount-value">{formatRate(rate.Amount)}</Text>
-        {rate.Code && <Text component="span" className="exchange-rates-history-amount-code">{rate.Code}</Text>}
-      </Box>
-    </Group>
+    <tr>
+      <td>
+        <span className="exchange-rates-history-date app-money">{date || '—'}</span>
+        {time && time !== '00:00' && <small className="exchange-rates-history-time">{time}</small>}
+      </td>
+      <td className="app-table-cell-number">{formatRate(rate.Amount)}</td>
+      <td className="app-table-cell-number">
+        <span className={`exchange-rates-history-change is-${direction}`}>
+          {previous && <Icon size={13} aria-hidden="true" />}
+          <TableChip tone={direction === 'up' ? 'success' : direction === 'down' ? 'danger' : 'neutral'} value={previous ? `${difference > 0 ? '+' : ''}${formatRate(difference)}` : '—'} />
+        </span>
+      </td>
+    </tr>
   )
 }

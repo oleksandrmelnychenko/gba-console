@@ -11,7 +11,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppModal } from '../../../shared/ui/AppModal'
 import {
   DocumentDetailChip,
   DocumentDetailLayout,
@@ -180,7 +180,7 @@ function useProductCapitalizationsPageModel() {
         if (detailedCapitalization) {
           setSelectedCapitalization(detailedCapitalization)
         } else {
-          setDetailError(t('Оприбуткування не знайдено або видалено'))
+          setDetailError(t('Оприховування не знайдено або видалено'))
         }
       }
     } catch (loadError) {
@@ -476,7 +476,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
                 styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
                 onClick={() => setCreatePanelOpened(true)}
               >
-                {t('Нове оприбуткування')}
+                {t('Оприховування')}
               </Button>
             )}
           </Group>
@@ -498,7 +498,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
             columns={columns}
             data={capitalizations}
             defaultLayout={PRODUCT_CAPITALIZATIONS_TABLE_DEFAULT_LAYOUT}
-            emptyText={t('Оприбуткувань не знайдено')}
+            emptyText={t('Документів не знайдено')}
             getRowId={(capitalization, index) => String(capitalization.NetUid || capitalization.Id || index)}
             height="100%"
             isLoading={isLoading}
@@ -572,18 +572,18 @@ export function ProductCapitalizationDetailDrawer({
   const totals = useMemo(() => calculateItemTotals(items), [items])
 
   return (
-    <AppDrawer
+    <AppModal
       opened={Boolean(capitalization)}
-      position="right"
-      size="wide"
-      title={t('Оприбуткування')}
+      size="min(1240px, calc(100vw - 32px))"
+      title={t('Оприховування')}
       onClose={onClose}
     >
       {capitalization && (
         <DocumentDetailLayout
+          variant="inventory"
           summary={
             <DocumentDetailSummary
-              eyebrow={t('Оприбуткування')}
+              eyebrow={t('Оприховування')}
               title={displayValue(capitalization.Number)}
               meta={<DocumentDetailChip tone="info">{formatDateTime(capitalization.FromDate)}</DocumentDetailChip>}
               metrics={
@@ -611,19 +611,12 @@ export function ProductCapitalizationDetailDrawer({
             </Group>
           }
         >
-          <DocumentDetailSection subtitle={displayValue(capitalization.Number)} title={t('Документ')}>
-            <DocumentDetailRow label={t('Дата')} mono value={formatDateTime(capitalization.FromDate)} />
-            <DocumentDetailRow label={t('Номер')} mono value={capitalization.Number} />
-            <DocumentDetailRow label={t('Сума')} mono value={formatMoney(capitalization.TotalAmount)} />
-            {capitalization.Comment && (
-              <DocumentDetailRow label={t('Коментар')} value={capitalization.Comment} wide />
-            )}
-          </DocumentDetailSection>
-
-          <DocumentDetailSection title={t('Учасники та склад')}>
-            <DocumentDetailRow label={t('Організація')} value={capitalization.Organization?.Name} wide />
-            <DocumentDetailRow label={t('Склад')} value={capitalization.Storage?.Name} />
+          <DocumentDetailSection title={t('Реквізити документа')}>
+            <DocumentDetailRow label={t('Організація')} value={<TableChip tone="product" value={capitalization.Organization?.Name} />} />
+            <DocumentDetailRow label={t('Склад')} value={<TableChip tone="storage" value={capitalization.Storage?.Name} />} />
             <DocumentDetailRow label={t('Відповідальний')} value={getResponsibleName(capitalization)} />
+            <DocumentDetailRow label={t('Сума документа')} mono value={formatMoney(capitalization.TotalAmount)} />
+            {capitalization.Comment && <DocumentDetailRow label={t('Коментар')} value={capitalization.Comment} wide />}
           </DocumentDetailSection>
 
           <DocumentDetailSection stacked subtitle={String(items.length)} title={t('Позиції')}>
@@ -649,7 +642,7 @@ export function ProductCapitalizationDetailDrawer({
           </DocumentDetailSection>
         </DocumentDetailLayout>
       )}
-    </AppDrawer>
+    </AppModal>
   )
 }
 

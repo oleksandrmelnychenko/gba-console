@@ -966,6 +966,8 @@ function BasketCartWorkflow() {
 
 function SalesWorkflowTab() {
   const { t } = useI18n()
+  const [sourceToolbarSlot, setSourceToolbarSlot] = useState<HTMLDivElement | null>(null)
+  const [selectionToolbarSlot, setSelectionToolbarSlot] = useState<HTMLDivElement | null>(null)
   const { can } = usePermissions()
   const navigate = useNavigate()
   const canOpenSale = can(PermissionKeys.SupplySales.Sale.Open)
@@ -1000,7 +1002,6 @@ function SalesWorkflowTab() {
   const [isCreatingDocument, setCreatingDocument] = useState(false)
   const [isTotalsLoading, setTotalsLoading] = useState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const [salesTableToolbarSlot, setSalesTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [debouncedSearchValue] = useDebouncedValue(filterDraft.value, 400)
   const destinationSaleIds = useMemo(() => new Set(destinationSales.map(getBasketSaleKey)), [destinationSales])
   const selectedSourceSales = useMemo(
@@ -1310,7 +1311,7 @@ function SalesWorkflowTab() {
   }
 
   return (
-    <Stack gap="md">
+    <Stack className="basket-sales-workspace" gap={12}>
       <Card className="app-data-card basket-supply-primary-card" withBorder padding={0} radius="md">
         <div className="app-filter-bar basket-supply-command-bar">
           <div className="app-filter-date-range">
@@ -1353,9 +1354,9 @@ function SalesWorkflowTab() {
               </ActionIcon>
             </Tooltip>
           </div>
-          <div ref={setSalesTableToolbarSlot} className="app-filter-table-toolbar-slot" />
         </div>
-        <Stack gap="md" p="md">
+        <div className="basket-sales-section-heading"><span className="app-section-title">{t('Доступні фактури')}</span><TableChip value={sourceSales.length} /><div ref={setSourceToolbarSlot} className="app-filter-table-toolbar-slot" /></div>
+        <Stack gap={8} p={8}>
           {error && (
             <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
               {error}
@@ -1383,81 +1384,72 @@ function SalesWorkflowTab() {
             emptyText={t('Даних не знайдено')}
             getRowId={(sale, index) => sale.NetUid || String(sale.Id || index)}
             isLoading={isLoading}
-            maxHeight={520}
+            maxHeight={320}
             minWidth={1100}
             rowClassName={(sale) => (selectedSourceSaleIds.has(getBasketSaleKey(sale)) ? 'basket-supply-row-selected' : undefined)}
             showLayoutControls
             tableId="basket-supply-ukraine-order-sales"
+            toolbarPortalTarget={sourceToolbarSlot}
             toolbarLeft={
               <Group gap="xs">
                 <Checkbox
-                  aria-label={t('Обрати всі')}
+                  label={t('Обрати всі')}
                   checked={selectedSourceCount > 0 && selectedSourceCount === sourceSales.length}
                   indeterminate={selectedSourceCount > 0 && selectedSourceCount < sourceSales.length}
                   onChange={toggleAllSourceSales}
                 />
               </Group>
             }
-            toolbarPortalTarget={salesTableToolbarSlot}
+            toolbarRight={
+              <Button disabled={!selectedSourceCount} leftSection={<ArrowRight size={16} />} onClick={moveSelectedSalesRight}>
+                {t('Додати до підбірки')} ({selectedSourceCount})
+              </Button>
+            }
             onRowClick={canOpenSale ? openSale : undefined}
           />
         </Stack>
       </Card>
 
-      <Group align="center" className="basket-supply-transfer-controls" justify="center">
-        <Button
-          disabled={!selectedSourceCount}
-          leftSection={<ArrowRight size={16} />}
-          variant="outline"
-          onClick={moveSelectedSalesRight}
-        >
-          {t('Додати')} ({selectedSourceCount})
-        </Button>
-        <Button
-          disabled={!selectedDestinationCount}
-          leftSection={<ArrowLeft size={16} />}
-          variant="outline"
-          onClick={moveSelectedSalesLeft}
-        >
-          {t('Повернути')} ({selectedDestinationCount})
-        </Button>
-      </Group>
-
-      <Card className="app-section-card" withBorder padding="md" radius="md">
-        <Stack gap="md">
+      <Card className="app-data-card basket-sales-selection" withBorder padding={0} radius="md">
+        <div className="basket-sales-section-heading"><span className="app-section-title">{t('Підбірка фактур')}</span><TableChip value={destinationSales.length} /><div ref={setSelectionToolbarSlot} className="app-filter-table-toolbar-slot" /></div>
+        <Stack gap={8} p={8}>
           <DataTable
             columns={destinationColumns}
             data={destinationSales}
             defaultLayout={BASKET_SALES_TABLE_DEFAULT_LAYOUT}
             emptyText={t('Підбірка порожня')}
             getRowId={(sale, index) => sale.NetUid || String(sale.Id || index)}
-            maxHeight={420}
+            maxHeight={320}
             minWidth={1100}
             rowClassName={(sale) =>
               selectedDestinationSaleIds.has(getBasketSaleKey(sale)) ? 'basket-supply-row-selected' : undefined
             }
             tableId="basket-supply-ukraine-order-sales-destination"
+            toolbarPortalTarget={selectionToolbarSlot}
             toolbarLeft={
               <Group gap="xs">
                 <Checkbox
-                  aria-label={t('Обрати всі')}
+                  label={t('Обрати всі')}
                   checked={selectedDestinationCount > 0 && selectedDestinationCount === destinationSales.length}
                   indeterminate={selectedDestinationCount > 0 && selectedDestinationCount < destinationSales.length}
                   onChange={toggleAllDestinationSales}
                 />
-                <Text c="dimmed" size="xs">
-                  {t('Фактур')}: {destinationSales.length}
-                </Text>
+
               </Group>
             }
             toolbarRight={
-              canAssembleDocument
+              <Group gap={8}>
+                <Button disabled={!selectedDestinationCount} leftSection={<ArrowLeft size={16} />} variant="default" onClick={moveSelectedSalesLeft}>
+                  {t('Повернути')} ({selectedDestinationCount})
+                </Button>
+              {canAssembleDocument
                 ? (
                     <Button color={CREATE_ACTION_COLOR} disabled={!destinationSales.length} loading={isCreatingDocument} onClick={() => setCreateModalOpen(true)}>
                       {isCreatingDocument ? t('Створення') : t('Створити')}
                     </Button>
                   )
-                : null
+                : null}
+              </Group>
             }
             onRowClick={canOpenSale ? openSale : undefined}
           />
@@ -1512,19 +1504,19 @@ function TotalsBar({ isLoading, totals }: { isLoading: boolean; totals: CartItem
     <SimpleGrid className="basket-supply-totals" cols={{ base: 2, md: 4 }} spacing="sm">
       <TotalItem isLoading={isLoading} label={t('Заг. к-сть')} value={formatQty(totals.TotalQty)} />
       <TotalItem isLoading={isLoading} label={t('Заг. вага')} value={formatQty(totals.TotalWeight)} />
-      <TotalItem isLoading={isLoading} label={`${t('Вартість Брутто')} (EUR)`} value={formatAmount(totals.TotalEuroAmount)} />
-      <TotalItem isLoading={isLoading} label={`${t('Вартість Брутто')} (PLN)`} value={formatAmount(totals.TotalPlnAmount)} />
+      <TotalItem isLoading={isLoading} currency="EUR" label={t('Вартість брутто')} value={formatAmount(totals.TotalEuroAmount)} />
+      <TotalItem isLoading={isLoading} currency="PLN" label={t('Вартість брутто')} value={formatAmount(totals.TotalPlnAmount)} />
     </SimpleGrid>
   )
 }
 
-function TotalItem({ isLoading, label, value }: { isLoading: boolean; label: string; value: string }) {
+function TotalItem({ currency, isLoading, label, value }: { currency?: string; isLoading: boolean; label: string; value: string }) {
   return (
     <Box className="basket-supply-total-item">
       <Text c="dimmed" size="xs">
         {label}
       </Text>
-      <Text className="app-money" fw={600}>{isLoading ? '...' : value}</Text>
+      <Group gap={6}><Text className="app-money" fw={500}>{isLoading ? '...' : value}</Text>{currency && <TableChip tone="source" value={currency} />}</Group>
     </Box>
   )
 }

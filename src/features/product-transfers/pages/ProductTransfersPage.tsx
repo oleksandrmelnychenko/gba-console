@@ -19,7 +19,6 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import {
   DocumentDetailFlag,
   DocumentDetailChip,
@@ -699,10 +698,9 @@ function ProductTransferDetailDrawer({ model }: { model: ReturnType<typeof usePr
   } = model
 
   return (
-    <AppDrawer
+    <AppModal
       opened={Boolean(selectedTransfer)}
-      position="right"
-      size="min(920px, 100vw)"
+      size="min(1240px, calc(100vw - 32px))"
       title={t('Деталі переміщення')}
       onClose={closeDetail}
     >
@@ -725,7 +723,7 @@ function ProductTransferDetailDrawer({ model }: { model: ReturnType<typeof usePr
         title={t('Завантажити')}
         onClose={closeDownload}
       />
-    </AppDrawer>
+    </AppModal>
   )
 }
 
@@ -1135,6 +1133,7 @@ export function TransferDetail({
         id: 'code',
         header: 'Код',
         accessor: (item) => getProductCode(item),
+        cell: (item) => <TableChip tone="product" value={getProductCode(item)} />,
         width: 120,
       },
       {
@@ -1172,6 +1171,7 @@ export function TransferDetail({
 
   return (
     <DocumentDetailLayout
+      variant="inventory"
       summary={
         <DocumentDetailSummary
           eyebrow={t('Переміщення')}
@@ -1207,19 +1207,12 @@ export function TransferDetail({
         </Group>
       }
     >
-      <DocumentDetailSection subtitle={displayValue(transfer.Number)} title={t('Документ')}>
-        <DocumentDetailRow label={t('Дата')} mono value={transferDate} />
-        <DocumentDetailRow label={t('Номер')} mono value={transfer.Number} />
-        {transfer.Comment && (
-          <DocumentDetailRow label={t('Коментар')} value={transfer.Comment} wide />
-        )}
-      </DocumentDetailSection>
-
-      <DocumentDetailSection title={t('Учасники та склади')}>
-        <DocumentDetailRow label={t('Організація')} value={transfer.Organization?.Name} wide />
-        <DocumentDetailRow label={t('Відповідальний')} value={getResponsibleName(transfer)} wide />
-        <DocumentDetailRow label={t('Зі складу')} value={transfer.FromStorage?.Name} />
-        <DocumentDetailRow label={t('На склад')} value={transfer.ToStorage?.Name} />
+      <DocumentDetailSection title={t('Реквізити переміщення')}>
+        <DocumentDetailRow label={t('Організація')} value={<TableChip tone="product" value={transfer.Organization?.Name} />} />
+        <DocumentDetailRow label={t('Відповідальний')} value={getResponsibleName(transfer)} />
+        <DocumentDetailRow label={t('Зі складу')} value={<TableChip tone="storage" value={transfer.FromStorage?.Name} />} />
+        <DocumentDetailRow label={t('На склад')} value={<TableChip tone="storage" value={transfer.ToStorage?.Name} />} />
+        {transfer.Comment && <DocumentDetailRow label={t('Коментар')} value={transfer.Comment} wide />}
       </DocumentDetailSection>
 
       <DocumentDetailSection stacked subtitle={String(items.length)} title={t('Позиції')}>

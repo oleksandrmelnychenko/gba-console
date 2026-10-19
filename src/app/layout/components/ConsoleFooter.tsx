@@ -6,9 +6,9 @@ import { QaBuildTicker } from './QaBuildTicker'
 export function ConsoleFooter() {
   return (
     <AppShell.Footer className="console-footer">
-      <Group h="100%" px="md" gap="md" wrap="nowrap">
+      <Group className="console-footer-inner" h="100%" gap={8} wrap="nowrap">
         <DataSyncProgressIndicator />
-        <ScrollArea type="never" scrollbarSize={0} className="console-footer-scroll">
+        <ScrollArea type="hover" scrollbars="x" scrollbarSize={3} className="console-footer-scroll">
           <CurrencyRatesTicker />
         </ScrollArea>
         <QaBuildTicker />

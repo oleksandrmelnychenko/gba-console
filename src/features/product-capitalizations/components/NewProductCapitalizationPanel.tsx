@@ -14,8 +14,7 @@ import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, FileSpreadsheet, Plus } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -131,145 +130,148 @@ export function NewProductCapitalizationPanel({ canCreate, opened, onClose, onCr
   const itemColumns = useItemColumns(model.items, model.updateItem, model.removeItem, isFormBusy)
 
   return (
-    <AppDrawer
+    <AppModal
       className="product-capitalization-sheet"
-      footer={
-        <>
-          <Button
-            disabled={isFormBusy}
-            leftSection={<FileSpreadsheet size={16} />}
-            variant="default"
-            onClick={model.openUploadModal}
-          >
-            {t('Імпорт з Excel')}
-          </Button>
-          <Button
-            color={CREATE_ACTION_COLOR}
-            disabled={isFormBusy}
-            loading={model.isSubmitting}
-            onClick={model.submit}
-          >
-            {t('Провести')}
-          </Button>
-        </>
-      }
       opened={opened}
-      position="right"
-      size="78rem"
-      title={t('Нове оприбуткування')}
+      size="min(1180px, calc(100vw - 32px))"
+      title={t('Оприховування')}
       onClose={model.requestClose}
     >
-      <Stack gap="md">
+      <Stack gap={12}>
         {model.error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {model.error}
           </Alert>
         )}
 
-        <Text className="app-section-title" fw={600} size="sm">
-          {t('Параметри документа')}
-        </Text>
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="sm" style={{ alignItems: 'end' }}>
-          <TextInput
-            disabled={isFormBusy}
-            label={t('Коментар')}
-            value={model.comment}
-            onChange={(event) => model.setComment(event.currentTarget.value)}
-          />
-          <TextInput
-            disabled={isFormBusy}
-            label={t('Дата')}
-            type="datetime-local"
-            value={model.fromDate}
-            onChange={(event) => model.setFromDate(event.currentTarget.value)}
-          />
-          <Select
-            comboboxProps={CAPITALIZATION_COMBOBOX_PROPS}
-            data={model.organizationOptions}
-            disabled={isFormBusy}
-            label={t('Організація')}
-            searchable
-            value={model.selectedOrganizationNetId}
-            onChange={model.selectOrganization}
-          />
-          <Select
-            comboboxProps={CAPITALIZATION_COMBOBOX_PROPS}
-            data={model.storageOptions}
-            disabled={isFormBusy || !model.selectedOrganizationNetId || model.isLoadingStorages}
-            label={t('Склад')}
-            placeholder={model.isLoadingStorages ? t('Завантаження') : t('Оберіть склад')}
-            searchable
-            value={model.selectedStorageNetId}
-            onChange={model.selectStorage}
-          />
-        </SimpleGrid>
+        <section className="product-capitalization-form-section">
+          <Text className="app-section-title" fw={500} size="sm">
+            {t('Параметри документа')}
+          </Text>
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="sm" style={{ alignItems: 'end' }}>
+            <TextInput
+              disabled={isFormBusy}
+              label={t('Коментар')}
+              value={model.comment}
+              onChange={(event) => model.setComment(event.currentTarget.value)}
+            />
+            <TextInput
+              disabled={isFormBusy}
+              label={t('Дата')}
+              type="datetime-local"
+              value={model.fromDate}
+              onChange={(event) => model.setFromDate(event.currentTarget.value)}
+            />
+            <Select
+              comboboxProps={CAPITALIZATION_COMBOBOX_PROPS}
+              data={model.organizationOptions}
+              disabled={isFormBusy}
+              label={t('Організація')}
+              searchable
+              value={model.selectedOrganizationNetId}
+              onChange={model.selectOrganization}
+            />
+            <Select
+              comboboxProps={CAPITALIZATION_COMBOBOX_PROPS}
+              data={model.storageOptions}
+              disabled={isFormBusy || !model.selectedOrganizationNetId || model.isLoadingStorages}
+              label={t('Склад')}
+              placeholder={model.isLoadingStorages ? t('Завантаження') : t('Оберіть склад')}
+              searchable
+              value={model.selectedStorageNetId}
+              onChange={model.selectStorage}
+            />
+          </SimpleGrid>
+        </section>
 
-        <Text className="app-section-title" fw={600} size="sm">
-          {t('Товари')}
-        </Text>
-        <Group align="end" gap="sm" wrap="nowrap">
-          <SearchableSelect
-            comboboxProps={CAPITALIZATION_COMBOBOX_PROPS}
-            data={model.vendorCodeOptions}
-            disabled={isFormBusy}
-            label={t('Артикул')}
-            style={{ flex: 1.4 }}
-            value={model.vendorCodeQuery}
-            onChange={model.changeVendorCodeQuery}
-            onOptionSubmit={model.selectVendorCode}
-          />
-          <NumberInput
-            allowDecimal={false}
-            allowNegative={false}
-            disabled={isFormBusy}
-            label={t('Кількість')}
-            min={1}
-            style={{ flex: 1 }}
-            value={model.itemEntry.quantity}
-            onChange={(value) => model.setItemEntry((current) => ({ ...current, quantity: toIntegerOrEmpty(value) }))}
-          />
-          <NumberInput
-            allowNegative={false}
-            disabled={isFormBusy}
-            label={t('Вага за одиницю')}
-            min={0}
-            style={{ flex: 1 }}
-            value={model.itemEntry.weight}
-            onChange={(value) => model.setItemEntry((current) => ({ ...current, weight: toNumberOrEmpty(value) }))}
-          />
-          <NumberInput
-            allowNegative={false}
-            decimalScale={2}
-            disabled={isFormBusy}
-            label={t('Ціна за одиницю')}
-            min={0}
-            style={{ flex: 1 }}
-            value={model.itemEntry.unitPrice}
-            onChange={(value) => model.setItemEntry((current) => ({ ...current, unitPrice: toNumberOrEmpty(value) }))}
-          />
-          <Button
-            color={CREATE_ACTION_COLOR}
-            disabled={isFormBusy}
-            leftSection={<Plus size={16} />}
-            mb={1}
-          onClick={model.addItem}
-          >
-            {t('Додати рядок')}
-          </Button>
-        </Group>
+        <section className="product-capitalization-form-section">
+          <Text className="app-section-title" fw={600} size="sm">
+            {t('Товари')}
+          </Text>
+          <div className="product-capitalization-item-entry">
+            <SearchableSelect
+              comboboxProps={CAPITALIZATION_COMBOBOX_PROPS}
+              data={model.vendorCodeOptions}
+              disabled={isFormBusy}
+              label={t('Артикул')}
+              style={{ flex: 1.4 }}
+              value={model.vendorCodeQuery}
+              onChange={model.changeVendorCodeQuery}
+              onOptionSubmit={model.selectVendorCode}
+            />
+            <NumberInput
+              allowDecimal={false}
+              allowNegative={false}
+              disabled={isFormBusy}
+              label={t('Кількість')}
+              min={1}
+              style={{ flex: 1 }}
+              value={model.itemEntry.quantity}
+              onChange={(value) => model.setItemEntry((current) => ({ ...current, quantity: toIntegerOrEmpty(value) }))}
+            />
+            <NumberInput
+              allowNegative={false}
+              disabled={isFormBusy}
+              label={t('Вага за одиницю')}
+              min={0}
+              style={{ flex: 1 }}
+              value={model.itemEntry.weight}
+              onChange={(value) => model.setItemEntry((current) => ({ ...current, weight: toNumberOrEmpty(value) }))}
+            />
+            <NumberInput
+              allowNegative={false}
+              decimalScale={2}
+              disabled={isFormBusy}
+              label={t('Ціна за одиницю')}
+              min={0}
+              style={{ flex: 1 }}
+              value={model.itemEntry.unitPrice}
+              onChange={(value) => model.setItemEntry((current) => ({ ...current, unitPrice: toNumberOrEmpty(value) }))}
+            />
+            <Button
+              color={CREATE_ACTION_COLOR}
+              disabled={isFormBusy}
+              leftSection={<Plus size={16} />}
+              mb={1}
+            onClick={model.addItem}
+            >
+              {t('Додати рядок')}
+            </Button>
+          </div>
 
-        <DataTable
-          columns={itemColumns}
-          data={model.items}
-          defaultLayout={ITEMS_TABLE_DEFAULT_LAYOUT}
-          emptyText={t('Додайте хоча б один товар')}
-          getRowId={(item) => item.__rowKey}
-          layoutVersion="new-product-capitalization-items-1"
-          maxHeight="calc(100vh - 400px)"
-          minWidth={920}
-          showToolbar={false}
-          tableId="new-product-capitalization-items"
-        />
+          <DataTable
+            columns={itemColumns}
+            data={model.items}
+            defaultLayout={ITEMS_TABLE_DEFAULT_LAYOUT}
+            emptyText={t('Додайте хоча б один товар')}
+            getRowId={(item) => item.__rowKey}
+            layoutVersion="new-product-capitalization-items-1"
+            maxHeight={300}
+            minWidth={920}
+            showToolbar={false}
+            tableId="new-product-capitalization-items"
+          />
+        </section>
+        <AppModalFooter>
+          <Group justify="space-between" w="100%">
+            <Button
+              disabled={isFormBusy}
+              leftSection={<FileSpreadsheet size={16} />}
+              variant="default"
+              onClick={model.openUploadModal}
+            >
+              {t('Імпорт з Excel')}
+            </Button>
+            <Button
+              color={CREATE_ACTION_COLOR}
+              disabled={isFormBusy}
+              loading={model.isSubmitting}
+              onClick={model.submit}
+            >
+              {t('Провести')}
+            </Button>
+          </Group>
+        </AppModalFooter>
       </Stack>
 
       {model.uploadModalOpened && (
@@ -296,7 +298,7 @@ export function NewProductCapitalizationPanel({ canCreate, opened, onClose, onCr
         onClose={model.cancelClose}
       >
         <Stack gap="md">
-          <Text>{t('Якщо закрити форму, документ оприбуткування не буде створено.')}</Text>
+          <Text>{t('Якщо закрити форму, документ не буде створено.')}</Text>
           <Group justify="flex-end">
             <Button variant="default" onClick={model.cancelClose}>
               {t('Залишитися')}
@@ -307,7 +309,7 @@ export function NewProductCapitalizationPanel({ canCreate, opened, onClose, onCr
           </Group>
         </Stack>
       </AppModal>
-    </AppDrawer>
+    </AppModal>
   )
 }
 
@@ -891,7 +893,7 @@ function useNewProductCapitalizationModel(
       }
 
       if (isCurrentSubmit()) {
-        notifications.show({ color: 'green', message: t('Оприбуткування створено') })
+        notifications.show({ color: 'green', message: t('Оприховування створено') })
         resetDraft()
         onCreated()
         onClose()

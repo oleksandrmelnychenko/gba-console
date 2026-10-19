@@ -38,18 +38,20 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
-import { CircleAlert, LayoutTemplate, Plus, RotateCcw, Save, Trash2 } from 'lucide-react'
+import { CheckCheck, CircleAlert, LayoutTemplate, Plus, RotateCcw, Save, Search, SearchX, Trash2 } from 'lucide-react'
 import { IconFileSpreadsheet } from '@tabler/icons-react'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
 import { requestProfitReadMode } from '../data/profitReadMode'
 import { isSettlementReadModeCapability, requestSettlementReadMode } from '../data/settlementReadMode'
 import { requestCashReadMode } from '../data/cashReadMode'
-import { type FormEvent, memo, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import { type FormEvent, memo, type ReactNode, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import type { TranslateFunction } from '../../../shared/i18n/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import '../../../shared/ui/selection-surface.css'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -204,7 +206,6 @@ import { useReportGroupingOrdering } from '../hooks/useReportGroupingOrdering'
 import type { ReportGroupingLayout } from '../data/reportGroupingLayout'
 import { DayProfitControls, SupplierProfitControls, type ProfitControlsPart } from './ProfitWorkbookControls'
 import { deskPlural, organizationFilterField, workbookDeskTitle, workbookOrganizationScope, workbookRequestSummary } from '../data/workbookDesk'
-import { WorkbookLanding } from './workbook-desk/WorkbookLanding'
 import { WorkbookSwitcher } from './workbook-desk/WorkbookSwitcher'
 import { WorkbookHeader } from './workbook-desk/WorkbookHeader'
 import { WorkbookActionBar } from './workbook-desk/WorkbookActionBar'
@@ -408,7 +409,6 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const [catalogueNotice, setCatalogueNotice] = useState<{ text: string; failed: boolean; title?: string; warning?: string } | null>(null)
   const [activeWorkbook, setActiveWorkbook] = useState<string | null>(null)
   const [workbookResolving, setWorkbookResolving] = useState(false)
-  const [landingRequested, setLandingRequested] = useState(false)
   const [deskTemplatesOpened, setDeskTemplatesOpened] = useState(false)
   const [shownReport, setShownReport] = useState<string | null>(null)
   const workbookLaunchToken = useRef(0)
@@ -685,7 +685,6 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     applyConfiguration({ ...template, Data: data }, nextDataset)
     setActiveWorkbook(null)
     setActiveTemplate(structuredClone(template))
-    setLandingRequested(false)
     return true
   }
 
@@ -828,7 +827,6 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     }
     applyConfiguration(launch.template, launch.dataset)
     setCatalogueNotice({ text: launch.notice, failed: false })
-    setLandingRequested(false)
     return true
   }
 
@@ -881,7 +879,6 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     workbookLaunchToken.current += 1
     setWorkbookResolving(false)
     setActiveWorkbook(null)
-    setLandingRequested(false)
     changeDataset(nextDataset)
   }
 
@@ -891,7 +888,6 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     const guide = bug1274WorkbookGuide(item.fileName)
     const title = guide ? `${item.fileName} — ${t(guide.title)}` : undefined
     const notice = guide ? t(guide.summary) : `${item.fileName}: ${item.notice}`
-    setLandingRequested(false)
     if (!resolvesWorkbookFilters(item.fileName)) {
       changeDataset(item.dataset, item)
       setActiveWorkbook(item.fileName)
@@ -922,6 +918,15 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   }
 
   const workbookLaunches = useMemo(() => availableBug1274WorkbookLaunches(datasetStorage.datasets), [datasetStorage.datasets])
+  const initialWorkbookOpened = useRef(false)
+  const openInitialWorkbook = useEffectEvent((item: WorkbookLaunch) => openWorkbook(item))
+  useEffect(() => {
+    if (!bug1274Only || !canGenerateReport || !datasetHidden || activeWorkbook || initialWorkbookOpened.current
+      || !datasetStorage.loaded || datasetStorage.error || !workbookLaunches.length) return
+    initialWorkbookOpened.current = true
+    openInitialWorkbook(workbookLaunches[0])
+  }, [activeWorkbook, bug1274Only, canGenerateReport, datasetHidden, datasetStorage.error, datasetStorage.loaded, workbookLaunches])
+
   const mountsDialog = (open: boolean) => !consoleScope || open
   const analysisRules = bug1274Only ? supportedAnalysisRules(templateBody, dataset, settlementDataset)
     : { topGroups: true, threshold: true, abc: true, ordering: true, filterExpression: true }
@@ -1165,7 +1170,6 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       <Button type="button" variant="subtle" color="gray" className="workbook-quiet-action" leftSection={<LayoutTemplate size={15} />}
         disabled={!canGenerateReport || isLoading} onClick={() => { setTemplateNotice(null); templateStorage.clearNotice(); setDeskTemplatesOpened(true) }}>{t('Шаблони')}</Button>
     </>
-    const showLanding = datasetHidden || landingRequested
     const excelUrl = result?.document.DocumentURL || null
     const pdfUrl = result?.document.PdfDocumentURL || null
     return (
@@ -1174,19 +1178,19 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         {canGenerateReport && catalogueNotice?.failed ? <Alert color="red" className="workbook-desk__notice" icon={<CircleAlert size={18} />}
           title={catalogueNotice.title ?? t('Не вдалося відкрити звіт')}
           withCloseButton closeButtonLabel={t('Закрити повідомлення')} onClose={() => setCatalogueNotice(null)}>{catalogueNotice.text}</Alert> : null}
-        {showLanding ? <WorkbookLanding launches={workbookLaunches} today={today} disabled={isLoading || workbookResolving}
-          loading={!datasetStorage.loaded && !datasetStorage.error} error={datasetStorage.error} canGenerate={canGenerateReport}
-          openReport={!datasetHidden ? deskTitle : null} actions={quietActions}
-          more={<>
-            <ReportDatasetPicker compact activeDataSources={BUG_1274_ACTIVE_DATA_SOURCES}
-              datasets={datasetStorage.datasets.filter(item => BUG_1274_ACTIVE_DATA_SOURCES.has(item.DataSource))} selected={dataSource}
-              disabled={!canGenerateReport || isLoading} loaded={datasetStorage.loaded} error={datasetStorage.error}
-              onChange={pickDataset} onRetry={datasetStorage.retry} />
-          </>}
-          onOpen={item => { openWorkbook(item) }} onReturn={() => setLandingRequested(false)} onRetry={datasetStorage.retry} />
-          : <form className="reports-stocks-form workbook-desk__form" onSubmit={submitReport}>
-            <WorkbookSwitcher launches={workbookLaunches} active={activeWorkbook} disabled={isLoading || workbookResolving}
-              extra={quietActions} onOpen={item => { openWorkbook(item) }} onBack={() => setLandingRequested(true)} />
+        <WorkbookSwitcher launches={workbookLaunches} active={activeWorkbook} disabled={isLoading || workbookResolving || !canGenerateReport}
+          extra={quietActions} onOpen={item => { openWorkbook(item) }} />
+        {!canGenerateReport ? <Alert color="yellow" icon={<CircleAlert size={18} />} title={t('Немає доступу до звітів')}>
+          {t('Ваша роль не дозволяє формувати звіти. Зверніться до адміністратора.')}
+        </Alert> : datasetStorage.error ? <Alert color="red" icon={<CircleAlert size={18} />} title={t('Не вдалося завантажити список звітів')}>
+          <Text size="sm">{datasetStorage.error}</Text>
+          <Button variant="default" size="xs" mt="xs" onClick={datasetStorage.retry}>{t('Спробувати ще раз')}</Button>
+        </Alert> : !datasetStorage.loaded || (datasetHidden && workbookResolving) ? <Group justify="center" p="xl" role="status">
+          <Loader size="sm" /><Text size="sm">{t('Завантаження звіту…')}</Text>
+        </Group> : datasetHidden ? <Alert color="gray" icon={<CircleAlert size={18} />} title={t('Звіти зараз недоступні')}>
+          {t('Оберіть доступний звіт у вкладках або спробуйте оновити список.')}
+          <Button variant="default" size="xs" mt="xs" onClick={datasetStorage.retry}>{t('Оновити')}</Button>
+        </Alert> : <form className="reports-stocks-form workbook-desk__form" onSubmit={submitReport}>
             <WorkbookHeader title={deskTitle} fileName={activeWorkbook} templateName={activeTemplate?.Name ?? ''} summary={deskSummary}
               resolving={workbookResolving} warning={catalogueNotice?.warning ?? null}
               about={guide ? t(guide.summary) : catalogueNotice && !catalogueNotice.failed && !activeWorkbook ? catalogueNotice.text : null} />
@@ -1923,14 +1927,15 @@ function LegacyReportBuilder({
       <div className="reports-stocks-legacy-panel__header">
         <Group className="reports-stocks-legacy-panel__title" gap={6} wrap="nowrap">
           <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Показники')}</Text>
-          <Text className="reports-stocks-count" size="xs">{checkedMeasurements || ''}</Text>
+          <TableChip value={checkedMeasurements} tone="neutral" />
         </Group>
         <Group gap={4} wrap="nowrap">
           <Button
             color={CREATE_ACTION_COLOR}
             size="compact-xs"
             type="button"
-            variant="subtle"
+            variant="default"
+            leftSection={<CheckCheck size={14} aria-hidden="true" />}
             onClick={() => setAllMeasurements(onMeasurementsChange, true)}
           >
             Усі
@@ -1939,7 +1944,8 @@ function LegacyReportBuilder({
             color="gray"
             size="compact-xs"
             type="button"
-            variant="subtle"
+            variant="default"
+            leftSection={<RotateCcw size={14} aria-hidden="true" />}
             onClick={() => setAllMeasurements(onMeasurementsChange, false)}
           >
             Очистити
@@ -1961,7 +1967,8 @@ function LegacyReportBuilder({
             || (group.SubList[0]?.Label || getReportFieldLabel(group.SubList[0]?.Name ?? '')) !== groupLabel
 
           return (
-            <div className="reports-stocks-legacy-measurement" key={group.Name}>
+            <div className="reports-stocks-legacy-measurement app-selection-surface" data-selected={group.IsChecked || group.SubList.some(item => item.IsChecked)} key={group.Name}>
+              <span className="app-selection-surface__marker" aria-hidden="true" />
               <Checkbox
                 checked={group.IsChecked}
                 indeterminate={!group.IsChecked && group.SubList.some((item) => item.IsChecked)}
@@ -2059,6 +2066,7 @@ function LegacyGroupingPickerModal({
   onAdd,
   onClose,
 }: LegacyGroupingPickerModalProps) {
+  const { t } = useI18n()
   const [pickerQuery, setPickerQuery] = useState('')
   const normalizedPickerQuery = pickerQuery.trim().toLocaleLowerCase('uk-UA')
   const visibleOptions = useMemo(
@@ -2082,17 +2090,18 @@ function LegacyGroupingPickerModal({
   return (
     <AppModal
       centered
-      classNames={{ title: 'reports-stocks-modal-title' }}
+      className="reports-group-picker-modal"
       opened={opened}
-      size="lg"
+      size={560}
       title={`Додати поле · ${title}`}
       onClose={closePicker}
     >
-      <Stack gap="sm">
+      <Stack gap="sm" className="reports-group-picker-content">
         <TextInput
           aria-label={`Пошук поля: ${title}`}
           autoFocus
-          placeholder="Назва поля"
+          placeholder={t('Знайти поле')}
+          leftSection={<Search size={16} aria-hidden="true" />}
           value={pickerQuery}
           onChange={(event) => setPickerQuery(event.currentTarget.value)}
         />
@@ -2105,14 +2114,16 @@ function LegacyGroupingPickerModal({
 
               return (
                 <button
-                  className="reports-stocks-group-picker__option"
+                  className="reports-stocks-group-picker__option app-selection-surface"
+                  data-selected={isAssignedToTarget}
                   disabled={isAssignedToTarget}
                   key={option.value}
                   type="button"
                   onClick={() => addOption(option.value)}
                 >
+                  <span className="app-selection-surface__marker" aria-hidden="true" />
                   <span className="reports-stocks-group-picker__copy">
-                    <span className="reports-stocks-group-picker__group">{groupLabel}</span>
+                    {fieldLabelParts.length > 0 && <span className="reports-stocks-group-picker__group">{groupLabel}</span>}
                     <span className="reports-stocks-group-picker__label">{fieldLabel}</span>
                   </span>
                   {isAssignedToTarget ? (
@@ -2130,8 +2141,10 @@ function LegacyGroupingPickerModal({
             })}
           </div>
         ) : (
-          <div className="reports-stocks-group-picker__empty">
-            <Text c="gray.9" size="sm">Нічого не знайдено</Text>
+          <div className="reports-stocks-group-picker__empty" role="status">
+            <SearchX size={24} strokeWidth={1.5} aria-hidden="true" />
+            <Text size="sm">{t(normalizedPickerQuery ? 'Нічого не знайдено' : 'Немає доступних полів')}</Text>
+            {normalizedPickerQuery && <Button variant="default" size="xs" onClick={() => setPickerQuery('')}>{t('Очистити пошук')}</Button>}
           </div>
         )}
       </Stack>
@@ -2254,19 +2267,20 @@ function ReportSelectionsCard({
               const fieldLabel = getSelectionFieldSummary(selection, filterFieldOptions, t)
 
               return (
-                <div className="reports-stocks-selection-summary" key={getSelectionRenderKey(selection, index)}>
+                <div className="reports-stocks-selection-summary app-selection-surface" data-selected={hasFixedReportAxes(dataSource) ? selection.IsChecked !== false : selection.IsChecked} key={getSelectionRenderKey(selection, index)}>
+                  <span className="app-selection-surface__marker" aria-hidden="true" />
                   <Checkbox
                     aria-label={`${t('Умова відбору')} ${index + 1}`}
                     checked={hasFixedReportAxes(dataSource) ? selection.IsChecked !== false : selection.IsChecked}
                     onChange={() => onChange({ kind: 'replace', index, selection: { ...selection, IsChecked: hasFixedReportAxes(dataSource) ? selection.IsChecked === false : !selection.IsChecked } })}
                   />
                   <Text className="reports-stocks-selection-summary__copy">
-                    <span className="reports-stocks-selection-summary__field">№{index + 1}: {fieldLabel}</span>
+                    <span className="reports-stocks-selection-summary__field">{fieldLabel}</span>
                     <span className="reports-stocks-selection-summary__condition">
                       {selection.FilterCondition.Name}
                     </span>
                     <span className="reports-stocks-selection-summary__value">
-                      {getSelectionValuesSummary(selection, t)}
+                      <TableChip value={getSelectionValuesSummary(selection, t)} tone="document" />
                     </span>
                   </Text>
                   <Group className="reports-stocks-selection-summary__actions" gap={4} wrap="nowrap">

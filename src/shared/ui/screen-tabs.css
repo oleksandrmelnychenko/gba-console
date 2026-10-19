@@ -27,7 +27,7 @@
   color: var(--mantine-color-gray-8);
   cursor: pointer;
   display: inline-flex;
-  flex: 1 0 auto;
+  flex: 0 0 auto;
   justify-content: center;
   font-family: var(--font-mono);
   font-size: 12px;

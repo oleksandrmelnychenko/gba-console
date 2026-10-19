@@ -1021,12 +1021,12 @@ export function ProductIncomeDocumentDrawer({
               meta={<>
                 {document.FromDate ? <DocumentDetailChip tone="info" icon={<CalendarDays size={13} />}>{formatDateTime(document.FromDate)}</DocumentDetailChip> : null}
                 {row.type ? <DocumentDetailChip>{row.type}</DocumentDetailChip> : null}
-                <DocumentDetailChip>{t('Кількість')}: {formatAmount(row.qty)}</DocumentDetailChip>
+                {overviewKind !== 'saleReturn' && <DocumentDetailChip>{t('Кількість')}: {formatAmount(row.qty)}</DocumentDetailChip>}
               </>}
               metrics={
                 <>
                   <div className="document-detail-metric">
-                    <span>{t('Сума')}</span>
+                    <span>{t('Сума документа')}</span>
                     <strong>{formatMoney(row.amount)} <TableChip tone="source" value={row.currency} /></strong>
                   </div>
                 </>
@@ -1072,21 +1072,35 @@ export function ProductIncomeDocumentDrawer({
             </Group>
           }
         >
-          <div className="document-detail-columns">
-            <DocumentDetailSection title={t('Документ')}>
+          {overviewKind === 'saleReturn' ? (
+            <DocumentDetailSection title={t('Реквізити документа')}>
+              <IncomeMetadataChip label={t('Постачальник / клієнт')} tone="document" value={row.client} />
+              <IncomeMetadataChip label={t('Організація')} tone="product" value={row.organization} />
+              <IncomeMetadataChip label={t('Склад')} tone="storage" value={document.Storage?.Name} />
+              <DocumentDetailRow label={t('Відповідальний')} value={getEntityName(document.User)} />
               <IncomeMetadataChip label={t('Номер інвойсу')} tone="document" value={row.invNumber} />
               <DocumentDetailRow label={t('Дата інвойсу')} mono value={formatDateTime(row.invDate)} />
               <DocumentDetailRow label={t('Дата МД')} mono value={formatDateTime(row.specificationDate)} />
               {row.comment || document.Comment ? <DocumentDetailRow label={t('Коментар')} value={row.comment || document.Comment} wide /> : null}
             </DocumentDetailSection>
+          ) : (
+            <div className="document-detail-columns">
+              <DocumentDetailSection title={t('Документ')}>
+                <IncomeMetadataChip label={t('Номер інвойсу')} tone="document" value={row.invNumber} />
+                <DocumentDetailRow label={t('Дата інвойсу')} mono value={formatDateTime(row.invDate)} />
+                <DocumentDetailRow label={t('Дата МД')} mono value={formatDateTime(row.specificationDate)} />
+                {row.comment || document.Comment ? <DocumentDetailRow label={t('Коментар')} value={row.comment || document.Comment} wide /> : null}
+              </DocumentDetailSection>
 
-            <DocumentDetailSection title={t('Учасники та склад')}>
-              <IncomeMetadataChip label={t('Постачальник / клієнт')} tone="document" value={row.client} />
-              <IncomeMetadataChip label={t('Організація')} tone="product" value={row.organization} />
-              <IncomeMetadataChip label={t('Склад')} tone="storage" value={document.Storage?.Name} />
-              <DocumentDetailRow label={t('Відповідальний')} value={getEntityName(document.User)} />
-            </DocumentDetailSection>
-          </div>
+              <DocumentDetailSection title={t('Учасники та склад')}>
+                <IncomeMetadataChip label={t('Постачальник / клієнт')} tone="document" value={row.client} />
+                <IncomeMetadataChip label={t('Організація')} tone="product" value={row.organization} />
+                <IncomeMetadataChip label={t('Склад')} tone="storage" value={document.Storage?.Name} />
+                <DocumentDetailRow label={t('Відповідальний')} value={getEntityName(document.User)} />
+              </DocumentDetailSection>
+            </div>
+
+          )}
 
           {detailMode === 'view' && deferredOverviewNote && (
             <Alert color={CREATE_ACTION_COLOR} icon={<CircleAlert size={18} />} variant="light">
@@ -1110,27 +1124,30 @@ export function ProductIncomeDocumentDrawer({
           {detailMode === 'view' && overviewKind === 'saleReturn' && <SaleReturnOverview document={document} />}
 
           {detailMode === 'view' && (
-            <DocumentDetailSection stacked subtitle={String(getActiveProductIncomeItems(document).length)} title={t('Позиції документа')}>
-              {documentInfoError && (
-                <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-                  {documentInfoError}
-                </Alert>
-              )}
-              <DataTable
-                columns={itemColumns}
-                data={getActiveProductIncomeItems(document)}
-                defaultLayout={ITEMS_TABLE_DEFAULT_LAYOUT}
-                emptyText={t('Позицій не знайдено')}
-                getRowId={(item, index) => String(item.NetUid || item.Id || index)}
-                isLoading={isLoadingDocumentInfo}
-                layoutVersion="product-income-document-items-2"
-                loadingText={t('Завантаження позицій документа')}
-                maxHeight={320}
-                minWidth={720}
-                showToolbar={false}
-                tableId="product-income-document-items"
-              />
-            </DocumentDetailSection>
+            <details className="income-warehouse-details" open={overviewKind !== 'saleReturn'}>
+              <summary hidden={overviewKind !== 'saleReturn'}>{t('Позиції складського обліку')} · {getActiveProductIncomeItems(document).length}</summary>
+              <DocumentDetailSection stacked subtitle={String(getActiveProductIncomeItems(document).length)} title={t('Позиції документа')}>
+                {documentInfoError && (
+                  <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+                    {documentInfoError}
+                  </Alert>
+                )}
+                <DataTable
+                  columns={itemColumns}
+                  data={getActiveProductIncomeItems(document)}
+                  defaultLayout={ITEMS_TABLE_DEFAULT_LAYOUT}
+                  emptyText={t('Позицій не знайдено')}
+                  getRowId={(item, index) => String(item.NetUid || item.Id || index)}
+                  isLoading={isLoadingDocumentInfo}
+                  layoutVersion="product-income-document-items-2"
+                  loadingText={t('Завантаження позицій документа')}
+                  maxHeight={320}
+                  minWidth={720}
+                  showToolbar={false}
+                  tableId="product-income-document-items"
+                />
+              </DocumentDetailSection>
+            </details>
           )}
 
           {detailMode === 'remainings' && (
@@ -1309,15 +1326,12 @@ function SaleReturnOverview({ document }: { document: ProductIncomeDocument }) {
   return (
     <DocumentDetailSection
       stacked
-      subtitle={<>{displayValue(firstItem?.SaleReturn?.Number)} · {displayValue(getEntityName(firstItem?.SaleReturn?.Client))}</>}
       title={t('Прихідна накладна (повернення)')}
     >
 
-      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12} verticalSpacing={10}>
+      <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing={12} verticalSpacing={10}>
         <DocumentDetailRow label={t('Угода')} value={agreement?.Name} />
         <IncomeMetadataChip label={t('Валюта')} tone="source" value={currencyCode} />
-        <DocumentDetailRow label={t('Дата інвойсу')} mono value={formatDateTime(firstItem?.SaleReturn?.FromDate)} />
-        <DocumentDetailRow label={t('Коментар')} value={firstItem?.Comment || document.Comment} />
       </SimpleGrid>
 
       {items.length === 0 ? (
@@ -1338,10 +1352,10 @@ function SaleReturnOverview({ document }: { document: ProductIncomeDocument }) {
         />
       )}
 
-      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12} verticalSpacing={10}>
+      <SimpleGrid className="income-return-totals" cols={{ base: 1, sm: 2, md: 4 }} spacing={12} verticalSpacing={10}>
         <DocumentDetailRow label={t('Всього позицій')} mono value={String(items.length)} />
         <DocumentDetailRow label={t('Вся кількість')} mono value={formatAmount(document.TotalQty || sumRows(items, (item) => item.SaleReturnItem?.Qty ?? item.Qty))} />
-        <DocumentDetailRow label={t('Загальна сума')} mono value={formatMoney(totalAmount)} />
+        <DocumentDetailRow label={t('Загальна сума')} mono value={<Group component="span" gap={6}><span>{formatMoney(totalAmount)}</span><TableChip tone="source" value={currencyCode} /></Group>} />
         {isVat && <DocumentDetailRow label={t('ПДВ')} mono value={formatMoney(totalVat)} />}
       </SimpleGrid>
     </DocumentDetailSection>

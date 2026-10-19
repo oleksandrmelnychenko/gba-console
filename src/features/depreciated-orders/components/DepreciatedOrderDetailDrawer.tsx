@@ -8,7 +8,7 @@ import {
 } from '@mantine/core'
 import { CircleAlert, Download } from 'lucide-react'
 import { useMemo } from 'react'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppModal } from '../../../shared/ui/AppModal'
 import {
   DocumentDetailFlag,
   DocumentDetailChip,
@@ -75,21 +75,20 @@ export function DepreciatedOrderDetailDrawer({
   const totalQty = useMemo(() => items.reduce((sum, item) => sum + (Number(item.Qty) || 0), 0), [items])
 
   return (
-    <AppDrawer
+    <AppModal
       opened={Boolean(order)}
-      padding="lg"
-      position="right"
-      size="wide"
+      size="min(1240px, calc(100vw - 32px))"
       title={t('Акт списання')}
       onClose={onClose}
     >
       {order && (
         <DocumentDetailLayout
+          variant="inventory"
           summary={
             <DocumentDetailSummary
               eyebrow={t('Акт списання')}
               title={displayValue(order.Number)}
-              meta={<><DocumentDetailChip tone="info">{formatDate(order.FromDate)}</DocumentDetailChip>{order.Storage?.Name ? <DocumentDetailChip tone="storage">{order.Storage.Name}</DocumentDetailChip> : null}</>}
+              meta={<><DocumentDetailChip tone="info">{formatDateTime(order.FromDate)}</DocumentDetailChip>{order.Storage?.Name ? <DocumentDetailChip tone="storage">{order.Storage.Name}</DocumentDetailChip> : null}</>}
               metrics={
                 <>
                   <DocumentDetailMetric label={t('Позицій')} value={String(items.length)} />
@@ -120,18 +119,11 @@ export function DepreciatedOrderDetailDrawer({
             </Group>
           }
         >
-          <DocumentDetailSection subtitle={displayValue(order.Number)} title={t('Документ')}>
-            <DocumentDetailRow label={t('Від якої дати')} mono value={formatDateTime(order.FromDate)} />
-            <DocumentDetailRow label={t('Номер')} mono value={order.Number} />
-            {order.Comment && (
-              <DocumentDetailRow label={t('Коментар')} value={order.Comment} wide />
-            )}
-          </DocumentDetailSection>
-
-          <DocumentDetailSection title={t('Учасники та склад')}>
-            <DocumentDetailRow label={t('Організація')} value={order.Organization?.Name} wide />
-            <DocumentDetailRow label={t('Склад')} value={order.Storage?.Name} />
+          <DocumentDetailSection title={t('Реквізити документа')}>
+            <DocumentDetailRow label={t('Організація')} value={<TableChip tone="product" value={order.Organization?.Name} />} />
+            <DocumentDetailRow label={t('Склад')} value={<TableChip tone="storage" value={order.Storage?.Name} />} />
             <DocumentDetailRow label={t('Відповідальний')} value={getResponsibleName(order)} />
+            {order.Comment && <DocumentDetailRow label={t('Коментар')} value={order.Comment} />}
           </DocumentDetailSection>
 
           <DocumentDetailSection stacked subtitle={String(items.length)} title={t('Позиції')}>
@@ -168,7 +160,7 @@ export function DepreciatedOrderDetailDrawer({
           onClose={onCloseDownload}
         />
       )}
-    </AppDrawer>
+    </AppModal>
   )
 }
 
@@ -279,10 +271,6 @@ function formatPlacements(locations: DepreciatedOrderLocation[]): string {
 
 function formatDateTime(value?: Date | string): string {
   return formatValue(value, true)
-}
-
-function formatDate(value?: Date | string): string {
-  return formatValue(value, false)
 }
 
 function formatValue(value: Date | string | undefined, withTime: boolean): string {

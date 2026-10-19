@@ -11,11 +11,11 @@ export function DocumentDetailLayout({
   actions?: ReactNode
   children: ReactNode
   summary: ReactNode
-  variant?: 'default' | 'compact'
+  variant?: 'default' | 'compact' | 'inventory'
 }) {
   return (
-    <div className={`document-detail-drawer${variant === 'compact' ? ' document-detail-drawer--compact' : ''}`}>
-      {variant === 'compact' ? (summary || actions ? <div className="document-detail-top">
+    <div className={`document-detail-drawer${variant !== 'default' ? ' document-detail-drawer--compact' + (variant === 'inventory' ? ' inventory-document-detail' : '') : ''}`}>
+      {variant !== 'default' ? (summary || actions ? <div className="document-detail-top">
         {summary}
         {actions ? <div className="document-detail-top__actions">{actions}</div> : null}
       </div> : null) : <>{summary}{actions}</>}
@@ -105,7 +105,7 @@ export function DocumentDetailRow({
   label: string
   mono?: boolean
   tone?: 'danger'
-  value?: string | number | null
+  value?: ReactNode
   wide?: boolean
 }) {
   return (

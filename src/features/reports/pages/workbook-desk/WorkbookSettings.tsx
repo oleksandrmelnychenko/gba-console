@@ -1,8 +1,17 @@
 import { Button, Select, TextInput } from '@mantine/core'
-import { ChevronDown, ChevronRight, ChevronUp } from 'lucide-react'
+import { Building2, ChartNoAxesCombined, ChevronDown, ChevronRight, ChevronUp, ListFilter, ListTree, SlidersHorizontal } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import '../../../../shared/ui/selection-surface.css'
 import type { ReportPeriodPreset } from '../../data/bug1274WorkbookGuide'
+
+const SECTION_ICONS: Record<string, ReactNode> = {
+  organizations: <Building2 size={16} aria-hidden="true" />,
+  filters: <ListFilter size={16} aria-hidden="true" />,
+  measures: <ChartNoAxesCombined size={16} aria-hidden="true" />,
+  grouping: <ListTree size={16} aria-hidden="true" />,
+  advanced: <SlidersHorizontal size={16} aria-hidden="true" />,
+}
 
 export type WorkbookSettingsSection = {
   id: string
@@ -58,9 +67,11 @@ export function WorkbookSettings({ sections, advanced, disabled = false }: Props
     <div id="workbook-settings-body" className="workbook-settings__body" hidden={!expanded}>
       <nav className="workbook-settings__nav" aria-label={t('Розділи налаштувань звіту')}>
         {panes.map(section => <button key={section.id} type="button"
-          className="workbook-settings__nav-item" aria-current={activeSection === section.id ? 'true' : undefined}
+          className="app-selection-surface workbook-settings__nav-item" data-selected={activeSection === section.id} aria-current={activeSection === section.id ? 'true' : undefined}
           aria-controls={`workbook-settings-pane-${section.id}`} onClick={() => setSelectedSection(section.id)}>
-          {t(section.title)}
+          <span className="app-selection-surface__marker" aria-hidden="true" />
+          {SECTION_ICONS[section.id]}
+          <span className="workbook-settings__nav-label">{t(section.title)}</span>
           {activeSection === section.id ? <ChevronRight size={14} aria-hidden="true" /> : null}
         </button>)}
       </nav>
