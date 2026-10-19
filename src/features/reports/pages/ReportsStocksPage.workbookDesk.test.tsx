@@ -16,6 +16,7 @@ import { currentVparivanieDataset } from '../data/currentVparivanie.test-fixture
 import { previousKyivDay } from '../data/cashPeriod'
 import type { NativeReportPreview } from '../data/nativeReportPreview'
 import { deskPeriodText, workbookDefaultPeriod } from '../data/workbookDesk'
+import { reportWorkspaceDraftKey } from '../data/reportWorkspaceDraft'
 import { WORKBOOK_FILES } from '../testing/workbookFiles'
 import { findOpenedWorkbook } from '../testing/workbookDesk'
 import { ReportsStocksPage } from './ReportsStocksPage'
@@ -59,10 +60,14 @@ const workbookDataSources: Readonly<Record<string, number>> = {
   'Ведомость по денежным средствам.xls': 40, 'Взаємороз всі.xls': 41, 'ДБіторка.xls': 41,
 }
 
-async function openDayWorkbook() {
-  render(page())
+async function findOpenedDayWorkbook() {
   await findOpenedWorkbook('ВП.xls')
   await waitFor(() => expect((screen.getByRole('button', { name: 'Показати на екрані' }) as HTMLButtonElement).disabled).toBe(false))
+}
+
+async function openDayWorkbook() {
+  render(page())
+  await findOpenedDayWorkbook()
 }
 
 it('opens every workbook from the switcher on its default period', async () => {
@@ -178,20 +183,51 @@ it('keeps report details available in the collapsed header', async () => {
 it('opens reports immediately while an earlier draft remains an optional recovery action', async () => {
   auth.owner = 'background-draft-owner'
   const first = render(page())
-  await findOpenedWorkbook('ВП.xls')
-  await waitFor(() => expect((screen.getByRole('button', { name: 'Показати на екрані' }) as HTMLButtonElement).disabled).toBe(false))
+  await findOpenedDayWorkbook()
   fireEvent.change(dateInput('Від'), { target: { value: '2026-09-02' } })
   first.unmount()
   render(page())
-  await findOpenedWorkbook('ВП.xls')
-  await waitFor(() => expect((screen.getByRole('button', { name: 'Показати на екрані' }) as HTMLButtonElement).disabled).toBe(false))
+  await findOpenedDayWorkbook()
   expect(dateInput('Від').value).not.toBe('2026-09-02')
   expect(screen.queryByRole('region', { name: 'Незбережена чернетка' })).toBeNull()
   expect(screen.queryByRole('button', { name: 'Відновити чернетку' })).toBeNull()
   expect(previewStockReport).not.toHaveBeenCalled()
   fireEvent.click(screen.getByRole('button', { name: 'Чернетка' }))
-  fireEvent.click(await screen.findByRole('button', { name: 'Повернути попередні налаштування' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Відновити чернетку' }))
   await waitFor(() => expect(dateInput('Від').value).toBe('2026-09-02'))
   expect(screen.queryByRole('dialog', { name: 'Чернетка звіту' })).toBeNull()
+  expect(createStockReport).not.toHaveBeenCalled()
+})
+
+it('keeps an earlier draft untouched and recoverable across visits that only open the first report', async () => {
+  auth.owner = 'repeat-visit-owner'
+  const key = reportWorkspaceDraftKey('repeat-visit-owner')
+  const first = render(page())
+  await findOpenedDayWorkbook()
+  expect(sessionStorage.getItem(key)).toBeNull()
+  expect((screen.getByRole('button', { name: 'Чернетка' }) as HTMLButtonElement).disabled).toBe(true)
+  fireEvent.change(dateInput('Від'), { target: { value: '2026-09-02' } })
+  await waitFor(() => expect(sessionStorage.getItem(key)).not.toBeNull())
+  const stored = sessionStorage.getItem(key)
+  first.unmount()
+  for (const visit of [1, 2, 3]) {
+    const view = render(page())
+    await findOpenedDayWorkbook()
+    expect(dateInput('Від').value).not.toBe('2026-09-02')
+    expect(sessionStorage.getItem(key)).toBe(stored)
+    fireEvent.click(screen.getByRole('button', { name: 'Чернетка' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Чернетка звіту' })
+    expect(within(dialog).getByText('Налаштування з попереднього відкриття.')).toBeTruthy()
+    expect(within(dialog).getByRole('button', { name: 'Відкинути чернетку' })).toBeTruthy()
+    const restore = within(dialog).getByRole('button', { name: 'Відновити чернетку' }) as HTMLButtonElement
+    expect(restore.disabled).toBe(false)
+    if (visit < 3) {
+      view.unmount()
+      continue
+    }
+    fireEvent.click(restore)
+    await waitFor(() => expect(dateInput('Від').value).toBe('2026-09-02'))
+  }
+  expect(previewStockReport).not.toHaveBeenCalled()
   expect(createStockReport).not.toHaveBeenCalled()
 })

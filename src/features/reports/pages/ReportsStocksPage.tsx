@@ -409,6 +409,11 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const [catalogueNotice, setCatalogueNotice] = useState<{ text: string; failed: boolean; title?: string; warning?: string } | null>(null)
   const [activeWorkbook, setActiveWorkbook] = useState<string | null>(null)
   const [workbookResolving, setWorkbookResolving] = useState(false)
+  const [initialWorkbook, setInitialWorkbook] = useState<'pending' | 'opening' | 'settled'>('pending')
+  if (initialWorkbook === 'opening' && !workbookResolving) setInitialWorkbook('settled')
+  const workbookLaunches = useMemo(() => availableBug1274WorkbookLaunches(datasetStorage.datasets), [datasetStorage.datasets])
+  const initialWorkbookLaunch = initialWorkbook === 'pending' && bug1274Only && canGenerateReport && datasetHidden && !activeWorkbook
+    && datasetStorage.loaded && !datasetStorage.error ? workbookLaunches[0] ?? null : null
   const [deskTemplatesOpened, setDeskTemplatesOpened] = useState(false)
   const [shownReport, setShownReport] = useState<string | null>(null)
   const workbookLaunchToken = useRef(0)
@@ -479,7 +484,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     name: templateName, data: templateBody, measurements: selectedMeasurements, activeTemplate, previousPeriod,
   }), [activeTemplate, previousPeriod, selectedMeasurements, templateBody, templateName])
   const workspaceDraft = useReportWorkspaceDraft({ ownerId, enabled: canGenerateReport,
-    ready: datasetStorage.loaded && !datasetStorage.error, snapshot: draftSnapshot, backgroundRecovery: bug1274Only })
+    ready: datasetStorage.loaded && !datasetStorage.error && !initialWorkbookLaunch && initialWorkbook !== 'opening',
+    snapshot: draftSnapshot, backgroundRecovery: bug1274Only })
   const configurationError = (consoleScope && !BUG_1274_ACTIVE_DATA_SOURCES.has(dataSource) ? BUG_1274_DISABLED_MESSAGE : null) ?? datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset, 'workspace'))
     ?? (requiresValuationAgreement(dataSource) && valuation.agreement?.Id !== valuationClientAgreementId ? 'Підтвердіть доступний договір оцінки.' : null)
   const checkedMeasurements = reportBody.sorted.Measurements.length
@@ -917,15 +923,16 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     if (preset) groupingOrdering.applyPreset(preset, next => applyConfiguration(next, dataset))
   }
 
-  const workbookLaunches = useMemo(() => availableBug1274WorkbookLaunches(datasetStorage.datasets), [datasetStorage.datasets])
   const initialWorkbookOpened = useRef(false)
-  const openInitialWorkbook = useEffectEvent((item: WorkbookLaunch) => openWorkbook(item))
+  const openInitialWorkbook = useEffectEvent((item: WorkbookLaunch) => {
+    setInitialWorkbook('opening')
+    openWorkbook(item)
+  })
   useEffect(() => {
-    if (!bug1274Only || !canGenerateReport || !datasetHidden || activeWorkbook || initialWorkbookOpened.current
-      || !datasetStorage.loaded || datasetStorage.error || !workbookLaunches.length) return
+    if (!initialWorkbookLaunch || initialWorkbookOpened.current) return
     initialWorkbookOpened.current = true
-    openInitialWorkbook(workbookLaunches[0])
-  }, [activeWorkbook, bug1274Only, canGenerateReport, datasetHidden, datasetStorage.error, datasetStorage.loaded, workbookLaunches])
+    openInitialWorkbook(initialWorkbookLaunch)
+  }, [initialWorkbookLaunch])
 
   const mountsDialog = (open: boolean) => !consoleScope || open
   const analysisRules = bug1274Only ? supportedAnalysisRules(templateBody, dataset, settlementDataset)
