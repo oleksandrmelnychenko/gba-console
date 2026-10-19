@@ -17,6 +17,9 @@ RUN npm run build
 FROM nginx:alpine AS runtime
 ENV API_PROXY_TARGET=http://data-concord:35981
 ENV API_HISTORY_PROXY_TARGET=http://data-analytics:35982
+ENV API_QA_PROXY_TARGET=http://data-concord-qa:35981
+ENV API_QA_HISTORY_PROXY_TARGET=http://data-analytics-qa:35982
+ENV GBA_QA_ENABLED=false
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/templates/default.conf.template
 EXPOSE 80

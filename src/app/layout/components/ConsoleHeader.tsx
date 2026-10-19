@@ -7,6 +7,7 @@ import { HeaderActionBar } from '../../../features/header-actions/components/Hea
 import gbaLogo from '../../../assets/brand/gba-logo.svg'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { ConsoleNav } from './ConsoleNav'
+import { DataEnvironmentSwitch } from './DataEnvironmentSwitch'
 import { NotificationCenter } from './NotificationCenter'
 
 const SIDE_SELECTORS = ['.console-header-brand', '.console-header-date', '.console-header-actions', '.console-header-user-panel'] as const
@@ -102,6 +103,7 @@ export function ConsoleHeader() {
         </Box>
 
         <Group gap="xs" wrap="nowrap" className="console-header-user-panel">
+          <DataEnvironmentSwitch />
           <Text className="console-header-user" visibleFrom="xs" size="sm" fw={600}>
             {displayName}
           </Text>
