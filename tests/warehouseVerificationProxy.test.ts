@@ -21,6 +21,13 @@ describe('warehouse verification proxy routing', () => {
       expect(viteTarget(path)).toContain('target: apiProxyTarget,')
     }
   })
+  it.each(['registry?from=2026-10-19T00%3A00%3A00.000&limit=20&offset=0&storageIds=2962', 'document/export'])('routes product history %s to the main API', (action) => {
+    for (const language of ['uk', 'en']) {
+      const path = `/api/v1/${language}/history/order/item/product-history/${action}`
+      expect(nginxTarget(path)).toContain('proxy_pass $api_proxy_upstream;')
+      expect(viteTarget(path)).toContain('target: apiProxyTarget,')
+    }
+  })
   it.each(['/history/order/item/get', '/report/revenue'])('keeps analytics routing for %s', (suffix) => {
     expect(nginxTarget(`/api/v1/uk${suffix}`)).toContain('proxy_pass $api_history_proxy_upstream;')
     expect(viteTarget(`/api/v1/uk${suffix}`)).toContain('VITE_DEV_HISTORY_PROXY_TARGET')

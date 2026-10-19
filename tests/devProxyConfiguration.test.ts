@@ -33,7 +33,7 @@ describe('local development proxy configuration', () => {
     expect(targets['/Data']).toBe('http://localhost:35981')
     expect(targets['/Images']).toBe('http://localhost:35981')
     expect(targets['^/api/v1/[^/]+/(history|report)']).toBe('http://localhost:35982')
-    expect(targets['^/api/v1/[^/]+/history/order/item/warehouse-ukraine/verification/']).toBe('http://localhost:35981')
+    expect(targets['^/api/v1/[^/]+/history/order/item/(warehouse-ukraine/verification|product-history)/']).toBe('http://localhost:35981')
   })
 
   it('uses development hosts when no overrides are configured', async () => {

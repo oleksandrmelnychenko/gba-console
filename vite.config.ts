@@ -105,7 +105,7 @@ export default defineConfig(({ mode }) => {
     },
     proxy: {
       // Permission-scoped warehouse verification endpoints belong to the main API.
-      '^/api/v1/[^/]+/history/order/item/warehouse-ukraine/verification/': {
+      '^/api/v1/[^/]+/history/order/item/(warehouse-ukraine/verification|product-history)/': {
         target: apiProxyTarget,
         changeOrigin: true,
         xfwd: true,
