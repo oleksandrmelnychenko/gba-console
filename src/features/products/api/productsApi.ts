@@ -469,7 +469,7 @@ export async function getProductSiblings(
   return normalizeProductSiblingGroup(result, productNetId)
 }
 
-const PRODUCT_SIBLING_COUNTS_BATCH_SIZE = 200
+const PRODUCT_SIBLING_COUNTS_BATCH_SIZE = 100
 
 export async function getProductSiblingCounts(
   productNetIds: string[],

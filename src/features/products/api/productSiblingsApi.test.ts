@@ -171,20 +171,20 @@ describe('product sibling cards API', () => {
     expect(counts).toEqual([{ ProductNetId: currentNetId, SiblingCount: 1 }])
   })
 
-  it('splits sibling count requests at the 200-product server limit', async () => {
-    const productNetIds = Array.from({ length: 201 }, (_, index) => `product-${index}`)
+  it('splits sibling count requests at 100 products to stay under the request-line limit', async () => {
+    const productNetIds = Array.from({ length: 101 }, (_, index) => `product-${index}`)
     apiRequestMock
       .mockResolvedValueOnce([{ ProductNetId: 'product-0', SiblingCount: 1 }])
-      .mockResolvedValueOnce([{ ProductNetId: 'product-200', SiblingCount: 2 }])
+      .mockResolvedValueOnce([{ ProductNetId: 'product-100', SiblingCount: 2 }])
 
     const counts = await getProductSiblingCounts(productNetIds)
 
     expect(apiRequestMock).toHaveBeenCalledTimes(2)
-    expect((apiRequestMock.mock.calls[0][1]?.query as { productNetIds: string[] }).productNetIds).toHaveLength(200)
-    expect((apiRequestMock.mock.calls[1][1]?.query as { productNetIds: string[] }).productNetIds).toEqual(['product-200'])
+    expect((apiRequestMock.mock.calls[0][1]?.query as { productNetIds: string[] }).productNetIds).toHaveLength(100)
+    expect((apiRequestMock.mock.calls[1][1]?.query as { productNetIds: string[] }).productNetIds).toEqual(['product-100'])
     expect(counts).toEqual([
       { ProductNetId: 'product-0', SiblingCount: 1 },
-      { ProductNetId: 'product-200', SiblingCount: 2 },
+      { ProductNetId: 'product-100', SiblingCount: 2 },
     ])
   })
 
