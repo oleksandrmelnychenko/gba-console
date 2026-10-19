@@ -63,6 +63,7 @@ const EXPORT_COLUMNS: ProtocolExportColumn[] = [
   { Number: 7, TableName: 'DeliveryProductProtocol', ColumnName: 'Comment', Translate: 'Коментар' },
 ]
 
+const invoicePluralRules = new Intl.PluralRules('uk-UA')
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short', timeStyle: 'short' })
 
@@ -790,10 +791,12 @@ function ProtocolSuppliersCell({ protocol }: { protocol: DeliveryProductProtocol
   const { t } = useI18n()
   const suppliers = getSupplierNames(protocol)
   const invoiceCount = protocol.SupplyInvoices?.length || 0
+  const invoicePlural = invoicePluralRules.select(invoiceCount)
+  const invoiceLabel = invoicePlural === 'one' ? t('інвойс') : invoicePlural === 'few' ? t('інвойси') : t('інвойсів')
   const title = displayValue(suppliers[0])
   const subtitle = suppliers.length > 1
     ? `${suppliers.length} ${t('постачальники')}`
-    : `${invoiceCount} ${t('інвойсів')}`
+    : `${invoiceCount} ${invoiceLabel}`
   const tooltip = suppliers.length > 0 ? suppliers.join('\n') : compactStrings([title, subtitle]).join('\n')
 
   return (

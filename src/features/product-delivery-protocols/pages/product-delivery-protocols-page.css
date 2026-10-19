@@ -223,11 +223,11 @@
 .product-delivery-protocols-main-subtitle,
 .product-delivery-protocols-two-line-cell > small,
 .product-delivery-protocols-date-cell > small {
-  color: var(--mantine-color-gray-6);
-  font-size: 11px;
+  color: var(--mantine-color-gray-7);
+  font-size: 12px;
   font-weight: 500;
-  line-height: 1.2;
-  margin-top: 3px;
+  line-height: 1.35;
+  margin-top: 4px;
 }
 
 /* Date value in the subtitle reads in mono. */
@@ -237,8 +237,8 @@
 }
 
 .product-delivery-protocols-main-subtitle strong {
-  color: var(--mantine-color-gray-7);
-  font-weight: 600;
+  color: var(--mantine-color-gray-8);
+  font-weight: inherit;
 }
 
 .product-delivery-protocols-state-cell {

@@ -965,7 +965,7 @@ function ProductDeliveryProtocolSpecificationPageContent() {
             {t('Завантаження')}
           </Text>
         ) : model.protocol ? (
-          <Stack className="product-specification-content" gap={10}>
+          <Stack className="protocol-specification-content" gap={10}>
             {specificationUnavailableMessage && (
               <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
                 {specificationUnavailableMessage}

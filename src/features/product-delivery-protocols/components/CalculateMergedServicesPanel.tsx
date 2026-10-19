@@ -1,5 +1,8 @@
-import { Alert, Badge, Button, Checkbox, Group, SegmentedControl, Select, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Checkbox, Group, SegmentedControl, Select, Stack, Text, TextInput } from '@mantine/core'
 import { useMemo } from 'react'
+import { Calculator } from 'lucide-react'
+import { TableChip } from '../../../shared/ui/TableChip'
+import '../../../shared/ui/selection-surface.css'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -7,7 +10,6 @@ import type {
   CalculateMergedServiceInvoiceItem,
   MergedService,
   SupplyExtraChargeType,
-  SupplyInvoice,
 } from '../detailTypes'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import './calculate-merged-services-panel.css'
@@ -56,9 +58,9 @@ function CalculateMergedServicesPanelContent({
   const [error, setError] = useValueState<string | null>(null)
 
   const typeOptions = [
-    { label: t('Розраховано по ціні'), value: '0' },
-    { label: t('Розраховано по вазі'), value: '1' },
-    { label: t("Розраховано по об'єму"), value: '2' },
+    { label: t('За вартістю'), value: '0' },
+    { label: t('За вагою'), value: '1' },
+    { label: t("За об'ємом"), value: '2' },
   ]
   const modeOptions = [
     { label: t('Розрахувати автоматично'), value: 'auto' },
@@ -104,14 +106,20 @@ function CalculateMergedServicesPanelContent({
       closeOnClickOutside={!isSaving}
       opened={opened}
       size="min(980px, calc(100vw - 32px))"
-      title={(
-        <div className="calculate-merged-services-title">
-          <span className="calculate-merged-services-title-label">{t('Розрахувати')}</span>
+      className="calculate-merged-services-dialog"
+      title={t('Розрахувати')}
+      onClose={() => {
+        if (!isSaving) {
+          onClose()
+        }
+      }}
+    >
+      <Stack className="calculate-merged-services-modal" gap={12}>
           <dl aria-label={t('Інформація про витрати')} className="calculate-merged-services-summary">
             <div className="calculate-merged-services-summary-item is-supplier">
               <dt>{t('Постачальник послуг')}</dt>
               <dd title={service.SupplyOrganization?.Name || undefined}>
-                {service.SupplyOrganization?.Name || '-'}
+                <TableChip tone="document" value={service.SupplyOrganization?.Name || '-'} />
               </dd>
             </div>
             <div className="calculate-merged-services-summary-item">
@@ -124,18 +132,9 @@ function CalculateMergedServicesPanelContent({
             </div>
             <div className="calculate-merged-services-summary-item is-currency">
               <dt>{t('Валюта витрат')}</dt>
-              <dd>{currencyCode || '-'}</dd>
+              <dd><TableChip tone="source" value={currencyCode || '-'} /></dd>
             </div>
           </dl>
-        </div>
-      )}
-      onClose={() => {
-        if (!isSaving) {
-          onClose()
-        }
-      }}
-    >
-      <Stack className="calculate-merged-services-modal" gap={12}>
         {error && (
           <Alert color="red" variant="light">
             {error}
@@ -159,19 +158,12 @@ function CalculateMergedServicesPanelContent({
                 className="calculate-merged-services-control"
                 data={typeOptions}
                 disabled={isSaving}
-                label={t('Тип')}
+                label={t('Розподіл витрат')}
                 value={String(extraChargeType)}
                 onChange={(value) => setExtraChargeType((Number(value) || 0) as SupplyExtraChargeType)}
               />
             )}
-            {currencyCode && (
-              <div className="calculate-merged-services-currency">
-                <Text component="span">{t('Валюта')}</Text>
-                <Badge className="app-role-pill is-gray" size="sm" variant="light">
-                  {currencyCode}
-                </Badge>
-              </div>
-            )}
+
           </div>
         </section>
 
@@ -179,23 +171,21 @@ function CalculateMergedServicesPanelContent({
           {items.map((item, index) => (
             <div
               key={item.entity.NetUid || index}
-              className={`calculate-service-invoice-card${item.isSelected || isAuto ? ' is-selected' : ''}`}
+              className="calculate-service-invoice-card app-selection-surface"
+              data-selected={item.isSelected || isAuto}
             >
-              <Group align="center" className="calculate-service-invoice-head" gap={8} wrap="nowrap">
-                <Badge className="app-role-pill calculate-service-invoice-number is-document" size="sm" variant="light">
-                  № {item.number || '-'}
-                </Badge>
-                <Text
-                  className="calculate-service-invoice-supplier"
-                  title={item.entity.SupplyInvoice?.SupplyOrder?.Client?.FullName || '-'}
-                >
-                  {item.entity.SupplyInvoice?.SupplyOrder?.Client?.FullName || '-'}
-                </Text>
+              <span className="app-selection-surface__marker" aria-hidden="true" />
+              <Group align="center" className="calculate-service-invoice-head" gap={8} wrap="wrap">
+                <TableChip tone="document" value={`№ ${item.number || '-'}`} />
+                <TableChip tone="document" value={item.entity.SupplyInvoice?.SupplyOrder?.Client?.FullName || '-'} />
               </Group>
 
               <div className="calculate-service-invoice-meta">
                 <Text component="span">{t('Курс')}</Text>
-                <strong>{formatInvoiceRate(item.entity.SupplyInvoice, currencyCode)}</strong>
+                <span className="calculate-service-invoice-rates">
+                  {Boolean(item.entity.SupplyInvoice?.ExchangeRate) && (currencyCode !== 'EUR' || item.entity.SupplyInvoice?.ExchangeRate !== item.entity.SupplyInvoice?.ExchangeRateEurToUah) && <span>{item.entity.SupplyInvoice?.ExchangeRate} <TableChip tone="source" value={currencyCode || '-'} /></span>}
+                  <span>{item.entity.SupplyInvoice?.ExchangeRateEurToUah || 0} <TableChip tone="source" value="EUR" /></span>
+                </span>
               </div>
 
               <div className="calculate-service-invoice-fields">
@@ -210,7 +200,8 @@ function CalculateMergedServicesPanelContent({
                 )}
                 <TextInput
                   className="calculate-service-invoice-control is-number"
-                  disabled={isSaving || !item.isSelected || isAuto}
+                  disabled={isSaving || (!isAuto && !item.isSelected)}
+                  readOnly={isAuto}
                   label={t('Вартість')}
                   type="number"
                   value={item.value}
@@ -218,7 +209,8 @@ function CalculateMergedServicesPanelContent({
                 />
                 <TextInput
                   className="calculate-service-invoice-control is-number"
-                  disabled={isSaving || !item.isSelected || isAuto}
+                  disabled={isSaving || (!isAuto && !item.isSelected)}
+                  readOnly={isAuto}
                   label={`${t('Вартість')} (${t('Бух.')})`}
                   type="number"
                   value={item.accountingValue}
@@ -229,11 +221,11 @@ function CalculateMergedServicesPanelContent({
           ))}
         </Stack>
 
-        <Group className="calculate-merged-services-footer" justify="flex-end" gap={8}>
+        <Group className="app-modal-footer calculate-merged-services-footer" justify="flex-end" gap={8}>
           <Button disabled={isSaving} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
-          <Button color={CREATE_ACTION_COLOR} disabled={isSaving} loading={isSaving} onClick={handleSubmit}>
+          <Button leftSection={<Calculator size={16} />} color={CREATE_ACTION_COLOR} disabled={isSaving} loading={isSaving} onClick={handleSubmit}>
             {t('Розрахувати')}
           </Button>
         </Group>
@@ -266,15 +258,4 @@ function formatExpenseAmount(value: number | null | undefined): string {
   }
 
   return value.toLocaleString('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-
-function formatInvoiceRate(invoice: SupplyInvoice | null | undefined, currencyCode: string): string {
-  const exchangeRate = invoice?.ExchangeRate || 0
-  const exchangeRateEurToUah = invoice?.ExchangeRateEurToUah || 0
-
-  if (exchangeRate !== 0) {
-    return `${exchangeRate} ${currencyCode}; ${exchangeRateEurToUah} EUR`
-  }
-
-  return `${exchangeRateEurToUah} EUR`
 }

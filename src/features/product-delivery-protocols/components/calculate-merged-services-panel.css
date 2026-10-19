@@ -1,259 +1,92 @@
-.calculate-merged-services-title {
-  align-items: center;
-  display: grid;
-  gap: 16px;
-  grid-template-columns: auto minmax(0, 1fr);
-  width: 100%;
+.calculate-merged-services-dialog .mantine-Modal-body {
+  background: var(--mantine-color-gray-0);
 }
 
-.calculate-merged-services-title-label {
-  white-space: nowrap;
-}
-
-.calculate-merged-services-summary {
-  align-items: center;
-  display: grid;
-  gap: 12px;
-  grid-template-columns: minmax(180px, 1.8fr) minmax(90px, 0.7fr) minmax(105px, 0.8fr) minmax(80px, 0.5fr);
-  margin: 0;
-  min-width: 0;
-}
-
-.calculate-merged-services-summary-item {
-  margin: 0;
-  min-width: 0;
-}
-
-.calculate-merged-services-summary-item dt {
-  color: var(--mantine-color-gray-6);
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 1.2;
-}
-
-.calculate-merged-services-summary-item dd {
-  color: var(--mantine-color-gray-9);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  font-weight: 650;
-  line-height: 1.25;
-  margin: 2px 0 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.calculate-merged-services-modal {
-  max-width: 100%;
-  padding-bottom: 0;
-  width: 100%;
-}
-
+.calculate-merged-services-summary,
 .calculate-merged-services-section,
 .calculate-service-invoice-card {
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 12px;
-}
-
-.calculate-merged-services-section .app-section-title {
-  line-height: 1.2;
-}
-
-.calculate-merged-services-settings {
-  align-items: end;
-  display: grid;
-  gap: 10px;
-  grid-template-columns: minmax(260px, 1.1fr) minmax(220px, 0.8fr) auto;
-  margin-top: 10px;
-}
-
-.calculate-merged-services-control {
   min-width: 0;
 }
 
-.calculate-merged-services-control .mantine-InputBase-label,
-.calculate-service-invoice-control .mantine-InputBase-label,
-.calculate-service-invoice-check .mantine-Checkbox-label {
-  color: var(--mantine-color-gray-9);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0;
+.calculate-merged-services-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) repeat(2, minmax(0, 1fr)) minmax(0, .6fr);
+  gap: 12px;
+  margin: 0;
 }
-
-.calculate-merged-services-control .mantine-Input-input,
-.calculate-service-invoice-control .mantine-Input-input {
-  border-color: var(--mantine-color-gray-2);
-  border-radius: 8px;
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  letter-spacing: 0;
+.calculate-merged-services-summary-item { min-width: 0; }
+.calculate-merged-services-summary dt,
+.calculate-service-invoice-meta > .mantine-Text-root {
+  color: var(--mantine-color-gray-7);
+  font: 500 12px/1.4 var(--font-sans);
+}
+.calculate-merged-services-summary dd {
+  margin: 5px 0 0;
+  color: var(--mantine-color-gray-9);
+  font: 500 13px/1.4 var(--font-mono);
+}
+.calculate-merged-services-dialog .app-table-chip,
+.calculate-merged-services-dialog .app-table-chip-label {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.calculate-merged-services-section .app-section-title { font: 600 14px/1.4 var(--font-mono); }
+.calculate-merged-services-settings {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: end;
+  margin-top: 10px;
+}
+.calculate-merged-services-dialog :is(.mantine-InputWrapper-label, .mantine-InputBase-label, .mantine-Checkbox-label) {
+  font: 500 12px/1.4 var(--font-sans);
+  color: var(--mantine-color-gray-9);
+}
+.calculate-merged-services-dialog .mantine-Input-input {
+  font: 400 13px/1.4 var(--font-mono);
   min-height: 36px;
 }
-
 .calculate-merged-services-mode {
   background: var(--mantine-color-gray-0);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
   padding: 3px;
+  min-width: 0;
 }
-
 .calculate-merged-services-mode .mantine-SegmentedControl-label {
-  color: var(--mantine-color-gray-8);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 650;
-  letter-spacing: 0;
+  font: 500 12px/1.4 var(--font-mono);
+  white-space: normal;
 }
-
-.calculate-merged-services-currency {
-  align-items: center;
-  align-self: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
-  display: flex;
-  gap: 8px;
-  min-height: 36px;
-  padding: 0 10px;
+.calculate-merged-services-mode .mantine-SegmentedControl-indicator {
+  background: var(--brand-orange);
+  box-shadow: none;
 }
-
-.calculate-merged-services-currency .mantine-Text-root {
-  color: var(--mantine-color-gray-6);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0;
-}
-
-.calculate-service-invoice-card {
-  transition:
-    border-color 120ms ease,
-    background-color 120ms ease;
-}
-
-.calculate-service-invoice-card.is-selected {
-  background: var(--mantine-color-orange-0);
-  border-color: var(--mantine-color-orange-3);
-}
-
-.calculate-service-invoice-head {
-  min-width: 0;
-}
-
-.calculate-service-invoice-number {
-  flex: 0 0 auto;
-}
-
-.calculate-service-invoice-supplier {
-  color: var(--mantine-color-gray-9);
-  flex: 1;
-  font-size: 13px;
-  font-weight: 650;
-  line-height: 1.25;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.calculate-service-invoice-meta {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 7px;
-  display: grid;
-  gap: 8px;
-  grid-template-columns: auto minmax(0, 1fr);
-  margin-top: 8px;
-  padding: 7px 9px;
-}
-
-.calculate-service-invoice-meta .mantine-Text-root {
-  color: var(--mantine-color-gray-6);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0;
-}
-
-.calculate-service-invoice-meta strong {
-  color: var(--mantine-color-gray-9);
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  font-weight: 650;
-  letter-spacing: 0;
-  overflow: hidden;
-  text-align: right;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
+.calculate-merged-services-mode .mantine-SegmentedControl-label[data-active] { color: white; }
+.calculate-service-invoice-head { min-width: 0; }
+.calculate-service-invoice-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+.calculate-service-invoice-rates,
+.calculate-service-invoice-rates > span { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.calculate-service-invoice-rates { gap: 16px; font: 500 13px/1.4 var(--font-mono); }
 .calculate-service-invoice-fields {
-  align-items: end;
   display: grid;
-  gap: 10px;
-  grid-template-columns: minmax(110px, 0.45fr) minmax(170px, 1fr) minmax(170px, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+  align-items: end;
   margin-top: 10px;
 }
-
-.calculate-service-invoice-fields .calculate-service-invoice-control:first-child {
-  grid-column-start: 2;
+.calculate-service-invoice-check { grid-column: 1 / -1; }
+.calculate-service-invoice-control { min-width: 0; }
+.calculate-service-invoice-control input { text-align: right; font-variant-numeric: tabular-nums; }
+.calculate-service-invoice-control input[readonly] { background: var(--mantine-color-gray-0); color: var(--mantine-color-gray-9); }
+.calculate-merged-services-dialog .calculate-merged-services-footer { margin-top: 0; }
+@media (max-width: 650px) {
+  .calculate-merged-services-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .calculate-merged-services-settings { grid-template-columns: minmax(0, 1fr); }
 }
-
-.calculate-service-invoice-control {
-  min-width: 0;
-}
-
-.calculate-service-invoice-control.is-number .mantine-Input-input {
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-
-.calculate-service-invoice-check {
-  padding-bottom: 8px;
-}
-
-.calculate-service-invoice-check .mantine-Checkbox-input:checked {
-  background-color: var(--brand-orange);
-  border-color: var(--brand-orange);
-}
-
-.calculate-merged-services-footer {
-  background: var(--mantine-color-white);
-  border-top: 1px solid var(--mantine-color-gray-2);
-  bottom: -1px;
-  margin: 2px -12px 0;
-  padding: 12px 12px 0;
-  position: sticky;
-  z-index: 2;
-}
-
-.calculate-merged-services-footer .mantine-Button-root {
-  font-family: var(--font-mono);
-  font-weight: 600;
-  letter-spacing: 0;
-}
-
-@media (max-width: 820px) {
-  .calculate-merged-services-title {
-    align-items: start;
-    gap: 8px;
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .calculate-merged-services-summary {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .calculate-merged-services-settings,
-  .calculate-service-invoice-fields {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .calculate-service-invoice-fields .calculate-service-invoice-control:first-child {
-    grid-column-start: auto;
-  }
+@media (max-width: 420px) {
+  .calculate-service-invoice-fields { grid-template-columns: minmax(0, 1fr); }
 }

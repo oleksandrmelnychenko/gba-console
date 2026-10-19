@@ -3,7 +3,7 @@
   flex-direction: column;
 }
 
-.product-specification-drawer :is(.product-specification-sheet, .product-specification-content) {
+.product-specification-drawer :is(.product-specification-sheet, .protocol-specification-content) {
   flex: 1;
   min-height: 0;
   min-width: 0;
@@ -90,9 +90,9 @@
 }
 
 .product-specification-drawer .product-specification-documents-card { flex-shrink: 0; padding: 10px 12px; }
-.product-specification-tabs { display: flex; flex-wrap: wrap; gap: 8px 20px; min-width: 0; }
-.product-specification-tab-row { display: flex; flex-direction: column; gap: 6px; min-width: 0; max-width: 100%; }
-.product-specification-tab-list { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.product-specification-tabs { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px 20px; min-width: 0; }
+.product-specification-tab-row { display: flex; align-items: center; flex-direction: column; gap: 6px; min-width: 0; max-width: 100%; }
+.product-specification-tab-list { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; min-width: 0; }
 .product-specification-tab {
   appearance: none;
   display: flex;

@@ -62,7 +62,6 @@
   border-color: var(--mantine-color-gray-2);
   border-radius: 8px;
   color: var(--mantine-color-gray-8);
-  font-family: inherit;
   height: var(--app-filter-control-height);
   line-height: 1.2;
   min-height: var(--app-filter-control-height);
@@ -120,50 +119,26 @@
   min-height: 0;
 }
 
-.product-specification-code-cell,
-.product-specification-plain-cell,
+/* Inherit table density and medium weight from the shared DataTable. */
+.product-specification-name-cell,
+.product-specification-responsible-cell,
+.product-specification-percent-cell,
+.product-specification-amount-cell {
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
 .product-specification-amount-cell,
 .product-specification-percent-cell {
   font-family: var(--font-mono);
   letter-spacing: 0;
-}
-
-.product-specification-code-cell {
-  color: var(--mantine-color-gray-9);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.product-specification-plain-cell {
-  color: var(--mantine-color-gray-7);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.product-specification-name-cell {
-  color: var(--mantine-color-gray-9);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.25;
-}
-
-.product-specification-percent-cell {
-  color: var(--mantine-color-gray-9);
-  font-size: 13px;
-  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .product-specification-amount-cell {
-  color: var(--mantine-color-gray-9);
-  font-size: 13px;
-  font-weight: 700;
   text-align: right;
-}
-
-.product-specification-responsible-cell {
-  color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
-  font-weight: 600;
 }
 
 .product-specification-codes-upload-stats {
