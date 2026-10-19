@@ -308,6 +308,36 @@ describe('Payment online shop canonical permission guards', () => {
     expect(screen.getByTestId('location').textContent).toBe('/accounting/payment-online-shop')
   })
 
+  it('applies the sale date range as soon as a date is picked', async () => {
+    allowedPermissions.add(PermissionKeys.SystemPages.OnlineShopPayment.View)
+    renderPage()
+    await waitFor(() => expect(getPaymentShopItemsPage).toHaveBeenCalledTimes(1))
+
+    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-10-01' } })
+    await waitFor(() => expect(getPaymentShopItemsPage).toHaveBeenLastCalledWith(
+      expect.objectContaining({ offset: 0, saleDateFrom: '2026-10-01', saleDateTo: '' }),
+    ))
+
+    fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-10-19' } })
+    await waitFor(() => expect(getPaymentShopItemsPage).toHaveBeenLastCalledWith(
+      expect.objectContaining({ saleDateFrom: '2026-10-01', saleDateTo: '2026-10-19' }),
+    ))
+  })
+
+  it('does not query a reversed date range', async () => {
+    allowedPermissions.add(PermissionKeys.SystemPages.OnlineShopPayment.View)
+    renderPage()
+    fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-10-01' } })
+    await waitFor(() => expect(getPaymentShopItemsPage).toHaveBeenLastCalledWith(
+      expect.objectContaining({ saleDateFrom: '', saleDateTo: '2026-10-01' }),
+    ))
+    const calls = vi.mocked(getPaymentShopItemsPage).mock.calls.length
+
+    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-10-19' } })
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(getPaymentShopItemsPage).toHaveBeenCalledTimes(calls)
+  })
+
   it('does not mount the registry without page.view', () => {
     renderPage()
 

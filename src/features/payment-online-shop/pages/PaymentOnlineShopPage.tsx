@@ -221,6 +221,18 @@ function usePaymentOnlineShopModel() {
     setActiveFilters(EMPTY_FILTERS)
   }
 
+  function changeSaleDate(key: 'saleDateFrom' | 'saleDateTo', value: string) {
+    const next = { ...filterDraft, [key]: value }
+    setFilterDraft(next)
+
+    if (next.saleDateFrom && next.saleDateTo && next.saleDateFrom > next.saleDateTo) {
+      return
+    }
+
+    setPage(1)
+    setActiveFilters((current) => ({ ...current, saleDateFrom: next.saleDateFrom, saleDateTo: next.saleDateTo }))
+  }
+
   async function handleAddPayment(
     payload: Omit<AddPaymentImagePayload, 'paymentImageId' | 'user'>,
   ): Promise<boolean> {
@@ -649,7 +661,7 @@ function usePaymentOnlineShopModel() {
   const hasNext = totalPages ? page < totalPages : items.length === pageSize
 
   return {
-    activeFilters, applyFilters, canCreatePayment, canEditPayment, closeDetail, closeEditItem, columns, createError, createNotice, editError, editItem, editNotice,
+    activeFilters, applyFilters, canCreatePayment, changeSaleDate, canEditPayment, closeDetail, closeEditItem, columns, createError, createNotice, editError, editItem, editNotice,
     error, filterDraft, handleAddPayment, handleEditPayment, hasNext, isCreating, isLoading, isRefreshingEdit,
     isSaving, items, openDetail, openEditItem, page, pageSize, refreshEditingPayment, reload, resetFilters,
     selectedItem, setFilterDraft, setPage, setPageSize,
@@ -776,7 +788,7 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
   const { t } = useI18n()
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
-    applyFilters, columns, error, filterDraft, hasNext, isLoading, items, openDetail, page, pageSize, reload,
+    applyFilters, changeSaleDate, columns, error, filterDraft, hasNext, isLoading, items, openDetail, page, pageSize, reload,
     resetFilters, setFilterDraft, setPage, setPageSize, totalPages,
   } = model
 
@@ -791,7 +803,7 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
               max={filterDraft.saleDateTo || undefined}
               type="date"
               value={filterDraft.saleDateFrom}
-              onChange={(event) => setFilterDraft({ ...filterDraft, saleDateFrom: event.currentTarget.value })}
+              onChange={(event) => changeSaleDate('saleDateFrom', event.currentTarget.value)}
             />
             <TextInput
               size="sm"
@@ -799,7 +811,7 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
               min={filterDraft.saleDateFrom || undefined}
               type="date"
               value={filterDraft.saleDateTo}
-              onChange={(event) => setFilterDraft({ ...filterDraft, saleDateTo: event.currentTarget.value })}
+              onChange={(event) => changeSaleDate('saleDateTo', event.currentTarget.value)}
             />
           </div>
           <TextInput
