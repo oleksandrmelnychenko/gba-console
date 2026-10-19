@@ -90,6 +90,45 @@ describe('ProductPriceSourcePanel', () => {
     expect(getProductSourcePriceComparison).toHaveBeenCalledTimes(2)
   })
 
+  it('shows when the selected source was last synced', async () => {
+    getProductSourcePriceComparison.mockResolvedValue({
+      Amg: {
+        IsAvailable: true,
+        IsLinked: true,
+        Prices: [{ PriceEur: 1.4, PricingName: 'ЦО2' }],
+        SyncedAtUtc: '2026-10-19T12:04:43.9337367',
+      },
+      Fenix: {
+        IsAvailable: true,
+        IsLinked: true,
+        Prices: [{ PriceEur: 1.54, PricingName: 'ЦО2' }],
+        SyncedAtUtc: '2026-10-19T12:41:05.1109628',
+      },
+      LocalCurrencyCode: 'UAH',
+      ProductNetId: 'product-source-panel-synced',
+    })
+
+    const view = renderPanel('product-source-panel-synced')
+
+    expect(await view.findByText(`Дані синку від ${formatSyncedAt('2026-10-19T12:04:43.9337367')}`)).toBeTruthy()
+    fireEvent.click(view.getByRole('radio', { name: 'Контех' }))
+    expect(await view.findByText(`Дані синку від ${formatSyncedAt('2026-10-19T12:41:05.1109628')}`)).toBeTruthy()
+  })
+
+  it('omits the sync line when the source has no sync time', async () => {
+    getProductSourcePriceComparison.mockResolvedValue({
+      Amg: { IsAvailable: true, IsLinked: true, Prices: [{ PriceEur: 2, PricingName: 'ЦО2' }] },
+      Fenix: { IsAvailable: true, IsLinked: true, Prices: [] },
+      LocalCurrencyCode: 'UAH',
+      ProductNetId: 'product-source-panel-unsynced',
+    })
+
+    const view = renderPanel('product-source-panel-unsynced')
+
+    await view.findByText('2,00')
+    expect(view.queryByText(/Дані синку від/)).toBeNull()
+  })
+
   it('orders prices as base/VAT pairs following the effective price order', async () => {
     getProductSourcePriceComparison.mockResolvedValue({
       Amg: {
@@ -125,6 +164,16 @@ describe('ProductPriceSourcePanel', () => {
     ])
   })
 })
+
+function formatSyncedAt(value: string) {
+  return new Intl.DateTimeFormat('uk-UA', {
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date(value))
+}
 
 function renderPanel(productNetId: string, refreshKey = 0) {
   return render(

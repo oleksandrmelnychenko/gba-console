@@ -159,6 +159,7 @@ export type ProductSourcePriceSet = {
   Prices?: ProductSourcePrice[]
   ProductCode?: number | null
   Source?: 'amg' | 'fenix' | string
+  SyncedAtUtc?: string | null
 }
 
 export type ProductSourcePriceComparison = {
