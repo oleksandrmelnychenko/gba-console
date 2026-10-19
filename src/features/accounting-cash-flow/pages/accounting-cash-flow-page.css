@@ -586,10 +586,10 @@
   display: grid;
   gap: 10px;
   grid-template-columns:
-    minmax(310px, 380px)
-    minmax(260px, 1fr)
-    minmax(210px, 260px)
-    minmax(180px, 220px)
+    264px
+    minmax(160px, 1fr)
+    minmax(160px, 220px)
+    max-content
     auto;
   min-width: 0;
   width: 100%;
@@ -623,7 +623,7 @@
 .accounting-cash-flow-period-fields {
   align-items: center;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 10px minmax(0, 1fr);
 }
 
 .accounting-cash-flow-period-separator {
@@ -675,22 +675,48 @@
 .accounting-cash-flow-kind-toggle {
   align-self: end;
   background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 9px;
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: 8px;
   min-height: var(--accounting-cash-flow-control-height);
   padding: 3px;
+  width: 240px;
+}
+
+.accounting-cash-flow-kind-toggle .mantine-SegmentedControl-control {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.accounting-cash-flow-kind-toggle .mantine-SegmentedControl-indicator {
+  background: var(--mantine-primary-color-filled);
+  border-radius: 8px;
+  box-shadow: none;
 }
 
 .accounting-cash-flow-kind-toggle .mantine-SegmentedControl-label {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-8);
   font-size: 12px;
   font-weight: 600;
-  min-height: 28px;
+  min-height: calc(var(--accounting-cash-flow-control-height) - 8px);
+  padding: 4px 8px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.accounting-cash-flow-kind-toggle .mantine-SegmentedControl-label[data-active='true'] {
-  color: var(--mantine-color-gray-9);
+.accounting-cash-flow-kind-toggle .mantine-SegmentedControl-label[data-active] {
+  color: var(--mantine-color-white);
 }
+
+.accounting-cash-flow-kind-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.accounting-cash-flow-kind-label svg { flex-shrink: 0; }
 
 .accounting-cash-flow-filter-actions {
   align-items: center;
@@ -740,7 +766,7 @@
   display: grid;
   flex: 0 0 auto;
   gap: 12px;
-  grid-template-columns: minmax(0, 780px) minmax(420px, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 38%);
   min-width: 0;
   padding: 12px;
 }
@@ -752,7 +778,6 @@
   grid-column: 1;
   grid-row: 1;
   justify-self: start;
-  max-width: 780px;
   min-width: 0;
   width: 100%;
 }
@@ -779,691 +804,92 @@
   color: var(--mantine-color-gray-6);
 }
 
-.accounting-cash-flow-agreement-list {
-  display: grid;
-  gap: 0;
-  max-height: min(34vh, 330px);
-  min-width: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 0 8px 4px 0;
-  scrollbar-color: var(--mantine-color-gray-4) transparent;
-  scrollbar-gutter: stable;
-  scrollbar-width: thin;
-}
-
-.accounting-cash-flow-agreement-list::-webkit-scrollbar {
-  width: 6px;
-}
-
-.accounting-cash-flow-agreement-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.accounting-cash-flow-agreement-list::-webkit-scrollbar-thumb {
-  background: var(--mantine-color-gray-4);
-  border-radius: 999px;
-}
-
-.accounting-cash-flow-agreement-card {
-  background: transparent;
-  border: 0;
-  border-bottom: 1px solid var(--mantine-color-gray-2);
-  border-radius: 0;
-  color: inherit;
-  cursor: pointer;
-  display: grid;
-  gap: 8px 14px;
-  grid-template-columns: minmax(0, 1fr) minmax(188px, auto);
-  min-height: 58px;
-  padding: 10px 8px 10px 16px;
-  position: relative;
-  text-align: left;
-  transition:
-    background 140ms ease,
-    border-color 140ms ease,
-    transform 140ms ease;
-}
-
-.accounting-cash-flow-agreement-card::after {
-  display: none;
-}
-
-.accounting-cash-flow-agreement-card:hover {
-  background: #fffaf5;
-  border-bottom-color: #ffd8bd;
-  transform: translateX(2px);
-}
-
-.accounting-cash-flow-agreement-card.is-selected {
-  background: #fffaf5;
-  border-bottom-color: #ffd8bd;
-  box-shadow: none;
-  transform: none;
-}
-
-.accounting-cash-flow-agreement-card.is-selected::before {
-  background: var(--brand-orange);
-  border-radius: 999px;
-  bottom: 11px;
-  content: '';
-  left: 3px;
-  position: absolute;
-  top: 11px;
-  width: 2px;
-}
-
-.accounting-cash-flow-agreement-card.is-overdue {
-  border-bottom-color: #ffd6d6;
-}
-
-.accounting-cash-flow-agreement-card.is-general {
-  min-height: 52px;
-}
-
-.accounting-cash-flow-agreement-card__body {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
-.accounting-cash-flow-agreement-card__top {
+.accounting-cash-flow-heading {
+  display: flex;
   align-items: center;
-  display: flex;
-  gap: 6px;
-  justify-content: flex-start;
-  min-width: 0;
-}
-
-.accounting-cash-flow-agreement-card__label {
-  color: var(--mantine-color-gray-8);
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.18;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.accounting-cash-flow-agreement-card.is-selected .accounting-cash-flow-agreement-card__label {
-  color: var(--mantine-color-gray-9);
-  padding-left: 0;
-}
-
-.accounting-cash-flow-agreement-card__meta {
-  color: var(--mantine-color-gray-6);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1.18;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.accounting-cash-flow-currency {
-  align-items: center;
-  background: var(--mantine-color-teal-0);
-  border: 1px solid var(--mantine-color-teal-2);
-  border-radius: 4px;
-  color: var(--mantine-color-teal-7);
-  display: inline-flex;
-  flex: 0 0 auto;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 700;
-  height: 17px;
-  justify-content: center;
-  line-height: 1;
-  min-width: 28px;
-  padding: 0 5px;
-}
-
-.accounting-cash-flow-agreement-card__stats {
-  align-items: stretch;
-  align-self: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  justify-content: flex-end;
-  min-width: 0;
-}
-
-.accounting-cash-flow-agreement-card__stat {
-  align-items: end;
-  background: rgba(248, 249, 250, 0.72);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 7px;
-  color: var(--mantine-color-gray-8);
-  display: grid;
-  gap: 2px 6px;
-  grid-template-columns: auto auto;
-  min-height: 34px;
-  min-width: 88px;
-  padding: 5px 7px;
-  white-space: nowrap;
-}
-
-.accounting-cash-flow-agreement-card__stat small {
-  color: var(--mantine-color-gray-6);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  grid-column: 1 / -1;
-  line-height: 1;
-}
-
-.accounting-cash-flow-agreement-card__stat strong {
-  color: var(--mantine-color-gray-8);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.accounting-cash-flow-agreement-card__stat em {
-  color: var(--mantine-color-gray-6);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-style: normal;
-  font-weight: 600;
-  line-height: 1;
-}
-
-.accounting-cash-flow-agreement-card__stat.is-danger {
-  background: #fff7f7;
-  border-color: #ffd6d6;
-}
-
-.accounting-cash-flow-agreement-card__stat.is-danger strong {
-  color: var(--mantine-color-red-7);
-}
-
-.accounting-cash-flow-agreement-card__status {
-  align-self: center;
-  flex: 0 0 auto;
-}
-
-.accounting-cash-flow-agreement-card__status::before {
-  display: none;
-}
-
-.accounting-cash-flow-agreement-list {
-  align-items: stretch;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  max-height: none;
-  overflow: visible;
-  padding: 0;
-  scrollbar-color: var(--mantine-color-gray-4) transparent;
-  scrollbar-gutter: auto;
-  scrollbar-width: thin;
-}
-
-.accounting-cash-flow-agreement-list::-webkit-scrollbar {
-  display: none;
-  height: 0;
-  width: auto;
-}
-
-.accounting-cash-flow-agreement-card {
-  background: var(--mantine-color-white);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
-  box-shadow: none;
-  color: inherit;
-  cursor: pointer;
-  display: grid;
-  flex: 0 0 380px;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(0, auto) auto;
-  min-height: 104px;
-  overflow: visible;
-  padding: 0;
-  position: relative;
-  text-align: left;
-  transition:
-    border-color 140ms ease,
-    background 140ms ease;
-}
-
-.accounting-cash-flow-agreement-card:hover,
-.accounting-cash-flow-agreement-card:focus-visible {
-  background: var(--mantine-color-white);
-  border-color: var(--mantine-color-gray-3);
-  box-shadow: none;
-  transform: none;
-}
-
-.accounting-cash-flow-agreement-card.is-selected {
-  background: var(--mantine-color-white);
-  border-color: var(--brand-orange);
-}
-
-.accounting-cash-flow-agreement-card.is-selected::before {
-  content: none;
-}
-
-.accounting-cash-flow-agreement-card.is-selected::after {
-  background: var(--brand-orange);
-  border-radius: 999px;
-  bottom: 5px;
-  content: '';
-  display: block;
-  height: 6px;
-  position: absolute;
-  right: 5px;
-  top: auto;
-  width: 6px;
-}
-
-.accounting-cash-flow-agreement-card.is-overdue:not(.is-selected) {
-  border-color: var(--mantine-color-gray-2);
-}
-
-.accounting-cash-flow-agreement-card.is-general {
-  flex: 1 0 100%;
-  grid-template-rows: minmax(0, auto);
-  min-height: 48px;
-  row-gap: 0;
-}
-
-.accounting-cash-flow-agreement-card__content {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  min-width: 0;
-  padding: 14px 14px 0;
-  row-gap: 5px;
-}
-
-.accounting-cash-flow-agreement-card.is-general .accounting-cash-flow-agreement-card__content {
-  align-content: start;
-  padding: 8px 14px 7px;
-}
-
-.accounting-cash-flow-agreement-card__head {
-  display: block;
-  min-width: 0;
-  padding-right: 108px;
-}
-
-.accounting-cash-flow-agreement-card__title-row {
-  align-items: center;
-  display: flex;
-  gap: 8px;
-  min-width: 0;
-}
-
-.accounting-cash-flow-agreement-card__label {
-  color: var(--mantine-color-gray-7);
-  font-family: var(--font-mono);
-  font-size: 13.5px;
-  font-weight: 700;
-  line-height: 1.1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.accounting-cash-flow-agreement-card.is-selected .accounting-cash-flow-agreement-card__label {
-  color: var(--mantine-color-gray-7);
-}
-
-.accounting-cash-flow-agreement-card__meta {
-  color: var(--mantine-color-gray-7);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 550;
-  line-height: 1.12;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.accounting-cash-flow-currency {
-  background: var(--mantine-color-teal-0);
-  border: 1px solid var(--mantine-color-teal-2);
-  border-radius: 7px;
-  color: var(--mantine-color-teal-8);
-  font-family: var(--font-mono);
-  font-size: 8.5px;
-  font-weight: 650;
-  height: auto;
-  min-width: auto;
-  padding: 3px 6px;
-}
-
-.accounting-cash-flow-agreement-card__stats {
-  align-items: end;
-  display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  min-height: 28px;
-  min-width: 0;
-  padding: 8px 14px 11px;
-}
-
-.accounting-cash-flow-agreement-card__stats > .accounting-cash-flow-agreement-card__status {
-  display: none;
-}
-
-.accounting-cash-flow-agreement-card__stat {
-  align-items: flex-start;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 6px;
-  display: flex;
-  flex-direction: column-reverse;
-  gap: 3px;
-  justify-content: end;
-  min-height: 32px;
-  min-width: 0;
-  padding: 5px 10px;
-  white-space: nowrap;
-}
-
-.accounting-cash-flow-agreement-card__stat small {
-  color: var(--mantine-color-gray-7);
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0;
-  line-height: 1;
-}
-
-.accounting-cash-flow-agreement-card__stat strong {
-  color: var(--mantine-color-gray-8);
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1;
-}
-
-.accounting-cash-flow-agreement-card__stat em {
-  display: none;
-}
-
-.accounting-cash-flow-agreement-card__stat.is-danger {
-  background: var(--mantine-color-gray-0);
-  border-color: var(--mantine-color-gray-2);
-}
-
-.accounting-cash-flow-agreement-card__stat.is-danger small {
-  color: var(--mantine-color-gray-7);
-}
-
-.accounting-cash-flow-agreement-card__stat.is-danger strong {
-  color: var(--mantine-color-red-6);
-}
-
-.accounting-cash-flow-agreement-card__status {
-  background: var(--mantine-color-teal-0);
-  border: 1px solid var(--mantine-color-teal-2);
-  border-radius: var(--mantine-radius-sm);
-  color: var(--mantine-color-teal-8);
-  font-family: var(--font-mono);
-  font-size: 8.5px;
-  font-weight: 600;
-  justify-content: flex-start;
-  letter-spacing: 0;
-  min-height: 18px;
-  padding: 0 7px;
-  position: absolute;
-  right: 14px;
-  top: 10px;
-  text-transform: uppercase;
-  width: max-content;
-  z-index: 1;
-}
-
-.accounting-cash-flow-agreement-card.is-overdue .accounting-cash-flow-agreement-card__status {
-  background: var(--mantine-color-red-0);
-  border-color: var(--mantine-color-red-2);
-  color: var(--mantine-color-red-8);
-}
-
-.accounting-cash-flow-agreement-card.is-inactive .accounting-cash-flow-agreement-card__status {
-  background: var(--mantine-color-blue-0);
-  border-color: var(--mantine-color-blue-2);
-  color: var(--mantine-color-blue-8);
-}
-
-.accounting-cash-flow-statement-hero {
-  background: var(--mantine-color-white);
-  border: 0;
-  border-radius: 12px;
-  box-shadow: none;
-  color: var(--mantine-color-gray-9);
-  display: grid;
+  justify-content: space-between;
   gap: 12px;
-  grid-template-columns: minmax(0, 1fr) minmax(230px, auto);
-  min-width: 0;
-  overflow: hidden;
-  padding: 14px;
-  position: relative;
+  padding: 12px 14px;
 }
 
-.accounting-cash-flow-statement-hero::after {
-  background: var(--mantine-color-gray-2);
-  bottom: 0;
+.accounting-cash-flow-heading-identity { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; min-width: 0; }
+.accounting-cash-flow-heading-actions { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 8px; flex-shrink: 0; }
+.accounting-cash-flow-heading h2,
+.accounting-cash-flow-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+}
+.accounting-cash-flow-heading h2::before {
   content: '';
-  height: 3px;
-  left: 14px;
-  position: absolute;
-  right: 14px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brand-orange);
+  flex-shrink: 0;
 }
-
-.accounting-cash-flow-statement-hero__identity {
-  align-items: start;
-  display: grid;
-  gap: 10px;
-  grid-column: 1;
-  grid-template-columns: auto minmax(0, 1fr);
-  min-width: 0;
-}
-
-.accounting-cash-flow-statement-hero__icon {
-  background: rgba(255, 247, 240, 0.9);
-  border: 1px solid #ffd8bd;
-  color: var(--brand-orange);
-}
-
-.accounting-cash-flow-statement-hero__title {
-  display: grid;
-  gap: 3px;
-  min-width: 0;
-}
-
-.accounting-cash-flow-statement-hero__title span,
-.accounting-cash-flow-statement-hero__balance span,
-.accounting-cash-flow-statement-hero__flow span {
-  color: var(--mantine-color-gray-6);
-  font-size: 10.5px;
-  font-weight: 600;
-  line-height: 1.15;
-  text-transform: uppercase;
-}
-
-.accounting-cash-flow-statement-hero__title strong {
-  color: var(--mantine-color-gray-9);
-  font-family: var(--font-mono);
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1.15;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.accounting-cash-flow-statement-hero__title small {
-  color: var(--mantine-color-gray-6);
-  font-size: 11.5px;
-  font-weight: 600;
-  line-height: 1.2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.accounting-cash-flow-statement-hero__balance {
-  align-self: start;
-  display: grid;
-  gap: 3px;
-  grid-column: 2;
-  grid-row: 1;
-  justify-self: end;
-  min-width: 220px;
-  text-align: right;
-}
-
-.accounting-cash-flow-statement-hero__balance strong {
-  align-items: baseline;
-  color: var(--mantine-color-gray-9);
-  display: flex;
-  font-family: var(--font-mono);
-  font-size: clamp(26px, 2.35vw, 38px);
-  font-weight: 700;
-  gap: 8px;
-  justify-content: flex-end;
-  letter-spacing: 0;
-  line-height: 0.95;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.accounting-cash-flow-statement-hero__balance strong em {
-  color: var(--mantine-color-gray-6);
+.accounting-cash-flow-client-chip {
+  margin: 0;
   font-size: 12px;
-  font-style: normal;
-  font-weight: 600;
-  line-height: 1;
+  color: var(--mantine-color-gray-7);
+  overflow-wrap: anywhere;
 }
-
-.accounting-cash-flow-statement-hero__balance strong.is-positive {
-  color: var(--mantine-color-teal-7);
-}
-
-.accounting-cash-flow-statement-hero__balance strong.is-negative {
-  color: var(--mantine-color-red-7);
-}
-
-.accounting-cash-flow-statement-hero__balance small {
-  color: var(--mantine-color-gray-6);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.accounting-cash-flow-statement-hero__balance small.is-positive {
-  color: var(--mantine-color-teal-7);
-}
-
-.accounting-cash-flow-statement-hero__balance small.is-negative {
-  color: var(--mantine-color-red-7);
-}
-
-.accounting-cash-flow-statement-hero__flow {
+.accounting-cash-flow-agreement-picker { gap: 8px; }
+.accounting-cash-flow-agreement-list {
   display: grid;
   gap: 8px;
-  grid-column: 1;
-  grid-row: 2;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-height: 340px;
+  overflow-y: auto;
   min-width: 0;
+  scrollbar-width: thin;
+  padding: 1px;
 }
-
-.accounting-cash-flow-statement-hero__flow div {
-  align-items: center;
-  background: rgba(255, 255, 255, 0.78);
+.accounting-cash-flow-agreement-card {
+  appearance: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 9px;
-  display: grid;
-  gap: 3px 7px;
-  grid-template-columns: auto minmax(0, 1fr);
-  min-height: 54px;
-  min-width: 0;
-  overflow: hidden;
-  padding: 10px 9px 8px;
-  position: relative;
+  border-radius: 10px;
+  background: var(--mantine-color-white);
+  text-align: left;
+  color: var(--mantine-color-gray-8);
+  cursor: pointer;
 }
-
-.accounting-cash-flow-statement-hero__flow svg {
-  color: var(--mantine-color-gray-6);
-  grid-row: 1 / span 2;
+.accounting-cash-flow-agreement-card:hover { background: var(--mantine-color-gray-0); }
+.accounting-cash-flow-agreement-card.is-selected { border-color: var(--brand-orange); }
+.accounting-cash-flow-agreement-card:focus-visible {
+  outline: 2px solid var(--brand-orange);
+  outline-offset: 2px;
 }
-
-.accounting-cash-flow-statement-hero__flow strong {
-  color: var(--mantine-color-gray-9);
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  width: 100%;
-}
-
-.accounting-cash-flow-statement-hero__flow-mark {
-  border-radius: 0 0 999px 999px;
-  display: block;
-  max-height: 24px;
-  min-height: 16px;
-  pointer-events: none;
-  position: absolute;
-  right: 14px;
-  top: 0;
-  width: 28px;
-}
-
-.accounting-cash-flow-statement-hero__flow-mark.is-debit {
-  background: rgba(20, 184, 166, 0.26);
-}
-
-.accounting-cash-flow-statement-hero__flow-mark.is-credit {
-  background: rgba(var(--brand-orange-rgb), 0.2);
-}
-
-.accounting-cash-flow-statement-hero__chips {
-  align-self: end;
-  display: grid;
-  gap: 6px;
-  grid-column: 2;
-  grid-row: 2;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  min-width: 0;
-  width: 100%;
-}
-
-.accounting-cash-flow-statement-hero__chips > span {
-  align-items: center;
-  gap: 4px;
-  font-family: var(--font-mono);
-  background: var(--app-chip-neutral-bg);
-  border: 1px solid var(--app-chip-neutral-border);
-  border-radius: 999px;
-  color: var(--app-chip-neutral-text);
-  display: flex;
-  font-size: 11px;
-  font-weight: 600;
-  height: 24px;
-  line-height: 1;
-  justify-content: center;
-  min-width: 0;
-  padding: 0 9px;
-  white-space: nowrap;
-}
-
-.accounting-cash-flow-statement-hero__chips > span:first-child {
-  grid-column: 1 / -1;
-}
+.accounting-cash-flow-agreement-card__content { grid-column: 1; grid-row: 1; min-width: 0; }
+.accounting-cash-flow-agreement-card__status { grid-column: 2; grid-row: 1; align-self: start; }
+.accounting-cash-flow-agreement-card__title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.accounting-cash-flow-agreement-card__label { font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.accounting-cash-flow-agreement-card__meta { display: block; margin-top: 3px; font-size: 11px; color: var(--mantine-color-gray-6); overflow-wrap: anywhere; }
+.accounting-cash-flow-agreement-card__meta .app-table-chip { max-width: 100%; height: auto; }
+.accounting-cash-flow-agreement-card__meta .app-table-chip-label { white-space: normal; overflow-wrap: anywhere; }
+.accounting-cash-flow-agreement-card__stats { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.accounting-cash-flow-agreement-card__stats:empty { display: none; }
+.accounting-cash-flow-agreement-card__stat { display: grid; gap: 3px; }
+.accounting-cash-flow-agreement-card__stat small { font-size: 10px; color: var(--mantine-color-gray-6); }
+.accounting-cash-flow-agreement-card__stat strong { font-family: var(--font-mono); font-size: 12px; }
+.accounting-cash-flow-agreement-card__stat em { display: none; }
+.accounting-cash-flow-agreement-card__stat.is-danger strong { color: var(--mantine-color-red-7); }
+.accounting-cash-flow-statement-hero { min-width: 0; }
+.accounting-cash-flow-statement-hero__scope { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.accounting-cash-flow-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.accounting-cash-flow-metrics > div { background: var(--mantine-color-gray-0); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+.accounting-cash-flow-metrics dt { color: var(--mantine-color-gray-7); font-size: 11px; }
+.accounting-cash-flow-metrics dd { margin: 4px 0 0; font: 600 18px var(--font-mono); overflow-wrap: anywhere; }
+.accounting-cash-flow-metrics dd.is-negative { color: var(--mantine-color-red-7); }
 
 .accounting-cash-flow-summary {
   background: var(--mantine-color-white);
@@ -1519,7 +945,7 @@
   border-radius: 12px;
   box-shadow: none;
   height: 100%;
-  padding: 10px;
+  padding: 0;
 }
 
 .accounting-cash-flow-chart .mantine-Text-root {
@@ -1542,22 +968,22 @@
 .accounting-cash-flow-grid-card {
   background: var(--mantine-color-white);
   flex: 0 0 auto;
-  min-height: 1240px;
+  min-height: 0;
   overflow: visible;
   padding: 0 12px 12px;
 }
 
 .accounting-cash-flow-grid-card .data-table {
   flex: 1 1 auto;
-  min-height: 1240px;
+  min-height: 0;
 }
 
 .accounting-cash-flow-grid-card .data-table-scroll {
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 10px;
-  height: 1240px !important;
-  max-height: 1240px;
-  min-height: 1240px;
+  height: auto !important;
+  max-height: 560px;
+  min-height: 0;
   padding-right: 10px;
 }
 
@@ -1639,12 +1065,6 @@
   min-width: 0;
 }
 
-.accounting-cash-flow-document-cell__meta span:not(:last-child)::after {
-  color: var(--mantine-color-gray-6);
-  content: '•';
-  margin-left: 6px;
-}
-
 .accounting-cash-flow-document-cell__type {
   background: var(--mantine-color-orange-0);
   border: 1px solid var(--mantine-color-orange-3);
@@ -1677,13 +1097,13 @@
 
 .accounting-cash-flow-money strong {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 600;
 }
 
 .accounting-cash-flow-money small {
-  color: var(--mantine-color-gray-6);
-  font-size: 10.5px;
+  color: var(--mantine-color-gray-8);
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -1698,21 +1118,22 @@
 }
 
 @media (max-width: 1320px) {
-  .accounting-cash-flow-filter-form {
-    grid-template-columns: minmax(300px, 1fr) minmax(260px, 1fr) minmax(190px, 230px) minmax(180px, 220px);
-  }
-
-  .accounting-cash-flow-filter-actions {
-    grid-column: 1 / -1;
-    justify-content: flex-start;
-  }
-
   .accounting-cash-flow-stage {
-    grid-template-columns: minmax(0, 720px) minmax(360px, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 38%);
   }
 
   .accounting-cash-flow-summary .mantine-SimpleGrid-root {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 1120px) {
+  .accounting-cash-flow-filter-form {
+    grid-template-columns: 264px minmax(160px, 1fr) minmax(160px, 1fr) max-content;
+  }
+
+  .accounting-cash-flow-filter-actions {
+    grid-column: 1 / -1;
   }
 }
 
@@ -1729,15 +1150,7 @@
     grid-column: 1 / -1;
   }
 
-  .accounting-cash-flow-agreement-list {
-    display: flex;
-    flex-wrap: wrap;
-    min-width: 0;
-  }
-
-  .accounting-cash-flow-agreement-card {
-    flex: 0 0 320px;
-  }
+  .accounting-cash-flow-agreement-list { grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); }
 
   .accounting-cash-flow-stage {
     grid-template-columns: minmax(0, 1fr);
@@ -1763,22 +1176,8 @@
     padding: 6px;
   }
 
-  .accounting-cash-flow-statement-hero {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .accounting-cash-flow-statement-hero__balance,
-  .accounting-cash-flow-statement-hero__flow,
-  .accounting-cash-flow-statement-hero__chips {
-    grid-column: 1;
-    grid-row: auto;
-  }
-
-  .accounting-cash-flow-statement-hero__balance {
-    justify-self: start;
-    min-width: 0;
-    text-align: left;
-  }
+  .accounting-cash-flow-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .accounting-cash-flow-heading { align-items: flex-start; flex-wrap: wrap; }
 
   .accounting-cash-flow-export-options {
     grid-template-columns: minmax(0, 1fr);
@@ -1810,3 +1209,6 @@
     flex-basis: 236px;
   }
 }
+
+.accounting-cash-flow-client-chip .app-table-chip { max-width: 100%; height: auto; padding-block: 3px; }
+.accounting-cash-flow-client-chip .app-table-chip-label { white-space: normal; overflow-wrap: anywhere; }

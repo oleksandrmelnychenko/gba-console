@@ -22,14 +22,6 @@
   overflow-x: auto;
 }
 
-.available-payments-filter-row > .app-filter-actions {
-  grid-column: 5;
-}
-
-.available-payments-filter-row > .app-filter-table-toolbar-slot {
-  grid-column: 6;
-}
-
 .available-payments-body {
   display: flex;
   flex: 1 1 auto;

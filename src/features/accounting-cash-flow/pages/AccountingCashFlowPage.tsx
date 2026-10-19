@@ -1,5 +1,6 @@
+import { ClientActionsButton } from '../../clients/components/ClientActionsButton'
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
   Badge,
   Box,
@@ -15,7 +16,7 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { notifications } from '@mantine/notifications'
-import { ArrowDownLeft, ArrowUpRight, CircleAlert, Download, Pencil, RefreshCw, RotateCcw, Scale, Search } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, CircleAlert, Download, ListFilter, Pencil, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
@@ -91,7 +92,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
 const ACCOUNTING_CASH_FLOW_TABLE_MIN_WIDTH = 1180
 
 const ACCOUNTING_CASH_FLOW_TABLE_LAYOUT = {
-  columnOrder: ['document', 'exchangeRate', 'organization', 'debit', 'credit', 'balance'],
+  columnOrder: ['document', 'type', 'exchangeRate', 'organization', 'debit', 'credit', 'balance'],
   columnPinning: {
     left: ['document'],
   },
@@ -376,6 +377,9 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
   function resetFilters() {
     setFilterDraft(initialFilters)
     setActiveFilters(initialFilters)
+    setFlowFilter('all')
+    setDocTypeFilter(null)
+    setItemSearch('')
   }
 
   function updateFilterDraft(nextFilterDraft: FilterDraft) {
@@ -424,6 +428,7 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
   }, [activeFilters.from, activeFilters.to, hasPermission, mode, selectedAgreement, t])
 
   return {
+    routeNetId,
     activeFilters,
     agreements,
     cashFlow,
@@ -481,6 +486,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
     [incomeDetail],
   )
   const {
+    routeNetId,
     agreements,
     cashFlow,
     cashFlowError,
@@ -688,6 +694,15 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
         ),
       },
       {
+        id: 'type',
+        header: t('Тип'),
+        width: 180,
+        minWidth: 160,
+        align: 'right',
+        accessor: (item) => getCashFlowTypeLabel(item.Type),
+        cell: (item) => <TableChip tone="document" value={getCashFlowTypeLabel(item.Type)} />,
+      },
+      {
         id: 'organization',
         header: t('Організація'),
         width: 250,
@@ -695,14 +710,14 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
         accessor: (item) => item.OrganizationName,
         cell: (item) => (
           <span className="accounting-cash-flow-organization-cell">
-            {displayValue(item.OrganizationName)}
+            <TableChip tone="product" value={displayValue(item.OrganizationName)} />
           </span>
         ),
       },
     ]
 
     if (showExchangeRateColumn) {
-      columns.splice(1, 0, {
+      columns.splice(2, 0, {
         id: 'exchangeRate',
         header: t('Курс'),
         width: 110,
@@ -790,6 +805,18 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
       )}
 
       <div className="accounting-cash-flow-shell">
+        <div className="accounting-cash-flow-heading">
+          <div className="accounting-cash-flow-heading-identity"><h2>{t('Взаєморозрахунки')}</h2><div className="accounting-cash-flow-client-chip"><TableChip tone="document" value={counterpartyName || t('Контрагент')} /></div></div>
+          <div className="accounting-cash-flow-heading-actions">
+            <Button color="gray" size="sm" variant="light" leftSection={<RotateCcw size={16} />} onClick={resetFilters}>
+              {t('Скинути фільтри')}
+            </Button>
+            <Button color="gray" size="sm" variant="light" leftSection={<RefreshCw size={16} />} loading={isCashFlowLoading || isCounterpartyLoading} onClick={() => reload()}>
+              {t('Оновити')}
+            </Button>
+            {mode === 'client' && <ClientActionsButton key={routeNetId} netUid={routeNetId} onChanged={reload} />}
+          </div>
+        </div>
         <div className="app-filter-bar accounting-cash-flow-filter-bar">
           <form className="accounting-cash-flow-filter-form" onSubmit={(event) => event.preventDefault()}>
             <div className="app-filter-field accounting-cash-flow-period-filter">
@@ -838,33 +865,17 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
             />
             <SegmentedControl
               className="accounting-cash-flow-kind-toggle"
+              color="orange"
+              withItemsBorders={false}
               data={[
-                { label: t('Усі'), value: 'all' },
-                { label: t('Дебет'), value: 'debit' },
-                { label: t('Кредит'), value: 'credit' },
+                { label: <span className="accounting-cash-flow-kind-label"><ListFilter size={15} aria-hidden="true" />{t('Усі')}</span>, value: 'all' },
+                { label: <span className="accounting-cash-flow-kind-label"><ArrowDownLeft size={15} aria-hidden="true" />{t('Дебет')}</span>, value: 'debit' },
+                { label: <span className="accounting-cash-flow-kind-label"><ArrowUpRight size={15} aria-hidden="true" />{t('Кредит')}</span>, value: 'credit' },
               ]}
               value={flowFilter}
               onChange={(value) => setFlowFilter(value as 'all' | 'debit' | 'credit')}
             />
             <div className="app-filter-actions accounting-cash-flow-filter-actions">
-              <Tooltip label={t('Скинути')}>
-                <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-                  <RotateCcw size={18} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon
-                  aria-label={t('Оновити')}
-                  className="accounting-cash-flow-icon-action"
-                  color="gray"
-                  loading={isCashFlowLoading || isCounterpartyLoading}
-                  size={36}
-                  variant="light"
-                  onClick={() => reload()}
-                >
-                  <RefreshCw size={17} />
-                </ActionIcon>
-              </Tooltip>
               <PermissionGate permissionKey={PermissionKeys.Clients.AccountingCashFlow.Export}>
                 <Tooltip disabled={canExport} label={t('Експорт доступний після вибору договору')}>
                   <Box>
@@ -925,9 +936,9 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
               distributeAvailableWidth
               emptyText={t('Взаєморозрахунків не знайдено')}
               getRowId={(item, index) => `${item.Type || 'type'}-${item.Id || item.Number || item.Name || 'row'}-${item.FromDate || index}`}
-              height="100%"
+              height="auto"
               isLoading={isCashFlowLoading}
-              layoutVersion={`accounting-cash-flow-ledger-${showExchangeRateColumn ? 'exchange' : 'base'}-1`}
+              layoutVersion={`accounting-cash-flow-ledger-${showExchangeRateColumn ? 'exchange' : 'base'}-2`}
               loadingText={t('Завантаження взаєморозрахунків')}
               minWidth={ACCOUNTING_CASH_FLOW_TABLE_MIN_WIDTH}
               rowClassName={(item) => item === selectedItem ? 'is-selected' : undefined}
@@ -979,11 +990,17 @@ function AccountingCashFlowDocumentTableCell({
   item: AccountingCashFlowHeadItem
   showEditedInvoiceBadge: boolean
 }) {
+  const dateLabel = formatDateTime(item.FromDate).replace(/,\s*00:00$/u, '')
+  const documentName = displayValue(item.Name)
+  const title = dateLabel !== '-'
+    ? documentName.replace(/\s+Від\s+\d{2}\.\d{2}\.\d{4}(?:\s+\d{1,2}:\d{1,2}(?::\d{2})?)?\s*$/iu, '')
+    : documentName
+
   return (
     <span className={`accounting-cash-flow-document-cell${item.IsCreditValue ? ' is-credit' : ' is-debit'}`}>
       <span className="accounting-cash-flow-document-cell__content">
         <span className="accounting-cash-flow-document-cell__title">
-          {displayValue(item.Name)}
+          {title}
           {showEditedInvoiceBadge ? (
             <Tooltip label={editedInvoiceLabel} position="right">
               <ThemeIcon className="accounting-cash-flow-document-cell__badge" color="orange" radius="xl" size="xs" variant="light">
@@ -993,8 +1010,7 @@ function AccountingCashFlowDocumentTableCell({
           ) : null}
         </span>
         <span className="accounting-cash-flow-document-cell__meta">
-          <span>{formatDateTime(item.FromDate)}</span>
-          <span className="accounting-cash-flow-document-cell__type">{getCashFlowTypeLabel(item.Type)}</span>
+          <TableChip tone="neutral" value={dateLabel} />
         </span>
       </span>
     </span>
@@ -1057,62 +1073,26 @@ function CashFlowStatementHero({
     : counterpartyName || t('Контрагент')
   const closingBalance = summary.closingBalance ?? 0
   const openingBalance = summary.beforeBalance ?? 0
-  const periodDelta = closingBalance - openingBalance
-  const debit = summary.afterInAmount ?? 0
-  const credit = summary.afterOutAmount ?? 0
-  const flowTotal = Math.max(Math.abs(debit) + Math.abs(credit), 1)
-  const debitPercent = Math.max(6, Math.min(94, (Math.abs(debit) / flowTotal) * 100))
-  const creditPercent = Math.max(6, Math.min(94, (Math.abs(credit) / flowTotal) * 100))
-  const balanceClassName = closingBalance < 0 ? ' is-negative' : ' is-positive'
-
   return (
-    <div className="accounting-cash-flow-statement-hero">
-      <div className="accounting-cash-flow-statement-hero__identity">
-        <ThemeIcon className="accounting-cash-flow-statement-hero__icon" color="gray" radius="xl" size={36} variant="light">
-          <Scale size={18} />
-        </ThemeIcon>
-        <div className="accounting-cash-flow-statement-hero__title">
-          <span>{t('Активний фокус')}</span>
-          <strong>{title}</strong>
-          <small>{meta}</small>
-        </div>
+    <section className="accounting-cash-flow-statement-hero">
+      <div className="accounting-cash-flow-statement-hero__scope">
+        <h3 className="accounting-cash-flow-section-title">{title}</h3>
+        {selectedAgreement && <TableChip tone="product" value={meta} />}
+        {currency && <TableChip tone="source" value={currency} />}
       </div>
-
-      <div className="accounting-cash-flow-statement-hero__balance">
-        <span>{t('Кінцевий баланс')}</span>
-        <strong className={balanceClassName}>
-          {formatMoney(closingBalance)}
-          {currency ? <em>{currency}</em> : null}
-        </strong>
-        <small className={periodDelta < 0 ? 'is-negative' : 'is-positive'}>
-          <span className="app-money">
-            {periodDelta >= 0 ? '+' : ''}{formatMoney(periodDelta)}
-          </span>{' '}
-          {t('за період')}
-        </small>
-      </div>
-
-      <div className="accounting-cash-flow-statement-hero__flow">
+      <dl className="accounting-cash-flow-metrics">
         <div>
-          <i className="accounting-cash-flow-statement-hero__flow-mark is-debit" style={{ height: `${debitPercent}%` }} />
-          <ArrowDownLeft size={15} />
-          <span>{t('Дебет')}</span>
-          <strong>{formatMoney(summary.afterInAmount)}</strong>
+          <dt>{t('Вхідний баланс')}</dt>
+          <dd>{formatMoney(openingBalance)}</dd>
         </div>
+        <div><dt>{t('Дебет')}</dt><dd>{formatMoney(summary.afterInAmount)}</dd></div>
+        <div><dt>{t('Кредит')}</dt><dd>{formatMoney(summary.afterOutAmount)}</dd></div>
         <div>
-          <i className="accounting-cash-flow-statement-hero__flow-mark is-credit" style={{ height: `${creditPercent}%` }} />
-          <ArrowUpRight size={15} />
-          <span>{t('Кредит')}</span>
-          <strong>{formatMoney(summary.afterOutAmount)}</strong>
+          <dt>{t('Кінцевий баланс')}</dt>
+          <dd className={closingBalance < 0 ? 'is-negative' : ''}>{formatMoney(closingBalance)}</dd>
         </div>
-      </div>
-
-      <div className="accounting-cash-flow-statement-hero__chips">
-        <span>{t('Вхідний баланс')}: <span className="app-money">{formatMoney(openingBalance)}</span></span>
-        <span>{t('Вхідний дебет')}: <span className="app-money">{formatMoney(summary.beforeInAmount)}</span></span>
-        <span>{t('Вхідний кредит')}: <span className="app-money">{formatMoney(summary.beforeOutAmount)}</span></span>
-      </div>
-    </div>
+      </dl>
+    </section>
   )
 }
 
@@ -1131,15 +1111,17 @@ function AgreementScopePicker({
 
   return (
     <div className="accounting-cash-flow-agreement-picker">
+      <h3 className="accounting-cash-flow-section-title">{t('Договори')}</h3>
       <div className="accounting-cash-flow-agreement-list">
         <button
+          aria-pressed={!selectedAgreementNetUid}
           className={`accounting-cash-flow-agreement-card is-general${!selectedAgreementNetUid ? ' is-selected' : ''}`}
           type="button"
           onClick={() => onSelectAgreement(null)}
         >
           <span className="accounting-cash-flow-agreement-card__content">
             <span className="accounting-cash-flow-agreement-card__label">{t('Всі договори')}</span>
-            <span className="accounting-cash-flow-agreement-card__meta">{t('Загальні взаєморозрахунки')}</span>
+            <span className="accounting-cash-flow-agreement-card__meta"><TableChip tone="product" value={t('Загальні взаєморозрахунки')} /></span>
           </span>
         </button>
         {agreements.map((agreement, index) => (
@@ -1183,22 +1165,21 @@ function AgreementDebtTile({
       <button
         className={`accounting-cash-flow-agreement-card${isSelected ? ' is-selected' : ''}${debt.isOverdue ? ' is-overdue' : ''}${isInactive ? ' is-inactive' : ''}`}
         type="button"
+        aria-pressed={isSelected}
         onClick={onSelect}
       >
-        <Badge className="accounting-cash-flow-agreement-card__status" variant="light">
-          {statusLabel}
-        </Badge>
+        <span className="accounting-cash-flow-agreement-card__status"><TableChip tone={debt.isOverdue ? 'danger' : isInactive ? 'neutral' : 'success'} value={statusLabel} /></span>
         <span className="accounting-cash-flow-agreement-card__content">
           <span className="accounting-cash-flow-agreement-card__head">
             <span className="accounting-cash-flow-agreement-card__title-row">
               <span className="accounting-cash-flow-agreement-card__label">
                 {stringValue(agreement.Agreement?.Name) || '-'}
               </span>
-              {currency ? <span className="accounting-cash-flow-currency">{currency}</span> : null}
+              {currency ? <TableChip tone="source" value={currency} /> : null}
             </span>
           </span>
           <span className="accounting-cash-flow-agreement-card__meta">
-            {stringValue(agreement.Agreement?.Organization?.Name) || stringValue(agreement.OriginalClientName) || '—'}
+            <TableChip tone="product" value={stringValue(agreement.Agreement?.Organization?.Name) || stringValue(agreement.OriginalClientName) || '—'} />
           </span>
         </span>
         <span className="accounting-cash-flow-agreement-card__stats">
@@ -1209,7 +1190,7 @@ function AgreementDebtTile({
                 <strong>{formatMoney(debt.totalOverdueDebt)}</strong>
               </span>
               <span className={`accounting-cash-flow-agreement-card__stat${Math.abs(debt.accountBalance) > debt.debtLimit ? ' is-danger' : ''}`}>
-                <small>Баланс</small>
+                <small>{t('Баланс')}</small>
                 <strong>{formatMoney(debt.accountBalance)}</strong>
               </span>
             </>

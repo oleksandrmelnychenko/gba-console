@@ -1,3 +1,6 @@
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -2203,6 +2206,7 @@ function getFloatingMenuAnchor(target: HTMLElement): FloatingMenuAnchor {
 function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
   const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
+  const positionPlural = new Intl.PluralRules('uk').select(orderItems.length)
   const date = getSaleDate(sale)
   const primaryAmount = getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount)
   const secondaryAmount = getSecondaryAmount(sale)
@@ -2339,38 +2343,12 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
 
       <section className="sale-detail-products">
         <div className="sale-detail-section-header">
-          <div>
-            <Text className="sale-detail-section-title">{t('Товари')}</Text>
-            <Text className="sale-detail-section-subtitle">
-              {orderItems.length} {t('позицій')}
-            </Text>
-          </div>
+          <Text className="sale-detail-section-title sale-detail-products-title">
+            {t('Товари')} · {orderItems.length} {t(positionPlural === 'one' ? 'позиція' : positionPlural === 'few' ? 'позиції' : 'позицій')}
+          </Text>
         </div>
 
-        <div className="sale-detail-products-table">
-          <div className={`sale-detail-products-head${showUahPrices ? ' has-uah-price' : ''}`}>
-            <span>{t('Товар')}</span>
-            <span>{t('К-сть')}</span>
-            <span>{t('Ціна')}</span>
-            {showUahPrices && <span>{t('Ціна')} UAH</span>}
-            <span>{t('Сума')}</span>
-          </div>
-          <div className="sale-detail-products-body">
-            {orderItems.length > 0 ? (
-              orderItems.map((item, index) => (
-                <SaleDetailProductRow
-                  key={String(item.NetUid || item.Id || index)}
-                  item={item}
-                  currencyCode={currencyCode}
-                  showUah={showUahPrices}
-                  uahRate={uahRate}
-                />
-              ))
-            ) : (
-              <div className="sale-detail-products-empty">{t('Товарів не знайдено')}</div>
-            )}
-          </div>
-        </div>
+        <SaleDetailProductsTable items={orderItems} currencyCode={currencyCode} showUah={showUahPrices} uahRate={uahRate} />
       </section>
     </div>
   )
@@ -2501,53 +2479,71 @@ function SaleDetailSection({
   )
 }
 
-function SaleDetailProductRow({
+function SaleDetailProductsTable({
   currencyCode,
-  item,
+  items,
   showUah,
   uahRate,
 }: {
   currencyCode: string
-  item: SalesUkraineOrderItem
-  showUah?: boolean
-  uahRate?: number | null
+  items: SalesUkraineOrderItem[]
+  showUah: boolean
+  uahRate: number | null
 }) {
-  const amount = getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount)
-  const qty = getNumber(item.Qty)
-  const unitPrice = amount != null && qty ? amount / qty : null
-  const uahAmount = showUah ? getOrderItemUahAmount(item, amount, uahRate) : null
-  const uahUnitPrice = uahAmount != null && qty ? uahAmount / qty : null
+  const { t } = useI18n()
+  const rows = useMemo(() => items.map((item, index) => {
+    const amount = getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount)
+    const qty = getNumber(item.Qty)
+    const uahAmount = showUah ? getOrderItemUahAmount(item, amount, uahRate) : null
+    return {
+      id: String(item.NetUid || item.Id || index),
+      name: getOrderItemProductName(item),
+      code: getOrderItemProductCode(item),
+      qty,
+      price: amount != null && qty ? amount / qty : null,
+      uahPrice: uahAmount != null && qty ? uahAmount / qty : null,
+      amount,
+      uahAmount,
+    }
+  }), [items, showUah, uahRate])
+  const columns = useMemo<DataTableColumn<(typeof rows)[number]>[]>(() => [
+    {
+      id: 'product', header: t('Товар'), width: 360, minWidth: 240, fill: true,
+      accessor: (row) => `${row.name} ${row.code}`,
+      cell: (row) => <div className="sale-detail-product-copy">
+        <OverflowTooltipText className="sale-detail-product-title">{displayValue(row.name)}</OverflowTooltipText>
+        <TableChip tone="product" value={row.code} />
+      </div>,
+    },
+    { id: 'qty', header: t('К-сть'), width: 110, minWidth: 100, align: 'right', numeric: true, accessor: (row) => row.qty },
+    { id: 'price', header: `${t('Ціна')} ${currencyCode}`, width: 130, minWidth: 110, align: 'right', numeric: true,
+      accessor: (row) => row.price, cell: (row) => <span className="sale-detail-money">{formatAmount(row.price)}</span> },
+    ...(showUah ? [{ id: 'uahPrice', header: `${t('Ціна')} UAH`, width: 140, minWidth: 110, align: 'right' as const, numeric: true,
+      accessor: (row: (typeof rows)[number]) => row.uahPrice,
+      cell: (row: (typeof rows)[number]) => <span className="sale-detail-money">{formatAmount(row.uahPrice)}</span> }] : []),
+    { id: 'amount', header: t('Сума'), width: 180, minWidth: 150, align: 'right', numeric: true,
+      accessor: (row) => row.amount,
+      cell: (row) => <div className="sale-detail-money sale-detail-money-total">
+        <span>{formatAmount(row.amount)} <TableChip tone="source" value={currencyCode} /></span>
+        {row.uahAmount != null && <span>{formatAmount(row.uahAmount)} <TableChip tone="neutral" value="UAH" /></span>}
+      </div>,
+    },
+  ], [currencyCode, showUah, t])
 
-  return (
-    <div className={`sale-detail-product-row${showUah ? ' has-uah-price' : ''}`}>
-      <div className="sale-detail-product-name">
-        <span className="sale-detail-product-icon" aria-hidden="true">
-          <Tag size={14} />
-        </span>
-        <div className="sale-detail-product-copy">
-          <OverflowTooltipText className="sale-detail-product-title">
-            {displayValue(getOrderItemProductName(item))}
-          </OverflowTooltipText>
-          <OverflowTooltipText className="sale-detail-product-subtitle">
-            {displayValue(getOrderItemProductCode(item))}
-          </OverflowTooltipText>
-        </div>
-      </div>
-      <span className="sale-detail-product-value is-numeric">{displayValue(qty)}</span>
-      <span className="app-money sale-detail-product-value">
-        {formatAmount(unitPrice)}
-      </span>
-      {showUah && (
-        <span className="app-money sale-detail-product-value is-uah">
-          {formatAmount(uahUnitPrice)}
-        </span>
-      )}
-      <span className="app-money sale-detail-product-amount">
-        {formatAmount(amount)} <small>{displayValue(currencyCode)}</small>
-        {uahAmount != null && <small className="sale-detail-product-uah">{formatAmount(uahAmount)} грн</small>}
-      </span>
-    </div>
-  )
+  return <div className="sale-detail-products-table">
+    <DataTable
+      tableId="sale-detail-products"
+      layoutVersion={showUah ? 'uah-1' : 'base-1'}
+      columns={columns}
+      data={rows}
+      getRowId={(row) => row.id}
+      height="auto"
+      maxHeight={420}
+      minWidth={showUah ? 780 : 640}
+      defaultLayout={{ density: 'compact', columnPinning: { left: ['product'] } }}
+      emptyText={t('Товарів не знайдено')}
+    />
+  </div>
 }
 
 function getTotalRows(sales: SalesUkraineSale[]): number {

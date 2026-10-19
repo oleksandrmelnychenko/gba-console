@@ -26,19 +26,13 @@
 /* Pin the reset / refresh / density cluster to the trailing edge of the
    wrapping filter row. */
 .outgoing-cashflows-filter-actions {
-  grid-column: 7;
   margin-left: auto;
-}
-
-.outgoing-cashflows-table-toolbar-slot {
-  grid-column: 8;
 }
 
 .outgoing-cashflows-create-actions {
   align-items: center;
   align-self: end;
   display: flex;
-  grid-column: 9;
   min-height: 36px;
 }
 

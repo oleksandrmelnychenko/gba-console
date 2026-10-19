@@ -47,7 +47,7 @@ import {
   searchIncomeCashflowRegistryPaymentRegisters,
   updateIncomeCashflowClient,
 } from '../api/incomeCashflowsApi'
-import { IncomePaymentOperationType, IncomePaymentOrderType, PaymentRegisterType } from '../types'
+import { IncomePaymentOperationType, PaymentRegisterType } from '../types'
 import {
   buildIncomeColleagueItem,
   buildIncomeRegisterItems,
@@ -1181,7 +1181,10 @@ export function IncomeCashflowDetailDrawer({
   const income = row?.income
   const orderSales = income?.IncomePaymentOrderSales || []
   const currency = income?.Currency?.Code || income?.Currency?.Name || '—'
-  const registerKind = income?.IncomePaymentOrderType === IncomePaymentOrderType.Cash ? t('Каса') : t('Банк')
+  const registerType = income?.PaymentRegister?.Type
+  const registerKind = registerType === PaymentRegisterType.Cash ? t('Каса')
+    : registerType === PaymentRegisterType.Bank ? t('Банк')
+    : registerType === PaymentRegisterType.Card ? t('Картка') : null
 
   return (
     <AppDrawer
@@ -1207,7 +1210,7 @@ export function IncomeCashflowDetailDrawer({
           {error}
         </Alert>
       ) : row && income ? (
-        <Stack className="document-detail-drawer document-detail-drawer--compact income-cashflow-detail" gap="md">
+        <Stack className="income-cashflow-detail" gap={10}>
           {onReassign && isClientPaymentReassignable(income) && (
             <Group className="income-cashflow-detail__actions" justify="flex-end">
               <Button
@@ -1221,35 +1224,34 @@ export function IncomeCashflowDetailDrawer({
             </Group>
           )}
 
-          <section className="document-detail-summary income-cashflow-detail__hero">
-            <div className="document-detail-summary__main income-cashflow-detail__identity">
-              <span className="document-detail-eyebrow income-cashflow-detail__eyebrow">{getIncomePaymentOrderTitle(income, t)}</span>
-              <strong className="document-detail-summary__title income-cashflow-detail__number">{displayValue(income.Number)}</strong>
-              <span className="document-detail-summary__meta income-cashflow-detail__date">{formatDateTime(income.FromDate)}</span>
+          <section className="income-cashflow-detail__hero">
+            <div className="income-cashflow-detail__identity">
+              <div className="income-cashflow-detail__reference">
+                <TableChip tone="document" value={displayValue(income.Number)} />
+                <TableChip tone="neutral" value={formatDateTime(income.FromDate)} />
+              </div>
               <div className="income-cashflow-detail__payer">
-                <strong>
-                  {displayValue(
+                <TableChip tone="document" value={displayValue(
                     income.Colleague && (income.AssignedPaymentOrders?.length || 0) > 0
                       ? joinTruthyParts(row.payer, t('Повернення'))
                       : row.payer,
-                  )}
-                </strong>
+                  )} />
                 <div className="income-cashflow-detail__badges">
-                  <Badge className="app-role-pill is-gray" variant="light">{registerKind}</Badge>
+                  {registerKind && <TableChip tone="neutral" value={registerKind} />}
                   {income.IsAccounting ? (
-                    <Badge className="app-role-pill is-green" variant="light">{t('Бухгалтерський')}</Badge>
+                    <TableChip tone="success" value={t('Бухгалтерський')} />
                   ) : null}
                   {income.IsManagementAccounting ? (
-                    <Badge className="app-role-pill is-green" variant="light">{t('Управлінський')}</Badge>
+                    <TableChip tone="success" value={t('Управлінський')} />
                   ) : null}
                   {income.IsCanceled ? (
-                    <Badge className="app-role-pill is-red" variant="light">{t('Скасовано')}</Badge>
+                    <TableChip tone="danger" value={t('Скасовано')} />
                   ) : null}
                 </div>
               </div>
             </div>
 
-            <div className="document-detail-summary__metrics income-cashflow-detail__summary">
+            <div className="income-cashflow-detail__summary">
               <IncomeDetailMetric
                 label={t('Сума')}
                 meta={currency}
@@ -1269,40 +1271,33 @@ export function IncomeCashflowDetailDrawer({
             </div>
           </section>
 
-          <div className="document-detail-tree income-cashflow-detail__tree">
-            <section className="document-detail-section income-cashflow-detail__tree-section">
-              <div className="document-detail-section__head income-cashflow-detail__tree-head">
-                <span className="document-detail-section__title income-cashflow-detail__tree-title">{t('Деталі ордера')}</span>
-                <span className="document-detail-section__subtitle income-cashflow-detail__tree-subtitle">{displayValue(income.Number)}</span>
-              </div>
-
+          <div className="income-cashflow-detail__tree">
               <div className="income-cashflow-detail__sections">
                 <IncomeDetailSection title={t('Платіж')}>
-                  <DetailItem label={t('Тип операції')} value={displayValue(row.operationType)} />
-                  <DetailItem label={t('Стаття руху')} value={displayValue(row.paymentMovement)} />
-                  <DetailItem label={t('Рахунок')} value={displayValue(row.paymentRegister)} />
-                  <DetailItem label={t('Призначення платежу')} value={displayValue(income.PaymentPurpose)} />
-                  <DetailItem label={t('Вхідний номер')} mono value={displayValue(income.ArrivalNumber)} />
+                  <IncomeDetailField chip="source" label={t('Тип операції')} value={displayValue(row.operationType)} />
+                  <IncomeDetailField chip="neutral" label={t('Стаття руху')} value={displayValue(row.paymentMovement)} />
+                  <IncomeDetailField label={t('Рахунок')} value={displayValue(row.paymentRegister)} />
+                  <IncomeDetailField label={t('Призначення платежу')} value={displayValue(income.PaymentPurpose)} />
+                  <IncomeDetailField chip="neutral" label={t('Вхідний номер')} mono value={displayValue(income.ArrivalNumber)} />
                 </IncomeDetailSection>
 
                 <IncomeDetailSection title={t('Облік')}>
-                  <DetailItem label={t('Організація')} value={displayValue(row.organization)} />
-                  <DetailItem label={t('Відповідальний')} value={displayValue(row.responsible)} />
-                  <DetailItem label={t('Договір')} value={displayValue(getIncomeAgreementName(income))} />
-                  <DetailItem label={t('Курс')} mono value={displayValue(income.ExchangeRate)} />
-                  <DetailItem
+                  <IncomeDetailField chip="document" label={t('Організація')} value={displayValue(row.organization)} />
+                  <IncomeDetailField chip="neutral" label={t('Відповідальний')} value={displayValue(row.responsible)} />
+                  <IncomeDetailField chip="document" label={t('Договір')} value={displayValue(getIncomeAgreementName(income))} />
+                  <IncomeDetailField label={t('Курс')} mono value={displayValue(income.ExchangeRate)} />
+                  <IncomeDetailField
                     label={t('Сума у валюті договору')}
                     mono
                     value={hasNumber(income.AgreementExchangedAmount) ? formatMoney(income.AgreementExchangedAmount) : displayValue(undefined)}
                   />
                 </IncomeDetailSection>
               </div>
-            </section>
 
             {income.Comment ? (
-              <section className="document-detail-section income-cashflow-detail__tree-section">
-                <div className="document-detail-section__head income-cashflow-detail__tree-head">
-                  <span className="document-detail-section__title income-cashflow-detail__tree-title">{t('Коментар')}</span>
+              <section className="income-cashflow-detail__tree-section">
+                <div className="income-cashflow-detail__tree-head">
+                  <span className="income-cashflow-detail__tree-title">{t('Коментар')}</span>
                 </div>
                 <div className="income-cashflow-detail__comment">
                   <Text size="sm">{income.Comment}</Text>
@@ -1342,10 +1337,10 @@ function IncomeDetailMetric({
   value: string
 }) {
   return (
-    <div className={`document-detail-metric income-cashflow-detail__metric${accent ? ' is-accent' : ''}`}>
+    <div className={`income-cashflow-detail__metric${accent ? ' is-accent' : ''}`}>
       <span>{label}</span>
       <strong>{value}</strong>
-      <small>{meta}</small>
+      <TableChip tone={meta.includes('%') ? 'neutral' : 'source'} value={meta} />
     </div>
   )
 }
@@ -1367,6 +1362,19 @@ function IncomeDetailSection({
       </div>
     </section>
   )
+}
+
+function IncomeDetailField({ label, mono, value, chip }: {
+  label: string
+  mono?: boolean
+  value: string
+  chip?: 'neutral' | 'document' | 'source'
+}) {
+  if (!value.trim() || value === '—' || value === '-') return null
+  return <div className={`income-cashflow-detail__field${mono ? ' is-mono' : ''}`}>
+    <span>{label}</span>
+    <div>{chip ? <TableChip tone={chip} value={value} /> : value}</div>
+  </div>
 }
 
 function IncomeOrderSalesSection({
