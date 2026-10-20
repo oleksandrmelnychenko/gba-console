@@ -139,6 +139,42 @@ describe('ProductsPage income price columns', () => {
   })
 })
 
+describe('ProductsPage income receipt number', () => {
+  it('shows the stored 1C receipt number when the AMG data is not resolved', async () => {
+    getProductIncomeMovementsMock.mockResolvedValue([
+      {
+        ...incomeMovement,
+        ExchangeRate: 0,
+        ImportedSourceMetadataResolved: false,
+        IncomeToStorageNumber: '00000000532',
+        NetPrice: 6.79,
+      },
+      {
+        ...incomeMovement,
+        ExchangeRate: 0,
+        ImportedSourceMetadataResolved: false,
+        IncomeToStorageNumber: undefined,
+        NetPrice: 7.01,
+      },
+    ])
+
+    await openIncomeTab()
+
+    const table = screen.getByText('Ціна нетто за одиницю, EUR').closest('table')
+    const headers = Array.from(table?.querySelectorAll('thead th') ?? [])
+    const numberColumn = headers.findIndex((header) => header.textContent?.includes('Номер приходу'))
+    const rateColumn = headers.findIndex((header) => header.textContent?.includes('Курс'))
+    const rows = Array.from(table?.querySelectorAll('tbody tr') ?? [])
+    const storedRow = rows.find((row) => row.textContent?.includes('6,79'))
+    const missingRow = rows.find((row) => row.textContent?.includes('7,01'))
+
+    expect(numberColumn).toBeGreaterThanOrEqual(0)
+    expect(storedRow?.querySelectorAll('td')[numberColumn]?.textContent).toBe('00000000532')
+    expect(storedRow?.querySelectorAll('td')[rateColumn]?.textContent).toBe('')
+    expect(missingRow?.querySelectorAll('td')[numberColumn]?.textContent).toBe('Дані AMG не визначені')
+  })
+})
+
 describe('ProductsPage inline movement table width', () => {
   it.each(['Прихід', 'Розхід'] as const)('keeps the %s table inside a bounded horizontal scroll area', async (tab) => {
     await openIncomeTab()

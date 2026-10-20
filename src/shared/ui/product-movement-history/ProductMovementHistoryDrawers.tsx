@@ -2329,7 +2329,7 @@ function useProductIncomeMovementColumns(): DataTableColumn<ProductIncomeMovemen
         width: 170,
         minWidth: 150,
         accessor: (row) => row.IncomeToStorageNumber,
-        cell: (row) => row.ImportedSourceMetadataResolved === false
+        cell: (row) => row.ImportedSourceMetadataResolved === false && !row.IncomeToStorageNumber
           ? t('Дані AMG не визначені')
           : <TableChip tone="document" value={displayValue(row.IncomeToStorageNumber)} />,
       },

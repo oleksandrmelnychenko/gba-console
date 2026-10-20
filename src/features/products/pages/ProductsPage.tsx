@@ -3365,7 +3365,7 @@ function ProductIncomeMovementsGrid({
         header: t('Номер приходу'),
         width: 140,
         accessor: (row) => row.IncomeToStorageNumber,
-        cell: (row) => row.ImportedSourceMetadataResolved === false
+        cell: (row) => row.ImportedSourceMetadataResolved === false && !formatMovementCellValue(row.IncomeToStorageNumber)
           ? renderMovementText(t('Дані AMG не визначені'))
           : <TableChip tone="document" value={formatMovementCellValue(row.IncomeToStorageNumber)} />,
       },
