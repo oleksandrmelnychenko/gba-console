@@ -12,7 +12,8 @@ type MovementRow = {
 const geometry = {
   maxScrollLeft: 809,
   scrollClientWidth: 1081,
-  scrollTop: 849,
+  scrollHeight: 360,
+  scrollTop: 835,
   scrollWidth: 1900,
 }
 const scrollLefts = new WeakMap<Element, number>()
@@ -26,7 +27,11 @@ function rect(left: number, top: number, width: number, height: number) {
 function stubGeometry() {
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
     if (this.classList.contains('data-table-scroll')) {
-      return rect(292, geometry.scrollTop, 1101, 360)
+      return rect(292, geometry.scrollTop, 1101, geometry.scrollHeight)
+    }
+
+    if (this.classList.contains('test-frame')) {
+      return rect(292, geometry.scrollTop, 1101, geometry.scrollHeight)
     }
 
     if (this.classList.contains('test-workspace')) {
@@ -44,17 +49,21 @@ function stubGeometry() {
       return geometry.scrollClientWidth
     }
 
+    if (this.classList.contains('test-frame')) return 1101
+
     return this.classList.contains('test-workspace') ? 1157 : 0
   })
   vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (this: HTMLElement) {
     if (this.classList.contains('data-table-scroll')) {
-      return 350
+      return geometry.scrollHeight - 18
     }
+
+    if (this.classList.contains('test-frame')) return geometry.scrollHeight
 
     return this.classList.contains('test-workspace') ? 666 : 0
   })
   vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: HTMLElement) {
-    return this.classList.contains('data-table-scroll') ? 360 : 0
+    return this.classList.contains('data-table-scroll') ? geometry.scrollHeight : 0
   })
   vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockImplementation(function (this: HTMLElement) {
     return this.classList.contains('data-table-scroll') ? geometry.scrollWidth : 0
@@ -95,19 +104,21 @@ function renderMovementTable(stickyHorizontalScrollbar = true) {
     <MantineProvider>
       <I18nProvider>
         <div className="test-workspace" style={{ overflowY: 'auto' }}>
-          <DataTable<MovementRow>
-            columns={[
-              { id: 'number', header: 'Номер', width: 900, accessor: (row) => row.number },
-              { id: 'client', header: 'Клієнт', width: 1000, accessor: (row) => row.client },
-            ]}
-            data={[{ client: 'ТОВ «Тест»', number: 'CH0000001' }]}
-            getRowId={(row) => row.number}
-            maxHeight={360}
-            minWidth={1900}
-            showLayoutControls={false}
-            stickyHorizontalScrollbar={stickyHorizontalScrollbar}
-            tableId="sticky-scrollbar-test"
-          />
+          <div className="test-frame" style={{ overflow: 'hidden' }}>
+            <DataTable<MovementRow>
+              columns={[
+                { id: 'number', header: 'Номер', width: 900, accessor: (row) => row.number },
+                { id: 'client', header: 'Клієнт', width: 1000, accessor: (row) => row.client },
+              ]}
+              data={[{ client: 'ТОВ «Тест»', number: 'CH0000001' }]}
+              getRowId={(row) => row.number}
+              maxHeight={360}
+              minWidth={1900}
+              showLayoutControls={false}
+              stickyHorizontalScrollbar={stickyHorizontalScrollbar}
+              tableId="sticky-scrollbar-test"
+            />
+          </div>
         </div>
       </I18nProvider>
     </MantineProvider>,
@@ -123,8 +134,9 @@ function renderMovementTable(stickyHorizontalScrollbar = true) {
 
 beforeEach(() => {
   geometry.maxScrollLeft = 809
+  geometry.scrollHeight = 360
   geometry.scrollClientWidth = 1081
-  geometry.scrollTop = 849
+  geometry.scrollTop = 835
   geometry.scrollWidth = 1900
   frames.length = 0
   Object.defineProperty(window, 'innerHeight', { configurable: true, value: 900 })
@@ -151,11 +163,12 @@ describe('DataTable sticky horizontal scrollbar', () => {
     const { bar } = renderMovementTable()
 
     expect(bar?.dataset.visible).toBe('true')
-    expect(bar?.getAttribute('aria-hidden')).toBe('true')
+    expect(bar?.getAttribute('aria-label')).toBe('Горизонтальна прокрутка таблиці')
+    expect(bar?.tabIndex).toBe(0)
     expect(bar?.style.left).toBe('292px')
-    expect(bar?.style.top).toBe('851px')
+    expect(bar?.style.top).toBe('843px')
     expect(bar?.style.width).toBe('1101px')
-    expect(bar?.style.height).toBe('10px')
+    expect(bar?.style.height).toBe('18px')
     expect((bar?.firstElementChild as HTMLElement).style.width).toBe('1910px')
   })
 
@@ -177,6 +190,25 @@ describe('DataTable sticky horizontal scrollbar', () => {
     expect(bar!.scrollLeft).toBe(809)
   })
 
+  it('reaches both ends with the keyboard without switching products', () => {
+    const { bar, scroll } = renderMovementTable()
+    const productNavigation = vi.fn()
+    document.addEventListener('keydown', productNavigation)
+
+    fireEvent.keyDown(bar!, { key: 'End' })
+    expect(scroll.scrollLeft).toBe(809)
+    expect(bar!.scrollLeft).toBe(809)
+    fireEvent.keyDown(bar!, { key: 'ArrowLeft' })
+    expect(scroll.scrollLeft).toBe(769)
+    fireEvent.keyDown(bar!, { key: 'Home' })
+    expect(scroll.scrollLeft).toBe(0)
+    expect(bar!.scrollLeft).toBe(0)
+    fireEvent.keyDown(bar!, { key: 'ArrowRight' })
+    expect(scroll.scrollLeft).toBe(40)
+    document.removeEventListener('keydown', productNavigation)
+    expect(productNavigation).not.toHaveBeenCalled()
+  })
+
   it('re-measures the reachable range after the columns change without moving the table', () => {
     const { bar, scroll } = renderMovementTable()
 
@@ -194,18 +226,30 @@ describe('DataTable sticky horizontal scrollbar', () => {
     expect((bar!.firstElementChild as HTMLElement).style.width).toBe('2110px')
   })
 
-  it('hides once the table own scrollbar scrolls into view and returns when it leaves', () => {
+  it('keeps the control at the table bottom when the native scrollbar is visible', () => {
     const { bar, workspace } = renderMovementTable()
 
     geometry.scrollTop = 478
     fireEvent.scroll(workspace)
     flushFrames()
-    expect(bar?.dataset.visible).toBe('false')
+    expect(bar?.dataset.visible).toBe('true')
+    expect(bar?.style.top).toBe('820px')
 
     geometry.scrollTop = 600
     fireEvent.scroll(workspace)
     flushFrames()
     expect(bar?.dataset.visible).toBe('true')
+  })
+
+  it('keeps a one-row table control visible inside the product frame', () => {
+    geometry.scrollTop = 715
+    geometry.scrollHeight = 89
+
+    const { bar, scroll } = renderMovementTable()
+
+    expect(scroll.querySelectorAll('tbody tr')).toHaveLength(1)
+    expect(bar?.dataset.visible).toBe('true')
+    expect(bar?.style.top).toBe('786px')
   })
 
   it('hides while the table is fully below the visible area', () => {

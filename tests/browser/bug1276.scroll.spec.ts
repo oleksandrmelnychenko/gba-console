@@ -19,6 +19,7 @@ test('Розхід pins a synced horizontal scrollbar to the bottom of the visib
 
   const scrollBox = await box(scroll)
   const barBox = await box(bar)
+  expect(barBox.height).toBeGreaterThan(10)
   const workspaceBottom = await workspace.evaluate((element) => element.getBoundingClientRect().top + element.clientHeight)
   expect(scrollBox.y + scrollBox.height).toBeGreaterThan(workspaceBottom)
   expect(Math.abs(barBox.y + barBox.height - workspaceBottom)).toBeLessThanOrEqual(1)
@@ -56,8 +57,12 @@ test('Розхід pins a synced horizontal scrollbar to the bottom of the visib
   expect(await workspace.evaluate((element) => element.scrollHeight)).toBe(workspaceHeight)
 
   await workspace.evaluate((element) => { element.scrollTop = element.scrollHeight })
-  await expect(bar).toHaveAttribute('data-visible', 'false')
-  await expect(bar).toBeHidden()
+  await expect(bar).toHaveAttribute('data-visible', 'true')
+  await expect.poll(async () => {
+    const tableBottom = await box(scroll)
+    const bottomControl = await box(bar)
+    return Math.abs(bottomControl.y + bottomControl.height - tableBottom.y - tableBottom.height)
+  }).toBeLessThanOrEqual(1)
 
   await workspace.evaluate((element) => { element.scrollTop = 0 })
   await expect(bar).toHaveAttribute('data-visible', 'true')
@@ -70,3 +75,28 @@ test('Розхід shows no extra scrollbar when all columns fit', async ({ page
   await expect(page.locator(barSelector)).toHaveAttribute('data-visible', 'false')
   await expect(page.locator(barSelector)).toBeHidden()
 })
+
+for (const rows of [1, 5]) {
+  test(`${rows}-row Розхід keeps the larger bottom control and reaches Кількість`, async ({ page }) => {
+    await page.setViewportSize({ width: 1919, height: 953 })
+    await page.goto(`/tests/browser/bug1276.html?rows=${rows}`)
+
+    const scroll = page.locator('.data-table-scroll')
+    const bar = page.getByRole('region', { name: 'Горизонтальна прокрутка таблиці' })
+    await expect(page.locator('.data-table-table tbody tr')).toHaveCount(rows)
+    await page.locator('.bug1276-workspace').evaluate((element) => { element.scrollTop = element.scrollHeight })
+    await expect(bar).toHaveAttribute('data-visible', 'true')
+
+    const scrollBox = await box(scroll)
+    const barBox = await box(bar)
+    expect(barBox.height).toBeGreaterThan(10)
+    expect(Math.abs(barBox.y + barBox.height - scrollBox.y - scrollBox.height)).toBeLessThanOrEqual(1)
+
+    await bar.press('End')
+    await expect.poll(() => scroll.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0)
+    const quantity = await box(page.getByRole('columnheader', { name: 'Кількість' }))
+    expect(quantity.x + quantity.width).toBeLessThanOrEqual(scrollBox.x + scrollBox.width + 2)
+    await bar.press('Home')
+    await expect.poll(() => scroll.evaluate((element) => element.scrollLeft)).toBe(0)
+  })
+}

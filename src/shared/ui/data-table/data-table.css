@@ -89,15 +89,25 @@
   background: transparent;
 }
 
+.data-table[data-sticky-horizontal-scrollbar] > .data-table-scroll {
+  scrollbar-color: var(--mantine-color-gray-6) var(--mantine-color-gray-1);
+  scrollbar-gutter: auto;
+  scrollbar-width: auto;
+}
+
+.data-table[data-sticky-horizontal-scrollbar] > .data-table-scroll::-webkit-scrollbar {
+  height: 18px;
+}
+
 .data-table-sticky-scrollbar {
   background: var(--mantine-color-white);
-  height: 10px;
+  height: 18px;
   left: 0;
   overflow-x: auto;
   overflow-y: hidden;
   position: fixed;
-  scrollbar-color: var(--mantine-color-gray-4) transparent;
-  scrollbar-width: thin;
+  scrollbar-color: var(--mantine-color-gray-6) var(--mantine-color-gray-1);
+  scrollbar-width: auto;
   top: 0;
   visibility: hidden;
   width: 0;
@@ -113,15 +123,15 @@
 }
 
 .data-table-sticky-scrollbar::-webkit-scrollbar {
-  height: 10px;
+  height: 18px;
 }
 
 .data-table-sticky-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--mantine-color-gray-1);
 }
 
 .data-table-sticky-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--mantine-color-gray-4);
+  background: var(--mantine-color-gray-6);
   border-radius: 999px;
 }
 
