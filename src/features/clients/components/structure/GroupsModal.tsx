@@ -9,7 +9,7 @@ import {
   TextInput,
   UnstyledButton,
 } from '@mantine/core'
-import { AppModal } from '../../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../../shared/ui/AppModal'
 import { CircleAlert, FolderTree, Plus, Save, Trash2, X } from 'lucide-react'
 import { useEffect } from 'react'
 import { useValueState } from '../../../../shared/hooks/useValueState'
@@ -285,9 +285,9 @@ export function GroupsModal({ canManage, opened, clientId, clientNetId, onClose,
       title={t('Ви впевнені, що хочете видалити групу?')}
       onClose={() => setGroupPendingDelete(null)}
     >
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap="md">
         <Text size="sm">{groupPendingDelete?.Name}</Text>
-        <Group justify="flex-end" gap="xs">
+        <AppModalFooter>
           <Button variant="default" onClick={() => setGroupPendingDelete(null)}>
             {t('Скасувати')}
           </Button>
@@ -305,7 +305,7 @@ export function GroupsModal({ canManage, opened, clientId, clientNetId, onClose,
           >
             {t('Видалити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>}
     </>

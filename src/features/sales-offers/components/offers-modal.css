@@ -130,3 +130,18 @@
   color: var(--mantine-color-gray-7);
   font: 400 12px / 1.4 var(--font-sans);
 }
+
+.offers-create-modal .mantine-Modal-body {
+  background: var(--mantine-color-gray-0);
+}
+
+.offers-create-modal__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  background: var(--mantine-color-white);
+}

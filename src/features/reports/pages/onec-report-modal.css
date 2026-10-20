@@ -1,7 +1,7 @@
-.onec-report-modal { display: grid; gap: 14px; min-width: 0; padding: 2px; }
-.onec-report-modal__section { border: 1px solid var(--mantine-color-gray-2); border-radius: 10px; padding: 14px; min-width: 0; }
+.onec-report-modal { display: grid; gap: 10px; min-width: 0; padding: 2px; }
+.onec-report-modal__section { border: 1px solid var(--mantine-color-gray-2); border-radius: 10px; padding: 12px; min-width: 0; }
 .onec-report-modal__scope { display: grid; grid-template-columns: minmax(0, 1fr) 36px; gap: 8px; align-items: end; }
-.onec-report-modal__fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+.onec-report-modal__fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .onec-report-modal__layout { grid-column: 1 / -1; }
 .onec-report-modal__fields input { font-family: var(--font-mono); }
 .onec-report-modal__details { color: var(--mantine-color-gray-7); overflow-wrap: anywhere; }

@@ -1,5 +1,6 @@
 import {
   Alert,
+  Card,
   Button,
   Group,
   Stack,
@@ -10,10 +11,9 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert, Save, Trash2 } from 'lucide-react'
 import { type FormEvent, useEffect, useReducer } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { usePermissions } from '../../auth/usePermissions'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
@@ -255,19 +255,37 @@ export function PaymentCashflowArticleFormPage() {
   }
 
   return (
-    <AppDrawer
+    <AppModal
+      className="app-compact-form"
       opened
-      position="right"
-      size="compact"
-      title={
-        <span style={{ fontFamily: 'var(--font-mono)' }}>
-          {isEditMode ? t('Редагування статті руху коштів') : t('Нова стаття руху коштів')}
-        </span>
-      }
+      size={600}
+      title={isEditMode ? t('Редагування статті руху коштів') : t('Нова стаття руху коштів')}
       onClose={handleCancel}
-      footer={
-        <Group gap="xs">
-          {isEditMode && canDelete && (
+    >
+      <form id="payment-cashflow-article-form" onSubmit={handleSubmit}>
+        <Card className="app-section-card" withBorder padding={12} radius="md">
+          <Stack gap={10}>
+            {error && (
+              <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+                {error}
+              </Alert>
+            )}
+
+            <TextInput
+              disabled={isLoading || isSaving || isDeleting || !canSave}
+              label={t('Назва')}
+              maxLength={ARTICLE_NAME_MAX_LENGTH}
+              placeholder={t('Вкажіть назву')}
+              required
+              value={operationName}
+              onChange={(event) => setFormState({ operationName: event.currentTarget.value })}
+            />
+          </Stack>
+        </Card>
+      </form>
+      <AppModalFooter className={isEditMode && canDelete ? 'app-modal-footer--split' : undefined}>
+        {isEditMode && canDelete && (
+          <Group gap="xs">
             <Button
               color="red"
               disabled={isLoading}
@@ -279,7 +297,10 @@ export function PaymentCashflowArticleFormPage() {
             >
               {t('Видалити')}
             </Button>
-          )}
+          </Group>
+        )}
+        <Group gap="xs">
+          <Button variant="default" disabled={isSaving || isDeleting} onClick={handleCancel}>{t('Скасувати')}</Button>
           {canSave && (
             <Button
               color={CREATE_ACTION_COLOR}
@@ -293,49 +314,29 @@ export function PaymentCashflowArticleFormPage() {
             </Button>
           )}
         </Group>
-      }
-    >
-      <form id="payment-cashflow-article-form" onSubmit={handleSubmit}>
-        <Stack gap="md">
-          {error && (
-            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-              {error}
-            </Alert>
-          )}
+      </AppModalFooter>
 
-          <TextInput
-            disabled={isLoading || isSaving || isDeleting || !canSave}
-            label={t('Назва')}
-            maxLength={ARTICLE_NAME_MAX_LENGTH}
-            placeholder={t('Вкажіть назву')}
-            required
-            value={operationName}
-            onChange={(event) => setFormState({ operationName: event.currentTarget.value })}
-          />
-        </Stack>
-      </form>
-
-      <AppModal
+      <AppModal className="app-compact-form"
         centered
         opened={deleteModalOpened}
         title={t('Видалити статтю руху коштів')}
         onClose={() => setDeleteModalOpened(false)}
       >
-        <Stack gap="md">
+        <Stack gap={10}>
           <Text>
             {t('Видалити статтю')} <Text span fw={600}>{operationName || t('Без назви')}</Text>?
           </Text>
-          <Group justify="flex-end">
-            <Button color="gray" disabled={isDeleting} variant="light" onClick={() => setDeleteModalOpened(false)}>
+          <AppModalFooter>
+            <Button color="gray" disabled={isDeleting} variant="default" onClick={() => setDeleteModalOpened(false)}>
               {t('Скасувати')}
             </Button>
             <Button color="red" leftSection={<Trash2 size={16} />} loading={isDeleting} onClick={handleDelete}>
               {t('Видалити')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
-    </AppDrawer>
+    </AppModal>
   )
 }
 

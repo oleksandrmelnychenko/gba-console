@@ -19,7 +19,7 @@ import { useAuth } from '../../auth/useAuth'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -743,8 +743,8 @@ function CategoryEditorForm({
         label={t('Послуги')}
         onChange={(event) => setSupplyServiceCategory(event.currentTarget.checked)}
       />
-      <Group justify="flex-end">
-        <Button color="gray" leftSection={<X size={16} />} variant="subtle" onClick={onClose}>
+      <AppModalFooter>
+        <Button color="gray" leftSection={<X size={16} />} variant="default" onClick={onClose}>
           {t('Скасувати')}
         </Button>
         <Button
@@ -755,7 +755,7 @@ function CategoryEditorForm({
         >
           {t('Зберегти')}
         </Button>
-      </Group>
+      </AppModalFooter>
     </Stack>
   )
 }
@@ -896,14 +896,14 @@ export function ProductEditorForm({
           }
         }}
       />
-      <Group justify="flex-end">
-        <Button color="gray" leftSection={<X size={16} />} variant="subtle" onClick={onClose}>
+      <AppModalFooter>
+        <Button color="gray" leftSection={<X size={16} />} variant="default" onClick={onClose}>
           {t('Скасувати')}
         </Button>
         <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} loading={isSubmitting} onClick={submit}>
           {t('Зберегти')}
         </Button>
-      </Group>
+      </AppModalFooter>
     </Stack>
   )
 }
@@ -965,18 +965,18 @@ function DeleteModal({
 
   return (
     <AppModal centered opened={Boolean(target)} title={t('Видалити запис')} onClose={onClose}>
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap="md">
         <Text>
           {t('Видалити')} <Text span fw={700}>{displayValue(targetName)}</Text>?
         </Text>
-        <Group justify="flex-end">
-          <Button color="gray" variant="subtle" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button color="red" loading={isSubmitting} onClick={onConfirm}>
             {t('Видалити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

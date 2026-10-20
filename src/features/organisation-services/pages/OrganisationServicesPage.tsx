@@ -1,3 +1,4 @@
+import { DocumentDetailLayout, DocumentDetailSection, DocumentDetailRow, DocumentDetailSummary } from '../../../shared/ui/document-detail/DocumentDetail'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -5,9 +6,7 @@ import {
   Anchor,
   Badge,
   Button,
-  Divider,
   Group,
-  SimpleGrid,
   Stack,
   Text,
   Tooltip,
@@ -669,24 +668,30 @@ function OrganisationServiceDetailDrawer({ row, onClose }: { row: PaymentTaskRow
   return (
     <AppDrawer
       opened={Boolean(row)}
-      padding="lg"
+      padding="md"
       position="right"
       size="min(980px, 100vw)"
       title={row ? `${row.serviceTypeLabel}${row.number ? ` #${row.number}` : ''}` : t('Деталі послуги')}
       onClose={onClose}
     >
       {row && service && task && (
-        <Stack gap="lg">
-          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
+        <DocumentDetailLayout variant="inventory" summary={
+          <DocumentDetailSummary variant="inventory" eyebrow={row.serviceTypeLabel}
+            title={displayValue(service.Number || service.ServiceNumber)}
+            meta={<Group gap={8}><span>{displayDate(row.date)}</span><TableChip tone="product" value={displayValue(getServiceOrganizationName(service))} /></Group>}
+            metrics={<Group gap={6}><span className="app-money">{displayMoney(service.GrossPrice)}</span><TableChip tone="source" value={displayValue(getServiceCurrencyCode(service))} /></Group>}
+          />
+        }>
+          <DocumentDetailSection title={t('Дані послуги')}>
             <DetailItem label={t('Дата')} value={displayDate(row.date)} />
             <DetailItem label={t('Тип')} value={row.serviceTypeLabel} />
             <DetailItem label={t('Назва')} value={displayValue(row.serviceName)} />
-            <DetailItem label={t('Номер')} value={displayValue(service.Number || service.ServiceNumber)} />
-            <DetailItem label={t('Номер документа')} value={displayValue(service.ServiceNumber)} />
+            <DetailItem tone="document" label={t('Номер')} value={displayValue(service.Number || service.ServiceNumber)} />
+            <DetailItem tone="document" label={t('Номер документа')} value={displayValue(service.ServiceNumber)} />
             <DetailItem label={t('Фактура')} value={displayValue(row.documentName)} />
-            <DetailItem label={t('Організація')} value={displayValue(getServiceOrganizationName(service))} />
+            <DetailItem tone="product" label={t('Організація')} value={displayValue(getServiceOrganizationName(service))} />
             <DetailItem label={t('Договір')} value={displayValue(getAgreementLabel(service))} />
-            <DetailItem label={t('Валюта')} value={displayValue(getServiceCurrencyCode(service))} />
+            <DetailItem tone="source" label={t('Валюта')} value={displayValue(getServiceCurrencyCode(service))} />
             <DetailItem mono label={t('Сума нетто')} value={displayMoney(service.NetPrice)} />
             <DetailItem mono label={t('Сума')} value={displayMoney(service.GrossPrice)} />
             <DetailItem mono label={t('Бух. нетто')} value={displayMoney(service.AccountingNetPrice)} />
@@ -697,17 +702,9 @@ function OrganisationServiceDetailDrawer({ row, onClose }: { row: PaymentTaskRow
             <DetailItem label={t('Дата завантаження')} value={displayDate(service.LoadDate)} />
             <DetailItem label={t('Днів доставки')} value={displayNumber(service.TermDeliveryInDays)} />
             <DetailItem label={t('Статус')} value={getStatusLabel(row.status, t)} />
-          </SimpleGrid>
+          </DocumentDetailSection>
 
-          <Divider />
-
-          <Stack gap="sm">
-            <Group justify="space-between">
-              <Text fw={700}>{t('Деталізація послуги')}</Text>
-              <Badge color={serviceDetails.length > 0 ? CREATE_ACTION_COLOR : 'gray'} variant="light">
-                {serviceDetails.length}
-              </Badge>
-            </Group>
+          <DocumentDetailSection title={t('Деталізація послуги')} actions={<TableChip tone="neutral" value={String(serviceDetails.length)} />} stacked>
             {serviceDetails.length > 0 ? (
               <DataTable
                 columns={getServiceDetailColumns(t)}
@@ -726,12 +723,9 @@ function OrganisationServiceDetailDrawer({ row, onClose }: { row: PaymentTaskRow
                 {t('Деталізації немає')}
               </Text>
             )}
-          </Stack>
+          </DocumentDetailSection>
 
-          <Divider />
-
-          <Stack gap="sm">
-            <Text fw={700}>{t('Документи')}</Text>
+          <DocumentDetailSection title={t('Документи')} stacked>
             {documents.length > 0 ? (
               <Stack gap="xs">
                 {documents.map((document, index) => {
@@ -755,19 +749,16 @@ function OrganisationServiceDetailDrawer({ row, onClose }: { row: PaymentTaskRow
                 {t('Документів немає')}
               </Text>
             )}
-          </Stack>
-        </Stack>
+          </DocumentDetailSection>
+        </DocumentDetailLayout>
       )}
     </AppDrawer>
   )
 }
 
-function DetailItem({ label, mono, value }: { label: string; mono?: boolean; value: string }) {
+function DetailItem({ label, mono, tone, value }: { label: string; mono?: boolean; tone?: 'product' | 'source' | 'warning' | 'neutral' | 'document'; value: string }) {
   return (
-    <div className={`app-detail-field${mono ? ' is-mono' : ''}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
+    <DocumentDetailRow label={label} mono={mono} value={tone ? <TableChip tone={tone} value={value} /> : value} />
   )
 }
 

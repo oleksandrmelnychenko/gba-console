@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { Button, Alert, Select, Stack, Text } from '@mantine/core'
@@ -350,7 +351,7 @@ function useOrdersColumns(indexMap: Map<SupplyOrderUkraine, number>) {
         width: 180,
         minWidth: 140,
         accessor: (order) => order.Organization?.Name,
-        cell: (order) => displayValue(order.Organization?.Name),
+        cell: (order) => <TableChip tone="product" value={getOrganizationDisplayName(order.Organization)} />,
       },
       {
         id: 'isPlaced',
@@ -366,7 +367,7 @@ function useOrdersColumns(indexMap: Map<SupplyOrderUkraine, number>) {
         width: 180,
         minWidth: 140,
         accessor: (order) => order.Responsible?.LastName,
-        cell: (order) => displayValue(order.Responsible?.LastName),
+        cell: (order) => <TableChip tone="warning" value={displayValue(order.Responsible?.LastName)} />,
       },
     ],
     [indexMap, t],

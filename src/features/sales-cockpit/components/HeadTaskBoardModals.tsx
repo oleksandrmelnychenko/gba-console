@@ -1,8 +1,8 @@
-import { Button, Group, Stack, Text, Textarea } from '@mantine/core'
+import { Button, Stack, Text, Textarea } from '@mantine/core'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { HeadTask } from '../types'
 
@@ -47,7 +47,7 @@ export function BoardNoteModal({
         }
       }}
     >
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap="md">
         <Text size="sm">{taskCaption(task, t('Завдання'))}</Text>
 
         {(task?.Notes.length ?? 0) > 0 && (
@@ -78,8 +78,8 @@ export function BoardNoteModal({
           onChange={(event) => setText(event.currentTarget.value)}
         />
 
-        <Group justify="flex-end">
-          <Button color="gray" disabled={saving} variant="light" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" disabled={saving} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button
@@ -94,7 +94,7 @@ export function BoardNoteModal({
           >
             {t('Зберегти')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )
@@ -131,7 +131,7 @@ export function BoardCancelModal({
         }
       }}
     >
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap="md">
         <Text size="sm">{taskCaption(task, t('Завдання'))}</Text>
 
         <Textarea
@@ -144,8 +144,8 @@ export function BoardCancelModal({
           onChange={(event) => setReason(event.currentTarget.value)}
         />
 
-        <Group justify="flex-end">
-          <Button color="gray" disabled={saving} variant="light" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" disabled={saving} variant="default" onClick={onClose}>
             {t('Назад')}
           </Button>
           <Button
@@ -159,7 +159,7 @@ export function BoardCancelModal({
           >
             {t('Скасувати задачу')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

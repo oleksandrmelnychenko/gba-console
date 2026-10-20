@@ -2,7 +2,7 @@ import { Button, Card, Group, Text } from '@mantine/core'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { useAuth } from '../../auth/useAuth'
 import type { ProtocolDetail } from '../detailTypes'
 import { getProtocolStatusActionLabel } from '../protocolStatus'
@@ -59,7 +59,7 @@ export function StatusSection({
         onClose={() => setConfirmOpen(false)}
       >
         <Text size="sm">{t('Змінити статус протоколу?')}</Text>
-        <Group justify="flex-end" mt="md">
+        <AppModalFooter>
           <Button disabled={isUpdating} variant="default" onClick={() => setConfirmOpen(false)}>
             {t('Скасувати')}
           </Button>
@@ -78,7 +78,7 @@ export function StatusSection({
           >
             {t('Підтвердити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </AppModal>
     </>
   )

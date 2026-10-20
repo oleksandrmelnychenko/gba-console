@@ -1452,19 +1452,19 @@ function CancelIncomeCashflowModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={Boolean(row)} title={t('Скасувати прибутковий ордер')} onClose={onClose}>
-      <Stack gap="md">
+    <AppModal className="app-compact-form" centered opened={Boolean(row)} title={t('Скасувати прибутковий ордер')} onClose={onClose}>
+      <Stack gap={10}>
         <Text>
           {t('Скасувати ордер')} <Text span fw={600}>{row?.number || t('Без номера')}</Text>?
         </Text>
-        <Group justify="flex-end">
+        <AppModalFooter>
           <Button disabled={isSaving} variant="default" onClick={onClose}>
             {t('Ні')}
           </Button>
           <Button color="red" leftSection={<X size={16} />} loading={isSaving} onClick={onCancel}>
             {t('Скасувати')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

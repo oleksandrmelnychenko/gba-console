@@ -8,7 +8,7 @@ import {
   Text,
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
-import { AppModal } from "../../../shared/ui/AppModal"
+import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from "../../../shared/ui/page-header-actions/PageHeaderActions"
 import { notifications } from '@mantine/notifications'
 import { Check, CircleAlert, Save, Trash2 } from 'lucide-react'
@@ -310,7 +310,7 @@ function OrganizationClientEditPageContent({
         </Group>
       }
     >
-    <Stack gap="lg">
+    <Stack className="app-compact-form" gap={10}>
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
@@ -328,8 +328,7 @@ function OrganizationClientEditPageContent({
         </Card>
       ) : client ? (
         <form id="organization-client-edit-form" onSubmit={handleSubmit}>
-          <Card withBorder radius="md" padding="md">
-            <Stack gap="md">
+            <Stack className="app-compact-form" gap={10}>
               <OrganizationClientForm
                 client={client}
                 disabled={!permissions.canEdit || isSaving || isDeleting}
@@ -355,7 +354,6 @@ function OrganizationClientEditPageContent({
                 </Group>
               )}
             </Stack>
-          </Card>
         </form>
       ) : (
         <Card withBorder radius="md" padding="lg">
@@ -364,16 +362,16 @@ function OrganizationClientEditPageContent({
       )}
 
       <AppModal centered opened={permissions.canDelete && deleteModalOpened} title={t('Видалити організацію')} onClose={() => setDeleteModalOpened(false)}>
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           <Text size="sm">{t('Підтвердити видалення')}: {client ? getOrganizationClientName(client) : ''}</Text>
-          <Group justify="flex-end">
-            <Button variant="subtle" color="gray" onClick={() => setDeleteModalOpened(false)}>
+          <AppModalFooter>
+            <Button variant="default" color="gray" onClick={() => setDeleteModalOpened(false)}>
               {t('Скасувати')}
             </Button>
             <Button color="red" leftSection={<Check size={16} />} loading={isDeleting} onClick={handleDelete}>
               {t('Видалити')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
     </Stack>

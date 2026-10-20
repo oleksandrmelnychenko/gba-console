@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
@@ -19,7 +20,7 @@ import {
   ThemeIcon,
   Tooltip,
 } from '@mantine/core'
-import { AppModal } from "../../../shared/ui/AppModal"
+import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import { Building, CircleAlert, Coins, DatabaseX, MapPin, Package, Plus, ReceiptText, RefreshCw, RotateCcw, Ruler, Save, Search, Star, Trash2, Truck, Upload, Users } from 'lucide-react'
 import { createContext, type ComponentType, type ReactNode, useCallback, useContext, useEffect, useMemo, useReducer, useState } from 'react'
@@ -1082,7 +1083,7 @@ function RegionEditorModal({
           onSave(name)
         }}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           {error ? (
             <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
@@ -1097,14 +1098,14 @@ function RegionEditorModal({
             value={name}
             onChange={(event) => setName(event.currentTarget.value)}
           />
-          <Group justify="flex-end">
-            <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
+          <AppModalFooter>
+            <Button color="gray" disabled={isSaving} type="button" variant="default" onClick={onClose}>
               Скасувати
             </Button>
             <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
               Зберегти
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </form>
     </AppModal>
@@ -1145,7 +1146,7 @@ function RegionCodeEditorModal({
           onSave(values)
         }}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap={10}>
           {error ? (
             <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
@@ -1195,21 +1196,21 @@ function DeleteResourceModal({
 }) {
   return (
     <AppModal centered className="client-resources-modal" opened={opened} title={<span style={RESOURCE_MONO_STYLE}>{translate("Видалити запис")}</span>} onClose={onClose}>
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap="md">
         {error ? (
           <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
             {error}
           </Alert>
         ) : null}
         <Text size="sm">{getDeleteTargetMessage(target)}</Text>
-        <Group justify="flex-end">
-          <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" disabled={isSaving} type="button" variant="default" onClick={onClose}>
             Скасувати
           </Button>
           <Button color="red" leftSection={<Trash2 size={16} />} loading={isSaving} onClick={onConfirm}>
             Видалити
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )
@@ -1550,7 +1551,7 @@ function PerfectClientEditorModal({
           onSave(values)
         }}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap={10}>
           {error ? (
             <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
@@ -1654,7 +1655,7 @@ function TaxInspectionEditorModal({
           onSave(values)
         }}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap={10}>
           {error ? (
             <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
@@ -1750,7 +1751,7 @@ function PricingEditorModal({
           onSave(values)
         }}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap={10}>
           {error ? (
             <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
@@ -1873,7 +1874,7 @@ function CurrencyEditorModal({
           onSave(values)
         }}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap={10}>
           {error ? (
             <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
@@ -1942,7 +1943,7 @@ function StorageEditorModal({
           onSave(values)
         }}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap={10}>
           {error ? (
             <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
@@ -2048,7 +2049,7 @@ function MeasureUnitEditorModal({
           onSave(values)
         }}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap={10}>
           {error ? (
             <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
@@ -2106,7 +2107,7 @@ function ReserveEditorModal({
           onSave(days)
         }}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap={10}>
           {error ? (
             <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
@@ -2165,7 +2166,7 @@ function TransporterEditorModal({
           onSave(values)
         }}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap={10}>
           {error ? (
             <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
@@ -2219,14 +2220,14 @@ function TransporterEditorModal({
 
 function ModalActions({ isSaving, onClose }: { isSaving: boolean; onClose: () => void }) {
   return (
-    <Group justify="flex-end">
-      <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
+    <AppModalFooter>
+      <Button color="gray" disabled={isSaving} type="button" variant="default" onClick={onClose}>
         Скасувати
       </Button>
       <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
         Зберегти
       </Button>
-    </Group>
+    </AppModalFooter>
   )
 }
 
@@ -2588,7 +2589,7 @@ function OrganizationEditorModal({
           onSave(values)
         }}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           {error ? (
             <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
@@ -2781,14 +2782,14 @@ function OrganizationEditorModal({
               onChange={(event) => setField('IsVatAgreements', event.currentTarget.checked)}
             />
           </Group>
-          <Group justify="flex-end">
-            <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
+          <AppModalFooter>
+            <Button color="gray" disabled={isSaving} type="button" variant="default" onClick={onClose}>
               Скасувати
             </Button>
             <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
               Зберегти
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </form>
     </AppModal>
@@ -3781,7 +3782,7 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
                 id: 'organization',
                 header: 'Облікова організація',
                 accessor: (storage) => storage.Organization?.Name,
-                cell: (storage) => <TableChip tone="product" value={storage.Organization?.Name} />,
+                cell: (storage) => <TableChip tone="product" value={getOrganizationDisplayName(storage.Organization)} />,
                 maxWidth: 190,
                 width: 190,
               },

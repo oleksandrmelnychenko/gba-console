@@ -1,8 +1,8 @@
 .new-sale-quantity-modal__main {
   display: grid;
   justify-items: center;
-  gap: 14px;
-  padding: 14px;
+  gap: 10px;
+  padding: 12px;
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 12px;
   background: var(--mantine-color-gray-0);
@@ -17,14 +17,13 @@
 }
 
 .new-sale-quantity-modal__quantity .mantine-NumberInput-label {
-  margin-bottom: 8px;
+  margin-bottom: 3px;
 }
 
 .new-sale-quantity-modal__quantity .mantine-NumberInput-input {
-  height: 64px;
   padding-inline: 36px;
   font-family: var(--font-mono);
-  font-size: 28px;
+  font-size: 12px;
   font-weight: 600;
   text-align: center;
   font-variant-numeric: tabular-nums;

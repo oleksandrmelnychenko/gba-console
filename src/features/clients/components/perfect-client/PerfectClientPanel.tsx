@@ -12,7 +12,7 @@ import {
   TextInput,
   Textarea,
 } from '@mantine/core'
-import { AppModal } from '../../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { CircleAlert, Plus, Search } from 'lucide-react'
 import { useEffect, useRef } from 'react'
@@ -510,7 +510,7 @@ function PerfectClientAddModal({
           onSave(values)
         }}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
@@ -585,14 +585,14 @@ function PerfectClientAddModal({
               onChange={(event) => setField('Value', event.currentTarget.value)}
             />
           )}
-          <Group justify="flex-end">
-            <Button color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
+          <AppModalFooter>
+            <Button color="gray" disabled={isSaving} variant="default" onClick={onClose}>
               {t('Скасувати')}
             </Button>
             <Button color={CREATE_ACTION_COLOR} loading={isSaving} type="submit">
               {t('Зберегти')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </form>
     </AppModal>

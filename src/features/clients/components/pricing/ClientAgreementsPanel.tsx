@@ -1,3 +1,5 @@
+import { getOrganizationDisplayName } from '../../../../shared/organizations/organizationDisplayName'
+import { TableChip } from '../../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
@@ -13,7 +15,7 @@ import {
 import { Check, CircleAlert, CircleHelp, Pencil, Plus, Printer, ShieldCheck, Trash2 } from 'lucide-react'
 import { DocumentExportModal } from '../../../../shared/ui/document-export-modal/DocumentExportModal'
 import { useMemo, useReducer } from 'react'
-import { AppModal } from '../../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../../shared/ui/AppModal'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../../auth/useAuth'
@@ -303,12 +305,12 @@ export function ClientAgreementsPanel({
           title: 'agreement-form-modal-title',
         }}
         opened={formOpened}
-        size={1120}
+        size={960}
         title={formIsEdit ? t('Редагування договору') : t('Новий договір')}
         onClose={() => dispatch({ type: 'closeForm' })}
       >
         {formDraft && (
-          <Stack gap="md">
+          <Stack className="app-compact-form" gap={10}>
             <AgreementForm
               agreement={formDraft}
               currencies={currencies}
@@ -329,8 +331,8 @@ export function ClientAgreementsPanel({
               </Text>
             )}
 
-            <Group justify="space-between">
-              <div>
+            <AppModalFooter>
+              <div style={{ marginRight: 'auto' }}>
                 {formIsEdit && !formIsSourceManaged && (
                   <Button
                     color="red"
@@ -343,8 +345,8 @@ export function ClientAgreementsPanel({
                   </Button>
                 )}
               </div>
-              <Group justify="flex-end">
-                <Button color="gray" variant="subtle" onClick={() => dispatch({ type: 'closeForm' })}>
+              <Group gap={8}>
+                <Button color="gray" variant="default" onClick={() => dispatch({ type: 'closeForm' })}>
                   {t('Скасувати')}
                 </Button>
                 <Button
@@ -356,7 +358,7 @@ export function ClientAgreementsPanel({
                   {t('Зберегти')}
                 </Button>
               </Group>
-            </Group>
+            </AppModalFooter>
           </Stack>
         )}
       </AppModal>
@@ -426,9 +428,10 @@ function BuyerAgreementItem({
               </Tooltip>
             )}
           </Group>
-          <Text size="xs" truncate>
-            {[agreement.Pricing?.Name, agreement.Organization?.Name].filter(Boolean).join(' · ')}
-          </Text>
+          <Group gap={6}>
+            {agreement.Pricing?.Name && <Text size="xs">{agreement.Pricing.Name}</Text>}
+            <TableChip tone="product" value={getOrganizationDisplayName(agreement.Organization)} />
+          </Group>
         </Stack>
 
         <Group gap="xs" align="center" wrap="nowrap">
@@ -464,9 +467,7 @@ function BuyerAgreementItem({
           )}
 
           {agreement.Currency?.Name && (
-            <Badge className="app-role-pill is-gray" variant="light">
-              {agreement.Currency.Name}
-            </Badge>
+            <TableChip tone="source" value={agreement.Currency.Name} />
           )}
 
           <Group gap={4} align="center">
@@ -533,16 +534,15 @@ function ProviderAgreementItem({
               </Badge>
             )}
           </Group>
-          <Text size="xs" truncate>
-            {[agreement.ProviderPricing?.Name, agreement.Organization?.Name].filter(Boolean).join(' · ')}
-          </Text>
+          <Group gap={6}>
+            {agreement.ProviderPricing?.Name && <Text size="xs">{agreement.ProviderPricing.Name}</Text>}
+            <TableChip tone="product" value={getOrganizationDisplayName(agreement.Organization)} />
+          </Group>
         </Stack>
 
         <Group gap="xs" align="center" wrap="nowrap">
           {agreement.Currency?.Name && (
-            <Badge className="app-role-pill is-gray" variant="light">
-              {agreement.Currency.Name}
-            </Badge>
+            <TableChip tone="source" value={agreement.Currency.Name} />
           )}
           {agreement.TermsOfPayment && (
             <Text c="dimmed" size="xs">

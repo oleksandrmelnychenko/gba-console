@@ -1,4 +1,6 @@
-import { Button, Group, Stack, Textarea, TextInput } from '@mantine/core'
+import { Button, Card, Group, Stack, Textarea, TextInput } from '@mantine/core'
+import { AppModalFooter } from '../../../../shared/ui/AppModal'
+import '../form/client-inline-form.css'
 import { Check, Trash2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -125,64 +127,69 @@ function ServicePayerFormFields({
   }
 
   return (
-    <Stack gap="md">
-      <TextInput
-        defaultValue={initialValues.LastName}
-        disabled={disabled}
-        error={errors.LastName}
-        label={t('Прізвище')}
-        maxLength={30}
-        required
-        onChange={(event) => update('LastName', event.currentTarget.value)}
-      />
-      <TextInput
-        defaultValue={initialValues.FirstName}
-        disabled={disabled}
-        label={t("Ім'я")}
-        maxLength={30}
-        onChange={(event) => update('FirstName', event.currentTarget.value)}
-      />
-      <TextInput
-        defaultValue={initialValues.MiddleName}
-        disabled={disabled}
-        label={t('По батькові')}
-        maxLength={30}
-        onChange={(event) => update('MiddleName', event.currentTarget.value)}
-      />
-      <TextInput
-        defaultValue={initialValues.MobilePhone}
-        disabled={disabled}
-        label={t('Мобільний телефон')}
-        maxLength={30}
-        onChange={(event) => update('MobilePhone', event.currentTarget.value)}
-      />
-      <TextInput
-        defaultValue={initialValues.PaymentAddress}
-        disabled={disabled}
-        label={t('Адреса оплати')}
-        maxLength={100}
-        onChange={(event) => update('PaymentAddress', event.currentTarget.value)}
-      />
-      <TextInput
-        defaultValue={initialValues.PaymentCard}
-        disabled={disabled}
-        error={errors.PaymentCard}
-        label={t('Платіжна картка')}
-        maxLength={100}
-        required
-        onChange={(event) => update('PaymentCard', event.currentTarget.value)}
-      />
-      <Textarea
-        autosize
-        defaultValue={initialValues.Comment}
-        disabled={disabled}
-        label={t('Коментар')}
-        maxLength={100}
-        minRows={2}
-        onChange={(event) => update('Comment', event.currentTarget.value)}
-      />
+    <Stack className="app-compact-form" gap={10}>
+      <Card className="app-section-card client-inline-form__fields" withBorder>
+        <TextInput
+          defaultValue={initialValues.LastName}
+          disabled={disabled}
+          error={errors.LastName}
+          label={t('Прізвище')}
+          maxLength={30}
+          required
+          onChange={(event) => update('LastName', event.currentTarget.value)}
+        />
+        <TextInput
+          defaultValue={initialValues.FirstName}
+          disabled={disabled}
+          label={t("Ім'я")}
+          maxLength={30}
+          onChange={(event) => update('FirstName', event.currentTarget.value)}
+        />
+        <TextInput
+          defaultValue={initialValues.MiddleName}
+          disabled={disabled}
+          label={t('По батькові')}
+          maxLength={30}
+          onChange={(event) => update('MiddleName', event.currentTarget.value)}
+        />
+        <TextInput
+          defaultValue={initialValues.MobilePhone}
+          disabled={disabled}
+          label={t('Мобільний телефон')}
+          maxLength={30}
+          onChange={(event) => update('MobilePhone', event.currentTarget.value)}
+        />
+        <TextInput
+          className="client-inline-form__wide"
+          defaultValue={initialValues.PaymentAddress}
+          disabled={disabled}
+          label={t('Адреса оплати')}
+          maxLength={100}
+          onChange={(event) => update('PaymentAddress', event.currentTarget.value)}
+        />
+        <TextInput
+          className="client-inline-form__wide"
+          defaultValue={initialValues.PaymentCard}
+          disabled={disabled}
+          error={errors.PaymentCard}
+          label={t('Платіжна картка')}
+          maxLength={100}
+          required
+          onChange={(event) => update('PaymentCard', event.currentTarget.value)}
+        />
+        <Textarea
+          className="client-inline-form__wide"
+          autosize
+          defaultValue={initialValues.Comment}
+          disabled={disabled}
+          label={t('Коментар')}
+          maxLength={100}
+          minRows={2}
+          onChange={(event) => update('Comment', event.currentTarget.value)}
+        />
 
-      <Group justify="space-between">
+      </Card>
+      <AppModalFooter className="app-modal-footer--split">
         <div>
           {isEdit && onDelete && (
             <Button
@@ -196,9 +203,9 @@ function ServicePayerFormFields({
             </Button>
           )}
         </div>
-        <Group gap="sm">
+        <Group gap={8}>
           {onCancel && (
-            <Button color="gray" disabled={disabled} variant="subtle" onClick={onCancel}>
+            <Button color="gray" disabled={disabled} variant="default" onClick={onCancel}>
               {t('Скасувати')}
             </Button>
           )}
@@ -211,7 +218,7 @@ function ServicePayerFormFields({
             {isEdit ? t('Зберегти') : t('Додати')}
           </Button>
         </Group>
-      </Group>
+      </AppModalFooter>
     </Stack>
   )
 }

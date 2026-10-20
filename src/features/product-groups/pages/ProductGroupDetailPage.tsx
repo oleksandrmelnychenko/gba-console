@@ -237,7 +237,7 @@ function ProductGroupDetailPageContent() {
               disabled={!isEdited || isSaving}
               leftSection={<RotateCcw size={16} />}
               type="button"
-              variant="light"
+              variant="default"
               onClick={resetEdits}
             >
               {t('Скасувати')}

@@ -184,3 +184,32 @@
 .available-payment-cash-flow-table__summary-value.is-negative {
   color: var(--mantine-color-red-6);
 }
+
+/* Inline outcome creation shares the compact payment-form rhythm. */
+.available-payment-outcome-row {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.available-payment-outcome-row > * {
+  flex: 0 1 260px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.available-payment-outcome-row > .available-payment-outcome-number,
+.available-payment-outcome-row > .available-payment-outcome-date {
+  flex-basis: 160px;
+}
+
+.available-payment-outcome-row > .available-payment-outcome-time {
+  flex-basis: 110px;
+}
+
+@media (max-width: 520px) {
+  .available-payment-outcome-row > * {
+    flex-basis: 100%;
+  }
+}

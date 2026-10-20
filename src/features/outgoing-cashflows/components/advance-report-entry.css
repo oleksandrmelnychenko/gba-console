@@ -1,0 +1,52 @@
+/* Bound related fields to their content instead of reserving full grid columns. */
+.advance-report-entry-parties,
+.advance-report-entry-document,
+.advance-report-entry-numbers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+  min-width: 0;
+}
+
+.advance-report-entry-parties > * {
+  flex: 0 1 210px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.advance-report-entry-parties--order > * {
+  flex-basis: 250px;
+}
+
+.advance-report-entry-document,
+.advance-report-entry-numbers,
+.advance-report-entry-comment {
+  margin-top: 10px;
+}
+
+.advance-report-entry-document > * {
+  flex: 0 1 200px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.advance-report-entry-numbers > * {
+  flex: 0 1 156px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.advance-report-entry-comment {
+  max-width: 560px;
+}
+
+@media (max-width: 520px) {
+  .advance-report-entry-parties > * {
+    flex-basis: 100%;
+  }
+
+  .advance-report-entry-numbers > * {
+    flex-basis: calc((100% - 10px) / 2);
+  }
+}

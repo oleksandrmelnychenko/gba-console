@@ -5,9 +5,7 @@ import {
   Alert,
   Button,
   Badge,
-  Divider,
   Group,
-  SimpleGrid,
   Stack,
   Text,
   TextInput,
@@ -21,6 +19,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useMutatedListRefresh } from '../../../shared/router/useMutatedListRefresh'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { DocumentDetailLayout, DocumentDetailSummary, DocumentDetailMetric, DocumentDetailSection, DocumentDetailRow } from '../../../shared/ui/document-detail/DocumentDetail'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -475,11 +474,13 @@ function ConsumableOrderDocumentCell({ row }: { row: ConsumableOrderRow }) {
 function ConsumableOrderSupplierCell({ row }: { row: ConsumableOrderRow }) {
   const { primary, secondary } = getConsumableOrderSupplierCellText(row)
   const tooltip = compactStrings([primary, secondary]).join('\n')
+  const organizationPrefix = `${row.organization || ''} · `
+  const secondaryText = secondary.startsWith(organizationPrefix) ? secondary.slice(organizationPrefix.length) : isSameDisplayText(secondary, row.organization) ? '' : secondary
 
   return (
     <span className="consumable-orders-two-line-cell" title={nativeTitle(tooltip)}>
-      {primary ? <span>{primary}</span> : null}
-      {secondary ? <small>{secondary}</small> : null}
+      {primary ? (isSameDisplayText(primary, row.organization) ? <TableChip tone="product" value={primary} /> : <span>{primary}</span>) : null}
+      {secondary ? <small>{row.organization && !isSameDisplayText(row.organization, primary) ? <TableChip tone="product" value={row.organization} /> : null}{secondaryText}</small> : null}
     </span>
   )
 }
@@ -528,7 +529,7 @@ function ConsumableOrderResponsibleCell({ row }: { row: ConsumableOrderRow }) {
 
   return (
     <span className="consumable-orders-responsible-cell" title={nativeTitle(tooltip)}>
-      {title ? <TableChip tone="storage" value={title} /> : null}
+      {title ? <TableChip tone="warning" value={title} /> : null}
     </span>
   )
 }
@@ -550,7 +551,7 @@ function ConsumableOrderStatusCell({ row }: { row: ConsumableOrderRow }) {
   )
 }
 
-function ConsumableOrderDetailDrawer({
+export function ConsumableOrderDetailDrawer({
   row,
   onClose,
   onPay,
@@ -566,91 +567,67 @@ function ConsumableOrderDetailDrawer({
   const items = order ? getActiveConsumableOrderItems(order) : []
   const outcomes = order ? getActiveOutcomePaymentLinks(order) : []
 
+  const itemColumns: DataTableColumn<ConsumablesOrderItem>[] = [
+    { id: 'code', header: t('Артикул'), minWidth: 140, accessor: (item) => item.ConsumableProduct?.VendorCode || '', cell: (item) => <TableChip tone="product" value={item.ConsumableProduct?.VendorCode} /> },
+    { id: 'name', header: t('Назва'), minWidth: 200, accessor: getItemName },
+    { id: 'category', header: t('Категорія'), minWidth: 160, accessor: (item) => item.ConsumableProductCategory?.Name || item.ConsumableProduct?.ConsumableProductCategory?.Name || '' },
+    { id: 'qty', header: t('Кількість'), minWidth: 100, align: 'right', accessor: (item) => item.Qty, cell: (item) => formatAmount(item.Qty) },
+    { id: 'price', header: t('Ціна'), minWidth: 120, align: 'right', accessor: (item) => item.PricePerItem, cell: (item) => formatMoney(item.PricePerItem) },
+    { id: 'net', header: t('Сума без ПДВ'), minWidth: 130, align: 'right', accessor: (item) => item.TotalPrice, cell: (item) => formatMoney(item.TotalPrice) },
+    { id: 'vatPercent', header: t('ПДВ %'), minWidth: 90, align: 'right', accessor: (item) => item.VatPercent, cell: (item) => formatAmount(item.VatPercent) },
+    { id: 'vat', header: t('ПДВ'), minWidth: 120, align: 'right', accessor: (item) => item.VAT, cell: (item) => formatMoney(item.VAT) },
+    { id: 'gross', header: t('Разом з ПДВ'), minWidth: 140, align: 'right', accessor: (item) => item.TotalPriceWithVAT, cell: (item) => formatMoney(item.TotalPriceWithVAT) },
+  ]
+
   return (
-    <AppDrawer opened={Boolean(row)} padding="md" size="xl" title={<span style={ORDERS_MONO_STYLE}>{t('Прибуткова накладна')}</span>} onClose={onClose}>
+    <AppDrawer opened={Boolean(row)} size="wide" title={t('Прибуткова накладна')} onClose={onClose}>
       {row && order && (
-        <Stack gap="md">
-          <Group justify="flex-end">
-            {onView && (
-              <Button leftSection={<Pencil size={16} />} styles={{ label: ORDERS_MONO_STYLE }} variant="outline" onClick={() => onView(row)}>
-                {t('Редагувати')}
-              </Button>
-            )}
-            {onPay && !order.IsPayed && (
-              <Button color="green" leftSection={<CreditCard size={16} />} styles={{ label: ORDERS_MONO_STYLE }} variant="outline" onClick={() => onPay(row)}>
-                {t('Оплатити')}
-              </Button>
-            )}
-          </Group>
-
-          <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <DetailItem label={t('Створено')} mono value={formatDateTime(row.created)} />
-            <DetailItem label={t('Номер')} mono value={displayValue(order.Number)} />
-            <DetailItem label={t('Дата входу')} mono value={formatDateTime(order.OrganizationFromDate)} />
-            <DetailItem label={t('Номер накладної')} mono value={displayValue(order.OrganizationNumber)} />
-            <DetailItem label={t('Постачальник послуг')} value={displayValue(row.serviceOrganization)} />
-            <DetailItem label={t('Організація')} value={displayValue(row.organization)} />
-            <DetailItem label={t('Договір')} value={displayValue(order.SupplyOrganizationAgreement?.Name || order.SupplyOrganizationAgreement?.Number)} />
-            <DetailItem label={t('Склад')} value={displayValue(row.storage)} />
-            <DetailItem label={t('Сума')} mono value={formatMoney(row.totalAmountWithoutVat)} />
-            <DetailItem label={t('Разом з ПДВ')} mono value={formatMoney(row.amount)} />
-            <DetailItem label={t('Валюта')} mono value={displayValue(row.currency)} />
-            <DetailItem label={t('Відповідальний')} value={displayValue(row.responsible)} />
-            <DetailItem label={t('Оплачено')} value={order.IsPayed ? t('Так') : t('Ні')} />
-            <DetailItem label={t('Закрито')} value={order.IsDone ? t('Так') : t('Ні')} />
-          </SimpleGrid>
-
-          <Stack gap={2}>
-            <Text className="app-section-title" fw={600} size="sm">
-              {t('Коментар')}
-            </Text>
-            <Text size="sm">{displayValue(row.comment)}</Text>
-          </Stack>
-
-          <Divider />
-
-          <Stack gap="sm">
-            <Text className="app-section-title" fw={600} size="sm">
-              {t('Позиції')}
-            </Text>
-            {items.length > 0 ? (
-              items.map((item, index) => (
-                <SimpleGrid key={getItemKey(item, index)} cols={{ base: 1, sm: 3 }}>
-                  <DetailItem label={t('Артикул')} mono value={displayValue(item.ConsumableProduct?.VendorCode)} />
-                  <DetailItem label={t('Назва')} value={displayValue(getItemName(item))} />
-                  <DetailItem label={t('Категорія')} value={displayValue(item.ConsumableProductCategory?.Name || item.ConsumableProduct?.ConsumableProductCategory?.Name)} />
-                  <DetailItem label={t('Кількість')} mono value={formatAmount(item.Qty)} />
-                  <DetailItem label={t('Ціна')} mono value={formatMoney(item.PricePerItem)} />
-                  <DetailItem label={t('Сума без ПДВ')} mono value={formatMoney(item.TotalPrice)} />
-                  <DetailItem label={t('ПДВ %')} mono value={formatAmount(item.VatPercent)} />
-                  <DetailItem label={t('ПДВ')} mono value={formatMoney(item.VAT)} />
-                  <DetailItem label={t('Разом з ПДВ')} mono value={formatMoney(item.TotalPriceWithVAT)} />
-                </SimpleGrid>
-              ))
-            ) : (
-              <Text c="dimmed" size="sm">
-                {t('Позицій немає')}
-              </Text>
-            )}
-          </Stack>
-
-          <Divider />
-
-          <Stack gap="sm">
-            <Text className="app-section-title" fw={600} size="sm">
-              {t('Структура документа')}
-            </Text>
-            {outcomes.length > 0 ? (
-              outcomes.map((item, index) => (
-                <OutcomeStructureItem key={getOutcomeLinkKey(item, index)} item={item} />
-              ))
-            ) : (
-              <Text c="dimmed" size="sm">
-                {t('Оплат за документом немає')}
-              </Text>
-            )}
-          </Stack>
-        </Stack>
+        <DocumentDetailLayout
+          variant="inventory"
+          actions={<Group gap={8}>
+            {onView && <Button color="gray" leftSection={<Pencil size={16} />} variant="default" onClick={() => onView(row)}>{t('Редагувати')}</Button>}
+            {onPay && !order.IsPayed && <Button color="green" leftSection={<CreditCard size={16} />} variant="outline" onClick={() => onPay(row)}>{t('Оплатити')}</Button>}
+          </Group>}
+          summary={<DocumentDetailSummary
+            eyebrow={t('Прибуткова накладна')}
+            title={displayValue(order.Number)}
+            meta={<><span>{t('Створено')}: {formatDateTime(row.created)}</span><TableChip tone="source" value={row.currency} /></>}
+            metrics={<>
+              <DocumentDetailMetric label={t('Сума')} value={formatMoney(row.totalAmountWithoutVat)} />
+              <DocumentDetailMetric label={t('Разом з ПДВ')} value={formatMoney(row.amount)} />
+            </>}
+          />}
+        >
+          <DocumentDetailSection title={t('Реквізити документа')}>
+            <DocumentDetailRow label={t('Дата входу')} mono value={formatDateTime(order.OrganizationFromDate)} />
+            <DocumentDetailRow label={t('Номер накладної')} value={<TableChip tone="document" value={order.OrganizationNumber} />} />
+            <DocumentDetailRow label={t('Постачальник послуг')} value={displayValue(row.serviceOrganization)} />
+            <DocumentDetailRow label={t('Організація')} value={<TableChip tone="product" value={row.organization} />} />
+            <DocumentDetailRow label={t('Договір')} value={<TableChip tone="neutral" value={order.SupplyOrganizationAgreement?.Name || order.SupplyOrganizationAgreement?.Number} />} />
+            <DocumentDetailRow label={t('Склад')} value={<TableChip tone="storage" value={row.storage} />} />
+            <DocumentDetailRow label={t('Відповідальний')} value={<TableChip tone="warning" value={row.responsible} />} />
+            <DocumentDetailRow label={t('Оплачено')} value={<TableChip tone={order.IsPayed ? 'success' : 'neutral'} value={order.IsPayed ? t('Так') : t('Ні')} />} />
+            <DocumentDetailRow label={t('Закрито')} value={<TableChip tone={order.IsDone ? 'success' : 'neutral'} value={order.IsDone ? t('Так') : t('Ні')} />} />
+            <DocumentDetailRow label={t('Коментар')} value={displayValue(row.comment)} wide />
+          </DocumentDetailSection>
+          <DocumentDetailSection title={t('Позиції')} subtitle={String(items.length)} stacked>
+            <DataTable
+              columns={itemColumns}
+              data={items}
+              defaultLayout={{ density: 'compact' }}
+              emptyText={t('Позицій немає')}
+              getRowId={getItemKey}
+              layoutVersion="consumable-order-detail-items-1"
+              maxHeight="45vh"
+              minWidth={1200}
+              showToolbar={false}
+              tableId="consumable-order-detail-items"
+            />
+          </DocumentDetailSection>
+          <DocumentDetailSection title={t('Структура документа')} stacked>
+            {outcomes.length > 0 ? outcomes.map((item, index) => <OutcomeStructureItem key={getOutcomeLinkKey(item, index)} item={item} />) : <Text size="sm">{t('Оплат за документом немає')}</Text>}
+          </DocumentDetailSection>
+        </DocumentDetailLayout>
       )}
     </AppDrawer>
   )
@@ -669,25 +646,16 @@ function OutcomeStructureItem({ item }: { item: OutcomePaymentOrderConsumablesOr
   }
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2 }}>
-      <DetailItem label={t('Ордер')} mono value={displayValue(outcome.Number || outcome.AdvanceNumber)} />
-      <DetailItem label={t('Дата')} mono value={formatDateTime(outcome.FromDate)} />
-      <DetailItem label={t('Сума')} mono value={formatMoney(outcome.Amount)} />
-      <DetailItem label={t('Валюта')} mono value={displayValue(outcome.PaymentCurrencyRegister?.Currency?.Code || outcome.PaymentCurrencyRegister?.Currency?.Name)} />
-      <DetailItem label={t('Організація')} value={displayValue(getOrganizationDisplayName(outcome.Organization))} />
-      <DetailItem label={t('Кому видано')} value={displayValue(getEntityName(outcome.Colleague))} />
-      <DetailItem label={t('Підзвіт')} value={outcome.IsUnderReport ? t('Так') : t('Ні')} />
-      <DetailItem label={t('Скасовано')} value={outcome.IsCanceled ? t('Так') : t('Ні')} />
-    </SimpleGrid>
-  )
-}
-
-function DetailItem({ label, mono = false, value }: { label: string; mono?: boolean; value: string }) {
-  return (
-    <div className={`consumable-orders-detail-field${mono ? ' is-mono' : ''}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
+    <DocumentDetailSection title={`${t('Ордер')} ${displayValue(outcome.Number || outcome.AdvanceNumber)}`}>
+      <DocumentDetailRow label={t('Ордер')} mono value={displayValue(outcome.Number || outcome.AdvanceNumber)} />
+      <DocumentDetailRow label={t('Дата')} mono value={formatDateTime(outcome.FromDate)} />
+      <DocumentDetailRow label={t('Сума')} mono value={formatMoney(outcome.Amount)} />
+      <DocumentDetailRow label={t('Валюта')} mono value={<TableChip tone="source" value={outcome.PaymentCurrencyRegister?.Currency?.Code || outcome.PaymentCurrencyRegister?.Currency?.Name} />} />
+      <DocumentDetailRow label={t('Організація')} value={<TableChip tone="product" value={getOrganizationDisplayName(outcome.Organization)} />} />
+      <DocumentDetailRow label={t('Кому видано')} value={displayValue(getEntityName(outcome.Colleague))} />
+      <DocumentDetailRow label={t('Підзвіт')} value={outcome.IsUnderReport ? t('Так') : t('Ні')} />
+      <DocumentDetailRow label={t('Скасовано')} value={outcome.IsCanceled ? t('Так') : t('Ні')} />
+    </DocumentDetailSection>
   )
 }
 

@@ -265,7 +265,7 @@ function ConsumableStorageFormPageContent() {
       title={isEditMode ? t('Редагування складу') : t('Новий склад')}
       onClose={handleCancel}>
       <form className="consumable-storage-form" id="consumable-storage-form" onSubmit={handleSubmit}>
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}

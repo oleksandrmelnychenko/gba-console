@@ -8,3 +8,11 @@
   font-weight: 600;
   letter-spacing: 0;
 }
+
+.product-interest-modal .mantine-Modal-body {
+  background: var(--mantine-color-gray-0);
+}
+
+.product-interest-modal .app-section-card {
+  background: var(--mantine-color-white);
+}

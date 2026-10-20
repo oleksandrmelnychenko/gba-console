@@ -2,7 +2,7 @@ import { Button, Loader, Stack, Text } from '@mantine/core'
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { WarehousePeriodCapabilityStatus } from './WarehousePeriodControls'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { ReportModal } from './ReportModal'
 import { getBuyerOrdersCapability } from '../api/originalBuyerOrdersApi'
 import { isBuyerOrdersCatalogueEntry, type BuyerOrdersCapability } from '../data/originalBuyerOrders'
 import type { ReportCatalogueEntry } from '../types'
@@ -30,11 +30,11 @@ function BuyerOrdersPeriodModal({ opened, enabled, disabled, capability, callerK
   const { t } = useI18n()
   // Initial dates are explicit in the form; no server default to today's balances.
   const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Kyiv' })
-  return <AppModal opened={opened && enabled && !!capability} title={t('Відомість замовлень покупців')} size={1250}
+  return <ReportModal opened={opened && enabled && !!capability} title={t('Відомість замовлень покупців')} size={1250}
     onClose={close} closeButtonProps={{ 'aria-label': t('Закрити відомість замовлень покупців') }}>
     {opened && capability ? <Suspense fallback={<Loader size="sm" />}><Panel key={JSON.stringify(scope)} capability={capability} callerKey={callerKey}
       canGenerate={enabled && !disabled} initialFrom={`${today.slice(0, 7)}-01`} initialThrough={today} /></Suspense> : null}
-  </AppModal>
+  </ReportModal>
 }
 
 export function OriginalBuyerOrdersCatalogueLaunch({ report, worlds, enabled, disabled, callerKey }: {

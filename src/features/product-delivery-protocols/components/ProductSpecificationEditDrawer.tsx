@@ -224,7 +224,7 @@ function ProductSpecificationEditDrawerContent({
         title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Є незбережені зміни')}</span>}
         onClose={() => setConfirmCloseOpen(false)}
       >
-        <Stack gap={10}>
+        <Stack className="app-compact-form" gap={10}>
           <Text>{t('Якщо закрити вікно, зміни митного коду не будуть збережені.')}</Text>
           <AppModalFooter>
             <Button variant="default" onClick={() => setConfirmCloseOpen(false)}>

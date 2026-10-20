@@ -280,7 +280,7 @@ function SupplierOrganizationCashFlowPageContent() {
         cell: (row) => (
           <span className="supplier-cash-flow-document">
             <strong>{displayValue(row.Name)}</strong>
-            {row.OrganizationName ? <small>{row.OrganizationName}</small> : null}
+            {row.OrganizationName ? <TableChip tone="product" value={row.OrganizationName} /> : null}
           </span>
         ),
       },

@@ -1,7 +1,7 @@
 import { Alert, Badge, Button, Divider, Group, Loader, NumberInput, Stack } from '@mantine/core'
 import { ChevronRight, CircleAlert, Clock, ExternalLink, Network, ToggleLeft, ToggleRight, Wallet } from 'lucide-react'
 import { type FormEvent, useEffect, useReducer, useState } from 'react'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -229,7 +229,7 @@ export function ReserveDaysModal({
       onClose={onClose}
     >
       <form onSubmit={onSubmit}>
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           <NumberInput
             allowDecimal={false}
             label={t('Днів резерву')}
@@ -237,14 +237,14 @@ export function ReserveDaysModal({
             value={days}
             onChange={(value) => onChangeDays(Number(value) || 0)}
           />
-          <Group justify="flex-end">
-            <Button variant="subtle" color="gray" onClick={onClose}>
+          <AppModalFooter>
+            <Button variant="default" color="gray" onClick={onClose}>
               {t('Скасувати')}
             </Button>
             <Button color={CREATE_ACTION_COLOR} loading={isSaving} type="submit">
               {t('Зберегти')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </form>
     </AppModal>
@@ -310,7 +310,7 @@ export function ClientStructureModal({
   return (
     <AppModal
       centered
-      className="client-commercial-structure-modal"
+      className="client-commercial-structure-modal app-compact-form"
       opened={Boolean(client)}
       size="min(1120px, 94vw)"
       title={client ? `${t('Структура клієнта')} · ${getClientDisplayName(client)}` : t('Структура клієнта')}

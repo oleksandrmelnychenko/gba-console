@@ -995,7 +995,7 @@ function ProductPlacementEditor({
               {t('Додати місце')}
             </Button>
             <Group gap="xs">
-              <Button size="xs" color="gray" variant="light" disabled={isSaving} onClick={cancelEditing}>
+              <Button size="xs" color="gray" variant="default" disabled={isSaving} onClick={cancelEditing}>
                 {t('Скасувати')}
               </Button>
               <Button size="xs" color={CREATE_ACTION_COLOR} leftSection={<Save size={14} />} loading={isSaving} onClick={() => void savePlacements()}>
@@ -1826,8 +1826,8 @@ function ProductConsignmentRemainingsPanel({ product }: { product: Product }) {
     { id: 'totalNetPrice', header: t('Загальна нетто'), align: 'right', accessor: (row) => row.TotalNetPrice, cell: (row) => <span className="app-money">{formatPrice(row.TotalNetPrice)}</span> },
     { id: 'grossPrice', header: t('Брутто'), align: 'right', accessor: (row) => row.GrossPrice, cell: (row) => <span className="app-money">{formatPrice(row.GrossPrice)}</span> },
     { id: 'accountingGrossPrice', header: t('Облікова брутто'), align: 'right', accessor: (row) => row.AccountingGrossPrice, cell: (row) => <span className="app-money">{formatPrice(row.AccountingGrossPrice)}</span> },
-    { id: 'currency', header: t('Валюта'), accessor: (row) => row.CurrencyName, cell: (row) => <TableChip tone="neutral" value={displayValue(row.CurrencyName)} /> },
-    { id: 'organization', header: t('Організація'), accessor: (row) => row.OrganizationName, cell: (row) => displayValue(row.OrganizationName) },
+    { id: 'currency', header: t('Валюта'), accessor: (row) => row.CurrencyName, cell: (row) => <TableChip tone="source" value={displayValue(row.CurrencyName)} /> },
+    { id: 'organization', header: t('Організація'), accessor: (row) => row.OrganizationName, cell: (row) => <TableChip tone="product" value={row.OrganizationName} /> },
     { id: 'weight', header: t('Вага'), align: 'right', accessor: (row) => row.Weight, cell: (row) => <span className="app-money">{formatAmount(row.Weight)}</span> },
   ], [t])
 
@@ -1899,7 +1899,7 @@ function ProductStorageHistoryPanel({ product }: { product: Product }) {
     { id: 'placement', header: t('Місце'), accessor: (row) => row.Placement, cell: (row) => displayValue(row.Placement) },
     { id: 'status', header: t('Статус'), accessor: (row) => row.StorageLocationType, cell: (row) => <TableChip value={formatStorageLocationType(row.StorageLocationType, t)} /> },
     { id: 'qty', header: t('Кількість'), align: 'right', accessor: (row) => formatStorageLocationQty(row), cell: (row) => <span className="app-money">{formatStorageLocationQty(row)}</span> },
-    { id: 'responsible', header: t('Відповідальний'), accessor: (row) => [row.User?.FirstName, row.User?.LastName].filter(Boolean).join(' '), cell: (row) => displayValue([row.User?.FirstName, row.User?.LastName].filter(Boolean).join(' ')) },
+    { id: 'responsible', header: t('Відповідальний'), accessor: (row) => [row.User?.FirstName, row.User?.LastName].filter(Boolean).join(' '), cell: (row) => <TableChip tone="warning" value={displayValue([row.User?.FirstName, row.User?.LastName].filter(Boolean).join(' '))} /> },
   ], [t])
 
   useEffect(() => {
@@ -2153,7 +2153,7 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
     { id: 'client', header: t('Клієнт'), minWidth: 220, accessor: (row) => row.ClientName, cell: (row) => displayValue(row.ClientName) },
     { id: 'storage', header: t('Склад'), minWidth: 120, accessor: (row) => row.StorageName, cell: (row) => <TableChip tone="storage" value={displayValue(row.StorageName)} /> },
     { id: 'organization', header: t('Організація'), minWidth: 160, accessor: (row) => row.OrganizationName, cell: (row) => <TableChip tone="product" value={displayValue(row.OrganizationName)} /> },
-    { id: 'responsible', header: t('Відповідальний'), minWidth: 150, accessor: (row) => row.Responsible || row.UserName, cell: (row) => displayValue(row.Responsible || row.UserName) },
+    { id: 'responsible', header: t('Відповідальний'), minWidth: 150, accessor: (row) => row.Responsible || row.UserName, cell: (row) => <TableChip tone="warning" value={displayValue(row.Responsible || row.UserName)} /> },
     { id: 'price', header: t('Собівартість'), minWidth: 120, align: 'right', accessor: (row) => row.Price, cell: (row) => <span className="app-money">{formatPrice(row.Price)}</span> },
     { id: 'accountingPrice', header: t('Облікова собівартість'), minWidth: 160, align: 'right', accessor: (row) => row.AccountingPrice, cell: (row) => <span className="app-money">{formatPrice(row.AccountingPrice)}</span> },
     { id: 'discount', header: t('Знижка'), minWidth: 110, align: 'right', accessor: (row) => row.Discount, cell: (row) => <span className="app-money">{formatPrice(row.Discount)}</span> },

@@ -1,8 +1,8 @@
-import { Alert, Button, SimpleGrid, Stack, TextInput } from '@mantine/core'
+import { Alert, Button, Card, Group, SimpleGrid, Stack, TextInput } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { TaxFreeCarrierPassport } from '../types'
 
@@ -64,86 +64,89 @@ export function TaxFreeCarrierPassportDrawer({
   }
 
   return (
-    <AppDrawer
+    <AppModal className="app-compact-form"
       opened={opened}
-      size="lg"
+      size={700}
       title={isEditMode ? t('Редагування Паспорту') : t('Новий Паспорт')}
       transitionProps={{ onEnter: resetDraft }}
       onClose={onClose}
-      footer={
+    >
+      <Card className="app-section-card" withBorder padding={12} radius="md">
+        <Stack gap={10}>
+          {error && (
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+              {error}
+            </Alert>
+          )}
+          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing={10} verticalSpacing={10}>
+            <TextInput
+              label={t('Місто')}
+              maxLength={50}
+              required
+              value={draft.city}
+              onChange={(event) => updateDraft({ city: event.currentTarget.value })}
+            />
+            <TextInput
+              label={t('Вулиця')}
+              maxLength={50}
+              required
+              value={draft.street}
+              onChange={(event) => updateDraft({ street: event.currentTarget.value })}
+            />
+            <TextInput
+              label={t('Номер будинку')}
+              maxLength={50}
+              required
+              value={draft.houseNumber}
+              onChange={(event) => updateDraft({ houseNumber: event.currentTarget.value })}
+            />
+          </SimpleGrid>
+          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing={10} verticalSpacing={10}>
+            <TextInput
+              label={t('Серія паспорту')}
+              maxLength={50}
+              required
+              value={draft.passportSeria}
+              onChange={(event) => updateDraft({ passportSeria: event.currentTarget.value })}
+            />
+            <TextInput
+              label={t('Номер паспорту')}
+              maxLength={50}
+              required
+              value={draft.passportNumber}
+              onChange={(event) => updateDraft({ passportNumber: event.currentTarget.value })}
+            />
+            <TextInput
+              label={t('Виданий')}
+              maxLength={50}
+              required
+              value={draft.passportIssuedBy}
+              onChange={(event) => updateDraft({ passportIssuedBy: event.currentTarget.value })}
+            />
+          </SimpleGrid>
+          <Group align="end" gap={10}>
+            <TextInput w={170} maw="100%"
+              label={t('Дійсний від')}
+              type="date"
+              value={draft.passportIssuedDate}
+              onChange={(event) => updateDraft({ passportIssuedDate: event.currentTarget.value })}
+            />
+            <TextInput w={170} maw="100%"
+              label={t('Дійсний до')}
+              type="date"
+              value={draft.passportCloseDate}
+              onChange={(event) => updateDraft({ passportCloseDate: event.currentTarget.value })}
+            />
+          </Group>
+        </Stack>
+      </Card>
+      <AppModalFooter>
+        <Button variant="default" onClick={onClose}>{t('Скасувати')}</Button>
         <Button color={CREATE_ACTION_COLOR} onClick={handleSubmit}>
           {t('Зберегти')}
         </Button>
-      }
-    >
-      <Stack gap="md">
-        {error && (
-          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-            {error}
-          </Alert>
-        )}
-        <SimpleGrid cols={{ base: 1, sm: 3 }}>
-          <TextInput
-            label={t('Місто')}
-            maxLength={50}
-            required
-            value={draft.city}
-            onChange={(event) => updateDraft({ city: event.currentTarget.value })}
-          />
-          <TextInput
-            label={t('Вулиця')}
-            maxLength={50}
-            required
-            value={draft.street}
-            onChange={(event) => updateDraft({ street: event.currentTarget.value })}
-          />
-          <TextInput
-            label={t('Номер будинку')}
-            maxLength={50}
-            required
-            value={draft.houseNumber}
-            onChange={(event) => updateDraft({ houseNumber: event.currentTarget.value })}
-          />
-        </SimpleGrid>
-        <SimpleGrid cols={{ base: 1, sm: 3 }}>
-          <TextInput
-            label={t('Серія паспорту')}
-            maxLength={50}
-            required
-            value={draft.passportSeria}
-            onChange={(event) => updateDraft({ passportSeria: event.currentTarget.value })}
-          />
-          <TextInput
-            label={t('Номер паспорту')}
-            maxLength={50}
-            required
-            value={draft.passportNumber}
-            onChange={(event) => updateDraft({ passportNumber: event.currentTarget.value })}
-          />
-          <TextInput
-            label={t('Виданий')}
-            maxLength={50}
-            required
-            value={draft.passportIssuedBy}
-            onChange={(event) => updateDraft({ passportIssuedBy: event.currentTarget.value })}
-          />
-        </SimpleGrid>
-        <SimpleGrid cols={{ base: 1, sm: 2 }}>
-          <TextInput
-            label={t('Дійсний від')}
-            type="date"
-            value={draft.passportIssuedDate}
-            onChange={(event) => updateDraft({ passportIssuedDate: event.currentTarget.value })}
-          />
-          <TextInput
-            label={t('Дійсний до')}
-            type="date"
-            value={draft.passportCloseDate}
-            onChange={(event) => updateDraft({ passportCloseDate: event.currentTarget.value })}
-          />
-        </SimpleGrid>
-      </Stack>
-    </AppDrawer>
+      </AppModalFooter>
+    </AppModal>
   )
 }
 

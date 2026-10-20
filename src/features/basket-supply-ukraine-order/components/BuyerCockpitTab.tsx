@@ -25,7 +25,7 @@ import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { TranslateFunction } from '../../../shared/i18n/types'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -1035,15 +1035,15 @@ function BuyerCockpitTabContent() {
           }
         }}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           <Stack gap={4}>
             <Text size="sm">{plan?.producer_name || `#${plan?.producer_id ?? ''}`}</Text>
             <Text c="dimmed" size="sm">
               {countFormatter.format(orderableItems.length)} {t('позицій')} · €{eurFormatter.format(orderableCost)}
             </Text>
           </Stack>
-          <Group justify="flex-end" gap="sm">
-            <Button color="gray" disabled={isCreatingOrder} variant="light" onClick={closeConfirm}>
+          <AppModalFooter>
+            <Button color="gray" disabled={isCreatingOrder} variant="default" onClick={closeConfirm}>
               {t('Скасувати')}
             </Button>
             <Button
@@ -1055,7 +1055,7 @@ function BuyerCockpitTabContent() {
             >
               {t('Створити')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
     </Stack>

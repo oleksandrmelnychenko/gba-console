@@ -118,6 +118,8 @@ export function ServicePayersPanel({ payers, disabled = false, onChange }: Servi
       </Card>
 
       <AppModal
+        className="client-inline-form-modal"
+        size={640}
         centered
         opened={modalOpened}
         title={editingPayer ? t('Платник') : t('Новий платник')}

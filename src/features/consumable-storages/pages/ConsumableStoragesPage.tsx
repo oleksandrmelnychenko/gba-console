@@ -365,7 +365,7 @@ function useConsumableStorageColumns({
         minWidth: 140,
         maxWidth: 220,
         accessor: (storage) => getEntityName(storage.ResponsibleUser),
-        cell: (storage) => <TruncatedCell value={getEntityName(storage.ResponsibleUser)} />,
+        cell: (storage) => <TableChip tone="warning" value={getEntityName(storage.ResponsibleUser)} />,
       },
       {
         id: 'organization',
@@ -373,7 +373,7 @@ function useConsumableStorageColumns({
         width: 300,
         minWidth: 220,
         accessor: (storage) => getOrganizationDisplayName(storage.Organization),
-        cell: (storage) => <TruncatedCell value={getOrganizationDisplayName(storage.Organization)} />,
+        cell: (storage) => <TableChip tone="product" value={getOrganizationDisplayName(storage.Organization)} />,
       },
       {
         id: 'products',
@@ -520,7 +520,7 @@ function ConsumableStorageDetailDrawer({
         >
           <DocumentDetailSection title={t('Реквізити складу')}>
             <DocumentDetailRow label={t('Організація')} value={<TableChip value={getOrganizationDisplayName(storage.Organization)} tone="product" />} />
-            <DocumentDetailRow label={t('Відповідальний')} value={getEntityName(storage.ResponsibleUser)} />
+            <DocumentDetailRow label={t('Відповідальний')} value={<TableChip tone="warning" value={getEntityName(storage.ResponsibleUser)} />} />
             {storage.Description?.trim() ? <DocumentDetailRow label={t('Опис')} value={storage.Description} wide /> : null}
           </DocumentDetailSection>
 
@@ -709,7 +709,7 @@ function useStorageRemnantColumns(): DataTableColumn<ConsumableProduct>[] {
         width: 130,
         minWidth: 112,
         accessor: (product) => getStorageRemnantCurrency(product),
-        cell: (product) => <TableChip tone="neutral" value={displayValue(getStorageRemnantCurrency(product))} />,
+        cell: (product) => <TableChip tone="source" value={displayValue(getStorageRemnantCurrency(product))} />,
       },
     ],
     [t],
@@ -1025,7 +1025,7 @@ function useDeprecatedConsumableOrderColumns({
         width: 120,
         minWidth: 104,
         accessor: (row) => row.item?.Currency?.Name || row.item?.Currency?.Code,
-        cell: (row) => <TableChip tone="neutral" value={displayValue(row.item?.Currency?.Name || row.item?.Currency?.Code)} />,
+        cell: (row) => <TableChip tone="source" value={displayValue(row.item?.Currency?.Name || row.item?.Currency?.Code)} />,
       },
       {
         id: 'costMovement',
@@ -1255,8 +1255,8 @@ function DeprecatedConsumableOrderEditorModal({
   }
 
   return (
-    <AppModal centered opened size="80vw" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{isEditMode ? t('Редагувати списання') : t('Списати зі складу')}</span>} onClose={onClose}>
-      <Stack gap="md">
+    <AppModal centered opened size={1120} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{isEditMode ? t('Редагувати списання') : t('Списати зі складу')}</span>} onClose={onClose}>
+      <Stack className="app-compact-form" gap="md">
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
@@ -1365,7 +1365,7 @@ function DeprecatedConsumableOrderEditorModal({
         />
 
         <AppModalFooter>
-          <Button color="gray" disabled={isSaving} leftSection={<X size={16} />} variant="light" onClick={onClose}>
+          <Button color="gray" disabled={isSaving} leftSection={<X size={16} />} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button disabled={!canSave} leftSection={<Save size={16} />} loading={isSaving} onClick={handleSave}>
@@ -1443,7 +1443,7 @@ function ConsumablesOrderItemsPicker({
                 <Table.Td className="app-table-number">{formatAmount(item.Qty)}</Table.Td>
                 <Table.Td className="app-table-number">{formatMoney(item.PricePerItem)}</Table.Td>
                 <Table.Td className="app-table-number">{formatMoney(item.TotalPrice)}</Table.Td>
-                <Table.Td><TableChip tone="neutral" value={displayValue(getConsumablesOrderItemCurrency(item, order)?.Name || getConsumablesOrderItemCurrency(item, order)?.Code)} /></Table.Td>
+                <Table.Td><TableChip tone="source" value={displayValue(getConsumablesOrderItemCurrency(item, order)?.Name || getConsumablesOrderItemCurrency(item, order)?.Code)} /></Table.Td>
                 <Table.Td>
                   <Button
                     disabled={isSaving || selected}
@@ -1534,7 +1534,7 @@ function DeprecatedConsumableOrderItemsTable({
                 </Table.Td>
                 <Table.Td className="app-table-number">{formatMoney(getDeprecatedItemPrice(item))}</Table.Td>
                 <Table.Td className="app-table-number">{formatMoney(getDeprecatedItemTotal(item))}</Table.Td>
-                <Table.Td><TableChip tone="neutral" value={displayValue(getDeprecatedItemCurrency(item)?.Name || getDeprecatedItemCurrency(item)?.Code)} /></Table.Td>
+                <Table.Td><TableChip tone="source" value={displayValue(getDeprecatedItemCurrency(item)?.Name || getDeprecatedItemCurrency(item)?.Code)} /></Table.Td>
                 <Table.Td>
                   <Select
                     clearable
@@ -1579,10 +1579,10 @@ function DeleteDeprecatedConsumableOrderModal({
 
   return (
     <AppModal centered opened={Boolean(order)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити списання')}</span>} onClose={onClose}>
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap="md">
         <Text>{order ? t('Списання "{number}" буде видалено.', { number: displayValue(order.Number) }) : ''}</Text>
         <AppModalFooter>
-          <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
+          <Button color="gray" disabled={isSaving} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button color="red" leftSection={<Trash2 size={16} />} loading={isSaving} onClick={onDelete}>
@@ -1609,10 +1609,10 @@ function DeleteStorageModal({
 
   return (
     <AppModal centered opened={Boolean(storage)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити склад')}</span>} onClose={onClose}>
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap="md">
         <Text>{storage ? t('Склад "{name}" буде видалено.', { name: displayValue(storage.Name) }) : ''}</Text>
         <AppModalFooter>
-          <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
+          <Button color="gray" disabled={isSaving} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button color="red" leftSection={<Trash2 size={16} />} loading={isSaving} onClick={onDelete}>

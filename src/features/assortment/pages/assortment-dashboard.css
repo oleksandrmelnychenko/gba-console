@@ -149,14 +149,14 @@
 
 .assort-select-dropdown [data-combobox-option] {
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   letter-spacing: 0;
 }
 
 .assort-select-dropdown [data-combobox-option]:hover,
 .assort-select-dropdown [data-combobox-option][data-combobox-selected],
 .assort-select-dropdown [data-combobox-option][aria-selected='true'] {
-  background: #fff4eb;
+  background: var(--mantine-color-gray-1);
   color: var(--mantine-color-gray-9);
 }
 

@@ -518,7 +518,7 @@
     0 18px 42px -20px rgba(16, 24, 40, 0.32);
   max-height: min(640px, calc(100vh - 96px));
   overflow: hidden;
-  padding: 14px;
+  padding: 12px;
   max-width: calc(100vw - 24px);
 }
 
@@ -531,7 +531,24 @@
 }
 
 .product-placement-editor__header {
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
   padding-bottom: 4px;
+}
+
+.product-placement-editor__header > .mantine-Group-root {
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.product-placement-editor .mantine-Button-root {
+  min-height: 32px;
+  height: 32px;
+  font-family: var(--font-mono);
+  font-size: 12px;
 }
 
 .product-placement-editor__title {
@@ -595,11 +612,11 @@
   border-radius: 8px;
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 650;
-  height: 34px;
+  height: 32px;
   letter-spacing: 0;
-  min-height: 34px;
+  min-height: 32px;
 }
 
 .product-placement-editor__field--qty .mantine-Input-input {
@@ -1421,7 +1438,7 @@
   padding: 0 4px 2px 0;
 }
 .product-edit-modal .mantine-Input-input {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--mantine-color-gray-9);
   background: white;
 }

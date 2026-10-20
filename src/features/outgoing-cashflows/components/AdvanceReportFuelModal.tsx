@@ -1,21 +1,21 @@
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
+import './advance-report-entry.css'
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
-  Badge,
+  Card,
   Button,
   Group,
   NumberInput,
   Select,
-  SimpleGrid,
   Stack,
   Text,
-  TextInput,
 } from '@mantine/core'
 import { CircleAlert, Save, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { searchCompanyCars } from '../../company-cars/api/companyCarsApi'
@@ -351,127 +351,131 @@ export function AdvanceReportFuelModal({
 
   return (
     <AppModal
+      className="app-compact-form"
       centered
       opened={opened}
-      size="xl"
-      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Додати пальне')}</span>}
+      size={960}
+      title={t('Додати пальне')}
       onClose={requestClose}
     >
-      <Stack gap="md">
+      <Stack gap={10}>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
-        <SimpleGrid cols={{ base: 1, md: 2 }}>
-          <TextInput disabled label={t('Організація')} value={getOrganizationDisplayName(outcomeOrder.Organization)} />
-          <SearchableSelect
-            data={supplierOptions}
-            disabled={isLoading}
-            label={t('Постачальник послуг')}
-            placeholder={t('Почніть вводити назву')}
-            value={form.supplierSearch}
-            onChange={(value) => updateForm({ selectedAgreementValue: '', selectedSupplierValue: '', supplierSearch: value })}
-            onOptionSubmit={handleSupplierSubmit}
-          />
-          <Select
-            data={agreementOptions}
-            disabled={!selectedSupplier || isLoading}
-            label={t('Договір')}
-            placeholder={t('Оберіть договір')}
-            searchable
-            value={form.selectedAgreementValue || null}
-            onChange={(value) => updateForm({ selectedAgreementValue: value || '' })}
-          />
-          <SearchableSelect
-            data={companyCarOptions}
-            disabled={isLoading}
-            label={t('Автомобіль компанії')}
-            placeholder={t('Номер або модель')}
-            value={form.companyCarSearch}
-            onChange={(value) => updateForm({ companyCarSearch: value, selectedCompanyCarValue: '' })}
-            onOptionSubmit={handleCompanyCarSubmit}
-          />
-          <Select
-            data={costMovementOptions}
-            disabled={isLoading || isLoadingCostMovements}
-            label={t('Стаття витрат')}
-            loading={isLoadingCostMovements}
-            placeholder={t('Оберіть статтю витрат')}
-            value={form.selectedCostMovementValue || null}
-            onChange={(value) => updateForm({ selectedCostMovementValue: value || '' })}
-          />
-          <NumberInput
-            allowNegative={false}
-            decimalScale={3}
-            disabled={isLoading}
-            label={t('Ціна за літр')}
-            min={0}
-            value={form.pricePerLiter}
-            onChange={(value) => updateForm({ pricePerLiter: toNumber(value), totalPriceWithVat: 0 })}
-          />
-          <NumberInput
-            allowNegative={false}
-            decimalScale={3}
-            disabled={isLoading}
-            label={t('Кількість пального')}
-            min={0}
-            value={form.fuelAmount}
-            onChange={(value) => updateForm({ fuelAmount: toNumber(value) })}
-          />
-          <NumberInput
-            allowNegative={false}
-            decimalScale={2}
-            disabled={isLoading}
-            label={t('Загальна сума з ПДВ')}
-            min={0}
-            value={form.totalPriceWithVat}
-            onChange={(value) => updateForm({ pricePerLiter: 0, totalPriceWithVat: toNumber(value) })}
-          />
-          <NumberInput
-            allowNegative={false}
-            decimalScale={2}
-            disabled={isLoading}
-            label={`${t('ПДВ')} %`}
-            min={0}
-            value={form.vatPercent}
-            onChange={(value) => {
-              const vatPercent = toNumber(value)
-              updateForm({ vatAmount: vatPercent > 0 ? form.vatAmount : 0, vatPercent })
-            }}
-          />
-          <NumberInput
-            allowNegative={false}
-            decimalScale={2}
-            disabled={isLoading}
-            label={t('Сума ПДВ')}
-            min={0}
-            value={form.vatAmount}
-            onChange={(value) => updateForm({ vatAmount: toNumber(value) })}
-          />
-        </SimpleGrid>
+        <Card className="app-section-card" withBorder padding={12} radius="md">
+          <Group gap={8} mb={10}><Text c="gray.9" size="xs" fw={500}>{t('Організація')}</Text><TableChip tone="product" value={getOrganizationDisplayName(outcomeOrder.Organization)} /></Group>
+          <div className="advance-report-entry-parties">
+            <SearchableSelect
+              data={supplierOptions}
+              disabled={isLoading}
+              label={t('Постачальник послуг')}
+              placeholder={t('Почніть вводити назву')}
+              value={form.supplierSearch}
+              onChange={(value) => updateForm({ selectedAgreementValue: '', selectedSupplierValue: '', supplierSearch: value })}
+              onOptionSubmit={handleSupplierSubmit}
+            />
+            <Select
+              data={agreementOptions}
+              disabled={!selectedSupplier || isLoading}
+              label={t('Договір')}
+              placeholder={t('Оберіть договір')}
+              searchable
+              value={form.selectedAgreementValue || null}
+              onChange={(value) => updateForm({ selectedAgreementValue: value || '' })}
+            />
+            <SearchableSelect
+              data={companyCarOptions}
+              disabled={isLoading}
+              label={t('Автомобіль компанії')}
+              placeholder={t('Номер або модель')}
+              value={form.companyCarSearch}
+              onChange={(value) => updateForm({ companyCarSearch: value, selectedCompanyCarValue: '' })}
+              onOptionSubmit={handleCompanyCarSubmit}
+            />
+            <Select
+              data={costMovementOptions}
+              disabled={isLoading || isLoadingCostMovements}
+              label={t('Стаття витрат')}
+              loading={isLoadingCostMovements}
+              placeholder={t('Оберіть статтю витрат')}
+              value={form.selectedCostMovementValue || null}
+              onChange={(value) => updateForm({ selectedCostMovementValue: value || '' })}
+            />
+          </div>
+          <div className="advance-report-entry-numbers">
+            <NumberInput
+              maw={180}
+              allowNegative={false}
+              decimalScale={3}
+              disabled={isLoading}
+              label={t('Ціна за літр')}
+              min={0}
+              value={form.pricePerLiter}
+              onChange={(value) => updateForm({ pricePerLiter: toNumber(value), totalPriceWithVat: 0 })}
+            />
+            <NumberInput
+              maw={180}
+              allowNegative={false}
+              decimalScale={3}
+              disabled={isLoading}
+              label={t('Кількість пального')}
+              min={0}
+              value={form.fuelAmount}
+              onChange={(value) => updateForm({ fuelAmount: toNumber(value) })}
+            />
+            <NumberInput
+              maw={180}
+              allowNegative={false}
+              decimalScale={2}
+              disabled={isLoading}
+              label={t('Загальна сума з ПДВ')}
+              min={0}
+              value={form.totalPriceWithVat}
+              onChange={(value) => updateForm({ pricePerLiter: 0, totalPriceWithVat: toNumber(value) })}
+            />
+            <NumberInput
+              maw={180}
+              allowNegative={false}
+              decimalScale={2}
+              disabled={isLoading}
+              label={`${t('ПДВ')} %`}
+              min={0}
+              value={form.vatPercent}
+              onChange={(value) => {
+                const vatPercent = toNumber(value)
+                updateForm({ vatAmount: vatPercent > 0 ? form.vatAmount : 0, vatPercent })
+              }}
+            />
+            <NumberInput
+              maw={180}
+              allowNegative={false}
+              decimalScale={2}
+              disabled={isLoading}
+              label={t('Сума ПДВ')}
+              min={0}
+              value={form.vatAmount}
+              onChange={(value) => updateForm({ vatAmount: toNumber(value) })}
+            />
+          </div>
+        </Card>
 
         <Group gap="xs">
-          <Badge className="app-role-pill is-gray" variant="light">
-            {t('Сума')}: <span className="app-money">{formatMoney(previewFueling.TotalPrice)}</span>
-          </Badge>
-          <Badge className="app-role-pill is-gray" variant="light">
-            {t('ПДВ')}: <span className="app-money">{formatMoney(previewFueling.VatAmount)}</span>
-          </Badge>
-          <Badge className="app-role-pill" variant="light">
-            {t('Разом')}: <span className="app-money">{formatMoney(previewFueling.TotalPriceWithVat)}</span>
-          </Badge>
+          <Text size="xs" c="gray.9">{t('Сума')}: <span className="app-money">{formatMoney(previewFueling.TotalPrice)}</span></Text>
+          <Text size="xs" c="gray.9">{t('ПДВ')}: <span className="app-money">{formatMoney(previewFueling.VatAmount)}</span></Text>
+          <Text size="xs" c="gray.9">{t('Разом')}: <span className="app-money">{formatMoney(previewFueling.TotalPriceWithVat)}</span></Text>
         </Group>
 
-        <Group justify="flex-end">
-          <Button color="gray" disabled={isSaving} leftSection={<X size={16} />} variant="light" onClick={requestClose}>
+        <AppModalFooter>
+          <Button color="gray" disabled={isSaving} leftSection={<X size={16} />} variant="default" onClick={requestClose}>
             {t('Скасувати')}
           </Button>
           <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} onClick={() => void submitFueling()}>
             {t('Додати')}
           </Button>
-        </Group>
+        </AppModalFooter>
 
         <AppModal
           centered
@@ -483,16 +487,16 @@ export function AdvanceReportFuelModal({
             }
           }}
         >
-          <Stack gap="md">
+          <Stack gap={10}>
             <Text>{t('Якщо закрити форму, введені дані не будуть додані до авансового звіту.')}</Text>
-            <Group justify="flex-end">
-              <Button color="gray" disabled={isSaving} variant="light" onClick={() => setConfirmCloseOpen(false)}>
+            <AppModalFooter>
+              <Button color="gray" disabled={isSaving} variant="default" onClick={() => setConfirmCloseOpen(false)}>
                 {t('Залишитися')}
               </Button>
               <Button color="red" disabled={isSaving} onClick={confirmClose}>
                 {t('Закрити без збереження')}
               </Button>
-            </Group>
+            </AppModalFooter>
           </Stack>
         </AppModal>
       </Stack>

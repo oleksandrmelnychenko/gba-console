@@ -1,8 +1,8 @@
-import { Alert, Badge, Button, Group, Menu, SimpleGrid, Stack, Text, Textarea, ThemeIcon } from '@mantine/core'
+import { Alert, Button, Group, Menu, SimpleGrid, Stack, Text, Textarea, ThemeIcon } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { Ban, Building2, ChevronRight, CircleAlert, Copy, Landmark, Link2, MoreHorizontal, Star, Store, Unlink } from 'lucide-react'
 import { useState } from 'react'
-import { TableChip } from '../../../../shared/ui/TableChip'
+import { TableChip, type TableChipTone } from '../../../../shared/ui/TableChip'
 import { AppModal, AppModalFooter } from '../../../../shared/ui/AppModal'
 import { mutateClientIdentity } from '../../api/clientsApi'
 import type {
@@ -56,7 +56,7 @@ export function ClientCommercialStructureView({
   )
 
   return (
-    <Stack className="client-commercial-structure" gap="md">
+    <Stack className="client-commercial-structure" gap={10}>
       <Group className="client-commercial-hero" align="flex-start" justify="space-between" gap="sm" wrap="wrap">
         <div className="client-commercial-hero__identity">
           <Text className="app-section-title client-commercial-title">{groupTitle}</Text>
@@ -132,7 +132,7 @@ export function ClientCommercialStructureView({
             <span className="client-structure-audit__summary">
               <ChevronRight className="client-structure-audit__chevron" size={15} />
               <span>{t('Відхилені кандидати')}</span>
-              <Badge className="app-role-pill is-gray" size="xs" variant="light">{rejectedCards.length}</Badge>
+              <TableChip tone="neutral" value={rejectedCards.length} />
             </span>
           </summary>
           <Stack gap="xs" mt="sm">
@@ -158,6 +158,7 @@ export function ClientCommercialStructureView({
       <BuyerPriceTypeEvidenceSection structure={structure} t={t} />
 
       <AppModal
+        className="app-compact-form"
         centered
         opened={Boolean(pendingDecision)}
         title={pendingDecision?.title || t('Зв’язок клієнтів')}
@@ -168,7 +169,7 @@ export function ClientCommercialStructureView({
           }
         }}
       >
-        <Stack gap="md">
+        <Stack gap={10}>
           <Text size="sm">{pendingDecision?.description}</Text>
           <Alert color="blue" icon={<CircleAlert size={17} />} variant="light">
             {t('Договори, продажі, платежі та баланси залишаться на своїх картках. Зміниться лише підтверджена структура й спільний кредитний контроль.')}
@@ -296,8 +297,8 @@ function BuyerPriceTypeEvidenceSection({ structure, t }: ClientCommercialStructu
               <tbody>{evidence.rows.map((row) => (
                 <tr key={row.reference}>
                   <td>{row.agreement}</td>
-                  <td><Badge className="app-role-pill" variant="light">{row.standard}</Badge></td>
-                  <td>{row.promotional ? <Badge className="app-role-pill is-green" variant="light">{row.promotional}</Badge> : '—'}</td>
+                  <td><TableChip tone="neutral" value={row.standard} /></td>
+                  <td>{row.promotional ? <TableChip tone="success" value={row.promotional} /> : '—'}</td>
                   <td>{t(row.validity)}</td>
                 </tr>
               ))}</tbody>
@@ -343,12 +344,12 @@ function LegalPartyNode({
       <summary className="client-legal-party__summary">
         <div className="client-legal-party__summary-layout">
           <ChevronRight className="client-legal-party__chevron" size={16} />
-          <Group className="client-legal-party__main" align="center" gap="sm" wrap="nowrap">
+          <Group className="client-legal-party__main" align="center" gap={8} wrap="nowrap">
             <ThemeIcon
               className="client-legal-party__icon"
               color={party.IsTarget ? 'orange' : 'gray'}
               radius="xl"
-              size={30}
+              size={24}
               variant="outline"
             >
               <Landmark size={16} />
@@ -362,12 +363,10 @@ function LegalPartyNode({
               </Text>
             </div>
           </Group>
-          <Group className="client-legal-party__badges" gap={6} wrap="nowrap">
-            {party.IsTarget ? <Badge className="app-role-pill is-orange" size="xs" variant="light">{t('Обрана')}</Badge> : null}
-            {party.RequiresReview ? <Badge className="app-role-pill is-orange" size="xs" variant="light">{t('Перевірити')}</Badge> : null}
-            <Badge className="app-role-pill is-gray" size="xs" variant="light">
-              {party.Cards.length} {t('карт.')}
-            </Badge>
+          <Group className="client-legal-party__badges" gap={4} wrap="wrap">
+            {party.IsTarget ? <TableChip tone="warning" value={t('Обрана')} /> : null}
+            {party.RequiresReview ? <TableChip tone="warning" value={t('Перевірити')} /> : null}
+            <TableChip value={`${party.Cards.length} ${t('карт.')}`} />
           </Group>
         </div>
       </summary>
@@ -617,12 +616,12 @@ function ClientCard({
   return (
     <div className={`client-source-card${card.IsTarget ? ' client-source-card--target' : ''}`}>
       <Group align="center" justify="space-between" gap="sm" wrap="nowrap">
-        <Group className="client-source-card__main" align="center" gap="sm" wrap="nowrap">
+        <Group className="client-source-card__main" align="center" gap={8} wrap="nowrap">
           <ThemeIcon
             className="client-source-card__icon"
             color={card.IsTarget ? 'orange' : 'gray'}
             radius="xl"
-            size={28}
+            size={24}
             variant="outline"
           >
             {card.IsTradePoint ? <Store size={15} /> : <Building2 size={15} />}
@@ -630,37 +629,29 @@ function ClientCard({
           <div className="client-source-card__identity">
             <Group gap={5} wrap="wrap">
               <Text className="client-source-card__name" title={displayName}>{repeatsPartyName ? t('Картка клієнта') : displayName}</Text>
-              {card.IsTarget ? <Badge className="app-role-pill is-orange" size="xs" variant="light">{t('Обрана')}</Badge> : null}
-              {card.IsTradePoint ? <Badge className="app-role-pill is-gray" size="xs" variant="light">{t('Торгова точка')}</Badge> : null}
-              {card.IsSubClient && !card.IsTradePoint ? <Badge className="app-role-pill is-gray" size="xs" variant="light">{t('Підклієнт')}</Badge> : null}
+              {card.IsTarget ? <TableChip tone="warning" value={t('Обрана')} /> : null}
+              {card.IsTradePoint ? <TableChip tone="neutral" value={t('Торгова точка')} /> : null}
+              {card.IsSubClient && !card.IsTradePoint ? <TableChip tone="neutral" value={t('Підклієнт')} /> : null}
               {card.HasExplicitRelationship && !card.IsSubClient && !card.IsTradePoint ? (
-                <Badge className="app-role-pill is-green" size="xs" variant="light">{t('Явний зв’язок')}</Badge>
+                <TableChip tone="success" value={t('Явний зв’язок')} />
               ) : null}
-              {card.IsPrimaryClient ? <Badge className="app-role-pill is-green" size="xs" variant="light">{t('Головна картка')}</Badge> : null}
+              {card.IsPrimaryClient ? <TableChip tone="success" value={t('Головна картка')} /> : null}
               {card.IsConfirmedMember && !card.IsPrimaryClient ? (
-                <Badge className="app-role-pill is-green" size="xs" variant="light">
-                  {card.ConfirmedRelationshipKind === 'duplicate' ? t('Підтверджений дубль') : t('Підтверджений зв’язок')}
-                </Badge>
+                <TableChip tone="success" value={card.ConfirmedRelationshipKind === 'duplicate' ? t('Підтверджений дубль') : t('Підтверджений зв’язок')} />
               ) : null}
-              {card.IsRejectedCandidate ? <Badge className="app-role-pill is-gray" size="xs" variant="light">{t('Зв’язок відхилено')}</Badge> : null}
-              {card.IsBlocked ? <Badge className="app-role-pill is-red" size="xs" variant="light">{t('Заблокована')}</Badge> : null}
-              {!card.IsActive ? <Badge className="app-role-pill is-gray" size="xs" variant="light">{t('Неактивна')}</Badge> : null}
+              {card.IsRejectedCandidate ? <TableChip tone="neutral" value={t('Зв’язок відхилено')} /> : null}
+              {card.IsBlocked ? <TableChip tone="danger" value={t('Заблокована')} /> : null}
+              {!card.IsActive ? <TableChip tone="neutral" value={t('Неактивна')} /> : null}
             </Group>
             <Group className="client-source-card__meta" gap={5} wrap="wrap">
               {roleLabel ? (
-                <Badge className="app-role-pill client-card-role-chip" color="teal" size="xs" variant="light">
-                  {roleLabel}
-                </Badge>
+                <TableChip tone="document" value={roleLabel} />
               ) : null}
               {regionCode ? (
-                <Badge className="app-role-pill is-gray client-card-code-chip" color="blue" size="xs" variant="light">
-                  {regionCode}
-                </Badge>
+                <TableChip tone="document" value={regionCode} />
               ) : null}
               {legalCode ? (
-                <Badge className="app-role-pill is-gray client-card-code-chip" color="gray" size="xs" variant="outline">
-                  {t('код')} {legalCode}
-                </Badge>
+                <TableChip value={`${t('код')} ${legalCode}`} />
               ) : null}
               {card.MainClientId ? (
                 <Text className="client-source-card__parent" component="span">
@@ -680,7 +671,7 @@ function ClientCard({
             </Group>
           </div>
         </Group>
-        <Group className="client-source-card__stats" gap={14} wrap="nowrap">
+        <Group className="client-source-card__stats" gap={6} wrap="wrap">
           <ClientCardMetric label={t('Договори')} value={`${card.ActiveAgreementCount}/${card.AgreementCount}`} />
           <ClientCardMetric label={t('Продажі')} value={card.SaleCount} />
           {onDecision && anchorClientNetUid ? (
@@ -739,10 +730,10 @@ function ClientSourceTreeNode({
     >
       <summary className="client-source-card__source-toggle">
         <ChevronRight size={16} />
-        <Badge className="app-role-pill is-source" variant="light">{getSourceLabel(snapshot.SourceSystem)}</Badge>
+        <TableChip tone="source" value={getSourceLabel(snapshot.SourceSystem)} />
         <span className="client-source-card__source-code">{snapshot.RegionCode?.trim() || `#${snapshot.SourceCode}`}</span>
         <span className="client-source-card__source-count">{t('Договори 1С')} · {agreements.length}</span>
-        {snapshot.SourceMarkedDeleted && <Badge className="app-role-pill is-red" variant="light">{t('видалений у 1С')}</Badge>}
+        {snapshot.SourceMarkedDeleted && <TableChip tone="danger" value={t('видалений у 1С')} />}
       </summary>
       <div className="client-source-card__source-header">
         <div className="client-source-card__source-identity">
@@ -773,7 +764,10 @@ function ClientSourceTreeNode({
                   <span>{getSourceAgreementTitle(agreement)}</span>
                   <SourceAgreementDetails agreement={agreement} t={t} />
                   <span className={`client-source-card__agreement-state is-${activity.kind}`}>
-                    {t(activity.label)}
+                    <TableChip
+                      tone={activity.kind === 'current' ? 'success' : activity.kind === 'expired' || activity.kind === 'deleted' ? 'danger' : activity.kind === 'future' ? 'warning' : 'neutral'}
+                      value={t(activity.label)}
+                    />
                   </span>
                 </div>
               )
@@ -1054,7 +1048,7 @@ function ClientCardMetric({ label, value }: { label: string; value: number | str
   return (
     <span className="client-source-card__stat">
       <span>{label}</span>
-      <strong>{value}</strong>
+      <TableChip value={value} />
     </span>
   )
 }
@@ -1080,8 +1074,8 @@ function SourceAgreementDetails({ agreement, t }: { agreement: ClientSourceAgree
 
   return (
     <div className="client-source-card__agreement-details">
-      {agreement.OrganizationName?.trim() && <TableChip tone="source" value={`${t('Організація')}: ${agreement.OrganizationName.trim()}`} />}
-      {currency && <TableChip value={`${t('Валюта')}: ${currencies[currency] || currency}`} />}
+      {agreement.OrganizationName?.trim() && <TableChip tone="product" value={`${t('Організація')}: ${agreement.OrganizationName.trim()}`} />}
+      {currency && <TableChip tone="source" value={`${t('Валюта')}: ${currencies[currency] || currency}`} />}
       {agreement.TypePriceName?.trim() && <TableChip tone="product" value={`${t('Тип ціни')}: ${agreement.TypePriceName.trim()}`} />}
       {period && <TableChip tone="document" value={`${t('Період')}: ${period}`} />}
     </div>
@@ -1112,16 +1106,16 @@ function StateBadge({ state, t }: { state: ClientCommercialStructureState; t: (v
     )
   }
 
-  const config: Record<ClientCommercialStructureState, { className: string; label: string }> = {
-    self: { className: 'is-gray', label: t('Окрема картка') },
-    confirmed: { className: 'is-green', label: t('Підтверджено') },
-    probable: { className: '', label: t('Ймовірний зв’язок') },
-    review_required: { className: 'is-orange', label: t('Потрібна перевірка') },
+  const config: Record<ClientCommercialStructureState, { tone: TableChipTone; label: string }> = {
+    self: { tone: 'neutral', label: t('Окрема картка') },
+    confirmed: { tone: 'success', label: t('Підтверджено') },
+    probable: { tone: 'warning', label: t('Ймовірний зв’язок') },
+    review_required: { tone: 'warning', label: t('Потрібна перевірка') },
   }
 
   return (
-    <Badge className={`app-role-pill client-commercial-state ${config[state].className}`} variant="light">
-      {config[state].label}
-    </Badge>
+    <span className="client-commercial-state">
+      <TableChip tone={config[state].tone} value={config[state].label} />
+    </span>
   )
 }

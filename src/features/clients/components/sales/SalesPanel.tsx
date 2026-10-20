@@ -1,3 +1,5 @@
+import { TableChip } from '../../../../shared/ui/TableChip'
+import type { ReactNode } from 'react'
 import {
   ActionIcon,
   Alert,
@@ -255,6 +257,7 @@ export function SalesPanel({ netId }: SalesPanelProps) {
       )}
 
       <AppDrawer
+        className="app-compact-form"
         opened={Boolean(detailKind)}
         position="right"
         size="min(720px, 100vw)"
@@ -516,19 +519,13 @@ function SaleOrderItemRow({
           {displayValue(product?.Name)}
         </Text>
         <Group gap="xs">
-          <Text c="dimmed" size="xs">
-            {displayValue(product?.VendorCode)}
-          </Text>
-          <Text c="dimmed" size="xs">
-            {displayValue(product?.MainOriginalNumber)}
-          </Text>
+          <TableChip tone="product" value={product?.VendorCode} />
+          <TableChip tone="warning" value={product?.MainOriginalNumber} />
         </Group>
         <CreatedInfo date={item.Created} lastName={item.User?.LastName} />
       </Box>
       <Stack align="flex-end" gap={2}>
-        <Text className="app-money" fw={700} size="sm">
-          {roundTotal(item.TotalAmountLocal)} {displayValue(currencyCode)}
-        </Text>
+        <Group gap={6} wrap="nowrap"><Text className="app-money" fw={700} size="sm">{roundTotal(item.TotalAmountLocal)}</Text><TableChip tone="source" value={currencyCode} /></Group>
         <Text c="dimmed" size="xs">
           {item.Qty ?? 0} {t('Кількість')}
         </Text>
@@ -557,19 +554,13 @@ function SaleReturnItemRow({
           {displayValue(product?.Name)}
         </Text>
         <Group gap="xs">
-          <Text c="dimmed" size="xs">
-            {displayValue(product?.VendorCode)}
-          </Text>
-          <Text c="dimmed" size="xs">
-            {displayValue(product?.MainOriginalNumber)}
-          </Text>
+          <TableChip tone="product" value={product?.VendorCode} />
+          <TableChip tone="warning" value={product?.MainOriginalNumber} />
         </Group>
         <CreatedInfo date={item.Created} lastName={item.CreatedBy?.LastName} />
       </Box>
       <Stack align="flex-end" gap={2}>
-        <Text className="app-money" fw={700} size="sm">
-          {roundTotal(item.AmountLocal)} {displayValue(currencyCode)}
-        </Text>
+        <Group gap={6} wrap="nowrap"><Text className="app-money" fw={700} size="sm">{roundTotal(item.AmountLocal)}</Text><TableChip tone="source" value={currencyCode} /></Group>
         <Text c="dimmed" size="xs">
           {item.Qty ?? 0} {t('Кількість')}
         </Text>
@@ -590,12 +581,12 @@ function SaleEditDetail({ sale }: { sale: Sale }) {
 
       <Card className="app-section-card" withBorder padding="md" radius="md">
         <Stack gap="xs">
-          <DetailRow label={t('Номер')} value={displayValue(sale.SaleNumber?.Value)} />
+          <DetailRow label={t('Номер')} value={<TableChip tone="document" value={sale.SaleNumber?.Value} />} />
           <DetailRow label={t('Статус')} value={getLifeCycleLabel(sale.BaseLifeCycleStatus?.SaleLifeCycleType, t)} />
           <DetailRow
             mono
             label={t('Сума')}
-            value={`${formatAmount(sale.TotalAmountLocal)} ${displayValue(currencyCode)}`}
+            value={<Group component="span" gap={6}><span>{formatAmount(sale.TotalAmountLocal)}</span><TableChip tone="source" value={currencyCode} /></Group>}
           />
           <DetailRow label={t('Кількість')} value={String(sale.TotalCount ?? 0)} />
           <DetailRow label={t('Дата')} value={formatDateTime(sale.ChangedToInvoice || sale.Created)} />
@@ -634,7 +625,7 @@ function SaleCarrierDetail({ sale }: { sale: Sale }) {
 
       <Card className="app-section-card" withBorder padding="md" radius="md">
         <Stack gap="xs">
-          <DetailRow label={t('Номер')} value={displayValue(sale.SaleNumber?.Value)} />
+          <DetailRow label={t('Номер')} value={<TableChip tone="document" value={sale.SaleNumber?.Value} />} />
           <DetailRow label={t('Дата')} value={formatDateTime(sale.ShipmentDate || sale.Created)} />
           {sale.Comment && <DetailRow label={t('Коментар')} value={sale.Comment} />}
         </Stack>
@@ -643,7 +634,7 @@ function SaleCarrierDetail({ sale }: { sale: Sale }) {
   )
 }
 
-function DetailRow({ label, mono, value }: { label: string; mono?: boolean; value: string }) {
+function DetailRow({ label, mono, value }: { label: string; mono?: boolean; value: ReactNode }) {
   return (
     <div className={`app-detail-field${mono ? ' is-mono' : ''}`}>
       <span>{label}</span>

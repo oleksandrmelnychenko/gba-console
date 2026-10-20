@@ -1,5 +1,6 @@
-import { Alert, Badge, Group, Stack, Text } from '@mantine/core'
+import { Alert, Group, Stack, Text } from '@mantine/core'
 import { TriangleAlert } from 'lucide-react'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { useI18n } from '../../../shared/i18n/useI18n'
 
@@ -24,15 +25,13 @@ export function ProductCapitalizationMissingItemsModal({
       title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Відсутні артикули')}</span>}
       onClose={onClose}
     >
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap="md">
         <Alert color="red" icon={<TriangleAlert size={18} />} variant="light">
           {t('Ці артикули з файлу не знайдено серед товарів')}
         </Alert>
         <Group gap="xs">
           {items.map((code) => (
-            <Badge key={code} className="app-role-pill is-red" size="lg" variant="light">
-              {code}
-            </Badge>
+            <TableChip key={code} tone="danger" value={code} />
           ))}
         </Group>
         {items.length === 0 && (

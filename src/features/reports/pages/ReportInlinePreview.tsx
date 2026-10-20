@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import { settlementAttributeText, type SettlementCounterpartyAttribute } from '../data/settlementSourceAttributes'
 import { Fragment } from 'react'
 import { Alert, Text } from '@mantine/core'
@@ -77,11 +78,18 @@ export function ReportInlinePreview({ preview, embedded = false }: { preview: Na
             {totalCells(group.Values)}
           </tr>)}
           <tr>
-          {rowHeaders.map((header, index) => <th scope="row" key={header} data-level={index < levelCount ? index : undefined}
-            className={repeated[rowIndex]?.[index] ? 'is-repeat' : undefined}>{rowHeaderText({ index, row, preview,
-            products: !!products, product: productRows.get(row.SourceIndex), regions: !!regions, region: regionRows.get(row.SourceIndex),
-            attributes: attributeRows.get(row.SourceIndex), workbookRow: workbookRows.get(row.SourceIndex), workbookColumns, sharedNames,
-            caption: rowCaption })}</th>)}
+          {rowHeaders.map((header, index) => {
+            const caption = rowHeaderText({ index, row, preview,
+              products: !!products, product: productRows.get(row.SourceIndex), regions: !!regions, region: regionRows.get(row.SourceIndex),
+              attributes: attributeRows.get(row.SourceIndex), workbookRow: workbookRows.get(row.SourceIndex), workbookColumns, sharedNames,
+              caption: rowCaption })
+            const isOrganization = !products && index < levelCount
+              && /^(Організація|Организация|Організація партії)$/iu.test(preview.RowSchema[index]?.Caption?.trim() ?? '')
+            return <th scope="row" key={header} data-level={index < levelCount ? index : undefined}
+              className={repeated[rowIndex]?.[index] ? 'is-repeat' : undefined}>
+              {isOrganization && !repeated[rowIndex]?.[index] ? <TableChip tone="product" value={caption} /> : caption}
+            </th>
+          })}
           {preview.Columns.map(column => {
             const value = cells.get(`${row.SourceIndex}:${column.SourceIndex}`)
             return <td key={column.SourceIndex} title={value === undefined ? 'Клітинка відсутня' : value.Kind === 'null' ? 'Явне значення NULL' : undefined}>

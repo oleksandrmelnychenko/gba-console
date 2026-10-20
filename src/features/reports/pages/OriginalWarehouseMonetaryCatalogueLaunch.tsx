@@ -2,7 +2,7 @@ import { Button, Loader, Stack, Text } from '@mantine/core'
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { WarehousePeriodCapabilityStatus } from './WarehousePeriodControls'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { ReportModal } from './ReportModal'
 import { getWarehouseMonetaryCapability } from '../api/originalWarehouseMonetaryApi'
 import { isWarehouseMonetaryCatalogueEntry, type WarehouseMonetaryCapability } from '../data/originalWarehouseMonetary'
 import type { ReportCatalogueEntry } from '../types'
@@ -30,11 +30,11 @@ function MonetaryPeriodModal({ opened, enabled, disabled, capability, callerKey,
   const { t } = useI18n()
   // Initial dates are explicit in the form; no server default to today's balances.
   const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Kyiv' })
-  return <AppModal opened={opened && enabled && !!capability} title={t('Партії на складах: кількість, вартість і ПДВ за період')} size={1250}
+  return <ReportModal opened={opened && enabled && !!capability} title={t('Партії на складах: кількість, вартість і ПДВ за період')} size={1250}
     onClose={close} closeButtonProps={{ 'aria-label': t('Закрити відомість партій') }}>
     {opened && capability ? <Suspense fallback={<Loader size="sm" />}><Panel key={JSON.stringify(scope)} capability={capability} callerKey={callerKey}
       canGenerate={enabled && !disabled} initialFrom={`${today.slice(0, 7)}-01`} initialThrough={today} /></Suspense> : null}
-  </AppModal>
+  </ReportModal>
 }
 
 export function OriginalWarehouseMonetaryCatalogueLaunch({ report, worlds, enabled, disabled, callerKey }: {

@@ -1,4 +1,5 @@
-import { Button, Group, Select, Stack, TextInput } from '@mantine/core'
+import { AppModalFooter } from '../../../shared/ui/AppModal'
+import { Button, Select, Stack, TextInput } from '@mantine/core'
 import { useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -93,7 +94,7 @@ export function ShiftForm({
 
   return (
     <Stack gap="sm">
-      <TextInput
+      <TextInput maw={230}
         label={t('Від якої дати')}
         type="datetime-local"
         value={fromDate}
@@ -121,7 +122,7 @@ export function ShiftForm({
       <TextInput label={t('Коментар')} value={comment} onChange={(event) => setComment(event.currentTarget.value)} />
       {displayQtyField && (
         <>
-          <TextInput
+          <TextInput maw={160}
             error={qtyError}
             label={t('К-сть')}
             type="number"
@@ -131,11 +132,11 @@ export function ShiftForm({
           {showPlacement && <PlacementFields required values={placement} onChange={setPlacement} />}
         </>
       )}
-      <Group justify="flex-end">
+      <AppModalFooter>
         <Button color={CREATE_ACTION_COLOR} disabled={!canSubmit} loading={isSubmitting} onClick={handleSubmit}>
           {t('Перемістити')}
         </Button>
-      </Group>
+      </AppModalFooter>
     </Stack>
   )
 }

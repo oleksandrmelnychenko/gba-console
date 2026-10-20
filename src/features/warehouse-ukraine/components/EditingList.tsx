@@ -13,7 +13,7 @@ import type { TranslateFunction } from '../../../shared/i18n/types'
 import { SaleAuditDetail } from '../../../shared/sale-audit/SaleAuditDetail'
 import { getWarehouseUkraineSaleAudit } from '../../../shared/sale-audit/saleAuditApi'
 import type { SaleAuditStatistic } from '../../../shared/sale-audit/saleAuditTypes'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
@@ -334,7 +334,7 @@ export function EditingList({ canProcess, kind, layoutVersion, loader, onLoaded,
         title={kind === 'carrier' ? t('Підтвердити зміну перевізника') : t('Підтвердити обробку акту')}
         onClose={closeConfirm}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           <Text size="sm">{t('Після підтвердження запис буде позначено як опрацьований.')}</Text>
 
           {confirmItem && kind === 'carrier' && <CarrierChangeSummary item={confirmItem} />}
@@ -343,8 +343,8 @@ export function EditingList({ canProcess, kind, layoutVersion, loader, onLoaded,
             <SaleAuditDetail error={auditError} isLoading={auditLoading} showConfirm={false} statistic={auditStatistic} />
           )}
 
-          <Group justify="flex-end" gap="sm">
-            <Button color="gray" disabled={isProcessing} variant="light" onClick={closeConfirm}>
+          <AppModalFooter>
+            <Button color="gray" disabled={isProcessing} variant="default" onClick={closeConfirm}>
               {t('Скасувати')}
             </Button>
             <Button
@@ -355,7 +355,7 @@ export function EditingList({ canProcess, kind, layoutVersion, loader, onLoaded,
             >
               {t('Підтвердити')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
     </Stack>

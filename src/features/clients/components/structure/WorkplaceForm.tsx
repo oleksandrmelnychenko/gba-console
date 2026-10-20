@@ -1,5 +1,7 @@
+import { getOrganizationDisplayName } from '../../../../shared/organizations/organizationDisplayName'
 import {
   Button,
+  Card,
   Checkbox,
   Group,
   PasswordInput,
@@ -9,6 +11,9 @@ import {
   TextInput,
   UnstyledButton,
 } from '@mantine/core'
+import { AppModalFooter } from '../../../../shared/ui/AppModal'
+import { TableChip } from '../../../../shared/ui/TableChip'
+import '../form/client-inline-form.css'
 import { Check } from 'lucide-react'
 import { useReducer } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -245,7 +250,7 @@ function WorkplaceFormFields({
   }
 
   return (
-    <Stack gap="md">
+    <Stack className="app-compact-form" gap={10}>
       <Checkbox
         checked={isWorkplaceMode}
         disabled={disabled}
@@ -255,104 +260,103 @@ function WorkplaceFormFields({
 
       {isWorkplaceMode && (
         <>
-          <Select
-            clearable={false}
-            data={groupOptions.map((group) => ({
-              value: String(group.Id),
-              label: group.Name || '',
-            }))}
-            disabled={disabled}
-            label={t('Група')}
-            value={String(selectedGroup.Id)}
-            onChange={handleGroupChange}
-          />
+          <Card className="app-section-card" withBorder>
+            <Stack gap={10}>
+              <Select
+                clearable={false}
+                data={groupOptions.map((group) => ({
+                  value: String(group.Id),
+                  label: group.Name || '',
+                }))}
+                disabled={disabled}
+                label={t('Група')}
+                value={String(selectedGroup.Id)}
+                onChange={handleGroupChange}
+              />
 
-          <Stack gap="xs">
-            <Text fw={500} size="sm">
-              {t('Договори')}
-            </Text>
-            {availableAgreements.length === 0 ? (
-              <Text c="dimmed" size="sm">
-                {t('Договорів не додано')}
-              </Text>
-            ) : (
-              availableAgreements.map((item) => {
-                const isSelected = selectedAgreements.some((agreement) => agreement.NetUid === item.NetUid)
+              <Stack className="client-inline-form__agreements" gap={6}>
+                <Text fw={500} size="sm">
+                  {t('Договори')}
+                </Text>
+                {availableAgreements.length === 0 ? (
+                  <Text c="dimmed" size="sm">
+                    {t('Договорів не додано')}
+                  </Text>
+                ) : (
+                  availableAgreements.map((item) => {
+                    const isSelected = selectedAgreements.some((agreement) => agreement.NetUid === item.NetUid)
 
-                return (
-                  <UnstyledButton
-                    key={item.NetUid}
-                    disabled={disabled}
-                    p="sm"
-                    style={{
-                      border: '1px solid var(--mantine-color-default-border)',
-                      borderRadius: 'var(--mantine-radius-sm)',
-                      backgroundColor: isSelected ? 'var(--mantine-color-orange-0)' : undefined,
-                      borderColor: isSelected ? 'rgba(var(--brand-orange-rgb), 0.55)' : undefined,
-                    }}
-                    onClick={() => toggleAgreement(item)}
-                  >
-                    <Stack gap={2}>
-                      <Text size="sm">{item.Agreement?.Organization?.Name}</Text>
-                      <Group gap={4} align="center">
-                        {item.Agreement?.Currency?.Code && (
-                          <Text c="dimmed" size="xs">
-                            {item.Agreement.Currency.Code}
-                          </Text>
-                        )}
-                        <Text size="sm">{item.Agreement?.Name}</Text>
-                      </Group>
-                    </Stack>
-                  </UnstyledButton>
-                )
-              })
-            )}
-          </Stack>
+                    return (
+                      <UnstyledButton
+                        key={item.NetUid}
+                        disabled={disabled}
+                        className="client-inline-form__agreement"
+                        aria-pressed={isSelected}
+                        onClick={() => toggleAgreement(item)}
+                      >
+                        <Stack gap={2}>
+                          <TableChip tone="product" value={getOrganizationDisplayName(item.Agreement?.Organization)} />
+                          <Group gap={4} align="center">
+                            {item.Agreement?.Currency?.Code && (
+                              <TableChip tone="source" value={item.Agreement.Currency.Code} />
+                            )}
+                            <Text size="sm">{item.Agreement?.Name}</Text>
+                          </Group>
+                        </Stack>
+                      </UnstyledButton>
+                    )
+                  })
+                )}
+              </Stack>
 
-          <TextInput
-            error={showErrors ? lastNameError : undefined}
-            label={t('Прізвище')}
-            required
-            value={values.LastName}
-            onChange={(event) => update('LastName', event.currentTarget.value)}
-          />
-          <TextInput
-            error={showErrors ? firstNameError : undefined}
-            label={t("Ім'я")}
-            required
-            value={values.FirstName}
-            onChange={(event) => update('FirstName', event.currentTarget.value)}
-          />
-          <TextInput
-            label={t('По батькові')}
-            value={values.MiddleName}
-            onChange={(event) => update('MiddleName', event.currentTarget.value)}
-          />
-          <TextInput
-            error={showErrors ? emailError : undefined}
-            label={t('Email')}
-            required
-            value={values.Email}
-            onChange={(event) => update('Email', event.currentTarget.value)}
-          />
-          <TextInput
-            error={showErrors ? phoneError : undefined}
-            label={t('Телефон')}
-            required
-            value={values.PhoneNumber}
-            onChange={(event) => update('PhoneNumber', event.currentTarget.value)}
-          />
-          {!isEdit && (
-            <PasswordInput
-              label={t('Пароль')}
-              value={values.Password}
-              onChange={(event) => update('Password', event.currentTarget.value)}
+            </Stack>
+          </Card>
+          <Card className="app-section-card client-inline-form__fields" withBorder>
+            <TextInput
+              error={showErrors ? lastNameError : undefined}
+              label={t('Прізвище')}
+              required
+              value={values.LastName}
+              onChange={(event) => update('LastName', event.currentTarget.value)}
             />
-          )}
+            <TextInput
+              error={showErrors ? firstNameError : undefined}
+              label={t("Ім'я")}
+              required
+              value={values.FirstName}
+              onChange={(event) => update('FirstName', event.currentTarget.value)}
+            />
+            <TextInput
+              label={t('По батькові')}
+              value={values.MiddleName}
+              onChange={(event) => update('MiddleName', event.currentTarget.value)}
+            />
+            <TextInput
+              error={showErrors ? emailError : undefined}
+              label={t('Email')}
+              required
+              value={values.Email}
+              onChange={(event) => update('Email', event.currentTarget.value)}
+            />
+            <TextInput
+              error={showErrors ? phoneError : undefined}
+              label={t('Телефон')}
+              required
+              value={values.PhoneNumber}
+              onChange={(event) => update('PhoneNumber', event.currentTarget.value)}
+            />
+            {!isEdit && (
+              <PasswordInput
+                label={t('Пароль')}
+                value={values.Password}
+                onChange={(event) => update('Password', event.currentTarget.value)}
+              />
+            )}
 
-          <Group justify="flex-end">
+          </Card>
+          <AppModalFooter>
             {onCancel && (
-              <Button color="gray" disabled={disabled} variant="subtle" onClick={onCancel}>
+              <Button color="gray" disabled={disabled} variant="default" onClick={onCancel}>
                 {t('Скасувати')}
               </Button>
             )}
@@ -364,7 +368,7 @@ function WorkplaceFormFields({
             >
               {isEdit ? t('Зберегти') : t('Створити')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </>
       )}
     </Stack>

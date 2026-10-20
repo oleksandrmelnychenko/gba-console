@@ -1,10 +1,11 @@
-import { Alert, Button, Grid, Group, NumberInput, Select, Stack, Text, TextInput, Textarea } from '@mantine/core'
+import { TableChip } from '../../../shared/ui/TableChip'
+import { Alert, Button, Grid, NumberInput, Select, Stack, Text, TextInput, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import {
   getIncomeCashflowClientAgreements,
@@ -315,7 +316,7 @@ export function SadPaymentFromSadModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={t('Створити прибутковий касовий ордер')} onClose={onClose}>
+    <AppModal className="app-compact-form" centered opened={opened} size="lg" title={t('Створити прибутковий касовий ордер')} onClose={onClose}>
       <Stack gap="md">
         {client && (
           <Text size="sm">
@@ -325,7 +326,7 @@ export function SadPaymentFromSadModal({
 
         {typeof referenceAmount === 'number' && (
           <Text size="sm">
-            {t('Сума')}: <span className="app-money">{formatPln(referenceAmount)} <span className="app-money-meta">PLN</span></span>
+            {t('Сума')}: <span className="app-money">{formatPln(referenceAmount)} <TableChip tone="source" value="PLN" /></span>
           </Text>
         )}
 
@@ -371,11 +372,11 @@ export function SadPaymentFromSadModal({
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, sm: 6 }}>
-            <TextInput disabled label={t('Валюта')} value={currencyLabel} />
+            <div><Text c="gray.9" size="xs" fw={500} mb={4}>{t('Валюта')}</Text><TableChip tone="source" value={currencyLabel} /></div>
           </Grid.Col>
 
           <Grid.Col span={{ base: 12, sm: 6 }}>
-            <NumberInput
+            <NumberInput maw={160}
               allowNegative={false}
               decimalScale={2}
               disabled={isLoading || isSaving}
@@ -387,7 +388,7 @@ export function SadPaymentFromSadModal({
           </Grid.Col>
 
           <Grid.Col span={{ base: 12, sm: 6 }}>
-            <TextInput
+            <TextInput maw={170}
               disabled={isLoading || isSaving}
               label={t('Дата')}
               max={dateBounds?.max}
@@ -420,14 +421,14 @@ export function SadPaymentFromSadModal({
           </Grid.Col>
         </Grid>
 
-        <Group justify="flex-end">
-          <Button color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" disabled={isSaving} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button disabled={isLoading} loading={isSaving} onClick={() => void handleSubmit()}>
             {t('Створити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

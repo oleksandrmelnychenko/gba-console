@@ -1,6 +1,6 @@
 import { Alert, Button, Checkbox, FileInput, Group, NumberInput, SimpleGrid, Stack, Text } from '@mantine/core'
 import { CircleAlert, FileSpreadsheet, Upload } from 'lucide-react'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import './product-capitalization-sheet.css'
@@ -88,7 +88,7 @@ export function ProductCapitalizationUploadModal({
       title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Імпорт з Excel')}</span>}
       onClose={closeModal}
     >
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap="md">
         {(validationError || submitError) && (
           <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
             {validationError || submitError}
@@ -188,7 +188,7 @@ export function ProductCapitalizationUploadModal({
           {t('Позиції з файлу буде додано до документа оприбуткування.')}
         </Text>
 
-        <Group justify="flex-end">
+        <AppModalFooter>
           <Button disabled={isSubmitting} variant="default" onClick={closeModal}>
             {t('Скасувати')}
           </Button>
@@ -201,7 +201,7 @@ export function ProductCapitalizationUploadModal({
           >
             {t('Завантажити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

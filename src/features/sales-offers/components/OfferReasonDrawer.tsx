@@ -1,8 +1,9 @@
-import { Anchor, Badge, Button, Group, Stack, Text, Textarea } from '@mantine/core'
+import { Anchor, Button, Card, Group, Stack, Text, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useState } from 'react'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
@@ -38,11 +39,11 @@ export function OfferReasonDrawer({
 
   return (
     <AppDrawer
-      className="offer-reason-drawer"
+      className="offer-reason-drawer app-compact-form"
       footer={
         isOpen && offer ? (
-          <Group gap="sm" justify="flex-end">
-            <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={close}>
+          <Group gap={8} justify="flex-end">
+            <Button color="gray" disabled={isSaving} type="button" variant="default" onClick={close}>
               {t('Скасувати')}
             </Button>
             <Button
@@ -128,7 +129,8 @@ function OfferReasonForm({
     <>
       <Stack
         component="form"
-        gap="md"
+        className="app-compact-form"
+        gap={10}
         id={OFFER_REASON_FORM_ID}
         onSubmit={(event) => {
           event.preventDefault()
@@ -159,47 +161,45 @@ function OfferReasonForm({
         )}
 
         {notProcessedItems.map((item) => (
-          <Stack key={item.NetUid} gap={4}>
-            <Group gap="xs" justify="space-between">
-              {item.Product?.NetUid ? (
-                <Anchor
-                  className="offer-reason-product-link"
-                  component="button"
-                  type="button"
-                  underline="always"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    setProductCardNetId(item.Product?.NetUid as string)
-                  }}
-                >
-                  {[item.Product?.VendorCode, item.Product?.Name].filter(Boolean).join(' ')}
-                </Anchor>
-              ) : (
-                <Text className="offer-reason-product-name">
-                  {[item.Product?.VendorCode, item.Product?.Name].filter(Boolean).join(' ')}
-                </Text>
-              )}
-              <Group gap="xs">
-                <Badge className="app-role-pill is-gray" variant="light">
-                  {t('Замовлено')}: {item.OrderedQty ?? 0}
-                </Badge>
-                <Badge className="app-role-pill is-orange" variant="light">
-                  {t('Неопрацьовано')}: {getItemNotProcessed(item)}
-                </Badge>
+          <Card key={item.NetUid} className="app-section-card" withBorder padding={12}>
+            <Stack gap={8}>
+              <Group gap="xs" justify="space-between">
+                {item.Product?.NetUid ? (
+                  <Anchor
+                    className="offer-reason-product-link"
+                    component="button"
+                    type="button"
+                    underline="always"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      setProductCardNetId(item.Product?.NetUid as string)
+                    }}
+                  >
+                    {[item.Product?.VendorCode, item.Product?.Name].filter(Boolean).join(' ')}
+                  </Anchor>
+                ) : (
+                  <Text className="offer-reason-product-name">
+                    {[item.Product?.VendorCode, item.Product?.Name].filter(Boolean).join(' ')}
+                  </Text>
+                )}
+                <Group gap="xs">
+                  <TableChip value={`${t('Замовлено')}: ${item.OrderedQty ?? 0}`} />
+                  <TableChip tone="warning" value={`${t('Неопрацьовано')}: ${getItemNotProcessed(item)}`} />
+                </Group>
               </Group>
-            </Group>
-            <Textarea
-              autosize
-              label={t('Причина')}
-              minRows={1}
-              value={item.NetUid ? reasons[item.NetUid] ?? '' : ''}
-              onChange={(event) => {
-                const value = event.currentTarget.value
+              <Textarea
+                autosize
+                label={t('Причина')}
+                minRows={1}
+                value={item.NetUid ? reasons[item.NetUid] ?? '' : ''}
+                onChange={(event) => {
+                  const value = event.currentTarget.value
 
-                setReasons((current) => ({ ...current, [item.NetUid ?? '']: value }))
-              }}
-            />
-          </Stack>
+                  setReasons((current) => ({ ...current, [item.NetUid ?? '']: value }))
+                }}
+              />
+            </Stack>
+          </Card>
         ))}
       </Stack>
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />

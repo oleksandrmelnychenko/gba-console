@@ -1153,7 +1153,7 @@ function OrderOrganizationGridCell({ row }: { row: SupplyUkraineOrderRow }) {
 
 function OrderResponsibleGridCell({ value }: { value: string }) {
   return (
-    <span className="supply-order-responsible-cell" title={nativeTitle(value)}>{value}</span>
+    <span className="supply-order-responsible-cell" title={nativeTitle(value)}><TableChip tone="warning" value={value} /></span>
   )
 }
 
@@ -1943,7 +1943,7 @@ export function OfficialCostsModal({
       title={<span className="supply-orders-official-costs-title">{t('Офіційні витрати доставки')}</span>}
       onClose={onClose}
     >
-      <Stack className="supply-orders-official-costs" gap="md">
+      <Stack className="app-compact-form supply-orders-official-costs" gap="md">
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}

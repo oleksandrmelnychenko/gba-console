@@ -100,7 +100,7 @@ export function UploadProductSpecificationModal({
       title={<span>{t('Завантаження митних кодів')}</span>}
       onClose={closeModal}
     >
-      <Stack className="customs-import-layout" gap={10}>
+      <Stack className="app-compact-form customs-import-layout" gap={10}>
         <Stack className="customs-import-fields" gap={10}>
           {validationError && (
             <Alert color="red" icon={<CircleAlert size={16} />} variant="light">

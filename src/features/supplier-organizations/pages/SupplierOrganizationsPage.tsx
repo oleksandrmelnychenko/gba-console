@@ -1,8 +1,11 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import {
   Badge,
   Alert,
   Button,
+  Group,
   Stack,
   Text,
   TextInput,
@@ -465,7 +468,7 @@ function SupplierOrganizationNameCell({ organization }: { organization: SupplyOr
   return (
     <span className="supplier-organizations-name-cell" title={nativeTitle(tooltip)}>
       <span className="supplier-organizations-name-copy">
-        <span className="supplier-organizations-name-title">{primary}</span>
+        <TableChip tone="product" value={getOrganizationDisplayName(organization) || primary} />
         {secondary ? <small className="supplier-organizations-name-subtitle">{secondary}</small> : null}
       </span>
     </span>
@@ -503,11 +506,12 @@ function SupplierOrganizationIdentifiersCell({ organization }: { organization: S
 
 function SupplierOrganizationAgreementCell({ organization }: { organization: SupplyOrganization }) {
   const { primary, secondary } = getSupplyOrganizationAgreementCellText(organization)
+  const organizationNames = [...new Set((organization.SupplyOrganizationAgreements || []).map((agreement) => getOrganizationDisplayName(agreement.Organization)).filter(Boolean))]
   const tooltip = compactStrings([primary, secondary]).join('\n')
 
   return (
     <span className="supplier-organizations-two-line-cell" title={nativeTitle(tooltip)}>
-      {primary ? <span>{primary}</span> : null}
+      {organizationNames.length ? <Group component="span" gap={4}>{organizationNames.map((name) => <TableChip key={name} tone="product" value={name} />)}</Group> : primary ? <span>{primary}</span> : null}
       {secondary ? <small className="supplier-organizations-agreement-meta">{secondary}</small> : null}
     </span>
   )

@@ -44,6 +44,7 @@ vi.mock('../../../shared/ui/AppDrawer', () => ({
 }))
 
 vi.mock('../../../shared/ui/AppModal', () => ({
+  AppModalFooter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   AppModal: ({ children, opened }: { children: React.ReactNode; opened: boolean }) => opened ? <div role="dialog">{children}</div> : null,
 }))
 

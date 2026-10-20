@@ -1,10 +1,9 @@
-import { Alert, Button, Group, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Card, Group, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Save, Trash2 } from 'lucide-react'
 import { type FormEvent, useEffect, useReducer } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -188,13 +187,59 @@ export function CurrencyConvertorFormPage() {
   }
 
   return (
-    <AppDrawer
+    <AppModal className="app-compact-form"
       opened
-      position="right"
-      size="compact"
+      size={600}
       title={isEditMode ? t('Редагування валютного трейдера') : t('Створення валютного трейдера')}
       onClose={handleCancel}
-      footer={
+    >
+      <form id="currency-trader-form" onSubmit={handleSubmit}>
+        <Card className="app-section-card" withBorder padding={12} radius="md">
+          <Stack gap={10}>
+            {error && (
+              <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+                {error}
+              </Alert>
+            )}
+
+            {!canSave && (
+              <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
+                {t('Немає прав для збереження валютного трейдера')}
+              </Alert>
+            )}
+
+            <SimpleGrid cols={{ base: 1, md: 2 }}>
+              <TextInput
+                disabled={isLoading || isSaving || !canSave}
+                label={t("Ім'я")}
+                required
+                value={form.firstName}
+                onChange={(event) => updateForm({ firstName: event.currentTarget.value })}
+              />
+              <TextInput
+                disabled={isLoading || isSaving || !canSave}
+                label={t('Прізвище')}
+                required
+                value={form.lastName}
+                onChange={(event) => updateForm({ lastName: event.currentTarget.value })}
+              />
+              <TextInput
+                disabled={isLoading || isSaving || !canSave}
+                label={t('По батькові')}
+                value={form.middleName}
+                onChange={(event) => updateForm({ middleName: event.currentTarget.value })}
+              />
+              <TextInput
+                disabled={isLoading || isSaving || !canSave}
+                label={t('Телефон')}
+                value={form.phoneNumber}
+                onChange={(event) => updateForm({ phoneNumber: event.currentTarget.value })}
+              />
+            </SimpleGrid>
+          </Stack>
+        </Card>
+      </form>
+      <AppModalFooter>
         <Group gap="xs">
           {isEditMode && canSave && (
             <Button
@@ -209,6 +254,9 @@ export function CurrencyConvertorFormPage() {
               {t('Видалити')}
             </Button>
           )}
+        </Group>
+        <Group gap="xs">
+          <Button variant="default" disabled={isSaving || isDeleting} onClick={handleCancel}>{t('Скасувати')}</Button>
           {canSave && (
             <Button
               color={CREATE_ACTION_COLOR}
@@ -222,60 +270,15 @@ export function CurrencyConvertorFormPage() {
             </Button>
           )}
         </Group>
-      }
-    >
-      <form id="currency-trader-form" onSubmit={handleSubmit}>
-        <Stack gap="md">
-          {error && (
-            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-              {error}
-            </Alert>
-          )}
+      </AppModalFooter>
 
-          {!canSave && (
-            <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
-              {t('Немає прав для збереження валютного трейдера')}
-            </Alert>
-          )}
-
-          <SimpleGrid cols={{ base: 1, md: 2 }}>
-            <TextInput
-              disabled={isLoading || isSaving || !canSave}
-              label={t("Ім'я")}
-              required
-              value={form.firstName}
-              onChange={(event) => updateForm({ firstName: event.currentTarget.value })}
-            />
-            <TextInput
-              disabled={isLoading || isSaving || !canSave}
-              label={t('Прізвище')}
-              required
-              value={form.lastName}
-              onChange={(event) => updateForm({ lastName: event.currentTarget.value })}
-            />
-            <TextInput
-              disabled={isLoading || isSaving || !canSave}
-              label={t('По батькові')}
-              value={form.middleName}
-              onChange={(event) => updateForm({ middleName: event.currentTarget.value })}
-            />
-            <TextInput
-              disabled={isLoading || isSaving || !canSave}
-              label={t('Телефон')}
-              value={form.phoneNumber}
-              onChange={(event) => updateForm({ phoneNumber: event.currentTarget.value })}
-            />
-          </SimpleGrid>
-        </Stack>
-      </form>
-
-      <AppModal
+      <AppModal className="app-compact-form"
         centered
         opened={deleteModalOpened}
         title={t('Видалити валютного трейдера')}
         onClose={() => setDeleteModalOpened(false)}
       >
-        <Stack gap="md">
+        <Stack gap={10}>
           <Text>
             {t('Видалити трейдера')}{' '}
             <Text span fw={600}>
@@ -283,17 +286,17 @@ export function CurrencyConvertorFormPage() {
             </Text>
             ?
           </Text>
-          <Group justify="flex-end">
-            <Button color="gray" disabled={isDeleting} variant="light" onClick={() => setDeleteModalOpened(false)}>
+          <AppModalFooter>
+            <Button color="gray" disabled={isDeleting} variant="default" onClick={() => setDeleteModalOpened(false)}>
               {t('Скасувати')}
             </Button>
             <Button color="red" leftSection={<Trash2 size={16} />} loading={isDeleting} onClick={handleDelete}>
               {t('Видалити')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
-    </AppDrawer>
+    </AppModal>
   )
 }
 

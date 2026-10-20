@@ -2,7 +2,7 @@ import { Button, Group, Loader } from '@mantine/core'
 import { LibraryBig } from 'lucide-react'
 import { lazy, Suspense, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { ReportModal } from './ReportModal'
 import { BUG_1274_ONLY_REPORT_SURFACE } from '../reportSurfacePolicy'
 import type { WorkbookLaunch } from '../data/bug1274WorkbookLaunch'
 import type { CatalogueLaunchChoice } from '../data/reportCatalogueLaunch'
@@ -98,12 +98,12 @@ export function ReportCatalogueControl({ enabled, disabled = false, presentation
         {!dialog && opened ? t('Сховати каталог звітів 1С') : t(consoleScope && BUG_1274_ONLY_REPORT_SURFACE ? 'Каталог звітів 1С' : 'Каталог усіх звітів 1С')}
       </Button>
     </Group>
-    {dialog ? <AppModal opened={enabled && opened} onClose={() => setOpened(false)}
+    {dialog ? <ReportModal opened={enabled && opened} onClose={() => setOpened(false)}
       title={t(consoleScope && BUG_1274_ONLY_REPORT_SURFACE ? 'Каталог звітів 1С' : 'Каталог усіх звітів 1С')} size={1280} className="report-catalogue-dialog"
       closeButtonProps={{ 'aria-label': t('Закрити каталог звітів') }} returnFocus={false}
       onExitTransitionEnd={() => trigger.current?.focus()}>
       {panel}
-    </AppModal> : panel}
+    </ReportModal> : panel}
   </>
 }
 

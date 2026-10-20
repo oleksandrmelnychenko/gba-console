@@ -1,7 +1,7 @@
 import { Badge, Box, Button, Card, Group, Loader, SimpleGrid, Stack, Text } from '@mantine/core'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
@@ -72,8 +72,8 @@ export function EditClientTypePanel({
   }, [opened, setClientTypes, setError, setLoading, t])
 
   return (
-    <AppDrawer opened={opened} position="right" size="min(520px, 100vw)" title={t('Тип клієнта')} onClose={onClose}>
-      <Stack gap="md">
+    <AppModal opened={opened} size={520} title={t('Тип клієнта')} onClose={onClose}>
+      <Stack className="app-compact-form" gap={10}>
         {error && (
           <Text c="red" size="sm">
             {error}
@@ -88,7 +88,7 @@ export function EditClientTypePanel({
             </Text>
           </Group>
         ) : (
-          <Stack gap="lg">
+          <Stack gap={10}>
             {selectableClientTypes.map((clientType) => {
               const roles = (clientType.ClientTypeRoles || []).filter((clientRole) =>
                 canSelectRole(clientType, clientRole, hasPermission),
@@ -108,7 +108,7 @@ export function EditClientTypePanel({
                 >
                   <Stack gap="sm">
                     <Text fw={600}>{clientType.Name || '-'}</Text>
-                    <SimpleGrid cols={1} spacing="sm">
+                    <SimpleGrid cols={1} spacing={8}>
                       {roles.map((clientRole) => {
                         const isSelected =
                           isSameType(clientType.NetUid, currentTypeNetUid)
@@ -122,7 +122,7 @@ export function EditClientTypePanel({
                             h="auto"
                             justify="space-between"
                             color={isSelected ? CREATE_ACTION_COLOR : 'gray'}
-                            variant={isSelected ? 'light' : 'default'}
+                            variant="default"
                             onClick={() => {
                               onSelect(clientType, clientRole)
                               onClose()
@@ -145,7 +145,7 @@ export function EditClientTypePanel({
           </Stack>
         )}
       </Stack>
-    </AppDrawer>
+    </AppModal>
   )
 }
 

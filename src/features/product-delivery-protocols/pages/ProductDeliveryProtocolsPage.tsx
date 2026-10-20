@@ -761,7 +761,7 @@ function ProtocolResponsibleCell({ protocol }: { protocol: DeliveryProductProtoc
   return (
     <span className="product-delivery-protocols-icon-cell" title={nativeTitle(tooltip)}>
       <span className="product-delivery-protocols-two-line-cell">
-        <span>{title}</span>
+        <TableChip tone="warning" value={title} />
         <small>{subtitle}</small>
       </span>
     </span>

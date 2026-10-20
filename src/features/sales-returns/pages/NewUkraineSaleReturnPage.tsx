@@ -1028,7 +1028,7 @@ export function NewUkraineSaleReturnPage() {
 
       <AppModal className="new-sale-return-editor" opened={Boolean(editor)} onClose={() => setEditor(null)} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Позиція повернення')}</span>}>
         {editor ? (
-          <Stack gap={10}>
+          <Stack className="app-compact-form" gap={10}>
             <div className="new-sale-return-editor-product">
               <ReturnDraftProduct product={editor.row.item.Product} onOpen={setProductCardNetId} />
               <Group gap={6}>
@@ -1093,14 +1093,14 @@ export function NewUkraineSaleReturnPage() {
                 {t('Немає складів, доступних для повернення за умовами цієї причини')}
               </Text>
             ) : null}
-            <Group className="new-sale-return-editor-actions" justify="flex-end" gap={8}>
+            <AppModalFooter>
               <Button size="sm" variant="default" onClick={() => setEditor(null)}>
                 {t('Скасувати')}
               </Button>
               <Button color="brand" variant="filled" size="sm" onClick={saveEditorDraft}>
                 {editor.draft ? t('Оновити') : t('Додати')}
               </Button>
-            </Group>
+            </AppModalFooter>
           </Stack>
         ) : null}
       </AppModal>
@@ -1116,7 +1116,7 @@ export function NewUkraineSaleReturnPage() {
       />
 
       <AppModal className="new-sale-return-cancel-modal" size={420} opened={Boolean(cancelCandidate)} onClose={() => setCancelCandidate(null)} title={t('Скасувати повернення')}>
-        <Stack gap={12}>
+        <Stack className="app-compact-form" gap={12}>
           <Group gap={6} className="new-sale-return-cancel-message">
             <Text>{t('Скасувати повернення')}</Text>
             <TableChip tone="document" value={cancelCandidate?.Number} />
@@ -1317,7 +1317,7 @@ function ReturnClientCell({ saleReturn }: { saleReturn: SalesReturn }) {
 }
 
 function ReturnOrganizationCell({ saleReturn }: { saleReturn: SalesReturn }) {
-  const organization = saleReturn.ClientAgreement?.Agreement?.Organization?.Name?.trim() || ''
+  const organization = getOrganizationDisplayName(saleReturn.ClientAgreement?.Agreement?.Organization)
   const storage = saleReturn.Storage?.Name?.trim() || ''
 
   return (

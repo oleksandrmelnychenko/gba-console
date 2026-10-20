@@ -1,8 +1,8 @@
-import { Alert, Button, Group, Stack, Textarea } from '@mantine/core'
+import { Alert, Button, Stack, Textarea } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 
 type ChangeCommentModalProps = {
   opened: boolean
@@ -42,7 +42,7 @@ export function ChangeCommentModal({ comment, isSaving, onClose, onSave, opened 
 
   return (
     <AppModal centered opened={opened} title={t('Зміна коментара')} onClose={onClose}>
-      <Stack gap="sm">
+      <Stack className="app-compact-form" gap="sm">
         <Textarea
           autosize
           label={t('Коментар')}
@@ -55,14 +55,14 @@ export function ChangeCommentModal({ comment, isSaving, onClose, onSave, opened 
             {error}
           </Alert>
         )}
-        <Group justify="flex-end" gap="sm">
-          <Button color="gray" variant="light" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button loading={isSaving} onClick={handleSave}>
             {t('Зберегти')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

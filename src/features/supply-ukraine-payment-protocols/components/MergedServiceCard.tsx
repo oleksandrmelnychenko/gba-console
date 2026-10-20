@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Anchor,
@@ -68,6 +69,15 @@ function LabelValueRow({ children, label, mono = false }: { children: ReactNode;
   )
 }
 
+function ServiceMoneyValue({ value, currencyCode }: { value?: number | null; currencyCode: string }) {
+  return (
+    <Group component="span" gap={6} justify="flex-end" wrap="wrap">
+      <span className="app-money">{formatMoney(value)}</span>
+      <TableChip tone="source" value={currencyCode} />
+    </Group>
+  )
+}
+
 function PaymentTaskRow({
   canRemove,
   isAccounting,
@@ -89,7 +99,7 @@ function PaymentTaskRow({
             {t('Платіжна задача')}
             {isAccounting ? ` (${t('Бух.')})` : ''}
           </Text>
-          <Text className="supply-payment-task-person">{responsibleName(task.User) || '-'}</Text>
+          <Text className="supply-payment-task-person"><TableChip tone="warning" value={responsibleName(task.User) || '-'} /></Text>
           <Text className="supply-payment-task-meta">
             {t('Сплатити до')}: {formatDate(task.PayToDate)}
           </Text>
@@ -137,12 +147,13 @@ function AddPaymentTaskForm({
 
   return (
     <Card className="supply-payment-inline-form" withBorder radius="sm" padding="sm">
-      <Stack gap="sm">
+      <Stack gap={10}>
         <Text className="supply-payment-inline-form-title">
           {t('Створити платіжну задачу')}
           {isAccounting ? ` (${t('Бух.')})` : ''}
         </Text>
         <TextInput
+          w={170} maw="100%"
           label={t('Сплатити до')}
           type="date"
           value={toDateInput(payToDate)}
@@ -158,7 +169,7 @@ function AddPaymentTaskForm({
         />
         <Textarea label={t('Коментар')} value={comment} onChange={(event) => setComment(event.currentTarget.value)} />
         <Group justify="flex-end" gap="sm">
-          <Button className="supply-payment-action-button" color="gray" disabled={isSaving} variant="light" onClick={onCancel}>
+          <Button className="supply-payment-action-button" color="gray" disabled={isSaving} variant="default" onClick={onCancel}>
             {t('Скасувати')}
           </Button>
           <Button
@@ -232,24 +243,24 @@ export function MergedServiceCard({
         <LabelValueRow mono label={t('Номер інвойса')}>{service.Number || '-'}</LabelValueRow>
         <LabelValueRow label={t('Постачальник послуг')}>{service.SupplyOrganization?.Name || '-'}</LabelValueRow>
         <LabelValueRow label={t('Договір')}>
-          {service.SupplyOrganizationAgreement?.Name || '-'} ({currencyCode})
+          {service.SupplyOrganizationAgreement?.Name || '-'} <TableChip tone="source" value={currencyCode} />
         </LabelValueRow>
         <LabelValueRow label={t('Тип')}>{service.ConsumableProduct?.Name || '-'}</LabelValueRow>
         <LabelValueRow label={t('Назва')}>{service.Name || '-'}</LabelValueRow>
 
-        <LabelValueRow mono label={t('Вартість Брутто')}>{formatMoney(service.GrossPrice, currencyCode)}</LabelValueRow>
-        <LabelValueRow mono label={t('Вартість Нетто')}>{formatMoney(service.NetPrice, currencyCode)}</LabelValueRow>
+        <LabelValueRow mono label={t('Вартість Брутто')}><ServiceMoneyValue value={service.GrossPrice} currencyCode={currencyCode} /></LabelValueRow>
+        <LabelValueRow mono label={t('Вартість Нетто')}><ServiceMoneyValue value={service.NetPrice} currencyCode={currencyCode} /></LabelValueRow>
         <LabelValueRow mono label={t('ПДВ %')}>{service.VatPercent ?? 0}</LabelValueRow>
-        <LabelValueRow mono label={t('ПДВ')}>{formatMoney(service.Vat, currencyCode)}</LabelValueRow>
+        <LabelValueRow mono label={t('ПДВ')}><ServiceMoneyValue value={service.Vat} currencyCode={currencyCode} /></LabelValueRow>
 
         <LabelValueRow mono label={`${t('Вартість Брутто')} (${t('Бух.')})`}>
-          {formatMoney(service.AccountingGrossPrice, currencyCode)}
+          <ServiceMoneyValue value={service.AccountingGrossPrice} currencyCode={currencyCode} />
         </LabelValueRow>
         <LabelValueRow mono label={`${t('Вартість Нетто')} (${t('Бух.')})`}>
-          {formatMoney(service.AccountingNetPrice, currencyCode)}
+          <ServiceMoneyValue value={service.AccountingNetPrice} currencyCode={currencyCode} />
         </LabelValueRow>
         <LabelValueRow mono label={`${t('ПДВ %')} (${t('Бух.')})`}>{service.AccountingVatPercent ?? 0}</LabelValueRow>
-        <LabelValueRow mono label={`${t('ПДВ')} (${t('Бух.')})`}>{formatMoney(service.AccountingVat, currencyCode)}</LabelValueRow>
+        <LabelValueRow mono label={`${t('ПДВ')} (${t('Бух.')})`}><ServiceMoneyValue value={service.AccountingVat} currencyCode={currencyCode} /></LabelValueRow>
 
         {service.IsIncludeAccountingValue && (
           <Badge className="app-role-pill" variant="light">
@@ -261,7 +272,7 @@ export function MergedServiceCard({
 
         {service.SupplyInformationTask && (
           <LabelValueRow mono label={t('Доставка в межах країни')}>
-            {formatMoney(service.SupplyInformationTask.GrossPrice, currencyCode)}
+            <ServiceMoneyValue value={service.SupplyInformationTask.GrossPrice} currencyCode={currencyCode} />
           </LabelValueRow>
         )}
 

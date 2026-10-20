@@ -1,6 +1,6 @@
-import { Button, Checkbox, Group, Stack, Text } from '@mantine/core'
+import { Button, Checkbox, Stack, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import type { SpecificationSupplyInvoice } from '../specificationTypes'
 
 type MergeInvoicesModalProps = {
@@ -39,7 +39,7 @@ export function MergeInvoicesModal({
         }
       }}
     >
-      <Stack gap="sm">
+      <Stack className="app-compact-form" gap="sm">
         {invoices.map((invoice) => {
           const netId = invoice.NetUid || ''
 
@@ -64,14 +64,14 @@ export function MergeInvoicesModal({
           </Text>
         ) : null}
 
-        <Group justify="flex-end">
-          <Button disabled={isMerging} variant="subtle" onClick={onClose}>
+        <AppModalFooter>
+          <Button disabled={isMerging} variant="default" onClick={onClose}>
             {t('Ні')}
           </Button>
           <Button disabled={isMerging || selectedNetIds.length < 2} loading={isMerging} onClick={onConfirm}>
             {t('Так')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

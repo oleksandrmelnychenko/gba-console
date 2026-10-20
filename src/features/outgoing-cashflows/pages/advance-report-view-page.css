@@ -1,13 +1,54 @@
 .advance-report-detail-drawer {
+  display: grid;
   align-content: start;
+  gap: 10px;
+  min-width: 0;
 }
 
+.advance-report-detail-title {
+  flex: 1;
+  min-width: 0;
+  margin-right: 10px;
+}
+
+.advance-report-detail-header,
 .advance-report-detail-actions {
-  min-height: 36px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.advance-report-detail-tree {
-  padding-bottom: 8px;
+.advance-report-detail-header { justify-content: space-between; }
+.advance-report-detail-actions .mantine-Button-root { flex: 0 0 auto; }
+.advance-report-detail-date { font: 500 12px/1.4 var(--font-mono); }
+
+.advance-report-detail-metric {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  text-align: right;
+}
+
+.advance-report-detail-metric > span {
+  color: var(--mantine-color-gray-9);
+  font: 500 12px/1.4 var(--font-sans);
+}
+
+.advance-report-detail-metric > strong {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--mantine-color-gray-9);
+  font: 500 16px/1.4 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.advance-report-detail-metric.is-danger > strong {
+  color: var(--mantine-color-red-8);
 }
 
 .advance-report-detail-section__table {
@@ -23,9 +64,7 @@
 }
 
 .advance-report-detail-totals {
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
-  padding: 12px;
+  min-width: 0;
 }
 
 .advance-report-detail-totals__metrics {
@@ -39,6 +78,9 @@
   .advance-report-detail-actions {
     justify-content: flex-start;
   }
+
+  .advance-report-detail-metric { text-align: left; }
+  .advance-report-detail-metric > strong { justify-content: flex-start; }
 
   .advance-report-detail-totals__metrics {
     grid-template-columns: 1fr;

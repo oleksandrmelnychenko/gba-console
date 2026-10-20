@@ -503,3 +503,98 @@
   .app-filter-bar.payment-accounts-filter-bar .app-filter-actions .mantine-Button-label { display: none; }
   .app-filter-bar.payment-accounts-filter-bar .app-filter-actions .mantine-Button-section { margin: 0; }
 }
+
+
+/* Creation is a short modal; the editable account workspace keeps its drawer. */
+.payment-account-create-modal .payment-account-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+}
+
+.payment-account-create-modal .payment-account-fields > * {
+  flex: 0 1 260px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.payment-account-create-modal .payment-account-create-currencies {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.payment-account-create-currency {
+  min-width: 0;
+}
+
+.payment-account-create-currency .mantine-Checkbox-root {
+  flex: 0 0 auto;
+}
+
+.payment-account-create-currency .mantine-Checkbox-label {
+  padding-inline-start: 6px;
+}
+
+.payment-account-create-currency .mantine-TextInput-root {
+  flex: 1 1 100px;
+  min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .payment-account-create-modal .payment-account-create-currencies {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .payment-account-type-tabs .mantine-SegmentedControl-control {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .payment-account-type-tabs .mantine-SegmentedControl-label {
+    height: auto;
+    min-height: 30px;
+    padding: 4px 6px;
+    white-space: normal;
+    line-height: 1.25;
+  }
+  .payment-account-create-modal .payment-account-create-currencies {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .payment-account-create-modal .payment-account-fields > * {
+    flex-basis: 100%;
+  }
+}
+
+.payment-account-transaction-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+  min-width: 0;
+}
+
+.payment-account-transaction-row + .payment-account-transaction-row {
+  margin-top: 10px;
+}
+
+.payment-account-transaction-row > * {
+  flex: 0 1 230px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.payment-account-transaction-row:last-child > * {
+  flex-basis: 560px;
+}
+
+
+.payment-account-transaction-row > .mantine-Stack-root {
+  flex-basis: 150px;
+}
+
+.payment-account-transaction-row > .mantine-Stack-root > .mantine-Text-root:first-child {
+  color: var(--mantine-color-gray-9);
+}

@@ -10,7 +10,7 @@ import {
 } from '@mantine/core'
 import { CircleAlert, Plus, Save } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import './currency-trader-exchange-rates.css'
@@ -87,7 +87,7 @@ export function CurrencyTraderExchangeRatesDrawer({
   const { canEdit, isAdding, isLoading, isSaving, showAddButton } = viewState
 
   return (
-    <AppModal className="currency-trader-rates-modal" opened={Boolean(trader)} size={700} title={title} onClose={onClose}>
+    <AppModal className="currency-trader-rates-modal app-compact-form" opened={Boolean(trader)} size={700} title={title} onClose={onClose}>
       <Stack className="currency-trader-rates-content" gap={12}>
         <div className="app-filter-bar currency-trader-rates-toolbar">
           <ToolbarDateRangeFilter from={from} to={to} onChange={onChangeDateRange} />
@@ -108,7 +108,7 @@ export function CurrencyTraderExchangeRatesDrawer({
         {isAdding && (
           <div className="currency-trader-rates-create">
             <div className="currency-trader-rates-fields">
-              <TextInput
+              <TextInput maw={170}
                 className="currency-trader-rates-date-field"
                 label={t('Дата курсу валют')}
                 type="date"
@@ -116,7 +116,7 @@ export function CurrencyTraderExchangeRatesDrawer({
                 onChange={(event) => onChangeNewRateDate(event.currentTarget.value)}
               />
               {CURRENCY_ORDER.map((currency) => (
-                <TextInput
+                <TextInput maw={160}
                   key={currency}
                   inputMode="decimal"
                   label={<TableChip tone="source" value={currency} />}
@@ -125,14 +125,14 @@ export function CurrencyTraderExchangeRatesDrawer({
                 />
               ))}
             </div>
-            <Group className="currency-trader-rates-create-actions" justify="flex-end" gap={8}>
+            <AppModalFooter>
               <Button color="gray" disabled={isSaving} variant="default" onClick={onCancelAdd}>
                 {t('Скасувати')}
               </Button>
               <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} onClick={onSaveNewRate}>
                 {t('Зберегти')}
               </Button>
-            </Group>
+            </AppModalFooter>
           </div>
         )}
 
@@ -163,7 +163,7 @@ export function CurrencyTraderExchangeRatesDrawer({
                       </Table.Td>
                       <Table.Td className="app-table-number currency-trader-rates-number currency-trader-rates-mono">
                         {isEditing ? (
-                          <TextInput
+                          <TextInput maw={160}
                             inputMode="decimal"
                             aria-label={t('Курс валют')}
                             size="xs"

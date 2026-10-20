@@ -1,3 +1,4 @@
+import { AppModalFooter } from '../../../shared/ui/AppModal'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
@@ -785,7 +786,7 @@ function ProductPlacementImportModal({
   return (
     <AppModal centered opened={opened} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Імпорт розміщень')}</span>} onClose={onClose}>
       <form onSubmit={submitForm}>
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
@@ -841,14 +842,14 @@ function ProductPlacementImportModal({
               onChange={(value) => setForm((currentForm) => ({ ...currentForm, EndRow: toInteger(value, 1000) }))}
             />
           </SimpleGrid>
-          <Group justify="flex-end">
-            <Button color="gray" disabled={isUploading} variant="light" onClick={onClose}>
+          <AppModalFooter>
+            <Button color="gray" disabled={isUploading} variant="default" onClick={onClose}>
               {t('Скасувати')}
             </Button>
             <Button loading={isUploading} type="submit">
               {t('Завантажити')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </form>
     </AppModal>
@@ -896,7 +897,7 @@ function ReturnedProductsModal({
 
   return (
     <AppModal centered opened={opened} size="min(1100px, 96vw)" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Не пройшли імпорт')}</span>} onClose={onClose}>
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap="md">
         <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
           {t('Перевірте кількість або розміщення та відправте позиції повторно.')}
         </Alert>
@@ -917,14 +918,14 @@ function ReturnedProductsModal({
           tableId="product-placement-returned"
           toolbarLeft={toolbarLeft}
         />
-        <Group justify="flex-end">
+        <AppModalFooter>
           {canExport && <Button leftSection={<Download size={16} />} loading={isExporting} variant="outline" onClick={onExport}>
             {t('Експорт')}
           </Button>}
           {canSubmit && <Button loading={isSubmitting} onClick={onSubmit}>
             {t('Оновити')}
           </Button>}
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )
@@ -1007,7 +1008,7 @@ function useProductPlacementColumns(
         width: 170,
         minWidth: 140,
         accessor: getResponsibleName,
-        cell: (row) => displayValue(getResponsibleName(row)),
+        cell: (row) => <TableChip tone="warning" value={displayValue(getResponsibleName(row))} />,
       },
     ],
     [offset, onOpenProductCard, placements, t],

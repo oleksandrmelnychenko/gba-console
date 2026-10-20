@@ -10,8 +10,7 @@ import {
   Stack,
   Text,
 } from '@mantine/core'
-import { AppDrawer } from "../../../shared/ui/AppDrawer"
-import { AppModal } from "../../../shared/ui/AppModal"
+import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from "../../../shared/ui/page-header-actions/PageHeaderActions"
 import { notifications } from '@mantine/notifications'
 import { Check, CircleAlert, Key, Save, Trash2, UserRound } from 'lucide-react'
@@ -273,12 +272,11 @@ function UserEditPageContent() {
   }
 
   return (
-    <AppDrawer
+    <AppModal className="app-compact-form"
       opened
       closeOnClickOutside={!isSaving && !isDeleting && !isResettingPassword}
       keepMounted={false}
-      position="right"
-      size="min(780px, 100vw)"
+      size={780}
       aria-label={user ? getUserFullName(user) : t('Користувач')}
       title={
         <span style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
@@ -286,18 +284,8 @@ function UserEditPageContent() {
         </span>
       }
       onClose={closeSheet}
-      footer={
-        <UserEditActions
-          canDelete={canDelete}
-          canEdit={canEdit}
-          isDeleting={isDeleting}
-          isSaving={isSaving}
-          user={user}
-          onDelete={() => setDeleteModalOpened(true)}
-        />
-      }
     >
-      <Stack className="user-sheet" gap="md">
+      <Stack className="user-sheet" gap={10}>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
@@ -334,7 +322,18 @@ function UserEditPageContent() {
           />
         )}
       </Stack>
-    </AppDrawer>
+      <AppModalFooter>
+        <Button color="gray" variant="default" disabled={isSaving || isDeleting || isResettingPassword} onClick={closeSheet}>{t('Скасувати')}</Button>
+        <UserEditActions
+          canDelete={canDelete}
+          canEdit={canEdit}
+          isDeleting={isDeleting}
+          isSaving={isSaving}
+          user={user}
+          onDelete={() => setDeleteModalOpened(true)}
+        />
+      </AppModalFooter>
+    </AppModal>
   )
 }
 
@@ -417,7 +416,7 @@ function UserEditContent({
 
   if (status.isLoading) {
     return (
-      <Card withBorder radius="md" padding="lg">
+      <Card withBorder radius="md" padding={12}>
         <Group justify="center" py="xl">
           <Loader color="orange" size="sm" />
           <Text c="dimmed" size="sm">
@@ -430,7 +429,7 @@ function UserEditContent({
 
   if (!user) {
     return (
-      <Card withBorder radius="md" padding="lg">
+      <Card withBorder radius="md" padding={12}>
         <Text c="dimmed">{t('Користувача не знайдено')}</Text>
       </Card>
     )
@@ -462,7 +461,7 @@ function UserEditContent({
       </div>
 
       {activeTab === 'profile' && (
-        <Box pt="md">
+        <Box pt={10}>
           <form id="user-edit-form" onSubmit={onSubmit}>
             <div className="user-sheet-card">
               <div className="user-sheet-card-head">
@@ -483,7 +482,7 @@ function UserEditContent({
       )}
 
       {canResetPassword && activeTab === 'password' && (
-        <Box pt="md">
+        <Box pt={10}>
           <UserPasswordPanel
             confirmPassword={confirmPassword}
             isResettingPassword={status.isResettingPassword}
@@ -524,7 +523,7 @@ function UserPasswordPanel({
           {t('Безпека')}
         </div>
         <div className="user-sheet-card-body">
-          <Stack gap="md">
+          <Stack gap={10}>
             <Group grow align="end">
             <PasswordInput
               disabled={!isPasswordChangeEnabled || isResettingPassword}
@@ -585,16 +584,16 @@ function DeleteUserModal({
 
   return (
     <AppModal centered opened={opened} title={t('Видалити користувача')} onClose={onClose}>
-      <Stack gap="md">
+      <Stack gap={10}>
         <Text size="sm">{t('Підтвердити видалення')}: {user ? getUserFullName(user) : ''}</Text>
-        <Group justify="flex-end">
-          <Button variant="subtle" color="gray" onClick={onClose}>
+        <AppModalFooter>
+          <Button variant="default" color="gray" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button color="red" leftSection={<Check size={16} />} loading={isDeleting} onClick={onDelete}>
             {t('Видалити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

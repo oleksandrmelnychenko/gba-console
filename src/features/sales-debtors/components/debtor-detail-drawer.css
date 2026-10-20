@@ -27,7 +27,7 @@
 }
 
 .debtor-detail__label {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-9);
   font-size: 12px;
   line-height: 1.35;
 }
@@ -35,21 +35,6 @@
 .debtor-detail__client,
 .debtor-detail__meta {
   min-width: 0;
-}
-
-.debtor-detail__client .app-table-chip {
-  height: auto;
-  max-width: 100%;
-  padding-block: 4px;
-}
-
-.debtor-detail__client .app-table-chip-label {
-  font-family: var(--mantine-font-family);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.3;
-  overflow-wrap: anywhere;
-  white-space: normal;
 }
 
 .debtor-detail__meta {

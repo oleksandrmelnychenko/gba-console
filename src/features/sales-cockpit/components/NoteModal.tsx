@@ -1,8 +1,8 @@
-import { Button, Divider, Group, Stack, Text, Textarea } from '@mantine/core'
+import { Button, Divider, Stack, Text, Textarea } from '@mantine/core'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { CockpitTask } from '../types'
 
@@ -44,7 +44,7 @@ export function NoteModal({
         }
       }}
     >
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap="md">
         {(task?.notes?.length ?? 0) > 0 && (
           <Stack gap="xs">
             <Text c="dimmed" fw={600} size="xs" tt="uppercase">
@@ -76,8 +76,8 @@ export function NoteModal({
           value={text}
           onChange={(event) => setText(event.currentTarget.value)}
         />
-        <Group justify="flex-end">
-          <Button color="gray" disabled={saving} variant="light" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" disabled={saving} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button
@@ -92,7 +92,7 @@ export function NoteModal({
           >
             {t('Зберегти')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { PermissionKeys } from '../../../../shared/auth/permissionKeys'
-import { AppModal } from '../../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../../shared/ui/AppModal'
 import { usePermissions } from '../../../auth/usePermissions'
 import { usePersistentCreateMutation } from '../../persistentCreateMutation'
 import type { SalesUkraineProduct } from '../../types'
@@ -146,6 +146,7 @@ function FutureReservationForm({
 
   return (
     <Stack
+      className="app-compact-form"
       gap="md"
       onKeyDown={(event) => {
         if (event.key === 'Enter') {
@@ -190,14 +191,14 @@ function FutureReservationForm({
         onChange={setCount}
       />
 
-      <Group justify="flex-end">
-        <Button color="gray" disabled={isSaving} variant="subtle" onClick={onCancel}>
+      <AppModalFooter>
+        <Button color="gray" disabled={isSaving} variant="default" onClick={onCancel}>
           {t('Скасувати')}
         </Button>
         <Button disabled={!canReserve} loading={isSaving} onClick={reserve}>
           {t('Зарезервувати')}
         </Button>
-      </Group>
+      </AppModalFooter>
     </Stack>
   )
 }

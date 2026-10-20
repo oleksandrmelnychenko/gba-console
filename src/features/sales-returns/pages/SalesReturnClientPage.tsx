@@ -892,7 +892,7 @@ function useBatchColumns(t: (value: string) => string): DataTableColumn<SalesRet
         id: 'organization',
         header: t('Організація'),
         accessor: (batch) => batch.OrganizationName,
-        cell: (batch) => <EntityCell value={displayValue(batch.OrganizationName)} />,
+        cell: (batch) => <TableChip tone="product" value={displayValue(batch.OrganizationName)} />,
         width: 180,
       },
       {

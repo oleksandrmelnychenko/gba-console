@@ -137,7 +137,7 @@ export function NewProductCapitalizationPanel({ canCreate, opened, onClose, onCr
       title={t('Оприховування')}
       onClose={model.requestClose}
     >
-      <Stack gap={12}>
+      <Stack className="app-compact-form" gap={12}>
         {model.error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {model.error}
@@ -297,16 +297,16 @@ export function NewProductCapitalizationPanel({ canCreate, opened, onClose, onCr
         title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Є незбережені зміни')}</span>}
         onClose={model.cancelClose}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           <Text>{t('Якщо закрити форму, документ не буде створено.')}</Text>
-          <Group justify="flex-end">
+          <AppModalFooter>
             <Button variant="default" onClick={model.cancelClose}>
               {t('Залишитися')}
             </Button>
             <Button color="red" onClick={model.confirmClose}>
               {t('Закрити без збереження')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
     </AppModal>

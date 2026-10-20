@@ -1,0 +1,33 @@
+.payment-service-form .mantine-Modal-body { background: var(--mantine-color-gray-0); }
+
+.payment-service-form__section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.payment-service-form__parties {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 10px;
+}
+
+.payment-service-form__number { width: 190px; max-width: 100%; }
+
+.payment-service-form__amounts {
+  display: grid;
+  grid-template-columns: minmax(0, 310px) minmax(0, 120px) minmax(0, 160px);
+  gap: 10px;
+  align-items: start;
+}
+
+.payment-service-form__payment { display: flex; flex-wrap: wrap; align-items: start; gap: 10px; }
+.payment-service-form__date { width: 150px; max-width: 100%; }
+.payment-service-form__responsible { width: 280px; max-width: 100%; }
+
+@media (max-width: 640px) {
+  .payment-service-form__parties,
+  .payment-service-form__amounts { grid-template-columns: minmax(0, 1fr); }
+}

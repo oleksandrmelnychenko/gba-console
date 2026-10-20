@@ -1,3 +1,5 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
+import { AppModalFooter } from '../../../shared/ui/AppModal'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -715,9 +717,9 @@ function ProductTransferCreateModal({ model }: { model: ReturnType<typeof usePro
   } = model
 
   return (
-    <AppModal centered opened={isCreateModalOpen} size="xl" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Нове переміщення з файлу')}</span>} onClose={closeCreateModal}>
+    <AppModal centered opened={isCreateModalOpen} size={760} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Нове переміщення з файлу')}</span>} onClose={closeCreateModal}>
       <form id="product-transfer-create-form" onSubmit={handleCreate}>
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           {createError && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {createError}
@@ -856,14 +858,14 @@ function ProductTransferCreateModal({ model }: { model: ReturnType<typeof usePro
               </Text>
             )}
 
-            <Group justify="flex-end">
-              <Button color="gray" disabled={isCreating} type="button" variant="subtle" onClick={closeCreateModal}>
+            <AppModalFooter>
+              <Button color="gray" disabled={isCreating} type="button" variant="default" onClick={closeCreateModal}>
                 {t('Скасувати')}
               </Button>
               <Button color={CREATE_ACTION_COLOR} loading={isCreating} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} type="submit">
                 {t('Створити')}
               </Button>
-            </Group>
+            </AppModalFooter>
         </Stack>
       </form>
     </AppModal>
@@ -882,7 +884,7 @@ function ProductTransferImportResultModal({ model }: { model: ReturnType<typeof 
       title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Результат імпорту')}</span>}
       onClose={() => setExceptionMessages([])}
     >
-      <Stack gap="sm">
+      <Stack className="app-compact-form" gap="sm">
         <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
           {t('Частину рядків файла сервер обробив з попередженнями.')}
         </Alert>
@@ -895,11 +897,11 @@ function ProductTransferImportResultModal({ model }: { model: ReturnType<typeof 
             ))}
           </Stack>
         </ScrollArea.Autosize>
-        <Group justify="flex-end">
-          <Button color="gray" variant="light" onClick={() => setExceptionMessages([])}>
+        <AppModalFooter>
+          <Button color="gray" variant="default" onClick={() => setExceptionMessages([])}>
             {t('Закрити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )
@@ -975,7 +977,7 @@ function useProductTransferColumns(
         width: 230,
         minWidth: 180,
         accessor: (transfer) => transfer.Organization?.Name,
-        cell: (transfer) => displayValue(transfer.Organization?.Name),
+        cell: (transfer) => <TableChip tone="product" value={getOrganizationDisplayName(transfer.Organization)} />,
       },
       {
         id: 'fromStorage',
@@ -999,7 +1001,7 @@ function useProductTransferColumns(
         width: 190,
         minWidth: 160,
         accessor: getResponsibleName,
-        cell: (transfer) => displayValue(getResponsibleName(transfer)),
+        cell: (transfer) => <TableChip tone="warning" value={displayValue(getResponsibleName(transfer))} />,
       },
       {
         id: 'items',
@@ -1189,7 +1191,7 @@ export function TransferDetail({
     >
       <DocumentDetailSection title={t('Реквізити переміщення')}>
         <DocumentDetailRow label={t('Організація')} value={<TableChip tone="product" value={transfer.Organization?.Name} />} />
-        <DocumentDetailRow label={t('Відповідальний')} value={getResponsibleName(transfer)} />
+        <DocumentDetailRow label={t('Відповідальний')} value={<TableChip tone="warning" value={getResponsibleName(transfer)} />} />
         <DocumentDetailRow label={t('Зі складу')} value={<TableChip tone="storage" value={transfer.FromStorage?.Name} />} />
         <DocumentDetailRow label={t('На склад')} value={<TableChip tone="storage" value={transfer.ToStorage?.Name} />} />
         {transfer.Comment && <DocumentDetailRow label={t('Коментар')} value={transfer.Comment} wide />}

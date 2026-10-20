@@ -2,7 +2,7 @@ import { Button, Loader, Stack, Text } from '@mantine/core'
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { WarehousePeriodCapabilityStatus } from './WarehousePeriodControls'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { ReportModal } from './ReportModal'
 import { getPriceSalesCapability } from '../api/originalPriceTypeSalesApi'
 import { isPriceSalesCatalogueEntry, type PriceSalesCapability } from '../data/originalPriceTypeSales'
 import type { ReportCatalogueEntry } from '../types'
@@ -30,11 +30,11 @@ function PriceSalesModal({ opened, enabled, disabled, capability, callerKey, sco
   const { t } = useI18n()
   // Initial dates are explicit in the form; no server default to today's balances.
   const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Kyiv' })
-  return <AppModal opened={opened && enabled && !!capability} title={t('Порівняння продажів за типом цін')} size={1250}
+  return <ReportModal opened={opened && enabled && !!capability} title={t('Порівняння продажів за типом цін')} size={1250}
     onClose={close} closeButtonProps={{ 'aria-label': t('Закрити порівняння продажів за типом цін') }}>
     {opened && capability ? <Suspense fallback={<Loader size="sm" />}><Panel key={JSON.stringify(scope)} capability={capability} callerKey={callerKey}
       canGenerate={enabled && !disabled} initialFrom={today} initialThrough={today} /></Suspense> : null}
-  </AppModal>
+  </ReportModal>
 }
 
 export function OriginalPriceTypeSalesCatalogueLaunch({ report, worlds, enabled, disabled, callerKey }: {

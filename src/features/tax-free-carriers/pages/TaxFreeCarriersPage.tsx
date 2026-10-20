@@ -16,7 +16,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -324,7 +324,7 @@ function CarriersDeleteModal({ model }: { model: ReturnType<typeof useTaxFreeCar
   const { carrierToDelete, confirmDelete, isDeleting, setCarrierToDelete } = model
 
   return (
-    <AppModal
+    <AppModal className="app-compact-form"
       centered
       opened={Boolean(carrierToDelete)}
       title={t('Ви впевнені, що хочете видалити?')}
@@ -332,14 +332,14 @@ function CarriersDeleteModal({ model }: { model: ReturnType<typeof useTaxFreeCar
     >
       <Stack gap="md">
         <Text>{getCarrierName(carrierToDelete)}</Text>
-        <Group justify="flex-end">
-          <Button color="gray" disabled={isDeleting} variant="light" onClick={() => setCarrierToDelete(null)}>
+        <AppModalFooter>
+          <Button color="gray" disabled={isDeleting} variant="default" onClick={() => setCarrierToDelete(null)}>
             {t('Скасувати')}
           </Button>
           <Button color="red" leftSection={<Trash2 size={16} />} loading={isDeleting} onClick={confirmDelete}>
             {t('Видалити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

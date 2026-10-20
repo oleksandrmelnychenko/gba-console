@@ -1,10 +1,10 @@
-import { Alert, Button, Checkbox, Group, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Checkbox, Stack, Text, TextInput } from '@mantine/core'
 import { CircleAlert, Search } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { getAllUkraineCartItemsForSad } from '../api/sadApi'
 import type { Sad, SadItem, SadSupplyOrderUkraineCartItem } from '../types'
 
@@ -232,7 +232,7 @@ export function SadAddItemsModal({ onAdd, onClose, opened, sad }: SadAddItemsMod
   }
 
   return (
-    <AppModal centered opened={opened} size="xl" title={t('Додати товари з корзини постачання')} onClose={onClose}>
+    <AppModal className="app-compact-form" centered opened={opened} size="xl" title={t('Додати товари з корзини постачання')} onClose={onClose}>
       <Stack>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
@@ -263,14 +263,14 @@ export function SadAddItemsModal({ onAdd, onClose, opened, sad }: SadAddItemsMod
           }
         />
 
-        <Group justify="flex-end">
+        <AppModalFooter>
           <Button variant="subtle" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button disabled={isLoading || selectedKeys.size === 0} onClick={addSelectedItems}>
             {t('Додати')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

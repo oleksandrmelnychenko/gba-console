@@ -8,7 +8,6 @@ import {
   Box,
   Button,
   Checkbox,
-  Group,
   Menu,
   Popover,
   Select,
@@ -46,7 +45,7 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import {
   confirmSalesUkraineSaleAuditHistory,
   getSalesUkraineSaleAudit,
@@ -1567,16 +1566,16 @@ function SalesUkrainePageContent() {
         onClose={() => (isConfirming ? undefined : setConfirmState(null))}
       >
         {confirmState && (
-          <Stack gap="md">
+          <Stack className="app-compact-form" gap="md">
             <Text>{confirmState.message}</Text>
-            <Group justify="flex-end">
-              <Button color="gray" disabled={isConfirming} variant="subtle" onClick={() => setConfirmState(null)}>
+            <AppModalFooter>
+              <Button color="gray" disabled={isConfirming} variant="default" onClick={() => setConfirmState(null)}>
                 {t('Скасувати')}
               </Button>
               <Button color={confirmState.color || CREATE_ACTION_COLOR} loading={isConfirming} onClick={runConfirm}>
                 {confirmState.confirmLabel}
               </Button>
-            </Group>
+            </AppModalFooter>
           </Stack>
         )}
       </AppModal>

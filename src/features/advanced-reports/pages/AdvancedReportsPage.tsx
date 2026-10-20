@@ -1,3 +1,4 @@
+import { DocumentDetailLayout, DocumentDetailSummary, DocumentDetailSection, DocumentDetailRow } from '../../../shared/ui/document-detail/DocumentDetail'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -6,7 +7,6 @@ import {
   Alert,
   Badge,
   Card,
-  Divider,
   Group,
   Menu,
   Select,
@@ -606,7 +606,7 @@ function useAdvancedReportColumns({
         width: 150,
         minWidth: 120,
         accessor: (row) => row.organization,
-        cell: (row) => renderSingleLineText(row.organization),
+        cell: (row) => <TableChip tone="product" value={displayValue(row.organization)} />,
       },
       {
         id: 'storage',
@@ -776,24 +776,29 @@ function AdvancedReportDetailDrawer({ row, onClose }: { row: AdvancedReportRow |
   return (
     <AppDrawer opened={Boolean(row)} padding="md" size="xl" title={t('Авансовий звіт')} onClose={onClose}>
       {row && (
-        <Stack gap="md">
-          <SimpleGrid cols={{ base: 1, sm: 2 }}>
+        <DocumentDetailLayout variant="inventory" summary={
+          <DocumentDetailSummary variant="inventory" eyebrow={t('Авансовий звіт')}
+            title={displayValue(row.number)} meta={formatDateTime(row.fromDate)}
+            metrics={<Group gap={8}><Text className="app-money" fw={500}>{formatMoney(row.amount)}</Text><TableChip tone="source" value={row.currency} /></Group>}
+          />
+        }>
+          <DocumentDetailSection title={t('Реквізити')}>
             <DetailItem label={t('Дата')} mono value={formatDateTime(row.fromDate)} />
-            <DetailItem label={t('Номер')} value={displayValue(row.number)} />
-            <DetailItem label={t('Видатковий ордер')} value={displayValue(row.order.Number || row.order.CustomNumber)} />
-            <DetailItem label={t('Організація')} value={displayValue(row.organization)} />
-            <DetailItem label={t('Склад')} value={displayValue(row.storage)} />
+            <DetailItem tone="document" label={t('Номер')} value={displayValue(row.number)} />
+            <DetailItem tone="document" label={t('Видатковий ордер')} value={displayValue(row.order.Number || row.order.CustomNumber)} />
+            <DetailItem tone="product" label={t('Організація')} value={displayValue(row.organization)} />
+            <DetailItem tone="storage" label={t('Склад')} value={displayValue(row.storage)} />
             <DetailItem label={t('Сума')} mono value={formatMoney(row.amount)} />
-            <DetailItem label={t('Валюта')} mono value={displayValue(row.currency)} />
+            <DetailItem tone="source" label={t('Валюта')} mono value={displayValue(row.currency)} />
             <DetailItem label={t('Курс')} value={displayValue(row.order.ExchangeRate)} />
             <DetailItem label={t('Сума в EUR')} mono value={hasNumber(row.order.AfterExchangeAmount) ? formatMoney(row.order.AfterExchangeAmount) : displayValue(undefined)} />
             <DetailItem label={t('ПДВ %')} value={hasNumber(row.order.VatPercent) ? displayValue(row.order.VatPercent) : displayValue(undefined)} />
             <DetailItem label={t('ПДВ')} mono value={hasNumber(row.order.VAT) ? formatMoney(row.order.VAT) : displayValue(undefined)} />
             <DetailItem label={t('Кому видано')} value={displayValue(row.payedTo)} />
-            <DetailItem label={t('Роль')} value={displayValue(row.role)} />
+            <DetailItem tone="neutral" label={t('Роль')} value={displayValue(row.role)} />
             <DetailItem label={t('Рахунок')} value={displayValue(row.paymentRegister)} />
             <DetailItem label={t('Стаття руху')} value={displayValue(row.paymentMovement)} />
-            <DetailItem label={t('Відповідальний')} value={displayValue(row.responsible)} />
+            <DetailItem tone="warning" label={t('Відповідальний')} value={displayValue(row.responsible)} />
             <DetailItem label={t('Різниця')} mono value={formatMoney(row.differenceAmount)} />
             <DetailItem label={t('Підзвіт')} value={row.isUnderReport ? t('Так') : t('Ні')} />
             <DetailItem label={t('Закрито')} value={row.order.IsUnderReportDone ? t('Так') : t('Ні')} />
@@ -801,19 +806,13 @@ function AdvancedReportDetailDrawer({ row, onClose }: { row: AdvancedReportRow |
             <DetailItem label={t('Управлінський')} value={row.order.IsManagementAccounting ? t('Так') : t('Ні')} />
             <DetailItem label={t('Вхідний номер')} value={displayValue(row.order.ArrivalNumber)} />
             <DetailItem label={t('Призначення платежу')} value={displayValue(row.order.PaymentPurpose)} />
-          </SimpleGrid>
+          </DocumentDetailSection>
 
-          <Stack gap={2}>
-            <Text c="dimmed" size="xs" tt="uppercase">
-              {t('Коментар')}
-            </Text>
+          <DocumentDetailSection title={t('Коментар')} stacked>
             <Text size="sm">{displayValue(row.comment)}</Text>
-          </Stack>
+          </DocumentDetailSection>
 
-          <Divider />
-
-          <Stack gap="xs">
-            <Text className="app-section-title" fw={600} size="sm">{t('Пов’язані документи')}</Text>
+          <DocumentDetailSection title={t('Пов’язані документи')} stacked>
             {relatedOrders.length > 0 ? (
               relatedOrders.map((item, index) => {
                 const order = item.ConsumablesOrder
@@ -825,7 +824,7 @@ function AdvancedReportDetailDrawer({ row, onClose }: { row: AdvancedReportRow |
                     <DetailItem label={t('Номер організації')} value={displayValue(order?.OrganizationNumber)} />
                     <DetailItem label={t('Дата організації')} mono value={formatDateTime(order?.OrganizationFromDate)} />
                     <DetailItem label={t('Постачальник/отримувач')} value={displayValue(getEntityName(order?.ConsumableProductOrganization))} />
-                    <DetailItem label={t('Склад')} value={displayValue(getEntityName(order?.ConsumablesStorage))} />
+                    <DetailItem tone="storage" label={t('Склад')} value={displayValue(getEntityName(order?.ConsumablesStorage))} />
                     <DetailItem label={t('Позицій')} value={String(itemsCount)} />
                     <DetailItem label={t('Сума без ПДВ')} mono value={formatMoney(order?.TotalAmountWithoutVAT)} />
                     <DetailItem label={t('Сума з ПДВ')} mono value={formatMoney(order?.TotalAmount)} />
@@ -837,8 +836,8 @@ function AdvancedReportDetailDrawer({ row, onClose }: { row: AdvancedReportRow |
                 {t('Пов’язаних документів немає')}
               </Text>
             )}
-          </Stack>
-        </Stack>
+          </DocumentDetailSection>
+        </DocumentDetailLayout>
       )}
     </AppDrawer>
   )
@@ -865,7 +864,13 @@ function AdvancedReportDocumentStructureDrawer({
   return (
     <AppDrawer opened={Boolean(row)} padding="md" size="xl" title={t('Структура документів')} onClose={onClose}>
       {row && (
-        <Stack gap="md">
+        <DocumentDetailLayout variant="inventory" summary={
+          <DocumentDetailSummary variant="inventory" eyebrow={t('Структура документів')}
+            title={displayValue(row.order.Number || row.order.CustomNumber || row.number)}
+            meta={formatDateTime(row.fromDate)}
+            metrics={<Group gap={6}><Text className="app-money">{formatMoney(row.amount)}</Text><TableChip tone="source" value={row.currency} /></Group>}
+          />
+        }>
           {isCalculating && (
             <Alert color="gray" variant="light">
               {t('Перерахунок структури документів...')}
@@ -878,9 +883,9 @@ function AdvancedReportDocumentStructureDrawer({
             </Alert>
           )}
 
-          <SimpleGrid cols={{ base: 1, sm: 2 }}>
+          <DocumentDetailSection title={t('Реквізити')}>
             <DetailItem label={t('Документ')} value={getOutcomePaymentOrderTypeLabel(row.order, t)} />
-            <DetailItem label={t('Видатковий ордер')} value={displayValue(row.order.Number || row.order.CustomNumber || row.number)} />
+            <DetailItem tone="document" label={t('Видатковий ордер')} value={displayValue(row.order.Number || row.order.CustomNumber || row.number)} />
             <DetailItem label={t('Дата')} mono value={formatDateTime(row.fromDate)} />
             <DetailItem label={t('Сума')} mono value={formatMoney(row.amount)} />
             <DetailItem
@@ -888,28 +893,26 @@ function AdvancedReportDocumentStructureDrawer({
               mono
               value={hasNumber(calculatedTotal) ? formatMoneyWithCurrency(calculatedTotal, row.currency) : displayValue(undefined)}
             />
-            <DetailItem label={t('Валюта')} mono value={displayValue(row.currency)} />
+            <DetailItem tone="source" label={t('Валюта')} mono value={displayValue(row.currency)} />
             <DetailItem label={t('Курс')} value={displayValue(row.order.ExchangeRate)} />
             <DetailItem label={t('Сума в EUR')} mono value={hasNumber(row.order.AfterExchangeAmount) ? formatMoney(row.order.AfterExchangeAmount) : displayValue(undefined)} />
             <DetailItem label={t('ПДВ %')} value={hasNumber(row.order.VatPercent) ? displayValue(row.order.VatPercent) : displayValue(undefined)} />
             <DetailItem label={t('ПДВ')} mono value={hasNumber(row.order.VAT) ? formatMoney(row.order.VAT) : displayValue(undefined)} />
-            <DetailItem label={t('Організація')} value={displayValue(row.organization)} />
+            <DetailItem tone="product" label={t('Організація')} value={displayValue(row.organization)} />
             <DetailItem label={t('Рахунок')} value={displayValue(row.paymentRegister)} />
             <DetailItem label={t('Стаття руху')} value={displayValue(row.paymentMovement)} />
             <DetailItem label={t('Вхідний номер')} value={displayValue(row.order.ArrivalNumber)} />
             <DetailItem label={t('Призначення платежу')} value={displayValue(row.order.PaymentPurpose)} />
             <DetailItem label={t('Кому видано')} value={displayValue(row.payedTo)} />
-            <DetailItem label={t('Відповідальний')} value={displayValue(row.responsible)} />
+            <DetailItem tone="warning" label={t('Відповідальний')} value={displayValue(row.responsible)} />
             <DetailItem label={t('Коментар')} value={displayValue(row.comment)} />
             <DetailItem label={t('Бухгалтерський')} value={row.order.IsAccounting ? t('Так') : t('Ні')} />
             <DetailItem label={t('Управлінський')} value={row.order.IsManagementAccounting ? t('Так') : t('Ні')} />
             <DetailItem label={t('Підзвіт')} value={row.isUnderReport ? t('Так') : t('Ні')} />
-            <DetailItem label={t('Авансовий звіт')} value={displayValue(row.order.AdvanceNumber || row.number)} />
-          </SimpleGrid>
+            <DetailItem tone="document" label={t('Авансовий звіт')} value={displayValue(row.order.AdvanceNumber || row.number)} />
+          </DocumentDetailSection>
 
-          <Divider />
-
-          <Stack gap="sm">
+          <DocumentDetailSection title={t('Пов’язані документи')} stacked>
             {rootAssignedOrder && !rootAssignedOrder.Deleted && (
               <AssignedPaymentOrderBlock
                 assignedPaymentOrder={rootAssignedOrder}
@@ -934,8 +937,8 @@ function AdvancedReportDocumentStructureDrawer({
                 {t('Структура документів відсутня')}
               </Text>
             ) : null}
-          </Stack>
-        </Stack>
+          </DocumentDetailSection>
+        </DocumentDetailLayout>
       )}
     </AppDrawer>
   )
@@ -957,8 +960,7 @@ function AssignedPaymentOrderBlock({
   const assignedIncome = assignedPaymentOrder.AssignedIncomePaymentOrder || assignedPaymentOrder.RootIncomePaymentOrder
 
   return (
-    <Stack gap="xs">
-      <Text className="app-section-title" fw={600} size="sm">{title}</Text>
+    <DocumentDetailSection title={title} stacked>
       <AdvanceReportStructureSummary
         assignedPaymentOrder={assignedPaymentOrder}
         calculatedTotal={calculatedTotal}
@@ -971,7 +973,7 @@ function AssignedPaymentOrderBlock({
           {t('Пов’язаний документ не завантажено')}
         </Text>
       )}
-    </Stack>
+    </DocumentDetailSection>
   )
 }
 
@@ -996,8 +998,8 @@ function AdvanceReportStructureSummary({
   const advanceReportTotal = hasNumber(calculatedTotal) ? calculatedTotal : parentOrder.Amount
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2 }}>
-      <DetailItem label={t('Авансовий звіт')} value={displayValue(parentOrder.AdvanceNumber)} />
+    <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing={10} verticalSpacing={10}>
+      <DetailItem tone="document" label={t('Авансовий звіт')} value={displayValue(parentOrder.AdvanceNumber)} />
       <DetailItem label={t('Дата авансового звіту')} value={formatDateTime(assignedOutcome?.Created || assignedOutcome?.FromDate || parentOrder.FromDate)} />
       <DetailItem label={t('Сума авансового звіту')} mono value={formatMoneyWithCurrency(advanceReportTotal, currency)} />
       <DetailItem label={t('Сума зв’язки')} mono value={formatMoneyWithCurrency(assignedPaymentOrder.Amount, currency)} />
@@ -1009,12 +1011,12 @@ function AssignedOutcomeOrderView({ order }: { order: OutcomePaymentOrder }) {
   const { t } = useI18n()
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2 }}>
+    <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing={10} verticalSpacing={10}>
       <DetailItem label={t('Документ')} value={getOutcomePaymentOrderTypeLabel(order, t)} />
-      <DetailItem label={t('Номер')} value={displayValue(order.Number || order.CustomNumber || order.AdvanceNumber)} />
+      <DetailItem tone="document" label={t('Номер')} value={displayValue(order.Number || order.CustomNumber || order.AdvanceNumber)} />
       <DetailItem label={t('Дата')} value={formatDateTime(order.FromDate)} />
       <DetailItem label={t('Сума')} mono value={formatMoney(order.Amount)} />
-      <DetailItem label={t('Валюта')} mono value={displayValue(order.PaymentCurrencyRegister?.Currency?.Code || order.PaymentCurrencyRegister?.Currency?.Name)} />
+      <DetailItem tone="source" label={t('Валюта')} mono value={displayValue(order.PaymentCurrencyRegister?.Currency?.Code || order.PaymentCurrencyRegister?.Currency?.Name)} />
       <DetailItem label={t('Отримувач')} value={displayValue(getPayedTo(order))} />
     </SimpleGrid>
   )
@@ -1024,25 +1026,20 @@ function AssignedIncomeOrderView({ order }: { order: AssignedIncomePaymentOrder 
   const { t } = useI18n()
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2 }}>
+    <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing={10} verticalSpacing={10}>
       <DetailItem label={t('Документ')} value={getIncomePaymentOrderTypeLabel(order, t)} />
-      <DetailItem label={t('Номер')} value={displayValue(order.Number)} />
+      <DetailItem tone="document" label={t('Номер')} value={displayValue(order.Number)} />
       <DetailItem label={t('Дата')} value={formatDateTime(order.FromDate)} />
       <DetailItem label={t('Сума')} mono value={formatMoney(order.Amount)} />
-      <DetailItem label={t('Валюта')} mono value={displayValue(order.Currency?.Code || order.Currency?.Name)} />
+      <DetailItem tone="source" label={t('Валюта')} mono value={displayValue(order.Currency?.Code || order.Currency?.Name)} />
       <DetailItem label={t('Платник')} value={displayValue(getEntityName(order.Colleague))} />
     </SimpleGrid>
   )
 }
 
 /* §5.1: dates, numbers and money render mono — pass `mono` for those values. */
-function DetailItem({ label, mono, value }: { label: string; mono?: boolean; value: string }) {
-  return (
-    <div className={`app-detail-field${mono ? ' is-mono' : ''}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  )
+function DetailItem({ label, mono, tone, value }: { label: string; mono?: boolean; tone?: 'product' | 'source' | 'warning' | 'document' | 'neutral' | 'storage'; value: string }) {
+  return <DocumentDetailRow label={label} mono={mono} value={tone ? <TableChip tone={tone} value={value} /> : value} />
 }
 
 function getTotalRows(reports: AdvancedReportsResponse): number {

@@ -651,7 +651,7 @@ function useSalesColumns({
         width: 90,
         minWidth: 80,
         accessor: (sale) => sale.ClientAgreement?.Agreement?.Currency?.Code,
-        cell: (sale) => <TableChip tone="neutral" value={displayValue(sale.ClientAgreement?.Agreement?.Currency?.Code)} />,
+        cell: (sale) => <TableChip tone="source" value={displayValue(sale.ClientAgreement?.Agreement?.Currency?.Code)} />,
       },
       {
         id: 'responsible',
@@ -659,7 +659,7 @@ function useSalesColumns({
         width: 180,
         minWidth: 140,
         accessor: (sale) => getResponsible(sale),
-        cell: (sale) => displayValue(getResponsible(sale)),
+        cell: (sale) => <TableChip tone="warning" value={displayValue(getResponsible(sale))} />,
       },
       {
         id: 'comment',

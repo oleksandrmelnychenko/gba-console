@@ -45,7 +45,7 @@ export function ProtocolOptionsModal({
       }
       onClose={onClose}
     >
-      <Stack className="app-modal-actions" gap="xs">
+      <Stack className="app-compact-form app-modal-actions" gap="xs">
         {canOpenLogisticPath && (
           <Button
             fullWidth

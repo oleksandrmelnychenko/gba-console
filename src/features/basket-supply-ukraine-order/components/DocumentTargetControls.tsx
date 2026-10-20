@@ -1,4 +1,5 @@
-import { Group, Select, SegmentedControl, Stack, Switch } from '@mantine/core'
+import { TableChip } from '../../../shared/ui/TableChip'
+import { Card, Group, Select, SegmentedControl, Stack, Switch } from '@mantine/core'
 import type {
   BasketSupplyDocumentState,
   BasketSupplyDocumentType,
@@ -51,58 +52,62 @@ export function DocumentTargetControls({
   }
 
   return (
-    <Stack gap="sm">
-      <Group align="end" gap="sm" wrap="nowrap" className="app-filter-fields clients-filter-row">
-        <SegmentedControl
-          data={documentTypeOptions}
-          disabled={disabled}
-          value={documentState.documentType}
-          onChange={(value) => patchDocumentState({ documentType: value as BasketSupplyDocumentType })}
-        />
-        <Switch
-          checked={documentState.isSelectExistingDocument && canSelectExisting}
-          disabled={disabled || !canSelectExisting}
-          label={t('Вибрати існуючий')}
-          onChange={(event) => patchDocumentState({ isSelectExistingDocument: event.currentTarget.checked })}
-        />
-      </Group>
-
-      {documentState.documentType === 'taxFree' && documentState.isSelectExistingDocument && (
-        <Select
-          clearable
-          data={taxFreeOptions}
-          disabled={disabled}
-          label={t('Упаковки (не проведені)')}
-          placeholder={t('Оберіть документ')}
-          value={documentState.existingTaxFreeNetUid || null}
-          onChange={(value) => patchDocumentState({ existingTaxFreeNetUid: value || '' })}
-        />
-      )}
-
-      {documentState.documentType === 'sad' && (
-        <Group align="end" gap="sm" grow>
-          {documentState.isSelectExistingDocument ? (
-            <Select
-              clearable
-              data={sadOptions}
-              disabled={disabled}
-              label={t('Експорти (не проведені)')}
-              placeholder={t('Оберіть документ')}
-              value={documentState.existingSadNetUid || null}
-              onChange={(value) => patchDocumentState({ existingSadNetUid: value || '' })}
-            />
-          ) : (
-            <Select
-              data={sadTypeOptions}
-              disabled={disabled}
-              label={t('Тип')}
-              value={String(documentState.sadType)}
-              onChange={(value) => patchDocumentState({ sadType: Number(value || SAD_TYPES.Sad) as SadTypeValue })}
-            />
-          )}
+    <Card className="app-section-card" withBorder padding={12}>
+      <Stack gap={10}>
+        <Group align="center" gap={10} wrap="wrap">
+          <SegmentedControl
+            data={documentTypeOptions}
+            disabled={disabled}
+            value={documentState.documentType}
+            onChange={(value) => patchDocumentState({ documentType: value as BasketSupplyDocumentType })}
+          />
+          <Switch
+            checked={documentState.isSelectExistingDocument && canSelectExisting}
+            disabled={disabled || !canSelectExisting}
+            label={t('Вибрати існуючий')}
+            onChange={(event) => patchDocumentState({ isSelectExistingDocument: event.currentTarget.checked })}
+          />
         </Group>
-      )}
-    </Stack>
+
+        {documentState.documentType === 'taxFree' && documentState.isSelectExistingDocument && (
+          <Select
+            clearable
+            data={taxFreeOptions}
+            renderOption={({ option }) => <TableChip tone="document" value={option.label} />}
+            disabled={disabled}
+            label={t('Упаковки (не проведені)')}
+            placeholder={t('Оберіть документ')}
+            value={documentState.existingTaxFreeNetUid || null}
+            onChange={(value) => patchDocumentState({ existingTaxFreeNetUid: value || '' })}
+          />
+        )}
+
+        {documentState.documentType === 'sad' && (
+          <Group align="end" gap="sm" grow>
+            {documentState.isSelectExistingDocument ? (
+              <Select
+                clearable
+                data={sadOptions}
+                renderOption={({ option }) => <TableChip tone="document" value={option.label} />}
+                disabled={disabled}
+                label={t('Експорти (не проведені)')}
+                placeholder={t('Оберіть документ')}
+                value={documentState.existingSadNetUid || null}
+                onChange={(value) => patchDocumentState({ existingSadNetUid: value || '' })}
+              />
+            ) : (
+              <Select
+                data={sadTypeOptions}
+                disabled={disabled}
+                label={t('Тип')}
+                value={String(documentState.sadType)}
+                onChange={(value) => patchDocumentState({ sadType: Number(value || SAD_TYPES.Sad) as SadTypeValue })}
+              />
+            )}
+          </Group>
+        )}
+      </Stack>
+    </Card>
   )
 }
 

@@ -242,10 +242,10 @@
   border-color: var(--mantine-color-gray-2);
   border-radius: 8px;
   font-family: var(--font-mono);
-  font-size: 13px;
-  height: 36px;
+  font-size: 12px;
+  height: 32px;
   letter-spacing: 0;
-  min-height: 36px;
+  min-height: 32px;
 }
 
 .protocol-create-modal-body .mantine-Button-label {

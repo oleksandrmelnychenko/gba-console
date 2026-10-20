@@ -12,7 +12,7 @@ import {
 } from '@mantine/core'
 import { CircleAlert, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import { AppModal } from '../../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../../shared/ui/AppModal'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { Client, ClientGroup, ClientWorkplace } from '../../types'
@@ -195,6 +195,8 @@ export function WorkplacesPanel({
       )}
 
       {canManage && <AppModal
+        className="client-inline-form-modal"
+        size={640}
         centered
         opened={formOpened}
         title={editingWorkplace && (editingWorkplace.Id || 0) > 0 ? t('Редагування') : t('Створення')}
@@ -216,10 +218,10 @@ export function WorkplacesPanel({
         title={t('Ви впевнені, що хочете заблокувати?')}
         onClose={() => setRemoveTarget(null)}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           {removeTarget && <WorkplaceItem workplace={removeTarget} readonly />}
-          <Group justify="flex-end">
-            <Button color="gray" variant="subtle" onClick={() => setRemoveTarget(null)}>
+          <AppModalFooter>
+            <Button color="gray" variant="default" onClick={() => setRemoveTarget(null)}>
               {t('Ні')}
             </Button>
             <Button
@@ -230,7 +232,7 @@ export function WorkplacesPanel({
             >
               {t('Так')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>}
     </Stack>

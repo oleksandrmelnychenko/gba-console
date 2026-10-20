@@ -1,3 +1,4 @@
+import { DocumentDetailLayout, DocumentDetailSection, DocumentDetailRow, DocumentDetailSummary } from '../../../shared/ui/document-detail/DocumentDetail'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { ClientActionsButton } from '../../clients/components/ClientActionsButton'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -1208,7 +1209,7 @@ function AccountingCashFlowDetailDrawer({
   return (
     <AppDrawer
       opened={Boolean(item)}
-      padding="lg"
+      padding="md"
       position="right"
       size={saleReturn ? 'min(1200px, 100vw)' : 'min(980px, 100vw)'}
       title={drawerTitle}
@@ -1217,15 +1218,14 @@ function AccountingCashFlowDetailDrawer({
       {item && saleReturn ? (
         <SaleReturnDetailContent item={item} saleReturn={saleReturn} />
       ) : item ? (
-        <Stack gap="md">
-          <div className="app-detail-grid">
+        <DocumentDetailLayout variant="inventory" summary={null}>
+          <DocumentDetailSection title={t('Дані документа')}>
             {detailFields.map((field) => (
               <DetailValue key={field.label} label={field.label} mono={field.mono} value={field.value} />
             ))}
-          </div>
-
-          <CashFlowDetailContent item={item} />
-        </Stack>
+          </DocumentDetailSection>
+          <DocumentDetailSection title={t('Позиції')} stacked><CashFlowDetailContent item={item} /></DocumentDetailSection>
+        </DocumentDetailLayout>
       ) : null}
     </AppDrawer>
   )
@@ -1237,8 +1237,8 @@ function buildHeadItemFields(item: AccountingCashFlowHeadItem, t: (key: string) 
   const fields: DetailField[] = [
     { label: 'Дата', value: formatDateTime(item.FromDate) },
     { label: 'Документ', value: displayValue(item.Name) },
-    { label: 'Номер', value: displayValue(item.Number) },
-    { label: 'Організація', value: displayValue(item.OrganizationName) },
+    { label: 'Номер', value: <TableChip tone="document" value={displayValue(item.Number)} /> },
+    { label: 'Організація', value: <TableChip tone="product" value={displayValue(item.OrganizationName)} /> },
     { label: 'Тип', value: getCashFlowTypeLabel(item.Type) },
     { label: 'Операція', value: item.IsCreditValue ? 'Кредит' : 'Дебет' },
     { label: 'Сума', mono: true, value: formatMoney(item.CurrentValue) },
@@ -1285,10 +1285,7 @@ function getVisibleLocalAmount(item: AccountingCashFlowHeadItem): number | undef
 
 function DetailValue({ label, mono, value }: DetailField) {
   return (
-    <div className={`app-detail-field${mono ? ' is-mono' : ''}`}>
-      <span>{label}</span>
-      <strong>{value || '-'}</strong>
-    </div>
+    <DocumentDetailRow label={label} mono={mono} value={value || '-'} />
   )
 }
 
@@ -1313,7 +1310,7 @@ function SaleReturnDetailContent({
   const requisites: DetailField[] = [
     { label: t('Дата'), value: formatDateTime(item.FromDate) },
     { label: t('Номер'), value: returnNumber },
-    { label: t('Організація'), value: displayValue(item.OrganizationName) },
+    { label: t('Організація'), value: <TableChip tone="product" value={displayValue(item.OrganizationName)} /> },
     { label: t('Клієнт'), value: clientName || '—' },
     { label: t('Договір'), value: agreementName || '—' },
     { label: t('Тип документа'), value: getCashFlowTypeLabel(item.Type) },
@@ -1323,43 +1320,24 @@ function SaleReturnDetailContent({
 
   return (
     <div className="accounting-cash-flow-return">
-      <section className="accounting-cash-flow-return__hero">
-        <div className="accounting-cash-flow-return__identity">
-          <span className="accounting-cash-flow-return__eyebrow">{t('Повернення від покупця')}</span>
-          <strong className="accounting-cash-flow-return__number">{returnNumber || '—'}</strong>
-          <span className="accounting-cash-flow-return__date">{formatDateTime(item.FromDate)}</span>
-          <div className="accounting-cash-flow-return__client">
-            <strong>{clientName || t('Клієнта не вказано')}</strong>
-            {agreementName ? <Badge className="app-role-pill is-gray">{agreementName}</Badge> : null}
-          </div>
-        </div>
-
-        <div className="accounting-cash-flow-return__summary">
-          <ReturnMetric label={t('Позиції')} value={String(items.length)} meta={`${formatAmount(totalQuantity)} ${t('шт.')}`} />
-          <ReturnMetric label={t('Сума')} value={formatMoney(item.CurrentValue)} meta="UAH" />
-          <ReturnMetric label={t('Баланс')} value={formatMoney(item.CurrentBalance)} meta="UAH" accent />
-        </div>
-      </section>
-
-      <section className="accounting-cash-flow-return__section">
-        <Text className="app-section-title accounting-cash-flow-return__section-title" fw={600}>
-          {t('Реквізити повернення')}
-        </Text>
-        <div className="accounting-cash-flow-return__requisites">
+      <DocumentDetailLayout variant="inventory" summary={
+        <DocumentDetailSummary variant="inventory" eyebrow={t('Повернення від покупця')}
+          title={returnNumber || '—'}
+          meta={<Group gap={8}><span>{formatDateTime(item.FromDate)}</span><span>{clientName || t('Клієнта не вказано')}</span>{agreementName ? <TableChip tone="neutral" value={agreementName} /> : null}</Group>}
+          metrics={<Group gap={10}>
+            <ReturnMetric label={t('Позиції')} value={String(items.length)} meta={`${formatAmount(totalQuantity)} ${t('шт.')}`} />
+            <ReturnMetric label={t('Сума')} value={formatMoney(item.CurrentValue)} meta="UAH" />
+            <ReturnMetric label={t('Баланс')} value={formatMoney(item.CurrentBalance)} meta="UAH" accent />
+          </Group>}
+        />
+      }>
+      <DocumentDetailSection title={t('Реквізити повернення')}>
           {requisites.map((field) => (
             <DetailValue key={field.label} label={field.label} mono={field.mono} value={field.value} />
           ))}
-        </div>
-      </section>
+      </DocumentDetailSection>
 
-      <section className="accounting-cash-flow-return__section accounting-cash-flow-return__positions">
-        <Group justify="space-between" align="center" gap="sm">
-          <Text className="app-section-title accounting-cash-flow-return__section-title" fw={600}>
-            {t('Позиції повернення')}
-          </Text>
-          <Badge className="app-role-pill is-gray">{items.length}</Badge>
-        </Group>
-
+      <DocumentDetailSection title={t('Позиції повернення')} actions={<TableChip tone="neutral" value={String(items.length)} />} stacked>
         {items.length === 0 ? (
           <div className="accounting-cash-flow-return__empty">{t('Позицій не знайдено')}</div>
         ) : (
@@ -1376,7 +1354,8 @@ function SaleReturnDetailContent({
             ))}
           </div>
         )}
-      </section>
+      </DocumentDetailSection>
+      </DocumentDetailLayout>
     </div>
   )
 }
@@ -1396,7 +1375,7 @@ function ReturnMetric({
     <div className={`accounting-cash-flow-return__metric${accent ? ' is-accent' : ''}`}>
       <span>{label}</span>
       <strong>{value}</strong>
-      {meta ? <small>{meta}</small> : null}
+      {meta ? meta === 'UAH' ? <TableChip tone="source" value={meta} /> : <small>{meta}</small> : null}
     </div>
   )
 }

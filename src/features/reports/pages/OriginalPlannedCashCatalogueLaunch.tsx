@@ -1,7 +1,7 @@
 import { Button, Loader, Stack, Text } from '@mantine/core'
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { ReportModal } from './ReportModal'
 import { WarehousePeriodCapabilityStatus } from './WarehousePeriodControls'
 import { getOriginalPlannedCapability } from '../api/originalPlannedCashApi'
 import { plannedCatalogueVariant, plannedDefinitions, type PlannedCapability, type PlannedVariant } from '../data/originalPlannedCash'
@@ -22,10 +22,10 @@ function useCapability(scope: Scope) {
 function PlannedModal({ opened, enabled, disabled, current, scope, close }: { opened: boolean; enabled: boolean; disabled: boolean;
   current: PlannedCapability | null; scope: Scope; close: () => void }) {
   const { t } = useI18n(), today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Kyiv' })
-  return <AppModal opened={opened && enabled && !!current} title={t(current ? plannedDefinitions[current.Variant].title : 'План коштів')} size={1250} onClose={close}>
+  return <ReportModal opened={opened && enabled && !!current} title={t(current ? plannedDefinitions[current.Variant].title : 'План коштів')} size={1250} onClose={close}>
     {opened && current ? <Suspense fallback={<Loader size="sm" />}><Panel key={JSON.stringify(scope)} capability={current} callerKey={scope.callerKey}
       canGenerate={enabled && !disabled} initialFrom={`${today.slice(0, 7)}-01`} initialThrough={today} /></Suspense> : null}
-  </AppModal>
+  </ReportModal>
 }
 export function OriginalPlannedCashCatalogueLaunch({ report, worlds, enabled, disabled, callerKey }: {
   report: ReportCatalogueEntry; worlds: readonly string[]; enabled: boolean; disabled: boolean; callerKey: string | null

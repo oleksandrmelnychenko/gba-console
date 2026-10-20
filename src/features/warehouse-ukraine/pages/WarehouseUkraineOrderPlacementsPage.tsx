@@ -13,7 +13,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { getSupplyOrderIncomeStatusLabel } from '../../../shared/supplyOrderIncomeStatus'
 import { getSupplyUkraineOrderDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
@@ -964,7 +964,7 @@ function WarehouseUkraineOrderPlacementsPageContent() {
                 className="warehouse-order-placement-action-button"
                 color="gray"
                 disabled={model.isBusy}
-                variant="light"
+                variant="default"
                 onClick={model.reloadFromServer}
               >
                 {t('Скасувати')}
@@ -1170,12 +1170,12 @@ function WarehouseUkraineOrderPlacementsPageContent() {
             }
           }}
         >
-          <Group justify="flex-end">
+          <AppModalFooter>
             <Button
               className="warehouse-order-placement-action-button"
               color="gray"
               disabled={model.isBusy}
-              variant="light"
+              variant="default"
               onClick={() => model.setColumnToRemove(null)}
             >
               {t('Скасувати')}
@@ -1189,7 +1189,7 @@ function WarehouseUkraineOrderPlacementsPageContent() {
             >
               {t('Видалити')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </AppModal>
 
         <AppModal
@@ -1197,18 +1197,18 @@ function WarehouseUkraineOrderPlacementsPageContent() {
           title={t('Ви впевнені?')}
           onClose={() => (model.isBusy ? undefined : model.setConfirmPlacement(null))}
         >
-          <Stack gap="md">
+          <Stack className="app-compact-form" gap="md">
             <Text>
               {model.confirmPlacement?.isFullPlaced
                 ? t('Провести замовлення повністю?')
                 : t('Оприходувати замовлення?')}
             </Text>
-            <Group justify="flex-end">
+            <AppModalFooter>
               <Button
                 className="warehouse-order-placement-action-button"
                 color="gray"
                 disabled={model.isBusy}
-                variant="light"
+                variant="default"
                 onClick={() => model.setConfirmPlacement(null)}
               >
                 {t('Скасувати')}
@@ -1222,7 +1222,7 @@ function WarehouseUkraineOrderPlacementsPageContent() {
               >
                 {t('Підтвердити')}
               </Button>
-            </Group>
+            </AppModalFooter>
           </Stack>
         </AppModal>
       </Stack>

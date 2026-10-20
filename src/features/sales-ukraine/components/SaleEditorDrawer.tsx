@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
@@ -116,6 +117,7 @@ export function SaleEditorDrawer({
 
   return (
     <AppDrawer
+      className="app-compact-form"
       opened={Boolean(sale)}
       position="right"
       size="min(1080px, 100vw)"
@@ -469,7 +471,7 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
         </Alert>
       )}
 
-      <Card withBorder padding="md" radius="md">
+      <Card className="app-section-card" withBorder padding={12} radius="md">
         <Group justify="space-between" align="flex-start" wrap="wrap">
           <Stack gap={2}>
             <Text fw={700} size="lg">
@@ -478,9 +480,7 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
             <Text size="sm" c="dimmed">
               {displayValue(sale.ClientAgreement?.Agreement?.Name)}
             </Text>
-            <Text size="xs" c="dimmed">
-              {displayValue(sale.ClientAgreement?.Agreement?.Organization?.Name)}
-            </Text>
+            <TableChip tone="product" value={getOrganizationDisplayName(sale.ClientAgreement?.Agreement?.Organization)} />
           </Stack>
           <Stack gap={4} align="flex-end">
             <Group gap="xs">
@@ -496,9 +496,7 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
               )}
               {isLoading && <Loader size="xs" />}
             </Group>
-            <Text className="app-money" fw={700} size="lg">
-              {amountFormatter.format(headerTotal)} {editorCurrencyCode}
-            </Text>
+            <Group gap={6} wrap="nowrap"><Text className="app-money" fw={700} size="lg">{amountFormatter.format(headerTotal)}</Text><TableChip tone="source" value={editorCurrencyCode} /></Group>
             <Text size="xs" c="dimmed">
               {t('ПДВ')}: <span className="app-money app-money-meta">{amountFormatter.format(getNumber(sale.Order?.TotalVat) ?? 0)}</span>
             </Text>
@@ -659,7 +657,7 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
           setInvoiceTtnFile(null)
         }}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           <Text>{t('Перетворити рахунок на накладну?')}</Text>
           <SaleDocumentWarehouseSelect
             value={sale.ChangedToInvoice ? sale.RegistrarStorageId ?? null : selectedWarehouseId ?? sale.RegistrarStorageId ?? null}
@@ -702,11 +700,11 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
               onChange={setInvoiceTtnFile}
             />
           )}
-          <Group justify="flex-end">
+          <AppModalFooter>
             <Button
               color="gray"
               disabled={isConverting}
-              variant="subtle"
+              variant="default"
               onClick={() => {
                 setConvertOpen(false)
                 setInvoiceTtnFile(null)
@@ -729,7 +727,7 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
             >
               {t(fileMutation.reconciliationRequired ? 'Звірити накладну' : 'Зробити накладну')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
 
@@ -741,18 +739,18 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
         onClose={() => (isDeleting ? undefined : setDeletingItem(null))}
       >
         {deletingItem && (
-          <Stack gap="md">
+          <Stack className="app-compact-form" gap="md">
             <Text>
               {t('Видалити товар')} «{displayValue(deletingItem.Product?.NameUA || deletingItem.Product?.Name)}»?
             </Text>
-            <Group justify="flex-end">
-              <Button color="gray" disabled={isDeleting} variant="subtle" onClick={() => setDeletingItem(null)}>
+            <AppModalFooter>
+              <Button color="gray" disabled={isDeleting} variant="default" onClick={() => setDeletingItem(null)}>
                 {t('Скасувати')}
               </Button>
               <Button color="red" loading={isDeleting} onClick={confirmDelete}>
                 {t('Видалити')}
               </Button>
-            </Group>
+            </AppModalFooter>
           </Stack>
         )}
       </AppModal>
@@ -1020,7 +1018,7 @@ function OrderItemQtyForm({
   }
 
   return (
-    <Stack gap="md">
+    <Stack className="app-compact-form" gap="md">
       <Text size="sm" fw={600}>
         {displayValue(item.Product?.NameUA || item.Product?.Name)}
       </Text>
@@ -1033,14 +1031,14 @@ function OrderItemQtyForm({
         value={qty}
         onChange={setQty}
       />
-      <Group justify="flex-end">
-        <Button color="gray" disabled={isSaving} variant="subtle" onClick={onCancel}>
+      <AppModalFooter>
+        <Button color="gray" disabled={isSaving} variant="default" onClick={onCancel}>
           {t('Скасувати')}
         </Button>
         <Button disabled={!isValid} loading={isSaving} onClick={save}>
           {t('Зберегти')}
         </Button>
-      </Group>
+      </AppModalFooter>
     </Stack>
   )
 }
@@ -1175,7 +1173,7 @@ function AddProductForm({
   }
 
   return (
-    <Stack gap="md" className="sale-add-product">
+    <Stack gap={10} className="sale-add-product app-compact-form">
       <DocumentDetailLayout summary={null}>
       <DocumentDetailSection title={t('Товар')} stacked>
       <TextInput
@@ -1447,7 +1445,7 @@ function OnlineShopSaleReassignForm({
   }
 
   return (
-    <Stack gap="md">
+    <Stack className="app-compact-form" gap="md">
       <Select
         searchable
         clearable
@@ -1481,14 +1479,14 @@ function OnlineShopSaleReassignForm({
         value={selectedAgreement}
         onChange={setSelectedAgreement}
       />
-      <Group justify="flex-end">
-        <Button color="gray" disabled={isReassigning} variant="subtle" onClick={onCancel}>
+      <AppModalFooter>
+        <Button color="gray" disabled={isReassigning} variant="default" onClick={onCancel}>
           {t('Скасувати')}
         </Button>
         <Button disabled={!selectedAgreement} loading={isReassigning} onClick={reassign}>
           {t('Переназначити')}
         </Button>
-      </Group>
+      </AppModalFooter>
     </Stack>
   )
 }
@@ -1585,9 +1583,9 @@ function ClientTab({ canReassign, sale, onSwitched }: { canReassign: boolean; on
     <Stack gap="md">
       <Stack gap={6}>
         <DetailRow label={t('Клієнт')} value={getClientName(sale)} />
-        <DetailRow label={t('Організація')} value={sale.ClientAgreement?.Agreement?.Organization?.Name} />
-        <DetailRow label={t('Валюта')} value={sale.ClientAgreement?.Agreement?.Currency?.Code} />
-        <DetailRow label={t('Менеджер')} value={getUserName(sale)} />
+        <div className="app-detail-field"><span>{t('Організація')}</span><TableChip tone="product" value={getOrganizationDisplayName(sale.ClientAgreement?.Agreement?.Organization)} /></div>
+        <div className="app-detail-field"><span>{t('Валюта')}</span><TableChip tone="source" value={sale.ClientAgreement?.Agreement?.Currency?.Code} /></div>
+        <div className="app-detail-field"><span>{t('Менеджер')}</span><TableChip tone="warning" value={getUserName(sale)} /></div>
         <Group justify="space-between" align="flex-start" gap="lg" wrap="nowrap">
           <Text size="sm" c="dimmed">
             {t('Перевізник')}

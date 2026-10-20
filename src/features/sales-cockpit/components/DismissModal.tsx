@@ -2,7 +2,7 @@ import { Button, Chip, Group, Stack, Text, Textarea } from '@mantine/core'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import type { CockpitTask } from '../types'
 
 const QUICK_REASONS = ['Не актуально', 'Клієнт відмовився', 'Дублює іншу задачу']
@@ -38,7 +38,7 @@ export function DismissModal({
         }
       }}
     >
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap="md">
         <Text size="sm">
           {task?.title || t('Завдання')}
           {task?.client_name ? ` — ${task.client_name}` : ''}
@@ -73,8 +73,8 @@ export function DismissModal({
           onChange={(event) => setReason(event.currentTarget.value)}
         />
 
-        <Group justify="flex-end">
-          <Button color="gray" disabled={saving} variant="light" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" disabled={saving} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button
@@ -88,7 +88,7 @@ export function DismissModal({
           >
             {t('Не актуально')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

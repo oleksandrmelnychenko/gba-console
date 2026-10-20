@@ -6,15 +6,13 @@ import {
   Button,
   Checkbox,
   FileInput,
-  Group,
   NumberInput,
   Select,
   SimpleGrid,
   Stack,
   Text,
   Textarea,
-  TextInput,
-} from '@mantine/core'
+  TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, FileText, Plus, Save, Upload, X } from 'lucide-react'
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef } from 'react'
@@ -24,7 +22,7 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
@@ -976,8 +974,8 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
         </Stack>
       </form>
 
-      <AppModal centered opened={itemEditor.opened} size="xl" title={itemEditor.mode === 'edit' ? t('Редагувати позицію') : t('Додати позицію')} onClose={closeItemEditor}>
-        <Stack className="consumable-order-item-modal" gap="md">
+      <AppModal centered opened={itemEditor.opened} size={760} title={itemEditor.mode === 'edit' ? t('Редагувати позицію') : t('Додати позицію')} onClose={closeItemEditor}>
+        <Stack className="app-compact-form consumable-order-item-modal" gap="md">
           {itemEditor.error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {itemEditor.error}
@@ -1134,14 +1132,14 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
             />
           </SimpleGrid>
 
-          <Group className="consumable-order-item-modal__actions" justify="flex-end">
+          <AppModalFooter className="consumable-order-item-modal__actions">
             <Button disabled={isMutationLocked} leftSection={<X size={16} />} variant="default" onClick={closeItemEditor}>
               {t('Скасувати')}
             </Button>
             <Button color={CREATE_ACTION_COLOR} disabled={isMutationLocked} leftSection={<Save size={16} />} onClick={() => void saveEditorItem()}>
               {t('Зберегти')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
     </AppDrawer>

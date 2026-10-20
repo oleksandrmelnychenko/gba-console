@@ -1,4 +1,4 @@
-import { Alert, Button, Group, Stack, Text, Tooltip } from '@mantine/core'
+import { Alert, Button, Stack, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus, RefreshCw, RotateCcw } from 'lucide-react'
 import { useEffect, useRef } from 'react'
@@ -7,7 +7,7 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { PagePermissionBoundary } from '../../auth/components/PagePermissionBoundary'
 import { usePermissions } from '../../auth/usePermissions'
@@ -329,16 +329,16 @@ function OffersPageContent() {
         onClose={() => (isConfirming ? undefined : setConfirmState(null))}
       >
         {confirmState && (
-          <Stack gap="md">
+          <Stack className="app-compact-form" gap="md">
             <Text>{confirmState.message}</Text>
-            <Group justify="flex-end">
-              <Button color="gray" disabled={isConfirming} variant="subtle" onClick={() => setConfirmState(null)}>
+            <AppModalFooter>
+              <Button color="gray" disabled={isConfirming} variant="default" onClick={() => setConfirmState(null)}>
                 {t('Скасувати')}
               </Button>
               <Button color="red" loading={isConfirming} onClick={runConfirm}>
                 {confirmState.confirmLabel}
               </Button>
-            </Group>
+            </AppModalFooter>
           </Stack>
         )}
       </AppModal>

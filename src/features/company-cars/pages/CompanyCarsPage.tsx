@@ -1,3 +1,5 @@
+import { TableChip } from '../../../shared/ui/TableChip'
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   Alert,
   Button,
@@ -378,7 +380,7 @@ function useCompanyCarColumns({
         width: 200,
         minWidth: 140,
         accessor: (companyCar) => companyCar.Organization?.Name,
-        cell: (companyCar) => <CompanyCarTextCell value={companyCar.Organization?.Name} />,
+        cell: (companyCar) => <TableChip tone="product" value={getOrganizationDisplayName(companyCar.Organization)} />,
       },
       {
         id: 'actions',

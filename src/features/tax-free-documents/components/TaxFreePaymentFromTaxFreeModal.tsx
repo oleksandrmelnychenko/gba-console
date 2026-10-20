@@ -1,4 +1,5 @@
-import { Alert, Button, Grid, Group, NumberInput, Select, Stack, Text, TextInput, Textarea } from '@mantine/core'
+import { TableChip } from '../../../shared/ui/TableChip'
+import { Alert, Button, Card, Group, NumberInput, Select, Stack, Text, TextInput, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -6,7 +7,7 @@ import { usePermissions } from '../../auth/usePermissions'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import {
   ACCOUNTING_COMMENT_MAX_LENGTH,
@@ -310,16 +311,14 @@ export function TaxFreePaymentFromTaxFreeModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={t('Створити прибутковий касовий ордер')} onClose={onClose}>
-      <Stack gap="md">
+    <AppModal className="app-compact-form" centered opened={opened} size={760} title={t('Створити прибутковий касовий ордер')} onClose={onClose}>
+      <Stack gap={10}>
         {document ? (
           <Stack gap={2}>
             <Text size="sm">
               {t('Клієнт')}: {getTaxFreeClient(document)}
             </Text>
-            <Text size="sm" c="dimmed">
-              {t('Tax Free')}: {document.Number || document.NetUid}
-            </Text>
+            <Group gap={6}><Text size="xs" c="gray.9">{t('Tax Free')}</Text><TableChip tone="document" value={document.Number || document.NetUid} /></Group>
             <Text size="sm">
               {t('Сума')}: <span className="app-money">{formatTaxFreeAmountPl(document.VatAmountPl)}</span>
             </Text>
@@ -332,91 +331,78 @@ export function TaxFreePaymentFromTaxFreeModal({
           </Alert>
         )}
 
-        <Grid gap="sm">
-          <Grid.Col span={{ base: 12, sm: 6 }}>
-            <Select
-              data={toEntityOptions(organizations)}
-              disabled={!organizations.length || isLoading || isSaving}
-              label={t('Організація')}
-              searchable
-              value={form.organizationValue || null}
-              onChange={(value) => updateForm({ organizationValue: value || '' })}
-            />
-          </Grid.Col>
-
-          <Grid.Col span={{ base: 12, sm: 6 }}>
-            <Select
-              data={toAgreementOptions(clientAgreements)}
-              disabled={!clientAgreements.length || isLoading || isSaving}
-              label={t('Договір')}
-              searchable
-              value={form.selectedAgreementValue || null}
-              onChange={(value) => updateForm({ selectedAgreementValue: value || '' })}
-            />
-          </Grid.Col>
-
-          <Grid.Col span={{ base: 12, sm: 6 }}>
-            <Select
-              data={toEntityOptions(paymentRegisters)}
-              disabled={!paymentRegisters.length || isLoading || isSaving}
-              label={t('Каса / рахунок')}
-              searchable
-              value={form.paymentRegisterValue || null}
-              onChange={(value) => updateForm({ paymentRegisterValue: value || '' })}
-            />
-          </Grid.Col>
-          <Grid.Col span={{ base: 12, sm: 6 }}>
-            <TextInput disabled label={t('Валюта')} value={currencyLabel} />
-          </Grid.Col>
-
-          <Grid.Col span={{ base: 12, sm: 6 }}>
-            <NumberInput
-              allowNegative={false}
-              decimalScale={2}
-              disabled={isLoading || isSaving}
-              label={t('Сума')}
-              min={0}
-              value={form.amount}
-              onChange={(value) => updateForm({ amount: toNumber(value) })}
-            />
-          </Grid.Col>
-
-          <Grid.Col span={{ base: 12, sm: 6 }}>
-            <TextInput
-              disabled={isLoading || isSaving}
-              label={t('Дата')}
-              max={dateBounds?.max}
-              min={dateBounds?.min}
-              type="date"
-              value={form.fromDate}
-              onChange={(event) => updateForm({ fromDate: event.currentTarget.value })}
-            />
-          </Grid.Col>
-
-          <Grid.Col span={{ base: 12, sm: 9 }}>
-            <SearchableSelect
-              data={toUniqueLabels(paymentMovements)}
-              disabled={isLoading || isSaving}
-              label={t('Стаття руху коштів')}
-              value={form.movementSearch}
-              onChange={(value) => updateForm({ movementSearch: value, selectedMovementValue: '' })}
-              onOptionSubmit={handleMovementSubmit}
-            />
-          </Grid.Col>
-          {canCreateCashflowArticle && <Grid.Col span={{ base: 12, sm: 3 }}>
-            <Button
-              disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading || isSaving}
-              fullWidth
-              leftSection={<Plus size={16} />}
-              mt={24}
-              type="button"
-              onClick={() => void handleCreateMovement()}
-            >
-              {t('Створити статтю')}
-            </Button>
-          </Grid.Col>}
-
-          <Grid.Col span={12}>
+        <Card className="app-section-card" withBorder padding={12} radius="md">
+          <Stack gap={10}>
+            <Group align="end" gap={10}>
+              <Select w={220} maw="100%"
+                data={toEntityOptions(organizations)}
+                disabled={!organizations.length || isLoading || isSaving}
+                label={t('Організація')}
+                searchable
+                value={form.organizationValue || null}
+                onChange={(value) => updateForm({ organizationValue: value || '' })}
+              />
+              <Select w={220} maw="100%"
+                data={toAgreementOptions(clientAgreements)}
+                disabled={!clientAgreements.length || isLoading || isSaving}
+                label={t('Договір')}
+                searchable
+                value={form.selectedAgreementValue || null}
+                onChange={(value) => updateForm({ selectedAgreementValue: value || '' })}
+              />
+              <Select w={220} maw="100%"
+                data={toEntityOptions(paymentRegisters)}
+                disabled={!paymentRegisters.length || isLoading || isSaving}
+                label={t('Каса / рахунок')}
+                searchable
+                value={form.paymentRegisterValue || null}
+                onChange={(value) => updateForm({ paymentRegisterValue: value || '' })}
+              />
+            </Group>
+            <Group align="end" gap={10}>
+              <NumberInput w={160} maw="100%"
+                allowNegative={false}
+                decimalScale={2}
+                disabled={isLoading || isSaving}
+                label={t('Сума')}
+                min={0}
+                value={form.amount}
+                onChange={(value) => updateForm({ amount: toNumber(value) })}
+              />
+              <TextInput w={170} maw="100%"
+                disabled={isLoading || isSaving}
+                label={t('Дата')}
+                max={dateBounds?.max}
+                min={dateBounds?.min}
+                type="date"
+                value={form.fromDate}
+                onChange={(event) => updateForm({ fromDate: event.currentTarget.value })}
+              />
+              <div>
+                <Text c="gray.9" size="xs" fw={500} mb={4}>{t('Валюта')}</Text>
+                <TableChip tone="source" value={currencyLabel} />
+              </div>
+            </Group>
+            <Group align="end" gap={10}>
+              <SearchableSelect w={360} maw="100%"
+                data={toUniqueLabels(paymentMovements)}
+                disabled={isLoading || isSaving}
+                label={t('Стаття руху коштів')}
+                value={form.movementSearch}
+                onChange={(value) => updateForm({ movementSearch: value, selectedMovementValue: '' })}
+                onOptionSubmit={handleMovementSubmit}
+              />
+              {canCreateCashflowArticle && (
+                <Button variant="default"
+                  disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading || isSaving}
+                  leftSection={<Plus size={16} />}
+                  type="button"
+                  onClick={() => void handleCreateMovement()}
+                >
+                  {t('Створити статтю')}
+                </Button>
+              )}
+            </Group>
             <Textarea
               disabled={isLoading || isSaving}
               label={t('Коментар')}
@@ -425,17 +411,17 @@ export function TaxFreePaymentFromTaxFreeModal({
               value={form.comment}
               onChange={(event) => updateForm({ comment: event.currentTarget.value })}
             />
-          </Grid.Col>
-        </Grid>
+          </Stack>
+        </Card>
 
-        <Group justify="flex-end">
-          <Button color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" disabled={isSaving} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button disabled={isLoading || !canCreateIncome} loading={isSaving} onClick={() => void handleSubmit()}>
             {t('Створити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

@@ -1,3 +1,4 @@
+import { AppModalFooter } from '../../../shared/ui/AppModal'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -902,8 +903,8 @@ function BasketCartWorkflow() {
         }}
       />
 
-      <AppModal centered opened={canAssembleDocument && isCreateModalOpen} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Створити документ')}</span>} onClose={closeCreateModal}>
-        <Stack gap="md">
+      <AppModal centered opened={canAssembleDocument && isCreateModalOpen} size={560} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Створити документ')}</span>} onClose={closeCreateModal}>
+        <Stack className="app-compact-form" gap="md">
           <DocumentTargetControls
             disabled={isCreatingDocument || isReferenceLoading}
             documentState={documentState}
@@ -912,27 +913,25 @@ function BasketCartWorkflow() {
             t={t}
             onChange={setDocumentState}
           />
-          <Group justify="space-between">
+          <AppModalFooter className="app-modal-footer--split">
             <Text c="dimmed" size="sm">
               {t('Позицій')}: {destinationItems.length}
             </Text>
             <Group gap="xs">
-              <Button color="gray" disabled={isCreatingDocument} variant="light" onClick={closeCreateModal}>
+              <Button color="gray" disabled={isCreatingDocument} variant="default" onClick={closeCreateModal}>
                 {t('Скасувати')}
               </Button>
               <Button color={CREATE_ACTION_COLOR} loading={isCreatingDocument} onClick={createDocument}>
                 {isCreatingDocument ? t('Створення') : t('Створити')}
               </Button>
             </Group>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
 
       <AppModal centered opened={canEditReservation && Boolean(reserveItem)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Резерв')}</span>} onClose={() => setReserveItem(null)}>
-        <Stack gap="md">
-          <Text size="sm">
-            {reserveItem?.Product?.VendorCode} {reserveItem?.Product?.Name}
-          </Text>
+        <Stack className="app-compact-form" gap="md">
+          <Group gap={6}><TableChip tone="product" value={reserveItem?.Product?.VendorCode} /><Text size="sm">{reserveItem?.Product?.Name}</Text></Group>
           <NumberInput
             allowDecimal={false}
             label={t('Зарезервована К-сть')}
@@ -940,14 +939,14 @@ function BasketCartWorkflow() {
             value={reserveQty}
             onChange={(value) => setReserveQty(toPositiveNumberOrZero(value))}
           />
-          <Group justify="flex-end">
-            <Button disabled={isUpdatingReserve} variant="subtle" onClick={() => setReserveItem(null)}>
+          <AppModalFooter>
+            <Button disabled={isUpdatingReserve} variant="default" onClick={() => setReserveItem(null)}>
               {t('Скасувати')}
             </Button>
             <Button color={CREATE_ACTION_COLOR} loading={isUpdatingReserve} onClick={saveReserveQty}>
               {t('Зберегти')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
     </Stack>
@@ -1431,8 +1430,8 @@ function SalesWorkflowTab() {
         </Stack>
       </Card>
 
-      <AppModal centered opened={canAssembleDocument && isCreateModalOpen} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Створити документ')}</span>} onClose={closeCreateModal}>
-        <Stack gap="md">
+      <AppModal centered opened={canAssembleDocument && isCreateModalOpen} size={560} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Створити документ')}</span>} onClose={closeCreateModal}>
+        <Stack className="app-compact-form" gap="md">
           <DocumentTargetControls
             disabled={isCreatingDocument || isReferenceLoading}
             documentState={documentState}
@@ -1441,19 +1440,19 @@ function SalesWorkflowTab() {
             t={t}
             onChange={setDocumentState}
           />
-          <Group justify="space-between">
+          <AppModalFooter className="app-modal-footer--split">
             <Text c="dimmed" size="sm">
               {t('Фактур')}: {destinationSales.length}
             </Text>
             <Group gap="xs">
-              <Button color="gray" disabled={isCreatingDocument} variant="light" onClick={closeCreateModal}>
+              <Button color="gray" disabled={isCreatingDocument} variant="default" onClick={closeCreateModal}>
                 {t('Скасувати')}
               </Button>
               <Button color={CREATE_ACTION_COLOR} loading={isCreatingDocument} onClick={createSalesDocument}>
                 {isCreatingDocument ? t('Створення') : t('Створити')}
               </Button>
             </Group>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
 

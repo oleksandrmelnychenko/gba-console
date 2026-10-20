@@ -1691,7 +1691,7 @@ function useProductIncomeDocumentColumns({
         width: 160,
         minWidth: 132,
         accessor: (row) => getEntityName(row.document.User),
-        cell: (row) => displayValue(getEntityName(row.document.User)),
+        cell: (row) => <TableChip tone="warning" value={displayValue(getEntityName(row.document.User))} />,
       },
       {
         id: 'comment',
@@ -1929,7 +1929,7 @@ function useRemainingConsignmentColumns({
         width: 94,
         minWidth: 82,
         accessor: (item) => item.CurrencyName,
-        cell: (item) => <TableChip tone="neutral" value={displayValue(item.CurrencyName)} />,
+        cell: (item) => <TableChip tone="source" value={displayValue(item.CurrencyName)} />,
       },
       {
         id: 'incomeInvoiceNumber',

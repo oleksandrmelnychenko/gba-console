@@ -434,7 +434,7 @@ export function PricingPanel({
   }
 
   const analystsSection = (
-    <Stack gap="lg">
+    <Stack className="app-compact-form" gap={10}>
       <Card className="app-section-card" withBorder padding="md" radius="md">
         <ManagerPicker
           client={client}
@@ -455,7 +455,7 @@ export function PricingPanel({
   )
 
   const agreementsSection = (
-    <Stack gap="lg">
+    <Stack className="app-compact-form" gap={10}>
       <Card className="app-section-card" withBorder padding="md" radius="md">
         <ClientAgreementsPanel
           agreements={clientAgreements}
@@ -506,7 +506,7 @@ export function PricingPanel({
   )
 
   return (
-    <Stack gap="lg">
+    <Stack className="app-compact-form" gap={10}>
       {lookupsError && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {lookupsError}
@@ -518,7 +518,7 @@ export function PricingPanel({
       ) : section === 'agreements' ? (
         agreementsSection
       ) : (
-        <Grid gap="lg">
+        <Grid gap={10}>
           <Grid.Col span={{ base: 12, md: 6 }}>{analystsSection}</Grid.Col>
           <Grid.Col span={{ base: 12, md: 6 }}>{agreementsSection}</Grid.Col>
         </Grid>

@@ -1,3 +1,5 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
   Badge,
@@ -32,7 +34,7 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -514,11 +516,8 @@ function PaymentAccountFormPageContent() {
   }
 
   return (
-    <AppDrawer
-      className="payment-account-form-drawer"
-      opened
-      position="right"
-      size="wide"
+    <PaymentAccountFormShell
+      isEditMode={isEditMode}
       title={
         <span style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
           {isEditMode ? t('Редагування рахунку') : t('Новий рахунок')}
@@ -584,7 +583,26 @@ function PaymentAccountFormPageContent() {
         />
       )}
     </Stack>
-    </AppDrawer>
+    </PaymentAccountFormShell>
+  )
+}
+
+function PaymentAccountFormShell({ children, footer, isEditMode, onClose, title }: {
+  children: ReactNode
+  footer: ReactNode
+  isEditMode: boolean
+  onClose: () => void
+  title: ReactNode
+}) {
+  if (isEditMode) {
+    return <AppDrawer className="payment-account-form-drawer app-compact-form" opened position="right" size="wide" title={title} onClose={onClose} footer={footer}>{children}</AppDrawer>
+  }
+
+  return (
+    <AppModal className="payment-account-create-modal app-compact-form" opened size={900} title={title} onClose={onClose}>
+      <Card className="app-section-card" withBorder padding={12} radius="md">{children}</Card>
+      <AppModalFooter>{footer}</AppModalFooter>
+    </AppModal>
   )
 }
 
@@ -753,7 +771,7 @@ function PaymentAccountFormCard({
 
   return (
     <form id="payment-account-form" onSubmit={onSubmit}>
-      <Stack gap="md">
+      <Stack gap={10}>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
@@ -779,7 +797,7 @@ function PaymentAccountFormCard({
           onChange={onSetAccountType}
         />
 
-        <SimpleGrid cols={{ base: 1, md: 2 }}>
+        <SimpleGrid className="payment-account-fields" cols={{ base: 1, md: 2 }} spacing={10} verticalSpacing={10}>
           <TextInput
             disabled={isFormDisabled}
             label={t('Назва')}
@@ -858,7 +876,7 @@ function PaymentAccountFormHeader({
 
   return (
     <Group justify="flex-end" gap="xs" wrap="wrap">
-      <Button color="gray" leftSection={<ArrowLeft size={16} />} type="button" variant="light" onClick={onCancel}>
+      <Button color="gray" leftSection={<ArrowLeft size={16} />} type="button" variant="default" onClick={onCancel}>
         {t('Назад')}
       </Button>
       {isEditMode && canSave && !isEditing && (
@@ -873,7 +891,7 @@ function PaymentAccountFormHeader({
         </Button>
       )}
       {isEditMode && isEditing && (
-        <Button color="gray" disabled={isLoading || isSaving} type="button" variant="light" onClick={onCancelEdit}>
+        <Button color="gray" disabled={isLoading || isSaving} type="button" variant="default" onClick={onCancelEdit}>
           {t('Скасувати')}
         </Button>
       )}
@@ -909,7 +927,7 @@ function BankFields({
   const { t } = useI18n()
 
   return (
-    <SimpleGrid cols={{ base: 1, md: 2 }}>
+    <SimpleGrid className="payment-account-fields" cols={{ base: 1, md: 2 }} spacing={10} verticalSpacing={10}>
       <Select
         clearable
         data={bankOptions}
@@ -926,7 +944,7 @@ function BankFields({
           })
         }}
       />
-      <TextInput
+      <TextInput maw={170}
         disabled={disabled}
         label={t('Дата відкриття')}
         type="date"
@@ -963,7 +981,7 @@ function CardFields({
   const { t } = useI18n()
 
   return (
-    <SimpleGrid cols={{ base: 1, md: 2 }}>
+    <SimpleGrid className="payment-account-fields" cols={{ base: 1, md: 2 }} spacing={10} verticalSpacing={10}>
       <Select
         clearable
         data={bankOptions}
@@ -1033,7 +1051,7 @@ function CurrencySelector({
           {t('Валюти відсутні')}
         </Text>
       )}
-      <SimpleGrid cols={isEditMode ? 1 : { base: 1, sm: 2, lg: 3 }}>
+      <SimpleGrid className={isEditMode ? undefined : 'payment-account-create-currencies'} cols={isEditMode ? 1 : { base: 1, sm: 2, lg: 3 }}>
         {visibleDrafts.map((draft) => {
           const index = drafts.indexOf(draft)
           const label = draft.currency.Code || draft.currency.Name || t('Валюта')
@@ -1047,16 +1065,14 @@ function CurrencySelector({
                 radius="sm"
                 padding="sm"
               >
-                <Group justify="space-between" gap="md" wrap="nowrap">
+                <Group justify="space-between" gap={8}>
                   <Stack gap={2}>
-                    <Text className="payment-account-currency-summary__code" fw={600} size="sm">
-                      {label}
-                    </Text>
+                    <TableChip tone="source" value={label} />
                     <Text c="dimmed" size="xs">
                       {draft.currency.Name || label}
                     </Text>
                   </Stack>
-                  <Group gap="md" wrap="nowrap">
+                  <Group gap={8}>
                     <Text className="payment-account-currency-summary__amount">
                       {formatMoney(parseAmount(draft.amount))}
                     </Text>
@@ -1079,24 +1095,24 @@ function CurrencySelector({
           }
 
           return (
-            <Card key={draft.currency.NetUid || draft.currency.Id || draft.currency.Code || index} withBorder radius="sm" padding="sm">
-              <Stack gap="xs">
+            <Card className="payment-account-create-currency" key={draft.currency.NetUid || draft.currency.Id || draft.currency.Code || index} withBorder radius="sm" padding={8}>
+              <Group gap={8} wrap="nowrap">
                 <Checkbox
                   checked={draft.selected}
                   disabled={isDisabled}
-                  label={label}
+                  label={<TableChip tone="source" value={label} />}
                   onChange={(event) => onChange(index, { selected: event.currentTarget.checked })}
                 />
-                <TextInput
+                <TextInput maw={160}
                   classNames={{ input: 'app-money' }}
                   disabled={isDisabled || !draft.selected}
                   inputMode="decimal"
-                  label={t('Сума')}
+                  aria-label={`${t('Сума')} ${label}`}
                   maxLength={14}
                   value={draft.amount}
                   onChange={(event) => onChange(index, { amount: event.currentTarget.value.slice(0, 14) })}
                 />
-              </Stack>
+              </Group>
             </Card>
           )
         })}
@@ -1223,8 +1239,8 @@ export function PaymentAccountActivityPanel({
 
           <Group align="end" className="app-filter-bar payment-account-activity__toolbar" justify="space-between" wrap="wrap">
             <Group align="end" className="payment-account-activity__dates" gap="sm" wrap="nowrap">
-              <TextInput label={t('З')} type="date" value={from} w={150} onChange={(event) => onFromChange(event.currentTarget.value)} />
-              <TextInput label={t('По')} type="date" value={to} w={150} onChange={(event) => onToChange(event.currentTarget.value)} />
+              <TextInput maw={170} label={t('З')} type="date" value={from} w={150} onChange={(event) => onFromChange(event.currentTarget.value)} />
+              <TextInput maw={170} label={t('По')} type="date" value={to} w={150} onChange={(event) => onToChange(event.currentTarget.value)} />
             </Group>
             <Group className="payment-account-activity__actions" gap="xs">
               <Button disabled={!account.NetUid} leftSection={<ArrowDownLeft size={16} />} size="xs" variant="default" onClick={onOpenIncome}>
@@ -1323,7 +1339,7 @@ export function PaymentAccountActivityPanel({
 
             <Tabs.Panel value="currency" pt="md">
               <Stack gap="md">
-                <Select
+                <Select maw={140}
                   data={currencyOptions}
                   label={t('Валюта')}
                   value={selectedCurrencyRegister ? getEntityValue(selectedCurrencyRegister) : null}
@@ -1478,7 +1494,7 @@ export function PaymentAccountTransferModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={t('Новий переказ')} onClose={onClose}>
+    <AppModal className="app-compact-form payment-account-transaction-modal" centered opened={opened} size={840} title={t('Новий переказ')} onClose={onClose}>
       <form onSubmit={handleSubmit}>
         <Stack gap="md">
           {error && (
@@ -1486,106 +1502,114 @@ export function PaymentAccountTransferModal({
               {error}
             </Alert>
           )}
-          <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <Select
-              data={toCurrencyRegisterSelectOptions(currencyRegisters)}
-              disabled={isLoading || isSubmitting}
-              label={t('З валюти')}
-              required
-              searchable
-              value={draft.fromPaymentCurrencyRegisterNetId || null}
-              onChange={(value) => setDraft((current) => ({
-                ...current,
-                fromPaymentCurrencyRegisterNetId: value || '',
-                toPaymentCurrencyRegisterNetId: '',
-              }))}
-            />
-            <Select
-              data={toCurrencyRegisterSelectOptions(destinationRegisters)}
-              disabled={!selectedFromRegister || isLoading || isSubmitting}
-              label={t('На рахунок')}
-              required
-              searchable
-              value={draft.toPaymentCurrencyRegisterNetId || null}
-              onChange={(value) => setDraft((current) => ({ ...current, toPaymentCurrencyRegisterNetId: value || '' }))}
-            />
-            <TextInput
-              classNames={{ input: 'app-money' }}
-              disabled={isSubmitting}
-              inputMode="decimal"
-              label={t('Сума')}
-              required
-              value={draft.amount}
-              onChange={(event) => {
-                const nextAmount = event.currentTarget.value
-                setDraft((current) => ({ ...current, amount: nextAmount }))
-              }}
-            />
-            <Select
-              data={[
-                { label: t('Переказ коштів'), value: String(TransferOperationType.FundsTransfer) },
-                { label: t('Отримання/внесення готівки в банк'), value: String(TransferOperationType.CashBankTransfer) },
-                { label: t('Переказ коштів на інший рахунок'), value: String(TransferOperationType.PaymentRegisterTransfer) },
-              ]}
-              disabled={isSubmitting}
-              label={t('Тип операції')}
-              required
-              value={String(draft.typeOfOperation)}
-              onChange={(value) => setDraft((current) => ({
-                ...current,
-                typeOfOperation: Number(value) as TransferOperationType,
-              }))}
-            />
-            <TextInput
-              disabled={isSubmitting}
-              label={t('Дата')}
-              required
-              type="date"
-              value={draft.fromDate}
-              onChange={(event) => {
-                const nextFromDate = event.currentTarget.value
-                setDraft((current) => ({ ...current, fromDate: nextFromDate }))
-              }}
-            />
-            <TextInput
-              disabled={isSubmitting}
-              label={t('Час')}
-              required
-              type="time"
-              value={draft.time}
-              onChange={(event) => {
-                const nextTime = event.currentTarget.value
-                setDraft((current) => ({ ...current, time: nextTime }))
-              }}
-            />
-            <Select
-              data={toPaymentMovementOptions(movements)}
-              disabled={isLoading || isSubmitting}
-              label={t('Стаття руху')}
-              required
-              searchable
-              value={draft.movementNetId || null}
-              onChange={(value) => setDraft((current) => ({ ...current, movementNetId: value || '' }))}
-            />
-            <TextInput
-              disabled={isSubmitting}
-              label={t('Коментар')}
-              maxLength={PAYMENT_COMMENT_MAX_LENGTH}
-              value={draft.comment}
-              onChange={(event) => {
-                const nextComment = event.currentTarget.value
-                setDraft((current) => ({ ...current, comment: nextComment }))
-              }}
-            />
-          </SimpleGrid>
-          <Group justify="flex-end">
-            <Button color="gray" disabled={isSubmitting} type="button" variant="light" onClick={onClose}>
+          <Card className="app-section-card" withBorder padding={12} radius="md">
+            <div className="payment-account-transaction-row">
+              <Select
+                data={toCurrencyRegisterSelectOptions(currencyRegisters)}
+                disabled={isLoading || isSubmitting}
+                label={t('З валюти')}
+                required
+                searchable
+                value={draft.fromPaymentCurrencyRegisterNetId || null}
+                onChange={(value) => setDraft((current) => ({
+                  ...current,
+                  fromPaymentCurrencyRegisterNetId: value || '',
+                  toPaymentCurrencyRegisterNetId: '',
+                }))}
+              />
+              <Select
+                data={toCurrencyRegisterSelectOptions(destinationRegisters)}
+                disabled={!selectedFromRegister || isLoading || isSubmitting}
+                label={t('На рахунок')}
+                required
+                searchable
+                value={draft.toPaymentCurrencyRegisterNetId || null}
+                onChange={(value) => setDraft((current) => ({ ...current, toPaymentCurrencyRegisterNetId: value || '' }))}
+              />
+            </div>
+            <div className="payment-account-transaction-row">
+              <Select
+                data={[
+                  { label: t('Переказ коштів'), value: String(TransferOperationType.FundsTransfer) },
+                  { label: t('Отримання/внесення готівки в банк'), value: String(TransferOperationType.CashBankTransfer) },
+                  { label: t('Переказ коштів на інший рахунок'), value: String(TransferOperationType.PaymentRegisterTransfer) },
+                ]}
+                disabled={isSubmitting}
+                label={t('Тип операції')}
+                required
+                value={String(draft.typeOfOperation)}
+                onChange={(value) => setDraft((current) => ({
+                  ...current,
+                  typeOfOperation: Number(value) as TransferOperationType,
+                }))}
+              />
+              <Select
+                data={toPaymentMovementOptions(movements)}
+                disabled={isLoading || isSubmitting}
+                label={t('Стаття руху')}
+                required
+                searchable
+                value={draft.movementNetId || null}
+                onChange={(value) => setDraft((current) => ({ ...current, movementNetId: value || '' }))}
+              />
+            </div>
+            <div className="payment-account-transaction-row">
+              <TextInput maw={160}
+                classNames={{ input: 'app-money' }}
+                disabled={isSubmitting}
+                inputMode="decimal"
+                label={t('Сума')}
+                required
+                value={draft.amount}
+                onChange={(event) => {
+                  const nextAmount = event.currentTarget.value
+                  setDraft((current) => ({ ...current, amount: nextAmount }))
+                }}
+              />
+              <TextInput maw={170}
+                disabled={isSubmitting}
+                label={t('Дата')}
+                required
+                type="date"
+                value={draft.fromDate}
+                onChange={(event) => {
+                  const nextFromDate = event.currentTarget.value
+                  setDraft((current) => ({ ...current, fromDate: nextFromDate }))
+                }}
+              />
+              <TextInput maw={110}
+                disabled={isSubmitting}
+                label={t('Час')}
+                required
+                type="time"
+                value={draft.time}
+                onChange={(event) => {
+                  const nextTime = event.currentTarget.value
+                  setDraft((current) => ({ ...current, time: nextTime }))
+                }}
+              />
+            </div>
+            <div className="payment-account-transaction-row">
+              <TextInput
+                disabled={isSubmitting}
+                label={t('Коментар')}
+                maxLength={PAYMENT_COMMENT_MAX_LENGTH}
+                value={draft.comment}
+                onChange={(event) => {
+                  const nextComment = event.currentTarget.value
+                  setDraft((current) => ({ ...current, comment: nextComment }))
+                }}
+              />
+            </div>
+          </Card>
+          <AppModalFooter>
+            <Button color="gray" disabled={isSubmitting} type="button" variant="default" onClick={onClose}>
               {t('Скасувати')}
             </Button>
             <Button color={CREATE_ACTION_COLOR} disabled={!canCreate} leftSection={<ArrowLeftRight size={16} />} loading={isSubmitting} type="submit">
               {t('Створити')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </form>
     </AppModal>
@@ -1822,7 +1846,7 @@ export function PaymentAccountExchangeModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={t('Новий обмін валют')} onClose={onClose}>
+    <AppModal className="app-compact-form payment-account-transaction-modal" centered opened={opened} size={840} title={t('Новий обмін валют')} onClose={onClose}>
       <form onSubmit={handleSubmit}>
         <Stack gap="md">
           {error && (
@@ -1830,140 +1854,148 @@ export function PaymentAccountExchangeModal({
               {error}
             </Alert>
           )}
-          <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <Select
-              data={toCurrencyRegisterSelectOptions(currencyRegisters)}
-              disabled={isLoading || isSubmitting}
-              label={t('З валюти')}
-              required
-              searchable
-              value={draft.fromPaymentCurrencyRegisterNetId || null}
-              onChange={(value) => setDraft((current) => ({
-                ...current,
-                currencyTraderNetId: '',
-                exchangeRate: '',
-                fromPaymentCurrencyRegisterNetId: value || '',
-                toPaymentCurrencyRegisterNetId: '',
-              }))}
-            />
-            <Select
-              data={toCurrencyRegisterSelectOptions(destinationRegisters)}
-              disabled={!selectedFromRegister || isLoading || isSubmitting}
-              label={t('У валюту')}
-              required
-              searchable
-              value={draft.toPaymentCurrencyRegisterNetId || null}
-              onChange={(value) => setDraft((current) => ({
-                ...current,
-                currencyTraderNetId: '',
-                exchangeRate: '',
-                toPaymentCurrencyRegisterNetId: value || '',
-              }))}
-            />
-            <TextInput
-              classNames={{ input: 'app-money' }}
-              disabled={isSubmitting}
-              inputMode="decimal"
-              label={t('Сума')}
-              required
-              value={draft.amount}
-              onChange={(event) => {
-                const nextAmount = event.currentTarget.value
-                setDraft((current) => ({ ...current, amount: nextAmount }))
-              }}
-            />
-            <Select
-              data={exchangeTraderOptions}
-              disabled={!selectedFromRegister || !selectedToRegister || isLoading || isLoadingTraders || isSubmitting}
-              label={t('Курс трейдера')}
-              searchable
-              value={draft.currencyTraderNetId || null}
-              onChange={(value) => {
-                const nextTrader = findCurrencyTrader(currencyTraders, value || '')
-                const nextRate = getTraderExchangeRate(nextTrader, exchangeRateCurrencyCode)
-
-                setDraft((current) => ({
-                  ...current,
-                  currencyTraderNetId: value || '',
-                  exchangeRate: nextRate ? String(nextRate.ExchangeRate) : current.exchangeRate,
-                }))
-              }}
-            />
-            <TextInput
-              disabled={isSubmitting}
-              inputMode="decimal"
-              label={t('Курс')}
-              required
-              value={draft.exchangeRate}
-              onChange={(event) => {
-                const nextExchangeRate = event.currentTarget.value
-                setDraft((current) => ({
+          <Card className="app-section-card" withBorder padding={12} radius="md">
+            <div className="payment-account-transaction-row">
+              <Select
+                data={toCurrencyRegisterSelectOptions(currencyRegisters)}
+                disabled={isLoading || isSubmitting}
+                label={t('З валюти')}
+                required
+                searchable
+                value={draft.fromPaymentCurrencyRegisterNetId || null}
+                onChange={(value) => setDraft((current) => ({
                   ...current,
                   currencyTraderNetId: '',
-                  exchangeRate: nextExchangeRate,
-                }))
-              }}
-            />
-            <InfoCell label={t('Сума після конвертації')} mono value={convertedAmountLabel} />
-            <TextInput
-              disabled={isSubmitting}
-              label={t('Вхідний номер')}
-              value={draft.incomeNumber}
-              onChange={(event) => {
-                const nextIncomeNumber = event.currentTarget.value
-                setDraft((current) => ({ ...current, incomeNumber: nextIncomeNumber }))
-              }}
-            />
-            <TextInput
-              disabled={isSubmitting}
-              label={t('Дата')}
-              required
-              type="date"
-              value={draft.fromDate}
-              onChange={(event) => {
-                const nextFromDate = event.currentTarget.value
-                setDraft((current) => ({ ...current, fromDate: nextFromDate }))
-              }}
-            />
-            <TextInput
-              disabled={isSubmitting}
-              label={t('Час')}
-              required
-              type="time"
-              value={draft.time}
-              onChange={(event) => {
-                const nextTime = event.currentTarget.value
-                setDraft((current) => ({ ...current, time: nextTime }))
-              }}
-            />
-            <Select
-              data={toPaymentMovementOptions(movements)}
-              disabled={isLoading || isSubmitting}
-              label={t('Стаття руху')}
-              required
-              searchable
-              value={draft.movementNetId || null}
-              onChange={(value) => setDraft((current) => ({ ...current, movementNetId: value || '' }))}
-            />
-            <TextInput
-              disabled={isSubmitting}
-              label={t('Коментар')}
-              maxLength={PAYMENT_COMMENT_MAX_LENGTH}
-              value={draft.comment}
-              onChange={(event) => {
-                const nextComment = event.currentTarget.value
-                setDraft((current) => ({ ...current, comment: nextComment }))
-              }}
-            />
-          </SimpleGrid>
-          <Group justify="flex-end">
-            <Button color="gray" disabled={isSubmitting} type="button" variant="light" onClick={onClose}>
+                  exchangeRate: '',
+                  fromPaymentCurrencyRegisterNetId: value || '',
+                  toPaymentCurrencyRegisterNetId: '',
+                }))}
+              />
+              <Select
+                data={toCurrencyRegisterSelectOptions(destinationRegisters)}
+                disabled={!selectedFromRegister || isLoading || isSubmitting}
+                label={t('У валюту')}
+                required
+                searchable
+                value={draft.toPaymentCurrencyRegisterNetId || null}
+                onChange={(value) => setDraft((current) => ({
+                  ...current,
+                  currencyTraderNetId: '',
+                  exchangeRate: '',
+                  toPaymentCurrencyRegisterNetId: value || '',
+                }))}
+              />
+            </div>
+            <div className="payment-account-transaction-row">
+              <TextInput maw={160}
+                classNames={{ input: 'app-money' }}
+                disabled={isSubmitting}
+                inputMode="decimal"
+                label={t('Сума')}
+                required
+                value={draft.amount}
+                onChange={(event) => {
+                  const nextAmount = event.currentTarget.value
+                  setDraft((current) => ({ ...current, amount: nextAmount }))
+                }}
+              />
+              <Select
+                data={exchangeTraderOptions}
+                disabled={!selectedFromRegister || !selectedToRegister || isLoading || isLoadingTraders || isSubmitting}
+                label={t('Курс трейдера')}
+                searchable
+                value={draft.currencyTraderNetId || null}
+                onChange={(value) => {
+                  const nextTrader = findCurrencyTrader(currencyTraders, value || '')
+                  const nextRate = getTraderExchangeRate(nextTrader, exchangeRateCurrencyCode)
+
+                  setDraft((current) => ({
+                    ...current,
+                    currencyTraderNetId: value || '',
+                    exchangeRate: nextRate ? String(nextRate.ExchangeRate) : current.exchangeRate,
+                  }))
+                }}
+              />
+              <TextInput maw={160}
+                disabled={isSubmitting}
+                inputMode="decimal"
+                label={t('Курс')}
+                required
+                value={draft.exchangeRate}
+                onChange={(event) => {
+                  const nextExchangeRate = event.currentTarget.value
+                  setDraft((current) => ({
+                    ...current,
+                    currencyTraderNetId: '',
+                    exchangeRate: nextExchangeRate,
+                  }))
+                }}
+              />
+              <InfoCell label={t('Сума після конвертації')} mono value={convertedAmountLabel} />
+            </div>
+            <div className="payment-account-transaction-row">
+              <TextInput
+                disabled={isSubmitting}
+                label={t('Вхідний номер')}
+                value={draft.incomeNumber}
+                onChange={(event) => {
+                  const nextIncomeNumber = event.currentTarget.value
+                  setDraft((current) => ({ ...current, incomeNumber: nextIncomeNumber }))
+                }}
+              />
+              <TextInput maw={170}
+                disabled={isSubmitting}
+                label={t('Дата')}
+                required
+                type="date"
+                value={draft.fromDate}
+                onChange={(event) => {
+                  const nextFromDate = event.currentTarget.value
+                  setDraft((current) => ({ ...current, fromDate: nextFromDate }))
+                }}
+              />
+              <TextInput maw={110}
+                disabled={isSubmitting}
+                label={t('Час')}
+                required
+                type="time"
+                value={draft.time}
+                onChange={(event) => {
+                  const nextTime = event.currentTarget.value
+                  setDraft((current) => ({ ...current, time: nextTime }))
+                }}
+              />
+              <Select
+                data={toPaymentMovementOptions(movements)}
+                disabled={isLoading || isSubmitting}
+                label={t('Стаття руху')}
+                required
+                searchable
+                value={draft.movementNetId || null}
+                onChange={(value) => setDraft((current) => ({ ...current, movementNetId: value || '' }))}
+              />
+            </div>
+            <div className="payment-account-transaction-row">
+              <TextInput
+                disabled={isSubmitting}
+                label={t('Коментар')}
+                maxLength={PAYMENT_COMMENT_MAX_LENGTH}
+                value={draft.comment}
+                onChange={(event) => {
+                  const nextComment = event.currentTarget.value
+                  setDraft((current) => ({ ...current, comment: nextComment }))
+                }}
+              />
+            </div>
+          </Card>
+          <AppModalFooter>
+            <Button color="gray" disabled={isSubmitting} type="button" variant="default" onClick={onClose}>
               {t('Скасувати')}
             </Button>
             <Button color={CREATE_ACTION_COLOR} disabled={!canCreate} leftSection={<ArrowLeftRight size={16} />} loading={isSubmitting} type="submit">
               {t('Створити')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </form>
     </AppModal>
@@ -1986,17 +2018,17 @@ function CancelActivityModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={opened} title={title} onClose={onClose}>
+    <AppModal className="app-compact-form" centered opened={opened} title={title} onClose={onClose}>
       <Stack gap="md">
         <Text>{t('Скасувати операцію?')}</Text>
-        <Group justify="flex-end">
-          <Button color="gray" disabled={isLoading} type="button" variant="light" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" disabled={isLoading} type="button" variant="default" onClick={onClose}>
             {t('Ні')}
           </Button>
           <Button color="red" leftSection={<X size={16} />} loading={isLoading} type="button" onClick={onConfirm}>
             {t('Так, скасувати')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )
@@ -2320,7 +2352,7 @@ function getIncomeColumns(t: (value: string) => string): ActivityColumn<PaymentA
     { key: 'amount', header: t('Сума'), align: 'right', cell: (income) => formatMoney(income.Amount) },
     { key: 'currency', header: t('Валюта'), cell: (income) => renderCurrencyValue(income.Currency?.Code) },
     { key: 'movement', header: t('Стаття руху'), cell: (income) => displayValue(getPaymentMovementName(income.PaymentMovementOperation)) },
-    { key: 'organization', header: t('Організація'), cell: (income) => displayValue(income.Organization?.Name) },
+    { key: 'organization', header: t('Організація'), cell: (income) => <TableChip tone="product" value={getOrganizationDisplayName(income.Organization)} /> },
     { key: 'user', header: t('Відповідальний'), cell: (income) => displayValue(getPersonName(income.User)) },
     { key: 'comment', header: t('Коментар'), cell: (income) => displayValue(income.Comment) },
   ]
@@ -2335,7 +2367,7 @@ function getOutcomeColumns(t: (value: string) => string): ActivityColumn<Payment
     { key: 'amount', header: t('Сума'), align: 'right', cell: (outcome) => formatMoney(outcome.Amount) },
     { key: 'currency', header: t('Валюта'), cell: (outcome) => renderCurrencyValue(outcome.PaymentCurrencyRegister?.Currency?.Code) },
     { key: 'movement', header: t('Стаття руху'), cell: (outcome) => displayValue(getPaymentMovementName(outcome.PaymentMovementOperation)) },
-    { key: 'organization', header: t('Організація'), cell: (outcome) => displayValue(outcome.Organization?.Name) },
+    { key: 'organization', header: t('Організація'), cell: (outcome) => <TableChip tone="product" value={getOrganizationDisplayName(outcome.Organization)} /> },
     { key: 'user', header: t('Відповідальний'), cell: (outcome) => displayValue(getPersonName(outcome.User)) },
     { key: 'comment', header: t('Коментар'), cell: (outcome) => displayValue(outcome.Comment) },
   ]

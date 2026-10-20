@@ -19,6 +19,7 @@ vi.mock('@mantine/notifications', () => ({
 }))
 
 vi.mock('../../../shared/ui/AppModal', () => ({
+  AppModalFooter: ({ children }: { children: import('react').ReactNode }) => <div>{children}</div>,
   AppModal: ({
     children,
     opened,

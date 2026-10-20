@@ -110,7 +110,7 @@ export function AdvanceReportProductsGrid({
         width: 220,
         minWidth: 160,
         accessor: (row) => row.organizationName,
-        cell: (row) => displayValue(row.organizationName),
+        cell: (row) => <TableChip tone="product" value={displayValue(row.organizationName)} />,
       },
       {
         id: 'agreementName',

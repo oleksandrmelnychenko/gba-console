@@ -4,7 +4,7 @@ import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { changeReconciliationDisposition } from '../api/actReconciliationsApi'
 import {
@@ -133,7 +133,7 @@ export function ActReconciliationDispositionModal({
   }
 
   return (
-    <AppModal
+    <AppModal className="app-compact-form"
       centered
       closeOnClickOutside={!isSubmitting}
       closeOnEscape={!isSubmitting}
@@ -193,8 +193,8 @@ export function ActReconciliationDispositionModal({
           </Alert>
         )}
 
-        <Group justify="flex-end">
-          <Button color="gray" disabled={isSubmitting} variant="subtle" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" disabled={isSubmitting} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button
@@ -205,7 +205,7 @@ export function ActReconciliationDispositionModal({
           >
             {isDismiss ? t('Закрити без руху') : t('Повернути в роботу')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

@@ -22,7 +22,7 @@ import type { ExportDocument } from '../../../shared/documents/exportDocument'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer, AppDrawerFooter } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -1957,7 +1957,7 @@ function ProductIncomePageFooter({ canEditPlacements, canUseIncome, model, useDr
         </Text>
       )}
       {model.isDirty && (
-        <Button color="gray" disabled={model.isSaving} variant="light" onClick={model.reloadFromServer}>
+        <Button color="gray" disabled={model.isSaving} variant="default" onClick={model.reloadFromServer}>
           {t('Скасувати')}
         </Button>
       )}
@@ -2048,8 +2048,8 @@ function ProductIncomeDialogs({
           }
         }}
       >
-        <Group justify="flex-end">
-          <Button color="gray" disabled={model.isSaving} variant="light" onClick={() => model.setColumnToRemove(null)}>
+        <AppModalFooter>
+          <Button color="gray" disabled={model.isSaving} variant="default" onClick={() => model.setColumnToRemove(null)}>
             {t('Скасувати')}
           </Button>
           <Button
@@ -2060,7 +2060,7 @@ function ProductIncomeDialogs({
           >
             {t('Видалити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </AppModal>
 
       <AppModal
@@ -2072,8 +2072,8 @@ function ProductIncomeDialogs({
           }
         }}
       >
-        <Group justify="flex-end">
-          <Button color="gray" disabled={model.isSaving} variant="light" onClick={() => model.setConfirmCarryOut(false)}>
+        <AppModalFooter>
+          <Button color="gray" disabled={model.isSaving} variant="default" onClick={() => model.setConfirmCarryOut(false)}>
             {t('Скасувати')}
           </Button>
           <Button
@@ -2083,7 +2083,7 @@ function ProductIncomeDialogs({
           >
             {t('Провести')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </AppModal>
 
       <AppModal
@@ -2095,16 +2095,16 @@ function ProductIncomeDialogs({
           }
         }}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           <Text>{t('Якщо продовжити, незбережені розміщення та зміни кількості будуть втрачені.')}</Text>
-          <Group justify="flex-end">
-            <Button color="gray" disabled={model.isSaving} variant="light" onClick={model.cancelDiscardChanges}>
+          <AppModalFooter>
+            <Button color="gray" disabled={model.isSaving} variant="default" onClick={model.cancelDiscardChanges}>
               {t('Залишитися')}
             </Button>
             <Button color="red" disabled={model.isSaving} onClick={model.confirmDiscardChanges}>
               {t('Продовжити без збереження')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
     </>

@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -6,14 +7,14 @@ import {
   Box,
   Button,
   Card,
-  Divider,
   Group,
   Stack,
   Text,
-  } from '@mantine/core'
+} from '@mantine/core'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { DocumentDetailLayout, DocumentDetailSummary, DocumentDetailMetric, DocumentDetailSection, DocumentDetailRow } from '../../../shared/ui/document-detail/DocumentDetail'
 import { CircleAlert, Download, RotateCcw } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { translate } from '../../../shared/i18n/translate'
@@ -30,7 +31,6 @@ import {
 } from '../api/supplyReturnsApi'
 import type { SupplyReturn, SupplyReturnExportDocument, SupplyReturnItem } from '../types'
 import './supply-returns-page.css'
-import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { usePermissions } from '../../auth/usePermissions'
@@ -494,21 +494,23 @@ function SupplyReturnDetailDrawer({ model }: { model: ReturnType<typeof useSuppl
     >
       {selectedReturn && (
         <>
-          {canExportDocument && (
-            <Group justify="flex-end" mb="md">
+          <SupplyReturnDetail
+            actions={canExportDocument ? (
               <Button
-                color={CREATE_ACTION_COLOR}
+                color="gray"
                 disabled={!selectedReturn.NetUid}
                 leftSection={<Download size={16} />}
                 loading={isDownloading}
-                variant="outline"
+                variant="default"
                 onClick={() => openDownload(selectedReturn)}
               >
                 {t('Завантажити')}
               </Button>
-            </Group>
-          )}
-          <SupplyReturnDetail error={detailError} isLoading={isDetailLoading} supplyReturn={selectedReturn} />
+            ) : null}
+            error={detailError}
+            isLoading={isDetailLoading}
+            supplyReturn={selectedReturn}
+          />
         </>
       )}
 
@@ -593,7 +595,7 @@ function useSupplyReturnColumns(
         width: 220,
         minWidth: 180,
         accessor: (supplyReturn) => supplyReturn.Organization?.Name,
-        cell: (supplyReturn) => displayValue(supplyReturn.Organization?.Name),
+        cell: (supplyReturn) => <TableChip tone="product" value={getOrganizationDisplayName(supplyReturn.Organization)} />,
       },
       {
         id: 'supplier',
@@ -634,7 +636,7 @@ function useSupplyReturnColumns(
         width: 200,
         minWidth: 160,
         accessor: getResponsibleName,
-        cell: (supplyReturn) => displayValue(getResponsibleName(supplyReturn)),
+        cell: (supplyReturn) => <TableChip tone="warning" value={displayValue(getResponsibleName(supplyReturn))} />,
       },
       {
         id: 'comment',
@@ -675,10 +677,12 @@ function useSupplyReturnColumns(
 }
 
 function SupplyReturnDetail({
+  actions,
   error,
   isLoading,
   supplyReturn,
 }: {
+  actions?: ReactNode
   error: string | null
   isLoading: boolean
   supplyReturn: SupplyReturn
@@ -746,56 +750,32 @@ function SupplyReturnDetail({
   )
 
   return (
-    <Stack gap="md">
-      {error && (
-        <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
-
-      <Group gap="xs">
-        {supplyReturn.IsManagement && (
-          <Badge className="app-role-pill" variant="light">
-            {t('Управ.')}
-          </Badge>
-        )}
-        {isLoading && (
-          <Badge color="gray" variant="light">
-            {t('Завантаження деталей')}
-          </Badge>
-        )}
-      </Group>
-
-      <DetailRows
-        rows={[
-          [t('Організація'), supplyReturn.Organization?.Name],
-          [t('Постачальник'), supplyReturn.Supplier?.SupplierName || supplyReturn.Supplier?.FullName],
-          [t('З складу'), supplyReturn.Storage?.Name],
-          [t('Відповідальний'), getResponsibleName(supplyReturn)],
-        ]}
-      />
-
-      {supplyReturn.Comment && (
-        <>
-          <Divider />
-          <Box>
-            <Text size="xs" c="dimmed" tt="uppercase">
-              {t('Коментар')}
-            </Text>
-            <Text size="sm">{supplyReturn.Comment}</Text>
-          </Box>
-        </>
-      )}
-
-      <Divider />
-
-      <Stack gap="xs">
-        <Group justify="space-between">
-          <Text className="app-section-title" fw={600} size="sm">{t('Назва товару')}</Text>
-          <Badge color="gray" variant="light">
-            {items.length}
-          </Badge>
-        </Group>
+    <DocumentDetailLayout
+      variant="inventory"
+      actions={actions}
+      summary={
+        <DocumentDetailSummary
+          eyebrow={t('Повернення постачальнику')}
+          title={displayValue(supplyReturn.Number)}
+          meta={formatDate(parseDate(supplyReturn.FromDate))}
+          status={<>{supplyReturn.IsManagement && <TableChip tone="neutral" value={t('Управ.')} />}{isLoading && <TableChip tone="neutral" value={t('Завантаження деталей')} />}</>}
+          metrics={<>
+            <DocumentDetailMetric label={t('Всього товарів')} value={String(items.length)} />
+            <DocumentDetailMetric label={t('Вся кількість')} value={formatAmount(getReturnQty(supplyReturn))} />
+            <DocumentDetailMetric label={t('Вся сума')} value={formatPrice(toNumber(supplyReturn.TotalNetPrice))} />
+          </>}
+        />
+      }
+    >
+      {error && <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>}
+      <DocumentDetailSection title={t('Реквізити документа')}>
+        <DocumentDetailRow label={t('Організація')} value={<TableChip tone="product" value={getOrganizationDisplayName(supplyReturn.Organization)} />} />
+        <DocumentDetailRow label={t('Постачальник')} value={supplyReturn.Supplier?.SupplierName || supplyReturn.Supplier?.FullName} />
+        <DocumentDetailRow label={t('З складу')} value={<TableChip tone="storage" value={supplyReturn.Storage?.Name} />} />
+        <DocumentDetailRow label={t('Відповідальний')} value={<TableChip tone="warning" value={getResponsibleName(supplyReturn)} />} />
+        {supplyReturn.Comment && <DocumentDetailRow label={t('Коментар')} value={supplyReturn.Comment} wide />}
+      </DocumentDetailSection>
+      <DocumentDetailSection title={t('Товари')} subtitle={String(items.length)} stacked>
         <DataTable
           columns={itemColumns}
           data={items}
@@ -809,33 +789,8 @@ function SupplyReturnDetail({
           minWidth={760}
           tableId="supply-return-items"
         />
-      </Stack>
-
-      <Divider />
-
-      <DetailRows
-        mono
-        rows={[
-          [t('Всього товарів'), items.length],
-          [t('Вся кількість'), formatAmount(getReturnQty(supplyReturn))],
-          [t('Вся сума'), formatPrice(toNumber(supplyReturn.TotalNetPrice))],
-        ]}
-      />
-    </Stack>
-  )
-}
-
-/* §7.2 leader rows: «label ——— value»; mono for numeric totals. */
-function DetailRows({ mono, rows }: { mono?: boolean; rows: Array<[string, unknown]> }) {
-  return (
-    <Stack gap={6}>
-      {rows.map(([label, value]) => (
-        <span className="app-leader-row" key={label}>
-          <span className="app-leader-row-label">{label}</span>
-          <span className={`app-leader-row-value${mono ? ' is-mono' : ''}`}>{displayValue(value)}</span>
-        </span>
-      ))}
-    </Stack>
+      </DocumentDetailSection>
+    </DocumentDetailLayout>
   )
 }
 

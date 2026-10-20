@@ -15,7 +15,8 @@ import {
 import { CircleAlert, RefreshCw } from 'lucide-react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
 import {
   PaymentType,
@@ -52,7 +53,7 @@ export function PaymentImageEditModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={Boolean(item)} title={t('Редагування')} onClose={onClose}>
+    <AppModal className="app-compact-form" centered opened={Boolean(item)} title={t('Редагування')} onClose={onClose}>
       {item && (
         <PaymentImageEditForm
           key={getPaymentImageEditKey(item)}
@@ -135,7 +136,7 @@ function PaymentImageEditForm({
           {validationError || editError}
         </Alert>
       )}
-      <NumberInput
+      <NumberInput maw={160}
         decimalScale={2}
         label={t('Сума')}
         min={0}
@@ -159,18 +160,20 @@ function PaymentImageEditForm({
         value={comment}
         onChange={(event) => setComment(event.currentTarget.value)}
       />
-      <Group justify="space-between">
+      <AppModalFooter>
+        <Group gap={8}>
         <Button
           color="gray"
           leftSection={<RefreshCw size={16} />}
           loading={isRefreshing}
-          variant="subtle"
+          variant="default"
           onClick={onRefresh}
         >
           {t('Оновити дані')}
         </Button>
-        <Group gap="sm">
-          <Button color="gray" variant="light" onClick={onClose}>
+        </Group>
+        <Group gap={8}>
+          <Button color="gray" variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button
@@ -182,7 +185,7 @@ function PaymentImageEditForm({
             {t('Підтвердити')}
           </Button>
         </Group>
-      </Group>
+      </AppModalFooter>
     </Stack>
   )
 }
@@ -214,10 +217,11 @@ function PaymentImageEditServerSummary({
             {t('Поточні дані сервера')}
           </Text>
           <Text size="sm">
-            {t('Сума')}: <strong className="app-money">{formatAmount(item.Amount)} UAH</strong>
+            {t('Сума')}: <strong className="app-money">{formatAmount(item.Amount)}</strong>{' '}
+            <TableChip tone="source" value="UAH" />
           </Text>
           <Text size="sm">
-            {t('Тип')}: <strong>{getPaymentTypeLabel(item.PaymentType, t)}</strong>
+            {t('Тип')}: <TableChip tone="neutral" value={getPaymentTypeLabel(item.PaymentType, t)} />
           </Text>
           {item.Updated && (
             <Text c="dimmed" size="xs">

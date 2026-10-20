@@ -1534,7 +1534,7 @@ function InvoiceUploadModal({
 
   return (
     <AppModal className="supply-invoice-upload-modal" centered opened={opened} size={760} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Додати інвойс')}</span>} onClose={close}>
-      <Stack gap={12}>
+      <Stack className="app-compact-form" gap={12}>
         <div className="supply-invoice-upload-scroll">
           <Card className="app-section-card" withBorder radius="md" padding="sm">
             <Stack gap={10}>
@@ -1627,7 +1627,7 @@ function PackListUploadModal({
 
   return (
     <AppModal className="supply-invoice-upload-modal" centered opened={opened} size={760} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Додати пак лист')}</span>} onClose={close}>
-      <Stack gap={12}>
+      <Stack className="app-compact-form" gap={12}>
         <div className="supply-invoice-upload-scroll">
           <Card className="app-section-card" withBorder radius="md" padding="sm">
             <Stack gap={10}>
@@ -1835,10 +1835,10 @@ function InvoiceMetadataModalBody({
         onRestore={restoreDocument}
       />
       <Divider />
-      <Group justify="flex-end">
-        <Button disabled={isSaving} leftSection={<X size={16} />} variant="subtle" onClick={onClose}>{t('Скасувати')}</Button>
+      <AppModalFooter>
+        <Button disabled={isSaving} leftSection={<X size={16} />} variant="default" onClick={onClose}>{t('Скасувати')}</Button>
         <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} onClick={() => onSubmit(form)}>{t('Зберегти')}</Button>
-      </Group>
+      </AppModalFooter>
     </Stack>
   )
 }
@@ -2082,12 +2082,12 @@ function DeleteModal({
 
   return (
     <AppModal centered opened={opened} title={title} onClose={onClose}>
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap="md">
         <Text>{t('Видалити')} <Text span fw={600} style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{value || ''}</Text>?</Text>
-        <Group justify="flex-end">
-          <Button disabled={isSaving} variant="subtle" onClick={onClose}>{t('Скасувати')}</Button>
+        <AppModalFooter>
+          <Button disabled={isSaving} variant="default" onClick={onClose}>{t('Скасувати')}</Button>
           <Button color="red" leftSection={<Trash2 size={16} />} loading={isSaving} onClick={onConfirm}>{t('Видалити')}</Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

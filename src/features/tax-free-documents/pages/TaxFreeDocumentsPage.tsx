@@ -792,7 +792,7 @@ function TaxFreeAccountingActionModal({
   const { t } = useI18n()
 
   return (
-    <AppModal
+    <AppModal className="app-compact-form"
       centered
       opened={opened}
       size={496}
@@ -1612,7 +1612,7 @@ function TaxFreePrintPreviewModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={Boolean(document)} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{`${t('Попередній перегляд')} ${document?.Number || ''}`}</span>} onClose={onClose}>
+    <AppModal className="app-compact-form" centered opened={Boolean(document)} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{`${t('Попередній перегляд')} ${document?.Number || ''}`}</span>} onClose={onClose}>
       {document && (
         <Stack gap="md">
           <Group justify="space-between">

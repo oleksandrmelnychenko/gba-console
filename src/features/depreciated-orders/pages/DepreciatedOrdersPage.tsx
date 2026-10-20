@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -650,7 +651,7 @@ function useDepreciatedOrderColumns(
         width: 300,
         minWidth: 200,
         accessor: (order) => order.Organization?.Name,
-        cell: (order) => displayValue(order.Organization?.Name),
+        cell: (order) => <TableChip tone="product" value={getOrganizationDisplayName(order.Organization)} />,
       },
       {
         id: 'storage',
@@ -667,7 +668,7 @@ function useDepreciatedOrderColumns(
         minWidth: 180,
         enableSorting: false,
         accessor: getResponsibleName,
-        cell: (order) => displayValue(getResponsibleName(order)),
+        cell: (order) => <TableChip tone="warning" value={displayValue(getResponsibleName(order))} />,
       },
       {
         id: 'comment',

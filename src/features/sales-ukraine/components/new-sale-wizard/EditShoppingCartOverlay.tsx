@@ -97,13 +97,14 @@ export function EditShoppingCartOverlay({
       className="new-sale-cart-edit-overlay"
       ref={rootRef}
       aria-modal="true"
+      aria-label={t('Редагування кошика')}
       role="dialog"
     >
       <Box className="new-sale-cart-edit-overlay__frame">
         <ActionIcon
           aria-label={t('Закрити')}
           className="new-sale-cart-edit-overlay__close"
-          size="lg"
+          size={32}
           variant="subtle"
           onClick={onClose}
         >
@@ -211,7 +212,7 @@ function CartTable({
       id: 'addedBy',
       header: t('Додав'),
       accessor: (row) => row.user,
-      cell: (row) => <CartTextCell value={displayValue(row.user)} />,
+      cell: (row) => <TableChip tone="warning" value={row.user} />,
       width: 132,
       minWidth: 110,
     },

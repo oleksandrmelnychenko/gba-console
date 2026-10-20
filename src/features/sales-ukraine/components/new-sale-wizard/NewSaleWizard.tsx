@@ -4,7 +4,7 @@ import { notifications } from '@mantine/notifications'
 import { Fragment, useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
-import { AppModal } from '../../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../../auth/useAuth'
 import {
@@ -426,7 +426,7 @@ export function NewSaleWizard({
         {opened && splitRecoveryStatus === 'failed' && (
           <Center p="md" style={{ flex: 1 }}>
             <Alert color="red" title={t('Не вдалося відновити розділені позиції')} w="min(520px, 100%)">
-              <Stack gap="sm">
+              <Stack className="app-compact-form" gap="sm">
                 <Text size="sm">{splitRecoveryError}</Text>
                 {splitRecoveryNeedsFile && (
                   <FileInput
@@ -436,7 +436,7 @@ export function NewSaleWizard({
                     onChange={setSplitRecoveryFile}
                   />
                 )}
-                <Group justify="flex-end">
+                <AppModalFooter>
                   <Button variant="default" onClick={onClose}>{t('Закрити без змін')}</Button>
                   {splitRecoveryNeedsManualConfirmation && (
                     <Button color="orange" onClick={confirmManualSplitDestination}>
@@ -449,7 +449,7 @@ export function NewSaleWizard({
                   >
                     {t('Повторити')}
                   </Button>
-                </Group>
+                </AppModalFooter>
               </Stack>
             </Alert>
           </Center>

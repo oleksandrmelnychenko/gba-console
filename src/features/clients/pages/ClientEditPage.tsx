@@ -11,7 +11,7 @@ import {
 } from '@mantine/core'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
-import { AppModal } from "../../../shared/ui/AppModal"
+import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from "../../../shared/ui/page-header-actions/PageHeaderActions"
 import { notifications } from '@mantine/notifications'
 import { BookUser, Building2, ChartBar, Check, ChevronRight, CircleAlert, CircleDot, Gauge, Globe, Info, FileText, Users, Sparkles, Landmark, Network, Pencil, Save, Star, Tag, Target, Trash2, type LucideProps } from 'lucide-react'
@@ -1633,16 +1633,16 @@ function DeleteClientModal({
 
   return (
     <AppModal centered opened={opened} title={t('Видалити картку')} onClose={onClose}>
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap="md">
         <Text size="sm">{t('Підтвердити видалення')}: {client ? getClientDisplayName(client) : ''}</Text>
-        <Group justify="flex-end">
-          <Button variant="subtle" color="gray" onClick={onClose}>
+        <AppModalFooter>
+          <Button variant="default" color="gray" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button color="red" leftSection={<Check size={16} />} loading={isDeleting} onClick={onConfirm}>
             {t('Видалити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

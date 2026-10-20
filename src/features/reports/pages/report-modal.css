@@ -1,0 +1,23 @@
+.report-modal .mantine-Group-root:has(> .mantine-InputWrapper-root) {
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.report-modal .mantine-Group-root > .mantine-InputWrapper-root {
+  flex: 0 1 240px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.report-modal .mantine-Group-root > .mantine-InputWrapper-root:has(input[type='date']) {
+  flex-basis: 170px;
+}
+
+.report-modal .mantine-Group-root > .mantine-InputWrapper-root:has(input[type='number']) {
+  flex-basis: 140px;
+}
+
+.report-modal .mantine-Group-root > .mantine-InputWrapper-root:has(input[type='time']) {
+  flex-basis: 120px;
+}

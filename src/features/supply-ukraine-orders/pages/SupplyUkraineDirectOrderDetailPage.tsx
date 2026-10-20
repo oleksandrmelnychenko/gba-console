@@ -968,7 +968,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
         zIndex={getDefaultZIndex('modal') + 1}
         onClose={() => dispatchCreditNote({ type: 'setDrawerOpen', open: false })}
       >
-        <Stack gap={10}>
+        <Stack className="app-compact-form" gap={10}>
           <Group className="supply-credit-notes-toolbar" justify="space-between" gap={8}>
             <Group gap={8}>
               <Text fw={600} size="sm">{t('Документи')}</Text>
@@ -1023,7 +1023,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
         zIndex={getDefaultZIndex('modal') + 2}
         onClose={closeCreditNoteModal}
       >
-        <Stack gap={10}>
+        <Stack className="app-compact-form" gap={10}>
           <Card className="supply-credit-note-form" withBorder radius="md" padding="sm">
             <Stack gap={12}>
               <SimpleGrid cols={{ base: 1, xs: 3 }} spacing={12}>
@@ -1098,7 +1098,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
         title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Зміна статуса документа')}</span>}
         onClose={closeStatusModal}
       >
-        <Stack gap={10}>
+        <Stack className="app-compact-form" gap={10}>
           <Text fw={600} size="sm">
             {statusDocument?.Name || statusDocument?.FileName || t('Документ')}
           </Text>
@@ -1114,14 +1114,14 @@ function SupplyUkraineDirectOrderDetailPageContent() {
             value={statusComment}
             onChange={(event) => dispatchStatusModal({ type: 'setComment', value: event.currentTarget.value })}
           />
-          <Group justify="flex-end" gap="xs">
+          <AppModalFooter>
             <Button disabled={isSaving} variant="default" onClick={closeStatusModal}>
               {t('Скасувати')}
             </Button>
             <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={saveDocumentStatus}>
               {t('Зберегти')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
     </AppDrawer>

@@ -1,3 +1,5 @@
+import { TableChip } from '../../../shared/ui/TableChip'
+import { AppModalFooter } from '../../../shared/ui/AppModal'
 import {
   Alert,
   Badge,
@@ -6,7 +8,6 @@ import {
   Group,
   NumberInput,
   Select,
-  SimpleGrid,
   Stack,
   Text,
   Textarea,
@@ -15,7 +16,7 @@ import { CircleAlert } from 'lucide-react'
 import { useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { DocumentDetailChip, DocumentDetailLayout, DocumentDetailSummary, DocumentDetailMetric, DocumentDetailSection, DocumentDetailRow } from '../../../shared/ui/document-detail/DocumentDetail'
+import { DocumentDetailChip, DocumentDetailLayout, DocumentDetailSummary, DocumentDetailSection, DocumentDetailRow } from '../../../shared/ui/document-detail/DocumentDetail'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { PaymentImageList } from './PaymentImageList'
 import { PaymentShopOrderItemsTable } from './PaymentShopOrderItemsTable'
@@ -132,15 +133,16 @@ export function PaymentShopDetailDrawer({
 
   return (
     <AppDrawer opened={Boolean(item)} padding="md" position="right" size="xl" title={t('Оплата магазину')} onClose={handleClose}>
-      <DocumentDetailLayout summary={
+      <DocumentDetailLayout variant="inventory" summary={
         <DocumentDetailSummary
+          variant="inventory"
           eyebrow={t('Документ')}
           title={sale?.SaleNumber?.Value || '—'}
           meta={<>{date ? <DocumentDetailChip tone="info">{formatDateTime(date)}</DocumentDetailChip> : null}{item?.RetailClient?.Name ? <DocumentDetailChip>{item.RetailClient.Name}</DocumentDetailChip> : null}</>}
           metrics={<>
-            <DocumentDetailMetric label={t('Підтверджено менеджером')} value={formatAmount(item?.RetailPaymentStatus?.Amount)} suffix="UAH" />
-            <DocumentDetailMetric label={t('Проведено бухгалтерією')} value={formatAmount(item?.RetailPaymentStatus?.PaidAmount)} suffix="UAH" />
-            <DocumentDetailMetric label={t('Залишок до оплати')} value={formatAmount(item?.RetailPaymentStatus?.AmountToPay)} suffix="UAH" />
+            <Stack gap={4}><Text size="xs" c="gray.9">{t('Підтверджено менеджером')}</Text><Group gap={6}><Text className="app-money">{formatAmount(item?.RetailPaymentStatus?.Amount)}</Text><TableChip tone="source" value="UAH" /></Group></Stack>
+            <Stack gap={4}><Text size="xs" c="gray.9">{t('Проведено бухгалтерією')}</Text><Group gap={6}><Text className="app-money">{formatAmount(item?.RetailPaymentStatus?.PaidAmount)}</Text><TableChip tone="source" value="UAH" /></Group></Stack>
+            <Stack gap={4}><Text size="xs" c="gray.9">{t('Залишок до оплати')}</Text><Group gap={6}><Text className="app-money">{formatAmount(item?.RetailPaymentStatus?.AmountToPay)}</Text><TableChip tone="source" value="UAH" /></Group></Stack>
           </>}
         />
       }>
@@ -161,7 +163,7 @@ export function PaymentShopDetailDrawer({
         </DocumentDetailSection>
         {isEditing && canCreatePayment && (
           <DocumentDetailSection title={t('Підтвердження оплати менеджером')} stacked>
-            <Stack gap="sm">
+            <Stack className="app-compact-form" gap={10}>
               {createNotice && (
                 <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
                   {createNotice}
@@ -180,8 +182,10 @@ export function PaymentShopDetailDrawer({
                 </Text>
               )}
 
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+              <Group align="end" gap={10}>
               <NumberInput
+                w={180}
+                maw="100%"
                 decimalScale={2}
                 label={t('Сума')}
                 min={0}
@@ -189,6 +193,8 @@ export function PaymentShopDetailDrawer({
                 onChange={(value) => setDraft((current) => ({ ...current, amount: value }))}
               />
               <Select
+                w={220}
+                maw="100%"
                 data={paymentTypeOptions}
                 label={t('Тип')}
                 value={draft.paymentType === null ? null : String(draft.paymentType)}
@@ -199,23 +205,27 @@ export function PaymentShopDetailDrawer({
                   }))
                 }
               />
-              </SimpleGrid>
+              </Group>
               <Textarea
+                autosize
+                minRows={1}
+                maw={560}
                 label={t('Коментар')}
                 value={draft.comment}
                 onChange={(event) => { const nextValue = event.currentTarget.value; setDraft((current) => ({ ...current, comment: nextValue })) }}
               />
               <FileInput
+                maw={320}
                 accept="image/*"
                 label={t('Зображення')}
                 value={draft.image}
                 onChange={(value) => setDraft((current) => ({ ...current, image: value }))}
               />
-              <Group justify="flex-end">
+              <AppModalFooter>
                 <Button color={CREATE_ACTION_COLOR} loading={isCreating} onClick={() => void handleCreate()}>
                   {t('Підтвердити оплату')}
                 </Button>
-              </Group>
+              </AppModalFooter>
             </Stack>
           </DocumentDetailSection>
         )}

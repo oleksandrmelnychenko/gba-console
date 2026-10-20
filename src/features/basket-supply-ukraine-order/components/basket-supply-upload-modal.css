@@ -8,6 +8,5 @@
 }
 .basket-upload-file { border-style: dashed; }
 .basket-supply-upload-modal .app-section-title { font: 500 13px/1.4 var(--font-mono); }
-.basket-supply-upload-modal .mantine-Input-input { font: 400 13px/1.4 var(--font-mono); }
 
 .basket-supply-upload-modal .app-modal-footer { position: sticky; bottom: 0; z-index: 2; background: var(--mantine-color-gray-0); padding-bottom: 8px; }

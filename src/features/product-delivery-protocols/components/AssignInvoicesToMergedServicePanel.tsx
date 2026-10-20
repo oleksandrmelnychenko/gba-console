@@ -1,9 +1,9 @@
-import { Alert, Button, Group, Skeleton, Stack } from '@mantine/core'
+import { Alert, Button, Skeleton, Stack } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getServiceApprovedInvoices } from '../api/protocolDetailApi'
 import type { MergedService, SupplyInvoice } from '../detailTypes'
@@ -125,7 +125,7 @@ export function AssignInvoicesToMergedServicePanel({
         }
       }}
     >
-      <Stack className="assign-invoices-modal" gap={12}>
+      <Stack className="app-compact-form assign-invoices-modal" gap={12}>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
@@ -141,7 +141,7 @@ export function AssignInvoicesToMergedServicePanel({
           <InvoiceSelectList disabled={isSaving} invoices={invoices} selected={selected} onToggle={toggle} />
         )}
 
-        <Group className="assign-invoices-footer" justify="flex-end" gap={8}>
+        <AppModalFooter className="assign-invoices-footer">
           <Button disabled={isSaving} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
@@ -153,7 +153,7 @@ export function AssignInvoicesToMergedServicePanel({
           >
             {t('Зберегти')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

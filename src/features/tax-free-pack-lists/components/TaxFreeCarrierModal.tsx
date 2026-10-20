@@ -1,5 +1,5 @@
-import { Alert, Button, Group, Select, Stack, TextInput } from '@mantine/core'
-import { AppModal } from "../../../shared/ui/AppModal"
+import { Alert, Button, Select, Stack, TextInput } from '@mantine/core'
+import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { CircleAlert, Search } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { useEffect, useMemo, useState } from 'react'
@@ -120,7 +120,7 @@ export function TaxFreeCarrierModal({ canEdit, opened, taxFree, onClose, onUpdat
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={t('Перевізник')} onClose={onClose}>
+    <AppModal className="app-compact-form" centered opened={opened} size="lg" title={t('Перевізник')} onClose={onClose}>
       <Stack>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
@@ -171,10 +171,10 @@ export function TaxFreeCarrierModal({ canEdit, opened, taxFree, onClose, onUpdat
           />
         )}
 
-        <Group justify="flex-end">
-          <Button disabled={isSaving} variant="subtle" onClick={onClose}>{t('Скасувати')}</Button>
+        <AppModalFooter>
+          <Button disabled={isSaving} variant="default" onClick={onClose}>{t('Скасувати')}</Button>
           <Button disabled={!canEdit} loading={isSaving} onClick={saveCarrier}>{t('Зберегти')}</Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

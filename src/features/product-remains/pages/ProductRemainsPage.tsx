@@ -993,7 +993,7 @@ function useProductRemainBatchColumns() {
       width: 240,
       minWidth: 180,
       accessor: (batch) => batch.OrganizationName,
-      cell: (batch) => displayValue(batch.OrganizationName),
+      cell: (batch) => <TableChip tone="product" value={batch.OrganizationName} />,
     },
     {
       id: 'totalGrossPrice',
@@ -1129,7 +1129,7 @@ function useProductRemainProductColumns(onOpenMovement?: (row: RemainingConsignm
       width: 104,
       minWidth: 92,
       accessor: (row) => row.CurrencyName,
-      cell: (row) => <TableChip tone="neutral" value={displayValue(row.CurrencyName)} />,
+      cell: (row) => <TableChip tone="source" value={displayValue(row.CurrencyName)} />,
     },
     {
       id: 'weight',
@@ -1677,7 +1677,7 @@ function useProductRemainMovementColumns() {
         width: 220,
         minWidth: 170,
         accessor: (row) => row.OrganizationName,
-        cell: (row) => displayValue(row.OrganizationName),
+        cell: (row) => <TableChip tone="product" value={row.OrganizationName} />,
       },
       {
         id: 'responsible',
@@ -1685,7 +1685,7 @@ function useProductRemainMovementColumns() {
         width: 160,
         minWidth: 130,
         accessor: (row) => row.Responsible,
-        cell: (row) => displayValue(row.Responsible),
+        cell: (row) => <TableChip tone="warning" value={displayValue(row.Responsible)} />,
       },
       {
         id: 'price',

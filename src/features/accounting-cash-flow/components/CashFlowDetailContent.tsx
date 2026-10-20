@@ -145,7 +145,7 @@ function useDetailColumns(columnKind: CashFlowDetailViewModel['columnKind']): Da
           width: 90,
           minWidth: 80,
           accessor: (row) => row.Currency,
-          cell: (row) => <TableChip tone="neutral" value={displayValue(row.Currency)} />,
+          cell: (row) => <TableChip tone="source" value={displayValue(row.Currency)} />,
         },
         {
           id: 'paymentStatus',
@@ -214,7 +214,7 @@ function useDetailColumns(columnKind: CashFlowDetailViewModel['columnKind']): Da
         width: 80,
         minWidth: 70,
         accessor: (row) => row.Currency,
-        cell: (row) => <TableChip tone="neutral" value={displayValue(row.Currency)} />,
+        cell: (row) => <TableChip tone="source" value={displayValue(row.Currency)} />,
       },
       {
         id: 'paymentStatus',

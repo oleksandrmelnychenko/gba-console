@@ -1,12 +1,13 @@
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
-import { Alert, Button, Grid, Group, NumberInput, Select, Stack, Text, TextInput, Textarea } from '@mantine/core'
+import { TableChip } from '../../../shared/ui/TableChip'
+import { Alert, Button, Grid, NumberInput, Select, Stack, Text, TextInput, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import {
   createIncomeCashflowPaymentMovement,
@@ -346,7 +347,7 @@ export function DocumentOutcomePaymentModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={t('Створити видатковий ордер')} onClose={onClose}>
+    <AppModal className="app-compact-form" centered opened={opened} size="lg" title={t('Створити видатковий ордер')} onClose={onClose}>
       <Stack gap="md">
         {source?.clientName && (
           <Text size="sm">
@@ -382,10 +383,10 @@ export function DocumentOutcomePaymentModal({
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, sm: 6 }}>
-            <TextInput disabled label={t('Валюта')} value={currencyLabel} />
+            <div><Text c="gray.9" size="xs" fw={500} mb={4}>{t('Валюта')}</Text><TableChip tone="source" value={currencyLabel} /></div>
           </Grid.Col>
           <Grid.Col span={{ base: 12, sm: 6 }}>
-            <NumberInput
+            <NumberInput maw={160}
               allowNegative={false}
               decimalScale={2}
               disabled={isLoading || isSaving}
@@ -407,7 +408,7 @@ export function DocumentOutcomePaymentModal({
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, sm: 6 }}>
-            <TextInput
+            <TextInput maw={170}
               disabled={isLoading || isSaving}
               label={t('Дата')}
               max={dateBounds?.max}
@@ -451,14 +452,14 @@ export function DocumentOutcomePaymentModal({
           </Grid.Col>
         </Grid>
 
-        <Group justify="flex-end">
-          <Button color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" disabled={isSaving} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button disabled={isLoading || !canSubmit} loading={isSaving} onClick={() => void handleSubmit()}>
             {t('Створити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

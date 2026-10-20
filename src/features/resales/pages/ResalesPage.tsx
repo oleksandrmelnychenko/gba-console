@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
@@ -19,7 +20,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { notifications } from '@mantine/notifications'
@@ -515,16 +516,16 @@ export function ResalesPage() {
         title={<span className="resales-modal-title">{t('Видалити перепродаж')}</span>}
         onClose={() => setDeleteCandidate(null)}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           <Text size="sm">{t('Документ буде видалено. Продовжити?')}</Text>
-          <Group justify="flex-end">
-            <Button color="gray" disabled={Boolean(removingNetId)} variant="light" onClick={() => setDeleteCandidate(null)}>
+          <AppModalFooter>
+            <Button color="gray" disabled={Boolean(removingNetId)} variant="default" onClick={() => setDeleteCandidate(null)}>
               {t('Скасувати')}
             </Button>
             <Button color="red" loading={Boolean(removingNetId)} onClick={confirmDelete}>
               {t('Видалити')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
 
@@ -2057,7 +2058,7 @@ function useResalesColumns({
         width: 220,
         minWidth: 180,
         accessor: (resale) => resale.Organization?.Name || resale.Organization?.FullName,
-        cell: (resale) => <TableChip tone="product" value={displayValue(resale.Organization?.Name || resale.Organization?.FullName)} />,
+        cell: (resale) => <TableChip tone="product" value={displayValue(getOrganizationDisplayName(resale.Organization))} />,
       },
       {
         id: 'comment',
@@ -2848,7 +2849,7 @@ function ProcessSelectionConfirmDrawer({
     <AppDrawer
       footer={
         <Group gap="sm">
-          <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
+          <Button color="gray" disabled={isSaving} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button disabled={!rows.length} loading={isSaving} onClick={onConfirm}>
@@ -2862,7 +2863,7 @@ function ProcessSelectionConfirmDrawer({
       title={t('Підтвердження обробки')}
       onClose={onClose}
     >
-      <Stack gap="lg">
+      <Stack className="app-compact-form" gap={10}>
         <Group gap="xs">
           <Badge color="orange" variant="light">
             {t('Позицій')}: {rows.length}
@@ -3094,7 +3095,7 @@ function ResaleProcessDrawer({
     <AppDrawer
       footer={
         <Group>
-          <Button loading={isRecalculating} variant="outline" onClick={() => void recalculateRows()}>
+          <Button loading={isRecalculating} variant="default" onClick={() => void recalculateRows()}>
             {t('Перерахувати')}
           </Button>
           <Button disabled={isRecalculating || processForm.isDirty} loading={isSaving} onClick={create}>
@@ -3108,7 +3109,7 @@ function ResaleProcessDrawer({
       title={t('Обробка перепродажу')}
       onClose={closeProcessDrawer}
     >
-      <Stack gap="lg">
+      <Stack className="app-compact-form" gap={10}>
         {processForm.warning && (
           <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
             {processForm.warning.Message}
@@ -3169,12 +3170,7 @@ function ResaleProcessDrawer({
         />
         <div className="app-detail-field">
           <span>{t('Організація')}</span>
-          <strong>
-            {displayValue(
-              processForm.activeProcessData?.Organization?.Name
-              || processForm.activeProcessData?.Organization?.FullName,
-            )}
-          </strong>
+          <TableChip tone="product" value={getOrganizationDisplayName(processForm.activeProcessData?.Organization)} />
         </div>
         <TotalsCard
           items={[

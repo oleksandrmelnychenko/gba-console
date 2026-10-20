@@ -5,7 +5,7 @@ import { TableChip } from '../../../shared/ui/TableChip'
 import '../../../shared/ui/selection-surface.css'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import type {
   CalculateMergedServiceInvoiceItem,
   MergedService,
@@ -114,7 +114,7 @@ function CalculateMergedServicesPanelContent({
         }
       }}
     >
-      <Stack className="calculate-merged-services-modal" gap={12}>
+      <Stack className="app-compact-form calculate-merged-services-modal" gap={12}>
           <dl aria-label={t('Інформація про витрати')} className="calculate-merged-services-summary">
             <div className="calculate-merged-services-summary-item is-supplier">
               <dt>{t('Постачальник послуг')}</dt>
@@ -221,14 +221,14 @@ function CalculateMergedServicesPanelContent({
           ))}
         </Stack>
 
-        <Group className="app-modal-footer calculate-merged-services-footer" justify="flex-end" gap={8}>
+        <AppModalFooter className="calculate-merged-services-footer">
           <Button disabled={isSaving} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button leftSection={<Calculator size={16} />} color={CREATE_ACTION_COLOR} disabled={isSaving} loading={isSaving} onClick={handleSubmit}>
             {t('Розрахувати')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

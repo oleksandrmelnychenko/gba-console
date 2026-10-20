@@ -1,8 +1,9 @@
-import { Alert, Button, Group, SimpleGrid, Stack, TextInput } from '@mantine/core'
+import { Alert, Button, SimpleGrid, Stack, TextInput } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { TaxFreeCarrierCar } from '../types'
 
 type CarDraft = {
@@ -46,7 +47,7 @@ export function TaxFreeCarrierCarModal({
   }
 
   return (
-    <AppModal
+    <AppModal className="app-compact-form"
       centered
       opened={opened}
       title={t('Машина перевізника')}
@@ -66,21 +67,21 @@ export function TaxFreeCarrierCarModal({
             value={draft.number}
             onChange={(event) => { const nextValue = event.currentTarget.value; setDraft((current) => ({ ...current, number: nextValue })) }}
           />
-          <TextInput
+          <TextInput maw={160}
             inputMode="decimal"
             label={t("Об'єм")}
             value={draft.volume}
             onChange={(event) => { const nextValue = event.currentTarget.value; setDraft((current) => ({ ...current, volume: nextValue })) }}
           />
         </SimpleGrid>
-        <Group justify="flex-end">
-          <Button color="gray" variant="light" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
-          <Button color="violet" onClick={handleSubmit}>
+          <Button color={CREATE_ACTION_COLOR} onClick={handleSubmit}>
             {t('Зберегти')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

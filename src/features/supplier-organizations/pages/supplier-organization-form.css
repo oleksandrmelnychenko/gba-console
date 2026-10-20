@@ -1,0 +1,13 @@
+.supplier-organization-form-sheet .supplier-organization-form-card { padding: 12px; }
+.supplier-organization-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-items: start; }
+.supplier-organization-form-grid--general { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.supplier-organization-form-grid--general > * { grid-column: span 3; }
+.supplier-organization-form-grid--general > :nth-child(n + 5) { grid-column: span 2; }
+.supplier-agreement-modal .mantine-Modal-body { background: var(--mantine-color-gray-0); }
+.supplier-agreement-documents { max-height: 200px; overflow-y: auto; }
+.supplier-agreement-documents > .mantine-Group-root > .mantine-Group-root:first-child { min-width: 0; flex: 1; }
+.supplier-agreement-document-name { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 560px) {
+  .supplier-organization-form-grid { grid-template-columns: minmax(0, 1fr); }
+  .supplier-organization-form-grid--general > * { grid-column: auto; }
+}

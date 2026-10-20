@@ -78,7 +78,7 @@ export function BasketSupplyUploadModal({
       title={isPreview ? t('Завантаження для експорту') : t('Завантаження замовлення')}
       onClose={closeModal}
     >
-      <Stack gap={12}>
+      <Stack className="app-compact-form" gap={12}>
         {(validationError || submitError) && (
           <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
             {validationError || submitError}

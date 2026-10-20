@@ -574,7 +574,7 @@ function CityEditorModal({
   return (
     <AppModal className="online-shop-cities-editor" size={520} centered opened={isOpen} title={city?.Id ? t('Редагування міста') : t('Нове місто')} onClose={onClose}>
       <form onSubmit={onSubmit}>
-        <Stack gap="md">
+        <Stack gap={10}>
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
@@ -606,8 +606,7 @@ function CityEditorModal({
             label={t('Локальна оплата')}
             onChange={(event) => onFieldChange('IsLocalPayment', event.currentTarget.checked)}
           />
-          <AppModalFooter>
-          <Group justify="space-between" w="100%">
+          <AppModalFooter className="app-modal-footer--split">
             <Box>
               {city?.Id && onArchive && (
                 <Button
@@ -630,7 +629,6 @@ function CityEditorModal({
                 {t('Зберегти')}
               </Button>
             </Group>
-          </Group>
           </AppModalFooter>
         </Stack>
       </form>
@@ -650,16 +648,16 @@ function CityArchiveModal({ city, isSaving, onArchive, onClose }: CityArchiveMod
 
   return (
     <AppModal centered opened={Boolean(city)} title={t('Архівувати місто')} onClose={onClose}>
-      <Stack gap="md">
+      <Stack gap={10}>
         <Text>{city ? t('Місто "{name}" буде прибране з активного списку.', { name: getCityName(city) }) : ''}</Text>
-        <Group justify="flex-end">
-          <Button color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" disabled={isSaving} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button color="red" loading={isSaving} onClick={onArchive}>
             {t('Архівувати')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

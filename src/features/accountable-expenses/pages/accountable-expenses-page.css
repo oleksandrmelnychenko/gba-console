@@ -485,15 +485,15 @@
 }
 
 .accountable-expense-detail-grid {
-  column-gap: 28px;
+  column-gap: 12px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   min-width: 0;
   row-gap: 12px;
 }
 
 .accountable-expense-detail-grid.is-compact {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 /* Field = «label ······ bold value» leader row (the contacts-card pattern). */
@@ -513,7 +513,7 @@
   transform: translateY(-3px);
 }
 
-.accountable-expense-detail-field span {
+.accountable-expense-detail-field > span {
   color: var(--mantine-color-gray-8);
   flex: 0 1 auto;
   font-size: 13px;
@@ -634,8 +634,13 @@
 }
 
 @media (max-width: 920px) {
-  .accountable-expense-detail-hero,
-  .accountable-expense-detail-metrics,
+  .accountable-expense-detail-grid,
+  .accountable-expense-detail-grid.is-compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
   .accountable-expense-detail-grid,
   .accountable-expense-detail-grid.is-compact {
     grid-template-columns: minmax(0, 1fr);

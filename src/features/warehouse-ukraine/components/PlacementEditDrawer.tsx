@@ -226,7 +226,7 @@ export function PlacementEditDrawer({
       footer={
         draft ? null : (
           <>
-            <Button color="gray" variant="light" onClick={onClose}>
+            <Button color="gray" variant="default" onClick={onClose}>
               {t('Скасувати')}
             </Button>
             <Button color={CREATE_ACTION_COLOR} onClick={handleApply}>
@@ -236,7 +236,7 @@ export function PlacementEditDrawer({
         )
       }
     >
-      <Stack gap="md">
+      <Stack gap={10}>
         <Text fw={600}>{headerText}</Text>
         <Text c="dimmed" size="sm">
           {`${t('Доступна К-сть')} ${Math.max(rowQty - placedQty, 0)}`}
@@ -247,6 +247,7 @@ export function PlacementEditDrawer({
             <Text c="dimmed" fw={600} size="xs">
               {t('Наявні розміщення товару')}
             </Text>
+            <Table.ScrollContainer minWidth={480}>
             <Table className="app-static-table" withTableBorder withColumnBorders>
               <Table.Thead>
                 <Table.Tr>
@@ -265,10 +266,12 @@ export function PlacementEditDrawer({
                 ))}
               </Table.Tbody>
             </Table>
+            </Table.ScrollContainer>
           </Stack>
         )}
 
-        <Table className="app-static-table" withTableBorder withColumnBorders>
+        <Table.ScrollContainer minWidth={480}>
+            <Table className="app-static-table" withTableBorder withColumnBorders>
           <Table.Thead>
             <Table.Tr>
               <Table.Th>#</Table.Th>
@@ -304,6 +307,7 @@ export function PlacementEditDrawer({
             ))}
           </Table.Tbody>
         </Table>
+            </Table.ScrollContainer>
 
         {!draft && (
           <Group>
@@ -314,9 +318,9 @@ export function PlacementEditDrawer({
         )}
 
         {draft && (
-          <Stack gap="sm">
+          <Stack gap={10}>
             <Text fw={600}>{t('Оприходування')}</Text>
-            <TextInput readOnly label={t('Код Виробника')} value={product?.VendorCode || ''} />
+            <TextInput w={220} maw="100%" readOnly label={t('Код Виробника')} value={product?.VendorCode || ''} />
 
             {availableAddresses.length > 0 && (
               <Checkbox
@@ -327,18 +331,21 @@ export function PlacementEditDrawer({
             )}
 
             {draft.useNewAddress ? (
-              <Group grow>
+              <Group align="end" gap={10}>
                 <TextInput
+                  w={140} maw="100%"
                   label={t('Склад')}
                   value={draft.storageNumber}
                   onChange={(event) => setDraft({ ...draft, storageNumber: event.currentTarget.value })}
                 />
                 <TextInput
+                  w={140} maw="100%"
                   label={t('Ряд')}
                   value={draft.rowNumber}
                   onChange={(event) => setDraft({ ...draft, rowNumber: event.currentTarget.value })}
                 />
                 <TextInput
+                  w={140} maw="100%"
                   label={t('Полиця')}
                   value={draft.cellNumber}
                   onChange={(event) => setDraft({ ...draft, cellNumber: event.currentTarget.value })}
@@ -347,13 +354,14 @@ export function PlacementEditDrawer({
             ) : (
               <Select
                 data={availableAddresses.map((address) => address.Address || '')}
+                w={440} maw="100%"
                 label={t('На адресу')}
                 value={draft.selectedAddress}
                 onChange={(value) => setDraft({ ...draft, selectedAddress: value || '' })}
               />
             )}
 
-            <NumberInput
+            <NumberInput w={140} maw="100%"
               allowDecimal={false}
               label={t('Кількість')}
               min={1}
@@ -368,7 +376,7 @@ export function PlacementEditDrawer({
             )}
 
             <Group justify="flex-end">
-              <Button color="gray" variant="light" onClick={() => setDraft(null)}>
+              <Button color="gray" variant="default" onClick={() => setDraft(null)}>
                 {t('Скасувати')}
               </Button>
               <Button onClick={acceptDraft}>{t('Зберегти')}</Button>

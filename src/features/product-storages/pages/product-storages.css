@@ -180,7 +180,7 @@
 .product-storages-action-sheet .mantine-InputWrapper-label,
 .product-storages-action-sheet .mantine-Switch-label {
   color: var(--mantine-color-gray-9);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0;
@@ -395,3 +395,8 @@
   .product-storages-toolbar-action .mantine-Button-section,
   .product-storages-filter-row .data-table-layout-control .mantine-Button-section { margin: 0; }
 }
+
+/* Scalar stock actions stay content-height; the preview table retains its drawer. */
+.product-storages-action-sheet .mantine-Modal-body { background: var(--mantine-color-gray-0); }
+.product-storages-action-date-row .mantine-Switch-root { padding-block: 6px; }
+.product-storages-action-placement { max-width: 470px; }

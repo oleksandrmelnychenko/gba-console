@@ -23,7 +23,7 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { getSupplyOrderIncomeStatusLabel } from '../../../shared/supplyOrderIncomeStatus'
 import { getSupplyUkraineOrderDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
@@ -694,7 +694,7 @@ function SupplyUkraineOrderOverviewPageContent() {
                     disabled={isSavingVatItems}
                     leftSection={<X size={16} />}
                     size="sm"
-                    variant="light"
+                    variant="default"
                     onClick={cancelItemVatPercentChanges}
                   >
                     {t('Скасувати')}
@@ -763,16 +763,16 @@ function SupplyUkraineOrderOverviewPageContent() {
           }
         }}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           <Text>{t('Якщо закрити вікно, зміни по документах не будуть збережені.')}</Text>
-          <Group justify="flex-end">
-            <Button color="gray" disabled={isSavingDocuments} variant="light" onClick={() => setDocumentsCloseConfirmOpened(false)}>
+          <AppModalFooter>
+            <Button color="gray" disabled={isSavingDocuments} variant="default" onClick={() => setDocumentsCloseConfirmOpened(false)}>
               {t('Залишитися')}
             </Button>
             <Button color="red" disabled={isSavingDocuments} variant="light" onClick={closeDocumentsModal}>
               {t('Закрити без збереження')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
       <ProductCardModal

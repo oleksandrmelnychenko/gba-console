@@ -1,3 +1,4 @@
+import { DocumentDetailLayout, DocumentDetailSection, DocumentDetailRow } from '../../../shared/ui/document-detail/DocumentDetail'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
@@ -27,7 +28,7 @@ import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
@@ -1064,6 +1065,7 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
 
   return (
     <AppDrawer
+      className="app-compact-form"
       opened={Boolean(group) || outcomeModels.length > 0}
       position="right"
       size="full"
@@ -1149,7 +1151,7 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
           />
         )}
 
-        <AppModal
+        <AppModal className="app-compact-form"
           centered
           opened={confirmCloseOutcomeOpen}
           title={t('Є незбережені зміни')}
@@ -1161,14 +1163,14 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
         >
           <Stack gap="md">
             <Text>{t('Якщо закрити вікно, дані видаткового ордера не будуть збережені.')}</Text>
-            <Group justify="flex-end">
-              <Button color="gray" disabled={isSaving} variant="light" onClick={() => setConfirmCloseOutcomeOpen(false)}>
+            <AppModalFooter>
+              <Button color="gray" disabled={isSaving} variant="default" onClick={() => setConfirmCloseOutcomeOpen(false)}>
                 {t('Залишитися')}
               </Button>
               <Button color="red" disabled={isSaving} onClick={confirmDrawerClose}>
                 {t('Закрити без збереження')}
               </Button>
-            </Group>
+            </AppModalFooter>
           </Stack>
         </AppModal>
 
@@ -1686,12 +1688,12 @@ function AvailablePaymentOutcomeForm({
 
   return (
     <form id="available-payment-outcome-form" onSubmit={onSubmit}>
-      <Stack gap="md" p="md" style={{ border: '1px solid var(--mantine-color-gray-3)', borderRadius: 8 }}>
+      <Stack className="app-section-card available-payment-outcome-form" gap={10} p={12}>
         <Group justify="space-between">
           <Text className="app-section-title" fw={600}>
             {t('Новий видатковий ордер')}
           </Text>
-          <Badge variant="light">{outcomeModels.length}</Badge>
+          <TableChip tone="neutral" value={String(outcomeModels.length)} />
         </Group>
 
         {isLoadingDictionaries ? (
@@ -1700,16 +1702,16 @@ function AvailablePaymentOutcomeForm({
           </Group>
         ) : (
           <>
-            <SimpleGrid cols={{ base: 1, md: 2 }}>
+            <div className="available-payment-outcome-row">
               <InfoCell label={t('Отримувач')} value={displayValue(recipientName)} />
               <InfoCell
                 label={t('Сума до оплати')}
                 mono
-                value={`${formatAmount(baseOutcomeAmount)} ${taskCurrencyCode}`.trim()}
+                value={<Group gap={6}><span>{formatAmount(baseOutcomeAmount)}</span><TableChip tone="source" value={taskCurrencyCode} /></Group>}
               />
-            </SimpleGrid>
+            </div>
 
-            <SimpleGrid cols={{ base: 1, md: 3 }}>
+            <div className="available-payment-outcome-row">
               <TextInput
                 disabled={isSaving}
                 label={t('Номер')}
@@ -1719,20 +1721,20 @@ function AvailablePaymentOutcomeForm({
               <TextInput
                 disabled={isSaving}
                 label={t('Від якої дати')}
-                type="date"
+                type="date" className="available-payment-outcome-date"
                 value={form.date}
                 onChange={(event) => updateForm({ date: event.currentTarget.value })}
               />
               <TextInput
                 disabled={isSaving}
                 label={t('Час')}
-                type="time"
+                type="time" className="available-payment-outcome-time"
                 value={form.time}
                 onChange={(event) => updateForm({ time: event.currentTarget.value })}
               />
-            </SimpleGrid>
+            </div>
 
-            <SimpleGrid cols={{ base: 1, md: 3 }}>
+            <div className="available-payment-outcome-row">
               <Select
                 data={organizationOptions}
                 disabled={isSaving}
@@ -1794,10 +1796,10 @@ function AvailablePaymentOutcomeForm({
                   </Text>
                 )}
               </Stack>
-            </SimpleGrid>
+            </div>
 
-            <SimpleGrid cols={{ base: 1, md: 3 }}>
-              <NumberInput
+            <div className="available-payment-outcome-row">
+              <NumberInput className="available-payment-outcome-number"
                 allowNegative={false}
                 decimalScale={2}
                 disabled={isSaving}
@@ -1806,7 +1808,7 @@ function AvailablePaymentOutcomeForm({
                 value={form.amount}
                 onChange={(value) => updateForm({ amount: toNumber(value) })}
               />
-              <NumberInput
+              <NumberInput className="available-payment-outcome-number"
                 allowNegative={false}
                 decimalScale={4}
                 disabled={isSaving}
@@ -1815,7 +1817,7 @@ function AvailablePaymentOutcomeForm({
                 value={form.exchangeRate}
                 onChange={(value) => updateForm({ exchangeRate: toNumber(value) })}
               />
-              <NumberInput
+              <NumberInput className="available-payment-outcome-number"
                 allowNegative={false}
                 decimalScale={2}
                 disabled={isSaving}
@@ -1824,7 +1826,7 @@ function AvailablePaymentOutcomeForm({
                 value={form.vatRate}
                 onChange={(value) => updateForm({ vatRate: toNumber(value) })}
               />
-              <NumberInput
+              <NumberInput className="available-payment-outcome-number"
                 decimalScale={2}
                 label={t('Сума ПДВ')}
                 readOnly
@@ -1863,9 +1865,9 @@ function AvailablePaymentOutcomeForm({
                   </Button>
                 )}
               </Stack>
-            </SimpleGrid>
+            </div>
 
-            <SimpleGrid cols={{ base: 1, md: 2 }}>
+            <div className="available-payment-outcome-row">
               <TextInput
                 disabled={isSaving}
                 label={t('Призначення платежу')}
@@ -1878,7 +1880,7 @@ function AvailablePaymentOutcomeForm({
                 value={form.comment}
                 onChange={(event) => updateForm({ comment: event.currentTarget.value })}
               />
-            </SimpleGrid>
+            </div>
 
             <Group gap="lg">
               <Checkbox
@@ -2156,43 +2158,34 @@ function AvailablePaymentCashFlowDetailDrawer({
   return (
     <AppDrawer
       opened={Boolean(item)}
-      padding="lg"
+      padding="md"
       position="right"
       size="min(980px, 100vw)"
       title={item?.Name || t('Деталі руху коштів')}
       onClose={onClose}
     >
       {item && (
-        <Stack gap="md">
-          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
+        <DocumentDetailLayout variant="inventory" summary={null}>
+          <DocumentDetailSection title={t('Дані документа')}>
             <CashFlowDetailValue label={t('Дата')} value={formatDateTime(item.FromDate)} />
             <CashFlowDetailValue label={t('Документ')} value={displayValue(item.Name)} />
             <CashFlowDetailValue label={t('Номер')} value={displayValue(item.Number)} />
-            <CashFlowDetailValue label={t('Організація')} value={displayValue(item.OrganizationName)} />
-            <CashFlowDetailValue label={t('Операція')} value={item.IsCreditValue ? t('Кредит') : t('Дебет')} />
+            <CashFlowDetailValue label={t('Організація')} value={<TableChip tone="product" value={displayValue(item.OrganizationName)} />} />
+            <CashFlowDetailValue label={t('Операція')} value={<TableChip tone="neutral" value={item.IsCreditValue ? t('Кредит') : t('Дебет')} />} />
             <CashFlowDetailValue label={t('Статус накладної')} value={<CashFlowPaymentStatusBadge item={item} />} />
             <CashFlowDetailValue mono label={t('Сума')} value={formatAmount(item.CurrentValue)} />
             <CashFlowDetailValue mono label={t('Поточний баланс')} value={formatAmount(item.CurrentBalance)} />
-          </SimpleGrid>
+          </DocumentDetailSection>
 
-          <CashFlowDetailContent item={item} />
-        </Stack>
+          <DocumentDetailSection title={t('Позиції')} stacked><CashFlowDetailContent item={item} /></DocumentDetailSection>
+        </DocumentDetailLayout>
       )}
     </AppDrawer>
   )
 }
 
 function CashFlowDetailValue({ label, mono, value }: { label: string; mono?: boolean; value: ReactNode }) {
-  return (
-    <Stack gap={2}>
-      <Text size="xs" c="dimmed">
-        {label}
-      </Text>
-      <Text className={mono ? 'app-money' : undefined} size="sm" fw={600} lineClamp={2}>
-        {value || '-'}
-      </Text>
-    </Stack>
-  )
+  return <DocumentDetailRow label={label} mono={mono} value={value || '-'} />
 }
 
 function CashFlowPaymentStatusBadge({ item }: { item: AccountingCashFlowHeadItem }) {
@@ -2482,15 +2475,8 @@ function getTransferOrderTypeLabel(order: AvailablePaymentOrderSummary, t: (key:
   return t('Видатковий картковий ордер')
 }
 
-function InfoCell({ label, mono = false, value }: { label: string; mono?: boolean; value: string }) {
-  return (
-    <Stack gap={2}>
-      <Text c="dimmed" size="xs">
-        {label}
-      </Text>
-      <Text className={mono ? 'app-money' : undefined} fw={600}>{value}</Text>
-    </Stack>
-  )
+function InfoCell({ label, mono = false, value }: { label: string; mono?: boolean; value: ReactNode }) {
+  return <DocumentDetailRow label={label} mono={mono} value={value} />
 }
 
 function RedirectToSourceButton({

@@ -278,7 +278,7 @@ export function ActReconciliationActionsModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={getModalTitle(target, t)} onClose={handleClose}>
+    <AppModal className="app-compact-form" centered opened={opened} size="lg" title={getModalTitle(target, t)} onClose={handleClose}>
       {(storagesError || submitError) && (
         <Alert color="red" icon={<CircleAlert size={18} />} mb="sm" variant="light">
           {submitError || storagesError}
@@ -400,7 +400,7 @@ function ActionQuantityPreview({
                     </Text>
                   </Table.Td>
                   <Table.Td className="app-table-number">
-                    <NumberInput
+                    <NumberInput maw={160}
                       allowNegative={false}
                       clampBehavior="none"
                       disabled={disabled || !isEditable}

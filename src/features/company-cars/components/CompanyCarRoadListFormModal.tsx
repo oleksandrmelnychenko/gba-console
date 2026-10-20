@@ -17,7 +17,8 @@ import { useEffect, useMemo, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DocumentDetailChip, DocumentDetailLayout, DocumentDetailSummary, DocumentDetailMetric, DocumentDetailSection, DocumentDetailRow } from '../../../shared/ui/document-detail/DocumentDetail'
 import './company-car-road-list-form.css'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { useAuth } from '../../auth/useAuth'
 import {
   calculateCompanyCarRoadListForCreate,
@@ -127,7 +128,7 @@ export function CompanyCarRoadListFormModal({
       title={`${isEditMode ? t('Редагування шляхового листа') : t('Створення шляхового листа')} ${t('для автомобіля')} ${effectiveCompanyCar.LicensePlate || ''}`.trim()}
       onClose={onClose}
     >
-      <Stack gap="md">
+      <Stack gap={10}>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
@@ -147,7 +148,9 @@ export function CompanyCarRoadListFormModal({
         )}
 
         <DocumentDetailLayout
+          variant="inventory"
           summary={<DocumentDetailSummary
+            variant="inventory"
             eyebrow={t('Автомобіль')}
             title={effectiveCompanyCar.LicensePlate || '—'}
             meta={effectiveCompanyCar.CarBrand ? <DocumentDetailChip>{effectiveCompanyCar.CarBrand}</DocumentDetailChip> : null}
@@ -494,7 +497,7 @@ function RoadListSummary({ companyCar, responsible }: { companyCar: CompanyCar; 
     <>
       <DocumentDetailRow label={t('Показники одометра')} mono value={formatNumber(companyCar.Mileage)} />
       <DocumentDetailRow label={t('Кількість пального')} mono value={formatNumber(companyCar.FuelAmount)} />
-      <DocumentDetailRow label={t('Відповідальний')} wide value={displayValue(responsible?.LastName)} />
+      <DocumentDetailRow label={t('Відповідальний')} wide value={<TableChip tone="warning" value={displayValue(responsible?.LastName)} />} />
     </>
   )
 }
@@ -513,25 +516,29 @@ function RoadListKilometerFields({
   const { t } = useI18n()
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2 }}>
+    <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} spacing={10}>
       <TextInput
+        inputMode="decimal"
         label={t('Показники одометра')}
         value={form.mileage}
         onChange={(event) => onPatch({ mileage: event.currentTarget.value })}
       />
       <TextInput
+        inputMode="decimal"
         disabled={isMileageOnly}
         label={t('По місту')}
         value={form.inCityKilometers}
         onChange={(event) => onPatch({ inCityKilometers: event.currentTarget.value })}
       />
       <TextInput
+        inputMode="decimal"
         disabled={isMileageOnly}
         label={t('За містом')}
         value={form.outsideCityKilometers}
         onChange={(event) => onPatch({ outsideCityKilometers: event.currentTarget.value })}
       />
       <TextInput
+        inputMode="decimal"
         disabled={isMixedDisabled}
         label={t('Змішаний режим')}
         value={form.mixedModeKilometers}
@@ -612,19 +619,19 @@ function RoadListFormFooter({
   const { t } = useI18n()
 
   return (
-    <Group justify="space-between">
+    <AppModalFooter className="app-modal-footer--split">
       <Badge color="gray" variant="light">
         {t('Загальний кілометраж')}: {formatNumber(calculated?.TotalKilometers ?? 0)}
       </Badge>
       <Group gap="xs">
-        <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
+        <Button color="gray" disabled={isSaving} variant="default" onClick={onClose}>
           {t('Скасувати')}
         </Button>
         <Button color={CREATE_ACTION_COLOR} disabled={isSaveDisabled} leftSection={<Save size={16} />} loading={isSaving} onClick={onSave}>
           {t('Зберегти')}
         </Button>
       </Group>
-    </Group>
+    </AppModalFooter>
   )
 }
 

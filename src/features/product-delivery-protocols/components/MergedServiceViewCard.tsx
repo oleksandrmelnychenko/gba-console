@@ -61,7 +61,7 @@ function PaymentTaskBlock({
           )}
         </Group>
         <LabelValueRow mono label={t('Сума')}><ProtocolMoneyValue value={task.GrossPrice} currency={currencyCode} /></LabelValueRow>
-        <LabelValueRow label={t('Відповідальний')}>{responsibleName(task.User) || '-'}</LabelValueRow>
+        <LabelValueRow label={t('Відповідальний')}><TableChip tone="warning" value={responsibleName(task.User) || '-'} /></LabelValueRow>
         <LabelValueRow label={t('Сплатити до')}>{formatDate(task.PayToDate)}</LabelValueRow>
         <LabelValueRow label={t('Коментар')}>{task.Comment || '-'}</LabelValueRow>
         {documents.length > 0 && (
@@ -186,7 +186,7 @@ export function MergedServiceViewCard({
               <ProtocolMoneyValue value={service.SupplyInformationTask.GrossPrice} currency={currencyCode} />
             </LabelValueRow>
             <LabelValueRow label={t('Відповідальний за оплату')}>
-              {responsibleName(service.SupplyInformationTask.User) || '-'}
+              <TableChip tone="warning" value={responsibleName(service.SupplyInformationTask.User) || '-'} />
             </LabelValueRow>
             <LabelValueRow label={t('Сплатити до')}>{formatDate(service.SupplyInformationTask.FromDate)}</LabelValueRow>
           </>

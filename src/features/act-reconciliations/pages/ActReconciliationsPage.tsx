@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import {
   Button,
@@ -368,7 +369,7 @@ function useReconciliationColumns(
         cell: (reconciliation) => {
           const value = displayValue(rowSummaries.get(reconciliation)?.organizationName)
 
-          return <span title={nativeTitle(value)}>{value}</span>
+          return <TableChip tone="product" value={value} />
         },
       },
       {

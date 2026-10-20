@@ -1,7 +1,7 @@
-import { Button, Group, Stack, Text } from '@mantine/core'
+import { Button, Stack, Text } from '@mantine/core'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
-import { AppModal } from '../../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../../shared/ui/AppModal'
 
 export function WizardReviewConfirmModal({
   opened,
@@ -37,16 +37,16 @@ export function WizardReviewConfirmModal({
       withCloseButton={false}
       onClose={onCancel}
     >
-      <Stack gap="md" onKeyDown={handleKeyDown}>
+      <Stack className="app-compact-form" gap="md" onKeyDown={handleKeyDown}>
         <Text>{t('Закрити вікно?')}</Text>
-        <Group gap="xs" justify="flex-end">
-          <Button color="gray" variant="light" onClick={onCancel}>
+        <AppModalFooter>
+          <Button color="gray" variant="default" onClick={onCancel}>
             {t('Скасувати')}
           </Button>
           <Button data-autofocus onClick={onConfirm}>
             {t('Так')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

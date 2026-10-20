@@ -588,3 +588,21 @@
   .vehicle-registry-toolbar-action .mantine-Button-label { display: none; }
   .vehicle-registry-toolbar-action .mantine-Button-section { margin: 0; }
 }
+
+/* Detail workspace uses the same compact cards as document sheets. */
+.vehicle-registry-detail .app-section-card {
+  padding: 12px;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  background: var(--mantine-color-white);
+}
+.vehicle-registry-detail .app-detail-hero { padding: 12px; gap: 12px; }
+.vehicle-registry-detail .app-detail-title strong,
+.vehicle-registry-detail .app-detail-metric strong { font-size: 16px; }
+.vehicle-registry-detail .app-detail-section-head { margin-bottom: 8px; padding-bottom: 0; }
+.vehicle-registry-detail .vehicle-registry-leaders { gap: 10px; }
+.vehicle-registry-detail .vehicle-registry-workflow { gap: 10px; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); }
+.vehicle-registry-detail .vehicle-registry-client-matches { padding-top: 12px; }
+@media (max-width: 760px) {
+  .vehicle-registry-detail .vehicle-registry-workflow { grid-template-columns: minmax(0, 1fr); }
+}

@@ -1,7 +1,7 @@
 import { Button, Loader, Stack, Text } from '@mantine/core'
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { ReportModal } from './ReportModal'
 import { WarehousePeriodCapabilityStatus } from './WarehousePeriodControls'
 import { getCashMovementsCapability } from '../api/originalCashMovementsApi'
 import { isCashMovementsCatalogueEntry, type CashMovementsCapability } from '../data/originalCashMovements'
@@ -23,11 +23,11 @@ function CashMovementsModal({ opened, scope, capability, disabled, close }: {
   opened: boolean; scope: Scope; capability: CashMovementsCapability | null; disabled: boolean; close: () => void
 }) {
   const { t } = useI18n(), today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Kyiv' })
-  return <AppModal opened={opened && scope.enabled && !!capability} title={t('Рухи коштів Fenix')} size={1400} onClose={close}
+  return <ReportModal opened={opened && scope.enabled && !!capability} title={t('Рухи коштів Fenix')} size={1400} onClose={close}
     closeButtonProps={{ 'aria-label': t('Закрити рухи коштів') }}>
     {opened && capability ? <Suspense fallback={<Loader size="sm" />}><Panel key={JSON.stringify(scope)} capability={capability}
       callerKey={scope.callerKey} canGenerate={scope.enabled && !disabled} initialFrom={`${today.slice(0, 7)}-01`} initialThrough={today} /></Suspense> : null}
-  </AppModal>
+  </ReportModal>
 }
 export function OriginalCashMovementsCatalogueLaunch({ report, worlds, enabled, disabled, callerKey }: {
   report: ReportCatalogueEntry; worlds: readonly string[]; enabled: boolean; disabled: boolean; callerKey: string | null

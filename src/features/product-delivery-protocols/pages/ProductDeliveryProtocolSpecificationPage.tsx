@@ -17,7 +17,7 @@ import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { PdfIcon } from '../../../shared/ui/PdfIcon'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -1296,16 +1296,16 @@ function ProductDeliveryProtocolSpecificationModals({
           }
         }}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           <Text>{t('Якщо закрити вікно, зміни по документах доставки не будуть збережені.')}</Text>
-          <Group justify="flex-end">
+          <AppModalFooter>
             <Button disabled={model.isSavingDocuments} variant="default" onClick={model.cancelCloseDocuments}>
               {t('Залишитися')}
             </Button>
             <Button color="red" disabled={model.isSavingDocuments} onClick={model.closeDocumentsDraft}>
               {t('Закрити без збереження')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
     </>

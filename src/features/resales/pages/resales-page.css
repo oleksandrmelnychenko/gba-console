@@ -636,7 +636,7 @@
 
 .resale-edit-drawer__section .mantine-InputWrapper-label {
   color: var(--mantine-color-gray-9);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0;
@@ -645,7 +645,7 @@
 .resale-edit-drawer__section .mantine-Input-input {
   border-color: var(--mantine-color-gray-2);
   border-radius: 8px;
-  min-height: 36px;
+  min-height: 32px;
 }
 
 .resale-edit-drawer__section--calculation {

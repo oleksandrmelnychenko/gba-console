@@ -1,3 +1,4 @@
+import { DocumentDetailLayout, DocumentDetailSummary, DocumentDetailSection, DocumentDetailRow } from '../../../shared/ui/document-detail/DocumentDetail'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -507,7 +508,7 @@ export function AccountableExpenseActionsModal({
   const title = row ? displayValue(row.productName || row.advanceNumber || row.order.Number) || t('Підзвітна витрата') : t('Підзвітна витрата')
 
   return (
-    <AppModal
+    <AppModal className="app-compact-form"
       centered
       opened={Boolean(row)}
       size={496}
@@ -584,13 +585,6 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
   const paymentLabel = row ? formatPaymentStatus(row.paymentStatus, t) : ''
   const underReportLabel = row ? formatUnderReportStatus(row.underReportStatus, t) : ''
   const typeLabel = row?.item.IsService ? t('Послуга') : t('Товар')
-  const heroMeta = row
-    ? compactStrings([
-        row.advanceNumber,
-        row.created ? formatDateTime(row.created) : undefined,
-        row.organization,
-      ]).join(' / ')
-    : ''
 
   return (
     <AppDrawer
@@ -606,35 +600,18 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
       onClose={onClose}
     >
       {row && (
-        <div className="accountable-expense-detail">
-          <section className="accountable-expense-detail-hero">
-            <div>
-              <div className="accountable-expense-detail-title">
-                <div className="accountable-expense-detail-title__copy">
-                  <strong>{displayValue(row.productName || row.advanceNumber || row.order.Number)}</strong>
-                  <span>{heroMeta || displayValue(undefined)}</span>
-                </div>
-              </div>
-              <div className="accountable-expense-detail-badges">
-                <Badge className={`app-role-pill ${getPaymentStatusPillVariant(row.paymentStatus)}`} variant="light">
-                  {paymentLabel}
-                </Badge>
-                {underReportLabel ? (
-                  <Badge className={row.underReportStatus === 'closed' ? 'app-role-pill is-green' : row.underReportStatus === 'mixed' ? 'app-role-pill is-orange' : 'app-role-pill is-gray'} variant="light">
-                    {underReportLabel}
-                  </Badge>
-                ) : null}
-                <Badge className="app-role-pill is-orange" variant="light">
-                  {typeLabel}
-                </Badge>
-              </div>
-            </div>
-            <div className="accountable-expense-detail-metrics">
-              <ExpenseDetailMetric label={t('Сума з ПДВ')} meta={displayValue(row.currency)} tone="orange" value={formatMoney(row.amount)} />
+        <DocumentDetailLayout variant="inventory" summary={
+          <DocumentDetailSummary variant="inventory" eyebrow={t('Підзвітна витрата')}
+            title={displayValue(row.advanceNumber || row.order.Number)}
+            meta={<><span className="app-money">{formatDateTime(row.created)}</span><TableChip tone="product" value={row.organization} /><TableChip value={typeLabel} /></>}
+            status={<><TableChip tone={row.paymentStatus === 'paid' ? 'success' : row.paymentStatus === 'partial' ? 'warning' : 'danger'} value={paymentLabel} />{underReportLabel ? <TableChip tone={row.underReportStatus === 'closed' ? 'success' : row.underReportStatus === 'mixed' ? 'warning' : 'neutral'} value={underReportLabel} /> : null}</>}
+            metrics={<>
+              <ExpenseDetailMetric label={t('Сума з ПДВ')} meta={displayValue(row.currency)} value={formatMoney(row.amount)} />
               <ExpenseDetailMetric label={t('Оплачено')} meta={displayValue(row.currency)} value={formatMoney(row.paidAmount)} />
-              <ExpenseDetailMetric label={t('Кількість')} meta={typeLabel} value={formatAmount(row.qty)} />
-            </div>
-          </section>
+              <ExpenseDetailMetric label={t('Кількість')} value={formatAmount(row.qty)} />
+            </>}
+          />
+        }>
 
           <ExpenseDetailSection title={t('Реквізити')}>
             <div className="accountable-expense-detail-grid">
@@ -643,9 +620,9 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
               <DetailItem label={t('Номер організації')} mono value={displayValue(row.order.OrganizationNumber)} />
               <DetailItem label={t('Дата організації')} mono value={formatDateTime(row.order.OrganizationFromDate)} />
               <DetailItem label={t('Авансовий звіт')} mono value={displayValue(row.advanceNumber)} />
-              <DetailItem label={t('Організація')} value={displayValue(row.organization)} />
+              <DetailItem tone="product" label={t('Організація')} value={displayValue(row.organization)} />
               <DetailItem label={t('Кому видано')} value={displayValue(row.payedTo)} />
-              <DetailItem label={t('Відповідальний')} value={displayValue(row.responsible)} />
+              <DetailItem tone="warning" label={t('Відповідальний')} value={displayValue(row.responsible)} />
             </div>
           </ExpenseDetailSection>
 
@@ -657,9 +634,7 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
                   <span>{displayValue(row.vendorCode)}</span>
                 </div>
               </div>
-              <Badge className="app-role-pill is-orange" variant="light">
-                {typeLabel}
-              </Badge>
+              <TableChip value={typeLabel} />
             </div>
             <div className="accountable-expense-detail-grid is-compact">
               <DetailItem label={t('Артикул')} mono value={displayValue(row.vendorCode)} />
@@ -669,7 +644,7 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
               <DetailItem label={t('Сума без ПДВ')} mono value={formatMoney(row.item.TotalPrice)} />
               <DetailItem label={t('ПДВ')} mono value={formatMoney(row.item.VAT)} />
               <DetailItem label={t('ПДВ %')} mono value={formatAmount(row.item.VatPercent)} />
-              <DetailItem label={t('Валюта')} mono value={displayValue(row.currency)} />
+              <DetailItem tone="source" label={t('Валюта')} mono value={displayValue(row.currency)} />
             </div>
           </ExpenseDetailSection>
 
@@ -708,7 +683,7 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
                 <DetailItem label={t('Видатковий ордер')} value={displayValue(outcome.Number || outcome.CustomNumber)} />
                 <DetailItem label={t('Дата')} value={formatDateTime(outcome.FromDate)} />
                 <DetailItem label={t('Сума')} mono value={formatMoney(outcome.Amount)} />
-                <DetailItem label={t('Валюта')} mono value={displayValue(outcome.PaymentCurrencyRegister?.Currency?.Code || outcome.PaymentCurrencyRegister?.Currency?.Name)} />
+                <DetailItem tone="source" label={t('Валюта')} mono value={displayValue(outcome.PaymentCurrencyRegister?.Currency?.Code || outcome.PaymentCurrencyRegister?.Currency?.Name)} />
                 <DetailItem label={t('Рахунок')} value={displayValue(outcome.PaymentCurrencyRegister?.PaymentRegister?.Name)} />
                 <DetailItem label={t('Стаття руху')} value={displayValue(outcome.PaymentMovementOperation?.PaymentMovement?.OperationName)} />
                 <DetailItem label={t('Призначення платежу')} value={displayValue(outcome.PaymentPurpose)} />
@@ -750,7 +725,7 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
                         <DetailItem label={t('Видатковий ордер')} value={displayValue(itemOutcome?.Number || itemOutcome?.CustomNumber)} />
                         <DetailItem label={t('Дата')} value={formatDateTime(itemOutcome?.FromDate)} />
                         <DetailItem label={t('Сума')} mono value={formatMoney(itemOutcome?.Amount)} />
-                        <DetailItem label={t('Валюта')} mono value={displayValue(itemOutcome?.PaymentCurrencyRegister?.Currency?.Code || itemOutcome?.PaymentCurrencyRegister?.Currency?.Name)} />
+                        <DetailItem tone="source" label={t('Валюта')} mono value={displayValue(itemOutcome?.PaymentCurrencyRegister?.Currency?.Code || itemOutcome?.PaymentCurrencyRegister?.Currency?.Name)} />
                         <DetailItem label={t('Закрито')} value={itemOutcome?.IsUnderReportDone ? t('Так') : t('Ні')} />
                       </div>
                     </div>
@@ -759,61 +734,27 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
               </div>
             </ExpenseDetailSection>
           )}
-        </div>
+        </DocumentDetailLayout>
       )}
     </AppDrawer>
   )
 }
 
-function ExpenseDetailMetric({
-  label,
-  meta,
-  tone = 'neutral',
-  value,
-}: {
-  label: string
-  meta?: string
-  tone?: 'neutral' | 'orange'
-  value: string
-}) {
+function ExpenseDetailMetric({ label, meta, value }: { label: string; meta?: string; value: string }) {
   return (
-    <div className={`accountable-expense-detail-metric is-${tone}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-      {meta && <small>{meta}</small>}
-    </div>
+    <Stack gap={4}>
+      <Text c="gray.9" size="xs">{label}</Text>
+      <Group gap={6}><Text className="app-money" fw={500}>{value}</Text>{meta ? <TableChip tone="source" value={meta} /> : null}</Group>
+    </Stack>
   )
 }
 
-function ExpenseDetailSection({
-  action,
-  children,
-  title,
-}: {
-  action?: ReactNode
-  children: ReactNode
-  title: string
-}) {
-  return (
-    <section className="accountable-expense-detail-section">
-      <div className="accountable-expense-detail-section__header">
-        <Text className="app-section-title" fw={600} size="sm">
-          {title}
-        </Text>
-        {action && <div className="accountable-expense-detail-section__action">{action}</div>}
-      </div>
-      <div className="accountable-expense-detail-section__body">{children}</div>
-    </section>
-  )
+function ExpenseDetailSection({ action, children, title }: { action?: ReactNode; children: ReactNode; title: string }) {
+  return <DocumentDetailSection actions={action} title={title} stacked>{children}</DocumentDetailSection>
 }
 
-function DetailItem({ label, mono = false, value }: { label: string; mono?: boolean; value: string }) {
-  return (
-    <div className={`accountable-expense-detail-field${mono ? ' is-mono' : ''}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  )
+function DetailItem({ label, mono = false, tone, value }: { label: string; mono?: boolean; tone?: 'product' | 'source' | 'warning' | 'neutral'; value: string }) {
+  return <DocumentDetailRow label={label} mono={mono} value={tone ? <TableChip tone={tone} value={value} /> : value} />
 }
 
 type StoredFilters = {

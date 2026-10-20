@@ -6,10 +6,11 @@ import {
   Text,
   TextInput,
 } from '@mantine/core'
-import { AppModal } from "../../../shared/ui/AppModal"
+import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { Check, Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { TableChip } from '../../../shared/ui/TableChip'
 import type { Currency, OrganizationClientAgreement } from '../types'
 import {
   createAgreement,
@@ -95,7 +96,8 @@ export function OrganizationClientAgreementsPanel({
         id: 'currency',
         header: 'Валюта',
         accessor: (row) => row.agreement.Currency ? getCurrencyLabel(row.agreement.Currency) : '',
-        minWidth: 180,
+        cell: (row) => <TableChip tone="source" value={row.agreement.Currency ? getCurrencyLabel(row.agreement.Currency) : null} />,
+        minWidth: 100,
       },
       {
         id: 'actions',
@@ -149,7 +151,7 @@ export function OrganizationClientAgreementsPanel({
   }
 
   return (
-    <Stack gap="sm">
+    <Stack className="organization-client-agreements" gap={10}>
       <Group justify="space-between" align="center">
         <Text fw={600}>{t('Договори')}</Text>
         <Button
@@ -182,9 +184,10 @@ export function OrganizationClientAgreementsPanel({
       />
 
       <AppModal centered opened={modalOpened} title={t('Новий договір')} onClose={() => setModalOpened(false)}>
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           <Select
             data={currencyOptions}
+            renderOption={({ option }) => <TableChip tone="source" value={option.label} />}
             label={t('Валюта')}
             required
             value={currencyId}
@@ -208,14 +211,14 @@ export function OrganizationClientAgreementsPanel({
               {error}
             </Text>
           )}
-          <Group justify="flex-end">
-            <Button variant="subtle" color="gray" onClick={() => setModalOpened(false)}>
+          <AppModalFooter>
+            <Button variant="default" color="gray" onClick={() => setModalOpened(false)}>
               {t('Скасувати')}
             </Button>
             <Button color={CREATE_ACTION_COLOR} leftSection={<Check size={16} />} onClick={handleAddAgreement}>
               {t('Додати')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
     </Stack>

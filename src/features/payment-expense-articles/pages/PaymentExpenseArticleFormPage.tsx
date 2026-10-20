@@ -1,5 +1,6 @@
 import {
   Alert,
+  Card,
   Button,
   Group,
   Stack,
@@ -10,8 +11,7 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert, Save, Trash2 } from 'lucide-react'
 import { type FormEvent, useEffect } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -248,19 +248,46 @@ export function PaymentExpenseArticleFormPage() {
   }
 
   return (
-    <AppDrawer
+    <AppModal
+      className="app-compact-form"
       opened
-      position="right"
-      size="compact"
-      title={
-        <span style={{ fontFamily: 'var(--font-mono)' }}>
-          {isEditMode ? t('Редагування статті витрат') : t('Нова стаття витрат')}
-        </span>
-      }
+      size={600}
+      title={isEditMode ? t('Редагування статті витрат') : t('Нова стаття витрат')}
       onClose={handleCancel}
-      footer={
-        <Group gap="xs">
-          {isEditMode && canDelete && (
+    >
+      <form id="payment-expense-article-form" onSubmit={handleSubmit}>
+        <Card className="app-section-card" withBorder padding={12} radius="md">
+          <Stack gap={10}>
+            {error && (
+              <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+                {error}
+              </Alert>
+            )}
+
+            <TextInput
+              disabled={isLoading || isSaving || isDeleting || !canSave}
+              label={t('Назва')}
+              maxLength={ARTICLE_NAME_MAX_LENGTH}
+              placeholder={t('Вкажіть назву')}
+              required
+              value={operationName}
+              onChange={(event) => {
+                // Read synchronously: currentTarget is null by the time the
+                // deferred updater runs, which killed the whole tree (bug 92).
+                const { value } = event.currentTarget
+
+                setFormState((current) => ({
+                  ...current,
+                  operationName: value,
+                }))
+              }}
+            />
+          </Stack>
+        </Card>
+      </form>
+      <AppModalFooter className={isEditMode && canDelete ? 'app-modal-footer--split' : undefined}>
+        {isEditMode && canDelete && (
+          <Group gap="xs">
             <Button
               color="red"
               disabled={isLoading}
@@ -272,7 +299,10 @@ export function PaymentExpenseArticleFormPage() {
             >
               {t('Видалити')}
             </Button>
-          )}
+          </Group>
+        )}
+        <Group gap="xs">
+          <Button variant="default" disabled={isSaving || isDeleting} onClick={handleCancel}>{t('Скасувати')}</Button>
           {canSave && (
             <Button
               color={CREATE_ACTION_COLOR}
@@ -286,52 +316,23 @@ export function PaymentExpenseArticleFormPage() {
             </Button>
           )}
         </Group>
-      }
-    >
-      <form id="payment-expense-article-form" onSubmit={handleSubmit}>
-        <Stack gap="md">
-          {error && (
-            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-              {error}
-            </Alert>
-          )}
+      </AppModalFooter>
 
-          <TextInput
-            disabled={isLoading || isSaving || isDeleting || !canSave}
-            label={t('Назва')}
-            maxLength={ARTICLE_NAME_MAX_LENGTH}
-            placeholder={t('Вкажіть назву')}
-            required
-            value={operationName}
-            onChange={(event) => {
-              // Read synchronously: currentTarget is null by the time the
-              // deferred updater runs, which killed the whole tree (bug 92).
-              const { value } = event.currentTarget
-
-              setFormState((current) => ({
-                ...current,
-                operationName: value,
-              }))
-            }}
-          />
-        </Stack>
-      </form>
-
-      <AppModal
+      <AppModal className="app-compact-form"
         centered
         opened={deleteModalOpened}
         title={t('Видалити статтю витрат')}
         onClose={() => setFormState((current) => ({ ...current, deleteModalOpened: false }))}
       >
-        <Stack gap="md">
+        <Stack gap={10}>
           <Text>
             {t('Видалити статтю')} <Text span fw={600}>{operationName || t('Без назви')}</Text>?
           </Text>
-          <Group justify="flex-end">
+          <AppModalFooter>
             <Button
               color="gray"
               disabled={isDeleting}
-              variant="light"
+              variant="default"
               onClick={() => setFormState((current) => ({ ...current, deleteModalOpened: false }))}
             >
               {t('Скасувати')}
@@ -339,10 +340,10 @@ export function PaymentExpenseArticleFormPage() {
             <Button color="red" leftSection={<Trash2 size={16} />} loading={isDeleting} onClick={handleDelete}>
               {t('Видалити')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
-    </AppDrawer>
+    </AppModal>
   )
 }
 

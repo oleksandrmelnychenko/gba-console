@@ -103,7 +103,7 @@
 
 .supply-payment-detail-row > span,
 .supply-payment-detail-row > .mantine-Text-root:first-child {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-8);
   font-size: 12px;
   font-weight: 500;
   line-height: 1.2;

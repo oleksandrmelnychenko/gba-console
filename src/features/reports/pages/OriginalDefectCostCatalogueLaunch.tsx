@@ -2,7 +2,7 @@ import { Button, Loader, Stack, Text } from '@mantine/core'
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { WarehousePeriodCapabilityStatus } from './WarehousePeriodControls'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { ReportModal } from './ReportModal'
 import { getDefectCostCapability } from '../api/originalDefectCostApi'
 import { isDefectCostCatalogueEntry, type DefectCostCapability } from '../data/originalDefectCost'
 import type { ReportCatalogueEntry } from '../types'
@@ -27,11 +27,11 @@ function DefectCostModal({ opened, enabled, disabled, capability, callerKey, sco
 }) {
   const { t } = useI18n()
   const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Kyiv' })
-  return <AppModal opened={opened && enabled && !!capability} title={t('Брак у виробництві · вартість')} size={1250}
+  return <ReportModal opened={opened && enabled && !!capability} title={t('Брак у виробництві · вартість')} size={1250}
     onClose={close} closeButtonProps={{ 'aria-label': t('Закрити звіт про вартість браку') }}>
     {opened && capability ? <Suspense fallback={<Loader size="sm" />}><Panel key={JSON.stringify(scope)} capability={capability} callerKey={callerKey}
       canGenerate={enabled && !disabled} initialFrom={today} initialThrough={today} /></Suspense> : null}
-  </AppModal>
+  </ReportModal>
 }
 export function OriginalDefectCostCatalogueLaunch({ report, worlds, enabled, disabled, callerKey }: {
   report: ReportCatalogueEntry; worlds: readonly string[]; enabled: boolean; disabled: boolean; callerKey: string | null

@@ -1,10 +1,10 @@
+import { DocumentDetailLayout, DocumentDetailSummary, DocumentDetailSection, DocumentDetailRow } from '../../../shared/ui/document-detail/DocumentDetail'
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
-  Badge,
   Card,
   Group,
   Loader,
-  SimpleGrid,
   Stack,
   Text,
   Textarea,
@@ -43,7 +43,7 @@ export function ActProvidingServiceDetailBody({
   } = model
 
   return (
-    <Stack gap="lg">
+    <Stack gap={10}>
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
@@ -51,40 +51,32 @@ export function ActProvidingServiceDetailBody({
       )}
 
       {displayModel ? (
-        <Card className="app-section-card" withBorder radius="md" padding="lg">
-          <Stack gap="lg">
-            <Group justify="space-between" align="flex-start" gap="sm">
-              <Stack gap={4}>
-                <Text fw={500} size="lg" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
-                  {displayValue(displayModel.number)}
-                </Text>
-                <Text c="dimmed" size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
-                  {formatDateTime(displayModel.date)}
-                </Text>
-              </Stack>
-              <Badge className={displayModel.accountingMarker ? 'app-role-pill is-orange' : 'app-role-pill is-green'} size="lg" variant="light">
-                {displayModel.accountingMarker ? t('Бухгалтерський') : t('Управлінський')}
-              </Badge>
-            </Group>
+        <DocumentDetailLayout variant="inventory" summary={
+          <DocumentDetailSummary variant="inventory" eyebrow={t('Акт надання послуг')}
+            title={displayValue(displayModel.number)}
+            meta={<><span className="app-money">{formatDateTime(displayModel.date)}</span><TableChip value={displayModel.accountingMarker ? t('Бухгалтерський') : t('Управлінський')} /></>}
+            metrics={<Group gap={6}><Text className="app-money">{formatMoney(displayModel.totalWithVat)}</Text><TableChip tone="source" value={displayModel.currency} /></Group>}
+          />
+        }>
+          <DocumentDetailSection title={t('Реквізити')}>
+            <DetailValue label={t('Номер')} mono value={displayModel.number} />
+            <DetailValue tone="product" label={t('Організація')} value={displayModel.organization} />
+            <DetailValue label={t('Постачальник послуг')} value={displayModel.serviceOrganization} />
+            <DetailValue label={t('Договір')} value={displayModel.agreement} />
+            <DetailValue tone="source" label={t('Валюта')} mono value={displayModel.currency} />
+            <DetailValue label={t('Дата інвойсу')} mono value={formatDateTime(displayModel.invDate)} />
+            <DetailValue label={t('Номер інвойсу')} mono value={displayModel.invNumber} />
+            <DetailValue tone="warning" label={t('Відповідальний')} value={displayModel.actResponsible} />
+            <DetailValue label={t('Послуга')} value={displayModel.name} />
+            <DetailValue label={t('Сума')} mono value={formatMoney(displayModel.amount)} />
+            <DetailValue label={t('ПДВ %')} mono value={formatPercent(displayModel.percentVat)} />
+            <DetailValue label={t('ПДВ')} mono value={formatMoney(displayModel.amountVat)} />
+            <DetailValue label={t('Разом з ПДВ')} mono value={formatMoney(displayModel.totalWithVat)} />
+          </DocumentDetailSection>
 
-            <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm" verticalSpacing={10}>
-              <DetailValue label={t('Номер')} mono value={displayModel.number} />
-              <DetailValue label={t('Організація')} value={displayModel.organization} />
-              <DetailValue label={t('Постачальник послуг')} value={displayModel.serviceOrganization} />
-              <DetailValue label={t('Договір')} value={displayModel.agreement} />
-              <DetailValue label={t('Валюта')} mono value={displayModel.currency} />
-              <DetailValue label={t('Дата інвойсу')} mono value={formatDateTime(displayModel.invDate)} />
-              <DetailValue label={t('Номер інвойсу')} mono value={displayModel.invNumber} />
-              <DetailValue label={t('Відповідальний')} value={displayModel.actResponsible} />
-              <DetailValue label={t('Послуга')} value={displayModel.name} />
-              <DetailValue label={t('Сума')} mono value={formatMoney(displayModel.amount)} />
-              <DetailValue label={t('ПДВ %')} mono value={formatPercent(displayModel.percentVat)} />
-              <DetailValue label={t('ПДВ')} mono value={formatMoney(displayModel.amountVat)} />
-              <DetailValue label={t('Разом з ПДВ')} mono value={formatMoney(displayModel.totalWithVat)} />
-            </SimpleGrid>
-
-            <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
-              <TextInput
+          <DocumentDetailSection title={t('Редагування')} stacked>
+            <Group align="start" gap={10}>
+              <TextInput maw={230}
                 disabled={!canEdit || isLoading || isSaving}
                 label={t('Дата акта')}
                 type="datetime-local"
@@ -92,24 +84,26 @@ export function ActProvidingServiceDetailBody({
                 onChange={(event) => updateFromDate(event.currentTarget.value)}
               />
               <Textarea
+                w={400}
+                maw="100%"
                 autosize
                 disabled={!canEdit || isLoading || isSaving}
                 label={t('Коментар')}
-                minRows={2}
+                minRows={1}
                 value={comment}
                 onChange={(event) => updateComment(event.currentTarget.value)}
               />
-            </SimpleGrid>
-          </Stack>
-        </Card>
+            </Group>
+          </DocumentDetailSection>
+        </DocumentDetailLayout>
       ) : isLoading ? (
-        <Card className="app-section-card" withBorder radius="md" padding="lg">
+        <Card className="app-section-card" withBorder radius="md" padding={12}>
           <Group justify="center" py="xl">
             <Loader />
           </Group>
         </Card>
       ) : (
-        <Card className="app-section-card" withBorder radius="md" padding="lg">
+        <Card className="app-section-card" withBorder radius="md" padding={12}>
           <Text c="dimmed">{t('Акт надання послуг не знайдено')}</Text>
         </Card>
       )}
@@ -117,12 +111,9 @@ export function ActProvidingServiceDetailBody({
   )
 }
 
-function DetailValue({ label, mono = false, value }: { label: string; mono?: boolean; value?: string | number }) {
+function DetailValue({ label, mono = false, tone, value }: { label: string; mono?: boolean; tone?: 'product' | 'source' | 'warning' | 'neutral'; value?: string | number }) {
   return (
-    <div className={`act-service-detail-field${mono ? ' is-mono' : ''}`}>
-      <span>{label}</span>
-      <strong>{displayValue(value)}</strong>
-    </div>
+    <DocumentDetailRow label={label} mono={mono} value={tone ? <TableChip tone={tone} value={displayValue(value)} /> : displayValue(value)} />
   )
 }
 

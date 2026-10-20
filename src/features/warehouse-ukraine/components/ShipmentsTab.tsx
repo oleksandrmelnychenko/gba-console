@@ -23,7 +23,7 @@ import { translate } from '../../../shared/i18n/translate'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { TransporterIcon, TransporterNameWithIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
@@ -1165,14 +1165,14 @@ function AutoShipmentsPanel({ onCarriedOut, permissions }: AutoShipmentsPanelPro
         title={t('Чи дійсно ви бажаєте провести?')}
         onClose={() => model.setConfirmCarryOut(false)}
       >
-        <Group justify="flex-end" gap="sm">
-          <Button color="gray" variant="light" onClick={() => model.setConfirmCarryOut(false)}>
+        <AppModalFooter>
+          <Button color="gray" variant="default" onClick={() => model.setConfirmCarryOut(false)}>
             {t('Ні')}
           </Button>
           <Button color="green" disabled={!model.canCarryOut} loading={model.isSaving} onClick={() => model.carryOut()}>
             {t('Так')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </AppModal>
     </Stack>
   )
@@ -1988,7 +1988,7 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
         footer={
           shipmentDraft ? (
             <>
-              <Button color="gray" leftSection={<X size={18} />} variant="light" onClick={requestCloseShipment}>
+              <Button color="gray" leftSection={<X size={18} />} variant="default" onClick={requestCloseShipment}>
                 {t('Скасувати')}
               </Button>
               <Button
@@ -2088,7 +2088,7 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
       <AppDrawer
         footer={
           <>
-            <Button color="gray" disabled={isManualLoading} variant="light" onClick={closeManualPicker}>
+            <Button color="gray" disabled={isManualLoading} variant="default" onClick={closeManualPicker}>
               {t('Скасувати')}
             </Button>
             <Button
@@ -2208,16 +2208,16 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
         title={t('Закрити без збереження?')}
         onClose={() => setConfirmCloseShipment(false)}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           <Text size="sm">{t('Незбережені зміни у відвантаженні буде втрачено.')}</Text>
-          <Group justify="flex-end" gap="sm">
-            <Button color="gray" variant="light" onClick={() => setConfirmCloseShipment(false)}>
+          <AppModalFooter>
+            <Button color="gray" variant="default" onClick={() => setConfirmCloseShipment(false)}>
               {t('Ні')}
             </Button>
             <Button color="red" onClick={closeShipment}>
               {t('Так')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
     </Stack>
@@ -2506,7 +2506,7 @@ function useManualShipmentSalesColumns(model: ManualShipmentSalesColumnsModel): 
         width: 160,
         minWidth: 120,
         accessor: getResponsible,
-        cell: (sale) => displayValue(getResponsible(sale)),
+        cell: (sale) => <TableChip tone="warning" value={displayValue(getResponsible(sale))} />,
       },
       {
         id: 'comment',
@@ -2892,7 +2892,7 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
         width: 80,
         minWidth: 60,
         accessor: (item) => item.Sale.ClientAgreement?.Agreement?.Currency?.Code,
-        cell: (item) => <TableChip tone="neutral" value={displayValue(item.Sale.ClientAgreement?.Agreement?.Currency?.Code)} />,
+        cell: (item) => <TableChip tone="source" value={displayValue(item.Sale.ClientAgreement?.Agreement?.Currency?.Code)} />,
       },
       {
         id: 'responsible',
@@ -2900,7 +2900,7 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
         width: 160,
         minWidth: 120,
         accessor: (item) => getResponsible(item.Sale),
-        cell: (item) => displayValue(getResponsible(item.Sale)),
+        cell: (item) => <TableChip tone="warning" value={displayValue(getResponsible(item.Sale))} />,
       },
       {
         id: 'comment',

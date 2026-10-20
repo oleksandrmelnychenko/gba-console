@@ -50,12 +50,12 @@
 }
 
 .app-drawer.app-form-sheet .mantine-Input-input {
-  min-height: 36px;
+  min-height: 32px;
 }
 
 .app-drawer.app-form-sheet .mantine-Button-root {
   border-radius: 8px;
-  min-height: 36px;
+  min-height: 32px;
 }
 
 .app-drawer.app-form-sheet .mantine-ActionIcon-root {

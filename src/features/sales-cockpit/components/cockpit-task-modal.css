@@ -1,0 +1,7 @@
+.cockpit-task-modal .mantine-Modal-body {
+  background: var(--mantine-color-gray-0);
+}
+
+.cockpit-task-modal .app-section-card {
+  background: var(--mantine-color-white);
+}

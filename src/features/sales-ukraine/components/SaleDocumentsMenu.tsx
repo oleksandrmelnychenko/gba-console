@@ -1,4 +1,4 @@
-import { Button, Group, Menu, Stack } from '@mantine/core'
+import { Button, Menu, Stack } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { ClipboardList, FileText, Printer, Receipt } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
@@ -7,7 +7,7 @@ import { getApiLanguage } from '../../../shared/api/apiClient'
 import { PermissionKeys, type SalesUkraineSalePermissionKey } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { SaleDocumentDownloads } from './SaleDocumentDownloads'
 import {
@@ -207,13 +207,13 @@ export function SaleDocumentsMenu({
         onClose={() => setResultState(null)}
       >
         {resultState && (
-          <Stack gap="sm">
+          <Stack className="app-compact-form" gap="sm">
             <SaleDocumentDownloads documents={resultState.documents} />
-            <Group justify="flex-end" mt="xs">
+            <AppModalFooter>
               <Button color="orange" variant="subtle" onClick={() => setResultState(null)}>
                 {t('Закрити')}
               </Button>
-            </Group>
+            </AppModalFooter>
           </Stack>
         )}
       </AppModal>

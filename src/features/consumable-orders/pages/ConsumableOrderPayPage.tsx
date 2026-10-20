@@ -1,8 +1,10 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   Alert,
   Badge,
   Button,
+  Card,
   NumberInput,
   Select,
   Stack,
@@ -14,7 +16,7 @@ import { Calendar, CircleAlert, Clock, Coins, Hash, Landmark, NotebookText, Pack
 import { type FormEvent, type ReactNode, useEffect, useMemo } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -641,26 +643,28 @@ function PaymentMovementModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={opened} title={t('Нова стаття руху коштів')} onClose={onClose}>
+    <AppModal className="app-compact-form" opened={opened} size={600} title={t('Нова стаття руху коштів')} onClose={onClose}>
       <form className="consumable-order-pay-movement-modal" onSubmit={onSubmit}>
-        <Stack gap="md">
-          <TextInput
-            autoFocus
-            className="consumable-order-pay-control"
-            disabled={isSaving}
-            label={t('Назва')}
-            leftSection={<Receipt size={15} />}
-            value={value}
-            onChange={(event) => onChange(event.currentTarget.value)}
-          />
-          <div className="consumable-order-pay-modal-actions">
-            <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
+        <Stack gap={10}>
+          <Card className="app-section-card" withBorder padding={12} radius="md">
+            <TextInput
+              autoFocus
+              className="consumable-order-pay-control"
+              disabled={isSaving}
+              label={t('Назва')}
+              leftSection={<Receipt size={15} />}
+              value={value}
+              onChange={(event) => onChange(event.currentTarget.value)}
+            />
+          </Card>
+          <AppModalFooter>
+            <Button color="gray" disabled={isSaving} type="button" variant="default" onClick={onClose}>
               {t('Скасувати')}
             </Button>
             <Button color={CREATE_ACTION_COLOR} disabled={!value.trim()} leftSection={<Plus size={15} />} loading={isSaving} type="submit">
               {t('Створити')}
             </Button>
-          </div>
+          </AppModalFooter>
         </Stack>
       </form>
     </AppModal>
@@ -680,9 +684,9 @@ function PaymentMetric({
 }) {
   return (
     <div className={`consumable-order-pay-metric is-${tone}`}>
-      <span>{label}</span>
+      <span className="consumable-order-pay-metric__label">{label}</span>
       <strong>{value}</strong>
-      {meta ? <small>{meta}</small> : null}
+      {meta ? <TableChip tone="source" value={meta} /> : null}
     </div>
   )
 }

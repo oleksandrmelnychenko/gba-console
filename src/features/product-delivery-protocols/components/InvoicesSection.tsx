@@ -532,7 +532,7 @@ function AssignInvoicesDrawer({
       }}
 
     >
-      <Stack gap={12}>
+      <Stack className="app-compact-form" gap={12}>
       <div className="invoice-assignment-modal__list">
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">

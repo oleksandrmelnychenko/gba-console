@@ -1,5 +1,75 @@
 /* Shared surface rules for forms and entity details, including older local
    field renderers. Scoped to overlays; page layouts and DataTable are unchanged. */
+.app-form-sheet .mantine-Input-wrapper {
+  /* Mantine's inline --input-height references these size tokens. Keep the
+     field, line box and NumberInput steppers on the same 32px geometry. */
+  --input-height-xs: 32px;
+  --input-height-sm: 32px;
+  --input-height-md: 32px;
+  --input-height-lg: 32px;
+  --input-height-xl: 32px;
+  --input-fz: 12px;
+}
+
+.app-form-sheet .mantine-Input-input {
+  font-size: 12px;
+}
+
+/* Multi-value selects and textareas retain their intrinsic/autosize height. */
+.app-form-sheet .mantine-Input-wrapper:not([data-multiline]) > .mantine-Input-input:not(textarea):not(.mantine-MultiSelect-input) {
+  height: 32px;
+}
+
+.app-form-sheet :is(
+  .mantine-Autocomplete-input,
+  .mantine-MultiSelect-input,
+  .mantine-NumberInput-input,
+  .mantine-Select-input,
+  input[role='combobox'],
+  input[type='number'],
+  input[inputmode='decimal'],
+  input[type='date'],
+  input[type='time'],
+  input[type='datetime-local']
+) {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0;
+}
+
+.app-form-sheet .mantine-Button-root {
+  --button-height-xs: 32px;
+  --button-height-sm: 32px;
+  --button-height-md: 32px;
+  --button-height-lg: 32px;
+  --button-height-xl: 32px;
+  --button-fz: 12px;
+  height: 32px;
+  font-size: 12px;
+}
+
+.app-form-sheet :is(.mantine-Checkbox-label, .mantine-Radio-label, .mantine-Switch-label) {
+  color: var(--mantine-color-gray-9);
+  font: 500 12px/1.4 var(--font-sans);
+}
+
+/* Opt-in form rhythm; large data workspaces keep their own grids and spacing. */
+.app-compact-form.mantine-Stack-root,
+.app-compact-form > .mantine-Stack-root,
+.app-compact-form .app-section-card > .mantine-Stack-root,
+.app-modal.app-compact-form .app-modal-resize > div > .mantine-Stack-root,
+.app-modal.app-compact-form .app-modal-resize > div > form > .mantine-Stack-root,
+.app-drawer.app-compact-form .app-sheet-scroll > .mantine-Stack-root,
+.app-drawer.app-compact-form .app-sheet-scroll > form > .mantine-Stack-root {
+  gap: 10px;
+}
+
+.app-form-sheet .app-compact-form .app-section-card,
+.app-form-sheet.app-compact-form .app-section-card {
+  padding: 12px;
+  border-radius: 10px;
+}
+
 :is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.app-detail-field, .app-leader-row, .product-card-field, .consumable-orders-detail-field, .act-service-detail-field, .accountable-expense-detail-field, .sale-detail-row, .sale-carrier-row, .supply-order-field) {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -21,7 +91,7 @@
   overflow-wrap: anywhere;
 }
 :is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.app-detail-field, .app-leader-row, .product-card-field, .consumable-orders-detail-field, .act-service-detail-field, .accountable-expense-detail-field, .sale-detail-row, .sale-carrier-row, .supply-order-field) > :is(span:first-child, .app-leader-row-label) {
-  color: var(--mantine-color-gray-7);
+  color: var(--mantine-color-gray-9);
   font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 500;

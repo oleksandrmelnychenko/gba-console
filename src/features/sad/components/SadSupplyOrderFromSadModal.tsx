@@ -1,10 +1,10 @@
-import { Alert, Button, Group, Select, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Select, Stack, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Search } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { formatLocalDate, formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import {
   getSupplyOrderOrganizations,
   getSupplyOrderSuppliers,
@@ -159,7 +159,7 @@ export function SadSupplyOrderFromSadModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={t('Створити замовлення постачання з SAD')} onClose={onClose}>
+    <AppModal className="app-compact-form" centered opened={opened} size="lg" title={t('Створити замовлення постачання з SAD')} onClose={onClose}>
       <Stack>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
@@ -240,7 +240,7 @@ export function SadSupplyOrderFromSadModal({
           onChange={setSelectedAgreementNetUid}
         />
 
-        <TextInput
+        <TextInput maw={170}
           disabled={isLoading || isSaving}
           label={t('Дата приходу')}
           type="date"
@@ -248,14 +248,14 @@ export function SadSupplyOrderFromSadModal({
           onChange={(event) => setOrderDate(event.currentTarget.value)}
         />
 
-        <Group justify="flex-end">
+        <AppModalFooter>
           <Button disabled={isSaving} variant="subtle" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button disabled={isLoading} loading={isSaving} onClick={() => void createOrder()}>
             {t('Створити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

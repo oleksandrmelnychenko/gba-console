@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
   Button,
@@ -419,9 +420,7 @@ function OrganizationNameCell({ client }: { client: OrganizationClient }) {
   const name = getOrganizationClientName(client)
 
   return (
-    <span className="organization-clients-name-cell" title={nativeTitle(name)}>
-      {name}
-    </span>
+    <TableChip tone="product" value={name} />
   )
 }
 

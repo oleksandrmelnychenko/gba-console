@@ -1,7 +1,7 @@
-import { Button, Group, Stack, TextInput } from '@mantine/core'
+import { Button, Stack, TextInput } from '@mantine/core'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import type { ShipmentDeliveryRecipientAddress } from '../shipmentTypes'
 
 type EditDeliveryAddressModalProps = {
@@ -44,7 +44,7 @@ export function EditDeliveryAddressModal({
 
   return (
     <AppModal centered opened={opened} title={t('Адреса доставки')} onClose={onClose}>
-      <Stack gap="sm">
+      <Stack className="app-compact-form" gap="sm">
         <TextInput
           label={t('Місто')}
           value={city}
@@ -66,14 +66,14 @@ export function EditDeliveryAddressModal({
             setDraft({ city, department, value: event.currentTarget.value, editedAddress: address })
           }
         />
-        <Group justify="flex-end" gap="sm">
-          <Button color="gray" variant="light" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button loading={isSaving} onClick={handleSave}>
             {t('Зберегти')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

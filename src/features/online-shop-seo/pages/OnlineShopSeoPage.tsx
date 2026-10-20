@@ -17,7 +17,7 @@ import {
   Textarea,
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
-import { AppModal } from "../../../shared/ui/AppModal"
+import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import { FileText, Info, Store, Users, Warehouse, type LucideIcon, CircleAlert, CreditCard, Hash, Image, Link, Pencil, Phone, Plus, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react'
 import { type CSSProperties, type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
@@ -2066,7 +2066,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
 
       <AppModal centered opened={isPageEditorOpen && canEditSeoPage} size="xl" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Редагування SEO сторінки')}</span>} onClose={closePageEditor}>
         <form onSubmit={handleSavePage}>
-          <Stack gap="md">
+          <Stack gap={10}>
             {formError && (
               <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                 {formError}
@@ -2110,14 +2110,14 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               value={pageFormValues.LdJson}
               onChange={(event) => setPageField('LdJson', event.currentTarget.value)}
             />
-            <Group justify="flex-end" gap="sm">
-              <Button color="gray" disabled={isSaving} type="button" variant="light" onClick={closePageEditor}>
+            <AppModalFooter>
+              <Button color="gray" disabled={isSaving} type="button" variant="default" onClick={closePageEditor}>
                 {t('Скасувати')}
               </Button>
               <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
                 {t('Зберегти')}
               </Button>
-            </Group>
+            </AppModalFooter>
           </Stack>
         </form>
       </AppModal>
@@ -2129,7 +2129,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
         onClose={closeContactEditor}
       >
         <form onSubmit={handleSaveContact}>
-          <Stack gap="md">
+          <Stack gap={10}>
             {formError && (
               <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                 {formError}
@@ -2184,8 +2184,8 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                 onChange={(event) => setContactField('Email', event.currentTarget.value)}
               />
             </SimpleGrid>
-            <Group justify="flex-end" gap="sm">
-              <Button color="gray" disabled={isSaving || isImageUploading} type="button" variant="light" onClick={closeContactEditor}>
+            <AppModalFooter>
+              <Button color="gray" disabled={isSaving || isImageUploading} type="button" variant="default" onClick={closeContactEditor}>
                 {t('Скасувати')}
               </Button>
               <Button
@@ -2197,7 +2197,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               >
                 {t('Зберегти')}
               </Button>
-            </Group>
+            </AppModalFooter>
           </Stack>
         </form>
       </AppModal>
@@ -2208,24 +2208,24 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
         title={t('Видалити контакт')}
         onClose={() => setRemoveContactTarget(null)}
       >
-        <Stack gap="md">
+        <Stack gap={10}>
           <Text>
             {t('Видалити контакт')} <Text span fw={600}>{displayValue(getSeoContactDisplayName(removeContactTarget))}</Text>?
           </Text>
-          <Group justify="flex-end" gap="sm">
-            <Button color="gray" disabled={isSaving} variant="light" onClick={() => setRemoveContactTarget(null)}>
+          <AppModalFooter>
+            <Button color="gray" disabled={isSaving} variant="default" onClick={() => setRemoveContactTarget(null)}>
               {t('Скасувати')}
             </Button>
             <Button color="red" leftSection={<Trash2 size={16} />} loading={isSaving} onClick={handleRemoveContact}>
               {t('Видалити')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
 
       <AppModal centered opened={Boolean(priorityStorageTarget && canSetStoragePriority)} title={t('Пріоритет складу')} onClose={closePriorityEditor}>
         <form onSubmit={handleSaveStoragePriority}>
-          <Stack gap="md">
+          <Stack gap={10}>
             {formError && (
               <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                 {formError}
@@ -2243,14 +2243,14 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                 setFormError(priorityStorageTarget ? validateStoragePriority(nextValue, priorityStorageTarget, ecommerceStorages) : null)
               }}
             />
-            <Group justify="flex-end" gap="sm">
-              <Button color="gray" disabled={isSaving} type="button" variant="light" onClick={closePriorityEditor}>
+            <AppModalFooter>
+              <Button color="gray" disabled={isSaving} type="button" variant="default" onClick={closePriorityEditor}>
                 {t('Скасувати')}
               </Button>
               <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
                 {t('Зберегти')}
               </Button>
-            </Group>
+            </AppModalFooter>
           </Stack>
         </form>
       </AppModal>
@@ -2261,18 +2261,18 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
         title={t('Видалити склад зі списку')}
         onClose={() => setRemoveStorageTarget(null)}
       >
-        <Stack gap="md">
+        <Stack gap={10}>
           <Text>
             {t('Видалити склад')} <Text span fw={600}>{displayValue(removeStorageTarget?.Name)}</Text> {t('зі списку інтернет-магазину?')}
           </Text>
-          <Group justify="flex-end" gap="sm">
-            <Button color="gray" disabled={isSaving} variant="light" onClick={() => setRemoveStorageTarget(null)}>
+          <AppModalFooter>
+            <Button color="gray" disabled={isSaving} variant="default" onClick={() => setRemoveStorageTarget(null)}>
               {t('Скасувати')}
             </Button>
             <Button color="red" leftSection={<Trash2 size={16} />} loading={isSaving} onClick={handleRemoveStorage}>
               {t('Видалити')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
 

@@ -4,7 +4,6 @@ import {
   Box,
   Button,
   Card,
-  Group,
   Skeleton,
   Stack,
   Text,
@@ -18,7 +17,7 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { UserRoleType } from '../../../shared/auth/types'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useAuth } from '../../auth/useAuth'
@@ -459,11 +458,11 @@ function UserRolesPageContent() {
         title={t('Незбережені зміни')}
         onClose={() => setPendingWorkspaceAction(null)}
       >
-        <Stack gap="md">
+        <Stack gap={10}>
           <Text size="sm">
             {t('Є незбережені зміни прав. Відхилити їх і продовжити?')}
           </Text>
-          <Group justify="flex-end">
+          <AppModalFooter>
             <Button
               color="gray"
               variant="subtle"
@@ -474,7 +473,7 @@ function UserRolesPageContent() {
             <Button color="red" onClick={discardChangesAndContinue}>
               {t('Відхилити зміни')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
 
@@ -484,12 +483,12 @@ function UserRolesPageContent() {
         title={t('Видалити роль')}
         onClose={() => setDeleteRoleTarget(null)}
       >
-        <Stack gap="md">
+        <Stack gap={10}>
           <Text size="sm">
             {t('Ви впевнені, що хочете видалити?')}{' '}
             {deleteRoleTarget ? getUserRoleName(deleteRoleTarget) : ''}
           </Text>
-          <Group justify="flex-end">
+          <AppModalFooter>
             <Button
               color="gray"
               disabled={isSaving}
@@ -506,7 +505,7 @@ function UserRolesPageContent() {
             >
               {t('Так')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
     </Stack>

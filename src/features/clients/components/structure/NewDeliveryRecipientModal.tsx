@@ -1,7 +1,7 @@
-import { Button, Group, Stack, TextInput } from '@mantine/core'
+import { Button, Stack, TextInput } from '@mantine/core'
 import { Check } from 'lucide-react'
 import { useState } from 'react'
-import { AppModal } from '../../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../../shared/ui/AppModal'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 
@@ -69,7 +69,7 @@ function NewDeliveryRecipientForm({
   }
 
   return (
-    <Stack gap="md">
+    <Stack className="app-compact-form" gap="md">
       <TextInput
         disabled={isSaving}
         label={t("Ім'я")}
@@ -84,8 +84,8 @@ function NewDeliveryRecipientForm({
         }}
       />
 
-      <Group justify="flex-end">
-        <Button color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
+      <AppModalFooter>
+        <Button color="gray" disabled={isSaving} variant="default" onClick={onClose}>
           {t('Скасувати')}
         </Button>
         <Button
@@ -97,7 +97,7 @@ function NewDeliveryRecipientForm({
         >
           {t('Створити')}
         </Button>
-      </Group>
+      </AppModalFooter>
     </Stack>
   )
 }

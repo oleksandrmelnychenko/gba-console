@@ -20,7 +20,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
@@ -589,7 +589,7 @@ function AvailablePaymentsPageContent() {
         onTaskUpdated={model.handleTaskUpdated}
         onToggleMarked={model.toggleMarked}
       />
-      <AppModal
+      <AppModal className="app-compact-form"
         centered
         opened={model.confirmCloseDetailOpen}
         title={translate('Є незбережені зміни')}
@@ -597,14 +597,14 @@ function AvailablePaymentsPageContent() {
       >
         <Stack gap="md">
           <Text>{translate('Якщо закрити вікно, додані файли не будуть збережені.')}</Text>
-          <Group justify="flex-end">
-            <Button color="gray" variant="light" onClick={model.cancelCloseDetail}>
+          <AppModalFooter>
+            <Button color="gray" variant="default" onClick={model.cancelCloseDetail}>
               {translate('Залишитися')}
             </Button>
             <Button color="red" onClick={model.confirmCloseDetail}>
               {translate('Закрити без збереження')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
     </Stack>

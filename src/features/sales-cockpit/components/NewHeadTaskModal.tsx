@@ -1,13 +1,14 @@
-import { Button, Group, Select, Stack, Text, TextInput, Textarea } from '@mantine/core'
+import { Card, Button, Group, Select, Stack, Text, TextInput, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useEffect, useMemo, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { usePermissions } from '../../auth/usePermissions'
 import { createHeadTask, getHeadClients } from '../api/salesCockpitApi'
+import './cockpit-task-modal.css'
 import type { CockpitUrgency, HeadClient, HeadTaskManager } from '../types'
 
 const URGENCY_OPTIONS: { value: CockpitUrgency; label: string }[] = [
@@ -137,6 +138,7 @@ export function NewHeadTaskModal({
 
   return (
     <AppModal
+      className="cockpit-task-modal"
       opened={isOpen}
       title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Нова задача для менеджера')}</span>}
       onClose={() => {
@@ -145,80 +147,84 @@ export function NewHeadTaskModal({
         }
       }}
     >
-      <Stack gap="md">
-        <Select
-          required
-          data={managerOptions}
-          disabled={saving}
-          label={t('Менеджер')}
-          placeholder={t('Оберіть менеджера')}
-          searchable
-          value={managerId}
-          onChange={setManagerId}
-        />
-
-        <Select
-          clearable
-          data={clientOptions}
-          disabled={saving || !managerId}
-          label={t('Клієнт (необовʼязково)')}
-          nothingFoundMessage={clientsLoading ? t('Завантаження…') : t('Нічого не знайдено')}
-          placeholder={managerId ? t('Оберіть клієнта') : t('Спершу оберіть менеджера')}
-          searchable
-          value={clientId}
-          onChange={setClientId}
-        />
-
-        <TextInput
-          required
-          disabled={saving}
-          label={t('Задача')}
-          maxLength={200}
-          placeholder={t('Що потрібно зробити?')}
-          value={title}
-          onChange={(event) => setTitle(event.currentTarget.value)}
-        />
-
-        <Textarea
-          autosize
-          disabled={saving}
-          label={t('Деталі (необовʼязково)')}
-          maxLength={2000}
-          minRows={2}
-          placeholder={t('Контекст, очікуваний результат…')}
-          value={description}
-          onChange={(event) => setDescription(event.currentTarget.value)}
-        />
-
-        <Group grow>
+      <Stack className="app-compact-form" gap={10}>
+        <Card className="app-section-card" withBorder>
+          <Stack gap={10}>
           <Select
-            data={URGENCY_OPTIONS.map((option) => ({ value: option.value, label: t(option.label) }))}
+            required
+            data={managerOptions}
             disabled={saving}
-            label={t('Терміновість')}
-            value={urgency}
-            onChange={(value) => setUrgency((value as CockpitUrgency) ?? 'high')}
+            label={t('Менеджер')}
+            placeholder={t('Оберіть менеджера')}
+            searchable
+            value={managerId}
+            onChange={setManagerId}
           />
+
+          <Select
+            clearable
+            data={clientOptions}
+            disabled={saving || !managerId}
+            label={t('Клієнт (необовʼязково)')}
+            nothingFoundMessage={clientsLoading ? t('Завантаження…') : t('Нічого не знайдено')}
+            placeholder={managerId ? t('Оберіть клієнта') : t('Спершу оберіть менеджера')}
+            searchable
+            value={clientId}
+            onChange={setClientId}
+          />
+
           <TextInput
+            required
             disabled={saving}
-            label={t('Термін (необовʼязково)')}
-            type="date"
-            value={dueDate}
-            onChange={(event) => setDueDate(event.currentTarget.value)}
+            label={t('Задача')}
+            maxLength={200}
+            placeholder={t('Що потрібно зробити?')}
+            value={title}
+            onChange={(event) => setTitle(event.currentTarget.value)}
           />
-        </Group>
 
-        <Text c="dimmed" size="xs">
-          {t('Менеджер побачить задачу першою у своєму кокпіті. Ви бачитимете виконання на цій дошці.')}
-        </Text>
+          <Textarea
+            autosize
+            disabled={saving}
+            label={t('Деталі (необовʼязково)')}
+            maxLength={2000}
+            minRows={2}
+            placeholder={t('Контекст, очікуваний результат…')}
+            value={description}
+            onChange={(event) => setDescription(event.currentTarget.value)}
+          />
 
-        <Group justify="flex-end">
-          <Button color="gray" disabled={saving} variant="light" onClick={onClose}>
+          <Group grow>
+            <Select
+              data={URGENCY_OPTIONS.map((option) => ({ value: option.value, label: t(option.label) }))}
+              disabled={saving}
+              label={t('Терміновість')}
+              value={urgency}
+              onChange={(value) => setUrgency((value as CockpitUrgency) ?? 'high')}
+            />
+            <TextInput
+              disabled={saving}
+              label={t('Термін (необовʼязково)')}
+              type="date"
+              value={dueDate}
+              onChange={(event) => setDueDate(event.currentTarget.value)}
+            />
+          </Group>
+
+          <Text c="dimmed" size="xs">
+            {t('Менеджер побачить задачу першою у своєму кокпіті. Ви бачитимете виконання на цій дошці.')}
+          </Text>
+
+          </Stack>
+        </Card>
+        <AppModalFooter>
+          <Button color="gray" disabled={saving} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button color={CREATE_ACTION_COLOR} disabled={!canSubmit} loading={saving} onClick={handleSubmit}>
             {t('Призначити задачу')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

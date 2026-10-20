@@ -20,6 +20,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import { ArrowLeftRight, Check, CircleAlert, ClipboardList, Download, Eye, RotateCcw, Search } from 'lucide-react'
 import { useDebouncedValue } from '@mantine/hooks'
@@ -1247,7 +1248,7 @@ function ProductStoragePreviewDrawer({
     <AppDrawer
       footer={
         <>
-          <Button color="gray" variant="light" onClick={onClose}>
+          <Button color="gray" variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button disabled={!canProcess || !rows.length || hasInvalidRows} leftSection={<Check size={16} />} onClick={onProcess}>
@@ -1372,12 +1373,11 @@ function ProductStorageActionModal({
   )
 
   return (
-    <AppDrawer
+    <AppModal
       className="app-form-sheet product-storages-action-sheet"
       closeOnClickOutside={false}
-      footer={footer}
       opened
-      size="standard"
+      size={780}
       title={<span className="product-storages-action-sheet-title">{t(getActionTitle(modal))}</span>}
       onClose={() => {
         if (!isSubmitting) {
@@ -1385,7 +1385,7 @@ function ProductStorageActionModal({
         }
       }}
     >
-      <Stack className="product-storages-action-content" gap="md">
+      <Stack className="app-compact-form product-storages-action-content" gap={10}>
         <SegmentedControl
           className="product-storages-action-mode"
           data={modeOptions}
@@ -1398,7 +1398,7 @@ function ProductStorageActionModal({
           <Badge className="app-role-pill is-gray" variant="light">
             {t('Позицій')}: {modal.rows.length}
           </Badge>
-          <Badge className="app-role-pill is-orange" variant="light">
+          <Badge className="app-role-pill is-gray" variant="light">
             {t('Кількість')}: {formatAmount(Number.isFinite(displayedQty) ? displayedQty : 0)}
           </Badge>
           <Badge className="app-role-pill product-storages-action-storage-pill is-storage" variant="light">
@@ -1406,114 +1406,123 @@ function ProductStorageActionModal({
           </Badge>
         </div>
 
-        <SimpleGrid cols={{ base: 1, sm: 2 }}>
-          <TextInput
-            disabled={isSubmitting}
-            label={t('Дата')}
-            type="datetime-local"
-            value={form.fromDate}
-            onChange={(event) => { const nextValue = event.currentTarget.value; onChangeForm((current) => ({ ...current, fromDate: nextValue })) }}
-          />
-          {showManagementSwitch ? (
-            <Switch
-              checked={form.isManagement}
-              color={CREATE_ACTION_COLOR}
+        <Card className="app-section-card" withBorder padding={12}>
+          <Stack gap={10}>
+            <Group className="product-storages-action-date-row" align="end" gap={12}>
+              <TextInput
+                disabled={isSubmitting}
+                w={220}
+                maw="100%"
+                label={t('Дата')}
+                type="datetime-local"
+                value={form.fromDate}
+                onChange={(event) => { const nextValue = event.currentTarget.value; onChangeForm((current) => ({ ...current, fromDate: nextValue })) }}
+              />
+              {showManagementSwitch ? (
+                <Switch
+                  checked={form.isManagement}
+                  color={CREATE_ACTION_COLOR}
+                  disabled={isSubmitting}
+                  label={t('Управлінська операція')}
+                  onChange={(event) => { const nextValue = event.currentTarget.checked; onChangeForm((current) => ({ ...current, isManagement: nextValue })) }}
+                />
+              ) : null}
+            </Group>
+
+            {modal.mode === 'transfer' ? (
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10}>
+                <TextInput disabled label={t('Зі складу')} value={fromStorage?.Name || ''} />
+                <Select
+                  searchable
+                  allowDeselect={false}
+                  data={toStorageOptions}
+                  disabled={isSubmitting || toStorageOptions.length === 0}
+                  label={t('На склад')}
+                  placeholder={t('Оберіть склад')}
+                  value={effectiveToStorageNetUid || null}
+                  onChange={(value) => onChangeForm((current) => ({ ...current, toStorageNetUid: value || '' }))}
+                />
+              </SimpleGrid>
+            ) : null}
+
+            {showPlacementFields ? (
+              <SimpleGrid className="product-storages-action-placement" cols={{ base: 1, xs: 3 }} spacing={10}>
+                <TextInput
+                  disabled={isSubmitting}
+                  label={t('Склад')}
+                  value={form.storageNumber}
+                  onChange={(event) => { const nextValue = event.currentTarget.value; onChangeForm((current) => ({ ...current, storageNumber: nextValue })) }}
+                />
+                <TextInput
+                  disabled={isSubmitting}
+                  label={t('Ряд')}
+                  value={form.rowNumber}
+                  onChange={(event) => { const nextValue = event.currentTarget.value; onChangeForm((current) => ({ ...current, rowNumber: nextValue })) }}
+                />
+                <TextInput
+                  disabled={isSubmitting}
+                  label={t('Полиця')}
+                  value={form.cellNumber}
+                  onChange={(event) => { const nextValue = event.currentTarget.value; onChangeForm((current) => ({ ...current, cellNumber: nextValue })) }}
+                />
+              </SimpleGrid>
+            ) : null}
+
+            {modal.mode === 'return' ? (
+              <ReturnConsignmentsPanel
+                disabled={isSubmitting}
+                isLoading={isLoadingReturnConsignments}
+                returnConsignments={returnConsignments}
+                selectedConsignmentId={form.consignmentId}
+                selectedReturnConsignment={selectedReturnConsignment}
+                onSelect={(consignmentId) => onChangeForm((current) => ({ ...current, consignmentId }))}
+              />
+            ) : null}
+
+            {showQuantityField ? (
+              <NumberInput
+                allowNegative={false}
+                decimalScale={3}
+                disabled={isSubmitting}
+                w={160}
+                maw="100%"
+                label={t('Кількість')}
+                max={singleMaxQty}
+                min={0.001}
+                value={form.qty}
+                onChange={(value) => onChangeForm((current) => ({ ...current, qty: toNumberInputValue(value) }))}
+              />
+            ) : null}
+
+            {modal.mode !== 'return' ? (
+              <TextInput
+                disabled={isSubmitting}
+                label={t('Причина')}
+                value={form.reason}
+                onChange={(event) => { const nextValue = event.currentTarget.value; onChangeForm((current) => ({ ...current, reason: nextValue })) }}
+              />
+            ) : null}
+
+            <Textarea
+              autosize
               disabled={isSubmitting}
-              label={t('Управлінська операція')}
-              mt={30}
-              onChange={(event) => { const nextValue = event.currentTarget.checked; onChangeForm((current) => ({ ...current, isManagement: nextValue })) }}
+              label={t('Коментар')}
+              minRows={2}
+              value={form.comment}
+              onChange={(event) => { const nextValue = event.currentTarget.value; onChangeForm((current) => ({ ...current, comment: nextValue })) }}
             />
-          ) : null}
-        </SimpleGrid>
 
-        {modal.mode === 'transfer' ? (
-          <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <TextInput disabled label={t('Зі складу')} value={fromStorage?.Name || ''} />
-            <Select
-              searchable
-              allowDeselect={false}
-              data={toStorageOptions}
-              disabled={isSubmitting || toStorageOptions.length === 0}
-              label={t('На склад')}
-              placeholder={t('Оберіть склад')}
-              value={effectiveToStorageNetUid || null}
-              onChange={(value) => onChangeForm((current) => ({ ...current, toStorageNetUid: value || '' }))}
-            />
-          </SimpleGrid>
-        ) : null}
-
-        {showPlacementFields ? (
-          <SimpleGrid cols={{ base: 1, sm: 3 }}>
-            <TextInput
-              disabled={isSubmitting}
-              label={t('Склад')}
-              value={form.storageNumber}
-              onChange={(event) => { const nextValue = event.currentTarget.value; onChangeForm((current) => ({ ...current, storageNumber: nextValue })) }}
-            />
-            <TextInput
-              disabled={isSubmitting}
-              label={t('Ряд')}
-              value={form.rowNumber}
-              onChange={(event) => { const nextValue = event.currentTarget.value; onChangeForm((current) => ({ ...current, rowNumber: nextValue })) }}
-            />
-            <TextInput
-              disabled={isSubmitting}
-              label={t('Полиця')}
-              value={form.cellNumber}
-              onChange={(event) => { const nextValue = event.currentTarget.value; onChangeForm((current) => ({ ...current, cellNumber: nextValue })) }}
-            />
-          </SimpleGrid>
-        ) : null}
-
-        {modal.mode === 'return' ? (
-          <ReturnConsignmentsPanel
-            disabled={isSubmitting}
-            isLoading={isLoadingReturnConsignments}
-            returnConsignments={returnConsignments}
-            selectedConsignmentId={form.consignmentId}
-            selectedReturnConsignment={selectedReturnConsignment}
-            onSelect={(consignmentId) => onChangeForm((current) => ({ ...current, consignmentId }))}
-          />
-        ) : null}
-
-        {showQuantityField ? (
-          <NumberInput
-            allowNegative={false}
-            decimalScale={3}
-            disabled={isSubmitting}
-            label={t('Кількість')}
-            max={singleMaxQty}
-            min={0.001}
-            value={form.qty}
-            onChange={(value) => onChangeForm((current) => ({ ...current, qty: toNumberInputValue(value) }))}
-          />
-        ) : null}
-
-        {modal.mode !== 'return' ? (
-          <TextInput
-            disabled={isSubmitting}
-            label={t('Причина')}
-            value={form.reason}
-            onChange={(event) => { const nextValue = event.currentTarget.value; onChangeForm((current) => ({ ...current, reason: nextValue })) }}
-          />
-        ) : null}
-
-        <Textarea
-          autosize
-          disabled={isSubmitting}
-          label={t('Коментар')}
-          minRows={2}
-          value={form.comment}
-          onChange={(event) => { const nextValue = event.currentTarget.value; onChangeForm((current) => ({ ...current, comment: nextValue })) }}
-        />
+          </Stack>
+        </Card>
 
         {(actionError || returnConsignmentsError) && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {actionError || returnConsignmentsError}
           </Alert>
         )}
+        <AppModalFooter>{footer}</AppModalFooter>
       </Stack>
-    </AppDrawer>
+    </AppModal>
   )
 }
 
@@ -1549,7 +1558,7 @@ function ReturnConsignmentsPanel({
         <Text className="app-section-title product-storages-return-title" fw={600} size="sm">
           {t('Прихід')}
         </Text>
-        <span className="app-role-pill is-orange product-storages-return-count">
+        <span className="app-role-pill is-gray product-storages-return-count">
           {countLabel}
         </span>
       </Group>

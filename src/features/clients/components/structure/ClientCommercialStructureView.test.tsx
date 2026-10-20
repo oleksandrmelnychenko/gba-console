@@ -127,7 +127,7 @@ describe('ClientCommercialStructureView', () => {
     const regionCodeValues = screen.getAllByText('BXM05202')
     expect(regionCodeValues.length).toBeGreaterThanOrEqual(2)
     expect(screen.getByText('код 01234567')).toBeTruthy()
-    expect(regionCodeValues.some((value) => Boolean(value.closest('.client-card-code-chip')))).toBe(true)
+    expect(regionCodeValues.some((value) => Boolean(value.closest('.app-table-chip.is-document')))).toBe(true)
     expect(screen.getAllByText('AMG').length).toBeGreaterThanOrEqual(1)
     expect(screen.queryByText('Деталі перевірки 1С')).toBeNull()
 

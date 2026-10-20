@@ -1,16 +1,16 @@
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
+import './advance-report-entry.css'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
-  Badge,
+  Card,
   Button,
   Divider,
   FileInput,
   Group,
   NumberInput,
   Select,
-  SimpleGrid,
   Stack,
   Table,
   Text,
@@ -604,86 +604,95 @@ export function AdvanceReportConsumableOrderModal({
 
   return (
     <AppModal
+      className="app-compact-form"
       centered
       opened={opened}
       size="min(1120px, 96vw)"
-      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Додати товар / послугу')}</span>}
+      title={t('Додати товар / послугу')}
       onClose={requestClose}
     >
-      <Stack gap="md">
+      <Stack gap={10}>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
-        <SimpleGrid cols={{ base: 1, md: 3 }}>
-          <SearchableSelect
-            data={supplierOptions}
-            disabled={isBusy}
-            label={t('Постачальник послуг')}
-            placeholder={t('Почніть вводити назву')}
-            value={form.supplierSearch}
-            onChange={(value) => updateForm({ selectedAgreementValue: '', selectedSupplierValue: '', supplierSearch: value })}
-            onOptionSubmit={handleSupplierSubmit}
-          />
-          <Select
-            data={agreementOptions}
-            disabled={!selectedSupplier || isBusy}
-            label={t('Договір')}
-            placeholder={t('Оберіть договір')}
-            searchable
-            value={form.selectedAgreementValue || null}
-            onChange={(value) => updateForm({ selectedAgreementValue: value || '' })}
-          />
-          <TextInput disabled label={t('Організація')} value={getOrganizationDisplayName(outcomeOrder.Organization)} />
-          <TextInput
-            disabled={isBusy}
-            label={t('Номер накладної')}
-            value={form.invoiceNumber}
-            onChange={(event) => updateForm({ invoiceNumber: event.currentTarget.value })}
-          />
-          <TextInput
-            disabled={isBusy}
-            label={t('Дата входу')}
-            type="date"
-            value={form.invoiceDate}
-            onChange={(event) => updateForm({ invoiceDate: event.currentTarget.value })}
-          />
-          <TextInput
-            disabled={isBusy}
-            label={t('Час')}
-            type="time"
-            value={form.invoiceTime}
-            onChange={(event) => updateForm({ invoiceTime: event.currentTarget.value })}
-          />
-          <Select
-            data={storageOptions}
-            disabled={isBusy || isLoadingStorages}
-            label={t('Склад')}
-            loading={isLoadingStorages}
-            placeholder={t('Оберіть склад')}
-            value={form.selectedStorageValue || null}
-            onChange={(value) => updateForm({ selectedStorageValue: value || '' })}
-          />
-          <Textarea
-            autosize
-            disabled={isBusy}
-            label={t('Коментар')}
-            minRows={1}
-            value={form.comment}
-            onChange={(event) => updateForm({ comment: event.currentTarget.value })}
-          />
-          <FileInput
-            clearable
-            disabled={isBusy}
-            label={t('Документи')}
-            multiple
-            placeholder={t('Завантажити файли')}
-            value={[]}
-            onChange={addDocumentFiles}
-          />
-        </SimpleGrid>
+        <Card className="app-section-card" withBorder padding={12} radius="md">
+          <Group gap={8} mb={10}><Text c="gray.9" size="xs" fw={500}>{t('Організація')}</Text><TableChip tone="product" value={getOrganizationDisplayName(outcomeOrder.Organization)} /></Group>
+          <div className="advance-report-entry-parties advance-report-entry-parties--order">
+            <SearchableSelect
+              data={supplierOptions}
+              disabled={isBusy}
+              label={t('Постачальник послуг')}
+              placeholder={t('Почніть вводити назву')}
+              value={form.supplierSearch}
+              onChange={(value) => updateForm({ selectedAgreementValue: '', selectedSupplierValue: '', supplierSearch: value })}
+              onOptionSubmit={handleSupplierSubmit}
+            />
+            <Select
+              data={agreementOptions}
+              disabled={!selectedSupplier || isBusy}
+              label={t('Договір')}
+              placeholder={t('Оберіть договір')}
+              searchable
+              value={form.selectedAgreementValue || null}
+              onChange={(value) => updateForm({ selectedAgreementValue: value || '' })}
+            />
+            <Select
+              data={storageOptions}
+              disabled={isBusy || isLoadingStorages}
+              label={t('Склад')}
+              loading={isLoadingStorages}
+              placeholder={t('Оберіть склад')}
+              value={form.selectedStorageValue || null}
+              onChange={(value) => updateForm({ selectedStorageValue: value || '' })}
+            />
+          </div>
+          <div className="advance-report-entry-document">
+            <TextInput
+              disabled={isBusy}
+              label={t('Номер накладної')}
+              value={form.invoiceNumber}
+              onChange={(event) => updateForm({ invoiceNumber: event.currentTarget.value })}
+            />
+            <TextInput
+              disabled={isBusy}
+              label={t('Дата входу')}
+              maw={170}
+              type="date"
+              value={form.invoiceDate}
+              onChange={(event) => updateForm({ invoiceDate: event.currentTarget.value })}
+            />
+            <TextInput
+              disabled={isBusy}
+              label={t('Час')}
+              maw={110}
+              type="time"
+              value={form.invoiceTime}
+              onChange={(event) => updateForm({ invoiceTime: event.currentTarget.value })}
+            />
+            <FileInput
+              clearable
+              disabled={isBusy}
+              label={t('Документи')}
+              multiple
+              placeholder={t('Завантажити файли')}
+              value={[]}
+              onChange={addDocumentFiles}
+            />
+          </div>
+          <div className="advance-report-entry-comment">
+            <Textarea
+              autosize
+              disabled={isBusy}
+              label={t('Коментар')}
+              minRows={1}
+              value={form.comment}
+              onChange={(event) => updateForm({ comment: event.currentTarget.value })}
+            />
+          </div>
+        </Card>
 
         {documentFiles.length > 0 && (
           <Stack gap={4}>
@@ -712,11 +721,9 @@ export function AdvanceReportConsumableOrderModal({
         <Group justify="space-between">
           <Group gap="xs">
             <Text className="app-section-title" fw={600} size="sm">{t('Позиції')}</Text>
-            <Badge color="gray" variant="light">
-              {visibleItems.length}
-            </Badge>
+            <TableChip value={visibleItems.length} />
           </Group>
-                <Button color={CREATE_ACTION_COLOR} disabled={isBusy} leftSection={<Plus size={16} />} onClick={openNewItemEditor}>
+          <Button color={CREATE_ACTION_COLOR} disabled={isBusy} leftSection={<Plus size={16} />} onClick={openNewItemEditor}>
             {t('Додати')}
           </Button>
         </Group>
@@ -785,20 +792,14 @@ export function AdvanceReportConsumableOrderModal({
           </Table>
         </Table.ScrollContainer>
 
-        <AppModalFooter>
+        <AppModalFooter className="app-modal-footer--split">
           <Group gap="xs">
-            <Badge className="app-role-pill is-gray" variant="light">
-              {t('Сума')}: <span className="app-money">{formatMoney(order.TotalAmountWithoutVAT ?? totals.totalWithoutVat)}</span>
-            </Badge>
-            <Badge className="app-role-pill is-gray" variant="light">
-              {t('ПДВ')}: <span className="app-money">{formatMoney(totals.vat)}</span>
-            </Badge>
-            <Badge className="app-role-pill" variant="light">
-              {t('Разом')}: <span className="app-money">{formatMoney(order.TotalAmount ?? totals.totalWithVat)}</span>
-            </Badge>
+            <Text size="xs" c="gray.9">{t('Сума')}: <span className="app-money">{formatMoney(order.TotalAmountWithoutVAT ?? totals.totalWithoutVat)}</span></Text>
+            <Text size="xs" c="gray.9">{t('ПДВ')}: <span className="app-money">{formatMoney(totals.vat)}</span></Text>
+            <Text size="xs" c="gray.9">{t('Разом')}: <span className="app-money">{formatMoney(order.TotalAmount ?? totals.totalWithVat)}</span></Text>
           </Group>
           <Group justify="flex-end">
-            <Button color="gray" disabled={isBusy} leftSection={<X size={16} />} variant="light" onClick={requestClose}>
+            <Button color="gray" disabled={isBusy} leftSection={<X size={16} />} variant="default" onClick={requestClose}>
               {t('Скасувати')}
             </Button>
             <Button color={CREATE_ACTION_COLOR} disabled={isBusy} leftSection={<Save size={16} />} loading={isCalculating} onClick={submitOrder}>
@@ -808,115 +809,121 @@ export function AdvanceReportConsumableOrderModal({
         </AppModalFooter>
 
         <AppModal
+          className="app-compact-form"
           centered
           opened={itemEditor.opened}
-          size="xl"
-          title={
-            <span style={{ fontFamily: 'var(--font-mono)' }}>
-              {itemEditor.mode === 'edit' ? t('Редагувати позицію') : t('Додати позицію')}
-            </span>
-          }
+          size={960}
+          title={itemEditor.mode === 'edit' ? t('Редагувати позицію') : t('Додати позицію')}
           onClose={closeItemEditor}
         >
-          <Stack gap="md">
+          <Stack gap={10}>
             {itemEditor.error && (
               <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                 {itemEditor.error}
               </Alert>
             )}
 
-            <SimpleGrid cols={{ base: 1, md: 2 }}>
-              <SearchableSelect
-                data={productAutocompleteOptions}
-                disabled={isBusy}
-                label={t('Назва товару / послуги')}
-                value={itemEditor.productSearch}
-                onChange={(value) => {
-                  setItemEditor((current) => ({
-                    ...current,
-                    item: clearEditorProduct(current.item),
-                    productSearch: value,
-                  }))
-                }}
-                onOptionSubmit={handleProductSubmit}
-              />
-              <SearchableSelect
-                data={productAutocompleteOptions}
-                disabled={isBusy}
-                label={t('Артикул')}
-                value={itemEditor.articleSearch}
-                onChange={(value) => {
-                  setItemEditor((current) => ({
-                    ...current,
-                    articleSearch: value,
-                    item: clearEditorProduct(current.item),
-                  }))
-                }}
-                onOptionSubmit={handleProductSubmit}
-              />
-              <TextInput
-                disabled
-                label={t('Категорія')}
-                value={itemEditor.item.ConsumableProductCategory?.Name || itemEditor.item.ConsumableProduct?.ConsumableProductCategory?.Name || ''}
-              />
-              <SearchableSelect
-                data={costMovementOptions}
-                disabled={isBusy}
-                label={t('Стаття витрат')}
-                value={itemEditor.costMovementSearch}
-                onChange={(value) => {
-                  setItemEditor((current) => ({
-                    ...current,
-                    costMovementSearch: value,
-                    item: {
-                      ...current.item,
-                      PaymentCostMovementOperation: null,
-                    },
-                  }))
-                }}
-                onOptionSubmit={handleCostMovementSubmit}
-              />
-              <NumberInput
-                allowNegative={false}
-                decimalScale={3}
-                disabled={isBusy}
-                label={t('Кількість')}
-                min={0}
-                rightSection={<Text c="dimmed" size="xs">{itemEditor.item.ConsumableProduct?.MeasureUnit?.Name}</Text>}
-                value={itemEditor.item.Qty || 0}
-                onChange={(value) => updateEditorItem({ Qty: toNumber(value) })}
-              />
-              <NumberInput
-                allowNegative={false}
-                decimalScale={3}
-                disabled={isBusy}
-                label={t('Ціна за одиницю')}
-                min={0}
-                value={itemEditor.item.PricePerItem || 0}
-                onChange={(value) => updateEditorItem({ PricePerItem: toNumber(value), TotalPriceWithVAT: undefined })}
-              />
-              <NumberInput
-                allowNegative={false}
-                decimalScale={2}
-                disabled={isBusy}
-                label={`${t('ПДВ')} %`}
-                min={0}
-                value={itemEditor.item.VatPercent || 0}
-                onChange={(value) => updateEditorItem({ VatPercent: toNumber(value) })}
-              />
-              <NumberInput
-                allowNegative={false}
-                decimalScale={2}
-                disabled={isBusy}
-                label={t('Разом з ПДВ')}
-                min={0}
-                value={itemEditor.item.TotalPriceWithVAT || 0}
-                onChange={(value) => updateEditorItem({ PricePerItem: 0, TotalPriceWithVAT: toNumber(value) })}
-              />
-            </SimpleGrid>
+            <Card className="app-section-card" withBorder padding={12} radius="md">
+
+              <div className="advance-report-entry-parties advance-report-entry-parties--item">
+                <SearchableSelect
+                  data={productAutocompleteOptions}
+                  disabled={isBusy}
+                  label={t('Назва товару / послуги')}
+                  value={itemEditor.productSearch}
+                  onChange={(value) => {
+                    setItemEditor((current) => ({
+                      ...current,
+                      item: clearEditorProduct(current.item),
+                      productSearch: value,
+                    }))
+                  }}
+                  onOptionSubmit={handleProductSubmit}
+                />
+                <SearchableSelect
+                  data={productAutocompleteOptions}
+                  disabled={isBusy}
+                  label={t('Артикул')}
+                  value={itemEditor.articleSearch}
+                  onChange={(value) => {
+                    setItemEditor((current) => ({
+                      ...current,
+                      articleSearch: value,
+                      item: clearEditorProduct(current.item),
+                    }))
+                  }}
+                  onOptionSubmit={handleProductSubmit}
+                />
+                <TextInput
+                  disabled
+                  label={t('Категорія')}
+                  value={itemEditor.item.ConsumableProductCategory?.Name || itemEditor.item.ConsumableProduct?.ConsumableProductCategory?.Name || ''}
+                />
+                <SearchableSelect
+                  data={costMovementOptions}
+                  disabled={isBusy}
+                  label={t('Стаття витрат')}
+                  value={itemEditor.costMovementSearch}
+                  onChange={(value) => {
+                    setItemEditor((current) => ({
+                      ...current,
+                      costMovementSearch: value,
+                      item: {
+                        ...current.item,
+                        PaymentCostMovementOperation: null,
+                      },
+                    }))
+                  }}
+                  onOptionSubmit={handleCostMovementSubmit}
+                />
+              </div>
+              <div className="advance-report-entry-numbers">
+                <NumberInput
+                  maw={180}
+                  allowNegative={false}
+                  decimalScale={3}
+                  disabled={isBusy}
+                  label={t('Кількість')}
+                  min={0}
+                  rightSection={<Text c="dimmed" size="xs">{itemEditor.item.ConsumableProduct?.MeasureUnit?.Name}</Text>}
+                  value={itemEditor.item.Qty || 0}
+                  onChange={(value) => updateEditorItem({ Qty: toNumber(value) })}
+                />
+                <NumberInput
+                  maw={180}
+                  allowNegative={false}
+                  decimalScale={3}
+                  disabled={isBusy}
+                  label={t('Ціна за одиницю')}
+                  min={0}
+                  value={itemEditor.item.PricePerItem || 0}
+                  onChange={(value) => updateEditorItem({ PricePerItem: toNumber(value), TotalPriceWithVAT: undefined })}
+                />
+                <NumberInput
+                  maw={180}
+                  allowNegative={false}
+                  decimalScale={2}
+                  disabled={isBusy}
+                  label={`${t('ПДВ')} %`}
+                  min={0}
+                  value={itemEditor.item.VatPercent || 0}
+                  onChange={(value) => updateEditorItem({ VatPercent: toNumber(value) })}
+                />
+                <NumberInput
+                  maw={180}
+                  allowNegative={false}
+                  decimalScale={2}
+                  disabled={isBusy}
+                  label={t('Разом з ПДВ')}
+                  min={0}
+                  value={itemEditor.item.TotalPriceWithVAT || 0}
+                  onChange={(value) => updateEditorItem({ PricePerItem: 0, TotalPriceWithVAT: toNumber(value) })}
+                />
+              </div>
+            </Card>
 
             <AppModalFooter>
-              <Button color="gray" disabled={isBusy} leftSection={<X size={16} />} variant="light" onClick={closeItemEditor}>
+              <Button color="gray" disabled={isBusy} leftSection={<X size={16} />} variant="default" onClick={closeItemEditor}>
                 {t('Скасувати')}
               </Button>
               <Button color={CREATE_ACTION_COLOR} disabled={isBusy} leftSection={<Save size={16} />} onClick={() => void saveEditorItem()}>
@@ -927,6 +934,7 @@ export function AdvanceReportConsumableOrderModal({
         </AppModal>
 
         <AppModal
+          className="app-compact-form"
           centered
           opened={confirmCloseOpen}
           title={t('Є незбережені зміни')}
@@ -936,10 +944,10 @@ export function AdvanceReportConsumableOrderModal({
             }
           }}
         >
-          <Stack gap="md">
+          <Stack gap={10}>
             <Text>{t('Якщо закрити форму, введені дані не будуть додані до авансового звіту.')}</Text>
             <AppModalFooter>
-              <Button color="gray" disabled={isBusy} variant="light" onClick={() => setConfirmCloseOpen(false)}>
+              <Button color="gray" disabled={isBusy} variant="default" onClick={() => setConfirmCloseOpen(false)}>
                 {t('Залишитися')}
               </Button>
               <Button color="red" disabled={isBusy} onClick={confirmClose}>

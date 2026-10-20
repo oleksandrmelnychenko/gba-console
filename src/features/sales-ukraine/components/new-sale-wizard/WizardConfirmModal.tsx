@@ -44,7 +44,7 @@ export function WizardConfirmModal({
       title={t('Підтвердження')}
       onClose={onCancel}
     >
-      <Stack gap="md" onKeyDown={handleKeyDown}>
+      <Stack className="app-compact-form" gap={10} onKeyDown={handleKeyDown}>
         <Text>{message}</Text>
 
         <AppModalFooter>

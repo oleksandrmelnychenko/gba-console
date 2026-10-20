@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { PermissionKeys } from '../../../../shared/auth/permissionKeys'
-import { AppModal } from '../../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../../shared/ui/AppModal'
 import { usePermissions } from '../../../auth/usePermissions'
 import { switchSale, type SwitchSalePayload } from '../../api/salesUkraineApi'
 import type { SalesUkraineSale } from '../../types'
@@ -160,7 +160,7 @@ function WizardReassignSaleForm({
   const tradePoints = structureClients.filter((item) => item.IsTradePoint)
 
   return (
-    <Stack gap="md">
+    <Stack className="app-compact-form" gap="md">
       {loading ? (
         <Group justify="center" py="md">
           <Loader size="sm" />
@@ -203,14 +203,14 @@ function WizardReassignSaleForm({
           )}
         </Stack>
       )}
-      <Group gap="sm" justify="flex-end">
-        <Button color="gray" disabled={busy} variant="light" onClick={onCancel}>
+      <AppModalFooter>
+        <Button color="gray" disabled={busy} variant="default" onClick={onCancel}>
           {t('Скасувати')}
         </Button>
         <Button loading={busy} onClick={() => void save()}>
           {t('Перемістити')}
         </Button>
-      </Group>
+      </AppModalFooter>
     </Stack>
   )
 }

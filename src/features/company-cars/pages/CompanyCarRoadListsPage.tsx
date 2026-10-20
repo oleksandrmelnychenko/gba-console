@@ -16,7 +16,7 @@ import { formatDateInputForQuery, formatLocalDate } from '../../../shared/date/d
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { TableChip } from '../../../shared/ui/TableChip'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
@@ -581,16 +581,16 @@ function DeleteRoadListModal({
 
   return (
     <AppModal centered opened={Boolean(roadList)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити шляховий лист')}</span>} onClose={onClose}>
-      <Stack gap="md">
+      <Stack gap={10}>
         <Text>{t('Шляховий лист буде видалено.')}</Text>
-        <Group justify="flex-end">
-          <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" disabled={isSaving} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button color="red" leftSection={<Trash2 size={16} />} loading={isSaving} onClick={onDelete}>
             {t('Видалити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

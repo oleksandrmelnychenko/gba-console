@@ -1,7 +1,7 @@
 import { Button, Loader, Stack, Text } from '@mantine/core'
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { ReportModal } from './ReportModal'
 import { getClientReportCapability } from '../api/originalClientReportApi'
 import { getPlannedFlowCapability } from '../api/originalPlannedCashFlowApi'
 import { isClientReportCatalogueEntry, type ClientCapability } from '../data/originalClientReport'
@@ -35,11 +35,11 @@ function DefaultModal({ opened, enabled, disabled, capability, scope, close }: {
   const { t } = useI18n(), today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Kyiv' })
   const title = scope.kind === 'client' ? 'Звіт за клієнтами' : 'Плани руху коштів'
   const props = { callerKey: scope.callerKey, canGenerate: enabled && !disabled, initialFrom: `${today.slice(0, 7)}-01`, initialThrough: today }
-  return <AppModal opened={opened && enabled && !!capability} title={t(title)} size={1350} onClose={close}>
+  return <ReportModal opened={opened && enabled && !!capability} title={t(title)} size={1350} onClose={close}>
     {opened && capability ? <Suspense fallback={<Loader size="sm" />}>{capability.kind === 'client'
       ? <ClientPanel key={JSON.stringify(scope)} capability={capability.value} {...props} />
       : <FlowPanel key={JSON.stringify(scope)} capability={capability.value} {...props} />}</Suspense> : null}
-  </AppModal>
+  </ReportModal>
 }
 function DefaultCatalogueLaunch({ report, worlds, enabled, disabled, callerKey, kind }: Props & { kind: Kind }) {
   const { t } = useI18n(), [opened, setOpened] = useState(false), [attempt, setAttempt] = useState(0)

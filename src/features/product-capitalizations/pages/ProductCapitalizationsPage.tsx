@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -596,7 +597,7 @@ export function ProductCapitalizationDetailDrawer({
           <DocumentDetailSection title={t('Реквізити документа')}>
             <DocumentDetailRow label={t('Організація')} value={<TableChip tone="product" value={capitalization.Organization?.Name} />} />
             <DocumentDetailRow label={t('Склад')} value={<TableChip tone="storage" value={capitalization.Storage?.Name} />} />
-            <DocumentDetailRow label={t('Відповідальний')} value={getResponsibleName(capitalization)} />
+            <DocumentDetailRow label={t('Відповідальний')} value={<TableChip tone="warning" value={getResponsibleName(capitalization)} />} />
             <DocumentDetailRow label={t('Сума документа')} mono value={formatMoney(capitalization.TotalAmount)} />
             {capitalization.Comment && <DocumentDetailRow label={t('Коментар')} value={capitalization.Comment} wide />}
           </DocumentDetailSection>
@@ -693,7 +694,7 @@ function useProductCapitalizationColumns(
         width: 260,
         minWidth: 190,
         accessor: (capitalization) => capitalization.Organization?.Name,
-        cell: (capitalization) => displayValue(capitalization.Organization?.Name),
+        cell: (capitalization) => <TableChip tone="product" value={getOrganizationDisplayName(capitalization.Organization)} />,
       },
       {
         id: 'responsible',
@@ -701,7 +702,7 @@ function useProductCapitalizationColumns(
         width: 190,
         minWidth: 150,
         accessor: getResponsibleName,
-        cell: (capitalization) => displayValue(getResponsibleName(capitalization)),
+        cell: (capitalization) => <TableChip tone="warning" value={displayValue(getResponsibleName(capitalization))} />,
       },
       {
         id: 'comment',

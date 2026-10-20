@@ -5,7 +5,7 @@ import { formatLocalDateTime } from '../../../shared/date/dateTime'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { useAuth } from '../../auth/useAuth'
 import type {
   CalculateMergedServiceInvoiceItem,
@@ -355,16 +355,16 @@ export function MergedServicesSection({
           }
         }}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           <Text size="sm">{t('Ви впевнені, що хочете видалити?')}</Text>
-          <Group justify="flex-end" gap="sm">
+          <AppModalFooter>
             <Button disabled={isSaving} variant="default" onClick={() => setRemoveTarget(null)}>
               {t('Скасувати')}
             </Button>
             <Button color="red" disabled={isSaving} loading={isSaving} onClick={handleRemoveConfirm}>
               {t('Видалити')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
     </Stack>

@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -20,7 +21,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { AppModal } from "../../../shared/ui/AppModal"
+import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import { ArrowLeft, ArrowRight, Banknote, CircleAlert, Download, Eye, FileUp, Package, Plus, RefreshCw, RotateCcw, SquarePen, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState, type ReactNode } from 'react'
@@ -274,7 +275,7 @@ export function AllSadsPage() {
         id: 'organization',
         header: t('Організація'),
         accessor: (sad) => sad.Organization?.Name,
-        cell: (sad) => <SadListTableValue value={displayValue(sad.Organization?.Name)} />,
+        cell: (sad) => <TableChip tone="product" value={displayValue(getOrganizationDisplayName(sad.Organization))} />,
         minWidth: 160,
       },
       {
@@ -498,17 +499,17 @@ export function AllSadsPage() {
         }}
       />}
 
-      {canDelete && <AppModal centered opened={Boolean(deleteTarget)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити SAD')}</span>} onClose={() => setDeleteTarget(null)}>
+      {canDelete && <AppModal className="app-compact-form" centered opened={Boolean(deleteTarget)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити SAD')}</span>} onClose={() => setDeleteTarget(null)}>
         <Stack>
           <Text>{t('Видалити обраний SAD?')}</Text>
-          <Group justify="flex-end">
-            <Button color="gray" disabled={isDeleting} variant="subtle" onClick={() => setDeleteTarget(null)}>
+          <AppModalFooter>
+            <Button color="gray" disabled={isDeleting} variant="default" onClick={() => setDeleteTarget(null)}>
               {t('Скасувати')}
             </Button>
             <Button color="red" loading={isDeleting} onClick={handleDeleteSad}>
               {t('Видалити')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>}
     </Stack>
@@ -1162,17 +1163,17 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
         onClose={() => setAddItemsOpen(false)}
       />}
 
-      {canEdit && <AppModal centered opened={Boolean(deleteItemTarget)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити позицію')}</span>} onClose={() => setDeleteItemTarget(null)}>
+      {canEdit && <AppModal className="app-compact-form" centered opened={Boolean(deleteItemTarget)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити позицію')}</span>} onClose={() => setDeleteItemTarget(null)}>
         <Stack>
           <Text>{t('Позицію буде прибрано з SAD після наступного збереження.')}</Text>
-          <Group justify="flex-end">
-            <Button color="gray" variant="subtle" onClick={() => setDeleteItemTarget(null)}>
+          <AppModalFooter>
+            <Button color="gray" variant="default" onClick={() => setDeleteItemTarget(null)}>
               {t('Скасувати')}
             </Button>
             <Button color="red" onClick={() => deleteItemTarget && deleteItem(deleteItemTarget)}>
               {t('Видалити')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>}
     </Stack>
@@ -1468,11 +1469,11 @@ function TirMovementPanel({
         }}
       />
 
-      <AppModal centered opened={Boolean(deletePalletTarget)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити палету')}</span>} onClose={() => setDeletePalletTarget(null)}>
+      <AppModal className="app-compact-form" centered opened={Boolean(deletePalletTarget)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити палету')}</span>} onClose={() => setDeletePalletTarget(null)}>
         <Stack>
           <Text>{t('Палету буде прибрано з SAD після наступного збереження.')}</Text>
-          <Group justify="flex-end">
-            <Button color="gray" variant="subtle" onClick={() => setDeletePalletTarget(null)}>
+          <AppModalFooter>
+            <Button color="gray" variant="default" onClick={() => setDeletePalletTarget(null)}>
               {t('Скасувати')}
             </Button>
             <Button
@@ -1491,7 +1492,7 @@ function TirMovementPanel({
             >
               {t('Видалити')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
     </Stack>
@@ -1799,7 +1800,7 @@ function MoveItemsModalContent({
   }
 
   return (
-    <AppModal centered opened size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Перемістити в палету')}</span>} onClose={onClose}>
+    <AppModal className="app-compact-form" centered opened size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Перемістити в палету')}</span>} onClose={onClose}>
       <Stack>
         <Alert color="orange" variant="light">
           {t('До палети буде додано')} {selectedItems.length} {t('позицій. Кількість береться з поля "Не в палеті".')}
@@ -1829,12 +1830,12 @@ function MoveItemsModalContent({
             onChange={(value) => setPalletNetId(value || '')}
           />
         )}
-        <Group justify="flex-end">
-          <Button color="gray" variant="subtle" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button onClick={move}>{t('Перемістити')}</Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )
@@ -2164,7 +2165,7 @@ function SadDocumentsModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Документи SAD')}</span>} onClose={onClose}>
+    <AppModal className="app-compact-form" centered opened={opened} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Документи SAD')}</span>} onClose={onClose}>
       <Stack>
         {canUpload && <FileInput
           clearable
@@ -2192,14 +2193,14 @@ function SadDocumentsModal({
             </Group>
           ))}
         </Stack>
-        <Group justify="flex-end">
-          <Button color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" disabled={isSaving} variant="default" onClick={onClose}>
             {t('Закрити')}
           </Button>
           {canUpload && <Button disabled={!files.length} loading={isSaving} onClick={uploadFiles}>
             {t('Завантажити')}
           </Button>}
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )
@@ -2268,7 +2269,7 @@ function SpecificationEditorModal({
   }
 
   return (
-    <AppModal centered opened size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Специфікація товару')}</span>} onClose={onClose}>
+    <AppModal className="app-compact-form" centered opened size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Специфікація товару')}</span>} onClose={onClose}>
       <Stack>
         <Text fw={600}>{editor.product.VendorCode} · {editor.product.Name}</Text>
         <TextInput
@@ -2277,45 +2278,45 @@ function SpecificationEditorModal({
           onChange={(event) => { const nextValue = event.currentTarget.value; setDraft((currentDraft) => ({ ...currentDraft, SpecificationCode: nextValue })) }}
         />
         <SimpleGrid cols={{ base: 1, sm: 2 }}>
-          <NumberInput
+          <NumberInput maw={160}
             decimalScale={2}
             label={t('Митна вартість')}
             value={toEditableNumber(draft.CustomsValue)}
             onChange={(value) => setDraft((currentDraft) => ({ ...currentDraft, CustomsValue: numberInputValue(value) }))}
           />
-          <NumberInput
+          <NumberInput maw={160}
             decimalScale={2}
             label={t('Мито')}
             value={toEditableNumber(draft.Duty)}
             onChange={(value) => setDraft((currentDraft) => ({ ...currentDraft, Duty: numberInputValue(value) }))}
           />
-          <NumberInput
+          <NumberInput maw={160}
             decimalScale={2}
             label={t('ПДВ')}
             value={toEditableNumber(draft.VATValue)}
             onChange={(value) => setDraft((currentDraft) => ({ ...currentDraft, VATValue: numberInputValue(value) }))}
           />
-          <NumberInput
+          <NumberInput maw={160}
             decimalScale={2}
             label={t('Мито %')}
             value={toEditableNumber(draft.DutyPercent)}
             onChange={(value) => setDraft((currentDraft) => ({ ...currentDraft, DutyPercent: numberInputValue(value) }))}
           />
-          <NumberInput
+          <NumberInput maw={160}
             decimalScale={2}
             label={t('ПДВ %')}
             value={toEditableNumber(draft.VATPercent)}
             onChange={(value) => setDraft((currentDraft) => ({ ...currentDraft, VATPercent: numberInputValue(value) }))}
           />
         </SimpleGrid>
-        <Group justify="flex-end">
-          <Button color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" disabled={isSaving} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button loading={isSaving} onClick={save}>
             {t('Зберегти')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )
@@ -2371,12 +2372,12 @@ function SpecificationUploadModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Імпорт специфікацій')}</span>} onClose={onClose}>
+    <AppModal className="app-compact-form" centered opened={opened} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Імпорт специфікацій')}</span>} onClose={onClose}>
       <Stack>
         <FileInput clearable label={t('Файл')} value={file} onChange={setFile} />
         <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
           {Object.keys(parseConfiguration).map((key) => (
-            <NumberInput
+            <NumberInput maw={160}
               key={key}
               label={getSpecificationColumnLabel(key as keyof SadSpecificationParseConfiguration, t)}
               min={1}
@@ -2390,14 +2391,14 @@ function SpecificationUploadModal({
             />
           ))}
         </SimpleGrid>
-        <Group justify="flex-end">
-          <Button color="gray" disabled={isUploading} variant="subtle" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" disabled={isUploading} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button disabled={!file} loading={isUploading} onClick={upload}>
             {t('Імпортувати')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )
@@ -2436,7 +2437,7 @@ function SadActionModal({
   const canCreateSupplyOrder = Boolean(sad.IsSend && !sad.IsFromSale && !sad.SupplyOrderUkraineId)
 
   return (
-    <AppModal
+    <AppModal className="app-compact-form"
       centered
       opened={Boolean(sad)}
       size={496}

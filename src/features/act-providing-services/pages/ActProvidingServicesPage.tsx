@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import {
   Alert,
@@ -280,10 +281,10 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
         fill: true,
         accessor: (row) => `${row.serviceOrganization || ''} ${row.organization || ''}`,
         cell: (row) => (
-          <ActTwoLineValue
-            primary={displayValue(row.serviceOrganization)}
-            secondary={displayValue(row.organization)}
-          />
+          <Stack gap={4}>
+            <Text size="sm">{displayValue(row.serviceOrganization)}</Text>
+            <TableChip tone="product" value={displayValue(row.organization)} />
+          </Stack>
         ),
       },
       {
@@ -429,7 +430,7 @@ function ActProvidingServiceOptionsModal({
   }
 
   return (
-    <AppModal
+    <AppModal className="app-compact-form"
       centered
       opened={Boolean(row)}
       size={496}

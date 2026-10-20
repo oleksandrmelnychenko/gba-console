@@ -3,18 +3,16 @@ import {
   Button,
   Checkbox,
   FileInput,
-  Group,
   NumberInput,
   Select,
   SimpleGrid,
   Stack,
   Text,
   Textarea,
-  TextInput,
-} from '@mantine/core'
+  TextInput } from '@mantine/core'
 import { CircleAlert, FileSpreadsheet } from 'lucide-react'
 import { type FormEvent, useMemo } from 'react'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
@@ -122,9 +120,9 @@ export function DepreciatedOrderCreateModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="xl" title={`${t('Додати')} ${t('Акт списання')}`} onClose={closeModal}>
+    <AppModal centered opened={opened} size={760} title={`${t('Додати')} ${t('Акт списання')}`} onClose={closeModal}>
       <form id="depreciated-order-create-form" onSubmit={submitForm}>
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           {(validationError || createError) && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {validationError || createError}
@@ -232,14 +230,14 @@ export function DepreciatedOrderCreateModal({
             </Text>
           )}
 
-          <Group justify="flex-end">
-            <Button color="red" disabled={isCreating} type="button" variant="subtle" onClick={closeModal}>
+          <AppModalFooter>
+            <Button color="gray" disabled={isCreating} type="button" variant="default" onClick={closeModal}>
               {t('Скасувати')}
             </Button>
             <Button color={CREATE_ACTION_COLOR} loading={isCreating} type="submit">
               {t('Списати')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </form>
     </AppModal>

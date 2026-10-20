@@ -1,8 +1,8 @@
-import { Alert, Button, Group, NumberInput, Stack, Text, Textarea } from '@mantine/core'
+import { Alert, Button, NumberInput, Stack, Text, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getSaleById, updateSaleDiscount } from '../api/salesUkraineApi'
 import {
@@ -172,7 +172,7 @@ function SaleDiscountForm({
   }
 
   return (
-    <Stack gap="md">
+    <Stack className="app-compact-form" gap="md">
       {orderItem && (
         <Text className="sale-discount-modal__product-name">
           {orderItem.Product?.NameUA || orderItem.Product?.Name || orderItem.Product?.VendorCode || ''}
@@ -212,14 +212,14 @@ function SaleDiscountForm({
         value={comment}
         onChange={(event) => setComment(event.currentTarget.value)}
       />
-      <Group justify="flex-end">
-        <Button color="gray" disabled={isSaving} variant="subtle" onClick={onCancel}>
+      <AppModalFooter>
+        <Button color="gray" disabled={isSaving} variant="default" onClick={onCancel}>
           {t('Скасувати')}
         </Button>
         <Button color={CREATE_ACTION_COLOR} disabled={!canEditComment} loading={isSaving} onClick={save}>
           {t('Зберегти')}
         </Button>
-      </Group>
+      </AppModalFooter>
     </Stack>
   )
 }

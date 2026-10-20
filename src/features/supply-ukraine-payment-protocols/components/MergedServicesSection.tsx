@@ -2,7 +2,7 @@ import { Button, Group, Stack, Text } from '@mantine/core'
 import { Plus } from 'lucide-react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import type {
   MergedService,
   NewMergedServiceFormValues,
@@ -116,16 +116,16 @@ export function MergedServicesSection({
       />
 
       <AppModal centered opened={Boolean(removeTarget)} title={t('Видалити')} onClose={() => setRemoveTarget(null)}>
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           <Text size="sm">{t('Ви впевнені, що хочете видалити?')}</Text>
-          <Group justify="flex-end" gap="sm">
-            <Button color="gray" disabled={isSaving} variant="light" onClick={() => setRemoveTarget(null)}>
+          <AppModalFooter>
+            <Button color="gray" disabled={isSaving} variant="default" onClick={() => setRemoveTarget(null)}>
               {t('Скасувати')}
             </Button>
             <Button color="red" loading={isSaving} onClick={handleRemoveConfirm}>
               {t('Видалити')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
     </Stack>

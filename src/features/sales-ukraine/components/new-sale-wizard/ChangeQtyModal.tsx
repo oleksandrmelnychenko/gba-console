@@ -99,7 +99,7 @@ function ChangeQtyForm({
   }
 
   return (
-    <Stack gap="md" onKeyDown={handleKeyDown}>
+    <Stack className="app-compact-form" gap={10} onKeyDown={handleKeyDown}>
       <div className="new-sale-quantity-modal__main">
         <Group gap={8} justify="center" className="new-sale-quantity-modal__available">
           <Text size="sm">{t('Доступно')}</Text>

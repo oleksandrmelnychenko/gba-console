@@ -1232,7 +1232,7 @@ function useSupplierColumns() {
         minWidth: 80,
         accessor: (supplier) => getSupplierAgreementCurrency(getPrimarySupplierAgreement(supplier)),
         cell: (supplier) => (
-          <TableChip value={displayValue(getSupplierAgreementCurrency(getPrimarySupplierAgreement(supplier)))} />
+          <TableChip tone="source" value={displayValue(getSupplierAgreementCurrency(getPrimarySupplierAgreement(supplier)))} />
         ),
       },
       {
@@ -1242,7 +1242,7 @@ function useSupplierColumns() {
         minWidth: 150,
         accessor: (supplier) => getSupplierAgreementOrganization(getPrimarySupplierAgreement(supplier)),
         cell: (supplier) => (
-          <SupplierTableValue value={displayValue(getSupplierAgreementOrganization(getPrimarySupplierAgreement(supplier)))} />
+          <TableChip tone="product" value={displayValue(getSupplierAgreementOrganization(getPrimarySupplierAgreement(supplier)))} />
         ),
       },
       {

@@ -22,6 +22,7 @@ vi.mock('@mantine/notifications', () => ({
 }))
 
 vi.mock('../../../shared/ui/AppModal', () => ({
+  AppModalFooter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   AppModal: ({ children, opened, title }: { children: React.ReactNode; opened: boolean; title: React.ReactNode }) => (
     opened ? <div aria-label={String(title)} role="dialog">{children}</div> : null
   ),

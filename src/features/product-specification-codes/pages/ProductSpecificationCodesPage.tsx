@@ -4,13 +4,11 @@ import {
   Button,
   Card,
   FileButton,
-  Group,
   ScrollArea,
   Stack,
   Text,
   TextInput,
-  Tooltip,
-} from '@mantine/core'
+  Tooltip } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, RotateCcw, Search } from 'lucide-react'
@@ -18,7 +16,7 @@ import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
@@ -334,9 +332,9 @@ function SpecificationUploadResultModal({
             </Stack>
           )}
 
-          <Group justify="flex-end">
-            <Button onClick={onClose}>{t('Закрити')}</Button>
-          </Group>
+          <AppModalFooter>
+            <Button variant="default" onClick={onClose}>{t('Закрити')}</Button>
+          </AppModalFooter>
         </Stack>
       )}
     </AppModal>
@@ -415,11 +413,7 @@ function useProductSpecificationColumns(
         width: 200,
         minWidth: 160,
         accessor: getResponsibleName,
-        cell: (specification) => (
-          <span className="product-specification-responsible-cell">
-            {displayValue(getResponsibleName(specification))}
-          </span>
-        ),
+        cell: (specification) => <TableChip tone="warning" value={getResponsibleName(specification)} />,
       },
       {
         id: 'capitalizedQty',

@@ -7,7 +7,7 @@ import {
   Stack,
   Text,
 } from '@mantine/core'
-import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from "../../../shared/ui/page-header-actions/PageHeaderActions"
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Save } from 'lucide-react'
@@ -175,39 +175,16 @@ function UserNewPageContent() {
   }
 
   return (
-    <AppDrawer
+    <AppModal className="app-compact-form"
       opened
       closeOnClickOutside={!isSaving}
       keepMounted={false}
-      position="right"
-      size="standard"
+      size={800}
       title={<span style={USER_NEW_MONO_STYLE}>{t('Новий користувач')}</span>}
       onClose={closeSheet}
-      footer={
-        <Group gap="xs" justify="flex-end">
-          <Button
-            color="gray"
-            disabled={isSaving}
-            styles={{ label: USER_NEW_MONO_STYLE }}
-            variant="subtle"
-            onClick={closeSheet}
-          >
-            {t('Скасувати')}
-          </Button>
-          <Button
-            color={CREATE_ACTION_COLOR}
-            form="user-new-form"
-            leftSection={<Save size={16} />}
-            loading={isSaving}
-            styles={{ label: USER_NEW_MONO_STYLE }}
-            type="submit"
-          >
-            {t('Створити')}
-          </Button>
-        </Group>
-      }
+
     >
-      <Stack gap="md">
+      <Stack gap={10}>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
@@ -215,8 +192,8 @@ function UserNewPageContent() {
         )}
 
         <form autoComplete="off" id="user-new-form" onSubmit={handleSubmit}>
-          <Card className="app-section-card" withBorder radius="md" padding="md">
-            <Stack gap="md">
+          <Card className="app-section-card" withBorder radius="md" padding={12}>
+            <Stack gap={10}>
               <Text className="app-section-title" fw={600}>
                 {t('Дані користувача')}
               </Text>
@@ -243,6 +220,27 @@ function UserNewPageContent() {
           </Card>
         </form>
       </Stack>
-    </AppDrawer>
+      <AppModalFooter>
+          <Button
+            color="gray"
+            disabled={isSaving}
+            styles={{ label: USER_NEW_MONO_STYLE }}
+            variant="default"
+            onClick={closeSheet}
+          >
+            {t('Скасувати')}
+          </Button>
+          <Button
+            color={CREATE_ACTION_COLOR}
+            form="user-new-form"
+            leftSection={<Save size={16} />}
+            loading={isSaving}
+            styles={{ label: USER_NEW_MONO_STYLE }}
+            type="submit"
+          >
+            {t('Створити')}
+          </Button>
+        </AppModalFooter>
+    </AppModal>
   )
 }

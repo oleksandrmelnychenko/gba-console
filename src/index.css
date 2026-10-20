@@ -360,7 +360,7 @@ text.app-money {
 .app-form-sheet input[type='time'],
 .app-form-sheet input[type='datetime-local'] {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 12px;
   letter-spacing: 0;
 }
 

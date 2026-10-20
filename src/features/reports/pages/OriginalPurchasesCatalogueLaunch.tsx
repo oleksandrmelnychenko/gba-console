@@ -2,7 +2,7 @@ import { Button, Loader, Stack, Text } from '@mantine/core'
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { WarehousePeriodCapabilityStatus } from './WarehousePeriodControls'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { ReportModal } from './ReportModal'
 import { getPurchasesCapability } from '../api/originalPurchasesApi'
 import { isPurchasesCatalogueEntry, type PurchasesCapability } from '../data/originalPurchases'
 import type { ReportCatalogueEntry } from '../types'
@@ -27,11 +27,11 @@ function PurchasesModal({ opened, enabled, disabled, capability, callerKey, scop
 }) {
   const { t } = useI18n()
   const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Kyiv' })
-  return <AppModal opened={opened && enabled && !!capability} title={t('Закупки')} size={1250}
+  return <ReportModal opened={opened && enabled && !!capability} title={t('Закупки')} size={1250}
     onClose={close} closeButtonProps={{ 'aria-label': t('Закрити звіт про закупки') }}>
     {opened && capability ? <Suspense fallback={<Loader size="sm" />}><Panel key={JSON.stringify(scope)} capability={capability} callerKey={callerKey}
       canGenerate={enabled && !disabled} initialFrom={today} initialThrough={today} /></Suspense> : null}
-  </AppModal>
+  </ReportModal>
 }
 export function OriginalPurchasesCatalogueLaunch({ report, worlds, enabled, disabled, callerKey }: {
   report: ReportCatalogueEntry; worlds: readonly string[]; enabled: boolean; disabled: boolean; callerKey: string | null

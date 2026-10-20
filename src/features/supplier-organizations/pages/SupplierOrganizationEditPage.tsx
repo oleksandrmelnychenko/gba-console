@@ -4,6 +4,7 @@ import {
   Alert,
   Badge,
   Button,
+  Card,
   Checkbox,
   Divider,
   FileInput,
@@ -29,7 +30,7 @@ import type { TranslateFunction } from '../../../shared/i18n/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -66,6 +67,8 @@ import {
   validateSupplyOrganizationAgreementForm,
 } from '../validation'
 import './supplier-organizations-page.css'
+import './supplier-organization-form.css'
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 
 const AGREEMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -336,7 +339,8 @@ function SupplierOrganizationEditPageContent({ canOpenOverview }: { canOpenOverv
     <AppDrawer
       opened={drawerOpened}
       position="right"
-      size="wide"
+      size={960}
+      className="supplier-organization-form-sheet"
       title={
         <span style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
           {organization.Id ? t('Редагувати постачальника послуг') : t('Новий постачальник послуг')}
@@ -353,7 +357,7 @@ function SupplierOrganizationEditPageContent({ canOpenOverview }: { canOpenOverv
         ) : null
       }
     >
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap={10}>
       <Tabs className="supplier-organization-edit-tabs-root" color={CREATE_ACTION_COLOR} value={activeTab} onChange={setActiveTab}>
         <Tabs.List className="pill-tabs supplier-organization-edit-tabs">
           <Tabs.Tab value="general">{t('Загальна інформація')}</Tabs.Tab>
@@ -371,7 +375,7 @@ function SupplierOrganizationEditPageContent({ canOpenOverview }: { canOpenOverv
         {!isNew && (
           <Group gap="xs" justify="flex-end" mt="md">
             <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void reloadOrganization()}>
+              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={32} variant="default" onClick={() => void reloadOrganization()}>
                 <RefreshCw size={18} />
               </ActionIcon>
             </Tooltip>
@@ -461,46 +465,48 @@ function GeneralInfoForm({
 
   return (
     <form id="supplier-organization-general-form" onSubmit={submit}>
-      <Stack gap="md">
-        <SimpleGrid cols={{ base: 1, md: 2 }}>
-          <TextInput
-            error={errors.Name ? t(errors.Name) : undefined}
-            label={t('Назва')}
-            required
-            value={values.Name}
-            onChange={(event) => setField('Name', event.currentTarget.value)}
-          />
-          <TextInput label={t('Адреса')} value={values.Address} onChange={(event) => setField('Address', event.currentTarget.value)} />
-          <TextInput
-            error={errors.EmailAddress ? t(errors.EmailAddress) : undefined}
-            label={t('Email')}
-            type="email"
-            value={values.EmailAddress}
-            onChange={(event) => setField('EmailAddress', event.currentTarget.value)}
-          />
-          <TextInput label={t('Телефон')} value={values.PhoneNumber} onChange={(event) => setField('PhoneNumber', event.currentTarget.value)} />
-          <TextInput label={t('ПДВ номер')} value={values.SROI} onChange={(event) => setField('SROI', event.currentTarget.value)} />
-          <TextInput label={t('ІПН')} value={values.TIN} onChange={(event) => setField('TIN', event.currentTarget.value)} />
-          <TextInput label={t('ЄДРПОУ')} value={values.USREOU} onChange={(event) => setField('USREOU', event.currentTarget.value)} />
-        </SimpleGrid>
-        <Group gap="lg">
-          <Checkbox
-            checked={values.IsAgreementReceived}
-            label={t('Договір отримано')}
-            onChange={(event) => setField('IsAgreementReceived', event.currentTarget.checked)}
-          />
-          <Checkbox
-            checked={values.IsBillReceived}
-            label={t('Рахунок отримано')}
-            onChange={(event) => setField('IsBillReceived', event.currentTarget.checked)}
-          />
-          <Checkbox
-            checked={values.IsNotResident}
-            label={t('Нерезидент')}
-            onChange={(event) => setField('IsNotResident', event.currentTarget.checked)}
-          />
-        </Group>
-      </Stack>
+      <Card className="app-section-card supplier-organization-form-card" withBorder>
+        <Stack className="app-compact-form" gap={10}>
+          <div className="supplier-organization-form-grid supplier-organization-form-grid--general">
+            <TextInput
+              error={errors.Name ? t(errors.Name) : undefined}
+              label={t('Назва')}
+              required
+              value={values.Name}
+              onChange={(event) => setField('Name', event.currentTarget.value)}
+            />
+            <TextInput label={t('Адреса')} value={values.Address} onChange={(event) => setField('Address', event.currentTarget.value)} />
+            <TextInput
+              error={errors.EmailAddress ? t(errors.EmailAddress) : undefined}
+              label={t('Email')}
+              type="email"
+              value={values.EmailAddress}
+              onChange={(event) => setField('EmailAddress', event.currentTarget.value)}
+            />
+            <TextInput label={t('Телефон')} value={values.PhoneNumber} onChange={(event) => setField('PhoneNumber', event.currentTarget.value)} />
+            <TextInput label={t('ПДВ номер')} value={values.SROI} onChange={(event) => setField('SROI', event.currentTarget.value)} />
+            <TextInput label={t('ІПН')} value={values.TIN} onChange={(event) => setField('TIN', event.currentTarget.value)} />
+            <TextInput label={t('ЄДРПОУ')} value={values.USREOU} onChange={(event) => setField('USREOU', event.currentTarget.value)} />
+          </div>
+          <Group gap={12}>
+            <Checkbox
+              checked={values.IsAgreementReceived}
+              label={t('Договір отримано')}
+              onChange={(event) => setField('IsAgreementReceived', event.currentTarget.checked)}
+            />
+            <Checkbox
+              checked={values.IsBillReceived}
+              label={t('Рахунок отримано')}
+              onChange={(event) => setField('IsBillReceived', event.currentTarget.checked)}
+            />
+            <Checkbox
+              checked={values.IsNotResident}
+              label={t('Нерезидент')}
+              onChange={(event) => setField('IsNotResident', event.currentTarget.checked)}
+            />
+          </Group>
+        </Stack>
+      </Card>
     </form>
   )
 }
@@ -526,20 +532,22 @@ function BankDetailsForm({
 
   return (
     <form id="supplier-organization-bank-form" onSubmit={submit}>
-      <Stack gap="md">
-        <SimpleGrid cols={{ base: 1, md: 2 }}>
-          <TextInput label={t('Банківські реквізити')} value={values.Requisites} onChange={(event) => setField('Requisites', event.currentTarget.value)} />
-          <TextInput label={t('Номер рахунку')} value={values.AccountNumber} onChange={(event) => setField('AccountNumber', event.currentTarget.value)} />
-          <TextInput label={t('Банк')} value={values.Bank} onChange={(event) => setField('Bank', event.currentTarget.value)} />
-          <TextInput label="BankAccount" value={values.BankAccount} onChange={(event) => setField('BankAccount', event.currentTarget.value)} />
-          <TextInput label="Swift" value={values.Swift} onChange={(event) => setField('Swift', event.currentTarget.value)} />
-          <TextInput label={t('Swift/BIC')} value={values.SwiftBic} onChange={(event) => setField('SwiftBic', event.currentTarget.value)} />
-          <TextInput label={t('Банк бенефіціара')} value={values.BeneficiaryBank} onChange={(event) => setField('BeneficiaryBank', event.currentTarget.value)} />
-          <TextInput label={t('Банк-посередник')} value={values.IntermediaryBank} onChange={(event) => setField('IntermediaryBank', event.currentTarget.value)} />
-          <TextInput label={t('Бенефіціар')} value={values.Beneficiary} onChange={(event) => setField('Beneficiary', event.currentTarget.value)} />
-          <TextInput label="BankAccountEUR" value={values.BankAccountEUR} onChange={(event) => setField('BankAccountEUR', event.currentTarget.value)} />
-        </SimpleGrid>
-      </Stack>
+      <Card className="app-section-card supplier-organization-form-card" withBorder>
+        <Stack className="app-compact-form" gap={10}>
+          <div className="supplier-organization-form-grid supplier-organization-form-grid--bank">
+            <TextInput label={t('Банківські реквізити')} value={values.Requisites} onChange={(event) => setField('Requisites', event.currentTarget.value)} />
+            <TextInput label={t('Номер рахунку')} value={values.AccountNumber} onChange={(event) => setField('AccountNumber', event.currentTarget.value)} />
+            <TextInput label={t('Банк')} value={values.Bank} onChange={(event) => setField('Bank', event.currentTarget.value)} />
+            <TextInput label="BankAccount" value={values.BankAccount} onChange={(event) => setField('BankAccount', event.currentTarget.value)} />
+            <TextInput label="Swift" value={values.Swift} onChange={(event) => setField('Swift', event.currentTarget.value)} />
+            <TextInput label={t('Swift/BIC')} value={values.SwiftBic} onChange={(event) => setField('SwiftBic', event.currentTarget.value)} />
+            <TextInput label={t('Банк бенефіціара')} value={values.BeneficiaryBank} onChange={(event) => setField('BeneficiaryBank', event.currentTarget.value)} />
+            <TextInput label={t('Банк-посередник')} value={values.IntermediaryBank} onChange={(event) => setField('IntermediaryBank', event.currentTarget.value)} />
+            <TextInput label={t('Бенефіціар')} value={values.Beneficiary} onChange={(event) => setField('Beneficiary', event.currentTarget.value)} />
+            <TextInput label="BankAccountEUR" value={values.BankAccountEUR} onChange={(event) => setField('BankAccountEUR', event.currentTarget.value)} />
+          </div>
+        </Stack>
+      </Card>
     </form>
   )
 }
@@ -574,22 +582,24 @@ function ContactPersonForm({
 
   return (
     <form id="supplier-organization-contact-form" onSubmit={submit}>
-      <Stack gap="md">
-        <SimpleGrid cols={{ base: 1, md: 2 }}>
-          <TextInput label={t('ПІБ')} value={values.ContactPersonName} onChange={(event) => setField('ContactPersonName', event.currentTarget.value)} />
-          <TextInput label={t('Телефон')} value={values.ContactPersonPhone} onChange={(event) => setField('ContactPersonPhone', event.currentTarget.value)} />
-          <TextInput
-            error={errors.ContactPersonEmail ? t(errors.ContactPersonEmail) : undefined}
-            label={t('Email')}
-            type="email"
-            value={values.ContactPersonEmail}
-            onChange={(event) => setField('ContactPersonEmail', event.currentTarget.value)}
-          />
-          <TextInput label="Viber" value={values.ContactPersonViber} onChange={(event) => setField('ContactPersonViber', event.currentTarget.value)} />
-          <TextInput label="Skype" value={values.ContactPersonSkype} onChange={(event) => setField('ContactPersonSkype', event.currentTarget.value)} />
-          <TextInput label={t('Коментар')} value={values.ContactPersonComment} onChange={(event) => setField('ContactPersonComment', event.currentTarget.value)} />
-        </SimpleGrid>
-      </Stack>
+      <Card className="app-section-card supplier-organization-form-card" withBorder>
+        <Stack className="app-compact-form" gap={10}>
+          <div className="supplier-organization-form-grid supplier-organization-form-grid--contact">
+            <TextInput label={t('ПІБ')} value={values.ContactPersonName} onChange={(event) => setField('ContactPersonName', event.currentTarget.value)} />
+            <TextInput label={t('Телефон')} value={values.ContactPersonPhone} onChange={(event) => setField('ContactPersonPhone', event.currentTarget.value)} />
+            <TextInput
+              error={errors.ContactPersonEmail ? t(errors.ContactPersonEmail) : undefined}
+              label={t('Email')}
+              type="email"
+              value={values.ContactPersonEmail}
+              onChange={(event) => setField('ContactPersonEmail', event.currentTarget.value)}
+            />
+            <TextInput label="Viber" value={values.ContactPersonViber} onChange={(event) => setField('ContactPersonViber', event.currentTarget.value)} />
+            <TextInput label="Skype" value={values.ContactPersonSkype} onChange={(event) => setField('ContactPersonSkype', event.currentTarget.value)} />
+            <TextInput label={t('Коментар')} value={values.ContactPersonComment} onChange={(event) => setField('ContactPersonComment', event.currentTarget.value)} />
+          </div>
+        </Stack>
+      </Card>
     </form>
   )
 }
@@ -818,7 +828,7 @@ function useAgreementColumns(onEdit?: (agreement: SupplyOrganizationAgreement) =
         width: 190,
         minWidth: 150,
         accessor: (agreement) => agreement.Organization?.Name,
-        cell: (agreement) => displayValue(agreement.Organization?.Name),
+        cell: (agreement) => <TableChip tone="product" value={getOrganizationDisplayName(agreement.Organization)} />,
       },
       {
         id: 'currency',
@@ -826,7 +836,7 @@ function useAgreementColumns(onEdit?: (agreement: SupplyOrganizationAgreement) =
         width: 110,
         minWidth: 90,
         accessor: (agreement) => agreement.Currency?.Code,
-        cell: (agreement) => <TableChip tone="neutral" value={displayValue(agreement.Currency?.Code || agreement.Currency?.Name)} />,
+        cell: (agreement) => <TableChip tone="source" value={displayValue(agreement.Currency?.Code || agreement.Currency?.Name)} />,
       },
       {
         id: 'amount',
@@ -912,130 +922,134 @@ function AgreementDrawer({
   const documents = (editor?.SupplyOrganizationDocuments || []).filter((document) => !document.Deleted)
 
   return (
-    <AppDrawer
+    <AppModal
       opened={Boolean(editor)}
-      padding="md"
-      size="lg"
+      size={680}
+      className="supplier-agreement-modal"
       title={isPersistedSupplyOrganizationAgreement(editor) ? `${t('Редагувати договір')}: ${displayValue(editor?.Name)}` : t('Новий договір')}
       onClose={onClose}
-      footer={
-        <Group gap="xs">
-          <Button color="gray" leftSection={<X size={16} />} variant="subtle" onClick={onClose}>
-            {t('Скасувати')}
-          </Button>
-          <Button color={CREATE_ACTION_COLOR} form="supplier-organization-agreement-form" leftSection={<Save size={16} />} loading={isSubmitting} type="submit">
-            {t('Зберегти')}
-          </Button>
-        </Group>
-      }
     >
       <form id="supplier-organization-agreement-form" onSubmit={submit}>
-        <Stack gap="md">
-          <TextInput
-            error={errors.name ? t(errors.name) : undefined}
-            label={t('Назва')}
-            required
-            value={values.name}
-            onChange={(event) => setField('name', event.currentTarget.value)}
-          />
-          <TextInput label={t('Номер договору')} value={values.number} onChange={(event) => setField('number', event.currentTarget.value)} />
-          <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <Select
-              data={ownerOrganizations.map((organization) => ({
-                label: displayValue(organization.Name),
-                value: entityKey(organization),
-              }))}
-              error={errors.organizationId ? t(errors.organizationId) : undefined}
-              label={t('Організація')}
-              required
-              searchable
-              value={values.organizationId || null}
-              onChange={(value) => setField('organizationId', value || '')}
-            />
-            <Select
-              data={currencies.map((currency) => ({
-                label: getCurrencyLabel(currency),
-                value: entityKey(currency),
-              }))}
-              error={errors.currencyId ? t(errors.currencyId) : undefined}
-              label={t('Валюта')}
-              required
-              searchable
-              value={values.currencyId || null}
-              onChange={(value) => setField('currencyId', value || '')}
-            />
-            <TextInput
-              error={errors.existFrom ? t(errors.existFrom) : undefined}
-              label={t('Діє з')}
-              max={values.existTo || undefined}
-              type="date"
-              value={values.existFrom}
-              onChange={(event) => setField('existFrom', event.currentTarget.value)}
-            />
-            <TextInput
-              error={errors.existTo ? t(errors.existTo) : undefined}
-              label={t('Діє до')}
-              min={values.existFrom || undefined}
-              type="date"
-              value={values.existTo}
-              onChange={(event) => setField('existTo', event.currentTarget.value)}
-            />
-          </SimpleGrid>
+        <Stack className="app-compact-form" gap={10}>
+          <Card className="app-section-card" withBorder>
+            <Stack gap={10}>
+              <TextInput
+                error={errors.name ? t(errors.name) : undefined}
+                label={t('Назва')}
+                required
+                value={values.name}
+                onChange={(event) => setField('name', event.currentTarget.value)}
+              />
+              <TextInput label={t('Номер договору')} value={values.number} onChange={(event) => setField('number', event.currentTarget.value)} />
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10}>
+                <Select
+                  data={ownerOrganizations.map((organization) => ({
+                    label: displayValue(organization.Name),
+                    value: entityKey(organization),
+                  }))}
+                  error={errors.organizationId ? t(errors.organizationId) : undefined}
+                  renderOption={({ option }) => <TableChip tone="product" value={option.label} />}
+                  label={t('Організація')}
+                  required
+                  searchable
+                  value={values.organizationId || null}
+                  onChange={(value) => setField('organizationId', value || '')}
+                />
+                <Select
+                  data={currencies.map((currency) => ({
+                    label: getCurrencyLabel(currency),
+                    value: entityKey(currency),
+                  }))}
+                  error={errors.currencyId ? t(errors.currencyId) : undefined}
+                  renderOption={({ option }) => <TableChip tone="source" value={option.label} />}
+                  label={t('Валюта')}
+                  required
+                  searchable
+                  value={values.currencyId || null}
+                  onChange={(value) => setField('currencyId', value || '')}
+                />
+                <TextInput
+                  error={errors.existFrom ? t(errors.existFrom) : undefined}
+                  label={t('Діє з')}
+                  max={values.existTo || undefined}
+                  type="date"
+                  value={values.existFrom}
+                  onChange={(event) => setField('existFrom', event.currentTarget.value)}
+                />
+                <TextInput
+                  error={errors.existTo ? t(errors.existTo) : undefined}
+                  label={t('Діє до')}
+                  min={values.existFrom || undefined}
+                  type="date"
+                  value={values.existTo}
+                  onChange={(event) => setField('existTo', event.currentTarget.value)}
+                />
+              </SimpleGrid>
 
-          <Divider label={t('Документи')} />
-          <Stack gap="xs">
-            {documents.map((document) => {
-              const documentUrl = getSupplierAgreementDocumentUrl(document)
-              const documentPdfUrl = getSupplierAgreementDocumentPdfUrl(document)
-              const documentName = getDocumentName(document)
+              <Divider label={t('Документи')} />
+              <Stack className="supplier-agreement-documents" gap={6}>
+                {documents.map((document) => {
+                  const documentUrl = getSupplierAgreementDocumentUrl(document)
+                  const documentPdfUrl = getSupplierAgreementDocumentPdfUrl(document)
+                  const documentName = getDocumentName(document)
 
-              return (
-                <Group key={getSupplierAgreementDocumentKey(document, documentName)} justify="space-between" wrap="nowrap">
-                  <Group gap="xs" wrap="nowrap">
-                    <File size={16} />
-                    <Text size="sm">{displayValue(documentName)}</Text>
-                  </Group>
-                  <Group gap={4} wrap="nowrap">
-                    {documentUrl && (
-                      <Tooltip label={t('Документ')}>
-                        <ActionIcon component="a" href={getDocumentHref(documentUrl)} target="_blank" rel="noreferrer" aria-label={t('Документ')} size="sm" variant="subtle">
-                          <FileSpreadsheet size={16} />
-                        </ActionIcon>
-                      </Tooltip>
-                    )}
-                    {documentPdfUrl && (
-                      <Tooltip label={t('PDF')}>
-                        <ActionIcon component="a" href={getDocumentHref(documentPdfUrl)} target="_blank" rel="noreferrer" aria-label={t('PDF')} size="sm" variant="subtle">
-                          <FileText size={16} />
-                        </ActionIcon>
-                      </Tooltip>
-                    )}
-                    {editor && (
-                      <Tooltip label={t('Видалити')}>
-                        <ActionIcon aria-label={t('Видалити документ')} color="red" size="sm" variant="subtle" onClick={() => onDeleteDocument(editor, document)}>
-                          <Trash2 size={16} />
-                        </ActionIcon>
-                      </Tooltip>
-                    )}
-                  </Group>
-                </Group>
-              )
-            })}
-            {documents.length === 0 && <Text c="dimmed" size="sm">{t('Документів немає')}</Text>}
-          </Stack>
+                  return (
+                    <Group key={getSupplierAgreementDocumentKey(document, documentName)} justify="space-between" wrap="nowrap">
+                      <Group gap="xs" wrap="nowrap">
+                        <File size={16} />
+                        <Text className="supplier-agreement-document-name" size="xs">{displayValue(documentName)}</Text>
+                      </Group>
+                      <Group gap={4} wrap="nowrap">
+                        {documentUrl && (
+                          <Tooltip label={t('Документ')}>
+                            <ActionIcon component="a" href={getDocumentHref(documentUrl)} target="_blank" rel="noreferrer" aria-label={t('Документ')} size="sm" variant="subtle">
+                              <FileSpreadsheet size={16} />
+                            </ActionIcon>
+                          </Tooltip>
+                        )}
+                        {documentPdfUrl && (
+                          <Tooltip label={t('PDF')}>
+                            <ActionIcon component="a" href={getDocumentHref(documentPdfUrl)} target="_blank" rel="noreferrer" aria-label={t('PDF')} size="sm" variant="subtle">
+                              <FileText size={16} />
+                            </ActionIcon>
+                          </Tooltip>
+                        )}
+                        {editor && (
+                          <Tooltip label={t('Видалити')}>
+                            <ActionIcon aria-label={t('Видалити документ')} color="red" size="sm" variant="subtle" onClick={() => onDeleteDocument(editor, document)}>
+                              <Trash2 size={16} />
+                            </ActionIcon>
+                          </Tooltip>
+                        )}
+                      </Group>
+                    </Group>
+                  )
+                })}
+                {documents.length === 0 && <Text c="dimmed" size="sm">{t('Документів немає')}</Text>}
+              </Stack>
 
-          <FileInput
-            clearable
-            label={t('Додати файли')}
-            leftSection={<Upload size={16} />}
-            multiple
-            value={values.files}
-            onChange={(files) => setField('files', files || [])}
-          />
+              <FileInput
+                clearable
+                label={t('Додати файли')}
+                leftSection={<Upload size={16} />}
+                multiple
+                value={values.files}
+                onChange={(files) => setField('files', files || [])}
+              />
 
+            </Stack>
+          </Card>
+          <AppModalFooter>
+            <Button color="gray" leftSection={<X size={16} />} variant="default" onClick={onClose}>
+              {t('Скасувати')}
+            </Button>
+            <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSubmitting} type="submit">
+              {t('Зберегти')}
+            </Button>
+          </AppModalFooter>
         </Stack>
       </form>
-    </AppDrawer>
+    </AppModal>
   )
 }
 
@@ -1056,18 +1070,18 @@ function DeleteModal({
 
   return (
     <AppModal centered opened={opened} title={t('Видалити постачальника послуг')} onClose={onClose}>
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap="md">
         <Text>
           {t('Видалити')} <Text span fw={700}>{displayValue(organization.Name)}</Text>?
         </Text>
-        <Group justify="flex-end">
-          <Button color="gray" variant="subtle" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button color="red" loading={isSubmitting} onClick={onConfirm}>
             {t('Видалити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

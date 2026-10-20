@@ -4,7 +4,6 @@ import {
   Button,
   Divider,
   FileInput,
-  Group,
   Select,
   Stack,
   Text,
@@ -17,7 +16,7 @@ import { useEffect, useMemo, useReducer, useState, type ReactNode } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -566,20 +565,20 @@ function TransportersPageContent({
         title={t('Архівувати перевізника')}
         onClose={() => setArchiveTarget(null)}
       >
-        <Stack gap="md">
+        <Stack gap={10}>
           <Text>
             {archiveTarget
               ? t('Перевізник "{name}" буде прибраний з активного списку.', { name: getTransporterName(archiveTarget) })
               : ''}
           </Text>
-          <Group justify="flex-end">
-            <Button color="gray" variant="subtle" onClick={() => setArchiveTarget(null)}>
+          <AppModalFooter>
+            <Button color="gray" variant="default" onClick={() => setArchiveTarget(null)}>
               {t('Скасувати')}
             </Button>
             <Button color="red" loading={isArchiving} onClick={handleArchiveTransporter}>
               {t('Архівувати')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
     </Stack>
@@ -621,7 +620,7 @@ function TransporterActionsModal({
       onClose={onClose}
     >
       {transporter && (
-        <Stack gap="md">
+        <Stack gap={10}>
           <Stack className="app-modal-actions" gap="xs">
             {canEdit && (
               <Button
@@ -700,7 +699,7 @@ function TransporterEditorModal({
           onSave(values)
         }}
       >
-        <Stack gap="md">
+        <Stack gap={10}>
           {error ? (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
@@ -737,14 +736,14 @@ function TransporterEditorModal({
             value={values.ImageFile}
             onChange={(file) => setField('ImageFile', file)}
           />
-          <Group justify="flex-end">
-            <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
+          <AppModalFooter>
+            <Button color="gray" disabled={isSaving} type="button" variant="default" onClick={onClose}>
               {translate('Скасувати')}
             </Button>
             <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
               {translate('Зберегти')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </form>
     </AppModal>

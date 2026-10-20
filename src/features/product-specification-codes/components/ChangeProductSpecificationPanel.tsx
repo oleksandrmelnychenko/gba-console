@@ -1,4 +1,4 @@
-import { Alert, Button, Group, NumberInput, Radio, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, NumberInput, Radio, Stack, Text, TextInput } from '@mantine/core'
 import { Check, CircleAlert } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
@@ -246,16 +246,16 @@ export function ChangeProductSpecificationPanel({
         title={t('Є незбережені зміни')}
         onClose={() => setConfirmCloseOpen(false)}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           <Text>{t('Якщо закрити вікно, зміни митного коду не будуть збережені.')}</Text>
-          <Group justify="flex-end">
-            <Button color="gray" variant="light" onClick={() => setConfirmCloseOpen(false)}>
+          <AppModalFooter>
+            <Button color="gray" variant="default" onClick={() => setConfirmCloseOpen(false)}>
               {t('Залишитися')}
             </Button>
             <Button color="red" onClick={confirmClose}>
               {t('Закрити без збереження')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
     </AppModal>

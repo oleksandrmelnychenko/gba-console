@@ -85,8 +85,8 @@
 .client-edit-title-name { overflow-wrap: anywhere; }
 .client-edit-title-code { flex-shrink: 0; }
 .client-edit-sheet :is(.mantine-Input-input, .mantine-Textarea-input):disabled { color: var(--mantine-color-gray-8); -webkit-text-fill-color: var(--mantine-color-gray-8); opacity: 1; background: var(--mantine-color-gray-0); border-color: var(--mantine-color-gray-3); }
-.client-edit-sheet .mantine-InputWrapper-label { color: var(--mantine-color-gray-7); font-size: 12px; margin-bottom: 5px; }
-.client-edit-sheet .mantine-Input-input { font-size: 14px; }
+.client-edit-sheet .mantine-InputWrapper-label { color: var(--mantine-color-gray-9); font-size: 12px; margin-bottom: 5px; }
+.client-edit-sheet .mantine-Input-input { font-size: 12px; }
 .client-edit-sheet .mantine-Switch-label { color: var(--mantine-color-gray-8); }
 @container registry (max-width: 800px) {
   .client-edit-layout { grid-template-columns: minmax(0, 1fr); }

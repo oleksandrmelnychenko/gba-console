@@ -11,12 +11,14 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Fuel, Receipt, Save } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
+import { TableChip } from '../../../shared/ui/TableChip'
+import { DocumentDetailLayout, DocumentDetailSummary, DocumentDetailSection as AdvanceReportDetailSection, DocumentDetailRow as AdvanceReportDetailRow } from '../../../shared/ui/document-detail/DocumentDetail'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
@@ -527,85 +529,89 @@ function AdvanceReportViewPageContent() {
       opened
       position="right"
       size="wide"
-      title={t('Авансовий звіт')}
+      classNames={{ title: 'advance-report-detail-title' }}
+      title={
+        <span className="advance-report-detail-header">
+          <span>{t('Авансовий звіт')}</span>
+          <span className="advance-report-detail-actions">
+            {!model.isDone && model.canEdit && (
+              <>
+                <Button color={CREATE_ACTION_COLOR} disabled={model.isBusy} leftSection={<Receipt size={16} />} onClick={model.openConsumableModal}>
+                  {t('Додати товар / послугу')}
+                </Button>
+                <Button color={CREATE_ACTION_COLOR} disabled={model.isBusy} leftSection={<Fuel size={16} />} onClick={model.openFuelModal}>
+                  {t('Додати пальне')}
+                </Button>
+              </>
+            )}
+          </span>
+        </span>
+      }
       onClose={model.goBack}
     >
-    <div className="document-detail-drawer document-detail-drawer--compact advance-report-detail-drawer">
-      <Group className="advance-report-detail-actions" gap="xs" justify="flex-end">
-        {!model.isDone && model.canEdit && (
+      <div className="advance-report-detail-drawer">
+        {model.error && (
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+            {model.error}
+          </Alert>
+        )}
+
+        {model.isLoading ? (
+          <Group justify="center" py="xl">
+            <Loader />
+          </Group>
+        ) : model.order ? (
+          <AdvanceReportContent model={model} />
+        ) : null}
+
+        {model.order && model.canEdit && (
           <>
-            <Button color={CREATE_ACTION_COLOR} disabled={model.isBusy} leftSection={<Receipt size={16} />} onClick={model.openConsumableModal}>
-              {t('Додати товар / послугу')}
-            </Button>
-            <Button color={CREATE_ACTION_COLOR} disabled={model.isBusy} leftSection={<Fuel size={16} />} onClick={model.openFuelModal}>
-              {t('Додати пальне')}
-            </Button>
+            <AdvanceReportConsumableOrderModal
+              opened={model.isConsumableModalOpen}
+              outcomeOrder={model.order}
+              onAdd={model.addConsumableOrder}
+              onClose={() => {
+                if (!model.isBusy) {
+                  model.setConsumableModalOpen(false)
+                }
+              }}
+            />
+            <AdvanceReportFuelModal
+              opened={model.isFuelModalOpen}
+              outcomeOrder={model.order}
+              onAdd={model.addFueling}
+              onClose={() => {
+                if (!model.isBusy) {
+                  model.setFuelModalOpen(false)
+                }
+              }}
+            />
           </>
         )}
-      </Group>
 
-      {model.error && (
-        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-          {model.error}
-        </Alert>
-      )}
-
-      {model.isLoading ? (
-        <Group justify="center" py="xl">
-          <Loader />
-        </Group>
-      ) : model.order ? (
-        <AdvanceReportContent model={model} />
-      ) : null}
-
-      {model.order && model.canEdit && (
-        <>
-          <AdvanceReportConsumableOrderModal
-            opened={model.isConsumableModalOpen}
-            outcomeOrder={model.order}
-            onAdd={model.addConsumableOrder}
-            onClose={() => {
-              if (!model.isBusy) {
-                model.setConsumableModalOpen(false)
-              }
-            }}
-          />
-          <AdvanceReportFuelModal
-            opened={model.isFuelModalOpen}
-            outcomeOrder={model.order}
-            onAdd={model.addFueling}
-            onClose={() => {
-              if (!model.isBusy) {
-                model.setFuelModalOpen(false)
-              }
-            }}
-          />
-        </>
-      )}
-
-      <AppModal
-        centered
-        opened={model.confirmLeaveOpen}
-        title={t('Є незбережені зміни')}
-        onClose={() => {
-          if (!model.isBusy) {
-            model.setConfirmLeaveOpen(false)
-          }
-        }}
-      >
-        <Stack gap="md">
-          <Text>{t('Якщо вийти зі сторінки, додані рядки, видалення і прикріплені файли не будуть збережені.')}</Text>
-          <Group justify="flex-end">
-            <Button color="gray" disabled={model.isBusy} variant="light" onClick={() => model.setConfirmLeaveOpen(false)}>
-              {t('Залишитися')}
-            </Button>
-            <Button color="red" disabled={model.isBusy} onClick={model.confirmLeave}>
-              {t('Вийти без збереження')}
-            </Button>
-          </Group>
-        </Stack>
-      </AppModal>
-    </div>
+        <AppModal
+          centered
+          opened={model.confirmLeaveOpen}
+          title={t('Є незбережені зміни')}
+          onClose={() => {
+            if (!model.isBusy) {
+              model.setConfirmLeaveOpen(false)
+            }
+          }}
+        >
+          <Stack gap={10}>
+            <Text>{t('Якщо вийти зі сторінки, додані рядки, видалення і прикріплені файли не будуть збережені.')}</Text>
+            <AppModalFooter>
+              <Button color="gray" disabled={model.isBusy} variant="default" onClick={() => model.setConfirmLeaveOpen(false)}>
+                {t('Залишитися')}
+              </Button>
+              <Button color="red" disabled={model.isBusy} onClick={model.confirmLeave}>
+                {t('Вийти без збереження')}
+              </Button>
+            </AppModalFooter>
+          </Stack>
+        </AppModal>
+      </div>
     </AppDrawer>
   )
 }
@@ -627,99 +633,94 @@ function AdvanceReportContent({ model }: { model: ReturnType<typeof useAdvanceRe
   const responsible = order.Colleague?.FullName || order.Colleague?.Name || order.Colleague?.LastName
 
   return (
-    <div className="document-detail-drawer document-detail-drawer--compact">
-      <section className="document-detail-summary">
-        <div className="document-detail-summary__main">
-          <span className="document-detail-eyebrow">{t('Авансовий звіт')}</span>
-          <Text className="document-detail-summary__title">{displayValue(reportNumber)}</Text>
-          <Text className="document-detail-summary__meta">
-            {formatDateTime(reportDate)} · {model.headerTitle}
-          </Text>
-        </div>
-        <div className="document-detail-summary__metrics">
-          <AdvanceReportDetailMetric
-            label={t('Сума ордера')}
-            suffix={model.currencyCode}
-            value={formatMoney(model.orderAmount)}
-          />
-          <AdvanceReportDetailMetric
-            label={t('Сума звіту')}
-            suffix={model.currencyCode}
-            value={formatMoney(model.reportTotal)}
-          />
-          <AdvanceReportDetailMetric
-            label={t('Різниця')}
-            suffix={model.currencyCode}
-            tone={difference ? 'danger' : undefined}
-            value={formatMoney(difference)}
-          />
-        </div>
-      </section>
+    <DocumentDetailLayout
+      variant="inventory"
+      summary={
+        <DocumentDetailSummary
+          variant="inventory"
+          eyebrow={t('Авансовий звіт')}
+          title={displayValue(reportNumber)}
+          meta={<><span className="advance-report-detail-date">{formatDateTime(reportDate)}</span><TableChip value={model.headerTitle} /></>}
+          metrics={<>
+            <AdvanceReportDetailMetric
+              label={t('Сума ордера')}
+              suffix={model.currencyCode}
+              value={formatMoney(model.orderAmount)}
+            />
+            <AdvanceReportDetailMetric
+              label={t('Сума звіту')}
+              suffix={model.currencyCode}
+              value={formatMoney(model.reportTotal)}
+            />
+            <AdvanceReportDetailMetric
+              label={t('Різниця')}
+              suffix={model.currencyCode}
+              tone={difference ? 'danger' : undefined}
+              value={formatMoney(difference)}
+            />
+          </>}
+        />
+      }
+    >
+      <AdvanceReportDetailSection title={model.headerTitle}>
+        <AdvanceReportDetailRow label={t('Дата')} mono value={formatDateTime(order.FromDate)} />
+        <AdvanceReportDetailRow label={t('Номер')} value={<TableChip tone="document" value={displayValue(order.Number)} />} />
+        <AdvanceReportDetailRow label={t('Авансовий звіт')} value={<TableChip tone="document" value={displayValue(reportNumber)} />} />
+        <AdvanceReportDetailRow label={t('Відповідальний')} value={<TableChip tone="warning" value={displayValue(responsible)} />} />
 
-      <div className="document-detail-tree advance-report-detail-tree">
-        <AdvanceReportDetailSection subtitle={displayValue(order.Number)} title={model.headerTitle}>
-          <AdvanceReportDetailRow label={t('Дата')} value={formatDateTime(order.FromDate)} />
-          <AdvanceReportDetailRow label={t('Номер')} value={displayValue(order.Number)} />
-          <AdvanceReportDetailRow label={t('Авансовий звіт')} value={displayValue(reportNumber)} />
-          <AdvanceReportDetailRow label={t('Відповідальний')} value={displayValue(responsible)} wide />
-          <AdvanceReportDetailRow
-            mono
-            label={t('Сума')}
-            value={`${formatMoney(model.orderAmount)}${model.currencyCode ? ` ${model.currencyCode}` : ''}`}
-          />
-        </AdvanceReportDetailSection>
+      </AdvanceReportDetailSection>
 
-        {hasConsumables ? (
-          <AdvanceReportDetailSection
-            subtitle={`${model.consumableRows.length}`}
-            title={`${t('Товари')} / ${t('Послуги')}`}
-          >
-            <div className="advance-report-detail-section__table">
+      {hasConsumables ? (
+        <AdvanceReportDetailSection
+          stacked
+          subtitle={`${model.consumableRows.length}`}
+          title={`${t('Товари')} / ${t('Послуги')}`}
+        >
+          <div className="advance-report-detail-section__table">
             <AdvanceReportProductsGrid
               canRemove={model.canEdit && !model.isBusy}
               rows={model.consumableRows}
               onRemove={model.removeConsumableRow}
             />
-            </div>
-          </AdvanceReportDetailSection>
-        ) : null}
+          </div>
+        </AdvanceReportDetailSection>
+      ) : null}
 
       {hasFuel && (
-          <AdvanceReportDetailSection subtitle={`${model.fuelRows.length}`} title={t('Пальне')}>
-            <div className="advance-report-detail-section__table">
+        <AdvanceReportDetailSection stacked subtitle={`${model.fuelRows.length}`} title={t('Пальне')}>
+          <div className="advance-report-detail-section__table">
             <AdvanceReportFuelGrid canRemove={model.canEdit && !model.isBusy} rows={model.fuelRows} onRemove={model.removeFuelRow} />
-            </div>
-          </AdvanceReportDetailSection>
+          </div>
+        </AdvanceReportDetailSection>
       )}
 
-        {positionsCount === 0 ? (
-          <AdvanceReportDetailSection subtitle="0" title={t('Позиції')}>
-            <div className="document-detail-empty">{t('Позицій немає')}</div>
-          </AdvanceReportDetailSection>
-        ) : null}
+      {positionsCount === 0 ? (
+        <AdvanceReportDetailSection stacked subtitle="0" title={t('Позиції')}>
+          <div className="document-detail-empty">{t('Позицій немає')}</div>
+        </AdvanceReportDetailSection>
+      ) : null}
 
-        {hasAnyRows(order) ? (
-          <AdvanceReportDetailSection title={t('Підсумки')}>
-            <Stack className="advance-report-detail-totals" gap="md">
+      {hasAnyRows(order) ? (
+        <AdvanceReportDetailSection stacked title={t('Підсумки')}>
+          <Stack className="advance-report-detail-totals" gap={10}>
             <IncomeMessage model={model} />
             <DifferenceMessage model={model} />
-              <div className="advance-report-detail-totals__metrics">
-                <AdvanceReportDetailMetric
-                  label={t('в.т.ч ПДВ')}
-                  suffix={model.currencyCode}
-                  value={formatMoney(model.totals.totalVat)}
-                />
-                <AdvanceReportDetailMetric
-                  label={t('Сума')}
-                  suffix={model.currencyCode}
-                  value={formatMoney(model.totals.total)}
-                />
-              </div>
-            </Stack>
-          </AdvanceReportDetailSection>
-        ) : null}
-      </div>
-    </div>
+            <div className="advance-report-detail-totals__metrics">
+              <AdvanceReportDetailMetric
+                label={t('в.т.ч ПДВ')}
+                suffix={model.currencyCode}
+                value={formatMoney(model.totals.totalVat)}
+              />
+              <AdvanceReportDetailMetric
+                label={t('Сума')}
+                suffix={model.currencyCode}
+                value={formatMoney(model.totals.total)}
+              />
+            </div>
+          </Stack>
+        </AdvanceReportDetailSection>
+      ) : null}
+    </DocumentDetailLayout>
   )
 }
 
@@ -735,52 +736,12 @@ function AdvanceReportDetailMetric({
   value: string
 }) {
   return (
-    <div className={`document-detail-metric${tone ? ` is-${tone}` : ''}`}>
+    <div className={`advance-report-detail-metric${tone ? ` is-${tone}` : ''}`}>
       <span>{label}</span>
       <strong>
         {displayValue(value)}
-        {suffix ? <em>{suffix}</em> : null}
+        {suffix ? <TableChip tone="source" value={suffix} /> : null}
       </strong>
-    </div>
-  )
-}
-
-function AdvanceReportDetailSection({
-  children,
-  subtitle,
-  title,
-}: {
-  children: ReactNode
-  subtitle?: string
-  title: string
-}) {
-  return (
-    <section className="document-detail-section">
-      <div className="document-detail-section__head">
-        <span className="document-detail-section__title">{title}</span>
-        {subtitle ? <span className="document-detail-section__subtitle">{subtitle}</span> : null}
-      </div>
-      <div className="document-detail-section__body">{children}</div>
-    </section>
-  )
-}
-
-function AdvanceReportDetailRow({
-  label,
-  mono,
-  value,
-  wide,
-}: {
-  label: string
-  mono?: boolean
-  value: string
-  wide?: boolean
-}) {
-  return (
-    <div className={`document-detail-row${wide ? ' is-wide' : ''}`}>
-      <span className="document-detail-row__label">{label}</span>
-      <span className="document-detail-row__line" aria-hidden />
-      <span className={`document-detail-row__value${mono ? ' app-money' : ''}`}>{displayValue(value)}</span>
     </div>
   )
 }
@@ -816,7 +777,7 @@ function IncomeMessage({ model }: { model: ReturnType<typeof useAdvanceReportVie
       <Text fw={600}>{orderTypeLabel}</Text>
       <Text c="dimmed">{t('на сумму')}</Text>
       <Text className="app-money" fw={700}>
-        {formatMoney(difference)} {model.currencyCode || ''}
+        {formatMoney(difference)} <TableChip tone="source" value={model.currencyCode} />
       </Text>
     </Group>
   )

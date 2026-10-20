@@ -1,5 +1,5 @@
-import { Alert, Button, Group, NumberInput, SimpleGrid, Stack } from '@mantine/core'
-import { AppModal } from "../../../shared/ui/AppModal"
+import { Alert, Button, Card, Group, NumberInput, Stack } from '@mantine/core'
+import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { CircleAlert } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import type { Dispatch, SetStateAction } from 'react'
@@ -77,51 +77,53 @@ export function TaxFreeBreakModal({ canBreak, opened, packList, onClose, onUpdat
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={t('Розбиття Tax Free')} onClose={onClose}>
-      <Stack>
+    <AppModal className="app-compact-form" centered opened={opened} size={620} title={t('Розбиття Tax Free')} onClose={onClose}>
+      <Stack gap={10}>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
-        <SimpleGrid cols={{ base: 1, sm: 2 }}>
-          <NumberInput
-            label={t('Макс. вага в TF')}
-            min={0}
-            value={form.weightLimit}
-            onChange={(value) => setFormValue(setForm, 'weightLimit', value)}
-          />
-          <NumberInput
-            label={t('Макс. сума з ПДВ в TF')}
-            min={0}
-            value={form.maxPriceLimit}
-            onChange={(value) => setFormValue(setForm, 'maxPriceLimit', value)}
-          />
-          <NumberInput
-            label={t('Мін. сума з ПДВ в TF')}
-            min={0}
-            value={form.minPriceLimit}
-            onChange={(value) => setFormValue(setForm, 'minPriceLimit', value)}
-          />
-          <NumberInput
-            label={t('Макс. к-сть однієї позиції в TF')}
-            min={0}
-            value={form.maxQtyInTaxFree}
-            onChange={(value) => setFormValue(setForm, 'maxQtyInTaxFree', value)}
-          />
-          <NumberInput
-            label={t('Макс. к-сть позицій в TF')}
-            min={0}
-            value={form.maxPositionsInTaxFree}
-            onChange={(value) => setFormValue(setForm, 'maxPositionsInTaxFree', value)}
-          />
-        </SimpleGrid>
+        <Card className="app-section-card" withBorder padding={12} radius="md">
+          <Group align="end" gap={10}>
+            <NumberInput w={170} maw="100%"
+              label={t('Макс. вага в TF')}
+              min={0}
+              value={form.weightLimit}
+              onChange={(value) => setFormValue(setForm, 'weightLimit', value)}
+            />
+            <NumberInput w={170} maw="100%"
+              label={t('Макс. сума з ПДВ в TF')}
+              min={0}
+              value={form.maxPriceLimit}
+              onChange={(value) => setFormValue(setForm, 'maxPriceLimit', value)}
+            />
+            <NumberInput w={170} maw="100%"
+              label={t('Мін. сума з ПДВ в TF')}
+              min={0}
+              value={form.minPriceLimit}
+              onChange={(value) => setFormValue(setForm, 'minPriceLimit', value)}
+            />
+            <NumberInput w={170} maw="100%"
+              label={t('Макс. к-сть однієї позиції в TF')}
+              min={0}
+              value={form.maxQtyInTaxFree}
+              onChange={(value) => setFormValue(setForm, 'maxQtyInTaxFree', value)}
+            />
+            <NumberInput w={170} maw="100%"
+              label={t('Макс. к-сть позицій в TF')}
+              min={0}
+              value={form.maxPositionsInTaxFree}
+              onChange={(value) => setFormValue(setForm, 'maxPositionsInTaxFree', value)}
+            />
+          </Group>
+        </Card>
 
-        <Group justify="flex-end">
-          <Button disabled={isSaving} variant="subtle" onClick={onClose}>{t('Скасувати')}</Button>
+        <AppModalFooter>
+          <Button disabled={isSaving} variant="default" onClick={onClose}>{t('Скасувати')}</Button>
           <Button disabled={!canBreak} loading={isSaving} onClick={submitBreak}>{t('Розбити')}</Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

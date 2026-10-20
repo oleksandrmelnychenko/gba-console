@@ -1,8 +1,8 @@
-import { Button, Checkbox, Group, NumberInput, Stack, Text } from '@mantine/core'
+import { Button, Checkbox, NumberInput, Stack, Text } from '@mantine/core'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { CockpitTask } from '../types'
 
@@ -36,7 +36,7 @@ export function DoneModal({
         }
       }}
     >
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap="md">
         {task?.client_name && (
           <Text c="dimmed" size="sm">
             {task.client_name}
@@ -60,14 +60,14 @@ export function DoneModal({
             onChange={setAmount}
           />
         )}
-        <Group justify="flex-end">
-          <Button color="gray" disabled={saving} variant="light" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" disabled={saving} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button color={CREATE_ACTION_COLOR} loading={saving} onClick={() => task && onSubmit(task, { amount: toAmount(amount), sold })}>
             {t('Підтвердити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

@@ -7,7 +7,7 @@ import { useAuth } from '../../auth/useAuth'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getCurrentUnmergedSale, getMergedSales, updateMergedSale } from '../api/salesUkraineApi'
 import {
@@ -571,16 +571,16 @@ function MergedSalesContent({
         title={t('Зробити рахунок')}
         onClose={() => (isConverting ? undefined : setConfirmSale(null))}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           <Text>{t('Перетворити цей продаж на рахунок?')}</Text>
-          <Group justify="flex-end">
-            <Button color="gray" disabled={isConverting} variant="subtle" onClick={() => setConfirmSale(null)}>
+          <AppModalFooter>
+            <Button color="gray" disabled={isConverting} variant="default" onClick={() => setConfirmSale(null)}>
               {t('Скасувати')}
             </Button>
             <Button color={CREATE_ACTION_COLOR} loading={isConverting} onClick={() => void submitSelectedSale()}>
               {t('Зробити рахунок')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
     </Stack>

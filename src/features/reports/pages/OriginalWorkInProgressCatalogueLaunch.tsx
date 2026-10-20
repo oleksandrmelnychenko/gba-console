@@ -2,7 +2,7 @@ import { Button, Loader, Stack, Text } from '@mantine/core'
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { WarehousePeriodCapabilityStatus } from './WarehousePeriodControls'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { ReportModal } from './ReportModal'
 import { getWipCapability } from '../api/originalWorkInProgressApi'
 import { isWipCatalogueEntry, type WipCapability } from '../data/originalWorkInProgress'
 import type { ReportCatalogueEntry } from '../types'
@@ -30,11 +30,11 @@ function WipModal({ opened, enabled, disabled, capability, callerKey, scope, clo
   const { t } = useI18n()
   // Initial dates are explicit in the form; no server default to today's balances.
   const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Kyiv' })
-  return <AppModal opened={opened && enabled && !!capability} title={t('Незавершене виробництво')} size={1250}
+  return <ReportModal opened={opened && enabled && !!capability} title={t('Незавершене виробництво')} size={1250}
     onClose={close} closeButtonProps={{ 'aria-label': t('Закрити незавершеного виробництва') }}>
     {opened && capability ? <Suspense fallback={<Loader size="sm" />}><Panel key={JSON.stringify(scope)} capability={capability} callerKey={callerKey}
       canGenerate={enabled && !disabled} initialFrom={today} initialThrough={today} /></Suspense> : null}
-  </AppModal>
+  </ReportModal>
 }
 
 export function OriginalWorkInProgressCatalogueLaunch({ report, worlds, enabled, disabled, callerKey }: {

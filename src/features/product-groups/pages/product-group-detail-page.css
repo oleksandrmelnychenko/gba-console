@@ -47,8 +47,8 @@
 }
 
 .product-group-detail-content .product-group-form .mantine-Input-input {
-  font-size: 13px;
-  min-height: 36px;
+  font-size: 12px;
+  min-height: 32px;
 }
 
 .product-group-detail-content .product-group-form .mantine-Input-input:disabled {

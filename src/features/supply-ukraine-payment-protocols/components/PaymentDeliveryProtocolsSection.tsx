@@ -16,8 +16,7 @@ import { CircleAlert, Plus, Trash2 } from 'lucide-react'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type {
@@ -319,74 +318,83 @@ export function PaymentDeliveryProtocolsSection({
         </Stack>
       )}
 
-      <AppDrawer
-        className="app-form-sheet"
+      <AppModal
+        className="app-compact-form"
         opened={isFormOpen}
-        size="md"
+        size={700}
         title={t('Створити платіжну задачу')}
         onClose={() => setFormOpen(false)}
-        footer={
+      >
+        <Card className="app-section-card" withBorder padding={12} radius="md">
+          <Stack gap={10}>
+            {validationError && (
+              <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
+                {validationError}
+              </Alert>
+            )}
+
+            <Select w={300} maw="100%"
+              data={keyOptions}
+              label={t('Форма платежу')}
+              searchable
+              value={protocolKey?.NetUid || null}
+              onChange={(netUid) => setProtocolKey(findByNetUid(protocolKeys, netUid))}
+            />
+            <Group align="end" gap={10}>
+              <TextInput w={160} maw="100%"
+                label={t('Вартість Брутто')}
+                type="number"
+                value={value}
+                onChange={(event) => updateValue(event.currentTarget.value)}
+              />
+              <TextInput w={120} maw="100%"
+                label={t('Відсоток')}
+                max={PERCENT_MAX}
+                min={0}
+                type="number"
+                value={discount}
+                onChange={(event) => updateDiscount(event.currentTarget.value)}
+              />
+            </Group>
+            <Checkbox
+              checked={isAccounting}
+              label={t('Бух. витрата')}
+              onChange={(event) => updateAccounting(event.currentTarget.checked)}
+            />
+
+            <Group align="end" gap={10}>
+              <TextInput w={170} maw="100%"
+                label={t('Сплатити до')}
+                type="date"
+                value={toDateInput(payToDate)}
+                onChange={(event) => setPayToDate(fromDateInput(event.currentTarget.value))}
+              />
+              <Select w={300} maw="100%"
+                clearable
+                data={userOptions}
+                label={t('Відповідальний за оплату')}
+                searchable
+                value={responsible?.NetUid || null}
+                onChange={(netUid) => setResponsible(findByNetUid(users, netUid))}
+              />
+            </Group>
+            <Textarea
+              label={t('Коментар')}
+              value={comment}
+              onChange={(event) => setComment(event.currentTarget.value)}
+            />
+
+          </Stack>
+        </Card>
+        <AppModalFooter>
+          <Button variant="default" disabled={isSaving} onClick={() => setFormOpen(false)}>
+            {t('Скасувати')}
+          </Button>
           <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={handleSubmit}>
             {t('Зберегти')}
           </Button>
-        }
-      >
-        <Stack gap="sm">
-          {validationError && (
-            <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
-              {validationError}
-            </Alert>
-          )}
-
-          <Select
-            data={keyOptions}
-            label={t('Форма платежу')}
-            searchable
-            value={protocolKey?.NetUid || null}
-            onChange={(netUid) => setProtocolKey(findByNetUid(protocolKeys, netUid))}
-          />
-          <TextInput
-            label={t('Вартість Брутто')}
-            type="number"
-            value={value}
-            onChange={(event) => updateValue(event.currentTarget.value)}
-          />
-          <TextInput
-            label={t('Відсоток')}
-            max={PERCENT_MAX}
-            min={0}
-            type="number"
-            value={discount}
-            onChange={(event) => updateDiscount(event.currentTarget.value)}
-          />
-          <Checkbox
-            checked={isAccounting}
-            label={t('Бух. витрата')}
-            onChange={(event) => updateAccounting(event.currentTarget.checked)}
-          />
-
-          <TextInput
-            label={t('Сплатити до')}
-            type="date"
-            value={toDateInput(payToDate)}
-            onChange={(event) => setPayToDate(fromDateInput(event.currentTarget.value))}
-          />
-          <Select
-            clearable
-            data={userOptions}
-            label={t('Відповідальний за оплату')}
-            searchable
-            value={responsible?.NetUid || null}
-            onChange={(netUid) => setResponsible(findByNetUid(users, netUid))}
-          />
-          <Textarea
-            label={t('Коментар')}
-            value={comment}
-            onChange={(event) => setComment(event.currentTarget.value)}
-          />
-
-        </Stack>
-      </AppDrawer>
+        </AppModalFooter>
+      </AppModal>
 
       <AppModal
         centered
@@ -395,16 +403,16 @@ export function PaymentDeliveryProtocolsSection({
         title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити')}</span>}
         onClose={() => setRemoveTarget(null)}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           <Text size="sm">{t('Ви впевнені, що хочете видалити?')}</Text>
-          <Group justify="flex-end" gap="sm">
+          <AppModalFooter>
             <Button disabled={isSaving} variant="default" onClick={() => setRemoveTarget(null)}>
               {t('Скасувати')}
             </Button>
             <Button color="red" loading={isSaving} onClick={handleRemoveConfirm}>
               {t('Видалити')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
     </Stack>

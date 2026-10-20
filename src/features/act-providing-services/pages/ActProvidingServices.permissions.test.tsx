@@ -36,6 +36,7 @@ vi.mock('../api/actProvidingServicesApi', () => ({
 }))
 
 vi.mock('../../../shared/ui/AppModal', () => ({
+  AppModalFooter: ({ children }: { children: import('react').ReactNode }) => <div>{children}</div>,
   AppModal: ({ children, opened }: { children: ReactNode; opened: boolean }) => opened ? <section>{children}</section> : null,
 }))
 

@@ -21,7 +21,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { PdfIcon } from '../../../shared/ui/PdfIcon'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import {
   addOrUpdateProductSpecification,
   getPackingListSpecificationProducts,
@@ -1154,13 +1154,13 @@ function DirectOrderSpecificationsModals({ model }: { model: DirectOrderSpecific
           }
         }}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           <Text>{t('Якщо закрити вікно, зміни по документах доставки не будуть збережені.')}</Text>
-          <Group justify="flex-end">
+          <AppModalFooter>
             <Button
               color="gray"
               disabled={model.isSavingDocuments}
-              variant="light"
+              variant="default"
               onClick={() => model.setDocumentsCloseConfirmOpen(false)}
             >
               {t('Залишитися')}
@@ -1168,7 +1168,7 @@ function DirectOrderSpecificationsModals({ model }: { model: DirectOrderSpecific
             <Button color="red" disabled={model.isSavingDocuments} onClick={model.closeDocumentsDraft}>
               {t('Закрити без збереження')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
       <SpecificationDownloadModal

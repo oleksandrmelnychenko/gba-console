@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { Alert, Skeleton } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useEffect, type ReactNode } from 'react'
@@ -87,7 +88,7 @@ export function DebtorDetailDrawer({ debtor, onClose }: {
               {(debtor.RegionCode || debtor.UserName) ? (
                 <div className="debtor-detail__meta">
                   {debtor.RegionCode ? <TableChip tone="document" value={debtor.RegionCode} /> : null}
-                  {debtor.UserName ? <TableChip tone="product" value={debtor.UserName} /> : null}
+                  {debtor.UserName ? <TableChip tone="warning" value={debtor.UserName} /> : null}
                 </div>
               ) : null}
             </div>
@@ -197,7 +198,8 @@ function DetailRow({ label, children }: { label: string; children: ReactNode }) 
 function DebtCard({ item }: { item: DebtorDebtItem }) {
   const { t } = useI18n()
   const debt = item.Debt
-  const agreement = getDebtAgreementLabel(item)
+  const agreement = displayValue(item.Agreement?.Name || item.Agreement?.Number)
+  const organization = getOrganizationDisplayName(item.Agreement?.Organization)
   const currencyCode = displayValue(item.Agreement?.Currency?.Code)
   const overdueTotal = toFiniteNumber(debt?.OverdueTotal)
   const overdueDays = toFiniteNumber(debt?.Days)
@@ -223,7 +225,8 @@ function DebtCard({ item }: { item: DebtorDebtItem }) {
           </div>
         </DetailRow>
         <DetailRow label={t('Днів прострочки')}><TableChip value={overdueDays} /></DetailRow>
-        {agreement ? <DetailRow label={t('Договір')}>{agreement}</DetailRow> : null}
+        {organization ? <DetailRow label={t('Організація')}><TableChip tone="product" value={organization} /></DetailRow> : null}
+        {agreement ? <DetailRow label={t('Договір')}><TableChip value={agreement} /></DetailRow> : null}
       </div>
     </article>
   )
@@ -236,16 +239,4 @@ function includesSubClients(debtor: ClientInDebt, total: DebtorDebtTotal | null)
 
 function displayValue(value?: string | null): string {
   return value?.trim() || ''
-}
-
-function getDebtAgreementLabel(item: DebtorDebtItem): string {
-  const agreement = item.Agreement
-  const organization = agreement?.Organization?.Name
-  const agreementName = agreement?.Name || agreement?.Number
-
-  if (organization && agreementName) {
-    return `${organization} · ${agreementName}`
-  }
-
-  return displayValue(agreementName || organization)
 }

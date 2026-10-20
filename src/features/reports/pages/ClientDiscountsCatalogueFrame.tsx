@@ -1,7 +1,7 @@
 import { Button, Stack, Text } from '@mantine/core'
 import type { ReactNode } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { ReportModal } from './ReportModal'
 import type { ReportCapabilityStatusProps } from './ReportCapabilityStatus'
 import { WarehousePeriodCapabilityStatus } from './WarehousePeriodControls'
 
@@ -15,7 +15,7 @@ export function ClientDiscountsCatalogueFrame({ current, enabled, callerKey, dis
   return <Stack gap={6}><WarehousePeriodCapabilityStatus current={current} enabled={enabled} callerKey={callerKey} disabled={disabled} retry={retry} />
     <Button disabled={!allowed} onClick={onOpen}>{t(title)}</Button>
     {unavailable ? <Text size="sm" c="dimmed">{t(unavailableLabel)}</Text> : null}
-    <AppModal opened={opened && allowed} title={t(title)} size={1250} onClose={onClose} closeButtonProps={{ 'aria-label': t(closeLabel) }}>
+    <ReportModal opened={opened && allowed} title={t(title)} size={1250} onClose={onClose} closeButtonProps={{ 'aria-label': t(closeLabel) }}>
       {children}
-    </AppModal></Stack>
+    </ReportModal></Stack>
 }

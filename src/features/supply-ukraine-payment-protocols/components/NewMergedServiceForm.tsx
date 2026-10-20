@@ -3,10 +3,10 @@ import {
   Button,
   Checkbox,
   FileInput,
-  Group,
   NumberInput,
   Select,
   Stack,
+  Text,
   Textarea,
   TextInput,
 } from '@mantine/core'
@@ -15,7 +15,8 @@ import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
+import './payment-service-form.css'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   getResponsibleUsers,
@@ -269,18 +270,8 @@ export function NewMergedServiceForm({
   }
 
   return (
-    <AppDrawer
-      opened={opened}
-      size="lg"
-      title={t('Додати')}
-      onClose={onClose}
-      footer={
-        <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={handleSubmit}>
-          {t('Зберегти')}
-        </Button>
-      }
-    >
-      <Stack gap="sm">
+    <AppModal className="app-compact-form payment-service-form" opened={opened} size={960} title={t('Додати')} onClose={onClose}>
+      <Stack className="app-compact-form" gap={10}>
         {loadError && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {loadError}
@@ -291,195 +282,209 @@ export function NewMergedServiceForm({
             {validationError}
           </Alert>
         )}
-
-        <Select
-          aria-invalid={Boolean(fieldErrors.supplyOrganization)}
-          aria-required="true"
-          data={organizationOptions}
-          error={fieldErrors.supplyOrganization}
-          label={t('Постачальник послуг')}
-          nothingFoundMessage={t('Нічого не знайдено')}
-          searchable
-          searchValue={organizationSearch}
-          value={values.supplyOrganization?.NetUid || null}
-          withAsterisk
-          onChange={(value) => {
-            selectOrganization(value)
-            setOrganizationSearch('')
-          }}
-          onSearchChange={setOrganizationSearch}
-        />
-        <Select
-          aria-invalid={Boolean(fieldErrors.agreement)}
-          aria-required="true"
-          data={agreementOptions}
-          disabled={!values.supplyOrganization}
-          error={fieldErrors.agreement}
-          label={t('Договір')}
-          searchable
-          value={values.agreement?.NetUid || null}
-          withAsterisk
-          onChange={selectAgreement}
-        />
-        <Select
-          clearable
-          data={productOptions}
-          label={t('Тип')}
-          searchable
-          value={values.consumableProduct?.NetUid || null}
-          onChange={(netUid) => update('consumableProduct', products.find((item) => item.NetUid === netUid) || null)}
-        />
-        <TextInput
-          aria-invalid={Boolean(fieldErrors.name)}
-          aria-required="true"
-          error={fieldErrors.name}
-          label={t('Назва')}
-          value={values.name}
-          withAsterisk
-          onChange={(event) => update('name', event.currentTarget.value)}
-        />
-        <TextInput
-          aria-invalid={Boolean(fieldErrors.invoiceNumber)}
-          aria-required="true"
-          error={fieldErrors.invoiceNumber}
-          label={t('Номер інвойса')}
-          value={values.invoiceNumber}
-          withAsterisk
-          onChange={(event) => update('invoiceNumber', event.currentTarget.value)}
-        />
-
-        <Group grow>
-          <TextInput
-            aria-invalid={Boolean(fieldErrors.grossPrice)}
-            classNames={{ input: 'app-money' }}
-            description={t('Заповніть хоча б одну вартість: управлінську або бухгалтерську')}
-            error={fieldErrors.grossPrice}
-            label={t('Вартість Брутто')}
-            type="number"
-            value={values.grossPrice}
-            onChange={(event) => update('grossPrice', event.currentTarget.value)}
+        <section className="app-section-card payment-service-form__section">
+          <Text className="app-section-title">{t('Послуга')}</Text>
+          <div className="payment-service-form__parties">
+            <Select
+              aria-invalid={Boolean(fieldErrors.supplyOrganization)}
+              aria-required="true"
+              data={organizationOptions}
+              error={fieldErrors.supplyOrganization}
+              label={t('Постачальник послуг')}
+              nothingFoundMessage={t('Нічого не знайдено')}
+              searchable
+              searchValue={organizationSearch}
+              value={values.supplyOrganization?.NetUid || null}
+              withAsterisk
+              onChange={(value) => {
+                selectOrganization(value)
+                setOrganizationSearch('')
+              }}
+              onSearchChange={setOrganizationSearch}
+            />
+            <Select
+              aria-invalid={Boolean(fieldErrors.agreement)}
+              aria-required="true"
+              data={agreementOptions}
+              disabled={!values.supplyOrganization}
+              error={fieldErrors.agreement}
+              label={t('Договір')}
+              searchable
+              value={values.agreement?.NetUid || null}
+              withAsterisk
+              onChange={selectAgreement}
+            />
+            <Select
+              clearable
+              data={productOptions}
+              label={t('Тип')}
+              searchable
+              value={values.consumableProduct?.NetUid || null}
+              onChange={(netUid) => update('consumableProduct', products.find((item) => item.NetUid === netUid) || null)}
+            />
+            <TextInput
+              aria-invalid={Boolean(fieldErrors.name)}
+              aria-required="true"
+              error={fieldErrors.name}
+              label={t('Назва')}
+              value={values.name}
+              withAsterisk
+              onChange={(event) => update('name', event.currentTarget.value)}
+            />
+          </div>
+          <div className="payment-service-form__number">
+            <TextInput
+              aria-invalid={Boolean(fieldErrors.invoiceNumber)}
+              aria-required="true"
+              error={fieldErrors.invoiceNumber}
+              label={t('Номер інвойса')}
+              value={values.invoiceNumber}
+              withAsterisk
+              onChange={(event) => update('invoiceNumber', event.currentTarget.value)}
+            />
+          </div>
+        </section>
+        <section className="app-section-card payment-service-form__section">
+          <Text className="app-section-title">{t('Розрахунок')}</Text>
+          <div className="payment-service-form__amounts">
+            <TextInput
+              aria-invalid={Boolean(fieldErrors.grossPrice)}
+              classNames={{ input: 'app-money' }}
+              description={t('Заповніть хоча б одну вартість: управлінську або бухгалтерську')}
+              error={fieldErrors.grossPrice}
+              label={t('Вартість Брутто')}
+              type="number"
+              value={values.grossPrice}
+              onChange={(event) => update('grossPrice', event.currentTarget.value)}
+            />
+            <TextInput
+              aria-invalid={Boolean(fieldErrors.percent)}
+              error={fieldErrors.percent}
+              label={t('ПДВ %')}
+              type="number"
+              value={values.percent}
+              onChange={(event) => update('percent', event.currentTarget.value)}
+            />
+            <TextInput
+              aria-invalid={Boolean(fieldErrors.exchangeRate)}
+              error={fieldErrors.exchangeRate}
+              label={t('Курс валют')}
+              type="number"
+              value={values.exchangeRate}
+              onChange={(event) => update('exchangeRate', event.currentTarget.value)}
+            />
+            <TextInput
+              aria-invalid={Boolean(fieldErrors.grossPriceAccounting)}
+              classNames={{ input: 'app-money' }}
+              error={fieldErrors.grossPriceAccounting}
+              label={`${t('Вартість Брутто')} (${t('Бух.')})`}
+              type="number"
+              value={values.grossPriceAccounting}
+              onChange={(event) => update('grossPriceAccounting', event.currentTarget.value)}
+            />
+            <TextInput
+              aria-invalid={Boolean(fieldErrors.percentAccounting)}
+              error={fieldErrors.percentAccounting}
+              label={`${t('ПДВ %')} (${t('Бух.')})`}
+              type="number"
+              value={values.percentAccounting}
+              onChange={(event) => update('percentAccounting', event.currentTarget.value)}
+            />
+            <TextInput
+              aria-invalid={Boolean(fieldErrors.accountingExchangeRate)}
+              error={fieldErrors.accountingExchangeRate}
+              label={`${t('Курс валют')} (${t('Бух.')})`}
+              type="number"
+              value={values.accountingExchangeRate}
+              onChange={(event) => update('accountingExchangeRate', event.currentTarget.value)}
+            />
+          </div>
+          <Checkbox
+            checked={values.isIncludeAccountingValue}
+            label={t('Включати бух. вартість у ціну брутто')}
+            onChange={(event) => update('isIncludeAccountingValue', event.currentTarget.checked)}
           />
-          <TextInput
-            aria-invalid={Boolean(fieldErrors.percent)}
-            error={fieldErrors.percent}
-            label={t('ПДВ %')}
-            type="number"
-            value={values.percent}
-            onChange={(event) => update('percent', event.currentTarget.value)}
+        </section>
+        <section className="app-section-card payment-service-form__section">
+          <Text className="app-section-title">{t('Оплата та доставка')}</Text>
+          <div className="payment-service-form__payment">
+            <div className="payment-service-form__date">
+              <TextInput
+                label={t('Від якої дати')}
+                type="date"
+                value={toDateInput(values.fromDate)}
+                onChange={(event) => update('fromDate', fromDateInput(event.currentTarget.value))}
+              />
+            </div>
+            <div className="payment-service-form__date">
+              <TextInput
+                aria-invalid={Boolean(fieldErrors.payToDate)}
+                aria-required={willCreatePaymentTask}
+                error={fieldErrors.payToDate}
+                label={t('Сплатити до')}
+                type="date"
+                value={toDateInput(values.payToDate)}
+                withAsterisk={willCreatePaymentTask}
+                onChange={(event) => update('payToDate', fromDateInput(event.currentTarget.value))}
+              />
+            </div>
+            <div className="payment-service-form__responsible">
+              <Select
+                aria-invalid={Boolean(fieldErrors.responsibleForPayment)}
+                aria-required={willCreatePaymentTask}
+                clearable
+                data={userOptions}
+                error={fieldErrors.responsibleForPayment}
+                label={t('Відповідальний за оплату')}
+                searchable
+                value={values.responsibleForPayment?.NetUid || null}
+                withAsterisk={willCreatePaymentTask}
+                onChange={(netUid) => update('responsibleForPayment', users.find((item) => item.NetUid === netUid) || null)}
+              />
+            </div>
+          </div>
+          <Checkbox
+            checked={values.isSupplyInformationTask}
+            label={t('Доставка в межах країни')}
+            onChange={(event) => update('isSupplyInformationTask', event.currentTarget.checked)}
           />
-        </Group>
-
-        <Group grow>
-          <TextInput
-            aria-invalid={Boolean(fieldErrors.grossPriceAccounting)}
-            classNames={{ input: 'app-money' }}
-            error={fieldErrors.grossPriceAccounting}
-            label={`${t('Вартість Брутто')} (${t('Бух.')})`}
-            type="number"
-            value={values.grossPriceAccounting}
-            onChange={(event) => update('grossPriceAccounting', event.currentTarget.value)}
-          />
-          <TextInput
-            aria-invalid={Boolean(fieldErrors.percentAccounting)}
-            error={fieldErrors.percentAccounting}
-            label={`${t('ПДВ %')} (${t('Бух.')})`}
-            type="number"
-            value={values.percentAccounting}
-            onChange={(event) => update('percentAccounting', event.currentTarget.value)}
-          />
-        </Group>
-
-        <Group grow>
-          <TextInput
-            aria-invalid={Boolean(fieldErrors.exchangeRate)}
-            error={fieldErrors.exchangeRate}
-            label={t('Курс валют')}
-            type="number"
-            value={values.exchangeRate}
-            onChange={(event) => update('exchangeRate', event.currentTarget.value)}
-          />
-          <TextInput
-            aria-invalid={Boolean(fieldErrors.accountingExchangeRate)}
-            error={fieldErrors.accountingExchangeRate}
-            label={`${t('Курс валют')} (${t('Бух.')})`}
-            type="number"
-            value={values.accountingExchangeRate}
-            onChange={(event) => update('accountingExchangeRate', event.currentTarget.value)}
-          />
-        </Group>
-
-        <Checkbox
-          checked={values.isIncludeAccountingValue}
-          label={t('Включати бух. вартість у ціну брутто')}
-          onChange={(event) => update('isIncludeAccountingValue', event.currentTarget.checked)}
-        />
-
-        <TextInput
-          label={t('Від якої дати')}
-          type="date"
-          value={toDateInput(values.fromDate)}
-          onChange={(event) => update('fromDate', fromDateInput(event.currentTarget.value))}
-        />
-
-        <Checkbox
-          checked={values.isSupplyInformationTask}
-          label={t('Доставка в межах країни')}
-          onChange={(event) => update('isSupplyInformationTask', event.currentTarget.checked)}
-        />
-
-        {values.isSupplyInformationTask && (
-          <Stack gap="sm">
-            <NumberInput
-              label={t('Вартість доставки в межах країни')}
-              value={values.supplyInformationTaskGrossPrice}
-              onChange={(value) => update('supplyInformationTaskGrossPrice', String(value))}
+          {values.isSupplyInformationTask && (
+            <Stack gap="sm">
+              <NumberInput
+                maw="100%"
+                w={220}
+                label={t('Вартість доставки в межах країни')}
+                value={values.supplyInformationTaskGrossPrice}
+                onChange={(value) => update('supplyInformationTaskGrossPrice', String(value))}
+              />
+              <Textarea
+                label={t('Коментар')}
+                value={values.supplyInformationTaskComment}
+                onChange={(event) => update('supplyInformationTaskComment', event.currentTarget.value)}
+              />
+            </Stack>
+          )}
+          <div className="payment-service-form__parties">
+            <FileInput
+              clearable
+              label={t('Інші файли')}
+              multiple
+              value={values.files}
+              onChange={(files) => update('files', files)}
             />
             <Textarea
               label={t('Коментар')}
-              value={values.supplyInformationTaskComment}
-              onChange={(event) => update('supplyInformationTaskComment', event.currentTarget.value)}
+              value={values.comment}
+              onChange={(event) => update('comment', event.currentTarget.value)}
             />
-          </Stack>
-        )}
-
-        <FileInput
-          clearable
-          label={t('Інші файли')}
-          multiple
-          value={values.files}
-          onChange={(files) => update('files', files)}
-        />
-
-        <TextInput
-          aria-invalid={Boolean(fieldErrors.payToDate)}
-          aria-required={willCreatePaymentTask}
-          error={fieldErrors.payToDate}
-          label={t('Сплатити до')}
-          type="date"
-          value={toDateInput(values.payToDate)}
-          withAsterisk={willCreatePaymentTask}
-          onChange={(event) => update('payToDate', fromDateInput(event.currentTarget.value))}
-        />
-        <Select
-          aria-invalid={Boolean(fieldErrors.responsibleForPayment)}
-          aria-required={willCreatePaymentTask}
-          clearable
-          data={userOptions}
-          error={fieldErrors.responsibleForPayment}
-          label={t('Відповідальний за оплату')}
-          searchable
-          value={values.responsibleForPayment?.NetUid || null}
-          withAsterisk={willCreatePaymentTask}
-          onChange={(netUid) => update('responsibleForPayment', users.find((item) => item.NetUid === netUid) || null)}
-        />
-        <Textarea
-          label={t('Коментар')}
-          value={values.comment}
-          onChange={(event) => update('comment', event.currentTarget.value)}
-        />
-
+          </div>
+        </section>
+        <AppModalFooter>
+          <Button color="gray" variant="default" onClick={onClose}>{t('Скасувати')}</Button>
+          <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={handleSubmit}>{t('Зберегти')}</Button>
+        </AppModalFooter>
       </Stack>
-    </AppDrawer>
+    </AppModal>
   )
 }
 

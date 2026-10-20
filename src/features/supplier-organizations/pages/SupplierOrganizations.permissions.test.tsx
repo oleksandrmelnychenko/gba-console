@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import type { SupplyOrganization } from '../types'
 import {
   createSupplierOrganizationAgreement,
@@ -50,6 +51,7 @@ vi.mock('../api/supplierOrganizationsApi', () => ({
 }))
 
 vi.mock('../../../shared/ui/AppModal', () => ({
+  AppModalFooter: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   AppModal: ({ children, opened }: { children: ReactNode; opened: boolean }) => opened ? <section>{children}</section> : null,
 }))
 
@@ -59,17 +61,22 @@ vi.mock('../../../shared/ui/AppDrawer', () => ({
 
 vi.mock('../../../shared/ui/data-table/DataTable', () => ({
   DataTable: ({
+    columns,
     data,
     onRowClick,
   }: {
+    columns?: DataTableColumn<SupplyOrganization>[]
     data: SupplyOrganization[]
     onRowClick?: (row: SupplyOrganization) => void
   }) => (
     <div>
       {data.map((row, index) => (
-        <button key={row.NetUid || index} type="button" onClick={() => onRowClick?.(row)}>
-          {row.Name || row.NetUid || `row-${index}`}
-        </button>
+        <div key={row.NetUid || index}>
+          <button type="button" onClick={() => onRowClick?.(row)}>
+            {row.Name || row.NetUid || `row-${index}`}
+          </button>
+          {columns?.find((column) => column.id === 'organization')?.cell?.(row)}
+        </div>
       ))}
     </div>
   ),
@@ -129,6 +136,23 @@ describe('Supplier Organizations canonical permission guards', () => {
 
     expect(screen.getByText('Доступ заборонено')).toBeTruthy()
     expect(getSupplierOrganizationsRegistry).not.toHaveBeenCalled()
+  })
+
+  it('renders organization chips for a supplier with agreements without crashing', async () => {
+    allowedPermissions.add(PermissionKeys.SupplierOrganizations.Page.View)
+    vi.mocked(getSupplierOrganizationsRegistry).mockResolvedValue([{
+      ...SUPPLIER,
+      SupplyOrganizationAgreements: [{
+        Id: 10,
+        Name: 'Основний договір',
+        Organization: { Id: 3, Name: 'Фенікс' },
+      }],
+    }])
+
+    renderRoute('/accounting/supplier-organizations')
+
+    const organization = await screen.findByText('Фенікс')
+    expect(organization.closest('.app-table-chip.is-product')).toBeTruthy()
   })
 
   it('keeps settlements, overview and create controls independently guarded', async () => {

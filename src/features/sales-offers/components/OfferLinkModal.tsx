@@ -2,7 +2,8 @@ import { ActionIcon, Anchor, Button, Group, Stack, Text, TextInput, Tooltip } fr
 import { notifications } from '@mantine/notifications'
 import { Copy, ExternalLink } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { getPublicOfferLink } from '../api/salesOffersApi'
 import type { ClientShoppingCart } from '../types'
 
@@ -34,11 +35,11 @@ export function OfferLinkModal({
       title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Пропозицію створено')}</span>}
       onClose={onClose}
     >
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap={10}>
         <Stack gap={4}>
           {offer?.Number && (
             <Text size="sm">
-              {t('Номер пропозиції')}: <strong>{offer.Number}</strong>
+              {t('Номер пропозиції')}: <TableChip tone="document" value={offer.Number} />
             </Text>
           )}
           {validUntil && (
@@ -51,7 +52,7 @@ export function OfferLinkModal({
         <Group align="flex-end" gap="xs" wrap="nowrap">
           <TextInput label={t('Посилання для клієнта')} readOnly style={{ flex: 1 }} value={link} />
           <Tooltip label={t('Скопіювати')}>
-            <ActionIcon aria-label={t('Скопіювати')} size={36} variant="light" onClick={copyLink}>
+            <ActionIcon aria-label={t('Скопіювати')} size={32} variant="default" onClick={copyLink}>
               <Copy size={18} />
             </ActionIcon>
           </Tooltip>
@@ -61,9 +62,9 @@ export function OfferLinkModal({
               component="a"
               href={link}
               rel="noreferrer"
-              size={36}
+              size={32}
               target="_blank"
-              variant="light"
+              variant="default"
             >
               <ExternalLink size={18} />
             </ActionIcon>
@@ -74,14 +75,14 @@ export function OfferLinkModal({
           {t('Пропозиція також зʼявиться у кабінеті клієнта в інтернет-магазині — розділ «Пропозиції» — після входу.')}
         </Text>
 
-        <Group justify="space-between">
-          <Anchor href="/sales/ukraine/offers" size="xs">
+        <AppModalFooter>
+          <Anchor style={{ marginRight: 'auto' }} href="/sales/ukraine/offers" size="xs">
             {t('Всі пропозиції')}
           </Anchor>
-          <Button color="gray" variant="light" onClick={onClose}>
+          <Button color="gray" variant="default" onClick={onClose}>
             {t('Закрити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

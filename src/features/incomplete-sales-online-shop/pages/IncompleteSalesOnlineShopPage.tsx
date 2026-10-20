@@ -1,3 +1,4 @@
+import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
   Badge,
@@ -13,7 +14,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
-import { AppModal } from "../../../shared/ui/AppModal"
+import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import { Check, CircleAlert, Receipt, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
@@ -511,7 +512,7 @@ function IncompleteSaleDetailDrawer({
   const { t } = useI18n()
 
   return (
-    <AppDrawer opened={Boolean(sale)} position="right" size="min(760px, 100vw)" title={t('Деталі продажу')} onClose={onClose}>
+    <AppDrawer className="app-compact-form" opened={Boolean(sale)} position="right" size="min(760px, 100vw)" title={t('Деталі продажу')} onClose={onClose}>
       {sale && (
         <IncompleteSaleDetail
           error={detailError}
@@ -550,20 +551,20 @@ function IncompleteSaleStatusModal({
         }
       }}
     >
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap="md">
         <Text size="sm">
           {pendingStatusAction?.status === 1
             ? t('Закріпити цей продаж за поточним користувачем?')
             : t('Позначити цей продаж виконаним?')}
         </Text>
-        <Group justify="flex-end">
-          <Button variant="subtle" color="gray" disabled={isConfirming} onClick={onClose}>
+        <AppModalFooter>
+          <Button variant="default" color="gray" disabled={isConfirming} onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button color="orange" leftSection={<Check size={16} />} loading={isConfirming} onClick={onConfirm}>
             {t('Підтвердити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )
@@ -720,7 +721,7 @@ function IncompleteSaleDetail({ error, isLoading, sale, onOpenClientSales }: Inc
   const hasClientSales = Boolean(sale.WithSales && getRetailClientNetUid(sale.RetailClient))
 
   return (
-    <Stack gap="md">
+    <Stack className="app-compact-form" gap={10}>
       {isLoading && (
         <Group justify="center" py="sm">
           <Loader color="orange" size="sm" />
@@ -736,7 +737,7 @@ function IncompleteSaleDetail({ error, isLoading, sale, onOpenClientSales }: Inc
         </Alert>
       )}
 
-      <Card withBorder radius="md" padding="md">
+      <Card className="app-section-card" withBorder radius="md" padding={12}>
         <Stack gap="xs">
           <Group justify="space-between" align="flex-start">
             <Box>
@@ -761,7 +762,7 @@ function IncompleteSaleDetail({ error, isLoading, sale, onOpenClientSales }: Inc
             </div>
             <div className="app-detail-field">
               <span>{t('Відповідальний')}</span>
-              <strong>{displayValue(responsibleName)}</strong>
+              <TableChip tone="warning" value={responsibleName} />
             </div>
           </div>
 

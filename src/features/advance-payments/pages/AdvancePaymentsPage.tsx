@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -231,7 +232,7 @@ function useAdvancePaymentColumns(): DataTableColumn<AdvancePayment>[] {
         width: 240,
         minWidth: 190,
         accessor: (payment) => payment.Organization?.Name || payment.Organization?.FullName,
-        cell: (payment) => displayValue(payment.Organization?.Name || payment.Organization?.FullName),
+        cell: (payment) => <TableChip tone="product" value={displayValue(getOrganizationDisplayName(payment.Organization))} />,
       },
       {
         id: 'responsible',

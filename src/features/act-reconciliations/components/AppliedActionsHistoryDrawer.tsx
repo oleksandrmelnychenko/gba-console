@@ -1,5 +1,6 @@
+import { DocumentDetailLayout, DocumentDetailSection } from '../../../shared/ui/document-detail/DocumentDetail'
 import { TableChip } from '../../../shared/ui/TableChip'
-import { Alert, Badge, Stack, Text } from '@mantine/core'
+import { Alert, Badge, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -44,17 +45,15 @@ export function AppliedActionsHistoryDrawer({
   const dispositionColumns = useDispositionHistoryColumns(t)
 
   return (
-    <AppDrawer opened={opened} padding="lg" position="right" size="72rem" title={title} onClose={onClose}>
-      <Stack gap="md">
+    <AppDrawer opened={opened} padding="md" position="right" size="72rem" title={title} onClose={onClose}>
+      <DocumentDetailLayout variant="inventory" summary={null}>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
-        <Text fw={700}>{t('Історія')}</Text>
-
-        <Text c="dimmed" fw={600} size="sm">{t('Складські документи')}</Text>
+        <DocumentDetailSection title={t('Складські документи')} stacked>
 
         <DataTable
           columns={columns}
@@ -73,7 +72,8 @@ export function AppliedActionsHistoryDrawer({
 
         {selectedAction && <AppliedActionsGrid appliedAction={selectedAction} />}
 
-        <Text c="dimmed" fw={600} mt="sm" size="sm">{t('Рішення без руху товару')}</Text>
+        </DocumentDetailSection>
+        <DocumentDetailSection title={t('Рішення без руху товару')} stacked>
 
         <DataTable
           columns={dispositionColumns}
@@ -88,7 +88,8 @@ export function AppliedActionsHistoryDrawer({
           showToolbar={false}
           tableId="act-reconciliation-disposition-history"
         />
-      </Stack>
+        </DocumentDetailSection>
+      </DocumentDetailLayout>
     </AppDrawer>
   )
 }

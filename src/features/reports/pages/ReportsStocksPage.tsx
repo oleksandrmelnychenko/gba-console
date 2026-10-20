@@ -52,7 +52,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import type { TranslateFunction } from '../../../shared/i18n/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import '../../../shared/ui/selection-surface.css'
-import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
+import { AppModalFooter } from '../../../shared/ui/AppModal'
+import { ReportModal } from './ReportModal'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
@@ -1006,29 +1007,29 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       notice={groupingOrdering.notice} onChange={groupingOrdering.changeOrdering} />,
   }
   const dialogs = <>
-    {mountsDialog(oneCReportOpen) ? <AppModal opened={oneCReportOpen} title={t('Валовий прибуток — як у 1С')} size={960}
+    {mountsDialog(oneCReportOpen) ? <ReportModal opened={oneCReportOpen} title={t('Валовий прибуток — як у 1С')} size={960}
       onClose={() => { if (!oneCReportGenerating) setOneCReportOpen(false) }}
       closeOnClickOutside={!oneCReportGenerating} closeOnEscape={!oneCReportGenerating}
       closeButtonProps={{ disabled: oneCReportGenerating, 'aria-label': t('Закрити звіт 1С') }}>
       {oneCReportOpen ? <OneCTurnoverReportPanel canGenerate={canGenerateReport} from={from} to={to}
         onFromChange={setFrom} onToChange={setTo} onLoadingChange={setOneCReportGenerating}
         onClose={() => setOneCReportOpen(false)} /> : null}
-    </AppModal> : null}
-    {mountsDialog(debtRatioCapability !== null) ? <AppModal opened={canGenerateReport && debtRatioCapability !== null} title={debtRatioCapability?.Title ?? ''} size={960}
+    </ReportModal> : null}
+    {mountsDialog(debtRatioCapability !== null) ? <ReportModal opened={canGenerateReport && debtRatioCapability !== null} title={debtRatioCapability?.Title ?? ''} size={960}
       onClose={() => { if (!debtRatioGenerating) setDebtRatioCapability(null) }}
       closeOnClickOutside={!debtRatioGenerating} closeOnEscape={!debtRatioGenerating}
       closeButtonProps={{ disabled: debtRatioGenerating, 'aria-label': t('Закрити оригінальний конструктор') }}>
       {canGenerateReport && debtRatioCapability ? <DebtToSalesRatioReportPanel capability={debtRatioCapability}
         initialMonth={(from || today).slice(0, 7)} canGenerate={canGenerateReport} onLoadingChange={setDebtRatioGenerating} /> : null}
-    </AppModal> : null}
-    {mountsDialog(activeClientsCapability !== null) ? <AppModal opened={canGenerateReport && activeClientsCapability !== null} title={activeClientsCapability?.Title ?? ''} size={960}
+    </ReportModal> : null}
+    {mountsDialog(activeClientsCapability !== null) ? <ReportModal opened={canGenerateReport && activeClientsCapability !== null} title={activeClientsCapability?.Title ?? ''} size={960}
       onClose={() => { if (!activeClientsGenerating) setActiveClientsCapability(null) }}
       closeOnClickOutside={!activeClientsGenerating} closeOnEscape={!activeClientsGenerating}
       closeButtonProps={{ disabled: activeClientsGenerating, 'aria-label': t('Закрити конструктор активних клієнтів') }}>
       {canGenerateReport && activeClientsCapability ? <ActiveClientsReportPanel capability={activeClientsCapability}
         initialMonth={(from || today).slice(0, 7)} canGenerate={canGenerateReport} callerKey={ownerId}
         onLoadingChange={setActiveClientsGenerating} /> : null}
-    </AppModal> : null}
+    </ReportModal> : null}
     {mountsDialog(collectionConstructor.modalProps.capability !== null) ? <CollectionCoefficientConstructorModal {...collectionConstructor.modalProps} /> : null}
     {mountsDialog(salesMarginConstructor.modalProps.capability !== null) ? <SalesMarginConstructorModal {...salesMarginConstructor.modalProps} /> : null}
     {mountsDialog(cashMovementConstructor.modalProps.capability !== null) ? <CashMovementConstructorModal {...cashMovementConstructor.modalProps} /> : null}
@@ -1042,38 +1043,38 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     {mountsDialog(inventoryTurnoverConstructor.modalProps.capability !== null) ? <InventoryTurnoverConstructorModal {...inventoryTurnoverConstructor.modalProps} /> : null}
     {mountsDialog(currentLiquidityConstructor.modalProps.capability !== null) ? <CurrentLiquidityConstructorModal {...currentLiquidityConstructor.modalProps} /> : null}
     {mountsDialog(plannedCashConstructor.modalProps.capability !== null) ? <PlannedCashConstructorModal {...plannedCashConstructor.modalProps} /> : null}
-    {mountsDialog(currencyDynamicsCapability !== null) ? <AppModal opened={canGenerateReport && currencyDynamicsCapability !== null} title={currencyDynamicsCapability?.Title ?? ''} size={960}
+    {mountsDialog(currencyDynamicsCapability !== null) ? <ReportModal opened={canGenerateReport && currencyDynamicsCapability !== null} title={currencyDynamicsCapability?.Title ?? ''} size={960}
       onClose={() => { if (!currencyDynamicsGenerating) setCurrencyDynamicsCapability(null) }}
       closeOnClickOutside={!currencyDynamicsGenerating} closeOnEscape={!currencyDynamicsGenerating}
       closeButtonProps={{ disabled: currencyDynamicsGenerating, 'aria-label': t('Закрити конструктор динаміки курсу') }}>
       {canGenerateReport && currencyDynamicsCapability ? <CurrencyRateDynamicsReportPanel capability={currencyDynamicsCapability}
         initialMonth={defaultCurrencyRateDynamicsMonth(today)} canGenerate={canGenerateReport} callerKey={ownerId}
         onLoadingChange={setCurrencyDynamicsGenerating} /> : null}
-    </AppModal> : null}
-    {mountsDialog(originalBuyerSalesShareCapability !== null) ? <AppModal opened={canGenerateReport && originalBuyerSalesShareCapability !== null} title={originalBuyerSalesShareCapability?.Title ?? ''} size={960}
+    </ReportModal> : null}
+    {mountsDialog(originalBuyerSalesShareCapability !== null) ? <ReportModal opened={canGenerateReport && originalBuyerSalesShareCapability !== null} title={originalBuyerSalesShareCapability?.Title ?? ''} size={960}
       onClose={() => { if (!originalBuyerSalesShareGenerating) setOriginalBuyerSalesShareCapability(null) }}
       closeOnClickOutside={!originalBuyerSalesShareGenerating} closeOnEscape={!originalBuyerSalesShareGenerating}
       closeButtonProps={{ disabled: originalBuyerSalesShareGenerating, 'aria-label': t('Закрити конструктор частки продажів') }}>
       {canGenerateReport && originalBuyerSalesShareCapability ? <OriginalBuyerSalesShareReportPanel capability={originalBuyerSalesShareCapability}
         initialMonth={defaultCurrencyRateDynamicsMonth(today)} canGenerate={canGenerateReport} callerKey={ownerId}
         onLoadingChange={setOriginalBuyerSalesShareGenerating} /> : null}
-    </AppModal> : null}
-    {mountsDialog(originalRevenueCapability !== null) ? <AppModal opened={canGenerateReport && originalRevenueCapability !== null} title={originalRevenueCapability?.Title ?? ''} size={1100}
+    </ReportModal> : null}
+    {mountsDialog(originalRevenueCapability !== null) ? <ReportModal opened={canGenerateReport && originalRevenueCapability !== null} title={originalRevenueCapability?.Title ?? ''} size={1100}
       onClose={() => { if (!originalRevenueGenerating) setOriginalRevenueCapability(null) }}
       closeOnClickOutside={!originalRevenueGenerating} closeOnEscape={!originalRevenueGenerating}
       closeButtonProps={{ disabled: originalRevenueGenerating, 'aria-label': t('Закрити конструктор виручки') }}>
       {canGenerateReport && originalRevenueCapability ? <OriginalRevenueReportPanel capability={originalRevenueCapability}
         initialMonth={defaultCurrencyRateDynamicsMonth(today)} canGenerate={canGenerateReport} callerKey={ownerId}
         onLoadingChange={setOriginalRevenueGenerating} /> : null}
-    </AppModal> : null}
-    {mountsDialog(cashAggregateCapability !== null) ? <AppModal opened={canGenerateReport && cashAggregateCapability !== null} title={cashAggregateCapability?.Title ?? ''} size={1100}
+    </ReportModal> : null}
+    {mountsDialog(cashAggregateCapability !== null) ? <ReportModal opened={canGenerateReport && cashAggregateCapability !== null} title={cashAggregateCapability?.Title ?? ''} size={1100}
       onClose={() => { if (!cashAggregateGenerating) setCashAggregateCapability(null) }}
       closeOnClickOutside={!cashAggregateGenerating} closeOnEscape={!cashAggregateGenerating}
       closeButtonProps={{ disabled: cashAggregateGenerating, 'aria-label': t('Закрити конструктор залишків коштів') }}>
       {canGenerateReport && cashAggregateCapability ? <CashAggregateBalanceReportPanel capability={cashAggregateCapability}
         initialPeriod={previousKyivDay(today)} canGenerate={canGenerateReport} callerKey={ownerId}
         onLoadingChange={setCashAggregateGenerating} /> : null}
-    </AppModal> : null}
+    </ReportModal> : null}
   </>
   const exportModal = (
     <DocumentExportModal
@@ -1220,7 +1221,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
               table={preview ? <MemoizedReportInlinePreview preview={preview} embedded /> : null}
               excelUrl={excelUrl} pdfUrl={pdfUrl} fileBaseName={lastRun?.fileName ?? null} />
           </form>}
-        <AppModal centered classNames={{ body: 'reports-stocks-template-modal__body', title: 'reports-stocks-modal-title' }}
+        <ReportModal centered classNames={{ body: 'reports-stocks-template-modal__body', title: 'reports-stocks-modal-title' }}
           opened={deskTemplatesOpened} closeOnClickOutside={!templateStorage.busy} closeOnEscape={!templateStorage.busy}
           closeButtonProps={{ disabled: templateStorage.busy }} size={820} title={t('Шаблони звіту')}
           onClose={() => setDeskTemplatesOpened(false)}>
@@ -1232,7 +1233,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
             onApply={template => { if (applyTemplate(template)) setDeskTemplatesOpened(false) }}
             onDeleted={deletedTemplate} onNameChange={setTemplateName} onRefresh={loadTemplates}
             onSave={saveTemplate} onUpdate={updateTemplate} />
-        </AppModal>
+        </ReportModal>
         {exportModal}
       </Stack>
     )
@@ -1621,7 +1622,7 @@ function ReportBuilderForm(props: ReportBuilderFormProps) {
           {t('Відкрийте звіт 1С за зразком Excel вище або оберіть звіт у полі «Звіт».')}
         </Alert> : <ReportBuilderContent {...props} />}
 
-        <AppModal
+        <ReportModal
           centered
           classNames={{ body: 'reports-stocks-template-modal__body', title: 'reports-stocks-modal-title' }}
           opened={templatesOpened}
@@ -1656,7 +1657,7 @@ function ReportBuilderForm(props: ReportBuilderFormProps) {
             onSave={onSaveTemplate}
             onUpdate={onUpdateTemplate}
           />
-        </AppModal>
+        </ReportModal>
       </form>
     </Card>
   )
@@ -2098,7 +2099,7 @@ function LegacyGroupingPickerModal({
   }
 
   return (
-    <AppModal
+    <ReportModal
       centered
       className="reports-group-picker-modal"
       opened={opened}
@@ -2158,7 +2159,7 @@ function LegacyGroupingPickerModal({
           </div>
         )}
       </Stack>
-    </AppModal>
+    </ReportModal>
   )
 }
 
@@ -2312,7 +2313,7 @@ function ReportSelectionsCard({
         ) : null}
       </Card>
 
-      <AppModal
+      <ReportModal
         centered
         className="reports-stocks-selection-modal"
         opened={Boolean(draftSelection)}
@@ -2321,7 +2322,7 @@ function ReportSelectionsCard({
         onClose={closeEditor}
       >
         {draftSelection ? (
-          <Stack gap="md">
+          <Stack gap={10}>
             <Select
               data={filterFieldOptions}
               label={t('Поле')}
@@ -2371,7 +2372,7 @@ function ReportSelectionsCard({
               />
             </div>
             <AppModalFooter>
-              <Button color="gray" type="button" variant="light" onClick={closeEditor}>{t('Скасувати')}</Button>
+              <Button color="gray" type="button" variant="default" onClick={closeEditor}>{t('Скасувати')}</Button>
               <Button
                 color={CREATE_ACTION_COLOR}
                 disabled={!draftSelection.SelectedField.Name || !draftSelection.Values.length}
@@ -2384,7 +2385,7 @@ function ReportSelectionsCard({
             </AppModalFooter>
           </Stack>
         ) : null}
-      </AppModal>
+      </ReportModal>
     </>
   )
 }

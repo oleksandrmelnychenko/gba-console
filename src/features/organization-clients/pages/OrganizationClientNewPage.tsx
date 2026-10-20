@@ -187,7 +187,7 @@ function OrganizationClientNewPageContent({ canCreate }: { canCreate: boolean })
         </Button>
       }
     >
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap={10}>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
@@ -195,7 +195,7 @@ function OrganizationClientNewPageContent({ canCreate }: { canCreate: boolean })
         )}
 
         <form id="organization-client-new-form" onSubmit={handleSubmit}>
-          <Stack gap="md">
+          <Stack className="app-compact-form" gap={10}>
             <OrganizationClientForm client={client} disabled={isSaving} onFieldChange={setField} />
 
             <OrganizationClientAgreementsPanel

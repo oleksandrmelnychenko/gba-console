@@ -3,7 +3,7 @@ import { Save, Trash2 } from 'lucide-react'
 import { type FormEvent } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { UserRole } from '../types'
 
@@ -56,7 +56,7 @@ export function RoleFormModal({
       onClose={onClose}
     >
       <form onSubmit={handleSubmit}>
-        <Stack gap="md">
+        <Stack gap={10}>
           <TextInput
             disabled={isSaving}
             error={error}
@@ -68,7 +68,7 @@ export function RoleFormModal({
               setError(null)
             }}
           />
-          <Group justify={role && canDelete ? 'space-between' : 'flex-end'}>
+          <AppModalFooter className={role && canDelete ? 'app-modal-footer--split' : undefined}>
             {role && canDelete ? (
               <Button
                 color="red"
@@ -85,7 +85,7 @@ export function RoleFormModal({
               <Button
                 color="gray"
                 disabled={isSaving}
-                variant="subtle"
+                variant="default"
                 onClick={onClose}
               >
                 {t('Скасувати')}
@@ -100,7 +100,7 @@ export function RoleFormModal({
                 {t('Зберегти')}
               </Button>
             </Group>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </form>
     </AppModal>

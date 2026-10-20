@@ -14,8 +14,7 @@ import { type FormEvent, useEffect, useMemo, useReducer } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { DocumentDetailChip, DocumentDetailLayout, DocumentDetailSummary, DocumentDetailMetric, DocumentDetailSection } from '../../../shared/ui/document-detail/DocumentDetail'
 import './company-car-form-page.css'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -253,43 +252,15 @@ function CompanyCarFormPageContent() {
   }
 
   return (
-    <AppDrawer
+    <AppModal
       opened
-      position="right"
-      size="standard"
-      className="company-car-form-sheet"
+      size={860}
+      className="company-car-form-sheet app-compact-form"
       title={isEditMode ? t('Автомобіль компанії') : t('Завести нову машину компанії')}
       onClose={handleCancel}
-      footer={
-        <Group gap="xs">
-          {isEditMode && canDelete && (
-            <Button
-              color="red"
-              disabled={isLoading || !companyCar.NetUid}
-              leftSection={<Trash2 size={16} />}
-              loading={isDeleting}
-              type="button"
-              variant="light"
-              onClick={() => setDeleteModalOpened(true)}
-            >
-              {t('Видалити')}
-            </Button>
-          )}
-          <Button
-            color={CREATE_ACTION_COLOR}
-            disabled={isLoading || !canSave}
-            form="company-car-form"
-            leftSection={<Save size={16} />}
-            loading={isSaving}
-            type="submit"
-          >
-            {t('Зберегти')}
-          </Button>
-        </Group>
-      }
     >
       <form id="company-car-form" onSubmit={handleSubmit}>
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap={10}>
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
@@ -303,8 +274,10 @@ function CompanyCarFormPageContent() {
           )}
 
           <DocumentDetailLayout
+            variant="inventory"
             summary={
               <DocumentDetailSummary
+                variant="inventory"
                 eyebrow={t('Автомобіль компанії')}
                 title={form.licensePlate || t('Нове авто')}
                 meta={form.carBrand ? <DocumentDetailChip>{form.carBrand}</DocumentDetailChip> : null}
@@ -316,7 +289,7 @@ function CompanyCarFormPageContent() {
             }
           >
             <DocumentDetailSection title={t('Автомобіль та організація')} stacked>
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10}>
                 <div className="company-car-form-organization"><Select
             clearable
             searchable
@@ -342,7 +315,7 @@ function CompanyCarFormPageContent() {
               </SimpleGrid>
             </DocumentDetailSection>
             <DocumentDetailSection title={t('Пальне та пробіг')} stacked>
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10}>
                 <TextInput
               disabled={isLoading || isSaving}
               label={t('Вмістимість баку')}
@@ -364,7 +337,7 @@ function CompanyCarFormPageContent() {
               </SimpleGrid>
             </DocumentDetailSection>
             <DocumentDetailSection title={t('Витрати пального')} stacked>
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10}>
                 <TextInput
               disabled={isLoading || isSaving}
               label={t('Розхід по місту на 100 км')}
@@ -388,6 +361,34 @@ function CompanyCarFormPageContent() {
           </DocumentDetailLayout>
         </Stack>
       </form>
+      <AppModalFooter>
+        <Group gap="xs">
+          <Button color="gray" variant="default" disabled={isSaving || isDeleting} onClick={handleCancel}>{t('Скасувати')}</Button>
+          {isEditMode && canDelete && (
+            <Button
+              color="red"
+              disabled={isLoading || !companyCar.NetUid}
+              leftSection={<Trash2 size={16} />}
+              loading={isDeleting}
+              type="button"
+              variant="light"
+              onClick={() => setDeleteModalOpened(true)}
+            >
+              {t('Видалити')}
+            </Button>
+          )}
+          <Button
+            color={CREATE_ACTION_COLOR}
+            disabled={isLoading || !canSave}
+            form="company-car-form"
+            leftSection={<Save size={16} />}
+            loading={isSaving}
+            type="submit"
+          >
+            {t('Зберегти')}
+          </Button>
+        </Group>
+      </AppModalFooter>
 
       <AppModal
         centered
@@ -395,21 +396,21 @@ function CompanyCarFormPageContent() {
         title={t('Видалити автомобіль компанії')}
         onClose={() => setDeleteModalOpened(false)}
       >
-        <Stack gap="md">
+        <Stack gap={10}>
           <Text>
             {t('Видалити автомобіль')} <Text span fw={600}>{form.carBrand || form.licensePlate || t('Без назви')}</Text>?
           </Text>
-          <Group justify="flex-end">
-            <Button color="gray" disabled={isDeleting} variant="light" onClick={() => setDeleteModalOpened(false)}>
+          <AppModalFooter>
+            <Button color="gray" disabled={isDeleting} variant="default" onClick={() => setDeleteModalOpened(false)}>
               {t('Скасувати')}
             </Button>
             <Button color="red" leftSection={<Trash2 size={16} />} loading={isDeleting} onClick={handleDelete}>
               {t('Видалити')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
-    </AppDrawer>
+    </AppModal>
   )
 }
 

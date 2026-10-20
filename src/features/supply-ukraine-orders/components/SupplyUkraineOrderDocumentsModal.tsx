@@ -12,7 +12,7 @@ import {
 import { File, FileText, Trash2, Undo2, Upload } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import type { SupplyOrderUkraineDocument } from '../types'
 
 export type UkraineOrderNewDocument = {
@@ -49,7 +49,7 @@ export function SupplyUkraineOrderDocumentsModal({
 
   return (
     <AppModal centered opened={opened} size="lg" title={t('Документи замовлення')} onClose={onClose}>
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap="md">
         {newDocuments.length > 0 && (
           <Stack gap={4}>
             <Text fw={600} size="sm">
@@ -117,7 +117,7 @@ export function SupplyUkraineOrderDocumentsModal({
 
         <Divider />
 
-        <Group justify="flex-end">
+        <AppModalFooter>
           <FileButton multiple accept=".xls,.xlsx,.pdf" onChange={(files) => onAddFiles(files || [])}>
             {(props) => (
               <Button {...props} disabled={isSaving} leftSection={<Upload size={16} />} variant="outline">
@@ -128,7 +128,7 @@ export function SupplyUkraineOrderDocumentsModal({
           <Button disabled={isSaving} loading={isSaving} onClick={onSave}>
             {t('Зберегти')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

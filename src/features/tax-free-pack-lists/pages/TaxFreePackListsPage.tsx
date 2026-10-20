@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -10,7 +11,7 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core'
-import { AppModal } from "../../../shared/ui/AppModal"
+import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { CircleAlert, Download, PackageMinus, RotateCcw, SquarePen } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { useEffect, useMemo, useReducer, useState } from 'react'
@@ -300,7 +301,7 @@ export function TaxFreePackListsPage() {
         </div>
       </Card>
 
-      <AppModal
+      <AppModal className="app-compact-form"
         centered
         opened={Boolean(selectedPackList)}
         size={496}
@@ -361,13 +362,13 @@ export function TaxFreePackListsPage() {
         )}
       </AppModal>
 
-      <AppModal centered opened={canDelete && Boolean(deleteCandidate)} title={t('Підтвердити видалення')} onClose={() => setDeleteCandidate(null)}>
+      <AppModal className="app-compact-form" centered opened={canDelete && Boolean(deleteCandidate)} title={t('Підтвердити видалення')} onClose={() => setDeleteCandidate(null)}>
         <Stack>
           <Text size="sm">{t('Видалити пакувальний лист')} {deleteCandidate?.Number || ''}?</Text>
-          <Group justify="flex-end">
-            <Button variant="subtle" onClick={() => setDeleteCandidate(null)}>{t('Скасувати')}</Button>
+          <AppModalFooter>
+            <Button variant="default" onClick={() => setDeleteCandidate(null)}>{t('Скасувати')}</Button>
             <Button color="red" onClick={confirmDelete}>{t('Видалити')}</Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
 
@@ -525,7 +526,7 @@ function usePackListColumns({
         header: t('Організація'),
         width: 160,
         accessor: (packList) => getEntityName(packList.Organization),
-        cell: (packList) => <PackListTableValue value={displayValue(getEntityName(packList.Organization))} />,
+        cell: (packList) => <TableChip tone="product" value={displayValue(getOrganizationDisplayName(packList.Organization))} />,
       },
       {
         id: 'client',

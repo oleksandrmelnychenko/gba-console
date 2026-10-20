@@ -349,7 +349,7 @@ function BankEditorModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered className="accounting-bank-editor" opened={isOpen} size={600} title={bank?.Id ? t('Редагування банку') : t('Новий банк')} onClose={onClose}>
+    <AppModal centered className="accounting-bank-editor app-compact-form" opened={isOpen} size={600} title={bank?.Id ? t('Редагування банку') : t('Новий банк')} onClose={onClose}>
       <form className="accounting-bank-editor-form" onSubmit={onSubmit}>
         <Stack gap={12}>
           {error && (
@@ -457,17 +457,17 @@ function BankDeleteModal({ bank, isSaving, onClose, onDelete }: BankDeleteModalP
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={Boolean(bank)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити банк')}</span>} onClose={onClose}>
+    <AppModal className="app-compact-form" centered opened={Boolean(bank)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити банк')}</span>} onClose={onClose}>
       <Stack gap="md">
         <Text>{bank ? t('Банк "{name}" буде позначено як видалений.', { name: getBankName(bank) }) : ''}</Text>
-        <Group justify="flex-end">
-          <Button color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" disabled={isSaving} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button color="red" loading={isSaving} onClick={onDelete}>
             {t('Видалити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

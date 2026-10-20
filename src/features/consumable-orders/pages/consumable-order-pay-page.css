@@ -122,8 +122,7 @@
   min-width: 0;
 }
 
-.consumable-order-pay-metric span,
-.consumable-order-pay-metric small {
+.consumable-order-pay-metric__label {
   color: var(--mantine-color-gray-7);
   display: block;
   font-family: var(--font-mono);
@@ -133,7 +132,7 @@
   line-height: 1.2;
 }
 
-.consumable-order-pay-metric span::before {
+.consumable-order-pay-metric__label::before {
   background: var(--brand-orange);
   border-radius: 999px;
   content: '';
@@ -144,7 +143,7 @@
   width: 6px;
 }
 
-.consumable-order-pay-metric.is-green span::before {
+.consumable-order-pay-metric.is-green .consumable-order-pay-metric__label::before {
   background: var(--mantine-color-green-6);
 }
 
@@ -162,8 +161,7 @@
   white-space: nowrap;
 }
 
-.consumable-order-pay-metric small {
-  font-size: 9px;
+.consumable-order-pay-metric > .app-table-chip {
   margin-top: 4px;
 }
 
@@ -257,7 +255,7 @@
 .consumable-order-pay-control .mantine-InputWrapper-label,
 .consumable-order-pay-movement-modal .mantine-InputWrapper-label {
   color: var(--mantine-color-gray-9);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0;
@@ -271,10 +269,10 @@
   border-radius: 8px;
   color: var(--mantine-color-gray-8);
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 520;
-  height: 36px;
-  min-height: 36px;
+  height: 32px;
+  min-height: 32px;
 }
 
 .consumable-order-pay-control.is-amount .mantine-Input-input {
@@ -288,13 +286,6 @@
 
 .consumable-order-pay-movement-modal {
   min-width: 0;
-}
-
-.consumable-order-pay-modal-actions {
-  align-items: center;
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
 }
 
 .consumable-order-pay-items {

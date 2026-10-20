@@ -1,5 +1,6 @@
-import { Alert, Badge, Button, Group, Stack, Text } from '@mantine/core'
-import { AppModal } from "../../../shared/ui/AppModal"
+import { TableChip } from '../../../shared/ui/TableChip'
+import { Alert, Button, Group, Stack, Text } from '@mantine/core'
+import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { Check, CircleAlert, Upload } from 'lucide-react'
 import { useMemo } from 'react'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -36,6 +37,7 @@ export function PreviewCartItemsModal({
         id: 'vendorCode',
         header: t('Код Виробника'),
         accessor: (item) => item.Product?.VendorCode || item.SupplyOrderUkraineCartItem?.Product?.VendorCode || '',
+        cell: (item) => <TableChip tone="product" value={item.Product?.VendorCode || item.SupplyOrderUkraineCartItem?.Product?.VendorCode} />,
         width: 150,
       },
       {
@@ -61,7 +63,7 @@ export function PreviewCartItemsModal({
       {
         id: 'status',
         header: t('Опис'),
-        cell: (item) => getPreviewErrorMessage(item, t) || <Badge color="green">{t('Файл валідний')}</Badge>,
+        cell: (item) => getPreviewErrorMessage(item, t) || <TableChip tone="success" value={t('Файл валідний')} />,
         minWidth: 220,
       },
     ],
@@ -75,7 +77,7 @@ export function PreviewCartItemsModal({
 
   return (
     <AppModal centered opened={opened} size="80rem" title={t('Попередній перегляд замовлення')} onClose={onClose}>
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap="md">
         <Alert
           color={hasErrors ? 'red' : 'green'}
           icon={hasErrors ? <CircleAlert size={16} /> : <Check size={16} />}
@@ -95,12 +97,12 @@ export function PreviewCartItemsModal({
           tableId="basket-supply-ukraine-order-preview"
         />
 
-        <Group justify="space-between">
+        <AppModalFooter className="app-modal-footer--split">
           <Text c="dimmed" size="sm">
             {t('Готово до завантаження')}: {validCartItems.length}
           </Text>
-          <Group>
-            <Button variant="subtle" onClick={onClose}>
+          <Group gap={8}>
+            <Button variant="default" onClick={onClose}>
               {t('Скасувати')}
             </Button>
             <Button
@@ -111,7 +113,7 @@ export function PreviewCartItemsModal({
               {t('Завантажити')}
             </Button>
           </Group>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )
@@ -136,15 +138,15 @@ function toValidCartItems(previewItems: PreviewCartItem[]) {
 
 function getPreviewErrorMessage(item: PreviewCartItem, t: (key: string) => string) {
   if (item.ZeroAvailable) {
-    return <Badge color="red">{t('Немає товарів на складі')}</Badge>
+    return <TableChip tone="danger" value={t('Немає товарів на складі')} />
   }
 
   if (item.LessAvailable) {
-    return <Badge color="orange">{t('Недостатня кількість на складі')}</Badge>
+    return <TableChip tone="warning" value={t('Недостатня кількість на складі')} />
   }
 
   if (item.NoCartItem) {
-    return <Badge color="red">{t('Немає в корзині')}</Badge>
+    return <TableChip tone="danger" value={t('Немає в корзині')} />
   }
 
   return null

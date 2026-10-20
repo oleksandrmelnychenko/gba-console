@@ -1,8 +1,8 @@
-import { Button, Group, Stack, TextInput } from '@mantine/core'
+import { Button, Stack, TextInput } from '@mantine/core'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 
 type NewIncomeDynamicColumnModalProps = {
   disabled?: boolean
@@ -30,7 +30,7 @@ export function NewIncomeDynamicColumnModal({
         }
       }}
     >
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap="md">
         <TextInput
           disabled={disabled}
           label={t('Від якої дати')}
@@ -42,14 +42,14 @@ export function NewIncomeDynamicColumnModal({
             }
           }}
         />
-        <Group justify="flex-end">
-          <Button color="gray" disabled={disabled} variant="light" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" disabled={disabled} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button disabled={disabled || !fromDate} onClick={() => onAdd(fromDate)}>
             {t('Додати')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

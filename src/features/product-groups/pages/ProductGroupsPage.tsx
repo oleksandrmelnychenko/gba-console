@@ -474,7 +474,7 @@ function ProductGroupCreateModal({
       onClose={onClose}
     >
       <form id="product-group-create-form" onSubmit={onSubmit}>
-        <Stack gap={12}>
+        <Stack className="app-compact-form" gap={12}>
           {createError && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {createError}

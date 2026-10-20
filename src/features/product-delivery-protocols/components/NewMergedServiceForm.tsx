@@ -3,21 +3,19 @@ import {
   Button,
   Checkbox,
   FileInput,
-  Group,
   NumberInput,
   Select,
   Stack,
   Text,
   TextInput,
-  Textarea,
-} from '@mantine/core'
+  Textarea } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, type ReactNode } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   getUnifiedServiceCreateResponsibleUsers,
@@ -369,7 +367,7 @@ export function NewMergedServiceForm({
         }
       }}
     >
-      <Stack className="new-merged-service-modal" gap={12}>
+      <Stack className="app-compact-form new-merged-service-modal" gap={12}>
         {loadError && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {loadError}
@@ -720,14 +718,14 @@ export function NewMergedServiceForm({
           </Text>
         )}
 
-        <Group className="new-merged-service-footer" justify="flex-end" gap={8}>
+        <AppModalFooter className="new-merged-service-footer">
           <Button disabled={isSaving} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button color={CREATE_ACTION_COLOR} disabled={isSaving} loading={isSaving} onClick={handleSubmit}>
             {t('Зберегти')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

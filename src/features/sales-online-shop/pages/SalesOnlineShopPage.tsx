@@ -1,3 +1,5 @@
+import { TableChip } from '../../../shared/ui/TableChip'
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import './sales-online-toolbar.css'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import {
@@ -7,7 +9,6 @@ import {
   Box,
   Button,
   Card,
-  Group,
   Menu,
   SegmentedControl,
   Select,
@@ -38,7 +39,7 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { TransporterNameWithIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
@@ -1048,16 +1049,16 @@ function SalesOnlineShopOrdersPage() {
         onClose={() => (isConfirming ? undefined : setConfirmState(null))}
       >
         {confirmState && (
-          <Stack gap="md">
+          <Stack className="app-compact-form" gap="md">
             <Text>{confirmState.message}</Text>
-            <Group justify="flex-end">
-              <Button color="gray" disabled={isConfirming} variant="subtle" onClick={() => setConfirmState(null)}>
+            <AppModalFooter>
+              <Button color="gray" disabled={isConfirming} variant="default" onClick={() => setConfirmState(null)}>
                 {t('Скасувати')}
               </Button>
               <Button color={confirmState.color || 'orange'} loading={isConfirming} onClick={runConfirm}>
                 {confirmState.confirmLabel}
               </Button>
-            </Group>
+            </AppModalFooter>
           </Stack>
         )}
       </AppModal>
@@ -1397,7 +1398,7 @@ export function SaleDetail({ sale }: { sale: SalesOnlineShopSale }) {
   const clientRows: Array<[string, unknown]> = [
     [t('Клієнт'), getSaleClientName(sale)],
     [t('Договір'), sale.ClientAgreement?.Agreement?.Name],
-    [t('Організація'), sale.ClientAgreement?.Agreement?.Organization?.Name],
+    [t('Організація'), <TableChip tone="product" value={getOrganizationDisplayName(sale.ClientAgreement?.Agreement?.Organization)} />],
     [t('Телефон'), sale.ClientAgreement?.Client?.MobileNumber || sale.ClientAgreement?.Client?.PhoneNumber],
   ]
 
@@ -1411,7 +1412,7 @@ export function SaleDetail({ sale }: { sale: SalesOnlineShopSale }) {
         <div className="sale-detail-hero-copy">
           <div className="sale-detail-kicker">
             <SaleSourceIcon sale={sale} />
-            <span>{displayValue(sale.SaleNumber?.Value)}</span>
+            <TableChip tone="document" value={sale.SaleNumber?.Value} />
             {date && (
               <>
                 <span className="sale-detail-dot" />
@@ -1445,7 +1446,7 @@ export function SaleDetail({ sale }: { sale: SalesOnlineShopSale }) {
         <div className={`sale-detail-total${isUnpaidSale(sale) ? ' is-unpaid' : ''}`}>
           <span className="sale-detail-total-label">{t('Сума')}</span>
           <strong className="app-money">{formatAmount(primaryAmount)}</strong>
-          <span className="app-money-meta">{displayValue(currencyCode)}</span>
+          <TableChip tone="source" value={currencyCode} />
         </div>
       </section>
 
@@ -1453,7 +1454,7 @@ export function SaleDetail({ sale }: { sale: SalesOnlineShopSale }) {
         <SaleDetailMetric label={t('Позиції')} value={displayValue(orderItems.length)} />
         <SaleDetailMetric label={t('ПДВ')} value={formatAmount(vatAmount)} />
         <SaleDetailMetric label={displayValue(secondaryCurrencyCode)} value={formatAmount(secondaryAmount)} />
-        <SaleDetailMetric label={t('Менеджер')} value={displayValue(getSaleUserName(sale))} />
+        <div className="sale-detail-metric"><span>{t('Менеджер')}</span><TableChip tone="warning" value={getSaleUserName(sale)} /></div>
       </div>
 
       <div className="sale-detail-sections">
@@ -1461,7 +1462,7 @@ export function SaleDetail({ sale }: { sale: SalesOnlineShopSale }) {
           icon={<Receipt size={15} />}
           title={t('Продаж')}
           rows={[
-            [t('Номер'), sale.SaleNumber?.Value],
+            [t('Номер'), <TableChip tone="document" value={sale.SaleNumber?.Value} />],
             [t('Дата'), date ? `${formatDate(date)} ${formatTime(date)}` : ''],
             [t('Статус'), getSaleStatusLabel(sale)],
             [t('Оплата'), getPaymentStatusLabel(sale)],

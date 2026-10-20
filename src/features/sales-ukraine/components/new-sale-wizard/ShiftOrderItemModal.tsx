@@ -2,7 +2,8 @@ import { Button, Group, NumberInput, Stack, Text } from '@mantine/core'
 import { useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
-import { AppModal } from '../../../../shared/ui/AppModal'
+import { TableChip } from '../../../../shared/ui/TableChip'
+import { AppModal, AppModalFooter } from '../../../../shared/ui/AppModal'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
 
@@ -90,19 +91,19 @@ function ShiftOrderItemForm({
   }
 
   return (
-    <Stack gap="md" onKeyDown={handleKeyDown}>
+    <Stack className="app-compact-form" gap="md" onKeyDown={handleKeyDown}>
       <Stack align="center" gap={0}>
         <Text className="app-money" fw={700} size="xl">
           {amountFormatter.format(amount)}
         </Text>
-        <Text c="dimmed" size="sm">
+        <Text c="gray.9" size="xs">
           {t('Зарезервовано')}
         </Text>
       </Stack>
 
       <Stack gap={4}>
         <Group gap={6} wrap="nowrap">
-          <Text c="dimmed" size="sm">
+          <Text c="gray.9" size="xs">
             {t('Для клієнта')}:
           </Text>
           <Text fw={600} size="sm">
@@ -110,20 +111,16 @@ function ShiftOrderItemForm({
           </Text>
         </Group>
         <Group gap={6} wrap="nowrap">
-          <Text c="dimmed" size="sm">
+          <Text c="gray.9" size="xs">
             {t('З рахунка')}:
           </Text>
-          <Text fw={600} size="sm">
-            {sourceName || ''}
-          </Text>
+          <TableChip tone="document" value={sourceName} />
         </Group>
         <Group gap={6} wrap="nowrap">
-          <Text c="dimmed" size="sm">
+          <Text c="gray.9" size="xs">
             {t('Аналітик')}:
           </Text>
-          <Text fw={600} size="sm">
-            {analyst || ''}
-          </Text>
+          <TableChip tone="warning" value={analyst} />
         </Group>
       </Stack>
 
@@ -142,14 +139,14 @@ function ShiftOrderItemForm({
         }}
       />
 
-      <Group justify="flex-end" gap="sm">
-        <Button color="gray" disabled={busy} variant="light" onClick={onCancel}>
+      <AppModalFooter>
+        <Button color="gray" disabled={busy} variant="default" onClick={onCancel}>
           {t('Скасувати')}
         </Button>
         <Button disabled={showError} loading={busy} onClick={apply}>
           {t('Застосувати')}
         </Button>
-      </Group>
+      </AppModalFooter>
     </Stack>
   )
 }

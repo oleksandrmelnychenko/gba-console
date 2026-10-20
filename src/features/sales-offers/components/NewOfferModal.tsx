@@ -99,11 +99,11 @@ function OfferGeneratedLink({ offer, onDone }: { offer: ClientShoppingCart; onDo
   return (
     <Stack gap={10}>
       <Text className="offers-modal-generated-title">
-        {t('Пропозиція')} {offer.Number ?? ''}
+        {t('Пропозиція')} <TableChip tone="document" value={offer.Number} />
       </Text>
       <Group align="flex-end" gap="xs" wrap="nowrap">
         <TextInput readOnly label={t('Посилання')} style={{ flex: 1 }} value={link} />
-        <ActionIcon aria-label={t('Копіювати посилання')} size="lg" variant="light" onClick={copy}>
+        <ActionIcon aria-label={t('Копіювати посилання')} size={32} variant="default" onClick={copy}>
           <Copy size={18} />
         </ActionIcon>
       </Group>
@@ -381,7 +381,8 @@ function NewOfferForm({
   }
 
   return (
-    <Stack className="offers-modal-form" gap={10}>
+    <Stack className="offers-modal-form app-compact-form" gap={10}>
+      <div className="offers-create-modal__fields">
       <Select
         {...OFFER_SELECT_PROPS}
         searchable
@@ -523,6 +524,7 @@ function NewOfferForm({
         </Text>
       )}
 
+      </div>
       <AppModalFooter>
         <Button disabled={isCreating} variant="default" onClick={onCancel}>
           {t('Скасувати')}

@@ -1,9 +1,9 @@
-import { Button, Group, Stack, TextInput } from '@mantine/core'
+import { Button, Stack, TextInput } from '@mantine/core'
 import { useEffect } from 'react'
 import { formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { CockpitTask } from '../types'
 
@@ -35,7 +35,7 @@ export function SnoozeModal({
         }
       }}
     >
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap="md">
         <TextInput
           disabled={saving}
           label={t('Нагадати')}
@@ -43,8 +43,8 @@ export function SnoozeModal({
           value={snoozeUntil}
           onChange={(event) => setSnoozeUntil(event.currentTarget.value)}
         />
-        <Group justify="flex-end">
-          <Button color="gray" disabled={saving} variant="light" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" disabled={saving} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button
@@ -62,7 +62,7 @@ export function SnoozeModal({
           >
             {t('Відкласти')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

@@ -311,7 +311,7 @@ function AddUnorderedProductForm({
 
       <AppDrawerFooter>
         <Group justify="flex-end">
-          <Button color="gray" disabled={isSaving} variant="subtle" onClick={onCancel}>
+          <Button color="gray" disabled={isSaving} variant="default" onClick={onCancel}>
             {t('Скасувати')}
           </Button>
           <Button disabled={!isValid} loading={isSaving} onClick={create}>

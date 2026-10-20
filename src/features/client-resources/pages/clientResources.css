@@ -420,10 +420,10 @@
 }
 
 /* Modals of the resources page follow the sheet-form pattern (§7/§9):
-   mono labels, 36px pattern controls, mono buttons. */
+   Onest labels, 32px pattern controls, mono buttons. */
 .client-resources-modal .mantine-InputWrapper-label {
   color: var(--mantine-color-gray-9);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0;
@@ -434,12 +434,12 @@
 .client-resources-modal .mantine-Input-input {
   border-color: var(--mantine-color-gray-2);
   border-radius: 8px;
-  min-height: 36px;
+  min-height: 32px;
 }
 
 .client-resources-modal .mantine-Select-input {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 12px;
   letter-spacing: 0;
 }
 
@@ -457,14 +457,14 @@
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 10px;
   display: grid;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
-  padding: 14px;
+  padding: 12px;
 }
 
 .client-resources-form-grid {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
 }
 

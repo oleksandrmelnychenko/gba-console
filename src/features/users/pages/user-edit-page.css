@@ -11,28 +11,24 @@
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 10px;
-  box-shadow: var(--app-card-shadow);
   min-width: 0;
   overflow: hidden;
 }
 
-/* Micro uppercase eyebrow header with the brand accent dot — echoes the
-   roster column heads and the active role marker on the rail. */
+/* Compact section headings share the form's neutral card surface. */
 .user-sheet-card-head {
   align-items: center;
-  background:
-    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.06), transparent 32%),
-    #fbfcfd;
+  background: var(--mantine-color-white);
   border-bottom: 1px solid var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-9);
   display: flex;
-  font-size: 10.5px;
-  font-weight: 500;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
   gap: 8px;
   letter-spacing: 0;
   line-height: 1.2;
-  padding: 11px 14px;
-  text-transform: uppercase;
+  padding: 10px 12px;
 }
 
 .user-sheet-card-dot {
@@ -44,14 +40,14 @@
 }
 
 .user-sheet-card-body {
-  padding: 14px;
+  padding: 12px;
 }
 
 /* Refined field labels to match the roster command bar. */
 .user-sheet .mantine-InputWrapper-label {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-9);
   font-size: 12px;
-  font-weight: 400;
+  font-weight: 500;
   letter-spacing: 0;
   line-height: 1.2;
   margin-bottom: 4px;

@@ -98,7 +98,7 @@
 .document-detail-section__body.is-stacked { grid-template-columns: minmax(0, 1fr); gap: 10px; }
 .document-detail-row,
 .document-detail-row.is-wide { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 5px; padding: 0; min-height: 0; }
-.document-detail-row__label { font-family: var(--font-sans); font-size: 12px; font-weight: 500; color: var(--mantine-color-gray-7); max-width: none; }
+.document-detail-row__label { font-family: var(--font-sans); font-size: 12px; font-weight: 500; color: var(--mantine-color-gray-9); max-width: none; }
 .document-detail-row__value { text-align: left; color: var(--mantine-color-gray-8); font-size: 14px; line-height: 1.4; }
 .document-detail-row__value.is-danger { color: var(--mantine-color-red-8); }
 

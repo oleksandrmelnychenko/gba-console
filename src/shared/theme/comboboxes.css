@@ -1,8 +1,9 @@
 /* Dropdowns live in portals, so typography must not depend on a toolbar ancestor. */
-:is(.mantine-Select-input, .mantine-MultiSelect-input, .checkbox-multi-select .mantine-Input-input),
-:is(.mantine-Combobox-search, .mantine-Select-search, .mantine-MultiSelect-search),
-:is(.mantine-Combobox-option, .mantine-Select-option, .mantine-MultiSelect-option),
-:is(.mantine-Combobox-empty, .mantine-Select-empty, .mantine-MultiSelect-empty) {
+:is(.mantine-Select-input, .mantine-MultiSelect-input, .mantine-Autocomplete-input, .checkbox-multi-select .mantine-Input-input),
+:is(.mantine-Combobox-search, .mantine-Select-search, .mantine-MultiSelect-search, .mantine-Autocomplete-search),
+:is(.mantine-Combobox-groupLabel, .mantine-Select-groupLabel, .mantine-MultiSelect-groupLabel, .mantine-Autocomplete-groupLabel),
+:is(.mantine-Combobox-option, .mantine-Select-option, .mantine-MultiSelect-option, .mantine-Autocomplete-option),
+:is(.mantine-Combobox-empty, .mantine-Select-empty, .mantine-MultiSelect-empty, .mantine-Autocomplete-empty) {
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 16px;

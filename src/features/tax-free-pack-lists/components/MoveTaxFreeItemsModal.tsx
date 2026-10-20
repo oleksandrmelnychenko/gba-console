@@ -1,5 +1,5 @@
-import { Alert, Button, Checkbox, Group, NumberInput, Select, Stack, Text } from '@mantine/core'
-import { AppModal } from "../../../shared/ui/AppModal"
+import { Alert, Button, Checkbox, NumberInput, Select, Stack, Text } from '@mantine/core'
+import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -95,7 +95,7 @@ export function MoveTaxFreeItemsModal({ items, opened, packList, onClose, onSubm
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={t('Перенесення у Tax Free')} onClose={onClose}>
+    <AppModal className="app-compact-form" centered opened={opened} size="lg" title={t('Перенесення у Tax Free')} onClose={onClose}>
       <Stack>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
@@ -105,7 +105,7 @@ export function MoveTaxFreeItemsModal({ items, opened, packList, onClose, onSubm
 
         <Stack gap="xs">
           {draftItems.map((item, index) => (
-            <NumberInput
+            <NumberInput maw={160}
               key={item.NetUid || index}
               label={getProductName(getTaxFreeItemProduct(item)) || item.ProductFullName || t('Позиція')}
               min={0}
@@ -140,10 +140,10 @@ export function MoveTaxFreeItemsModal({ items, opened, packList, onClose, onSubm
 
         {draftItems.length === 0 && <Text size="sm" c="dimmed">{t('Позиції не вибрано')}</Text>}
 
-        <Group justify="flex-end">
-          <Button variant="subtle" onClick={onClose}>{t('Скасувати')}</Button>
+        <AppModalFooter>
+          <Button variant="default" onClick={onClose}>{t('Скасувати')}</Button>
           <Button disabled={draftItems.length === 0} onClick={submitMove}>{t('Додати')}</Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

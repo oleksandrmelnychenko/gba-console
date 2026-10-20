@@ -11,7 +11,7 @@ import {
 } from '@mantine/core'
 import { CircleAlert, Plus, Trash2 } from 'lucide-react'
 import { useEffect } from 'react'
-import { AppModal } from '../../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../../shared/hooks/useValueState'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -233,14 +233,14 @@ export function DeliveryRecipientsPanel({
         title={t('Ви впевнені, що хочете видалити?')}
         onClose={() => setRemoveTarget(null)}
       >
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap="md">
           {removeTarget && (
             <Text fw={500} size="sm">
               {removeTarget.FullName?.trim()}
             </Text>
           )}
-          <Group justify="flex-end">
-            <Button color="gray" variant="subtle" onClick={() => setRemoveTarget(null)}>
+          <AppModalFooter>
+            <Button color="gray" variant="default" onClick={() => setRemoveTarget(null)}>
               {t('Ні')}
             </Button>
             <Button
@@ -251,7 +251,7 @@ export function DeliveryRecipientsPanel({
             >
               {t('Так')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>}
     </Stack>

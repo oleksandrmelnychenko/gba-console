@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -412,7 +413,7 @@ function useBalancesColumns() {
         header: t('Організація'),
         minWidth: 200,
         accessor: (document) => document.Organization?.Name,
-        cell: (document) => displayValue(document.Organization?.Name),
+        cell: (document) => <TableChip tone="product" value={displayValue(getOrganizationDisplayName(document.Organization))} />,
       },
     ],
     [t],

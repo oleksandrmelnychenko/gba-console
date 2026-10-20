@@ -26,7 +26,7 @@
 
 .product-specification-edit-modal .mantine-Input-input {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .product-specification-edit-modal .mantine-Input-input:disabled {

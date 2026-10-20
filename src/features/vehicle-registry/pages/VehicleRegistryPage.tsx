@@ -30,6 +30,7 @@ import { usePermissions } from '../../auth/usePermissions'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { DocumentDetailSummary, DocumentDetailMetric } from '../../../shared/ui/document-detail/DocumentDetail'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
@@ -693,11 +694,11 @@ function VehicleDetailDrawer({
   }
 
   return (
-    <AppDrawer
+    <AppDrawer className="vehicle-registry-detail app-compact-form"
       footer={
         detail && canEdit ? (
           <Group justify="space-between" wrap="nowrap">
-            <Button color="gray" variant="subtle" onClick={onClose}>{t('Закрити')}</Button>
+            <Button color="gray" variant="default" onClick={onClose}>{t('Закрити')}</Button>
             <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={() => void saveWorkflow()}>
               {t('Зберегти')}
             </Button>
@@ -712,7 +713,7 @@ function VehicleDetailDrawer({
       {isLoading && !detail ? (
         <div className="vehicle-registry-drawer-loading"><Loader color="orange" size="sm" /></div>
       ) : (
-        <Stack gap="md">
+        <Stack gap={10}>
           {error && <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>}
           {detail && (
             <>
@@ -743,9 +744,9 @@ function VehicleDetailDrawer({
                 </div>
               </div>
 
-              <section>
+              <section className="app-section-card">
                 <div className="app-detail-section-head">
-                  <Text fw={650}>{t('Дані реєстру')}</Text>
+                  <Text className="app-section-title" fw={600}>{t('Дані реєстру')}</Text>
                 </div>
                 <div className="vehicle-registry-leaders">
                   <LeaderRow label={t('Власник')} value={detail.OwnerName} />
@@ -774,9 +775,9 @@ function VehicleDetailDrawer({
                     }}
                   />
 
-                  <section className="vehicle-registry-workflow">
+                  <section className="vehicle-registry-workflow app-section-card">
                     <div className="app-detail-section-head">
-                      <Text fw={650}>{t('Обробка')}</Text>
+                      <Text className="app-section-title" fw={600}>{t('Обробка')}</Text>
                     </div>
                     <Select
                       allowDeselect={false}
@@ -798,11 +799,11 @@ function VehicleDetailDrawer({
                 </>
               )}
 
-              <section>
+              <section className="app-section-card">
                 <div className="app-detail-section-head">
                   <Group gap={7}>
                     <History size={16} />
-                    <Text fw={650}>{t('Історія обробки')}</Text>
+                    <Text className="app-section-title" fw={600}>{t('Історія обробки')}</Text>
                   </Group>
                 </div>
                 {detail.Events.length ? (
@@ -839,7 +840,7 @@ function ClientMatchSection({
   const { t } = useI18n()
 
   return (
-    <section className="vehicle-registry-client-matches">
+    <section className="vehicle-registry-client-matches app-section-card">
       <div className="app-detail-section-head">
         <Group gap={7}>
           <UserRoundSearch size={17} />
@@ -962,38 +963,24 @@ function ImportIssuesDrawer({
   }, [item, t])
 
   return (
-    <AppDrawer
+    <AppDrawer className="app-compact-form"
       opened={Boolean(item)}
       size="standard"
       title={<span className="vehicle-registry-drawer-title">{t('Перевірка імпорту')}</span>}
       onClose={onClose}
     >
       {item && (
-        <Stack gap="md">
-          <div className="app-detail-hero">
-            <div>
-              <span className="app-detail-eyebrow">{item.Brand || t('Імпорт')}</span>
-              <div className="app-detail-title">
-                <strong>{item.OriginalFileName}</strong>
-                <span>{formatDate(item.CompletedAtUtc || item.CreatedAtUtc)}</span>
-              </div>
-              <div className="app-detail-badges">
-                <ImportStatusBadge status={item.Status} />
-              </div>
-            </div>
-            <div className="app-detail-hero__side">
-              <div className="app-detail-metrics">
-                <div className="app-detail-metric">
-                  <span>{t('Рядків')}</span>
-                  <strong>{numberFormatter.format(item.TotalRows)}</strong>
-                </div>
-                <div className="app-detail-metric">
-                  <span>{t('Проблем')}</span>
-                  <strong>{numberFormatter.format(total)}</strong>
-                </div>
-              </div>
-            </div>
-          </div>
+        <Stack gap={10}>
+          <DocumentDetailSummary
+            variant="inventory"
+            eyebrow={item.Brand || t('Імпорт')}
+            title={item.OriginalFileName}
+            meta={<><span className="app-mono">{formatDate(item.CompletedAtUtc || item.CreatedAtUtc)}</span><ImportStatusBadge status={item.Status} /></>}
+            metrics={<>
+              <DocumentDetailMetric label={t('Рядків')} value={numberFormatter.format(item.TotalRows)} />
+              <DocumentDetailMetric label={t('Проблем')} value={numberFormatter.format(total)} />
+            </>}
+          />
 
           {error && <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>}
           <div className="vehicle-registry-issue-table">

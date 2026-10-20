@@ -110,7 +110,7 @@ export function UploadDeliveryDocumentsModal({
         }
       }}
     >
-      <Stack className="customs-import-layout" gap={10}>
+      <Stack className="app-compact-form customs-import-layout" gap={10}>
         <Stack className="customs-import-fields" gap={10}>
           {canSelectSupplier && (
             <section className="customs-import-section" aria-label={t('Постачальник послуг')}>

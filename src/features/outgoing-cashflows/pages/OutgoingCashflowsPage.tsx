@@ -5,7 +5,6 @@ import {
   Alert,
   Badge,
   Button,
-  Divider,
   Group,
   Menu,
   Select,
@@ -38,7 +37,7 @@ import {
   DocumentDetailSection,
   DocumentDetailSummary,
 } from '../../../shared/ui/document-detail/DocumentDetail'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -1215,7 +1214,7 @@ function OutgoingCashflowDocumentStructureDrawer({
   return (
     <AppDrawer opened={Boolean(row)} padding="md" size="xl" title={t('Структура документів')} onClose={onClose}>
       {row && (
-        <Stack gap="md">
+        <DocumentDetailLayout variant="inventory" summary={null}>
           {isCalculating && (
             <Alert color="gray" variant="light">
               {t('Перерахунок структури документів...')}
@@ -1228,8 +1227,8 @@ function OutgoingCashflowDocumentStructureDrawer({
             </Alert>
           )}
 
-          <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <DetailItem label={t('Видатковий ордер')} value={displayValue(row.number)} />
+          <DocumentDetailSection title={t('Дані документа')}>
+            <DetailItem tone="document" label={t('Видатковий ордер')} value={displayValue(row.number)} />
             <DetailItem label={t('Дата')} value={formatDateTime(row.fromDate)} />
             <DetailItem label={t('Сума')} mono value={formatMoney(row.amount)} />
             <DetailItem
@@ -1237,23 +1236,21 @@ function OutgoingCashflowDocumentStructureDrawer({
               mono
               value={hasNumber(calculatedTotal) ? formatMoneyWithCurrency(calculatedTotal, row.currency) : displayValue(undefined)}
             />
-            <DetailItem label={t('Валюта')} mono value={displayValue(row.currency)} />
+            <DetailItem tone="source" label={t('Валюта')} mono value={displayValue(row.currency)} />
             <DetailItem label={t('Курс')} value={displayValue(row.order.ExchangeRate)} />
             <DetailItem label={t('Сума в EUR')} mono value={formatMoneyOptional(row.order.EuroAmount ?? row.order.AfterExchangeAmount)} />
             <DetailItem label={t('ПДВ %')} value={hasNumber(row.order.VatPercent) ? displayValue(row.order.VatPercent) : displayValue(undefined)} />
             <DetailItem label={t('ПДВ')} mono value={formatMoneyOptional(row.order.VAT)} />
             <DetailItem label={t('Кому видано')} value={displayValue(row.payedTo)} />
-            <DetailItem label={t('Організація')} value={displayValue(row.organization)} />
+            <DetailItem tone="product" label={t('Організація')} value={displayValue(row.organization)} />
             <DetailItem label={t('Рахунок')} value={displayValue(row.paymentRegister)} />
             <DetailItem label={t('Стаття руху')} value={displayValue(row.paymentMovement)} />
             <DetailItem label={t('Призначення платежу')} value={displayValue(row.order.PaymentPurpose)} />
             <DetailItem label={t('Підзвіт')} value={row.isUnderReport ? t('Так') : t('Ні')} />
-            <DetailItem label={t('Авансовий звіт')} value={displayValue(row.order.AdvanceNumber)} />
-          </SimpleGrid>
+            <DetailItem tone="document" label={t('Авансовий звіт')} value={displayValue(row.order.AdvanceNumber)} />
+          </DocumentDetailSection>
 
-          <Divider />
-
-          <Stack gap="sm">
+          <DocumentDetailSection title={t('Пов’язані документи')} stacked>
             {rootAssignedOrder && !rootAssignedOrder.Deleted && (
               <AssignedPaymentOrderBlock
                 assignedPaymentOrder={rootAssignedOrder}
@@ -1278,8 +1275,8 @@ function OutgoingCashflowDocumentStructureDrawer({
                 {t('Структура документів відсутня')}
               </Text>
             ) : null}
-          </Stack>
-        </Stack>
+          </DocumentDetailSection>
+        </DocumentDetailLayout>
       )}
     </AppDrawer>
   )
@@ -1301,8 +1298,7 @@ function AssignedPaymentOrderBlock({
   const assignedIncome = assignedPaymentOrder.AssignedIncomePaymentOrder || assignedPaymentOrder.RootIncomePaymentOrder
 
   return (
-    <Stack gap="xs">
-      <Text className="app-section-title" fw={600} size="sm">{title}</Text>
+    <DocumentDetailSection title={title} stacked>
       <AdvanceReportStructureSummary
         assignedPaymentOrder={assignedPaymentOrder}
         calculatedTotal={calculatedTotal}
@@ -1315,7 +1311,7 @@ function AssignedPaymentOrderBlock({
           {t('Пов’язаний документ не завантажено')}
         </Text>
       )}
-    </Stack>
+    </DocumentDetailSection>
   )
 }
 
@@ -1340,8 +1336,8 @@ function AdvanceReportStructureSummary({
   const advanceReportTotal = hasNumber(calculatedTotal) ? calculatedTotal : parentOrder.Amount
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2 }}>
-      <DetailItem label={t('Авансовий звіт')} value={displayValue(parentOrder.AdvanceNumber)} />
+    <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing={10}>
+      <DetailItem tone="document" label={t('Авансовий звіт')} value={displayValue(parentOrder.AdvanceNumber)} />
       <DetailItem label={t('Дата авансового звіту')} value={formatDateTime(assignedOutcome?.Created || assignedOutcome?.FromDate || parentOrder.FromDate)} />
       <DetailItem label={t('Сума авансового звіту')} mono value={formatMoneyWithCurrency(advanceReportTotal, currency)} />
       <DetailItem label={t('Сума зв’язки')} mono value={formatMoneyWithCurrency(assignedPaymentOrder.Amount, currency)} />
@@ -1353,12 +1349,12 @@ function AssignedOutcomeOrderView({ order }: { order: OutcomePaymentOrder }) {
   const { t } = useI18n()
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2 }}>
+    <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing={10}>
       <DetailItem label={t('Документ')} value={getOutcomePaymentOrderTypeLabel(order, t)} />
-      <DetailItem label={t('Номер')} value={displayValue(order.Number || order.CustomNumber)} />
+      <DetailItem tone="document" label={t('Номер')} value={displayValue(order.Number || order.CustomNumber)} />
       <DetailItem label={t('Дата')} value={formatDateTime(order.FromDate)} />
       <DetailItem label={t('Сума')} mono value={formatMoney(order.Amount)} />
-      <DetailItem label={t('Валюта')} mono value={displayValue(order.PaymentCurrencyRegister?.Currency?.Code || order.PaymentCurrencyRegister?.Currency?.Name)} />
+      <DetailItem tone="source" label={t('Валюта')} mono value={displayValue(order.PaymentCurrencyRegister?.Currency?.Code || order.PaymentCurrencyRegister?.Currency?.Name)} />
       <DetailItem label={t('Отримувач')} value={displayValue(getPayedTo(order))} />
     </SimpleGrid>
   )
@@ -1368,12 +1364,12 @@ function AssignedIncomeOrderView({ order }: { order: AssignedIncomePaymentOrder 
   const { t } = useI18n()
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2 }}>
+    <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing={10}>
       <DetailItem label={t('Документ')} value={getIncomePaymentOrderTypeLabel(order, t)} />
-      <DetailItem label={t('Номер')} value={displayValue(order.Number)} />
+      <DetailItem tone="document" label={t('Номер')} value={displayValue(order.Number)} />
       <DetailItem label={t('Дата')} value={formatDateTime(order.FromDate)} />
       <DetailItem label={t('Сума')} mono value={formatMoney(order.Amount)} />
-      <DetailItem label={t('Валюта')} mono value={displayValue(order.Currency?.Code || order.Currency?.Name)} />
+      <DetailItem tone="source" label={t('Валюта')} mono value={displayValue(order.Currency?.Code || order.Currency?.Name)} />
       <DetailItem label={t('Колега')} value={displayValue(getColleagueFullName(order.Colleague))} />
     </SimpleGrid>
   )
@@ -1393,7 +1389,7 @@ function CancelOutgoingCashflowModal({
   const { t } = useI18n()
 
   return (
-    <AppModal
+    <AppModal className="app-compact-form"
       centered
       opened={Boolean(row)}
       title={t('Скасувати видатковий ордер')}
@@ -1403,27 +1399,24 @@ function CancelOutgoingCashflowModal({
         }
       }}
     >
-      <Stack gap="md">
+      <Stack gap={10}>
         <Text>{row ? t('Ордер "{number}" буде позначено як скасований.', { number: displayValue(row.number) }) : ''}</Text>
-        <Group justify="flex-end">
-          <Button color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" disabled={isSaving} variant="default" onClick={onClose}>
             {t('Закрити')}
           </Button>
           <Button color="red" disabled={isSaving} loading={isSaving} onClick={onCancel}>
             {t('Скасувати')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )
 }
 
-function DetailItem({ label, mono = false, value }: { label: string; mono?: boolean; value: string }) {
+function DetailItem({ label, mono = false, tone, value }: { label: string; mono?: boolean; tone?: 'source' | 'product' | 'document'; value: string }) {
   return (
-    <div className={`app-detail-field${mono ? ' is-mono' : ''}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
+    <DocumentDetailRow label={label} mono={mono} value={tone ? <TableChip tone={tone} value={value} /> : value} />
   )
 }
 

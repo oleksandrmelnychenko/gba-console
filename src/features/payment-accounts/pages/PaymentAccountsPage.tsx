@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
@@ -363,7 +364,7 @@ function usePaymentAccountColumns(onOpen: (account: PaymentAccount) => void): Da
         width: 220,
         minWidth: 180,
         accessor: (account) => account.Organization?.Name || account.Organization?.FullName,
-        cell: (account) => <TableChip tone="product" value={displayValue(account.Organization?.Name || account.Organization?.FullName)} />,
+        cell: (account) => <TableChip tone="product" value={displayValue(getOrganizationDisplayName(account.Organization))} />,
       },
       {
         id: 'isActive',

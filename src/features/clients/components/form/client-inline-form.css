@@ -1,0 +1,8 @@
+.client-inline-form-modal .mantine-Modal-body { background: var(--mantine-color-gray-0); }
+.client-inline-form__fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-items: start; }
+.client-inline-form__wide { grid-column: 1 / -1; }
+.client-inline-form__agreements { max-height: 180px; overflow-y: auto; }
+.client-inline-form__agreement { padding: 8px; border: 1px solid var(--mantine-color-gray-3); border-radius: 8px; background: var(--mantine-color-white); }
+.client-inline-form__agreement[aria-pressed='true'] { border-color: var(--mantine-color-gray-5); background: var(--mantine-color-gray-1); }
+.client-inline-form__agreement:focus-visible { outline: 2px solid var(--app-focus-border); outline-offset: 2px; }
+@media (max-width: 480px) { .client-inline-form__fields { grid-template-columns: minmax(0, 1fr); } }

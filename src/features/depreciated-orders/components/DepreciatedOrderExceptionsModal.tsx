@@ -1,6 +1,6 @@
-import { Alert, Button, Group, ScrollArea, Stack, Text, Tooltip } from '@mantine/core'
+import { Alert, Button, ScrollArea, Stack, Text, Tooltip } from '@mantine/core'
 import { TriangleAlert } from 'lucide-react'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { useI18n } from '../../../shared/i18n/useI18n'
 
 export type DepreciatedOrderExceptionsModalProps = {
@@ -19,7 +19,7 @@ export function DepreciatedOrderExceptionsModal({ exceptions, onClose }: Depreci
       title={t('Товари не потрапили в списання')}
       onClose={onClose}
     >
-      <Stack gap="sm">
+      <Stack className="app-compact-form" gap="sm">
         <Alert color="yellow" icon={<TriangleAlert size={18} />} variant="light">
           {t('Частину товарів не вдалося списати.')}
         </Alert>
@@ -34,11 +34,11 @@ export function DepreciatedOrderExceptionsModal({ exceptions, onClose }: Depreci
             ))}
           </Stack>
         </ScrollArea.Autosize>
-        <Group justify="flex-end">
-          <Button color="gray" variant="light" onClick={onClose}>
+        <AppModalFooter>
+          <Button color="gray" variant="default" onClick={onClose}>
             {t('Закрити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

@@ -17,7 +17,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
-import { AppModal } from "../../../shared/ui/AppModal"
+import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { ArrowLeft, ArrowRight, CircleAlert, File, Printer, RefreshCw, Save, Search, Trash2, Truck } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
@@ -594,7 +594,7 @@ export function EditTaxFreePackListPage() {
               </Button>}
               {canEdit && isDirty && (
                 <Group>
-                  <Button variant="subtle" onClick={cancelChanges}>{t('Скасувати')}</Button>
+                  <Button variant="default" onClick={cancelChanges}>{t('Скасувати')}</Button>
                   <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} onClick={() => persistPackList()}>
                     {t('Зберегти')}
                   </Button>
@@ -912,7 +912,7 @@ export function EditTaxFreePackListPage() {
         onClose={() => setPrintDocumentModal(null)}
       />
 
-      <AppModal
+      <AppModal className="app-compact-form"
         centered
         opened={confirmCloseDocumentsOpen}
         title={t('Є незбережені зміни')}
@@ -920,22 +920,22 @@ export function EditTaxFreePackListPage() {
       >
         <Stack gap="md">
           <Text>{t('Якщо закрити документи, вибрані файли не будуть завантажені.')}</Text>
-          <Group justify="flex-end">
-            <Button color="gray" variant="light" onClick={() => setConfirmCloseDocumentsOpen(false)}>
+          <AppModalFooter>
+            <Button color="gray" variant="default" onClick={() => setConfirmCloseDocumentsOpen(false)}>
               {t('Залишитися')}
             </Button>
             <Button color="red" onClick={confirmCloseDocumentsDrawer}>
               {t('Закрити без збереження')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
 
-      <AppModal centered opened={Boolean(deleteTaxFree)} title={t('Підтвердити видалення')} onClose={() => setDeleteTaxFree(null)}>
+      <AppModal className="app-compact-form" centered opened={Boolean(deleteTaxFree)} title={t('Підтвердити видалення')} onClose={() => setDeleteTaxFree(null)}>
         <Stack>
           <Text size="sm">{t('Видалити')} TF {deleteTaxFree?.Number || ''}?</Text>
-          <Group justify="flex-end">
-            <Button variant="subtle" onClick={() => setDeleteTaxFree(null)}>{t('Скасувати')}</Button>
+          <AppModalFooter>
+            <Button variant="default" onClick={() => setDeleteTaxFree(null)}>{t('Скасувати')}</Button>
             <Button
               color="red"
               onClick={() => {
@@ -950,11 +950,11 @@ export function EditTaxFreePackListPage() {
             >
               {t('Видалити')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
 
-      <AppModal
+      <AppModal className="app-compact-form"
         centered
         opened={pendingDirtyAction !== null}
         title={t('Є незбережені зміни')}
@@ -962,14 +962,14 @@ export function EditTaxFreePackListPage() {
       >
         <Stack gap="md">
           <Text>{t('Якщо продовжити, незбережені зміни пакувального листа Tax Free будуть втрачені.')}</Text>
-          <Group justify="flex-end">
-            <Button color="gray" disabled={isSaving} variant="light" onClick={cancelDirtyNavigation}>
+          <AppModalFooter>
+            <Button color="gray" disabled={isSaving} variant="default" onClick={cancelDirtyNavigation}>
               {t('Залишитися')}
             </Button>
             <Button color="red" disabled={isSaving} onClick={confirmDirtyNavigation}>
               {t('Продовжити без збереження')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
     </Stack>

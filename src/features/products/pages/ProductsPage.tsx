@@ -2480,7 +2480,7 @@ function ProductPlacementStorageUploadModal({
 
   return (
     <AppModal centered opened={opened} size="min(1120px, 96vw)" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Завантаження місць зберігання')}</span>} onClose={closeModal}>
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap="md">
         {(error || storagesError) ? (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error || storagesError}</Alert>
         ) : null}
@@ -2562,7 +2562,7 @@ function ProductPlacementStorageUploadModal({
               </Stack>
             </Card>
             <AppModalFooter>
-              <Button color="gray" variant="light" disabled={isSavingReturn} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} onClick={closeModal}>
+              <Button color="gray" variant="default" disabled={isSavingReturn} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} onClick={closeModal}>
                 {t('Закрити')}
               </Button>
               <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSavingReturn} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} onClick={() => void saveNotPassedRows()}>
@@ -2752,7 +2752,7 @@ export function ProductFileUploadModal({
 
   return (
     <AppModal centered opened={opened} size="min(960px, 96vw)" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Завантаження товарів')}</span>} onClose={closeModal}>
-      <Stack gap="md">
+      <Stack className="app-compact-form" gap="md">
         {(error || pricingState.error) ? (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error || pricingState.error}
@@ -2882,7 +2882,7 @@ export function ProductFileUploadModal({
         </Card>
 
         <AppModalFooter>
-          <Button color="gray" disabled={isUploading} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="light" onClick={closeModal}>
+          <Button color="gray" disabled={isUploading} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="default" onClick={closeModal}>
             {t('Скасувати')}
           </Button>
           <Button color={CREATE_ACTION_COLOR} leftSection={<Upload size={16} />} loading={isUploading} disabled={!canSubmit} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} onClick={() => void submitUpload()}>
@@ -3009,7 +3009,7 @@ function ProductUploadDocumentModal({
 
   return (
     <AppModal centered opened={opened} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t(labels.title)}</span>} onClose={closeModal}>
-      <Stack gap="md" onKeyDown={handleUploadKeyDown}>
+      <Stack className="app-compact-form" gap="md" onKeyDown={handleUploadKeyDown}>
         {error ? (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
@@ -3070,7 +3070,7 @@ function ProductUploadDocumentModal({
         </Card>
 
         <AppModalFooter>
-          <Button color="gray" disabled={isUploading} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="light" onClick={closeModal}>
+          <Button color="gray" disabled={isUploading} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="default" onClick={closeModal}>
             {t('Скасувати')}
           </Button>
           <Button color={CREATE_ACTION_COLOR} leftSection={<Upload size={16} />} loading={isUploading} disabled={!canSubmit} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} onClick={() => void submitUpload()}>
@@ -3353,7 +3353,7 @@ function ProductIncomeMovementsGrid({
         header: t('Організація'),
         width: 150,
         accessor: (row) => row.OrganizationName,
-        cell: (row) => renderMovementText(row.OrganizationName),
+        cell: (row) => <TableChip tone="product" value={row.OrganizationName} />,
       },
       {
         id: 'incomeDate',
@@ -3584,7 +3584,7 @@ function ProductOutcomeMovementsGrid({
         header: t('Організація'),
         width: 160,
         accessor: (row) => row.OrganizationName,
-        cell: (row) => renderMovementText(row.OrganizationName),
+        cell: (row) => <TableChip tone="product" value={row.OrganizationName} />,
       },
       {
         id: 'documentNumber',
@@ -3606,7 +3606,7 @@ function ProductOutcomeMovementsGrid({
         header: t('Відповідальний'),
         width: 190,
         accessor: (row) => row.ResponsibleName,
-        cell: (row) => renderMovementText(row.ResponsibleName),
+        cell: (row) => <TableChip tone="warning" value={row.ResponsibleName} />,
       },
       {
         id: 'price',
