@@ -1,0 +1,200 @@
+.resale-detail-sheet .resale-detail-page {
+  flex: none;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+}
+.resale-detail-sheet .document-detail-drawer,
+.resale-detail-sheet .document-detail-tree {
+  gap: 12px;
+  padding: 0;
+  background: transparent;
+}
+.resale-detail-sheet .document-detail-top {
+  padding: 12px;
+  background: var(--mantine-color-body);
+}
+.resale-detail-sheet .document-detail-summary {
+  grid-template-columns: minmax(220px, 1fr) auto;
+  padding: 0;
+  gap: 16px;
+}
+.resale-detail-sheet .document-detail-summary__metrics {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  padding-left: 16px;
+}
+.resale-detail-sheet .document-detail-metric {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+.resale-detail-sheet .document-detail-metric strong {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 16px;
+}
+.resale-detail-sheet .resale-detail-participants {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.resale-detail-sheet .document-detail-section {
+  min-width: 0;
+  padding: 12px;
+  background: var(--mantine-color-body);
+}
+.resale-detail-sheet .document-detail-section__head {
+  min-height: 32px;
+  margin-bottom: 8px;
+}
+.resale-detail-sheet .document-detail-section__title,
+.resale-detail-sheet .app-section-title {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.resale-detail-sheet .document-detail-section__body.is-stacked {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 8px;
+}
+.resale-detail-sheet .resale-detail-fact {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: start;
+  align-content: start;
+  gap: 8px;
+  min-height: 24px;
+  min-width: 0;
+}
+.resale-detail-sheet .resale-detail-fact::before { display: none; }
+.resale-detail-sheet .resale-detail-fact__label {
+  color: var(--mantine-color-text);
+  font: 400 12px/1.5 var(--font-sans);
+}
+.resale-detail-sheet .resale-detail-fact__value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font: 500 13px/1.5 var(--font-sans);
+}
+.resale-detail-sheet .resale-detail-fact__value.is-mono { font-family: var(--font-mono); }
+.resale-detail-sheet .resale-detail-fact .app-table-chip { max-width: 100%; height: auto; white-space: normal; }
+.resale-detail-sheet .resale-detail-fact .app-table-chip-label { white-space: normal; }
+.resale-detail-sheet .resale-detail-document-actions { padding-top: 0; gap: 6px; }
+.resale-detail-sheet .resale-detail-table-section {
+  flex: none;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  background: var(--mantine-color-body);
+}
+.resale-detail-sheet .resale-detail-table-heading { padding: 8px 10px; }
+.resale-detail-sheet .resale-detail-command-bar {
+  grid-template-columns: minmax(180px, 1fr) minmax(130px, .55fr) minmax(150px, .7fr) auto;
+  gap: 8px;
+}
+.resale-detail-sheet .resale-detail-table-body { flex: none; min-height: 0; }
+.resale-detail-sheet .resale-detail-table-body .data-table { height: auto; }
+.resale-detail-sheet .resale-detail-table-body .data-table-scroll { max-height: 55vh; }
+.app-drawer.app-form-sheet.resale-detail-sheet .mantine-Input-input { min-height: 32px; height: 32px; font-family: var(--font-mono); font-size: 12px; }
+.resale-detail-sheet .mantine-InputWrapper-label { font-size: 12px; font-weight: 600; }
+.app-drawer.app-form-sheet.resale-detail-sheet .mantine-Button-root { min-height: 32px; height: 32px; font-size: 12px; padding-inline: 10px; }
+.resale-detail-sheet .mantine-Anchor-root { color: var(--mantine-color-text); text-decoration: none; }
+.resale-detail-sheet .mantine-Anchor-root:hover { text-decoration: underline; }
+.resale-detail-sheet .resale-detail-unit { color: var(--mantine-color-gray-6); font-size: 11px; font-weight: 400; }
+.resale-detail-sheet .resale-detail-table-body .app-money { font-size: 14px; }
+@media (max-width: 1000px) {
+  .resale-detail-sheet .resale-detail-command-bar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .resale-detail-sheet .resale-detail-command-bar__actions { grid-column: 1 / -1; }
+}
+@media (max-width: 760px) {
+  .resale-detail-sheet .document-detail-summary,
+  .resale-detail-sheet .resale-detail-participants { grid-template-columns: minmax(0, 1fr); }
+  .resale-detail-sheet .document-detail-summary__metrics { padding-left: 0; border-left: 0; }
+}
+@media (max-width: 600px) {
+  .resale-detail-sheet .resale-detail-command-bar { grid-template-columns: minmax(0, 1fr); }
+  .resale-detail-sheet .resale-detail-command-bar__actions { flex-wrap: wrap; }
+  .resale-detail-sheet .resale-detail-fact { grid-template-columns: 100px minmax(0, 1fr); }
+}
+
+/* The nested edit sheet is portalled, so it needs its own compact form scope. */
+.resale-edit-sheet .resale-edit-drawer__section {
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--mantine-color-body);
+}
+.resale-edit-sheet .resale-edit-drawer__section .app-section-title {
+  margin: 0;
+  padding-bottom: 0;
+  border: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.resale-edit-sheet .mantine-InputWrapper-label {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+.app-drawer.app-form-sheet.resale-edit-sheet .mantine-Input-input {
+  min-height: 32px;
+  height: 32px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.app-drawer.app-form-sheet.resale-edit-sheet textarea.mantine-Input-input {
+  height: auto;
+  min-height: 72px;
+  padding: 7px 10px;
+}
+.app-drawer.app-form-sheet.resale-edit-sheet .mantine-Input-input:disabled {
+  color: var(--mantine-color-gray-7);
+  opacity: 1;
+}
+.resale-edit-sheet .resale-edit-drawer__section--calculation {
+  align-items: center;
+  gap: 10px;
+}
+.resale-edit-sheet .resale-edit-drawer__hint {
+  margin-top: 4px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.app-drawer.app-form-sheet.resale-edit-sheet .mantine-Button-root {
+  min-height: 32px;
+  height: 32px;
+  padding-inline: 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+}
+.resale-edit-sheet .resale-edit-drawer__footer {
+  gap: 8px;
+  align-items: center;
+}
+.resale-edit-sheet .resale-edit-drawer__footer > .mantine-Group-root { gap: 6px; }
+@media (max-width: 600px) {
+  .resale-edit-sheet .resale-edit-drawer__section--calculation { grid-template-columns: minmax(0, 1fr); }
+  .resale-edit-sheet .resale-edit-drawer__section--calculation > .mantine-Button-root { justify-self: start; }
+  .resale-edit-sheet .resale-edit-drawer__footer { flex-flow: row wrap; justify-content: flex-end; }
+}
+
+.app-drawer.resale-detail-sheet .app-sheet-scroll > .resale-detail-page {
+  padding: 0;
+  background: transparent;
+}

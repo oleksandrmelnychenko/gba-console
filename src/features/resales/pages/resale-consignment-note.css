@@ -1,0 +1,75 @@
+/* Same compact TTN form layout used by sales Ukraine. */
+.resale-ttn-form { container-type: inline-size; min-width: 0; }
+.resale-ttn-sheet .mantine-Alert-root.resale-ttn-validation {
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+.resale-ttn-validation .mantine-Alert-icon {
+  width: 14px;
+  height: 16px;
+  flex-basis: 14px;
+  margin-inline-end: 6px;
+}
+.resale-ttn-validation .mantine-Alert-icon svg { width: 14px; height: 14px; }
+.resale-ttn-validation .mantine-Alert-message { font: 400 12px/16px var(--font-sans); }
+.resale-ttn-hero,
+.resale-ttn-section {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  box-shadow: none;
+  padding: 10px 12px;
+}
+.resale-ttn-hero {
+  display: grid;
+  align-items: end;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, .95fr);
+}
+.resale-ttn-document,
+.resale-ttn-select { min-width: 0; }
+.resale-ttn-sheet .resale-ttn-form .app-section-title {
+  font: 600 13px/1.4 var(--font-mono);
+  margin-bottom: 8px;
+}
+.resale-ttn-document-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font: 500 13px/1.4 var(--font-mono);
+  overflow-wrap: anywhere;
+}
+.resale-ttn-document-date { color: var(--mantine-color-gray-6); font-size: 11px; }
+.resale-ttn-grid,
+.resale-ttn-dimensions { align-items: end; }
+.resale-ttn-vehicles {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
+}
+.app-drawer.app-form-sheet.resale-ttn-sheet .mantine-InputWrapper-label {
+  font: 500 12px/1.4 var(--font-sans);
+  margin-bottom: 3px;
+}
+.app-drawer.app-form-sheet.resale-ttn-sheet .mantine-Input-input {
+  min-height: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font: 400 12px/1.4 var(--font-mono);
+}
+.resale-ttn-footer { width: 100%; max-width: 100%; gap: 8px; }
+.app-drawer.app-form-sheet.resale-ttn-sheet .resale-ttn-footer .mantine-Button-root {
+  height: 32px;
+  min-height: 32px;
+  font-size: 12px;
+  padding-inline: 12px;
+}
+@container (min-width: 900px) {
+  .resale-ttn-vehicles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .resale-ttn-form .resale-ttn-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .resale-ttn-grid > :nth-last-child(-n + 2) { grid-column: span 2; }
+}
+@media (max-width: 900px) {
+  .resale-ttn-hero { grid-template-columns: minmax(0, 1fr); }
+}

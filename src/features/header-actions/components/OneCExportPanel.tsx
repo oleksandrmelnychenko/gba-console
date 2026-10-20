@@ -1,9 +1,8 @@
-import { ActionIcon, Button, Group, Select, Stack, TextInput, Tooltip } from '@mantine/core'
+import { Box, Button, Group, Select, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { FileUp } from 'lucide-react'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { startGbaToOneCSync } from '../api/syncApi'
 import { TypeOfXmlDocument } from '../types'
@@ -13,12 +12,11 @@ const EXPORT_COMBOBOX_PROPS = {
   classNames: { dropdown: 'sync-modal-dropdown' },
 }
 
-export function OneCExportControl() {
+export function OneCExportPanel() {
   const { t } = useI18n()
   const [documentType, setDocumentType] = useState(String(TypeOfXmlDocument.Sales))
   const [fromDate, setFromDate] = useState(() => new Date())
   const [isExporting, setIsExporting] = useState(false)
-  const [opened, setOpened] = useState(false)
   const [toDate, setToDate] = useState(() => new Date())
 
   async function runExport() {
@@ -50,31 +48,13 @@ export function OneCExportControl() {
   }
 
   return (
-    <>
-      <Tooltip label={t('Вивантаження GBA в 1С')} openDelay={300}>
-        <ActionIcon
-          aria-label={t('Вивантаження GBA в 1С')}
-          className="console-header-action"
-          color="gray"
-          onClick={() => setOpened(true)}
-          size="lg"
-          variant="subtle"
-        >
-          <FileUp size={23} strokeWidth={1.7} />
-        </ActionIcon>
-      </Tooltip>
-
-      <AppModal
-        centered
-        opened={opened}
-        onClose={() => setOpened(false)}
-        size="md"
-        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Вивантаження GBA в 1С')}</span>}
-      >
-        <Stack gap="md">
-          <Group align="end" grow>
+    <Stack gap={10}>
+      <Box className="sync-config-panel">
+        <Text className="app-section-title">{t('Вивантаження GBA в 1С')}</Text>
+        <Stack gap={10} mt={10}>
+          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing={10}>
             <TextInput
-              label={t('З')}
+              label={t('Дата від')}
               type="date"
               value={toDateInputValue(fromDate)}
               onChange={(event) =>
@@ -82,39 +62,39 @@ export function OneCExportControl() {
               }
             />
             <TextInput
-              label={t('По')}
+              label={t('Дата до')}
               type="date"
               value={toDateInputValue(toDate)}
               onChange={(event) =>
                 setToDate(parseDateInputValue(event.currentTarget.value, toDate, true))
               }
             />
-          </Group>
-          <Select
-            comboboxProps={EXPORT_COMBOBOX_PROPS}
-            data={[
-              { value: String(TypeOfXmlDocument.Sales), label: t('Продажі') },
-              {
-                value: String(TypeOfXmlDocument.ProductIncomes),
-                label: t('Прихідні накладні на товар'),
-              },
-            ]}
-            label={t('Тип документа')}
-            onChange={(value) => value && setDocumentType(value)}
-            value={documentType}
-          />
-          <Group justify="flex-end">
-            <Button
-              color={CREATE_ACTION_COLOR}
-              leftSection={<FileUp size={16} strokeWidth={1.9} />}
-              loading={isExporting}
-              onClick={() => void runExport()}
-            >
-              {t('Вивантажити')}
-            </Button>
-          </Group>
+            <Select
+              comboboxProps={EXPORT_COMBOBOX_PROPS}
+              data={[
+                { value: String(TypeOfXmlDocument.Sales), label: t('Продажі') },
+                {
+                  value: String(TypeOfXmlDocument.ProductIncomes),
+                  label: t('Прихідні накладні на товар'),
+                },
+              ]}
+              label={t('Тип документа')}
+              onChange={(value) => value && setDocumentType(value)}
+              value={documentType}
+            />
+          </SimpleGrid>
         </Stack>
-      </AppModal>
-    </>
+      </Box>
+      <Group justify="flex-end" className="sync-action-bar">
+        <Button
+          color={CREATE_ACTION_COLOR}
+          leftSection={<FileUp size={16} strokeWidth={1.9} />}
+          loading={isExporting}
+          onClick={() => void runExport()}
+        >
+          {t('Вивантажити')}
+        </Button>
+      </Group>
+    </Stack>
   )
 }

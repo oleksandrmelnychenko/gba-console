@@ -781,3 +781,95 @@
     min-height: 420px;
   }
 }
+
+/* Registry uses the same compact filter strip and semantic chips as sales. */
+.resales-page .resales-registry-money {
+  align-items: center;
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  gap: 6px;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+.resales-page .resales-registry-date {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.resales-page .resales-registry-date > span + span {
+  color: var(--mantine-color-gray-6);
+}
+
+.resales-page .resales-filter-bar {
+  container-name: resale-registry;
+  container-type: inline-size;
+  overflow: visible;
+}
+
+.resales-page .resales-filter-row.app-filter-fields {
+  gap: 8px;
+}
+
+.resales-page .resales-filter-row > .resales-status-filter {
+  flex: 0 0 160px;
+  width: 160px;
+}
+
+.resales-page .resales-filter-actions {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  margin-left: 0;
+}
+
+.resales-page .resales-table-toolbar-slot :is(.data-table-toolbar, .data-table-toolbar-left) {
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+
+.resales-filter-dropdown {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  max-width: calc(100vw - 24px);
+  min-width: var(--popover-anchor-width);
+  padding: 4px;
+}
+
+.resales-filter-dropdown .resales-filter-option {
+  border-radius: 6px;
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  min-height: 30px;
+  padding: 7px 8px;
+}
+
+.resales-filter-dropdown .resales-filter-option:is(:hover, [data-combobox-selected], [aria-selected='true'], [data-checked]) {
+  background: var(--mantine-color-gray-1);
+  color: var(--mantine-color-gray-9);
+}
+
+@container resale-registry (max-width: 960px) {
+  .resales-page .resales-filter-row > .resales-status-filter {
+    flex-basis: 130px;
+    width: 130px;
+  }
+
+  .resales-table-toolbar-slot .data-table-layout-control {
+    width: 36px;
+    min-width: 36px;
+    padding-inline: 0;
+  }
+  .resales-table-toolbar-slot .data-table-layout-control .mantine-Button-label { display: none; }
+  .resales-table-toolbar-slot .data-table-layout-control .mantine-Button-section { margin: 0; }
+}

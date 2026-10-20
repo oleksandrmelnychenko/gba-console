@@ -74,7 +74,7 @@ export function MyOffersPanel() {
         }
       } catch (loadError) {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити оферти'))
+          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити пропозиції'))
         }
       } finally {
         if (!cancelled) {
@@ -148,12 +148,12 @@ export function MyOffersPanel() {
       try {
         await restartOfferValidity(offer.NetUid, { operationId })
         operationIdsRef.current.delete(operationKey)
-        notifications.show({ color: 'green', message: t('Термін дії оферти продовжено') })
+        notifications.show({ color: 'green', message: t('Термін дії пропозиції продовжено') })
         setReloadKey((key) => key + 1)
       } catch (actionError) {
         notifications.show({
           color: 'red',
-          message: actionError instanceof Error ? actionError.message : t('Не вдалося продовжити оферту'),
+          message: actionError instanceof Error ? actionError.message : t('Не вдалося продовжити пропозицію'),
         })
       } finally {
         setPendingNetId(null)
@@ -282,7 +282,7 @@ export function MyOffersPanel() {
     <Card className="app-section-card cockpit-panel-card" withBorder padding={0} radius="md">
       <div className="app-filter-bar cockpit-panel-bar">
         <div className="cockpit-panel-heading">
-          <Text className="app-section-title" fw={600} size="sm">{t('Мої оферти')}</Text>
+          <Text className="app-section-title" fw={600} size="sm">{t('Мої пропозиції')}</Text>
           <Text className="cockpit-panel-meta" size="xs">
             {isLoading ? t('Завантаження') : visibleOffers.length + ' · ' + t('замовлено') + ' ' + summary.ordered + ' · ' + t('переглянуто') + ' ' + summary.viewed + ' · ' + t('протерміновано') + ' ' + summary.expired}
           </Text>
@@ -317,7 +317,7 @@ export function MyOffersPanel() {
         <DataTable
           columns={offerColumns}
           data={visibleOffers}
-          emptyText={error ? t('Дані оферт недоступні') : t('За обраний період оферт немає')}
+          emptyText={error ? t('Дані пропозицій недоступні') : t('За обраний період пропозицій немає')}
           getRowId={(offer) => String(offer.NetUid ?? offer.Id)}
           height="100%"
           isLoading={isLoading}

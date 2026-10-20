@@ -28,13 +28,6 @@
   min-width: 0;
 }
 
-@container registry (min-width: 1760px) {
-  .sales-debtors-command-bar.app-filter-bar {
-    display: grid;
-    grid-template-columns: minmax(170px, 1fr) minmax(190px, 1fr) minmax(126px, .7fr) 104px 160px auto auto;
-  }
-}
-
 .sales-debtors-filter .mantine-InputWrapper-label {
   color: var(--mantine-color-gray-9);
   display: block;
@@ -196,14 +189,77 @@
 .sales-debtors-manager-cell .app-table-chip { max-width: 100%; }
 .sales-debtors-region-cell { text-transform: none; }
 
-@container registry (min-width: 1200px) {
-  .sales-debtors-page .sales-debtors-command-bar.app-filter-bar {
-    display: grid;
-    grid-template-columns: minmax(110px, 1fr) minmax(110px, 1fr) minmax(100px, .8fr) 80px 116px auto auto;
-    gap: 8px;
+/* Keep the desktop command strip on one baseline; compact menus remain readable. */
+.sales-debtors-filter-dropdown {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  max-width: calc(100vw - 24px);
+  min-width: var(--popover-anchor-width);
+  padding: 4px;
+}
+
+.sales-debtors-filter-dropdown .sales-debtors-filter-option {
+  border-radius: 6px;
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  min-height: 30px;
+  padding: 7px 8px;
+  overflow-wrap: anywhere;
+}
+
+.sales-debtors-filter-dropdown .sales-debtors-filter-option:is(:hover, [data-combobox-selected], [aria-selected='true'], [data-checked]) {
+  background: var(--mantine-color-gray-1);
+  color: var(--mantine-color-gray-9);
+}
+
+.sales-debtors-page .sales-debtors-command-bar > .sales-debtors-filter {
+  flex: 0 1 190px;
+  min-width: 0;
+}
+
+.sales-debtors-page .sales-debtors-command-bar > .is-organization {
+  flex: 0 1 220px;
+}
+
+.sales-debtors-page .sales-debtors-command-bar > .is-type {
+  flex: 0 1 140px;
+}
+
+.sales-debtors-page .sales-debtors-command-bar > .is-currency {
+  flex: 0 0 90px;
+}
+
+.sales-debtors-page .sales-debtors-command-bar > .is-days {
+  flex: 0 0 150px;
+}
+
+.sales-debtors-page .sales-debtors-command-bar .sales-debtors-command-actions {
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.sales-debtors-page .sales-debtors-command-bar :is(.sales-debtors-toolbar-slot, .data-table-toolbar, .data-table-toolbar-left) {
+  gap: 6px;
+}
+
+@container registry (max-width: 1550px) {
+  .sales-debtors-page .sales-debtors-command-bar > .is-manager { flex-basis: 130px; }
+  .sales-debtors-page .sales-debtors-command-bar > .is-organization { flex-basis: 160px; }
+  .sales-debtors-page .sales-debtors-command-bar > .is-type { flex-basis: 110px; }
+  .sales-debtors-page .sales-debtors-command-bar > .is-currency { flex-basis: 76px; }
+  .sales-debtors-page .sales-debtors-command-bar > .is-days { flex-basis: 145px; }
+}
+
+@container registry (max-width: 1320px) {
+  .sales-debtors-command-bar .data-table-layout-control {
+    width: 36px;
+    min-width: 36px;
+    padding-inline: 0;
   }
-  .sales-debtors-command-bar .sales-debtors-command-actions { gap: 6px; }
-  .sales-debtors-command-bar .data-table-toolbar,
-  .sales-debtors-command-bar .data-table-toolbar-left { flex-wrap: nowrap; gap: 6px; }
-  .sales-debtors-command-bar .data-table-toolbar button { padding-inline: 8px; }
+  .sales-debtors-command-bar .data-table-layout-control .mantine-Button-label { display: none; }
+  .sales-debtors-command-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }

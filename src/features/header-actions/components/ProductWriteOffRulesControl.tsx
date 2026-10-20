@@ -1,12 +1,13 @@
 import { ActionIcon, Box, Group, Indicator, Loader, Popover, ScrollArea, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { Package, X } from 'lucide-react'
+import { Package, Trash2 } from 'lucide-react'
 import { useEffect, useReducer } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getProductWriteOffRuleLocaleLabel } from '../../products/utils'
 import { deleteProductWriteOffRule, getProductWriteOffBaseRules } from '../api/productWriteOffRulesApi'
 import type { ProductWriteOffRule } from '../types'
+import { TableChip } from '../../../shared/ui/TableChip'
 
 type RulesState = {
   error: Error | null
@@ -153,13 +154,14 @@ export function ProductWriteOffRulesControl() {
           </Indicator>
         </ActionIcon>
       </Popover.Target>
-      <Popover.Dropdown className="write-off-rules-popover">
-        <Text size="sm" fw={700} mb={8}>
-          {t('Глобальні правила списання')}
-        </Text>
+      <Popover.Dropdown className="write-off-rules-popover" p={0}>
+        <Group className="write-off-rules-header" justify="space-between" wrap="nowrap">
+          <Text>{t('Глобальні правила списання')}</Text>
+          <TableChip tone="document" value={state.items.length} />
+        </Group>
 
         {state.isLoading && (
-          <Group gap="xs">
+          <Group className="write-off-rules-state" gap="xs">
             <Loader size="xs" color="orange" />
             <Text size="sm" c="dimmed">
               {t('Завантаження')}
@@ -168,43 +170,41 @@ export function ProductWriteOffRulesControl() {
         )}
 
         {!state.isLoading && state.error && (
-          <Text size="sm" c="red">
+          <Text className="write-off-rules-state" size="sm" c="red">
             {state.error.message}
           </Text>
         )}
 
         {!state.isLoading && !state.error && state.items.length === 0 && (
-          <Text size="sm" c="dimmed">
+          <Text className="write-off-rules-state" size="sm" c="dimmed">
             {t('Немає правил списання')}
           </Text>
         )}
 
         {!state.isLoading && !state.error && state.items.length > 0 && (
-          <ScrollArea h={220} type="auto">
-            <Stack gap={6}>
+          <ScrollArea.Autosize mah={280} type="auto">
+            <Stack gap={0}>
               {state.items.map((rule) => (
                 <Group key={rule.NetUid || rule.Id} gap="xs" justify="space-between" wrap="nowrap" className="write-off-rule-row">
                   <Box>
-                    <Text size="sm" fw={600}>
-                      {parseRuleLocale(rule.RuleLocale, t)}
-                    </Text>
-                    <Text size="xs" c="dimmed">
+                    <TableChip tone="document" value={parseRuleLocale(rule.RuleLocale, t)} />
+                    <Text mt={5} size="xs" c="dimmed">
                       {parseRuleType(rule.RuleType, t)}
                     </Text>
                   </Box>
                   <ActionIcon
                     aria-label={t('Видалити')}
-                    color="red"
+                    color="gray"
                     variant="subtle"
                     loading={state.removingNetUid === rule.NetUid}
                     onClick={() => removeRule(rule)}
                   >
-                    <X size={15} strokeWidth={2} />
+                    <Trash2 size={16} strokeWidth={1.7} />
                   </ActionIcon>
                 </Group>
               ))}
             </Stack>
-          </ScrollArea>
+          </ScrollArea.Autosize>
         )}
       </Popover.Dropdown>
     </Popover>

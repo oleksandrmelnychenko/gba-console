@@ -5,6 +5,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout, DataTableExpandToggleOptions } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
+import { WizardProductPhoto } from '../../sales-ukraine/components/new-sale-wizard/WizardProductPhoto'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { CartReserveOrderItem, ShoppingCartReserveItem } from '../types'
 import {
@@ -202,7 +203,7 @@ function CartReserveItems({
         distributeAvailableWidth
         emptyText={t('Позицій не знайдено')}
         getRowId={getOrderItemKey}
-        layoutVersion="shopping-cart-reserve-items-5"
+        layoutVersion="shopping-cart-reserve-items-6"
         minWidth={columns.reduce((width, column) => width + (column.width || 0), 0)}
         showDensityToggle={false}
         showLayoutControls={false}
@@ -263,34 +264,42 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
       {
         id: 'name',
         header: 'Назва',
-        width: 240,
-        minWidth: 200,
+        width: 280,
+        minWidth: 240,
         accessor: (item) => item.Product?.Name || '',
         cell: (item) => (
-          <Stack gap={0}>
-            {item.Product?.NetUid ? (
-              <Anchor
-                className="cart-reserve-product-link"
-                component="button"
-                title={item.Product?.Name || ''}
-                type="button"
-                underline="never"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onOpenProductCard(item.Product?.NetUid as string)
-                }}
-              >
-                {item.Product?.Name || ''}
-              </Anchor>
-            ) : (
-              <Text className="cart-reserve-product-name" title={item.Product?.Name || ''}>{item.Product?.Name || ''}</Text>
+          <div className="cart-reserve-product-cell">
+            {item.Product && (
+              <WizardProductPhoto
+                className="cart-reserve-product-photo"
+                product={item.Product}
+              />
             )}
-            {item.Comment ? (
-              <Text className="cart-reserve-comment" lineClamp={1} title={item.Comment}>
-                {item.Comment}
-              </Text>
-            ) : null}
-          </Stack>
+            <Stack className="cart-reserve-product-copy" gap={2}>
+              {item.Product?.NetUid ? (
+                <Anchor
+                  className="cart-reserve-product-link"
+                  component="button"
+                  title={item.Product?.Name || ''}
+                  type="button"
+                  underline="never"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onOpenProductCard(item.Product?.NetUid as string)
+                  }}
+                >
+                  {item.Product?.Name || ''}
+                </Anchor>
+              ) : (
+                <Text className="cart-reserve-product-name" title={item.Product?.Name || ''}>{item.Product?.Name || ''}</Text>
+              )}
+              {item.Comment ? (
+                <Text className="cart-reserve-comment" lineClamp={1} title={item.Comment}>
+                  {item.Comment}
+                </Text>
+              ) : null}
+            </Stack>
+          </div>
         ),
       },
       {

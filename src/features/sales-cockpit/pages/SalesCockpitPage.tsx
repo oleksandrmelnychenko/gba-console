@@ -371,7 +371,7 @@ function SalesCockpitPageContent() {
           [
             { label: 'Черга задач', value: 'tasks' },
             { label: 'Мої клієнти', value: 'clients' },
-            { label: 'Мої оферти', value: 'offers' },
+            { label: 'Мої пропозиції', value: 'offers' },
           ] as const
         ).map((tab) => (
           <button

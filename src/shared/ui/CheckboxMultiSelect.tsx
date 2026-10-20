@@ -22,6 +22,7 @@ export function CheckboxMultiSelect({
   label,
   placeholder,
   className,
+  dropdownClassName,
   limit,
   maxDropdownHeight = 260,
   searchable = true,
@@ -33,6 +34,7 @@ export function CheckboxMultiSelect({
   label?: string
   placeholder?: string
   className?: string
+  dropdownClassName?: string
   limit?: number
   maxDropdownHeight?: number
   searchable?: boolean
@@ -97,7 +99,7 @@ export function CheckboxMultiSelect({
         </InputBase>
       </Combobox.Target>
 
-      <Combobox.Dropdown>
+      <Combobox.Dropdown className={dropdownClassName}>
         {searchable && (
           <Combobox.Search
             value={search}

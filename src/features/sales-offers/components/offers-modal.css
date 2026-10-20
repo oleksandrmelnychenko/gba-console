@@ -45,3 +45,88 @@
   min-width: 0;
   text-align: left;
 }
+
+.app-modal.app-form-sheet.offers-create-modal .mantine-Input-input {
+  height: 32px;
+  min-height: 32px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 30px;
+}
+
+.app-modal.app-form-sheet.offers-create-modal .mantine-InputWrapper-label {
+  margin-bottom: 3px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.app-modal.app-form-sheet.offers-create-modal .mantine-Button-root {
+  height: 32px;
+  min-height: 32px;
+  font-size: 12px;
+}
+
+.offers-create-modal .app-modal-footer {
+  margin-top: 0;
+  padding-top: 10px;
+}
+
+.offers-create-modal__table-scroll {
+  min-width: 0;
+  overflow-x: auto;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+}
+
+.offers-create-modal .offers-modal-lines-table {
+  min-width: 560px;
+  border: 0;
+}
+
+.offers-create-modal .offers-modal-lines-table .mantine-Table-td:first-child {
+  white-space: normal;
+}
+
+.offers-create-modal__product {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.offers-create-modal__product-codes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* Select dropdowns render in a portal, outside the modal's typography scope. */
+.offers-create-select-dropdown {
+  padding: 4px;
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+}
+
+.offers-create-select-option {
+  min-height: 30px;
+  padding: 6px 8px;
+  color: var(--mantine-color-gray-9);
+  font: 400 12px / 1.4 var(--font-mono);
+}
+
+.offers-create-select-option .app-table-chip {
+  max-width: 100%;
+}
+
+.offers-create-select-option > span {
+  min-width: 0;
+}
+
+.offers-create-select-empty {
+  padding: 8px;
+  color: var(--mantine-color-gray-7);
+  font: 400 12px / 1.4 var(--font-sans);
+}

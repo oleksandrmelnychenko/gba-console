@@ -28,6 +28,7 @@ export type CartReserveClientAgreement = CartReserveEntity & {
 
 export type CartReserveProduct = CartReserveEntity & {
   CurrentEurToUahExchangeRate?: number
+  Image?: string
   MainOriginalNumber?: string
   Name?: string
   VendorCode?: string

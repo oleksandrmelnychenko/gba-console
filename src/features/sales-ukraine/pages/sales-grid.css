@@ -32,28 +32,6 @@
   width: 280px;
 }
 
-/* Keep the whole command bar on one baseline when the actual sales panel
-   has room; narrower panels retain the shared wrapping layout. */
-@container registry (min-width: 1760px) {
-  .sales-ukraine-page .sales-filter-bar > .app-filter-fields.sales-filter-row {
-    display: grid;
-    grid-template-columns:
-      260px minmax(170px, 1.1fr)
-      minmax(110px, 0.65fr) minmax(110px, 0.65fr)
-      minmax(145px, 1fr) minmax(170px, 1.1fr)
-      max-content max-content max-content;
-  }
-
-  .sales-ukraine-page .sales-filter-row > .app-filter-date-range {
-    width: 100%;
-  }
-
-  .sales-ukraine-page .sales-filter-row > .sales-filter-actions {
-    flex-wrap: nowrap;
-    margin-left: 0;
-  }
-}
-
 .sales-filter-search,
 .sales-filter-control,
 .sales-filter-date,
@@ -64,6 +42,12 @@
 
 .sales-filter-period-wrap {
   display: grid;
+}
+
+.sales-filter-period-icon-wrap {
+  flex: 0 0 36px;
+  align-self: end;
+  width: 36px;
 }
 
 .sales-filter-label {
@@ -119,6 +103,7 @@
   border-radius: 12px;
   box-shadow: 0 18px 44px rgba(20, 28, 38, 0.14);
   padding: 0;
+  max-width: calc(100vw - 24px);
 }
 
 .sales-filter-period-panel {
@@ -134,16 +119,32 @@
 .sales-filter-period-range {
   align-items: end;
   background: var(--mantine-color-white);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
   display: grid;
   gap: 8px;
-  grid-template-columns: minmax(0, 1fr) 16px minmax(0, 1fr);
-  padding: 10px 14px 10px 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .sales-filter-period-field {
   min-width: 0;
+}
+
+.sales-filter-period-menu .mantine-Input-input {
+  min-height: 36px;
+  height: 36px;
+  padding-inline: 8px;
+  font: 400 12px var(--font-mono);
+}
+
+.sales-filter-period-menu .mantine-Button-root {
+  height: 32px;
+  min-height: 32px;
+  padding-inline: 10px;
+  font: 600 12px var(--font-mono);
+}
+
+.sales-filter-period-error {
+  color: var(--mantine-color-red-7);
+  font: 400 12px/16px var(--font-sans);
 }
 
 .sales-filter-period-separator {
@@ -250,7 +251,7 @@
 .sales-filter-dropdown-option:hover,
 .sales-filter-dropdown-option[data-combobox-selected],
 .sales-filter-dropdown-option[aria-selected='true'] {
-  background: #fff4eb;
+  background: var(--mantine-color-gray-1);
   color: var(--mantine-color-gray-9);
 }
 
@@ -412,7 +413,7 @@
 
 .sales-filter-organisation-option:hover,
 .sales-filter-organisation-option.is-selected {
-  background: #fff4eb;
+  background: var(--mantine-color-gray-1);
   color: var(--mantine-color-gray-9);
 }
 
@@ -1479,4 +1480,35 @@
   .sales-grid-skeleton-line {
     animation: none;
   }
+}
+
+/* Use natural field widths. Only crowded toolbars switch to compact controls. */
+.sales-ukraine-page .app-filter-fields > .sales-filter-status { flex: 0 1 140px; }
+.sales-ukraine-page .app-filter-fields > .sales-filter-organisation-picker { flex: 0 1 180px; }
+.sales-ukraine-page .app-filter-fields > .sales-filter-manager { flex: 0 1 150px; }
+.sales-ukraine-page .app-filter-fields > .sales-filter-search { flex: 0 1 190px; }
+.sales-ukraine-page .app-filter-fields > .sales-filter-client { flex: 0 1 200px; }
+
+@container registry (max-width: 1700px) {
+  .sales-ukraine-page .app-filter-fields > .sales-filter-status { flex-basis: 110px; }
+  .sales-ukraine-page .app-filter-fields > .sales-filter-organisation-picker { flex-basis: 140px; }
+  .sales-ukraine-page .app-filter-fields > .sales-filter-manager { flex-basis: 130px; }
+  .sales-ukraine-page .app-filter-fields > .sales-filter-search { flex-basis: 140px; }
+  .sales-ukraine-page .app-filter-fields > .sales-filter-client { flex-basis: 150px; }
+}
+
+@container registry (max-width: 1360px) {
+  .sales-ukraine-page .app-filter-fields > .sales-filter-status { flex-basis: 100px; }
+  .sales-ukraine-page .app-filter-fields > .sales-filter-organisation-picker { flex-basis: 130px; }
+  .sales-ukraine-page .app-filter-fields > .sales-filter-manager { flex-basis: 110px; }
+  .sales-ukraine-page .app-filter-fields > .sales-filter-search { flex-basis: 120px; }
+  .sales-ukraine-page .app-filter-fields > .sales-filter-client { flex-basis: 140px; }
+  .sales-ukraine-page .sales-filter-ecommerce .mantine-Checkbox-label { display: none; }
+  .sales-ukraine-page .sales-filter-create {
+    width: 36px;
+    min-width: 36px;
+    padding-inline: 0;
+  }
+  .sales-ukraine-page .sales-filter-create .mantine-Button-label { display: none; }
+  .sales-ukraine-page .sales-filter-create .mantine-Button-section { margin: 0; }
 }

@@ -77,6 +77,7 @@ import {
   usePersistentSalesMutation,
 } from '../../sales-ukraine/persistentSalesMutation'
 import { ClientReturnsReportPanel } from '../components/ClientReturnsReportPanel'
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 
 const SALE_ITEMS_TABLE_LAYOUT = {
   columnPinning: {
@@ -185,6 +186,8 @@ export function NewUkraineSaleReturnPage() {
   const [isLoadingEditorStorages, setLoadingEditorStorages] = useState(false)
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
   const salesRequestIdRef = useRef(0)
+  const editorRequestIdRef = useRef(0)
+  const storageRequestIdRef = useRef(0)
 
   const { items, isLoading } = listState
   const filteredItems = useMemo(() => filterReturns(items, searchValue), [items, searchValue])
@@ -319,6 +322,9 @@ export function NewUkraineSaleReturnPage() {
     const timeout = window.setTimeout(() => {
       searchSalesReturnClients(normalizedSearch, controller.signal)
         .then((nextClients) => {
+          if (controller.signal.aborted) {
+            return
+          }
           // Mantine replaces the search text with the rendered option label
           // after selection. A request for that decorated label can resolve
           // empty; retain the selected entity so its NetUid remains available
@@ -348,6 +354,35 @@ export function NewUkraineSaleReturnPage() {
   function updateListSearch(nextSearchValue: string) {
     setPage(1)
     setSearchDraft(nextSearchValue)
+  }
+
+  function openCreate() {
+    salesRequestIdRef.current += 1
+    editorRequestIdRef.current += 1
+    storageRequestIdRef.current += 1
+    setOrganizationId(null)
+    setClients([])
+    setClientId(null)
+    setClientSearch('')
+    setSaleSearch('')
+    setSaleFromDate(shiftDateInput(-1825))
+    setSaleToDate(shiftDateInput(0))
+    setSalesState({ isLoading: false, sales: [] })
+    setDrafts([])
+    setCreateError(null)
+    setCreateWarning(null)
+    setReviewOpened(false)
+    setReviewError(null)
+    setEditor(null)
+    setEditorQty('')
+    setEditorStatus(undefined)
+    setEditorStorageId(null)
+    setEditorStorages([])
+    setEditorVatWarning(null)
+    setEditorError(null)
+    setLoadingEditorStorages(false)
+    setProductCardNetId(null)
+    setCreateOpened(true)
   }
 
   const loadSales = useCallback(async (signal?: AbortSignal) => {
@@ -399,7 +434,7 @@ export function NewUkraineSaleReturnPage() {
     try {
       const sales = await getSalesForReturn(searchParams, signal)
 
-      if (requestId !== salesRequestIdRef.current) {
+      if (signal?.aborted || requestId !== salesRequestIdRef.current) {
         return
       }
 
@@ -507,6 +542,9 @@ export function NewUkraineSaleReturnPage() {
   }
 
   function openEditor(row: SaleItemRow) {
+    editorRequestIdRef.current += 1
+    storageRequestIdRef.current += 1
+    setLoadingEditorStorages(false)
     const draft = drafts.find((item) => getOrderItemKey(item.orderItem) === getOrderItemKey(row.item))
 
     setEditor({
@@ -527,6 +565,7 @@ export function NewUkraineSaleReturnPage() {
   }
 
   async function loadEditorVatWarning(row: SaleItemRow) {
+    const requestId = editorRequestIdRef.current
     const orderItemNetId = row.item.NetUid
 
     if (!orderItemNetId) {
@@ -536,13 +575,18 @@ export function NewUkraineSaleReturnPage() {
     try {
       const vatWarning = await getReturnVatWarning(orderItemNetId)
 
-      setEditorVatWarning(vatWarning || null)
+      if (requestId === editorRequestIdRef.current) {
+        setEditorVatWarning(vatWarning || null)
+      }
     } catch {
-      setEditorVatWarning(null)
+      if (requestId === editorRequestIdRef.current) {
+        setEditorVatWarning(null)
+      }
     }
   }
 
   async function loadEditorStorages(row: SaleItemRow, status?: SalesReturnItemStatusValue) {
+    const requestId = ++storageRequestIdRef.current
     const orderItemNetId = row.item.NetUid
     // Fall back to the organization the user filtered by when the sale payload
     // omits the deeply-nested Organization.NetUid — otherwise the editor hard-
@@ -570,6 +614,9 @@ export function NewUkraineSaleReturnPage() {
         status,
       })
 
+      if (requestId !== storageRequestIdRef.current) {
+        return
+      }
       setEditorStorages(storages)
       setEditorStorageId((currentStorageId) => {
         if (currentStorageId && storages.some((storage) => getEntityKey(storage) === currentStorageId)) {
@@ -579,9 +626,13 @@ export function NewUkraineSaleReturnPage() {
         return storages[0] ? getEntityKey(storages[0]) : null
       })
     } catch (loadError) {
-      setEditorError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити склади повернення'))
+      if (requestId === storageRequestIdRef.current) {
+        setEditorError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити склади повернення'))
+      }
     } finally {
-      setLoadingEditorStorages(false)
+      if (requestId === storageRequestIdRef.current) {
+        setLoadingEditorStorages(false)
+      }
     }
   }
 
@@ -713,30 +764,15 @@ export function NewUkraineSaleReturnPage() {
     <Box className="new-sale-return-page console-table-page">
       <div className="sales-dashboard-tab-content new-sale-return-shell">
         <div className="new-sale-return-command-bar app-filter-bar">
-          <div className="app-filter-date-range">
-            <TextInput
-              className="new-sale-return-date-input"
-              label={t('Від')}
-              max={toDate || undefined}
-              type="date"
-              value={fromDate}
-              onChange={(event) => {
-                setPage(1)
-                setFromDate(event.currentTarget.value)
-              }}
-            />
-            <TextInput
-              className="new-sale-return-date-input"
-              label={t('До')}
-              min={fromDate || undefined}
-              type="date"
-              value={toDate}
-              onChange={(event) => {
-                setPage(1)
-                setToDate(event.currentTarget.value)
-              }}
-            />
-          </div>
+          <ToolbarDateRangeFilter
+            from={fromDate}
+            to={toDate}
+            onChange={({ from, to }) => {
+              setPage(1)
+              setFromDate(from)
+              setToDate(to)
+            }}
+          />
 
           <TextInput
             className="new-sale-return-search-input"
@@ -763,13 +799,16 @@ export function NewUkraineSaleReturnPage() {
           </div>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot new-sale-return-table-toolbar-slot" />
           <div className="new-sale-return-create-actions">
-            <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
-              leftSection={<FileChartColumn size={16} />}
-              onClick={() => setReportOpened(true)}
-            >
-              {t('Сформувати звіт')}
-            </Button>
-            <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} onClick={() => setCreateOpened(true)}>
+            <Tooltip label={t('Сформувати звіт')}>
+              <Button variant="default" size="sm" className="new-sale-return-report-action"
+                aria-label={t('Сформувати звіт')}
+                leftSection={<FileChartColumn size={16} />}
+                onClick={() => setReportOpened(true)}
+              >
+                {t('Сформувати звіт')}
+              </Button>
+            </Tooltip>
+            <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} onClick={openCreate}>
               {t('Створити')}
             </Button>
           </div>
@@ -812,18 +851,23 @@ export function NewUkraineSaleReturnPage() {
 
       <AppDrawer
         className="new-sale-return-create-sheet"
-        footer={
-          <Button color="brand" variant="filled" size="sm" disabled={!drafts.length} leftSection={<Eye size={16} />} onClick={openReview}>
-            {t('Перегляд')} ({drafts.length})
-          </Button>
-        }
         opened={createOpened}
         position="right"
-        size="100%"
+        size="full"
         title={t('Нове повернення')}
         onClose={() => setCreateOpened(false)}
+        footer={
+          <Group gap={8}>
+            <Button variant="default" onClick={() => setCreateOpened(false)}>
+              {t('Скасувати')}
+            </Button>
+            <Button color="brand" variant="filled" size="sm" disabled={!drafts.length} leftSection={<Eye size={16} />} onClick={openReview}>
+              {t('Перегляд')} ({drafts.length})
+            </Button>
+          </Group>
+        }
       >
-        <Stack className={`new-sale-return-create-workspace${!saleItemRows.length ? ' is-empty' : ''}`} gap={8}>
+        <Stack className={`new-sale-return-create-workspace${!saleItemRows.length ? ' is-empty' : ''}`} gap={10}>
           {createError ? (
             <Alert color="red" icon={<CircleAlert size={16} />} title={t('Помилка')}>
               {createError}
@@ -889,8 +933,8 @@ export function NewUkraineSaleReturnPage() {
                 height="100%"
                 isLoading={salesState.isLoading}
                 distributeAvailableWidth
-                layoutVersion="sales-return-new-sale-items-compact-3"
-                minWidth={1364}
+                layoutVersion="sales-return-new-sale-items-compact-4"
+                minWidth={1464}
                 tableId="sales-return-new-sale-items"
                 toolbarPortalTarget={createTableToolbarSlot}
               /> : (
@@ -1263,7 +1307,7 @@ function ReturnOrganizationCell({ saleReturn }: { saleReturn: SalesReturn }) {
 
   return (
     <span className="new-sale-return-two-line">
-      <span className="new-sale-return-main-line" title={organization}>{organization}</span>
+      <TableChip tone="product" value={organization} />
       {storage ? (
         <span className="new-sale-return-organization-meta">
           <span className="app-role-pill new-sale-return-storage-pill is-storage" title={storage}>
@@ -1486,11 +1530,18 @@ function useSaleItemColumns({
         cell: (row) => (
           <span className="new-sale-return-create-amount">
             <strong className="app-money">{formatMoney(row.item.TotalAmountLocal)}</strong>
-            <TableChip tone="source" value={row.sale.ClientAgreement?.Agreement?.Currency?.Code} />
           </span>
         ),
         align: 'right',
         width: 140,
+      },
+      {
+        id: 'currency',
+        header: t('Валюта'),
+        accessor: (row) => row.sale.ClientAgreement?.Agreement?.Currency?.Code,
+        cell: (row) => <TableChip tone="source" value={row.sale.ClientAgreement?.Agreement?.Currency?.Code} />,
+        width: 100,
+        minWidth: 100,
       },
       {
         id: 'draft',
@@ -1673,7 +1724,7 @@ function ReturnDetails({
 
       <section className="new-sale-return-detail-participants" aria-label={t('Учасники')}>
         <ReturnDetailRow label={t('Договір')} value={saleReturn.ClientAgreement?.Agreement?.Name} />
-        <ReturnDetailRow label={t('Організація')} value={saleReturn.ClientAgreement?.Agreement?.Organization?.Name} />
+        <ReturnDetailRow label={t('Організація')} value={<TableChip tone="product" value={saleReturn.ClientAgreement?.Agreement?.Organization?.Name} />} />
         <ReturnDetailRow label={t('Склад')} value={<TableChip tone="storage" value={displayValue(saleReturn.Storage?.Name)} />} />
       </section>
 

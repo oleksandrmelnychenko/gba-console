@@ -42,13 +42,11 @@ describe('NotificationCenter', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Сповіщення: 1 непрочитаних/ }))
     const notificationTitle = await screen.findByText('Нове замовлення з інтернет-магазину')
-    expect(screen.getByText((_, element) => (
-      element?.classList.contains('console-notification-message') === true
-      && element.textContent?.includes('Ін00001234 · Shop Client · 9 090,00 UAH · 3 поз.') === true
-    ))).not.toBeNull()
-    expect(screen.getByText('Ін00001234').classList.contains('console-notification-reference-tag')).toBe(true)
-    expect(screen.getByText('Shop Client').classList.contains('console-notification-message-strong')).toBe(true)
-    expect(screen.getByText('3 поз.').classList.contains('console-notification-message-strong')).toBe(true)
+    expect(screen.getByText('Ін00001234').closest('.app-table-chip')).not.toBeNull()
+    expect(screen.getByText('Shop Client')).not.toBeNull()
+    expect(screen.getByText('9 090,00')).not.toBeNull()
+    expect(screen.getByText('UAH').closest('.app-table-chip')).not.toBeNull()
+    expect(screen.getByText('3 поз.').closest('.app-table-chip')).not.toBeNull()
     expect(document.querySelector('.console-notification-time')?.textContent).toMatch(/^\d{2}\.\d{2}\s\d{2}:\d{2}$/)
 
     fireEvent.click(notificationTitle)
@@ -81,12 +79,9 @@ describe('NotificationCenter', () => {
     fireEvent.click(screen.getByRole('button', { name: /Сповіщення: 2 непрочитаних/ }))
     await screen.findByText('Нова зацікавленість з інтернет-магазину')
 
-    expect(screen.getByText('011.058-00-PE').classList.contains('console-notification-reference-tag')).toBe(true)
-    expect(screen.getByText('Уляна тест 3').classList.contains('console-notification-message-strong')).toBe(true)
-    expect(screen.getByText('2 шт.').classList.contains('console-notification-message-strong')).toBe(true)
-    expect(screen.getByText((_, element) => (
-      element?.classList.contains('console-notification-message') === true
-      && element.textContent?.includes('011.058-00-PE · Уляна тест 3 · Кільце ущільнююче · 2 шт.') === true
-    ))).not.toBeNull()
+    expect(screen.getByText('011.058-00-PE').closest('.app-table-chip')).not.toBeNull()
+    expect(screen.getByText('Уляна тест 3')).not.toBeNull()
+    expect(screen.getByText('Кільце ущільнююче')).not.toBeNull()
+    expect(screen.getByText('2 шт.').closest('.app-table-chip')).not.toBeNull()
   })
 })

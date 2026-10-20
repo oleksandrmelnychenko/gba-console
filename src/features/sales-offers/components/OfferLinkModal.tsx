@@ -31,14 +31,14 @@ export function OfferLinkModal({
   return (
     <AppModal
       opened={Boolean(offer)}
-      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Оферту створено')}</span>}
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Пропозицію створено')}</span>}
       onClose={onClose}
     >
       <Stack gap="md">
         <Stack gap={4}>
           {offer?.Number && (
             <Text size="sm">
-              {t('Номер оферти')}: <strong>{offer.Number}</strong>
+              {t('Номер пропозиції')}: <strong>{offer.Number}</strong>
             </Text>
           )}
           {validUntil && (
@@ -76,7 +76,7 @@ export function OfferLinkModal({
 
         <Group justify="space-between">
           <Anchor href="/sales/ukraine/offers" size="xs">
-            {t('Всі оферти')}
+            {t('Всі пропозиції')}
           </Anchor>
           <Button color="gray" variant="light" onClick={onClose}>
             {t('Закрити')}

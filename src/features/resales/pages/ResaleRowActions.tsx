@@ -1,5 +1,4 @@
 import { Group } from '@mantine/core'
-import { Link } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import type {
@@ -64,12 +63,6 @@ export function ResaleRowActions({
           onClick={() => onDelete(resale)}
         />
       )}
-      <TableRowAction
-        action="open"
-        component={Link}
-        label={t('Відкрити')}
-        to={`/resales/${resale.NetUid || ''}`}
-      />
     </Group>
   )
 }

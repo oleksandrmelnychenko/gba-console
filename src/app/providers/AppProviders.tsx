@@ -6,11 +6,12 @@ import { AuthProvider } from '../../features/auth/AuthProvider'
 import { I18nProvider } from '../../shared/i18n/I18nProvider'
 import { RealtimeProvider } from '../../shared/realtime/RealtimeProvider'
 import { theme } from '../../shared/theme/theme'
+import './notifications.css'
 
 export function AppProviders({ children }: PropsWithChildren) {
   return (
     <MantineProvider theme={theme}>
-      <Notifications position="top-right" />
+      <Notifications position="bottom-right" containerWidth={380} className="app-toasts" />
       <BrowserRouter>
         <I18nProvider>
           <AuthProvider>

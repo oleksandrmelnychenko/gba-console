@@ -371,7 +371,7 @@ function ClientRecommendationsForAgreement({
   )
 
   const offerDisabledReason = !state.agreement
-    ? t('Щоб створити оферту, додайте клієнту активний договір')
+    ? t('Щоб створити пропозицію, додайте клієнту активний договір')
     : chosen.length === 0
       ? t('Виберіть хоча б один товар')
       : ''
@@ -482,12 +482,12 @@ function ClientRecommendationsForAgreement({
                       variant="light"
                       onClick={handleCreateOffer}
                     >
-                      {chosen.length > 0 ? `${t('Створити оферту')} (${chosen.length})` : t('Створити оферту')}
+                      {chosen.length > 0 ? `${t('Створити пропозицію')} (${chosen.length})` : t('Створити пропозицію')}
                     </Button>
                   </span>
                 </Tooltip>
               )}
-              <Tooltip label={t('Термін дії оферти')} withArrow>
+              <Tooltip label={t('Термін дії пропозиції')} withArrow>
                 <Select
                   allowDeselect={false}
                   data={[

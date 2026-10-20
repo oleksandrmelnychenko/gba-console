@@ -70,7 +70,7 @@ describe('sales offer mutation contracts', () => {
     offer.OrderItems = [...(offer.OrderItems ?? []), { Product: { Id: 21, NetUid: productNetUid }, Qty: 1 }]
 
     await expect(createOffer(offer, { operationId })).rejects.toThrow(
-      'Один товар не можна додати до оферти двічі',
+      'Один товар не можна додати до пропозиції двічі',
     )
     expect(apiRequestMock).not.toHaveBeenCalled()
   })
@@ -80,7 +80,7 @@ describe('sales offer mutation contracts', () => {
     offer.OrderItems![0].Qty = Number.NaN
 
     await expect(processOffer(offer, { operationId })).rejects.toThrow(
-      'Кількість товару в оферті має бути більшою за нуль',
+      'Кількість товару в пропозиції має бути більшою за нуль',
     )
     expect(apiRequestMock).not.toHaveBeenCalled()
   })

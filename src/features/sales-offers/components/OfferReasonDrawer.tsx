@@ -58,7 +58,7 @@ export function OfferReasonDrawer({
       }
       opened={isOpen}
       size="lg"
-      title={offer ? `${t('Оферта')} ${offer.Number ?? ''}` : t('Причини')}
+      title={offer ? `${t('Пропозиція')} ${offer.Number ?? ''}` : t('Причини')}
       onClose={close}
     >
       {isOpen && offer && (
@@ -112,7 +112,7 @@ function OfferReasonForm({
 
     try {
       await processOffer(payload, { operationId })
-      notifications.show({ color: 'green', message: t('Оферту успішно оновлено') })
+      notifications.show({ color: 'green', message: t('Пропозицію успішно оновлено') })
       onSaved()
     } catch (error) {
       notifications.show({

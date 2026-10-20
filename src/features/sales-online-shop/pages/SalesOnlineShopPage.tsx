@@ -2053,7 +2053,7 @@ function SaleSourceIcon({ sale }: { sale: SalesOnlineShopSale }) {
     source === 0
       ? { icon: <Globe size={14} />, label: t('Інтернет-магазин') }
       : source === 2
-        ? { icon: <Tag size={14} />, label: t('Оферта') }
+        ? { icon: <Tag size={14} />, label: t('Пропозиція') }
         : isInvoiceStage
           ? { icon: <ReceiptText size={14} />, label: t('Накладна') }
           : { icon: <Receipt size={14} />, label: t('Рахунок') }

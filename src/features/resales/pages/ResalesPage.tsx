@@ -21,10 +21,11 @@ import {
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Download, FileDown, Pencil, Plus, RefreshCw, RotateCcw, Search, Truck } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate, formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
@@ -112,16 +113,21 @@ import {
   RESALE_DOCUMENT_EXPORT_PERMISSION,
   RESALE_EDIT_PERMISSION,
 } from '../permissions'
+import { DocumentDetailLayout, DocumentDetailSummary, DocumentDetailSection, DocumentDetailChip } from '../../../shared/ui/document-detail/DocumentDetail'
+import { SalesDashboardShell } from '../../../shared/ui/SalesDashboardShell'
 import './resales-page.css'
+import './resale-detail-sheet.css'
+import './resale-consignment-note.css'
 
 const PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 const DEFAULT_RESALES_LOOKBACK_DAYS = 3
 
 const RESALES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
-    left: ['status', 'created', 'number'],
+    left: ['number'],
     right: ['actions'],
   },
+  columnVisibility: { agreement: false, comment: false, currency: false, amountLocal: false, payment: false },
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
@@ -149,6 +155,7 @@ const DETAIL_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['vendorCode', 'productName'],
   },
+  columnVisibility: { measure: false, specification: false, locations: false, vat: false, profit: false, profitability: false },
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
@@ -391,29 +398,25 @@ export function ResalesPage() {
       <div className="sales-dashboard-tab-content resales-card">
         <div className="app-filter-bar resales-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields resales-filter-row">
-            <div className="app-filter-date-range">
-              <TextInput
-                label={t('Від')}
-                max={toDate || undefined}
-                type="date"
-                value={fromDate}
-                onChange={(event) => {
-                  setPage(1)
-                  setFromDate(event.currentTarget.value)
-                }}
-              />
-              <TextInput
-                label={t('До')}
-                min={fromDate || undefined}
-                type="date"
-                value={toDate}
-                onChange={(event) => {
-                  setPage(1)
-                  setToDate(event.currentTarget.value)
-                }}
-              />
-            </div>
+            <ToolbarDateRangeFilter
+              from={fromDate}
+              to={toDate}
+              onChange={({ from, to }) => {
+                setPage(1)
+                setFromDate(from)
+                setToDate(to)
+              }}
+            />
             <Select
+              className="resales-status-filter"
+              comboboxProps={{
+                classNames: {
+                  dropdown: 'resales-filter-dropdown',
+                  option: 'resales-filter-option',
+                },
+                position: 'bottom-start',
+                width: 'max-content',
+              }}
               allowDeselect={false}
               data={[
                 { label: t('Усі'), value: '0' },
@@ -422,7 +425,6 @@ export function ResalesPage() {
               ]}
               label={t('Статус')}
               value={status}
-              w={160}
               onChange={(value) => {
                 setPage(1)
                 setStatus(value || '0')
@@ -489,15 +491,17 @@ export function ResalesPage() {
             getRowId={(resale, index) => String(resale.NetUid || resale.Id || index)}
             height="100%"
             isLoading={isLoading}
-            layoutVersion="resales-table-2"
+            layoutVersion="resales-table-3"
             loadingText={t('Завантаження перепродажів')}
-            minWidth={1320}
+            minWidth={1100}
             showLayoutControls
             tableId="resales"
             toolbarPortalTarget={tableToolbarSlot}
             onRowClick={(resale) => {
               if (resale.NetUid) {
-                navigate(`/resales/${resale.NetUid}`)
+                navigate(`/resales/${resale.NetUid}`, {
+                  state: { backgroundLocation: location, returnPath: `${location.pathname}${location.search}` },
+                })
               }
             }}
           />
@@ -1226,6 +1230,26 @@ function NewResalePageContent({
 
 export function ResalePage() {
   const { t } = useI18n()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const hasBackground = Boolean((location.state as { backgroundLocation?: unknown } | null)?.backgroundLocation)
+  const close = () => {
+    if (hasBackground) navigate(-1)
+    else navigate('/resales', { replace: true })
+  }
+
+  return (
+    <>
+      {!hasBackground && <SalesDashboardShell><ResalesPage /></SalesDashboardShell>}
+      <AppDrawer opened size="full" title={t('Перепродаж')} className="resale-detail-sheet" onClose={close}>
+        <ResaleDetailContent />
+      </AppDrawer>
+    </>
+  )
+}
+
+function ResaleDetailContent() {
+  const { t } = useI18n()
   const { id } = useParams()
   const { hasPermission } = useAuth()
   const canEdit = hasPermission(RESALE_EDIT_PERMISSION)
@@ -1255,7 +1279,6 @@ export function ResalePage() {
   const [itemAvailability, setItemAvailability] = useValueState<string | null>('all')
   const [itemSpecification, setItemSpecification] = useValueState<string | null>('all')
   const [detailTableToolbarSlot, setDetailTableToolbarSlot] = useState<HTMLDivElement | null>(null)
-  const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const recalcTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const detailRequestRef = useRef(0)
   const recalcRef = useRef<(itemModels: UpdatedResaleItemModel[]) => void>(() => {})
@@ -1327,7 +1350,7 @@ export function ResalePage() {
     return () => {
       cancelled = true
     }
-  }, [applyDetailResult, id, reloadKey, setError, setLoading, setWarning, t])
+  }, [applyDetailResult, id, setError, setLoading, setWarning, t])
 
   useEffect(() => {
     recalcRef.current = (itemModels: UpdatedResaleItemModel[]) => {
@@ -1346,6 +1369,19 @@ export function ResalePage() {
   )
 
   const totals = useMemo(() => getDetailTotals(model, rows), [model, rows])
+  const editAgreementOptions = useMemo(() => {
+    const options = buildClientAgreementOptions(detailInfo.client, model?.ReSale.Organization, false)
+    const selected = detailInfo.clientAgreement
+    const selectedValue = selected?.NetUid || (typeof selected?.Id === 'number' ? String(selected.Id) : '')
+    if (selected && selectedValue && !options.some((option) => option.value === selectedValue)) {
+      const currency = selected.Agreement?.Currency?.Code
+      options.unshift({
+        value: selectedValue,
+        label: `${getAgreementName(selected.Agreement) || t('Угода')}${currency ? ` (${currency})` : ''}`,
+      })
+    }
+    return options
+  }, [detailInfo.client, detailInfo.clientAgreement, model?.ReSale.Organization, t])
   const indexedRows = useMemo(
     () => rows.map((row, index) => ({ ...row, __rowIndex: index } as UpdatedResaleItemModel & { __rowIndex: number })),
     [rows],
@@ -1496,7 +1532,13 @@ export function ResalePage() {
         return
       }
 
+      if (!result.data) {
+        setError(t('Не вдалося підтвердити збереження перепродажу. Оновіть дані перед повторною спробою.'))
+        return
+      }
+
       applyDetailResult(result)
+      setEditDrawerOpened(false)
       notifications.show({
         color: 'green',
         message: t('Перепродаж збережено'),
@@ -1670,9 +1712,9 @@ export function ResalePage() {
           emptyText={t('Позицій не знайдено')}
           getRowId={(_row, index) => String(index)}
           isLoading
-          layoutVersion="resale-detail-items-table-2"
+          layoutVersion="resale-detail-items-table-3"
           loadingText={t('Завантаження перепродажу')}
-          minWidth={1800}
+          minWidth={1080}
           tableId="resale-detail-items"
         />
       </Card>
@@ -1688,45 +1730,28 @@ export function ResalePage() {
   }
 
   return (
-    <Stack className="resale-detail-page console-table-page" gap={6}>
-      <div className="console-table-shell resale-detail-shell">
-      <div className="resale-detail-overview">
-      <section className="resale-detail-document">
-      <div className="resale-detail-summary">
-        <div className="resale-detail-summary__main">
-          <Text className="app-detail-eyebrow">{changedToInvoice ? t('Інвойс') : t('Рахунок')}</Text>
-          <Group gap="xs" align="center">
-            <Text className="app-detail-title" component="h1">
-              {displayValue(model.ReSale.SaleNumber?.Value)}
-            </Text>
-            <Badge color={getResaleStatusColor(model.ReSale)} variant="light">
-              {getResaleStatusLabel(model.ReSale)}
-            </Badge>
-          </Group>
-          <Text className="resale-detail-heading__meta">{formatDateTime(model.ReSale.Created)}</Text>
-        </div>
-        <div className="resale-detail-summary__metrics">
-          <ResaleSummaryMetric label={t('Сума')} value={formatMoney(totals.amount)} />
-          <ResaleSummaryMetric label={t('Сума, грн')} value={formatMoney(getResaleUahAmount(model.ReSale))} />
-          <ResaleSummaryMetric label={t('Оплачено')} value={formatMoney(model.ReSale.TotalPaymentAmount)} />
-          <ResaleSummaryMetric
-            danger={Number(model.ReSale.DifferencePaymentAndInvoiceAmount || 0) !== 0}
-            label={t('Різниця')}
-            value={formatMoney(model.ReSale.DifferencePaymentAndInvoiceAmount)}
-          />
-        </div>
-        <Group className="resale-detail-summary__actions" gap="xs">
-          <Button component={Link} to="/resales" color="gray" variant="light">
-            {t('До списку')}
-          </Button>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon aria-label={t('Оновити')} color="gray" size={38} variant="light" onClick={() => reload()}>
-              <RefreshCw size={18} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
-      </div>
-
+    <Stack className="resale-detail-page" gap={12}>
+      <DocumentDetailLayout variant="inventory" summary={
+        <DocumentDetailSummary
+          variant="inventory"
+          eyebrow={t('Перепродаж')}
+          title={displayValue(model.ReSale.SaleNumber?.Value)}
+          status={<Badge color={getResaleStatusColor(model.ReSale)} variant="light">{getResaleStatusLabel(model.ReSale)}</Badge>}
+          meta={<>
+            <DocumentDetailChip>{formatDateTime(model.ReSale.Created)}</DocumentDetailChip>
+            <DocumentDetailChip>{t('Кількість')}: {formatAmount(totals.qty)}</DocumentDetailChip>
+          </>}
+          metrics={<>
+            <ResaleDetailMoney label={t('Сума')} value={totals.amount} />
+            <ResaleDetailMoney label={t('Оплачено')} value={model.ReSale.TotalPaymentAmount} />
+            <ResaleDetailMoney
+              danger={Number(model.ReSale.DifferencePaymentAndInvoiceAmount || 0) !== 0}
+              label={t('Різниця')}
+              value={model.ReSale.DifferencePaymentAndInvoiceAmount}
+            />
+          </>}
+        />
+      }>
       {(error || warning) && (
         <Alert color={warning ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
           <Stack gap={4}>
@@ -1740,26 +1765,15 @@ export function ResalePage() {
         </Alert>
       )}
 
-      <div className="resale-detail-content-grid">
-        <section className="resale-detail-panel resale-detail-panel--facts">
-          <Text className="app-section-title">{t('Дані перепродажу')}</Text>
-          <div className="resale-detail-facts">
-            <ResaleDetailLine label={t('Статус')} value={getResaleStatusLabel(model.ReSale)} />
-            <ResaleDetailLine label={t('Відповідальний')} value={model.ReSale.ChangedToInvoiceBy?.LastName || model.ReSale.User?.LastName} />
-            <ResaleDetailLine label={t('Організація')} value={model.ReSale.Organization?.Name || model.ReSale.Organization?.FullName} />
-            <ResaleDetailLine label={t('Дата створення')} mono value={formatDateTime(model.ReSale.Created)} />
-          </div>
-          <div className="resale-detail-aux-metrics">
-            <ResaleAuxMetric label={t('Кількість')} value={formatAmount(totals.qty)} />
-            <ResaleAuxMetric label={t('ПДВ')} value={formatMoney(totals.vat)} />
-            <ResaleAuxMetric label={t('Вага')} value={formatAmount(totals.weight)} />
-          </div>
-        </section>
-
-        <section className="resale-detail-panel resale-detail-panel--client">
-          <Group className="resale-detail-panel-heading" justify="space-between" align="center" wrap="nowrap">
-            <Text className="app-section-title">{t('Клієнт і угода')}</Text>
-            {canEdit && <Button
+      <div className="resale-detail-participants">
+        <DocumentDetailSection title={t('Дані перепродажу')} stacked>
+          <ResaleDetailLine label={t('Відповідальний')} tone="product" value={model.ReSale.ChangedToInvoiceBy?.LastName || model.ReSale.User?.LastName} />
+          <ResaleDetailLine label={t('Організація')} tone="product" value={model.ReSale.Organization?.Name || model.ReSale.Organization?.FullName} />
+          <ResaleDetailLine label={t('ПДВ, UAH')} mono value={formatMoney(totals.vat)} />
+          <ResaleDetailLine label={t('Вага')} mono value={formatAmount(totals.weight)} />
+        </DocumentDetailSection>
+        <DocumentDetailSection title={t('Клієнт і угода')} stacked actions={
+            canEdit && <Button
               leftSection={<Pencil size={15} />}
               onClick={() => {
                 setDetailInfo({
@@ -1771,43 +1785,36 @@ export function ResalePage() {
               }}
             >
               {t('Редагувати')}
-            </Button>}
-          </Group>
-          <div className="resale-detail-client-overview">
-            <ResaleDetailLine label={t('Клієнт')} value={getClientName(model.ReSale.ClientAgreement?.Client)} />
-            <ResaleDetailLine label={t('Угода')} value={getAgreementName(model.ReSale.ClientAgreement?.Agreement)} />
-          </div>
-          <div className="resale-detail-comment">
-            <Text className="resale-detail-comment__label">{t('Коментар')}</Text>
-            <Text className="resale-detail-comment__value">{displayValue(model.ReSale.Comment)}</Text>
-          </div>
-          <Group className="resale-detail-document-actions" justify="flex-end">
-            {canExportDocuments && <Button disabled={!model.ReSale.NetUid} leftSection={<Download size={16} />} loading={isExporting} variant="outline" onClick={() => exportDocument(DocumentType.PaymentDocument)}>
+            </Button>
+        }>
+          <ResaleDetailLine label={t('Клієнт')} tone="warning" value={getClientName(model.ReSale.ClientAgreement?.Client)} />
+          <ResaleDetailLine label={t('Угода')} tone="neutral" value={getAgreementName(model.ReSale.ClientAgreement?.Agreement)} />
+          {model.ReSale.Comment && <ResaleDetailLine label={t('Коментар')} value={model.ReSale.Comment} />}
+          <Group className="resale-detail-document-actions" justify="flex-start">
+            {canExportDocuments && <Button disabled={!model.ReSale.NetUid} leftSection={<Download size={16} />} loading={isExporting} variant="default" onClick={() => exportDocument(DocumentType.PaymentDocument)}>
               {t('Платіжний документ')}
             </Button>}
             {canExportDocuments && changedToInvoice && (
-              <Button disabled={!model.ReSale.NetUid} leftSection={<Download size={16} />} loading={isExporting} variant="outline" onClick={() => exportDocument(DocumentType.SalesInvoice)}>
+              <Button disabled={!model.ReSale.NetUid} leftSection={<Download size={16} />} loading={isExporting} variant="default" onClick={() => exportDocument(DocumentType.SalesInvoice)}>
                 {t('Інвойс')}
               </Button>
             )}
             {canPrintConsignmentNote && changedToInvoice && (
-              <Button disabled={!model.ReSale.NetUid} leftSection={<Truck size={16} />} variant="outline" onClick={() => setConsignmentNoteOpened(true)}>
+              <Button disabled={!model.ReSale.NetUid} leftSection={<Truck size={16} />} variant="default" onClick={() => setConsignmentNoteOpened(true)}>
                 {t('ТТН')}
               </Button>
             )}
           </Group>
-        </section>
-      </div>
-      </section>
-
+        </DocumentDetailSection>
       </div>
 
       <section className="resale-detail-table-section">
         <Group className="resale-detail-table-heading" justify="space-between" align="center">
           <Text className="app-section-title">{t('Позиції перепродажу')}</Text>
-          <Badge color="gray" variant="light">
-            {filteredRows.length} / {rows.length}
-          </Badge>
+          <Group gap={6}>
+            <TableChip tone="source" value="UAH" title={t('Валюта цін і сум позицій')} />
+            <TableChip value={`${filteredRows.length} / ${rows.length}`} />
+          </Group>
         </Group>
         <div className="console-table-command-bar resale-detail-command-bar">
           <TextInput
@@ -1860,30 +1867,30 @@ export function ResalePage() {
           defaultLayout={DETAIL_TABLE_DEFAULT_LAYOUT}
           emptyText={t('Позицій не знайдено')}
           getRowId={(row, index) => String(row.ConsignmentItem?.NetUid || row.ConsignmentItem?.Id || index)}
-          layoutVersion="resale-detail-items-table-2"
-          height="100%"
-          minWidth={1800}
+          layoutVersion="resale-detail-items-table-3"
+          minWidth={1080}
           tableId="resale-detail-items"
           toolbarPortalTarget={detailTableToolbarSlot}
         />
         </div>
       </section>
-      </div>
+      </DocumentDetailLayout>
 
       <AppDrawer
         opened={canEdit && editDrawerOpened}
         size="compact"
+        className="resale-edit-sheet"
         title={t('Редагування перепродажу')}
         footer={(
           <Group className="resale-edit-drawer__footer" justify="space-between" wrap="nowrap">
             <Group gap="xs">
               {canConvert && !changedToInvoice && detailInfo.clientAgreement && (
-                <Button disabled={isSaving || isCompleted} loading={isSaving} color="green" onClick={changeToInvoice}>
+                <Button disabled={isSaving || isCompleted} loading={isSaving} color={CREATE_ACTION_COLOR} onClick={changeToInvoice}>
                   {t('Зробити інвойсом')}
                 </Button>
               )}
               {canComplete && changedToInvoice && detailInfo.clientAgreement && !model.ReSale.IsCompleted && (
-                <Button disabled={isSaving || isCompleted} loading={isSaving} color="green" onClick={completeInvoice}>
+                <Button disabled={isSaving || isCompleted} loading={isSaving} color={CREATE_ACTION_COLOR} onClick={completeInvoice}>
                   {t('Завершити')}
                 </Button>
               )}
@@ -1900,10 +1907,22 @@ export function ResalePage() {
         )}
         onClose={() => setEditDrawerOpened(false)}
       >
-        <Stack className="resale-edit-drawer" gap="md">
+        <Stack className="resale-edit-drawer" gap={10}>
+          {(error || warning) && (
+            <Alert color={warning ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
+              <Stack gap={4}>
+                <Text size="sm">{warning?.Message || error}</Text>
+                {warning?.Products?.map((product) => (
+                  <Text key={`${product.ProductId}-${product.VendorCode}`} size="xs">
+                    {displayValue(product.VendorCode)} - {formatAmount(product.Qty)}
+                  </Text>
+                ))}
+              </Stack>
+            </Alert>
+          )}
           <section className="resale-edit-drawer__section">
             <Text className="app-section-title">{t('Клієнт і угода')}</Text>
-            <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
+            <SimpleGrid cols={1} spacing={8}>
               <ResaleClientSelect
                 disabled={changedToInvoice || isSaving}
                 label={t('Клієнт')}
@@ -1913,7 +1932,7 @@ export function ResalePage() {
               <Select
                 searchable
                 disabled={changedToInvoice || isSaving || !detailInfo.client}
-                data={buildClientAgreementOptions(detailInfo.client, model.ReSale.Organization || undefined, false)}
+                data={editAgreementOptions}
                 label={t('Угода')}
                 value={detailInfo.clientAgreement?.NetUid || detailInfo.clientAgreement?.Id ? String(detailInfo.clientAgreement.NetUid || detailInfo.clientAgreement.Id) : null}
                 onChange={(value) => {
@@ -1925,7 +1944,9 @@ export function ResalePage() {
             <Textarea
               disabled={isSaving}
               label={t('Коментар')}
-              minRows={4}
+              autosize
+              minRows={3}
+              maxRows={6}
               value={detailInfo.comment}
               onChange={(event) => {
                 const nextValue = event.currentTarget.value
@@ -1938,7 +1959,7 @@ export function ResalePage() {
               <Text className="app-section-title">{t('Розрахунок')}</Text>
               <Text className="resale-edit-drawer__hint">{t('Оновіть суми після зміни клієнта, угоди або позицій.')}</Text>
             </div>
-            <Button disabled={isCompleted || isSaving} loading={isSaving} leftSection={<RefreshCw size={16} />} variant="light" onClick={() => recalculate()}>
+            <Button disabled={isCompleted || isSaving} loading={isSaving} leftSection={<RefreshCw size={16} />} variant="default" onClick={() => recalculate()}>
               {t('Перерахувати')}
             </Button>
           </section>
@@ -1985,8 +2006,8 @@ function useResalesColumns({
       {
         id: 'status',
         header: t('Статус'),
-        width: 126,
-        minWidth: 108,
+        width: 100,
+        minWidth: 90,
         accessor: (resale) => getResaleStatusLabel(resale),
         cell: (resale) => (
           <Badge color={getResaleStatusColor(resale)} variant="light">
@@ -1997,26 +2018,30 @@ function useResalesColumns({
       {
         id: 'created',
         header: t('Створено'),
-        width: 150,
-        minWidth: 132,
+        width: 115,
+        minWidth: 105,
         accessor: (resale) => resale.Created,
-        cell: (resale) => formatDateTime(resale.Created),
+        cell: (resale) => (
+          <span className="resales-registry-date">
+            {formatDateTime(resale.Created).split(', ').map((part, index) => <span key={index}>{part}</span>)}
+          </span>
+        ),
       },
       {
         id: 'number',
         header: t('Номер'),
-        width: 130,
-        minWidth: 108,
+        width: 140,
+        minWidth: 130,
         accessor: (resale) => resale.SaleNumber?.Value,
         cell: (resale) => <TableChip tone="document" value={displayValue(resale.SaleNumber?.Value)} />,
       },
       {
         id: 'client',
         header: t('Клієнт'),
-        width: 230,
+        width: 240,
         minWidth: 180,
         accessor: (resale) => getClientName(resale.ClientAgreement?.Client),
-        cell: (resale) => displayValue(getClientName(resale.ClientAgreement?.Client)),
+        cell: (resale) => <TableChip tone="warning" value={displayValue(getClientName(resale.ClientAgreement?.Client))} />,
       },
       {
         id: 'agreement',
@@ -2032,7 +2057,7 @@ function useResalesColumns({
         width: 220,
         minWidth: 180,
         accessor: (resale) => resale.Organization?.Name || resale.Organization?.FullName,
-        cell: (resale) => displayValue(resale.Organization?.Name || resale.Organization?.FullName),
+        cell: (resale) => <TableChip tone="product" value={displayValue(resale.Organization?.Name || resale.Organization?.FullName)} />,
       },
       {
         id: 'comment',
@@ -2050,11 +2075,16 @@ function useResalesColumns({
         id: 'amount',
         numeric: true,
         header: t('Сума'),
-        width: 120,
-        minWidth: 104,
+        width: 160,
+        minWidth: 145,
         align: 'right',
         accessor: (resale) => resale.TotalAmount,
-        cell: (resale) => formatMoney(resale.TotalAmount),
+        cell: (resale) => (
+          <span className="resales-registry-money">
+            <span>{formatMoney(resale.TotalAmount)}</span>
+            <TableChip tone="source" value={resale.ClientAgreement ? resale.ClientAgreement.Agreement?.Currency?.Code : 'UAH'} />
+          </span>
+        ),
       },
       {
         id: 'currency',
@@ -2063,7 +2093,7 @@ function useResalesColumns({
         width: 94,
         minWidth: 82,
         accessor: (resale) => resale.ClientAgreement?.Agreement?.Currency?.Code,
-        cell: (resale) => <TableChip tone="neutral" value={displayValue(resale.ClientAgreement?.Agreement?.Currency?.Code || 'UAH')} />,
+        cell: (resale) => <TableChip tone="source" value={resale.ClientAgreement ? resale.ClientAgreement.Agreement?.Currency?.Code : 'UAH'} />,
       },
       {
         id: 'amountLocal',
@@ -2073,7 +2103,12 @@ function useResalesColumns({
         minWidth: 104,
         align: 'right',
         accessor: (resale) => getResaleUahAmount(resale),
-        cell: (resale) => formatMoney(getResaleUahAmount(resale)),
+        cell: (resale) => (
+          <span className="resales-registry-money">
+            <span>{formatMoney(getResaleUahAmount(resale)) || '—'}</span>
+            {getResaleUahAmount(resale) !== undefined && <TableChip tone="source" value="UAH" />}
+          </span>
+        ),
       },
       {
         id: 'payment',
@@ -2090,8 +2125,8 @@ function useResalesColumns({
       {
         id: 'actions',
         header: '',
-        width: 184,
-        minWidth: 168,
+        width: 132,
+        minWidth: 116,
         enableSorting: false,
         enableHiding: false,
         enablePinning: false,
@@ -2519,10 +2554,10 @@ function useResaleDetailColumns({
                 onOpenProductCard(netId)
               }}
             >
-              {displayValue(getUpdatedRowVendorCode(row))}
+              <TableChip tone="product" value={getUpdatedRowVendorCode(row)} />
             </Anchor>
           ) : (
-            <Text fw={700}>{displayValue(getUpdatedRowVendorCode(row))}</Text>
+            <Text fw={700}><TableChip tone="product" value={getUpdatedRowVendorCode(row)} /></Text>
           )
         },
       },
@@ -2561,7 +2596,7 @@ function useResaleDetailColumns({
         width: 104,
         align: 'right',
         accessor: (row) => row.Qty,
-        cell: (row) => formatAmount(row.Qty),
+        cell: (row) => <span className="app-money">{formatAmount(row.Qty)} <span className="resale-detail-unit">{getUpdatedRowMeasureUnit(row)}</span></span>,
       },
       {
         id: 'measure',
@@ -3265,6 +3300,10 @@ function DownloadDocumentModal({
   )
 }
 
+function normalizeConsignmentLabel(value: string | undefined, legacyKey: string, fallback: string): string {
+  return !value?.trim() || value.trim() === legacyKey ? fallback : value
+}
+
 function ConsignmentNoteSettingsDrawer({
   opened,
   resale,
@@ -3275,7 +3314,11 @@ function ConsignmentNoteSettingsDrawer({
   onClose: () => void
 }) {
   const { t } = useI18n()
-  const defaultSetting = useMemo(() => buildDefaultConsignmentNoteSetting(resale), [resale])
+  const defaultSetting = useMemo(() => ({
+    ...buildDefaultConsignmentNoteSetting(resale),
+    CarLabel: t('Автомобіль'),
+    TrailerLabel: t('Причіп'),
+  }), [resale, t])
   const [settings, setSettings] = useValueState<ResaleConsignmentNoteSetting[]>([])
   const [noteState, setNoteState] = useValueState<ConsignmentNoteDrawerState>(() => createConsignmentNoteDrawerState(defaultSetting))
   const [isLoading, setLoading] = useValueState(false)
@@ -3344,7 +3387,11 @@ function ConsignmentNoteSettingsDrawer({
       return
     }
 
-    const nextSetting = applyConsignmentDocumentDefaults(selectedSetting, defaultSetting)
+    const nextSetting = applyConsignmentDocumentDefaults({
+      ...selectedSetting,
+      CarLabel: normalizeConsignmentLabel(selectedSetting.CarLabel, 'ConsignmentLabels.InformationCarTitle', defaultSetting.CarLabel || ''),
+      TrailerLabel: normalizeConsignmentLabel(selectedSetting.TrailerLabel, 'ConsignmentLabels.InformationTrailerSubTitle', defaultSetting.TrailerLabel || ''),
+    }, defaultSetting)
 
     setNoteState({
       error: null,
@@ -3491,9 +3538,10 @@ function ConsignmentNoteSettingsDrawer({
 
   return (
     <AppDrawer
+      className="resale-ttn-sheet"
       footer={
-        <Group>
-          <Button color="gray" disabled={!noteState.isEdited || isSaving} variant="light" onClick={resetChanges}>
+        <Group className="resale-ttn-footer" justify="flex-end">
+          <Button disabled={!noteState.isEdited || isSaving} variant="default" onClick={resetChanges}>
             {t('Скасувати')}
           </Button>
           {hasExistingSetting && (
@@ -3515,23 +3563,25 @@ function ConsignmentNoteSettingsDrawer({
       title={t('Друк ТТН')}
       onClose={onClose}
     >
-      <Stack gap="lg">
+      <Stack className="resale-ttn-form" gap={10}>
         {noteState.error && (
-          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+          <Alert className="resale-ttn-validation" color="red" icon={<CircleAlert size={14} />} variant="light">
             {noteState.error}
           </Alert>
         )}
 
-        <Group justify="space-between" align="end" gap="sm">
-          <Box style={{ flex: '1 1 260px' }}>
-            <Text c="dimmed" size="xs" tt="uppercase">
+        <Box className="resale-ttn-hero">
+          <Box className="resale-ttn-document">
+            <Text className="app-section-title resale-ttn-eyebrow">
               {t('По документу')}
             </Text>
-            <Text fw={600} size="sm">
-              {t('Інвойс')} {displayValue(resale?.SaleNumber?.Value)} {t('від')} {formatDateTime(getConsignmentNoteDate(resale))}
+            <Text className="resale-ttn-document-title">
+              {t('Інвойс')} <TableChip tone="document" value={displayValue(resale?.SaleNumber?.Value)} />
+              <span className="resale-ttn-document-date">{t('від')} {formatDateTime(getConsignmentNoteDate(resale))}</span>
             </Text>
           </Box>
           <Select
+            className="resale-ttn-select"
             clearable
             searchable
             data={settingOptions}
@@ -3539,102 +3589,110 @@ function ConsignmentNoteSettingsDrawer({
             label={t('Існуючі налаштування')}
             placeholder={t('Обрати')}
             value={noteState.selectedSettingKey}
-            style={{ flex: '1 1 260px' }}
             onChange={selectSetting}
           />
-        </Group>
+        </Box>
 
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
-          <TextInput
-            label={t('Назва')}
-            maxLength={200}
-            value={noteState.setting.Name || ''}
-            onChange={(event) => updateTextField('Name', event.currentTarget.value)}
-          />
-          <TextInput label={t('Номер')} value={noteState.setting.Number || ''} onChange={(event) => updateTextField('Number', event.currentTarget.value)} />
-          <TextInput
-            label={t('Марка і номер авто')}
-            maxLength={200}
-            value={noteState.setting.BrandAndNumberCar || ''}
-            onChange={(event) => updateTextField('BrandAndNumberCar', event.currentTarget.value)}
-          />
-          <TextInput
-            label={t('Номер причепа')}
-            maxLength={200}
-            value={noteState.setting.TrailerNumber || ''}
-            onChange={(event) => updateTextField('TrailerNumber', event.currentTarget.value)}
-          />
-          <TextInput
-            label={t('Замовник')}
-            maxLength={200}
-            value={noteState.setting.Customer || ''}
-            onChange={(event) => updateTextField('Customer', event.currentTarget.value)}
-          />
-          <TextInput
-            label={t('Водій')}
-            maxLength={200}
-            value={noteState.setting.Driver || ''}
-            onChange={(event) => updateTextField('Driver', event.currentTarget.value)}
-          />
-          <TextInput
-            label={t('Перевізник')}
-            maxLength={200}
-            value={noteState.setting.Carrier || ''}
-            onChange={(event) => updateTextField('Carrier', event.currentTarget.value)}
-          />
-          <TextInput
-            label={t('Тип перевезення')}
-            maxLength={200}
-            value={noteState.setting.TypeTransportation || ''}
-            onChange={(event) => updateTextField('TypeTransportation', event.currentTarget.value)}
-          />
-          <TextInput
-            label={t('Пункт розвантаження')}
-            maxLength={500}
-            value={noteState.setting.UnloadingPoint || ''}
-            onChange={(event) => updateTextField('UnloadingPoint', event.currentTarget.value)}
-          />
-          <TextInput
-            label={t('Пункт завантаження')}
-            maxLength={500}
-            value={noteState.setting.LoadingPoint || ''}
-            onChange={(event) => updateTextField('LoadingPoint', event.currentTarget.value)}
-          />
-        </SimpleGrid>
+        <Box className="app-section-card resale-ttn-section">
+          <Text className="app-section-title" fw={600}>{t('Дані ТТН')}</Text>
+          <SimpleGrid className="resale-ttn-grid" cols={{ base: 1, sm: 2 }} spacing={8}>
+            <TextInput
+              label={t('Назва')}
+              maxLength={200}
+              value={noteState.setting.Name || ''}
+              onChange={(event) => updateTextField('Name', event.currentTarget.value)}
+            />
+            <TextInput
+              label={t('Номер')}
+              value={noteState.setting.Number || ''}
+              onChange={(event) => updateTextField('Number', event.currentTarget.value)}
+            />
+            <TextInput
+              label={t('Марка та номер автомобіля')}
+              maxLength={200}
+              value={noteState.setting.BrandAndNumberCar || ''}
+              onChange={(event) => updateTextField('BrandAndNumberCar', event.currentTarget.value)}
+            />
+            <TextInput
+              label={t('Номер причепа')}
+              maxLength={200}
+              value={noteState.setting.TrailerNumber || ''}
+              onChange={(event) => updateTextField('TrailerNumber', event.currentTarget.value)}
+            />
+            <TextInput
+              label={t('Замовник')}
+              maxLength={200}
+              value={noteState.setting.Customer || ''}
+              onChange={(event) => updateTextField('Customer', event.currentTarget.value)}
+            />
+            <TextInput
+              label={t('Водій')}
+              maxLength={200}
+              value={noteState.setting.Driver || ''}
+              onChange={(event) => updateTextField('Driver', event.currentTarget.value)}
+            />
+            <TextInput
+              label={t('Перевізник')}
+              maxLength={200}
+              value={noteState.setting.Carrier || ''}
+              onChange={(event) => updateTextField('Carrier', event.currentTarget.value)}
+            />
+            <TextInput
+              label={t('Вид перевезення')}
+              maxLength={200}
+              value={noteState.setting.TypeTransportation || ''}
+              onChange={(event) => updateTextField('TypeTransportation', event.currentTarget.value)}
+            />
+            <TextInput
+              label={t('Пункт розвантаження')}
+              maxLength={500}
+              value={noteState.setting.UnloadingPoint || ''}
+              onChange={(event) => updateTextField('UnloadingPoint', event.currentTarget.value)}
+            />
+            <TextInput
+              label={t('Пункт завантаження')}
+              maxLength={500}
+              value={noteState.setting.LoadingPoint || ''}
+              onChange={(event) => updateTextField('LoadingPoint', event.currentTarget.value)}
+            />
+          </SimpleGrid>
+        </Box>
 
-        <Stack gap="sm">
-          <Text fw={700}>{t('Авто')}</Text>
+        <div className="resale-ttn-vehicles">
+        <Box className="app-section-card resale-ttn-section">
+          <Text className="app-section-title" fw={600}>{t('Автомобіль')}</Text>
+          <SimpleGrid className="resale-ttn-dimensions" cols={{ base: 2, sm: 3 }} spacing={8}>
           <TextInput
             label={t('Заголовок')}
             maxLength={200}
-            value={noteState.setting.CarLabel || t('ConsignmentLabels.InformationCarTitle')}
+            value={noteState.setting.CarLabel || ''}
             onChange={(event) => updateTextField('CarLabel', event.currentTarget.value)}
           />
-          <SimpleGrid cols={{ base: 2, md: 5 }} spacing="sm">
-            <NumberInput label="L" value={noteState.setting.CarLength || 0} onChange={(value) => updateNumberField('CarLength', value)} />
-            <NumberInput label="W" value={noteState.setting.CarWidth || 0} onChange={(value) => updateNumberField('CarWidth', value)} />
-            <NumberInput label="H" value={noteState.setting.CarHeight || 0} onChange={(value) => updateNumberField('CarHeight', value)} />
-            <NumberInput label="NW" value={noteState.setting.CarNetWeight || 0} onChange={(value) => updateNumberField('CarNetWeight', value)} />
-            <NumberInput label="GW" value={noteState.setting.CarGrossWeight || 0} onChange={(value) => updateNumberField('CarGrossWeight', value)} />
+            <NumberInput label={t('Довжина, мм')} value={noteState.setting.CarLength || 0} onChange={(value) => updateNumberField('CarLength', value)} />
+            <NumberInput label={t('Ширина, мм')} value={noteState.setting.CarWidth || 0} onChange={(value) => updateNumberField('CarWidth', value)} />
+            <NumberInput label={t('Висота, мм')} value={noteState.setting.CarHeight || 0} onChange={(value) => updateNumberField('CarHeight', value)} />
+            <NumberInput label={t('Вага нетто, т')} value={noteState.setting.CarNetWeight || 0} onChange={(value) => updateNumberField('CarNetWeight', value)} />
+            <NumberInput label={t('Вага брутто, т')} value={noteState.setting.CarGrossWeight || 0} onChange={(value) => updateNumberField('CarGrossWeight', value)} />
           </SimpleGrid>
-        </Stack>
+        </Box>
 
-        <Stack gap="sm">
-          <Text fw={700}>{t('Причіп')}</Text>
+        <Box className="app-section-card resale-ttn-section">
+          <Text className="app-section-title" fw={600}>{t('Причіп')}</Text>
+          <SimpleGrid className="resale-ttn-dimensions" cols={{ base: 2, sm: 3 }} spacing={8}>
           <TextInput
             label={t('Заголовок')}
             maxLength={200}
-            value={noteState.setting.TrailerLabel || t('ConsignmentLabels.InformationTrailerSubTitle')}
+            value={noteState.setting.TrailerLabel || ''}
             onChange={(event) => updateTextField('TrailerLabel', event.currentTarget.value)}
           />
-          <SimpleGrid cols={{ base: 2, md: 5 }} spacing="sm">
-            <NumberInput label="L" value={noteState.setting.TrailerLength || 0} onChange={(value) => updateNumberField('TrailerLength', value)} />
-            <NumberInput label="W" value={noteState.setting.TrailerWidth || 0} onChange={(value) => updateNumberField('TrailerWidth', value)} />
-            <NumberInput label="H" value={noteState.setting.TrailerHeight || 0} onChange={(value) => updateNumberField('TrailerHeight', value)} />
-            <NumberInput label="NW" value={noteState.setting.TrailerNetWeight || 0} onChange={(value) => updateNumberField('TrailerNetWeight', value)} />
-            <NumberInput label="GW" value={noteState.setting.TrailerGrossWeight || 0} onChange={(value) => updateNumberField('TrailerGrossWeight', value)} />
+            <NumberInput label={t('Довжина, мм')} value={noteState.setting.TrailerLength || 0} onChange={(value) => updateNumberField('TrailerLength', value)} />
+            <NumberInput label={t('Ширина, мм')} value={noteState.setting.TrailerWidth || 0} onChange={(value) => updateNumberField('TrailerWidth', value)} />
+            <NumberInput label={t('Висота, мм')} value={noteState.setting.TrailerHeight || 0} onChange={(value) => updateNumberField('TrailerHeight', value)} />
+            <NumberInput label={t('Вага нетто, т')} value={noteState.setting.TrailerNetWeight || 0} onChange={(value) => updateNumberField('TrailerNetWeight', value)} />
+            <NumberInput label={t('Вага брутто, т')} value={noteState.setting.TrailerGrossWeight || 0} onChange={(value) => updateNumberField('TrailerGrossWeight', value)} />
           </SimpleGrid>
-        </Stack>
+        </Box>
+        </div>
 
       </Stack>
 
@@ -3672,23 +3730,22 @@ function ResaleSummaryMetric({ label, value, danger = false }: { label: string; 
   )
 }
 
-function ResaleDetailLine({ label, value, mono = false }: { label: string; value?: string | number; mono?: boolean }) {
+function ResaleDetailMoney({ label, value, danger = false }: { label: string; value?: number; danger?: boolean }) {
+  return <div className={`document-detail-metric${danger ? ' is-danger' : ''}`}>
+    <span>{label}</span>
+    <strong>{formatMoney(value) || '—'} <TableChip tone="source" value="UAH" /></strong>
+  </div>
+}
+
+function ResaleDetailLine({ label, value, mono = false, tone }: { label: string; value?: string | number; mono?: boolean; tone?: 'product' | 'storage' | 'warning' | 'neutral' }) {
   return (
-    <div className="app-leader-row resale-detail-fact">
-      <span className="app-leader-row-label">{label}</span>
-      <span className={`app-leader-row-value${mono ? ' is-mono' : ''}`}>{displayValue(value)}</span>
+    <div className="resale-detail-fact">
+      <span className="resale-detail-fact__label">{label}</span>
+      <span className={`resale-detail-fact__value${mono ? ' is-mono' : ''}`}>{tone ? <TableChip tone={tone} value={value || '—'} /> : displayValue(value) || '—'}</span>
     </div>
   )
 }
 
-function ResaleAuxMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="resale-detail-aux-metric">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  )
-}
 
 type ResaleAvailabilityWithTotalsTotals = {
   totalQty: number
@@ -4331,22 +4388,12 @@ function formatAmount(value?: number): string {
   return amountFormatter.format(value)
 }
 
-/* UAH equivalent of a resale total. TotalAmountLocal is the AGREEMENT-currency
-   amount (EUR for EUR agreements), NOT UAH — so use TotalAmountEurToUah for EUR
-   agreements, TotalAmountLocal for UAH ones, and blank for other foreign
-   currencies that carry no UAH conversion. */
+/* Registry totals in EUR must never be used as a UAH fallback. */
 function getResaleUahAmount(resale: { ClientAgreement?: ResaleClientAgreement | null; TotalAmount?: number; TotalAmountLocal?: number; TotalAmountEurToUah?: number }): number | undefined {
-  const currencyCode = resale.ClientAgreement?.Agreement?.Currency?.Code
-
-  if (currencyCode === 'EUR') {
+  if (typeof resale.TotalAmountEurToUah === 'number' && Number.isFinite(resale.TotalAmountEurToUah)) {
     return resale.TotalAmountEurToUah
   }
-
-  if (!currencyCode || currencyCode === 'UAH') {
-    return resale.TotalAmountLocal ?? resale.TotalAmount
-  }
-
-  return undefined
+  return resale.ClientAgreement?.Agreement?.Currency?.Code === 'UAH' ? resale.TotalAmountLocal : undefined
 }
 
 function formatMoney(value?: number): string {

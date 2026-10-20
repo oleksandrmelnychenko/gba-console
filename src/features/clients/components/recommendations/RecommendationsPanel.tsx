@@ -330,14 +330,14 @@ function RecommendationsForAgreement({
                         variant="default"
                         onClick={handleCreateOffer}
                       >
-                        {selectedCount > 0 ? `${t('Створити оферту')} (${selectedCount})` : t('Створити оферту')}
+                        {selectedCount > 0 ? `${t('Створити пропозицію')} (${selectedCount})` : t('Створити пропозицію')}
                       </Button>
                     </span>
                   </Tooltip>
-                  <Tooltip label={t('Термін дії оферти')} withArrow>
+                  <Tooltip label={t('Термін дії пропозиції')} withArrow>
                     <Select
                       className="client-recommendations-term"
-                      label={t('Термін оферти')}
+                      label={t('Термін пропозиції')}
                       allowDeselect={false}
                       data={[
                         { value: '1', label: `1 ${t('дн')}` },

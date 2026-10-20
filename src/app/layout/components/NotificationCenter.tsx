@@ -1,6 +1,5 @@
 import {
   ActionIcon,
-  Badge,
   Box,
   Group,
   Indicator,
@@ -17,6 +16,8 @@ import { useNavigate } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useConsoleNotificationCenter } from '../../../shared/notification-center/store'
 import type { ConsoleNotification } from '../../../shared/notification-center/types'
+import { TableChip } from '../../../shared/ui/TableChip'
+import { NotificationProducts } from './NotificationProducts'
 
 type NotificationCenterProps = {
   userKey?: string
@@ -91,9 +92,7 @@ export function NotificationCenter({ userKey }: NotificationCenterProps) {
             <Box className="console-notification-heading-copy">
               <Text className="console-notification-title">{t('Сповіщення')}</Text>
               {unreadCount > 0 ? (
-                <Badge className="console-notification-unread-badge" color="orange" size="xs" variant="light">
-                  {unreadCount} {t('непрочитаних')}
-                </Badge>
+                <TableChip tone="document" value={unreadCount} title={`${unreadCount} ${t('непрочитаних')}`} />
               ) : (
                 <Text className="console-notification-subtitle">{t('Усе переглянуто')}</Text>
               )}
@@ -107,7 +106,7 @@ export function NotificationCenter({ userKey }: NotificationCenterProps) {
                 className="console-notification-header-action"
                 disabled={unreadCount === 0}
                 size={30}
-                variant="default"
+                variant="subtle"
                 onClick={markAllRead}
               >
                 <CheckCheck size={16} />
@@ -119,7 +118,7 @@ export function NotificationCenter({ userKey }: NotificationCenterProps) {
                 className="console-notification-header-action"
                 disabled={items.length === 0}
                 size={30}
-                variant="default"
+                variant="subtle"
                 onClick={clear}
               >
                 <Trash2 size={15} />
@@ -152,21 +151,16 @@ export function NotificationCenter({ userKey }: NotificationCenterProps) {
                   </Box>
                   <Box className="console-notification-copy">
                     <Group className="console-notification-item-heading" gap={8} justify="space-between" wrap="nowrap">
-                      <Text className="console-notification-item-title" lineClamp={1}>
+                      <Text className="console-notification-item-title">
                         {notification.title}
                       </Text>
                     </Group>
-                    <Text className="console-notification-message" component="div" lineClamp={2}>
-                      <Text className="console-notification-time" component="span">
-                        {formatNotificationTime(notification.createdAt)}
-                      </Text>
-                      {notification.message ? (
-                        <>
-                          <span className="console-notification-message-separator"> · </span>
-                          {renderNotificationMessage(notification)}
-                        </>
-                      ) : null}
+                    <Text className="console-notification-time" component="time" dateTime={notification.createdAt}>
+                      {formatNotificationTime(notification.createdAt)}
                     </Text>
+                    <Box className="console-notification-message">
+                      {renderNotificationMessage(notification)}
+                    </Box>
                   </Box>
                   <ChevronRight
                     aria-hidden="true"
@@ -174,6 +168,9 @@ export function NotificationCenter({ userKey }: NotificationCenterProps) {
                     size={16}
                     strokeWidth={1.7}
                   />
+                  {notification.kind === 'ecommerce-order' && notification.entityNetUid ? (
+                    <NotificationProducts saleNetUid={notification.entityNetUid} />
+                  ) : null}
                 </UnstyledButton>
               ))}
             </Stack>
@@ -202,19 +199,19 @@ function renderNotificationMessage(notification: ConsoleNotification) {
     const isAmount = notification.kind === 'ecommerce-order' && /\d[\d\s.,]*\s[A-Z]{3}$/.test(part)
     const isPositions = notification.kind === 'ecommerce-order' && /^\d+\s+поз\.?$/i.test(part.trim())
     const isQuantity = notification.kind === 'ecommerce-interest' && /^\d+(?:[.,]\d+)?\s+шт\.?$/i.test(part.trim())
-    const className = [
-      isReference ? 'console-notification-reference-tag' : null,
-      isAmount ? 'console-notification-message-emphasis' : null,
-      isClient || isPositions || isQuantity ? 'console-notification-message-strong' : null,
-    ].filter(Boolean).join(' ') || undefined
-
+    const amount = isAmount ? part.match(/^(.*)\s([A-Z]{3})$/) : null
     return (
       <span
         key={`${notification.id}-message-${index}`}
-        className={className}
+        className={isClient ? 'console-notification-client' : amount ? 'console-notification-amount' : undefined}
       >
-        {index > 0 ? <span className="console-notification-message-separator"> · </span> : null}
-        {part}
+        {isReference ? (
+          <TableChip tone={notification.kind === 'ecommerce-interest' ? 'product' : 'document'} value={part} />
+        ) : isPositions || isQuantity ? (
+          <TableChip tone="document" value={part} />
+        ) : amount ? (
+          <><strong>{amount[1]}</strong><TableChip tone="source" value={amount[2]} /></>
+        ) : part}
       </span>
     )
   })

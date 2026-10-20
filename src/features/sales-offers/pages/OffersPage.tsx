@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Button, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { Alert, Button, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus, RefreshCw, RotateCcw } from 'lucide-react'
 import { useEffect, useRef } from 'react'
@@ -98,7 +98,7 @@ function OffersPageContent() {
         }
       } catch {
         if (!cancelled) {
-          setError(t('Не вдалося завантажити оферти'))
+          setError(t('Не вдалося завантажити пропозиції'))
           setOffers([])
         }
       } finally {
@@ -175,12 +175,12 @@ function OffersPageContent() {
     try {
       await restartOfferValidity(offer.NetUid, { operationId: getOperationId(operationKey) })
       operationIdsRef.current.delete(operationKey)
-      notifications.show({ color: 'green', message: t('Оферту перезапущено') })
+      notifications.show({ color: 'green', message: t('Пропозицію перезапущено') })
       refresh()
     } catch (error) {
       notifications.show({
         color: 'red',
-        message: error instanceof Error ? error.message : t('Не вдалося перезапустити оферту'),
+        message: error instanceof Error ? error.message : t('Не вдалося перезапустити пропозицію'),
       })
     }
   }
@@ -193,7 +193,7 @@ function OffersPageContent() {
     setConfirmState({
       confirmLabel: t('Видалити'),
       message: t('Ви впевнені, що бажаєте видалити?'),
-      title: t('Видалення оферти'),
+      title: t('Видалення пропозиції'),
       onConfirm: async () => {
         if (!can(PermissionKeys.SalesUkraineOffers.Offer.Delete)) {
           return
@@ -206,7 +206,7 @@ function OffersPageContent() {
           { operationId: getOperationId(operationKey) },
         )
         operationIdsRef.current.delete(operationKey)
-        notifications.show({ color: 'green', message: t('Оферту успішно видалено') })
+        notifications.show({ color: 'green', message: t('Пропозицію успішно видалено') })
         refresh()
       },
     })
@@ -255,23 +255,23 @@ function OffersPageContent() {
           </div>
           <div className="app-filter-actions offers-filter-actions">
             <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                <RotateCcw size={17} />
-              </ActionIcon>
+              <Button className="offers-secondary-action" aria-label={t('Скинути')} variant="default" leftSection={<RotateCcw size={17} />} onClick={resetFilters}>
+                {t('Скинути')}
+              </Button>
             </Tooltip>
             <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" onClick={reload}>
               {t('Застосувати')}
             </Button>
             <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={refresh}>
-                <RefreshCw size={17} />
-              </ActionIcon>
+              <Button className="offers-secondary-action" aria-label={t('Оновити')} variant="default" loading={isLoading} leftSection={<RefreshCw size={17} />} onClick={refresh}>
+                {t('Оновити')}
+              </Button>
             </Tooltip>
           </div>
           {canCreate && (
             <div className="offers-create-actions">
               <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} onClick={() => setNewOpen(true)}>
-                {t('Створити оферту')}
+                {t('Створити пропозицію')}
               </Button>
             </div>
           )}
@@ -285,7 +285,7 @@ function OffersPageContent() {
           )}
 
           {isLoading ? (
-            <div className="offers-skeleton" aria-label={t('Завантаження оферт')} aria-busy="true">
+            <div className="offers-skeleton" aria-label={t('Завантаження пропозицій')} aria-busy="true">
               {Array.from({ length: 5 }, (_, index) => (
                 <div key={index} className="offers-skeleton-card">
                   <span className="offers-skeleton-line is-title" />
@@ -295,7 +295,7 @@ function OffersPageContent() {
               ))}
             </div>
           ) : offers.length === 0 ? (
-            <Text c="dimmed">{t('Оферти відсутні')}</Text>
+            <Text c="dimmed">{t('Пропозиції відсутні')}</Text>
           ) : (
             <Stack gap="sm">
               {offers.map((offer) => (

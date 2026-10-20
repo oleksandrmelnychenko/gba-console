@@ -34,7 +34,7 @@ const SALES_DASHBOARD_TABS: SalesTab[] = [
   },
   {
     icon: FileText,
-    label: 'Оферти',
+    label: 'Пропозиції',
     permissionKey: PermissionKeys.SystemPages.SalesUkraineOffers.View,
     value: '/sales/ukraine/offers',
   },

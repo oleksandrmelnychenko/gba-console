@@ -86,6 +86,7 @@ import { useGridColumnResize } from './useGridColumnResize'
 import type { CSSProperties } from 'react'
 import { findSaleOrderItemByIdentity } from '../components/saleDiscountPayload'
 import { SalesClientSearch } from '../components/SalesClientSearch'
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { usePersistentSaleJsonMutationRunner } from '../usePersistentSaleJsonMutation'
 import type {
   SalesUkraineFilters,
@@ -1132,26 +1133,11 @@ function SalesUkrainePageContent() {
         <Stack className="sales-ukraine-content" gap={0}>
           <div className="sales-filter-bar">
             <div className="app-filter-fields sales-filter-row has-create">
-              <div className="app-filter-date-range">
-                <TextInput
-                  className="sales-filter-date"
-                  label={t('Від')}
-                  max={filterDraft.to || undefined}
-                  size="sm"
-                  type="date"
-                  value={filterDraft.from}
-                  onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-                />
-                <TextInput
-                  className="sales-filter-date"
-                  label={t('До')}
-                  min={filterDraft.from || undefined}
-                  size="sm"
-                  type="date"
-                  value={filterDraft.to}
-                  onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-                />
-              </div>
+              <ToolbarDateRangeFilter
+                from={filterDraft.from}
+                to={filterDraft.to}
+                onChange={(range) => applyFilters({ ...filterDraft, ...range })}
+              />
               <TextInput
                 className="sales-filter-search"
                 label={t('Пошук')}
@@ -1161,9 +1147,16 @@ function SalesUkrainePageContent() {
                 value={filterDraft.value}
                 onChange={(event) => applySearchValue(event.currentTarget.value)}
               />
+              <SalesClientSearch
+                className="sales-filter-control sales-filter-client"
+                label={t('Клієнт')}
+                placeholder={t('Пошук клієнта')}
+                value={filterDraft.clientId}
+                onChange={(clientId) => applyFilters({ ...filterDraft, clientId })}
+              />
               <Select
                 allowDeselect={false}
-                className="sales-filter-control"
+                className="sales-filter-control sales-filter-status"
                 comboboxProps={SALES_FILTER_COMBOBOX_PROPS}
                 data={statusSelectData}
                 label={t('Статус')}
@@ -1174,7 +1167,7 @@ function SalesUkrainePageContent() {
               />
               <Select
                 allowDeselect={false}
-                className="sales-filter-control"
+                className="sales-filter-control sales-filter-manager"
                 comboboxProps={SALES_FILTER_COMBOBOX_PROPS}
                 data={managerSelectData}
                 label={t('Менеджер')}
@@ -1252,20 +1245,16 @@ function SalesUkrainePageContent() {
                   )}
                 </div>
               </div>
-              <SalesClientSearch
-                className="sales-filter-control sales-filter-client"
-                label={t('Клієнт')}
-                placeholder={t('Пошук клієнта')}
-                value={filterDraft.clientId}
-                onChange={(clientId) => applyFilters({ ...filterDraft, clientId })}
-              />
-              <Checkbox
-                checked={filterDraft.forEcommerce}
-                className="sales-filter-ecommerce"
-                label={t('Інтернет-магазин')}
-                size="sm"
-                onChange={(event) => applyFilters({ ...filterDraft, forEcommerce: event.currentTarget.checked })}
-              />
+              <Tooltip label={t('Інтернет-магазин')}>
+                <Checkbox
+                  aria-label={t('Інтернет-магазин')}
+                  checked={filterDraft.forEcommerce}
+                  className="sales-filter-ecommerce"
+                  label={t('Інтернет-магазин')}
+                  size="sm"
+                  onChange={(event) => applyFilters({ ...filterDraft, forEcommerce: event.currentTarget.checked })}
+                />
+              </Tooltip>
               <div className="app-filter-actions sales-filter-actions">
                 <Tooltip label={t('Скинути')}>
                   <ActionIcon
@@ -1288,6 +1277,8 @@ function SalesUkrainePageContent() {
               >
                 <Button
                   className="sales-filter-create"
+                  aria-label={t('Новий продаж')}
+                  title={t('Новий продаж')}
                   color={CREATE_ACTION_COLOR}
                   leftSection={<Plus size={16} />}
                   size="sm"
@@ -2641,7 +2632,7 @@ function SaleSourceIcon({ sale }: { sale: SalesUkraineSale }) {
     source === 0
       ? { icon: <Globe size={16} />, label: t('Інтернет-магазин') }
       : source === 2
-        ? { icon: <Tag size={16} />, label: t('Оферта') }
+        ? { icon: <Tag size={16} />, label: t('Пропозиція') }
         : isInvoiceStage
           ? { icon: <ClipboardList size={16} />, label: t('Накладна') }
           : { icon: <FileText size={16} />, label: t('Рахунок') }

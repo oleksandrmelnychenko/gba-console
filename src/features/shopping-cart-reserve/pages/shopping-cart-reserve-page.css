@@ -169,6 +169,32 @@
   min-width: 0;
 }
 
+.cart-reserve-product-cell {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+}
+
+.cart-reserve-product-photo {
+  align-items: center;
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  color: var(--mantine-color-gray-5);
+  display: flex;
+  flex: 0 0 44px;
+  height: 44px;
+  justify-content: center;
+  overflow: hidden;
+  width: 44px;
+}
+
+.cart-reserve-product-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .cart-reserve-comment {
   color: var(--mantine-color-gray-6);
   font-size: 11px;

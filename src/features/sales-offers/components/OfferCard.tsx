@@ -83,7 +83,7 @@ export function OfferCard({
       </div>
       <Collapse expanded={expanded} id={detailsId}>
         <div className="offer-card-lines">
-          <Table className="app-static-table" aria-label={t('Товари оферти')} miw={720}>
+          <Table className="app-static-table" aria-label={t('Товари пропозиції')} miw={720}>
             <Table.Thead><Table.Tr>
               <Table.Th>{t('Товар')}</Table.Th>
               <Table.Th className="app-table-cell-number">{t('Кількість')}</Table.Th>

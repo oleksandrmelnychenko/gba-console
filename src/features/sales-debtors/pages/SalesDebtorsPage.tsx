@@ -31,6 +31,15 @@ import './sales-debtors-page.css'
 
 const daysOptions = ['3', '5', '7', '10']
 
+const DEBTORS_FILTER_COMBOBOX_PROPS = {
+  classNames: {
+    dropdown: 'sales-debtors-filter-dropdown',
+    option: 'sales-debtors-filter-option',
+  },
+  position: 'bottom-start' as const,
+  width: 'max-content',
+}
+
 const currencyCodeByType: Record<TypeOfCurrencyOfAgreementValue, string> = {
   [TypeOfCurrencyOfAgreement.None]: '',
   [TypeOfCurrencyOfAgreement.UAH]: 'UAH',
@@ -206,6 +215,7 @@ export function SalesDebtorsPage() {
       <div className="sales-dashboard-tab-content">
         <div className="sales-debtors-command-bar app-filter-bar">
           <Select
+            comboboxProps={DEBTORS_FILTER_COMBOBOX_PROPS}
             clearable
             searchable
             className="sales-debtors-filter is-manager"
@@ -220,6 +230,7 @@ export function SalesDebtorsPage() {
             }}
           />
           <Select
+            comboboxProps={DEBTORS_FILTER_COMBOBOX_PROPS}
             clearable
             searchable
             className="sales-debtors-filter is-organization"
@@ -233,6 +244,7 @@ export function SalesDebtorsPage() {
             }}
           />
           <Select
+            comboboxProps={DEBTORS_FILTER_COMBOBOX_PROPS}
             allowDeselect={false}
             className="sales-debtors-filter is-type"
             data={[
@@ -248,6 +260,7 @@ export function SalesDebtorsPage() {
             }}
           />
           <Select
+            comboboxProps={DEBTORS_FILTER_COMBOBOX_PROPS}
             allowDeselect={false}
             className="sales-debtors-filter is-currency"
             data={[
@@ -265,6 +278,7 @@ export function SalesDebtorsPage() {
             }}
           />
           <Select
+            comboboxProps={DEBTORS_FILTER_COMBOBOX_PROPS}
             allowDeselect={false}
             className="sales-debtors-filter is-days"
             data={daysOptions}

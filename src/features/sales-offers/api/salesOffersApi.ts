@@ -66,7 +66,7 @@ export async function restartOfferValidity(
   netId: string,
   operation: SalesMutationOperationOptions,
 ): Promise<void> {
-  const persistedNetId = requirePersistedGuid(netId, 'Оферта не має коректного ідентифікатора')
+  const persistedNetId = requirePersistedGuid(netId, 'Пропозиція не має коректного ідентифікатора')
 
   await apiRequest<unknown>('/sales/offers/update/validity', {
     headers: getSalesMutationOperationHeaders(operation.operationId),
@@ -188,7 +188,7 @@ function safeParse(value: string): unknown {
 function validateNewOffer(offer: ClientShoppingCart): void {
   if ((offer.Id ?? 0) > 0 || offer.NetUid) {
     throw new SalesMutationPreflightValidationError(
-      'Нова оферта не може містити збережений ідентифікатор',
+      'Нова пропозиція не може містити збережений ідентифікатор',
     )
   }
 
@@ -207,11 +207,11 @@ function validateNewOffer(offer: ClientShoppingCart): void {
 function validatePersistedOffer(offer: ClientShoppingCart): void {
   if ((offer.Id ?? 0) <= 0) {
     throw new SalesMutationPreflightValidationError(
-      'Оферта не має коректного ідентифікатора',
+      'Пропозиція не має коректного ідентифікатора',
     )
   }
 
-  requirePersistedGuid(offer.NetUid, 'Оферта не має коректного ідентифікатора')
+  requirePersistedGuid(offer.NetUid, 'Пропозиція не має коректного ідентифікатора')
 
   if (offer.Deleted) {
     return
@@ -223,7 +223,7 @@ function validatePersistedOffer(offer: ClientShoppingCart): void {
 function validateOfferItems(items: OfferOrderItem[] | undefined, requirePersistedItems: boolean): void {
   if (!items?.length) {
     throw new SalesMutationPreflightValidationError(
-      'Додайте хоча б один товар до оферти',
+      'Додайте хоча б один товар до пропозиції',
     )
   }
 
@@ -233,31 +233,31 @@ function validateOfferItems(items: OfferOrderItem[] | undefined, requirePersiste
     if (requirePersistedItems) {
       if ((item.Id ?? 0) <= 0) {
         throw new SalesMutationPreflightValidationError(
-          'Позиція оферти не має коректного ідентифікатора',
+          'Позиція пропозиції не має коректного ідентифікатора',
         )
       }
 
-      requirePersistedGuid(item.NetUid, 'Позиція оферти не має коректного ідентифікатора')
+      requirePersistedGuid(item.NetUid, 'Позиція пропозиції не має коректного ідентифікатора')
     }
 
     if ((item.Product?.Id ?? 0) <= 0) {
       throw new SalesMutationPreflightValidationError(
-        'Товар оферти не має коректного ідентифікатора',
+        'Товар пропозиції не має коректного ідентифікатора',
       )
     }
 
     const productNetId = requirePersistedGuid(
       item.Product?.NetUid,
-      'Товар оферти не має коректного ідентифікатора',
+      'Товар пропозиції не має коректного ідентифікатора',
     )
 
     if (productNetIds.has(productNetId)) {
       throw new SalesMutationPreflightValidationError(
-        'Один товар не можна додати до оферти двічі',
+        'Один товар не можна додати до пропозиції двічі',
       )
     }
 
     productNetIds.add(productNetId)
-    requirePositiveFiniteQuantity(item.Qty, 'Кількість товару в оферті має бути більшою за нуль')
+    requirePositiveFiniteQuantity(item.Qty, 'Кількість товару в пропозиції має бути більшою за нуль')
   }
 }

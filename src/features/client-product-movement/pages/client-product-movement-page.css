@@ -115,24 +115,52 @@
   letter-spacing: 0;
 }
 
-.client-product-movement-filter-row > .mantine-InputWrapper-root {
-  width: auto;
+/* Natural field widths; compact only when the command row needs the space. */
+.client-product-movement-page .client-product-movement-filter-row {
+  --app-multi-select-width: 240px;
 }
-
-@container registry (min-width: 1380px) {
-  .client-product-movement-filter-bar .client-product-movement-filter-row {
-    --app-multi-select-width: 100%;
-    display: grid;
-    grid-template-columns: 250px minmax(160px, 1fr) minmax(160px, 1fr) minmax(115px, .7fr) auto auto;
+.client-product-movement-page .client-product-movement-filter-row > .client-product-movement-client-filter {
+  flex: 0 1 220px;
+}
+.client-product-movement-page .client-product-movement-filter-row > .client-product-movement-article-filter {
+  flex: 0 1 180px;
+}
+.client-product-movement-page .client-product-movement-filter-actions {
+  flex: 0 0 auto;
+  margin-left: 0;
+}
+.client-product-movement-filter-dropdown {
+  width: max-content !important;
+  max-width: calc(100vw - 24px);
+  padding: 4px;
+}
+.client-product-movement-filter-dropdown [data-combobox-option],
+.client-product-movement-filter-dropdown .mantine-Combobox-empty,
+.client-product-movement-filter-dropdown .mantine-Combobox-search {
+  color: var(--mantine-color-gray-9);
+  font: 400 12px/16px var(--font-mono);
+}
+.client-product-movement-filter-dropdown [data-combobox-option] {
+  min-height: 30px;
+  padding: 7px 8px;
+  border-radius: 6px;
+}
+.client-product-movement-filter-dropdown [data-combobox-option]:is(:hover, [data-combobox-selected], [aria-selected='true'], [data-checked]) {
+  background: var(--mantine-color-gray-1);
+}
+@container registry (max-width: 1380px) {
+  .client-product-movement-page .client-product-movement-filter-row { --app-multi-select-width: 180px; }
+  .client-product-movement-page .client-product-movement-filter-row > .client-product-movement-client-filter { flex-basis: 180px; }
+  .client-product-movement-page .client-product-movement-filter-row > .client-product-movement-article-filter { flex-basis: 140px; }
+}
+@container registry (max-width: 1250px) {
+  .client-product-movement-table-toolbar-slot .data-table-layout-control {
+    width: 36px;
+    min-width: 36px;
+    padding-inline: 0;
   }
-
-  .client-product-movement-filter-row > .app-filter-date-range {
-    width: 250px;
-  }
-
-  .client-product-movement-filter-row > .mantine-InputWrapper-root {
-    width: 100%;
-  }
+  .client-product-movement-table-toolbar-slot .data-table-layout-control .mantine-Button-label { display: none; }
+  .client-product-movement-table-toolbar-slot .data-table-layout-control .mantine-Button-section { margin: 0; }
 }
 
 .client-product-movement-page__table > .data-table > .data-table-scroll {

@@ -18,7 +18,7 @@ vi.mock('../../features/auth/useAuth', () => ({
 
 const SALES_TAB_PERMISSIONS = [
   ['Продажі', PermissionKeys.SalesUkraine.Sale.View],
-  ['Оферти', PermissionKeys.SystemPages.SalesUkraineOffers.View],
+  ['Пропозиції', PermissionKeys.SystemPages.SalesUkraineOffers.View],
   ['Резерв кошика', PermissionKeys.SystemPages.SalesUkraineCartReserve.View],
   ['Боржники', PermissionKeys.SystemPages.SalesUkraineDebtors.View],
   ['Зацікавленість', PermissionKeys.SystemPages.SalesUkraineInterest.View],
@@ -84,10 +84,10 @@ describe('SalesDashboardShell layout', () => {
     const { container } = renderShell()
     const shellBefore = container.querySelector('.sales-dashboard-shell__card.console-table-shell')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Оферти' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Пропозиції' }))
 
     const shellAfter = container.querySelector('.sales-dashboard-shell__card.console-table-shell')
-    const offersTab = screen.getByRole('button', { name: 'Оферти' })
+    const offersTab = screen.getByRole('button', { name: 'Пропозиції' })
 
     expect(shellAfter).toBe(shellBefore)
     expect(offersTab.classList.contains('is-active')).toBe(true)

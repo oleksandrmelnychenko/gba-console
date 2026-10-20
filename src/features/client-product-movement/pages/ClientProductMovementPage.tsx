@@ -18,6 +18,7 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
@@ -310,23 +311,14 @@ export function ClientProductMovementPage() {
       <div className="sales-dashboard-tab-content client-product-movement-card">
         <div className="app-filter-bar client-product-movement-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields client-product-movement-filter-row">
-            <div className="app-filter-date-range">
-              <TextInput
-                label={t('Від')}
-                max={filterDraft.to || undefined}
-                type="date"
-                value={filterDraft.from}
-                onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-              />
-              <TextInput
-                label={t('До')}
-                min={filterDraft.from || undefined}
-                type="date"
-                value={filterDraft.to}
-                onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-              />
-            </div>
+            <ToolbarDateRangeFilter
+              from={filterDraft.from}
+              to={filterDraft.to}
+              onChange={(range) => applyFilters({ ...filterDraft, ...range })}
+            />
             <Select
+              className="client-product-movement-client-filter"
+              comboboxProps={{ classNames: { dropdown: 'client-product-movement-filter-dropdown' }, width: 'max-content', position: 'bottom-start' }}
               clearable
               searchable
               data={clientSelectData}
@@ -340,6 +332,8 @@ export function ClientProductMovementPage() {
               onSearchChange={setClientQuery}
             />
             <CheckboxMultiSelect
+              className="client-product-movement-organization-filter"
+              dropdownClassName="client-product-movement-filter-dropdown"
               data={organizationOptions}
               label={t('Організація')}
               placeholder={t('Усі')}
@@ -347,6 +341,7 @@ export function ClientProductMovementPage() {
               onChange={(value) => applyFilters({ ...filterDraft, organizationIds: value })}
             />
             <TextInput
+              className="client-product-movement-article-filter"
               label={t('Артикул')}
               value={filterDraft.article}
               onChange={(event) => setFilterDraft({ ...filterDraft, article: event.currentTarget.value })}
@@ -498,7 +493,7 @@ function useColumns() {
         minWidth: 150,
         enableSorting: false,
         accessor: (row) => row.OrganizationName,
-        cell: (row) => displayValue(row.OrganizationName),
+        cell: (row) => <TableChip tone="product" value={displayValue(row.OrganizationName)} />,
       },
       {
         id: 'responsible',
@@ -507,7 +502,7 @@ function useColumns() {
         minWidth: 140,
         enableSorting: false,
         accessor: (row) => row.Responsible,
-        cell: (row) => <TableChip tone="product" value={displayValue(row.Responsible)} />,
+        cell: (row) => <TableChip tone="warning" value={displayValue(row.Responsible)} />,
       },
       {
         id: 'updatedDate',
@@ -626,7 +621,7 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
         width: 200,
         minWidth: 140,
         accessor: (item) => item.Responsible,
-        cell: (item) => <TableChip tone="product" value={displayValue(item.Responsible)} />,
+        cell: (item) => <TableChip tone="warning" value={displayValue(item.Responsible)} />,
       },
       {
         id: 'amount',

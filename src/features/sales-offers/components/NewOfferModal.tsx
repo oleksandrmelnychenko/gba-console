@@ -4,7 +4,8 @@ import { Copy, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
@@ -28,6 +29,16 @@ import type {
   OffersProduct,
 } from '../types'
 import './offers-modal.css'
+
+const OFFER_SELECT_PROPS = {
+  classNames: {
+    dropdown: 'offers-create-select-dropdown',
+    option: 'offers-create-select-option',
+    empty: 'offers-create-select-empty',
+  },
+  maxDropdownHeight: 220,
+  size: 'xs' as const,
+}
 
 export function NewOfferModal({
   onClose,
@@ -56,10 +67,10 @@ export function NewOfferModal({
   return (
     <AppModal
       centered
-      className="offers-modal"
+      className="offers-modal offers-create-modal"
       opened={isOpen}
       size="lg"
-      title={<span className="offers-modal__title">{created ? t('Оферту створено') : t('Створити оферту')}</span>}
+      title={<span className="offers-modal__title">{created ? t('Пропозицію створено') : t('Створити пропозицію')}</span>}
       onClose={close}
     >
       {isOpen
@@ -86,9 +97,9 @@ function OfferGeneratedLink({ offer, onDone }: { offer: ClientShoppingCart; onDo
   }
 
   return (
-    <Stack gap="md">
+    <Stack gap={10}>
       <Text className="offers-modal-generated-title">
-        {t('Оферта')} {offer.Number ?? ''}
+        {t('Пропозиція')} {offer.Number ?? ''}
       </Text>
       <Group align="flex-end" gap="xs" wrap="nowrap">
         <TextInput readOnly label={t('Посилання')} style={{ flex: 1 }} value={link} />
@@ -96,9 +107,9 @@ function OfferGeneratedLink({ offer, onDone }: { offer: ClientShoppingCart; onDo
           <Copy size={18} />
         </ActionIcon>
       </Group>
-      <Group justify="flex-end">
+      <AppModalFooter>
         <Button color={CREATE_ACTION_COLOR} onClick={onDone}>{t('Готово')}</Button>
-      </Group>
+      </AppModalFooter>
     </Stack>
   )
 }
@@ -352,17 +363,17 @@ function NewOfferForm({
 
     try {
       const result = await runCreateOffer(offer, createOffer)
-      notifications.show({ color: 'green', message: t('Оферту успішно створено') })
+      notifications.show({ color: 'green', message: t('Пропозицію успішно створено') })
 
       if (result?.NetUid) {
         onCreated(result)
       } else {
-        notifications.show({ color: 'red', message: t('Не вдалося отримати посилання на оферту') })
+        notifications.show({ color: 'red', message: t('Не вдалося отримати посилання на пропозицію') })
       }
     } catch (error) {
       notifications.show({
         color: 'red',
-        message: error instanceof Error ? error.message : t('Не вдалося створити оферту'),
+        message: error instanceof Error ? error.message : t('Не вдалося створити пропозицію'),
       })
     } finally {
       setCreating(false)
@@ -370,14 +381,16 @@ function NewOfferForm({
   }
 
   return (
-    <Stack className="offers-modal-form" gap="md">
+    <Stack className="offers-modal-form" gap={10}>
       <Select
+        {...OFFER_SELECT_PROPS}
         searchable
         data={clientData}
         label={t('Клієнт')}
         leftSection={<Search size={16} />}
-        nothingFoundMessage={clientQuery.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')}
-        placeholder={t('Пошук клієнта')}
+        nothingFoundMessage={clientQuery.trim().length < 2 ? null : t('Нічого не знайдено')}
+        placeholder={t('Пошук клієнта — мінімум 2 символи')}
+        renderOption={({ option }) => <TableChip tone="warning" value={option.label} />}
         searchValue={clientQuery}
         value={clientNetId}
         onChange={(value) => {
@@ -392,11 +405,13 @@ function NewOfferForm({
 
       {subClientData.length > 0 && (
         <Select
+          {...OFFER_SELECT_PROPS}
           clearable
           searchable
           data={subClientData}
           disabled={isLoadingSubClients}
           label={t('Суб-клієнт')}
+          renderOption={({ option }) => <TableChip tone="warning" value={option.label} />}
           placeholder={t('Без суб-клієнта')}
           value={subClientNetId}
           onChange={(value) => {
@@ -408,6 +423,7 @@ function NewOfferForm({
       )}
 
       <Select
+        {...OFFER_SELECT_PROPS}
         searchable
         data={agreementData}
         disabled={!clientNetId || isLoadingAgreements}
@@ -419,15 +435,20 @@ function NewOfferForm({
       />
 
       <Select
+        {...OFFER_SELECT_PROPS}
         searchable
         data={productData}
         disabled={!agreementNetId}
         label={t('Товар')}
         leftSection={<Search size={16} />}
         nothingFoundMessage={
-          productQuery.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')
+          productQuery.trim().length < 2 ? null : t('Нічого не знайдено')
         }
-        placeholder={t('Пошук товару')}
+        placeholder={t('Пошук товару — мінімум 2 символи')}
+        renderOption={({ option }) => {
+          const product = productOptions.find((item) => item.NetUid === option.value)
+          return product ? <OfferLineProduct product={product} /> : option.label
+        }}
         searchValue={productQuery}
         value={null}
         onChange={(value) => {
@@ -437,6 +458,7 @@ function NewOfferForm({
       />
 
       {lines.length > 0 && (
+        <div className="offers-create-modal__table-scroll">
         <Table className="app-static-table offers-modal-lines-table" striped>
           <Table.Thead>
             <Table.Tr>
@@ -455,20 +477,21 @@ function NewOfferForm({
                       className="offers-modal-product-link"
                       component="button"
                       type="button"
-                      underline="always"
+                      underline="hover"
                       onClick={(event) => {
                         event.stopPropagation()
                         setProductCardNetId(line.product.NetUid as string)
                       }}
                     >
-                      {getProductLabel(line.product)}
+                      <OfferLineProduct product={line.product} />
                     </Anchor>
                   ) : (
-                    <Text className="offers-modal-product-name">{getProductLabel(line.product)}</Text>
+                    <div className="offers-modal-product-name"><OfferLineProduct product={line.product} /></div>
                   )}
                 </Table.Td>
                 <Table.Td className="app-table-number">
                   <NumberInput
+                    aria-label={t('Кількість')}
                     hideControls
                     min={1}
                     value={line.qty}
@@ -477,6 +500,7 @@ function NewOfferForm({
                 </Table.Td>
                 <Table.Td>
                   <TextInput
+                    aria-label={t('Коментар')}
                     placeholder={t('Коментар')}
                     value={line.comment}
                     onChange={(event) => updateLineComment(line.key, event.currentTarget.value)}
@@ -489,24 +513,37 @@ function NewOfferForm({
             ))}
           </Table.Tbody>
         </Table>
+        </div>
       )}
 
       {agreementNetId && lines.length === 0 && (
         <Text c="dimmed" size="sm">
-          {t('Додайте товари до оферти')}
+          {t('Додайте товари до пропозиції')}
         </Text>
       )}
 
-      <Group justify="flex-end">
-        <Button color="gray" disabled={isCreating} variant="subtle" onClick={onCancel}>
+      <AppModalFooter>
+        <Button disabled={isCreating} variant="default" onClick={onCancel}>
           {t('Скасувати')}
         </Button>
         <Button color={CREATE_ACTION_COLOR} disabled={!agreementNetId || lines.length === 0} loading={isCreating} onClick={create}>
           {t('Створити')}
         </Button>
-      </Group>
+      </AppModalFooter>
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </Stack>
+  )
+}
+
+function OfferLineProduct({ product }: { product: OffersProduct }) {
+  return (
+    <span className="offers-create-modal__product">
+      <span className="offers-create-modal__product-codes">
+        <TableChip tone="product" value={product.VendorCode} />
+        <TableChip tone="warning" value={product.MainOriginalNumber} />
+      </span>
+      <span>{product.Name || product.NetUid}</span>
+    </span>
   )
 }
 

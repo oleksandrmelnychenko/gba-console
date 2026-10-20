@@ -14,6 +14,7 @@ import {
   IncomeCashflowShopFormPage,
   IncomeCashflowUserFormPage,
   NewResalePage,
+  ResalePage,
   OrganizationClientEditPage,
   OrganizationClientNewPage,
   OutgoingCashflowCreatePage,
@@ -274,6 +275,11 @@ export function App() {
               element={lazyRoute(<ProductGroupDetailPage />)}
             />
             <Route path="/resales/new" element={lazyRoute(<NewResalePage />)} />
+            <Route path="/resales/:id" element={
+              <PagePermissionBoundary permissionKey={PermissionKeys.Resales.Page.View}>
+                {lazyRoute(<ResalePage />)}
+              </PagePermissionBoundary>
+            } />
             <Route path="/users/new" element={lazyRoute(<UserNewPage />)} />
             <Route
               path="/users/edit/:netid"

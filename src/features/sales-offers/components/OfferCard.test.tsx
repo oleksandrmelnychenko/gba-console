@@ -35,7 +35,7 @@ describe('OfferCard actions and expanded lines', () => {
 
   it('preserves product opening and the exact item passed to the accessible reason action', () => {
     const { props } = renderOffer()
-    const table = screen.getByRole('table', { name: 'Товари оферти' })
+    const table = screen.getByRole('table', { name: 'Товари пропозиції' })
     expect(within(table).getAllByRole('columnheader')).toHaveLength(5)
     fireEvent.click(within(table).getByRole('button', { name: 'Причини' }))
     expect(props.onOpenItemReason).toHaveBeenCalledWith(offer, item)

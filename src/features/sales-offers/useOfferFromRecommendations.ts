@@ -9,7 +9,7 @@ import { buildOfferFromRecommendations } from './offerFromRecommendations'
 import type { RecommendationProduct } from '../clients/recommendationsTypes'
 import type { ClientShoppingCart, OfferClientAgreement } from './types'
 
-// Shared «Створити оферту» flow for recommendation check-lists (client card + cockpit clients tab):
+// Shared «Створити пропозицію» flow for recommendation check-lists (client card + cockpit clients tab):
 // build the cart, run the idempotent create mutation, hand back the persisted offer for the link modal.
 export function useOfferFromRecommendations() {
   const { t } = useI18n()
@@ -37,17 +37,17 @@ export function useOfferFromRecommendations() {
         )
 
         if (!result?.NetUid) {
-          notifications.show({ color: 'red', message: t('Не вдалося отримати посилання на оферту') })
+          notifications.show({ color: 'red', message: t('Не вдалося отримати посилання на пропозицію') })
           return false
         }
 
-        notifications.show({ color: 'green', message: t('Оферту успішно створено') })
+        notifications.show({ color: 'green', message: t('Пропозицію успішно створено') })
         setCreatedOffer(result)
         return true
       } catch (error) {
         notifications.show({
           color: 'red',
-          message: error instanceof Error ? error.message : t('Не вдалося створити оферту'),
+          message: error instanceof Error ? error.message : t('Не вдалося створити пропозицію'),
         })
         return false
       } finally {
