@@ -641,3 +641,17 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Compact registry toolbar: fixed field widths, responsive action labels. */
+.app-filter-bar.accountable-expenses-command-bar { container: accountable-expenses-toolbar / inline-size; display: flex; flex-wrap: wrap; overflow: visible; }
+.app-filter-bar.accountable-expenses-command-bar > .app-filter-fields { display: flex; flex: 0 1 auto; flex-wrap: wrap; align-items: end; gap: 8px; width: auto; min-width: 0; max-width: 100%; }
+.app-filter-bar.accountable-expenses-command-bar > .mantine-InputWrapper-root { flex: 0 0 240px; width: 240px; min-width: 0; max-width: 100%; }
+.app-filter-bar.accountable-expenses-command-bar :is(.app-filter-actions, .data-table-toolbar, .data-table-toolbar-left) { flex-wrap: nowrap; gap: 8px; margin-left: 0; }
+.app-filter-bar.accountable-expenses-command-bar .app-filter-actions { flex: 0 0 auto; }
+@container accountable-expenses-toolbar (max-width: 1000px) {
+  .app-filter-bar.accountable-expenses-command-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar.accountable-expenses-command-bar .data-table-layout-control .mantine-Button-label { display: none; }
+  .app-filter-bar.accountable-expenses-command-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
+}
+
+.app-filter-bar.accountable-expenses-command-bar .finance-toolbar-action { flex: 0 0 auto; white-space: nowrap; }

@@ -1,3 +1,4 @@
+import { changeReportPeriod, readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -57,12 +58,11 @@ describe('constructor draft recovery', () => {
 
   it('recovers an unfinished period after remount only on request, without generating or updating a template', async () => {
     const view = await ready()
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '' } })
-    fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-09-03' } })
+    changeReportPeriod({ from: '', to: '2026-09-03' })
     view.unmount()
     await restored()
-    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('')
-    expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe('2026-09-03')
+    expect((readReportDateInput('Від') as HTMLInputElement).value).toBe('')
+    expect((readReportDateInput('До') as HTMLInputElement).value).toBe('2026-09-03')
     expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(true)
     expect(createStockReport).not.toHaveBeenCalled()
     expect(saveServerReportTemplate).not.toHaveBeenCalled()
@@ -70,7 +70,7 @@ describe('constructor draft recovery', () => {
 
   it('retains unknown advanced data without a saved template while the restored draft is edited', async () => {
     const view = await ready()
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-09-02' } })
+    changeReportPeriod({ from: '2026-09-02' })
     view.unmount()
     const key = 'report-workspace-draft:v1:draft-owner-a'
     const candidate = JSON.parse(sessionStorage.getItem(key)!)
@@ -78,7 +78,7 @@ describe('constructor draft recovery', () => {
     candidate.snapshot.data.futureOptions = futureOptions
     sessionStorage.setItem(key, JSON.stringify(candidate))
     await restored()
-    fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-09-09' } })
+    changeReportPeriod({ to: '2026-09-09' })
     await waitFor(() => {
       const saved = JSON.parse(sessionStorage.getItem(key)!)
       expect(saved.snapshot.data.to).toBe('2026-09-09')
@@ -91,11 +91,11 @@ describe('constructor draft recovery', () => {
 
   it('restores the opened revision without adopting a newer server revision', async () => {
     const view = await ready(); await openTemplate(template.Name)
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-09-02' } })
+    changeReportPeriod({ from: '2026-09-02' })
     view.unmount()
     vi.mocked(getServerReportTemplates).mockResolvedValue([{ ...template, Revision: 5 }])
     await restored()
-    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-09-02')
+    expect((readReportDateInput('Від') as HTMLInputElement).value).toBe('2026-09-02')
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     await waitFor(() => expect((screen.getByRole('button', { name: 'Оновити шаблон' }) as HTMLButtonElement).disabled).toBe(true))
     expect(saveServerReportTemplate).not.toHaveBeenCalled()
@@ -125,7 +125,7 @@ describe('constructor draft recovery', () => {
 
   it.each(['reset', 'preset', 'dataset', 'template'])('can return to the previous exact draft after %s', async action => {
     await ready(); await openTemplate(template.Name)
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-09-02' } })
+    changeReportPeriod({ from: '2026-09-02' })
     if (action === 'reset') fireEvent.click(screen.getByRole('button', { name: 'Скинути' }))
     else if (action === 'preset') fireEvent.click(screen.getByRole('button', { name: 'Продажі за днями' }))
     else if (action === 'template') await openTemplate(template.Name)
@@ -134,7 +134,7 @@ describe('constructor draft recovery', () => {
       fireEvent.click(await screen.findByRole('option', { name: stockDataset.Name }))
     }
     fireEvent.click(await screen.findByRole('button', { name: 'Повернути попередні налаштування' }))
-    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-09-02')
+    expect((readReportDateInput('Від') as HTMLInputElement).value).toBe('2026-09-02')
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     expect(within(screen.getByText('Відкритий шаблон').parentElement!).getByText(template.Name)).toBeTruthy()
     expect(saveServerReportTemplate).not.toHaveBeenCalled()
@@ -142,7 +142,7 @@ describe('constructor draft recovery', () => {
 
   it('does not offer another account\'s draft and preserves it for the original owner', async () => {
     const first = await ready()
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-09-02' } })
+    changeReportPeriod({ from: '2026-09-02' })
     first.unmount()
     owner = 'draft-owner-b'
     saveSession({ userNetUid: owner, csrfToken: 'draft-fixture-csrf-b' })
@@ -152,6 +152,6 @@ describe('constructor draft recovery', () => {
     owner = 'draft-owner-a'
     saveSession({ userNetUid: owner, csrfToken: 'draft-fixture-csrf-a-returned' })
     await restored()
-    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-09-02')
+    expect((readReportDateInput('Від') as HTMLInputElement).value).toBe('2026-09-02')
   })
 })

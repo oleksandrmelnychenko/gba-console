@@ -1,3 +1,4 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
@@ -384,42 +385,21 @@ export function AllSadsPage() {
       <div className="console-table-shell sad-list-page__shell">
         <div className="app-filter-bar sad-list-page__toolbar">
           <Group align="flex-end" className="app-filter-fields sad-list-page__filters" gap={10} wrap="nowrap">
-            <div className="app-filter-date-range">
-              <TextInput
-                label={t('Від')}
-                type="date"
-                value={filters.from}
-                onChange={(event) => {
-                  const nextValue = event.currentTarget.value
-                  setPage(1)
-                  setFilters((currentFilters) => ({ ...currentFilters, from: nextValue }))
-                }}
-              />
-              <TextInput
-                label={t('До')}
-                type="date"
-                value={filters.to}
-                onChange={(event) => {
-                  const nextValue = event.currentTarget.value
-                  setPage(1)
-                  setFilters((currentFilters) => ({ ...currentFilters, to: nextValue }))
-                }}
-              />
-            </div>
+            <ToolbarDateRangeFilter from={filters.from} to={filters.to} onChange={(range) => { setPage(1); setFilters((current) => ({ ...current, ...range })) }} />
             <div className="app-filter-actions sad-list-page__actions">
               <Tooltip label={t('Скинути')}>
-                <ActionIcon
+                <Button
                   aria-label={t('Скинути')}
                   color="gray"
-                  size={34}
-                  variant="light"
+                  variant="default"
                   onClick={() => {
                     setPage(1)
                     setFilters({ from: SYNC_DATA_RANGE_START, to: formatLocalDate(new Date()) })
                   }}
-                >
-                  <RotateCcw size={17} />
-                </ActionIcon>
+
+                  className="sad-list-toolbar-caption-action" title={t('Скинути')} leftSection={<RotateCcw size={17} />}>
+                  {t('Скинути')}
+                </Button>
               </Tooltip>
               <Paginator
                 hasNext={hasMore}

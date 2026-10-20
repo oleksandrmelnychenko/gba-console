@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import type {
   ConsumableOrderRow,
   ConsumablesOrder,
@@ -45,7 +46,7 @@ export function buildConsumableOrderRows(orders: ConsumablesOrder[]): Consumable
     isPayed: order.IsPayed,
     itemCount: getActiveConsumableOrderItems(order).length,
     order,
-    organization: getEntityName(order.SupplyOrganizationAgreement?.Organization),
+    organization: getOrganizationDisplayName(order.SupplyOrganizationAgreement?.Organization) || undefined,
     organizationFromDate: order.OrganizationFromDate,
     organizationNumber: order.OrganizationNumber,
     responsible: getEntityName(order.User),

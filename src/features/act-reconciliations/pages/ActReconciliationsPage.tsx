@@ -1,12 +1,12 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import {
-  ActionIcon,
+  Button,
   Alert,
   Badge,
   Group,
   Select,
   Stack,
   Text,
-  TextInput,
   Tooltip,
 } from '@mantine/core'
 import { CircleAlert, RefreshCw, RotateCcw } from 'lucide-react'
@@ -229,25 +229,10 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
       <div className="console-table-shell act-reconciliations-shell">
         <div className="app-filter-bar act-reconciliations-filter-bar">
           <div className="app-filter-fields act-reconciliations-filter-row">
-            <div className="app-filter-date-range">
-              <TextInput
-                className="act-reconciliations-date-input"
-                label={t('Від')}
-                max={filterDraft.to || undefined}
-                type="date"
-                value={filterDraft.from}
-                onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-              />
-              <TextInput
-                className="act-reconciliations-date-input"
-                label={t('До')}
-                min={filterDraft.from || undefined}
-                type="date"
-                value={filterDraft.to}
-                onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-              />
-            </div>
+            <ToolbarDateRangeFilter from={filterDraft.from} to={filterDraft.to} onChange={(range) => applyFilters({ ...filterDraft, ...range })} />
             <Select
+              classNames={{ dropdown: 'act-reconciliations-toolbar-dropdown' }}
+              comboboxProps={{ width: 'max-content', position: 'bottom-start' }}
               className="act-reconciliations-status-filter"
               data={[
                 { value: 'all', label: t('Усі стани') },
@@ -262,21 +247,14 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
             />
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
-                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                  <RotateCcw size={17} />
-                </ActionIcon>
+                <Button aria-label={t('Скинути')} onClick={resetFilters} className="finance-toolbar-action" variant="default" leftSection={<RotateCcw size={17} />} title={t('Скинути')}>{t('Скинути')}</Button>
               </Tooltip>
               <Tooltip label={t('Оновити')}>
-                <ActionIcon
+                <Button
                   aria-label={t('Оновити')}
-                  color="gray"
                   loading={isLoading}
-                  size={34}
-                  variant="light"
                   onClick={() => reload()}
-                >
-                  <RefreshCw size={18} />
-                </ActionIcon>
+                 className="finance-toolbar-action" variant="default" leftSection={<RefreshCw size={18} />} title={t('Оновити')}>{t('Оновити')}</Button>
               </Tooltip>
             </div>
             <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot act-reconciliations-table-toolbar-slot" />

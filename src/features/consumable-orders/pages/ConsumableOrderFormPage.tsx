@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   Alert,
   Anchor,
@@ -663,7 +664,7 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
   const currencyLabel = selectedAgreement?.Currency?.Code || selectedAgreement?.Currency?.Name || ''
   const supplierLabel = displayValue(getEntityLabel(selectedSupplier))
   const agreementLabel = displayValue(selectedAgreement?.Name || selectedAgreement?.Number)
-  const organizationLabel = displayValue(getEntityLabel(selectedAgreement?.Organization))
+  const organizationLabel = displayValue(getOrganizationDisplayName(selectedAgreement?.Organization))
   const storageLabel = displayValue(getEntityLabel(selectedStorage))
   const internalNumberLabel = order.Number ? `№ ${order.Number}` : t('Накладна ще без внутрішнього номера')
   const invoiceNumberLabel = form.invoiceNumber ? `№ ${form.invoiceNumber}` : t('Без номера постачальника')

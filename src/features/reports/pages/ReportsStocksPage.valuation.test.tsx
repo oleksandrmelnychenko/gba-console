@@ -1,3 +1,4 @@
+import { changeReportPeriod, readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -57,10 +58,9 @@ describe('current stock valuation by exact client agreement', () => {
 
   it('requires a verified agreement, preserves it through presets, and clears it on dataset changes', async () => {
     const { container } = await ready()
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-06-01' } })
-    fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-06-30' } })
+    changeReportPeriod({ from: '2026-06-01', to: '2026-06-30' })
     await chooseDataset(valuationDataset.Name)
-    expect(screen.queryByLabelText('Від')).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull()
     expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(true)
     fireEvent.submit(container.querySelector('form')!)
     expect(createStockReport).not.toHaveBeenCalled()
@@ -74,8 +74,8 @@ describe('current stock valuation by exact client agreement', () => {
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({ dataSource: 8, valuationClientAgreementId: 459018,
       from: '', to: '', selections: [], sorted: { Row: [{ type: 29 }, { type: 28 }], Measurements: [{ Type: 17 }, { Type: 21 }] } })
     await chooseDataset(reportDatasets[0].Name)
-    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-06-01')
-    expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe('2026-06-30')
+    expect((readReportDateInput('Від') as HTMLInputElement).value).toBe('2026-06-01')
+    expect((readReportDateInput('До') as HTMLInputElement).value).toBe('2026-06-30')
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(2))
     expect(vi.mocked(createStockReport).mock.calls[1][0]).not.toHaveProperty('valuationClientAgreementId')
@@ -108,11 +108,11 @@ describe('current stock valuation by exact client agreement', () => {
     template.Data = { ...template.Data, valuationClientAgreementId: identity } as unknown as ReportRequestBody
     vi.mocked(getServerReportTemplates).mockResolvedValue([template])
     await ready()
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-06-01' } })
+    changeReportPeriod({ from: '2026-06-01' })
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Моя оцінка за договором' }))
     expect(screen.getByText('Виберіть точний договір клієнта для оцінки залишків.')).toBeTruthy()
-    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-06-01')
+    expect((readReportDateInput('Від') as HTMLInputElement).value).toBe('2026-06-01')
     expect(searchValuationAgreements).not.toHaveBeenCalled()
     expect(saveServerReportTemplate).not.toHaveBeenCalled()
   })

@@ -154,3 +154,10 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.product-group-detail-content .product-group-detail-filter-row > .product-group-detail-search {
+  flex: 0 1 240px;
+  width: 240px;
+  max-width: 100%;
+}
+.product-group-detail-filter-row .product-group-detail-table-tools { margin-left: 0; }

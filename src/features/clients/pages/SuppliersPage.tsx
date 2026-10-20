@@ -978,9 +978,13 @@ function SuppliersFilterToolbar({
       />
       <div className="app-filter-actions sales-filter-actions suppliers-filter-actions">
         <Tooltip label={t('Скинути')}>
-          <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={onReset}>
-            <RotateCcw size={17} />
-          </ActionIcon>
+          <Button variant="default" color="gray" aria-label={t('Скинути')} onClick={onReset}
+            className="suppliers-toolbar-action"
+            title={t('Скинути')}
+            leftSection={<RotateCcw size={17} />}
+          >
+            {t('Скинути')}
+          </Button>
         </Tooltip>
         {canExport && <Tooltip label={t('Експорт в Excel')}>
           <ActionIcon

@@ -1077,20 +1077,22 @@ function ClientsFilterToolbar({
           onSetPage(1)
           onSetSearchValue(event.currentTarget.value)
         }}
-        style={{ flex: '1 1 auto', minWidth: 140 }}
+        className="clients-filter-search"
       />
       <Select
+        classNames={{ dropdown: 'clients-filter-dropdown' }}
         size="sm"
         label={t('Поле')}
         data={searchFieldOptions}
         value={searchField}
-        style={{ flex: '0 0 240px' }}
+        className="clients-filter-field"
         onChange={(value) => {
           onSetPage(1)
           onSetSearchField(value || CLIENT_SEARCH_SQL)
         }}
       />
       <Select
+        classNames={{ dropdown: 'clients-filter-dropdown' }}
         size="sm"
         label={t('Статус')}
         data={[
@@ -1099,7 +1101,7 @@ function ClientsFilterToolbar({
           { value: 'inactive', label: t('Неактивні') },
         ]}
         value={activeFilter}
-        style={{ flex: '0 0 110px' }}
+        className="clients-filter-status"
         onChange={(value) => {
           onSetPage(1)
           onSetActiveFilter((value as ActiveFilter | null) || 'all')
@@ -1115,9 +1117,13 @@ function ClientsFilterToolbar({
       />
       <div className="app-filter-actions">
         <Tooltip label={t('Скинути')}>
-          <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={onReset}>
-            <RotateCcw size={17} />
-          </ActionIcon>
+          <Button variant="default" color="gray" aria-label={t('Скинути')} onClick={onReset}
+            className="clients-toolbar-action"
+            title={t('Скинути')}
+            leftSection={<RotateCcw size={17} />}
+          >
+            {t('Скинути')}
+          </Button>
         </Tooltip>
         {canExport && (
           <Tooltip label={t('Експорт в Excel')}>

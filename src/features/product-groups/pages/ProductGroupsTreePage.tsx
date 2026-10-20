@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Group, Loader, Skeleton, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { Button, Alert, Group, Loader, Skeleton, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CircleAlert, Folder, Folders, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useEffect, useMemo, useReducer } from 'react'
@@ -132,26 +132,22 @@ function ProductGroupsTreePageContent() {
                 <TextInput
                   label={t('Пошук групи')}
                   leftSection={<Search size={16} />}
-                  style={{ flex: '1 1 auto', minWidth: 160 }}
+                  className="product-groups-tree-search"
                   value={searchDraft}
                   onChange={(event) => setSearchDraft(event.currentTarget.value)}
                 />
                 <div className="app-filter-actions">
                   <Tooltip label={t('Скинути')}>
-                    <ActionIcon
+                    <Button
                       aria-label={t('Скинути')}
                       color="gray"
-                      size={34}
-                      variant="light"
+                      size="sm"
+                      variant="default"
                       onClick={() => setSearchDraft('')}
-                    >
-                      <RotateCcw size={17} />
-                    </ActionIcon>
+                     className="registry-caption-action" leftSection={<RotateCcw size={17} />}>{t('Скинути')}</Button>
                   </Tooltip>
                   <Tooltip label={t('Оновити')}>
-                    <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={() => reload()}>
-                      <RefreshCw size={17} />
-                    </ActionIcon>
+                    <Button aria-label={t('Оновити')} color="gray" loading={isLoading} size="sm" variant="default" onClick={() => reload()} className="registry-caption-action" leftSection={<RefreshCw size={17} />}>{t('Оновити')}</Button>
                   </Tooltip>
                 </div>
               </Group>

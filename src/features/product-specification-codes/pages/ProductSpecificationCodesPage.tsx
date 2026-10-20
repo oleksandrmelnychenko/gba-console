@@ -1,6 +1,5 @@
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
   Button,
   Card,
@@ -229,23 +228,19 @@ function ProductSpecificationCodesPageContent() {
             />
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
-                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
-                  <RotateCcw size={17} />
-                </ActionIcon>
+                <Button aria-label={t('Скинути')} color="gray" size="sm" variant="default" onClick={model.resetFilters} className="registry-caption-action" leftSection={<RotateCcw size={17} />}>{t('Скинути')}</Button>
               </Tooltip>
               {canImport && (
                 <FileButton accept=".xlsx,.xls,.csv" onChange={handleUpload}>
                   {(props) => (
                     <Tooltip label={t('Завантажити Excel')}>
-                      <ActionIcon
+                      <Button
                         {...props}
                         aria-label={t('Завантажити Excel')}
                         loading={isUploading}
-                        size={34}
+                        size="sm"
                         variant="default"
-                      >
-                        <ExcelIcon size={22} />
-                      </ActionIcon>
+                       className="registry-caption-action" leftSection={<ExcelIcon size={22} />}>{t('Завантажити Excel')}</Button>
                     </Tooltip>
                   )}
                 </FileButton>

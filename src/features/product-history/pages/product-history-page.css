@@ -7,6 +7,7 @@
 }
 
 .product-history-card {
+  container: product-history / inline-size;
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2) !important;
   box-shadow: var(--app-card-shadow) !important;
@@ -21,11 +22,11 @@
 /* Filter strip pinned at the top of the card; the table below it scrolls. */
 .product-history-page .product-history-filter-bar.app-filter-bar {
   flex: 0 0 auto;
-  overflow-x: auto;
+  overflow: visible;
 }
 
 .product-history-filter-row .app-filter-actions {
-  margin-left: auto;
+  margin-left: 0;
 }
 
 .product-history-placement-trigger {
@@ -249,24 +250,84 @@
 
 .product-history-page .product-history-filter-row {
   --app-multi-select-width: 200px;
-  display: grid;
-  grid-template-columns: 130px 200px minmax(190px, 240px) max-content max-content;
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   width: 100%;
 }
 
-.product-history-page .product-history-filter-row > * {
-  grid-row: 1;
+.product-history-page .product-history-filter-row > .product-history-date-filter {
+  flex: 0 0 140px;
+  width: 140px;
   min-width: 0;
-  width: auto;
 }
 
-.product-history-page .product-history-filter-row .app-filter-actions,
-.product-history-page .product-history-filter-row .app-filter-table-toolbar-slot,
-.product-history-page .product-history-filter-row .data-table-toolbar,
-.product-history-page .product-history-filter-row .data-table-toolbar-left {
-  flex-wrap: nowrap;
-  min-width: max-content;
+.product-history-page .product-history-filter-row > .product-history-search-filter {
+  flex: 0 1 220px;
+  width: 220px;
+  min-width: 0;
+}
+
+.product-history-filter-row > .app-filter-actions,
+.product-history-filter-row > .app-filter-table-toolbar-slot {
+  flex: 0 0 auto;
+  margin-left: 0;
+}
+
+.product-history-storage-dropdown {
+  width: max-content !important;
+  min-width: 200px;
+  max-width: min(560px, calc(100vw - 24px));
+  padding: 4px;
+}
+
+.product-history-storage-dropdown :is(.mantine-Combobox-search, .mantine-Combobox-option, .mantine-Combobox-empty) {
+  color: var(--mantine-color-gray-9);
+  font: 400 12px / 16px var(--font-mono);
+}
+
+.product-history-storage-dropdown .mantine-Combobox-option {
+  min-height: 30px;
+  padding: 7px 8px;
+  border-radius: 6px;
+}
+
+.product-history-storage-dropdown .mantine-Combobox-option:is(:hover, [data-combobox-selected], [data-combobox-active]) {
+  background: var(--mantine-color-gray-1);
+}
+
+@container product-history (max-width: 1400px) {
+  .product-history-filter-row .data-table-layout-control {
+    width: 36px;
+    min-width: 36px;
+    padding-inline: 0;
+  }
+  .product-history-filter-row .data-table-layout-control .mantine-Button-label { display: none; }
+  .product-history-filter-row .data-table-layout-control .mantine-Button-section { margin: 0; }
+}
+
+@container product-history (max-width: 1200px) {
+  .product-history-page .product-history-filter-row > .product-history-search-filter {
+    flex-basis: 180px;
+    width: 180px;
+  }
+  .product-history-filter-row .product-history-export-action {
+    width: 36px;
+    min-width: 36px;
+    padding-inline: 0;
+  }
+  .product-history-export-action .mantine-Button-label { display: none; }
+  .product-history-export-action .mantine-Button-section { margin: 0; }
+}
+
+@container product-history (max-width: 1000px) {
+  .product-history-filter-row .product-history-reset-action {
+    width: 36px;
+    min-width: 36px;
+    padding-inline: 0;
+  }
+  .product-history-reset-action .mantine-Button-label { display: none; }
+  .product-history-reset-action .mantine-Button-section { margin: 0; }
 }
 
 .product-history-table-state {

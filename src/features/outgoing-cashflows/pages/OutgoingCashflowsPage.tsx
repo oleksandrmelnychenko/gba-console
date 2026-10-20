@@ -1,6 +1,7 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
   Badge,
   Button,
@@ -32,9 +33,7 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import {
   DocumentDetailFlag,
-  DocumentDetailChip,
   DocumentDetailLayout,
-  DocumentDetailMetric,
   DocumentDetailRow,
   DocumentDetailSection,
   DocumentDetailSummary,
@@ -72,6 +71,7 @@ import type {
 } from '../types'
 import '../../../shared/ui/console-table-page.css'
 import './outgoing-cashflows-page.css'
+import './outgoing-cashflow-detail.css'
 
 const PAGE_SIZE = 40
 const SEARCH_DEBOUNCE_MS = 350
@@ -480,7 +480,6 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
 
   return {
     cancelRow,
-    cashflows,
     columns,
     currencies,
     currencyNetId,
@@ -557,7 +556,6 @@ function OutgoingCashflowsPageContent() {
 
 type OutgoingCashflowsPageModel = {
   cancelRow: OutgoingCashflowRow | null
-  cashflows: OutgoingCashflowsResponse
   columns: DataTableColumn<OutgoingCashflowRow>[]
   currencies: Currency[]
   currencyNetId: string
@@ -608,7 +606,6 @@ type OutgoingCashflowsPageModel = {
 function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel }) {
   const {
     cancelRow,
-    cashflows,
     columns,
     currencies,
     currencyNetId,
@@ -680,49 +677,49 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
       <div className="console-table-shell outgoing-cashflows-card">
         <div className="app-filter-bar outgoing-cashflows-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields outgoing-cashflows-filter-row">
-            <div className="app-filter-date-range">
-              <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => onSetFromDate(event.currentTarget.value)} />
-              <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => onSetToDate(event.currentTarget.value)} />
-            </div>
+            <ToolbarDateRangeFilter from={fromDate} to={toDate} onChange={(range) => { onSetFromDate(range.from); onSetToDate(range.to) }} />
             <TextInput
               leftSection={<Search size={16} />}
               label={t('Пошук')}
               placeholder={t('Номер, отримувач, рахунок або коментар')}
               value={searchValue}
-              w="100%"
               onChange={(event) => onSetSearchValue(event.currentTarget.value)}
             />
             <Select
+              classNames={{ dropdown: 'outgoing-cashflows-toolbar-dropdown' }}
+              comboboxProps={{ width: 'max-content', position: 'bottom-start' }}
               clearable
               searchable
               data={toSelectOptions(currencies, (currency) => currency.Name || currency.Code)}
               label={t('Валюта')}
               placeholder={t('Усі')}
               value={currencyNetId || null}
-              w="100%"
               onChange={(value) => onSetCurrencyNetId(value || '')}
             />
             <Select
+              classNames={{ dropdown: 'outgoing-cashflows-toolbar-dropdown' }}
+              comboboxProps={{ width: 'max-content', position: 'bottom-start' }}
               clearable
               searchable
               data={toSelectOptions(paymentRegisters, (register) => register.Name)}
               label={t('Рахунок')}
               placeholder={t('Усі')}
               value={paymentRegisterNetId || null}
-              w="100%"
               onChange={(value) => onSetPaymentRegisterNetId(value || '')}
             />
             <Select
+              classNames={{ dropdown: 'outgoing-cashflows-toolbar-dropdown' }}
+              comboboxProps={{ width: 'max-content', position: 'bottom-start' }}
               clearable
               searchable
               data={toSelectOptions(paymentMovements, (movement) => movement.OperationName)}
               label={t('Стаття руху')}
               placeholder={t('Усі')}
               value={paymentMovementNetId || null}
-              w="100%"
               onChange={(value) => onSetPaymentMovementNetId(value || '')}
             />
             <CheckboxMultiSelect
+              dropdownClassName="outgoing-cashflows-toolbar-dropdown"
               className="outgoing-cashflows-organization-filter"
               data={organizationOptions}
               label={t('Організації')}
@@ -732,9 +729,7 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
             />
             <div className="app-filter-actions outgoing-cashflows-filter-actions">
               <Tooltip label={t('Скинути фільтри')}>
-                <ActionIcon aria-label={t('Скинути фільтри')} color="gray" size={34} variant="light" onClick={onResetFilters}>
-                  <RotateCcw size={17} />
-                </ActionIcon>
+                <Button aria-label={t('Скинути фільтри')} onClick={onResetFilters} className="finance-toolbar-action" variant="default" leftSection={<RotateCcw size={17} />} title={t('Скинути фільтри')}>{t('Скинути')}</Button>
               </Tooltip>
               <Paginator
                 hasNext={hasMore}
@@ -759,6 +754,8 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
                 <Menu position="bottom-end" shadow="md" width={340} withinPortal>
                 <Menu.Target>
                   <Button
+                    aria-label={t('Новий')}
+                    title={t('Новий')}
                     color={CREATE_ACTION_COLOR}
                     leftSection={<Plus size={16} />}
                     rightSection={<ChevronDown size={14} />}
@@ -823,19 +820,6 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
             showLayoutControls
             tableId="outgoing-cashflows"
             toolbarPortalTarget={tableToolbarSlot}
-            footer={
-              <Group className="outgoing-cashflows-table-footer" gap="xs" justify="flex-end" wrap="nowrap">
-                <Badge className="app-role-pill is-gray" variant="light">
-                  {t('Рядків')}: {rows.length}
-                </Badge>
-                <Badge className="app-role-pill is-green" variant="light">
-                  {t('Кредиторська заборгованість')}: <span className="app-money">{formatMoney(cashflows.PositiveDifferenceAmount)}</span>
-                </Badge>
-                <Badge className="app-role-pill is-red" variant="light">
-                  {t('Дебіторська заборгованість')}: <span className="app-money">{formatMoney(cashflows.NegativeDifferenceAmount)}</span>
-                </Badge>
-              </Group>
-            }
             onRowClick={onOpenDetails}
           />
         </div>
@@ -946,7 +930,7 @@ function useOutgoingCashflowColumns({
         width: 90,
         minWidth: 80,
         accessor: (row) => row.currency,
-        cell: (row) => <TableChip tone="neutral" value={displayValue(row.currency)} />,
+        cell: (row) => <TableChip tone="source" value={displayValue(row.currency)} />,
       },
       {
         id: 'payedTo',
@@ -970,7 +954,7 @@ function useOutgoingCashflowColumns({
         width: 240,
         minWidth: 180,
         accessor: (row) => row.operationType,
-        cell: (row) => displayValue(row.operationType),
+        cell: (row) => <TableChip tone="neutral" value={displayValue(row.operationType)} />,
       },
       {
         id: 'paymentMovement',
@@ -986,7 +970,7 @@ function useOutgoingCashflowColumns({
         width: 210,
         minWidth: 160,
         accessor: (row) => row.organization,
-        cell: (row) => displayValue(row.organization),
+        cell: (row) => <TableChip tone="product" value={displayValue(row.organization)} />,
       },
       {
         id: 'responsible',
@@ -1106,63 +1090,61 @@ function OutgoingCashflowDetailDrawer({ row, onClose }: { row: OutgoingCashflowR
   const relatedOrders = getActiveRelatedConsumablesOrders(row?.order.OutcomePaymentOrderConsumablesOrders)
 
   return (
-    <AppDrawer opened={Boolean(row)} padding="md" size="xl" title={t('Видатковий ордер')} onClose={onClose}>
+    <AppDrawer opened={Boolean(row)} padding="md" size="wide" title={t('Видатковий ордер')} onClose={onClose}>
       {row && (
-        <DocumentDetailLayout
-          summary={
-            <DocumentDetailSummary
-              eyebrow={t('Документ')}
-              title={displayValue(row.number)}
-              meta={<><DocumentDetailChip tone="info">{formatDateTime(row.fromDate)}</DocumentDetailChip><DocumentDetailChip>{displayValue(row.operationType)}</DocumentDetailChip></>}
-              metrics={
-                <>
-                  <DocumentDetailMetric label={t('Сума')} value={formatMoney(row.amount)} suffix={row.currency} />
-                  <DocumentDetailMetric label={t('Різниця')} tone={row.differenceAmount ? 'danger' : undefined} value={formatMoney(row.differenceAmount)} />
-                  <DocumentDetailMetric label={t('ПДВ')} value={formatMoneyOptional(row.order.VAT)} />
-                </>
-              }
-            />
-          }
-        >
-          <DocumentDetailSection subtitle={displayValue(row.number)} title={t('Документ')}>
-            <DocumentDetailRow label={t('Дата')} value={formatDateTime(row.fromDate)} />
-            <DocumentDetailRow label={t('Номер')} value={displayValue(row.number)} />
-            <DocumentDetailRow label={t('Вхідний номер')} value={displayValue(row.order.ArrivalNumber)} />
-            <DocumentDetailRow label={t('Тип операції')} value={displayValue(row.operationType)} />
-            <DocumentDetailRow label={t('Призначення платежу')} value={displayValue(row.order.PaymentPurpose)} wide />
-            <DocumentDetailRow label={t('Коментар')} value={displayValue(row.comment)} wide />
-          </DocumentDetailSection>
-
-          <DocumentDetailSection subtitle={displayValue(row.currency)} title={t('Суми та валюта')}>
-            <DocumentDetailRow mono label={t('Сума')} value={formatMoneyWithCurrency(row.amount, row.currency)} />
-            <DocumentDetailRow label={t('Валюта')} value={displayValue(row.currency)} />
-            <DocumentDetailRow label={t('Курс')} value={displayValue(row.order.ExchangeRate)} />
-            <DocumentDetailRow mono label={t('Сума в EUR')} value={formatMoneyOptional(row.order.EuroAmount ?? row.order.AfterExchangeAmount)} />
-            <DocumentDetailRow label={t('ПДВ %')} value={hasNumber(row.order.VatPercent) ? displayValue(row.order.VatPercent) : displayValue(undefined)} />
-            <DocumentDetailRow mono label={t('ПДВ')} value={formatMoneyOptional(row.order.VAT)} />
-            <DocumentDetailRow mono label={t('Різниця')} tone={row.differenceAmount ? 'danger' : undefined} value={formatMoney(row.differenceAmount)} />
-          </DocumentDetailSection>
-
-          <DocumentDetailSection subtitle={displayValue(row.organization)} title={t('Учасники та рахунки')}>
-            <DocumentDetailRow label={t('Кому видано')} value={displayValue(row.payedTo)} wide />
-            <DocumentDetailRow label={t('Організація')} value={displayValue(row.organization)} wide />
-            <DocumentDetailRow label={t('Рахунок')} value={displayValue(row.paymentRegister)} wide />
-            <DocumentDetailRow label={t('Стаття руху')} value={displayValue(row.paymentMovement)} wide />
-            <DocumentDetailRow label={t('Відповідальний')} value={displayValue(row.responsible)} wide />
-            <DocumentDetailRow label={t('Клієнт')} value={displayValue(getEntityName(row.order.ClientAgreement?.Client) || getEntityName(row.order.Client))} wide />
-          </DocumentDetailSection>
-
-          <DocumentDetailSection title={t('Стани')}>
-            <div className="document-detail-flags">
-              <DocumentDetailFlag active={Boolean(row.isUnderReport)} label={t('Підзвіт')} />
-              <DocumentDetailFlag active={Boolean(row.order.IsUnderReportDone)} label={t('Закрито')} />
-              <DocumentDetailFlag active={Boolean(row.isCanceled)} label={t('Скасовано')} />
-              <DocumentDetailFlag active={Boolean(row.isAccounting)} label={t('Бухгалтерський')} />
-              <DocumentDetailFlag active={Boolean(row.isManagementAccounting)} label={t('Управлінський')} />
+        <div className="outgoing-cashflow-view">
+          <DocumentDetailLayout
+            variant="inventory"
+            summary={
+              <DocumentDetailSummary
+                variant="inventory"
+                eyebrow={t('Документ')}
+                title={displayValue(row.number)}
+                status={row.isCanceled ? <TableChip tone="danger" value={t('Скасовано')} /> : undefined}
+                meta={<>
+                  <span className="outgoing-cashflow-view__date">{formatDateTime(row.fromDate)}</span>
+                  <TableChip tone="neutral" value={displayValue(row.operationType)} />
+                </>}
+                metrics={<>
+                  <OutgoingDetailMetric label={t('Сума')} value={formatMoney(row.amount)} currency={row.currency} />
+                  <OutgoingDetailMetric label={t('ПДВ')} value={formatMoneyOptional(row.order.VAT)} currency={row.currency} />
+                  <OutgoingDetailMetric label={t('Різниця')} value={formatMoney(row.differenceAmount)} currency={row.currency} danger={Boolean(row.differenceAmount)} />
+                </>}
+              />
+            }
+          >
+            <div className="outgoing-cashflow-view__metadata">
+              <DocumentDetailSection title={t('Платіж')} stacked>
+                <DocumentDetailRow label={t('Кому видано')} value={displayValue(row.payedTo)} />
+                <DocumentDetailRow label={t('Клієнт')} value={displayValue(getEntityName(row.order.ClientAgreement?.Client) || getEntityName(row.order.Client))} />
+                <DocumentDetailRow label={t('Рахунок')} value={displayValue(row.paymentRegister)} />
+                <DocumentDetailRow label={t('Стаття руху')} value={displayValue(row.paymentMovement)} />
+                <DocumentDetailRow mono label={t('Вхідний номер')} value={displayValue(row.order.ArrivalNumber)} />
+                <DocumentDetailRow label={t('Призначення платежу')} value={displayValue(row.order.PaymentPurpose)} />
+              </DocumentDetailSection>
+              <DocumentDetailSection title={t('Облік')} stacked>
+                <DocumentDetailRow label={t('Організація')} value={<TableChip tone="product" value={displayValue(row.organization)} />} />
+                <DocumentDetailRow label={t('Відповідальний')} value={<TableChip tone="warning" value={displayValue(row.responsible)} />} />
+                <DocumentDetailRow mono label={t('Курс')} value={displayValue(row.order.ExchangeRate)} />
+                <DocumentDetailRow label={t('Сума в EUR')} value={<OutgoingDetailAmount value={formatMoneyOptional(row.order.EuroAmount ?? row.order.AfterExchangeAmount)} currency="EUR" />} />
+                <DocumentDetailRow mono label={t('ПДВ %')} value={hasNumber(row.order.VatPercent) ? displayValue(row.order.VatPercent) : displayValue(undefined)} />
+              </DocumentDetailSection>
             </div>
-          </DocumentDetailSection>
-
-          <DocumentDetailSection subtitle={`${relatedOrders.length}`} title={t('Пов’язані документи')}>
+            {row.comment && (
+              <DocumentDetailSection title={t('Коментар')} stacked>
+                <Text className="outgoing-cashflow-view__comment">{row.comment}</Text>
+              </DocumentDetailSection>
+            )}
+            <DocumentDetailSection title={t('Стани')} stacked>
+              <div className="document-detail-flags">
+                <DocumentDetailFlag active={Boolean(row.isUnderReport)} label={t('Підзвіт')} />
+                <DocumentDetailFlag active={Boolean(row.order.IsUnderReportDone)} label={t('Закрито')} />
+                <DocumentDetailFlag active={Boolean(row.isCanceled)} label={t('Скасовано')} />
+                <DocumentDetailFlag active={Boolean(row.isAccounting)} label={t('Бухгалтерський')} />
+                <DocumentDetailFlag active={Boolean(row.isManagementAccounting)} label={t('Управлінський')} />
+              </div>
+            </DocumentDetailSection>
+          <DocumentDetailSection subtitle={`${relatedOrders.length}`} title={t('Пов’язані документи')} stacked>
             {relatedOrders.length > 0 ? (
               <div className="document-detail-related-list">
                 {relatedOrders.map((item, index) => {
@@ -1172,14 +1154,14 @@ function OutgoingCashflowDetailDrawer({ row, onClose }: { row: OutgoingCashflowR
                   return (
                     <article key={getRelatedOrderKey(row, item, index)} className="document-detail-related-card">
                       <div className="document-detail-related-card__head">
-                        <span>{displayValue(order?.Number)}</span>
+                        <TableChip tone="document" value={displayValue(order?.Number)} />
                         <span>{formatDateTime(order?.OrganizationFromDate)}</span>
                       </div>
                       <div className="document-detail-related-card__grid">
-                        <DocumentDetailRow label={t('Номер організації')} value={displayValue(order?.OrganizationNumber)} />
+                        <DocumentDetailRow mono label={t('Номер організації')} value={displayValue(order?.OrganizationNumber)} />
                         <DocumentDetailRow label={t('Постачальник/отримувач')} value={displayValue(getEntityName(order?.ConsumableProductOrganization))} />
                         <DocumentDetailRow label={t('Склад')} value={displayValue(getEntityName(order?.ConsumablesStorage))} />
-                        <DocumentDetailRow label={t('Позицій')} value={String(itemsCount)} />
+                        <DocumentDetailRow mono label={t('Позицій')} value={String(itemsCount)} />
                         <DocumentDetailRow mono label={t('Сума без ПДВ')} value={formatMoneyOptional(order?.TotalAmountWithoutVAT)} />
                         <DocumentDetailRow mono label={t('Сума з ПДВ')} value={formatMoneyOptional(order?.TotalAmount)} />
                       </div>
@@ -1191,10 +1173,25 @@ function OutgoingCashflowDetailDrawer({ row, onClose }: { row: OutgoingCashflowR
               <div className="document-detail-empty">{t('Пов’язаних документів немає')}</div>
             )}
           </DocumentDetailSection>
-        </DocumentDetailLayout>
+          </DocumentDetailLayout>
+        </div>
       )}
     </AppDrawer>
   )
+}
+
+function OutgoingDetailAmount({ currency, value }: { currency?: string; value: string }) {
+  return <span className="outgoing-cashflow-view__amount">
+    <span className="app-money">{value}</span>
+    {currency && <TableChip tone="source" value={currency} />}
+  </span>
+}
+
+function OutgoingDetailMetric({ currency, danger, label, value }: { currency?: string; danger?: boolean; label: string; value: string }) {
+  return <div className={`outgoing-cashflow-view__metric${danger ? ' is-danger' : ''}`}>
+    <span>{label}</span>
+    <OutgoingDetailAmount currency={currency} value={value} />
+  </div>
 }
 
 function OutgoingCashflowDocumentStructureDrawer({
@@ -1446,7 +1443,7 @@ function buildCashflowRows(orders: OutcomePaymentOrder[]): OutgoingCashflowRow[]
     number: order.Number || order.CustomNumber,
     operationType: order.OperationTypeName,
     order,
-    organization: getEntityName(order.Organization),
+    organization: getOrganizationDisplayName(order.Organization) || undefined,
     payedTo: getPayedTo(order),
     paymentMovement: order.PaymentMovementOperation?.PaymentMovement?.OperationName,
     paymentRegister: order.PaymentCurrencyRegister?.PaymentRegister?.Name,

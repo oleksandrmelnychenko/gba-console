@@ -1201,3 +1201,25 @@
 .cockpit-panel-heading { align-self: center; display: grid; gap: 6px; min-width: 180px; margin-right: 12px; }
 .cockpit-panel-meta { color: var(--mantine-color-gray-6); font-family: var(--font-mono); white-space: nowrap; }
 .cockpit-panel-table { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; overflow: hidden; }
+
+/* Natural-width controls, with wrapping reserved for small screens. */
+.cockpit-page .cockpit-command-bar,
+.cockpit-page .cockpit-board-filter,
+.cockpit-panel-card .cockpit-panel-bar { display: flex; flex-wrap: wrap; gap: 8px; overflow: visible; }
+.cockpit-page .cockpit-command-actions,
+.cockpit-panel-card .cockpit-panel-bar .app-filter-actions { flex: 0 0 auto; margin-left: 0; justify-content: flex-start; }
+.cockpit-page .cockpit-board-filter > .mantine-InputWrapper-root { flex: 0 1 180px; width: 180px; min-width: 0; }
+.cockpit-page .cockpit-command-bar > .cockpit-date-filter { flex: 0 0 150px; width: 150px; }
+.cockpit-panel-card .cockpit-panel-bar > .mantine-TextInput-root { flex: 0 1 240px; width: 240px; min-width: 0; }
+.cockpit-panel-card .cockpit-panel-heading { flex: 0 1 240px; min-width: 160px; max-width: 240px; margin-right: 0; }
+.cockpit-panel-card .cockpit-panel-meta { white-space: normal; font-size: 12px; }
+.cockpit-page .cockpit-day-filter-field { flex: 0 0 auto; }
+@media (max-width: 1050px) {
+  .cockpit-panel-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .cockpit-panel-bar .data-table-layout-control .mantine-Button-label { display: none; }
+  .cockpit-panel-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
+}
+@media (max-width: 600px) {
+  .cockpit-page .cockpit-command-actions,
+  .cockpit-panel-card .cockpit-panel-bar .app-filter-actions { flex-shrink: 1; flex-wrap: wrap; }
+}

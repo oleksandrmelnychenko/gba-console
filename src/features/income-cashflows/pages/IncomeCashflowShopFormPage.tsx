@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   ActionIcon,
   Alert,
@@ -249,7 +250,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
     [form.selectedMovementValue, paymentMovements],
   )
   const activeMovement = selectedMovement
-  const organizationOptions = useMemo(() => toEntityOptions(organizations), [organizations])
+  const organizationOptions = useMemo(() => toEntityOptions(organizations, getOrganizationDisplayName), [organizations])
   const registerOptions = useMemo(() => toEntityOptions(filteredPaymentRegisters), [filteredPaymentRegisters])
   const currencyOptions = useMemo(() => toCurrencyOptions(selectedRegister), [selectedRegister])
   const agreementOptions = useMemo(() => toClientAgreementOptions(organizationAgreements), [organizationAgreements])
@@ -875,7 +876,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
 
   return (
     <AppDrawer
-      className="income-cashflow-shop-form-drawer"
+      className="income-cashflow-shop-form-drawer income-cashflow-compact-form"
       opened
       position="right"
       size="wide"
@@ -922,8 +923,9 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
               {t('Реквізити оплати')}
             </Text>
 
-            <SimpleGrid cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
+            <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
             <TextInput
+              className="cashflow-field-date"
               disabled={isLoading || isSaving}
               label={t('Дата')}
               required
@@ -932,6 +934,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
               onChange={(event) => updateForm({ date: event.currentTarget.value })}
             />
             <TextInput
+              className="cashflow-field-time"
               disabled={isLoading || isSaving}
               label={t('Час')}
               required
@@ -939,6 +942,8 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
               value={form.time}
               onChange={(event) => updateForm({ time: event.currentTarget.value })}
             />
+            </SimpleGrid>
+            <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
             <Select
               data={organizationOptions}
               disabled={!organizationOptions.length || isLoading || isSaving}
@@ -958,6 +963,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
               onChange={handleRegisterChanged}
             />
             <Select
+              className="cashflow-field-currency"
               data={currencyOptions}
               disabled={!selectedRegister || isLoading || isSaving}
               label={t('Валюта')}
@@ -967,6 +973,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
               onChange={(value) => updateForm({ selectedCurrencyValue: value || '' })}
             />
             <Select
+              className="cashflow-field-agreement"
               data={agreementOptions}
               disabled={!agreementOptions.length || isLoading || isSaving}
               label={t('Договір')}
@@ -975,7 +982,10 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
               value={form.selectedAgreementValue || null}
               onChange={handleAgreementChanged}
             />
+            </SimpleGrid>
+            <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
             <NumberInput
+              className="cashflow-field-amount"
               allowNegative={false}
               decimalScale={2}
               disabled={isLoading || isSaving}
@@ -986,6 +996,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
               onChange={handleAmountChanged}
             />
             <NumberInput
+              className="cashflow-field-rate"
               allowNegative={false}
               decimalScale={6}
               disabled={isLoading || isSaving}
@@ -994,7 +1005,9 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
               value={form.exchangeRate}
               onChange={(value) => updateForm({ exchangeRate: toNumber(value) })}
             />
-              <Group align="flex-end" gap="xs" wrap="nowrap">
+            </SimpleGrid>
+            <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
+              <Group className="cashflow-field-article" align="flex-end" gap="xs" wrap="nowrap">
                 <SearchableSelect
                   data={movementOptions}
                   disabled={isLoading || isSaving}
@@ -1643,7 +1656,7 @@ function getDebtValuesBySaleId(debts: ClientInDebt[], saleId: string): string[] 
   return values
 }
 
-function toEntityOptions<T extends NamedEntity>(entities: T[]): SelectOption[] {
+function toEntityOptions<T extends NamedEntity>(entities: T[], getLabel: (entity: T) => string | undefined = getEntityName): SelectOption[] {
   const options: SelectOption[] = []
 
   for (const entity of entities) {
@@ -1651,7 +1664,7 @@ function toEntityOptions<T extends NamedEntity>(entities: T[]): SelectOption[] {
 
     if (value) {
       options.push({
-        label: getEntityName(entity) || value,
+        label: getLabel(entity) || value,
         value,
       })
     }

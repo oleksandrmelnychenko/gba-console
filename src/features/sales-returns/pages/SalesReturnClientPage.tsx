@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
@@ -618,7 +619,7 @@ export function SalesReturnClientPage() {
                     <Select
                       clearable
                       data={organizations.map((organization) => ({
-                        label: getEntityName(organization) || t('Без назви'),
+                        label: getOrganizationDisplayName(organization) || t('Без назви'),
                         value: getEntityKey(organization),
                       }))}
                       disabled={isLoadingOrganizations}

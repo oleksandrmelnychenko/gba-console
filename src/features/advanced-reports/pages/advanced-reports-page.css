@@ -81,3 +81,23 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Natural-width registry controls; compact layout actions when space is limited. */
+.advanced-reports-card { container: advanced-reports / inline-size; }
+.advanced-reports-filter-bar.app-filter-bar { overflow: visible; }
+.advanced-reports-filter-bar .advanced-reports-filter-row { display: flex; flex-wrap: wrap; gap: 8px; --app-multi-select-width: 200px; }
+.advanced-reports-filter-bar .advanced-reports-filter-row > .mantine-InputWrapper-root { flex: 0 1 170px; width: 170px; min-width: 0; }
+.advanced-reports-filter-bar .advanced-reports-filter-row > .mantine-InputWrapper-root:has(input[type='date']) { flex: 0 0 140px; width: 140px; }
+.advanced-reports-filter-row > .app-filter-actions { margin-left: 0; flex: 0 0 auto; }
+@container advanced-reports (max-width: 1250px) {
+  .advanced-reports-filter-bar .advanced-reports-filter-row > .mantine-InputWrapper-root { flex-basis: 120px; width: 120px; }
+  .advanced-reports-filter-row .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .advanced-reports-filter-row .data-table-layout-control .mantine-Button-label { display: none; }
+  .advanced-reports-filter-row .data-table-layout-control .mantine-Button-section { margin: 0; }
+}
+
+@container advanced-reports (max-width: 1050px) {
+ .app-filter-bar .advanced-reports-toolbar-caption-action { width: 36px; min-width: 36px; padding-inline: 0; }
+ .advanced-reports-toolbar-caption-action .mantine-Button-label { display: none; }
+ .advanced-reports-toolbar-caption-action .mantine-Button-section { margin: 0; }
+}

@@ -40,7 +40,7 @@ vi.mock('../../../shared/ui/data-table/DataTable', () => ({
     <div data-testid={tableId}>
       {data.map((item, index) => (
         <div key={index}>
-          <button type="button" onClick={() => onRowClick?.(item)}>
+          <button disabled={!onRowClick} type="button" onClick={() => onRowClick?.(item)}>
             Відкрити рядок
           </button>
           {columns.map((column) => (
@@ -116,6 +116,7 @@ describe('Income cashflows canonical permission guards', () => {
     const pageOnly = renderPage()
     await waitFor(() => expect(getIncomeCashflows).toHaveBeenCalled())
     expect(screen.queryByRole('button', { name: 'Новий' })).toBeNull()
+    expect((await screen.findByRole('button', { name: 'Відкрити рядок' })).hasAttribute('disabled')).toBe(true)
     expect(screen.queryByLabelText('Деталі')).toBeNull()
     expect(screen.queryByLabelText('Переназначити клієнта')).toBeNull()
     expect(screen.queryByLabelText('Скасувати')).toBeNull()
@@ -132,7 +133,11 @@ describe('Income cashflows canonical permission guards', () => {
     allowedPermissions.delete(incomePermissions.IncomeOrder.CreateSupplierReturn)
     allowedPermissions.add(incomePermissions.Order.OpenDetails)
     const detailsOnly = renderPage()
-    expect(await screen.findByLabelText('Деталі')).toBeTruthy()
+    expect(screen.queryByLabelText('Деталі')).toBeNull()
+    const openRow = await screen.findByRole('button', { name: 'Відкрити рядок' })
+    expect(openRow.hasAttribute('disabled')).toBe(false)
+    fireEvent.click(openRow)
+    expect(await screen.findByRole('dialog')).toBeTruthy()
     expect(screen.queryByLabelText('Переназначити клієнта')).toBeNull()
     expect(screen.queryByLabelText('Скасувати')).toBeNull()
     detailsOnly.unmount()

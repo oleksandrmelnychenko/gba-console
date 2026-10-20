@@ -1212,3 +1212,16 @@
 
 .accounting-cash-flow-client-chip .app-table-chip { max-width: 100%; height: auto; padding-block: 3px; }
 .accounting-cash-flow-client-chip .app-table-chip-label { white-space: normal; overflow-wrap: anywhere; }
+
+/* Compact registry toolbar: fixed field widths, responsive action labels. */
+.app-filter-bar.accounting-cash-flow-filter-bar { container: accounting-cash-flow-toolbar / inline-size; display: flex; flex-wrap: wrap; overflow: visible; }
+.app-filter-bar.accounting-cash-flow-filter-bar > .accounting-cash-flow-filter-form { display: flex; flex: 0 1 auto; flex-wrap: wrap; align-items: end; gap: 8px; width: auto; min-width: 0; max-width: 100%; }
+.app-filter-bar.accounting-cash-flow-filter-bar > .accounting-cash-flow-filter-form > :is(.mantine-InputWrapper-root, .app-filter-field) { flex: 0 0 180px; width: 180px; min-width: 0; max-width: 100%; }
+.app-filter-bar.accounting-cash-flow-filter-bar :is(.app-filter-actions, .data-table-toolbar, .data-table-toolbar-left) { flex-wrap: nowrap; gap: 8px; margin-left: 0; }
+.app-filter-bar.accounting-cash-flow-filter-bar .app-filter-actions { flex: 0 0 auto; }
+.accounting-cash-flow-toolbar-dropdown { width: max-content !important; max-width: calc(100vw - 24px); padding: 4px; }
+@container accounting-cash-flow-toolbar (max-width: 1060px) {
+  .app-filter-bar.accounting-cash-flow-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar.accounting-cash-flow-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
+  .app-filter-bar.accounting-cash-flow-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
+}

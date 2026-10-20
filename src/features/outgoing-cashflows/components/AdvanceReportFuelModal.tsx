@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   Alert,
   Badge,
@@ -364,7 +365,7 @@ export function AdvanceReportFuelModal({
         )}
 
         <SimpleGrid cols={{ base: 1, md: 2 }}>
-          <TextInput disabled label={t('Організація')} value={getEntityLabel(outcomeOrder.Organization)} />
+          <TextInput disabled label={t('Організація')} value={getOrganizationDisplayName(outcomeOrder.Organization)} />
           <SearchableSelect
             data={supplierOptions}
             disabled={isLoading}

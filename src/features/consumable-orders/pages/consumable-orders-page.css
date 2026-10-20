@@ -290,3 +290,16 @@
   font-family: var(--font-mono);
   letter-spacing: 0;
 }
+
+/* Registry controls stay together at natural widths on laptop screens. */
+.consumable-orders-page .consumable-orders-command-bar { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; overflow: visible; }
+.consumable-orders-page .consumable-orders-command-bar .app-filter-fields { gap: 8px; }
+.consumable-orders-page .consumable-orders-command-bar .app-filter-actions,
+.consumable-orders-page .consumable-orders-command-bar .app-filter-table-toolbar-slot { flex: 0 0 auto; margin-left: 0; }
+.consumable-orders-page .consumable-orders-command-bar > .mantine-Button-root { flex: 0 0 auto; }
+.consumable-orders-page .consumable-orders-command-bar .consumable-orders-search-input { flex: 0 1 240px; width: 240px; min-width: 0; max-width: 100%; }
+@media (max-width: 1050px) {
+  .consumable-orders-page .consumable-orders-command-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .consumable-orders-page .consumable-orders-command-bar .data-table-layout-control .mantine-Button-label { display: none; }
+  .consumable-orders-page .consumable-orders-command-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
+}

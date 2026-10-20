@@ -1,6 +1,7 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
+  Button,
   Alert,
   Group,
   Select,
@@ -251,22 +252,7 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
     <div className="balances-card console-table-shell">
       <div className="app-filter-bar balances-filter-bar">
         <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields balances-filter-row">
-          <div className="app-filter-date-range">
-            <TextInput
-              label={t('Від')}
-              max={filterDraft.to || undefined}
-              type="date"
-              value={filterDraft.from}
-              onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-            />
-            <TextInput
-              label={t('До')}
-              min={filterDraft.from || undefined}
-              type="date"
-              value={filterDraft.to}
-              onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-            />
-          </div>
+          <ToolbarDateRangeFilter from={filterDraft.from} to={filterDraft.to} onChange={(range) => applyFilters({ ...filterDraft, ...range })} />
           <TextInput
             label={t('Пошук')}
             leftSection={<Search size={15} />}
@@ -280,10 +266,11 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
             }}
           />
           <Select
+              classNames={{ dropdown: 'balances-toolbar-dropdown' }}
+              comboboxProps={{ width: 'max-content', position: 'bottom-start' }}
             data={typeOptions}
             label={t('Тип контрагента')}
             value={String(filterDraft.type)}
-            w={200}
             onChange={(value) =>
               applyFilters({
                 ...filterDraft,
@@ -293,16 +280,11 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
           />
           <div className="app-filter-actions balances-filter-actions">
             <Tooltip label={t('Скинути')}>
-              <ActionIcon
+              <Button
                 aria-label={t('Скинути')}
-                color="gray"
                 disabled={!hasActiveFilters}
-                size={34}
-                variant="light"
                 onClick={resetFilters}
-              >
-                <RotateCcw size={17} />
-              </ActionIcon>
+               className="finance-toolbar-action" variant="default" leftSection={<RotateCcw size={17} />} title={t('Скинути')}>{t('Скинути')}</Button>
             </Tooltip>
             <Paginator
               isLoading={isLoading}

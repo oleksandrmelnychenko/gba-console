@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 import { Alert, Badge, Button, Card, Group, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
@@ -262,7 +263,7 @@ function SupplyOrderProductPlacementContent({
               <DetailValue tone="document" label={t('Номер замовлення')} value={order?.SupplyOrderNumber?.Number || ukraineOrder?.Number} />
               <DetailValue tone="document" label={t('Постачальник')} value={getEntityName(order?.Client || ukraineOrder?.Supplier)} />
               <DetailValue label={t('Від')} value={formatDate(order?.DateFrom || ukraineOrder?.FromDate)} />
-              <DetailValue tone="product" label={t('Організація')} value={getEntityName(order?.Organization || ukraineOrder?.Organization || income?.Organization)} />
+              <DetailValue tone="product" label={t('Організація')} value={getOrganizationDisplayName(order?.Organization || ukraineOrder?.Organization || income?.Organization)} />
               <DetailValue tone="source" label={t('Валюта')} value={currencyCode} />
               <DetailValue label={t('Договір')} value={order?.ClientAgreement?.Agreement?.Name || ukraineOrder?.ClientAgreement?.Agreement?.Name} />
               <DetailValue tone="document" label={t('Інвойс')} value={invoice?.Number || ukraineOrder?.InvNumber} />

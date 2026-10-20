@@ -95,3 +95,26 @@
 .available-payments-summary .mantine-Badge-root {
   height: 20px;
 }
+
+/* Natural-width registry controls; compact layout actions when space is limited. */
+.available-payments-card { container: available-payments / inline-size; }
+.available-payments-filter-bar.app-filter-bar { overflow: visible; }
+.available-payments-filter-bar .available-payments-filter-row { display: flex; flex-wrap: wrap; gap: 8px; --app-multi-select-width: 200px; }
+.available-payments-filter-bar .available-payments-filter-row > .mantine-InputWrapper-root { flex: 0 1 200px; width: 200px; min-width: 0; }
+.available-payments-filter-bar .available-payments-filter-row > .mantine-InputWrapper-root:has(input[type='date']) { flex: 0 0 140px; width: 140px; }
+.available-payments-filter-row > .app-filter-actions { margin-left: 0; flex: 0 0 auto; }
+@container available-payments (max-width: 1000px) {
+  .available-payments-filter-bar .available-payments-filter-row > .mantine-InputWrapper-root { flex-basis: 130px; width: 130px; }
+  .available-payments-filter-row .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .available-payments-filter-row .data-table-layout-control .mantine-Button-label { display: none; }
+  .available-payments-filter-row .data-table-layout-control .mantine-Button-section { margin: 0; }
+}
+
+@container available-payments (max-width: 800px) {
+ .app-filter-bar .available-payments-toolbar-caption-action { width: 36px; min-width: 36px; padding-inline: 0; }
+ .available-payments-toolbar-caption-action .mantine-Button-label { display: none; }
+ .available-payments-toolbar-caption-action .mantine-Button-section { margin: 0; }
+}
+@container available-payments (min-width: 1001px) and (max-width: 1250px) {
+ .available-payments-filter-bar .available-payments-filter-row > .mantine-InputWrapper-root { flex-basis: 180px; width: 180px; }
+}

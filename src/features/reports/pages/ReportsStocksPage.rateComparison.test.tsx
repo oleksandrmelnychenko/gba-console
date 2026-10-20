@@ -1,3 +1,4 @@
+import { changeReportPeriod } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -20,8 +21,7 @@ async function choose() {
   fireEvent.click(await screen.findByRole('option', { name: rateDataset.Name }))
 }
 function dates(from = '2026-07-01', to = '2026-07-31') {
-  fireEvent.change(screen.getByLabelText('Від'), { target: { value: from } })
-  fireEvent.change(screen.getByLabelText('До'), { target: { value: to } })
+  changeReportPeriod({ from: from, to: to })
 }
 const originalScroll = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollIntoView')
 afterAll(() => { if (originalScroll) Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', originalScroll); else Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView') })
@@ -44,7 +44,7 @@ describe('source19 explicit series constructor', () => {
   })
   it('requires series and two dates, exposes no generic period/filter/grouping and preserves selected order', async () => {
     const user = userEvent.setup(), { container } = await ready(); await choose()
-    expect(screen.queryByLabelText('Від')).toBeNull(); expect(screen.queryByLabelText('До')).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull(); expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Додати умову' })).toBeNull()
     expect(screen.queryByRole('button', { name: /Додати поле: Групування/ })).toBeNull()
     expect(screen.queryByText('Поточний стан на час читання даних. Історичний період не застосовується.')).toBeNull()

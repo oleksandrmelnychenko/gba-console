@@ -836,18 +836,13 @@ function BuyerCockpitTabContent() {
           onChange={setSelectedProducerId}
         />
         <div className="app-filter-actions">
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
+          <Button
               aria-label={t('Оновити')}
               disabled={selectedProducerId === null}
               loading={isLoading}
-              size={34}
-              variant="light"
+              variant="default"
               onClick={() => reload()}
-            >
-              <RefreshCw size={17} />
-            </ActionIcon>
-          </Tooltip>
+             color="gray" className="registry-caption-action" title={t('Оновити')} leftSection={<RefreshCw size={17} />}>{t('Оновити')}</Button>
         </div>
       </div>
       <Stack gap="md" p="md">

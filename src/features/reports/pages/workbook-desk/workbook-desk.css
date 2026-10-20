@@ -799,3 +799,14 @@
 .workbook-presentation__option .mantine-Checkbox-label { font-size: 13px; font-weight: 500; }
 .workbook-presentation__reset { align-self: flex-start; }
 .workbook-advanced .mantine-Button-root { width: fit-content; max-width: 100%; min-height: 32px; }
+
+.app-filter-bar.workbook-toolbar { flex-wrap: nowrap; gap: 8px; }
+.workbook-toolbar .workbook-period { flex: 0 1 auto; min-width: 0; gap: 8px; }
+.workbook-toolbar .workbook-period__presets { display: block; flex: 0 0 180px; width: 180px; }
+.workbook-toolbar .workbook-actions__buttons { flex: 0 0 auto; margin-left: 0; gap: 8px; }
+@media (max-width: 760px) {
+  .app-filter-bar.workbook-toolbar, .workbook-toolbar .workbook-period,
+  .workbook-toolbar .workbook-actions__buttons { flex-wrap: wrap; }
+}
+
+.workbook-toolbar .reports-toolbar-action { flex: 0 0 auto; white-space: nowrap; }

@@ -1,11 +1,11 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
+  Button,
   Alert,
   Card,
   Group,
   Stack,
-  TextInput,
   Tooltip,
 } from '@mantine/core'
 import { CircleAlert, RotateCcw } from 'lucide-react'
@@ -125,31 +125,10 @@ export function AdvancePaymentsPage() {
       <Card className="app-data-card advance-payments-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar advance-payments-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields advance-payments-filter-row">
-            <div className="app-filter-date-range">
-              <TextInput
-                label={t('Від')}
-                type="date"
-                value={fromDate}
-                onChange={(event) => {
-                  setPage(1)
-                  setFromDate(event.currentTarget.value)
-                }}
-              />
-              <TextInput
-                label={t('До')}
-                type="date"
-                value={toDate}
-                onChange={(event) => {
-                  setPage(1)
-                  setToDate(event.currentTarget.value)
-                }}
-              />
-            </div>
+            <ToolbarDateRangeFilter from={fromDate} to={toDate} onChange={(range) => { setPage(1); setFromDate(range.from); setToDate(range.to) }} />
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
-                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                  <RotateCcw size={17} />
-                </ActionIcon>
+                <Button aria-label={t('Скинути')} onClick={resetFilters} className="finance-toolbar-action" variant="default" leftSection={<RotateCcw size={17} />} title={t('Скинути')}>{t('Скинути')}</Button>
               </Tooltip>
               <Paginator
                 hasNext={canMoveForward}

@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   Alert,
   Badge,
@@ -908,7 +909,7 @@ function buildConsumableRows(order: AdvanceReportOrder | null, isDone: boolean):
         name: item.ConsumableProduct?.Name || '',
         organization: consumablesOrder?.ConsumableProductOrganization?.Name || '',
         organizationFromNumber: consumablesOrder?.OrganizationNumber || '',
-        organizationName: consumablesOrder?.SupplyOrganizationAgreement?.Organization?.FullName || '',
+        organizationName: getOrganizationDisplayName(consumablesOrder?.SupplyOrganizationAgreement?.Organization),
         pricePerUnit: item.PricePerItem,
         quantity: item.Qty,
         storageName: consumablesOrder?.ConsumablesStorage?.Name || '',

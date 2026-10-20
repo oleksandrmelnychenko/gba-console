@@ -34,7 +34,7 @@ vi.mock('../../../shared/ui/paginator/Paginator', () => ({
 
 function renderPage() {
   return render(
-    <MantineProvider>
+    <MantineProvider env="test">
       <I18nProvider>
         <ProductAvailabilitiesPage />
       </I18nProvider>
@@ -77,7 +77,8 @@ describe('ProductAvailabilitiesPage date range', () => {
       })
     })
 
-    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe(today)
+    fireEvent.click(screen.getByRole('button', { name: /^Період:/ }))
+    expect((await screen.findByLabelText('Від') as HTMLInputElement).value).toBe(today)
     expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe(today)
   })
 
@@ -87,14 +88,19 @@ describe('ProductAvailabilitiesPage date range', () => {
     await waitFor(() => expect(getProductAvailabilities).toHaveBeenCalledTimes(1))
     vi.mocked(getProductAvailabilities).mockClear()
 
-    fireEvent.change(screen.getByLabelText('Від'), {
+    fireEvent.click(screen.getByRole('button', { name: /^Період:/ }))
+    fireEvent.change(await screen.findByLabelText('Від'), {
       target: { value: '2026-08-01' },
     })
     fireEvent.change(screen.getByLabelText('До'), {
       target: { value: '2026-08-08' },
     })
 
+    expect(getProductAvailabilities).not.toHaveBeenCalled()
+    fireEvent.click(await screen.findByRole('button', { name: 'Застосувати' }))
+
     await waitFor(() => {
+      expect(getProductAvailabilities).toHaveBeenCalledTimes(1)
       expect(getProductAvailabilities).toHaveBeenCalledWith({
         from: '2026-08-01',
         limit: expect.any(Number),
@@ -113,13 +119,18 @@ describe('ProductAvailabilitiesPage date range', () => {
 
     await waitFor(() => expect(getProductAvailabilities).toHaveBeenCalledTimes(1))
 
-    fireEvent.change(screen.getByLabelText('Від'), {
+    fireEvent.click(screen.getByRole('button', { name: /^Період:/ }))
+    fireEvent.change(await screen.findByLabelText('Від'), {
       target: { value: '2026-08-01' },
     })
     fireEvent.change(screen.getByLabelText('До'), {
       target: { value: '2026-08-08' },
     })
+    fireEvent.click(await screen.findByRole('button', { name: 'Застосувати' }))
+    await waitFor(() => expect(getProductAvailabilities).toHaveBeenLastCalledWith(expect.objectContaining({ from: '2026-08-01', to: '2026-08-08' })))
     fireEvent.click(screen.getByLabelText('Скинути'))
+    await waitFor(() => expect(getProductAvailabilities).toHaveBeenLastCalledWith(expect.objectContaining({ from: today, to: today })))
+    fireEvent.click(screen.getByRole('button', { name: /^Період:/ }))
 
     await waitFor(() => {
       expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe(today)

@@ -1,3 +1,5 @@
+import './sales-online-toolbar.css'
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import {
   ActionIcon,
   Alert,
@@ -808,24 +810,7 @@ function SalesOnlineShopOrdersPage() {
         <Stack className="sales-ukraine-content" gap={0}>
           <div className="sales-filter-bar">
             <div className="app-filter-fields sales-filter-row sales-online-filter-row">
-              <div className="app-filter-date-range">
-                <TextInput
-                  className="sales-filter-date"
-                  label={t('Від')}
-                  max={filterDraft.to || undefined}
-                  type="date"
-                  value={filterDraft.from}
-                  onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-                />
-                <TextInput
-                  className="sales-filter-date"
-                  label={t('До')}
-                  min={filterDraft.from || undefined}
-                  type="date"
-                  value={filterDraft.to}
-                  onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-                />
-              </div>
+              <ToolbarDateRangeFilter from={filterDraft.from} to={filterDraft.to} onChange={(range) => applyFilters({ ...filterDraft, ...range })} />
               <TextInput
                 className="sales-filter-search"
                 label={t('Пошук')}

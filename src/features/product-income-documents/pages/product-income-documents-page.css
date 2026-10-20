@@ -54,3 +54,16 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Registry controls stay together at natural widths on laptop screens. */
+.product-income-documents-page .product-income-documents-filter-bar { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; overflow: visible; }
+.product-income-documents-page .product-income-documents-filter-bar .app-filter-fields { gap: 8px; }
+.product-income-documents-page .product-income-documents-filter-bar .app-filter-actions,
+.product-income-documents-page .product-income-documents-filter-bar .app-filter-table-toolbar-slot { flex: 0 0 auto; margin-left: 0; }
+.product-income-documents-page .product-income-documents-filter-bar > .mantine-Button-root { flex: 0 0 auto; }
+.product-income-documents-page .product-income-documents-filter-bar .product-income-documents-search-filter { flex: 0 1 240px; width: 240px; min-width: 0; max-width: 100%; }
+@media (max-width: 1050px) {
+  .product-income-documents-page .product-income-documents-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .product-income-documents-page .product-income-documents-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
+  .product-income-documents-page .product-income-documents-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
+}

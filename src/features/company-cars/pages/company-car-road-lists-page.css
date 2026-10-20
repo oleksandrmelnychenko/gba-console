@@ -47,3 +47,25 @@
 .company-car-road-lists-filter-row .app-filter-table-toolbar-slot .data-table-toolbar-right:empty {
   display: none;
 }
+
+/* Keep sparse controls at natural widths; compact only when the card needs it. */
+.app-filter-bar.company-car-road-lists-filter-bar { display: flex; flex-wrap: wrap; overflow: visible; gap: 8px; }
+.app-filter-bar.company-car-road-lists-filter-bar .app-filter-actions { flex: 0 0 auto; flex-wrap: nowrap; margin-left: 0; gap: 8px; }
+.app-filter-bar.company-car-road-lists-filter-bar :is(.data-table-toolbar, .data-table-toolbar-left) { flex-wrap: nowrap; gap: 8px; }
+@container registry (max-width: 600px) {
+ .app-filter-bar.company-car-road-lists-filter-bar .app-filter-actions { flex: 0 1 auto; flex-wrap: wrap; }
+}
+
+.app-filter-bar.company-car-road-lists-filter-bar > .company-car-road-lists-filter-row { display: contents; }
+@container registry (max-width: 800px) {
+ .company-car-road-lists-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+ .company-car-road-lists-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
+ .company-car-road-lists-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
+}
+
+/* Captions remain visible until this toolbar needs the icon-only size. */
+@container registry (max-width: 900px) {
+  .app-filter-bar .company-car-road-lists-toolbar-action { width: 36px; min-width: 36px; padding-inline: 0; }
+  .company-car-road-lists-toolbar-action .mantine-Button-label { display: none; }
+  .company-car-road-lists-toolbar-action .mantine-Button-section { margin: 0; }
+}

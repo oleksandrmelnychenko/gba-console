@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   ActionIcon,
   Alert,
@@ -17,7 +18,7 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus, Save } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -158,7 +159,7 @@ function IncomeCashflowUserFormPageContent() {
     [form.selectedUserValue, users],
   )
   const activeUser = selectedUser
-  const organizationOptions = useMemo(() => toEntityOptions(organizations), [organizations])
+  const organizationOptions = useMemo(() => toEntityOptions(organizations, getOrganizationDisplayName), [organizations])
   const registerOptions = useMemo(() => toEntityOptions(filteredPaymentRegisters), [filteredPaymentRegisters])
   const currencyOptions = useMemo(() => toCurrencyOptions(selectedRegister), [selectedRegister])
   const movementOptions = useMemo(() => toUniqueLabels(paymentMovements), [paymentMovements])
@@ -463,25 +464,12 @@ function IncomeCashflowUserFormPageContent() {
   }
 
   return (
-    <AppDrawer
-      className="income-cashflow-user-form-drawer"
+    <AppModal
+      className="income-cashflow-user-form-drawer income-cashflow-compact-form"
       opened
-      position="right"
-      size="standard"
+      size={960}
       title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Повернення від колеги')}</span>}
       onClose={() => navigate(INCOME_CASHFLOWS_PATH)}
-      footer={
-        <Button
-          color={CREATE_ACTION_COLOR}
-          disabled={isLoading || isSaving}
-          form="income-cashflow-user-form"
-          leftSection={<Save size={16} />}
-          loading={isSaving}
-          type="submit"
-        >
-          {t('Зберегти')}
-        </Button>
-      }
     >
       <form className="income-cashflow-user-form" id="income-cashflow-user-form" onSubmit={handleSubmit}>
         <Stack gap="md">
@@ -495,7 +483,7 @@ function IncomeCashflowUserFormPageContent() {
             <Text className="app-section-title" fw={600} size="sm">
               {t('Дані прибуткового ордера')}
             </Text>
-            <SimpleGrid cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
+            <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
               <SearchableSelect
                 data={userOptions}
                 disabled={isLoading || isSaving}
@@ -507,6 +495,7 @@ function IncomeCashflowUserFormPageContent() {
                 onOptionSubmit={handleUserSubmit}
               />
               <TextInput
+                className="cashflow-field-date"
                 disabled={isLoading || isSaving}
                 label={t('Дата')}
                 required
@@ -515,6 +504,7 @@ function IncomeCashflowUserFormPageContent() {
                 onChange={(event) => updateForm({ date: event.currentTarget.value })}
               />
               <TextInput
+                className="cashflow-field-time"
                 disabled={isLoading || isSaving}
                 label={t('Час')}
                 required
@@ -529,7 +519,7 @@ function IncomeCashflowUserFormPageContent() {
             <Text className="app-section-title" fw={600} size="sm">
               {t('Реквізити надходження')}
             </Text>
-            <SimpleGrid cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
+            <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
             <Select
               data={organizationOptions}
               disabled={isLoading || isSaving}
@@ -549,6 +539,7 @@ function IncomeCashflowUserFormPageContent() {
               onChange={handleRegisterChanged}
             />
             <Select
+              className="cashflow-field-currency"
               data={currencyOptions}
               disabled={!selectedRegister || isLoading || isSaving}
               label={t('Валюта')}
@@ -557,7 +548,10 @@ function IncomeCashflowUserFormPageContent() {
               value={form.selectedCurrencyValue || null}
               onChange={(value) => updateForm({ selectedCurrencyValue: value || '' })}
             />
+            </SimpleGrid>
+            <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
             <NumberInput
+              className="cashflow-field-amount"
               allowNegative={false}
               decimalScale={2}
               disabled={isLoading || isSaving}
@@ -568,6 +562,7 @@ function IncomeCashflowUserFormPageContent() {
               onChange={handleAmountChanged}
             />
             <NumberInput
+              className="cashflow-field-vat"
               allowNegative={false}
               decimalScale={2}
               disabled={isLoading || isSaving}
@@ -578,6 +573,7 @@ function IncomeCashflowUserFormPageContent() {
               onChange={handleVatRateChanged}
             />
             <NumberInput
+              className="cashflow-field-amount"
               allowNegative={false}
               decimalScale={2}
               disabled={isLoading || isSaving}
@@ -588,6 +584,7 @@ function IncomeCashflowUserFormPageContent() {
               onChange={(value) => updateForm({ vatAmount: toNumber(value) })}
             />
             <NumberInput
+              className="cashflow-field-rate"
               allowNegative={false}
               decimalScale={6}
               disabled={isLoading || isSaving}
@@ -596,7 +593,9 @@ function IncomeCashflowUserFormPageContent() {
               value={form.exchangeRate}
               onChange={(value) => updateForm({ exchangeRate: toNumber(value) })}
             />
-              <Group align="flex-end" gap="xs" wrap="nowrap">
+            </SimpleGrid>
+            <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
+              <Group className="cashflow-field-article" align="flex-end" gap="xs" wrap="nowrap">
                 <SearchableSelect
                   data={movementOptions}
                   disabled={isLoading || isSaving}
@@ -658,7 +657,21 @@ function IncomeCashflowUserFormPageContent() {
           </Stack>
         </Stack>
       </form>
-    </AppDrawer>
+      <AppModalFooter>
+        <Button color="gray" variant="default" onClick={() => navigate(INCOME_CASHFLOWS_PATH)}>{t('Скасувати')}</Button>
+
+        <Button
+          color={CREATE_ACTION_COLOR}
+          disabled={isLoading || isSaving}
+          form="income-cashflow-user-form"
+          leftSection={<Save size={16} />}
+          loading={isSaving}
+          type="submit"
+        >
+          {t('Зберегти')}
+        </Button>
+      </AppModalFooter>
+    </AppModal>
   )
 }
 
@@ -784,7 +797,7 @@ function matchesRegister(register: PaymentRegister, organization: Organization |
   return getEntityValue(register.Organization) === getEntityValue(organization) || register.OrganizationId === organization.Id
 }
 
-function toEntityOptions<T extends NamedEntity>(entities: T[]): SelectOption[] {
+function toEntityOptions<T extends NamedEntity>(entities: T[], getLabel: (entity: T) => string | undefined = getEntityName): SelectOption[] {
   const options: SelectOption[] = []
 
   for (const entity of entities) {
@@ -795,7 +808,7 @@ function toEntityOptions<T extends NamedEntity>(entities: T[]): SelectOption[] {
     }
 
     options.push({
-      label: getEntityName(entity) || value,
+      label: getLabel(entity) || value,
       value,
     })
   }

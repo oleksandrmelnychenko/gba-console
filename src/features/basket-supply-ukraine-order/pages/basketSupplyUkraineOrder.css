@@ -2046,3 +2046,53 @@
 .basket-sales-section-heading > .app-filter-table-toolbar-slot { flex: 1 1 580px; min-width: 0; }
 .basket-sales-section-heading > .app-section-title { white-space: nowrap; }
 .basket-sales-section-heading > .app-filter-table-toolbar-slot > .data-table-toolbar { flex: 1; width: 100%; }
+
+/* Registry controls retain their natural size on wide and laptop screens. */
+.basket-supply-command-bar.app-filter-bar {
+  flex-wrap: wrap;
+  gap: 8px;
+  overflow: visible;
+}
+.basket-supply-command-bar.app-filter-bar > .mantine-InputWrapper-root { flex: 0 1 240px; width: 240px; min-width: 0; max-width: 100%; }
+.basket-supply-command-bar.app-filter-bar > .app-filter-actions { flex: 0 0 auto; margin-left: 0; }
+.basket-supply-command-bar .basket-supply-filters { display: flex; flex: 0 1 auto; flex-wrap: wrap; width: auto; gap: 8px; }
+.basket-supply-command-bar .basket-supply-filters > .mantine-InputWrapper-root { flex: 0 1 180px; width: 180px; min-width: 0; }
+.basket-supply-command-bar .basket-supply-filters > .mantine-InputWrapper-root:first-child { flex-basis: 200px; width: 200px; }
+.basket-supply-command-bar.procure-dashboard__toolbar > .mantine-NumberInput-root { flex: 0 0 120px; width: 120px; }
+.budget-cart-tab .budget-cart-filter-bar { overflow: visible; }
+.budget-cart-tab .budget-cart-filter-row { flex-wrap: wrap; gap: 8px; }
+.budget-cart-tab .budget-cart-filter-row > .mantine-InputWrapper-root { flex: 0 1 160px; min-width: 0; }
+.budget-cart-tab .budget-cart-filter-row > .app-filter-field { flex: 0 0 auto; }
+.budget-cart-tab .budget-cart-submit { margin-left: 0; }
+.budget-cart-tab .budget-cart-filter-note { align-self: auto; padding: 0 12px 10px; }
+.budget-cart-tab .budget-cart-filter-note .mantine-Text-root { white-space: normal; font-size: 12px; }
+.procure-cockpit .procure-cockpit-bar { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; }
+.procure-cockpit .procure-cockpit-bar__filters { display: contents; }
+.procure-cockpit .procure-cockpit-bar > .app-filter-command-row { display: contents; }
+.procure-cockpit .procure-cockpit-bar__lens { flex: 0 0 220px; width: 220px; }
+.procure-cockpit .procure-cockpit-bar__search,
+.procure-cockpit .procure-cockpit-bar__producer { flex: 0 1 180px; width: 180px; }
+.procure-cockpit .procure-cockpit-bar__submit { margin-left: 0; }
+@media (max-width: 1400px) {
+  .basket-supply-command-bar.is-split .app-filter-primary-action,
+  .basket-supply-command-bar.is-split .data-table-layout-control,
+  .procure-cockpit-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .basket-supply-command-bar.is-split .app-filter-primary-action .mantine-Button-label,
+  .basket-supply-command-bar.is-split .data-table-layout-control .mantine-Button-label,
+  .procure-cockpit-bar .data-table-layout-control .mantine-Button-label { display: none; }
+  .basket-supply-command-bar.is-split .app-filter-primary-action .mantine-Button-section,
+  .basket-supply-command-bar.is-split .data-table-layout-control .mantine-Button-section,
+  .procure-cockpit-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
+  .procure-cockpit .procure-cockpit-bar__search,
+  .procure-cockpit .procure-cockpit-bar__producer { flex-basis: 150px; width: 150px; }
+}
+@media (max-width: 600px) {
+  .procure-cockpit .procure-cockpit-bar > * { max-width: 100%; }
+  .basket-supply-command-bar.app-filter-bar > .app-filter-actions { flex-wrap: wrap; flex-shrink: 1; }
+}
+
+@media (max-width: 1350px) {
+  .procure-cockpit-bar .registry-caption-action { width: 36px; min-width: 36px; padding-inline: 0; }
+  .procure-cockpit-bar .registry-caption-action .mantine-Button-label { display: none; }
+  .procure-cockpit-bar .registry-caption-action .mantine-Button-section { margin: 0; }
+}

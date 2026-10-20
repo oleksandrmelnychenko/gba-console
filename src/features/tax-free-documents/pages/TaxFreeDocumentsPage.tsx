@@ -1,6 +1,6 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
   Badge,
   Box,
@@ -626,38 +626,22 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
       <Card className="app-data-card tax-free-documents-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar tax-free-documents-filter-bar">
           <Group align="flex-end" gap={10} wrap="nowrap" className="app-filter-fields tax-free-documents-filter-row">
-            <div className="app-filter-date-range">
-              <TextInput
-                label={t('Від')}
-                type="date"
-                value={dateFrom}
-                onChange={(event) => {
-                  setPage(1)
-                  setDateFrom(event.currentTarget.value)
-                }}
-              />
-              <TextInput
-                label={t('До')}
-                type="date"
-                value={dateTo}
-                onChange={(event) => {
-                  setPage(1)
-                  setDateTo(event.currentTarget.value)
-                }}
-              />
-            </div>
+            <ToolbarDateRangeFilter from={dateFrom} to={dateTo} onChange={(range) => { setPage(1); setDateFrom(range.from); setDateTo(range.to) }} />
             <Select
+              classNames={{ dropdown: 'tax-free-documents-toolbar-dropdown' }}
+              comboboxProps={{ width: 'max-content', position: 'bottom-start' }}
               clearable={false}
               data={statusOptions}
               label={t('Статус')}
               value={statusValue}
-              w={180}
               onChange={(value) => {
                 setPage(1)
                 setStatusValue(value || 'all')
               }}
             />
             <Select
+              classNames={{ dropdown: 'tax-free-documents-toolbar-dropdown' }}
+              comboboxProps={{ width: 'max-content', position: 'bottom-start' }}
               clearable
               data={carrierSelectOptions}
               label={t('Перевізник')}
@@ -665,7 +649,6 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
               searchable
               searchValue={carrierSearch}
               value={selectedCarrierNetId}
-              style={{ flex: '1 1 220px' }}
               onChange={(value) => {
                 setPage(1)
                 setSelectedCarrierNetId(value || '')
@@ -677,14 +660,11 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
               label={t('Номер Tax Free')}
               placeholder={t('Введіть номер')}
               value={searchDraft}
-              style={{ flex: '1 1 220px' }}
               onChange={(event) => updateSearch(event.currentTarget.value)}
             />
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
-                <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetFilters}>
-                  <RotateCcw size={17} />
-                </ActionIcon>
+                <Button aria-label={t('Скинути')} onClick={resetFilters} className="finance-toolbar-action" variant="default" leftSection={<RotateCcw size={17} />} title={t('Скинути')}>{t('Скинути')}</Button>
               </Tooltip>
               <Paginator
                 isLoading={isLoading}

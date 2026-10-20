@@ -52,6 +52,14 @@
 .client-product-movement-page__table > .data-table > .data-table-scroll {
   flex: 1 1 auto;
   min-height: 0;
+  container-type: inline-size;
+}
+
+.client-product-movement-page__table > .data-table > .data-table-scroll > .data-table-table > tbody > .data-table-expanded-row > .data-table-expanded-cell > .data-table-expanded-content {
+  position: sticky;
+  left: 0;
+  width: 100cqw;
+  max-width: 100%;
 }
 
 .client-product-movement-entity-cell,
@@ -197,6 +205,12 @@
 .client-product-movement-detail-table .data-table-scroll {
   border: 0;
   border-radius: 0;
+  overflow-x: scroll;
+}
+
+.client-product-movement-page__table .data-table-scroll {
+  scrollbar-color: auto;
+  scrollbar-width: auto;
 }
 
 .client-product-movement-detail-table tbody tr:last-child > td {

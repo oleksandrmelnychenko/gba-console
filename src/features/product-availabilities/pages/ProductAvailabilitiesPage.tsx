@@ -20,6 +20,7 @@ import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
 import { PdfIcon } from '../../../shared/ui/PdfIcon'
@@ -360,27 +361,19 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
       <Card className="app-data-card product-availabilities-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-availabilities-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-availabilities-filter-row">
-            <div className="app-filter-date-range">
-              <TextInput
-                label={t('Від')}
-                type="date"
-                value={dateFrom}
-                onChange={(event) => {
-                  setPage(1)
-                  setDateFrom(event.currentTarget.value)
-                }}
-              />
-              <TextInput
-                label={t('До')}
-                type="date"
-                value={dateTo}
-                onChange={(event) => {
-                  setPage(1)
-                  setDateTo(event.currentTarget.value)
-                }}
-              />
-            </div>
+            <ToolbarDateRangeFilter
+              from={dateFrom}
+              to={dateTo}
+              onChange={({ from, to }) => {
+                setPage(1)
+                setDateFrom(from)
+                setDateTo(to)
+              }}
+            />
             <Select
+              className="product-availabilities-storage"
+              classNames={{ dropdown: 'product-availabilities-storage-dropdown' }}
+              comboboxProps={{ width: 320, position: 'bottom-start' }}
               searchable
               allowDeselect={false}
               data={storageOptions}
@@ -394,6 +387,7 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
               }}
             />
             <TextInput
+              className="product-availabilities-search"
               leftSection={<Search size={16} />}
               label={t('Код товару')}
               placeholder={t('Пошук за кодом')}
@@ -411,14 +405,18 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
                 color="gray"
                 size="sm"
                 aria-label={t('Скинути')}
+                title={t('Скинути')}
+                className="product-availabilities-action"
                 leftSection={<RotateCcw size={16} />}
                 onClick={resetFilters}
               >
-                {t('Скинути')}
+                <span className="product-availabilities-action-label">{t('Скинути')}</span>
               </Button>
               {canExport && (
                 <Button
                   aria-label={t('Друк PDF')}
+                  title={t('Друк PDF')}
+                  className="product-availabilities-action"
                   color="gray"
                   disabled={!selectedStorageNetId || Boolean(filterError)}
                   loading={isExporting}
@@ -427,7 +425,7 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
                   leftSection={<PdfIcon size={20} />}
                   onClick={() => void handleExport()}
                 >
-                  {t('Друк PDF')}
+                  <span className="product-availabilities-action-label">{t('Друк PDF')}</span>
                 </Button>
               )}
               <Paginator

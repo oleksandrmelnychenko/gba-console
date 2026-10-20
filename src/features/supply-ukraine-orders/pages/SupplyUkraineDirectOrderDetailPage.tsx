@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   ActionIcon,
   Alert,
@@ -784,7 +785,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
               </Text>
               <div className="supply-order-fields">
                 <LeaderField label={t('Постачальник')} value={getEntityName(order.Client)} />
-                <LeaderField label={t('Отримувач товару')} value={getEntityName(order.Organization)} />
+                <LeaderField label={t('Отримувач товару')} value={getOrganizationDisplayName(order.Organization)} />
               </div>
               <Stack gap={4} align="flex-start">
                 <Text fw={600} size="sm">{t('Тип доставки')}</Text>

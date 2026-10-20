@@ -9,6 +9,16 @@
   min-width: 0;
 }
 
+.new-sale-return-cancel-message .mantine-Text-root {
+  color: var(--mantine-color-gray-9);
+  font: 400 13px/20px var(--font-sans);
+}
+.app-modal.new-sale-return-cancel-modal .mantine-Button-root {
+  height: 32px;
+  min-height: 32px;
+  font: 600 12px/1.4 var(--font-mono);
+}
+
 .new-sale-return-create-filters {
   flex: 0 0 auto;
   padding: 10px;
@@ -18,10 +28,48 @@
 }
 
 .new-sale-return-create-fields {
-  display: grid;
-  grid-template-columns: minmax(160px, 1fr) minmax(200px, 1.3fr) minmax(160px, 1fr) 145px 145px;
+  display: flex;
+  flex-wrap: wrap;
   align-items: end;
   gap: 10px;
+}
+
+.new-sale-return-create-fields > .mantine-InputWrapper-root {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+.new-sale-return-create-organization { width: 220px; }
+.new-sale-return-create-client { width: 260px; }
+.new-sale-return-create-search { width: 200px; }
+.new-sale-return-create-fields .app-date-range-icon-wrap {
+  flex-basis: 32px;
+  width: 32px;
+}
+.new-sale-return-create-fields .app-date-range-icon-wrap .mantine-ActionIcon-root {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+}
+.new-sale-return-create-dropdown {
+  width: max-content !important;
+  max-width: min(560px, calc(100vw - 24px));
+  padding: 4px;
+}
+.new-sale-return-create-dropdown [data-combobox-option] {
+  min-height: 30px;
+  padding: 6px 8px;
+  font: 400 12px/18px var(--font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.new-sale-return-create-dropdown [data-combobox-option] > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.new-sale-return-create-dropdown [data-combobox-option]:is([data-combobox-selected], [aria-selected='true'], [data-checked], :hover) {
+  background: var(--mantine-color-gray-1);
+  color: var(--mantine-color-gray-9);
 }
 
 .app-drawer.app-form-sheet.new-sale-return-create-sheet .mantine-InputWrapper-label {
@@ -113,21 +161,9 @@
   font: 400 12px/16px var(--font-sans);
 }
 
-@media (max-width: 1050px) {
-  .new-sale-return-create-fields {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
 @media (max-width: 620px) {
-  .new-sale-return-create-fields {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .new-sale-return-create-fields > :first-child,
-  .new-sale-return-create-fields > :nth-child(2),
-  .new-sale-return-create-fields > :nth-child(3) {
-    grid-column: 1 / -1;
+  .new-sale-return-create-fields > .mantine-InputWrapper-root {
+    width: min(260px, 100%);
   }
 }
 

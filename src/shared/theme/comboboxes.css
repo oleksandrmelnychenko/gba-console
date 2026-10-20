@@ -1,0 +1,23 @@
+/* Dropdowns live in portals, so typography must not depend on a toolbar ancestor. */
+:is(.mantine-Select-input, .mantine-MultiSelect-input, .checkbox-multi-select .mantine-Input-input),
+:is(.mantine-Combobox-search, .mantine-Select-search, .mantine-MultiSelect-search),
+:is(.mantine-Combobox-option, .mantine-Select-option, .mantine-MultiSelect-option),
+:is(.mantine-Combobox-empty, .mantine-Select-empty, .mantine-MultiSelect-empty) {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0;
+}
+
+:is(.mantine-Combobox-option, .mantine-Select-option, .mantine-MultiSelect-option) {
+  min-height: 30px;
+  padding: 7px 8px;
+  border-radius: 6px;
+}
+
+:is(.mantine-Combobox-option, .mantine-Select-option, .mantine-MultiSelect-option):is(
+  :hover, [data-combobox-selected], [data-combobox-active], [aria-selected='true']
+):not([data-combobox-disabled]) {
+  background: var(--mantine-color-gray-1);
+  color: var(--mantine-color-gray-9);
+}

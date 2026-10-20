@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   Alert,
   Badge,
@@ -164,7 +165,7 @@ function ConsumableOrderPayPageContent({
       null,
     [form.movementSearch, form.selectedMovementValue, paymentMovements],
   )
-  const organizationOptions = useMemo(() => toEntityOptions(organizations), [organizations])
+  const organizationOptions = useMemo(() => toEntityOptions(organizations, getOrganizationDisplayName), [organizations])
   const registerOptions = useMemo(() => toEntityOptions(paymentRegisters), [paymentRegisters])
   const currencyOptions = useMemo(() => toCurrencyOptions(selectedRegister?.PaymentCurrencyRegisters || []), [selectedRegister])
   const movementOptions = useMemo(() => toEntityOptions(paymentMovements, (movement) => movement?.OperationName || ''), [paymentMovements])
@@ -182,7 +183,7 @@ function ConsumableOrderPayPageContent({
   const supplierLabel = displayValue(
     getEntityLabel(order?.SupplyOrganizationAgreement?.SupplyOrganization) ||
       getEntityLabel(order?.ConsumableProductOrganization) ||
-      getEntityLabel(order?.SupplyOrganizationAgreement?.Organization),
+      getOrganizationDisplayName(order?.SupplyOrganizationAgreement?.Organization),
   )
   const agreementLabel = displayValue(order?.SupplyOrganizationAgreement?.Name || order?.SupplyOrganizationAgreement?.Number)
   const orderNumberLabel = order?.Number ? `№ ${order.Number}` : t('Накладна без внутрішнього номера')

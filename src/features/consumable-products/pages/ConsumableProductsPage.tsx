@@ -335,28 +335,19 @@ function ConsumableProductsPageContent() {
             }}
           />
           <div className="app-filter-actions consumable-products-filter-actions">
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon
+            <Button
                 aria-label={t('Скинути')}
                 color="gray"
                 disabled={!searchValue}
-                size={34}
                 type="button"
-                variant="light"
+                variant="default"
                 onClick={() => {
                   setHasSearchInput(false)
                   setSearchValue('')
                   setSelectedCategoryKey(null)
                 }}
-              >
-                <RotateCcw size={17} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={() => void reloadCategories()}>
-                <RefreshCw size={17} />
-              </ActionIcon>
-            </Tooltip>
+               className="registry-caption-action" title={t('Скинути')} leftSection={<RotateCcw size={17} />}>{t('Скинути')}</Button>
+            <Button aria-label={t('Оновити')} color="gray" loading={isLoading} variant="default" onClick={() => void reloadCategories()} className="registry-caption-action" title={t('Оновити')} leftSection={<RefreshCw size={17} />}>{t('Оновити')}</Button>
           </div>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
           <div className="consumable-products-create-actions">

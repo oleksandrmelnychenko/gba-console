@@ -1,6 +1,6 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
   Badge,
   Button,
@@ -8,7 +8,6 @@ import {
   Group,
   Stack,
   Text,
-  TextInput,
   Tooltip,
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
@@ -240,46 +239,20 @@ export function TaxFreePackListsPage() {
       <Card className="app-data-card tax-free-pack-lists-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar tax-free-pack-lists-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields tax-free-pack-lists-filter-row">
-            <div className="app-filter-date-range">
-              <TextInput
-                label={t('Від')}
-                type="date"
-                value={filters.from}
-                onChange={(event) => {
-                  dispatchList({ type: 'filterChanged', field: 'from', value: event.currentTarget.value })
-                }}
-              />
-              <TextInput
-                label={t('До')}
-                type="date"
-                value={filters.to}
-                onChange={(event) => {
-                  dispatchList({ type: 'filterChanged', field: 'to', value: event.currentTarget.value })
-                }}
-              />
-            </div>
-            <div className="app-filter-actions" style={{ marginLeft: 'auto' }}>
+            <ToolbarDateRangeFilter from={filters.from} to={filters.to} onChange={(range) => dispatchList({ type: 'filtersReset', filters: { ...filters, ...range } })} />
+            <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
-                <ActionIcon
-                  variant="light"
-                  color="gray"
-                  size={34}
+                <Button
                   aria-label={t('Скинути')}
                   onClick={resetFilters}
-                >
-                  <RotateCcw size={17} />
-                </ActionIcon>
+                 className="finance-toolbar-action" variant="default" leftSection={<RotateCcw size={17} />} title={t('Скинути')}>{t('Скинути')}</Button>
               </Tooltip>
               {canExport && <Tooltip label={t('Завантажити')}>
-                <ActionIcon
-                  variant="default"
-                  size={34}
+                <Button
                   aria-label={t('Завантажити')}
                   loading={isExporting}
                   onClick={exportPackLists}
-                >
-                  <Download size={18} />
-                </ActionIcon>
+                 className="finance-toolbar-action" variant="default" leftSection={<Download size={18} />} title={t('Завантажити')}>{t('Завантажити')}</Button>
               </Tooltip>}
               <Paginator
                 isLoading={isLoading}

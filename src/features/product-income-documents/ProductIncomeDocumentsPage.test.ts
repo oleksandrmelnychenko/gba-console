@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ProductIncomeDocument } from './types'
 import {
+  getIncomeReturnTotals,
   getItemProductCode,
   getItemProductName,
   getOverviewKind,
@@ -222,6 +223,97 @@ describe('ProductIncomeDocumentsPage helpers', () => {
     })
 
     expect(mapDocumentRow(document).amount).toBe(1250)
+  })
+
+  it('shows the short organization name instead of the legal full name', () => {
+    const organization = {
+      Name: 'ТОВ «АМГ «КОНКОРД»',
+      FullName: 'ТОВАРИСТВО З ОБМЕЖЕНОЮ ВІДПОВІДАЛЬНІСТЮ "АВТОМОБІЛЬНА МОТОРИЗАЦІЙНА ГРУПА "КОНКОРД"',
+    }
+    const ukraineIncome = incomeDocument({
+      ProductIncomeItems: [{ Qty: 1, SupplyOrderUkraineItem: { SupplyOrderUkraine: { Organization: organization } } }],
+    })
+    const capitalizationIncome = incomeDocument({
+      ProductIncomeItems: [{ Qty: 1, ProductCapitalizationItem: { ProductCapitalization: { Organization: organization } } }],
+    })
+    const reconciliationIncome = incomeDocument({
+      Storage: { Organization: organization },
+      ProductIncomeItems: [{ Qty: 1, ActReconciliationItem: {} }],
+    })
+
+    expect(mapDocumentRow(ukraineIncome).organization).toBe('ТОВ «АМГ «КОНКОРД»')
+    expect(mapDocumentRow(capitalizationIncome).organization).toBe('ТОВ «АМГ «КОНКОРД»')
+    expect(mapDocumentRow(reconciliationIncome).organization).toBe('ТОВ «АМГ «КОНКОРД»')
+  })
+})
+
+describe('income return totals', () => {
+  it('uses the partial returned lines instead of stale original-order document totals', () => {
+    const document = incomeDocument({
+      TotalNetPrice: 9999,
+      TotalNetWithVat: 11998.8,
+      TotalQty: 100,
+      Currency: { Code: 'UAH' },
+      ProductIncomeItems: [
+        {
+          Qty: 50,
+          SaleReturnItem: {
+            Amount: 50.34,
+            AmountLocal: 0,
+            Qty: 1,
+            SaleReturn: { Number: 'RETURN-PARTIAL' },
+            OrderItem: { Order: { Sale: { ClientAgreement: { Agreement: { Currency: { Code: 'UAH' } } } } } },
+          },
+        },
+        { Qty: 50, SaleReturnItem: { Amount: 6.13, AmountLocal: 0, Qty: 2 } },
+      ],
+    })
+
+    expect(getIncomeReturnTotals(document).amount).toBeCloseTo(56.47, 8)
+    expect(getIncomeReturnTotals(document)).toMatchObject({ qty: 3, currency: 'EUR' })
+    const row = mapDocumentRow(document)
+    expect(row.amount).toBeCloseTo(56.47, 8)
+    expect(row).toMatchObject({ qty: 3, currency: 'EUR', invNumber: 'RETURN-PARTIAL' })
+  })
+
+  it('excludes deleted return lines and unrelated inventory lines', () => {
+    const document = incomeDocument({ ProductIncomeItems: [
+      { Deleted: true, Qty: 999, SaleReturnItem: { Amount: 999, Qty: 999 } },
+      { Qty: 300, Product: { Name: 'Unrelated inventory' } },
+      { Qty: 2.5, SaleReturnItem: { Amount: 12.5, SaleReturn: { Number: 'RETURN-ACTIVE' } } },
+    ] })
+    expect(getIncomeReturnTotals(document)).toEqual({ amount: 12.5, qty: 2.5, currency: 'EUR' })
+    expect(mapDocumentRow(document)).toMatchObject({ amount: 12.5, qty: 2.5 })
+  })
+
+  it('preserves real zero amounts and quantities instead of substituting document totals', () => {
+    const document = incomeDocument({ TotalNetPrice: 900, TotalQty: 99, ProductIncomeItems: [
+      { Qty: 99, SaleReturnItem: { Amount: 0, Qty: 0, SaleReturn: { Number: 'ZERO' } } },
+    ] })
+    expect(getIncomeReturnTotals(document)).toEqual({ amount: 0, qty: 0, currency: 'EUR' })
+    expect(mapDocumentRow(document)).toMatchObject({ amount: 0, qty: 0, currency: 'EUR' })
+  })
+
+  it.each([undefined, Number.NaN, Number.POSITIVE_INFINITY])('keeps an incomplete amount unknown (%s) rather than presenting a partial sum', (amount) => {
+    const document = incomeDocument({ TotalNetPrice: 999, ProductIncomeItems: [
+      { SaleReturnItem: { Amount: 10, Qty: 1, SaleReturn: { Number: 'INCOMPLETE' } } },
+      { SaleReturnItem: { Amount: amount, Qty: 2 } },
+    ] })
+    expect(getIncomeReturnTotals(document)).toEqual({ amount: undefined, qty: 3, currency: 'EUR' })
+    expect(mapDocumentRow(document).amount).toBeUndefined()
+  })
+
+  it('keeps missing quantities unknown without discarding the independently known amount', () => {
+    expect(getIncomeReturnTotals(incomeDocument({ TotalQty: 99, ProductIncomeItems: [
+      { SaleReturnItem: { Amount: 10, Qty: 1 } },
+      { SaleReturnItem: { Amount: 20 } },
+    ] }))).toEqual({ amount: 30, qty: undefined, currency: 'EUR' })
+  })
+
+  it('does not turn an empty active return set into a zero-valued document', () => {
+    expect(getIncomeReturnTotals(incomeDocument({ TotalNetPrice: 100, TotalQty: 5, ProductIncomeItems: [
+      { Deleted: true, SaleReturnItem: { Amount: 100, Qty: 5 } },
+    ] }))).toEqual({ amount: undefined, qty: undefined, currency: 'EUR' })
   })
 })
 

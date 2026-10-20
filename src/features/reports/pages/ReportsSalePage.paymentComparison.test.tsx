@@ -33,7 +33,7 @@ function lastCsvSheet() {
 }
 it('renders authoritative4dp money/2dp relative values from binary XLSX and removes stale totals from filtered CSV', async () => {
   const { container } = viewer(); await upload(paymentRows('mixed')); await screen.findByText(PAYMENT_COMPARISON_TITLE)
-  expect(screen.queryByLabelText('Від')).toBeNull(); expect(screen.queryByLabelText('До')).toBeNull();
+  expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull(); expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull();
   expect(screen.getByText('Рядків: 2')).toBeTruthy(); expect(container.querySelector('.reports-sale-table')!.textContent).toContain('120,0000')
   expect(container.querySelectorAll('.reports-client-activity-header')).toHaveLength(1)
   fireEvent.click(screen.getByLabelText('Експорт CSV')); expect(lastCsvSheet().rows.at(-1)?.cells).toEqual(['Загальний підсумок', '', '', '', '', '', ''])

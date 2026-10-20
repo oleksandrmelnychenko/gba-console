@@ -1,6 +1,7 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
   Button,
   Card,
@@ -241,34 +242,24 @@ function ConsumableStoragesPageContent() {
               leftSection={<Search size={16} />}
               placeholder={t('Пошук')}
               value={searchValue}
-              w={{ base: '100%', sm: 360 }}
+              className="consumable-storages-search"
               onChange={(event) => setSearchValue(event.currentTarget.value)}
             />
             <div className="app-filter-actions consumable-storages-filter-actions">
-              <Tooltip label={t('Скинути')}>
-                <ActionIcon
+              <Button
                   aria-label={t('Скинути')}
                   color="gray"
                   disabled={!searchValue}
-                  size={34}
-                  variant="light"
+                  variant="default"
                   onClick={() => setSearchValue('')}
-                >
-                  <RotateCcw size={17} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon
+                 className="registry-caption-action" title={t('Скинути')} leftSection={<RotateCcw size={17} />}>{t('Скинути')}</Button>
+              <Button
                   aria-label={t('Оновити')}
                   color="gray"
                   loading={isLoading}
-                  size={34}
-                  variant="light"
+                  variant="default"
                   onClick={reload}
-                >
-                  <RefreshCw size={17} />
-                </ActionIcon>
-              </Tooltip>
+                 className="registry-caption-action" title={t('Оновити')} leftSection={<RefreshCw size={17} />}>{t('Оновити')}</Button>
             </div>
             <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
             <PermissionGate permissionKey={CONSUMABLE_STORAGE_CREATE_PERMISSION}>
@@ -381,8 +372,8 @@ function useConsumableStorageColumns({
         header: t('Організація'),
         width: 300,
         minWidth: 220,
-        accessor: (storage) => getEntityName(storage.Organization),
-        cell: (storage) => <TruncatedCell value={getEntityName(storage.Organization)} />,
+        accessor: (storage) => getOrganizationDisplayName(storage.Organization),
+        cell: (storage) => <TruncatedCell value={getOrganizationDisplayName(storage.Organization)} />,
       },
       {
         id: 'products',
@@ -528,7 +519,7 @@ function ConsumableStorageDetailDrawer({
           }
         >
           <DocumentDetailSection title={t('Реквізити складу')}>
-            <DocumentDetailRow label={t('Організація')} value={<TableChip value={storage.Organization?.Name || getEntityName(storage.Organization)} tone="product" />} />
+            <DocumentDetailRow label={t('Організація')} value={<TableChip value={getOrganizationDisplayName(storage.Organization)} tone="product" />} />
             <DocumentDetailRow label={t('Відповідальний')} value={getEntityName(storage.ResponsibleUser)} />
             {storage.Description?.trim() ? <DocumentDetailRow label={t('Опис')} value={storage.Description} wide /> : null}
           </DocumentDetailSection>
@@ -586,7 +577,7 @@ function StorageRemnantsPanel({ products }: { products: ConsumableProduct[] }) {
         label={t('Пошук')}
         placeholder={t('Назва або артикул')}
         value={searchValue}
-        w={{ base: '100%', sm: 320 }}
+        className="consumable-storages-search"
         onChange={(event) => setSearchValue(event.currentTarget.value)}
       />
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot consumable-storage-remnants-toolbar" />
@@ -866,21 +857,16 @@ function DeprecatedConsumableOrdersPanel({
       <div className="app-filter-bar consumable-storage-detail-filter-bar consumable-storage-detail-filter-bar--two-row">
       <Group align="end" justify="space-between" gap={10} wrap="nowrap" className="app-filter-fields consumable-storage-detail-filter-row">
         <Group align="end" gap="sm" wrap="wrap">
-          <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => setFromDate(event.currentTarget.value)} />
-          <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => setToDate(event.currentTarget.value)} />
+          <ToolbarDateRangeFilter from={fromDate} to={toDate} onChange={({ from, to }) => { setFromDate(from); setToDate(to) }} />
           <TextInput
             leftSection={<Search size={16} />}
             label={t('Пошук')}
             placeholder={t('Номер, артикул, товар або отримувач')}
             value={searchValue}
-            w={{ base: '100%', sm: 320 }}
+            className="consumable-storages-search"
             onChange={(event) => setSearchValue(event.currentTarget.value)}
           />
-          <Tooltip label={t('Скинути')}>
-            <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-              <RotateCcw size={18} />
-            </ActionIcon>
-          </Tooltip>
+          <Button aria-label={t('Скинути')} color="gray" variant="default" onClick={resetFilters} className="registry-caption-action" title={t('Скинути')} leftSection={<RotateCcw size={18} />}>{t('Скинути')}</Button>
           <div className="consumable-storage-deprecated-controls">
             <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot consumable-storage-deprecated-toolbar" />
             <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
@@ -1654,7 +1640,7 @@ function filterConsumableStorages(storages: ConsumablesStorage[], value: string)
       storage.Name,
       storage.Description,
       getEntityName(storage.ResponsibleUser),
-      getEntityName(storage.Organization),
+      getOrganizationDisplayName(storage.Organization),
     ].some((field) => field?.toLowerCase().includes(normalizedValue)),
   )
 }

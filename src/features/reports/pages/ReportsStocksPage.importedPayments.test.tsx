@@ -1,3 +1,5 @@
+import { changeReportPeriod } from '../testing/reportPeriod'
+import { readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -20,11 +22,7 @@ async function choose() {
   fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
   fireEvent.click(await screen.findByRole('option', { name: importedPaymentsDataset.Name }))
 }
-function periods() {
-  for (const [label, value] of [['Від', '2026-07-01'], ['До', '2026-07-31']]) {
-    fireEvent.change(screen.getByLabelText(label), { target: { value } })
-  }
-}
+function periods() { changeReportPeriod({ from: '2026-07-01', to: '2026-07-31' }) }
 
 describe('source14 constructor and private templates', () => {
   beforeEach(() => {
@@ -68,7 +66,7 @@ describe('source14 constructor and private templates', () => {
     const { container } = await ready()
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Платежі за липень' }))
-    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-07-01')
+    expect((readReportDateInput('Від') as HTMLInputElement).value).toBe('2026-07-01')
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toEqual(template.Data)
@@ -78,7 +76,7 @@ describe('source14 constructor and private templates', () => {
     expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0]).toEqual(template)
     fireEvent.click(screen.getByRole('button', { name: 'Відкрити для редагування: Платежі з порогом' }))
     expect(screen.getByText(/Записані імпортовані платежі містять непідтримувані/)).toBeTruthy()
-    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-07-01')
+    expect((readReportDateInput('Від') as HTMLInputElement).value).toBe('2026-07-01')
   })
   it('restores a selected measurement whose IsChecked flag is omitted', async () => {
     const data = importedPaymentsRequest(); data.sorted.Measurements = [{ ...data.sorted.Measurements[2] }]

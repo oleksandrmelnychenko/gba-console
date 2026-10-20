@@ -21,29 +21,91 @@
   overflow: hidden;
 }
 
+.supply-ukraine-orders-filter-bar {
+  container: orders-toolbar / inline-size;
+}
+
 .supply-ukraine-orders-filter-fields {
-  display: grid;
-  grid-template-columns: 310px minmax(220px, 1fr) minmax(170px, 240px) minmax(150px, 200px);
   align-items: end;
-  gap: 10px;
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  gap: 8px;
   min-width: 0;
+  max-width: 100%;
 }
 
-.supply-ukraine-orders-filter-bar { container: orders-toolbar / inline-size; }
-
-@container orders-toolbar (max-width: 920px) {
-  .supply-ukraine-orders-filter-fields {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  }
-  .supply-ukraine-orders-filter-fields .app-filter-date-range {
-    width: auto;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.supply-ukraine-orders-filter-fields > * {
+  flex: 0 0 auto;
 }
 
-@container orders-toolbar (max-width: 520px) {
-  .supply-ukraine-orders-filter-fields .app-filter-date-range,
-  .supply-ukraine-orders-search-input { grid-column: 1 / -1; }
+.supply-ukraine-orders-search-input { width: 240px; }
+.supply-ukraine-orders-currency-filter { width: 180px; }
+.supply-ukraine-orders-type-filter { width: 170px; }
+
+.supply-ukraine-orders-filter-bar .supply-ukraine-orders-filter-actions {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  margin-left: 0;
+}
+
+.supply-ukraine-orders-table-toolbar-slot :is(.data-table-toolbar, .data-table-toolbar-left) {
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+
+.supply-ukraine-orders-filter-dropdown {
+  width: max-content !important;
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  max-width: calc(100vw - 24px);
+  min-width: var(--popover-anchor-width);
+  padding: 4px;
+}
+
+.supply-ukraine-orders-filter-dropdown .supply-ukraine-orders-filter-option {
+  border-radius: 6px;
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  min-height: 30px;
+  padding: 7px 8px;
+}
+
+.supply-ukraine-orders-filter-dropdown .supply-ukraine-orders-filter-option:is(:hover, [data-combobox-selected], [aria-selected='true'], [data-checked]) {
+  background: var(--mantine-color-gray-1);
+  color: var(--mantine-color-gray-9);
+}
+
+@container orders-toolbar (max-width: 1600px) {
+  .supply-ukraine-orders-search-input { width: 200px; }
+  .supply-ukraine-orders-currency-filter { width: 120px; }
+  .supply-ukraine-orders-type-filter { width: 140px; }
+
+  .supply-ukraine-orders-table-toolbar-slot .data-table-layout-control {
+    width: 36px;
+    min-width: 36px;
+    padding-inline: 0;
+  }
+  .supply-ukraine-orders-table-toolbar-slot .data-table-layout-control .mantine-Button-label { display: none; }
+  .supply-ukraine-orders-table-toolbar-slot .data-table-layout-control .mantine-Button-section { margin: 0; }
+}
+
+@container orders-toolbar (max-width: 1250px) {
+  .supply-ukraine-orders-search-input { width: 180px; }
+  .supply-ukraine-orders-currency-filter { width: 110px; }
+  .supply-ukraine-orders-type-filter { width: 120px; }
+
+  .supply-ukraine-orders-create-actions .app-filter-primary-action {
+    width: 36px;
+    min-width: 36px;
+    padding-inline: 0;
+  }
+  .supply-ukraine-orders-create-actions .app-filter-primary-action .mantine-Button-label { display: none; }
+  .supply-ukraine-orders-create-actions .app-filter-primary-action .mantine-Button-section { margin: 0; }
 }
 
 .supply-ukraine-orders-create-actions {
@@ -51,11 +113,17 @@
   align-self: end;
   display: flex;
   flex: 0 0 auto;
-  gap: 10px;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  margin-left: auto;
+  gap: 8px;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  margin-left: 0;
   min-height: var(--supply-orders-control-height);
+}
+
+@container orders-toolbar (max-width: 600px) {
+  .supply-ukraine-orders-filter-bar .supply-ukraine-orders-filter-actions {
+    flex-wrap: wrap;
+  }
 }
 
 .supply-ukraine-orders-create-actions:empty {
@@ -789,4 +857,11 @@
 
 .supply-orders-official-costs-cancel.mantine-Button-root {
   color: var(--brand-orange);
+}
+
+.supply-ukraine-orders-page .registry-caption-action { flex: 0 0 auto; white-space: nowrap; }
+@container registry (max-width: 1300px) {
+  .supply-ukraine-orders-page .registry-caption-action { width: 36px; min-width: 36px; padding-inline: 0; }
+  .supply-ukraine-orders-page .registry-caption-action .mantine-Button-label { display: none; }
+  .supply-ukraine-orders-page .registry-caption-action .mantine-Button-section { margin: 0; }
 }

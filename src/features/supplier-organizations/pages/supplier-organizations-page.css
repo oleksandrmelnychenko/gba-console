@@ -300,3 +300,19 @@
   color: var(--mantine-color-gray-9);
   font-weight: 600;
 }
+
+.supplier-organizations-page .console-table-shell { container: supplier-organizations / inline-size; }
+.supplier-organizations-page .supplier-organizations-command-bar { display: flex; flex-wrap: wrap; overflow: visible; gap: 8px; }
+.supplier-organizations-command-bar > .supplier-organizations-search-input { flex: 0 1 240px; width: 240px; min-width: 0; }
+.supplier-organizations-command-bar > .supplier-organizations-command-actions { margin-left: 0; }
+@container supplier-organizations (max-width: 1250px) {
+ .supplier-organizations-command-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+ .supplier-organizations-command-bar .data-table-layout-control .mantine-Button-label { display: none; }
+ .supplier-organizations-command-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
+}
+
+@container registry (max-width: 1000px) {
+ .app-filter-bar .supplier-organizations-toolbar-caption-action { width: 36px; min-width: 36px; padding-inline: 0; }
+ .supplier-organizations-toolbar-caption-action .mantine-Button-label { display: none; }
+ .supplier-organizations-toolbar-caption-action .mantine-Button-section { margin: 0; }
+}

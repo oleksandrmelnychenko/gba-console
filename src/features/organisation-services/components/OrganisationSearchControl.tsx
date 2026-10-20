@@ -22,8 +22,6 @@ type OrganisationSearchControlProps = {
 }
 
 const CONTROL_STYLE = {
-  flex: '1 1 280px',
-  minWidth: 220,
   position: 'relative',
 } as const
 
@@ -37,13 +35,12 @@ const SUGGESTIONS_PANEL_STYLE = {
 
 const SUGGESTION_BUTTON_STYLE = {
   alignItems: 'center',
-  background: 'transparent',
   border: 0,
   borderBottom: '1px solid var(--mantine-color-gray-2)',
   cursor: 'pointer',
   display: 'flex',
   justifyContent: 'space-between',
-  padding: '10px 12px',
+  padding: '7px 8px',
   textAlign: 'left',
   width: '100%',
 } as const
@@ -104,7 +101,7 @@ export function OrganisationSearchControl({
           />
         </Popover.Target>
 
-        <Popover.Dropdown mah={260} p={0} style={SUGGESTIONS_PANEL_STYLE}>
+        <Popover.Dropdown className="organisation-services-search-dropdown" mah={260} p={0} style={SUGGESTIONS_PANEL_STYLE}>
           {organizations.length > 0 ? (
             organizations.map((organization) => (
               <button
@@ -112,6 +109,7 @@ export function OrganisationSearchControl({
                 type="button"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => onSelect(organization)}
+                className="organisation-services-search-option"
                 style={SUGGESTION_BUTTON_STYLE}
               >
                 <Text fw={600} size="sm">

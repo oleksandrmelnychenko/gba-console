@@ -1,6 +1,5 @@
 import { procurementLoadError } from '../procurementLoadError'
 import {
-  ActionIcon,
   Alert,
   Badge,
   Button,
@@ -11,8 +10,7 @@ import {
   SimpleGrid,
   Stack,
   Text,
-  Tooltip,
-} from '@mantine/core'
+  } from '@mantine/core'
 import {
   FilterX,
   RefreshCw,
@@ -467,18 +465,13 @@ function ProcureDashboardTabContent() {
             w={140}
           />
           <div className="app-filter-actions">
-            <Tooltip label={t('Скинути фільтри')}>
-              <ActionIcon
+            <Button
                 aria-label={t('Скинути фільтри')}
                 disabled={!hasAppliedFilters && !hasDraftFilterChanges}
                 onClick={resetFilters}
-                size={34}
                 type="button"
                 variant="default"
-              >
-                <FilterX size={17} />
-              </ActionIcon>
-            </Tooltip>
+               color="gray" className="registry-caption-action" title={t('Скинути фільтри')} leftSection={<FilterX size={17} />}>{t('Скинути фільтри')}</Button>
             <div
               className="app-filter-table-toolbar-slot"
               ref={setTableToolbarTarget}

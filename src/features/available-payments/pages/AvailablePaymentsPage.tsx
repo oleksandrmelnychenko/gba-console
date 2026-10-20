@@ -1,3 +1,4 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import {
   ActionIcon,
   Alert,
@@ -9,7 +10,6 @@ import {
   Select,
   Stack,
   Text,
-  TextInput,
   Tooltip,
 } from '@mantine/core'
 import { CircleAlert, ListTree, RotateCcw, X } from 'lucide-react'
@@ -673,28 +673,13 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
     <Card className="app-data-card available-payments-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar available-payments-filter-bar">
         <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields available-payments-filter-row">
-          <div className="app-filter-date-range">
-            <TextInput
-              label={t('Від')}
-              max={filterDraft.to || undefined}
-              type="date"
-              value={filterDraft.from}
-              onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-            />
-            <TextInput
-              label={t('До')}
-              min={filterDraft.from || undefined}
-              type="date"
-              value={filterDraft.to}
-              onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-            />
-          </div>
+          <ToolbarDateRangeFilter from={filterDraft.from} to={filterDraft.to} onChange={(range) => applyFilters({ ...filterDraft, ...range })} />
           <Select
             data={organizationOptions}
             label={t('Організація')}
             searchable
             value={filterDraft.organizationNetId}
-            style={{ flex: '1 1 auto', minWidth: 180 }}
+            className="available-payments-organization"
             onChange={(value) => applyFilters({ ...filterDraft, organizationNetId: value || '' })}
           />
           <Select
@@ -708,15 +693,15 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
           />
           <div className="app-filter-actions">
             <Tooltip label={t('Скинути')}>
-              <ActionIcon
+              <Button
                 aria-label={t('Скинути')}
                 color="gray"
-                size={34}
-                variant="light"
+                variant="default"
                 onClick={resetFilters}
-              >
-                <RotateCcw size={17} />
-              </ActionIcon>
+
+                className="available-payments-toolbar-caption-action" title={t('Скинути')} leftSection={<RotateCcw size={17} />}>
+                {t('Скинути')}
+              </Button>
             </Tooltip>
             <Paginator
               hasNext={hasMore}

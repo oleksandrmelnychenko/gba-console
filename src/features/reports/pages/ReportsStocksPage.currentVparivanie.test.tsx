@@ -1,3 +1,4 @@
+import { changeReportPeriod } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -25,7 +26,7 @@ it('offers exact group lookup and InGroup only for this dataset, then sends fixe
   const user=userEvent.setup();const {container}=render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>)
   await screen.findByRole('button',{name:'Продажі за днями'})
   fireEvent.click(screen.getByRole('combobox',{name:'Звіт'}));fireEvent.click(await screen.findByRole('option',{name:dataset.Name}))
-  fireEvent.change(screen.getByLabelText('Від'),{target:{value:'2026-09-01'}});fireEvent.change(screen.getByLabelText('До'),{target:{value:'2026-09-27'}})
+  changeReportPeriod({ from: '2026-09-01', to: '2026-09-27' })
   expect((screen.getByRole('button',{name:'Сформувати'}) as HTMLButtonElement).disabled).toBe(true)
   expect(screen.getByText(/Менеджер покупця поки недоступний/)).toBeTruthy()
   fireEvent.click(screen.getByRole('button',{name:'Додати умову'}));const dialog=screen.getByRole('dialog',{name:'Додати умову відбору'})
@@ -61,7 +62,7 @@ it.each([{reference:'ABCDEF1234567890ABCDEF1234567890',empty:false},{reference:'
   const {container}=render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>)
   await screen.findByRole('button',{name:'Продажі за днями'})
   fireEvent.click(screen.getByRole('combobox',{name:'Звіт'}));fireEvent.click(await screen.findByRole('option',{name:dataset.Name}))
-  fireEvent.change(screen.getByLabelText('Від'),{target:{value:'2026-09-12'}});fireEvent.change(screen.getByLabelText('До'),{target:{value:'2026-09-12'}})
+  changeReportPeriod({ from: '2026-09-12', to: '2026-09-12' })
   expect(screen.queryByText(/Менеджер покупця поки недоступний/)).toBeNull()
   expect(screen.getByText(/Основний менеджер покупця з картки клієнта GBA/)).toBeTruthy()
   for(const [field,name] of [[4,'Synthetic group'],[60,caption]] as const){

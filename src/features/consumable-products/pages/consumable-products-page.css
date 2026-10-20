@@ -320,3 +320,16 @@
     max-height: 260px;
   }
 }
+
+/* Registry controls stay together at natural widths on laptop screens. */
+.consumable-products-page .consumable-products-filter-bar { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; overflow: visible; }
+.consumable-products-page .consumable-products-filter-bar .app-filter-fields { gap: 8px; }
+.consumable-products-page .consumable-products-filter-bar .app-filter-actions,
+.consumable-products-page .consumable-products-filter-bar .app-filter-table-toolbar-slot { flex: 0 0 auto; margin-left: 0; }
+.consumable-products-page .consumable-products-filter-bar > .mantine-Button-root { flex: 0 0 auto; }
+.consumable-products-page .consumable-products-filter-bar .consumable-products-search-input { flex: 0 1 240px; width: 240px; min-width: 0; max-width: 100%; }
+@media (max-width: 1050px) {
+  .consumable-products-page .consumable-products-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .consumable-products-page .consumable-products-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
+  .consumable-products-page .consumable-products-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
+}

@@ -1,11 +1,12 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
-import '../../../shared/ui/document-detail/document-detail.css'
+import { DocumentDetailLayout, DocumentDetailRow, DocumentDetailSection, DocumentDetailSummary } from '../../../shared/ui/document-detail/DocumentDetail'
 import {
-  ActionIcon,
   Alert,
   Badge,
   Button,
-  Divider,
+  Card,
   Group,
   Menu,
   Select,
@@ -16,7 +17,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { Banknote, ChevronDown, CircleAlert, Landmark, Plus, RotateCcw, Search, Share2, Store, Users, X } from 'lucide-react'
+import { Banknote, ChevronDown, CircleAlert, Landmark, Plus, RotateCcw, Save, Search, Share2, Store, Users, X } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -25,7 +26,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { useMutatedListRefresh } from '../../../shared/router/useMutatedListRefresh'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -64,6 +65,7 @@ import {
 } from '../permissions'
 import '../../../shared/ui/console-table-page.css'
 import './income-cashflows-page.css'
+import './income-cashflow-detail.css'
 import type {
   AssignedPaymentOrder,
   Client,
@@ -85,7 +87,7 @@ const MAX_ORGANIZATION_QUERY_FILTER_IDS = 1800
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['fromDate', 'number'],
-    right: ['reassign', 'cancel', 'actions'],
+    right: ['reassign', 'cancel'],
   },
   density: 'normal',
 } satisfies DataTableDefaultLayout
@@ -223,7 +225,6 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
   )
 
   const rows = useMemo(() => buildIncomeCashflowRows(incomeOrders), [incomeOrders])
-  const totalQty = totalRowsQty ?? incomeOrders.length
 
   const closeIncomeDetails = useCallback(() => {
     if (focusedOrderNetId && selectedRow?.income.NetUid === focusedOrderNetId) {
@@ -237,14 +238,12 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
 
   const columns = useIncomeCashflowColumns({
     canCancel,
-    canOpen: canOpenDetails,
     canReassign: canReassignClient,
     onCancel: (row) => {
       if (hasPermission(INCOME_CASHFLOWS_CANCEL_PERMISSION)) {
         setCancelRow(row)
       }
     },
-    onOpen: openIncomeDetails,
     onReassign: (row) => {
       if (hasPermission(INCOME_CASHFLOWS_REASSIGN_CLIENT_PERMISSION)) {
         setReassignRow(row)
@@ -506,7 +505,6 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
     filterError,
     fromDate,
     hasMore,
-    incomeOrders,
     isCanceling,
     isLoading,
     isLoadingLookups,
@@ -523,7 +521,6 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
     selectedRow,
     selectedStructureCalculationState,
     toDate,
-    totalQty,
     totalRowsQty,
     onCancel: handleCancel,
     onCloseCancel: () => setCancelRow(null),
@@ -587,7 +584,6 @@ type IncomeCashflowsPageModel = {
   filterError: string | null
   fromDate: string
   hasMore: boolean
-  incomeOrders: IncomePaymentOrder[]
   isCanceling: boolean
   isLoading: boolean
   isLoadingLookups: boolean
@@ -604,7 +600,6 @@ type IncomeCashflowsPageModel = {
   selectedRow: IncomeCashflowRow | null
   selectedStructureCalculationState: IncomeDocumentStructureCalculationState
   toDate: string
-  totalQty: number
   totalRowsQty: number | null
   onCancel: () => void
   onCloseCancel: () => void
@@ -639,7 +634,6 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
     filterError,
     fromDate,
     hasMore,
-    incomeOrders,
     isCanceling,
     isLoading,
     isLoadingLookups,
@@ -656,7 +650,6 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
     selectedRow,
     selectedStructureCalculationState,
     toDate,
-    totalQty,
     totalRowsQty,
     onCancel,
     onCloseCancel,
@@ -715,39 +708,38 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
       <div className="console-table-shell income-cashflows-card">
         <div className="app-filter-bar income-cashflows-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields income-cashflows-filter-row">
-            <div className="app-filter-date-range">
-              <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => onSetFromDate(event.currentTarget.value)} />
-              <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => onSetToDate(event.currentTarget.value)} />
-            </div>
+            <ToolbarDateRangeFilter from={fromDate} to={toDate} onChange={(range) => { onSetFromDate(range.from); onSetToDate(range.to) }} />
             <TextInput
               leftSection={<Search size={16} />}
               label={t('Пошук')}
               placeholder={t('Номер, платник, рахунок або коментар')}
               value={searchValue}
-              w={170}
               onChange={(event) => onSetSearchValue(event.currentTarget.value)}
             />
             <Select
+              classNames={{ dropdown: 'income-cashflows-toolbar-dropdown' }}
+              comboboxProps={{ width: 'max-content', position: 'bottom-start' }}
               clearable
               searchable
               data={toSelectOptions(currencies, (currency) => currency.Name || currency.Code)}
               label={t('Валюта')}
               placeholder={t('Усі')}
               value={currencyNetId || null}
-              w={190}
               onChange={(value) => onSetCurrencyNetId(value || '')}
             />
             <Select
+              classNames={{ dropdown: 'income-cashflows-toolbar-dropdown' }}
+              comboboxProps={{ width: 'max-content', position: 'bottom-start' }}
               clearable
               searchable
               data={toSelectOptions(paymentRegisters, (register) => register.Name)}
               label={t('Рахунок')}
               placeholder={t('Усі')}
               value={paymentRegisterNetId || null}
-              w={220}
               onChange={(value) => onSetPaymentRegisterNetId(value || '')}
             />
             <CheckboxMultiSelect
+              dropdownClassName="income-cashflows-toolbar-dropdown"
               className="income-cashflows-organization-filter"
               data={organizationOptions}
               label={t('Організації')}
@@ -758,9 +750,7 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
 
             <div className="app-filter-actions income-cashflows-filter-actions">
               <Tooltip label={t('Скинути')}>
-                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={onResetFilters}>
-                  <RotateCcw size={17} />
-                </ActionIcon>
+                <Button aria-label={t('Скинути')} onClick={onResetFilters} className="finance-toolbar-action" variant="default" leftSection={<RotateCcw size={17} />} title={t('Скинути')}>{t('Скинути')}</Button>
               </Tooltip>
               <Paginator
                 hasNext={hasMore}
@@ -869,7 +859,7 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
             emptyText={t('Прибуткових ордерів не знайдено')}
             getRowId={(row) => row.id}
             isLoading={isTableBusy}
-            layoutVersion="income-cashflows-1"
+            layoutVersion="income-cashflows-2"
             minWidth={1680}
             showLayoutControls
             tableId="income-cashflows"
@@ -878,11 +868,6 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
           />
         </div>
 
-        <IncomeCashflowsSummary
-          canceledQty={incomeOrders.filter((order) => order.IsCanceled).length}
-          loadedQty={incomeOrders.length}
-          totalQty={totalQty}
-        />
       </div>
 
       {canOpenDetails && (
@@ -912,45 +897,15 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
   )
 }
 
-function IncomeCashflowsSummary({
-  canceledQty,
-  loadedQty,
-  totalQty,
-}: {
-  canceledQty: number
-  loadedQty: number
-  totalQty: number
-}) {
-  const { t } = useI18n()
-
-  return (
-    <Group className="income-cashflows-summary" gap="xs" justify="flex-end" wrap="nowrap">
-      <Badge className="app-role-pill is-gray" variant="light">
-        {t('Завантажено')}: {loadedQty}
-      </Badge>
-      <Badge className="app-role-pill is-gray" variant="light">
-        {t('Всього')}: {totalQty}
-      </Badge>
-      <Badge className={`app-role-pill ${canceledQty > 0 ? 'is-red' : 'is-gray'}`} variant="light">
-        {t('Скасовано')}: {canceledQty}
-      </Badge>
-    </Group>
-  )
-}
-
 function useIncomeCashflowColumns({
   canCancel,
-  canOpen,
   canReassign,
   onCancel,
-  onOpen,
   onReassign,
 }: {
   canCancel: boolean
-  canOpen: boolean
   canReassign: boolean
   onCancel: (row: IncomeCashflowRow) => void
-  onOpen: (row: IncomeCashflowRow) => void
   onReassign: (row: IncomeCashflowRow) => void
 }): DataTableColumn<IncomeCashflowRow>[] {
   const { t } = useI18n()
@@ -1018,7 +973,7 @@ function useIncomeCashflowColumns({
         width: 210,
         minWidth: 160,
         accessor: (row) => row.operationType,
-        cell: (row) => displayValue(row.operationType),
+        cell: (row) => <TableChip tone="neutral" value={displayValue(row.operationType)} />,
       },
       {
         id: 'amount',
@@ -1039,7 +994,7 @@ function useIncomeCashflowColumns({
         width: 90,
         minWidth: 80,
         accessor: (row) => row.currency,
-        cell: (row) => <TableChip tone="neutral" value={displayValue(row.currency)} />,
+        cell: (row) => <TableChip tone="source" value={displayValue(row.currency)} />,
       },
       {
         id: 'paymentMovement',
@@ -1055,7 +1010,7 @@ function useIncomeCashflowColumns({
         width: 190,
         minWidth: 150,
         accessor: (row) => row.organization,
-        cell: (row) => displayValue(row.organization),
+        cell: (row) => <TableChip tone="product" value={displayValue(row.organization)} />,
       },
       {
         id: 'paymentRegister',
@@ -1134,29 +1089,8 @@ function useIncomeCashflowColumns({
           )
         },
       },
-      {
-        id: 'actions',
-        header: '',
-        width: 62,
-        minWidth: 58,
-        align: 'right',
-        enableSorting: false,
-        enableHiding: false,
-        enablePinning: false,
-        enableReorder: false,
-        cell: (row) => canOpen ? (
-          <TableRowAction
-            action="details"
-            label={t('Деталі')}
-            onClick={(event) => {
-              event.stopPropagation()
-              onOpen(row)
-            }}
-          />
-        ) : null,
-      },
     ],
-    [canCancel, canOpen, canReassign, onCancel, onOpen, onReassign, t],
+    [canCancel, canReassign, onCancel, onReassign, t],
   )
 }
 
@@ -1190,11 +1124,22 @@ export function IncomeCashflowDetailDrawer({
     <AppDrawer
       opened={opened ?? Boolean(row)}
       padding="md"
-      size="min(1200px, 100vw)"
+      classNames={{ title: 'income-cashflow-view__sheet-title' }}
+      size="wide"
       title={
-        <span style={{ fontFamily: 'var(--font-mono)' }}>
-          {getIncomePaymentOrderTitle(income, t)}
-          {income?.Number ? ` · ${income.Number}` : ''}
+        <span className="income-cashflow-view__header">
+          <span>{getIncomePaymentOrderTitle(income, t)}{income?.Number ? ` · ${income.Number}` : ''}</span>
+          {row && income && onReassign && isClientPaymentReassignable(income) && (
+            <Button
+              color={CREATE_ACTION_COLOR}
+              leftSection={<Share2 size={16} />}
+              size="xs"
+              variant="filled"
+              onClick={() => onReassign(row)}
+            >
+              {t('Переназначити клієнта')}
+            </Button>
+          )}
         </span>
       }
       onClose={onClose}
@@ -1210,220 +1155,120 @@ export function IncomeCashflowDetailDrawer({
           {error}
         </Alert>
       ) : row && income ? (
-        <Stack className="income-cashflow-detail" gap={10}>
-          {onReassign && isClientPaymentReassignable(income) && (
-            <Group className="income-cashflow-detail__actions" justify="flex-end">
-              <Button
-                color={CREATE_ACTION_COLOR}
-                leftSection={<Share2 size={16} />}
-                variant="outline"
-                onClick={() => onReassign(row)}
-              >
-                {t('Переназначити клієнта')}
-              </Button>
-            </Group>
-          )}
-
-          <section className="income-cashflow-detail__hero">
-            <div className="income-cashflow-detail__identity">
-              <div className="income-cashflow-detail__reference">
-                <TableChip tone="document" value={displayValue(income.Number)} />
-                <TableChip tone="neutral" value={formatDateTime(income.FromDate)} />
-              </div>
-              <div className="income-cashflow-detail__payer">
-                <TableChip tone="document" value={displayValue(
-                    income.Colleague && (income.AssignedPaymentOrders?.length || 0) > 0
-                      ? joinTruthyParts(row.payer, t('Повернення'))
-                      : row.payer,
-                  )} />
-                <div className="income-cashflow-detail__badges">
-                  {registerKind && <TableChip tone="neutral" value={registerKind} />}
-                  {income.IsAccounting ? (
-                    <TableChip tone="success" value={t('Бухгалтерський')} />
-                  ) : null}
-                  {income.IsManagementAccounting ? (
-                    <TableChip tone="success" value={t('Управлінський')} />
-                  ) : null}
-                  {income.IsCanceled ? (
-                    <TableChip tone="danger" value={t('Скасовано')} />
-                  ) : null}
-                </div>
-              </div>
+        <div className="income-cashflow-view">
+          <DocumentDetailLayout
+            variant="inventory"
+            summary={
+              <DocumentDetailSummary
+                variant="inventory"
+                eyebrow={getIncomePaymentOrderTitle(income, t)}
+                title={displayValue(income.Number)}
+                status={income.IsCanceled ? <TableChip tone="danger" value={t('Скасовано')} /> : undefined}
+                meta={
+                  <>
+                    <span className="income-cashflow-view__date">{formatDateTime(income.FromDate)}</span>
+                    {registerKind && <TableChip value={registerKind} />}
+                    {income.IsAccounting && <TableChip tone="success" value={t('Бухгалтерський')} />}
+                    {income.IsManagementAccounting && <TableChip tone="success" value={t('Управлінський')} />}
+                    <span className="income-cashflow-view__payer">
+                      {displayValue(income.Colleague && (income.AssignedPaymentOrders?.length || 0) > 0
+                        ? joinTruthyParts(row.payer, t('Повернення')) : row.payer)}
+                    </span>
+                  </>
+                }
+                metrics={
+                  <>
+                    <IncomeDetailMetric label={t('Сума')} currency={currency} value={formatMoney(income.Amount)} />
+                    <IncomeDetailMetric label={t('Сума в EUR')} currency="EUR" value={hasNumber(income.EuroAmount) ? formatMoney(income.EuroAmount) : '—'} />
+                    <IncomeDetailMetric label={`${t('ПДВ')} · ${hasNumber(income.VatPercent) ? income.VatPercent : 0}%`} currency={currency} value={hasNumber(income.VAT) ? formatMoney(income.VAT) : '—'} />
+                  </>
+                }
+              />
+            }
+          >
+            <div className="income-cashflow-view__metadata">
+              <DocumentDetailSection title={t('Платіж')} stacked>
+                <IncomeDetailField label={t('Тип операції')} value={displayValue(row.operationType)} />
+                <IncomeDetailField label={t('Стаття руху')} value={displayValue(row.paymentMovement)} />
+                <IncomeDetailField label={t('Рахунок')} value={displayValue(row.paymentRegister)} />
+                <IncomeDetailField label={t('Призначення платежу')} value={displayValue(income.PaymentPurpose)} />
+                <IncomeDetailField label={t('Вхідний номер')} mono value={displayValue(income.ArrivalNumber)} />
+              </DocumentDetailSection>
+              <DocumentDetailSection title={t('Облік')} stacked>
+                <IncomeDetailField chip="product" label={t('Організація')} value={displayValue(row.organization)} />
+                <IncomeDetailField chip="warning" label={t('Відповідальний')} value={displayValue(row.responsible)} />
+                <IncomeDetailField chip="neutral" label={t('Договір')} value={displayValue(getIncomeAgreementName(income))} />
+                <IncomeDetailField label={t('Курс')} mono value={displayValue(income.ExchangeRate)} />
+                {hasNumber(income.AgreementExchangedAmount) && (
+                  <DocumentDetailRow label={t('Сума у валюті договору')} value={
+                    <IncomeDetailAmount value={formatMoney(income.AgreementExchangedAmount)} currency={income.ClientAgreement?.Agreement?.Currency?.Code || income.ClientAgreement?.Agreement?.Currency?.Name || income.OrganizationClientAgreement?.Currency?.Code || income.OrganizationClientAgreement?.Currency?.Name} />
+                  } />
+                )}
+              </DocumentDetailSection>
             </div>
-
-            <div className="income-cashflow-detail__summary">
-              <IncomeDetailMetric
-                label={t('Сума')}
-                meta={currency}
-                value={formatMoney(income.Amount)}
-              />
-              <IncomeDetailMetric
-                label={t('Сума в EUR')}
-                meta="EUR"
-                value={hasNumber(income.EuroAmount) ? formatMoney(income.EuroAmount) : '—'}
-              />
-              <IncomeDetailMetric
-                accent={hasNumber(income.VAT) && Number(income.VAT) > 0}
-                label={t('ПДВ')}
-                meta={`${hasNumber(income.VatPercent) ? income.VatPercent : 0}%`}
-                value={hasNumber(income.VAT) ? formatMoney(income.VAT) : '—'}
-              />
-            </div>
-          </section>
-
-          <div className="income-cashflow-detail__tree">
-              <div className="income-cashflow-detail__sections">
-                <IncomeDetailSection title={t('Платіж')}>
-                  <IncomeDetailField chip="source" label={t('Тип операції')} value={displayValue(row.operationType)} />
-                  <IncomeDetailField chip="neutral" label={t('Стаття руху')} value={displayValue(row.paymentMovement)} />
-                  <IncomeDetailField label={t('Рахунок')} value={displayValue(row.paymentRegister)} />
-                  <IncomeDetailField label={t('Призначення платежу')} value={displayValue(income.PaymentPurpose)} />
-                  <IncomeDetailField chip="neutral" label={t('Вхідний номер')} mono value={displayValue(income.ArrivalNumber)} />
-                </IncomeDetailSection>
-
-                <IncomeDetailSection title={t('Облік')}>
-                  <IncomeDetailField chip="document" label={t('Організація')} value={displayValue(row.organization)} />
-                  <IncomeDetailField chip="neutral" label={t('Відповідальний')} value={displayValue(row.responsible)} />
-                  <IncomeDetailField chip="document" label={t('Договір')} value={displayValue(getIncomeAgreementName(income))} />
-                  <IncomeDetailField label={t('Курс')} mono value={displayValue(income.ExchangeRate)} />
-                  <IncomeDetailField
-                    label={t('Сума у валюті договору')}
-                    mono
-                    value={hasNumber(income.AgreementExchangedAmount) ? formatMoney(income.AgreementExchangedAmount) : displayValue(undefined)}
-                  />
-                </IncomeDetailSection>
-              </div>
-
             {income.Comment ? (
-              <section className="income-cashflow-detail__tree-section">
-                <div className="income-cashflow-detail__tree-head">
-                  <span className="income-cashflow-detail__tree-title">{t('Коментар')}</span>
-                </div>
-                <div className="income-cashflow-detail__comment">
-                  <Text size="sm">{income.Comment}</Text>
-                </div>
-              </section>
+              <DocumentDetailSection title={t('Коментар')} stacked>
+                <Text className="income-cashflow-view__comment" size="sm">{income.Comment}</Text>
+              </DocumentDetailSection>
             ) : null}
-          </div>
-
-          {orderSales.length > 0 && (
-            <>
-              <Divider />
-              <IncomeOrderSalesSection currency={income.Currency?.Code || income.Currency?.Name} sales={orderSales} />
-            </>
-          )}
-
-          {hasIncomeDocumentStructure(income) && (
-            <>
-              <Divider />
-              <IncomeDocumentStructure income={income} structureCalculation={structureCalculation} />
-            </>
-          )}
-        </Stack>
+            {orderSales.length > 0 && <IncomeOrderSalesSection currency={currency} sales={orderSales} />}
+            {hasIncomeDocumentStructure(income) && <IncomeDocumentStructure income={income} structureCalculation={structureCalculation} />}
+          </DocumentDetailLayout>
+        </div>
       ) : null}
     </AppDrawer>
   )
 }
 
-function IncomeDetailMetric({
-  accent = false,
-  label,
-  meta,
-  value,
-}: {
-  accent?: boolean
-  label: string
-  meta: string
-  value: string
-}) {
-  return (
-    <div className={`income-cashflow-detail__metric${accent ? ' is-accent' : ''}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-      <TableChip tone={meta.includes('%') ? 'neutral' : 'source'} value={meta} />
-    </div>
-  )
+function IncomeDetailAmount({ currency, value }: { currency?: string; value: string }) {
+  if (!value) return null
+  return <span className="income-cashflow-view__amount">
+    <span className="app-money">{value}</span>
+    {currency && <TableChip tone="source" value={currency} />}
+  </span>
 }
 
-function IncomeDetailSection({
-  children,
-  title,
-}: {
-  children: ReactNode
-  title: string
-}) {
-  return (
-    <section className="income-cashflow-detail__section">
-      <Text className="income-cashflow-detail__section-title" fw={600}>
-        {title}
-      </Text>
-      <div className="income-cashflow-detail__field-list">
-        {children}
-      </div>
-    </section>
-  )
+function IncomeDetailMetric({ currency, label, value }: { currency: string; label: string; value: string }) {
+  return <div className="income-cashflow-view__metric">
+    <span>{label}</span>
+    <IncomeDetailAmount currency={currency} value={value} />
+  </div>
 }
 
 function IncomeDetailField({ label, mono, value, chip }: {
   label: string
   mono?: boolean
   value: string
-  chip?: 'neutral' | 'document' | 'source'
+  chip?: 'neutral' | 'product' | 'warning'
 }) {
   if (!value.trim() || value === '—' || value === '-') return null
-  return <div className={`income-cashflow-detail__field${mono ? ' is-mono' : ''}`}>
-    <span>{label}</span>
-    <div>{chip ? <TableChip tone={chip} value={value} /> : value}</div>
-  </div>
+  return <DocumentDetailRow label={label} mono={mono} value={chip ? <TableChip tone={chip} value={value} /> : value} />
 }
 
-function IncomeOrderSalesSection({
-  currency,
-  sales,
-}: {
-  currency?: string
-  sales: IncomePaymentOrderSale[]
-}) {
+function IncomeOrderSalesSection({ currency, sales }: { currency?: string; sales: IncomePaymentOrderSale[] }) {
   const { t } = useI18n()
-
   return (
-    <Stack gap="xs">
-      <Text className="app-section-title" fw={600} size="sm">{t('Рахунки та продажі')}</Text>
-      {sales.map((sale, index) => (
-        <IncomeOrderSaleBlock
-          key={getIncomeOrderSaleKey(sale, index)}
-          currency={currency}
-          sale={sale}
-        />
-      ))}
-    </Stack>
-  )
-}
-
-function IncomeOrderSaleBlock({
-  currency,
-  sale,
-}: {
-  currency?: string
-  sale: IncomePaymentOrderSale
-}) {
-  const { t } = useI18n()
-  const saleDocument = sale.Sale || sale.ReSale || null
-  const amount = firstNumber(sale.Amount, saleDocument?.TotalAmount, saleDocument?.TotalAmountLocal)
-
-  return (
-    <SimpleGrid cols={{ base: 1, sm: 2 }}>
-      <DetailItem label={t('Тип')} value={sale.ReSale ? t('Ресейл') : t('Продаж')} />
-      <DetailItem label={t('Дата')} mono value={formatDateTime(sale.Created || saleDocument?.Created)} />
-      <DetailItem label={t('Номер рахунку')} mono value={displayValue(saleDocument?.SaleNumber?.Value)} />
-      <DetailItem label={t('Сума')} mono value={formatMoneyWithCurrency(amount, currency)} />
-      <Stack gap={2}>
-        <Text c="dimmed" size="xs" tt="uppercase">
-          {t('Оплата')}
-        </Text>
-        <IncomePaymentStatusBadge value={saleDocument} />
-      </Stack>
-    </SimpleGrid>
+    <DocumentDetailSection title={t('Рахунки та продажі')} subtitle={sales.length} stacked>
+      <div className="income-cashflow-view__table-scroll" role="region" aria-label={t('Рахунки та продажі')} tabIndex={0}>
+        <table className="app-static-table">
+          <thead><tr>
+            <th>{t('Тип')}</th><th>{t('Номер рахунку')}</th><th>{t('Дата')}</th>
+            <th className="app-table-cell-number">{t('Сума')}</th><th>{t('Оплата')}</th>
+          </tr></thead>
+          <tbody>{sales.map((sale, index) => {
+            const document = sale.Sale || sale.ReSale || null
+            const amount = firstNumber(sale.Amount, document?.TotalAmount, document?.TotalAmountLocal)
+            return <tr key={getIncomeOrderSaleKey(sale, index)}>
+              <td>{sale.ReSale ? t('Ресейл') : t('Продаж')}</td>
+              <td><TableChip tone="document" value={document?.SaleNumber?.Value} /></td>
+              <td className="income-cashflow-view__date">{formatDateTime(sale.Created || document?.Created)}</td>
+              <td className="app-table-cell-number"><IncomeDetailAmount value={hasNumber(amount) ? formatMoney(amount) : ''} currency={currency} /></td>
+              <td><IncomePaymentStatusBadge value={document} /></td>
+            </tr>
+          })}</tbody>
+        </table>
+      </div>
+    </DocumentDetailSection>
   )
 }
 
@@ -1431,25 +1276,13 @@ function IncomePaymentStatusBadge({ value }: { value: unknown }) {
   const { t } = useI18n()
   const status = getAccountingCashFlowRecordPaymentStatus(value)
 
-  if (!status) {
-    return (
-      <Text c="dimmed" size="sm">
-        {displayValue(undefined)}
-      </Text>
-    )
-  }
+  if (!status) return null
 
-  const pillClass =
-    status.kind === 'paid' ? 'is-green'
-    : status.kind === 'unpaid' ? 'is-red'
-    : status.kind === 'partial' ? 'is-yellow'
-    : 'is-gray'
+  const tone = status.kind === 'paid' ? 'success'
+    : status.kind === 'unpaid' ? 'danger'
+    : status.kind === 'partial' ? 'warning' : 'neutral'
 
-  return (
-    <Badge className={`app-role-pill ${pillClass}`} size="sm" variant="light">
-      {t(status.label)}
-    </Badge>
-  )
+  return <TableChip tone={tone} value={t(status.label)} />
 }
 
 function incomeDocumentStructureCalculationReducer(
@@ -1502,8 +1335,7 @@ function IncomeDocumentStructure({
       : undefined
 
   return (
-    <Stack gap="sm">
-      <Text className="app-section-title" fw={600} size="sm">{t('Структура документів')}</Text>
+    <DocumentDetailSection title={t('Структура документів')} stacked>
 
       {structureCalculation.isCalculating && (
         <Alert color="gray" variant="light">
@@ -1517,14 +1349,14 @@ function IncomeDocumentStructure({
         </Alert>
       )}
 
-      <SimpleGrid cols={{ base: 1, sm: 2 }}>
-        <DetailItem label={t('Прибутковий ордер')} value={displayValue(income.Number)} />
+      <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="sm" verticalSpacing="xs">
+        <DetailItem label={t('Прибутковий ордер')} value={<TableChip tone="document" value={income.Number} />} />
         <DetailItem label={t('Дата')} mono value={formatDateTime(income.FromDate)} />
-        <DetailItem label={t('Сума')} mono value={formatMoneyWithCurrency(income.Amount, income.Currency?.Code || income.Currency?.Name)} />
+        <DetailItem label={t('Сума')} mono value={<IncomeDetailAmount value={hasNumber(income.Amount) ? formatMoney(income.Amount) : ''} currency={income.Currency?.Code || income.Currency?.Name} />} />
         <DetailItem
           label={t('Перерахована сума')}
           mono
-          value={hasNumber(calculatedTotal) ? formatMoneyWithCurrency(calculatedTotal, getOutcomeCurrency(outcomeToCalculate)) : displayValue(undefined)}
+          value={hasNumber(calculatedTotal) ? <IncomeDetailAmount value={formatMoney(calculatedTotal)} currency={getOutcomeCurrency(outcomeToCalculate)} /> : displayValue(undefined)}
         />
         <DetailItem label={t('Платник')} value={displayValue(getIncomePayerName(income))} />
       </SimpleGrid>
@@ -1551,7 +1383,7 @@ function IncomeDocumentStructure({
           {t('Структура документів відсутня')}
         </Text>
       ) : null}
-    </Stack>
+    </DocumentDetailSection>
   )
 }
 
@@ -1570,13 +1402,13 @@ function IncomeAssignedPaymentOrderBlock({
   return (
     <Stack gap="xs">
       <Text fw={600} size="sm">{title}</Text>
-      <SimpleGrid cols={{ base: 1, sm: 2 }}>
-        <DetailItem label={t('Номер зв’язки')} value={displayValue(assignedOrder.Number)} />
+      <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="sm" verticalSpacing="xs">
+        <DetailItem label={t('Номер зв’язки')} value={<TableChip tone="document" value={assignedOrder.Number} />} />
         <DetailItem label={t('Сума зв’язки')} mono value={formatMoney(assignedOrder.Amount)} />
         <DetailItem
           label={t('Сума авансового звіту')}
           mono
-          value={hasNumber(calculatedTotal) ? formatMoneyWithCurrency(calculatedTotal, getOutcomeCurrency(outcome)) : displayValue(undefined)}
+          value={hasNumber(calculatedTotal) ? <IncomeDetailAmount value={formatMoney(calculatedTotal)} currency={getOutcomeCurrency(outcome)} /> : displayValue(undefined)}
         />
       </SimpleGrid>
 
@@ -1595,12 +1427,12 @@ function IncomeAssignedOutcomeOrderView({ order }: { order: OutcomePaymentOrder 
   const { t } = useI18n()
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2 }}>
+    <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="sm" verticalSpacing="xs">
       <DetailItem label={t('Документ')} value={getOutcomePaymentOrderTypeLabel(order, t)} />
-      <DetailItem label={t('Номер')} value={displayValue(order.Number || order.CustomNumber || order.AdvanceNumber)} />
-      <DetailItem label={t('Авансовий звіт')} value={displayValue(order.AdvanceNumber)} />
+      <DetailItem label={t('Номер')} value={<TableChip tone="document" value={order.Number || order.CustomNumber || order.AdvanceNumber} />} />
+      <DetailItem label={t('Авансовий звіт')} value={<TableChip tone="document" value={order.AdvanceNumber} />} />
       <DetailItem label={t('Дата')} value={formatDateTime(order.FromDate)} />
-      <DetailItem label={t('Сума')} mono value={formatMoneyWithCurrency(order.Amount, getOutcomeCurrency(order))} />
+      <DetailItem label={t('Сума')} mono value={<IncomeDetailAmount value={hasNumber(order.Amount) ? formatMoney(order.Amount) : ''} currency={getOutcomeCurrency(order)} />} />
       <DetailItem label={t('Отримувач')} value={displayValue(getOutcomePayedTo(order))} />
     </SimpleGrid>
   )
@@ -1850,41 +1682,48 @@ export function ReassignIncomeClientModal({
   return (
     <AppModal
       centered
+      className="income-reassign-modal"
+      size={496}
       opened={opened}
       title={
-        <span style={{ fontFamily: 'var(--font-mono)' }}>
-          {row?.number ? `${t('Переназначити клієнта')} — ${row.number}` : t('Переназначити клієнта')}
+        <span className="income-reassign-title">
+          <span>{t('Переназначити клієнта')}</span>
+          {row?.number && <TableChip tone="document" value={row.number} />}
         </span>
       }
       onClose={handleClose}
     >
-      <Stack gap="md">
+      <Stack className="income-reassign-content" gap={10}>
+        <Card className="app-section-card income-reassign-fields" withBorder radius="md" padding={12}>
+          <SearchableSelect
+            comboboxProps={{ classNames: { dropdown: 'income-reassign-dropdown' } }}
+            selectionPlaceholder={t('Почніть вводити назву')}
+            data={counterpartyOptions.map((option) => option.label)}
+            disabled={isSaving}
+            filter={({ options }) => options}
+            label={t('Клієнт')}
+            placeholder={t('Почніть вводити назву')}
+            value={searchValue}
+            onChange={handleSearchValueChanged}
+            onOptionSubmit={(label) => {
+              const option = counterpartyOptions.find((item) => item.label === label)
+              if (option) {
+                handleClientSelected(option)
+              }
+            }}
+          />
 
-        <SearchableSelect
-          data={counterpartyOptions.map((option) => option.label)}
-          disabled={isSaving}
-          filter={({ options }) => options}
-          label={t('Клієнт')}
-          placeholder={t('Почніть вводити назву')}
-          value={searchValue}
-          onChange={handleSearchValueChanged}
-          onOptionSubmit={(label) => {
-            const option = counterpartyOptions.find((item) => item.label === label)
-            if (option) {
-              handleClientSelected(option)
-            }
-          }}
-        />
-
-        <Select
-          data={agreementOptions}
-          disabled={!agreementOptions.length || isSaving}
-          label={t('Договір')}
-          placeholder={t('Оберіть договір')}
-          searchable
-          value={selectedAgreementValue || null}
-          onChange={(value) => setSelectedAgreementValue(value || '')}
-        />
+          <Select
+            comboboxProps={{ classNames: { dropdown: 'income-reassign-dropdown' } }}
+            data={agreementOptions}
+            disabled={!agreementOptions.length || isSaving}
+            label={t('Договір')}
+            placeholder={t('Оберіть договір')}
+            searchable
+            value={selectedAgreementValue || null}
+            onChange={(value) => setSelectedAgreementValue(value || '')}
+          />
+        </Card>
 
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
@@ -1892,20 +1731,20 @@ export function ReassignIncomeClientModal({
           </Alert>
         )}
 
-        <Group justify="flex-end">
-          <Button color="gray" disabled={isSaving} variant="light" onClick={handleClose}>
+        <AppModalFooter>
+          <Button disabled={isSaving} variant="default" onClick={handleClose}>
             {t('Скасувати')}
           </Button>
           <Button
             color={CREATE_ACTION_COLOR}
             disabled={!selectedClientValue || !selectedAgreementValue}
-            leftSection={<Share2 size={16} />}
+            leftSection={<Save size={16} />}
             loading={isSaving}
             onClick={() => void handleSubmit()}
           >
             {t('Зберегти')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )
@@ -1943,13 +1782,8 @@ function PayerCell({ row }: { row: IncomeCashflowRow }) {
 }
 
 /* §5.1: dates, numbers and money render mono — pass `mono` for those values. */
-function DetailItem({ label, mono, value }: { label: string; mono?: boolean; value: string }) {
-  return (
-    <div className={`app-detail-field${mono ? ' is-mono' : ''}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  )
+function DetailItem({ label, mono, value }: { label: string; mono?: boolean; value: ReactNode }) {
+  return <DocumentDetailRow label={label} mono={mono} value={value} />
 }
 
 function buildIncomeCashflowRows(incomeOrders: IncomePaymentOrder[]): IncomeCashflowRow[] {
@@ -2109,7 +1943,7 @@ function getOutcomeCurrency(order: OutcomePaymentOrder | null): string | undefin
 function getOutcomePayedTo(order: OutcomePaymentOrder): string | undefined {
   return getEntityName(order.Client)
     || getPersonFullName(order.Colleague)
-    || getEntityName(order.Organization)
+    || getOrganizationDisplayName(order.Organization)
     || getEntityName(order.User)
 }
 
@@ -2258,16 +2092,6 @@ function formatMoney(value?: number): string {
   const amount = typeof value === 'number' && Number.isFinite(value) ? value : 0
 
   return moneyFormatter.format(amount)
-}
-
-function formatMoneyWithCurrency(value?: number, currency?: string): string {
-  if (!hasNumber(value)) {
-    return displayValue(undefined)
-  }
-
-  const formatted = formatMoney(value)
-
-  return currency ? `${formatted} ${currency}` : formatted
 }
 
 function firstNumber(...values: Array<number | undefined>): number | undefined {

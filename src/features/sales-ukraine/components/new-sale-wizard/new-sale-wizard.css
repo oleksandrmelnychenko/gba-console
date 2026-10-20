@@ -9246,3 +9246,8 @@
 .new-sale-product-picker-name-line > .app-table-chip { flex-shrink: 0; }
 .new-sale-product-picker-card .new-sale-product-picker-name-line { margin-top: 4px; }
 .new-sale-product-picker-card .new-sale-product-picker-name-line .new-sale-product-picker-card__name { margin-top: 0; }
+
+.new-sale-register .new-sale-register-toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
+.new-sale-register .new-sale-register-toolbar__controls > .mantine-InputWrapper-root { flex: 0 1 140px; width: 140px; min-width: 0; }
+.new-sale-register .new-sale-register-toolbar__controls > .new-sale-register-search { flex: 0 1 200px; width: 200px; min-width: 0; }
+.new-sale-register .new-sale-register-orders-button { flex: 0 0 auto; margin-left: 0; }

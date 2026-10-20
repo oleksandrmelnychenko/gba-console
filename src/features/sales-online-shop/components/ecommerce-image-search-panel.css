@@ -406,3 +406,9 @@
     grid-column: auto;
   }
 }
+
+.image-search-audit-toolbar .image-search-audit-filter-row { flex-wrap: wrap; gap: 8px; }
+.image-search-audit-toolbar .image-search-audit-search { flex: 0 1 260px; width: 260px; min-width: 0; max-width: 100%; }
+.image-search-audit-toolbar .image-search-audit-status { flex: 0 1 160px; width: 160px; min-width: 0; }
+.image-search-audit-toolbar .image-search-audit-actions { flex: 0 0 auto; margin-left: 0; }
+@media (max-width: 600px) { .image-search-audit-toolbar .image-search-audit-actions { flex-shrink: 1; flex-wrap: wrap; } }

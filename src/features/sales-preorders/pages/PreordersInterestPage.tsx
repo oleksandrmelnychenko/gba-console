@@ -1,5 +1,5 @@
 import { TableChip } from '../../../shared/ui/TableChip'
-import { ActionIcon, Anchor, Button, Center, Stack, Text, Tooltip } from '@mantine/core'
+import { Anchor, Button, Center, Stack, Text } from '@mantine/core'
 import { RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -257,18 +257,14 @@ function PreordersInterestPageContent() {
       <div className="sales-dashboard-tab-content preorders-interest-card">
         <div className="app-filter-bar preorders-interest-command-bar">
           <div className="app-filter-actions preorders-interest-command-actions">
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                color="gray"
-                loading={isLoading}
-                size={34}
-                variant="light"
-                onClick={refresh}
-              >
-                <RefreshCw size={18} />
-              </ActionIcon>
-            </Tooltip>
+            <Button
+              leftSection={<RefreshCw size={18} />}
+              loading={isLoading}
+              variant="default"
+              onClick={refresh}
+            >
+              {t('Оновити')}
+            </Button>
           </div>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot preorders-interest-table-toolbar-slot" />
         </div>

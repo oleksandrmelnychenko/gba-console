@@ -1,4 +1,5 @@
-import { ActionIcon, Alert, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
+import { Button, Alert, Select, Stack, Text } from '@mantine/core'
 import { CircleAlert, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -118,24 +119,7 @@ export function ManagerSalesByTopNXView() {
     <div className="sales-dashboard-tab-content sales-chart-card">
       <div className="app-filter-bar">
         <div className="app-filter-fields sales-chart-filter-row is-topnx">
-          <div className="app-filter-date-range">
-            <TextInput
-              className="sales-chart-filter-control"
-              label={t('Від')}
-              max={to || undefined}
-              type="date"
-              value={from}
-              onChange={(event) => setFrom(event.currentTarget.value)}
-            />
-            <TextInput
-              className="sales-chart-filter-control"
-              label={t('До')}
-              min={from || undefined}
-              type="date"
-              value={to}
-              onChange={(event) => setTo(event.currentTarget.value)}
-            />
-          </div>
+          <ToolbarDateRangeFilter from={from} to={to} onChange={({ from, to }) => { setFrom(from); setTo(to) }} />
           <Select
             allowDeselect={false}
             className="sales-chart-filter-control"
@@ -145,11 +129,9 @@ export function ManagerSalesByTopNXView() {
             onChange={(value) => setTypeTop((Number(value) === SalesChartsTopType.TopX ? SalesChartsTopType.TopX : SalesChartsTopType.TopN))}
           />
           <div className="app-filter-actions sales-chart-filter-actions">
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                <RotateCcw size={17} />
-              </ActionIcon>
-            </Tooltip>
+            <Button aria-label={t('Скинути')} color="gray" variant="default" leftSection={<RotateCcw size={17} />} onClick={resetFilters}>
+              {t('Скинути')}
+            </Button>
           </div>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot sales-chart-table-toolbar-slot" />
         </div>

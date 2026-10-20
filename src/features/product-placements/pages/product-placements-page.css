@@ -52,3 +52,23 @@
   flex: 1 1 auto;
   min-height: 0;
 }
+
+/* Natural-width registry controls; compact layout actions when space is limited. */
+.product-placements-card { container: product-placements / inline-size; }
+.product-placements-filter-bar.app-filter-bar { overflow: visible; }
+.product-placements-filter-bar .product-placements-filter-row { display: flex; flex-wrap: wrap; gap: 8px; --app-multi-select-width: 200px; }
+.product-placements-filter-bar .product-placements-filter-row > .mantine-InputWrapper-root { flex: 0 1 180px; width: 180px; min-width: 0; }
+.product-placements-filter-bar .product-placements-filter-row > .mantine-InputWrapper-root:has(input[type='date']) { flex: 0 0 140px; width: 140px; }
+.product-placements-filter-row > .app-filter-actions { margin-left: 0; flex: 0 0 auto; }
+@container product-placements (max-width: 1250px) {
+  .product-placements-filter-bar .product-placements-filter-row > .mantine-InputWrapper-root { flex-basis: 160px; width: 160px; }
+  .product-placements-filter-row .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .product-placements-filter-row .data-table-layout-control .mantine-Button-label { display: none; }
+  .product-placements-filter-row .data-table-layout-control .mantine-Button-section { margin: 0; }
+}
+
+@container product-placements (max-width: 1250px) {
+ .app-filter-bar .product-placements-toolbar-caption-action { width: 36px; min-width: 36px; padding-inline: 0; }
+ .product-placements-toolbar-caption-action .mantine-Button-label { display: none; }
+ .product-placements-toolbar-caption-action .mantine-Button-section { margin: 0; }
+}

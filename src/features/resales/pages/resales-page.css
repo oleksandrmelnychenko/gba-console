@@ -873,3 +873,10 @@
   .resales-table-toolbar-slot .data-table-layout-control .mantine-Button-label { display: none; }
   .resales-table-toolbar-slot .data-table-layout-control .mantine-Button-section { margin: 0; }
 }
+
+.resales-reset-action { flex: 0 0 auto; white-space: nowrap; }
+@container resale-registry (max-width: 960px) {
+  .resales-reset-action { width: 36px; min-width: 36px; padding-inline: 0; }
+  .resales-reset-action .mantine-Button-label { display: none; }
+  .resales-reset-action .mantine-Button-section { margin: 0; }
+}

@@ -1,3 +1,4 @@
+import { readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
@@ -36,8 +37,8 @@ it('selects the completed Kyiv day, one exact leg and submits only fixed account
   fireEvent.click(screen.getByRole('button', { name: 'Відкрити Ведомость по денежным средствам.xls' }))
   expect((screen.getByRole('combobox', { name: 'Звіт' }) as HTMLInputElement).value).toBe(cashPeriodDataset.Name)
   expect(screen.getAllByText('Ведомость по денежным средствам.xls — Відомість по коштах').length).toBeGreaterThan(0)
-  expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe(previousKyivDay(formatKyivBusinessDate()))
-  expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe(previousKyivDay(formatKyivBusinessDate()))
+  expect((readReportDateInput('Від') as HTMLInputElement).value).toBe(previousKyivDay(formatKyivBusinessDate()))
+  expect((readReportDateInput('До') as HTMLInputElement).value).toBe(previousKyivDay(formatKyivBusinessDate()))
   fireEvent.click(await screen.findByRole('combobox', { name: 'Рахунок і власна валюта' }))
   fireEvent.click(await screen.findByRole('option', { name: /Synthetic organization/ }))
   fireEvent.submit(container.querySelector('form')!)
@@ -50,7 +51,7 @@ it('selects the completed Kyiv day, one exact leg and submits only fixed account
     'CurrencyBasis', 'CurrencyRegisterId', 'CurrencyRegisterNetUid', 'Version',
   ])
   fireEvent.click(screen.getByRole('button', { name: 'Скинути' }))
-  expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe(previousKyivDay(formatKyivBusinessDate()))
+  expect((readReportDateInput('До') as HTMLInputElement).value).toBe(previousKyivDay(formatKyivBusinessDate()))
   expect(screen.queryByText(/Структура звіту руху коштів фіксована/)).toBeNull()
 })
 

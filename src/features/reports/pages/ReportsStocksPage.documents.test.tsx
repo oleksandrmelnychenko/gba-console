@@ -1,3 +1,4 @@
+import { changeReportPeriod, readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -30,20 +31,20 @@ describe('native supplier-return documents and current debt',()=>{
   })
   it('keeps supplier returns periodic and debt current-only with their own presets and measures',async()=>{
     const {container}=await ready()
-    fireEvent.change(screen.getByLabelText('Від'),{target:{value:'2026-06-01'}});fireEvent.change(screen.getByLabelText('До'),{target:{value:'2026-06-30'}})
+    changeReportPeriod({ from: '2026-06-01', to: '2026-06-30' })
     for(const dataset of nativeDocumentDatasets) {
       await choose(dataset.Name)
       fireEvent.click(screen.getByRole('button',{name:getNativeReportProfile(dataset.DataSource)!.preset.name}))
       expect(screen.queryByRole('combobox',{name:'Договір для оцінки'})).toBeNull()
-      expect(screen.queryByLabelText('Від')!==null).toBe(dataset.DataSource===9)
+      expect(screen.queryByRole('button', { name: /^Період:/ })!==null).toBe(dataset.DataSource===9)
       expect(screen.getByRole('checkbox',{name:dataset.Measurements[0].Name})).toBeTruthy()
       fireEvent.submit(container.querySelector('form')!)
       await waitFor(()=>expect(createStockReport).toHaveBeenCalledTimes(dataset.DataSource===9?1:2))
       expect(vi.mocked(createStockReport).mock.lastCall?.[0]).toEqual(defaultDatasetRequest(dataset,'2026-06-01','2026-06-30'))
     }
     await choose(supplierReturnDataset.Name)
-    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-06-01')
-    fireEvent.change(screen.getByLabelText('Від'),{target:{value:''}})
+    expect((readReportDateInput('Від') as HTMLInputElement).value).toBe('2026-06-01')
+    changeReportPeriod({ from: '' })
     expect((screen.getByRole('button',{name:'Сформувати'}) as HTMLButtonElement).disabled).toBe(true)
   })
   it.each(nativeDocumentDatasets.flatMap(dataset=>dataset.Filters.map(field=>({dataset,field}))))('uses source $dataset.DataSource native one-character lookup for exact field $field.Type',async({dataset,field})=>{
@@ -67,7 +68,7 @@ describe('native supplier-return documents and current debt',()=>{
     const template:ReportTemplate={Id:crypto.randomUUID(),Revision:1,Name:'Мій борг',Data:data}
     vi.mocked(getServerReportTemplates).mockResolvedValue([template]);const {container}=await ready()
     fireEvent.click(screen.getByRole('button',{name:'Шаблони'}));fireEvent.click(await screen.findByRole('button',{name:'Відкрити для редагування: Мій борг'}))
-    expect(screen.queryByLabelText('Від')).toBeNull();expect(screen.queryByRole('combobox',{name:'Договір для оцінки'})).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull();expect(screen.queryByRole('combobox',{name:'Договір для оцінки'})).toBeNull()
     fireEvent.submit(container.querySelector('form')!);await waitFor(()=>expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toEqual({...data,selections:data.selections.slice(0,2)})
     fireEvent.click(screen.getByRole('button',{name:'Шаблони'}));fireEvent.click(screen.getByRole('button',{name:'Новий шаблон'}));fireEvent.click(screen.getByRole('button',{name:'Зберегти'}))
@@ -77,6 +78,6 @@ describe('native supplier-return documents and current debt',()=>{
     const data={...defaultDatasetRequest(currentDebtDataset,'',''),from:'2026-06-01',to:'2026-06-30'}
     vi.mocked(getServerReportTemplates).mockResolvedValue([{Id:crypto.randomUUID(),Revision:1,Name:'Історичний борг',Data:data}]);await ready()
     fireEvent.click(screen.getByRole('button',{name:'Шаблони'}));fireEvent.click(await screen.findByRole('button',{name:'Відкрити для редагування: Історичний борг'}))
-    expect(screen.getByText(/Поточна заборгованість не підтримує період/)).toBeTruthy();expect(screen.getByLabelText('Від')).toBeTruthy()
+    expect(screen.getByText(/Поточна заборгованість не підтримує період/)).toBeTruthy();expect(readReportDateInput('Від')).toBeTruthy()
   })
 })

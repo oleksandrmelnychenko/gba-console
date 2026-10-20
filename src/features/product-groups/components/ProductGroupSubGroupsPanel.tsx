@@ -1,7 +1,5 @@
 import {
-  ActionIcon,
   Alert,
-  Box,
   Button,
   Group,
   Select,
@@ -19,7 +17,6 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { getProductSubGroups } from '../api/productGroupsApi'
 import type { ProductGroup, ProductSubGroup } from '../types'
 import { displayValue, formatProductGroupDate, getProductGroupName } from '../utils'
@@ -31,7 +28,7 @@ const PRODUCT_GROUP_SEARCH_DEBOUNCE_MS = 300
 const SUB_GROUPS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['name'],
-    right: ['actions'],
+    right: [],
   },
   density: 'normal',
 } satisfies DataTableDefaultLayout
@@ -113,30 +110,8 @@ export function ProductGroupSubGroupsPanel({ productGroupNetId }: ProductGroupSu
         accessor: (subGroup) => subGroup.SubProductGroup?.Created,
         cell: (subGroup) => formatProductGroupDate(subGroup.SubProductGroup?.Created),
       },
-      {
-        id: 'actions',
-        header: '',
-        width: 58,
-        minWidth: 58,
-        maxWidth: 58,
-        align: 'center',
-        enableHiding: false,
-        enableReorder: false,
-        enableResizing: false,
-        enableSorting: false,
-        cell: (subGroup) => (
-          <Box onClick={(event) => event.stopPropagation()}>
-            <TableRowAction
-              action="open"
-              disabled={!subGroup.SubProductGroup?.NetUid}
-              label={t('Відкрити')}
-              onClick={() => openSubGroup(subGroup.SubProductGroup)}
-            />
-          </Box>
-        ),
-      },
     ],
-    [openSubGroup, t],
+    [],
   )
   const loadSubGroups = useCallback(
     async (offset: number, append: boolean) => {
@@ -219,29 +194,25 @@ export function ProductGroupSubGroupsPanel({ productGroupNetId }: ProductGroupSu
           onChange={(value) => setLimit(Number(value || DEFAULT_PAGE_LIMIT))}
         />
         <Tooltip label={t('Скинути')}>
-          <ActionIcon
+          <Button
             aria-label={t('Скинути')}
             color="gray"
-            size={36}
+            size="sm"
             style={{ flex: '0 0 auto' }}
-            variant="light"
+            variant="default"
             onClick={resetSearch}
-          >
-            <RotateCcw size={18} />
-          </ActionIcon>
+           className="registry-caption-action" leftSection={<RotateCcw size={18} />}>{t('Скинути')}</Button>
         </Tooltip>
         <Tooltip label={t('Оновити')}>
-          <ActionIcon
+          <Button
             aria-label={t('Оновити')}
             color="gray"
             loading={isLoading}
-            size={36}
+            size="sm"
             style={{ flex: '0 0 auto' }}
-            variant="light"
+            variant="default"
             onClick={() => reload()}
-          >
-            <RefreshCw size={18} />
-          </ActionIcon>
+           className="registry-caption-action" leftSection={<RefreshCw size={18} />}>{t('Оновити')}</Button>
         </Tooltip>
         <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot product-group-detail-table-tools" />
         <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />

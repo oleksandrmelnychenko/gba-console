@@ -6,7 +6,7 @@ import {
   useNavigate,
   useSearchParams,
 } from 'react-router-dom'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppModal } from '../../../shared/ui/AppModal'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { PermissionGate } from '../../auth/components/PermissionGate'
@@ -132,17 +132,16 @@ function OutgoingCashflowCreatePageContent() {
   }
 
   return (
-    <AppDrawer
+    <AppModal
       className="outgoing-cashflow-create-drawer"
       opened
-      position="right"
-      size="standard"
+      size={960}
       title={<span style={{ fontFamily: 'var(--font-mono)' }}>{drawerTitle}</span>}
       onClose={() => navigate(OUTGOING_CASHFLOWS_PATH)}
     >
       <Stack gap="md">
         {activeMode ? renderActiveForm(activeMode) : <OutgoingCreateModeSelector onNavigate={handleNavigate} />}
       </Stack>
-    </AppDrawer>
+    </AppModal>
   )
 }

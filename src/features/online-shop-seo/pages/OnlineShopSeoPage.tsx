@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
@@ -1652,6 +1653,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                     <Text className="app-filter-label seo-page-command-combo-label">{t(commandSearch.label)}</Text>
                     <div className="seo-page-command-combo-control">
                       <Select
+                        classNames={{ dropdown: 'seo-toolbar-filter-dropdown' }}
                         allowDeselect={false}
                         aria-label={t(commandSearch.filterLabel || 'Шукати по')}
                         className="seo-page-command-combo-filter"
@@ -3135,11 +3137,11 @@ function getPaymentCardBrandLabel(brand: PaymentCardBrand) {
 }
 
 function getOrganizationName(organization?: OnlineShopPaymentRegister['Organization'] | OnlineShopStorage['Organization']) {
-  return organization?.FullName || organization?.Name || organization?.Abbreviation || ''
+  return getOrganizationDisplayName(organization) || organization?.Abbreviation || ''
 }
 
 function getCompactOrganizationName(organization?: OnlineShopPaymentRegister['Organization'] | OnlineShopStorage['Organization']) {
-  return organization?.Abbreviation || organization?.Name || organization?.FullName || ''
+  return organization?.Abbreviation || getOrganizationDisplayName(organization)
 }
 
 function sortStoragesByPriority(storages: OnlineShopStorage[]) {

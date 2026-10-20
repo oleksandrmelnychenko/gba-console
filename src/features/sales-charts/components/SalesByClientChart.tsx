@@ -1,7 +1,8 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { LineChart } from '@mantine/charts'
 import { MONEY_AXIS_TICK } from '../../../shared/ui/charts/chartTheme'
 import { ChartLoading } from '../../../shared/ui/charts/ChartState'
-import { ActionIcon, Alert, Select, Stack, TextInput, Tooltip } from '@mantine/core'
+import { Button, Alert, Select, Stack } from '@mantine/core'
 import { CircleAlert, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -136,24 +137,7 @@ export function SalesByClientChart() {
     <div className="sales-dashboard-tab-content sales-chart-card">
       <div className="app-filter-bar">
         <div className="app-filter-fields sales-chart-filter-row is-client">
-          <div className="app-filter-date-range">
-            <TextInput
-              className="sales-chart-filter-control"
-              label={t('Від')}
-              max={to || undefined}
-              type="date"
-              value={from}
-              onChange={(event) => setFrom(event.currentTarget.value)}
-            />
-            <TextInput
-              className="sales-chart-filter-control"
-              label={t('До')}
-              min={from || undefined}
-              type="date"
-              value={to}
-              onChange={(event) => setTo(event.currentTarget.value)}
-            />
-          </div>
+          <ToolbarDateRangeFilter from={from} to={to} onChange={({ from, to }) => { setFrom(from); setTo(to) }} />
           <SearchableSelect
             className="sales-chart-filter-control"
             data={autocompleteData}
@@ -182,11 +166,9 @@ export function SalesByClientChart() {
             onChange={(value) => setTypePeriod(toPeriodType(value))}
           />
           <div className="app-filter-actions sales-chart-filter-actions">
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                <RotateCcw size={17} />
-              </ActionIcon>
-            </Tooltip>
+            <Button aria-label={t('Скинути')} color="gray" variant="default" leftSection={<RotateCcw size={17} />} onClick={resetFilters}>
+              {t('Скинути')}
+            </Button>
           </div>
         </div>
       </div>

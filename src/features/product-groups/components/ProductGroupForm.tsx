@@ -86,6 +86,7 @@ export function ProductGroupForm({
 
       <Select
         clearable
+        classNames={{ dropdown: 'product-group-select-dropdown', option: 'product-group-select-option' }}
         data={rootGroupOptions}
         disabled={disabled || isLoadingRootGroups}
         filter={filterRootGroups}

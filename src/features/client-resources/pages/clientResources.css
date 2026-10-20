@@ -532,3 +532,13 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.app-filter-bar.client-resources-filter-bar { container: client-resource-toolbar / inline-size; }
+.app-filter-bar.client-resources-filter-bar > .client-resources-filter-fields { flex: 0 1 auto; width: auto; }
+.client-resources-filter-bar .client-resources-filter-fields > .mantine-InputWrapper-root { flex: 0 1 200px; width: 200px; min-width: 0; }
+.client-resources-filter-bar > .client-resources-filter-actions { margin-left: 0; }
+@container client-resource-toolbar (max-width: 1100px) {
+ .client-resources-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+ .client-resources-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
+ .client-resources-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
+}

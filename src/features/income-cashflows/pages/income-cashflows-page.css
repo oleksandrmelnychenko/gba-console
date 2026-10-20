@@ -58,18 +58,6 @@
   min-height: 0;
 }
 
-.income-cashflows-summary {
-  border-top: 1px solid var(--mantine-color-gray-2);
-  flex: 0 0 auto;
-  min-height: 30px;
-  overflow-x: auto;
-  padding: 4px 12px;
-}
-
-.income-cashflows-summary .mantine-Badge-root {
-  height: 20px;
-}
-
 .income-cashflows-card .data-table-cell {
   white-space: nowrap;
 }
@@ -79,58 +67,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.income-cashflow-detail {
-  display: grid;
-  gap: 10px;
-  padding: 10px;
-  background: var(--mantine-color-gray-0);
-  border-radius: 12px;
-  min-width: 0;
-}
-.income-cashflow-detail__hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 38%);
-  gap: 16px;
-  background: white;
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
-  padding: 14px;
-}
-.income-cashflow-detail__identity { min-width: 0; display: grid; align-content: start; gap: 10px; }
-.income-cashflow-detail__reference,
-.income-cashflow-detail__badges { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.income-cashflow-detail__payer { display: grid; justify-items: start; gap: 8px; min-width: 0; }
-.income-cashflow-detail__payer > .app-table-chip,
-.income-cashflow-detail__field .app-table-chip { height: auto; min-height: 22px; max-width: 100%; padding-block: 3px; }
-.income-cashflow-detail__payer .app-table-chip-label,
-.income-cashflow-detail__field .app-table-chip-label { white-space: normal; overflow-wrap: anywhere; }
-.income-cashflow-detail__summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-self: start; }
-.income-cashflow-detail__metric { display: grid; justify-items: start; gap: 6px; padding: 10px; background: var(--mantine-color-gray-0); border-radius: 8px; min-width: 0; }
-.income-cashflow-detail__metric > span:first-child { font-size: 11px; font-weight: 500; color: var(--mantine-color-gray-8); }
-.income-cashflow-detail__metric > strong { font: 600 17px var(--font-mono); color: var(--mantine-color-gray-9); overflow-wrap: anywhere; }
-.income-cashflow-detail__tree { display: grid; gap: 10px; min-width: 0; }
-.income-cashflow-detail__sections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.income-cashflow-detail__section,
-.income-cashflow-detail__tree-section { background: white; padding: 14px; border: 1px solid var(--mantine-color-gray-2); border-radius: 10px; min-width: 0; }
-.income-cashflow-detail__section-title,
-.income-cashflow-detail__tree-title { display: flex; align-items: center; gap: 8px; color: var(--mantine-color-gray-8); font: 600 14px var(--font-mono); margin-bottom: 12px; }
-.income-cashflow-detail__section-title::before,
-.income-cashflow-detail__tree-title::before { content: ''; width: 6px; height: 6px; flex-shrink: 0; background: var(--brand-orange); border-radius: 50%; }
-.income-cashflow-detail__field-list { display: grid; gap: 12px; }
-.income-cashflow-detail__field { display: grid; grid-template-columns: 135px minmax(0, 1fr); align-items: baseline; gap: 8px 12px; }
-.income-cashflow-detail__field > span { color: var(--mantine-color-gray-8); font-family: var(--font-sans); font-size: 12px; font-weight: 500; line-height: 1.5; }
-.income-cashflow-detail__field > div { color: var(--mantine-color-gray-9); font-size: 13px; font-weight: 500; line-height: 1.5; overflow-wrap: anywhere; min-width: 0; }
-.income-cashflow-detail__field.is-mono > div { font-family: var(--font-mono); font-weight: 600; }
-.income-cashflow-detail__comment { color: var(--mantine-color-gray-9); overflow-wrap: anywhere; }
-@media (max-width: 900px) {
-  .income-cashflow-detail__hero { grid-template-columns: minmax(0, 1fr); }
-  .income-cashflow-detail__field { grid-template-columns: minmax(0, 1fr); gap: 3px; }
-}
-@media (max-width: 620px) {
-  .income-cashflow-detail__sections { grid-template-columns: minmax(0, 1fr); }
-  .income-cashflow-detail__summary { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
 }
 
 /* Client/counterparty income sheet. The selectors share the compact account
@@ -443,4 +379,70 @@
     flex: 1 1 145px;
     padding: 8px 0 0;
   }
+}
+
+/* Compact registry toolbar: fixed field widths, responsive action labels. */
+.app-filter-bar.income-cashflows-filter-bar { container: income-cashflows-toolbar / inline-size; display: flex; flex-wrap: wrap; overflow: visible; }
+.app-filter-bar.income-cashflows-filter-bar > .app-filter-fields { display: flex; flex: 0 1 auto; flex-wrap: wrap; align-items: end; gap: 8px; width: auto; min-width: 0; max-width: 100%; }
+.app-filter-bar.income-cashflows-filter-bar > .app-filter-fields > :is(.mantine-InputWrapper-root, .app-filter-field) { flex: 0 0 160px; width: 160px; min-width: 0; max-width: 100%; }
+.app-filter-bar.income-cashflows-filter-bar :is(.app-filter-actions, .data-table-toolbar, .data-table-toolbar-left) { flex-wrap: nowrap; gap: 8px; margin-left: 0; }
+.app-filter-bar.income-cashflows-filter-bar .app-filter-actions { flex: 0 0 auto; }
+.income-cashflows-toolbar-dropdown { width: max-content !important; max-width: calc(100vw - 24px); padding: 4px; }
+@container income-cashflows-toolbar (max-width: 1060px) {
+  .app-filter-bar.income-cashflows-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar.income-cashflows-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
+  .app-filter-bar.income-cashflows-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
+}
+@container income-cashflows-toolbar (max-width: 1500px) {
+  .app-filter-bar.income-cashflows-filter-bar > .app-filter-fields > :is(.mantine-InputWrapper-root, .app-filter-field) { flex-basis: 120px; width: 120px; }
+  .app-filter-bar.income-cashflows-filter-bar .income-cashflows-organization-filter { --app-multi-select-width: 120px; flex: 0 0 120px; width: 120px; }
+  .app-filter-bar.income-cashflows-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar.income-cashflows-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
+  .app-filter-bar.income-cashflows-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
+}
+
+@container income-cashflows-toolbar (max-width: 1250px) {
+ .income-cashflows-filter-bar .finance-toolbar-action { width: 36px; min-width: 36px; padding-inline: 0; }
+ .income-cashflows-filter-bar .finance-toolbar-action .mantine-Button-label { display: none; }
+ .income-cashflows-filter-bar .finance-toolbar-action .mantine-Button-section { margin: 0; }
+}
+
+/* Cashflow forms share the compact field rhythm without filling empty height. */
+.income-cashflow-compact-form .mantine-Modal-title { flex: 1; margin-right: 12px; }
+.income-cashflow-compact-form :is(.mantine-Modal-body, .app-sheet-scroll) { background: var(--mantine-color-gray-0); }
+.income-cashflow-compact-form form > .mantine-Stack-root { gap: 8px; }
+.income-cashflow-compact-form form > .mantine-Stack-root > .mantine-Stack-root {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 12px;
+  padding: 10px 12px;
+  gap: 8px;
+}
+.income-cashflow-compact-form .mantine-SimpleGrid-root { gap: 8px 10px; }
+.income-cashflow-compact-form.app-form-sheet .app-section-title { color: var(--mantine-color-gray-9); font: 600 13px/1.4 var(--font-mono); margin: 0; }
+.income-cashflow-compact-form.app-form-sheet :is(.mantine-InputWrapper-label, .mantine-Checkbox-label) { color: var(--mantine-color-gray-9); font: 500 12px/1.4 var(--font-sans); }
+.income-cashflow-compact-form.app-form-sheet .mantine-Input-input { min-height: 32px; height: 32px; font: 400 12px/1.4 var(--font-mono); }
+.income-cashflow-compact-form.app-form-sheet textarea.mantine-Input-input { height: auto; min-height: 48px; }
+.income-cashflow-compact-form.app-form-sheet .mantine-Button-root { height: 32px; min-height: 32px; font: 500 12px/1.3 var(--font-mono); }
+.income-cashflow-compact-form.app-form-sheet .mantine-ActionIcon-root { height: 32px; width: 32px; min-height: 32px; min-width: 32px; }
+.income-cashflow-compact-form .income-cashflow-client-form__accounting-flags { gap: 12px 20px; padding-top: 2px; }
+.income-cashflow-compact-form .income-cashflow-client-form__tabs .mantine-SegmentedControl-label { height: 26px; font-size: 12px; padding-inline: 10px; }
+.income-cashflow-compact-form .app-modal-footer { margin-top: 12px; }
+@media (max-width: 700px) {
+  .income-cashflow-compact-form .income-cashflow-client-form__titlebar { flex-wrap: wrap; }
+  .income-cashflow-compact-form .income-cashflow-client-form__title { white-space: normal; }
+}
+
+.income-cashflow-compact-form .cashflow-fields-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 10px; }
+.income-cashflow-compact-form .cashflow-fields-row > * { flex: 0 1 280px; min-width: 0; max-width: 100%; }
+.income-cashflow-compact-form .cashflow-fields-row > .cashflow-field-date { flex-basis: 140px; }
+.income-cashflow-compact-form .cashflow-fields-row > .cashflow-field-time { flex-basis: 100px; }
+.income-cashflow-compact-form .cashflow-fields-row > .cashflow-field-number { flex-basis: 160px; }
+.income-cashflow-compact-form .cashflow-fields-row > :is(.cashflow-field-currency, .cashflow-field-rate, .cashflow-field-vat) { flex-basis: 130px; }
+.income-cashflow-compact-form .cashflow-fields-row > .cashflow-field-amount { flex-basis: 150px; }
+.income-cashflow-compact-form .cashflow-fields-row > .cashflow-field-article { flex-basis: 320px; }
+.income-cashflow-compact-form .cashflow-fields-row > .cashflow-field-purpose { flex: 1 1 280px; }
+@media (max-width: 600px) {
+  .income-cashflow-compact-form .cashflow-fields-row > * { flex-basis: 100%; }
+  .income-cashflow-compact-form .cashflow-fields-row > :is(.cashflow-field-date, .cashflow-field-time, .cashflow-field-number, .cashflow-field-currency, .cashflow-field-rate, .cashflow-field-vat, .cashflow-field-amount) { flex-basis: calc(50% - 5px); }
 }

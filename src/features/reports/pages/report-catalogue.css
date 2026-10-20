@@ -52,3 +52,21 @@
 .workbook-catalogue__name { color: var(--mantine-color-gray-8); font-weight: 600; }
 .workbook-catalogue__details { display: grid; gap: 12px; }
 .workbook-catalogue .mantine-Button-root { font-family: var(--font-mono); font-weight: 600; }
+
+.app-filter-bar.report-catalogue__filters,
+.app-filter-bar.workbook-catalogue__filters { display: flex; flex-wrap: nowrap; gap: 8px; min-width: 0; }
+.report-catalogue__filters > .mantine-TextInput-root,
+.workbook-catalogue__filters > .mantine-TextInput-root { flex: 0 0 220px; width: 220px; min-width: 0; }
+.report-catalogue__filters > .mantine-Select-root { flex: 0 0 160px; width: 160px; min-width: 0; }
+.report-catalogue__filters > .mantine-Select-root:nth-child(3) { flex-basis: 110px; width: 110px; }
+.workbook-catalogue__filters .app-filter-actions { flex: 0 0 auto; margin-left: 0; }
+@media (max-width: 1250px) {
+  .report-catalogue__filters > .mantine-Select-root { flex-basis: 150px; width: 150px; }
+  .report-catalogue__filters > .mantine-TextInput-root { flex-basis: 200px; width: 200px; }
+}
+@media (max-width: 900px) {
+  .app-filter-bar.report-catalogue__filters, .app-filter-bar.workbook-catalogue__filters { flex-wrap: wrap; }
+  .report-catalogue__filters > .mantine-TextInput-root, .workbook-catalogue__filters > .mantine-TextInput-root { max-width: 100%; }
+}
+
+:is(.report-catalogue__filters, .workbook-catalogue__filters) .reports-toolbar-action { flex: 0 0 auto; white-space: nowrap; }

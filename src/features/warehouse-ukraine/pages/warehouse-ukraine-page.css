@@ -583,3 +583,36 @@
 .warehouse-ukraine-page .warehouse-ukraine-table-toolbar-slot .data-table-toolbar-left {
   flex-wrap: nowrap;
 }
+
+/* One compact command row; single-date registers retain their date control. */
+.warehouse-ukraine-page .warehouse-ukraine-filter-bar.app-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  overflow: visible;
+  --app-multi-select-width: 180px;
+}
+.warehouse-ukraine-page .warehouse-ukraine-filter-bar > .warehouse-ukraine-filter-input { flex: 0 1 180px; width: 180px; min-width: 0; }
+.warehouse-ukraine-page .warehouse-ukraine-filter-bar :is(.warehouse-ukraine-filter-actions, .warehouse-ukraine-table-toolbar-slot, .warehouse-ukraine-command-actions) { flex: 0 0 auto; margin-left: 0; }
+.warehouse-ukraine-page .warehouse-ukraine-filter-bar > .warehouse-ukraine-verification-snapshot { flex: 0 0 auto; width: auto; }
+@media (max-width: 1380px) {
+  .warehouse-ukraine-filter-bar .data-table-layout-control,
+  .warehouse-ukraine-filter-bar .warehouse-toolbar-icon-action { width: 36px; min-width: 36px; padding-inline: 0; }
+  .warehouse-ukraine-filter-bar .data-table-layout-control .mantine-Button-label,
+  .warehouse-ukraine-filter-bar .warehouse-toolbar-icon-action .mantine-Button-label { display: none; }
+  .warehouse-ukraine-filter-bar .data-table-layout-control .mantine-Button-section,
+  .warehouse-ukraine-filter-bar .warehouse-toolbar-icon-action .mantine-Button-section { margin: 0; }
+}
+
+@media (min-width: 1100px) {
+  .warehouse-ukraine-filter-bar:not(.is-auto-shipments) .warehouse-toolbar-icon-action,
+  .warehouse-ukraine-filter-bar:is(.is-orders, .is-editing) .data-table-layout-control {
+    width: auto;
+    min-width: auto;
+    padding-inline: var(--button-padding-x, 12px);
+  }
+  .warehouse-ukraine-filter-bar:not(.is-auto-shipments) .warehouse-toolbar-icon-action .mantine-Button-label,
+  .warehouse-ukraine-filter-bar:is(.is-orders, .is-editing) .data-table-layout-control .mantine-Button-label { display: flex; }
+  .warehouse-ukraine-filter-bar:not(.is-auto-shipments) .warehouse-toolbar-icon-action .mantine-Button-section[data-position='left'],
+  .warehouse-ukraine-filter-bar:is(.is-orders, .is-editing) .data-table-layout-control .mantine-Button-section[data-position='left'] { margin-inline-end: var(--mantine-spacing-xs); }
+}

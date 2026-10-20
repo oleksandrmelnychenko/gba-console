@@ -1,6 +1,8 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
+  Button,
   Alert,
   Badge,
   Card,
@@ -443,16 +445,13 @@ function AdvancedReportsPageContent() {
         <div className="app-filter-bar advanced-reports-filter-bar">
           <Stack className="advanced-reports-filter-content" gap={8}>
             <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields advanced-reports-filter-row">
-              <div className="app-filter-date-range">
-                <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => changeFromDate(event.currentTarget.value)} />
-                <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => changeToDate(event.currentTarget.value)} />
-              </div>
+              <ToolbarDateRangeFilter from={fromDate} to={toDate} onChange={({ from, to }) => { changeFromDate(from); changeToDate(to) }} />
               <TextInput
                 leftSection={<Search size={16} />}
                 label={t('Пошук')}
                 placeholder={t('Номер, організація, отримувач або коментар')}
                 value={searchValue}
-                style={{ flex: '1 1 auto', minWidth: 220 }}
+                className="advanced-reports-search"
                 onChange={(event) => changeSearchValue(event.currentTarget.value)}
               />
               <Select
@@ -487,9 +486,10 @@ function AdvancedReportsPageContent() {
               />
               <div className="app-filter-actions">
                 <Tooltip label={t('Скинути фільтри')}>
-                  <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути фільтри')} onClick={resetFilters}>
-                    <RotateCcw size={17} />
-                  </ActionIcon>
+                  <Button variant="default" color="gray" aria-label={t('Скинути фільтри')} onClick={resetFilters}
+                    className="advanced-reports-toolbar-caption-action" title={t('Скинути фільтри')} leftSection={<RotateCcw size={17} />}>
+                    {t('Скинути')}
+                  </Button>
                 </Tooltip>
                 <Paginator
                   isLoading={isTableBusy || isLoadingLookups}
@@ -1079,7 +1079,7 @@ function toAdvancedReportRow(order: OutcomePaymentOrder, index: number): Advance
     isUnderReport: order.IsUnderReport,
     number: order.AdvanceNumber,
     order,
-    organization: getEntityName(order.Organization),
+    organization: getOrganizationDisplayName(order.Organization) || undefined,
     payedTo: getPayedTo(order),
     paymentMovement: order.PaymentMovementOperation?.PaymentMovement?.OperationName,
     paymentRegister: order.PaymentCurrencyRegister?.PaymentRegister?.Name,

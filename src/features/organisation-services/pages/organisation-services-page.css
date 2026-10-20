@@ -50,3 +50,40 @@
   min-width: max-content;
   width: 100%;
 }
+
+/* Keep sparse controls at natural widths; compact only when the card needs it. */
+.app-filter-bar.organisation-services-filter-bar { display: flex; flex-wrap: wrap; overflow: visible; gap: 8px; }
+.app-filter-bar.organisation-services-filter-bar .app-filter-actions { flex: 0 0 auto; flex-wrap: nowrap; margin-left: 0; gap: 8px; }
+.app-filter-bar.organisation-services-filter-bar :is(.data-table-toolbar, .data-table-toolbar-left) { flex-wrap: nowrap; gap: 8px; }
+@container registry (max-width: 600px) {
+ .app-filter-bar.organisation-services-filter-bar .app-filter-actions { flex: 0 1 auto; flex-wrap: wrap; }
+}
+
+.app-filter-bar.organisation-services-filter-bar { --app-multi-select-width: 160px; }
+.organisation-services-search-form { display: contents; }
+.app-filter-bar.organisation-services-filter-bar .organisation-search-control { flex: 0 0 220px; width: 220px; min-width: 0; max-width: 100%; }
+.organisation-services-filter-bar .data-table-toolbar-left > .mantine-Text-root { display: none; }
+.organisation-services-search-dropdown { max-width: calc(100vw - 24px); }
+.organisation-services-search-option .mantine-Text-root { font-family: var(--font-mono); font-size: 12px; line-height: 16px; }
+.organisation-services-search-option:hover { background: var(--mantine-color-gray-1); }
+@container registry (max-width: 1250px) {
+ .app-filter-bar.organisation-services-filter-bar { --app-multi-select-width: 140px; }
+ .app-filter-bar.organisation-services-filter-bar .organisation-search-control { flex-basis: 180px; width: 180px; }
+}
+@container registry (max-width: 1250px) {
+ .organisation-services-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+ .organisation-services-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
+ .organisation-services-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
+}
+
+
+.organisation-services-search-option { background: transparent; }
+.organisation-services-search-option:hover { background: var(--mantine-color-gray-1); }
+.organisation-services-filter-bar .organisation-search-control .mantine-TextInput-input { font-family: var(--font-mono); font-size: 12px; }
+
+/* Captions remain visible until this toolbar needs the icon-only size. */
+@container registry (max-width: 1000px) {
+  .app-filter-bar .organisation-services-toolbar-action { width: 36px; min-width: 36px; padding-inline: 0; }
+  .organisation-services-toolbar-action .mantine-Button-label { display: none; }
+  .organisation-services-toolbar-action .mantine-Button-section { margin: 0; }
+}

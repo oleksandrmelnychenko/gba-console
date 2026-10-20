@@ -745,3 +745,18 @@
   font-family: var(--font-mono);
   font-size: 10.5px;
 }
+
+.assort-filter { container: assortment-toolbar / inline-size; overflow: visible; }
+.assort-filter .assort-filter-row { gap: 8px; flex-wrap: wrap; --app-multi-select-width: 180px; }
+.assort-filter .assort-filter-row > .mantine-InputWrapper-root { flex: 0 1 160px; width: 160px; }
+.assort-filter-row .app-filter-table-toolbar-slot { margin-left: 0; }
+@container assortment-toolbar (max-width: 1200px) {
+ .assort-filter .assort-filter-row > .mantine-InputWrapper-root { flex-basis: 130px; width: 130px; }
+ .assort-filter-row .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+ .assort-filter-row .data-table-layout-control .mantine-Button-label { display: none; }
+ .assort-filter-row .data-table-layout-control .mantine-Button-section { margin: 0; }
+}
+.assort-dash__controls { flex-wrap: wrap; }
+@media (max-width: 1250px) {
+ .assort-dash__controls > .mantine-InputWrapper-root { width: 140px; flex: 0 1 140px; }
+}

@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Badge, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { Button, Alert, Badge, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { CircleAlert, RotateCcw, Search } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -258,19 +258,22 @@ function NewEcommerceClientsPageContent() {
               {visibleFrom}-{visibleTo} / {filteredClients.length}
             </span>
             <Tooltip label={t('Скинути')}>
-              <ActionIcon
+              <Button
                 aria-label={t('Скинути')}
                 color="gray"
                 disabled={!hasActiveSearch}
-                size={34}
-                variant="light"
+                variant="default"
                 onClick={() => {
                   setSearchValue('')
                   setPage(1)
                 }}
+
+                className="new-ecommerce-clients-toolbar-action"
+                title={t('Скинути')}
+                leftSection={<RotateCcw size={17} />}
               >
-                <RotateCcw size={17} />
-              </ActionIcon>
+                {t('Скинути')}
+              </Button>
             </Tooltip>
             <Paginator
               isLoading={isLoading}

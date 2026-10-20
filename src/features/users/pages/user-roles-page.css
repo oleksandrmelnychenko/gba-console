@@ -209,3 +209,17 @@
   flex: 1 1 auto;
   height: auto;
 }
+
+/* Keep sparse controls at natural widths; compact only when the card needs it. */
+.app-filter-bar.user-roles-filter-bar { display: flex; flex-wrap: wrap; overflow: visible; gap: 8px; }
+.app-filter-bar.user-roles-filter-bar .app-filter-actions { flex: 0 0 auto; flex-wrap: nowrap; margin-left: 0; gap: 8px; }
+.app-filter-bar.user-roles-filter-bar :is(.data-table-toolbar, .data-table-toolbar-left) { flex-wrap: nowrap; gap: 8px; }
+@container registry (max-width: 600px) {
+ .app-filter-bar.user-roles-filter-bar .app-filter-actions { flex: 0 1 auto; flex-wrap: wrap; }
+}
+.app-filter-bar.user-roles-filter-bar > .user-roles-search-input { flex: 0 0 280px; width: 280px; min-width: 0; max-width: 100%; }
+@container registry (max-width: 950px) {
+ .user-roles-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+ .user-roles-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
+ .user-roles-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
+}

@@ -1,5 +1,4 @@
 import {
-  ActionIcon,
   Alert,
   Badge,
   Box,
@@ -231,16 +230,19 @@ function OnlineShopClientsPageContent() {
               {visibleFrom}-{visibleTo} / {totalClients}
             </span>
             <Tooltip label={t('Скинути')}>
-              <ActionIcon
+              <Button
                 aria-label={t('Скинути')}
                 color="gray"
                 disabled={!hasActiveSearch}
-                size={34}
-                variant="light"
+                variant="default"
                 onClick={resetSearch}
+
+                className="online-shop-clients-toolbar-action"
+                title={t('Скинути')}
+                leftSection={<RotateCcw size={17} />}
               >
-                <RotateCcw size={17} />
-              </ActionIcon>
+                {t('Скинути')}
+              </Button>
             </Tooltip>
             <Paginator
               isLoading={isTableBusy}

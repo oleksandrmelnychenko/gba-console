@@ -1,5 +1,6 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
-import { Button, Alert, Select, Stack, Text, TextInput } from '@mantine/core'
+import { Button, Alert, Select, Stack, Text } from '@mantine/core'
 import { CircleAlert, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -222,25 +223,9 @@ export function OrdersTab({ canOpenPlacement }: { canOpenPlacement: boolean }) {
     <Stack className="warehouse-ukraine-tab" gap={6}>
       <div className="warehouse-ukraine-tab-content">
         <div className="app-filter-bar warehouse-ukraine-filter-bar is-orders">
-            <div className="app-filter-date-range">
-              <TextInput
-                className="warehouse-ukraine-filter-input"
-                label={t('Від')}
-                max={model.filterDraft.to || undefined}
-                type="date"
-                value={model.filterDraft.from}
-                onChange={(event) => model.applyFilters({ ...model.filterDraft, from: event.currentTarget.value })}
-              />
-              <TextInput
-                className="warehouse-ukraine-filter-input"
-                label={t('До')}
-                min={model.filterDraft.from || undefined}
-                type="date"
-                value={model.filterDraft.to}
-                onChange={(event) => model.applyFilters({ ...model.filterDraft, to: event.currentTarget.value })}
-              />
-            </div>
+            <ToolbarDateRangeFilter from={model.filterDraft.from} to={model.filterDraft.to} onChange={({ from, to }) => model.applyFilters({ ...model.filterDraft, from, to })} />
             <Select
+              classNames={{ dropdown: 'warehouse-ukraine-toolbar-dropdown' }}
               className="warehouse-ukraine-filter-input"
               allowDeselect={false}
               data={[
@@ -253,7 +238,7 @@ export function OrdersTab({ canOpenPlacement }: { canOpenPlacement: boolean }) {
               onChange={(value) => model.applyFilters({ ...model.filterDraft, placed: value === 'true' })}
             />
             <div className="app-filter-actions warehouse-ukraine-filter-actions">
-              <Button variant="default" size="sm" leftSection={<RotateCcw size={16} />} onClick={model.resetFilters}>
+              <Button className="warehouse-toolbar-icon-action" aria-label={t('Скинути')} title={t('Скинути')} variant="default" size="sm" leftSection={<RotateCcw size={16} />} onClick={model.resetFilters}>
                 {t('Скинути')}
               </Button>
               <Paginator

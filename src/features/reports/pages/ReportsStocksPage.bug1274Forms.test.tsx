@@ -1,3 +1,4 @@
+import { changeReportPeriod, readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
@@ -118,11 +119,10 @@ it('lists the six workbooks by name in one switcher row and opens the first one 
 it('opens ВП.xls on the current month, says why a too long period is refused and «Скинути» restores the workbook', async () => {
   await openWorkbook('Валовий прибуток за днем')
   const yesterday = previousKyivDay(formatKyivBusinessDate())
-  const from = () => (screen.getByLabelText('Від') as HTMLInputElement).value
+  const from = () => (readReportDateInput('Від') as HTMLInputElement).value
   expect(from()).toBe(`${yesterday.slice(0, 7)}-01`)
-  expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe(yesterday)
-  fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-01-01' } })
-  fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-09-30' } })
+  expect((readReportDateInput('До') as HTMLInputElement).value).toBe(yesterday)
+  changeReportPeriod({ from: '2026-01-01', to: '2026-09-30' })
   await waitFor(() => expect(document.getElementById('report-constructor-blocked-reason')?.textContent).toMatch(/\d+/))
   openWorkbookSettingsSection('Відбори')
   fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }))

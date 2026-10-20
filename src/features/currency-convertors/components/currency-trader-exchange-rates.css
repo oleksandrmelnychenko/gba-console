@@ -1,0 +1,63 @@
+.currency-trader-rates-content { min-width: 0; }
+.app-filter-bar.currency-trader-rates-toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+}
+.currency-trader-rates-heading {
+  color: var(--mantine-color-gray-9);
+  font: 600 12px/18px var(--font-mono);
+  margin-right: auto;
+}
+.currency-trader-rates-create {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  padding: 12px;
+}
+.currency-trader-rates-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.currency-trader-rates-date-field { grid-column: 1 / -1; max-width: 200px; }
+.currency-trader-rates-create-actions { margin-top: 12px; }
+.currency-trader-rates-modal .mantine-TextInput-input,
+.currency-trader-rates-table .currency-trader-rates-mono { font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+.currency-trader-rates-table-scroll {
+  max-height: min(360px, 48vh);
+  overflow: auto;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+}
+.currency-trader-rates-table { min-width: 440px; }
+.currency-trader-rates-table thead { position: sticky; top: 0; background: var(--mantine-color-white); z-index: 1; }
+.currency-trader-rates-table .currency-trader-rates-number { text-align: right; }
+.currency-trader-rates-number .mantine-TextInput-input { text-align: right; }
+.currency-trader-rates-number .mantine-TextInput-root { max-width: 130px; margin-left: auto; }
+.currency-trader-rates-actions-heading { width: 80px; }
+.currency-trader-rates-empty { border: 1px solid var(--mantine-color-gray-2); border-radius: 10px; padding: 24px 12px; text-align: center; }
+.currency-trader-rates-empty .mantine-Text-root { font-family: var(--font-mono); font-size: 12px; }
+.currency-trader-rates-error { padding: 8px 12px; font-size: 12px; }
+@media (max-width: 480px) {
+  .currency-trader-rates-fields { grid-template-columns: minmax(0, 1fr); }
+  .currency-trader-rates-date-field { max-width: none; }
+}
+
+/* Match the compact bank editor; the shared period popover keeps its own sizing. */
+.app-modal.app-form-sheet.currency-trader-rates-modal .mantine-TextInput-input {
+  height: 32px;
+  min-height: 32px;
+  padding-inline: 10px;
+  border-radius: 8px;
+  color: var(--mantine-color-gray-9);
+  font: 400 12px var(--font-mono);
+}
+.app-modal.app-form-sheet.currency-trader-rates-modal .mantine-Button-root {
+  height: 32px;
+  min-height: 32px;
+  font: 600 12px var(--font-mono);
+}

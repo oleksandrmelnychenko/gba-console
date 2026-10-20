@@ -64,3 +64,23 @@
   flex: 1 1 auto;
   min-height: 0;
 }
+
+/* Natural-width registry controls; compact layout actions when space is limited. */
+.currency-convertors-card { container: currency-convertors / inline-size; }
+.currency-convertors-filter-bar.app-filter-bar { overflow: visible; }
+.currency-convertors-filter-bar .currency-convertors-filter-row { display: flex; flex-wrap: wrap; gap: 8px; --app-multi-select-width: 200px; }
+.currency-convertors-filter-bar .currency-convertors-filter-row > .mantine-InputWrapper-root { flex: 0 1 280px; width: 280px; min-width: 0; }
+.currency-convertors-filter-bar .currency-convertors-filter-row > .mantine-InputWrapper-root:has(input[type='date']) { flex: 0 0 140px; width: 140px; }
+.currency-convertors-filter-row > .app-filter-actions { margin-left: 0; flex: 0 0 auto; }
+@container currency-convertors (max-width: 1000px) {
+  .currency-convertors-filter-bar .currency-convertors-filter-row > .mantine-InputWrapper-root { flex-basis: 240px; width: 240px; }
+  .currency-convertors-filter-row .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .currency-convertors-filter-row .data-table-layout-control .mantine-Button-label { display: none; }
+  .currency-convertors-filter-row .data-table-layout-control .mantine-Button-section { margin: 0; }
+}
+
+@container currency-convertors (max-width: 850px) {
+ .app-filter-bar .currency-convertors-toolbar-caption-action { width: 36px; min-width: 36px; padding-inline: 0; }
+ .currency-convertors-toolbar-caption-action .mantine-Button-label { display: none; }
+ .currency-convertors-toolbar-caption-action .mantine-Button-section { margin: 0; }
+}

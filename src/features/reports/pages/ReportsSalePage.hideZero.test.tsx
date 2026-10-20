@@ -31,7 +31,7 @@ it('imports a real binary metadata-only XLSX, shows the explicit presentation in
   const { container } = viewer(); upload(await workbookFile(hideZeroAllHiddenRows))
   await screen.findByText('Усі підтверджені нульові записи приховано')
   expect(screen.getByText(/Це стан цього файлу, а не нова перевірка джерела/)).toBeTruthy()
-  expect(screen.queryByLabelText('Від')).toBeNull()
+  expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull()
   expect(screen.getByText('Рядків: 0')).toBeTruthy()
   expect(container.querySelectorAll('.reports-sale-table tr')).toHaveLength(0)
   fireEvent.click(screen.getByRole('button', { name: 'Діаграма' }))

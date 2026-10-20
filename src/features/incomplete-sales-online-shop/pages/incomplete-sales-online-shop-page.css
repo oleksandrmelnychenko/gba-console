@@ -6,24 +6,27 @@
   padding: 6px 4px 0;
 }
 
-.incomplete-sales-online-shop-filter-bar {
+.incomplete-sales-online-shop-page .incomplete-sales-online-shop-filter-bar {
   align-items: end;
-  display: grid;
+  display: flex;
   flex: 0 0 auto;
-  grid-template-columns: 310px minmax(260px, 1fr) auto auto auto;
+  flex-wrap: wrap;
   min-width: 0;
-  overflow-x: auto;
+  overflow: visible;
 }
 
-.incomplete-sales-online-shop-date-input,
-.incomplete-sales-online-shop-search-input {
+.incomplete-sales-online-shop-page .incomplete-sales-online-shop-filter-bar > .incomplete-sales-online-shop-search-input {
+  flex: 0 0 220px;
+  max-width: 100%;
   min-width: 0;
+  width: 220px;
 }
 
 .incomplete-sales-online-shop-checkbox {
   align-items: center;
   align-self: end;
   display: flex;
+  flex: 0 0 auto;
   min-height: 36px;
   min-width: 0;
   padding: 0 4px;
@@ -39,14 +42,59 @@
   white-space: nowrap;
 }
 
-.incomplete-sales-online-shop-filter-actions,
-.incomplete-sales-online-shop-table-toolbar-slot {
+.incomplete-sales-online-shop-page .incomplete-sales-online-shop-filter-actions,
+.incomplete-sales-online-shop-page .incomplete-sales-online-shop-table-toolbar-slot {
   align-items: center;
   align-self: end;
   display: flex;
-  justify-content: flex-end;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  margin-left: 0;
   min-height: 36px;
   min-width: 0;
+}
+
+.incomplete-sales-online-shop-page .incomplete-sales-online-shop-table-toolbar-slot :is(.data-table-toolbar, .data-table-toolbar-left) {
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+
+@container registry (max-width: 1000px) {
+  .incomplete-sales-online-shop-page .incomplete-sales-online-shop-filter-bar > .incomplete-sales-online-shop-search-input {
+    flex-basis: 180px;
+    width: 180px;
+  }
+
+  .incomplete-sales-online-shop-filter-actions .incomplete-sales-online-shop-secondary-action {
+    min-width: 36px;
+    padding-inline: 0;
+    width: 36px;
+  }
+
+  .incomplete-sales-online-shop-secondary-action .mantine-Button-label {
+    display: none;
+  }
+
+  .incomplete-sales-online-shop-secondary-action .mantine-Button-section {
+    margin: 0;
+  }
+}
+
+@container registry (max-width: 800px) {
+  .incomplete-sales-online-shop-table-toolbar-slot .data-table-layout-control {
+    min-width: 36px;
+    padding-inline: 0;
+    width: 36px;
+  }
+
+  .incomplete-sales-online-shop-table-toolbar-slot .data-table-layout-control .mantine-Button-label {
+    display: none;
+  }
+
+  .incomplete-sales-online-shop-table-toolbar-slot .data-table-layout-control .mantine-Button-section {
+    margin: 0;
+  }
 }
 
 .incomplete-sales-online-shop-table {

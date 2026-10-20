@@ -1,4 +1,5 @@
-import { ActionIcon, Alert, Loader, Select, Stack, Text, Tooltip } from '@mantine/core'
+import {
+  Button, Alert, Loader, Select, Stack, Text, Tooltip } from '@mantine/core'
 import { CircleAlert, RotateCcw, Search } from 'lucide-react'
 import { useEffect } from 'react'
 import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
@@ -429,15 +430,15 @@ function PredictionFilters({
         </div>
         <div className="app-filter-actions sales-prediction-filter-actions">
           <Tooltip label={t('Скинути')}>
-            <ActionIcon
+            <Button
               aria-label={t('Скинути')}
               color="gray"
-              size={34}
-              variant="light"
+              variant="default"
               onClick={onReset}
-            >
-              <RotateCcw size={17} />
-            </ActionIcon>
+
+              className="sales-prediction-toolbar-caption-action" title={t('Скинути')} leftSection={<RotateCcw size={17} />}>
+              {t('Скинути')}
+            </Button>
           </Tooltip>
         </div>
       </div>

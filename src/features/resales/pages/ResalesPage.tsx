@@ -432,9 +432,9 @@ export function ResalesPage() {
             />
             <div className="app-filter-actions resales-filter-actions">
               <Tooltip label={t('Скинути')}>
-                <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetFilters}>
-                  <RotateCcw size={17} />
-                </ActionIcon>
+                <Button className="resales-reset-action" variant="default" leftSection={<RotateCcw size={17} />} aria-label={t('Скинути')} onClick={resetFilters}>
+                  {t('Скинути')}
+                </Button>
               </Tooltip>
               <Paginator
                 isLoading={isLoading}

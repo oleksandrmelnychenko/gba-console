@@ -1,18 +1,17 @@
+import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
   Box,
   Button,
   Card,
   Group,
-  MultiSelect,
   Select,
   Stack,
   Text,
   TextInput,
-  Tooltip,
-} from '@mantine/core'
+  } from '@mantine/core'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import {
   DocumentDetailChip,
@@ -756,35 +755,16 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
 
         <div className="app-filter-bar product-remains-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-remains-filter-row">
-            <div className="app-filter-date-range">
-              <TextInput
-                label={t('Від')}
-                type="date"
-                value={dateFrom}
-                onChange={(event) => {
-                  resetAllData()
-                  setDateFrom(event.currentTarget.value)
-                }}
-              />
-              <TextInput
-                label={t('До')}
-                type="date"
-                value={dateTo}
-                onChange={(event) => {
-                  resetAllData()
-                  setDateTo(event.currentTarget.value)
-                }}
-              />
-            </div>
-            <MultiSelect
-              clearable
+            <ToolbarDateRangeFilter from={dateFrom} to={dateTo} onChange={({ from, to }) => { resetAllData(); setDateFrom(from); setDateTo(to) }} />
+            <CheckboxMultiSelect
+              className="product-remains-storage-filter"
+              dropdownClassName="product-remains-toolbar-dropdown"
               searchable
               data={storageOptions}
               disabled={isLoadingStorages}
               label={t('Склад')}
               placeholder={selectedStorageValues.length === 0 ? t('Всі склади') : undefined}
               value={selectedStorageValues}
-              w={300}
               onChange={(value) => {
                 resetAllData()
                 setSelectedStorageValues(value)
@@ -799,7 +779,8 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
               placeholder={t('Всі постачальники')}
               searchValue={supplierSearch}
               value={supplierNetId}
-              style={{ flex: '1 1 240px', minWidth: 220 }}
+              className="product-remains-supplier-filter"
+              classNames={{ dropdown: 'product-remains-toolbar-dropdown' }}
               onChange={(value) => {
                 resetAllData()
                 setSupplierNetId(value)
@@ -812,30 +793,21 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                 label={t('Пошук товару')}
                 placeholder={t('Код або назва')}
                 value={productSearchDraft}
-                style={{ flex: '1 1 260px', minWidth: 220 }}
+                className="product-remains-search-filter"
                 onChange={(event) => updateProductSearch(event.currentTarget.value)}
               />
             )}
             <div className="app-filter-actions">
-              <Tooltip label={t('Скинути')}>
-                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                  <RotateCcw size={17} />
-                </ActionIcon>
-              </Tooltip>
+              <Button aria-label={t('Скинути')} color="gray" variant="default" onClick={resetFilters} className="registry-caption-action" title={t('Скинути')} leftSection={<RotateCcw size={17} />}>{t('Скинути')}</Button>
               {canExport && (
-                <Tooltip label={t('Експорт')}>
-                  <ActionIcon
+                <Button
                     aria-label={t('Експорт')}
                     color="gray"
                     disabled={Boolean(exportingTab || filterError)}
                     loading={exportingTab === activeTab}
-                    size={34}
-                    variant="light"
+                    variant="default"
                     onClick={handleExport}
-                  >
-                    <Download size={17} />
-                  </ActionIcon>
-                </Tooltip>
+                   className="registry-caption-action" title={t('Експорт')} leftSection={<Download size={17} />}>{t('Експорт')}</Button>
               )}
               <Paginator
                 hasNext={activeTab === 'batches' ? batchHasMore : productHasMore}
@@ -1561,21 +1533,11 @@ function ProductRemainMovementsPanel({ row }: { row: RemainingConsignment }) {
           </div>
           <Stack className="product-remains-detail__section-body" gap="sm">
             <Group align="end" gap="sm" wrap="nowrap" className="app-filter-fields clients-filter-row product-remains-detail__filter-row">
-              <TextInput
-                label={t('Від')}
-                type="date"
-                value={dateFrom}
-                w={150}
-                onChange={(event) => dispatch({ type: 'dateFromChanged', value: event.currentTarget.value })}
-              />
-              <TextInput
-                label={t('До')}
-                type="date"
-                value={dateTo}
-                w={150}
-                onChange={(event) => dispatch({ type: 'dateToChanged', value: event.currentTarget.value })}
-              />
-              <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
+              <ToolbarDateRangeFilter from={dateFrom} to={dateTo} onChange={({ from, to }) => {
+                dispatch({ type: 'dateFromChanged', value: from })
+                dispatch({ type: 'dateToChanged', value: to })
+              }} />
+              <Button color="gray" variant="default" size="sm"
                 disabled={Boolean(missingNetIdError || filterError)}
                 leftSection={<RefreshCw size={18} />}
                 loading={isLoading}

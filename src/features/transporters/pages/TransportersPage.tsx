@@ -1,6 +1,5 @@
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
   Button,
   Divider,
@@ -406,6 +405,7 @@ function TransportersPageContent({
               onChange={(event) => setSearch(event.currentTarget.value)}
             />
             <Select
+              classNames={{ dropdown: 'transporters-filter-dropdown' }}
               className="transporters-status-filter"
               data={[
                 { value: 'active', label: t('Активні') },
@@ -421,29 +421,35 @@ function TransportersPageContent({
 
           <div className="app-filter-actions transporters-toolbar-actions">
             <Tooltip label={t('Скинути')}>
-              <ActionIcon
+              <Button
                 aria-label={t('Скинути')}
                 color="gray"
                 disabled={!search}
-                size={34}
                 type="button"
-                variant="light"
+                variant="default"
                 onClick={() => setSearch('')}
+
+                className="transporters-toolbar-action"
+                title={t('Скинути')}
+                leftSection={<RotateCcw size={17} />}
               >
-                <RotateCcw size={17} />
-              </ActionIcon>
+                {t('Скинути')}
+              </Button>
             </Tooltip>
             <Tooltip label={t('Оновити')}>
-              <ActionIcon
+              <Button
                 aria-label={t('Оновити')}
                 color="gray"
                 loading={isBusy}
-                size={34}
-                variant="light"
+                variant="default"
                 onClick={() => reload()}
+
+                className="transporters-toolbar-action"
+                title={t('Оновити')}
+                leftSection={<RefreshCw size={17} />}
               >
-                <RefreshCw size={17} />
-              </ActionIcon>
+                {t('Оновити')}
+              </Button>
             </Tooltip>
           </div>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot transporters-table-toolbar-slot" />

@@ -1,3 +1,4 @@
+import { changeReportPeriod } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -20,8 +21,7 @@ async function choose() {
   fireEvent.click(await screen.findByRole('option', { name: salesXyzDataset.Name }))
 }
 function dates(from = '2026-05-01', to = '2026-07-31') {
-  fireEvent.change(screen.getByLabelText('Від'), { target: { value: from } })
-  fireEvent.change(screen.getByLabelText('До'), { target: { value: to } })
+  changeReportPeriod({ from: from, to: to })
 }
 const originalScroll = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollIntoView')
 afterAll(() => { if (originalScroll) Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', originalScroll); else Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView') })

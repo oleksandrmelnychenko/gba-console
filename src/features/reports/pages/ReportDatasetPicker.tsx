@@ -18,7 +18,7 @@ type Props = {
 export function ReportDatasetPicker({ datasets, selected, disabled, loaded, error, compact = false, activeDataSources, onChange, onRetry }: Props) {
   const dataset = datasets.find(item => item.DataSource === selected)
   return <Stack gap={6} p={compact ? 0 : 'sm'} className={compact ? 'report-dataset-picker report-dataset-picker--compact' : 'report-dataset-picker'}>
-    <Select label="Звіт" data={datasets.map(item => ({ value: String(item.DataSource), label: activeDataSources && !activeDataSources.has(item.DataSource) ? `${item.Name} · Готово (запуск вимкнено)` : (activeDataSources && BUG_1274_ONLY_REPORT_SURFACE ? bug1274DatasetTitle(item.DataSource) : undefined) ?? item.Name, disabled: activeDataSources ? !activeDataSources.has(item.DataSource) : false }))}
+    <Select classNames={compact ? { dropdown: 'reports-toolbar-dropdown' } : undefined} label="Звіт" data={datasets.map(item => ({ value: String(item.DataSource), label: activeDataSources && !activeDataSources.has(item.DataSource) ? `${item.Name} · Готово (запуск вимкнено)` : (activeDataSources && BUG_1274_ONLY_REPORT_SURFACE ? bug1274DatasetTitle(item.DataSource) : undefined) ?? item.Name, disabled: activeDataSources ? !activeDataSources.has(item.DataSource) : false }))}
       value={dataset && (!activeDataSources || activeDataSources.has(selected)) ? String(selected) : null} disabled={disabled || !loaded || !!error}
       placeholder={!loaded ? 'Завантаження наборів даних…' : 'Виберіть звіт'} allowDeselect={false}
       searchable={compact} aria-label="Звіт" aria-busy={!loaded}

@@ -1,3 +1,4 @@
+import { changeReportPeriod, readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -31,10 +32,10 @@ describe('native distinct sale-client constructor', () => {
   })
   it('restores explicit period after current-state source, selects count25 only, and never offers additive transformations or valuation', async () => {
     const { container } = await ready()
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-06-01' } }); fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-07-31' } })
+    changeReportPeriod({ from: '2026-06-01', to: '2026-07-31' })
     await choose(valuationDataset.Name); expect(screen.getByRole('combobox', { name: 'Договір для оцінки' })).toBeTruthy()
     await choose(clientActivityDataset.Name)
-    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-06-01')
+    expect((readReportDateInput('Від') as HTMLInputElement).value).toBe('2026-06-01')
     expect(screen.queryByRole('combobox', { name: 'Договір для оцінки' })).toBeNull()
     expect(screen.getByRole('checkbox', { name: CLIENT_ACTIVITY_COUNT_CAPTION })).toBeTruthy()
     expect(screen.queryByRole('button', { name: /Увімкнути TOP/ })).toBeNull()

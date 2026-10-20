@@ -1,4 +1,4 @@
-import { Alert, Button, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { Alert, Button, Group, Stack, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus, RefreshCw, RotateCcw } from 'lucide-react'
 import { useEffect, useRef } from 'react'
@@ -8,6 +8,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { PagePermissionBoundary } from '../../auth/components/PagePermissionBoundary'
 import { usePermissions } from '../../auth/usePermissions'
 import { createWizardOperationId } from '../../sales-ukraine/components/new-sale-wizard/wizardMutationOperation'
@@ -114,10 +115,6 @@ function OffersPageContent() {
       cancelled = true
     }
   }, [applied, setError, setLoading, setOffers, t])
-
-  function reload() {
-    setApplied({ ...draft })
-  }
 
   function resetFilters() {
     const nextFilters = buildInitialFilters()
@@ -233,35 +230,20 @@ function OffersPageContent() {
     <Stack className="offers-page" gap={0}>
       <div className="sales-dashboard-tab-content offers-card">
         <div className="app-filter-bar offers-filter-bar">
-          <div className="app-filter-date-range">
-            <TextInput
-              label={t('Від')}
-              type="date"
-              value={draft.from}
-              onChange={(event) => {
-                const nextValue = event.currentTarget.value
-                setDraft((current) => ({ ...current, from: nextValue }))
-              }}
-            />
-            <TextInput
-              label={t('До')}
-              type="date"
-              value={draft.to}
-              onChange={(event) => {
-                const nextValue = event.currentTarget.value
-                setDraft((current) => ({ ...current, to: nextValue }))
-              }}
-            />
-          </div>
+          <ToolbarDateRangeFilter
+            from={draft.from}
+            to={draft.to}
+            onChange={(range) => {
+              setDraft(range)
+              setApplied({ ...range })
+            }}
+          />
           <div className="app-filter-actions offers-filter-actions">
             <Tooltip label={t('Скинути')}>
               <Button className="offers-secondary-action" aria-label={t('Скинути')} variant="default" leftSection={<RotateCcw size={17} />} onClick={resetFilters}>
                 {t('Скинути')}
               </Button>
             </Tooltip>
-            <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" onClick={reload}>
-              {t('Застосувати')}
-            </Button>
             <Tooltip label={t('Оновити')}>
               <Button className="offers-secondary-action" aria-label={t('Оновити')} variant="default" loading={isLoading} leftSection={<RefreshCw size={17} />} onClick={refresh}>
                 {t('Оновити')}

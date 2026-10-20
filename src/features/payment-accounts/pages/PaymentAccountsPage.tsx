@@ -242,6 +242,8 @@ function PaymentAccountsPageContent() {
               />
             </div>
             <Select
+              classNames={{ dropdown: 'payment-accounts-toolbar-dropdown' }}
+              comboboxProps={{ width: 'max-content', position: 'bottom-start' }}
               clearable
               searchable
               data={organizationOptions}
@@ -252,10 +254,10 @@ function PaymentAccountsPageContent() {
               onChange={(value) => setOrganizationNetId(value || '')}
             />
             <div className="app-filter-actions">
-              <Button variant="default" size="sm" leftSection={<RotateCcw size={16} />} onClick={resetFilters}>
+              <Button aria-label={t('Скинути')} title={t('Скинути')} variant="default" size="sm" leftSection={<RotateCcw size={16} />} onClick={resetFilters}>
                 {t('Скинути')}
               </Button>
-              <Button variant="default" size="sm" leftSection={<RefreshCw size={16} />}
+              <Button aria-label={t('Оновити')} title={t('Оновити')} variant="default" size="sm" leftSection={<RefreshCw size={16} />}
                 loading={isLoading || isLoadingLookups} onClick={reload}>
                 {t('Оновити')}
               </Button>

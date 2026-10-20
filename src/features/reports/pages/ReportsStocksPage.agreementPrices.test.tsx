@@ -51,7 +51,7 @@ beforeEach(() => {
 afterEach(clearSession)
 it('requires a verified exact contract, keeps it in the preset and submits current prices without dates', async () => {
   const view = await ready(); await prices()
-  expect(screen.queryByLabelText('Від')).toBeNull()
+  expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull()
   expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(true)
   fireEvent.submit(view.container.querySelector('form')!); expect(createStockReport).not.toHaveBeenCalled()
   await agreement()

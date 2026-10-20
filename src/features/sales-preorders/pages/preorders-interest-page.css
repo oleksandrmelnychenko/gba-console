@@ -21,9 +21,10 @@
 
 .preorders-interest-command-bar {
   align-items: end;
-  display: grid;
+  display: flex;
   flex: 0 0 auto;
-  grid-template-columns: minmax(0, 1fr) auto;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .preorders-interest-command-actions,
@@ -31,6 +32,8 @@
   align-items: center;
   align-self: end;
   display: flex;
+  flex: 0 0 auto;
+  margin-left: 0;
   min-height: 36px;
 }
 

@@ -266,14 +266,6 @@ function BudgetCartTabContent() {
                 value={method}
               />
             </Stack>
-            <Stack className="budget-cart-filter-note" gap={2}>
-              <Text c="gray.8" fw={600} size="sm">
-                {t('Бюджет товару без ПДВ, доставки та митних витрат, EUR')}
-              </Text>
-              <Text c="gray.9" size="xs">
-                {getBudgetMethodDescription(method, t)}
-              </Text>
-            </Stack>
             <Button
               className="budget-cart-submit"
               color={CREATE_ACTION_COLOR}
@@ -287,6 +279,14 @@ function BudgetCartTabContent() {
             </Button>
           </Group>
         </div>
+            <Stack className="budget-cart-filter-note" gap={2}>
+              <Text c="gray.8" fw={600} size="sm">
+                {t('Бюджет товару без ПДВ, доставки та митних витрат, EUR')}
+              </Text>
+              <Text c="gray.9" size="xs">
+                {getBudgetMethodDescription(method, t)}
+              </Text>
+            </Stack>
       </Card>
 
       {error && (

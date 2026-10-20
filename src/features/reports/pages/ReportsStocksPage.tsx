@@ -38,7 +38,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
-import { CheckCheck, CircleAlert, LayoutTemplate, Plus, RotateCcw, Save, Search, SearchX, Trash2 } from 'lucide-react'
+import { CheckCheck, CircleAlert, LayoutTemplate, MonitorPlay, Plus, RotateCcw, Save, Search, SearchX, Trash2 } from 'lucide-react'
 import { IconFileSpreadsheet } from '@tabler/icons-react'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
@@ -1574,11 +1574,12 @@ function ReportBuilderForm(props: ReportBuilderFormProps) {
           {datasetPanel}
           <ReportPeriodInputs dataSource={dataSource} supported={periodSupported} from={from} to={to} maxDate={maxDate} disabled={constructorMode && isLoading}
             presets={props.periodPresets} onFromChange={onFromChange} onToChange={onToChange} />
-          {!constructorMode && !props.datasetHidden ? comparisonPanel : null}
+          {!constructorMode && !props.datasetHidden && comparisonPanel ? <div className="reports-stocks-toolbar-comparison">{comparisonPanel}</div> : null}
           <div className="app-filter-actions reports-stocks-actions">
             {catalogueControl}
             <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
               disabled={templatesDisabled}
+              aria-label={t('Шаблони')} title={t('Шаблони')}
               leftSection={<LayoutTemplate size={16} />}
               type="button"
               onClick={() => { onClearTemplateNotice(); setTemplatesOpened(true) }}
@@ -1586,17 +1587,17 @@ function ReportBuilderForm(props: ReportBuilderFormProps) {
               {t('Шаблони')}
             </Button>
             <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} disabled={templatesDisabled} variant="default" size={34} type="button" onClick={onReset}>
-                <RotateCcw size={17} />
-              </ActionIcon>
+              <Button aria-label={t('Скинути')} disabled={templatesDisabled} type="button" onClick={onReset} className="reports-toolbar-action" variant="default" leftSection={<RotateCcw size={17} />} title={t('Скинути')}>{t('Скинути')}</Button>
             </Tooltip>
           </div>
           </div>
-          <Button type="button" variant="default" disabled={!canSubmit || isLoading}
+          <Button type="button" variant="default" className="reports-stocks-preview" leftSection={<MonitorPlay size={16} />}
+            aria-label={t('Показати на екрані')} title={t('Показати на екрані')} disabled={!canSubmit || isLoading}
             onClick={onPreview}>{t('Показати на екрані')}</Button>
           <Tooltip label={t('Сформувати')}>
             <Button
               className="reports-stocks-generate"
+              aria-label={t('Сформувати')}
               color={CREATE_ACTION_COLOR}
               leftSection={<IconFileSpreadsheet size={16} />}
               loading={isLoading}

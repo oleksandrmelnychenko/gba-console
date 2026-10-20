@@ -8,7 +8,6 @@ import { REVENUE_COMPARISON_TITLE } from '../data/revenueComparison'
 import { XYZ_TITLE } from '../data/salesXyz'
 import { IMPORTED_PAYMENTS_TITLE } from '../data/importedPayments'
 import {
-  ActionIcon,
   Alert,
   Badge,
   Box,
@@ -25,6 +24,7 @@ import { CircleAlert, Download, Printer, RefreshCw, RotateCcw, Search, Upload } 
 import { type ChangeEvent, type ReactNode, useMemo } from 'react'
 import readXlsxFile from 'read-excel-file/browser'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { isMoneyField } from '../../../shared/ui/moneyTypography'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -200,39 +200,28 @@ function ReportsSalePageContent() {
           </div>
           <div className="app-filter-actions reports-sale-actions">
             <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                <RotateCcw size={17} />
-              </ActionIcon>
+              <Button aria-label={t('Скинути')} onClick={resetFilters} className="reports-toolbar-action" variant="default" leftSection={<RotateCcw size={17} />} title={t('Скинути')}>{t('Скинути')}</Button>
             </Tooltip>
             {hasPermission(PermissionKeys.ReportsSaleFile.Document.Export) && (
               <Tooltip label={t('Експорт CSV')}>
-                <ActionIcon aria-label={t('Експорт CSV')} color="gray" disabled={!activeSheet} size={34} variant="light" onClick={exportCsv}>
-                  <Download size={17} />
-                </ActionIcon>
+                <Button aria-label={t('Експорт CSV')} disabled={!activeSheet} onClick={exportCsv} className="reports-toolbar-action" variant="default" leftSection={<Download size={17} />} title={t('Експорт CSV')}>{t('Експорт CSV')}</Button>
               </Tooltip>
             )}
             {hasPermission(PermissionKeys.ReportsSaleFile.Document.Print) && (
               <Tooltip label={t('Друк')}>
-                <ActionIcon aria-label={t('Друк')} color="gray" disabled={!activeSheet} size={34} variant="light" onClick={printReport}>
-                  <Printer size={17} />
-                </ActionIcon>
+                <Button aria-label={t('Друк')} disabled={!activeSheet} onClick={printReport} className="reports-toolbar-action" variant="default" leftSection={<Printer size={17} />} title={t('Друк')}>{t('Друк')}</Button>
               </Tooltip>
             )}
             <Tooltip label={t('Очистити файл')}>
-              <ActionIcon
+              <Button
                 aria-label={t('Очистити файл')}
-                color="gray"
-                size={34}
-                variant="light"
                 onClick={() => {
                   setSheets([])
                   setActiveSheetName(null)
                   setFileName('')
                   resetFilters()
                 }}
-              >
-                <RefreshCw size={17} />
-              </ActionIcon>
+               className="reports-toolbar-action" variant="default" leftSection={<RefreshCw size={17} />} title={t('Очистити файл')}>{t('Очистити файл')}</Button>
             </Tooltip>
           </div>
           <div className="app-filter-table-toolbar-slot">
@@ -501,12 +490,11 @@ async function parseSpreadsheetFile(file: File): Promise<SpreadsheetSheet[]> {
 function SpreadsheetPeriodFilter({ currentStock, from, to, onFromChange, onToChange }: {
   currentStock: boolean; from: string; to: string; onFromChange: (value: string) => void; onToChange: (value: string) => void
 }) {
-  const { t } = useI18n()
   if (currentStock) return null
-  return <div className="app-filter-date-range">
-    <TextInput label={t('Від')} type="date" value={from} onChange={event => onFromChange(event.currentTarget.value)} />
-    <TextInput label={t('До')} type="date" value={to} onChange={event => onToChange(event.currentTarget.value)} />
-  </div>
+  return <ToolbarDateRangeFilter from={from} to={to} onChange={range => {
+    onFromChange(range.from)
+    onToChange(range.to)
+  }} />
 }
 
 function formatSpreadsheetCell(value: SpreadsheetCellValue, sheet: SpreadsheetSheet, columnIndex: number): string {

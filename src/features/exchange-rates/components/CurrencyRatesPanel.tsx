@@ -1,3 +1,4 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import {
   ActionIcon,
   Box,
@@ -5,7 +6,6 @@ import {
   Group,
   FocusTrap,
   Text,
-  TextInput,
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
@@ -53,8 +53,7 @@ type PanelState = {
 
 type PanelAction =
   | { type: 'rateSelected'; rate: ExchangeRate }
-  | { type: 'fromDateChanged'; date: Date }
-  | { type: 'toDateChanged'; date: Date }
+  | { type: 'dateRangeChanged'; from: Date; to: Date }
   | { type: 'filterReset' }
   | { type: 'formOpened'; groupId: string; rates: ExchangeRate[] }
   | { type: 'formClosed' }
@@ -112,16 +111,8 @@ function panelReducer(state: PanelState, action: PanelAction): PanelState {
         ...state,
         selectedRate: action.rate,
       }
-    case 'fromDateChanged':
-      return {
-        ...state,
-        fromDate: action.date,
-      }
-    case 'toDateChanged':
-      return {
-        ...state,
-        toDate: action.date,
-      }
+    case 'dateRangeChanged':
+      return { ...state, fromDate: action.from, toDate: action.to }
     case 'filterReset':
       return {
         ...state,
@@ -453,16 +444,13 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style, opened = 
                   </div>
                   <div className="app-filter-bar">
                     <div className="app-filter-fields">
-                      <div className="app-filter-date-range">
-                        <TextInput label={t('Від')} type="date" value={toDateInputValue(panelState.fromDate)}
-                          onChange={(event) => dispatchPanel({ type: 'fromDateChanged', date: parseDateInputValue(event.currentTarget.value, panelState.fromDate) })} />
-                        <TextInput label={t('До')} type="date" value={toDateInputValue(panelState.toDate)}
-                          onChange={(event) => dispatchPanel({ type: 'toDateChanged', date: parseDateInputValue(event.currentTarget.value, panelState.toDate, true) })} />
-                      </div>
+                      <ToolbarDateRangeFilter from={toDateInputValue(panelState.fromDate)} to={toDateInputValue(panelState.toDate)}
+                        onChange={range => dispatchPanel({ type: 'dateRangeChanged',
+                          from: parseDateInputValue(range.from, panelState.fromDate),
+                          to: parseDateInputValue(range.to, panelState.toDate, true),
+                        })} />
                       <Tooltip label={t('Скинути')}>
-                        <ActionIcon variant="default" size={32} aria-label={t('Скинути')} onClick={resetFilter}>
-                          <RotateCcw size={16} />
-                        </ActionIcon>
+                        <Button aria-label={t('Скинути')} onClick={resetFilter} className="exchange-toolbar-action" variant="default" leftSection={<RotateCcw size={16} />} title={t('Скинути')}>{t('Скинути')}</Button>
                       </Tooltip>
                     </div>
                   </div>

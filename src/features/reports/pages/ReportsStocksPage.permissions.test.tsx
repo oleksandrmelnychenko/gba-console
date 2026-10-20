@@ -1,3 +1,4 @@
+import { changeReportPeriod, readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -96,8 +97,8 @@ describe('stock report permissions', () => {
     vi.setSystemTime(new Date('2026-09-05T21:30:00Z'))
     try {
       render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>)
-      expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-09-06')
-      expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe('2026-09-06')
+      expect((readReportDateInput('Від') as HTMLInputElement).value).toBe('2026-09-06')
+      expect((readReportDateInput('До') as HTMLInputElement).value).toBe('2026-09-06')
     } finally {
       vi.useRealTimers()
       vi.unstubAllEnvs()
@@ -118,8 +119,7 @@ describe('stock report permissions', () => {
     localStorage.setItem('app_configs_reports_template:v1', saved)
     vi.mocked(createStockReport).mockRejectedValue(new Error('test request'))
     const { container } = render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>)
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-09-01' } })
-    fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-09-03' } })
+    changeReportPeriod({ from: '2026-09-01', to: '2026-09-03' })
 
     fireEvent.click(await screen.findByRole('button', { name: 'Продажі за днями' }))
 

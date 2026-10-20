@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../shared/organizations/organizationDisplayName'
 import type {
   ActProvidingService,
   BillOfLadingService,
@@ -65,7 +66,7 @@ export function toActProvidingServiceDisplayModel(
       listInvDate: act.FromDate,
       name: source.value.ConsumableProduct?.Name,
       number: source.value.InvoiceNumber || baseModel.number,
-      organization: getEntityName(source.value.SupplyOrderUkraine?.Organization),
+      organization: getOrganizationDisplayName(source.value.SupplyOrderUkraine?.Organization) || undefined,
       percentVat: source.value.AccountingVatPercent,
       responsible: getEntityName(source.value.User),
       serviceOrganization: getEntityName(source.value.SupplyOrganization),
@@ -85,7 +86,7 @@ export function toActProvidingServiceDisplayModel(
       invNumber: source.value.Number,
       name: source.value.ConsumableProduct?.Name,
       number: source.value.ServiceNumber || baseModel.number,
-      organization: getEntityName(source.value.SupplyOrganizationAgreement?.Organization),
+      organization: getOrganizationDisplayName(source.value.SupplyOrganizationAgreement?.Organization) || undefined,
       percentVat: source.isAccounting ? source.value.AccountingVatPercent : source.value.VatPercent,
       protocolNetId: source.value.DeliveryProductProtocol?.NetUid,
       responsible: getEntityName(source.value.User || act.User),
@@ -107,7 +108,7 @@ export function toActProvidingServiceDisplayModel(
       invNumber: source.value.Number,
       name: source.value.TypeBillOfLadingService === TYPE_BILL_OF_LADING_CONTAINER ? t('Контейнер') : t('Авто'),
       number: source.value.ServiceNumber || baseModel.number,
-      organization: getEntityName(source.value.SupplyOrganizationAgreement?.Organization),
+      organization: getOrganizationDisplayName(source.value.SupplyOrganizationAgreement?.Organization) || undefined,
       protocolNetId: source.value.DeliveryProductProtocol?.NetUid,
       responsible: getEntityName(source.value.User || act.User),
       serviceOrganization: getEntityName(source.value.SupplyOrganization),

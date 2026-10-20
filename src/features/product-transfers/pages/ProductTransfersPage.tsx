@@ -1,6 +1,6 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
   Badge,
   Box,
@@ -17,8 +17,7 @@ import {
   Text,
   Textarea,
   TextInput,
-  Tooltip,
-} from '@mantine/core'
+  } from '@mantine/core'
 import {
   DocumentDetailFlag,
   DocumentDetailChip,
@@ -610,28 +609,9 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
     <Card className="app-filter-card product-transfers-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar product-transfers-filter-bar">
         <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-transfers-filter-row">
-          <div className="app-filter-date-range">
-            <TextInput
-              label={t('Від')}
-              max={filterDraft.to || undefined}
-              type="date"
-              value={filterDraft.from}
-              onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-            />
-            <TextInput
-              label={t('До')}
-              min={filterDraft.from || undefined}
-              type="date"
-              value={filterDraft.to}
-              onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-            />
-          </div>
+          <ToolbarDateRangeFilter from={filterDraft.from} to={filterDraft.to} onChange={({ from, to }) => { applyFilters({ ...filterDraft, from, to }) }} />
           <div className="app-filter-actions">
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                <RotateCcw size={17} />
-              </ActionIcon>
-            </Tooltip>
+            <Button aria-label={t('Скинути')} color="gray" variant="default" onClick={resetFilters} className="registry-caption-action" title={t('Скинути')} leftSection={<RotateCcw size={17} />}>{t('Скинути')}</Button>
             <Paginator
               isLoading={isLoading}
               page={page}
