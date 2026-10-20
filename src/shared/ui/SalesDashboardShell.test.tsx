@@ -24,9 +24,12 @@ const SALES_TAB_PERMISSIONS = [
   ['Зацікавленість', PermissionKeys.SystemPages.SalesUkraineInterest.View],
   ['Повернення', PermissionKeys.SystemPages.SalesUkraineReturns.View],
   ['Рух товару клієнта', PermissionKeys.SystemPages.SalesUkraineClientProductMovement.View],
+  ['Resale', PermissionKeys.Resales.Page.View],
+] as const
+
+const HIDDEN_SALES_TAB_PERMISSIONS = [
   ['Прогноз', PermissionKeys.SystemPages.SalesUkrainePrediction.View],
   ['Графіки', PermissionKeys.SystemPages.SalesCharts.View],
-  ['Resale', PermissionKeys.Resales.Page.View],
 ] as const
 
 function renderShell(initialEntry = '/sales/ukraine/all') {
@@ -56,7 +59,7 @@ function renderShell(initialEntry = '/sales/ukraine/all') {
 describe('SalesDashboardShell layout', () => {
   beforeEach(() => {
     permissionState.granted = new Set(
-      SALES_TAB_PERMISSIONS.map(([, permissionKey]) => permissionKey),
+      [...SALES_TAB_PERMISSIONS, ...HIDDEN_SALES_TAB_PERMISSIONS].map(([, permissionKey]) => permissionKey),
     )
   })
 
@@ -103,7 +106,19 @@ describe('SalesDashboardShell layout', () => {
     },
   )
 
-  it('shows all ten tabs in the product order when every page permission is granted', () => {
+  it.each(HIDDEN_SALES_TAB_PERMISSIONS)(
+    'keeps the %s tab out of the navigation even when its page is granted',
+    (label, permissionKey) => {
+      permissionState.granted = new Set([permissionKey])
+
+      renderShell()
+
+      expect(screen.queryAllByRole('button')).toHaveLength(0)
+      expect(screen.queryByRole('button', { name: label })).toBeNull()
+    },
+  )
+
+  it('shows the eight visible tabs in the product order when every page permission is granted', () => {
     renderShell()
 
     expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(
@@ -113,15 +128,19 @@ describe('SalesDashboardShell layout', () => {
 
   it('redirects the dashboard entry route to the first permitted tab', async () => {
     permissionState.granted = new Set([
-      PermissionKeys.SystemPages.SalesUkrainePrediction.View,
+      PermissionKeys.SystemPages.SalesUkraineDebtors.View,
+      PermissionKeys.Resales.Page.View,
     ])
 
     renderShell('/sales/ukraine/all')
 
     await waitFor(() => {
       expect(
-        screen.getByRole('button', { name: 'Прогноз' }).getAttribute('aria-pressed'),
+        screen.getByRole('button', { name: 'Боржники' }).getAttribute('aria-pressed'),
       ).toBe('true')
     })
+    expect(
+      screen.getByRole('button', { name: 'Resale' }).getAttribute('aria-pressed'),
+    ).toBe('false')
   })
 })

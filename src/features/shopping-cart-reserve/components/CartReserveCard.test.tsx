@@ -27,7 +27,7 @@ describe('CartReserveTable currency output', () => {
     fireEvent.click(screen.getByLabelText('Розгорнути позиції'))
 
     expect(screen.getAllByText(/51,95/).length).toBeGreaterThan(0)
-    expect(screen.getByText('Курс EUR→UAH: 51,9500')).not.toBeNull()
+    expect(screen.getByTitle('Курс EUR → UAH').textContent).toBe('EUR → UAH · 51,9500')
   })
 })
 

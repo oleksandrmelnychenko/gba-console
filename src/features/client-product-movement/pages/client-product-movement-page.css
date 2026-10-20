@@ -143,13 +143,6 @@
   background: var(--mantine-color-gray-0);
 }
 
-.client-product-movement-page__table .app-table-row-action.mantine-ActionIcon-root,
-.client-product-movement-page__table .app-table-row-action.mantine-ActionIcon-root:hover {
-  background: transparent;
-  border-color: transparent;
-  color: var(--mantine-color-gray-9);
-}
-
 .client-product-movement-page__table > .data-table .data-table-expanded-cell {
   background: var(--mantine-color-white);
 }

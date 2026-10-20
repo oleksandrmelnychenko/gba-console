@@ -92,7 +92,7 @@ describe('CarrierHistory', () => {
     )
 
     expect(historyCell(container, 'transporter', 'baseline').textContent).toContain('Самовивіз')
-    expect(historyCell(container, 'mobilePhone', 'baseline').textContent).toBe('')
+    expect(historyCell(container, 'mobilePhone', 'baseline').textContent).toBe('—')
     expect(historyCell(container, 'transporter', 'baseline').classList).not.toContain('is-changed')
     expect(historyCell(container, 'transporter', 'history-event-1').textContent).toContain('Гюнсел')
     expect(historyCell(container, 'mobilePhone', 'history-event-1').textContent).toContain('455645454545')
