@@ -102,6 +102,20 @@
   color: var(--mantine-color-red-6);
 }
 
+.debtor-detail__number.is-secondary strong {
+  color: var(--mantine-color-gray-7);
+  font-size: 13px;
+}
+
+.debtor-detail__overdue {
+  display: grid;
+  gap: 4px;
+}
+
+.debtor-detail__overdue .debtor-detail__number:not(.is-secondary) strong {
+  color: var(--mantine-color-red-6);
+}
+
 .debtor-detail__section-head {
   align-items: center;
   display: flex;

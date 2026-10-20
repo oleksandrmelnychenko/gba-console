@@ -120,6 +120,38 @@
   color: var(--mantine-color-red-6);
 }
 
+.sales-debtors-currency-cell {
+  display: grid;
+  gap: 4px;
+  justify-items: end;
+  line-height: 1.08;
+  min-width: 0;
+}
+
+.sales-debtors-currency-line {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.sales-debtors-currency-line strong {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.sales-debtors-currency-cell.is-danger strong {
+  color: var(--mantine-color-red-6);
+}
+
+.sales-debtors-currency-empty {
+  color: var(--mantine-color-gray-5);
+}
+
 .sales-debtors-days-cell {
   align-items: center;
   display: inline-flex;
@@ -171,6 +203,12 @@
   font-size: 14px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.sales-debtors-summary__currency {
+  align-items: center;
+  display: inline-flex;
+  gap: 5px;
 }
 
 @container registry (max-width: 600px) {

@@ -16,6 +16,16 @@ import {
 } from '../api/salesDebtorsApi'
 import { DebtorDetailDrawer } from '../components/DebtorDetailDrawer'
 import { DownloadDocumentModal } from '../components/DownloadDocumentModal'
+import {
+  EURO_CURRENCY_CODE,
+  formatCurrencyAmounts,
+  getDebtorCurrencyAmounts,
+  getDebtorEuroAmount,
+  getSummaryCurrencyAmounts,
+  hasCurrencyBreakdown,
+  type CurrencyAmount,
+  type DebtorCurrencyField,
+} from '../model/debtorCurrency'
 import { TypeOfClientAgreement, TypeOfCurrencyOfAgreement } from '../types'
 import type {
   ClientDebtors,
@@ -66,6 +76,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
 
 const emptyDebtors: ClientDebtors = {
   ClientInDebtors: [],
+  CurrencyTotals: [],
   TotalMissedDays: 0,
   TotalOverdueDebtorsValue: 0,
   TotalQtyClients: 0,
@@ -94,8 +105,6 @@ export function SalesDebtorsPage() {
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   const offset = (page - 1) * pageSize
-  // The filter selects agreement currencies; remainder/overdue are always EUR equivalents.
-  // TotalDebtInDays sums native agreement amounts, with no currency metadata in the API.
   const currencyCode = currencyCodeByType[typeCurrency]
   const debtorColumns = useDebtorColumns(currencyCode, days)
   const totalPages = Math.max(1, Math.ceil(debtors.TotalQtyClients / pageSize))
@@ -334,8 +343,8 @@ export function SalesDebtorsPage() {
             getRowId={(row, index) => String(row.ClientNetId || `${row.ClientName || 'debtor'}-${index}`)}
             height="100%"
             isLoading={isLoading}
-            layoutVersion="sales-debtors-table-1"
-            minWidth={1120}
+            layoutVersion="sales-debtors-table-2"
+            minWidth={1320}
             showLayoutControls
             tableId="sales-debtors"
             toolbarPortalTarget={tableToolbarSlot}
@@ -343,7 +352,7 @@ export function SalesDebtorsPage() {
           />
         </div>
 
-        <SalesDebtorsSummary debtors={debtors} currencyCode="EUR" />
+        <SalesDebtorsSummary debtors={debtors} />
       </div>
 
       <DownloadDocumentModal
@@ -351,7 +360,7 @@ export function SalesDebtorsPage() {
         opened={downloadModalOpened}
         onClose={() => setDownloadModalOpened(false)}
       />
-      <DebtorDetailDrawer currencyCode="EUR" debtor={selectedDebtor} onClose={() => setSelectedDebtor(null)} />
+      <DebtorDetailDrawer debtor={selectedDebtor} onClose={() => setSelectedDebtor(null)} />
     </Stack>
   )
 }
@@ -390,10 +399,10 @@ function useDebtorColumns(currencyCode: string, days: number) {
         id: 'totalDebtInDays',
         header: `${t('Борг через')} ${days} ${t('днів')}`,
         width: 180,
-        minWidth: 180,
+        minWidth: 160,
         align: 'right',
-        accessor: (row) => row.TotalDebtInDays ?? 0,
-        cell: (row) => <DebtorAmountCell amount={row.TotalDebtInDays} currencyCode={currencyCode} />,
+        accessor: (row) => getDebtorEuroAmount(row, 'TotalDebtInDays'),
+        cell: (row) => <DebtorCurrencyAmountsCell currencyCode={currencyCode} debtor={row} field="TotalDebtInDays" />,
       },
       {
         id: 'missedDays',
@@ -405,24 +414,44 @@ function useDebtorColumns(currencyCode: string, days: number) {
         cell: (row) => <DebtorDaysCell value={row.MissedDays ?? 0} />,
       },
       {
+        id: 'currencyDebt',
+        header: t('Борг'),
+        width: 168,
+        minWidth: 140,
+        align: 'right',
+        accessor: (row) => getDebtorEuroAmount(row, 'RemainderDebt'),
+        cell: (row) => <DebtorCurrencyAmountsCell currencyCode={currencyCode} debtor={row} field="RemainderDebt" />,
+      },
+      {
+        id: 'currencyOverdueDebt',
+        header: t('Прострочено'),
+        width: 168,
+        minWidth: 140,
+        align: 'right',
+        accessor: (row) => getDebtorEuroAmount(row, 'OverdueDebt'),
+        cell: (row) => <DebtorCurrencyAmountsCell currencyCode={currencyCode} debtor={row} field="OverdueDebt" tone="danger" />,
+      },
+      {
         id: 'remainderDebt',
-        header: t('Залишок'),
-        width: 156,
+        header: t('Борг, EUR'),
+        width: 150,
         minWidth: 130,
         align: 'right',
-        accessor: (row) => row.RemainderDebt ?? 0,
-        cell: (row) => <DebtorAmountCell amount={row.RemainderDebt} currencyCode="EUR" />,
+        accessor: (row) => getDebtorEuroAmount(row, 'RemainderDebt'),
+        cell: (row) => <DebtorAmountCell amount={getDebtorEuroAmount(row, 'RemainderDebt')} currencyCode={EURO_CURRENCY_CODE} />,
       },
       {
         id: 'overdueDebt',
-        header: t('Прострочено'),
+        header: t('Прострочено, EUR'),
         width: 156,
-        minWidth: 130,
+        minWidth: 136,
         align: 'right',
-        accessor: (row) => row.OverdueDebt ?? 0,
-        cell: (row) => (
-          <DebtorAmountCell amount={row.OverdueDebt} currencyCode="EUR" tone={(row.OverdueDebt ?? 0) > 0 ? 'danger' : undefined} />
-        ),
+        accessor: (row) => getDebtorEuroAmount(row, 'OverdueDebt'),
+        cell: (row) => {
+          const amount = getDebtorEuroAmount(row, 'OverdueDebt')
+
+          return <DebtorAmountCell amount={amount} currencyCode={EURO_CURRENCY_CODE} tone={amount > 0 ? 'danger' : undefined} />
+        },
       },
     ],
     [currencyCode, days, t],
@@ -488,6 +517,45 @@ function DebtorAmountCell({
   )
 }
 
+function DebtorCurrencyAmountsCell({
+  currencyCode,
+  debtor,
+  field,
+  tone,
+}: {
+  currencyCode: string
+  debtor: ClientInDebt
+  field: DebtorCurrencyField
+  tone?: 'danger'
+}) {
+  if (!hasCurrencyBreakdown(debtor)) {
+    return field === 'TotalDebtInDays'
+      ? <DebtorAmountCell amount={debtor.TotalDebtInDays} currencyCode={currencyCode} />
+      : <span className="sales-debtors-currency-empty">—</span>
+  }
+
+  const amounts = getDebtorCurrencyAmounts(debtor, field)
+
+  if (amounts.length === 0) {
+    return <span className="sales-debtors-currency-empty">—</span>
+  }
+
+  return <DebtorCurrencyAmounts amounts={amounts} tone={tone} />
+}
+
+function DebtorCurrencyAmounts({ amounts, tone }: { amounts: CurrencyAmount[]; tone?: 'danger' }) {
+  return (
+    <span className={`sales-debtors-currency-cell${tone === 'danger' ? ' is-danger' : ''}`}>
+      {amounts.map((item) => (
+        <span key={item.currencyCode || 'none'} className="sales-debtors-currency-line">
+          <strong>{moneyFormatter.format(item.amount)}</strong>
+          {item.currencyCode ? <TableChip tone="source" value={item.currencyCode} /> : null}
+        </span>
+      ))}
+    </span>
+  )
+}
+
 function DebtorDaysCell({ value }: { value: number }) {
   const { t } = useI18n()
   const description = value < 0
@@ -507,25 +575,47 @@ function DebtorDaysCell({ value }: { value: number }) {
   )
 }
 
-function SalesDebtorsSummary({ currencyCode, debtors }: { currencyCode: string; debtors: ClientDebtors }) {
+function SalesDebtorsSummary({ debtors }: { debtors: ClientDebtors }) {
   const { t } = useI18n()
+  const remainderByCurrency = getSummaryCurrencyAmounts(debtors.CurrencyTotals, 'RemainderDebt')
+  const overdueByCurrency = getSummaryCurrencyAmounts(debtors.CurrencyTotals, 'OverdueDebt')
 
   return (
     <div className="sales-debtors-summary">
       <Badge className="app-role-pill is-gray" variant="light">
         {t('Клієнтів')}: {debtors.TotalQtyClients}
       </Badge>
+      {remainderByCurrency.length > 0 ? (
+        <SalesDebtorsSummaryCurrencies amounts={remainderByCurrency} label={t('Борг')} />
+      ) : null}
+      {overdueByCurrency.length > 0 ? (
+        <SalesDebtorsSummaryCurrencies amounts={overdueByCurrency} label={t('Прострочено')} />
+      ) : null}
       <span className="sales-debtors-summary__amount">
-        <span>{t('Залишок')}</span>
+        <span>{t('Борг, EUR')}</span>
         <strong>{moneyFormatter.format(debtors.TotalRemainderDebtorsValue)}</strong>
-        <TableChip tone="source" value={currencyCode} />
+        <TableChip tone="source" value={EURO_CURRENCY_CODE} />
       </span>
       <span className="sales-debtors-summary__amount">
-        <span>{t('Прострочено')}</span>
+        <span>{t('Прострочено, EUR')}</span>
         <strong>{moneyFormatter.format(debtors.TotalOverdueDebtorsValue)}</strong>
-        <TableChip tone="source" value={currencyCode} />
+        <TableChip tone="source" value={EURO_CURRENCY_CODE} />
       </span>
     </div>
+  )
+}
+
+function SalesDebtorsSummaryCurrencies({ amounts, label }: { amounts: CurrencyAmount[]; label: string }) {
+  return (
+    <span className="sales-debtors-summary__amount" title={`${label}: ${formatCurrencyAmounts(amounts, (value) => moneyFormatter.format(value))}`}>
+      <span>{label}</span>
+      {amounts.map((item) => (
+        <span key={item.currencyCode || 'none'} className="sales-debtors-summary__currency">
+          <strong>{moneyFormatter.format(item.amount)}</strong>
+          {item.currencyCode ? <TableChip tone="source" value={item.currencyCode} /> : null}
+        </span>
+      ))}
+    </span>
   )
 }
 

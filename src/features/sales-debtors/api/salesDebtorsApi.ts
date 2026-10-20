@@ -4,6 +4,7 @@ import type {
   DebtorDebtItem,
   DebtorDebtTotal,
   ClientInDebt,
+  DebtorsCurrencyTotal,
   DebtorsDocumentResult,
   DebtorsFilters,
   DebtorsManagerOption,
@@ -80,6 +81,7 @@ function toClientDebtors(result: unknown): ClientDebtors {
 
     return {
       ClientInDebtors: Array.isArray(record.ClientInDebtors) ? (record.ClientInDebtors as ClientInDebt[]) : [],
+      CurrencyTotals: Array.isArray(record.CurrencyTotals) ? (record.CurrencyTotals as DebtorsCurrencyTotal[]) : [],
       TotalMissedDays: toNumber(record.TotalMissedDays),
       TotalOverdueDebtorsValue: toNumber(record.TotalOverdueDebtorsValue),
       TotalQtyClients: toNumber(record.TotalQtyClients),
@@ -89,6 +91,7 @@ function toClientDebtors(result: unknown): ClientDebtors {
 
   return {
     ClientInDebtors: [],
+    CurrencyTotals: [],
     TotalMissedDays: 0,
     TotalOverdueDebtorsValue: 0,
     TotalQtyClients: 0,
