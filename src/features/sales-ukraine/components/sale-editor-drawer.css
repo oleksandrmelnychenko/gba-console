@@ -1,7 +1,7 @@
 .sale-editor-tabs {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   min-height: 0;
 }
 
@@ -12,4 +12,33 @@
 
 .sale-editor-tab-panel {
   min-height: 0;
+}
+
+.sale-editor-summary__identity {
+  flex: 1 1 240px;
+  min-width: 0;
+  align-items: flex-start;
+}
+
+.sale-editor-summary__client {
+  color: var(--mantine-color-gray-8);
+  font-size: 13px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.sale-editor-summary__amount {
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sale-editor-client__agreement-select {
+  flex: 1 1 240px;
+  min-width: 0;
+  max-width: 440px;
+}
+
+.sale-editor-client__agreement > .mantine-Button-root {
+  flex-shrink: 0;
 }

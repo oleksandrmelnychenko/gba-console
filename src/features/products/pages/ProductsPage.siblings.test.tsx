@@ -1,5 +1,6 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -323,6 +324,79 @@ describe('ProductsPage search sibling markers', () => {
     fireEvent.change(screen.getByLabelText('Введіть товар'), { target: { value } })
     await screen.findByText('BRG-2')
   }
+
+  it('returns to focused search with Escape and accepts pasted text', async () => {
+    getProductsMock.mockResolvedValue(searchProducts)
+    const user = userEvent.setup()
+    renderProductsPage(`/products?netId=${currentNetId}`)
+    await screen.findByRole('group', { name: 'Картки артикула' })
+    expect(screen.queryByLabelText('Введіть товар')).toBeNull()
+
+    await user.keyboard('{Escape}')
+    const input = screen.getByLabelText('Введіть товар') as HTMLInputElement
+    expect(document.activeElement).toBe(input)
+    await user.paste('BRG-2')
+
+    expect(input.value).toBe('BRG-2')
+    await waitFor(() => expect(getProductsMock).toHaveBeenLastCalledWith(expect.objectContaining({ value: 'BRG-2' })))
+  })
+
+  it('keeps pasted search text focused when the previous query resolves during debounce', async () => {
+    let resolvePrevious!: (products: Product[]) => void
+    const previousRequest = new Promise<Product[]>((resolve) => { resolvePrevious = resolve })
+    getProductsMock.mockReturnValueOnce(previousRequest)
+    getProductsMock.mockResolvedValue(searchProducts)
+    const user = userEvent.setup()
+    renderProductsPage('/products')
+    const input = screen.getByLabelText('Введіть товар') as HTMLInputElement
+
+    await user.click(input)
+    await user.paste('0701000260')
+    await waitFor(() => expect(getProductsMock).toHaveBeenCalledTimes(1))
+    await user.clear(input)
+    await user.paste('BRG-2')
+
+    await act(async () => { resolvePrevious([currentProduct]) })
+
+    expect(screen.getByLabelText('Введіть товар')).toBe(input)
+    expect(input.value).toBe('BRG-2')
+    expect(document.activeElement).toBe(input)
+    await waitFor(() => expect(getProductsMock).toHaveBeenLastCalledWith(expect.objectContaining({ value: 'BRG-2' })))
+  })
+
+  it('completes search when the draft returns to the previous query before debounce', async () => {
+    let resolveSearch!: (products: Product[]) => void
+    getProductsMock.mockReturnValueOnce(new Promise<Product[]>((resolve) => { resolveSearch = resolve }))
+    getProductsMock.mockResolvedValue(searchProducts)
+    renderProductsPage('/products')
+    const input = screen.getByLabelText('Введіть товар')
+    fireEvent.change(input, { target: { value: 'BRG-2' } })
+    await waitFor(() => expect(getProductsMock).toHaveBeenCalledTimes(1))
+
+    act(() => {
+      fireEvent.change(input, { target: { value: 'SEAL-3' } })
+      fireEvent.change(input, { target: { value: 'BRG-2' } })
+    })
+    await act(async () => { resolveSearch(searchProducts) })
+
+    await screen.findByText('BRG-2')
+    expect(getProductsMock.mock.calls.every(([params]) => params.value === 'BRG-2')).toBe(true)
+  })
+
+  it('keeps an in-flight result valid when editing only surrounding search whitespace', async () => {
+    let resolveSearch!: (products: Product[]) => void
+    getProductsMock.mockReturnValueOnce(new Promise<Product[]>((resolve) => { resolveSearch = resolve }))
+    renderProductsPage('/products')
+    const input = screen.getByLabelText('Введіть товар')
+    fireEvent.change(input, { target: { value: 'BRG-2' } })
+    await waitFor(() => expect(getProductsMock).toHaveBeenCalledTimes(1))
+    fireEvent.change(input, { target: { value: 'BRG-2 ' } })
+
+    await act(async () => { resolveSearch(searchProducts) })
+
+    expect(screen.getByText('BRG-2')).toBeTruthy()
+    expect(getProductsMock).toHaveBeenCalledTimes(1)
+  })
 
   it('marks only the search results reported by the counts endpoint', async () => {
     getProductsMock.mockResolvedValue(searchProducts)

@@ -90,6 +90,7 @@
 }
 
 .data-table[data-sticky-horizontal-scrollbar] > .data-table-scroll {
+  padding-bottom: var(--data-table-sticky-scrollbar-inset, 0px);
   scrollbar-color: var(--mantine-color-gray-6) var(--mantine-color-gray-1);
   scrollbar-gutter: auto;
   scrollbar-width: auto;

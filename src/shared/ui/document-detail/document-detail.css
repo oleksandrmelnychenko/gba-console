@@ -6,7 +6,7 @@
 .document-detail-summary__title { color: var(--mantine-color-gray-9); font-family: var(--font-mono); line-height: 1.25; }
 .document-detail-summary__meta { color: var(--mantine-color-gray-7); font-size: 12px; }
 .document-detail-metric { display: grid; }
-.document-detail-metric span { color: var(--mantine-color-gray-7); font: 600 11px / 1.2 var(--font-mono); }
+.document-detail-metric > span:not(.app-table-chip) { color: var(--mantine-color-gray-7); font: 600 11px / 1.2 var(--font-mono); }
 .document-detail-metric strong { display: flex; align-items: baseline; gap: 5px; color: var(--mantine-color-gray-9); font-family: var(--font-mono); line-height: 1.15; }
 .document-detail-metric em { font-style: normal; font-weight: 600; }
 .document-detail-tree { display: grid; min-width: 0; }

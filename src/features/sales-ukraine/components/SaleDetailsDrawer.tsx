@@ -1,7 +1,6 @@
 import {
   Anchor,
   Alert,
-  Badge,
   Box,
   Button,
   Checkbox,
@@ -372,7 +371,7 @@ function SaleDetailsContent({
         <Box className="sale-carrier-main">
           {isEditMode ? (
         <Stack
-          className="sale-carrier-edit-form"
+          className="sale-carrier-edit-form app-compact-form"
           component="form"
           gap="sm"
           id={SALE_DETAILS_FORM_ID}
@@ -549,9 +548,7 @@ function SaleDetailsContent({
             </Button>
           )}
           {sale.IsSent && (
-            <Badge className="app-role-pill is-green sale-carrier-sent-pill" color="teal" mt="md" variant="light">
-              {t('Продаж проведено')}
-            </Badge>
+            <TableChip tone="success" value={t('Продаж проведено')} />
           )}
         </Box>
 
@@ -864,9 +861,7 @@ function BooleanPill({ active }: { active: boolean }) {
   const { t } = useI18n()
 
   return (
-    <Badge className={`app-role-pill ${active ? 'is-green' : 'is-gray'}`} size="xs" variant="light">
-      {active ? t('Так') : t('Ні')}
-    </Badge>
+    <TableChip tone={active ? 'success' : 'neutral'} value={active ? t('Так') : t('Ні')} />
   )
 }
 

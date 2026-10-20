@@ -1,6 +1,8 @@
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { TableChip } from '../../../shared/ui/TableChip'
+import { DocumentDetailSummary } from '../../../shared/ui/document-detail/DocumentDetail'
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   ActionIcon,
   Alert,
@@ -2235,32 +2237,14 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
 
   return (
     <div className="sale-detail-sheet">
-      <section className="sale-detail-hero">
-        <div className="sale-detail-hero-copy">
-          <div className="sale-detail-kicker">
-            <span>{displayValue(sale.SaleNumber?.Value)}</span>
-            {date && (
-              <>
-                <span className="sale-detail-dot" />
-                <span>
-                  {formatDate(date)} {formatTime(date)}
-                </span>
-              </>
-            )}
-          </div>
-          <div className="sale-detail-headline">
-            <OverflowTooltipText className="sale-detail-title">
-              {displayValue(getSaleClientDisplayName(sale))}
-            </OverflowTooltipText>
-            {sale.ClientAgreement?.Agreement?.Name?.trim() ? (
-              <>
-                <span className="sale-detail-headline-sep" aria-hidden="true">·</span>
-                <OverflowTooltipText className="sale-detail-subtitle">
-                  {sale.ClientAgreement.Agreement.Name}
-                </OverflowTooltipText>
-              </>
-            ) : null}
-          </div>
+      <DocumentDetailSummary
+        variant="inventory"
+        eyebrow={t('Продаж')}
+        title={displayValue(getSaleClientDisplayName(sale))}
+        meta={<>
+          <TableChip tone="document" value={sale.SaleNumber?.Value} />
+          {date && <span className="sale-detail-date">{formatDate(date)} {formatTime(date)}</span>}
+          <TableChip value={sale.ClientAgreement?.Agreement?.Name} />
           <div className="sale-detail-status-strip">
             <Badge className={`app-role-pill sale-detail-pill ${getSaleStatusPillClass(sale)}`} variant="light">
               {getSaleStatusLabel(sale)}
@@ -2273,20 +2257,18 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
             {sale.IsLocked && <span className="app-role-pill sale-detail-pill is-red">{t('Заблоковано')}</span>}
             {sale.IsPrinted && <span className="app-role-pill sale-detail-pill is-gray">{t('Друковано')}</span>}
           </div>
-        </div>
-
-        <div className={`sale-detail-total${isUnpaidSale(sale) ? ' is-unpaid' : ''}`}>
-          <span className="sale-detail-total-label">{t('Сума')}</span>
-          <strong className="app-money">{formatAmount(primaryAmount)}</strong>
-          <span className="app-money-meta">{displayValue(currencyCode)}</span>
-        </div>
-      </section>
+        </>}
+        metrics={<div className="document-detail-metric">
+          <span>{t('Сума')}</span>
+          <strong>{formatAmount(primaryAmount)} <TableChip tone="source" value={currencyCode} /></strong>
+        </div>}
+      />
 
       <div className="sale-detail-metrics">
         <SaleDetailMetric label={t('Позиції')} value={displayValue(orderItems.length)} />
         <SaleDetailMetric label={t('ПДВ')} value={formatAmount(vatAmount)} />
-        <SaleDetailMetric label={displayValue(secondaryCurrencyCode)} value={formatAmount(secondaryAmount)} />
-        <SaleDetailMetric label={t('Менеджер')} value={displayValue(getSaleUserName(sale))} />
+        <SaleDetailMetric label={<TableChip tone="source" value={secondaryCurrencyCode} />} value={formatAmount(secondaryAmount)} />
+        <SaleDetailMetric label={t('Менеджер')} value={<TableChip tone="warning" value={getSaleUserName(sale)} />} />
       </div>
 
       <div className="sale-detail-sections">
@@ -2294,7 +2276,7 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
           icon={<Receipt size={15} />}
           title={t('Продаж')}
           rows={[
-            [t('Номер'), sale.SaleNumber?.Value],
+            [t('Номер'), <TableChip tone="document" value={sale.SaleNumber?.Value} />],
             [t('Дата'), date ? `${formatDate(date)} ${formatTime(date)}` : ''],
             [t('Статус'), getSaleStatusLabel(sale)],
             [t('Оплата'), getPaymentStatusLabel(sale)],
@@ -2306,8 +2288,8 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
           rows={[
             [t('Клієнт'), getSaleClientName(sale)],
             [t('Покупець'), getRetailClientLine(sale)],
-            [t('Договір'), sale.ClientAgreement?.Agreement?.Name],
-            [t('Організація'), sale.ClientAgreement?.Agreement?.Organization?.Name],
+            [t('Договір'), <TableChip value={sale.ClientAgreement?.Agreement?.Name} />],
+            [t('Організація'), <TableChip tone="product" value={getOrganizationDisplayName(sale.ClientAgreement?.Agreement?.Organization)} />],
             [
               t('Телефон'),
               sale.ClientAgreement?.Client?.MobileNumber || sale.ClientAgreement?.Client?.PhoneNumber || sale.ClientAgreement?.Client?.ClientNumber,
@@ -2322,7 +2304,7 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
             [t('Отримувач'), sale.DeliveryRecipient?.FullName],
             [t('Телефон'), sale.DeliveryRecipient?.MobilePhone],
             [t('Адреса'), getSaleDeliveryAddress(sale)],
-            [t('ТТН'), sale.CustomersOwnTtn?.Number || sale.TTN],
+            [t('ТТН'), <TableChip tone="document" value={sale.CustomersOwnTtn?.Number || sale.TTN} />],
           ]}
         />
       </div>
@@ -2347,11 +2329,11 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
   )
 }
 
-function SaleDetailMetric({ label, value }: { label: string; value: string }) {
+function SaleDetailMetric({ label, value }: { label: ReactNode; value: ReactNode }) {
   return (
     <div className="sale-detail-metric">
-      <span>{label}</span>
-      <OverflowTooltipText strong>{value}</OverflowTooltipText>
+      <div className="sale-detail-metric-label">{label}</div>
+      {typeof value === 'string' ? <OverflowTooltipText strong>{value}</OverflowTooltipText> : <div>{value}</div>}
     </div>
   )
 }
@@ -2463,8 +2445,8 @@ function SaleDetailSection({
       <div className="sale-detail-rows">
         {rows.map(([label, value]) => (
           <div key={label} className="sale-detail-row">
-            <span>{label}</span>
-            {isValidElement(value) ? value : <OverflowTooltipText strong>{displayValue(value)}</OverflowTooltipText>}
+            <span className="sale-detail-row-label">{label}</span>
+            <div className="sale-detail-row-value">{isValidElement(value) ? value : <OverflowTooltipText strong>{displayValue(value)}</OverflowTooltipText>}</div>
           </div>
         ))}
       </div>
@@ -2518,7 +2500,7 @@ function SaleDetailProductsTable({
       accessor: (row) => row.amount,
       cell: (row) => <div className="sale-detail-money sale-detail-money-total">
         <span>{formatAmount(row.amount)} <TableChip tone="source" value={currencyCode} /></span>
-        {row.uahAmount != null && <span>{formatAmount(row.uahAmount)} <TableChip tone="neutral" value="UAH" /></span>}
+        {row.uahAmount != null && <span>{formatAmount(row.uahAmount)} <TableChip tone="source" value="UAH" /></span>}
       </div>,
     },
   ], [currencyCode, showUah, t])

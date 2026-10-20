@@ -91,32 +91,25 @@ function ShiftOrderItemForm({
   }
 
   return (
-    <Stack className="app-compact-form" gap="md" onKeyDown={handleKeyDown}>
-      <Stack align="center" gap={0}>
-        <Text className="app-money" fw={700} size="xl">
-          {amountFormatter.format(amount)}
-        </Text>
-        <Text c="gray.9" size="xs">
-          {t('Зарезервовано')}
-        </Text>
-      </Stack>
-
+    <Stack className="app-compact-form" gap={10} onKeyDown={handleKeyDown}>
       <Stack gap={4}>
-        <Group gap={6} wrap="nowrap">
+        <Group gap={6}>
+          <Text c="gray.9" size="xs">{t('Зарезервовано')}:</Text>
+          <Text className="app-money" fw={600} size="sm">{amountFormatter.format(amount)}</Text>
+        </Group>
+        <Group gap={6}>
           <Text c="gray.9" size="xs">
             {t('Для клієнта')}:
           </Text>
-          <Text fw={600} size="sm">
-            {regionCode || ''}
-          </Text>
+          <TableChip tone="document" value={regionCode} />
         </Group>
-        <Group gap={6} wrap="nowrap">
+        <Group gap={6}>
           <Text c="gray.9" size="xs">
             {t('З рахунка')}:
           </Text>
           <TableChip tone="document" value={sourceName} />
         </Group>
-        <Group gap={6} wrap="nowrap">
+        <Group gap={6}>
           <Text c="gray.9" size="xs">
             {t('Аналітик')}:
           </Text>
@@ -125,6 +118,8 @@ function ShiftOrderItemForm({
       </Stack>
 
       <NumberInput
+        w={220}
+        maw="100%"
         allowNegative={false}
         autoFocus
         data-autofocus

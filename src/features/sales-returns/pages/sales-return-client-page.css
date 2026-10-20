@@ -53,16 +53,29 @@
   min-width: 0;
 }
 
-.sales-return-client-drawer-actions {
-  margin-bottom: -4px;
-}
-
 .sales-return-client-section {
   box-shadow: none;
 }
 
 .sales-return-client-form-grid {
   align-items: end;
+}
+
+.sales-return-client-item-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+}
+
+.sales-return-client-item-fields > .mantine-InputWrapper-root {
+  flex: 0 1 220px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.sales-return-client-item-fields > .mantine-NumberInput-root {
+  flex-basis: 140px;
 }
 
 .sales-return-client-product-search {

@@ -10,6 +10,7 @@ type MovementRow = {
 }
 
 const geometry = {
+  nativeScrollbarHeight: 18,
   maxScrollLeft: 809,
   scrollClientWidth: 1081,
   scrollHeight: 360,
@@ -55,7 +56,7 @@ function stubGeometry() {
   })
   vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (this: HTMLElement) {
     if (this.classList.contains('data-table-scroll')) {
-      return geometry.scrollHeight - 18
+      return geometry.scrollHeight - geometry.nativeScrollbarHeight
     }
 
     if (this.classList.contains('test-frame')) return geometry.scrollHeight
@@ -129,10 +130,11 @@ function renderMovementTable(stickyHorizontalScrollbar = true) {
   const bar = view.container.querySelector<HTMLElement>('.data-table-sticky-scrollbar')
   const workspace = view.container.querySelector<HTMLElement>('.test-workspace')!
 
-  return { bar, scroll, workspace }
+  return { bar, scroll, workspace, unmount: view.unmount }
 }
 
 beforeEach(() => {
+  geometry.nativeScrollbarHeight = 18
   geometry.maxScrollLeft = 809
   geometry.scrollHeight = 360
   geometry.scrollClientWidth = 1081
@@ -250,6 +252,42 @@ describe('DataTable sticky horizontal scrollbar', () => {
     expect(scroll.querySelectorAll('tbody tr')).toHaveLength(1)
     expect(bar?.dataset.visible).toBe('true')
     expect(bar?.style.top).toBe('786px')
+  })
+
+  it('reserves space below the last row for macOS overlay scrollbars', () => {
+    geometry.nativeScrollbarHeight = 0
+    geometry.scrollTop = 715
+    geometry.scrollHeight = 89
+    const { bar, scroll, unmount } = renderMovementTable()
+
+    expect(bar?.dataset.visible).toBe('true')
+    expect(bar?.style.height).toBe('18px')
+    expect(scroll.style.getPropertyValue('--data-table-sticky-scrollbar-inset')).toBe('18px')
+
+    // Once every column fits, neither the fixed control nor its space remains.
+    geometry.scrollClientWidth = geometry.scrollWidth
+    fireEvent(window, new Event('resize'))
+    flushFrames()
+    expect(bar?.dataset.visible).toBe('false')
+    expect(scroll.style.getPropertyValue('--data-table-sticky-scrollbar-inset')).toBe('0px')
+
+    unmount()
+    expect(scroll.style.getPropertyValue('--data-table-sticky-scrollbar-inset')).toBe('')
+  })
+
+  it('does not add a second gutter when the native scrollbar already reserves space', () => {
+    const { scroll } = renderMovementTable()
+    expect(scroll.style.getPropertyValue('--data-table-sticky-scrollbar-inset')).toBe('0px')
+
+    geometry.nativeScrollbarHeight = 0
+    fireEvent(window, new Event('resize'))
+    flushFrames()
+    expect(scroll.style.getPropertyValue('--data-table-sticky-scrollbar-inset')).toBe('18px')
+
+    geometry.nativeScrollbarHeight = 18
+    fireEvent(window, new Event('resize'))
+    flushFrames()
+    expect(scroll.style.getPropertyValue('--data-table-sticky-scrollbar-inset')).toBe('0px')
   })
 
   it('hides while the table is fully below the visible area', () => {

@@ -622,12 +622,12 @@ function MergedSaleCard({
   const canInvoice = canCreateInvoice && hasSelectedMergedSaleItems(sale, draft)
 
   return (
-    <Card withBorder className="sales-merge-card" padding="md" radius="md">
+    <Card withBorder className="sales-merge-card app-compact-form" padding={10} radius="md">
       <Stack gap="sm">
         <Group justify="space-between" align="flex-start" wrap="wrap">
           <Stack gap={2}>
             <Group gap="xs">
-              <Text className="sales-merge-title">{displayValue(sale.SaleNumber?.Value)}</Text>
+              <TableChip tone="document" value={sale.SaleNumber?.Value} />
               <Badge className={`app-role-pill ${getClientPillClass(client)}`} size="xs" variant="light">
                 {getClientTypeLabel(client, t)}
               </Badge>
@@ -635,9 +635,10 @@ function MergedSaleCard({
             <Text className="sales-merge-client" size="sm">
               {displayValue(client?.FullName)}
             </Text>
-            <Text className="sales-merge-meta">
-              {[getUserLastName(sale), formatDateTime(sale.Updated)].filter(Boolean).join(' · ')}
-            </Text>
+            <Group gap={6}>
+              <TableChip tone="warning" value={getUserLastName(sale)} />
+              <Text className="sales-merge-meta">{formatDateTime(sale.Updated)}</Text>
+            </Group>
           </Stack>
           <Group gap="sm">
             <Checkbox
@@ -711,7 +712,7 @@ function MergedSaleCard({
                   </Table.Td>
                   <Table.Td className="app-table-number" ta="right">
                     {formatAmount(getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount), qty, getNumber(item.Qty))}{' '}
-                    {currency}
+                    <TableChip tone="source" value={currency} />
                   </Table.Td>
                 </Table.Tr>
               )

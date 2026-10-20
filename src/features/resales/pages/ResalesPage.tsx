@@ -1731,13 +1731,13 @@ function ResaleDetailContent() {
   }
 
   return (
-    <Stack className="resale-detail-page" gap={12}>
+    <Stack className="resale-detail-page" gap={10}>
       <DocumentDetailLayout variant="inventory" summary={
         <DocumentDetailSummary
           variant="inventory"
           eyebrow={t('Перепродаж')}
           title={displayValue(model.ReSale.SaleNumber?.Value)}
-          status={<Badge color={getResaleStatusColor(model.ReSale)} variant="light">{getResaleStatusLabel(model.ReSale)}</Badge>}
+          status={<TableChip tone={isResaleCompleted(model.ReSale) || isResaleInvoice(model.ReSale) ? 'success' : 'neutral'} value={getResaleStatusLabel(model.ReSale)} />}
           meta={<>
             <DocumentDetailChip>{formatDateTime(model.ReSale.Created)}</DocumentDetailChip>
             <DocumentDetailChip>{t('Кількість')}: {formatAmount(totals.qty)}</DocumentDetailChip>
@@ -1768,8 +1768,8 @@ function ResaleDetailContent() {
 
       <div className="resale-detail-participants">
         <DocumentDetailSection title={t('Дані перепродажу')} stacked>
-          <ResaleDetailLine label={t('Відповідальний')} tone="product" value={model.ReSale.ChangedToInvoiceBy?.LastName || model.ReSale.User?.LastName} />
-          <ResaleDetailLine label={t('Організація')} tone="product" value={model.ReSale.Organization?.Name || model.ReSale.Organization?.FullName} />
+          <ResaleDetailLine label={t('Відповідальний')} tone="warning" value={model.ReSale.ChangedToInvoiceBy?.LastName || model.ReSale.User?.LastName} />
+          <ResaleDetailLine label={t('Організація')} tone="product" value={getOrganizationDisplayName(model.ReSale.Organization)} />
           <ResaleDetailLine label={t('ПДВ, UAH')} mono value={formatMoney(totals.vat)} />
           <ResaleDetailLine label={t('Вага')} mono value={formatAmount(totals.weight)} />
         </DocumentDetailSection>
@@ -2864,20 +2864,12 @@ function ProcessSelectionConfirmDrawer({
       onClose={onClose}
     >
       <Stack className="app-compact-form" gap={10}>
-        <Group gap="xs">
-          <Badge color="orange" variant="light">
-            {t('Позицій')}: {rows.length}
-          </Badge>
-          <Badge color="blue" variant="light">
-            {t('Кількість')}: {formatAmount(totals.qty)}
-          </Badge>
-          <Badge color="teal" variant="light">
-            {t('Сума продажу')}: <span className="app-money">{formatMoney(totals.sale)}</span>
-          </Badge>
-          <Badge color="gray" variant="light">
-            {t('Собівартість')}: <span className="app-money">{formatMoney(totals.cost)}</span>
-          </Badge>
-        </Group>
+        <div className="resale-confirm-summary">
+          <div><span>{t('Позицій')}</span><strong>{rows.length}</strong></div>
+          <div><span>{t('Кількість')}</span><strong>{formatAmount(totals.qty)}</strong></div>
+          <div><span>{t('Сума продажу')}</span><strong className="app-money">{formatMoney(totals.sale)}</strong></div>
+          <div><span>{t('Собівартість')}</span><strong className="app-money">{formatMoney(totals.cost)}</strong></div>
+        </div>
 
         <DataTable
           columns={columns}
@@ -3534,7 +3526,7 @@ function ConsignmentNoteSettingsDrawer({
 
   return (
     <AppDrawer
-      className="resale-ttn-sheet"
+      className="resale-ttn-sheet app-compact-form"
       footer={
         <Group className="resale-ttn-footer" justify="flex-end">
           <Button disabled={!noteState.isEdited || isSaving} variant="default" onClick={resetChanges}>
@@ -3545,7 +3537,7 @@ function ConsignmentNoteSettingsDrawer({
               {t('Видалити')}
             </Button>
           )}
-          <Button disabled={!noteState.isEdited || isPrinting} loading={isSaving} variant="outline" onClick={saveSetting}>
+          <Button color={CREATE_ACTION_COLOR} disabled={!noteState.isEdited || isPrinting} loading={isSaving} onClick={saveSetting}>
             {hasExistingSetting ? t('Зберегти') : t('Створити')}
           </Button>
           <Button leftSection={<Truck size={16} />} loading={isPrinting} onClick={printDocument}>

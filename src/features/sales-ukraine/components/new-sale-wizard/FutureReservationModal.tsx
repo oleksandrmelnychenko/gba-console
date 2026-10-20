@@ -6,6 +6,7 @@ import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { PermissionKeys } from '../../../../shared/auth/permissionKeys'
 import { AppModal, AppModalFooter } from '../../../../shared/ui/AppModal'
+import { TableChip } from '../../../../shared/ui/TableChip'
 import { usePermissions } from '../../../auth/usePermissions'
 import { usePersistentCreateMutation } from '../../persistentCreateMutation'
 import type { SalesUkraineProduct } from '../../types'
@@ -147,7 +148,7 @@ function FutureReservationForm({
   return (
     <Stack
       className="app-compact-form"
-      gap="md"
+      gap={10}
       onKeyDown={(event) => {
         if (event.key === 'Enter') {
           event.preventDefault()
@@ -159,15 +160,25 @@ function FutureReservationForm({
         }
       }}
     >
-      <Text fw={600} size="sm">
-        {product.VendorCode || product.Articul} · {product.NameUA || product.Name}
-      </Text>
+      <Stack gap={4}>
+        <Group gap={6}>
+          <TableChip tone="product" value={product.VendorCode || product.Articul} />
+        </Group>
+        <Text fw={600} size="sm">{product.NameUA || product.Name}</Text>
+      </Stack>
 
       {supplyOrderNetId ? (
         <Alert color="blue" icon={<CalendarClock size={18} />} variant="light">
-          {t('Найближча поставка')}: {order?.Number ? `${order.Number} · ` : ''}
-          {order?.OrderArrivedDate ? formatLocalDate(new Date(order.OrderArrivedDate)) : t('дата невідома')}
-          {maxCount !== null ? ` · ${maxCount} ${t('штук')}` : ''}
+          <Stack gap={4}>
+            <Text size="xs" fw={600}>{t('Найближча поставка')}</Text>
+            <Group gap={6}>
+              <TableChip tone="document" value={order?.Number} />
+              <Text size="xs" ff="var(--font-mono)">
+                {order?.OrderArrivedDate ? formatLocalDate(new Date(order.OrderArrivedDate)) : t('дата невідома')}
+                {maxCount !== null ? ` · ${maxCount} ${t('штук')}` : ''}
+              </Text>
+            </Group>
+          </Stack>
         </Alert>
       ) : !clientNetId ? (
         <Alert color="orange" variant="light">
@@ -180,6 +191,8 @@ function FutureReservationForm({
       )}
 
       <NumberInput
+        w={180}
+        maw="100%"
         allowNegative={false}
         decimalScale={2}
         disabled={!supplyOrderNetId}

@@ -197,6 +197,7 @@ function SaleDiscountForm({
         allowDecimal
         decimalScale={2}
         disabled={!canEditPercentage || discountMutation.hasPending}
+        className="sale-discount-modal__percentage"
         label={t('Відсоток знижки')}
         max={99}
         min={-99}

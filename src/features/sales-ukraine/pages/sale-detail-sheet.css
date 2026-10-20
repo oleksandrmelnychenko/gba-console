@@ -14,7 +14,7 @@
 .sale-detail-sheet {
   color: var(--mantine-color-gray-8);
   display: grid;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
 }
 
@@ -134,13 +134,13 @@
 .sale-detail-total strong {
   color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.1;
 }
 
-.sale-detail-total span:last-child {
+.sale-detail-total > span:not(.app-table-chip):last-child {
   color: var(--mantine-color-gray-6);
   font-family: var(--font-mono);
   font-size: 11px;
@@ -153,7 +153,7 @@
   color: var(--mantine-color-gray-8);
 }
 
-.sale-detail-total.is-unpaid span:last-child {
+.sale-detail-total.is-unpaid > span:not(.app-table-chip):last-child {
   color: var(--mantine-color-gray-6);
 }
 
@@ -197,7 +197,8 @@
   padding: 8px 10px;
 }
 
-.sale-detail-metric span {
+.sale-detail-metric > span:not(.app-table-chip),
+.sale-detail-metric-label {
   color: var(--mantine-color-gray-7);
   font-family: var(--font-mono);
   font-size: 12px;
@@ -206,7 +207,8 @@
   line-height: 1.2;
 }
 
-.sale-detail-metric span::before {
+.sale-detail-metric > span:not(.app-table-chip)::before,
+.sale-detail-metric-label::before {
   background: var(--brand-orange);
   border-radius: 999px;
   content: '';
@@ -220,7 +222,7 @@
 .sale-detail-metric strong {
   color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.15;
@@ -312,7 +314,7 @@
   display: grid;
   grid-template-columns: auto minmax(24px, 1fr) fit-content(46%);
   min-height: 32px;
-  padding: 7px 0;
+  padding: 4px 0;
 }
 
 .sale-detail-row::before {
@@ -447,3 +449,6 @@
 }
 
 .sale-detail-products-title { color: var(--mantine-color-gray-9); }
+
+.sale-detail-date { font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
+.sale-detail-row-value > strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -15,3 +15,8 @@
   font-weight: 600;
   letter-spacing: 0;
 }
+
+.sale-discount-modal__percentage {
+  width: 160px;
+  max-width: 100%;
+}

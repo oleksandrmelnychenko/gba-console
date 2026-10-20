@@ -1,4 +1,4 @@
-import { Anchor, Button, Card, Checkbox, Group, Select, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
+import { Anchor, Button, Card, Checkbox, Group, Select, Stack, Text, TextInput } from '@mantine/core'
 import { FileChartColumn, FileText } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
@@ -114,17 +114,17 @@ export function ClientReturnsReportPanel({ opened, onClose }: ClientReturnsRepor
 
   return (
     <AppModal
-      className="client-returns-report-modal"
+      className="client-returns-report-modal app-compact-form"
       opened={opened}
       size={640}
       title={t('Сформувати звіт')}
       onClose={handleClose}
     >
-      <Stack className="client-returns-report-scroll" gap={12}>
+      <Stack gap={10}>
         <Card className="app-section-card client-returns-report-section" withBorder padding="sm" radius="md">
-          <Stack gap={12}>
+          <Stack gap={10}>
             <Text className="app-section-title" size="sm" fw={600}>{t('Параметри звіту')}</Text>
-            <SimpleGrid cols={{ base: 1, xs: 2 }} spacing={12}>
+            <Group className="client-returns-report-dates" gap={10}>
               <TextInput
                 label={t('Від')}
                 type="date"
@@ -132,7 +132,7 @@ export function ClientReturnsReportPanel({ opened, onClose }: ClientReturnsRepor
                 onChange={(event) => setFromDate(event.currentTarget.value)}
               />
               <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => setToDate(event.currentTarget.value)} />
-            </SimpleGrid>
+            </Group>
 
             <Select
               clearable
@@ -173,6 +173,7 @@ export function ClientReturnsReportPanel({ opened, onClose }: ClientReturnsRepor
             />
 
             <Select
+              className="client-returns-report-type"
               data={[
                 { label: t('Згруповано'), value: '0' },
                 { label: t('Деталізовано'), value: '1' },

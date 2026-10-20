@@ -18,13 +18,13 @@
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
   box-shadow: none;
-  padding: 10px 12px;
+  padding: 10px;
 }
 .resale-ttn-hero {
   display: grid;
   align-items: end;
-  gap: 12px;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, .95fr);
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, .95fr);
 }
 .resale-ttn-document,
 .resale-ttn-select { min-width: 0; }
@@ -40,7 +40,7 @@
   font: 500 13px/1.4 var(--font-mono);
   overflow-wrap: anywhere;
 }
-.resale-ttn-document-date { color: var(--mantine-color-gray-6); font-size: 11px; }
+.resale-ttn-document-date { color: var(--mantine-color-gray-7); font-size: 11px; }
 .resale-ttn-grid,
 .resale-ttn-dimensions { align-items: end; }
 .resale-ttn-vehicles {
@@ -58,7 +58,7 @@
   border-radius: 8px;
   font: 400 12px/1.4 var(--font-mono);
 }
-.resale-ttn-footer { width: 100%; max-width: 100%; gap: 8px; }
+.resale-ttn-footer { width: 100%; max-width: 100%; gap: 8px; flex-wrap: wrap; }
 .app-drawer.app-form-sheet.resale-ttn-sheet .resale-ttn-footer .mantine-Button-root {
   height: 32px;
   min-height: 32px;
@@ -70,6 +70,6 @@
   .resale-ttn-form .resale-ttn-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .resale-ttn-grid > :nth-last-child(-n + 2) { grid-column: span 2; }
 }
-@media (max-width: 900px) {
+@container (max-width: 620px) {
   .resale-ttn-hero { grid-template-columns: minmax(0, 1fr); }
 }

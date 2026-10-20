@@ -38,6 +38,13 @@ export function DataTableStickyScrollbar({ scrollElement }: { scrollElement: HTM
     const update = () => {
       frame = 0
       const barHeight = getHorizontalScrollbarThickness(scroll)
+      // macOS overlay scrollbars consume no layout space. Reserve the fixed
+      // control's height inside the viewport so it cannot cover the final row.
+      const nativeBarHeight = Math.max(0, scroll.offsetHeight - scroll.clientHeight - scroll.clientTop * 2)
+      const bottomInset = scroll.scrollWidth > scroll.clientWidth
+        ? Math.max(0, barHeight - nativeBarHeight)
+        : 0
+      scroll.style.setProperty('--data-table-sticky-scrollbar-inset', `${bottomInset}px`)
       const layout = getStickyScrollbarLayout({
         barHeight,
         clientWidth: scroll.clientWidth,
@@ -129,6 +136,7 @@ export function DataTableStickyScrollbar({ scrollElement }: { scrollElement: HTM
       resizeObserver?.disconnect()
       intersectionObserver?.disconnect()
       bar.dataset.visible = 'false'
+      scroll.style.removeProperty('--data-table-sticky-scrollbar-inset')
     }
   }, [scrollElement])
 
@@ -142,6 +150,8 @@ export function DataTableStickyScrollbar({ scrollElement }: { scrollElement: HTM
     const next = event.key === 'Home' ? 0
       : event.key === 'End' ? scrollElement.scrollWidth
         : scrollElement.scrollLeft + (event.key === 'ArrowLeft' ? -40 : 40)
+    // DOM scrolling is imperative; this does not mutate React-owned data.
+    // eslint-disable-next-line react-hooks/immutability
     scrollElement.scrollLeft = next
     event.currentTarget.scrollLeft = scrollElement.scrollLeft
   }

@@ -2,27 +2,22 @@
   background: var(--mantine-color-gray-0);
 }
 
-.client-returns-report-scroll {
-  max-height: max(160px, calc(100dvh - 300px));
-  overflow-y: auto;
-}
-
 .client-returns-report-modal .client-returns-report-section {
   background: var(--mantine-color-white);
-  padding: 14px;
 }
 
 .client-returns-report-modal .app-section-title {
   color: var(--mantine-color-gray-9);
-  font: 600 14px/1.4 var(--font-mono);
+  font: 600 13px/1.4 var(--font-mono);
   letter-spacing: 0;
 }
 
-.client-returns-report-modal .mantine-Input-input {
-  font-family: var(--font-mono);
-  font-size: 13px;
+.client-returns-report-dates > .mantine-InputWrapper-root {
+  width: 170px;
+  max-width: 100%;
 }
 
-.client-returns-report-modal .app-modal-footer .mantine-Button-root[data-variant='default'] {
-  background: var(--mantine-color-white);
+.client-returns-report-type {
+  width: 220px;
+  max-width: 100%;
 }

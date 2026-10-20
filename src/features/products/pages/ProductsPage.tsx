@@ -27,7 +27,7 @@ import {
 import { notifications } from '@mantine/notifications'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { PdfIcon } from '../../../shared/ui/PdfIcon'
-import { ArrowDownLeft, ArrowUpRight, Hash, Layers, ArrowLeftRight, Box as BoxIcon, ChevronDown, CircleAlert, ClipboardList, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, Save, Settings, Sparkles, SquarePen, Trash2, TriangleAlert, Upload } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, Hash, Layers, ArrowLeftRight, Box as BoxIcon, ChevronDown, CircleAlert, ClipboardList, Copy, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, Save, Settings, Sparkles, SquarePen, Trash2, TriangleAlert, Upload } from 'lucide-react'
 import { lazy, Suspense, type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -565,6 +565,9 @@ function ProductsPageContent() {
 
     return () => {
       window.clearTimeout(timeoutId)
+      // Retire the previous query immediately, before the next debounce starts.
+      // Its single-result response must not replace the focused search input.
+      searchRequestRef.current += 1
     }
   }, [hasRequestedProducts, loadProducts, reloadKey, searchValue, searchMode, sortMode])
 
@@ -1362,6 +1365,18 @@ function ProductInlineView({
           </Text>
           <Tooltip label={getProductTitle(product)} multiline maw={420} withinPortal>
             <Text component="span" fw={650} truncate className="product-inline-name">{getProductTitle(product)}</Text>
+          </Tooltip>
+          <Tooltip label={t('Скопіювати артикул і назву')} withinPortal>
+            <ActionIcon
+              aria-label={t('Скопіювати артикул і назву')}
+              color="gray"
+              size={32}
+              variant="subtle"
+              style={{ flexShrink: 0, alignSelf: 'center' }}
+              onClick={() => copyToClipboard([product.VendorCode?.trim(), getProductTitle(product)].filter(Boolean).join(' '))}
+            >
+              <Copy size={16} aria-hidden="true" />
+            </ActionIcon>
           </Tooltip>
         </Box>
 

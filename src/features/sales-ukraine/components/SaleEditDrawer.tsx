@@ -636,7 +636,7 @@ function createSaleEditColumns({
       id: 'user',
       header: t('Відповідальний'),
       accessor: (row) => getUserName(row.item.User),
-      cell: (row) => <span className="sale-edit-user-name">{displayValue(getUserName(row.item.User)) || '-'}</span>,
+      cell: (row) => <TableChip tone="warning" value={displayValue(getUserName(row.item.User)) || '-'} />,
       width: 152,
       minWidth: 152,
       enableSorting: false,

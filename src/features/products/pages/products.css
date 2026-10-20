@@ -391,7 +391,7 @@
 }
 
 .product-inline-name {
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
   color: var(--mantine-color-gray-9);
   font-size: 18px;

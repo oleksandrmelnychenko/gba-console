@@ -11,11 +11,11 @@ export type SaleDocumentDownload = {
 
 export function SaleDocumentDownloads({ documents }: { documents: SaleDocumentDownload[] }) {
   return (
-    <Stack gap="sm">
+    <Stack className="app-compact-form" gap={8}>
       {documents.map((document, index) => (
-        <Paper key={`${document.label}-${index}`} withBorder p="md" radius="md">
-          <Stack gap="sm">
-            <Text className="app-section-title" fw={600} size="sm">
+        <Paper key={`${document.label}-${index}`} className="app-section-card" withBorder p={10} radius="md">
+          <Group gap={8} justify="space-between" wrap="wrap">
+            <Text className="app-section-title" fw={600} size="sm" style={{ flex: '1 1 180px' }}>
               {document.label}
             </Text>
             <Group gap="xs">
@@ -24,9 +24,9 @@ export function SaleDocumentDownloads({ documents }: { documents: SaleDocumentDo
                   color="gray"
                   component="a"
                   href={getDocumentHref(document.pdfUrl)}
-                  leftSection={<PdfIcon size={20} />}
+                  leftSection={<PdfIcon size={16} />}
                   rel="noopener noreferrer"
-                  size="sm"
+                  size="xs"
                   target="_blank"
                   variant="default"
                 >
@@ -38,9 +38,9 @@ export function SaleDocumentDownloads({ documents }: { documents: SaleDocumentDo
                   color="gray"
                   component="a"
                   href={getDocumentHref(document.excelUrl)}
-                  leftSection={<ExcelIcon size={20} />}
+                  leftSection={<ExcelIcon size={16} />}
                   rel="noopener noreferrer"
-                  size="sm"
+                  size="xs"
                   target="_blank"
                   variant="default"
                 >
@@ -48,7 +48,7 @@ export function SaleDocumentDownloads({ documents }: { documents: SaleDocumentDo
                 </Button>
               )}
             </Group>
-          </Stack>
+          </Group>
         </Paper>
       ))}
     </Stack>

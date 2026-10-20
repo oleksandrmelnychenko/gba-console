@@ -2,7 +2,6 @@ import { getOrganizationDisplayName } from '../../../shared/organizations/organi
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
-  Badge,
   Button,
   Card,
   FileInput,
@@ -471,32 +470,26 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
         </Alert>
       )}
 
-      <Card className="app-section-card" withBorder padding={12} radius="md">
+      <Card className="app-section-card sale-editor-summary" withBorder padding={12} radius="md">
         <Group justify="space-between" align="flex-start" wrap="wrap">
-          <Stack gap={2}>
-            <Text fw={700} size="lg">
+          <Stack className="sale-editor-summary__identity" gap={4}>
+            <Text className="sale-editor-summary__client">
               {displayValue(getClientName(sale))}
             </Text>
-            <Text size="sm" c="dimmed">
-              {displayValue(sale.ClientAgreement?.Agreement?.Name)}
-            </Text>
+            <TableChip tone="neutral" value={displayValue(sale.ClientAgreement?.Agreement?.Name)} />
             <TableChip tone="product" value={getOrganizationDisplayName(sale.ClientAgreement?.Agreement?.Organization)} />
           </Stack>
           <Stack gap={4} align="flex-end">
             <Group gap="xs">
               {sale.IsVatSale && (
-                <Badge color="blue" variant="light">
-                  {t('ПДВ')}
-                </Badge>
+                <TableChip tone="document" value={t('ПДВ')} />
               )}
               {sale.IsLocked && (
-                <Badge color="red" variant="light">
-                  {t('Заблоковано')}
-                </Badge>
+                <TableChip tone="danger" value={t('Заблоковано')} />
               )}
               {isLoading && <Loader size="xs" />}
             </Group>
-            <Group gap={6} wrap="nowrap"><Text className="app-money" fw={700} size="lg">{amountFormatter.format(headerTotal)}</Text><TableChip tone="source" value={editorCurrencyCode} /></Group>
+            <Group gap={6} wrap="nowrap"><Text className="app-money sale-editor-summary__amount">{amountFormatter.format(headerTotal)}</Text><TableChip tone="source" value={editorCurrencyCode} /></Group>
             <Text size="xs" c="dimmed">
               {t('ПДВ')}: <span className="app-money app-money-meta">{amountFormatter.format(getNumber(sale.Order?.TotalVat) ?? 0)}</span>
             </Text>
@@ -1580,13 +1573,13 @@ function ClientTab({ canReassign, sale, onSwitched }: { canReassign: boolean; on
   }
 
   return (
-    <Stack gap="md">
-      <Stack gap={6}>
+    <Stack className="sale-editor-client" gap={10}>
+      <Stack gap={8}>
         <DetailRow label={t('Клієнт')} value={getClientName(sale)} />
         <div className="app-detail-field"><span>{t('Організація')}</span><TableChip tone="product" value={getOrganizationDisplayName(sale.ClientAgreement?.Agreement?.Organization)} /></div>
         <div className="app-detail-field"><span>{t('Валюта')}</span><TableChip tone="source" value={sale.ClientAgreement?.Agreement?.Currency?.Code} /></div>
         <div className="app-detail-field"><span>{t('Менеджер')}</span><TableChip tone="warning" value={getUserName(sale)} /></div>
-        <Group justify="space-between" align="flex-start" gap="lg" wrap="nowrap">
+        <Group justify="space-between" align="flex-start" gap={8} wrap="wrap">
           <Text size="sm" c="dimmed">
             {t('Перевізник')}
           </Text>
@@ -1608,13 +1601,13 @@ function ClientTab({ canReassign, sale, onSwitched }: { canReassign: boolean; on
         )}
       </Stack>
 
-      <Group align="end" gap="sm" wrap="nowrap">
+      <Group className="sale-editor-client__agreement" align="end" gap={8} wrap="wrap">
         <Select
           disabled={!canReassign}
           searchable
           data={agreementOptions}
           label={t('Договір')}
-          style={{ flex: 1 }}
+          className="sale-editor-client__agreement-select"
           value={selectedAgreement || null}
           onChange={(value) => setSelectedAgreement(value || '')}
         />

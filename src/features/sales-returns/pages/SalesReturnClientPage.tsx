@@ -3,7 +3,6 @@ import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
   Alert,
-  Badge,
   Box,
   Button,
   Card,
@@ -563,31 +562,18 @@ export function SalesReturnClientPage() {
       <ClientReturnsReportPanel opened={reportOpened} onClose={() => setReportOpened(false)} />
 
       <AppDrawer
-        className="sales-return-client-drawer"
+        className="sales-return-client-drawer app-compact-form"
         opened={createOpened}
         position="right"
         size="min(1120px, 100vw)"
         title={t('Повернення від клієнта')}
         onClose={closeCreateDrawer}
         footer={
-          <Button
-            className="sales-return-client-primary-action"
-            color={CREATE_ACTION_COLOR}
-            disabled={!items.length}
-            form="sales-return-client-form"
-            loading={isSaving}
-            type="submit"
-          >
-            {t('Створити повернення')}
-          </Button>
-        }
-      >
-        <Stack className="sales-return-client-drawer-content" gap="md">
-          <Group className="sales-return-client-drawer-actions" justify="flex-end" align="flex-start">
+          <Group justify="space-between" gap={8} w="100%">
             <Button
               color="gray"
               leftSection={<RefreshCw size={16} />}
-              variant="light"
+              variant="default"
               onClick={() => {
                 setItems([])
                 resetProductDraft()
@@ -597,8 +583,23 @@ export function SalesReturnClientPage() {
             >
               {t('Очистити')}
             </Button>
+            <Group gap={8}>
+              <Button variant="default" onClick={closeCreateDrawer}>{t('Скасувати')}</Button>
+              <Button
+                className="sales-return-client-primary-action"
+                color={CREATE_ACTION_COLOR}
+                disabled={!items.length}
+                form="sales-return-client-form"
+                loading={isSaving}
+                type="submit"
+              >
+                {t('Створити повернення')}
+              </Button>
+            </Group>
           </Group>
-
+        }
+      >
+        <Stack className="sales-return-client-drawer-content" gap={10}>
           {error ? (
             <Alert color="red" icon={<CircleAlert size={16} />} title={t('Помилка')}>
               {error}
@@ -610,12 +611,12 @@ export function SalesReturnClientPage() {
             </Alert>
           ) : null}
 
-          <form id="sales-return-client-form" onSubmit={handleSubmit}>
-            <Stack gap="md">
+          <form className="app-compact-form" id="sales-return-client-form" onSubmit={handleSubmit}>
+            <Stack gap={10}>
               <Card className="app-section-card sales-return-client-section" withBorder radius="md" padding="md">
                 <Stack gap="sm">
                   <Text className="app-section-title">{t('Параметри повернення')}</Text>
-                  <SimpleGrid className="sales-return-client-form-grid" cols={{ base: 1, md: 2, lg: 4 }}>
+                  <SimpleGrid className="sales-return-client-form-grid" cols={{ base: 1, sm: 2, lg: 4 }} spacing={10}>
                     <Select
                       clearable
                       data={organizations.map((organization) => ({
@@ -710,7 +711,7 @@ export function SalesReturnClientPage() {
                     </Group>
                   </Box>
 
-                  <SimpleGrid className="sales-return-client-form-grid" cols={{ base: 1, md: 4 }}>
+                  <div className="sales-return-client-item-fields">
                     <NumberInput
                       allowDecimal
                       decimalScale={3}
@@ -746,14 +747,13 @@ export function SalesReturnClientPage() {
                     <Button
                       color={CREATE_ACTION_COLOR}
                       leftSection={<Plus size={16} />}
-                      mt={{ base: 0, md: 24 }}
                       onClick={addItem}
                       type="button"
                       variant="filled"
                     >
                       {t('Додати позицію')}
                     </Button>
-                  </SimpleGrid>
+                  </div>
                 </Stack>
               </Card>
 
@@ -846,7 +846,7 @@ function useDirectReturnColumns({
         id: 'batch',
         header: t('Партія'),
         accessor: (item) => item.batch.IncomeToStorageNumber,
-        cell: (item) => <MonoCell value={displayValue(item.batch.IncomeToStorageNumber)} />,
+        cell: (item) => <TableChip tone="document" value={displayValue(item.batch.IncomeToStorageNumber)} />,
         width: 180,
       },
       {
@@ -971,19 +971,11 @@ function MoneyCell({ value }: { value: string }) {
 }
 
 function StatusPill({ value }: { value: string }) {
-  return value ? (
-    <Badge className="app-role-pill is-orange" variant="light">
-      {value}
-    </Badge>
-  ) : null
+  return value ? <TableChip tone="warning" value={value} /> : null
 }
 
 function CurrencyPill({ value }: { value: string }) {
-  return value ? (
-    <Badge className="app-role-pill is-gray" variant="light">
-      {value}
-    </Badge>
-  ) : null
+  return value ? <TableChip tone="source" value={value} /> : null
 }
 
 function StorageConditionHint({

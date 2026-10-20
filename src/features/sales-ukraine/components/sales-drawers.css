@@ -162,11 +162,13 @@
   border-radius: 8px;
 }
 
-@container (min-width: 900px) {
+@container (min-width: 620px) {
   .consignment-note-settings-vehicles {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
 
+@container (min-width: 900px) {
   .consignment-note-settings .consignment-note-settings-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
@@ -187,7 +189,7 @@
 
 .consignment-note-settings-footer .mantine-Button-root {
   min-width: 96px;
-  height: 34px;
+  height: 32px;
   font-size: 12px;
 }
 
@@ -315,7 +317,7 @@
 .sale-carrier-layout {
   align-items: start;
   display: grid;
-  gap: 12px;
+  gap: 10px;
   grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
   min-width: 0;
 }
