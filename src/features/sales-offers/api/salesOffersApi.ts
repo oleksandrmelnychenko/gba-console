@@ -95,11 +95,17 @@ export async function createOffer(
 }
 
 export async function searchOffersClients(value: string): Promise<OffersClientOption[]> {
-  const result = await apiRequest<unknown>('/clients/payers/search/all', {
+  const searchValue = value.trim()
+
+  if (!searchValue) {
+    return []
+  }
+
+  const result = await apiRequest<unknown>('/clients/sales-ukraine/offers/create/search', {
     query: {
       limit: 50,
       offset: 0,
-      value: value.trim(),
+      value: searchValue,
     },
   })
 

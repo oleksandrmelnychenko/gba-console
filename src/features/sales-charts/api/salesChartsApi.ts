@@ -83,11 +83,17 @@ export async function getSalesOrganizations(): Promise<SalesChartsOrganizationOp
 }
 
 export async function searchSalesClients(value: string): Promise<SalesChartsClientOption[]> {
-  const result = await apiRequest<unknown>('/clients/payers/search/all', {
+  const searchValue = value.trim()
+
+  if (!searchValue) {
+    return []
+  }
+
+  const result = await apiRequest<unknown>('/clients/sales-charts/search', {
     query: {
       limit: 50,
       offset: 0,
-      value: value.trim(),
+      value: searchValue,
     },
   })
 

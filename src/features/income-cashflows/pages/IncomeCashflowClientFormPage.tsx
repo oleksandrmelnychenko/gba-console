@@ -435,7 +435,7 @@ function IncomeCashflowClientFormPageContent() {
         return
       }
 
-      void searchIncomeCashflowClientPayers(value, controller.signal)
+      void searchIncomeCashflowClientPayers(value, 'client-payment', controller.signal)
         .then((nextPayers) => {
           if (!cancelled) {
             setPayerClients(nextPayers)
@@ -1132,6 +1132,7 @@ function IncomeCashflowClientFormPageContent() {
               <SearchableSelect
                 data={payerOptions}
                 disabled={isLoading || isResolvingCounterparty || isSaving}
+                filter={({ options }) => options}
                 label={t('Пошук за платниками')}
                 placeholder={t('Почніть вводити платника')}
                 value={form.payerSearch}

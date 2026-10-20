@@ -288,8 +288,11 @@ export async function searchIncomeCashflowCounterpartiesForOperation(
     : expandIncomeCashflowClientOptions(counterparties)
 }
 
+export type IncomeCashflowPayerSearchScope = 'client-payment' | 'reassign-client'
+
 export async function searchIncomeCashflowClientPayers(
   value: string,
+  scope: IncomeCashflowPayerSearchScope,
   signal?: AbortSignal,
 ): Promise<Client[]> {
   const searchValue = value.trim()
@@ -298,10 +301,9 @@ export async function searchIncomeCashflowClientPayers(
     return []
   }
 
-  const result = await apiRequest<unknown>('/clients/payers/search/all', {
+  const result = await apiRequest<unknown>(`/clients/income-cashflows/${scope}/payers/search`, {
     query: {
       limit: 20,
-      offset: 0,
       value: searchValue,
     },
     signal,

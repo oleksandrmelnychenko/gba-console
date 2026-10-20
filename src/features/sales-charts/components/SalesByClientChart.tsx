@@ -3,11 +3,12 @@ import { MONEY_AXIS_TICK } from '../../../shared/ui/charts/chartTheme'
 import { ChartLoading } from '../../../shared/ui/charts/ChartState'
 import { ActionIcon, Alert, Select, Stack, TextInput, Tooltip } from '@mantine/core'
 import { CircleAlert, RotateCcw } from 'lucide-react'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
+import { createAutocompleteOptionSubmitGuard } from '../../income-cashflows/autocompleteOptionSubmitGuard'
 import { getSalesByClient, searchSalesClients } from '../api/salesChartsApi'
 import type { SalesChartsClientOption, SalesChartsClientPoint } from '../types'
 import { SalesChartsPeriodType } from '../types'
@@ -33,6 +34,7 @@ export function SalesByClientChart() {
   const [points, setPoints] = useValueState<SalesChartsClientPoint[]>([])
   const [isLoading, setIsLoading] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
+  const [clientOptionSubmitGuard] = useState(createAutocompleteOptionSubmitGuard)
 
   useEffect(() => {
     let cancelled = false
@@ -110,7 +112,7 @@ export function SalesByClientChart() {
     () =>
       clients.reduce<{ netId: string; value: string }[]>((acc, client) => {
         const option = { netId: client.NetUid || '', value: clientLabel(client) }
-        if (option.netId && option.value) {
+        if (option.netId && option.value && !acc.some((item) => item.value === option.value)) {
           acc.push(option)
         }
         return acc
@@ -155,15 +157,19 @@ export function SalesByClientChart() {
           <SearchableSelect
             className="sales-chart-filter-control"
             data={autocompleteData}
+            filter={({ options }) => options}
             label={t('Клієнт')}
             selectionPlaceholder={t('Пошук клієнта')}
             value={clientQuery}
             onChange={(value) => {
               setClientQuery(value)
-              setNetId(null)
+              if (!clientOptionSubmitGuard.consumeChange(value)) {
+                setNetId(null)
+              }
             }}
             onOptionSubmit={(value) => {
               const matched = clientOptions.find((option) => option.value === value)
+              clientOptionSubmitGuard.markSubmitted(value)
               setNetId(matched ? matched.netId : null)
             }}
           />

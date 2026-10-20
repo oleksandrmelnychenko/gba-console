@@ -9,6 +9,8 @@ import {
 import { IncomeCounterpartySearchType } from './income-cashflows/types'
 import { getProductRemainSuppliers } from './product-remains/api/productRemainsApi'
 import { searchReportClients, searchReportUsers } from './reports/api/reportsApi'
+import { searchSalesClients } from './sales-charts/api/salesChartsApi'
+import { searchOffersClients } from './sales-offers/api/salesOffersApi'
 import { searchSalesReturnClients } from './sales-returns/api/salesReturnsApi'
 import { searchSupplyOrganizations as searchPaymentProtocolSupplyOrganizations } from './supply-ukraine-payment-protocols/api/paymentProtocolsApi'
 
@@ -29,7 +31,10 @@ describe('lookup search empty value guards', () => {
       'income cashflow counterparties',
       () => searchOtherIncomeCashflowCounterparties('  ', IncomeCounterpartySearchType.Client),
     ],
-    ['income cashflow client payers', () => searchIncomeCashflowClientPayers('  ')],
+    ['income cashflow client payers', () => searchIncomeCashflowClientPayers('  ', 'client-payment')],
+    ['income cashflow reassign payers', () => searchIncomeCashflowClientPayers('  ', 'reassign-client')],
+    ['sales chart clients', () => searchSalesClients('  ')],
+    ['offer clients', () => searchOffersClients('  ')],
     ['product remain suppliers', () => getProductRemainSuppliers({ limit: 20, offset: 0, value: '  ' })],
     ['report clients', () => searchReportClients({ limit: 20, offset: 0, value: '  ' })],
     ['report users', () => searchReportUsers({ limit: 20, offset: 0, value: '  ' })],

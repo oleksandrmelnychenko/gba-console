@@ -386,6 +386,7 @@ function NewOfferForm({
         {...OFFER_SELECT_PROPS}
         searchable
         data={clientData}
+        filter={({ options }) => options}
         label={t('Клієнт')}
         leftSection={<Search size={16} />}
         nothingFoundMessage={clientQuery.trim().length < 2 ? null : t('Нічого не знайдено')}

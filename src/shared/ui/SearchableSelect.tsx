@@ -28,6 +28,7 @@ export function SearchableSelect({
   defaultDropdownOpened,
   disabled,
   dropdownOpened,
+  filter,
   label,
   leftSection,
   limit,
@@ -63,6 +64,7 @@ export function SearchableSelect({
       defaultDropdownOpened={defaultDropdownOpened}
       disabled={disabled}
       dropdownOpened={dropdownOpened}
+      filter={filter}
       label={label}
       leftSection={leftSection}
       limit={limit}

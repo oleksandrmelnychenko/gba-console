@@ -16,6 +16,7 @@ import {
   getIncomeCashflowSupplyOrganizationAgreements,
   getIncomeCashflowByNetId,
   getIncomeCashflowForAccountingCashFlow,
+  searchIncomeCashflowClientPayers,
   searchIncomeCashflowCounterpartiesForOperation,
   searchOtherIncomeCashflowCounterparties,
   searchOutgoingCashflowCounterparties,
@@ -427,6 +428,29 @@ describe('income cashflow API lookup contracts', () => {
       '/clients/outgoing-cashflows/create/suppliers/search',
       '/supplies/organizations/outgoing-cashflows/create/search',
     ])
+  })
+
+  it.each([
+    ['client-payment', '/clients/income-cashflows/client-payment/payers/search'],
+    ['reassign-client', '/clients/income-cashflows/reassign-client/payers/search'],
+  ] as const)('searches %s payers as clients and expands their sub-clients', async (scope, route) => {
+    apiRequestMock.mockResolvedValueOnce([
+      {
+        FullName: 'ТОВ "АГРО"',
+        NetUid: 'client-1',
+        SubClients: [{ SubClient: { FullName: 'Філія АГРО', NetUid: 'sub-1' } }],
+      },
+      { FullName: 'ТОВ "АГРО"', NetUid: 'client-1' },
+    ])
+    const controller = new AbortController()
+
+    const result = await searchIncomeCashflowClientPayers(' тов ', scope, controller.signal)
+
+    expect(result.map((client) => client.NetUid)).toEqual(['client-1', 'sub-1'])
+    expect(apiRequestMock).toHaveBeenCalledWith(route, {
+      query: { limit: 20, value: 'тов' },
+      signal: controller.signal,
+    })
   })
 
   it.each([

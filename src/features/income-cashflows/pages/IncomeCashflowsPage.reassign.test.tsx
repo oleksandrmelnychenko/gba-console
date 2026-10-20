@@ -232,6 +232,7 @@ describe('ReassignIncomeClientModal', () => {
     await waitFor(() =>
       expect(searchClientPayersMock).toHaveBeenCalledWith(
         'Client',
+        'reassign-client',
         expect.any(AbortSignal),
       ),
     )
@@ -286,5 +287,30 @@ describe('ReassignIncomeClientModal', () => {
 
     expect(screen.queryByRole('option', { name: 'Agreement A' })).toBeNull()
     expect(screen.getByRole('option', { name: 'Agreement B' })).toBeTruthy()
+  })
+
+  it('offers one option per client name when the search returns same-named clients', async () => {
+    searchClientPayersMock.mockResolvedValue([
+      { FullName: 'ТОВ "ТЕРМО-БУД"', NetUid: 'termo-1' },
+      { FullName: 'ТОВ "ТЕРМО-БУД"', NetUid: 'termo-2' },
+      { FullName: 'ТОВ "АГРО"', NetUid: 'agro-1' },
+    ])
+    getClientAgreementsMock.mockResolvedValue([])
+
+    renderModal()
+
+    fireEvent.change(
+      await screen.findByRole<HTMLInputElement>('combobox', { name: 'Клієнт' }),
+      { target: { value: 'тов' } },
+    )
+
+    expect(await screen.findByRole('option', { name: 'ТОВ "АГРО"' })).toBeTruthy()
+    expect(screen.getAllByRole('option', { name: 'ТОВ "ТЕРМО-БУД"' })).toHaveLength(1)
+
+    fireEvent.click(screen.getByRole('option', { name: 'ТОВ "ТЕРМО-БУД"' }))
+
+    await waitFor(() =>
+      expect(getClientAgreementsMock).toHaveBeenCalledWith('termo-1'),
+    )
   })
 })

@@ -1666,7 +1666,12 @@ export function ReassignIncomeClientModal({
 
   const opened = Boolean(row)
 
-  const counterpartyOptions = useMemo(() => toSelectOptions(clients, getEntityName), [clients])
+  const counterpartyOptions = useMemo(
+    () => toSelectOptions(clients, getEntityName).filter(
+      (option, index, options) => options.findIndex((item) => item.label === option.label) === index,
+    ),
+    [clients],
+  )
 
   const agreementOptions = useMemo(
     () => toClientAgreementOptions(clientAgreements),
@@ -1757,7 +1762,7 @@ export function ReassignIncomeClientModal({
         return
       }
 
-      const result = await searchIncomeCashflowClientPayers(value, controller.signal).catch((searchError) => {
+      const result = await searchIncomeCashflowClientPayers(value, 'reassign-client', controller.signal).catch((searchError) => {
         if (!cancelled) {
           setError(searchError instanceof Error ? searchError.message : 'Не вдалося завантажити клієнтів')
         }
@@ -1858,6 +1863,7 @@ export function ReassignIncomeClientModal({
         <SearchableSelect
           data={counterpartyOptions.map((option) => option.label)}
           disabled={isSaving}
+          filter={({ options }) => options}
           label={t('Клієнт')}
           placeholder={t('Почніть вводити назву')}
           value={searchValue}

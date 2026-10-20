@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import type { ClientShoppingCart } from '../types'
-import { createOffer, getCockpitOffers, processOffer, restartOfferValidity } from './salesOffersApi'
+import { createOffer, getCockpitOffers, processOffer, restartOfferValidity, searchOffersClients } from './salesOffersApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -109,6 +109,24 @@ describe('sales offer mutation contracts', () => {
         from: '2026-08-01',
         to: '2026-08-19',
       },
+    })
+  })
+})
+
+describe('sales offer client search', () => {
+  beforeEach(() => {
+    apiRequestMock.mockReset()
+  })
+
+  it('searches real clients through the offer-create facade', async () => {
+    apiRequestMock.mockResolvedValueOnce([{ FullName: 'ТОВ "АГРО"', NetUid: 'client-1' }])
+
+    await expect(searchOffersClients(' тов ')).resolves.toEqual([
+      { FullName: 'ТОВ "АГРО"', NetUid: 'client-1' },
+    ])
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/sales-ukraine/offers/create/search', {
+      query: { limit: 50, offset: 0, value: 'тов' },
     })
   })
 })
