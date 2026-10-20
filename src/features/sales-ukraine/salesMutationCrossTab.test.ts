@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { SalesPendingMutationLease } from './pendingSalesMutationRegistry'
 import {
   installSalesMutationStorageHarness,
   type SalesMutationStorageHarness,
@@ -105,7 +106,7 @@ describe('cross-tab sales mutation fencing', () => {
     )).rejects.toBeInstanceOf(tabA.SalesPendingMutationFenceError)
   }, MODULE_ISOLATION_TEST_TIMEOUT_MS)
 
-  it('does not let two distinct queued operation IDs send under Web Locks', async () => {
+  it('serializes two distinct queued operation IDs under Web Locks', async () => {
     harness = installSalesMutationStorageHarness('tab-a')
     const tabA = await importRegistryForTab('tab-a')
     const tabB = await importRegistryForTab('tab-b')
@@ -114,63 +115,158 @@ describe('cross-tab sales mutation fencing', () => {
     const operationB = '32222222-2222-4222-8222-222222222222'
     const lockName = getLockName(scope)
     const releaseQueue = harness.holdWebLock(lockName)
-    let sends = 0
+    const sends: string[] = []
+    const generations: number[] = []
+    let firstSettled = false
 
     harness.selectTab('tab-a')
     const first = tabA.withSalesPendingMutationLock(scope, operationA, { operationA }, async (lease) => {
       tabA.markSalesPendingMutationSubmitted(lease)
-      sends += 1
+      sends.push(lease.operationId)
+      generations.push(lease.generation)
       tabA.resolveSalesPendingMutation(lease, 'committed')
+      firstSettled = true
     })
     harness.selectTab('tab-b')
     const second = tabB.withSalesPendingMutationLock(scope, operationB, { operationB }, async (lease) => {
+      expect(firstSettled).toBe(true)
+      expect(tabB.loadSalesPendingMutationByOperation(scope, operationA)).toBe(null)
       tabB.markSalesPendingMutationSubmitted(lease)
-      sends += 1
+      sends.push(lease.operationId)
+      generations.push(lease.generation)
       tabB.resolveSalesPendingMutation(lease, 'committed')
     })
 
     releaseQueue()
     const results = await Promise.allSettled([first, second])
 
-    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1)
-    expect(results.filter((result) => result.status === 'rejected')).toHaveLength(1)
-    expect(sends).toBe(1)
+    expect(results.map((result) => result.status)).toEqual(['fulfilled', 'fulfilled'])
+    expect(sends).toEqual([operationA, operationB])
+    expect(generations[1]).toBeGreaterThan(generations[0] ?? Number.POSITIVE_INFINITY)
+    expect(tabB.loadSalesPendingMutation(scope)).toBe(null)
   }, MODULE_ISOLATION_TEST_TIMEOUT_MS)
 
-  it('allows only one distinct operation to send with the lease fallback', async () => {
+  it('refuses a queued operation ID while the other tab left its operation unresolved', async () => {
+    harness = installSalesMutationStorageHarness('tab-a')
+    const tabA = await importRegistryForTab('tab-a')
+    const tabB = await importRegistryForTab('tab-b')
+    const scope = createScope()
+    const operationA = '23111111-1111-4111-8111-111111111111'
+    const operationB = '34222222-2222-4222-8222-222222222222'
+    const releaseQueue = harness.holdWebLock(getLockName(scope))
+    let sends = 0
+
+    harness.selectTab('tab-a')
+    const first = tabA.withSalesPendingMutationLock(scope, operationA, { operationA }, async (lease) => {
+      tabA.markSalesPendingMutationSubmitted(lease)
+      sends += 1
+      tabA.markSalesPendingMutationUnknown(lease)
+    })
+    harness.selectTab('tab-b')
+    const second = tabB.withSalesPendingMutationLock(scope, operationB, { operationB }, async (lease) => {
+      tabB.markSalesPendingMutationSubmitted(lease)
+      sends += 1
+    })
+
+    releaseQueue()
+    const [firstResult, secondResult] = await Promise.allSettled([first, second])
+
+    expect(firstResult.status).toBe('fulfilled')
+    expect(secondResult.status).toBe('rejected')
+    expect(secondResult.status === 'rejected' ? secondResult.reason : null)
+      .toBeInstanceOf(tabB.SalesPendingMutationConflictError)
+    expect(sends).toBe(1)
+    expect(tabB.loadSalesPendingMutation(scope)).toMatchObject({ operationId: operationA, phase: 'unknown' })
+  }, MODULE_ISOLATION_TEST_TIMEOUT_MS)
+
+  it.each([
+    ['Web Locks', true],
+    ['the lease fallback', false],
+  ])('still refuses a concurrent operation while another tab holds an active lease with %s', async (_label, webLocks) => {
+    harness = installSalesMutationStorageHarness('tab-a')
+
+    if (!webLocks) {
+      harness.disableWebLocks()
+    }
+
+    const tabA = await importRegistryForTab('tab-a')
+    const tabB = await importRegistryForTab('tab-b')
+    const scope = createScope()
+    const operationA = '25111111-1111-4111-8111-111111111111'
+    const operationB = '36222222-2222-4222-8222-222222222222'
+    const leaseReady = deferred<void>()
+    const finishActive = deferred<void>()
+    const concurrentCallback = vi.fn(async () => undefined)
+
+    harness.selectTab('tab-a')
+    const active = tabA.withSalesPendingMutationLock(scope, operationA, { operationA }, async (lease) => {
+      tabA.markSalesPendingMutationSubmitted(lease)
+      leaseReady.resolve()
+      await finishActive.promise
+      tabA.resolveSalesPendingMutation(lease, 'committed')
+    })
+    await leaseReady.promise
+
+    harness.selectTab('tab-b')
+    await expect(tabB.withSalesPendingMutationLock(
+      scope,
+      operationB,
+      { operationB },
+      concurrentCallback,
+    )).rejects.toBeInstanceOf(tabB.SalesPendingMutationConflictError)
+    expect(concurrentCallback).not.toHaveBeenCalled()
+
+    harness.selectTab('tab-a')
+    finishActive.resolve()
+    await active
+  }, MODULE_ISOLATION_TEST_TIMEOUT_MS)
+
+  it('never lets two distinct operations hold the fallback lease concurrently', async () => {
     harness = installSalesMutationStorageHarness('tab-a')
     harness.disableWebLocks()
     const tabA = await importRegistryForTab('tab-a')
     const tabB = await importRegistryForTab('tab-b')
     const scope = createScope()
+    const releaseWinner = deferred<void>()
+    let active = 0
+    let maxActive = 0
     let sends = 0
+    const send = async (registry: RegistryModule, lease: SalesPendingMutationLease) => {
+      registry.markSalesPendingMutationSubmitted(lease)
+      active += 1
+      maxActive = Math.max(maxActive, active)
+      sends += 1
+      await releaseWinner.promise
+      active -= 1
+      registry.resolveSalesPendingMutation(lease, 'committed')
+    }
 
     harness.selectTab('tab-a')
     const first = tabA.withSalesPendingMutationLock(
       scope,
       '41111111-1111-4111-8111-111111111111',
       { tab: 'a' },
-      async (lease) => {
-        tabA.markSalesPendingMutationSubmitted(lease)
-        sends += 1
-        tabA.resolveSalesPendingMutation(lease, 'committed')
-      },
+      (lease) => send(tabA, lease),
     )
     harness.selectTab('tab-b')
     const second = tabB.withSalesPendingMutationLock(
       scope,
       '52222222-2222-4222-8222-222222222222',
       { tab: 'b' },
-      async (lease) => {
-        tabB.markSalesPendingMutationSubmitted(lease)
-        sends += 1
-        tabB.resolveSalesPendingMutation(lease, 'committed')
-      },
+      (lease) => send(tabB, lease),
     )
 
+    const refused = await Promise.race([
+      first.then(() => null, (error: unknown) => error),
+      second.then(() => null, (error: unknown) => error),
+    ])
+    expect(refused).toMatchObject({ name: 'SalesPendingMutationConflictError' })
+
+    releaseWinner.resolve()
     const results = await Promise.allSettled([first, second])
     expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1)
     expect(sends).toBe(1)
+    expect(maxActive).toBe(1)
   }, MODULE_ISOLATION_TEST_TIMEOUT_MS)
 
   it('retains corrupt evidence, fails storage reads closed, and dispatches real cross-tab updates', async () => {

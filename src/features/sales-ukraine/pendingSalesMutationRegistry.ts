@@ -639,7 +639,8 @@ function acquireDurableLease<TPayload>(
   const control = readControl(scope)
 
   if (
-    control?.operationId !== operationId &&
+    control?.state === 'active' &&
+    control.operationId !== operationId &&
     !hasSameControlObservation(control, observedControl)
   ) {
     throw new SalesPendingMutationConflictError(
