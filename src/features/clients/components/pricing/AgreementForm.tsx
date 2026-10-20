@@ -406,7 +406,7 @@ export function AgreementForm({
       return
     }
 
-    const hasVat = organizationHasVat(organization)
+    const hasVat = organizationHasVat(organization, organizations)
 
     if (hasVat) {
       onChange({

@@ -602,7 +602,7 @@ function createAgreementDraft(
     draft.IsPayForDelivery = false
     draft.ProviderPricing = undefined
   } else {
-    const hasVat = organizationHasVat(organizations[0])
+    const hasVat = organizationHasVat(organizations[0], organizations)
     const pricingName = hasVat ? PRICING_NAME_BULK_TWO_VAT : PRICING_NAME_BULK_TWO
     const defaultPricing = pricings.find((pricing) => pricing.Name === pricingName) || pricings[0]
     draft.Pricing = defaultPricing
