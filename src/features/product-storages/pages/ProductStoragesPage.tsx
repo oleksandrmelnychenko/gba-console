@@ -1,6 +1,5 @@
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
   Badge,
   Button,
@@ -18,7 +17,6 @@ import {
   Text,
   Textarea,
   TextInput,
-  Tooltip,
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { notifications } from '@mantine/notifications'
@@ -33,6 +31,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
@@ -445,22 +444,14 @@ function useProductStoragesPageModel() {
     setSearchDraft(nextValue)
   }
 
-  function updateFromDate(nextFromDate: string) {
-    if (fromDate !== nextFromDate) {
+  function updateDateRange({ from, to }: { from: string; to: string }) {
+    if (fromDate !== from || toDate !== to) {
       closeStorageActions()
     }
 
     setPage(1)
-    setFromDate(nextFromDate)
-  }
-
-  function updateToDate(nextToDate: string) {
-    if (toDate !== nextToDate) {
-      closeStorageActions()
-    }
-
-    setPage(1)
-    setToDate(nextToDate)
+    setFromDate(from)
+    setToDate(to)
   }
 
   function updatePageSize(nextPageSize: number) {
@@ -863,11 +854,10 @@ function useProductStoragesPageModel() {
     setPreviewOpened,
     submitAction,
     toggleAvailability,
-    updateFromDate,
+    updateDateRange,
     updatePageSize,
     updatePreviewQty,
     updateSearch,
-    updateToDate,
   }
 }
 
@@ -952,11 +942,10 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     setPreviewOpened,
     submitAction,
     toggleAvailability,
-    updateFromDate,
+    updateDateRange,
     updatePageSize,
     updatePreviewQty,
     updateSearch,
-    updateToDate,
   } = model
 
   return (
@@ -964,23 +953,11 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
       <Card className="app-data-card product-storages-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-storages-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-storages-filter-row">
-            <div className="app-filter-date-range">
-              <TextInput
-                label={t('Від')}
-                max={toDate || undefined}
-                type="date"
-                value={fromDate}
-                onChange={(event) => updateFromDate(event.currentTarget.value)}
-              />
-              <TextInput
-                label={t('До')}
-                min={fromDate || undefined}
-                type="date"
-                value={toDate}
-                onChange={(event) => updateToDate(event.currentTarget.value)}
-              />
-            </div>
+            <ToolbarDateRangeFilter from={fromDate} to={toDate} onChange={updateDateRange} />
             <Select
+              className="product-storages-storage-filter"
+              classNames={{ dropdown: 'product-storages-filter-dropdown' }}
+              comboboxProps={{ width: 320, position: 'bottom-start' }}
               searchable
               allowDeselect={false}
               data={storageOptions}
@@ -988,7 +965,6 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
               label={t('Склад')}
               placeholder={isLoadingStorages ? t('Завантаження') : t('Оберіть склад')}
               value={selectedStorageNetId || null}
-              w={300}
               onChange={(value) => selectStorageNetId(value || '')}
             />
             <TextInput
@@ -996,30 +972,36 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
               label={t('Пошук')}
               placeholder={t('Код або назва товару')}
               value={searchDraft}
-              style={{ flex: '1 1 240px' }}
+              className="product-storages-search-filter"
               onChange={(event) => updateSearch(event.currentTarget.value)}
             />
             <div className="app-filter-actions">
               {canExport ? (
-                <Tooltip label={t('Експорт')}>
-                  <ActionIcon
-                    aria-label={t('Експорт')}
-                    color="gray"
-                    disabled={!selectedStorageNetId || Boolean(filterError) || isExporting}
-                    loading={isExporting}
-                    size={34}
-                    variant="light"
-                    onClick={handleExport}
-                  >
-                    <Download size={18} />
-                  </ActionIcon>
-                </Tooltip>
+                <Button
+                  className="product-storages-toolbar-action"
+                  aria-label={t('Експорт')}
+                  title={t('Експорт')}
+                  color="gray"
+                  disabled={!selectedStorageNetId || Boolean(filterError) || isExporting}
+                  loading={isExporting}
+                  variant="default"
+                  leftSection={<Download size={18} />}
+                  onClick={handleExport}
+                >
+                  <span className="product-storages-toolbar-action-label">{t('Експорт')}</span>
+                </Button>
               ) : null}
-              <Tooltip label={t('Скинути')}>
-                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                  <RotateCcw size={17} />
-                </ActionIcon>
-              </Tooltip>
+              <Button
+                className="product-storages-toolbar-action"
+                aria-label={t('Скинути')}
+                title={t('Скинути')}
+                color="gray"
+                variant="default"
+                leftSection={<RotateCcw size={17} />}
+                onClick={resetFilters}
+              >
+                <span className="product-storages-toolbar-action-label">{t('Скинути')}</span>
+              </Button>
               <Paginator
                 isLoading={isLoading || isLoadingStorages}
                 page={page}

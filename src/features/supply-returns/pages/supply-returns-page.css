@@ -58,3 +58,15 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Registry controls stay together at natural widths on laptop screens. */
+.supply-returns-page .supply-returns-filter-bar { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; overflow: visible; }
+.supply-returns-page .supply-returns-filter-bar .app-filter-fields { gap: 8px; }
+.supply-returns-page .supply-returns-filter-bar .app-filter-actions,
+.supply-returns-page .supply-returns-filter-bar .app-filter-table-toolbar-slot { flex: 0 0 auto; margin-left: 0; }
+.supply-returns-page .supply-returns-filter-bar > .mantine-Button-root { flex: 0 0 auto; }
+@media (max-width: 1050px) {
+  .supply-returns-page .supply-returns-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .supply-returns-page .supply-returns-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
+  .supply-returns-page .supply-returns-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
+}

@@ -1,3 +1,4 @@
+import { readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -38,8 +39,8 @@ it('defers the capability until catalogue opening and keeps the monthly request 
   await screen.findByRole('button', { name: 'Продажі за днями' })
   expect(getEmployeeGrossProfitCapabilities).not.toHaveBeenCalled()
   expect(getReportCatalogue).not.toHaveBeenCalled()
-  const from = (screen.getByLabelText('Від') as HTMLInputElement).value
-  const through = (screen.getByLabelText('До') as HTMLInputElement).value
+  const from = (readReportDateInput('Від') as HTMLInputElement).value
+  const through = (readReportDateInput('До') as HTMLInputElement).value
   const draftKey = 'report-workspace-draft:v1:employee-gross-profit-test-owner'
   const draft = sessionStorage.getItem(draftKey)
   fireEvent.click(screen.getByRole('button', { name: 'Каталог усіх звітів 1С' }))
@@ -61,8 +62,8 @@ it('defers the capability until catalogue opening and keeps the monthly request 
   expect(sessionStorage.getItem(draftKey)).toBe(draft)
   fireEvent.click(within(modal).getByRole('button', { name: 'Закрити прибуток на співробітника' }))
   await waitFor(() => expect(screen.queryByRole('dialog', { name: employeeGrossProfitCapability().ReportName })).toBeNull())
-  expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe(from)
-  expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe(through)
+  expect((readReportDateInput('Від') as HTMLInputElement).value).toBe(from)
+  expect((readReportDateInput('До') as HTMLInputElement).value).toBe(through)
 })
 
 it('opens the dedicated monthly report when the native numeric dataset catalogue is unavailable', async () => {

@@ -1,3 +1,4 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { PdfIcon } from '../../../shared/ui/PdfIcon'
 import {
@@ -1949,10 +1950,7 @@ function ProductStorageHistoryPanel({ product }: { product: Product }) {
     <div className="console-table-shell product-data-table-shell">
       <div className="app-filter-bar">
         <div className="app-filter-fields">
-          <div className="app-filter-date-range">
-            <TextInput label={t('З')} type="date" value={dateFrom} onChange={(event) => { setPage(1); setDateFrom(event.currentTarget.value) }} />
-            <TextInput label={t('По')} type="date" value={dateTo} onChange={(event) => { setPage(1); setDateTo(event.currentTarget.value) }} />
-          </div>
+          <ToolbarDateRangeFilter from={dateFrom} to={dateTo} onChange={({ from, to }) => { setPage(1); setDateFrom(from); setDateTo(to) }} />
           <div className="app-filter-actions">
             <Paginator
               page={page}
@@ -2174,10 +2172,7 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
     <div className="console-table-shell product-data-table-shell">
       <div className="app-filter-bar product-movement-sheet-toolbar">
         <div className="app-filter-fields product-movement-sheet-filters">
-          <div className="app-filter-date-range">
-            <TextInput label={t('З')} type="date" value={dateFrom} onChange={(event) => setDateFrom(event.currentTarget.value)} />
-            <TextInput label={t('По')} type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
-          </div>
+          <ToolbarDateRangeFilter from={dateFrom} to={dateTo} onChange={({ from, to }) => { setDateFrom(from); setDateTo(to) }} />
           <Select label={t('Тип руху')} data={movementTypeOptions.map((option) => ({ ...option, label: t(option.label) }))} value={movementType} onChange={(value) => setMovementType(value || '0')} />
           <MovementDocumentTypeFilter options={movementItemTypeOptions} value={selectedTypes} onChange={setSelectedTypes} />
           {hasSiblings ? (

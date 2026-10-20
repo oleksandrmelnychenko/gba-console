@@ -300,10 +300,10 @@ export function InvoiceRegisterTab({ canExport }: { canExport: boolean }) {
               onChange={(event) => model.applyFilters({ ...model.filterDraft, date: event.currentTarget.value })}
             />
             <div className="app-filter-actions warehouse-ukraine-filter-actions">
-              <Button variant="default" size="sm" leftSection={<RotateCcw size={16} />} onClick={model.resetFilters}>
+              <Button className="warehouse-toolbar-icon-action" aria-label={t('Скинути')} title={t('Скинути')} variant="default" size="sm" leftSection={<RotateCcw size={16} />} onClick={model.resetFilters}>
                 {t('Скинути')}
               </Button>
-              <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
+              <Button color="gray" variant="default" size="sm" className="warehouse-toolbar-icon-action" aria-label={t('Роздрукувати')} title={t('Роздрукувати')}
                 leftSection={<Download size={16} />}
                 loading={model.isDownloading}
                 disabled={!canExport || Boolean(model.filterError) || model.isLoading || model.isDownloading}

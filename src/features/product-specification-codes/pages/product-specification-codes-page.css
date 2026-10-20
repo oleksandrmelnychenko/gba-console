@@ -24,16 +24,30 @@
   box-sizing: border-box;
   display: flex;
   flex: 0 0 auto;
-  overflow-x: auto;
+  container: specification-codes-toolbar / inline-size;
+  overflow: visible;
 }
 
-.product-specification-codes-filter-row .app-filter-actions {
-  grid-column: 3;
-  margin-left: auto;
+.product-specification-codes-page .product-specification-codes-filter-row {
+  flex: 0 1 auto;
+  gap: 8px;
+  width: auto;
 }
 
-.product-specification-codes-filter-row > .app-filter-table-toolbar-slot {
-  grid-column: 4;
+.product-specification-codes-page .product-specification-codes-filter-row > .product-specification-codes-search {
+  flex: 0 0 200px;
+  width: 200px;
+}
+
+.product-specification-codes-page .product-specification-codes-filter-row .app-filter-actions {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  margin-left: 0;
+}
+
+.product-specification-codes-filter-row :is(.data-table-toolbar, .data-table-toolbar-left) {
+  flex-wrap: nowrap;
+  gap: 8px;
 }
 
 .product-specification-codes-search {
@@ -164,13 +178,37 @@
   letter-spacing: 0;
 }
 
-@media (max-width: 1200px) {
-
-  .product-specification-codes-filter-row .app-filter-actions {
-    grid-column: 3;
+@container specification-codes-toolbar (max-width: 1060px) {
+  .product-specification-codes-page .product-specification-codes-filter-row > .product-specification-codes-search {
+    flex-basis: 180px;
+    width: 180px;
   }
 
-  .product-specification-codes-filter-row > .app-filter-table-toolbar-slot {
-    grid-column: 4;
+  .product-specification-codes-filter-row .data-table-layout-control {
+    width: 36px;
+    min-width: 36px;
+    padding-inline: 0;
   }
+  .product-specification-codes-filter-row .data-table-layout-control .mantine-Button-label { display: none; }
+  .product-specification-codes-filter-row .data-table-layout-control .mantine-Button-section { margin: 0; }
+}
+
+@container specification-codes-toolbar (max-width: 420px) {
+  .product-specification-codes-page .product-specification-codes-filter-row > .product-specification-codes-search {
+    flex-basis: 160px;
+    width: 160px;
+  }
+}
+
+.product-specification-codes-page .registry-caption-action { flex: 0 0 auto; white-space: nowrap; }
+@container registry (max-width: 1050px) {
+  .product-specification-codes-page .registry-caption-action { width: 36px; min-width: 36px; padding-inline: 0; }
+  .product-specification-codes-page .registry-caption-action .mantine-Button-label { display: none; }
+  .product-specification-codes-page .registry-caption-action .mantine-Button-section { margin: 0; }
+}
+
+@container specification-codes-toolbar (max-width: 1350px) {
+  .product-specification-codes-filter-row .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .product-specification-codes-filter-row .data-table-layout-control .mantine-Button-label { display: none; }
+  .product-specification-codes-filter-row .data-table-layout-control .mantine-Button-section { margin: 0; }
 }

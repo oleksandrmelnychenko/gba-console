@@ -1,6 +1,6 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
   Badge,
   Box,
@@ -10,9 +10,7 @@ import {
   Group,
   Stack,
   Text,
-  TextInput,
-  Tooltip,
-} from '@mantine/core'
+  } from '@mantine/core'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CircleAlert, Download, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
@@ -420,28 +418,9 @@ function SupplyReturnsTableCard({ model }: { model: ReturnType<typeof useSupplyR
     <Card className="app-data-card supply-returns-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar supply-returns-filter-bar">
         <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields supply-returns-filter-row">
-          <div className="app-filter-date-range">
-            <TextInput
-              label={t('Від')}
-              max={filterDraft.to || undefined}
-              type="date"
-              value={filterDraft.from}
-              onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-            />
-            <TextInput
-              label={t('До')}
-              min={filterDraft.from || undefined}
-              type="date"
-              value={filterDraft.to}
-              onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-            />
-          </div>
+          <ToolbarDateRangeFilter from={filterDraft.from} to={filterDraft.to} onChange={({ from, to }) => { applyFilters({ ...filterDraft, from, to }) }} />
           <div className="app-filter-actions">
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetFilters}>
-                <RotateCcw size={17} />
-              </ActionIcon>
-            </Tooltip>
+            <Button variant="default" color="gray" aria-label={t('Скинути')} onClick={resetFilters} className="registry-caption-action" title={t('Скинути')} leftSection={<RotateCcw size={17} />}>{t('Скинути')}</Button>
             <Paginator
               isLoading={isLoading}
               page={page}

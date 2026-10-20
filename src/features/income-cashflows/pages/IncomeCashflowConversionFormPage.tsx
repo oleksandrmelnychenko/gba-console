@@ -18,7 +18,7 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus, Save } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -503,11 +503,10 @@ function IncomeCashflowConversionFormPageContent() {
   }
 
   return (
-    <AppDrawer
-      className="income-cashflow-conversion-form-drawer"
+    <AppModal
+      className="income-cashflow-conversion-form-drawer income-cashflow-compact-form"
       opened
-      position="right"
-      size="standard"
+      size={960}
       title={(
         <Group className="income-cashflow-client-form__titlebar" gap="sm" justify="space-between" wrap="nowrap">
           <span className="income-cashflow-client-form__title" style={{ fontFamily: 'var(--font-mono)' }}>{title}</span>
@@ -526,18 +525,6 @@ function IncomeCashflowConversionFormPageContent() {
         </Group>
       )}
       onClose={() => navigate(INCOME_CASHFLOWS_PATH)}
-      footer={
-        <Button
-          color={CREATE_ACTION_COLOR}
-          disabled={isLoading || isSaving}
-          form="income-cashflow-conversion-form"
-          leftSection={<Save size={16} />}
-          loading={isSaving}
-          type="submit"
-        >
-          {t('Зберегти')}
-        </Button>
-      }
     >
       <form className="income-cashflow-conversion-form" id="income-cashflow-conversion-form" onSubmit={handleSubmit}>
         <Stack gap="md">
@@ -582,88 +569,101 @@ function IncomeCashflowConversionFormPageContent() {
             <Text className="app-section-title" fw={600} size="sm">
               {t('Реквізити надходження')}
             </Text>
-            <SimpleGrid cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
-            <TextInput
-              disabled={isLoading || isSaving}
-              label={t('Дата')}
-              required
-              type="date"
-              value={form.date}
-              onChange={(event) => updateForm({ date: event.currentTarget.value })}
-            />
-            <TextInput
-              disabled={isLoading || isSaving}
-              label={t('Час')}
-              required
-              type="time"
-              value={form.time}
-              onChange={(event) => updateForm({ time: event.currentTarget.value })}
-            />
-            <TextInput
-              disabled={isLoading || isSaving}
-              label={t('Вхідний номер')}
-              maxLength={INCOME_CASHFLOW_TEXT_LIMITS.arrivalNumber}
-              value={form.entranceNumber}
-              onChange={(event) => updateForm({ entranceNumber: event.currentTarget.value })}
-            />
-            <Select
-              data={organizationOptions}
-              disabled={isLoading || isSaving}
-              label={t('Організація')}
-              required
-              searchable
-              value={form.organizationValue || null}
-              onChange={handleOrganizationChanged}
-            />
-            <Select
-              data={registerOptions}
-              disabled={!selectedOrganization || isLoading || isSaving}
-              label={t('Каса / рахунок')}
-              required
-              searchable
-              value={form.paymentRegisterValue || null}
-              onChange={handleRegisterChanged}
-            />
-            <Select
-              data={currencyOptions}
-              disabled={!selectedRegister || isLoading || isSaving}
-              label={t('Валюта')}
-              required
-              searchable
-              value={form.selectedCurrencyValue || null}
-              onChange={(value) => updateForm({ selectedCurrencyValue: value || '' })}
-            />
-            <NumberInput
-              allowNegative={false}
-              decimalScale={2}
-              disabled={isLoading || isSaving}
-              label={t('Сума')}
-              min={0}
-              required
-              value={form.amount}
-              onChange={handleAmountChanged}
-            />
-            <NumberInput
-              allowNegative={false}
-              decimalScale={2}
-              disabled={isLoading || isSaving}
-              label={t('Ставка ПДВ')}
-              max={100}
-              min={0}
-              value={form.vatRate}
-              onChange={handleVatRateChanged}
-            />
-            <NumberInput
-              allowNegative={false}
-              decimalScale={2}
-              disabled={isLoading || isSaving}
-              label={t('Сума ПДВ')}
-              max={form.amount}
-              min={0}
-              value={form.vatAmount}
-              onChange={(value) => updateForm({ vatAmount: toNumber(value) })}
-            />
-              <Group align="flex-end" gap="xs" wrap="nowrap">
+            <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
+              <TextInput
+                className="cashflow-field-date"
+                disabled={isLoading || isSaving}
+                label={t('Дата')}
+                required
+                type="date"
+                value={form.date}
+                onChange={(event) => updateForm({ date: event.currentTarget.value })}
+              />
+              <TextInput
+                className="cashflow-field-time"
+                disabled={isLoading || isSaving}
+                label={t('Час')}
+                required
+                type="time"
+                value={form.time}
+                onChange={(event) => updateForm({ time: event.currentTarget.value })}
+              />
+              <TextInput
+                className="cashflow-field-number"
+                disabled={isLoading || isSaving}
+                label={t('Вхідний номер')}
+                maxLength={INCOME_CASHFLOW_TEXT_LIMITS.arrivalNumber}
+                value={form.entranceNumber}
+                onChange={(event) => updateForm({ entranceNumber: event.currentTarget.value })}
+              />
+            </SimpleGrid>
+            <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
+              <Select
+                data={organizationOptions}
+                disabled={isLoading || isSaving}
+                label={t('Організація')}
+                required
+                searchable
+                value={form.organizationValue || null}
+                onChange={handleOrganizationChanged}
+              />
+              <Select
+                data={registerOptions}
+                disabled={!selectedOrganization || isLoading || isSaving}
+                label={t('Каса / рахунок')}
+                required
+                searchable
+                value={form.paymentRegisterValue || null}
+                onChange={handleRegisterChanged}
+              />
+              <Select
+                className="cashflow-field-currency"
+                data={currencyOptions}
+                disabled={!selectedRegister || isLoading || isSaving}
+                label={t('Валюта')}
+                required
+                searchable
+                value={form.selectedCurrencyValue || null}
+                onChange={(value) => updateForm({ selectedCurrencyValue: value || '' })}
+              />
+            </SimpleGrid>
+            <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
+              <NumberInput
+                className="cashflow-field-amount"
+                allowNegative={false}
+                decimalScale={2}
+                disabled={isLoading || isSaving}
+                label={t('Сума')}
+                min={0}
+                required
+                value={form.amount}
+                onChange={handleAmountChanged}
+              />
+              <NumberInput
+                className="cashflow-field-vat"
+                allowNegative={false}
+                decimalScale={2}
+                disabled={isLoading || isSaving}
+                label={t('Ставка ПДВ')}
+                max={100}
+                min={0}
+                value={form.vatRate}
+                onChange={handleVatRateChanged}
+              />
+              <NumberInput
+                className="cashflow-field-amount"
+                allowNegative={false}
+                decimalScale={2}
+                disabled={isLoading || isSaving}
+                label={t('Сума ПДВ')}
+                max={form.amount}
+                min={0}
+                value={form.vatAmount}
+                onChange={(value) => updateForm({ vatAmount: toNumber(value) })}
+              />
+            </SimpleGrid>
+            <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
+              <Group className="cashflow-field-article" align="flex-end" gap="xs" wrap="nowrap">
                 <SearchableSelect
                   data={movementOptions}
                   disabled={isLoading || isSaving}
@@ -691,13 +691,14 @@ function IncomeCashflowConversionFormPageContent() {
                   </Tooltip>
                 )}
               </Group>
-            <TextInput
-              disabled={isLoading || isSaving}
-              label={t('Призначення платежу')}
-              maxLength={INCOME_CASHFLOW_TEXT_LIMITS.paymentPurpose}
-              value={form.paymentPurpose}
-              onChange={(event) => updateForm({ paymentPurpose: event.currentTarget.value })}
-            />
+              <TextInput
+                className="cashflow-field-purpose"
+                disabled={isLoading || isSaving}
+                label={t('Призначення платежу')}
+                maxLength={INCOME_CASHFLOW_TEXT_LIMITS.paymentPurpose}
+                value={form.paymentPurpose}
+                onChange={(event) => updateForm({ paymentPurpose: event.currentTarget.value })}
+              />
             </SimpleGrid>
           </Stack>
 
@@ -732,7 +733,21 @@ function IncomeCashflowConversionFormPageContent() {
           </Stack>
         </Stack>
       </form>
-    </AppDrawer>
+      <AppModalFooter>
+        <Button color="gray" variant="default" onClick={() => navigate(INCOME_CASHFLOWS_PATH)}>{t('Скасувати')}</Button>
+
+        <Button
+          color={CREATE_ACTION_COLOR}
+          disabled={isLoading || isSaving}
+          form="income-cashflow-conversion-form"
+          leftSection={<Save size={16} />}
+          loading={isSaving}
+          type="submit"
+        >
+          {t('Зберегти')}
+        </Button>
+      </AppModalFooter>
+    </AppModal>
   )
 }
 

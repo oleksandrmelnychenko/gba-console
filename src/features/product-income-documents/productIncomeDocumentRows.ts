@@ -57,6 +57,22 @@ export function getItemProductName(item: ProductIncomeItem): string | undefined 
   return product?.NameUA || product?.Name
 }
 
+/** Return amounts are in EUR; income totals may include the original order quantity. */
+export function getIncomeReturnTotals(document: ProductIncomeDocument) {
+  const items = getActiveProductIncomeItems(document).filter((item) => item.SaleReturnItem)
+  const amounts = items.map((item) => item.SaleReturnItem?.Amount)
+  const quantities = items.map((item) => item.SaleReturnItem?.Qty ?? item.Qty)
+  return {
+    amount: amounts.length > 0 && amounts.every(isFiniteNumber)
+      ? amounts.reduce((total, amount) => total + amount, 0)
+      : undefined,
+    qty: quantities.length > 0 && quantities.every(isFiniteNumber)
+      ? quantities.reduce((total, qty) => total + qty, 0)
+      : undefined,
+    currency: 'EUR',
+  }
+}
+
 export function mapDocumentRow(document: ProductIncomeDocument): DocumentRow {
   const items = getActiveProductIncomeItems(document)
   const amount = getDocumentAmount(document)
@@ -70,15 +86,18 @@ export function mapDocumentRow(document: ProductIncomeDocument): DocumentRow {
   const saleReturnItem = items.find((item) => item.SaleReturnItem)?.SaleReturnItem
 
   if (saleReturnItem?.SaleReturn) {
+    const totals = getIncomeReturnTotals(document)
     return {
       ...baseRow,
+      amount: totals.amount,
+      currency: totals.currency,
       client: getEntityName(saleReturnItem.SaleReturn.Client),
       comment: saleReturnItem.Comment || document.Comment,
       docState: getDocumentState(documentIsActive && !items.some((item) => item.SaleReturnItem?.SaleReturn?.IsCanceled)),
       invDate: saleReturnItem.SaleReturn.FromDate,
       invNumber: saleReturnItem.SaleReturn.Number,
       organization: getEntityName(saleReturnItem.OrderItem?.Order?.Sale?.ClientAgreement?.Agreement?.Organization),
-      qty: document.TotalQty,
+      qty: totals.qty,
       specificationDate: saleReturnItem.SaleReturn.FromDate,
       type: translate('Прихідна накладна (повернення)'),
     }

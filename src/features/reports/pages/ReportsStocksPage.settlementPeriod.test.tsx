@@ -1,3 +1,4 @@
+import { readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
@@ -34,8 +35,8 @@ it('selects explicit world/family, a completed Kyiv day and exact agreement with
   fireEvent.click(screen.getByRole('button', { name: 'Відкрити Взаємороз всі.xls' }))
   expect((screen.getByRole('combobox', { name: 'Звіт' }) as HTMLInputElement).value).toBe(settlementPeriodDataset.Name)
   expect(screen.getAllByText('Взаємороз всі.xls — Взаєморозрахунки з контрагентами').length).toBeGreaterThan(0)
-  expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe(previousKyivDay(formatKyivBusinessDate()))
-  expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe(previousKyivDay(formatKyivBusinessDate()))
+  expect((readReportDateInput('Від') as HTMLInputElement).value).toBe(previousKyivDay(formatKyivBusinessDate()))
+  expect((readReportDateInput('До') as HTMLInputElement).value).toBe(previousKyivDay(formatKyivBusinessDate()))
   expect(getSettlementPeriodAgreements).not.toHaveBeenCalled()
   fireEvent.click(screen.getByRole('combobox', { name: 'База обліку договору' }))
   fireEvent.click(await screen.findByRole('option', { name: 'Fenix' }))
@@ -54,7 +55,7 @@ it('selects explicit world/family, a completed Kyiv day and exact agreement with
     'AgreementId', 'AgreementNetUid', 'CurrencyBasis', 'NativeFamily', 'SourceWorld', 'Version',
   ])
   fireEvent.click(screen.getByRole('button', { name: 'Скинути' }))
-  expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe(previousKyivDay(formatKyivBusinessDate()))
+  expect((readReportDateInput('До') as HTMLInputElement).value).toBe(previousKyivDay(formatKyivBusinessDate()))
   expect((screen.getByRole('combobox', { name: 'База обліку договору' }) as HTMLInputElement).value).toBe('')
   expect((screen.getByRole('combobox', { name: 'Тип договору' }) as HTMLInputElement).value).toBe('')
   expect(screen.queryByRole('combobox', { name: 'Договір і валюта взаєморозрахунків' })).toBeNull()

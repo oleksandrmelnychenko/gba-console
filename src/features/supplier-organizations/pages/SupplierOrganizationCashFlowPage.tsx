@@ -1,12 +1,12 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
+  Button,
   Alert,
   Select,
   SimpleGrid,
   Stack,
   Text,
-  TextInput,
   Tooltip,
 } from '@mantine/core'
 import { CircleAlert, FileDown, RefreshCw } from 'lucide-react'
@@ -359,20 +359,7 @@ function SupplierOrganizationCashFlowPageContent() {
     >
     <Stack className="supplier-cash-flow-page" gap="sm">
       <div className="app-filter-bar supplier-cash-flow-filter-bar">
-        <div className="app-filter-date-range">
-          <TextInput
-            label={t('Від')}
-            type="date"
-            value={fromDate}
-            onChange={(event) => setFromDate(event.currentTarget.value)}
-          />
-          <TextInput
-            label={t('До')}
-            type="date"
-            value={toDate}
-            onChange={(event) => setToDate(event.currentTarget.value)}
-          />
-        </div>
+        <ToolbarDateRangeFilter from={fromDate} to={toDate} onChange={({ from, to }) => { setFromDate(from); setToDate(to) }} />
         <Select
           className="supplier-cash-flow-type-filter"
           data={ACCOUNTING_TYPES.map((item) => ({ ...item, label: t(item.label) }))}
@@ -398,35 +385,37 @@ function SupplierOrganizationCashFlowPageContent() {
         <div className="app-filter-actions">
           {canExport && (
             <Tooltip label={t('Друк PDF')}>
-              <ActionIcon
+              <Button
                 aria-label={t('Друк PDF')}
                 color={CREATE_ACTION_COLOR}
                 disabled={Boolean(filterError)}
-                size={36}
-                variant="light"
+                size="sm"
+                variant="default"
                 onClick={() => {
                   setDownloadDocument(null)
                   setExportModalOpen(true)
                 }}
-              >
-                <FileDown size={17} />
-              </ActionIcon>
+
+                className="supplier-cash-flow-toolbar-caption-action" title={t('Друк PDF')} leftSection={<FileDown size={17} />}>
+                {t('Друк PDF')}
+              </Button>
             </Tooltip>
           )}
           <Tooltip label={t('Оновити')}>
-            <ActionIcon
+            <Button
               aria-label={t('Оновити')}
               color="gray"
               loading={isLoadingOrganization || isLoadingCashFlow}
-              size={36}
-              variant="light"
+              size="sm"
+              variant="default"
               onClick={() => {
                 void loadOrganization()
                 void loadCashFlow()
               }}
-            >
-              <RefreshCw size={17} />
-            </ActionIcon>
+
+              className="supplier-cash-flow-toolbar-caption-action" title={t('Оновити')} leftSection={<RefreshCw size={17} />}>
+              {t('Оновити')}
+            </Button>
           </Tooltip>
         </div>
       </div>

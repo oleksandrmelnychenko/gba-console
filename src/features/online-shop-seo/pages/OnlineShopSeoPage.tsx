@@ -1652,6 +1652,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                     <Text className="app-filter-label seo-page-command-combo-label">{t(commandSearch.label)}</Text>
                     <div className="seo-page-command-combo-control">
                       <Select
+                        classNames={{ dropdown: 'seo-toolbar-filter-dropdown' }}
                         allowDeselect={false}
                         aria-label={t(commandSearch.filterLabel || 'Шукати по')}
                         className="seo-page-command-combo-filter"

@@ -1228,3 +1228,35 @@
     flex-wrap: wrap;
   }
 }
+
+/* Keep sparse controls at natural widths; compact only when the card needs it. */
+.app-filter-bar.suppliers-filter-bar { display: flex; flex-wrap: wrap; overflow: visible; gap: 8px; }
+.app-filter-bar.suppliers-filter-bar .app-filter-actions { flex: 0 0 auto; flex-wrap: nowrap; margin-left: 0; gap: 8px; }
+.app-filter-bar.suppliers-filter-bar :is(.data-table-toolbar, .data-table-toolbar-left) { flex-wrap: nowrap; gap: 8px; }
+@container registry (max-width: 600px) {
+ .app-filter-bar.suppliers-filter-bar .app-filter-actions { flex: 0 1 auto; flex-wrap: wrap; }
+}
+
+.app-filter-bar.suppliers-filter-bar > .suppliers-filter-row { display: contents; }
+.app-filter-bar.suppliers-filter-bar .suppliers-filter-search-input { flex: 0 0 220px; width: 220px; max-width: 100%; }
+.app-filter-bar.suppliers-filter-bar .suppliers-filter-field { flex: 0 0 150px; width: 150px; }
+.app-filter-bar.suppliers-filter-bar .suppliers-filter-status { flex: 0 0 110px; width: 110px; }
+.suppliers-filter-dropdown { background: var(--mantine-color-white); padding: 4px !important; }
+.suppliers-filter-dropdown :is([data-combobox-option], .suppliers-filter-dropdown-option) { font-family: var(--font-mono); font-size: 12px; line-height: 16px; padding: 7px 8px !important; }
+.suppliers-filter-dropdown :is([data-combobox-option], .suppliers-filter-dropdown-option):is(:hover, [data-combobox-selected], [aria-selected='true']) { background: var(--mantine-color-gray-1); }
+@container registry (max-width: 1250px) {
+ .app-filter-bar.suppliers-filter-bar .suppliers-filter-search-input { flex-basis: 170px; width: 170px; }
+ .app-filter-bar.suppliers-filter-bar .suppliers-filter-field { flex-basis: 130px; width: 130px; }
+}
+@container registry (max-width: 1250px) {
+ .suppliers-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+ .suppliers-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
+ .suppliers-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
+}
+
+/* Captions remain visible until this toolbar needs the icon-only size. */
+@container registry (max-width: 1050px) {
+  .app-filter-bar .suppliers-toolbar-action { width: 36px; min-width: 36px; padding-inline: 0; }
+  .suppliers-toolbar-action .mantine-Button-label { display: none; }
+  .suppliers-toolbar-action .mantine-Button-section { margin: 0; }
+}

@@ -1,3 +1,4 @@
+import { changeReportPeriod, readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -57,8 +58,7 @@ describe('native report datasets in the constructor', () => {
 
   it('switches to purchase facts, keeps dates and uses only supported measures', async () => {
     const { container } = await renderReady()
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-09-01' } })
-    fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-09-03' } })
+    changeReportPeriod({ from: '2026-09-01', to: '2026-09-03' })
     fireEvent.click(screen.getByRole('button', { name: 'Продажі за договорами' }))
     await chooseDataset('Надходження товарів')
     expect(screen.queryByRole('button', { name: 'Продажі за договорами' })).toBeNull()
@@ -75,11 +75,10 @@ describe('native report datasets in the constructor', () => {
   it.each(currentStockDatasets)('clears dates, uses the snapshot preset and restores the prior period for source $DataSource', async dataset => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, ...currentStockDatasets])
     const { container } = await renderReady()
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-06-01' } })
-    fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-06-30' } })
+    changeReportPeriod({ from: '2026-06-01', to: '2026-06-30' })
     await chooseDataset(dataset.Name)
-    expect(screen.queryByLabelText('Від')).toBeNull()
-    expect(screen.queryByLabelText('До')).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull()
     expect(screen.getByText('Поточний стан на час читання даних. Історичний період не застосовується.')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Кількість за одиницями' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: getCurrentStockReport(dataset.DataSource)!.preset.name }))
@@ -89,8 +88,8 @@ describe('native report datasets in the constructor', () => {
     expect(screen.getByText(/Сервер не повернув файл поточних залишків/)).toBeTruthy()
     expect(container.querySelector('.reports-stocks-result__meta')?.textContent).toMatch(/^Поточний стан · Показників: /)
     await chooseDataset(purchaseDataset.Name)
-    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-06-01')
-    expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe('2026-06-30')
+    expect((readReportDateInput('Від') as HTMLInputElement).value).toBe('2026-06-01')
+    expect((readReportDateInput('До') as HTMLInputElement).value).toBe('2026-06-30')
   })
 
   it.each(currentStockDatasets.flatMap(dataset => dataset.Filters.map(field => ({ dataset, field }))))('uses source $dataset.DataSource native lookup and exact Id for one-character $field.Name searches', async ({ dataset, field }) => {
@@ -127,7 +126,7 @@ describe('native report datasets in the constructor', () => {
     const { container } = await renderReady()
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Мої залишки' }))
-    expect(screen.queryByLabelText('Від')).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull()
     expect((screen.getByRole('checkbox', { name: 'Умова відбору 1' }) as HTMLInputElement).checked).toBe(false)
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
@@ -146,11 +145,11 @@ describe('native report datasets in the constructor', () => {
     } }
     vi.mocked(getServerReportTemplates).mockResolvedValue([template])
     await renderReady()
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-08-01' } })
+    changeReportPeriod({ from: '2026-08-01' })
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Історична дата у залишках' }))
     expect(screen.getByText(/Поточні залишки не підтримують період або історичну дату/)).toBeTruthy()
-    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-08-01')
+    expect((readReportDateInput('Від') as HTMLInputElement).value).toBe('2026-08-01')
     expect((screen.getByRole('combobox', { name: 'Звіт' }) as HTMLInputElement).value).toBe('Продажі')
     expect(createStockReport).not.toHaveBeenCalled()
     expect(saveServerReportTemplate).not.toHaveBeenCalled()
@@ -168,7 +167,7 @@ describe('native report datasets in the constructor', () => {
     const { container } = await renderReady()
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Мій поточний зріз' }))
-    expect(screen.queryByLabelText('Від')).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull()
     expect((screen.getByRole('checkbox', { name: 'Умова відбору 1' }) as HTMLInputElement).checked).toBe(true)
     expect((screen.getByRole('checkbox', { name: 'Умова відбору 2' }) as HTMLInputElement).checked).toBe(false)
     fireEvent.submit(container.querySelector('form')!)
@@ -196,7 +195,7 @@ describe('native report datasets in the constructor', () => {
     const { container } = await renderReady()
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Мої залишки партій' }))
-    expect(screen.queryByLabelText('Від')).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull()
     expect((screen.getByRole('checkbox', { name: 'Умова відбору 3' }) as HTMLInputElement).checked).toBe(false)
     fireEvent.click(screen.getByRole('button', { name: 'Залишки партій за організаціями' }))
     fireEvent.submit(container.querySelector('form')!)
@@ -252,7 +251,7 @@ describe('native report datasets in the constructor', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Мій шаблон надходжень' }))
     expect((screen.getByRole('combobox', { name: 'Звіт' }) as HTMLInputElement).value).toBe('Надходження товарів')
-    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-09-01')
+    expect((readReportDateInput('Від') as HTMLInputElement).value).toBe('2026-09-01')
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(screen.getByRole('button', { name: 'Новий шаблон' }))
     fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
@@ -286,11 +285,11 @@ describe('native report datasets in the constructor', () => {
   it.each([1, 99])('refuses saved source %s without changing the current form', async source => {
     vi.mocked(getServerReportTemplates).mockResolvedValue([storedTemplate(source)])
     await renderReady()
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-08-01' } })
+    changeReportPeriod({ from: '2026-08-01' })
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Мій шаблон надходжень' }))
     expect(screen.getByText(/Налаштування не застосовано/)).toBeTruthy()
-    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-08-01')
+    expect((readReportDateInput('Від') as HTMLInputElement).value).toBe('2026-08-01')
     expect((screen.getByRole('combobox', { name: 'Звіт' }) as HTMLInputElement).value).toBe('Продажі')
   })
 

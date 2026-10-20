@@ -1,3 +1,4 @@
+import { changeReportPeriod, readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -153,13 +154,12 @@ describe('exact Fenix filters in the report constructor', () => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dayDataset])
     const { container } = await ready()
     fireEvent.click(screen.getByRole('button', { name: 'Відкрити ВП.xls' }))
-    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe(`${previousKyivDay(formatKyivBusinessDate()).slice(0, 7)}-01`)
-    expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe(previousKyivDay(formatKyivBusinessDate()))
+    expect((readReportDateInput('Від') as HTMLInputElement).value).toBe(`${previousKyivDay(formatKyivBusinessDate()).slice(0, 7)}-01`)
+    expect((readReportDateInput('До') as HTMLInputElement).value).toBe(previousKyivDay(formatKyivBusinessDate()))
     expect((screen.getByRole('checkbox', { name: 'Товар без послуг (Fenix)' }) as HTMLInputElement).checked).toBe(true)
     expect((screen.getByRole('checkbox', { name: 'Організації зі збереженого налаштування 1С' }) as HTMLInputElement).checked).toBe(true)
     expect((screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }) as HTMLInputElement).checked).toBe(true)
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-09-01' } })
-    fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-09-30' } })
+    changeReportPeriod({ from: '2026-09-01', to: '2026-09-30' })
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({
@@ -221,8 +221,7 @@ describe('exact Fenix filters in the report constructor', () => {
     const { container } = await ready()
     fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
     fireEvent.click(await screen.findByRole('option', { name: dayDataset.Name }))
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-07-01' } })
-    fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-07-31' } })
+    changeReportPeriod({ from: '2026-07-01', to: '2026-07-31' })
     fireEvent.click(screen.getByRole('checkbox', { name: 'Товар без послуг (Fenix)' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Організації зі збереженого налаштування 1С' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }))
@@ -236,7 +235,7 @@ describe('exact Fenix filters in the report constructor', () => {
     expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(true)
     fireEvent.submit(container.querySelector('form')!)
     expect(createStockReport).toHaveBeenCalledOnce()
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-07-31' } })
+    changeReportPeriod({ from: '2026-07-31' })
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(2))
     expect(vi.mocked(createStockReport).mock.calls[1][0]).toMatchObject({
@@ -305,8 +304,7 @@ describe('exact Fenix filters in the report constructor', () => {
     expect((screen.getByRole('combobox', { name: 'Розрахунок за постачальниками' }) as HTMLInputElement).value)
       .toBe('Продажі мінус повернення')
     expect(screen.getAllByText(/Недоступні собівартість і прибуток залишаються порожніми, зокрема у підсумках/).length).toBeGreaterThan(0)
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-07-01' } })
-    fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-07-31' } })
+    changeReportPeriod({ from: '2026-07-01', to: '2026-07-31' })
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     const submitted = vi.mocked(createStockReport).mock.calls[0][0]

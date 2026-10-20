@@ -1,6 +1,6 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
   Button,
   Badge,
@@ -10,8 +10,7 @@ import {
   Stack,
   Text,
   TextInput,
-  Tooltip,
-} from '@mantine/core'
+  } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CircleAlert, CreditCard, CreditCard as CreditCardIcon, Eye as EyeIcon, Pencil, Plus, RotateCcw, Search, SquarePen as SquarePenIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -194,32 +193,7 @@ export function ConsumableOrdersPage() {
     <Stack className="consumable-orders-page console-table-page" gap={6}>
       <div className="console-table-shell">
         <div className="app-filter-bar consumable-orders-command-bar">
-          <div className="app-filter-date-range">
-            <TextInput
-              className="consumable-orders-date-input"
-              label={t('Від')}
-              type="date"
-              value={fromDate}
-              onChange={(event) => {
-                setFromDate(event.currentTarget.value)
-                setPage(1)
-                setOrders([])
-                setTotalOrders(undefined)
-              }}
-            />
-            <TextInput
-              className="consumable-orders-date-input"
-              label={t('До')}
-              type="date"
-              value={toDate}
-              onChange={(event) => {
-                setToDate(event.currentTarget.value)
-                setPage(1)
-                setOrders([])
-                setTotalOrders(undefined)
-              }}
-            />
-          </div>
+          <ToolbarDateRangeFilter from={fromDate} to={toDate} onChange={({ from, to }) => { setFromDate(from); setToDate(to); setPage(1); setOrders([]); setTotalOrders(undefined) }} />
 
           <TextInput
             className="consumable-orders-search-input"
@@ -235,18 +209,13 @@ export function ConsumableOrdersPage() {
             }}
           />
           <div className="app-filter-actions consumable-orders-command-actions">
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon
+            <Button
                 aria-label={t('Скинути')}
                 color="gray"
                 disabled={!hasActiveFilters}
-                size={34}
-                variant="light"
+                variant="default"
                 onClick={resetFilters}
-              >
-                <RotateCcw size={17} />
-              </ActionIcon>
-            </Tooltip>
+               className="registry-caption-action" title={t('Скинути')} leftSection={<RotateCcw size={17} />}>{t('Скинути')}</Button>
             <Paginator
               isLoading={isLoading}
               page={page}

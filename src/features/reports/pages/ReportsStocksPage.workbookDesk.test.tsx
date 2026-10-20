@@ -1,3 +1,4 @@
+import { changeReportPeriod, openReportPeriod, readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
@@ -54,7 +55,7 @@ beforeEach(() => {
 })
 
 const page = () => <MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>
-const dateInput = (label: string) => screen.getByLabelText(label) as HTMLInputElement
+const dateInput = readReportDateInput
 const workbookDataSources: Readonly<Record<string, number>> = {
   'ВП.xls': 35, 'ВП по постачальниках.xls': 38, 'Впарювання.xls': 39,
   'Ведомость по денежным средствам.xls': 40, 'Взаємороз всі.xls': 41, 'ДБіторка.xls': 41,
@@ -95,7 +96,7 @@ it('shows the table with its row count and turns Excel and PDF into direct downl
   expect(excel.getAttribute('href')).toContain('/Data/reports/day.xlsx')
   expect(excel.getAttribute('download')).toMatch(/^ВП \d\d\.\d\d\.\d{4}-\d\d\.\d\d\.\d{4}\.xlsx$/)
   expect(screen.getByRole('link', { name: 'Завантажити PDF' }).getAttribute('download')).toMatch(/\.pdf$/)
-  fireEvent.change(dateInput('Від'), { target: { value: dateInput('До').value } })
+  changeReportPeriod({ from: dateInput('До').value })
   await waitFor(() => expect(screen.queryByRole('region', { name: 'Таблиця попереднього перегляду' })).toBeNull())
   expect(screen.getByText('Налаштування змінено')).toBeTruthy()
   expect(screen.getByRole('button', { name: 'Сформувати Excel' })).toBeTruthy()
@@ -114,10 +115,14 @@ it('forms a file with the request of the former «Сформувати» and ope
 it('says why the actions are blocked and points the buttons at that reason', async () => {
   await openDayWorkbook()
   const yesterday = previousKyivDay(formatKyivBusinessDate())
-  fireEvent.change(dateInput('До'), { target: { value: previousKyivDay(yesterday) } })
-  fireEvent.change(dateInput('Від'), { target: { value: yesterday } })
+  const period = openReportPeriod()
+  fireEvent.change(within(period).getByLabelText('До'), { target: { value: previousKyivDay(yesterday) } })
+  fireEvent.change(within(period).getByLabelText('Від'), { target: { value: yesterday } })
+  expect(within(period).getByRole('button', { name: 'Застосувати' }).hasAttribute('disabled')).toBe(true)
+  expect(within(period).getByRole('alert').textContent).toContain('Дата «Від» має бути не пізніше дати «До»')
+  fireEvent.click(within(period).getByRole('button', { name: 'Скасувати' }))
+  changeReportPeriod({ from: '' })
   await waitFor(() => expect(document.getElementById('report-constructor-blocked-reason')?.textContent).toMatch(/період/))
-  expect(screen.getByText('Дата початку не може бути пізніше дати завершення')).toBeTruthy()
   for (const name of ['Показати на екрані', 'Сформувати Excel', 'Сформувати PDF']) {
     const button = screen.getByRole('button', { name }) as HTMLButtonElement
     expect(button.disabled).toBe(true)
@@ -144,7 +149,7 @@ it('shows what is happening while the report is formed and the server reason whe
 it('keeps the report list beside the open report instead of hiding the report behind «Усі звіти»', async () => {
   await openDayWorkbook()
   const day = previousKyivDay(formatKyivBusinessDate())
-  fireEvent.change(dateInput('Від'), { target: { value: day } })
+  changeReportPeriod({ from: day })
   const switcher = screen.getByRole('navigation', { name: 'Звіти' })
   expect(within(switcher).getAllByRole('button', { name: /^Відкрити / })).toHaveLength(6)
   expect(within(switcher).getByRole('button', { name: 'Відкрити ВП.xls' }).getAttribute('aria-current')).toBe('true')
@@ -184,7 +189,7 @@ it('opens reports immediately while an earlier draft remains an optional recover
   auth.owner = 'background-draft-owner'
   const first = render(page())
   await findOpenedDayWorkbook()
-  fireEvent.change(dateInput('Від'), { target: { value: '2026-09-02' } })
+  changeReportPeriod({ from: '2026-09-02' })
   first.unmount()
   render(page())
   await findOpenedDayWorkbook()
@@ -206,7 +211,7 @@ it('keeps an earlier draft untouched and recoverable across visits that only ope
   await findOpenedDayWorkbook()
   expect(sessionStorage.getItem(key)).toBeNull()
   expect((screen.getByRole('button', { name: 'Чернетка' }) as HTMLButtonElement).disabled).toBe(true)
-  fireEvent.change(dateInput('Від'), { target: { value: '2026-09-02' } })
+  changeReportPeriod({ from: '2026-09-02' })
   await waitFor(() => expect(sessionStorage.getItem(key)).not.toBeNull())
   const stored = sessionStorage.getItem(key)
   first.unmount()

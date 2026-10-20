@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Badge, Button, Group, Loader, Pagination, Select, Stack, Table, Text, TextInput } from '@mantine/core'
+import { Alert, Badge, Button, Group, Loader, Pagination, Select, Stack, Table, Text, TextInput } from '@mantine/core'
 import { ArrowRight, ChevronRight, RotateCcw, Search } from 'lucide-react'
 import { DocumentDetailMetric, DocumentDetailSummary } from '../../../shared/ui/document-detail/DocumentDetail'
 import { bug1274ReportTitle } from '../data/bug1274WorkbookGuide'
@@ -208,12 +208,12 @@ export function ReportCataloguePanel({ onOpen, onOpenDebtToSalesRatio, onOpenCol
       <div className="report-catalogue__list">
       <div className="app-filter-bar report-catalogue__filters">
         <TextInput label={t('Пошук звіту')} placeholder={t('Назва звіту')} leftSection={<Search size={16} />} value={search} onChange={event => { setSearch(event.currentTarget.value); setPage(1) }} />
-        <Select label={t('Тип звіту')} placeholder={t('Усі типи')} clearable value={kind} data={Object.entries(kindLabels).map(([value, label]) => ({ value, label: t(label) }))} onChange={value => { setKind(value); setPage(1) }} />
-        <Select label={t('База')} placeholder={t('Усі бази')} clearable value={world} data={[...new Set(catalogue.Reports.flatMap(report => report.Sources.map(source => source.World)))].map(value => ({ value, label: worldLabel(value) }))} onChange={value => { setWorld(value); setPage(1) }} />
-        <Select label={t('Стан перенесення')} placeholder={t('Усі стани')} clearable value={status} data={Object.entries(MIGRATION_STATUS_LABELS).map(([value, label]) => ({ value, label: t(label) }))} onChange={value => { setStatus(value); setPage(1) }} />
-        <Select label={t('Стан залежностей')} placeholder={t('Усі залежності')} clearable value={dependency} data={Object.entries(DEPENDENCY_STATUS_LABELS).map(([value, label]) => ({ value, label: t(label) }))} onChange={value => { setDependency(value); setPage(1) }} />
-        <ActionIcon size={36} variant="light" color="gray" aria-label={t('Скинути фільтри')} title={t('Скинути фільтри')}
-          onClick={() => { setSearch(''); setKind(null); setWorld(null); setStatus(null); setDependency(null); setPage(1) }}><RotateCcw size={16} /></ActionIcon>
+        <Select classNames={{ dropdown: 'reports-toolbar-dropdown' }} label={t('Тип звіту')} placeholder={t('Усі типи')} clearable value={kind} data={Object.entries(kindLabels).map(([value, label]) => ({ value, label: t(label) }))} onChange={value => { setKind(value); setPage(1) }} />
+        <Select classNames={{ dropdown: 'reports-toolbar-dropdown' }} label={t('База')} placeholder={t('Усі бази')} clearable value={world} data={[...new Set(catalogue.Reports.flatMap(report => report.Sources.map(source => source.World)))].map(value => ({ value, label: worldLabel(value) }))} onChange={value => { setWorld(value); setPage(1) }} />
+        <Select classNames={{ dropdown: 'reports-toolbar-dropdown' }} label={t('Стан перенесення')} placeholder={t('Усі стани')} clearable value={status} data={Object.entries(MIGRATION_STATUS_LABELS).map(([value, label]) => ({ value, label: t(label) }))} onChange={value => { setStatus(value); setPage(1) }} />
+        <Select classNames={{ dropdown: 'reports-toolbar-dropdown' }} label={t('Стан залежностей')} placeholder={t('Усі залежності')} clearable value={dependency} data={Object.entries(DEPENDENCY_STATUS_LABELS).map(([value, label]) => ({ value, label: t(label) }))} onChange={value => { setDependency(value); setPage(1) }} />
+        <Button aria-label={t('Скинути фільтри')} title={t('Скинути фільтри')}
+          onClick={() => { setSearch(''); setKind(null); setWorld(null); setStatus(null); setDependency(null); setPage(1) }} className="reports-toolbar-action" variant="default" leftSection={<RotateCcw size={16} />}>{t('Скинути')}</Button>
       </div>
       <div className="report-catalogue__results">
       <Text size="xs" c="dimmed">{t('У вибірці: {entries} позицій · {implementations} реалізацій. Загальні показники вище охоплюють усі бази.', { entries: filtered.length, implementations: visibleSourceCount })}</Text>
@@ -363,7 +363,7 @@ function ReportLaunchActions({ report, catalogue, options, disabled, unavailable
   const label = (option: LaunchOption) => `${worldLabel(option.choice.world)} · ${t(option.label)}`
   if (!options.length) return <Text size="xs" c="dimmed">{t(unavailable)}</Text>
   return <Stack className="report-catalogue__launch" gap={6} role="group" aria-label={t('Відкрити звіт: {name}', { name: report.Title })} style={{ width: '100%', maxWidth: 440 }}>
-    {options.length > 1 ? <Select label={t('Варіант для конструктора')} aria-label={t('Варіант звіту: {name}', { name: report.Title })}
+    {options.length > 1 ? <Select classNames={{ dropdown: 'reports-toolbar-dropdown' }} label={t('Варіант для конструктора')} aria-label={t('Варіант звіту: {name}', { name: report.Title })}
       placeholder={t('Оберіть базу та варіант')} disabled={disabled} value={selected ? launchIdentity(selected.choice) : null}
       data={options.map(option => ({ value: launchIdentity(option.choice), label: label(option) }))}
       onChange={value => { setSelectedKey(value); setRejectedKey(null) }} /> : <Text size="sm">{label(options[0])}</Text>}

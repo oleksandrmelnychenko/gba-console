@@ -1,3 +1,4 @@
+import { changeReportPeriod } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -90,7 +91,7 @@ describe('constructor result and export request identity', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Продажі за днями' }))
     fireEvent.submit(container.querySelector('form')!)
     await screen.findByRole('dialog', { name: 'Файли сформованого звіту' })
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-06-01' } })
+    changeReportPeriod({ from: '2026-06-01' })
     expect(screen.queryByRole('dialog', { name: 'Файли сформованого звіту' })).toBeNull()
     expect(screen.queryByRole('heading', { name: 'Результат' })).toBeNull()
   })
@@ -104,7 +105,7 @@ describe('constructor result and export request identity', () => {
     expect(vi.mocked(previewStockReport)).toHaveBeenCalledOnce()
     expect(vi.mocked(createStockReport)).not.toHaveBeenCalled()
     expect(screen.queryByRole('dialog', { name: 'Файли сформованого звіту' })).toBeNull()
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-06-01' } })
+    changeReportPeriod({ from: '2026-06-01' })
     expect(screen.queryByRole('region', { name: 'Таблиця попереднього перегляду' })).toBeNull()
   })
 

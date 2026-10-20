@@ -1,5 +1,4 @@
 import {
-  ActionIcon,
   Alert,
   Button,
   Group,
@@ -192,27 +191,33 @@ function CompanyCarsPageContent() {
           />
           <div className="app-filter-actions company-cars-filter-actions">
             <Tooltip label={t('Скинути')}>
-              <ActionIcon
+              <Button
                 aria-label={t('Скинути')}
                 color="gray"
-                size={34}
-                variant="light"
+                variant="default"
                 onClick={() => setSearchValue('')}
+
+                className="company-cars-toolbar-action"
+                title={t('Скинути')}
+                leftSection={<RotateCcw size={17} />}
               >
-                <RotateCcw size={17} />
-              </ActionIcon>
+                {t('Скинути')}
+              </Button>
             </Tooltip>
             <Tooltip label={t('Оновити')}>
-              <ActionIcon
+              <Button
                 aria-label={t('Оновити')}
                 color="gray"
                 loading={isLoading}
-                size={34}
-                variant="light"
+                variant="default"
                 onClick={reload}
+
+                className="company-cars-toolbar-action"
+                title={t('Оновити')}
+                leftSection={<RefreshCw size={18} />}
               >
-                <RefreshCw size={18} />
-              </ActionIcon>
+                {t('Оновити')}
+              </Button>
             </Tooltip>
           </div>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />

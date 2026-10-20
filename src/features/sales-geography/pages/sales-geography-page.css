@@ -273,3 +273,12 @@
     transition: none;
   }
 }
+
+.sales-geography-filter-card .sales-geography-toolbar { display: flex; flex-wrap: wrap; overflow: visible; }
+.sales-geography-toolbar .sales-geography-actions { flex: 0 0 auto; margin-left: 0; }
+
+@container registry (max-width: 850px) {
+ .app-filter-bar .sales-geography-toolbar-caption-action { width: 36px; min-width: 36px; padding-inline: 0; }
+ .sales-geography-toolbar-caption-action .mantine-Button-label { display: none; }
+ .sales-geography-toolbar-caption-action .mantine-Button-section { margin: 0; }
+}

@@ -1,3 +1,4 @@
+import { readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -30,7 +31,7 @@ async function openForm(kind: PlannedCashKind) {
   render(<Providers><ReportsStocksPage consoleScope={false} constructorMode /></Providers>)
   await screen.findByRole('button', { name: 'Продажі за днями' }); expect(getPlannedCashCapabilities).not.toHaveBeenCalled(); expect(getReportCatalogue).not.toHaveBeenCalled()
   const draftKey = `report-workspace-draft:v1:${PLANNED_CASH_TEST_CALLER}`, draft = sessionStorage.getItem(draftKey)
-  const from = (screen.getByLabelText('Від') as HTMLInputElement).value
+  const from = (readReportDateInput('Від') as HTMLInputElement).value
   fireEvent.click(await screen.findByRole('button', { name: 'Каталог усіх звітів 1С' }))
   // A cold catalogue opening loads its lazy module before the capability action exists.
   const button = await screen.findByRole('button', { name: 'Відкрити звіт планування коштів' }); await waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(false)); fireEvent.click(button)
@@ -44,7 +45,7 @@ it.each(plannedCashCalendarKinds)('opens %s only on demand and keeps explicit pe
   expect(within(modal).queryByRole('combobox')).toBeNull(); fireEvent.click(within(modal).getByRole('button', { name: 'Переглянути' }))
   await within(modal).findByRole('region', { name: 'Результат планування коштів' }); expect(createStockReport).not.toHaveBeenCalled(); expect(sessionStorage.getItem(draftKey)).toBe(draft)
   fireEvent.click(within(modal).getByRole('button', { name: 'Закрити звіт планування коштів' })); await waitFor(() => expect(screen.queryByRole('dialog', { name: plannedCashCapability(kind).ReportName })).toBeNull())
-  expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe(from); expect(getPlannedCashCapabilities).toHaveBeenCalledWith(kind, PLANNED_CASH_TEST_CALLER, expect.any(AbortSignal))
+  expect((readReportDateInput('Від') as HTMLInputElement).value).toBe(from); expect(getPlannedCashCapabilities).toHaveBeenCalledWith(kind, PLANNED_CASH_TEST_CALLER, expect.any(AbortSignal))
 })
 it.each(plannedCashDdsKinds)('opens %s dates with a real pending scenario notice and never substitutes native payments', async kind => {
   const { modal } = await openForm(kind)

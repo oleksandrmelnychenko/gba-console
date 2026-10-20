@@ -1,5 +1,4 @@
 import {
-  ActionIcon,
   Alert,
   Box,
   Button,
@@ -261,39 +260,27 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
             leftSection={<Search size={16} />}
             placeholder={t('Прізвище')}
             value={searchDraft}
-            style={{ flex: '1 1 auto', minWidth: 180 }}
             onChange={(event) => updateSearchDraft(event.currentTarget.value)}
           />
           <div className="app-filter-actions">
             <Tooltip label={t('Скинути')}>
-              <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetSearch}>
-                <RotateCcw size={17} />
-              </ActionIcon>
+              <Button aria-label={t('Скинути')} onClick={resetSearch} className="finance-toolbar-action" variant="default" leftSection={<RotateCcw size={17} />} title={t('Скинути')}>{t('Скинути')}</Button>
             </Tooltip>
             {canExport && (
               <Tooltip label={t('Завантажити')}>
-                <ActionIcon
+                <Button
                   aria-label={t('Завантажити')}
-                  variant="default"
-                  size={34}
                   loading={isDownloading}
                   onClick={exportDocument}
-                >
-                  <Download size={17} />
-                </ActionIcon>
+                 className="finance-toolbar-action" variant="default" leftSection={<Download size={17} />} title={t('Завантажити')}>{t('Завантажити')}</Button>
               </Tooltip>
             )}
             <Tooltip label={t('Оновити')}>
-              <ActionIcon
+              <Button
                 aria-label={t('Оновити')}
-                color="gray"
                 loading={isLoading}
-                size={34}
-                variant="light"
                 onClick={reload}
-              >
-                <RefreshCw size={17} />
-              </ActionIcon>
+               className="finance-toolbar-action" variant="default" leftSection={<RefreshCw size={17} />} title={t('Оновити')}>{t('Оновити')}</Button>
             </Tooltip>
           </div>
           {canCreate && (

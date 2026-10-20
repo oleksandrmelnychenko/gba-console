@@ -1,5 +1,5 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import {
-  ActionIcon,
   Badge,
   Alert,
   Button,
@@ -256,22 +256,7 @@ function SupplierOrganizationsPageContent() {
     <Stack className="supplier-organizations-page console-table-page" gap={6}>
       <div className="console-table-shell">
         <div className="app-filter-bar supplier-organizations-command-bar">
-          <div className="app-filter-date-range">
-            <TextInput
-              className="supplier-organizations-date-input"
-              label={t('Від')}
-              type="date"
-              value={dateFrom}
-              onChange={(event) => updateDateFrom(event.currentTarget.value)}
-            />
-            <TextInput
-              className="supplier-organizations-date-input"
-              label={t('До')}
-              type="date"
-              value={dateTo}
-              onChange={(event) => updateDateTo(event.currentTarget.value)}
-            />
-          </div>
+          <ToolbarDateRangeFilter from={dateFrom} to={dateTo} onChange={({ from, to }) => { updateDateFrom(from); updateDateTo(to) }} />
 
           <TextInput
             className="supplier-organizations-search-input"
@@ -283,30 +268,30 @@ function SupplierOrganizationsPageContent() {
           />
           <div className="app-filter-actions supplier-organizations-command-actions">
             <Tooltip label={t('Скинути')}>
-              <ActionIcon
+              <Button
                 aria-label={t('Скинути')}
                 color="gray"
                 disabled={!hasActiveFilters}
-                size={34}
-                variant="light"
+                variant="default"
                 onClick={resetFilters}
-              >
-                <RotateCcw size={17} />
-              </ActionIcon>
+
+                className="supplier-organizations-toolbar-caption-action" title={t('Скинути')} leftSection={<RotateCcw size={17} />}>
+                {t('Скинути')}
+              </Button>
             </Tooltip>
             {canExport && (
               <Tooltip label={t('Друк')}>
-                <ActionIcon
+                <Button
                   aria-label={t('Друк')}
                   color="gray"
                   disabled={isExporting}
                   loading={isExporting}
-                  size={34}
-                  variant="light"
+                  variant="default"
                   onClick={exportList}
-                >
-                  <Download size={18} />
-                </ActionIcon>
+
+                  className="supplier-organizations-toolbar-caption-action" title={t('Друк')} leftSection={<Download size={18} />}>
+                  {t('Друк')}
+                </Button>
               </Tooltip>
             )}
             <Paginator

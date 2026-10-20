@@ -2,6 +2,7 @@ import { Alert, Badge, createTheme, Drawer, Loader, Modal, Tooltip, parseThemeCo
 import './alerts.css'
 import './table-chips.css'
 import './static-tables.css'
+import './comboboxes.css'
 import { IosLoader } from '../ui/IosLoader'
 
 const violet: MantineColorsTuple = [

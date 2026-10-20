@@ -1,6 +1,6 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
   Box,
   Button,
@@ -8,8 +8,6 @@ import {
   Group,
   Stack,
   Text,
-  TextInput,
-  Tooltip,
 } from '@mantine/core'
 import { AppModal } from '../../../shared/ui/AppModal'
 import {
@@ -433,27 +431,11 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
       <Card className="app-data-card product-capitalizations-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-capitalizations-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-capitalizations-filter-row">
-            <div className="app-filter-date-range">
-              <TextInput
-                label={t('Від')}
-                type="date"
-                value={activeFilters.from}
-                onChange={(event) => updateFilters({ from: event.currentTarget.value })}
-              />
-              <TextInput
-                label={t('До')}
-                type="date"
-                value={activeFilters.to}
-                onChange={(event) => updateFilters({ to: event.currentTarget.value })}
-              />
-            </div>
-            <div className="product-capitalizations-filter-spacer" />
+            <ToolbarDateRangeFilter from={activeFilters.from} to={activeFilters.to} onChange={({ from, to }) => { updateFilters({ from, to }) }} />
             <div className="app-filter-actions">
-              <Tooltip label={t('Скинути')}>
-                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                  <RotateCcw size={17} />
-                </ActionIcon>
-              </Tooltip>
+              <Button color="gray" variant="default" leftSection={<RotateCcw size={17} />} onClick={resetFilters}>
+                {t('Скинути')}
+              </Button>
               <Paginator
                 hasNext={canMoveForward}
                 isLoading={isLoading}
@@ -695,7 +677,7 @@ function useProductCapitalizationColumns(
         header: 'Валюта',
         width: 92,
         minWidth: 84,
-        cell: () => <TableChip tone="neutral" value={'EUR'} />,
+        cell: () => <TableChip tone="source" value="EUR" />,
       },
       {
         id: 'storage',

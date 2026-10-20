@@ -18,7 +18,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
-import { AppModal } from "../../../shared/ui/AppModal"
+import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import { Check, CircleAlert, Eye, FileChartColumn, Plus, Search, Trash2 } from 'lucide-react'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
@@ -881,7 +881,17 @@ export function NewUkraineSaleReturnPage() {
 
           <section className="new-sale-return-create-filters" aria-label={t('Пошук продажів')}>
             <div className="new-sale-return-create-fields">
+              <ToolbarDateRangeFilter
+                from={saleFromDate}
+                to={saleToDate}
+                onChange={({ from, to }) => {
+                  setSaleFromDate(from)
+                  setSaleToDate(to)
+                }}
+              />
               <Select
+                className="new-sale-return-create-organization"
+                comboboxProps={{ classNames: { dropdown: 'new-sale-return-create-dropdown' } }}
                 clearable
                 data={organizations.map((organization) => ({
                   label: getEntityName(organization) || t('Без назви'),
@@ -893,6 +903,8 @@ export function NewUkraineSaleReturnPage() {
                 value={organizationId}
               />
               <Select
+                className="new-sale-return-create-client"
+                comboboxProps={{ classNames: { dropdown: 'new-sale-return-create-dropdown' } }}
                 clearable
                 data={clientOptions.map((client) => ({
                   label: getClientOptionLabel(client),
@@ -905,9 +917,7 @@ export function NewUkraineSaleReturnPage() {
                 searchValue={clientSearch}
                 value={clientId}
               />
-              <TextInput placeholder={t('Пошук за артикулом')} leftSection={<Search size={16} />} label={t('Артикул')} onChange={(event) => setSaleSearch(event.currentTarget.value)} value={saleSearch} />
-              <TextInput label={t('З дати')} onChange={(event) => setSaleFromDate(event.currentTarget.value)} type="date" value={saleFromDate} />
-              <TextInput label={t('По дату')} onChange={(event) => setSaleToDate(event.currentTarget.value)} type="date" value={saleToDate} />
+              <TextInput className="new-sale-return-create-search" placeholder={t('Пошук за артикулом')} leftSection={<Search size={16} />} label={t('Артикул')} onChange={(event) => setSaleSearch(event.currentTarget.value)} value={saleSearch} />
             </div>
           </section>
           <section className="new-sale-return-create-results" aria-label={t('Продажі для повернення')}>
@@ -1104,17 +1114,21 @@ export function NewUkraineSaleReturnPage() {
         onClose={() => setDownloadModalOpened(false)}
       />
 
-      <AppModal opened={Boolean(cancelCandidate)} onClose={() => setCancelCandidate(null)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Скасувати повернення')}</span>}>
-        <Stack gap="md">
-          <Text>{t('Скасувати повернення')} {cancelCandidate?.Number}?</Text>
-          <Group justify="flex-end">
+      <AppModal className="new-sale-return-cancel-modal" size={420} opened={Boolean(cancelCandidate)} onClose={() => setCancelCandidate(null)} title={t('Скасувати повернення')}>
+        <Stack gap={12}>
+          <Group gap={6} className="new-sale-return-cancel-message">
+            <Text>{t('Скасувати повернення')}</Text>
+            <TableChip tone="document" value={cancelCandidate?.Number} />
+            <Text>?</Text>
+          </Group>
+          <AppModalFooter>
             <Button variant="default" onClick={() => setCancelCandidate(null)}>
               {t('Ні')}
             </Button>
             <Button color="red" loading={isCanceling} onClick={() => void confirmCancel()}>
               {t('Так')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </AppModal>
 
@@ -1364,7 +1378,7 @@ function ReturnAmountCell({ saleReturn }: { saleReturn: SalesReturn }) {
   return (
     <span className="new-sale-return-amount-cell">
       <strong className="app-money">{formatMoney(saleReturn.TotalAmountLocal)}</strong>
-      <small className="app-money-meta">{currency}</small>
+      <TableChip tone="source" value={currency} />
     </span>
   )
 }

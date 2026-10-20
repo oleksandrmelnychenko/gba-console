@@ -1,0 +1,209 @@
+.income-cashflow-view__sheet-title {
+  flex: 1;
+  min-width: 0;
+  margin-right: 10px;
+}
+
+.income-cashflow-view__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  font-family: var(--font-mono);
+}
+
+.income-cashflow-view__header .mantine-Button-root {
+  flex: 0 0 auto;
+  height: 32px;
+  font: 500 12px var(--font-mono);
+}
+
+.income-cashflow-view {
+  width: 100%;
+  min-width: 0;
+}
+
+.income-cashflow-view .document-detail-summary {
+  border: 0;
+  border-radius: 0;
+  grid-template-columns: minmax(220px, 1fr) auto;
+}
+
+.income-cashflow-view .document-detail-summary__metrics {
+  align-items: flex-start;
+  gap: 12px 20px;
+  padding-left: 16px;
+}
+
+.income-cashflow-view__payer {
+  flex-basis: 100%;
+  color: var(--mantine-color-gray-9);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.income-cashflow-view__date {
+  font: 500 12px/1.4 var(--font-mono);
+  white-space: nowrap;
+}
+
+.income-cashflow-view__metric {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+}
+
+.income-cashflow-view__metric > span:first-child,
+.income-cashflow-view .document-detail-row__label {
+  color: var(--mantine-color-gray-8);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.income-cashflow-view__amount {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.income-cashflow-view__amount > .app-money {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+.income-cashflow-view__metric .app-money {
+  font-size: 16px;
+}
+
+.income-cashflow-view__metadata {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
+}
+
+.income-cashflow-view__metadata .document-detail-row {
+  grid-template-columns: minmax(108px, 32%) minmax(0, 1fr);
+  align-items: baseline;
+  gap: 8px;
+}
+
+.income-cashflow-view .document-detail-row__value {
+  font-size: 12px;
+}
+
+.income-cashflow-view__comment {
+  color: var(--mantine-color-gray-9);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.income-cashflow-view__table-scroll {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.income-cashflow-view__table-scroll .app-static-table {
+  min-width: 620px;
+}
+
+@container document-detail (max-width: 820px) {
+  .income-cashflow-view .document-detail-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .income-cashflow-view .document-detail-summary__metrics {
+    justify-content: flex-start;
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .income-cashflow-view__metric {
+    justify-items: start;
+  }
+}
+
+@container document-detail (max-width: 640px) {
+  .income-cashflow-view__metadata {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@container document-detail (max-width: 380px) {
+  .income-cashflow-view__metadata .document-detail-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 3px;
+  }
+}
+
+.app-modal.app-form-sheet.income-reassign-modal .mantine-Input-input {
+  height: 32px;
+  min-height: 32px;
+  border-radius: 8px;
+  padding-inline: 10px 30px;
+  color: var(--mantine-color-gray-9);
+  font: 400 12px var(--font-mono);
+}
+
+.app-modal.app-form-sheet.income-reassign-modal .mantine-Button-root {
+  height: 32px;
+  min-height: 32px;
+  font: 600 12px var(--font-mono);
+}
+
+.income-reassign-dropdown :is(.mantine-Combobox-option, .mantine-Combobox-empty, .mantine-Combobox-search) {
+  font: 400 12px/1.4 var(--font-mono);
+}
+
+.income-reassign-dropdown .mantine-Combobox-option {
+  min-height: 30px;
+  padding: 6px 10px;
+}
+
+.income-reassign-dropdown .mantine-Combobox-option:is([data-combobox-selected], [data-combobox-active]) {
+  background: var(--mantine-color-gray-1);
+  color: var(--mantine-color-gray-9);
+}
+
+/* Reassignment uses the same inset form surface as the compact editors. */
+.app-modal.income-reassign-modal .mantine-Modal-body {
+  background: var(--mantine-color-gray-0);
+}
+
+.income-reassign-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.income-reassign-title .app-table-chip {
+  font: 500 12px/1.4 var(--font-mono);
+}
+
+.app-modal.income-reassign-modal .income-reassign-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--mantine-color-white);
+}
+
+.app-modal.app-form-sheet.income-reassign-modal .mantine-InputWrapper-label {
+  margin-bottom: 4px;
+  color: var(--mantine-color-gray-9);
+  font: 600 12px/16px var(--font-sans);
+}
+
+.app-modal.income-reassign-modal .app-modal-footer {
+  margin-top: 0;
+  padding-top: 10px;
+}
+
+.income-reassign-content .mantine-Alert-root {
+  padding: 8px 10px;
+}

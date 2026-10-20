@@ -157,3 +157,21 @@
 .consumable-storage-organization-readonly .app-table-chip { justify-self: start; max-width: 100%; white-space: normal; }
 .consumable-storage-organization-readonly .app-table-chip-label { white-space: normal; }
 @media (max-width: 600px) { .consumable-storage-form-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* Registry controls stay together at natural widths on laptop screens. */
+.consumable-storages-page .consumable-storages-filter-bar { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; overflow: visible; }
+.consumable-storages-page .consumable-storages-filter-bar .app-filter-fields { gap: 8px; }
+.consumable-storages-page .consumable-storages-filter-bar .app-filter-actions,
+.consumable-storages-page .consumable-storages-filter-bar .app-filter-table-toolbar-slot { flex: 0 0 auto; margin-left: 0; }
+.consumable-storages-page .consumable-storages-filter-bar > .mantine-Button-root { flex: 0 0 auto; }
+.consumable-storages-page .consumable-storages-filter-bar .consumable-storages-search { flex: 0 1 240px; width: 240px; min-width: 0; max-width: 100%; }
+@media (max-width: 1050px) {
+  .consumable-storages-page .consumable-storages-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .consumable-storages-page .consumable-storages-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
+  .consumable-storages-page .consumable-storages-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
+}
+
+.consumable-storage-detail-filter-bar { overflow: visible; }
+.consumable-storage-detail-filter-bar .consumable-storage-detail-filter-row { justify-content: flex-start; flex-wrap: wrap; gap: 8px; }
+.consumable-storage-detail-filter-bar .consumable-storages-search { flex: 0 1 240px; width: 240px; max-width: 100%; }
+.consumable-storage-detail-filter-bar .consumable-storage-remnants-toolbar { margin-left: 0; }

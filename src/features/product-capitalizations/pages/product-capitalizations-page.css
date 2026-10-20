@@ -59,3 +59,15 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Registry controls stay together at natural widths on laptop screens. */
+.product-capitalizations-page .product-capitalizations-filter-bar { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; overflow: visible; }
+.product-capitalizations-page .product-capitalizations-filter-bar .app-filter-fields { gap: 8px; }
+.product-capitalizations-page .product-capitalizations-filter-bar .app-filter-actions,
+.product-capitalizations-page .product-capitalizations-filter-bar .app-filter-table-toolbar-slot { flex: 0 0 auto; margin-left: 0; }
+.product-capitalizations-page .product-capitalizations-filter-bar > .mantine-Button-root { flex: 0 0 auto; }
+@media (max-width: 1050px) {
+  .product-capitalizations-page .product-capitalizations-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .product-capitalizations-page .product-capitalizations-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
+  .product-capitalizations-page .product-capitalizations-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
+}

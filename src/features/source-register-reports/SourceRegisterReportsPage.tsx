@@ -99,7 +99,7 @@ function PublicationPicker({ items, value, onChange }: { items: readonly Registe
     for (const item of items) { const key = label(item); captions.set(key, (captions.get(key) ?? 0) + 1) }
     return items.map(item => ({ value: item.publicationId, label: `${label(item)}${captions.get(label(item))! > 1 ? ` · ${item.publicationId}` : ''}` }))
   }, [items])
-  return <Select className="register-reports-picker" label="Публікація даних" placeholder="Оберіть публікацію" searchable clearable limit={50} data={data} value={value} onChange={onChange} nothingFoundMessage="Публікацій не знайдено" />
+  return <Select classNames={{ dropdown: 'register-reports-picker-dropdown' }} className="register-reports-picker" label="Публікація даних" placeholder="Оберіть публікацію" searchable clearable limit={50} data={data} value={value} onChange={onChange} nothingFoundMessage="Публікацій не знайдено" />
 }
 
 function SelectedPublication({ publication, session, retry }: { publication: RegisterPublicationSummary; session: ApiStreamSession; retry: () => void }) {

@@ -1,12 +1,11 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import {
-  ActionIcon,
   Alert,
   Button,
   Card,
   Group,
   Stack,
   Text,
-  TextInput,
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
@@ -260,32 +259,34 @@ function CompanyCarRoadListsPageContent() {
         </Group>
         <div className="app-filter-bar company-car-road-lists-filter-bar">
           <Group align="end" gap={10} wrap="wrap" className="app-filter-fields company-car-road-lists-filter-row">
-            <TextInput
-              label={t('Від')}
-              type="date"
-              value={fromDate}
-              w={170}
-              onChange={(event) => setFromDate(event.currentTarget.value)}
-            />
-            <TextInput
-              label={t('До')}
-              type="date"
-              value={toDate}
-              w={170}
-              onChange={(event) => setToDate(event.currentTarget.value)}
+            <ToolbarDateRangeFilter
+              from={fromDate}
+              to={toDate}
+              onChange={({ from, to }) => {
+                setFromDate(from)
+                setToDate(to)
+              }}
             />
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
-                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                  <RotateCcw size={17} />
-                </ActionIcon>
+                <Button aria-label={t('Скинути')} color="gray" variant="default" onClick={resetFilters}
+                  className="company-car-road-lists-toolbar-action"
+                  title={t('Скинути')}
+                  leftSection={<RotateCcw size={17} />}
+                >
+                  {t('Скинути')}
+                </Button>
               </Tooltip>
               <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
               <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
               <Tooltip label={t('Оновити')}>
-                <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="light" onClick={reload}>
-                  <RefreshCw size={18} />
-                </ActionIcon>
+                <Button aria-label={t('Оновити')} loading={isLoading} variant="default" onClick={reload} color="gray"
+                  className="company-car-road-lists-toolbar-action"
+                  title={t('Оновити')}
+                  leftSection={<RefreshCw size={18} />}
+                >
+                  {t('Оновити')}
+                </Button>
               </Tooltip>
             </div>
             {canCreateRoadList && (

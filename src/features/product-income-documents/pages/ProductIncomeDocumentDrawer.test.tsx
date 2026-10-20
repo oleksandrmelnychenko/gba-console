@@ -151,13 +151,82 @@ describe('ProductIncomeDocumentDrawer', () => {
 
   it.each([
     ['Прихідна накладна (акт звірки)', { ActReconciliationItem: { Product: { VendorCode: 'ACT-1' } } }, 'product-income-act-reconciliation-overview'],
-    ['Прихідна накладна (повернення)', { SaleReturnItem: { SaleReturn: { Number: 'RETURN-1' }, Qty: 1 } }, 'product-income-sale-return-items'],
+    ['Товари повернення', { SaleReturnItem: { SaleReturn: { Number: 'RETURN-1' }, Qty: 1 } }, 'product-income-sale-return-items'],
   ] as const)('applies the same section pattern to %s', async (title, item, tableId) => {
     renderDrawer({ document: { ...capitalizationDocument, ProductIncomeItems: [item] } })
     await screen.findByRole('dialog', { name: 'Документ приходу' })
     const section = screen.getByRole('region', { name: title })
     expect(section.querySelector('.document-detail-section__body.is-stacked')).toBeTruthy()
     expect(within(section).getByTestId(tableId).textContent).toBe('1')
+  })
+
+  it('shows the same EUR return total in the header and footer despite stale document totals', async () => {
+    renderDrawer({ document: {
+      Number: 'RETURN-395',
+      TotalNetPrice: 9999,
+      TotalQty: 100,
+      Currency: { Code: 'UAH' },
+      ProductIncomeItems: [
+        { Qty: 50, SaleReturnItem: { Amount: 50.34, AmountLocal: 0, Qty: 1, SaleReturn: { Number: 'RETURN-395' } } },
+        { Qty: 50, SaleReturnItem: { Amount: 6.13, AmountLocal: 0, Qty: 2 } },
+        { Deleted: true, SaleReturnItem: { Amount: 900, Qty: 90 } },
+      ],
+    } })
+    const dialog = await screen.findByRole('dialog', { name: 'Документ приходу' })
+    const summary = dialog.querySelector('.document-detail-summary')!
+    const overview = within(dialog).getByRole('region', { name: 'Товари повернення' })
+    const footer = overview.querySelector('.income-return-totals')!
+    expect(summary.textContent).toContain('Сума повернення')
+    expect(summary.textContent?.replace(/\s/g, '')).toContain('56,47EUR')
+    expect(footer.textContent?.replace(/\s/g, '')).toContain('56,47EUR')
+    expect(footer.textContent?.replace(/\s/g, '')).toContain('Всякількість3')
+    expect(within(overview).getByTestId('product-income-sale-return-items').textContent).toBe('2')
+    expect(summary.textContent).not.toContain('9999')
+  })
+
+  it('sums only active return-line VAT and ignores stale document VAT totals', async () => {
+    renderDrawer({ document: {
+      Number: 'RETURN-VAT',
+      TotalVatAmount: 9999,
+      ProductIncomeItems: [
+        { SaleReturnItem: {
+          Amount: 60.66, Qty: 2, VatAmount: 10.11, SaleReturn: { Number: 'RETURN-VAT' },
+          OrderItem: { Order: { Sale: { ClientAgreement: { Agreement: { WithVATAccounting: true } } } } },
+        } },
+        { SaleReturnItem: { Amount: 13.32, Qty: 1, VatAmount: 2.22 } },
+        { Deleted: true, SaleReturnItem: { Amount: 600, Qty: 10, VatAmount: 100 } },
+        { Qty: 50 },
+      ],
+    } })
+    await screen.findByRole('dialog', { name: 'Документ приходу' })
+    const overview = screen.getByRole('region', { name: 'Товари повернення' })
+    const vatRow = within(overview).getByText('ПДВ').closest('.document-detail-row')!
+    expect(vatRow.querySelector('.document-detail-row__value')?.textContent).toBe('12,33')
+    expect(vatRow.textContent).not.toContain('9999')
+    expect(within(overview).getByTestId('product-income-sale-return-items').textContent).toBe('2')
+  })
+
+  it.each([
+    ['all VAT values are missing', [undefined, undefined], '—'],
+    ['one VAT value is missing', [3.5, undefined], '—'],
+    ['one VAT value is NaN', [3.5, Number.NaN], '—'],
+    ['one VAT value is infinite', [3.5, Number.POSITIVE_INFINITY], '—'],
+    ['every VAT value is a real zero', [0, 0], '0,00'],
+  ] as const)('distinguishes unknown return VAT from zero when %s', async (_description, vatAmounts, expected) => {
+    renderDrawer({ document: {
+      Number: 'RETURN-VAT',
+      TotalVatAmount: 1234,
+      ProductIncomeItems: vatAmounts.map(VatAmount => ({
+        SaleReturnItem: {
+          Amount: 10, Qty: 1, VatAmount, SaleReturn: { Number: 'RETURN-VAT' },
+          OrderItem: { Order: { Sale: { ClientAgreement: { Agreement: { WithVATAccounting: true } } } } },
+        },
+      })),
+    } })
+    await screen.findByRole('dialog', { name: 'Документ приходу' })
+    const overview = screen.getByRole('region', { name: 'Товари повернення' })
+    const vatRow = within(overview).getByText('ПДВ').closest('.document-detail-row')!
+    expect(vatRow.querySelector('.document-detail-row__value')?.textContent).toBe(expected)
   })
 
   it('handles a document without source data or a network identifier', async () => {

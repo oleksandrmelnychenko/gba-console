@@ -1125,7 +1125,8 @@ function ProductAssortmentFilterBar({
           aria-label={t('Поле пошуку')}
           allowDeselect={false}
           className="product-assortment-filter-select"
-          classNames={{ option: 'product-assortment-filter-option' }}
+          classNames={{ dropdown: 'product-assortment-filter-dropdown', option: 'product-assortment-filter-option' }}
+          comboboxProps={{ width: 'max-content', position: 'bottom-start' }}
           data={SEARCH_MODE_OPTION_VALUES.map((value) => ({ label: t(SEARCH_MODE_LABELS[value]), value }))}
           label={t('Поле пошуку')}
           value={searchMode}
@@ -1135,7 +1136,8 @@ function ProductAssortmentFilterBar({
           aria-label={t('Сортування')}
           allowDeselect={false}
           className="product-assortment-filter-select"
-          classNames={{ option: 'product-assortment-filter-option' }}
+          classNames={{ dropdown: 'product-assortment-filter-dropdown', option: 'product-assortment-filter-option' }}
+          comboboxProps={{ width: 'max-content', position: 'bottom-start' }}
           data={SORT_MODE_OPTION_VALUES.map((value) => ({ label: t(SORT_MODE_LABELS[value]), value }))}
           label={t('Сортування')}
           value={sortMode}

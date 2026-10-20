@@ -1,5 +1,5 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import {
-  ActionIcon,
   Alert,
   Button,
   Stack,
@@ -316,30 +316,7 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
       <div className="console-table-shell">
         <div className="app-filter-bar act-services-filter-bar">
           <div className="app-filter-fields act-services-filter-row">
-            <div className="app-filter-date-range">
-              <TextInput
-                className="act-services-date-input"
-                label={t('Від')}
-                max={dateTo || undefined}
-                type="date"
-                value={dateFrom}
-                onChange={(event) => {
-                  setPage(1)
-                  setDateFrom(event.currentTarget.value)
-                }}
-              />
-              <TextInput
-                className="act-services-date-input"
-                label={t('До')}
-                min={dateFrom || undefined}
-                type="date"
-                value={dateTo}
-                onChange={(event) => {
-                  setPage(1)
-                  setDateTo(event.currentTarget.value)
-                }}
-              />
-            </div>
+            <ToolbarDateRangeFilter from={dateFrom} to={dateTo} onChange={(range) => { setPage(1); setDateFrom(range.from); setDateTo(range.to) }} />
 
             <TextInput
               className="act-services-search-input"
@@ -355,9 +332,7 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
 
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
-                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetPageFilters}>
-                  <RotateCcw size={17} />
-                </ActionIcon>
+                <Button aria-label={t('Скинути')} onClick={resetPageFilters} className="finance-toolbar-action" variant="default" leftSection={<RotateCcw size={17} />} title={t('Скинути')}>{t('Скинути')}</Button>
               </Tooltip>
               <Paginator
                 hasNext={canMoveForward}

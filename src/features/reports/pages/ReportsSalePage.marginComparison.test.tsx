@@ -33,7 +33,7 @@ function lastCsvSheet() {
 }
 it('renders authoritative 2dp values from binary XLSX and removes stale totals from filtered CSV', async () => {
   const { container } = viewer(); await upload(marginRows()); await screen.findByText(MARGIN_COMPARISON_TITLE)
-  expect(screen.queryByLabelText('Від')).toBeNull(); expect(screen.queryByLabelText('До')).toBeNull();
+  expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull(); expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull();
   expect(screen.getByText('Рядків: 2')).toBeTruthy(); expect(container.querySelector('.reports-sale-table')!.textContent).toContain('15,00')
   expect(container.querySelectorAll('.reports-client-activity-header')).toHaveLength(1)
   fireEvent.click(screen.getByLabelText('Експорт CSV')); expect(lastCsvSheet().rows.at(-1)?.cells).toEqual(['Загальний підсумок', '', 15, 10, 5, 50])

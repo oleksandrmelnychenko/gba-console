@@ -89,8 +89,10 @@ export function ReportCatalogueControl({ enabled, disabled = false, presentation
   return <>
     <Group>
       <Button ref={trigger} type="button" variant={quiet ? 'subtle' : dialog ? 'filled' : 'subtle'} color={quiet ? 'gray' : undefined}
-        className={quiet ? 'workbook-quiet-action' : undefined} disabled={!enabled || disabled}
-        leftSection={quiet ? <LibraryBig size={15} aria-hidden="true" /> : undefined}
+        className={quiet ? 'report-catalogue-trigger workbook-quiet-action' : 'report-catalogue-trigger'} disabled={!enabled || disabled}
+        leftSection={<LibraryBig size={15} aria-hidden="true" />}
+        aria-label={t(consoleScope && BUG_1274_ONLY_REPORT_SURFACE ? 'Каталог звітів 1С' : 'Каталог усіх звітів 1С')}
+        title={t(consoleScope && BUG_1274_ONLY_REPORT_SURFACE ? 'Каталог звітів 1С' : 'Каталог усіх звітів 1С')}
         aria-haspopup={dialog ? 'dialog' : undefined} aria-expanded={enabled && opened}
         onClick={() => setOpened(value => !value)}>
         {!dialog && opened ? t('Сховати каталог звітів 1С') : t(consoleScope && BUG_1274_ONLY_REPORT_SURFACE ? 'Каталог звітів 1С' : 'Каталог усіх звітів 1С')}

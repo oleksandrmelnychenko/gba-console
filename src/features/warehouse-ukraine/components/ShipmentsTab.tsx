@@ -1,3 +1,4 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
@@ -1016,25 +1017,9 @@ function AutoShipmentsPanel({ onCarriedOut, permissions }: AutoShipmentsPanelPro
     <Stack className="warehouse-ukraine-tab" gap={6}>
       <div className="warehouse-ukraine-tab-content">
         <div className="app-filter-bar warehouse-ukraine-filter-bar is-auto-shipments">
-            <div className="app-filter-date-range">
-              <TextInput
-                className="warehouse-ukraine-filter-input"
-                label={t('Від')}
-                max={model.filterDraft.to || undefined}
-                type="date"
-                value={model.filterDraft.from}
-                onChange={(event) => model.setFilterDraft({ ...model.filterDraft, from: event.currentTarget.value })}
-              />
-              <TextInput
-                className="warehouse-ukraine-filter-input"
-                label={t('До')}
-                min={model.filterDraft.from || undefined}
-                type="date"
-                value={model.filterDraft.to}
-                onChange={(event) => model.setFilterDraft({ ...model.filterDraft, to: event.currentTarget.value })}
-              />
-            </div>
+            <ToolbarDateRangeFilter from={model.filterDraft.from} to={model.filterDraft.to} onChange={({ from, to }) => model.setFilterDraft({ ...model.filterDraft, from, to })} />
             <Select
+              classNames={{ dropdown: 'warehouse-ukraine-toolbar-dropdown' }}
               className="warehouse-ukraine-filter-input"
               data={typeOptions}
               label={t('Перевізники')}
@@ -1043,6 +1028,7 @@ function AutoShipmentsPanel({ onCarriedOut, permissions }: AutoShipmentsPanelPro
               onChange={(value) => model.setSelectedTypeNetId(value)}
             />
             <Select
+              classNames={{ dropdown: 'warehouse-ukraine-toolbar-dropdown' }}
               className="warehouse-ukraine-filter-input"
               data={transporterOptions}
               label={t('Перевізники')}
@@ -1051,10 +1037,10 @@ function AutoShipmentsPanel({ onCarriedOut, permissions }: AutoShipmentsPanelPro
               onChange={(value) => model.setSelectedTransporterNetId(value)}
             />
             <div className="app-filter-actions warehouse-ukraine-filter-actions">
-              <Button variant="default" size="sm" leftSection={<RotateCcw size={16} />} onClick={model.resetFilters}>
+              <Button className="warehouse-toolbar-icon-action" aria-label={t('Скинути')} title={t('Скинути')} variant="default" size="sm" leftSection={<RotateCcw size={16} />} onClick={model.resetFilters}>
                 {t('Скинути')}
               </Button>
-              <Button variant="default" size="sm" leftSection={<RefreshCw size={16} />}
+              <Button className="warehouse-toolbar-icon-action" aria-label={t('Оновити')} title={t('Оновити')} variant="default" size="sm" leftSection={<RefreshCw size={16} />}
                 loading={model.isLoading} onClick={() => model.refreshList()}>
                 {t('Оновити')}
               </Button>
@@ -1075,7 +1061,7 @@ function AutoShipmentsPanel({ onCarriedOut, permissions }: AutoShipmentsPanelPro
               >
                 {t('Провести і закрити')}
               </Button>
-              <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
+              <Button color="gray" variant="default" size="sm" className="warehouse-toolbar-icon-action" aria-label={t('Друк PDF')} title={t('Друк PDF')}
                 disabled={!model.canPrintShipment || !model.selectedTransporterNetId || Boolean(model.filterError)}
                 leftSection={<FileDown size={18} />}
                 styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
@@ -1901,25 +1887,9 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
     <Stack className="warehouse-ukraine-tab" gap={6}>
       <div className="warehouse-ukraine-tab-content">
         <div className="app-filter-bar warehouse-ukraine-filter-bar is-all-shipments">
-            <div className="app-filter-date-range">
-              <TextInput
-                className="warehouse-ukraine-filter-input"
-                label={t('Від')}
-                max={filterDraft.to || undefined}
-                type="date"
-                value={filterDraft.from}
-                onChange={(event) => updateListFilter({ ...filterDraft, from: event.currentTarget.value })}
-              />
-              <TextInput
-                className="warehouse-ukraine-filter-input"
-                label={t('До')}
-                min={filterDraft.from || undefined}
-                type="date"
-                value={filterDraft.to}
-                onChange={(event) => updateListFilter({ ...filterDraft, to: event.currentTarget.value })}
-              />
-            </div>
+            <ToolbarDateRangeFilter from={filterDraft.from} to={filterDraft.to} onChange={({ from, to }) => updateListFilter({ ...filterDraft, from, to })} />
             <Select
+              classNames={{ dropdown: 'warehouse-ukraine-toolbar-dropdown' }}
               className="warehouse-ukraine-filter-input"
               data={typeOptions}
               label={t('Тип перевізника')}
@@ -1928,6 +1898,7 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
               onChange={changeTransporterType}
             />
             <Select
+              classNames={{ dropdown: 'warehouse-ukraine-toolbar-dropdown' }}
               className="warehouse-ukraine-filter-input"
               data={transporterOptions}
               label={t('Перевізник')}
@@ -1937,7 +1908,7 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
               onChange={changeTransporter}
             />
             <div className="app-filter-actions warehouse-ukraine-filter-actions">
-              <Button variant="default" size="sm" leftSection={<RotateCcw size={16} />} onClick={resetListFilters}>
+              <Button className="warehouse-toolbar-icon-action" aria-label={t('Скинути')} title={t('Скинути')} variant="default" size="sm" leftSection={<RotateCcw size={16} />} onClick={resetListFilters}>
                 {t('Скинути')}
               </Button>
               <Paginator

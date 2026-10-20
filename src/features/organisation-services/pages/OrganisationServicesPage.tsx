@@ -1,6 +1,6 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
   Anchor,
   Badge,
@@ -10,7 +10,6 @@ import {
   SimpleGrid,
   Stack,
   Text,
-  TextInput,
   Tooltip,
 } from '@mantine/core'
 import { CircleAlert, RefreshCw, RotateCcw } from 'lucide-react'
@@ -517,91 +516,95 @@ function OrganisationServicesPageView({ model }: { model: OrganisationServicesPa
   return (
     <Stack className="organisation-services-page console-table-page" gap={6}>
       <div className="organisation-services-shell console-table-shell">
-        <form className="app-filter-bar organisation-services-filter-bar" onSubmit={submitSearch}>
-          <div className="app-filter-date-range">
-            <TextInput
-              label={t('Від')}
-              type="date"
-              value={dateFrom}
-              onChange={(event) => setDateFrom(event.currentTarget.value)}
-            />
-            <TextInput
-              label={t('До')}
-              type="date"
-              value={dateTo}
-              onChange={(event) => setDateTo(event.currentTarget.value)}
-            />
-          </div>
-          <OrganisationSearchControl
-            isLoading={organizationSearchState.isLoading}
-            organizations={organizationSearchState.suggestions}
-            selectedOrganization={selectedOrganization}
-            value={organizationSearch}
-            onAutoSelect={() => {
-              void autoSelectOrganization(true)
+        <div className="app-filter-bar organisation-services-filter-bar">
+          <ToolbarDateRangeFilter
+            from={dateFrom}
+            to={dateTo}
+            onChange={({ from, to }) => {
+              setDateFrom(from)
+              setDateTo(to)
             }}
-            onChange={updateOrganizationSearch}
-            onClear={clearOrganization}
-            onSelect={selectOrganization}
           />
-          <CheckboxMultiSelect
-            data={availableServiceOptions}
-            disabled={!selectedOrganization}
-            label={t('Типи послуг')}
-            placeholder={selectedOrganization ? t('Оберіть типи') : t('Оберіть організацію')}
-            searchable
-            value={selectedServiceTypes}
-            onChange={updateSelectedServiceTypes}
-          />
-          <CheckboxMultiSelect
-            data={documentFilterOptions.map((option) => ({
-              value: option.value,
-              label: t(option.label),
-            }))}
-            label={t('Документи')}
-            placeholder={t('Усі')}
-            searchable={false}
-            value={documentFilters}
-            onChange={(values) => setDocumentFilters(values.filter(isDocumentFilter))}
-          />
-          <div className="app-filter-actions organisation-services-filter-actions">
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon
-                aria-label={t('Скинути')}
-                color="gray"
-                size={34}
-                type="button"
-                variant="light"
-                onClick={resetFilters}
-              >
-                <RotateCcw size={17} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                color="gray"
-                disabled={!lastSearchParams}
-                loading={isLoadingTasks}
-                size={34}
-                type="button"
-                variant="light"
-                onClick={refreshPaymentTasks}
-              >
-                <RefreshCw size={17} />
-              </ActionIcon>
-            </Tooltip>
-          </div>
-          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
-          <Button
-            className="organisation-services-submit"
-            color={CREATE_ACTION_COLOR}
-            loading={isLoadingTasks}
-            type="submit"
-          >
-            {t('Взаєморозрахунки')}
-          </Button>
-        </form>
+          <form className="organisation-services-search-form" onSubmit={submitSearch}>
+            <OrganisationSearchControl
+              isLoading={organizationSearchState.isLoading}
+              organizations={organizationSearchState.suggestions}
+              selectedOrganization={selectedOrganization}
+              value={organizationSearch}
+              onAutoSelect={() => {
+                void autoSelectOrganization(true)
+              }}
+              onChange={updateOrganizationSearch}
+              onClear={clearOrganization}
+              onSelect={selectOrganization}
+            />
+            <CheckboxMultiSelect
+              dropdownClassName="organisation-services-filter-dropdown"
+              data={availableServiceOptions}
+              disabled={!selectedOrganization}
+              label={t('Типи послуг')}
+              placeholder={selectedOrganization ? t('Оберіть типи') : t('Оберіть організацію')}
+              searchable
+              value={selectedServiceTypes}
+              onChange={updateSelectedServiceTypes}
+            />
+            <CheckboxMultiSelect
+              dropdownClassName="organisation-services-filter-dropdown"
+              data={documentFilterOptions.map((option) => ({
+                value: option.value,
+                label: t(option.label),
+              }))}
+              label={t('Документи')}
+              placeholder={t('Усі')}
+              searchable={false}
+              value={documentFilters}
+              onChange={(values) => setDocumentFilters(values.filter(isDocumentFilter))}
+            />
+            <div className="app-filter-actions organisation-services-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <Button
+                  aria-label={t('Скинути')}
+                  color="gray"
+                  type="button"
+                  variant="default"
+                  onClick={resetFilters}
+
+                  className="organisation-services-toolbar-action"
+                  title={t('Скинути')}
+                  leftSection={<RotateCcw size={17} />}
+                >
+                  {t('Скинути')}
+                </Button>
+              </Tooltip>
+              <Tooltip label={t('Оновити')}>
+                <Button
+                  aria-label={t('Оновити')}
+                  color="gray"
+                  disabled={!lastSearchParams}
+                  loading={isLoadingTasks}
+                  type="button"
+                  variant="default"
+                  onClick={refreshPaymentTasks}
+
+                  className="organisation-services-toolbar-action"
+                  title={t('Оновити')}
+                  leftSection={<RefreshCw size={17} />}
+                >
+                  {t('Оновити')}
+                </Button>
+              </Tooltip>
+            </div>
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
+            <Button
+              className="organisation-services-submit"
+              color={CREATE_ACTION_COLOR}
+              loading={isLoadingTasks}
+              type="submit"
+            >
+              {t('Взаєморозрахунки')}
+            </Button>
+          </form>
+        </div>
 
         {visibleError && (
           <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />} variant="light">

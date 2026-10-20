@@ -33,7 +33,7 @@ describe('accounting payments filter-header pattern', () => {
     expect(source).not.toContain('useDataTableDensity')
   })
 
-  it.each(datedPages)('$path starts with the shared paired-date geometry', ({ path, rowClass }) => {
+  it.each(datedPages)('$path starts with the shared compact period control', ({ path, rowClass }) => {
     const source = pageSources[path]
     const rowStart = source.indexOf(`className="app-filter-fields ${rowClass}"`)
     const rowContentStart = source.indexOf('>', rowStart) + 1
@@ -41,10 +41,8 @@ describe('accounting payments filter-header pattern', () => {
 
     expect(rowStart).toBeGreaterThanOrEqual(0)
     expect(rowContentStart).toBeGreaterThan(0)
-    expect(firstChild.startsWith('<div className="app-filter-date-range">')).toBe(true)
-    expect(source).toContain('className="app-filter-date-range"')
-    expect(source).toContain("label={t('Від')}")
-    expect(source).toContain("label={t('До')}")
+    expect(firstChild.startsWith('<ToolbarDateRangeFilter')).toBe(true)
+    expect(source).not.toContain('className="app-filter-date-range"')
   })
 
   it('gives the payment account type switch the canonical label/control slots', () => {

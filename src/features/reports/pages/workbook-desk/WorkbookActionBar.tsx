@@ -1,4 +1,4 @@
-import { ActionIcon, Button, Loader } from '@mantine/core'
+import { Button, Loader } from '@mantine/core'
 import type { ReactNode } from 'react'
 import { CircleAlert, CircleCheck, MonitorPlay, RotateCcw } from 'lucide-react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -52,11 +52,9 @@ export function WorkbookActionBar({ period, canSubmit, isLoading, blockedReason,
     <div className="app-filter-bar workbook-toolbar">
       {period}
     <div className="app-filter-actions workbook-actions__buttons">
-      <ActionIcon type="button" variant="default" color="gray" size={34}
+      <Button type="button"
         disabled={resetDisabled} aria-label={t('Скинути')}
-        title={t('Повернути період і відбори за замовчуванням')} onClick={onReset}>
-        <RotateCcw size={16} aria-hidden="true" />
-      </ActionIcon>
+        title={t('Повернути період і відбори за замовчуванням')} onClick={onReset} className="reports-toolbar-action" variant="default" leftSection={<RotateCcw size={16} aria-hidden="true" />}>{t('Скинути')}</Button>
       {file('excel', excelUrl)}
       {file('pdf', pdfUrl)}
       <Button type="button" color={CREATE_ACTION_COLOR} className="workbook-actions__preview"

@@ -26,7 +26,7 @@ it.each(artifacts)('imports actual server workbook $name and exports identical d
   const { container } = render(<MemoryRouter><MantineProvider env="test"><I18nProvider><ReportsSalePage /></I18nProvider></MantineProvider></MemoryRouter>)
   fireEvent.change(screen.getByLabelText('Завантажити файл'), { target: { files: [file] } })
   await screen.findByText('Рядків: 1')
-  expect(screen.queryByLabelText('Від')).toBeNull(); expect(screen.queryByLabelText('До')).toBeNull()
+  expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull(); expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull()
   expect(container.querySelectorAll('.reports-sale-row-total, .reports-sale-row-subtotal, .reports-sale-row-computed')).toHaveLength(0)
   const cells = container.querySelectorAll('.reports-sale-table tr.data-table-row td.data-table-cell')
   expect(Array.from(cells).slice(1).map(cell => cell.textContent)).toEqual(artifact.expected.map(value => value == null ? '' : value.replace('.', ',')))

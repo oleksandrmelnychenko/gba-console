@@ -142,6 +142,11 @@ function NewProductDeliveryProtocolForm({
         <Stack gap={12}>
           <Select
             searchable
+            classNames={{
+              input: 'new-protocol-combobox-input',
+              dropdown: 'new-protocol-combobox-dropdown',
+              option: 'new-protocol-combobox-option',
+            }}
             data={organizationOptions}
             error={organizationMissing ? t('Вкажіть організацію') : undefined}
             label={t('Організація')}
@@ -154,6 +159,11 @@ function NewProductDeliveryProtocolForm({
           <SimpleGrid cols={{ base: 1, xs: 2 }} spacing={12}>
             <Select
               allowDeselect={false}
+              classNames={{
+                input: 'new-protocol-combobox-input',
+                dropdown: 'new-protocol-combobox-dropdown',
+                option: 'new-protocol-combobox-option',
+              }}
               data={transportationOptions}
               label={t('Тип')}
               value={transportationType}

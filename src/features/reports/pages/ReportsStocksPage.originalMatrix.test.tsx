@@ -1,3 +1,4 @@
+import { readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
@@ -37,8 +38,8 @@ it('opens the exact full-period saved form and runs its mounted original matrix 
   fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
   fireEvent.click(await screen.findByRole('button', { name: /Відкрити для редагування: Оригінальна повна матриця/ }))
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
-  expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2025-01-01')
-  expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe('2026-10-09')
+  expect((readReportDateInput('Від') as HTMLInputElement).value).toBe('2025-01-01')
+  expect((readReportDateInput('До') as HTMLInputElement).value).toBe('2026-10-09')
   fireEvent.click(screen.getByRole('button', { name: 'Переглянути оригінальну матрицю' }))
   await waitFor(() => expect(readScopedOriginalMatrix).toHaveBeenCalledOnce())
   expect(getOriginalMatrixScopeBinding).toHaveBeenCalledWith(matrixCapability(),
@@ -54,7 +55,7 @@ it('opens the saved form 39 without the original matrix in the BUG-1274-only sur
   fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
   fireEvent.click(await screen.findByRole('button', { name: /Відкрити для редагування: Оригінальна повна матриця/ }))
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
-  expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2025-01-01')
+  expect((readReportDateInput('Від') as HTMLInputElement).value).toBe('2025-01-01')
   expect(screen.queryByRole('button', { name: 'Переглянути оригінальну матрицю' })).toBeNull()
   expect(container.querySelector('form')).toBeTruthy()
   expect(getOriginalMatrixCapability).not.toHaveBeenCalled()

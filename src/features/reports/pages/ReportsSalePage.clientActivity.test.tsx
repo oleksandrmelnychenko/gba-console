@@ -1,3 +1,4 @@
+import { readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -33,7 +34,7 @@ function lastCsvSheet() {
 }
 it.each(['known', 'disjoint', 'unknown'] as const)('imports binary count XLSX, preserves server grand and CSV without money formatting or filtered sums: %s', async kind => {
   const { container } = viewer(); await upload(clientActivityWorkbookRows(kind)); await screen.findByText(CLIENT_ACTIVITY_REPORT_TITLE)
-  expect(screen.getByLabelText('Від')).toBeTruthy(); expect(screen.getByText('Рядків: 2')).toBeTruthy()
+  expect(readReportDateInput('Від')).toBeTruthy(); expect(screen.getByText('Рядків: 2')).toBeTruthy()
   const cells = container.querySelectorAll('.reports-sale-table tr.data-table-row td.data-table-cell')
   expect(cells[1].textContent).toBe('2')
   expect(cells[cells.length - 1].textContent).toBe(kind === 'known' ? '3' : kind === 'disjoint' ? '4' : '')

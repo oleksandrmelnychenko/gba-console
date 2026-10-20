@@ -21,7 +21,7 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppDrawerFooter } from '../../../shared/ui/AppDrawer'
+import { AppModalFooter } from '../../../shared/ui/AppModal'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
@@ -942,8 +942,9 @@ export function OutgoingPaymentGroupForm({
             <Text className="app-section-title" fw={600} size="sm">
               {t('Реквізити виплати')}
             </Text>
-            <SimpleGrid cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
+            <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
               <TextInput
+                className="cashflow-field-date"
                 disabled={isLoading || isSaving}
                 label={t('Дата')}
                 required
@@ -952,6 +953,7 @@ export function OutgoingPaymentGroupForm({
                 onChange={(event) => updateForm({ date: event.currentTarget.value })}
               />
               <TextInput
+                className="cashflow-field-time"
                 disabled={isLoading || isSaving}
                 label={t('Час')}
                 required
@@ -959,6 +961,8 @@ export function OutgoingPaymentGroupForm({
                 value={form.time}
                 onChange={(event) => updateForm({ time: event.currentTarget.value })}
               />
+            </SimpleGrid>
+            <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
               <Select
                 data={organizationOptions}
                 disabled={!organizationOptions.length || isLoading || isSaving}
@@ -978,7 +982,7 @@ export function OutgoingPaymentGroupForm({
                 onChange={handleRegisterChanged}
               />
               <Select
-                className="app-input-description-below"
+                className="app-input-description-below cashflow-field-currency"
                 data={currencyOptions}
                 description={balanceLabel || undefined}
                 disabled={!selectedRegister || isLoading || isSaving}
@@ -990,7 +994,7 @@ export function OutgoingPaymentGroupForm({
               />
               {!isOtherOutcome && (
                 <Select
-                  className="app-input-description-below"
+                  className="app-input-description-below cashflow-field-agreement"
                   data={agreementOptions}
                   description={agreementBalance || undefined}
                   disabled={!agreementOptions.length || isLoading || isSaving}
@@ -1001,7 +1005,10 @@ export function OutgoingPaymentGroupForm({
                   onChange={(value) => updateForm({ selectedAgreementValue: value || '' })}
                 />
               )}
+            </SimpleGrid>
+            <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
               <NumberInput
+                className="cashflow-field-amount"
                 allowNegative={false}
                 decimalScale={2}
                 disabled={isLoading || isSaving}
@@ -1012,6 +1019,7 @@ export function OutgoingPaymentGroupForm({
                 onChange={handleAmountChanged}
               />
               <NumberInput
+                className="cashflow-field-rate"
                 allowNegative={false}
                 decimalScale={6}
                 disabled={isLoading || isSaving}
@@ -1021,6 +1029,7 @@ export function OutgoingPaymentGroupForm({
                 onChange={(value) => updateForm({ exchangeRate: toNumber(value) })}
               />
               <NumberInput
+                className="cashflow-field-vat"
                 allowNegative={false}
                 decimalScale={2}
                 disabled={isLoading || isSaving}
@@ -1031,6 +1040,7 @@ export function OutgoingPaymentGroupForm({
                 onChange={handleVatRateChanged}
               />
               <NumberInput
+                className="cashflow-field-amount"
                 allowNegative={false}
                 decimalScale={2}
                 disabled={isLoading || isSaving}
@@ -1040,7 +1050,9 @@ export function OutgoingPaymentGroupForm({
                 value={form.vatAmount}
                 onChange={(value) => updateForm({ vatAmount: toNumber(value) })}
               />
-              <Group align="flex-end" gap="xs" wrap="nowrap">
+            </SimpleGrid>
+            <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
+              <Group className="cashflow-field-article" align="flex-end" gap="xs" wrap="nowrap">
                 <SearchableSelect
                   data={movementOptions}
                   disabled={isLoading || isSaving}
@@ -1089,6 +1101,7 @@ export function OutgoingPaymentGroupForm({
             </Text>
             <SimpleGrid cols={{ base: 1, md: 2 }} style={{ alignItems: 'start' }}>
               <TextInput
+                className="cashflow-field-purpose"
                 disabled={isLoading || isSaving}
                 label={t('Призначення платежу')}
                 maxLength={INCOME_CASHFLOW_TEXT_LIMITS.paymentPurpose}
@@ -1123,9 +1136,9 @@ export function OutgoingPaymentGroupForm({
           </Stack>
         </Stack>
       </form>
-      <AppDrawerFooter>
+      <AppModalFooter>
         <Group gap="xs" justify="flex-end">
-          <Button color="gray" leftSection={<ArrowLeft size={16} />} type="button" variant="light" onClick={onCancel}>
+          <Button color="gray" leftSection={<ArrowLeft size={16} />} type="button" variant="default" onClick={onCancel}>
             {t('Назад')}
           </Button>
           {hasPermission(PermissionKeys.OutgoingCashflows.Order.Create) && (
@@ -1141,7 +1154,7 @@ export function OutgoingPaymentGroupForm({
             </Button>
           )}
         </Group>
-      </AppDrawerFooter>
+      </AppModalFooter>
     </>
   )
 }

@@ -1,3 +1,4 @@
+import { changeReportPeriod } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -21,10 +22,9 @@ async function choose() {
   fireEvent.click(await screen.findByRole('option', { name: clientComparisonDataset.Name }))
 }
 function periods() {
-  for (const [label, value] of [['Поточний період: від', '2026-07-01'], ['Поточний період: до', '2026-07-31'],
-    ['Період порівняння: від', '2026-06-01'], ['Період порівняння: до', '2026-06-30']]) {
-    fireEvent.change(screen.getByLabelText(label), { target: { value } })
-  }
+  changeReportPeriod({ from: '2026-07-01', to: '2026-07-31' })
+  fireEvent.change(screen.getByLabelText('Період порівняння: від'), { target: { value: '2026-06-01' } })
+  fireEvent.change(screen.getByLabelText('Період порівняння: до'), { target: { value: '2026-06-30' } })
 }
 
 describe('source13 constructor and private templates', () => {

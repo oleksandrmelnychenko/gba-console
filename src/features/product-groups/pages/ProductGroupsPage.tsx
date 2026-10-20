@@ -1,15 +1,12 @@
 import {
-  ActionIcon,
   Alert,
   Badge,
-  Box,
   Button,
   Card,
   Group,
   Stack,
   Text,
   TextInput,
-  Tooltip,
 } from '@mantine/core'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -22,7 +19,6 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { usePermissions } from '../../auth/usePermissions'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
@@ -45,7 +41,6 @@ import './product-groups-page.css'
 const PRODUCT_GROUPS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['status', 'name'],
-    right: ['actions'],
   },
   density: 'normal',
 } satisfies DataTableDefaultLayout
@@ -109,7 +104,7 @@ function ProductGroupsPageContent() {
     },
     [canOpenDetails, location, navigate],
   )
-  const columns = useProductGroupColumns(openProductGroup, canOpenDetails)
+  const columns = useProductGroupColumns()
 
   useEffect(() => {
     let cancelled = false
@@ -259,33 +254,33 @@ function ProductGroupsPageContent() {
               placeholder={t('Назва або опис')}
               value={searchDraft}
               onChange={(event) => updateSearch(event.currentTarget.value)}
-              style={{ flex: '1 1 auto', minWidth: 160 }}
+              className="product-groups-search"
             />
             <div className="app-filter-actions">
-              <Tooltip label={t('Скинути')}>
-                <ActionIcon
-                  aria-label={t('Скинути')}
-                  color="gray"
-                  size={34}
-                  variant="light"
-                  onClick={resetSearch}
-                >
-                  <RotateCcw size={17} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon
-                  aria-label={t('Оновити')}
-                  color="gray"
-                  loading={isLoading}
-                  size={34}
-                  type="button"
-                  variant="light"
-                  onClick={() => reload()}
-                >
-                  <RefreshCw size={18} />
-                </ActionIcon>
-              </Tooltip>
+              <Button
+                className="product-groups-secondary-action"
+                aria-label={t('Скинути')}
+                title={t('Скинути')}
+                color="gray"
+                variant="default"
+                leftSection={<RotateCcw size={17} />}
+                onClick={resetSearch}
+              >
+                <span className="product-groups-action-label">{t('Скинути')}</span>
+              </Button>
+              <Button
+                className="product-groups-secondary-action"
+                aria-label={t('Оновити')}
+                title={t('Оновити')}
+                color="gray"
+                loading={isLoading}
+                type="button"
+                variant="default"
+                leftSection={<RefreshCw size={18} />}
+                onClick={() => reload()}
+              >
+                <span className="product-groups-action-label">{t('Оновити')}</span>
+              </Button>
             </div>
             <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
             <PermissionGate permissionKey={PRODUCT_GROUPS_ADD_PERMISSION}>
@@ -351,10 +346,7 @@ function ProductGroupsPageContent() {
   )
 }
 
-function useProductGroupColumns(
-  openProductGroup: (productGroup: ProductGroup) => void,
-  canOpenDetails: boolean,
-) {
+function useProductGroupColumns() {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<ProductGroup>[]>(
@@ -439,30 +431,9 @@ function useProductGroupColumns(
         accessor: (productGroup) => productGroup.Created,
         cell: (productGroup) => formatProductGroupDate(productGroup.Created),
       },
-      {
-        id: 'actions',
-        header: '',
-        width: 58,
-        minWidth: 58,
-        maxWidth: 58,
-        align: 'center',
-        enableHiding: false,
-        enableReorder: false,
-        enableResizing: false,
-        enableSorting: false,
-        cell: (productGroup) => canOpenDetails ? (
-          <Box onClick={(event) => event.stopPropagation()}>
-            <TableRowAction
-              action="open"
-              disabled={!productGroup.NetUid}
-              label={t('Відкрити')}
-              onClick={() => openProductGroup(productGroup)}
-            />
-          </Box>
-        ) : null,
-      },
+
     ],
-    [canOpenDetails, openProductGroup, t],
+    [t],
   )
 }
 
@@ -498,7 +469,7 @@ function ProductGroupCreateModal({
       className="product-group-create-modal"
       centered
       opened={opened}
-      size={640}
+      size={520}
       title={t('Нова група товарів')}
       onClose={onClose}
     >
@@ -512,6 +483,7 @@ function ProductGroupCreateModal({
 
           <Card className="app-section-card product-group-create-section" withBorder radius="md" padding="sm">
             <ProductGroupForm
+              compact
               disabled={isCreating}
               isLoadingRootGroups={isLoadingRootGroups}
               productGroup={createDraft}

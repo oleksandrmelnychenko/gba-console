@@ -423,6 +423,7 @@ export function ClientProductMovementPage() {
             renderExpandToggle={renderMovementExpandToggle}
             expandColumnLabels={{ collapseRow: t('Згорнути позиції'), expandRow: t('Розгорнути позиції') }}
             height="100%"
+            stickyHorizontalScrollbar
             isLoading={isLoading}
             layoutVersion="client-product-movement-table-5"
             loadingText={t('Завантаження руху товару')}
@@ -709,6 +710,7 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
         getRowId={(item, index) => `${item.Product?.VendorCode || ''}-${item.ProductSpecificationCode || ''}-${index}`}
         layoutVersion="client-product-movement-items-table-3"
         maxHeight="40vh"
+        stickyHorizontalScrollbar
         minWidth={800}
         showToolbar={false}
         tableId={`client-product-movement-items-${document.DocumentId ?? document.DocumentNumber ?? 'doc'}`}

@@ -1,3 +1,4 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { ClientActionsButton } from '../../clients/components/ClientActionsButton'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -17,7 +18,6 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { notifications } from '@mantine/notifications'
 import { ArrowDownLeft, ArrowUpRight, CircleAlert, Download, ListFilter, Pencil, RefreshCw, RotateCcw, Search } from 'lucide-react'
-import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -819,32 +819,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
         </div>
         <div className="app-filter-bar accounting-cash-flow-filter-bar">
           <form className="accounting-cash-flow-filter-form" onSubmit={(event) => event.preventDefault()}>
-            <div className="app-filter-field accounting-cash-flow-period-filter">
-              <span className="app-filter-label accounting-cash-flow-filter-label">{t('Період')}</span>
-              <div className="accounting-cash-flow-period-fields">
-                <TextInput
-                  className="accounting-cash-flow-date-input"
-                  aria-label={t('З')}
-                  type="date"
-                  value={filterDraft.from}
-                  onChange={(event) => {
-                    const value = event.currentTarget.value
-                    updateFilterDraft({ ...filterDraft, from: value })
-                  }}
-                />
-                <span className="accounting-cash-flow-period-separator" />
-                <TextInput
-                  className="accounting-cash-flow-date-input"
-                  aria-label={t('По')}
-                  type="date"
-                  value={filterDraft.to}
-                  onChange={(event) => {
-                    const value = event.currentTarget.value
-                    updateFilterDraft({ ...filterDraft, to: value })
-                  }}
-                />
-              </div>
-            </div>
+            <ToolbarDateRangeFilter from={filterDraft.from} to={filterDraft.to} onChange={(range) => updateFilterDraft({ ...filterDraft, ...range })} />
             <TextInput
               className="accounting-cash-flow-search"
               label={t('Пошук')}
@@ -854,6 +829,8 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
               onChange={(event) => setItemSearch(event.currentTarget.value)}
             />
             <Select
+              classNames={{ dropdown: 'accounting-cash-flow-toolbar-dropdown' }}
+              comboboxProps={{ width: 'max-content', position: 'bottom-start' }}
               clearable
               searchable
               className="accounting-cash-flow-type-select"
@@ -881,7 +858,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
                   <Box>
                     <Button
                       className="accounting-cash-flow-export"
-                      color={CREATE_ACTION_COLOR}
+                      variant="default"
                       disabled={!canExport}
                       leftSection={<Download size={15} />}
                       loading={isExporting}

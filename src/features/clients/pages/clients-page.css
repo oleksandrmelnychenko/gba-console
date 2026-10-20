@@ -127,3 +127,37 @@
 /* Table typography/zebra/kebab/icons intentionally have NO page overrides:
    the pattern table styles are the shared defaults in data-table.css
    (docs/ui-patterns.md — the table is identical on every screen). */
+
+/* Keep sparse controls at natural widths; compact only when the card needs it. */
+.app-filter-bar.clients-filter-bar { display: flex; flex-wrap: wrap; overflow: visible; gap: 8px; }
+.app-filter-bar.clients-filter-bar .app-filter-actions { flex: 0 0 auto; flex-wrap: nowrap; margin-left: 0; gap: 8px; }
+.app-filter-bar.clients-filter-bar :is(.data-table-toolbar, .data-table-toolbar-left) { flex-wrap: nowrap; gap: 8px; }
+@container registry (max-width: 600px) {
+ .app-filter-bar.clients-filter-bar .app-filter-actions { flex: 0 1 auto; flex-wrap: wrap; }
+}
+
+.app-filter-bar.clients-filter-bar { --app-multi-select-width: 160px; }
+.app-filter-bar.clients-filter-bar > .clients-filter-row { display: contents; }
+.app-filter-bar.clients-filter-bar .clients-filter-search { flex: 0 0 220px; width: 220px; min-width: 0; max-width: 100%; }
+.app-filter-bar.clients-filter-bar .clients-filter-field { flex: 0 0 160px; width: 160px; min-width: 0; }
+.app-filter-bar.clients-filter-bar .clients-filter-status { flex: 0 0 110px; width: 110px; min-width: 0; }
+.clients-role-filter-label, .clients-role-filter-dropdown :is(.mantine-Checkbox-label, .mantine-Text-root) { font-family: var(--font-mono); font-size: 12px; line-height: 16px; }
+.clients-role-filter-dropdown .mantine-Checkbox-body { min-height: 30px; align-items: center; }
+@container registry (max-width: 1450px) {
+ .app-filter-bar.clients-filter-bar { --app-multi-select-width: 110px; }
+ .app-filter-bar.clients-filter-bar .clients-filter-search { flex-basis: 125px; width: 125px; }
+ .app-filter-bar.clients-filter-bar .clients-filter-field { flex-basis: 120px; width: 120px; }
+ .app-filter-bar.clients-filter-bar .clients-filter-status { flex-basis: 100px; width: 100px; }
+}
+@container registry (max-width: 1450px) {
+ .clients-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+ .clients-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
+ .clients-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
+}
+
+/* Captions remain visible until this toolbar needs the icon-only size. */
+@container registry (max-width: 1250px) {
+  .app-filter-bar .clients-toolbar-action { width: 36px; min-width: 36px; padding-inline: 0; }
+  .clients-toolbar-action .mantine-Button-label { display: none; }
+  .clients-toolbar-action .mantine-Button-section { margin: 0; }
+}

@@ -6,33 +6,22 @@
   min-width: 0;
 }
 
-.product-income-document-detail .document-detail-drawer,
-.product-income-document-detail .document-detail-tree {
-  gap: 10px;
-}
-
-.product-income-document-detail .document-detail-summary {
-  gap: 10px;
+.product-income-document-detail .document-detail-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
   padding: 12px;
 }
 
-.product-income-document-detail .document-detail-summary__title {
-  display: inline-flex;
-  border: 1px solid var(--app-chip-document-border);
-  border-radius: 999px;
-  padding: 2px 8px;
-  background: var(--app-chip-document-bg);
-  color: var(--app-chip-document-text);
-  font: 500 13px / 1.4 var(--font-mono);
+.product-income-document-detail .document-detail-top .document-detail-summary {
+  flex: 1 1 420px;
+  gap: 12px;
+  padding: 0;
 }
 
 .product-income-document-detail .document-detail-summary__meta {
   margin-top: 6px;
-}
-
-.product-income-document-detail .document-detail-chip {
-  padding: 2px 8px;
-  font-size: 12px;
 }
 
 .product-income-document-detail .document-detail-summary__metrics {
@@ -40,33 +29,25 @@
   padding-left: 12px;
 }
 
-.product-income-document-detail .document-detail-metric {
-  gap: 4px;
-}
-
-.product-income-document-detail .document-detail-metric > span {
-  font: 400 12px / 1.4 var(--font-sans);
-}
-
-.product-income-document-detail .document-detail-metric strong {
-  align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  font-weight: 500;
-}
-
 .product-income-document-detail .document-detail-top__actions {
-  padding: 8px 12px;
+  padding: 0;
+  border: 0;
 }
 
-.product-income-document-detail .document-detail-top__actions .mantine-Button-root {
-  height: 34px;
-  min-height: 34px;
-  font-size: 13px;
+.product-income-document-detail .document-detail-top__actions .mantine-Button-root,
+.product-income-document-detail .income-document-table-tools .data-table-layout-control {
+  height: 32px;
+  min-height: 32px;
+  font: 500 12px / 1.3 var(--font-mono);
 }
 
-.product-income-document-detail .document-detail-secondary-action {
-  background: var(--mantine-color-white);
+.income-document-date,
+.income-document-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--mantine-color-gray-7);
+  font: 400 12px / 1.4 var(--font-mono);
 }
 
 .product-income-document-detail .document-detail-columns {
@@ -78,35 +59,21 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.product-income-document-detail .document-detail-section {
-  padding: 12px;
-}
-
 .product-income-document-detail .document-detail-section__head {
-  border: 0;
-  min-height: 20px;
-  padding-bottom: 0;
-  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .product-income-document-detail .document-detail-section__title {
-  font: 600 14px / 1.4 var(--font-mono);
+  color: var(--mantine-color-gray-9);
+  font: 600 13px / 1.4 var(--font-mono);
 }
 
-.product-income-document-detail .document-detail-section__body {
-  gap: 10px 12px;
-}
-
-.product-income-document-detail .document-detail-section__body.is-stacked {
-  margin-top: 0;
-}
-
-.product-income-document-detail .document-detail-row {
-  gap: 4px;
-}
-
-.product-income-document-detail .document-detail-row__label {
-  font: 400 12px / 1.4 var(--font-sans);
+.product-income-document-detail .document-detail-row__label,
+.product-income-document-detail .document-detail-metric > span,
+.product-income-document-detail .document-detail-eyebrow {
+  color: var(--mantine-color-gray-9);
+  font: 500 12px / 1.4 var(--font-sans);
 }
 
 .product-income-document-detail .document-detail-row__value {
@@ -114,13 +81,15 @@
   font-weight: 400;
 }
 
-.product-income-document-detail .document-detail-row .app-table-chip {
-  border-radius: 10px;
-  white-space: normal;
+.income-return-metadata {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  min-width: 0;
 }
 
-.product-income-document-detail .document-detail-row .app-table-chip-label {
-  overflow-wrap: anywhere;
+.income-return-metadata > .document-detail-row:first-child {
+  grid-column: span 2;
 }
 
 .product-income-document-detail .data-table {
@@ -128,23 +97,79 @@
   max-width: 100%;
 }
 
-@media (max-width: 700px) {
+.product-income-document-detail .income-document-table-tools {
+  display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.product-income-document-detail .income-document-table-tools :is(.data-table-toolbar, .data-table-toolbar-left) {
+  margin: 0;
+  padding: 0;
+  min-height: 0;
+}
+
+.product-income-document-detail .income-return-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  border-top: 1px solid var(--mantine-color-gray-2);
+  padding-top: 12px;
+}
+
+.income-return-totals .document-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.income-warehouse-details {
+  min-width: 0;
+}
+
+.income-warehouse-details > summary {
+  cursor: pointer;
+  padding: 10px 12px;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  background: var(--mantine-color-white);
+  font: 500 13px / 1.4 var(--font-mono);
+}
+
+.income-warehouse-details[open] > summary {
+  margin-bottom: 8px;
+}
+
+.income-warehouse-details > summary:focus-visible {
+  outline: 2px solid var(--app-focus-border);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .income-return-metadata {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .product-income-document-detail .document-detail-columns {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .product-income-document-detail .document-detail-section__actions {
+    margin-left: 0;
+  }
+
+  .product-income-document-detail .document-detail-summary__metrics {
+    padding-left: 0;
   }
 }
 
 @media (max-width: 440px) {
+  .income-return-metadata,
   .product-income-document-detail .document-detail-columns .document-detail-section__body {
     grid-template-columns: minmax(0, 1fr);
   }
-}
 
-.product-income-document-detail .document-detail-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px; }
-.product-income-document-detail .document-detail-top .document-detail-summary { flex: 1 1 520px; padding: 0; }
-.product-income-document-detail .document-detail-top__actions { padding: 0; border: 0; }
-.income-return-totals { background: var(--mantine-color-gray-0); border-radius: 8px; padding: 10px 12px; }
-.income-warehouse-details { min-width: 0; }
-.income-warehouse-details > summary { cursor: pointer; padding: 10px 12px; border: 1px solid var(--mantine-color-gray-2); border-radius: 8px; background: white; font: 500 13px/1.4 var(--font-mono); }
-.income-warehouse-details[open] > summary { margin-bottom: 8px; }
-.income-warehouse-details > summary:focus-visible { outline: 2px solid var(--app-focus-border); outline-offset: 2px; }
+  .income-return-metadata > .document-detail-row:first-child {
+    grid-column: auto;
+  }
+}

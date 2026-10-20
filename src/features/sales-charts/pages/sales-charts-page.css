@@ -180,3 +180,8 @@
     gap: 8px 20px;
   }
 }
+
+.sales-chart-card .app-filter-bar .sales-chart-filter-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.sales-chart-card .app-filter-bar .sales-chart-filter-row > .sales-chart-filter-control { flex: 0 1 200px; width: 200px; min-width: 0; }
+.sales-chart-card .sales-chart-filter-row > .sales-chart-filter-actions,
+.sales-chart-card .sales-chart-table-toolbar-slot { margin-left: 0; flex: 0 0 auto; }

@@ -1,6 +1,7 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
+  Button,
   Alert,
   Badge,
   Card,
@@ -221,8 +222,8 @@ function usePaymentOnlineShopModel() {
     setActiveFilters(EMPTY_FILTERS)
   }
 
-  function changeSaleDate(key: 'saleDateFrom' | 'saleDateTo', value: string) {
-    const next = { ...filterDraft, [key]: value }
+  function changeSaleDate(range: { from: string; to: string }) {
+    const next = { ...filterDraft, saleDateFrom: range.from, saleDateTo: range.to }
     setFilterDraft(next)
 
     if (next.saleDateFrom && next.saleDateTo && next.saleDateFrom > next.saleDateTo) {
@@ -796,24 +797,7 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
     <Card className="app-data-card payment-online-shop-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar payment-online-shop-filter-bar">
         <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields payment-online-shop-filter-row">
-          <div className="app-filter-date-range">
-            <TextInput
-              size="sm"
-              label={t('Від')}
-              max={filterDraft.saleDateTo || undefined}
-              type="date"
-              value={filterDraft.saleDateFrom}
-              onChange={(event) => changeSaleDate('saleDateFrom', event.currentTarget.value)}
-            />
-            <TextInput
-              size="sm"
-              label={t('До')}
-              min={filterDraft.saleDateFrom || undefined}
-              type="date"
-              value={filterDraft.saleDateTo}
-              onChange={(event) => changeSaleDate('saleDateTo', event.currentTarget.value)}
-            />
-          </div>
+          <ToolbarDateRangeFilter from={filterDraft.saleDateFrom} to={filterDraft.saleDateTo} onChange={(range) => changeSaleDate(range)} />
           <TextInput
             size="sm"
             label={t('Продаж')}
@@ -825,7 +809,6 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
                 applyFilters()
               }
             }}
-            style={{ flex: '1 1 auto', minWidth: 180 }}
           />
           <TextInput
             size="sm"
@@ -841,14 +824,10 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
           />
           <div className="app-filter-actions">
             <Tooltip label={t('Пошук')}>
-              <ActionIcon aria-label={t('Пошук')} color="gray" size={34} variant="light" onClick={applyFilters}>
-                <Search size={17} />
-              </ActionIcon>
+              <Button aria-label={t('Пошук')} onClick={applyFilters} className="finance-toolbar-action" variant="default" leftSection={<Search size={17} />} title={t('Пошук')}>{t('Пошук')}</Button>
             </Tooltip>
             <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                <RotateCcw size={17} />
-              </ActionIcon>
+              <Button aria-label={t('Скинути')} onClick={resetFilters} className="finance-toolbar-action" variant="default" leftSection={<RotateCcw size={17} />} title={t('Скинути')}>{t('Скинути')}</Button>
             </Tooltip>
             <Paginator
               hasNext={hasNext}

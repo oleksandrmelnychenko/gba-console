@@ -21,7 +21,7 @@ it('imports binary four-axis account XLSX and exports current metadata, all note
   const bytes = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer
   const { container } = render(<MemoryRouter><MantineProvider env="test"><I18nProvider><ReportsSalePage /></I18nProvider></MantineProvider></MemoryRouter>)
   fireEvent.change(screen.getByLabelText('Завантажити файл'), { target: { files: [new File([bytes], 'accounts.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })] } })
-  await screen.findByText(accountBalanceHeaderLines[0]); expect(screen.queryByLabelText('Від')).toBeNull()
+  await screen.findByText(accountBalanceHeaderLines[0]); expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull()
   const cells = container.querySelectorAll('.reports-sale-table tr.data-table-row td.data-table-cell')
   expect(cells[4].textContent).toBe('0,00'); expect(cells[9].textContent).toBe('1 234,56')
   fireEvent.click(screen.getByLabelText('Експорт CSV'))

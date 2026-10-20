@@ -1,5 +1,4 @@
 import {
-  ActionIcon,
   Alert,
   Button,
   Stack,
@@ -275,29 +274,35 @@ function OrganizationClientsPageContent({ permissions }: { permissions: Organiza
           />
           <div className="app-filter-actions organization-clients-filter-actions">
             <Tooltip label={t('Скинути')}>
-              <ActionIcon
+              <Button
                 aria-label={t('Скинути')}
                 color="gray"
                 disabled={!searchDraft.trim()}
-                size={34}
-                variant="light"
+                variant="default"
                 onClick={resetSearch}
+
+                className="organization-clients-toolbar-action"
+                title={t('Скинути')}
+                leftSection={<RotateCcw size={17} />}
               >
-                <RotateCcw size={17} />
-              </ActionIcon>
+                {t('Скинути')}
+              </Button>
             </Tooltip>
             <Tooltip label={t('Оновити')}>
-              <ActionIcon
+              <Button
                 aria-label={t('Оновити')}
                 color="gray"
                 loading={isLoading}
-                size={34}
                 type="button"
-                variant="light"
+                variant="default"
                 onClick={() => reload()}
+
+                className="organization-clients-toolbar-action"
+                title={t('Оновити')}
+                leftSection={<RefreshCw size={18} />}
               >
-                <RefreshCw size={18} />
-              </ActionIcon>
+                {t('Оновити')}
+              </Button>
             </Tooltip>
           </div>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot organization-clients-table-toolbar-slot" />

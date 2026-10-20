@@ -23,11 +23,11 @@
 /* Body region below the shared filter bar keeps the original card padding. */
 .product-storages-filter-bar {
   flex: 0 0 auto;
-  overflow-x: auto;
+  overflow: visible;
 }
 
 .product-storages-filter-row .app-filter-actions {
-  margin-left: auto;
+  margin-left: 0;
 }
 
 .product-storages-body {
@@ -346,4 +346,52 @@
   color: var(--mantine-color-gray-9);
   font-size: 12px;
   font-weight: 700;
+}
+
+.product-storages-card {
+  container: product-storages / inline-size;
+  min-width: 0;
+}
+.product-storages-filter-bar .product-storages-filter-row {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.product-storages-filter-bar .product-storages-filter-row > .product-storages-storage-filter {
+  flex: 0 1 200px;
+  width: 200px;
+}
+.product-storages-filter-bar .product-storages-filter-row > .product-storages-search-filter {
+  flex: 0 1 180px;
+  width: 180px;
+}
+.product-storages-filter-row > .app-filter-actions,
+.product-storages-filter-row > .app-filter-table-toolbar-slot,
+.product-storages-filter-row > .product-storages-preview-action { flex: 0 0 auto; }
+.product-storages-filter-dropdown {
+  max-width: calc(100vw - 24px);
+  padding: 4px;
+}
+.product-storages-filter-dropdown :is([data-combobox-option], .mantine-Combobox-empty) {
+  color: var(--mantine-color-gray-9);
+  font: 400 12px / 16px var(--font-mono);
+}
+.product-storages-filter-dropdown [data-combobox-option] {
+  min-height: 30px;
+  padding: 7px 8px;
+  border-radius: 6px;
+}
+.product-storages-filter-dropdown [data-combobox-option]:is(:hover, [data-combobox-selected], [aria-selected='true']) {
+  background: var(--mantine-color-gray-1);
+}
+@container product-storages (max-width: 1380px) {
+  .product-storages-filter-row .product-storages-toolbar-action,
+  .product-storages-filter-row .data-table-layout-control {
+    width: 36px;
+    min-width: 36px;
+    padding-inline: 0;
+  }
+  .product-storages-toolbar-action-label,
+  .product-storages-filter-row .data-table-layout-control .mantine-Button-label { display: none; }
+  .product-storages-toolbar-action .mantine-Button-section,
+  .product-storages-filter-row .data-table-layout-control .mantine-Button-section { margin: 0; }
 }

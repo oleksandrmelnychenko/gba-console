@@ -977,3 +977,77 @@
 .reports-stocks-grouping-requirement {
   color: var(--mantine-color-gray-9);
 }
+
+/* Registry bars keep bounded fields rather than filling available space. */
+.app-filter-bar.reports-sale-filter-bar,
+.app-filter-bar.reports-stocks-template-toolbar,
+.reports-stocks-form .app-filter-bar.reports-stocks-filter-bar {
+  display: flex; flex-wrap: nowrap; min-width: 0; gap: 8px; overflow: visible;
+}
+.reports-sale-filter-bar .reports-sale-search { flex: 0 0 220px; width: 220px; min-width: 0; }
+.reports-sale-filter-bar .reports-sale-meta { flex: 0 1 auto; min-width: 0; max-width: 240px; gap: 6px; }
+.reports-sale-meta .reports-sale-file-name { min-width: 0; max-width: 140px; }
+.reports-sale-filter-bar .reports-sale-actions { flex: 0 0 auto; margin-left: 0; gap: 6px; }
+.reports-stocks-template-toolbar > .mantine-TextInput-root { flex: 0 0 260px; width: 260px; min-width: 0; max-width: 100%; }
+.reports-stocks-filter-bar .reports-stocks-toolbar-fields { display: flex; flex: 0 1 auto; width: auto; flex-wrap: nowrap; align-items: end; min-width: 0; gap: 8px; }
+.reports-stocks-filter-bar .reports-stocks-toolbar-fields .report-dataset-picker--compact { flex: 0 0 240px; width: 240px; min-width: 0; max-width: 240px; }
+.reports-stocks-filter-bar .reports-stocks-toolbar-fields > .reports-period-presets { flex: 0 0 150px; width: 150px; min-width: 0; }
+.reports-stocks-filter-bar .reports-stocks-actions { flex: 0 0 auto; margin-left: 0; gap: 6px; }
+.reports-stocks-toolbar-comparison { flex: 0 0 288px; width: 288px; min-width: 0; }
+.reports-stocks-toolbar-comparison > .mantine-Group-root { flex-wrap: nowrap; gap: 8px; }
+.reports-stocks-toolbar-comparison .mantine-TextInput-root { width: 140px; min-width: 0; }
+.reports-stocks-toolbar-comparison .mantine-InputWrapper-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.reports-stocks-toolbar-fields > .mantine-Text-root { flex: 0 1 240px; max-width: 240px; font-size: 12px; }
+@media (max-width: 1500px) {
+  .reports-stocks-filter-bar .reports-stocks-toolbar-fields .report-dataset-picker--compact { flex-basis: 200px; width: 200px; max-width: 200px; }
+  .reports-stocks-filter-bar :is(.reports-stocks-preview, .reports-stocks-generate) { flex: 0 0 36px; width: 36px; min-width: 36px; padding: 0; }
+  .reports-stocks-filter-bar :is(.reports-stocks-preview, .reports-stocks-generate) .mantine-Button-label { display: none; }
+  .reports-stocks-filter-bar :is(.reports-stocks-preview, .reports-stocks-generate) .mantine-Button-section { margin: 0; }
+  .reports-sale-filter-bar .reports-sale-meta { max-width: 160px; }
+  .reports-sale-meta .reports-sale-file-name { max-width: 70px; }
+  .reports-sale-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .reports-sale-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
+  .reports-sale-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
+}
+@media (max-width: 900px) {
+  .app-filter-bar.reports-sale-filter-bar, .app-filter-bar.reports-stocks-template-toolbar,
+  .reports-stocks-form .app-filter-bar.reports-stocks-filter-bar,
+  .reports-stocks-filter-bar .reports-stocks-toolbar-fields { flex-wrap: wrap; }
+  .reports-sale-filter-bar .reports-sale-search { max-width: 100%; }
+  .reports-stocks-filter-bar .reports-stocks-toolbar-fields { flex-basis: auto; }
+}
+
+.reports-stocks-filter-bar .reports-stocks-actions { flex-wrap: nowrap; }
+@media (max-width: 1500px) {
+  .reports-stocks-filter-bar .reports-stocks-actions > .mantine-Button-root,
+  .reports-stocks-filter-bar .report-catalogue-trigger { flex: 0 0 36px; width: 36px; min-width: 36px; padding: 0; }
+  .reports-stocks-filter-bar .reports-stocks-actions > .mantine-Button-root .mantine-Button-label,
+  .reports-stocks-filter-bar .report-catalogue-trigger .mantine-Button-label { display: none; }
+  .reports-stocks-filter-bar .reports-stocks-actions > .mantine-Button-root .mantine-Button-section,
+  .reports-stocks-filter-bar .report-catalogue-trigger .mantine-Button-section { margin: 0; }
+}
+.reports-toolbar-dropdown { width: max-content !important; max-width: calc(100vw - 24px); padding: 4px; }
+
+:is(.reports-sale-filter-bar, .reports-stocks-template-toolbar) .reports-toolbar-action { flex: 0 0 auto; width: auto; min-width: 0; white-space: nowrap; }
+/* The reset caption still fits beside compact report-specific actions. */
+.reports-stocks-filter-bar .reports-stocks-actions > .reports-toolbar-action { flex: 0 0 auto; width: auto; min-width: 0; padding-inline: 12px; }
+.reports-stocks-filter-bar .reports-stocks-actions > .reports-toolbar-action .mantine-Button-label { display: flex; }
+.reports-stocks-filter-bar .reports-stocks-actions > .reports-toolbar-action .mantine-Button-section { margin-inline-end: 8px; }
+@media (max-width: 1250px) {
+  .reports-sale-filter-bar .reports-sale-search { flex-basis: 180px; width: 180px; }
+  .reports-sale-filter-bar .reports-sale-meta { max-width: 100px; }
+  .reports-sale-meta .reports-sale-file-name { display: none; }
+}
+@media (max-width: 1050px) {
+  .reports-sale-filter-bar .reports-toolbar-action { width: 36px; min-width: 36px; padding-inline: 0; }
+  .reports-sale-filter-bar .reports-toolbar-action .mantine-Button-label { display: none; }
+  .reports-sale-filter-bar .reports-toolbar-action .mantine-Button-section { margin: 0; }
+}
+
+@media (min-width: 1051px) {
+  .reports-stocks-filter-bar:not(:has(.reports-period-presets, .reports-stocks-toolbar-comparison, .reports-stocks-toolbar-fields > .mantine-Text-root)) :is(.reports-stocks-preview, .reports-stocks-generate, .report-catalogue-trigger, .app-filter-primary-action) {
+    flex: 0 0 auto; width: auto; min-width: 0; padding-inline: 12px;
+  }
+  .reports-stocks-filter-bar:not(:has(.reports-period-presets, .reports-stocks-toolbar-comparison, .reports-stocks-toolbar-fields > .mantine-Text-root)) :is(.reports-stocks-preview, .reports-stocks-generate, .report-catalogue-trigger, .app-filter-primary-action) .mantine-Button-label { display: flex; }
+  .reports-stocks-filter-bar:not(:has(.reports-period-presets, .reports-stocks-toolbar-comparison, .reports-stocks-toolbar-fields > .mantine-Text-root)) :is(.reports-stocks-preview, .reports-stocks-generate, .report-catalogue-trigger, .app-filter-primary-action) .mantine-Button-section { margin-inline-end: 8px; }
+}

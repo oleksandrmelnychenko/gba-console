@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Box, Button, Card, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { Alert, Box, Button, Card, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
@@ -172,19 +172,12 @@ function useCurrencyConvertorsPageModel() {
     setEditingRate(null)
   }, [setAdding, setEditingRate, setRates, setRatesError, setSelectedTrader])
 
-  function changeFrom(value: string) {
-    setFrom(value)
+  function changeDateRange(range: { from: string; to: string }) {
+    setFrom(range.from)
+    setTo(range.to)
 
     if (selectedTrader?.NetUid) {
-      void loadRates(selectedTrader.NetUid, value, to)
-    }
-  }
-
-  function changeTo(value: string) {
-    setTo(value)
-
-    if (selectedTrader?.NetUid) {
-      void loadRates(selectedTrader.NetUid, from, value)
+      void loadRates(selectedTrader.NetUid, range.from, range.to)
     }
   }
 
@@ -356,11 +349,10 @@ function useCurrencyConvertorsPageModel() {
     traders: visibleTraders,
     cancelAdd,
     cancelEdit,
-    changeFrom,
+    changeDateRange,
     changeSearch,
     changeNewRateDate,
     changeNewRateValue,
-    changeTo,
     closeTrader,
     deleteRate,
     goToCreate,
@@ -408,34 +400,34 @@ function CurrencyConvertorsPageContent() {
               label={t('Пошук')}
               placeholder={t("Ім'я, прізвище, по батькові або телефон")}
               size="sm"
-              style={{ flex: '1 1 auto', minWidth: 180 }}
+              className="currency-convertors-search"
               value={model.searchValue}
               onChange={(event) => model.changeSearch(event.currentTarget.value)}
             />
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
-                <ActionIcon
+                <Button
                   aria-label={t('Скинути')}
                   color="gray"
                   disabled={!model.searchValue.trim()}
-                  size={34}
-                  variant="light"
+                  variant="default"
                   onClick={model.resetSearch}
-                >
-                  <RotateCcw size={17} />
-                </ActionIcon>
+
+                  className="currency-convertors-toolbar-caption-action" title={t('Скинути')} leftSection={<RotateCcw size={17} />}>
+                  {t('Скинути')}
+                </Button>
               </Tooltip>
               <Tooltip label={t('Оновити')}>
-                <ActionIcon
+                <Button
                   aria-label={t('Оновити')}
                   color="gray"
                   loading={model.isLoading}
-                  size={34}
-                  variant="light"
+                  variant="default"
                   onClick={() => model.reload()}
-                >
-                  <RefreshCw size={18} />
-                </ActionIcon>
+
+                  className="currency-convertors-toolbar-caption-action" title={t('Оновити')} leftSection={<RefreshCw size={18} />}>
+                  {t('Оновити')}
+                </Button>
               </Tooltip>
             </div>
             <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
@@ -491,10 +483,9 @@ function CurrencyConvertorsPageContent() {
         onCancelAdd={model.cancelAdd}
         onCancelEdit={model.cancelEdit}
         onChangeEditingValue={model.setEditingValue}
-        onChangeFrom={model.changeFrom}
+        onChangeDateRange={model.changeDateRange}
         onChangeNewRateDate={model.changeNewRateDate}
         onChangeNewRateValue={model.changeNewRateValue}
-        onChangeTo={model.changeTo}
         onClose={model.closeTrader}
         onDelete={model.deleteRate}
         onSaveEdit={model.saveEdit}

@@ -152,7 +152,7 @@ function LocationProbe() {
 function renderPage() {
   return render(
     <MemoryRouter initialEntries={['/accounting/payment-online-shop']}>
-      <MantineProvider>
+      <MantineProvider env="test">
         <I18nProvider>
           <PaymentOnlineShopPage />
           <LocationProbe />
@@ -308,34 +308,37 @@ describe('Payment online shop canonical permission guards', () => {
     expect(screen.getByTestId('location').textContent).toBe('/accounting/payment-online-shop')
   })
 
-  it('applies the sale date range as soon as a date is picked', async () => {
+  it('applies both sale date bounds together after confirming the period', async () => {
     allowedPermissions.add(PermissionKeys.SystemPages.OnlineShopPayment.View)
     renderPage()
     await waitFor(() => expect(getPaymentShopItemsPage).toHaveBeenCalledTimes(1))
 
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-10-01' } })
-    await waitFor(() => expect(getPaymentShopItemsPage).toHaveBeenLastCalledWith(
-      expect.objectContaining({ offset: 0, saleDateFrom: '2026-10-01', saleDateTo: '' }),
-    ))
-
+    fireEvent.click(screen.getByRole('button', { name: /^Період:/ }))
+    fireEvent.change(await screen.findByLabelText('Від'), { target: { value: '2026-10-01' } })
     fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-10-19' } })
-    await waitFor(() => expect(getPaymentShopItemsPage).toHaveBeenLastCalledWith(
-      expect.objectContaining({ saleDateFrom: '2026-10-01', saleDateTo: '2026-10-19' }),
-    ))
+    expect(getPaymentShopItemsPage).toHaveBeenCalledTimes(1)
+    fireEvent.click(await screen.findByRole('button', { name: 'Застосувати' }))
+
+    await waitFor(() => {
+      expect(getPaymentShopItemsPage).toHaveBeenCalledTimes(2)
+      expect(getPaymentShopItemsPage).toHaveBeenLastCalledWith(
+        expect.objectContaining({ offset: 0, saleDateFrom: '2026-10-01', saleDateTo: '2026-10-19' }),
+      )
+    })
   })
 
-  it('does not query a reversed date range', async () => {
+  it('does not query a reversed draft date range', async () => {
     allowedPermissions.add(PermissionKeys.SystemPages.OnlineShopPayment.View)
     renderPage()
-    fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-10-01' } })
-    await waitFor(() => expect(getPaymentShopItemsPage).toHaveBeenLastCalledWith(
-      expect.objectContaining({ saleDateFrom: '', saleDateTo: '2026-10-01' }),
-    ))
-    const calls = vi.mocked(getPaymentShopItemsPage).mock.calls.length
-
+    await waitFor(() => expect(getPaymentShopItemsPage).toHaveBeenCalledTimes(1))
+    fireEvent.click(screen.getByRole('button', { name: /^Період:/ }))
+    fireEvent.change(await screen.findByLabelText('До'), { target: { value: '2026-10-01' } })
     fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-10-19' } })
-    await new Promise((resolve) => setTimeout(resolve, 50))
-    expect(getPaymentShopItemsPage).toHaveBeenCalledTimes(calls)
+    const apply = await screen.findByRole('button', { name: 'Застосувати' }) as HTMLButtonElement
+    expect(apply.disabled).toBe(true)
+    expect((await screen.findByRole('alert')).textContent).toContain('Дата «Від» має бути не пізніше дати «До»')
+    fireEvent.click(apply)
+    expect(getPaymentShopItemsPage).toHaveBeenCalledTimes(1)
   })
 
   it('does not mount the registry without page.view', () => {

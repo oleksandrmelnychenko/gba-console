@@ -44,7 +44,7 @@ it.each(artifacts)('imports actual SQL/C# workbook $name, preserving weighted to
   fireEvent.change(screen.getByLabelText('Завантажити файл'), { target: { files: [file] } })
   await screen.findByText(MARGIN_COMPARISON_TITLE)
   expect(screen.getByText(`Рядків: ${leaves.length}`)).toBeTruthy()
-  expect(screen.queryByLabelText('Від')).toBeNull(); expect(screen.queryByLabelText('До')).toBeNull()
+  expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull(); expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull()
   expect(container.querySelectorAll('.reports-sale-row-computed')).toHaveLength(0)
   const tableRows = container.querySelectorAll('.reports-sale-table tr.data-table-row')
   expect(Array.from(tableRows).map(row => Array.from(row.querySelectorAll('td.data-table-cell')).slice(2)

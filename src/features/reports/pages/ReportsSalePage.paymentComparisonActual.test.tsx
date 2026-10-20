@@ -47,7 +47,7 @@ it.each(artifacts)('imports actual SQL/C# workbook $name, preserving currency su
   expect(screen.getByText(`Рядків: ${leaves.length}`)).toBeTruthy()
   expect(container.querySelector('span[title="Порівняння платежів · Сума за поточний період"]')?.textContent).toBe('Поточна сума')
   expect(container.querySelector('span[title="Порівняння платежів · Сума за період порівняння"]')?.textContent).toBe('Попередня сума')
-  expect(screen.queryByLabelText('Від')).toBeNull(); expect(screen.queryByLabelText('До')).toBeNull()
+  expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull(); expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull()
   expect(container.querySelectorAll('.reports-sale-row-computed')).toHaveLength(0)
   const tableRows = container.querySelectorAll('.reports-sale-table tr.data-table-row')
   expect(Array.from(tableRows).map(row => Array.from(row.querySelectorAll('td.data-table-cell')).slice(3)

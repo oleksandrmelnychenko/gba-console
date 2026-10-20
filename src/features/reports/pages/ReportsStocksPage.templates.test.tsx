@@ -1,3 +1,4 @@
+import { changeReportPeriod } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -38,7 +39,7 @@ describe('constructor opened-template identity', () => {
   it('sends an edited period only to the opened id while preserving its stored name', async () => {
     render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage consoleScope={false} /></I18nProvider></MantineProvider>)
     await screen.findByRole('button', { name: 'Продажі за днями' }); await openTemplate()
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-09-02' } })
+    changeReportPeriod({ from: '2026-09-02' })
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(screen.getByRole('button', { name: 'Новий шаблон' }))
     fireEvent.change(screen.getByLabelText('Назва шаблону'), { target: { value: 'Назва нового draft' } })
@@ -50,7 +51,7 @@ describe('constructor opened-template identity', () => {
   it('does not upgrade an old opened draft when renaming a newer reloaded template', async () => {
     render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage consoleScope={false} /></I18nProvider></MantineProvider>)
     await screen.findByRole('button', { name: 'Продажі за днями' }); await openTemplate()
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-09-02' } })
+    changeReportPeriod({ from: '2026-09-02' })
     const newer = { ...template, Revision: 5, Data: { ...template.Data, from: '2026-09-03' } }
     vi.mocked(getServerReportTemplates).mockResolvedValue([newer])
     vi.mocked(saveServerReportTemplate).mockImplementation(async request => {

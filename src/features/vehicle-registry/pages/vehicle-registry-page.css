@@ -462,9 +462,6 @@
       auto;
   }
 
-  .vehicle-registry-filter-bar > :nth-child(7) {
-    display: none;
-  }
 }
 
 @media (max-width: 1120px) {
@@ -508,4 +505,86 @@
   .vehicle-registry-workflow .app-detail-section-head {
     grid-column: 1;
   }
+}
+
+/* Status filters stay available in the popover instead of disappearing on laptops. */
+.vehicle-registry-shell .app-filter-bar.vehicle-registry-filter-bar,
+.vehicle-registry-shell .app-filter-bar.vehicle-registry-import-bar {
+  display: flex;
+  flex-wrap: wrap;
+  overflow: visible;
+  gap: 8px;
+}
+.vehicle-registry-shell .vehicle-registry-filter-bar > .mantine-InputWrapper-root {
+  flex: 0 0 130px;
+  width: 130px;
+  min-width: 0;
+  max-width: 100%;
+}
+.vehicle-registry-shell .vehicle-registry-filter-bar > .vehicle-registry-search {
+  flex-basis: 220px;
+  width: 220px;
+}
+.vehicle-registry-shell .app-filter-bar .app-filter-actions {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  margin-left: 0;
+  gap: 8px;
+}
+.vehicle-registry-shell .app-filter-bar :is(.data-table-toolbar, .data-table-toolbar-left) {
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+.vehicle-registry-extra-filters {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 380px;
+  max-width: calc(100vw - 24px);
+  padding: 12px;
+}
+.vehicle-registry-extra-filters .mantine-InputWrapper-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.vehicle-registry-filter-count {
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 18px;
+  margin-left: 6px;
+  min-width: 20px;
+  text-align: center;
+}
+.vehicle-registry-shell .vehicle-registry-import-copy {
+  flex: 0 0 280px;
+  min-width: 0;
+  max-width: 100%;
+}
+@container registry (max-width: 1250px) {
+  .vehicle-registry-shell .vehicle-registry-filter-bar > .mantine-InputWrapper-root {
+    flex-basis: 110px;
+    width: 110px;
+  }
+  .vehicle-registry-shell .vehicle-registry-filter-bar > .vehicle-registry-search {
+    flex-basis: 150px;
+    width: 150px;
+  }
+  .vehicle-registry-shell .app-filter-bar .data-table-layout-control {
+    width: 36px;
+    min-width: 36px;
+    padding-inline: 0;
+  }
+  .vehicle-registry-shell .app-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
+  .vehicle-registry-shell .app-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
+}
+@container registry (max-width: 600px) {
+  .vehicle-registry-shell .app-filter-bar .app-filter-actions { flex: 0 1 auto; flex-wrap: wrap; }
+}
+
+/* Captions remain visible until this toolbar needs the icon-only size. */
+@container registry (max-width: 1250px) {
+  .app-filter-bar .vehicle-registry-toolbar-action { width: 36px; min-width: 36px; padding-inline: 0; }
+  .vehicle-registry-toolbar-action .mantine-Button-label { display: none; }
+  .vehicle-registry-toolbar-action .mantine-Button-section { margin: 0; }
 }

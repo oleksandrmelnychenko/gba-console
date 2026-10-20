@@ -219,6 +219,7 @@ function UsersPageContent() {
             onChange={(event) => setSearchValue(event.currentTarget.value)}
           />
           <Select
+            classNames={{ dropdown: 'users-filter-dropdown' }}
             className="users-filter-select"
             clearable
             data={regionOptions}
@@ -228,6 +229,7 @@ function UsersPageContent() {
             onChange={setRegionFilter}
           />
           <Select
+            classNames={{ dropdown: 'users-filter-dropdown' }}
             className="users-filter-select"
             clearable
             data={statusOptions}

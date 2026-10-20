@@ -1,0 +1,10 @@
+
+.sales-online-shop-page .sales-filter-bar { overflow: visible; }
+.sales-online-shop-page .sales-online-filter-row { flex-wrap: wrap; gap: 8px; }
+.sales-online-shop-page .sales-online-filter-row > .sales-filter-search { flex: 0 1 240px; width: 240px; }
+.sales-online-shop-page .sales-online-filter-row > .sales-filter-control { flex: 0 1 160px; width: 160px; }
+.sales-online-shop-page .sales-online-filter-row > .sales-filter-actions { flex: 0 0 auto; margin-left: 0; }
+@media (max-width: 1250px) {
+ .sales-online-shop-page .sales-online-filter-row > .sales-filter-search { flex-basis: 200px; width: 200px; }
+ .sales-online-shop-page .sales-online-filter-row > .sales-filter-control { flex-basis: 140px; width: 140px; }
+}

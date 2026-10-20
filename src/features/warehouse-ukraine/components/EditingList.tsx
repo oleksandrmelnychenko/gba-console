@@ -1,5 +1,6 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
-import { Alert, Anchor, Badge, Button, Checkbox, Group, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Anchor, Badge, Button, Checkbox, Group, SimpleGrid, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, RotateCcw } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useReducer, useRef, useState } from 'react'
@@ -276,24 +277,7 @@ export function EditingList({ canProcess, kind, layoutVersion, loader, onLoaded,
     <Stack className="warehouse-ukraine-tab" gap={6}>
       <div className="warehouse-ukraine-tab-content">
         <div className="app-filter-bar warehouse-ukraine-filter-bar is-editing">
-          <div className="app-filter-date-range">
-            <TextInput
-              className="warehouse-ukraine-filter-input"
-              label={t('Від')}
-              max={filterDraft.to || undefined}
-              type="date"
-              value={filterDraft.from}
-              onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-            />
-            <TextInput
-              className="warehouse-ukraine-filter-input"
-              label={t('До')}
-              min={filterDraft.from || undefined}
-              type="date"
-              value={filterDraft.to}
-              onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-            />
-          </div>
+          <ToolbarDateRangeFilter from={filterDraft.from} to={filterDraft.to} onChange={({ from, to }) => applyFilters({ ...filterDraft, from, to })} />
           <Checkbox
             color="orange"
             checked={filterDraft.isDevelopment}
@@ -301,7 +285,7 @@ export function EditingList({ canProcess, kind, layoutVersion, loader, onLoaded,
             onChange={(event) => applyFilters({ ...filterDraft, isDevelopment: event.currentTarget.checked })}
           />
           <div className="app-filter-actions warehouse-ukraine-filter-actions">
-            <Button variant="default" size="sm" leftSection={<RotateCcw size={16} />} onClick={resetFilters}>
+            <Button className="warehouse-toolbar-icon-action" aria-label={t('Скинути')} title={t('Скинути')} variant="default" size="sm" leftSection={<RotateCcw size={16} />} onClick={resetFilters}>
                 {t('Скинути')}
               </Button>
             <Paginator

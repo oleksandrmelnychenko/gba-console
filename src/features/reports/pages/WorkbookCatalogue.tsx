@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Button, Group, Select, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Group, Select, Text, TextInput } from '@mantine/core'
 import { RotateCcw, Search } from 'lucide-react'
 import { useMemo, useState, type ReactNode } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -58,12 +58,12 @@ export function WorkbookCatalogue({ catalogue, inspection, datasets, canGenerate
         <div className="app-filter-bar workbook-catalogue__filters">
           <TextInput label={t('Пошук звіту')} placeholder={t('Назва звіту')} leftSection={<Search size={16} />}
             value={search} onChange={event => setSearch(event.currentTarget.value)} />
-          <Select label={t('База')} placeholder={t('Усі бази')} clearable value={world}
+          <Select classNames={{ dropdown: 'reports-toolbar-dropdown' }} label={t('База')} placeholder={t('Усі бази')} clearable value={world}
             data={worlds.map(value => ({ value, label: value === 'fenix' ? 'Fenix' : value === 'amg' ? 'AMG' : value }))}
             onChange={setWorld} />
           <div className="app-filter-actions">
-            <ActionIcon type="button" variant="default" size={34} aria-label={t('Скинути фільтри')} title={t('Скинути фільтри')}
-              onClick={() => { setSearch(''); setWorld(null) }}><RotateCcw size={16} /></ActionIcon>
+            <Button type="button" aria-label={t('Скинути фільтри')} title={t('Скинути фільтри')}
+              onClick={() => { setSearch(''); setWorld(null) }} className="reports-toolbar-action" variant="default" leftSection={<RotateCcw size={16} />}>{t('Скинути')}</Button>
             <span className="workbook-catalogue__count">{t('Звітів: {count}', { count: reports.length })}</span>
           </div>
           <div ref={setToolbar} className="app-filter-table-toolbar-slot" />

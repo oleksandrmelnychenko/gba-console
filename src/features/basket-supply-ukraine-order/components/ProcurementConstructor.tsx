@@ -613,7 +613,7 @@ function ProcurementConstructorContent() {
   return (
     <div className="procure-cockpit">
       <Card className="app-data-card basket-supply-primary-card" padding={0} radius="md" withBorder>
-        <div className="app-filter-bar app-filter-bar--stacked procure-cockpit-bar">
+        <div className="app-filter-bar procure-cockpit-bar">
           <div className="procure-cockpit-bar__filters">
             <div className="app-filter-field procure-cockpit-bar__lens">
               <Text className="app-filter-label">{t('План закупівлі')}</Text>
@@ -651,33 +651,23 @@ function ProcurementConstructorContent() {
           </div>
           <div className="app-filter-command-row">
             <div className="app-filter-actions procure-cockpit-bar__actions">
-              <Tooltip label={t('Скинути')}>
-                <ActionIcon
+              <Button
                   aria-label={t('Скинути')}
                   color="gray"
-                  size={34}
-                  variant="light"
+                  variant="default"
                   onClick={() => {
                     setLens('warehouse')
                     setSelectedProducerId(null)
                     setSearchQuery('')
                   }}
-                >
-                  <RotateCcw size={17} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon
+                 className="registry-caption-action" title={t('Скинути')} leftSection={<RotateCcw size={17} />}>{t('Скинути')}</Button>
+              <Button
                   aria-label={t('Оновити')}
                   color="gray"
                   loading={isLoading}
-                  size={34}
-                  variant="light"
+                  variant="default"
                   onClick={() => reload()}
-                >
-                  <RefreshCw size={17} />
-                </ActionIcon>
-              </Tooltip>
+                 className="registry-caption-action" title={t('Оновити')} leftSection={<RefreshCw size={17} />}>{t('Оновити')}</Button>
               <Menu position="bottom-end" shadow="md" width={280}>
                 <Menu.Target>
                   <Button color="gray" variant="default" size="sm" className="procure-cockpit-bar__sessions" leftSection={<Bookmark size={15} />}>
@@ -719,21 +709,16 @@ function ProcurementConstructorContent() {
                 </Menu.Dropdown>
               </Menu>
               {canExport && (
-                <Tooltip label={t('Експорт в Excel')}>
-                  <ActionIcon
+                <Button
                     aria-label={t('Експорт в Excel')}
                     disabled={visibleRows.length === 0}
-                    size={34}
                     variant="default"
                     onClick={() => {
                       if (can(PermissionKeys.PurchaseCockpit.Document.Export)) {
                         void exportRowsToXlsx(visibleRows, lens, t, orderQtyFor)
                       }
                     }}
-                  >
-                    <ExcelIcon size={22} />
-                  </ActionIcon>
-                </Tooltip>
+                   color="gray" className="registry-caption-action" title={t('Експорт в Excel')} leftSection={<ExcelIcon size={22} />}>{t('Експорт в Excel')}</Button>
               )}
             </div>
             <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />

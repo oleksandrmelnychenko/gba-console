@@ -363,6 +363,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
         <div className="app-filter-bar product-history-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-history-filter-row">
             <TextInput
+              className="product-history-date-filter"
               label={t('Дата')}
               type="date"
               value={dateTo}
@@ -372,6 +373,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
               }}
             />
             <CheckboxMultiSelect
+              dropdownClassName="product-history-storage-dropdown"
               searchable
               data={storageOptions}
               disabled={isLoadingStorages || storageOptions.length === 0}
@@ -385,6 +387,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
               }}
             />
             <TextInput
+              className="product-history-search-filter"
               leftSection={<Search size={16} />}
               label={t('Пошук')}
               placeholder={t('Код або назва товару')}
@@ -392,12 +395,15 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
               onChange={(event) => updateSearch(event.currentTarget.value)}
             />
             <div className="app-filter-actions">
-              <Button variant="default" color="gray" size="sm" aria-label={t('Скинути')}
+              <Button className="product-history-reset-action" title={t('Скинути')}
+                variant="default" color="gray" size="sm" aria-label={t('Скинути')}
                 leftSection={<RotateCcw size={16} />} onClick={resetFilters}>
                 {t('Скинути')}
               </Button>
               {canExport && (
                 <Button
+                  className="product-history-export-action"
+                  title={t('Друк PDF')}
                   aria-label={t('Друк PDF')}
                   color="gray"
                   variant="default"

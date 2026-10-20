@@ -1,6 +1,5 @@
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
   Button,
   Group,
@@ -234,29 +233,25 @@ export function ProductGroupProductsPanel({ canOpenProduct, productGroupNetId }:
           onChange={(value) => setLimit(Number(value || DEFAULT_PAGE_LIMIT))}
         />
         <Tooltip label={t('Скинути')}>
-          <ActionIcon
+          <Button
             aria-label={t('Скинути')}
             color="gray"
-            size={36}
+            size="sm"
             style={{ flex: '0 0 auto' }}
-            variant="light"
+            variant="default"
             onClick={resetSearch}
-          >
-            <RotateCcw size={18} />
-          </ActionIcon>
+           className="registry-caption-action" leftSection={<RotateCcw size={18} />}>{t('Скинути')}</Button>
         </Tooltip>
         <Tooltip label={t('Оновити')}>
-          <ActionIcon
+          <Button
             aria-label={t('Оновити')}
             color="gray"
             loading={isLoading}
-            size={36}
+            size="sm"
             style={{ flex: '0 0 auto' }}
-            variant="light"
+            variant="default"
             onClick={() => reload()}
-          >
-            <RefreshCw size={18} />
-          </ActionIcon>
+           className="registry-caption-action" leftSection={<RefreshCw size={18} />}>{t('Оновити')}</Button>
         </Tooltip>
         <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot product-group-detail-table-tools" />
         <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />

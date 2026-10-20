@@ -73,12 +73,12 @@ export function ClientTypeRoleFilter({ clientTypes, disabled, value, onChange }:
           w={CHECKBOX_MULTI_SELECT_WIDTH}
           style={{ flex: `0 0 ${CHECKBOX_MULTI_SELECT_WIDTH}` }}
         >
-          <Text size="sm" truncate>
+          <Text className="clients-role-filter-label" size="sm" truncate>
             {triggerLabel}
           </Text>
         </Button>
       </Popover.Target>
-      <Popover.Dropdown p="xs">
+      <Popover.Dropdown className="clients-role-filter-dropdown" p="xs">
         <ScrollArea.Autosize mah={320} type="auto">
           <Stack gap="sm" w={260}>
             {groups.map((group) => {

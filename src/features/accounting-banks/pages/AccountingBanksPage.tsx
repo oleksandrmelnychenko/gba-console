@@ -1,8 +1,6 @@
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
-  Box,
   Button,
   Card,
   Group,
@@ -12,7 +10,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { AppModal } from "../../../shared/ui/AppModal"
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
@@ -243,25 +241,17 @@ function AccountingBanksPageContent() {
               placeholder={t('Назва, МФО, ЄДРПОУ, місто, телефон або адреса')}
               value={searchDraft}
               onChange={(event) => updateSearch(event.currentTarget.value)}
-              style={{ flex: '1 1 auto', minWidth: 180 }}
             />
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
-                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetSearch}>
-                  <RotateCcw size={17} />
-                </ActionIcon>
+                <Button aria-label={t('Скинути')} onClick={resetSearch} className="finance-toolbar-action" variant="default" leftSection={<RotateCcw size={17} />} title={t('Скинути')}>{t('Скинути')}</Button>
               </Tooltip>
               <Tooltip label={t('Оновити')}>
-                <ActionIcon
+                <Button
                   aria-label={t('Оновити')}
-                  color="gray"
                   loading={isLoading}
-                  size={34}
-                  variant="light"
                   onClick={reload}
-                >
-                  <RefreshCw size={17} />
-                </ActionIcon>
+                 className="finance-toolbar-action" variant="default" leftSection={<RefreshCw size={17} />} title={t('Оновити')}>{t('Оновити')}</Button>
               </Tooltip>
             </div>
             <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
@@ -359,15 +349,15 @@ function BankEditorModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered className="accounting-bank-editor" opened={isOpen} size={680} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{bank?.Id ? t('Редагування банку') : t('Новий банк')}</span>} onClose={onClose}>
-      <form onSubmit={onSubmit}>
-        <Stack gap="md">
+    <AppModal centered className="accounting-bank-editor" opened={isOpen} size={600} title={bank?.Id ? t('Редагування банку') : t('Новий банк')} onClose={onClose}>
+      <form className="accounting-bank-editor-form" onSubmit={onSubmit}>
+        <Stack gap={12}>
           {error && (
-            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+            <Alert className="accounting-bank-editor-error" color="red" icon={<CircleAlert size={16} />} variant="light">
               {error}
             </Alert>
           )}
-          <div className="accounting-bank-editor-card">
+          <Card className="app-section-card accounting-bank-editor-card" withBorder radius="md" padding="md">
             <Text className="app-section-title" size="sm">{t('Реквізити банку')}</Text>
           <TextInput
             disabled={isSaving || !canSubmit}
@@ -377,7 +367,7 @@ function BankEditorModal({
             value={values.name}
             onChange={(event) => onFieldChange('name', event.currentTarget.value)}
           />
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+          <SimpleGrid cols={{ base: 1, xs: 2 }} spacing={10}>
             <TextInput
               disabled={isSaving || !canSubmit}
               label={t('МФО')}
@@ -395,10 +385,10 @@ function BankEditorModal({
               onChange={(event) => onFieldChange('edrpouCode', event.currentTarget.value)}
             />
           </SimpleGrid>
-          </div>
-          <div className="accounting-bank-editor-card">
+          </Card>
+          <Card className="app-section-card accounting-bank-editor-card" withBorder radius="md" padding="md">
             <Text className="app-section-title" size="sm">{t('Контактні дані')}</Text>
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+          <SimpleGrid cols={{ base: 1, xs: 2 }} spacing={10}>
             <TextInput
               disabled={isSaving || !canSubmit}
               label={t('Місто')}
@@ -421,9 +411,9 @@ function BankEditorModal({
             value={values.address}
             onChange={(event) => onFieldChange('address', event.currentTarget.value)}
           />
-          </div>
-          <Group justify="space-between">
-            <Box>
+          </Card>
+          <AppModalFooter className="accounting-bank-editor-footer">
+            <Group gap={8}>
               {bank?.Id && (
                 <PermissionGate permissionKey={ACCOUNTING_BANK_DELETE_PERMISSION}>
                   <Button
@@ -438,9 +428,9 @@ function BankEditorModal({
                   </Button>
                 </PermissionGate>
               )}
-            </Box>
+            </Group>
             <Group gap="xs">
-              <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
+              <Button disabled={isSaving} type="button" variant="default" onClick={onClose}>
                 {t('Скасувати')}
               </Button>
               <PermissionGate permissionKey={bank?.Id ? ACCOUNTING_BANK_SAVE_PERMISSION : ACCOUNTING_BANK_CREATE_PERMISSION}>
@@ -449,7 +439,7 @@ function BankEditorModal({
                 </Button>
               </PermissionGate>
             </Group>
-          </Group>
+          </AppModalFooter>
         </Stack>
       </form>
     </AppModal>

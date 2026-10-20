@@ -6,3 +6,42 @@
 .new-product-delivery-protocol-modal .mantine-Button-root[data-variant='default'] {
   background: var(--mantine-color-white);
 }
+
+.new-product-delivery-protocol-modal .new-protocol-combobox-input {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.new-protocol-combobox-dropdown {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  max-width: calc(100vw - 24px);
+  padding: 4px;
+}
+
+.new-protocol-combobox-dropdown .new-protocol-combobox-option {
+  border-radius: 6px;
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  min-height: 30px;
+  padding: 7px 8px;
+}
+
+.new-protocol-combobox-dropdown .new-protocol-combobox-option:is(:hover, [data-combobox-selected], [aria-selected='true'], [data-checked]) {
+  background: var(--mantine-color-gray-1);
+  color: var(--mantine-color-gray-9);
+}
+
+.new-protocol-combobox-dropdown .mantine-Combobox-empty {
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  padding: 7px 8px;
+}

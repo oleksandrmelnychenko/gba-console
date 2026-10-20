@@ -183,7 +183,7 @@ it('requires the exact available agreement for dataset 22 and preserves it when 
   const view = await ready()
   await select('Звіт', agreementPricesDataset.Name)
   expect(blockingReason().textContent).toMatch(/договір/i)
-  expect(screen.queryByLabelText('Від')).toBeNull()
+  expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull()
   moveTo('Аналіз і сортування'); moveTo('Умови відбору'); moveTo('Результат')
   fireEvent.submit(view.container.querySelector('form')!)
   expect(createStockReport).not.toHaveBeenCalled()

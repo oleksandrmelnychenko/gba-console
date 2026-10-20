@@ -20,7 +20,7 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppDrawerFooter } from '../../../shared/ui/AppDrawer'
+import { AppModalFooter } from '../../../shared/ui/AppModal'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
@@ -422,8 +422,9 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
             <Text className="app-section-title" fw={600} size="sm">
               {t('Дані видаткового ордера')}
             </Text>
-            <SimpleGrid cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
+            <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
               <TextInput
+                className="cashflow-field-date"
                 disabled={isLoading || isSaving}
                 label={t('Дата')}
                 required
@@ -432,6 +433,7 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
                 onChange={(event) => updateForm({ date: event.currentTarget.value })}
               />
               <TextInput
+                className="cashflow-field-time"
                 disabled={isLoading || isSaving}
                 label={t('Час')}
                 required
@@ -440,6 +442,7 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
                 onChange={(event) => updateForm({ time: event.currentTarget.value })}
               />
               <TextInput
+                className="cashflow-field-number"
                 disabled={isLoading || isSaving}
                 label={t('Вхідний номер')}
                 maxLength={INCOME_CASHFLOW_TEXT_LIMITS.arrivalNumber}
@@ -453,7 +456,7 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
             <Text className="app-section-title" fw={600} size="sm">
               {t('Реквізити виплати')}
             </Text>
-            <SimpleGrid cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
+            <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
               <Select
                 data={organizationOptions}
                 disabled={isLoading || isSaving}
@@ -473,7 +476,7 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
                 onChange={handleRegisterChanged}
               />
               <Select
-                className="app-input-description-below"
+                className="app-input-description-below cashflow-field-currency"
                 data={currencyOptions}
                 description={balanceLabel || undefined}
                 disabled={!selectedRegister || isLoading || isSaving}
@@ -483,7 +486,10 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
                 value={form.selectedCurrencyRegisterValue || null}
                 onChange={(value) => updateForm({ selectedCurrencyRegisterValue: value || '' })}
               />
+            </SimpleGrid>
+            <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
               <NumberInput
+                className="cashflow-field-amount"
                 allowNegative={false}
                 decimalScale={2}
                 disabled={isLoading || isSaving}
@@ -502,7 +508,9 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
                 onChange={handleUserSearchChanged}
                 onOptionSubmit={handleUserSubmit}
               />
-              <Group align="flex-end" gap="xs" wrap="nowrap">
+            </SimpleGrid>
+            <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
+              <Group className="cashflow-field-article" align="flex-end" gap="xs" wrap="nowrap">
                 <SearchableSelect
                   data={movementOptions}
                   disabled={isLoading || isSaving}
@@ -539,6 +547,7 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
             </Text>
             <SimpleGrid cols={{ base: 1, md: 2 }} style={{ alignItems: 'start' }}>
               <TextInput
+                className="cashflow-field-purpose"
                 disabled={isLoading || isSaving}
                 label={t('Призначення платежу')}
                 maxLength={INCOME_CASHFLOW_TEXT_LIMITS.paymentPurpose}
@@ -573,13 +582,13 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
           </Stack>
         </Stack>
       </form>
-      <AppDrawerFooter>
+      <AppModalFooter>
         <Group gap="xs" justify="flex-end">
           <Button
             color="gray"
             leftSection={<ArrowLeft size={16} />}
             type="button"
-            variant="light"
+            variant="default"
             onClick={onCancel}
           >
             {t('Скасувати')}
@@ -597,7 +606,7 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
             </Button>
           )}
         </Group>
-      </AppDrawerFooter>
+      </AppModalFooter>
     </>
   )
 }

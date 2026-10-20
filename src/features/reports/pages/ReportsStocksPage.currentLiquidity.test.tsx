@@ -1,3 +1,4 @@
+import { readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -39,7 +40,7 @@ function selectEndpoints(modal: HTMLElement) {
 it('defers capability until catalogue opening and keeps the two-endpoint scalar scope outside the native workspace draft', async () => {
   render(<Providers><ReportsStocksPage consoleScope={false} constructorMode /></Providers>); await screen.findByRole('button', { name: 'Продажі за днями' })
   expect(getCurrentLiquidityCapabilities).not.toHaveBeenCalled(); expect(getReportCatalogue).not.toHaveBeenCalled()
-  const from = (screen.getByLabelText('Від') as HTMLInputElement).value, through = (screen.getByLabelText('До') as HTMLInputElement).value
+  const from = (readReportDateInput('Від') as HTMLInputElement).value, through = (readReportDateInput('До') as HTMLInputElement).value
   const draftKey = `report-workspace-draft:v1:${CURRENT_LIQUIDITY_TEST_CALLER}`, draft = sessionStorage.getItem(draftKey)
   const modal = await openForm(); selectEndpoints(modal)
   expect((within(modal).getByLabelText('Поточна дата') as HTMLInputElement).type).toBe('date')
@@ -49,7 +50,7 @@ it('defers capability until catalogue opening and keeps the two-endpoint scalar 
   expect(createStockReport).not.toHaveBeenCalled(); expect(sessionStorage.getItem(draftKey)).toBe(draft)
   fireEvent.click(within(modal).getByRole('button', { name: 'Закрити звіт поточної ліквідності' }))
   await waitFor(() => expect(screen.queryByRole('dialog', { name: currentLiquidityCapability().ReportName })).toBeNull())
-  expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe(from); expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe(through)
+  expect((readReportDateInput('Від') as HTMLInputElement).value).toBe(from); expect((readReportDateInput('До') as HTMLInputElement).value).toBe(through)
 })
 it('opens the original form with genuine capability even when the native numeric dataset catalogue is unavailable', async () => {
   vi.mocked(getReportDatasets).mockRejectedValue(new Error('Native datasets unavailable')); render(<Providers><ReportsStocksPage consoleScope={false} constructorMode /></Providers>)

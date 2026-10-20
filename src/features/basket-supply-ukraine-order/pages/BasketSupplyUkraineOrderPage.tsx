@@ -1,6 +1,6 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
   Badge,
   Box,
@@ -14,8 +14,7 @@ import {
   Stack,
   Text,
   TextInput,
-  Tooltip,
-} from '@mantine/core'
+  } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { useDebouncedValue } from '@mantine/hooks'
@@ -763,28 +762,19 @@ function BasketCartWorkflow() {
             </SimpleGrid>
 
             <div className="app-filter-actions">
-              <Tooltip label={t('Скинути')}>
-                <ActionIcon
+              <Button
                   aria-label={t('Скинути')}
                   color="gray"
-                  size={34}
-                  variant="light"
+                  variant="default"
                   onClick={() => setFilters({ availability: 'all', priority: 'all', search: '' })}
-                >
-                  <RotateCcw size={17} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={() => reload()}>
-                  <RefreshCw size={16} />
-                </ActionIcon>
-              </Tooltip>
+                 className="registry-caption-action" title={t('Скинути')} leftSection={<RotateCcw size={17} />}>{t('Скинути')}</Button>
+              <Button aria-label={t('Оновити')} color="gray" loading={isLoading} variant="default" onClick={() => reload()} className="registry-caption-action" title={t('Оновити')} leftSection={<RefreshCw size={16} />}>{t('Оновити')}</Button>
               {canImportFile && (
                 <>
-                  <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" leftSection={FILE_IMPORT_ICON} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} onClick={() => openUploadModal('load')}>
+                  <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" aria-label={t('Завантажити в корзину')} title={t('Завантажити в корзину')} leftSection={FILE_IMPORT_ICON} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} onClick={() => openUploadModal('load')}>
                     {t('Завантажити в корзину')}
                   </Button>
-                  <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" leftSection={FILE_SPREADSHEET_ICON} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} onClick={() => openUploadModal('preview')}>
+                  <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" aria-label={t('Вибрати для експорту')} title={t('Вибрати для експорту')} leftSection={FILE_SPREADSHEET_ICON} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} onClick={() => openUploadModal('preview')}>
                     {t('Вибрати для експорту')}
                   </Button>
                 </>
@@ -1314,20 +1304,11 @@ function SalesWorkflowTab() {
     <Stack className="basket-sales-workspace" gap={12}>
       <Card className="app-data-card basket-supply-primary-card" withBorder padding={0} radius="md">
         <div className="app-filter-bar basket-supply-command-bar">
-          <div className="app-filter-date-range">
-            <TextInput
-              label={t('Від')}
-              type="date"
-              value={filterDraft.from}
-              onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-            />
-            <TextInput
-              label={t('До')}
-              type="date"
-              value={filterDraft.to}
-              onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-            />
-          </div>
+          <ToolbarDateRangeFilter
+            from={filterDraft.from}
+            to={filterDraft.to}
+            onChange={({ from, to }) => applyFilters({ ...filterDraft, from, to })}
+          />
           <TextInput
             label={t('Пошук')}
             leftSection={<Search size={16} />}
@@ -1343,16 +1324,8 @@ function SalesWorkflowTab() {
             }}
           />
           <div className="app-filter-actions">
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                <RotateCcw size={17} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={() => reload()}>
-                <RefreshCw size={16} />
-              </ActionIcon>
-            </Tooltip>
+            <Button aria-label={t('Скинути')} color="gray" variant="default" onClick={resetFilters} className="registry-caption-action" title={t('Скинути')} leftSection={<RotateCcw size={17} />}>{t('Скинути')}</Button>
+            <Button aria-label={t('Оновити')} color="gray" loading={isLoading} variant="default" onClick={() => reload()} className="registry-caption-action" title={t('Оновити')} leftSection={<RefreshCw size={16} />}>{t('Оновити')}</Button>
           </div>
         </div>
         <div className="basket-sales-section-heading"><span className="app-section-title">{t('Доступні фактури')}</span><TableChip value={sourceSales.length} /><div ref={setSourceToolbarSlot} className="app-filter-table-toolbar-slot" /></div>

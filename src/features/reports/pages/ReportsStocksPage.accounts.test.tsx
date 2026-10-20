@@ -1,3 +1,4 @@
+import { changeReportPeriod, readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -30,19 +31,19 @@ describe('recorded account balance constructor', () => {
   })
   it('switches to the current four-axis preset without leaking dates or valuation and restores the period on return', async () => {
     const { container } = await ready()
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-06-01' } }); fireEvent.change(screen.getByLabelText('До'), { target: { value: '2026-06-30' } })
+    changeReportPeriod({ from: '2026-06-01', to: '2026-06-30' })
     await choose(valuationDataset.Name)
     expect(screen.getByRole('combobox', { name: 'Договір для оцінки' })).toBeTruthy()
     await choose(accountBalanceDataset.Name)
     fireEvent.click(screen.getByRole('button', { name: getNativeReportProfile(11)!.preset.name }))
-    expect(screen.queryByLabelText('Від')).toBeNull(); expect(screen.queryByRole('combobox', { name: 'Договір для оцінки' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull(); expect(screen.queryByRole('combobox', { name: 'Договір для оцінки' })).toBeNull()
     expect(screen.getByRole('checkbox', { name: 'Записаний залишок рахунку' })).toBeTruthy()
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toEqual(defaultDatasetRequest(accountBalanceDataset, '', ''))
     await choose(supplierReturnDataset.Name)
-    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-06-01')
-    expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe('2026-06-30')
+    expect((readReportDateInput('Від') as HTMLInputElement).value).toBe('2026-06-01')
+    expect((readReportDateInput('До') as HTMLInputElement).value).toBe('2026-06-30')
   })
   it.each(accountBalanceDataset.Filters)('uses native one-character lookup and the exact selected Id for field $Type', async field => {
     const id = field.Type === 33 ? 3 : field.Type === 34 ? 2 : 741
@@ -62,7 +63,7 @@ describe('recorded account balance constructor', () => {
     const template = { Id: crypto.randomUUID(), Revision: 1, Name: 'Мої записані рахунки', Data: data }
     vi.mocked(getServerReportTemplates).mockResolvedValue([template]); const { container } = await ready()
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Мої записані рахунки' }))
-    expect(screen.queryByLabelText('Від')).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Період:/ })).toBeNull()
     fireEvent.submit(container.querySelector('form')!); await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toEqual({ ...data, selections: data.selections.slice(0, 2) })
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(screen.getByRole('button', { name: 'Оновити шаблон' }))
@@ -80,7 +81,7 @@ describe('recorded account balance constructor', () => {
     const data = { ...defaultDatasetRequest(accountBalanceDataset, '', ''), from: '2026-06-01' }
     vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: crypto.randomUUID(), Revision: 1, Name: 'Історичні рахунки', Data: data }]); await ready()
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Історичні рахунки' }))
-    expect(screen.getByText(/Записані залишки рахунків не підтримують період/)).toBeTruthy(); expect(screen.getByLabelText('Від')).toBeTruthy()
+    expect(screen.getByText(/Записані залишки рахунків не підтримують період/)).toBeTruthy(); expect(readReportDateInput('Від')).toBeTruthy()
     expect(createStockReport).not.toHaveBeenCalled()
   })
 })

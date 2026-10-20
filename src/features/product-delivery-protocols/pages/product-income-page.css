@@ -385,3 +385,5 @@
 .product-income-table-toolbar-slot { display: flex; flex-wrap: wrap; margin-left: auto; }
 .product-income-table-toolbar-slot .data-table-toolbar { padding: 0; margin: 0; }
 .product-income-page .app-section-title { color: var(--mantine-color-gray-9); }
+
+.product-income-grid-toolbar .product-income-table-toolbar-slot { margin-left: 0; }

@@ -25,6 +25,7 @@ vi.mock('../api/accountingBanksApi', () => ({
 }))
 
 vi.mock('../../../shared/ui/AppModal', () => ({
+  AppModalFooter: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   AppModal: ({ children, opened }: { children: ReactNode; opened: boolean }) =>
     opened ? <section>{children}</section> : null,
 }))

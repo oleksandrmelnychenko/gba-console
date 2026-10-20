@@ -45,3 +45,10 @@
   .register-reports-heading { align-items: flex-start; }
   .register-reports-actions { width: 100%; }
 }
+
+.register-reports-picker { width: 440px; max-width: 100%; flex: 0 0 auto; }
+.register-reports-picker .mantine-InputWrapper-label { font: 500 12px var(--font-mono); }
+.register-reports-actions { flex: 0 0 auto; }
+@media (min-width: 901px) { .register-reports-header { flex-wrap: nowrap; } }
+
+.register-reports-picker-dropdown { width: max-content !important; max-width: min(700px, calc(100vw - 24px)); padding: 4px; }

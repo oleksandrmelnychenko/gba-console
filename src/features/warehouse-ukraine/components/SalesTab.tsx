@@ -1,3 +1,4 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { Alert, Anchor, Badge, Button, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
@@ -432,24 +433,7 @@ export function SalesTab({ canCreateShipment, canPrintEditAct, canPrintInvoice, 
     <Stack className="warehouse-ukraine-tab" gap={6}>
       <div className="warehouse-ukraine-tab-content">
         <div className="app-filter-bar warehouse-ukraine-filter-bar is-sales">
-          <div className="app-filter-date-range">
-            <TextInput
-              className="warehouse-ukraine-filter-input"
-              label={t('Від')}
-              max={model.filterDraft.to || undefined}
-              type="date"
-              value={model.filterDraft.from}
-              onChange={(event) => model.applyFilters({ ...model.filterDraft, from: event.currentTarget.value })}
-            />
-            <TextInput
-              className="warehouse-ukraine-filter-input"
-              label={t('До')}
-              min={model.filterDraft.from || undefined}
-              type="date"
-              value={model.filterDraft.to}
-              onChange={(event) => model.applyFilters({ ...model.filterDraft, to: event.currentTarget.value })}
-            />
-          </div>
+          <ToolbarDateRangeFilter from={model.filterDraft.from} to={model.filterDraft.to} onChange={({ from, to }) => model.applyFilters({ ...model.filterDraft, from, to })} />
           <TextInput
             className="warehouse-ukraine-filter-input"
             label={t('Пошук по товару')}
@@ -457,7 +441,7 @@ export function SalesTab({ canCreateShipment, canPrintEditAct, canPrintInvoice, 
             onChange={(event) => model.setFilterDraft({ ...model.filterDraft, value: event.currentTarget.value })}
           />
           <div className="app-filter-actions warehouse-ukraine-filter-actions">
-            <Button variant="default" size="sm" leftSection={<RotateCcw size={16} />} onClick={model.resetFilters}>
+            <Button className="warehouse-toolbar-icon-action" aria-label={t('Скинути')} title={t('Скинути')} variant="default" size="sm" leftSection={<RotateCcw size={16} />} onClick={model.resetFilters}>
                 {t('Скинути')}
               </Button>
             <Paginator

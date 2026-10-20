@@ -1,4 +1,5 @@
-import { Button, Select, TextInput } from '@mantine/core'
+import { ToolbarDateRangeFilter } from '../../../../shared/ui/ToolbarDateRangeFilter'
+import { Button, Select } from '@mantine/core'
 import { Building2, ChartNoAxesCombined, ChevronDown, ChevronRight, ChevronUp, ListFilter, ListTree, SlidersHorizontal } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -105,20 +106,16 @@ export function WorkbookPeriodField({ from, to, minDate, maxDate, presets, error
   const { t } = useI18n()
   const activePreset = presets.find(preset => preset.from === from && preset.to === to)
   return <div className="workbook-period">
-    {presets.length ? <Select className="workbook-period__presets" label={t('Період')} placeholder={t('Довільний період')}
+    {presets.length ? <Select classNames={{ dropdown: 'reports-toolbar-dropdown' }} className="workbook-period__presets" label={t('Період')} placeholder={t('Довільний період')}
       data={presets.map(preset => ({ value: preset.label, label: t(preset.label) }))}
       value={activePreset?.label ?? null} allowDeselect={false} disabled={disabled}
       onChange={value => {
         const preset = presets.find(item => item.label === value)
         if (preset) { onFromChange(preset.from); onToChange(preset.to) }
       }} /> : null}
-    <div className="app-filter-date-range">
-      <TextInput label={t('Від')} type="date" min={minDate} max={to || maxDate} value={from}
-        disabled={disabled} error={Boolean(error)} aria-describedby={error ? 'workbook-period-error' : undefined}
-        onChange={event => onFromChange(event.currentTarget.value)} />
-      <TextInput label={t('До')} type="date" min={from || minDate} max={maxDate} value={to}
-        disabled={disabled} error={Boolean(error)} aria-describedby={error ? 'workbook-period-error' : undefined}
-        onChange={event => onToChange(event.currentTarget.value)} />
+    <div role="group" aria-label={t('Період')} aria-describedby={error ? 'workbook-period-error' : undefined}>
+      <ToolbarDateRangeFilter from={from} to={to} min={minDate} max={maxDate} disabled={disabled}
+        onChange={range => { onFromChange(range.from); onToChange(range.to) }} />
     </div>
     {error ? <p id="workbook-period-error" className="workbook-period__error" role="alert">{error}</p> : null}
   </div>

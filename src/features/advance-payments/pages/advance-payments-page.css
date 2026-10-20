@@ -47,3 +47,17 @@
   flex: 1 1 auto;
   min-height: 0;
 }
+
+/* Compact registry toolbar: fixed field widths, responsive action labels. */
+.app-filter-bar.advance-payments-filter-bar { container: advance-payments-toolbar / inline-size; display: flex; flex-wrap: wrap; overflow: visible; }
+.app-filter-bar.advance-payments-filter-bar > .app-filter-fields { display: flex; flex: 0 1 auto; flex-wrap: wrap; align-items: end; gap: 8px; width: auto; min-width: 0; max-width: 100%; }
+.app-filter-bar.advance-payments-filter-bar > .app-filter-fields > :is(.mantine-InputWrapper-root, .app-filter-field) { flex: 0 0 180px; width: 180px; min-width: 0; max-width: 100%; }
+.app-filter-bar.advance-payments-filter-bar :is(.app-filter-actions, .data-table-toolbar, .data-table-toolbar-left) { flex-wrap: nowrap; gap: 8px; margin-left: 0; }
+.app-filter-bar.advance-payments-filter-bar .app-filter-actions { flex: 0 0 auto; }
+@container advance-payments-toolbar (max-width: 780px) {
+  .app-filter-bar.advance-payments-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar.advance-payments-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
+  .app-filter-bar.advance-payments-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
+}
+
+.app-filter-bar.advance-payments-filter-bar .finance-toolbar-action { flex: 0 0 auto; white-space: nowrap; }

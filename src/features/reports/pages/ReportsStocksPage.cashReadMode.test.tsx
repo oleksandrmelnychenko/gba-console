@@ -1,3 +1,4 @@
+import { changeReportPeriod } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
@@ -64,8 +65,7 @@ it('opens the cash workbook on current documents, then keeps deliberate register
 it('accepts a period from 01.01.2025 through today by default and keeps the opt-out on completed days', async () => {
   const view = await openWorkbook()
   const today = formatKyivBusinessDate()
-  fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2025-01-01' } })
-  fireEvent.change(screen.getByLabelText('До'), { target: { value: today } })
+  changeReportPeriod({ from: '2025-01-01', to: today })
   expect(await submitted(view, 1)).toMatchObject({ cashReadMode: 0, from: '2025-01-01', to: today })
   mode('За налаштуваннями звіту')
   fireEvent.submit(view.container.querySelector('form')!)

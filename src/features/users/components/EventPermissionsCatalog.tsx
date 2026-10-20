@@ -439,7 +439,7 @@ export const EventPermissionsCatalog = forwardRef<
 
   return (
     <Box className="role-tree event-permissions-editor">
-      <div className="app-filter-bar event-permissions-filters">
+      <div className={`app-filter-bar event-permissions-filters${hasActiveFilters ? ' has-active-filters' : ''}`}>
         <TextInput
           className="event-permissions-search"
           aria-label={t('Пошук права')}

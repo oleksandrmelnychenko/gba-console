@@ -1,6 +1,5 @@
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
   Anchor,
   Button,
@@ -601,38 +600,39 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
               label={t('Пошук')}
               placeholder={t('Код або назва товару')}
               value={searchDraft}
-              style={{ flex: '1 1 220px' }}
+              className="product-placements-search"
               onChange={(event) => updateSearch(event.currentTarget.value)}
             />
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
-                <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetFilters}>
-                  <RotateCcw size={17} />
-                </ActionIcon>
+                <Button variant="default" color="gray" aria-label={t('Скинути')} onClick={resetFilters}
+                  className="product-placements-toolbar-caption-action" title={t('Скинути')} leftSection={<RotateCcw size={17} />}>
+                  {t('Скинути')}
+                </Button>
               </Tooltip>
               {canImport && <Tooltip label={t('Імпорт')}>
-                <ActionIcon
+                <Button
                   aria-label={t('Імпорт')}
                   color="gray"
                   disabled={storageOptions.length === 0}
-                  size={34}
-                  variant="light"
+                  variant="default"
                   onClick={() => setImportModalOpened(true)}
-                >
-                  <FileInputIcon size={18} />
-                </ActionIcon>
+
+                  className="product-placements-toolbar-caption-action" title={t('Імпорт')} leftSection={<FileInputIcon size={18} />}>
+                  {t('Імпорт')}
+                </Button>
               </Tooltip>}
               {canExport && <Tooltip label={t('Експорт')}>
-                <ActionIcon
+                <Button
                   aria-label={t('Експорт')}
                   color="gray"
                   loading={isExporting}
-                  size={34}
-                  variant="light"
+                  variant="default"
                   onClick={handleExport}
-                >
-                  <Download size={18} />
-                </ActionIcon>
+
+                  className="product-placements-toolbar-caption-action" title={t('Експорт')} leftSection={<Download size={18} />}>
+                  {t('Експорт')}
+                </Button>
               </Tooltip>}
               <Paginator
                 hasNext={canMoveForward}

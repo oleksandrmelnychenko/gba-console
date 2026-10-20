@@ -1,6 +1,6 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
   Button,
   Card,
@@ -54,6 +54,7 @@ import {
 import { getProductIncomeDocumentSourceLink } from '../productIncomeDocumentSourceLink'
 import {
   getIncomeItemProduct,
+  getIncomeReturnTotals,
   getItemProductCode,
   getItemProductName,
   getOverviewKind,
@@ -691,44 +692,21 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
       <Card className="app-data-card product-income-documents-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-income-documents-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-income-documents-filter-row">
-            <div className="app-filter-date-range">
-              <TextInput
-                size="sm"
-                label={t('Від')}
-                type="date"
-                value={dateFrom}
-                onChange={(event) => {
-                  clearTransientSelection()
-                  setPage(1)
-                  setDateFrom(event.currentTarget.value)
-                }}
-              />
-              <TextInput
-                size="sm"
-                label={t('До')}
-                type="date"
-                value={dateTo}
-                onChange={(event) => {
-                  clearTransientSelection()
-                  setPage(1)
-                  setDateTo(event.currentTarget.value)
-                }}
-              />
-            </div>
+            <ToolbarDateRangeFilter from={dateFrom} to={dateTo} onChange={({ from, to }) => { clearTransientSelection(); setPage(1); setDateFrom(from); setDateTo(to) }} />
             <TextInput
               size="sm"
               leftSection={<Search size={16} />}
               label={t('Пошук')}
               placeholder={t('Номер, постачальник або коментар')}
               value={searchDraft}
-              style={{ flex: '1 1 260px' }}
+              className="product-income-documents-search-filter"
               onChange={(event) => updateSearch(event.currentTarget.value)}
             />
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
-                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                  <RotateCcw size={17} />
-                </ActionIcon>
+                <Button variant="default" size="sm" leftSection={<RotateCcw size={16} />} onClick={resetFilters}>
+                  {t('Скинути')}
+                </Button>
               </Tooltip>
               <Paginator
                 isLoading={isLoading}
@@ -999,6 +977,9 @@ export function ProductIncomeDocumentDrawer({
   const sourceLink = document ? getPrimaryProductIncomeSourceLink(document) : null
   const overviewKind = document ? getOverviewKind(document) : 'document'
   const deferredOverviewNote = document ? getDeferredOverviewNote(document, t) : null
+  const returnAgreement = document
+    ? getActiveProductIncomeItems(document).find((item) => item.SaleReturnItem)?.SaleReturnItem?.OrderItem?.Order?.Sale?.ClientAgreement?.Agreement
+    : null
 
   return (
     <AppDrawer
@@ -1011,23 +992,24 @@ export function ProductIncomeDocumentDrawer({
       {document && row && (
         <div className="product-income-document-detail">
         <DocumentDetailLayout
-          variant="compact"
+          variant="inventory"
           summary={
             <DocumentDetailSummary
+              variant="inventory"
               eyebrow={t('Документ')}
               title={document.Number ? `№ ${document.Number}` : displayValue(document.Number)}
               status={row.docState ? <DocumentDetailChip tone={row.docState === t('Виконано') ? 'success' : 'danger'}
                 icon={row.docState === t('Виконано') ? <Check size={13} /> : <X size={13} />}>{row.docState}</DocumentDetailChip> : null}
               meta={<>
-                {document.FromDate ? <DocumentDetailChip tone="info" icon={<CalendarDays size={13} />}>{formatDateTime(document.FromDate)}</DocumentDetailChip> : null}
-                {row.type ? <DocumentDetailChip>{row.type}</DocumentDetailChip> : null}
+                {document.FromDate ? <span className="income-document-date"><CalendarDays size={13} />{formatDateTime(document.FromDate)}</span> : null}
+                {row.type ? <span className="income-document-kind">{row.type}</span> : null}
                 {overviewKind !== 'saleReturn' && <DocumentDetailChip>{t('Кількість')}: {formatAmount(row.qty)}</DocumentDetailChip>}
               </>}
               metrics={
                 <>
                   <div className="document-detail-metric">
-                    <span>{t('Сума документа')}</span>
-                    <strong>{formatMoney(row.amount)} <TableChip tone="source" value={row.currency} /></strong>
+                    <span>{t(overviewKind === 'saleReturn' ? 'Сума повернення' : 'Сума документа')}</span>
+                    <strong>{row.amount == null ? '—' : formatMoney(row.amount)} <TableChip tone="source" value={row.currency} /></strong>
                   </div>
                 </>
               }
@@ -1062,7 +1044,8 @@ export function ProductIncomeDocumentDrawer({
                 <Button
                   disabled={!document.NetUid || isLoadingRemainings}
                   loading={isLoadingRemainings}
-                  variant="filled"
+                  variant="default"
+                  className="document-detail-secondary-action"
                   leftSection={<Layers size={16} />}
                   onClick={() => onLoadRemainings(document)}
                 >
@@ -1073,15 +1056,17 @@ export function ProductIncomeDocumentDrawer({
           }
         >
           {overviewKind === 'saleReturn' ? (
-            <DocumentDetailSection title={t('Реквізити документа')}>
-              <IncomeMetadataChip label={t('Постачальник / клієнт')} tone="document" value={row.client} />
+            <DocumentDetailSection title={t('Реквізити документа')} stacked>
+              <div className="income-return-metadata">
+              <DocumentDetailRow label={t('Клієнт')} value={row.client} wide />
               <IncomeMetadataChip label={t('Організація')} tone="product" value={row.organization} />
               <IncomeMetadataChip label={t('Склад')} tone="storage" value={document.Storage?.Name} />
-              <DocumentDetailRow label={t('Відповідальний')} value={getEntityName(document.User)} />
-              <IncomeMetadataChip label={t('Номер інвойсу')} tone="document" value={row.invNumber} />
-              <DocumentDetailRow label={t('Дата інвойсу')} mono value={formatDateTime(row.invDate)} />
-              <DocumentDetailRow label={t('Дата МД')} mono value={formatDateTime(row.specificationDate)} />
+              <IncomeMetadataChip label={t('Відповідальний')} tone="warning" value={getEntityName(document.User)} />
+              <IncomeMetadataChip label={t('Повернення')} tone="document" value={row.invNumber} />
+              <DocumentDetailRow label={t('Дата повернення')} mono value={formatDateTime(row.invDate)} />
+              <DocumentDetailRow label={t('Угода')} value={returnAgreement?.Name} />
               {row.comment || document.Comment ? <DocumentDetailRow label={t('Коментар')} value={row.comment || document.Comment} wide /> : null}
+              </div>
             </DocumentDetailSection>
           ) : (
             <div className="document-detail-columns">
@@ -1096,7 +1081,7 @@ export function ProductIncomeDocumentDrawer({
                 <IncomeMetadataChip label={t('Постачальник / клієнт')} tone="document" value={row.client} />
                 <IncomeMetadataChip label={t('Організація')} tone="product" value={row.organization} />
                 <IncomeMetadataChip label={t('Склад')} tone="storage" value={document.Storage?.Name} />
-                <DocumentDetailRow label={t('Відповідальний')} value={getEntityName(document.User)} />
+                <IncomeMetadataChip label={t('Відповідальний')} tone="warning" value={getEntityName(document.User)} />
               </DocumentDetailSection>
             </div>
 
@@ -1314,49 +1299,50 @@ function useCapitalizationOverviewColumns(): DataTableColumn<CapitalizationOverv
 
 function SaleReturnOverview({ document }: { document: ProductIncomeDocument }) {
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const items = getActiveProductIncomeItems(document).filter((item) => item.SaleReturnItem)
   const firstItem = items[0]?.SaleReturnItem
   const agreement = firstItem?.OrderItem?.Order?.Sale?.ClientAgreement?.Agreement
-  const currencyCode = agreement?.Currency?.Code || agreement?.Currency?.Name || ''
+  const totals = getIncomeReturnTotals(document)
+  const currencyCode = totals.currency
   const isVat = Boolean(agreement?.WithVATAccounting)
-  const totalAmount = document.TotalNetPrice || sumRows(items, (item) => item.SaleReturnItem?.Amount)
-  const totalVat = document.TotalVatAmount || sumRows(items, (item) => item.SaleReturnItem?.VatAmount)
-  const columns = getSaleReturnOverviewColumns(t, currencyCode, isVat, items)
+  const totalAmount = totals.amount
+  const vatAmounts = items.map((item) => item.SaleReturnItem?.VatAmount)
+  const totalVat = vatAmounts.length > 0 && vatAmounts.every(isFiniteNumber)
+    ? vatAmounts.reduce((total, amount) => total + amount, 0)
+    : undefined
+  const columns = getSaleReturnOverviewColumns(t, isVat, items)
 
   return (
     <DocumentDetailSection
+      actions={<div className="income-document-table-tools" ref={setTableToolbarSlot} />}
       stacked
-      title={t('Прихідна накладна (повернення)')}
+      title={t('Товари повернення')}
     >
-
-      <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing={12} verticalSpacing={10}>
-        <DocumentDetailRow label={t('Угода')} value={agreement?.Name} />
-        <IncomeMetadataChip label={t('Валюта')} tone="source" value={currencyCode} />
-      </SimpleGrid>
-
       {items.length === 0 ? (
         <Text c="dimmed" size="sm">
           {t('Позицій не знайдено')}
         </Text>
       ) : (
         <DataTable
+          toolbarPortalTarget={tableToolbarSlot}
           columns={columns}
           data={items}
           defaultLayout={{ density: 'normal' }}
           emptyText={t('Позицій не знайдено')}
           getRowId={(item) => getSaleReturnIncomeItemKey(item)}
-          layoutVersion="product-income-sale-return-items-1"
+          layoutVersion="product-income-sale-return-items-2"
           maxHeight={420}
-          minWidth={isVat ? 1010 : 886}
+          minWidth={isVat ? 880 : 744}
           tableId="product-income-sale-return-items"
         />
       )}
 
       <SimpleGrid className="income-return-totals" cols={{ base: 1, sm: 2, md: 4 }} spacing={12} verticalSpacing={10}>
         <DocumentDetailRow label={t('Всього позицій')} mono value={String(items.length)} />
-        <DocumentDetailRow label={t('Вся кількість')} mono value={formatAmount(document.TotalQty || sumRows(items, (item) => item.SaleReturnItem?.Qty ?? item.Qty))} />
-        <DocumentDetailRow label={t('Загальна сума')} mono value={<Group component="span" gap={6}><span>{formatMoney(totalAmount)}</span><TableChip tone="source" value={currencyCode} /></Group>} />
-        {isVat && <DocumentDetailRow label={t('ПДВ')} mono value={formatMoney(totalVat)} />}
+        <DocumentDetailRow label={t('Вся кількість')} mono value={totals.qty == null ? '—' : formatAmount(totals.qty)} />
+        <DocumentDetailRow label={t('Загальна сума')} mono value={<Group component="span" gap={6}><span>{totalAmount == null ? '—' : formatMoney(totalAmount)}</span><TableChip tone="source" value={currencyCode} /></Group>} />
+        {isVat && <DocumentDetailRow label={t('ПДВ')} mono value={totalVat == null ? '—' : formatMoney(totalVat)} />}
       </SimpleGrid>
     </DocumentDetailSection>
   )
@@ -1364,7 +1350,6 @@ function SaleReturnOverview({ document }: { document: ProductIncomeDocument }) {
 
 function getSaleReturnOverviewColumns(
   t: (value: string) => string,
-  currencyCode: string,
   isVat: boolean,
   items: ProductIncomeItem[],
 ): DataTableColumn<ProductIncomeItem>[] {
@@ -1409,21 +1394,12 @@ function getSaleReturnOverviewColumns(
     },
     {
       id: 'amount',
-      header: t('Сума'),
+      header: t('Сума, EUR'),
       width: 124,
       minWidth: 108,
       align: 'right',
       accessor: (item) => item.SaleReturnItem?.Amount,
       cell: (item) => <Text className="app-money" size="sm" ta="right">{formatMoney(item.SaleReturnItem?.Amount)}</Text>,
-    },
-    {
-      id: 'amountLocal',
-      header: currencyCode || t('Сума у валюті'),
-      width: 136,
-      minWidth: 118,
-      align: 'right',
-      accessor: (item) => item.SaleReturnItem?.AmountLocal,
-      cell: (item) => <Text className="app-money" size="sm" ta="right">{formatMoney(item.SaleReturnItem?.AmountLocal)}</Text>,
     },
     ...(isVat
       ? [
@@ -1460,6 +1436,7 @@ function ActReconciliationOverview({
   isLoading: boolean
 }) {
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const rows = getActReconciliationOverviewRows(document)
   const columns = useMemo<DataTableColumn<ActReconciliationOverviewRow>[]>(
     () => [
@@ -1525,12 +1502,14 @@ function ActReconciliationOverview({
 
   return (
     <DocumentDetailSection
+      actions={<div className="income-document-table-tools" ref={setTableToolbarSlot} />}
       stacked
       subtitle={<>{displayValue(document.Number)} · <span className="app-money app-money-meta">{formatMoney(document.TotalNetPrice)}</span></>}
       title={t('Прихідна накладна (акт звірки)')}
     >
 
       <DataTable
+          toolbarPortalTarget={tableToolbarSlot}
         columns={columns}
         data={rows}
         emptyText={t('Позицій не знайдено')}
@@ -1644,7 +1623,7 @@ function useProductIncomeDocumentColumns({
         width: 96,
         minWidth: 82,
         accessor: (row) => row.currency,
-        cell: (row) => <TableChip tone="neutral" value={displayValue(row.currency)} />,
+        cell: (row) => <TableChip tone="source" value={displayValue(row.currency)} />,
       },
       {
         id: 'client',
@@ -1696,7 +1675,7 @@ function useProductIncomeDocumentColumns({
         width: 220,
         minWidth: 180,
         accessor: (row) => row.organization,
-        cell: (row) => displayValue(row.organization),
+        cell: (row) => <TableChip tone="product" value={row.organization} />,
       },
       {
         id: 'state',
@@ -1704,7 +1683,7 @@ function useProductIncomeDocumentColumns({
         width: 116,
         minWidth: 96,
         accessor: (row) => row.docState,
-        cell: (row) => displayValue(row.docState),
+        cell: (row) => <TableChip tone={row.docState === t('Виконано') ? 'success' : 'danger'} value={row.docState} />,
       },
       {
         id: 'responsible',
@@ -1966,7 +1945,7 @@ function useRemainingConsignmentColumns({
         width: 180,
         minWidth: 150,
         accessor: (item) => item.OrganizationName,
-        cell: (item) => displayValue(item.OrganizationName),
+        cell: (item) => <TableChip tone="product" value={item.OrganizationName} />,
       },
       {
         id: 'weight',

@@ -1,4 +1,5 @@
 .event-permissions-editor {
+  container: event-permissions / inline-size;
   min-width: 0;
 }
 
@@ -11,8 +12,10 @@
 }
 
 .app-filter-bar.event-permissions-filters > .event-permissions-search {
-  flex: 1 1 200px;
-  min-width: 160px;
+  flex: 0 0 200px;
+  width: 200px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .app-filter-bar.event-permissions-filters > .event-permissions-risk {
@@ -58,12 +61,12 @@
 
 @media (max-width: 560px) {
   .app-filter-bar.event-permissions-filters > .event-permissions-search {
-    flex-basis: 100%;
+    flex-basis: 200px;
   }
 
   .app-filter-bar.event-permissions-filters > .event-permissions-risk,
   .app-filter-bar.event-permissions-filters > .event-permissions-selection {
-    flex: 1 1 140px;
+    flex: 0 0 130px;
   }
 
   .event-permissions-stats {
@@ -193,4 +196,11 @@
 
 .event-permissions-editor .role-tree-disclosure {
   color: var(--mantine-color-gray-7);
+}
+
+/* The extra selection action appears only for filtered results. Keep all captions. */
+@container event-permissions (max-width: 1250px) {
+  .app-filter-bar.event-permissions-filters.has-active-filters > .event-permissions-search { flex-basis: 150px; width: 150px; }
+  .app-filter-bar.event-permissions-filters.has-active-filters > .event-permissions-risk { flex-basis: 120px; width: 120px; }
+  .app-filter-bar.event-permissions-filters.has-active-filters > .event-permissions-selection { flex-basis: 100px; width: 100px; }
 }

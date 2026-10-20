@@ -23,7 +23,7 @@
   border-bottom-color: var(--mantine-color-gray-2);
   box-sizing: border-box;
   flex: 0 0 auto;
-  overflow-x: auto;
+  overflow: visible;
 }
 
 .product-availabilities-page__table {
@@ -44,30 +44,58 @@
   min-height: 0;
 }
 
-/* Keep filters and table controls on one baseline; overflow stays in the strip. */
+/* Bound controls to their content; compact actions only where the row is crowded. */
+.product-availabilities-card { container: product-availabilities / inline-size; }
 .product-availabilities-page .product-availabilities-filter-row {
-  display: grid;
-  grid-template-columns: 260px minmax(210px, 240px) minmax(170px, 200px) max-content max-content;
-  flex-wrap: nowrap;
-  gap: 8px;
-  width: 100%;
-}
-
-.product-availabilities-page .product-availabilities-filter-row > * {
-  grid-row: 1;
-  min-width: 0;
-}
-
-.product-availabilities-page .product-availabilities-filter-row .app-filter-date-range {
-  width: 260px;
-  min-width: 260px;
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
+.product-availabilities-page .product-availabilities-filter-row > .product-availabilities-storage {
+  flex: 0 1 200px;
+  width: 200px;
+}
+.product-availabilities-page .product-availabilities-filter-row > .product-availabilities-search {
+  flex: 0 1 180px;
+  width: 180px;
+}
+.product-availabilities-filter-row > .app-filter-actions,
+.product-availabilities-filter-row > .app-filter-table-toolbar-slot {
+  flex: 0 0 auto;
+  margin-left: 0;
+}
+.product-availabilities-storage-dropdown {
+  max-width: calc(100vw - 24px);
+  padding: 4px;
+}
+.product-availabilities-storage-dropdown :is([data-combobox-option], .mantine-Combobox-empty) {
+  color: var(--mantine-color-gray-9);
+  font: 400 12px / 16px var(--font-mono);
+}
+.product-availabilities-storage-dropdown [data-combobox-option] {
+  min-height: 30px;
+  padding: 7px 8px;
+  border-radius: 6px;
+}
+.product-availabilities-storage-dropdown [data-combobox-option]:is(:hover, [data-combobox-selected], [aria-selected='true']) {
+  background: var(--mantine-color-gray-1);
+}
+@container product-availabilities (max-width: 1320px) {
+  .product-availabilities-filter-row .data-table-layout-control {
+    width: 36px;
+    min-width: 36px;
+    padding-inline: 0;
+  }
+  .product-availabilities-filter-row .data-table-layout-control .mantine-Button-label { display: none; }
+  .product-availabilities-filter-row .data-table-layout-control .mantine-Button-section { margin: 0; }
+}
 
-.product-availabilities-page .product-availabilities-filter-row .app-filter-actions,
-.product-availabilities-page .product-availabilities-filter-row .app-filter-table-toolbar-slot,
-.product-availabilities-page .product-availabilities-filter-row .data-table-toolbar,
-.product-availabilities-page .product-availabilities-filter-row .data-table-toolbar-left {
-  flex-wrap: nowrap;
-  min-width: max-content;
+@container product-availabilities (max-width: 1000px) {
+  .product-availabilities-filter-row .product-availabilities-action {
+    width: 36px;
+    min-width: 36px;
+    padding-inline: 0;
+  }
+  .product-availabilities-action-label { display: none; }
+  .product-availabilities-action .mantine-Button-section { margin: 0; }
 }

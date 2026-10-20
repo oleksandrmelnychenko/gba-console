@@ -1,3 +1,4 @@
+import { changeReportPeriod, readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -51,7 +52,7 @@ describe('saved variant and dirty constructor draft are explicit independent act
 
   it('runs the exact saved revision while the edited period and draft name remain unsaved', async () => {
     await ready()
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-09-02' } })
+    changeReportPeriod({ from: '2026-09-02' })
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(screen.getByRole('button', { name: 'Новий шаблон' }))
     fireEvent.change(screen.getByLabelText('Назва шаблону'), { target: { value: 'Моя незбережена чернетка' } })
@@ -60,7 +61,7 @@ describe('saved variant and dirty constructor draft are explicit independent act
     fireEvent.click(screen.getByRole('button', { name: 'Показати збережений варіант' }))
     await screen.findByRole('button', { name: 'Файли збереженого звіту' })
     expect(vi.mocked(previewSavedNativeReport).mock.calls[0][0]).toEqual({ id: template.Id, revision: 4, dataSource: 0 })
-    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-09-02')
+    expect((readReportDateInput('Від') as HTMLInputElement).value).toBe('2026-09-02')
     expect(saveServerReportTemplate).not.toHaveBeenCalled()
     expect(createStockReport).not.toHaveBeenCalled(); expect(previewStockReport).not.toHaveBeenCalled()
     expect(template.Data.from).toBe('2026-09-01')
@@ -70,12 +71,12 @@ describe('saved variant and dirty constructor draft are explicit independent act
     expect((screen.getByLabelText('Назва шаблону') as HTMLInputElement).value).toBe('Моя незбережена чернетка')
     fireEvent.click(screen.getByRole('button', { name: 'Скасувати' }))
     fireEvent.click(within(screen.getByRole('group', { name: template.Name })).getByRole('button', { name: `Відкрити для редагування: ${template.Name}` }))
-    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-09-01')
+    expect((readReportDateInput('Від') as HTMLInputElement).value).toBe('2026-09-01')
   })
 
   it('uses an edited draft only when the ordinary constructor preview is explicitly requested', async () => {
     await ready()
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-09-02' } })
+    changeReportPeriod({ from: '2026-09-02' })
     fireEvent.click(screen.getByRole('button', { name: 'Показати на екрані' }))
     await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(previewStockReport).mock.calls[0][0]).toMatchObject({ from: '2026-09-02', to: template.Data.to })

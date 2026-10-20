@@ -1,3 +1,4 @@
+import { changeReportPeriod } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -166,7 +167,7 @@ describe('named catalogue report to constructor', () => {
   it('rechecks the parent capabilities before replacing a draft and keeps the catalogue open on refusal', async () => {
     vi.mocked(getReportDatasets).mockResolvedValueOnce(reportDatasets).mockResolvedValue([currentDebtDataset])
     await ready()
-    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-09-03' } })
+    changeReportPeriod({ from: '2026-09-03' })
     const before = stored().snapshot
     await launchDebt()
     expect(screen.getByText('Не вдалося відкрити звіт')).toBeTruthy()

@@ -1,5 +1,4 @@
 import {
-  ActionIcon,
   Alert,
   Badge,
   Box,
@@ -29,6 +28,7 @@ import { IncompleteSaleItemsList } from '../../clients/components/IncompleteSale
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import type { RetailCartItem } from '../../clients/onlineShopTypes'
 import type { SaleOrderItem } from '../../clients/salesTypes'
 import type {
@@ -363,12 +363,11 @@ function IncompleteSalesOnlineShopPageView({
         filterDraft={filterDraft}
         isLoading={isLoading}
         sales={sales}
-        onFromChange={(from) => applyFilters({ ...filterDraft, from })}
+        onPeriodChange={(range) => applyFilters({ ...filterDraft, ...range })}
         onNumberChange={(number) => applyFilters({ ...filterDraft, number })}
         onOpenDetail={openDetail}
         onReload={reloadSales}
         onReset={resetFilters}
-        onToChange={(to) => applyFilters({ ...filterDraft, to })}
         onToggleAccepted={(isAccepted) => applyFilters({ ...filterDraft, isAccepted })}
       />
 
@@ -395,12 +394,11 @@ function IncompleteSalesTableCard({
   filterDraft,
   isLoading,
   sales,
-  onFromChange,
+  onPeriodChange,
   onNumberChange,
   onOpenDetail,
   onReload,
   onReset,
-  onToChange,
   onToggleAccepted,
 }: {
   columns: DataTableColumn<IncompleteSalesOnlineShopItem>[]
@@ -408,12 +406,11 @@ function IncompleteSalesTableCard({
   filterDraft: FilterDraft
   isLoading: boolean
   sales: IncompleteSalesOnlineShopItem[]
-  onFromChange: (from: string) => void
+  onPeriodChange: (range: { from: string; to: string }) => void
   onNumberChange: (number: string) => void
   onOpenDetail: (sale: IncompleteSalesOnlineShopItem) => void
   onReload: () => void
   onReset: () => void
-  onToChange: (to: string) => void
   onToggleAccepted: (isAccepted: boolean) => void
 }) {
   const { t } = useI18n()
@@ -422,24 +419,11 @@ function IncompleteSalesTableCard({
   return (
     <div className="incomplete-sales-online-shop-shell console-table-shell">
       <div className="app-filter-bar incomplete-sales-online-shop-filter-bar">
-        <div className="app-filter-date-range">
-          <TextInput
-            className="incomplete-sales-online-shop-date-input"
-            label={t('Від')}
-            max={filterDraft.to || undefined}
-            type="date"
-            value={filterDraft.from}
-            onChange={(event) => onFromChange(event.currentTarget.value)}
-          />
-          <TextInput
-            className="incomplete-sales-online-shop-date-input"
-            label={t('До')}
-            min={filterDraft.from || undefined}
-            type="date"
-            value={filterDraft.to}
-            onChange={(event) => onToChange(event.currentTarget.value)}
-          />
-        </div>
+        <ToolbarDateRangeFilter
+          from={filterDraft.from}
+          to={filterDraft.to}
+          onChange={onPeriodChange}
+        />
         <TextInput
           className="incomplete-sales-online-shop-search-input"
           label={t('Номер')}
@@ -456,14 +440,26 @@ function IncompleteSalesTableCard({
         />
         <div className="app-filter-actions incomplete-sales-online-shop-filter-actions">
           <Tooltip label={t('Скинути')}>
-            <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={onReset}>
-              <RotateCcw size={17} />
-            </ActionIcon>
+            <Button
+              className="incomplete-sales-online-shop-secondary-action"
+              variant="default"
+              aria-label={t('Скинути')}
+              leftSection={<RotateCcw size={17} />}
+              onClick={onReset}
+            >
+              {t('Скинути')}
+            </Button>
           </Tooltip>
           <Tooltip label={t('Оновити')}>
-            <ActionIcon variant="light" color="gray" size={34} aria-label={t('Оновити')} onClick={onReload}>
-              <RefreshCw size={18} />
-            </ActionIcon>
+            <Button
+              className="incomplete-sales-online-shop-secondary-action"
+              variant="default"
+              aria-label={t('Оновити')}
+              leftSection={<RefreshCw size={18} />}
+              onClick={onReload}
+            >
+              {t('Оновити')}
+            </Button>
           </Tooltip>
         </div>
         <div

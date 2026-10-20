@@ -1039,7 +1039,7 @@ function IncomeCashflowClientFormPageContent() {
   return (
     <>
       <AppDrawer
-        className="income-cashflow-client-form-drawer"
+        className="income-cashflow-client-form-drawer income-cashflow-compact-form"
         opened
         position="right"
         size="wide"
@@ -1163,8 +1163,9 @@ function IncomeCashflowClientFormPageContent() {
               {t('Реквізити надходження')}
             </Text>
 
-            <SimpleGrid cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
+            <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
               <TextInput
+                className="cashflow-field-number"
                 disabled={isLoading || isSaving}
                 label={t('Вхідний номер')}
                 maxLength={INCOME_CASHFLOW_TEXT_LIMITS.arrivalNumber}
@@ -1172,6 +1173,7 @@ function IncomeCashflowClientFormPageContent() {
                 onChange={(event) => updateForm({ entranceNumber: event.currentTarget.value })}
               />
               <TextInput
+                className="cashflow-field-date"
                 disabled={isLoading || isSaving}
                 label={t('Дата')}
                 required
@@ -1180,6 +1182,7 @@ function IncomeCashflowClientFormPageContent() {
                 onChange={(event) => updateForm({ date: event.currentTarget.value })}
               />
               <TextInput
+                className="cashflow-field-time"
                 disabled={isLoading || isSaving}
                 label={t('Час')}
                 required
@@ -1187,6 +1190,8 @@ function IncomeCashflowClientFormPageContent() {
                 value={form.time}
                 onChange={(event) => updateForm({ time: event.currentTarget.value })}
               />
+            </SimpleGrid>
+            <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
               <Select
                 data={registerOptions}
                 disabled={!selectedOrganization || isLoading || isSaving}
@@ -1197,6 +1202,7 @@ function IncomeCashflowClientFormPageContent() {
                 onChange={handleRegisterChanged}
               />
               <Select
+                className="cashflow-field-currency"
                 data={currencyOptions}
                 disabled={!selectedRegister || isLoading || isSaving}
                 label={t('Валюта')}
@@ -1206,6 +1212,7 @@ function IncomeCashflowClientFormPageContent() {
                 onChange={(value) => updateForm({ selectedCurrencyValue: value || '' })}
               />
               <Select
+                className="cashflow-field-agreement"
                 data={agreementOptions}
                 disabled={!agreementOptions.length || isLoading || isSaving}
                 label={t('Договір')}
@@ -1214,7 +1221,10 @@ function IncomeCashflowClientFormPageContent() {
                 value={form.selectedAgreementValue || null}
                 onChange={handleAgreementChanged}
               />
+            </SimpleGrid>
+            <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
               <NumberInput
+                className="cashflow-field-amount"
                 allowNegative={false}
                 decimalScale={2}
                 disabled={isLoading || isSaving}
@@ -1225,6 +1235,7 @@ function IncomeCashflowClientFormPageContent() {
                 onChange={handleAmountChanged}
               />
               <NumberInput
+                className="cashflow-field-rate"
                 allowNegative={false}
                 decimalScale={6}
                 disabled={isLoading || isSaving}
@@ -1234,6 +1245,7 @@ function IncomeCashflowClientFormPageContent() {
                 onChange={(value) => updateForm({ exchangeRate: toNumber(value) })}
               />
               <NumberInput
+                className="cashflow-field-vat"
                 allowNegative={false}
                 decimalScale={2}
                 disabled={isLoading || isSaving}
@@ -1244,6 +1256,7 @@ function IncomeCashflowClientFormPageContent() {
                 onChange={handleVatRateChanged}
               />
               <NumberInput
+                className="cashflow-field-amount"
                 allowNegative={false}
                 decimalScale={2}
                 disabled={isLoading || isSaving}
@@ -1253,7 +1266,9 @@ function IncomeCashflowClientFormPageContent() {
                 value={form.vatAmount}
                 onChange={(value) => updateForm({ vatAmount: toNumber(value) })}
               />
-              <Group align="flex-end" gap="xs" wrap="nowrap">
+            </SimpleGrid>
+            <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
+              <Group className="cashflow-field-article" align="flex-end" gap="xs" wrap="nowrap">
                 <SearchableSelect
                   data={movementOptions}
                   disabled={isLoading || isSaving}

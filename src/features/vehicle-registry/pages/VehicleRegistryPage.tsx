@@ -1,11 +1,11 @@
 import {
-  ActionIcon,
   Alert,
   Badge,
   Button,
   FileButton,
   Group,
   Loader,
+  Popover,
   Select,
   Stack,
   Text,
@@ -21,6 +21,7 @@ import {
   Link2,
   RotateCcw,
   Search,
+  SlidersHorizontal,
   UserRoundSearch,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
@@ -325,6 +326,7 @@ export function VehicleRegistryPage() {
               }}
             />
             <Select
+              classNames={{ dropdown: 'vehicle-registry-filter-dropdown' }}
               searchable
               clearable
               data={filters.Brands}
@@ -338,6 +340,7 @@ export function VehicleRegistryPage() {
               }}
             />
             <Select
+              classNames={{ dropdown: 'vehicle-registry-filter-dropdown' }}
               searchable
               clearable
               data={filters.Models}
@@ -349,62 +352,93 @@ export function VehicleRegistryPage() {
                 setModel(value)
               }}
             />
-            <Select
-              clearable
-              data={clientMatchOptions(t)}
-              label={t('Клієнт у GBA')}
-              placeholder={t('Усі · збіги зверху')}
-              value={clientMatchState}
-              onChange={(value) => {
-                setPage(1)
-                setClientMatchState(value as VehicleRegistryClientMatchState | null)
-              }}
-            />
-            <Select
-              clearable
-              data={processingOptions(t)}
-              label={t('Обробка')}
-              placeholder={t('Всі')}
-              value={processingState}
-              onChange={(value) => {
-                setPage(1)
-                setProcessingState(value as VehicleRegistryProcessingState | null)
-              }}
-            />
-            <Select
-              clearable
-              data={workflowOptions(t)}
-              label={t('Статус')}
-              placeholder={t('Всі')}
-              value={workflowStatus}
-              onChange={(value) => {
-                setPage(1)
-                setWorkflowStatus(value as VehicleRegistryWorkflowStatus | null)
-              }}
-            />
-            <Select
-              clearable
-              data={qualityOptions(t)}
-              label={t('Якість')}
-              placeholder={t('Всі')}
-              value={qualityStatus}
-              onChange={(value) => {
-                setPage(1)
-                setQualityStatus(value as VehicleRegistryDataQualityStatus | null)
-              }}
-            />
+            <Popover position="bottom-start" withinPortal shadow="md" trapFocus returnFocus>
+              <Popover.Target>
+                <Button
+                  className="vehicle-registry-extra-filter-trigger"
+                  variant="default"
+                  color="gray"
+                  leftSection={<SlidersHorizontal size={16} />}
+                  aria-label={t('Додаткові фільтри')}
+                >
+                  {t('Фільтри')}
+                  {[clientMatchState, processingState, workflowStatus, qualityStatus].filter(Boolean).length > 0 && (
+                    <span className="vehicle-registry-filter-count">
+                      {[clientMatchState, processingState, workflowStatus, qualityStatus].filter(Boolean).length}
+                    </span>
+                  )}
+                </Button>
+              </Popover.Target>
+              <Popover.Dropdown className="vehicle-registry-extra-filters">
+                <Select
+                  comboboxProps={{ withinPortal: false }}
+                  classNames={{ dropdown: 'vehicle-registry-filter-dropdown' }}
+                  clearable
+                  data={clientMatchOptions(t)}
+                  label={t('Клієнт у GBA')}
+                  placeholder={t('Усі · збіги зверху')}
+                  value={clientMatchState}
+                  onChange={(value) => {
+                    setPage(1)
+                    setClientMatchState(value as VehicleRegistryClientMatchState | null)
+                  }}
+                />
+                <Select
+                  comboboxProps={{ withinPortal: false }}
+                  classNames={{ dropdown: 'vehicle-registry-filter-dropdown' }}
+                  clearable
+                  data={processingOptions(t)}
+                  label={t('Обробка')}
+                  placeholder={t('Всі')}
+                  value={processingState}
+                  onChange={(value) => {
+                    setPage(1)
+                    setProcessingState(value as VehicleRegistryProcessingState | null)
+                  }}
+                />
+                <Select
+                  comboboxProps={{ withinPortal: false }}
+                  classNames={{ dropdown: 'vehicle-registry-filter-dropdown' }}
+                  clearable
+                  data={workflowOptions(t)}
+                  label={t('Статус')}
+                  placeholder={t('Всі')}
+                  value={workflowStatus}
+                  onChange={(value) => {
+                    setPage(1)
+                    setWorkflowStatus(value as VehicleRegistryWorkflowStatus | null)
+                  }}
+                />
+                <Select
+                  comboboxProps={{ withinPortal: false }}
+                  classNames={{ dropdown: 'vehicle-registry-filter-dropdown' }}
+                  clearable
+                  data={qualityOptions(t)}
+                  label={t('Якість')}
+                  placeholder={t('Всі')}
+                  value={qualityStatus}
+                  onChange={(value) => {
+                    setPage(1)
+                    setQualityStatus(value as VehicleRegistryDataQualityStatus | null)
+                  }}
+                />
+              </Popover.Dropdown>
+            </Popover>
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути фільтри')}>
-                <ActionIcon
+                <Button
                   aria-label={t('Скинути фільтри')}
                   color="gray"
                   disabled={!searchDraft.trim() && activeFilterCount === 0}
-                  size={34}
-                  variant="light"
+                  variant="default"
                   onClick={resetFilters}
+
+                  className="vehicle-registry-toolbar-action"
+                  title={t('Скинути фільтри')}
+                  leftSection={<RotateCcw size={17} />}
                 >
-                  <RotateCcw size={17} />
-                </ActionIcon>
+                  {t('Скинути фільтри')}
+                </Button>
               </Tooltip>
               <Paginator
                 isLoading={isLoading}

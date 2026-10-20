@@ -218,3 +218,25 @@
   min-width: 0;
   overflow: hidden;
 }
+
+/* Keep sparse controls at natural widths; compact only when the card needs it. */
+.app-filter-bar.users-filter-bar { display: flex; flex-wrap: wrap; overflow: visible; gap: 8px; }
+.app-filter-bar.users-filter-bar .app-filter-actions { flex: 0 0 auto; flex-wrap: nowrap; margin-left: 0; gap: 8px; }
+.app-filter-bar.users-filter-bar :is(.data-table-toolbar, .data-table-toolbar-left) { flex-wrap: nowrap; gap: 8px; }
+@container registry (max-width: 600px) {
+ .app-filter-bar.users-filter-bar .app-filter-actions { flex: 0 1 auto; flex-wrap: wrap; }
+}
+
+.users-page .app-filter-bar.users-filter-bar { display: flex; }
+.app-filter-bar.users-filter-bar > .users-search-input { flex: 0 0 220px; width: 220px; min-width: 0; max-width: 100%; }
+.app-filter-bar.users-filter-bar > .users-filter-select { flex: 0 0 100px; width: 100px; min-width: 0; }
+.users-filter-bar .users-create-actions { flex: 0 0 auto; gap: 8px; }
+@container registry (max-width: 1250px) {
+ .app-filter-bar.users-filter-bar > .users-search-input { flex-basis: 180px; width: 180px; }
+}
+@container registry (max-width: 600px) { .users-filter-bar .users-create-actions { flex: 0 1 auto; flex-wrap: wrap; } }
+@container registry (max-width: 1250px) {
+ .users-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+ .users-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
+ .users-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
+}

@@ -87,8 +87,8 @@ export function ReportTemplatesPanel({ storage, ordering, configurationReady, co
         <TextInput aria-label={t('Пошук шаблонів')} placeholder={t('Знайти шаблон')} value={search} leftSection={<Search size={16} />}
           rightSection={search ? <ActionIcon variant="subtle" color="gray" aria-label={t('Очистити пошук')} onClick={() => setSearch('')}><X size={14} /></ActionIcon> : null}
           onChange={event => setSearch(event.currentTarget.value)} />
-        <ActionIcon className="reports-stocks-template-secondary" aria-label={t('Оновити список')} title={t('Оновити список')} size={36}
-          type="button" variant="default" disabled={disabled || storage.busy} onClick={onRefresh}><RefreshCw size={16} /></ActionIcon>
+        <Button className="reports-stocks-template-secondary reports-toolbar-action" aria-label={t('Оновити список')} title={t('Оновити список')}
+          type="button" disabled={disabled || storage.busy} onClick={onRefresh} variant="default" leftSection={<RefreshCw size={16} />}>{t('Оновити')}</Button>
         <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} disabled={blocked || !configurationReady}
           onClick={() => { onClearNotice(); setCreating(true) }}>{t('Новий шаблон')}</Button>
       </div>

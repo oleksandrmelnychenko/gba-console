@@ -23,10 +23,15 @@
   align-items: center;
   align-self: end;
   display: flex;
+  flex: 0 0 auto;
   gap: 10px;
   justify-content: flex-end;
   min-height: 36px;
   min-width: 0;
+}
+
+.offers-filter-bar .offers-filter-actions {
+  margin-left: 0;
 }
 
 .offers-page .mantine-Button-root {
@@ -36,7 +41,7 @@
   white-space: nowrap;
 }
 
-@container registry (max-width: 960px) {
+@container registry (max-width: 640px) {
   .offers-filter-actions .offers-secondary-action {
     width: 36px;
     min-width: 36px;

@@ -1,5 +1,4 @@
 import {
-  ActionIcon,
   Alert,
   Badge,
   Button,
@@ -15,7 +14,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Download, Eye, FileText, ListChecks, PackageCheck, PackageOpen, Plus, Receipt, ReceiptText, RotateCcw, Route, Search } from 'lucide-react'
+import { CircleAlert, Download, Eye, FileText, ListChecks, PackageCheck, PackageOpen, Receipt, ReceiptText, RotateCcw, Route, Search } from 'lucide-react'
 import { Fragment, useCallback, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
@@ -28,6 +27,7 @@ import { SUPPLY_ORDER_INCOME_STATUS_LABEL } from '../../../shared/supplyOrderInc
 import { getSupplyUkraineOrderDisplayNumber, normalizeDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { TableChip } from '../../../shared/ui/TableChip'
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -1333,26 +1333,13 @@ export function OrdersFilterToolbar({
 }) {
   const { t } = useI18n()
   return (
-    <div className="app-filter-bar app-filter-bar--stacked supply-ukraine-orders-filter-bar">
+    <div className="app-filter-bar supply-ukraine-orders-filter-bar">
       <div className="supply-ukraine-orders-filter-fields">
-        <div className="app-filter-date-range">
-          <TextInput
-            className="supply-ukraine-orders-date-input"
-            label={t('Від')}
-            max={filterDraft.to || undefined}
-            type="date"
-            value={filterDraft.from}
-            onChange={(event) => onApplyFilterPatch({ from: event.currentTarget.value })}
-          />
-          <TextInput
-            className="supply-ukraine-orders-date-input"
-            label={t('До')}
-            min={filterDraft.from || undefined}
-            type="date"
-            value={filterDraft.to}
-            onChange={(event) => onApplyFilterPatch({ to: event.currentTarget.value })}
-          />
-        </div>
+        <ToolbarDateRangeFilter
+          from={filterDraft.from}
+          to={filterDraft.to}
+          onChange={onApplyFilterPatch}
+        />
         <TextInput
           className="supply-ukraine-orders-search-input"
           leftSection={<Search size={16} />}
@@ -1372,6 +1359,8 @@ export function OrdersFilterToolbar({
         <Select
           clearable
           className="supply-ukraine-orders-currency-filter"
+          classNames={{ dropdown: 'supply-ukraine-orders-filter-dropdown', option: 'supply-ukraine-orders-filter-option' }}
+          comboboxProps={{ width: 'max-content', position: 'bottom-start' }}
           data={currencyOptions}
           label={t('Валюта')}
           placeholder={t('Усі')}
@@ -1382,24 +1371,20 @@ export function OrdersFilterToolbar({
         <Select
           allowDeselect={false}
           className="supply-ukraine-orders-type-filter"
+          classNames={{ dropdown: 'supply-ukraine-orders-filter-dropdown', option: 'supply-ukraine-orders-filter-option' }}
+          comboboxProps={{ width: 'max-content', position: 'bottom-start' }}
           data={TYPE_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
           label={t('Тип')}
           value={filterDraft.type}
           onChange={(value) => onApplyType((value as SupplyUkraineOrderKind) || 'all')}
         />
-      </div>
-      <div className="app-filter-command-row">
-        <div className="app-filter-actions">
+        <div className="app-filter-actions supply-ukraine-orders-filter-actions">
           <Tooltip label={t('Скинути фільтри')}>
-            <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути фільтри')} onClick={onResetFilters}>
-              <RotateCcw size={17} />
-            </ActionIcon>
+            <Button variant="default" color="gray" size="sm" aria-label={t('Скинути фільтри')} onClick={onResetFilters} className="registry-caption-action" leftSection={<RotateCcw size={17} />}>{t('Скинути')}</Button>
           </Tooltip>
           {canPrint && (
             <Tooltip label={t('Завантажити')}>
-              <ActionIcon variant="light" color="gray" size={34} aria-label={t('Завантажити')} loading={isDownloading} onClick={onDownload}>
-                <Download size={18} />
-              </ActionIcon>
+              <Button variant="default" color="gray" size="sm" aria-label={t('Завантажити')} loading={isDownloading} onClick={onDownload} className="registry-caption-action" leftSection={<Download size={18} />}>{t('Завантажити')}</Button>
             </Tooltip>
           )}
           <Paginator
@@ -1418,14 +1403,18 @@ export function OrdersFilterToolbar({
         />
         <div className="supply-ukraine-orders-create-actions">
           {createPermissions.canCreateDirect && (
-            <Button color={CREATE_ACTION_COLOR} size="sm" className="app-filter-primary-action" leftSection={<Plus size={16} />} onClick={onCreateDirect}>
-              {t('Нове замовлення')}
-            </Button>
+            <Tooltip label={t('Нове замовлення')}>
+              <Button color={CREATE_ACTION_COLOR} size="sm" className="app-filter-primary-action" aria-label={t('Нове замовлення')} leftSection={<FileText size={16} />} onClick={onCreateDirect}>
+                {t('Нове замовлення')}
+              </Button>
+            </Tooltip>
           )}
           {createPermissions.canCreateToUkraine && (
-            <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" leftSection={<Plus size={16} />} onClick={onCreateToUkraine}>
-              {t('Поставка')}
-            </Button>
+            <Tooltip label={t('Поставка')}>
+              <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" aria-label={t('Поставка')} leftSection={<PackageOpen size={16} />} onClick={onCreateToUkraine}>
+                {t('Поставка')}
+              </Button>
+            </Tooltip>
           )}
         </div>
       </div>

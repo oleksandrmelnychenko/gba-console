@@ -254,6 +254,7 @@ export function PricingPage() {
         <div className="app-filter-bar pricing-page__filter-bar">
           <Select
             className="pricing-page__filter"
+            classNames={{ dropdown: 'pricing-toolbar-dropdown' }}
             clearable
             data={productOptions}
             filter={({ options }) => options}
@@ -270,6 +271,7 @@ export function PricingPage() {
 
           <Select
             className="pricing-page__filter"
+            classNames={{ dropdown: 'pricing-toolbar-dropdown' }}
             clearable
             data={clientOptions}
             filter={({ options }) => options}
@@ -286,6 +288,7 @@ export function PricingPage() {
 
           <Select
             className="pricing-page__filter"
+            classNames={{ dropdown: 'pricing-toolbar-dropdown' }}
             data={agreementOptions}
             disabled={!selectedClient || agreementOptions.length === 0}
             label={t('Угода клієнта')}

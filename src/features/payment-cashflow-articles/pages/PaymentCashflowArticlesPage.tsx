@@ -1,5 +1,4 @@
 import {
-  ActionIcon,
   Alert,
   Button,
   Group,
@@ -174,31 +173,20 @@ function PaymentCashflowArticlesPageContent({ inSharedShell = false }: PaymentCa
             placeholder={t('Введіть назву статті')}
             value={searchValue}
             onChange={(event) => setSearchValue(event.currentTarget.value)}
-            style={{ flex: '1 1 auto', minWidth: 180 }}
           />
           <div className="app-filter-actions">
             <Tooltip label={t('Скинути')}>
-              <ActionIcon
+              <Button
                 aria-label={t('Скинути')}
-                color="gray"
-                size={34}
-                variant="light"
                 onClick={() => setSearchValue('')}
-              >
-                <RotateCcw size={17} />
-              </ActionIcon>
+               className="finance-toolbar-action" variant="default" leftSection={<RotateCcw size={17} />} title={t('Скинути')}>{t('Скинути')}</Button>
             </Tooltip>
             <Tooltip label={t('Оновити')}>
-              <ActionIcon
+              <Button
                 aria-label={t('Оновити')}
-                color="gray"
                 loading={isLoading}
-                size={34}
-                variant="light"
                 onClick={reload}
-              >
-                <RefreshCw size={17} />
-              </ActionIcon>
+               className="finance-toolbar-action" variant="default" leftSection={<RefreshCw size={17} />} title={t('Оновити')}>{t('Оновити')}</Button>
             </Tooltip>
           </div>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />

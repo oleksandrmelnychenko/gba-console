@@ -1,6 +1,6 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
   Badge,
   Button,
@@ -252,32 +252,7 @@ export function AccountableExpensesPage() {
     <Stack className="accountable-expenses-page console-table-page" gap={6}>
       <div className="accountable-expenses-shell console-table-shell">
         <div className="app-filter-bar accountable-expenses-command-bar">
-          <div className="app-filter-date-range">
-            <TextInput
-              className="accountable-expenses-date-input"
-              label={t('Від')}
-              type="date"
-              value={fromDate}
-              onChange={(event) => {
-                setFromDate(event.currentTarget.value)
-                setPage(1)
-                setOrders([])
-                setTotalOrders(undefined)
-              }}
-            />
-            <TextInput
-              className="accountable-expenses-date-input"
-              label={t('До')}
-              type="date"
-              value={toDate}
-              onChange={(event) => {
-                setToDate(event.currentTarget.value)
-                setPage(1)
-                setOrders([])
-                setTotalOrders(undefined)
-              }}
-            />
-          </div>
+          <ToolbarDateRangeFilter from={fromDate} to={toDate} onChange={(range) => { setFromDate(range.from); setToDate(range.to); setPage(1); setOrders([]); setTotalOrders(undefined) }} />
 
           <TextInput
             className="accountable-expenses-search-input"
@@ -295,16 +270,11 @@ export function AccountableExpensesPage() {
 
           <div className="app-filter-actions accountable-expenses-command-actions">
             <Tooltip label={t('Скинути')}>
-              <ActionIcon
+              <Button
                 aria-label={t('Скинути')}
-                color="gray"
                 disabled={!hasActiveFilters}
-                size={34}
-                variant="light"
                 onClick={resetFilters}
-              >
-                <RotateCcw size={17} />
-              </ActionIcon>
+               className="finance-toolbar-action" variant="default" leftSection={<RotateCcw size={17} />} title={t('Скинути')}>{t('Скинути')}</Button>
             </Tooltip>
             <Paginator
               isLoading={isLoading}

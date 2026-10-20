@@ -1,3 +1,4 @@
+import { changeReportPeriod } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -72,7 +73,7 @@ it('keeps the original capability independent of an unavailable numeric dataset 
 it('preserves actual saved-draft recovery and bytes on dataset failure until explicitly discarded', async () => {
   const view = render(<Providers><ReportsStocksPage consoleScope={false} constructorMode /></Providers>)
   await screen.findByRole('button', { name: 'Продажі за днями' })
-  fireEvent.change(screen.getByLabelText('Від'), { target: { value: '' } })
+  changeReportPeriod({ from: '' })
   const key = 'report-workspace-draft:v1:debt-ratio-test-owner'
   await waitFor(() => expect(sessionStorage.getItem(key)).not.toBeNull())
   const saved = sessionStorage.getItem(key)

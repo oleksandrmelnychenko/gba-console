@@ -1,5 +1,4 @@
-import { ActionIcon, AppShell, Badge, Box, Group, Title, Text } from '@mantine/core'
-import { LogOut } from 'lucide-react'
+import { AppShell, Box, Group, Title, Text } from '@mantine/core'
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../features/auth/useAuth'
@@ -9,6 +8,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { ConsoleNav } from './ConsoleNav'
 import { DataEnvironmentSwitch } from './DataEnvironmentSwitch'
 import { NotificationCenter } from './NotificationCenter'
+import { ConsoleAccountMenu } from './ConsoleAccountMenu'
 
 const SIDE_SELECTORS = ['.console-header-brand', '.console-header-date', '.console-header-actions', '.console-header-user-panel'] as const
 
@@ -89,9 +89,6 @@ export function ConsoleHeader() {
         <Group gap="xs" wrap="nowrap" className="console-header-actions">
           <HeaderActionBar />
           <NotificationCenter userKey={user?.NetUid || user?.Id?.toString() || session?.userNetUid} />
-          <ActionIcon variant="subtle" color="gray" size="lg" aria-label={t('Вийти')} onClick={logout}>
-            <LogOut size={24} strokeWidth={1.7} />
-          </ActionIcon>
         </Group>
 
         <Group gap={6} wrap="nowrap" className="console-header-date">
@@ -104,14 +101,7 @@ export function ConsoleHeader() {
 
         <Group gap="xs" wrap="nowrap" className="console-header-user-panel">
           <DataEnvironmentSwitch />
-          <Text className="console-header-user" visibleFrom="xs" size="sm" fw={600}>
-            {displayName}
-          </Text>
-          {roleName && (
-            <Badge className="console-header-role" color="orange" radius="xl" size="sm" variant="light" visibleFrom="xs">
-              {roleName}
-            </Badge>
-          )}
+          <ConsoleAccountMenu displayName={displayName} email={user?.Email} roleName={roleName} onLogout={logout} />
         </Group>
       </Box>
     </AppShell.Header>

@@ -117,3 +117,8 @@
   .exchange-rates-panel-rate.mantine-Button-root { flex-basis: 90px; }
   .exchange-rates-history-card .app-filter-bar .app-filter-date-range { flex-basis: 100%; }
 }
+
+.exchange-rates-history-card .app-filter-bar { flex-wrap: nowrap; }
+.exchange-rates-history-card .app-filter-fields { flex: 0 0 auto; }
+
+.exchange-rates-history-card .exchange-toolbar-action { flex: 0 0 auto; white-space: nowrap; }

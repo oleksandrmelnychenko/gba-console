@@ -35,3 +35,14 @@
 .sales-prediction-filter-actions {
   align-self: end;
 }
+
+.sales-prediction-filter-card .sales-prediction-filter-bar { display: flex; flex-wrap: wrap; overflow: visible; }
+.sales-prediction-filter-bar .sales-prediction-filter-row { flex: 0 1 auto; width: auto; }
+.sales-prediction-filter-bar .sales-prediction-filter-row > .mantine-InputWrapper-root { flex: 0 1 240px; width: 240px; }
+.sales-prediction-filter-bar .sales-prediction-filter-actions { margin-left: 0; }
+
+@container registry (max-width: 600px) {
+ .app-filter-bar .sales-prediction-toolbar-caption-action { width: 36px; min-width: 36px; padding-inline: 0; }
+ .sales-prediction-toolbar-caption-action .mantine-Button-label { display: none; }
+ .sales-prediction-toolbar-caption-action .mantine-Button-section { margin: 0; }
+}

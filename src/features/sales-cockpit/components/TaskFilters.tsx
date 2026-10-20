@@ -41,14 +41,14 @@ export function TaskFilters({
   )
 
   return (
-    <Group gap={10} wrap="nowrap">
+    <Group className="cockpit-task-filters" gap={8} wrap="wrap">
       <Select
         clearable
         data={taskTypeData}
         label={t('Тип завдання')}
         placeholder={t('Усі типи')}
         value={taskType}
-        w={240}
+        w={180}
         onChange={(value) => onTaskTypeChange((value as CockpitTaskType | null) ?? null)}
       />
       <Select
@@ -57,7 +57,7 @@ export function TaskFilters({
         label={t('Терміновість')}
         placeholder={t('Будь-яка')}
         value={urgency}
-        w={200}
+        w={140}
         onChange={(value) => onUrgencyChange((value as CockpitUrgency | null) ?? null)}
       />
     </Group>

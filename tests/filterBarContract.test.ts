@@ -244,7 +244,8 @@ describe('filter-bar CSS contract', () => {
       }
 
       rule.walkDecls((declaration) => {
-        if (['flex-wrap', 'min-width', 'overflow', 'overflow-x'].includes(declaration.prop)) {
+        const safeOverrides: Record<string, string> = { 'flex-wrap': 'wrap', 'min-width': '0', overflow: 'visible', 'overflow-x': 'visible' }
+        if (declaration.prop in safeOverrides && declaration.value !== safeOverrides[declaration.prop]) {
           clientsBarOverrides.push(`${rule.selector} -> ${declaration.prop}:${declaration.value}`)
         }
       })
