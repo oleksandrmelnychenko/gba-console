@@ -416,6 +416,25 @@ type ShipmentsTabModelOptions = {
 let lastAutoShipmentFilters: FilterDraft | null = null
 let lastAutoShipmentTypeNetId: string | null = null
 let lastAutoShipmentTransporterNetId: string | null = null
+const autoShipmentLoadsInFlight = new Map<string, Promise<void>>()
+
+function runAfterAutoShipmentLoadInFlight<TResult>(
+  context: string,
+  load: () => Promise<TResult>,
+): Promise<TResult> {
+  const inFlight = autoShipmentLoadsInFlight.get(context)
+  const current = inFlight ? inFlight.then(load) : load()
+  const settled = current.then(() => undefined, () => undefined)
+
+  autoShipmentLoadsInFlight.set(context, settled)
+  void settled.then(() => {
+    if (autoShipmentLoadsInFlight.get(context) === settled) {
+      autoShipmentLoadsInFlight.delete(context)
+    }
+  })
+
+  return current
+}
 
 function useShipmentsTabModel({ canCarryOut, canEdit, canPrintShipment, onCarriedOut }: ShipmentsTabModelOptions) {
   const { t } = useI18n()
@@ -549,11 +568,20 @@ function useShipmentsTabModel({ canCarryOut, canEdit, canPrintShipment, onCarrie
 
       try {
         const request: AutoShipmentListParams = { transporterNetId, from, to }
-        const attempt = await runAutoShipmentMutation<AutoShipmentListParams, ShipmentList>(
-          `shipment-list-auto:${transporterNetId}:${from}:${to}`,
-          request,
-          (payload, operation) => getAutoShipmentList(payload, operation),
-        )
+        const context = `shipment-list-auto:${transporterNetId}:${from}:${to}`
+        const attempt = await runAfterAutoShipmentLoadInFlight(context, async () => (
+          cancelled
+            ? null
+            : runAutoShipmentMutation<AutoShipmentListParams, ShipmentList>(
+                context,
+                request,
+                (payload, operation) => getAutoShipmentList(payload, operation),
+              )
+        ))
+
+        if (!attempt) {
+          return
+        }
 
         if (!attempt.completed) {
           throw attempt.error

@@ -15,6 +15,7 @@ import {
   getAutoShipmentList,
   getShipmentTransporterTypes,
   getShipmentTransportersByType,
+  updateShipmentList,
 } from '../api/shipmentsApi'
 import type { ShipmentList } from '../shipmentTypes'
 import { ShipmentsTab } from './ShipmentsTab'
@@ -45,6 +46,8 @@ const getAllShipmentListsMock = vi.mocked(getAllShipmentLists)
 const getAutoShipmentListMock = vi.mocked(getAutoShipmentList)
 const getShipmentTransporterTypesMock = vi.mocked(getShipmentTransporterTypes)
 const getShipmentTransportersByTypeMock = vi.mocked(getShipmentTransportersByType)
+const updateShipmentListMock = vi.mocked(updateShipmentList)
+const TOMBSTONE_MESSAGE = /tombstone/
 
 let harness: SalesMutationStorageHarness
 
@@ -68,7 +71,7 @@ describe('ShipmentsTab «Підбір» queued auto-selection', () => {
     harness.dispose()
   })
 
-  it('sends the reopened panel request after the queued earlier create/auto call completes', async () => {
+  it('sends the reopened panel request after the earlier create/auto call that was still waiting for its lock', async () => {
     const autoLockRequests: string[] = []
     const grant: { release: (() => void) | null } = { release: null }
     const locks = navigator.locks
@@ -91,22 +94,7 @@ describe('ShipmentsTab «Підбір» queued auto-selection', () => {
     }) as LockManager['request'])
 
     try {
-      render(
-        <MantineProvider>
-          <I18nProvider>
-            <ShipmentsTab
-              createRequest={1}
-              permissions={{
-                canCarryOut: true,
-                canCreate: true,
-                canEdit: true,
-                canPrintInvoice: true,
-                canPrintShipment: true,
-              }}
-            />
-          </I18nProvider>
-        </MantineProvider>,
-      )
+      renderShipmentsTab()
 
       await waitFor(() => expect(autoLockRequests).toHaveLength(1))
       expect(getAutoShipmentListMock).not.toHaveBeenCalled()
@@ -114,13 +102,14 @@ describe('ShipmentsTab «Підбір» queued auto-selection', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Усі' }))
       await waitFor(() => expect(getAllShipmentListsMock).toHaveBeenCalled())
       fireEvent.click(screen.getByRole('button', { name: 'Підбір' }))
-      await waitFor(() => expect(autoLockRequests).toHaveLength(2))
-      expect(autoLockRequests[1]).toBe(autoLockRequests[0])
+      expect(autoLockRequests).toHaveLength(1)
 
       expect(grant.release).not.toBe(null)
       grant.release?.()
 
       await waitFor(() => expect(getAutoShipmentListMock).toHaveBeenCalledTimes(2))
+      expect(autoLockRequests).toHaveLength(2)
+      expect(autoLockRequests[1]).toBe(autoLockRequests[0])
       expect(await screen.findByText('000000123')).toBeTruthy()
       expect(screen.queryByText(/Mutation scope змінився/)).toBeNull()
 
@@ -138,12 +127,121 @@ describe('ShipmentsTab «Підбір» queued auto-selection', () => {
         userKey: 'net:user-a',
       })).toBe(null)
     } finally {
+      grant.release?.()
       requestSpy.mockRestore()
     }
   })
+
+  it('waits for the create/auto call that already holds its lease when «Підбір» is reopened', async () => {
+    const firstResponse = deferred<ShipmentList>()
+    getAutoShipmentListMock
+      .mockImplementationOnce(() => firstResponse.promise)
+      .mockResolvedValueOnce(buildShipmentList({ extraSaleNumber: '000000124' }))
+
+    renderShipmentsTab()
+
+    await waitFor(() => expect(getAutoShipmentListMock).toHaveBeenCalledTimes(1))
+    const firstCall = getAutoShipmentListMock.mock.calls[0]
+    const scope = {
+      context: `shipment-list-auto:${TRANSPORTER_NET_ID}:${firstCall?.[0].from}:${firstCall?.[0].to}`,
+      kind: 'shipment-list-auto' as const,
+      userKey: 'net:user-a',
+    }
+    expect(loadSalesPendingMutation(scope)).toMatchObject({
+      operationId: firstCall?.[1].operationId,
+      phase: 'submitted',
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Усі' }))
+    await waitFor(() => expect(getAllShipmentListsMock).toHaveBeenCalled())
+    fireEvent.click(screen.getByRole('button', { name: 'Підбір' }))
+    firstResponse.resolve(buildShipmentList())
+
+    expect(await screen.findByText('000000124')).toBeTruthy()
+    expect(getAutoShipmentListMock).toHaveBeenCalledTimes(2)
+    expect(getAutoShipmentListMock.mock.calls[1]?.[1].operationId).not.toBe(firstCall?.[1].operationId)
+    expect(screen.queryByText(TOMBSTONE_MESSAGE)).toBeNull()
+    expect(loadSalesPendingMutation(scope)).toBe(null)
+  })
+
+  it('reloads a fresh list after a quantity save while an earlier refresh is still in flight', async () => {
+    const refreshResponse = deferred<ShipmentList>()
+    const saveResponse = deferred<ShipmentList>()
+    getAutoShipmentListMock
+      .mockResolvedValueOnce(buildShipmentList())
+      .mockImplementationOnce(() => refreshResponse.promise)
+      .mockResolvedValueOnce(buildShipmentList({ extraSaleNumber: '000000124', qtyPlaces: 5 }))
+    updateShipmentListMock.mockImplementationOnce(() => saveResponse.promise)
+
+    renderShipmentsTab()
+
+    const saleRow = (await screen.findByText('000000123')).closest('tr') as HTMLTableRowElement
+    const qtyPlacesInput = saleRow.querySelector<HTMLInputElement>('input[type="number"]')
+
+    expect(qtyPlacesInput).not.toBe(null)
+    fireEvent.focus(qtyPlacesInput as HTMLInputElement)
+    fireEvent.change(qtyPlacesInput as HTMLInputElement, { target: { value: '5' } })
+    await waitFor(() => expect(getQtyPlacesInput('000000123').value).toBe('5'))
+    fireEvent.blur(getQtyPlacesInput('000000123'))
+    await waitFor(() => expect(updateShipmentListMock).toHaveBeenCalledTimes(1))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Оновити' }))
+    await waitFor(() => expect(getAutoShipmentListMock).toHaveBeenCalledTimes(2))
+
+    saveResponse.resolve(buildShipmentList({ qtyPlaces: 5 }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Провести і закрити' })).toBeTruthy())
+    refreshResponse.resolve(buildShipmentList())
+
+    expect(await screen.findByText('000000124')).toBeTruthy()
+    expect(getAutoShipmentListMock).toHaveBeenCalledTimes(3)
+    const operationIds = getAutoShipmentListMock.mock.calls.map((call) => call[1].operationId)
+    expect(new Set(operationIds).size).toBe(3)
+    expect(screen.queryByText(TOMBSTONE_MESSAGE)).toBeNull()
+  })
 })
 
-function buildShipmentList(): ShipmentList {
+function renderShipmentsTab() {
+  return render(
+    <MantineProvider>
+      <I18nProvider>
+        <ShipmentsTab
+          createRequest={1}
+          permissions={{
+            canCarryOut: true,
+            canCreate: true,
+            canEdit: true,
+            canPrintInvoice: true,
+            canPrintShipment: true,
+          }}
+        />
+      </I18nProvider>
+    </MantineProvider>,
+  )
+}
+
+function getQtyPlacesInput(saleNumber: string): HTMLInputElement {
+  const input = screen.getByText(saleNumber).closest('tr')?.querySelector<HTMLInputElement>('input[type="number"]')
+
+  if (!input) {
+    throw new Error(`No quantity input for ${saleNumber}`)
+  }
+
+  return input
+}
+
+function deferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void
+  const promise = new Promise<T>((promiseResolve) => {
+    resolve = promiseResolve
+  })
+
+  return { promise, resolve }
+}
+
+function buildShipmentList({
+  extraSaleNumber,
+  qtyPlaces = 0,
+}: { extraSaleNumber?: string; qtyPlaces?: number } = {}): ShipmentList {
   return {
     Id: 10,
     NetUid: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
@@ -161,7 +259,7 @@ function buildShipmentList(): ShipmentList {
       {
         Id: 30,
         NetUid: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
-        QtyPlaces: 0,
+        QtyPlaces: qtyPlaces,
         Sale: {
           Id: 20,
           NetUid: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
@@ -169,6 +267,19 @@ function buildShipmentList(): ShipmentList {
           SaleNumber: { Value: '000000123' },
         },
       },
+      ...(extraSaleNumber
+        ? [{
+            Id: 31,
+            NetUid: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+            QtyPlaces: 0,
+            Sale: {
+              Id: 21,
+              NetUid: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+              ChangedToInvoice: '2026-10-20T12:40:00Z',
+              SaleNumber: { Value: extraSaleNumber },
+            },
+          }]
+        : []),
     ],
   }
 }
