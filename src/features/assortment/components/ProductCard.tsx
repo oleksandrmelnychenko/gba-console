@@ -1,7 +1,6 @@
 import { ACTION_LABELS, REASON_LABELS } from '../assortmentLabels'
 import {
   Alert,
-  Badge,
   Card,
   Group,
   Loader,
@@ -14,6 +13,7 @@ import { Brain, CircleAlert, Factory } from 'lucide-react'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 import { getProduct, getProductAnalytics, getProductRegions, getProductSubstitutes } from '../api/assortmentApi'
 import type { ProductAnalytics, ProductDetail, ProductRegions, ProductSubstitutes } from '../types'
 import { ProductSalesAnalytics } from './ProductSalesAnalytics'
@@ -31,18 +31,18 @@ const preciseMoney = new Intl.NumberFormat('uk-UA', {
 
 
 
-const ACTION_PILLS: Record<string, string> = {
-  discount_or_redistribute: 'is-orange',
-  dead_stock_review: 'is-red',
-  fix_margin: 'is-red',
-  keep_push: 'is-green',
-  margin_review: 'is-yellow',
-  monitor: 'is-gray',
-  monitor_decline: 'is-yellow',
-  quality_review: 'is-orange',
-  reorder_check: 'is-orange',
-  slow_mover_review: 'is-yellow',
-  to_order_candidate: 'is-green',
+const ACTION_TONES: Record<string, TableChipTone> = {
+  discount_or_redistribute: 'warning',
+  dead_stock_review: 'danger',
+  fix_margin: 'danger',
+  keep_push: 'success',
+  margin_review: 'warning',
+  monitor: 'neutral',
+  monitor_decline: 'warning',
+  quality_review: 'warning',
+  reorder_check: 'warning',
+  slow_mover_review: 'warning',
+  to_order_candidate: 'success',
 }
 
 
@@ -82,8 +82,8 @@ const XYZ_LABELS: Record<string, string> = {
   Z: 'нерегулярний',
 }
 
-function healthPill(health: number): string {
-  return health < 40 ? 'is-red' : health < 70 ? 'is-yellow' : 'is-green'
+function healthTone(health: number): TableChipTone {
+  return health < 40 ? 'danger' : health < 70 ? 'warning' : 'success'
 }
 
 function scorePill(score: number | null): string {
@@ -275,7 +275,7 @@ export function ProductCard({
   if (!detail?.found) {
     if (error) {
       return (
-        <Card withBorder>
+        <Card className="assort-product-section" withBorder>
           <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
@@ -287,13 +287,11 @@ export function ProductCard({
     // (e.g. a catalog item never sold / not in the assortment) — show its identity and the
     // reason instead of a bare dead-end, so the buyer knows it's «no signals», not an error.
     return (
-      <Card withBorder>
+      <Card className="assort-product-section" withBorder>
         <Stack gap={6}>
           <Text className="assort-product-hero__name">{detail?.name ?? `ID ${detail?.product_id ?? ''}`}</Text>
           {detail?.vendor_code && (
-            <Text c="dimmed" size="sm">
-              {detail.vendor_code}
-            </Text>
+            <TableChip tone="product" value={detail.vendor_code} />
           )}
           <Alert color="gray" icon={<CircleAlert size={18} />} variant="light">
             {t('Товар ще не продавався і відсутній на складі — немає сигналів для аналітики')}
@@ -311,11 +309,11 @@ export function ProductCard({
   const producerName = typeof detail.primary_producer_name === 'string' ? detail.primary_producer_name : ''
 
   return (
-    <Stack gap="md">
+    <Stack className="assort-product-card" gap={10}>
       <ProductHero detail={detail} producerId={producerId} producerName={producerName} t={t} />
       <ProductAiAction actionLabel={actionLabel} actionReasons={actionReasons} t={t} />
 
-      <SimpleGrid cols={{ base: 2, md: 4 }}>
+      <SimpleGrid cols={{ base: 2, md: 4 }} spacing={10}>
         <Stat label={t('Залишок на складі')} value={formatNullableNumber(detail.qty_on_hand)} />
         <Stat label={t('Вартість залишку')} value={money.format(detail.eur_value)} />
         <Stat label={t('Маржа')} value={formatPercent(detail.margin_pct)} />
@@ -327,7 +325,7 @@ export function ProductCard({
 
       <ProductSalesAnalytics analytics={analytics} error={analyticsError} />
 
-      <SimpleGrid cols={{ base: 1, md: 3 }}>
+      <SimpleGrid cols={{ base: 1, md: 3 }} spacing={10}>
         <ScoreCard
           description={t('Наскільки товар продається та чи відповідає запас попиту.')}
           label={t('Загальна оцінка товару')}
@@ -370,11 +368,11 @@ function ProductHero({
 }) {
   return (
     <Card className="assort-product-hero" radius="md" withBorder>
-      <Group align="flex-start" justify="space-between" wrap="nowrap">
+      <Group align="flex-start" justify="space-between" gap={8} wrap="wrap">
         <Stack gap={6} miw={0}>
           <Stack gap={2}>
             <Text className="assort-product-hero__name">{detail.name ?? detail.product_id}</Text>
-            <Text className="assort-product-hero__code">{detail.vendor_code || `ID ${detail.product_id}`}</Text>
+            <TableChip tone="product" value={detail.vendor_code || `ID ${detail.product_id}`} />
           </Stack>
           {producerId !== null && (
             <Group gap={6} wrap="nowrap">
@@ -385,9 +383,7 @@ function ProductHero({
             </Group>
           )}
         </Stack>
-        <Badge className={`app-role-pill ${healthPill(detail.health)}`} variant="light">
-          {t('Загальна оцінка')}: {Math.round(detail.health)}/100
-        </Badge>
+        <TableChip tone={healthTone(detail.health)} value={`${t('Загальна оцінка')}: ${Math.round(detail.health)}/100`} />
       </Group>
     </Card>
   )
@@ -404,28 +400,22 @@ function ProductAiAction({
 }) {
   return (
     <Card className="assort-ai-action" radius="md" withBorder>
-      <Group align="flex-start" justify="space-between" wrap="nowrap">
-        <Group align="flex-start" gap="sm" wrap="nowrap">
+      <Group align="flex-start" justify="space-between" gap={8} wrap="wrap">
+        <Group align="flex-start" gap={8} wrap="nowrap">
           <Brain className="assort-ai-action__icon" size={20} />
-          <Stack gap={8}>
+          <Stack gap={8} miw={0}>
             <Group gap="xs">
               <Text className="app-section-title" fw={600} size="sm">
                 {t('Що рекомендує система')}
               </Text>
-              <Badge className={`app-role-pill ${ACTION_PILLS[actionLabel] ?? 'is-gray'}`} size="sm" variant="light">
-                {t(ACTION_LABELS[actionLabel] ?? 'Перевірити товар')}
-              </Badge>
+              <TableChip tone={ACTION_TONES[actionLabel] ?? 'neutral'} value={t(ACTION_LABELS[actionLabel] ?? 'Перевірити товар')} />
             </Group>
             <Group gap={6}>
               {actionReasons.length === 0 ? (
-                <Badge className="app-role-pill is-gray" size="xs" variant="light">
-                  {t('Додаткових застережень немає')}
-                </Badge>
+                <TableChip value={t('Додаткових застережень немає')} />
               ) : (
                 actionReasons.map((reason) => (
-                  <Badge className="app-role-pill is-gray" key={reason} size="xs" variant="light">
-                    {t(REASON_LABELS[reason] ?? 'Система знайшла сигнал, який потребує перевірки')}
-                  </Badge>
+                  <TableChip key={reason} value={t(REASON_LABELS[reason] ?? 'Система знайшла сигнал, який потребує перевірки')} />
                 ))
               )}
             </Group>
@@ -438,12 +428,12 @@ function ProductAiAction({
 
 function CommercialProfile({ detail, t }: { detail: ProductDetail; t: ProductCardTranslate }) {
   return (
-    <Card radius="md" withBorder>
-      <Stack gap="sm">
+    <Card className="assort-product-section" radius="md" withBorder>
+      <Stack gap={10}>
         <Text className="app-section-title" fw={600} size="sm">
           {t('Комерційний профіль')}
         </Text>
-        <SimpleGrid cols={{ base: 2, md: 4 }}>
+        <SimpleGrid cols={{ base: 2, md: 4 }} spacing={10}>
           <Stat label={t('Продано за 12 місяців')} value={formatNullableNumber(detail.annual_units)} />
           <Stat label={t('Виручка за 12 місяців')} value={money.format(detail.revenue_eur)} />
           <Stat
@@ -456,23 +446,13 @@ function CommercialProfile({ detail, t }: { detail: ProductDetail; t: ProductCar
           />
         </SimpleGrid>
         <Group gap={6}>
-          <Badge className="app-role-pill is-gray" variant="light">
-            {t('Внесок у продажі')}: {t(ABC_LABELS[detail.abc] ?? 'недостатньо даних')} ({t('клас')} {detail.abc})
-          </Badge>
-          <Badge className="app-role-pill is-gray" variant="light">
-            {t('Регулярність попиту')}: {t(XYZ_LABELS[detail.xyz] ?? 'недостатньо даних')} ({t('клас')} {detail.xyz})
-          </Badge>
-          <Badge className="app-role-pill is-gray" variant="light">
-            {t('Стан запасу')}: {t(formatClass(detail.band))}
-          </Badge>
-          <Badge className="app-role-pill is-gray" variant="light">
-            {t('Стадія попиту')}: {t(formatClass(detail.lifecycle))}
-          </Badge>
-          <Badge className="app-role-pill is-gray" variant="light">
-            {detail.return_rate === 0
-              ? t('Повернень не було')
-              : `${t('Повернення')}: ${formatPercent(detail.return_rate)}`}
-          </Badge>
+          <TableChip value={`${t('Внесок у продажі')}: ${t(ABC_LABELS[detail.abc] ?? 'недостатньо даних')} (${t('клас')} ${detail.abc})`} />
+          <TableChip value={`${t('Регулярність попиту')}: ${t(XYZ_LABELS[detail.xyz] ?? 'недостатньо даних')} (${t('клас')} ${detail.xyz})`} />
+          <TableChip value={`${t('Стан запасу')}: ${t(formatClass(detail.band))}`} />
+          <TableChip value={`${t('Стадія попиту')}: ${t(formatClass(detail.lifecycle))}`} />
+          <TableChip value={detail.return_rate === 0
+            ? t('Повернень не було')
+            : `${t('Повернення')}: ${formatPercent(detail.return_rate)}`} />
         </Group>
       </Stack>
     </Card>
@@ -489,7 +469,7 @@ function SubstitutesPanel({
   t: ProductCardTranslate
 }) {
   return (
-    <Card radius="md" withBorder>
+    <Card className="assort-product-section" radius="md" withBorder>
       <Stack gap="xs">
         <Text className="app-section-title" fw={600} size="sm">
           {t('Доступні замінники')}
@@ -508,9 +488,7 @@ function SubstitutesPanel({
               <Text c="gray.8" fw={600} size="sm">
                 {candidate.name ?? candidate.product_id}
               </Text>
-              <Badge className={`app-role-pill ${healthPill(candidate.health)}`} variant="light">
-                {Math.round(candidate.health)}
-              </Badge>
+              <TableChip tone={healthTone(candidate.health)} value={Math.round(candidate.health)} />
             </Group>
           ))
         )}
@@ -531,7 +509,7 @@ function RegionsPanel({
   t: ProductCardTranslate
 }) {
   return (
-    <Card radius="md" withBorder>
+    <Card className="assort-product-section" radius="md" withBorder>
       <Stack gap="xs">
         <Text className="app-section-title" fw={600} size="sm">
           {t('Де купують товар')}
@@ -600,14 +578,12 @@ function ScoreCard({
 
   return (
     <Card className="assort-score-card" radius="md" withBorder>
-      <Stack gap="sm">
-        <Group justify="space-between" wrap="nowrap">
+      <Stack gap={10}>
+        <Group justify="space-between" gap={8} wrap="wrap">
           <Text className="app-section-title" fw={600} size="sm">
             {label}
           </Text>
-          <Badge className={`app-role-pill ${scorePill(score)}`} variant="light">
-            {formatScore(score)}
-          </Badge>
+          <TableChip tone={score === null ? 'neutral' : healthTone(score)} value={formatScore(score)} />
         </Group>
         <Stack gap={3}>
           <Text c="dimmed" size="xs">

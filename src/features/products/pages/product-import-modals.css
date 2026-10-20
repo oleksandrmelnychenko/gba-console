@@ -1,0 +1,43 @@
+.product-import-form {
+  container-type: inline-size;
+}
+
+.product-import-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 155px), 1fr));
+  gap: 10px;
+}
+
+.product-import-price-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px 32px;
+  align-items: end;
+  gap: 8px;
+}
+
+.product-import-price-row > * {
+  min-width: 0;
+}
+
+.product-import-price-source {
+  width: min(100%, 280px);
+  font-family: var(--font-mono);
+}
+
+.product-import-code .mantine-Input-input {
+  font-family: var(--font-mono);
+}
+
+@container (max-width: 420px) {
+  .product-import-price-row {
+    grid-template-columns: minmax(0, 1fr) 32px;
+  }
+
+  .product-import-price-row > .mantine-Select-root {
+    grid-column: 1 / -1;
+  }
+
+  .product-import-price-row > .mantine-NumberInput-root {
+    max-width: 140px;
+  }
+}

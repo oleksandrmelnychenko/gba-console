@@ -1,35 +1,29 @@
 /* Product card (drawer, §7.2) ---------------------------------------------- */
-.assort-product-hero {
-  padding: 14px 16px;
+.assort-product-card {
+  min-width: 0;
+}
+
+.assort-product-hero,
+.assort-product-section,
+.assort-ai-action,
+.assort-score-card,
+.assort-sales-analytics {
+  padding: 12px;
+  min-width: 0;
 }
 
 .assort-product-hero__name {
-  font-family: var(--font-mono);
-  font-size: 17px;
-  font-weight: 500;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 600;
   letter-spacing: 0;
   color: var(--mantine-color-gray-9);
-}
-
-.assort-product-hero__code {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  letter-spacing: 0;
-  color: var(--mantine-color-gray-6);
-}
-
-.assort-ai-action {
-  padding: 14px 16px;
 }
 
 .assort-ai-action__icon {
   color: var(--brand-orange);
   flex: 0 0 auto;
   margin-top: 1px;
-}
-
-.assort-score-card {
-  padding: 14px 16px;
 }
 
 .assort-score-card__status {
@@ -82,14 +76,10 @@
 .assort-stat__value {
   display: block;
   font-family: var(--font-mono);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   letter-spacing: 0;
   color: var(--mantine-color-gray-9);
-}
-
-.assort-sales-analytics {
-  padding: 14px 16px;
 }
 
 .assort-sales-insight {
@@ -122,10 +112,9 @@
 }
 
 .assort-sales-stat > span {
-  color: var(--mantine-color-gray-6);
-  font-size: 10px;
-  font-weight: 650;
-  text-transform: uppercase;
+  color: var(--mantine-color-gray-8);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .assort-sales-stat > b {
@@ -133,8 +122,7 @@
   font-family: var(--font-mono);
   font-size: 16px;
   letter-spacing: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 .assort-sales-stat small {
@@ -154,6 +142,7 @@
 .assort-sales-chart figcaption {
   align-items: baseline;
   display: flex;
+  flex-wrap: wrap;
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 700;
@@ -174,7 +163,7 @@
   border-radius: 8px;
   display: grid;
   gap: 3px;
-  padding: 18px 14px;
+  padding: 12px;
   text-align: center;
 }
 

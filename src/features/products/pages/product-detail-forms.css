@@ -1,0 +1,48 @@
+/* Product action forms use the shared sheet controls and compact form rhythm. */
+.product-edit-modal .product-edit-fields {
+  max-height: none;
+  overflow: visible;
+  padding: 0;
+}
+
+:is(.product-edit-modal, .product-images-modal) :is(.product-edit-identity, .product-images-identity) > .mantine-Text-root {
+  min-width: 0;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.product-images-modal .product-images-panel {
+  max-height: none;
+}
+
+.product-images-modal .product-images-panel > .product-images-gallery {
+  max-height: none;
+  overflow: visible;
+}
+
+.product-images-modal .product-images-empty {
+  min-height: 124px;
+  padding: 16px 12px;
+}
+
+.product-specification-modal .product-specification-summary {
+  padding: 10px 12px;
+}
+
+.product-specification-modal :is(.product-specification-content, .product-specification-values) {
+  gap: 10px;
+}
+
+.product-specification-modal .product-specification-history-item + .product-specification-history-item {
+  padding-top: 10px;
+}
+
+.product-specification-modal .product-specification-empty {
+  min-height: 64px;
+}
+
+.product-audit-panel .product-audit-date {
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}

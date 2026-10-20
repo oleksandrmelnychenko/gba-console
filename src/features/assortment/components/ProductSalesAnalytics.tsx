@@ -1,10 +1,11 @@
 import { AreaChart, BarChart } from '@mantine/charts'
 import { MONEY_AXIS_TICK } from '../../../shared/ui/charts/chartTheme'
-import { Alert, Badge, Card, Group, SimpleGrid, Stack, Text } from '@mantine/core'
+import { Alert, Card, Group, SimpleGrid, Stack, Text } from '@mantine/core'
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react'
 import { useMemo } from 'react'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { TableChip } from '../../../shared/ui/TableChip'
 import type { ProductAnalytics, ProductSalesSeriesPoint } from '../types'
 
 type ProductSalesAnalyticsProps = {
@@ -80,7 +81,7 @@ export function ProductSalesAnalytics({ analytics, error }: ProductSalesAnalytic
 
   return (
     <Card className="assort-sales-analytics" radius="md" withBorder>
-      <Stack gap="md">
+      <Stack gap={10}>
         <Group align="flex-start" justify="space-between" wrap="wrap">
           <Stack gap={2}>
             <Group align="center" gap="xs">
@@ -97,9 +98,7 @@ export function ProductSalesAnalytics({ analytics, error }: ProductSalesAnalytic
               {t('Дані в системі доступні з')} {formatDate(analytics.source_history_start)}.
             </Text>
           </Stack>
-          <Badge color="gray" variant="light">
-            {t('Період')}: {analytics.window.months} {t('місяців')}
-          </Badge>
+          <TableChip value={`${t('Період')}: ${analytics.window.months} ${t('місяців')}`} />
         </Group>
 
         <SalesInsight trend={summary.trend} />
@@ -145,7 +144,7 @@ export function ProductSalesAnalytics({ analytics, error }: ProductSalesAnalytic
             <figure className="assort-sales-chart">
               <figcaption>
                 <span>{t('Виручка')}</span>
-                <small>EUR</small>
+                <TableChip tone="source" value="EUR" />
               </figcaption>
               <div
                 aria-label={`${t('Виручка по місяцях')}. ${buildAccessibleSeries(points, 'revenue', 'EUR')}`}

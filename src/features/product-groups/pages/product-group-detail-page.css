@@ -19,13 +19,13 @@
 }
 
 .product-group-detail-content .app-section-title {
-  font: 600 14px / 1.4 var(--font-mono);
+  font: 600 13px / 1.4 var(--font-mono);
 }
 
 .product-group-detail-content .product-group-form.is-compact {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px 12px;
+  gap: 10px;
 }
 
 .product-group-form.is-compact .product-group-form-names {
@@ -42,7 +42,7 @@
 
 .product-group-detail-content .product-group-form .mantine-InputWrapper-label,
 .product-group-detail-content .product-group-form .mantine-Switch-label {
-  color: var(--mantine-color-gray-8);
+  color: var(--mantine-color-gray-9);
   font: 500 12px / 1.4 var(--font-sans);
 }
 

@@ -144,6 +144,7 @@ import {
   PRODUCT_WRITE_OFF_PERMISSION,
 } from '../permissions'
 import './products.css'
+import './product-import-modals.css'
 import '../../../shared/ui/selection-surface.css'
 
 const InformationalMovementPanel = lazy(() =>
@@ -2494,8 +2495,8 @@ function ProductPlacementStorageUploadModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="min(1120px, 96vw)" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Завантаження місць зберігання')}</span>} onClose={closeModal}>
-      <Stack className="app-compact-form" gap="md">
+    <AppModal centered opened={opened} size={notPassedRows.length ? "min(1120px, 96vw)" : 760} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Завантаження місць зберігання')}</span>} onClose={closeModal}>
+      <Stack className="app-compact-form product-import-form" gap={10}>
         {(error || storagesError) ? (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error || storagesError}</Alert>
         ) : null}
@@ -2503,7 +2504,7 @@ function ProductPlacementStorageUploadModal({
         {notPassedRows.length === 0 ? (
           <>
             <Card className="app-section-card" withBorder radius="md" padding="md">
-              <Stack gap="md">
+              <Stack gap={10}>
                 <Text className="app-section-title" fw={600} size="sm">{t('Файл і склад')}</Text>
                 <Select
                   data={storageOptions}
@@ -2524,9 +2525,9 @@ function ProductPlacementStorageUploadModal({
               </Stack>
             </Card>
             <Card className="app-section-card" withBorder radius="md" padding="md">
-              <Stack gap="md">
+              <Stack gap={10}>
                 <Text className="app-section-title" fw={600} size="sm">{t('Колонки та рядки')}</Text>
-                <SimpleGrid cols={{ base: 2, sm: 5 }} spacing="sm" style={{ alignItems: 'end' }}>
+                <SimpleGrid cols={{ base: 2, sm: 3 }} spacing={10} style={{ alignItems: 'end' }}>
                   <NumberInput label={t('Початковий рядок')} min={1} value={startRow} onChange={(value) => setStartRow(Number(value) || 0)} />
                   <NumberInput label={t('Кінцевий рядок')} min={0} value={endRow} onChange={(value) => setEndRow(Number(value) || 0)} />
                   <NumberInput label={t('Колонка коду')} min={1} value={columnVendorCode} onChange={(value) => setColumnVendorCode(Number(value) || 0)} />
@@ -2544,8 +2545,11 @@ function ProductPlacementStorageUploadModal({
         ) : (
           <>
             <Card className="app-section-card" withBorder radius="md" padding="md">
-              <Stack gap="md">
-                <Text className="app-section-title" fw={600} size="sm">{t('Не пройшли позиції')}</Text>
+              <Stack gap={10}>
+                <Group gap={8}>
+                  <Text className="app-section-title" fw={600} size="sm">{t('Не пройшли позиції')}</Text>
+                  <TableChip tone="danger" value={notPassedRows.length} />
+                </Group>
                 <ScrollArea mah={420}>
                   <Table className="app-static-table" withTableBorder miw={760}>
                 <Table.Thead>
@@ -2767,7 +2771,7 @@ export function ProductFileUploadModal({
 
   return (
     <AppModal centered opened={opened} size="min(960px, 96vw)" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Завантаження товарів')}</span>} onClose={closeModal}>
-      <Stack className="app-compact-form" gap="md">
+      <Stack className="app-compact-form product-import-form" gap={10}>
         {(error || pricingState.error) ? (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error || pricingState.error}
@@ -2780,9 +2784,9 @@ export function ProductFileUploadModal({
         ) : null}
 
         <Card className="app-section-card" withBorder radius="md" padding="md">
-          <Stack gap="md">
+          <Stack gap={10}>
             <Text className="app-section-title" fw={600} size="sm">{t('Файл і операція')}</Text>
-            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm" style={{ alignItems: 'end' }}>
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10} style={{ alignItems: 'end' }}>
               <Select
                 allowDeselect={false}
                 data={productFileUploadModeOptions.map((option) => ({ ...option, label: t(option.label) }))}
@@ -2802,9 +2806,9 @@ export function ProductFileUploadModal({
         </Card>
 
         <Card className="app-section-card" withBorder radius="md" padding="md">
-          <Stack gap="md">
+          <Stack gap={10}>
             <Text className="app-section-title" fw={600} size="sm">{t('Колонки')}</Text>
-            <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="sm" style={{ alignItems: 'end' }}>
+            <Box className="product-import-columns" style={{ alignItems: 'end' }}>
               {productFileUploadFieldLabels.map((item) => (
                 <NumberInput
                   key={item.field}
@@ -2815,20 +2819,23 @@ export function ProductFileUploadModal({
                   onChange={(value) => setColumnField(item.field, value)}
                 />
               ))}
-            </SimpleGrid>
+            </Box>
           </Stack>
         </Card>
 
         <Card className="app-section-card" withBorder radius="md" padding="md">
-          <Stack gap="md">
+          <Stack gap={10}>
             <Group justify="space-between">
-              <Text className="app-section-title" fw={600} size="sm">{t('Ціни')}</Text>
+              <Group gap={8}>
+                <Text className="app-section-title" fw={600} size="sm">{t('Ціни')}</Text>
+                <TableChip value={form.prices.length} />
+              </Group>
               <Button
                 disabled={pricingState.isLoading || pricingOptions.length === 0}
                 leftSection={<Plus size={16} />}
                 size="xs"
                 styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-                            onClick={addPriceRow}
+                onClick={addPriceRow}
               >
                 {t('Додати ціну')}
               </Button>
@@ -2844,29 +2851,27 @@ export function ProductFileUploadModal({
                   const isDuplicatePricing = isDuplicateProductUploadPricingId(form.prices, priceRow.pricingId)
 
                   return (
-                    <Group key={priceRow.key} gap="xs" wrap="nowrap" align="flex-end">
+                    <Box key={priceRow.key} className="product-import-price-row">
                       <Select
                         allowDeselect={false}
                         data={pricingOptions}
                         error={isDuplicatePricing ? t('Дубль типу ціни') : undefined}
                         label={t('Тип ціни')}
-                        style={{ flex: '1 1 240px' }}
                         value={priceRow.pricingId}
                         onChange={(value) => updatePriceRow(priceRow.key, { pricingId: value || '' })}
                       />
                       <NumberInput
                         label={t('Колонка')}
                         min={0}
-                        style={{ flex: '0 0 130px' }}
                         value={priceRow.columnNumber}
                         onChange={(value) => updatePriceRow(priceRow.key, { columnNumber: readProductUploadNumber(value) })}
                       />
                       <Tooltip label={t('Видалити')}>
-                        <ActionIcon aria-label={t('Видалити')} color="red" variant="light" onClick={() => removePriceRow(priceRow.key)}>
+                        <ActionIcon aria-label={t('Видалити')} color="red" size={32} variant="light" onClick={() => removePriceRow(priceRow.key)}>
                           <Trash2 size={16} />
                         </ActionIcon>
                       </Tooltip>
-                    </Group>
+                    </Box>
                   )
                 })}
               </Stack>
@@ -2876,11 +2881,11 @@ export function ProductFileUploadModal({
 
             {hasPriceRows ? (
               <Box component="fieldset" m={0} p={0} style={{ border: 0, minWidth: 0 }}>
-                <Text component="legend" fw={500} mb={6} size="sm">
+                <Text component="legend" c="gray.9" fw={500} mb={4} size="xs">
                   {t('Джерело цін')} <Text component="span" c="red">*</Text>
                 </Text>
                 <SegmentedControl
-                  fullWidth
+                  className="product-import-price-source"
                   data={[
                     { label: t('Контех (Fenix)'), value: 'fenix' },
                     { label: 'AMG', value: 'amg' },
@@ -3024,7 +3029,7 @@ function ProductUploadDocumentModal({
 
   return (
     <AppModal centered opened={opened} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t(labels.title)}</span>} onClose={closeModal}>
-      <Stack className="app-compact-form" gap="md" onKeyDown={handleUploadKeyDown}>
+      <Stack className="app-compact-form product-import-form" gap={10} onKeyDown={handleUploadKeyDown}>
         {error ? (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
@@ -3032,7 +3037,7 @@ function ProductUploadDocumentModal({
         ) : null}
 
         <Card className="app-section-card" withBorder radius="md" padding="md">
-          <Stack gap="md">
+          <Stack gap={10}>
             <Text className="app-section-title" fw={600} size="sm">{t('Дані завантаження')}</Text>
 
             <FileInput
@@ -3043,14 +3048,16 @@ function ProductUploadDocumentModal({
               onChange={(nextFile) => setField('file', nextFile)}
             />
 
-            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm" style={{ alignItems: 'end' }}>
+            <SimpleGrid cols={2} spacing={10} style={{ alignItems: 'end' }}>
               <TextInput
                 label={t('Артикул товару')}
+                className="product-import-code"
                 value={form.vendorCode}
                 onChange={(event) => setField('vendorCode', event.currentTarget.value)}
               />
               <TextInput
                 label={t(labels.articleLabel)}
+                className="product-import-code"
                 value={form.article}
                 onChange={(event) => setField('article', event.currentTarget.value)}
               />

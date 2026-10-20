@@ -65,8 +65,8 @@ export function ProductGroupForm({
   }
 
   return (
-    <Stack className={`product-group-form${compact ? ' is-compact' : ''}`} gap={12}>
-      <SimpleGrid className="product-group-form-names" cols={{ base: 1, xs: 2 }} spacing={12} verticalSpacing={12}>
+    <Stack className={`product-group-form app-compact-form${compact ? ' is-compact' : ''}`} gap={10}>
+      <SimpleGrid className="product-group-form-names" cols={{ base: 1, xs: 2 }} spacing={10} verticalSpacing={10}>
         <TextInput
           label={t('Назва')}
           maxLength={100}

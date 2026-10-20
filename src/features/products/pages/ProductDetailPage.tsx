@@ -44,6 +44,7 @@ import { DocumentExportModal } from '../../../shared/ui/document-export-modal/Do
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import './products.css'
+import './product-detail-forms.css'
 import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
@@ -1067,7 +1068,7 @@ export function ProductActionDrawer({
 
   if (activePanel === 'edit') {
     return (
-      <AppModal opened title={t('Редагувати товар')} size={860} onClose={onClose} className="product-edit-modal" closeOnClickOutside={false}>
+      <AppModal opened title={t('Редагувати товар')} size={800} onClose={onClose} className="product-edit-modal app-compact-form" closeOnClickOutside={false}>
         <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION} fallback={<ProductPermissionDeniedAlert />}>
           <ProductEditPanel key={getProductPanelKey(product)} product={product} onProductSaved={onProductSaved} onClose={onClose} />
         </PermissionGate>
@@ -1077,7 +1078,7 @@ export function ProductActionDrawer({
 
   if (activePanel === 'images') {
     return (
-      <AppModal opened title={t('Зображення')} size={860} onClose={onClose} className="product-images-modal" closeOnClickOutside={false}>
+      <AppModal opened title={t('Зображення')} size={760} onClose={onClose} className="product-images-modal app-compact-form" closeOnClickOutside={false}>
         <ProductImagesPanel key={getProductPanelKey(product)} product={product} onProductSaved={onProductSaved} />
       </AppModal>
     )
@@ -1085,7 +1086,7 @@ export function ProductActionDrawer({
 
   if (activePanel === 'specification') {
     return (
-      <AppModal opened title={t('Специфікація')} size={860} onClose={onClose} className="product-specification-modal" closeOnClickOutside={false}>
+      <AppModal opened title={t('Специфікація')} size={800} onClose={onClose} className="product-specification-modal app-compact-form" closeOnClickOutside={false}>
         <ProductSpecificationPanel key={getProductPanelKey(product)} product={product} onProductSaved={onProductSaved} onClose={onClose} />
       </AppModal>
     )
@@ -1203,8 +1204,8 @@ function ProductEditPanel({ onClose, onProductSaved, product }: { onClose: () =>
   }
 
   return (
-    <form id="product-edit-drawer-form" onSubmit={submitForm}>
-      <Stack gap={12}>
+    <form id="product-edit-drawer-form" className="app-compact-form" onSubmit={submitForm}>
+      <Stack gap={10}>
         <Group className="product-edit-identity" gap={8} wrap="wrap">
           <TableChip tone="product" value={getProductCode(product)} />
           <Text size="sm" fw={600}>{getProductTitle(product)}</Text>
@@ -1217,8 +1218,8 @@ function ProductEditPanel({ onClose, onProductSaved, product }: { onClose: () =>
             </Alert>
           )}
           <Card className="app-section-card product-edit-section" withBorder radius="md" padding="sm">
-            <Text className="app-section-title" mb={12}>{t('Характеристики')}</Text>
-            <SimpleGrid cols={{ base: 1, xs: 2, sm: 3 }} spacing={12} verticalSpacing={10} style={{ alignItems: 'end' }}>
+            <Text className="app-section-title" mb={8}>{t('Характеристики')}</Text>
+            <SimpleGrid cols={{ base: 1, xs: 2, sm: 3 }} spacing={10} verticalSpacing={10} style={{ alignItems: 'end' }}>
               {canEditClassification && (
                 <Select
                   label={t('Тип позиції')}
@@ -1245,15 +1246,15 @@ function ProductEditPanel({ onClose, onProductSaved, product }: { onClose: () =>
             </SimpleGrid>
           </Card>
           <Card className="app-section-card product-edit-section" withBorder radius="md" padding="sm">
-            <Text className="app-section-title" mb={12}>{t('Опис та нотатки')}</Text>
-            <SimpleGrid cols={{ base: 1, xs: 2 }} spacing={12} verticalSpacing={10} style={{ alignItems: 'end' }}>
+            <Text className="app-section-title" mb={8}>{t('Опис та нотатки')}</Text>
+            <SimpleGrid cols={{ base: 1, xs: 2 }} spacing={10} verticalSpacing={10} style={{ alignItems: 'end' }}>
               <Textarea autosize minRows={2} maxRows={5} label={t('Опис')} value={form.Description} onChange={(event) => setField('Description', event.currentTarget.value)} />
               <Textarea autosize minRows={2} maxRows={5} label={t('Опис UA')} value={form.DescriptionUA} onChange={(event) => setField('DescriptionUA', event.currentTarget.value)} />
               <Textarea autosize minRows={2} maxRows={5} label={t('Нотатки')} value={form.Notes} onChange={(event) => setField('Notes', event.currentTarget.value)} />
               <Textarea autosize minRows={2} maxRows={5} label={t('Нотатки UA')} value={form.NotesUA} onChange={(event) => setField('NotesUA', event.currentTarget.value)} />
             </SimpleGrid>
           </Card>
-          <Group className="product-edit-flags" gap="lg">
+          <Group className="product-edit-flags" gap={12}>
             <Checkbox checked={form.IsForZeroSale} label={t('Нульовий продаж')} onChange={(event) => setField('IsForZeroSale', event.currentTarget.checked)} />
             <Checkbox checked={form.IsForSale} label={t('Для продажу')} onChange={(event) => setField('IsForSale', event.currentTarget.checked)} />
           </Group>
@@ -1371,8 +1372,8 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
   }
 
   return (
-    <Stack className="product-images-panel" gap="sm">
-      <Group className="product-images-identity" gap="sm" wrap="wrap">
+    <Stack className="product-images-panel" gap={10}>
+      <Group className="product-images-identity" gap={10} wrap="wrap">
         <TableChip tone="product" value={getProductCode(product)} />
         <Text fw={600} c="dark">{getProductTitle(product)}</Text>
       </Group>
@@ -1405,21 +1406,21 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
           {hasPermission(PRODUCT_IMAGE_ADD_PERMISSION) && <Text size="sm">{t('Оберіть файли, щоб додати фото товару')}</Text>}
         </div>
       ) : (
-        <SimpleGrid className="product-images-gallery" cols={{ base: 1, xs: 2, md: 3 }} spacing="sm">
+        <SimpleGrid className="product-images-gallery" cols={{ base: 1, xs: 2, md: 3 }} spacing={10}>
           {displayedImages.map(({ image, index }) => (
             <Box
               key={`${image.NetUid || image.FileName || index}`}
               className="product-image-card"
               data-deleted={image.Deleted || undefined}
             >
-              <Stack gap="sm">
+              <Stack gap={10}>
                 <button
                   type="button"
                   className="product-image-preview"
                   aria-label={t('Переглянути зображення')}
                   onClick={() => setPreviewImageUrl(toProxiedAssetUrl(image.ImageUrl) || null)}
                 >
-                  <Image src={toProxiedAssetUrl(image.ImageUrl)} alt={image.FileName || getProductTitle(product)} h={190} fit="contain" radius="sm" />
+                  <Image src={toProxiedAssetUrl(image.ImageUrl)} alt={image.FileName || getProductTitle(product)} h={160} fit="contain" radius="sm" />
                 </button>
                 <Group justify="space-between" gap="xs" wrap="nowrap">
                   <TableChip tone={image.Deleted ? 'danger' : image.IsMainImage ? 'success' : 'neutral'} value={image.Deleted ? t('Буде видалено') : image.IsMainImage ? t('Головне') : t('Зображення')} />
@@ -1446,14 +1447,14 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
               key={preview.url}
               className="product-image-card"
             >
-              <Stack gap="sm">
+              <Stack gap={10}>
                 <button
                   type="button"
                   className="product-image-preview"
                   aria-label={t('Переглянути зображення')}
                   onClick={() => setPreviewImageUrl(preview.url)}
                 >
-                  <Image src={preview.url} alt={preview.file.name || getProductTitle(product)} h={190} fit="contain" radius="sm" />
+                  <Image src={preview.url} alt={preview.file.name || getProductTitle(product)} h={160} fit="contain" radius="sm" />
                 </button>
                 <Group justify="space-between" gap="xs" wrap="nowrap">
                   <TableChip tone="document" value={t('Нове')} />
@@ -1467,14 +1468,12 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
         </SimpleGrid>
       )}
       <AppModalFooter>
-        <Group gap="xs" wrap="nowrap">
-          <Button variant="default" color="gray" disabled={!hasChanges || isSaving} onClick={resetImageChanges}>
-            {t('Скасувати')}
-          </Button>
-          <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={18} />} loading={isSaving} disabled={!hasChanges || !canSaveChanges} onClick={saveImages}>
-            {t('Зберегти')}
-          </Button>
-        </Group>
+        <Button variant="default" color="gray" disabled={!hasChanges || isSaving} onClick={resetImageChanges}>
+          {t('Скасувати')}
+        </Button>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} disabled={!hasChanges || !canSaveChanges} onClick={saveImages}>
+          {t('Зберегти')}
+        </Button>
       </AppModalFooter>
       <ProductImageViewerModal
         imageUrl={previewImageUrl}
@@ -1534,12 +1533,13 @@ function ProductAuditPanel({ product }: { product: Product }) {
   }, [field, productNetUid, t])
 
   return (
-    <Stack gap="md">
+    <Stack className="product-audit-panel app-compact-form" gap={10}>
       <Select
         data={productAuditFieldOptions.map((option) => ({ ...option, label: t(option.label) }))}
         label={t('Поле')}
         value={field}
         w={260}
+        maw="100%"
         onChange={(value) => setField((value as ProductAuditField) || 'Description')}
       />
       {activeError && <Alert color={missingNetUidError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">{activeError}</Alert>}
@@ -1559,9 +1559,9 @@ function ProductAuditPanel({ product }: { product: Product }) {
               }}
             >
               <Text size="sm" style={{ overflowWrap: 'anywhere' }}>{displayValue(entry.NewValues?.[0]?.Value)}</Text>
-              <Group justify="space-between" gap="xs" wrap="nowrap" mt={4}>
-                <Text c="dimmed" size="xs">{displayValue(entry.UpdatedBy)}</Text>
-                <Text c="dimmed" size="xs">{formatDate(entry.Created)}</Text>
+              <Group justify="space-between" gap={8} wrap="wrap" mt={6}>
+                <TableChip tone="warning" value={entry.UpdatedBy} />
+                <Text className="product-audit-date" size="xs">{formatDate(entry.Created)}</Text>
               </Group>
             </Box>
           ))}
@@ -1656,7 +1656,7 @@ function ProductSpecificationPanel({
         )}
       >
         <div className="product-specification-content">
-          <Stack gap={12}>
+          <Stack gap={10}>
             <DocumentDetailSection title={t('Поточна специфікація')} stacked>
               {currentSpecification ? (
                 <>
@@ -1705,7 +1705,7 @@ function ProductSpecificationPanel({
                 <Text size="sm">{t(specifications.length === 0 ? 'Специфікацій не знайдено' : 'Історію не знайдено')}</Text>
               </div>
             ) : (
-              <Stack gap={12}>
+              <Stack gap={10}>
                 {historySpecifications.map((specification, index) => (
                   <Stack className="product-specification-history-item" gap={8} key={specification.NetUid || specification.Id || index}>
                     <SpecificationCodeChips specification={specification} />
@@ -1745,7 +1745,7 @@ function SpecificationMetadata({ specification }: { specification: ProductSpecif
   const created = formatDate(specification.Created)
   return (
     <Group gap={8}>
-      {author && author !== '-' && <Text className="product-specification-author" size="xs" c="gray.7">{author}</Text>}
+      {author && author !== '-' && <TableChip tone="warning" value={author} />}
       {created && created !== '-' && (
         <DocumentDetailChip tone="document" icon={<CalendarDays size={13} />}>{created}</DocumentDetailChip>
       )}

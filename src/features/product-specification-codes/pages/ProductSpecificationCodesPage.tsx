@@ -306,9 +306,9 @@ function SpecificationUploadResultModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={Boolean(result)} title={t('Результат завантаження')} onClose={onClose}>
+    <AppModal className="product-specification-upload-modal app-compact-form" centered opened={Boolean(result)} title={t('Результат завантаження')} onClose={onClose}>
       {result && (
-        <Stack gap="md">
+        <Stack gap={10}>
           <div className="product-specification-codes-upload-stats">
             <UploadStat label={t('Розпізнано')} value={result.ParsedCount} />
             <UploadStat color="teal" label={t('Оновлено')} value={result.SuccessfullyUpdatedCount} />
@@ -323,9 +323,7 @@ function SpecificationUploadResultModal({
               <ScrollArea.Autosize mah={240} type="auto">
                 <Stack gap={2}>
                   {result.InvalidVendorCodes.map((code, index) => (
-                    <Text key={`${code}-${index}`} size="sm">
-                      {code}
-                    </Text>
+                    <TableChip key={`${code}-${index}`} tone="product" value={code} />
                   ))}
                 </Stack>
               </ScrollArea.Autosize>
@@ -343,7 +341,7 @@ function SpecificationUploadResultModal({
 
 function UploadStat({ color, label, value }: { color?: string; label: string; value: number }) {
   return (
-    <Card className="product-specification-codes-upload-stat" withBorder padding="sm" radius="md">
+    <Card className="product-specification-codes-upload-stat" withBorder padding={10} radius="md">
       <Text c="dimmed" size="xs">
         {label}
       </Text>

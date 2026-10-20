@@ -129,14 +129,14 @@ export function ChangeProductSpecificationPanel({
 
   return (
     <AppModal
-      className="product-specification-change-sheet"
+      className="product-specification-change-sheet app-compact-form"
       opened={Boolean(productSpecification)}
       size={720}
       title={title}
       onClose={requestClose}
     >
       {productSpecification && (
-        <Stack className="product-specification-change-body" gap={12}>
+        <Stack className="product-specification-change-body" gap={10}>
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}

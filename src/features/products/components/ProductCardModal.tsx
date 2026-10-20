@@ -135,7 +135,7 @@ function ProductCardContent({
             {product.MainOriginalNumber && (
               <span className="product-card-original">
                 <span>OEM</span>
-                <TableChip tone="warning" value={product.MainOriginalNumber} />
+                <TableChip tone="product" value={product.MainOriginalNumber} />
               </span>
             )}
           </Group>

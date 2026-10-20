@@ -6,13 +6,14 @@ import {
   Checkbox,
   Divider,
   Group,
+  SimpleGrid,
   Stack,
   Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, ExternalLink, Pencil, Plus, RefreshCw, RotateCcw, Search, Trash2, X } from 'lucide-react'
+import { CircleAlert, ExternalLink, Pencil, Plus, RefreshCw, RotateCcw, Save, Search, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useAuth } from '../../auth/useAuth'
@@ -597,7 +598,7 @@ function ConsumableProductUnitCell({ value }: { value: string }) {
     return null
   }
 
-  return <span className="app-role-pill is-gray consumable-product-unit" title={nativeTitle(value)}>{value}</span>
+  return <TableChip value={value} />
 }
 
 function ConsumableProductActionsModal({
@@ -629,7 +630,11 @@ function ConsumableProductActionsModal({
       onClose={onClose}
     >
       {product && (
-        <Stack gap="md">
+        <Stack className="app-compact-form" gap={10}>
+          <Group gap={8}>
+            <TableChip tone="product" value={product.VendorCode} />
+            <TableChip value={product.MeasureUnit?.Name} />
+          </Group>
           <Stack className="app-modal-actions" gap="xs">
             <PermissionGate permissionKey={PermissionKeys.ConsumableProducts.Product.Edit}>
               <Button
@@ -703,7 +708,7 @@ function CategoryEditorModal({
       onClose={onClose}
     >
       {error && (
-        <Alert color="red" icon={<CircleAlert size={18} />} mb="md" variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} mb={10} variant="light">
           {error}
         </Alert>
       )}
@@ -736,7 +741,7 @@ function CategoryEditorForm({
   const [isSupplyServiceCategory, setSupplyServiceCategory] = useValueState(Boolean(editor.category?.IsSupplyServiceCategory))
 
   return (
-    <Stack gap="md">
+    <Stack className="app-compact-form" gap={10}>
       <TextInput label={t('Назва')} value={name} onChange={(event) => setName(event.currentTarget.value)} />
       <Checkbox
         checked={isSupplyServiceCategory}
@@ -749,7 +754,7 @@ function CategoryEditorForm({
         </Button>
         <Button
           color={CREATE_ACTION_COLOR}
-          leftSection={<Plus size={16} />}
+          leftSection={<Save size={16} />}
           loading={isSubmitting}
           onClick={() => onSubmit({ isSupplyServiceCategory, name })}
         >
@@ -783,7 +788,7 @@ function ProductEditorModal({
       onClose={onClose}
     >
       {error && (
-        <Alert color="red" icon={<CircleAlert size={18} />} mb="md" variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} mb={10} variant="light">
           {error}
         </Alert>
       )}
@@ -866,41 +871,43 @@ export function ProductEditorForm({
   }
 
   return (
-    <Stack gap="md">
+    <Stack className="app-compact-form" gap={10}>
       <TextInput label={t('Назва')} value={name} onChange={(event) => setName(event.currentTarget.value)} />
-      <TextInput label={t('Артикул')} value={vendorCode} onChange={(event) => setVendorCode(event.currentTarget.value)} />
-      <SearchableSelect
-        data={measureUnitOptions}
-        label={t('Одиниця виміру')}
-        value={measureUnitSearch}
-        onChange={(value) => {
-          if (value === measureUnitSearch) {
-            return
-          }
+      <SimpleGrid cols={2} spacing={10}>
+        <TextInput className="consumable-product-vendor-input" label={t('Артикул')} value={vendorCode} onChange={(event) => setVendorCode(event.currentTarget.value)} />
+        <SearchableSelect
+          data={measureUnitOptions}
+          label={t('Одиниця виміру')}
+          value={measureUnitSearch}
+          onChange={(value) => {
+            if (value === measureUnitSearch) {
+              return
+            }
 
-          setMeasureUnitSearch(value)
-          setSelectedMeasureUnit(null)
-          setMeasureUnits([])
-        }}
-        onOptionSubmit={(value) => {
-          const measureUnit = measureUnits.find((item, index) => getMeasureUnitOptionValue(item, index) === value) || null
-          setMeasureUnitSearch(measureUnit ? getMeasureUnitLabel(measureUnit) : value)
-          setSelectedMeasureUnit(measureUnit)
-        }}
-        onBlur={() => {
-          const measureUnit = resolveSingleFilteredMeasureUnit(measureUnits, measureUnitSearch)
-
-          if (measureUnit) {
-            setMeasureUnitSearch(getMeasureUnitLabel(measureUnit))
+            setMeasureUnitSearch(value)
+            setSelectedMeasureUnit(null)
+            setMeasureUnits([])
+          }}
+          onOptionSubmit={(value) => {
+            const measureUnit = measureUnits.find((item, index) => getMeasureUnitOptionValue(item, index) === value) || null
+            setMeasureUnitSearch(measureUnit ? getMeasureUnitLabel(measureUnit) : value)
             setSelectedMeasureUnit(measureUnit)
-          }
-        }}
-      />
+          }}
+          onBlur={() => {
+            const measureUnit = resolveSingleFilteredMeasureUnit(measureUnits, measureUnitSearch)
+
+            if (measureUnit) {
+              setMeasureUnitSearch(getMeasureUnitLabel(measureUnit))
+              setSelectedMeasureUnit(measureUnit)
+            }
+          }}
+        />
+      </SimpleGrid>
       <AppModalFooter>
         <Button color="gray" leftSection={<X size={16} />} variant="default" onClick={onClose}>
           {t('Скасувати')}
         </Button>
-        <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} loading={isSubmitting} onClick={submit}>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSubmitting} onClick={submit}>
           {t('Зберегти')}
         </Button>
       </AppModalFooter>

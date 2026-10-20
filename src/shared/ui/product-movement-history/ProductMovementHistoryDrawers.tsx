@@ -592,7 +592,7 @@ function ProductMovementHistoryDrawerContent({
   const title = product ? `${t('Рух товару')}: ${getProductTitle(product)}` : t('Рух товару')
 
   return (
-    <AppDrawer opened={opened && Boolean(product)} position="right" size="min(1280px, 98vw)" title={title} onClose={onClose}>
+    <AppDrawer className="app-compact-form" opened={opened && Boolean(product)} position="right" size="min(1280px, 98vw)" title={title} onClose={onClose}>
       {product ? (
         <Card
           className="app-data-card product-movement-history-shell"
@@ -731,9 +731,9 @@ function ProductStorageLocationHistoryDrawerContent({
   }, [dateFrom, dateTo, filterError, opened, page, pageSize, productNetUid, reloadKey, requestPath, t])
 
   return (
-    <AppDrawer opened={opened && Boolean(product)} position="right" size="min(1180px, 98vw)" title={title} onClose={onClose}>
-      <Stack gap="md">
-        <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+    <AppDrawer className="app-compact-form" opened={opened && Boolean(product)} position="right" size="min(1180px, 98vw)" title={title} onClose={onClose}>
+      <Stack gap={10}>
+        <Group align="end" gap={10} wrap="wrap" className="product-movement-history-location-filters">
           <TextInput
             label={t('З')}
             type="date"
@@ -987,7 +987,7 @@ function ProductMovementPanel({
       </Group>
 
       </div>
-      <Stack className="product-movement-history-panel__body" gap="md">
+      <Stack className="product-movement-history-panel__body" gap={10}>
       {activeError ? (
         <Alert color={filterError || missingNetUidError || typesError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
           {activeError}
@@ -1104,7 +1104,7 @@ export function HistoricalSourceMovementPanel({
           </div>
         </Group>
       </div>
-      <Stack className="product-movement-history-panel__body" gap="md">
+      <Stack className="product-movement-history-panel__body" gap={10}>
         <Alert color="gray" icon={<LockKeyhole size={18} />} variant="light">
           {t('Історичні партії з 1С без активної локальної партії. Вони доступні лише для перегляду, не змінюють складську наявність і недоступні для складських операцій.')}
         </Alert>
@@ -1220,7 +1220,7 @@ export function InformationalMovementPanel({
   return (
     <Stack className="product-movement-history-panel" gap={0}>
       <div className="app-filter-bar product-movement-history-panel__filters">
-        <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+        <Group align="end" gap={10} wrap="wrap" className="product-movement-history-location-filters">
           <TextInput
             label={t('З')}
             type="date"
@@ -1286,7 +1286,7 @@ export function InformationalMovementPanel({
           </div>
         </Group>
       </div>
-      <Stack className="product-movement-history-panel__body" gap="md">
+      <Stack className="product-movement-history-panel__body" gap={10}>
         <Alert color={getInformationalQueueColor(queue)} icon={<TriangleAlert size={18} />} variant="light">
           {getInformationalQueueDescription(queue, t)}
         </Alert>
@@ -1385,7 +1385,7 @@ function useInformationalMovementColumns(): DataTableColumn<InformationalMovemen
       accessor: (row) => `${row.VendorCode || ''} ${row.ProductName || ''}`,
       cell: (row) => (
         <Stack gap={0}>
-          <Text fw={600} size="sm">{displayValue(row.VendorCode)}</Text>
+          <TableChip tone="product" value={displayValue(row.VendorCode)} />
           <Text c="dimmed" lineClamp={1} size="xs">{displayValue(row.ProductName)}</Text>
         </Stack>
       ),
@@ -1638,7 +1638,7 @@ function useHistoricalSourceAnchorColumns(): DataTableColumn<HistoricalSourceAnc
       width: 230,
       minWidth: 180,
       accessor: (row) => row.SourceOrganizationName,
-      cell: (row) => displayValue(row.SourceOrganizationName),
+      cell: (row) => <TableChip tone="product" value={displayValue(row.SourceOrganizationName)} />,
     },
     {
       id: 'qty',
@@ -1837,7 +1837,7 @@ function ProductIncomeMovementPanel({
         onRefresh={() => reload()}
       />
       </div>
-      <Stack className="product-movement-history-panel__body" gap="md">
+      <Stack className="product-movement-history-panel__body" gap={10}>
       {activeError ? (
         <Alert color={filterError || missingNetUidError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
           {activeError}
@@ -2047,7 +2047,7 @@ function ProductOutcomeMovementPanel({
         onRefresh={() => reload()}
       />
       </div>
-      <Stack className="product-movement-history-panel__body" gap="md">
+      <Stack className="product-movement-history-panel__body" gap={10}>
       {activeError ? (
         <Alert color={filterError || missingNetUidError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
           {activeError}
@@ -2205,7 +2205,7 @@ function useProductMovementColumns(): DataTableColumn<ProductMovement>[] {
         width: 220,
         minWidth: 170,
         accessor: (row) => row.OrganizationName,
-        cell: (row) => displayValue(row.OrganizationName),
+        cell: (row) => <TableChip tone="product" value={displayValue(row.OrganizationName)} />,
       },
       {
         id: 'sourceProjection',
@@ -2313,7 +2313,7 @@ function useProductIncomeMovementColumns(): DataTableColumn<ProductIncomeMovemen
         width: 220,
         minWidth: 170,
         accessor: (row) => row.OrganizationName,
-        cell: (row) => displayValue(row.OrganizationName),
+        cell: (row) => <TableChip tone="product" value={displayValue(row.OrganizationName)} />,
       },
       {
         id: 'incomeToStorageDate',
@@ -2355,7 +2355,7 @@ function useProductIncomeMovementColumns(): DataTableColumn<ProductIncomeMovemen
         width: 110,
         minWidth: 96,
         accessor: (row) => row.Currency,
-        cell: (row) => <TableChip tone="neutral" value={displayValue(row.Currency)} />,
+        cell: (row) => <TableChip tone="source" value={displayValue(row.Currency)} />,
       },
       {
         id: 'exchangeRate',
@@ -2562,7 +2562,7 @@ function useProductOutcomeMovementColumns(): DataTableColumn<ProductOutcomeMovem
         width: 220,
         minWidth: 170,
         accessor: (row) => row.OrganizationName,
-        cell: (row) => displayValue(row.OrganizationName),
+        cell: (row) => <TableChip tone="product" value={displayValue(row.OrganizationName)} />,
       },
       {
         id: 'documentNumber',

@@ -162,18 +162,20 @@
 }
 
 .product-specification-codes-upload-stat {
+  min-width: 0;
   border: 1px solid var(--mantine-color-gray-2) !important;
   box-shadow: none;
 }
 
 .product-specification-codes-upload-stat .mantine-Text-root:first-child {
-  color: var(--mantine-color-gray-6);
-  font-family: var(--font-mono);
-  font-size: 11px;
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-sans);
+  font-size: 12px;
   font-weight: 600;
 }
 
 .product-specification-codes-upload-stat .mantine-Text-root:last-child {
+  font-size: 16px;
   font-family: var(--font-mono);
   letter-spacing: 0;
 }
@@ -211,4 +213,10 @@
   .product-specification-codes-filter-row .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
   .product-specification-codes-filter-row .data-table-layout-control .mantine-Button-label { display: none; }
   .product-specification-codes-filter-row .data-table-layout-control .mantine-Button-section { margin: 0; }
+}
+
+@media (max-width: 440px) {
+  .product-specification-upload-modal .product-specification-codes-upload-stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
