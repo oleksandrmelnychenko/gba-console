@@ -61,6 +61,14 @@ function fixture(overrides: Partial<Props> = {}): Props {
   }
 }
 
+function tableValues(table: HTMLElement) {
+  const columns = within(table).getAllByRole('columnheader').slice(1).map((header) => header.textContent?.trim() ?? '')
+  return Object.fromEntries(within(table).getAllByRole('row').slice(1).map((row) => [
+    within(row).getByRole('rowheader').textContent?.trim() ?? '',
+    Object.fromEntries(within(row).getAllByRole('cell').map((cell, index) => [columns[index], cell.textContent?.replace(/\s+/g, ' ').trim() ?? ''])),
+  ]))
+}
+
 function panel(props: Props) {
   return (
     <MantineProvider env="test" theme={theme}>
@@ -99,13 +107,19 @@ describe('ProductFullDetailPanel', () => {
     expect(screen.getByText('2376002000*')).toBeTruthy()
     expect(screen.getByText('X9')).toBeTruthy()
 
-    const prices = within(screen.getByRole('region', { name: 'Ціни' }))
-    expect(prices.getByText('24,48 EUR')).toBeTruthy()
-    expect(prices.getByText('22,00 EUR')).toBeTruthy()
-    expect(prices.getByText('32,07 EUR')).toBeTruthy()
-    expect(prices.getByText(/1\s670,78 UAH/)).toBeTruthy()
-    expect(prices.getByText('10,00%')).toBeTruthy()
-    expect(prices.getByText(/2 шт · 1\s275,41 UAH · 24,48 EUR/)).toBeTruthy()
+    const summary = within(screen.getByRole('region', { name: 'Коротка інформація про товар' }))
+    expect(tableValues(summary.getByRole('table', { name: 'Ціни товару' }))).toEqual({
+      'Ціна': { EUR: '24,48', UAH: '1 275,41' },
+      'ЦО2 (НДС)': { EUR: '24,48', UAH: '' },
+      'Зі знижкою': { EUR: '22,00', UAH: '' },
+      'Роздріб': { EUR: '32,07', UAH: '1 670,78' },
+    })
+    const stockPrices = within(screen.getByRole('region', { name: 'Наявність і ціни' }))
+    expect(tableValues(stockPrices.getByRole('table', { name: 'Наявність і ціни' }))).toEqual({
+      'ПДВ склад': { 'К-сть': '2 шт', EUR: '24,48', UAH: '1 275,41' },
+    })
+    expect(stockPrices.getByText('Знижка')).toBeTruthy()
+    expect(stockPrices.getByText('10,00%')).toBeTruthy()
     expect(within(screen.getByRole('region', { name: 'Опис' })).getByText('F5127-MN')).toBeTruthy()
   })
 
@@ -113,38 +127,47 @@ describe('ProductFullDetailPanel', () => {
     const props = fixture()
     render(panel({ ...props, pricing: { ...props.pricing, PriceEUR: 25.5 } }))
     const summary = within(screen.getByRole('region', { name: 'Коротка інформація про товар' }))
-    for (const label of ['Доступно', 'Ціна в EUR', 'Ціна в UAH', 'ЦО2 (НДС)', 'Зі знижкою']) {
-      expect(summary.getByText(label)).toBeTruthy()
-    }
-    for (const value of ['24,48', '25,50', '22,00', '32,07']) {
-      expect(summary.getByText(value)).toBeTruthy()
-    }
-    expect(summary.getByText(/1\s275,41/)).toBeTruthy()
-    expect(summary.getByText(/1\s670,78/)).toBeTruthy()
-    expect(summary.getAllByText('Роздріб')).toHaveLength(2)
+    const stock = summary.getByText('Доступно').parentElement as HTMLElement
+    expect(stock.textContent?.replace(/\s+/g, ' ')).toBe('Доступно2шт')
+    expect(tableValues(summary.getByRole('table', { name: 'Ціни товару' }))).toEqual({
+      'Ціна': { EUR: '24,48', UAH: '1 275,41' },
+      'ЦО2 (НДС)': { EUR: '25,50', UAH: '' },
+      'Зі знижкою': { EUR: '22,00', UAH: '' },
+      'Роздріб': { EUR: '32,07', UAH: '1 670,78' },
+    })
     expect(summary.queryByRole('button', { name: 'Деталі' })).toBeNull()
+  })
+
+  it('shows the agreement current price passed by the wizard in the summary', () => {
+    render(panel(fixture({ currentPriceEur: 30.5 })))
+    const summary = within(screen.getByRole('region', { name: 'Коротка інформація про товар' }))
+    expect(tableValues(summary.getByRole('table', { name: 'Ціни товару' }))['Ціна']).toEqual({ EUR: '30,50', UAH: '1 275,41' })
   })
 
   it('omits the duplicate summary when it is rendered in the pinned slot', () => {
     render(panel(fixture({ showSummary: false })))
     expect(screen.queryByRole('region', { name: 'Коротка інформація про товар' })).toBeNull()
     expect(screen.queryByRole('heading', { name: 'Амортизатор' })).toBeNull()
-    expect(screen.getByRole('region', { name: 'Ціни' })).toBeTruthy()
+    expect(within(screen.getByRole('region', { name: 'Наявність і ціни' })).getByRole('table', { name: 'Наявність і ціни' })).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Наявність' })).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Опис' })).toBeTruthy()
   })
 
   it('places availability after the description with the same heading pattern as product details', () => {
     render(panel(fixture()))
+    const details = screen.getByRole('region', { name: 'Наявність і ціни' })
     const description = screen.getByRole('region', { name: 'Опис' })
     const availability = screen.getByRole('region', { name: 'Наявність' })
-    const detailsHeading = screen.getByRole('heading', { name: 'Деталі товару', level: 3 })
-    const availabilityHeading = within(availability).getByRole('heading', { name: 'Наявність', level: 3 })
+    const titleOf = (section: HTMLElement) => document.getElementById(section.getAttribute('aria-labelledby') ?? '')
 
     expect(description.compareDocumentPosition(availability) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0)
-    expect(availability.classList.contains('new-sale-product-detail__tree')).toBe(true)
-    expect(availabilityHeading.parentElement?.className).toBe(detailsHeading.parentElement?.className)
-    expect(availabilityHeading.closest('.new-sale-product-detail__section')).toBeNull()
+    for (const section of [details, description, availability]) {
+      expect(section.classList.contains('document-detail-section')).toBe(true)
+    }
+    expect(titleOf(availability)?.textContent).toBe('Наявність')
+    expect(titleOf(availability)?.className).toBe(titleOf(details)?.className)
+    expect(titleOf(availability)?.parentElement?.className).toBe(titleOf(details)?.parentElement?.className)
+    expect(details.contains(availability) || description.contains(availability)).toBe(false)
     expect(within(availability).getByRole('radiogroup', { name: 'Тип наявності' })).toBeTruthy()
     expect(within(availability).getByRole('region', { name: 'Деталі залишків' })).toBeTruthy()
   })
@@ -236,18 +259,17 @@ describe('ProductFullDetailPanel', () => {
     const props = fixture()
     const view = render(panel(props))
     const stock = screen.getByRole('region', { name: 'Деталі залишків' })
-    const heading = within(stock).getByRole('heading', { name: 'Деталі залишків' })
-    expect(heading.parentElement?.textContent).toBe('Деталі залишків')
+    expect(within(stock).getAllByRole('columnheader').map((header) => header.textContent)).toEqual(['Розташування', 'К-сть'])
     expect(within(stock).queryByText('Склади Україна (ПДВ)')).toBeNull()
-    expect(within(stock).getByText('СКЛАД -3')).toBeTruthy()
-    expect(within(stock).getByText('2')).toBeTruthy()
+    const [stockRow] = within(stock).getAllByRole('row').slice(1)
+    expect(within(stockRow).getAllByRole('cell').map((cell) => cell.textContent?.replace(/\s+/g, ' ').trim())).toEqual(['СКЛАД -3', '2 шт'])
     expect(screen.getByRole('radio', { name: 'Склади Україна (ПДВ) 2' })).toBeTruthy()
 
     view.rerender(panel({ ...props, rows: [], selectedChipIndex: 0 }))
-    expect(heading.parentElement?.textContent).toBe('Деталі залишків')
-    expect(within(stock).queryByText('В рахунках')).toBeNull()
-    expect(within(stock).queryByText('0')).toBeNull()
-    expect(within(stock).getByText('Немає деталізації')).toBeTruthy()
+    const emptyStock = screen.getByRole('region', { name: 'Деталі залишків' })
+    expect(emptyStock.textContent).toBe('Немає деталізації')
+    expect(within(emptyStock).queryByText('В рахунках')).toBeNull()
+    expect(within(emptyStock).queryByText('0')).toBeNull()
   })
 
   it('retains detailed stock metadata and the nearest supply', () => {
@@ -256,15 +278,22 @@ describe('ProductFullDetailPanel', () => {
       selectedRowIndex: 0,
       nearestSupplyOrder: { OrderArrivedDate: '2026-09-01T12:00:00Z', Qty: 5 },
     })))
-    expect(screen.getByText('UA · СКЛАД -3 · Баранов')).toBeTruthy()
-    expect(screen.getByText('Найближча партія')).toBeTruthy()
-    expect(screen.getByText('2026-09-01 · 5 шт')).toBeTruthy()
+    const [stockRow] = within(screen.getByRole('table', { name: 'Деталі залишків' })).getAllByRole('row').slice(1)
+    expect(stockRow.classList.contains('is-selected')).toBe(true)
+    const [location, quantity] = within(stockRow).getAllByRole('cell')
+    expect([...location.querySelectorAll('.app-table-chip-label, p')].map((item) => item.textContent)).toEqual(['СКЛАД -3', 'UA', 'Баранов'])
+    expect(quantity.textContent?.replace(/\s+/g, ' ').trim()).toBe('2 шт')
+    const nearest = within(screen.getByRole('region', { name: 'Наявність і ціни' })).getByText('Найближча партія').parentElement as HTMLElement
+    expect([...nearest.children].map((item) => item.textContent)).toEqual(['Найближча партія', '2026-09-01', '5', 'шт'])
   })
 
   it('retains resale prices outside VAT sales and handles empty detail data', () => {
     const props = fixture({ isVatSale: false })
     const view = render(panel(props))
-    expect(within(screen.getByRole('region', { name: 'Ціни' })).getByText(/3 шт · 1\s094,10 UAH · 21,00 EUR/)).toBeTruthy()
+    expect(tableValues(within(screen.getByRole('region', { name: 'Наявність і ціни' })).getByRole('table', { name: 'Наявність і ціни' }))).toEqual({
+      'Склад': { 'К-сть': '4 шт', EUR: '24,48', UAH: '1 275,41' },
+      'Перепродаж': { 'К-сть': '3 шт', EUR: '21,00', UAH: '1 094,10' },
+    })
     view.rerender(panel({ ...props, product: {}, pricing: null, rows: [], canEditDescription: false }))
     expect(screen.getByText('Код відсутній')).toBeTruthy()
     expect(screen.getByText('Опис відсутній')).toBeTruthy()

@@ -32,6 +32,7 @@ export function ProductFullDetailPanel({
   canEditDescription,
   chips,
   clientAgreementNetId,
+  currentPriceEur,
   descriptionDraft,
   detailsError,
   isFullDetail,
@@ -57,6 +58,7 @@ export function ProductFullDetailPanel({
   canEditDescription: boolean
   chips: WizardDetailChip[]
   clientAgreementNetId?: string | null
+  currentPriceEur?: number | null
   descriptionDraft: string
   detailsError?: string | null
   isFullDetail: boolean
@@ -135,7 +137,7 @@ export function ProductFullDetailPanel({
   return (
     <section aria-label={t('Детальна інформація про товар')} className="new-sale-product-detail">
       <DocumentDetailLayout summary={null}>
-        {showSummary && <ProductSummaryCard variant="detail" displayQty={displayQty} localCurrencyCode={localCurrencyCode} pricing={pricing} product={product} onOpenImage={onOpenImage} />}
+        {showSummary && <ProductSummaryCard variant="detail" currentPriceEur={currentPriceEur} displayQty={displayQty} localCurrencyCode={localCurrencyCode} pricing={pricing} product={product} onOpenImage={onOpenImage} />}
         <div className="new-sale-product-detail__columns">
           <DocumentDetailSection title={t('Наявність і ціни')} stacked>
             {isFullDetail && (

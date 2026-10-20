@@ -18,6 +18,7 @@ const apiMocks = vi.hoisted(() => ({
   addOrderItem: vi.fn(),
   deleteOrderItem: vi.fn(),
   getProductAvailabilityBuckets: vi.fn(),
+  getProductCurrentPriceByAgreement: vi.fn(),
   searchSaleProductsWithAvailability: vi.fn(),
   updateOrderItem: vi.fn(),
   updateProduct: vi.fn(),
@@ -44,7 +45,7 @@ vi.mock('./newSaleWizardApi', async (importOriginal) => {
     getProductAnalogues: vi.fn(async () => []),
     getProductAvailabilityBuckets: apiMocks.getProductAvailabilityBuckets,
     getProductCalculatedPricingsByAgreement: vi.fn(async () => []),
-    getProductCurrentPriceByAgreement: vi.fn(async () => null),
+    getProductCurrentPriceByAgreement: apiMocks.getProductCurrentPriceByAgreement,
     getProductReservationsByAgreement: vi.fn(async () => []),
     searchSaleProductsWithAvailability: apiMocks.searchSaleProductsWithAvailability,
     shiftOrderItemFromSale: vi.fn(async () => null),
@@ -75,27 +76,6 @@ vi.mock('../../../../shared/realtime/events', async (importOriginal) => {
 
 vi.mock('../../../clients/api/clientRecommendationsApi', () => ({
   getMostPurchasedProductsByClientId: vi.fn(async () => []),
-}))
-
-vi.mock('./WizardShoppingCartGrid', () => ({
-  WizardShoppingCartGrid: ({
-    items,
-    onCrossSell,
-    onRemove,
-  }: {
-    items: SalesUkraineOrderItem[]
-    onCrossSell?: (item: SalesUkraineOrderItem) => void
-    onRemove?: (item: SalesUkraineOrderItem) => void
-  }) => (
-    <div>
-      <button disabled={!items[0] || !onCrossSell} type="button" onClick={() => items[0] && onCrossSell?.(items[0])}>
-        cross sell
-      </button>
-      <button disabled={!items[0] || !onRemove} type="button" onClick={() => items[0] && onRemove?.(items[0])}>
-        remove row
-      </button>
-    </div>
-  ),
 }))
 
 vi.mock('./WizardCrossSellModal', () => ({
@@ -204,6 +184,26 @@ function renderStep({
   )
 }
 
+async function findDetailDrawer() {
+  const drawer = await screen.findByRole('dialog', { name: 'Деталі товару' })
+  const summary = within(within(drawer).getByRole('region', { name: 'Коротка інформація про товар' }))
+  expect(summary.getByText('SEM12081')).toBeTruthy()
+  expect(summary.getByRole('heading', { name: 'Комплект ремонтний вала розжимного' })).toBeTruthy()
+  return drawer
+}
+
+function summaryPrices(summary: HTMLElement) {
+  const table = within(summary).getByRole('table', { name: 'Ціни товару' })
+  const row = within(table).getByRole('rowheader', { name: 'Ціна' }).closest('tr') as HTMLElement
+  return within(row).getAllByRole('cell').map((cell) => cell.textContent?.replace(/\s+/g, ' ').trim())
+}
+
+async function findCartRowAction(name: string) {
+  fireEvent.click(screen.getByRole('button', { name: 'Показати кошик' }))
+  const cart = await screen.findByRole('list', { name: 'Товари в кошику' })
+  return within(cart).getByRole('button', { name })
+}
+
 beforeEach(() => {
   clearAllSalesPendingMutations()
   clearAllWizardSplitRecoveries()
@@ -212,6 +212,7 @@ beforeEach(() => {
   apiMocks.acceptedQty = 3
   apiMocks.addOrderItem.mockReset().mockResolvedValue(null)
   apiMocks.deleteOrderItem.mockReset().mockResolvedValue(null)
+  apiMocks.getProductCurrentPriceByAgreement.mockReset().mockResolvedValue(null)
   apiMocks.searchSaleProductsWithAvailability.mockReset().mockResolvedValue([])
   apiMocks.updateOrderItem.mockReset().mockResolvedValue(null)
   apiMocks.updateProduct.mockReset().mockResolvedValue(null)
@@ -258,25 +259,27 @@ describe('NewSaleProductsStep selected product summary', () => {
     renderStep()
     fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'SEM12081' } })
     fireEvent.click(await screen.findByRole('button', { name: 'Деталі' }))
-    const drawer = await screen.findByRole('dialog', { name: /Деталі товару · SEM12081/ })
+    const drawer = await findDetailDrawer()
     fireEvent.keyDown(within(drawer).getByRole('button', { name: 'Закрити деталі товару' }), { key: 'i', ctrlKey: true })
     const preview = await screen.findByRole('dialog', { name: 'Перегляд зображення' })
     fireEvent.keyDown(within(preview).getByRole('button', { name: 'Закрити фото' }), { key: 'Escape' })
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Перегляд зображення' })).toBeNull())
     expect(getWizardKeyboardState()).toBe('FullDetail')
-    expect(screen.getByRole('dialog', { name: /Деталі товару · SEM12081/ })).toBeTruthy()
+    expect(within(screen.getByRole('dialog', { name: 'Деталі товару' })).getByText('SEM12081')).toBeTruthy()
     expect(apiMocks.addOrderItem).not.toHaveBeenCalled()
   })
 
-  it('keeps one summary visible when opening and closing details with mouse and keyboard', async () => {
+  it('keeps one page summary visible when opening and closing details with mouse and keyboard', async () => {
     apiMocks.searchSaleProductsWithAvailability.mockResolvedValueOnce([
       createSearchProduct(10, { CurrentPrice: 24.48, CurrentLocalPrice: 1275.41 }),
     ])
+    apiMocks.getProductCurrentPriceByAgreement.mockResolvedValue(30.5)
     const view = renderStep()
     fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'SEM12081' } })
     const summaryName = 'Коротка інформація про товар'
     const detailName = 'Детальна інформація про товар'
-    await screen.findByRole('region', { name: summaryName })
+    const pageSummary = await screen.findByRole('region', { name: summaryName })
+    await waitFor(() => expect(summaryPrices(pageSummary)).toEqual(['30,50', '1 275,41']))
     expect(screen.queryByRole('region', { name: detailName })).toBeNull()
     const detailsButton = screen.getByRole('button', { name: 'Деталі' })
     expect(detailsButton.getAttribute('data-variant')).toBe('filled')
@@ -286,11 +289,16 @@ describe('NewSaleProductsStep selected product summary', () => {
     expect(detailsButton.getAttribute('aria-expanded')).toBe('false')
 
     fireEvent.click(detailsButton)
-    const drawer = await screen.findByRole('dialog', { name: /Деталі товару · SEM12081/ })
+    const drawer = await findDetailDrawer()
     expect(within(drawer).getByRole('region', { name: detailName })).toBeTruthy()
     expect(view.container.querySelector('.new-sale-product-detail')).toBeNull()
     expect(drawer.closest('.app-drawer')).toBeTruthy()
-    expect(screen.getAllByRole('region', { name: summaryName })).toHaveLength(1)
+    const drawerSummary = within(drawer).getByRole('region', { name: summaryName })
+    const summaries = screen.getAllByRole('region', { name: summaryName })
+    expect(summaries).toHaveLength(2)
+    expect(summaries).toContain(pageSummary)
+    expect(summaries).toContain(drawerSummary)
+    expect(summaryPrices(drawerSummary)).toEqual(summaryPrices(pageSummary))
     expect(detailsButton.getAttribute('aria-expanded')).toBe('true')
 
     fireEvent.click(within(drawer).getByRole('button', { name: 'Закрити деталі товару' }))
@@ -299,7 +307,7 @@ describe('NewSaleProductsStep selected product summary', () => {
     expect(detailsButton.getAttribute('aria-expanded')).toBe('false')
 
     fireEvent.keyDown(document.body, { key: 'Enter', ctrlKey: true })
-    const reopened = await screen.findByRole('dialog', { name: /Деталі товару · SEM12081/ })
+    const reopened = await findDetailDrawer()
     fireEvent.keyDown(within(reopened).getByRole('button', { name: 'Закрити деталі товару' }), { key: 'Escape' })
     expect(screen.queryByRole('region', { name: detailName })).toBeNull()
     expect(screen.getAllByRole('region', { name: summaryName })).toHaveLength(1)
@@ -313,7 +321,7 @@ describe('NewSaleProductsStep selected product summary', () => {
     renderStep()
     fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'SEM12081' } })
     fireEvent.click(await screen.findByRole('button', { name: 'Деталі' }))
-    const drawer = await screen.findByRole('dialog', { name: /Деталі товару · SEM12081/ })
+    const drawer = await findDetailDrawer()
     fireEvent.click(within(drawer).getByRole('button', { name: 'Редагувати' }))
     const input = within(drawer).getByRole('textbox', { name: 'Опис' })
     fireEvent.change(input, { target: { value: 'Оновлений опис' } })
@@ -335,7 +343,7 @@ describe('NewSaleProductsStep selected product summary', () => {
     renderStep()
     fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'SEM12081' } })
     fireEvent.click(await screen.findByRole('button', { name: 'Деталі' }))
-    const drawer = await screen.findByRole('dialog', { name: /Деталі товару · SEM12081/ })
+    const drawer = await findDetailDrawer()
     fireEvent.click(within(drawer).getByRole('button', { name: 'Редагувати' }))
     const input = within(drawer).getByRole('textbox', { name: 'Опис' })
     fireEvent.change(input, { target: { value: 'Незбережена зміна' } })
@@ -344,7 +352,7 @@ describe('NewSaleProductsStep selected product summary', () => {
     expect(screen.getByRole('region', { name: 'Коротка інформація про товар' })).toBeTruthy()
     expect(apiMocks.updateProduct).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Деталі' }))
-    const reopened = await screen.findByRole('dialog', { name: /Деталі товару · SEM12081/ })
+    const reopened = await findDetailDrawer()
     expect(within(reopened).getByText('Початковий опис')).toBeTruthy()
     expect(within(reopened).queryByText('Незбережена зміна')).toBeNull()
   })
@@ -428,7 +436,7 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
     const onCartChanged = vi.fn(async () => createSale(5))
     renderStep({ onCartChanged })
 
-    fireEvent.click(screen.getByRole('button', { name: 'cross sell' }))
+    fireEvent.click(await findCartRowAction('Кросс-продажі до товару'))
     fireEvent.click(await screen.findByRole('button', { name: 'pick same product' }))
     fireEvent.click(await screen.findByRole('button', { name: 'accept quantity' }))
 
@@ -456,7 +464,7 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
 
     renderStep({ onCartChanged, onPendingMutationChange })
 
-    fireEvent.click(screen.getByRole('button', { name: 'cross sell' }))
+    fireEvent.click(await findCartRowAction('Кросс-продажі до товару'))
     fireEvent.click(await screen.findByRole('button', { name: 'pick same product' }))
     fireEvent.click(await screen.findByRole('button', { name: 'accept quantity' }))
 
@@ -620,7 +628,7 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
     const onPendingMutationChange = vi.fn()
     renderStep({ onPendingMutationChange })
 
-    fireEvent.click(screen.getByRole('button', { name: 'remove row' }))
+    fireEvent.click(await findCartRowAction('Видалити'))
     fireEvent.click(await screen.findByRole('button', { name: 'confirm mutation' }))
 
     await waitFor(() => expect(apiMocks.deleteOrderItem).toHaveBeenCalledOnce())
@@ -647,7 +655,7 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
     const onCartChanged = vi.fn(async () => createSale())
     renderStep({ onCartChanged, onPendingMutationChange })
 
-    fireEvent.click(screen.getByRole('button', { name: 'remove row' }))
+    fireEvent.click(await findCartRowAction('Видалити'))
     fireEvent.click(await screen.findByRole('button', { name: 'confirm mutation' }))
 
     const retry = await screen.findByRole('button', { name: 'Перевірити та повторити' })
@@ -676,7 +684,7 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
     const onCartChanged = vi.fn(async () => reconciledSale)
     renderStep({ onCartChanged, onPendingMutationChange })
 
-    fireEvent.click(screen.getByRole('button', { name: 'remove row' }))
+    fireEvent.click(await findCartRowAction('Видалити'))
     fireEvent.click(await screen.findByRole('button', { name: 'confirm mutation' }))
 
     const retry = await screen.findByRole('button', { name: 'Перевірити та повторити' })

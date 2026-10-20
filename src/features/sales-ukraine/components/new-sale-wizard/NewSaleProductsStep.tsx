@@ -3609,6 +3609,7 @@ export function NewSaleProductsStep({
       <ProductFullDetailPanel
         canEditDescription={canEditMainDescription && active?.source === 'main'}
         chips={getMainChips(selectedMainSnapshot?.availabilities)}
+        currentPriceEur={getWizardProductNumber(getProductMeta(selectedMainProduct)?.price)}
         descriptionDraft={descriptionDraftSnapshot}
         displayQty={getDisplayedAvailableQty(selectedMainProduct) ?? 0}
         detailsError={selectedMainSnapshot?.detailsError}

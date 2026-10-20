@@ -22,20 +22,33 @@ describe('WizardShoppingCartGrid toolbar', () => {
   })
   afterEach(() => vi.restoreAllMocks())
 
-  it.each([false, true])('omits the standalone columns button when populated=%s, retaining header controls', (populated) => {
+  it.each([false, true])('renders the toolbar only in the cart sheet slot when populated=%s, retaining header controls', (populated) => {
     const items: SalesUkraineOrderItem[] = populated ? [{
       NetUid: 'cart-row-1',
       Product: { NameUA: 'Амортизатор', VendorCode: 'KI00085' },
       Qty: 2,
       TotalAmount: 48.96,
     }] : []
-    const view = renderWithProviders(<WizardShoppingCartGrid items={items} localCurrencyCode="UAH" useEurToUah />)
+    const grid = (toolbarPortalTarget: Element | null) => (
+      <MantineProvider env="test">
+        <I18nProvider><WizardShoppingCartGrid items={items} localCurrencyCode="UAH" toolbarPortalTarget={toolbarPortalTarget} useEurToUah /></I18nProvider>
+      </MantineProvider>
+    )
+    const toolbarSlot = document.body.appendChild(document.createElement('div'))
+    const view = render(grid(null))
+    expect(document.querySelector('.data-table-toolbar')).toBeNull()
+    view.rerender(grid(toolbarSlot))
     expect(view.container.querySelector('.data-table-toolbar')).toBeNull()
+    const toolbar = within(toolbarSlot.querySelector('.data-table-toolbar') as HTMLElement)
+    expect(toolbar.getByRole('button', { name: 'Колонки' })).toBeTruthy()
+    expect(toolbar.getByRole('button', { name: 'Висота рядків' })).toBeTruthy()
     const productHeader = within(screen.getByRole('columnheader', { name: /^Товар/ }))
     expect(productHeader.getByLabelText('Колонки')).toBeTruthy()
     expect(productHeader.getByRole('button', { name: /^Товар.*Сортувати за зростанням$/ })).toBeTruthy()
     expect(productHeader.getByLabelText('Змінити ширину колонки')).toBeTruthy()
     expect(screen.getByText(populated ? 'Амортизатор' : 'Кошик порожній')).toBeTruthy()
+    view.unmount()
+    toolbarSlot.remove()
   })
 
   it('leaves the toolbar enabled by default for other tables', () => {
