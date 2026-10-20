@@ -1,5 +1,5 @@
 import { ActionIcon, Alert, Box, Button, Center, FileInput, Group, Loader, Stack, Text, UnstyledButton } from '@mantine/core'
-import { ArrowRight, Check, ChevronRight, Keyboard, X } from 'lucide-react'
+import { ArrowRight, Check, ChevronRight, X } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { Fragment, useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
@@ -46,10 +46,10 @@ import {
 import {
   dispatchWizardKey,
   initializeWizardKeyboard,
-  useWizardKeyboardSnapshot,
   WIZARD_STEP_TITLES,
   type WizardStepIndex,
 } from './wizardKeyboard'
+import { WizardKeyboardHelp } from './WizardKeyboardHelp'
 import { WizardConfirmModal } from './WizardConfirmModal'
 import { WizardClientHeroHeader } from './WizardClientHeroHeader'
 import { WizardDownloadDocumentsModal } from './WizardDownloadDocumentsModal'
@@ -466,28 +466,6 @@ function isSaleDocumentResult(value: unknown): value is SaleDocumentResult {
 }
 
 const WIZARD_STEPS: { index: WizardStepIndex }[] = [{ index: 0 }, { index: 1 }, { index: 2 }]
-
-// Leaf subscriber to the keyboard-mode store: only these ~4 DOM nodes re-render
-// on a mode transition instead of the whole wizard host (which used to recreate
-// header tools and re-render the mounted step on every transition).
-function WizardKeyboardStateLabel() {
-  const { t } = useI18n()
-  const keyboard = useWizardKeyboardSnapshot()
-
-  return (
-    <Group
-      className="new-sale-wizard-keyboard-state"
-      gap={8}
-      wrap="nowrap"
-      title={`${t('Стан режиму клавіатури')}: ${keyboard.label || t('Клавіатура')}`}
-    >
-      <Keyboard size={16} aria-hidden="true" />
-      <Text className="new-sale-wizard-keyboard-state__value">
-        {keyboard.label || t('Клавіатура')}
-      </Text>
-    </Group>
-  )
-}
 
 function NewSaleWizardContent({
   canOpenDeliveryDetails,
@@ -1199,6 +1177,13 @@ function NewSaleWizardContent({
     }
 
   function handleRootKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    const helpTarget = event.target instanceof Element ? event.target.closest('[data-wizard-keyboard-help]') : null
+    if (helpTarget && (
+      helpTarget.getAttribute('role') === 'dialog' ||
+      helpTarget.getAttribute('aria-expanded') === 'true' ||
+      event.key === 'Enter' || event.key === ' '
+    )) return
+
     if (productsBusyRef.current) {
       event.preventDefault()
 
@@ -1215,14 +1200,14 @@ function NewSaleWizardContent({
       return
     }
 
-    if (event.key === 'F1' || event.key === 'F3') {
+    if (event.key === 'F1') {
       event.preventDefault()
       event.stopPropagation()
 
       return
     }
 
-    if (event.key === 'F2') {
+    if (event.key === 'F2' || event.key === 'F3') {
       event.preventDefault()
       event.stopPropagation()
     }
@@ -1427,7 +1412,7 @@ function NewSaleWizardContent({
       </Box>
 
       <Box className="new-sale-wizard-footer">
-        <WizardKeyboardStateLabel />
+        <WizardKeyboardHelp />
 
         <Group component="nav" aria-label={t('Етапи продажу')} className="new-sale-wizard-step-list" gap={4} justify="center" wrap="nowrap">
           {WIZARD_STEPS.map((step, index) => {

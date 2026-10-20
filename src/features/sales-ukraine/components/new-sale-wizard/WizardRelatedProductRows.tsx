@@ -1,11 +1,11 @@
-import { TableChip } from '../../../../shared/ui/TableChip'
-import { Box, HoverCard, Stack, Text } from '@mantine/core'
-import { Package } from 'lucide-react'
+import { TableChip, type TableChipTone } from '../../../../shared/ui/TableChip'
+import { Box, Stack, Text } from '@mantine/core'
 import type { ReactNode } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { TableRowAction } from '../../../../shared/ui/table-row-action'
-import { getProductMainImage, getProductShopImageUrl } from '../../../products/utils'
+import { getProductMainOriginalNumber, isCriticalProductTop } from '../../../products/utils'
 import type { WizardSaleProduct } from './wizardSaleProduct'
+import { WizardProductPhoto } from './WizardProductPhoto'
 
 export function WizardRelatedProductRows({
   products,
@@ -14,6 +14,7 @@ export function WizardRelatedProductRows({
   getItemColor,
   renderExtra,
   onOpenCard,
+  onOpenImage,
   onPick,
   onProductInterest,
 }: {
@@ -21,6 +22,7 @@ export function WizardRelatedProductRows({
   focusedIndex: number
   getItemColor?: (product: WizardSaleProduct) => string | undefined
   onOpenCard?: (productNetId: string) => void
+  onOpenImage?: (product: WizardSaleProduct) => void
   onPick: (index: number) => void
   onProductInterest?: (product: WizardSaleProduct) => void
   products: WizardSaleProduct[]
@@ -37,6 +39,7 @@ export function WizardRelatedProductRows({
           product={product}
           renderExtra={renderExtra}
           onOpenCard={onOpenCard}
+          onOpenImage={onOpenImage}
           onPick={() => onPick(index)}
           onProductInterest={onProductInterest}
         />
@@ -52,6 +55,7 @@ function WizardRelatedProductRow({
   product,
   renderExtra,
   onOpenCard,
+  onOpenImage,
   onPick,
   onProductInterest,
 }: {
@@ -59,6 +63,7 @@ function WizardRelatedProductRow({
   color?: string
   focused: boolean
   onOpenCard?: (productNetId: string) => void
+  onOpenImage?: (product: WizardSaleProduct) => void
   onPick: () => void
   onProductInterest?: (product: WizardSaleProduct) => void
   product: WizardSaleProduct
@@ -68,84 +73,78 @@ function WizardRelatedProductRow({
   const code = product.VendorCode || product.Articul || '-'
   const name = product.NameUA || product.Name || ''
   const extra = renderExtra?.(product)
-  // Mini photo (shop image fallback for sparse payloads) — rounded mask per request.
-  const imageUrl = getProductMainImage(product)?.ImageUrl || getProductShopImageUrl(product)
 
   return (
     <Box
-      className="new-sale-related-row"
+      className="new-sale-related-row app-table-chips"
       data-active={active ? 'true' : undefined}
       data-focused={focused ? 'true' : undefined}
       onClick={onPick}
     >
       <Box className="new-sale-related-row__content">
-        {imageUrl ? (
-          <HoverCard openDelay={160} position="right-start" shadow="md" withinPortal>
-            <HoverCard.Target>
-              <Box className="new-sale-related-row__thumb" aria-hidden="true">
-                <img alt="" loading="lazy" src={imageUrl} />
-              </Box>
-            </HoverCard.Target>
-            <HoverCard.Dropdown className="new-sale-related-row__thumb-preview">
-              <img alt={code} src={imageUrl} />
-            </HoverCard.Dropdown>
-          </HoverCard>
-        ) : (
-          <Box className="new-sale-related-row__thumb" aria-hidden="true">
-            <Package size={16} strokeWidth={1.6} />
-          </Box>
-        )}
+        <WizardProductPhoto
+          className="new-sale-related-row__thumb"
+          product={product}
+          onOpen={onOpenImage ? () => onOpenImage(product) : undefined}
+        />
         <Box className="new-sale-related-row__copy">
           <Box className="new-sale-related-row__headline">
-            <Text c={color} className="new-sale-related-row__code" truncate>
-              <TableChip tone="product" value={code} />
-            </Text>
-            <RelatedInlineFacts product={product} />
+            <Box className="new-sale-related-row__identity-line">
+              <Text c={color} className="new-sale-related-row__code" truncate>
+                <TableChip tone="product" value={code} />
+              </Text>
+              {product.Top?.trim() && !['-', '—'].includes(product.Top.trim()) && (
+                <span className="new-sale-related-row__top">Top <TableChip tone={isCriticalProductTop(product.Top) ? 'danger' : 'neutral'} value={product.Top} /></span>
+              )}
+            </Box>
+            <Box className="new-sale-related-row__actions">
+              {product.NetUid && onProductInterest && (
+                <TableRowAction
+                  action="recommend"
+                  label={t('Цікавить товар')}
+                  onClick={() => onProductInterest(product)}
+                />
+              )}
+              {product.NetUid && onOpenCard && (
+                <TableRowAction
+                  action="details"
+                  label={t('Картка товару')}
+                  onClick={() => onOpenCard(product.NetUid as string)}
+                />
+              )}
+            </Box>
           </Box>
           <Text className="new-sale-related-row__name" title={name}>
             {name}
           </Text>
+          <RelatedInlineFacts product={product} />
         </Box>
       </Box>
       <Box className="new-sale-related-row__side">
         {extra && <Box className="new-sale-related-row__extra">{extra}</Box>}
-        <Box className="new-sale-related-row__actions">
-          {product.NetUid && onProductInterest && (
-            <TableRowAction
-              action="recommend"
-              label={t('Цікавить товар')}
-              onClick={() => onProductInterest(product)}
-            />
-          )}
-          {product.NetUid && onOpenCard && (
-            <TableRowAction
-              action="details"
-              label={t('Картка товару')}
-              onClick={() => onOpenCard(product.NetUid as string)}
-            />
-          )}
-        </Box>
+
       </Box>
     </Box>
   )
 }
 
 function RelatedInlineFacts({ product }: { product: WizardSaleProduct }) {
-  const facts = [
-    product.MainOriginalNumber,
-    product.Top,
-    product.Size,
-    product.MeasureUnit?.Name,
-  ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+  const facts: { label: string; value: string | null | undefined; tone: TableChipTone }[] = [
+    { label: 'Оригінальний номер', value: getProductMainOriginalNumber(product), tone: 'warning' },
+    { label: 'Розмір', value: product.Size, tone: 'warning' },
+  ]
+  const visibleFacts = facts.filter(({ value }) => value?.trim() && !['-', '—'].includes(value.trim()))
 
-  if (facts.length === 0) {
+  if (visibleFacts.length === 0) {
     return null
   }
 
   return (
     <Box className="new-sale-related-row__facts">
-      {facts.map((fact) => (
-        <span key={fact}>{fact}</span>
+      {visibleFacts.map((fact) => (
+        <Box key={fact.label} title={`${fact.label}: ${fact.value}`}>
+          <TableChip value={fact.value} tone={fact.tone} />
+        </Box>
       ))}
     </Box>
   )

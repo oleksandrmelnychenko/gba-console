@@ -1,10 +1,11 @@
 import { TableChip } from '../../../../shared/ui/TableChip'
 import { Box, Group, Loader, Stack, Text } from '@mantine/core'
+import { Layers2, Package, Puzzle } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { memo, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
-import { getProductMainImage, getProductShopImageUrl, splitProductSearchResults } from '../../../products/utils'
-import type { WizardSaleProduct } from './wizardSaleProduct'
+import { getProductMainImage, getProductShopImageUrl, isCriticalProductTop, splitProductSearchResults } from '../../../products/utils'
+import { getComponentCarouselEntries, type WizardSaleProduct } from './wizardSaleProduct'
 
 // Keystrokes are settled locally for this long before the value is lifted to the
 // parent step — the step is ~2600 lines, so re-rendering it per keystroke is the
@@ -212,17 +213,22 @@ const ProductViewerRow = memo(function ProductViewerRow({
     <Box component="button" className="new-sale-product-picker-row" type="button" onClick={() => onPick(index)}>
       <Box className="new-sale-product-picker-row__content">
         <Box className="new-sale-product-picker-row__status">
+          <Package size={18} strokeWidth={1.6} aria-hidden="true" />
           <Box className={`new-sale-product-picker-row__dot ${colorClassName}`} />
         </Box>
         <Box className="new-sale-product-picker-row__copy">
-          {code && (
-            <Text className="new-sale-product-picker-row__code" title={code} truncate>
-              <TableChip tone="product" value={code} />
-            </Text>
-          )}
-          <Text className="new-sale-product-picker-row__name" title={name} truncate>
-            {name}
-          </Text>
+          <div className="new-sale-product-picker-code-line">
+            {code && (
+              <Text className="new-sale-product-picker-row__code" title={code} truncate>
+                <TableChip tone="product" value={code} />
+              </Text>
+            )}
+            {isCriticalProductTop(product.Top) && <TableChip tone="danger" value={product.Top} />}
+            <ProductRelationIndicators product={product} />
+          </div>
+          <div className="new-sale-product-picker-name-line">
+            <Text className="new-sale-product-picker-row__name" title={name} truncate>{name}</Text>
+          </div>
         </Box>
         {typeof qty === 'number' && (
           <span className="new-sale-product-picker-row__qty">{qty}</span>
@@ -290,18 +296,43 @@ function ProductMiniCard({
           <img alt={code} loading="lazy" src={imageUrl} />
         </Box>
       )}
+      <Package className="new-sale-product-picker-card__icon" size={18} strokeWidth={1.6} aria-hidden="true" />
       <Box className="new-sale-product-picker-card__top">
-        <Text c={color} className="new-sale-product-picker-card__code" title={name} truncate>
-          {code}
-        </Text>
+        <div className="new-sale-product-picker-code-line">
+          <Text c={color} className="new-sale-product-picker-card__code" title={name} truncate>
+            <TableChip tone="product" value={code} />
+          </Text>
+          {isCriticalProductTop(product.Top) && <TableChip tone="danger" value={product.Top} />}
+          <ProductRelationIndicators product={product} />
+        </div>
         {typeof qty === 'number' && (
           <span className="new-sale-product-picker-card__qty">{qty}</span>
         )}
       </Box>
-      <Text className="new-sale-product-picker-card__name" title={name}>
-        {name}
-      </Text>
+      <div className="new-sale-product-picker-name-line">
+        <Text className="new-sale-product-picker-card__name" title={name}>{name}</Text>
+      </div>
     </Box>
+  )
+}
+
+function ProductRelationIndicators({ product }: { product: WizardSaleProduct }) {
+  const { t } = useI18n()
+  const hasComponents = product.HasComponent || getComponentCarouselEntries(product).entries.length > 0
+
+  return (
+    <>
+      {product.HasAnalogue && (
+        <span className="new-sale-product-picker-relation is-analogue" role="img" aria-label={t('Є аналоги')} title={t('Є аналоги')}>
+          <Layers2 size={14} aria-hidden />
+        </span>
+      )}
+      {hasComponents && (
+        <span className="new-sale-product-picker-relation is-component" role="img" aria-label={t('Є комплектуючі')} title={t('Є комплектуючі')}>
+          <Puzzle size={14} aria-hidden />
+        </span>
+      )}
+    </>
   )
 }
 

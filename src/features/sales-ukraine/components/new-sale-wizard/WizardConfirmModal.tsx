@@ -8,12 +8,14 @@ export function WizardConfirmModal({
   busy = false,
   message,
   opened,
+  zIndex,
   onCancel,
   onConfirm,
 }: {
   busy?: boolean
   message: string
   opened: boolean
+  zIndex?: number
   onCancel: () => void
   onConfirm: () => void
 }) {
@@ -38,6 +40,7 @@ export function WizardConfirmModal({
     <AppModal
       centered
       opened={opened}
+      zIndex={zIndex}
       title={t('Підтвердження')}
       onClose={onCancel}
     >

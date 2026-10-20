@@ -2,9 +2,10 @@ import { Alert, Badge, Box, Button, Group, Progress, Skeleton, Text } from '@man
 import { CircleAlert, Package, ShoppingCart, Sparkles } from 'lucide-react'
 import { memo, useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { TableChip, type TableChipTone } from '../../../../shared/ui/TableChip'
 import { AppModal } from '../../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
-import { getProductMainImage, getProductShopImageUrl } from '../../../products/utils'
+import { getProductMainImage, getProductMainOriginalNumber, getProductShopImageUrl, isCriticalProductTop } from '../../../products/utils'
 import { getProductCoPurchaseRecommendations } from '../../../clients/api/clientRecommendationsApi'
 import { getWizardProductNumber, getWizardSellableQty, type WizardSaleProduct } from './wizardSaleProduct'
 import './wizard-cross-sell-modal.css'
@@ -22,6 +23,7 @@ export function WizardCrossSellModal({
   isVatSale,
   localCurrencyCode,
   opened,
+  zIndex,
   seedProduct,
   useEurToUah,
   onClose,
@@ -33,6 +35,7 @@ export function WizardCrossSellModal({
   isVatSale: boolean
   localCurrencyCode: string
   opened: boolean
+  zIndex?: number
   seedProduct: WizardSaleProduct | null
   useEurToUah: boolean
   onClose: () => void
@@ -96,18 +99,18 @@ export function WizardCrossSellModal({
 
   return (
     <AppModal
+      zIndex={zIndex}
       centered
       className="wizard-cross-sell-modal"
       opened={opened}
       size="min(1240px, calc(100vw - 32px))"
       title={
         <Group gap={8} wrap="nowrap">
-          <Sparkles size={16} />
+          <Sparkles className="wizard-cross-sell-ai-icon" size={16} fill="currentColor" strokeWidth={0} />
           <Text fw={600}>
-            {seedProduct?.VendorCode
-              ? `${t('З цим товаром купують')} · ${seedProduct.VendorCode}`
-              : t('Кросс-продажі для клієнта')}
+            {seedProduct?.VendorCode ? t('З цим товаром купують') : t('Кросс-продажі для клієнта')}
           </Text>
+          {seedProduct?.VendorCode && <TableChip tone="product" value={seedProduct.VendorCode} />}
         </Group>
       }
       onClose={onClose}
@@ -125,11 +128,8 @@ export function WizardCrossSellModal({
           <header className="wizard-cross-sell-related__head">
             <div>
               <Text className="app-section-title" fw={600}>{t('Разом купують')}</Text>
-              <Text c="dimmed" size="xs">{t('Товари впорядковані за силою рекомендації')}</Text>
             </div>
-            <Badge className="app-role-pill is-orange" size="sm" variant="light">
-              {isLoading ? '…' : visibleProducts.length}
-            </Badge>
+            <TableChip value={isLoading ? '…' : visibleProducts.length} />
           </header>
 
           <div className="wizard-cross-sell-related__scroll">
@@ -193,25 +193,19 @@ function SeedProductCard({
     <section className="wizard-cross-sell-seed">
       <div className="wizard-cross-sell-seed__eyebrow">
         <span>{t('Основний товар')}</span>
-        <Badge className="app-role-pill is-gray" size="xs" variant="light">
-          {recommendationCount} {t('зв’язків')}
-        </Badge>
+        <TableChip value={`${recommendationCount} ${t('зв’язків')}`} />
       </div>
       <ProductArtwork className="wizard-cross-sell-seed__image" product={product} />
       <div className="wizard-cross-sell-seed__copy">
-        <span className="wizard-cross-sell-code">{product?.VendorCode || product?.Articul || ''}</span>
+        <TableChip tone="product" value={product?.VendorCode || product?.Articul} />
         <strong title={product?.NameUA || product?.Name || undefined}>
           {product?.NameUA || product?.Name || t('Товар')}
         </strong>
       </div>
       <div className="wizard-cross-sell-seed__metrics">
-        <ProductMetric label={t('Наявність')} value={`${qtyFormatter.format(sellable)} ${product?.MeasureUnit?.Name ?? ''}`} />
-        <ProductMetric label="EUR" value={amountFormatter.format(getWizardProductNumber(product?.CurrentPrice) ?? 0)} />
-        <ProductMetric label={localCurrencyCode} value={amountFormatter.format(localPrice)} />
-      </div>
-      <div className="wizard-cross-sell-seed__hint">
-        <Sparkles size={14} />
-        <span>{t('Від цього товару побудована добірка')}</span>
+        <ProductMetric quantity label={t('Наявність')} value={`${qtyFormatter.format(sellable)} ${product?.MeasureUnit?.Name ?? ''}`} />
+        <ProductMetric currency label="EUR" value={amountFormatter.format(getWizardProductNumber(product?.CurrentPrice) ?? 0)} />
+        <ProductMetric currency label={localCurrencyCode} value={amountFormatter.format(localPrice)} />
       </div>
     </section>
   )
@@ -243,9 +237,11 @@ const CrossSellProductCard = memo(function CrossSellProductCard({
   const availabilityPercent = maximumSellable > 0 ? Math.min(100, (sellable / maximumSellable) * 100) : 0
   const code = product.VendorCode || product.Articul || ''
   const name = product.NameUA || product.Name || ''
-  const facts = [product.MainOriginalNumber, product.Top, product.Size]
-    .filter((value): value is string => Boolean(value?.trim()))
-    .slice(0, 2)
+  const facts: { key: string; value?: string | null; tone: TableChipTone }[] = [
+    { key: 'original', value: getProductMainOriginalNumber(product), tone: 'warning' },
+    { key: 'top', value: product.Top, tone: isCriticalProductTop(product.Top) ? 'danger' : 'neutral' },
+    { key: 'size', value: product.Size, tone: 'warning' },
+  ]
 
   return (
     <article className="wizard-cross-sell-card">
@@ -261,21 +257,21 @@ const CrossSellProductCard = memo(function CrossSellProductCard({
         <ProductArtwork className="wizard-cross-sell-card__image" product={product} />
         <div className="wizard-cross-sell-card__body">
           <div className="wizard-cross-sell-card__headline">
-            <span className="wizard-cross-sell-code">{code}</span>
+            <TableChip tone="product" value={code} />
             {facts.length > 0 && (
               <span className="wizard-cross-sell-card__facts">
-                {facts.map((fact) => <span key={fact}>{fact}</span>)}
+                {facts.filter((fact) => fact.value && !['-', '—'].includes(fact.value.trim())).map((fact) => <TableChip key={fact.key} tone={fact.tone} value={fact.value} />)}
               </span>
             )}
           </div>
           <strong className="wizard-cross-sell-card__name" title={name}>{name}</strong>
           <div className="wizard-cross-sell-card__metrics">
-            <ProductMetric label={t('Наявність')} value={`${qtyFormatter.format(sellable)} ${product.MeasureUnit?.Name ?? ''}`} />
-            <ProductMetric label="EUR" value={amountFormatter.format(getWizardProductNumber(product.CurrentPrice) ?? 0)} />
-            <ProductMetric label={localCurrencyCode} value={amountFormatter.format(localPrice)} />
+            <ProductMetric quantity label={t('Наявність')} value={`${qtyFormatter.format(sellable)} ${product.MeasureUnit?.Name ?? ''}`} />
+            <ProductMetric currency label="EUR" value={amountFormatter.format(getWizardProductNumber(product.CurrentPrice) ?? 0)} />
+            <ProductMetric currency label={localCurrencyCode} value={amountFormatter.format(localPrice)} />
           </div>
           <div className="wizard-cross-sell-card__availability">
-            <span>{sellable > 0 ? t('Є в наявності') : t('Немає в наявності')}</span>
+            <TableChip tone={sellable > 0 ? 'success' : 'danger'} value={sellable > 0 ? t('Є в наявності') : t('Немає в наявності')} />
             <Progress
               aria-label={t('Відносний залишок')}
               color={sellable > 0 ? 'green' : 'gray'}
@@ -299,11 +295,11 @@ const CrossSellProductCard = memo(function CrossSellProductCard({
   )
 })
 
-function ProductMetric({ label, value }: { label: string; value: string }) {
+function ProductMetric({ currency = false, quantity = false, label, value }: { currency?: boolean; quantity?: boolean; label: string; value: string }) {
   return (
     <span className="wizard-cross-sell-metric">
-      <small>{label}</small>
-      <strong>{value}</strong>
+      <small>{currency ? <TableChip tone="source" value={label} /> : label}</small>
+      <strong>{quantity ? <TableChip value={value} /> : value}</strong>
     </span>
   )
 }
@@ -329,7 +325,7 @@ function CrossSellLoadingCards() {
     <div className="wizard-cross-sell-loading">
       {Array.from({ length: 4 }).map((_, index) => (
         <div key={index} className="wizard-cross-sell-loading__card">
-          <Skeleton height={76} radius={10} width={76} />
+          <Skeleton height={112} radius={12} width={112} />
           <div>
             <Skeleton height={10} mb={10} radius="xl" width="32%" />
             <Skeleton height={13} mb={14} radius="xl" width="78%" />

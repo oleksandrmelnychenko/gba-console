@@ -7,7 +7,7 @@ import { getLegalPartyRiskLabel } from './wizardLegalPartyRisk'
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
-  minimumFractionDigits: 0,
+  minimumFractionDigits: 2,
 })
 
 export function WizardLegalPartyRiskPopover({
@@ -19,7 +19,7 @@ export function WizardLegalPartyRiskPopover({
   const isCritical = risk.AttentionLevel === 'critical'
 
   return (
-    <Popover position="bottom-start" shadow="md" width={360} withinPortal>
+    <Popover position="bottom-start" shadow="md" width={520} withinPortal>
       <Popover.Target>
         <Box
           aria-label={t('Дані клієнта потребують уваги')}
@@ -44,15 +44,18 @@ export function WizardLegalPartyRiskPopover({
             <Group
               className="new-sale-client-legal-risk__overdue"
               justify="space-between"
+              wrap="nowrap"
               key={`${currency.CurrencyNetUid || currency.CurrencyId || 'none'}:${currency.CurrencyCode || 'unknown'}`}
             >
               <Text size="sm">
                 {t('Прострочено')} · {currency.MaxOverdueDays} {t('дн.')}
               </Text>
-              <Text className="app-money" fw={700} size="sm">
-                {moneyFormatter.format(currency.OverdueAmount)}{' '}
+              <Group className="new-sale-client-legal-risk__amount" gap={8} wrap="nowrap">
+                <Text className="app-money" fw={700} size="sm">
+                  {moneyFormatter.format(currency.OverdueAmount)}
+                </Text>
                 <TableChip tone="source" value={currency.CurrencyCode || t('валюта не вказана')} />
-              </Text>
+              </Group>
             </Group>
           ))}
           {risk.AttentionReasons.length > 0 && (

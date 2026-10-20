@@ -22,14 +22,19 @@ type AppBottomSheetProps = {
   bodyClassName?: string
   children: ReactNode
   closeLabel: string
+  closeOnEscape?: boolean
   collapseLabel: string
   contentClassName?: string
   expandLabel: string
+  headerTools?: ReactNode
   initialSnap?: AppBottomSheetSnap
   mediumHeightRatio?: number
   opened: boolean
   overlayOpacity?: number
+  returnFocus?: boolean
+  trapFocus?: boolean
   title: ReactNode
+  zIndex?: number
   onClose: () => void
 }
 
@@ -45,14 +50,19 @@ export function AppBottomSheet({
   bodyClassName,
   children,
   closeLabel,
+  closeOnEscape = true,
   collapseLabel,
   contentClassName,
   expandLabel,
+  headerTools,
   initialSnap = 'medium',
   mediumHeightRatio = 0.6,
   opened,
   overlayOpacity = 0.1,
+  returnFocus,
+  trapFocus,
   title,
+  zIndex,
   onClose,
 }: AppBottomSheetProps) {
   const [snap, setSnap] = useState<AppBottomSheetSnap>(initialSnap)
@@ -235,6 +245,10 @@ export function AppBottomSheet({
     <Drawer.Root
       ref={drawerRef}
       opened={opened}
+      closeOnEscape={closeOnEscape}
+      returnFocus={returnFocus}
+      trapFocus={trapFocus}
+      zIndex={zIndex}
       padding={0}
       position="bottom"
       size={
@@ -280,9 +294,16 @@ export function AppBottomSheet({
             >
               <span className="app-bottom-sheet__grabber" aria-hidden="true" />
             </button>
-            <Drawer.Title className="app-bottom-sheet__title">
-              <div className="app-bottom-sheet__title-text">{title}</div>
-            </Drawer.Title>
+            <div className={headerTools ? 'app-bottom-sheet__title-row' : undefined}>
+              <Drawer.Title className="app-bottom-sheet__title">
+                <div className="app-bottom-sheet__title-text">{title}</div>
+              </Drawer.Title>
+              {headerTools && (
+                <div className="app-bottom-sheet__header-tools" onPointerDownCapture={(event) => event.stopPropagation()}>
+                  {headerTools}
+                </div>
+              )}
+            </div>
           </div>
           <Drawer.CloseButton aria-label={closeLabel} />
         </Drawer.Header>

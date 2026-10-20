@@ -671,6 +671,12 @@ export function NewSaleClientStep({
 
   useLayoutEffect(() => {
     arrowNavRef.current = (event: KeyboardEvent) => {
+      const helpTarget = event.target instanceof Element ? event.target.closest('[data-wizard-keyboard-help]') : null
+      if (helpTarget && (
+        helpTarget.getAttribute('role') === 'dialog' ||
+        helpTarget.getAttribute('aria-expanded') === 'true' ||
+        event.key === 'Enter' || event.key === ' '
+      )) return
       const isArrow = event.key === 'ArrowUp' || event.key === 'ArrowDown'
       const isAgreementArrow = event.key === 'ArrowLeft' || event.key === 'ArrowRight'
       const isEscape = event.key === 'Escape'

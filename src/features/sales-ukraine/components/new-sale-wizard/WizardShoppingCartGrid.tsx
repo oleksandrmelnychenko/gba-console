@@ -20,7 +20,7 @@ import '../../../../shared/ui/data-table/data-table.css'
 const qtyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
 const priceFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 
-const WIZARD_CART_TABLE_MIN_WIDTH = 1280
+const WIZARD_CART_TABLE_MIN_WIDTH = 840
 const WIZARD_CART_TABLE_LAYOUT: DataTableDefaultLayout = {
   columnPinning: {
     right: ['actions'],
@@ -38,7 +38,8 @@ const WIZARD_CART_TABLE_LAYOUT: DataTableDefaultLayout = {
     specificationCode: 116,
     total: 132,
   },
-  density: 'normal',
+  columnVisibility: { comment: false, specificationCode: false, addedBy: false, discount: false },
+  density: 'compact',
 }
 
 function displayValue(value: unknown): string {
@@ -52,6 +53,7 @@ export const WizardShoppingCartGrid = memo(function WizardShoppingCartGrid({
   items,
   localCurrencyCode,
   useEurToUah,
+  toolbarPortalTarget,
   onCrossSell,
   onRemove,
   onRowClick,
@@ -60,6 +62,7 @@ export const WizardShoppingCartGrid = memo(function WizardShoppingCartGrid({
   items: SalesUkraineOrderItem[]
   localCurrencyCode: string
   useEurToUah: boolean
+  toolbarPortalTarget?: Element | null
   onCrossSell?: (item: SalesUkraineOrderItem) => void
   onRemove?: (item: SalesUkraineOrderItem) => void
   onRowClick?: (item: SalesUkraineOrderItem) => void
@@ -136,6 +139,8 @@ export const WizardShoppingCartGrid = memo(function WizardShoppingCartGrid({
       {
         id: 'qty',
         header: t('К-сть'),
+        align: 'right',
+        className: 'new-sale-cart__quantity-column',
         accessor: (item) => getWizardProductNumber(item.Qty) ?? 0,
         cell: (item) => <WizardCartValueCell unit={t('шт')} value={qtyFormatter.format(getWizardProductNumber(item.Qty) ?? 0)} />,
         width: 78,
@@ -227,12 +232,13 @@ export const WizardShoppingCartGrid = memo(function WizardShoppingCartGrid({
           emptyText={t('Кошик порожній')}
           getRowId={(item, index) => String(item.NetUid || item.Id || index)}
           isLoading={busy && items.length === 0}
-          layoutVersion="new-sale-wizard-cart-1"
+          layoutVersion="new-sale-wizard-cart-2"
           height="100%"
           minWidth={WIZARD_CART_TABLE_MIN_WIDTH}
-          showDensityToggle={false}
+          showDensityToggle
           showLayoutControls
-          showToolbar={false}
+          showToolbar
+          toolbarPortalTarget={toolbarPortalTarget}
           tableId="new-sale-wizard-cart"
           onRowClick={onRowClick}
         />
@@ -331,11 +337,11 @@ function WizardCartStackValueCell({
     <Box className="new-sale-cart__value-cell">
       <Group gap={4} wrap="nowrap">
         <Text>{primaryValue}</Text>
-        <Text>{primaryUnit}</Text>
+        <TableChip tone="source" value={primaryUnit} />
       </Group>
       <Group gap={4} wrap="nowrap">
         <Text>{secondaryValue}</Text>
-        <Text>{secondaryUnit}</Text>
+        <TableChip tone="source" value={secondaryUnit} />
       </Group>
     </Box>
   )

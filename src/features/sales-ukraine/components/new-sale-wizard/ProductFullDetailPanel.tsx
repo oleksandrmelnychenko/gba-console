@@ -1,12 +1,13 @@
 import { ActionIcon, Button, Group, Loader, ScrollArea, SegmentedControl, Text, TextInput } from '@mantine/core'
-import { Check, Pencil } from 'lucide-react'
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { ArrowLeftRight, Check, Pencil, ReceiptText, Truck, Warehouse } from 'lucide-react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { WizardCalculatedProductPricing, WizardNearestSupplyOrder } from './newSaleWizardApi'
 import { ProductSummaryCard } from './ProductSummaryCard'
 import { WizardAiPriceHint } from './WizardAiPriceHint'
-import { buildWizardProductPriceRows } from './wizardProductPricing'
+import { TableChip } from '../../../../shared/ui/TableChip'
+import { DocumentDetailLayout, DocumentDetailSection } from '../../../../shared/ui/document-detail/DocumentDetail'
 import './product-full-detail-panel.css'
 import { getWizardProductNumber, type WizardSaleProduct } from './wizardSaleProduct'
 
@@ -92,11 +93,11 @@ export function ProductFullDetailPanel({
 
     wasEditingRef.current = isEditingDescription
   }, [descriptionDraft, isEditingDescription])
-  const code = product.VendorCode || product.Articul || ''
   const measureUnit = product.MeasureUnit?.Name || t('шт')
   const discountRate = pricing?.DiscountRate ?? null
-  const priceRows = buildWizardProductPriceRows({ localCurrency: localCurrencyCode, pricing, product })
   const legacyLines = buildLegacyPriceLines(product, isVatSale, localCurrencyCode, displayQty ?? 0)
+  const stockCurrencies = [...new Set(['EUR', localCurrencyCode, ...legacyLines.flatMap((line) => line.uahPrice != null ? ['UAH'] : [])])]
+
 
   function handleAvailabilityKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     const target = event.target
@@ -133,54 +134,41 @@ export function ProductFullDetailPanel({
 
   return (
     <section aria-label={t('Детальна інформація про товар')} className="new-sale-product-detail">
-      {showSummary && <ProductSummaryCard displayQty={displayQty} localCurrencyCode={localCurrencyCode} pricing={pricing} product={product} onOpenImage={onOpenImage} />}
-
-      <div className="new-sale-product-detail__tree">
-        <div className="new-sale-product-detail__tree-head">
-          <h3>{t('Деталі товару')}</h3>
-          <span>{code}</span>
-        </div>
-        <div className="new-sale-product-detail__sections">
-          <ProductDetailSection title={t('Ціни')}>
-            {priceRows.map((row) => (
-              <DetailField
-                key={row.key}
-                label={t(row.label)}
-                mono
-                value={formatPrice(row.value) + ' ' + row.currency}
-              />
-            ))}
-            {discountRate != null && (
-              <DetailField label={t('Знижка')} mono value={priceFormatter.format(discountRate) + '%'} />
+      <DocumentDetailLayout summary={null}>
+        {showSummary && <ProductSummaryCard variant="detail" displayQty={displayQty} localCurrencyCode={localCurrencyCode} pricing={pricing} product={product} onOpenImage={onOpenImage} />}
+        <div className="new-sale-product-detail__columns">
+          <DocumentDetailSection title={t('Наявність і ціни')} stacked>
+            {isFullDetail && (
+              <div className="new-sale-product-detail__table-scroll">
+                <table className="app-static-table" aria-label={t('Наявність і ціни')}>
+                  <thead><tr>
+                    <th scope="col">{t('Джерело')}</th>
+                    <th scope="col" className="app-table-cell-number">{t('К-сть')}</th>
+                    {stockCurrencies.map((currency) => <th key={currency} scope="col" className="app-table-cell-number"><TableChip tone="source" value={currency} /></th>)}
+                  </tr></thead>
+                  <tbody>{legacyLines.map((line) => (
+                    <tr key={line.key}>
+                      <th scope="row">{t(line.label)}</th>
+                      <td className="app-table-cell-number">{qtyFormatter.format(line.qty)} <TableChip value={measureUnit} /></td>
+                      {stockCurrencies.map((currency) => <td key={currency} className="app-table-cell-number">{formatPrice(getLegacyCurrencyPrice(line, currency))}</td>)}
+                    </tr>
+                  ))}</tbody>
+                </table>
+              </div>
             )}
-            {isFullDetail && legacyLines.map((line) => (
-              <DetailField
-                key={line.key}
-                label={t(line.label)}
-                mono
-                value={[
-                  qtyFormatter.format(line.qty) + ' ' + measureUnit,
-                  ...new Set([
-                    line.localPrice != null ? formatPrice(line.localPrice) + ' ' + line.localCurrency : '',
-                    line.eurPrice != null ? formatPrice(line.eurPrice) + ' EUR' : '',
-                    line.uahPrice != null ? formatPrice(line.uahPrice) + ' UAH' : '',
-                  ].filter(Boolean)),
-                ].join(' · ')}
-              />
-            ))}
-            {nearestSupplyOrder && (
-              <DetailField
-                label={t('Найближча партія')}
-                mono
-                value={[
-                  nearestSupplyOrder.OrderArrivedDate ? formatLocalDate(new Date(nearestSupplyOrder.OrderArrivedDate)) : '—',
-                  qtyFormatter.format(nearestSupplyOrder.Qty ?? 0) + ' ' + measureUnit,
-                ].join(' · ')}
-              />
+            {(discountRate != null || nearestSupplyOrder) && (
+              <Group gap={16} className="new-sale-product-detail__extra">
+                {discountRate != null && <Group gap={6}><Text size="xs">{t('Знижка')}</Text><TableChip tone="document" value={priceFormatter.format(discountRate) + '%'} /></Group>}
+                {nearestSupplyOrder && <Group gap={6}>
+                  <Text size="xs">{t('Найближча партія')}</Text>
+                  <TableChip tone="document" value={nearestSupplyOrder.OrderArrivedDate ? formatLocalDate(new Date(nearestSupplyOrder.OrderArrivedDate)) : '—'} />
+                  <span className="app-money">{qtyFormatter.format(nearestSupplyOrder.Qty ?? 0)}</span><TableChip value={measureUnit} />
+                </Group>}
+              </Group>
             )}
-          </ProductDetailSection>
+          </DocumentDetailSection>
 
-          <ProductDetailSection
+          <DocumentDetailSection stacked
             title={t('Опис')}
             actions={canEditDescription && (
               <ActionIcon
@@ -210,16 +198,11 @@ export function ProductFullDetailPanel({
             ) : (
               <p className="new-sale-product-detail__description">{product.Description || t('Опис відсутній')}</p>
             )}
-          </ProductDetailSection>
+          </DocumentDetailSection>
         </div>
-      </div>
 
-      <section aria-label={t('Наявність')} className="new-sale-product-detail__tree">
-        <div className="new-sale-product-detail__tree-head">
-          <h3>{t('Наявність')}</h3>
-        </div>
-        <div className="new-sale-product-detail__sections new-sale-product-detail__availability-sections">
-          <div className="new-sale-product-detail__section new-sale-product-detail__availability-section">
+        <DocumentDetailSection title={t('Наявність')} stacked>
+          <div className="new-sale-product-detail__availability-section">
             {isLoadingDetails ? (
               <Group aria-live="polite" className="new-sale-product-detail__state" gap={8} role="status">
                 <Loader size="xs" />
@@ -243,6 +226,7 @@ export function ProductFullDetailPanel({
                   value: chip.key,
                   label: (
                     <span className="new-sale-product-detail__availability-option">
+                      <AvailabilityIcon chipKey={chip.key} />
                       <span>{chip.name}</span>{' '}
                       <strong className="new-sale-product-detail__availability-count">{qtyFormatter.format(chip.count)}</strong>
                     </span>
@@ -265,55 +249,48 @@ export function ProductFullDetailPanel({
           </div>
 
           {isFullDetail && !isLoadingDetails && !detailsError && (
-            <ProductDetailSection title={t('Деталі залишків')}>
+            <div role="region" aria-label={t('Деталі залишків')} className="new-sale-product-detail__stock">
               {rows.length > 0 ? (
-                <ScrollArea.Autosize mah={130} type="auto">
-                  {rows.map((row, index) => (
-                    <DetailField
-                      key={getDetailRowKey(row)}
-                      className={cx('new-sale-product-detail__stock-row', index === selectedRowIndex && 'is-selected')}
-                      label={[showRowDetails && row.regionCode, row.name, showRowDetails && row.analyst].filter(Boolean).join(' · ')}
-                      mono
-                      value={qtyFormatter.format(row.amount)}
-                    />
-                  ))}
+                <ScrollArea.Autosize mah={240} type="auto">
+                  <table className="app-static-table" aria-label={t('Деталі залишків')}>
+                    <thead><tr><th scope="col">{t('Розташування')}</th><th scope="col" className="app-table-cell-number">{t('К-сть')}</th></tr></thead>
+                    <tbody>{rows.map((row, index) => (
+                      <tr key={getDetailRowKey(row)} className={cx('new-sale-product-detail__stock-row', index === selectedRowIndex && 'is-selected')}>
+                        <td>
+                          <Group gap={8}>
+                            <TableChip tone="storage" value={row.name} />
+                            {showRowDetails && row.regionCode && <TableChip value={row.regionCode} />}
+                            {showRowDetails && row.analyst && <Text size="xs">{row.analyst}</Text>}
+                          </Group>
+                        </td>
+                        <td className="app-table-cell-number">{qtyFormatter.format(row.amount)} <TableChip value={measureUnit} /></td>
+                      </tr>
+                    ))}</tbody>
+                  </table>
                 </ScrollArea.Autosize>
               ) : (
                 <p className="new-sale-product-detail__empty">{t('Немає деталізації')}</p>
               )}
-            </ProductDetailSection>
+            </div>
           )}
-        </div>
-      </section>
+        </DocumentDetailSection>
 
       <WizardAiPriceHint
         clientAgreementNetId={clientAgreementNetId}
         productNetId={product.NetUid}
         withVat={isVatSale}
       />
+      </DocumentDetailLayout>
     </section>
   )
 }
 
-function ProductDetailSection({ actions, children, title }: { actions?: ReactNode; children: ReactNode; title: string }) {
-  return (
-    <section aria-label={title} className="new-sale-product-detail__section">
-      <div className="new-sale-product-detail__section-head">
-        <h4>{title}</h4>
-        {actions}
-      </div>
-      <div className="new-sale-product-detail__field-list">{children}</div>
-    </section>
-  )
-}
-
-function DetailField({ className, label, mono, value }: { className?: string; label: string; mono?: boolean; value: string }) {
-  return (
-    <div className={cx('app-detail-field', mono && 'is-mono', className)}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  )
+function AvailabilityIcon({ chipKey }: { chipKey: string }) {
+  const Icon = chipKey === 'InAccount' ? ReceiptText
+    : chipKey === 'AvailableQtyUkReSale' ? ArrowLeftRight
+      : chipKey === 'OnWayToPl' || chipKey === 'OnWayToUkr' ? Truck
+        : Warehouse
+  return <Icon size={16} strokeWidth={1.8} aria-hidden="true" />
 }
 
 type LegacyPriceLine = {
@@ -363,6 +340,13 @@ function buildLegacyPriceLines(
   }
 
   return [storageLine, resaleLine]
+}
+
+function getLegacyCurrencyPrice(line: LegacyPriceLine, currency: string): number | null | undefined {
+  if (currency === line.localCurrency && line.localPrice != null) return line.localPrice
+  if (currency === 'EUR') return line.eurPrice
+  if (currency === 'UAH') return line.uahPrice
+  return null
 }
 
 function formatPrice(value: number | null | undefined): string {

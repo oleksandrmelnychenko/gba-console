@@ -1,0 +1,35 @@
+.wizard-keyboard-help-trigger {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  justify-self: start;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+.wizard-keyboard-help-trigger:hover,
+.wizard-keyboard-help-trigger[aria-expanded='true'] {
+  background: var(--mantine-color-gray-1);
+  color: var(--brand-orange);
+}
+.wizard-keyboard-help-trigger:focus-visible {
+  outline: 2px solid var(--brand-orange);
+  outline-offset: 2px;
+}
+.wizard-keyboard-help {
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 100px);
+  overflow-y: auto;
+  padding: 16px;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 12px;
+}
+.wizard-keyboard-help__title { font: 600 14px var(--font-mono); }
+.wizard-keyboard-help__mode { color: var(--brand-orange); font-size: 12px; margin: 4px 0 12px; }
+.wizard-keyboard-help__keys { display: grid; gap: 10px; margin: 0; }
+.wizard-keyboard-help__keys > div { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 12px; align-items: baseline; }
+.wizard-keyboard-help__keys dd { margin: 0; font-size: 12px; color: var(--mantine-color-gray-8); }
+.wizard-keyboard-help kbd { display: inline-block; padding: 3px 6px; border: 1px solid var(--mantine-color-gray-3); border-radius: 5px; background: var(--mantine-color-gray-0); color: var(--mantine-color-gray-8); font: 500 11px var(--font-mono); white-space: nowrap; }
+.wizard-keyboard-help__steps { display: flex; flex-wrap: wrap; gap: 10px; padding-top: 14px; margin: 14px 0 10px; border-top: 1px solid var(--mantine-color-gray-2); }
+.wizard-keyboard-help__steps > span { display: flex; align-items: center; gap: 6px; font-size: 11px; }

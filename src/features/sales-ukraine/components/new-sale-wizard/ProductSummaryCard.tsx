@@ -1,11 +1,13 @@
-import { Button, Image } from '@mantine/core'
-import { Eye, Image as ImageIcon } from 'lucide-react'
+import { TableChip, type TableChipTone } from '../../../../shared/ui/TableChip'
+import { Button } from '@mantine/core'
+import { Eye } from 'lucide-react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
-import { getProductMainImage, getProductShopImageUrl, getRelatedProductRowColor } from '../../../products/utils'
+import { getProductMainOriginalNumber, isCriticalProductTop } from '../../../products/utils'
 import type { WizardCalculatedProductPricing } from './newSaleWizardApi'
 import { buildWizardProductPriceRows } from './wizardProductPricing'
 import { getWizardProductNumber, type WizardSaleProduct } from './wizardSaleProduct'
+import { WizardProductPhoto } from './WizardProductPhoto'
 import './product-summary-card.css'
 
 const qtyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
@@ -20,6 +22,7 @@ export function ProductSummaryCard({
   onOpenImage,
   pricing,
   product,
+  variant = 'compact',
 }: {
   currentPriceEur?: number | null
   detailsExpanded?: boolean
@@ -29,77 +32,66 @@ export function ProductSummaryCard({
   onOpenImage?: () => void
   pricing: WizardCalculatedProductPricing | null
   product: WizardSaleProduct
+  variant?: 'compact' | 'detail'
 }) {
   const { t } = useI18n()
-  const shopImageUrl = getProductShopImageUrl(product)
-  // Search results can omit ProductImages, so retain the shop-image fallback.
-  const imageUrl = getProductMainImage(product)?.ImageUrl || shopImageUrl
   const code = product.VendorCode || product.Articul || ''
   const name = product.NameUA || product.Name || t('Без назви')
+  const top = product.Top?.trim()
   const unit = product.MeasureUnit?.Name || t('шт')
   const currentPrice = currentPriceEur ?? getWizardProductNumber(product.CurrentPrice)
   const localPrice = getWizardProductNumber(product.CurrentPriceEurToUah) ?? getWizardProductNumber(product.CurrentLocalPrice)
   const priceRows = buildWizardProductPriceRows({ localCurrency: localCurrencyCode, pricing, product })
-  const facts = [
-    { label: t('Оригінальний номер'), value: product.MainOriginalNumber },
-    { label: 'TOP', value: product.Top },
-    { label: t('Розмір'), value: product.Size },
-    { label: t('Одиниця'), value: unit },
-  ].filter((item) => item.value)
-  const photo = imageUrl ? (
-    <Image alt={name} fallbackSrc={shopImageUrl || undefined} fit="contain" h="100%" src={imageUrl} w="100%" />
-  ) : (
-    <ImageIcon aria-label={t('Фото відсутнє')} size={24} strokeWidth={1.5} />
-  )
+  const matrixRows = [
+    { key: 'current', label: t('Ціна'), eur: currentPrice, local: localPrice },
+    ...(['base-eur', 'discount-eur'] as const).map((key) => ({
+      key,
+      label: t(priceRows.find((row) => row.key === key)?.label ?? (key === 'base-eur' ? 'База' : 'Зі знижкою')),
+      eur: priceRows.find((row) => row.key === key)?.value,
+      local: null,
+    })),
+    {
+      key: 'retail',
+      label: t('Роздріб'),
+      eur: priceRows.find((row) => row.key === 'retail-eur')?.value,
+      local: priceRows.find((row) => row.key === 'retail-local')?.value,
+    },
+  ]
+  const facts: { label: string; value: string | null | undefined; tone?: TableChipTone }[] = [
+    { label: t('Оригінальний номер'), value: getProductMainOriginalNumber(product), tone: 'warning' as const },
+    { label: t('Розмір'), value: product.Size, tone: 'warning' as const },
+  ].filter((item) => item.value && !['-', '—'].includes(String(item.value).trim()))
 
   return (
-    <section aria-label={t('Коротка інформація про товар')} className="new-sale-product-summary">
-      <header className="app-detail-hero new-sale-product-summary__hero">
+    <section aria-label={t('Коротка інформація про товар')} className={`new-sale-product-summary new-sale-product-summary--${variant}`}>
+      <header className="new-sale-product-summary__hero">
         <div className="new-sale-product-summary__identity">
-          {imageUrl && onOpenImage ? (
-            <button
-              aria-haspopup="dialog"
-              aria-label={`${t('Збільшити фото')} · ${name}`}
-              className="new-sale-product-summary__photo is-interactive"
-              title={t('Збільшити фото')}
-              type="button"
-              onClick={onOpenImage}
-              onKeyDown={(event) => {
-                // Handle activation once, without the wizard's Enter-to-add shortcut.
-                if ((event.key === 'Enter' || event.key === ' ') && !event.ctrlKey && !event.altKey && !event.metaKey) {
-                  event.preventDefault()
-                  event.stopPropagation()
-                  if (!event.repeat) onOpenImage()
-                }
-              }}
-            >
-              {photo}
-            </button>
-          ) : (
-            <div className="new-sale-product-summary__photo">{photo}</div>
-          )}
           <div className="new-sale-product-summary__heading">
-            <span className="new-sale-product-summary__eyebrow">{t('Товар')}</span>
-            <strong className={`new-sale-product-summary__code${code ? '' : ' is-missing'}`}>{code || t('Код відсутній')}</strong>
-            <h3 className="new-sale-product-summary__name" style={{ color: getRelatedProductRowColor(product) }}>{name}</h3>
-            <dl className="new-sale-product-summary__facts">
+            <div className="new-sale-product-summary__title-row">
+              <TableChip tone="product" value={code || t('Код відсутній')} />
+              <h3 className="new-sale-product-summary__name">{name}</h3>
+              {top && !['-', '—'].includes(top) && (
+                <span className="new-sale-product-summary__top">
+                  <span>Top</span>
+                  {isCriticalProductTop(top) ? <TableChip tone="danger" value={top} /> : <strong className="app-money">{top}</strong>}
+                </span>
+              )}
+            </div>
+            {facts.length > 0 && <dl className="new-sale-product-summary__metadata">
               {facts.map((item) => (
                 <div key={item.label}>
                   <dt>{item.label}</dt>
-                  <dd>{item.value}</dd>
+                  <dd>{item.tone ? <TableChip tone={item.tone} value={item.value} /> : <span className="app-money">{item.value}</span>}</dd>
                 </div>
               ))}
-            </dl>
+            </dl>}
           </div>
         </div>
-        <div className="new-sale-product-summary__side">
-          <div className="new-sale-product-summary__metrics">
-            <Metric label={t('Доступно')} meta={unit} value={qtyFormatter.format(displayQty)} />
-            {currentPrice != null && <Metric label={t('Ціна в EUR')} meta="EUR" money value={priceFormatter.format(currentPrice)} />}
-            {localPrice != null && <Metric label={t('Ціна в') + ' ' + localCurrencyCode} meta={localCurrencyCode} money value={priceFormatter.format(localPrice)} />}
-            {priceRows.map((row) => (
-              <Metric key={row.key} label={t(row.label)} meta={row.currency} money value={priceFormatter.format(row.value)} />
-            ))}
+        <div className="new-sale-product-summary__actions">
+          <div className="new-sale-product-summary__stock">
+            <span>{t('Доступно')}</span>
+            <strong>{qtyFormatter.format(displayQty)}</strong>
+            <TableChip tone="neutral" value={unit} />
           </div>
           {onOpenDetails && (
             <Button
@@ -117,16 +109,29 @@ export function ProductSummaryCard({
           )}
         </div>
       </header>
+      <div className="new-sale-product-summary__body">
+        <WizardProductPhoto className="new-sale-product-summary__photo" hoverPreview={variant !== 'detail'} product={product} onOpen={onOpenImage} />
+      <div className="new-sale-product-summary__pricing">
+        <table aria-label={t('Ціни товару')} className="app-static-table new-sale-product-summary__price-table">
+          <thead>
+            <tr>
+              <th scope="col">{t('Тип ціни')}</th>
+              <th className="app-table-cell-number" scope="col"><TableChip tone="source" value="EUR" /></th>
+              <th className="app-table-cell-number" scope="col"><TableChip tone="source" value={localCurrencyCode} /></th>
+            </tr>
+          </thead>
+          <tbody>
+            {matrixRows.map((row) => (
+              <tr key={row.key}>
+                <th scope="row">{row.label}</th>
+                <td className="app-table-cell-number">{row.eur == null ? '—' : priceFormatter.format(row.eur)}</td>
+                <td className="app-table-cell-number">{row.local == null ? null : priceFormatter.format(row.local)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      </div>
     </section>
-  )
-}
-
-function Metric({ label, meta, money, value }: { label: string; meta: string; money?: boolean; value: string }) {
-  return (
-    <div className="new-sale-product-summary__metric">
-      <span title={label}>{label}</span>
-      <strong className={money ? 'app-money' : undefined}>{value}</strong>
-      <small className={money ? 'app-money-meta' : undefined}>{meta}</small>
-    </div>
   )
 }

@@ -95,12 +95,14 @@ const HIDDEN_SALE_EDIT_FOOTER: SaleEditFooterState = {
 
 export function SaleEditDrawer({
   sale,
+  zIndex,
   onClose,
   onSaved,
 }: {
   onClose: () => void
   onSaved: () => void
   sale: SalesUkraineSale | null
+  zIndex?: number
 }) {
   const { t } = useI18n()
   const isNew = isNewSale(sale)
@@ -111,6 +113,7 @@ export function SaleEditDrawer({
 
   return (
     <AppDrawer
+      zIndex={zIndex}
       footer={
         sale && activeFooterState.visible ? (
           <Group gap="sm" justify="flex-end">

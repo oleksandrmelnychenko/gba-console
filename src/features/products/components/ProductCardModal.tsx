@@ -1,5 +1,5 @@
 import { Alert, Anchor, Group, Image, Loader, Stack, Text } from '@mantine/core'
-import { CircleAlert, ExternalLink } from 'lucide-react'
+import { CircleAlert, ExternalLink, Image as ImageIcon, ZoomIn } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DocumentDetailRow, DocumentDetailSection } from '../../../shared/ui/document-detail/DocumentDetail'
@@ -7,7 +7,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 import { getProductByNetId } from '../api/productsApi'
 import type { Product } from '../types'
-import { getProductMainImage, getProductTitle } from '../utils'
+import { getProductMainImage, getProductTitle, isCriticalProductTop } from '../utils'
 import { ShopImageGallery } from './ShopImageGallery'
 import './product-card-modal.css'
 
@@ -30,7 +30,7 @@ export function ProductCardModal({
   const { t } = useI18n()
 
   return (
-    <AppModal className="product-card-modal" centered opened={Boolean(productNetId)} size={760} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Картка товару')}</span>} onClose={onClose}>
+    <AppModal className="product-card-modal" centered opened={Boolean(productNetId)} size={1040} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Картка товару')}</span>} onClose={onClose}>
       {productNetId && <ProductCardContent key={productNetId} loadProduct={loadProduct} productNetId={productNetId} salePrices={salePrices} />}
     </AppModal>
   )
@@ -122,12 +122,16 @@ function ProductCardContent({
       return urls
     }, mainImage?.ImageUrl ? [mainImage.ImageUrl] : []) || []
 
+  const prices = salePrices ?? [{ currencyCode: 'EUR', unitPrice: product.CurrentPrice ?? null }, { currencyCode: t('Локальна'), unitPrice: product.CurrentLocalPrice ?? null }]
+
   return (
     <Stack gap={10} className="product-card-content">
+      <div className="product-card-hero">
       <Group className="product-card-summary" justify="space-between" align="flex-start" wrap="nowrap">
         <Stack gap={2}>
           <Group gap={8} wrap="wrap">
             <TableChip tone="product" value={product.VendorCode} />
+            {product.Top && <span className="product-card-original"><span>Top</span><TableChip tone={isCriticalProductTop(product.Top) ? 'danger' : 'neutral'} value={product.Top} /></span>}
             {product.MainOriginalNumber && (
               <span className="product-card-original">
                 <span>OEM</span>
@@ -152,7 +156,6 @@ function ProductCardContent({
         )}
       </Group>
 
-      <div className={`product-card-overview${mainImage?.ImageUrl ? ' has-image' : ''}`}>
         {mainImage?.ImageUrl ? (
           <div className="product-card-media">
             <button
@@ -162,6 +165,7 @@ function ProductCardContent({
               onClick={() => window.open(mainImage.ImageUrl, '_blank', 'noopener,noreferrer')}
             >
               <Image src={mainImage.ImageUrl} alt={name} fit="contain" h="100%" w="100%" />
+              <span aria-hidden className="product-card-image-zoom"><ZoomIn size={18} /></span>
             </button>
             {persistedImageUrls.length > 1 ? (
               <Group gap={6} className="product-inline-thumbs">
@@ -183,7 +187,35 @@ function ProductCardContent({
               onImageClick={(url) => window.open(url, '_blank', 'noopener,noreferrer')}
             />
           </div>
-        ) : null}
+        ) : (
+          <div className="product-card-media">
+            <div className="product-card-image-empty"><ImageIcon aria-label={t('Фото відсутнє')} size={36} /></div>
+            <ShopImageGallery vendorCode={product.VendorCode} onImageClick={(url) => window.open(url, '_blank', 'noopener,noreferrer')} />
+          </div>
+        )}
+      <div className="product-card-facts">
+        <DetailRow label={t('Од. виміру')} chip="neutral" value={product.MeasureUnit?.Name} />
+        <DetailRow label={t('Вага')} mono value={formatNumber(product.Weight)} />
+        <DetailRow label={t('Розмір')} chip="warning" value={product.Size} />
+        <DetailRow label={t("Об'єм")} mono value={product.Volume} />
+      </div>
+      <div className="product-card-prices">
+        <table className="app-static-table" aria-label={t('Ціни товару')}>
+          <thead><tr><th scope="col">{t('Тип ціни')}</th>
+            {prices.map((price, index) => (
+              <th scope="col" className="app-table-cell-number" key={index}><TableChip tone="source" value={price.currencyCode || t('Валюта договору')} /></th>
+            ))}
+          </tr></thead>
+          <tbody><tr><th scope="row">{salePrices ? t('Ціна продажу') : t('Ціна')}</th>
+            {prices.map((price, index) => (
+              <td className="app-table-cell-number" key={index}>{formatMoney(price.unitPrice) || '—'}</td>
+            ))}
+          </tr></tbody>
+        </table>
+        {salePrices && <Text size="xs" c="dimmed" mt={8}>{t('Ціна за одиницю з урахуванням знижок у вибраному продажі.')}</Text>}
+      </div>
+      </div>
+      <div className="document-detail-tree">
         <DocumentDetailSection title={t('Наявність')}>
           <DetailRow label={t('Доступно (UA)')} mono value={formatNumber(product.AvailableQtyUk)} />
           <DetailRow label={t('В дорозі')} mono value={formatNumber(product.AvailableQtyRoad)} />
@@ -191,30 +223,6 @@ function ProductCardContent({
           <DetailRow label={t('Доступно (перепродаж)')} mono value={formatNumber(product.AvailableQtyUkReSale)} />
           <DetailRow label={t('Браковані')} mono value={formatNumber(product.AvailableDefectiveQtyUk)} />
         </DocumentDetailSection>
-      </div>
-      {!mainImage?.ImageUrl ? (
-        <ShopImageGallery
-          vendorCode={product.VendorCode}
-          onImageClick={(url) => window.open(url, '_blank', 'noopener,noreferrer')}
-        />
-      ) : null}
-
-      <div className="document-detail-tree">
-      {salePrices ? <Text size="xs" c="dimmed">{t('Ціна за одиницю з урахуванням знижок у вибраному продажі.')}</Text> : null}
-      <DocumentDetailSection title={t('Ціни та характеристики')}>
-        {salePrices ? salePrices.map((price, index) => (
-          <DetailRow key={`${price.currencyCode}-${index}`} label={`${t('Ціна продажу')} (${price.currencyCode || t('валюта договору')})`}
-            money={(price.unitPrice ?? 0) > 0} mono value={formatMoney(price.unitPrice) || t('Немає даних')} />
-        )) : <>
-          <DetailRow label={t('Ціна (локальна)')} money={(product.CurrentLocalPrice ?? 0) > 0} mono value={formatMoney(product.CurrentLocalPrice)} />
-          <DetailRow label={t('Ціна (EUR)')} money={(product.CurrentPrice ?? 0) > 0} mono value={formatMoney(product.CurrentPrice)} />
-        </>}
-        <DetailRow label={t('Од. виміру')} mono value={product.MeasureUnit?.Name} />
-        <DetailRow label={t('Вага')} mono value={formatNumber(product.Weight)} />
-        <DetailRow label={t('Розмір')} chip="warning" value={product.Size} />
-        <DetailRow label={t("Об'єм")} mono value={product.Volume} />
-      </DocumentDetailSection>
-
       {description && (
         <DocumentDetailSection title={t('Опис')} stacked>
           <Text size="sm">{description}</Text>

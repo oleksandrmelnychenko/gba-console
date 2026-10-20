@@ -1,6 +1,7 @@
+import { TableChip } from '../../../../shared/ui/TableChip'
 import { Alert, Box, Button, Group, Select, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { Box as BoxIcon, FileSignature, Hash, Search, Settings, Sparkles, Trash2 } from 'lucide-react'
+import { FileSignature, Hash, Search, Sparkles, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react'
 import { useAuth } from '../../../auth/useAuth'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -29,7 +30,7 @@ import {
   type SalesPendingMutationLease,
   type SalesPendingMutationScope,
 } from '../../pendingSalesMutationRegistry'
-import { getSaleLocalCurrencyCode, isNonVatEurSale, roundMoney } from '../../saleMoney'
+import { getSaleLocalCurrencyCode, isNonVatEurSale } from '../../saleMoney'
 import { getSaleLifecycleTypeKey } from '../../saleStatus'
 import type { SalesUkraineOrderItem, SalesUkraineSale, SalesUkraineUser } from '../../types'
 import {
@@ -77,6 +78,7 @@ import { WizardConfirmModal } from './WizardConfirmModal'
 import { WizardCrossSellModal } from './WizardCrossSellModal'
 import { WizardProductCarousel } from './WizardProductCarousel'
 import { WizardRelatedProductRows } from './WizardRelatedProductRows'
+import { WizardProductSummarySkeleton, WizardRelatedProductsSkeleton } from './WizardProductSkeletons'
 import { WizardClientHeroHeader } from './WizardClientHeroHeader'
 import {
   getWizardAvailabilityChipCount,
@@ -142,7 +144,7 @@ import {
   type WizardCartLocalCommit,
   type WizardCartMutationRequest,
 } from './wizardCartMutation'
-import { WizardShoppingCartGrid } from './WizardShoppingCartGrid'
+import { WizardCartSheet } from './WizardCartSheet'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const CHANGE_PRODUCT_DESCRIPTION_PERMISSION = PermissionKeys.SalesUkraine.Sale.EditProductComment
@@ -273,6 +275,7 @@ export function NewSaleProductsStep({
   sale: SalesUkraineSale | null
 }) {
   const { t } = useI18n()
+  const [cartSheetOpen, setCartSheetOpen] = useState(false)
   const { hasPermission, session, user } = useAuth()
   const canCreatePreorder = hasPermission(CREATE_PREORDER_PERMISSION)
   const canCreateFutureReservation = hasPermission(CREATE_FUTURE_RESERVATION_PERMISSION)
@@ -289,10 +292,13 @@ export function NewSaleProductsStep({
   const [crossSellProduct, setCrossSellProduct] = useState<WizardSaleProduct | null>(null)
   const [mainIndex, setMainIndex] = useState(0)
   const [active, setActive] = useState<{ product: WizardSaleProduct; source: ActiveProductSource } | null>(null)
-  const [analogueState, setAnalogueState] = useState<{ items: WizardSaleProduct[]; parentNetUid: string | null }>({
+  const [analogueState, setAnalogueState] = useState<{ items: WizardSaleProduct[]; parentNetUid: string | null; scopeKey: string | null }>({
     items: [],
     parentNetUid: null,
+    scopeKey: null,
   })
+  const analogueCacheRef = useRef(new Map<string, WizardSaleProduct[]>())
+  const [analogueCacheRevision, setAnalogueCacheRevision] = useState(0)
   const [analogueIndex, setAnalogueIndex] = useState<number | null>(null)
   const [componentParent, setComponentParent] = useState<WizardSaleProduct | null>(null)
   const [componentIndex, setComponentIndex] = useState<number | null>(null)
@@ -455,6 +461,7 @@ export function NewSaleProductsStep({
     }
   }, [])
   const isVatSale = Boolean(sale?.IsVatSale)
+  const analogueScopeKey = JSON.stringify([agreementNetId, isVatSale, sale?.NetUid || EMPTY_GUID, refreshTick, analogueCacheRevision])
   const isSaleLifecycleNew = getSaleLifecycleTypeKey(sale?.BaseLifeCycleStatus?.SaleLifeCycleType) === '0'
   const currentReconciliationError = reconciliationContextRef.current === mutationContextKey ? reconciliationError : null
   const useEurToUah = isNonVatEurSale(sale)
@@ -615,6 +622,8 @@ export function NewSaleProductsStep({
 
   const clearProductPricingCache = useCallback(() => {
     pricingCacheGenerationRef.current += 1
+    analogueCacheRef.current.clear()
+    setAnalogueCacheRevision((revision) => revision + 1)
     setReservationsState((previous) => ({ agreementNetId: previous.agreementNetId, values: EMPTY_RESERVATIONS }))
     setProductPricingState((previous) => ({ agreementNetId: previous.agreementNetId, values: EMPTY_PRODUCT_PRICING }))
     setProductDetailState((previous) => ({ ...previous, values: EMPTY_PRODUCT_DETAILS }))
@@ -628,7 +637,7 @@ export function NewSaleProductsStep({
   const clearActiveProductData = useCallback(() => {
     setActive(null)
     setProductDetailState({ agreementNetId: null, saleNetId: EMPTY_GUID, values: EMPTY_PRODUCT_DETAILS })
-    setAnalogueState({ items: [], parentNetUid: null })
+    setAnalogueState({ items: [], parentNetUid: null, scopeKey: null })
     setAnalogueIndex(null)
     setComponentParent(null)
     setComponentIndex(null)
@@ -793,15 +802,41 @@ export function NewSaleProductsStep({
     const requestProduct = activeProduct
     const saleNetId = sale?.NetUid || EMPTY_GUID
     const controller = new AbortController()
+    const analogueCacheKey = `${analogueScopeKey}:${netUid}`
+    const cachedAnalogues = analogueCacheRef.current.get(analogueCacheKey)
     let cancelled = false
+    if (source !== 'analogue' && (cachedAnalogues || !requestProduct?.HasAnalogue)) {
+      setAnalogueState({ items: cachedAnalogues ?? [], parentNetUid: netUid, scopeKey: analogueScopeKey })
+      setAnalogueIndex(null)
+    }
     const handle = setTimeout(() => {
+      if (source !== 'analogue' && requestProduct?.HasAnalogue && !cachedAnalogues) {
+        // Related cards can render as soon as their own request completes;
+        // pricing and reservations must not keep their loading frame visible.
+        void getProductAnalogues(netUid, requestAgreementNetId, controller.signal).then((analogues) => {
+          if (cancelled) return
+          const filtered = analogues
+            .filter((item) => (item.ProductAvailabilities?.length ?? 0) > 0)
+            .sort((a, b) => getAvailabilitySortKey(b, isVatSale) - getAvailabilitySortKey(a, isVatSale))
+          const cache = analogueCacheRef.current
+          cache.set(analogueCacheKey, filtered)
+          if (cache.size > 100) {
+            const oldestKey = cache.keys().next().value
+            if (oldestKey) cache.delete(oldestKey)
+          }
+          setAnalogueState({ items: filtered, parentNetUid: netUid, scopeKey: analogueScopeKey })
+          setAnalogueIndex(null)
+        }).catch(() => {
+          if (cancelled) return
+          // Keep the previous empty-result behavior, but do not cache failures.
+          setAnalogueState({ items: [], parentNetUid: netUid, scopeKey: analogueScopeKey })
+          setAnalogueIndex(null)
+        })
+      }
       void (async () => {
-        const [pricing, productReservations, analogues] = await Promise.all([
+        const [pricing, productReservations] = await Promise.all([
           loadPricingSnapshot(netUid, requestAgreementNetId),
           getProductReservationsByAgreement(requestAgreementNetId, netUid).catch(() => [] as WizardProductReservation[]),
-          source !== 'analogue' && requestProduct?.HasAnalogue
-            ? getProductAnalogues(netUid, requestAgreementNetId, controller.signal).catch(() => [] as WizardSaleProduct[])
-            : Promise.resolve<WizardSaleProduct[] | null>(null),
         ])
 
         if (cancelled) {
@@ -830,18 +865,6 @@ export function NewSaleProductsStep({
           storePricingSnapshot(netUid, requestAgreementNetId, pricing, productReservations)
         }
 
-        if (source !== 'analogue') {
-          if (analogues) {
-            const filtered = analogues
-              .filter((item) => (item.ProductAvailabilities?.length ?? 0) > 0)
-              .sort((a, b) => getAvailabilitySortKey(b, isVatSale) - getAvailabilitySortKey(a, isVatSale))
-            setAnalogueState({ items: filtered, parentNetUid: netUid })
-          } else {
-            setAnalogueState({ items: [], parentNetUid: null })
-          }
-
-          setAnalogueIndex(null)
-        }
       })()
     }, 240)
 
@@ -850,7 +873,7 @@ export function NewSaleProductsStep({
       controller.abort()
       clearTimeout(handle)
     }
-  }, [activeProduct, active?.source, agreementNetId, isVatSale, refreshTick, sale?.NetUid])
+  }, [activeProduct, active?.source, agreementNetId, analogueScopeKey, isVatSale, refreshTick, sale?.NetUid])
 
   const isActiveProductFullDetail =
     (active?.source === 'main' && detailKeyboardState === 'FullDetail') ||
@@ -1332,6 +1355,7 @@ export function NewSaleProductsStep({
     const patchProduct = (product: WizardSaleProduct) =>
       patchWizardProductAvailability(product, productNetUid, availability)
 
+    analogueCacheRef.current.forEach((items, key) => analogueCacheRef.current.set(key, items.map(patchProduct)))
     setResults((previous) => previous.map(patchProduct))
     setActive((previous) => (previous ? { ...previous, product: patchProduct(previous.product) } : previous))
     setAnalogueState((previous) => ({ ...previous, items: previous.items.map(patchProduct) }))
@@ -1459,11 +1483,12 @@ export function NewSaleProductsStep({
   }
 
   function focusSearchInput() {
-    searchInputRef.current?.focus()
+    if (!cartSheetOpen) searchInputRef.current?.focus()
   }
 
   function focusMainProduct(product: WizardSaleProduct) {
     setActive({ product, source: 'main' })
+    restoreCachedAnalogues(product)
     setComponentParent(product)
     setComponentIndex(null)
     setAnalogueIndex(null)
@@ -1491,6 +1516,7 @@ export function NewSaleProductsStep({
   }
 
   function focusAnalogue(index: number, options?: { keepDetail?: boolean }) {
+    if (analogueState.scopeKey !== analogueScopeKey) return
     const product = analogueState.items[index]
 
     if (!product) {
@@ -1516,11 +1542,19 @@ export function NewSaleProductsStep({
 
     setComponentIndex(index)
     setActive({ product: entry.product, source: 'component' })
+    restoreCachedAnalogues(entry.product)
 
     if (options?.keepDetail) {
       setDetail((previous) => ({ chipIndex: previous?.chipIndex ?? null, rowIndex: null }))
     } else {
       resetDetail()
+    }
+  }
+
+  function restoreCachedAnalogues(product: WizardSaleProduct) {
+    const items = product.NetUid ? analogueCacheRef.current.get(`${analogueScopeKey}:${product.NetUid}`) : undefined
+    if (items || !product.HasAnalogue) {
+      setAnalogueState({ items: items ?? [], parentNetUid: product.NetUid ?? null, scopeKey: analogueScopeKey })
     }
   }
 
@@ -2606,7 +2640,7 @@ export function NewSaleProductsStep({
   }
 
   function openImage(product: WizardSaleProduct | null) {
-    const imageUrl = product ? (getProductMainImage(product as Product)?.ImageUrl ?? product.Image) : null
+    const imageUrl = product ? (getProductMainImage(product as Product)?.ImageUrl || product.Image || getProductShopImageUrl(product)) : null
 
     if (!imageUrl) {
       return
@@ -2670,6 +2704,10 @@ export function NewSaleProductsStep({
   }
 
   function applyProductPatch(updated: WizardSaleProduct) {
+    analogueCacheRef.current.forEach((items, key) => analogueCacheRef.current.set(
+      key,
+      items.map((item) => item.NetUid === updated.NetUid ? { ...item, Description: updated.Description } : item),
+    ))
     setActive((previous) => (previous ? { ...previous, product: updated } : previous))
     setResults((previous) => previous.map((item) => (item.NetUid === updated.NetUid ? { ...item, Description: updated.Description } : item)))
     setAnalogueState((previous) => ({
@@ -3391,7 +3429,35 @@ export function NewSaleProductsStep({
   }
 
   function handleProductKey(event: WizardKeyEvent): boolean {
+    if (event.hotkey === 'F3' && event.nativeEvent.repeat) return true
     if (qtyModal || shiftRow || futureProduct || removeConfirmOpen || removeRowItem || cartActionItem || isActEditOpen) {
+      return false
+    }
+
+    // The cart sheet owns its controls; do not dispatch product shortcuts beneath it.
+    if (cartSheetOpen) {
+      const target = event.nativeEvent.target
+      // A nested modal may close in Mantine's window capture handler before
+      // this handler runs. Its Escape must not also close the underlying sheet.
+      if (target instanceof Element && target.closest('.mantine-Modal-content, .mantine-Drawer-content:not(.wizard-cart-sheet)')) {
+        return true
+      }
+      if (crossSellProduct) return false
+      if (event.hotkey === 'F2') {
+        setCartSheetOpen(false)
+        openEditCart()
+      } else if (event.hotkey === 'Escape' || event.hotkey === 'F3') {
+        setCartSheetOpen(false)
+      }
+      return true
+    }
+
+    if (event.hotkey === 'F3') {
+      if (productCardNetId || crossSellProduct) return false
+      if (['ProductSearch', 'ProductSelection', 'AnalogueSelection', 'ComponentSelection'].includes(kbState)) {
+        setCartSheetOpen(true)
+        return true
+      }
       return false
     }
 
@@ -3440,7 +3506,7 @@ export function NewSaleProductsStep({
       if (
         containerRef.current?.contains(target as Node) ||
         isInteractiveTarget(target) ||
-        (target instanceof Element && target.closest('.new-sale-product-details-drawer, .new-sale-product-image-modal'))
+        (target instanceof Element && target.closest('.new-sale-product-details-drawer, .new-sale-product-image-modal, .wizard-cart-sheet, [data-wizard-keyboard-help]'))
       ) {
         return
       }
@@ -3492,21 +3558,26 @@ export function NewSaleProductsStep({
     const localPrice = getWizardProductNumber(product.CurrentPriceEurToUah) ?? getWizardProductNumber(product.CurrentLocalPrice) ?? 0
 
     return (
-      <Group className="new-sale-related-row__metrics" gap={6} wrap="nowrap">
-        {setQty != null && (
-          <Text className="new-sale-related-row__metric is-muted">
-            {t('К-сть')}: {qtyFormatter.format(setQty)}
-          </Text>
-        )}
-        <Text className="new-sale-related-row__metric is-qty">
+      <Box className="new-sale-related-row__metrics">
+        <Box className="new-sale-related-row__metric">
+          <Text className="new-sale-related-row__metric-label">{t('Доступно')}</Text>
           {/* Search-payload sellable qty (stable across focus) so the number does
               not jump when switching between analogues as the detailed snapshot
               loads for the focused row (bug #17). */}
-          {qtyFormatter.format(getWizardSellableQty(product, isVatSale) ?? 0)} {product.MeasureUnit?.Name ?? ''}
-        </Text>
-        <Text className="new-sale-related-row__metric">{amountFormatter.format(getWizardProductNumber(product.CurrentPrice) ?? 0)} EUR</Text>
-        <Text className="new-sale-related-row__metric">{amountFormatter.format(localPrice)} {localCurrencyCode}</Text>
-      </Group>
+          <TableChip value={`${qtyFormatter.format(getWizardSellableQty(product, isVatSale) ?? 0)} ${product.MeasureUnit?.Name ?? ''}`} />
+          {setQty != null && (
+            <Text className="new-sale-related-row__set-qty">{t('У комплекті')}: {qtyFormatter.format(setQty)}</Text>
+          )}
+        </Box>
+        <Box className="new-sale-related-row__metric">
+          <TableChip tone="source" value="EUR" />
+          <Text className="new-sale-related-row__amount app-money">{amountFormatter.format(getWizardProductNumber(product.CurrentPrice) ?? 0)}</Text>
+        </Box>
+        <Box className="new-sale-related-row__metric">
+          <TableChip tone="source" value={localCurrencyCode} />
+          <Text className="new-sale-related-row__amount app-money">{amountFormatter.format(localPrice)}</Text>
+        </Box>
+      </Box>
     )
   }
 
@@ -3552,9 +3623,9 @@ export function NewSaleProductsStep({
         rows={getMainDetailRows(selectedMainSnapshot?.availabilities, selectedMainChipIndex)}
         selectedChipIndex={selectedMainChipIndex}
         selectedRowIndex={active?.source === 'main' ? (detail?.rowIndex ?? null) : null}
-        showSummary={false}
         showRowDetails={selectedMainChipIndex === 0}
         onDescriptionDraftChange={handleDescriptionDraftChange}
+        onOpenImage={() => openImage(selectedMainProduct)}
         onSelectChip={(chipIndex) => {
           setDetail({ chipIndex, rowIndex: null })
 
@@ -3584,16 +3655,24 @@ export function NewSaleProductsStep({
   const productSearchEmptyDescription = isSearchPristine
     ? t('Введіть мінімум 3 символи у пошуку, щоб побачити доступні товари.')
     : t('Змініть запит або поле пошуку, щоб знайти потрібний товар.')
-  const hasAnalogueRows = Boolean(selectedMainProduct && analogueState.items.length > 0)
+  const isAnalogueLoading = isSearching || Boolean(
+    activeProduct?.HasAnalogue
+    && active?.source !== 'analogue'
+    && (analogueState.parentNetUid !== activeProduct.NetUid || analogueState.scopeKey !== analogueScopeKey),
+  )
+  const isComponentLoading = isSearching
+  const hasAnalogueRows = Boolean(selectedMainProduct && analogueState.scopeKey === analogueScopeKey && analogueState.items.length > 0 && (
+    active?.source === 'analogue' || analogueState.parentNetUid === activeProduct?.NetUid
+  ))
   const hasComponentRows = Boolean(selectedMainProduct && componentEntries.entries.length > 0)
   const analoguePanel = (
     <Stack className="new-sale-products-step__related-panel" gap={7}>
       <Group className="new-sale-products-step__related-head" justify="space-between" wrap="nowrap">
         <Text className="new-sale-products-step__related-title">{t('Аналоги')}</Text>
-        <span>{analogueState.items.length}</span>
+        <TableChip value={isAnalogueLoading ? '…' : hasAnalogueRows ? analogueState.items.length : 0} tone="neutral" />
       </Group>
-      <Box className={`new-sale-products-step__related-scroll ${hasAnalogueRows ? '' : 'is-empty'}`}>
-        {hasAnalogueRows ? (
+      <Box aria-busy={isAnalogueLoading} className={`new-sale-products-step__related-scroll ${hasAnalogueRows || isAnalogueLoading ? '' : 'is-empty'}`}>
+        {isAnalogueLoading ? <WizardRelatedProductsSkeleton /> : hasAnalogueRows ? (
           <WizardRelatedProductRows
             active={analogueStatesActive}
             focusedIndex={analogueIndex ?? -1}
@@ -3601,6 +3680,7 @@ export function NewSaleProductsStep({
             products={analogueState.items}
             renderExtra={(product) => renderPriceExtra(product)}
             onOpenCard={setProductCardNetId}
+            onOpenImage={openImage}
             onProductInterest={canCreatePreorder && agreementNetId ? (product) => openInterest(product) : undefined}
             onPick={(index) => {
               focusAnalogue(index)
@@ -3622,24 +3702,18 @@ export function NewSaleProductsStep({
     <Stack className="new-sale-products-step__related-panel new-sale-products-step__component-panel" gap={7}>
       <Group className="new-sale-products-step__related-head" justify="space-between" wrap="nowrap">
         <Text className="new-sale-products-step__related-title">{t('Комплектуючі')}</Text>
-        <span>{componentEntries.entries.length}</span>
+        <TableChip value={isComponentLoading ? '…' : componentEntries.entries.length} tone="neutral" />
       </Group>
-      <Box className={`new-sale-products-step__related-scroll ${hasComponentRows ? '' : 'is-empty'}`}>
-        {hasComponentRows ? (
+      <Box aria-busy={isComponentLoading} className={`new-sale-products-step__related-scroll ${hasComponentRows || isComponentLoading ? '' : 'is-empty'}`}>
+        {isComponentLoading ? <WizardRelatedProductsSkeleton /> : hasComponentRows ? (
           <WizardRelatedProductRows
             active={componentStatesActive}
             focusedIndex={componentIndex ?? -1}
             getItemColor={(product) => getRelatedProductRowColor(product)}
             products={componentEntries.entries.map((entry) => entry.product)}
-            renderExtra={(product) => (
-              <Group className="new-sale-related-row__component-extra" gap={6} wrap="nowrap">
-                <Box className="new-sale-related-row__component-icon">
-                  {componentEntries.isBaseSet ? <BoxIcon size={13} /> : <Settings size={13} />}
-                </Box>
-                {renderPriceExtra(product, product.NetUid ? setQtyByNetUid.get(product.NetUid) : undefined)}
-              </Group>
-            )}
+            renderExtra={(product) => renderPriceExtra(product, product.NetUid ? setQtyByNetUid.get(product.NetUid) : undefined)}
             onOpenCard={setProductCardNetId}
+            onOpenImage={openImage}
             onProductInterest={canCreatePreorder && agreementNetId ? (product) => openInterest(product) : undefined}
             onPick={(index) => {
               focusComponent(index)
@@ -3658,7 +3732,7 @@ export function NewSaleProductsStep({
     </Stack>
   )
   const relatedGridPanel = (
-    <Box className="new-sale-products-step__related-grid">
+    <Box className={`new-sale-products-step__related-grid ${!hasAnalogueRows && !hasComponentRows ? 'is-empty' : ''}`}>
       {analoguePanel}
       {componentPanel}
     </Box>
@@ -3706,7 +3780,7 @@ export function NewSaleProductsStep({
                   option: 'new-sale-products-step__search-select-option',
                 }}
                 data={SEARCH_MODE_OPTIONS.map((option) => ({ label: t(option.label), value: option.value }))}
-                label={t('Місце вводу для пошуку')}
+                label={t('Шукати за')}
                 value={searchMode}
                 onChange={(value) => handleSearchSettingsChange(value, null)}
               />
@@ -3718,7 +3792,7 @@ export function NewSaleProductsStep({
                   option: 'new-sale-products-step__search-select-option',
                 }}
                 data={SORT_MODE_OPTIONS.map((option) => ({ label: t(option.label), value: option.value }))}
-                label={t('Сортувати За')}
+                label={t('Сортування')}
                 value={sortMode}
                 onChange={(value) => handleSearchSettingsChange(null, value)}
               />
@@ -3730,7 +3804,7 @@ export function NewSaleProductsStep({
               leftSection={<Sparkles size={14} />}
               loading={isLoadingRecommendations}
               size="xs"
-              variant="light"
+              variant="default"
               onClick={() => void loadClientRecommendations()}
             >
               {t('Рекомендації для клієнта')}
@@ -3810,41 +3884,31 @@ export function NewSaleProductsStep({
             ) : (
               <>
                 {relatedGridPanel}
-
-                {selectedMainProductSummary && (
-                  <Box className="new-sale-products-step__selected-slot">{selectedMainProductSummary}</Box>
+                {(selectedMainProductSummary || isSearching) && (
+                  <Box className="new-sale-products-step__selected-slot">
+                    {isSearching ? <WizardProductSummarySkeleton /> : selectedMainProductSummary}
+                  </Box>
                 )}
 
-          {/* Pinned cart — stays put regardless of how many analogues/components are shown */}
-          <Box className="new-sale-products-step__cart-slot">
-<Stack gap={4} h="100%">
-              <Text fw={600} size="sm">
-                {t('Кошик')}
-              </Text>
-              <WizardShoppingCartGrid
-                busy={busy}
-                items={orderItems}
-                localCurrencyCode={localCurrencyCode}
-                useEurToUah={useEurToUah}
-                onCrossSell={clientNetId ? handleCartCrossSell : undefined}
-                onRemove={isSaleLifecycleNew ? handleCartRowRemove : undefined}
-                onRowClick={handleCartRowClick}
-              />
-              {isVatSale && orderItems.length > 0 && (
-                <Group justify="flex-end">
-                  <Text size="sm">
-                    {t('ПДВ')}:{' '}
-                    <Text className="app-money" fw={600} span>
-                      {amountFormatter.format(roundMoney(totalVat))}
-                    </Text>
-                  </Text>
-                </Group>
-              )}
-            </Stack>
-          </Box>
+
               </>
             )}
           </Box>
+          <WizardCartSheet
+            busy={busy}
+            items={orderItems}
+            localCurrencyCode={localCurrencyCode}
+            opened={cartSheetOpen}
+            overlayActive={Boolean(cartActionItem || qtyModal || removeRowItem || removeConfirmOpen || isActEditOpen || crossSellProduct || shiftRow || futureProduct || productCardNetId || imagePreview)}
+            totalVat={isVatSale ? totalVat : undefined}
+            useEurToUah={useEurToUah}
+            onClose={() => setCartSheetOpen(false)}
+            onCrossSell={clientNetId ? handleCartCrossSell : undefined}
+            onEditCart={openEditCart}
+            onOpen={() => setCartSheetOpen(true)}
+            onRemove={isSaleLifecycleNew ? handleCartRowRemove : undefined}
+            onRowClick={handleCartRowClick}
+          />
         </Box>
       </Box>
 
@@ -3854,7 +3918,7 @@ export function NewSaleProductsStep({
         closeOnEscape={false}
         opened={Boolean(detailProduct)}
         size="standard"
-        title={[t('Деталі товару'), detailProduct?.VendorCode || detailProduct?.Articul, detailProduct?.NameUA || detailProduct?.Name].filter(Boolean).join(' · ')}
+        title={t('Деталі товару')}
         onClose={closeProductDetails}
         onKeyDown={handleProductDetailsKeyDown}
       >
@@ -3920,6 +3984,7 @@ export function NewSaleProductsStep({
       </AppDrawer>
 
       <WizardCrossSellModal
+        zIndex={cartSheetOpen ? 220 : undefined}
         agreementNetId={agreementNetId}
         clientNetId={clientNetId}
         excludeNetUids={excludedCrossSellProductNetUids}
@@ -3948,6 +4013,7 @@ export function NewSaleProductsStep({
       <CartRowActionsModal
         isInvoice={!isSaleLifecycleNew}
         item={cartActionItem}
+        zIndex={cartSheetOpen ? 220 : undefined}
         onActEdit={() => {
           setCartActionItem(null)
           setActEditOpen(true)
@@ -3965,6 +4031,7 @@ export function NewSaleProductsStep({
 
       {/* «Накладна» is editable only through the edit act — the popup routes here. */}
       <SaleEditDrawer
+        zIndex={cartSheetOpen ? 220 : undefined}
         sale={isActEditOpen ? sale : null}
         onClose={() => setActEditOpen(false)}
         onSaved={() => {
@@ -3974,6 +4041,7 @@ export function NewSaleProductsStep({
       />
 
       <ChangeQtyModal
+        zIndex={cartSheetOpen ? 220 : undefined}
         availableQty={qtyModal?.available ?? 0}
         busy={busy}
         initialComment={qtyModal?.item.Comment ?? ''}
@@ -4009,6 +4077,7 @@ export function NewSaleProductsStep({
       />
 
       <WizardConfirmModal
+        zIndex={cartSheetOpen ? 220 : undefined}
         busy={busy}
         message={t('Видалити позицію з рахунку?')}
         opened={removeConfirmOpen}
@@ -4017,6 +4086,7 @@ export function NewSaleProductsStep({
       />
 
       <WizardConfirmModal
+        zIndex={cartSheetOpen ? 220 : undefined}
         busy={busy}
         message={t('Видалити позицію з рахунку?')}
         opened={Boolean(removeRowItem)}
@@ -4187,6 +4257,7 @@ function CartRowActionsModal({
   onChangeQty,
   onClose,
   onRemove,
+  zIndex,
 }: {
   isInvoice: boolean
   item: SalesUkraineOrderItem | null
@@ -4194,6 +4265,7 @@ function CartRowActionsModal({
   onChangeQty: (item: SalesUkraineOrderItem) => void
   onClose: () => void
   onRemove: (item: SalesUkraineOrderItem) => void
+  zIndex?: number
 }) {
   const { t } = useI18n()
   const code = item?.Product?.VendorCode || item?.Product?.Articul || ''
@@ -4202,6 +4274,7 @@ function CartRowActionsModal({
   return (
     <AppModal
       centered
+      zIndex={zIndex}
       opened={Boolean(item)}
       size={496}
       title={

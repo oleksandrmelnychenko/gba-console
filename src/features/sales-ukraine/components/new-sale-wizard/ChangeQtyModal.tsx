@@ -1,9 +1,11 @@
-import { Button, NumberInput, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
+import { Button, Group, NumberInput, Stack, Text, TextInput } from '@mantine/core'
 import { useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { AppModal, AppModalFooter } from '../../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableChip } from '../../../../shared/ui/TableChip'
+import './change-qty-modal.css'
 
 const qtyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
 
@@ -13,6 +15,7 @@ export function ChangeQtyModal({
   initialComment,
   initialQty,
   opened,
+  zIndex,
   onAccept,
   onCancel,
 }: {
@@ -21,6 +24,7 @@ export function ChangeQtyModal({
   initialComment?: string
   initialQty?: number
   opened: boolean
+  zIndex?: number
   onAccept: (qty: number, comment: string) => void
   onCancel: () => void
 }) {
@@ -29,7 +33,10 @@ export function ChangeQtyModal({
   return (
     <AppModal
       centered
+      className="new-sale-quantity-modal"
       opened={opened}
+      zIndex={zIndex}
+      size={420}
       title={t('Додати в кошик')}
       onClose={onCancel}
     >
@@ -93,23 +100,19 @@ function ChangeQtyForm({
 
   return (
     <Stack gap="md" onKeyDown={handleKeyDown}>
-      <div className="app-modal-metric">
-        <Text c="dimmed" ff="var(--font-mono)" size="xs">
-          {t('Доступна К-сть')}
-        </Text>
-        <Text ff="var(--font-mono)" fw={600} size="lg">
-          {qtyFormatter.format(availableQty)}
-        </Text>
-      </div>
-
-      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+      <div className="new-sale-quantity-modal__main">
+        <Group gap={8} justify="center" className="new-sale-quantity-modal__available">
+          <Text size="sm">{t('Доступно')}</Text>
+          <TableChip tone={availableQty > 0 ? 'success' : 'neutral'} value={qtyFormatter.format(availableQty)} />
+        </Group>
         <NumberInput
+          className="new-sale-quantity-modal__quantity"
           allowNegative={false}
           autoFocus
           data-autofocus
           decimalScale={3}
           error={showError ? t('Невірна кількість') : undefined}
-          label={showError ? t('Невірна кількість') : t('Кількість')}
+          label={t('Кількість')}
           min={0}
           value={value}
           onChange={(next) => {
@@ -118,13 +121,13 @@ function ChangeQtyForm({
           }}
           onFocus={(event) => event.currentTarget.select()}
         />
+      </div>
 
-        <TextInput
-          label={t('Коментар')}
-          value={comment}
-          onChange={(event) => setComment(event.currentTarget.value)}
-        />
-      </SimpleGrid>
+      <TextInput
+        label={t('Коментар')}
+        value={comment}
+        onChange={(event) => setComment(event.currentTarget.value)}
+      />
 
       <AppModalFooter>
         <Button disabled={busy} variant="default" onClick={onCancel}>

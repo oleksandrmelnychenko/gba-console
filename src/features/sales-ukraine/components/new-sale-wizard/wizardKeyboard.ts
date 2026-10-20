@@ -213,19 +213,22 @@ export function useWizardKeyboard(step: WizardStepIndex): {
   setState: (state: WizardKeyboardState) => void
   state: WizardKeyboardState
 } {
-  useEffect(() => {
+  const activeStep = getWizardKeyboardSnapshot().activeStep
+  // A mounted step owns its keyboard mode, including after the external store
+  // is reset during development or restored independently of the wizard UI.
+  useLayoutEffect(() => {
     initializeWizardKeyboard(step)
-  }, [step])
-
-  const current = useWizardKeyboardSnapshot()
+  }, [step, activeStep])
+  useWizardKeyboardSnapshot()
+  const state = getWizardKeyboardState(step)
 
   return {
     consumeNextEscape: consumeNextWizardEscape,
     goBack: goBackWizardKeyboardState,
-    label: current.label,
+    label: WIZARD_KEYBOARD_STATE_LABELS[state],
     restorePreviousProductState: restorePreviousProductKeyboardState,
     setState: setWizardKeyboardState,
-    state: current.state,
+    state,
   }
 }
 
@@ -242,6 +245,7 @@ export type WizardHotkey =
   | 'Enter'
   | 'Escape'
   | 'F2'
+  | 'F3'
   | 'Space'
 
 export type WizardKeyEvent = {
@@ -307,6 +311,8 @@ export function toWizardHotkey(event: ReactKeyboardEvent<HTMLElement> | Keyboard
       return 'Escape'
     case 'F2':
       return 'F2'
+    case 'F3':
+      return 'F3'
     case ' ':
       return 'Space'
     default:
