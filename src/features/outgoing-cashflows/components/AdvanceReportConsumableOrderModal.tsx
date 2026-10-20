@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
@@ -635,7 +636,7 @@ export function AdvanceReportConsumableOrderModal({
             value={form.selectedAgreementValue || null}
             onChange={(value) => updateForm({ selectedAgreementValue: value || '' })}
           />
-          <TextInput disabled label={t('Організація')} value={getEntityLabel(outcomeOrder.Organization)} />
+          <TextInput disabled label={t('Організація')} value={getOrganizationDisplayName(outcomeOrder.Organization)} />
           <TextInput
             disabled={isBusy}
             label={t('Номер накладної')}

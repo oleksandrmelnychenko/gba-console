@@ -22,10 +22,10 @@ export function getEntityName(entity?: NamedEntity | null): string {
   return entity?.FullName || entity?.LastName || entity?.Name || entity?.OperationName || entity?.Code || entity?.Number || ''
 }
 
-export function toEntityOptions<T extends NamedEntity>(entities: T[]) {
+export function toEntityOptions<T extends NamedEntity>(entities: T[], getLabel: (entity: T) => string | undefined = getEntityName) {
   return entities.reduce<{ label: string; value: string }[]>((acc, entity) => {
     const option = {
-      label: getEntityName(entity) || getEntityValue(entity),
+      label: getLabel(entity) || getEntityValue(entity),
       value: getEntityValue(entity),
     }
 

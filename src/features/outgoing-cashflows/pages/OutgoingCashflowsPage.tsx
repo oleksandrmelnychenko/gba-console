@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -1442,7 +1443,7 @@ function buildCashflowRows(orders: OutcomePaymentOrder[]): OutgoingCashflowRow[]
     number: order.Number || order.CustomNumber,
     operationType: order.OperationTypeName,
     order,
-    organization: getEntityName(order.Organization),
+    organization: getOrganizationDisplayName(order.Organization) || undefined,
     payedTo: getPayedTo(order),
     paymentMovement: order.PaymentMovementOperation?.PaymentMovement?.OperationName,
     paymentRegister: order.PaymentCurrencyRegister?.PaymentRegister?.Name,

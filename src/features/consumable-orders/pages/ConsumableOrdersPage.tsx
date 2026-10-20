@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -673,7 +674,7 @@ function OutcomeStructureItem({ item }: { item: OutcomePaymentOrderConsumablesOr
       <DetailItem label={t('Дата')} mono value={formatDateTime(outcome.FromDate)} />
       <DetailItem label={t('Сума')} mono value={formatMoney(outcome.Amount)} />
       <DetailItem label={t('Валюта')} mono value={displayValue(outcome.PaymentCurrencyRegister?.Currency?.Code || outcome.PaymentCurrencyRegister?.Currency?.Name)} />
-      <DetailItem label={t('Організація')} value={displayValue(getEntityName(outcome.Organization))} />
+      <DetailItem label={t('Організація')} value={displayValue(getOrganizationDisplayName(outcome.Organization))} />
       <DetailItem label={t('Кому видано')} value={displayValue(getEntityName(outcome.Colleague))} />
       <DetailItem label={t('Підзвіт')} value={outcome.IsUnderReport ? t('Так') : t('Ні')} />
       <DetailItem label={t('Скасовано')} value={outcome.IsCanceled ? t('Так') : t('Ні')} />

@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { DocumentDetailLayout, DocumentDetailRow, DocumentDetailSection, DocumentDetailSummary } from '../../../shared/ui/document-detail/DocumentDetail'
@@ -1942,7 +1943,7 @@ function getOutcomeCurrency(order: OutcomePaymentOrder | null): string | undefin
 function getOutcomePayedTo(order: OutcomePaymentOrder): string | undefined {
   return getEntityName(order.Client)
     || getPersonFullName(order.Colleague)
-    || getEntityName(order.Organization)
+    || getOrganizationDisplayName(order.Organization)
     || getEntityName(order.User)
 }
 

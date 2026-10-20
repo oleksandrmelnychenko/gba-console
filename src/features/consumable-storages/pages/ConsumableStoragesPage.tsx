@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -371,8 +372,8 @@ function useConsumableStorageColumns({
         header: t('Організація'),
         width: 300,
         minWidth: 220,
-        accessor: (storage) => getEntityName(storage.Organization),
-        cell: (storage) => <TruncatedCell value={getEntityName(storage.Organization)} />,
+        accessor: (storage) => getOrganizationDisplayName(storage.Organization),
+        cell: (storage) => <TruncatedCell value={getOrganizationDisplayName(storage.Organization)} />,
       },
       {
         id: 'products',
@@ -518,7 +519,7 @@ function ConsumableStorageDetailDrawer({
           }
         >
           <DocumentDetailSection title={t('Реквізити складу')}>
-            <DocumentDetailRow label={t('Організація')} value={<TableChip value={storage.Organization?.Name || getEntityName(storage.Organization)} tone="product" />} />
+            <DocumentDetailRow label={t('Організація')} value={<TableChip value={getOrganizationDisplayName(storage.Organization)} tone="product" />} />
             <DocumentDetailRow label={t('Відповідальний')} value={getEntityName(storage.ResponsibleUser)} />
             {storage.Description?.trim() ? <DocumentDetailRow label={t('Опис')} value={storage.Description} wide /> : null}
           </DocumentDetailSection>
@@ -1639,7 +1640,7 @@ function filterConsumableStorages(storages: ConsumablesStorage[], value: string)
       storage.Name,
       storage.Description,
       getEntityName(storage.ResponsibleUser),
-      getEntityName(storage.Organization),
+      getOrganizationDisplayName(storage.Organization),
     ].some((field) => field?.toLowerCase().includes(normalizedValue)),
   )
 }

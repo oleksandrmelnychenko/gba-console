@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
 import '../../../shared/ui/document-detail/document-detail.css'
 import {
@@ -894,7 +895,7 @@ export function NewUkraineSaleReturnPage() {
                 comboboxProps={{ classNames: { dropdown: 'new-sale-return-create-dropdown' } }}
                 clearable
                 data={organizations.map((organization) => ({
-                  label: getEntityName(organization) || t('Без назви'),
+                  label: getOrganizationDisplayName(organization) || t('Без назви'),
                   value: getEntityKey(organization),
                 }))}
                 label={t('Організація')}

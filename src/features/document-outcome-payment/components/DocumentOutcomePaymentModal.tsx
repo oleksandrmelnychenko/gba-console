@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { Alert, Button, Grid, Group, NumberInput, Select, Stack, Text, TextInput, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus } from 'lucide-react'
@@ -109,7 +110,7 @@ export function DocumentOutcomePaymentModal({
     () => selectedMovement || paymentMovements.find((movement) => getEntityName(movement) === form.movementSearch.trim()) || null,
     [form.movementSearch, paymentMovements, selectedMovement],
   )
-  const organizationOptions = useMemo(() => toEntityOptions(organizations), [organizations])
+  const organizationOptions = useMemo(() => toEntityOptions(organizations, getOrganizationDisplayName), [organizations])
   const registerOptions = useMemo(() => toEntityOptions(paymentRegisters), [paymentRegisters])
   const agreementOptions = useMemo(
     () => organizationClientAgreements.length
@@ -575,7 +576,7 @@ function dedupeAgreements<TAgreement extends NamedEntity>(
   }, [])
 }
 
-function toEntityOptions<T extends NamedEntity>(entities: T[]) {
+function toEntityOptions<T extends NamedEntity>(entities: T[], getLabel: (entity: T) => string | undefined = getEntityName) {
   const options: Array<{ label: string; value: string }> = []
 
   for (const entity of entities) {
@@ -586,7 +587,7 @@ function toEntityOptions<T extends NamedEntity>(entities: T[]) {
     }
 
     options.push({
-      label: getEntityName(entity) || getEntityValue(entity),
+      label: getLabel(entity) || getEntityValue(entity),
       value,
     })
   }

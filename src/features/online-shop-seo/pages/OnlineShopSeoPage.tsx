@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
@@ -3136,11 +3137,11 @@ function getPaymentCardBrandLabel(brand: PaymentCardBrand) {
 }
 
 function getOrganizationName(organization?: OnlineShopPaymentRegister['Organization'] | OnlineShopStorage['Organization']) {
-  return organization?.FullName || organization?.Name || organization?.Abbreviation || ''
+  return getOrganizationDisplayName(organization) || organization?.Abbreviation || ''
 }
 
 function getCompactOrganizationName(organization?: OnlineShopPaymentRegister['Organization'] | OnlineShopStorage['Organization']) {
-  return organization?.Abbreviation || organization?.Name || organization?.FullName || ''
+  return organization?.Abbreviation || getOrganizationDisplayName(organization)
 }
 
 function sortStoragesByPriority(storages: OnlineShopStorage[]) {

@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../shared/organizations/organizationDisplayName'
 import { getAccountingOperationByPayloadType } from '../accounting/accountingOperationCatalog'
 import type {
   IncomeCashflowRow,
@@ -24,7 +25,7 @@ export function buildIncomeCashflowRow(
       'income',
       Number(income.OperationType),
     )?.labels.list || 'Невідомий тип операції',
-    organization: getEntityName(income.Organization),
+    organization: getOrganizationDisplayName(income.Organization) || undefined,
     payer: getIncomePayerName(income),
     paymentMovement: income.PaymentMovementOperation?.PaymentMovement?.OperationName,
     paymentRegister: income.PaymentRegister?.Name,

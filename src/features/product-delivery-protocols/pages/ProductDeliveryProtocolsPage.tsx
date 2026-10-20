@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   Alert,
   Button,
@@ -741,12 +742,10 @@ function ProtocolStateCell({ protocol }: { protocol: DeliveryProductProtocol }) 
 }
 
 function ProtocolOrganizationCell({ protocol }: { protocol: DeliveryProductProtocol }) {
-  const title = displayValue(protocol.Organization?.Name)
-  const subtitle = displayValue(protocol.Organization?.FullName || protocol.Organization?.Abbreviation || protocol.Organization?.Code)
-  const tooltip = compactStrings([title, subtitle]).join('\n') || title
+  const title = displayValue(getOrganizationDisplayName(protocol.Organization))
 
   return (
-    <span className="product-delivery-protocols-icon-cell" title={nativeTitle(tooltip)}>
+    <span className="product-delivery-protocols-icon-cell" title={nativeTitle(title)}>
       <span className="product-delivery-protocols-two-line-cell">
         <TableChip tone="product" value={title} />
       </span>

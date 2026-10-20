@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   ActionIcon,
   Alert,
@@ -233,7 +234,7 @@ export function OutgoingPaymentGroupForm({
 
   const operationOptions = useMemo(() => getOperationOptions(t), [t])
   const searchTypeOptions = useMemo(() => getSearchTypeOptions(operationType, t), [operationType, t])
-  const organizationOptions = useMemo(() => toEntityOptions(availableOrganizations), [availableOrganizations])
+  const organizationOptions = useMemo(() => toEntityOptions(availableOrganizations, getOrganizationDisplayName), [availableOrganizations])
   const registerOptions = useMemo(() => toEntityOptions(filteredRegisters), [filteredRegisters])
   const currencyOptions = useMemo(() => toCurrencyOptions(selectedRegister), [selectedRegister])
   const agreementOptions = useMemo(

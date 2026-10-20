@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   ActionIcon,
   Alert,
@@ -249,7 +250,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
     [form.selectedMovementValue, paymentMovements],
   )
   const activeMovement = selectedMovement
-  const organizationOptions = useMemo(() => toEntityOptions(organizations), [organizations])
+  const organizationOptions = useMemo(() => toEntityOptions(organizations, getOrganizationDisplayName), [organizations])
   const registerOptions = useMemo(() => toEntityOptions(filteredPaymentRegisters), [filteredPaymentRegisters])
   const currencyOptions = useMemo(() => toCurrencyOptions(selectedRegister), [selectedRegister])
   const agreementOptions = useMemo(() => toClientAgreementOptions(organizationAgreements), [organizationAgreements])
@@ -1655,7 +1656,7 @@ function getDebtValuesBySaleId(debts: ClientInDebt[], saleId: string): string[] 
   return values
 }
 
-function toEntityOptions<T extends NamedEntity>(entities: T[]): SelectOption[] {
+function toEntityOptions<T extends NamedEntity>(entities: T[], getLabel: (entity: T) => string | undefined = getEntityName): SelectOption[] {
   const options: SelectOption[] = []
 
   for (const entity of entities) {
@@ -1663,7 +1664,7 @@ function toEntityOptions<T extends NamedEntity>(entities: T[]): SelectOption[] {
 
     if (value) {
       options.push({
-        label: getEntityName(entity) || value,
+        label: getLabel(entity) || value,
         value,
       })
     }

@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   ActionIcon,
   Alert,
@@ -158,7 +159,7 @@ function IncomeCashflowUserFormPageContent() {
     [form.selectedUserValue, users],
   )
   const activeUser = selectedUser
-  const organizationOptions = useMemo(() => toEntityOptions(organizations), [organizations])
+  const organizationOptions = useMemo(() => toEntityOptions(organizations, getOrganizationDisplayName), [organizations])
   const registerOptions = useMemo(() => toEntityOptions(filteredPaymentRegisters), [filteredPaymentRegisters])
   const currencyOptions = useMemo(() => toCurrencyOptions(selectedRegister), [selectedRegister])
   const movementOptions = useMemo(() => toUniqueLabels(paymentMovements), [paymentMovements])
@@ -796,7 +797,7 @@ function matchesRegister(register: PaymentRegister, organization: Organization |
   return getEntityValue(register.Organization) === getEntityValue(organization) || register.OrganizationId === organization.Id
 }
 
-function toEntityOptions<T extends NamedEntity>(entities: T[]): SelectOption[] {
+function toEntityOptions<T extends NamedEntity>(entities: T[], getLabel: (entity: T) => string | undefined = getEntityName): SelectOption[] {
   const options: SelectOption[] = []
 
   for (const entity of entities) {
@@ -807,7 +808,7 @@ function toEntityOptions<T extends NamedEntity>(entities: T[]): SelectOption[] {
     }
 
     options.push({
-      label: getEntityName(entity) || value,
+      label: getLabel(entity) || value,
       value,
     })
   }

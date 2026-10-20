@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -1078,7 +1079,7 @@ function toAdvancedReportRow(order: OutcomePaymentOrder, index: number): Advance
     isUnderReport: order.IsUnderReport,
     number: order.AdvanceNumber,
     order,
-    organization: getEntityName(order.Organization),
+    organization: getOrganizationDisplayName(order.Organization) || undefined,
     payedTo: getPayedTo(order),
     paymentMovement: order.PaymentMovementOperation?.PaymentMovement?.OperationName,
     paymentRegister: order.PaymentCurrencyRegister?.PaymentRegister?.Name,

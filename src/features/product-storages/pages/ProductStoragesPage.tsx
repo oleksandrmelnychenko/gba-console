@@ -1,3 +1,4 @@
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
@@ -1609,7 +1610,7 @@ function ReturnConsignmentsPanel({
           <ReturnConsignmentDetail label={t('Постачальник')} value={getClientName(selectedReturnConsignment.Supplier)} />
           <ReturnConsignmentDetail
             label={t('Організація')}
-            value={selectedReturnConsignment.Organization?.FullName || selectedReturnConsignment.Organization?.Name}
+            value={getOrganizationDisplayName(selectedReturnConsignment.Organization)}
           />
           <ReturnConsignmentDetail label={t('Доступно по партії')} value={formatAmount(selectedReturnConsignment.RemainingQty)} />
         </div>

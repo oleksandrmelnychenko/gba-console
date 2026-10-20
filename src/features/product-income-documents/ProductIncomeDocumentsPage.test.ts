@@ -224,6 +224,27 @@ describe('ProductIncomeDocumentsPage helpers', () => {
 
     expect(mapDocumentRow(document).amount).toBe(1250)
   })
+
+  it('shows the short organization name instead of the legal full name', () => {
+    const organization = {
+      Name: 'ТОВ «АМГ «КОНКОРД»',
+      FullName: 'ТОВАРИСТВО З ОБМЕЖЕНОЮ ВІДПОВІДАЛЬНІСТЮ "АВТОМОБІЛЬНА МОТОРИЗАЦІЙНА ГРУПА "КОНКОРД"',
+    }
+    const ukraineIncome = incomeDocument({
+      ProductIncomeItems: [{ Qty: 1, SupplyOrderUkraineItem: { SupplyOrderUkraine: { Organization: organization } } }],
+    })
+    const capitalizationIncome = incomeDocument({
+      ProductIncomeItems: [{ Qty: 1, ProductCapitalizationItem: { ProductCapitalization: { Organization: organization } } }],
+    })
+    const reconciliationIncome = incomeDocument({
+      Storage: { Organization: organization },
+      ProductIncomeItems: [{ Qty: 1, ActReconciliationItem: {} }],
+    })
+
+    expect(mapDocumentRow(ukraineIncome).organization).toBe('ТОВ «АМГ «КОНКОРД»')
+    expect(mapDocumentRow(capitalizationIncome).organization).toBe('ТОВ «АМГ «КОНКОРД»')
+    expect(mapDocumentRow(reconciliationIncome).organization).toBe('ТОВ «АМГ «КОНКОРД»')
+  })
 })
 
 describe('income return totals', () => {

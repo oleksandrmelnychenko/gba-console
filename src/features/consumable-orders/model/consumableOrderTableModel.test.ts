@@ -37,6 +37,20 @@ describe('consumableOrderTableModel', () => {
     })
   })
 
+  it('shows the short organization name instead of the legal full name', () => {
+    const order = consumableOrder({
+      NetUid: 'order-amg',
+      SupplyOrganizationAgreement: {
+        Organization: {
+          Name: 'ТОВ «АМГ «КОНКОРД»',
+          FullName: 'ТОВАРИСТВО З ОБМЕЖЕНОЮ ВІДПОВІДАЛЬНІСТЮ "АВТОМОБІЛЬНА МОТОРИЗАЦІЙНА ГРУПА "КОНКОРД"',
+        },
+      },
+    })
+
+    expect(buildConsumableOrderRows([order])[0].organization).toBe('ТОВ «АМГ «КОНКОРД»')
+  })
+
   it('keeps the legacy zero amount and blank currency without a product organization', () => {
     const order = consumableOrder({
       Id: 7,
