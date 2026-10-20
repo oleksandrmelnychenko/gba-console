@@ -37,6 +37,7 @@ export type ClientProductMovementDocument = {
   OrganizationName?: string
   TotalEuroAmount?: number
   TotalPositions?: number
+  TotalQty?: number
   Responsible?: string
   TotalRowsQty?: number
   InfoItems?: ClientProductMovementInfoItem[]
