@@ -6,13 +6,18 @@ import {
   getSalesPendingMutationUserKey,
   listSalesPendingMutationsForUser,
   loadSalesPendingMutation,
+  loadSalesPendingMutationByOperation,
   markSalesPendingMutationSubmitted,
   markSalesPendingMutationUnknown,
+  releasePreparedSalesPendingMutation,
+  resolveRejectedSalesPendingMutation,
   resolveSalesPendingMutation,
   SALES_MUTATION_RESOLUTION_RETENTION_MS,
+  SalesPendingMutationConflictError,
   saveSalesPendingMutation,
   synchronizeSalesPendingMutationUser,
   withSalesPendingMutationLock,
+  type SalesPendingMutationLease,
   type SalesPendingMutationScope,
 } from './pendingSalesMutationRegistry'
 import {
@@ -382,6 +387,147 @@ describe('pending sales mutation registry', () => {
     }
   })
 })
+
+describe('queued operations on one mutation scope', () => {
+  const queuedScope: SalesPendingMutationScope = {
+    context: 'shipment-list-auto:transporter-1:2026-10-13:2026-10-20',
+    kind: 'shipment-list-auto',
+    userKey: 'net:user-a',
+  }
+  const firstOperationId = 'a1111111-1111-4111-8111-111111111111'
+  const queuedOperationId = 'b2222222-2222-4222-8222-222222222222'
+  const settlements: Array<[string, (lease: SalesPendingMutationLease) => void]> = [
+    ['committed', (lease) => {
+      markSalesPendingMutationSubmitted(lease)
+      resolveSalesPendingMutation(lease, 'committed')
+    }],
+    ['rejected', (lease) => {
+      markSalesPendingMutationSubmitted(lease)
+      resolveRejectedSalesPendingMutation(lease)
+    }],
+    ['released', (lease) => {
+      releasePreparedSalesPendingMutation(lease)
+    }],
+  ]
+
+  it.each(settlements)(
+    'sends a queued operation after the earlier operation was %s while it waited',
+    async (_label, settle) => {
+      const releaseGrant = storageHarness.holdWebLock(getScopeLockName(queuedScope))
+      const sends: string[] = []
+
+      const first = withSalesPendingMutationLock(queuedScope, firstOperationId, { run: 1 }, async (lease) => {
+        sends.push(lease.operationId)
+        settle(lease)
+        return 'first'
+      })
+      const queued = withSalesPendingMutationLock(queuedScope, queuedOperationId, { run: 2 }, async (lease) => {
+        expect(loadSalesPendingMutationByOperation(queuedScope, firstOperationId)).toBe(null)
+        markSalesPendingMutationSubmitted(lease)
+        sends.push(lease.operationId)
+        resolveSalesPendingMutation(lease, 'committed')
+        return 'queued'
+      })
+
+      releaseGrant()
+      const results = await Promise.allSettled([first, queued])
+
+      expect(results).toEqual([
+        { status: 'fulfilled', value: 'first' },
+        { status: 'fulfilled', value: 'queued' },
+      ])
+      expect(sends).toEqual([firstOperationId, queuedOperationId])
+      expect(loadSalesPendingMutation(queuedScope)).toBe(null)
+    },
+  )
+
+  it('refuses a queued operation when the operation that ran during the wait is still unresolved', async () => {
+    const releaseGrant = storageHarness.holdWebLock(getScopeLockName(queuedScope))
+    const queuedCallback = vi.fn(async () => 'queued')
+
+    const first = withSalesPendingMutationLock(queuedScope, firstOperationId, { run: 1 }, async (lease) => {
+      markSalesPendingMutationSubmitted(lease)
+      markSalesPendingMutationUnknown(lease)
+      return 'first'
+    })
+    const queued = withSalesPendingMutationLock(queuedScope, queuedOperationId, { run: 2 }, queuedCallback)
+
+    releaseGrant()
+    const [firstResult, queuedResult] = await Promise.allSettled([first, queued])
+
+    expect(firstResult).toEqual({ status: 'fulfilled', value: 'first' })
+    expect(queuedResult).toMatchObject({ status: 'rejected' })
+    expect(rejectionOf(queuedResult)).toBeInstanceOf(SalesPendingMutationConflictError)
+    expect(rejectionOf(queuedResult).message).toContain('Mutation scope змінився')
+    expect(queuedCallback).not.toHaveBeenCalled()
+    expect(loadSalesPendingMutation(queuedScope)).toMatchObject({
+      operationId: firstOperationId,
+      phase: 'unknown',
+    })
+  })
+
+  it('refuses a queued operation when another operation became pending during the wait', async () => {
+    const pendingOperationId = 'c3333333-3333-4333-8333-333333333333'
+    const releaseGrant = storageHarness.holdWebLock(getScopeLockName(queuedScope))
+    const queuedCallback = vi.fn(async () => 'queued')
+
+    const first = withSalesPendingMutationLock(queuedScope, firstOperationId, { run: 1 }, async (lease) => {
+      markSalesPendingMutationSubmitted(lease)
+      resolveSalesPendingMutation(lease, 'committed')
+      storageHarness.runAsTab('tab-b', () => {
+        saveSalesPendingMutation(queuedScope, pendingOperationId, { run: 3 })
+      })
+      return 'first'
+    })
+    const queued = withSalesPendingMutationLock(queuedScope, queuedOperationId, { run: 2 }, queuedCallback)
+
+    releaseGrant()
+    const [firstResult, queuedResult] = await Promise.allSettled([first, queued])
+
+    expect(firstResult).toEqual({ status: 'fulfilled', value: 'first' })
+    expect(rejectionOf(queuedResult)).toBeInstanceOf(SalesPendingMutationConflictError)
+    expect(queuedCallback).not.toHaveBeenCalled()
+    expect(loadSalesPendingMutation(queuedScope)).toMatchObject({
+      operationId: pendingOperationId,
+      phase: 'prepared',
+    })
+  })
+
+  it('refuses a queued operation whose own operationId was closed while it waited', async () => {
+    const releaseGrant = storageHarness.holdWebLock(getScopeLockName(queuedScope))
+    const replayCallback = vi.fn(async () => 'replay')
+
+    const first = withSalesPendingMutationLock(queuedScope, firstOperationId, { run: 1 }, async (lease) => {
+      markSalesPendingMutationSubmitted(lease)
+      resolveSalesPendingMutation(lease, 'committed')
+      return 'first'
+    })
+    const replay = withSalesPendingMutationLock(queuedScope, firstOperationId, { run: 1 }, replayCallback)
+
+    releaseGrant()
+    const [firstResult, replayResult] = await Promise.allSettled([first, replay])
+
+    expect(firstResult).toEqual({ status: 'fulfilled', value: 'first' })
+    expect(rejectionOf(replayResult).message).toContain('tombstone')
+    expect(replayCallback).not.toHaveBeenCalled()
+  })
+})
+
+function rejectionOf(result: PromiseSettledResult<unknown>): Error {
+  if (result.status !== 'rejected' || !(result.reason instanceof Error)) {
+    throw new Error('Expected the queued operation to be refused')
+  }
+
+  return result.reason
+}
+
+function getScopeLockName(lockScope: SalesPendingMutationScope): string {
+  return `gba-sales-mutation:${encodeURIComponent([
+    lockScope.userKey,
+    lockScope.kind,
+    lockScope.context,
+  ].join('\u001f'))}`
+}
 
 function listStoredJson(prefix: string): Array<Record<string, unknown>> {
   return listStoredKeys(prefix)
