@@ -695,6 +695,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   }
 
   function applyConfiguration(template: ReportTemplate, nextDataset: ReportDataset) {
+    workbookLaunchToken.current += 1
+    setWorkbookResolving(false)
     setConstructorSection('structure')
     setCatalogueNotice(null)
     workspaceDraft.rememberBeforeReplace()
