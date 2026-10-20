@@ -19,7 +19,9 @@ const columns = [
   { id: 'quantity', header: 'Кількість', width: 110, accessor: (row: OutcomeRow) => row.quantity },
 ]
 
-const data = Array.from({ length: 30 }, (_, index): OutcomeRow => ({
+const requestedRows = Number(new URLSearchParams(window.location.search).get('rows'))
+const rowCount = requestedRows === 1 || requestedRows === 5 ? requestedRows : 30
+const data = Array.from({ length: rowCount }, (_, index): OutcomeRow => ({
   client: `Клієнт ${index + 1}`,
   date: '21.09.2026',
   manager: 'Менеджер',

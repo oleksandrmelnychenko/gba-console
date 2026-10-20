@@ -1,4 +1,4 @@
-export const DEFAULT_STICKY_SCROLLBAR_HEIGHT = 10
+export const DEFAULT_STICKY_SCROLLBAR_HEIGHT = 18
 
 export type StickyScrollbarRect = {
   bottom: number
@@ -36,13 +36,9 @@ export function getStickyScrollbarLayout({
   const overflowWidth = scrollWidth - clientWidth
   const left = Math.max(scrollRect.left, clipRect.left)
   const right = Math.min(scrollRect.right, clipRect.right)
-  const top = clipRect.bottom - barHeight
+  const top = Math.min(scrollRect.bottom, clipRect.bottom) - barHeight
 
   if (overflowWidth < 1 || right - left < 1) {
-    return HIDDEN_LAYOUT
-  }
-
-  if (scrollRect.bottom <= clipRect.bottom + 0.5) {
     return HIDDEN_LAYOUT
   }
 

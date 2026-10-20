@@ -74,13 +74,13 @@ describe('getStickyScrollbarLayout', () => {
     })).visible).toBe(true)
   })
 
-  it('hides once the table own horizontal scrollbar is inside the visible area', () => {
+  it('keeps the bottom control when the native scrollbar is inside the visible area', () => {
     expect(getStickyScrollbarLayout(metrics({
       scrollRect: { bottom: 861, left: 292, right: 1393, top: 501 },
-    }))).toEqual({ visible: false })
+    }))).toEqual({ left: 292, top: 851, visible: true, width: 1101 })
     expect(getStickyScrollbarLayout(metrics({
       scrollRect: { bottom: 838, left: 292, right: 1393, top: 478 },
-    }))).toEqual({ visible: false })
+    }))).toEqual({ left: 292, top: 828, visible: true, width: 1101 })
   })
 
   it('hides when the table has no horizontal overflow', () => {

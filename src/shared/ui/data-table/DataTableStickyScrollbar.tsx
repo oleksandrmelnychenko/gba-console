@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react'
+import { type KeyboardEvent, useEffect, useRef } from 'react'
+import { useI18n } from '../../i18n/useI18n'
 import {
   createHorizontalScrollLink,
   getClippingAncestors,
@@ -13,6 +14,7 @@ import {
 const INTERSECTION_THRESHOLDS = Array.from({ length: 11 }, (_, index) => index / 10)
 
 export function DataTableStickyScrollbar({ scrollElement }: { scrollElement: HTMLElement | null }) {
+  const { t } = useI18n()
   const barRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
 
@@ -130,13 +132,29 @@ export function DataTableStickyScrollbar({ scrollElement }: { scrollElement: HTM
     }
   }, [scrollElement])
 
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (!scrollElement || !['Home', 'End', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+      return
+    }
+
+    event.preventDefault()
+    event.stopPropagation()
+    const next = event.key === 'Home' ? 0
+      : event.key === 'End' ? scrollElement.scrollWidth
+        : scrollElement.scrollLeft + (event.key === 'ArrowLeft' ? -40 : 40)
+    scrollElement.scrollLeft = next
+    event.currentTarget.scrollLeft = scrollElement.scrollLeft
+  }
+
   return (
     <div
       ref={barRef}
-      aria-hidden="true"
+      aria-label={t('Горизонтальна прокрутка таблиці')}
       className="data-table-sticky-scrollbar"
       data-visible="false"
-      tabIndex={-1}
+      onKeyDown={handleKeyDown}
+      role="region"
+      tabIndex={0}
     >
       <div ref={contentRef} className="data-table-sticky-scrollbar-content" />
     </div>

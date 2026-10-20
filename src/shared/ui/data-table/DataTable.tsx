@@ -567,7 +567,7 @@ export function DataTable<TData>({
   const portalToolbar = toolbarPortalTarget !== undefined
 
   return (
-    <div className={`data-table data-table-density-${effectiveDensity}`}>
+    <div className={`data-table data-table-density-${effectiveDensity}`} data-sticky-horizontal-scrollbar={stickyHorizontalScrollbar || undefined}>
       {portalToolbar ? null : toolbarNode}
       {portalToolbar && toolbarPortalTarget && toolbarNode
         ? createPortal(toolbarNode, toolbarPortalTarget)

@@ -14,9 +14,10 @@ import {
   getProductReservationByNetId,
   getProducts,
 } from '../api/productsApi'
-import type { Product, ProductIncomeMovement } from '../types'
+import type { Product, ProductIncomeMovement, ProductOutcomeMovement } from '../types'
 
 const productStyles = readFileSync('src/features/products/pages/products.css', 'utf8')
+const tableStyles = readFileSync('src/shared/ui/data-table/data-table.css', 'utf8')
 
 vi.mock('../api/productsApi', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../api/productsApi')>()
@@ -233,6 +234,89 @@ describe('ProductsPage inline movement table width', () => {
   })
 })
 
+describe('BUG-1276 product outcome bottom control', () => {
+  const netId = '4dbbcd95-ac69-441e-9150-611d842bdef7'
+  const movementRows: ProductOutcomeMovement[] = [
+    { DocumentNumber: 'КОк00001761', FromDate: '2026-10-20T18:00:36.5666667', Price: 16.13924, Qty: 25 },
+    { DocumentNumber: 'КОк00000635', FromDate: '2026-10-07T13:17:03', Price: 16.00857699805068, Qty: 1 },
+    { DocumentNumber: 'КСн00003079', FromDate: '2026-09-30T11:09:17', Price: 16.39941860465116, Qty: 1 },
+    { DocumentNumber: 'КСн00002327', FromDate: '2026-09-23T10:20:54', Price: 15.13998082454458, Qty: 1 },
+    { DocumentNumber: 'КСн00002248', FromDate: '2026-09-22T15:03:17', Price: 15.53365292425695, Qty: 1 },
+  ].map((row) => ({
+    ...row,
+    DocumentTypeName: 'Видаткова накладна',
+    OrganizationName: 'ТОВ «АМГ «КОНКОРД»',
+    StorageName: 'СКЛАД -3',
+  }))
+
+  it.each([1, 5])('keeps a larger control for %i visible rows and reaches the last quantity', async (rowCount) => {
+    const positions = new WeakMap<Element, number>()
+    const tableHeight = 34 + rowCount * 45 + 18
+    const scrollWidth = (element: HTMLElement) => Number.parseFloat(element.querySelector('table')?.style.width || '1900')
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.classList.contains('data-table-scroll') ? 1610 : 1919
+    })
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.classList.contains('data-table-scroll') ? tableHeight - 18 : 950
+    })
+    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.classList.contains('data-table-scroll') ? tableHeight : 950
+    })
+    vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.classList.contains('data-table-scroll') ? scrollWidth(this) : 1919
+    })
+    vi.spyOn(Element.prototype, 'scrollLeft', 'get').mockImplementation(function (this: Element) {
+      return positions.get(this) ?? 0
+    })
+    vi.spyOn(Element.prototype, 'scrollLeft', 'set').mockImplementation(function (this: Element, value: number) {
+      const max = this.classList.contains('data-table-scroll') ? scrollWidth(this as HTMLElement) - 1610 : Infinity
+      positions.set(this, Math.min(Math.max(0, value), max))
+    })
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      if (this.classList.contains('data-table-scroll')) return new DOMRect(263, 400, 1610, tableHeight)
+      if (this.classList.contains('data-table-sticky-scrollbar')) {
+        return new DOMRect(Number.parseFloat(this.style.left) || 0, Number.parseFloat(this.style.top) || 0, 0, 0)
+      }
+      return new DOMRect(0, 0, 1919, 950)
+    })
+    getProductByNetIdMock.mockResolvedValue({ ...product, NetUid: netId, VendorCode: '0106040-VDN', NameUA: 'Патрубок компресора' })
+    vi.mocked(getProductOutcomeMovements).mockResolvedValue(movementRows.slice(0, rowCount))
+
+    await openIncomeTab(netId)
+    fireEvent.click(screen.getByRole('button', { name: 'Розхід' }))
+    fireEvent.change(screen.getByLabelText('З'), { target: { value: '2026-09-20' } })
+    fireEvent.change(screen.getByLabelText('По'), { target: { value: '2026-10-20' } })
+    await screen.findByText('КОк00001761')
+    expect(getProductOutcomeMovements).toHaveBeenLastCalledWith({ from: '2026-09-20', to: '2026-10-20', productNetId: netId })
+
+    const scroll = document.querySelector<HTMLElement>('.product-inline-tab-pane .data-table-scroll')!
+    const table = scroll.querySelector('table')!
+    const bar = screen.getByRole('region', { name: 'Горизонтальна прокрутка таблиці' })
+    await waitFor(() => expect(bar.dataset.visible).toBe('true'))
+    expect(bar.style.height).toBe('18px')
+    expect(scroll.parentElement?.dataset.stickyHorizontalScrollbar).toBe('true')
+    expect(tableStyles).toMatch(/\.data-table\[data-sticky-horizontal-scrollbar\] > \.data-table-scroll\s*\{[^}]*scrollbar-width:\s*auto\s*;/)
+    expect(tableStyles).toMatch(/\.data-table\[data-sticky-horizontal-scrollbar\] > \.data-table-scroll\s*\{[^}]*scrollbar-gutter:\s*auto\s*;/)
+    expect(tableStyles).toMatch(/\.data-table-sticky-scrollbar::-webkit-scrollbar\s*\{[^}]*height:\s*18px\s*;/)
+    expect(table.querySelectorAll('thead th')).toHaveLength(9)
+    expect(table.querySelectorAll('tbody tr')).toHaveLength(rowCount)
+    const firstRow = table.querySelector('tbody tr')!
+    expect(firstRow.querySelector('td:nth-last-child(2)')?.textContent).toBe('16,14')
+    expect(firstRow.querySelector('td:last-child')?.textContent).toBe('25')
+
+    fireEvent.keyDown(bar, { key: 'End' })
+    expect(scroll.scrollLeft).toBe(scroll.scrollWidth - scroll.clientWidth)
+    expect(scroll.scrollLeft).toBeGreaterThan(0)
+    const columnsWidth = Array.from(table.querySelectorAll('col')).reduce((sum, column) => sum + Number.parseFloat(column.style.width), 0)
+    expect(columnsWidth - scroll.scrollLeft).toBe(scroll.clientWidth)
+    expect(bar.scrollLeft).toBe(scroll.scrollLeft)
+    fireEvent.keyDown(bar, { key: 'Home' })
+    expect(scroll.scrollLeft).toBe(0)
+    expect(bar.scrollLeft).toBe(0)
+    expect(getProductByNetIdMock).toHaveBeenLastCalledWith(netId, expect.any(AbortSignal))
+  })
+})
+
 describe('ProductsPage movement exports', () => {
   it.each([
     ['Прихід', exportProductIncomeMovementsDocument],
@@ -283,9 +367,9 @@ describe('ProductsPage movement exports', () => {
   })
 })
 
-async function openIncomeTab() {
+async function openIncomeTab(netId = product.NetUid!) {
   render(
-    <MemoryRouter initialEntries={['/products?netId=product-42']}>
+    <MemoryRouter initialEntries={[`/products?netId=${netId}`]}>
       <MantineProvider>
         <I18nProvider>
           <ProductsPage />
