@@ -235,7 +235,7 @@ const movementTypeOptions = [
   { label: 'Бухгалтерський рух', value: '1' },
   { label: 'Управлінський рух', value: '2' },
 ]
-const PRODUCT_INCOME_DEFAULT_LOOKBACK_DAYS = 30
+const PRODUCT_MOVEMENT_DEFAULT_LOOKBACK_DAYS = 365
 const noProductSiblingCards: ProductSiblingCard[] = []
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', {
@@ -2046,7 +2046,7 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const productNetUid = product.NetUid?.trim()
-  const [dateFrom, setDateFrom] = useState(() => getDateDaysAgo(PRODUCT_INCOME_DEFAULT_LOOKBACK_DAYS))
+  const [dateFrom, setDateFrom] = useState(() => getDateDaysAgo(PRODUCT_MOVEMENT_DEFAULT_LOOKBACK_DAYS))
   const [dateTo, setDateTo] = useState(getTodayDate)
   const [movementType, setMovementType] = useState('0')
   const [selectedTypes, setSelectedTypes] = useState<number[]>(movementItemTypes)

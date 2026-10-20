@@ -397,7 +397,7 @@ function storageLocationDrawerReducer(
 
 function createProductMovementFilterState(): ProductMovementFilterState {
   return {
-    dateFrom: getTodayDate(),
+    dateFrom: getDateYearsAgo(1),
     dateTo: getTodayDate(),
     movementType: '0',
     selectedTypes: movementItemTypes,

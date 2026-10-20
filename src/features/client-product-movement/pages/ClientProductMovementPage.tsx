@@ -83,15 +83,20 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
 export function ClientProductMovementPage() {
   const { t } = useI18n()
   const today = useMemo(() => formatLocalDate(new Date()), [])
+  const yearAgo = useMemo(() => {
+    const date = new Date()
+    date.setFullYear(date.getFullYear() - 1)
+    return formatLocalDate(date)
+  }, [])
   const initialDraft = useMemo<FilterDraft>(
     () => ({
       article: '',
       clientNetId: '',
-      from: today,
+      from: yearAgo,
       organizationIds: [],
       to: today,
     }),
-    [today],
+    [today, yearAgo],
   )
 
   const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialDraft)
