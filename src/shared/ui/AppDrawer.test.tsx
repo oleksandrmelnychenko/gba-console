@@ -48,7 +48,7 @@ describe('AppDrawer', () => {
       document
         .querySelector<HTMLElement>('.mantine-Drawer-root')
         ?.style.getPropertyValue('--drawer-size'),
-    ).toBe('min(1200px, 100vw)')
+    ).toBe('min(1200px, calc(100vw - 16px))')
   })
 
   it('keeps short forms compact when requested explicitly', async () => {
@@ -65,7 +65,7 @@ describe('AppDrawer', () => {
       document
         .querySelector<HTMLElement>('.mantine-Drawer-root')
         ?.style.getPropertyValue('--drawer-size'),
-    ).toBe('min(560px, 100vw)')
+    ).toBe('min(560px, calc(100vw - 16px))')
   })
 
   it('keeps nested form state when its contextual footer appears', async () => {
