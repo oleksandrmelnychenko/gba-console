@@ -22,15 +22,15 @@ function declarations(selector: string) {
 describe('wizard product photo preview', () => {
   it('hides the photo by default without changing layout or blocking other results', () => {
     expect(declarations('.new-sale-product-picker-card__media')).toMatchObject({
-      'pointer-events': 'none',
       position: 'absolute',
       visibility: 'hidden',
     })
   })
 
-  it('reveals the photo on hover and keyboard focus', () => {
+  it('reveals the photo on hover and keyboard focus until the user dismisses it', () => {
     expect(declarations(
-      '.new-sale-product-picker-card:is(:hover, :focus-visible) .new-sale-product-picker-card__media',
+      '.new-sale-product-picker-card-wrap:not([data-photo-dismissed]):is(:hover, :focus-within) .new-sale-product-picker-card__media',
     )).toMatchObject({ visibility: 'visible' })
+    expect(declarations('.new-sale-product-picker-card__photo-close')).toMatchObject({ position: 'absolute' })
   })
 })
