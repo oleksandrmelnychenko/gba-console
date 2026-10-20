@@ -36,9 +36,20 @@
 }
 
 .mantine-Drawer-content.app-bottom-sheet.wizard-cart-sheet {
-  width: calc(100vw - 24px);
-  max-width: calc(100vw - 24px);
-  margin-inline: 12px;
+  --cart-sheet-left-inset: max(8px, env(safe-area-inset-left));
+  --cart-sheet-right-inset: max(8px, env(safe-area-inset-right));
+  --cart-sheet-bottom-inset: max(8px, env(safe-area-inset-bottom));
+  width: calc(100vw - var(--cart-sheet-left-inset) - var(--cart-sheet-right-inset));
+  max-width: calc(100vw - var(--cart-sheet-left-inset) - var(--cart-sheet-right-inset));
+  max-height: calc(100dvh - max(8px, env(safe-area-inset-top)) - var(--cart-sheet-bottom-inset));
+  margin: 0 var(--cart-sheet-right-inset) var(--cart-sheet-bottom-inset) var(--cart-sheet-left-inset);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 14px;
+  background: var(--mantine-color-white);
+}
+
+.wizard-cart-sheet .wizard-cart-sheet__body {
+  padding-bottom: 8px;
 }
 
 .wizard-cart-sheet__body > div,
@@ -248,8 +259,9 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 12px 28px;
-  padding: 14px 18px 4px;
+  padding: 14px 18px 8px;
   border-top: 1px solid var(--mantine-color-gray-2);
+  background: var(--mantine-color-white);
   color: var(--mantine-color-gray-8);
 }
 

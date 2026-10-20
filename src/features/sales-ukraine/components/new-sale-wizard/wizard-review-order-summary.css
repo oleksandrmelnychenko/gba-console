@@ -94,19 +94,21 @@
 .wizard-review-order-summary__totals {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
+  flex-shrink: 0;
   flex-wrap: wrap;
-  gap: 18px;
-  padding: 12px 16px;
+  gap: 8px 18px;
+  padding: 10px 16px;
   border-top: 1px solid var(--mantine-color-gray-2);
-  background: var(--mantine-color-gray-0);
+  background: var(--mantine-color-white);
 }
 
 .wizard-review-order-summary__quantity,
 .wizard-review-order-summary__amounts {
   display: flex;
-  flex-direction: column;
-  gap: 5px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .wizard-review-order-summary__quantity > span,
@@ -122,7 +124,8 @@
 }
 
 .wizard-review-order-summary__amounts {
-  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 8px 18px;
 }
 
 .wizard-review-order-summary__amounts > div {
@@ -136,7 +139,11 @@
 @media (max-width: 575px) {
   .wizard-review-order-summary__header,
   .wizard-review-order-summary__totals {
-    padding: 14px;
+    padding: 10px 14px;
+  }
+
+  .wizard-review-order-summary__totals strong {
+    font-size: 15px;
   }
 
   .wizard-review-order-summary .wizard-cart-card {

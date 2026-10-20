@@ -2,7 +2,8 @@ import { TableChip } from '../../../shared/ui/TableChip'
 import { useMemo, useState } from 'react'
 import { Anchor, Badge, Stack, Text } from '@mantine/core'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import type { DataTableColumn, DataTableDefaultLayout, DataTableExpandToggleOptions } from '../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { CartReserveOrderItem, ShoppingCartReserveItem } from '../types'
@@ -26,6 +27,17 @@ import {
 const TABLE_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
+
+function renderReserveExpandToggle({ isExpanded, label, onToggle }: DataTableExpandToggleOptions) {
+  return (
+    <TableRowAction
+      action={isExpanded ? 'collapse' : 'expand'}
+      aria-expanded={isExpanded}
+      label={label}
+      onClick={onToggle}
+    />
+  )
+}
 
 type CartReserveTableProps = {
   carts: ShoppingCartReserveItem[]
@@ -64,6 +76,7 @@ export function CartReserveTable({ carts, isLoading, onOpenClient }: CartReserve
             onOpenProductCard={setProductCardNetId}
           />
         )}
+        renderExpandToggle={renderReserveExpandToggle}
       />
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </div>
@@ -118,7 +131,7 @@ function useCartColumns(onOpenClient: (cart: ShoppingCartReserveItem) => void) {
         accessor: (cart) => cart.TotalAmount ?? 0,
         cell: (cart) => (
           <Text className="app-money cart-reserve-summary-amount">
-            {formatMoney(cart.TotalAmount)} <span>{getCartCurrencyCode()}</span>
+            {formatMoney(cart.TotalAmount)} <TableChip tone="source" value={getCartCurrencyCode()} />
           </Text>
         ),
       },
@@ -131,7 +144,7 @@ function useCartColumns(onOpenClient: (cart: ShoppingCartReserveItem) => void) {
         accessor: (cart) => getCartUahAmount(cart) ?? Number.MIN_SAFE_INTEGER,
         cell: (cart) => (
           <Text className="app-money cart-reserve-summary-amount">
-            {formatMoney(getCartUahAmount(cart))} <span>UAH</span>
+            {formatMoney(getCartUahAmount(cart))} <TableChip tone="source" value="UAH" />
           </Text>
         ),
       },
@@ -166,7 +179,13 @@ function CartReserveItems({
 }) {
   const { t } = useI18n()
   const localCurrencyCode = getCartLocalCurrencyCode(cart)
-  const columns = useCartItemColumns(localCurrencyCode, onOpenProductCard)
+  const allColumns = useCartItemColumns(localCurrencyCode, onOpenProductCard)
+  const items = cart.OrderItems || []
+  const columns = allColumns.filter((column) => {
+    if (column.id === 'seller') return items.some((item) => item.User?.LastName?.trim())
+    if (column.id === 'specificationCode') return items.some((item) => item.AssignedSpecification?.SpecificationCode?.trim())
+    return true
+  })
 
   return (
     <div className="cart-reserve-items-frame">
@@ -178,13 +197,13 @@ function CartReserveItems({
       </div>
       <DataTable
         columns={columns}
-        data={cart.OrderItems || []}
+        data={items}
         defaultLayout={TABLE_LAYOUT}
         distributeAvailableWidth
         emptyText={t('Позицій не знайдено')}
         getRowId={getOrderItemKey}
-        layoutVersion="shopping-cart-reserve-items-3"
-        minWidth={1100}
+        layoutVersion="shopping-cart-reserve-items-5"
+        minWidth={columns.reduce((width, column) => width + (column.width || 0), 0)}
         showDensityToggle={false}
         showLayoutControls={false}
         tableId={`shopping-cart-reserve-items-${cart.NetUid || 'cart'}`}
@@ -215,7 +234,7 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
       {
         id: 'vendorCode',
         header: 'Код виробника',
-        width: 150,
+        width: 130,
         minWidth: 120,
         accessor: (item) => item.Product?.VendorCode || '',
         cell: (item) => {
@@ -228,23 +247,23 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
               component="button"
               title={code}
               type="button"
-              underline="always"
+              underline="never"
               onClick={(event) => {
                 event.stopPropagation()
                 onOpenProductCard(netId)
               }}
             >
-              {code}
+              <TableChip tone="product" value={code} />
             </Anchor>
           ) : (
-            <Text className="cart-reserve-mono-cell" title={code}>{code}</Text>
+            <TableChip tone="product" value={code} />
           )
         },
       },
       {
         id: 'name',
         header: 'Назва',
-        width: 280,
+        width: 240,
         minWidth: 200,
         accessor: (item) => item.Product?.Name || '',
         cell: (item) => (
@@ -255,7 +274,7 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
                 component="button"
                 title={item.Product?.Name || ''}
                 type="button"
-                underline="always"
+                underline="never"
                 onClick={(event) => {
                   event.stopPropagation()
                   onOpenProductCard(item.Product?.NetUid as string)
@@ -277,16 +296,16 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
       {
         id: 'originalNumber',
         header: 'Оригінальний номер',
-        width: 180,
+        width: 165,
         minWidth: 140,
         accessor: (item) => item.Product?.MainOriginalNumber || '',
-        cell: (item) => <TableChip tone="product" value={item.Product?.MainOriginalNumber || ''} />,
+        cell: (item) => <TableChip tone="warning" value={item.Product?.MainOriginalNumber || ''} />,
       },
       {
         id: 'created',
         header: 'Дата',
-        width: 150,
-        minWidth: 130,
+        width: 125,
+        minWidth: 115,
         accessor: (item) => (item.Created ? new Date(item.Created).getTime() : 0),
         cell: (item) => (
           <Stack gap={0}>
@@ -298,7 +317,7 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
       {
         id: 'seller',
         header: 'Продавець',
-        width: 150,
+        width: 130,
         minWidth: 120,
         accessor: (item) => item.User?.LastName || '',
         cell: (item) => item.User?.LastName || '',
@@ -306,7 +325,7 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
       {
         id: 'specificationCode',
         header: 'Код специфікації',
-        width: 160,
+        width: 140,
         minWidth: 130,
         accessor: (item) => item.AssignedSpecification?.SpecificationCode || '',
         cell: (item) => <TableChip tone="neutral" value={item.AssignedSpecification?.SpecificationCode || ''} />,
@@ -314,8 +333,8 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
       {
         id: 'qty',
         header: 'К-сть',
-        width: 110,
-        minWidth: 90,
+        width: 70,
+        minWidth: 65,
         align: 'right',
         accessor: (item) => item.Qty ?? 0,
         cell: (item) => <Text className="cart-reserve-number-cell">{formatQty(item)}</Text>,
@@ -323,21 +342,25 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
       {
         id: 'amount',
         header: 'Сума',
-        width: 160,
-        minWidth: 130,
+        width: 220,
+        minWidth: 210,
         align: 'right',
         accessor: (item) => getOrderItemAmount(item, localCurrencyCode),
         cell: (item) => (
-          <Stack gap={0} align="flex-end">
-            <Text className="app-money" fw={600} size="sm">
-              {formatMoney(item.TotalAmountLocal)} {localCurrencyCode}
+          <Stack className="cart-reserve-item-amounts" gap={2} align="flex-end">
+            <Text className="app-money cart-reserve-summary-amount">
+              {formatMoney(item.TotalAmountLocal)} <TableChip tone="source" value={localCurrencyCode} />
             </Text>
-            <Text className="app-money app-money-meta" size="xs">
-              {formatMoney(getOrderItemAmount(item, localCurrencyCode))} {getOrderItemAmountCurrency(localCurrencyCode)}
+            <Text className="app-money cart-reserve-summary-amount">
+              {formatMoney(getOrderItemAmount(item, localCurrencyCode))} <TableChip tone="source" value={getOrderItemAmountCurrency(localCurrencyCode)} />
             </Text>
-            <Text className="app-money app-money-meta" size="xs">
-              Курс EUR→UAH: {formatExchangeRate(item.Product?.CurrentEurToUahExchangeRate)}
-            </Text>
+            <span className="cart-reserve-exchange-rate">
+              <TableChip
+                tone="neutral"
+                title="Курс EUR → UAH"
+                value={`EUR → UAH · ${formatExchangeRate(item.Product?.CurrentEurToUahExchangeRate)}`}
+              />
+            </span>
           </Stack>
         ),
       },

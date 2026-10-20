@@ -84,3 +84,21 @@
     flex-wrap: wrap;
   }
 }
+.new-sale-review-step.new-sale-review-checkout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.new-sale-review-checkout > .new-sale-review-step__body {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.new-sale-review-checkout > .mantine-Alert-root {
+  flex-shrink: 0;
+}

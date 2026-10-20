@@ -191,9 +191,9 @@ export function SaleAuditDetail({
     { id: 'product', header: t('Товар'), accessor: (row) => row.item.Product?.Name || '', fill: true, width: 300, minWidth: 240,
       cell: (row) => <div className="sale-audit-product"><Package size={16} aria-hidden="true" /><span>{row.item.Product?.Name}</span></div> },
     { id: 'vendor', header: t('Код виробника'), accessor: (row) => row.item.Product?.VendorCode || '', width: 160, minWidth: 144,
-      cell: (row) => <TableChip tone="document" value={row.item.Product?.VendorCode} /> },
+      cell: (row) => <TableChip tone="product" value={row.item.Product?.VendorCode} /> },
     { id: 'original', header: t('Ориг. номер'), accessor: (row) => row.item.Product?.MainOriginalNumber || '', width: 168, minWidth: 140,
-      cell: (row) => <TableChip tone="product" value={row.item.Product?.MainOriginalNumber} /> },
+      cell: (row) => <TableChip tone="warning" value={row.item.Product?.MainOriginalNumber} /> },
   ]
   if (movementCount) {
     columns.push(
@@ -215,7 +215,7 @@ export function SaleAuditDetail({
   }
 
   return (
-    <Stack className="sale-audit-detail" gap="md">
+    <Stack className="sale-audit-detail" gap="xs">
       {error && <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>}
       {isLoading ? <Stack gap="sm" aria-label={t('Завантаження')}>
         <Skeleton height={76} radius="md" />
@@ -253,7 +253,7 @@ export function SaleAuditDetail({
             </ol> : <Text size="sm" c="gray.6">{t('Історія логістики відсутня')}</Text>}
           </DocumentDetailSection>
         </div>
-        <DocumentDetailSection title={t('Переміщення товарів')} subtitle={String(orderItems.length)} stacked
+        <DocumentDetailSection title={t(movementCount ? 'Переміщення товарів' : 'Товари документа')} subtitle={String(movementCount || orderItems.length)} stacked
           actions={showConfirm && confirmableHistoryNetId ? <Button size="xs" color={CREATE_ACTION_COLOR} onClick={() => setConfirmHistoryNetId(confirmableHistoryNetId)}>{t('Підтвердити обробку')}</Button> : null}
         >
           {!movementCount && Boolean(orderItems.length) && <Text size="xs" c="gray.7">{t('Переміщень не зафіксовано')}</Text>}

@@ -211,9 +211,7 @@ function SaleExpandContentItem({
           </div>
           <div className="sale-expand-product-meta">
             {orderItem.Product?.MainOriginalNumber && (
-              <span className="app-table-chip sale-expand-product-meta-value is-number is-product" title={orderItem.Product.MainOriginalNumber}>
-                <strong>{orderItem.Product.MainOriginalNumber}</strong>
-              </span>
+              <TableChip tone="warning" value={orderItem.Product.MainOriginalNumber} />
             )}
             {created && (
               <span className="sale-expand-product-meta-value">

@@ -108,6 +108,7 @@ export function DataTable<TData>({
   renderExpandedRow,
   getRowCanExpand,
   expandColumnLabels,
+  renderExpandToggle,
 }: DataTableProps<TData>) {
   const { t } = useI18n()
   const isExpandable = Boolean(renderExpandedRow)
@@ -461,6 +462,7 @@ export function DataTable<TData>({
             expandLabel: expandLabels.expandRow,
             onToggleRow: toggleExpandedRow,
             renderExpandedRow: (row: TData) => renderExpandedRowRef.current?.(row) ?? null,
+            renderExpandToggle,
           }
         : undefined,
     [
@@ -468,6 +470,7 @@ export function DataTable<TData>({
       expandLabels.expandRow,
       isExpandable,
       toggleExpandedRow,
+      renderExpandToggle,
     ],
   )
 

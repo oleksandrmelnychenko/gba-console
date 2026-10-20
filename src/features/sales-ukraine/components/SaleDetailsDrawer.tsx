@@ -22,6 +22,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { TranslateFunction } from '../../../shared/i18n/types'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { TransporterNameWithIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
@@ -49,18 +50,12 @@ import './sales-drawers.css'
 const SALE_DETAILS_FORM_ID = 'sale-details-carrier-form'
 
 type SaleDetailsFooterState = {
-  isReconciliation: boolean
-  isSaving: boolean
   saleKey: string
-  saveDisabled: boolean
   visible: boolean
 }
 
 const HIDDEN_SALE_DETAILS_FOOTER: SaleDetailsFooterState = {
-  isReconciliation: false,
-  isSaving: false,
   saleKey: '',
-  saveDisabled: false,
   visible: false,
 }
 
@@ -86,36 +81,9 @@ export function SaleDetailsDrawer({
 
   return (
     <AppDrawer
+      className="sale-carrier-drawer"
       closeOnClickOutside={!activeFooterState.visible}
       closeOnEscape={!activeFooterState.visible}
-      footer={
-        canEdit && sale && activeFooterState.visible ? (
-          <Group gap="sm" justify="flex-end">
-            <Button
-              className="sales-drawer-action-button"
-              color="gray"
-              disabled={activeFooterState.isSaving}
-              form={SALE_DETAILS_FORM_ID}
-              leftSection={<X size={16} />}
-              type="reset"
-              variant="default"
-            >
-              {t('Скасувати')}
-            </Button>
-            <Button
-              className="sales-drawer-action-button"
-              color={CREATE_ACTION_COLOR}
-              disabled={activeFooterState.saveDisabled}
-              form={SALE_DETAILS_FORM_ID}
-              leftSection={<Check size={16} />}
-              loading={activeFooterState.isSaving}
-              type="submit"
-            >
-              {t(activeFooterState.isReconciliation ? 'Звірити збереження' : 'Зберегти')}
-            </Button>
-          </Group>
-        ) : undefined
-      }
       opened={Boolean(sale)}
       position="right"
       size="min(1080px, 100vw)"
@@ -374,20 +342,14 @@ function SaleDetailsContent({
 
   useEffect(() => {
     onFooterStateChange({
-      isReconciliation: fileMutation.reconciliationRequired,
-      isSaving,
       saleKey,
-      saveDisabled,
       visible: canEdit && isEditMode,
     })
   }, [
     canEdit,
-    fileMutation.reconciliationRequired,
     isEditMode,
-    isSaving,
     onFooterStateChange,
     saleKey,
-    saveDisabled,
   ])
 
   return (
@@ -553,9 +515,36 @@ function SaleDetailsContent({
             <DetailsView sale={sale} />
           )}
 
-          {/* Edit button at the bottom of the left column, under "Завантажити ТТН" (legacy order). */}
+          {canEdit && isEditMode && (
+            <Group className="sale-carrier-form-actions" gap="xs" justify="flex-end" mt="xs">
+              <Button
+                className="sales-drawer-action-button"
+                disabled={isSaving}
+                form={SALE_DETAILS_FORM_ID}
+                leftSection={<X size={15} />}
+                size="xs"
+                type="reset"
+                variant="default"
+              >
+                {t('Скасувати')}
+              </Button>
+              <Button
+                className="sales-drawer-action-button"
+                color={CREATE_ACTION_COLOR}
+                disabled={saveDisabled}
+                form={SALE_DETAILS_FORM_ID}
+                leftSection={<Check size={15} />}
+                loading={isSaving}
+                size="xs"
+                type="submit"
+              >
+                {t(fileMutation.reconciliationRequired ? 'Звірити збереження' : 'Зберегти')}
+              </Button>
+            </Group>
+          )}
+
           {canEdit && !sale.IsSent && !isEditMode && (
-            <Button className="sales-drawer-action-button sale-carrier-edit-button" color={CREATE_ACTION_COLOR} leftSection={<Pencil size={16} />} mt="md" variant="outline" onClick={enterEdit}>
+            <Button className="sales-drawer-action-button sale-carrier-edit-button" color={CREATE_ACTION_COLOR} leftSection={<Pencil size={15} />} mt="xs" size="xs" variant="filled" onClick={enterEdit}>
               {t(fileMutation.reconciliationRequired ? 'Звірити операцію' : 'Редагувати')}
             </Button>
           )}
@@ -748,12 +737,22 @@ export function CarrierHistory({ current, entries }: { current: SalesUkraineUpda
       <Text className="app-section-title sale-carrier-section-title">{t('Історія змін перевізника')}</Text>
       <ScrollArea offsetScrollbars="x" type="auto">
         <Table className="app-static-table sales-drawer-table sale-carrier-history-table" withColumnBorders withRowBorders striped>
+          <colgroup>
+            <col style={{ width: 176 }} />
+            {columns.map((col) => <col key={col.key} />)}
+          </colgroup>
           <Table.Thead>
             <Table.Tr>
               <Table.Th />
               {columns.map((col) => (
                 <Table.Th key={col.key} className={col.isCurrent ? 'is-current-col' : undefined}>
-                  {col.header}
+                  <div className="sale-carrier-history-heading">
+                    <TableChip
+                      tone={col.isCurrent ? 'document' : 'neutral'}
+                      value={t(col.isCurrent ? 'Після змін' : col.key === 'baseline' ? 'До змін' : 'Зміна')}
+                    />
+                    <span>{col.header}</span>
+                  </div>
                 </Table.Th>
               ))}
             </Table.Tr>
@@ -777,7 +776,7 @@ export function CarrierHistory({ current, entries }: { current: SalesUkraineUpda
                   const cellClass = [
                     col.isCurrent ? 'is-current-col' : '',
                     isChanged ? 'is-changed' : '',
-                    row.key === 'cashOnDeliveryAmount' ? 'app-table-number' : '',
+                    ['cashOnDeliveryAmount', 'shipmentDate', 'mobilePhone', 'ttn', 'ownTtnNumber'].includes(row.key) ? 'app-table-number' : '',
                   ].filter(Boolean).join(' ')
 
                   return (
@@ -787,7 +786,7 @@ export function CarrierHistory({ current, entries }: { current: SalesUkraineUpda
                       data-history-column={col.key}
                       data-history-field={row.key}
                     >
-                      {row.node ? row.node(col.entry) : value}
+                      {value ? (row.node ? row.node(col.entry) : value) : <span className="sale-carrier-history-empty">—</span>}
                     </Table.Td>
                   )
                 })}
@@ -799,14 +798,14 @@ export function CarrierHistory({ current, entries }: { current: SalesUkraineUpda
                 const latest = col.isCurrent ? sortedEntries.at(-1) : col.entry
                 const isChanged = hasCarrierHistoryMask(latest) && hasCarrierHistoryField(latest, CARRIER_HISTORY_CHANGED_FIELD.ttnDocument)
 
-                return <Table.Td key={`doc-${col.key}`} className={isChanged ? 'is-changed' : undefined} data-history-column={col.key} data-history-field="ttnDocument">
+                return <Table.Td key={`doc-${col.key}`} className={[col.isCurrent ? 'is-current-col' : '', isChanged ? 'is-changed' : ''].filter(Boolean).join(' ') || undefined} data-history-column={col.key} data-history-field="ttnDocument">
                   {col.entry.TtnPDFPath ? (
                     <Anchor href={toSecure(col.entry.TtnPDFPath)} target="_blank" rel="noopener noreferrer">
                       <Download size={14} style={{ verticalAlign: 'text-bottom', marginRight: 4 }} />
                       {t('Завантажити')}
                     </Anchor>
                   ) : (
-                    ''
+                    '—'
                   )}
                 </Table.Td>
               })}
@@ -818,21 +817,22 @@ export function CarrierHistory({ current, entries }: { current: SalesUkraineUpda
   )
 }
 
-// Compact label/value pair for the client info block — left-aligned (not stretched) so the value
-// sits right next to its label rather than across the full drawer width.
-function HeaderRow({ label, value }: { label: string; value: unknown }) {
-  return <Row label={label} mono value={value} />
-}
-
 // Client code / name / invoice number + date — shown under the transporter in both view and edit.
 function ClientInfo({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
 
   return (
     <>
-      <HeaderRow label={t('Код клієнта')} value={sale.ClientAgreement?.Client?.RegionCode?.Value} />
+      <Row label={t('Код клієнта')} value={sale.ClientAgreement?.Client?.RegionCode?.Value}>
+        <TableChip tone="document" value={sale.ClientAgreement?.Client?.RegionCode?.Value} />
+      </Row>
       <Row label={t('Назва клієнта')} value={sale.ClientAgreement?.Client?.FullName} />
-      <HeaderRow label={t('Номер накладної та дата')} value={`${sale.SaleNumber?.Value ?? ''} ${formatDate(sale.Created)}`.trim()} />
+      <Row label={t('Номер накладної та дата')} value={`${sale.SaleNumber?.Value ?? ''} ${formatDate(sale.Created)}`.trim()}>
+        <span className="sale-carrier-document">
+          <TableChip tone="document" value={sale.SaleNumber?.Value} />
+          <span className="sale-carrier-document__date">{formatDate(sale.Created)}</span>
+        </span>
+      </Row>
     </>
   )
 }

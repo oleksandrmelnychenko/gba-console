@@ -4,7 +4,7 @@ import { ChevronRight } from 'lucide-react'
 import { flexRender, type Cell, type Column, type Row, type Table as TableInstance } from '@tanstack/react-table'
 import { getPinnedStyle } from './dataTablePinning'
 import { hasTextSelectionWithin } from './dataTableRowInteraction'
-import type { DataTableColumnMeta } from './types'
+import type { DataTableColumnMeta, DataTableExpandToggleOptions } from './types'
 
 const SKELETON_ROW_COUNT = 9
 const SKELETON_LINE_WIDTHS = ['78%', '62%', '46%', '70%', '54%', '84%', '58%', '38%'] as const
@@ -15,6 +15,7 @@ type DataTableExpandConfig<TData> = {
   expandLabel: string
   onToggleRow: (rowId: string) => void
   renderExpandedRow: (row: TData) => ReactNode
+  renderExpandToggle?: (options: DataTableExpandToggleOptions) => ReactNode
 }
 
 type DataTableBodyProps<TData> = {
@@ -109,7 +110,11 @@ function DataTableBodyRowInner<TData>({
                 }
               : undefined}
           >
-            {canExpand ? (
+            {canExpand && expand.renderExpandToggle ? expand.renderExpandToggle({
+              isExpanded,
+              label: isExpanded ? expand.collapseLabel : expand.expandLabel,
+              onToggle: () => expand.onToggleRow(row.id),
+            }) : canExpand ? (
               <ActionIcon
                 aria-expanded={isExpanded}
                 aria-label={isExpanded ? expand.collapseLabel : expand.expandLabel}

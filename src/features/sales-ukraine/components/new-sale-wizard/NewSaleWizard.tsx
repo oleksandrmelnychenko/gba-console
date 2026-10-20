@@ -500,6 +500,7 @@ function NewSaleWizardContent({
 }) {
   const { t } = useI18n()
   const [active, setActive] = useState(0)
+  const [cartOpened, setCartOpened] = useState(Boolean(initialSale))
   const [permissionFlow, setPermissionFlow] = useState<'create' | 'edit'>(initialSale ? 'edit' : 'create')
   const [state, setState] = useState<NewSaleWizardState>(() => createNewSaleWizardInitialState(prefill))
   // Preserved across step switches so the client step can restore instantly on remount.
@@ -1371,6 +1372,7 @@ function NewSaleWizardContent({
         {active === 1 && (
           <NewSaleProductsStep
             agreementNetId={state.agreementNetId}
+            cartOpened={cartOpened}
             client={wizardClient}
             clientNetId={state.clientNetId}
             permissionFlow={permissionFlow}
@@ -1378,6 +1380,7 @@ function NewSaleWizardContent({
             sale={productsCart}
             onBusyChange={handleProductsBusyChange}
             onCartChanged={reloadCart}
+            onCartOpenedChange={setCartOpened}
             onPendingMutationChange={handleProductsPendingChange}
             onRequestClose={requestExit}
             onRestoreSplitItems={restoreSplitBeforeAbandonment}

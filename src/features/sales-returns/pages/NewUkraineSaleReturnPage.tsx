@@ -56,6 +56,7 @@ import type {
   SalesReturnItem,
   SalesReturnItemStatusValue,
   SalesReturnOrderItem,
+  SalesReturnProduct,
   SalesReturnOrganization,
   SalesReturnSale,
   SalesReturnStorage,
@@ -79,17 +80,17 @@ import { ClientReturnsReportPanel } from '../components/ClientReturnsReportPanel
 
 const SALE_ITEMS_TABLE_LAYOUT = {
   columnPinning: {
-    left: ['select', 'saleNumber', 'vendorCode'],
+    left: ['select'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const DETAIL_ITEMS_TABLE_LAYOUT = {
   columnPinning: {
-    left: ['vendorCode', 'product'],
+    left: ['vendorCode'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const RETURNS_TABLE_LAYOUT = {
@@ -202,6 +203,7 @@ export function NewUkraineSaleReturnPage() {
   const selectedOrganizationNetUid = selectedOrganization?.NetUid
   const clientOptions = useMemo(() => mergeSelectedClient(clients, selectedClient), [clients, selectedClient])
   const saleItemRows = useMemo(() => flattenSaleItemRows(salesState.sales), [salesState.sales])
+  const showReturnResults = hasReturnSearch || salesState.isLoading || saleItemRows.length > 0
   const statusOptions = useMemo(() => getStatusOptions(t), [t])
   const saleItemColumns = useSaleItemColumns({
     drafts,
@@ -811,7 +813,7 @@ export function NewUkraineSaleReturnPage() {
       <AppDrawer
         className="new-sale-return-create-sheet"
         footer={
-          <Button disabled={!drafts.length} leftSection={<Eye size={16} />} onClick={openReview}>
+          <Button color="brand" variant="filled" size="sm" disabled={!drafts.length} leftSection={<Eye size={16} />} onClick={openReview}>
             {t('Перегляд')} ({drafts.length})
           </Button>
         }
@@ -821,7 +823,7 @@ export function NewUkraineSaleReturnPage() {
         title={t('Нове повернення')}
         onClose={() => setCreateOpened(false)}
       >
-        <Stack className="new-sale-return-create-workspace" gap={10}>
+        <Stack className={`new-sale-return-create-workspace${!saleItemRows.length ? ' is-empty' : ''}`} gap={8}>
           {createError ? (
             <Alert color="red" icon={<CircleAlert size={16} />} title={t('Помилка')}>
               {createError}
@@ -859,18 +861,21 @@ export function NewUkraineSaleReturnPage() {
                 searchValue={clientSearch}
                 value={clientId}
               />
-              <TextInput leftSection={<Search size={16} />} label={t('Артикул')} onChange={(event) => setSaleSearch(event.currentTarget.value)} value={saleSearch} />
+              <TextInput placeholder={t('Пошук за артикулом')} leftSection={<Search size={16} />} label={t('Артикул')} onChange={(event) => setSaleSearch(event.currentTarget.value)} value={saleSearch} />
               <TextInput label={t('З дати')} onChange={(event) => setSaleFromDate(event.currentTarget.value)} type="date" value={saleFromDate} />
               <TextInput label={t('По дату')} onChange={(event) => setSaleToDate(event.currentTarget.value)} type="date" value={saleToDate} />
             </div>
           </section>
           <section className="new-sale-return-create-results" aria-label={t('Продажі для повернення')}>
             <div className="new-sale-return-create-results__toolbar">
-              <Text className="app-section-title">{t('Продажі для повернення')}</Text>
-              <div className="new-sale-return-create-results__controls" ref={setCreateTableToolbarSlot} />
+              <Group gap={8}>
+                <Text className="app-section-title">{t('Продажі для повернення')}</Text>
+                {saleItemRows.length ? <TableChip tone="neutral" value={saleItemRows.length} /> : null}
+              </Group>
+              {showReturnResults ? <div className="new-sale-return-create-results__controls" ref={setCreateTableToolbarSlot} /> : null}
             </div>
             <div className="new-sale-return-create-results__table">
-              <DataTable
+              {showReturnResults ? <DataTable
                 columns={saleItemColumns}
                 data={saleItemRows}
                 defaultLayout={SALE_ITEMS_TABLE_LAYOUT}
@@ -883,16 +888,25 @@ export function NewUkraineSaleReturnPage() {
                 getRowId={(row, index) => `${getOrderItemKey(row.item)}-${index}`}
                 height="100%"
                 isLoading={salesState.isLoading}
-                minWidth={1280}
+                distributeAvailableWidth
+                layoutVersion="sales-return-new-sale-items-compact-3"
+                minWidth={1364}
                 tableId="sales-return-new-sale-items"
                 toolbarPortalTarget={createTableToolbarSlot}
-              />
+              /> : (
+                <div className="new-sale-return-create-empty is-initial">
+                  <Search size={24} aria-hidden="true" />
+                  <Text fw={600}>{t('Введіть артикул або виберіть клієнта')}</Text>
+                  <Text c="dimmed">{t('Знайдіть продаж і додайте потрібні позиції до повернення')}</Text>
+                </div>
+              )}
             </div>
           </section>
         </Stack>
       </AppDrawer>
 
       <AppDrawer
+        className="new-sale-return-review-sheet"
         opened={reviewOpened}
         onClose={() => setReviewOpened(false)}
         position="right"
@@ -916,7 +930,7 @@ export function NewUkraineSaleReturnPage() {
           </Group>
         }
       >
-        <Stack gap="md">
+        <Stack gap={10}>
           {reviewError ? (
             <Alert color="red" icon={<CircleAlert size={16} />} title={t('Помилка')}>
               {reviewError}
@@ -924,66 +938,26 @@ export function NewUkraineSaleReturnPage() {
           ) : null}
 
           {groupDraftsByClient(drafts).map((group) => (
-            <Stack gap="xs" key={group.key}>
-              <Text fw={600}>{group.clientName}</Text>
+            <Stack className="new-sale-return-review-group" gap={10} key={group.key}>
+              <TableChip tone="warning" value={group.clientName} />
               <Stack gap="xs">
                 {group.drafts.map((draft) => (
-                  <Group key={getOrderItemKey(draft.orderItem)} justify="space-between" wrap="nowrap" gap="md">
-                    <div style={{ minWidth: 0 }}>
-                      {draft.orderItem.Product?.NetUid ? (
-                        <Anchor
-                          c="dark.6"
-                          underline="always"
-                          component="button"
-                          display="block"
-                          fw={600}
-                          maw="100%"
-                          truncate
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            setProductCardNetId(draft.orderItem.Product?.NetUid || null)
-                          }}
-                        >
-                          {displayValue(draft.orderItem.Product?.VendorCode)}
-                        </Anchor>
-                      ) : (
-                        <Text fw={600} truncate>
-                          {displayValue(draft.orderItem.Product?.VendorCode)}
-                        </Text>
-                      )}
-                      {draft.orderItem.Product?.NetUid ? (
-                        <Anchor
-                          c="dark.6"
-                          underline="always"
-                          component="button"
-                          display="block"
-                          maw="100%"
-                          size="sm"
-                          truncate
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            setProductCardNetId(draft.orderItem.Product?.NetUid || null)
-                          }}
-                        >
-                          {displayValue(draft.orderItem.Product?.Name)}
-                        </Anchor>
-                      ) : (
-                        <Text size="sm" c="dimmed" truncate>
-                          {displayValue(draft.orderItem.Product?.Name)}
-                        </Text>
-                      )}
-                      <Text size="xs" c="dimmed">
-                        {formatAmount(draft.qty)} · {getStatusLabel(draft.status, t)} · {displayValue(draft.storage?.Name)}
-                      </Text>
+                  <Group className="new-sale-return-review-item" key={getOrderItemKey(draft.orderItem)} justify="space-between" wrap="nowrap" gap={10}>
+                    <div className="new-sale-return-review-item__main">
+                      <ReturnDraftProduct product={draft.orderItem.Product} onOpen={setProductCardNetId} />
+                      <Group className="new-sale-return-review-item__meta" gap={6}>
+                        <span>{t('Кількість')}</span>
+                        <TableChip value={formatAmount(draft.qty)} />
+                        <TableChip title={t('Причина')} value={getStatusLabel(draft.status, t)} />
+                        <TableChip tone="storage" value={displayValue(draft.storage?.Name)} />
+                      </Group>
                     </div>
                     <Tooltip label={t('Видалити')}>
                       <ActionIcon
                         aria-label={t('Видалити')}
-                        color="red"
+                        color="dark"
                         onClick={() => removeDraftByOrderItem(draft.orderItem)}
-                        variant="subtle"
+                        variant="transparent"
                       >
                         <Trash2 size={16} />
                       </ActionIcon>
@@ -997,45 +971,15 @@ export function NewUkraineSaleReturnPage() {
         </Stack>
       </AppDrawer>
 
-      <AppModal opened={Boolean(editor)} onClose={() => setEditor(null)} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Позиція повернення')}</span>}>
+      <AppModal className="new-sale-return-editor" opened={Boolean(editor)} onClose={() => setEditor(null)} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Позиція повернення')}</span>}>
         {editor ? (
-          <Stack gap="md">
-            <div>
-              {editor.row.item.Product?.NetUid ? (
-                <Anchor
-                  c="dark.6"
-                  underline="always"
-                  component="button"
-                  fw={600}
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    setProductCardNetId(editor.row.item.Product?.NetUid || null)
-                  }}
-                >
-                  {displayValue(editor.row.item.Product?.VendorCode)}
-                </Anchor>
-              ) : (
-                <Text fw={600}>{displayValue(editor.row.item.Product?.VendorCode)}</Text>
-              )}
-              {editor.row.item.Product?.NetUid ? (
-                <Anchor
-                  c="dark.6"
-                  underline="always"
-                  component="button"
-                  display="block"
-                  size="sm"
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    setProductCardNetId(editor.row.item.Product?.NetUid || null)
-                  }}
-                >
-                  {displayValue(editor.row.item.Product?.Name)}
-                </Anchor>
-              ) : (
-                <Text size="sm" c="dimmed">{displayValue(editor.row.item.Product?.Name)}</Text>
-              )}
+          <Stack gap={10}>
+            <div className="new-sale-return-editor-product">
+              <ReturnDraftProduct product={editor.row.item.Product} onOpen={setProductCardNetId} />
+              <Group gap={6}>
+                <TableChip tone="document" value={editor.row.sale.SaleNumber?.Value} />
+                <TableChip tone="warning" value={editor.row.sale.ClientAgreement?.Client?.FullName || editor.row.sale.ClientAgreement?.Client?.Name} />
+              </Group>
             </div>
             {editorError ? (
               <Alert color="red" icon={<CircleAlert size={16} />}>
@@ -1047,7 +991,7 @@ export function NewUkraineSaleReturnPage() {
                 {editorVatWarning}
               </Alert>
             ) : null}
-            <SimpleGrid cols={{ base: 1, md: 3 }}>
+            <SimpleGrid className="new-sale-return-editor-fields" cols={{ base: 1, sm: 3 }} spacing={8}>
               <NumberInput
                 allowDecimal
                 decimalScale={3}
@@ -1094,11 +1038,11 @@ export function NewUkraineSaleReturnPage() {
                 {t('Немає складів, доступних для повернення за умовами цієї причини')}
               </Text>
             ) : null}
-            <Group justify="flex-end">
-              <Button variant="default" onClick={() => setEditor(null)}>
+            <Group className="new-sale-return-editor-actions" justify="flex-end" gap={8}>
+              <Button size="sm" variant="default" onClick={() => setEditor(null)}>
                 {t('Скасувати')}
               </Button>
-              <Button color={CREATE_ACTION_COLOR} onClick={saveEditorDraft}>
+              <Button color="brand" variant="filled" size="sm" onClick={saveEditorDraft}>
                 {editor.draft ? t('Оновити') : t('Додати')}
               </Button>
             </Group>
@@ -1133,6 +1077,26 @@ export function NewUkraineSaleReturnPage() {
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </Box>
   )
+}
+
+function ReturnDraftProduct({ product, onOpen }: {
+  product?: SalesReturnProduct | null
+  onOpen: (netId: string) => void
+}) {
+  const identity = (
+    <>
+      <TableChip tone="product" value={displayValue(product?.VendorCode)} />
+      <span className="new-sale-return-draft-product__name">{displayValue(product?.Name)}</span>
+    </>
+  )
+
+  const netId = product?.NetUid
+
+  return netId ? (
+    <button className="new-sale-return-draft-product" type="button" onClick={() => onOpen(netId)}>
+      {identity}
+    </button>
+  ) : <div className="new-sale-return-draft-product">{identity}</div>
 }
 
 function useReturnColumns({
@@ -1423,14 +1387,14 @@ function useSaleItemColumns({
           )
         },
         enableSorting: false,
-        width: 70,
+        width: 44,
       },
       {
         id: 'saleNumber',
         header: t('Продаж'),
         accessor: (row) => row.sale.SaleNumber?.Value,
         cell: (row) => <TableChip tone="document" value={displayValue(row.sale.SaleNumber?.Value)} />,
-        width: 150,
+        width: 130,
       },
       {
         id: 'vendorCode',
@@ -1440,31 +1404,24 @@ function useSaleItemColumns({
           const netId = row.item.Product?.NetUid
           const isHighlighted = Boolean(searchedVendorCode && row.item.Product?.VendorCode === searchedVendorCode)
 
-          if (!netId) {
-            return isHighlighted ? (
-              <Text fw={600} bg="#78ff33" px={4}>
-                {displayValue(row.item.Product?.VendorCode)}
-              </Text>
-            ) : (
-              displayValue(row.item.Product?.VendorCode)
-            )
-          }
+          const code = <TableChip tone="product" value={displayValue(row.item.Product?.VendorCode)} />
+
+          if (!netId) return code
 
           return (
             <Anchor
-              bg={isHighlighted ? '#78ff33' : undefined}
+              className={isHighlighted ? 'new-sale-return-create-product-link is-match' : 'new-sale-return-create-product-link'}
               c="dark.6"
-              underline="always"
+              underline="hover"
               component="button"
               fw={600}
-              px={isHighlighted ? 4 : undefined}
               type="button"
               onClick={(event) => {
                 event.stopPropagation()
                 onOpenProductCard(netId)
               }}
             >
-              {displayValue(row.item.Product?.VendorCode)}
+              {code}
             </Anchor>
           )
         },
@@ -1480,7 +1437,7 @@ function useSaleItemColumns({
           return netId ? (
             <Anchor
               c="dark.6"
-              underline="always"
+              underline="hover"
               component="button"
               size="sm"
               type="button"
@@ -1495,38 +1452,45 @@ function useSaleItemColumns({
             displayValue(row.item.Product?.Name)
           )
         },
-        width: 260,
+        width: 240,
       },
       {
         id: 'client',
         header: t('Клієнт'),
         accessor: (row) => row.sale.ClientAgreement?.Client?.FullName,
-        cell: (row) => displayValue(row.sale.ClientAgreement?.Client?.FullName),
-        width: 220,
+        cell: (row) => <TableChip tone="warning" value={displayValue(row.sale.ClientAgreement?.Client?.FullName || row.sale.ClientAgreement?.Client?.Name)} />,
+        width: 200,
       },
       {
         id: 'soldQty',
         header: t('К-сть'),
         accessor: (row) => row.item.Qty,
-        cell: (row) => formatAmount(row.item.Qty),
+        cell: (row) => <span className="new-sale-return-create-number">{formatAmount(row.item.Qty)}</span>,
         align: 'right',
-        width: 100,
+        width: 90,
+        minWidth: 90,
       },
       {
         id: 'returnedQty',
         header: t('Повернено'),
         accessor: (row) => row.item.ReturnItemQty,
-        cell: (row) => formatAmount(row.item.ReturnItemQty),
+        cell: (row) => <span className="new-sale-return-create-number">{formatAmount(row.item.ReturnItemQty)}</span>,
         align: 'right',
-        width: 110,
+        width: 120,
+        minWidth: 120,
       },
       {
         id: 'price',
         header: t('Сума'),
         accessor: (row) => row.item.TotalAmountLocal,
-        cell: (row) => <span className="app-money">{formatMoney(row.item.TotalAmountLocal)}</span>,
+        cell: (row) => (
+          <span className="new-sale-return-create-amount">
+            <strong className="app-money">{formatMoney(row.item.TotalAmountLocal)}</strong>
+            <TableChip tone="source" value={row.sale.ClientAgreement?.Agreement?.Currency?.Code} />
+          </span>
+        ),
         align: 'right',
-        width: 120,
+        width: 140,
       },
       {
         id: 'draft',
@@ -1541,20 +1505,23 @@ function useSaleItemColumns({
             </Badge>
           ) : ''
         },
-        width: 240,
+        width: 160,
+        minWidth: 145,
       },
       {
         id: 'actions',
         header: '',
-        cell: (row) => (
-          <Group gap="xs" wrap="nowrap">
-            <Button size="xs" variant="outline" onClick={() => onEdit(row)}>
-              {drafts.some((draft) => getOrderItemKey(draft.orderItem) === getOrderItemKey(row.item)) ? t('Змінити') : t('Додати')}
+        cell: (row) => {
+          const isAdded = drafts.some((draft) => getOrderItemKey(draft.orderItem) === getOrderItemKey(row.item))
+
+          return (
+            <Button color="brand" size="xs" variant={isAdded ? 'default' : 'filled'} onClick={() => onEdit(row)}>
+              {isAdded ? t('Змінити') : t('Додати')}
             </Button>
-          </Group>
-        ),
+          )
+        },
         enableSorting: false,
-        width: 110,
+        width: 100,
       },
     ],
     [drafts, onEdit, onOpenProductCard, onRemove, searchedVendorCode, t],
@@ -1580,7 +1547,7 @@ function useDetailColumns({
           return netId ? (
             <Anchor
               c="dark.6"
-              underline="always"
+              underline="hover"
               component="button"
               fw={600}
               type="button"
@@ -1589,10 +1556,10 @@ function useDetailColumns({
                 onOpenProductCard(netId)
               }}
             >
-              {displayValue(item.OrderItem?.Product?.VendorCode)}
+              <TableChip tone="product" value={displayValue(item.OrderItem?.Product?.VendorCode)} />
             </Anchor>
           ) : (
-            <Text fw={600}>{displayValue(item.OrderItem?.Product?.VendorCode)}</Text>
+            <TableChip tone="product" value={displayValue(item.OrderItem?.Product?.VendorCode)} />
           )
         },
         width: 140,
@@ -1607,7 +1574,7 @@ function useDetailColumns({
           return netId ? (
             <Anchor
               c="dark.6"
-              underline="always"
+              underline="hover"
               component="button"
               size="sm"
               type="button"
@@ -1628,39 +1595,44 @@ function useDetailColumns({
         id: 'qty',
         header: t('Кількість'),
         accessor: (item) => item.Qty,
-        cell: (item) => formatAmount(item.Qty),
+        cell: (item) => <span className="new-sale-return-detail-number">{formatAmount(item.Qty)}</span>,
         align: 'right',
-        width: 110,
+        width: 90,
       },
       {
         id: 'status',
         header: t('Причина'),
         accessor: (item) => getStatusLabel(item.SaleReturnItemStatus, t),
         cell: (item) => <TableChip value={getStatusLabel(item.SaleReturnItemStatus, t)} />,
-        width: 220,
+        width: 170,
       },
       {
         id: 'storage',
         header: t('Склад'),
         accessor: (item) => item.Storage?.Name,
         cell: (item) => <TableChip tone="storage" value={displayValue(item.Storage?.Name)} />,
-        width: 180,
+        width: 145,
       },
       {
         id: 'amount',
         header: t('Сума'),
         accessor: (item) => item.AmountLocal,
-        cell: (item) => <span className="app-money">{formatMoney(item.AmountLocal)}</span>,
+        cell: (item) => (
+          <span className="new-sale-return-detail-amount">
+            <strong className="app-money">{formatMoney(item.AmountLocal)}</strong>
+            <TableChip tone="source" value={item.OrderItem?.Order?.Sale?.ClientAgreement?.Agreement?.Currency?.Code} />
+          </span>
+        ),
         align: 'right',
-        width: 120,
+        width: 110,
       },
       {
         id: 'vatAmount',
         header: t('ПДВ'),
         accessor: (item) => (item.OrderItem?.Order?.Sale?.IsVatSale ? item.VatAmountLocal : undefined),
-        cell: (item) => (item.OrderItem?.Order?.Sale?.IsVatSale ? <span className="app-money">{formatMoney(item.VatAmountLocal)}</span> : ''),
+        cell: (item) => (item.OrderItem?.Order?.Sale?.IsVatSale ? <span className="new-sale-return-detail-number">{formatMoney(item.VatAmountLocal)}</span> : ''),
         align: 'right',
-        width: 120,
+        width: 110,
       },
     ],
     [onOpenProductCard, t],
@@ -1678,106 +1650,82 @@ function ReturnDetails({
   const items = saleReturn.SaleReturnItems || []
   const clientName = displayValue(saleReturn.Client?.FullName || saleReturn.Client?.Name)
   const status = saleReturn.IsCanceled ? t('Скасовано') : t('Активне')
+  const currency = saleReturn.Currency?.Code || saleReturn.ClientAgreement?.Agreement?.Currency?.Code
 
   return (
-    <div className="document-detail-drawer document-detail-drawer--compact new-sale-return-detail">
-      <section className="document-detail-summary new-sale-return-detail-summary">
-        <div className="document-detail-summary__main new-sale-return-detail-summary__main">
-          <span className="document-detail-eyebrow new-sale-return-detail-eyebrow">{t('Документ повернення')}</span>
-          <Text className="document-detail-summary__title new-sale-return-detail-summary__title">{displayValue(saleReturn.Number)}</Text>
-          <Text className="document-detail-summary__meta new-sale-return-detail-summary__meta">
-            {formatDateTime(saleReturn.FromDate)} · {clientName}
-          </Text>
+    <div className="document-detail-drawer new-sale-return-detail">
+      <section className="new-sale-return-detail-summary">
+        <div className="new-sale-return-detail-summary__main">
+          <Group gap={8}>
+            <TableChip tone="document" value={saleReturn.Number} />
+            <TableChip tone={saleReturn.IsCanceled ? 'danger' : 'success'} value={status} />
+            <span className="new-sale-return-detail-date">{formatDateTime(saleReturn.FromDate)}</span>
+          </Group>
+          <div className="new-sale-return-detail-client">
+            <TableChip tone="warning" value={clientName} />
+          </div>
         </div>
-
-        <div className="document-detail-summary__metrics new-sale-return-detail-summary__metrics">
-          <ReturnDetailMetric label={t('Сума')} value={formatMoney(saleReturn.TotalAmountLocal)} />
+        <div className="new-sale-return-detail-summary__metrics">
           <ReturnDetailMetric label={t('Позицій')} value={String(items.length)} />
-          <ReturnDetailMetric label={t('Статус')} tone={saleReturn.IsCanceled ? 'danger' : undefined} value={status} />
+          <ReturnDetailMetric label={t('Сума')} value={formatMoney(saleReturn.TotalAmountLocal)} currency={currency} />
         </div>
       </section>
 
-      <div className="document-detail-tree new-sale-return-detail-tree">
-        <ReturnDetailSection subtitle={displayValue(saleReturn.Number)} title={t('Документ')}>
-          <ReturnDetailRow label={t('Номер')} value={saleReturn.Number} />
-          <ReturnDetailRow label={t('Дата')} value={formatDateTime(saleReturn.FromDate)} />
-          <ReturnDetailRow label={t('Статус')} tone={saleReturn.IsCanceled ? 'danger' : undefined} value={status} />
-          <ReturnDetailRow mono label={t('Сума')} value={formatMoney(saleReturn.TotalAmountLocal)} />
-        </ReturnDetailSection>
+      <section className="new-sale-return-detail-participants" aria-label={t('Учасники')}>
+        <ReturnDetailRow label={t('Договір')} value={saleReturn.ClientAgreement?.Agreement?.Name} />
+        <ReturnDetailRow label={t('Організація')} value={saleReturn.ClientAgreement?.Agreement?.Organization?.Name} />
+        <ReturnDetailRow label={t('Склад')} value={<TableChip tone="storage" value={displayValue(saleReturn.Storage?.Name)} />} />
+      </section>
 
-        <ReturnDetailSection subtitle={clientName} title={t('Учасники')}>
-          <ReturnDetailRow label={t('Клієнт')} value={clientName} wide />
-          <ReturnDetailRow label={t('Договір')} value={saleReturn.ClientAgreement?.Agreement?.Name} wide />
-          <ReturnDetailRow label={t('Організація')} value={saleReturn.ClientAgreement?.Agreement?.Organization?.Name} wide />
-          <ReturnDetailRow label={t('Склад')} value={saleReturn.Storage?.Name} wide />
-        </ReturnDetailSection>
-
-        <ReturnDetailSection subtitle={String(items.length)} title={t('Позиції повернення')}>
-          <div className="new-sale-return-detail-table">
-            <DataTable
-              columns={columns}
-              data={items}
-              defaultLayout={DETAIL_ITEMS_TABLE_LAYOUT}
-              emptyText={t('Позиції не знайдено')}
-              getRowId={(item, index) => item.NetUid || String(item.Id || index)}
-              minWidth={900}
-              showToolbar={false}
-              tableId="sales-return-detail-items"
-            />
-          </div>
-        </ReturnDetailSection>
-      </div>
+      <section className="new-sale-return-detail-section">
+        <div className="new-sale-return-detail-section__head">
+          <span className="app-section-title">{t('Позиції повернення')}</span>
+          <TableChip value={items.length} />
+        </div>
+        <div className="new-sale-return-detail-table">
+          <DataTable
+            columns={columns}
+            data={items}
+            defaultLayout={DETAIL_ITEMS_TABLE_LAYOUT}
+            distributeAvailableWidth
+            emptyText={t('Позиції не знайдено')}
+            getRowId={(item, index) => item.NetUid || String(item.Id || index)}
+            layoutVersion="sales-return-detail-items-compact-2"
+            minWidth={1025}
+            showToolbar={false}
+            tableId="sales-return-detail-items"
+          />
+        </div>
+      </section>
     </div>
   )
 }
 
 function ReturnDetailMetric({
   label,
-  tone,
   value,
+  currency,
 }: {
   label: string
-  tone?: 'danger'
   value: string
+  currency?: string
 }) {
   return (
-    <div className={`document-detail-metric new-sale-return-detail-metric${tone ? ` is-${tone}` : ''}`}>
+    <div className="new-sale-return-detail-metric">
       <span>{label}</span>
-      <strong>{displayValue(value)}</strong>
+      <div className="new-sale-return-detail-metric__value">
+        <strong>{value}</strong>
+        {currency ? <TableChip tone="source" value={currency} /> : null}
+      </div>
     </div>
   )
 }
 
-function ReturnDetailSection({ children, subtitle, title }: { children: ReactNode; subtitle?: string; title: string }) {
+function ReturnDetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <section className="document-detail-section new-sale-return-detail-section">
-      <div className="document-detail-section__head new-sale-return-detail-section__head">
-        <span className="document-detail-section__title new-sale-return-detail-section__title">{title}</span>
-        {subtitle ? <span className="document-detail-section__subtitle new-sale-return-detail-section__subtitle">{subtitle}</span> : null}
-      </div>
-      <div className="document-detail-section__body new-sale-return-detail-section__body">{children}</div>
-    </section>
-  )
-}
-
-function ReturnDetailRow({
-  label,
-  mono,
-  tone,
-  value,
-  wide,
-}: {
-  label: string
-  mono?: boolean
-  tone?: 'danger'
-  value: unknown
-  wide?: boolean
-}) {
-  return (
-    <div className={`document-detail-row new-sale-return-detail-row${wide ? ' is-wide' : ''}`}>
-      <span className="document-detail-row__label new-sale-return-detail-row__label">{label}</span>
-      <span className="document-detail-row__line new-sale-return-detail-row__line" aria-hidden />
-      <span className={`document-detail-row__value new-sale-return-detail-row__value${mono ? ' app-money' : ''}${tone ? ` is-${tone}` : ''}`}>{displayValue(value)}</span>
+    <div className="new-sale-return-detail-row">
+      <span className="new-sale-return-detail-row__label">{label}</span>
+      <span className="new-sale-return-detail-row__value">{value || '—'}</span>
     </div>
   )
 }

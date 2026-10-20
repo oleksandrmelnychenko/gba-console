@@ -17,11 +17,6 @@ export function WizardReviewOrderSummary({ items, localCurrencyCode, useEurToUah
   useEurToUah: boolean
 }) {
   const { t } = useI18n()
-  const totals = items.reduce((result, item) => ({
-    quantity: result.quantity + (getWizardProductNumber(item.Qty) ?? 0),
-    eur: result.eur + (getWizardProductNumber(item.TotalAmount) ?? 0),
-    local: result.local + getOrderItemLocalTotal(item, useEurToUah),
-  }), { quantity: 0, eur: 0, local: 0 })
 
   return (
     <section className="wizard-review-order-summary app-table-chips" aria-label={t('Ваше замовлення')}>
@@ -36,23 +31,39 @@ export function WizardReviewOrderSummary({ items, localCurrencyCode, useEurToUah
         localCurrencyCode={localCurrencyCode}
         useEurToUah={useEurToUah}
       />
-      <footer className="wizard-review-order-summary__totals">
-        <div className="wizard-review-order-summary__quantity">
-          <span>{t('Кількість')}</span>
-          <strong>{quantityFormatter.format(totals.quantity)}</strong>
-        </div>
-        <div className="wizard-review-order-summary__amounts">
-          <span>{t('Разом')}</span>
-          <div>
-            <strong>{moneyFormatter.format(roundMoney(totals.eur))}</strong>
-            <TableChip tone="source" value="EUR" />
-          </div>
-          <div>
-            <strong>{moneyFormatter.format(roundMoney(totals.local))}</strong>
-            <TableChip tone="source" value={localCurrencyCode} />
-          </div>
-        </div>
-      </footer>
     </section>
+  )
+}
+
+export function WizardReviewOrderTotals({ items, localCurrencyCode, useEurToUah }: {
+  items: SalesUkraineOrderItem[]
+  localCurrencyCode: string
+  useEurToUah: boolean
+}) {
+  const { t } = useI18n()
+  const totals = items.reduce((result, item) => ({
+    quantity: result.quantity + (getWizardProductNumber(item.Qty) ?? 0),
+    eur: result.eur + (getWizardProductNumber(item.TotalAmount) ?? 0),
+    local: result.local + getOrderItemLocalTotal(item, useEurToUah),
+  }), { quantity: 0, eur: 0, local: 0 })
+
+  return (
+    <footer className="wizard-review-order-summary__totals app-table-chips" aria-label={t('Підсумок замовлення')}>
+      <div className="wizard-review-order-summary__quantity">
+        <span>{t('Кількість')}</span>
+        <strong>{quantityFormatter.format(totals.quantity)}</strong>
+      </div>
+      <div className="wizard-review-order-summary__amounts">
+        <span>{t('Разом')}</span>
+        <div>
+          <strong>{moneyFormatter.format(roundMoney(totals.eur))}</strong>
+          <TableChip tone="source" value="EUR" />
+        </div>
+        <div>
+          <strong>{moneyFormatter.format(roundMoney(totals.local))}</strong>
+          <TableChip tone="source" value={localCurrencyCode} />
+        </div>
+      </div>
+    </footer>
   )
 }

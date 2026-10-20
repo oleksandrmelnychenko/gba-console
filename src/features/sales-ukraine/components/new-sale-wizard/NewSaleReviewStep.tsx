@@ -94,7 +94,7 @@ import { buildWizardSplitSale } from './wizardSplitSale'
 import { createWizardAsyncGenerationGuard } from './wizardAsyncGeneration'
 import { createWizardEnterLatch } from './wizardEnterLatch'
 import { SaleDocumentWarehouseSelect } from './SaleDocumentWarehouseSelect'
-import { WizardReviewOrderSummary } from './WizardReviewOrderSummary'
+import { WizardReviewOrderSummary, WizardReviewOrderTotals } from './WizardReviewOrderSummary'
 import { getSaleLocalCurrencyCode, isNonVatEurSale } from '../../saleMoney'
 import './wizard-review-checkout.css'
 
@@ -215,6 +215,7 @@ export function NewSaleReviewStep({
   const mountedRef = useRef(false)
   const splitItems = useWizardSplitOrderItems()
   const mergedSale = useWizardMergedSale()
+  const reviewItems = splitItems.length > 0 ? splitItems : mergedSale?.orderItems ?? sale?.Order?.OrderItems ?? []
   const isMergedMode = Boolean(mergedSale)
   const needsDocumentWarehouse = sale?.Order?.OrderSource !== LOCAL_ORDER_SOURCE
   const mergedConversionDenied = submitFlow === 'edit' && isMergedMode && !canConvertMergedToBill
@@ -1661,7 +1662,7 @@ export function NewSaleReviewStep({
         <Box className="new-sale-review-form app-form-sheet">
           <Box className="new-sale-review-layout">
             <WizardReviewOrderSummary
-              items={splitItems.length > 0 ? splitItems : mergedSale?.orderItems ?? sale?.Order?.OrderItems ?? []}
+              items={reviewItems}
               localCurrencyCode={getSaleLocalCurrencyCode(sale)}
               useEurToUah={isNonVatEurSale(sale)}
             />
@@ -1862,6 +1863,11 @@ export function NewSaleReviewStep({
         </Box>
       </Box>
 
+      <WizardReviewOrderTotals
+        items={reviewItems}
+        localCurrencyCode={getSaleLocalCurrencyCode(sale)}
+        useEurToUah={isNonVatEurSale(sale)}
+      />
       <WizardReviewConfirmModal opened={confirmOpened} onCancel={handleCancelClose} onConfirm={() => void handleConfirmClose()} />
     </Box>
   )

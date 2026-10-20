@@ -7,6 +7,7 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import {
@@ -299,7 +300,7 @@ export function ConsignmentNoteSettingsDrawer({
       title={t('Друк ТТН')}
       onClose={onClose}
     >
-      <Stack className="consignment-note-settings" gap="md">
+      <Stack className="consignment-note-settings" gap={10}>
         {noteState.error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {noteState.error}
@@ -312,7 +313,8 @@ export function ConsignmentNoteSettingsDrawer({
               {t('По документу')}
             </Text>
             <Text className="consignment-note-settings-document-title">
-              {t('Накладна')} <span className="consignment-note-settings-document-number">{displayValue(sale?.SaleNumber?.Value)}</span> {t('від')} {formatDateTime(getConsignmentNoteDate(sale))}
+              {t('Накладна')} <TableChip tone="document" value={displayValue(sale?.SaleNumber?.Value)} />
+              <span className="consignment-note-settings-document-date">{t('від')} {formatDateTime(getConsignmentNoteDate(sale))}</span>
             </Text>
           </Box>
           <Select
@@ -330,7 +332,7 @@ export function ConsignmentNoteSettingsDrawer({
 
         <Box className="app-section-card consignment-note-settings-section">
           <Text className="app-section-title" fw={600}>{t('Дані ТТН')}</Text>
-          <SimpleGrid className="consignment-note-settings-grid" cols={{ base: 1, md: 2 }} spacing="sm">
+          <SimpleGrid className="consignment-note-settings-grid" cols={{ base: 1, sm: 2 }} spacing={8}>
             <TextInput
               label={t('Назва')}
               maxLength={200}
@@ -393,15 +395,16 @@ export function ConsignmentNoteSettingsDrawer({
           </SimpleGrid>
         </Box>
 
+        <div className="consignment-note-settings-vehicles">
         <Box className="app-section-card consignment-note-settings-section">
           <Text className="app-section-title" fw={600}>{t('Автомобіль')}</Text>
+          <SimpleGrid className="consignment-note-settings-dimensions" cols={{ base: 2, sm: 3 }} spacing={8}>
           <TextInput
             label={t('Заголовок')}
             maxLength={200}
             value={noteState.setting.CarLabel || ''}
             onChange={(event) => updateTextField('CarLabel', event.currentTarget.value)}
           />
-          <SimpleGrid className="consignment-note-settings-dimensions" cols={{ base: 2, md: 5 }} spacing="sm">
             <NumberInput label={t('Довжина, мм')} value={noteState.setting.CarLength || 0} onChange={(value) => updateNumberField('CarLength', value)} />
             <NumberInput label={t('Ширина, мм')} value={noteState.setting.CarWidth || 0} onChange={(value) => updateNumberField('CarWidth', value)} />
             <NumberInput label={t('Висота, мм')} value={noteState.setting.CarHeight || 0} onChange={(value) => updateNumberField('CarHeight', value)} />
@@ -412,13 +415,13 @@ export function ConsignmentNoteSettingsDrawer({
 
         <Box className="app-section-card consignment-note-settings-section">
           <Text className="app-section-title" fw={600}>{t('Причіп')}</Text>
+          <SimpleGrid className="consignment-note-settings-dimensions" cols={{ base: 2, sm: 3 }} spacing={8}>
           <TextInput
             label={t('Заголовок')}
             maxLength={200}
             value={noteState.setting.TrailerLabel || ''}
             onChange={(event) => updateTextField('TrailerLabel', event.currentTarget.value)}
           />
-          <SimpleGrid className="consignment-note-settings-dimensions" cols={{ base: 2, md: 5 }} spacing="sm">
             <NumberInput label={t('Довжина, мм')} value={noteState.setting.TrailerLength || 0} onChange={(value) => updateNumberField('TrailerLength', value)} />
             <NumberInput label={t('Ширина, мм')} value={noteState.setting.TrailerWidth || 0} onChange={(value) => updateNumberField('TrailerWidth', value)} />
             <NumberInput label={t('Висота, мм')} value={noteState.setting.TrailerHeight || 0} onChange={(value) => updateNumberField('TrailerHeight', value)} />
@@ -426,6 +429,7 @@ export function ConsignmentNoteSettingsDrawer({
             <NumberInput label={t('Вага брутто, т')} value={noteState.setting.TrailerGrossWeight || 0} onChange={(value) => updateNumberField('TrailerGrossWeight', value)} />
           </SimpleGrid>
         </Box>
+        </div>
       </Stack>
 
       <DownloadDocumentModal

@@ -1,0 +1,201 @@
+.debtor-detail {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.debtor-detail__summary,
+.debtor-detail__section {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.debtor-detail__summary {
+  align-items: center;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.debtor-detail__identity {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.debtor-detail__label {
+  color: var(--mantine-color-gray-6);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.debtor-detail__client,
+.debtor-detail__meta {
+  min-width: 0;
+}
+
+.debtor-detail__client .app-table-chip {
+  height: auto;
+  max-width: 100%;
+  padding-block: 4px;
+}
+
+.debtor-detail__client .app-table-chip-label {
+  font-family: var(--mantine-font-family);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.debtor-detail__meta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.debtor-detail__metrics,
+.debtor-detail__totals {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-width: 0;
+}
+
+.debtor-detail__metric {
+  background: var(--mantine-color-gray-0);
+  border-radius: 8px;
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 8px 10px;
+}
+
+.debtor-detail__metrics .debtor-detail__metric {
+  min-width: 112px;
+}
+
+.debtor-detail__number {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.debtor-detail__number strong {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.debtor-detail__metric.is-danger strong {
+  color: var(--mantine-color-red-6);
+}
+
+.debtor-detail__section-head {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.debtor-detail__section-head h3 {
+  align-items: center;
+  color: var(--mantine-color-gray-8);
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  gap: 8px;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.debtor-detail__section-head h3::before {
+  background: var(--brand-orange);
+  border-radius: 50%;
+  content: '';
+  flex: 0 0 6px;
+  height: 6px;
+}
+
+.debtor-detail__debts,
+.debtor-detail__loading {
+  display: grid;
+  gap: 8px;
+}
+
+.debtor-detail__debt {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  min-width: 0;
+  padding: 10px;
+}
+
+.debtor-detail__debt-head {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.debtor-detail__debt-head time {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.debtor-detail__debt-grid {
+  display: grid;
+  gap: 8px 20px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.debtor-detail__row {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 90px minmax(0, 1fr);
+  min-width: 0;
+}
+
+.debtor-detail__row > div {
+  color: var(--mantine-color-gray-8);
+  font-size: 12px;
+  line-height: 1.4;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.debtor-detail__empty {
+  color: var(--mantine-color-gray-6);
+  font-size: 12px;
+  padding: 14px 0;
+}
+
+@media (max-width: 900px) {
+  .debtor-detail__summary { grid-template-columns: minmax(0, 1fr); }
+  .debtor-detail__metrics .debtor-detail__metric { min-width: 0; }
+}
+
+@media (max-width: 600px) {
+  .debtor-detail__summary,
+  .debtor-detail__section { padding: 10px; }
+  .debtor-detail__debt-grid { grid-template-columns: minmax(0, 1fr); }
+  .debtor-detail__totals { grid-template-columns: minmax(0, 1fr); }
+  .debtor-detail__metrics { gap: 5px; }
+  .debtor-detail__metrics .debtor-detail__metric { padding: 7px; }
+  .debtor-detail__number strong { font-size: 14px; }
+}

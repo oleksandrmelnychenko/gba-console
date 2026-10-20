@@ -12,16 +12,17 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { ChevronDown, ChevronRight, CircleAlert, Download, RotateCcw } from 'lucide-react'
+import { CircleAlert, Download, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import type { DataTableColumn, DataTableDefaultLayout, DataTableExpandToggleOptions } from '../../../shared/ui/data-table/types'
 import {
   CLIENT_SEARCH_PAGE_SIZE,
   exportClientProductMovementDocument,
@@ -47,19 +48,6 @@ type FilterDraft = {
   from: string
   organizationIds: string[]
   to: string
-}
-
-const MOVEMENT_ROW = {
-  DETAIL: 'detail',
-  DOCUMENT: 'document',
-} as const
-
-type MovementRowKind = (typeof MOVEMENT_ROW)[keyof typeof MOVEMENT_ROW]
-
-type MovementRow = {
-  id: string
-  kind: MovementRowKind
-  document: ClientProductMovementDocument
 }
 
 type SelectOption = {
@@ -109,7 +97,6 @@ export function ClientProductMovementPage() {
   const [clientOptions, setClientOptions] = useValueState<ClientProductMovementClientOption[]>([])
   const [clientOffset, setClientOffset] = useValueState(0)
   const [clientHasMore, setClientHasMore] = useValueState(false)
-  const [expandedKeys, setExpandedKeys] = useValueState<Set<string>>(() => new Set())
   const [isLoading, setLoading] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
   const [isExporting, setExporting] = useValueState(false)
@@ -204,7 +191,6 @@ export function ClientProductMovementPage() {
   useEffect(() => {
     if (!activeFilters.clientNetId) {
       setDocuments([])
-      setExpandedKeys(new Set())
 
       return
     }
@@ -220,7 +206,6 @@ export function ClientProductMovementPage() {
 
         if (!cancelled) {
           setDocuments(next)
-          setExpandedKeys(new Set())
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -239,7 +224,7 @@ export function ClientProductMovementPage() {
     return () => {
       cancelled = true
     }
-  }, [activeFilters, reloadKey, setDocuments, setError, setExpandedKeys, setLoading, t])
+  }, [activeFilters, reloadKey, setDocuments, setError, setLoading, t])
 
   useEffect(() => {
     if (debouncedArticle !== filterDraft.article) {
@@ -280,20 +265,6 @@ export function ClientProductMovementPage() {
     setClientOffset((current) => current + CLIENT_SEARCH_PAGE_SIZE)
   }
 
-  function toggleExpanded(key: string) {
-    setExpandedKeys((current) => {
-      const next = new Set(current)
-
-      if (next.has(key)) {
-        next.delete(key)
-      } else {
-        next.add(key)
-      }
-
-      return next
-    })
-  }
-
   async function exportDocument() {
     if (!activeFilters.clientNetId) {
       return
@@ -323,9 +294,7 @@ export function ClientProductMovementPage() {
     [clientOptions],
   )
 
-  const rows = useMemo(() => buildRows(documents, expandedKeys), [documents, expandedKeys])
-
-  const columns = useColumns({ expandedKeys, onToggle: toggleExpanded })
+  const columns = useColumns()
 
   const toolbarLeft = useMemo(
     () => (hasClient ? null : (
@@ -367,7 +336,6 @@ export function ClientProductMovementPage() {
               scrollAreaProps={{ onBottomReached: loadMoreClients }}
               searchValue={clientQuery}
               value={filterDraft.clientNetId || null}
-              w={260}
               onChange={(value) => applyFilters({ ...filterDraft, clientNetId: value || '' })}
               onSearchChange={setClientQuery}
             />
@@ -381,7 +349,6 @@ export function ClientProductMovementPage() {
             <TextInput
               label={t('Артикул')}
               value={filterDraft.article}
-              w={180}
               onChange={(event) => setFilterDraft({ ...filterDraft, article: event.currentTarget.value })}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
@@ -449,17 +416,20 @@ export function ClientProductMovementPage() {
         <div className="client-product-movement-page__table">
           <DataTable
             columns={columns}
-            data={rows}
+            data={documents}
             defaultLayout={MOVEMENT_TABLE_DEFAULT_LAYOUT}
             distributeAvailableWidth
             emptyText={hasClient ? t('Документів не знайдено') : t('Оберіть клієнта для перегляду')}
-            getRowId={(row) => row.id}
+            getRowId={getDocumentKey}
+            getRowCanExpand={(document) => Boolean(document.InfoItems?.length)}
+            renderExpandedRow={(document) => <MovementInfoItemsTable document={document} />}
+            renderExpandToggle={renderMovementExpandToggle}
+            expandColumnLabels={{ collapseRow: t('Згорнути позиції'), expandRow: t('Розгорнути позиції') }}
             height="100%"
             isLoading={isLoading}
-            layoutVersion="client-product-movement-table-2"
+            layoutVersion="client-product-movement-table-4"
             loadingText={t('Завантаження руху товару')}
-            minWidth={1280}
-            rowClassName={(row) => (row.kind === MOVEMENT_ROW.DETAIL ? 'gba-movement-detail-row' : undefined)}
+            minWidth={1120}
             showLayoutControls
             tableId="client-product-movement"
             toolbarLeft={toolbarLeft}
@@ -478,49 +448,30 @@ export function ClientProductMovementPage() {
   )
 }
 
-function useColumns({
-  expandedKeys,
-  onToggle,
-}: {
-  expandedKeys: Set<string>
-  onToggle: (key: string) => void
-}) {
+function renderMovementExpandToggle({ isExpanded, label, onToggle }: DataTableExpandToggleOptions) {
+  return (
+    <TableRowAction
+      action={isExpanded ? 'collapse' : 'expand'}
+      aria-expanded={isExpanded}
+      label={label}
+      onClick={onToggle}
+    />
+  )
+}
+
+function useColumns() {
   const { t } = useI18n()
 
-  return useMemo<DataTableColumn<MovementRow>[]>(
+  return useMemo<DataTableColumn<ClientProductMovementDocument>[]>(
     () => [
       {
         id: 'type',
         header: t('Тип'),
-        width: 320,
-        minWidth: 220,
+        width: 140,
+        minWidth: 120,
         enableSorting: false,
-        accessor: (row) => row.document.DocumentTypeName,
-        cell: (row) => {
-          if (row.kind === MOVEMENT_ROW.DETAIL) {
-            return <MovementInfoItemsTable document={row.document} />
-          }
-
-          const documentKey = row.id
-          const isExpanded = expandedKeys.has(documentKey)
-          const hasItems = (row.document.InfoItems?.length || 0) > 0
-
-          return (
-            <Group gap={6} wrap="nowrap">
-              <ActionIcon
-                aria-label={isExpanded ? t('Згорнути') : t('Розгорнути')}
-                color="gray"
-                disabled={!hasItems}
-                size="sm"
-                variant="subtle"
-                onClick={() => onToggle(documentKey)}
-              >
-                {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-              </ActionIcon>
-              <MovementEntityCell value={displayValue(row.document.DocumentTypeName)} />
-            </Group>
-          )
-        },
+        accessor: (row) => row.DocumentTypeName,
+        cell: (row) => <MovementEntityCell value={displayValue(row.DocumentTypeName)} />,
       },
       {
         id: 'number',
@@ -528,44 +479,44 @@ function useColumns({
         width: 150,
         minWidth: 120,
         enableSorting: false,
-        accessor: (row) => row.document.DocumentNumber,
-        cell: (row) => (row.kind === MOVEMENT_ROW.DETAIL ? null : <TableChip tone="document" value={displayValue(row.document.DocumentNumber)} />),
+        accessor: (row) => row.DocumentNumber,
+        cell: (row) => <TableChip tone="document" value={displayValue(row.DocumentNumber)} />,
       },
       {
         id: 'fromDate',
         header: t('Дата'),
-        width: 160,
+        width: 145,
         minWidth: 130,
         enableSorting: false,
-        accessor: (row) => row.document.DocumentFromDate,
-        cell: (row) => (row.kind === MOVEMENT_ROW.DETAIL ? null : <MovementMonoCell value={displayValue(formatDateTime(row.document.DocumentFromDate))} />),
+        accessor: (row) => row.DocumentFromDate,
+        cell: (row) => <MovementMonoCell value={displayValue(formatDateTime(row.DocumentFromDate))} />,
       },
       {
         id: 'organization',
         header: t('Організація'),
-        width: 200,
+        width: 180,
         minWidth: 150,
         enableSorting: false,
-        accessor: (row) => row.document.OrganizationName,
-        cell: (row) => (row.kind === MOVEMENT_ROW.DETAIL ? null : displayValue(row.document.OrganizationName)),
+        accessor: (row) => row.OrganizationName,
+        cell: (row) => displayValue(row.OrganizationName),
       },
       {
         id: 'responsible',
         header: t('Відповідальний'),
-        width: 180,
+        width: 160,
         minWidth: 140,
         enableSorting: false,
-        accessor: (row) => row.document.Responsible,
-        cell: (row) => (row.kind === MOVEMENT_ROW.DETAIL ? null : displayValue(row.document.Responsible)),
+        accessor: (row) => row.Responsible,
+        cell: (row) => <TableChip tone="product" value={displayValue(row.Responsible)} />,
       },
       {
         id: 'updatedDate',
         header: t('Оновлено'),
-        width: 160,
+        width: 145,
         minWidth: 130,
         enableSorting: false,
-        accessor: (row) => row.document.DocumentUpdatedDate,
-        cell: (row) => (row.kind === MOVEMENT_ROW.DETAIL ? null : <MovementMonoCell value={displayValue(formatDateTime(row.document.DocumentUpdatedDate))} />),
+        accessor: (row) => row.DocumentUpdatedDate,
+        cell: (row) => <MovementMonoCell value={displayValue(formatDateTime(row.DocumentUpdatedDate))} />,
       },
       {
         id: 'amount',
@@ -574,21 +525,21 @@ function useColumns({
         minWidth: 120,
         align: 'right',
         enableSorting: false,
-        accessor: (row) => getNumber(row.document.TotalEuroAmount),
-        cell: (row) => (row.kind === MOVEMENT_ROW.DETAIL ? null : <MovementMoneyCell value={formatAmount(getNumber(row.document.TotalEuroAmount))} />),
+        accessor: (row) => getNumber(row.TotalEuroAmount),
+        cell: (row) => <MovementMoneyCell value={formatAmount(getNumber(row.TotalEuroAmount))} />,
       },
       {
         id: 'positions',
         header: t('Позиції'),
-        width: 110,
+        width: 90,
         minWidth: 90,
         align: 'right',
         enableSorting: false,
-        accessor: (row) => getNumber(row.document.TotalPositions),
-        cell: (row) => (row.kind === MOVEMENT_ROW.DETAIL ? null : <MovementNumberCell value={displayValue(getNumber(row.document.TotalPositions))} />),
+        accessor: (row) => getNumber(row.TotalPositions),
+        cell: (row) => <MovementNumberCell value={displayValue(getNumber(row.TotalPositions))} />,
       },
     ],
-    [expandedKeys, onToggle, t],
+    [t],
   )
 }
 
@@ -600,7 +551,7 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
     () => [
       {
         id: 'vendorCode',
-        header: t('Код Виробника'),
+        header: t('Товар'),
         width: 320,
         minWidth: 220,
         accessor: (item) => item.Product?.VendorCode,
@@ -617,7 +568,7 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
                   component="button"
                   title={code}
                   type="button"
-                  underline="always"
+                  underline="hover"
                   onClick={(event) => {
                     event.stopPropagation()
                     setProductCardNetId(netId)
@@ -626,7 +577,7 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
                   <TableChip tone="product" value={code} />
                 </Anchor>
               ) : (
-                <MovementMonoCell value={code} />
+                <TableChip tone="product" value={code} />
               )}
               {netId ? (
                 <Anchor
@@ -634,7 +585,7 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
                   component="button"
                   title={name}
                   type="button"
-                  underline="always"
+                  underline="hover"
                   onClick={(event) => {
                     event.stopPropagation()
                     setProductCardNetId(netId)
@@ -665,7 +616,7 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
         width: 200,
         minWidth: 140,
         accessor: (item) => item.Responsible,
-        cell: (item) => displayValue(item.Responsible),
+        cell: (item) => <TableChip tone="product" value={displayValue(item.Responsible)} />,
       },
       {
         id: 'amount',
@@ -678,7 +629,7 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
       },
       {
         id: 'qty',
-        header: t('штук'),
+        header: t('К-сть'),
         width: 110,
         minWidth: 90,
         align: 'right',
@@ -690,16 +641,21 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
   )
 
   return (
-    <Box className="client-product-movement-detail-table" py="xs">
+    <Box className="client-product-movement-detail-table">
+      <div className="client-product-movement-detail-heading">
+        <span>{t('Позиції')}</span>
+        <TableChip tone="neutral" value={String(items.length)} />
+      </div>
       <DataTable
         columns={itemColumns}
         data={items}
         defaultLayout={MOVEMENT_ITEMS_TABLE_DEFAULT_LAYOUT}
+        distributeAvailableWidth
         emptyText={t('Позицій не знайдено')}
         getRowId={(item, index) => `${item.Product?.VendorCode || ''}-${item.ProductSpecificationCode || ''}-${index}`}
-        layoutVersion="client-product-movement-items-table-1"
+        layoutVersion="client-product-movement-items-table-2"
         maxHeight="40vh"
-        minWidth={960}
+        minWidth={800}
         showToolbar={false}
         tableId={`client-product-movement-items-${document.DocumentId ?? document.DocumentNumber ?? 'doc'}`}
       />
@@ -734,26 +690,11 @@ function MovementNumberCell({ value }: { value: string }) {
 
 function MovementMoneyCell({ value }: { value: string }) {
   return value ? (
-    <span className="app-money client-product-movement-money-cell" title={value}>
-      {value}
+    <span className="client-product-movement-money-group">
+      <span className="app-money client-product-movement-money-cell" title={value}>{value}</span>
+      <TableChip tone="source" value="EUR" />
     </span>
   ) : null
-}
-
-function buildRows(documents: ClientProductMovementDocument[], expandedKeys: Set<string>): MovementRow[] {
-  const rows: MovementRow[] = []
-
-  documents.forEach((document, index) => {
-    const key = getDocumentKey(document, index)
-
-    rows.push({ document, id: key, kind: MOVEMENT_ROW.DOCUMENT })
-
-    if (expandedKeys.has(key) && (document.InfoItems?.length || 0) > 0) {
-      rows.push({ document, id: `${key}-detail`, kind: MOVEMENT_ROW.DETAIL })
-    }
-  })
-
-  return rows
 }
 
 function getDocumentKey(document: ClientProductMovementDocument, index: number): string {

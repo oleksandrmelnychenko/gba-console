@@ -7,6 +7,7 @@ import {
   Box,
   Button,
   Card,
+  Checkbox,
   Group,
   NumberInput,
   Select,
@@ -37,7 +38,6 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { useAuth } from '../../auth/useAuth'
 import { usePermissions } from '../../auth/usePermissions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import {
   addResale,
@@ -126,9 +126,8 @@ const RESALES_TABLE_DEFAULT_LAYOUT = {
 } satisfies DataTableDefaultLayout
 
 const AVAILABILITIES_TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['select', 'vendorCode', 'productName'],
-  },
+  columnPinning: { left: ['select'] },
+  columnVisibility: { created: false, specification: false, group: false, measure: false },
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
@@ -582,6 +581,7 @@ function NewResalePageContent({
   const location = useLocation()
   const routeState = location.state as NewResaleRouteState | null
   const returnPath = routeState?.returnPath || '/resales'
+  const [availabilityToolbarSlot, setAvailabilityToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [filterOptions, setFilterOptions] = useValueState<ResaleAvailabilityFilterOptions | null>(null)
   const [form, setForm] = useValueState<ResaleAvailabilityForm>(() => ({
     amount: 0,
@@ -645,11 +645,9 @@ function NewResalePageContent({
     return map
   }, [availabilities])
   const columns = useResaleAvailabilityColumns({
-    rows: availabilities,
     selectedKeys,
     onOpenProductCard: canOpenProductDetails ? setProductCardNetId : undefined,
     onToggle: toggleAvailability,
-    onToggleAll: toggleAllAvailabilities,
   })
   const loadAvailabilities = useCallback(
     async (nextPayload: ResaleAvailabilityFilterPayload) => {
@@ -968,11 +966,26 @@ function NewResalePageContent({
       position="right"
       size="min(1440px, 100vw)"
       title={t('Новий перепродаж')}
+      footer={
+        <div className="resales-new-summary">
+          <div className="resales-new-summary-selection">
+            <span>{t('Вибрано')}</span>
+            <TableChip tone="neutral" value={String(selectedRows.length)} />
+          </div>
+          <div className="resales-new-summary-values">
+            <span className="resales-new-summary-caption">{t('Разом за всіма товарами')}</span>
+            <ResaleSummaryMetric label={t('Кількість')} value={formatAmount(totals.totalQty)} />
+            <ResaleSummaryMetric label={t('З ПДВ')} value={formatMoney(totals.totalValueWithVat)} />
+            <ResaleSummaryMetric label={t('З націнкою')} value={formatMoney(totals.totalWithExtraValue)} />
+          </div>
+        </div>
+      }
       onClose={closeSheet}
     >
-      <Stack className="resales-new-sheet" gap={12}>
-        <Card className="resales-new-filter-card" withBorder radius="md" padding="sm">
+      <Stack className="resales-new-sheet" gap={10}>
+        <Card className="resales-new-filter-card" withBorder radius="md" padding={10}>
           <Stack gap={8}>
+            <Text className="app-section-title">{t('Налаштування підбору')}</Text>
             <div className="resales-new-primary-grid">
               <NumberInput
                 hideControls
@@ -1029,7 +1042,7 @@ function NewResalePageContent({
                 onChange={(value) => setForm((currentForm) => ({ ...currentForm, specificationCodes: value }))}
               />
             </div>
-            <Group align="end" gap="sm" wrap="nowrap" className="app-filter-fields resales-new-filter-row">
+            <div className="resales-new-filter-row">
               <TextInput
                 className="resales-new-control resales-new-search-control"
                 leftSection={<Search size={16} />}
@@ -1068,6 +1081,8 @@ function NewResalePageContent({
                 value={generateStorageNetId}
                 onChange={setGenerateStorageNetId}
               />
+            </div>
+            <Group className="resales-new-command-row" gap={8} justify="flex-end" wrap="wrap">
               <Button
                 className="resales-new-action"
                 color={CREATE_ACTION_COLOR}
@@ -1088,7 +1103,7 @@ function NewResalePageContent({
               </Button>
               {canExportAvailabilities && <Button
                 className="resales-new-action"
-                color={CREATE_ACTION_COLOR}
+                variant="default"
                 disabled={!payload || isLoadingOptions || isLoadingAvailabilities}
                 leftSection={<FileDown size={16} />}
                 loading={isExporting}
@@ -1113,7 +1128,7 @@ function NewResalePageContent({
         </Card>
 
         {(error || warning || dateRangeError) && (
-          <Alert color={warning || dateRangeError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
+          <Alert className="resales-new-notice" color={warning || dateRangeError ? 'yellow' : 'red'} icon={<CircleAlert size={16} />} variant="light">
             <Stack gap={4}>
               <Text size="sm">{warning?.Message || dateRangeError || error}</Text>
               {warning?.Products?.map((product) => (
@@ -1125,26 +1140,41 @@ function NewResalePageContent({
           </Alert>
         )}
 
-        <TotalsCard
-          items={[
-            { label: t('Кількість'), value: formatAmount(totals.totalQty) },
-            { label: t('З ПДВ'), value: formatMoney(totals.totalValueWithVat) },
-            { label: t('З націнкою'), value: formatMoney(totals.totalWithExtraValue) },
-          ]}
-        />
-
-        <Card withBorder radius="md" padding="md">
+        <Card className="resales-new-table-card" withBorder radius="md" padding={0}>
+          <div className="resales-new-table-heading">
+            <Group gap={8} wrap="nowrap">
+              <Text className="app-section-title">{t('Доступні товари')}</Text>
+              <TableChip tone="neutral" value={String(availabilities.length)} />
+            </Group>
+            <Group className="resales-new-table-tools" gap={8} wrap="wrap">
+              <Button
+                size="compact-xs"
+                variant="default"
+                disabled={!availabilities.length || isLoadingAvailabilities}
+                onClick={toggleAllAvailabilities}
+              >
+                {selectedRows.length === availabilities.length && availabilities.length > 0
+                  ? t('Скасувати вибір усіх')
+                  : t('Обрати всі')}
+              </Button>
+              <div ref={setAvailabilityToolbarSlot} className="app-filter-table-toolbar-slot" />
+            </Group>
+          </div>
           <DataTable
             columns={columns}
             data={availabilities}
             defaultLayout={AVAILABILITIES_TABLE_DEFAULT_LAYOUT}
+            distributeAvailableWidth
+            showLayoutControls
+            toolbarPortalTarget={availabilityToolbarSlot}
+            rowClassName={(row) => selectedKeys.includes(getAvailabilityKey(row)) ? 'is-selected' : undefined}
             emptyText={t('Доступних товарів не знайдено')}
             getRowId={(row, index) => getAvailabilityKey(row) || String(index)}
             isLoading={isLoadingAvailabilities || isLoadingOptions}
-            layoutVersion="resale-availabilities-table-1"
+            layoutVersion="resale-availabilities-table-3"
             loadingText={t('Завантаження доступних товарів')}
-            maxHeight="calc(100vh - 410px)"
-            minWidth={1440}
+            maxHeight="55vh"
+            minWidth={1120}
             tableId="resale-availabilities"
             onRowClick={toggleAvailability}
           />
@@ -2083,43 +2113,23 @@ function useResalesColumns({
 }
 
 function useResaleAvailabilityColumns({
-  rows,
   selectedKeys,
   onOpenProductCard,
   onToggle,
-  onToggleAll,
 }: {
-  rows: GroupingResaleAvailability[]
   selectedKeys: string[]
   onOpenProductCard?: (netId: string) => void
   onToggle: (row: GroupingResaleAvailability) => void
-  onToggleAll: () => void
 }): DataTableColumn<GroupingResaleAvailability>[] {
   const { t } = useI18n()
-  const allSelected =
-    rows.length > 0 && rows.every((row) => selectedKeys.includes(getAvailabilityKey(row)))
 
   return useMemo<DataTableColumn<GroupingResaleAvailability>[]>(
     () => [
       {
         id: 'select',
-        header: (
-          <ActionIcon
-            aria-label={t('Обрати всі')}
-            color={allSelected ? 'orange' : 'gray'}
-            disabled={rows.length === 0}
-            size={28}
-            variant={allSelected ? 'filled' : 'light'}
-            onClick={(event) => {
-              event.stopPropagation()
-              onToggleAll()
-            }}
-          >
-            {allSelected ? '✓' : '+'}
-          </ActionIcon>
-        ),
-        width: 54,
-        minWidth: 48,
+        header: '',
+        width: 44,
+        minWidth: 44,
         enableSorting: false,
         enableHiding: false,
         enablePinning: false,
@@ -2128,11 +2138,12 @@ function useResaleAvailabilityColumns({
           const selected = selectedKeys.includes(getAvailabilityKey(row))
 
           return (
-            <TableRowAction
-              action="select"
-              label={t('Обрати')}
-              tone={selected ? 'success' : 'neutral'}
-              onClick={() => onToggle(row)}
+            <Checkbox
+              aria-label={selected ? t('Скасувати вибір') : t('Обрати')}
+              checked={selected}
+              size="xs"
+              onClick={(event) => event.stopPropagation()}
+              onChange={() => onToggle(row)}
             />
           )
         },
@@ -2157,46 +2168,56 @@ function useResaleAvailabilityColumns({
           return netId && onOpenProductCard ? (
             <Anchor
               component="button"
-              fw={700}
+              underline="never"
               type="button"
               onClick={(event) => {
                 event.stopPropagation()
                 onOpenProductCard(netId)
               }}
             >
-              {displayValue(row.VendorCode)}
+              <TableChip tone="product" value={displayValue(row.VendorCode)} />
             </Anchor>
           ) : (
-            <Text fw={700}>{displayValue(row.VendorCode)}</Text>
+            <TableChip tone="product" value={displayValue(row.VendorCode)} />
           )
         },
       },
       {
         id: 'productName',
         header: t('Товар'),
-        width: 300,
-        minWidth: 240,
+        width: 250,
+        minWidth: 220,
+        fill: true,
         accessor: (row) => row.ProductName,
         cell: (row) => {
           const netId = getAvailabilityProductNetId(row)
 
-          return netId && onOpenProductCard ? (
-            <Anchor
-              component="button"
-              lineClamp={2}
-              size="sm"
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation()
-                onOpenProductCard(netId)
-              }}
-            >
-              {displayValue(row.ProductName)}
-            </Anchor>
-          ) : (
-            <Text size="sm" lineClamp={2}>
-              {displayValue(row.ProductName)}
-            </Text>
+          return (
+            <div className="resales-new-product">
+              {netId && onOpenProductCard ? (
+                <Anchor
+                  className="resales-new-product-name"
+                  component="button"
+                  underline="hover"
+                  lineClamp={2}
+                  size="sm"
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onOpenProductCard(netId)
+                  }}
+                >
+                  {displayValue(row.ProductName)}
+                </Anchor>
+              ) : (
+                <Text className="resales-new-product-name" size="sm" lineClamp={2}>
+                  {displayValue(row.ProductName)}
+                </Text>
+              )}
+              <span className="resales-new-product-meta">
+                {[row.ProductGroup, row.SpecificationCode, formatDateTime(row.CreatedReSaleAvailability)].filter(Boolean).join(' · ')}
+              </span>
+            </div>
           )
         },
       },
@@ -2211,8 +2232,8 @@ function useResaleAvailabilityColumns({
       {
         id: 'storage',
         header: t('Склад'),
-        width: 180,
-        minWidth: 140,
+        width: 120,
+        minWidth: 110,
         accessor: (row) => row.FromStorage?.Name,
         cell: (row) => <TableChip tone="storage" value={displayValue(row.FromStorage?.Name)} />,
       },
@@ -2226,12 +2247,12 @@ function useResaleAvailabilityColumns({
       },
       {
         id: 'qty',
-        header: t('Кількість'),
-        width: 112,
-        minWidth: 96,
+        header: t('К-сть'),
+        width: 90,
+        minWidth: 80,
         align: 'right',
         accessor: (row) => row.Qty,
-        cell: (row) => formatAmount(row.Qty),
+        cell: (row) => <div className="resales-new-quantity"><strong>{formatAmount(row.Qty)}</strong><span>{displayValue(row.MeasureUnit)}</span></div>,
       },
       {
         id: 'measure',
@@ -2245,21 +2266,21 @@ function useResaleAvailabilityColumns({
         id: 'price',
         numeric: true,
         header: t('Собівартість'),
-        width: 128,
-        minWidth: 110,
+        width: 112,
+        minWidth: 104,
         align: 'right',
         accessor: (row) => row.AccountingGrossPrice,
-        cell: (row) => formatMoney(row.AccountingGrossPrice),
+        cell: (row) => <span className="app-money resales-new-money">{formatMoney(row.AccountingGrossPrice)}</span>,
       },
       {
         id: 'salePrice',
         numeric: true,
         header: t('Ціна продажу'),
-        width: 128,
-        minWidth: 110,
+        width: 112,
+        minWidth: 104,
         align: 'right',
         accessor: (row) => row.SalePrice,
-        cell: (row) => formatMoney(row.SalePrice),
+        cell: (row) => <span className="app-money resales-new-money">{formatMoney(row.SalePrice)}</span>,
       },
       {
         id: 'totalCost',
@@ -2269,7 +2290,7 @@ function useResaleAvailabilityColumns({
         minWidth: 124,
         align: 'right',
         accessor: (row) => row.TotalAccountingPrice,
-        cell: (row) => formatMoney(row.TotalAccountingPrice),
+        cell: (row) => <span className="app-money resales-new-money">{formatMoney(row.TotalAccountingPrice)}</span>,
       },
       {
         id: 'totalSale',
@@ -2279,10 +2300,10 @@ function useResaleAvailabilityColumns({
         minWidth: 118,
         align: 'right',
         accessor: (row) => row.TotalSalePrice,
-        cell: (row) => formatMoney(row.TotalSalePrice),
+        cell: (row) => <span className="app-money resales-new-money">{formatMoney(row.TotalSalePrice)}</span>,
       },
     ],
-    [allSelected, onOpenProductCard, onToggle, onToggleAll, rows, selectedKeys, t],
+    [onOpenProductCard, onToggle, selectedKeys, t],
   )
 }
 

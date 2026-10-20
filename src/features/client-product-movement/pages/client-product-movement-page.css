@@ -20,11 +20,10 @@
 
 .client-product-movement-filter-bar {
   flex: 0 0 auto;
-  overflow-x: auto;
+  overflow: visible;
 }
 
 .client-product-movement-filter-actions {
-  grid-column: 6;
   margin-left: auto;
 }
 
@@ -32,7 +31,6 @@
   align-items: center;
   align-self: end;
   display: flex;
-  grid-column: 7;
   justify-content: flex-end;
   min-height: 36px;
 }
@@ -115,4 +113,96 @@
 .client-product-movement-document-modal__title {
   font-family: var(--font-mono);
   letter-spacing: 0;
+}
+
+.client-product-movement-filter-row > .mantine-InputWrapper-root {
+  width: auto;
+}
+
+@container registry (min-width: 1380px) {
+  .client-product-movement-filter-bar .client-product-movement-filter-row {
+    --app-multi-select-width: 100%;
+    display: grid;
+    grid-template-columns: 250px minmax(160px, 1fr) minmax(160px, 1fr) minmax(115px, .7fr) auto auto;
+  }
+
+  .client-product-movement-filter-row > .app-filter-date-range {
+    width: 250px;
+  }
+
+  .client-product-movement-filter-row > .mantine-InputWrapper-root {
+    width: 100%;
+  }
+}
+
+.client-product-movement-page__table > .data-table > .data-table-scroll {
+  border: 0;
+}
+
+.client-product-movement-page__table .data-table-row:has(.app-table-row-action[aria-expanded='true']) > td {
+  background: var(--mantine-color-gray-0);
+}
+
+.client-product-movement-page__table .app-table-row-action.mantine-ActionIcon-root,
+.client-product-movement-page__table .app-table-row-action.mantine-ActionIcon-root:hover {
+  background: transparent;
+  border-color: transparent;
+  color: var(--mantine-color-gray-9);
+}
+
+.client-product-movement-page__table > .data-table .data-table-expanded-cell {
+  background: var(--mantine-color-white);
+}
+
+.client-product-movement-detail-table {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  margin: 8px;
+  overflow: hidden;
+}
+
+.client-product-movement-detail-heading {
+  align-items: center;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  gap: 8px;
+  padding: 8px;
+}
+
+.client-product-movement-detail-table .data-table-scroll {
+  border: 0;
+  border-radius: 0;
+}
+
+.client-product-movement-detail-table tbody tr:last-child > td {
+  border-bottom: 0;
+}
+
+.client-product-movement-detail-table .client-product-movement-product-name {
+  color: var(--mantine-color-gray-8);
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: normal;
+}
+
+.client-product-movement-money-group {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+.client-product-movement-money-cell,
+.client-product-movement-number-cell {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.client-product-movement-mono-cell {
+  font-size: 12px;
 }

@@ -112,6 +112,14 @@ export type DataTableProps<TData> = {
   renderExpandedRow?: (row: TData) => ReactNode
   getRowCanExpand?: (row: TData) => boolean
   expandColumnLabels?: DataTableExpandColumnLabels
+  /** Optional expansion control. Keep its label, expanded state, and click handling accessible. */
+  renderExpandToggle?: (options: DataTableExpandToggleOptions) => ReactNode
+}
+
+export type DataTableExpandToggleOptions = {
+  isExpanded: boolean
+  label: string
+  onToggle: () => void
 }
 
 export type DataTableExpandColumnLabels = {

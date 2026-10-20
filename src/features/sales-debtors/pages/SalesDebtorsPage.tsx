@@ -1,29 +1,24 @@
-import '../../../shared/ui/document-detail/document-detail.css'
-import { ActionIcon, Alert, Badge, Select, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Badge, Select, Stack, Tooltip } from '@mantine/core'
 import { CircleAlert, FileDown } from 'lucide-react'
-import { useEffect, useMemo, useReducer, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import {
   exportDebtorsDocument,
-  getDebtorDebtTotal,
-  getDebtorGroupedDebts,
   getDebtorsManagers,
   getDebtorsOrganizations,
   getFilteredDebtors,
 } from '../api/salesDebtorsApi'
+import { DebtorDetailDrawer } from '../components/DebtorDetailDrawer'
 import { DownloadDocumentModal } from '../components/DownloadDocumentModal'
 import { TypeOfClientAgreement, TypeOfCurrencyOfAgreement } from '../types'
 import type {
   ClientDebtors,
-  DebtorDebtItem,
-  DebtorDebtSale,
-  DebtorDebtTotal,
   ClientInDebt,
   DebtorsDocumentResult,
   DebtorsManagerOption,
@@ -37,7 +32,7 @@ import './sales-debtors-page.css'
 const daysOptions = ['3', '5', '7', '10']
 
 const currencyCodeByType: Record<TypeOfCurrencyOfAgreementValue, string> = {
-  [TypeOfCurrencyOfAgreement.None]: 'EUR',
+  [TypeOfCurrencyOfAgreement.None]: '',
   [TypeOfCurrencyOfAgreement.UAH]: 'UAH',
   [TypeOfCurrencyOfAgreement.PLN]: 'PLN',
   [TypeOfCurrencyOfAgreement.EUR]: 'EUR',
@@ -90,6 +85,8 @@ export function SalesDebtorsPage() {
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   const offset = (page - 1) * pageSize
+  // The filter selects agreement currencies; remainder/overdue are always EUR equivalents.
+  // TotalDebtInDays sums native agreement amounts, with no currency metadata in the API.
   const currencyCode = currencyCodeByType[typeCurrency]
   const debtorColumns = useDebtorColumns(currencyCode, days)
   const totalPages = Math.max(1, Math.ceil(debtors.TotalQtyClients / pageSize))
@@ -271,7 +268,7 @@ export function SalesDebtorsPage() {
             allowDeselect={false}
             className="sales-debtors-filter is-days"
             data={daysOptions}
-            label={t('Борг через днів')}
+            label={t('Борг через (днів)')}
             value={String(days)}
             onChange={(value) => {
               setPage(1)
@@ -332,7 +329,7 @@ export function SalesDebtorsPage() {
           />
         </div>
 
-        <SalesDebtorsSummary debtors={debtors} currencyCode={currencyCode} />
+        <SalesDebtorsSummary debtors={debtors} currencyCode="EUR" />
       </div>
 
       <DownloadDocumentModal
@@ -340,7 +337,7 @@ export function SalesDebtorsPage() {
         opened={downloadModalOpened}
         onClose={() => setDownloadModalOpened(false)}
       />
-      <DebtorDetailDrawer currencyCode={currencyCode} debtor={selectedDebtor} onClose={() => setSelectedDebtor(null)} />
+      <DebtorDetailDrawer currencyCode="EUR" debtor={selectedDebtor} onClose={() => setSelectedDebtor(null)} />
     </Stack>
   )
 }
@@ -353,8 +350,8 @@ function useDebtorColumns(currencyCode: string, days: number) {
       {
         id: 'region',
         header: t('Регіон'),
-        width: 96,
-        minWidth: 80,
+        width: 108,
+        minWidth: 100,
         accessor: (row) => row.RegionCode || '',
         cell: (row) => <DebtorRegionCell value={row.RegionCode?.trim() || ''} />,
       },
@@ -378,17 +375,17 @@ function useDebtorColumns(currencyCode: string, days: number) {
       {
         id: 'totalDebtInDays',
         header: `${t('Борг через')} ${days} ${t('днів')}`,
-        width: 168,
-        minWidth: 140,
+        width: 180,
+        minWidth: 180,
         align: 'right',
         accessor: (row) => row.TotalDebtInDays ?? 0,
         cell: (row) => <DebtorAmountCell amount={row.TotalDebtInDays} currencyCode={currencyCode} />,
       },
       {
         id: 'missedDays',
-        header: t('Дні'),
-        width: 92,
-        minWidth: 76,
+        header: t('Термін, днів'),
+        width: 132,
+        minWidth: 132,
         align: 'right',
         accessor: (row) => row.MissedDays ?? 0,
         cell: (row) => <DebtorDaysCell value={row.MissedDays ?? 0} />,
@@ -400,7 +397,7 @@ function useDebtorColumns(currencyCode: string, days: number) {
         minWidth: 130,
         align: 'right',
         accessor: (row) => row.RemainderDebt ?? 0,
-        cell: (row) => <DebtorAmountCell amount={row.RemainderDebt} currencyCode={currencyCode} />,
+        cell: (row) => <DebtorAmountCell amount={row.RemainderDebt} currencyCode="EUR" />,
       },
       {
         id: 'overdueDebt',
@@ -410,7 +407,7 @@ function useDebtorColumns(currencyCode: string, days: number) {
         align: 'right',
         accessor: (row) => row.OverdueDebt ?? 0,
         cell: (row) => (
-          <DebtorAmountCell amount={row.OverdueDebt} currencyCode={currencyCode} tone={(row.OverdueDebt ?? 0) > 0 ? 'danger' : undefined} />
+          <DebtorAmountCell amount={row.OverdueDebt} currencyCode="EUR" tone={(row.OverdueDebt ?? 0) > 0 ? 'danger' : undefined} />
         ),
       },
     ],
@@ -437,7 +434,7 @@ function DebtorClientCell({ debtor }: { debtor: ClientInDebt }) {
   return (
     <div className="console-table-entity-cell sales-debtors-client-cell">
       <span className="console-table-entity-copy">
-        <span className="console-table-entity-title" title={title}>{title}</span>
+        <TableChip tone="warning" value={title} />
         {subtitle ? (
           <span className="console-table-entity-subtitle sales-debtors-client-meta" title={subtitle}>{subtitle}</span>
         ) : null}
@@ -450,9 +447,7 @@ function DebtorManagerCell({ value }: { value: string }) {
   return (
     <div className="sales-debtors-manager-cell">
       {value ? (
-        <span className="app-role-pill sales-debtors-manager-pill is-gray" title={value}>
-          {value}
-        </span>
+        <TableChip tone="product" value={value} />
       ) : null}
     </div>
   )
@@ -472,17 +467,28 @@ function DebtorAmountCell({
   return (
     <span className={`sales-debtors-amount-cell${tone === 'danger' ? ' is-danger' : ''}`}>
       <strong>{value}</strong>
-      <small>{currencyCode}</small>
+      {currencyCode ? <TableChip tone="source" value={currencyCode} /> : (
+        <TableChip tone="neutral" value="За договорами" title="Сума у валютах договорів. Оберіть валюту у фільтрі, щоб бачити суму в одній валюті." />
+      )}
     </span>
   )
 }
 
 function DebtorDaysCell({ value }: { value: number }) {
+  const { t } = useI18n()
+  const description = value < 0
+    ? `${t('Прострочення')}: ${Math.abs(value)} ${t('днів')}`
+    : value > 0
+      ? `${t('До терміну оплати')}: ${value} ${t('днів')}`
+      : t('Термін оплати сьогодні')
+
   return (
     <span className={`sales-debtors-days-cell${value < 0 ? ' is-danger' : value > 0 ? ' is-warning' : ''}`}>
-      <strong className={`app-role-pill sales-debtors-days-pill${value < 0 ? ' is-red' : value > 0 ? ' is-orange' : ' is-gray'}`}>
-        {value}
-      </strong>
+      <Tooltip label={description}>
+        <strong aria-label={description} className={`app-role-pill sales-debtors-days-pill${value < 0 ? ' is-red' : value > 0 ? ' is-orange' : ' is-gray'}`}>
+          {value > 0 ? `+${value}` : value}
+        </strong>
+      </Tooltip>
     </span>
   )
 }
@@ -495,232 +501,18 @@ function SalesDebtorsSummary({ currencyCode, debtors }: { currencyCode: string; 
       <Badge className="app-role-pill is-gray" variant="light">
         {t('Клієнтів')}: {debtors.TotalQtyClients}
       </Badge>
-      <Badge className="app-role-pill is-gray" variant="light">
-        {t('Днів')}: {debtors.TotalMissedDays}
-      </Badge>
-      <Badge className="app-role-pill is-gray" variant="light">
-        {t('Залишок')}: {moneyFormatter.format(debtors.TotalRemainderDebtorsValue)} {currencyCode}
-      </Badge>
-      <Badge className="app-role-pill is-gray" variant="light">
-        {t('Прострочено')}: {moneyFormatter.format(debtors.TotalOverdueDebtorsValue)} {currencyCode}
-      </Badge>
+      <span className="sales-debtors-summary__amount">
+        <span>{t('Залишок')}</span>
+        <strong>{moneyFormatter.format(debtors.TotalRemainderDebtorsValue)}</strong>
+        <TableChip tone="source" value={currencyCode} />
+      </span>
+      <span className="sales-debtors-summary__amount">
+        <span>{t('Прострочено')}</span>
+        <strong>{moneyFormatter.format(debtors.TotalOverdueDebtorsValue)}</strong>
+        <TableChip tone="source" value={currencyCode} />
+      </span>
     </div>
   )
-}
-
-function DebtorDetailDrawer({
-  currencyCode,
-  debtor,
-  onClose,
-}: {
-  currencyCode: string
-  debtor: ClientInDebt | null
-  onClose: () => void
-}) {
-  const { t } = useI18n()
-  const [items, setItems] = useValueState<DebtorDebtItem[]>([])
-  const [total, setTotal] = useValueState<DebtorDebtTotal | null>(null)
-  const [isLoading, setLoading] = useValueState(false)
-  const [error, setError] = useValueState<string | null>(null)
-
-  useEffect(() => {
-    const clientNetId = debtor?.ClientNetId
-
-    if (!clientNetId) {
-      setItems([])
-      setTotal(null)
-      setLoading(false)
-      setError(null)
-
-      return
-    }
-
-    const controller = new AbortController()
-    const debtorClientNetId = clientNetId
-
-    async function loadDetails() {
-      setLoading(true)
-      setError(null)
-
-      try {
-        const [nextItems, nextTotal] = await Promise.all([
-          getDebtorGroupedDebts(debtorClientNetId, controller.signal),
-          getDebtorDebtTotal(debtorClientNetId, controller.signal),
-        ])
-
-        setItems(nextItems)
-        setTotal(nextTotal)
-      } catch (loadError) {
-        if (!controller.signal.aborted) {
-          setItems([])
-          setTotal(null)
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити деталі боржника'))
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void loadDetails()
-
-    return () => {
-      controller.abort()
-    }
-  }, [debtor?.ClientNetId, setError, setItems, setLoading, setTotal, t])
-
-  return (
-    <AppDrawer
-      className="sales-debtor-detail-drawer"
-      opened={Boolean(debtor)}
-      padding="md"
-      position="right"
-      size="xl"
-      title={t('Деталі боржника')}
-      onClose={onClose}
-    >
-      {debtor ? (
-        <div className="document-detail-drawer document-detail-drawer--compact sales-debtor-detail">
-          <section className="document-detail-summary sales-debtor-detail-summary">
-            <div className="document-detail-summary__main sales-debtor-detail-summary__main">
-              <span className="document-detail-eyebrow sales-debtor-detail-eyebrow">{t('Клієнт')}</span>
-              <Text className="document-detail-summary__title sales-debtor-detail-summary__title">{displayValue(debtor.ClientName)}</Text>
-              <Text className="document-detail-summary__meta sales-debtor-detail-summary__meta">
-                {displayValue(debtor.RegionCode)} · {displayValue(debtor.UserName)}
-              </Text>
-            </div>
-            <div className="document-detail-summary__metrics sales-debtor-detail-summary__metrics">
-              <DebtorDetailMetric label={t('Залишок')} tone="neutral" unit={currencyCode} value={debtor.RemainderDebt} />
-              <DebtorDetailMetric label={t('Прострочено')} tone="danger" unit={currencyCode} value={debtor.OverdueDebt} />
-              <DebtorDetailMetric format="integer" label={t('Днів')} tone={(debtor.MissedDays ?? 0) < 0 ? 'danger' : 'neutral'} value={debtor.MissedDays} />
-            </div>
-          </section>
-
-          <div className="document-detail-tree sales-debtor-detail-tree">
-            <DebtorDetailSection subtitle={currencyCode} title={t('Загальна заборгованість')}>
-              <DebtorDetailRow mono label="EUR" value={`${moneyFormatter.format(total?.TotalEuro ?? 0)} EUR`} />
-              <DebtorDetailRow mono label="UAH" value={`${moneyFormatter.format(total?.TotalLocal ?? 0)} UAH`} />
-              <DebtorDetailRow
-                mono
-                label={t('По структурі')}
-                value={`${moneyFormatter.format(total?.TotalSubClientDebt ?? 0)} UAH`}
-              />
-            </DebtorDetailSection>
-
-            <DebtorDetailSection subtitle={`${items.length}`} title={t('Борги по клієнту')}>
-              {isLoading ? (
-                <div className="sales-debtor-detail-state">{t('Завантаження деталей')}</div>
-              ) : error ? (
-                <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-                  {error}
-                </Alert>
-              ) : items.length === 0 ? (
-                <div className="sales-debtor-detail-state">{t('Боргових документів не знайдено')}</div>
-              ) : (
-                <div className="document-detail-related-list sales-debtor-detail-related-list">
-                  {items.map((item, index) => (
-                    <DebtorDebtCard key={item.NetUid || `${item.Id || 'debt'}-${index}`} currencyCode={currencyCode} item={item} />
-                  ))}
-                </div>
-              )}
-            </DebtorDetailSection>
-          </div>
-        </div>
-      ) : null}
-    </AppDrawer>
-  )
-}
-
-function DebtorDetailSection({
-  children,
-  subtitle,
-  title,
-}: {
-  children: ReactNode
-  subtitle?: string
-  title: string
-}) {
-  return (
-    <section className="document-detail-section sales-debtor-detail-section">
-      <div className="document-detail-section__head sales-debtor-detail-section__head">
-        <span className="document-detail-section__title sales-debtor-detail-section__title">{title}</span>
-        {subtitle ? <span className="document-detail-section__subtitle sales-debtor-detail-section__subtitle">{subtitle}</span> : null}
-      </div>
-      <div className="document-detail-section__body sales-debtor-detail-section__body">{children}</div>
-    </section>
-  )
-}
-
-function DebtorDetailRow({ label, mono, value }: { label: string; mono?: boolean; value: string }) {
-  return (
-    <div className="document-detail-row sales-debtor-detail-row">
-      <span className="document-detail-row__label sales-debtor-detail-row__label">{label}</span>
-      <span className="document-detail-row__line sales-debtor-detail-row__line" aria-hidden />
-      <span className={`document-detail-row__value sales-debtor-detail-row__value${mono ? ' app-money' : ''}`}>{value}</span>
-    </div>
-  )
-}
-
-function DebtorDetailMetric({
-  label,
-  format = 'money',
-  tone,
-  unit,
-  value,
-}: {
-  format?: 'integer' | 'money'
-  label: string
-  tone?: 'danger' | 'neutral'
-  unit?: string
-  value: number | undefined
-}) {
-  const formattedValue = format === 'integer' ? String(value ?? 0) : moneyFormatter.format(value ?? 0)
-
-  return (
-    <span className={`document-detail-metric sales-debtor-detail-metric${tone === 'danger' ? ' is-danger' : ''}`}>
-      <span>{label}</span>
-      <strong>{formattedValue}</strong>
-      {unit ? <small>{unit}</small> : null}
-    </span>
-  )
-}
-
-function DebtorDebtCard({ currencyCode: fallbackCurrencyCode, item }: { currencyCode: string; item: DebtorDebtItem }) {
-  const { t } = useI18n()
-  const sale = item.Sale || item.ReSale || null
-  const documentNumber = getDebtDocumentNumber(item, sale)
-  const documentDate = getDebtDocumentDate(item, sale)
-  const agreement = getDebtAgreementLabel(item)
-  const status = getDebtStatusLabel(sale)
-  const currencyCode = item.Agreement?.Currency?.Code || fallbackCurrencyCode
-  const amount = item.Debt?.Total ?? sale?.TotalAmount ?? sale?.TotalAmountLocal ?? 0
-  const days = item.Debt?.Days ?? 0
-
-  return (
-    <article className="document-detail-related-card sales-debtor-detail-related-card">
-      <div className="document-detail-related-card__head sales-debtor-detail-related-card__head">
-        <Tooltip label={documentNumber}>
-          <span>{documentNumber || '-'}</span>
-        </Tooltip>
-        <span>{documentDate || '-'}</span>
-      </div>
-      <div className="document-detail-related-card__grid sales-debtor-detail-related-card__grid">
-        <DebtorDetailRow label={t('Договір')} value={agreement || '-'} />
-        <DebtorDetailRow label={t('Статус')} value={status || '-'} />
-        <DebtorDetailRow
-          mono
-          label={t('Сума боргу')}
-          value={`${moneyFormatter.format(amount)}${currencyCode ? ` ${currencyCode}` : ''}`}
-        />
-        <DebtorDetailRow label={t('Днів')} value={String(days)} />
-      </div>
-    </article>
-  )
-}
-
-function displayValue(value?: string | null): string {
-  return value?.trim() || ''
 }
 
 function formatDateTime(value?: string | null): string {
@@ -731,42 +523,6 @@ function formatDateTime(value?: string | null): string {
   const date = new Date(value)
 
   return Number.isNaN(date.getTime()) ? '' : dateTimeFormatter.format(date)
-}
-
-function getDebtDocumentNumber(item: DebtorDebtItem, sale: DebtorDebtSale | null): string {
-  return displayValue(
-    sale?.SaleNumber?.Value ||
-    sale?.SaleNumber?.Name ||
-    sale?.SaleNumber?.Number ||
-    sale?.Number ||
-    sale?.Name ||
-    item.Debt?.Name,
-  )
-}
-
-function getDebtDocumentDate(item: DebtorDebtItem, sale: DebtorDebtSale | null): string {
-  return formatDateTime(sale?.ChangedToInvoice || sale?.Created || item.Created)
-}
-
-function getDebtAgreementLabel(item: DebtorDebtItem): string {
-  const agreement = item.Agreement
-  const organization = agreement?.Organization?.Name
-  const agreementName = agreement?.Name || agreement?.Number
-
-  if (organization && agreementName) {
-    return `${organization} · ${agreementName}`
-  }
-
-  return displayValue(agreementName || organization)
-}
-
-function getDebtStatusLabel(sale: DebtorDebtSale | null): string {
-  return displayValue(
-    sale?.BaseSalePaymentStatus?.Name ||
-    sale?.BaseSalePaymentStatus?.Value ||
-    sale?.BaseLifeCycleStatus?.Name ||
-    sale?.BaseLifeCycleStatus?.Value,
-  )
 }
 
 function getManagerLabel(manager: DebtorsManagerOption): string {

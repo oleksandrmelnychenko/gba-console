@@ -1528,6 +1528,7 @@ function SalesUkrainePageContent() {
           <Suspense fallback={null}>
             <LazySaleAuditDetail
               documentApi={SALES_UKRAINE_AUDIT_DOCUMENT_API}
+              documentNumber={auditSale.SaleNumber?.Value}
               error={auditError}
               isLoading={auditLoading}
               showConfirm={canEditSale}
@@ -1865,11 +1866,11 @@ const SaleGridRow = memo(function SaleGridRow({
 
       <div className={`sg-amt${unpaid ? ' is-unpaid' : ''}`}>
         <span className="sg-amt-val">{formatAmount(localAmount)}</span>
-        <span className="sg-amt-unit">{displayValue(getSaleCurrencyCode(sale))}</span>
+        <TableChip tone="source" value={displayValue(getSaleCurrencyCode(sale))} />
       </div>
       <div className={`sg-amt${unpaid ? ' is-unpaid' : ''}`}>
         <span className="sg-amt-val">{formatAmount(getSecondaryAmount(sale))}</span>
-        <span className="sg-amt-unit">{getSecondaryAmountCode(sale)}</span>
+        <TableChip tone="source" value={getSecondaryAmountCode(sale)} />
       </div>
       <div className={`sg-amt${unpaid ? ' is-unpaid' : ''}`}>
         <span className="sg-amt-val">{formatAmount(vat)}</span>
@@ -1970,10 +1971,12 @@ const SaleGridRow = memo(function SaleGridRow({
         <Badge className={`app-role-pill ${getSaleStatusPillClass(sale)}`} size="sm" variant="light">
           {getSaleStatusLabel(sale)}
         </Badge>
-        <span
-          className="sg-status-pay"
-          style={{ color: paymentColor ? `var(--mantine-color-${paymentColor}-6)` : undefined }}
-        >
+        <span className="sg-status-pay">
+          <span
+            className="sg-status-pay__indicator"
+            aria-hidden="true"
+            style={{ backgroundColor: paymentColor ? `var(--mantine-color-${paymentColor}-6)` : undefined }}
+          />
           {displayValue(`${getPaymentStatusLabel(sale)}${getRetailPaymentSuffix(sale)}`)}
         </span>
       </div>

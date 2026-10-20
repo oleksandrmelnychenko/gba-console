@@ -13,14 +13,12 @@
   min-width: 0;
 }
 
-.sales-dashboard-shell__tabs {
-  flex: 0 0 auto;
+/* The shared card owns the outside outline; tabs only divide navigation
+   from the filter strip below it. */
+.sales-dashboard-shell .sales-dashboard-shell__tabs.app-screen-tabs {
+  border: 0;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
   border-radius: 0;
-  padding-bottom: 4px;
-}
-
-.sales-dashboard-shell__tabs .pill-tab {
-  padding-bottom: 12px;
 }
 
 .sales-dashboard-shell__content {

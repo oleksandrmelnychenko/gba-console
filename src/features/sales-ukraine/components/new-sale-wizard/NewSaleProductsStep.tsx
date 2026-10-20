@@ -1,5 +1,6 @@
 import { TableChip } from '../../../../shared/ui/TableChip'
 import { Alert, Box, Button, Group, Select, Stack, Text } from '@mantine/core'
+import { useUncontrolled } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { FileSignature, Hash, Search, Sparkles, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react'
@@ -250,6 +251,7 @@ function toPersistedCartMutation(operation: PendingCartMutation): PersistedWizar
 
 export function NewSaleProductsStep({
   agreementNetId,
+  cartOpened,
   client,
   clientNetId,
   headerClose,
@@ -258,11 +260,13 @@ export function NewSaleProductsStep({
   sale,
   onBusyChange,
   onCartChanged,
+  onCartOpenedChange,
   onPendingMutationChange,
   onRequestClose,
   onRestoreSplitItems,
 }: {
   agreementNetId: string | null
+  cartOpened?: boolean
   client?: Client | null
   clientNetId: string | null
   headerClose?: ReactNode
@@ -270,13 +274,18 @@ export function NewSaleProductsStep({
   permissionFlow?: 'create' | 'edit'
   onBusyChange?: (busy: boolean) => void
   onCartChanged: () => SalesUkraineSale | null | void | Promise<SalesUkraineSale | null | void>
+  onCartOpenedChange?: (opened: boolean) => void
   onPendingMutationChange?: (pending: boolean) => void
   onRequestClose?: () => void
   onRestoreSplitItems?: () => Promise<boolean>
   sale: SalesUkraineSale | null
 }) {
   const { t } = useI18n()
-  const [cartSheetOpen, setCartSheetOpen] = useState(false)
+  const [cartSheetOpen, setCartSheetOpen] = useUncontrolled({
+    value: cartOpened,
+    finalValue: false,
+    onChange: onCartOpenedChange,
+  })
   const { hasPermission, session, user } = useAuth()
   const canCreatePreorder = hasPermission(CREATE_PREORDER_PERMISSION)
   const canCreateFutureReservation = hasPermission(CREATE_FUTURE_RESERVATION_PERMISSION)

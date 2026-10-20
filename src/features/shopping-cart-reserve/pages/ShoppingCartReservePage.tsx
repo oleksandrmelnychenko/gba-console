@@ -1,6 +1,6 @@
-import { useEffect, useReducer } from 'react'
-import { ActionIcon, Alert, Stack, Tooltip } from '@mantine/core'
-import { CircleAlert, RefreshCw } from 'lucide-react'
+import { useEffect } from 'react'
+import { Alert, Stack } from '@mantine/core'
+import { CircleAlert } from 'lucide-react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useNavigate } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -16,7 +16,6 @@ export function ShoppingCartReservePage() {
   const [carts, setCarts] = useValueState<ShoppingCartReserveItem[]>([])
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
-  const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   useEffect(() => {
     let cancelled = false
@@ -48,7 +47,7 @@ export function ShoppingCartReservePage() {
     return () => {
       cancelled = true
     }
-  }, [reloadKey, setCarts, setError, setLoading, t])
+  }, [setCarts, setError, setLoading, t])
 
   function handleOpenClient(cart: ShoppingCartReserveItem) {
     const netUid = getCartClientNetUid(cart)
@@ -64,23 +63,6 @@ export function ShoppingCartReservePage() {
   return (
     <Stack className="shopping-cart-reserve-page" gap={0}>
       <div className="sales-dashboard-tab-content shopping-cart-reserve-card">
-        <div className="app-filter-bar shopping-cart-reserve-command-bar">
-          <div className="app-filter-actions shopping-cart-reserve-command-actions">
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                color="gray"
-                loading={isLoading}
-                size={34}
-                variant="light"
-                onClick={() => reload()}
-              >
-                <RefreshCw size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </div>
-        </div>
-
         <div className="shopping-cart-reserve-content">
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
