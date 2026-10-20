@@ -754,6 +754,11 @@
   flex: 0 0 auto;
 }
 
+.app-table-chip.sg-client-code {
+  font-size: 13px;
+  line-height: 18px;
+}
+
 .sg-client-name-text {
   flex: 0 1 auto;
   min-width: 0;
@@ -1191,6 +1196,11 @@
   flex: 0 0 auto;
   max-width: 132px;
   min-width: 0;
+}
+
+.sale-expand-product-code .app-table-chip {
+  font-size: 13px;
+  line-height: 18px;
 }
 
 .sale-expand-product-name {

@@ -22,6 +22,11 @@
 
 .product-card-summary > .mantine-Stack-root { min-width: 0; }
 .product-card-summary .app-table-chip { font-size: 12px; }
+.product-card-summary .app-table-chip.is-product {
+  font-size: 14px;
+  line-height: 20px;
+}
+
 .product-card-hero > .product-card-summary {
   border: 0;
   border-radius: 0;
