@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getOneCTurnoverSyncCatalog, getSyncStatus, startDailySync, startSyncSession } from '../api/syncApi'
 import { SyncControl } from './SyncControl'
@@ -37,8 +37,8 @@ describe('native report synchronization boundary', () => {
     fireEvent.click(screen.getByRole('radio', { name: /Щоденна/ }))
     fireEvent.click(screen.getByRole('radio', { name: 'FENIX' }))
 
-    expect(screen.getByLabelText('Дата від')).toBeTruthy()
-    expect(screen.getByLabelText('Дата до')).toBeTruthy()
+    expect(within(screen.getByRole('tabpanel')).getByLabelText('Дата від')).toBeTruthy()
+    expect(within(screen.getByRole('tabpanel')).getByLabelText('Дата до')).toBeTruthy()
     expect(screen.getByLabelText('Звітні рухи 1С — окремий запуск Fenix')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Завантажити звітні рухи 1С' })).toBeNull()
     expect(getOneCTurnoverSyncCatalog).not.toHaveBeenCalled()

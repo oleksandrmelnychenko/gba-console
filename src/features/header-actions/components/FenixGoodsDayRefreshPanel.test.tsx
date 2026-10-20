@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest, ApiError } from '../../../shared/api/apiClient'
 import { AuthContext } from '../../auth/AuthContext'
@@ -108,8 +108,8 @@ describe('one explicit request', () => {
     await waitFor(() => expect(getSyncStatus).toHaveBeenCalledOnce())
     fireEvent.click(screen.getByRole('radio', { name: /Щоденна/ }))
     fireEvent.click(screen.getByRole('radio', { name: 'FENIX' }))
-    fireEvent.change(screen.getByLabelText('Дата від'), { target: { value: DAY } })
-    fireEvent.change(screen.getByLabelText('Дата до'), { target: { value: DAY } })
+    fireEvent.change(within(screen.getByRole('tabpanel')).getByLabelText('Дата від'), { target: { value: DAY } })
+    fireEvent.change(within(screen.getByRole('tabpanel')).getByLabelText('Дата до'), { target: { value: DAY } })
     fireEvent.click(screen.getByRole('button', { name: BUTTON }))
     expect((screen.getByRole('button', { name: 'Запустити щоденну синхронізацію' }) as HTMLButtonElement).disabled).toBe(true)
     expect(startDailySync).not.toHaveBeenCalled()
