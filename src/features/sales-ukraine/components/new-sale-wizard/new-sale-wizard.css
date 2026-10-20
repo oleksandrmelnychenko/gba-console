@@ -6998,6 +6998,8 @@
 
 /* Reveal the photo above the compact card on hover or keyboard focus without
    covering the search results while the user is navigating the picker. */
+.new-sale-product-picker-card-wrap { position: relative; width: 100%; }
+.new-sale-product-picker-card-wrap::before { content: ''; position: absolute; bottom: 100%; left: 0; right: 0; height: 8px; }
 .new-sale-product-picker-card__media {
   align-items: center;
   background: var(--mantine-color-white);
@@ -7010,17 +7012,18 @@
   justify-content: center;
   left: 0;
   overflow: hidden;
-  pointer-events: none;
+  pointer-events: auto;
   position: absolute;
   right: 0;
   visibility: hidden;
   z-index: 20;
 }
 
-.new-sale-product-picker-card:is(:hover, :focus-visible) .new-sale-product-picker-card__media {
+.new-sale-product-picker-card-wrap:not([data-photo-dismissed]):is(:hover, :focus-within) .new-sale-product-picker-card__media {
   visibility: visible;
 }
 
+.new-sale-product-picker-card__photo-close { position: absolute; right: 6px; top: 6px; }
 .new-sale-product-picker-card__media img {
   height: 100%;
   object-fit: contain;
@@ -8017,7 +8020,14 @@
   position: absolute;
   right: 10px;
   top: 10px;
-  z-index: 2;
+  /* Let the photo layer rise above filters without lifting the result rows. */
+  z-index: auto;
+}
+
+.new-sale-products-step__picker-carousel .new-sale-product-picker__upper,
+.new-sale-products-step__picker-carousel .new-sale-product-picker__lower {
+  position: relative;
+  z-index: 1;
 }
 
 .new-sale-products-step__picker-carousel.is-search-centered .new-sale-product-picker {
@@ -8939,9 +8949,36 @@
 .new-sale-products-step__main-column { height: auto; overflow-y: auto; }
 .new-sale-products-step__related-grid,
 .new-sale-products-step__related-grid.is-empty { flex: 1 0 240px; min-height: 240px; }
+.new-sale-products-step__related-grid { position: relative; }
+.wizard-related-frame__content { display: contents; }
+.wizard-related-frame__loading {
+  position: absolute;
+  top: 42px;
+  right: 12px;
+  z-index: 2;
+  padding: 4px 10px;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  background: var(--mantine-color-white);
+  color: var(--mantine-color-gray-6);
+  font-size: 12px;
+  pointer-events: none;
+}
 .new-sale-products-step__selected-slot { flex: 0 0 320px; min-height: 320px; }
 .new-sale-products-step__selected-slot > .new-sale-product-summary { height: 100%; }
 
+@media (min-width: 901px) {
+  /* Keep prices and the photo anchored while optional product facts change. */
+  .new-sale-products-step__selected-slot > .new-sale-product-summary {
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+  .new-sale-products-step__selected-slot .new-sale-product-summary__hero {
+    min-height: 0;
+  }
+  .new-sale-products-step__selected-slot .new-sale-product-summary__pricing {
+    align-self: end;
+  }
+}
 
 .wizard-related-skeleton { display: grid; grid-template-columns: minmax(112px, 28%) minmax(0, 1fr); gap: 12px; padding: 10px 12px; }
 .wizard-related-skeleton + .wizard-related-skeleton { border-top: 1px solid var(--mantine-color-gray-2); }
@@ -8991,7 +9028,7 @@
 .new-sale-product-picker .new-sale-product-picker-card {
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 10px;
-  height: auto;
+  height: 60px;
   min-height: 60px;
   padding: 8px 12px 8px 38px;
 }
@@ -9201,6 +9238,7 @@
 .new-sale-product-picker-code-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .new-sale-product-picker-code-line > .app-table-chip { flex-shrink: 0; }
 .new-sale-product-picker-card__top > .new-sale-product-picker-code-line { flex: 1 1 0; }
+.new-sale-product-picker-card__top { min-height: 22px; }
 .new-sale-product-picker-card .new-sale-product-picker-card__code { max-width: 100%; }
 .new-sale-product-picker-relation { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 22px; width: 22px; height: 22px; border-radius: 6px; }
 .new-sale-product-picker-relation.is-analogue { color: var(--mantine-color-blue-7); background: var(--mantine-color-blue-0); }

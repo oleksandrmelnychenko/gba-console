@@ -78,6 +78,7 @@ import { WizardConfirmModal } from './WizardConfirmModal'
 import { WizardCrossSellModal } from './WizardCrossSellModal'
 import { WizardProductCarousel } from './WizardProductCarousel'
 import { WizardRelatedProductRows } from './WizardRelatedProductRows'
+import { WizardRelatedProductsFrame } from './WizardRelatedProductsFrame'
 import { WizardProductSummarySkeleton, WizardRelatedProductsSkeleton } from './WizardProductSkeletons'
 import { WizardClientHeroHeader } from './WizardClientHeroHeader'
 import {
@@ -1483,7 +1484,7 @@ export function NewSaleProductsStep({
   }
 
   function focusSearchInput() {
-    if (!cartSheetOpen) searchInputRef.current?.focus()
+    if (!cartSheetOpen) searchInputRef.current?.focus({ preventScroll: true })
   }
 
   function focusMainProduct(product: WizardSaleProduct) {
@@ -3732,10 +3733,10 @@ export function NewSaleProductsStep({
     </Stack>
   )
   const relatedGridPanel = (
-    <Box className={`new-sale-products-step__related-grid ${!hasAnalogueRows && !hasComponentRows ? 'is-empty' : ''}`}>
+    <WizardRelatedProductsFrame loading={isAnalogueLoading || isComponentLoading} scopeKey={analogueScopeKey}>
       {analoguePanel}
       {componentPanel}
-    </Box>
+    </WizardRelatedProductsFrame>
   )
 
   return (

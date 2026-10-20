@@ -16,7 +16,7 @@ export function WizardCartCards({ items, busy, localCurrencyCode, useEurToUah, o
   busy: boolean
   localCurrencyCode: string
   useEurToUah: boolean
-  onRowClick: (item: SalesUkraineOrderItem) => void
+  onRowClick?: (item: SalesUkraineOrderItem) => void
   onRemove?: (item: SalesUkraineOrderItem) => void
   onCrossSell?: (item: SalesUkraineOrderItem) => void
 }) {
@@ -53,7 +53,7 @@ export function WizardCartCards({ items, busy, localCurrencyCode, useEurToUah, o
               {item.Comment && <Text size="xs" c="dimmed">{item.Comment}</Text>}
               <Group gap={10} className="wizard-cart-card__actions">
                 <span className="wizard-cart-card__quantity">{t('К-сть')} <TableChip value={`${qty.format(getWizardProductNumber(item.Qty) ?? 0)} ${product?.MeasureUnit?.Name || t('шт')}`} /></span>
-                <Button data-cart-card-action disabled={busy} variant="default" size="compact-xs" leftSection={<Ellipsis size={14} />} aria-label={`${t('Дії з товаром')} · ${code}`} onClick={() => onRowClick(item)}>{t('Дії')}</Button>
+                {onRowClick && <Button data-cart-card-action disabled={busy} variant="default" size="compact-xs" leftSection={<Ellipsis size={14} />} aria-label={`${t('Дії з товаром')} · ${code}`} onClick={() => onRowClick(item)}>{t('Дії')}</Button>}
                 {onRemove && <Button disabled={busy} color="red" variant="subtle" size="compact-xs" leftSection={<Trash2 size={14} />} onClick={() => onRemove(item)}>{t('Видалити')}</Button>}
               </Group>
             </div>

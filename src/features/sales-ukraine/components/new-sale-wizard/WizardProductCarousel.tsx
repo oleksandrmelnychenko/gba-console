@@ -1,6 +1,6 @@
 import { TableChip } from '../../../../shared/ui/TableChip'
-import { Box, Group, Loader, Stack, Text } from '@mantine/core'
-import { Layers2, Package, Puzzle } from 'lucide-react'
+import { ActionIcon, Box, Group, Loader, Stack, Text, Tooltip } from '@mantine/core'
+import { Layers2, Package, Puzzle, X } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { memo, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -257,11 +257,17 @@ function ProductMiniCard({
   // Product photo right in the drum card (falls back to the shop image when the
   // sparse search payload carries no ProductImages) — same width as the card.
   const imageUrl = getProductMainImage(product)?.ImageUrl || getProductShopImageUrl(product)
+  const [dismissedPhoto, setDismissedPhoto] = useState<string | null>(null)
+
+  function closePhoto() {
+    setDismissedPhoto(imageUrl || null)
+    searchInputRef.current?.focus({ preventScroll: true })
+  }
 
   function copyCode() {
     // Clicking the card blurs the (hidden) search input → keyboard events stop reaching the
     // wizard root. Restore focus so Enter still adds the product after a copy.
-    searchInputRef.current?.focus()
+    searchInputRef.current?.focus({ preventScroll: true })
 
     const value = product.VendorCode || product.Articul || ''
 
@@ -283,35 +289,62 @@ function ProductMiniCard({
 
   return (
     <Box
-      component="button"
-      aria-label={`${t('Скопіювати код')}: ${code}`}
-      className="new-sale-product-picker-card"
-      data-active={active ? 'true' : undefined}
-      title={t('Скопіювати код')}
-      type="button"
-      onClick={copyCode}
+      className="new-sale-product-picker-card-wrap"
+      data-photo-dismissed={dismissedPhoto === imageUrl ? 'true' : undefined}
+      onMouseLeave={() => setDismissedPhoto(null)}
     >
+      <Box
+        component="button"
+        aria-label={`${t('Скопіювати код')}: ${code}`}
+        className="new-sale-product-picker-card"
+        data-active={active ? 'true' : undefined}
+        title={t('Скопіювати код')}
+        type="button"
+        onClick={copyCode}
+      >
+        <Package className="new-sale-product-picker-card__icon" size={18} strokeWidth={1.6} aria-hidden="true" />
+        <Box className="new-sale-product-picker-card__top">
+          <div className="new-sale-product-picker-code-line">
+            <Text c={color} className="new-sale-product-picker-card__code" title={name} truncate>
+              <TableChip tone="product" value={code} />
+            </Text>
+            {isCriticalProductTop(product.Top) && <TableChip tone="danger" value={product.Top} />}
+            <ProductRelationIndicators product={product} />
+          </div>
+          {typeof qty === 'number' && (
+            <span className="new-sale-product-picker-card__qty">{qty}</span>
+          )}
+        </Box>
+        <div className="new-sale-product-picker-name-line">
+          <Text className="new-sale-product-picker-card__name" title={name}>{name}</Text>
+        </div>
+      </Box>
       {imageUrl && (
-        <Box className="new-sale-product-picker-card__media">
-          <img alt={code} loading="lazy" src={imageUrl} />
+        <Box
+          className="new-sale-product-picker-card__media"
+          onKeyDown={(event) => {
+            event.stopPropagation()
+            if (event.key === 'Escape') {
+              event.preventDefault()
+              closePhoto()
+            }
+          }}
+        >
+          <img alt={name || code} loading="lazy" src={imageUrl} />
+          <Tooltip label={t('Закрити фото')} withinPortal>
+            <ActionIcon
+              aria-label={t('Закрити фото')}
+              className="new-sale-product-picker-card__photo-close"
+              color="gray"
+              size="sm"
+              variant="default"
+              onClick={closePhoto}
+            >
+              <X size={15} aria-hidden />
+            </ActionIcon>
+          </Tooltip>
         </Box>
       )}
-      <Package className="new-sale-product-picker-card__icon" size={18} strokeWidth={1.6} aria-hidden="true" />
-      <Box className="new-sale-product-picker-card__top">
-        <div className="new-sale-product-picker-code-line">
-          <Text c={color} className="new-sale-product-picker-card__code" title={name} truncate>
-            <TableChip tone="product" value={code} />
-          </Text>
-          {isCriticalProductTop(product.Top) && <TableChip tone="danger" value={product.Top} />}
-          <ProductRelationIndicators product={product} />
-        </div>
-        {typeof qty === 'number' && (
-          <span className="new-sale-product-picker-card__qty">{qty}</span>
-        )}
-      </Box>
-      <div className="new-sale-product-picker-name-line">
-        <Text className="new-sale-product-picker-card__name" title={name}>{name}</Text>
-      </div>
     </Box>
   )
 }
@@ -323,14 +356,18 @@ function ProductRelationIndicators({ product }: { product: WizardSaleProduct }) 
   return (
     <>
       {product.HasAnalogue && (
-        <span className="new-sale-product-picker-relation is-analogue" role="img" aria-label={t('Є аналоги')} title={t('Є аналоги')}>
-          <Layers2 size={14} aria-hidden />
-        </span>
+        <Tooltip label={t('Є аналоги')} withinPortal>
+          <span className="new-sale-product-picker-relation is-analogue" role="img" aria-label={t('Є аналоги')}>
+            <Layers2 size={14} aria-hidden />
+          </span>
+        </Tooltip>
       )}
       {hasComponents && (
-        <span className="new-sale-product-picker-relation is-component" role="img" aria-label={t('Є комплектуючі')} title={t('Є комплектуючі')}>
-          <Puzzle size={14} aria-hidden />
-        </span>
+        <Tooltip label={t('Є комплектуючі')} withinPortal>
+          <span className="new-sale-product-picker-relation is-component" role="img" aria-label={t('Є комплектуючі')}>
+            <Puzzle size={14} aria-hidden />
+          </span>
+        </Tooltip>
       )}
     </>
   )

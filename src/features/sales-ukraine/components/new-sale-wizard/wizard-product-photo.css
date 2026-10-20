@@ -46,11 +46,6 @@
   pointer-events: none;
 }
 
-/* Quick/cached loads should not start a new pulse on every arrow press. */
-.wizard-product-photo__skeleton::after {
-  animation-delay: 180ms;
-}
-
 .wizard-product-photo__zoom {
   position: absolute;
   right: 12px;

@@ -1,6 +1,6 @@
 import { ActionIcon, Alert, Box, Button, Checkbox, FileInput, Group, NumberInput, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { CircleX, Copy, Upload } from 'lucide-react'
+import { CircleX, Upload } from 'lucide-react'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useAuth } from '../../../auth/useAuth'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -94,17 +94,12 @@ import { buildWizardSplitSale } from './wizardSplitSale'
 import { createWizardAsyncGenerationGuard } from './wizardAsyncGeneration'
 import { createWizardEnterLatch } from './wizardEnterLatch'
 import { SaleDocumentWarehouseSelect } from './SaleDocumentWarehouseSelect'
+import { WizardReviewOrderSummary } from './WizardReviewOrderSummary'
+import { getSaleLocalCurrencyCode, isNonVatEurSale } from '../../saleMoney'
+import './wizard-review-checkout.css'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const LOCAL_ORDER_SOURCE = 1
-const SALE_LIFE_CYCLE_STATUS_NAMES: Record<number, string> = {
-  0: 'Рахунок',
-  1: 'Накладна',
-  2: 'Накладна',
-  3: 'Відправлено',
-  4: 'Отримано',
-  5: 'Очікування',
-}
 const reviewFieldClassNames = {
   input: 'new-sale-review-field__input',
   label: 'new-sale-review-field__label',
@@ -490,7 +485,7 @@ export function NewSaleReviewStep({
   })
 
   useEffect(() => {
-    submitRef.current?.focus()
+    submitRef.current?.focus({ preventScroll: true })
   }, [])
 
   useEffect(() => {
@@ -705,9 +700,6 @@ export function NewSaleReviewStep({
   const addressKey = value.address?.Id != null ? String(value.address.Id) : null
 
   const lifecycleKey = getSaleLifecycleTypeKey(sale?.BaseLifeCycleStatus?.SaleLifeCycleType)
-  const documentTitle = sale
-    ? `${withVatAccounting ? `(${t('ПДВ')}) ` : ''}${getSaleLifeCycleStatusName(sale)} ${sale.SaleNumber?.Value ?? ''}`.trim()
-    : ''
   const primaryLabel = submitting && withVatAccounting
     ? t('Продаж збережено · формуємо документи…')
     : finalSubmitOutcomePending
@@ -1634,7 +1626,7 @@ export function NewSaleReviewStep({
   }
 
   return (
-    <Box className="new-sale-review-step app-form-sheet">
+    <Box className="new-sale-review-step new-sale-review-checkout app-form-sheet">
       {blockedFileMutation && (
         <Alert color="orange" mb="sm" title={t('Потрібна звірка операції')}>
           <Text size="sm">
@@ -1668,18 +1660,12 @@ export function NewSaleReviewStep({
       <Box className="new-sale-review-step__body">
         <Box className="new-sale-review-form app-form-sheet">
           <Box className="new-sale-review-layout">
+            <WizardReviewOrderSummary
+              items={splitItems.length > 0 ? splitItems : mergedSale?.orderItems ?? sale?.Order?.OrderItems ?? []}
+              localCurrencyCode={getSaleLocalCurrencyCode(sale)}
+              useEurToUah={isNonVatEurSale(sale)}
+            />
             <Box className="new-sale-review-main">
-              {documentTitle && (
-                <Box className="new-sale-review-document-head">
-                  <span className="new-sale-review-document-head__icon" aria-hidden="true">
-                    <Copy size={17} strokeWidth={1.8} />
-                  </span>
-                  <Text className="new-sale-review-document-head__title" title={documentTitle}>
-                    {documentTitle}
-                  </Text>
-                </Box>
-              )}
-
               {needsDocumentWarehouse && (
                 <Box className="new-sale-review-section">
                   <SaleDocumentWarehouseSelect
@@ -1853,26 +1839,26 @@ export function NewSaleReviewStep({
                   ) : null}
                 </Box>
               </Box>
+
+              <Group className="new-sale-review-actions" gap="sm" justify="flex-end">
+                {sale && !isMergedMode ? (
+                  <Button className="new-sale-review-actions__secondary" color="gray" disabled={finalSubmitOutcomePending} loading={saving} variant="light" onClick={() => void handleSave()}>
+                    {t('Зберегти')}
+                  </Button>
+                ) : null}
+                <Button
+                  ref={submitRef}
+                  className="new-sale-review-actions__primary"
+                  disabled={submitPermissionDenied || Boolean(blockedFileMutation && !blockedFileMutation.canResume)}
+                  loading={submitting}
+                  title={submitPermissionDenied ? effectiveSubmitDeniedReason : undefined}
+                  onClick={() => void submitSale()}
+                >
+                  {primaryLabel}
+                </Button>
+              </Group>
             </Box>
           </Box>
-
-          <Group className="new-sale-review-actions" gap="sm" justify="flex-end">
-            {sale && !isMergedMode ? (
-              <Button className="new-sale-review-actions__secondary" color="gray" disabled={finalSubmitOutcomePending} loading={saving} variant="light" onClick={() => void handleSave()}>
-                {t('Зберегти')}
-              </Button>
-            ) : null}
-            <Button
-              ref={submitRef}
-              className="new-sale-review-actions__primary"
-              disabled={submitPermissionDenied || Boolean(blockedFileMutation && !blockedFileMutation.canResume)}
-              loading={submitting}
-              title={submitPermissionDenied ? effectiveSubmitDeniedReason : undefined}
-              onClick={() => void submitSale()}
-            >
-              {primaryLabel}
-            </Button>
-          </Group>
         </Box>
       </Box>
 
@@ -1960,10 +1946,4 @@ function applyRecipientSelection(
 
 function getPositiveId(value: number | null | undefined): number | null {
   return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null
-}
-
-function getSaleLifeCycleStatusName(sale: SalesUkraineSale): string {
-  const type = Number(sale.BaseLifeCycleStatus?.SaleLifeCycleType)
-
-  return Number.isFinite(type) ? (SALE_LIFE_CYCLE_STATUS_NAMES[type] ?? '') : ''
 }
