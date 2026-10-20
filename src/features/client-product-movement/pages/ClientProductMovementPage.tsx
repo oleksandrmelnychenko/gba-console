@@ -64,6 +64,8 @@ const MOVEMENT_ITEMS_TABLE_DEFAULT_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
+const EURO_CURRENCY_CODE = 'EUR'
+
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
   minimumFractionDigits: 2,
@@ -422,7 +424,7 @@ export function ClientProductMovementPage() {
             expandColumnLabels={{ collapseRow: t('Згорнути позиції'), expandRow: t('Розгорнути позиції') }}
             height="100%"
             isLoading={isLoading}
-            layoutVersion="client-product-movement-table-4"
+            layoutVersion="client-product-movement-table-5"
             loadingText={t('Завантаження руху товару')}
             minWidth={1120}
             showLayoutControls
@@ -514,14 +516,29 @@ function useColumns() {
         cell: (row) => <MovementMonoCell value={displayValue(formatDateTime(row.DocumentUpdatedDate))} />,
       },
       {
-        id: 'amount',
+        id: 'localAmount',
+        header: t('Сума'),
+        width: 150,
+        minWidth: 130,
+        align: 'right',
+        enableSorting: false,
+        accessor: (row) => getNumber(row.TotalLocalAmount),
+        cell: (row) => (
+          <MovementMoneyCell
+            currency={getCurrencyCode(row.DocumentCurrencyCode)}
+            value={formatAmount(getNumber(row.TotalLocalAmount))}
+          />
+        ),
+      },
+      {
+        id: 'euroAmount',
         header: t('Сума EUR'),
         width: 140,
         minWidth: 120,
         align: 'right',
         enableSorting: false,
         accessor: (row) => getNumber(row.TotalEuroAmount),
-        cell: (row) => <MovementMoneyCell value={formatAmount(getNumber(row.TotalEuroAmount))} />,
+        cell: (row) => <MovementMoneyCell currency={EURO_CURRENCY_CODE} value={formatAmount(getNumber(row.TotalEuroAmount))} />,
       },
       {
         id: 'positions',
@@ -552,6 +569,7 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
   const { t } = useI18n()
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
   const items = Array.isArray(document.InfoItems) ? document.InfoItems : []
+  const documentCurrency = getCurrencyCode(document.DocumentCurrencyCode)
   const itemColumns = useMemo<DataTableColumn<ClientProductMovementInfoItem>[]>(
     () => [
       {
@@ -624,15 +642,6 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
         cell: (item) => <TableChip tone="warning" value={displayValue(item.Responsible)} />,
       },
       {
-        id: 'amount',
-        header: t('Сума EUR'),
-        width: 140,
-        minWidth: 110,
-        align: 'right',
-        accessor: (item) => getNumber(item.TotalAmount),
-        cell: (item) => <MovementMoneyCell value={formatAmount(getNumber(item.TotalAmount))} />,
-      },
-      {
         id: 'qty',
         header: t('К-сть'),
         width: 110,
@@ -642,16 +651,47 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
         cell: (item) => <MovementNumberCell value={displayValue(getNumber(item.ItemQty))} />,
       },
       {
-        id: 'pricePerItem',
+        id: 'localPricePerItem',
+        header: t('Ціна за од.'),
+        width: 150,
+        minWidth: 120,
+        align: 'right',
+        accessor: (item) => getNumber(item.LocalPricePerItem),
+        cell: (item) => (
+          <MovementMoneyCell currency={documentCurrency} value={formatAmount(getNumber(item.LocalPricePerItem))} />
+        ),
+      },
+      {
+        id: 'localAmount',
+        header: t('Сума'),
+        width: 150,
+        minWidth: 120,
+        align: 'right',
+        accessor: (item) => getNumber(item.LocalTotalAmount),
+        cell: (item) => (
+          <MovementMoneyCell currency={documentCurrency} value={formatAmount(getNumber(item.LocalTotalAmount))} />
+        ),
+      },
+      {
+        id: 'euroPricePerItem',
         header: t('Ціна за од., EUR'),
         width: 140,
         minWidth: 110,
         align: 'right',
         accessor: (item) => getNumber(item.PricePerItem),
-        cell: (item) => <MovementMoneyCell value={formatAmount(getNumber(item.PricePerItem))} />,
+        cell: (item) => <MovementMoneyCell currency={EURO_CURRENCY_CODE} value={formatAmount(getNumber(item.PricePerItem))} />,
+      },
+      {
+        id: 'euroAmount',
+        header: t('Сума EUR'),
+        width: 140,
+        minWidth: 110,
+        align: 'right',
+        accessor: (item) => getNumber(item.TotalAmount),
+        cell: (item) => <MovementMoneyCell currency={EURO_CURRENCY_CODE} value={formatAmount(getNumber(item.TotalAmount))} />,
       },
     ],
-    [t],
+    [documentCurrency, t],
   )
 
   return (
@@ -667,7 +707,7 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
         distributeAvailableWidth
         emptyText={t('Позицій не знайдено')}
         getRowId={(item, index) => `${item.Product?.VendorCode || ''}-${item.ProductSpecificationCode || ''}-${index}`}
-        layoutVersion="client-product-movement-items-table-2"
+        layoutVersion="client-product-movement-items-table-3"
         maxHeight="40vh"
         minWidth={800}
         showToolbar={false}
@@ -702,13 +742,17 @@ function MovementNumberCell({ value }: { value: string }) {
   )
 }
 
-function MovementMoneyCell({ value }: { value: string }) {
+function MovementMoneyCell({ currency, value }: { currency: string; value: string }) {
   return value ? (
     <span className="client-product-movement-money-group">
       <span className="app-money client-product-movement-money-cell" title={value}>{value}</span>
-      <TableChip tone="source" value="EUR" />
+      <TableChip tone="source" value={currency} />
     </span>
   ) : null
+}
+
+function getCurrencyCode(value?: string | null): string {
+  return typeof value === 'string' ? value.trim() : ''
 }
 
 function getDocumentKey(document: ClientProductMovementDocument, index: number): string {

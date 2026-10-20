@@ -26,6 +26,8 @@ export type ClientProductMovementInfoItem = {
   TotalAmount?: number
   ItemQty?: number
   PricePerItem?: number
+  LocalPricePerItem?: number | null
+  LocalTotalAmount?: number | null
 }
 
 export type ClientProductMovementDocument = {
@@ -36,6 +38,8 @@ export type ClientProductMovementDocument = {
   DocumentUpdatedDate?: string
   OrganizationName?: string
   TotalEuroAmount?: number
+  DocumentCurrencyCode?: string | null
+  TotalLocalAmount?: number | null
   TotalPositions?: number
   TotalQty?: number
   Responsible?: string
