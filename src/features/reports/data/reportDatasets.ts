@@ -1,3 +1,5 @@
+import { reportConfigurationError } from './reportConfiguration'
+import { numberPresentationError } from './reportNumberPresentation'
 import { cloneWorkbookAliases, workbookConfigurationError } from './workbookPresentation'
 import { agreementPricesConfigurationError } from './agreementPrices'
 import { agreementPriceComparisonConfigurationError, cloneAgreementPriceComparisonAliases, defaultAgreementPriceComparison } from './agreementPriceComparison'
@@ -197,6 +199,8 @@ export function withDefaultReadModes(data: ReportRequestBody, dataset?: ReportDa
 
 /** Refuse incompatible saved settings before mutating the form. Never remove or remap a filter. */
 export function datasetConfigurationError(data: ReportRequestBody, dataset: ReportDataset | undefined, purpose: 'current' | 'workspace' = 'current'): string | null {
+  const metadataError = numberPresentationError(data, dataset) ?? reportConfigurationError(data, dataset)
+  if (metadataError) return metadataError
   if (data.dataSource !== 38 && (data.supplierSourceWorld !== undefined || data.SupplierSourceWorld !== undefined))
     return 'Вибір бази Fenix або AMG доступний лише для партійного прибутку за постачальниками.'
   if (data.returnsOnly !== undefined || data.ReturnsOnly !== undefined) {

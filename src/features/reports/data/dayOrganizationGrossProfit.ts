@@ -1,3 +1,4 @@
+import { validProfitRows, readReportConfiguration } from './reportConfiguration'
 import { requestProfitReadMode, profitReadModeConfigurationError, currentProfitMaximumDays } from './profitReadMode'
 import { originalNormalPeriodError } from './originalNormalPeriod'
 import type { ReportDataset, ReportRequestBody } from '../types'
@@ -63,7 +64,7 @@ export function dayOrganizationGrossProfitConfigurationError(data: ReportRequest
   if (Object.entries(data).some(([key, value]) => unsupported.has(key.toLowerCase()) && value != null)) return invalid
   const sorted = data.sorted
   if (!sorted || !Array.isArray(sorted.Row) || !Array.isArray(sorted.Col) || !Array.isArray(sorted.Measurements)
-    || sorted.Row.map(item => item.type).join(',') !== '3,4' || sorted.Col.length
+    || !validProfitRows(data, [3, 4], 2) || dataset && !readReportConfiguration(dataset.configuration) && sorted.Row.map(item => item.type).join(',') !== '3,4'
     || sorted.Measurements.length < 1 || sorted.Measurements.length > 10
     || sorted.Measurements.some(item => !measures.includes(item.Type)
       || (item.IsChecked !== undefined && typeof item.IsChecked !== 'boolean'))

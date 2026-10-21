@@ -254,6 +254,10 @@ export type ReportSourceBuyerSubtreeCapabilities = {
 }
 
 export type ReportRequestBody = {
+  supplierWarehouse?: unknown
+  SupplierWarehouse?: unknown
+  numberPresentation?: unknown
+  NumberPresentation?: unknown
   workbookPresentation?: unknown
   WorkbookPresentation?: unknown
   currentVparivanieFullScope?: unknown
@@ -340,9 +344,11 @@ export type ReportRequestBody = {
   to: string
 }
 
-export type ReportDatasetField = { Type: number; Name: string; Selectable?: boolean }
+export type ReportDatasetField = { Type: number; Name: string; Selectable?: boolean; valueSemantics?: import('./data/reportNumberPresentation').ReportValueSemantics }
 
 export type ReportDataset = {
+  configuration?: unknown
+  numberPresentation?: unknown
   workbookPresentation?: unknown
   returnsOnly?: boolean
   groupedSettlementPeriod?: unknown

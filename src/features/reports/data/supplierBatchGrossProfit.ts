@@ -1,3 +1,4 @@
+import { validProfitRows, readReportConfiguration } from './reportConfiguration'
 import { requestProfitReadMode, profitReadModeConfigurationError, currentProfitMaximumDays } from './profitReadMode'
 import { originalNormalPeriodError } from './originalNormalPeriod'
 import type { ReportDataset, ReportRequestBody } from '../types'
@@ -67,7 +68,7 @@ export function supplierBatchGrossProfitConfigurationError(data: ReportRequestBo
     return 'Для піддерева «Покупці» потрібні база Fenix і підтверджений граф покупців.'
   if (!validDate(data.from) || !validDate(data.to) || data.from > data.to)
     return 'Оберіть один коректний період партійного прибутку.'
-  const normal = requestProfitReadMode(data) !== 0 && world === 0 && requestSupplierBasis(data) === 0 && data.sorted?.Row?.[0]?.type === 78
+  const normal = requestProfitReadMode(data) !== 0 && world === 0 && requestSupplierBasis(data) === 0
   const maximumDays = requestProfitReadMode(data) === 0 ? currentProfitMaximumDays(dataset?.profitReadMode) : 31
   if (requestProfitReadMode(data) === 1 && !normal) return 'Для збережених регістрів 1С потрібні підтверджені відбори Fenix.'
   if (normal && data.from >= '2025-01-01') {
@@ -77,11 +78,8 @@ export function supplierBatchGrossProfitConfigurationError(data: ReportRequestBo
     return `Період «Валового прибутку по постачальниках» — не більше ${maximumDays} календарних днів. Зменште період.`
   if (Object.entries(data).some(([key, value]) => forbidden.has(key.toLowerCase()) && value != null)) return invalid
   const sorted = data.sorted
-  const axis = Array.isArray(sorted?.Row) ? sorted.Row.map(item => item.type).join(',') : ''
-  if (!sorted || !Array.isArray(sorted.Row) || !['73,4,21', '78,4,21'].includes(axis ?? '')
-    || axis === '78,4,21' && dataset != null &&
-      dataset.Groupings.map(item => item.Type).join(',') !== '73,78,4,21'
-    || !Array.isArray(sorted.Col) || sorted.Col.length
+  if (!sorted || !validProfitRows(data, requestSupplierBasis(data) === 0 ? [78, 4, 21] : [73, 78, 4, 21], 3)
+    || dataset && !readReportConfiguration(dataset.configuration) && !['73,4,21', '78,4,21'].includes(sorted.Row.map(item => item.type).join(','))
     || !Array.isArray(sorted.Measurements) || sorted.Measurements.length < 1 || sorted.Measurements.length > 10
     || sorted.Measurements.some(item => !measures.includes(item.Type)
       || (item.IsChecked != null && typeof item.IsChecked !== 'boolean'))

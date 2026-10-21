@@ -1,3 +1,4 @@
+import { validProfitRows } from './reportConfiguration'
 import type { ReportDataset, ReportGroupingItem, ReportRequestBody } from '../types'
 
 type JsonRecord = Record<string, unknown>
@@ -55,8 +56,7 @@ export function supplierBasisConfigurationError(data: ReportRequestBody, dataset
   if (basis !== 0 && basis !== 1) return 'Некоректний спосіб розрахунку за постачальниками. Налаштування не застосовано.'
   if (dataset && !isSupplierBasisCapability(dataset.supplierBasis))
     return 'Сервер не підтвердив вибір способу розрахунку за постачальниками.'
-  if (basis === 0 && (data.sorted?.Row?.map(item => item.type).join(',') !== '78,4,21'
-    || data.sorted?.Col?.length !== 0))
+  if (basis === 0 && !validProfitRows(data, [78, 4, 21], 3))
     return 'Продажі мінус повернення підтримують склад документа → організацію → постачальника.'
   return null
 }

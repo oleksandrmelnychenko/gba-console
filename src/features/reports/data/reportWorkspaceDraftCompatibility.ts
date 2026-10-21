@@ -1,3 +1,7 @@
+import { effectiveReportConfiguration, reportConfigurationError } from './reportConfiguration'
+import { numberPresentationError } from './reportNumberPresentation'
+import { cashPeriodConfigurationError } from './cashPeriod'
+import { settlementPeriodConfigurationError } from './settlementPeriod'
 import { profitReadModeConfigurationError, requestProfitReadMode } from './profitReadMode'
 import { settlementReadModeConfigurationError } from './settlementReadMode'
 import { cashReadModeConfigurationError } from './cashReadMode'
@@ -10,7 +14,7 @@ import type { ReportWorkspaceSnapshot } from './reportWorkspaceDraft'
 
 const options = ['comparison', 'xyz', 'paymentComparison', 'marginComparison', 'rateComparison',
   'returnComparison', 'buyerSalesShare', 'revenueComparison', 'ordering', 'filterExpression',
-  'abcClassification', 'hideZero', 'threshold', 'topGroups', 'priceTypeSalesComparison', 'workbookPresentation']
+  'abcClassification', 'hideZero', 'threshold', 'topGroups', 'priceTypeSalesComparison', 'workbookPresentation', 'numberPresentation']
 
 /** Recovery checks what the current editor can represent, not whether an unfinished report can run. */
 export function reportWorkspaceDraftCompatibility(snapshot: ReportWorkspaceSnapshot, dataset?: ReportDataset): string | null {
@@ -22,6 +26,11 @@ export function reportWorkspaceDraftCompatibility(snapshot: ReportWorkspaceSnaps
   if (dataset.PeriodSupported === false && (data.from || data.to)) {
     return 'Чернетка містить період, який цей набір даних не підтримує. Чернетка збережена без змін.'
   }
+  const metadataError = numberPresentationError(data, dataset) ?? reportConfigurationError(data, dataset, true)
+  if (metadataError) return `${metadataError} Чернетка збережена без змін.`
+  const capabilityLayout = effectiveReportConfiguration(dataset, data) !== undefined
+  const legacyLayout = dataset.DataSource === 40 ? cashPeriodConfigurationError(data, dataset) === null
+    : dataset.DataSource === 41 ? settlementPeriodConfigurationError(data, dataset) === null : false
   const modeError = profitReadModeConfigurationError(data, dataset)
   if (modeError) return `${modeError} Чернетка збережена без змін.`
   const settlementModeError = settlementReadModeConfigurationError(data, dataset)
@@ -43,7 +52,7 @@ export function reportWorkspaceDraftCompatibility(snapshot: ReportWorkspaceSnaps
   }
   if ((data.dataSource === 13 && data.sorted.Col.length > 0)
     || (hasFixedReportAxes(dataset.DataSource) && ((dataset.DataSource === 39 ? data.sorted.Col.map(field => field.type).join(',') !== '74,75' : data.sorted.Col.length > 0)
-      || !presented && !originalSupplier && JSON.stringify(data.sorted.Row.map(field => field.type)) !== JSON.stringify(getNativeReportProfile(dataset.DataSource)?.rowGroupings)))
+      || !capabilityLayout && !legacyLayout && !presented && !originalSupplier && JSON.stringify(data.sorted.Row.map(field => field.type)) !== JSON.stringify(getNativeReportProfile(dataset.DataSource)?.rowGroupings)))
     || (data.dataSource === 19 && data.selections.length > 0)) {
     return 'Структура чернетки несумісна з цим набором даних. Чернетка збережена без змін.'
   }

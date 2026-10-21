@@ -1,3 +1,5 @@
+import { reportConfigurationError } from '../data/reportConfiguration'
+import { numberPresentationError, readNumberPresentation, requestNumberPresentation } from '../data/reportNumberPresentation'
 import { workbookConfigurationError } from '../data/workbookPresentation'
 import { bindWorkbookPreview } from '../data/workbookPreview'
 import { settlementAttributeKey } from '../data/settlementSourceAttributes'
@@ -18,7 +20,7 @@ import { returnComparisonConfigurationError } from '../data/returnComparison'
 import { buyerSalesShareConfigurationError } from '../data/buyerSalesShare'
 import { revenueComparisonConfigurationError, revenueExactId } from '../data/revenueComparison'
 import { salesXyzConfigurationError } from '../data/salesXyz'
-import { apiRequest } from '../../../shared/api/apiClient'
+import { apiRequest, ApiError } from '../../../shared/api/apiClient'
 import type {
   ReportDataset,
   ReportEntity,
@@ -58,13 +60,16 @@ export async function createStockReport(body: ReportRequestBody, dataset?: Repor
 /** Calculates one bounded on-screen page and file links from the same report run. */
 export async function previewStockReport(body: ReportRequestBody, dataset?: ReportDataset): Promise<{ result: ReportResult; preview: NativeReportPreview }> {
   const request = prepareStockReportRequest(body, dataset)
+  const version2 = dataset?.configuration !== undefined && await supportsImmutableReportPreview()
   const response = await apiRequest<unknown>('/report/stocks/preview', {
     method: 'POST',
     dedupe: false,
-    query: { rowOffset: 0, rowLimit: 50 },
+    query: { rowOffset: 0, rowLimit: 50, ...(version2 ? { previewVersion: 2 } : {}) },
     body: request,
   })
   const preview = normalizeNativeReportPreview(response, currentVparivanieFullScope(request))
+  if (version2) preview.ResultSession = readReportResultSession(response, preview)
+  assertNumberPresentation(request, preview)
   bindWorkbookPreview(request, preview)
   if ((request.dataSource === 35 || request.dataSource === 38)
     && ((requestProfitReadMode(request) ?? null) !== (preview.Request?.ProfitReadMode ?? null)
@@ -84,12 +89,69 @@ export async function previewStockReport(body: ReportRequestBody, dataset?: Repo
   return { result: normalizeReportResult(response), preview }
 }
 
+function assertNumberPresentation(request: ReportRequestBody, preview: NativeReportPreview): void {
+  const expected = readNumberPresentation(requestNumberPresentation(request)), actual = preview.numberPresentation
+  if (expected?.moneyScale !== actual?.moneyScale || expected?.version !== actual?.version
+    || (['money', 'quantity', 'percent', 'unitPrice', 'rate'] as const).some(kind => expected?.decimalPlacesByKind?.[kind] !== actual?.decimalPlacesByKind?.[kind]))
+    throw new Error('Сервер повернув інший формат чисел результату.')
+}
+type ReportResultSession = NonNullable<NativeReportPreview['ResultSession']>
+async function supportsImmutableReportPreview(): Promise<boolean> {
+  let value: unknown
+  try { value = await apiRequest<unknown>('/report/stocks/preview/capabilities') }
+  catch (error) { if (error instanceof ApiError && error.status === 404) return false; throw error }
+  if (!value || typeof value !== 'object') throw new Error('Сервер не підтвердив можливості перегляду звіту.')
+  const capability = value as Record<string, unknown>
+  if (capability.Version !== 2 || capability.ExplicitExport !== true || typeof capability.MaximumPageRows !== 'number'
+    || capability.MaximumPageRows < 50 || typeof capability.TimeToLiveSeconds !== 'number') throw new Error('Непідтримувана версія перегляду звіту.')
+  return true
+}
+function readReportResultSession(value: unknown, preview?: NativeReportPreview): ReportResultSession {
+  const item = value as Record<string, unknown> | null
+  const sha = (value: unknown): value is string => typeof value === 'string' && /^[a-f\d]{64}$/i.test(value)
+  if (!item || typeof item.ResultId !== 'string' || !/^[a-f\d]{8}(?:-[a-f\d]{4}){3}-[a-f\d]{12}$/i.test(item.ResultId)
+    || !sha(item.RequestSha256) || !sha(item.ResultSha256) || typeof item.ExpiresAtUtc !== 'string'
+    || !Number.isFinite(Date.parse(item.ExpiresAtUtc)) || preview && (item.ResultSha256 !== preview.ResultSha256 || item.RequestSha256 !== preview.RequestSha256
+      || item.PreviewVersion !== 2)) throw new Error('Сервер повернув некоректну ідентичність результату.')
+  return { ResultId: item.ResultId, RequestSha256: item.RequestSha256, ResultSha256: item.ResultSha256, ExpiresAtUtc: item.ExpiresAtUtc }
+}
+function assertSameResult(expected: ReportResultSession, actual: ReportResultSession): void {
+  if (expected.ResultId !== actual.ResultId || expected.RequestSha256 !== actual.RequestSha256 || expected.ResultSha256 !== actual.ResultSha256)
+    throw new Error('Сервер повернув інший розрахунок. Повторно сформуйте звіт.')
+}
+function cachedResultError(error: unknown): never {
+  if (error instanceof ApiError && error.status === 404) throw new Error('Строк зберігання результату завершився або він недоступний. Сформуйте звіт повторно; автоматичний перерахунок не виконувався.')
+  throw error
+}
+export async function getStockReportPreviewPage(session: ReportResultSession, request: ReportRequestBody, offset: number, signal?: AbortSignal): Promise<NativeReportPreview> {
+  if (!Number.isInteger(offset) || offset < 0 || offset > 500000) throw new Error('Некоректна сторінка звіту.')
+  try {
+    const response = await apiRequest<unknown>(`/report/stocks/preview/${session.ResultId}`, { query: { rowOffset: offset, rowLimit: 50 }, signal })
+    const preview = normalizeNativeReportPreview(response, currentVparivanieFullScope(request))
+    preview.ResultSession = readReportResultSession(response, preview)
+    assertSameResult(session, preview.ResultSession)
+    if (preview.Page.Offset !== offset) throw new Error('Сервер повернув іншу сторінку звіту.')
+    assertNumberPresentation(request, preview)
+  bindWorkbookPreview(request, preview)
+    return preview
+  } catch (error) { return cachedResultError(error) }
+}
+export async function exportStockReportPreview(session: ReportResultSession): Promise<ReportResult> {
+  try {
+    const response = await apiRequest<unknown>(`/report/stocks/preview/${session.ResultId}/export`, { method: 'POST', body: {}, dedupe: false })
+    assertSameResult(session, readReportResultSession(response))
+    return normalizeReportResult(response)
+  } catch (error) { return cachedResultError(error) }
+}
+
 /** Reuses native refusal rules without submitting or replacing a saved definition. */
 export function validateStockReportRequest(body: ReportRequestBody, dataset?: ReportDataset): void {
   prepareStockReportRequest(body, dataset)
 }
 
 function prepareStockReportRequest(body: ReportRequestBody, dataset?: ReportDataset): ReportRequestBody {
+  const presentationError = numberPresentationError(body, dataset) ?? reportConfigurationError(body, dataset)
+  if (presentationError) throw new Error(presentationError)
   const request = (body.dataSource === 2 || body.dataSource === 17 || body.dataSource === 18 || body.dataSource === 19 || body.dataSource === 20 || body.dataSource === 21 || body.dataSource === 22 || body.dataSource === 23 || body.dataSource === 24 || body.dataSource === 25 || body.dataSource === 27 || body.dataSource === 28 || body.dataSource === 35 || body.dataSource === 38 || body.dataSource === 39 || body.dataSource === 40 || body.dataSource === 41) ? structuredClone(body) : body
   const workbookError = workbookConfigurationError(request)
   if (workbookError) throw new Error(workbookError)

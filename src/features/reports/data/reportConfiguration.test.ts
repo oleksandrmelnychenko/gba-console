@@ -1,0 +1,38 @@
+import { describe, expect, it } from 'vitest'
+import type { ReportDataset, ReportRequestBody } from '../types'
+import { effectiveReportConfiguration, reportConfigurationError, reportAxesPolicy, type ReportConfiguration } from './reportConfiguration'
+import { defaultDatasetRequest, datasetMeasurements } from './reportDatasets'
+import { presentedCashDataset, presentedSettlementDataset } from './workbookPresentation.test-fixtures'
+import { reportWorkspaceDraftCompatibility } from './reportWorkspaceDraftCompatibility'
+const configuration: ReportConfiguration = { version: 1, axisMode: 'profitRows', allowedRows: [73, 78, 4, 21], allowedColumns: [], minimumRows: 1, maximumRows: 3, allowRowReorder: true, rowLayouts: [], columnLayouts: [[]], mutuallyExclusiveRows: [[73, 78]], period: { required: true, supported: true, maximumDays: 31, maximumMonths: null, minimumDate: null }, variants: [{ key: 'currentDocuments', allowedRows: [78, 4, 21], period: { required: true, supported: true, maximumDays: 62, maximumMonths: null, minimumDate: null } }] }
+const dataset: ReportDataset = { DataSource: 38, Name: 'Прибуток', Description: '', Groupings: [], Measurements: [], Filters: [], Limitations: [], configuration }
+const rows = (types: number[]) => types.map(type => ({ type, key: String(type), label: String(type) }))
+const request = (types: number[]): ReportRequestBody => ({ dataSource: 38, profitReadMode: 0, supplierBasis: 0, from: '2026-09-01', to: '2026-10-21', selections: [], sorted: { Row: rows(types), Col: [], Measurements: [] } })
+describe('server report configuration', () => {
+  it('supports subsets and permutations without changing the calculation period or allowing a receipt warehouse in current mode', () => {
+    for (const layout of [[21], [4, 21], [21, 78, 4]]) expect(reportConfigurationError(request(layout), dataset)).toBeNull()
+    expect(reportConfigurationError(request([73]), dataset)).toMatch(/групування/)
+    expect(reportConfigurationError(request([78, 78]), dataset)).toMatch(/групування/)
+    expect(reportConfigurationError(request([]), dataset)).toMatch(/групування/)
+    expect(reportConfigurationError(request([]), dataset, true)).toBeNull()
+    expect(effectiveReportConfiguration(dataset, request([21]))?.period.maximumDays).toBe(62)
+    expect(reportAxesPolicy(dataset, request([21]))).toMatchObject({ fixed: false, rowsOnly: true })
+  })
+  it('treats nullable variant replacements from .NET metadata as inherited values', () => {
+    const value = { ...dataset, configuration: { ...configuration, variants: [{ key: 'currentDocuments', axisMode: null, allowedRows: [78, 4, 21], allowedColumns: null, rowLayouts: null, columnLayouts: null, minimumRows: null, maximumRows: null, maximumColumns: null, period: null, filters: null }] } }
+    expect(effectiveReportConfiguration(value, request([21]))).toMatchObject({ axisMode: 'profitRows', maximumRows: 3, allowedColumns: [], period: configuration.period })
+  })
+  it('keeps legacy special forms fixed until server confirms editable capability', () => {
+    expect(reportAxesPolicy(undefined, { ...request([3, 4]), dataSource: 35 }).fixed).toBe(true)
+    expect(reportAxesPolicy(undefined, { ...request([3, 4]), dataSource: 36 }).fixed).toBe(true)
+  })
+  it.each([[40, [40, 44, 43]], [41, [4, 41, 76]], [41, [4, 76]]] as const)('restores valid source%s draft axes without extra workbook presentation', (source, layout) => {
+    const dataSet = source === 40 ? presentedCashDataset : presentedSettlementDataset
+    const data = defaultDatasetRequest(dataSet, '2026-10-01', '2026-10-04')
+    data.sorted.Row = rows([...layout])
+    delete data.workbookPresentation
+    const snapshot = { name: 'Збережений звіт', data, measurements: datasetMeasurements(dataSet, data.sorted.Measurements), activeTemplate: null, previousPeriod: { from: data.from, to: data.to } }
+    expect(reportWorkspaceDraftCompatibility(snapshot, dataSet)).toBeNull()
+    expect(snapshot.data.sorted.Row.map(row => row.type)).toEqual(layout)
+  })
+})

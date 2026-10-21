@@ -1,3 +1,4 @@
+import { formatReportDecimal, moneyScaleLabel, reportValueUnit } from '../data/reportNumberPresentation'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { settlementAttributeText, type SettlementCounterpartyAttribute } from '../data/settlementSourceAttributes'
 import { Fragment } from 'react'
@@ -27,6 +28,7 @@ export function ReportInlinePreview({ preview, embedded = false }: { preview: Na
     index === preview.RowSchema.length - 1, workbookRows.get(row.SourceIndex), workbook?.fields ?? [])
   const sharedNames = preview.RowSchema.map((_, index) => previewSharedNames(preview.Rows.map(row => rowCaption(row, index))))
   const amountColumns = new Set(preview.Columns.filter(column => isAmountColumn(column)).map(column => column.SourceIndex))
+  const semanticsByColumn = new Map(preview.valueSemantics?.map(item => [item.columnSourceIndex, item.semantics]))
   const blanksZero = previewBlanksZero(preview.Request?.DataSource)
   const totals = preview.Totals
   const groupTotals = new Map<number, NonNullable<NativeReportPreview['Totals']>['Groups']>()
@@ -34,6 +36,8 @@ export function ReportInlinePreview({ preview, embedded = false }: { preview: Na
     .sort((left, right) => left.Level - right.Level))
   const valueText = (value: NativeReportPreviewScalar | undefined, columnSourceIndex: number) =>
     blanksZero && isZeroPreviewScalar(value) ? ''
+      : preview.numberPresentation && semanticsByColumn.has(columnSourceIndex) && value?.Kind === 'decimal' && typeof value.Value === 'string'
+        ? formatReportDecimal(value.Value, semanticsByColumn.get(columnSourceIndex)!, preview.numberPresentation)
       : products && value?.Kind === 'decimal' && typeof value.Value === 'string'
         ? previewNumberText(currentVparivanieQuantityText(value.Value))
         : amountColumns.has(columnSourceIndex) && value?.Kind === 'decimal' && typeof value.Value === 'string'
@@ -63,8 +67,9 @@ export function ReportInlinePreview({ preview, embedded = false }: { preview: Na
       <table className="app-static-table">
         <thead><tr>
           {rowHeaders.map((header, index) => <th scope="col" rowSpan={products ? 2 : undefined} key={`row-${index}`}>{header}</th>)}
-          {preview.Columns.map(column => <th scope="col" key={column.SourceIndex}>
+          {preview.Columns.map(column => <th scope="col" key={column.SourceIndex} title={semanticsByColumn.has(column.SourceIndex) ? reportValueUnit(semanticsByColumn.get(column.SourceIndex)!, preview.numberPresentation) : undefined}>
             {(products ? column.Values.slice(0, 1) : sharedGroup ? column.Values.slice(1) : column.Values).map(value => value.Caption).filter(Boolean).join(' / ') || `Стовпець ${column.Ordinal + 1}`}
+            {moneyScaleLabel(preview.numberPresentation, semanticsByColumn.get(column.SourceIndex)) ? `, ${moneyScaleLabel(preview.numberPresentation, semanticsByColumn.get(column.SourceIndex))}` : ''}
           </th>)}
         </tr>{products ? <tr>{preview.Columns.map(column => <th scope="col" key={column.SourceIndex}>
           {currentVparivanieSecondTier(column)}
@@ -104,7 +109,7 @@ export function ReportInlinePreview({ preview, embedded = false }: { preview: Na
         </tr></tfoot> : null}
       </table>
     </div>
-    {preview.Page.HasMore ? <Text size="xs" c="dimmed" className="report-inline-preview__more">Показано перші {preview.Page.ReturnedRows} рядків. Повний результат доступний у Excel або PDF.{totals
+    {preview.Page.HasMore ? <Text size="xs" c="dimmed" className="report-inline-preview__more">Показано рядки {preview.Page.Offset + 1}–{preview.Page.Offset + preview.Page.ReturnedRows}. Повний результат доступний у Excel або PDF.{totals
       ? ` Загальний підсумок — за всіма ${preview.Page.TotalVisibleRows} рядками звіту.` : ''}</Text> : null}
   </section>
 }

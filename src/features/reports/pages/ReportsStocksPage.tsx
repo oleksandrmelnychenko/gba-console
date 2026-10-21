@@ -1,3 +1,8 @@
+import { ReportPreviewPages } from './ReportPreviewPages'
+import { exportStockReportPreview } from '../api/reportsApi'
+import { ReportNumberPresentationPanel } from './ReportNumberPresentationPanel'
+import { requestNumberPresentation, readNumberPresentation, readValueSemantics, reportValueUnit } from '../data/reportNumberPresentation'
+import { effectiveReportConfiguration, reportAxesPolicy, reportMaximumDate } from '../data/reportConfiguration'
 import { BUG_1274_ACTIVE_DATA_SOURCES, BUG_1274_DISABLED_MESSAGE } from '../data/reportMigration'
 import { BUG_1274_ONLY_REPORT_SURFACE } from '../reportSurfacePolicy'
 import { lacksCurrentReadMode, TEMPLATE_WITHOUT_READ_MODE_ERROR } from '../data/currentReadModePolicy'
@@ -45,7 +50,7 @@ import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowActi
 import { requestProfitReadMode } from '../data/profitReadMode'
 import { isSettlementReadModeCapability, requestSettlementReadMode } from '../data/settlementReadMode'
 import { requestCashReadMode } from '../data/cashReadMode'
-import { type FormEvent, memo, type ReactNode, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
+import { type FormEvent, type ReactNode, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -188,7 +193,6 @@ import { requestFilterExpression } from '../data/reportFilterExpression'
 import { CLIENT_COMPARISON_MAX_DATE, CLIENT_COMPARISON_MIN_DATE, comparisonWindow, isComparisonDate, requestComparison } from '../data/clientPeriodComparison'
 import { ClientComparisonPeriodPanel } from './ClientComparisonPeriodPanel'
 import { buildReportBuilderRequest } from '../data/reportBuilderRequest'
-import { ReportInlinePreview } from './ReportInlinePreview'
 import { CurrentVparivanieRegionalPanel } from './CurrentVparivanieRegionalPanel'
 import { OriginalVparivanieReportPanel } from './OriginalVparivanieReportPanel'
 import type { NativeReportPreview } from '../data/nativeReportPreview'
@@ -262,7 +266,6 @@ const SALE_DOCUMENT_STATUS_OPTIONS: Array<{ label: string; value: string }> = [
 
 const defaultCondition = REPORT_FILTER_CONDITIONS[0]
 
-const MemoizedReportInlinePreview = memo(ReportInlinePreview)
 
 // What the finished run was asked for, kept because the response carries none of it back.
 type ReportRunOutcome = {
@@ -350,6 +353,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const [sourceBuyerSubtree, setSourceBuyerSubtree] = useValueState<unknown>(undefined)
   const [profitReadMode, setProfitReadMode] = useValueState<unknown>(undefined)
   const [dayOrganizationBasis, setDayOrganizationBasis] = useValueState<unknown>(undefined)
+  const [supplierWarehouse, setSupplierWarehouse] = useValueState<unknown>(undefined)
+  const [numberPresentation, setNumberPresentation] = useValueState<unknown>(undefined)
   const [supplierBasis, setSupplierBasis] = useValueState<unknown>(undefined)
   const [supplierSourceWorld, setSupplierSourceWorld] = useValueState<unknown>(undefined)
   const [returnsOnly, setReturnsOnly] = useValueState<boolean | undefined>(undefined)
@@ -434,9 +439,14 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   )
   const settlementDataset = useMemo(() => settlementFormDataset(priceTypeDataset, groupedSettlementPeriod, settlementReadMode), [priceTypeDataset, groupedSettlementPeriod, settlementReadMode])
   const cashDataset = useMemo(() => cashFormDataset(settlementDataset, groupedCashPeriod), [settlementDataset, groupedCashPeriod])
-  const filterFieldOptions = useMemo(() => datasetFilters(cashDataset), [cashDataset])
-  const maxDate = useMemo(() => settlementMaximumDate(dataSource, groupedSettlementPeriod, today, cashReadMode)
-    ?? (supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MAX_DATE : `${today.slice(0, 4)}-12-31`), [cashReadMode, dataSource, groupedSettlementPeriod, today])
+  const effectiveConfiguration = effectiveReportConfiguration(dataset, { dataSource, from, to, sorted: { Row: rowGroups, Col: colGroups, Measurements: [] }, selections, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, cashReadMode, settlementReadMode, cashPeriod, settlementPeriod, groupedCashPeriod, groupedSettlementPeriod, workbookPresentation: workbook.value })
+  const effectiveFilterTypes = effectiveConfiguration?.filters
+  const filterFieldOptions = useMemo(() => {
+    const allowed = effectiveFilterTypes ? new Set(effectiveFilterTypes) : null
+    return datasetFilters(cashDataset).filter(option => !allowed || allowed.has(option.field.Type))
+  }, [cashDataset, effectiveFilterTypes])
+  const maxDate = reportMaximumDate(effectiveConfiguration, today) ?? settlementMaximumDate(dataSource, groupedSettlementPeriod, today, cashReadMode)
+    ?? (supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MAX_DATE : `${today.slice(0, 4)}-12-31`)
   const [debouncedFrom] = useDebouncedValue(from, DATE_INPUT_DEBOUNCE_MS)
   const [debouncedTo] = useDebouncedValue(to, DATE_INPUT_DEBOUNCE_MS)
   const periodError = supportsFullReportDateRange(dataSource) ? (!isComparisonDate(from) || !isComparisonDate(to) || from > to ? 'Оберіть коректний період у межах 1900–9998 років.' : null)
@@ -445,8 +455,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   // period on a pause, and only once it is a period the server can answer for.
   const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
   const reportBody = useMemo<ReportRequestBody>(
-    () => ({ ...buildReportBuilderRequest({ dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }),
-    [fullCurrentVparivanie, abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbook.value, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => ({ ...buildReportBuilderRequest({ supplierWarehouse, numberPresentation, dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }),
+    [supplierWarehouse, numberPresentation, fullCurrentVparivanie, abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbook.value, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const agreementVerified = !requiresValuationAgreement(dataSource) || valuation.agreement?.Id === valuationClientAgreementId
   const runRequestKey = useMemo(() => JSON.stringify({ request: reportBody, allowed: canGenerateReport, agreementVerified }),
@@ -520,7 +530,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           ? t('Додайте хоча б одне групування рядків')
           : incompleteSelectionMessage
   const emptyRunNotice =
-    lastRun && !lastRun.hasDocument
+    lastRun && !lastRun.hasDocument && !preview
       ? lastRun.rateComparison ? 'Сервер не повернув файл історичних курсів. Перевірте обрану серію.' : !lastRun.periodSupported ? t(dataSource === 11 ? 'Сервер не повернув файл записаних залишків рахунків. Спробуйте послабити умови відбору.' : dataSource === 10 ? 'Сервер не повернув файл поточної заборгованості. Спробуйте послабити умови відбору.' : 'Сервер не повернув файл поточних залишків. Спробуйте послабити умови відбору.')
       : t('За період {from} – {to} сервер не повернув файл звіту. Спробуйте інший період або послабте умови відбору.', {
           from: formatDate(lastRun.from),
@@ -539,12 +549,13 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       return
     }
 
+    const existingPreview = !showPreview ? preview : null
     const updateAttempt = beginRun()
     if (constructorMode) setConstructorSection('result')
 
     try {
       const previewResult = showPreview ? await previewStockReport(reportBody, dataset) : null
-      const nextResult = previewResult?.result ?? await createStockReport(reportBody, dataset)
+      const nextResult = previewResult?.result ?? (existingPreview?.ResultSession ? await exportStockReportPreview(existingPreview.ResultSession) : await createStockReport(reportBody, dataset))
       const outcome: ReportRunOutcome = {
         ...(rateComparisonOptions(rateComparison) ? { rateComparison: structuredClone(rateComparisonOptions(rateComparison)!) } : {}),
         ...returnComparisonSummary(returnComparison),
@@ -566,7 +577,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         to,
       }
 
-      updateAttempt({ result: nextResult, preview: previewResult?.preview ?? null, lastRun: outcome,
+      updateAttempt({ result: nextResult, preview: previewResult?.preview ?? existingPreview ?? null, lastRun: outcome,
         downloadModalOpened: !showPreview && outcome.hasDocument })
       if (previewResult) setShownReport(`${activeWorkbook ?? ''}|${dataSource}`)
     } catch (submitError) {
@@ -615,6 +626,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setSourceBuyerSubtree(snapshotDefaults?.sourceBuyerSubtree)
     setProfitReadMode(snapshotDefaults?.profitReadMode)
     setDayOrganizationBasis(snapshotDefaults?.dayOrganizationBasis)
+    setSupplierWarehouse(snapshotDefaults?.supplierWarehouse)
+    setNumberPresentation(snapshotDefaults?.numberPresentation)
     setSupplierBasis(snapshotDefaults?.supplierBasis)
     setSupplierSourceWorld(snapshotDefaults?.supplierSourceWorld)
     setPriceTypeSalesComparison(snapshotDefaults?.priceTypeSalesComparison)
@@ -731,6 +744,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setCashPeriod(structuredClone(data.cashPeriod))
     setGroupedCashPeriod(structuredClone(requestGroupedCashPeriod(data)))
     setCashReadMode(structuredClone(requestCashReadMode(data)))
+    setSupplierWarehouse(structuredClone(data.supplierWarehouse ?? data.SupplierWarehouse))
+    setNumberPresentation(structuredClone(requestNumberPresentation(data)))
     workbook.restore(data)
     setOneCSpecialSettings(structuredClone(requestOneCSpecialSettings(data, nextDataset.DataSource)))
     setOneCScope(structuredClone(data.oneC))
@@ -806,6 +821,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setCashPeriod(structuredClone(data.cashPeriod))
     setGroupedCashPeriod(structuredClone(requestGroupedCashPeriod(data)))
     setCashReadMode(structuredClone(requestCashReadMode(data)))
+    setSupplierWarehouse(structuredClone(data.supplierWarehouse ?? data.SupplierWarehouse))
+    setNumberPresentation(structuredClone(requestNumberPresentation(data)))
     workbook.restore(data)
     setOneCSpecialSettings(structuredClone(requestOneCSpecialSettings(data, nextDataset.DataSource)))
     setOneCScope(structuredClone(data.oneC))
@@ -978,7 +995,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const supplierProfitControls = (part?: ProfitControlsPart) => <SupplierProfitControls part={part} dataset={dataset}
     disabled={comparisonSettingsDisabled} hideRegister={bug1274Only} profitReadMode={profitReadMode}
     supplierBasis={supplierBasis} supplierSourceWorld={supplierSourceWorld} sourceBuyerSubtree={sourceBuyerSubtree}
-    groupingOptions={groupingOptions} setProfitReadMode={setProfitReadMode} setSupplierBasis={setSupplierBasis}
+    groupingOptions={groupingOptions} setProfitReadMode={setProfitReadMode} setSupplierBasis={value => { setSupplierBasis(value); if (value === 0 && supplierWarehouse !== undefined) setSupplierWarehouse(78) }}
     setSupplierSourceWorld={setSupplierSourceWorld} setSourceBuyerSubtree={setSourceBuyerSubtree} setRowGroups={setRowGroups} />
 
   if (!bug1274Only && canGenerateReport && ownerId && workspaceDraft.recovery !== 'none'
@@ -1107,12 +1124,15 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     const organizationOption = organizationField === null ? undefined : filterFieldOptions.find(option => option.field.Type === organizationField)
     const isOrganizationSelection = (selection: ReportSelection) => organizationOption !== undefined && selection.SelectedField.Type === organizationField
     const builder = {
-      dataSource, colGroups, filterFieldOptions, groupingOptions, groupingSelectData, measurements, rowGroups, selections,
+      dataset, request: reportBody, dataSource, colGroups, filterFieldOptions, groupingOptions, groupingSelectData, measurements, rowGroups, selections,
       lookupFrom: lookup.from, lookupTo: lookup.to, lookupProfitReadMode: lookup.profitReadMode,
       lookupProfitUnavailable: lookup.profitUnavailable, lookupSourceWorld: lookup.sourceWorld, lookupSalesBasis: lookup.salesBasis,
       lookupProvidedDiscountBasis: lookup.providedDiscountBasis,
       onColGroupsChange: (value: ReportGroupingItem[] | ((current: ReportGroupingItem[]) => ReportGroupingItem[])) => groupingOrdering.changeAxis('Col', value),
-      onRowGroupsChange: (value: ReportGroupingItem[] | ((current: ReportGroupingItem[]) => ReportGroupingItem[])) => groupingOrdering.changeAxis('Row', value),
+      onRowGroupsChange: (value: ReportGroupingItem[] | ((current: ReportGroupingItem[]) => ReportGroupingItem[])) => {
+        if (dataSource === 38 && supplierWarehouse == null) setSupplierWarehouse(rowGroups.some(row => row.type === 73) ? 73 : 78)
+        groupingOrdering.changeAxis('Row', value)
+      },
       onMeasurementsChange: setMeasurements, onSelectionsChange: filterLogic.editSelection, onGroupingLayoutChange: groupingOrdering.changeLayout,
     }
     const supplierControls = dataSource === 38 && isSupplierSourceWorldCapability(dataset?.supplierSourceWorld)
@@ -1160,10 +1180,10 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         compactSummary: String(filterChips.length), content: filtersContent },
       { id: 'measures', title: 'Показники', summary: checkedMeasurements
         ? `${checkedMeasurements} ${deskPlural(checkedMeasurements, ['показник', 'показники', 'показників'])}` : t('Не вибрано жодного'),
-        compactSummary: String(checkedMeasurements), content: <LegacyReportBuilder part="measures" {...builder} /> },
-      { id: 'grouping', title: 'Групування', summary: hasFixedReportAxes(dataSource) ? t('Як у книзі 1С')
+        compactSummary: String(checkedMeasurements), content: <><LegacyReportBuilder part="measures" {...builder} /><ReportNumberPresentationPanel value={numberPresentation} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setNumberPresentation} /></> },
+      { id: 'grouping', title: 'Групування', summary: reportAxesPolicy(dataset, reportBody).fixed ? t('Як у книзі 1С')
         : rowGroups.length ? `${groupingLabels(rowGroups)}${colGroups.length ? ` · ${t('стовпці')}: ${groupingLabels(colGroups)}` : ''}` : t('Не вибрано'),
-        compactSummary: hasFixedReportAxes(dataSource) ? t('За формою')
+        compactSummary: reportAxesPolicy(dataset, reportBody).fixed ? t('За формою')
           : colGroups.length ? `${rowGroups.length} ${t('ряд.')} · ${colGroups.length} ${t('стовп.')}`
           : rowGroups.length ? `${rowGroups.length} ${deskPlural(rowGroups.length, ['рівень', 'рівні', 'рівнів'])}` : t('Немає'),
         content: groupingContent },
@@ -1206,7 +1226,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
               about={guide ? t(guide.summary) : catalogueNotice && !catalogueNotice.failed && !activeWorkbook ? catalogueNotice.text : null} />
             <WorkbookActionBar canSubmit={canSubmit && !workbookResolving} isLoading={isLoading}
               period={periodSupported ? <WorkbookPeriodField from={from} to={to}
-                minDate={supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE} maxDate={maxDate}
+                minDate={effectiveConfiguration?.period.minimumDate ?? (supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE)} maxDate={maxDate}
                 presets={reportPeriodPresets(dataSource, today)} error={periodError} disabled={isLoading || workbookResolving}
                 onFromChange={setFrom} onToChange={setTo} />
                 : <Text size="sm">{t('Поточний стан на час читання даних. Історичний період не застосовується.')}</Text>}
@@ -1218,7 +1238,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
             <WorkbookResult dataSource={dataSource} title={deskTitle} period={deskSummary.period} isLoading={isLoading}
               error={error} emptyRun={emptyRunNotice} generated={Boolean(lastRun?.hasDocument && !preview)}
               stale={!preview && !lastRun && !isLoading && !error && shownReport === deskReportKey}
-              table={preview ? <MemoizedReportInlinePreview preview={preview} embedded /> : null}
+              table={preview ? <ReportPreviewPages key={preview.ResultSession?.ResultId ?? preview.ResultSha256} initial={preview} request={reportBody} embedded /> : null}
               excelUrl={excelUrl} pdfUrl={pdfUrl} fileBaseName={lastRun?.fileName ?? null} />
           </form>}
         <ReportModal centered classNames={{ body: 'reports-stocks-template-modal__body', title: 'reports-stocks-modal-title' }}
@@ -1276,7 +1296,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         onChange={setValuationAgreementId} onRetry={valuation.retry} /> : dataSource === 29
           ? <CurrentDiscountAgreementInput value={valuationClientAgreementId} enabled={canGenerateReport} disabled={isLoading} onChange={setValuationAgreementId} />
           : null}</> : null}
-      <ReportBuilderForm
+      <ReportBuilderForm dataset={dataset} reportBody={reportBody}
         constructorMode={constructorMode}
         constructorSection={constructorSection}
         onConstructorSectionChange={navigateConstructorSection}
@@ -1396,6 +1416,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
 }
 
 type ReportBuilderFormProps = {
+  dataset?: ReportDataset
+  reportBody: ReportRequestBody
   constructorMode: boolean
   constructorSection: ReportConstructorSection
   onConstructorSectionChange: (section: ReportConstructorSection) => void
@@ -1664,7 +1686,7 @@ function ReportBuilderForm(props: ReportBuilderFormProps) {
 }
 
 function ReportBuilderContent(props: ReportBuilderFormProps) {
-  const {
+  const { dataset, reportBody,
     constructorMode,
     constructorSection,
     onConstructorSectionChange,
@@ -1712,7 +1734,7 @@ function ReportBuilderContent(props: ReportBuilderFormProps) {
           <ReportSourceSettings {...props} />
           <ReportBuilderNotices {...props} />
           <fieldset className="report-constructor-fields" disabled={constructorMode && templatesDisabled}>
-          <LegacyReportBuilder
+          <LegacyReportBuilder dataset={dataset} request={reportBody}
             constructorSection={constructorMode ? constructorSection : undefined}
             filterExpressionPanel={filterExpressionPanel}
             onGroupingLayoutChange={onGroupingLayoutChange}
@@ -1754,7 +1776,7 @@ function ReportBuilderContent(props: ReportBuilderFormProps) {
             placeholder={resultPlaceholder}
             onOpenFiles={onOpenFiles}
           />
-          {preview ? <MemoizedReportInlinePreview preview={preview} /> : null}
+          {preview ? <ReportPreviewPages key={preview.ResultSession?.ResultId ?? preview.ResultSha256} initial={preview} request={reportBody} /> : null}
           </ReportSectionPanel>
         </div>
         </div>
@@ -1826,6 +1848,8 @@ function ReportBuilderNotices(props: ReportBuilderFormProps) {
 type LegacyReportBuilderPart = 'measures' | 'grouping' | 'selections'
 
 type LegacyReportBuilderProps = {
+  dataset?: ReportDataset
+  request?: ReportRequestBody
   part?: LegacyReportBuilderPart
   selectionFilter?: (selection: ReportSelection) => boolean
   newSelection?: () => ReportSelection
@@ -1870,6 +1894,7 @@ const fixedAxesDescription: Partial<Record<number, string>> = {
 }
 
 function LegacyReportBuilder({
+  dataset, request,
   part,
   selectionFilter,
   newSelection,
@@ -1902,11 +1927,14 @@ function LegacyReportBuilder({
   const [groupingPickerTarget, setGroupingPickerTarget] = useState<'rows' | 'columns' | null>(null)
   const checkedMeasurements = flattenCheckedMeasurements(measurements).length
   const groupingLayout = { Row: rowGroups, Col: colGroups }
+  const policy = reportAxesPolicy(dataset, request ?? { dataSource, from: '', to: '', selections, sorted: { ...groupingLayout, Measurements: [] } })
+  const fixedAxes = policy.fixed
+  const rowsOnly = policy.rowsOnly
   const allowedGroupingTypes = new Set(groupingOptions.map(item => item.type))
   const selectedGroupingTypes = new Set([...rowGroups, ...colGroups].map(item => item.type))
 
   const transferGrouping = (axis: ReportGroupingAxis, type: number) => {
-    if (dataSource === 13 || hasFixedReportAxes(dataSource)) return
+    if (rowsOnly || fixedAxes) return
     const next = transferReportGrouping(groupingLayout, axis, type, allowedGroupingTypes)
     if (next === groupingLayout) return
     onGroupingLayoutChange(next)
@@ -1916,7 +1944,7 @@ function LegacyReportBuilder({
 
   const addGroupingFromPicker = (value: string) => {
     const item = groupingOptions.find((option) => String(option.type) === value)
-    if (hasFixedReportAxes(dataSource) || !item || !groupingPickerTarget || (dataSource === 13 && groupingPickerTarget === 'columns') || selectedGroupingTypes.has(item.type) || (groupingPickerTarget === 'columns' && item.type === ABC_CLASS_GROUPING)) return
+    if (fixedAxes || !item || !groupingPickerTarget || (rowsOnly && groupingPickerTarget === 'columns') || selectedGroupingTypes.has(item.type) || (groupingPickerTarget === 'columns' && item.type === ABC_CLASS_GROUPING)) return
 
     if (groupingPickerTarget === 'rows') {
       onRowGroupsChange((current) => addGrouping(current, item))
@@ -1925,6 +1953,12 @@ function LegacyReportBuilder({
     }
 
     closeGroupingPicker()
+  }
+
+  const measurementUnit = (type: number | undefined, label: string) => {
+    const semantics = readValueSemantics(dataset?.Measurements.find(field => field.Type === type)?.valueSemantics)
+    return semantics ? reportValueUnit(semantics, readNumberPresentation(request?.numberPresentation))
+      : nativeReportMeasurementUnit(dataSource, label, type) ?? t('Без поділу за ПДВ')
   }
 
   const selectionPanel = dataSource === 19 ? null : <section className="reports-stocks-legacy__selections">
@@ -1998,7 +2032,7 @@ function LegacyReportBuilder({
                   size="sm"
                   onChange={() => toggleMeasurementItem(measurements, groupIndex, itemIndex, onMeasurementsChange)}
                 />
-              )) : <Text className="reports-stocks-measurement-unit" size="xs">{nativeReportMeasurementUnit(dataSource, groupLabel) ?? t('Без поділу за ПДВ')}</Text>}
+              )) : <Text className="reports-stocks-measurement-unit" size="xs">{measurementUnit(group.SubList[0]?.Type, groupLabel)}</Text>}
             </div>
           )
         })}
@@ -2009,27 +2043,32 @@ function LegacyReportBuilder({
   const groupingSection = (
     <section className="app-section-card reports-stocks-structure">
       <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Групування')}</Text>
-      {fixedAxesDescription[dataSource] ? part === 'grouping' ? (dataSource === 39
-        ? <Text size="sm">Товари у рядках; залишки, продажі й контрагенти у стовпцях.</Text> : null)
+      {fixedAxes ? part === 'grouping' ? (dataSource === 39
+        ? <Text size="sm">Товари у рядках; залишки, продажі й контрагенти у стовпцях.</Text> : <Text size="sm">{rowGroups.map(group => group.label).join(' → ')}</Text>)
         : <Text size="sm">{dataSource === 39
         ? `Товар → сім атрибутів. Колонки: Остатки, Продажи та Контрагенты; один показник «Результат». ${currentVparivanieNotice(filterFieldOptions.some(option => option.field.Type === 60))}`
-        : dataSource === 41 ? settlementAxesDescription(rowGroups) : fixedAxesDescription[dataSource]}</Text> : <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={dataSource !== 13}
+        : dataSource === 41 ? settlementAxesDescription(rowGroups) : fixedAxesDescription[dataSource] ?? rowGroups.map(group => group.label).join(' → ')}</Text> : <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={!rowsOnly}
         onOpenPicker={() => setGroupingPickerTarget('rows')}
         onRemove={(index) => onRowGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
         onReorder={(type, direction) => onRowGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
         onTransfer={type => transferGrouping('Row', type)} />}
-      {hasFixedReportAxes(dataSource) ? null : dataSource !== 13 ? <ReportGroupingPanel layout={groupingLayout} axis="Col" allowed={allowedGroupingTypes}
+      {fixedAxes ? null : !rowsOnly ? <ReportGroupingPanel layout={groupingLayout} axis="Col" allowed={allowedGroupingTypes}
         onOpenPicker={() => setGroupingPickerTarget('columns')}
         onRemove={(index) => onColGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
         onReorder={(type, direction) => onColGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
-        onTransfer={type => transferGrouping('Col', type)} /> : <Text size="sm" c="dimmed">Порівняння періодів показує вибрані показники у стовпцях.</Text>}
+        onTransfer={type => transferGrouping('Col', type)} /> : <Text size="sm" c="dimmed">Вибрані показники відображаються у стовпцях.</Text>}
     </section>
   )
 
+  const pickerAllowed = policy.config ? new Set(groupingPickerTarget === 'columns' ? policy.config.allowedColumns : policy.config.allowedRows) : null
+  const pickerExcluded = new Set(policy.config?.mutuallyExclusiveRows.filter(group => group.some(type => selectedGroupingTypes.has(type))).flat())
+  const warehouse = request?.supplierWarehouse ?? request?.SupplierWarehouse
+  if (warehouse === 73) pickerExcluded.add(78)
+  if (warehouse === 78) pickerExcluded.add(73)
   const groupingPicker = (
     <LegacyGroupingPickerModal
       opened={groupingPickerTarget !== null}
-      options={groupingSelectData.filter(item => !selectedGroupingTypes.has(Number(item.value)) && (groupingPickerTarget !== 'columns' || Number(item.value) !== ABC_CLASS_GROUPING))}
+      options={groupingSelectData.filter(item => !selectedGroupingTypes.has(Number(item.value)) && (!pickerAllowed || pickerAllowed.has(Number(item.value))) && !pickerExcluded.has(Number(item.value)) && (groupingPickerTarget !== 'columns' || Number(item.value) !== ABC_CLASS_GROUPING))}
       target={groupingPickerTarget}
       title={groupingPickerTarget === 'rows' ? 'Групування рядків' : 'Групування стовпців'}
       onAdd={addGroupingFromPicker}

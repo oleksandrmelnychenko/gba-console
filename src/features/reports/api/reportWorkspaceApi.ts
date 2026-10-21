@@ -1,3 +1,5 @@
+import { readReportConfiguration, reportConfigurationError } from '../data/reportConfiguration'
+import { cloneNumberPresentationAliases, readValueSemantics, numberPresentationSupported, numberPresentationError } from '../data/reportNumberPresentation'
 import { cloneWorkbookAliases, normalizeWorkbookDataset, workbookConfigurationError } from '../data/workbookPresentation'
 import { settlementPeriodConfigurationError, isSettlementPeriodDataset } from '../data/settlementPeriod'
 import { agreementPricesConfigurationError, isAgreementPricesDataset } from '../data/agreementPrices'
@@ -43,6 +45,7 @@ function isDatasetField(value: unknown): value is ReportDatasetField {
   if (!value || typeof value !== 'object') return false
   const field = value as Partial<ReportDatasetField>
   return Number.isSafeInteger(field.Type) && field.Type! >= 0 && typeof field.Name === 'string' && field.Name.trim().length > 0
+    && (field.valueSemantics === undefined || !!readValueSemantics(field.valueSemantics))
     && (field.Selectable === undefined || typeof field.Selectable === 'boolean')
 }
 
@@ -52,6 +55,8 @@ function isDataset(value: unknown): value is ReportDataset {
   const fieldsValid = [item.Groupings, item.Measurements, item.Filters].every(fields =>
     Array.isArray(fields) && fields.every(isDatasetField) && new Set(fields.map(field => field.Type)).size === fields.length)
   return Number.isSafeInteger(item.DataSource) && item.DataSource! >= 0 && item.DataSource !== 1 && typeof item.Name === 'string' && !!item.Name.trim()
+    && (item.configuration === undefined || !!readReportConfiguration(item.configuration))
+    && (item.numberPresentation === undefined || numberPresentationSupported(item as ReportDataset))
     && typeof item.Description === 'string' && fieldsValid && !!item.Groupings?.length && !!item.Measurements?.length
     && (item.PeriodRequired === undefined || typeof item.PeriodRequired === 'boolean')
     && (item.PeriodSupported === undefined || typeof item.PeriodSupported === 'boolean')
@@ -254,6 +259,7 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     ...cloneGroupedCashAliases(value.Data),
     ...cloneCashReadModeAliases(value.Data),
     ...cloneWorkbookAliases(value.Data),
+    ...cloneNumberPresentationAliases(value.Data),
     ...(Object.hasOwn(value.Data, 'cashPeriod') ? { cashPeriod: value.Data.cashPeriod,
       ...(Object.hasOwn(value.Data, 'CashPeriod') ? { CashPeriod: value.Data.CashPeriod } : {}),
     } : Object.hasOwn(value.Data, 'CashPeriod') ? { cashPeriod: value.Data.CashPeriod } : {}),
@@ -301,6 +307,8 @@ export async function getServerReportTemplates(signal?: AbortSignal): Promise<Re
 
 export async function saveServerReportTemplate(template: ReportTemplate, signal?: AbortSignal): Promise<ReportTemplate> {
   const request = (template.Data.dataSource === 2 || template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21 || template.Data.dataSource === 22 || template.Data.dataSource === 23 || template.Data.dataSource === 24 || template.Data.dataSource === 25 || template.Data.dataSource === 27 || template.Data.dataSource === 28 || template.Data.dataSource === 35 || template.Data.dataSource === 39 || template.Data.dataSource === 40 || template.Data.dataSource === 41) ? structuredClone(template) : template
+  const numericError = numberPresentationError(request.Data) ?? reportConfigurationError(request.Data)
+  if (numericError) throw new Error(numericError)
   const workbookError = workbookConfigurationError(request.Data)
   if (workbookError) throw new Error(workbookError)
   const exactFilterError = nativeExactFiltersConfigurationError(request.Data)

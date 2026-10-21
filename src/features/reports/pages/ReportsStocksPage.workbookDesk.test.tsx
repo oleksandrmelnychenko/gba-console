@@ -237,3 +237,27 @@ it('keeps an earlier draft untouched and recoverable across visits that only ope
   expect(previewStockReport).not.toHaveBeenCalled()
   expect(createStockReport).not.toHaveBeenCalled()
 })
+
+
+it('uses server editable supplier rows, preserves warehouse basis when hidden, and clears old result after a layout edit', async () => {
+  const configuration = { version: 1, axisMode: 'profitRows', allowedRows: [73, 78, 4, 21], allowedColumns: [], minimumRows: 1, maximumRows: 3, allowRowReorder: true, rowLayouts: [], columnLayouts: [[]], mutuallyExclusiveRows: [[73, 78]], period: { required: true, supported: true, maximumDays: 62, maximumMonths: null, minimumDate: null }, variants: [{ key: 'currentDocuments', allowedRows: [78, 4, 21] }] }
+  vi.mocked(getReportDatasets).mockResolvedValue([profitDayDataset, { ...profitSupplierDataset, configuration }])
+  render(page())
+  const switcher = await findOpenedWorkbook('ВП.xls')
+  fireEvent.click(within(switcher).getByRole('button', { name: `Відкрити ${workbookDisplayFileName('ВП по постачальниках.xls')}` }))
+  await findOpenedWorkbook('ВП по постачальниках.xls')
+  fireEvent.click(screen.getByRole('button', { name: /^Групування:/ }))
+  const rows = screen.getByRole('region', { name: 'Групування рядків' })
+  const deleteButtons = within(rows).getAllByRole('button', { name: /^Видалити / })
+  fireEvent.click(deleteButtons[0])
+  await waitFor(() => expect((screen.getByRole('button', { name: 'Показати на екрані' }) as HTMLButtonElement).disabled).toBe(false))
+  fireEvent.click(screen.getByRole('button', { name: 'Показати на екрані' }))
+  await screen.findByRole('region', { name: 'Таблиця попереднього перегляду' })
+  const request = vi.mocked(previewStockReport).mock.calls.at(-1)![0]
+  expect(request).toMatchObject({ dataSource: 38, supplierBasis: 0, supplierWarehouse: 78, profitReadMode: 0 })
+  expect(request.sorted.Row.map(row => row.type)).toEqual([4, 21])
+  expect(request.sorted.Col).toEqual([])
+  fireEvent.click(within(rows).getAllByRole('button', { name: /^Перемістити .* нижче$/ })[0])
+  await waitFor(() => expect(screen.queryByRole('region', { name: 'Таблиця попереднього перегляду' })).toBeNull())
+  expect(screen.queryByRole('link', { name: 'Завантажити Excel' })).toBeNull()
+})

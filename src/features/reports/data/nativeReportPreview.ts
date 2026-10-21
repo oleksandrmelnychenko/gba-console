@@ -1,3 +1,4 @@
+import { readNumberPresentation, readValueSemantics, type ReportNumberPresentation, type ReportValueSemantics } from './reportNumberPresentation'
 import { readWorkbookPreview, type WorkbookPreview } from './workbookPreview'
 import { readSettlementCounterpartyAttributes, type SettlementCounterpartyAttributes } from './settlementSourceAttributes'
 import { readClientDiscountRegions, type ClientDiscountRegions } from './originalClientDiscounts'
@@ -33,8 +34,12 @@ export type NativeReportPreviewRequest = {
   Notes: string[] | null
 }
 export type NativeReportPreview = {
+  numberPresentation?: ReportNumberPresentation
+  valueSemantics?: Array<{ columnSourceIndex: number; measureType: number | null; semantics: ReportValueSemantics }>
+  ResultSession?: { ResultId: string; RequestSha256: string; ResultSha256: string; ExpiresAtUtc: string }
   Version: number
   ResultSha256: string
+  RequestSha256?: string
   PresentationOnly: boolean
   Request: NativeReportPreviewRequest | null
   Page: { Offset: number; Limit: number; TotalVisibleRows: number; ReturnedRows: number; HasMore: boolean }
@@ -153,6 +158,9 @@ export function normalizeNativeReportPreview(response: unknown, fullCurrentVpari
     || !Array.isArray(preview.Cells) || preview.Cells.length > 12800)
     throw new Error('Сервер повернув некоректний попередній перегляд звіту.')
 
+  if (preview.numberPresentation != null && !readNumberPresentation(preview.numberPresentation)) throw new Error('Непідтримуваний формат чисел результату.')
+  if (preview.valueSemantics !== undefined && (!Array.isArray(preview.valueSemantics) || preview.valueSemantics.some(item => !record(item) || !Number.isInteger(item.columnSourceIndex) || !readValueSemantics(item.semantics)))) throw new Error('Некоректні одиниці показників результату.')
+  if (preview.numberPresentation != null && (!Array.isArray(preview.valueSemantics) || preview.Columns.some(column => !record(column) || !(preview.valueSemantics as Array<Record<string, unknown>>).some(item => item.columnSourceIndex === column.SourceIndex)))) throw new Error('Сервер не передав одиниці всіх показників.')
   const axis = (item: unknown, max: number): item is NativeReportPreviewAxis => record(item)
     && boundedInteger(item.Ordinal, max) && boundedInteger(item.SourceIndex, 500000)
     && Array.isArray(item.Values) && item.Values.length <= 66
