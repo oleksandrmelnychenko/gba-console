@@ -85,7 +85,7 @@ it('uses the complete legacy Fenix scope for the date picker after opting out of
   mode('За налаштуваннями звіту')
   fireEvent.click(screen.getByRole('button', { name: /^Період:/ }))
   expect(screen.getByLabelText('До').getAttribute('max')).toBe('2099-12-31')
-  fireEvent.click(screen.getByRole('button', { name: 'Скасувати', exact: true }))
+  fireEvent.click(screen.getByRole('button', { name: 'Скасувати' }))
   fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }))
   fireEvent.click(screen.getByRole('button', { name: /^Період:/ }))
   expect(screen.getByLabelText('До').getAttribute('max')).toBe('2030-12-31')
