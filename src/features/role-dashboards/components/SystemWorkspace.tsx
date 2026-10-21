@@ -1,5 +1,13 @@
-import { ActionIcon, Alert, Badge, Card, Group, Progress, SimpleGrid, Skeleton, Stack, Text, Tooltip } from '@mantine/core'
-import { CircleAlert, RefreshCw } from 'lucide-react'
+import { ActionIcon, Alert, Badge, Card, Group, Skeleton, Stack, Text, Tooltip } from '@mantine/core'
+import {
+  CircleAlert,
+  CircleCheck,
+  CircleHelp,
+  CircleX,
+  RefreshCw,
+  TriangleAlert,
+  type LucideIcon,
+} from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { AI_FLEET_SERVICES, getAiFleetServicesSnapshot } from '../../ai-fleet/api/aiFleetApi'
 import type { AiFleetServiceStatus } from '../../ai-fleet/types'
@@ -8,13 +16,61 @@ import {
   buildAiFleetObservation,
   type AiFleetObservation,
 } from '../../ai-fleet/utils/aiFleetObservations'
-import { buildAiFleetAnalytics, buildAiFleetServiceViews } from '../../ai-fleet/utils/aiFleetView'
+import {
+  buildAiFleetAnalytics,
+  buildAiFleetServiceViews,
+  type AiFleetEffectiveState,
+  type AiFleetReadinessRow,
+} from '../../ai-fleet/utils/aiFleetView'
 import { AiFleetAnalyticsDashboard } from '../../ai-fleet/components/AiFleetAnalyticsDashboard'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 
 type SystemWorkspaceProps = {
   showDirectory?: boolean
 }
+
+type ServiceState = 'down' | 'healthy' | 'unknown'
+
+type FleetState = ServiceState | 'loading' | 'warning'
+
+const FLEET_STATE_VIEW: Record<Exclude<FleetState, 'loading'>, { icon: LucideIcon; label: string; pill: string }> = {
+  down: { icon: CircleX, label: 'Є збої', pill: 'is-red' },
+  healthy: { icon: CircleCheck, label: 'Норма', pill: 'is-green' },
+  unknown: { icon: CircleHelp, label: 'Неповні дані', pill: 'is-gray' },
+  warning: { icon: TriangleAlert, label: 'Увага', pill: 'is-orange' },
+}
+
+const fleetDateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  month: '2-digit',
+})
+
+const fleetTimeFormatter = new Intl.DateTimeFormat('uk-UA', { hour: '2-digit', minute: '2-digit' })
+
+const SERVICE_STATE_ORDER: Record<ServiceState, number> = {
+  down: 0,
+  unknown: 1,
+  healthy: 2,
+}
+
+const CHECK_STATE_LABEL: Record<AiFleetEffectiveState, string> = {
+  fail: 'Помилка',
+  pass: 'Працює',
+  unknown: 'Немає даних',
+  warning: 'Застаріло',
+}
+
+const CHECK_STATE_TONE: Record<AiFleetEffectiveState, TableChipTone> = {
+  fail: 'danger',
+  pass: 'success',
+  unknown: 'neutral',
+  warning: 'warning',
+}
+
+const warmupAgeFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 1 })
 
 export function SystemWorkspace({ showDirectory = false }: SystemWorkspaceProps) {
   const { t } = useI18n()
@@ -22,6 +78,7 @@ export function SystemWorkspace({ showDirectory = false }: SystemWorkspaceProps)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(true)
   const [observations, setObservations] = useState<AiFleetObservation[]>([])
+  const [checkedAtMs, setCheckedAtMs] = useState<number | null>(null)
   const [reloadKey, reload] = useReducer((value: number) => value + 1, 0)
 
   useEffect(() => {
@@ -55,6 +112,7 @@ export function SystemWorkspace({ showDirectory = false }: SystemWorkspaceProps)
           }
 
           setStatuses(snapshot.statuses)
+          setCheckedAtMs(capturedAtMs)
           setError(snapshot.telemetryError ?? null)
         }
       } catch (loadError) {
@@ -84,17 +142,6 @@ export function SystemWorkspace({ showDirectory = false }: SystemWorkspaceProps)
     }
   }, [reloadKey, t])
 
-  const healthyCount = useMemo(
-    () => statuses.filter((status) => status.health.state === 'healthy' && status.warmup.state === 'healthy').length,
-    [statuses],
-  )
-  const serviceStates = useMemo(
-    () => AI_FLEET_SERVICES.map((service) => getCombinedState(statuses.find((status) => status.serviceId === service.id))),
-    [statuses],
-  )
-  const downCount = serviceStates.filter((state) => state === 'down').length
-  const unknownCount = serviceStates.filter((state) => state === 'unknown').length
-  const readinessPercent = Math.round((healthyCount / AI_FLEET_SERVICES.length) * 100)
   const serviceRows = useMemo(
     () => buildAiFleetServiceViews(AI_FLEET_SERVICES, statuses),
     [statuses],
@@ -106,6 +153,13 @@ export function SystemWorkspace({ showDirectory = false }: SystemWorkspaceProps)
   const analytics = useMemo(
     () => buildAiFleetAnalytics(serviceRows, operation),
     [operation, serviceRows],
+  )
+  const statusRows = useMemo(
+    () => analytics.readinessRows
+      .map((row) => ({ row, state: getCombinedState(statuses.find((status) => status.serviceId === row.serviceId)) }))
+      .toSorted((left, right) => SERVICE_STATE_ORDER[left.state] - SERVICE_STATE_ORDER[right.state]
+        || left.row.serviceName.localeCompare(right.row.serviceName, 'uk')),
+    [analytics.readinessRows, statuses],
   )
 
   if (showDirectory) {
@@ -125,25 +179,49 @@ export function SystemWorkspace({ showDirectory = false }: SystemWorkspaceProps)
     )
   }
 
+  const totalCount = AI_FLEET_SERVICES.length
+  const healthyCount = statusRows.filter((item) => item.state === 'healthy').length
+  const downCount = statusRows.filter((item) => item.state === 'down').length
+  const unknownCount = statusRows.filter((item) => item.state === 'unknown').length
+  const isInitialLoad = isLoading && statuses.length === 0
+  const fleetState: FleetState = isInitialLoad
+    ? 'loading'
+    : downCount > 0
+      ? 'down'
+      : unknownCount > 0 ? 'unknown' : analytics.staleWarmupCount > 0 ? 'warning' : 'healthy'
+  const fleetView = fleetState === 'loading' ? null : FLEET_STATE_VIEW[fleetState]
+  const segments: Array<{ count: number; label: string; state: ServiceState }> = [
+    { count: healthyCount, label: t('Працюють'), state: 'healthy' },
+    { count: downCount, label: t('З помилкою'), state: 'down' },
+    { count: unknownCount, label: t('Без телеметрії'), state: 'unknown' },
+  ]
+  const lastWarmupMs = statuses.reduce<number | null>((latest, status) => {
+    const finishedMs = status.warmup.lastFinishedAtUtc ? Date.parse(status.warmup.lastFinishedAtUtc) : Number.NaN
+    return Number.isNaN(finishedMs) || (latest !== null && latest >= finishedMs) ? latest : finishedMs
+  }, null)
+  const freshestWarmupHours = analytics.readinessRows.reduce<number | null>(
+    (freshest, row) => row.warmupAgeHours === null || (freshest !== null && freshest <= row.warmupAgeHours) ? freshest : row.warmupAgeHours,
+    null,
+  )
+  const fleetNote = downCount > 0
+    ? `${downCount} ${t('з')} ${totalCount} ${t('сервісів не відповідають — вони першими в таблиці.')}`
+    : unknownCount > 0
+      ? `${unknownCount} ${t('з')} ${totalCount} ${t('сервісів без повної телеметрії.')}`
+      : analytics.staleWarmupCount > 0
+        ? `${t('Ранковий прогрів застарів у')} ${analytics.staleWarmupCount} ${t('з')} ${totalCount} ${t('сервісів.')}`
+        : t('Усі сервіси доступні, прогрів свіжий.')
+
   return (
     <Card className="app-section-card role-dashboard-system-card" withBorder padding={0} radius="md">
       <Group className="role-dashboard-section-head" justify="space-between" wrap="nowrap">
-        <Group gap="sm" wrap="nowrap">
-          <div className="role-dashboard-section-copy">
-            <Text component="h2" className="app-section-title" fw={600}>
-              {t(showDirectory ? 'AI та системні сервіси' : 'Стан системних сервісів')}
-            </Text>
-            <Text className="role-dashboard-section-subtitle">
-              {t('Доступність і готовність робочих модулів')}
-            </Text>
-          </div>
-          <Badge
-            className={`app-role-pill ${isLoading ? 'is-orange' : healthyCount === AI_FLEET_SERVICES.length ? 'is-green' : 'is-gray'}`}
-            variant="light"
-          >
-            {isLoading ? t('Перевірка') : `${healthyCount}/${AI_FLEET_SERVICES.length}`}
-          </Badge>
-        </Group>
+        <div className="role-dashboard-section-copy">
+          <Text component="h2" className="app-section-title" fw={600}>
+            {t('Стан системних сервісів')}
+          </Text>
+          <Text className="role-dashboard-section-subtitle">
+            {t('Доступність API та ранковий прогрів AI-сервісів')}
+          </Text>
+        </div>
         <Tooltip label={t('Оновити')}>
           <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={() => reload()}>
             <RefreshCw size={17} />
@@ -158,74 +236,158 @@ export function SystemWorkspace({ showDirectory = false }: SystemWorkspaceProps)
           </Alert>
         )}
 
-        <div className="role-dashboard-health-strip">
-          <div className="role-dashboard-health-stat is-healthy">
-            <Text className="role-dashboard-health-label">{t('Працюють')}</Text>
-            <Text className="role-dashboard-health-value">{healthyCount}</Text>
-          </div>
-          <div className="role-dashboard-health-stat is-down">
-            <Text className="role-dashboard-health-label">{t('З помилкою')}</Text>
-            <Text className="role-dashboard-health-value">{downCount}</Text>
-          </div>
-          <div className="role-dashboard-health-stat is-unknown">
-            <Text className="role-dashboard-health-label">{t('Без телеметрії')}</Text>
-            <Text className="role-dashboard-health-value">{unknownCount}</Text>
-          </div>
-          <div className="role-dashboard-health-progress">
-            <Group justify="space-between" gap="sm" wrap="nowrap">
-              <Text className="role-dashboard-health-label">{t('Готовність флоту')}</Text>
-              <Text className="role-dashboard-health-percent">{readinessPercent}%</Text>
-            </Group>
-            <Progress
-              aria-label={t('Готовність флоту')}
-              color={downCount > 0 ? 'red' : healthyCount === AI_FLEET_SERVICES.length ? 'green' : 'orange'}
-              radius="xl"
-              size={5}
-              value={readinessPercent}
-            />
+        <div className="role-dashboard-system-grid">
+          <article className={`role-dashboard-fleet is-${fleetState}`} aria-busy={isInitialLoad}>
+            <Text className="role-dashboard-fleet-eyebrow">{t('Готовність флоту')}</Text>
+            {isInitialLoad ? (
+              <Stack gap={10} mt={10}>
+                <Skeleton height={34} radius="sm" width="46%" />
+                <Skeleton height={12} radius="xl" />
+                <Skeleton height={10} radius="sm" width="80%" />
+              </Stack>
+            ) : (
+              <>
+                <div className="role-dashboard-fleet-score">
+                  <strong>{healthyCount}</strong>
+                  <span>/{totalCount}</span>
+                  {fleetView && (
+                    <Badge className={`app-role-pill ${fleetView.pill}`} variant="light">{t(fleetView.label)}</Badge>
+                  )}
+                </div>
+                <Text className="role-dashboard-fleet-caption">{t('сервісів працюють')}</Text>
+                <div
+                  aria-label={`${t('Готовність флоту')}: ${segments.map((segment) => `${segment.label} ${segment.count}`).join(', ')}`}
+                  className="role-dashboard-fleet-bar"
+                  role="img"
+                >
+                  {segments.map((segment) => segment.count > 0 ? (
+                    <span
+                      aria-hidden="true"
+                      className={`role-dashboard-fleet-segment is-${segment.state}`}
+                      key={segment.state}
+                      style={{ flexGrow: segment.count }}
+                    />
+                  ) : null)}
+                </div>
+                <ul className="role-dashboard-fleet-legend">
+                  {segments.map((segment) => (
+                    <li className={`is-${segment.state}${segment.count > 0 ? ' has-value' : ''}`} key={segment.state}>
+                      <i aria-hidden="true" />
+                      <span>{segment.label}</span>
+                      <b>{segment.count}</b>
+                    </li>
+                  ))}
+                </ul>
+                <dl className="role-dashboard-fleet-facts">
+                  <div>
+                    <dt>{t('Останній прогрів')}</dt>
+                    <dd>{lastWarmupMs === null ? '—' : fleetDateTimeFormatter.format(lastWarmupMs)}</dd>
+                  </div>
+                  <div>
+                    <dt>{t('Минуло')}</dt>
+                    <dd>{freshestWarmupHours === null ? '—' : `${warmupAgeFormatter.format(freshestWarmupHours)} ${t('год')}`}</dd>
+                  </div>
+                  <div>
+                    <dt>{t('Перевірено')}</dt>
+                    <dd>{checkedAtMs === null ? '—' : fleetTimeFormatter.format(checkedAtMs)}</dd>
+                  </div>
+                </dl>
+                {fleetView && (
+                  <p className={`role-dashboard-fleet-note is-${fleetState}`} role="status">
+                    <fleetView.icon aria-hidden="true" size={16} strokeWidth={2} />
+                    <span>{fleetNote}</span>
+                  </p>
+                )}
+              </>
+            )}
+          </article>
+
+          <div
+            aria-label={t('Стан системних сервісів')}
+            className="role-dashboard-service-table-scroll"
+            role="region"
+            tabIndex={0}
+          >
+            <table className="app-static-table role-dashboard-service-table">
+              <thead>
+                <tr>
+                  <th scope="col">{t('Сервіс')}</th>
+                  <th scope="col">{t('API')}</th>
+                  <th scope="col">{t('Прогрів 05:00')}</th>
+                  <th className="app-table-cell-number" scope="col">{t('Свіжість')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {isInitialLoad
+                  ? AI_FLEET_SERVICES.map((service) => (
+                    <tr key={service.id}>
+                      <th scope="row"><Skeleton height={12} radius="sm" width="60%" /></th>
+                      <td><Skeleton height={18} radius="xl" width={72} /></td>
+                      <td><Skeleton height={18} radius="xl" width={72} /></td>
+                      <td><Skeleton height={12} ml="auto" radius="sm" width={40} /></td>
+                    </tr>
+                  ))
+                  : statusRows.map(({ row, state }) => (
+                    <ServiceStatusRow
+                      key={row.serviceId}
+                      row={row}
+                      state={state}
+                      status={statuses.find((status) => status.serviceId === row.serviceId)}
+                    />
+                  ))}
+              </tbody>
+            </table>
           </div>
         </div>
-
-        <SimpleGrid className="role-dashboard-service-grid" cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
-          {AI_FLEET_SERVICES.map((service) => {
-            const status = statuses.find((item) => item.serviceId === service.id)
-            const state = getCombinedState(status)
-
-            return (
-              <Card key={service.id} className={`role-dashboard-service is-${state}`} padding="sm" radius="md" withBorder>
-                {isLoading && statuses.length === 0 ? (
-                  <Stack gap={7}>
-                    <Skeleton height={13} radius="sm" width="42%" />
-                    <Skeleton height={10} radius="sm" width="70%" />
-                  </Stack>
-                ) : (
-                  <Group justify="space-between" wrap="nowrap">
-                    <Group gap="sm" wrap="nowrap">
-                      <span aria-hidden="true" className={`role-dashboard-service-dot is-${state}`} />
-                      <div>
-                        <Text className="role-dashboard-service-name">{service.name}</Text>
-                        <Text className="role-dashboard-service-source" lineClamp={1}>{service.source}</Text>
-                      </div>
-                    </Group>
-                    <Badge
-                      className={`app-role-pill ${state === 'healthy' ? 'is-green' : state === 'down' ? 'is-red' : 'is-gray'}`}
-                      size="sm"
-                      variant="light"
-                    >
-                      {t(state === 'healthy' ? 'Працює' : state === 'down' ? 'Помилка' : 'Немає даних')}
-                    </Badge>
-                  </Group>
-                )}
-              </Card>
-            )
-          })}
-        </SimpleGrid>
       </div>
     </Card>
   )
 }
 
-function getCombinedState(status: AiFleetServiceStatus | undefined): 'down' | 'healthy' | 'unknown' {
+function ServiceStatusRow({
+  row,
+  state,
+  status,
+}: {
+  row: AiFleetReadinessRow
+  state: ServiceState
+  status: AiFleetServiceStatus | undefined
+}) {
+  const { t } = useI18n()
+
+  return (
+    <tr className={`is-${state}`}>
+      <th scope="row">
+        <span className="role-dashboard-service-cell">
+          <span aria-hidden="true" className={`role-dashboard-service-dot is-${state}`} />
+          <span className="role-dashboard-service-copy">
+            <span className="role-dashboard-service-name">{row.serviceName}</span>
+            <span className="role-dashboard-service-source">{row.source}</span>
+          </span>
+        </span>
+      </th>
+      <td>
+        <TableChip
+          title={status?.health.message}
+          tone={CHECK_STATE_TONE[row.healthCheckState]}
+          value={t(CHECK_STATE_LABEL[row.healthCheckState])}
+        />
+      </td>
+      <td>
+        <TableChip
+          title={status?.warmup.message}
+          tone={CHECK_STATE_TONE[row.warmupCheckState]}
+          value={t(CHECK_STATE_LABEL[row.warmupCheckState])}
+        />
+      </td>
+      <td className="app-table-cell-number">
+        {row.warmupAgeHours === null ? '—' : `${warmupAgeFormatter.format(row.warmupAgeHours)} ${t('год')}`}
+      </td>
+    </tr>
+  )
+}
+
+function getCombinedState(status: AiFleetServiceStatus | undefined): ServiceState {
   if (!status) {
     return 'unknown'
   }

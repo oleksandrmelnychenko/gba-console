@@ -1,10 +1,11 @@
-import { Alert, Box, Card, Group, Loader, SegmentedControl, Select, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Box, Card, Group, Loader, SegmentedControl, Select, Stack, Text } from '@mantine/core'
 import { CircleAlert, LayoutDashboard } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AiFeatureBadge } from '../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../shared/i18n/useI18n'
 import { PageHeaderTitle } from '../../shared/ui/page-header-actions/PageHeaderActions'
+import { ToolbarDateRangeFilter } from '../../shared/ui/ToolbarDateRangeFilter'
 import { RoleDashboardWorkspace } from '../../features/role-dashboards/components/RoleDashboardWorkspace'
 import { getDashboardWorkspaceCatalog } from '../../features/role-dashboards/api/dashboardWorkspacesApi'
 import type { DashboardWorkspaceCatalog } from '../../features/role-dashboards/types'
@@ -26,6 +27,7 @@ export function DashboardPage() {
   const [from, setFrom] = useState(() => firstDayOfCurrentMonth())
   const [to, setTo] = useState(() => localDateValue(new Date()))
   const [periodPreset, setPeriodPreset] = useState<PeriodPreset>('month')
+  const [toolbarSlot, setToolbarSlot] = useState<HTMLDivElement | null>(null)
   const today = useMemo(() => localDateValue(new Date()), [])
 
   useEffect(() => {
@@ -95,6 +97,16 @@ export function DashboardPage() {
     setPeriodPreset(preset)
   }
 
+  function applyCustomPeriod(range: { from: string; to: string }) {
+    if (!range.from || !range.to) {
+      return
+    }
+
+    setFrom(range.from)
+    setTo(range.to)
+    setPeriodPreset('custom')
+  }
+
   if (error) {
     return (
       <Alert color="red" icon={<CircleAlert size={17} />} title={t('Дашборд недоступний')} variant="light">
@@ -127,7 +139,7 @@ export function DashboardPage() {
       </PageHeaderTitle>
       {(catalog.canSwitchWorkspace || showsSharedPeriod) && (
       <Card className="app-filter-card role-dashboard-toolbar-card" withBorder radius="md" padding={0}>
-        <Group className="app-filter-bar role-dashboard-toolbar" justify="space-between" wrap="nowrap">
+        <Group className="app-filter-bar role-dashboard-toolbar" wrap="nowrap">
           {catalog.canSwitchWorkspace && (
             <Box className="app-filter-field role-dashboard-selector-field">
               <Text className="app-filter-label">{t('Дашборд')}</Text>
@@ -143,63 +155,39 @@ export function DashboardPage() {
           )}
 
           {showsSharedPeriod && (
-            <Group className="role-dashboard-period" gap={10} wrap="nowrap">
-            <Box className="app-filter-field role-dashboard-period-presets">
-              <Text className="app-filter-label">{t('Період')}</Text>
-              <SegmentedControl
-                aria-label={t('Період')}
-                data={[
-                  { label: t('Сьогодні'), value: 'today' },
-                  { label: t('7 днів'), value: '7d' },
-                  { label: t('30 днів'), value: '30d' },
-                  { label: t('Місяць'), value: 'month' },
-                ]}
-                size="xs"
-                value={periodPreset}
-                onChange={applyPeriodPreset}
-              />
-            </Box>
-            <Box className="app-filter-field role-dashboard-date-field">
-              <Text className="app-filter-label">{t('Від')}</Text>
-              <TextInput
-                aria-label={t('Від')}
-                max={to}
-                required
-                type="date"
-                value={from}
-                onChange={(event) => {
-                  if (event.currentTarget.value) {
-                    setFrom(event.currentTarget.value)
-                    setPeriodPreset('custom')
-                  }
-                }}
-              />
-            </Box>
-            <Box className="app-filter-field role-dashboard-date-field">
-              <Text className="app-filter-label">{t('До')}</Text>
-              <TextInput
-                aria-label={t('До')}
-                max={today}
-                min={from}
-                required
-                type="date"
-                value={to}
-                onChange={(event) => {
-                  if (event.currentTarget.value) {
-                    setTo(event.currentTarget.value)
-                    setPeriodPreset('custom')
-                  }
-                }}
-              />
-            </Box>
+            <Group className="role-dashboard-period" gap={8} wrap="nowrap">
+              <Box className="app-filter-field role-dashboard-period-presets">
+                <Text className="app-filter-label">{t('Період')}</Text>
+                <SegmentedControl
+                  aria-label={t('Період')}
+                  data={[
+                    { label: t('Сьогодні'), value: 'today' },
+                    { label: t('7 днів'), value: '7d' },
+                    { label: t('30 днів'), value: '30d' },
+                    { label: t('Місяць'), value: 'month' },
+                  ]}
+                  size="xs"
+                  value={periodPreset}
+                  onChange={applyPeriodPreset}
+                />
+              </Box>
+              <ToolbarDateRangeFilter from={from} max={today} to={to} onChange={applyCustomPeriod} />
+              <Text className={`role-dashboard-period-range${periodPreset === 'custom' ? ' is-custom' : ''}`} aria-live="polite">
+                {formatDisplayDate(from)} — {formatDisplayDate(to)}
+              </Text>
             </Group>
           )}
+          <div className="role-dashboard-toolbar-slot" ref={setToolbarSlot} />
         </Group>
       </Card>
       )}
 
       <Box className={`role-dashboard-content${usesInternalScroll ? ' role-dashboard-content--bounded' : ''}`}>
-        <RoleDashboardWorkspace period={period} workspaceKey={selectedWorkspace} />
+        <RoleDashboardWorkspace
+          period={period}
+          toolbarTarget={catalog.canSwitchWorkspace || showsSharedPeriod ? toolbarSlot : undefined}
+          workspaceKey={selectedWorkspace}
+        />
       </Box>
     </Stack>
   )
@@ -216,6 +204,10 @@ function readLastWorkspace(): string | null {
 function firstDayOfCurrentMonth(): string {
   const today = new Date()
   return localDateValue(new Date(today.getFullYear(), today.getMonth(), 1))
+}
+
+function formatDisplayDate(value: string): string {
+  return value.split('-').reverse().join('.')
 }
 
 function addDays(value: string, days: number): string {

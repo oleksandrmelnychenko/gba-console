@@ -11,7 +11,25 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { Ban, CircleAlert, CircleDashed, MessageSquare, MessageSquarePlus, Plus, RefreshCw, Sparkles } from 'lucide-react'
+import {
+  Ban,
+  CircleAlert,
+  CircleDashed,
+  ClipboardList,
+  ClipboardPen,
+  Clock3,
+  MessageSquare,
+  MessageSquarePlus,
+  Plus,
+  RefreshCw,
+  Repeat,
+  Shuffle,
+  Sparkles,
+  UserMinus,
+  UserPlus,
+  Wallet,
+  type LucideIcon,
+} from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
@@ -69,6 +87,16 @@ const TASK_TYPE_LABEL: Record<string, string> = {
   churn_winback: 'Повернення клієнта',
   new_client_activation: 'Активація нового клієнта',
   manual: 'Від керівника',
+}
+
+const TASK_TYPE_VIEW: Record<string, { icon: LucideIcon; tone: string }> = {
+  churn_winback: { icon: UserMinus, tone: 'red' },
+  cross_sell: { icon: Shuffle, tone: 'teal' },
+  debt_followup: { icon: Wallet, tone: 'orange' },
+  default: { icon: ClipboardList, tone: 'gray' },
+  manual: { icon: ClipboardPen, tone: 'brand' },
+  new_client_activation: { icon: UserPlus, tone: 'green' },
+  reorder_due: { icon: Repeat, tone: 'blue' },
 }
 
 const TASK_TYPE_FILTER_OPTIONS = [
@@ -404,7 +432,7 @@ export function HeadTaskBoard({
             </Button>
           )}
           {canGenerateTasks && (
-            <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
+            <Button color="gray" variant="default" size="sm"
               leftSection={<Sparkles size={16} />}
               loading={isGenerating}
               onClick={handleGenerate}
@@ -428,7 +456,6 @@ export function HeadTaskBoard({
         </div>
       </div>
 
-      <HeadTaskProgressSummary byStatus={data.ByStatus} />
 
       {status === 'dismissed' && data.IsHead && <HeadDismissalsPanel managerId={managerId} />}
 
@@ -446,6 +473,14 @@ export function HeadTaskBoard({
         </Text>
       ) : (
         <div className="cockpit-board-list">
+          <div aria-hidden="true" className="cockpit-board-list__head">
+            <span />
+            <span>{t('Задача')}</span>
+            <span>{t('Виручка · шанс')}</span>
+            <span>{t('Терміновість')}</span>
+            <span>{t('Оновлено')}</span>
+            <span />
+          </div>
           {data.Tasks.map((task) => (
             <HeadTaskRow
               canAddNote={canAddNote}
@@ -500,84 +535,6 @@ export function HeadTaskBoard({
   )
 }
 
-function HeadTaskProgressSummary({ byStatus }: { byStatus: HeadTaskByStatus }) {
-  const { t } = useI18n()
-  const ready = byStatus.Open + byStatus.InProgress
-  const terminal = byStatus.Done + byStatus.Dismissed
-  const paused = byStatus.Snoozed
-  const knownTotal = ready + terminal + paused
-  const activeFlow = byStatus.Open + byStatus.InProgress + byStatus.Done
-  const completion = activeFlow > 0 ? byStatus.Done / activeFlow : 0
-  const adoption = ready > 0 ? byStatus.InProgress / ready : 0
-
-  return (
-    <div className="cockpit-progress-panel">
-      <div className="cockpit-progress-grid">
-        <ProgressMetric
-          accent="brand"
-          label={t('Готові до дії')}
-          subLabel={t('нові + в роботі')}
-          value={String(ready)}
-        />
-        <ProgressMetric
-          accent="info"
-          label={t('В роботі зараз')}
-          subLabel={`${formatPercent(adoption)} ${t('від готових')}`}
-          value={String(byStatus.InProgress)}
-        />
-        <ProgressMetric
-          accent="success"
-          label={t('Виконано')}
-          subLabel={`${formatPercent(completion)} ${t('закриття активного потоку')}`}
-          value={String(byStatus.Done)}
-        />
-        <ProgressMetric
-          accent={paused > 0 ? 'warning' : 'muted'}
-          label={t('Відкладені')}
-          subLabel={t('не в активній черзі')}
-          value={String(paused)}
-        />
-      </div>
-
-      <div className="cockpit-progress-track" aria-label={t('Прогрес задач')}>
-        <span className="is-open" style={{ width: percentWidth(byStatus.Open, knownTotal) }} />
-        <span className="is-progress" style={{ width: percentWidth(byStatus.InProgress, knownTotal) }} />
-        <span className="is-done" style={{ width: percentWidth(byStatus.Done, knownTotal) }} />
-        <span className="is-paused" style={{ width: percentWidth(paused + byStatus.Dismissed, knownTotal) }} />
-      </div>
-
-      <Group gap="xs" justify="space-between" wrap="wrap">
-        <Text c="dimmed" size="xs">
-          {t('Усього задач у поточному циклі')}: {knownTotal}
-        </Text>
-        <Text c="dimmed" size="xs">
-          {t('Закриті або відхилені')}: {terminal}
-        </Text>
-      </Group>
-    </div>
-  )
-}
-
-function ProgressMetric({
-  accent,
-  label,
-  subLabel,
-  value,
-}: {
-  accent: 'brand' | 'info' | 'muted' | 'success' | 'warning'
-  label: string
-  subLabel: string
-  value: string
-}) {
-  return (
-    <div className={`cockpit-progress-metric is-${accent}`}>
-      <span className="cockpit-progress-metric__label">{label}</span>
-      <span className="cockpit-progress-metric__value">{value}</span>
-      <span className="cockpit-progress-metric__sub">{subLabel}</span>
-    </div>
-  )
-}
-
 function HeadTaskRow({
   canAddNote,
   canDismiss,
@@ -597,39 +554,39 @@ function HeadTaskRow({
   const lastNote = task.Notes.length > 0 ? task.Notes[task.Notes.length - 1] : null
   const isActive = task.Status === 'open' || task.Status === 'in_progress' || task.Status === 'snoozed'
 
+  const managerName = task.ManagerName?.trim() || `#${task.ManagerId}`
+  const typeView = TASK_TYPE_VIEW[task.TaskType ?? ''] ?? TASK_TYPE_VIEW.default
+  const chance = task.POutcome !== null ? Math.max(0, Math.min(1, task.POutcome)) : null
+
   return (
-    <div className={`cockpit-board-row${task.SlaBreached ? ' is-breached' : ''}`}>
+    <div className={`cockpit-board-row is-urgency-${task.Urgency ?? 'normal'}${task.SlaBreached ? ' is-breached' : ''}`}>
+      <span aria-hidden="true" className={`cockpit-board-row__type is-${typeView.tone}`}>
+        <typeView.icon size={17} strokeWidth={1.9} />
+      </span>
+
       <div className="cockpit-board-row__task">
-        <Group gap={6} wrap="wrap">
+        <div className="cockpit-board-row__headline">
           <Text className="cockpit-board-row__title">{task.Title?.trim() || t('Завдання')}</Text>
-          {task.TaskType && (
-            <Badge className={`app-role-pill${isManual ? '' : ' is-gray'}`} size="sm" variant="light">
-              {taskTypeLabel(task.TaskType, t)}
-            </Badge>
-          )}
           {isManual && dueDate && (
-            <Badge className="app-role-pill is-gray" size="sm" variant="light">
-              {t('Термін')}: {dueDate}
-            </Badge>
+            <span className="cockpit-board-row__type-label is-gray">{t('Термін')}: {dueDate}</span>
           )}
-        </Group>
-        <Group gap={6} mt={4} wrap="wrap">
-          <Text c="dimmed" size="xs">
+        </div>
+        <div className="cockpit-board-row__meta">
+          {task.TaskType && (
+            <span className="cockpit-board-row__type-label">{taskTypeLabel(task.TaskType, t)}</span>
+          )}
+          <span className="cockpit-board-row__client" title={task.ClientName ?? undefined}>
             {task.ClientName?.trim() || (task.ClientId !== null && task.ClientId > 0 ? `#${task.ClientId}` : t('Клієнт не вказаний'))}
-          </Text>
-          <span className="cockpit-board-row__separator" aria-hidden="true" />
-          <Text c="dimmed" size="xs">{task.ManagerName?.trim() || `#${task.ManagerId}`}</Text>
+          </span>
+          <span className="cockpit-board-row__manager">{managerName}</span>
           {lastNote?.Text && (
-            <>
-              <span className="cockpit-board-row__separator" aria-hidden="true" />
-              <Tooltip label={`${lastNote.AuthorName ? `${lastNote.AuthorName}: ` : ''}${lastNote.Text}`} multiline w={320}>
-                <Text c="dimmed" size="xs" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <MessageSquare size={12} /> {task.Notes.length}
-                </Text>
-              </Tooltip>
-            </>
+            <Tooltip label={`${lastNote.AuthorName ? `${lastNote.AuthorName}: ` : ''}${lastNote.Text}`} multiline w={320}>
+              <span className="cockpit-board-row__notes">
+                <MessageSquare size={12} /> {task.Notes.length}
+              </span>
+            </Tooltip>
           )}
-        </Group>
+        </div>
         {task.Status === 'dismissed' && task.ResolutionReason && (
           <Text c="red.7" mt={4} size="xs">
             {t('Причина')}: {task.ResolutionReason}
@@ -645,9 +602,17 @@ function HeadTaskRow({
       </div>
 
       <div className="cockpit-board-row__value">
-        <span className="cockpit-board-row__label">{t('Очікувана виручка')}</span>
         <strong>{task.ExpectedValue !== null ? formatMoney(task.ExpectedValue) : '—'}</strong>
-        <span>{task.POutcome !== null ? `${t('Шанс результату')} ${formatPercent(task.POutcome)}` : `${t('Пріоритет')} ${Math.round(task.Priority)}`}</span>
+        {chance !== null ? (
+          <span className="cockpit-board-row__chance" title={t('Шанс результату')}>
+            <span className="cockpit-board-row__chance-track" aria-hidden="true">
+              <span style={{ width: `${Math.max(4, Math.round(chance * 100))}%` }} />
+            </span>
+            {formatPercent(chance)}
+          </span>
+        ) : (
+          <span className="cockpit-board-row__chance">{t('Пріоритет')} {Math.round(task.Priority)}</span>
+        )}
       </div>
 
       <div className="cockpit-board-row__badges">
@@ -658,11 +623,11 @@ function HeadTaskRow({
           <Badge className="app-role-pill is-orange" leftSection={<CircleDashed size={12} />} size="sm" variant="light">
             {inProgressLabel(task.InProgressSince, t)}
           </Badge>
-        ) : (
+        ) : task.Status !== 'open' ? (
           <Badge className={`app-role-pill ${statusPill(task.Status)}`.trim()} size="sm" variant="light">
             {statusLabel(task.Status, t)}
           </Badge>
-        )}
+        ) : null}
         {task.SlaBreached ? (
           <Badge className="app-role-pill is-red" size="sm" variant="light">
             {t('Прострочено SLA')}
@@ -671,11 +636,11 @@ function HeadTaskRow({
       </div>
 
       <div className="cockpit-board-row__updated">
-        <span className="cockpit-board-row__label">{t('Оновлено')}</span>
+        <Clock3 aria-hidden="true" size={12} />
         <span>{relativeTaskDateLabel(task.UpdatedAt || task.GeneratedAt, t)}</span>
       </div>
 
-      <Group gap={4} wrap="nowrap">
+      <Group className="cockpit-board-row__actions" gap={4} wrap="nowrap">
         {canAddNote && <Tooltip label={t('Коментар керівника')}>
           <ActionIcon
             aria-label={t('Коментар керівника')}
@@ -842,12 +807,4 @@ function formatMoney(value: number): string {
 
 function formatPercent(value: number): string {
   return `${Math.round(value * 100)}%`
-}
-
-function percentWidth(value: number, total: number): string {
-  if (total <= 0 || value <= 0) {
-    return '0%'
-  }
-
-  return `${Math.max(2, Math.round((value / total) * 100))}%`
 }

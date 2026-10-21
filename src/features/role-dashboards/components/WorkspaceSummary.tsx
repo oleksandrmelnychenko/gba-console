@@ -1,141 +1,109 @@
-import { ActionIcon, Alert, Badge, Card, Group, Loader, SimpleGrid, Text, Tooltip, UnstyledButton } from '@mantine/core'
-import { CircleAlert, RefreshCw } from 'lucide-react'
-import { useEffect, useReducer, useState } from 'react'
+import { ActionIcon, Alert, Badge, Skeleton, Text, Tooltip, UnstyledButton } from '@mantine/core'
+import { ArrowUpRight, CircleAlert, RefreshCw } from 'lucide-react'
+import type { CSSProperties, ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { getDashboardWorkspaceSummary } from '../api/dashboardWorkspacesApi'
-import type {
-  DashboardWorkspaceKey,
-  DashboardWorkspaceMetric,
-  DashboardWorkspacePeriod,
-  DashboardWorkspaceSummary,
-} from '../types'
+import type { WorkspaceSummaryState } from '../hooks/useWorkspaceSummary'
+import type { DashboardWorkspaceMetric } from '../types'
+import { formatMetricValue } from '../utils/metricView'
+import { MetricIcon } from './MetricIcon'
 import { useI18n } from '../../../shared/i18n/useI18n'
 
 export function WorkspaceSummary({
-  period,
-  workspaceKey,
+  state,
+  toolbarTarget,
 }: {
-  period: DashboardWorkspacePeriod
-  workspaceKey: DashboardWorkspaceKey
+  state: WorkspaceSummaryState
+  /** Page toolbar slot for the refresh status; `null` while it mounts, `undefined` when the page has no toolbar. */
+  toolbarTarget?: HTMLElement | null
 }) {
   const { t } = useI18n()
   const navigate = useNavigate()
-  const [summary, setSummary] = useState<DashboardWorkspaceSummary | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [isRefreshing, setRefreshing] = useState(false)
-  const [reloadKey, reload] = useReducer((value: number) => value + 1, 0)
+  const { error, isRefreshing, reload, summary } = state
 
-  useEffect(() => {
-    const controller = new AbortController()
-    let requestInFlight = false
+  const refreshStatus = (
+    <div className="role-dashboard-refresh">
+      <Text className="role-dashboard-updated" aria-live="polite">
+        {summary?.generatedAtUtc ? `${t('Оновлено о')} ${formatUpdatedAt(summary.generatedAtUtc)}` : t('Оновлення…')}
+      </Text>
+      <Tooltip label={t('Оновити показники')}>
+        <ActionIcon
+          aria-label={t('Оновити показники')}
+          color="gray"
+          loading={isRefreshing}
+          size={36}
+          variant="default"
+          onClick={reload}
+        >
+          <RefreshCw size={16} />
+        </ActionIcon>
+      </Tooltip>
+    </div>
+  )
 
-    async function load(reset: boolean) {
-      if (requestInFlight) {
-        return
-      }
-
-      requestInFlight = true
-      setRefreshing(true)
-      setError(null)
-
-      if (reset) {
-        setSummary(null)
-      }
-
-      try {
-        const loaded = await getDashboardWorkspaceSummary(workspaceKey, period, controller.signal)
-
-        if (!controller.signal.aborted) {
-          setSummary(loaded)
-        }
-      } catch (loadError) {
-        if (!controller.signal.aborted) {
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити показники'))
-        }
-      } finally {
-        requestInFlight = false
-
-        if (!controller.signal.aborted) {
-          setRefreshing(false)
-        }
-      }
-    }
-
-    void load(true)
-
-    const refreshTimer = window.setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        void load(false)
-      }
-    }, getRefreshInterval(workspaceKey))
-
-    return () => {
-      window.clearInterval(refreshTimer)
-      controller.abort()
-    }
-  }, [period, reloadKey, t, workspaceKey])
+  let content: ReactNode
 
   if (error && !summary) {
-    return <Alert color="red" icon={<CircleAlert size={16} />} variant="light">{error}</Alert>
-  }
-
-  if (!summary) {
-    return <Group justify="center" py="md"><Loader size="sm" /></Group>
-  }
-
-  return (
-    <Card className="app-section-card role-dashboard-summary-card" withBorder padding={0} radius="md">
-      {error && (
-        <Alert className="role-dashboard-inline-alert" color="orange" icon={<CircleAlert size={16} />} variant="light">{error}</Alert>
-      )}
-      <Group className="role-dashboard-section-head" justify="space-between" wrap="nowrap">
-        <div className="role-dashboard-section-copy">
-          <Text component="h2" className="app-section-title" fw={600}>{t('Ключові показники')}</Text>
-          <Text className="role-dashboard-section-subtitle">{t('Зведення за обраний період')}</Text>
-        </div>
-        <Group gap={4} wrap="nowrap">
-          {summary.generatedAtUtc && (
-            <Text className="role-dashboard-updated" aria-live="polite">
-              {t('Оновлено')}: {formatUpdatedAt(summary.generatedAtUtc)}
-            </Text>
-          )}
-          <Tooltip label={t('Оновити показники')}>
-            <ActionIcon
-              aria-label={t('Оновити показники')}
-              loading={isRefreshing}
-              size="sm"
-              variant="subtle"
-              onClick={() => reload()}
-            >
-              <RefreshCw size={15} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
-      </Group>
-      <SimpleGrid className="role-dashboard-kpi-grid" cols={{ base: 1, xs: 2, md: 3, xl: 5 }} spacing={0}>
+    content = <Alert color="red" icon={<CircleAlert size={16} />} variant="light">{error}</Alert>
+  } else if (!summary) {
+    content = (
+      <div aria-busy="true" className="role-dashboard-kpi-grid" style={kpiColumns(4)}>
+        {[0, 1, 2, 3].map((index) => (
+          <div className="role-dashboard-kpi" key={index}>
+            <Skeleton className="role-dashboard-kpi-icon" height={40} radius={10} width={40} />
+            <span className="role-dashboard-kpi-body">
+              <Skeleton height={10} radius="sm" width="62%" />
+              <Skeleton height={22} mt={8} radius="sm" width="36%" />
+            </span>
+          </div>
+        ))}
+      </div>
+    )
+  } else if (summary.metrics.length === 0) {
+    content = <Text className="role-dashboard-kpi-empty">{t('Показників для цього дашборда поки немає')}</Text>
+  } else {
+    content = (
+      <div className="role-dashboard-kpi-grid" style={kpiColumns(summary.metrics.length)}>
         {summary.metrics.map((metric) => {
           const route = metric.route
           return <MetricCard key={metric.key} metric={metric} onOpen={route ? () => navigate(route) : undefined} />
         })}
-      </SimpleGrid>
-    </Card>
+      </div>
+    )
+  }
+
+  return (
+    <section aria-label={t('Ключові показники')} className="role-dashboard-kpis">
+      {toolbarTarget === undefined ? refreshStatus : toolbarTarget && createPortal(refreshStatus, toolbarTarget)}
+      {error && summary && (
+        <Alert className="role-dashboard-inline-alert" color="orange" icon={<CircleAlert size={16} />} variant="light">{error}</Alert>
+      )}
+      {content}
+    </section>
   )
 }
 
 function MetricCard({ metric, onOpen }: { metric: DashboardWorkspaceMetric; onOpen?: () => void }) {
+  const { t } = useI18n()
   const formatted = formatMetricValue(metric)
   const content = (
-    <div className={`role-dashboard-kpi is-${metric.tone}`}>
-      <Text className="role-dashboard-kpi-label" lineClamp={2}>{metric.label}</Text>
-      <Group align="flex-end" gap={6} justify="space-between" wrap="nowrap">
+    <div className={`role-dashboard-kpi is-${metric.tone}${metric.hasData ? '' : ' is-empty'}`}>
+      <span aria-hidden="true" className="role-dashboard-kpi-icon"><MetricIcon metric={metric} size={19} strokeWidth={1.9} /></span>
+      <span className="role-dashboard-kpi-body">
+        <Text className="role-dashboard-kpi-label" lineClamp={1} title={metric.label}>{metric.label}</Text>
         <span className="role-dashboard-kpi-value">
-          {formatted.value}
+          {metric.hasData ? formatted.value : t(formatted.value)}
           {formatted.unit && <span className="role-dashboard-kpi-unit">{formatted.unit}</span>}
         </span>
+      </span>
+      <span className="role-dashboard-kpi-aside">
+        {onOpen && <ArrowUpRight aria-hidden="true" className="role-dashboard-kpi-open" size={16} />}
         {metric.hasData && metric.coveragePercent < 100 && (
-          <Badge className="app-role-pill is-orange" size="xs" variant="light">{metric.coveragePercent}%</Badge>
+          <Tooltip label={t('Охоплення даних')}>
+            <Badge className="app-role-pill is-orange" size="xs" variant="light">{metric.coveragePercent}%</Badge>
+          </Tooltip>
         )}
-      </Group>
+      </span>
     </div>
   )
 
@@ -150,33 +118,8 @@ function MetricCard({ metric, onOpen }: { metric: DashboardWorkspaceMetric; onOp
   ) : content
 }
 
-function formatMetricValue(metric: DashboardWorkspaceMetric): { unit: string; value: string } {
-  if (!metric.hasData) {
-    return { unit: '', value: 'Немає даних' }
-  }
-
-  if (metric.unit === 'EUR' || metric.unit === 'UAH') {
-    return {
-      unit: metric.unit,
-      value: new Intl.NumberFormat('uk-UA', {
-        maximumFractionDigits: 2,
-        minimumFractionDigits: 2,
-      }).format(metric.value),
-    }
-  }
-
-  return {
-    unit: '',
-    value: new Intl.NumberFormat('uk-UA', {
-      maximumFractionDigits: metric.unit === 'qty' ? 2 : 0,
-    }).format(metric.value),
-  }
-}
-
-function getRefreshInterval(workspaceKey: DashboardWorkspaceKey): number {
-  return workspaceKey === 'accounting' || workspaceKey === 'finance' || workspaceKey === 'executive'
-    ? 300_000
-    : 60_000
+function kpiColumns(count: number): CSSProperties {
+  return { '--role-dashboard-kpi-columns': Math.min(Math.max(count, 1), 5) } as CSSProperties
 }
 
 function formatUpdatedAt(value: string): string {

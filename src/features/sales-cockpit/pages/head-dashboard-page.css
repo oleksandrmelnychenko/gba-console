@@ -73,7 +73,7 @@
 
 .cockpit-head-page .cockpit-head-workspace {
   gap: 8px;
-  grid-template-columns: minmax(0, 1fr) clamp(320px, 24vw, 420px);
+  grid-template-columns: clamp(320px, 24vw, 420px) minmax(0, 1fr);
 }
 
 .cockpit-head-main {

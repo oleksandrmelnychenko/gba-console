@@ -238,14 +238,6 @@ function HeadDashboardPageContent() {
             </Card>
 
             <div className="cockpit-head-workspace">
-              <Stack className="cockpit-head-main" gap={8}>
-                <HeadTaskBoard
-                  managerId={selectedManagerId}
-                  onManagerChange={setSelectedManagerId}
-                />
-                <HeadDashboardChartsPanel reloadKey={reloadKey} rows={rows} />
-              </Stack>
-
               <Stack className="cockpit-head-sidebar" gap={8}>
                 <TeamMonitor
                   isLoading={isLoading}
@@ -255,6 +247,14 @@ function HeadDashboardPageContent() {
                 />
                 <EscalationsPanel escalated={escalated} />
                 <HeadAiFleetStatus />
+              </Stack>
+
+              <Stack className="cockpit-head-main" gap={8}>
+                <HeadTaskBoard
+                  managerId={selectedManagerId}
+                  onManagerChange={setSelectedManagerId}
+                />
+                <HeadDashboardChartsPanel reloadKey={reloadKey} rows={rows} />
               </Stack>
             </div>
 
@@ -338,7 +338,7 @@ function TeamMonitor({
       <Group className="cockpit-side-header" gap="xs" justify="space-between">
         <div>
           <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Команда')}</Text>
-          <Text c="dimmed" size="xs">{t('План, оплати та активні задачі')}</Text>
+          <Text c="dimmed" size="xs">{t('Натисніть на менеджера, щоб побачити його задачі')}</Text>
         </div>
         {selectedManagerId !== null ? (
           <Button color="orange" size="compact-xs" variant="subtle" onClick={() => onSelect(null)}>{t('Усі')}</Button>
@@ -367,8 +367,8 @@ function TeamMonitor({
                   </Badge>
                 </Group>
                 <div className="cockpit-manager-row__metrics">
-                  <span>{t('Відвантаження')} <strong>{formatPercent(row.target.shipped.attainment_pct)}</strong></span>
-                  <span>{t('Оплати')} <strong>{formatPercent(row.target.paid.attainment_pct)}</strong></span>
+                  <span>{t('Відвантаження')} <strong className={attainmentClass(row.target.shipped.attainment_pct)}>{formatPercent(row.target.shipped.attainment_pct)}</strong></span>
+                  <span>{t('Оплати')} <strong className={attainmentClass(row.target.paid.attainment_pct)}>{formatPercent(row.target.paid.attainment_pct)}</strong></span>
                   <span>{t('Продано')} <strong>{row.tasks.sold_month}</strong></span>
                 </div>
               </UnstyledButton>
@@ -442,6 +442,10 @@ function formatMoney(value: number): string {
 
 function formatRate(value: number): string {
   return `${Math.round(value * 100)}%`
+}
+
+function attainmentClass(value: number): string {
+  return value >= 80 ? 'is-good' : value < 50 ? 'is-low' : ''
 }
 
 function formatPercent(value: number): string {

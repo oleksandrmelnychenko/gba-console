@@ -3,19 +3,20 @@ import { SalesCockpitPage, HeadDashboardPage } from '../../sales-cockpit'
 import { ProcureDashboardTab } from '../../basket-supply-ukraine-order'
 import type { DashboardWorkspaceKey, DashboardWorkspacePeriod } from '../types'
 import { BuyerWorkspace } from '../../basket-supply-ukraine-order/components/BuyerWorkspace'
+import { useWorkspaceSummary } from '../hooks/useWorkspaceSummary'
 import { OperationsWorkspace } from './OperationsWorkspace'
 import { SystemWorkspace } from './SystemWorkspace'
 import { WorkspaceSummary } from './WorkspaceSummary'
 import '../../basket-supply-ukraine-order/pages/basketSupplyUkraineOrder.css'
 
-export function RoleDashboardWorkspace({
-  period,
-  workspaceKey,
-}: {
+type WorkspaceProps = {
   period: DashboardWorkspacePeriod
+  toolbarTarget?: HTMLElement | null
   workspaceKey: DashboardWorkspaceKey
-}) {
-  switch (workspaceKey) {
+}
+
+export function RoleDashboardWorkspace(props: WorkspaceProps) {
+  switch (props.workspaceKey) {
     case 'sales-manager':
       return <SalesCockpitPage />
     case 'sales-head':
@@ -24,11 +25,22 @@ export function RoleDashboardWorkspace({
       return <BuyerWorkspace />
     case 'buyer-head':
       return <ProcureDashboardTab />
-    case 'gba':
-      return <Stack className="role-dashboard-gba-workspace" gap={6}><WorkspaceSummary period={period} workspaceKey={workspaceKey} /><SystemWorkspace showDirectory /></Stack>
-    case 'system':
-      return <Stack gap={6}><WorkspaceSummary period={period} workspaceKey={workspaceKey} /><SystemWorkspace /></Stack>
     default:
-      return <Stack gap={6}><WorkspaceSummary period={period} workspaceKey={workspaceKey} /><OperationsWorkspace workspaceKey={workspaceKey} /></Stack>
+      return <SummaryWorkspace {...props} />
   }
+}
+
+function SummaryWorkspace({ period, toolbarTarget, workspaceKey }: WorkspaceProps) {
+  const state = useWorkspaceSummary(workspaceKey, period)
+  const summary = <WorkspaceSummary state={state} toolbarTarget={toolbarTarget} />
+
+  if (workspaceKey === 'gba') {
+    return <Stack className="role-dashboard-gba-workspace" gap={6}>{summary}<SystemWorkspace showDirectory /></Stack>
+  }
+
+  if (workspaceKey === 'system') {
+    return <Stack gap={6}>{summary}<SystemWorkspace /></Stack>
+  }
+
+  return <Stack gap={6}>{summary}<OperationsWorkspace summary={state.summary} workspaceKey={workspaceKey} /></Stack>
 }
