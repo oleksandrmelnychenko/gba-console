@@ -1,4 +1,4 @@
-import { MantineProvider } from '@mantine/core'
+import { Drawer, MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../i18n/I18nProvider'
@@ -46,6 +46,31 @@ describe('ToolbarDateRangeFilter', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Період:/ }))
     expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-10-01')
     expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it.each(['Від', 'До', 'Застосувати', 'Скасувати', 'Період'])('Escape on %s cancels only the picker inside a Drawer', (target) => {
+    const onClose = vi.fn()
+    const onChange = vi.fn()
+    render(<MantineProvider env="test"><I18nProvider>
+      <Drawer opened onClose={onClose} title="Картка товару">
+        <ToolbarDateRangeFilter from="2026-10-01" to="2026-10-20" onChange={onChange} />
+      </Drawer>
+    </I18nProvider></MantineProvider>)
+    fireEvent.click(screen.getByRole('button', { name: /^Період:/ }))
+    fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-10-05' } })
+    const control = target === 'Період' ? screen.getByRole('dialog', { name: 'Період' })
+      : target === 'Від' || target === 'До' ? screen.getByLabelText(target)
+        : screen.getByRole('button', { name: target })
+    fireEvent.keyDown(control, { key: 'Escape', code: 'Escape' })
+    expect(screen.queryByRole('dialog', { name: 'Період' })).toBeNull()
+    expect(onClose).not.toHaveBeenCalled()
+    expect(onChange).not.toHaveBeenCalled()
+    expect(screen.getByRole('dialog', { name: 'Картка товару' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /^Період:/ }))
+    expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-10-01')
+    fireEvent.keyDown(screen.getByLabelText('Від'), { key: 'Escape', code: 'Escape' })
+    fireEvent.keyDown(screen.getByRole('button', { name: /^Період:/ }), { key: 'Escape', code: 'Escape' })
+    expect(onClose).toHaveBeenCalledExactlyOnceWith()
   })
 
   it('rejects reversed ranges and keeps caller-provided date bounds', () => {

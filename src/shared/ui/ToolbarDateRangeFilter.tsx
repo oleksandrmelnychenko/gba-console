@@ -69,7 +69,8 @@ export function ToolbarDateRangeFilter({ from, to, min, max, disabled, required 
             </ActionIcon>
           </Tooltip>
         </Popover.Target>
-        <Popover.Dropdown className="app-date-range-menu" role="dialog" aria-label={t('Період')}>
+        {/* Mantine Drawer checks this marker on the key target during window capture. */}
+        <Popover.Dropdown className="app-date-range-menu" role="dialog" aria-label={t('Період')} data-mantine-stop-propagation>
           <form
             className="app-date-range-panel"
             onSubmit={(event) => {
@@ -85,6 +86,7 @@ export function ToolbarDateRangeFilter({ from, to, min, max, disabled, required 
                 className="app-date-range-field"
                 label={fromLabel ?? t('Від')}
                 type="date"
+                data-mantine-stop-propagation
                 required={required}
                 withAsterisk={false}
                 disabled={disabled}
@@ -98,6 +100,7 @@ export function ToolbarDateRangeFilter({ from, to, min, max, disabled, required 
                 className="app-date-range-field"
                 label={toLabel ?? t('До')}
                 type="date"
+                data-mantine-stop-propagation
                 required={required}
                 withAsterisk={false}
                 disabled={disabled}
@@ -109,8 +112,8 @@ export function ToolbarDateRangeFilter({ from, to, min, max, disabled, required 
             </div>
             {invalidRange ? <span className="app-date-range-error" role="alert">{rangeError}</span> : null}
             <Group justify="flex-end" gap={8}>
-              <Button variant="default" onClick={() => setOpened(false)}>{t('Скасувати')}</Button>
-              <Button type="submit" disabled={invalidRange || disabled}>{t('Застосувати')}</Button>
+              <Button variant="default" data-mantine-stop-propagation onClick={() => setOpened(false)}>{t('Скасувати')}</Button>
+              <Button type="submit" data-mantine-stop-propagation disabled={invalidRange || disabled}>{t('Застосувати')}</Button>
             </Group>
           </form>
         </Popover.Dropdown>
