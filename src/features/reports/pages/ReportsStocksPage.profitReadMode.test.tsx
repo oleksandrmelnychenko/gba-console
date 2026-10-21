@@ -74,3 +74,19 @@ it('hides current opt-in without a confirmed capability', async () => {
   await openWorkbook('Валовий прибуток за днем')
   expect(screen.queryByRole('combobox', { name: 'Джерело розрахунку' })).toBeNull()
 })
+
+it('uses the complete legacy Fenix scope for the date picker after opting out of an explicit read mode', async () => {
+  const period = { required: true, supported: true, maximumDays: 31, maximumMonths: null, minimumDate: null, maximumDate: '2030-12-31' }
+  const configuration = { version: 1, axisMode: 'profitRows', allowedRows: [3, 4], allowedColumns: [], minimumRows: 1,
+    maximumRows: 2, allowRowReorder: true, rowLayouts: [], columnLayouts: [[]], mutuallyExclusiveRows: [], period,
+    variants: [{ key: 'originalNormal', period: { ...period, maximumDays: null, maximumMonths: 120, maximumDate: '2099-12-31' } }] }
+  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, { ...profitDayDataset, configuration }])
+  await openWorkbook('Валовий прибуток за днем')
+  mode('За налаштуваннями звіту')
+  fireEvent.click(screen.getByRole('button', { name: /^Період:/ }))
+  expect(screen.getByLabelText('До').getAttribute('max')).toBe('2099-12-31')
+  fireEvent.click(screen.getByRole('button', { name: 'Скасувати', exact: true }))
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }))
+  fireEvent.click(screen.getByRole('button', { name: /^Період:/ }))
+  expect(screen.getByLabelText('До').getAttribute('max')).toBe('2030-12-31')
+})
