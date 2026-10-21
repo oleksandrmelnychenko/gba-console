@@ -3,12 +3,13 @@ export type TableChipTone = 'neutral' | 'document' | 'product' | 'source' | 'sto
 type TableChipProps = {
   value: string | number | null | undefined
   tone?: TableChipTone
+  size?: 'md' | 'lg'
   showEmpty?: boolean
   title?: string
 }
 
 /** A short table value, including values inside expanded rows. */
-export function TableChip({ value, tone = 'neutral', showEmpty = false, title }: TableChipProps) {
+export function TableChip({ value, tone = 'neutral', showEmpty = false, title, size }: TableChipProps) {
   const text = (value == null ? '' : String(value).trim()) || (showEmpty ? '-' : '')
 
   // Preserve existing empty-value notation without creating an empty capsule.
@@ -23,7 +24,7 @@ export function TableChip({ value, tone = 'neutral', showEmpty = false, title }:
       : tone
 
   return (
-    <span className={`app-table-chip is-${color}`} title={title ?? text}>
+    <span className={`app-table-chip is-${color}${size ? ` is-size-${size}` : ''}`} title={title ?? text}>
       <span className="app-table-chip-label">{text}</span>
     </span>
   )

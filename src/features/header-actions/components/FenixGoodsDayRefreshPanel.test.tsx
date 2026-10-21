@@ -53,7 +53,7 @@ beforeEach(() => {
   vi.setSystemTime(new Date('2026-09-27T12:00:00Z'))
   vi.mocked(apiRequest).mockReset().mockResolvedValue(reply())
   vi.mocked(getSyncStatus).mockReset().mockResolvedValue({ InMemorySynchronizationInProgress: false,
-    IsGlobalLockHeld: false, IsGlobalLockStatusAvailable: true, IsInProgress: false })
+    IsGlobalLockHeld: false, IsGlobalLockStatusAvailable: true, IsInProgress: false, MinimumSupportedDate: '2025-01-01' })
   vi.mocked(startDailySync).mockReset()
   vi.mocked(startSyncSession).mockReset()
 })

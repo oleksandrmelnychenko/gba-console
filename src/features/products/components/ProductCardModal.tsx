@@ -130,12 +130,12 @@ function ProductCardContent({
       <Group className="product-card-summary" justify="space-between" align="flex-start" wrap="nowrap">
         <Stack gap={2}>
           <Group gap={8} wrap="wrap">
-            <TableChip tone="product" value={product.VendorCode} />
+            <TableChip tone="product" size="lg" value={product.VendorCode} />
             {product.Top && <span className="product-card-original"><span>Top</span><TableChip tone={isCriticalProductTop(product.Top) ? 'danger' : 'neutral'} value={product.Top} /></span>}
             {product.MainOriginalNumber && (
               <span className="product-card-original">
                 <span>OEM</span>
-                <TableChip tone="product" value={product.MainOriginalNumber} />
+                <TableChip tone="product" size="md" value={product.MainOriginalNumber} />
               </span>
             )}
           </Group>

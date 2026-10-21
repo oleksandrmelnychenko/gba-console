@@ -93,3 +93,7 @@
   border-color: var(--app-chip-danger-border);
   color: var(--app-chip-danger-text);
 }
+
+/* Detail-card identifiers can be emphasized without changing table-row typography. */
+.app-table-chip.is-size-md { font-size: 12px; line-height: 18px; }
+.app-table-chip.is-size-lg { font-size: 14px; line-height: 20px; }
