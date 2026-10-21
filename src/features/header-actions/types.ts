@@ -112,6 +112,7 @@ export type DataSyncPipelineRun = {
 }
 
 export type DataSyncStatus = {
+  MinimumSupportedDate?: string | null
   ActiveRun?: DataSyncPipelineRun | null
   ActiveSynchronizationType?: string
   InMemorySynchronizationInProgress: boolean

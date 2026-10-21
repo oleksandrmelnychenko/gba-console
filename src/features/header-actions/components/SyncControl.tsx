@@ -35,6 +35,7 @@ import {
 import {
   createInitialSyncState,
   getFirstSyncDateRangeError,
+  getMinimumSyncSessionDate,
   getSessionDocumentTypes,
   getTodaySyncDate,
   hasSyncDateRangeErrors,
@@ -126,8 +127,10 @@ export function SyncControl() {
   const isStartBlocked = [isSyncInProgress, state.isStatusRefreshing, isStatusUnknown, isGoodsRefreshing].includes(true)
   const sourceForAmg = state.source === 'amg'
   const today = getTodaySyncDate()
+  const minimumDate = getMinimumSyncSessionDate(state.status)
+  const isSessionStartBlocked = isStartBlocked || !minimumDate
   const activeRange = state.dateRanges[state.mode]
-  const activeRangeErrors = validateSyncDateRange(activeRange, today)
+  const activeRangeErrors = validateSyncDateRange(activeRange, today, minimumDate)
 
   function requestSync(mode: SyncMode) {
     const types = getSessionDocumentTypes(mode, state.selectedDailyDocumentTypes)
@@ -136,7 +139,7 @@ export function SyncControl() {
       return
     }
 
-    const errors = validateSyncDateRange(state.dateRanges[mode], today)
+    const errors = validateSyncDateRange(state.dateRanges[mode], today, minimumDate)
     if (hasSyncDateRangeErrors(errors)) {
       notifications.show({ color: 'red', message: t(getFirstSyncDateRangeError(errors)) })
       return
@@ -152,7 +155,7 @@ export function SyncControl() {
     }
 
     const range = state.dateRanges[mode]
-    const errors = validateSyncDateRange(range, today)
+    const errors = validateSyncDateRange(range, today, minimumDate)
     if (hasSyncDateRangeErrors(errors)) {
       notifications.show({ color: 'red', message: t(getFirstSyncDateRangeError(errors)) })
       dispatch({ type: 'confirmationCanceled' })
@@ -186,6 +189,11 @@ export function SyncControl() {
     descriptor: SyncStartDescriptor,
     request: (operationId: string) => Promise<SyncRunResponse>,
   ) {
+    if (!minimumDate) {
+      notifications.show({ color: 'yellow', message: t('Межа періоду синхронізації недоступна. Оновіть статус') })
+      return
+    }
+
     if (isStartBlocked) {
       notifications.show({ color: 'yellow', message: t('Синхронізація вже виконується') })
       return
@@ -282,6 +290,7 @@ export function SyncControl() {
 
               <SyncSessionConfigurator
                 dateErrors={activeRangeErrors}
+                minimumDate={minimumDate}
                 mode={state.mode}
                 range={activeRange}
                 selectedDailyDocumentTypes={state.selectedDailyDocumentTypes}
@@ -296,9 +305,17 @@ export function SyncControl() {
                 onSourceChange={(source) => dispatch({ type: 'sourceChanged', source })}
               />
 
-              <OneCTurnoverSyncPanel visible={state.opened && direction === 'import'} mode={state.mode} source={state.source}
+              {!minimumDate ? (
+                <Text size="xs" c="dimmed" role="status">
+                  {t(state.isStatusRefreshing
+                    ? 'Завантаження межі періоду синхронізації…'
+                    : 'Межа періоду синхронізації недоступна. Оновіть статус')}
+                </Text>
+              ) : null}
+
+              <OneCTurnoverSyncPanel minimumDate={minimumDate} visible={state.opened && direction === 'import'} mode={state.mode} source={state.source}
                 range={activeRange} types={state.selectedDailyDocumentTypes} today={today}
-                blocked={isStartBlocked || Boolean(state.pendingRun)} loading={state.isStarting} onRun={runReportSync} />
+                blocked={isSessionStartBlocked || Boolean(state.pendingRun)} loading={state.isStarting} onRun={runReportSync} />
 
               <FenixGoodsDayRefreshPanel visible={state.opened && direction === 'import'} mode={state.mode} source={state.source}
                 range={activeRange} blocked={isStartBlocked || Boolean(state.pendingRun)}
@@ -318,12 +335,13 @@ export function SyncControl() {
                   onCancel={() => dispatch({ type: 'confirmationCanceled' })}
                   onConfirm={() => void runConfirmedSync()}
                   isLoading={state.isStarting}
+                  isBlocked={isSessionStartBlocked}
                 />
               ) : (
                 <Group justify="flex-end" className="sync-action-bar">
                   <Button
                     color={CREATE_ACTION_COLOR}
-                    disabled={isStartBlocked}
+                    disabled={isSessionStartBlocked}
                     leftSection={<Play size={16} strokeWidth={1.9} />}
                     loading={state.isStarting}
                     onClick={() => requestSync(state.mode)}
@@ -345,6 +363,7 @@ export function SyncControl() {
 
 function SyncConfirmation({
   documentTypeCount,
+  isBlocked,
   isLoading,
   mode,
   onCancel,
@@ -353,6 +372,7 @@ function SyncConfirmation({
   source,
 }: {
   documentTypeCount: number
+  isBlocked: boolean
   isLoading: boolean
   mode: SyncMode
   onCancel: () => void
@@ -407,7 +427,7 @@ function SyncConfirmation({
         <Button color="gray" disabled={isLoading} onClick={onCancel} variant="subtle">
           {t('Скасувати')}
         </Button>
-        <Button color={CREATE_ACTION_COLOR} loading={isLoading} onClick={onConfirm}>
+        <Button color={CREATE_ACTION_COLOR} disabled={isBlocked} loading={isLoading} onClick={onConfirm}>
           {t('Запустити')}
         </Button>
       </Group>

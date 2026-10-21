@@ -1,4 +1,4 @@
-import { formatLocalDate, SYNC_DATA_RANGE_START } from '../../shared/date/dateTime'
+import { formatLocalDate } from '../../shared/date/dateTime'
 import { allDailySyncTypes } from './syncOptions'
 import type { DataSyncStatus } from './types'
 
@@ -18,6 +18,7 @@ export type SyncDateRangeErrors = {
 
 export type SyncState = {
   dateRanges: Record<SyncMode, SyncDateRange>
+  hasEditedFullRange: boolean
   isStarting: boolean
   isStatusRefreshing: boolean
   mode: SyncMode
@@ -50,13 +51,16 @@ export type SyncAction =
     }
 
 const STRICT_DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
-export const MIN_SYNC_SESSION_DATE = SYNC_DATA_RANGE_START
+export function getMinimumSyncSessionDate(status: DataSyncStatus | null): string | null {
+  const minimum = status?.MinimumSupportedDate
+  return minimum && isStrictSyncDate(minimum) ? minimum : null
+}
 
 export function createInitialSyncState(today = getTodaySyncDate()): SyncState {
   return {
     dateRanges: {
       full: {
-        from: MIN_SYNC_SESSION_DATE,
+        from: '',
         to: today,
       },
       daily: {
@@ -64,6 +68,7 @@ export function createInitialSyncState(today = getTodaySyncDate()): SyncState {
         to: today,
       },
     },
+    hasEditedFullRange: false,
     isStarting: false,
     isStatusRefreshing: false,
     mode: 'full',
@@ -88,13 +93,19 @@ export function syncReducer(state: SyncState, action: SyncAction): SyncState {
       return { ...state, source: action.source, pendingRun: null }
     case 'statusRefreshStarted':
       return { ...state, isStatusRefreshing: true }
-    case 'statusSucceeded':
+    case 'statusSucceeded': {
+      const minimum = getMinimumSyncSessionDate(action.status)
+      const initializeFullRange = minimum && !state.hasEditedFullRange
       return {
         ...state,
         isStatusRefreshing: false,
+        dateRanges: initializeFullRange
+          ? { ...state.dateRanges, full: { ...state.dateRanges.full, from: minimum } }
+          : state.dateRanges,
         status: action.status,
         statusError: '',
       }
+    }
     case 'statusFailed':
       return {
         ...state,
@@ -118,6 +129,7 @@ export function syncReducer(state: SyncState, action: SyncAction): SyncState {
     case 'dateChanged':
       return {
         ...state,
+        hasEditedFullRange: state.hasEditedFullRange || action.mode === 'full',
         dateRanges: {
           ...state.dateRanges,
           [action.mode]: {
@@ -139,18 +151,19 @@ export function getTodaySyncDate(now = new Date()): string {
 export function validateSyncDateRange(
   range: SyncDateRange,
   today = getTodaySyncDate(),
+  minimum: string | null = null,
 ): SyncDateRangeErrors {
   const errors: SyncDateRangeErrors = {}
 
   errors.from = validateDateBoundary(range.from, 'Дата від є обов’язковою')
   errors.to = validateDateBoundary(range.to, 'Дата до є обов’язковою')
 
-  if (!errors.from && range.from < MIN_SYNC_SESSION_DATE) {
-    errors.from = 'Дата не може бути раніше 01.01.2025'
+  if (!errors.from && minimum && range.from < minimum) {
+    errors.from = `Дата не може бути раніше ${minimum.split('-').reverse().join('.')}`
   }
 
-  if (!errors.to && range.to < MIN_SYNC_SESSION_DATE) {
-    errors.to = 'Дата не може бути раніше 01.01.2025'
+  if (!errors.to && minimum && range.to < minimum) {
+    errors.to = `Дата не може бути раніше ${minimum.split('-').reverse().join('.')}`
   }
 
   if (!errors.to && range.to > today) {

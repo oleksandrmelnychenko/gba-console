@@ -1,3 +1,4 @@
+import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { ProductSourceHistoryRefresh } from '../../../shared/ui/product-movement-history/ProductSourceHistoryRefresh'
 import { withProductSourceHistoryColumns } from '../../../shared/ui/product-movement-history/productSourceHistory'
 import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
@@ -3306,8 +3307,9 @@ function ProductInlineMovementsTab({
         reload()
       }} />
       <Group className="app-filter-bar product-movement-toolbar" align="end" gap={10} wrap="nowrap">
-        <TextInput className="product-movement-toolbar__control" label={t('З')} type="date" value={dateFrom} onChange={(event) => setDateFrom(event.currentTarget.value)} />
-        <TextInput className="product-movement-toolbar__control" label={t('По')} type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
+        <ToolbarDateRangeFilter from={dateFrom} to={dateTo} fromLabel={t('З')} toLabel={t('По')}
+          min="1900-01-01" max="9999-12-30" required
+          onChange={({ from, to }) => { setDateFrom(from); setDateTo(to) }} />
         {hasSiblings ? (
           <ProductSiblingScopeControl id={`product-inline-${direction}-sibling-scope`} value={siblingScope} onChange={setSiblingScope} />
         ) : null}

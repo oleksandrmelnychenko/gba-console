@@ -6,6 +6,7 @@ import type { SyncDateRange, SyncMode, SyncSource } from '../syncSessionForm'
 import type { OneCTurnoverSyncCatalog, OneCTurnoverSyncFilters } from '../types'
 
 type Props = {
+  minimumDate?: string | null
   range: SyncDateRange
   types: string[]
   today: string
@@ -27,7 +28,7 @@ export function OneCTurnoverSyncPanel(props: Props) {
   </Stack>
 }
 
-function TurnoverConfiguration({ range, types, today, blocked, loading, onRun }: Props) {
+function TurnoverConfiguration({ range, types, today, minimumDate, blocked, loading, onRun }: Props) {
   const [catalog, setCatalog] = useState<OneCTurnoverSyncCatalog | null>(null)
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
@@ -55,7 +56,7 @@ function TurnoverConfiguration({ range, types, today, blocked, loading, onRun }:
     return () => controller.abort()
   }, [attempt])
 
-  const validation = validateOneCTurnoverSync(range, types, filters, catalog, today)
+  const validation = validateOneCTurnoverSync(range, types, filters, catalog, today, minimumDate)
   function updateFilters(next: OneCTurnoverSyncFilters) {
     setConfirming(false)
     setFilters(next)

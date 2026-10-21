@@ -8,7 +8,7 @@ import {
 } from './dateTime'
 
 describe('SYNC_DATA_RANGE_START', () => {
-  it('matches the current operational sync baseline', () => {
+  it('retains the independent legacy document-list default', () => {
     expect(SYNC_DATA_RANGE_START).toBe('2025-01-01')
   })
 })

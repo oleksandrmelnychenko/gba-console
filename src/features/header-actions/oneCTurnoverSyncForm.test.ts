@@ -21,6 +21,12 @@ describe('explicit turnover sync filters', () => {
   it('accepts an exact named source scope with 31 days and explicit include-services', () => {
     expect(validate()).toBeNull()
   })
+  it('uses the session server boundary for the dated DocumentsOnly import', () => {
+    const dates = { from: '2020-01-01', to: '2020-01-31' }
+    expect(validateOneCTurnoverSync(dates, ['6'], filters, catalog, '2026-09-06', '2019-01-01')).toBeNull()
+    expect(validateOneCTurnoverSync(dates, ['6'], filters, catalog, '2026-09-06', '2021-01-01'))
+      .toBe('Дата не може бути раніше 01.01.2021')
+  })
   it('rejects 32 days, invalid dates and missing document types', () => {
     expect(validate(filters, catalog, { ...range, to: '2026-09-01' })).toContain('31')
     expect(validate(filters, catalog, { ...range, to: '2026-02-31' })).not.toBeNull()

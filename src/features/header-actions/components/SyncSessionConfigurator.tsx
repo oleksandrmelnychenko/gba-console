@@ -11,7 +11,6 @@ import {
 import { CircleCheck, ShieldCheck } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
-  MIN_SYNC_SESSION_DATE,
   type SyncDateRange,
   type SyncDateRangeErrors,
   type SyncMode,
@@ -21,6 +20,7 @@ import { DailySyncTypeChecklist } from './DailySyncTypeChecklist'
 
 type SyncSessionConfiguratorProps = {
   dateErrors: SyncDateRangeErrors
+  minimumDate: string | null
   mode: SyncMode
   range: SyncDateRange
   selectedDailyDocumentTypes: string[]
@@ -33,6 +33,7 @@ type SyncSessionConfiguratorProps = {
 
 export function SyncSessionConfigurator({
   dateErrors,
+  minimumDate,
   mode,
   onDailyDocumentTypesChange,
   onDateChange,
@@ -79,7 +80,7 @@ export function SyncSessionConfigurator({
             error={dateErrors.from}
             label={t('Дата від')}
             max={today}
-            min={MIN_SYNC_SESSION_DATE}
+            min={minimumDate ?? undefined}
             type="date"
             value={range.from}
             onChange={(event) => onDateChange('from', event.currentTarget.value)}
@@ -88,7 +89,7 @@ export function SyncSessionConfigurator({
             error={dateErrors.to}
             label={t('Дата до')}
             max={today}
-            min={MIN_SYNC_SESSION_DATE}
+            min={minimumDate ?? undefined}
             type="date"
             value={range.to}
             onChange={(event) => onDateChange('to', event.currentTarget.value)}

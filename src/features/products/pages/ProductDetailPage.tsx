@@ -2189,7 +2189,9 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
       }} />
       <div className="app-filter-bar product-movement-sheet-toolbar">
         <div className="app-filter-fields product-movement-sheet-filters">
-          <ToolbarDateRangeFilter from={dateFrom} to={dateTo} onChange={({ from, to }) => { setDateFrom(from); setDateTo(to) }} />
+          <ToolbarDateRangeFilter from={dateFrom} to={dateTo} fromLabel={t('З')} toLabel={t('По')}
+            min="1900-01-01" max="9999-12-30" required
+            onChange={({ from, to }) => { setDateFrom(from); setDateTo(to) }} />
           <Select label={t('Тип руху')} data={movementTypeOptions.map((option) => ({ ...option, label: t(option.label) }))} value={movementType} onChange={(value) => setMovementType(value || '0')} />
           <MovementDocumentTypeFilter options={movementItemTypeOptions} value={selectedTypes} onChange={setSelectedTypes} />
           {hasSiblings ? (

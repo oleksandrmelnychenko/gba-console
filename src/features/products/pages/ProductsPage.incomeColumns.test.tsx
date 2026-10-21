@@ -323,8 +323,10 @@ describe('BUG-1276 product outcome bottom control', () => {
 
     await openIncomeTab(netId)
     fireEvent.click(screen.getByRole('button', { name: 'Розхід' }))
+    openDatePicker()
     fireEvent.change(screen.getByLabelText('З'), { target: { value: '2026-09-20' } })
     fireEvent.change(screen.getByLabelText('По'), { target: { value: '2026-10-20' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Застосувати' }))
     await screen.findByText('КОк00001761')
     expect(getProductOutcomeMovements).toHaveBeenLastCalledWith({ from: '2026-09-20', to: '2026-10-20', productNetId: netId })
 
@@ -380,13 +382,37 @@ describe('ProductsPage movement audit regressions', () => {
     await waitFor(() => expect(tab === 'Прихід' ? getProductIncomeMovementsMock : getProductOutcomeMovements).toHaveBeenCalled())
     const load = tab === 'Прихід' ? getProductIncomeMovementsMock : vi.mocked(getProductOutcomeMovements)
     load.mockClear()
-    fireEvent.change(screen.getByLabelText('З'), { target: { value: '' } })
-    await screen.findByText('Вкажіть дату початку та дату завершення')
+    openDatePicker()
+    const picker = within(screen.getByRole('dialog', { name: 'Період' }))
+    fireEvent.change(picker.getByLabelText('З'), { target: { value: '' } })
+    expect(picker.getByRole('alert').textContent).toBe('Вкажіть дату початку та дату завершення')
     expect(load).not.toHaveBeenCalled()
-    expect((screen.getByRole('button', { name: 'Друк PDF' }) as HTMLButtonElement).disabled).toBe(true)
-    fireEvent.change(screen.getByLabelText('З'), { target: { value: '2099-01-01' } })
-    await screen.findByText('Дата початку не може бути пізнішою за дату завершення')
+    expect((picker.getByRole('button', { name: 'Застосувати' }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.change(picker.getByLabelText('З'), { target: { value: '2099-01-01' } })
+    expect(picker.getByRole('alert').textContent).toBe('Дата «Від» має бути не пізніше дати «До»')
     expect(load).not.toHaveBeenCalled()
+  })
+
+  it.each(['Прихід', 'Розхід'] as const)('applies %s dates atomically, cancels drafts, and retains pre-2025 same-day history', async (tab) => {
+    await openIncomeTab()
+    if (tab === 'Розхід') fireEvent.click(screen.getByRole('button', { name: tab }))
+    const load = tab === 'Прихід' ? getProductIncomeMovementsMock : vi.mocked(getProductOutcomeMovements)
+    await waitFor(() => expect(load).toHaveBeenCalled())
+    const original = load.mock.calls.at(-1)![0]
+    load.mockClear()
+    openDatePicker()
+    fireEvent.change(screen.getByLabelText('З'), { target: { value: '2020-07-13' } })
+    fireEvent.change(screen.getByLabelText('По'), { target: { value: '2020-07-13' } })
+    expect(load).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Скасувати' }))
+    expect(load).not.toHaveBeenCalled()
+    openDatePicker()
+    expect((screen.getByLabelText('З') as HTMLInputElement).value).toBe(original.from)
+    expect((screen.getByLabelText('По') as HTMLInputElement).value).toBe(original.to)
+    fireEvent.change(screen.getByLabelText('З'), { target: { value: '2020-07-13' } })
+    fireEvent.change(screen.getByLabelText('По'), { target: { value: '2020-07-13' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Застосувати' }))
+    await waitFor(() => expect(load).toHaveBeenCalledExactlyOnceWith({ productNetId: 'product-42', from: '2020-07-13', to: '2020-07-13' }))
   })
 
   it('reloads a successful empty income response after synchronization without changing the dates', async () => {
@@ -408,7 +434,9 @@ describe('ProductsPage movement audit regressions', () => {
     await openIncomeTab()
     fireEvent.click(screen.getByRole('button', { name: 'Друк PDF' }))
     await screen.findByRole('dialog', { name: /Друк PDF/ })
+    openDatePicker()
     fireEvent.change(screen.getByLabelText('З'), { target: { value: '2026-07-13' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Застосувати' }))
     await act(async () => resolveExport({ PdfDocumentURL: 'https://example.com/stale.pdf' }))
     await waitFor(() => expect(screen.queryByRole('dialog', { name: /Друк PDF/ })).toBeNull())
     expect(screen.queryByRole('link', { name: /PDF/ })).toBeNull()
@@ -450,7 +478,9 @@ describe('ProductsPage movement exports', () => {
       resolveRows = resolve
     }))
     const toolbar = screen.getByRole('button', { name: 'Друк PDF' }).closest('.product-movement-toolbar') as HTMLElement
-    fireEvent.change(within(toolbar).getByLabelText('З'), { target: { value: '2026-08-01' } })
+    openDatePicker()
+    fireEvent.change(screen.getByLabelText('З'), { target: { value: '2026-08-01' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Застосувати' }))
     await waitFor(() => expect(getProductIncomeMovementsMock).toHaveBeenCalledTimes(2))
     expect(within(toolbar).getByRole('button', { name: 'Колонки' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Друк PDF' }))
@@ -479,4 +509,9 @@ async function openIncomeTab(netId = product.NetUid!) {
   fireEvent.click(await screen.findByRole('button', { name: 'Прихід' }))
 
   await screen.findByText('Ціна нетто за одиницю, EUR')
+}
+
+function openDatePicker() {
+  const toolbar = document.querySelector('.product-movement-toolbar') as HTMLElement
+  fireEvent.click(within(toolbar).getByRole('button', { name: /^Період:/, hidden: true }))
 }

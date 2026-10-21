@@ -1,3 +1,4 @@
+import { ToolbarDateRangeFilter } from '../ToolbarDateRangeFilter'
 import { ProductSourceHistoryRefresh } from './ProductSourceHistoryRefresh'
 import { withProductSourceHistoryColumns, type ProductSourceHistoryInfo } from './productSourceHistory'
 import { TableChip } from '../TableChip'
@@ -224,6 +225,7 @@ type ProductMovementFilterState = {
 }
 
 type ProductMovementFilterAction =
+  | { type: 'set-date-range'; from: string; to: string }
   | { type: 'set-selected-types'; value: number[] }
   | { type: 'set-date-from'; value: string }
   | { type: 'set-date-to'; value: string }
@@ -234,9 +236,7 @@ type MovementDateState = {
   dateTo: string
 }
 
-type MovementDateAction =
-  | { type: 'set-date-from'; value: string }
-  | { type: 'set-date-to'; value: string }
+type MovementDateAction = { type: 'set-date-range'; from: string; to: string }
 
 type MovementRowsState<TRow> = {
   error: string | null
@@ -414,6 +414,8 @@ function productMovementFilterReducer(
   action: ProductMovementFilterAction,
 ): ProductMovementFilterState {
   switch (action.type) {
+    case 'set-date-range':
+      return { ...state, dateFrom: action.from, dateTo: action.to }
     case 'set-selected-types':
       return {
         ...state,
@@ -446,18 +448,7 @@ function createMovementDateState(): MovementDateState {
 }
 
 function movementDateReducer(state: MovementDateState, action: MovementDateAction): MovementDateState {
-  switch (action.type) {
-    case 'set-date-from':
-      return {
-        ...state,
-        dateFrom: action.value,
-      }
-    case 'set-date-to':
-      return {
-        ...state,
-        dateTo: action.value,
-      }
-  }
+  return { ...state, dateFrom: action.from, dateTo: action.to }
 }
 
 function createMovementRowsState<TRow>(): MovementRowsState<TRow> {
@@ -948,20 +939,9 @@ function ProductMovementPanel({
       }} />
       <div className="app-filter-bar product-movement-history-filter-bar product-movement-history-filter-bar--extended">
       <Group align="end" gap={10} wrap="wrap" className="product-movement-history-filter-row">
-        <TextInput
-          label={t('З')}
-          type="date"
-          value={dateFrom}
-          w={150}
-          onChange={(event) => dispatchFilterState({ type: 'set-date-from', value: event.currentTarget.value })}
-        />
-        <TextInput
-          label={t('По')}
-          type="date"
-          value={dateTo}
-          w={150}
-          onChange={(event) => dispatchFilterState({ type: 'set-date-to', value: event.currentTarget.value })}
-        />
+        <ToolbarDateRangeFilter from={dateFrom} to={dateTo} fromLabel={t('З')} toLabel={t('По')}
+          min="1900-01-01" max="9999-12-30" required
+          onChange={({ from, to }) => dispatchFilterState({ type: 'set-date-range', from, to })} />
         <Select
           label={t('Тип руху')}
           data={movementTypeOptions.map((option) => ({ ...option, label: t(option.label) }))}
@@ -1846,8 +1826,7 @@ function ProductIncomeMovementPanel({
         exportDisabled={!productNetUid || Boolean(filterError)}
         exportLoading={isExporting}
         isLoading={isLoading}
-        onDateFromChange={(value) => dispatchDateState({ type: 'set-date-from', value })}
-        onDateToChange={(value) => dispatchDateState({ type: 'set-date-to', value })}
+        onDateChange={({ from, to }) => dispatchDateState({ type: 'set-date-range', from, to })}
         onExport={() => void exportMovements()}
         onRefresh={() => reload()}
       />
@@ -2061,8 +2040,7 @@ function ProductOutcomeMovementPanel({
         exportDisabled={!productNetUid || Boolean(filterError)}
         exportLoading={isExporting}
         isLoading={isLoading}
-        onDateFromChange={(value) => dispatchDateState({ type: 'set-date-from', value })}
-        onDateToChange={(value) => dispatchDateState({ type: 'set-date-to', value })}
+        onDateChange={({ from, to }) => dispatchDateState({ type: 'set-date-range', from, to })}
         onExport={() => void exportMovements()}
         onRefresh={() => reload()}
       />
@@ -2103,8 +2081,7 @@ function MovementDateToolbar({
   exportDisabled,
   exportLoading,
   isLoading,
-  onDateFromChange,
-  onDateToChange,
+  onDateChange,
   onExport,
   onRefresh,
 }: {
@@ -2114,8 +2091,7 @@ function MovementDateToolbar({
   exportDisabled: boolean
   exportLoading: boolean
   isLoading: boolean
-  onDateFromChange: (value: string) => void
-  onDateToChange: (value: string) => void
+  onDateChange: (range: { from: string; to: string }) => void
   onExport: () => void
   onRefresh: () => void
 }) {
@@ -2123,8 +2099,8 @@ function MovementDateToolbar({
 
   return (
     <Group align="end" gap={10} wrap="nowrap" className="product-movement-history-filter-row">
-      <TextInput label={t('З')} type="date" value={dateFrom} w={150} onChange={(event) => onDateFromChange(event.currentTarget.value)} />
-      <TextInput label={t('По')} type="date" value={dateTo} w={150} onChange={(event) => onDateToChange(event.currentTarget.value)} />
+      <ToolbarDateRangeFilter from={dateFrom} to={dateTo} fromLabel={t('З')} toLabel={t('По')}
+        min="1900-01-01" max="9999-12-30" required onChange={onDateChange} />
       <div className="app-filter-actions">
       <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action" leftSection={<RefreshCw size={18} />} loading={isLoading} onClick={onRefresh}>
         {t('Оновити')}
