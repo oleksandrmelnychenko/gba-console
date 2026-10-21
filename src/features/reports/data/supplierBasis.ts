@@ -60,3 +60,11 @@ export function supplierBasisConfigurationError(data: ReportRequestBody, dataset
     return 'Продажі мінус повернення підтримують склад документа → організацію → постачальника.'
   return null
 }
+
+/** Hiding a dimension preserves its calculation basis; choosing another warehouse is an explicit change. */
+export function supplierWarehouseAfterRowEdit(current: unknown, before: ReportGroupingItem[], after: ReportGroupingItem[]): 73 | 78 {
+  const chosen = after.find(row => row.type === 73 || row.type === 78)?.type
+  if (chosen === 73 || chosen === 78) return chosen
+  if (current === 73 || current === 78) return current
+  return before.some(row => row.type === 73) ? 73 : 78
+}

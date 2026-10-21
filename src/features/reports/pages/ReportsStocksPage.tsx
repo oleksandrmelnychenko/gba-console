@@ -218,7 +218,7 @@ import { WorkbookPeriodField, WorkbookSettings, type WorkbookSettingsSection } f
 import { WorkbookResult } from './workbook-desk/WorkbookResult'
 import './workbook-desk/workbook-desk.css'
 import { requestDayOrganizationBasis } from '../data/dayOrganizationBasis'
-import { requestSupplierBasis, supplierBasisFormDataset } from '../data/supplierBasis'
+import { supplierWarehouseAfterRowEdit, requestSupplierBasis, supplierBasisFormDataset } from '../data/supplierBasis'
 import { requestProductClassification, requestSourceOrganizations, requestSourceBuyerSubtree } from '../data/nativeExactFilters'
 import { isSupplierSourceWorldCapability, requestSupplierSourceWorld } from '../data/supplierBatchGrossProfit'
 import PriceTypeSalesComparisonPanel from './PriceTypeSalesComparisonPanel'
@@ -1130,8 +1130,9 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       lookupProvidedDiscountBasis: lookup.providedDiscountBasis,
       onColGroupsChange: (value: ReportGroupingItem[] | ((current: ReportGroupingItem[]) => ReportGroupingItem[])) => groupingOrdering.changeAxis('Col', value),
       onRowGroupsChange: (value: ReportGroupingItem[] | ((current: ReportGroupingItem[]) => ReportGroupingItem[])) => {
-        if (dataSource === 38 && supplierWarehouse == null) setSupplierWarehouse(rowGroups.some(row => row.type === 73) ? 73 : 78)
-        groupingOrdering.changeAxis('Row', value)
+        const next = typeof value === 'function' ? value(rowGroups) : value
+        if (dataSource === 38) setSupplierWarehouse(supplierWarehouseAfterRowEdit(supplierWarehouse, rowGroups, next))
+        groupingOrdering.changeAxis('Row', next)
       },
       onMeasurementsChange: setMeasurements, onSelectionsChange: filterLogic.editSelection, onGroupingLayoutChange: groupingOrdering.changeLayout,
     }
@@ -2062,9 +2063,6 @@ function LegacyReportBuilder({
 
   const pickerAllowed = policy.config ? new Set(groupingPickerTarget === 'columns' ? policy.config.allowedColumns : policy.config.allowedRows) : null
   const pickerExcluded = new Set(policy.config?.mutuallyExclusiveRows.filter(group => group.some(type => selectedGroupingTypes.has(type))).flat())
-  const warehouse = request?.supplierWarehouse ?? request?.SupplierWarehouse
-  if (warehouse === 73) pickerExcluded.add(78)
-  if (warehouse === 78) pickerExcluded.add(73)
   const groupingPicker = (
     <LegacyGroupingPickerModal
       opened={groupingPickerTarget !== null}

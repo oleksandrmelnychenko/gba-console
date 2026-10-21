@@ -1,3 +1,4 @@
+import { supplierWarehouseAfterRowEdit } from './supplierBasis'
 import { describe, expect, it } from 'vitest'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { effectiveReportConfiguration, reportConfigurationError, reportAxesPolicy, type ReportConfiguration } from './reportConfiguration'
@@ -21,6 +22,13 @@ describe('server report configuration', () => {
   it('treats nullable variant replacements from .NET metadata as inherited values', () => {
     const value = { ...dataset, configuration: { ...configuration, variants: [{ key: 'currentDocuments', axisMode: null, allowedRows: [78, 4, 21], allowedColumns: null, rowLayouts: null, columnLayouts: null, minimumRows: null, maximumRows: null, maximumColumns: null, period: null, filters: null }] } }
     expect(effectiveReportConfiguration(value, request([21]))).toMatchObject({ axisMode: 'profitRows', maximumRows: 3, allowedColumns: [], period: configuration.period })
+  })
+  it('retains hidden warehouse semantics but allows an explicit warehouse choice after hiding it', () => {
+    const hidden = supplierWarehouseAfterRowEdit(undefined, rows([73, 4, 21]), rows([4, 21]))
+    expect(hidden).toBe(73)
+    expect(supplierWarehouseAfterRowEdit(hidden, rows([4, 21]), rows([21, 4]))).toBe(73)
+    expect(supplierWarehouseAfterRowEdit(hidden, rows([4, 21]), rows([78, 4, 21]))).toBe(78)
+    expect(supplierWarehouseAfterRowEdit(undefined, rows([78, 4, 21]), rows([21]))).toBe(78)
   })
   it('keeps legacy special forms fixed until server confirms editable capability', () => {
     expect(reportAxesPolicy(undefined, { ...request([3, 4]), dataSource: 35 }).fixed).toBe(true)
