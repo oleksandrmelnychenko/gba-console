@@ -1,3 +1,5 @@
+import { workbookDisplayFileName } from './bug1274WorkbookGuide'
+
 const FORBIDDEN = /[\\/:*?"<>|]+/g
 
 function displayDay(value: string): string {
@@ -5,7 +7,7 @@ function displayDay(value: string): string {
 }
 
 export function reportFileBaseName(name: string, from: string, to: string, periodSupported: boolean): string {
-  const clean = name.replace(/\.xlsx?$/i, '').replace(FORBIDDEN, ' ').replace(/\s+/g, ' ').trim() || 'Звіт'
+  const clean = workbookDisplayFileName(name).replace(/\.xlsx?$/i, '').replace(FORBIDDEN, ' ').replace(/\s+/g, ' ').trim() || 'Звіт'
   if (!periodSupported || !from || !to) return clean
   return from === to ? `${clean} ${displayDay(from)}` : `${clean} ${displayDay(from)}-${displayDay(to)}`
 }

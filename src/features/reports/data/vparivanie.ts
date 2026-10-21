@@ -2,8 +2,8 @@ import type { ReportDataset, ReportRequestBody } from '../types'
 import { revenueExactId } from './revenueComparison'
 
 export const VPARIVANIE_SOURCE = 36
-export const VPARIVANIE_TITLE = 'Впарювання GBA: підтверджені залишки й продажі'
-const invalid = 'Оберіть один точний товар, за потреби одного клієнта, та всі три показники «Впарювання».'
+export const VPARIVANIE_TITLE = 'Аналіз залишків і продажів GBA: підтверджені залишки й продажі'
+const invalid = 'Оберіть один точний товар, за потреби одного клієнта, та всі три показники «Аналіз залишків і продажів».'
 const forbidden = new Set(['onec', 'comparison', 'xyz', 'revenuecomparison', 'buyersalesshare', 'returncomparison',
   'ratecomparison', 'margincomparison', 'paymentcomparison', 'pricetypesalescomparison', 'agreementpricecomparison',
   'valuationclientagreementid', 'ordering', 'filterexpression', 'topgroups', 'threshold', 'hidezero',
@@ -24,11 +24,11 @@ export function vparivanieConfigurationError(data: ReportRequestBody, dataset?: 
     || dataset.PeriodSupported !== true || dataset.Groupings.map(item => item.Type).join(',') !== '5'
     || dataset.Measurements.map(item => item.Type).join(',') !== '80,81,82'
     || dataset.Filters.map(item => item.Type).join(',') !== '1,5'))
-    return 'Сервер не підтвердив набір «Впарювання».'
+    return 'Сервер не підтвердив набір «Аналіз залишків і продажів».'
   if (!validDate(data.from) || !validDate(data.to) || data.from > data.to)
-    return 'Оберіть коректний включний період «Впарювання».'
+    return 'Оберіть коректний включний період «Аналіз залишків і продажів».'
   if ((Date.parse(`${data.to}T00:00:00Z`) - Date.parse(`${data.from}T00:00:00Z`)) / 86400000 >= 366)
-    return 'Період «Впарювання» може охоплювати щонайбільше 366 днів.'
+    return 'Період «Аналіз залишків і продажів» може охоплювати щонайбільше 366 днів.'
   if (Object.entries(data).some(([key, value]) => forbidden.has(key.toLowerCase()) && value != null)) return invalid
   const sorted = data.sorted
   if (!sorted || !Array.isArray(sorted.Row) || sorted.Row.map(item => item.type).join(',') !== '5'

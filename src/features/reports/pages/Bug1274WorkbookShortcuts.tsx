@@ -1,6 +1,6 @@
 import { Button, Group, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { BUG_1274_WORKBOOKS_INTRO, BUG_1274_WORKBOOKS_TITLE, bug1274WorkbookGuide } from '../data/bug1274WorkbookGuide'
+import { workbookDisplayFileName, BUG_1274_WORKBOOKS_INTRO, BUG_1274_WORKBOOKS_TITLE, bug1274WorkbookGuide } from '../data/bug1274WorkbookGuide'
 import type { WorkbookLaunch } from '../data/bug1274WorkbookLaunch'
 import './bug1274-workbook-shortcuts.css'
 
@@ -19,8 +19,8 @@ export function Bug1274WorkbookShortcuts({ launches, active, disabled, onOpen }:
       <Text className="workbook-shortcuts__compact-title" size="sm" fw={600}>{title}:</Text>
       {launches.map(item => <Button key={item.fileName} type="button" size="compact-sm"
         variant={item.fileName === active ? 'filled' : 'light'} disabled={disabled}
-        aria-label={t('Відкрити {file}', { file: item.fileName })} title={bug1274WorkbookGuide(item.fileName)?.title}
-        aria-current={item.fileName === active ? 'true' : undefined} onClick={() => onOpen(item)}>{item.fileName}</Button>)}
+        aria-label={t('Відкрити {file}', { file: workbookDisplayFileName(item.fileName) })} title={bug1274WorkbookGuide(item.fileName)?.title}
+        aria-current={item.fileName === active ? 'true' : undefined} onClick={() => onOpen(item)}>{workbookDisplayFileName(item.fileName)}</Button>)}
     </Group>
   </section>
   return <section className="app-section-card workbook-shortcuts" aria-label={title}>
@@ -32,12 +32,12 @@ export function Bug1274WorkbookShortcuts({ launches, active, disabled, onOpen }:
         <div className="workbook-shortcuts__text">
           <Group gap={8} wrap="wrap" align="baseline">
             <Text size="sm" fw={600}>{t(guide?.title ?? item.label)}</Text>
-            <Text size="xs" c="dimmed">{item.fileName}</Text>
+            <Text size="xs" c="dimmed">{workbookDisplayFileName(item.fileName)}</Text>
           </Group>
           <Text size="xs">{t(guide?.summary ?? item.notice)}</Text>
         </div>
         <Button type="button" size="xs" variant="light" disabled={disabled}
-          aria-label={t('Відкрити {file}', { file: item.fileName })} onClick={() => onOpen(item)}>{t('Відкрити')}</Button>
+          aria-label={t('Відкрити {file}', { file: workbookDisplayFileName(item.fileName) })} onClick={() => onOpen(item)}>{t('Відкрити')}</Button>
       </div>
     })}</div>
   </section>

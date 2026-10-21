@@ -1,3 +1,4 @@
+import { workbookDisplayFileName } from '../data/bug1274WorkbookGuide'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { expect } from 'vitest'
 
@@ -7,7 +8,7 @@ export function findWorkbookLanding() {
 
 export async function findOpenedWorkbook(fileName: string) {
   const switcher = await screen.findByRole('navigation', { name: 'Звіти' })
-  await waitFor(() => expect(within(switcher).getByRole('button', { name: `Відкрити ${fileName}` })
+  await waitFor(() => expect(within(switcher).getByRole('button', { name: `Відкрити ${workbookDisplayFileName(fileName)}` })
     .getAttribute('aria-current')).toBe('true'))
   return switcher
 }

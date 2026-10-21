@@ -1,7 +1,7 @@
 import { Alert, Badge, Button, Group, Loader, Pagination, Select, Stack, Table, Text, TextInput } from '@mantine/core'
 import { ArrowRight, ChevronRight, RotateCcw, Search } from 'lucide-react'
 import { DocumentDetailMetric, DocumentDetailSummary } from '../../../shared/ui/document-detail/DocumentDetail'
-import { bug1274ReportTitle } from '../data/bug1274WorkbookGuide'
+import { workbookDisplayFileName, bug1274ReportTitle } from '../data/bug1274WorkbookGuide'
 import './report-catalogue.css'
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -252,7 +252,7 @@ function CatalogueTable({ consoleScope = false, onOpenWorkbook, visibleRows, cat
           <Table.Thead><Table.Tr><Table.Th>{t('Звіт')}</Table.Th><Table.Th>{t('Тип')}</Table.Th><Table.Th>{t('Стан за базами')}</Table.Th></Table.Tr></Table.Thead>
           <Table.Tbody>{visibleRows.map(({ report, options, matchingSources }) => <Fragment key={report.Id}>
             <Table.Tr>
-              <Table.Td><Stack gap={8} align="flex-start"><Button className="report-catalogue__report-title" leftSection={<ChevronRight size={14} aria-hidden="true" />} type="button" variant="subtle" size="compact-sm" aria-expanded={expanded.has(report.Id)} aria-label={t('Покриття звіту: {name}', { name: report.Title })}
+              <Table.Td><Stack gap={8} align="flex-start"><Button className="report-catalogue__report-title" leftSection={<ChevronRight size={14} aria-hidden="true" />} type="button" variant="subtle" size="compact-sm" aria-expanded={expanded.has(report.Id)} aria-label={t('Покриття звіту: {name}', { name: bug1274ReportTitle(report.Id) ?? report.Title })}
                 styles={{ root: { height: 'auto', maxWidth: '100%' }, label: { whiteSpace: 'normal', textAlign: 'left' } }}
                 onClick={() => onToggle(report.Id)}>{consoleScope && BUG_1274_ONLY_REPORT_SURFACE ? bug1274ReportTitle(report.Id) ?? report.Title : report.Title}</Button>
                 {consoleScope && BUG_1274_ONLY_REPORT_SURFACE && bug1274ReportTitle(report.Id)
@@ -267,7 +267,7 @@ function CatalogueTable({ consoleScope = false, onOpenWorkbook, visibleRows, cat
                     .map(launch => <Button key={launch.fileName} type="button" size="xs"
                       disabled={disabled || !canGenerate || !onOpenWorkbook}
                       onClick={() => { if (!disabled && canGenerate) onOpenWorkbook?.(launch) }}>
-                      {launch.fileName}
+                      {workbookDisplayFileName(launch.fileName)}
                     </Button>)
                   : <>
                 {onOpenSalesMargin && isSalesMarginCatalogueEntry(report)
@@ -362,8 +362,8 @@ function ReportLaunchActions({ report, catalogue, options, disabled, unavailable
   const selected = options.length === 1 ? options[0] : options.find(option => launchIdentity(option.choice) === selectedKey)
   const label = (option: LaunchOption) => `${worldLabel(option.choice.world)} · ${t(option.label)}`
   if (!options.length) return <Text size="xs" c="dimmed">{t(unavailable)}</Text>
-  return <Stack className="report-catalogue__launch" gap={6} role="group" aria-label={t('Відкрити звіт: {name}', { name: report.Title })} style={{ width: '100%', maxWidth: 440 }}>
-    {options.length > 1 ? <Select classNames={{ dropdown: 'reports-toolbar-dropdown' }} label={t('Варіант для конструктора')} aria-label={t('Варіант звіту: {name}', { name: report.Title })}
+  return <Stack className="report-catalogue__launch" gap={6} role="group" aria-label={t('Відкрити звіт: {name}', { name: bug1274ReportTitle(report.Id) ?? report.Title })} style={{ width: '100%', maxWidth: 440 }}>
+    {options.length > 1 ? <Select classNames={{ dropdown: 'reports-toolbar-dropdown' }} label={t('Варіант для конструктора')} aria-label={t('Варіант звіту: {name}', { name: bug1274ReportTitle(report.Id) ?? report.Title })}
       placeholder={t('Оберіть базу та варіант')} disabled={disabled} value={selected ? launchIdentity(selected.choice) : null}
       data={options.map(option => ({ value: launchIdentity(option.choice), label: label(option) }))}
       onChange={value => { setSelectedKey(value); setRejectedKey(null) }} /> : <Text size="sm">{label(options[0])}</Text>}
@@ -378,7 +378,7 @@ function ReportMigrationDetails({ report, migrations, datasets, canGenerate, lau
   report: ReportCatalogueEntry; migrations: ReadonlyMap<string, ReportSourceMigration>; datasets: ReportDataset[] | null; canGenerate: boolean; launchEnabled: boolean
 }) {
   const { t } = useI18n()
-  return <Stack className="report-catalogue__coverage" gap="md" aria-label={t('Покриття звіту: {name}', { name: report.Title })}>{report.Sources.map(source => {
+  return <Stack className="report-catalogue__coverage" gap="md" aria-label={t('Покриття звіту: {name}', { name: bug1274ReportTitle(report.Id) ?? report.Title })}>{report.Sources.map(source => {
     const migration = migrations.get(sourceIdentity(source))
     return <Stack key={sourceIdentity(source)} gap={4}>
       <Text fw={600}>{worldLabel(source.World)} · {source.SourceId}</Text>

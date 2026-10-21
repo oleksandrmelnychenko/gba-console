@@ -26,7 +26,7 @@ function RegionalTable({ result }: { result: CurrentVparivanieRegionalResult }) 
     <Button size="xs" variant="default" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>Попередні рядки</Button>
     <Text size="xs">{result.Rows.length ? first + 1 : 0}–{first + visible.length} / {result.Rows.length}</Text>
     <Button size="xs" variant="default" disabled={first + visible.length >= result.Rows.length} onClick={() => setPage(currentPage + 1)}>Наступні рядки</Button>
-  </Group><div className="report-inline-preview__scroll" tabIndex={0} role="region" aria-label="Регіональна форма Впарювання">
+  </Group><div className="report-inline-preview__scroll" tabIndex={0} role="region" aria-label="Регіональна форма Аналіз залишків і продажів">
     <table className="app-static-table"><thead><tr>{CURRENT_VPARIVANIE_PRODUCT_CAPTIONS.map(caption => <th scope="col" key={caption}>{caption}</th>)}
       {columns.map(key => <th scope="col" key={key}>{currentRegionalColumnCaption(key)}</th>)}</tr></thead>
       <tbody>{visible.map(row => {
@@ -91,14 +91,14 @@ export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disa
     try {
       const blob = format === 'csv' ? new Blob([currentRegionalCsv(result)], { type: 'text/csv;charset=utf-8' })
         : format === 'xlsx' ? await currentRegionalXlsx(result) : await currentRegionalPdf(result)
-      if (currentKey.current === requestKey) download(blob, `vparivanie-regional-${result.From}-${result.To}.${format}`)
+      if (currentKey.current === requestKey) download(blob, `${CURRENT_REGIONAL_TITLE} ${result.From}-${result.To}.${format}`)
     } catch (cause) {
       setFailure({ key: requestKey, message: cause instanceof Error ? cause.message : 'Не вдалося сформувати файл.' })
     } finally { setExportKey(null) }
   }
 
   if (!available) return null
-  return <section className="app-section-card" aria-label="Регіональна форма Впарювання">
+  return <section className="app-section-card" aria-label="Регіональна форма Аналіз залишків і продажів">
     <Stack gap="sm"><Text component="h2" fw={600} size="sm">{CURRENT_REGIONAL_TITLE}</Text>
       <RegionalFullScopeCheckbox dataset={dataset} checked={fullScope}
         disabled={!enabled || disabled || busy || exporting} onChange={onFullScopeChange} />

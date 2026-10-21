@@ -4,11 +4,11 @@ import { originalMatrixScope } from './originalVparivanieScope'
 
 export const CURRENT_VPARIVANIE_SOURCE = 39
 export const CURRENT_VPARIVANIE_UNASSIGNED_MANAGER = '00000000000000000000000000000000'
-export const CURRENT_VPARIVANIE_FULL_TITLE = 'Впарювання: повний вибір'
+export const CURRENT_VPARIVANIE_FULL_TITLE = 'Аналіз залишків і продажів: повний вибір'
 export const CURRENT_VPARIVANIE_FULL_NOTE = 'Повний вибраний набір: усі сторінки прочитано до кінця в одному SQL Snapshot GBA.'
-export const CURRENT_VPARIVANIE_TITLE = 'Впарювання'
-export const CURRENT_VPARIVANIE_LEGACY_TITLES = ['Впарювання: поточні залишки та продажі GBA', 'Впарювання: залишки на кінець періоду та продажі GBA'] as const
-export const CURRENT_VPARIVANIE_LEGACY_FULL_TITLES = ['Впарювання: повний вибір, поточні залишки та продажі GBA',
+export const CURRENT_VPARIVANIE_TITLE = 'Аналіз залишків і продажів'
+export const CURRENT_VPARIVANIE_LEGACY_TITLES = ['Впарювання', 'Впарювання: поточні залишки та продажі GBA', 'Впарювання: залишки на кінець періоду та продажі GBA'] as const
+export const CURRENT_VPARIVANIE_LEGACY_FULL_TITLES = ['Впарювання: повний вибір', 'Впарювання: повний вибір, поточні залишки та продажі GBA',
   'Впарювання: повний вибір, залишки на кінець періоду та продажі GBA'] as const
 export const isCurrentVparivanieFullTitle = (title: string): boolean =>
   title === CURRENT_VPARIVANIE_FULL_TITLE || (CURRENT_VPARIVANIE_LEGACY_FULL_TITLES as readonly string[]).includes(title)
@@ -139,20 +139,20 @@ function validDate(value: string): boolean {
 export function currentVparivanieConfigurationError(data: ReportRequestBody, dataset?: ReportDataset, purpose: 'current' | 'workspace' = 'current'): string | null {
   const modes = Object.entries(data).filter(([key]) => key.toLowerCase() === 'currentvparivaniefullscope')
   if (modes.length && (modes.length !== 1 || modes[0][1] !== true || data.dataSource !== CURRENT_VPARIVANIE_SOURCE))
-    return 'Повний вибір доступний лише для поточної матриці «Впарювання»; перемикач має бути явно увімкнений.'
+    return 'Повний вибір доступний лише для поточної матриці «Аналіз залишків і продажів»; перемикач має бути явно увімкнений.'
   if (data.dataSource !== CURRENT_VPARIVANIE_SOURCE) return null
   const full = currentVparivanieFullScope(data)
   if (full && dataset && !currentVparivanieFullScopeAvailable(dataset))
-    return 'Сервер поки не підтримує повний вибраний набір матриці «Впарювання».'
-  if (dataset && !isCurrentVparivanieDataset(dataset)) return 'Сервер не підтвердив поточну матрицю «Впарювання».'
+    return 'Сервер поки не підтримує повний вибраний набір матриці «Аналіз залишків і продажів».'
+  if (dataset && !isCurrentVparivanieDataset(dataset)) return 'Сервер не підтвердив поточну матрицю «Аналіз залишків і продажів».'
   if (!validDate(data.from) || !validDate(data.to) || data.from > data.to)
-    return 'Оберіть коректний включний період продажів «Впарювання».'
+    return 'Оберіть коректний включний період продажів «Аналіз залишків і продажів».'
   if ((Date.parse(`${data.to}T00:00:00Z`) - Date.parse(`${data.from}T00:00:00Z`)) / 86400000 >= 366) {
     let originalScope = false
     if (purpose === 'workspace') {
       try { originalMatrixScope(data); originalScope = true } catch { /* Other saved current variants retain their ordinary bound. */ }
     }
-    if (!originalScope) return 'Період продажів «Впарювання» — не більше 366 днів. Зменште період.'
+    if (!originalScope) return 'Період продажів «Аналіз залишків і продажів» — не більше 366 днів. Зменште період.'
   }
   if (Object.entries(data).some(([key, value]) => forbidden.has(key.toLowerCase()) && value != null)) return invalid
   const sorted = data.sorted

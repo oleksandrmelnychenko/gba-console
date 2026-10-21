@@ -18,7 +18,7 @@ it('writes the same regional matrix with exact text, separate total and empty-co
   expect(workbook.SheetNames).toEqual(['Звіт', 'Про звіт', 'Клітинки'])
   expect(workbook.Sheets['Звіт'].B5).toMatchObject({ t: 's', v: '=Товар' })
   expect(workbook.Sheets['Звіт'].H5).toMatchObject({ t: 's', v: '9007199254740993.00000001' })
-  expect(workbook.Sheets['Про звіт'].A1).toMatchObject({ t: 's', v: 'Впарювання: регіональна форма' })
+  expect(workbook.Sheets['Про звіт'].A1).toMatchObject({ t: 's', v: 'Аналіз залишків і продажів: регіональна форма' })
   expect(workbook.Sheets['Клітинки'].A1).toMatchObject({ t: 's', v: 'ProductId' })
   const tables = currentRegionalPdfDefinition(value).content.filter(part => 'table' in part)
   expect(tables[0]).toHaveProperty('table.body.1.7', '9007199254740993.00000001')

@@ -1,3 +1,4 @@
+import { workbookDisplayFileName } from '../data/bug1274WorkbookGuide'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
@@ -44,7 +45,7 @@ it('launches the period cash, both settlement variants and the current product m
     ['Ведомость по денежным средствам.xls', 40, undefined],
     ['Взаємороз всі.xls', 41, true], ['ДБіторка.xls', 41, false], ['Впарювання.xls', 39, undefined],
   ] as const) {
-    const button = await screen.findByRole('button', { name })
+    const button = await screen.findByRole('button', { name: workbookDisplayFileName(name) })
     expect((button as HTMLButtonElement).disabled).toBe(false)
     fireEvent.click(button)
     expect(open).toHaveBeenLastCalledWith(expect.objectContaining({ fileName: name, dataset: expect.objectContaining({ DataSource: id }),
@@ -56,7 +57,7 @@ it('lists only the five BUG-1274 reports and hides ready, captured and unassesse
   const open = mount()
   await screen.findByRole('button', { name: 'ДБіторка.xls' })
   expect(Array.from(document.querySelectorAll('.workbook-catalogue__name')).map(name => name.textContent))
-    .toEqual(['Валовий прибуток', 'Валовий прибуток по постачальниках', 'Впарювання', 'Відомість по коштах',
+    .toEqual(['Валовий прибуток', 'Валовий прибуток по постачальниках', 'Аналіз залишків і продажів', 'Відомість по коштах',
       'Відомість по взаєморозрахунках з контрагентами'])
   expect(screen.queryByText('Назва в конфігурації 1С: builtin:ВаловаяПрибыль')).toBeNull()
   fireEvent.click(screen.getAllByRole('button', { name: 'Відомості про звіт' })[0])
@@ -106,7 +107,7 @@ it('shows the compact filtered report count without duplicate metrics', async ()
   mount()
   await screen.findByRole('button', { name: 'ДБіторка.xls' })
   expect(screen.getByText('Звітів: 5')).toBeTruthy()
-  fireEvent.change(screen.getByLabelText('Пошук звіту'), { target: { value: 'Впарювання' } })
+  fireEvent.change(screen.getByLabelText('Пошук звіту'), { target: { value: 'Аналіз залишків і продажів' } })
   expect(screen.getByText('Звітів: 1')).toBeTruthy()
   expect(screen.queryByText('Джерельних реалізацій')).toBeNull()
   expect(screen.queryByText('Стан перенесення та джерела')).toBeNull()

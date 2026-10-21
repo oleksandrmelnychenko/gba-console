@@ -1,7 +1,7 @@
 import type { NativeReportPreviewAxis } from './nativeReportPreview'
 
 type Schema = { Identity?: string; KeyKind?: string }
-const fail = (): never => { throw new Error('Сервер повернув некоректні ключі колонок матриці «Впарювання».') }
+const fail = (): never => { throw new Error('Сервер повернув некоректні ключі колонок матриці «Аналіз залишків і продажів».') }
 const positiveNativeClient = (value: string) => /^native-client:[1-9]\d{0,18}$/.test(value)
   && BigInt(value.slice('native-client:'.length)) <= 9223372036854775807n
 /** Captions are presentation only; exact typed keys keep equal names apart. */
@@ -17,7 +17,7 @@ export function validateCurrentVparivanieColumns(schema: Schema[], columns: Nati
     const [group, party, measureGroup, measure] = column.Values
     const groupIdentity = group.Identity
     const partyIdentity = party.Identity
-    if (!groupIdentity || !partyIdentity) throw new Error('Сервер повернув некоректні ключі колонок матриці «Впарювання».')
+    if (!groupIdentity || !partyIdentity) throw new Error('Сервер повернув некоректні ключі колонок матриці «Аналіз залишків і продажів».')
     if (groupIdentity.Kind !== 'signedInteger' || !['1', '2', '3'].includes(groupIdentity.Value ?? '')
       || groupIdentity.Provenance !== 'columnAxisKey'
       || measureGroup.Caption !== 'Результат' || measure.Caption !== 'Результат') fail()

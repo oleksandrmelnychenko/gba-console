@@ -1,3 +1,4 @@
+import { workbookDisplayFileName } from '../data/bug1274WorkbookGuide'
 import { changeReportPeriod, readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
@@ -35,7 +36,7 @@ const page = () => <MantineProvider env="test"><I18nProvider><ReportsStocksPage 
 async function openWorkbook(label: string) {
   const view = render(page())
   await findOpenedWorkbook('ВП.xls')
-  fireEvent.click(screen.getByRole('button', { name: `Відкрити ${WORKBOOK_FILES[label] ?? label}` }))
+  fireEvent.click(screen.getByRole('button', { name: `Відкрити ${workbookDisplayFileName(WORKBOOK_FILES[label] ?? label)}` }))
   await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/i)).toBeNull())
   expandWorkbookSettings()
   openWorkbookAdvanced()
@@ -46,7 +47,7 @@ it('offers the six workbook forms of the five BUG-1274 reports and only their da
   const switcher = await findOpenedWorkbook('ВП.xls')
   for (const label of ['Валовий прибуток за днем', 'Валовий прибуток за постачальниками', 'Матриця товарів',
     'Рух коштів за період', 'Взаєморозрахунки за період', 'Дебіторка за період'])
-    expect(within(switcher).getByRole('button', { name: `Відкрити ${WORKBOOK_FILES[label] ?? label}` })).toBeTruthy()
+    expect(within(switcher).getByRole('button', { name: `Відкрити ${workbookDisplayFileName(WORKBOOK_FILES[label] ?? label)}` })).toBeTruthy()
   expect(within(switcher).getAllByRole('button', { name: /^Відкрити / })).toHaveLength(6)
   expect(screen.queryByRole('combobox', { name: 'Звіт' })).toBeNull()
 })
@@ -67,6 +68,9 @@ it.each([
 
 it('opens the product matrix form without the original matrix', async () => {
   await openWorkbook('Матриця товарів')
+  expect(screen.getByRole('heading', { name: 'Аналіз залишків і продажів' })).toBeTruthy()
+  expect(screen.queryByText('Впарювання.xls')).toBeNull()
+  expect(screen.getByText('Аналіз залишків і продажів.xls')).toBeTruthy()
   openWorkbookSettingsSection('Групування')
   expect(screen.getByText('Товари у рядках; залишки, продажі й контрагенти у стовпцях.')).toBeTruthy()
   expect(screen.queryByRole('button', { name: 'Переглянути оригінальну матрицю' })).toBeNull()
@@ -104,7 +108,7 @@ it('lists the six workbooks by name in one switcher row and opens the first one 
   const switcher = await findOpenedWorkbook('ВП.xls')
   expect(screen.getAllByRole('navigation', { name: 'Звіти' })).toHaveLength(1)
   expect(within(switcher).getAllByRole('button', { name: /^Відкрити / }).map(tab => tab.textContent))
-    .toEqual(['ВП', 'ВП по постачальниках', 'Впарювання', 'Відомість по коштах', 'Взаєморозрахунки всі', 'ДБіторка'])
+    .toEqual(['ВП', 'ВП по постачальниках', 'Аналіз залишків і продажів', 'Відомість по коштах', 'Взаєморозрахунки всі', 'ДБіторка'])
   expect(within(switcher).queryByText(/Часткова|набір даних|режим/)).toBeNull()
   expect(within(switcher).queryByText('Валовий прибуток по постачальниках')).toBeNull()
   expect(screen.getByRole('heading', { name: 'Валовий прибуток' })).toBeTruthy()

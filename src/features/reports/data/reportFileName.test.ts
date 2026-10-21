@@ -10,3 +10,8 @@ it('keeps the name valid on Windows and falls back to a plain report name', () =
   expect(reportFileBaseName('Кошти: залишки / рух', '', '', false)).toBe('Кошти залишки рух')
   expect(reportFileBaseName('  ', '2026-09-01', '2026-09-30', false)).toBe('Звіт')
 })
+
+it('downloads the renamed report without changing its legacy workbook identity', () => {
+  expect(reportFileBaseName('Впарювання.xls', '2026-09-01', '2026-09-30', true))
+    .toBe('Аналіз залишків і продажів 01.09.2026-30.09.2026')
+})

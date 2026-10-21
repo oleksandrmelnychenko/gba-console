@@ -235,7 +235,7 @@ function normalizeCurrentVparivanieProducts(preview: Record<string, unknown>, re
   const value = preview.CurrentVparivanieProducts
   const current = request?.DataSource === 'NativeCurrentVparivanie'
   if (!current && value === undefined && !full) return undefined
-  const fail = () => { throw new Error('Сервер повернув непідтверджені атрибути товарів матриці «Впарювання».') }
+  const fail = () => { throw new Error('Сервер повернув непідтверджені атрибути товарів матриці «Аналіз залишків і продажів».') }
   if (!current || !request.HasPeriod || request.IsCurrentSnapshot || !request.PeriodFrom || !request.PeriodTo
     || request.RowGroupings?.length !== 1 || request.ColumnGroupings?.length !== 2
     || request.Measures?.join(',') !== 'Результат'

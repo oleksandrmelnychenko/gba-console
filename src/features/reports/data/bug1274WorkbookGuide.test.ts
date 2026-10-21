@@ -36,6 +36,6 @@ it('offers quick periods that end on the day each form opens on and respects the
 
 it('names the five report datasets as the 1C reports', () => {
   expect([35, 38, 39, 40, 41].map(bug1274DatasetTitle)).toEqual(['Валовий прибуток', 'Валовий прибуток по постачальниках',
-    'Впарювання', 'Відомість по коштах', 'Взаєморозрахунки з контрагентами'])
+    'Аналіз залишків і продажів', 'Відомість по коштах', 'Взаєморозрахунки з контрагентами'])
   expect(bug1274DatasetTitle(12)).toBeUndefined()
 })

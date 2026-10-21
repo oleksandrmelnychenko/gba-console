@@ -22,7 +22,7 @@ const GUIDES: Readonly<Record<string, WorkbookGuide>> = {
       + 'налаштування 1С «OV», покупці з групи «Покупці».',
   },
   'Впарювання.xls': {
-    title: 'Впарювання',
+    title: 'Аналіз залишків і продажів',
     summary: 'Товари із залишком на кінець періоду, продажами й контрагентами. Відбори книги: група AL-KO, покупець АФРАКО ТЗОВ, '
       + 'основний менеджер Крицький О. Р. Залишок відомий від останнього перенесення залишків з 1С; за раніший період він порожній.',
   },
@@ -84,7 +84,7 @@ export function reportPeriodPresets(dataSource: number, today: string): ReportPe
 const REPORT_TITLES: Readonly<Record<string, string>> = {
   'builtin:ВаловаяПрибыль': 'Валовий прибуток',
   'builtin:ВаловаяПрибыльПоПоставщикам': 'Валовий прибуток по постачальниках',
-  'builtin:ОтчетВпаривание': 'Впарювання',
+  'builtin:ОтчетВпаривание': 'Аналіз залишків і продажів',
   'builtin:ВедомостьДенежныеСредства': 'Відомість по коштах',
   'builtin:ВедомостьВзаиморасчетыСКонтрагентами': 'Відомість по взаєморозрахунках з контрагентами',
 }
@@ -96,11 +96,16 @@ export function bug1274ReportTitle(reportId: string): string | undefined {
 const DATASET_TITLES: Readonly<Record<number, string>> = {
   35: 'Валовий прибуток',
   38: 'Валовий прибуток по постачальниках',
-  39: 'Впарювання',
+  39: 'Аналіз залишків і продажів',
   40: 'Відомість по коштах',
   41: 'Взаєморозрахунки з контрагентами',
 }
 
 export function bug1274DatasetTitle(dataSource: number): string | undefined {
   return DATASET_TITLES[dataSource]
+}
+
+/** Display-only name; persisted workbook identity and import lookup stay unchanged. */
+export function workbookDisplayFileName(fileName: string): string {
+  return fileName === 'Впарювання.xls' ? 'Аналіз залишків і продажів.xls' : fileName
 }

@@ -5,7 +5,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { availableBug1274WorkbookLaunches, BUG_1274_WORKBOOK_REPORT_IDS, type WorkbookLaunch } from '../data/bug1274WorkbookLaunch'
-import { bug1274ReportTitle } from '../data/bug1274WorkbookGuide'
+import { workbookDisplayFileName, bug1274ReportTitle } from '../data/bug1274WorkbookGuide'
 import { filterConsoleMigrationCatalogue, inspectCatalogueMigration } from '../data/reportMigration'
 import { workbookDeskEntry } from '../data/workbookDesk'
 import type { ReportCatalogue, ReportCatalogueEntry, ReportDataset } from '../types'
@@ -36,7 +36,7 @@ export function WorkbookCatalogue({ catalogue, inspection, datasets, canGenerate
   const columns = useMemo<DataTableColumn<ReportCatalogueEntry>[]>(() => [
     { id: 'report', header: t('Звіт'), accessor: report => bug1274ReportTitle(report.Id) ?? report.Title,
       width: 400, minWidth: 220, fill: true, numeric: false,
-      cell: report => <span className="workbook-catalogue__name" title={report.Title}>{t(bug1274ReportTitle(report.Id) ?? report.Title)}</span> },
+      cell: report => <span className="workbook-catalogue__name" title={bug1274ReportTitle(report.Id) ?? report.Title}>{t(bug1274ReportTitle(report.Id) ?? report.Title)}</span> },
     { id: 'worlds', header: t('Бази'), accessor: report => report.Sources.map(source => source.World.toUpperCase()).join(' · '),
       width: 130, minWidth: 110, numeric: false },
     { id: 'forms', header: t('Відкрити форму'), width: 400, minWidth: 300, enableSorting: false,
@@ -44,7 +44,7 @@ export function WorkbookCatalogue({ catalogue, inspection, datasets, canGenerate
         const forms = launches.filter(launch => BUG_1274_WORKBOOK_REPORT_IDS[launch.fileName] === report.Id)
         return forms.length ? <Group gap={6} wrap="nowrap">
           {forms.map(launch => <Button key={launch.fileName} type="button" size="compact-sm" variant="default"
-            aria-label={launch.fileName} title={launch.fileName} disabled={disabled || !canGenerate || !onOpenWorkbook}
+            aria-label={workbookDisplayFileName(launch.fileName)} title={workbookDisplayFileName(launch.fileName)} disabled={disabled || !canGenerate || !onOpenWorkbook}
             onClick={event => { event.stopPropagation(); if (!disabled && canGenerate) onOpenWorkbook?.(launch) }}>
             {t(workbookDeskEntry(launch.fileName)?.name ?? launch.label)}
           </Button>)}

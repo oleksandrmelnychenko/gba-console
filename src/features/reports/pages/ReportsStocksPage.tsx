@@ -113,7 +113,7 @@ import { usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes
 import { CURRENT_VPARIVANIE_NOTICE, currentVparivanieConfigurationError, currentVparivanieFilterConditions, currentVparivanieNotice, currentVparivanieFullScope } from '../data/currentVparivanie'
 import { previousKyivDay } from '../data/cashPeriod'
 import { availableBug1274WorkbookLaunches, bug1274WorkbookRequest, opensOnPreviousDay, type WorkbookLaunch } from '../data/bug1274WorkbookLaunch'
-import { bug1274WorkbookGuide, bug1274WorkbookPeriod, reportPeriodPresets, type ReportPeriodPreset } from '../data/bug1274WorkbookGuide'
+import { workbookDisplayFileName, bug1274WorkbookGuide, bug1274WorkbookPeriod, reportPeriodPresets, type ReportPeriodPreset } from '../data/bug1274WorkbookGuide'
 import { supportedAnalysisRules } from '../data/supportedAnalysisRules'
 import { reportFileBaseName } from '../data/reportFileName'
 import { Bug1274WorkbookShortcuts } from './Bug1274WorkbookShortcuts'
@@ -561,7 +561,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         name: templateName.trim(),
         fileName: reportFileBaseName(activeWorkbook ?? dataset?.Name ?? '', from, to, periodSupported),
         title: activeWorkbook && bug1274WorkbookGuide(activeWorkbook)
-          ? `${activeWorkbook} — ${t(bug1274WorkbookGuide(activeWorkbook)!.title)}` : dataset?.Name ?? '',
+          ? `${workbookDisplayFileName(activeWorkbook)} — ${t(bug1274WorkbookGuide(activeWorkbook)!.title)}` : dataset?.Name ?? '',
         rowGroupings: rowGroups.map((group) => group.label || getReportFieldLabel(group.key)),
         to,
       }
@@ -895,7 +895,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     if (!canGenerateReport || isLoading || workbookResolving) return false
     const token = ++workbookLaunchToken.current
     const guide = bug1274WorkbookGuide(item.fileName)
-    const title = guide ? `${item.fileName} — ${t(guide.title)}` : undefined
+    const title = guide ? `${workbookDisplayFileName(item.fileName)} — ${t(guide.title)}` : undefined
     const notice = guide ? t(guide.summary) : `${item.fileName}: ${item.notice}`
     if (!resolvesWorkbookFilters(item.fileName)) {
       changeDataset(item.dataset, item)
@@ -1201,7 +1201,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           {t('Оберіть доступний звіт у вкладках або спробуйте оновити список.')}
           <Button variant="default" size="xs" mt="xs" onClick={datasetStorage.retry}>{t('Оновити')}</Button>
         </Alert> : <form className="reports-stocks-form workbook-desk__form" onSubmit={submitReport}>
-            <WorkbookHeader title={deskTitle} fileName={activeWorkbook} templateName={activeTemplate?.Name ?? ''} summary={deskSummary}
+            <WorkbookHeader title={deskTitle} fileName={activeWorkbook ? workbookDisplayFileName(activeWorkbook) : null} templateName={activeTemplate?.Name ?? ''} summary={deskSummary}
               resolving={workbookResolving} warning={catalogueNotice?.warning ?? null}
               about={guide ? t(guide.summary) : catalogueNotice && !catalogueNotice.failed && !activeWorkbook ? catalogueNotice.text : null} />
             <WorkbookActionBar canSubmit={canSubmit && !workbookResolving} isLoading={isLoading}

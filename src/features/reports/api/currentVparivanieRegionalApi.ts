@@ -6,9 +6,9 @@ import { currentVparivanieRegionalAvailable, normalizeCurrentVparivanieRegional,
 
 export async function readCurrentVparivanieRegional(dataset: ReportDataset, request: ReportRequestBody,
   signal?: AbortSignal): Promise<CurrentVparivanieRegionalResult> {
-  if (!currentVparivanieRegionalAvailable(dataset)) throw new Error('Сервер ще не підтримує регіональну форму «Впарювання».')
+  if (!currentVparivanieRegionalAvailable(dataset)) throw new Error('Сервер ще не підтримує регіональну форму «Аналіз залишків і продажів».')
   const rejected = currentVparivanieConfigurationError(request, dataset)
-  if (request.dataSource !== 39 || rejected) throw new Error(rejected ?? 'Оберіть поточне «Впарювання».')
+  if (request.dataSource !== 39 || rejected) throw new Error(rejected ?? 'Оберіть поточне «Аналіз залишків і продажів».')
   const captured = structuredClone(request)
   const result = await apiRequest<unknown>('/report/datasets/39/current-regional', {
     method: 'POST', body: captured, signal,

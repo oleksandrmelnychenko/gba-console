@@ -195,7 +195,7 @@ export function buildSheetExportRows(
   totalsRow?: SpreadsheetCellValue[] | null,
 ): SpreadsheetCellValue[][] {
   if (isCurrentVparivanieSheet(sheet)) {
-    if (totalsRow) throw new Error('Поточна матриця «Впарювання» не підтримує підсумки в браузері.')
+    if (totalsRow) throw new Error('Поточна матриця «Аналіз залишків і продажів» не підтримує підсумки в браузері.')
     validateCurrentVparivanieSheet({ ...sheet, rows })
   }
   if (isAgreementPricesSheet(sheet)) {
@@ -351,7 +351,7 @@ function currentVparivanieCsvRecords(text: string): string[] {
     if (character === '\n' && !quoted) { records.push(record.replace(/\r$/, '')); record = '' }
     else record += character
   }
-  if (quoted) throw new Error('Некоректний CSV поточної матриці «Впарювання».')
+  if (quoted) throw new Error('Некоректний CSV поточної матриці «Аналіз залишків і продажів».')
   records.push(record.replace(/\r$/, ''))
   return records
 }

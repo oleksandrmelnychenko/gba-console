@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import { currentVparivanieConfigurationError, currentVparivanieFullScopeAvailable,
-  CURRENT_VPARIVANIE_FULL_NOTE, CURRENT_VPARIVANIE_FULL_TITLE } from './currentVparivanie'
+  CURRENT_VPARIVANIE_FULL_NOTE, CURRENT_VPARIVANIE_FULL_TITLE, CURRENT_VPARIVANIE_LEGACY_FULL_TITLES } from './currentVparivanie'
 import { currentVparivanieDataset, currentVparivanieRequest, currentVparivaniePreview, exactSelection } from './currentVparivanie.test-fixtures'
 import { normalizeNativeReportPreview } from './nativeReportPreview'
 import { normalizeCurrentVparivanieRegional } from './currentVparivanieRegional'
@@ -80,6 +80,11 @@ it('reads and reexports every full workbook row with text identity and null quan
   const csv = exported.map(row => row.map(cell => cell == null ? '' : `"${String(cell).replaceAll('"','""')}"`).join(';')).join('\n')
   const restored = buildSpreadsheetSheet('Full', parseDelimitedText(csv, ';'), 'flat')
   expect(restored.rows).toHaveLength(257);expect(restored.rows[256].cells[0]).toBe('0000256')
+  for (const title of CURRENT_VPARIVANIE_LEGACY_FULL_TITLES) {
+    const legacy = buildSpreadsheetSheet('Full', [[title], ...rows.slice(1)])
+    expect(legacy.header?.lines[0]).toBe(CURRENT_VPARIVANIE_FULL_TITLE)
+    expect(legacy.rows).toEqual(sheet.rows)
+  }
   rows[0] = ['Впарювання: поточні залишки та продажі GBA']
   expect(() => buildSpreadsheetSheet('Bounded', rows)).toThrow('Некоректний файл')
 })

@@ -1,8 +1,8 @@
 import type { SpreadsheetReportHeader, SpreadsheetSheet } from '../types'
-import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, CURRENT_VPARIVANIE_FULL_NOTE, isCurrentVparivanieFullTitle, isCurrentVparivanieTitle } from './currentVparivanie'
+import { CURRENT_VPARIVANIE_TITLE, CURRENT_VPARIVANIE_FULL_TITLE, CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, CURRENT_VPARIVANIE_FULL_NOTE, isCurrentVparivanieFullTitle, isCurrentVparivanieTitle } from './currentVparivanie'
 
 export const CURRENT_VPARIVANIE_DISPLAY_LINE = `Колонки товару: ${CURRENT_VPARIVANIE_PRODUCT_CAPTIONS.join(', ')}`
-const invalid = () => new Error('Некоректний файл матриці «Впарювання»: потрібні сім атрибутів товару, один «Результат», залишок і явний період продажів.')
+const invalid = () => new Error('Некоректний файл матриці «Аналіз залишків і продажів»: потрібні сім атрибутів товару, один «Результат», залишок і явний період продажів.')
 export const isCurrentVparivanieSheet = (sheet: SpreadsheetSheet | null): boolean => !!sheet?.header && isCurrentVparivanieTitle(sheet.header.lines[0])
 
 /** The workbook declares display width independently of the one Product identity. */
@@ -15,7 +15,7 @@ export function currentVparivanieDisplayHeader(title: string, header: Spreadshee
     || header.lines.filter(line => line.startsWith('Показники:')).join(',') !== 'Показники: Результат'
     || header.lines.filter(line => /^Період: \d{2}\.\d{2}\.\d{4} – \d{2}\.\d{2}\.\d{4}$/.test(line)).length !== 1) throw invalid()
   // Attribution lines retain the semantic axis. Only table parsing uses seven display columns.
-  return { ...header, rowGroupings: [...CURRENT_VPARIVANIE_PRODUCT_CAPTIONS] }
+  return { ...header, lines: [isCurrentVparivanieFullTitle(title) ? CURRENT_VPARIVANIE_FULL_TITLE : CURRENT_VPARIVANIE_TITLE, ...header.lines.slice(1)], rowGroupings: [...CURRENT_VPARIVANIE_PRODUCT_CAPTIONS] }
 }
 
 export function validateCurrentVparivanieSheet(sheet: SpreadsheetSheet): SpreadsheetSheet {

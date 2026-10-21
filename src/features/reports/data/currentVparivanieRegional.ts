@@ -22,7 +22,7 @@ const exactId = (value: unknown): value is string => typeof value === 'string'
   && /^[1-9]\d{0,18}$/.test(value) && BigInt(value) <= 9223372036854775807n
 const text = (value: unknown): value is string | null => value === null
   || typeof value === 'string'
-function fail(): never { throw new Error('Сервер повернув неповну регіональну форму «Впарювання».') }
+function fail(): never { throw new Error('Сервер повернув неповну регіональну форму «Аналіз залишків і продажів».') }
 const displayDate = (date: string) => `${date.slice(8, 10)}.${date.slice(5, 7)}.${date.slice(0, 4)}`
 
 // Compare decimal text at an exact common scale; no floating-point quantity is introduced.

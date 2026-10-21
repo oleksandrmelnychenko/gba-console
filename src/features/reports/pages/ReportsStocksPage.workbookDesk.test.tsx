@@ -1,3 +1,4 @@
+import { workbookDisplayFileName } from '../data/bug1274WorkbookGuide'
 import { changeReportPeriod, openReportPeriod, readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
@@ -76,7 +77,7 @@ it('opens every workbook from the switcher on its default period', async () => {
   const switcher = await findOpenedWorkbook('ВП.xls')
   for (const file of Object.values(WORKBOOK_FILES)) {
     const period = workbookDefaultPeriod(file, workbookDataSources[file], formatKyivBusinessDate())!
-    fireEvent.click(within(switcher).getByRole('button', { name: `Відкрити ${file}` }))
+    fireEvent.click(within(switcher).getByRole('button', { name: `Відкрити ${workbookDisplayFileName(file)}` }))
     await findOpenedWorkbook(file)
     await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/i)).toBeNull())
     expect(deskPeriodText(dateInput('Від').value, dateInput('До').value)).toBe(deskPeriodText(period.from, period.to))

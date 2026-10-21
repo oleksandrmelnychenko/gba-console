@@ -5,7 +5,7 @@ import { currentVparivanieV2CellKey, currentVparivanieV2ColumnCaption,
   currentVparivanieV2Columns, type CurrentVparivanieV2PdfDefinition } from './currentVparivanieV2Export'
 import type { CurrentVparivanieRegionalResult } from './currentVparivanieRegional'
 
-export const CURRENT_REGIONAL_TITLE = 'Впарювання: регіональна форма'
+export const CURRENT_REGIONAL_TITLE = 'Аналіз залишків і продажів: регіональна форма'
 export const currentRegionalCellText = (cell?: CurrentVparivanieV2Cell) =>
   cell === undefined ? '' : cell.Quantity === null ? '∅' : currentVparivanieQuantityText(cell.Quantity)
 const currentRegionalCellValue = (cell?: CurrentVparivanieV2Cell): string | number =>
