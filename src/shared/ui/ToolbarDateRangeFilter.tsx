@@ -10,6 +10,7 @@ type Props = {
   min?: string
   max?: string
   disabled?: boolean
+  required?: boolean
   fromLabel?: string
   toLabel?: string
   onChange: (range: { from: string; to: string }) => void
@@ -19,11 +20,29 @@ function displayDate(value: string) {
   return value ? value.split('-').reverse().join('.') : '…'
 }
 
-export function ToolbarDateRangeFilter({ from, to, min, max, disabled, fromLabel, toLabel, onChange }: Props) {
+function validDate(date: string, min?: string, max?: string) {
+  const timestamp = Date.parse(`${date}T00:00:00Z`)
+  return /^\d{4}-\d{2}-\d{2}$/.test(date) && !Number.isNaN(timestamp) &&
+    new Date(timestamp).toISOString().slice(0, 10) === date &&
+    (!min || date >= min) && (!max || date <= max)
+}
+
+function validateRange(range: { from: string; to: string }, required: boolean, min?: string, max?: string) {
+  if (required && (!range.from || !range.to)) return 'Вкажіть дату початку та дату завершення'
+  if (required && (!validDate(range.from, min, max) || !validDate(range.to, min, max))) {
+    return 'Вкажіть коректні дати в межах дозволеного періоду'
+  }
+  if (range.from && range.to && range.from > range.to) return 'Дата «Від» має бути не пізніше дати «До»'
+  return null
+}
+
+export function ToolbarDateRangeFilter({ from, to, min, max, disabled, required = false, fromLabel, toLabel, onChange }: Props) {
   const { t } = useI18n()
   const [opened, setOpened] = useState(false)
   const [draft, setDraft] = useState({ from, to })
-  const invalidRange = Boolean(draft.from && draft.to && draft.from > draft.to)
+  const error = validateRange(draft, required, min, max)
+  const rangeError = error ? t(error) : null
+  const invalidRange = Boolean(rangeError)
   const summary = from || to ? `${displayDate(from)} — ${displayDate(to)}` : t('Увесь період')
   const fromMax = [draft.to, max].filter(Boolean).sort()[0]
   const toMin = [draft.from, min].filter(Boolean).sort().at(-1)
@@ -66,6 +85,8 @@ export function ToolbarDateRangeFilter({ from, to, min, max, disabled, fromLabel
                 className="app-date-range-field"
                 label={fromLabel ?? t('Від')}
                 type="date"
+                required={required}
+                withAsterisk={false}
                 disabled={disabled}
                 min={min}
                 max={fromMax}
@@ -77,6 +98,8 @@ export function ToolbarDateRangeFilter({ from, to, min, max, disabled, fromLabel
                 className="app-date-range-field"
                 label={toLabel ?? t('До')}
                 type="date"
+                required={required}
+                withAsterisk={false}
                 disabled={disabled}
                 min={toMin}
                 max={max}
@@ -84,7 +107,7 @@ export function ToolbarDateRangeFilter({ from, to, min, max, disabled, fromLabel
                 onChange={(event) => setDraft({ ...draft, to: event.currentTarget.value })}
               />
             </div>
-            {invalidRange ? <span className="app-date-range-error" role="alert">{t('Дата «Від» має бути не пізніше дати «До»')}</span> : null}
+            {invalidRange ? <span className="app-date-range-error" role="alert">{rangeError}</span> : null}
             <Group justify="flex-end" gap={8}>
               <Button variant="default" onClick={() => setOpened(false)}>{t('Скасувати')}</Button>
               <Button type="submit" disabled={invalidRange || disabled}>{t('Застосувати')}</Button>
