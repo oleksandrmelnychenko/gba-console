@@ -129,7 +129,7 @@ export function settlementPeriodConfigurationError(data: ReportRequestBody, data
   const days = (Date.parse(`${data.to}T00:00:00Z`) - Date.parse(`${data.from}T00:00:00Z`)) / 86_400_000 + 1
   if (days > 31) return 'Період взаєморозрахунків може охоплювати щонайбільше 31 день.'
   if (!readSettlementPeriodScope(data.settlementPeriod)) return 'Оберіть базу, тип і точний договір зі списку GBA.'
-  const allowed = new Set(['dataSource', 'from', 'to', 'sorted', 'selections', 'settlementPeriod', 'groupedSettlementPeriod', 'GroupedSettlementPeriod'])
+  const allowed = new Set(['numberPresentation', 'NumberPresentation', 'dataSource', 'from', 'to', 'sorted', 'selections', 'settlementPeriod', 'groupedSettlementPeriod', 'GroupedSettlementPeriod'])
   if (Object.entries(data).some(([key, value]) => !allowed.has(key) && value != null))
     return 'Для взаєморозрахунків недоступні додаткові відбори, FX, управлінська валюта й перетворення.'
   if (!Array.isArray(data.selections) || data.selections.length !== 0

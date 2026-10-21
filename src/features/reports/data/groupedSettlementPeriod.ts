@@ -209,7 +209,7 @@ export function groupedSettlementConfigurationError(data: ReportRequestBody, dat
   if (groupsError) return groupsError
   const workbookError = workbookConfigurationError(data, dataset)
   if (workbookError) return workbookError
-  const allowed = new Set(['datasource', 'from', 'to', 'sorted', 'selections', 'groupedsettlementperiod', 'settlementreadmode', 'filterexpression', 'sourcebuyersubtree', 'sourcecounterpartygroups', 'workbookpresentation'])
+  const allowed = new Set(['numberpresentation', 'datasource', 'from', 'to', 'sorted', 'selections', 'groupedsettlementperiod', 'settlementreadmode', 'filterexpression', 'sourcebuyersubtree', 'sourcecounterpartygroups', 'workbookpresentation'])
   if (Object.entries(data).some(([key, value]) => !allowed.has(key.toLowerCase()) && value != null))
     return 'Групові взаєморозрахунки не поєднуються з точним договором, перерахунком валют або іншими перетвореннями.'
   const sourceBuyer = aliases(data, 'SourceBuyerSubtree')

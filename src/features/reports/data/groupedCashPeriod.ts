@@ -68,7 +68,7 @@ export function groupedCashConfigurationError(data: ReportRequestBody, dataset?:
   if (dataset && !groupedCashSupported(dataset)) return 'Сервер ще не підтримує звіт за кількома рахунками.'
   const workbookError = workbookConfigurationError(data, dataset)
   if (workbookError) return workbookError
-  const allowed = new Set(['datasource', 'from', 'to', 'sorted', 'selections', 'groupedcashperiod', 'cashreadmode', 'workbookpresentation'])
+  const allowed = new Set(['numberpresentation', 'datasource', 'from', 'to', 'sorted', 'selections', 'groupedcashperiod', 'cashreadmode', 'workbookpresentation'])
   if (Object.entries(data).some(([key, value]) => !allowed.has(key.toLowerCase()) && value != null))
     return 'Рахунки не поєднуються з точним записом або іншими перетвореннями.'
   if (!Array.isArray(data.selections) || data.selections.some(selection => selection?.IsChecked !== false

@@ -1,3 +1,4 @@
+import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { hasFixedReportAxes } from './nativeReportProfiles'
 
@@ -44,6 +45,11 @@ export function effectiveReportConfiguration(dataset: ReportDataset | undefined,
   if (data.dataSource === 40 && option(data, 'cashPeriod') != null) key = 'exactRecord'
   if (data.dataSource === 41 && option(data, 'settlementPeriod') != null) key = 'exactAgreement'
   if (data.dataSource === 2 && option(data, 'returnsOnly') === true) key = 'returnsOnly'
+  const sales = option(data, 'priceTypeSalesComparison')
+  if (data.dataSource === 27 && record(sales) && (sales.SalesBasis ?? sales.salesBasis) === 0) key = 'operational'
+  const groupedSettlement = option(data, 'groupedSettlementPeriod')
+  if (data.dataSource === 41 && mode == null && record(groupedSettlement)
+    && (groupedSettlement.SourceWorld ?? groupedSettlement.sourceWorld) === 'Fenix' && option(data, 'sourceBuyerSubtree') != null) key = 'originalNormal'
   let result = { ...base, ...base.variants.find(variant => variant.key === key) }
   if (data.dataSource === 40 && option(data, 'workbookPresentation') != null) {
     const row = data.sorted.Row.map(item => item.type).join(',')
@@ -81,6 +87,8 @@ export function reportConfigurationError(data: ReportRequestBody, dataset?: Repo
   const period = config.period
   if (!period.supported && (data.from || data.to)) return 'Цей звіт не підтримує період.'
   if (period.required && (!data.from || !data.to || data.from > data.to)) return 'Оберіть коректний період звіту.'
+  if (data.to && period.endDatePolicy && period.endDatePolicy !== 'unrestricted'
+    && data.to > reportMaximumDate(config, formatKyivBusinessDate())!) return 'Оберіть підтримувану кінцеву дату київського періоду звіту.'
   if (data.to && period.maximumDate && data.to > period.maximumDate) return `Період доступний до ${period.maximumDate}.`
   if (data.from && period.minimumDate && data.from < period.minimumDate) return `Період доступний від ${period.minimumDate}.`
   if (data.from && data.to && period.maximumDays && (Date.parse(data.to) - Date.parse(data.from)) / 86400000 >= period.maximumDays)

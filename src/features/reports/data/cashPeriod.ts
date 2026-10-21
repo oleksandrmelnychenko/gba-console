@@ -141,7 +141,7 @@ export function cashPeriodConfigurationError(data: ReportRequestBody, dataset?: 
   if (!grouped && !scope) return 'Оберіть точний рахунок і його валюту зі списку GBA.'
   if (scope?.Version === 2 && dataset && !cashPeriodSupportsManagement(dataset))
     return 'Сервер ще не підтримує управлінські колонки руху коштів.'
-  const allowed = new Set(['dataSource', 'from', 'to', 'sorted', 'selections', grouped ? 'groupedCashPeriod' : 'cashPeriod'])
+  const allowed = new Set(['numberPresentation', 'NumberPresentation', 'dataSource', 'from', 'to', 'sorted', 'selections', grouped ? 'groupedCashPeriod' : 'cashPeriod'])
   if (Object.entries(data).some(([key, value]) => !allowed.has(key) && !(grouped && ['GroupedCashPeriod', 'cashReadMode', 'CashReadMode', 'workbookPresentation', 'WorkbookPresentation'].includes(key)) && value != null))
     return 'Для руху коштів недоступні додаткові відбори та перерахунок за поточним курсом.'
   if (!Array.isArray(data.selections) || !grouped && data.selections.length !== 0
