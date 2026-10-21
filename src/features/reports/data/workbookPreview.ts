@@ -55,7 +55,9 @@ export function readWorkbookPreview(raw: unknown, preview: NativeReportPreview):
     return { type: field.type as number, caption: field.caption, placement: field.placement as WorkbookField['placement'] }
   })
   if (source === 35) {
-    if (raw.rows.length !== 0 || preview.RowSchema.map(field => (field as { Identity?: string }).Identity).join(',') !== 'Day,Organization') return fail()
+    const identities = preview.RowSchema.map(field => (field as { Identity?: string }).Identity)
+    if (raw.rows.length !== 0 || identities.length < 1 || identities.length > 2
+      || new Set(identities).size !== identities.length || identities.some(identity => identity !== 'Day' && identity !== 'Organization')) return fail()
   } else if (raw.rows.length !== preview.Rows.length || preview.SettlementCounterpartyAttributes
     || source === 40 && !['PaymentRegister', 'PaymentBalanceRecord']
       .includes(preview.RowSchema.map(field => (field as { Identity?: string }).Identity).join(','))
@@ -110,4 +112,21 @@ export function workbookAttributeText(value?: WorkbookAttribute): string {
   if (!value || value.state === 'unavailable') return '—'
   if (value.state === 'null') return '∅'
   return `${value.state === 'mixed' ? 'Кілька значень: ' : ''}${value.values.join(', ')}`
+}
+
+/** Bind editable profit axes to request identities, never translated display captions. */
+export function bindProfitPreviewGrouping(request: ReportRequestBody, preview: NativeReportPreview): void {
+  if (request.dataSource !== 35 && request.dataSource !== 38) return
+  const identities: Readonly<Record<number, string>> = request.dataSource === 35
+    ? { 3: 'Day', 4: 'Organization' }
+    : { 73: 'SourceReceiptStorage', 78: 'SourceRegistrarWarehouse', 4: 'Organization', 21: 'Supplier' }
+  const expected = request.sorted.Row.map(row => identities[row.type])
+  const actual = preview.RowSchema.map(field => (field as { Identity?: string }).Identity)
+  if (preview.Request?.DataSource !== (request.dataSource === 35 ? 'NativeDayOrganizationGrossProfit' : 'NativeSupplierGrossProfit')
+    || expected.length === 0 || expected.length > (request.dataSource === 35 ? 2 : 3) || expected.some(identity => !identity)
+    || new Set(expected).size !== expected.length || request.sorted.Col.length !== 0
+    || expected.includes('SourceReceiptStorage') && expected.includes('SourceRegistrarWarehouse')
+    || actual.length !== expected.length || actual.some((identity, index) => identity !== expected[index])
+    || preview.Rows.some(row => row.Values.length !== expected.length))
+    throw new Error('Сервер повернув інше групування рядків прибутку, ніж було запитано.')
 }

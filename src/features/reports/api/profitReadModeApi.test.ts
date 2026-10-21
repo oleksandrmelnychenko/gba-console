@@ -4,14 +4,15 @@ import { defaultDatasetRequest } from '../data/reportDatasets'
 import { profitDayDataset, profitSupplierDataset } from '../data/profitReadMode.test-fixtures'
 import { normalizeNativeReportPreview } from '../data/nativeReportPreview'
 import { savedNativeReportConfigurationError } from '../data/savedNativeReport'
-import { createStockReport, previewStockReport, validateStockReportRequest } from './reportsApi'
-vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
+import { createStockReport, previewStockReport, getStockReportPreviewPage, validateStockReportRequest } from './reportsApi'
+vi.mock('../../../shared/api/apiClient', async original => ({ ...await original<typeof import('../../../shared/api/apiClient')>(), apiRequest: vi.fn() }))
 beforeEach(() => vi.clearAllMocks())
 function response(mode: unknown = 0, source = 'NativeDayOrganizationGrossProfit') {
   return { Preview: { Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true,
     Request: { DataSource: source, ProfitReadMode: mode, IsCurrentSnapshot: false, HasPeriod: true },
     Page: { Offset: 0, Limit: 50, TotalVisibleRows: 0, ReturnedRows: 0, HasMore: false },
-    RowSchema: [], ColumnSchema: [], Rows: [], Columns: [], Cells: [] } }
+    RowSchema: (source === 'NativeSupplierGrossProfit' ? ['SourceRegistrarWarehouse', 'Organization', 'Supplier'] : ['Day', 'Organization'])
+      .map(Identity => ({ Identity, Caption: Identity })), ColumnSchema: [], Rows: [], Columns: [], Cells: [] } }
 }
 it.each([profitDayDataset, profitSupplierDataset])('submits immutable explicit mode for source $DataSource and binds preview source', async dataset => {
   const request = { ...defaultDatasetRequest(dataset, '2026-09-01', '2026-09-30'), profitReadMode: 0 }
@@ -70,4 +71,16 @@ it.each([profitDayDataset, profitSupplierDataset])('passes the server two-month 
   expect(() => validateStockReportRequest(request, dataset)).toThrow('31')
   expect(() => validateStockReportRequest(request)).toThrow('31')
   expect(() => validateStockReportRequest({ ...request, to: '2026-10-03' }, current)).toThrow('62')
+})
+
+it.each([profitDayDataset, profitSupplierDataset])('rejects changed grouping on initial and cached pages for source $DataSource', async dataset => {
+  const request = defaultDatasetRequest(dataset, '2026-10-01', '2026-10-20')
+  const payload = response(0, dataset.DataSource === 35 ? 'NativeDayOrganizationGrossProfit' : 'NativeSupplierGrossProfit')
+  payload.Preview.RowSchema.reverse()
+  vi.mocked(apiRequest).mockResolvedValue(payload)
+  await expect(previewStockReport(request)).rejects.toThrow('інше групування')
+  const session = { ResultId: '11111111-2222-3333-4444-555555555555', RequestSha256: 'b'.repeat(64), ResultSha256: 'a'.repeat(64), ExpiresAtUtc: '2030-01-01T00:15:00Z' }
+  vi.mocked(apiRequest).mockResolvedValue({ ...payload, ...session, PreviewVersion: 2,
+    Preview: { ...payload.Preview, RequestSha256: session.RequestSha256 } })
+  await expect(getStockReportPreviewPage(session, request, 0)).rejects.toThrow('інше групування')
 })

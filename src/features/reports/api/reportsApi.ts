@@ -1,7 +1,7 @@
 import { reportConfigurationError } from '../data/reportConfiguration'
 import { numberPresentationError, readNumberPresentation, requestNumberPresentation } from '../data/reportNumberPresentation'
 import { workbookConfigurationError } from '../data/workbookPresentation'
-import { bindWorkbookPreview } from '../data/workbookPreview'
+import { bindProfitPreviewGrouping, bindWorkbookPreview } from '../data/workbookPreview'
 import { settlementAttributeKey } from '../data/settlementSourceAttributes'
 import { settlementPeriodConfigurationError } from '../data/settlementPeriod'
 import { agreementPricesConfigurationError } from '../data/agreementPrices'
@@ -86,6 +86,7 @@ export async function previewStockReport(body: ReportRequestBody, dataset?: Repo
     throw new Error('Сервер повернув результат іншого набору даних замість руху коштів.')
   if (request.dataSource === 40 && (requestCashReadMode(request) ?? null) !== (preview.Request?.CashReadMode ?? null))
     throw new Error('Сервер повернув інше джерело розрахунку коштів.')
+  bindProfitPreviewGrouping(request, preview)
   return { result: normalizeReportResult(response), preview }
 }
 
@@ -132,7 +133,8 @@ export async function getStockReportPreviewPage(session: ReportResultSession, re
     assertSameResult(session, preview.ResultSession)
     if (preview.Page.Offset !== offset) throw new Error('Сервер повернув іншу сторінку звіту.')
     assertNumberPresentation(request, preview)
-  bindWorkbookPreview(request, preview)
+    bindWorkbookPreview(request, preview)
+    bindProfitPreviewGrouping(request, preview)
     return preview
   } catch (error) { return cachedResultError(error) }
 }
