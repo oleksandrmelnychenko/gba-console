@@ -78,7 +78,7 @@ it.each(['world', 'source', 'definition', 'report'] as const)('does not expose o
   if (field === 'definition') entry.Sources[0].DefinitionSha256 = '0'.repeat(64)
   if (field === 'report') entry.Id = 'builtin:ВедомостьВзаиморасчетыСКонтрагентами'
   configure(entry); mount()
-  await screen.findByRole('button', { name: 'Покриття звіту: Відомість коштів' })
+  await screen.findByRole('button', { name: `Покриття звіту: ${field === 'report' ? 'Відомість по взаєморозрахунках з контрагентами' : 'Відомість по коштах'}` })
   expect(screen.queryByRole('button', { name: 'Fenix · відомість коштів за період' })).toBeNull()
   expect(getOriginalCashCapability).not.toHaveBeenCalled()
 })

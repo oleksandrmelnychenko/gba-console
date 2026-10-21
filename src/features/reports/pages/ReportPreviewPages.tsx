@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import { Alert, Button, Group, Text } from '@mantine/core'
 import { getStockReportPreviewPage } from '../api/reportsApi'
 import type { NativeReportPreview } from '../data/nativeReportPreview'
 import type { ReportRequestBody } from '../types'
 import { ReportInlinePreview } from './ReportInlinePreview'
-export function ReportPreviewPages({ initial, request, embedded = false }: { initial: NativeReportPreview; request: ReportRequestBody; embedded?: boolean }) {
+export const ReportPreviewPages = memo(function ReportPreviewPages({ initial, request, embedded = false }: { initial: NativeReportPreview; request: ReportRequestBody; embedded?: boolean }) {
   const [preview, setPreview] = useState(initial)
   const [pendingOffset, setPendingOffset] = useState<number | null>(null)
   const loading = pendingOffset !== null
@@ -37,4 +37,4 @@ export function ReportPreviewPages({ initial, request, embedded = false }: { ini
       <Button variant="default" disabled={loading || !preview.Page.HasMore} loading={loading} onClick={() => void page(preview.Page.Offset + preview.Page.Limit)}>Наступні рядки</Button>
     </Group> : null}
   </>
-}
+})
