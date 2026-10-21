@@ -1,6 +1,7 @@
 export type QueryValue = string | number | boolean | Date | null | undefined
 export type QueryParams = Record<string, QueryValue | QueryValue[]>
 
+// Legacy document-list default; sync forms use MinimumSupportedDate from the server.
 export const SYNC_DATA_RANGE_START = '2025-01-01'
 export const KYIV_TIME_ZONE = 'Europe/Kyiv'
 
