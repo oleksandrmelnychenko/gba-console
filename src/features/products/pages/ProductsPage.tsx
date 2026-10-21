@@ -1,3 +1,5 @@
+import { ProductSourceHistoryRefresh } from '../../../shared/ui/product-movement-history/ProductSourceHistoryRefresh'
+import { withProductSourceHistoryColumns } from '../../../shared/ui/product-movement-history/productSourceHistory'
 import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
@@ -3298,6 +3300,11 @@ function ProductInlineMovementsTab({
 
   return (
     <Stack className="product-inline-movements product-inline-table-frame" gap={0}>
+      <ProductSourceHistoryRefresh productNetId={productNetUid} includeSiblings={includeSiblings} onRefreshed={() => {
+        exportRequestRef.current += 1
+        dispatch({ type: 'export-clear' })
+        reload()
+      }} />
       <Group className="app-filter-bar product-movement-toolbar" align="end" gap={10} wrap="nowrap">
         <TextInput className="product-movement-toolbar__control" label={t('З')} type="date" value={dateFrom} onChange={(event) => setDateFrom(event.currentTarget.value)} />
         <TextInput className="product-movement-toolbar__control" label={t('По')} type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
@@ -3378,7 +3385,7 @@ function ProductIncomeMovementsGrid({
 }) {
   const { t } = useI18n()
   const cardColumns = useMemo<DataTableColumn<ProductIncomeMovement>[]>(
-    () => [
+    () => withProductSourceHistoryColumns([
       {
         id: 'storage',
         header: t('Склад'),
@@ -3557,7 +3564,7 @@ function ProductIncomeMovementsGrid({
         accessor: (row) => row.PriceDifference,
         cell: (row) => renderMovementPrice(row.PriceDifference),
       },
-    ],
+    ], t),
     [t],
   )
   const columns = useMemo<DataTableColumn<ProductIncomeMovement>[]>(
@@ -3602,7 +3609,7 @@ function ProductOutcomeMovementsGrid({
 }) {
   const { t } = useI18n()
   const cardColumns = useMemo<DataTableColumn<ProductOutcomeMovement>[]>(
-    () => [
+    () => withProductSourceHistoryColumns([
       {
         id: 'date',
         header: t('Дата'),
@@ -3669,7 +3676,7 @@ function ProductOutcomeMovementsGrid({
         accessor: (row) => row.Qty,
         cell: (row) => renderMovementAmount(row.Qty),
       },
-    ],
+    ], t),
     [t],
   )
   const columns = useMemo<DataTableColumn<ProductOutcomeMovement>[]>(
@@ -3959,14 +3966,15 @@ function formatInlineDateTime(value?: Date | string | null): string {
 
 function getIncomeMovementRowKey(row: ProductIncomeMovement, index: number): string {
   return String(
-    row.NetUid
+    row.SourceHistory?.RowKey
+      || row.NetUid
       || row.Id
       || `${row.IncomeToStorageNumber || row.IncomeInvoiceNumber || 'income'}-${row.IncomeToStorageDate || row.IncomeInvoiceDate || ''}-${index}`,
   )
 }
 
 function getOutcomeMovementRowKey(row: ProductOutcomeMovement, index: number): string {
-  return String(row.NetUid || row.Id || `${row.DocumentNumber || 'outcome'}-${row.FromDate || ''}-${index}`)
+  return String(row.SourceHistory?.RowKey || row.NetUid || row.Id || `${row.DocumentNumber || 'outcome'}-${row.FromDate || ''}-${index}`)
 }
 
 function getIncomeMovementGridRowId(row: ProductIncomeMovement, index: number): string {

@@ -1,3 +1,5 @@
+import { ProductSourceHistoryRefresh } from './ProductSourceHistoryRefresh'
+import { withProductSourceHistoryColumns, type ProductSourceHistoryInfo } from './productSourceHistory'
 import { TableChip } from '../TableChip'
 import {
   ActionIcon,
@@ -71,6 +73,7 @@ type EntityFields = {
 }
 
 type ProductMovement = EntityFields & {
+  SourceHistory?: ProductSourceHistoryInfo | null
   AccountingPrice?: number
   ClientName?: string
   Comment?: string
@@ -93,6 +96,7 @@ type ProductMovement = EntityFields & {
 }
 
 type ProductIncomeMovement = EntityFields & {
+  SourceHistory?: ProductSourceHistoryInfo | null
   AccountingEurUnitPrice?: number
   AccountingGrossPrice?: number
   Currency?: string
@@ -124,6 +128,7 @@ type ProductIncomeMovement = EntityFields & {
 }
 
 type ProductOutcomeMovement = EntityFields & {
+  SourceHistory?: ProductSourceHistoryInfo | null
   ClientName?: string
   DocumentNumber?: string | number
   DocumentTypeName?: string
@@ -936,6 +941,11 @@ function ProductMovementPanel({
 
   return (
     <Stack className="product-movement-history-panel" gap={0}>
+      <ProductSourceHistoryRefresh productNetId={productNetUid} active={active && requestPath.includes('/assortment/')} onRefreshed={() => {
+        exportRequestRef.current += 1
+        dispatchExportModalState({ type: 'close-document' })
+        reload()
+      }} />
       <div className="app-filter-bar product-movement-history-filter-bar product-movement-history-filter-bar--extended">
       <Group align="end" gap={10} wrap="wrap" className="product-movement-history-filter-row">
         <TextInput
@@ -998,7 +1008,7 @@ function ProductMovementPanel({
         data={activeError ? [] : rows}
         defaultLayout={MOVEMENT_TABLE_DEFAULT_LAYOUT}
         emptyText={t('Рух товару не знайдено')}
-        getRowId={(row, index) => String(row.NetUid || row.Id || `${row.DocumentType || 'document'}-${row.DocumentNumber || 'number'}-${index}`)}
+        getRowId={(row, index) => String(row.SourceHistory?.RowKey || row.NetUid || row.Id || `${row.DocumentType || 'document'}-${row.DocumentNumber || 'number'}-${index}`)}
         isLoading={isLoading}
         layoutVersion="product-movement-history-shared-1"
         loadingText={t('Завантаження руху товару')}
@@ -1823,6 +1833,11 @@ function ProductIncomeMovementPanel({
 
   return (
     <Stack className="product-movement-history-panel" gap={0}>
+      <ProductSourceHistoryRefresh productNetId={productNetUid} active={active && requestPath.includes('/assortment/')} onRefreshed={() => {
+        exportRequestRef.current += 1
+        dispatchExportModalState({ type: 'close-document' })
+        reload()
+      }} />
       <div className="app-filter-bar product-movement-history-filter-bar">
       <MovementDateToolbar
         canExport={canExport}
@@ -2033,6 +2048,11 @@ function ProductOutcomeMovementPanel({
 
   return (
     <Stack className="product-movement-history-panel" gap={0}>
+      <ProductSourceHistoryRefresh productNetId={productNetUid} active={active && requestPath.includes('/assortment/')} onRefreshed={() => {
+        exportRequestRef.current += 1
+        dispatchExportModalState({ type: 'close-document' })
+        reload()
+      }} />
       <div className="app-filter-bar product-movement-history-filter-bar">
       <MovementDateToolbar
         canExport={canExport}
@@ -2058,7 +2078,7 @@ function ProductOutcomeMovementPanel({
         data={activeError ? [] : rows}
         defaultLayout={OUTCOME_TABLE_DEFAULT_LAYOUT}
         emptyText={t('Вихід товару не знайдено')}
-        getRowId={(row, index) => String(row.NetUid || row.Id || `${row.DocumentTypeName || 'outcome'}-${row.DocumentNumber || 'number'}-${index}`)}
+        getRowId={(row, index) => String(row.SourceHistory?.RowKey || row.NetUid || row.Id || `${row.DocumentTypeName || 'outcome'}-${row.DocumentNumber || 'number'}-${index}`)}
         isLoading={isLoading}
         layoutVersion="product-outcome-movement-history-shared-1"
         loadingText={t('Завантаження виходу товару')}
@@ -2142,7 +2162,7 @@ function useProductMovementColumns(): DataTableColumn<ProductMovement>[] {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<ProductMovement>[]>(
-    () => [
+    () => withProductSourceHistoryColumns([
       {
         id: 'incomeDocumentNumber',
         header: t('Номер прихідної накладної'),
@@ -2281,7 +2301,7 @@ function useProductMovementColumns(): DataTableColumn<ProductMovement>[] {
         accessor: (row) => row.Comment,
         cell: (row) => displayValue(row.Comment),
       },
-    ],
+    ], t),
     [t],
   )
 }
@@ -2290,7 +2310,7 @@ function useProductIncomeMovementColumns(): DataTableColumn<ProductIncomeMovemen
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<ProductIncomeMovement>[]>(
-    () => [
+    () => withProductSourceHistoryColumns([
       {
         id: 'storageName',
         header: t('Склад'),
@@ -2492,7 +2512,7 @@ function useProductIncomeMovementColumns(): DataTableColumn<ProductIncomeMovemen
         accessor: (row) => row.PriceDifference,
         cell: (row) => formatMoney(row.PriceDifference),
       },
-    ],
+    ], t),
     [t],
   )
 }
@@ -2501,6 +2521,8 @@ function getIncomeSourceLabel(
   row: ProductIncomeMovement,
   t: (value: string) => string,
 ): string {
+  if (row.SourceHistory) return `${t('Історія 1С')} · ${row.SourceHistory.SourceSystem}`
+
   if (row.ImportedForAmg === true) {
     return 'AMG'
   }
@@ -2516,6 +2538,9 @@ function getIncomeProjectionLabel(
   row: ProductIncomeMovement,
   t: (value: string) => string,
 ): string {
+  if (row.SourceHistory) return row.SourceHistory.HasPhysicalMovement
+    ? t('Історія документа') : t('Без складського руху')
+
   if (row.IsHide === true) {
     return t('Впливає на склад')
   }
@@ -2531,7 +2556,7 @@ function useProductOutcomeMovementColumns(): DataTableColumn<ProductOutcomeMovem
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<ProductOutcomeMovement>[]>(
-    () => [
+    () => withProductSourceHistoryColumns([
       {
         id: 'fromDate',
         header: t('Дата'),
@@ -2606,7 +2631,7 @@ function useProductOutcomeMovementColumns(): DataTableColumn<ProductOutcomeMovem
         accessor: (row) => row.Qty,
         cell: (row) => formatAmount(row.Qty),
       },
-    ],
+    ], t),
     [t],
   )
 }

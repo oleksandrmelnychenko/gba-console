@@ -98,6 +98,29 @@ function movementHeaders(): string[] {
 }
 
 describe('product movement drawer with sibling cards', () => {
+  it('labels archive movement and leaves GBA cost fields empty', async () => {
+    getProductMovementsMock.mockResolvedValueOnce([{
+      DocumentNumber: 'ARCHIVE-MOVE', IncomeQty: 2, Price: 999, AccountingPrice: 888,
+      SourceHistory: {
+        RowKey: 'Fenix:13228:doc:1', SourceSystem: 'Fenix', SourceDocumentType: 277,
+        HasCurrentBalance: false, HasPhysicalMovement: true,
+        SourceUnitPrice: 12.34, SourceCurrency: 'UAH',
+      },
+    }])
+    renderMovementDrawer()
+    await screen.findByText('ARCHIVE-MOVE')
+    expect(screen.getByText('Історія 1С · Fenix')).toBeTruthy()
+    expect(screen.getByText('12,34')).toBeTruthy()
+    expect(screen.getByText('UAH')).toBeTruthy()
+    const table = screen.getByText('ARCHIVE-MOVE').closest('table')!
+    const headers = Array.from(table.querySelectorAll('thead th'))
+    const cells = Array.from(screen.getByText('ARCHIVE-MOVE').closest('tr')!.querySelectorAll('td'))
+    for (const heading of ['Собівартість', 'Облікова собівартість']) {
+      const index = headers.findIndex((header) => header.textContent?.trim() === heading)
+      expect(cells[index]?.textContent).toBe('—')
+    }
+  })
+
   it('reloads the movement with all sibling cards and names the card of each row', async () => {
     renderMovementDrawer(siblingCards)
 

@@ -1,4 +1,7 @@
+import type { ProductSourceHistoryInfo } from './productSourceHistory'
+
 export type ProductIncomeMovementTreeSource = {
+  SourceHistory?: ProductSourceHistoryInfo | null
   Currency?: string
   ImportedForAmg?: boolean | null
   IncomeQty?: number
@@ -217,6 +220,8 @@ function getIncomeTreeGroupKey(
   row: ProductIncomeMovementTreeSource,
   index: number,
 ): string {
+  if (row.SourceHistory?.RowKey) return `source-history:${row.SourceHistory.RowKey}`
+
   const documentNumber = normalizeTreePart(row.IncomeToStorageNumber)
 
   return documentNumber

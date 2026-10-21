@@ -1,3 +1,4 @@
+import type { ProductSourceHistoryInfo } from '../../shared/ui/product-movement-history/productSourceHistory'
 export type EntityFields = {
   Created?: Date | string
   Deleted?: boolean
@@ -284,6 +285,7 @@ export type ProductConsignmentRemaining = EntityFields & {
 }
 
 export type ProductMovement = EntityFields & {
+  SourceHistory?: ProductSourceHistoryInfo | null
   AccountingGrossPrice?: number
   AccountingPrice?: number
   Card?: ProductSiblingCardRef | null
@@ -311,6 +313,7 @@ export type ProductMovement = EntityFields & {
 }
 
 export type ProductIncomeMovement = EntityFields & {
+  SourceHistory?: ProductSourceHistoryInfo | null
   AccountingEurUnitPrice?: number
   AccountingGrossPrice?: number
   Card?: ProductSiblingCardRef | null
@@ -339,6 +342,7 @@ export type ProductIncomeMovement = EntityFields & {
 }
 
 export type ProductOutcomeMovement = EntityFields & {
+  SourceHistory?: ProductSourceHistoryInfo | null
   Card?: ProductSiblingCardRef | null
   ClientName?: string
   DocumentNumber?: string | number

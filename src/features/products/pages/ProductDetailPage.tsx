@@ -1,3 +1,5 @@
+import { ProductSourceHistoryRefresh } from '../../../shared/ui/product-movement-history/ProductSourceHistoryRefresh'
+import { withProductSourceHistoryColumns } from '../../../shared/ui/product-movement-history/productSourceHistory'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { PdfIcon } from '../../../shared/ui/PdfIcon'
@@ -2149,7 +2151,7 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
     }
   }
 
-  const cardMovementColumns = useMemo<DataTableColumn<ProductMovement>[]>(() => [
+  const cardMovementColumns = useMemo<DataTableColumn<ProductMovement>[]>(() => withProductSourceHistoryColumns([
     { id: 'incomeNumber', header: t('Номер прихідної накладної'), minWidth: 160, accessor: (row) => row.IncomeDocumentNumber, cell: (row) => <TableChip tone="document" value={displayValue(row.IncomeDocumentNumber)} /> },
     { id: 'incomeDate', header: t('Дата прихідної накладної'), minWidth: 160, accessor: (row) => row.IncomeDocumentFromDate, cell: (row) => <span className="app-money">{formatDateTime(row.IncomeDocumentFromDate)}</span> },
     { id: 'document', header: t('Документ'), minWidth: 150, accessor: (row) => row.DocumentType || row.MovementType, cell: (row) => displayValue(row.DocumentType || row.MovementType) },
@@ -2170,7 +2172,7 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
     { id: 'income', header: t('Прихід'), minWidth: 110, align: 'right', accessor: (row) => row.IncomeQty, cell: (row) => <span className="app-money">{formatAmount(row.IncomeQty)}</span> },
     { id: 'outcome', header: t('Розхід'), minWidth: 110, align: 'right', accessor: (row) => row.OutcomeQty, cell: (row) => <span className="app-money">{formatAmount(row.OutcomeQty)}</span> },
     { id: 'comment', header: t('Коментар'), minWidth: 220, accessor: (row) => row.Comment, cell: (row) => displayValue(row.Comment) },
-  ], [t])
+  ], t), [t])
   const movementColumns = useMemo<DataTableColumn<ProductMovement>[]>(
     () => includeSiblings
       ? [createProductSiblingCardColumn<ProductMovement>(t('Картка')), ...cardMovementColumns]
@@ -2180,6 +2182,11 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
 
   return (
     <div className="console-table-shell product-data-table-shell">
+      <ProductSourceHistoryRefresh productNetId={productNetUid} includeSiblings={includeSiblings} onRefreshed={() => {
+        exportRequestRef.current += 1
+        dispatchExport({ document: null, error: null, isExporting: false })
+        reload()
+      }} />
       <div className="app-filter-bar product-movement-sheet-toolbar">
         <div className="app-filter-fields product-movement-sheet-filters">
           <ToolbarDateRangeFilter from={dateFrom} to={dateTo} onChange={({ from, to }) => { setDateFrom(from); setDateTo(to) }} />
@@ -2211,7 +2218,7 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
             density={density}
             onDensityChange={setDensity}
             emptyText={t('Рух товару не знайдено')}
-            getRowId={(row, index) => getProductSiblingRowKey(row.Card, String(row.NetUid || row.Id || `${row.DocumentNumber || 'movement'}-${index}`))}
+            getRowId={(row, index) => getProductSiblingRowKey(row.Card, String(row.SourceHistory?.RowKey || row.NetUid || row.Id || `${row.DocumentNumber || 'movement'}-${index}`))}
             height="100%"
             isLoading={isLoading}
             layoutVersion="product-movement-2"

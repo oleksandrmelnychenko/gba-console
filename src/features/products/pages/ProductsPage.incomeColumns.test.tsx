@@ -91,6 +91,45 @@ afterEach(() => {
 })
 
 describe('ProductsPage income price columns', () => {
+  it('shows archived source amounts separately and does not invent stock or EUR prices', async () => {
+    getProductIncomeMovementsMock.mockResolvedValueOnce([{
+      ...incomeMovement, IncomeToStorageNumber: 'ARCHIVE-ONLY', RemainingQty: 0,
+      SourceHistory: {
+        RowKey: 'Fenix:277:old:1', SourceSystem: 'Fenix', SourceDocumentType: 277,
+        HasCurrentBalance: false, HasPhysicalMovement: false,
+        SourceUnitPrice: 123.45, SourceAmount: 740.7, SourceCurrency: 'UAH',
+      },
+    }])
+    await openIncomeTab()
+    const table = screen.getByText('ARCHIVE-ONLY').closest('table')!
+    const headers = Array.from(table.querySelectorAll('thead th'))
+    const cells = Array.from(screen.getByText('ARCHIVE-ONLY').closest('tr')!.querySelectorAll('td'))
+    for (const heading of ['Залишок', 'Ціна нетто за одиницю, EUR', 'Сума нетто приходу, EUR', 'Управлінська собівартість приходу, EUR']) {
+      const index = headers.findIndex((header) => header.textContent?.includes(heading))
+      expect(cells[index]?.textContent).toBe('—')
+    }
+    expect(within(table).getByText('Історія 1С · Fenix · Без складського руху')).toBeTruthy()
+    expect(within(table).getByText('123,45')).toBeTruthy()
+    expect(within(table).getByText('UAH')).toBeTruthy()
+  })
+
+  it('keeps historical outcome price in its document currency', async () => {
+    vi.mocked(getProductOutcomeMovements).mockResolvedValueOnce([{
+      DocumentNumber: 'ARCHIVE-SALE', Qty: 2, Price: 999,
+      SourceHistory: {
+        RowKey: 'AMG:301:sale:1', SourceSystem: 'AMG', SourceDocumentType: 301,
+        HasCurrentBalance: false, HasPhysicalMovement: true,
+        SourceUnitPrice: 123.45, SourceCurrency: 'UAH',
+      },
+    }])
+    await openIncomeTab()
+    fireEvent.click(screen.getByRole('button', { name: 'Розхід' }))
+    await screen.findByText('ARCHIVE-SALE')
+    expect(screen.getByText('Історія 1С · AMG')).toBeTruthy()
+    expect(screen.getByText('123,45')).toBeTruthy()
+    expect(screen.queryByText('999,00')).toBeNull()
+  })
+
   it('loads the whole receipt history by default so old lots that hold stock are listed', async () => {
     await openIncomeTab()
 
@@ -298,7 +337,7 @@ describe('BUG-1276 product outcome bottom control', () => {
     expect(tableStyles).toMatch(/\.data-table\[data-sticky-horizontal-scrollbar\] > \.data-table-scroll\s*\{[^}]*scrollbar-width:\s*auto\s*;/)
     expect(tableStyles).toMatch(/\.data-table\[data-sticky-horizontal-scrollbar\] > \.data-table-scroll\s*\{[^}]*scrollbar-gutter:\s*auto\s*;/)
     expect(tableStyles).toMatch(/\.data-table-sticky-scrollbar::-webkit-scrollbar\s*\{[^}]*height:\s*18px\s*;/)
-    expect(table.querySelectorAll('thead th')).toHaveLength(9)
+    expect(table.querySelectorAll('thead th')).toHaveLength(14)
     expect(table.querySelectorAll('tbody tr')).toHaveLength(rowCount)
     const firstRow = table.querySelector('tbody tr')!
     expect(firstRow.querySelector('td:nth-last-child(2)')?.textContent).toBe('16,14')
