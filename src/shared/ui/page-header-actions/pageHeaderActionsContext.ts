@@ -4,9 +4,11 @@ export type PageHeaderActionsContextValue = {
   container: HTMLElement | null
   panelActionsContainer: HTMLElement | null
   contentHeaderContainer: HTMLElement | null
+  titleContainer: HTMLElement | null
   setContainer: (element: HTMLElement | null) => void
   setPanelActionsContainer: (element: HTMLElement | null) => void
   setContentHeaderContainer: (element: HTMLElement | null) => void
+  setTitleContainer: (element: HTMLElement | null) => void
   breadcrumb: string | null
   setBreadcrumb: (label: string | null) => void
 }
@@ -16,9 +18,11 @@ export const PageHeaderActionsContext =
     container: null,
     panelActionsContainer: null,
     contentHeaderContainer: null,
+    titleContainer: null,
     setContainer: () => {},
     setPanelActionsContainer: () => {},
     setContentHeaderContainer: () => {},
+    setTitleContainer: () => {},
     breadcrumb: null,
     setBreadcrumb: () => {},
   })

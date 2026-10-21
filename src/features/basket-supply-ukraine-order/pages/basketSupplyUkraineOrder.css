@@ -38,10 +38,35 @@
 /* The page shell owns the only outer border. Each tab's leading data card keeps
    its filter/table layout, but loses its duplicate card chrome so the tab strip
    and active filter read as one continuous surface. */
-.basket-supply-page .basket-supply-primary-card {
+.basket-supply-page .basket-supply-primary-card,
+.buyer-workspace .basket-supply-primary-card {
   border: 0 !important;
   border-radius: 0 !important;
   box-shadow: none !important;
+}
+
+/* The tabs stay outside both the plan table's scroll area and the producer panel. */
+.buyer-workspace {
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.buyer-workspace > .buyer-workspace__tabs {
+  flex: 0 0 auto;
+  border-radius: 10px 10px 0 0;
+  overflow-y: hidden;
+}
+
+.buyer-workspace__panel:not([hidden]) {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
 }
 
 .basket-supply-page .basket-supply-primary-card > .app-filter-bar:last-child {
@@ -984,8 +1009,14 @@
 }
 
 .procure-cockpit-bar__lens .mantine-SegmentedControl-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0 10px;
   font-size: 12px;
   font-weight: 600;
+  line-height: 16px;
 }
 
 .procure-cockpit-bar__lens .mantine-SegmentedControl-control[data-active] .mantine-SegmentedControl-label {

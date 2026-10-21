@@ -12,8 +12,8 @@ export function BuyerWorkspace() {
   const [visited, setVisited] = useState(() => new Set([view]))
 
   return (
-    <Stack gap={6}>
-      <div className="pill-tabs" role="tablist" aria-label={t('Розділи закупівель')}>
+    <Stack className="buyer-workspace" gap={6}>
+      <div className="pill-tabs buyer-workspace__tabs" role="tablist" aria-label={t('Розділи закупівель')}>
         {[{ value: 'plan', label: 'Конструктор закупівель' }, { value: 'producer', label: 'Умови виробника' }].map((tab) => (
           <button
             aria-selected={view === tab.value}
@@ -30,8 +30,8 @@ export function BuyerWorkspace() {
           </button>
         ))}
       </div>
-      <div hidden={view !== 'plan'}>{visited.has('plan') && <ProcurementConstructor />}</div>
-      <div hidden={view !== 'producer'}>{visited.has('producer') && <BuyerCockpitTab />}</div>
+      <div className="buyer-workspace__panel" hidden={view !== 'plan'}>{visited.has('plan') && <ProcurementConstructor />}</div>
+      <div className="buyer-workspace__panel" hidden={view !== 'producer'}>{visited.has('producer') && <BuyerCockpitTab />}</div>
     </Stack>
   )
 }

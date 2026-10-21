@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AiFeatureBadge } from '../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../shared/i18n/useI18n'
+import { PageHeaderTitle } from '../../shared/ui/page-header-actions/PageHeaderActions'
 import { RoleDashboardWorkspace } from '../../features/role-dashboards/components/RoleDashboardWorkspace'
 import { getDashboardWorkspaceCatalog } from '../../features/role-dashboards/api/dashboardWorkspacesApi'
 import type { DashboardWorkspaceCatalog } from '../../features/role-dashboards/types'
@@ -114,19 +115,20 @@ export function DashboardPage() {
   }
 
   return (
-    <Stack className="role-dashboard-page" gap={6}>
+    <Stack className={`role-dashboard-page${selectedWorkspace === 'buyer' ? ' role-dashboard-page--buyer' : ''}`} gap={6}>
+      <PageHeaderTitle>
+        <Box className="role-dashboard-title">
+          <Group gap={6} wrap="nowrap" justify="center">
+            <Text component="h1" className="role-dashboard-heading">
+              {t(selectedDescriptor.name)}
+            </Text>
+            {selectedDescriptor.isAi && <AiFeatureBadge compact tooltip={t('AI-функція')} />}
+          </Group>
+        </Box>
+      </PageHeaderTitle>
+      {(catalog.canSwitchWorkspace || showsSharedPeriod) && (
       <Card className="app-filter-card role-dashboard-toolbar-card" withBorder radius="md" padding={0}>
         <Group className="app-filter-bar role-dashboard-toolbar" justify="space-between" wrap="nowrap">
-          <Box className="role-dashboard-title">
-            <Group gap={6} wrap="nowrap">
-              <Text component="h1" className="app-section-title role-dashboard-heading">
-                {t(selectedDescriptor.name)}
-              </Text>
-              {selectedDescriptor.isAi && <AiFeatureBadge compact tooltip={t('AI-функція')} />}
-            </Group>
-            <Text className="role-dashboard-group">{t(selectedDescriptor.group)}</Text>
-          </Box>
-
           {catalog.canSwitchWorkspace && (
             <Box className="app-filter-field role-dashboard-selector-field">
               <Text className="app-filter-label">{t('Дашборд')}</Text>
@@ -195,8 +197,9 @@ export function DashboardPage() {
           )}
         </Group>
       </Card>
+      )}
 
-      <Box className="role-dashboard-content">
+      <Box className={`role-dashboard-content${selectedWorkspace === 'buyer' ? ' role-dashboard-content--buyer' : ''}`}>
         <RoleDashboardWorkspace period={period} workspaceKey={selectedWorkspace} />
       </Box>
     </Stack>

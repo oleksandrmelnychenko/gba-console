@@ -20,16 +20,17 @@
 }
 
 .role-dashboard-toolbar {
-  display: grid;
-  grid-template-columns: minmax(220px, 1fr) 300px auto;
+  display: flex;
   overflow-x: auto;
   border: 0;
   border-radius: 0;
 }
 
 .role-dashboard-title {
-  min-width: 180px;
+  min-width: 0;
+  max-width: 100%;
   align-self: center;
+  text-align: center;
 }
 
 .role-dashboard-heading {
@@ -39,14 +40,10 @@
   font-size: 14px;
   font-weight: 650;
   line-height: 1.25;
-}
-
-.role-dashboard-group {
-  margin-top: 4px;
-  color: var(--mantine-color-gray-6);
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  font-weight: 500;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .role-dashboard-selector-field {
@@ -100,6 +97,17 @@
   min-width: 0;
   overflow: auto;
   padding: 0 2px 6px 0;
+}
+
+.role-dashboard-page.role-dashboard-page--buyer {
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.role-dashboard-content.role-dashboard-content--buyer {
+  display: flex;
+  overflow: hidden;
 }
 
 .role-dashboard-gba-workspace {
@@ -462,10 +470,6 @@
 }
 
 @media (max-width: 76em) {
-  .role-dashboard-toolbar {
-    grid-template-columns: minmax(200px, 1fr) 270px auto;
-  }
-
   .role-dashboard-selector-field {
     width: 270px;
   }
@@ -476,10 +480,6 @@
 }
 
 @media (max-width: 62em) {
-  .role-dashboard-toolbar {
-    grid-template-columns: minmax(190px, 1fr) 260px auto;
-  }
-
   .role-dashboard-selector-field {
     width: 260px;
   }
@@ -509,14 +509,6 @@
       100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px
     );
     overflow: visible;
-  }
-
-  .role-dashboard-toolbar {
-    display: flex;
-  }
-
-  .role-dashboard-title {
-    flex: 0 0 190px;
   }
 
   .role-dashboard-selector-field {

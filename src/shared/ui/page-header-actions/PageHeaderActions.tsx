@@ -21,6 +21,7 @@ export function PageHeaderActionsProvider({
     useState<HTMLElement | null>(null)
   const [contentHeaderContainer, setContentHeaderContainer] =
     useState<HTMLElement | null>(null)
+  const [titleContainer, setTitleContainer] = useState<HTMLElement | null>(null)
   const [breadcrumb, setBreadcrumb] = useState<string | null>(null)
 
   return (
@@ -29,9 +30,11 @@ export function PageHeaderActionsProvider({
         container,
         panelActionsContainer,
         contentHeaderContainer,
+        titleContainer,
         setContainer,
         setPanelActionsContainer,
         setContentHeaderContainer,
+        setTitleContainer,
         breadcrumb,
         setBreadcrumb,
       }}
@@ -72,6 +75,23 @@ export function PageContentHeaderSlot({ className }: { className?: string }) {
   )
 
   return <div ref={refCallback} className={className} />
+}
+
+/** Destination for the current page title in the shell's date/profile row. */
+export function PageHeaderTitleSlot({ className }: { className?: string }) {
+  const { setTitleContainer } = useContext(PageHeaderActionsContext)
+  const refCallback = useCallback(
+    (element: HTMLDivElement | null) => setTitleContainer(element),
+    [setTitleContainer],
+  )
+
+  return <div ref={refCallback} className={className} />
+}
+
+/** Lift a page title into the shell; React removes it when the page unmounts. */
+export function PageHeaderTitle({ children }: { children: ReactNode }) {
+  const { titleContainer } = useContext(PageHeaderActionsContext)
+  return titleContainer ? createPortal(children, titleContainer) : null
 }
 
 /** Render inside any page to lift primary actions to the right of the header panel. */

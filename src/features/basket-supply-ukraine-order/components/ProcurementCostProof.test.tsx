@@ -27,11 +27,11 @@ it('shows factual zero, partial historical median and manual/unavailable cost as
   const rows = [...container.querySelectorAll('tbody tr')]
   const zero = rows.find(row => row.textContent?.includes(names[0]))!
   const unknown = rows.find(row => row.textContent?.includes(names[4]))!
-  expect(within(zero as HTMLElement).getAllByText('0,00').length).toBe(2)
+  expect(within(zero as HTMLElement).getAllByText('0,00', { selector: '.app-money' }).length).toBe(2)
   expect(within(unknown as HTMLElement).queryByText('0,00')).toBeNull()
   expect(within(unknown as HTMLElement).getByText('Виключено')).not.toBeNull()
   const partial = rows.find(row => row.textContent?.includes(names[2]))! as HTMLElement
-  expect(within(partial).getByText('10,00')).not.toBeNull()
+  expect(within(partial).getByText('10,00', { selector: '.app-money' })).not.toBeNull()
   expect(within(partial).getAllByText('Неповне покриття').length).toBeGreaterThan(0)
   expect(within(partial).getByText('Виключено')).not.toBeNull()
   expect(screen.queryByText('Цінність/€')).toBeNull()
@@ -53,7 +53,8 @@ it('explains exact observation scope, manual tax uncertainty and dimensionless b
   expect(screen.getByText(/автоматичний бюджет його не використовує/)).not.toBeNull()
   expect(screen.getByText(/Чернетка замовлення використовує власні договірні умови/)).not.toBeNull()
   const component = plan.cost_observation_manifest.components[0]
-  expect(screen.getByText(`Час читання UTC: ${component.observation_started_at_utc} — ${component.observation_completed_at_utc}`)).not.toBeNull()
+  expect(screen.getByTitle(`Час читання UTC: ${component.observation_started_at_utc} — ${component.observation_completed_at_utc}`)).not.toBeNull()
+  expect(screen.getByTitle(component.component_id)).not.toBeNull()
 })
 
 it('retains small manual estimates and the recorded scalar zero in unit price formatting', () => {
