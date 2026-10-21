@@ -27,20 +27,21 @@
 }
 
 .role-dashboard-title {
+  display: flex;
   min-width: 0;
   max-width: 100%;
-  align-self: center;
-  text-align: center;
+  align-self: stretch;
 }
 
 .role-dashboard-heading {
   margin: 0;
-  color: var(--mantine-color-gray-9);
-  font-family: var(--font-mono);
-  font-size: 14px;
-  font-weight: 650;
-  line-height: 1.25;
+  height: 100%;
+  border-radius: 0;
   min-width: 0;
+  cursor: default;
+}
+
+.role-dashboard-heading-label {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -92,6 +93,7 @@
 }
 
 .role-dashboard-content {
+  --dashboard-surface-radius: 10px;
   flex: 1 1 auto;
   min-height: 0;
   min-width: 0;
@@ -99,15 +101,28 @@
   padding: 0 2px 6px 0;
 }
 
-.role-dashboard-page.role-dashboard-page--buyer {
+.role-dashboard-page .role-dashboard-content .pill-tabs {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: var(--dashboard-surface-radius);
+  flex-shrink: 0;
+  overflow-y: hidden;
+}
+
+.role-dashboard-page.role-dashboard-page--bounded {
   height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
 }
 
-.role-dashboard-content.role-dashboard-content--buyer {
+.role-dashboard-content.role-dashboard-content--bounded {
   display: flex;
   overflow: hidden;
+}
+
+.role-dashboard-content--bounded > .cockpit-page {
+  height: 100%;
+  min-width: 0;
+  padding: 0;
 }
 
 .role-dashboard-gba-workspace {

@@ -56,6 +56,7 @@ export function DashboardPage() {
     : null
   const selectedDescriptor = catalog?.workspaces.find((workspace) => workspace.key === selectedWorkspace)
   const showsSharedPeriod = selectedWorkspace ? !['sales-manager', 'sales-head', 'buyer', 'buyer-head'].includes(selectedWorkspace) : false
+  const usesInternalScroll = selectedWorkspace ? ['sales-manager', 'sales-head', 'buyer'].includes(selectedWorkspace) : false
   const period = useMemo(() => ({ from, toExclusive: addDays(to, 1) }), [from, to])
   const selectOptions = useMemo(
     () => catalog ? groupDashboardWorkspaceOptions(catalog, t) : [],
@@ -115,15 +116,13 @@ export function DashboardPage() {
   }
 
   return (
-    <Stack className={`role-dashboard-page${selectedWorkspace === 'buyer' ? ' role-dashboard-page--buyer' : ''}`} gap={6}>
+    <Stack className={`role-dashboard-page${usesInternalScroll ? ' role-dashboard-page--bounded' : ''}`} gap={6}>
       <PageHeaderTitle>
         <Box className="role-dashboard-title">
-          <Group gap={6} wrap="nowrap" justify="center">
-            <Text component="h1" className="role-dashboard-heading">
-              {t(selectedDescriptor.name)}
-            </Text>
+          <h1 className="console-subnav-pill console-subnav-item is-active role-dashboard-heading" aria-current="page">
+            <span className="role-dashboard-heading-label">{t(selectedDescriptor.name)}</span>
             {selectedDescriptor.isAi && <AiFeatureBadge compact tooltip={t('AI-функція')} />}
-          </Group>
+          </h1>
         </Box>
       </PageHeaderTitle>
       {(catalog.canSwitchWorkspace || showsSharedPeriod) && (
@@ -199,7 +198,7 @@ export function DashboardPage() {
       </Card>
       )}
 
-      <Box className={`role-dashboard-content${selectedWorkspace === 'buyer' ? ' role-dashboard-content--buyer' : ''}`}>
+      <Box className={`role-dashboard-content${usesInternalScroll ? ' role-dashboard-content--bounded' : ''}`}>
         <RoleDashboardWorkspace period={period} workspaceKey={selectedWorkspace} />
       </Box>
     </Stack>

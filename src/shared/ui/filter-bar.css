@@ -207,6 +207,15 @@
   min-height: var(--app-filter-control-height, 36px);
 }
 
+:is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar)
+  .app-filter-field > .mantine-SegmentedControl-root .mantine-SegmentedControl-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding-block: 0;
+}
+
 /* ---- Compact labels (12px caption, near-black gray-9 per the pattern) ---- */
 .app-filter-bar .mantine-InputWrapper-label,
 .sales-filter-bar .mantine-InputWrapper-label,

@@ -286,6 +286,7 @@
   grid-column: 2;
   grid-row: 2;
   display: flex;
+  align-self: stretch;
   align-items: center;
   justify-content: center;
   min-width: 0;

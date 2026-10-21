@@ -3,6 +3,7 @@ import './alerts.css'
 import './table-chips.css'
 import './static-tables.css'
 import './comboboxes.css'
+import './segmented-controls.css'
 import { IosLoader } from '../ui/IosLoader'
 
 const violet: MantineColorsTuple = [
