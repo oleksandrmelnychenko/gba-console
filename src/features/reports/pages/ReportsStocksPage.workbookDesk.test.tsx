@@ -7,7 +7,7 @@ import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { ApiError } from '../../../shared/api/apiClient'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
-import { createStockReport, previewStockReport, searchDatasetReportValues } from '../api/reportsApi'
+import { createStockReport, exportStockReportPreview, previewStockReport, searchDatasetReportValues } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
 import { getSettlementCounterpartyGroups } from '../api/counterpartyGroupsApi'
 import { reportDatasets } from '../data/reportDatasets.test-fixtures'
@@ -28,7 +28,7 @@ const auth = vi.hoisted(() => ({ owner: null as string | null }))
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ user: auth.owner ? { NetUid: auth.owner } : null, hasPermission: () => true }) }))
 vi.mock('../../../shared/ui/document-export-modal/DocumentExportModal', () => ({ DocumentExportModal: vi.fn(() => null) }))
 vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(),
-  createStockReport: vi.fn(), previewStockReport: vi.fn(), searchDatasetReportValues: vi.fn() }))
+  createStockReport: vi.fn(), exportStockReportPreview: vi.fn(), previewStockReport: vi.fn(), searchDatasetReportValues: vi.fn() }))
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(),
   getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn() }))
 vi.mock('../api/counterpartyGroupsApi', () => ({ getSettlementCounterpartyGroups: vi.fn() }))
@@ -260,4 +260,41 @@ it('uses server editable supplier rows, preserves warehouse basis when hidden, a
   fireEvent.click(within(rows).getAllByRole('button', { name: /^Перемістити .* нижче$/ })[0])
   await waitFor(() => expect(screen.queryByRole('region', { name: 'Таблиця попереднього перегляду' })).toBeNull())
   expect(screen.queryByRole('link', { name: 'Завантажити Excel' })).toBeNull()
+})
+
+const resultSession = { ResultId: '11111111-2222-3333-4444-555555555555', RequestSha256: 'b'.repeat(64), ResultSha256: 'a'.repeat(64), ExpiresAtUtc: '2030-01-01T00:00:00Z' }
+async function openImmutablePreview() {
+  vi.mocked(previewStockReport).mockResolvedValue({ result: { document: { DocumentURL: '', PdfDocumentURL: '' }, raw: {} },
+    preview: { ...preview, ResultSession: resultSession } })
+  await openDayWorkbook()
+  fireEvent.click(screen.getByRole('button', { name: 'Показати на екрані' }))
+  await screen.findByRole('region', { name: 'Таблиця попереднього перегляду' })
+}
+it.each(['Excel', 'PDF'])('exports the immutable preview through %s, locking both actions while export is pending', async format => {
+  let resolve!: (value: Awaited<ReturnType<typeof exportStockReportPreview>>) => void
+  vi.mocked(exportStockReportPreview).mockImplementationOnce(() => new Promise(done => { resolve = done }))
+  await openImmutablePreview()
+  for (const name of ['Excel', 'PDF']) expect(screen.getByRole('button', { name: `Сформувати ${name}` })).toHaveProperty('disabled', false)
+  fireEvent.click(screen.getByRole('button', { name: `Сформувати ${format}` }))
+  await waitFor(() => expect(exportStockReportPreview).toHaveBeenCalledExactlyOnceWith(resultSession))
+  for (const name of ['Excel', 'PDF']) expect(screen.getByRole('button', { name: `Сформувати ${name}` })).toHaveProperty('disabled', true)
+  await act(async () => resolve({ document: files, raw: {} }))
+  await screen.findByRole('link', { name: 'Завантажити Excel' })
+  expect(screen.getByRole('link', { name: 'Завантажити PDF' })).toBeTruthy()
+  expect(createStockReport).not.toHaveBeenCalled()
+  expect(previewStockReport).toHaveBeenCalledOnce()
+})
+it('retries a failed export against the same snapshot and keeps a missing PDF disabled after successful partial export', async () => {
+  vi.mocked(exportStockReportPreview).mockRejectedValueOnce(new Error('Тимчасова помилка експорту'))
+    .mockResolvedValueOnce({ document: { DocumentURL: files.DocumentURL }, raw: {} })
+  await openImmutablePreview()
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати PDF' }))
+  await screen.findByText('Тимчасова помилка експорту')
+  expect(screen.getByRole('button', { name: 'Сформувати PDF' })).toHaveProperty('disabled', false)
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати PDF' }))
+  await screen.findByRole('link', { name: 'Завантажити Excel' })
+  expect(vi.mocked(exportStockReportPreview).mock.calls).toEqual([[resultSession], [resultSession]])
+  expect(screen.getByRole('button', { name: 'Сформувати PDF' })).toHaveProperty('disabled', true)
+  expect(createStockReport).not.toHaveBeenCalled()
+  expect(previewStockReport).toHaveBeenCalledOnce()
 })

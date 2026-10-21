@@ -18,6 +18,7 @@ type Props = {
   isLoading: boolean
   blockedReason: string | null
   ran: boolean
+  previewNeedsExport?: boolean
   excelUrl: string | null
   pdfUrl: string | null
   fileBaseName: string | null
@@ -27,7 +28,7 @@ type Props = {
   onReset: () => void
 }
 
-export function WorkbookActionBar({ period, canSubmit, isLoading, blockedReason, ran, excelUrl, pdfUrl, fileBaseName, resetDisabled,
+export function WorkbookActionBar({ period, canSubmit, isLoading, blockedReason, ran, previewNeedsExport = false, excelUrl, pdfUrl, fileBaseName, resetDisabled,
   onPreview, onGenerate, onReset }: Props) {
   const { t } = useI18n()
   const blocked = !canSubmit && !isLoading && blockedReason ? blockedReason : null
@@ -40,7 +41,7 @@ export function WorkbookActionBar({ period, canSubmit, isLoading, blockedReason,
       href={getDocumentHref(url)} target="_blank" rel="noreferrer"
       download={deskDownloadName(fileBaseName, url, format)}
       aria-label={t('Завантажити {format}', { format: label })}>{label}</Button>
-    const missing = ran && !isLoading
+    const missing = ran && !isLoading && !previewNeedsExport
     return <Button type={format === 'excel' ? 'submit' : 'button'} variant="default" className="workbook-actions__file"
       leftSection={icon} disabled={!canSubmit || isLoading || missing} aria-describedby={describedBy}
       title={missing ? t('Сервер не повернув файл {format} для цього звіту.', { format: label }) : undefined}

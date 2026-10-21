@@ -276,6 +276,7 @@ type ReportRunOutcome = {
   fileName: string
   from: string
   hasDocument: boolean
+  previewNeedsExport: boolean
   measures: string[]
   name: string
   title: string
@@ -568,6 +569,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         colGroupings: colGroups.map((group) => group.label || getReportFieldLabel(group.key)),
         from,
         hasDocument: Boolean(nextResult.document.DocumentURL || nextResult.document.PdfDocumentURL),
+        previewNeedsExport: Boolean(showPreview && previewResult?.preview.ResultSession),
         measures: reportBody.sorted.Measurements.map((measurement) => measurement.Label || getReportFieldLabel(measurement.Name)),
         name: templateName.trim(),
         fileName: reportFileBaseName(activeWorkbook ?? dataset?.Name ?? '', from, to, periodSupported),
@@ -581,7 +583,9 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         downloadModalOpened: !showPreview && outcome.hasDocument })
       if (previewResult) setShownReport(`${activeWorkbook ?? ''}|${dataSource}`)
     } catch (submitError) {
-      updateAttempt({ result: null, error: describeReportError(submitError, t) })
+      updateAttempt({ result: existingPreview?.ResultSession ? result : null,
+        ...(existingPreview?.ResultSession ? { preview: existingPreview, lastRun } : {}),
+        error: describeReportError(submitError, t) })
     } finally {
       updateAttempt({ isLoading: false })
     }
@@ -1232,7 +1236,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
                 onFromChange={setFrom} onToChange={setTo} />
                 : <Text size="sm">{t('Поточний стан на час читання даних. Історичний період не застосовується.')}</Text>}
               blockedReason={workbookResolving ? t('Зачекайте: застосовуються відбори книги…') : submitBlockedReason || null}
-              ran={Boolean(result)} excelUrl={excelUrl} pdfUrl={pdfUrl} fileBaseName={lastRun?.fileName ?? null}
+              ran={Boolean(result)} previewNeedsExport={Boolean(lastRun?.previewNeedsExport)} excelUrl={excelUrl} pdfUrl={pdfUrl} fileBaseName={lastRun?.fileName ?? null}
               resetDisabled={!canGenerateReport || isLoading} onPreview={() => void runReport(true)}
               onGenerate={() => void runReport(false)} onReset={resetReport} />
             <WorkbookSettings sections={deskSections} advanced={advancedContent} disabled={comparisonSettingsDisabled} />
