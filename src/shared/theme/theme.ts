@@ -1,4 +1,4 @@
-import { Alert, Badge, createTheme, Drawer, Loader, Modal, Tooltip, parseThemeColor, type MantineColorsTuple } from '@mantine/core'
+import { Alert, Autocomplete, Badge, Combobox, createTheme, Drawer, Loader, Modal, MultiSelect, Select, Tooltip, parseThemeColor, type MantineColorsTuple } from '@mantine/core'
 import './alerts.css'
 import './table-chips.css'
 import './static-tables.css'
@@ -34,6 +34,10 @@ const brand: MantineColorsTuple = [
   '#7C3C13',
 ]
 
+const comboboxStyles = {
+  dropdown: { minWidth: 'max(320px, var(--popover-anchor-width, 0px))' },
+}
+
 export const theme = createTheme({
   fontFamily: 'Onest, Inter, system-ui, sans-serif',
   headings: {
@@ -48,6 +52,13 @@ export const theme = createTheme({
   primaryShade: 6,
   defaultRadius: 'md',
   components: {
+    Combobox: Combobox.extend({
+      defaultProps: { position: 'bottom-start' },
+      styles: comboboxStyles,
+    }),
+    Select: Select.extend({ styles: comboboxStyles }),
+    MultiSelect: MultiSelect.extend({ styles: comboboxStyles }),
+    Autocomplete: Autocomplete.extend({ styles: comboboxStyles }),
     Badge: Badge.extend({
       styles: (theme, props) => {
         // Keep the badge's semantic colour even when its caller uses a filled
