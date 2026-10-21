@@ -2055,9 +2055,14 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
   const [rows, setRows] = useState<ProductMovement[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(false)
-  const [exportDocument, setExportDocument] = useState<ProductMovementExportDocument | null>(null)
-  const [exportError, setExportError] = useState<string | null>(null)
-  const [isExporting, setExporting] = useState(false)
+  const [exportState, dispatchExport] = useReducer((state: {
+    document: ProductMovementExportDocument | null
+    error: string | null
+    isExporting: boolean
+  }, action: { document?: ProductMovementExportDocument | null; error?: string | null; isExporting?: boolean }) => ({ ...state, ...action }), {
+    document: null, error: null, isExporting: false,
+  })
+  const { document: exportDocument, error: exportError, isExporting } = exportState
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const { density, setDensity } = useDataTableDensity('product-movement', 'normal')
   const filterError = getDateRangeError(dateFrom, dateTo, t)
@@ -2065,6 +2070,13 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
   const typesError = selectedTypes.length === 0 ? t('Оберіть хоча б один тип руху') : null
   const activeError = filterError || missingNetUidError || typesError || error
   const canExportMovements = hasPermission(PRODUCT_MOVEMENT_EXPORT_PERMISSION)
+
+  const exportRequestRef = useRef(0)
+
+  useEffect(() => {
+    dispatchExport({ document: null, error: null, isExporting: false })
+    return () => { exportRequestRef.current += 1 }
+  }, [dateFrom, dateTo, includeSiblings, movementType, productNetUid, selectedTypes])
 
   useEffect(() => {
     if (filterError || typesError || !productNetUid) {
@@ -2116,11 +2128,9 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
       return
     }
 
-    setExporting(true)
+    const requestId = ++exportRequestRef.current
+    dispatchExport({ document: null, error: null, isExporting: true })
     setError(null)
-
-    setExportDocument(null)
-    setExportError(null)
 
     try {
       const nextDocument = await exportProductMovementsDocument({
@@ -2131,11 +2141,11 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
         types: selectedTypes,
       })
 
-      setExportDocument(nextDocument)
+      if (requestId === exportRequestRef.current) dispatchExport({ document: nextDocument })
     } catch (exportError) {
-      setExportError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ руху товару'))
+      if (requestId === exportRequestRef.current) dispatchExport({ error: exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ руху товару') })
     } finally {
-      setExporting(false)
+      if (requestId === exportRequestRef.current) dispatchExport({ isExporting: false })
     }
   }
 
@@ -2201,7 +2211,7 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
             density={density}
             onDensityChange={setDensity}
             emptyText={t('Рух товару не знайдено')}
-            getRowId={(row, index) => getProductSiblingRowKey(row.Card, String(row.NetUid || row.Id || row.DocumentNumber || index))}
+            getRowId={(row, index) => getProductSiblingRowKey(row.Card, String(row.NetUid || row.Id || `${row.DocumentNumber || 'movement'}-${index}`))}
             height="100%"
             isLoading={isLoading}
             layoutVersion="product-movement-2"
@@ -2220,8 +2230,8 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
         opened={isExporting || Boolean(exportDocument) || Boolean(exportError)}
         title={t('Друк PDF')}
         onClose={() => {
-          setExportDocument(null)
-          setExportError(null)
+          exportRequestRef.current += 1
+          dispatchExport({ document: null, error: null, isExporting: false })
         }}
       />
     </div>

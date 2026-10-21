@@ -3180,6 +3180,12 @@ function isTextLikeKeyboardTarget(target: EventTarget | null): boolean {
   return target.isContentEditable || tagName === 'input' || tagName === 'select' || tagName === 'textarea'
 }
 
+function getMovementDateRangeError(from: string, to: string, t: (key: string) => string): string | null {
+  if (!from || !to) return t('Вкажіть дату початку та дату завершення')
+  if (from > to) return t('Дата початку не може бути пізнішою за дату завершення')
+  return null
+}
+
 function ProductInlineMovementsTab({
   direction,
   product,
@@ -3209,9 +3215,16 @@ function ProductInlineMovementsTab({
   const includeSiblings = hasSiblings && siblingScope === 'all'
   const labels = inlineMovementLabels[direction]
   const canExportMovements = hasPermission(PRODUCT_MOVEMENT_EXPORT_PERMISSION)
+  const filterError = getMovementDateRangeError(dateFrom, dateTo, t)
+  const exportRequestRef = useRef(0)
 
   useEffect(() => {
-    if (!productNetUid) {
+    dispatch({ type: 'export-clear' })
+    return () => { exportRequestRef.current += 1 }
+  }, [dateFrom, dateTo, direction, includeSiblings, productNetUid])
+
+  useEffect(() => {
+    if (!productNetUid || filterError) {
       return
     }
 
@@ -3253,13 +3266,14 @@ function ProductInlineMovementsTab({
     return () => {
       cancelled = true
     }
-  }, [dateFrom, dateTo, direction, includeSiblings, productNetUid, reloadKey, t])
+  }, [dateFrom, dateTo, direction, filterError, includeSiblings, productNetUid, reloadKey, t])
 
   async function exportRows() {
-    if (!canExportMovements || !productNetUid || state.isExporting || includeSiblings) {
+    if (!canExportMovements || !productNetUid || state.isExporting || includeSiblings || filterError) {
       return
     }
 
+    const requestId = ++exportRequestRef.current
     dispatch({ type: 'export-loading' })
 
     try {
@@ -3272,8 +3286,9 @@ function ProductInlineMovementsTab({
         ? await exportProductIncomeMovementsDocument(params)
         : await exportProductOutcomeMovementsDocument(params)
 
-      dispatch({ document, type: 'export-success' })
+      if (requestId === exportRequestRef.current) dispatch({ document, type: 'export-success' })
     } catch (exportError) {
+      if (requestId !== exportRequestRef.current) return
       dispatch({
         error: exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ'),
         type: 'export-error',
@@ -3290,10 +3305,14 @@ function ProductInlineMovementsTab({
           <ProductSiblingScopeControl id={`product-inline-${direction}-sibling-scope`} value={siblingScope} onChange={setSiblingScope} />
         ) : null}
         <div className="app-filter-actions">
+          <Button color="gray" variant="default" size="sm" disabled={!productNetUid || Boolean(filterError)}
+            leftSection={<RefreshCw size={16} />} loading={state.isLoading && !filterError} onClick={() => reload()}>
+            {t('Оновити')}
+          </Button>
           <PermissionGate permissionKey={PRODUCT_MOVEMENT_EXPORT_PERMISSION}>
             <Button color="gray" variant="default" size="sm"
               className="product-movement-toolbar__button"
-              disabled={!productNetUid || includeSiblings}
+              disabled={!productNetUid || includeSiblings || Boolean(filterError)}
               leftSection={<PdfIcon size={20} />}
               loading={state.isExporting}
               onClick={() => void exportRows()}
@@ -3311,7 +3330,8 @@ function ProductInlineMovementsTab({
           {t('У товару немає NetUid для завантаження руху товару')}
         </Alert>
       )}
-      {state.error && (
+      {filterError && <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">{filterError}</Alert>}
+      {!filterError && state.error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           <Stack gap="xs" align="flex-start">
             <span>{state.error}</span>
@@ -3321,7 +3341,7 @@ function ProductInlineMovementsTab({
           </Stack>
         </Alert>
       )}
-      {productNetUid && (direction === 'income' ? (
+      {productNetUid && !filterError && (direction === 'income' ? (
         <ProductIncomeMovementsGrid toolbarPortalTarget={tableToolbarSlot} emptyText={state.error ? '' : t(labels.empty)} includeSiblings={includeSiblings} isLoading={state.isLoading} rows={state.rows as ProductIncomeMovement[]} />
       ) : (
         <ProductOutcomeMovementsGrid toolbarPortalTarget={tableToolbarSlot} emptyText={state.error ? '' : t(labels.empty)} includeSiblings={includeSiblings} isLoading={state.isLoading} rows={state.rows as ProductOutcomeMovement[]} />
@@ -3333,7 +3353,10 @@ function ProductInlineMovementsTab({
         isLoading={state.isExporting}
         opened={state.isExporting || Boolean(state.document) || Boolean(state.exportError)}
         title={t('Друк PDF')}
-        onClose={() => dispatch({ type: 'export-clear' })}
+        onClose={() => {
+          exportRequestRef.current += 1
+          dispatch({ type: 'export-clear' })
+        }}
       />
       </Stack>
     </Stack>
@@ -3682,6 +3705,7 @@ function inlineMovementReducer(state: InlineMovementState, action: InlineMovemen
     case 'export-clear':
       return {
         ...state,
+        isExporting: false,
         document: null,
         exportError: null,
       }
@@ -3937,12 +3961,12 @@ function getIncomeMovementRowKey(row: ProductIncomeMovement, index: number): str
   return String(
     row.NetUid
       || row.Id
-      || `${row.IncomeToStorageNumber || row.IncomeInvoiceNumber || 'income'}-${row.IncomeToStorageDate || row.IncomeInvoiceDate || index}`,
+      || `${row.IncomeToStorageNumber || row.IncomeInvoiceNumber || 'income'}-${row.IncomeToStorageDate || row.IncomeInvoiceDate || ''}-${index}`,
   )
 }
 
 function getOutcomeMovementRowKey(row: ProductOutcomeMovement, index: number): string {
-  return String(row.NetUid || row.Id || `${row.DocumentNumber || 'outcome'}-${row.FromDate || index}`)
+  return String(row.NetUid || row.Id || `${row.DocumentNumber || 'outcome'}-${row.FromDate || ''}-${index}`)
 }
 
 function getIncomeMovementGridRowId(row: ProductIncomeMovement, index: number): string {

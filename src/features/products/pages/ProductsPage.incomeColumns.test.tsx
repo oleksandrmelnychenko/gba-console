@@ -317,6 +317,65 @@ describe('BUG-1276 product outcome bottom control', () => {
   })
 })
 
+describe('ProductsPage movement audit regressions', () => {
+  it.each(['Прихід', 'Розхід'] as const)('preserves separate %s rows from one document without duplicate React identities', async (tab) => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    getProductIncomeMovementsMock.mockResolvedValue([
+      { ...incomeMovement, IncomeToStorageNumber: 'SAME-DOCUMENT', IncomeToStorageDate: '2026-07-13T09:00:00', StorageName: 'WAREHOUSE-A' },
+      { ...incomeMovement, IncomeToStorageNumber: 'SAME-DOCUMENT', IncomeToStorageDate: '2026-07-13T09:00:00', StorageName: 'WAREHOUSE-B' },
+    ])
+    vi.mocked(getProductOutcomeMovements).mockResolvedValue([
+      { DocumentNumber: 'SAME-DOCUMENT', FromDate: '2026-10-21T10:00:00', StorageName: 'WAREHOUSE-A', Qty: 7 },
+      { DocumentNumber: 'SAME-DOCUMENT', FromDate: '2026-10-21T10:00:00', StorageName: 'WAREHOUSE-B', Qty: 18 },
+    ])
+    await openIncomeTab()
+    if (tab === 'Розхід') fireEvent.click(screen.getByRole('button', { name: tab }))
+    await screen.findByText('WAREHOUSE-A')
+    await screen.findByText('WAREHOUSE-B')
+    expect(error.mock.calls.filter((args) => args.some((arg) => String(arg).includes('same key')))).toEqual([])
+  })
+
+  it.each(['Прихід', 'Розхід'] as const)('does not request or export %s with an empty or reversed date interval', async (tab) => {
+    await openIncomeTab()
+    if (tab === 'Розхід') fireEvent.click(screen.getByRole('button', { name: tab }))
+    await waitFor(() => expect(tab === 'Прихід' ? getProductIncomeMovementsMock : getProductOutcomeMovements).toHaveBeenCalled())
+    const load = tab === 'Прихід' ? getProductIncomeMovementsMock : vi.mocked(getProductOutcomeMovements)
+    load.mockClear()
+    fireEvent.change(screen.getByLabelText('З'), { target: { value: '' } })
+    await screen.findByText('Вкажіть дату початку та дату завершення')
+    expect(load).not.toHaveBeenCalled()
+    expect((screen.getByRole('button', { name: 'Друк PDF' }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.change(screen.getByLabelText('З'), { target: { value: '2099-01-01' } })
+    await screen.findByText('Дата початку не може бути пізнішою за дату завершення')
+    expect(load).not.toHaveBeenCalled()
+  })
+
+  it('reloads a successful empty income response after synchronization without changing the dates', async () => {
+    getProductIncomeMovementsMock.mockResolvedValueOnce([]).mockResolvedValueOnce([
+      { ...incomeMovement, IncomeToStorageNumber: 'AFTER-SYNC' },
+    ])
+    await openIncomeTab()
+    const original = getProductIncomeMovementsMock.mock.calls[0][0]
+    const refresh = within(document.querySelector('.product-movement-toolbar') as HTMLElement).getByRole('button', { name: 'Оновити' })
+    await waitFor(() => expect((refresh as HTMLButtonElement).disabled).toBe(false))
+    fireEvent.click(refresh)
+    await screen.findByText('AFTER-SYNC')
+    expect(getProductIncomeMovementsMock).toHaveBeenLastCalledWith(original)
+  })
+
+  it('discards an income export completed after its date interval changed', async () => {
+    let resolveExport!: (document: { PdfDocumentURL: string }) => void
+    vi.mocked(exportProductIncomeMovementsDocument).mockReturnValue(new Promise((resolve) => { resolveExport = resolve }))
+    await openIncomeTab()
+    fireEvent.click(screen.getByRole('button', { name: 'Друк PDF' }))
+    await screen.findByRole('dialog', { name: /Друк PDF/ })
+    fireEvent.change(screen.getByLabelText('З'), { target: { value: '2026-07-13' } })
+    await act(async () => resolveExport({ PdfDocumentURL: 'https://example.com/stale.pdf' }))
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: /Друк PDF/ })).toBeNull())
+    expect(screen.queryByRole('link', { name: /PDF/ })).toBeNull()
+  })
+})
+
 describe('ProductsPage movement exports', () => {
   it.each([
     ['Прихід', exportProductIncomeMovementsDocument],

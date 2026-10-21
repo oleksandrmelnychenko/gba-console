@@ -1,10 +1,10 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
-import { getProductMovements } from '../api/productsApi'
+import { exportProductMovementsDocument, getProductMovements } from '../api/productsApi'
 import type { Product, ProductMovement, ProductSiblingCard, ProductSiblingCardRef } from '../types'
 
 vi.mock('../api/productsApi', async (importOriginal) => {
@@ -59,6 +59,7 @@ const siblingCards: ProductSiblingCard[] = [
 const getProductMovementsMock = vi.mocked(getProductMovements)
 
 beforeEach(() => {
+  vi.mocked(exportProductMovementsDocument).mockReset()
   getProductMovementsMock.mockReset().mockImplementation(async (params) => (params.includeSiblings
     ? [
         { Card: fenixCardRef, DocumentNumber: 'FX-IN', IncomeQty: 6, NetUid: 'movement-fenix' },
@@ -160,5 +161,37 @@ describe('product stock summary with sibling cards', () => {
 
     expect(screen.getByText('Всього')).toBeTruthy()
     expect(screen.queryByText('Разом на складах')).toBeNull()
+  })
+})
+
+
+describe('product movement drawer audit regressions', () => {
+  it('preserves separate FIFO rows of the same document without duplicate identities', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    getProductMovementsMock.mockResolvedValue([
+      { DocumentNumber: 'SPLIT-SALE', StorageName: 'WAREHOUSE-A', OutcomeQty: 2 },
+      { DocumentNumber: 'SPLIT-SALE', StorageName: 'WAREHOUSE-B', OutcomeQty: 3 },
+    ])
+    renderMovementDrawer()
+    await screen.findByText('WAREHOUSE-A')
+    await screen.findByText('WAREHOUSE-B')
+    expect(error.mock.calls.filter((args) => args.some((arg) => String(arg).includes('same key')))).toEqual([])
+  })
+
+  it.each(['scope', 'unmount'] as const)('discards a pending export after %s changes', async (change) => {
+    let resolveExport!: (document: { PdfDocumentURL: string }) => void
+    vi.mocked(exportProductMovementsDocument).mockReturnValue(new Promise((resolve) => { resolveExport = resolve }))
+    const view = renderMovementDrawer(siblingCards)
+    await screen.findByText('FX-IN')
+    fireEvent.click(screen.getByRole('button', { name: 'Друк PDF' }))
+    await screen.findByRole('dialog', { name: /Друк PDF/ })
+    if (change === 'scope') {
+      fireEvent.click(within(screen.getByRole('radiogroup', { name: 'Картки' })).getByRole('radio', { name: 'Разом' }))
+    } else {
+      view.unmount()
+    }
+    await act(async () => resolveExport({ PdfDocumentURL: 'https://example.com/stale.pdf' }))
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: /Друк PDF/ })).toBeNull())
+    expect(screen.queryByRole('link', { name: /PDF/ })).toBeNull()
   })
 })
