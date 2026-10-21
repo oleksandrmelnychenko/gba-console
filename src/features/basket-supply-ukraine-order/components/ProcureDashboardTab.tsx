@@ -1,49 +1,51 @@
 import { procurementLoadError } from '../procurementLoadError'
 import {
   Alert,
-  Badge,
   Button,
   Card,
   Group,
   NumberInput,
   Select,
-  SimpleGrid,
   Stack,
   Text,
-  } from '@mantine/core'
+} from '@mantine/core'
 import {
+  BarChart3,
+  CircleAlert,
+  Layers3,
+  TrendingUp,
   FilterX,
   RefreshCw,
 } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
-import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
-import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { AgingBars } from '../../../shared/ui/charts/AgingBars'
-import { ForecastLine } from '../../../shared/ui/charts/ForecastLine'
 import { UrgencyDonut } from '../../../shared/ui/charts/UrgencyDonut'
 import type { UrgencyLevel } from '../../../shared/ui/charts/chartTheme'
 import type { UrgencySliceInput } from '../../../shared/ui/charts/donutData'
-import type { ForecastPoint } from '../../../shared/ui/charts/forecastData'
-import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { usePermissions } from '../../auth/usePermissions'
 import { getSupplyDashboardSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
 import type { Client } from '../../supply-ukraine-orders/types'
 import { getSupplyDashboardCharts } from '../api/procurementApi'
 import { summarizeProcurementCharts } from '../procureDashboardModel'
+import { procurementQuantityFormat as qtyFormatter } from '../procurementQuantityFormat'
 import type {
   ProcurementCharts,
   ProcurementDemandSeries,
   ProcurementTopItem,
 } from '../procurementTypes'
-import { ProcurementCostSnapshot } from './ProcurementCostProof'
 import { ProcurementProductCell } from './ProcurementProductCell'
 import { ProcurementWorkspaceState } from './ProcurementWorkspaceState'
+import { TableChip } from '../../../shared/ui/TableChip'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { AnalyticsTabs } from '../../../shared/ui/analytics/AnalyticsControls'
+import { AnalyticsSeriesChart } from '../../../shared/ui/analytics/AnalyticsSeriesChart'
+import './procurement-dashboard.css'
 
 type ProcureDashboardState = {
   charts: ProcurementCharts | null
@@ -92,10 +94,6 @@ const URGENCY_TO_LEVEL: Record<string, UrgencyLevel> = {
   low: 'low',
 }
 
-const qtyFormatter = new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: 2,
-})
-
 const countFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 0,
 })
@@ -127,6 +125,8 @@ export function ProcureDashboardTab() {
 function ProcureDashboardTabContent() {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const { can } = usePermissions()
+  const canOpenConstructor = can(PermissionKeys.SystemPages.PurchaseCockpit.View)
   const [state, dispatch] = useReducer(dashboardReducer, initialState)
   const [producers, setProducers] = useState<Client[]>([])
   const [producerId, setProducerId] = useState<string | null>(null)
@@ -137,6 +137,11 @@ function ProcureDashboardTabContent() {
   const [selectedForecastProductId, setSelectedForecastProductId] = useState<
     number | null
   >(null)
+  const [mode, setMode] = useState('urgency')
+  const [urgencyFilter, setUrgencyFilter] = useState<'all' | 'critical' | 'attention'>('all')
+  const [detailProductId, setDetailProductId] = useState<number | null>(null)
+  const [pageSize, setPageSize] = useState(20)
+  const [pageSelection, setPageSelection] = useState({ page: 1, charts: null as ProcurementCharts | null })
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const { charts, error, isLoading } = state
 
@@ -203,6 +208,8 @@ function ProcureDashboardTabContent() {
 
   function applyFilters() {
     setSelectedForecastProductId(null)
+    setDetailProductId(null)
+    setUrgencyFilter('all')
     setAppliedProducerId(producerId ? Number(producerId) : null)
     setAppliedTopN(normalizeTopN(topN))
     reload()
@@ -210,6 +217,8 @@ function ProcureDashboardTabContent() {
 
   function resetFilters() {
     setSelectedForecastProductId(null)
+    setDetailProductId(null)
+    setUrgencyFilter('all')
     setProducerId(null)
     setTopN(15)
     setAppliedProducerId(null)
@@ -246,12 +255,13 @@ function ProcureDashboardTabContent() {
     draftProducerId !== appliedProducerId || normalizedTopN !== appliedTopN
   const hasAppliedFilters =
     typeof appliedProducerId === 'number' || appliedTopN !== 15
+  const displayProducerId = charts ? charts.producer_id : appliedProducerId
   const selectedProducerName =
-    producerOptions.find((option) => Number(option.value) === appliedProducerId)?.label
+    producerOptions.find((option) => Number(option.value) === displayProducerId)?.label
   const activeScopeLabel =
-    typeof appliedProducerId === 'number'
-      ? selectedProducerName || `${t('Виробник')} ${appliedProducerId}`
-      : t('Весь кошик')
+    typeof displayProducerId === 'number'
+      ? selectedProducerName || `${t('Виробник')} ${displayProducerId}`
+      : t('Усі виробники')
   const snapshotLabel = formatSnapshotDate(charts?.as_of_date ?? null, t)
   const hasUrgencyData = urgencyData.some((slice) => slice.value > 0)
   const hasDaysOfCoverData = (charts?.days_of_cover_hist ?? []).some(
@@ -261,7 +271,7 @@ function ProcureDashboardTabContent() {
   const selectedForecastSeries =
     forecastSeries.find(
       (series) => series.product_id === selectedForecastProductId,
-    ) ?? null
+    ) ?? forecastSeries[0] ?? null
   const hasForecastData = forecastSeries.length > 0
   const hasTopItems = (charts?.top_items.length ?? 0) > 0
   const hasUsefulData =
@@ -270,819 +280,177 @@ function ProcureDashboardTabContent() {
     (item) => item.producer_name || typeof item.producer_id === 'number',
   )
 
-  const forecastColumns = useMemo<
-    Array<DataTableColumn<ProcurementDemandSeries>>
-  >(
-    () => [
-      {
-        id: 'product',
-        header: t('Товар'),
-        accessor: (series) =>
-          series.product_name || series.vendor_code || series.product_id,
-        cell: (series) => {
-          const forecastSummary = summarizeDemandSeries(series)
+  const filteredItems = useMemo(() => (charts?.top_items ?? []).filter((item) =>
+    urgencyFilter === 'critical' ? item.urgency === 'critical'
+      : urgencyFilter === 'attention' ? ['critical', 'high'].includes(item.urgency) : true,
+  ), [charts, urgencyFilter])
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize))
+  const page = pageSelection.charts === charts ? Math.min(pageSelection.page, totalPages) : 1
+  const detailItem = charts?.top_items.find((item) => item.product_id === detailProductId)
+  const detailSeries = forecastSeries.find((series) => series.product_id === detailProductId)
 
-          return (
-            <div className="procure-dashboard__forecast-list-cell">
-              <ProcurementProductCell row={series} t={t} />
-              <div className="procure-dashboard__forecast-list-meta">
-                <span>
-                  {formatUkrainianCount(series.points.length, [
-                    t('період'),
-                    t('періоди'),
-                    t('періодів'),
-                  ])}
-                </span>
-                <strong>
-                  {t('Прогноз')} ·{' '}
-                  {forecastSummary.nextForecast === null
-                    ? '—'
-                    : qtyFormatter.format(forecastSummary.nextForecast)}
-                </strong>
-              </div>
-              <TableRowAction
-                action="details"
-                label={`${t('Відкрити графік')}: ${
-                  series.product_name ||
-                  series.vendor_code ||
-                  series.product_id
-                }`}
-                onClick={() => setSelectedForecastProductId(series.product_id)}
-              />
-            </div>
-          )
-        },
-        enableHiding: false,
-        enablePinning: false,
-        enableReorder: false,
-        enableResizing: false,
-        enableSorting: false,
-        fill: true,
-        width: 320,
-      },
-    ],
-    [t],
-  )
+  function selectUrgency(filter: typeof urgencyFilter) {
+    setMode('urgency')
+    setUrgencyFilter(filter)
+    setPageSelection({ page: 1, charts })
+  }
 
-  const topItemColumns = useMemo<Array<DataTableColumn<ProcurementTopItem>>>(
-    () => {
-      const columns: Array<DataTableColumn<ProcurementTopItem>> = [
-        {
-          id: 'product',
-          header: t('Товар'),
-          accessor: (item) => item.product_name || item.vendor_code || item.product_id,
-          cell: (item) => <ProcurementProductCell row={item} t={t} />,
-          width: 320,
-          fill: true,
-        },
-      ]
-
-      if (hasProducerData) {
-        columns.push({
-          id: 'producer',
-          header: t('Виробник'),
-          accessor: (item) => item.producer_name || item.producer_id || '',
-          cell: (item) => (
-            <div className="procure-table-entity-cell">
-              <span className="procure-table-entity-cell__primary">
-                {item.producer_name || item.producer_id || ''}
-              </span>
-              {item.producer_name && typeof item.producer_id === 'number' ? (
-                <span className="procure-table-entity-cell__meta">
-                  <span>{t('ID')}</span>
-                  <strong>{item.producer_id}</strong>
-                </span>
-              ) : null}
-            </div>
-          ),
-          width: 190,
-        })
-      }
-
-      columns.push(
-        {
-          id: 'urgency',
-          header: t('Терміновість'),
-          accessor: (item) => item.urgency,
-          cell: (item) => (
-            <Badge className={urgencyPillClass(item.urgency)} size="sm" variant="light">
-              {t(URGENCY_LABEL[item.urgency] ?? item.urgency)}
-            </Badge>
-          ),
-          width: 150,
-        },
-        {
-          id: 'suggested',
-          header: t('Рекомендовано'),
-          accessor: (item) => item.suggested_qty,
-          cell: (item) => (
-            <span className="procure-dashboard__table-number">
-              {qtyFormatter.format(item.suggested_qty)}
-            </span>
-          ),
-          width: 150,
-          align: 'right',
-        },
-        {
-          id: 'onHand',
-          header: t('В наявності'),
-          accessor: (item) => item.on_hand,
-          cell: (item) => (
-            <span className="procure-dashboard__table-number">
-              {qtyFormatter.format(item.on_hand)}
-            </span>
-          ),
-          width: 140,
-          align: 'right',
-        },
-        {
-          id: 'reorderPoint',
-          header: t('Точка замовлення'),
-          accessor: (item) => item.reorder_point,
-          cell: (item) => (
-            <span className="procure-dashboard__table-number">
-              {qtyFormatter.format(item.reorder_point)}
-            </span>
-          ),
-          width: 160,
-          align: 'right',
-        },
-        {
-          id: 'shortage',
-          header: t('Бракує до точки'),
-          accessor: (item) => Math.max(0, item.reorder_point - item.on_hand),
-          cell: (item) => (
-            <span className="procure-dashboard__table-number">
-              {qtyFormatter.format(Math.max(0, item.reorder_point - item.on_hand))}
-            </span>
-          ),
-          width: 130,
-          align: 'right',
-        },
-      )
-
-      return columns
+  const topItemColumns = useMemo<Array<DataTableColumn<ProcurementTopItem>>>(() => [
+    {
+      id: 'product', header: t('Товар'), accessor: (item) => item.product_name || item.vendor_code || item.product_id,
+      cell: (item) => <ProcurementProductCell row={item} t={t} />, width: 300, fill: true,
     },
-    [hasProducerData, t],
-  )
-
-  const selectedForecastSummary = selectedForecastSeries
-    ? summarizeDemandSeries(selectedForecastSeries)
-    : null
+    ...(hasProducerData ? [{
+      id: 'producer', header: t('Виробник'), accessor: (item: ProcurementTopItem) => item.producer_name || item.producer_id || '',
+      cell: (item: ProcurementTopItem) => <TableChip tone="document" value={item.producer_name || item.producer_id} />, width: 170,
+    }] : []),
+    {
+      id: 'urgency', header: t('Терміновість'), accessor: (item) => item.urgency,
+      cell: (item) => <TableChip value={t(URGENCY_LABEL[item.urgency] ?? item.urgency)} tone={item.urgency === 'critical' ? 'danger' : item.urgency === 'high' ? 'warning' : 'neutral'} />, width: 135,
+    },
+    ...([
+      ['suggested_qty', 'Рекомендовано'], ['on_hand', 'В наявності'], ['reorder_point', 'Точка замовлення'],
+    ] as const).map(([key, label]) => ({
+      id: key, header: t(label), accessor: (item: ProcurementTopItem) => item[key],
+      cell: (item: ProcurementTopItem) => <span className="procurement-dashboard__number">{qtyFormatter.format(item[key])}</span>,
+      width: 145, align: 'right' as const,
+    })),
+    {
+      id: 'shortage', header: t('Бракує до точки'), accessor: (item) => Math.max(0, item.reorder_point - item.on_hand),
+      cell: (item) => <span className="procurement-dashboard__number">{qtyFormatter.format(Math.max(0, item.reorder_point - item.on_hand))}</span>, width: 135, align: 'right',
+    },
+  ], [hasProducerData, t])
 
   return (
-    <Stack className="procure-dashboard" gap={6}>
-      <Card
-        className="app-data-card basket-supply-primary-card procure-dashboard__shell"
-        padding={0}
-        radius="md"
-        withBorder
-      >
-        <form
-          className="app-filter-bar basket-supply-command-bar procure-dashboard__toolbar"
-          onSubmit={(event) => {
-            event.preventDefault()
-            applyFilters()
-          }}
-        >
-          <Select
-            clearable
-            data={producerOptions}
-            label={t('Виробник')}
-            placeholder={t('Весь кошик')}
-            searchable
-            value={producerId}
-            w={280}
-            onChange={setProducerId}
-          />
-          <NumberInput
-            allowDecimal={false}
-            allowNegative={false}
-            label={t('Топ позицій')}
-            min={1}
-            onChange={(value) => setTopN(typeof value === 'number' ? value : '')}
-            value={topN}
-            w={140}
-          />
-          <div className="app-filter-actions">
-            <Button
-                aria-label={t('Скинути фільтри')}
-                disabled={!hasAppliedFilters && !hasDraftFilterChanges}
-                onClick={resetFilters}
-                type="button"
-                variant="default"
-               color="gray" className="registry-caption-action" title={t('Скинути фільтри')} leftSection={<FilterX size={17} />}>{t('Скинути фільтри')}</Button>
-            <div
-              className="app-filter-table-toolbar-slot"
-              ref={setTableToolbarTarget}
-            />
-            <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
-              leftSection={<RefreshCw size={16} />}
-              loading={isLoading}
-              type="submit"
-            >
-              {hasDraftFilterChanges ? t('Застосувати') : t('Оновити')}
-            </Button>
+    <Stack className="procurement-dashboard app-table-chips" gap={12}>
+      <form className="app-filter-bar procurement-dashboard__toolbar" onSubmit={(event) => { event.preventDefault(); applyFilters() }}>
+        <Select clearable searchable data={producerOptions} label={t('Виробник')} placeholder={t('Усі виробники')}
+          value={producerId} onChange={setProducerId} className="procurement-dashboard__producer" />
+        <NumberInput allowDecimal={false} allowNegative={false} label={t('Топ позицій')} min={1} max={100}
+          className="procurement-dashboard__top-n" value={topN} onChange={(value) => setTopN(typeof value === 'number' ? value : '')} w={118} />
+        <Button variant="default" color="gray" leftSection={<FilterX size={16} />} disabled={!hasAppliedFilters && !hasDraftFilterChanges}
+          onClick={resetFilters} type="button">{t('Скинути фільтри')}</Button>
+        <Button color="brand" leftSection={<RefreshCw size={16} />} loading={isLoading} type="submit">
+          {hasDraftFilterChanges ? t('Застосувати') : t('Оновити')}
+        </Button>
+        <div className="procurement-dashboard__snapshot"><span>{snapshotLabel}</span><TableChip tone="document" value={activeScopeLabel} /></div>
+      </form>
+      <Text component="h1" className="app-section-title" fw={600} size="sm">{t('Дашборд постачання')}</Text>
+      {error && <ProcurementWorkspaceState action={{ label: t('Повторити'), onClick: reload }}
+        description={charts ? t('Показано попередній зріз. Не вдалося отримати актуальні дані.') : t('Сервіс закупівель тимчасово недоступний. Повторіть завантаження.')}
+        surface title={error} tone="error" />}
+      {isLoading && !charts && <ProcurementWorkspaceState isLoading surface description="" title={t('Завантаження дашборда')} />}
+      {!isLoading && !hasUsefulData && !error && <ProcurementWorkspaceState surface title={t('Даних для аналізу поки немає')}
+        description={hasAppliedFilters ? t('Для вибраного виробника даних немає.') : t('Немає даних про запаси та попит.')}
+        action={hasAppliedFilters ? { label: t('Показати весь кошик'), onClick: resetFilters } : canOpenConstructor ? { label: t('Відкрити конструктор закупівель'), onClick: () => navigate('/basket-supply-ukraine-order/cockpit') } : undefined} />}
+      {hasUsefulData && <>
+        <div className="procurement-dashboard__metrics" aria-label={t('Поточні показники')}>
+          <DashboardMetric label={t('Всього позицій')} value={summary.totalPositions} active={mode === 'urgency' && urgencyFilter === 'all'} onClick={() => selectUrgency('all')} icon={<Layers3 size={16} />} />
+          <DashboardMetric label={t('Критичні позиції')} value={summary.criticalPositions} active={mode === 'urgency' && urgencyFilter === 'critical'} onClick={() => selectUrgency('critical')} icon={<CircleAlert size={16} />} />
+          <DashboardMetric label={t('Потребують уваги')} value={summary.attentionPositions} active={mode === 'urgency' && urgencyFilter === 'attention'} onClick={() => selectUrgency('attention')} icon={<BarChart3 size={16} />} />
+          <article className="procurement-dashboard__metric"><span>{t('Рекомендовано в добірці')}</span><strong>{qtyFormatter.format(summary.totalSuggested)}</strong><small>{summary.topItems} {t('позицій')}</small></article>
+        </div>
+        <Card className="app-section-card procurement-dashboard__analysis" withBorder radius="md" padding={12}>
+          <div className="procurement-dashboard__chart-toolbar">
+            <AnalyticsTabs label={t('Режим аналітики')} value={mode} onChange={setMode} items={[
+              { value: 'urgency', label: t('Терміновість'), icon: <CircleAlert size={16} /> },
+              { value: 'coverage', label: t('Покриття'), icon: <Layers3 size={16} /> },
+              { value: 'demand', label: t('Попит'), icon: <TrendingUp size={16} /> },
+            ]} />
+            {mode === 'demand' && hasForecastData && <Select aria-label={t('Товар для аналізу')} searchable allowDeselect={false}
+              data={forecastSeries.map((series) => ({ value: String(series.product_id), label: [series.vendor_code, series.product_name || series.product_id].filter(Boolean).join(' · ') }))}
+              value={String(selectedForecastSeries?.product_id)} onChange={(value) => setSelectedForecastProductId(value ? Number(value) : null)} className="procurement-dashboard__product-select" />}
           </div>
-        </form>
-
-        <Stack className="procure-dashboard__content" gap={6}>
-          <section
-            aria-labelledby="procure-dashboard-title"
-            className="procure-dashboard__intro"
-          >
-            <div className="procure-dashboard__intro-copy">
-              <Group gap="xs" wrap="nowrap">
-                <Text
-                  className="app-section-title"
-                  component="h1"
-                  fw={600}
-                  id="procure-dashboard-title"
-                  size="sm"
-                >
-                  {t('Дашборд постачання')}
-                </Text>
-                <AiFeatureBadge tooltip={t('AI-сервіс закупівель')} />
-              </Group>
-              <Text className="procure-dashboard__description">
-                {t(
-                  'Оперативний зріз потреби: від критичних залишків до кількості, яку варто замовити.',
-                )}
-              </Text>
-              {charts && <><AiHistoryLineageNote lineage={charts} /><ProcurementCostSnapshot context={charts} /></>}
-            </div>
-            <div className="procure-dashboard__snapshot">
-              <span>{t('Зріз даних')}</span>
-              <strong>{snapshotLabel}</strong>
-              <small>{activeScopeLabel}</small>
-            </div>
-          </section>
-
-          {error && (
-            <ProcurementWorkspaceState
-              action={{ label: t('Повторити'), onClick: reload }}
-              description={charts
-                ? t('Показано попередній зріз. Не вдалося отримати актуальні дані.')
-                : t('Сервіс закупівель тимчасово недоступний. Повторіть завантаження.')}
-              surface
-              title={error}
-              tone="error"
-            />
-          )}
-
-          {hasUsefulData ? (
-            <Card className="app-section-card procure-dashboard__summary" padding={0} radius="md" withBorder>
-              <div className="procure-dashboard__metrics">
-                <DashboardMetric
-                  hint={t('у вибраному зрізі')}
-                  isLoading={false}
-                  label={t('Всього позицій')}
-                  value={countFormatter.format(summary.totalPositions)}
-                />
-                <DashboardMetric
-                  hint={formatUkrainianCount(
-                    summary.criticalPositions,
-                    [t('критична позиція'), t('критичні позиції'), t('критичних позицій')],
-                  )}
-                  isLoading={false}
-                  label={t('Потребують уваги')}
-                  tone="danger"
-                  value={countFormatter.format(summary.attentionPositions)}
-                />
-                <DashboardMetric
-                  hint={formatUkrainianCount(
-                    summary.topItems,
-                    [t('пріоритетна позиція'), t('пріоритетні позиції'), t('пріоритетних позицій')],
-                  )}
-                  isLoading={false}
-                  label={t('Рекомендовано замовити')}
-                  tone="brand"
-                  value={qtyFormatter.format(summary.totalSuggested)}
-                />
-                <DashboardMetric
-                  hint={t('товарів із часовим рядом')}
-                  isLoading={false}
-                  label={t('Прогнозів попиту')}
-                  tone="model"
-                  value={countFormatter.format(summary.forecastProducts)}
-                />
-              </div>
-            </Card>
-          ) : null}
-
-          {isLoading && !charts ? (
-            <ProcurementWorkspaceState
-              description={t('Збираємо залишки, прогноз попиту та рекомендації до замовлення.')}
-              isLoading
-              surface
-              title={t('Готуємо оперативний зріз')}
-            />
-          ) : null}
-
-          {!isLoading && !hasUsefulData && !error ? (
-            <ProcurementWorkspaceState
-              action={
-                hasAppliedFilters
-                  ? {
-                      label: t('Показати весь кошик'),
-                      onClick: resetFilters,
-                    }
-                  : {
-                      label: t('Відкрити конструктор закупівель'),
-                      onClick: () => navigate('/basket-supply-ukraine-order/cockpit'),
-                    }
-              }
-              description={
-                hasAppliedFilters
-                  ? t('Для вибраного виробника немає дефіцитів або прогнозних позицій. Скиньте фільтр, щоб повернутися до загального зрізу.')
-                  : t('У загальному зрізі немає дефіцитів або прогнозних позицій. Поточний запас покриває розраховану потребу.')
-              }
-              facts={[
-                { label: t('Зріз'), value: snapshotLabel },
-                { label: t('Область'), value: activeScopeLabel },
-              ]}
-              surface
-              title={t('Даних для аналізу поки немає')}
-            />
-          ) : null}
-
-          <div className={'procure-dashboard__analysis' + (hasForecastData && (hasUrgencyData || hasDaysOfCoverData) ? ' has-forecast' : '')}>
-          {hasUsefulData && (hasUrgencyData || hasDaysOfCoverData) ? (
-            <SimpleGrid
-              className="procure-dashboard__chart-grid"
-              cols={{ base: 1, md: hasUrgencyData && hasDaysOfCoverData ? 2 : 1 }}
-              spacing={6}
-            >
-              {hasUrgencyData ? (
-                <Card
-                  className="app-section-card procure-dashboard__panel"
-                  padding="md"
-                  radius="md"
-                  withBorder
-                >
-                  <Stack gap={10}>
-                    <DashboardPanelHeader
-                      subtitle={t('Швидко показує, де замовлення не можна відкладати.')}
-                      title={t('Терміновість поповнення')}
-                    />
-                    <div className="procure-dashboard__urgency-layout">
-                      <UrgencyDonut
-                        chartLabel={
-                          charts
-                            ? countFormatter.format(sumCount(urgencyData))
-                            : undefined
-                        }
-                        data={urgencyData}
-                        emptyLabel={t('Даних не знайдено')}
-                        isLoading={isLoading}
-                        loadingLabel={t('Завантаження…')}
-                        size={150}
-                        thickness={26}
-                        valueFormatter={(value) => countFormatter.format(value)}
-                      />
-                      <div
-                        aria-label={t('Розподіл за терміновістю')}
-                        className="procure-dashboard__urgency-legend"
-                      >
-                        {urgencyData.map((slice) => (
-                          <div
-                            className="procure-dashboard__urgency-row"
-                            key={slice.level}
-                          >
-                            <span
-                              aria-hidden="true"
-                              className={`procure-dashboard__urgency-dot is-${slice.level}`}
-                            />
-                            <span>{slice.label}</span>
-                            <strong>{countFormatter.format(slice.value)}</strong>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </Stack>
-                </Card>
-              ) : null}
-
-              {hasDaysOfCoverData ? (
-                <Card
-                  className="app-section-card procure-dashboard__panel"
-                  padding="md"
-                  radius="md"
-                  withBorder
-                >
-                  <Stack gap={10}>
-                    <DashboardPanelHeader
-                      subtitle={t('Розподіл позицій за прогнозованим запасом у днях.')}
-                      title={t('Запас днів покриття')}
-                    />
-                    <AgingBars
-                      height={190}
-                      bucketKey="bucket"
-                      data={daysOfCoverData}
-                      emptyLabel={t('Даних не знайдено')}
-                      isLoading={isLoading}
-                      loadingLabel={t('Завантаження…')}
-                      series={[{ name: t('Позицій'), color: 'orange.6' }]}
-                      valueFormatter={(value) => countFormatter.format(value)}
-                    />
-                  </Stack>
-                </Card>
-              ) : null}
-            </SimpleGrid>
-          ) : null}
-
-          {hasForecastData ? (
-            <Card
-              className="app-section-card procure-dashboard__panel"
-              padding="md"
-              radius="md"
-              withBorder
-            >
-              <Stack gap={10}>
-                <Group align="flex-start" justify="space-between" wrap="wrap">
-                  <DashboardPanelHeader
-                    subtitle={t('Факт і модель попиту для позицій у фокусі.')}
-                    title={t('Прогноз попиту')}
-                  />
-                  <Badge className="app-role-pill is-gray" variant="light">
-                    {formatUkrainianCount(
-                      summary.forecastProducts,
-                      [t('товар'), t('товари'), t('товарів')],
-                    )}
-                  </Badge>
-                </Group>
-                <div className="procure-dashboard__forecast-list">
-                  <DataTable
-                    columns={forecastColumns}
-                    data={forecastSeries}
-                    defaultLayout={{ density: 'normal' }}
-                    emptyText={t('Прогнозів попиту не знайдено')}
-                    enablePinning={false}
-                    fillAvailableWidth
-                    getRowId={(series) => String(series.product_id)}
-                    isLoading={isLoading}
-                    layoutVersion={1}
-                    maxHeight={250}
-                    minWidth={280}
-                    rowClassName={(series) =>
-                      series.product_id === selectedForecastProductId
-                        ? 'is-selected'
-                        : undefined
-                    }
-                    showToolbar={false}
-                    showDensityToggle={false}
-                    tableId="basket-supply-ukraine-order-demand-series"
-                    onRowClick={(series) =>
-                      setSelectedForecastProductId(series.product_id)
-                    }
-                  />
-                </div>
-              </Stack>
-            </Card>
-          ) : null}
-
+          {mode === 'urgency' && <section aria-label={t('Терміновість поповнення')} className="procurement-dashboard__distribution">
+            <UrgencyDonut data={urgencyData} chartLabel={countFormatter.format(summary.totalPositions)} emptyLabel={t('Даних не знайдено')} size={208} thickness={30} valueFormatter={(value) => countFormatter.format(value)} />
+            <div className="procurement-dashboard__legend">{urgencyData.map((slice) => <div key={slice.level}>
+              <TableChip value={slice.label} tone={slice.level === 'critical' ? 'danger' : slice.level === 'high' ? 'warning' : 'neutral'} />
+              <strong>{countFormatter.format(slice.value)}</strong>
+              <span>{summary.totalPositions > 0 ? `${Math.round(slice.value / summary.totalPositions * 100)}%` : '—'}</span>
+            </div>)}</div>
+          </section>}
+          {mode === 'coverage' && <section aria-label={t('Запас днів покриття')}><AgingBars height={240} bucketKey="bucket" data={daysOfCoverData} emptyLabel={t('Даних не знайдено')}
+            series={[{ name: t('Позицій'), color: 'orange.6' }]} valueFormatter={(value) => countFormatter.format(value)} /></section>}
+          {mode === 'demand' && (selectedForecastSeries ? <DemandChart series={selectedForecastSeries} t={t} /> : <div className="procurement-dashboard__empty">{t('Прогнозів попиту не знайдено')}</div>)}
+        </Card>
+      </>}
+      {hasTopItems && <Card className="app-section-card procurement-dashboard__table" withBorder radius="md" padding={0}>
+        <div className="procurement-dashboard__table-toolbar">
+          <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Пріоритетні позиції')}</Text>
+          <TableChip value={`${filteredItems.length} / ${summary.topItems}`} />
+          {urgencyFilter !== 'all' && <Button variant="subtle" color="gray" size="compact-xs" onClick={() => selectUrgency('all')}>
+            {urgencyFilter === 'critical' ? t('Критичні в добірці') : t('Потребують уваги в добірці')} ×
+          </Button>}
+          <div className="procurement-dashboard__table-actions">
+            <Paginator page={page} pageSize={pageSize} totalPages={totalPages} isLoading={isLoading}
+              onPageChange={(value) => setPageSelection({ page: value, charts })}
+              onPageSizeChange={(value) => { setPageSize(value); setPageSelection({ page: 1, charts }) }} />
+            <div ref={setTableToolbarTarget} />
           </div>
-
-          {hasTopItems ? (
-            <Card
-              className="app-section-card procure-dashboard__panel"
-              padding="md"
-              radius="md"
-              withBorder
-            >
-              <Stack gap={10}>
-                <Group align="flex-start" justify="space-between" wrap="wrap">
-                  <DashboardPanelHeader
-                    subtitle={t('Позиції, які першими мають перейти в план закупівлі.')}
-                    title={t('Пріоритетні позиції')}
-                  />
-                  <Badge className="app-role-pill is-orange" variant="light">
-                    {formatUkrainianCount(
-                      summary.topItems,
-                      [t('позиція'), t('позиції'), t('позицій')],
-                    )}
-                  </Badge>
-                </Group>
-                <DataTable
-                  columns={topItemColumns}
-                  data={charts?.top_items ?? []}
-                  defaultLayout={{
-                    columnPinning: { left: ['product'] },
-                    density: 'normal',
-                  }}
-                  distributeAvailableWidth
-                  emptyText={t('Даних не знайдено')}
-                  getRowId={(item) => String(item.product_id)}
-                  isLoading={isLoading}
-                  layoutVersion={4}
-                  maxHeight={520}
-                  minWidth={hasProducerData ? 1180 : 980}
-                  showLayoutControls
-                  tableId="basket-supply-ukraine-order-procure-top-items"
-                  toolbarPortalTarget={tableToolbarTarget}
-                />
-              </Stack>
-            </Card>
-          ) : null}
-        </Stack>
-      </Card>
-
-      <AppDrawer
-        opened={Boolean(selectedForecastSeries)}
-        position="right"
-        size="compact"
-        title={t('Динаміка попиту')}
-        onClose={() => setSelectedForecastProductId(null)}
-      >
-        {selectedForecastSeries && selectedForecastSummary ? (
-          <Stack className="procure-dashboard__forecast-drawer" gap="md">
-            <div className="app-detail-hero procure-dashboard__forecast-hero">
-              <div>
-                <span className="app-detail-eyebrow">{t('Товар')}</span>
-                <div className="procure-dashboard__forecast-product">
-                  <ProcurementProductCell row={selectedForecastSeries} t={t} />
-                </div>
-              </div>
-              <div className="app-detail-hero__side">
-                <Badge className="app-role-pill is-gray" variant="light">
-                  {formatUkrainianCount(
-                    selectedForecastSeries.points.length,
-                    [t('період'), t('періоди'), t('періодів')],
-                  )}
-                </Badge>
-              </div>
-            </div>
-
-            <div
-              aria-label={t('Ключові показники прогнозу')}
-              className="procure-dashboard__forecast-metrics"
-            >
-              <ForecastMetric
-                label={t('Останній факт')}
-                value={selectedForecastSummary.lastActual}
-              />
-              <ForecastMetric
-                label={t('Наступний прогноз')}
-                tone="brand"
-                value={selectedForecastSummary.nextForecast}
-              />
-              <ForecastMetric
-                label={t('Горизонт')}
-                suffix={selectUkrainianForm(
-                  selectedForecastSummary.forecastPeriods,
-                  [t('період'), t('періоди'), t('періодів')],
-                )}
-                value={selectedForecastSummary.forecastPeriods}
-              />
-            </div>
-
-            <Card
-              className="app-section-card procure-dashboard__forecast-chart-card"
-              padding="md"
-              radius="md"
-              withBorder
-            >
-              <Stack gap={12}>
-                <DashboardPanelHeader
-                  subtitle={t('Фактичний попит і наступні прогнозні періоди.')}
-                  title={t('Графік попиту')}
-                />
-                <ForecastLine
-                  actualColor="gray.6"
-                  actualLabel={t('Факт')}
-                  data={buildForecastPoints(selectedForecastSeries)}
-                  emptyLabel={t('Даних не знайдено')}
-                  forecastColor="orange.6"
-                  forecastLabel={t('Прогноз')}
-                  height={300}
-                  valueFormatter={(value) => qtyFormatter.format(value)}
-                  withLegend
-                />
-              </Stack>
-            </Card>
-          </Stack>
-        ) : null}
+        </div>
+        <DataTable columns={topItemColumns} data={filteredItems} pagination={{ pageIndex: page - 1, pageSize }}
+          defaultLayout={{ columnPinning: { left: ['product'] }, density: 'normal' }} distributeAvailableWidth
+          emptyText={t('У добірці таких позицій немає')} getRowId={(item) => String(item.product_id)} isLoading={isLoading}
+          layoutVersion={5} maxHeight={520} minWidth={hasProducerData ? 1130 : 960} showLayoutControls
+          tableId="basket-supply-ukraine-order-procure-top-items" toolbarPortalTarget={tableToolbarTarget}
+          onSortingChange={() => setPageSelection({ page: 1, charts })}
+          onRowClick={(item) => setDetailProductId(item.product_id)} />
+      </Card>}
+      <AppDrawer opened={Boolean(detailItem)} position="right" size="compact" title={t('Аналітика товару')} onClose={() => setDetailProductId(null)}>
+        {detailItem && <Stack className="procurement-dashboard__detail app-table-chips" gap="sm">
+          <ProcurementProductCell row={detailItem} t={t} />
+          <Group gap="xs"><TableChip tone="document" value={detailItem.producer_name || detailItem.producer_id} /><TableChip tone={detailItem.urgency === 'critical' ? 'danger' : detailItem.urgency === 'high' ? 'warning' : 'neutral'} value={t(URGENCY_LABEL[detailItem.urgency] ?? detailItem.urgency)} /></Group>
+          <div className="procurement-dashboard__detail-metrics">{([
+            ['В наявності', detailItem.on_hand], ['Точка замовлення', detailItem.reorder_point], ['Рекомендовано', detailItem.suggested_qty],
+          ] as const).map(([label, value]) => <article key={label}><span>{t(label)}</span><strong>{qtyFormatter.format(value)}</strong></article>)}</div>
+          {detailSeries ? <DemandChart series={detailSeries} t={t} /> : <div className="procurement-dashboard__empty">{t('Прогнозу для цього товару немає')}</div>}
+          {canOpenConstructor && <Button color="brand" onClick={() => {
+            const params = new URLSearchParams({ productId: String(detailItem.product_id) })
+            const selectedProducerId = detailItem.producer_id ?? displayProducerId
+            if (typeof selectedProducerId === 'number') params.set('producerId', String(selectedProducerId))
+            navigate(`/basket-supply-ukraine-order/cockpit?${params.toString()}`)
+          }}>{t('Відкрити в конструкторі')}</Button>}
+        </Stack>}
       </AppDrawer>
     </Stack>
   )
 }
 
-type DashboardMetricProps = {
-  hint: string
-  isLoading: boolean
-  label: string
-  tone?: 'brand' | 'danger' | 'model'
-  value: string
-}
-
-function DashboardMetric({
-  hint,
-  isLoading,
-  label,
-  tone,
-  value,
-}: DashboardMetricProps) {
-  return (
-    <article
-      className={`procure-dashboard__metric${tone ? ` is-${tone}` : ''}`}
-    >
-      <span className="procure-dashboard__metric-label">{label}</span>
-      <strong className="procure-dashboard__metric-value">
-        {isLoading ? '—' : value}
-      </strong>
-      <span className="procure-dashboard__metric-hint">{hint}</span>
-    </article>
-  )
-}
-
-function DashboardPanelHeader({
-  subtitle,
-  title,
-}: {
-  subtitle: string
-  title: string
+function DashboardMetric({ label, value, active, onClick, icon }: {
+  label: string; value: number; active: boolean; onClick: () => void; icon: React.ReactNode
 }) {
-  return (
-    <div className="procure-dashboard__panel-heading">
-      <Text className="app-section-title" component="h2" fw={600} size="sm">
-        {title}
-      </Text>
-      <Text c="dimmed" size="xs">
-        {subtitle}
-      </Text>
-    </div>
-  )
+  return <article><button className={`procurement-dashboard__metric${active ? ' is-active' : ''}`} type="button" aria-pressed={active} onClick={onClick}>
+    <span>{icon}{label}</span><strong>{countFormatter.format(value)}</strong>
+  </button></article>
 }
 
-function ForecastMetric({
-  label,
-  suffix,
-  tone,
-  value,
-}: {
-  label: string
-  suffix?: string
-  tone?: 'brand'
-  value: number | null
-}) {
-  return (
-    <article
-      className={`procure-dashboard__forecast-metric${
-        tone ? ` is-${tone}` : ''
-      }`}
-    >
-      <span>{label}</span>
-      <strong>{value === null ? '—' : qtyFormatter.format(value)}</strong>
-      {suffix ? <small>{suffix}</small> : null}
-    </article>
-  )
+function DemandChart({ series, t }: { series: ProcurementDemandSeries; t: (value: string) => string }) {
+  return <AnalyticsSeriesChart points={series.points.map((point) => ({ label: point.period, actual: point.is_forecast ? null : point.units, forecast: point.is_forecast ? point.units : null }))}
+    valueLabel={t('Кількість')} formatValue={(value) => qtyFormatter.format(value)} height={240} emptyLabel={t('Даних не знайдено')} />
 }
 
-function buildUrgencySlices(
-  charts: ProcurementCharts | null,
-  t: (value: string) => string,
-): UrgencySliceInput[] {
-  if (!charts) {
-    return []
-  }
-
-  return charts.urgency_mix
-    .map((bucket) => {
-      const level = URGENCY_TO_LEVEL[bucket.urgency]
-
-      if (!level) {
-        return null
-      }
-
-      return {
-        label: t(URGENCY_LABEL[bucket.urgency] ?? bucket.urgency),
-        level,
-        value: bucket.count,
-      }
-    })
-    .filter((slice): slice is UrgencySliceInput => slice !== null)
-}
-
-function buildForecastPoints(series: ProcurementDemandSeries): ForecastPoint[] {
-  return series.points.map((point) => ({
-    forecast: point.is_forecast,
-    period: point.period,
-    value: point.units,
-  }))
-}
-
-function enrichDemandSeries(
-  charts: ProcurementCharts | null,
-): ProcurementDemandSeries[] {
-  if (!charts) {
-    return []
-  }
-
-  const productsById = new Map(
-    charts.top_items.map((item) => [item.product_id, item]),
-  )
-
-  return charts.demand_series.map((series) => {
-    const product = productsById.get(series.product_id)
-
-    return {
-      ...series,
-      image_url: series.image_url || product?.image_url,
-      oe_number: series.oe_number || product?.oe_number,
-      product_name: series.product_name || product?.product_name,
-      vendor_code: series.vendor_code || product?.vendor_code,
-    }
+function buildUrgencySlices(charts: ProcurementCharts | null, t: (value: string) => string): UrgencySliceInput[] {
+  return (charts?.urgency_mix ?? []).flatMap((bucket) => {
+    const level = URGENCY_TO_LEVEL[bucket.urgency]
+    return level ? [{ label: t(URGENCY_LABEL[bucket.urgency] ?? bucket.urgency), level, value: bucket.count }] : []
   })
 }
 
-function summarizeDemandSeries(series: ProcurementDemandSeries): {
-  forecastPeriods: number
-  lastActual: number | null
-  nextForecast: number | null
-} {
-  const actualPoints = series.points.filter((point) => !point.is_forecast)
-  const forecastPoints = series.points.filter((point) => point.is_forecast)
-
-  return {
-    forecastPeriods: forecastPoints.length,
-    lastActual: actualPoints.at(-1)?.units ?? null,
-    nextForecast: forecastPoints[0]?.units ?? null,
-  }
-}
-
-function sumCount(slices: UrgencySliceInput[]): number {
-  return slices.reduce((sum, slice) => sum + slice.value, 0)
+function enrichDemandSeries(charts: ProcurementCharts | null): ProcurementDemandSeries[] {
+  const productsById = new Map((charts?.top_items ?? []).map((item) => [item.product_id, item]))
+  return (charts?.demand_series ?? []).map((series) => {
+    const product = productsById.get(series.product_id)
+    return { ...series, image_url: series.image_url || product?.image_url, oe_number: series.oe_number || product?.oe_number,
+      product_name: series.product_name || product?.product_name, vendor_code: series.vendor_code || product?.vendor_code }
+  })
 }
 
 function normalizeTopN(value: number | ''): number {
-  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
-    return 15
-  }
-
-  return Math.max(1, Math.round(value))
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.min(100, Math.max(1, Math.round(value))) : 15
 }
 
-function formatSnapshotDate(
-  value: string | null,
-  t: (value: string) => string,
-): string {
-  if (!value) {
-    return t('Поточний стан')
-  }
-
+function formatSnapshotDate(value: string | null, t: (value: string) => string): string {
+  if (!value) return t('Поточний стан')
   const date = new Date(`${value}T00:00:00`)
-
-  if (Number.isNaN(date.getTime())) {
-    return value
-  }
-
-  return snapshotDateFormatter.format(date)
-}
-
-function formatUkrainianCount(
-  value: number,
-  forms: readonly [one: string, few: string, many: string],
-): string {
-  return `${countFormatter.format(value)} ${selectUkrainianForm(value, forms)}`
-}
-
-function selectUkrainianForm(
-  value: number,
-  forms: readonly [one: string, few: string, many: string],
-): string {
-  const absoluteValue = Math.abs(Math.trunc(value))
-  const mod100 = absoluteValue % 100
-  const mod10 = absoluteValue % 10
-
-  if (mod100 >= 11 && mod100 <= 14) {
-    return forms[2]
-  }
-
-  if (mod10 === 1) {
-    return forms[0]
-  }
-
-  if (mod10 >= 2 && mod10 <= 4) {
-    return forms[1]
-  }
-
-  return forms[2]
-}
-
-function urgencyPillClass(urgency: string): string {
-  const level = URGENCY_TO_LEVEL[urgency]
-
-  if (level === 'critical') {
-    return 'app-role-pill is-red'
-  }
-
-  if (level === 'high') {
-    return 'app-role-pill is-orange'
-  }
-
-  if (level === 'normal') {
-    return 'app-role-pill is-yellow'
-  }
-
-  return 'app-role-pill is-gray'
+  return Number.isNaN(date.getTime()) ? value : snapshotDateFormatter.format(date)
 }

@@ -1,0 +1,40 @@
+.procurement-item-analytics { min-width: 0; padding: 12px; background: var(--mantine-color-body); }
+.procurement-item-analytics__header, .procurement-item-analytics__identity, .procurement-item-analytics__chips, .procurement-item-analytics__toolbar, .procurement-item-analytics__controls, .procurement-item-analytics__footer, .procurement-item-analytics__scenario-label { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
+.procurement-item-analytics__header, .procurement-item-analytics__toolbar { justify-content: space-between; }
+.procurement-item-analytics__identity { flex: 1; }
+.procurement-item-analytics__identity > strong { font-size: 14px; overflow-wrap: anywhere; }
+.procurement-item-analytics__identity .app-table-chip { max-width: 260px; }
+.procurement-item-analytics__metrics, .procurement-item-analytics__facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding: 10px 0; }
+.procurement-item-analytics__metrics { margin-bottom: 8px; border-bottom: 1px solid var(--mantine-color-gray-2); }
+.procurement-item-analytics__metric > span { font-size: 12px; color: var(--mantine-color-gray-6); }
+.procurement-item-analytics__metric > div { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.procurement-item-analytics__metric strong { font-family: var(--font-mono); font-size: 17px; white-space: nowrap; }
+.procurement-item-analytics__panel { min-width: 0; padding-top: 8px; }
+.procurement-item-analytics__toolbar { margin-bottom: 4px; }
+.procurement-item-analytics__state { min-height: 220px; display: flex; gap: 10px; align-items: center; justify-content: center; color: var(--mantine-color-gray-6); font-size: 13px; }
+.procurement-item-analytics__partial { display: flex; justify-content: flex-end; margin: 4px 0; }
+.procurement-item-analytics__table-wrap { max-height: 240px; overflow: auto; }
+.procurement-item-analytics__table-wrap table { width: 100%; }
+.procurement-item-analytics__table-wrap td { font-family: var(--font-mono); white-space: nowrap; }
+.procurement-item-analytics__scenario-label { font-family: var(--font-mono); font-size: 12px; margin-bottom: 8px; }
+.procurement-item-analytics__details { border-top: 1px solid var(--mantine-color-gray-2); padding: 10px 0; font-size: 13px; }
+.procurement-item-analytics__details summary { cursor: pointer; font-family: var(--font-mono); }
+.procurement-item-analytics__footer { justify-content: flex-end; border-top: 1px solid var(--mantine-color-gray-2); padding-top: 8px; margin-top: 6px; }
+.procurement-item-analytics__footer strong { font-family: var(--font-mono); white-space: nowrap; font-size: 14px; }
+.procurement-item-analytics__quantity { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.procurement-item-analytics__quantity .mantine-NumberInput-root { width: 110px; }
+.procurement-item-analytics__quantity input { font-family: var(--font-mono); min-height: 30px; height: 30px; }
+@media (max-width: 600px) {
+  .procurement-item-analytics { padding: 10px; }
+  .procurement-item-analytics__metrics, .procurement-item-analytics__facts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .procurement-item-analytics__identity { flex-basis: 100%; }
+  .procurement-item-analytics__footer { justify-content: flex-start; }
+}
+.procurement-item-analytics__overview { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(460px, 1.4fr); align-items: center; gap: 12px; border-bottom: 1px solid var(--mantine-color-gray-2); margin-bottom: 8px; }
+.procurement-item-analytics__overview .procurement-item-analytics__header { padding-bottom: 8px; }
+.procurement-item-analytics__overview .procurement-item-analytics__metrics { margin: 0; border: 0; padding: 6px 0 10px; }
+.procurement-item-analytics__navigation { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.procurement-item-analytics__navigation .procurement-item-analytics__toolbar { margin: 0; gap: 8px; }
+@media (max-width: 850px) {
+  .procurement-item-analytics__overview { grid-template-columns: minmax(0, 1fr); gap: 0; }
+}

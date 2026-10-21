@@ -1,343 +1,102 @@
-import { AreaChart, BarChart } from '@mantine/charts'
-import { MONEY_AXIS_TICK } from '../../../shared/ui/charts/chartTheme'
-import { Alert, Card, Group, SimpleGrid, Stack, Text } from '@mantine/core'
-import { AlertTriangle, ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react'
-import { useMemo } from 'react'
-import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
+import { Alert, Button, Card, Group, Text } from '@mantine/core'
+import { AlertTriangle, BarChart3, Coins, ShoppingBag, Table2, Tag } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { AnalyticsTabs } from '../../../shared/ui/analytics/AnalyticsControls'
+import { AnalyticsSeriesChart } from '../../../shared/ui/analytics/AnalyticsSeriesChart'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { TableChip } from '../../../shared/ui/TableChip'
 import type { ProductAnalytics, ProductSalesSeriesPoint } from '../types'
 
-type ProductSalesAnalyticsProps = {
-  analytics: ProductAnalytics | null
-  error: string | null
-}
+const quantity = new Intl.NumberFormat('uk-UA', { maximumSignificantDigits: 15 })
+const money = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const monthFormat = new Intl.DateTimeFormat('uk-UA', { month: 'short', year: '2-digit', timeZone: 'UTC' })
+const dateFormat = new Intl.DateTimeFormat('uk-UA', { timeZone: 'UTC' })
+const metrics = [
+  { value: 'units', label: 'Продано', icon: <BarChart3 size={15} /> },
+  { value: 'order_count', label: 'Замовлень', icon: <ShoppingBag size={15} /> },
+  { value: 'revenue_eur', label: 'Виручка', icon: <Coins size={15} /> },
+  { value: 'avg_price_eur', label: 'Середня ціна', icon: <Tag size={15} /> },
+] as const
 
-type ProductSalesChartPoint = {
-  isComplete: boolean
-  label: string
-  month: string
-  orders: number
-  revenue: number
-  units: number
-}
+type Metric = typeof metrics[number]['value']
+type Point = { month: string; label: string; complete: boolean; units: number | null; order_count: number | null; revenue_eur: number | null; avg_price_eur: number | null }
+const finite = (value: unknown): number | null => typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null
+const monthIndex = (value: string) => /^\d{4}-(0[1-9]|1[0-2])$/.test(value) ? Number(value.slice(0, 4)) * 12 + Number(value.slice(5)) - 1 : null
+const monthKey = (index: number) => `${Math.floor(index / 12)}-${String(index % 12 + 1).padStart(2, '0')}`
+const formatMonth = (key: string) => monthFormat.format(new Date(`${key}-01T00:00:00Z`))
+const sum = (points: Point[], metric: 'units' | 'order_count' | 'revenue_eur') => points.length && points.every(point => point[metric] !== null) ? points.reduce((total, point) => total + point[metric]!, 0) : null
 
-type SalesTrend =
-  | { kind: 'insufficient-history' }
-  | { kind: 'no-sales' }
-  | { kind: 'percentage'; percent: number }
-  | { kind: 'resumed' }
-
-const integerFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
-const decimalFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 1 })
-const euroFormatter = new Intl.NumberFormat('uk-UA', {
-  currency: 'EUR',
-  maximumFractionDigits: 0,
-  style: 'currency',
-})
-const preciseEuroFormatter = new Intl.NumberFormat('uk-UA', {
-  currency: 'EUR',
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 2,
-  style: 'currency',
-})
-const compactEuroFormatter = new Intl.NumberFormat('uk-UA', {
-  currency: 'EUR',
-  maximumFractionDigits: 1,
-  notation: 'compact',
-  style: 'currency',
-})
-const monthFormatter = new Intl.DateTimeFormat('uk-UA', { month: 'short', year: '2-digit' })
-const dateFormatter = new Intl.DateTimeFormat('uk-UA')
-
-export function ProductSalesAnalytics({ analytics, error }: ProductSalesAnalyticsProps) {
-  const { t } = useI18n()
-  const points = useMemo(
-    () => normalizeSalesSeries(analytics?.sales_series ?? []),
-    [analytics?.sales_series],
-  )
-  const summary = useMemo(() => summarizeSales(points), [points])
-
-  if (error) {
-    return (
-      <Alert color="orange" icon={<AlertTriangle aria-hidden="true" size={17} />} title={t('Динаміка продажів недоступна')} variant="light">
-        {error}
-      </Alert>
-    )
-  }
-
-  if (!analytics || points.length === 0) {
-    return (
-      <Card className="assort-sales-analytics" radius="md" withBorder>
-        <Text className="app-section-title" fw={600} size="sm">{t('Продажі за обраний період')}</Text>
-        <Text c="dimmed" mt="xs" size="sm">{t('За вибраний період немає даних продажів.')}</Text>
-      </Card>
-    )
-  }
-
-  const partialMonth = points.some((point) => !point.isComplete)
-  const hasChartData = summary.units > 0 || summary.revenue > 0
-  const includedThrough = formatInclusiveEndDate(analytics.window.end_exclusive)
-
-  return (
-    <Card className="assort-sales-analytics" radius="md" withBorder>
-      <Stack gap={10}>
-        <Group align="flex-start" justify="space-between" wrap="wrap">
-          <Stack gap={2}>
-            <Group align="center" gap="xs">
-              <Text className="app-section-title" fw={600} size="sm">
-                {t('Продажі за останні')} {analytics.window.months} {t('міс.')}
-              </Text>
-              <AiFeatureBadge compact size="xs" tooltip={t('AI-аналітика продажів товару')} />
-            </Group>
-            <Text c="dimmed" size="xs">
-              {t('Показуємо лише продажі, які система враховує у звітах. Залишок на складі — стан на сьогодні.')}
-            </Text>
-            <Text c="dimmed" size="xs">
-              {t('У цьому розрахунку враховано продажі з')} {formatDate(analytics.effective_start)}.{' '}
-              {t('Дані в системі доступні з')} {formatDate(analytics.source_history_start)}.
-            </Text>
-          </Stack>
-          <TableChip value={`${t('Період')}: ${analytics.window.months} ${t('місяців')}`} />
-        </Group>
-
-        <SalesInsight trend={summary.trend} />
-
-        <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="xs">
-          <SalesStat label={t('Продано')} value={decimalFormatter.format(summary.units)} suffix={t('шт.')} />
-          <SalesStat label={t('Замовлень')} value={integerFormatter.format(summary.orders)} />
-          <SalesStat label={t('Виручка')} value={euroFormatter.format(summary.revenue)} />
-          <SalesStat
-            label={t('Середня ціна')}
-            value={summary.averagePrice === null ? t('Немає даних') : preciseEuroFormatter.format(summary.averagePrice)}
-          />
-        </SimpleGrid>
-
-        {hasChartData ? (
-          <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
-            <figure className="assort-sales-chart">
-              <figcaption>
-                <span>{t('Продані одиниці')}</span>
-                <small>{t('по місяцях')}</small>
-              </figcaption>
-              <div
-                aria-label={`${t('Продані одиниці по місяцях')}. ${buildAccessibleSeries(points, 'units', t('шт.'))}`}
-                role="img"
-              >
-                <BarChart
-                  barProps={{ isAnimationActive: false, radius: [4, 4, 0, 0] }}
-                  data={points}
-                  dataKey="label"
-                  gridAxis="y"
-                  h={220}
-                  maxBarWidth={28}
-                  series={[{ color: 'teal.6', label: t('Продано'), name: 'units' }]}
-                  tickLine="y"
-                  tooltipAnimationDuration={0}
-                  valueFormatter={(value) => `${decimalFormatter.format(value)} ${t('шт.')}`}
-                  xAxisProps={{ minTickGap: 18 }}
-                  yAxisProps={{ allowDecimals: false, tickFormatter: (value: number) => integerFormatter.format(value), width: 34 }}
-                />
-              </div>
-            </figure>
-
-            <figure className="assort-sales-chart">
-              <figcaption>
-                <span>{t('Виручка')}</span>
-                <TableChip tone="source" value="EUR" />
-              </figcaption>
-              <div
-                aria-label={`${t('Виручка по місяцях')}. ${buildAccessibleSeries(points, 'revenue', 'EUR')}`}
-                role="img"
-              >
-                <AreaChart
-                  areaProps={{ isAnimationActive: false }}
-                  classNames={{ tooltipItemData: 'app-money' }}
-                  connectNulls={false}
-                  curveType="linear"
-                  data={points}
-                  dataKey="label"
-                  fillOpacity={0.12}
-                  gridAxis="y"
-                  h={220}
-                  series={[{ color: 'orange.6', label: t('Виручка'), name: 'revenue' }]}
-                  tickLine="y"
-                  tooltipAnimationDuration={0}
-                  valueFormatter={(value) => euroFormatter.format(value)}
-                  withDots={false}
-                  withGradient={false}
-                  xAxisProps={{ minTickGap: 18 }}
-                  yAxisProps={{ tick: MONEY_AXIS_TICK, tickFormatter: (value: number) => compactEuroFormatter.format(value), width: 54 }}
-                />
-              </div>
-            </figure>
-          </SimpleGrid>
-        ) : (
-          <div className="assort-sales-empty">
-            <Text fw={600} size="sm">{t('Продажів за обраний період не було.')}</Text>
-            <Text c="dimmed" size="xs">
-              {t('Графіки не показуємо, тому що всі значення дорівнюють нулю.')}
-            </Text>
-          </div>
-        )}
-
-        <Text c="dimmed" className="assort-sales-analytics__caption" size="xs">
-          {partialMonth
-            ? `* ${t('Останній місяць періоду ще не завершений, тому його не враховуємо в оцінці тенденції. Дані враховано по')} ${includedThrough} ${t('включно')}. `
-            : ''}
-          {t('Залишок і покриття показані на сьогодні.')}
-        </Text>
-      </Stack>
-    </Card>
-  )
-}
-
-function SalesInsight({ trend }: { trend: SalesTrend }) {
-  const { t } = useI18n()
-
-  if (trend.kind === 'insufficient-history') {
-    return (
-      <div className="assort-sales-insight is-neutral">
-        <Minus aria-hidden="true" size={16} />
-        <Text size="xs">{t('Для надійного тренду потрібно щонайменше шість завершених місяців.')}</Text>
-      </div>
-    )
-  }
-
-  if (trend.kind === 'resumed') {
-    return (
-      <div className="assort-sales-insight is-positive">
-        <ArrowUpRight aria-hidden="true" size={16} />
-        <Text size="xs">
-          {t('Продажі відновилися: останні 3 завершені місяці мають попит після нульових попередніх 3 місяців.')}
-        </Text>
-      </div>
-    )
-  }
-
-  if (trend.kind === 'no-sales') {
-    return (
-      <div className="assort-sales-insight is-neutral">
-        <Minus aria-hidden="true" size={16} />
-        <Text size="xs">{t('За останні 6 повних місяців цей товар не продавався.')}</Text>
-      </div>
-    )
-  }
-
-  const trendPercent = trend.percent
-  const isGrowing = trendPercent > 0
-  const isDeclining = trendPercent < 0
-  const Icon = isGrowing ? ArrowUpRight : isDeclining ? ArrowDownRight : Minus
-  const tone = isGrowing ? 'positive' : isDeclining ? 'negative' : 'neutral'
-  const direction = isGrowing ? t('вище') : isDeclining ? t('нижче') : t('без змін')
-
-  return (
-    <div className={`assort-sales-insight is-${tone}`}>
-      <Icon aria-hidden="true" size={16} />
-      <Text size="xs">
-        {t('Середні продажі останніх 3 завершених місяців')} {direction}{' '}
-        {isGrowing || isDeclining ? <b>{Math.abs(trendPercent)}%</b> : null}{' '}
-        {t('проти попередніх 3 місяців')}.
-      </Text>
-    </div>
-  )
-}
-
-function SalesStat({ label, suffix, value }: { label: string; suffix?: string; value: string }) {
-  return (
-    <div className="assort-sales-stat">
-      <span>{label}</span>
-      <b>{value}{suffix ? <small> {suffix}</small> : null}</b>
-    </div>
-  )
-}
-
-function normalizeSalesSeries(series: ProductSalesSeriesPoint[]): ProductSalesChartPoint[] {
-  return series.flatMap((point) => {
-    if (!/^\d{4}-\d{2}$/.test(point.month)) {
-      return []
-    }
-
-    const units = toFiniteNonNegative(point.units)
-    const orders = toFiniteNonNegative(point.order_count)
-    const revenue = toFiniteNonNegative(point.revenue_eur)
-
-    if (units === null || orders === null || revenue === null) {
-      return []
-    }
-
-    return [{
-      isComplete: point.is_complete,
-      label: `${formatMonth(point.month)}${point.is_complete ? '' : '*'}`,
-      month: point.month,
-      orders,
-      revenue,
-      units,
-    }]
+function salesPoints(analytics: ProductAnalytics | null, months: number): Point[] {
+  if (!analytics) return []
+  const end = new Date(`${analytics.window.end_exclusive}T00:00:00Z`)
+  if (!Number.isFinite(end.getTime())) return []
+  end.setUTCDate(end.getUTCDate() - 1)
+  const last = end.getUTCFullYear() * 12 + end.getUTCMonth()
+  const earliest = monthIndex(analytics.effective_start.slice(0, 7)) ?? last - months + 1
+  const first = Math.max(last - months + 1, earliest)
+  const byMonth = new Map(analytics.sales_series.filter(point => monthIndex(point.month) !== null).map(point => [point.month, point]))
+  return Array.from({ length: Math.max(0, last - first + 1) }, (_, offset) => {
+    const month = monthKey(first + offset)
+    const point: ProductSalesSeriesPoint | undefined = byMonth.get(month)
+    return { month, label: formatMonth(month), complete: point?.is_complete === true,
+      units: finite(point?.units), order_count: finite(point?.order_count), revenue_eur: finite(point?.revenue_eur), avg_price_eur: finite(point?.avg_price_eur) }
   })
 }
 
-function summarizeSales(points: ProductSalesChartPoint[]) {
-  const units = points.reduce((total, point) => total + point.units, 0)
-  const orders = points.reduce((total, point) => total + point.orders, 0)
-  const revenue = points.reduce((total, point) => total + point.revenue, 0)
-  const averagePrice = units > 0 ? revenue / units : null
-  const complete = points.filter((point) => point.isComplete)
-  const recent = complete.slice(-3)
-  const previous = complete.slice(-6, -3)
-  const recentAverage = average(recent.map((point) => point.units))
-  const previousAverage = average(previous.map((point) => point.units))
-  let trend: SalesTrend
-
-  if (recent.length !== 3 || previous.length !== 3) {
-    trend = { kind: 'insufficient-history' }
-  } else if (previousAverage === 0) {
-    trend = recentAverage > 0 ? { kind: 'resumed' } : { kind: 'no-sales' }
-  } else {
-    trend = {
-      kind: 'percentage',
-      percent: Math.round(((recentAverage / previousAverage) - 1) * 100),
-    }
-  }
-
-  return { averagePrice, orders, revenue, trend, units }
+function salesTrend(points: Point[]) {
+  const complete = points.filter(point => point.complete)
+  const comparison = complete.slice(-6)
+  const consecutive = comparison.length === 6 && comparison.every((point, index) => point.units !== null && (!index || monthIndex(point.month)! === monthIndex(comparison[index - 1].month)! + 1))
+  if (!consecutive) return { label: 'Недостатньо історії для тренду', tone: 'neutral' as const }
+  const previous = comparison.slice(0, 3).reduce((total, point) => total + point.units!, 0)
+  const recent = comparison.slice(3).reduce((total, point) => total + point.units!, 0)
+  if (previous === 0) return { label: recent > 0 ? 'Продажі відновилися' : 'Без продажів', tone: recent > 0 ? 'success' as const : 'neutral' as const }
+  const change = Math.round((recent / previous - 1) * 100)
+  return { label: `Тренд 3 міс.: ${change > 0 ? '+' : change < 0 ? '−' : ''}${Math.abs(change)}%`, tone: change < 0 ? 'danger' as const : change > 0 ? 'success' as const : 'neutral' as const }
 }
 
-function average(values: number[]): number {
-  return values.length === 0 ? 0 : values.reduce((total, value) => total + value, 0) / values.length
-}
+export function ProductSalesAnalytics({ analytics, error }: { analytics: ProductAnalytics | null; error: string | null }) {
+  const { t } = useI18n()
+  const [months, setMonths] = useState('12')
+  const [metric, setMetric] = useState<Metric>('units')
+  const [table, setTable] = useState(false)
+  const points = useMemo(() => salesPoints(analytics, Number(months)), [analytics, months])
+  const allPoints = useMemo(() => salesPoints(analytics, 12), [analytics])
+  const trend = salesTrend(allPoints)
+  const units = sum(points, 'units')
+  const revenue = sum(points, 'revenue_eur')
+  const totals: Record<Metric, number | null> = { units, order_count: sum(points, 'order_count'), revenue_eur: revenue,
+    avg_price_eur: units !== null && units > 0 && revenue !== null ? revenue / units : null }
+  const isMoney = metric === 'revenue_eur' || metric === 'avg_price_eur'
+  const formatValue = (value: number) => (isMoney ? money : quantity).format(value)
+  const hasData = points.some(point => metrics.some(item => point[item.value] !== null))
+  const partial = points.some(point => !point.complete && metrics.some(item => point[item.value] !== null))
+  const missing = points.some(point => metrics.slice(0, 3).some(item => point[item.value] === null))
+  const end = analytics ? new Date(`${analytics.window.end_exclusive}T00:00:00Z`) : null
+  if (end) end.setUTCDate(end.getUTCDate() - 1)
 
-function toFiniteNonNegative(value: number | null | undefined): number | null {
-  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null
-}
+  if (error) return <Alert color="gray" icon={<AlertTriangle size={17} />} title={t('Динаміка продажів недоступна')} variant="outline">{error}</Alert>
 
-function formatMonth(month: string): string {
-  return monthFormatter.format(new Date(`${month}-01T00:00:00Z`)).replace('.', '')
-}
-
-function formatDate(value: string): string {
-  const date = new Date(`${value}T00:00:00Z`)
-
-  return Number.isNaN(date.getTime())
-    ? value
-    : dateFormatter.format(date)
-}
-
-function formatInclusiveEndDate(endExclusive: string): string {
-  const date = new Date(`${endExclusive}T00:00:00Z`)
-
-  if (Number.isNaN(date.getTime())) {
-    return endExclusive
-  }
-
-  date.setUTCDate(date.getUTCDate() - 1)
-  return dateFormatter.format(date)
-}
-
-function buildAccessibleSeries(
-  points: ProductSalesChartPoint[],
-  key: 'revenue' | 'units',
-  unit: string,
-): string {
-  return points.map((point) => `${point.month}: ${decimalFormatter.format(point[key])} ${unit}`).join(', ')
+  return <Card className="assort-sales-analytics" radius="md" withBorder>
+    <div className="assort-sales-toolbar">
+      <Text component="h2" className="app-section-title" fw={600} size="sm">{t('Продажі')}</Text>
+      <Group gap={6}>
+        <AnalyticsTabs label={t('Період продажів')} value={months} onChange={setMonths} items={['3', '6', '12'].map(value => ({ value, label: `${value} ${t('міс.')}` }))} />
+        <Button size="compact-xs" variant={table ? 'filled' : 'default'} color={table ? 'brand' : 'gray'} aria-pressed={table} leftSection={<Table2 size={14} />} onClick={() => setTable(!table)}>{t('Дані')}</Button>
+      </Group>
+    </div>
+    {!hasData ? <div className="assort-sales-empty">{t('За вибраний період немає даних продажів.')}</div> : <>
+      <div className="assort-sales-metrics">
+        <AnalyticsTabs label={t('Показник продажів')} value={metric} onChange={value => setMetric(value as Metric)} items={metrics.map(item => ({ ...item, label: t(item.label), valueLabel: <>{totals[item.value] === null ? '—' : (item.value === 'units' || item.value === 'order_count' ? quantity : money).format(totals[item.value]!)}{(item.value === 'revenue_eur' || item.value === 'avg_price_eur') && <> <TableChip tone="source" value="EUR" /></>}</> }))} />
+      </div>
+      <div className="assort-sales-context">
+        <span>{points[0]?.label} — {points.at(-1)?.label}</span>
+        <TableChip value={t(trend.label)} tone={trend.tone} title={t('Останні 3 завершені місяці проти попередніх 3; неповні місяці не враховано.')} />
+        {partial && <TableChip value={t('Неповний місяць')} tone="neutral" title={`${t('Дані враховано по')} ${end && Number.isFinite(end.getTime()) ? dateFormat.format(end) : '—'}. ${t('Неповні місяці не враховано в тренді.')}`} />}
+        {missing && <TableChip value={t('Неповні дані')} tone="warning" title={t('Відсутні значення не замінено нулями.')} />}
+      </div>
+      {table ? <div className="assort-sales-table"><table className="app-static-table"><thead><tr><th>{t('Місяць')}</th>{metrics.map(item => <th key={item.value}>{t(item.label)}{item.value.endsWith('eur') ? ', EUR' : ''}</th>)}</tr></thead><tbody>{[...points].reverse().map(point => <tr key={point.month}><td>{point.label}{!point.complete && <TableChip value={t('неповний')} />}</td>{metrics.map(item => <td key={item.value}>{point[item.value] === null ? '—' : (item.value.endsWith('eur') ? money : quantity).format(point[item.value]!)}</td>)}</tr>)}</tbody></table></div>
+        : <AnalyticsSeriesChart points={points.map(point => ({ label: `${point.label}${point.complete ? '' : ` · ${t('неповний')}`}`, actual: point[metric] }))} valueLabel={`${t(metrics.find(item => item.value === metric)!.label)}${isMoney ? ', EUR' : ''}`} formatValue={formatValue} height={200} emptyLabel={t('За вибраний період немає даних продажів.')} />}
+    </>}
+  </Card>
 }

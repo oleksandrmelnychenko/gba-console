@@ -3,6 +3,7 @@ import type {
   ColumnOrderState,
   ColumnPinningState,
   ColumnSizingState,
+  PaginationState,
   SortingState,
   VisibilityState,
 } from '@tanstack/react-table'
@@ -109,6 +110,8 @@ export type DataTableProps<TData> = {
   manualSorting?: boolean
   sorting?: DataTableSortingState
   onSortingChange?: (sorting: DataTableSortingState) => void
+  /** Optional controlled client pagination, applied after sorting. The caller owns page changes and resets; pageIndex is zero-based. */
+  pagination?: PaginationState
   renderExpandedRow?: (row: TData) => ReactNode
   getRowCanExpand?: (row: TData) => boolean
   expandColumnLabels?: DataTableExpandColumnLabels

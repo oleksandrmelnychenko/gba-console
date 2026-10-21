@@ -498,18 +498,17 @@
   --data-table-cell-bg: var(--mantine-color-yellow-0);
 }
 
-/* Row hover — the warm brand tint (came from the old console skin, kept as the
-   shared default per the pattern). */
+/* Surfaces may select a neutral interaction palette without changing row geometry. */
 .data-table-row.data-table-row-clickable:hover .data-table-cell {
-  --data-table-cell-bg: #fffaf5;
+  --data-table-cell-bg: var(--data-table-hover-bg, #fffaf5);
 }
 
 .data-table-row.is-selected {
-  --data-table-cell-bg: var(--mantine-color-orange-0);
+  --data-table-cell-bg: var(--data-table-selected-bg, var(--mantine-color-orange-0));
 }
 
 .data-table-row.is-selected.data-table-row-clickable:hover .data-table-cell {
-  --data-table-cell-bg: var(--mantine-color-orange-0);
+  --data-table-cell-bg: var(--data-table-selected-bg, var(--mantine-color-orange-0));
 }
 
 .data-table-empty {

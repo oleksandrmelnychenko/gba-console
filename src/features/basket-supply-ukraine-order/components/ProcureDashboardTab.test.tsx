@@ -1,9 +1,10 @@
 import { fixtureCostContext } from '../procurementCostTestFixtures'
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { theme } from '../../../shared/theme/theme'
 import { getSupplyDashboardSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
 import { getSupplyDashboardCharts } from '../api/procurementApi'
@@ -183,7 +184,7 @@ describe('ProcureDashboardTab', () => {
     )
 
     expect(await screen.findByText('Даних для аналізу поки немає')).not.toBeNull()
-    expect(screen.getByText(/Поточний запас покриває розраховану потребу/)).not.toBeNull()
+    expect(screen.getByText('Немає даних про запаси та попит.')).not.toBeNull()
     expect(screen.queryByText('Терміновість поповнення')).toBeNull()
     expect(screen.queryByText('Запас днів покриття')).toBeNull()
     expect(
@@ -191,31 +192,108 @@ describe('ProcureDashboardTab', () => {
     ).not.toBeNull()
   })
 
-  it('opens the selected product forecast in a right-side detail sheet', async () => {
-    render(
-      <MemoryRouter>
-        <I18nProvider>
-          <MantineProvider theme={theme}>
-            <ProcureDashboardTab />
-          </MantineProvider>
-        </I18nProvider>
-      </MemoryRouter>,
-    )
+  it('switches analytical modes without fetching again and opens the clicked priority product', async () => {
+    renderDashboard()
+    await screen.findByText('Всього позицій')
+    expect(screen.getByLabelText('Терміновість поповнення')).not.toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Покриття' }))
+    expect(screen.getByLabelText('Запас днів покриття')).not.toBeNull()
+    expect(screen.queryByLabelText('Терміновість поповнення')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Попит' }))
+    expect(screen.getByRole('combobox', { name: 'Товар для аналізу' })).not.toBeNull()
+    expect(screen.getByRole('button', { name: 'Факт' })).not.toBeNull()
+    expect(getSupplyDashboardCharts).toHaveBeenCalledOnce()
 
-    expect(await screen.findByText('Прогноз попиту')).not.toBeNull()
-    expect(screen.queryByText('Графік попиту')).toBeNull()
+    fireEvent.click(screen.getByText('Гальмівний диск'))
+    const drawer = await screen.findByRole('dialog')
+    expect(within(drawer).getByText('Аналітика товару')).not.toBeNull()
+    expect(within(drawer).getByText('7,5')).not.toBeNull()
+    expect(within(drawer).getByRole('button', { name: 'Відкрити в конструкторі' })).not.toBeNull()
+    expect(getSupplyDashboardCharts).toHaveBeenCalledOnce()
+  })
 
-    const openForecastButton = document.querySelector<HTMLButtonElement>(
-      '[aria-label="Відкрити графік: Гальмівний диск"]',
-    )
+  it('scopes KPI filtering to the top-item selection and preserves actual global counts', async () => {
+    vi.mocked(getSupplyDashboardCharts).mockResolvedValue({ ...charts, top_items: [
+      charts.top_items[0], { ...charts.top_items[0], product_id: 102, product_name: 'Інший товар', urgency: 'normal' },
+    ] })
+    renderDashboard()
+    await screen.findByText('Інший товар')
+    expect(screen.getByText('Рекомендовано в добірці').closest('article')?.textContent).toContain('15')
+    fireEvent.click(screen.getByRole('button', { name: /Критичні позиції/ }))
+    expect(screen.queryByText('Інший товар')).toBeNull()
+    expect(screen.getByText('Критичні в добірці ×')).not.toBeNull()
+    expect(screen.getByText('Всього позицій').closest('article')?.textContent).toContain('25')
+    fireEvent.click(screen.getByRole('button', { name: /Критичні в добірці/ }))
+    expect(screen.getByText('Інший товар')).not.toBeNull()
+    expect(getSupplyDashboardCharts).toHaveBeenCalledOnce()
+  })
 
-    expect(openForecastButton).not.toBeNull()
-    fireEvent.click(openForecastButton!)
+  it('preserves fractional quantities in summary, priority cells, product details and chart inspection', async () => {
+    vi.mocked(getSupplyDashboardCharts).mockResolvedValue({
+      ...charts,
+      top_items: [{ ...charts.top_items[0], suggested_qty: 0.021, on_hand: 0.004, reorder_point: 0.025 }],
+      demand_series: [{ product_id: 101, points: [
+        { is_forecast: false, period: '2026-06', units: 0.004 },
+        { is_forecast: true, period: '2026-07', units: 0.021 },
+      ] }],
+    })
+    renderDashboard()
+    await screen.findByText('Гальмівний диск')
+    expect(screen.getByText('Рекомендовано в добірці').closest('article')?.querySelector('strong')?.textContent).toBe('0,021')
+    const productRow = screen.getByText('Гальмівний диск').closest('tr')!
+    expect(within(productRow).getAllByText('0,021').length).toBeGreaterThan(0)
+    expect(within(productRow).getByText('0,004')).not.toBeNull()
+    expect(within(productRow).getByText('0,025')).not.toBeNull()
 
-    expect(await screen.findByText('Динаміка попиту')).not.toBeNull()
-    expect(screen.getByText('Графік попиту')).not.toBeNull()
-    expect(screen.getByText('Останній факт')).not.toBeNull()
-    expect(screen.getByText('Наступний прогноз')).not.toBeNull()
-    expect(screen.getByText('Горизонт')).not.toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Попит' }))
+    expect(screen.getByRole('button', { name: 'Прогноз' }).textContent).toContain('0,021')
+    fireEvent.keyDown(screen.getByRole('group', { name: 'Графік: Кількість' }), { key: 'Home' })
+    expect(screen.getByRole('button', { name: 'Факт' }).textContent).toContain('0,004')
+
+    fireEvent.click(screen.getByText('Гальмівний диск'))
+    const drawer = await screen.findByRole('dialog')
+    expect(within(drawer).getByText('В наявності').closest('article')?.textContent).toContain('0,004')
+    expect(within(drawer).getByText('Рекомендовано').closest('article')?.textContent).toContain('0,021')
+  })
+
+  it('keeps the last successful scope when applying a different producer fails', async () => {
+    renderDashboard()
+    await screen.findByText('Всього позицій')
+    vi.mocked(getSupplyDashboardCharts).mockRejectedValueOnce(new Error('unavailable'))
+    fireEvent.click(screen.getByRole('combobox', { name: 'Виробник' }))
+    fireEvent.click(await screen.findByText('Meyle GmbH'))
+    fireEvent.click(screen.getByRole('button', { name: 'Застосувати' }))
+    await screen.findByText('Не вдалося завантажити дашборд постачання')
+    expect(document.querySelector('.procurement-dashboard__snapshot')?.textContent).toContain('Усі виробники')
+    expect(screen.getByText('Всього позицій').closest('article')?.textContent).toContain('25')
+  })
+
+  it('does not expose constructor navigation without its page permission', async () => {
+    canMock.mockImplementation((permission) => permission !== PermissionKeys.SystemPages.PurchaseCockpit.View)
+    renderDashboard()
+    await screen.findByText('Гальмівний диск')
+    fireEvent.click(screen.getByText('Гальмівний диск'))
+    const drawer = await screen.findByRole('dialog')
+    expect(within(drawer).queryByRole('button', { name: 'Відкрити в конструкторі' })).toBeNull()
+  })
+
+  it('paginates priority positions and explains absent product forecasts in the drawer', async () => {
+    vi.mocked(getSupplyDashboardCharts).mockResolvedValue({ ...charts, top_items: Array.from({ length: 21 }, (_, index) => ({
+      ...charts.top_items[0], product_id: index + 200, product_name: `Товар ${index + 1}`, vendor_code: `CODE-${index + 1}`,
+    })) })
+    renderDashboard()
+    await screen.findByText('Товар 1')
+    expect(screen.queryByText('Товар 21')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Наступна сторінка' }))
+    expect(screen.getByText('Товар 21')).not.toBeNull()
+    expect(screen.queryByText('Товар 1')).toBeNull()
+    fireEvent.click(screen.getByText('Товар 21'))
+    const drawer = await screen.findByRole('dialog')
+    expect(within(drawer).getByText('Прогнозу для цього товару немає')).not.toBeNull()
+    expect(within(drawer).queryByRole('button', { name: 'Прогноз' })).toBeNull()
   })
 })
+
+function renderDashboard() {
+  return render(<MemoryRouter><I18nProvider><MantineProvider theme={theme}><ProcureDashboardTab /></MantineProvider></I18nProvider></MemoryRouter>)
+}

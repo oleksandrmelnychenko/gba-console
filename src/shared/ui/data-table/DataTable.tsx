@@ -20,6 +20,7 @@ import {
 } from '@dnd-kit/sortable'
 import {
   getCoreRowModel,
+  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
   type ColumnDef,
@@ -105,6 +106,7 @@ export function DataTable<TData>({
   manualSorting = false,
   sorting: controlledSorting,
   onSortingChange,
+  pagination,
   renderExpandedRow,
   getRowCanExpand,
   expandColumnLabels,
@@ -348,6 +350,9 @@ export function DataTable<TData>({
     getCoreRowModel: getCoreRowModel(),
     getRowId,
     getSortedRowModel: manualSorting ? undefined : getSortedRowModel(),
+    getPaginationRowModel: pagination ? getPaginationRowModel() : undefined,
+    manualPagination: !pagination,
+    autoResetPageIndex: false,
     manualSorting,
     enableColumnPinning: true,
     enableColumnResizing: true,
@@ -365,6 +370,7 @@ export function DataTable<TData>({
       columnSizing: normalizedLayout.columnSizing,
       columnVisibility: normalizedLayout.columnVisibility,
       sorting,
+      ...(pagination ? { pagination } : {}),
     },
   })
 

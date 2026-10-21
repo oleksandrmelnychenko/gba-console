@@ -1,4 +1,6 @@
 import { fixtureCostContext, fixtureNoBudget, fixtureLineCostFields } from '../procurementCostTestFixtures'
+import { Profiler } from 'react'
+import type { DataTableProps } from '../../../shared/ui/data-table/types'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -14,9 +16,23 @@ import {
 import type { ReorderSuggestion } from '../procurementTypes'
 import { ProcurementConstructor, ProcurementProofPanel } from './ProcurementConstructor'
 
-const { canMock } = vi.hoisted(() => ({
+const { canMock, planRenderMock, tableRenderMock } = vi.hoisted(() => ({
+  planRenderMock: vi.fn(),
+  tableRenderMock: vi.fn(),
   canMock: vi.fn<(permissionKey: string) => boolean>(),
 }))
+
+vi.mock('../../../shared/ui/data-table/DataTable', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../shared/ui/data-table/DataTable')>()
+  return { ...actual, DataTable: (props: DataTableProps<unknown>) => {
+    tableRenderMock()
+    return (
+    <Profiler id="plan-grid" onRender={planRenderMock}>
+      <actual.DataTable {...props} />
+    </Profiler>
+    )
+  } }
+})
 
 vi.mock('../../supply-ukraine-orders/api/supplyUkraineOrdersApi', () => ({
   getPurchaseCockpitSuppliers: vi.fn(),
@@ -40,6 +56,7 @@ vi.mock('../../assortment/api/assortmentApi', () => ({
 describe('ProcurementConstructor', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    window.history.replaceState({}, '', '/')
     localStorage.removeItem('gba.procurement.sessions.v1')
     vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(640)
     canMock.mockReturnValue(true)
@@ -88,6 +105,23 @@ describe('ProcurementConstructor', () => {
     })
   })
 
+  it('clears a deep-linked product filter when restoring another session and skips unused chart requests', async () => {
+    window.history.replaceState({}, '', '/?productId=42&producerId=501')
+    const plan = await vi.mocked(getPurchaseCockpitWarehousePlan)({ budgetEur: 0, method: 'greedy' })
+    vi.mocked(getProducerPlan).mockResolvedValue({ ...plan, history_scope: 'demand', producer_id: 501, producer_name: 'Meyle', lead_time_days: 7, lead_time_std_days: 0, lead_time_source: 'test' })
+    vi.mocked(getPurchaseCockpitWarehousePlan).mockResolvedValue({ ...plan, items: [suggestion({ product_id: 999, product_name: 'Restored item', producer_id: 777 })] })
+    localStorage.setItem('gba.procurement.sessions.v1', JSON.stringify([{ id: 'restore-other', name: 'Other plan',
+      savedAt: '2026-09-08T00:00:00Z', lens: 'warehouse', producerId: null, draftQty: {}, basket: [] }]))
+    render(<MantineProvider theme={theme}><I18nProvider><ProcurementConstructor /></I18nProvider></MantineProvider>)
+    await waitFor(() => expect(getProducerPlan).toHaveBeenCalled())
+    expect((screen.getByPlaceholderText('Товар, код або виробник') as HTMLInputElement).value).toBe('42')
+    fireEvent.click(screen.getByRole('button', { name: 'Сесії' }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: /Other plan/ }))
+    expect(await screen.findByText('Restored item')).not.toBeNull()
+    expect((screen.getByPlaceholderText('Товар, код або виробник') as HTMLInputElement).value).toBe('')
+    expect(getPurchaseCockpitCharts).not.toHaveBeenCalled()
+  })
+
   it('restores legacy basket quantities with unknown cost and sends only exact IDs/quantity to the mocked draft endpoint', async () => {
     const legacy = { ...suggestion({ producer_id: 501, producer_name: 'Meyle' }) } as Record<string, unknown>
     delete legacy.cost_provenance
@@ -97,6 +131,7 @@ describe('ProcurementConstructor', () => {
     await screen.findByRole('button', { name: 'Термінові в кошик · 2' })
     fireEvent.click(screen.getByRole('button', { name: 'Сесії' }))
     fireEvent.click(await screen.findByRole('menuitem', { name: /Legacy cost fixture/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Кошик · 1' }))
     expect(await screen.findByText('Джерело оцінки не підтверджено для поточного плану. Кількість збережено без переоцінки.')).not.toBeNull()
     expect(screen.getAllByText('1 без ціни').length).toBeGreaterThan(0)
     fireEvent.click(screen.getByRole('button', { name: 'Створити чернетку' }))
@@ -137,6 +172,7 @@ describe('ProcurementConstructor', () => {
     expect(screen.queryByRole('button', { name: 'Експорт в Excel' })).toBeNull()
 
     fireEvent.click(addAll)
+    fireEvent.click(screen.getByRole('button', { name: 'Кошик · 2' }))
 
     await waitFor(() => expect(screen.getByText('Кошик замовлень')).not.toBeNull())
     expect(screen.queryByRole('button', { name: 'Створити чернетку' })).toBeNull()
@@ -167,31 +203,128 @@ describe('ProcurementConstructor', () => {
     })
 
     fireEvent.click(screen.getByRole('button', { name: 'Термінові в кошик · 2' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect((screen.getByRole('button', { name: 'Термінові в кошик · 0' }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Кошик · 2' }))
 
     await waitFor(() => {
       expect(screen.getAllByRole('button', { name: 'Створити чернетку' })).toHaveLength(2)
-      expect(
-        (screen.getByRole('button', {
-          name: 'Термінові в кошик · 0',
-        }) as HTMLButtonElement).disabled,
-      ).toBe(true)
     })
 
     expect(screen.getByText('Кошик замовлень')).not.toBeNull()
-    expect(screen.getByText('Розподілено за виробниками')).not.toBeNull()
     expect(screen.getByText('Виробників')).not.toBeNull()
     expect(screen.getByText('Сума оцінок')).not.toBeNull()
     expect(screen.getByText('65,00')).not.toBeNull()
 
-    const basketRail = screen.getByText('Кошик замовлень').closest('aside')
+    const basketRail = screen.getByRole('dialog', { name: 'Кошик замовлень' })
     expect(basketRail).not.toBeNull()
     const producerNames = within(basketRail as HTMLElement).getAllByText(/Lemforder|Meyle/)
     expect(producerNames.map((node) => node.textContent)).toEqual(['Lemforder', 'Meyle'])
 
+    const collapseMeyle = screen.getByRole('button', { name: 'Згорнути Meyle' })
+    expect(collapseMeyle.querySelector('.app-table-chip.is-document')?.textContent).toBe('Meyle')
+    fireEvent.click(collapseMeyle)
+    expect(screen.getByRole('button', { name: 'Розгорнути Meyle' }).getAttribute('aria-expanded')).toBe('false')
+    await waitFor(() => expect(screen.getAllByRole('button', { name: 'Створити чернетку' })).toHaveLength(1))
+    expect(screen.getByRole('button', { name: 'Згорнути Lemforder' }).getAttribute('aria-expanded')).toBe('true')
+    fireEvent.click(screen.getByRole('button', { name: 'Розгорнути Meyle' }))
+    await waitFor(() => expect(screen.getAllByRole('button', { name: 'Створити чернетку' })).toHaveLength(2))
+    expect((within(basketRail).getAllByLabelText('Кількість Гальмівний диск') as HTMLInputElement[]).map(input => input.value)).toEqual(['4', '9'])
+
     fireEvent.click(screen.getByRole('button', { name: 'Очистити кошик' }))
     await waitFor(() => {
-      expect(screen.queryByText('Кошик замовлень')).toBeNull()
+      expect(screen.getByText('Кошик порожній')).not.toBeNull()
     })
+  })
+
+  it('opens the basket from a row plus and re-expands its previously collapsed producer', async () => {
+    render(<MantineProvider theme={theme}><I18nProvider><ProcurementConstructor /></I18nProvider></MantineProvider>)
+    const addButtons = await screen.findAllByRole('button', { name: 'Додати в кошик' })
+    fireEvent.click(addButtons[0])
+
+    expect(await screen.findByRole('dialog', { name: 'Кошик замовлень' })).not.toBeNull()
+    expect(screen.getByRole('button', { name: 'Згорнути Meyle' }).getAttribute('aria-expanded')).toBe('true')
+    fireEvent.click(screen.getByRole('button', { name: 'Згорнути Meyle' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Закрити кошик' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+
+    fireEvent.click(screen.getByRole('button', { name: 'У кошику' }))
+    expect(await screen.findByRole('dialog', { name: 'Кошик замовлень' })).not.toBeNull()
+    expect(screen.getByRole('button', { name: 'Згорнути Meyle' }).getAttribute('aria-expanded')).toBe('true')
+    expect((screen.getByLabelText('Кількість Гальмівний диск') as HTMLInputElement).value).toBe('6')
+    expect(createCockpitDraftOrder).not.toHaveBeenCalled()
+  })
+
+  it('does not re-render the plan grid for sheet controls or basket quantity edits', async () => {
+    render(<MantineProvider theme={theme}><I18nProvider><ProcurementConstructor /></I18nProvider></MantineProvider>)
+    fireEvent.click(await screen.findByRole('button', { name: 'Термінові в кошик · 2' }))
+    await waitFor(() => expect(screen.getAllByRole('button', { name: 'У кошику' })).toHaveLength(2))
+    planRenderMock.mockClear()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Кошик · 2' }))
+    fireEvent.change(screen.getAllByLabelText('Кількість Гальмівний диск')[0], { target: { value: '12' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Згорнути Meyle' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Закрити кошик' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+
+    expect(planRenderMock).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Кошик · 2' }))
+    expect((screen.getAllByLabelText('Кількість Гальмівний диск')[0] as HTMLInputElement).value).toBe('12')
+  })
+
+  it('keeps analytics controls local and adds the edited fractional quantity to the expanded producer basket', async () => {
+    render(<MantineProvider theme={theme}><I18nProvider><ProcurementConstructor /></I18nProvider></MantineProvider>)
+    await screen.findByRole('button', { name: 'Термінові в кошик · 2' })
+    fireEvent.click(screen.getAllByRole('button', { name: 'Розгорнути рядок' })[0])
+    const panel = await screen.findByRole('article', { name: 'Аналітика товару' })
+    await within(panel).findByText('За цей період даних немає')
+    tableRenderMock.mockClear()
+
+    fireEvent.click(within(panel).getByRole('button', { name: 'Виручка' }))
+    fireEvent.click(within(panel).getByRole('button', { name: 'Розрахунок' }))
+    expect(within(panel).getByText('Страховий запас')).not.toBeNull()
+    expect(tableRenderMock).not.toHaveBeenCalled()
+
+    fireEvent.change(within(panel).getByLabelText('Кількість до кошика'), { target: { value: '0.021' } })
+    fireEvent.click(within(panel).getByRole('button', { name: 'У кошик' }))
+    const basket = await screen.findByRole('dialog', { name: 'Кошик замовлень' })
+    expect(within(basket).getByRole('button', { name: 'Згорнути Meyle' }).getAttribute('aria-expanded')).toBe('true')
+    expect((within(basket).getByLabelText('Кількість Гальмівний диск') as HTMLInputElement).value).toBe('0.021')
+    expect(createCockpitDraftOrder).not.toHaveBeenCalled()
+  })
+
+  it('pages the plan while keeping search, bulk actions and basket state across all rows', async () => {
+    const basePlan = await vi.mocked(getPurchaseCockpitWarehousePlan)({ budgetEur: 0, method: 'greedy' })
+    const items = Array.from({ length: 61 }, (_, index) => suggestion({
+      product_id: index + 1,
+      product_name: `Тестова позиція ${index + 1}`,
+      vendor_code: `PAGE-${index + 1}`,
+    }))
+    vi.mocked(getPurchaseCockpitWarehousePlan).mockResolvedValue({ ...basePlan, items, item_count: 61 })
+    render(<MantineProvider theme={theme}><I18nProvider><ProcurementConstructor /></I18nProvider></MantineProvider>)
+
+    await screen.findByRole('button', { name: 'Термінові в кошик · 61' })
+    expect(screen.getAllByLabelText('Замовити')).toHaveLength(50)
+    expect(screen.queryByText('Тестова позиція 61')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Наступна сторінка' }))
+    expect(screen.getAllByLabelText('Замовити')).toHaveLength(11)
+    expect(screen.getByText('Тестова позиція 61')).not.toBeNull()
+    fireEvent.change(screen.getAllByLabelText('Замовити')[0], { target: { value: '9' } })
+    fireEvent.click(screen.getAllByRole('button', { name: 'Додати в кошик' })[0])
+    expect((screen.getByLabelText('Кількість Тестова позиція 51') as HTMLInputElement).value).toBe('9')
+    fireEvent.click(screen.getByRole('button', { name: 'Закрити кошик' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(screen.getByRole('button', { name: 'Кошик · 1' })).not.toBeNull()
+    expect(screen.getByRole('button', { name: 'Термінові в кошик · 60' })).not.toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Попередня сторінка' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Наступна сторінка' }))
+    expect((screen.getAllByLabelText('Замовити')[0] as HTMLInputElement).value).toBe('9')
+    fireEvent.change(screen.getByLabelText('Пошук у плані'), { target: { value: 'PAGE-61' } })
+    await waitFor(() => expect(screen.getAllByLabelText('Замовити')).toHaveLength(1))
+    expect(screen.getByText('Тестова позиція 61')).not.toBeNull()
+    expect((screen.getByLabelText('Номер сторінки') as HTMLInputElement).value).toBe('1')
+    expect(screen.getByRole('button', { name: 'Кошик · 1' })).not.toBeNull()
   })
 
   it('keeps failed demand unknown and recovers through retry', async () => {
@@ -221,10 +354,16 @@ describe('ProcurementConstructor', () => {
     render(<MantineProvider theme={theme}><I18nProvider><ProcurementConstructor /></I18nProvider></MantineProvider>)
 
     fireEvent.click(await screen.findByRole('button', { name: 'Термінові в кошик · 1' }))
-    const rail = screen.getByText('Кошик замовлень').closest('aside')!
+    fireEvent.click(screen.getByRole('button', { name: 'Кошик · 1' }))
+    const rail = screen.getByRole('dialog', { name: 'Кошик замовлень' })!
     expect((within(rail).getByLabelText('Кількість Гальмівний диск') as HTMLInputElement).value).toBe('0.021')
     expect(within(rail).getAllByText('2,10').length).toBeGreaterThan(0)
-    fireEvent.click(within(rail).getByRole('button', { name: 'Створити чернетку' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Закрити кошик' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    fireEvent.click(screen.getByRole('button', { name: 'Кошик · 1' }))
+    const reopenedSheet = screen.getByRole('dialog', { name: 'Кошик замовлень' })
+    expect((within(reopenedSheet).getByLabelText('Кількість Гальмівний диск') as HTMLInputElement).value).toBe('0.021')
+    fireEvent.click(within(reopenedSheet).getByRole('button', { name: 'Створити чернетку' }))
     await waitFor(() => expect(createCockpitDraftOrder).toHaveBeenCalledWith(501, [{ productId: 42, qty: 0.021 }]))
   })
 
@@ -232,10 +371,10 @@ describe('ProcurementConstructor', () => {
     const row = suggestion({ suggested_qty: 0.021, raw_qty: 0.02, order_multiple: 0.003,
       unit_cost_eur: 100, line_cost_eur: 2.1, order_up_to: 2.021 })
     const { container } = render(<MantineProvider theme={theme}>
-      <ProcurementProofPanel row={row} selectedQty={0.021} demand={[]} t={value => value} />
+      <ProcurementProofPanel row={row} selectedQty={0.021} t={value => value} />
     </MantineProvider>)
-    await waitFor(() => expect(container.querySelector('.procure-proof__order-qty')?.textContent).toContain('0,021'))
-    expect(container.querySelector('.procure-proof')?.textContent).not.toContain('шт.')
+    await waitFor(() => expect(screen.getByText('0,021')).not.toBeNull())
+    expect(container.querySelector('.procurement-item-analytics')?.textContent).not.toContain('шт.')
     expect(screen.getByText('2,10')).not.toBeNull()
   })
 
@@ -314,6 +453,7 @@ describe('ProcurementConstructor', () => {
     )
 
     fireEvent.click(await screen.findByRole('button', { name: 'Термінові в кошик · 1' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Кошик · 1' }))
 
     expect(await screen.findByText('Без ціни')).not.toBeNull()
     expect(screen.getAllByText('Відомі оцінки')).toHaveLength(2)

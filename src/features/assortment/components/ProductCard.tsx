@@ -2,6 +2,7 @@ import { ACTION_LABELS, REASON_LABELS } from '../assortmentLabels'
 import {
   Alert,
   Card,
+  Button,
   Group,
   Loader,
   Progress,
@@ -9,8 +10,8 @@ import {
   Stack,
   Text,
 } from '@mantine/core'
-import { Brain, CircleAlert, Factory } from 'lucide-react'
-import { useEffect } from 'react'
+import { CircleAlert, Factory, Package } from 'lucide-react'
+import { useEffect, type ReactNode } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
@@ -20,7 +21,7 @@ import { ProductSalesAnalytics } from './ProductSalesAnalytics'
 import './product-card.css'
 
 const integer = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
-const decimal = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 0 })
+const decimal = new Intl.NumberFormat('uk-UA', { maximumSignificantDigits: 15 })
 const money = new Intl.NumberFormat('uk-UA', { currency: 'EUR', maximumFractionDigits: 0, style: 'currency' })
 const preciseMoney = new Intl.NumberFormat('uk-UA', {
   currency: 'EUR',
@@ -126,7 +127,7 @@ function formatScore(score: number | null | undefined): string {
 }
 
 function formatPercent(value: number | null | undefined): string {
-  return value == null ? 'Немає даних' : `${(value * 100).toFixed(1)}%`
+  return value == null ? 'Немає даних' : `${new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 1 }).format(value * 100)}%`
 }
 
 function formatNullableNumber(value: number | null | undefined): string {
@@ -309,23 +310,23 @@ export function ProductCard({
   const producerName = typeof detail.primary_producer_name === 'string' ? detail.primary_producer_name : ''
 
   return (
-    <Stack className="assort-product-card" gap={10}>
-      <ProductHero detail={detail} producerId={producerId} producerName={producerName} t={t} />
+    <Stack className="assort-product-card app-table-chips" gap={12}>
+      <ProductHero detail={detail} producerId={producerId} producerName={producerName} />
       <ProductAiAction actionLabel={actionLabel} actionReasons={actionReasons} t={t} />
 
-      <SimpleGrid cols={{ base: 2, md: 4 }} spacing={10}>
+      <SimpleGrid className="assort-product-metrics" cols={{ base: 2, md: 4 }} spacing={12}>
         <Stat label={t('Залишок на складі')} value={formatNullableNumber(detail.qty_on_hand)} />
-        <Stat label={t('Вартість залишку')} value={money.format(detail.eur_value)} />
+        <Stat label={t('Вартість залишку')} value={<>{decimal.format(detail.eur_value)} <TableChip tone="source" value="EUR" /></>} />
         <Stat label={t('Маржа')} value={formatPercent(detail.margin_pct)} />
         <Stat
           label={t('Запасу вистачить')}
-          value={detail.cover_days == null ? t('Немає даних') : formatDays(detail.cover_days)}
+          value={detail.cover_days == null ? '—' : <TableChip tone={detail.band === 'understock' ? 'warning' : 'neutral'} value={formatDays(detail.cover_days)} />}
         />
       </SimpleGrid>
 
       <ProductSalesAnalytics analytics={analytics} error={analyticsError} />
 
-      <SimpleGrid cols={{ base: 1, md: 3 }} spacing={10}>
+      <SimpleGrid className="assort-score-grid" cols={{ base: 1, md: 3 }} spacing={10}>
         <ScoreCard
           description={t('Наскільки товар продається та чи відповідає запас попиту.')}
           label={t('Загальна оцінка товару')}
@@ -347,8 +348,10 @@ export function ProductCard({
       </SimpleGrid>
 
       <CommercialProfile detail={detail} t={t} />
-      <SubstitutesPanel error={subsError} substitutes={subs} t={t} />
-      <RegionsPanel error={regionsError} productRegions={productRegions} regionId={regionId} t={t} />
+      <div className="assort-product-related">
+        <SubstitutesPanel key={`substitutes-${productId}`} error={subsError} substitutes={subs} t={t} />
+        <RegionsPanel key={`regions-${productId}`} error={regionsError} productRegions={productRegions} regionId={regionId} t={t} />
+      </div>
     </Stack>
   )
 }
@@ -359,31 +362,24 @@ function ProductHero({
   detail,
   producerId,
   producerName,
-  t,
 }: {
   detail: ProductDetail
   producerId: number | null
   producerName: string
-  t: ProductCardTranslate
 }) {
   return (
     <Card className="assort-product-hero" radius="md" withBorder>
-      <Group align="flex-start" justify="space-between" gap={8} wrap="wrap">
-        <Stack gap={6} miw={0}>
-          <Stack gap={2}>
+      <Group align="center" gap={10} wrap="wrap">
+          <Group gap={8} miw={0}>
             <Text className="assort-product-hero__name">{detail.name ?? detail.product_id}</Text>
             <TableChip tone="product" value={detail.vendor_code || `ID ${detail.product_id}`} />
-          </Stack>
+          </Group>
           {producerId !== null && (
-            <Group gap={6} wrap="nowrap">
+            <Group className="assort-product-hero__producer" gap={6} wrap="nowrap" miw={0}>
               <Factory size={14} />
-              <Text c="gray.8" size="xs" truncate>
-                {producerName || `#${producerId}`}
-              </Text>
+              <TableChip tone="document" value={producerName || `#${producerId}`} />
             </Group>
           )}
-        </Stack>
-        <TableChip tone={healthTone(detail.health)} value={`${t('Загальна оцінка')}: ${Math.round(detail.health)}/100`} />
       </Group>
     </Card>
   )
@@ -400,27 +396,10 @@ function ProductAiAction({
 }) {
   return (
     <Card className="assort-ai-action" radius="md" withBorder>
-      <Group align="flex-start" justify="space-between" gap={8} wrap="wrap">
-        <Group align="flex-start" gap={8} wrap="nowrap">
-          <Brain className="assort-ai-action__icon" size={20} />
-          <Stack gap={8} miw={0}>
-            <Group gap="xs">
-              <Text className="app-section-title" fw={600} size="sm">
-                {t('Що рекомендує система')}
-              </Text>
-              <TableChip tone={ACTION_TONES[actionLabel] ?? 'neutral'} value={t(ACTION_LABELS[actionLabel] ?? 'Перевірити товар')} />
-            </Group>
-            <Group gap={6}>
-              {actionReasons.length === 0 ? (
-                <TableChip value={t('Додаткових застережень немає')} />
-              ) : (
-                actionReasons.map((reason) => (
-                  <TableChip key={reason} value={t(REASON_LABELS[reason] ?? 'Система знайшла сигнал, який потребує перевірки')} />
-                ))
-              )}
-            </Group>
-          </Stack>
-        </Group>
+      <Group gap={8}>
+        <Text className="app-section-title" fw={600} size="sm">{t('Рекомендація')}</Text>
+        <TableChip tone={ACTION_TONES[actionLabel] ?? 'neutral'} value={t(ACTION_LABELS[actionLabel] ?? 'Перевірити товар')} />
+        {actionReasons.map(reason => <TableChip key={reason} value={t(REASON_LABELS[reason] ?? 'Потребує перевірки')} />)}
       </Group>
     </Card>
   )
@@ -429,10 +408,9 @@ function ProductAiAction({
 function CommercialProfile({ detail, t }: { detail: ProductDetail; t: ProductCardTranslate }) {
   return (
     <Card className="assort-product-section" radius="md" withBorder>
-      <Stack gap={10}>
-        <Text className="app-section-title" fw={600} size="sm">
-          {t('Комерційний профіль')}
-        </Text>
+      <details className="assort-score-details">
+        <summary><span className="app-section-title">{t('Комерційний профіль')}</span></summary>
+        <Stack gap={12}>
         <SimpleGrid cols={{ base: 2, md: 4 }} spacing={10}>
           <Stat label={t('Продано за 12 місяців')} value={formatNullableNumber(detail.annual_units)} />
           <Stat label={t('Виручка за 12 місяців')} value={money.format(detail.revenue_eur)} />
@@ -454,110 +432,102 @@ function CommercialProfile({ detail, t }: { detail: ProductDetail; t: ProductCar
             ? t('Повернень не було')
             : `${t('Повернення')}: ${formatPercent(detail.return_rate)}`} />
         </Group>
-      </Stack>
+        </Stack>
+      </details>
     </Card>
   )
 }
 
-function SubstitutesPanel({
-  error,
-  substitutes,
-  t,
-}: {
+function relatedNumber(value: number | null | undefined, fractionDigits?: number) {
+  if (value == null || !Number.isFinite(value)) return '—'
+  return fractionDigits === undefined
+    ? decimal.format(value)
+    : new Intl.NumberFormat('uk-UA', { minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits }).format(value)
+}
+
+function SubstitutesPanel({ error, substitutes, t }: {
   error: string | null
   substitutes: ProductSubstitutes | null
   t: ProductCardTranslate
 }) {
+  const [expanded, setExpanded] = useValueState(false)
+  const candidates = substitutes?.candidates ?? []
+  const visible = expanded ? candidates : candidates.slice(0, 6)
   return (
-    <Card className="assort-product-section" radius="md" withBorder>
-      <Stack gap="xs">
-        <Text className="app-section-title" fw={600} size="sm">
-          {t('Доступні замінники')}
-        </Text>
-        {error ? (
-          <Alert color="orange" icon={<CircleAlert size={16} />} variant="light">
-            {error}
-          </Alert>
-        ) : (substitutes?.candidates ?? []).length === 0 ? (
-          <Text c="dimmed" size="sm">
-            {t('Замінників у наявності не знайдено.')}
-          </Text>
-        ) : (
-          (substitutes?.candidates ?? []).map((candidate) => (
-            <Group key={candidate.product_id} justify="space-between">
-              <Text c="gray.8" fw={600} size="sm">
-                {candidate.name ?? candidate.product_id}
-              </Text>
-              <TableChip tone={healthTone(candidate.health)} value={Math.round(candidate.health)} />
-            </Group>
-          ))
-        )}
-      </Stack>
+    <Card className="assort-product-section assort-related-panel" radius="md" withBorder>
+      <Group justify="space-between" gap={6} mb={8}>
+        <Text className="app-section-title" fw={600} size="sm">{t('Доступні замінники')}</Text>
+        {!error && <TableChip value={candidates.length} title={t('Кількість замінників')} />}
+      </Group>
+      {error ? (
+        <Alert color="gray" icon={<CircleAlert size={16} />} variant="outline">{error}</Alert>
+      ) : candidates.length === 0 ? (
+        <Text className="assort-related-empty" c="dimmed" size="sm">{t('Замінників у наявності не знайдено.')}</Text>
+      ) : (
+        <>
+          <div className="assort-related-table" data-expanded={expanded} tabIndex={0} role="region" aria-label={t('Доступні замінники')}>
+            <table>
+              <thead><tr><th scope="col">{t('Товар')}</th><th scope="col">{t('Залишок')}</th><th scope="col">{t('Оцінка')}</th></tr></thead>
+              <tbody>{visible.map(candidate => (
+                <tr key={candidate.product_id}>
+                  <td>
+                    <div className="assort-related-name assort-related-product-name"><Package size={16} aria-hidden="true" />{candidate.name ?? candidate.product_id}</div>
+                    <div className="assort-related-meta">
+                      <TableChip tone="product" value={candidate.vendor_code || `ID ${candidate.product_id}`} />
+                      {candidate.primary_producer_name && <TableChip tone="document" value={candidate.primary_producer_name} />}
+                    </div>
+                  </td>
+                  <td><TableChip tone={candidate.qty_on_hand > 0 ? 'storage' : 'neutral'} value={relatedNumber(candidate.qty_on_hand)} /></td>
+                  <td><TableChip tone={Number.isFinite(candidate.health) ? healthTone(candidate.health) : 'neutral'} value={Number.isFinite(candidate.health) ? `${Math.round(candidate.health)}/100` : '—'} /></td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+          {candidates.length > 6 && <Button className="assort-related-more" variant="subtle" color="gray" size="compact-xs" onClick={() => setExpanded(value => !value)} aria-expanded={expanded}>{expanded ? t('Згорнути') : `${t('Показати всі')} · ${candidates.length}`}</Button>}
+        </>
+      )}
     </Card>
   )
 }
 
-function RegionsPanel({
-  error,
-  productRegions,
-  regionId,
-  t,
-}: {
+function RegionsPanel({ error, productRegions, regionId, t }: {
   error: string | null
   productRegions: ProductRegions | null
   regionId?: number
   t: ProductCardTranslate
 }) {
+  const [expanded, setExpanded] = useValueState(false)
+  const regions = productRegions?.regions ?? []
+  const visible = expanded ? regions : regions.slice(0, 6)
   return (
-    <Card className="assort-product-section" radius="md" withBorder>
-      <Stack gap="xs">
-        <Text className="app-section-title" fw={600} size="sm">
-          {t('Де купують товар')}
-        </Text>
-        {error ? (
-          <Alert color="orange" icon={<CircleAlert size={16} />} variant="light">
-            {error}
-          </Alert>
-        ) : (productRegions?.regions ?? []).length === 0 ? (
-          <Text c="dimmed" size="sm">
-            {t('За обраний період продажів у регіонах не було.')}
-          </Text>
-        ) : (
-          (productRegions?.regions ?? []).map((region) => {
-            const isSelected = region.region_id === regionId
-            return (
-              <Group key={region.region_id} justify="space-between" wrap="nowrap">
-                <Stack gap={0} miw={0}>
-                  {/* Selection reads as the orange accent (§6), not extra weight. */}
-                  <Text
-                    c={isSelected ? undefined : 'gray.8'}
-                    fw={isSelected ? 600 : 500}
-                    size="sm"
-                    style={isSelected ? { color: 'var(--brand-orange)' } : undefined}
-                    truncate
-                  >
-                    {region.region_name || `#${region.region_id}`}
-                  </Text>
-                  <Text c="dimmed" size="xs">
-                    <b className="assort-meta-num">{integer.format(region.regional_order_count)}</b>{' '}
-                    {t('замовлень')} ·{' '}
-                    <b className="assort-meta-num">{integer.format(region.regional_client_count)}</b>{' '}
-                    {t('клієнтів')}
-                  </Text>
-                </Stack>
-                <Stack align="flex-end" gap={0}>
-                  <Text className="app-money" size="sm">
-                    {money.format(region.regional_revenue_eur)}
-                  </Text>
-                  <Text c="dimmed" size="xs">
-                    <b className="assort-meta-num">{integer.format(region.regional_units)}</b> {t('шт.')}
-                  </Text>
-                </Stack>
-              </Group>
-            )
-          })
-        )}
-      </Stack>
+    <Card className="assort-product-section assort-related-panel" radius="md" withBorder>
+      <Group justify="space-between" gap={6} mb={8}>
+        <Text className="app-section-title" fw={600} size="sm">{t('Де купують товар')}</Text>
+        {!error && <TableChip value={regions.length} title={t('Кількість регіонів')} />}
+      </Group>
+      {error ? (
+        <Alert color="gray" icon={<CircleAlert size={16} />} variant="outline">{error}</Alert>
+      ) : regions.length === 0 ? (
+        <Text className="assort-related-empty" c="dimmed" size="sm">{t('За обраний період продажів у регіонах не було.')}</Text>
+      ) : (
+        <>
+          <div className="assort-related-table" data-expanded={expanded} tabIndex={0} role="region" aria-label={t('Де купують товар')}>
+            <table>
+              <thead><tr><th scope="col">{t('Регіон')}</th><th scope="col">{t('К-сть')}</th><th scope="col" title={t('Замовлення')}>{t('Зам.')}</th><th scope="col">{t('Клієнти')}</th><th scope="col">{t('Виручка')} <TableChip tone="source" value="EUR" /></th></tr></thead>
+              <tbody>{visible.map(region => (
+                <tr key={region.region_id} aria-current={region.region_id === regionId ? 'true' : undefined}>
+                  <td><TableChip tone="document" value={region.region_name || `#${region.region_id}`} /></td>
+                  <td>{relatedNumber(region.regional_units)}</td>
+                  <td>{relatedNumber(region.regional_order_count)}</td>
+                  <td>{relatedNumber(region.regional_client_count)}</td>
+                  <td>{relatedNumber(region.regional_revenue_eur, 2)}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+          {regions.length > 6 && <Button className="assort-related-more" variant="subtle" color="gray" size="compact-xs" onClick={() => setExpanded(value => !value)} aria-expanded={expanded}>{expanded ? t('Згорнути') : `${t('Показати всі')} · ${regions.length}`}</Button>}
+        </>
+      )}
     </Card>
   )
 }
@@ -578,13 +548,12 @@ function ScoreCard({
 
   return (
     <Card className="assort-score-card" radius="md" withBorder>
-      <Stack gap={10}>
-        <Group justify="space-between" gap={8} wrap="wrap">
-          <Text className="app-section-title" fw={600} size="sm">
-            {label}
-          </Text>
+      <details className="assort-score-details">
+        <summary>
+          <span className="app-section-title">{label}</span>
           <TableChip tone={score === null ? 'neutral' : healthTone(score)} value={formatScore(score)} />
-        </Group>
+        </summary>
+        <Stack gap={10}>
         <Stack gap={3}>
           <Text c="dimmed" size="xs">
             {description}
@@ -614,18 +583,20 @@ function ScoreCard({
             ))}
           </Stack>
         )}
-      </Stack>
+        </Stack>
+      </details>
     </Card>
   )
 }
 
 /* §7.2 metric: compact mono label and an unboxed mono value —
    no boxes around each number. */
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value }: { label: string; value: ReactNode }) {
+  const eur = typeof value === 'string' ? /^(.*)\sEUR$/.exec(value) : null
   return (
     <div>
       <span className="assort-stat__label app-section-title">{label}</span>
-      <span className="assort-stat__value">{value}</span>
+      <span className="assort-stat__value">{eur ? <>{eur[1]} <TableChip tone="source" value="EUR" /></> : value}</span>
     </div>
   )
 }

@@ -1,11 +1,13 @@
 import { fixtureLineCostFields, fixtureCostProof } from '../procurementCostTestFixtures'
 import { MantineProvider } from '@mantine/core'
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { theme } from '../../../shared/theme/theme'
 import { getProductAnalytics } from '../../assortment/api/assortmentApi'
 import type { ReorderSuggestion } from '../procurementTypes'
 import { ProcurementProofPanel } from './ProcurementConstructor'
+import { clearProductAnalyticsResource } from './productAnalyticsResource'
+import { clearSession, saveSession } from '../../../shared/auth/session'
 
 vi.mock('../../assortment/api/assortmentApi', () => ({
   getProductAnalytics: vi.fn(),
@@ -14,6 +16,7 @@ vi.mock('../../assortment/api/assortmentApi', () => ({
 const t = (key: string) => key
 
 describe('ProcurementProofPanel', () => {
+  beforeEach(() => { clearSession(); clearProductAnalyticsResource(); vi.mocked(getProductAnalytics).mockReset() })
   it('presents the recommendation as a user-facing decision with evidence', async () => {
     vi.mocked(getProductAnalytics).mockResolvedValueOnce({
       sales_series: [
@@ -40,14 +43,67 @@ describe('ProcurementProofPanel', () => {
       </MantineProvider>,
     )
 
-    expect(screen.getByText('Рекомендація закупівлі')).not.toBeNull()
     expect(screen.getByText('Змінено вручну')).not.toBeNull()
-    expect(screen.getByText('Як отримано кількість')).not.toBeNull()
-    expect(screen.getByText('Коли виникне дефіцит')).not.toBeNull()
-    expect(screen.getByText('Параметри прогнозу')).not.toBeNull()
+    expect(await screen.findByRole('button', { name: 'Дані' })).not.toBeNull()
+    await waitFor(() => expect(getProductAnalytics).toHaveBeenCalledWith(100, undefined, 12, expect.any(AbortSignal)))
+    fireEvent.click(screen.getByRole('button', { name: 'Дані' }))
     expect(await screen.findByText('черв. 2026 р.')).not.toBeNull()
-    expect(screen.getAllByText('18').length).toBeGreaterThan(1)
+    expect(screen.queryByText('croston')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Розрахунок' }))
+    expect(screen.getByText('Мінімальне замовлення')).not.toBeNull()
+    expect(screen.getByText('Обґрунтування вартості')).not.toBeNull()
+    expect(getProductAnalytics).toHaveBeenCalledTimes(1)
   })
+  it('shows request failures as failures and permits retry', async () => {
+    vi.mocked(getProductAnalytics).mockRejectedValueOnce(new Error('network'))
+    vi.mocked(getProductAnalytics).mockResolvedValueOnce({ sales_series: [] } as unknown as Awaited<ReturnType<typeof getProductAnalytics>>)
+    render(<MantineProvider theme={theme}><ProcurementProofPanel row={suggestion()} selectedQty={30} t={t} /></MantineProvider>)
+    expect((await screen.findByRole('alert')).textContent).toContain('Не вдалося завантажити продажі')
+    expect(screen.queryByText('За цей період даних немає')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Повторити' }))
+    expect(await screen.findByText('За цей період даних немає')).not.toBeNull()
+    expect(getProductAnalytics).toHaveBeenCalledTimes(2)
+  })
+
+  it('ignores an old range response and distinguishes missing price from zero', async () => {
+    let resolveOld!: (data: Awaited<ReturnType<typeof getProductAnalytics>>) => void
+    vi.mocked(getProductAnalytics).mockReturnValueOnce(new Promise((resolve) => { resolveOld = resolve }))
+    vi.mocked(getProductAnalytics).mockResolvedValueOnce({ sales_series: [{ month: '2026-10', units: 0, revenue_eur: 0, order_count: 0, avg_price_eur: null, is_complete: false }] } as Awaited<ReturnType<typeof getProductAnalytics>>)
+    render(<MantineProvider theme={theme}><ProcurementProofPanel row={suggestion()} selectedQty={30} t={t} /></MantineProvider>)
+    fireEvent.click(screen.getByRole('button', { name: '3 міс.' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Дані' }))
+    expect(await screen.findByText('жовт. 2026 р.')).not.toBeNull()
+    resolveOld({ sales_series: [] } as unknown as Awaited<ReturnType<typeof getProductAnalytics>>)
+    await waitFor(() => expect(screen.getByText('жовт. 2026 р.')).not.toBeNull())
+    expect(screen.getByText('Є неповні місяці')).not.toBeNull()
+    expect(screen.getAllByText('—').length).toBeGreaterThan(0)
+  })
+
+  it('keeps unavailable table values distinct from real zero', async () => {
+    vi.mocked(getProductAnalytics).mockResolvedValueOnce({ sales_series: [{
+      month: '2026-10', units: 0, revenue_eur: null, order_count: null,
+      avg_price_eur: undefined, is_complete: true,
+    }] } as unknown as Awaited<ReturnType<typeof getProductAnalytics>>)
+    render(<MantineProvider theme={theme}><ProcurementProofPanel row={suggestion()} selectedQty={30} t={t} /></MantineProvider>)
+    fireEvent.click(screen.getByRole('button', { name: 'Дані' }))
+    const table = await screen.findByRole('table')
+    expect(within(table).getAllByRole('cell').map((cell) => cell.textContent?.trim())).toEqual(['жовт. 2026 р.', '0', '—', '—', '—'])
+    expect(table.textContent).not.toContain('NaN')
+  })
+
+  it('replaces already visible history when the authenticated session changes', async () => {
+    saveSession({ userNetUid: 'user-a', csrfToken: 'session-a' })
+    const payload = (units: number) => ({ sales_series: [{ month: '2026-10', units, revenue_eur: 0, order_count: 0, avg_price_eur: null, is_complete: true }] }) as Awaited<ReturnType<typeof getProductAnalytics>>
+    vi.mocked(getProductAnalytics).mockResolvedValueOnce(payload(123)).mockResolvedValueOnce(payload(456))
+    render(<MantineProvider theme={theme}><ProcurementProofPanel row={suggestion()} selectedQty={30} t={t} /></MantineProvider>)
+    fireEvent.click(screen.getByRole('button', { name: 'Дані' }))
+    expect(await screen.findByRole('cell', { name: '123' })).not.toBeNull()
+    act(() => { saveSession({ userNetUid: 'user-b', csrfToken: 'session-b' }) })
+    expect(screen.queryByRole('cell', { name: '123' })).toBeNull()
+    expect(await screen.findByRole('cell', { name: '456' })).not.toBeNull()
+    expect(getProductAnalytics).toHaveBeenCalledTimes(2)
+  })
+
 })
 
 function suggestion(): ReorderSuggestion {

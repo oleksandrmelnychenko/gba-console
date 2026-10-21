@@ -20,7 +20,7 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeft, ArrowRight, Check, CircleAlert, FileInput, FileSpreadsheet, RefreshCw, RotateCcw, Search } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, CircleAlert, ClipboardList, FileInput, FileSpreadsheet, LayoutDashboard, RefreshCw, RotateCcw, Search, Truck, Wallet, type LucideIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
@@ -150,19 +150,19 @@ export function BasketSupplyUkraineOrderPage() {
   const canViewPurchaseCockpit = can(PermissionKeys.SystemPages.PurchaseCockpit.View)
   const canViewSupplyDashboard = can(PermissionKeys.SystemPages.SupplyDashboard.View)
   const canViewSales = can(PermissionKeys.SystemPages.SupplySales.View)
-  const tabs: Array<{ ai?: boolean; label: string; value: BasketSupplyWorkflowTab }> = [
-    ...(canViewSales ? [{ value: 'sales' as const, label: t('Фактура') }] : []),
+  const tabs: Array<{ ai?: boolean; icon: LucideIcon; label: string; value: BasketSupplyWorkflowTab }> = [
+    ...(canViewSales ? [{ value: 'sales' as const, icon: FileSpreadsheet, label: t('Фактура') }] : []),
     ...(canViewCart ? [
-      { value: 'cart' as const, label: t('Переміщення на Україну') },
+      { value: 'cart' as const, icon: Truck, label: t('Переміщення на Україну') },
     ] : []),
     ...(canViewPurchaseCockpit ? [
-      { value: 'cockpit' as const, label: t('Конструктор закупівель'), ai: true },
+      { value: 'cockpit' as const, icon: ClipboardList, label: t('Конструктор закупівель') },
     ] : []),
     ...(canViewSupplyDashboard ? [
-      { value: 'dashboard' as const, label: t('Дашборд'), ai: true },
+      { value: 'dashboard' as const, icon: LayoutDashboard, label: t('Дашборд'), ai: true },
     ] : []),
     ...(canViewBudgetCart ? [
-      { value: 'budget-cart' as const, label: t('Закупівля під бюджет'), ai: true },
+      { value: 'budget-cart' as const, icon: Wallet, label: t('Закупівля під бюджет'), ai: true },
     ] : []),
   ]
 
@@ -199,15 +199,16 @@ export function BasketSupplyUkraineOrderPage() {
   return (
     <Stack className="basket-supply-page" gap={0}>
       <Card className="app-data-card basket-supply-shell" withBorder radius="md" padding={0}>
-        <div className="basket-supply-tabs pill-tabs">
+        <div className="basket-supply-tabs pill-tabs app-screen-tabs">
           {tabs.map((tab) => (
             <button
               key={tab.value}
               type="button"
-              className={`pill-tab${activeTab === tab.value ? ' is-active' : ''}`}
+              className={`pill-tab app-screen-tab${activeTab === tab.value ? ' is-active' : ''}`}
               aria-pressed={activeTab === tab.value}
               onClick={() => changeTab(tab.value)}
             >
+              <tab.icon size={16} strokeWidth={1.8} aria-hidden="true" />
               {tab.label}
               {tab.ai && <AiFeatureBadge compact tooltip={t('AI-сервіс закупівель')} />}
             </button>

@@ -7,6 +7,7 @@
 }
 
 .supply-ukraine-orders-card {
+  --app-filter-control-height: 32px;
   --supply-orders-control-height: var(--app-filter-control-height);
   --supply-orders-label-gap: var(--app-filter-label-gap);
   --supply-orders-label-height: var(--app-filter-label-height);
@@ -25,10 +26,22 @@
   container: orders-toolbar / inline-size;
 }
 
+.supply-ukraine-orders-filter-bar .app-date-range-icon-wrap {
+  flex-basis: 32px;
+  width: 32px;
+}
+
+.supply-ukraine-orders-filter-bar .app-date-range-icon-wrap .mantine-ActionIcon-root {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+}
+
 .supply-ukraine-orders-filter-fields {
   align-items: end;
   display: flex;
-  flex: 0 1 auto;
+  flex: 1 1 100%;
   flex-wrap: wrap;
   gap: 8px;
   min-width: 0;
@@ -37,11 +50,12 @@
 
 .supply-ukraine-orders-filter-fields > * {
   flex: 0 0 auto;
+  max-width: 100%;
 }
 
-.supply-ukraine-orders-search-input { width: 240px; }
-.supply-ukraine-orders-currency-filter { width: 180px; }
-.supply-ukraine-orders-type-filter { width: 170px; }
+.supply-ukraine-orders-search-input { width: 220px; }
+.supply-ukraine-orders-currency-filter { width: 110px; }
+.supply-ukraine-orders-type-filter { width: 140px; }
 
 .supply-ukraine-orders-filter-bar .supply-ukraine-orders-filter-actions {
   flex: 0 0 auto;
@@ -80,32 +94,22 @@
   color: var(--mantine-color-gray-9);
 }
 
-@container orders-toolbar (max-width: 1600px) {
-  .supply-ukraine-orders-search-input { width: 200px; }
-  .supply-ukraine-orders-currency-filter { width: 120px; }
-  .supply-ukraine-orders-type-filter { width: 140px; }
-
-  .supply-ukraine-orders-table-toolbar-slot .data-table-layout-control {
-    width: 36px;
-    min-width: 36px;
-    padding-inline: 0;
-  }
-  .supply-ukraine-orders-table-toolbar-slot .data-table-layout-control .mantine-Button-label { display: none; }
-  .supply-ukraine-orders-table-toolbar-slot .data-table-layout-control .mantine-Button-section { margin: 0; }
+/* Keep readable captions; wrap groups only when their actual widths require it. */
+.supply-ukraine-orders-filter-bar :is(.registry-caption-action, .data-table-layout-control, .app-filter-primary-action) {
+  width: auto;
+  min-width: 32px;
+  height: var(--supply-orders-control-height);
+  min-height: var(--supply-orders-control-height);
+  padding-inline: 10px;
 }
 
-@container orders-toolbar (max-width: 1250px) {
-  .supply-ukraine-orders-search-input { width: 180px; }
-  .supply-ukraine-orders-currency-filter { width: 110px; }
-  .supply-ukraine-orders-type-filter { width: 120px; }
+.supply-ukraine-orders-filter-bar :is(.registry-caption-action, .data-table-layout-control, .app-filter-primary-action) .mantine-Button-label {
+  display: flex;
+  font-size: 12px;
+}
 
-  .supply-ukraine-orders-create-actions .app-filter-primary-action {
-    width: 36px;
-    min-width: 36px;
-    padding-inline: 0;
-  }
-  .supply-ukraine-orders-create-actions .app-filter-primary-action .mantine-Button-label { display: none; }
-  .supply-ukraine-orders-create-actions .app-filter-primary-action .mantine-Button-section { margin: 0; }
+.supply-ukraine-orders-filter-bar :is(.registry-caption-action, .data-table-layout-control, .app-filter-primary-action) .mantine-Button-section[data-position='left'] {
+  margin-inline-end: 6px;
 }
 
 .supply-ukraine-orders-create-actions {
@@ -122,6 +126,11 @@
 
 @container orders-toolbar (max-width: 600px) {
   .supply-ukraine-orders-filter-bar .supply-ukraine-orders-filter-actions {
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+  }
+
+  .supply-ukraine-orders-create-actions {
     flex-wrap: wrap;
   }
 }
@@ -151,9 +160,9 @@
 .supply-ukraine-orders-type-filter .mantine-InputWrapper-label {
   color: var(--mantine-color-gray-9);
   display: block;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   height: var(--supply-orders-label-height);
   letter-spacing: 0;
   line-height: 1.2;
@@ -860,8 +869,3 @@
 }
 
 .supply-ukraine-orders-page .registry-caption-action { flex: 0 0 auto; white-space: nowrap; }
-@container registry (max-width: 1300px) {
-  .supply-ukraine-orders-page .registry-caption-action { width: 36px; min-width: 36px; padding-inline: 0; }
-  .supply-ukraine-orders-page .registry-caption-action .mantine-Button-label { display: none; }
-  .supply-ukraine-orders-page .registry-caption-action .mantine-Button-section { margin: 0; }
-}

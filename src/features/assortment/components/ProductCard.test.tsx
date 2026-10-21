@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import {
@@ -44,6 +44,29 @@ describe('ProductCard', () => {
     })
   })
 
+  it('keeps substitutes identifiable and preserves precise regional figures when expanding', async () => {
+    vi.mocked(getProductSubstitutes).mockResolvedValue({
+      ...history(), found: true, product_id: 18_286, count: 7, in_stock_count: 7,
+      candidates: Array.from({ length: 7 }, (_, index) => ({ ...buildProduct(), product_id: index + 1, vendor_code: `ALT-${index + 1}`, name: 'Однакова назва', qty_on_hand: 0.25 })),
+    })
+    vi.mocked(getProductRegions).mockResolvedValue({
+      ...history(), count: 1, product_id: 18_286, window_days: 365,
+      regions: [{ product_id: 18_286, region_id: 1, region_name: 'Київ', regional_units: 0.25, regional_order_count: 2, regional_client_count: 1, regional_revenue_eur: 0.49 }],
+    })
+    render(<MantineProvider><I18nProvider><ProductCard productId={18_286} regionId={1} /></I18nProvider></MantineProvider>)
+    const substitutes = await screen.findByRole('region', { name: 'Доступні замінники' })
+    expect(within(substitutes).getAllByRole('row')).toHaveLength(7)
+    expect(screen.queryByText('ALT-7')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Показати всі · 7' }))
+    expect(screen.getByText('ALT-7')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Згорнути' }))
+    expect(screen.queryByText('ALT-7')).toBeNull()
+    const regions = screen.getByRole('region', { name: 'Де купують товар' })
+    expect(within(regions).getByText('0,25')).toBeTruthy()
+    expect(within(regions).getByText('0,49')).toBeTruthy()
+    expect(within(regions).getByText('Київ').closest('tr')?.getAttribute('aria-current')).toBe('true')
+  })
+
   it('explains the product scores and empty states in business language', async () => {
     render(
       <MantineProvider>
@@ -54,8 +77,8 @@ describe('ProductCard', () => {
     )
 
     expect(await screen.findByText('Амортизатор')).toBeTruthy()
-    expect(screen.getByText('Загальна оцінка: 21/100')).toBeTruthy()
-    expect(screen.getByText('Що рекомендує система')).toBeTruthy()
+    expect(screen.getAllByText('21/100')).toHaveLength(1)
+    expect(screen.getByText('Рекомендація')).toBeTruthy()
     expect(screen.getByText('Перевірити залишок без продажів')).toBeTruthy()
     expect(screen.getByText('Товар давно не продавався')).toBeTruthy()
     expect(screen.getByText('Залишок на складі')).toBeTruthy()
@@ -70,6 +93,8 @@ describe('ProductCard', () => {
     expect(screen.getByText('Повернень не було')).toBeTruthy()
     expect(screen.getByText('Замінників у наявності не знайдено.')).toBeTruthy()
     expect(screen.getByText('За обраний період продажів у регіонах не було.')).toBeTruthy()
+    expect(screen.getByText('Загальна оцінка товару').closest('details')?.open).toBe(false)
+    expect(screen.getByText('SEM OTOMOTIV DIS TICARET LTD.STI.').closest('.app-table-chip')?.className).toContain('is-document')
     expect(screen.queryByText(/^Health$/)).toBeNull()
     expect(screen.queryByText(/^ABC C$/)).toBeNull()
     expect(screen.queryByText(/^XYZ Z$/)).toBeNull()

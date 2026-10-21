@@ -2,6 +2,7 @@ import { Badge, Stack, Text } from '@mantine/core'
 import type { ProcurementCostContext, ProcurementCostProvenance } from '../procurementCostTypes'
 import type { ReorderSuggestion } from '../procurementTypes'
 import { formatUnitCost } from '../procurementMoneyFormat'
+import { TableChip } from '../../../shared/ui/TableChip'
 
 const coverageLabels = { complete: 'Повне покриття', partial: 'Неповне покриття', unknown: 'Вартість не підтверджено',
   no_observations: 'Немає спостережень', buyer_supplied: 'Ручна оцінка' }
@@ -19,8 +20,20 @@ export function ProcurementCostBadge({ proof }: { proof: ProcurementCostProvenan
   </Badge>
 }
 
-export function ProcurementCostProof({ item }: { item: ReorderSuggestion }) {
+export function ProcurementCostProof({ item, compact = false }: { item: ReorderSuggestion; compact?: boolean }) {
   const proof = item.cost_provenance
+  if (compact) return <Stack component="section" aria-label="Джерело оцінки закупівлі" gap={6}>
+    <div><TableChip value={coverageLabels[proof.coverage]} tone={proof.budget_eligible ? 'success' : 'warning'} /></div>
+    <Text size="xs">{proof.source === 'buyer_supplied'
+      ? 'Ручна оцінка закупівельника; склад податків не підтверджено.'
+      : 'Історична оцінка надходжень без ПДВ, доставки та мита; не поточна ціна постачальника.'}</Text>
+    {proof.coverage === 'partial' ? <Text size="xs">Відомо лише частину вартості. Повну суму не підтверджено.</Text> : null}
+    {proof.coverage === 'unknown' || proof.coverage === 'no_observations'
+      ? <Text size="xs">Підтвердженої ціни немає.</Text> : null}
+    {!proof.budget_eligible ? <Text size="xs">Цю оцінку не включено до автоматичного бюджету.</Text> : null}
+    <Text size="xs">Маржа та очікуваний прибуток не розраховані: склад податків у ціні продажу не підтверджено.</Text>
+    {item.cheaper_alt ? <Text size="xs">Дешевше в історії: {formatUnitCost(item.cheaper_alt.cost_eur)} <TableChip value="EUR" tone="source" />. {coverageLabels[item.cheaper_alt.cost_provenance.coverage]}. Це минулі надходження, а не поточна пропозиція.</Text> : null}
+  </Stack>
   return <Stack component="section" aria-label="Джерело оцінки закупівлі" gap="xs">
     <Text fw={600} size="sm">Джерело оцінки закупівлі</Text>
     <ProcurementCostBadge proof={proof} />
@@ -49,7 +62,15 @@ export function ProcurementCostProof({ item }: { item: ReorderSuggestion }) {
   </Stack>
 }
 
-export function ProcurementCostSnapshot({ context }: { context: ProcurementCostContext }) {
+export function ProcurementCostSnapshot({ context, compact = false }: { context: ProcurementCostContext; compact?: boolean }) {
+  if (compact) return <Stack component="section" className="procurement-cost-notice" aria-label="Стан джерела вартості" gap={6}>
+    <div><TableChip value={context.cost_totals_certified ? 'Вартість підтверджена' : 'Оцінка неповна'} tone={context.cost_totals_certified ? 'success' : 'warning'} /></div>
+    <Text size="xs">{context.cost_totals_certified
+      ? 'Історична вартість товарів без ПДВ, доставки та мита.'
+      : context.cost_total_basis === 'includes_buyer_values_with_unverified_tax_basis'
+        ? 'Є ручні оцінки з непідтвердженим складом податків. Загальну вартість не підтверджено.'
+        : 'Відомі історичні оцінки — без ПДВ, доставки та мита. Невідомі суми залишаються невизначеними.'}</Text>
+  </Stack>
   const manifest = context.cost_observation_manifest
   return <Stack component="section" aria-label="Стан джерела вартості" gap={4}>
     <Text size="sm">{context.cost_totals_certified
