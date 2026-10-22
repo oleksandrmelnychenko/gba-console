@@ -26,10 +26,14 @@ describe('metric scope', () => {
     expect(params.get('queueValue')).toBe('3')
     expect(readWorkspaceQueueRequest(params, 'warehouse')).toEqual({ workspace: 'warehouse', key: 'negative-stock', from: summary.from, to: summary.to, asOf: '2026-10-22T12:00:00Z', offset: 0, limit: 50 })
   })
-  it('does not link unavailable queues or accept an ambiguous calculation time', () => {
+  it('rejects ambiguous calculation time but opens explicitly defined unknown totals without inventing zero', () => {
     const current = { ...metric, key: 'negative-stock', queueKey: 'negative-stock' }
     expect(metricDrilldownRoute({ ...summary, generatedAtUtc: '2026-10-22T12:00:00' }, current)).toBeUndefined()
-    expect(metricDrilldownRoute({ ...summary, generatedAtUtc: '2026-10-22T12:00:00Z' }, { ...current, hasData: false })).toBeUndefined()
+    const route = metricDrilldownRoute({ ...summary, generatedAtUtc: '2026-10-22T12:00:00Z' }, { ...current, hasData: false })!
+    const params = new URL(route, 'https://console.test').searchParams
+    expect(params.get('queue')).toBe('negative-stock')
+    expect(params.has('queueValue')).toBe(false)
+    expect(metricDrilldownRoute(summary, { ...current, queueKey: undefined, hasData: false })).toBeUndefined()
   })
   it('requires every expected metric to have complete data before an all-clear state', () => {
     const complete = { ...summary, metrics: ['receipts', 'receipt-qty', 'awaiting-placement', 'negative-stock', 'transfers'].map((key) => ({ ...metric, key, value: 0 })) }

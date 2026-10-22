@@ -26,9 +26,12 @@ export function metricTimeLabel(metric: DashboardWorkspaceMetric): string {
 
 /** Only link counts whose destination supports exactly the same population and period. */
 export function metricDrilldownRoute(summary: DashboardWorkspaceSummary, metric: DashboardWorkspaceMetric): string | undefined {
-  if (metric.queueKey && metric.hasData && Number.isFinite(metric.value)) {
+  if (metric.queueKey) {
     const params = new URLSearchParams({ view: summary.workspace, queue: metric.queueKey,
-      queueFrom: summary.from.slice(0, 10), queueTo: summary.to.slice(0, 10), queueAsOf: summary.generatedAtUtc, queueValue: String(metric.value) })
+      queueFrom: summary.from.slice(0, 10), queueTo: summary.to.slice(0, 10), queueAsOf: summary.generatedAtUtc })
+    // An unknown total can still have an explicit document population explaining
+    // missing evidence. Do not turn its unavailable value into a comparison with zero.
+    if (metric.hasData && Number.isFinite(metric.value)) params.set('queueValue', String(metric.value))
     if (readWorkspaceQueueRequest(params, summary.workspace)) return `/dashboard?${params}`
   }
   if (summary.workspace !== 'warehouse' || metric.key !== 'transfers' || metric.timeBasis !== 'period' || !metric.hasData) return undefined

@@ -30,4 +30,10 @@ describe('financial evidence presentation', () => {
     expect(screen.getByText('%')).toBeTruthy()
   })
 
+  it('keeps an unknown financial total actionable when its source documents are available', () => {
+    show({ metrics: [{ ...metric, key: 'recognized-cogs', queueKey: 'recognized-cogs', label: 'Визнана собівартість', hasData: false, unknownReason: 'Собівартість 72 документів не підтверджена' }] })
+    expect(screen.getByRole('button', { name: 'Визнана собівартість: Немає даних' })).toBeTruthy()
+    expect(screen.getByText('Собівартість 72 документів не підтверджена')).toBeTruthy()
+  })
+
 })

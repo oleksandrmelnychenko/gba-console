@@ -50,3 +50,12 @@ it('rejects malformed queue dates without querying', async () => {
   await screen.findByText('Некоректні параметри черги')
   expect(getDashboardQueue).not.toHaveBeenCalled()
 })
+
+it('shows underlying documents for an unknown financial total without comparing it to zero', async () => {
+  vi.mocked(getDashboardQueue).mockResolvedValue({ ...data, aggregateValue: null, unit: 'EUR', rows: [{ ...data.rows[0], quantity: null, description: 'Історична собівартість не підтверджена' }] })
+  draw(location.replace('&queueValue=1', ''))
+  await screen.findByText('Лист-17')
+  expect(screen.getByText(/Значення показника.*Не визначено/)).toBeTruthy()
+  expect(screen.getByText('Історична собівартість не підтверджена')).toBeTruthy()
+  expect(screen.queryByText(/Дані змінилися після розрахунку/)).toBeNull()
+})
