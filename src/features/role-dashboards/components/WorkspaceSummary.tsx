@@ -6,9 +6,12 @@ import { useNavigate } from 'react-router-dom'
 import type { WorkspaceSummaryState } from '../hooks/useWorkspaceSummary'
 import type { DashboardWorkspaceMetric } from '../types'
 import { formatMetricValue } from '../utils/metricView'
+import { MetricComparison } from './MetricComparison'
 import { MetricIcon } from './MetricIcon'
 import { metricDrilldownRoute, metricTimeLabel } from '../utils/metricScope'
 import { useI18n } from '../../../shared/i18n/useI18n'
+
+const updatedAtFormatter = new Intl.DateTimeFormat('uk-UA', { hour: '2-digit', minute: '2-digit' })
 
 export function WorkspaceSummary({
   state,
@@ -109,6 +112,7 @@ function MetricCard({ metric, onOpen }: { metric: DashboardWorkspaceMetric; onOp
           {metric.hasData ? formatted.value : t(formatted.value)}
           {formatted.unit && <span className="role-dashboard-kpi-unit">{formatted.unit}</span>}
         </span>
+        <MetricComparison metric={metric} />
       </span>
       <span className="role-dashboard-kpi-aside">
         {onOpen && <ArrowUpRight aria-hidden="true" className="role-dashboard-kpi-open" size={16} />}
@@ -157,5 +161,5 @@ function formatUpdatedAt(value: string): string {
   const date = new Date(value)
   return Number.isNaN(date.getTime())
     ? '—'
-    : new Intl.DateTimeFormat('uk-UA', { hour: '2-digit', minute: '2-digit' }).format(date)
+    : updatedAtFormatter.format(date)
 }

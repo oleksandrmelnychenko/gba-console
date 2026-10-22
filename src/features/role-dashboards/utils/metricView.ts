@@ -89,6 +89,10 @@ export function formatMetricValue(metric: DashboardWorkspaceMetric): { unit: str
     return { unit: metric.unit, value: moneyFormatter.format(metric.value) }
   }
 
+  if (metric.unit === '%') {
+    return { unit: '%', value: qtyFormatter.format(metric.value) }
+  }
+
   return {
     unit: '',
     value: (metric.unit === 'qty' ? qtyFormatter : countFormatter).format(metric.value),

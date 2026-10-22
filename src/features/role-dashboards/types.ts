@@ -31,7 +31,18 @@ export type DashboardWorkspaceCatalog = {
 
 export type DashboardWorkspaceMetricTone = 'critical' | 'neutral' | 'positive' | 'warning'
 
+export type DashboardMetricComparison = {
+  from: string | null
+  to: string | null
+  value: number | null
+  delta: number | null
+  deltaPercent: number | null
+  unknownReason: string
+}
+
 export type DashboardWorkspaceMetric = {
+  comparison?: DashboardMetricComparison
+
   coveragePercent: number | null
   formula?: string
   source?: string

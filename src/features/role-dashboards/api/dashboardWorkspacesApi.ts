@@ -1,3 +1,4 @@
+import { normalizeMetricComparison } from './metricComparison'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   dashboardWorkspaceKeys,
@@ -61,15 +62,17 @@ export function normalizeDashboardWorkspaceSummary(
     throw new Error('Не вдалося прочитати показники робочого простору')
   }
 
+  const from = readString(record.From ?? record.from) || fallbackPeriod.from
+  const to = readString(record.To ?? record.to) || fallbackPeriod.toExclusive
   return {
     cacheTtlSeconds: readPositiveNumber(record.CacheTtlSeconds ?? record.cacheTtlSeconds, 30),
     dataFreshness: readString(record.DataFreshness ?? record.dataFreshness) || 'source-watermark-unknown',
-    from: readString(record.From ?? record.from) || fallbackPeriod.from,
+    from,
     generatedAtUtc: readString(record.GeneratedAtUtc ?? record.generatedAtUtc),
     metrics: rawMetrics
-      .map(normalizeMetric)
+      .map(value => normalizeMetric(value, from, to))
       .filter((metric): metric is DashboardWorkspaceMetric => metric !== null),
-    to: readString(record.To ?? record.to) || fallbackPeriod.toExclusive,
+    to,
     workspace: isWorkspaceKey(workspace) ? workspace : fallbackWorkspace,
   }
 }
@@ -90,7 +93,7 @@ function normalizeWorkspace(value: unknown): DashboardWorkspaceDescriptor | null
   }
 }
 
-function normalizeMetric(value: unknown): DashboardWorkspaceMetric | null {
+function normalizeMetric(value: unknown, from: string, to: string): DashboardWorkspaceMetric | null {
   const record = toRecord(value)
   const key = readString(record.Key ?? record.key)
   const label = readString(record.Label ?? record.label)
@@ -105,6 +108,7 @@ function normalizeMetric(value: unknown): DashboardWorkspaceMetric | null {
   const coverage = record.CoveragePercent !== undefined ? record.CoveragePercent : record.coveragePercent
   const timeBasis = readString(record.TimeBasis ?? record.timeBasis)
   return {
+    comparison: normalizeMetricComparison(record.Comparison ?? record.comparison, { from, to, value: parsedValue, hasData, timeBasis }),
     coveragePercent: coverage == null ? null : clampPercent(readNumber(coverage, 0)),
     formula: readString(record.Formula ?? record.formula) || undefined,
     source: readString(record.Source ?? record.source) || undefined,

@@ -24,4 +24,10 @@ describe('financial evidence presentation', () => {
     show({ generatedAtUtc: new Date(Date.now() - 301_000).toISOString() })
     expect(screen.getByText(/Показники застаріли/)).toBeTruthy()
   })
+  it('preserves fractional margin and the percentage unit in the KPI', () => {
+    show({ metrics: [{ ...metric, key: 'gross-margin', label: 'Валова маржа', unit: '%', value: 25.25 }] })
+    expect(screen.getByText('25,25')).toBeTruthy()
+    expect(screen.getByText('%')).toBeTruthy()
+  })
+
 })
