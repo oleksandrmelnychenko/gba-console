@@ -85,7 +85,7 @@ describe('NavigationRouteGuard page permissions', () => {
     RolesPage.mockClear()
   })
 
-  it('renders no page or access-denied message when /users/roles permission is absent', () => {
+  it('keeps the page unmounted when its page permission is absent despite an allowed navigation prefix', () => {
     renderRolesRoute(usersOnlyNavigation)
 
     expect(RolesPage).not.toHaveBeenCalled()
@@ -94,12 +94,13 @@ describe('NavigationRouteGuard page permissions', () => {
     expect(screen.queryByText('Немає доступу')).toBeNull()
   })
 
-  it('renders no page or access-denied message when the route is absent from navigation', () => {
+  it('explains access denial without mounting the page when navigation is empty', () => {
     renderRolesRoute([])
 
     expect(RolesPage).not.toHaveBeenCalled()
     expect(screen.queryByText('Керування ролями')).toBeNull()
-    expect(screen.queryByText('Доступ заборонено')).toBeNull()
+    expect(screen.getByRole('alert').textContent).toContain('Доступ заборонено')
+    expect(screen.getByRole('alert').textContent).toContain('Ця сторінка недоступна для вашого облікового запису.')
     expect(screen.queryByText('Немає доступу')).toBeNull()
   })
 

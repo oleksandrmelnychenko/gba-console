@@ -94,7 +94,7 @@ describe('sales route permission refresh', () => {
     await waitFor(() => expect(getNavigation).toHaveBeenCalledTimes(1))
     expect(screen.queryByTestId('sales-registry')).toBeNull()
     expect(screen.queryByText('Немає доступу')).toBeNull()
-    expect(screen.queryByText('Доступ заборонено')).toBeNull()
+    expect(await screen.findByText('Доступ заборонено')).not.toBeNull()
 
     act(() => notifyAuthPermissionsChanged())
 
@@ -102,6 +102,7 @@ describe('sales route permission refresh', () => {
     await waitFor(() => expect(getNavigation).toHaveBeenCalledTimes(2))
     expect(await screen.findByRole('button', { name: 'Продажі' })).not.toBeNull()
     expect(screen.getByTestId('sales-registry')).not.toBeNull()
+    expect(screen.queryByText('Доступ заборонено')).toBeNull()
   })
 
   it('keeps the sales route denied when a focus refresh still lacks page view', async () => {
@@ -116,14 +117,14 @@ describe('sales route permission refresh', () => {
     await waitFor(() => expect(getNavigation).toHaveBeenCalledTimes(1))
     expect(screen.queryByTestId('sales-registry')).toBeNull()
     expect(screen.queryByText('Немає доступу')).toBeNull()
-    expect(screen.queryByText('Доступ заборонено')).toBeNull()
+    expect(await screen.findByText('Доступ заборонено')).not.toBeNull()
 
     act(() => window.dispatchEvent(new Event('focus')))
 
     await waitFor(() => expect(getMyPermissions).toHaveBeenCalledTimes(2))
     expect(screen.queryByTestId('sales-registry')).toBeNull()
     expect(screen.queryByText('Немає доступу')).toBeNull()
-    expect(screen.queryByText('Доступ заборонено')).toBeNull()
+    expect(await screen.findByText('Доступ заборонено')).not.toBeNull()
     expect(screen.queryByRole('button', { name: 'Продажі' })).toBeNull()
   })
 })

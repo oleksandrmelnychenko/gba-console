@@ -44,7 +44,14 @@ export function NavigationRouteGuard({ children }: { children: ReactNode }) {
   }
 
   if (!isNavigationPathAllowed(modules, targetPath)) {
-    return null
+    return (
+      <NavigationRouteState
+        color="yellow"
+        description={t('Ця сторінка недоступна для вашого облікового запису.')}
+        icon={<TriangleAlert size={20} strokeWidth={1.8} />}
+        title={t('Доступ заборонено')}
+      />
+    )
   }
 
   return children
