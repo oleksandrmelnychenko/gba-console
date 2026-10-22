@@ -625,6 +625,7 @@ describe('getProcurementCharts', () => {
         producer_id: 42,
         top_n: 8,
         model_version: 'procure-hist120-v1',
+        population: { scope: 'supplier_assortment', item_count: 1, unique_product_count: 1, total_suggested_qty: 8, unpriced_item_count: 0, budget_ineligible_item_count: 1, budget_eur: null, approval_status: 'not_provided' },
         urgency_mix: [{ urgency: 'critical', count: 1 }],
         days_of_cover_hist: [{ bucket: '0-7', count: 1 }],
         demand_series: [
@@ -641,6 +642,7 @@ describe('getProcurementCharts', () => {
           {
             image_url: 'https://cdn.example.test/product.png',
             oe_number: 'OE-100',
+            evidence: { inventory: { available: 1, reserved: 1, on_order: 3 }, forecast_method: 'naive', forecast_units: 12, forecast_horizon_days: 30, unit_cost_eur: 0, line_cost_eur: 0, cost_coverage: 'complete', budget_eligible: false, reason: 'Потрібне поповнення' },
             on_hand: 2,
             producer_id: 42,
             producer_name: 'Brembo',
@@ -676,6 +678,8 @@ describe('getProcurementCharts', () => {
       product_name: 'Гальмівний диск',
       vendor_code: 'BR-100',
     })
+    expect(charts.population).toMatchObject({ item_count: 1, total_suggested_qty: 8, budget_eur: null, approval_status: 'not_provided' })
+    expect(charts.top_items[0].evidence).toMatchObject({ available: 1, reserved: 1, on_order: 3, unit_cost_eur: 0, line_cost_eur: 0, forecast_method: 'naive' })
     expect(charts.model_version).toBe('procure-hist120-v1')
     expect(charts).toMatchObject({
       source_history_start: '2025-01-01',

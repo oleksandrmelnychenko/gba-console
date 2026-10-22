@@ -59,6 +59,8 @@ export type AssortmentStockRow = Pick<AssortmentRow, 'band' | 'cover_days' | 'eu
 }
 
 export type AssortmentStock = ProductHistoryContract & {
+  valued_skus?: number
+  unvalued_skus?: number
   model_version?: string | null
   total_skus: number
   total_qty: number

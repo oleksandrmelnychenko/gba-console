@@ -277,16 +277,18 @@ function normalizeHealth(payload: unknown): AiFleetHealthState {
   const healthy = record.healthy ?? record.Healthy
   const status = String(record.status ?? record.Status ?? '').toLowerCase()
 
-  if (healthy === true || status === 'healthy' || status === 'ok') {
-    return { state: 'healthy' }
-  }
-
-  if (healthy === false || status === 'unhealthy' || status === 'down' || status === 'degraded') {
+  // A positive liveness flag cannot override an explicit degraded business state.
+  if (healthy === false || record.business_ready === false || status === 'unhealthy' || status === 'down' || status === 'degraded') {
     return {
       message: readMessage(record) || 'Health endpoint повернув негативний статус.',
       state: 'down',
     }
   }
+
+  if (record.fallback === true || record.model_fallback === true || record.data_stale === true) {
+    return { message: 'Сервіс повідомляє про резервну модель або застарілі дані; повну готовність не підтверджено.', state: 'unknown' }
+  }
+  if (healthy === true || status === 'healthy' || status === 'ok') return { state: 'healthy' }
 
   return {
     message: readMessage(record) || 'Health endpoint не містить явного healthy/status.',

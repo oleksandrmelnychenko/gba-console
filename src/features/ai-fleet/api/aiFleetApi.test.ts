@@ -73,6 +73,16 @@ describe('aiFleetApi', () => {
     expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/ai/fleet/status', { signal: undefined })
   })
 
+  it.each([
+    [{ healthy: true, status: 'degraded' }, 'down'],
+    [{ healthy: true, business_ready: false }, 'down'],
+    [{ healthy: true, model_fallback: true }, 'unknown'],
+    [{ healthy: true, data_stale: true }, 'unknown'],
+  ])('does not hide negative source evidence behind liveness: %j', async (health, state) => {
+    apiRequestMock.mockResolvedValueOnce(health).mockResolvedValueOnce({ OperationState: 'unknown', Services: [] })
+    await expect(getAiFleetServiceStatus('products')).resolves.toMatchObject({ health: { state } })
+  })
+
   it('preserves an in-progress cycle without claiming completion', async () => {
     apiRequestMock.mockResolvedValueOnce({ healthy: true }).mockResolvedValueOnce({
       Running: true, OperationState: 'unknown', LastStartedAtUtc: '2026-09-07T02:00:00Z',

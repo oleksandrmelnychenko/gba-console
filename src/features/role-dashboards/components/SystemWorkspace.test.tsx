@@ -6,6 +6,8 @@ import { AI_FLEET_SERVICES, getAiFleetServicesSnapshot } from '../../ai-fleet/ap
 import type { AiFleetServicesSnapshot } from '../../ai-fleet/types'
 import { SystemWorkspace } from './SystemWorkspace'
 
+vi.mock('./SyncSourceStatus', () => ({ SyncSourceStatus: () => null }))
+
 vi.mock('../../ai-fleet/api/aiFleetApi', () => ({
   AI_FLEET_SERVICES: [{ id: 'test-api', name: 'Test API', source: 'Test', location: '/ai/test', description: 'Test service' }],
   getAiFleetServicesSnapshot: vi.fn(),
@@ -71,6 +73,16 @@ describe('system workspace telemetry evidence', () => {
     await screen.findByText('Неповні дані')
     expect(screen.queryByText(successNote)).toBeNull()
     expect(screen.getByText('Немає даних')).toBeTruthy()
+  })
+
+  it('does not count stale warmup as a healthy service', async () => {
+    const snapshot = healthy()
+    snapshot.statuses[0].warmup.lastFinishedAtUtc = '2020-01-01T00:00:00Z'
+    getSnapshot.mockResolvedValue(snapshot)
+    show()
+    await screen.findByText('Увага')
+    expect(screen.queryByText(successNote)).toBeNull()
+    expect(screen.getByText('Готовність флоту').parentElement?.querySelector('.role-dashboard-fleet-score strong')?.textContent).toBe('0')
   })
 
   it('shows an initial failure as unknown instead of remaining in loading', async () => {

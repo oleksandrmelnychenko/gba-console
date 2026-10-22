@@ -23,6 +23,7 @@ import {
   type AiFleetReadinessRow,
 } from '../../ai-fleet/utils/aiFleetView'
 import { AiFleetAnalyticsDashboard } from '../../ai-fleet/components/AiFleetAnalyticsDashboard'
+import { SyncSourceStatus } from './SyncSourceStatus'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 
@@ -30,7 +31,7 @@ type SystemWorkspaceProps = {
   showDirectory?: boolean
 }
 
-type ServiceState = 'down' | 'healthy' | 'unknown'
+type ServiceState = 'down' | 'healthy' | 'unknown' | 'warning'
 
 type FleetState = ServiceState | 'loading' | 'warning'
 
@@ -53,7 +54,8 @@ const fleetTimeFormatter = new Intl.DateTimeFormat('uk-UA', { hour: '2-digit', m
 const SERVICE_STATE_ORDER: Record<ServiceState, number> = {
   down: 0,
   unknown: 1,
-  healthy: 2,
+  warning: 2,
+  healthy: 3,
 }
 
 const CHECK_STATE_LABEL: Record<AiFleetEffectiveState, string> = {
@@ -166,6 +168,7 @@ export function SystemWorkspace({ showDirectory = false }: SystemWorkspaceProps)
   if (showDirectory) {
     return (
       <Stack className="role-dashboard-ai-analytics" gap={6}>
+        <SyncSourceStatus />
         {error && (
           <Alert color="orange" icon={<CircleAlert size={16} />} variant="light">
             {error}
@@ -199,6 +202,7 @@ export function SystemWorkspace({ showDirectory = false }: SystemWorkspaceProps)
     { count: healthyCount, label: t('Працюють'), state: 'healthy' },
     { count: downCount, label: t('З помилкою'), state: 'down' },
     { count: unknownCount, label: t('Без телеметрії'), state: 'unknown' },
+    { count: statusRows.filter((item) => item.state === 'warning').length, label: t('Застаріло'), state: 'warning' },
   ]
   const lastWarmupMs = statuses.reduce<number | null>((latest, status) => {
     const finishedMs = status.warmup.lastFinishedAtUtc ? Date.parse(status.warmup.lastFinishedAtUtc) : Number.NaN
@@ -237,6 +241,8 @@ export function SystemWorkspace({ showDirectory = false }: SystemWorkspaceProps)
       </Group>
 
       <div className="role-dashboard-system-body">
+        <SyncSourceStatus />
+        <Text size="sm" c="dimmed">{t("Доступність API й прогрів не підтверджують якість моделі або свіжість бізнес-даних. Режим fallback і ізоляція DEV/QA цими перевірками не визначаються; сервіс може бути спільним.")}</Text>
         {error && (
           <Alert color="orange" icon={<CircleAlert size={16} />} variant="light">
             {error}
@@ -399,5 +405,6 @@ function getCombinedState(row: AiFleetReadinessRow): ServiceState {
     return 'down'
   }
 
-  return row.healthCheckState === 'unknown' || row.warmupCheckState === 'unknown' ? 'unknown' : 'healthy'
+  if (row.healthCheckState === 'unknown' || row.warmupCheckState === 'unknown') return 'unknown'
+  return row.healthCheckState === 'warning' || row.warmupCheckState === 'warning' ? 'warning' : 'healthy'
 }

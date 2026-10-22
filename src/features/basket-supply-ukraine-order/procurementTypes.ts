@@ -11,7 +11,19 @@ export type ProcurementDaysOfCoverBucket = {
   count: number
 }
 
+export type ProcurementChartEvidence = {
+  available: number; reserved: number; on_order: number
+  forecast_method: string; forecast_units: number; forecast_horizon_days: number
+  unit_cost_eur: number | null; line_cost_eur: number | null
+  cost_coverage: string; budget_eligible: boolean; reason: string
+}
+export type ProcurementChartPopulation = {
+  scope: 'supplier_assortment' | 'needed_cart'; item_count: number; unique_product_count: number
+  total_suggested_qty: number; unpriced_item_count: number; budget_ineligible_item_count: number
+  budget_eur: number | null; approval_status: 'not_provided'
+}
 export type ProcurementTopItem = {
+  evidence?: ProcurementChartEvidence | null
   image_url?: string | null
   oe_number?: string | null
   producer_id?: number | null
@@ -41,6 +53,7 @@ export type ProcurementDemandSeries = {
 }
 
 export type ProcurementCharts = ProcurementHistoryContract & {
+  population?: ProcurementChartPopulation | null
   producer_id: number | null
   top_n: number
   urgency_mix: ProcurementUrgencyBucket[]

@@ -128,6 +128,7 @@ function ProcureDashboardTabContent() {
   const { can } = usePermissions()
   const canOpenConstructor = can(PermissionKeys.SystemPages.PurchaseCockpit.View)
   const [state, dispatch] = useReducer(dashboardReducer, initialState)
+  const [suppliersError, setSuppliersError] = useState(false)
   const [producers, setProducers] = useState<Client[]>([])
   const [producerId, setProducerId] = useState<string | null>(null)
   const [topN, setTopN] = useState<number | ''>(15)
@@ -152,11 +153,13 @@ function ProcureDashboardTabContent() {
       .then((loaded) => {
         if (!cancelled) {
           setProducers(loaded)
+          setSuppliersError(false)
         }
       })
       .catch(() => {
         if (!cancelled) {
           setProducers([])
+          setSuppliersError(true)
         }
       })
 
@@ -260,8 +263,8 @@ function ProcureDashboardTabContent() {
     producerOptions.find((option) => Number(option.value) === displayProducerId)?.label
   const activeScopeLabel =
     typeof displayProducerId === 'number'
-      ? selectedProducerName || `${t('Виробник')} ${displayProducerId}`
-      : t('Усі виробники')
+      ? selectedProducerName || `${t('Постачальник')} ${displayProducerId}`
+      : t('Усі постачальники')
   const snapshotLabel = formatSnapshotDate(charts?.as_of_date ?? null, t)
   const hasUrgencyData = urgencyData.some((slice) => slice.value > 0)
   const hasDaysOfCoverData = (charts?.days_of_cover_hist ?? []).some(
@@ -301,7 +304,7 @@ function ProcureDashboardTabContent() {
       cell: (item) => <ProcurementProductCell row={item} t={t} />, width: 300, fill: true,
     },
     ...(hasProducerData ? [{
-      id: 'producer', header: t('Виробник'), accessor: (item: ProcurementTopItem) => item.producer_name || item.producer_id || '',
+      id: 'producer', header: t('Постачальник'), accessor: (item: ProcurementTopItem) => item.producer_name || item.producer_id || '',
       cell: (item: ProcurementTopItem) => <TableChip tone="document" value={item.producer_name || item.producer_id} />, width: 170,
     }] : []),
     {
@@ -324,7 +327,7 @@ function ProcureDashboardTabContent() {
   return (
     <Stack className="procurement-dashboard app-table-chips" gap={12}>
       <form className="app-filter-bar procurement-dashboard__toolbar" onSubmit={(event) => { event.preventDefault(); applyFilters() }}>
-        <Select clearable searchable data={producerOptions} label={t('Виробник')} placeholder={t('Усі виробники')}
+        <Select clearable searchable data={producerOptions} label={t('Постачальник')} placeholder={t('Усі постачальники')}
           value={producerId} onChange={setProducerId} className="procurement-dashboard__producer" />
         <NumberInput allowDecimal={false} allowNegative={false} label={t('Топ позицій')} min={1} max={100}
           className="procurement-dashboard__top-n" value={topN} onChange={(value) => setTopN(typeof value === 'number' ? value : '')} w={118} />
@@ -339,11 +342,17 @@ function ProcureDashboardTabContent() {
       {error && <ProcurementWorkspaceState action={{ label: t('Повторити'), onClick: reload }}
         description={charts ? t('Показано попередній зріз. Не вдалося отримати актуальні дані.') : t('Сервіс закупівель тимчасово недоступний. Повторіть завантаження.')}
         surface title={error} tone="error" />}
+      {suppliersError && <Text c="orange" size="sm">{t('Довідник постачальників недоступний. Це не означає, що постачальників немає.')}</Text>}
       {isLoading && !charts && <ProcurementWorkspaceState isLoading surface description="" title={t('Завантаження дашборда')} />}
       {!isLoading && !hasUsefulData && !error && <ProcurementWorkspaceState surface title={t('Даних для аналізу поки немає')}
-        description={hasAppliedFilters ? t('Для вибраного виробника даних немає.') : t('Немає даних про запаси та попит.')}
+        description={hasAppliedFilters ? t('Для вибраного постачальника даних немає.') : t('Немає даних про запаси та попит.')}
         action={hasAppliedFilters ? { label: t('Показати весь кошик'), onClick: resetFilters } : canOpenConstructor ? { label: t('Відкрити конструктор закупівель'), onClick: () => navigate('/basket-supply-ukraine-order/cockpit') } : undefined} />}
       {hasUsefulData && <>
+        <Text size="sm" c="dimmed">{charts?.population
+          ? `${t(charts.population.scope === 'needed_cart' ? 'Повний кошик позицій, що потребують поповнення' : 'Повний асортимент вибраного постачальника')}: ${charts.population.item_count} ${t('позицій')}, ${charts.population.unique_product_count} ${t('унікальних товарів')}. ${t('Рекомендовано загалом')}: ${qtyFormatter.format(charts.population.total_suggested_qty)}. ${t('Без вартості')}: ${charts.population.unpriced_item_count}. ${t('Не підтверджено для бюджету')}: ${charts.population.budget_ineligible_item_count}.`
+          : t('Повний обсяг рекомендованої кількості та покриття вартості в цьому зрізі не надано.')}</Text>
+        <Text size="sm" c="dimmed">{t('Зріз попиту')}: {charts?.as_of_date ?? '—'}. {t('Запаси й резерви — стан на момент розрахунку, не історичний залишок на цю дату. Перед замовленням перевірте актуальність у конструкторі.')}</Text>
+        <Text size="sm" c="dimmed">{t('Бюджет')}: {charts?.population?.budget_eur == null ? t('не задано') : `${qtyFormatter.format(charts.population.budget_eur)} EUR`}. {t('Стан погодження не надходить із джерела. Рекомендація не є погодженим замовленням.')}</Text>
         <div className="procurement-dashboard__metrics" aria-label={t('Поточні показники')}>
           <DashboardMetric label={t('Всього позицій')} value={summary.totalPositions} active={mode === 'urgency' && urgencyFilter === 'all'} onClick={() => selectUrgency('all')} icon={<Layers3 size={16} />} />
           <DashboardMetric label={t('Критичні позиції')} value={summary.criticalPositions} active={mode === 'urgency' && urgencyFilter === 'critical'} onClick={() => selectUrgency('critical')} icon={<CircleAlert size={16} />} />
@@ -403,8 +412,15 @@ function ProcureDashboardTabContent() {
           <div className="procurement-dashboard__detail-metrics">{([
             ['В наявності', detailItem.on_hand], ['Точка замовлення', detailItem.reorder_point], ['Рекомендовано', detailItem.suggested_qty],
           ] as const).map(([label, value]) => <article key={label}><span>{t(label)}</span><strong>{qtyFormatter.format(value)}</strong></article>)}</div>
+          <Text size="sm">{t('Дата розрахунку')}: {charts?.as_of_date ?? '—'}. {t('Історія попиту')}: {charts?.history_complete ? t('покриття повне') : t('покриття часткове')}.</Text>
+          {detailItem.evidence ? <Stack gap={4}>
+            <Text size="sm">{detailItem.evidence.reason}</Text>
+            <Text size="sm">{t('Доступно')}: {qtyFormatter.format(detailItem.evidence.available)} · {t('У резерві')}: {qtyFormatter.format(detailItem.evidence.reserved)} · {t('В дорозі')}: {qtyFormatter.format(detailItem.evidence.on_order)}</Text>
+            <Text size="sm">{t('Прогноз')}: {qtyFormatter.format(detailItem.evidence.forecast_units)} / {detailItem.evidence.forecast_horizon_days} {t('днів')} · {t('Метод')}: {detailItem.evidence.forecast_method}</Text>
+            <Text size="sm">{t('Вартість позиції')}: {detailItem.evidence.line_cost_eur == null ? t('невідома') : `${qtyFormatter.format(detailItem.evidence.line_cost_eur)} EUR`}. {detailItem.evidence.budget_eligible ? t('Джерело вартості підтверджене для розрахунку бюджету.') : t('Вартість не підтверджена для розрахунку бюджету; потрібна перевірка закупівельником.')}</Text>
+          </Stack> : <Text size="sm" c="dimmed">{t('Детальні джерела запасу, прогнозу та вартості для цього зрізу недоступні.')}</Text>}
           {detailSeries ? <DemandChart series={detailSeries} t={t} /> : <div className="procurement-dashboard__empty">{t('Прогнозу для цього товару немає')}</div>}
-          {canOpenConstructor && <Button color="brand" onClick={() => {
+          {canOpenConstructor && <Button color="brand" disabled={Boolean(error) || isLoading} onClick={() => {
             const params = new URLSearchParams({ productId: String(detailItem.product_id) })
             const selectedProducerId = detailItem.producer_id ?? displayProducerId
             if (typeof selectedProducerId === 'number') params.set('producerId', String(selectedProducerId))

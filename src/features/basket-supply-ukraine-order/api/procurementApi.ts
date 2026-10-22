@@ -392,12 +392,51 @@ async function normalizeCharts(result: unknown): Promise<ProcurementCharts> {
   return {
     ...history,
     ...costs,
+    population: normalizeChartPopulation(data.population, urgencyMix.reduce((total, bucket) => total + bucket.count, 0)),
     producer_id: producerId,
     top_n: topN,
     urgency_mix: urgencyMix,
     days_of_cover_hist: daysOfCover,
     top_items: topItems,
     demand_series: demandSeries,
+  }
+}
+
+function normalizeChartPopulation(value: unknown, itemCount: number) {
+  if (value == null) return null
+  const data = requireRecord(value, 'charts.population')
+  if (data.scope !== 'supplier_assortment' && data.scope !== 'needed_cart') throw new ProcurementContractError('charts.population.scope', 'unknown scope')
+  if (data.approval_status !== 'not_provided') throw new ProcurementContractError('charts.population.approval_status', 'unsupported approval status')
+  const count = requireIntegerInRange(data.item_count, 'charts.population.item_count', 0, Number.MAX_SAFE_INTEGER)
+  if (count !== itemCount) throw new ProcurementContractError('charts.population.item_count', 'differs from full urgency population')
+  return {
+    scope: data.scope, approval_status: data.approval_status,
+    item_count: count,
+    unique_product_count: requireIntegerInRange(data.unique_product_count, 'charts.population.unique_product_count', 0, count),
+    total_suggested_qty: requireNumberInRange(data.total_suggested_qty, 'charts.population.total_suggested_qty', 0, Number.MAX_VALUE),
+    unpriced_item_count: requireIntegerInRange(data.unpriced_item_count, 'charts.population.unpriced_item_count', 0, count),
+    budget_ineligible_item_count: requireIntegerInRange(data.budget_ineligible_item_count, 'charts.population.budget_ineligible_item_count', 0, count),
+    budget_eur: data.budget_eur == null ? null : requireNumberInRange(data.budget_eur, 'charts.population.budget_eur', 0, Number.MAX_VALUE),
+  } as const
+}
+
+function normalizeChartEvidence(value: unknown, path: string) {
+  if (value == null) return null
+  const data = requireRecord(value, path)
+  const inventory = requireRecord(data.inventory, `${path}.inventory`)
+  if (typeof data.budget_eligible !== 'boolean') throw new ProcurementContractError(`${path}.budget_eligible`, 'expected boolean')
+  return {
+    available: requireFiniteNumber(inventory.available, `${path}.inventory.available`),
+    reserved: requireFiniteNumber(inventory.reserved, `${path}.inventory.reserved`),
+    on_order: requireFiniteNumber(inventory.on_order, `${path}.inventory.on_order`),
+    forecast_method: requireNonEmptyString(data.forecast_method, `${path}.forecast_method`),
+    forecast_units: requireNumberInRange(data.forecast_units, `${path}.forecast_units`, 0, Number.MAX_VALUE),
+    forecast_horizon_days: requireIntegerInRange(data.forecast_horizon_days, `${path}.forecast_horizon_days`, 1, Number.MAX_SAFE_INTEGER),
+    unit_cost_eur: data.unit_cost_eur == null ? null : requireNumberInRange(data.unit_cost_eur, `${path}.unit_cost_eur`, 0, Number.MAX_VALUE),
+    line_cost_eur: data.line_cost_eur == null ? null : requireNumberInRange(data.line_cost_eur, `${path}.line_cost_eur`, 0, Number.MAX_VALUE),
+    cost_coverage: requireNonEmptyString(data.cost_coverage, `${path}.cost_coverage`),
+    budget_eligible: data.budget_eligible,
+    reason: requireNonEmptyString(data.reason, `${path}.reason`),
   }
 }
 
@@ -462,6 +501,7 @@ function normalizeTopItems(value: unknown) {
     seen.add(productId)
 
     return {
+      evidence: normalizeChartEvidence(entry.evidence, `${path}.evidence`),
       image_url: requireNullableString(entry.image_url, `${path}.image_url`),
       oe_number: requireNullableString(entry.oe_number, `${path}.oe_number`),
       producer_id: requireNullableSafePositiveInteger(entry.producer_id, `${path}.producer_id`),

@@ -1,3 +1,4 @@
+import { requireMatchingAssortmentScopes } from '../snapshotScope'
 import { ACTION_LABELS, REASON_LABELS } from '../assortmentLabels'
 import {
   Alert,
@@ -276,7 +277,7 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
           align: 'right',
           minWidth: 130,
           accessor: (row) => row.eur_value,
-          cell: (row) => <MoneyCell value={row.eur_value} />,
+          cell: (row) => <MoneyCell value={row.unit_cost_eur == null ? null : row.eur_value} />,
         },
         {
           id: 'action',
@@ -394,6 +395,8 @@ function AssortmentDashboardPageContent() {
         ])
 
         if (!controller.signal.aborted) {
+          requireMatchingAssortmentScopes([overviewResult, healthResult, regionsResult, stockResult, marginResult, returnsResult]
+            .flatMap((result) => result.status === 'fulfilled' ? [result.value] : []))
           const failures = [
             settledErrorMessage(overviewResult, t('Огляд асортименту недоступний')),
             settledErrorMessage(healthResult, t('Деталізація асортименту недоступна')),
@@ -448,7 +451,7 @@ function AssortmentDashboardPageContent() {
   const negativeMarginRevenue = getSummaryNumber(marginSummary, 'eur_at_negative_margin')
   const overallReturnRate = getSummaryNumber(returnsSummary, 'overall_return_rate')
   const marginProfit = weightedMargin == null || knownMarginRevenue == null ? null : knownMarginRevenue * weightedMargin
-  const avgHealth = Math.round(body?.avg_health ?? 0)
+  const avgHealth = body == null ? null : Math.round(body.avg_health)
   const regionOptions = useMemo(
     () => (regions?.regions ?? []).map((region) => ({
       value: String(region.region_id),
@@ -499,6 +502,8 @@ function AssortmentDashboardPageContent() {
 
   return (
     <Stack className="assort-dash" gap={6}>
+      <Text size="xs" c="dimmed">{t('Розділи мають спільну дату й джерело історії, але обчислюються окремо; одночасність знімка бази не підтверджена. Прогноз майбутнього попиту цей екран не надає.')}</Text>
+      <Text size="sm" c="dimmed">{t('Оцінка запасу враховує лише товари з відомою собівартістю. Без оцінки')}: {stock?.unvalued_skus == null ? t('невідомо') : formatInt(stock.unvalued_skus)}. {t('Невідома собівартість не означає нульову ціну.')}</Text>
       <div className="assort-dash__shell">
         <AssortmentHeader
           avgHealth={avgHealth}
@@ -589,7 +594,7 @@ function AssortmentHeader({
   onFiltersChange,
   onReset,
 }: {
-  avgHealth: number
+  avgHealth: number | null
   filters: AssortmentHealthParams
   regionOptions: SelectOption[]
   totalSkus?: number
@@ -609,7 +614,7 @@ function AssortmentHeader({
           <Text className="assort-dash__subtitle">
             {totalSkus == null ? t('Стан запасів') : <><b>{formatInt(totalSkus)}</b> {t('товарних позицій')}</>}
             {' · '}
-            {t('здоровʼя')} <b>{avgHealth}/100</b>
+            {t('здоровʼя')} <b>{avgHealth == null ? t('невідомо') : `${avgHealth}/100`}</b>
           </Text>
         </div>
         <div className="assort-dash__controls">
@@ -722,7 +727,7 @@ function AssortmentStructure({
   body,
   visibleBandSegments,
 }: {
-  avgHealth: number
+  avgHealth: number | null
   bandSegments: BandSegment[]
   body?: AssortmentOverview['overview']
   visibleBandSegments: BandSegment[]
@@ -777,11 +782,11 @@ function AssortmentStructure({
           <RingProgress
             label={
               <Text ff="var(--font-mono)" fw={600} size="xl" ta="center">
-                {avgHealth}
+                {avgHealth ?? '—'}
               </Text>
             }
             roundCaps
-            sections={[{ value: avgHealth, color: healthColor(avgHealth) }]}
+            sections={avgHealth == null ? [] : [{ value: avgHealth, color: healthColor(avgHealth) }]}
             size={106}
             thickness={10}
           />

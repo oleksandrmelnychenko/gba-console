@@ -128,7 +128,7 @@ describe('ProcureDashboardTab', () => {
     await waitFor(() => {
       expect(getSupplyDashboardSuppliers).toHaveBeenCalledOnce()
     })
-    fireEvent.click(screen.getByRole('combobox', { name: 'Виробник' }))
+    fireEvent.click(screen.getByRole('combobox', { name: 'Постачальник' }))
     fireEvent.click(await screen.findByText('Meyle GmbH'))
     fireEvent.change(screen.getByLabelText('Топ позицій'), {
       target: { value: '8' },
@@ -260,11 +260,11 @@ describe('ProcureDashboardTab', () => {
     renderDashboard()
     await screen.findByText('Всього позицій')
     vi.mocked(getSupplyDashboardCharts).mockRejectedValueOnce(new Error('unavailable'))
-    fireEvent.click(screen.getByRole('combobox', { name: 'Виробник' }))
+    fireEvent.click(screen.getByRole('combobox', { name: 'Постачальник' }))
     fireEvent.click(await screen.findByText('Meyle GmbH'))
     fireEvent.click(screen.getByRole('button', { name: 'Застосувати' }))
     await screen.findByText('Не вдалося завантажити дашборд постачання')
-    expect(document.querySelector('.procurement-dashboard__snapshot')?.textContent).toContain('Усі виробники')
+    expect(document.querySelector('.procurement-dashboard__snapshot')?.textContent).toContain('Усі постачальники')
     expect(screen.getByText('Всього позицій').closest('article')?.textContent).toContain('25')
   })
 
