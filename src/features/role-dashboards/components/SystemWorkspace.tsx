@@ -208,8 +208,8 @@ export function SystemWorkspace({ showDirectory = false }: SystemWorkspaceProps)
     const finishedMs = status.warmup.lastFinishedAtUtc ? Date.parse(status.warmup.lastFinishedAtUtc) : Number.NaN
     return Number.isNaN(finishedMs) || (latest !== null && latest >= finishedMs) ? latest : finishedMs
   }, null)
-  const freshestWarmupHours = analytics.readinessRows.reduce<number | null>(
-    (freshest, row) => row.warmupAgeHours === null || (freshest !== null && freshest <= row.warmupAgeHours) ? freshest : row.warmupAgeHours,
+  const oldestWarmupHours = analytics.readinessRows.reduce<number | null>(
+    (oldest, row) => row.warmupAgeHours === null || (oldest !== null && oldest >= row.warmupAgeHours) ? oldest : row.warmupAgeHours,
     null,
   )
   const fleetNote = error
@@ -293,12 +293,12 @@ export function SystemWorkspace({ showDirectory = false }: SystemWorkspaceProps)
                 </ul>
                 <dl className="role-dashboard-fleet-facts">
                   <div>
-                    <dt>{t('Останній прогрів')}</dt>
+                    <dt>{t('Найсвіжіший прогрів')}</dt>
                     <dd>{lastWarmupMs === null ? '—' : fleetDateTimeFormatter.format(lastWarmupMs)}</dd>
                   </div>
                   <div>
-                    <dt>{t('Минуло')}</dt>
-                    <dd>{freshestWarmupHours === null ? '—' : `${warmupAgeFormatter.format(freshestWarmupHours)} ${t('год')}`}</dd>
+                    <dt>{t('Вік найстарішого прогріву')}</dt>
+                    <dd>{oldestWarmupHours === null ? '—' : `${warmupAgeFormatter.format(oldestWarmupHours)} ${t('год')}`}</dd>
                   </div>
                   <div>
                     <dt>{t('Перевірено')}</dt>
