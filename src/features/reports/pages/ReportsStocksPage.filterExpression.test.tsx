@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { useState, type ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -14,7 +14,13 @@ vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => tr
 vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(), createStockReport: vi.fn() }))
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(), getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn(), saveServerReportTemplate: vi.fn() }))
 function Providers({ children }: { children: ReactNode }) { return <MantineProvider env="test"><I18nProvider>{children}</I18nProvider></MantineProvider> }
-async function select(name: string, option: string) { fireEvent.click(screen.getByRole('combobox', { name })); fireEvent.click(await screen.findByRole('option', { name: option })) }
+async function select(name: string, option: string) {
+  fireEvent.click(screen.getByRole('combobox', { name }))
+  fireEvent.click(await screen.findByRole('option', { name: option }))
+  // Finish Mantine's deferred selected-option update before the caller can
+  // unmount the editor or finish the test and tear down its document.
+  await act(async () => { await new Promise<void>(resolve => window.setTimeout(resolve, 0)) })
+}
 const saved = () => ({ Id: crypto.randomUUID(), Revision: 3, Name: 'Груповані рахунки', Data: expressionRequest() })
 async function ready() { const view = render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>); await screen.findByRole('button', { name: 'Продажі за днями' }); return view }
 async function applySaved() { fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Груповані рахунки' })) }
