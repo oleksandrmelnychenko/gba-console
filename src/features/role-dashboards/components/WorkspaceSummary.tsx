@@ -1,6 +1,6 @@
 import { ActionIcon, Alert, Badge, Skeleton, Text, Tooltip, UnstyledButton } from '@mantine/core'
 import { ArrowUpRight, CircleAlert, RefreshCw } from 'lucide-react'
-import type { CSSProperties, ReactNode } from 'react'
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import type { WorkspaceSummaryState } from '../hooks/useWorkspaceSummary'
@@ -21,11 +21,18 @@ export function WorkspaceSummary({
   const { t } = useI18n()
   const navigate = useNavigate()
   const { error, isRefreshing, reload, summary } = state
+  const [now, setNow] = useState(Date.now)
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 15_000)
+    return () => window.clearInterval(timer)
+  }, [])
+  const calculatedAt = summary ? Date.parse(summary.generatedAtUtc) : Number.NaN
+  const isStale = Boolean(summary && (!Number.isFinite(calculatedAt) || now - calculatedAt > summary.cacheTtlSeconds * 1000))
 
   const refreshStatus = (
     <div className="role-dashboard-refresh">
       <Text className="role-dashboard-updated" aria-live="polite">
-        {summary?.generatedAtUtc ? `${t('Оновлено о')} ${formatUpdatedAt(summary.generatedAtUtc)}` : t('Оновлення…')}
+        {summary?.generatedAtUtc ? `${t('Розраховано о')} ${formatUpdatedAt(summary.generatedAtUtc)}` : t('Оновлення…')}
       </Text>
       <Tooltip label={t('Оновити показники')}>
         <ActionIcon
@@ -76,9 +83,11 @@ export function WorkspaceSummary({
   return (
     <section aria-label={t('Ключові показники')} className="role-dashboard-kpis">
       {toolbarTarget === undefined ? refreshStatus : toolbarTarget && createPortal(refreshStatus, toolbarTarget)}
+      {isStale && <Alert color="orange" variant="light">{t('Показники застаріли: строк кешу минув. До успішного оновлення показано попередній розрахунок.')}</Alert>}
       {error && summary && (
         <Alert className="role-dashboard-inline-alert" color="orange" icon={<CircleAlert size={16} />} variant="light">{error}</Alert>
       )}
+      {summary && <Text size="xs" c="dimmed">{t('Час розрахунку не підтверджує свіжість синхронізації. Повнота джерел показана окремо.')}</Text>}
       {content}
     </section>
   )
@@ -91,8 +100,20 @@ function MetricCard({ metric, onOpen }: { metric: DashboardWorkspaceMetric; onOp
     <div className={`role-dashboard-kpi is-${metric.tone}${metric.hasData ? '' : ' is-empty'}`}>
       <span aria-hidden="true" className="role-dashboard-kpi-icon"><MetricIcon metric={metric} size={19} strokeWidth={1.9} /></span>
       <span className="role-dashboard-kpi-body">
-        <Text className="role-dashboard-kpi-label" lineClamp={1} title={metric.label}>{metric.label}</Text>
+        <Tooltip multiline w={380} label={<div>
+          <div>{metric.formula || t('Формулу джерела не надано')}</div>
+          {metric.source && <div>{t('Джерело')}: {metric.source}</div>}
+          {metric.grain && <div>{t('Одиниця обліку')}: {metric.grain}</div>}
+          {metric.scope && <div>{t('Обсяг')}: {metric.scope}</div>}
+          {metric.owner && <div>{t('Власник визначення')}: {metric.owner}</div>}
+          <div>{metric.sourceWatermarkUtc ? `${t('Джерело оновлено')}: ${metric.sourceWatermarkUtc}` : t('Час останньої синхронізації джерела не підтверджено')}</div>
+          <div>{metric.coveragePercent == null ? t('Повнота джерела невідома') : `${t('Охоплення даних')}: ${metric.coveragePercent}%`}</div>
+          {metric.unknownReason && <div>{metric.unknownReason}</div>}
+        </div>}>
+          <Text className="role-dashboard-kpi-label" lineClamp={1}>{metric.label}</Text>
+        </Tooltip>
         <Text size="xs" c="dimmed">{t(metricTimeLabel(metric))}</Text>
+        {metric.unknownReason && <Text size="xs" c="orange" lineClamp={2} title={metric.unknownReason}>{metric.unknownReason}</Text>}
         <span className="role-dashboard-kpi-value">
           {metric.hasData ? formatted.value : t(formatted.value)}
           {formatted.unit && <span className="role-dashboard-kpi-unit">{formatted.unit}</span>}
@@ -100,7 +121,7 @@ function MetricCard({ metric, onOpen }: { metric: DashboardWorkspaceMetric; onOp
       </span>
       <span className="role-dashboard-kpi-aside">
         {onOpen && <ArrowUpRight aria-hidden="true" className="role-dashboard-kpi-open" size={16} />}
-        {metric.hasData && metric.coveragePercent < 100 && (
+        {metric.coveragePercent !== null && metric.coveragePercent < 100 && (
           <Tooltip label={t('Охоплення даних')}>
             <Badge className="app-role-pill is-orange" size="xs" variant="light">{metric.coveragePercent}%</Badge>
           </Tooltip>
