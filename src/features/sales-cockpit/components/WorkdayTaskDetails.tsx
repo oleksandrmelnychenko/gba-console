@@ -1,4 +1,4 @@
-import { Alert, Button, Group, Loader, Modal, Pagination, Stack, Text } from '@mantine/core'
+import { Alert, Button, Group, Loader, Modal, Pagination, Stack, Text, getDefaultZIndex } from '@mantine/core'
 import { useCallback, useReducer, useState, type ComponentProps } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getWorkdayTasks } from '../api/workdayApi'
@@ -23,7 +23,7 @@ export function WorkdayTaskDetails({ row, actions, revision, paused, onClose }: 
   }, [filter, row.key])
   const state = useWorkdayResource(load, `${row.key}:${filter.scope}:${filter.page}:${revision}:${retry}`, paused)
   const editable = filter.scope === 'active'
-  return <Modal opened onClose={onClose} title={`${t('Завдання клієнта')}: ${row.client_name || t('Без клієнта')}`} size="xl" trapFocus={!paused} closeButtonProps={{ 'aria-label': t('Закрити завдання') }} closeOnEscape={!paused} closeOnClickOutside={!paused} withCloseButton={!paused}>
+  return <Modal opened zIndex={getDefaultZIndex('modal') - 1} onClose={onClose} title={`${t('Завдання клієнта')}: ${row.client_name || t('Без клієнта')}`} size="xl" trapFocus={!paused} closeButtonProps={{ 'aria-label': t('Закрити завдання') }} closeOnEscape={!paused} closeOnClickOutside={!paused} withCloseButton={!paused}>
     <Stack gap="sm">
       <Group justify="space-between">
         <Group gap="xs">{(['active', 'history'] as const).map((scope) => <Button key={scope} variant={filter.scope === scope ? 'filled' : 'light'} onClick={() => setFilter({ scope, page: 1 })}>{t(scope === 'active' ? 'Активні завдання' : 'Історія завдань')}</Button>)}</Group>
