@@ -90,7 +90,8 @@ describe('sales preorder permissions', () => {
   it('does not mount the interest registry without page.view', () => {
     renderUi(<PreordersInterestPage />)
 
-    expect(screen.queryByText('Доступ заборонено')).toBeNull()
+    expect(screen.getByRole('alert').textContent).toContain('Доступ заборонено')
+    expect(screen.getByRole('alert').textContent).toContain('Ця сторінка недоступна для вашого облікового запису.')
     expect(screen.queryByTestId('preorders-table')).toBeNull()
     expect(api.getPreorders).not.toHaveBeenCalled()
   })
