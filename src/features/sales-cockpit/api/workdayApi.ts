@@ -7,7 +7,7 @@ const contractError = () => new Error('Некоректна відповідь �
 const positiveInteger = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value > 0
 const nonnegativeInteger = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
 const activeStatuses = new Set(['open', 'in_progress', 'snoozed'])
-const terminalStatuses = new Set(['done', 'dismissed', 'orphaned'])
+const terminalStatuses = new Set(['done', 'dismissed', 'orphaned', 'superseded'])
 function checkPage(data: WorkdayPage | WorkdayTasksPage, rows: unknown[], offset: number) {
   if (!data || !positiveInteger(data.manager_id) || typeof data.manager_net_uid !== 'string' || !data.manager_net_uid.trim()
     || data.offset !== offset || data.limit !== 20 || !nonnegativeInteger(data.total) || !Array.isArray(rows)

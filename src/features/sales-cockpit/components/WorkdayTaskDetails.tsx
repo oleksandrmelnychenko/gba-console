@@ -7,6 +7,7 @@ import type { CockpitTask } from '../types'
 import type { WorkdayRow, WorkdayScope } from '../workdayTypes'
 import { formatContactDate } from '../utils/contactDate'
 import { TaskCard } from './TaskCard'
+import { TaskSourceEvidence } from './TaskSourceEvidence'
 
 export type WorkdayTaskActions = Omit<ComponentProps<typeof TaskCard>, 'task' | 'pending'> & { pendingTaskKey: string | null }
 export function WorkdayTaskDetails({ row, actions, revision, paused, onClose }: {
@@ -45,7 +46,7 @@ export function WorkdayTaskDetails({ row, actions, revision, paused, onClose }: 
     </Stack>
   </Modal>
 }
-const STATUS_LABELS: Record<string, string> = { generated: 'Згенеровано', open: 'Відкрито', in_progress: 'У роботі', snoozed: 'Відкладено', done: 'Виконано', dismissed: 'Не актуально', orphaned: 'Більше не актуально' }
+const STATUS_LABELS: Record<string, string> = { generated: 'Згенеровано', open: 'Відкрито', in_progress: 'У роботі', snoozed: 'Відкладено', done: 'Виконано', dismissed: 'Не актуально', orphaned: 'Більше не актуально', superseded: 'Оновлено за даними документів' }
 function TaskHistory({ task }: { task: CockpitTask }) {
   const { t } = useI18n()
   const history = Array.isArray(task.status_history) ? task.status_history as Record<string, unknown>[] : []
@@ -53,6 +54,7 @@ function TaskHistory({ task }: { task: CockpitTask }) {
     <Text size="sm">{t('Статус')}: {t(STATUS_LABELS[task.status ?? ''] ?? task.status ?? '—')}</Text>
     {typeof task.resolution_reason === 'string' && task.resolution_reason && <Text size="sm">{task.resolution_reason}</Text>}
     <TaskOutcome value={task.outcome} />
+    <TaskSourceEvidence value={task.source_evidence} />
     {(task.notes?.length || history.length) ? <details><summary>{t('Нотатки та зміни статусу')}</summary><Stack gap={6} mt="xs">
       {keyedRecords(task.notes ?? []).map(({ record: note, key }) => <Text key={key} size="sm" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{note.author_name || t('Автор')} · {note.created_at ? formatContactDate(note.created_at) : '—'}: {note.text}</Text>)}
       {keyedRecords(history).map(({ record: entry, key }) => <TaskStatusEntry key={key} entry={entry} />)}

@@ -14,6 +14,7 @@ export type CockpitTaskStatus =
   | 'snoozed'
   | 'dismissed'
   | 'orphaned'
+  | 'superseded'
 
 export type CockpitUrgency = 'critical' | 'high' | 'normal' | 'low'
 

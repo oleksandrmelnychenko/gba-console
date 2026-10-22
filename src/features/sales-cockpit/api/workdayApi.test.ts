@@ -23,6 +23,14 @@ describe('workday API boundary', () => {
     vi.mocked(apiRequest).mockResolvedValue(scope === 'active' ? active : history)
     expect((await getWorkdayTasks('client:1', scope, 0)).scope).toBe(scope)
   })
+  it('accepts superseded advice only in history and retains source evidence', async () => {
+    const evidence = { kind: 'debt_settled', debts: { 123: '0' }, observed_at: '2026-10-22T09:00:00Z' }
+    const tasks = history.tasks.map((task) => ({ ...task, status: 'superseded', source_evidence: evidence }))
+    vi.mocked(apiRequest).mockResolvedValue({ ...history, tasks })
+    expect((await getWorkdayTasks('client:1', 'history', 0)).tasks[0].source_evidence).toEqual(evidence)
+    vi.mocked(apiRequest).mockResolvedValue({ ...active, tasks: active.tasks.map((task) => ({ ...task, status: 'superseded' })) })
+    await expect(getWorkdayTasks('client:1', 'active', 0)).rejects.toThrow('Некоректна відповідь')
+  })
   it.each([
     { ...queue, total: 999 },
     { ...queue, manager_id: 999 },
