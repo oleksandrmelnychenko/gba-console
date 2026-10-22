@@ -92,7 +92,6 @@ export function SystemWorkspace({ showDirectory = false }: SystemWorkspaceProps)
 
       requestInFlight = true
       setLoading(true)
-      setError(null)
 
       try {
         const snapshot = await getAiFleetServicesSnapshot(controller.signal)
@@ -112,11 +111,13 @@ export function SystemWorkspace({ showDirectory = false }: SystemWorkspaceProps)
           }
 
           setStatuses(snapshot.statuses)
-          setCheckedAtMs(capturedAtMs)
+          setCheckedAtMs(snapshot.telemetryError ? null : capturedAtMs)
           setError(snapshot.telemetryError ?? null)
         }
       } catch (loadError) {
         if (!controller.signal.aborted) {
+          setStatuses([])
+          setCheckedAtMs(null)
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити стан сервісів'))
         }
       } finally {
@@ -156,10 +157,10 @@ export function SystemWorkspace({ showDirectory = false }: SystemWorkspaceProps)
   )
   const statusRows = useMemo(
     () => analytics.readinessRows
-      .map((row) => ({ row, state: getCombinedState(statuses.find((status) => status.serviceId === row.serviceId)) }))
+      .map((row) => ({ row, state: getCombinedState(row) }))
       .toSorted((left, right) => SERVICE_STATE_ORDER[left.state] - SERVICE_STATE_ORDER[right.state]
         || left.row.serviceName.localeCompare(right.row.serviceName, 'uk')),
-    [analytics.readinessRows, statuses],
+    [analytics.readinessRows],
   )
 
   if (showDirectory) {
@@ -170,11 +171,15 @@ export function SystemWorkspace({ showDirectory = false }: SystemWorkspaceProps)
             {error}
           </Alert>
         )}
-        <AiFleetAnalyticsDashboard
-          analytics={analytics}
-          history={observations}
-          isLoading={isLoading && statuses.length === 0}
-        />
+        {error ? (
+          <Text c="dimmed" size="sm">{t('Поточна аналітика недоступна: перевірку телеметрії не завершено.')}</Text>
+        ) : (
+          <AiFleetAnalyticsDashboard
+            analytics={analytics}
+            history={observations}
+            isLoading={isLoading && statuses.length === 0}
+          />
+        )}
       </Stack>
     )
   }
@@ -183,12 +188,12 @@ export function SystemWorkspace({ showDirectory = false }: SystemWorkspaceProps)
   const healthyCount = statusRows.filter((item) => item.state === 'healthy').length
   const downCount = statusRows.filter((item) => item.state === 'down').length
   const unknownCount = statusRows.filter((item) => item.state === 'unknown').length
-  const isInitialLoad = isLoading && statuses.length === 0
+  const isInitialLoad = isLoading && statuses.length === 0 && !error
   const fleetState: FleetState = isInitialLoad
     ? 'loading'
     : downCount > 0
       ? 'down'
-      : unknownCount > 0 ? 'unknown' : analytics.staleWarmupCount > 0 ? 'warning' : 'healthy'
+      : error || unknownCount > 0 ? 'unknown' : analytics.staleWarmupCount > 0 ? 'warning' : 'healthy'
   const fleetView = fleetState === 'loading' ? null : FLEET_STATE_VIEW[fleetState]
   const segments: Array<{ count: number; label: string; state: ServiceState }> = [
     { count: healthyCount, label: t('Працюють'), state: 'healthy' },
@@ -203,7 +208,9 @@ export function SystemWorkspace({ showDirectory = false }: SystemWorkspaceProps)
     (freshest, row) => row.warmupAgeHours === null || (freshest !== null && freshest <= row.warmupAgeHours) ? freshest : row.warmupAgeHours,
     null,
   )
-  const fleetNote = downCount > 0
+  const fleetNote = error
+    ? t('Перевірку телеметрії не завершено. Поточну готовність усіх сервісів не підтверджено.')
+    : downCount > 0
     ? `${downCount} ${t('з')} ${totalCount} ${t('сервісів не відповідають — вони першими в таблиці.')}`
     : unknownCount > 0
       ? `${unknownCount} ${t('з')} ${totalCount} ${t('сервісів без повної телеметрії.')}`
@@ -387,14 +394,10 @@ function ServiceStatusRow({
   )
 }
 
-function getCombinedState(status: AiFleetServiceStatus | undefined): ServiceState {
-  if (!status) {
-    return 'unknown'
-  }
-
-  if (status.health.state === 'down' || status.warmup.state === 'down') {
+function getCombinedState(row: AiFleetReadinessRow): ServiceState {
+  if (row.healthCheckState === 'fail' || row.warmupCheckState === 'fail') {
     return 'down'
   }
 
-  return status.health.state === 'healthy' && status.warmup.state === 'healthy' ? 'healthy' : 'unknown'
+  return row.healthCheckState === 'unknown' || row.warmupCheckState === 'unknown' ? 'unknown' : 'healthy'
 }
