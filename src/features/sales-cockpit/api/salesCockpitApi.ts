@@ -552,6 +552,8 @@ function normalizeDashboard(result: unknown, expectedAsOf?: string): CockpitDash
         }, [])
       : [],
     value_at_risk_eur: toNumber(payload.value_at_risk_eur),
+    debt_unknown_date_count: toNumber(payload.debt_unknown_date_count),
+    debt_unknown_date_eur: toNumber(payload.debt_unknown_date_eur),
     ...(payload.debt_unknown_terms_count !== undefined ? {
       debt_unknown_terms_count: toNumber(payload.debt_unknown_terms_count),
       debt_unknown_terms_eur: toNumber(payload.debt_unknown_terms_eur),
@@ -668,6 +670,8 @@ function normalizeHeadDashboardTeam(value: unknown): HeadDashboardTeam | null {
     open_tasks: toNumber(row.open_tasks),
     critical: toNumber(row.critical),
     value_at_risk_eur: toNumber(row.value_at_risk_eur),
+    debt_unknown_date_count: toNumber(row.debt_unknown_date_count),
+    debt_unknown_date_eur: toNumber(row.debt_unknown_date_eur),
     ...(row.debt_unknown_terms_count !== undefined ? {
       debt_unknown_terms_count: toNumber(row.debt_unknown_terms_count),
       debt_unknown_terms_eur: toNumber(row.debt_unknown_terms_eur),

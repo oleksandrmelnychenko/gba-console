@@ -146,6 +146,7 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
     taskTypeData.some((item) => item.value > 0) ||
     agingData.some((item) => item.amount > 0)
   const hasSummaryData =
+    (dashboard?.debt_unknown_date_count ?? 0) > 0 ||
     (dashboard?.debt_unknown_terms_count ?? 0) > 0 ||
     (dashboard?.value_at_risk_eur ?? 0) > 0 ||
     completedTotals.open > 0 ||
@@ -163,6 +164,9 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
         <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Дашборд завдань')}</Text>
         {dashboard && <Text size="xs" c="dimmed">{t('Поточний зріз')}: {dashboard.as_of}. {t('Це дата розрахунку, не підтвердження свіжості синхронізації.')}</Text>}
         <Text size="xs" c="dimmed">{t('Борг — поточні непогашені документи; групування за днями після договірного терміну оплати. Кількість у групах — документи, не клієнти.')}</Text>
+        {(dashboard?.debt_unknown_date_count ?? 0) > 0 && <Alert color="yellow">
+          {t('Дата документа не визначена')}: {dashboard?.debt_unknown_date_count} · {formatMoney(dashboard?.debt_unknown_date_eur ?? 0)}. {t('Ці документи показано окремо від відомого простроченого боргу.')}
+        </Alert>}
         {(dashboard?.debt_unknown_terms_count ?? 0) > 0 && <Alert color="yellow">
           {t('Термін оплати не визначено')}: {dashboard?.debt_unknown_terms_count} · {formatMoney(dashboard?.debt_unknown_terms_eur ?? 0)}. {t('Ці документи показано окремо від відомого простроченого боргу.')}
         </Alert>}

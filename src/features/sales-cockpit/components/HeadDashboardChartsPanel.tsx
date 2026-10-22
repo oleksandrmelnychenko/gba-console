@@ -119,7 +119,7 @@ export function HeadDashboardChartsPanel({
   )
 
   const valueSeries = useMemo<AgingSeries[]>(
-    () => [{ name: 'value', label: t('Сума під ризиком, €'), color: 'red.6' }],
+    () => [{ name: 'value', label: t('Відомий прострочений борг, €'), color: 'red.6' }],
     [t],
   )
 
@@ -149,6 +149,9 @@ export function HeadDashboardChartsPanel({
         )}
         {(dashboard?.teams.reduce((sum, team) => sum + (team.debt_unknown_terms_count ?? 0), 0) ?? 0) > 0 && <Alert color="yellow">
           {t('Є документи без визначеного терміну оплати. Вони не входять до відомого простроченого боргу.')}
+        </Alert>}
+        {(dashboard?.teams.reduce((sum, team) => sum + (team.debt_unknown_date_count ?? 0), 0) ?? 0) > 0 && <Alert color="yellow">
+          {t('Дата документа не визначена')}: {dashboard?.teams.reduce((sum, team) => sum + (team.debt_unknown_date_count ?? 0), 0)} · {formatMoney(dashboard?.teams.reduce((sum, team) => sum + (team.debt_unknown_date_eur ?? 0), 0) ?? 0)}. {t('Ці документи показано окремо від відомого простроченого боргу.')}
         </Alert>}
 
         <div className="cockpit-analytics-grid">

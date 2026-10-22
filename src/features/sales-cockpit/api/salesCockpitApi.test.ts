@@ -668,6 +668,8 @@ describe('salesCockpitApi', () => {
       task_type_mix: [{ type: 'debt_followup', count: 3 }],
       urgency_mix: [{ urgency: 'critical', count: 2 }],
       value_at_risk_eur: 4200.5,
+      debt_unknown_date_count: 0,
+      debt_unknown_date_eur: 0,
       debt_aging: [{ bucket: '0-30', amount_eur: 1000, count: 2 }],
       completed_vs_open: [{ status: 'open', count: 4 }, { status: 'done', count: 1 }],
     })
@@ -697,11 +699,23 @@ describe('salesCockpitApi', () => {
       requested_manager_net_uid: '11111111-1111-1111-1111-111111111111',
       as_of: '2026-06-08',
       ...history('2025-06-08'),
-      teams: [{ manager_id: 7, open_tasks: 4, critical: 1, value_at_risk_eur: 1200 }],
+      teams: [{ manager_id: 7, open_tasks: 4, critical: 1, value_at_risk_eur: 1200, debt_unknown_date_count: 0, debt_unknown_date_eur: 0 }],
       escalated_count: 2,
       total_value_at_risk_eur: 9800.25,
     })
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/head/dashboard')
+  })
+
+  it('preserves unknown-date debt separately in manager and head responses', async () => {
+    const debt = { debt_unknown_date_count: 3, debt_unknown_date_eur: 250.75, value_at_risk_eur: 100 }
+    apiRequestMock.mockResolvedValueOnce({ manager_id: 7, as_of: '2026-06-08', ...history('2025-06-08'), ...debt })
+    await expect(getDashboard()).resolves.toMatchObject(debt)
+    apiRequestMock.mockResolvedValueOnce({
+      is_head: true, as_of: '2026-06-08', ...history('2025-06-08'),
+      teams: [{ manager_id: 7, open_tasks: 0, critical: 0, ...debt }],
+      total_value_at_risk_eur: 100,
+    })
+    await expect(getHeadDashboard()).resolves.toMatchObject({ teams: [debt], total_value_at_risk_eur: 100 })
   })
 
   it('defaults the head dashboard to a non-head empty shape on a non-object response', async () => {

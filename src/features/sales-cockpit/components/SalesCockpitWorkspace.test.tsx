@@ -2,10 +2,11 @@ import { MantineProvider } from '@mantine/core'
 import { act, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { theme } from '../../../shared/theme/theme'
-import { getDashboard } from '../api/salesCockpitApi'
+import { getDashboard, getHeadDashboard } from '../api/salesCockpitApi'
 import type { CockpitDashboard } from '../types'
 import { CockpitDashboardPanel } from './CockpitDashboardPanel'
 import { CockpitTaskList } from './CockpitTaskList'
+import { HeadDashboardChartsPanel } from './HeadDashboardChartsPanel'
 
 const mocks = vi.hoisted(() => ({
   translate: (key: string) => key,
@@ -17,10 +18,11 @@ vi.mock('../../../shared/i18n/useI18n', () => ({
 
 vi.mock('../api/salesCockpitApi', () => ({
   getDashboard: vi.fn(),
+  getHeadDashboard: vi.fn(),
 }))
 
 vi.mock('../../../shared/ui/charts/AgingBars', () => ({
-  AgingBars: () => <div data-testid="aging-chart" />,
+  AgingBars: ({ data }: { data: unknown }) => <div data-testid="aging-chart">{JSON.stringify(data)}</div>,
 }))
 
 vi.mock('../../../shared/ui/charts/TaskTypeDonut', () => ({
@@ -115,6 +117,29 @@ describe('Sales cockpit workspace', () => {
     renderWithTheme(<CockpitDashboardPanel reloadKey={0} />)
     expect(await screen.findByText(/Термін оплати не визначено/)).toBeTruthy()
     expect(screen.getByText(/Ці документи показано окремо від відомого простроченого боргу/)).toBeTruthy()
+  })
+
+  it('keeps an unknown-date-only dashboard visible without adding it to known overdue debt', async () => {
+    vi.mocked(getDashboard).mockResolvedValue(dashboard({ debt_unknown_date_count: 3, debt_unknown_date_eur: 250 }))
+    renderWithTheme(<CockpitDashboardPanel reloadKey={0} />)
+    expect(await screen.findByText(/Дата документа не визначена: 3 · €250/)).toBeTruthy()
+    expect(screen.getByText('Відомий прострочений борг')).toBeTruthy()
+    expect(screen.getByText('€0')).toBeTruthy()
+    expect(screen.queryByTestId('aging-chart')).toBeNull()
+  })
+
+  it('shows head unknown-date totals separately from known manager chart values', async () => {
+    vi.mocked(getHeadDashboard).mockResolvedValue({
+      is_head: true, as_of: '2026-07-24', escalated_count: 0, total_value_at_risk_eur: 100,
+      teams: [
+        { manager_id: 1, open_tasks: 0, critical: 0, value_at_risk_eur: 100, debt_unknown_date_count: 2, debt_unknown_date_eur: 200 },
+        { manager_id: 2, open_tasks: 0, critical: 0, value_at_risk_eur: 0, debt_unknown_date_count: 1, debt_unknown_date_eur: 50 },
+      ],
+    })
+    renderWithTheme(<HeadDashboardChartsPanel reloadKey={0} rows={[]} />)
+    expect(await screen.findByText(/Дата документа не визначена: 3 · €250/)).toBeTruthy()
+    expect(screen.getByText('Відомий прострочений борг за менеджером')).toBeTruthy()
+    expect(screen.getAllByTestId('aging-chart')[0].textContent).toBe('[{"manager":"#1","value":100},{"manager":"#2","value":0}]')
   })
 })
 
