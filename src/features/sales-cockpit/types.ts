@@ -225,6 +225,9 @@ export type CockpitCompletedVsOpen = {
 }
 
 export type CockpitDashboard = AiHistoryLineage & {
+  ai_active?: number | null
+  manual_backlog?: number | null
+  active_total?: number | null
   debt_unknown_terms_count?: number
   debt_unknown_terms_eur?: number
   debt_unknown_date_count?: number
@@ -240,6 +243,8 @@ export type CockpitDashboard = AiHistoryLineage & {
 }
 
 export type HeadDashboardTeam = {
+  ai_active?: number | null
+  manual_backlog?: number | null
   debt_unknown_terms_count?: number
   debt_unknown_terms_eur?: number
   debt_unknown_date_count?: number
@@ -391,6 +396,23 @@ export type HeadDismissalsResponse = {
   top_reasons: HeadDismissalTopReason[]
 }
 
+export type CockpitClientSegment = 'all' | 'reorder_due' | 'reorder_overdue' | 'reactivation' | 'new_client'
+export type CockpitRepeatProduct = {
+  product_id: number
+  product_net_uid: string | null
+  name: string
+  last_purchase_on: string
+  last_quantity: number
+  recent_purchase_dates: string[]
+  purchase_count: number
+  cycle_days: number | null
+  next_expected_on: string | null
+  overdue_days: number | null
+  available_qty: number | null
+  availability_status: 'available' | 'out_of_stock' | 'unknown'
+  history_status: 'sufficient' | 'short' | 'partial'
+  reason: string
+}
 export type CockpitClient = {
   client_id: number
   client_net_uid: string
@@ -403,6 +425,23 @@ export type CockpitClient = {
   turnover_eur: number
   overdue_eur: number
   max_days_past_terms: number
+  segments: CockpitClientSegment[]
+  repeat_evidence: {
+    products: CockpitRepeatProduct[]
+    history_start: string
+    history_complete: boolean
+    date_basis: 'source_document_date'
+    reason: string
+  }
+  contact_cooldown: {
+    active: boolean
+    reason: 'scheduled_contact' | 'contacted_current_cycle' | null
+    event_id: string | null
+    contacted_at: string | null
+    next_contact_at: string | null
+    next_action: string | null
+  }
+  new_client_basis: 'no_retained_purchase_in_available_history' | null
 }
 
 export type CockpitClientsResponse = {
@@ -410,6 +449,13 @@ export type CockpitClientsResponse = {
   manager_net_uid?: string
   as_of?: string
   count: number
+  total: number
+  population_count: number
+  offset: number
+  limit: number
+  segment: CockpitClientSegment
+  search: string
+  segment_counts: Record<CockpitClientSegment, number>
   clients: CockpitClient[]
 }
 

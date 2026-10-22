@@ -5,6 +5,7 @@ import {
 } from '../../../shared/ai/aiHistoryLineage'
 import type {
   CockpitClient,
+  CockpitClientSegment,
   CockpitClientsResponse,
   CockpitCompletedVsOpen,
   CockpitCount,
@@ -260,10 +261,11 @@ export async function getHeadDismissals(
   return normalizeHeadDismissals(result)
 }
 
-export async function getCockpitClients(): Promise<CockpitClientsResponse> {
-  const result = await apiRequest<unknown>('/sales/cockpit/clients')
+export async function getCockpitClients(params: { segment?: CockpitClientSegment; search?: string; offset?: number; limit?: number } = {}): Promise<CockpitClientsResponse> {
+  const query = { segment: params.segment ?? 'all', search: params.search?.trim() ?? '', offset: params.offset ?? 0, limit: params.limit ?? 50 }
+  const result = await apiRequest<unknown>('/sales/cockpit/clients', { query })
 
-  return normalizeCockpitClients(result)
+  return normalizeCockpitClients(result, query)
 }
 
 export async function getDashboard(): Promise<CockpitDashboard> {
@@ -534,6 +536,8 @@ function normalizeDashboard(result: unknown, expectedAsOf?: string): CockpitDash
 
   return {
     ...history,
+    ...normalizeActiveTaskSplit(payload.ai_active, payload.manual_backlog, payload.active_total, true),
+    ...(payload.active_total != null ? { active_total: payload.active_total } : {}),
     manager_id: typeof payload.manager_id === 'number' ? payload.manager_id : 0,
     manager_net_uid: typeof payload.manager_net_uid === 'string' ? payload.manager_net_uid : undefined,
     as_of: history.as_of,
@@ -666,6 +670,7 @@ function normalizeHeadDashboardTeam(value: unknown): HeadDashboardTeam | null {
   const row = value as Partial<HeadDashboardTeam>
 
   return {
+    ...normalizeActiveTaskSplit(row.ai_active, row.manual_backlog, row.open_tasks),
     manager_id: typeof row.manager_id === 'number' ? row.manager_id : 0,
     open_tasks: toNumber(row.open_tasks),
     critical: toNumber(row.critical),
@@ -677,6 +682,15 @@ function normalizeHeadDashboardTeam(value: unknown): HeadDashboardTeam | null {
       debt_unknown_terms_eur: toNumber(row.debt_unknown_terms_eur),
     } : {}),
   }
+}
+
+function normalizeActiveTaskSplit(ai: unknown, manual: unknown, total: unknown, requireTotal = false) {
+  if (ai == null && manual == null && (!requireTotal || total == null)) return {}
+  if (![ai, manual, total].every((value) => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0)
+    || (ai as number) + (manual as number) !== total) {
+    throw new SalesCockpitContractError('dashboard.active_counts', 'Лічильники AI та ручних завдань не узгоджені із загальною кількістю активних завдань.')
+  }
+  return { ai_active: ai as number, manual_backlog: manual as number }
 }
 
 function normalizeHeadTasksResponse(result: unknown): HeadTasksResponse {
@@ -870,22 +884,31 @@ function normalizeDismissalReasons(value: unknown): HeadDismissalReason[] {
   }, [])
 }
 
-function normalizeCockpitClients(result: unknown): CockpitClientsResponse {
+function normalizeCockpitClients(result: unknown, query: { segment: CockpitClientSegment; search: string; offset: number; limit: number }): CockpitClientsResponse {
   const payload = result && typeof result === 'object' ? (result as Partial<CockpitClientsResponse>) : {}
-  const clients = Array.isArray(payload.clients)
-    ? payload.clients.reduce<CockpitClient[]>((acc, value) => {
-        const row = normalizeCockpitClient(value)
-        if (row) acc.push(row)
-        return acc
-      }, [])
-    : []
+  const segments: CockpitClientSegment[] = ['all', 'reorder_due', 'reorder_overdue', 'reactivation', 'new_client']
+  if (!Array.isArray(payload.clients) || ![payload.count, payload.total, payload.population_count].every(isClientCount)
+    || payload.offset !== query.offset || payload.limit !== query.limit || payload.search !== query.search || payload.segment !== query.segment
+    || !payload.segment_counts || !segments.every((key) => isClientCount(payload.segment_counts?.[key]))
+    || payload.segment_counts.all !== payload.population_count || payload.segment_counts[query.segment] !== payload.total
+    || (payload.total as number) > (payload.population_count as number)
+    || segments.some((key) => payload.segment_counts![key] > payload.population_count!)
+    || payload.count !== payload.clients.length || payload.count !== Math.min(query.limit, Math.max(0, payload.total! - query.offset))) {
+    throw new SalesCockpitContractError('clients.population', 'Повні лічильники клієнтських сегментів або сторінка недоступні.')
+  }
+  const clients = payload.clients.map(normalizeCockpitClient)
+  if (clients.some((row) => !row || (query.segment !== 'all' && !row.segments.includes(query.segment)))
+    || new Set(clients.map((row) => row?.client_id)).size !== clients.length) {
+    throw new SalesCockpitContractError('clients.evidence', 'Клієнти не відповідають вибраному сегменту або бракує доказів рекомендації.')
+  }
 
   return {
-    ...payload,
-    count: typeof payload.count === 'number' ? payload.count : clients.length,
-    clients,
+    ...payload as CockpitClientsResponse,
+    clients: clients as CockpitClient[],
   }
 }
+
+function isClientCount(value: unknown): value is number { return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 }
 
 function normalizeCockpitClient(value: unknown): CockpitClient | null {
   if (!value || typeof value !== 'object') {
@@ -894,7 +917,23 @@ function normalizeCockpitClient(value: unknown): CockpitClient | null {
 
   const row = value as Partial<CockpitClient>
 
-  if (typeof row.client_id !== 'number' || typeof row.client_net_uid !== 'string') {
+  const evidence = row.repeat_evidence
+  const cooldown = row.contact_cooldown
+  if (!isClientCount(row.client_id) || row.client_id === 0 || typeof row.client_net_uid !== 'string'
+    || !Array.isArray(row.segments) || !row.segments.every((key) => ['reorder_due', 'reorder_overdue', 'reactivation', 'new_client'].includes(key))
+    || !evidence || !Array.isArray(evidence.products) || typeof evidence.reason !== 'string'
+    || typeof evidence.history_complete !== 'boolean' || !isClientDate(evidence.history_start) || evidence.date_basis !== 'source_document_date'
+    || !cooldown || typeof cooldown.active !== 'boolean' || (cooldown.active && row.segments.length > 0)
+    || ![null, 'scheduled_contact', 'contacted_current_cycle'].includes(cooldown.reason)
+    || !evidence.products.every((product) => product && isClientCount(product.product_id) && product.product_id > 0
+      && isClientDate(product.last_purchase_on) && Array.isArray(product.recent_purchase_dates) && product.recent_purchase_dates.every(isClientDate)
+      && typeof product.name === 'string' && typeof product.reason === 'string' && Number.isFinite(product.last_quantity)
+      && isClientCount(product.purchase_count) && ['sufficient', 'short', 'partial'].includes(product.history_status)
+      && (product.cycle_days === null || (Number.isFinite(product.cycle_days) && product.cycle_days > 0))
+      && (product.next_expected_on === null || isClientDate(product.next_expected_on))
+      && (product.overdue_days === null || Number.isFinite(product.overdue_days))
+      && (product.availability_status === 'unknown' ? product.available_qty === null
+        : ['available', 'out_of_stock'].includes(product.availability_status) && typeof product.available_qty === 'number' && Number.isFinite(product.available_qty) && product.available_qty >= 0))) {
     return null
   }
 
@@ -910,7 +949,15 @@ function normalizeCockpitClient(value: unknown): CockpitClient | null {
     turnover_eur: toNumber(row.turnover_eur),
     overdue_eur: toNumber(row.overdue_eur),
     max_days_past_terms: toNumber(row.max_days_past_terms),
+    segments: row.segments,
+    repeat_evidence: evidence,
+    contact_cooldown: cooldown,
+    new_client_basis: row.new_client_basis ?? null,
   }
+}
+
+function isClientDate(value: unknown): value is string {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value
 }
 
 function normalizeHeadTaskByStatus(value: unknown): HeadTaskByStatus {

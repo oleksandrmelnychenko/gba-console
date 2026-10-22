@@ -7,6 +7,7 @@ import {
   Checkbox,
   Group,
   Loader,
+  Pagination,
   Select,
   Stack,
   Table,
@@ -48,7 +49,8 @@ import { RecommendationAgreementScope } from '../../clients/components/recommend
 import type { SalesUkraineClientAgreement, SalesUkraineProduct } from '../../sales-ukraine/types'
 import { getCockpitClients } from '../api/salesCockpitApi'
 import type { ContactClient } from '../contactTypes'
-import type { CockpitClient } from '../types'
+import type { CockpitClient, CockpitClientSegment, CockpitClientsResponse } from '../types'
+import { ClientRepeatEvidence } from './ClientRepeatEvidence'
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
 const lastOrderFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
@@ -60,12 +62,15 @@ type ClientRecommendationsState = {
   products: RecommendationProduct[]
 }
 
-export function MyClientsPanel({ onContact, onTasks }: { onContact?: (client: ContactClient) => void; onTasks?: (client: ContactClient) => void }) {
+export function MyClientsPanel({ onContact, onTasks, revision = 0 }: { onContact?: (client: ContactClient) => void; onTasks?: (client: ContactClient) => void; revision?: number }) {
   const { can } = usePermissions()
   const canRecordContact = can(PermissionKeys.SalesCockpit.Task.AddNote)
   const { t } = useI18n()
   const navigate = useNavigate()
-  const [clients, setClients] = useValueState<CockpitClient[]>([])
+  const [response, setResponse] = useValueState<CockpitClientsResponse | null>(null)
+  const [segment, setSegment] = useState<CockpitClientSegment>('all')
+  const [page, setPage] = useState(1)
+  const pageSize = 50
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useState(true)
   const [search, setSearch] = useValueState('')
@@ -79,12 +84,15 @@ export function MyClientsPanel({ onContact, onTasks }: { onContact?: (client: Co
     async function load() {
       setError(null)
       setLoading(true)
+      setResponse(null)
 
       try {
-        const result = await getCockpitClients()
+        const result = await getCockpitClients({ segment, search: debouncedSearch, offset: (page - 1) * pageSize, limit: pageSize })
 
         if (!cancelled) {
-          setClients(result.clients)
+          const lastPage = Math.max(1, Math.ceil(result.total / pageSize))
+          if (page > lastPage) setPage(lastPage)
+          else setResponse(result)
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -102,20 +110,15 @@ export function MyClientsPanel({ onContact, onTasks }: { onContact?: (client: Co
     return () => {
       cancelled = true
     }
-  }, [reloadKey, setClients, setError, t])
+  }, [reloadKey, revision, segment, page, debouncedSearch, setResponse, setError, t])
 
-  const visibleClients = useMemo(() => {
-    const needle = debouncedSearch.trim().toLowerCase()
-
-    if (!needle) {
-      return clients
-    }
-
-    return clients.filter((client) =>
-      [client.name, client.full_name, client.phone, client.email]
-        .some((field) => (field ?? '').toLowerCase().includes(needle)),
-    )
-  }, [clients, debouncedSearch])
+  const segments: Array<{ value: CockpitClientSegment; label: string }> = [
+    { value: 'all', label: t('Усі клієнти') },
+    { value: 'reorder_due', label: t('Час повторного замовлення') },
+    { value: 'reorder_overdue', label: t('Прострочена повторна покупка') },
+    { value: 'reactivation', label: t('Давно не купували') },
+    { value: 'new_client', label: t('Без покупок у доступній історії') },
+  ]
 
   const clientColumns = useMemo<DataTableColumn<CockpitClient>[]>(
     () => [
@@ -182,6 +185,12 @@ export function MyClientsPanel({ onContact, onTasks }: { onContact?: (client: Co
         width: 215,
       },
       {
+        id: 'repeat-reason',
+        header: t('Причина та наступний контакт'),
+        cell: (client) => <ClientRepeatEvidence client={client} compact />,
+        width: 320,
+      },
+      {
         id: 'contacts',
         header: t('Контакти'),
         cell: (client) => {
@@ -227,17 +236,25 @@ export function MyClientsPanel({ onContact, onTasks }: { onContact?: (client: Co
         <div className="cockpit-panel-heading">
           <Text className="app-section-title" fw={600} size="sm">{t('Мої клієнти')}</Text>
           <Group gap={6} wrap="nowrap">
-            <Badge className="app-role-pill is-gray" variant="light">{isLoading ? '…' : visibleClients.length}</Badge>
+            <Badge className="app-role-pill is-gray" variant="light">{isLoading ? '…' : response?.total ?? '—'}</Badge>
             <AiFeatureBadge size="sm" tooltip={t('AI-рекомендації товарів для кожного клієнта')} />
           </Group>
         </div>
+        <Select
+          label={t('Сегмент клієнтів')}
+          value={segment}
+          allowDeselect={false}
+          data={segments.map((item) => ({ value: item.value, label: `${item.label} (${response?.segment_counts[item.value] ?? '—'})` }))}
+          w={320}
+          onChange={(value) => { setSegment((value ?? 'all') as CockpitClientSegment); setPage(1) }}
+        />
         <TextInput
           label={t('Пошук клієнта')}
           leftSection={<Search size={15} />}
           placeholder={t('Назва, телефон або email')}
           value={search}
           w={280}
-          onChange={(event) => setSearch(event.currentTarget.value)}
+          onChange={(event) => { setSearch(event.currentTarget.value); setPage(1) }}
         />
         <div className="app-filter-actions">
           <Button
@@ -252,38 +269,45 @@ export function MyClientsPanel({ onContact, onTasks }: { onContact?: (client: Co
         </div>
       </div>
       {error && <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>}
+      {response && <Text size="xs" c="dimmed" px="md" py="xs">
+        {t('У вибраному сегменті')}: {response.total} · {t('У клієнтській базі за пошуком')}: {response.population_count}. {t('Лічильники охоплюють усі знайдені записи, не лише цю сторінку. Сегменти можуть перетинатися.')}
+      </Text>}
       <div className="cockpit-panel-table">
         <DataTable
           columns={clientColumns}
-          data={visibleClients}
+          data={response?.clients ?? []}
           emptyText={error ? t('Дані клієнтів недоступні') : t('Клієнтів не знайдено')}
           expandColumnLabels={{ collapseRow: t('Згорнути'), expandRow: t('Розгорнути') }}
           getRowId={(client) => String(client.client_id)}
           height="100%"
           isLoading={isLoading}
-          layoutVersion="clients-workday-3"
+          layoutVersion="clients-workday-4"
           minWidth={1180}
-          renderExpandedRow={(client) => <ClientRecommendationsInline client={client} />}
+          renderExpandedRow={(client) => <Stack gap="xs"><ClientRepeatEvidence client={client} /><ClientRecommendationsInline client={client} onSaleCreated={() => setReloadKey((key) => key + 1)} /></Stack>}
           showLayoutControls
           tableId="sales-cockpit-my-clients"
           toolbarPortalTarget={tableToolbarSlot}
         />
       </div>
+      {response && response.total > pageSize && <Group justify="space-between" p="sm">
+        <Text size="sm">{t('Показано')}: {response.offset + 1}–{response.offset + response.count} {t('з')} {response.total}</Text>
+        <Pagination total={Math.ceil(response.total / pageSize)} value={page} onChange={setPage} />
+      </Group>}
     </Card>
   )
 }
 
-function ClientRecommendationsInline({ client }: { client: CockpitClient }) {
+function ClientRecommendationsInline({ client, onSaleCreated }: { client: CockpitClient; onSaleCreated: () => void }) {
   return (
     <RecommendationAgreementScope clientNetId={client.client_net_uid}>
-      {(agreement) => <ClientRecommendationsForAgreement client={client} agreement={agreement as SalesUkraineClientAgreement} />}
+      {(agreement) => <ClientRecommendationsForAgreement client={client} agreement={agreement as SalesUkraineClientAgreement} onSaleCreated={onSaleCreated} />}
     </RecommendationAgreementScope>
   )
 }
 
 function ClientRecommendationsForAgreement({
-  client, agreement,
-}: { client: CockpitClient; agreement: SalesUkraineClientAgreement }) {
+  client, agreement, onSaleCreated,
+}: { client: CockpitClient; agreement: SalesUkraineClientAgreement; onSaleCreated: () => void }) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const { can } = usePermissions()
@@ -589,7 +613,7 @@ function ClientRecommendationsForAgreement({
           permissionScopedSalesUkraineApi
           prefill={wizardPrefill}
           onClose={() => setWizardPrefill(null)}
-          onCreated={() => setWizardPrefill(null)}
+          onCreated={() => { setWizardPrefill(null); onSaleCreated() }}
         />
       )}
     </div>

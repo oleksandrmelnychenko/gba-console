@@ -253,7 +253,7 @@ function SalesCockpitPageContent() {
         <div className="cockpit-page-content"><ContactsPanel onOpen={setContactClient} revision={contactsRevision} /></div>
       ) : view === 'clients' ? (
         <div className="cockpit-page-content">
-          <MyClientsPanel onContact={setContactClient} onTasks={setTaskClient} />
+          <MyClientsPanel revision={reloadKey} onContact={setContactClient} onTasks={setTaskClient} />
         </div>
       ) : view === 'offers' ? (
         <div className="cockpit-page-content">

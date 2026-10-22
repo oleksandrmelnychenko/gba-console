@@ -146,6 +146,7 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
     taskTypeData.some((item) => item.value > 0) ||
     agingData.some((item) => item.amount > 0)
   const hasSummaryData =
+    (dashboard?.active_total ?? 0) > 0 ||
     (dashboard?.debt_unknown_date_count ?? 0) > 0 ||
     (dashboard?.debt_unknown_terms_count ?? 0) > 0 ||
     (dashboard?.value_at_risk_eur ?? 0) > 0 ||
@@ -163,6 +164,9 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
       <Stack gap="md">
         <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Дашборд завдань')}</Text>
         {dashboard && <Text size="xs" c="dimmed">{t('Поточний зріз')}: {dashboard.as_of}. {t('Це дата розрахунку, не підтвердження свіжості синхронізації.')}</Text>}
+        {dashboard && (dashboard.ai_active != null && dashboard.manual_backlog != null && dashboard.active_total != null ? (
+          <Text size="sm">{t('Усі активні, включно з відкладеними')}: {dashboard.active_total} · {t('AI-рекомендації')}: {dashboard.ai_active} · {t('Ручні завдання')}: {dashboard.manual_backlog}</Text>
+        ) : <Text size="xs" c="dimmed">{t('Поділ активних завдань на AI та ручні недоступний.')}</Text>)}
         <Text size="xs" c="dimmed">{t('Борг — поточні непогашені документи; групування за днями після договірного терміну оплати. Кількість у групах — документи, не клієнти.')}</Text>
         {(dashboard?.debt_unknown_date_count ?? 0) > 0 && <Alert color="yellow">
           {t('Дата документа не визначена')}: {dashboard?.debt_unknown_date_count} · {formatMoney(dashboard?.debt_unknown_date_eur ?? 0)}. {t('Ці документи показано окремо від відомого простроченого боргу.')}
@@ -180,7 +184,7 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
         {isLoading || hasSummaryData ? (
           <div className="cockpit-dashboard-metrics">
             <StatCard accent="danger" label={t('Відомий прострочений борг')} value={formatMoney(dashboard?.value_at_risk_eur ?? 0)} />
-            <StatCard accent="info" label={t('Активні')} value={String(completedTotals.open)} />
+            <StatCard accent="info" label={t('Доступні зараз у вхідних')} value={String(completedTotals.open)} />
             <StatCard accent="success" label={t('Виконано (місяць)')} value={String(completedTotals.done)} />
             <StatCard label={t('Відхилено (місяць)')} value={String(completedTotals.dismissed)} />
           </div>

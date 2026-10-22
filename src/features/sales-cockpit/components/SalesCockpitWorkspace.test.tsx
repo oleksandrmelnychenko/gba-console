@@ -119,6 +119,29 @@ describe('Sales cockpit workspace', () => {
     expect(screen.getByText(/Ці документи показано окремо від відомого простроченого боргу/)).toBeTruthy()
   })
 
+  it('shows deferred manual backlog even when the visible inbox is empty', async () => {
+    vi.mocked(getDashboard).mockResolvedValue(dashboard({ ai_active: 0, manual_backlog: 5, active_total: 5 }))
+    renderWithTheme(<CockpitDashboardPanel reloadKey={0} />)
+    expect(await screen.findByText('Усі активні, включно з відкладеними: 5 · AI-рекомендації: 0 · Ручні завдання: 5')).toBeTruthy()
+    expect(screen.getByText('Доступні зараз у вхідних')).toBeTruthy()
+  })
+
+  it('labels the split unavailable for older NBA rather than asserting zero manual commitments', async () => {
+    vi.mocked(getDashboard).mockResolvedValue(dashboard({ value_at_risk_eur: 100 }))
+    renderWithTheme(<CockpitDashboardPanel reloadKey={0} />)
+    expect(await screen.findByText('Поділ активних завдань на AI та ручні недоступний.')).toBeTruthy()
+    expect(screen.queryByText(/Ручні завдання: 0/)).toBeNull()
+  })
+
+  it('keeps AI and manual head counts visible per manager and reconciles their total', async () => {
+    vi.mocked(getHeadDashboard).mockResolvedValue({ is_head: true, teams: [
+      { manager_id: 1, open_tasks: 12, critical: 1, value_at_risk_eur: 0, ai_active: 4, manual_backlog: 8 },
+    ], escalated_count: 0, total_value_at_risk_eur: 0 })
+    renderWithTheme(<HeadDashboardChartsPanel reloadKey={0} rows={[]} />)
+    expect(await screen.findByText('Усі активні, включно з відкладеними: 12 · AI-рекомендації: 4 · Ручні завдання: 8')).toBeTruthy()
+    expect(screen.getAllByTestId('aging-chart')[1].textContent).toBe('[{"manager":"#1","open":12,"critical":1,"ai":4,"manual":8}]')
+  })
+
   it('keeps an unknown-date-only dashboard visible without adding it to known overdue debt', async () => {
     vi.mocked(getDashboard).mockResolvedValue(dashboard({ debt_unknown_date_count: 3, debt_unknown_date_eur: 250 }))
     renderWithTheme(<CockpitDashboardPanel reloadKey={0} />)

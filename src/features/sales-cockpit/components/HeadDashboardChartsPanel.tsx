@@ -106,6 +106,7 @@ export function HeadDashboardChartsPanel({
     [dashboard?.teams, nameById],
   )
 
+  const hasCompleteTaskSplit = dashboard?.teams.every((team) => team.ai_active != null && team.manual_backlog != null) ?? false
   const tasksData = useMemo(
     () =>
       (dashboard?.teams ?? [])
@@ -114,6 +115,7 @@ export function HeadDashboardChartsPanel({
           manager: nameById.get(team.manager_id) ?? `#${team.manager_id}`,
           open: team.open_tasks,
           critical: team.critical,
+          ...(team.ai_active != null && team.manual_backlog != null ? { ai: team.ai_active, manual: team.manual_backlog } : {}),
         })),
     [dashboard?.teams, nameById],
   )
@@ -127,8 +129,12 @@ export function HeadDashboardChartsPanel({
     () => [
       { name: 'open', label: t('Активні'), color: 'blue.6' },
       { name: 'critical', label: t('Критичні'), color: 'red.6' },
+      ...(hasCompleteTaskSplit ? [
+        { name: 'ai', label: t('AI-рекомендації'), color: 'cyan.6' },
+        { name: 'manual', label: t('Ручні завдання'), color: 'orange.6' },
+      ] : []),
     ],
-    [t],
+    [t, hasCompleteTaskSplit],
   )
 
   return (
@@ -147,6 +153,9 @@ export function HeadDashboardChartsPanel({
             {error}
           </Alert>
         )}
+        {dashboard && (hasCompleteTaskSplit ? (
+          <Text size="sm">{t('Усі активні, включно з відкладеними')}: {dashboard.teams.reduce((sum, team) => sum + team.open_tasks, 0)} · {t('AI-рекомендації')}: {dashboard.teams.reduce((sum, team) => sum + (team.ai_active ?? 0), 0)} · {t('Ручні завдання')}: {dashboard.teams.reduce((sum, team) => sum + (team.manual_backlog ?? 0), 0)}</Text>
+        ) : <Text size="xs" c="dimmed">{t('Поділ активних завдань на AI та ручні недоступний.')}</Text>)}
         {(dashboard?.teams.reduce((sum, team) => sum + (team.debt_unknown_terms_count ?? 0), 0) ?? 0) > 0 && <Alert color="yellow">
           {t('Є документи без визначеного терміну оплати. Вони не входять до відомого простроченого боргу.')}
         </Alert>}

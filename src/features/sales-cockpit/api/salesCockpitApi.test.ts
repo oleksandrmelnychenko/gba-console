@@ -1,3 +1,5 @@
+import { clientsPage, clientFixture } from '../clientSegments.testData'
+import producerClientFixture from '../repeat-clients-wire.testData.json'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { addHeadTaskNote, addTaskNote, createHeadTask, dismissHeadTask, getCockpitClients, getCockpitCount, getCockpitInbox, getCompleteCockpitInbox, getCockpitTarget, getDashboard, getEscalated, getHeadClients, getHeadDashboard, getHeadDismissals, getHeadTasks, getHeadTeam, regenerateCockpit, regenerateHeadCockpit, SalesCockpitContractError, setTaskStatus } from './salesCockpitApi'
@@ -186,37 +188,46 @@ describe('salesCockpitApi', () => {
     })
   })
 
-  it('normalizes the cockpit client book and coerces numbers', async () => {
-    apiRequestMock.mockResolvedValueOnce({
-      manager_id: 7,
-      count: 2,
-      clients: [
-        {
-          client_id: 10,
-          client_net_uid: 'aaa',
-          name: 'Акме',
-          orders_cnt: 4,
-          turnover_eur: 1234.5,
-          overdue_eur: 10,
-          max_days_past_terms: 3,
-        },
-        { client_id: 11 }, // no net uid -> dropped
-        null,
-      ],
-    })
+  it('preserves full population counts and documentary evidence across client pages', async () => {
+    const page = clientsPage({ count: 1, total: 51, population_count: 51, offset: 50, segment_counts: { all: 51, reorder_due: 0, reorder_overdue: 51, reactivation: 0, new_client: 0 } })
+    apiRequestMock.mockResolvedValueOnce(page)
+    await expect(getCockpitClients({ offset: 50 })).resolves.toMatchObject(page)
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/clients', { query: { segment: 'all', search: '', offset: 50, limit: 50 } })
+  })
 
-    const result = await getCockpitClients()
+  it('accepts the serialized NBA producer fixture with a persisted contact cooldown', async () => {
+    apiRequestMock.mockResolvedValueOnce(producerClientFixture)
+    const page = await getCockpitClients()
+    expect(page.total).toBe(1)
+    expect(page.clients[0].contact_cooldown.active).toBe(true)
+    expect(page.clients[0].segments).toEqual([])
+    expect(page.clients[0].repeat_evidence.products[0]).toMatchObject({ cycle_days: 14, available_qty: 20, next_expected_on: '2026-10-15' })
+  })
 
-    expect(result.clients).toHaveLength(1)
-    expect(result.clients[0]).toMatchObject({
-      client_id: 10,
-      client_net_uid: 'aaa',
-      orders_cnt: 4,
-      turnover_eur: 1234.5,
-      overdue_eur: 10,
-      max_days_past_terms: 3,
-    })
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/clients')
+  it('rejects missing population totals rather than counting the loaded page', async () => {
+    apiRequestMock.mockResolvedValueOnce({ count: 1, clients: [clientFixture()] })
+    await expect(getCockpitClients()).rejects.toBeInstanceOf(SalesCockpitContractError)
+  })
+
+  it('rejects contradictory availability and a cooldown that retains an actionable segment', async () => {
+    const client = clientFixture()
+    client.repeat_evidence.products[0].availability_status = 'unknown'
+    apiRequestMock.mockResolvedValueOnce(clientsPage({ clients: [client] }))
+    await expect(getCockpitClients()).rejects.toBeInstanceOf(SalesCockpitContractError)
+    client.repeat_evidence.products[0].available_qty = null
+    client.contact_cooldown.active = true
+    apiRequestMock.mockResolvedValueOnce(clientsPage({ clients: [client] }))
+    await expect(getCockpitClients()).rejects.toBeInstanceOf(SalesCockpitContractError)
+  })
+
+  it('preserves all-active split independently of the currently visible inbox', async () => {
+    apiRequestMock.mockResolvedValueOnce({ manager_id: 7, as_of: '2026-06-08', ...history('2025-06-08'), ai_active: 4, manual_backlog: 8, active_total: 12, completed_vs_open: [{ status: 'open', count: 2 }] })
+    await expect(getDashboard()).resolves.toMatchObject({ ai_active: 4, manual_backlog: 8, active_total: 12, completed_vs_open: [{ status: 'open', count: 2 }] })
+  })
+
+  it.each([{ ai_active: 1 }, { ai_active: 1, manual_backlog: 2, active_total: 2 }, { ai_active: -1, manual_backlog: 2, active_total: 1 }])('rejects incomplete or inconsistent task split %j', async (counts) => {
+    apiRequestMock.mockResolvedValueOnce({ manager_id: 7, as_of: '2026-06-08', ...history('2025-06-08'), ...counts })
+    await expect(getDashboard()).rejects.toBeInstanceOf(SalesCockpitContractError)
   })
 
   it('loads the active count and normalizes the urgency breakdown', async () => {
