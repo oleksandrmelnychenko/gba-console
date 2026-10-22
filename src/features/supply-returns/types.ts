@@ -64,8 +64,9 @@ export type SupplyReturnItem = EntityFields & {
   Qty?: number
   Storage?: SupplyReturnStorage | null
   SupplyReturnId?: number
-  TotalNetPrice?: number
-  TotalNetWeight?: number
+  HasIncompleteCostData?: boolean
+  TotalNetPrice?: number | null
+  TotalNetWeight?: number | null
 }
 
 export type SupplyReturn = EntityFields & {
@@ -84,8 +85,9 @@ export type SupplyReturn = EntityFields & {
   Supplier?: SupplyReturnClient | null
   SupplierId?: number
   SupplyReturnItems?: SupplyReturnItem[]
-  TotalNetPrice?: number
-  TotalNetWeight?: number
+  HasIncompleteCostData?: boolean
+  TotalNetPrice?: number | null
+  TotalNetWeight?: number | null
   TotalRowsQty?: number
 }
 

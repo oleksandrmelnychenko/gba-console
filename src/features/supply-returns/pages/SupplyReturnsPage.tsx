@@ -619,8 +619,8 @@ function useSupplyReturnColumns(
         width: 160,
         minWidth: 130,
         align: 'right',
-        accessor: (supplyReturn) => toNumber(supplyReturn.TotalNetPrice) || 0,
-        cell: (supplyReturn) => formatPrice(toNumber(supplyReturn.TotalNetPrice)),
+        accessor: (supplyReturn) => supplyReturn.HasIncompleteCostData ? undefined : toNumber(supplyReturn.TotalNetPrice),
+        cell: (supplyReturn) => supplyReturn.HasIncompleteCostData ? t('Немає даних') : formatPrice(toNumber(supplyReturn.TotalNetPrice)),
       },
       {
         id: 'fromStorage',
@@ -742,8 +742,8 @@ function SupplyReturnDetail({
         width: 160,
         minWidth: 130,
         align: 'right',
-        accessor: (item) => toNumber(item.TotalNetPrice) || 0,
-        cell: (item) => formatPrice(toNumber(item.TotalNetPrice)),
+        accessor: (item) => item.HasIncompleteCostData ? undefined : toNumber(item.TotalNetPrice),
+        cell: (item) => item.HasIncompleteCostData ? t('Немає даних') : formatPrice(toNumber(item.TotalNetPrice)),
       },
     ],
     [itemIndexMap, t],
@@ -762,12 +762,13 @@ function SupplyReturnDetail({
           metrics={<>
             <DocumentDetailMetric label={t('Всього товарів')} value={String(items.length)} />
             <DocumentDetailMetric label={t('Вся кількість')} value={formatAmount(getReturnQty(supplyReturn))} />
-            <DocumentDetailMetric label={t('Вся сума')} value={formatPrice(toNumber(supplyReturn.TotalNetPrice))} />
+            <DocumentDetailMetric label={t('Вся сума')} value={supplyReturn.HasIncompleteCostData ? t('Немає даних') : formatPrice(toNumber(supplyReturn.TotalNetPrice))} />
           </>}
         />
       }
     >
       {error && <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>}
+      {supplyReturn.HasIncompleteCostData && <Alert color="yellow" variant="light">{t('Для частини товарів немає даних історичної партії. Кількість доступна, повну суму повернення визначити неможливо.')}</Alert>}
       <DocumentDetailSection title={t('Реквізити документа')}>
         <DocumentDetailRow label={t('Організація')} value={<TableChip tone="product" value={getOrganizationDisplayName(supplyReturn.Organization)} />} />
         <DocumentDetailRow label={t('Постачальник')} value={supplyReturn.Supplier?.SupplierName || supplyReturn.Supplier?.FullName} />

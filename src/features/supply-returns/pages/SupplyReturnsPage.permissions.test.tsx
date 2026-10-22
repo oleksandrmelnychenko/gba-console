@@ -128,4 +128,23 @@ describe('Supplier returns canonical permission guards', () => {
 
     await waitFor(() => expect(exportSupplyReturnDocument).toHaveBeenCalledWith('return-1'))
   })
+  it('shows unavailable historical cost without hiding quantities or substituting zero', async () => {
+    allowedPermissions.add(PermissionKeys.WarehouseAccounting.SupplierReturns.Page.View)
+    allowedPermissions.add(PermissionKeys.WarehouseAccounting.SupplierReturns.Return.OpenDetails)
+    const historical: SupplyReturn = {
+      ...SUPPLY_RETURN,
+      HasIncompleteCostData: true,
+      TotalNetPrice: 1234.56,
+      SupplyReturnItems: [{ Id: 1, Qty: 7, HasIncompleteCostData: true, TotalNetPrice: 0 }],
+    }
+    vi.mocked(getSupplyReturns).mockResolvedValue({ items: [historical], totalQty: 1 })
+    vi.mocked(getSupplyReturnByNetId).mockResolvedValue(historical)
+    renderPage()
+    fireEvent.click(await screen.findByRole('button', { name: 'RETURN-1' }))
+    expect(await screen.findByText('Немає даних')).toBeTruthy()
+    expect(screen.getByText('7')).toBeTruthy()
+    expect(screen.getByText(/повну суму повернення визначити неможливо/)).toBeTruthy()
+    expect(screen.queryByText(/1[ ,]234/)).toBeNull()
+  })
+
 })
