@@ -260,7 +260,7 @@ function HeadDashboardPageContent() {
 
               <Stack className="cockpit-head-main" gap={8}>
                 <Text size="xs" c="dimmed">Історичний орієнтир за поточною клієнтською базою менеджера; передача клієнта змінює цей зріз. Це не персональна історична виручка і не затверджений план. Темп розподілено за умовним календарем Пн–Сб; свята не враховано. Повнота імпорту не підтверджена.</Text>
-                <HeadCoachingPanel managerId={selectedManagerId} managers={rows.map(row => ({ id: row.manager_id, name: managerName(row) }))} onChanged={triggerReload} />
+                <HeadCoachingPanel managerId={selectedManagerId} onManagerChange={setSelectedManagerId} managers={rows.map(row => ({ id: row.manager_id, name: managerName(row) }))} onChanged={triggerReload} />
                 <HeadTaskBoard
                   managerId={selectedManagerId}
                   onManagerChange={setSelectedManagerId}
