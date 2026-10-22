@@ -1,14 +1,13 @@
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
-  ActionIcon,
   Alert,
   Badge,
+  Button,
   Card,
   Group,
   Select,
   Text,
   TextInput,
-  Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -304,11 +303,14 @@ export function MyOffersPanel() {
           onChange={(event) => setSearch(event.currentTarget.value)}
         />
         <div className="app-filter-actions">
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="default" onClick={() => setReloadKey((key) => key + 1)}>
-              <RefreshCw size={17} />
-            </ActionIcon>
-          </Tooltip>
+          <Button
+            leftSection={<RefreshCw size={16} />}
+            loading={isLoading}
+            variant="default"
+            onClick={() => setReloadKey((key) => key + 1)}
+          >
+            {t('Оновити')}
+          </Button>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
         </div>
       </div>

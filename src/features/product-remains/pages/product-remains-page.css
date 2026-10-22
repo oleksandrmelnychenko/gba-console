@@ -25,16 +25,6 @@
   box-shadow: var(--app-card-shadow);
 }
 
-.product-remains-tabs {
-  flex: 0 0 auto;
-  border-radius: 0;
-  padding-bottom: 4px;
-}
-
-.product-remains-tabs .pill-tab {
-  padding-bottom: 12px;
-}
-
 /* Let the filter strip span the full card width while filters + actions stay in
    a single toolbar row. The tabs are a separate full-width strip above, so the
    controls no longer steal horizontal space from the header. */

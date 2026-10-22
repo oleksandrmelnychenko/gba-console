@@ -21,7 +21,7 @@ import {
   DocumentDetailSection,
   DocumentDetailSummary,
 } from '../../../shared/ui/document-detail/DocumentDetail'
-import { CircleAlert, Download, RefreshCw, RotateCcw, Search } from 'lucide-react'
+import { Boxes, CircleAlert, Download, Package, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
@@ -734,20 +734,21 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
   return (
     <Stack className="product-remains-page" gap={6}>
       <Card className="app-data-card product-remains-card" withBorder radius="md" padding={0}>
-        <div className="product-remains-tabs pill-tabs">
+        <div className="app-screen-tabs">
           {([
-            { value: 'batches', label: t('Партії') },
-            { value: 'products', label: t('Товари') },
+            { value: 'batches', label: t('Партії'), icon: Boxes },
+            { value: 'products', label: t('Товари'), icon: Package },
           ] as const).map((tab) => (
             <button
               key={tab.value}
               type="button"
-              className={`pill-tab${activeTab === tab.value ? ' is-active' : ''}`}
+              className={`app-screen-tab${activeTab === tab.value ? ' is-active' : ''}`}
               aria-pressed={activeTab === tab.value}
               onClick={() => {
                 selectActiveTab(tab.value)
               }}
             >
+              <tab.icon size={16} aria-hidden="true" />
               {tab.label}
             </button>
           ))}

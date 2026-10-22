@@ -54,11 +54,13 @@
   gap: 6px;
 }
 
-.income-cashflow-view__metric > span:first-child,
+.income-cashflow-view__metric > span:first-child {
+  color: var(--mantine-color-gray-7);
+  font: 600 11px/1.2 var(--font-mono);
+}
+
 .income-cashflow-view .document-detail-row__label {
-  color: var(--mantine-color-gray-8);
-  font-size: 12px;
-  font-weight: 500;
+  color: var(--mantine-color-gray-7);
 }
 
 .income-cashflow-view__amount {
@@ -91,11 +93,8 @@
   gap: 8px;
 }
 
-.income-cashflow-view .document-detail-row__value {
-  font-size: 12px;
-}
-
 .income-cashflow-view__comment {
+  font: 400 13px/1.4 var(--font-sans);
   color: var(--mantine-color-gray-9);
   overflow-wrap: anywhere;
   white-space: pre-wrap;

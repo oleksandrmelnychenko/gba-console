@@ -176,9 +176,11 @@ function normalizeNavigationNodes(
 
     normalizedNodes.push({
       ...node,
-      Module: reportWorkspaceRoutes.includes(normalizePath(node.Route || ''))
-        ? BUG_1274_ONLY_REPORT_SURFACE ? 'Звіти' : 'Конструктор звітів'
-        : overrideNavigationLabel(node.Module),
+      Module: normalizePath(node.Route || '') === '/dashboard'
+        ? 'Робочий простір'
+        : reportWorkspaceRoutes.includes(normalizePath(node.Route || ''))
+          ? BUG_1274_ONLY_REPORT_SURFACE ? 'Звіти' : 'Конструктор звітів'
+          : overrideNavigationLabel(node.Module),
       Children: normalizeNavigationNodes(node.Children, includeVehicleRegistry),
     })
   }

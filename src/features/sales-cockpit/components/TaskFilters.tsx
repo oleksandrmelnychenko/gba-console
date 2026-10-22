@@ -1,4 +1,4 @@
-import { Group, Select } from '@mantine/core'
+import { Select } from '@mantine/core'
 import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { CockpitTaskType, CockpitUrgency } from '../types'
@@ -41,7 +41,7 @@ export function TaskFilters({
   )
 
   return (
-    <Group className="cockpit-task-filters" gap={8} wrap="wrap">
+    <div className="app-filter-control-group">
       <Select
         clearable
         data={taskTypeData}
@@ -60,6 +60,6 @@ export function TaskFilters({
         w={140}
         onChange={(value) => onUrgencyChange((value as CockpitUrgency | null) ?? null)}
       />
-    </Group>
+    </div>
   )
 }

@@ -1,5 +1,5 @@
 import { Alert, Stack } from '@mantine/core'
-import { CircleAlert } from 'lucide-react'
+import { CircleAlert, ClipboardList, FileText, MessagesSquare, Users } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -378,23 +378,24 @@ function SalesCockpitPageContent() {
 
   return (
     <Stack className="cockpit-page" gap={6}>
-      <div className="pill-tabs cockpit-view-tabs" role="tablist" aria-label={t('Розділи кокпіта')}>
+      <div className="app-screen-tabs" role="tablist" aria-label={t('Розділи кокпіта')}>
         {(
           [
-            { label: 'Черга задач', value: 'tasks' },
-            { label: 'Мої клієнти', value: 'clients' },
-            { label: 'Контакти та домовленості', value: 'contacts' },
-            { label: 'Мої пропозиції', value: 'offers' },
+            { label: 'Черга задач', value: 'tasks', icon: ClipboardList },
+            { label: 'Мої клієнти', value: 'clients', icon: Users },
+            { label: 'Контакти та домовленості', value: 'contacts', icon: MessagesSquare },
+            { label: 'Мої пропозиції', value: 'offers', icon: FileText },
           ] as const
         ).map((tab) => (
           <button
             aria-selected={view === tab.value}
-            className={`pill-tab${view === tab.value ? ' is-active' : ''}`}
+            className={`app-screen-tab${view === tab.value ? ' is-active' : ''}`}
             key={tab.value}
             role="tab"
             type="button"
             onClick={() => setView(tab.value)}
           >
+            <tab.icon size={16} aria-hidden="true" />
             {t(tab.label)}
           </button>
         ))}

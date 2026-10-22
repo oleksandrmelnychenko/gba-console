@@ -1,6 +1,6 @@
-import { ActionIcon, Button, Card, SegmentedControl, Text, Tooltip } from '@mantine/core'
+import { Button, Card, SegmentedControl, Text } from '@mantine/core'
 import { RefreshCw, RotateCcw, Sparkles } from 'lucide-react'
-import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { CockpitTaskType, CockpitUrgency } from '../types'
@@ -52,66 +52,61 @@ export function CockpitToolbar({
 
   return (
     <Card className="app-filter-card cockpit-toolbar-card" withBorder radius="md" padding={0}>
-      <div className="app-filter-bar cockpit-command-bar">
-        <AppDateInput
-          className="cockpit-date-filter"
-          label={t('Дата розрахунку плану')}
-          type="date"
-          value={asOfDate ?? ''}
-          w={170}
-          onChange={(event) => onAsOfDateChange(event.currentTarget.value || undefined)}
-        />
-        {asOfDate && <Text c="dimmed" size="xs">{t('Черга задач — поточна')}</Text>}
-        <TaskFilters
-          taskType={taskType}
-          urgency={urgency}
-          onTaskTypeChange={onTaskTypeChange}
-          onUrgencyChange={onUrgencyChange}
-        />
-        <div className="app-filter-field cockpit-day-filter-field">
-          <span className="app-filter-label">{t('Період')}</span>
-          <SegmentedControl
-            className="cockpit-day-filter"
-            data={[
-              { label: t('Усі'), value: 'all' },
-              { label: `${t('Сьогодні')} (${todayCount})`, value: 'today' },
-            ]}
-            size="sm"
-            value={dayFilter}
-            onChange={(value) => onDayFilterChange(value as CockpitDayFilter)}
+      <div className="app-filter-bar">
+        <div className="app-filter-fields">
+          <AppDateInput
+            className="cockpit-date-filter"
+            label={t('Дата розрахунку плану')}
+            type="date"
+            value={asOfDate ?? ''}
+            style={{ flex: '0 1 150px' }}
+            onChange={(event) => onAsOfDateChange(event.currentTarget.value || undefined)}
           />
-        </div>
-        <div className="app-filter-actions cockpit-command-actions">
-          <AiFeatureBadge size="sm" tooltip={t('AI-сервіс завдань продажів')} />
-          <Text className="cockpit-toolbar-count">
-            {t('Завдань')}: <strong>{visibleCount}</strong>
-          </Text>
-          <Tooltip label={t('Скинути фільтри')}>
-            <ActionIcon
+          {asOfDate && <Text c="dimmed" size="xs">{t('Черга задач — поточна')}</Text>}
+          <TaskFilters
+            taskType={taskType}
+            urgency={urgency}
+            onTaskTypeChange={onTaskTypeChange}
+            onUrgencyChange={onUrgencyChange}
+          />
+          <div className="app-filter-field cockpit-day-filter-field">
+            <span className="app-filter-label">{t('Період')}</span>
+            <SegmentedControl
+              className="cockpit-day-filter"
+              data={[
+                { label: t('Усі'), value: 'all' },
+                { label: `${t('Сьогодні')} (${todayCount})`, value: 'today' },
+              ]}
+              size="sm"
+              value={dayFilter}
+              onChange={(value) => onDayFilterChange(value as CockpitDayFilter)}
+            />
+          </div>
+          <div className="app-filter-actions cockpit-command-actions">
+            <Button
               aria-label={t('Скинути фільтри')}
               disabled={!hasActiveFilters}
-              size={34}
-              variant="light"
+              leftSection={<RotateCcw size={16} />}
+              variant="default"
               onClick={onReset}
             >
-              <RotateCcw size={17} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="light" onClick={onReload}>
-              <RefreshCw size={18} />
-            </ActionIcon>
-          </Tooltip>
-          {canRegenerate && (
-            <Button
-              color={CREATE_ACTION_COLOR}
-              leftSection={<Sparkles size={16} />}
-              loading={isRegenerating}
-              onClick={onRegenerate}
-            >
-              {t('Згенерувати завдання')}
+              {t('Скинути')}
             </Button>
-          )}
+            <Button leftSection={<RefreshCw size={16} />} loading={isLoading} variant="default" onClick={onReload}>
+              {t('Оновити')}
+            </Button>
+            <TableChip value={`${t('Завдань')}: ${visibleCount}`} />
+            {canRegenerate && (
+              <Button
+                color={CREATE_ACTION_COLOR}
+                leftSection={<Sparkles size={16} />}
+                loading={isRegenerating}
+                onClick={onRegenerate}
+              >
+                {t('Згенерувати завдання')}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </Card>
