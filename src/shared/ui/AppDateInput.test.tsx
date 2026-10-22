@@ -1,6 +1,6 @@
 import { Drawer, MantineProvider } from '@mantine/core'
 import { DatesProvider } from '@mantine/dates'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import 'dayjs/locale/uk'
@@ -174,5 +174,37 @@ it('clears from the calendar clear button and closes the popup', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Очистити дату' }))
   expect(onValue).toHaveBeenLastCalledWith('')
   expect(input.value).toBe('')
+  expect(screen.queryByRole('grid')).toBeNull()
+})
+
+it.each(['calendarHeaderLevel', 'calendarHeaderControl', 'monthsListControl', 'yearsListControl'])('Escape from focused %s retains the host drawer', (control) => {
+  const onClose = vi.fn()
+  render(<MantineProvider env="test"><Drawer opened onClose={onClose} title="Документ">
+    <AppDateInput label="Дата" value="2026-10-01" onChange={vi.fn()} />
+  </Drawer></MantineProvider>)
+  fireEvent.focus(screen.getByLabelText('Дата'))
+  const header = () => document.querySelector<HTMLElement>('.mantine-DateInput-calendarHeaderLevel')!
+  if (control === 'monthsListControl' || control === 'yearsListControl') fireEvent.click(header())
+  if (control === 'yearsListControl') fireEvent.click(header())
+  const target = document.querySelector<HTMLElement>(`.mantine-DateInput-${control}`)!
+  expect(target).toBeTruthy()
+  fireEvent.focus(target)
+  fireEvent.keyDown(target, { key: 'Escape' })
+  expect(onClose).not.toHaveBeenCalled()
+  expect(document.querySelector('[data-dates-dropdown]')).toBeNull()
+})
+
+it('keeps the popup open while actual keyboard focus moves from the field into its calendar', () => {
+  const onClose = vi.fn()
+  render(<MantineProvider env="test"><Drawer opened onClose={onClose} title="Документ">
+    <AppDateInput label="Дата" value="2026-10-01" onChange={vi.fn()} getDayProps={day => ({ 'aria-label': day })} />
+  </Drawer></MantineProvider>)
+  act(() => screen.getByLabelText('Дата').focus())
+  const day = screen.getByRole('button', { name: '2026-10-02' })
+  act(() => day.focus())
+  expect(document.activeElement).toBe(day)
+  expect(screen.getByRole('grid')).toBeTruthy()
+  fireEvent.keyDown(day, { key: 'Escape' })
+  expect(onClose).not.toHaveBeenCalled()
   expect(screen.queryByRole('grid')).toBeNull()
 })

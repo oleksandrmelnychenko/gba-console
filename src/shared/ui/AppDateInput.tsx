@@ -1,6 +1,6 @@
 import { DateInput, type DateInputProps } from '@mantine/dates'
 import { CalendarDays } from 'lucide-react'
-import { useLayoutEffect, useRef, useState, type ChangeEvent } from 'react'
+import { useId, useLayoutEffect, useRef, useState, type ChangeEvent, type FocusEvent } from 'react'
 import './app-date-input.css'
 
 type NativeDateType = 'date' | 'datetime-local'
@@ -57,6 +57,7 @@ export function AppDateInput({
   ...rest
 }: AppDateInputProps) {
   const withTime = type === 'datetime-local'
+  const calendarId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
   const [typedDraft, setTypedDraft] = useState<string | null>(null)
   const [calendarOpen, setCalendarOpen] = useState(false)
@@ -101,7 +102,7 @@ export function AppDateInput({
       {...rest}
       // A day grid is a `grid`, not a data table: screen readers and table queries
       // must not confuse an open calendar with the page's own tables.
-      attributes={calendarAttributes(rest.attributes)}
+      attributes={{ ...rest.attributes, month: { role: 'grid', ...rest.attributes?.month }, day: { ...rest.attributes?.day, 'data-mantine-stop-propagation': true } }}
       className={['app-date-input', rest.className].filter(Boolean).join(' ')}
       // Native date inputs can always be emptied; `required` is enforced by the form.
       clearable={!readOnly && !disabled}
@@ -126,10 +127,21 @@ export function AppDateInput({
         withinPortal: true,
         ...popoverProps,
         // The host modal listens during window capture, before the popup handler.
-        attributes: { ...popoverProps?.attributes, dropdown: { ...popoverProps?.attributes?.dropdown, 'data-mantine-stop-propagation': true } },
+        attributes: { ...popoverProps?.attributes, dropdown: {
+          ...popoverProps?.attributes?.dropdown,
+          'data-mantine-stop-propagation': true,
+          'data-app-date-input-calendar': calendarId,
+          // Some Mantine calendar levels do not forward style attributes to buttons.
+          // Mark the actual focused target before ModalBase's window key capture.
+          onFocusCapture: (event: FocusEvent<HTMLDivElement>) => {
+            event.target.setAttribute('data-mantine-stop-propagation', 'true')
+            const caller = popoverProps?.attributes?.dropdown?.onFocusCapture
+            if (typeof caller === 'function') caller(event)
+          },
+        } },
         opened: calendarOpen,
         onChange: (opened) => { setCalendarOpen(opened); popoverProps?.onChange?.(opened) },
-        onDismiss: () => { setCalendarOpen(false); popoverProps?.onDismiss?.() },
+        onDismiss: () => { inputRef.current?.focus(); setCalendarOpen(false); popoverProps?.onDismiss?.() },
       }}
       readOnly={readOnly}
       required={required}
@@ -150,7 +162,9 @@ export function AppDateInput({
           setTypedDraft(null)
           validateInput(event.currentTarget, value ?? '', withTime, min, max)
         }
-        setCalendarOpen(false)
+        const nextFocus = event.relatedTarget
+        const insideCalendar = nextFocus instanceof HTMLElement && nextFocus.closest(`[data-app-date-input-calendar="${calendarId}"]`)
+        if (!insideCalendar) setCalendarOpen(false)
         onBlur?.(event)
       }}
       onChange={(next) => {
@@ -241,14 +255,4 @@ function validateInput(input: HTMLInputElement, raw: string, withTime: boolean, 
     if ((lower && parsed < lower) || (upper && parsed > upper)) error = 'Вкажіть дату в межах дозволеного періоду'
   }
   input.setCustomValidity(error)
-}
-
-
-function calendarAttributes(attributes: DateInputProps['attributes']) {
-  const merged = { ...attributes, month: { role: 'grid', ...attributes?.month } }
-  // ModalBase checks the event target itself during window capture.
-  for (const control of ['day', 'calendarHeaderControl', 'calendarHeaderLevel', 'calendarHeaderSelect', 'monthsListControl', 'yearsListControl'] as const) {
-    merged[control] = { ...attributes?.[control], 'data-mantine-stop-propagation': true }
-  }
-  return merged
 }
