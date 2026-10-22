@@ -1,9 +1,10 @@
-import { Alert, Button, Group, Stack, Table, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Group, Stack, Table, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import type { PlannedCashCapabilities, PlannedCashCell, PlannedCashFilters, PlannedCashReport } from '../data/plannedCash'
 import { PlannedCashScenarioPicker } from './PlannedCashScenarioPicker'
 import { usePlannedCashReport } from '../hooks/usePlannedCashReport'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 export function PlannedCashReportPanel(props: { capability: PlannedCashCapabilities; initialFilters: PlannedCashFilters; canGenerate: boolean; callerKey: string | null
   onLoadingChange?: (value: boolean) => void }) {
@@ -13,13 +14,13 @@ export function PlannedCashReportPanel(props: { capability: PlannedCashCapabilit
   return <Stack gap="md">
     <Text size="sm">{t('Звіт із поточних даних GBA. Кінцева дата періоду не входить до нього.')}</Text>
     <Group grow>
-      <TextInput type="date" label={t('Період від')} value={filters.From} disabled={disabled} onChange={event => change('From', event.currentTarget.value)} />
-      <TextInput type="date" label={t('Період до (не включно)')} value={filters.ThroughExclusive} disabled={disabled} onChange={event => change('ThroughExclusive', event.currentTarget.value)} />
+      <AppDateInput type="date" label={t('Період від')} value={filters.From} disabled={disabled} onChange={event => change('From', event.currentTarget.value)} />
+      <AppDateInput type="date" label={t('Період до (не включно)')} value={filters.ThroughExclusive} disabled={disabled} onChange={event => change('ThroughExclusive', event.currentTarget.value)} />
     </Group>
     {scenario ? <Group grow>
-      <TextInput type="date" label={t('Попередній період від')} value={filters.PreviousFrom} disabled={disabled} onChange={event => change('PreviousFrom', event.currentTarget.value)} />
-      <TextInput type="date" label={t('Попередній період до (не включно)')} value={filters.PreviousThroughExclusive} disabled={disabled} onChange={event => change('PreviousThroughExclusive', event.currentTarget.value)} />
-    </Group> : <TextInput type="date" label={t('Дата планового залишку')} value={filters.PlanEndpoint} disabled={disabled}
+      <AppDateInput type="date" label={t('Попередній період від')} value={filters.PreviousFrom} disabled={disabled} onChange={event => change('PreviousFrom', event.currentTarget.value)} />
+      <AppDateInput type="date" label={t('Попередній період до (не включно)')} value={filters.PreviousThroughExclusive} disabled={disabled} onChange={event => change('PreviousThroughExclusive', event.currentTarget.value)} />
+    </Group> : <AppDateInput type="date" label={t('Дата планового залишку')} value={filters.PlanEndpoint} disabled={disabled}
       description={t('Оберіть дату, на яку потрібно взяти плановий залишок.')} onChange={event => change('PlanEndpoint', event.currentTarget.value)} />}
     {scenario ? <PlannedCashScenarioPicker choices={choices} disabled={disabled} /> : null}
     {!props.canGenerate ? <Alert color="yellow">{t('Недостатньо прав для формування звітів.')}</Alert> : null}

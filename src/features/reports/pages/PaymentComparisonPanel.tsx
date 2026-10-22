@@ -1,6 +1,7 @@
-import { Alert, Card, Select, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Card, Select, SimpleGrid, Stack, Text } from '@mantine/core'
 import { CLIENT_COMPARISON_MAX_DATE, CLIENT_COMPARISON_MIN_DATE } from '../data/clientPeriodComparison'
 import { defaultPaymentComparison } from '../data/paymentComparison'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type Props = { dataSource: number; value: unknown; disabled: boolean; onChange: (value: unknown) => void }
 const directions = [{ value: '1', label: 'Надходження' }, { value: '2', label: 'Виплати' }]
@@ -14,9 +15,9 @@ export default function PaymentComparisonPanel({ dataSource, value, disabled, on
       onChange={value => onChange({ ...draft, Direction: value === null ? null : Number(value) })} />
     <Text size="sm">Дати «Від» і «До» визначають поточний період. Нижче задайте незалежний період порівняння. Періоди можуть збігатися, перетинатися чи мати різну тривалість; поточний може бути ранішим.</Text>
     <SimpleGrid cols={{ base: 1, sm: 2 }}>
-      <TextInput type="date" label="Платежі: порівняння від" value={typeof draft.From === 'string' ? draft.From : ''} disabled={disabled}
+      <AppDateInput type="date" label="Платежі: порівняння від" value={typeof draft.From === 'string' ? draft.From : ''} disabled={disabled}
         min={CLIENT_COMPARISON_MIN_DATE} max={CLIENT_COMPARISON_MAX_DATE} onChange={event => onChange({ ...draft, From: event.currentTarget.value })} />
-      <TextInput type="date" label="Платежі: порівняння до" value={typeof draft.To === 'string' ? draft.To : ''} disabled={disabled}
+      <AppDateInput type="date" label="Платежі: порівняння до" value={typeof draft.To === 'string' ? draft.To : ''} disabled={disabled}
         min={typeof draft.From === 'string' && draft.From ? draft.From : CLIENT_COMPARISON_MIN_DATE} max={CLIENT_COMPARISON_MAX_DATE} onChange={event => onChange({ ...draft, To: event.currentTarget.value })} />
     </SimpleGrid>
     <Text size="sm">Валюта → клієнт → точний договір. Порівнюються записані суми імпортованих документів у власній валюті. Знак виплати зберігається. Це стан збережених документів за підтвердженою датою, без перерахунку за поточними курсами чи умовами договору.</Text>

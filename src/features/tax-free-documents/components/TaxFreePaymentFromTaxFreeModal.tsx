@@ -1,5 +1,5 @@
 import { TableChip } from '../../../shared/ui/TableChip'
-import { Alert, Button, Card, Group, NumberInput, Select, Stack, Text, TextInput, Textarea } from '@mantine/core'
+import { Alert, Button, Card, Group, NumberInput, Select, Stack, Text, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -34,6 +34,7 @@ import type {
 import { createIncomePaymentFromTaxFree, createTaxFreeCashflowArticle } from '../api/taxFreeDocumentsApi'
 import type { TaxFreeDocument } from '../types'
 import { formatTaxFreeAmountPl, getTaxFreeClient } from '../utils'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 const SEARCH_DEBOUNCE_MS = 300
 const POLAND_CULTURE = 'pl'
@@ -369,7 +370,7 @@ export function TaxFreePaymentFromTaxFreeModal({
                 value={form.amount}
                 onChange={(value) => updateForm({ amount: toNumber(value) })}
               />
-              <TextInput w={170} maw="100%"
+              <AppDateInput w={170} maw="100%"
                 disabled={isLoading || isSaving}
                 label={t('Дата')}
                 max={dateBounds?.max}

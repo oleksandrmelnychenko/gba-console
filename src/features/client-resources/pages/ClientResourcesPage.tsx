@@ -113,6 +113,7 @@ import type {
 import { CLIENT_RESOURCE_STEPS } from '../types'
 import { canDeletePricing, canEditPricing, isBusinessOrganizationVisible } from '../clientResourcePolicies'
 import { buildSaleOrganizationsByStorageId } from '../clientResourceStorageOrganizations'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import '../../../shared/ui/console-table-page.css'
 import './clientResources.css'
 
@@ -2737,7 +2738,7 @@ function OrganizationEditorModal({
               value={values.RegistrationNumber}
               onChange={(event) => setField('RegistrationNumber', event.currentTarget.value)}
             />
-            <TextInput
+            <AppDateInput
               label={translate("Дата реєстрації")}
               type="date"
               value={values.RegistrationDate}
@@ -2748,7 +2749,7 @@ function OrganizationEditorModal({
               value={values.PFURegistrationNumber}
               onChange={(event) => setField('PFURegistrationNumber', event.currentTarget.value)}
             />
-            <TextInput
+            <AppDateInput
               label={translate("Дата ПФУ")}
               type="date"
               value={values.PFURegistrationDate}

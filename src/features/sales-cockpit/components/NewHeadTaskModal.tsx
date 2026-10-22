@@ -10,6 +10,7 @@ import { usePermissions } from '../../auth/usePermissions'
 import { createHeadTask, getHeadClients } from '../api/salesCockpitApi'
 import './cockpit-task-modal.css'
 import type { CockpitUrgency, HeadClient, HeadTaskManager } from '../types'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 const URGENCY_OPTIONS: { value: CockpitUrgency; label: string }[] = [
   { value: 'critical', label: 'Критично' },
@@ -202,7 +203,7 @@ export function NewHeadTaskModal({
               value={urgency}
               onChange={(value) => setUrgency((value as CockpitUrgency) ?? 'high')}
             />
-            <TextInput
+            <AppDateInput
               disabled={saving}
               label={t('Термін (необовʼязково)')}
               type="date"

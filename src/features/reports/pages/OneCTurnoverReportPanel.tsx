@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Button, Select, Stack, Text, TextInput } from '@mantine/core'
+import { ActionIcon, Alert, Button, Select, Stack, Text } from '@mantine/core'
 import { useEffect, useState } from 'react'
 import { CircleAlert, FileSpreadsheet, RefreshCw } from 'lucide-react'
 import { AppModalFooter } from '../../../shared/ui/AppModal'
@@ -10,6 +10,7 @@ import { DocumentExportModal } from '../../../shared/ui/document-export-modal/Do
 import { createStockReport, getOneCTurnoverScopes } from '../api/reportsApi'
 import { createOneCTurnoverReport, ONE_C_REPORT_LAYOUTS, oneCReportPeriodError, oneCReportScopeError, type OneCReportLayoutId } from '../data/oneCTurnoverReport'
 import type { OneCTurnoverScopeSummary, ReportResult } from '../types'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type Props = {
   canGenerate: boolean
@@ -71,8 +72,8 @@ export function OneCTurnoverReportPanel({ canGenerate, from, to, onFromChange, o
         </details> : null}
       </div>
       <div className="onec-report-modal__section onec-report-modal__fields">
-        <TextInput type="date" label={t('Від (1С)')} min="2000-01-01" max={to || '7998-12-31'} value={from} disabled={run.loading} onChange={event => onFromChange(event.currentTarget.value)} />
-        <TextInput type="date" label={t('До (1С)')} min={from || '2000-01-01'} max="7998-12-31" value={to} disabled={run.loading} onChange={event => onToChange(event.currentTarget.value)} />
+        <AppDateInput type="date" label={t('Від (1С)')} min="2000-01-01" max={to || '7998-12-31'} value={from} disabled={run.loading} onChange={event => onFromChange(event.currentTarget.value)} />
+        <AppDateInput type="date" label={t('До (1С)')} min={from || '2000-01-01'} max="7998-12-31" value={to} disabled={run.loading} onChange={event => onToChange(event.currentTarget.value)} />
         <Select className="onec-report-modal__layout" label={t('Структура звіту 1С')} value={layout} disabled={run.loading}
           data={ONE_C_REPORT_LAYOUTS.map(item => ({ value: item.id, label: t(item.name) }))}
           onChange={value => { if (value) setLayout(value as OneCReportLayoutId) }} />

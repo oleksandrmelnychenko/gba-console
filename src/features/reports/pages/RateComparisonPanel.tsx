@@ -1,9 +1,10 @@
-import { Alert, Button, Card, Select, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Card, Select, SimpleGrid, Stack, Text } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { useEffect, useState } from 'react'
 import { searchDatasetReportValues } from '../api/reportsApi'
 import { CLIENT_COMPARISON_MAX_DATE, CLIENT_COMPARISON_MIN_DATE } from '../data/clientPeriodComparison'
 import { defaultRateComparison, rateDefinitionId } from '../data/rateComparison'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type Props = { dataSource: number; value: unknown; disabled: boolean; onChange: (value: unknown) => void }
 export default function RateComparisonPanel(props: Props) {
@@ -21,9 +22,9 @@ function RateSettings({ value, disabled, onChange }: Props) {
       <RateDefinitionSelector key={`${kind}:${rateDefinitionId(draft.RateDefinitionId) ? 'selected' : 'empty'}`} kind={kind} value={rateDefinitionId(draft.RateDefinitionId) ? draft.RateDefinitionId : ''} disabled={disabled}
         onChange={RateDefinitionId => onChange({ ...draft, RateDefinitionId })} />
       <SimpleGrid cols={{ base: 1, sm: 2 }}>
-        <TextInput type="date" label="Курс: поточна дата" value={typeof draft.CurrentAsOf === 'string' ? draft.CurrentAsOf : ''} disabled={disabled}
+        <AppDateInput type="date" label="Курс: поточна дата" value={typeof draft.CurrentAsOf === 'string' ? draft.CurrentAsOf : ''} disabled={disabled}
           min={CLIENT_COMPARISON_MIN_DATE} max={CLIENT_COMPARISON_MAX_DATE} onChange={event => onChange({ ...draft, CurrentAsOf: event.currentTarget.value })} />
-        <TextInput type="date" label="Курс: дата порівняння" value={typeof draft.PreviousAsOf === 'string' ? draft.PreviousAsOf : ''} disabled={disabled}
+        <AppDateInput type="date" label="Курс: дата порівняння" value={typeof draft.PreviousAsOf === 'string' ? draft.PreviousAsOf : ''} disabled={disabled}
           min={CLIENT_COMPARISON_MIN_DATE} max={CLIENT_COMPARISON_MAX_DATE} onChange={event => onChange({ ...draft, PreviousAsOf: event.currentTarget.value })} />
       </SimpleGrid>
       <Text size="sm">На кожну дату сервер читає останній запис до завершення вибраного дня за календарем збережених даних. Цей календар не означає єдиний часовий пояс для всієї історії.</Text>

@@ -1,4 +1,4 @@
-import { Box, Button, Group, Select, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
+import { Box, Button, Group, Select, SimpleGrid, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { FileUp } from 'lucide-react'
 import { useState } from 'react'
@@ -7,6 +7,7 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { startGbaToOneCSync } from '../api/syncApi'
 import { TypeOfXmlDocument } from '../types'
 import { parseDateInputValue, toDateInputValue } from '../utils'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 const EXPORT_COMBOBOX_PROPS = {
   classNames: { dropdown: 'sync-modal-dropdown' },
@@ -53,7 +54,7 @@ export function OneCExportPanel() {
         <Text className="app-section-title">{t('Вивантаження GBA в 1С')}</Text>
         <Stack gap={10} mt={10}>
           <SimpleGrid cols={{ base: 1, sm: 3 }} spacing={10}>
-            <TextInput
+            <AppDateInput
               label={t('Дата від')}
               type="date"
               value={toDateInputValue(fromDate)}
@@ -61,7 +62,7 @@ export function OneCExportPanel() {
                 setFromDate(parseDateInputValue(event.currentTarget.value, fromDate))
               }
             />
-            <TextInput
+            <AppDateInput
               label={t('Дата до')}
               type="date"
               value={toDateInputValue(toDate)}

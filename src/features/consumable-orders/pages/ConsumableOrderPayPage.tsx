@@ -56,6 +56,7 @@ import {
   CASHFLOW_ARTICLE_CREATE_PERMISSION,
   CONSUMABLE_ORDER_PAY_PERMISSION,
 } from '../permissions'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import './consumable-order-pay-page.css'
 
 type LocationState = {
@@ -501,7 +502,7 @@ function ConsumableOrderPayPageContent({
               title={t('Оплата')}
             />
             <div className="consumable-order-pay-form-grid">
-            <TextInput
+            <AppDateInput
               className="consumable-order-pay-control is-compact is-date"
               disabled={isLoading || isSaving || isOrderPaid}
               label={t('Дата')}

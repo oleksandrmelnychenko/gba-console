@@ -1,6 +1,7 @@
-import { Alert, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, SimpleGrid, Stack, Text } from '@mantine/core'
 import { CLIENT_COMPARISON_MAX_DATE, CLIENT_COMPARISON_MIN_DATE } from '../data/clientPeriodComparison'
 import { defaultBuyerSalesShare } from '../data/buyerSalesShare'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type Props = { value: unknown; disabled: boolean; onChange: (value: unknown) => void }
 export default function BuyerSalesSharePanel({ value, disabled, onChange }: Props) {
@@ -9,9 +10,9 @@ export default function BuyerSalesSharePanel({ value, disabled, onChange }: Prop
     <Text fw={600}>Нові й повторні покупці за двома періодами</Text>
     <Text size="sm">Дати «Від» і «До» визначають поточний період. Нижче задайте окремий період порівняння. Обидва включають крайні дні за Києвом; можуть перетинатися, збігатися чи мати різну тривалість. Поточний період може бути ранішим.</Text>
     <SimpleGrid cols={{ base: 1, sm: 2 }}>
-      <TextInput type="date" label="Частки продажів: порівняння від" value={typeof draft.From === 'string' ? draft.From : ''} disabled={disabled}
+      <AppDateInput type="date" label="Частки продажів: порівняння від" value={typeof draft.From === 'string' ? draft.From : ''} disabled={disabled}
         min={CLIENT_COMPARISON_MIN_DATE} max={CLIENT_COMPARISON_MAX_DATE} onChange={event => onChange({ ...draft, From: event.currentTarget.value })} />
-      <TextInput type="date" label="Частки продажів: порівняння до" value={typeof draft.To === 'string' ? draft.To : ''} disabled={disabled}
+      <AppDateInput type="date" label="Частки продажів: порівняння до" value={typeof draft.To === 'string' ? draft.To : ''} disabled={disabled}
         min={typeof draft.From === 'string' && draft.From ? draft.From : CLIENT_COMPARISON_MIN_DATE} max={CLIENT_COMPARISON_MAX_DATE} onChange={event => onChange({ ...draft, To: event.currentTarget.value })} />
     </SimpleGrid>
     <Text size="sm">Покупець новий, якщо в історії GBA немає проведених продажів йому до початку відповідного періоду. Враховуються всі його договори й товари; відбори цього звіту не змінюють історію першої покупки.</Text>

@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { ReconciliationStorageOption } from '../types'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 export type WriteOffFormValues = {
   comment: string
@@ -56,7 +57,7 @@ export function WriteOffForm({
 
   return (
     <Stack gap="sm">
-      <TextInput maw={230}
+      <AppDateInput maw={230}
         label={t('Від якої дати')}
         type="datetime-local"
         value={fromDate}

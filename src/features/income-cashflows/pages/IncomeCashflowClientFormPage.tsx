@@ -110,6 +110,7 @@ import {
   getIncomeCreatePermissionByOperationType,
   INCOME_CASHFLOWS_MOVEMENT_CREATE_PERMISSION,
 } from '../permissions'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import './income-cashflows-page.css'
 
 type FormState = {
@@ -1173,7 +1174,7 @@ function IncomeCashflowClientFormPageContent() {
                 value={form.entranceNumber}
                 onChange={(event) => updateForm({ entranceNumber: event.currentTarget.value })}
               />
-              <TextInput
+              <AppDateInput
                 className="cashflow-field-date"
                 disabled={isLoading || isSaving}
                 label={t('Дата')}

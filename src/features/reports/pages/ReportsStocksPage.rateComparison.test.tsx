@@ -71,7 +71,7 @@ describe('source19 explicit series constructor', () => {
     vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: crypto.randomUUID(), Name: 'Історичний курс', Revision: 1, Data: data }])
     await ready(); dates('2026-05-01', '2026-05-31')
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Історичний курс' }))
-    expect((screen.getByLabelText('Курс: поточна дата') as HTMLInputElement).value).toBe('2026-07-31')
+    expect((screen.getByLabelText('Курс: поточна дата') as HTMLInputElement).value).toBe('31.07.2026')
     fireEvent.click(screen.getByRole('button', { name: 'Скинути' }))
     expect((screen.getByLabelText('Курс: поточна дата') as HTMLInputElement).value).toBe('')
     expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(true)

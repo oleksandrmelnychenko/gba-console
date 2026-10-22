@@ -91,6 +91,7 @@ import type {
   SupplyOrderItem,
   User,
 } from '../types'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type NumberFieldValue = number | ''
 type InvoiceUploadForm = {
@@ -1546,7 +1547,7 @@ function InvoiceUploadModal({
                   value={form.number}
                   onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, number: nextValue })) }}
                 />
-                <TextInput
+                <AppDateInput
                   disabled={isSaving}
                   label={t('Дата')}
                   type="datetime-local"
@@ -1639,7 +1640,7 @@ function PackListUploadModal({
                   value={form.number}
                   onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, number: nextValue })) }}
                 />
-                <TextInput
+                <AppDateInput
                   disabled={isSaving}
                   label={t('Дата')}
                   type="datetime-local"
@@ -1794,7 +1795,7 @@ function InvoiceMetadataModalBody({
           value={form.number}
           onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, number: nextValue })) }}
         />
-        <TextInput
+        <AppDateInput
           disabled={isSaving}
           label={t('Дата')}
           type="datetime-local"
@@ -1950,7 +1951,7 @@ export function PackListMetadataModalBody({
               <TextInput disabled={isSaving} label="PL.NO" value={form.plNo} onChange={(event) => updateTextField('plNo', event.currentTarget.value)} />
               <TextInput disabled={isSaving} label="Mark" value={form.markNumber} onChange={(event) => updateTextField('markNumber', event.currentTarget.value)} />
               <TextInput disabled={isSaving} label="No" value={form.no} onChange={(event) => updateTextField('no', event.currentTarget.value)} />
-              <TextInput disabled={isSaving} label={t('Дата')} type="datetime-local" value={form.dateFrom} onChange={(event) => updateTextField('dateFrom', event.currentTarget.value)} />
+              <AppDateInput disabled={isSaving} label={t('Дата')} type="datetime-local" value={form.dateFrom} onChange={(event) => updateTextField('dateFrom', event.currentTarget.value)} />
             </SimpleGrid>
             <Textarea
               autosize

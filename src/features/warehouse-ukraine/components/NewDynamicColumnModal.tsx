@@ -1,8 +1,9 @@
-import { Button, Stack, TextInput } from '@mantine/core'
+import { Button, Stack } from '@mantine/core'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type NewDynamicColumnModalProps = {
   opened: boolean
@@ -26,7 +27,7 @@ export function NewDynamicColumnModal({ disabled = false, opened, onClose, onAdd
       }}
     >
       <Stack className="app-compact-form" gap="md">
-        <TextInput
+        <AppDateInput
           disabled={disabled}
           label={t('Від якої дати')}
           type="date"

@@ -15,6 +15,7 @@ import {
   WIZARD_SALE_REGISTER_STATUS_NEW,
   WIZARD_SALE_REGISTER_STATUS_PACKAGING,
 } from './wizardClientStepApi'
+import { AppDateInput } from '../../../../shared/ui/AppDateInput'
 import '../../../../shared/ui/data-table/data-table.css'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
@@ -246,7 +247,7 @@ export function WizardClientRegistry({
             value={saleSearch}
             onChange={(event) => onChangeSaleSearch(event.currentTarget.value)}
           />
-          <TextInput
+          <AppDateInput
             label={t('Початкова дата')}
             max={dateTo || undefined}
             size="xs"
@@ -254,7 +255,7 @@ export function WizardClientRegistry({
             value={dateFrom}
             onChange={(event) => onChangeDateFrom(event.currentTarget.value)}
           />
-          <TextInput
+          <AppDateInput
             label={t('Кінцева дата')}
             min={dateFrom || undefined}
             size="xs"

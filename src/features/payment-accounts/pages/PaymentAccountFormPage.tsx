@@ -85,6 +85,7 @@ import type {
   PaymentRegisterTransfer,
 } from '../types'
 import { PaymentRegisterTransferType, PaymentRegisterType, TransferOperationType } from '../types'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import './payment-accounts-page.css'
 
 type LocationState = {
@@ -944,7 +945,7 @@ function BankFields({
           })
         }}
       />
-      <TextInput maw={170}
+      <AppDateInput maw={170}
         disabled={disabled}
         label={t('Дата відкриття')}
         type="date"
@@ -1239,8 +1240,8 @@ export function PaymentAccountActivityPanel({
 
           <Group align="end" className="app-filter-bar payment-account-activity__toolbar" justify="space-between" wrap="wrap">
             <Group align="end" className="payment-account-activity__dates" gap="sm" wrap="nowrap">
-              <TextInput maw={170} label={t('З')} type="date" value={from} w={150} onChange={(event) => onFromChange(event.currentTarget.value)} />
-              <TextInput maw={170} label={t('По')} type="date" value={to} w={150} onChange={(event) => onToChange(event.currentTarget.value)} />
+              <AppDateInput maw={170} label={t('З')} type="date" value={from} w={150} onChange={(event) => onFromChange(event.currentTarget.value)} />
+              <AppDateInput maw={170} label={t('По')} type="date" value={to} w={150} onChange={(event) => onToChange(event.currentTarget.value)} />
             </Group>
             <Group className="payment-account-activity__actions" gap="xs">
               <Button disabled={!account.NetUid} leftSection={<ArrowDownLeft size={16} />} size="xs" variant="default" onClick={onOpenIncome}>
@@ -1566,7 +1567,7 @@ export function PaymentAccountTransferModal({
                   setDraft((current) => ({ ...current, amount: nextAmount }))
                 }}
               />
-              <TextInput maw={170}
+              <AppDateInput maw={170}
                 disabled={isSubmitting}
                 label={t('Дата')}
                 required
@@ -1943,7 +1944,7 @@ export function PaymentAccountExchangeModal({
                   setDraft((current) => ({ ...current, incomeNumber: nextIncomeNumber }))
                 }}
               />
-              <TextInput maw={170}
+              <AppDateInput maw={170}
                 disabled={isSubmitting}
                 label={t('Дата')}
                 required

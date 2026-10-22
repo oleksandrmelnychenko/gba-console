@@ -1,4 +1,4 @@
-import { Button, Stack, TextInput } from '@mantine/core'
+import { Button, Stack } from '@mantine/core'
 import { useEffect } from 'react'
 import { formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -6,6 +6,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { CockpitTask } from '../types'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 export function SnoozeModal({
   task,
@@ -36,7 +37,7 @@ export function SnoozeModal({
       }}
     >
       <Stack className="app-compact-form" gap="md">
-        <TextInput
+        <AppDateInput
           disabled={saving}
           label={t('Нагадати')}
           type="datetime-local"

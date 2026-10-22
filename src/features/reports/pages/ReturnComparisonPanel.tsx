@@ -1,6 +1,7 @@
-import { Alert, Card, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Card, SimpleGrid, Stack, Text } from '@mantine/core'
 import { CLIENT_COMPARISON_MAX_DATE, CLIENT_COMPARISON_MIN_DATE } from '../data/clientPeriodComparison'
 import { defaultReturnComparison } from '../data/returnComparison'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type Props = { dataSource: number; value: unknown; disabled: boolean; onChange: (value: unknown) => void }
 export default function ReturnComparisonPanel({ dataSource, value, disabled, onChange }: Props) {
@@ -10,9 +11,9 @@ export default function ReturnComparisonPanel({ dataSource, value, disabled, onC
     <Text fw={600}>Повернення покупців за двома періодами</Text>
     <Text size="sm">Дати «Від» і «До» визначають поточний період. Нижче задайте незалежний період порівняння. Обидва включають крайні дні за Києвом; можуть перетинатися, збігатися чи мати різну тривалість. Поточний період може бути ранішим.</Text>
     <SimpleGrid cols={{ base: 1, sm: 2 }}>
-      <TextInput type="date" label="Повернення: порівняння від" value={typeof draft.From === 'string' ? draft.From : ''} disabled={disabled}
+      <AppDateInput type="date" label="Повернення: порівняння від" value={typeof draft.From === 'string' ? draft.From : ''} disabled={disabled}
         min={CLIENT_COMPARISON_MIN_DATE} max={CLIENT_COMPARISON_MAX_DATE} onChange={event => onChange({ ...draft, From: event.currentTarget.value })} />
-      <TextInput type="date" label="Повернення: порівняння до" value={typeof draft.To === 'string' ? draft.To : ''} disabled={disabled}
+      <AppDateInput type="date" label="Повернення: порівняння до" value={typeof draft.To === 'string' ? draft.To : ''} disabled={disabled}
         min={typeof draft.From === 'string' && draft.From ? draft.From : CLIENT_COMPARISON_MIN_DATE} max={CLIENT_COMPARISON_MAX_DATE} onChange={event => onChange({ ...draft, To: event.currentTarget.value })} />
     </SimpleGrid>
     <Text size="sm">Клієнт → точний договір. Звіт використовує дату документа повернення, а не початкового продажу. Імпортовані дати читаються за місцевим календарем Києва, дати створених у GBA повернень — з урахуванням часу UTC.</Text>

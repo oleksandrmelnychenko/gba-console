@@ -1,6 +1,7 @@
-import { Group, MultiSelect, Text, TextInput } from '@mantine/core'
+import { Group, MultiSelect, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { ReportCapabilityStatus, type ReportCapabilityStatusProps } from './ReportCapabilityStatus'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 // Presentation shared by both period statements; data loading and access remain with each caller.
 export function WarehousePeriodCapabilityStatus(props: ReportCapabilityStatusProps) {
@@ -41,6 +42,6 @@ export function OriginalPeriodDateInputs({ from, through, busy, changeFrom, chan
   from: string; through: string; busy: boolean; changeFrom: (value: string) => void; changeThrough: (value: string) => void
 }) {
   const { t } = useI18n()
-  return <Group grow><TextInput type="date" label={t('Початок періоду')} value={from} disabled={busy} onChange={e => changeFrom(e.currentTarget.value)} />
-    <TextInput type="date" label={t('Кінець періоду')} value={through} disabled={busy} onChange={e => changeThrough(e.currentTarget.value)} /></Group>
+  return <Group grow><AppDateInput type="date" label={t('Початок періоду')} value={from} disabled={busy} onChange={e => changeFrom(e.currentTarget.value)} />
+    <AppDateInput type="date" label={t('Кінець періоду')} value={through} disabled={busy} onChange={e => changeThrough(e.currentTarget.value)} /></Group>
 }

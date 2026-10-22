@@ -10,7 +10,6 @@ import {
   Stack,
   Text,
   Textarea,
-  TextInput,
   Tooltip,
 } from '@mantine/core'
 import { Plus, Trash2 } from 'lucide-react'
@@ -22,6 +21,7 @@ import type { MergedService, ProtocolUser, SupplyDocument, SupplyPaymentTask } f
 import { formatDate, formatMoney, fromDateInput, responsibleName, toDateInput } from './helpers'
 import type { MergedServicePermissions } from './MergedServicesSection'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type AddPaymentTaskValues = {
   comment: string
@@ -152,7 +152,7 @@ function AddPaymentTaskForm({
           {t('Створити платіжну задачу')}
           {isAccounting ? ` (${t('Бух.')})` : ''}
         </Text>
-        <TextInput
+        <AppDateInput
           w={170} maw="100%"
           label={t('Сплатити до')}
           type="date"

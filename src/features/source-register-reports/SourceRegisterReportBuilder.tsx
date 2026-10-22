@@ -6,6 +6,7 @@ import { RegisterFieldEditor } from './components/RegisterFieldEditor'
 import { RegisterSelectionEditor } from './components/RegisterSelectionEditor'
 import { validateRegisterDescriptor } from './validation'
 import type { RegisterPeriodDraft, SourceRegisterDescriptorWire, SourceRegisterQueryDraft, SourceRegisterQueryWire } from './types'
+import { AppDateInput } from '../../shared/ui/AppDateInput'
 import './sourceRegisterReports.css'
 
 export type SourceRegisterReportBuilderProps = {
@@ -21,7 +22,7 @@ export type SourceRegisterReportBuilderProps = {
 function PeriodEditor({ label, value, disabled, onChange }: { label: string; value: RegisterPeriodDraft; disabled: boolean; onChange: (value: RegisterPeriodDraft) => void }) {
   return <fieldset className="source-register-period"><legend>{label}</legend><Stack gap="xs">
     <SimpleGrid cols={{ base: 1, xs: 2 }}>
-      <TextInput label={`${label}: дата`} type="date" min="0001-01-01" max="9999-12-31" value={value.date} disabled={disabled}
+      <AppDateInput label={`${label}: дата`} type="date" min="0001-01-01" max="9999-12-31" value={value.date} disabled={disabled}
         onChange={event => onChange({ ...value, date: event.currentTarget.value })} />
       <TextInput label={`${label}: час`} type="time" step="1" value={value.time} disabled={disabled}
         onChange={event => onChange({ ...value, time: event.currentTarget.value })} />

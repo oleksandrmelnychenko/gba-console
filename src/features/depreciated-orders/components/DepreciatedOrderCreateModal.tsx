@@ -9,7 +9,7 @@ import {
   Stack,
   Text,
   Textarea,
-  TextInput } from '@mantine/core'
+} from '@mantine/core'
 import { CircleAlert, FileSpreadsheet } from 'lucide-react'
 import { type FormEvent, useMemo } from 'react'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
@@ -18,6 +18,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import type { DepreciatedOrderCreateFromFilePayload, DepreciatedOrderStorage } from '../types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 export type DepreciatedOrderCreateModalProps = {
   canCreateManagement: boolean
@@ -145,7 +146,7 @@ export function DepreciatedOrderCreateModal({
               value={form.storageNetUid || null}
               onChange={(value) => setForm((current) => ({ ...current, storageNetUid: value || '' }))}
             />
-            <TextInput
+            <AppDateInput
               disabled={isCreating}
               label={t('Від якої дати')}
               type="datetime-local"

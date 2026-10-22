@@ -70,6 +70,7 @@ import {
   mergeSavedPlacementRow,
   selectIncomePackingList,
 } from '../productIncomePlacementState'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import './product-income-page.css'
 
 const DEFAULT_VAT_PERCENT = 23
@@ -1827,7 +1828,7 @@ function ProductIncomeControlsCard({
             />
           )}
           {model.isInvoiceAllNotPlaced && (
-            <TextInput
+            <AppDateInput
               className="product-income-control is-date"
               disabled={!canUseIncome || isPlaced || model.isDirty || model.isSaving}
               label={t('Від якої дати')}

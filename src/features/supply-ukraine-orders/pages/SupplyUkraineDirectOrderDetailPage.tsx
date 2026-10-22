@@ -62,6 +62,7 @@ import type {
   SupplyOrderDeliveryDocument,
 } from '../types'
 import { hasSupplyProForm } from '../proFormHelpers'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 const TRANSPORTATION_OPTIONS = [
   { icon: Truck, label: 'Авто', value: '0' },
@@ -825,7 +826,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
                   value={amountValue}
                   onChange={(value) => dispatchAmountEdit({ type: 'setAmountValue', value })}
                 />
-                <TextInput
+                <AppDateInput
                   disabled={!isEditingAmount || isSaving}
                   label={t('Від якої дати')}
                   type="date"
@@ -1040,7 +1041,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
                   value={creditNoteAmount}
                   onChange={(value) => dispatchCreditNote({ type: 'setAmount', value })}
                 />
-                <TextInput
+                <AppDateInput
                   label={t('Дата')}
                   type="date"
                   value={creditNoteDate}

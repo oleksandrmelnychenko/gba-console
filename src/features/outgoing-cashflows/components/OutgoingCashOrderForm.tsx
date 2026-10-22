@@ -51,6 +51,7 @@ import {
   validateOutgoingCashOrderForm,
 } from '../outgoingCashOrderPolicy'
 import type { Organization, PaymentMovement } from '../types'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type OutgoingCashOrderFormProps = {
   onCancel: () => void
@@ -423,7 +424,7 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
               {t('Дані видаткового ордера')}
             </Text>
             <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
-              <TextInput
+              <AppDateInput
                 className="cashflow-field-date"
                 disabled={isLoading || isSaving}
                 label={t('Дата')}

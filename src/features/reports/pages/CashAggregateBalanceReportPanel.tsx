@@ -1,4 +1,4 @@
-import { Alert, Button, Group, Stack, Table, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Group, Stack, Table, Text } from '@mantine/core'
 import { useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -9,6 +9,7 @@ import { cashAggregateBalanceCellText, cashAggregateBalancePeriodError, isCashAg
   type CashAggregateBalanceReport, type CashAggregateBalanceRow, type CashAggregateBalanceTotals } from '../data/cashAggregateBalance'
 import { useReportRunState } from '../hooks/useReportRunState'
 import { formatDateTime, normalizeReportResult } from '../utils'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 export function CashAggregateBalanceReportPanel({ capability, initialPeriod, canGenerate, callerKey, onLoadingChange }: {
   capability: CashAggregateBalanceCapabilities; initialPeriod: string; canGenerate: boolean; callerKey: string | null
@@ -37,7 +38,7 @@ export function CashAggregateBalanceReportPanel({ capability, initialPeriod, can
   return <Stack gap="md">
     <Text size="sm">{t('Оберіть дату залишків коштів. Попередня дата — на три календарні місяці раніше.')}</Text>
     <Text size="sm" c="dimmed">{t('Залишки показуються за нашими рахунками в підтвердженій управлінській валюті. Дані для двох дат можуть бути оновлені в різний час.')}</Text>
-    <TextInput type="date" label={t('Період')} value={period} disabled={!canGenerate || run.isLoading}
+    <AppDateInput type="date" label={t('Період')} value={period} disabled={!canGenerate || run.isLoading}
       onChange={event => setPeriod(event.currentTarget.value)} />
     {!canGenerate ? <Alert color="yellow">{t('Недостатньо прав для формування звітів.')}</Alert> : null}
     {!executable ? <Alert color="yellow">{t('Сервер ще не підтримує формування цього конструктора.')}</Alert> : null}

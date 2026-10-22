@@ -1,9 +1,10 @@
-import { Alert, Button, Group, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Group, Stack, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import type { CurrentLiquidityCapabilities, CurrentLiquidityEndpoints, CurrentLiquidityInput, CurrentLiquidityReport } from '../data/currentLiquidity'
 import { useCurrentLiquidityReport } from '../hooks/useCurrentLiquidityReport'
 import { ServerReportCellsTable } from './ServerReportCellsTable'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 export function CurrentLiquidityReportPanel(props: { capability: CurrentLiquidityCapabilities; initialEndpoints: CurrentLiquidityEndpoints; canGenerate: boolean; callerKey: string | null
   onLoadingChange?: (value: boolean) => void }) {
@@ -12,9 +13,9 @@ export function CurrentLiquidityReportPanel(props: { capability: CurrentLiquidit
   return <Stack gap="md">
     <Text size="sm">{t('Порівняння залишків на дві обрані дати. Оберіть перший день місяця; попередня дата має бути раніше поточної.')}</Text>
     <Group grow>
-      <TextInput type="date" label={t('Поточна дата')} value={current} disabled={!props.canGenerate || run.isLoading}
+      <AppDateInput type="date" label={t('Поточна дата')} value={current} disabled={!props.canGenerate || run.isLoading}
         onChange={event => setCurrent(event.currentTarget.value)} />
-      <TextInput type="date" label={t('Попередня дата')} value={previous} disabled={!props.canGenerate || run.isLoading}
+      <AppDateInput type="date" label={t('Попередня дата')} value={previous} disabled={!props.canGenerate || run.isLoading}
         onChange={event => setPrevious(event.currentTarget.value)} />
     </Group>
     {!props.canGenerate ? <Alert color="yellow">{t('Недостатньо прав для формування звітів.')}</Alert> : null}

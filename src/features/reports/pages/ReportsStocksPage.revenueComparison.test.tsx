@@ -83,6 +83,6 @@ describe('source16 builder and precise contract templates', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(screen.getAllByRole('button', { name: 'Оновити шаблон' })[0])
     await waitFor(() => expect(saveServerReportTemplate).toHaveBeenCalledOnce()); expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0]).toEqual(template)
     fireEvent.click(screen.getByRole('button', { name: 'Відкрити для редагування: Виручка непідтримана' })); expect(screen.getByText(/Перевірте порівняння виручки/)).toBeTruthy()
-    expect((screen.getByLabelText('Виручка: порівняння від') as HTMLInputElement).value).toBe('2026-06-01')
+    expect((screen.getByLabelText('Виручка: порівняння від') as HTMLInputElement).value).toBe('01.06.2026')
   })
 })

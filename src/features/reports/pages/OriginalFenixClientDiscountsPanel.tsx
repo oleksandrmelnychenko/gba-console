@@ -1,4 +1,4 @@
-import { Alert, Button, Group, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Group, Stack, Text } from '@mantine/core'
 import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { readFenixDiscounts } from '../api/originalFenixClientDiscountsApi'
@@ -9,6 +9,7 @@ import { emptyFenixCaptions, selectedFenixPagedRequest, type FenixDiscountCatalo
 import { useReportRunState } from '../hooks/useReportRunState'
 import { OriginalFenixClientDiscountPagedControls } from './OriginalFenixClientDiscountPagedControls'
 import { OriginalFenixClientDiscountGrid } from './OriginalFenixClientDiscountGrid'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 const formats = ['csv', 'xlsx', 'pdf'] as const
 function download(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob), link = document.createElement('a')
@@ -89,7 +90,7 @@ export function OriginalFenixClientDiscountsPanel({ readiness, callerKey, canGen
   function select(field: FenixDiscountField, values: string[], observed: FenixDiscountChoice[]) { delivery.invalidate(); selection.select(field, values, observed) }
   return <Stack gap="md"><Text size="sm">{t('FENIX · ОтчетПоСкидкам: отримувач → номенклатура, максимальний відсоток знижки/націнки. Прямий код регіону належить отримувачу.')}</Text>
     <Text size="sm" c="dimmed">{t('Форма підтримує прямі знижки клієнтів з числовим відсотком. Інші типи отримувачів або відсотка залишають повний результат недоступним.')}</Text>
-    <TextInput type="date" label={t('Дата зрізу')} value={through} disabled={busy} onChange={event => { delivery.invalidate(); setThrough(event.currentTarget.value) }} />
+    <AppDateInput type="date" label={t('Дата зрізу')} value={through} disabled={busy} onChange={event => { delivery.invalidate(); setThrough(event.currentTarget.value) }} />
     <OriginalFenixClientDiscountPagedControls through={through} names={named} scope={names.scope} captions={captions} selection={selected} busy={busy} permitted={permitted} dateError={dateError} error={names.run.error} loading={names.run.isLoading}
       onSelect={select} onLoad={() => { delivery.invalidate(); selection.clear(); void names.load() }} />
     <Text size="sm" c="dimmed">{t('Зріз охоплює останню цілу секунду дня, 23:59:59. Відсотки не додаються. Відповідність поточному оригіналу 1С ще не підтверджена; валютна конвертація не застосовується.')}</Text>

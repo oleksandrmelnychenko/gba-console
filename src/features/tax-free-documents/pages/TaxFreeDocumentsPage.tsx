@@ -57,6 +57,7 @@ import {
   getTaxFreeStatusLabel,
   getTaxFreeStatusOptions,
 } from '../utils'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import './tax-free-documents-page.css'
 
 const FILTER_STORAGE_KEY = 'taxFreeDocumentFilters:v2'
@@ -1548,7 +1549,7 @@ function TaxFreeStatusPanel({
           <Stack gap="sm">
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
               <TaxFreeDetailField label={t('Наступний статус')} value={getTaxFreeStatusLabel(nextStatus)} />
-              <TextInput
+              <AppDateInput
                 label={t('Дата')}
                 type="datetime-local"
                 value={dateValue}

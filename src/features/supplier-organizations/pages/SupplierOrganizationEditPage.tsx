@@ -69,6 +69,7 @@ import {
 import './supplier-organizations-page.css'
 import './supplier-organization-form.css'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 const AGREEMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -968,7 +969,7 @@ function AgreementDrawer({
                   value={values.currencyId || null}
                   onChange={(value) => setField('currencyId', value || '')}
                 />
-                <TextInput
+                <AppDateInput
                   error={errors.existFrom ? t(errors.existFrom) : undefined}
                   label={t('Діє з')}
                   max={values.existTo || undefined}
@@ -976,7 +977,7 @@ function AgreementDrawer({
                   value={values.existFrom}
                   onChange={(event) => setField('existFrom', event.currentTarget.value)}
                 />
-                <TextInput
+                <AppDateInput
                   error={errors.existTo ? t(errors.existTo) : undefined}
                   label={t('Діє до')}
                   min={values.existFrom || undefined}

@@ -29,6 +29,7 @@ import {
 import type { Agreement, Currency, Organization, Pricing, ProviderPricing } from '../../types'
 import { organizationHasVat } from './organizationVat'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
+import { AppDateInput } from '../../../../shared/ui/AppDateInput'
 
 export type AgreementFormProps = {
   agreement: Agreement
@@ -261,13 +262,13 @@ export function AgreementForm({
             )}
 
             <Group grow align="flex-start">
-              <TextInput
+              <AppDateInput
                 label={t('Діє з')}
                 type="date"
                 value={toInputDate(agreement.FromDate)}
                 onChange={(event) => onChange({ FromDate: event.currentTarget.value || undefined })}
               />
-              <TextInput
+              <AppDateInput
                 label={t('Діє по')}
                 type="date"
                 value={toInputDate(agreement.ToDate)}

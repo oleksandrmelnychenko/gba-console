@@ -1,4 +1,4 @@
-import { Alert, Button, Group, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Group, Stack, Text } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { readFenixDiscountAnalysis } from '../api/originalFenixDiscountAnalysisApi'
@@ -9,6 +9,7 @@ import { useReportRunState } from '../hooks/useReportRunState'
 import { useFenixDiscountChoices } from '../hooks/useFenixDiscountChoices'
 import { OriginalFenixDiscountChoiceControls } from './OriginalFenixDiscountChoiceControls'
 import { OriginalFenixDiscountAnalysisGrid } from './OriginalFenixDiscountAnalysisGrid'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 const formats = ['csv', 'xlsx', 'pdf'] as const
 function download(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob), link = document.createElement('a')
@@ -70,7 +71,7 @@ export function OriginalFenixDiscountAnalysisPanel({ capability, callerKey, canG
   const busy = delivery.run.isLoading || delivery.exporting || names.run.isLoading
   function select(field: FenixDiscountField, values: string[]) { delivery.invalidate(); setSelection({ key: names.key, witness: named?.ResultSha256 ?? null, values: { ...selected, [field]: [...values] } }) }
   return <Stack gap="md"><Text>{t('Fenix · Аналіз знижок і націнок: контрагенти в рядках, номенклатура у стовпцях; тип ціни й відсоток. Загальних підсумків немає.')}</Text>
-    <TextInput type="date" label={t('Дата зрізу')} value={through} disabled={busy} onChange={event => { delivery.invalidate(); setThrough(event.currentTarget.value) }} />
+    <AppDateInput type="date" label={t('Дата зрізу')} value={through} disabled={busy} onChange={event => { delivery.invalidate(); setThrough(event.currentTarget.value) }} />
     <OriginalFenixDiscountChoiceControls names={named} selection={selected} busy={busy} permitted={permitted} dateError={dateError} error={names.run.error} loading={names.run.isLoading}
       onSelect={select} onLoad={() => { delivery.invalidate(); setSelection({ key: '', witness: null, values: emptyFenixDiscountSelection() }); void names.load() }} />
     <Text size="sm" c="dimmed">{t('Звіт показує стан на кінець обраного дня. Залиште відбори порожніми, щоб охопити всіх контрагентів і всю номенклатуру.')}</Text>

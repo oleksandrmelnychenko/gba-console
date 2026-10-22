@@ -1,4 +1,4 @@
-import { Alert, Button, Group, MultiSelect, Stack, Table, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Group, MultiSelect, Stack, Table, Text } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { readOriginalPlannedCash } from '../api/originalPlannedCashApi'
@@ -6,6 +6,7 @@ import { plannedDefaultRows, plannedDefinitions, plannedFieldLabels, plannedFiel
   type OriginalPlannedResult, type PlannedCapability, type PlannedChoice, type PlannedField, type PlannedFilter } from '../data/originalPlannedCash'
 import { plannedCsv, plannedExportError, plannedMatrix, plannedPdf, plannedXlsx } from '../data/originalPlannedCashExport'
 import { useReportRunState } from '../hooks/useReportRunState'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 const formats = ['csv', 'xlsx', 'pdf'] as const
 function download(blob: Blob, name: string) {
@@ -22,8 +23,8 @@ const dependencies: Record<string, string> = {
 }
 function PlannedPeriod({ from, through, busy, change }: { from: string; through: string; busy: boolean; change: (field: 'from' | 'through', value: string) => void }) {
   const { t } = useI18n()
-  return <Group grow><TextInput type="date" label={t('Початок періоду')} value={from} disabled={busy} onChange={event => change('from', event.currentTarget.value)} />
-    <TextInput type="date" label={t('Кінець періоду')} value={through} disabled={busy} onChange={event => change('through', event.currentTarget.value)} /></Group>
+  return <Group grow><AppDateInput type="date" label={t('Початок періоду')} value={from} disabled={busy} onChange={event => change('from', event.currentTarget.value)} />
+    <AppDateInput type="date" label={t('Кінець періоду')} value={through} disabled={busy} onChange={event => change('through', event.currentTarget.value)} /></Group>
 }
 function PlannedSelections({ rows, filters, choices, busy, group, select }: { rows: PlannedField[]; filters: PlannedFilter[]; choices: PlannedChoice[]; busy: boolean;
   group: (rows: PlannedField[]) => void; select: (field: PlannedField, keys: string[]) => void }) {

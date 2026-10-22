@@ -78,6 +78,7 @@ import { DownloadDocumentModal } from './DownloadDocumentModal'
 import { EditDeliveryAddressModal } from './EditDeliveryAddressModal'
 import { EditDeliveryRecipientModal } from './EditDeliveryRecipientModal'
 import { hasWarehouseDocumentUrl } from './openWarehouseDocument'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: { left: ['index', 'clientName'] },
@@ -2029,7 +2030,7 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
               value={shipmentDraft?.Comment || ''}
               onChange={(event) => updateDraftField('Comment', event.currentTarget.value)}
             />
-            <TextInput
+            <AppDateInput
               className="warehouse-ukraine-filter-input warehouse-shipment-edit-date"
               disabled={!canEditShipment || isSaving}
               label={t('Дата від')}
@@ -2109,14 +2110,14 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
           <Card withBorder radius="md" padding="md">
             <Group align="end" gap="sm" wrap="wrap">
               <div className="app-filter-date-range">
-                <TextInput
+                <AppDateInput
                   label={t('Від')}
                   max={manualFilterDraft.to || undefined}
                   type="date"
                   value={manualFilterDraft.from}
                   onChange={(event) => setManualFilterDraft({ ...manualFilterDraft, from: event.currentTarget.value })}
                 />
-                <TextInput
+                <AppDateInput
                   label={t('До')}
                   min={manualFilterDraft.from || undefined}
                   type="date"

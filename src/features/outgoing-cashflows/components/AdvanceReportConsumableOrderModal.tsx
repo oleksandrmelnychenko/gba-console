@@ -50,6 +50,7 @@ import {
   searchConsumableStorages,
   searchPaymentCostMovements,
 } from '../../consumable-orders/api/consumableOrdersApi'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type FormState = {
   comment: string
@@ -656,7 +657,7 @@ export function AdvanceReportConsumableOrderModal({
               value={form.invoiceNumber}
               onChange={(event) => updateForm({ invoiceNumber: event.currentTarget.value })}
             />
-            <TextInput
+            <AppDateInput
               disabled={isBusy}
               label={t('Дата входу')}
               maw={170}

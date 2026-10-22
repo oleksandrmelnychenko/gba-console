@@ -6,7 +6,6 @@ import {
   SimpleGrid,
   Stack,
   Text,
-  TextInput,
 } from '@mantine/core'
 import { CircleCheck, ShieldCheck } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -17,6 +16,7 @@ import {
   type SyncSource,
 } from '../syncSessionForm'
 import { DailySyncTypeChecklist } from './DailySyncTypeChecklist'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type SyncSessionConfiguratorProps = {
   dateErrors: SyncDateRangeErrors
@@ -76,7 +76,7 @@ export function SyncSessionConfigurator({
 
       <Stack gap="md">
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <TextInput
+          <AppDateInput
             error={dateErrors.from}
             label={t('Дата від')}
             max={today}
@@ -85,7 +85,7 @@ export function SyncSessionConfigurator({
             value={range.from}
             onChange={(event) => onDateChange('from', event.currentTarget.value)}
           />
-          <TextInput
+          <AppDateInput
             error={dateErrors.to}
             label={t('Дата до')}
             max={today}

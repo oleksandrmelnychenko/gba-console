@@ -5,6 +5,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { TaxFreeCarrierPassport } from '../types'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type PassportDraft = {
   city: string
@@ -125,13 +126,13 @@ export function TaxFreeCarrierPassportDrawer({
             />
           </SimpleGrid>
           <Group align="end" gap={10}>
-            <TextInput w={170} maw="100%"
+            <AppDateInput w={170} maw="100%"
               label={t('Дійсний від')}
               type="date"
               value={draft.passportIssuedDate}
               onChange={(event) => updateDraft({ passportIssuedDate: event.currentTarget.value })}
             />
-            <TextInput w={170} maw="100%"
+            <AppDateInput w={170} maw="100%"
               label={t('Дійсний до')}
               type="date"
               value={draft.passportCloseDate}

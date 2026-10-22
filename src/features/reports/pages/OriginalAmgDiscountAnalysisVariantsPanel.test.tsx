@@ -25,7 +25,7 @@ async function choose() {
 it('loads exact saved date and filters then refreshes own names before binding a new preview witness', async () => {
   setup(); const saved = amgVariant(); saved.Scope.Request.Through = '2026-10-01'; vi.mocked(loadAmgDiscountVariant).mockResolvedValue(saved)
   render(panel()); await choose(); fireEvent.click(button('Відкрити варіант AMG')); await waitFor(() => expect(button('Сформувати').disabled).toBe(false))
-  expect((screen.getByLabelText('Дата зрізу') as HTMLInputElement).value).toBe('2026-10-01'); expect(readAmgDiscountAnalysisChoices).toHaveBeenCalledTimes(1)
+  expect((screen.getByLabelText('Дата зрізу') as HTMLInputElement).value).toBe('01.10.2026'); expect(readAmgDiscountAnalysisChoices).toHaveBeenCalledTimes(1)
   const namesRequest = vi.mocked(readAmgDiscountAnalysisChoices).mock.calls[0][0]; expect(namesRequest.Counterparties).toEqual([amgParty]); expect(namesRequest.Products).toEqual([amgProduct]); expect(namesRequest.ChoicesWitnessSha256).toBeUndefined()
   fireEvent.click(button('Сформувати')); await screen.findByRole('table'); expect(vi.mocked(readAmgDiscountAnalysis).mock.calls[0][0].ChoicesWitnessSha256).toBe(amgChoiceWitness)
   expect(button('CSV').disabled).toBe(false)

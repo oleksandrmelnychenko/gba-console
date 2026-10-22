@@ -37,7 +37,7 @@ it('launches exact account-grouped original cash with an editable closed day, wi
   await waitFor(() => expect((open as HTMLButtonElement).disabled).toBe(false)); fireEvent.click(open)
   const dialog = await screen.findByRole('dialog', { name: cashAggregateCapability().Title })
   const period = within(dialog).getByLabelText('Період') as HTMLInputElement
-  expect(period.type).toBe('date'); expect(period.value).toBe(previousKyivDay(formatKyivBusinessDate()))
+  expect(period.dataset.datesInput).toBe('true'); expect(period.value).toBe(previousKyivDay(formatKyivBusinessDate()).split('-').reverse().join('.'))
   expect(within(dialog).queryByLabelText('Від')).toBeNull(); expect(within(dialog).queryByLabelText('До')).toBeNull()
   expect(within(dialog).queryByRole('combobox')).toBeNull()
   fireEvent.change(period, { target: { value: '2026-09-30' } }); fireEvent.click(within(dialog).getByRole('button', { name: 'Переглянути' }))

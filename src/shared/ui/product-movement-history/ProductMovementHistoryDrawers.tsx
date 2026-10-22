@@ -13,7 +13,6 @@ import {
   Stack,
   Tabs,
   Text,
-  TextInput,
   Tooltip,
 } from '@mantine/core'
 import { ArrowDownToLine, ArrowRightLeft, ArrowUpFromLine, Archive, ChevronLeft, ChevronRight, CircleAlert, Download, LockKeyhole, Minus, Plus, RefreshCw, TriangleAlert } from 'lucide-react'
@@ -54,6 +53,7 @@ import {
   type ProductMovementHistoryRequestPaths,
 } from './productMovementHistoryRequestPaths'
 import { MovementDocumentTypeFilter } from './MovementDocumentTypeFilter'
+import { AppDateInput } from '../AppDateInput'
 import './product-movement-history-drawers.css'
 
 export type MovementHistoryProduct = {
@@ -730,7 +730,7 @@ function ProductStorageLocationHistoryDrawerContent({
     <AppDrawer className="app-compact-form" opened={opened && Boolean(product)} position="right" size="min(1180px, 98vw)" title={title} onClose={onClose}>
       <Stack gap={10}>
         <Group align="end" gap={10} wrap="wrap" className="product-movement-history-location-filters">
-          <TextInput
+          <AppDateInput
             label={t('З')}
             type="date"
             value={dateFrom}
@@ -739,7 +739,7 @@ function ProductStorageLocationHistoryDrawerContent({
               dispatchDrawerState({ type: 'set-date-from', value: event.currentTarget.value })
             }}
           />
-          <TextInput
+          <AppDateInput
             label={t('По')}
             type="date"
             value={dateTo}
@@ -1080,8 +1080,8 @@ export function HistoricalSourceMovementPanel({
     <Stack className="product-movement-history-panel" gap={0}>
       <div className="app-filter-bar product-movement-history-filter-bar">
         <Group align="end" gap={10} wrap="nowrap" className="product-movement-history-filter-row">
-          <TextInput label={t('З')} type="date" value={dateFrom} w={150} onChange={(event) => setDateFrom(event.currentTarget.value)} />
-          <TextInput label={t('По')} type="date" value={dateTo} w={150} onChange={(event) => setDateTo(event.currentTarget.value)} />
+          <AppDateInput label={t('З')} type="date" value={dateFrom} w={150} onChange={(event) => setDateFrom(event.currentTarget.value)} />
+          <AppDateInput label={t('По')} type="date" value={dateTo} w={150} onChange={(event) => setDateTo(event.currentTarget.value)} />
           <div className="app-filter-actions">
             <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
               disabled={Boolean(filterError || missingNetUidError)}
@@ -1211,7 +1211,7 @@ export function InformationalMovementPanel({
     <Stack className="product-movement-history-panel" gap={0}>
       <div className="app-filter-bar product-movement-history-panel__filters">
         <Group align="end" gap={10} wrap="wrap" className="product-movement-history-location-filters">
-          <TextInput
+          <AppDateInput
             label={t('З')}
             type="date"
             value={dateFrom}
@@ -1221,7 +1221,7 @@ export function InformationalMovementPanel({
               setDateFrom(event.currentTarget.value)
             }}
           />
-          <TextInput
+          <AppDateInput
             label={t('По')}
             type="date"
             value={dateTo}

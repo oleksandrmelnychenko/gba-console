@@ -8,11 +8,11 @@ import {
   Stack,
   Text,
   Textarea,
-  TextInput,
 } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { ActProvidingServiceDetailModel } from './useActProvidingServiceDetailModel'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
@@ -76,7 +76,7 @@ export function ActProvidingServiceDetailBody({
 
           <DocumentDetailSection title={t('Редагування')} stacked>
             <Group align="start" gap={10}>
-              <TextInput maw={230}
+              <AppDateInput maw={230}
                 disabled={!canEdit || isLoading || isSaving}
                 label={t('Дата акта')}
                 type="datetime-local"

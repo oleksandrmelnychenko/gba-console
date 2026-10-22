@@ -19,6 +19,7 @@ import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { CUSTOMS_DECLARATION_UPLOAD_LABEL } from '../customsDeclarationLabels'
 import type { SupplyOrganization } from '../detailTypes'
 import type { DeliveryDocumentDraft } from '../specificationTypes'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type UploadDeliveryDocumentsModalProps = {
   dateCustomDeclaration: string
@@ -155,7 +156,7 @@ export function UploadDeliveryDocumentsModal({
                 value={numberCustomDeclaration}
                 onChange={(event) => onChangeNumberCustomDeclaration(event.currentTarget.value)}
               />
-              <TextInput
+              <AppDateInput
                 disabled={isSaving}
                 label={t('Дата митної декларації')}
                 type="date"

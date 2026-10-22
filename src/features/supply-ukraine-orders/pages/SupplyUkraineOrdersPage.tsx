@@ -75,6 +75,7 @@ import {
   getInvoiceAmountBreakdown,
   getToUkraineOrderAmountBreakdown,
 } from '../orderAmountBreakdown'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import '../../../shared/ui/console-table-page.css'
 import './supply-ukraine-orders.css'
 
@@ -2029,7 +2030,7 @@ export function OfficialCostsModal({
                 value={form.accountingVatPercent}
                 onChange={(value) => updateForm({ accountingVatPercent: toNonNegativeNumber(value) })}
               />
-              <TextInput
+              <AppDateInput
                 className="supply-orders-official-costs-field is-mono"
                 disabled={isSaving}
                 label={t('Дата')}

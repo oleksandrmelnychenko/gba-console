@@ -103,6 +103,7 @@ import {
   getConsumableOrdersRemainingAmount,
   getSelectedConsumableOrders,
 } from './supplierUnpaidConsumableOrders'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type OutgoingPaymentGroupFormProps = {
   onCancel: () => void
@@ -944,7 +945,7 @@ export function OutgoingPaymentGroupForm({
               {t('Реквізити виплати')}
             </Text>
             <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
-              <TextInput
+              <AppDateInput
                 className="cashflow-field-date"
                 disabled={isLoading || isSaving}
                 label={t('Дата')}

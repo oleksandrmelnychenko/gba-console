@@ -18,8 +18,7 @@ import {
   Switch,
   Text,
   Textarea,
-  TextInput,
-  } from '@mantine/core'
+} from '@mantine/core'
 import {
   DocumentDetailFlag,
   DocumentDetailChip,
@@ -59,6 +58,7 @@ import type {
   ProductTransferLocation,
   ProductTransferStorage,
 } from '../types'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import './product-transfers-page.css'
 
 type FilterDraft = {
@@ -768,7 +768,7 @@ function ProductTransferCreateModal({ model }: { model: ReturnType<typeof usePro
           </SimpleGrid>
 
             <SimpleGrid cols={{ base: 1, sm: 2 }}>
-              <TextInput
+              <AppDateInput
                 disabled={isCreating}
                 label={t('Дата')}
                 type="date"

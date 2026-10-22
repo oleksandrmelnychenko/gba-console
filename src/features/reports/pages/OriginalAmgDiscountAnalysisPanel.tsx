@@ -1,4 +1,4 @@
-import { Alert, Button, Group, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Group, Stack, Text } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { readAmgDiscountAnalysis } from '../api/originalAmgDiscountAnalysisApi'
@@ -12,6 +12,7 @@ import { amgDiscountVariantScope, type AmgDiscountVariant } from '../data/origin
 import { useAmgDiscountAnalysisSelection } from '../hooks/useAmgDiscountAnalysisSelection'
 import { OriginalAmgDiscountVariantControls } from './OriginalAmgDiscountVariantControls'
 import { OriginalAmgDiscountAnalysisGrid } from './OriginalAmgDiscountAnalysisGrid'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 const formats = ['csv', 'xlsx', 'pdf'] as const
 function download(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob), link = document.createElement('a')
@@ -81,7 +82,7 @@ export function OriginalAmgDiscountAnalysisPanel({ capability, callerKey, canGen
   }
   const savedScope = dateError ? null : amgDiscountVariantScope({ ...amgDiscountAnalysisRequest(through), Counterparties: selected.Контрагент, Products: selected.Номенклатура })
   return <Stack gap="md"><Text>{t('AMG · Аналіз знижок і націнок: контрагенти в рядках, номенклатура у стовпцях; тип ціни й відсоток. Загальних підсумків немає.')}</Text>
-    <TextInput type="date" label={t('Дата зрізу')} value={through} disabled={busy} onChange={event => { delivery.invalidate(); scope.clear(); setThrough(event.currentTarget.value) }} />
+    <AppDateInput type="date" label={t('Дата зрізу')} value={through} disabled={busy} onChange={event => { delivery.invalidate(); scope.clear(); setThrough(event.currentTarget.value) }} />
     <OriginalAmgDiscountAnalysisChoiceControls names={named} selection={selected} busy={busy} selectionBlocked={blockedVariant} permitted={permitted} dateError={dateError} error={names.run.error} loading={names.run.isLoading}
       onSelect={select} onLoad={() => { delivery.invalidate(); scope.clearSelection(); void names.load(pending?.Request) }} />
     <Text size="sm" c="dimmed">{t('Залиште відбори порожніми, щоб охопити всіх контрагентів і всю номенклатуру.')}</Text>

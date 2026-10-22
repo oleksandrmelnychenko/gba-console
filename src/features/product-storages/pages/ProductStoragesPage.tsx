@@ -62,6 +62,7 @@ import type {
   ProductStorageStorage,
   ProductStoragesExportDocument,
 } from '../types'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 const PRODUCT_STORAGES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: { right: ['actions'] },
@@ -1409,7 +1410,7 @@ function ProductStorageActionModal({
         <Card className="app-section-card" withBorder padding={12}>
           <Stack gap={10}>
             <Group className="product-storages-action-date-row" align="end" gap={12}>
-              <TextInput
+              <AppDateInput
                 disabled={isSubmitting}
                 w={220}
                 maw="100%"

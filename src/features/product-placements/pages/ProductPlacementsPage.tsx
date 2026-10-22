@@ -48,6 +48,7 @@ import type {
   ProductPlacementsExportDocument,
   ProductPlacementStorageLocation,
 } from '../types'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import './product-placements-page.css'
 
 const SEARCH_DEBOUNCE_MS = 200
@@ -573,7 +574,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
       <Card className="app-data-card product-placements-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-placements-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-placements-filter-row">
-            <TextInput
+            <AppDateInput
               label={t('До')}
               type="date"
               value={dateTo}

@@ -19,6 +19,7 @@ import { TableShimmerRows } from '../../../shared/ui/table-shimmer/TableShimmerR
 import { CURRENCY_ORDER } from '../types'
 import type { CurrencyTrader, CurrencyTraderExchangeRate } from '../types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type NewRateDraft = {
   date: string
@@ -108,7 +109,7 @@ export function CurrencyTraderExchangeRatesDrawer({
         {isAdding && (
           <div className="currency-trader-rates-create">
             <div className="currency-trader-rates-fields">
-              <TextInput maw={170}
+              <AppDateInput maw={170}
                 className="currency-trader-rates-date-field"
                 label={t('Дата курсу валют')}
                 type="date"

@@ -33,7 +33,7 @@ describe('server synchronization date boundary', () => {
   it('uses the server minimum in both date inputs and permits a supported pre-2025 range', async () => {
     vi.mocked(getSyncStatus).mockResolvedValue(idle('2018-04-03'))
     const { from, to } = open()
-    await waitFor(() => expect(from.value).toBe('2018-04-03'))
+    await waitFor(() => expect(from.value).toBe('03.04.2018'))
     expect(from.min).toBe('2018-04-03')
     expect(to.min).toBe('2018-04-03')
     fireEvent.change(from, { target: { value: '2020-01-01' } })
@@ -50,7 +50,7 @@ describe('server synchronization date boundary', () => {
   it('keeps edited dates while the status refresh changes the server minimum', async () => {
     vi.mocked(getSyncStatus).mockResolvedValue(idle('2018-01-01'))
     const { from, to } = open()
-    await waitFor(() => expect(from.value).toBe('2018-01-01'))
+    await waitFor(() => expect(from.value).toBe('01.01.2018'))
     fireEvent.change(from, { target: { value: '2021-05-01' } })
     fireEvent.change(to, { target: { value: '2021-05-05' } })
     vi.mocked(getSyncStatus).mockResolvedValue(idle('2022-01-01'))

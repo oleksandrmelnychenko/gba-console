@@ -43,7 +43,7 @@ it('defers capability until catalogue opening and keeps the two-endpoint scalar 
   const from = (readReportDateInput('Від') as HTMLInputElement).value, through = (readReportDateInput('До') as HTMLInputElement).value
   const draftKey = `report-workspace-draft:v1:${CURRENT_LIQUIDITY_TEST_CALLER}`, draft = sessionStorage.getItem(draftKey)
   const modal = await openForm(); selectEndpoints(modal)
-  expect((within(modal).getByLabelText('Поточна дата') as HTMLInputElement).type).toBe('date')
+  expect((within(modal).getByLabelText('Поточна дата') as HTMLInputElement).dataset.datesInput).toBe('true')
   expect(within(modal).queryByRole('combobox')).toBeNull(); expect(within(modal).queryByLabelText('Від')).toBeNull()
   fireEvent.click(within(modal).getByRole('button', { name: 'Переглянути' })); await within(modal).findByRole('region', { name: 'Результат поточної ліквідності' })
   expect(previewCurrentLiquidity).toHaveBeenCalledWith(currentLiquidityCapability(), '2026-10-01', '2026-09-01', CURRENT_LIQUIDITY_TEST_CALLER, expect.any(AbortSignal))
