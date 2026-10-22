@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { theme } from '../../../shared/theme/theme'
 import { OfferCard } from '../../sales-offers/components/OfferCard'
@@ -22,6 +22,14 @@ describe('sales cockpit action permissions', () => {
     expect(screen.queryByRole('button', { name: 'Відкласти' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Нотатка' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Не актуально' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Записати контакт' })).toBeNull()
+  })
+
+  it('exposes contact logging only under AddNote without completing the task', () => {
+    renderTask({ canAddNote: true })
+    fireEvent.click(screen.getByRole('button', { name: 'Записати контакт' }))
+    expect(noTaskAction).toHaveBeenCalledWith(expect.objectContaining({ client_id: 42 }))
+    expect(screen.queryByRole('button', { name: 'Виконано' })).toBeNull()
   })
 
   it('renders only the explicitly granted task action', () => {
@@ -32,6 +40,7 @@ describe('sales cockpit action permissions', () => {
     expect(screen.queryByRole('button', { name: 'Відкласти' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Нотатка' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Не актуально' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Записати контакт' })).toBeNull()
   })
 })
 
@@ -66,6 +75,7 @@ describe('offer action permissions', () => {
 function renderTask(overrides: Partial<TaskPermissionProps>) {
   const task: CockpitTask = {
     task_key: 'task-1',
+    client_id: 42,
     status: 'open',
     title: 'Подзвонити клієнту',
   }
@@ -84,6 +94,7 @@ function renderTask(overrides: Partial<TaskPermissionProps>) {
       {...permissions}
       task={task}
       onAddNote={noTaskAction}
+      onContact={noTaskAction}
       onDismiss={noTaskAction}
       onDone={noTaskAction}
       onSnooze={noTaskAction}

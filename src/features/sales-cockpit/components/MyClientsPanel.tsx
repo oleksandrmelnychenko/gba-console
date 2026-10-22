@@ -48,6 +48,7 @@ import { NewSaleWizard, type NewSaleWizardPrefill } from '../../sales-ukraine/co
 import { RecommendationAgreementScope } from '../../clients/components/recommendations/RecommendationAgreementScope'
 import type { SalesUkraineClientAgreement, SalesUkraineProduct } from '../../sales-ukraine/types'
 import { getCockpitClients } from '../api/salesCockpitApi'
+import type { ContactClient } from '../contactTypes'
 import type { CockpitClient } from '../types'
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
@@ -60,7 +61,9 @@ type ClientRecommendationsState = {
   products: RecommendationProduct[]
 }
 
-export function MyClientsPanel() {
+export function MyClientsPanel({ onContact }: { onContact?: (client: ContactClient) => void }) {
+  const { can } = usePermissions()
+  const canRecordContact = can(PermissionKeys.SalesCockpit.Task.AddNote)
   const { t } = useI18n()
   const navigate = useNavigate()
   const [clients, setClients] = useValueState<CockpitClient[]>([])
@@ -188,6 +191,7 @@ export function MyClientsPanel() {
 
           return (
             <Group gap={4} justify="flex-end" wrap="nowrap">
+              {canRecordContact && onContact && <Button size="xs" variant="light" onClick={() => onContact({ client_id: client.client_id, client_name: client.name || client.full_name || `#${client.client_id}` })}>{t('Записати контакт')}</Button>}
               {phone && (
                 <TableRowAction
                   action="call"
@@ -211,10 +215,10 @@ export function MyClientsPanel() {
         },
         align: 'right',
         rowActions: true,
-        width: 96,
+        width: canRecordContact && onContact ? 250 : 96,
       },
     ],
-    [navigate, t],
+    [navigate, t, canRecordContact, onContact],
   )
 
   return (

@@ -16,6 +16,7 @@ type CockpitTaskListProps = {
   tasks: CockpitTask[]
   title?: string
   onAddNote: (task: CockpitTask) => void
+  onContact?: (task: CockpitTask) => void
   onDismiss: (task: CockpitTask) => void
   onDone: (task: CockpitTask) => void
   onSnooze: (task: CockpitTask) => void
@@ -33,6 +34,7 @@ export function CockpitTaskList({
   tasks,
   title,
   onAddNote,
+  onContact,
   onDismiss,
   onDone,
   onSnooze,
@@ -79,6 +81,7 @@ export function CockpitTaskList({
                 pending={pendingTaskKey === task.task_key}
                 task={task}
                 onAddNote={onAddNote}
+                onContact={onContact}
                 onDismiss={onDismiss}
                 onDone={onDone}
                 onSnooze={onSnooze}

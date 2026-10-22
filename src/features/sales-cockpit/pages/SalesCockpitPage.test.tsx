@@ -2,6 +2,7 @@ import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { theme } from '../../../shared/theme/theme'
+import { getContacts } from '../api/contactsApi'
 import { getCompleteCockpitInbox, getCockpitTarget } from '../api/salesCockpitApi'
 import type { CockpitTask } from '../types'
 import { SalesCockpitPage } from './SalesCockpitPage'
@@ -14,6 +15,7 @@ vi.mock('../api/salesCockpitApi', () => ({
   getCompleteCockpitInbox: vi.fn(), getCockpitTarget: vi.fn(), regenerateCockpit: vi.fn(),
   setTaskStatus: vi.fn(), addTaskNote: vi.fn(),
 }))
+vi.mock('../api/contactsApi', () => ({ getContacts: vi.fn(), getContactHistory: vi.fn(), recordContact: vi.fn() }))
 vi.mock('../components/MyClientsPanel', () => ({ MyClientsPanel: () => null }))
 vi.mock('../components/MyOffersPanel', () => ({ MyOffersPanel: () => null }))
 vi.mock('../components/CockpitDashboardPanel', () => ({ CockpitDashboardPanel: () => null }))
@@ -62,6 +64,16 @@ describe('Sales cockpit workday filters', () => {
     fireEvent.change(screen.getByLabelText('Дата розрахунку плану'), { target: { value: '2026-10-01' } })
     expect(screen.getByText('Черга задач — поточна')).toBeTruthy()
     await waitFor(() => expect(getCockpitTarget).toHaveBeenLastCalledWith('2026-10-01'))
+  })
+
+  it('opens commitments independently of failed AI inbox or target', async () => {
+    vi.mocked(getCockpitTarget).mockRejectedValue(new Error('Target unavailable'))
+    vi.mocked(getContacts).mockResolvedValue({ manager_id: 1, manager_net_uid: 'manager', as_of: '2026-10-22', timezone: 'Europe/Kyiv', bucket: 'today', search: '', offset: 0, limit: 20, count: 0, total: 0, counts: { all: 0, today: 0, overdue: 0, upcoming: 0, unscheduled: 0 }, contacts: [] })
+    render(<MantineProvider theme={theme}><SalesCockpitPage /></MantineProvider>)
+    await screen.findByText('Target unavailable')
+    fireEvent.click(screen.getByRole('tab', { name: 'Контакти та домовленості' }))
+    expect(await screen.findByText('Контактів за цими умовами немає')).toBeTruthy()
+    expect(getContacts).toHaveBeenCalledTimes(1)
   })
 
   it('does not overlap queue pagination with the next polling interval', async () => {

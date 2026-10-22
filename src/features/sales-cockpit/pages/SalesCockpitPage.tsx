@@ -21,6 +21,9 @@ import { CockpitTaskList } from '../components/CockpitTaskList'
 import { CockpitToolbar, type CockpitDayFilter } from '../components/CockpitToolbar'
 import { DismissModal } from '../components/DismissModal'
 import { DoneModal } from '../components/DoneModal'
+import { ContactModal } from '../components/ContactModal'
+import { ContactsPanel } from '../components/ContactsPanel'
+import type { ContactClient } from '../contactTypes'
 import { MyClientsPanel } from '../components/MyClientsPanel'
 import { MyOffersPanel } from '../components/MyOffersPanel'
 import { NoteModal } from '../components/NoteModal'
@@ -96,7 +99,12 @@ function SalesCockpitPageContent() {
   const [snoozeTask, setSnoozeTask] = useState<CockpitTask | null>(null)
   const [doneTask, setDoneTask] = useState<CockpitTask | null>(null)
   const [dismissTask, setDismissTask] = useState<CockpitTask | null>(null)
-  const [view, setView] = useState<'clients' | 'offers' | 'tasks'>('tasks')
+  const [view, setView] = useState<'clients' | 'offers' | 'tasks' | 'contacts'>('tasks')
+  const [contactClient, setContactClient] = useState<ContactClient | null>(null)
+  const [contactsRevision, refreshContacts] = useReducer((key: number) => key + 1, 0)
+  const openTaskContact = (task: CockpitTask) => {
+    if (task.client_id) setContactClient({ client_id: task.client_id, client_name: task.client_name || `#${task.client_id}` })
+  }
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   const triggerReload = useCallback(() => {
@@ -108,9 +116,9 @@ function SalesCockpitPageContent() {
   const busyRef = useRef(false)
   useEffect(() => {
     busyRef.current = Boolean(
-      noteTask || snoozeTask || doneTask || dismissTask || pendingTaskKey || isRegenerating,
+      contactClient || noteTask || snoozeTask || doneTask || dismissTask || pendingTaskKey || isRegenerating,
     )
-  }, [noteTask, snoozeTask, doneTask, dismissTask, pendingTaskKey, isRegenerating])
+  }, [contactClient, noteTask, snoozeTask, doneTask, dismissTask, pendingTaskKey, isRegenerating])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -375,6 +383,7 @@ function SalesCockpitPageContent() {
           [
             { label: 'Черга задач', value: 'tasks' },
             { label: 'Мої клієнти', value: 'clients' },
+            { label: 'Контакти та домовленості', value: 'contacts' },
             { label: 'Мої пропозиції', value: 'offers' },
           ] as const
         ).map((tab) => (
@@ -391,9 +400,11 @@ function SalesCockpitPageContent() {
         ))}
       </div>
 
-      {view === 'clients' ? (
+      {view === 'contacts' ? (
+        <div className="cockpit-page-content"><ContactsPanel onOpen={setContactClient} revision={contactsRevision} /></div>
+      ) : view === 'clients' ? (
         <div className="cockpit-page-content">
-          <MyClientsPanel />
+          <MyClientsPanel onContact={setContactClient} />
         </div>
       ) : view === 'offers' ? (
         <div className="cockpit-page-content">
@@ -451,6 +462,7 @@ function SalesCockpitPageContent() {
                 tasks={manualTasks}
                 title="Задачі від керівника"
                 onAddNote={setNoteTask}
+                onContact={openTaskContact}
                 onDismiss={setDismissTask}
                 onDone={setDoneTask}
                 onSnooze={setSnoozeTask}
@@ -468,6 +480,7 @@ function SalesCockpitPageContent() {
               pendingTaskKey={pendingTaskKey}
               tasks={aiTasks}
               onAddNote={setNoteTask}
+                onContact={openTaskContact}
               onDismiss={setDismissTask}
               onDone={setDoneTask}
               onSnooze={setSnoozeTask}
@@ -478,6 +491,8 @@ function SalesCockpitPageContent() {
           </div>
         </>
       )}
+
+      {contactClient && <ContactModal key={contactClient.client_id} client={contactClient} canRecord={canAddNote} onClose={() => setContactClient(null)} onSaved={() => { refreshContacts(); notifications.show({ color: 'green', message: t('Контакт збережено') }) }} />}
 
       <NoteModal
         saving={Boolean(noteTask && pendingTaskKey === noteTask.task_key)}

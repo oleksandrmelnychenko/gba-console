@@ -48,6 +48,7 @@ export function TaskCard({
   onSnooze,
   onDismiss,
   onAddNote,
+  onContact,
   pending = false,
 }: {
   canAddNote: boolean
@@ -61,6 +62,7 @@ export function TaskCard({
   onSnooze: (task: CockpitTask) => void
   onDismiss: (task: CockpitTask) => void
   onAddNote: (task: CockpitTask) => void
+  onContact?: (task: CockpitTask) => void
   pending?: boolean
 }) {
   const { t } = useI18n()
@@ -187,6 +189,7 @@ export function TaskCard({
               {t('Нотатка')}
             </Button>
           )}
+          {canAddNote && task.client_id && onContact && <Button size="xs" variant="light" disabled={pending} onClick={() => onContact(task)}>{t('Записати контакт')}</Button>}
           {canDismiss && (
             <Button color="red" leftSection={<X size={16} />} size="xs" variant="subtle" onClick={() => onDismiss(task)}>
               {t('Не актуально')}
