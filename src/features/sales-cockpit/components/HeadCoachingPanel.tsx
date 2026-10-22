@@ -54,7 +54,7 @@ export function HeadCoachingPanel({ managerId, managers, onChanged }: { managerI
       setSaveError(cause instanceof ApiError && cause.status === 409 ? 'Задачу вже змінили або закрили. Закрийте вікно й оновіть чергу перед повторною спробою.' : cause instanceof Error ? cause.message : 'Не вдалося передати задачу')
     } finally { setSaving(false) }
   }
-  return <Card withBorder padding="sm"><Stack gap="sm">
+  return <Card component="section" aria-label="Робочі черги команди" withBorder padding="sm"><Stack gap="sm">
     <Group justify="space-between"><Text fw={600}>Робочі черги команди</Text><Button variant="subtle" size="xs" onClick={reload} loading={loading}>Оновити черги</Button></Group>
     <Text size="xs" c="dimmed">Поточний стан. Лічильники охоплюють усю вибірку. Це навантаження й домовленості, а не рейтинг якості менеджерів.</Text>
     <Group>{(Object.keys(labels) as CoachingBucket[]).map(value => <Button key={value} size="xs" variant={bucket === value ? 'filled' : 'light'} onClick={() => { setBucket(value); resetPage() }}>{labels[value]}{data ? ` · ${data.counts[value]}` : ''}</Button>)}</Group>
