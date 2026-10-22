@@ -32,7 +32,16 @@ export type DashboardWorkspaceCatalog = {
 export type DashboardWorkspaceMetricTone = 'critical' | 'neutral' | 'positive' | 'warning'
 
 export type DashboardWorkspaceMetric = {
-  coveragePercent: number
+  coveragePercent: number | null
+  formula?: string
+  source?: string
+  grain?: string
+  scope?: string
+  owner?: string
+  unknownReason?: string
+  sourceWatermarkUtc?: string
+  asOfUtc?: string
+  queueKey?: string
   hasData: boolean
   key: string
   label: string

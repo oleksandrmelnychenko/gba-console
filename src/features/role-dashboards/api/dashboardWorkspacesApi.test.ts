@@ -60,12 +60,12 @@ describe('dashboardWorkspacesApi', () => {
       ],
     }, 'system', { from: '2026-06-01', toExclusive: '2026-06-02' })).toEqual({
       cacheTtlSeconds: 30,
-      dataFreshness: 'live',
+      dataFreshness: 'source-watermark-unknown',
       from: '2026-07-01',
       generatedAtUtc: '2026-07-11T09:00:00Z',
       metrics: [
-        { coveragePercent: 100, hasData: true, key: 'receipts', label: 'Оприходувань', route: '/products/income/documents', timeBasis: 'unknown', tone: 'positive', unit: 'count', value: 4 },
-        { coveragePercent: 100, hasData: true, key: 'bad', label: 'Невідомий тон', route: undefined, timeBasis: 'unknown', tone: 'neutral', unit: 'qty', value: 12.5 },
+        { coveragePercent: null, hasData: true, key: 'receipts', label: 'Оприходувань', route: '/products/income/documents', timeBasis: 'unknown', tone: 'positive', unit: 'count', value: 4 },
+        { coveragePercent: null, hasData: true, key: 'bad', label: 'Невідомий тон', route: undefined, timeBasis: 'unknown', tone: 'neutral', unit: 'qty', value: 12.5 },
       ],
       to: '2026-07-12',
       workspace: 'warehouse',
@@ -74,7 +74,7 @@ describe('dashboardWorkspacesApi', () => {
 
   it.each([undefined, null, '', 'broken', Number.NaN, Number.POSITIVE_INFINITY, false])('does not turn invalid value %s into known zero', (value) => {
     const summary = normalizeDashboardWorkspaceSummary({ Metrics: [{ Key: 'negative-stock', Label: 'Залишки', Value: value, HasData: true }] }, 'warehouse', { from: '2026-10-01', toExclusive: '2026-11-01' })
-    expect(summary.metrics[0]).toMatchObject({ hasData: false, coveragePercent: 0 })
+    expect(summary.metrics[0]).toMatchObject({ hasData: false, coveragePercent: null })
   })
 
   it('retains legitimate zero while rejecting malformed coverage', () => {
@@ -85,4 +85,10 @@ describe('dashboardWorkspacesApi', () => {
   it('rejects a missing metrics collection instead of presenting a successful empty summary', () => {
     expect(() => normalizeDashboardWorkspaceSummary({}, 'warehouse', { from: '2026-10-01', toExclusive: '2026-11-01' })).toThrow()
   })
+  it('preserves documented definitions and never fabricates a sync watermark from calculation time', () => {
+    const summary = normalizeDashboardWorkspaceSummary({ GeneratedAtUtc: '2026-10-22T12:00:00Z', Metrics: [{ Key: 'debt', Label: 'Борг', Value: null, HasData: false, CoveragePercent: null, Formula: 'SUM(document EUR)', Source: 'Debt', Grain: 'debt document', Scope: 'current', Owner: 'finance', UnknownReason: 'Missing historical FX', SourceWatermarkUtc: null, AsOfUtc: '2026-10-22T12:00:00Z', QueueKey: 'receivables-eur' }] }, 'finance', { from: '2026-10-01', toExclusive: '2026-11-01' })
+    expect(summary.metrics[0]).toMatchObject({ hasData: false, coveragePercent: null, formula: 'SUM(document EUR)', source: 'Debt', grain: 'debt document', scope: 'current', owner: 'finance', unknownReason: 'Missing historical FX', queueKey: 'receivables-eur', asOfUtc: '2026-10-22T12:00:00Z' })
+    expect(summary.metrics[0].sourceWatermarkUtc).toBeUndefined()
+  })
+
 })

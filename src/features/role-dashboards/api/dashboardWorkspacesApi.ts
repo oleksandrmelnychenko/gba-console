@@ -63,7 +63,7 @@ export function normalizeDashboardWorkspaceSummary(
 
   return {
     cacheTtlSeconds: readPositiveNumber(record.CacheTtlSeconds ?? record.cacheTtlSeconds, 30),
-    dataFreshness: readString(record.DataFreshness ?? record.dataFreshness) || 'live',
+    dataFreshness: readString(record.DataFreshness ?? record.dataFreshness) || 'source-watermark-unknown',
     from: readString(record.From ?? record.from) || fallbackPeriod.from,
     generatedAtUtc: readString(record.GeneratedAtUtc ?? record.generatedAtUtc),
     metrics: rawMetrics
@@ -105,7 +105,16 @@ function normalizeMetric(value: unknown): DashboardWorkspaceMetric | null {
   const coverage = record.CoveragePercent !== undefined ? record.CoveragePercent : record.coveragePercent
   const timeBasis = readString(record.TimeBasis ?? record.timeBasis)
   return {
-    coveragePercent: hasData ? clampPercent(readNumber(coverage, coverage === undefined ? 100 : 0)) : 0,
+    coveragePercent: coverage == null ? null : clampPercent(readNumber(coverage, 0)),
+    formula: readString(record.Formula ?? record.formula) || undefined,
+    source: readString(record.Source ?? record.source) || undefined,
+    grain: readString(record.Grain ?? record.grain) || undefined,
+    scope: readString(record.Scope ?? record.scope) || undefined,
+    owner: readString(record.Owner ?? record.owner) || undefined,
+    unknownReason: readString(record.UnknownReason ?? record.unknownReason) || undefined,
+    sourceWatermarkUtc: readString(record.SourceWatermarkUtc ?? record.sourceWatermarkUtc) || undefined,
+    asOfUtc: readString(record.AsOfUtc ?? record.asOfUtc) || undefined,
+    queueKey: readString(record.QueueKey ?? record.queueKey) || undefined,
     hasData,
     key,
     label,
