@@ -759,9 +759,9 @@
 .workbook-settings__control .reports-stocks-legacy-measurements__list {
   border: 1px solid var(--desk-border);
   border-radius: 8px;
-  overflow: hidden;
+  overflow-x: auto;
 }
-.workbook-settings__control :is(.reports-stocks-measurement-columns, .reports-stocks-legacy-measurement) { padding: 8px 12px 8px 16px; }
+.workbook-settings__control :is(.reports-stocks-measurement-columns, .reports-stocks-legacy-measurement) { min-width: 280px; padding: 8px 12px 8px 16px; }
 .workbook-settings__control .reports-stocks-measurement-columns { background: var(--mantine-color-gray-1); font-weight: 600; }
 .workbook-settings__control .reports-stocks-legacy-measurement { min-height: 44px; }
 .workbook-settings__control .reports-stocks-legacy-measurement .app-selection-surface__marker { inset-block: 10px; }
