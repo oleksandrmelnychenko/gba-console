@@ -1,5 +1,5 @@
 import { TableChip } from '../../../shared/ui/TableChip'
-import { Button, Checkbox, Group, NumberInput, Select, Stack, Table, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Checkbox, Group, NumberInput, Select, Stack, Table, Text, TextInput } from '@mantine/core'
 import { useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -140,6 +140,7 @@ function ProtocolIncomePlacementDrawerContent({
     }, [])
   }, [product, selectedStorage])
 
+  const isReadOnly = placements.some((placement) => placement.IsApplied)
   const placedQty = sumQty(placements)
   const canAddPlacements = maxQty > placedQty
 
@@ -228,6 +229,7 @@ function ProtocolIncomePlacementDrawerContent({
   }
 
   function handleApply() {
+    if (isReadOnly) return
     if (placedQty > maxQty) {
       setError(t('Невірна кількість'))
       return
@@ -247,11 +249,11 @@ function ProtocolIncomePlacementDrawerContent({
         draft ? undefined : (
           <>
             <Button color="gray" variant="default" onClick={onClose}>
-              {t('Скасувати')}
+              {t(isReadOnly ? 'Закрити' : 'Скасувати')}
             </Button>
-            <Button color={CREATE_ACTION_COLOR} data-testid="placement-apply" onClick={handleApply}>
+            {!isReadOnly && <Button color={CREATE_ACTION_COLOR} data-testid="placement-apply" onClick={handleApply}>
               {t('Зберегти')}
-            </Button>
+            </Button>}
           </>
         )
       }
@@ -262,6 +264,11 @@ function ProtocolIncomePlacementDrawerContent({
     >
       <Stack gap={10}>
         <Text fw={600}>{headerText}</Text>
+        {isReadOnly && (
+          <Alert color="blue">
+            {t('Цей рядок містить оприбутковані розміщення й доступний лише для перегляду. Для решти товару додайте нову колонку на сторінці оприбуткування.')}
+          </Alert>
+        )}
         <Text c="dimmed" size="sm">
           {`${t('Доступна К-сть')} ${Math.max(maxQty - placedQty, 0)}`}
         </Text>
@@ -290,8 +297,8 @@ function ProtocolIncomePlacementDrawerContent({
             {placements.map((placement, index) => (
               <Table.Tr
                 key={placementKey(placement, index)}
-                style={{ cursor: placement.IsApplied ? 'default' : 'pointer' }}
-                onClick={() => !placement.IsApplied && openDraft(placement)}
+                style={{ cursor: isReadOnly ? 'default' : 'pointer' }}
+                onClick={() => !isReadOnly && openDraft(placement)}
               >
                 <Table.Td>{index + 1}</Table.Td>
                 <Table.Td><TableChip tone="storage" value={placement.StorageNumber} /></Table.Td>
@@ -299,7 +306,7 @@ function ProtocolIncomePlacementDrawerContent({
                 <Table.Td>{placement.CellNumber}</Table.Td>
                 <Table.Td className="protocol-income-placement-qty-cell app-table-number">{placement.Qty ?? 0}</Table.Td>
                 <Table.Td className="protocol-income-placement-action-cell">
-                  {!placement.IsApplied && (
+                  {!isReadOnly && (
                     <TableRowAction action="delete" label={t('Видалити')} onClick={() => removePlacement(placement)} />
                   )}
                 </Table.Td>
@@ -309,7 +316,7 @@ function ProtocolIncomePlacementDrawerContent({
         </Table>
         </Table.ScrollContainer>
 
-        {!draft && (
+        {!draft && !isReadOnly && (
           <Group>
               <Button color={CREATE_ACTION_COLOR} data-testid="placement-add-draft" disabled={!canAddPlacements} onClick={() => openDraft(null)}>
               {t('Додати')}

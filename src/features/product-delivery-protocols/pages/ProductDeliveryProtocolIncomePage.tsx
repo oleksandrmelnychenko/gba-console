@@ -920,6 +920,11 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
         return
       }
 
+      if (columnHasAppliedPlacements(column)) {
+        notifications.show({ color: 'blue', message: t('Для решти товару додайте нову колонку: ця колонка вже містить оприбутковані розміщення') })
+        return
+      }
+
       if (isDirty) {
         notifications.show({ color: 'red', message: t('Збережіть зміни перед переміщенням залишків') })
         return
@@ -1394,11 +1399,11 @@ function useProductIncomeColumns({
             <Text size="sm">{formatDate(column.FromDate)}</Text>
             <Group gap={4} wrap="nowrap">
               {canEditPlacements && (
-                <Tooltip label={t('Перемістити залишки')}>
+                <Tooltip label={t(columnHasAppliedPlacements(column) ? 'Для решти товару додайте нову колонку: ця колонка вже містить оприбутковані розміщення' : 'Перемістити залишки')}>
                   <ActionIcon
                     aria-label={t('Перемістити залишки')}
                     color="gray"
-                    disabled={!canUseIncome || isPlaced || model.isDirty || model.isSaving}
+                    disabled={!canUseIncome || isPlaced || model.isDirty || model.isSaving || columnHasAppliedPlacements(column)}
                     size="sm"
                     variant="subtle"
                     onClick={() => model.handleMoveRemnants(column)}
