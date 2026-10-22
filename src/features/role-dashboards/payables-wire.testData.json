@@ -1,0 +1,75 @@
+{
+  "provenance": "Actual GbaJsonOptions serializer output, DashboardPayablesSerializationTests, Europe/Kyiv, 2026-10-23; synthetic data, not live balances",
+  "snapshot": {
+    "ReadAtUtc": "2026-10-23T06:06:00Z",
+    "Worlds": [
+      {
+        "World": "fenix",
+        "Status": "confirmed",
+        "Reason": null,
+        "PublicationId": "627d491a-5792-430c-92a5-a965a3ae6924",
+        "SourceCutoffUtc": "2026-10-22T21:00:00Z",
+        "CapturedAtUtc": "2026-10-23T06:00:00Z",
+        "PublishedAtUtc": "2026-10-23T06:05:00Z",
+        "ScopeComplete": true,
+        "Scope": "registered-canonical-supplier-agreements",
+        "RequestedKeys": 1,
+        "ReturnedKeys": 1,
+        "ExcludedKeys": 2,
+        "Buckets": [
+          {
+            "CurrencyCode": "830",
+            "CurrencyLabel": null,
+            "RowCount": 1,
+            "SignedBalance": -1527.0,
+            "Payable": 1527.0,
+            "Advance": 0
+          }
+        ]
+      },
+      {
+        "World": "amg",
+        "Status": "unavailable",
+        "Reason": "Missing confirmed publication",
+        "PublicationId": null,
+        "SourceCutoffUtc": null,
+        "CapturedAtUtc": null,
+        "PublishedAtUtc": null,
+        "ScopeComplete": false,
+        "Scope": "registered-canonical-supplier-agreements",
+        "RequestedKeys": null,
+        "ReturnedKeys": null,
+        "ExcludedKeys": null,
+        "Buckets": []
+      }
+    ]
+  },
+  "rows": {
+    "World": "fenix",
+    "PublicationId": "627d491a-5792-430c-92a5-a965a3ae6924",
+    "CurrencyCode": "830",
+    "SourceCutoffUtc": "2026-10-22T21:00:00Z",
+    "Offset": 0,
+    "Limit": 50,
+    "Total": 1,
+    "Aggregate": {
+      "SignedBalance": -1527,
+      "Payable": 1527,
+      "Advance": 0
+    },
+    "Rows": [
+      {
+        "Id": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "PartyKind": 2,
+        "SupplierCode": "1001",
+        "SupplierName": "Fixture supplier",
+        "AgreementId": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+        "AgreementName": "Fixture agreement",
+        "OrganizationName": "Fixture organization",
+        "SignedBalance": -1527,
+        "Payable": 1527,
+        "Advance": 0
+      }
+    ]
+  }
+}

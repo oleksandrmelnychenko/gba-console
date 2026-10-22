@@ -8,6 +8,7 @@ import { OperationsWorkspace } from './OperationsWorkspace'
 import { SystemWorkspace } from './SystemWorkspace'
 import { WorkspaceSummary } from './WorkspaceSummary'
 import { WorkspaceQueueModal } from './WorkspaceQueueModal'
+import { PayablesSnapshotPanel } from './PayablesSnapshotPanel'
 import '../../basket-supply-ukraine-order/pages/basketSupplyUkraineOrder.css'
 
 type WorkspaceProps = {
@@ -43,5 +44,5 @@ function SummaryWorkspace({ period, toolbarTarget, workspaceKey }: WorkspaceProp
     return <Stack gap={6}>{summary}<SystemWorkspace /></Stack>
   }
 
-  return <Stack gap={6}>{summary}<OperationsWorkspace error={state.error} summary={state.summary} workspaceKey={workspaceKey} /><WorkspaceQueueModal workspace={workspaceKey} /></Stack>
+  return <Stack gap={6}>{summary}{(workspaceKey === 'finance' || workspaceKey === 'executive') && <PayablesSnapshotPanel key={workspaceKey} workspace={workspaceKey} />}<OperationsWorkspace error={state.error} summary={state.summary} workspaceKey={workspaceKey} /><WorkspaceQueueModal workspace={workspaceKey} /></Stack>
 }
