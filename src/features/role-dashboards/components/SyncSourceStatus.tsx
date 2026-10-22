@@ -35,7 +35,7 @@ export function SyncSourceStatus() {
     {error && <Alert color="orange">{error}</Alert>}
     <Text size="sm">Стан: {!status ? 'Невідомо' : !status.IsGlobalLockStatusAvailable ? 'Не підтверджено: недоступна перевірка блокування' : status.IsInProgress ? 'Виконується' : 'Активного запуску не виявлено'}</Text>
     <Text size="sm">Останній підтверджений успішний запуск: {displayInstant(evidence?.lastSuccess)}.</Text>
-    {status?.LastTerminalRun?.Status !== 'Finished' && <Text size="xs" c="dimmed">Джерело повертає лише останній завершений запуск; дату попереднього успішного запуску не надано.</Text>}
+    {!evidence?.lastSuccess && <Text size="xs" c="dimmed">Підтвердженого успішного запуску в доступному журналі не надано.</Text>}
     <Text size="sm">Останній результат: {status?.LastTerminalRun?.Status ?? 'Невідомо'} · завершення: {displayInstant(status?.LastTerminalRun?.CompletedAtUtc)}</Text>
     <Text size="sm">Прогрес сесії: {evidence?.total == null ? 'Невідомо' : `${evidence.completed} / ${evidence.total} завершених етапів`} · невдалих етапів цієї сесії: {evidence?.total == null ? 'Невідомо' : evidence.failed}</Text>
     {evidence?.failedStep && <Text size="sm" c="red">Етап збою: {evidence.failedStep}</Text>}

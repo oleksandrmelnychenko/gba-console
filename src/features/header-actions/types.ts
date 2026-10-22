@@ -120,6 +120,7 @@ export type DataSyncStatus = {
   IsGlobalLockStatusAvailable: boolean
   IsInProgress: boolean
   LastTerminalRun?: DataSyncPipelineRun | null
+  LastSuccessfulRun?: DataSyncPipelineRun | null
   PipelineRunId?: string | null
   RunId?: string | null
   Session?: DataSyncSessionProgress | null
