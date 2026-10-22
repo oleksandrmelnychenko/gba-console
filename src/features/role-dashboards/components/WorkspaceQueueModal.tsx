@@ -70,7 +70,7 @@ function hasAggregateChanged(actual: number | null, unit: string, expected: stri
   // Financial KPI totals use decimal.Round(..., 2, AwayFromZero); queues retain source precision.
   // Intl's default halfExpand rounding also rounds negative midpoint values away from zero.
   if (unit === 'EUR' && actual !== null) {
-    return currencyComparison.format(actual) !== currencyComparison.format(Number(expected))
+    return Number(currencyComparison.format(actual)) !== Number(currencyComparison.format(Number(expected)))
   }
   return actual !== Number(expected)
 }

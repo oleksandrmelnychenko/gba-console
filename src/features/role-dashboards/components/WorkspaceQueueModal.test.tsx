@@ -61,6 +61,8 @@ it('shows underlying documents for an unknown financial total without comparing 
 })
 
 it.each([
+  [-0.0001, '0', false],
+  [-0.01, '0', true],
   [311324.4742, '311324.47', false],
   [232175.276, '232175.28', false],
   [-20596.779, '-20596.78', false],
