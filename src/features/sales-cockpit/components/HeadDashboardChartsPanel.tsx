@@ -1,8 +1,6 @@
 import { Alert, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useReducer } from 'react'
-import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
-import { hasAiHistoryLineage } from '../../../shared/ai/aiHistoryLineage'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AgingBars, type AgingSeries } from '../../../shared/ui/charts/AgingBars'
 import { getHeadDashboard } from '../api/salesCockpitApi'
@@ -141,9 +139,7 @@ export function HeadDashboardChartsPanel({
             <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Аналітика навантаження')}</Text>
             <Text c="dimmed" size="xs">{t('Ризик і активні задачі за менеджерами')}</Text>
           </div>
-          {dashboard && hasAiHistoryLineage(dashboard) && (
-            <AiHistoryLineageNote lineage={dashboard} />
-          )}
+          {dashboard?.as_of && <Text size="xs" c="dimmed">{t('Поточний зріз')}: {dashboard.as_of}. {t('Це дата розрахунку, не підтвердження свіжості синхронізації.')}</Text>}
         </div>
 
         {error && (
@@ -151,11 +147,14 @@ export function HeadDashboardChartsPanel({
             {error}
           </Alert>
         )}
+        {(dashboard?.teams.reduce((sum, team) => sum + (team.debt_unknown_terms_count ?? 0), 0) ?? 0) > 0 && <Alert color="yellow">
+          {t('Є документи без визначеного терміну оплати. Вони не входять до відомого простроченого боргу.')}
+        </Alert>}
 
         <div className="cockpit-analytics-grid">
           <div className="cockpit-chart-card">
           <Stack gap="xs">
-            <Text className="cockpit-subtitle">{t('Сума під ризиком за менеджером')}</Text>
+            <Text className="cockpit-subtitle">{t('Відомий прострочений борг за менеджером')}</Text>
             <AgingBars
               money
               bucketKey="manager"

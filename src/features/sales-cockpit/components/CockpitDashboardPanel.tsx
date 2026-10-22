@@ -1,7 +1,6 @@
 import { Alert, Card, Group, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useReducer } from 'react'
-import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AgingBars, type AgingSeries } from '../../../shared/ui/charts/AgingBars'
 import { TaskTypeDonut } from '../../../shared/ui/charts/TaskTypeDonut'
@@ -147,6 +146,7 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
     taskTypeData.some((item) => item.value > 0) ||
     agingData.some((item) => item.amount > 0)
   const hasSummaryData =
+    (dashboard?.debt_unknown_terms_count ?? 0) > 0 ||
     (dashboard?.value_at_risk_eur ?? 0) > 0 ||
     completedTotals.open > 0 ||
     completedTotals.done > 0 ||
@@ -161,7 +161,11 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
     <Card className="app-section-card cockpit-dashboard-panel" withBorder radius="md">
       <Stack gap="md">
         <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Дашборд завдань')}</Text>
-        {dashboard && <AiHistoryLineageNote lineage={dashboard} />}
+        {dashboard && <Text size="xs" c="dimmed">{t('Поточний зріз')}: {dashboard.as_of}. {t('Це дата розрахунку, не підтвердження свіжості синхронізації.')}</Text>}
+        <Text size="xs" c="dimmed">{t('Борг — поточні непогашені документи; групування за днями після договірного терміну оплати. Кількість у групах — документи, не клієнти.')}</Text>
+        {(dashboard?.debt_unknown_terms_count ?? 0) > 0 && <Alert color="yellow">
+          {t('Термін оплати не визначено')}: {dashboard?.debt_unknown_terms_count} · {formatMoney(dashboard?.debt_unknown_terms_eur ?? 0)}. {t('Ці документи показано окремо від відомого простроченого боргу.')}
+        </Alert>}
 
         {error && (
           <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
@@ -171,7 +175,7 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
 
         {isLoading || hasSummaryData ? (
           <div className="cockpit-dashboard-metrics">
-            <StatCard accent="danger" label={t('Сума під ризиком')} value={formatMoney(dashboard?.value_at_risk_eur ?? 0)} />
+            <StatCard accent="danger" label={t('Відомий прострочений борг')} value={formatMoney(dashboard?.value_at_risk_eur ?? 0)} />
             <StatCard accent="info" label={t('Активні')} value={String(completedTotals.open)} />
             <StatCard accent="success" label={t('Виконано (місяць)')} value={String(completedTotals.done)} />
             <StatCard label={t('Відхилено (місяць)')} value={String(completedTotals.dismissed)} />

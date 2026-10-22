@@ -109,6 +109,13 @@ describe('Sales cockpit workspace', () => {
     expect(screen.getByTestId('task-type-chart')).not.toBeNull()
     expect(screen.getByTestId('aging-chart')).not.toBeNull()
   })
+
+  it('keeps unknown payment terms separate even when there is no known overdue debt', async () => {
+    vi.mocked(getDashboard).mockResolvedValue(dashboard({ debt_unknown_terms_count: 2, debt_unknown_terms_eur: 125.5 }))
+    renderWithTheme(<CockpitDashboardPanel reloadKey={0} />)
+    expect(await screen.findByText(/Термін оплати не визначено/)).toBeTruthy()
+    expect(screen.getByText(/Ці документи показано окремо від відомого простроченого боргу/)).toBeTruthy()
+  })
 })
 
 function renderWithTheme(node: React.ReactNode) {

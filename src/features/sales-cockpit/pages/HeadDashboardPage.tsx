@@ -1,3 +1,4 @@
+import { departmentPaceColor } from '../metricPresentation'
 import { CockpitSourceStatus } from '../components/CockpitSourceStatus'
 import {
   ActionIcon,
@@ -130,6 +131,8 @@ function HeadDashboardPageContent() {
         }
       } catch (loadError) {
         if (!active) return
+        setTeam(EMPTY_TEAM)
+        setEscalated(EMPTY_ESCALATED)
 
         if (loadError instanceof ApiError && loadError.status === 403) {
           setForbidden(true)
@@ -206,7 +209,7 @@ function HeadDashboardPageContent() {
                 <div className="cockpit-head-section-heading">
                   <div>
                     <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Результат відділу')}</Text>
-                    <Text c="dimmed" size="xs">{t('План, виконання та результат AI-задач за місяць')}</Text>
+                    <Text c="dimmed" size="xs">{t('Історичний орієнтир, темп на дату та результат AI-задач')}</Text>
                   </div>
                   {hasAiHistoryLineage(team) && <AiHistoryLineageNote lineage={team} />}
                 </div>
@@ -214,14 +217,16 @@ function HeadDashboardPageContent() {
                 <div className="cockpit-head-kpis">
                   <DepartmentMetric
                     accent="brand"
-                    label={t('Відвантажено цього місяця')}
+                    label={t('Розрахункова сума замовлень за місяць')}
                     target={team.totals.shipped_target}
+                    expected={team.team.reduce((sum, row) => sum + row.target.shipped.expected_to_date, 0)}
                     value={team.totals.shipped_mtd}
                   />
                   <DepartmentMetric
                     accent="info"
                     label={t('Отримано оплат цього місяця')}
                     target={team.totals.paid_target}
+                    expected={team.team.reduce((sum, row) => sum + row.target.paid.expected_to_date, 0)}
                     value={team.totals.paid_mtd}
                   />
                   <OutcomeMetric
@@ -271,29 +276,31 @@ function DepartmentMetric({
   accent,
   label,
   target,
+  expected,
   value,
 }: {
   accent: 'brand' | 'info'
   label: string
   target: number
+  expected: number
   value: number
 }) {
   const { t } = useI18n()
   const percent = target > 0 ? Math.round((value / target) * 100) : 0
-  const progressColor = target <= 0 ? 'gray' : percent >= 100 ? 'green' : percent >= 80 ? 'orange' : 'red'
+  const progressColor = departmentPaceColor(target, value, expected)
 
   return (
     <div className={`cockpit-head-kpi is-${accent}`}>
       <Group gap="xs" justify="space-between" wrap="nowrap">
         <span className="cockpit-head-kpi__label">{label}</span>
         <Badge className={`app-role-pill ${PROGRESS_PILL[progressColor] ?? 'is-gray'}`} size="sm" variant="light">
-          {target > 0 ? `${percent}% ${t('плану')}` : t('План не задано')}
+          {target > 0 ? `${percent}% ${t('орієнтира')}` : t('Орієнтир відсутній')}
         </Badge>
       </Group>
       <div className="cockpit-head-kpi__value">{formatMoney(value)}</div>
       <Group gap="xs" justify="space-between" wrap="nowrap">
         <span className="cockpit-head-kpi__sub">
-          {t('План')}: <span className="app-money">{formatMoney(target)}</span>
+          {t('Орієнтир')}: <span className="app-money">{formatMoney(target)}</span>
         </span>
         <strong className="cockpit-head-kpi__percent">{target > 0 ? `${percent}%` : '—'}</strong>
       </Group>
@@ -369,8 +376,8 @@ function TeamMonitor({
                   </Badge>
                 </Group>
                 <div className="cockpit-manager-row__metrics">
-                  <span>{t('Відвантаження')} <strong className={attainmentClass(row.target.shipped.attainment_pct)}>{formatPercent(row.target.shipped.attainment_pct)}</strong></span>
-                  <span>{t('Оплати')} <strong className={attainmentClass(row.target.paid.attainment_pct)}>{formatPercent(row.target.paid.attainment_pct)}</strong></span>
+                  <span>{t('Замовлення')} <strong className={paceClass(row.target.shipped.pace_status)}>{formatPercent(row.target.shipped.attainment_pct)}</strong></span>
+                  <span>{t('Оплати')} <strong className={paceClass(row.target.paid.pace_status)}>{formatPercent(row.target.paid.attainment_pct)}</strong></span>
                   <span>{t('Продано')} <strong>{row.tasks.sold_month}</strong></span>
                 </div>
               </UnstyledButton>
@@ -423,7 +430,9 @@ function EscalatedRow({ task }: { task: EscalatedTask }) {
 }
 
 function priorityScore(row: HeadTeamRow): number {
-  return row.tasks.active * 10_000 + Math.max(0, 100 - row.target.shipped.attainment_pct)
+  const expected = row.target.shipped.expected_to_date
+  const gapPercent = expected > 0 ? Math.max(0, 100 * (expected - row.target.shipped.mtd) / expected) : 0
+  return row.tasks.active * 10_000 + gapPercent
 }
 
 function managerName(row: HeadTeamRow): string {
@@ -446,8 +455,8 @@ function formatRate(value: number): string {
   return `${Math.round(value * 100)}%`
 }
 
-function attainmentClass(value: number): string {
-  return value >= 80 ? 'is-good' : value < 50 ? 'is-low' : ''
+function paceClass(status: string): string {
+  return status === 'ahead' ? 'is-good' : status === 'behind' ? 'is-low' : ''
 }
 
 function formatPercent(value: number): string {

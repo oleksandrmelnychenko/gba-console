@@ -38,12 +38,14 @@ export function CockpitTargetCard({ target }: { target: CockpitTarget }) {
     <Card className="app-section-card cockpit-target-card" withBorder radius="md">
       <Stack gap="sm">
         <Text className="app-section-title" fw={600} size="sm">
-          {t('Моя ціль (місяць)')}
+          {t('Історичний орієнтир на місяць')}
         </Text>
         <AiHistoryLineageNote lineage={target} />
+        <Text size="xs" c="dimmed">{t('Середнє завершених місяців, не затверджений план. Клієнти належать поточному менеджеру; темп порівнюється з очікуваним результатом на дату за календарем Пн–Сб.')}</Text>
+        <Text size="xs" c="dimmed">{t('Замовлення: кількість × ціна за датою створення, без вирахування повернень. Оплати: збережена сума EUR за датою платежу.')}</Text>
 
         <SimpleGrid cols={1} spacing={0}>
-          <TargetMetric label={t('Відвантаження')} metric={target.shipped} t={t} />
+          <TargetMetric label={t('Замовлення (розрахункова сума)')} metric={target.shipped} t={t} />
           <TargetMetric label={t('Оплати')} metric={target.paid} t={t} />
         </SimpleGrid>
       </Stack>
@@ -75,7 +77,7 @@ function TargetMetric({
         </span>
       </div>
       <span className="cockpit-metric-sub">
-        {t('Сьогодні потрібно')}: <span className="app-money">{formatMoney(metric.today_needed)}</span>
+        {t('Потрібний темп за решту робочих днів')}: <span className="app-money">{formatMoney(metric.today_needed)}</span>
       </span>
     </div>
   )

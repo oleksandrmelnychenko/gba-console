@@ -225,6 +225,8 @@ export type CockpitCompletedVsOpen = {
 }
 
 export type CockpitDashboard = AiHistoryLineage & {
+  debt_unknown_terms_count?: number
+  debt_unknown_terms_eur?: number
   manager_id: number
   manager_net_uid?: string
   as_of: string
@@ -236,6 +238,8 @@ export type CockpitDashboard = AiHistoryLineage & {
 }
 
 export type HeadDashboardTeam = {
+  debt_unknown_terms_count?: number
+  debt_unknown_terms_eur?: number
   manager_id: number
   open_tasks: number
   critical: number
