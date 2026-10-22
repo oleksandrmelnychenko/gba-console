@@ -28,6 +28,7 @@ import { getEscalated, getHeadTeam } from '../api/salesCockpitApi'
 import { HeadAiFleetStatus } from '../components/HeadAiFleetStatus'
 import { DocumentaryResultsPanel } from '../components/DocumentaryResultsPanel'
 import { HeadDashboardChartsPanel } from '../components/HeadDashboardChartsPanel'
+import { HeadCoachingPanel } from '../components/HeadCoachingPanel'
 import { HeadTaskBoard } from '../components/HeadTaskBoard'
 import { useCockpitRealtimeReload } from '../hooks/useCockpitRealtimeReload'
 import type { CockpitUrgency, EscalatedResponse, EscalatedTask, HeadTeam, HeadTeamRow } from '../types'
@@ -157,7 +158,7 @@ function HeadDashboardPageContent() {
   }, [reloadKey, setError, setEscalated, setTeam, t])
 
   const rows = useMemo(
-    () => team.team.toSorted((left, right) => priorityScore(right) - priorityScore(left)),
+    () => team.team.toSorted((left, right) => right.tasks.active - left.tasks.active || left.manager_id - right.manager_id),
     [team.team],
   )
 
@@ -218,14 +219,14 @@ function HeadDashboardPageContent() {
                 <div className="cockpit-head-kpis">
                   <DepartmentMetric
                     accent="brand"
-                    label={t('Розрахункова сума замовлень за місяць')}
+                    label={t('Накладні за місяць, брутто')}
                     target={team.totals.shipped_target}
                     expected={team.team.reduce((sum, row) => sum + row.target.shipped.expected_to_date, 0)}
                     value={team.totals.shipped_mtd}
                   />
                   <DepartmentMetric
                     accent="info"
-                    label={t('Отримано оплат цього місяця')}
+                    label={t('Документи оплат за місяць')}
                     target={team.totals.paid_target}
                     expected={team.team.reduce((sum, row) => sum + row.target.paid.expected_to_date, 0)}
                     value={team.totals.paid_mtd}
@@ -258,6 +259,8 @@ function HeadDashboardPageContent() {
               </Stack>
 
               <Stack className="cockpit-head-main" gap={8}>
+                <Text size="xs" c="dimmed">Історичний орієнтир за поточною клієнтською базою менеджера; передача клієнта змінює цей зріз. Це не персональна історична виручка і не затверджений план. Темп розподілено за умовним календарем Пн–Сб; свята не враховано. Повнота імпорту не підтверджена.</Text>
+                <HeadCoachingPanel managerId={selectedManagerId} managers={rows.map(row => ({ id: row.manager_id, name: managerName(row) }))} onChanged={triggerReload} />
                 <HeadTaskBoard
                   managerId={selectedManagerId}
                   onManagerChange={setSelectedManagerId}
@@ -378,8 +381,8 @@ function TeamMonitor({
                   </Badge>
                 </Group>
                 <div className="cockpit-manager-row__metrics">
-                  <span>{t('Замовлення')} <strong className={paceClass(row.target.shipped.pace_status)}>{formatPercent(row.target.shipped.attainment_pct)}</strong></span>
-                  <span>{t('Оплати')} <strong className={paceClass(row.target.paid.pace_status)}>{formatPercent(row.target.paid.attainment_pct)}</strong></span>
+                  <span>{t('Накладні, брутто')} <strong className={paceClass(row.target.shipped.pace_status)}>{row.target.shipped.pace_status === 'no_target' ? t('Немає орієнтира') : formatPercent(row.target.shipped.attainment_pct)}</strong></span>
+                  <span>{t('Документи оплат')} <strong className={paceClass(row.target.paid.pace_status)}>{row.target.paid.pace_status === 'no_target' ? t('Немає орієнтира') : formatPercent(row.target.paid.attainment_pct)}</strong></span>
                   <span>{t('Продано')} <strong>{row.tasks.sold_month}</strong></span>
                 </div>
               </UnstyledButton>
@@ -429,12 +432,6 @@ function EscalatedRow({ task }: { task: EscalatedTask }) {
       <Text className="cockpit-escalated-client">{task.client_name || t('Клієнт не вказаний')}</Text>
     </div>
   )
-}
-
-function priorityScore(row: HeadTeamRow): number {
-  const expected = row.target.shipped.expected_to_date
-  const gapPercent = expected > 0 ? Math.max(0, 100 * (expected - row.target.shipped.mtd) / expected) : 0
-  return row.tasks.active * 10_000 + gapPercent
 }
 
 function managerName(row: HeadTeamRow): string {
