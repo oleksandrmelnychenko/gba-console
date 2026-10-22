@@ -155,3 +155,24 @@ it('clears an old bounds error when the calendar selects an allowed day', () => 
   fireEvent.click(screen.getByRole('button', { name: '2026-10-02' }))
   expect(input.checkValidity()).toBe(true)
 })
+
+it('Escape on a portaled calendar cell closes only the picker inside a Drawer', () => {
+  const onClose = vi.fn()
+  render(<MantineProvider env="test"><Drawer opened onClose={onClose} title="Документ">
+    <AppDateInput label="Дата" value="2026-10-01" onChange={vi.fn()} getDayProps={day => ({ 'aria-label': day })} />
+  </Drawer></MantineProvider>)
+  fireEvent.focus(screen.getByLabelText('Дата'))
+  fireEvent.keyDown(screen.getByRole('button', { name: '2026-10-02' }), { key: 'Escape' })
+  expect(onClose).not.toHaveBeenCalled()
+  expect(screen.queryByRole('grid')).toBeNull()
+  expect(screen.getByRole('dialog', { name: 'Документ' })).toBeTruthy()
+})
+
+it('clears from the calendar clear button and closes the popup', () => {
+  const { input, onValue } = setup({ initial: '2026-10-01', clearButtonProps: { 'aria-label': 'Очистити дату' } })
+  fireEvent.focus(input)
+  fireEvent.click(screen.getByRole('button', { name: 'Очистити дату' }))
+  expect(onValue).toHaveBeenLastCalledWith('')
+  expect(input.value).toBe('')
+  expect(screen.queryByRole('grid')).toBeNull()
+})

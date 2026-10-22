@@ -88,8 +88,8 @@ export function AppDateInput({
 
   function emit(next: string) {
     setTypedDraft(null)
+    if (!next) setCalendarOpen(false)
     setEmitted(next)
-    setCalendarOpen(true)
     const target = { name: name ?? '', value: next }
     onChange?.({ currentTarget: target, target } as unknown as ChangeEvent<HTMLInputElement>)
   }
@@ -101,7 +101,7 @@ export function AppDateInput({
       {...rest}
       // A day grid is a `grid`, not a data table: screen readers and table queries
       // must not confuse an open calendar with the page's own tables.
-      attributes={{ ...rest.attributes, month: { role: 'grid', ...rest.attributes?.month } }}
+      attributes={calendarAttributes(rest.attributes)}
       className={['app-date-input', rest.className].filter(Boolean).join(' ')}
       // Native date inputs can always be emptied; `required` is enforced by the form.
       clearable={!readOnly && !disabled}
@@ -113,12 +113,24 @@ export function AppDateInput({
       getDayProps={(day) => ({
         ...rest.getDayProps?.(day),
         disabled: Boolean((minDay && day < minDay) || (maxDay && day > maxDay)) || rest.getDayProps?.(day).disabled,
+        onClick: (event) => {
+          setCalendarOpen(false)
+          rest.getDayProps?.(day).onClick?.(event)
+        },
       })}
       max={max}
       min={min}
       name={name}
       placeholder={placeholder ?? PLACEHOLDER[type]}
-      popoverProps={{ withinPortal: true, ...popoverProps }}
+      popoverProps={{
+        withinPortal: true,
+        ...popoverProps,
+        // The host modal listens during window capture, before the popup handler.
+        attributes: { ...popoverProps?.attributes, dropdown: { ...popoverProps?.attributes?.dropdown, 'data-mantine-stop-propagation': true } },
+        opened: calendarOpen,
+        onChange: (opened) => { setCalendarOpen(opened); popoverProps?.onChange?.(opened) },
+        onDismiss: () => { setCalendarOpen(false); popoverProps?.onDismiss?.() },
+      }}
       readOnly={readOnly}
       required={required}
       rightSection={rightSection ?? <CalendarDays aria-hidden="true" size={15} />}
@@ -127,6 +139,7 @@ export function AppDateInput({
       valueFormat={DISPLAY_FORMAT[type]}
       withTime={withTime}
       onChangeCapture={(event) => {
+        setCalendarOpen(true)
         setTypedDraft(event.currentTarget.value)
         validateInput(event.currentTarget, event.currentTarget.value, withTime, min, max)
         onChangeCapture?.(event)
@@ -228,4 +241,14 @@ function validateInput(input: HTMLInputElement, raw: string, withTime: boolean, 
     if ((lower && parsed < lower) || (upper && parsed > upper)) error = 'Вкажіть дату в межах дозволеного періоду'
   }
   input.setCustomValidity(error)
+}
+
+
+function calendarAttributes(attributes: DateInputProps['attributes']) {
+  const merged = { ...attributes, month: { role: 'grid', ...attributes?.month } }
+  // ModalBase checks the event target itself during window capture.
+  for (const control of ['day', 'calendarHeaderControl', 'calendarHeaderLevel', 'calendarHeaderSelect', 'monthsListControl', 'yearsListControl'] as const) {
+    merged[control] = { ...attributes?.[control], 'data-mantine-stop-propagation': true }
+  }
+  return merged
 }
