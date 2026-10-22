@@ -59,3 +59,26 @@ it('shows underlying documents for an unknown financial total without comparing 
   expect(screen.getByText('Історична собівартість не підтверджена')).toBeTruthy()
   expect(screen.queryByText(/Дані змінилися після розрахунку/)).toBeNull()
 })
+
+it.each([
+  [311324.4742, '311324.47', false],
+  [232175.276, '232175.28', false],
+  [-20596.779, '-20596.78', false],
+  [1.005, '1.01', false],
+  [-1.005, '-1.01', false],
+  [1.005, '1.00', true],
+  [-1.005, '-1.00', true],
+  [311324.486, '311324.47', true],
+])('compares EUR source %s with cached cents %s using the same monetary precision', async (aggregateValue, expected, changed) => {
+  vi.mocked(getDashboardQueue).mockResolvedValue({ ...data, aggregateValue, unit: 'EUR' })
+  draw(location.replace('queueValue=1', `queueValue=${expected}`))
+  await screen.findByText('Лист-17')
+  expect(Boolean(screen.queryByText(/Дані змінилися після розрахунку/))).toBe(changed)
+})
+
+it('keeps quantity comparison exact instead of hiding a sub-cent-sized stock change', async () => {
+  vi.mocked(getDashboardQueue).mockResolvedValue({ ...data, aggregateValue: 1.0001, unit: 'qty' })
+  draw()
+  await screen.findByText('Лист-17')
+  expect(screen.getByText(/Дані змінилися після розрахунку/)).toBeTruthy()
+})

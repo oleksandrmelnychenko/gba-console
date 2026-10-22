@@ -11,6 +11,7 @@ import type { WorkspaceQueue, WorkspaceQueueRequest } from '../queueTypes'
 import { readWorkspaceQueueRequest } from '../utils/metricScope'
 
 const number = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 6 })
+const currencyComparison = new Intl.NumberFormat('en', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false })
 
 export function WorkspaceQueueModal({ workspace }: { workspace: DashboardWorkspaceKey }) {
   const [params, setParams] = useSearchParams()
@@ -44,7 +45,7 @@ function QueueModal({ request, expected, onClose }: { request: WorkspaceQueueReq
 function QueueContents({ data, expected, page, onPage }: { data: WorkspaceQueue; expected: string | null; page: number; onPage: (page: number) => void }) {
   const { t } = useI18n()
   const { modules } = useNavigation()
-  const changed = expected !== null && Number.isFinite(Number(expected)) && data.aggregateValue !== Number(expected)
+  const changed = hasAggregateChanged(data.aggregateValue, data.unit, expected)
   return <>
         <Text size="sm">{t('Записів')}: {data.total} · {t('Значення показника')}: {data.aggregateValue === null ? t('Не визначено') : number.format(data.aggregateValue)} {data.unit === 'qty' ? t('шт.') : data.unit === 'count' ? '' : data.unit}</Text>
         {changed && <Alert color="yellow">{t('Дані змінилися після розрахунку дашборда. Тут показано значення за поточним складом записів; оновіть показники дашборда.')}</Alert>}
@@ -62,4 +63,14 @@ function QueueContents({ data, expected, page, onPage }: { data: WorkspaceQueue;
         </Table></Table.ScrollContainer>}
         {(data.total > 50 || page > 1) && <Pagination value={page} total={Math.max(page, Math.ceil(data.total / 50))} onChange={onPage} />}
       </>
+}
+
+function hasAggregateChanged(actual: number | null, unit: string, expected: string | null) {
+  if (expected === null || !Number.isFinite(Number(expected))) return false
+  // Financial KPI totals use decimal.Round(..., 2, AwayFromZero); queues retain source precision.
+  // Intl's default halfExpand rounding also rounds negative midpoint values away from zero.
+  if (unit === 'EUR' && actual !== null) {
+    return currencyComparison.format(actual) !== currencyComparison.format(Number(expected))
+  }
+  return actual !== Number(expected)
 }
