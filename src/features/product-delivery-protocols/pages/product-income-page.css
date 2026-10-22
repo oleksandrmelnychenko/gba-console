@@ -19,6 +19,10 @@
 .income-grid-fill .data-table-scroll {
   flex: 1 1 auto;
   min-height: 0;
+  /* The reserved two-sided gutter clips the last placement quantity at the
+     horizontal scroll limit in Chromium. Let this bounded grid use its actual
+     scroll viewport, as the other wide document grids do. */
+  scrollbar-gutter: auto;
 }
 
 .product-income-page {
