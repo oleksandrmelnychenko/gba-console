@@ -44,6 +44,7 @@ import {
   type CarrierHistoryChangedField,
 } from './carrierHistoryFields'
 import { applySaleTransporterIdentity } from './saleTransporterPayload'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import './sales-drawers.css'
 
 const SALE_DETAILS_FORM_ID = 'sale-details-carrier-form'
@@ -410,7 +411,7 @@ function SaleDetailsContent({
           />
           <ClientInfo sale={sale} />
           {showShipmentDate && (
-            <TextInput
+            <AppDateInput
               disabled={fileMutation.reconciliationRequired}
               label={t('Дата відгрузки')}
               type="date"

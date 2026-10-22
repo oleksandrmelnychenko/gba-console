@@ -60,6 +60,7 @@ import {
   getIncomeCreatePermissionByOperationType,
   INCOME_CASHFLOWS_MOVEMENT_CREATE_PERMISSION,
 } from '../permissions'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import './income-cashflows-page.css'
 
 type FormState = {
@@ -571,7 +572,7 @@ function IncomeCashflowConversionFormPageContent() {
               {t('Реквізити надходження')}
             </Text>
             <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
-              <TextInput
+              <AppDateInput
                 className="cashflow-field-date"
                 disabled={isLoading || isSaving}
                 label={t('Дата')}

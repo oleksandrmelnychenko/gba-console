@@ -1,4 +1,4 @@
-import { Alert, Button, FileInput, NumberInput, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, FileInput, NumberInput, SimpleGrid, Stack, Text } from '@mantine/core'
 import { CircleAlert, Upload } from 'lucide-react'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -6,6 +6,7 @@ import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import './customs-import-modals.css'
 import type { ProductSpecificationParseConfiguration } from '../specificationTypes'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type UploadProductSpecificationModalProps = {
   isLoading: boolean
@@ -111,7 +112,7 @@ export function UploadProductSpecificationModal({
           <section className="customs-import-section" aria-label={t('Файл та дата')}>
             <Text className="app-section-title">{t('Файл та дата')}</Text>
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10}>
-              <TextInput
+              <AppDateInput
                 aria-required="true"
                 disabled={isLoading}
                 label={t('Дата митної декларації')}

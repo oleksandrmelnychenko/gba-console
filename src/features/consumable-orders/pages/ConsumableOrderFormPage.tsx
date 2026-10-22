@@ -67,6 +67,7 @@ import {
   CONSUMABLE_ORDER_CREATE_PERMISSION,
   CONSUMABLE_ORDER_EDIT_PERMISSION,
 } from '../permissions'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import './consumable-order-form-page.css'
 
 type LocationState = {
@@ -779,7 +780,7 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
                 value={form.invoiceNumber}
                 onChange={(event) => updateForm({ invoiceNumber: event.currentTarget.value })}
               />
-              <TextInput
+              <AppDateInput
                 className="consumable-order-form-control is-requisites-date"
                 disabled={isFormLocked}
                 label={t('Дата входу')}
@@ -832,7 +833,7 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
             />
             {form.paymentTaskEnabled ? (
               <div className="consumable-order-form-grid">
-              <TextInput
+              <AppDateInput
                 className="consumable-order-form-control is-compact"
                 disabled={isFormLocked || isTaskMutationLocked}
                 label={t('Сплатити до')}

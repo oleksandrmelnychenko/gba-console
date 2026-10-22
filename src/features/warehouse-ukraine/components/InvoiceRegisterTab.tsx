@@ -13,6 +13,7 @@ import { getInvoicePrintStatus } from '../invoicePrintStatus'
 import type { Sale, WarehouseUkraineExportDocument } from '../types'
 import { DownloadDocumentModal } from './DownloadDocumentModal'
 import { displayValue, getDateShiftedByDays } from './dateHelpers'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 const DEFAULT_PAGE_SIZE = 20
 const PAGE_SIZE_OPTIONS = ['20', '50', '100', '150', '500']
@@ -292,7 +293,7 @@ export function InvoiceRegisterTab({ canExport }: { canExport: boolean }) {
               value={model.filterDraft.value}
               onChange={(event) => model.updateFilterDraft({ ...model.filterDraft, value: event.currentTarget.value })}
             />
-            <TextInput
+            <AppDateInput
               className="warehouse-ukraine-filter-input"
               label={t('На дату')}
               type="date"

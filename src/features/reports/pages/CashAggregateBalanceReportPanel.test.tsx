@@ -20,7 +20,7 @@ it('shows horizontal account rows and server recomputed totals with four exact c
   const result = cashAggregateReport()
   vi.mocked(previewCashAggregateBalance).mockResolvedValue(result)
   render(panel())
-  expect((screen.getByLabelText('Період') as HTMLInputElement).type).toBe('date')
+  expect((screen.getByLabelText('Період') as HTMLInputElement).dataset.datesInput).toBe('true')
   expect(screen.queryByRole('combobox')).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: 'Переглянути' }))
   const region = await screen.findByRole('region', { name: 'Результат сукупного залишку коштів' })

@@ -1,6 +1,7 @@
-import { Alert, Button, Card, Select, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Card, Select, Stack, Text } from '@mantine/core'
 import { cloneProvidedDiscountSettings, currentProvidedDiscountsSupported, defaultOneCSpecialSettings, oneCSpecialSpecification, oneCSpecialVersionSupported, providedDiscountBasis } from '../data/oneCSpecialReports'
 import type { ReportDataset } from '../types'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type Props = { dataSource: number; dataset?: ReportDataset; value: unknown; disabled: boolean; onChange: (value: unknown) => void }
 const record = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -31,7 +32,7 @@ export function OneCSpecialReportPanel({ dataSource, dataset, value, disabled, o
       <Select label="База джерела 1С" data={sourceChoices} value={sourceValid ? sourceWorld : null}
         placeholder="Оберіть Fenix або AMG" disabled={disabled || !versionValid}
         allowDeselect={false} onChange={world => { if (world && spec.worlds.includes(Number(world))) set({ SourceWorld: Number(world) }) }} />
-      {spec.date ? <TextInput type="date" label={spec.date === 'AsOf' ? 'Дата аналізу цін' : 'Дата стану знижок'}
+      {spec.date ? <AppDateInput type="date" label={spec.date === 'AsOf' ? 'Дата аналізу цін' : 'Дата стану знижок'}
         min={dataSource === 28 ? '1900-01-01' : '1753-01-01'} max="7999-12-31" value={dateValue}
         disabled={disabled || !versionValid}
         onChange={event => set({ [spec.date!]: event.currentTarget.value })} /> : null}

@@ -40,6 +40,7 @@ import type {
 } from '../types'
 import { ProductCapitalizationMissingItemsModal } from './ProductCapitalizationMissingItemsModal'
 import { ProductCapitalizationUploadModal } from './ProductCapitalizationUploadModal'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import './product-capitalization-sheet.css'
 
 const VENDOR_CODE_DEBOUNCE_MS = 280
@@ -155,7 +156,7 @@ export function NewProductCapitalizationPanel({ canCreate, opened, onClose, onCr
               value={model.comment}
               onChange={(event) => model.setComment(event.currentTarget.value)}
             />
-            <TextInput
+            <AppDateInput
               disabled={isFormBusy}
               label={t('Дата')}
               type="datetime-local"

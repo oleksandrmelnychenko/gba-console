@@ -93,6 +93,7 @@ import {
   AVAILABLE_PAYMENTS_TASK_MARK_AVAILABLE_PERMISSION,
   AVAILABLE_PAYMENTS_TASK_MERGE_PERMISSION,
 } from '../permissions'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type AvailablePaymentsDetailDrawerProps = {
   filesByTaskId: Record<string, File[]>
@@ -1718,7 +1719,7 @@ function AvailablePaymentOutcomeForm({
                 value={form.customNumber}
                 onChange={(event) => updateForm({ customNumber: event.currentTarget.value })}
               />
-              <TextInput
+              <AppDateInput
                 disabled={isSaving}
                 label={t('Від якої дати')}
                 type="date" className="available-payment-outcome-date"
@@ -2088,14 +2089,14 @@ function CashFlowTab({
   )
   const controls = (
     <Group align="end" gap={10} wrap="wrap">
-      <TextInput
+      <AppDateInput
         label={t('Від')}
         type="date"
         value={filters.from}
         w={150}
         onChange={(event) => onFiltersChange({ ...filters, from: event.currentTarget.value })}
       />
-      <TextInput
+      <AppDateInput
         label={t('До')}
         type="date"
         value={filters.to}

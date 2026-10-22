@@ -27,6 +27,7 @@ import type {
 } from '../types'
 import { formatDate, formatMoney, responsibleName } from './helpers'
 import { fromDateInput, toDateInput } from './helpers'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import './payment-delivery-protocols-section.css'
 
 type SelectOption = {
@@ -363,7 +364,7 @@ export function PaymentDeliveryProtocolsSection({
             />
 
             <Group align="end" gap={10}>
-              <TextInput w={170} maw="100%"
+              <AppDateInput w={170} maw="100%"
                 label={t('Сплатити до')}
                 type="date"
                 value={toDateInput(payToDate)}

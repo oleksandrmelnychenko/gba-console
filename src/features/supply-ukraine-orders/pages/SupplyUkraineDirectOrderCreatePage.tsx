@@ -55,6 +55,7 @@ import type {
   SupplyTransportationTypeValue,
   UkraineOrderFromSupplierParseConfiguration,
 } from '../types'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type NumberFieldValue = number | ''
 type CreateMode = SupplyUkraineOrderCreateMode
@@ -561,7 +562,7 @@ function OrderDetailsSection({
   const { t } = useI18n()
 
   const dateField = (
-    <TextInput
+    <AppDateInput
       disabled={isLoading || isSaving}
       label={t('Дата')}
       type="datetime-local"
@@ -629,7 +630,7 @@ function OrderDetailsSection({
                 value={form.invNumber}
                 onChange={(event) => onFormChange({ invNumber: event.currentTarget.value })}
               />
-              <TextInput
+              <AppDateInput
                 disabled={isLoading || isSaving}
                 label={t('Дата накладної')}
                 type="datetime-local"

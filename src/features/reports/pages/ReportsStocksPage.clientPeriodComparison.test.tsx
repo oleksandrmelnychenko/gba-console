@@ -71,7 +71,7 @@ describe('source13 constructor and private templates', () => {
     const { container } = await ready()
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Клієнти: липень проти червня' }))
-    expect((screen.getByLabelText('Період порівняння: від') as HTMLInputElement).value).toBe('2026-06-01')
+    expect((screen.getByLabelText('Період порівняння: від') as HTMLInputElement).value).toBe('01.06.2026')
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toEqual(template.Data)
@@ -81,7 +81,7 @@ describe('source13 constructor and private templates', () => {
     expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0]).toEqual(template)
     fireEvent.click(screen.getByRole('button', { name: 'Відкрити для редагування: Неповне порівняння' }))
     expect(screen.getByText(/Оберіть початок і завершення періоду порівняння/)).toBeTruthy()
-    expect((screen.getByLabelText('Період порівняння: від') as HTMLInputElement).value).toBe('2026-06-01')
+    expect((screen.getByLabelText('Період порівняння: від') as HTMLInputElement).value).toBe('01.06.2026')
   })
   it('keeps an omitted IsChecked selected when restoring a source13 template', async () => {
     const data = clientComparisonRequest()

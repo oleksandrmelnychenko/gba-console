@@ -1,4 +1,4 @@
-import { Alert, Button, Card, Select, SimpleGrid, Stack, Textarea, TextInput } from '@mantine/core'
+import { Alert, Button, Card, Select, SimpleGrid, Stack, Textarea } from '@mantine/core'
 import { CircleAlert, Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { isBusinessOrganizationVisible } from '../../client-resources/clientResourcePolicies'
@@ -8,6 +8,7 @@ import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { CreateProtocolPayload, ProtocolOrganization } from '../types'
 import { SupplyTransportationType } from '../types'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import './new-product-delivery-protocol-modal.css'
 
 export type NewProductDeliveryProtocolModalProps = {
@@ -174,7 +175,7 @@ function NewProductDeliveryProtocolForm({
                 }))
               }
             />
-            <TextInput
+            <AppDateInput
               error={dateMissing ? t('Вкажіть дату') : undefined}
               label={t('Від якої дати')}
               type="datetime-local"

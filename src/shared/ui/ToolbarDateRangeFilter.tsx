@@ -1,6 +1,7 @@
 import { ActionIcon, Button, Group, Popover, TextInput, Tooltip } from '@mantine/core'
+import { DatePicker, type DatePickerPreset } from '@mantine/dates'
 import { CalendarDays } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useI18n } from '../i18n/useI18n'
 import './toolbar-date-range-filter.css'
 
@@ -36,10 +37,38 @@ function validateRange(range: { from: string; to: string }, required: boolean, m
   return null
 }
 
+function isoDate(value: Date) {
+  const month = String(value.getMonth() + 1).padStart(2, '0')
+  const day = String(value.getDate()).padStart(2, '0')
+  return `${value.getFullYear()}-${month}-${day}`
+}
+
+function buildPresets(t: (key: string) => string): DatePickerPreset<'range'>[] {
+  const today = new Date()
+  const shifted = (days: number) => isoDate(new Date(today.getFullYear(), today.getMonth(), today.getDate() - days))
+  const end = isoDate(today)
+
+  return [
+    { label: t('Сьогодні'), value: [end, end] },
+    { label: t('Вчора'), value: [shifted(1), shifted(1)] },
+    { label: t('7 днів'), value: [shifted(6), end] },
+    { label: t('30 днів'), value: [shifted(29), end] },
+    { label: t('Цей місяць'), value: [isoDate(new Date(today.getFullYear(), today.getMonth(), 1)), end] },
+    {
+      label: t('Минулий місяць'),
+      value: [
+        isoDate(new Date(today.getFullYear(), today.getMonth() - 1, 1)),
+        isoDate(new Date(today.getFullYear(), today.getMonth(), 0)),
+      ],
+    },
+  ]
+}
+
 export function ToolbarDateRangeFilter({ from, to, min, max, disabled, required = false, fromLabel, toLabel, onChange }: Props) {
   const { t } = useI18n()
   const [opened, setOpened] = useState(false)
   const [draft, setDraft] = useState({ from, to })
+  const presets = useMemo(() => buildPresets(t), [t])
   const error = validateRange(draft, required, min, max)
   const rangeError = error ? t(error) : null
   const invalidRange = Boolean(rangeError)
@@ -54,7 +83,7 @@ export function ToolbarDateRangeFilter({ from, to, min, max, disabled, required 
 
   return (
     <div className="app-date-range-icon-wrap">
-      <Popover opened={opened} onChange={changeOpened} position="bottom-start" width={340} withinPortal trapFocus returnFocus shadow="md">
+      <Popover opened={opened} onChange={changeOpened} position="bottom-start" withinPortal trapFocus returnFocus shadow="md">
         <Popover.Target>
           <Tooltip label={`${t('Період')}: ${summary}`} disabled={opened}>
             <ActionIcon
@@ -81,6 +110,19 @@ export function ToolbarDateRangeFilter({ from, to, min, max, disabled, required 
               setOpened(false)
             }}
           >
+            <DatePicker
+              allowSingleDateInRange
+              className="app-date-range-calendar"
+              data-mantine-stop-propagation
+              defaultDate={draft.to || draft.from || undefined}
+              maxDate={max}
+              minDate={min}
+              presets={presets}
+              size="sm"
+              type="range"
+              value={[draft.from || null, draft.to || null]}
+              onChange={([nextFrom, nextTo]) => setDraft({ from: nextFrom ?? '', to: nextTo ?? '' })}
+            />
             <div className="app-date-range-range">
               <TextInput
                 className="app-date-range-field"

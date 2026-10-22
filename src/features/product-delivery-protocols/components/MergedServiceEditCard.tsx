@@ -42,6 +42,7 @@ import { toMergedServiceDateTimeInput } from '../mergedServiceDateInput'
 import type { ProtocolUser } from '../types'
 import { getMergedServiceExchangeRatePresentation } from './mergedServiceExchangeRatePresentation'
 import { responsibleName } from './protocolDetailHelpers'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import './merged-service-edit.css'
 
 const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
@@ -981,7 +982,7 @@ function MergedServicePrimaryFields({
             onChange={(event) => update('name', event.currentTarget.value)}
           />
 
-          <TextInput
+          <AppDateInput
             aria-invalid={Boolean(fieldErrors.fromDate)}
             disabled={isSaving}
             error={fieldErrors.fromDate}
@@ -1078,7 +1079,7 @@ function MergedServicePrimaryFields({
             value={draft.supplyInformationTaskGrossPrice}
             onChange={(value) => update('supplyInformationTaskGrossPrice', String(value))}
           />
-          <TextInput
+          <AppDateInput
             aria-invalid={Boolean(fieldErrors.supplyInformationTaskPayToDate)}
             disabled={isSaving}
             error={fieldErrors.supplyInformationTaskPayToDate}
@@ -1218,7 +1219,7 @@ function TaskDocumentsEditor({
         {label}
       </Text>
       <Group grow>
-        <TextInput
+        <AppDateInput
           aria-invalid={Boolean(taskDateError)}
           disabled={disabled}
           error={taskDateError}

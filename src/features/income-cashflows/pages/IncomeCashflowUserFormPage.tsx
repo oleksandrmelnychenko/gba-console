@@ -59,6 +59,7 @@ import {
   getIncomeCreatePermissionByOperationType,
   INCOME_CASHFLOWS_MOVEMENT_CREATE_PERMISSION,
 } from '../permissions'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import './income-cashflows-page.css'
 
 type FormState = {
@@ -494,7 +495,7 @@ function IncomeCashflowUserFormPageContent() {
                 onChange={handleUserSearchChanged}
                 onOptionSubmit={handleUserSubmit}
               />
-              <TextInput
+              <AppDateInput
                 className="cashflow-field-date"
                 disabled={isLoading || isSaving}
                 label={t('Дата')}

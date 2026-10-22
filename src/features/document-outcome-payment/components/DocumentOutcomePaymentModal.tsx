@@ -1,6 +1,6 @@
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
-import { Alert, Button, Grid, NumberInput, Select, Stack, Text, TextInput, Textarea } from '@mantine/core'
+import { Alert, Button, Grid, NumberInput, Select, Stack, Text, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
@@ -33,6 +33,7 @@ import type {
   OutcomePaymentOrder,
   OutcomePaymentRegister,
 } from '../types'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 const SEARCH_DEBOUNCE_MS = 300
 const SELECT_PAYMENT_MOVEMENT = 'Виберіть статтю грошових витрат'
@@ -408,7 +409,7 @@ export function DocumentOutcomePaymentModal({
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, sm: 6 }}>
-            <TextInput maw={170}
+            <AppDateInput maw={170}
               disabled={isLoading || isSaving}
               label={t('Дата')}
               max={dateBounds?.max}

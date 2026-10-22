@@ -1,9 +1,10 @@
-import { Alert, NumberInput, Text, TextInput } from '@mantine/core'
+import { Alert, NumberInput, Text } from '@mantine/core'
 import type { FormEvent } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DocumentDetailSection } from '../../../shared/ui/document-detail/DocumentDetail'
 import type { ExchangeRate } from '../types'
 import { parseDateTimeInputValue, toDateTimeInputValue } from '../utils'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type CurrencyRatesUpdateFormProps = {
   id: string
@@ -24,7 +25,7 @@ export function CurrencyRatesUpdateForm({ id, amountEntries, formDate, formError
     <form id={id} className="exchange-rates-form" onSubmit={onSubmit}>
       <DocumentDetailSection title={t('Оновлення курсу')} stacked>
         <Text size="xs" c="dimmed">{t('Вкажіть дату та нове значення')}</Text>
-        <TextInput
+        <AppDateInput
           label={t('Дата створення')}
           type="datetime-local"
           autoFocus

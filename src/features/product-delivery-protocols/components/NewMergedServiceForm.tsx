@@ -31,6 +31,7 @@ import type {
 import type { ProtocolUser } from '../types'
 import { getMergedServiceExchangeRatePresentation } from './mergedServiceExchangeRatePresentation'
 import { responsibleName } from './protocolDetailHelpers'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import './new-merged-service-form.css'
 
 const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
@@ -441,7 +442,7 @@ export function NewMergedServiceForm({
               value={values.name}
               onChange={(event) => update('name', event.currentTarget.value)}
             />
-            <TextInput
+            <AppDateInput
               className="new-merged-service-control"
               disabled={isSaving}
               label={t('Від якої дати')}
@@ -592,7 +593,7 @@ export function NewMergedServiceForm({
               value={values.files}
               onChange={(files) => update('files', files)}
             />
-            <TextInput
+            <AppDateInput
               className="new-merged-service-control"
               disabled={isSaving}
               label={t('Сплатити до')}
@@ -621,7 +622,7 @@ export function NewMergedServiceForm({
             />
             {values.createTask && (
               <div className="new-merged-service-grid">
-                <TextInput
+                <AppDateInput
                   className="new-merged-service-control"
                   disabled={isSaving}
                   label={t('Сплатити до')}
@@ -670,7 +671,7 @@ export function NewMergedServiceForm({
             />
             {values.createAccountingTask && (
               <div className="new-merged-service-grid">
-                <TextInput
+                <AppDateInput
                   className="new-merged-service-control"
                   disabled={isSaving}
                   label={t('Сплатити до')}

@@ -1,5 +1,5 @@
 import { TableChip } from '../../../shared/ui/TableChip'
-import { ActionIcon, Alert, Badge, Button, Card, Group, NumberInput, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Badge, Button, Card, Group, NumberInput, Select, Stack, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { BetweenVerticalEnd, CircleAlert, Plus, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo } from 'react'
@@ -40,6 +40,7 @@ import type {
   PlacementStorage,
   PlacementSupplyOrder,
 } from '../placementsTypes'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import './warehouse-ukraine-page.css'
 
 const PLACEMENT_ADD_CANCEL_SAVE_PERMISSION = PermissionKeys.OrdersUkraine.Placement.Save
@@ -1054,7 +1055,7 @@ function WarehouseUkraineOrderPlacementsPageContent() {
             </Group>
             <Group className="app-filter-control-group" gap={8} align="end">
               {isOpenOrder && (canCarryOut || canGetUp) && (
-                <TextInput
+                <AppDateInput
                   className="warehouse-order-placement-control"
                   label={t('Дата оприходування')}
                   disabled={model.isBusy || model.isDirty}

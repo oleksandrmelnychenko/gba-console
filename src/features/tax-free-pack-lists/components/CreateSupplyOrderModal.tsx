@@ -12,6 +12,7 @@ import {
 } from '../api/taxFreePackListsApi'
 import type { Client, Organization, TaxFreePackList } from '../types'
 import { formatDateTime, getClientAgreementLabel, getClientLabel } from '../utils'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type CreateSupplyOrderModalProps = {
   canCreate: boolean
@@ -227,7 +228,7 @@ export function CreateSupplyOrderModal({ canCreate, opened, packList, onClose, o
           value={effectiveAgreementValue}
           onChange={(value) => dispatch({ type: 'agreementSelected', value })}
         />
-        <TextInput maw={230}
+        <AppDateInput maw={230}
           disabled={isLoading || isSaving}
           label={t('Дата приходу')}
           type="datetime-local"

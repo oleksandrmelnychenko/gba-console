@@ -1,0 +1,35 @@
+/* Calendar date fields (AppDateInput). Typed value stays mono like the native
+   date inputs they replace; the dropdown calendar uses the brand accent. */
+.app-date-input .mantine-DateInput-input {
+  font-family: var(--font-mono);
+}
+
+.app-date-input .mantine-DateInput-section[data-position='right'] {
+  color: var(--mantine-color-gray-6);
+}
+
+.mantine-DateInput-calendarHeaderLevel {
+  font: 650 13px var(--font-mono);
+  text-transform: capitalize;
+}
+
+.mantine-DateInput-weekday {
+  color: var(--mantine-color-gray-6);
+  font: 600 11px var(--font-mono);
+  text-transform: capitalize;
+}
+
+.mantine-DateInput-day {
+  border-radius: 6px;
+  font: 500 12.5px var(--font-mono);
+}
+
+.mantine-DateInput-day[data-selected] {
+  background: var(--brand-orange);
+  color: var(--mantine-color-white);
+}
+
+.mantine-DateInput-day[data-today]:not([data-selected]) {
+  outline: 1px solid rgba(var(--brand-orange-rgb), 0.5);
+  outline-offset: -1px;
+}

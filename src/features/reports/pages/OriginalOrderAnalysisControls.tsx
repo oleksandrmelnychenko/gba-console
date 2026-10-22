@@ -1,8 +1,9 @@
-import { Button, Checkbox, Group, MultiSelect, Select, Stack, Text, TextInput } from '@mantine/core'
+import { Button, Checkbox, Group, MultiSelect, Select, Stack, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { orderAnalysisFieldLabels, orderAnalysisFilterFields, orderAnalysisFilterKey, orderAnalysisRowOptions, type OrderAnalysisCapability, type OrderAnalysisField, type OrderAnalysisFilter, type OrderAnalysisState } from '../data/originalOrderAnalyses'
 import { orderAnalysisMeasureLabel, orderAnalysisPaymentLabels, orderAnalysisShipmentLabels } from '../data/originalOrderAnalysisLabels'
 import type { OrderAnalysisChoice } from '../data/originalOrderAnalysisResponse'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 function NamedOrderFilter({ field, choices, filters, busy, select }: { field: OrderAnalysisField; choices: OrderAnalysisChoice[]; filters: OrderAnalysisFilter[]; busy: boolean; select: (field: OrderAnalysisField, key: string | null) => void }) {
   const { t } = useI18n(), options = choices.filter(v => v.Field === field).map(v => ({ value: orderAnalysisFilterKey(v), label: v.Caption })), value = filters.find(v => v.Field === field)
   return <Select label={t(orderAnalysisFieldLabels[field])} searchable clearable limit={50} data={options} value={value ? orderAnalysisFilterKey(value) : null} disabled={busy || !options.length && !value}
@@ -22,8 +23,8 @@ export function OriginalOrderAnalysisControls({ capability, from, through, rows,
   select: (field: OrderAnalysisField, key: string | null) => void; changeShipment: (v: OrderAnalysisState[] | null) => void; changePayment: (v: OrderAnalysisState[] | null) => void
 }) {
   const { t } = useI18n(), kind = capability.Definition.Kind
-  return <Stack gap="sm"><Group><TextInput type="date" label={t('Початок періоду')} value={from} onChange={e => changePeriod('from', e.currentTarget.value)} />
-    <TextInput type="date" label={t('Кінець періоду')} value={through} onChange={e => changePeriod('through', e.currentTarget.value)} /></Group>
+  return <Stack gap="sm"><Group><AppDateInput type="date" label={t('Початок періоду')} value={from} onChange={e => changePeriod('from', e.currentTarget.value)} />
+    <AppDateInput type="date" label={t('Кінець періоду')} value={through} onChange={e => changePeriod('through', e.currentTarget.value)} /></Group>
     {orderAnalysisFilterFields(kind).map(field => <NamedOrderFilter key={field} field={field} choices={choices} filters={filters} busy={busy || choicesBusy} select={select} />)}
     <Text size="sm" c="dimmed">{t('Відбори використовують назви наших довідників. Одне значення на поле; різні поля застосовуються разом.')}</Text>
     <MultiSelect label={t('Рядки звіту')} value={rows.map(String)} disabled={busy} data={orderAnalysisRowOptions(kind).map(v => ({ value: String(v), label: t(orderAnalysisFieldLabels[v]) }))} clearable onChange={v => changeRows(v.map(x => Number(x) as OrderAnalysisField))} />

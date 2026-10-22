@@ -1,10 +1,11 @@
-import { ActionIcon, Button, Card, SegmentedControl, Text, TextInput, Tooltip } from '@mantine/core'
+import { ActionIcon, Button, Card, SegmentedControl, Text, Tooltip } from '@mantine/core'
 import { RefreshCw, RotateCcw, Sparkles } from 'lucide-react'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { CockpitTaskType, CockpitUrgency } from '../types'
 import { TaskFilters } from './TaskFilters'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 export type CockpitDayFilter = 'all' | 'today'
 
@@ -52,7 +53,7 @@ export function CockpitToolbar({
   return (
     <Card className="app-filter-card cockpit-toolbar-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar cockpit-command-bar">
-        <TextInput
+        <AppDateInput
           className="cockpit-date-filter"
           label={t('Дата розрахунку плану')}
           type="date"

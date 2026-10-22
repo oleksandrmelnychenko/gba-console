@@ -6,6 +6,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import type { ReconciliationStorageOption } from '../types'
 import { PlacementFields, type PlacementValues } from './PlacementFields'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 export type ProductPlacementFormValues = {
   cellNumber?: string
@@ -85,7 +86,7 @@ export function ProductPlacementForm({
 
   return (
     <Stack gap="sm">
-      <TextInput maw={230}
+      <AppDateInput maw={230}
         label={t('Від якої дати')}
         type="datetime-local"
         value={fromDate}

@@ -31,6 +31,7 @@ import type {
   SupplyOrganizationAgreement,
 } from '../types'
 import { fromDateInput, responsibleName, toDateInput } from './helpers'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type SelectOption = {
   label: string
@@ -409,7 +410,7 @@ export function NewMergedServiceForm({
           <Text className="app-section-title">{t('Оплата та доставка')}</Text>
           <div className="payment-service-form__payment">
             <div className="payment-service-form__date">
-              <TextInput
+              <AppDateInput
                 label={t('Від якої дати')}
                 type="date"
                 value={toDateInput(values.fromDate)}
@@ -417,7 +418,7 @@ export function NewMergedServiceForm({
               />
             </div>
             <div className="payment-service-form__date">
-              <TextInput
+              <AppDateInput
                 aria-invalid={Boolean(fieldErrors.payToDate)}
                 aria-required={willCreatePaymentTask}
                 error={fieldErrors.payToDate}

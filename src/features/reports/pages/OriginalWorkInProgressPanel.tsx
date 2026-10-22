@@ -1,4 +1,4 @@
-import { Alert, Button, Checkbox, Group, MultiSelect, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Checkbox, Group, MultiSelect, Stack, Text } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { readWip } from '../api/originalWorkInProgressApi'
@@ -7,6 +7,7 @@ import { wipDefaults, wipField, wipFilters, wipMeasures, wipPeriodError, wipRequ
 import { wipCsv, wipExportError, wipHeaders, wipLines, wipPdf, wipUnitNote, wipValues, wipXlsx } from '../data/originalWorkInProgressExport'
 import { useReportRunState } from '../hooks/useReportRunState'
 import { OriginalSalesGrid } from './OriginalSalesGrid'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 const formats = ['csv', 'xlsx', 'pdf'] as const
 const labels = { Подразделение: 'Підрозділи', НоменклатурнаяГруппа: 'Номенклатурні групи', СтатьяЗатрат: 'Статті витрат' }
 const empty = (): WipSelection => ({ Divisions: [], ProductGroups: [], CostArticles: [] })
@@ -67,8 +68,8 @@ export function OriginalWorkInProgressPanel({ capability, callerKey, canGenerate
     setChoices(previous => previous?.scope === scope ? { ...previous, values: { ...previous.values, [field]: previous.values[field].filter(c => kept.has(c.Key) || fresh.has(c.Key)) } } : previous)
   }
   return <Stack gap="md"><Text>{t('Підрозділ → номенклатурна група → стаття витрат. Чотири суми залишків і рухів; п’ять додаткових ресурсів доступні окремо.')}</Text>
-    <Group grow><TextInput type="date" label={t('Початок періоду')} value={from} disabled={busy} onChange={e => { delivery.invalidate(); setFrom(e.currentTarget.value) }} />
-      <TextInput type="date" label={t('Кінець періоду (включно)')} value={through} disabled={busy} onChange={e => { delivery.invalidate(); setThrough(e.currentTarget.value) }} /></Group>
+    <Group grow><AppDateInput type="date" label={t('Початок періоду')} value={from} disabled={busy} onChange={e => { delivery.invalidate(); setFrom(e.currentTarget.value) }} />
+      <AppDateInput type="date" label={t('Кінець періоду (включно)')} value={through} disabled={busy} onChange={e => { delivery.invalidate(); setThrough(e.currentTarget.value) }} /></Group>
     <Group grow>{wipFilters.map(f => { const values = selected[wipField[f]], options = current?.values[f] ?? []
       return <MultiSelect key={f} label={t(labels[f])} data={options.map(c => ({ value: c.Key, label: c.Caption }))} value={values} searchable clearable maxValues={256}
         disabled={busy || (!options.length && !values.length)} onChange={v => choose(f, v)} />

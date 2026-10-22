@@ -1,4 +1,4 @@
-import { Alert, Button, Group, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Group, Stack, Text } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { readAmgDiscounts } from '../api/originalAmgClientDiscountsApi'
@@ -8,6 +8,7 @@ import { useAmgDiscountChoices } from '../hooks/useAmgDiscountChoices'
 import { useReportRunState } from '../hooks/useReportRunState'
 import { OriginalAmgDiscountChoiceControls } from './OriginalAmgDiscountChoiceControls'
 import { OriginalSalesGrid } from './OriginalSalesGrid'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 const formats = ['csv', 'xlsx', 'pdf'] as const
 function download(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob), link = document.createElement('a')
@@ -71,7 +72,7 @@ export function OriginalAmgClientDiscountsPanel({ readiness, callerKey, canGener
   const busy = delivery.run.isLoading || delivery.exporting || names.run.isLoading, exportError = result?.InputAvailable ? amgDiscountExportError(result) : null
   function select(field: AmgDiscountField, values: string[]) { delivery.invalidate(); setSelection({ key: names.key, witness: named?.ResultSha256 ?? null, values: { ...selected, [field]: [...values] } }) }
   return <Stack gap="md"><Text size="sm">{t('AMG · ОтчетПоСкидкам: отримувач → номенклатура, максимальний відсоток знижки/націнки. Прямий код регіону належить отримувачу.')}</Text>
-    <TextInput type="date" label={t('Дата зрізу')} value={through} disabled={busy} onChange={event => { delivery.invalidate(); setThrough(event.currentTarget.value) }} />
+    <AppDateInput type="date" label={t('Дата зрізу')} value={through} disabled={busy} onChange={event => { delivery.invalidate(); setThrough(event.currentTarget.value) }} />
     <OriginalAmgDiscountChoiceControls names={named} selection={selected} busy={busy} permitted={permitted} dateError={dateError} error={names.run.error} loading={names.run.isLoading}
       onSelect={select} onLoad={() => { delivery.invalidate(); setSelection({ key: '', witness: null, values: emptyAmgSelection() }); void names.load() }} />
     <Text size="sm" c="dimmed">{t('Зріз охоплює останню цілу секунду дня, 23:59:59. Відсотки не додаються. Відповідність поточному оригіналу 1С ще не підтверджена; валютна конвертація не застосовується.')}</Text>

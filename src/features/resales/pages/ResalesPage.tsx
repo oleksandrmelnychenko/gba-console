@@ -116,6 +116,7 @@ import {
 } from '../permissions'
 import { DocumentDetailLayout, DocumentDetailSummary, DocumentDetailSection, DocumentDetailChip } from '../../../shared/ui/document-detail/DocumentDetail'
 import { SalesDashboardShell } from '../../../shared/ui/SalesDashboardShell'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import './resales-page.css'
 import './resale-detail-sheet.css'
 import './resale-consignment-note.css'
@@ -1058,7 +1059,7 @@ function NewResalePageContent({
                   setForm((currentForm) => ({ ...currentForm, search: nextValue }))
                 }}
               />
-              <TextInput
+              <AppDateInput
                 className="resales-new-control resales-new-date-control"
                 label={t('Від')}
                 type="datetime-local"
@@ -1068,7 +1069,7 @@ function NewResalePageContent({
                   setForm((currentForm) => ({ ...currentForm, from: nextValue }))
                 }}
               />
-              <TextInput
+              <AppDateInput
                 className="resales-new-control resales-new-date-control"
                 label={t('До')}
                 type="datetime-local"

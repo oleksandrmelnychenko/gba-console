@@ -1,4 +1,4 @@
-import { Alert, Button, Checkbox, Group, MultiSelect, Select, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Checkbox, Group, MultiSelect, Select, Stack, Text } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getPriceSalesTypes, readPriceSales } from '../api/originalPriceTypeSalesApi'
@@ -7,6 +7,7 @@ import { priceSalesDefaults, priceSalesField, priceSalesFilters, priceSalesMeasu
 import { priceSalesCsv, priceSalesExportError, priceSalesHeaders, priceSalesLines, priceSalesPdf, priceSalesUnitNote, priceSalesValues, priceSalesXlsx } from '../data/originalPriceTypeSalesExport'
 import { OriginalSalesGrid } from './OriginalSalesGrid'
 import { useReportRunState } from '../hooks/useReportRunState'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 const formats = ['csv', 'xlsx', 'pdf'] as const
 const labels = { 'Контрагент': 'Контрагенти', 'Номенклатура': 'Товари', 'Проект': 'Проєкти', 'Подразделение': 'Підрозділи' }
 const empty = (): PriceSalesSelection => ({ Counterparties: [], Products: [], Projects: [], Divisions: [] })
@@ -89,8 +90,8 @@ export function OriginalPriceTypeSalesPanel({ capability, callerKey, canGenerate
     setChoices(previous => previous?.scope === scope ? { ...previous, values: { ...previous.values, [field]: previous.values[field].filter(c => kept.has(c.Key) || fresh.has(c.Key)) } } : previous)
   }
   return <Stack gap="md"><Text>{t('Контрагент → товар. Чотири ресурси оригіналу за замовчуванням; сім додаткових ресурсів доступні окремо.')}</Text>
-    <Group grow><TextInput type="date" label={t('Початок періоду')} value={from} disabled={busy} onChange={e => { delivery.invalidate(); setFrom(e.currentTarget.value) }} />
-      <TextInput type="date" label={t('Кінець періоду (включно)')} value={through} disabled={busy} onChange={e => { delivery.invalidate(); setThrough(e.currentTarget.value) }} /></Group>
+    <Group grow><AppDateInput type="date" label={t('Початок періоду')} value={from} disabled={busy} onChange={e => { delivery.invalidate(); setFrom(e.currentTarget.value) }} />
+      <AppDateInput type="date" label={t('Кінець періоду (включно)')} value={through} disabled={busy} onChange={e => { delivery.invalidate(); setThrough(e.currentTarget.value) }} /></Group>
     <NamedPriceSalesType current={currentTypes} priceType={priceType} busy={busy} canGenerate={canGenerate} callerKey={callerKey}
       onChange={v => { delivery.invalidate(); setPrice({ scope: callerScope, value: v ?? '' }) }} />
     <Group grow>{priceSalesFilters.map(f => { const values = selected[priceSalesField[f]], options = current?.values[f] ?? []

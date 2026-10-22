@@ -22,8 +22,8 @@ function panel(callerKey = 'owner-a', canGenerate = true, loading?: (value: bool
 it('shows the exact four server display strings and same-run XLSX/PDF without financial arithmetic or a second generation', async () => {
   const report = currentLiquidityReport(); report.Cells[0].FormattedValue = '2.5000000000000000000000000000'
   vi.mocked(previewCurrentLiquidity).mockResolvedValue(report); render(<StrictMode>{panel()}</StrictMode>)
-  expect((screen.getByLabelText('Поточна дата') as HTMLInputElement).type).toBe('date')
-  expect((screen.getByLabelText('Попередня дата') as HTMLInputElement).type).toBe('date'); expect(screen.queryByRole('combobox')).toBeNull()
+  expect((screen.getByLabelText('Поточна дата') as HTMLInputElement).dataset.datesInput).toBe('true')
+  expect((screen.getByLabelText('Попередня дата') as HTMLInputElement).dataset.datesInput).toBe('true'); expect(screen.queryByRole('combobox')).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
   const result = await screen.findByRole('region', { name: 'Результат поточної ліквідності' })
   expect(within(result).getAllByRole('columnheader').map(cell => cell.textContent)).toEqual(report.Columns.map(column => column.Caption))

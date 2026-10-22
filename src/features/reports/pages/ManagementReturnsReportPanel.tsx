@@ -1,9 +1,10 @@
-import { Alert, Button, Group, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Group, Stack, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import type { ManagementReturnsCapabilities, ManagementReturnsReport, ManagementReturnsWindows } from '../data/managementReturns'
 import { useManagementReturnsReport } from '../hooks/useManagementReturnsReport'
 import { ServerReportCellsTable } from './ServerReportCellsTable'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 export function ManagementReturnsReportPanel(props: { capability: ManagementReturnsCapabilities; initialMonth: string; canGenerate: boolean; callerKey: string | null
   onLoadingChange?: (value: boolean) => void }) {
@@ -31,9 +32,9 @@ function ManagementReturnsPeriodInputs({ windows, disabled, onChange }: { window
   return <Stack gap="xs">
     <Text size="xs" c="dimmed">{t('Локальні календарні межі: початок включно, кінцева межа не включається.')}</Text>
     {(['CurrentPeriod', 'PreviousPeriod'] as const).map(name => <Group grow key={name}>
-      <TextInput type="datetime-local" step="0.001" label={t(name === 'CurrentPeriod' ? 'Поточний період: початок' : 'Попередній період: початок')}
+      <AppDateInput type="datetime-local" step="0.001" label={t(name === 'CurrentPeriod' ? 'Поточний період: початок' : 'Попередній період: початок')}
         value={windows[name].From} disabled={disabled} onChange={event => onChange({ ...windows, [name]: { ...windows[name], From: event.currentTarget.value } })} />
-      <TextInput type="datetime-local" step="0.001" label={t(name === 'CurrentPeriod' ? 'Поточний період: виключна кінцева межа' : 'Попередній період: виключна кінцева межа')}
+      <AppDateInput type="datetime-local" step="0.001" label={t(name === 'CurrentPeriod' ? 'Поточний період: виключна кінцева межа' : 'Попередній період: виключна кінцева межа')}
         value={windows[name].ThroughExclusive} disabled={disabled} onChange={event => onChange({ ...windows, [name]: { ...windows[name], ThroughExclusive: event.currentTarget.value } })} />
     </Group>)}
   </Stack>

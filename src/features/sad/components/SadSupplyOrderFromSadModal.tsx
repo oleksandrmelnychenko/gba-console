@@ -17,6 +17,7 @@ import type {
 } from '../../supply-ukraine-orders/types'
 import { createSupplyOrderFromSad } from '../api/sadApi'
 import type { Sad } from '../types'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type SadSupplyOrderFromSadModalProps = {
   opened: boolean
@@ -240,7 +241,7 @@ export function SadSupplyOrderFromSadModal({
           onChange={setSelectedAgreementNetUid}
         />
 
-        <TextInput maw={170}
+        <AppDateInput maw={170}
           disabled={isLoading || isSaving}
           label={t('Дата приходу')}
           type="date"

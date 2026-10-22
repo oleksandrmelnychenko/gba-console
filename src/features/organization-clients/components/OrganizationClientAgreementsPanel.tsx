@@ -4,7 +4,6 @@ import {
   Select,
   Stack,
   Text,
-  TextInput,
 } from '@mantine/core'
 import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { Check, Plus } from 'lucide-react'
@@ -22,6 +21,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 const AGREEMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -196,7 +196,7 @@ export function OrganizationClientAgreementsPanel({
               setError(null)
             }}
           />
-          <TextInput
+          <AppDateInput
             label={t('Дата')}
             required
             type="date"

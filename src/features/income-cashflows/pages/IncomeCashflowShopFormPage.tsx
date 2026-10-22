@@ -74,6 +74,7 @@ import {
 import { createLatestRequestGuard } from '../latestRequestGuard'
 import { createAutocompleteOptionSubmitGuard } from '../autocompleteOptionSubmitGuard'
 import { isSelectedShopPaymentRegister } from '../shopPaymentRegisters'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import './income-cashflows-page.css'
 
 type FormState = {
@@ -924,7 +925,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
             </Text>
 
             <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
-            <TextInput
+            <AppDateInput
               className="cashflow-field-date"
               disabled={isLoading || isSaving}
               label={t('Дата')}

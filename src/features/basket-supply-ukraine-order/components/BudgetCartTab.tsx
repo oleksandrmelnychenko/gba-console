@@ -8,7 +8,6 @@ import {
   SegmentedControl,
   Stack,
   Text,
-  TextInput,
   Tooltip,
 } from '@mantine/core'
 import { ChevronUp, CircleAlert } from 'lucide-react'
@@ -31,6 +30,7 @@ import { ProcurementCostSnapshot } from './ProcurementCostProof'
 import { BudgetCartSummary, type BudgetCartFinancials } from './BudgetCartSummary'
 import { BudgetCartTable } from './BudgetCartTable'
 import { ProcurementWorkspaceState } from './ProcurementWorkspaceState'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type BudgetCartState = {
   plan: CartPlan | null
@@ -229,7 +229,7 @@ function BudgetCartTabContent() {
         <div className="app-filter-bar budget-cart-filter-bar">
           <Group align="flex-end" gap={10} wrap="nowrap" className="app-filter-fields budget-cart-filter-row">
             <Tooltip label={t('Дата історії попиту; поточні запаси та спостереження закупівель мають окремий стан')}>
-              <TextInput
+              <AppDateInput
                 label={t('Дата зрізу')}
                 size="sm"
                 type="date"

@@ -35,6 +35,7 @@ import type {
   ProductHistoryPlacement,
   ProductHistoryStorage,
 } from '../types'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import './product-history-page.css'
 
 const PRODUCT_HISTORY_TABLE_DEFAULT_LAYOUT = {
@@ -362,7 +363,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
       <Card className="app-data-card product-history-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-history-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-history-filter-row">
-            <TextInput
+            <AppDateInput
               className="product-history-date-filter"
               label={t('Дата')}
               type="date"

@@ -10,7 +10,6 @@ import {
   SimpleGrid,
   Stack,
   Text,
-  TextInput,
 } from '@mantine/core'
 import { CircleAlert, MapPin, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -42,6 +41,7 @@ import type {
   AssortmentRow,
   AssortmentStock,
 } from '../types'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import './assortment-dashboard.css'
 
 const integer = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
@@ -613,7 +613,7 @@ function AssortmentHeader({
           </Text>
         </div>
         <div className="assort-dash__controls">
-          <TextInput
+          <AppDateInput
             label={t('Дата зрізу')}
             type="date"
             value={filters.asOfDate ?? ''}

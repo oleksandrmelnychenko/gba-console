@@ -1,10 +1,11 @@
-import { Alert, Button, Group, MultiSelect, Stack, Table, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Group, MultiSelect, Stack, Table, Text } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { readStatement } from '../api/originalCounterpartyStatementApi'
 import { statementPeriodError, statementRequest, type StatementCapability, type StatementChoice, type StatementResult } from '../data/originalCounterpartyStatement'
 import { statementCsv, statementExportError, statementHeaders, statementLines, statementPdf, statementUnitNote, statementValues, statementXlsx } from '../data/originalCounterpartyStatementExport'
 import { useReportRunState } from '../hooks/useReportRunState'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 const formats = ['csv', 'xlsx', 'pdf'] as const
 const labels = { orgs: 'Організації', parties: 'Контрагенти', agreements: 'Договори' }
 type Selection = { orgs: string[]; parties: string[]; agreements: string[] }
@@ -87,8 +88,8 @@ export function OriginalCounterpartyStatementPanel({ capability, callerKey, canG
     } } : previous)
   }
   return <Stack gap="md"><Text>{t('Організація → контрагент → договір. Початок, прихід, витрата й кінець для обох записаних ресурсів.')}</Text>
-    <Group grow><TextInput type="date" label={t('Початок періоду')} value={from} disabled={busy} onChange={e => { delivery.invalidate(); setFrom(e.currentTarget.value) }} />
-      <TextInput type="date" label={t('Кінець періоду (включно)')} value={through} disabled={busy} onChange={e => { delivery.invalidate(); setThrough(e.currentTarget.value) }} /></Group>
+    <Group grow><AppDateInput type="date" label={t('Початок періоду')} value={from} disabled={busy} onChange={e => { delivery.invalidate(); setFrom(e.currentTarget.value) }} />
+      <AppDateInput type="date" label={t('Кінець періоду (включно)')} value={through} disabled={busy} onChange={e => { delivery.invalidate(); setThrough(e.currentTarget.value) }} /></Group>
     <Group grow>{(['orgs', 'parties', 'agreements'] as const).map(field => {
       const selected = values[field], options = current?.values[field] ?? []
       return <MultiSelect key={field} label={t(labels[field])} data={options.map(c => ({ value: c.Key, label: c.Caption }))} value={selected}

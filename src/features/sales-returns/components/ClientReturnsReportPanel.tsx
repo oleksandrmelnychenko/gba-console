@@ -1,4 +1,4 @@
-import { Anchor, Button, Card, Checkbox, Group, Select, Stack, Text, TextInput } from '@mantine/core'
+import { Anchor, Button, Card, Checkbox, Group, Select, Stack, Text } from '@mantine/core'
 import { FileChartColumn, FileText } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
@@ -8,6 +8,7 @@ import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { exportSaleReturnsReport, searchSalesReturnReportClients } from '../api/salesReturnsApi'
 import type { SalesReturnClient, SalesReturnDocument } from '../types'
 import { getEntityName } from '../utils'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import './client-returns-report.css'
 
 type ClientReturnsReportPanelProps = {
@@ -125,13 +126,13 @@ export function ClientReturnsReportPanel({ opened, onClose }: ClientReturnsRepor
           <Stack gap={10}>
             <Text className="app-section-title" size="sm" fw={600}>{t('Параметри звіту')}</Text>
             <Group className="client-returns-report-dates" gap={10}>
-              <TextInput
+              <AppDateInput
                 label={t('Від')}
                 type="date"
                 value={fromDate}
                 onChange={(event) => setFromDate(event.currentTarget.value)}
               />
-              <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => setToDate(event.currentTarget.value)} />
+              <AppDateInput label={t('До')} type="date" value={toDate} onChange={(event) => setToDate(event.currentTarget.value)} />
             </Group>
 
             <Select

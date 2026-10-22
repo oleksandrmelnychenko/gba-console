@@ -1,5 +1,5 @@
 import { TableChip } from '../../../shared/ui/TableChip'
-import { Alert, Button, Grid, NumberInput, Select, Stack, Text, TextInput, Textarea } from '@mantine/core'
+import { Alert, Button, Grid, NumberInput, Select, Stack, Text, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -33,6 +33,7 @@ import type {
 } from '../../document-outcome-payment/types'
 import { createIncomePaymentFromSad } from '../api/sadApi'
 import type { Sad } from '../types'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 const SEARCH_DEBOUNCE_MS = 300
 
@@ -388,7 +389,7 @@ export function SadPaymentFromSadModal({
           </Grid.Col>
 
           <Grid.Col span={{ base: 12, sm: 6 }}>
-            <TextInput maw={170}
+            <AppDateInput maw={170}
               disabled={isLoading || isSaving}
               label={t('Дата')}
               max={dateBounds?.max}

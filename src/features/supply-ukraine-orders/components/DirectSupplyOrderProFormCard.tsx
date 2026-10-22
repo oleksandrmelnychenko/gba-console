@@ -29,6 +29,7 @@ import {
 import { useAuth } from '../../auth/useAuth'
 import { hasSupplyProForm } from '../proFormHelpers'
 import type { DirectSupplyOrder, SupplyProForm, SupplyProFormDocument } from '../types'
+import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 import './supply-order-document-summary.css'
 
@@ -216,7 +217,7 @@ export function DirectSupplyOrderProFormCard({
                 value={typeof draft.NetPrice === 'number' ? draft.NetPrice : ''}
                 onChange={(value) => dispatch({ type: 'setDraft', patch: { NetPrice: typeof value === 'number' ? value : Number(value) || undefined } })}
               />
-              <TextInput
+              <AppDateInput
                 label={t('Дата')}
                 required
                 type="date"
