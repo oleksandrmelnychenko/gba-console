@@ -100,16 +100,7 @@ function MetricCard({ metric, onOpen }: { metric: DashboardWorkspaceMetric; onOp
     <div className={`role-dashboard-kpi is-${metric.tone}${metric.hasData ? '' : ' is-empty'}`}>
       <span aria-hidden="true" className="role-dashboard-kpi-icon"><MetricIcon metric={metric} size={19} strokeWidth={1.9} /></span>
       <span className="role-dashboard-kpi-body">
-        <Tooltip multiline w={380} label={<div>
-          <div>{metric.formula || t('Формулу джерела не надано')}</div>
-          {metric.source && <div>{t('Джерело')}: {metric.source}</div>}
-          {metric.grain && <div>{t('Одиниця обліку')}: {metric.grain}</div>}
-          {metric.scope && <div>{t('Обсяг')}: {metric.scope}</div>}
-          {metric.owner && <div>{t('Власник визначення')}: {metric.owner}</div>}
-          <div>{metric.sourceWatermarkUtc ? `${t('Джерело оновлено')}: ${metric.sourceWatermarkUtc}` : t('Час останньої синхронізації джерела не підтверджено')}</div>
-          <div>{metric.coveragePercent == null ? t('Повнота джерела невідома') : `${t('Охоплення даних')}: ${metric.coveragePercent}%`}</div>
-          {metric.unknownReason && <div>{metric.unknownReason}</div>}
-        </div>}>
+        <Tooltip multiline w={380} label={<MetricEvidence metric={metric} />}>
           <Text className="role-dashboard-kpi-label" lineClamp={1}>{metric.label}</Text>
         </Tooltip>
         <Text size="xs" c="dimmed">{t(metricTimeLabel(metric))}</Text>
@@ -139,6 +130,23 @@ function MetricCard({ metric, onOpen }: { metric: DashboardWorkspaceMetric; onOp
       {content}
     </UnstyledButton>
   ) : content
+}
+
+function MetricEvidence({ metric }: { metric: DashboardWorkspaceMetric }) {
+  const { t } = useI18n()
+  const details = [
+    [t('Джерело'), metric.source],
+    [t('Одиниця обліку'), metric.grain],
+    [t('Обсяг'), metric.scope],
+    [t('Власник визначення'), metric.owner],
+  ]
+  return <div>
+    <div>{metric.formula || t('Формулу джерела не надано')}</div>
+    {details.filter(([, value]) => value).map(([label, value]) => <div key={label}>{label}: {value}</div>)}
+    <div>{metric.sourceWatermarkUtc ? `${t('Джерело оновлено')}: ${metric.sourceWatermarkUtc}` : t('Час останньої синхронізації джерела не підтверджено')}</div>
+    <div>{metric.coveragePercent == null ? t('Повнота джерела невідома') : `${t('Охоплення даних')}: ${metric.coveragePercent}%`}</div>
+    {metric.unknownReason && <div>{metric.unknownReason}</div>}
+  </div>
 }
 
 function kpiColumns(count: number): CSSProperties {

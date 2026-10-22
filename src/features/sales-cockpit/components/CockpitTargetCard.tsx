@@ -16,7 +16,7 @@ const PACE_LABEL: Record<HeadPaceStatus, string> = {
   ahead: 'Випереджає',
   on: 'У графіку',
   behind: 'Відстає',
-  no_target: 'Немає цілі',
+  no_target: 'Немає орієнтира',
 }
 
 // Maps a pace status to the metric tile's left-accent variant in sales-cockpit-page.css.
@@ -42,10 +42,10 @@ export function CockpitTargetCard({ target }: { target: CockpitTarget }) {
         </Text>
         <AiHistoryLineageNote lineage={target} />
         <Text size="xs" c="dimmed">{t('Середнє завершених місяців, не затверджений план. Клієнти належать поточному менеджеру; темп порівнюється з очікуваним результатом на дату за календарем Пн–Сб.')}</Text>
-        <Text size="xs" c="dimmed">{t('Замовлення: кількість × ціна за датою створення, без вирахування повернень. Оплати: збережена сума EUR за датою платежу.')}</Text>
+        <Text size="xs" c="dimmed">{t('Накладні: брутто за підтвердженою датою накладної; повернення мають власний період. Це не визнана виручка чи факт відправки. Оплати: збережені EUR за датою реєстру. Повнота імпорту невідома; календар Пн–Сб не враховує свят.')}</Text>
 
         <SimpleGrid cols={1} spacing={0}>
-          <TargetMetric label={t('Замовлення (розрахункова сума)')} metric={target.shipped} t={t} />
+          <TargetMetric label={t('Накладні, брутто')} metric={target.shipped} t={t} />
           <TargetMetric label={t('Оплати')} metric={target.paid} t={t} />
         </SimpleGrid>
       </Stack>
@@ -73,7 +73,7 @@ function TargetMetric({
       <div className="cockpit-target-row">
         <span className="cockpit-metric-value">{formatMoney(metric.mtd)}</span>
         <span className="cockpit-target-of">
-          / {formatMoney(metric.target)} · {formatPercent(metric.attainment_pct)}
+          / {formatMoney(metric.target)} · {metric.target > 0 ? formatPercent(metric.attainment_pct) : '—'}
         </span>
       </div>
       <span className="cockpit-metric-sub">
