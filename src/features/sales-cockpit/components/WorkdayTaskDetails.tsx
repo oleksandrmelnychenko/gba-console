@@ -7,6 +7,7 @@ import type { CockpitTask } from '../types'
 import type { WorkdayRow, WorkdayScope } from '../workdayTypes'
 import { formatContactDate } from '../utils/contactDate'
 import { TaskCard } from './TaskCard'
+import { TaskDocumentaryResults } from './DocumentaryResultsPanel'
 import { TaskSourceEvidence } from './TaskSourceEvidence'
 
 export type WorkdayTaskActions = Omit<ComponentProps<typeof TaskCard>, 'task' | 'pending'> & { pendingTaskKey: string | null }
@@ -40,6 +41,7 @@ export function WorkdayTaskDetails({ row, actions, revision, paused, onClose }: 
             canDismiss={editable && actions.canDismiss} canSnooze={editable && actions.canSnooze}
             canTakeInProgress={editable && actions.canTakeInProgress} onContact={row.can_contact ? actions.onContact : undefined} />
           <TaskHistory task={task} />
+          <TaskDocumentaryResults task={task} canLink={actions.canAddNote && row.can_contact} />
         </Stack>)}
         {state.data.total > 20 && <Pagination value={filter.page} total={Math.ceil(state.data.total / 20)} onChange={(page) => setFilter({ ...filter, page })} />}
       </> : null}

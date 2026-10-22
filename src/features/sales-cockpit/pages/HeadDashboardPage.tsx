@@ -26,6 +26,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { PagePermissionBoundary } from '../../auth/components/PagePermissionBoundary'
 import { getEscalated, getHeadTeam } from '../api/salesCockpitApi'
 import { HeadAiFleetStatus } from '../components/HeadAiFleetStatus'
+import { DocumentaryResultsPanel } from '../components/DocumentaryResultsPanel'
 import { HeadDashboardChartsPanel } from '../components/HeadDashboardChartsPanel'
 import { HeadTaskBoard } from '../components/HeadTaskBoard'
 import { useCockpitRealtimeReload } from '../hooks/useCockpitRealtimeReload'
@@ -262,6 +263,7 @@ function HeadDashboardPageContent() {
                   onManagerChange={setSelectedManagerId}
                 />
                 <HeadDashboardChartsPanel reloadKey={reloadKey} rows={rows} />
+                <DocumentaryResultsPanel head revision={reloadKey} />
               </Stack>
             </div>
 
