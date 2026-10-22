@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { hasCompleteMetricCoverage, metricDrilldownRoute, readDashboardTransferPeriod } from './metricScope'
+import { hasCompleteMetricCoverage, metricDrilldownRoute, readDashboardTransferPeriod, readWorkspaceQueueRequest } from './metricScope'
 import type { DashboardWorkspaceMetric, DashboardWorkspaceSummary } from '../types'
 
 const metric: DashboardWorkspaceMetric = { key: 'transfers', label: 'Переміщень', value: 3, hasData: true, coveragePercent: 100, tone: 'neutral', unit: 'count', timeBasis: 'period' }
@@ -17,6 +17,19 @@ describe('metric scope', () => {
   it('does not turn a generic register route into a reconciled KPI drilldown', () => {
     expect(metricDrilldownRoute(summary, { ...metric, key: 'negative-stock', route: '/warehouse/ukraine' })).toBeUndefined()
     expect(metricDrilldownRoute(summary, { ...metric, timeBasis: 'unknown' })).toBeUndefined()
+  })
+  it('preserves the exact queue, period and calculation time when opening a current-state KPI', () => {
+    const current = { ...metric, key: 'negative-stock', queueKey: 'negative-stock', timeBasis: 'current' as const }
+    const route = metricDrilldownRoute({ ...summary, generatedAtUtc: '2026-10-22T12:00:00Z' }, current)!
+    const params = new URL(route, 'https://console.test').searchParams
+    expect(params.get('view')).toBe('warehouse')
+    expect(params.get('queueValue')).toBe('3')
+    expect(readWorkspaceQueueRequest(params, 'warehouse')).toEqual({ workspace: 'warehouse', key: 'negative-stock', from: summary.from, to: summary.to, asOf: '2026-10-22T12:00:00Z', offset: 0, limit: 50 })
+  })
+  it('does not link unavailable queues or accept an ambiguous calculation time', () => {
+    const current = { ...metric, key: 'negative-stock', queueKey: 'negative-stock' }
+    expect(metricDrilldownRoute({ ...summary, generatedAtUtc: '2026-10-22T12:00:00' }, current)).toBeUndefined()
+    expect(metricDrilldownRoute({ ...summary, generatedAtUtc: '2026-10-22T12:00:00Z' }, { ...current, hasData: false })).toBeUndefined()
   })
   it('requires every expected metric to have complete data before an all-clear state', () => {
     const complete = { ...summary, metrics: ['receipts', 'receipt-qty', 'awaiting-placement', 'negative-stock', 'transfers'].map((key) => ({ ...metric, key, value: 0 })) }
