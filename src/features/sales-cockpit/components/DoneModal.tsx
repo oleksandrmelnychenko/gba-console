@@ -45,7 +45,7 @@ export function DoneModal({
         <Checkbox
           checked={sold}
           disabled={saving}
-          label={t('Продаж відбувся')}
+          label={t('Позначити продаж зі слів менеджера')}
           onChange={(event) => setSold(event.currentTarget.checked)}
         />
         {sold && (
@@ -53,13 +53,14 @@ export function DoneModal({
             allowNegative={false}
             decimalScale={2}
             disabled={saving}
-            label={t('Сума продажу')}
+            label={t('Сума зі слів менеджера, EUR')}
             min={0}
             placeholder={t('Введіть суму')}
             value={amount}
             onChange={setAmount}
           />
         )}
+        <Text size="xs" c="dimmed">{t('Ця відмітка фіксує результат задачі. Продаж і оплату потрібно оформити окремими документами.')}</Text>
         <AppModalFooter>
           <Button color="gray" disabled={saving} variant="default" onClick={onClose}>
             {t('Скасувати')}

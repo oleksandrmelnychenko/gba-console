@@ -223,15 +223,15 @@ function HeadDashboardPageContent() {
                     value={team.totals.paid_mtd}
                   />
                   <OutcomeMetric
-                    label={t('Результат AI-задач за місяць')}
+                    label={t('Результат задач за місяць')}
                     primary={`${team.totals.done_month} ${t('виконано')}`}
-                    secondary={`${team.totals.sold_month} ${t('з продажем')} · ${formatRate(team.totals.conversion_rate)} ${t('конверсія')}`}
+                    secondary={`${team.totals.sold_month} ${t('позначено продажем')} · ${formatRate(team.totals.conversion_rate)} ${t('за відмітками менеджерів')}`}
                   />
                   <OutcomeMetric
                     accent="success"
-                    label={t('Виручка з виконаних AI-задач')}
+                    label={t('Сума продажів зі слів менеджерів')}
                     primary={formatMoney(team.totals.revenue_month)}
-                    secondary={`${team.totals.generated_month} ${t('задач сформовано за місяць')}`}
+                    secondary={t('Ручні результати задач; без звірки з документами продажу')}
                   />
                 </div>
               </Stack>

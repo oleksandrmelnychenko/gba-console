@@ -484,7 +484,7 @@ export function HeadTaskBoard({
           <div aria-hidden="true" className="cockpit-board-list__head">
             <span />
             <span>{t('Задача')}</span>
-            <span>{t('Виручка · шанс')}</span>
+            <span>{t('Очікувана сума · шанс')}</span>
             <span>{t('Терміновість')}</span>
             <span>{t('Оновлено')}</span>
             <span />
