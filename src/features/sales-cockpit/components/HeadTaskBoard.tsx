@@ -151,7 +151,15 @@ export function HeadTaskBoard({
   const [noteTask, setNoteTask] = useState<HeadTask | null>(null)
   const [cancelTask, setCancelTask] = useState<HeadTask | null>(null)
   const [isActionPending, setActionPending] = useState(false)
-  const [page, setPage] = useState(1)
+  const [pageSelection, setPageSelection] = useState({ managerId, page: 1 })
+  // The parent team list can change manager independently of the board select.
+  const page = pageSelection.managerId === managerId ? pageSelection.page : 1
+  if (pageSelection.managerId !== managerId) {
+    setPageSelection({ managerId, page: 1 })
+  }
+  const setPage = useCallback((nextPage: number) => {
+    setPageSelection({ managerId, page: nextPage })
+  }, [managerId])
   const [error, setError] = useValueState<string | null>(null)
   const [forbidden, setForbidden] = useState(false)
   const [isGenerating, setGenerating] = useState(false)
@@ -246,7 +254,7 @@ export function HeadTaskBoard({
       setPage(1)
       setLoading(true)
     },
-    [setStatus],
+    [setPage, setStatus],
   )
 
   const handleManagerChange = useCallback(
@@ -255,7 +263,7 @@ export function HeadTaskBoard({
       setPage(1)
       setLoading(true)
     },
-    [onManagerChange],
+    [onManagerChange, setPage],
   )
 
   const handleUrgencyChange = useCallback(
@@ -264,7 +272,7 @@ export function HeadTaskBoard({
       setPage(1)
       setLoading(true)
     },
-    [setUrgency],
+    [setPage, setUrgency],
   )
 
   const handleTaskTypeChange = useCallback(
@@ -273,7 +281,7 @@ export function HeadTaskBoard({
       setPage(1)
       setLoading(true)
     },
-    [setTaskType],
+    [setPage, setTaskType],
   )
 
   const handleBoardNoteSubmit = useCallback(

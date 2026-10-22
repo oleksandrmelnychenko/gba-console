@@ -64,10 +64,91 @@ export async function getCockpitInbox(params: CockpitInboxParams = {}): Promise<
     query: {
       limit: params.limit,
       status: params.status,
+      ...(params.offset !== undefined ? { offset: params.offset } : {}),
     },
   })
 
   return normalizeInbox(result)
+}
+
+const COMPLETE_INBOX_PAGE_SIZE = 200
+const COMPLETE_INBOX_MAX_TASKS = 10_000
+
+/** Return a complete active queue, or fail visibly instead of presenting a truncated queue. */
+export async function getCompleteCockpitInbox(signal?: AbortSignal): Promise<CockpitInbox> {
+  const tasks: CockpitTask[] = []
+  const taskKeys = new Set<string>()
+  let firstPage: CockpitInbox | undefined
+
+  for (let offset = 0; offset < COMPLETE_INBOX_MAX_TASKS; offset += COMPLETE_INBOX_PAGE_SIZE) {
+    const raw = await apiRequest<unknown>('/sales/cockpit/inbox', {
+      query: { limit: COMPLETE_INBOX_PAGE_SIZE, offset },
+      ...(signal ? { signal } : {}),
+    })
+    const page = requireCompleteInboxPage(raw, offset)
+
+    if (firstPage && (
+      page.total !== firstPage.total
+      || page.revision !== firstPage.revision
+      || page.manager_id !== firstPage.manager_id
+      || page.manager_net_uid !== firstPage.manager_net_uid
+    )) {
+      throw new SalesCockpitContractError('inbox', 'Черга змінилася під час завантаження. Оновіть її повторно.')
+    }
+    firstPage ??= page
+
+    for (const task of page.tasks) {
+      if (typeof task.task_key !== 'string' || !task.task_key.trim() || taskKeys.has(task.task_key)) {
+        throw new SalesCockpitContractError('inbox.tasks', 'Повторні або некоректні задачі. Повну чергу не завантажено.')
+      }
+      taskKeys.add(task.task_key)
+      tasks.push(task)
+    }
+
+    if (page.total === undefined || tasks.length === page.total) {
+      return {
+        manager_id: firstPage.manager_id, manager_net_uid: firstPage.manager_net_uid,
+        count: tasks.length, total: tasks.length, revision: firstPage.revision, tasks,
+      }
+    }
+  }
+
+  throw new SalesCockpitContractError('inbox.total', 'Черга перевищує ліміт завантаження. Потрібне звуження на сервері.')
+}
+
+function requireCompleteInboxPage(raw: unknown, requestedOffset: number): CockpitInbox {
+  if (!raw || typeof raw !== 'object' || !Array.isArray((raw as CockpitInbox).tasks)) {
+    throw new SalesCockpitContractError('inbox', 'Відсутні дані черги.')
+  }
+  const page = raw as CockpitInbox
+  requireInboxRevision(page.revision)
+  if (!Number.isSafeInteger(page.count) || page.count !== page.tasks.length
+    || page.tasks.some((task) => !task || typeof task !== 'object')) {
+    throw new SalesCockpitContractError('inbox.count', 'Кількість задач не відповідає даним черги.')
+  }
+
+  // A legacy short first page is complete. A full page without a total is ambiguous.
+  if (page.total === undefined && requestedOffset === 0 && page.count < COMPLETE_INBOX_PAGE_SIZE
+    && (page.offset === undefined || page.offset === 0)
+    && (page.limit === undefined || page.limit === COMPLETE_INBOX_PAGE_SIZE)) {
+    return page
+  }
+  const total = page.total
+  if (typeof total !== 'number' || !Number.isSafeInteger(total) || total < 0 || total > COMPLETE_INBOX_MAX_TASKS
+    || page.offset !== requestedOffset || page.limit !== COMPLETE_INBOX_PAGE_SIZE
+    || page.count !== Math.min(COMPLETE_INBOX_PAGE_SIZE, total - requestedOffset)) {
+    throw new SalesCockpitContractError('inbox.pagination', 'Сервер повернув неповну чергу задач. Оновіть дані або зверніться до адміністратора.')
+  }
+  if (total > COMPLETE_INBOX_PAGE_SIZE && !page.revision) {
+    throw new SalesCockpitContractError('inbox.revision', 'Неможливо перевірити цілісність повної черги. Оновіть дані після оновлення сервера.')
+  }
+  return page
+}
+
+function requireInboxRevision(value: unknown): void {
+  if (value !== undefined && (typeof value !== 'string' || !/^[a-f0-9]{64}$/.test(value))) {
+    throw new SalesCockpitContractError('inbox.revision', 'Некоректна версія черги задач.')
+  }
 }
 
 export async function getCockpitCount(): Promise<CockpitCount> {
@@ -241,6 +322,7 @@ export async function regenerateHeadCockpit(asOfDate?: string): Promise<CockpitG
 
 function normalizeInbox(result: unknown): CockpitInbox {
   const payload = result && typeof result === 'object' ? (result as Partial<CockpitInbox>) : {}
+  requireInboxRevision(payload.revision)
   const tasks = Array.isArray(payload.tasks)
     ? payload.tasks.reduce<CockpitTask[]>((acc, value) => {
         const task = normalizeTask(value)

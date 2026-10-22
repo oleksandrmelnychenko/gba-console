@@ -69,6 +69,10 @@ export type CockpitTask = {
 }
 
 export type CockpitInbox = {
+  revision?: string
+  total?: number
+  offset?: number
+  limit?: number
   manager_id?: number
   manager_net_uid?: string
   count: number
@@ -90,6 +94,7 @@ export type CockpitCount = {
 }
 
 export type CockpitInboxParams = {
+  offset?: number
   limit?: number
   status?: string
 }

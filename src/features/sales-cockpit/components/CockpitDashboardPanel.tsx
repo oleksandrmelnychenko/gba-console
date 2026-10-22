@@ -65,8 +65,11 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
 
   useEffect(() => {
     let cancelled = false
+    let requestInFlight = false
 
     async function loadDashboard() {
+      if (requestInFlight) return
+      requestInFlight = true
       dispatch({ type: 'loading' })
 
       try {
@@ -82,12 +85,18 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
             type: 'failed',
           })
         }
+      } finally {
+        requestInFlight = false
       }
     }
 
     void loadDashboard()
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void loadDashboard()
+    }, 60_000)
 
     return () => {
+      window.clearInterval(interval)
       cancelled = true
     }
   }, [reloadKey, t])

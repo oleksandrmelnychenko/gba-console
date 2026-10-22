@@ -370,6 +370,14 @@ function AssortmentDashboardPageContent() {
     async function load() {
       setError(null)
       setLoading(true)
+      // Every section belongs to this request scope. A failed response must not
+      // leave a previous date or region presented beside the new snapshot.
+      setOverview(null)
+      setRows([])
+      setRegions(null)
+      setStock(null)
+      setMargin(null)
+      setReturns(null)
       try {
         const [overviewResult, healthResult, regionsResult, stockResult, marginResult, returnsResult] = await Promise.allSettled([
           getAssortmentOverview(filters.asOfDate, controller.signal),

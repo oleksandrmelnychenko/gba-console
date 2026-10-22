@@ -169,8 +169,8 @@ function HeadDashboardPageContent() {
           </Stack>
 
           <Group className="app-filter-actions cockpit-command-actions" gap={10} justify="flex-end">
-            <Badge className="app-role-pill is-green" leftSection={<Radio size={12} />} variant="light">
-              {t('Наживо')}
+            <Badge className={`app-role-pill ${error ? 'is-orange' : 'is-gray'}`} leftSection={<Radio size={12} />} variant="light">
+              {t(error ? 'Не вдалося оновити' : isLoading ? 'Оновлення…' : team.as_of ? 'Оновлюється щохвилини' : 'Немає даних')}
             </Badge>
             <Button color="brand" variant="filled" size="sm"
               className="cockpit-toolbar-button app-filter-primary-action"
@@ -199,7 +199,7 @@ function HeadDashboardPageContent() {
               <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>
             ) : null}
 
-            <Card className="app-section-card cockpit-head-summary" withBorder radius="md" padding={0}>
+            {team.as_of && <Card className="app-section-card cockpit-head-summary" withBorder radius="md" padding={0}>
               <Stack gap={0}>
                 <div className="cockpit-head-section-heading">
                   <div>
@@ -235,17 +235,17 @@ function HeadDashboardPageContent() {
                   />
                 </div>
               </Stack>
-            </Card>
+            </Card>}
 
             <div className="cockpit-head-workspace">
               <Stack className="cockpit-head-sidebar" gap={8}>
-                <TeamMonitor
+                {team.as_of && <TeamMonitor
                   isLoading={isLoading}
                   rows={rows}
                   selectedManagerId={selectedManagerId}
                   onSelect={setSelectedManagerId}
-                />
-                <EscalationsPanel escalated={escalated} />
+                />}
+                {team.as_of && <EscalationsPanel escalated={escalated} />}
                 <HeadAiFleetStatus />
               </Stack>
 

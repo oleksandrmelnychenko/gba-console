@@ -53,8 +53,11 @@ export function HeadDashboardChartsPanel({
 
   useEffect(() => {
     let cancelled = false
+    let requestInFlight = false
 
     async function loadCharts() {
+      if (requestInFlight) return
+      requestInFlight = true
       dispatch({ type: 'loading' })
 
       try {
@@ -70,12 +73,18 @@ export function HeadDashboardChartsPanel({
             type: 'failed',
           })
         }
+      } finally {
+        requestInFlight = false
       }
     }
 
     void loadCharts()
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void loadCharts()
+    }, 60_000)
 
     return () => {
+      window.clearInterval(interval)
       cancelled = true
     }
   }, [reloadKey, t])

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { addHeadTaskNote, addTaskNote, createHeadTask, dismissHeadTask, getCockpitClients, getCockpitCount, getCockpitInbox, getCockpitTarget, getDashboard, getEscalated, getHeadClients, getHeadDashboard, getHeadDismissals, getHeadTasks, getHeadTeam, regenerateCockpit, regenerateHeadCockpit, SalesCockpitContractError, setTaskStatus } from './salesCockpitApi'
+import { addHeadTaskNote, addTaskNote, createHeadTask, dismissHeadTask, getCockpitClients, getCockpitCount, getCockpitInbox, getCompleteCockpitInbox, getCockpitTarget, getDashboard, getEscalated, getHeadClients, getHeadDashboard, getHeadDismissals, getHeadTasks, getHeadTeam, regenerateCockpit, regenerateHeadCockpit, SalesCockpitContractError, setTaskStatus } from './salesCockpitApi'
 import type { CockpitTask } from '../types'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -42,6 +42,67 @@ describe('salesCockpitApi', () => {
         status: undefined,
       },
     })
+  })
+
+  it('loads all 201 active tasks across pages with stable manager identity', async () => {
+    const tasks = Array.from({ length: 201 }, (_, index) => ({ task_key: `task-${index}`, title: `Task ${index}` }))
+    apiRequestMock.mockResolvedValueOnce({ manager_id: 7, revision: 'a'.repeat(64), total: 201, offset: 0, limit: 200, count: 200, tasks: tasks.slice(0, 200) })
+    apiRequestMock.mockResolvedValueOnce({ manager_id: 7, revision: 'a'.repeat(64), total: 201, offset: 200, limit: 200, count: 1, tasks: tasks.slice(200) })
+    await expect(getCompleteCockpitInbox()).resolves.toMatchObject({ revision: 'a'.repeat(64), total: 201, count: 201, tasks })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/sales/cockpit/inbox', { query: { limit: 200, offset: 200 } })
+  })
+
+  it('accepts a short legacy queue but refuses a full page without a total', async () => {
+    apiRequestMock.mockResolvedValueOnce({ count: 1, tasks: [{ task_key: 'one' }] })
+    await expect(getCompleteCockpitInbox()).resolves.toMatchObject({ total: 1, count: 1 })
+    apiRequestMock.mockResolvedValueOnce({ count: 200, tasks: Array.from({ length: 200 }, (_, index) => ({ task_key: `task-${index}` })) })
+    await expect(getCompleteCockpitInbox()).rejects.toThrow(SalesCockpitContractError)
+  })
+
+  it.each(['duplicate', 'total', 'manager', 'offset', 'short'])('rejects an inconsistent %s second page rather than returning partial tasks', async (issue) => {
+    const tasks = Array.from({ length: 200 }, (_, index) => ({ task_key: `task-${index}` }))
+    apiRequestMock.mockResolvedValueOnce({ manager_id: 7, revision: 'a'.repeat(64), total: 201, offset: 0, limit: 200, count: 200, tasks })
+    apiRequestMock.mockResolvedValueOnce({
+      manager_id: issue === 'manager' ? 8 : 7,
+      revision: 'a'.repeat(64),
+      total: issue === 'total' ? 202 : 201,
+      offset: issue === 'offset' ? 0 : 200, limit: 200,
+      count: issue === 'short' ? 0 : 1,
+      tasks: issue === 'short' ? [] : [{ task_key: issue === 'duplicate' ? 'task-0' : 'last' }],
+    })
+    await expect(getCompleteCockpitInbox()).rejects.toThrow(SalesCockpitContractError)
+    expect(apiRequestMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('rejects a same-count queue replacement between pages', async () => {
+    apiRequestMock.mockResolvedValueOnce({ manager_id: 7, revision: 'a'.repeat(64), total: 201, offset: 0, limit: 200, count: 200, tasks: Array.from({ length: 200 }, (_, index) => ({ task_key: `task-${index}` })) })
+    apiRequestMock.mockResolvedValueOnce({ manager_id: 7, revision: 'b'.repeat(64), total: 201, offset: 200, limit: 200, count: 1, tasks: [{ task_key: 'new-task' }] })
+    await expect(getCompleteCockpitInbox()).rejects.toThrow('Черга змінилася')
+  })
+
+  it('requires a snapshot revision for a multi-page queue', async () => {
+    apiRequestMock.mockResolvedValueOnce({ total: 201, offset: 0, limit: 200, count: 200, tasks: Array.from({ length: 200 }, (_, index) => ({ task_key: `task-${index}` })) })
+    await expect(getCompleteCockpitInbox()).rejects.toThrow('цілісність')
+    expect(apiRequestMock).toHaveBeenCalledTimes(1)
+  })
+
+  it.each(['A'.repeat(64), 'a'.repeat(63), null])('rejects a malformed inbox revision %s', async (revision) => {
+    apiRequestMock.mockResolvedValueOnce({ revision, count: 0, tasks: [] })
+    await expect(getCockpitInbox()).rejects.toThrow(SalesCockpitContractError)
+  })
+
+  it('does not return the first page if loading the next page fails', async () => {
+    apiRequestMock.mockResolvedValueOnce({ revision: 'a'.repeat(64), total: 201, offset: 0, limit: 200, count: 200, tasks: Array.from({ length: 200 }, (_, index) => ({ task_key: `task-${index}` })) })
+    apiRequestMock.mockRejectedValueOnce(new Error('Second page unavailable'))
+    await expect(getCompleteCockpitInbox()).rejects.toThrow('Second page unavailable')
+  })
+
+  it('bounds a complete inbox request and passes cancellation through', async () => {
+    const controller = new AbortController()
+    apiRequestMock.mockResolvedValueOnce({ total: 10_001, offset: 0, limit: 200, count: 200, tasks: Array.from({ length: 200 }, (_, index) => ({ task_key: `task-${index}` })) })
+    await expect(getCompleteCockpitInbox(controller.signal)).rejects.toThrow(SalesCockpitContractError)
+    expect(apiRequestMock).toHaveBeenCalledTimes(1)
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/inbox', { query: { limit: 200, offset: 0 }, signal: controller.signal })
   })
 
   it('creates a head task with the PascalCase body and returns the created doc', async () => {

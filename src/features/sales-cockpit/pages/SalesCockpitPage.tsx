@@ -9,7 +9,7 @@ import { PagePermissionBoundary } from '../../auth/components/PagePermissionBoun
 import { usePermissions } from '../../auth/usePermissions'
 import {
   addTaskNote,
-  getCockpitInbox,
+  getCompleteCockpitInbox,
   getCockpitTarget,
   regenerateCockpit,
   setTaskStatus,
@@ -30,7 +30,6 @@ import { buildCockpitTaskInsights, isCockpitTaskToday, kyivDayKey } from '../uti
 import { useCockpitRealtimeReload } from '../hooks/useCockpitRealtimeReload'
 import './sales-cockpit-page.css'
 
-const INBOX_LIMIT = 50
 const POLL_INTERVAL_MS = 60_000
 
 // Inbox ordering: head-assigned (manual) tasks pin above the AI queue, then triage by urgency band,
@@ -115,13 +114,16 @@ function SalesCockpitPageContent() {
 
   useEffect(() => {
     const controller = new AbortController()
+    let requestInFlight = false
 
     async function loadInbox() {
+      if (requestInFlight) return
+      requestInFlight = true
       setError(null)
 
       try {
         const [inbox, cockpitTarget] = await Promise.all([
-          getCockpitInbox({ limit: INBOX_LIMIT }),
+          getCompleteCockpitInbox(controller.signal),
           getCockpitTarget(asOfDate),
         ])
 
@@ -134,6 +136,7 @@ function SalesCockpitPageContent() {
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити завдання'))
         }
       } finally {
+        requestInFlight = false
         if (!controller.signal.aborted) {
           setLoading(false)
         }
@@ -143,7 +146,7 @@ function SalesCockpitPageContent() {
     void loadInbox()
 
     const interval = setInterval(() => {
-      if (!busyRef.current) {
+      if (!busyRef.current && document.visibilityState === 'visible') {
         void loadInbox()
       }
     }, POLL_INTERVAL_MS)
@@ -350,8 +353,9 @@ function SalesCockpitPageContent() {
     setUrgencyFilter(null)
     setDayFilter('all')
     setAsOfDate(undefined)
-    setLoading(true)
-  }, [setAsOfDate, setDayFilter, setTaskTypeFilter, setUrgencyFilter])
+    // Local queue filters do not trigger a request. Only a changed snapshot does.
+    if (asOfDate) setLoading(true)
+  }, [asOfDate, setAsOfDate, setDayFilter, setTaskTypeFilter, setUrgencyFilter])
 
   const hasActiveFilters = Boolean(
     asOfDate || taskTypeFilter || urgencyFilter || dayFilter !== 'all',

@@ -1,6 +1,6 @@
 import { MantineProvider } from '@mantine/core'
-import { render, screen, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { act, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { theme } from '../../../shared/theme/theme'
 import { getDashboard } from '../api/salesCockpitApi'
 import type { CockpitDashboard } from '../types'
@@ -32,6 +32,7 @@ vi.mock('../../../shared/ui/charts/UrgencyDonut', () => ({
 }))
 
 describe('Sales cockpit workspace', () => {
+  afterEach(() => vi.useRealTimers())
   beforeEach(() => {
     vi.mocked(getDashboard).mockReset()
   })
@@ -74,6 +75,24 @@ describe('Sales cockpit workspace', () => {
     expect(screen.queryByTestId('urgency-chart')).toBeNull()
     expect(screen.queryByTestId('task-type-chart')).toBeNull()
     expect(screen.queryByTestId('aging-chart')).toBeNull()
+  })
+
+  it('refreshes task analytics on polling and after a task mutation', async () => {
+    vi.useFakeTimers()
+    vi.mocked(getDashboard).mockResolvedValue(dashboard({ value_at_risk_eur: 500 }))
+    const view = renderWithTheme(<CockpitDashboardPanel reloadKey={0} />)
+    await act(async () => {})
+    expect(getDashboard).toHaveBeenCalledTimes(1)
+
+    await act(async () => { await vi.advanceTimersByTimeAsync(60_000) })
+    expect(getDashboard).toHaveBeenCalledTimes(2)
+
+    view.rerender(<MantineProvider theme={theme}><CockpitDashboardPanel reloadKey={1} /></MantineProvider>)
+    await act(async () => {})
+    expect(getDashboard).toHaveBeenCalledTimes(3)
+    view.unmount()
+    await act(async () => { await vi.advanceTimersByTimeAsync(60_000) })
+    expect(getDashboard).toHaveBeenCalledTimes(3)
   })
 
   it('renders all analytics when the dashboard has useful data', async () => {

@@ -54,12 +54,13 @@ export function CockpitToolbar({
       <div className="app-filter-bar cockpit-command-bar">
         <TextInput
           className="cockpit-date-filter"
-          label={t('Дата зрізу')}
+          label={t('Дата розрахунку плану')}
           type="date"
           value={asOfDate ?? ''}
           w={170}
           onChange={(event) => onAsOfDateChange(event.currentTarget.value || undefined)}
         />
+        {asOfDate && <Text c="dimmed" size="xs">{t('Черга задач — поточна')}</Text>}
         <TaskFilters
           taskType={taskType}
           urgency={urgency}

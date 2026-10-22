@@ -204,6 +204,22 @@ describe('AssortmentDashboardPage', () => {
     await waitFor(() => expect(getAssortmentHealth).toHaveBeenLastCalledWith(expect.objectContaining({ limit: 500 }), expect.any(AbortSignal)))
   })
 
+  it('does not combine an earlier snapshot with partial results after changing the date', async () => {
+    renderPage()
+    await screen.findByText('Поповнити запас')
+    expect(screen.getAllByText('Гальмівний диск передній').length).toBeGreaterThan(0)
+
+    mockAssortmentData([{ ...product, name: 'Товар нового зрізу', vendor_code: 'NEW-1' }])
+    vi.mocked(getAssortmentStock).mockRejectedValue(new Error('Stock unavailable'))
+    vi.mocked(getAssortmentMargin).mockRejectedValue(new Error('Margin unavailable'))
+    fireEvent.change(screen.getByLabelText('Дата зрізу'), { target: { value: '2026-07-25' } })
+
+    await screen.findByText(/Stock unavailable/)
+    expect(screen.getAllByText('Товар нового зрізу').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Гальмівний диск передній')).toBeNull()
+    expect(screen.queryByText('BR-501')).toBeNull()
+  })
+
   it('shows a meaningful filtered empty state instead of a blank table', async () => {
     mockAssortmentData([])
     renderPage()
