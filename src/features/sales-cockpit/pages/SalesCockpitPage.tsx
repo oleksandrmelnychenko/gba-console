@@ -1,24 +1,17 @@
-import { Alert, Stack } from '@mantine/core'
-import { CircleAlert, ClipboardList, FileText, MessagesSquare, Users } from 'lucide-react'
+import { Button, Group, Stack } from '@mantine/core'
+import { ClipboardList, FileText, MessagesSquare, Users } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
-import { useValueState } from '../../../shared/hooks/useValueState'
+import { useCallback, useReducer, useState } from 'react'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { PagePermissionBoundary } from '../../auth/components/PagePermissionBoundary'
 import { usePermissions } from '../../auth/usePermissions'
 import {
   addTaskNote,
-  getCompleteCockpitInbox,
-  getCockpitTarget,
   regenerateCockpit,
   setTaskStatus,
 } from '../api/salesCockpitApi'
 import { CockpitDashboardPanel } from '../components/CockpitDashboardPanel'
-import { CockpitQueueSummary } from '../components/CockpitQueueSummary'
-import { CockpitTargetCard } from '../components/CockpitTargetCard'
-import { CockpitTaskList } from '../components/CockpitTaskList'
-import { CockpitToolbar, type CockpitDayFilter } from '../components/CockpitToolbar'
 import { DismissModal } from '../components/DismissModal'
 import { DoneModal } from '../components/DoneModal'
 import { ContactModal } from '../components/ContactModal'
@@ -28,45 +21,12 @@ import { MyClientsPanel } from '../components/MyClientsPanel'
 import { MyOffersPanel } from '../components/MyOffersPanel'
 import { NoteModal } from '../components/NoteModal'
 import { SnoozeModal } from '../components/SnoozeModal'
-import type { CockpitTarget, CockpitTask, CockpitTaskType, CockpitUrgency } from '../types'
-import { buildCockpitTaskInsights, isCockpitTaskToday, kyivDayKey } from '../utils/taskInsights'
+import type { CockpitTask } from '../types'
+import { WorkdayQueue } from '../components/WorkdayQueue'
+import { WorkdayPlanPanel } from '../components/WorkdayPlanPanel'
+import { WorkdayTaskDetails } from '../components/WorkdayTaskDetails'
 import { useCockpitRealtimeReload } from '../hooks/useCockpitRealtimeReload'
 import './sales-cockpit-page.css'
-
-const POLL_INTERVAL_MS = 60_000
-
-// Inbox ordering: head-assigned (manual) tasks pin above the AI queue, then triage by urgency band,
-// then business tier (debt = cash at risk first), then score. Mirrors the gba-nba inbox ordering.
-const URGENCY_RANK: Record<CockpitUrgency, number> = { critical: 0, high: 1, normal: 2, low: 3 }
-const TYPE_RANK: Record<CockpitTaskType, number> = {
-  manual: -1,
-  debt_followup: 0,
-  reorder_due: 1,
-  churn_winback: 2,
-  cross_sell: 3,
-  new_client_activation: 4,
-}
-
-function inboxOrder(left: CockpitTask, right: CockpitTask): number {
-  return (
-    getManualRank(left) - getManualRank(right) ||
-    getUrgencyRank(left.urgency) - getUrgencyRank(right.urgency) ||
-    getTaskTypeRank(left.task_type) - getTaskTypeRank(right.task_type) ||
-    (right.priority ?? 0) - (left.priority ?? 0)
-  )
-}
-
-function getManualRank(task: CockpitTask): number {
-  return task.task_type === 'manual' ? 0 : 1
-}
-
-function getUrgencyRank(urgency?: CockpitUrgency): number {
-  return urgency ? URGENCY_RANK[urgency] : 9
-}
-
-function getTaskTypeRank(taskType?: CockpitTaskType): number {
-  return taskType ? TYPE_RANK[taskType] : 9
-}
 
 export function SalesCockpitPage() {
   return (
@@ -85,14 +45,6 @@ function SalesCockpitPageContent() {
   const canDismiss = can(PermissionKeys.SalesCockpit.Task.Dismiss)
   const canAddNote = can(PermissionKeys.SalesCockpit.Task.AddNote)
   const canGenerate = can(PermissionKeys.SalesCockpit.Task.Generate)
-  const [tasks, setTasks] = useValueState<CockpitTask[]>([])
-  const [target, setTarget] = useValueState<CockpitTarget | null>(null)
-  const [taskTypeFilter, setTaskTypeFilter] = useValueState<CockpitTaskType | null>(null)
-  const [urgencyFilter, setUrgencyFilter] = useValueState<CockpitUrgency | null>(null)
-  const [dayFilter, setDayFilter] = useValueState<CockpitDayFilter>('all')
-  const [asOfDate, setAsOfDate] = useValueState<string | undefined>(undefined)
-  const [error, setError] = useValueState<string | null>(null)
-  const [isLoading, setLoading] = useState(true)
   const [isRegenerating, setRegenerating] = useState(false)
   const [pendingTaskKey, setPendingTaskKey] = useState<string | null>(null)
   const [noteTask, setNoteTask] = useState<CockpitTask | null>(null)
@@ -100,6 +52,7 @@ function SalesCockpitPageContent() {
   const [doneTask, setDoneTask] = useState<CockpitTask | null>(null)
   const [dismissTask, setDismissTask] = useState<CockpitTask | null>(null)
   const [view, setView] = useState<'clients' | 'offers' | 'tasks' | 'contacts'>('tasks')
+  const [taskClient, setTaskClient] = useState<ContactClient | null>(null)
   const [contactClient, setContactClient] = useState<ContactClient | null>(null)
   const [contactsRevision, refreshContacts] = useReducer((key: number) => key + 1, 0)
   const openTaskContact = (task: CockpitTask) => {
@@ -108,94 +61,11 @@ function SalesCockpitPageContent() {
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   const triggerReload = useCallback(() => {
-    setLoading(true)
     reload()
   }, [])
   const scheduleReload = useCockpitRealtimeReload(triggerReload)
 
-  const busyRef = useRef(false)
-  useEffect(() => {
-    busyRef.current = Boolean(
-      contactClient || noteTask || snoozeTask || doneTask || dismissTask || pendingTaskKey || isRegenerating,
-    )
-  }, [contactClient, noteTask, snoozeTask, doneTask, dismissTask, pendingTaskKey, isRegenerating])
-
-  useEffect(() => {
-    const controller = new AbortController()
-    let requestInFlight = false
-
-    async function loadInbox() {
-      if (requestInFlight) return
-      requestInFlight = true
-      setError(null)
-
-      try {
-        const [inbox, cockpitTarget] = await Promise.all([
-          getCompleteCockpitInbox(controller.signal),
-          getCockpitTarget(asOfDate),
-        ])
-
-        if (!controller.signal.aborted) {
-          setTasks(inbox.tasks)
-          setTarget(cockpitTarget)
-        }
-      } catch (loadError) {
-        if (!controller.signal.aborted && !isAbortError(loadError)) {
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити завдання'))
-        }
-      } finally {
-        requestInFlight = false
-        if (!controller.signal.aborted) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void loadInbox()
-
-    const interval = setInterval(() => {
-      if (!busyRef.current && document.visibilityState === 'visible') {
-        void loadInbox()
-      }
-    }, POLL_INTERVAL_MS)
-
-    return () => {
-      controller.abort()
-      clearInterval(interval)
-    }
-  }, [asOfDate, reloadKey, setError, setTarget, setTasks, t])
-
-  // Recomputed each render (a single cheap formatter call) so the "today" window
-  // stays current across a midnight boundary without an extra dependency.
-  const todayKey = kyivDayKey(new Date())
-
-  const todayCount = useMemo(
-    () => tasks.reduce((count, task) => (isCockpitTaskToday(task, todayKey) ? count + 1 : count), 0),
-    [tasks, todayKey],
-  )
-
-  const queueInsights = useMemo(() => buildCockpitTaskInsights(tasks, todayKey), [tasks, todayKey])
-
-  const visibleTasks = useMemo(() => {
-    const filtered = tasks.filter(
-      (task) =>
-        (!taskTypeFilter || task.task_type === taskTypeFilter) &&
-        (!urgencyFilter || task.urgency === urgencyFilter) &&
-        (dayFilter === 'all' || isCockpitTaskToday(task, todayKey)),
-    )
-
-    return filtered.toSorted(inboxOrder)
-  }, [tasks, taskTypeFilter, urgencyFilter, dayFilter, todayKey])
-
-  // Head-assigned tasks render as their own pinned section above the AI queue.
-  const manualTasks = useMemo(
-    () => visibleTasks.filter((task) => task.task_type === 'manual'),
-    [visibleTasks],
-  )
-  const aiTasks = useMemo(
-    () => visibleTasks.filter((task) => task.task_type !== 'manual'),
-    [visibleTasks],
-  )
+  const busy = Boolean(contactClient || noteTask || snoozeTask || doneTask || dismissTask || pendingTaskKey || isRegenerating)
 
   const handleDoneSubmit = useCallback(
     async (task: CockpitTask, outcome: { sold: boolean; amount: number | null }) => {
@@ -333,7 +203,7 @@ function SalesCockpitPageContent() {
     setRegenerating(true)
 
     try {
-      await regenerateCockpit(asOfDate)
+      await regenerateCockpit()
       notifications.show({ color: 'green', message: t('Завдання оновлено') })
       scheduleReload()
     } catch (actionError) {
@@ -344,37 +214,13 @@ function SalesCockpitPageContent() {
     } finally {
       setRegenerating(false)
     }
-  }, [asOfDate, can, scheduleReload, t])
+  }, [can, scheduleReload, t])
 
-  const handleReload = triggerReload
-
-  const handleAsOfDateChange = useCallback(
-    (value: string | undefined) => {
-      setAsOfDate(value)
-      setLoading(true)
-    },
-    [setAsOfDate],
-  )
-
-  const handleResetFilters = useCallback(() => {
-    setTaskTypeFilter(null)
-    setUrgencyFilter(null)
-    setDayFilter('all')
-    setAsOfDate(undefined)
-    // Local queue filters do not trigger a request. Only a changed snapshot does.
-    if (asOfDate) setLoading(true)
-  }, [asOfDate, setAsOfDate, setDayFilter, setTaskTypeFilter, setUrgencyFilter])
-
-  const hasActiveFilters = Boolean(
-    asOfDate || taskTypeFilter || urgencyFilter || dayFilter !== 'all',
-  )
-  const hasTargetData = Boolean(
-    target
-      && [target.shipped, target.paid].some(
-        (metric) => metric.target > 0 || metric.mtd > 0 || metric.today_needed > 0,
-      ),
-  )
-  const showOverview = isLoading || tasks.length > 0 || hasTargetData
+  const taskActions = {
+    canAddNote, canComplete, canDismiss, canSnooze, canTakeInProgress, pendingTaskKey,
+    onAddNote: setNoteTask, onContact: openTaskContact, onDismiss: setDismissTask,
+    onDone: setDoneTask, onSnooze: setSnoozeTask, onTakeInProgress: handleTakeInProgress,
+  }
 
   return (
     <Stack className="cockpit-page" gap={6}>
@@ -405,7 +251,7 @@ function SalesCockpitPageContent() {
         <div className="cockpit-page-content"><ContactsPanel onOpen={setContactClient} revision={contactsRevision} /></div>
       ) : view === 'clients' ? (
         <div className="cockpit-page-content">
-          <MyClientsPanel onContact={setContactClient} />
+          <MyClientsPanel onContact={setContactClient} onTasks={setTaskClient} />
         </div>
       ) : view === 'offers' ? (
         <div className="cockpit-page-content">
@@ -413,87 +259,21 @@ function SalesCockpitPageContent() {
         </div>
       ) : (
         <>
-          <CockpitToolbar
-            canRegenerate={canGenerate}
-            asOfDate={asOfDate}
-            dayFilter={dayFilter}
-            hasActiveFilters={hasActiveFilters}
-            isLoading={isLoading}
-            isRegenerating={isRegenerating}
-            taskType={taskTypeFilter}
-            todayCount={todayCount}
-            urgency={urgencyFilter}
-            visibleCount={visibleTasks.length}
-            onAsOfDateChange={handleAsOfDateChange}
-            onDayFilterChange={setDayFilter}
-            onRegenerate={handleRegenerate}
-            onReload={handleReload}
-            onReset={handleResetFilters}
-            onTaskTypeChange={setTaskTypeFilter}
-            onUrgencyChange={setUrgencyFilter}
-          />
-
           <div className="cockpit-page-content">
-            {error && (
-              <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-                {error}
-              </Alert>
-            )}
-
-            {showOverview ? (
-              <div className={`cockpit-overview${hasTargetData ? '' : ' is-single'}`}>
-                <CockpitQueueSummary
-                  insights={queueInsights}
-                  isLoading={isLoading}
-                  visibleCount={visibleTasks.length}
-                />
-                {target && hasTargetData ? <CockpitTargetCard target={target} /> : null}
-              </div>
-            ) : null}
-
-            {manualTasks.length > 0 && (
-              <CockpitTaskList
-                canAddNote={canAddNote}
-                canComplete={canComplete}
-                canDismiss={canDismiss}
-                canSnooze={canSnooze}
-                canTakeInProgress={canTakeInProgress}
-                isLoading={false}
-                pendingTaskKey={pendingTaskKey}
-                tasks={manualTasks}
-                title="Задачі від керівника"
-                onAddNote={setNoteTask}
-                onContact={openTaskContact}
-                onDismiss={setDismissTask}
-                onDone={setDoneTask}
-                onSnooze={setSnoozeTask}
-                onTakeInProgress={handleTakeInProgress}
-              />
-            )}
-
-            <CockpitTaskList
-              canAddNote={canAddNote}
-              canComplete={canComplete}
-              canDismiss={canDismiss}
-              canSnooze={canSnooze}
-              canTakeInProgress={canTakeInProgress}
-              isLoading={isLoading}
-              pendingTaskKey={pendingTaskKey}
-              tasks={aiTasks}
-              onAddNote={setNoteTask}
-                onContact={openTaskContact}
-              onDismiss={setDismissTask}
-              onDone={setDoneTask}
-              onSnooze={setSnoozeTask}
-              onTakeInProgress={handleTakeInProgress}
-            />
+            <Group justify="flex-end">
+              <Button variant="default" onClick={triggerReload}>{t('Оновити')}</Button>
+              {canGenerate && <Button loading={isRegenerating} onClick={handleRegenerate}>{t('Згенерувати завдання')}</Button>}
+            </Group>
+            <WorkdayPlanPanel revision={reloadKey} paused={busy} />
+            <WorkdayQueue revision={reloadKey} paused={busy} onContact={setContactClient} actions={taskActions} />
 
             <CockpitDashboardPanel reloadKey={reloadKey} />
           </div>
         </>
       )}
 
-      {contactClient && <ContactModal key={contactClient.client_id} client={contactClient} canRecord={canAddNote} onClose={() => setContactClient(null)} onSaved={() => { refreshContacts(); notifications.show({ color: 'green', message: t('Контакт збережено') }) }} />}
+      {taskClient && <WorkdayTaskDetails key={taskClient.client_id} row={{ key: `client:${taskClient.client_id}`, client_name: taskClient.client_name, can_contact: true }} actions={taskActions} revision={reloadKey} paused={busy} onClose={() => setTaskClient(null)} />}
+      {contactClient && <ContactModal key={contactClient.client_id} client={contactClient} canRecord={canAddNote} onClose={() => setContactClient(null)} onSaved={() => { refreshContacts(); scheduleReload(); notifications.show({ color: 'green', message: t('Контакт збережено') }) }} />}
 
       <NoteModal
         saving={Boolean(noteTask && pendingTaskKey === noteTask.task_key)}
@@ -524,8 +304,4 @@ function SalesCockpitPageContent() {
       />
     </Stack>
   )
-}
-
-function isAbortError(error: unknown): boolean {
-  return error instanceof DOMException && error.name === 'AbortError'
 }

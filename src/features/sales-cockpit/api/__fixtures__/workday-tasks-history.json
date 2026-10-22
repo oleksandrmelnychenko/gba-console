@@ -1,0 +1,38 @@
+{
+  "manager_id": 1,
+  "manager_net_uid": "11111111-1111-1111-1111-111111111111",
+  "key": "client:1",
+  "scope": "history",
+  "offset": 0,
+  "limit": 20,
+  "count": 1,
+  "total": 1,
+  "tasks": [
+    {
+      "_id": "6ada009b42af46661fe15ec9",
+      "task_key": "fixture-closed",
+      "client_id": 1,
+      "manager_id": 1,
+      "client_name": "Клієнт 1",
+      "task_type": "reorder_due",
+      "status": "done",
+      "title": "Зателефонувати",
+      "reason": "Повторна покупка",
+      "urgency": "normal",
+      "priority": 30,
+      "due_date": null,
+      "generated_at": "2026-10-22T10:00:00Z",
+      "updated_at": "2026-10-22T10:00:00Z",
+      "notes": [],
+      "status_history": [],
+      "outcome": {
+        "sold": true,
+        "amount": 125.5,
+        "note": "Замовлено"
+      },
+      "p_outcome": 0.3,
+      "expected_value": 0.0,
+      "ev_score": 0.0
+    }
+  ]
+}
