@@ -14,7 +14,7 @@ describe('contact contract', () => {
     expect(apiRequest).toHaveBeenCalledWith('/sales/cockpit/contacts', { query: { bucket: 'today', search: 'A.*[', offset: 0, limit: 20 }, signal })
   })
   it.each([
-    { ...page(), contacts: [{ ...event, manager_id: 99 }] },
+    { ...page(), contacts: [{ ...event, manager_id: -1 }] },
     { ...page(), contacts: [{ ...event, at: '2026-10-21T09:00:00' }] },
     { ...page(), total: 99 },
     { ...page(), total: 99, counts: { all: 99, today: 99, overdue: 0, upcoming: 0, unscheduled: 0 } },
@@ -23,6 +23,15 @@ describe('contact contract', () => {
   ])('rejects incomplete or contradictory queue response %#', async (data) => {
     vi.mocked(apiRequest).mockResolvedValue(data)
     await expect(getContacts('today', 'A.*[', 0)).rejects.toThrow('Некоректна відповідь')
+  })
+  it('preserves previous contact authors after client transfer, but POST must be by the current manager', async () => {
+    const transferred = { ...event, manager_id: 99, manager_name: 'Previous manager' }
+    vi.mocked(apiRequest).mockResolvedValue({ ...page(), contacts: [transferred] })
+    expect((await getContacts('today', 'A.*[', 0)).contacts[0].manager_id).toBe(99)
+    vi.mocked(apiRequest).mockResolvedValue({ manager_id: 1, client_id: 42, offset: 0, limit: 20, count: 1, total: 1, events: [transferred] })
+    expect((await getContactHistory(42, 0)).events[0].manager_name).toBe('Previous manager')
+    vi.mocked(apiRequest).mockResolvedValue({ manager_id: 1, event: transferred })
+    await expect(recordContact({ EventId: 'uuid', ClientId: 42, Result: 'reached', Note: null, NextContactAt: event.next_contact_at, NextAction: event.next_action })).rejects.toThrow('Некоректна відповідь')
   })
   it('rejects history for another client', async () => {
     vi.mocked(apiRequest).mockResolvedValue({ manager_id: 1, client_id: 43, offset: 0, limit: 20, count: 1, total: 1, events: [{ ...event, client_id: 43 }] })

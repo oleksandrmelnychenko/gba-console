@@ -5,9 +5,9 @@ const contractError = () => new Error('Некоректна відповідь �
 function validDate(value: unknown): value is string {
   return typeof value === 'string' && /(?:Z|[+-]\d{2}:\d{2})$/.test(value) && Number.isFinite(Date.parse(value))
 }
-function checkEvent(event: ContactEvent, managerId: number) {
+export function checkContactEvent(event: ContactEvent, managerId?: number) {
   if (!event || typeof event.event_id !== 'string' || !Number.isInteger(event.client_id) || event.client_id <= 0
-    || event.manager_id !== managerId || typeof event.client_name !== 'string' || typeof event.manager_name !== 'string'
+    || !Number.isInteger(event.manager_id) || event.manager_id <= 0 || (managerId !== undefined && event.manager_id !== managerId) || typeof event.client_name !== 'string' || typeof event.manager_name !== 'string'
     || !Object.hasOwn(CONTACT_RESULTS, event.result) || !validDate(event.at)
     || (event.note !== null && typeof event.note !== 'string')
     || (event.next_contact_at === null ? event.next_action !== null : !validDate(event.next_contact_at) || typeof event.next_action !== 'string' || !event.next_action.trim())) throw contractError()
@@ -16,7 +16,7 @@ function checkPage(data: ContactHistory | ContactPage, rows: ContactEvent[], off
   if (!data || !Number.isInteger(data.manager_id) || data.manager_id <= 0 || data.offset !== offset || data.limit !== 20
     || !Number.isInteger(data.total) || data.total < 0 || !Array.isArray(rows) || data.count !== rows.length
     || rows.length !== Math.min(20, Math.max(0, data.total - offset))) throw contractError()
-  rows.forEach((event) => checkEvent(event, data.manager_id))
+  rows.forEach((event) => checkContactEvent(event))
 }
 export async function getContacts(bucket: ContactBucket, search: string, offset: number, signal?: AbortSignal): Promise<ContactPage> {
   const data = await apiRequest<ContactPage>('/sales/cockpit/contacts', { query: { bucket, search, offset, limit: 20 }, signal })
@@ -38,7 +38,7 @@ export async function getContactHistory(clientId: number, offset: number, signal
 export async function recordContact(body: ContactBody): Promise<ContactEvent> {
   const response = await apiRequest<{ manager_id: number; event: ContactEvent }>('/sales/cockpit/contacts', { method: 'POST', body })
   if (!response || !Number.isInteger(response.manager_id) || response.manager_id <= 0) throw contractError()
-  checkEvent(response.event, response.manager_id)
+  checkContactEvent(response.event, response.manager_id)
   const event = response.event
   if (event.event_id !== body.EventId || event.client_id !== body.ClientId || event.result !== body.Result
     || event.note !== body.Note || event.next_action !== body.NextAction

@@ -60,7 +60,7 @@ type ClientRecommendationsState = {
   products: RecommendationProduct[]
 }
 
-export function MyClientsPanel({ onContact }: { onContact?: (client: ContactClient) => void }) {
+export function MyClientsPanel({ onContact, onTasks }: { onContact?: (client: ContactClient) => void; onTasks?: (client: ContactClient) => void }) {
   const { can } = usePermissions()
   const canRecordContact = can(PermissionKeys.SalesCockpit.Task.AddNote)
   const { t } = useI18n()
@@ -190,7 +190,8 @@ export function MyClientsPanel({ onContact }: { onContact?: (client: ContactClie
 
           return (
             <Group gap={4} justify="flex-end" wrap="nowrap">
-              {canRecordContact && onContact && <Button size="xs" variant="light" onClick={() => onContact({ client_id: client.client_id, client_name: client.name || client.full_name || `#${client.client_id}` })}>{t('Записати контакт')}</Button>}
+              {onTasks && <Button size="xs" variant="light" onClick={() => onTasks({ client_id: client.client_id, client_name: client.name || client.full_name || `#${client.client_id}` })}>{t('Завдання та історія')}</Button>}
+              {onContact && <Button size="xs" variant="light" onClick={() => onContact({ client_id: client.client_id, client_name: client.name || client.full_name || `#${client.client_id}` })}>{t(canRecordContact ? 'Записати контакт' : 'Історія контактів')}</Button>}
               {phone && (
                 <TableRowAction
                   action="call"
@@ -214,10 +215,10 @@ export function MyClientsPanel({ onContact }: { onContact?: (client: ContactClie
         },
         align: 'right',
         rowActions: true,
-        width: canRecordContact && onContact ? 250 : 96,
+        width: (onContact ? 250 : 96) + (onTasks ? 185 : 0),
       },
     ],
-    [navigate, t, canRecordContact, onContact],
+    [navigate, t, canRecordContact, onContact, onTasks],
   )
 
   return (
@@ -260,7 +261,7 @@ export function MyClientsPanel({ onContact }: { onContact?: (client: ContactClie
           getRowId={(client) => String(client.client_id)}
           height="100%"
           isLoading={isLoading}
-          layoutVersion="clients-compact-2"
+          layoutVersion="clients-workday-3"
           minWidth={1180}
           renderExpandedRow={(client) => <ClientRecommendationsInline client={client} />}
           showLayoutControls
