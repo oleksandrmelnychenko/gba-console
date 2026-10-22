@@ -119,4 +119,31 @@ describe('ToolbarDateRangeFilter', () => {
     expect(onChange).toHaveBeenCalledExactlyOnceWith({ from: '', to: '2026-10-20' })
   })
 
+  it('refreshes presets on reopening after Kyiv midnight, including the month boundary', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    try {
+      vi.setSystemTime(new Date('2026-10-31T21:59:59Z'))
+      const { onChange } = setup()
+      fireEvent.click(screen.getByRole('button', { name: 'Сьогодні', exact: true }))
+      expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-10-31')
+      fireEvent.click(screen.getByRole('button', { name: 'Скасувати' }))
+
+      vi.setSystemTime(new Date('2026-10-31T22:00:01Z'))
+      fireEvent.click(screen.getByRole('button', { name: /^Період:/ }))
+      fireEvent.click(screen.getByRole('button', { name: 'Сьогодні', exact: true }))
+      expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-11-01')
+      expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe('2026-11-01')
+      fireEvent.click(screen.getByRole('button', { name: '7 днів', exact: true }))
+      expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-10-26')
+      fireEvent.click(screen.getByRole('button', { name: 'Минулий місяць', exact: true }))
+      expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('2026-10-01')
+      expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe('2026-10-31')
+      expect(onChange).not.toHaveBeenCalled()
+      fireEvent.click(screen.getByRole('button', { name: 'Застосувати' }))
+      expect(onChange).toHaveBeenCalledExactlyOnceWith({ from: '2026-10-01', to: '2026-10-31' })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
 })

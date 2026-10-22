@@ -106,3 +106,20 @@
   outline: 1px solid rgba(var(--brand-orange-rgb), 0.5);
   outline-offset: -1px;
 }
+
+@media (max-width: 480px) {
+  .app-date-range-calendar {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .app-date-range-calendar .mantine-DatePicker-presetsList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-width: 0;
+    width: 100%;
+    margin: 0 0 10px;
+    padding: 0 0 8px;
+    border-right: 0;
+    border-bottom: 1px solid var(--mantine-color-gray-2);
+  }
+}
