@@ -90,7 +90,7 @@ describe('NavigationRouteGuard page permissions', () => {
 
     expect(RolesPage).not.toHaveBeenCalled()
     expect(screen.queryByText('Керування ролями')).toBeNull()
-    expect(screen.queryByText('Доступ заборонено')).toBeNull()
+    expect(screen.getByRole('alert').textContent).toContain('Доступ заборонено')
     expect(screen.queryByText('Немає доступу')).toBeNull()
   })
 
