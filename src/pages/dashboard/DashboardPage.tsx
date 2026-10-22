@@ -132,7 +132,7 @@ export function DashboardPage() {
       <PageHeaderTitle>
         <Box className="role-dashboard-title">
           <h1 className="console-subnav-pill console-subnav-item is-active role-dashboard-heading" aria-current="page">
-            <span className="role-dashboard-heading-label">{t(selectedDescriptor.name)}</span>
+            <span className="role-dashboard-heading-label">{t('Робочий простір')}</span>
             {selectedDescriptor.isAi && <AiFeatureBadge compact tooltip={t('AI-функція')} />}
           </h1>
         </Box>
