@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { theme } from '../../../shared/theme/theme'
 import { getContacts, getContactHistory } from '../api/contactsApi'
@@ -133,6 +133,24 @@ describe('Sales cockpit server workday queue', () => {
     expect(screen.queryByRole('button', { name: 'Виконано' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Нотатка' })).toBeNull()
     expect(screen.getByText(/Продаж зі слів менеджера/)).toBeTruthy()
+  })
+  it('places a nested note editor above task details and closes only that editor', async () => {
+    renderPage()
+    await screen.findByText('Клієнт 1')
+    fireEvent.click(screen.getAllByRole('button', { name: 'Завдання та історія' })[0])
+    await screen.findByText('Завдань: 2')
+    const detail = screen.getByRole('dialog', { name: 'Завдання клієнта: Клієнт 1' })
+    fireEvent.click(within(detail).getAllByRole('button', { name: 'Нотатка' })[0])
+    const note = screen.getByRole('dialog', { name: 'Додати нотатку' })
+    const detailLayer = Number(getComputedStyle(detail.closest('.mantine-Modal-root')!).getPropertyValue('--mb-z-index'))
+    const noteLayer = Number(getComputedStyle(note.closest('.mantine-Modal-root')!).getPropertyValue('--mb-z-index'))
+    expect(noteLayer).toBeGreaterThan(detailLayer)
+    fireEvent.change(within(note).getByRole('textbox', { name: 'Нотатка' }), { target: { value: 'Draft stays in the foreground' } })
+    expect((within(note).getByRole('textbox', { name: 'Нотатка' }) as HTMLTextAreaElement).value).toBe('Draft stays in the foreground')
+    fireEvent.click(within(note).getByRole('button', { name: 'Скасувати' }))
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Додати нотатку' })).toBeNull())
+    expect(screen.getByRole('dialog', { name: 'Завдання клієнта: Клієнт 1' })).toBeTruthy()
+    expect(setTaskStatus).not.toHaveBeenCalled()
   })
   it('keeps task actions and contact recording behind independent permissions', async () => {
     mocks.can = (key) => key.endsWith('.view')
