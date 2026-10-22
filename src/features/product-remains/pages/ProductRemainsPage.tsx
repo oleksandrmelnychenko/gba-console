@@ -3,7 +3,6 @@ import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilte
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
-  Box,
   Button,
   Card,
   Group,
@@ -21,7 +20,7 @@ import {
   DocumentDetailSection,
   DocumentDetailSummary,
 } from '../../../shared/ui/document-detail/DocumentDetail'
-import { Boxes, CircleAlert, Download, Package, RefreshCw, RotateCcw, Search } from 'lucide-react'
+import { ChartNoAxesCombined, Boxes, CircleAlert, Download, Package, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
@@ -64,11 +63,12 @@ import {
   getSupplierDisplayName,
   getVendorCode,
 } from '../utils'
+import { ProductRemainsStatisticsSheet } from '../components/ProductRemainsStatisticsSheet'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import './product-remains-page.css'
 
 type ProductRemainsTab = 'batches' | 'products'
 
-const LOCAL_CURRENCY_CODE = 'UAH'
 const PAGE_SIZE = 25
 const pageSizeOptions = ['25', '50', '100']
 
@@ -728,6 +728,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
     setSupplierNetId, setSupplierSearch, updateProductSearch,
   } = model
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
+  const [statisticsOpened, setStatisticsOpened] = useState(false)
   const alertMessage = filterError || resourceError || activeError
   const isWarningAlert = Boolean(filterError)
 
@@ -823,6 +824,15 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
               />
             </div>
             <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
+            <Button
+              color={CREATE_ACTION_COLOR}
+              leftSection={<ChartNoAxesCombined size={16} />}
+              onClick={() => setStatisticsOpened(true)}
+              aria-haspopup="dialog"
+              aria-expanded={statisticsOpened}
+            >
+              {t('Статистика')}
+            </Button>
           </Group>
         </div>
 
@@ -852,7 +862,6 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                 toolbarPortalTarget={tableToolbarSlot}
                 onRowClick={setSelectedBatch}
               />
-              <RemainsTotalsFooter kind="batches" totals={batchTotals} />
             </Stack>
           )}
 
@@ -875,11 +884,21 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                 toolbarPortalTarget={tableToolbarSlot}
                 onRowClick={canOpenMovement ? openMovement : undefined}
               />
-              <RemainsTotalsFooter kind="products" totals={productTotals} />
             </Stack>
           )}
         </Stack>
       </Card>
+
+      <ProductRemainsStatisticsSheet
+        opened={statisticsOpened}
+        onClose={() => setStatisticsOpened(false)}
+        totals={activeTab === 'batches' ? batchTotals : productTotals}
+        kind={activeTab}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        isLoading={isActiveLoading}
+        error={alertMessage}
+      />
 
       <AppDrawer
         opened={Boolean(selectedBatch)}
@@ -1239,46 +1258,6 @@ function useProductRemainBatchDetailColumns() {
     },
     ],
     [],
-  )
-}
-
-function TotalEntry({ label, value }: { label: string; value: string }) {
-  return (
-    <Box className="product-remains-total">
-      <span className="product-remains-total__label">{label}</span>
-      <span className="product-remains-total__value app-money">{value}</span>
-    </Box>
-  )
-}
-
-function RemainsTotalsFooter<TItem>({ totals, kind }: { totals: CollectionWithTotals<TItem> | null; kind: ProductRemainsTab }) {
-  const { t } = useI18n()
-
-  if (!totals) {
-    return null
-  }
-
-  const generalLabel = t('Загальна')
-  const periodLabel = t('Період')
-  const accountingShort = t('Бух.')
-
-  return (
-    <Box className="product-remains-totals-footer">
-      <div className="product-remains-totals-footer__grid">
-        <TotalEntry label={t('Загальна к-сть')} value={formatAmount(totals.TotalQty)} />
-        <TotalEntry label={`${generalLabel} (EUR)`} value={formatMoney(totals.TotalAmount)} />
-        <TotalEntry label={`${generalLabel} (EUR, ${accountingShort})`} value={formatMoney(totals.AccountingTotalAmount)} />
-        <TotalEntry label={`${generalLabel} (${LOCAL_CURRENCY_CODE})`} value={formatMoney(totals.TotalAmountLocal)} />
-        <TotalEntry label={`${generalLabel} (${LOCAL_CURRENCY_CODE}, ${accountingShort})`} value={formatMoney(totals.AccountingTotalAmountLocal)} />
-        <TotalEntry label={t('К-сть за вибраний період')} value={formatAmount(totals.TotalQtyFiltered)} />
-        <TotalEntry label={`${periodLabel} (EUR)`} value={formatMoney(totals.TotalAmountFiltered)} />
-        <TotalEntry label={`${periodLabel} (EUR, ${accountingShort})`} value={formatMoney(totals.AccountingTotalAmountFiltered)} />
-        {kind === 'batches' && (
-          <TotalEntry label={`${periodLabel} (${LOCAL_CURRENCY_CODE})`} value={formatMoney(totals.TotalAmountLocalFiltered)} />
-        )}
-        <TotalEntry label={`${periodLabel} (${LOCAL_CURRENCY_CODE}, ${accountingShort})`} value={formatMoney(totals.AccountingTotalAmountLocalFiltered)} />
-      </div>
-    </Box>
   )
 }
 

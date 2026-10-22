@@ -1,6 +1,5 @@
 import {
   Alert,
-  Card,
   Button,
   Group,
   Stack,
@@ -8,7 +7,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Save, Trash2 } from 'lucide-react'
+import { CircleAlert, Save, Trash2, X } from 'lucide-react'
 import { type FormEvent, useEffect, useReducer } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -258,30 +257,27 @@ export function PaymentCashflowArticleFormPage() {
     <AppModal
       className="app-compact-form"
       opened
-      size={600}
       title={isEditMode ? t('Редагування статті руху коштів') : t('Нова стаття руху коштів')}
       onClose={handleCancel}
     >
       <form id="payment-cashflow-article-form" onSubmit={handleSubmit}>
-        <Card className="app-section-card" withBorder padding={12} radius="md">
-          <Stack gap={10}>
-            {error && (
-              <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-                {error}
-              </Alert>
-            )}
+        <Stack gap={10}>
+          {error && (
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+              {error}
+            </Alert>
+          )}
 
-            <TextInput
-              disabled={isLoading || isSaving || isDeleting || !canSave}
-              label={t('Назва')}
-              maxLength={ARTICLE_NAME_MAX_LENGTH}
-              placeholder={t('Вкажіть назву')}
-              required
-              value={operationName}
-              onChange={(event) => setFormState({ operationName: event.currentTarget.value })}
-            />
-          </Stack>
-        </Card>
+          <TextInput
+            disabled={isLoading || isSaving || isDeleting || !canSave}
+            label={t('Назва')}
+            maxLength={ARTICLE_NAME_MAX_LENGTH}
+            placeholder={t('Вкажіть назву')}
+            required
+            value={operationName}
+            onChange={(event) => setFormState({ operationName: event.currentTarget.value })}
+          />
+        </Stack>
       </form>
       <AppModalFooter className={isEditMode && canDelete ? 'app-modal-footer--split' : undefined}>
         {isEditMode && canDelete && (
@@ -300,7 +296,14 @@ export function PaymentCashflowArticleFormPage() {
           </Group>
         )}
         <Group gap="xs">
-          <Button variant="default" disabled={isSaving || isDeleting} onClick={handleCancel}>{t('Скасувати')}</Button>
+          <Button
+            disabled={isSaving || isDeleting}
+            leftSection={<X size={16} />}
+            variant="default"
+            onClick={handleCancel}
+          >
+            {t('Скасувати')}
+          </Button>
           {canSave && (
             <Button
               color={CREATE_ACTION_COLOR}

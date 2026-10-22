@@ -206,16 +206,16 @@
   margin-bottom: 8px;
 }
 
-.document-detail-related-card__head span:first-child {
+.document-detail-related-card__head > span:first-child:not(.app-table-chip) {
   color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 700;
 }
 
-.document-detail-related-card__head span:last-child {
+.document-detail-related-card__head > span:last-child:not(.app-table-chip) {
   color: var(--mantine-color-gray-7);
-  font-size: 11px;
+  font: 500 12px/1.4 var(--font-mono);
   white-space: nowrap;
 }
 

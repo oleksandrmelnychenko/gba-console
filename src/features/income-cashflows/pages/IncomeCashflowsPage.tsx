@@ -1401,7 +1401,7 @@ function IncomeAssignedPaymentOrderBlock({
 
   return (
     <Stack gap="xs">
-      <Text fw={600} size="sm">{title}</Text>
+      <Text className="income-cashflow-view__related-title">{title}</Text>
       <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="sm" verticalSpacing="xs">
         <DetailItem label={t('Номер зв’язки')} value={<TableChip tone="document" value={assignedOrder.Number} />} />
         <DetailItem label={t('Сума зв’язки')} mono value={formatMoney(assignedOrder.Amount)} />
@@ -1431,7 +1431,7 @@ function IncomeAssignedOutcomeOrderView({ order }: { order: OutcomePaymentOrder 
       <DetailItem label={t('Документ')} value={getOutcomePaymentOrderTypeLabel(order, t)} />
       <DetailItem label={t('Номер')} value={<TableChip tone="document" value={order.Number || order.CustomNumber || order.AdvanceNumber} />} />
       <DetailItem label={t('Авансовий звіт')} value={<TableChip tone="document" value={order.AdvanceNumber} />} />
-      <DetailItem label={t('Дата')} value={formatDateTime(order.FromDate)} />
+      <DetailItem label={t('Дата')} mono value={formatDateTime(order.FromDate)} />
       <DetailItem label={t('Сума')} mono value={<IncomeDetailAmount value={hasNumber(order.Amount) ? formatMoney(order.Amount) : ''} currency={getOutcomeCurrency(order)} />} />
       <DetailItem label={t('Отримувач')} value={displayValue(getOutcomePayedTo(order))} />
     </SimpleGrid>

@@ -1,6 +1,7 @@
 import {
   Alert,
   Button,
+  Card,
   Checkbox,
   FileInput,
   NumberInput,
@@ -10,7 +11,7 @@ import {
   Text,
   Textarea,
 } from '@mantine/core'
-import { CircleAlert, FileSpreadsheet } from 'lucide-react'
+import { CircleAlert, FileMinus2, FileSpreadsheet, X } from 'lucide-react'
 import { type FormEvent, useMemo } from 'react'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -121,9 +122,9 @@ export function DepreciatedOrderCreateModal({
   }
 
   return (
-    <AppModal centered opened={opened} size={760} title={`${t('Додати')} ${t('Акт списання')}`} onClose={closeModal}>
+    <AppModal className="app-compact-form" centered opened={opened} size={680} title={`${t('Додати')} ${t('Акт списання')}`} onClose={closeModal}>
       <form id="depreciated-order-create-form" onSubmit={submitForm}>
-        <Stack className="app-compact-form" gap="md">
+        <Stack gap={10}>
           {(validationError || createError) && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {validationError || createError}
@@ -135,7 +136,7 @@ export function DepreciatedOrderCreateModal({
             </Alert>
           )}
 
-          <SimpleGrid cols={{ base: 1, sm: 2 }}>
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10} verticalSpacing={10}>
             <Select
               searchable
               allowDeselect={false}
@@ -159,51 +160,67 @@ export function DepreciatedOrderCreateModal({
             <Checkbox
               checked={form.isManagement}
               disabled={isCreating}
-              label={t('Управ.')}
+              label={t('Управлінський облік')}
               onChange={(event) => { const nextValue = event.currentTarget.checked; setForm((current) => ({ ...current, isManagement: nextValue })) }}
             />
           )}
 
-          <SimpleGrid cols={{ base: 1, sm: 4 }}>
-            <NumberInput
-              allowDecimal={false}
-              allowNegative={false}
-              disabled={isCreating}
-              label={t('Код Виробника')}
-              min={1}
-              value={form.vendorCodeColumnNumber}
-              onChange={(value) =>
-                setForm((current) => ({ ...current, vendorCodeColumnNumber: toNumberInputValue(value) }))
-              }
-            />
-            <NumberInput
-              allowDecimal={false}
-              allowNegative={false}
-              disabled={isCreating}
-              label={t('Кількість')}
-              min={1}
-              value={form.qtyColumnNumber}
-              onChange={(value) => setForm((current) => ({ ...current, qtyColumnNumber: toNumberInputValue(value) }))}
-            />
-            <NumberInput
-              allowDecimal={false}
-              allowNegative={false}
-              disabled={isCreating}
-              label={t('Від')}
-              min={1}
-              value={form.startRow}
-              onChange={(value) => setForm((current) => ({ ...current, startRow: toNumberInputValue(value) }))}
-            />
-            <NumberInput
-              allowDecimal={false}
-              allowNegative={false}
-              disabled={isCreating}
-              label={t('До')}
-              min={1}
-              value={form.endRow}
-              onChange={(value) => setForm((current) => ({ ...current, endRow: toNumberInputValue(value) }))}
-            />
-          </SimpleGrid>
+          <Card className="app-section-card" withBorder padding={12} radius="md">
+            <Stack gap={10}>
+              <Text component="h3" className="app-section-title" size="sm" fw={500}>{t('Імпорт з Excel')}</Text>
+              <FileInput
+                accept=".xls,.xlsx"
+                clearable
+                disabled={isCreating}
+                label={t('Завантажте документ')}
+                leftSection={<FileSpreadsheet size={16} />}
+                placeholder={t('XLS або XLSX')}
+                value={form.file}
+                onChange={(file) => setForm((current) => ({ ...current, file }))}
+              />
+
+              <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={10} verticalSpacing={10}>
+                <NumberInput
+                  allowDecimal={false}
+                  allowNegative={false}
+                  disabled={isCreating}
+                  label={t('Колонка артикула')}
+                  min={1}
+                  value={form.vendorCodeColumnNumber}
+                  onChange={(value) =>
+                    setForm((current) => ({ ...current, vendorCodeColumnNumber: toNumberInputValue(value) }))
+                  }
+                />
+                <NumberInput
+                  allowDecimal={false}
+                  allowNegative={false}
+                  disabled={isCreating}
+                  label={t('Колонка кількості')}
+                  min={1}
+                  value={form.qtyColumnNumber}
+                  onChange={(value) => setForm((current) => ({ ...current, qtyColumnNumber: toNumberInputValue(value) }))}
+                />
+                <NumberInput
+                  allowDecimal={false}
+                  allowNegative={false}
+                  disabled={isCreating}
+                  label={t('Перший рядок')}
+                  min={1}
+                  value={form.startRow}
+                  onChange={(value) => setForm((current) => ({ ...current, startRow: toNumberInputValue(value) }))}
+                />
+                <NumberInput
+                  allowDecimal={false}
+                  allowNegative={false}
+                  disabled={isCreating}
+                  label={t('Останній рядок')}
+                  min={1}
+                  value={form.endRow}
+                  onChange={(value) => setForm((current) => ({ ...current, endRow: toNumberInputValue(value) }))}
+                />
+              </SimpleGrid>
+            </Stack>
+          </Card>
 
           <Textarea
             autosize
@@ -214,16 +231,6 @@ export function DepreciatedOrderCreateModal({
             onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, comment: nextValue })) }}
           />
 
-          <FileInput
-            accept=".xls,.xlsx"
-            clearable
-            disabled={isCreating}
-            label={t('Завантажте документ')}
-            leftSection={<FileSpreadsheet size={16} />}
-            placeholder={t('XLS або XLSX')}
-            value={form.file}
-            onChange={(file) => setForm((current) => ({ ...current, file }))}
-          />
 
           {!canCreateManagement && (
             <Text c="dimmed" size="xs">
@@ -232,10 +239,10 @@ export function DepreciatedOrderCreateModal({
           )}
 
           <AppModalFooter>
-            <Button color="gray" disabled={isCreating} type="button" variant="default" onClick={closeModal}>
+            <Button color="gray" disabled={isCreating} type="button" leftSection={<X size={16} />} variant="default" onClick={closeModal}>
               {t('Скасувати')}
             </Button>
-            <Button color={CREATE_ACTION_COLOR} loading={isCreating} type="submit">
+            <Button color={CREATE_ACTION_COLOR} loading={isCreating} leftSection={<FileMinus2 size={16} />} type="submit">
               {t('Списати')}
             </Button>
           </AppModalFooter>

@@ -47,7 +47,7 @@
   align-items: center;
   gap: 5px;
   color: var(--mantine-color-gray-7);
-  font: 400 12px / 1.4 var(--font-mono);
+  font: 500 12px / 1.4 var(--font-mono);
 }
 
 .product-income-document-detail .document-detail-columns {
@@ -64,21 +64,13 @@
   gap: 8px;
 }
 
-.product-income-document-detail .document-detail-section__title {
-  color: var(--mantine-color-gray-9);
-  font: 600 13px / 1.4 var(--font-mono);
+.product-income-document-detail .document-detail-row__label {
+  color: var(--mantine-color-gray-7);
 }
 
-.product-income-document-detail .document-detail-row__label,
-.product-income-document-detail .document-detail-metric > span,
-.product-income-document-detail .document-detail-eyebrow {
-  color: var(--mantine-color-gray-9);
-  font: 500 12px / 1.4 var(--font-sans);
-}
-
-.product-income-document-detail .document-detail-row__value {
-  font-size: 13px;
-  font-weight: 400;
+.product-income-document-detail .document-detail-metric > span {
+  color: var(--mantine-color-gray-7);
+  font: 600 11px / 1.2 var(--font-mono);
 }
 
 .income-return-metadata {

@@ -38,8 +38,8 @@
 
 .income-cashflow-view__payer {
   flex-basis: 100%;
-  color: var(--mantine-color-gray-9);
-  font-size: 13px;
+  color: var(--mantine-color-gray-8);
+  font: 500 13px/1.4 var(--font-sans);
   overflow-wrap: anywhere;
 }
 
@@ -205,4 +205,9 @@
 
 .income-reassign-content .mantine-Alert-root {
   padding: 8px 10px;
+}
+
+.income-cashflow-view__related-title {
+  color: var(--mantine-color-gray-8);
+  font: 500 13px/1.4 var(--font-mono);
 }

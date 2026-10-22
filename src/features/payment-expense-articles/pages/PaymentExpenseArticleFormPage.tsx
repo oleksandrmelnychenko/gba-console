@@ -1,6 +1,5 @@
 import {
   Alert,
-  Card,
   Button,
   Group,
   Stack,
@@ -8,7 +7,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Save, Trash2 } from 'lucide-react'
+import { CircleAlert, Save, Trash2, X } from 'lucide-react'
 import { type FormEvent, useEffect } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
@@ -251,39 +250,36 @@ export function PaymentExpenseArticleFormPage() {
     <AppModal
       className="app-compact-form"
       opened
-      size={600}
       title={isEditMode ? t('Редагування статті витрат') : t('Нова стаття витрат')}
       onClose={handleCancel}
     >
       <form id="payment-expense-article-form" onSubmit={handleSubmit}>
-        <Card className="app-section-card" withBorder padding={12} radius="md">
-          <Stack gap={10}>
-            {error && (
-              <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-                {error}
-              </Alert>
-            )}
+        <Stack gap={10}>
+          {error && (
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+              {error}
+            </Alert>
+          )}
 
-            <TextInput
-              disabled={isLoading || isSaving || isDeleting || !canSave}
-              label={t('Назва')}
-              maxLength={ARTICLE_NAME_MAX_LENGTH}
-              placeholder={t('Вкажіть назву')}
-              required
-              value={operationName}
-              onChange={(event) => {
-                // Read synchronously: currentTarget is null by the time the
-                // deferred updater runs, which killed the whole tree (bug 92).
-                const { value } = event.currentTarget
+          <TextInput
+            disabled={isLoading || isSaving || isDeleting || !canSave}
+            label={t('Назва')}
+            maxLength={ARTICLE_NAME_MAX_LENGTH}
+            placeholder={t('Вкажіть назву')}
+            required
+            value={operationName}
+            onChange={(event) => {
+              // Read synchronously: currentTarget is null by the time the
+              // deferred updater runs, which killed the whole tree (bug 92).
+              const { value } = event.currentTarget
 
-                setFormState((current) => ({
-                  ...current,
-                  operationName: value,
-                }))
-              }}
-            />
-          </Stack>
-        </Card>
+              setFormState((current) => ({
+                ...current,
+                operationName: value,
+              }))
+            }}
+          />
+        </Stack>
       </form>
       <AppModalFooter className={isEditMode && canDelete ? 'app-modal-footer--split' : undefined}>
         {isEditMode && canDelete && (
@@ -302,7 +298,14 @@ export function PaymentExpenseArticleFormPage() {
           </Group>
         )}
         <Group gap="xs">
-          <Button variant="default" disabled={isSaving || isDeleting} onClick={handleCancel}>{t('Скасувати')}</Button>
+          <Button
+            disabled={isSaving || isDeleting}
+            leftSection={<X size={16} />}
+            variant="default"
+            onClick={handleCancel}
+          >
+            {t('Скасувати')}
+          </Button>
           {canSave && (
             <Button
               color={CREATE_ACTION_COLOR}

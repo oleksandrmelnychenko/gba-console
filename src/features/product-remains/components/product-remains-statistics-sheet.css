@@ -1,0 +1,105 @@
+.product-remains-statistics-sheet .app-bottom-sheet__header {
+  padding-inline: 24px;
+}
+
+.product-remains-statistics-sheet .mantine-Drawer-close {
+  right: 24px;
+}
+
+.product-remains-statistics__title {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.app-bottom-sheet .product-remains-statistics {
+  overflow-y: auto;
+  padding: 12px 24px max(20px, env(safe-area-inset-bottom));
+  background: var(--mantine-color-gray-0);
+}
+
+.product-remains-statistics__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.product-remains-statistics__section {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 12px;
+  background: var(--mantine-color-white);
+}
+
+.product-remains-statistics__heading {
+  display: flex;
+  align-items: flex-start;
+  min-height: 44px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.product-remains-statistics__heading h3 {
+  margin: 0;
+  font: 500 14px/1.4 var(--font-mono);
+}
+
+.product-remains-statistics__quantity {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--mantine-color-gray-7);
+  font: 500 12px/1.4 var(--font-sans);
+}
+
+.product-remains-statistics__period {
+  margin-top: 6px;
+  color: var(--mantine-color-gray-7);
+  font: 500 12px/1.4 var(--font-mono);
+}
+
+.product-remains-statistics__table {
+  width: 100%;
+  margin-top: 12px;
+  border-collapse: collapse;
+  font: 500 14px/1.4 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.product-remains-statistics__table :is(th, td) {
+  padding: 10px 6px;
+  text-align: right;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  white-space: nowrap;
+}
+
+.product-remains-statistics__table th:first-child {
+  padding-left: 0;
+  text-align: left;
+}
+
+.product-remains-statistics__table thead th {
+  color: var(--mantine-color-gray-7);
+  font: 500 12px/1.4 var(--font-sans);
+}
+
+.product-remains-statistics__table tr:last-child td,
+.product-remains-statistics__table tbody tr:last-child th {
+  border-bottom: 0;
+}
+
+@media (max-width: 900px) {
+  .product-remains-statistics__grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 440px) {
+  .product-remains-statistics-sheet .app-bottom-sheet__header { padding-inline: 16px; }
+  .product-remains-statistics-sheet .mantine-Drawer-close { right: 16px; }
+  .app-bottom-sheet .product-remains-statistics { padding: 10px 16px max(16px, env(safe-area-inset-bottom)); }
+  .product-remains-statistics__section { padding: 10px; }
+  .product-remains-statistics__table { font-size: 12px; }
+  .product-remains-statistics__table :is(th, td) { padding-inline: 3px; }
+}

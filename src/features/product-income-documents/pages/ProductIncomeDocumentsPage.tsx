@@ -1002,7 +1002,7 @@ export function ProductIncomeDocumentDrawer({
                 icon={row.docState === t('Виконано') ? <Check size={13} /> : <X size={13} />}>{row.docState}</DocumentDetailChip> : null}
               meta={<>
                 {document.FromDate ? <span className="income-document-date"><CalendarDays size={13} />{formatDateTime(document.FromDate)}</span> : null}
-                {row.type ? <span className="income-document-kind">{row.type}</span> : null}
+                {row.type ? <TableChip value={row.type} /> : null}
                 {overviewKind !== 'saleReturn' && <DocumentDetailChip>{t('Кількість')}: {formatAmount(row.qty)}</DocumentDetailChip>}
               </>}
               metrics={
@@ -1064,7 +1064,7 @@ export function ProductIncomeDocumentDrawer({
               <IncomeMetadataChip label={t('Відповідальний')} tone="warning" value={getEntityName(document.User)} />
               <IncomeMetadataChip label={t('Повернення')} tone="document" value={row.invNumber} />
               <DocumentDetailRow label={t('Дата повернення')} mono value={formatDateTime(row.invDate)} />
-              <DocumentDetailRow label={t('Угода')} value={returnAgreement?.Name} />
+              <IncomeMetadataChip label={t('Угода')} tone="neutral" value={returnAgreement?.Name} />
               {row.comment || document.Comment ? <DocumentDetailRow label={t('Коментар')} value={row.comment || document.Comment} wide /> : null}
               </div>
             </DocumentDetailSection>
@@ -1110,7 +1110,7 @@ export function ProductIncomeDocumentDrawer({
 
           {detailMode === 'view' && (
             <details className="income-warehouse-details" open={overviewKind !== 'saleReturn'}>
-              <summary hidden={overviewKind !== 'saleReturn'}>{t('Позиції складського обліку')} · {getActiveProductIncomeItems(document).length}</summary>
+              <summary hidden={overviewKind !== 'saleReturn'}>{t('Позиції складського обліку')} <TableChip value={getActiveProductIncomeItems(document).length} /></summary>
               <DocumentDetailSection stacked subtitle={String(getActiveProductIncomeItems(document).length)} title={t('Позиції документа')}>
                 {documentInfoError && (
                   <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
