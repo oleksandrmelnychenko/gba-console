@@ -71,7 +71,7 @@ function createSale(overrides: Partial<SalesUkraineSale> = {}): SalesUkraineSale
   return {
     BaseLifeCycleStatus: { SaleLifeCycleType: 'Packaging' },
     ClientAgreement: {
-      Agreement: { WithVATAccounting: false },
+      Agreement: { WithVATAccounting: false, Organization: { Culture: 'uk' } },
     },
     HistoryInvoiceEdit: [],
     IsVatSale: false,
@@ -196,10 +196,10 @@ describe('SaleDocumentsMenu legacy document semantics', () => {
     expect(mocks.getSaleInvoiceDocument).not.toHaveBeenCalled()
   })
 
-  it('shows PZ only for a Polish sale in invoice status', async () => {
-    mocks.getApiLanguage.mockReturnValue('pl')
+  it.each(['uk', 'pl'])('shows PZ for a Polish organization with %s UI language', async (language) => {
+    mocks.getApiLanguage.mockReturnValue(language)
 
-    renderMenu()
+    renderMenu(createSale({ ClientAgreement: { Agreement: { Organization: { Culture: 'PL' } } } }))
     await openMenu()
 
     fireEvent.click(screen.getByText('PZ'))
@@ -207,10 +207,25 @@ describe('SaleDocumentsMenu legacy document semantics', () => {
     await waitFor(() => expect(mocks.getSalePzDocument).toHaveBeenCalledWith('sale-net-id'))
   })
 
+  it.each(['uk', undefined, ''])('hides PZ for organization culture %s even with Polish UI language', async (culture) => {
+    mocks.getApiLanguage.mockReturnValue('pl')
+    renderMenu(createSale({
+      NetUid: '34edde86-420f-4bc6-91c1-bb5380e9141a',
+      ClientAgreement: { Agreement: { Organization: { Culture: culture } } },
+    }))
+    await openMenu()
+
+    expect(screen.queryByText('PZ')).toBeNull()
+    expect(mocks.getSalePzDocument).not.toHaveBeenCalled()
+  })
+
   it('hides PZ for a Polish sale after invoice status', async () => {
     mocks.getApiLanguage.mockReturnValue('pl')
 
-    renderMenu(createSale({ BaseLifeCycleStatus: { SaleLifeCycleType: 'Packaged' } }))
+    renderMenu(createSale({
+      BaseLifeCycleStatus: { SaleLifeCycleType: 'Packaged' },
+      ClientAgreement: { Agreement: { Organization: { Culture: 'pl' } } },
+    }))
     await openMenu()
 
     expect(screen.getByText('Видаткова накладна')).toBeTruthy()

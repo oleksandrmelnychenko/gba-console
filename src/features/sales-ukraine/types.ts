@@ -45,6 +45,7 @@ export type SalesUkraineCurrency = SalesUkraineEntity & {
 
 export type SalesUkraineOrganization = SalesUkraineEntity & {
   Address?: string
+  Culture?: string
   Name?: string
 }
 

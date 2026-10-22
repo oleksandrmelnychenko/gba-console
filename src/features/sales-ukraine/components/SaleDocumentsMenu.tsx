@@ -3,7 +3,6 @@ import { notifications } from '@mantine/notifications'
 import { ClipboardList, FileText, Printer, Receipt } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { usePermissions } from '../../auth/usePermissions'
-import { getApiLanguage } from '../../../shared/api/apiClient'
 import { PermissionKeys, type SalesUkraineSalePermissionKey } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -79,10 +78,9 @@ export function SaleDocumentsMenu({
 
   const canExportInvoice = can(PermissionKeys.SalesUkraine.Sale.ExportInvoice)
 
-  const apiLanguage = getApiLanguage()
   const actions = useMemo(
-    () => (sale ? buildDocumentActions(sale, apiLanguage, t).filter((action) => can(action.permissionKey)) : []),
-    [apiLanguage, can, sale, t],
+    () => (sale ? buildDocumentActions(sale, t).filter((action) => can(action.permissionKey)) : []),
+    [can, sale, t],
   )
   const isControlled = typeof opened === 'boolean'
 
@@ -279,7 +277,7 @@ function revisionDocumentsLabel(revision: number, isCurrent: boolean, t: (key: s
   return `${t('Правка')} ${revision} ${t('документа')}`
 }
 
-function buildDocumentActions(sale: SalesUkraineSale, apiLanguage: string, t: (key: string) => string): DocumentAction[] {
+function buildDocumentActions(sale: SalesUkraineSale, t: (key: string) => string): DocumentAction[] {
   const netId = sale.NetUid
 
   if (!netId) {
@@ -290,7 +288,7 @@ function buildDocumentActions(sale: SalesUkraineSale, apiLanguage: string, t: (k
   const isPackaging = lifecycleStatusKey === 'Packaging' || lifecycleStatusKey === 'Packaged'
   const isInvoiceStatus = lifecycleStatusKey === 'Packaging'
   const isPaymentBillStatus = lifecycleStatusKey === 'New'
-  const isPolishRegion = apiLanguage.toLowerCase() === 'pl'
+  const isPolishSale = sale.ClientAgreement?.Agreement?.Organization?.Culture?.toLowerCase() === 'pl'
   const hasTransporter = Boolean(sale.TransporterId)
   const isVat = Boolean(sale.IsVatSale)
   const withVatAccounting = Boolean(sale.ClientAgreement?.Agreement?.WithVATAccounting)
@@ -373,7 +371,7 @@ function buildDocumentActions(sale: SalesUkraineSale, apiLanguage: string, t: (k
     })
   }
 
-  if (isPolishRegion && isInvoiceStatus) {
+  if (isPolishSale && isInvoiceStatus) {
     actions.push({
       fetch: () => getSalePzDocument(netId),
       key: 'pz',
