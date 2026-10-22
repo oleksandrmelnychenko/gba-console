@@ -1,3 +1,4 @@
+import { CockpitSourceStatus } from '../components/CockpitSourceStatus'
 import {
   ActionIcon,
   Alert,
@@ -158,6 +159,7 @@ function HeadDashboardPageContent() {
 
   return (
     <Stack className="cockpit-page cockpit-head-page" gap={6}>
+      <CockpitSourceStatus head />
       <Card className="app-filter-card cockpit-toolbar-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar cockpit-command-bar cockpit-head-command-bar">
           <Stack className="cockpit-head-title" gap={3}>

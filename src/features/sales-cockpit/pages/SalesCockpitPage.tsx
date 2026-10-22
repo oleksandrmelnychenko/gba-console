@@ -1,3 +1,4 @@
+import { CockpitSourceStatus } from '../components/CockpitSourceStatus'
 import { Button, Group, Stack } from '@mantine/core'
 import { ClipboardList, FileText, MessagesSquare, Users } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
@@ -224,6 +225,7 @@ function SalesCockpitPageContent() {
 
   return (
     <Stack className="cockpit-page" gap={6}>
+      <CockpitSourceStatus />
       <div className="app-screen-tabs" role="tablist" aria-label={t('Розділи кокпіта')}>
         {(
           [
