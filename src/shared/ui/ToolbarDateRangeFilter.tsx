@@ -93,7 +93,8 @@ export function ToolbarDateRangeFilter({ from, to, min, max, disabled, required 
           </Tooltip>
         </Popover.Target>
         {/* Mantine Drawer checks this marker on the key target during window capture. */}
-        <Popover.Dropdown className="app-date-range-menu" role="dialog" aria-label={t('Період')} data-mantine-stop-propagation>
+        <Popover.Dropdown className="app-date-range-menu" role="dialog" aria-label={t('Період')} data-mantine-stop-propagation
+          onFocusCapture={(event) => event.target.setAttribute('data-mantine-stop-propagation', 'true')}>
           <form
             className="app-date-range-panel"
             onSubmit={(event) => {

@@ -48,7 +48,7 @@ describe('ToolbarDateRangeFilter', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
-  it.each(['Від', 'До', 'Застосувати', 'Скасувати', 'Період'])('Escape on %s cancels only the picker inside a Drawer', (target) => {
+  it.each(['Від', 'До', 'Застосувати', 'Скасувати', 'Період', 'day', 'presetButton', 'calendarHeaderControl', 'calendarHeaderLevel', 'monthsListControl', 'yearsListControl'])('Escape on %s cancels only the picker inside a Drawer', (target) => {
     const onClose = vi.fn()
     const onChange = vi.fn()
     render(<MantineProvider env="test"><I18nProvider>
@@ -58,9 +58,15 @@ describe('ToolbarDateRangeFilter', () => {
     </I18nProvider></MantineProvider>)
     fireEvent.click(screen.getByRole('button', { name: /^Період:/ }))
     fireEvent.change(screen.getByLabelText('Від'), { target: { value: '2026-10-05' } })
-    const control = target === 'Період' ? screen.getByRole('dialog', { name: 'Період' })
+    if (target === 'monthsListControl' || target === 'yearsListControl') {
+      fireEvent.click(document.querySelector('.mantine-DatePicker-calendarHeaderLevel')!)
+      if (target === 'yearsListControl') fireEvent.click(document.querySelector('.mantine-DatePicker-calendarHeaderLevel')!)
+    }
+    const calendarControl = document.querySelector(`.mantine-DatePicker-${target}:not([disabled])`)
+    const control = calendarControl ?? (target === 'Період' ? screen.getByRole('dialog', { name: 'Період' })
       : target === 'Від' || target === 'До' ? screen.getByLabelText(target)
-        : screen.getByRole('button', { name: target })
+        : screen.getByRole('button', { name: target }))
+    fireEvent.focus(control)
     fireEvent.keyDown(control, { key: 'Escape', code: 'Escape' })
     expect(screen.queryByRole('dialog', { name: 'Період' })).toBeNull()
     expect(onClose).not.toHaveBeenCalled()
