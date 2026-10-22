@@ -6,8 +6,8 @@ vi.mock('../../../shared/i18n/useI18n', () => ({ useI18n: () => ({ t: (text: str
 const show = (value: unknown) => render(<MantineProvider><TaskSourceEvidence value={value} /></MantineProvider>)
 it('deduplicates purchase document evidence and does not imply paid attribution', () => {
   show({ kind: 'purchase', observed_at: '2026-10-22T10:00:00Z', orders: {
-    1: { order_id: 123, purchased_at: '2026-10-22T09:00:00Z' },
-    2: { order_id: 123, purchased_at: '2026-10-22T09:00:00Z' },
+    1: { order_id: 123, purchased_on: '2026-10-22', date_basis: 'source_document_date' },
+    2: { order_id: 123, purchased_on: '2026-10-22', date_basis: 'source_document_date' },
   } })
   expect(screen.getAllByText(/Замовлення #123/)).toHaveLength(1)
   expect(screen.getByText(/це не підтвердження оплати/)).toBeTruthy()

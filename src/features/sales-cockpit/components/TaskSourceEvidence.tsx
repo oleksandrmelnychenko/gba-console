@@ -18,7 +18,7 @@ export function TaskSourceEvidence({ value }: { value: unknown }) {
     label = t('Виявлено нову покупку')
     documents = [...new Set(Object.values(value.orders).flatMap((order) => record(order)
       && typeof order.order_id === 'number' && Number.isSafeInteger(order.order_id) && order.order_id > 0
-      ? [`${t('Замовлення')} #${order.order_id}${typeof order.purchased_at === 'string' && Number.isFinite(Date.parse(order.purchased_at)) ? ` · ${formatContactDate(order.purchased_at)}` : ''}`] : []))]
+      ? [`${t('Замовлення')} #${order.order_id}${typeof order.purchased_on === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(order.purchased_on) ? ` · ${order.purchased_on.split('-').reverse().join('.')} (${t('дата документа')})` : ''}`] : []))]
   } else if (value.kind === 'duplicate_recommendation') {
     label = t('Повторну пораду об’єднано з активною')
   } else return null
