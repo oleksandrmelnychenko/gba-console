@@ -1,6 +1,6 @@
 import { DateInput, type DateInputProps } from '@mantine/dates'
 import { CalendarDays } from 'lucide-react'
-import { useState, type ChangeEvent } from 'react'
+import { useLayoutEffect, useRef, useState, type ChangeEvent } from 'react'
 import './app-date-input.css'
 
 type NativeDateType = 'date' | 'datetime-local'
@@ -43,6 +43,7 @@ export function AppDateInput({
   max,
   name,
   onChange,
+  onChangeCapture,
   onBlur,
   onClick,
   onFocus,
@@ -56,6 +57,8 @@ export function AppDateInput({
   ...rest
 }: AppDateInputProps) {
   const withTime = type === 'datetime-local'
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [typedDraft, setTypedDraft] = useState<string | null>(null)
   const [calendarOpen, setCalendarOpen] = useState(false)
   // DateInput keeps the typed text while its dropdown is open and ignores outside
   // value changes until blur. A reset from the form during that time (value
@@ -67,9 +70,14 @@ export function AppDateInput({
   const minDay = toPickerValue(min, false)
   const maxDay = toPickerValue(max, false)
 
+  useLayoutEffect(() => {
+    if (inputRef.current) validateInput(inputRef.current, typedDraft ?? value ?? '', withTime, min, max)
+  })
+
   if ((value ?? '') !== seen) {
     setSeen(value ?? '')
     if ((value ?? '') !== emitted) {
+      setTypedDraft(null)
       setEmitted(value ?? '')
       if (calendarOpen) {
         setCalendarOpen(false)
@@ -79,6 +87,7 @@ export function AppDateInput({
   }
 
   function emit(next: string) {
+    setTypedDraft(null)
     setEmitted(next)
     setCalendarOpen(true)
     const target = { name: name ?? '', value: next }
@@ -88,6 +97,7 @@ export function AppDateInput({
   return (
     <DateInput
       key={generation}
+      ref={inputRef}
       {...rest}
       // A day grid is a `grid`, not a data table: screen readers and table queries
       // must not confuse an open calendar with the page's own tables.
@@ -98,8 +108,8 @@ export function AppDateInput({
       data-mantine-stop-propagation={calendarOpen || undefined}
       dateParser={(input) => parseTypedDate(input, withTime)}
       disabled={disabled}
-      // Like a native input, min/max only guide the calendar (out-of-range days
-      // are disabled); a typed value still reaches the form, which validates it.
+      // Keep typed values available to callers while preserving native form validity.
+      // Text inputs do not enforce min/max themselves, so validateInput does it.
       getDayProps={(day) => ({
         ...rest.getDayProps?.(day),
         disabled: Boolean((minDay && day < minDay) || (maxDay && day > maxDay)) || rest.getDayProps?.(day).disabled,
@@ -116,11 +126,26 @@ export function AppDateInput({
       value={toPickerValue(value, withTime)}
       valueFormat={DISPLAY_FORMAT[type]}
       withTime={withTime}
+      onChangeCapture={(event) => {
+        setTypedDraft(event.currentTarget.value)
+        validateInput(event.currentTarget, event.currentTarget.value, withTime, min, max)
+        onChangeCapture?.(event)
+      }}
       onBlur={(event) => {
+        // Mantine restores the controlled value after this callback by default.
+        if (rest.fixOnBlur !== false) {
+          setTypedDraft(null)
+          validateInput(event.currentTarget, value ?? '', withTime, min, max)
+        }
         setCalendarOpen(false)
         onBlur?.(event)
       }}
-      onChange={(next) => emit(toNativeValue(next, withTime))}
+      onChange={(next) => {
+        // Mantine emits a day without a time when a calendar cell is clicked.
+        const nextWithTime = withTime && next && /^\d{4}-\d{2}-\d{2}$/.test(next)
+          ? `${next}T${value?.split(/[ T]/)[1] || '00:00'}` : next
+        emit(toNativeValue(nextWithTime, withTime))
+      }}
       onClick={(event) => {
         setCalendarOpen(true)
         onClick?.(event)
@@ -191,4 +216,16 @@ function parseTypedDate(input: string, withTime: boolean): string | null {
   const pad = (part: number) => String(part).padStart(2, '0')
   const datePart = `${year}-${pad(month)}-${pad(day)}`
   return withTime ? `${datePart} ${pad(hours)}:${pad(minutes)}:00` : datePart
+}
+
+
+function validateInput(input: HTMLInputElement, raw: string, withTime: boolean, min?: string, max?: string) {
+  const parsed = raw.trim() ? parseTypedDate(raw, withTime) : null
+  let error = raw.trim() && !parsed ? 'Вкажіть коректну дату' : ''
+  if (parsed) {
+    const lower = min ? parseTypedDate(min, withTime) : null
+    const upper = max ? parseTypedDate(max, withTime) : null
+    if ((lower && parsed < lower) || (upper && parsed > upper)) error = 'Вкажіть дату в межах дозволеного періоду'
+  }
+  input.setCustomValidity(error)
 }

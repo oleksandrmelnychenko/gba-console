@@ -1,11 +1,11 @@
-import { Alert, Button, Checkbox, Group, MultiSelect, Select, Stack, Table, Text } from '@mantine/core'
+import { TextInput, Alert, Button, Checkbox, Group, MultiSelect, Select, Stack, Table, Text } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { availabilityDateInput } from '../data/originalCashAvailability'
 import { readDebt } from '../api/originalCounterpartyDebtApi'
 import { debtInstantError, debtRequest, type DebtCapability, type DebtChoice, type DebtResult } from '../data/originalCounterpartyDebt'
 import { debtCsv, debtExportError, debtHeaders, debtLines, debtPdf, debtUnitNote, debtValues, debtXlsx } from '../data/originalCounterpartyDebtExport'
 import { useReportRunState } from '../hooks/useReportRunState'
-import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 const formats = ['csv', 'xlsx', 'pdf'] as const
 const dependencies: Record<string, string> = {
@@ -70,6 +70,7 @@ function useDebtRun(capability: DebtCapability, callerKey: string | null, canGen
   return { run, permitted, error, report, exporting, invalidate, generate, exportFile }
 }
 
+// Keep native sub-minute precision: Mantine DateInput normalizes timestamps and drops fractional seconds.
 export function OriginalCounterpartyDebtPanel({ capability, callerKey, canGenerate, initialAsOf }: {
   capability: DebtCapability; callerKey: string | null; canGenerate: boolean; initialAsOf: string
 }) {
@@ -96,7 +97,7 @@ export function OriginalCounterpartyDebtPanel({ capability, callerKey, canGenera
     })
   }
   return <Stack gap="md"><Text>{t('Організація → контрагент. Типово показано управлінську суму; сума взаєморозрахунків є окремою необов’язковою колонкою.')}</Text>
-    <AppDateInput type="datetime-local" step={1} label={t('Момент залишку (до)')} value={asOf} disabled={busy} onChange={e => { delivery.invalidate(); setAsOf(e.currentTarget.value.length === 16 ? e.currentTarget.value + ':00' : e.currentTarget.value) }} />
+    <TextInput type="datetime-local" step={1} label={t('Момент залишку (до)')} value={asOf} disabled={busy} onChange={e => { delivery.invalidate(); setAsOf(availabilityDateInput(e.currentTarget.value)) }} />
     <Select label={t('Вид заборгованості')} data={[{ value: '0', label: t('Усі') }, { value: '1', label: t('Позитивна сума взаєморозрахунків') }, { value: '2', label: t('Від’ємна сума взаєморозрахунків') }]}
       value={String(kind)} disabled={busy} onChange={v => { delivery.invalidate(); setKind(Number(v ?? '0')) }} />
     <Checkbox label={t('Додаткова сума взаєморозрахунків')} checked={settlement} disabled={busy} onChange={e => { delivery.invalidate(); setSettlement(e.currentTarget.checked) }} />

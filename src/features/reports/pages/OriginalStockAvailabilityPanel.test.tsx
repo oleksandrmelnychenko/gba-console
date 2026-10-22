@@ -60,3 +60,13 @@ it('invalid plain point disables generation while DateKon form remains editable'
   render(panel()); fireEvent.change(screen.getByLabelText('Дата й час залишку'), { target: { value: '' } })
   expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(true); expect(readOriginalStockAvailability).not.toHaveBeenCalled()
 })
+
+it('preserves an edited exact-second stock cutoff in the request', async () => {
+  render(panel())
+  const date = screen.getByLabelText('Дата й час залишку') as HTMLInputElement
+  expect(date.value).toBe('2026-10-06T12:34:56.000')
+  fireEvent.change(date, { target: { value: '2026-10-06T12:34:59' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
+  await waitFor(() => expect(readOriginalStockAvailability).toHaveBeenCalled())
+  expect(vi.mocked(readOriginalStockAvailability).mock.calls[0][0].At).toBe('2026-10-06 12:34:59')
+})

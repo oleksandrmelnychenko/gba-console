@@ -1,4 +1,4 @@
-import { MantineProvider } from '@mantine/core'
+import { Drawer, MantineProvider } from '@mantine/core'
 import { DatesProvider } from '@mantine/dates'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
@@ -95,4 +95,63 @@ describe('AppDateInput', () => {
     fireEvent.change(input, { target: { value: '02.10.2026 18:05' } })
     expect(onValue).toHaveBeenLastCalledWith('2026-10-02T18:05')
   })
+})
+
+
+describe('native form and drawer compatibility', () => {
+  it('blocks malformed typing until corrected without emitting an impossible date', () => {
+    const { input, onValue } = setup({ initial: '2026-10-01' })
+    fireEvent.change(input, { target: { value: '31.02.2026' } })
+    expect(input.checkValidity()).toBe(false)
+    expect(onValue).not.toHaveBeenCalled()
+    fireEvent.change(input, { target: { value: '02.10.2026' } })
+    expect(input.checkValidity()).toBe(true)
+  })
+
+  it('enforces initial and typed bounds through native form validity', () => {
+    const { input, onValue } = setup({ initial: '2026-09-30', min: '2026-10-01', max: '2026-10-31' })
+    expect(input.checkValidity()).toBe(false)
+    fireEvent.change(input, { target: { value: '01.11.2026' } })
+    expect(onValue).toHaveBeenLastCalledWith('2026-11-01')
+    expect(input.checkValidity()).toBe(false)
+    fireEvent.change(input, { target: { value: '31.10.2026' } })
+    expect(input.checkValidity()).toBe(true)
+  })
+
+  it('enforces time bounds on the same day', () => {
+    const { input } = setup({ type: 'datetime-local', initial: '2026-10-01T09:00', min: '2026-10-01T09:30', max: '2026-10-01T18:00' })
+    expect(input.checkValidity()).toBe(false)
+    fireEvent.change(input, { target: { value: '01.10.2026 09:30' } })
+    expect(input.checkValidity()).toBe(true)
+  })
+
+  it('preserves the current time when selecting another calendar day', () => {
+    const { input, onValue } = setup({ type: 'datetime-local', initial: '2026-10-01T09:30', getDayProps: day => ({ 'aria-label': day }) })
+    fireEvent.focus(input)
+    fireEvent.click(screen.getByRole('button', { name: '2026-10-02' }))
+    expect(onValue).toHaveBeenLastCalledWith('2026-10-02T09:30')
+  })
+
+  it('Escape first closes the focused calendar and then the host drawer', () => {
+    const onClose = vi.fn()
+    render(<MantineProvider env="test"><Drawer opened onClose={onClose} title="Документ">
+      <AppDateInput label="Дата" value="2026-10-01" onChange={vi.fn()} />
+    </Drawer></MantineProvider>)
+    const input = screen.getByLabelText('Дата')
+    fireEvent.focus(input)
+    expect(screen.getByRole('grid')).toBeTruthy()
+    fireEvent.keyDown(input, { key: 'Escape' })
+    expect(screen.queryByRole('grid')).toBeNull()
+    expect(onClose).not.toHaveBeenCalled()
+    fireEvent.keyDown(input, { key: 'Escape' })
+    expect(onClose).toHaveBeenCalledOnce()
+  })
+})
+
+it('clears an old bounds error when the calendar selects an allowed day', () => {
+  const { input } = setup({ initial: '2026-09-30', min: '2026-10-01', getDayProps: day => ({ 'aria-label': day }) })
+  expect(input.checkValidity()).toBe(false)
+  fireEvent.focus(input)
+  fireEvent.click(screen.getByRole('button', { name: '2026-10-02' }))
+  expect(input.checkValidity()).toBe(true)
 })

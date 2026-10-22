@@ -49,7 +49,12 @@ export function availabilityDateError(value: string): string | null {
   return year < 1900 || year >= 3999 || month < 1 || month > 12 || day < 1 || day > days[month - 1] || hour > 23 || minute > 59 || second > 59 ? 'Некоректна дата або час.' : null
 }
 // datetime-local may omit explicitly zero seconds; this appends literal :00, never a timezone/day adjustment.
-export const availabilityDateInput = (v: string) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v) ? `${v}:00` : v
+export function availabilityDateInput(value: string) {
+  // Native datetime fields may serialize whole seconds with a zero fraction.
+  // Remove only zeroes; a nonzero fraction must still fail exact-second validation.
+  const normalized = value.replace(/(T\d{2}:\d{2}:\d{2})\.0+$/, '$1')
+  return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(normalized) ? `${normalized}:00` : normalized
+}
 export function readAvailabilityFilter(v: unknown): AvailabilityFilter {
   if (!record(v) || !field(v.Field) || !hex(v.Reference, 32)) throw availabilityError()
   if (v.Field === 'БанковскийСчетКасса') {

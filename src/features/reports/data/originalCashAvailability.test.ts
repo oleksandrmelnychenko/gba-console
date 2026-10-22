@@ -87,3 +87,9 @@ it('total currency witnesses cannot erase or substitute the account unit or mixe
   expect(() => normalizeAvailabilityResult({ ...value, OwnTotals: { ...value.OwnTotals!, MixedOwnCurrencies: true } }, request())).toThrow()
   expect(() => normalizeAvailabilityResult({ ...value, ManagementTotals: { ...value.ManagementTotals!, Currencies: [{ ...value.ManagementTotals!.Currencies[0], Code: 'EUR' }] } }, request())).toThrow()
 })
+
+it('normalizes native zero fractions without rounding a nonzero exact-second boundary', () => {
+  expect(availabilityDateInput('2026-10-06T12:34:59.000')).toBe('2026-10-06T12:34:59')
+  expect(availabilityDateInput('2026-10-06T12:34:59.001')).toBe('2026-10-06T12:34:59.001')
+  expect(availabilityDateError(availabilityDateInput('2026-10-06T12:34:59.001'))).not.toBeNull()
+})

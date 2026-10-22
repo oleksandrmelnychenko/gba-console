@@ -47,7 +47,7 @@ it('defers capability until catalogue opening and keeps the two local windows ou
   const from = (readReportDateInput('Від') as HTMLInputElement).value, through = (readReportDateInput('До') as HTMLInputElement).value
   const draftKey = `report-workspace-draft:v1:${MANAGEMENT_RETURNS_TEST_CALLER}`, draft = sessionStorage.getItem(draftKey)
   const modal = await openForm(); selectWindows(modal)
-  expect((within(modal).getByLabelText('Поточний період: початок') as HTMLInputElement).dataset.datesInput).toBe('true')
+  expect((within(modal).getByLabelText('Поточний період: початок') as HTMLInputElement).type).toBe('datetime-local')
   expect(within(modal).queryByRole('combobox')).toBeNull(); expect(within(modal).queryByLabelText('Від')).toBeNull()
   fireEvent.click(within(modal).getByRole('button', { name: 'Переглянути' })); await within(modal).findByRole('region', { name: 'Результат управлінських повернень' })
   expect(previewManagementReturns).toHaveBeenCalledWith(managementReturnsCapability(), initialManagementReturnsWindows('2026-09'), MANAGEMENT_RETURNS_TEST_CALLER, expect.any(AbortSignal))

@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { StrictMode } from 'react'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -103,4 +103,15 @@ it('clears previous files on permission loss and refuses unsafe or mismatched mo
   const unsafe = managementReturnsReport(); unsafe.PdfDocumentURL = 'javascript:alert(1)'; vi.mocked(previewManagementReturns).mockResolvedValue(unsafe)
   view.rerender(panel()); fireEvent.click(screen.getByRole('button', { name: 'Сформувати' })); await screen.findByText(/непідтверджений результат/)
   expect(screen.queryByRole('region', { name: 'Результат управлінських повернень' })).toBeNull(); expect(screen.queryByRole('dialog', { name: 'Файли управлінських повернень' })).toBeNull()
+})
+
+it('preserves fractional exclusive return-report boundaries in the request', async () => {
+  vi.mocked(previewManagementReturns).mockResolvedValue(managementReturnsReport())
+  render(panel())
+  const boundary = screen.getByLabelText('Поточний період: виключна кінцева межа') as HTMLInputElement
+  fireEvent.change(boundary, { target: { value: '2026-09-30T10:20:59.999' } })
+  expect(boundary.value).toBe('2026-09-30T10:20:59.999')
+  fireEvent.click(screen.getByRole('button', { name: 'Переглянути' }))
+  await waitFor(() => expect(previewManagementReturns).toHaveBeenCalled())
+  expect(vi.mocked(previewManagementReturns).mock.calls[0][1].CurrentPeriod.ThroughExclusive).toBe('2026-09-30T10:20:59.999')
 })
