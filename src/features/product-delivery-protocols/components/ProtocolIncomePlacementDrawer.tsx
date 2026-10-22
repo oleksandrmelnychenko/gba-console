@@ -148,15 +148,20 @@ function ProtocolIncomePlacementDrawerContent({
     const excludedQty = placement ? sumQtyExcept(placements, placement) : placedQty
     const defaultQty = placement?.Qty || Math.max(maxQty - excludedQty, 0)
     const hasAddresses = availableAddresses.length > 0
+    const existingAddress = placement && availableAddresses.find((address) =>
+      (address.StorageNumber || '') === (placement.StorageNumber || '') &&
+      (address.RowNumber || '') === (placement.RowNumber || '') &&
+      (address.CellNumber || '') === (placement.CellNumber || ''),
+    )
 
     setError(null)
     setDraft({
       editing: placement,
-      useNewAddress: !hasAddresses,
+      useNewAddress: placement ? !existingAddress : !hasAddresses,
       storageNumber: placement?.StorageNumber || '',
       rowNumber: placement?.RowNumber || '',
       cellNumber: placement?.CellNumber || '',
-      selectedAddress: hasAddresses ? availableAddresses[0].Address || '' : '',
+      selectedAddress: existingAddress?.Address || availableAddresses[0]?.Address || '',
       qty: defaultQty,
     })
   }

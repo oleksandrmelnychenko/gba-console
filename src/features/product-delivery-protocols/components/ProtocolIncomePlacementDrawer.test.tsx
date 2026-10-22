@@ -113,4 +113,43 @@ describe('ProtocolIncomePlacementDrawer', () => {
     ])
   })
 
+  it.each([
+    { name: 'second known address', address: '5', known: true },
+    { name: 'custom address absent from the product list', address: '9', known: false },
+  ])('preserves the $name when only its quantity is edited', ({ address, known }) => {
+    const onApply = vi.fn()
+    const edited = { Id: 31, Qty: 4, StorageNumber: address, RowNumber: address, CellNumber: address }
+    const first = { ...row.DynamicProductPlacements[0], Qty: 3 }
+    const productItem = {
+      ...item,
+      SupplyInvoiceOrderItem: {
+        Product: {
+          ...item.SupplyInvoiceOrderItem?.Product,
+          ProductPlacements: [
+            { StorageNumber: '1', RowNumber: '2', CellNumber: '3' },
+            { StorageNumber: '5', RowNumber: '5', CellNumber: '5' },
+          ],
+        },
+      },
+    }
+    renderWithMantine(<I18nProvider><ProtocolIncomePlacementDrawer
+      opened columnId="column-1" item={productItem} maxQty={12}
+      row={{ ...row, DynamicProductPlacements: [first, edited] }}
+      selectedStorage={null} onApply={onApply} onClose={vi.fn()}
+    /></I18nProvider>)
+    fireEvent.click(screen.getByText('4'))
+    expect((screen.getByLabelText('Нова адреса') as HTMLInputElement).checked).toBe(!known)
+    if (known) {
+      expect((screen.getByLabelText('На адресу', { selector: 'input:not([type="hidden"])' }) as HTMLInputElement).value).toBe('5-5-5')
+    } else {
+      for (const label of ['Склад', 'Ряд', 'Полиця']) {
+        expect((screen.getByLabelText(label) as HTMLInputElement).value).toBe('9')
+      }
+    }
+    fireEvent.change(screen.getByLabelText('Кількість'), { target: { value: '6' } })
+    fireEvent.click(screen.getByTestId('placement-accept-draft'))
+    fireEvent.click(screen.getByTestId('placement-apply'))
+    expect(onApply).toHaveBeenCalledExactlyOnceWith([first, { ...edited, Qty: 6 }])
+  })
+
 })
