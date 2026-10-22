@@ -37,6 +37,7 @@ export type DashboardWorkspaceMetric = {
   key: string
   label: string
   route?: string
+  timeBasis?: 'current' | 'period' | 'unknown'
   tone: DashboardWorkspaceMetricTone
   unit: string
   value: number

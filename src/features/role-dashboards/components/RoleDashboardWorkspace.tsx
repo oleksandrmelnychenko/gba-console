@@ -42,5 +42,5 @@ function SummaryWorkspace({ period, toolbarTarget, workspaceKey }: WorkspaceProp
     return <Stack gap={6}>{summary}<SystemWorkspace /></Stack>
   }
 
-  return <Stack gap={6}>{summary}<OperationsWorkspace summary={state.summary} workspaceKey={workspaceKey} /></Stack>
+  return <Stack gap={6}>{summary}<OperationsWorkspace error={state.error} summary={state.summary} workspaceKey={workspaceKey} /></Stack>
 }

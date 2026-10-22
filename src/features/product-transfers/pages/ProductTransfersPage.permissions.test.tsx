@@ -1,6 +1,7 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
+import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -84,11 +85,11 @@ const storages = [
   },
 ]
 
-function renderPage() {
+function renderPage(entry = '/products/transfers') {
   return render(
     <MantineProvider>
       <I18nProvider>
-        <ProductTransfersPage />
+        <MemoryRouter initialEntries={[entry]}><ProductTransfersPage /></MemoryRouter>
       </I18nProvider>
     </MantineProvider>,
   )
@@ -103,6 +104,14 @@ describe('ProductTransfersPage canonical permission guards', () => {
     vi.mocked(getProductTransferStorages).mockResolvedValue(storages)
     vi.mocked(exportProductTransferDocument).mockResolvedValue({ DocumentURL: '/transfer.xlsx' })
     vi.mocked(addProductTransferFromFile).mockResolvedValue([])
+  })
+
+  it('requests the dashboard calendar range instead of the default last week', async () => {
+    allowedPermissions.add(PermissionKeys.ProductTransfers.Page.View)
+    renderPage('/products/transfers?dashboardFrom=2026-10-24&dashboardToExclusive=2026-10-27')
+    await waitFor(() => expect(getProductTransfers).toHaveBeenCalledWith({
+      from: '2026-10-24', to: '2026-10-26', limit: 20, offset: 0,
+    }))
   })
 
   it('does not mount the page model without page access', () => {

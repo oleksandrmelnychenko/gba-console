@@ -56,13 +56,17 @@ export function normalizeDashboardWorkspaceSummary(
 ): DashboardWorkspaceSummary {
   const record = toRecord(payload)
   const workspace = readString(record.Workspace ?? record.workspace)
+  const rawMetrics = record.Metrics ?? record.metrics
+  if (!Array.isArray(rawMetrics)) {
+    throw new Error('Не вдалося прочитати показники робочого простору')
+  }
 
   return {
     cacheTtlSeconds: readPositiveNumber(record.CacheTtlSeconds ?? record.cacheTtlSeconds, 30),
     dataFreshness: readString(record.DataFreshness ?? record.dataFreshness) || 'live',
     from: readString(record.From ?? record.from) || fallbackPeriod.from,
     generatedAtUtc: readString(record.GeneratedAtUtc ?? record.generatedAtUtc),
-    metrics: readArray(record.Metrics ?? record.metrics)
+    metrics: rawMetrics
       .map(normalizeMetric)
       .filter((metric): metric is DashboardWorkspaceMetric => metric !== null),
     to: readString(record.To ?? record.to) || fallbackPeriod.toExclusive,
@@ -95,15 +99,21 @@ function normalizeMetric(value: unknown): DashboardWorkspaceMetric | null {
     return null
   }
 
+  const parsedValue = readNumber(record.Value ?? record.value, Number.NaN)
+  const availability = record.HasData !== undefined ? record.HasData : record.hasData
+  const hasData = Number.isFinite(parsedValue) && (availability === undefined || availability === true)
+  const coverage = record.CoveragePercent !== undefined ? record.CoveragePercent : record.coveragePercent
+  const timeBasis = readString(record.TimeBasis ?? record.timeBasis)
   return {
-    coveragePercent: clampPercent(readNumber(record.CoveragePercent ?? record.coveragePercent, 100)),
-    hasData: (record.HasData ?? record.hasData) !== false,
+    coveragePercent: hasData ? clampPercent(readNumber(coverage, coverage === undefined ? 100 : 0)) : 0,
+    hasData,
     key,
     label,
     route: readString(record.Route ?? record.route) || undefined,
+    timeBasis: timeBasis === 'current' || timeBasis === 'period' ? timeBasis : 'unknown',
     tone: readTone(record.Tone ?? record.tone),
     unit: readString(record.Unit ?? record.unit) || 'count',
-    value: readNumber(record.Value ?? record.value),
+    value: hasData ? parsedValue : 0,
   }
 }
 

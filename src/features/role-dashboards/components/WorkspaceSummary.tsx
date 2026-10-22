@@ -7,6 +7,7 @@ import type { WorkspaceSummaryState } from '../hooks/useWorkspaceSummary'
 import type { DashboardWorkspaceMetric } from '../types'
 import { formatMetricValue } from '../utils/metricView'
 import { MetricIcon } from './MetricIcon'
+import { metricDrilldownRoute, metricTimeLabel } from '../utils/metricScope'
 import { useI18n } from '../../../shared/i18n/useI18n'
 
 export function WorkspaceSummary({
@@ -65,7 +66,7 @@ export function WorkspaceSummary({
     content = (
       <div className="role-dashboard-kpi-grid" style={kpiColumns(summary.metrics.length)}>
         {summary.metrics.map((metric) => {
-          const route = metric.route
+          const route = metricDrilldownRoute(summary, metric)
           return <MetricCard key={metric.key} metric={metric} onOpen={route ? () => navigate(route) : undefined} />
         })}
       </div>
@@ -91,6 +92,7 @@ function MetricCard({ metric, onOpen }: { metric: DashboardWorkspaceMetric; onOp
       <span aria-hidden="true" className="role-dashboard-kpi-icon"><MetricIcon metric={metric} size={19} strokeWidth={1.9} /></span>
       <span className="role-dashboard-kpi-body">
         <Text className="role-dashboard-kpi-label" lineClamp={1} title={metric.label}>{metric.label}</Text>
+        <Text size="xs" c="dimmed">{t(metricTimeLabel(metric))}</Text>
         <span className="role-dashboard-kpi-value">
           {metric.hasData ? formatted.value : t(formatted.value)}
           {formatted.unit && <span className="role-dashboard-kpi-unit">{formatted.unit}</span>}

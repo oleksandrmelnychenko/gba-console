@@ -64,11 +64,25 @@ describe('dashboardWorkspacesApi', () => {
       from: '2026-07-01',
       generatedAtUtc: '2026-07-11T09:00:00Z',
       metrics: [
-        { coveragePercent: 100, hasData: true, key: 'receipts', label: 'Оприходувань', route: '/products/income/documents', tone: 'positive', unit: 'count', value: 4 },
-        { coveragePercent: 100, hasData: true, key: 'bad', label: 'Невідомий тон', route: undefined, tone: 'neutral', unit: 'qty', value: 12.5 },
+        { coveragePercent: 100, hasData: true, key: 'receipts', label: 'Оприходувань', route: '/products/income/documents', timeBasis: 'unknown', tone: 'positive', unit: 'count', value: 4 },
+        { coveragePercent: 100, hasData: true, key: 'bad', label: 'Невідомий тон', route: undefined, timeBasis: 'unknown', tone: 'neutral', unit: 'qty', value: 12.5 },
       ],
       to: '2026-07-12',
       workspace: 'warehouse',
     })
+  })
+
+  it.each([undefined, null, '', 'broken', Number.NaN, Number.POSITIVE_INFINITY, false])('does not turn invalid value %s into known zero', (value) => {
+    const summary = normalizeDashboardWorkspaceSummary({ Metrics: [{ Key: 'negative-stock', Label: 'Залишки', Value: value, HasData: true }] }, 'warehouse', { from: '2026-10-01', toExclusive: '2026-11-01' })
+    expect(summary.metrics[0]).toMatchObject({ hasData: false, coveragePercent: 0 })
+  })
+
+  it('retains legitimate zero while rejecting malformed coverage', () => {
+    const summary = normalizeDashboardWorkspaceSummary({ Metrics: [{ Key: 'negative-stock', Label: 'Залишки', Value: 0, CoveragePercent: 'broken', TimeBasis: 'current' }] }, 'warehouse', { from: '2026-10-01', toExclusive: '2026-11-01' })
+    expect(summary.metrics[0]).toMatchObject({ hasData: true, value: 0, coveragePercent: 0, timeBasis: 'current' })
+  })
+
+  it('rejects a missing metrics collection instead of presenting a successful empty summary', () => {
+    expect(() => normalizeDashboardWorkspaceSummary({}, 'warehouse', { from: '2026-10-01', toExclusive: '2026-11-01' })).toThrow()
   })
 })

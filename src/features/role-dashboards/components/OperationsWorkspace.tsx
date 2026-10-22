@@ -23,54 +23,54 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import type { DashboardWorkspaceKey, DashboardWorkspaceMetric, DashboardWorkspaceSummary } from '../types'
 import { formatMetricValue, isAttentionMetric } from '../utils/metricView'
 import { MetricIcon } from './MetricIcon'
+import { hasCompleteMetricCoverage, metricTimeLabel } from '../utils/metricScope'
 
 type WorkspaceAction = {
   description: string
   icon: LucideIcon
   label: string
-  /** Summary metrics shown on the card; without it, metrics with the same route are used. */
-  metricKeys?: string[]
   route: string
 }
 
 const workspaceActions: Partial<Record<DashboardWorkspaceKey, WorkspaceAction[]>> = {
   logistics: [
-    { description: 'Інвойси, документи доставки й терміни', icon: Truck, label: 'Замовлення на Україну', metricKeys: ['shipped-invoices', 'missing-documents', 'overdue-orders'], route: '/orders/ukraine/all' },
-    { description: 'Відкриті та частково розміщені поставки', icon: ClipboardList, label: 'Протоколи поставок', metricKeys: ['open-protocols', 'partially-placed'], route: '/product-delivery-protocols' },
-    { description: 'Прийом товару від постачальників', icon: PackageCheck, label: 'Документи приходу', metricKeys: [], route: '/products/income/documents' },
-    { description: 'Відвантаження зі складу', icon: FileCheck2, label: 'Складські накладні', metricKeys: [], route: '/warehouse/ukraine' },
+    { description: 'Інвойси, документи доставки й терміни', icon: Truck, label: 'Замовлення на Україну', route: '/orders/ukraine/all' },
+    { description: 'Відкриті та частково розміщені поставки', icon: ClipboardList, label: 'Протоколи поставок', route: '/product-delivery-protocols' },
+    { description: 'Прийом товару від постачальників', icon: PackageCheck, label: 'Документи приходу', route: '/products/income/documents' },
+    { description: 'Відвантаження зі складу', icon: FileCheck2, label: 'Складські накладні', route: '/warehouse/ukraine' },
   ],
   warehouse: [
-    { description: 'Накладні та відвантаження', icon: Boxes, label: 'Склад Україна', metricKeys: ['negative-stock'], route: '/warehouse/ukraine' },
-    { description: 'Комірки й лоти для прийнятого товару', icon: PackageCheck, label: 'Розміщення товарів', metricKeys: ['awaiting-placement'], route: '/products/placements' },
-    { description: 'Рух товару між складами й комірками', icon: Route, label: 'Переміщення товарів', metricKeys: ['transfers'], route: '/products/transfers' },
-    { description: 'Надходження товару на склад', icon: ClipboardList, label: 'Оприходування', metricKeys: ['receipts', 'receipt-qty'], route: '/products/capitalization' },
-    { description: 'Брак і повернення постачальникам', icon: ReceiptText, label: 'Повернення постачальнику', metricKeys: [], route: '/supplies/returns' },
+    { description: 'Наявність за складами та партіями', icon: Boxes, label: 'Наявність товарів', route: '/products/consignments/availabilities' },
+    { description: 'Накладні та відвантаження', icon: Boxes, label: 'Склад Україна', route: '/warehouse/ukraine' },
+    { description: 'Комірки й лоти для прийнятого товару', icon: PackageCheck, label: 'Розміщення товарів', route: '/products/placements' },
+    { description: 'Рух товару між складами й комірками', icon: Route, label: 'Переміщення товарів', route: '/products/transfers' },
+    { description: 'Надходження товару на склад', icon: ClipboardList, label: 'Документи приходу', route: '/products/income/documents' },
+    { description: 'Брак і повернення постачальникам', icon: ReceiptText, label: 'Повернення постачальнику', route: '/supplies/returns' },
   ],
   accounting: [
-    { description: 'Надходження та прибуткові документи', icon: Banknote, label: 'Рух коштів', metricKeys: ['cash-in', 'income-documents'], route: '/accounting/income-cashflows' },
-    { description: 'Витрати й видаткові документи', icon: CircleDollarSign, label: 'Вихідні платежі', metricKeys: ['cash-out', 'outcome-documents'], route: '/accounting/outgoing-cashflow' },
-    { description: 'Розбіжності з контрагентами', icon: FileCheck2, label: 'Акти звірки', metricKeys: ['reconciliation-differences'], route: '/ukraine/act/reconcoliation' },
-    { description: 'Платежі, що чекають розподілу', icon: ReceiptText, label: 'Доступні платежі', metricKeys: [], route: '/accounting/available-payments' },
+    { description: 'Надходження та прибуткові документи', icon: Banknote, label: 'Рух коштів', route: '/accounting/income-cashflows' },
+    { description: 'Витрати й видаткові документи', icon: CircleDollarSign, label: 'Вихідні платежі', route: '/accounting/outgoing-cashflow' },
+    { description: 'Розбіжності з контрагентами', icon: FileCheck2, label: 'Акти звірки', route: '/ukraine/act/reconcoliation' },
+    { description: 'Платежі, що чекають розподілу', icon: ReceiptText, label: 'Доступні платежі', route: '/accounting/available-payments' },
   ],
   finance: [
-    { description: 'Надходження та прибуткові документи', icon: Banknote, label: 'Рух коштів', metricKeys: ['cash-in'], route: '/accounting/income-cashflows' },
-    { description: 'Витрати й видаткові документи', icon: CircleDollarSign, label: 'Вихідні платежі', metricKeys: ['cash-out'], route: '/accounting/outgoing-cashflow' },
-    { description: 'Синхронізовані документи та сальдо', icon: ReceiptText, label: 'Баланси', metricKeys: ['net-cash-flow'], route: '/accounting/sync/documents' },
-    { description: 'Розбіжності з контрагентами', icon: FileCheck2, label: 'Акти звірки', metricKeys: [], route: '/ukraine/act/reconcoliation' },
+    { description: 'Надходження та прибуткові документи', icon: Banknote, label: 'Рух коштів', route: '/accounting/income-cashflows' },
+    { description: 'Витрати й видаткові документи', icon: CircleDollarSign, label: 'Вихідні платежі', route: '/accounting/outgoing-cashflow' },
+    { description: 'Синхронізовані документи та сальдо', icon: ReceiptText, label: 'Баланси', route: '/accounting/sync/documents' },
+    { description: 'Розбіжності з контрагентами', icon: FileCheck2, label: 'Акти звірки', route: '/ukraine/act/reconcoliation' },
   ],
   executive: [
-    { description: 'Реалізації та повернення по Україні', icon: CircleDollarSign, label: 'Продажі', metricKeys: ['sales', 'sold-qty', 'returns'], route: '/sales/ukraine/all' },
-    { description: 'Попит, залишки й оборотність', icon: Boxes, label: 'Аналітика асортименту', metricKeys: ['available-qty'], route: '/products/assortment' },
-    { description: 'Клієнтська база й заборгованість', icon: Users, label: 'Клієнти', metricKeys: ['open-debts'], route: '/clients' },
-    { description: 'Замовлення на Україну', icon: Truck, label: 'Замовлення', metricKeys: [], route: '/orders/ukraine/all' },
+    { description: 'Реалізації та повернення по Україні', icon: CircleDollarSign, label: 'Продажі', route: '/sales/ukraine/all' },
+    { description: 'Попит, залишки й оборотність', icon: Boxes, label: 'Аналітика асортименту', route: '/products/assortment' },
+    { description: 'Клієнтська база й заборгованість', icon: Users, label: 'Клієнти', route: '/clients' },
+    { description: 'Замовлення на Україну', icon: Truck, label: 'Замовлення', route: '/orders/ukraine/all' },
   ],
   driver: [
-    { description: 'Призначені й відправлені відвантаження', icon: Truck, label: 'Складські накладні', metricKeys: ['assigned', 'sent', 'pending'], route: '/warehouse/ukraine' },
+    { description: 'Призначені й відправлені відвантаження', icon: Truck, label: 'Складські накладні', route: '/warehouse/ukraine' },
   ],
   client: [
-    { description: 'Профіль і контрагенти', icon: Users, label: 'Клієнти', metricKeys: [], route: '/clients' },
-    { description: 'Замовлення, позиції та документи', icon: ReceiptText, label: 'Продажі', metricKeys: ['sales', 'items', 'qty'], route: '/sales/ukraine/all' },
+    { description: 'Профіль і контрагенти', icon: Users, label: 'Клієнти', route: '/clients' },
+    { description: 'Замовлення, позиції та документи', icon: ReceiptText, label: 'Продажі', route: '/sales/ukraine/all' },
   ],
 }
 
@@ -85,9 +85,11 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2
 const percentFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
 
 export function OperationsWorkspace({
+  error,
   summary,
   workspaceKey,
 }: {
+  error?: string | null
   summary: DashboardWorkspaceSummary | null
   workspaceKey: DashboardWorkspaceKey
 }) {
@@ -110,8 +112,8 @@ export function OperationsWorkspace({
       <Card className="app-section-card role-dashboard-operations" withBorder padding={0} radius="md">
         <div className="role-dashboard-section-head">
           <div className="role-dashboard-section-copy">
-            <Text component="h2" className="app-section-title" fw={600}>{t('Робочі черги')}</Text>
-            <Text className="role-dashboard-section-subtitle">{t('Швидкий доступ до щоденних операцій')}</Text>
+            <Text component="h2" className="app-section-title" fw={600}>{t('Реєстри')}</Text>
+            <Text className="role-dashboard-section-subtitle">{t('Загальні реєстри. Їхні фільтри можуть відрізнятися від показників дашборда.')}</Text>
           </div>
         </div>
         <div className="role-dashboard-operations-body">
@@ -121,7 +123,6 @@ export function OperationsWorkspace({
                 <QueueAction
                   action={action}
                   key={action.route}
-                  metrics={getActionMetrics(action, metrics)}
                   onOpen={() => navigate(action.route)}
                 />
               ))}
@@ -148,7 +149,7 @@ export function OperationsWorkspace({
           <div className="role-dashboard-section-head">
             <div className="role-dashboard-section-copy">
               <Text component="h2" className="app-section-title" fw={600}>{t('Потребує уваги')}</Text>
-              <Text className="role-dashboard-section-subtitle">{t('Відхилення за обраний період')}</Text>
+              <Text className="role-dashboard-section-subtitle">{t('Поточний стан і події за період')}</Text>
             </div>
             {attention.length > 0 && (
               <Badge className={`app-role-pill ${attention[0].tone === 'critical' ? 'is-red' : 'is-orange'}`} variant="light">
@@ -157,22 +158,7 @@ export function OperationsWorkspace({
             )}
           </div>
           <div className="role-dashboard-attention-body">
-            {!summary ? (
-              <>
-                <Skeleton height={54} radius={8} />
-                <Skeleton height={54} radius={8} />
-              </>
-            ) : attention.length === 0 ? (
-              <div className="role-dashboard-attention-empty">
-                <CircleCheck aria-hidden="true" size={20} />
-                <div>
-                  <Text fw={650} size="sm">{t('Відхилень немає')}</Text>
-                  <Text size="xs">{t('Критичні показники за період у нормі')}</Text>
-                </div>
-              </div>
-            ) : (
-              attention.map((metric) => <AttentionItem key={metric.key} metric={metric} />)
-            )}
+            <AttentionStatus error={error} summary={summary} attention={attention} />
           </div>
         </Card>
       </div>
@@ -180,13 +166,34 @@ export function OperationsWorkspace({
   )
 }
 
+function AttentionStatus({ error, summary, attention }: { error?: string | null; summary: DashboardWorkspaceSummary | null; attention: DashboardWorkspaceMetric[] }) {
+  const { t } = useI18n()
+  if (error) return <Text size="sm" c="orange">{t('Перевірку показників не завершено: помилка оновлення')}</Text>
+  if (!summary) return <><Skeleton height={54} radius={8} /><Skeleton height={54} radius={8} /></>
+  const complete = hasCompleteMetricCoverage(summary)
+  if (attention.length === 0 && !complete) return <Text size="sm" c="orange">{t('Недостатньо даних для перевірки відхилень')}</Text>
+  if (attention.length === 0) return (
+    <div className="role-dashboard-attention-empty">
+      <CircleCheck aria-hidden="true" size={20} />
+      <div>
+        <Text fw={650} size="sm">{t('Відхилень у доступних показниках немає')}</Text>
+        <Text size="xs">{t('Перевірено лише наведені показники')}</Text>
+      </div>
+    </div>
+  )
+  return (
+    <>
+      {!complete && <Text size="sm" c="orange">{t('Частину показників не вдалося перевірити')}</Text>}
+      {attention.map((metric) => <AttentionItem key={metric.key} metric={metric} />)}
+    </>
+  )
+}
+
 function QueueAction({
   action,
-  metrics,
   onOpen,
 }: {
   action: WorkspaceAction
-  metrics: DashboardWorkspaceMetric[]
   onOpen: () => void
 }) {
   const { t } = useI18n()
@@ -197,19 +204,6 @@ function QueueAction({
       <span className="role-dashboard-action-copy">
         <span className="role-dashboard-action-title">{t(action.label)}</span>
         <span className="role-dashboard-action-description">{t(action.description)}</span>
-        {metrics.length > 0 && (
-          <span className="role-dashboard-action-metrics">
-            {metrics.map((metric) => {
-              const formatted = formatMetricValue(metric)
-              return (
-                <span className={`role-dashboard-action-metric is-${isAttentionMetric(metric) ? metric.tone : 'neutral'}`} key={metric.key}>
-                  {metric.label}
-                  <b>{metric.hasData ? formatted.value : '—'}{formatted.unit && ` ${formatted.unit}`}</b>
-                </span>
-              )
-            })}
-          </span>
-        )}
       </span>
       <ArrowRight aria-hidden="true" className="role-dashboard-action-arrow" size={17} />
     </UnstyledButton>
@@ -217,26 +211,20 @@ function QueueAction({
 }
 
 function AttentionItem({ metric }: { metric: DashboardWorkspaceMetric }) {
-  const navigate = useNavigate()
+  const { t } = useI18n()
   const formatted = formatMetricValue(metric)
-  const route = metric.route
   const content = (
     <>
       <span aria-hidden="true" className="role-dashboard-attention-icon"><MetricIcon metric={metric} size={16} /></span>
-      <span className="role-dashboard-attention-label">{metric.label}</span>
+      <span className="role-dashboard-attention-label">{metric.label}<Text size="xs" c="dimmed">{t(metricTimeLabel(metric))}</Text></span>
       <span className="role-dashboard-attention-value">
         {formatted.value}
         {formatted.unit && <small>{formatted.unit}</small>}
       </span>
-      {route && <ArrowRight aria-hidden="true" className="role-dashboard-attention-arrow" size={15} />}
     </>
   )
 
-  return route ? (
-    <UnstyledButton className={`role-dashboard-attention-item is-${metric.tone}`} onClick={() => navigate(route)}>
-      {content}
-    </UnstyledButton>
-  ) : (
+  return (
     <div className={`role-dashboard-attention-item is-${metric.tone}`}>{content}</div>
   )
 }
@@ -294,10 +282,4 @@ function CashFlowCard({
       </div>
     </Card>
   )
-}
-
-function getActionMetrics(action: WorkspaceAction, metrics: DashboardWorkspaceMetric[]): DashboardWorkspaceMetric[] {
-  return action.metricKeys
-    ? action.metricKeys.flatMap((key) => metrics.filter((metric) => metric.key === key))
-    : metrics.filter((metric) => metric.route === action.route)
 }

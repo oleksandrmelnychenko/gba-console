@@ -33,6 +33,8 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Download, FileSpreadsheet, Plus, RotateCcw } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { readDashboardTransferPeriod } from '../../role-dashboards/utils/metricScope'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -113,13 +115,14 @@ function useProductTransfersPageModel({
   canOpenDetails: boolean
 }) {
   const { t } = useI18n()
+  const [searchParams] = useSearchParams()
   const today = useMemo(() => formatLocalDate(new Date()), [])
   const initialFilters = useMemo<FilterDraft>(
-    () => ({
+    () => readDashboardTransferPeriod(searchParams) ?? ({
       from: getDateShiftedByDays(-7),
       to: today,
     }),
-    [today],
+    [searchParams, today],
   )
   const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialFilters)
   const [activeFilters, setActiveFilters] = useValueState<FilterDraft>(initialFilters)
