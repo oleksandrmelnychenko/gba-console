@@ -125,15 +125,15 @@ describe('AiFleetControl', () => {
       renderControl(false)
       fireEvent.click(screen.getByRole('button', { name: 'AI флот' }))
 
-      expect(await screen.findByText('1 знімків')).toBeTruthy()
+      expect(await screen.findByText('Знімки: 1')).toBeTruthy()
 
       dateNow.mockReturnValue(firstCaptureMs + 31_000)
       getAiFleetServicesSnapshot.mockResolvedValue(buildSnapshot('Статус 05:00 повернув неповні дані.'))
       fireEvent.click(screen.getByRole('button', { name: 'Оновити' }))
 
       await waitFor(() => expect(getAiFleetServicesSnapshot).toHaveBeenCalledTimes(2))
-      expect(screen.getByText('1 знімків')).toBeTruthy()
-      expect(screen.getByText('Збираємо live-історію')).toBeTruthy()
+      expect(screen.getByText('Знімки: 1')).toBeTruthy()
+      expect(screen.getByText('Очікуємо наступне оновлення')).toBeTruthy()
       expect(screen.queryByTestId('fleet-chart')).toBeNull()
     } finally {
       dateNow.mockRestore()

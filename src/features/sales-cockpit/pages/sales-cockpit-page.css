@@ -1434,7 +1434,7 @@
 }
 .cockpit-workday-plan-toolbar > .app-filter-field { width: 190px; }
 .cockpit-workday-plan-actions { margin-left: auto; }
-.cockpit-workday-queue { min-width: 0; }
+.cockpit-workday-queue { min-width: 0; overflow-wrap: anywhere; }
 .cockpit-workday-search { flex: 1 1 260px; min-width: 0; }
 .cockpit-workday-buckets {
   display: flex;
