@@ -223,9 +223,8 @@
   letter-spacing: 0;
   line-height: 1.2;
   min-height: 13px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 /* Selected region --------------------------------------------------------- */
