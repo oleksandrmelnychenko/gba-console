@@ -43,7 +43,9 @@ const informationalQueueCodes = new Set<InformationalMovementQueue>([
 
 const informationalSeverityCodes = new Set(['Error', 'Info', 'Warning'])
 
-export function isSafeInformationalMovement(row: InformationalMovement): boolean {
+export function isSafeInformationalMovement(value: unknown): value is InformationalMovement {
+  if (!value || typeof value !== 'object') return false
+  const row = value as InformationalMovement
   return row.StateCode === 'InformationalOnly'
     && row.CanMutate === false
     && row.AffectsAvailability === false
@@ -51,9 +53,21 @@ export function isSafeInformationalMovement(row: InformationalMovement): boolean
     && informationalReasonCodes.has(row.ReasonCode)
     && informationalQueueCodes.has(row.QueueCode)
     && informationalSeverityCodes.has(row.SeverityCode)
-    && Number.isInteger(row.SourceItemId)
+    && Number.isSafeInteger(row.SourceItemId)
     && row.SourceItemId > 0
-    && Boolean(row.InfoKey?.trim())
+    && typeof row.InfoKey === 'string'
+    && Boolean(row.InfoKey.trim())
+    && typeof row.DocumentType === 'string'
+    && typeof row.KindCode === 'string'
+    && typeof row.MissingEvidenceCode === 'string'
+    && typeof row.IsKnownFixture === 'boolean'
+    && Number.isFinite(row.Qty)
+    && Number.isSafeInteger(row.TotalRows)
+    && row.TotalRows > 0
+    && ['ActionCode', 'ActionNetUid', 'Comment', 'DocumentNumber', 'ProductName', 'ProductNetUid', 'VendorCode']
+      .every(key => (value as Record<string, unknown>)[key] == null || typeof (value as Record<string, unknown>)[key] === 'string')
+    && (row.DocumentDate == null || ((typeof row.DocumentDate === 'string' || row.DocumentDate instanceof Date)
+      && Number.isFinite(new Date(row.DocumentDate).getTime())))
 }
 
 export function getInformationalMovementActionPath(row: InformationalMovement): string | null {
@@ -66,4 +80,30 @@ export function getInformationalMovementActionPath(row: InformationalMovement): 
   }
 
   return `/ukraine/act/reconcoliation/${encodeURIComponent(actionNetUid)}`
+}
+
+
+/** A malformed or wrong-scope response must never become a successful empty audit. */
+export function parseInformationalMovementPage(
+  result: unknown,
+  context: { queue: InformationalMovementQueue; productNetId?: string; offset: number; limit: number },
+): InformationalMovement[] {
+  const payload = result && typeof result === 'object' ? result as Record<string, unknown> : null
+  const rows = Array.isArray(result)
+    ? result
+    : ['Items', 'Collection', 'Data', 'Movements', 'History']
+      .map(key => payload?.[key]).find(Array.isArray)
+  const invalidResponse = () => new Error('Некоректна відповідь контролю складських даних. Результат перевірки не підтверджено. Оновіть дані.')
+  if (!Array.isArray(rows) || rows.length > context.limit || !rows.every(isSafeInformationalMovement)) {
+    throw invalidResponse()
+  }
+  const totalRows = rows[0]?.TotalRows
+  if (rows.some(row => row.QueueCode !== context.queue
+    || row.TotalRows !== totalRows
+    || (context.productNetId && row.ProductNetUid?.toLowerCase() !== context.productNetId.toLowerCase()))
+    || (rows.length > 0 && totalRows < context.offset + rows.length)
+    || new Set(rows.map(row => row.InfoKey)).size !== rows.length) {
+    throw invalidResponse()
+  }
+  return rows
 }

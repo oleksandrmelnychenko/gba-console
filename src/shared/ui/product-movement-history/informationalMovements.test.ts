@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   getInformationalMovementActionPath,
   isSafeInformationalMovement,
+  parseInformationalMovementPage,
   type InformationalMovement,
 } from './informationalMovements'
 
@@ -60,5 +61,27 @@ describe('isSafeInformationalMovement', () => {
       QueueCode: 'ActionRequired',
       SeverityCode: 'Error',
     }))).toBe('/sales/ukraine/all?saleNetId=6f7c248c-f994-46b0-bff6-2ec6061b26d2')
+  })
+})
+
+
+describe('parseInformationalMovementPage', () => {
+  const context = { queue: 'BusinessPending' as const, offset: 0, limit: 200 }
+  it('accepts the API array and supported legacy envelopes, including a genuine empty list', () => {
+    const rows = [createRow()]
+    expect(parseInformationalMovementPage(rows, context)).toEqual(rows)
+    expect(parseInformationalMovementPage({ Items: rows }, context)).toEqual(rows)
+    expect(parseInformationalMovementPage([], context)).toEqual([])
+  })
+  it.each([
+    [createRow({ Qty: Number.NaN })],
+    [createRow({ TotalRows: 0 })],
+    [createRow({ TotalRows: 2 }), createRow({ InfoKey: 'OTHER:2', TotalRows: 3 })],
+    [createRow({ TotalRows: 2 }), createRow({ TotalRows: 2 })],
+    [createRow({ QueueCode: 'Technical' })],
+    [createRow({ ProductNetUid: 42 as unknown as string })],
+    [createRow({ DocumentDate: 'not-a-date' })],
+  ].map(rows => ({ rows })))('rejects invalid values, pagination metadata and crossed queues: %j', ({ rows }) => {
+    expect(() => parseInformationalMovementPage(rows, context)).toThrow(/Результат перевірки не підтверджено/)
   })
 })

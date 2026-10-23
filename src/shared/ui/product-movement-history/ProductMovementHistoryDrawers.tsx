@@ -40,7 +40,7 @@ import {
 } from './historicalSourceAnchors'
 import {
   getInformationalMovementActionPath,
-  isSafeInformationalMovement,
+  parseInformationalMovementPage,
   type InformationalMovement,
   type InformationalMovementQueue,
 } from './informationalMovements'
@@ -1131,15 +1131,42 @@ export function HistoricalSourceMovementPanel({
   )
 }
 
-export function InformationalMovementPanel({
-  active,
-  product,
-  requestPath = '/consignments/info/movement/informational/filtered',
-}: {
+type InformationalMovementPanelProps = {
   active: boolean
   product?: MovementHistoryProduct
   requestPath?: string
-}) {
+  allowAllProducts?: boolean
+}
+
+export function InformationalMovementPanel(props: InformationalMovementPanelProps) {
+  // A new product or API context starts a fresh scope, filters and page together.
+  return <InformationalMovementScope key={`${props.product ? `product:${props.product.NetUid || props.product.VendorCode || ''}` : 'all'}:${props.requestPath || ''}`} {...props} />
+}
+
+function InformationalMovementScope({ allowAllProducts = false, ...props }: InformationalMovementPanelProps) {
+  const { t } = useI18n()
+  const [scope, setScope] = useState<'product' | 'all'>(props.product ? 'product' : 'all')
+  const productLabel = [props.product?.VendorCode, props.product?.NameUA || props.product?.Name].filter(Boolean).join(' · ')
+  return <Stack gap={8}>
+    {allowAllProducts && props.product ? <Select
+      label={t('Область перевірки')}
+      allowDeselect={false}
+      data={[{ value: 'product', label: t('Вибраний товар') }, { value: 'all', label: t('Усі товари') }]}
+      value={scope}
+      onChange={value => setScope(value === 'all' ? 'all' : 'product')}
+    /> : null}
+    <Text size="sm" fw={600}>{scope === 'product'
+      ? `${t('Товар')}: ${productLabel || props.product?.NetUid || t('Не визначено')}`
+      : t('Область перевірки: усі товари')}</Text>
+    <InformationalMovementContent key={scope} {...props} product={scope === 'product' ? props.product : undefined} />
+  </Stack>
+}
+
+function InformationalMovementContent({
+  active,
+  product,
+  requestPath = '/consignments/info/movement/informational/filtered',
+}: InformationalMovementPanelProps) {
   const { t } = useI18n()
   const productNetUid = product?.NetUid?.trim() || ''
   const [dateFrom, setDateFrom] = useState(() => getDateYearsAgo(20))
@@ -1157,11 +1184,9 @@ export function InformationalMovementPanel({
   const missingNetUidError = product && !productNetUid
     ? t('У товару немає NetUid для контролю складських даних')
     : null
-  const unsafeRows = useMemo(() => rows.filter((row) => !isSafeInformationalMovement(row)), [rows])
-  const safeRows = useMemo(() => rows.filter(isSafeInformationalMovement), [rows])
   const columns = useInformationalMovementColumns()
   const activeError = filterError || missingNetUidError || error
-  const totalRows = safeRows[0]?.TotalRows || 0
+  const totalRows = rows[0]?.TotalRows || 0
   const canMoveBack = page > 1
   const canMoveForward = page * INFORMATIONAL_PAGE_SIZE < totalRows
 
@@ -1186,6 +1211,10 @@ export function InformationalMovementPanel({
         }, requestPath)
 
         if (!cancelled) {
+          if (nextRows.length === 0 && page > 1) {
+            setPage(1)
+            return
+          }
           dispatchRowsState({ rows: nextRows, type: 'load-succeeded' })
         }
       } catch (loadError) {
@@ -1277,6 +1306,12 @@ export function InformationalMovementPanel({
         </Group>
       </div>
       <Stack className="product-movement-history-panel__body" gap={10}>
+        <Text size="sm" c="dimmed">
+          {t('Перевіряємо зв’язки джерел: приходи 1С без активної партії, САД і Tax Free без фізичного джерела, зняття резерву без джерела руху та незастосовані різниці звірки. Це не повна звірка залишків, резервів, розміщень або FIFO.')}
+        </Text>
+        <Text size="xs" c="dimmed">
+          {t('Черги «Проблеми», «Очікують дії» та «Службові» переглядаються окремо. Період відбирає дату документа; записи без дати включено незалежно від періоду.')}
+        </Text>
         <Alert color={getInformationalQueueColor(queue)} icon={<TriangleAlert size={18} />} variant="light">
           {getInformationalQueueDescription(queue, t)}
         </Alert>
@@ -1285,15 +1320,10 @@ export function InformationalMovementPanel({
             {activeError}
           </Alert>
         ) : null}
-        {unsafeRows.length > 0 ? (
-          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-            {t('Частину рядків приховано: сервер не підтвердив безпечний інформаційний стан.')} ({unsafeRows.length})
-          </Alert>
-        ) : null}
         {!activeError ? (
           <DataTable
             columns={columns}
-            data={safeRows}
+            data={rows}
             defaultLayout={{ columnPinning: { left: ['state', 'product'] }, density: 'normal' }}
             emptyText={getInformationalQueueEmptyText(queue, t)}
             getRowId={(row) => row.InfoKey}
@@ -1308,7 +1338,7 @@ export function InformationalMovementPanel({
         ) : null}
         {!activeError && totalRows > 0 ? (
           <Text c="dimmed" size="xs">
-            {t('Показано')}: {(page - 1) * INFORMATIONAL_PAGE_SIZE + 1}–{Math.min(page * INFORMATIONAL_PAGE_SIZE, totalRows)} / {totalRows}
+            {t('Показано')}: {(page - 1) * INFORMATIONAL_PAGE_SIZE + 1}–{(page - 1) * INFORMATIONAL_PAGE_SIZE + rows.length} / {totalRows}
           </Text>
         ) : null}
       </Stack>
@@ -1482,9 +1512,9 @@ function getInformationalQueueDescription(
 ): string {
   switch (queue) {
     case 'ActionRequired':
-      return t('Тут лише записи з реально відсутнім зв’язком із партією або фізичним рухом. Їх потрібно перевірити та виправити.')
+      return t('Записи з ознаками відсутнього зв’язку з партією або рухом за наявними перевірками. Перевірте джерело документа перед виправленням.')
     case 'BusinessPending':
-      return t('Це коректні складські документи, які очікують явної дії користувача. До застосування вони не змінюють наявність.')
+      return t('Незастосовані різниці звірки, які очікують дії користувача. Самі ці інформаційні рядки не змінюють наявність.')
     case 'Technical':
       return t('Це службові, тестові й аудитні записи. Вони не є рухом товару, не змінюють наявність і не потребують дії користувача.')
   }
@@ -1496,11 +1526,11 @@ function getInformationalQueueEmptyText(
 ): string {
   switch (queue) {
     case 'ActionRequired':
-      return t('Проблем складських даних у вибраному періоді не знайдено')
+      return t('У черзі «Проблеми» за вибраний період записів не знайдено')
     case 'BusinessPending':
-      return t('Документів, що очікують складської дії, не знайдено')
+      return t('У черзі «Очікують дії» за вибраний період записів не знайдено')
     case 'Technical':
-      return t('Службових записів у вибраному періоді не знайдено')
+      return t('У черзі «Службові» за вибраний період записів не знайдено')
   }
 }
 
@@ -2750,7 +2780,7 @@ async function getInformationalMovements(
     },
   })
 
-  return normalizeArray(result) as InformationalMovement[]
+  return parseInformationalMovementPage(result, params)
 }
 
 async function getProductIncomeMovements(

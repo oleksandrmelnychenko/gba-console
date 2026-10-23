@@ -1094,6 +1094,8 @@ function ProductsPageContent() {
             <PermissionGate permissionKey={PRODUCT_MOVEMENT_PERMISSION}>
               <InformationalMovementPanel
                 active
+                allowAllProducts
+                product={selectedProduct || undefined}
                 requestPath="/consignments/info/assortment/movement/informational/filtered"
               />
             </PermissionGate>
