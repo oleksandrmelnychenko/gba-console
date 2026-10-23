@@ -7,8 +7,8 @@ const VIEW_WIDTH = 760
 const VIEW_HEIGHT = 480
 const MIN_RADIUS = 6
 const MAX_RADIUS = 56
-const TOOLTIP_WIDTH = 208
-const TOOLTIP_HEIGHT = 74
+const TOOLTIP_WIDTH = 280
+const TOOLTIP_HEIGHT = 96
 
 const METRIC_FILL: Record<GeographyMetric, string> = {
   sales: 'var(--mantine-color-teal-6)',
@@ -45,13 +45,13 @@ export function UkraineBubbleMap({ regions, metric, formatMoney, formatCount }: 
 
   // Draw largest-first so that smaller regions remain reachable.
   const bubbles = useMemo(() => {
-    const maxValue = regions.reduce((max, region) => Math.max(max, region.valueEur), 0)
+    const maxValue = regions.reduce((max, region) => Math.max(max, Math.abs(region.valueEur ?? 0)), 0)
     const k = maxValue > 0 ? MAX_RADIUS / Math.sqrt(maxValue) : 0
 
     return regions
       .map((region) => ({
         region,
-        radius: maxValue > 0 ? clamp(k * Math.sqrt(Math.max(0, region.valueEur)), MIN_RADIUS, MAX_RADIUS) : MIN_RADIUS,
+        radius: maxValue > 0 ? clamp(k * Math.sqrt(Math.abs(region.valueEur ?? 0)), MIN_RADIUS, MAX_RADIUS) : MIN_RADIUS,
         cx: projectLng(region.lng, VIEW_WIDTH),
         cy: projectLat(region.lat, VIEW_HEIGHT),
       }))
@@ -73,6 +73,9 @@ export function UkraineBubbleMap({ regions, metric, formatMoney, formatCount }: 
         />
 
         {bubbles.map(({ region, radius, cx, cy }) => {
+          const unknown = region.valueEur === null
+          const negative = region.valueEur !== null && region.valueEur < 0
+          const amountLabel = unknown ? `${t('Сума не визначена')}, ${t('Відомо')}: ${formatMoney(region.knownValueEur)}` : formatMoney(region.valueEur!)
           const isActive = hover?.region.code === region.code
           const showDetails = () => setHover({ region, x: cx, y: cy, radius })
           const hideDetails = () => setHover((current) => current?.region.code === region.code ? null : current)
@@ -83,12 +86,13 @@ export function UkraineBubbleMap({ regions, metric, formatMoney, formatCount }: 
               cx={cx}
               cy={cy}
               r={radius}
-              fill={METRIC_FILL[metric]}
+              fill={unknown || region.valueEur === 0 ? 'none' : negative ? 'var(--mantine-color-red-6)' : METRIC_FILL[metric]}
               fillOpacity={isActive ? 0.65 : 0.35}
-              stroke={isActive ? 'var(--brand-orange)' : METRIC_STROKE[metric]}
+              stroke={negative ? 'var(--mantine-color-red-8)' : unknown ? 'var(--mantine-color-gray-6)' : METRIC_STROKE[metric]}
+              strokeDasharray={unknown ? '3 2' : undefined}
               strokeWidth={isActive ? 2.5 : 1}
               role="img"
-              aria-label={`${region.name}: ${formatMoney(region.valueEur)}, ${formatCount(region.clientCount)}`}
+              aria-label={`${region.name}: ${amountLabel}, ${formatCount(region.clientCount)}`}
               tabIndex={0}
               onFocus={showDetails}
               onBlur={hideDetails}
@@ -132,9 +136,10 @@ export function UkraineBubbleMap({ regions, metric, formatMoney, formatCount }: 
               {hover.region.name}
             </text>
             <text className="app-money" x={12} y={43} fontSize={13} fill="var(--mantine-color-gray-8)">
-              {formatMoney(hover.region.valueEur)}
+              {hover.region.valueEur === null ? t('Сума не визначена') : formatMoney(hover.region.valueEur)}
             </text>
-            <text x={12} y={61} fontSize={11} fill="var(--mantine-color-gray-6)">
+            {hover.region.valueEur === null && <text className="app-money" x={12} y={61} fontSize={11} fill="var(--mantine-color-gray-6)">{t('Відомо')}: {formatMoney(hover.region.knownValueEur)}</text>}
+            <text x={12} y={hover.region.valueEur === null ? 79 : 61} fontSize={11} fill="var(--mantine-color-gray-6)">
               {formatCount(hover.region.clientCount)}
             </text>
           </g>

@@ -282,3 +282,9 @@
  .sales-geography-toolbar-caption-action .mantine-Button-label { display: none; }
  .sales-geography-toolbar-caption-action .mantine-Button-section { margin: 0; }
 }
+
+.sales-geography-context { display: grid; gap: 4px; padding: 4px; }
+.sales-geography-amount { display: inline-flex; flex-direction: column; gap: 3px; }
+.sales-geography-amount small { color: var(--mantine-color-gray-6); font-size: 11px; font-weight: 400; }
+.sales-geography-map-note { color: var(--mantine-color-gray-6); padding: 4px 12px 8px; }
+.sales-geography-metric dd { overflow-wrap: anywhere; }

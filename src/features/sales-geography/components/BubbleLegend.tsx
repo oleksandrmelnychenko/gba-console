@@ -28,7 +28,7 @@ export function BubbleLegend({ maxValue, metric, formatMoney, scaleLabel }: Bubb
       <Text c="gray.6" size="xs">{scaleLabel}</Text>
       <ul className="sales-geography-legend-values">
         {LEGEND_RADII.map((radius) => {
-          const value = maxValue > 0 ? Math.round((radius / MAX_RADIUS) ** 2 * maxValue) : 0
+          const value = maxValue > 0 ? (radius / MAX_RADIUS) ** 2 * maxValue : 0
           return (
             <li key={radius}>
               <svg width={44} height={44} viewBox="0 0 44 44" aria-hidden="true">

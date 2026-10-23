@@ -1,38 +1,22 @@
-import {
-  Button,
-  Alert,
-  Badge,
-  Card,
-  Group,
-  SegmentedControl,
-  Stack,
-  Text,
-  Tooltip,
-} from '@mantine/core'
+import { Alert, Badge, Button, Card, Group, SegmentedControl, Stack, Text, Tooltip } from '@mantine/core'
 import { CircleAlert, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
-import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { ChartLoading } from '../../../shared/ui/charts/ChartState'
 import { getSalesGeography } from '../api/salesGeographyApi'
 import { BubbleLegend } from '../components/BubbleLegend'
+import { GeographyAmount } from '../components/GeographyAmount'
+import { GeographyContext } from '../components/GeographyContext'
 import { UkraineBubbleMap } from '../components/UkraineBubbleMap'
-import { OBLAST_CENTROIDS } from '../data/oblastCentroids'
-import type { GeographyMetric, OtherBucket, PlottedRegion, SalesRegionAggregate } from '../types'
+import { splitGeographyRegions, formatGeographyMoney } from '../data/salesGeographyPresentation'
+import type { GeographyMetric, GeographyRegion, SalesGeographySummary } from '../types'
 import './sales-geography-page.css'
 
 type SalesGeographyPeriodKey = 'all' | '12' | '24' | '36'
-
 const RATING_TABLE_DEFAULT_LAYOUT = { density: 'compact' } satisfies DataTableDefaultLayout
-
-const moneyFormatter = new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: 0,
-})
-
 const countFormatter = new Intl.NumberFormat('uk-UA')
-
 const METRIC_PILL_CLASS: Record<GeographyMetric, string> = {
   sales: 'app-role-pill is-green sales-geography-pill',
   debt: 'app-role-pill is-orange sales-geography-pill',
@@ -43,84 +27,59 @@ export function SalesGeographyPage() {
   const [metric, setMetric] = useState<GeographyMetric>('sales')
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [period, setPeriod] = useState<SalesGeographyPeriodKey>('all')
-  const [aggregates, setAggregates] = useValueState<SalesRegionAggregate[]>([])
-  const [error, setError] = useValueState<string | null>(null)
+  const [summary, setSummary] = useState<SalesGeographySummary | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(true)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   useEffect(() => {
     let active = true
-
+    const controller = new AbortController()
     async function load() {
-      if (active) {
-        setLoading(true)
-      }
-
+      setLoading(true)
       try {
-        const result = await getSalesGeography({
-          metric,
-          ...(metric === 'sales' ? getPeriodParams(period) : {}),
-        })
-
+        const result = await getSalesGeography(
+          { metric, ...(metric === 'sales' ? getPeriodParams(period) : {}) },
+          controller.signal,
+        )
         if (active) {
-          setAggregates(result)
+          setSummary(result)
           setError(null)
         }
       } catch (loadError) {
-        if (!active) {
-          return
-        }
-
-        setAggregates([])
-        setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити карту'))
-      } finally {
         if (active) {
-          setLoading(false)
+          setSummary(null)
+          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити карту'))
         }
+      } finally {
+        if (active) setLoading(false)
       }
     }
-
     void load()
-
     return () => {
       active = false
+      controller.abort()
     }
-  }, [metric, period, reloadKey, setAggregates, setError, t])
+  }, [metric, period, reloadKey, t])
 
-  const { plotted, other } = useMemo(() => splitAggregates(aggregates), [aggregates])
-
-  const totalValue = useMemo(
-    () => plotted.reduce((sum, region) => sum + region.valueEur, 0) + other.valueEur,
-    [plotted, other.valueEur],
-  )
-  const totalClients = useMemo(() => aggregates.reduce((sum, row) => sum + row.ClientCount, 0), [aggregates])
-  const maxValue = useMemo(() => plotted.reduce((max, region) => Math.max(max, region.valueEur), 0), [plotted])
-
-  const formatMoney = useCallback((value: number) => `€${moneyFormatter.format(value)}`, [])
-  const formatCount = useCallback(
-    (count: number) => `${countFormatter.format(count)} ${t('клієнтів')}`,
-    [t],
-  )
-
-  const handleReload = useCallback(() => {
-    reload()
-  }, [])
-
-  const metricLabel = metric === 'sales' ? t('Продажі') : t('Борг')
-  const periodLabel =
-    period === 'all'
-      ? t('Весь час')
-      : `${period} ${t('міс')}`
-  const ratingColumns = useMemo<DataTableColumn<PlottedRegion>[]>(
+  const { regions, plotted, other } = useMemo(() => splitGeographyRegions(summary?.Rows ?? []), [summary])
+  const maxValue = useMemo(() => plotted.reduce((max, row) => Math.max(max, Math.abs(row.valueEur ?? 0)), 0), [plotted])
+  const formatCount = useCallback((count: number) => `${countFormatter.format(count)} ${t('клієнтів')}`, [t])
+  const metricLabel = metric === 'sales' ? t('Продажі мінус повернення') : t('Поточний борг')
+  const periodLabel = period === 'all' ? t('Уся наявна історія') : `${period} ${t('міс')}`
+  const ready = !isLoading && !error && summary !== null
+  const ratingColumns = useMemo<DataTableColumn<GeographyRegion>[]>(
     () => [
       {
         id: 'region',
-        header: t('Область'),
-        accessor: (region) => region.name,
-        cell: (region) => (
+        header: t('Регіон'),
+        accessor: (row) => row.name,
+        cell: (row) => (
           <Group gap={6} wrap="nowrap">
-            <span className="sales-geography-region-code">{region.code}</span>
-            <Text fw={600} size="sm" title={region.name} truncate>{region.name}</Text>
+            <span className="sales-geography-region-code">{row.code === 'unassigned' ? '—' : row.code}</span>
+            <Text fw={600} size="sm" title={t(row.name)} truncate>
+              {t(row.name)}
+            </Text>
           </Group>
         ),
         minWidth: 180,
@@ -129,28 +88,23 @@ export function SalesGeographyPage() {
       {
         id: 'value',
         header: metricLabel,
-        accessor: (region) => region.valueEur,
-        cell: (region) => (
-          <span className="app-money">{formatMoney(region.valueEur)}</span>
-        ),
+        accessor: (row) => row.valueEur,
+        cell: (row) => <GeographyAmount value={row.valueEur} known={row.knownValueEur} />,
         align: 'right',
-        width: 130,
+        width: 170,
+        minWidth: 150,
       },
       {
         id: 'clients',
         header: t('Клієнти'),
-        accessor: (region) => region.clientCount,
-        cell: (region) => (
-          <span className="sales-geography-count">
-            {countFormatter.format(region.clientCount)}
-          </span>
-        ),
+        accessor: (row) => row.clientCount,
+        cell: (row) => <span className="sales-geography-count">{countFormatter.format(row.clientCount)}</span>,
         align: 'right',
-        minWidth: 112,
-        width: 112,
+        width: 100,
+        minWidth: 90,
       },
     ],
-    [formatMoney, metricLabel, t],
+    [metricLabel, t],
   )
 
   return (
@@ -175,7 +129,7 @@ export function SalesGeographyPage() {
               <SegmentedControl
                 aria-label={t('Період')}
                 data={[
-                  { label: t('Весь час'), value: 'all' },
+                  { label: t('Уся наявна історія'), value: 'all' },
                   { label: t('12 міс'), value: '12' },
                   { label: t('24 міс'), value: '24' },
                   { label: t('36 міс'), value: '36' },
@@ -196,9 +150,11 @@ export function SalesGeographyPage() {
                 color="gray"
                 loading={isLoading}
                 variant="default"
-                onClick={handleReload}
-
-                className="sales-geography-toolbar-caption-action" title={t('Оновити')} leftSection={<RefreshCw size={18} />}>
+                onClick={reload}
+                className="sales-geography-toolbar-caption-action"
+                title={t('Оновити')}
+                leftSection={<RefreshCw size={18} />}
+              >
                 {t('Оновити')}
               </Button>
             </Tooltip>
@@ -206,40 +162,40 @@ export function SalesGeographyPage() {
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
         </div>
       </Card>
-
       <div className="sales-geography-content">
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
-
+        {ready && <GeographyContext summary={summary} />}
         <Card className="app-section-card sales-geography-summary" component="dl" padding={0} radius="md" withBorder>
           <div className="sales-geography-metric">
-            <dt>{metric === 'sales' ? t('Продажі за період') : t('Поточний борг')}</dt>
-            <dd className="app-money">{isLoading || error ? '' : formatMoney(totalValue)}</dd>
+            <dt>{metric === 'sales' ? t('Продажі мінус повернення') : t('Увесь поточний борг')}</dt>
+            <dd>{ready && <GeographyAmount value={summary.TotalEur} known={summary.KnownTotalEur} />}</dd>
           </div>
           <div className="sales-geography-metric">
             <dt>{t('Клієнти')}</dt>
-            <dd>{isLoading || error ? '' : countFormatter.format(totalClients)}</dd>
+            <dd>{ready && countFormatter.format(summary.ClientCount)}</dd>
           </div>
           <div className="sales-geography-metric">
             <dt>{t('Регіони на карті')}</dt>
-            <dd>{isLoading || error ? '' : plotted.length}</dd>
+            <dd>{ready && plotted.length}</dd>
           </div>
           <div className="sales-geography-metric">
             <dt>{t('Поза картою')}</dt>
-            <dd className="app-money">{isLoading || error ? '' : formatMoney(other.valueEur)}</dd>
+            <dd>{ready && <GeographyAmount value={other.valueEur} known={other.knownValueEur} />}</dd>
           </div>
         </Card>
-
         <div className="sales-geography-workspace">
           <Card className="app-section-card sales-geography-map-card" padding={0} radius="md" withBorder>
             <div className="sales-geography-section-heading">
               <Text className="app-section-title" component="h2" fw={600} size="sm">
                 {t('Карта України')}
               </Text>
-              <Badge className={METRIC_PILL_CLASS[metric]} variant="light">{metricLabel}</Badge>
+              <Badge className={METRIC_PILL_CLASS[metric]} variant="light">
+                {metricLabel}
+              </Badge>
               <Badge className="app-role-pill is-gray sales-geography-pill" variant="light">
                 {metric === 'sales' ? periodLabel : t('Поточний стан')}
               </Badge>
@@ -256,50 +212,54 @@ export function SalesGeographyPage() {
               ) : (
                 <UkraineBubbleMap
                   formatCount={formatCount}
-                  formatMoney={formatMoney}
+                  formatMoney={formatGeographyMoney}
                   metric={metric}
                   regions={plotted}
                 />
               )}
             </div>
-            {!isLoading && plotted.length > 0 && (
+            {ready && maxValue > 0 && (
               <BubbleLegend
-                formatMoney={formatMoney}
+                formatMoney={formatGeographyMoney}
                 maxValue={maxValue}
                 metric={metric}
-                scaleLabel={t('Масштаб (площа кола)')}
+                scaleLabel={t('Площа кола — модуль відомої суми')}
               />
             )}
+            {ready && plotted.length > 0 && (
+              <Text className="sales-geography-map-note" size="xs">
+                {t('Червоне коло — від’ємний результат. Порожнє пунктирне коло — сума не визначена.')}
+              </Text>
+            )}
           </Card>
-
           <Card className="app-section-card sales-geography-rating-card" padding={0} radius="md" withBorder>
             <div className="sales-geography-section-heading">
               <Text className="app-section-title" component="h2" fw={600} size="sm">
-                {t('Рейтинг областей')}
+                {t('Усі регіони')}
               </Text>
               <Badge className="app-role-pill is-gray sales-geography-pill" variant="light">
-                {plotted.length}
+                {ready ? regions.length : ''}
               </Badge>
             </div>
             <div className="sales-geography-rating-body">
               <DataTable
                 columns={ratingColumns}
-                data={plotted}
+                data={regions}
                 defaultLayout={RATING_TABLE_DEFAULT_LAYOUT}
                 emptyText={t('Немає даних для відображення')}
-                getRowId={(region) => region.code}
+                getRowId={(row) => row.code}
                 height="100%"
                 isLoading={isLoading}
-                minWidth={422}
+                minWidth={450}
                 showLayoutControls
                 tableId="sales-geography-rating"
                 toolbarPortalTarget={tableToolbarSlot}
               />
             </div>
-            {other.count > 0 && !isLoading && (
+            {ready && other.count > 0 && (
               <Text className="sales-geography-other" size="xs">
-                {t('Поза картою')}: <span className="app-money">{formatMoney(other.valueEur)}</span>
-                { ` · ${countFormatter.format(other.clientCount)} ${t('клієнтів')} · ${t('Кодів')}: ${other.count}`}
+                {t('Поза картою')}: <GeographyAmount value={other.valueEur} known={other.knownValueEur} />
+                {` · ${countFormatter.format(other.clientCount)} ${t('клієнтів')} · ${t('Кодів')}: ${other.count}`}
               </Text>
             )}
           </Card>
@@ -310,38 +270,5 @@ export function SalesGeographyPage() {
 }
 
 function getPeriodParams(period: SalesGeographyPeriodKey): { period: 'all' } | { months: number } {
-  if (period === 'all') {
-    return { period: 'all' }
-  }
-
-  return { months: Number(period) }
-}
-
-// Join aggregates to the centroid table. Known oblast codes become plotted bubbles
-// (preserving the ValueEur-desc order from the backend); everything else (foreign /
-// occupied noise) collapses into a single «Інше» bucket.
-function splitAggregates(aggregates: SalesRegionAggregate[]): { plotted: PlottedRegion[]; other: OtherBucket } {
-  const plotted: PlottedRegion[] = []
-  const other: OtherBucket = { count: 0, valueEur: 0, clientCount: 0 }
-
-  for (const row of aggregates) {
-    const centroid = OBLAST_CENTROIDS[row.RegionCode]
-
-    if (centroid) {
-      plotted.push({
-        code: row.RegionCode,
-        name: centroid.name,
-        lat: centroid.lat,
-        lng: centroid.lng,
-        valueEur: row.ValueEur,
-        clientCount: row.ClientCount,
-      })
-    } else {
-      other.count += 1
-      other.valueEur += row.ValueEur
-      other.clientCount += row.ClientCount
-    }
-  }
-
-  return { plotted, other }
+  return period === 'all' ? { period: 'all' } : { months: Number(period) }
 }

@@ -5,8 +5,7 @@ export type OblastCentroid = {
 }
 
 // Oblast code -> Ukrainian display name + centroid (lat, lng). These are the only
-// codes we plot; any RegionCode not present here is treated as foreign / occupied
-// noise and bucketed under «Інше» (see SalesGeographyPage).
+// codes we plot; other region codes remain in the totals and table, under «Поза картою».
 export const OBLAST_CENTROIDS: Record<string, OblastCentroid> = {
   XM: { name: 'Хмельницька', lat: 49.42, lng: 26.99 },
   KI: { name: 'Київ', lat: 50.45, lng: 30.52 },
@@ -33,7 +32,6 @@ export const OBLAST_CENTROIDS: Record<string, OblastCentroid> = {
   XN: { name: 'Херсонська', lat: 46.64, lng: 32.61 },
   LK: { name: 'Луганська', lat: 48.57, lng: 39.31 },
   KR: { name: 'Крим', lat: 44.95, lng: 34.1 },
-  '200': { name: 'Крим', lat: 44.95, lng: 34.1 },
 }
 
 // Equirectangular projection over the Ukraine bbox. Used by BOTH the national

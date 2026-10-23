@@ -1,14 +1,32 @@
-// Served by gba-server (.NET) at GET sales/geography. The DTO is PascalCase with
-// NO JsonPropertyName — mirror SalesRegionAggregateDto.cs field-for-field
-// (RegionCode: string, ValueEur: decimal, ClientCount: int). The response is
-// ordered by ValueEur desc.
 export type SalesRegionAggregate = {
-  RegionCode: string
-  ValueEur: number
+  RegionCode: string | null
+  ValueEur: number | null
+  KnownValueEur: number
   ClientCount: number
+  UnresolvedAmountCount: number
 }
 
 export type GeographyMetric = 'sales' | 'debt'
+
+export type SalesGeographySummary = {
+  Metric: GeographyMetric
+  Currency: 'EUR'
+  TimeZone: 'Europe/Kyiv'
+  From: string | null
+  To: string | null
+  AvailableFrom: string | null
+  LatestDocumentDate: string | null
+  AsOfUtc: string
+  AmountBasis: 'confirmed-invoices-minus-active-returns-with-vat' | 'current-positive-receivables-historical-fx'
+  RegionBasis: 'current-client-region'
+  ImportCompletenessConfirmed: boolean
+  UnresolvedUnit: 'lines' | 'debts'
+  Rows: SalesRegionAggregate[]
+  TotalEur: number | null
+  KnownTotalEur: number
+  ClientCount: number
+  UnresolvedAmountCount: number
+}
 
 export type GeographyPeriod = 'all'
 
@@ -20,20 +38,21 @@ export type GeographyParams = {
   to?: string
 }
 
-// A single plotted bubble: an aggregate joined to its oblast centroid.
-export type PlottedRegion = {
+export type GeographyRegion = {
   code: string
   name: string
-  lat: number
-  lng: number
-  valueEur: number
+  valueEur: number | null
+  knownValueEur: number
   clientCount: number
+  unresolvedAmountCount: number
 }
 
-// Aggregates whose RegionCode is not a known Ukrainian oblast (foreign / occupied
-// noise) get bucketed here instead of plotted.
+export type PlottedRegion = GeographyRegion & { lat: number; lng: number }
+
 export type OtherBucket = {
   count: number
-  valueEur: number
+  valueEur: number | null
+  knownValueEur: number
   clientCount: number
+  unresolvedAmountCount: number
 }
