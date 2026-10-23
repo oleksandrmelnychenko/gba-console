@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Badge, Skeleton, Text, Tooltip, UnstyledButton } from '@mantine/core'
+import { ActionIcon, Alert, Skeleton, Text, Tooltip, UnstyledButton } from '@mantine/core'
 import { ArrowUpRight, CircleAlert, RefreshCw } from 'lucide-react'
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
@@ -7,6 +7,7 @@ import type { WorkspaceSummaryState } from '../hooks/useWorkspaceSummary'
 import type { DashboardWorkspaceMetric } from '../types'
 import { formatMetricValue } from '../utils/metricView'
 import { MetricComparison } from './MetricComparison'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { MetricIcon } from './MetricIcon'
 import { metricDrilldownRoute, metricTimeLabel } from '../utils/metricScope'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -61,7 +62,7 @@ export function WorkspaceSummary({
       <div aria-busy="true" className="role-dashboard-kpi-grid" style={kpiColumns(4)}>
         {[0, 1, 2, 3].map((index) => (
           <div className="role-dashboard-kpi" key={index}>
-            <Skeleton className="role-dashboard-kpi-icon" height={40} radius={10} width={40} />
+            <Skeleton className="role-dashboard-kpi-icon" height={28} radius={6} width={28} />
             <span className="role-dashboard-kpi-body">
               <Skeleton height={10} radius="sm" width="62%" />
               <Skeleton height={22} mt={8} radius="sm" width="36%" />
@@ -104,7 +105,7 @@ function MetricCard({ metric, onOpen }: { metric: DashboardWorkspaceMetric; onOp
       <span aria-hidden="true" className="role-dashboard-kpi-icon"><MetricIcon metric={metric} size={19} strokeWidth={1.9} /></span>
       <span className="role-dashboard-kpi-body">
         <Tooltip multiline w={380} label={<MetricEvidence metric={metric} />}>
-          <Text className="role-dashboard-kpi-label" lineClamp={1}>{metric.label}</Text>
+          <Text className="role-dashboard-kpi-label" lineClamp={2} title={metric.label}>{metric.label}</Text>
         </Tooltip>
         <Text size="xs" c="dimmed">{t(metricTimeLabel(metric))}</Text>
         {metric.unknownReason && <Text size="xs" c="orange" lineClamp={2} title={metric.unknownReason}>{metric.unknownReason}</Text>}
@@ -118,7 +119,7 @@ function MetricCard({ metric, onOpen }: { metric: DashboardWorkspaceMetric; onOp
         {onOpen && <ArrowUpRight aria-hidden="true" className="role-dashboard-kpi-open" size={16} />}
         {metric.coveragePercent !== null && metric.coveragePercent < 100 && (
           <Tooltip label={t('Охоплення даних')}>
-            <Badge className="app-role-pill is-orange" size="xs" variant="light">{metric.coveragePercent}%</Badge>
+            <span><TableChip tone="warning" value={`${metric.coveragePercent}%`} /></span>
           </Tooltip>
         )}
       </span>

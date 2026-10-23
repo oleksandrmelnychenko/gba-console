@@ -1,14 +1,6 @@
 import { AreaChart } from '@mantine/charts'
-import { Badge, Group, Loader, Stack, Text } from '@mantine/core'
-import {
-  Activity,
-  AlertTriangle,
-  CheckCircle2,
-  CircleHelp,
-  Clock3,
-  Gauge,
-  XCircle,
-} from 'lucide-react'
+import { Loader, Stack, Text } from '@mantine/core'
+import { Activity, CheckCircle2 } from 'lucide-react'
 import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { AiFleetObservation } from '../utils/aiFleetObservations'
@@ -23,7 +15,7 @@ import {
   AI_FLEET_WARMUP_STALE_HOURS,
 } from '../utils/aiFleetView'
 import './ai-fleet-analytics.css'
-import { Orb } from '../../../shared/ui/orb/Orb'
+import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 
 type AiFleetAnalyticsDashboardProps = {
   analytics: AiFleetAnalytics
@@ -70,12 +62,6 @@ const STATE_LABEL: Record<AiFleetEffectiveState, string> = {
   unknown: 'Немає даних',
   warning: 'Застаріло',
 }
-
-const STATE_ICON_PROPS = {
-  'aria-hidden': true,
-  size: 13,
-  strokeWidth: 2.2,
-} as const
 
 export function AiFleetAnalyticsDashboard({
   analytics,
@@ -127,31 +113,19 @@ export function AiFleetAnalyticsDashboard({
       className="ai-fleet-dashboard"
     >
       <header className="ai-fleet-dashboard__header">
-        <Group gap="xs" wrap="nowrap">
-          <Gauge aria-hidden="true" size={19} />
-          <div>
-            <Text fw={700} id="ai-fleet-analytics-title" size="sm">
-              {t('Операційна аналітика AI')}
-            </Text>
-            <Text c="dimmed" size="xs">
-              {t('Snapshot стану флоту та live-спостереження цієї вкладки')}
-            </Text>
-          </div>
-        </Group>
+        <Text component="h2" className="app-section-title" fw={600} id="ai-fleet-analytics-title">
+          {t('Стан сервісів')}
+        </Text>
         {isLoading ? (
-          <Badge color="gray" leftSection={<Loader size={11} />} variant="light">
-            {t('Оновлюємо')}
-          </Badge>
+          <span className="ai-fleet-dashboard__loading"><Loader size={12} />{t('Оновлюємо')}</span>
         ) : (
-          <Badge color={stateColor(summaryState)} variant="light">
-            {analytics.passedCheckCount}/{analytics.totalCheckCount} {t('перевірок пройдено')}
-          </Badge>
+          <TableChip tone={stateTone(summaryState)} value={`${analytics.passedCheckCount}/${analytics.totalCheckCount} ${t('перевірок пройдено')}`} />
         )}
       </header>
 
       <div className="ai-fleet-dashboard__overview">
         <article className={`ai-fleet-dashboard__score-card is-${summaryState}`}>
-          <Text className="ai-fleet-dashboard__eyebrow">{t('Флот зараз')}</Text>
+          <Text className="ai-fleet-dashboard__eyebrow">{t('Пройдено перевірок')}</Text>
           <div
             aria-label={`${t('Пройдено перевірок')}: ${analytics.passedCheckCount} ${t('з')} ${analytics.totalCheckCount}`}
             className="ai-fleet-dashboard__score"
@@ -160,7 +134,7 @@ export function AiFleetAnalyticsDashboard({
             <span>/{analytics.totalCheckCount}</span>
           </div>
           <Text className="ai-fleet-dashboard__score-label" size="xs">
-            {t('контрольних API та 05:00 перевірок')}
+            {t('API та ранкове оновлення')}
           </Text>
           <Text className="ai-fleet-dashboard__insight" size="sm">
             {summaryText}
@@ -170,8 +144,7 @@ export function AiFleetAnalyticsDashboard({
         <article className="ai-fleet-dashboard__card ai-fleet-dashboard__distribution-card">
           <div className="ai-fleet-dashboard__card-heading">
             <div>
-              <Text className="ai-fleet-dashboard__card-title">{t('Склад перевірок')}</Text>
-              <Text c="dimmed" size="xs">{t('Кількість станів без усереднення у відсоток')}</Text>
+              <Text className="app-section-title ai-fleet-dashboard__card-title" fw={600}>{t('Склад перевірок')}</Text>
             </div>
           </div>
           <Stack gap="md">
@@ -209,10 +182,8 @@ export function AiFleetAnalyticsDashboard({
         <article className="ai-fleet-dashboard__card ai-fleet-dashboard__sla-card">
           <div className="ai-fleet-dashboard__card-heading">
             <div>
-              <Text className="ai-fleet-dashboard__card-title">{t('Пороги операції')}</Text>
-              <Text c="dimmed" size="xs">{t('Факт проти контрольного ліміту')}</Text>
+              <Text className="app-section-title ai-fleet-dashboard__card-title" fw={600}>{t('Останнє оновлення')}</Text>
             </div>
-            <Clock3 aria-hidden="true" size={17} />
           </div>
           <Stack gap="lg">
             <ThresholdBullet
@@ -234,9 +205,6 @@ export function AiFleetAnalyticsDashboard({
               value={analytics.operationAgeHours}
             />
           </Stack>
-          <Text className="ai-fleet-dashboard__sla-note" c="dimmed" size="xs">
-            {t('Вертикальна риска — контрольний ліміт. Значення праворуч від неї потребує уваги.')}
-          </Text>
         </article>
       </div>
 
@@ -266,7 +234,7 @@ function StateDistributionBar({
     <figure className="ai-fleet-distribution">
       <figcaption className="ai-fleet-distribution__caption">
         <span>{title}</span>
-        <b>{total} {t('сервісів')}</b>
+        <TableChip value={`${total} ${t('сервісів')}`} />
       </figcaption>
       <div
         aria-label={`${title}. ${description}`}
@@ -331,22 +299,20 @@ function SessionTrendChart({
     <figure className="ai-fleet-dashboard__card ai-fleet-dashboard__trend-card">
       <div className="ai-fleet-dashboard__card-heading">
         <div>
-          <Text className="ai-fleet-dashboard__card-title">
+          <Text className="app-section-title ai-fleet-dashboard__card-title" fw={600}>
             {t('Динаміка перевірок')} · {totalChecks}
           </Text>
-          <Text c="dimmed" size="xs">{t('Спостереження лише в цій вкладці — не uptime і не SLA')}</Text>
+          <Text c="dimmed" size="xs">{t('Поточна сесія')}</Text>
         </div>
-        <Badge color="gray" variant="light">
-          {observedPointCount} {t('знімків')}
-        </Badge>
+        <TableChip value={`${t('Знімки')}: ${observedPointCount}`} />
       </div>
 
       {observedPointCount < 2 ? (
         <div aria-live="polite" className="ai-fleet-dashboard__collecting">
-          {isLoading && observedPointCount === 0 ? <Orb size={24} variant="thinking" /> : <Activity aria-hidden="true" size={23} />}
-          <Text fw={650} size="sm">{t('Збираємо live-історію')}</Text>
+          {isLoading && observedPointCount === 0 ? <Loader size={20} color="gray" /> : <Activity aria-hidden="true" size={23} />}
+          <Text fw={650} size="sm">{t('Очікуємо наступне оновлення')}</Text>
           <Text c="dimmed" size="xs">
-            {observedPointCount}/2 {t('знімків. Графік зʼявиться після наступного успішного оновлення.')}
+            {observedPointCount}/2 {t('знімків для графіка')}
           </Text>
         </div>
       ) : (
@@ -363,9 +329,9 @@ function SessionTrendChart({
             curveType="linear"
             data={chartData}
             dataKey="time"
-            fillOpacity={0.14}
+            fillOpacity={0.04}
             gridAxis="y"
-            h={230}
+            h={190}
             series={[
               { color: 'teal.6', label: t('OK'), name: 'pass' },
               { color: 'orange.6', label: t('Застаріло'), name: 'warning' },
@@ -396,11 +362,11 @@ function SessionTrendChart({
         </div>
       )}
 
-      <figcaption className="ai-fleet-dashboard__figure-caption">
-        {observedPointCount >= 2 && firstTime && lastTime
-          ? `${observedPointCount} ${t('знімків')}: ${firstTime}–${lastTime}. ${accessibleSummary}`
-          : t('Потрібні щонайменше два успішні live-знімки.')}
-      </figcaption>
+      {observedPointCount >= 2 && firstTime && lastTime && (
+        <figcaption className="ai-fleet-dashboard__figure-caption">
+          {firstTime}–{lastTime}
+        </figcaption>
+      )}
     </figure>
   )
 }
@@ -473,8 +439,7 @@ function ServiceMatrix({ rows }: { rows: AiFleetReadinessRow[] }) {
     <article className="ai-fleet-dashboard__card ai-fleet-dashboard__matrix-card">
       <div className="ai-fleet-dashboard__card-heading">
         <div>
-          <Text className="ai-fleet-dashboard__card-title">{t('Матриця сервісів')}</Text>
-          <Text c="dimmed" size="xs">{t('Критичні та застарілі стани показані першими')}</Text>
+          <Text className="app-section-title ai-fleet-dashboard__card-title" fw={600}>{t('Сервіси')}</Text>
         </div>
       </div>
       <div
@@ -503,16 +468,14 @@ function ServiceMatrix({ rows }: { rows: AiFleetReadinessRow[] }) {
               return (
                 <tr key={row.serviceId}>
                   <th scope="row">
-                    <span className="ai-fleet-matrix__service">{row.serviceName}</span>
+                    <span className="ai-fleet-matrix__service"><TableChip tone="document" value={row.serviceName} /></span>
                     <small>{row.source}</small>
                   </th>
                   <td><CheckStatePill label={t(STATE_LABEL[row.healthCheckState])} state={row.healthCheckState} /></td>
                   <td><CheckStatePill label={t(STATE_LABEL[row.warmupCheckState])} state={row.warmupCheckState} /></td>
                   <td>{formatWarmupAge(row.warmupAgeHours, t)}</td>
                   <td>
-                    <b className={`ai-fleet-matrix__checks is-${rowState(row)}`}>
-                      {passedChecks}/2
-                    </b>
+                    <TableChip tone={stateTone(rowState(row))} value={`${passedChecks}/2`} />
                   </td>
                 </tr>
               )
@@ -525,41 +488,34 @@ function ServiceMatrix({ rows }: { rows: AiFleetReadinessRow[] }) {
 }
 
 function CheckStatePill({ label, state }: { label: string; state: AiFleetEffectiveState }) {
-  return (
-    <span className={`ai-fleet-check-state is-${state}`}>
-      <StateIcon state={state} />
-      {label}
-    </span>
-  )
-}
-
-function StateIcon({ state }: { state: AiFleetEffectiveState }) {
-  if (state === 'pass') {
-    return <CheckCircle2 {...STATE_ICON_PROPS} />
-  }
-
-  if (state === 'warning') {
-    return <AlertTriangle {...STATE_ICON_PROPS} />
-  }
-
-  if (state === 'fail') {
-    return <XCircle {...STATE_ICON_PROPS} />
-  }
-
-  return <CircleHelp {...STATE_ICON_PROPS} />
+  return <TableChip value={label} tone={stateTone(state)} />
 }
 
 function RankedActions({ actions }: { actions: AiFleetAnalytics['nextActions'] }) {
   const { t } = useI18n()
 
+  const groups = new Map<string, {
+    message: string
+    severity: 'danger' | 'warning'
+    services: Map<string, string>
+  }>()
+  for (const action of actions) {
+    const key = `${action.severity}:${action.message}`
+    let group = groups.get(key)
+    if (!group) {
+      group = { message: action.message, severity: action.severity, services: new Map() }
+      groups.set(key, group)
+    }
+    group.services.set(action.serviceId, action.serviceName)
+  }
+
   return (
     <article className="ai-fleet-dashboard__card ai-fleet-dashboard__actions-card">
       <div className="ai-fleet-dashboard__card-heading">
         <div>
-          <Text className="ai-fleet-dashboard__card-title">{t('Що перевірити далі')}</Text>
-          <Text c="dimmed" size="xs">{t('Пріоритет: падіння, потім застарілі або неповні дані')}</Text>
+          <Text className="app-section-title ai-fleet-dashboard__card-title" fw={600}>{t('Потребує уваги')}</Text>
         </div>
-        {actions.length > 0 ? <Badge color="orange" variant="light">{actions.length}</Badge> : null}
+        {actions.length > 0 ? <TableChip value={actions.length} /> : null}
       </div>
 
       {actions.length === 0 ? (
@@ -569,14 +525,16 @@ function RankedActions({ actions }: { actions: AiFleetAnalytics['nextActions'] }
         </div>
       ) : (
         <ol className="ai-fleet-dashboard__actions-list">
-          {actions.map((action, index) => (
-            <li className={`is-${action.severity}`} key={`${action.serviceId}-${action.message}`}>
-              <span className="ai-fleet-dashboard__action-rank" aria-hidden="true">
-                {String(index + 1).padStart(2, '0')}
-              </span>
+          {[...groups.entries()].map(([key, group]) => (
+            <li key={key}>
+              <TableChip value={t(group.severity === 'danger' ? 'Помилка' : 'Увага')} tone={group.severity === 'danger' ? 'danger' : 'warning'} />
               <div>
-                <Text fw={650} size="xs">{action.serviceName}</Text>
-                <Text size="xs">{t(action.message)}</Text>
+                <Text size="xs">{t(group.message)}</Text>
+                <div className="ai-fleet-dashboard__affected-services">
+                  {[...group.services.entries()].map(([id, name]) => (
+                    <TableChip key={id} tone="document" value={name} />
+                  ))}
+                </div>
               </div>
             </li>
           ))}
@@ -613,20 +571,8 @@ function rowState(row: AiFleetReadinessRow): AiFleetEffectiveState {
     : row.warmupCheckState
 }
 
-function stateColor(state: AiFleetEffectiveState): string {
-  if (state === 'pass') {
-    return 'teal'
-  }
-
-  if (state === 'warning') {
-    return 'orange'
-  }
-
-  if (state === 'fail') {
-    return 'red'
-  }
-
-  return 'gray'
+function stateTone(state: AiFleetEffectiveState): TableChipTone {
+  return { pass: 'success', warning: 'warning', fail: 'danger', unknown: 'neutral' }[state] as TableChipTone
 }
 
 function buildSummaryText(
@@ -636,18 +582,18 @@ function buildSummaryText(
   t: (key: string) => string,
 ): string {
   if (failedChecks > 0) {
-    return `${failedChecks} ${t('перевірок не проходять. Почніть із критичних дій нижче.')}`
+    return `${failedChecks} ${t('перевірок з помилкою')}`
   }
 
   if (warningChecks > 0) {
-    return `${warningChecks} ${t('warmup-статусів застаріли, хоча API можуть бути доступними.')}`
+    return `${warningChecks} ${t('застарілих ранкових оновлень')}`
   }
 
   if (unknownChecks > 0) {
-    return `${unknownChecks} ${t('перевірок не мають повної телеметрії.')}`
+    return `${unknownChecks} ${t('перевірок без даних')}`
   }
 
-  return t('Усі отримані API та 05:00 перевірки проходять.')
+  return t('Усі перевірки пройдено')
 }
 
 function formatWarmupAge(value: number | null, t: (key: string) => string): string {

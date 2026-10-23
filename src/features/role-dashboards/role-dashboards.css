@@ -58,7 +58,7 @@
 }
 
 .role-dashboard-selector-field {
-  width: 300px;
+  width: 240px;
 }
 
 .role-dashboard-selector {
@@ -238,51 +238,28 @@
 }
 
 .role-dashboard-kpi {
-  --kpi-accent: var(--mantine-color-gray-7);
-  --kpi-accent-bg: var(--mantine-color-gray-0);
-  --kpi-accent-border: var(--mantine-color-gray-2);
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) auto;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
   min-width: 0;
   height: 100%;
-  min-height: 70px;
-  padding: 12px 14px;
+  min-height: 66px;
+  padding: 10px 12px;
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 10px;
   transition: border-color 120ms ease, background-color 120ms ease;
 }
 
-.role-dashboard-kpi.is-positive {
-  --kpi-accent: var(--mantine-color-green-7);
-  --kpi-accent-bg: var(--mantine-color-green-0);
-  --kpi-accent-border: var(--mantine-color-green-2);
-}
-
-.role-dashboard-kpi.is-warning {
-  --kpi-accent: var(--brand-orange);
-  --kpi-accent-bg: rgba(var(--brand-orange-rgb), 0.08);
-  --kpi-accent-border: rgba(var(--brand-orange-rgb), 0.28);
-}
-
-.role-dashboard-kpi.is-critical {
-  --kpi-accent: var(--mantine-color-red-7);
-  --kpi-accent-bg: var(--mantine-color-red-0);
-  --kpi-accent-border: var(--mantine-color-red-2);
-}
-
 .role-dashboard-kpi-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  color: var(--kpi-accent);
-  background: var(--kpi-accent-bg);
-  border: 1px solid var(--kpi-accent-border);
-  border-radius: 10px;
+  width: 28px;
+  height: 28px;
+  color: var(--mantine-color-gray-7);
+  flex-shrink: 0;
 }
 
 .role-dashboard-kpi-body {
@@ -306,10 +283,14 @@
   gap: 7px;
   color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
-  font-size: 24px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 600;
   letter-spacing: -0.03em;
   line-height: 1;
+}
+
+.role-dashboard-kpi.is-warning .role-dashboard-kpi-value {
+  color: var(--mantine-color-yellow-9);
 }
 
 .role-dashboard-kpi.is-critical .role-dashboard-kpi-value {
@@ -1079,19 +1060,9 @@ button.role-dashboard-attention-item:focus-visible {
   font-size: 11.5px;
 }
 
-@media (max-width: 76em) {
-  .role-dashboard-selector-field {
-    width: 270px;
-  }
-}
-
 @media (max-width: 62em) {
   .role-dashboard-ops {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .role-dashboard-selector-field {
-    width: 260px;
   }
 
   .role-dashboard-kpi-grid {

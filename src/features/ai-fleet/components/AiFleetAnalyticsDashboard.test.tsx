@@ -77,12 +77,12 @@ function buildAnalytics() {
   }, NOW_MS)
 }
 
-function renderDashboard(history = [buildAiFleetObservation(buildAnalytics(), NOW_MS)]) {
+function renderDashboard(history = [buildAiFleetObservation(buildAnalytics(), NOW_MS)], analytics = buildAnalytics()) {
   return render(
     <MantineProvider theme={theme}>
       <I18nProvider>
         <AiFleetAnalyticsDashboard
-          analytics={buildAnalytics()}
+          analytics={analytics}
           history={history}
           isLoading={false}
         />
@@ -133,10 +133,30 @@ describe('AiFleetAnalyticsDashboard', () => {
       name: 'Вік останнього фінішу: 6,7 год. ліміт 30 год. У межах.',
     })).toBeTruthy()
 
-    expect(screen.getByText('Збираємо live-історію')).toBeTruthy()
-    expect(screen.getByText('1/2 знімків. Графік зʼявиться після наступного успішного оновлення.')).toBeTruthy()
+    expect(screen.getByText('Очікуємо наступне оновлення')).toBeTruthy()
+    expect(screen.getByText('1/2 знімків для графіка')).toBeTruthy()
     expect(screen.queryByTestId('ai-fleet-session-area-chart')).toBeNull()
     expect(chartMocks.areaChart).not.toHaveBeenCalled()
+  })
+
+  it('groups identical actions while retaining every affected service', () => {
+    const analytics = buildAnalytics()
+    const action = analytics.nextActions[0]
+    renderDashboard(undefined, {
+      ...analytics,
+      nextActions: [
+        { ...action, serviceId: 'first', serviceName: 'first-service' },
+        { ...action, serviceId: 'second', serviceName: 'second-service' },
+        { ...action, serviceId: 'third', serviceName: 'third-service', message: 'Інша проблема' },
+      ],
+    })
+    const list = screen.getByRole('list')
+    expect(within(list).getAllByRole('listitem')).toHaveLength(2)
+    expect(within(list).getAllByText(action.message)).toHaveLength(1)
+    expect(within(list).getByText('first-service')).toBeTruthy()
+    expect(within(list).getByText('second-service')).toBeTruthy()
+    expect(within(list).getByText('third-service')).toBeTruthy()
+    expect(within(list).getByText('Інша проблема')).toBeTruthy()
   })
 
   it('renders an accessible session trend after two successful observations', () => {
