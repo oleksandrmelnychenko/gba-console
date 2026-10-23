@@ -1,3 +1,5 @@
+import { financialTotal } from '../financials'
+import type { FinancialBasis } from '../types'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   normalizeAiHistoryLineage,
@@ -148,6 +150,7 @@ function normalizeHistoryResponse<T>(
   expectedAsOf?: string,
 ): T {
   const value = requireRecord(result, path)
+  validateFinancialContract(value, path)
   const asOf = requireAiIsoDate(value.as_of, `${path}.as_of`, createContractError)
   const lineage = normalizeAiHistoryLineage(value, path, createContractError, {
     asOf,
@@ -246,6 +249,23 @@ function normalizeProductAnalytics(result: unknown, expectedAsOf?: string): Prod
     },
   )
   assertSameLineage(lineage, quality, `${path}.data_quality`)
+  validateBasis(dataQuality, `${path}.data_quality`, true)
+  if (!Array.isArray(value.sales_series)) throw createContractError(path, 'missing monthly series')
+  const seenMonths = new Set<string>()
+  value.sales_series.forEach((raw, index) => {
+    const row = requireRecord(raw, path)
+    const rowPath = `${path}.sales_series.${index}`
+    validateFinancialRow(row, rowPath, true)
+    if (typeof row.month !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])$/.test(row.month) || seenMonths.has(row.month)) throw createContractError(rowPath, 'duplicate or invalid month')
+    seenMonths.add(row.month)
+    const monthStart = `${row.month}-01`
+    const next = new Date(`${monthStart}T00:00:00Z`)
+    next.setUTCMonth(next.getUTCMonth() + 1)
+    const nextMonth = next.toISOString().slice(0, 10)
+    const expectedStart = monthStart > lineage.effective_start ? monthStart : lineage.effective_start
+    const expectedEnd = nextMonth < asOf ? nextMonth : asOf
+    if (row.period_start !== expectedStart || row.period_end_exclusive !== expectedEnd || expectedStart >= expectedEnd) throw createContractError(rowPath, 'monthly dates differ from effective Kyiv period')
+  })
   if (dataQuality.zero_fill_begins_at !== lineage.effective_start) {
     throw new ProductIntelligenceContractError(
       `${path}.data_quality.zero_fill_begins_at`,
@@ -287,4 +307,48 @@ function requireNonEmptyString(value: unknown, path: string): string {
 
 function createContractError(path: string, reason: string): ProductIntelligenceContractError {
   return new ProductIntelligenceContractError(path, reason)
+}
+
+function validateBasis(value: Record<string, unknown>, path: string, analytics = false) {
+  if (value.time_zone !== 'Europe/Kyiv' || value[analytics ? 'revenue_basis' : 'sales_basis'] !== 'confirmed-invoices-gross-with-vat'
+    || value.net_sales_basis !== 'confirmed-invoices-minus-active-returns-with-vat'
+    || value.import_completeness_confirmed !== false) {
+    throw createContractError(path, 'unverified sales basis, timezone or import completeness')
+  }
+}
+
+function finiteMoney(value: unknown, path: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) throw createContractError(path, 'expected finite money')
+  return value
+}
+
+function validateFinancialContract(value: Record<string, unknown>, path: string) {
+  validateBasis(value, path)
+  if (value.overview) {
+    const summary = requireRecord(value.overview, `${path}.overview`)
+    validateFinancialRow({ revenue_eur: summary.total_revenue_eur,
+      net_revenue_eur: summary.total_net_revenue_eur, known_net_revenue_eur: summary.known_total_net_revenue_eur,
+      unresolved_amount_count: summary.unresolved_amount_count }, `${path}.overview`)
+  }
+  if ('revenue_eur' in value) validateFinancialRow(value, path)
+  for (const key of ['tasks', 'regions', 'candidates']) {
+    if (Array.isArray(value[key])) value[key].forEach((row, index) => {
+      const item = requireRecord(row, `${path}.${key}.${index}`)
+      validateFinancialRow({ ...item, revenue_eur: item.revenue_eur ?? item.regional_revenue_eur }, `${path}.${key}.${index}`)
+    })
+  }
+}
+
+function validateFinancialRow(row: Record<string, unknown>, path: string, requireBasis = false) {
+  finiteMoney(row.revenue_eur, `${path}.revenue_eur`)
+  const unresolved = row.unresolved_amount_count
+  if (typeof unresolved !== 'number' || !Number.isSafeInteger(unresolved) || unresolved < 0) throw createContractError(path, 'invalid unresolved amount count')
+  const known = finiteMoney(row.known_net_revenue_eur, `${path}.known_net_revenue_eur`)
+  if (unresolved > 0 ? row.net_revenue_eur !== null : row.net_revenue_eur !== known) throw createContractError(path, 'net total must expose unresolved amounts')
+  if (requireBasis) {
+    const basis = requireRecord(row.financial_basis, `${path}.financial_basis`)
+    if (typeof basis.revenue_eur !== 'string' || typeof basis.known_returned_value_eur !== 'string' || basis.unresolved_amount_count !== unresolved) throw createContractError(path, 'missing exact additive financial basis')
+    const exact = basis as FinancialBasis
+    if (financialTotal([exact], false) !== row.revenue_eur || financialTotal([exact], true) !== row.net_revenue_eur || financialTotal([{ ...exact, unresolved_amount_count: 0 }], true) !== known) throw createContractError(path, 'display amounts differ from exact financial basis')
+  }
 }

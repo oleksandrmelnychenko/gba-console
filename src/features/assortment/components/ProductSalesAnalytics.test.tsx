@@ -14,12 +14,29 @@ describe('ProductSalesAnalytics', () => {
     expect(screen.getByRole('group', { name: 'Графік: Продано' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '3 міс.' }))
     expect(within(metrics).getByRole('button', { name: 'Продано 45' })).toBeTruthy()
-    fireEvent.click(within(metrics).getByRole('button', { name: /Виручка/ }))
-    expect(screen.getByRole('group', { name: 'Графік: Виручка, EUR' })).toBeTruthy()
+    fireEvent.click(within(metrics).getByRole('button', { name: /До повернень/ }))
+    expect(screen.getByRole('group', { name: 'Графік: До повернень, EUR' })).toBeTruthy()
     expect(screen.queryByRole('group', { name: 'Графік: Продано' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Дані' }))
     expect(screen.getAllByRole('row')).toHaveLength(4)
-    expect(screen.queryByRole('group', { name: 'Графік: Виручка, EUR' })).toBeNull()
+    expect(screen.queryByRole('group', { name: 'Графік: До повернень, EUR' })).toBeNull()
+  })
+
+  it('shows signed net amounts and rounds selected exact monthly basis once', () => {
+    const analytics = buildAnalytics()
+    analytics.sales_series = analytics.sales_series.map((point, index) => ({ ...point,
+      revenue_eur: index === 5 || index === 6 ? 1.01 : 0,
+      net_revenue_eur: index === 6 ? -1 : index === 5 ? 1.01 : 0,
+      financial_basis: { revenue_eur: index === 5 || index === 6 ? '1.005' : '0', known_returned_value_eur: index === 6 ? '2.005' : '0', unresolved_amount_count: 0 },
+    }))
+    renderAnalytics(analytics)
+    fireEvent.click(screen.getByRole('button', { name: '3 міс.' }))
+    expect(screen.getByRole('button', { name: 'До повернень 2,01 EUR' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Мінус повернення 0,01 EUR' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Мінус повернення 0,01 EUR' }))
+    expect(screen.getByRole('group', { name: 'Графік: Мінус повернення, EUR' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Дані' }))
+    expect(screen.getByRole('table').textContent).toContain('-1,00')
   })
 
   it('preserves partial actuals but excludes the partial month from the comparison', () => {
@@ -47,14 +64,14 @@ describe('ProductSalesAnalytics', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Дані' }))
     const march = screen.getAllByRole('row').find(row => row.textContent?.includes('бер.'))!
     expect(march.textContent).toContain('—')
-    expect(within(march).getAllByRole('cell').slice(1).map(cell => cell.textContent)).toEqual(['—', '—', '—', '—'])
+    expect(within(march).getAllByRole('cell').slice(1).map(cell => cell.textContent)).toEqual(['—', '—', '—', '—', '—'])
   })
 
   it('does not turn missing fields into zero or NaN', () => {
     const analytics = buildAnalytics()
     analytics.sales_series[6] = { ...analytics.sales_series[6], revenue_eur: null, avg_price_eur: undefined } as unknown as ProductSalesSeriesPoint
     renderAnalytics(analytics)
-    expect(screen.getByRole('button', { name: 'Виручка — EUR' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'До повернень — EUR' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Продано 95' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Дані' }))
     expect(screen.getByRole('table').textContent).not.toContain('NaN')

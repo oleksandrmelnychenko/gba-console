@@ -1,3 +1,14 @@
+export type FinancialBasis = { revenue_eur: string; known_returned_value_eur: string; unresolved_amount_count: number | null }
+export type SalesFinancials = {
+  gross_revenue_eur?: number
+  returned_value_eur?: number | null
+  known_returned_value_eur?: number
+  net_revenue_eur?: number | null
+  known_net_revenue_eur?: number
+  unresolved_amount_count?: number | null
+  financial_basis?: FinancialBasis
+}
+
 export type AssortmentBand =
   | 'dead'
   | 'slow'
@@ -11,7 +22,7 @@ export type AssortmentAbc = 'A' | 'B' | 'C' | string
 export type AssortmentXyz = 'X' | 'Y' | 'Z' | string
 export type AssortmentLifecycle = 'new' | 'growing' | 'mature' | 'declining' | 'dead' | string
 
-export type AssortmentRow = {
+export type AssortmentRow = SalesFinancials & {
   product_id: number
   qty_on_hand: number
   eur_value: number
@@ -76,6 +87,9 @@ export type AssortmentOverviewBody = {
   by_xyz: Record<string, number>
   total_eur_value: number
   total_revenue_eur: number
+  total_net_revenue_eur?: number | null
+  known_total_net_revenue_eur?: number
+  unresolved_amount_count?: number
   avg_health: number
   total_skus: number
 }
@@ -107,8 +121,8 @@ export type AssortmentHealth = ProductHistoryContract & {
   tasks: AssortmentRow[]
 }
 
-export type AssortmentRegionRow = {
-  region_id: number
+export type AssortmentRegionRow = SalesFinancials & {
+  region_id: number | null
   region_name?: string | null
   client_count: number
   order_count: number
@@ -172,9 +186,9 @@ export type ProductSubstitutes = ProductHistoryContract & {
   candidates: AssortmentRow[]
 }
 
-export type ProductRegionRow = {
+export type ProductRegionRow = SalesFinancials & {
   product_id: number
-  region_id: number
+  region_id: number | null
   region_name?: string | null
   regional_units: number
   regional_revenue_eur: number
@@ -189,7 +203,7 @@ export type ProductRegions = ProductHistoryContract & {
   regions: ProductRegionRow[]
 }
 
-export type ProductSalesSeriesPoint = {
+export type ProductSalesSeriesPoint = SalesFinancials & {
   avg_price_eur: number | null
   is_complete: boolean
   month: string
@@ -240,6 +254,7 @@ import type { AiHistoryLineage } from '../../shared/ai/aiHistoryLineage'
 
 export type ProductHistoryWindow = AiHistoryLineage & {
   requested_start: string
+  end_inclusive?: string | null
   effective_days: number
 }
 

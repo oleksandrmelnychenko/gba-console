@@ -174,7 +174,7 @@ describe('AssortmentDashboardPage', () => {
     expect(screen.getByRole('combobox', { name: 'XYZ' })).not.toBeNull()
     expect(screen.getByRole('combobox', { name: 'Наявність' })).not.toBeNull()
 
-    fireEvent.change(screen.getByLabelText('Дата зрізу'), { target: { value: '2026-07-25' } })
+    fireEvent.change(screen.getByLabelText('До дати (не включно)'), { target: { value: '2026-07-25' } })
 
     await waitFor(() => {
       expect(getAssortmentHealth).toHaveBeenLastCalledWith(
@@ -212,7 +212,7 @@ describe('AssortmentDashboardPage', () => {
     mockAssortmentData([{ ...product, name: 'Товар нового зрізу', vendor_code: 'NEW-1' }])
     vi.mocked(getAssortmentStock).mockRejectedValue(new Error('Stock unavailable'))
     vi.mocked(getAssortmentMargin).mockRejectedValue(new Error('Margin unavailable'))
-    fireEvent.change(screen.getByLabelText('Дата зрізу'), { target: { value: '2026-07-25' } })
+    fireEvent.change(screen.getByLabelText('До дати (не включно)'), { target: { value: '2026-07-25' } })
 
     await screen.findByText(/Stock unavailable/)
     expect(screen.getAllByText('Товар нового зрізу').length).toBeGreaterThan(0)

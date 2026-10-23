@@ -1,3 +1,4 @@
+import { financialTotal } from '../financials'
 import { Alert, Button, Card, Group, Text } from '@mantine/core'
 import { AlertTriangle, BarChart3, Coins, ShoppingBag, Table2, Tag } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -5,7 +6,7 @@ import { AnalyticsTabs } from '../../../shared/ui/analytics/AnalyticsControls'
 import { AnalyticsSeriesChart } from '../../../shared/ui/analytics/AnalyticsSeriesChart'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { TableChip } from '../../../shared/ui/TableChip'
-import type { ProductAnalytics, ProductSalesSeriesPoint } from '../types'
+import type { FinancialBasis, ProductAnalytics, ProductSalesSeriesPoint } from '../types'
 
 const quantity = new Intl.NumberFormat('uk-UA', { maximumSignificantDigits: 15 })
 const money = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -13,18 +14,20 @@ const monthFormat = new Intl.DateTimeFormat('uk-UA', { month: 'short', year: '2-
 const dateFormat = new Intl.DateTimeFormat('uk-UA', { timeZone: 'UTC' })
 const metrics = [
   { value: 'units', label: 'Продано', icon: <BarChart3 size={15} /> },
-  { value: 'order_count', label: 'Замовлень', icon: <ShoppingBag size={15} /> },
-  { value: 'revenue_eur', label: 'Виручка', icon: <Coins size={15} /> },
+  { value: 'order_count', label: 'Накладних', icon: <ShoppingBag size={15} /> },
+  { value: 'revenue_eur', label: 'До повернень', icon: <Coins size={15} /> },
+  { value: 'net_revenue_eur', label: 'Мінус повернення', icon: <Coins size={15} /> },
   { value: 'avg_price_eur', label: 'Середня ціна', icon: <Tag size={15} /> },
 ] as const
 
 type Metric = typeof metrics[number]['value']
-type Point = { month: string; label: string; complete: boolean; units: number | null; order_count: number | null; revenue_eur: number | null; avg_price_eur: number | null }
+type Point = { month: string; label: string; complete: boolean; units: number | null; order_count: number | null; revenue_eur: number | null; net_revenue_eur: number | null; financial_basis?: FinancialBasis; avg_price_eur: number | null }
+const signed = (value: unknown): number | null => typeof value === 'number' && Number.isFinite(value) ? value : null
 const finite = (value: unknown): number | null => typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null
 const monthIndex = (value: string) => /^\d{4}-(0[1-9]|1[0-2])$/.test(value) ? Number(value.slice(0, 4)) * 12 + Number(value.slice(5)) - 1 : null
 const monthKey = (index: number) => `${Math.floor(index / 12)}-${String(index % 12 + 1).padStart(2, '0')}`
 const formatMonth = (key: string) => monthFormat.format(new Date(`${key}-01T00:00:00Z`))
-const sum = (points: Point[], metric: 'units' | 'order_count' | 'revenue_eur') => points.length && points.every(point => point[metric] !== null) ? points.reduce((total, point) => total + point[metric]!, 0) : null
+const sum = (points: Point[], metric: 'units' | 'order_count' | 'revenue_eur' | 'net_revenue_eur') => points.length && points.every(point => point[metric] !== null) ? points.reduce((total, point) => total + point[metric]!, 0) : null
 
 function salesPoints(analytics: ProductAnalytics | null, months: number): Point[] {
   if (!analytics) return []
@@ -39,7 +42,7 @@ function salesPoints(analytics: ProductAnalytics | null, months: number): Point[
     const month = monthKey(first + offset)
     const point: ProductSalesSeriesPoint | undefined = byMonth.get(month)
     return { month, label: formatMonth(month), complete: point?.is_complete === true,
-      units: finite(point?.units), order_count: finite(point?.order_count), revenue_eur: finite(point?.revenue_eur), avg_price_eur: finite(point?.avg_price_eur) }
+      units: signed(point?.units), order_count: finite(point?.order_count), revenue_eur: signed(point?.revenue_eur), net_revenue_eur: signed(point?.net_revenue_eur), financial_basis: point?.financial_basis, avg_price_eur: signed(point?.avg_price_eur) }
   })
 }
 
@@ -64,10 +67,14 @@ export function ProductSalesAnalytics({ analytics, error }: { analytics: Product
   const allPoints = useMemo(() => salesPoints(analytics, 12), [analytics])
   const trend = salesTrend(allPoints)
   const units = sum(points, 'units')
-  const revenue = sum(points, 'revenue_eur')
-  const totals: Record<Metric, number | null> = { units, order_count: sum(points, 'order_count'), revenue_eur: revenue,
+  const basis = points.map(point => point.financial_basis)
+  const exactBasis = basis.length > 0 && basis.every((row): row is FinancialBasis => row !== undefined) ? basis : null
+  const revenue = exactBasis ? financialTotal(exactBasis, false) : sum(points, 'revenue_eur')
+  const netRevenue = exactBasis ? financialTotal(exactBasis, true) : null
+  const knownNetRevenue = exactBasis ? financialTotal(exactBasis.map(row => ({ ...row, unresolved_amount_count: 0 })), true) : null
+  const totals: Record<Metric, number | null> = { units, order_count: sum(points, 'order_count'), revenue_eur: revenue, net_revenue_eur: netRevenue,
     avg_price_eur: units !== null && units > 0 && revenue !== null ? revenue / units : null }
-  const isMoney = metric === 'revenue_eur' || metric === 'avg_price_eur'
+  const isMoney = metric.endsWith('eur')
   const formatValue = (value: number) => (isMoney ? money : quantity).format(value)
   const hasData = points.some(point => metrics.some(item => point[item.value] !== null))
   const partial = points.some(point => !point.complete && metrics.some(item => point[item.value] !== null))
@@ -87,10 +94,11 @@ export function ProductSalesAnalytics({ analytics, error }: { analytics: Product
     </div>
     {!hasData ? <div className="assort-sales-empty">{t('За вибраний період немає даних продажів.')}</div> : <>
       <div className="assort-sales-metrics">
-        <AnalyticsTabs label={t('Показник продажів')} value={metric} onChange={value => setMetric(value as Metric)} items={metrics.map(item => ({ ...item, label: t(item.label), valueLabel: <>{totals[item.value] === null ? '—' : (item.value === 'units' || item.value === 'order_count' ? quantity : money).format(totals[item.value]!)}{(item.value === 'revenue_eur' || item.value === 'avg_price_eur') && <> <TableChip tone="source" value="EUR" /></>}</> }))} />
+        <AnalyticsTabs label={t('Показник продажів')} value={metric} onChange={value => setMetric(value as Metric)} items={metrics.map(item => ({ ...item, label: t(item.label), valueLabel: <>{totals[item.value] === null ? '—' : (item.value === 'units' || item.value === 'order_count' ? quantity : money).format(totals[item.value]!)}{item.value.endsWith('eur') && <> <TableChip tone="source" value="EUR" /></>}</> }))} />
       </div>
       <div className="assort-sales-context">
-        <span>{points[0]?.label} — {points.at(-1)?.label}</span>
+        <span>{analytics && points[0] ? dateFormat.format(new Date(`${analytics.effective_start > `${points[0].month}-01` ? analytics.effective_start : `${points[0].month}-01`}T00:00:00Z`)) : '—'} — {end ? dateFormat.format(end) : '—'} · {t('Київ')}</span>
+        {netRevenue === null && <TableChip value={knownNetRevenue === null ? t('Сума після повернень не визначена') : `${t('Відома частина')}: ${money.format(knownNetRevenue)} EUR`} tone="warning" title={t('Потрібне підтвердження суми повернень; невідомі значення не замінено нулями.')} />}
         <TableChip value={t(trend.label)} tone={trend.tone} title={t('Останні 3 завершені місяці проти попередніх 3; неповні місяці не враховано.')} />
         {partial && <TableChip value={t('Неповний місяць')} tone="neutral" title={`${t('Дані враховано по')} ${end && Number.isFinite(end.getTime()) ? dateFormat.format(end) : '—'}. ${t('Неповні місяці не враховано в тренді.')}`} />}
         {missing && <TableChip value={t('Неповні дані')} tone="warning" title={t('Відсутні значення не замінено нулями.')} />}

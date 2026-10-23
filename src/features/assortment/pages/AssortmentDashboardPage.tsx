@@ -1,3 +1,4 @@
+import { financialPeriod } from '../financials'
 import { requireMatchingAssortmentScopes } from '../snapshotScope'
 import { ACTION_LABELS, REASON_LABELS } from '../assortmentLabels'
 import {
@@ -46,7 +47,7 @@ import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import './assortment-dashboard.css'
 
 const integer = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
-const money = new Intl.NumberFormat('uk-UA', { currency: 'EUR', maximumFractionDigits: 0, style: 'currency' })
+const money = new Intl.NumberFormat('uk-UA', { currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2, style: 'currency' })
 
 const RATING_LIMIT = 8
 const REGION_LIMIT = 50
@@ -82,7 +83,7 @@ const SORT_OPTIONS = [
   { value: 'revenue', label: 'Найбільша виручка' },
 ]
 const REGIONAL_SORT_OPTIONS = [
-  { value: 'regional_revenue', label: 'Виручка в регіоні' },
+  { value: 'regional_revenue', label: 'Продажі до повернень у регіоні' },
   { value: 'regional_units', label: 'Штуки в регіоні' },
 ]
 const REGIONAL_SORT_VALUES = new Set(REGIONAL_SORT_OPTIONS.map((option) => option.value))
@@ -177,7 +178,7 @@ const ASSORT_COMBOBOX_PROPS = {
 }
 
 function regionName(region: AssortmentRegionRow): string {
-  return region.region_name || `#${region.region_id}`
+  return region.region_name || (region.region_id == null ? 'Без регіону' : `#${region.region_id}`)
 }
 
 function isRegionalSort(sort: string | undefined): boolean {
@@ -255,7 +256,7 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
         },
         {
           id: 'margin',
-          header: t('Маржа %'),
+          header: t('Оцінена маржа %'),
           align: 'right',
           minWidth: 110,
           accessor: (row) => row.margin_pct ?? -Infinity,
@@ -450,17 +451,17 @@ function AssortmentDashboardPageContent() {
   const knownMarginRevenue = getSummaryNumber(marginSummary, 'revenue_eur_known_margin')
   const negativeMarginRevenue = getSummaryNumber(marginSummary, 'eur_at_negative_margin')
   const overallReturnRate = getSummaryNumber(returnsSummary, 'overall_return_rate')
-  const marginProfit = weightedMargin == null || knownMarginRevenue == null ? null : knownMarginRevenue * weightedMargin
+  const marginProfit = getSummaryNumber(marginSummary, 'estimated_profit_eur')
   const avgHealth = body == null ? null : Math.round(body.avg_health)
   const regionOptions = useMemo(
     () => (regions?.regions ?? []).map((region) => ({
-      value: String(region.region_id),
+      value: String(region.region_id ?? 0),
       label: `${regionName(region)} · ${formatMoney(region.revenue_eur)}`,
     })),
     [regions?.regions],
   )
   const selectedRegion = useMemo(
-    () => regions?.regions.find((region) => region.region_id === filters.regionId) ?? null,
+    () => regions?.regions.find((region) => (region.region_id ?? 0) === filters.regionId) ?? null,
     [filters.regionId, regions?.regions],
   )
   const sortOptions = filters.regionId == null ? SORT_OPTIONS : [...SORT_OPTIONS, ...REGIONAL_SORT_OPTIONS]
@@ -523,6 +524,7 @@ function AssortmentDashboardPageContent() {
           <div className="assort-dash__overview">
             <AssortmentKpis
               body={body}
+              period={financialPeriod(overview)}
               knownMarginRevenue={knownMarginRevenue}
               marginProfit={marginProfit}
               negativeMarginSkus={negativeMarginSkus}
@@ -532,7 +534,7 @@ function AssortmentDashboardPageContent() {
             />
 
             {selectedRegion && (
-              <RegionSummary region={selectedRegion} windowDays={filters.regionWindowDays ?? REGION_WINDOW_DAYS} />
+              <RegionSummary region={selectedRegion} period={financialPeriod(regions, 'regional')} />
             )}
 
             <div className="assort-dash__insights">
@@ -617,7 +619,7 @@ function AssortmentHeader({
         </div>
         <div className="assort-dash__controls">
           <AppDateInput
-            label={t('Дата зрізу')}
+            label={t('До дати (не включно)')}
             type="date"
             value={filters.asOfDate ?? ''}
             w={160}
@@ -668,6 +670,7 @@ function AssortmentHeader({
 
 function AssortmentKpis({
   body,
+  period,
   knownMarginRevenue,
   marginProfit,
   negativeMarginSkus,
@@ -676,6 +679,7 @@ function AssortmentKpis({
   weightedMargin,
 }: {
   body?: AssortmentOverview['overview']
+  period: string
   knownMarginRevenue: number | null
   marginProfit: number | null
   negativeMarginSkus: number | null
@@ -686,23 +690,28 @@ function AssortmentKpis({
   const { t } = useI18n()
 
   return (
-    <SimpleGrid className="assort-kpis" cols={{ base: 1, sm: 2, lg: 4 }} spacing={0}>
+    <SimpleGrid className="assort-kpis" cols={{ base: 1, sm: 2, lg: 5 }} spacing={0}>
       <KpiTile
         label={t('Вартість запасів')}
         sub={body?.total_skus == null ? undefined : `${t('Товарних позицій')}: ${formatInt(body.total_skus)}`}
         value={formatMoney(body?.total_eur_value)}
       />
       <KpiTile
-        label={t('Оборот за 12 міс.')}
-        sub={t('сумарна виручка продажів')}
+        label={t('Продажі до повернень')}
+        sub={`${t('Увесь асортимент')} · ${period}`}
         value={formatMoney(body?.total_revenue_eur)}
       />
       <KpiTile
-        label={t('Валовий заробіток')}
+        label={t('Продажі мінус повернення')}
+        value={body?.total_net_revenue_eur === null ? t('Не визначено') : formatMoney(body?.total_net_revenue_eur)}
+        sub={body?.unresolved_amount_count ? `${t('Відома частина')}: ${formatMoney(body.known_total_net_revenue_eur)} · ${body.unresolved_amount_count} ${t('сум без підтвердження')} · ${period}` : `${t('Увесь асортимент')} · ${period}`}
+      />
+      <KpiTile
+        label={t('Оцінений прибуток')}
         sub={
           weightedMargin == null
             ? t('маржа невідома')
-            : `${t('маржа')} ${pct(weightedMargin)} · ${t('виручка')} ${formatMoney(knownMarginRevenue)}`
+            : `${t('За поточною собівартістю')} · ${pct(weightedMargin)} · ${formatMoney(knownMarginRevenue)}`
         }
         value={formatMoney(marginProfit)}
       />
@@ -995,7 +1004,7 @@ function AssortmentDetailTable({
   )
 }
 
-function RegionSummary({ region, windowDays }: { region: AssortmentRegionRow; windowDays: number }) {
+function RegionSummary({ region, period }: { region: AssortmentRegionRow; period: string }) {
   const { t } = useI18n()
 
   return (
@@ -1007,12 +1016,13 @@ function RegionSummary({ region, windowDays }: { region: AssortmentRegionRow; wi
         <div>
           <span>{regionName(region)}</span>
           <small>
-            {t('регіональний зріз за')} {formatInt(windowDays)} {t('днів')}
+            {t('Усі товари регіону')} · {period}
           </small>
         </div>
       </div>
       <div className="assort-region__metrics">
-        <RegionMetric label={t('Виручка')} value={formatMoney(region.revenue_eur)} />
+        <RegionMetric label={t('Продажі до повернень')} value={formatMoney(region.revenue_eur)} />
+        <RegionMetric label={t('Продажі мінус повернення')} value={region.net_revenue_eur === null ? `${t('Відома частина')}: ${formatMoney(region.known_net_revenue_eur)}` : formatMoney(region.net_revenue_eur)} />
         <RegionMetric label={t('Штуки')} value={formatInt(region.units)} />
         <RegionMetric label={t('Клієнти')} value={formatInt(region.client_count)} />
         <RegionMetric label={t('Товарні позиції')} value={formatInt(region.product_count)} />

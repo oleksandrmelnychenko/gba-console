@@ -111,7 +111,7 @@
 .assort-score-details summary:focus-visible { outline: 2px solid var(--brand-orange); outline-offset: 4px; border-radius: 4px; }
 .assort-score-details[open] summary { margin-bottom: 12px; }
 .assort-sales-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
-.assort-sales-metrics .app-analytics-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.assort-sales-metrics .app-analytics-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 .assort-sales-metrics .app-analytics-tab { min-width: 0; gap: 6px; padding: 8px 10px; }
 .assort-sales-metrics .app-analytics-tab[aria-pressed='true'] { background: var(--mantine-color-white); color: var(--mantine-color-text); border-color: var(--brand-orange); }
 .assort-sales-metrics .app-analytics-tab-value { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 18px; }

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   getAssortmentHealth,
+  getAssortmentOverview,
   getProductAnalytics,
   ProductIntelligenceContractError,
 } from './assortmentApi'
@@ -45,6 +46,25 @@ describe('assortment product analytics API', () => {
     })
   })
 
+  it('keeps the unknown-region selector distinct from no filter', async () => {
+    apiRequestMock.mockResolvedValueOnce(historyResponse())
+    await getAssortmentHealth({ regionId: 0, regionWindowDays: 30 })
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/intelligence/assortment/health', expect.objectContaining({ query: expect.objectContaining({ regionId: 0, regionWindowDays: 30 }) }))
+  })
+
+  it('rejects unproven financial semantics instead of displaying legacy totals', async () => {
+    apiRequestMock.mockResolvedValueOnce({ ...historyResponse(), sales_basis: 'order-created' })
+    await expect(getAssortmentOverview()).rejects.toBeInstanceOf(ProductIntelligenceContractError)
+  })
+
+  it('requires unknown monetary totals to remain null', async () => {
+    const overview = { total_revenue_eur: 10, total_net_revenue_eur: null, known_total_net_revenue_eur: -2, unresolved_amount_count: 1 }
+    apiRequestMock.mockResolvedValueOnce({ ...historyResponse(), overview })
+    await expect(getAssortmentOverview()).resolves.toHaveProperty('overview.total_net_revenue_eur', null)
+    apiRequestMock.mockResolvedValueOnce({ ...historyResponse(), overview: { ...overview, total_net_revenue_eur: 0 } })
+    await expect(getAssortmentOverview()).rejects.toBeInstanceOf(ProductIntelligenceContractError)
+  })
+
   it('requests the monthly analytics contract with product id, period, and cancellation signal', async () => {
     const controller = new AbortController()
     const response = analyticsResponse()
@@ -70,6 +90,10 @@ describe('assortment product analytics API', () => {
 
 function historyResponse() {
   return {
+    time_zone: 'Europe/Kyiv',
+    sales_basis: 'confirmed-invoices-gross-with-vat',
+    net_sales_basis: 'confirmed-invoices-minus-active-returns-with-vat',
+    import_completeness_confirmed: false,
     as_of: '2026-07-10',
     source_history_start: '2025-01-01',
     requested_start: '2025-07-10',
@@ -90,6 +114,10 @@ function historyResponse() {
 
 function analyticsResponse() {
   return {
+    time_zone: 'Europe/Kyiv',
+    sales_basis: 'confirmed-invoices-gross-with-vat',
+    net_sales_basis: 'confirmed-invoices-minus-active-returns-with-vat',
+    import_completeness_confirmed: false,
     as_of: '2026-07-10',
     source_history_start: '2025-01-01',
     requested_start: '2025-08-01',
@@ -99,6 +127,10 @@ function analyticsResponse() {
     product_id: 42,
     sales_series: [],
     data_quality: {
+      time_zone: 'Europe/Kyiv',
+      revenue_basis: 'confirmed-invoices-gross-with-vat',
+      net_sales_basis: 'confirmed-invoices-minus-active-returns-with-vat',
+      import_completeness_confirmed: false,
       source_history_start: '2025-01-01',
       requested_start: '2025-08-01',
       effective_start: '2025-08-01',
