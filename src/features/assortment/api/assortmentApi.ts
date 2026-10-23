@@ -323,18 +323,34 @@ function finiteMoney(value: unknown, path: string): number {
 }
 
 function validateFinancialContract(value: Record<string, unknown>, path: string) {
+  // Stock snapshots and catalogue analogues expose no sales amounts. Their history
+  // lineage is still validated by normalizeHistoryResponse, independently of money.
+  if (path === 'assortment_stock' || path === 'product_substitutes') return
   validateBasis(value, path)
-  if (value.overview) {
+  if (path === 'assortment_overview') {
     const summary = requireRecord(value.overview, `${path}.overview`)
     validateFinancialRow({ revenue_eur: summary.total_revenue_eur,
       net_revenue_eur: summary.total_net_revenue_eur, known_net_revenue_eur: summary.known_total_net_revenue_eur,
       unresolved_amount_count: summary.unresolved_amount_count }, `${path}.overview`)
+    return
   }
-  if ('revenue_eur' in value) validateFinancialRow(value, path)
-  for (const key of ['tasks', 'regions', 'candidates']) {
-    if (Array.isArray(value[key])) value[key].forEach((row, index) => {
-      const item = requireRecord(row, `${path}.${key}.${index}`)
-      validateFinancialRow({ ...item, revenue_eur: item.revenue_eur ?? item.regional_revenue_eur }, `${path}.${key}.${index}`)
+  if (path === 'product') {
+    if (value.found === true) validateFinancialRow(value, path)
+    return
+  }
+  const fullRows = path === 'assortment_health' ? ['tasks']
+    : path === 'assortment_regions' || path === 'product_regions' ? ['regions'] : []
+  const grossRows = path === 'assortment_margin' ? ['leaders', 'laggards', 'negative']
+    : path === 'assortment_returns' ? ['high_returns'] : []
+  for (const key of [...fullRows, ...grossRows]) {
+    const rows = value[key]
+    if (!Array.isArray(rows)) throw createContractError(`${path}.${key}`, 'expected rows')
+    rows.forEach((row, index) => {
+      const rowPath = `${path}.${key}.${index}`
+      const item = requireRecord(row, rowPath)
+      // Compact estimated-margin/return-rate rankings carry gross amounts only.
+      if (grossRows.includes(key)) finiteMoney(item.revenue_eur, `${rowPath}.revenue_eur`)
+      else validateFinancialRow({ ...item, revenue_eur: item.revenue_eur ?? item.regional_revenue_eur }, rowPath)
     })
   }
 }
