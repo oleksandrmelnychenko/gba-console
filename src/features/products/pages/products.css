@@ -30,7 +30,7 @@
   height: 100%;
   min-height: 0;
   width: 100%;
-  padding: 10px 8px 12px;
+  padding: 10px 4px 12px;
   border-right: 1px solid rgba(226, 232, 240, 0.92);
   background: var(--mantine-color-white);
   overflow: visible; /* let the selected plate float out over the detail panel — the rails self-clip
@@ -129,7 +129,7 @@
   border-bottom: 1px solid var(--mantine-color-gray-2);
   background: #ffffff;
   min-height: 52px;
-  padding: 0 8px;
+  padding: 0;
 }
 
 /* ── Selected product: emphasised code · name · Top (no fill, tight) ── */
@@ -1129,6 +1129,7 @@
 
 .product-carousel-row-code {
   display: flex;
+  gap: 6px;
   align-items: center;
   max-width: 100%;
 }
@@ -1138,6 +1139,11 @@
   max-width: 100%;
   font-size: 12px;
 }
+
+.product-carousel-row-code .app-table-chip.is-danger,
+.product-assortment-selected-code .app-table-chip.is-danger { flex-shrink: 0; }
+.product-carousel-row-code .app-table-chip.is-product,
+.product-assortment-selected-code .app-table-chip.is-product { min-width: 0; }
 
 .product-carousel-name-line {
   display: flex;
@@ -1197,7 +1203,9 @@
 }
 
 .product-assortment-selected-code {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin-bottom: 2px;
   max-width: min(660px, calc(100vw - 110px));
   overflow: hidden;
@@ -1295,8 +1303,8 @@
 }
 .product-inline-stock-bar .product-stock-bar > * {
   min-width: 0;
-  min-height: 64px;
-  padding: 10px 12px;
+  min-height: 44px;
+  padding: 6px 8px;
   background: var(--mantine-color-gray-0);
   border: 0;
   border-radius: 8px;
@@ -1310,8 +1318,17 @@
   outline-offset: 2px;
 }
 .product-inline-stock-bar .product-stock-bar .app-money {
-  margin-bottom: 4px;
+  margin-bottom: 2px;
+  font-size: 16px;
 }
+.product-inline-stock-bar .product-stock-warehouse { position: relative; padding-right: 22px; }
+.product-inline-stock-bar .product-stock-warehouse-hint {
+  position: absolute;
+  right: 6px;
+  top: 7px;
+  margin-top: 0;
+}
+.product-inline-stock-bar .product-stock-warehouse-hint .mantine-Text-root { display: none; }
 .product-stock-warehouse {
   cursor: pointer;
   transition: background-color 140ms ease, box-shadow 140ms ease;

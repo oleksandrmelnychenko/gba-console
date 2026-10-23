@@ -932,7 +932,7 @@ function ProductMovementPanel({
 
   return (
     <Stack className="product-movement-history-panel" gap={0}>
-      <ProductSourceHistoryRefresh productNetId={productNetUid} active={active && requestPath.includes('/assortment/')} onRefreshed={() => {
+      <ProductSourceHistoryRefresh hideControls productNetId={productNetUid} active={active && requestPath.includes('/assortment/')} onRefreshed={() => {
         exportRequestRef.current += 1
         dispatchExportModalState({ type: 'close-document' })
         reload()
@@ -1813,7 +1813,7 @@ function ProductIncomeMovementPanel({
 
   return (
     <Stack className="product-movement-history-panel" gap={0}>
-      <ProductSourceHistoryRefresh productNetId={productNetUid} active={active && requestPath.includes('/assortment/')} onRefreshed={() => {
+      <ProductSourceHistoryRefresh hideControls productNetId={productNetUid} active={active && requestPath.includes('/assortment/')} onRefreshed={() => {
         exportRequestRef.current += 1
         dispatchExportModalState({ type: 'close-document' })
         reload()
@@ -2027,7 +2027,7 @@ function ProductOutcomeMovementPanel({
 
   return (
     <Stack className="product-movement-history-panel" gap={0}>
-      <ProductSourceHistoryRefresh productNetId={productNetUid} active={active && requestPath.includes('/assortment/')} onRefreshed={() => {
+      <ProductSourceHistoryRefresh hideControls productNetId={productNetUid} active={active && requestPath.includes('/assortment/')} onRefreshed={() => {
         exportRequestRef.current += 1
         dispatchExportModalState({ type: 'close-document' })
         reload()

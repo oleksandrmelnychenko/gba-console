@@ -90,7 +90,7 @@ describe('ProductPriceSourcePanel', () => {
     expect(getProductSourcePriceComparison).toHaveBeenCalledTimes(2)
   })
 
-  it('shows when the selected source was last synced', async () => {
+  it('omits sync timestamps for both price sources', async () => {
     getProductSourcePriceComparison.mockResolvedValue({
       Amg: {
         IsAvailable: true,
@@ -110,9 +110,11 @@ describe('ProductPriceSourcePanel', () => {
 
     const view = renderPanel('product-source-panel-synced')
 
-    expect(await view.findByText(`Дані синку від ${formatSyncedAt('2026-10-19T12:04:43.9337367')}`)).toBeTruthy()
+    await view.findByText('1,40')
+    expect(view.queryByText(/Дані синку від/)).toBeNull()
     fireEvent.click(view.getByRole('radio', { name: 'Контех' }))
-    expect(await view.findByText(`Дані синку від ${formatSyncedAt('2026-10-19T12:41:05.1109628')}`)).toBeTruthy()
+    await view.findByText('1,54')
+    expect(view.queryByText(/Дані синку від/)).toBeNull()
   })
 
   it('omits the sync line when the source has no sync time', async () => {
@@ -164,16 +166,6 @@ describe('ProductPriceSourcePanel', () => {
     ])
   })
 })
-
-function formatSyncedAt(value: string) {
-  return new Intl.DateTimeFormat('uk-UA', {
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(new Date(value))
-}
 
 function renderPanel(productNetId: string, refreshKey = 0) {
   return render(

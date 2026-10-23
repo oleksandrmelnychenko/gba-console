@@ -783,7 +783,7 @@ function ProductAvailabilityPlacementRow({
   return (
     <Popover offset={2} opened={opened} position="bottom-start" shadow="md" width={760} withinPortal onChange={setOpened}>
       <Popover.Target>
-        <Box className="product-stock-warehouse" role="button" tabIndex={0} aria-expanded={opened} aria-haspopup="dialog" aria-label={`${displayValue(availability.Storage?.Name)}: ${t('Місця зберігання')}`} onClick={() => setOpened((currentOpened) => !currentOpened)} onKeyDown={(event) => {
+        <Box className="product-stock-warehouse" title={t('Місця зберігання')} role="button" tabIndex={0} aria-expanded={opened} aria-haspopup="dialog" aria-label={`${displayValue(availability.Storage?.Name)}: ${t('Місця зберігання')}`} onClick={() => setOpened((currentOpened) => !currentOpened)} onKeyDown={(event) => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault()
             setOpened((currentOpened) => !currentOpened)
@@ -2182,7 +2182,7 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
 
   return (
     <div className="console-table-shell product-data-table-shell">
-      <ProductSourceHistoryRefresh productNetId={productNetUid} includeSiblings={includeSiblings} onRefreshed={() => {
+      <ProductSourceHistoryRefresh hideControls productNetId={productNetUid} includeSiblings={includeSiblings} onRefreshed={() => {
         exportRequestRef.current += 1
         dispatchExport({ document: null, error: null, isExporting: false })
         reload()

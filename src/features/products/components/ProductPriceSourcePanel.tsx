@@ -35,13 +35,7 @@ type SourcePriceCacheEntry = {
 const SOURCE_PRICE_CACHE_TTL_MS = 2 * 60 * 1000
 const SOURCE_PRICE_CACHE_LIMIT = 100
 const sourcePriceCache = new Map<string, SourcePriceCacheEntry>()
-const syncedAtFormatter = new Intl.DateTimeFormat('uk-UA', {
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  month: '2-digit',
-  year: 'numeric',
-})
+
 
 export function ProductPriceSourcePanel({
   effectivePrices,
@@ -174,7 +168,6 @@ function SourcePricesView({
   const prices = (source.Prices || [])
     .filter((price) => !isPolishPricingName(price.PricingName) && hasSourcePriceValue(price))
     .sort((left, right) => compareSourcePricingNames(left.PricingName || '', right.PricingName || '', effectiveOrder))
-  const syncedAt = formatSyncedAt(source.SyncedAtUtc)
 
   return (
     <>
@@ -186,9 +179,6 @@ function SourcePricesView({
           <Text c="gray.8" size="sm">{t('Цін не знайдено')}</Text>
         )}
       </Stack>
-      {syncedAt ? (
-        <Text c="gray.8" mt={4} size="xs">{t('Дані синку від {date}', { date: syncedAt })}</Text>
-      ) : null}
     </>
   )
 }
@@ -276,16 +266,6 @@ function cacheSourcePrices(productNetId: string, value: ProductSourcePriceCompar
     expiresAt: Date.now() + SOURCE_PRICE_CACHE_TTL_MS,
     value,
   })
-}
-
-function formatSyncedAt(value?: string | null): string | null {
-  if (!value) {
-    return null
-  }
-
-  const date = new Date(value)
-
-  return Number.isNaN(date.getTime()) ? null : syncedAtFormatter.format(date)
 }
 
 function isAbortError(error: unknown): boolean {

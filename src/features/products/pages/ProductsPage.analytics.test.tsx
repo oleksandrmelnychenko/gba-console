@@ -100,7 +100,7 @@ describe('ProductsPage', () => {
 
     for (const selector of ['.product-carousel-row-code', '.product-assortment-selected-code', '.product-inline-code']) {
       const label = container.querySelector(selector) as HTMLElement
-      expect(label.textContent).toBe('Код відсутній')
+      expect((label.querySelector('.app-table-chip.is-product') ?? label).textContent).toBe('Код відсутній')
       expect(label.dataset.codeMissing).toBe('true')
       expect(getComputedStyle(label).color).toBe('var(--mantine-color-dimmed)')
     }

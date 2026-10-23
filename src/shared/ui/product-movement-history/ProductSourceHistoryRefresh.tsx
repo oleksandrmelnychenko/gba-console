@@ -29,11 +29,12 @@ const statusLabels = {
 } as const
 
 export function ProductSourceHistoryRefresh({
-  productNetId, includeSiblings = false, active = true, onRefreshed,
+  productNetId, includeSiblings = false, active = true, hideControls = false, onRefreshed,
 }: {
   productNetId?: string | null
   includeSiblings?: boolean
   active?: boolean
+  hideControls?: boolean
   onRefreshed: () => void
 }) {
   const { t } = useI18n()
@@ -81,7 +82,7 @@ export function ProductSourceHistoryRefresh({
     return () => { controller.abort(); clearTimeout(timer) }
   }, [active, includeSiblings, productNetId, request, scope])
 
-  if (!active || !productNetId) return null
+  if (!active || !productNetId || hideControls) return null
   const refreshedDates = status?.Products.flatMap((product) => product.Sources)
     .map((source) => source.RefreshedAtUtc).filter((value): value is string => Boolean(value)) || []
   // Oldest timestamp avoids describing partially stale sources as freshly synchronized.

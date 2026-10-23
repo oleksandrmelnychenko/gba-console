@@ -1244,10 +1244,10 @@ function ProductAssortmentCarousel({
             <span className="product-carousel-row-body">
               <span className="product-assortment-selected-code" data-code-missing={!selectedProduct.VendorCode?.trim() || undefined}>
                 <TableChip tone="product" value={getProductCode(selectedProduct)} />
+                {isCriticalProductTop(selectedProduct.Top) && <TableChip tone="danger" value={selectedProduct.Top} />}
               </span>
               <span className="product-carousel-name-line">
                 <span className="product-assortment-selected-name">{getProductTitle(selectedProduct)}</span>
-                {isCriticalProductTop(selectedProduct.Top) && <TableChip tone="danger" value={selectedProduct.Top} />}
               </span>
             </span>
           </button>
@@ -1304,10 +1304,10 @@ function ProductCarouselRow({
       <span className="product-carousel-row-body">
         <span className="product-carousel-row-code" data-code-missing={!product.VendorCode?.trim() || undefined}>
           <TableChip tone="product" value={getProductCode(product)} />
+          {isCriticalProductTop(product.Top) && <TableChip tone="danger" value={product.Top} />}
         </span>
         <span className="product-carousel-name-line">
           <span className="product-carousel-row-name">{getProductTitle(product)}</span>
-          {isCriticalProductTop(product.Top) && <TableChip tone="danger" value={product.Top} />}
           <ProductSiblingCountMarker siblingCount={siblingCount} />
         </span>
       </span>
@@ -3301,7 +3301,7 @@ function ProductInlineMovementsTab({
 
   return (
     <Stack className="product-inline-movements product-inline-table-frame" gap={0}>
-      <ProductSourceHistoryRefresh productNetId={productNetUid} includeSiblings={includeSiblings} onRefreshed={() => {
+      <ProductSourceHistoryRefresh hideControls productNetId={productNetUid} includeSiblings={includeSiblings} onRefreshed={() => {
         exportRequestRef.current += 1
         dispatch({ type: 'export-clear' })
         reload()
