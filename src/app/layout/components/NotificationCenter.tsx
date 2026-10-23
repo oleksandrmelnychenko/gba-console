@@ -143,21 +143,18 @@ export function NotificationCenter({ userKey }: NotificationCenterProps) {
                   className={`console-notification-item${notification.readAt ? '' : ' is-unread'}`}
                   onClick={() => openNotification(notification)}
                 >
-                  <Box
-                    className={`console-notification-icon is-${notification.kind}`}
-                    aria-hidden="true"
-                  >
-                    {getNotificationIcon(notification.kind)}
-                  </Box>
                   <Box className="console-notification-copy">
-                    <Group className="console-notification-item-heading" gap={8} justify="space-between" wrap="nowrap">
+                    <Group className="console-notification-item-heading" gap={6} wrap="nowrap">
+                      <Box className={`console-notification-icon is-${notification.kind}`} aria-hidden="true">
+                        {getNotificationIcon(notification.kind)}
+                      </Box>
                       <Text className="console-notification-item-title">
                         {notification.title}
                       </Text>
+                      <Text className="console-notification-time" component="time" dateTime={notification.createdAt}>
+                        {formatNotificationTime(notification.createdAt)}
+                      </Text>
                     </Group>
-                    <Text className="console-notification-time" component="time" dateTime={notification.createdAt}>
-                      {formatNotificationTime(notification.createdAt)}
-                    </Text>
                     <Box className="console-notification-message">
                       {renderNotificationMessage(notification)}
                     </Box>

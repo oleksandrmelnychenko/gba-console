@@ -145,45 +145,72 @@
 }
 
 .workbook-header__facts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 28px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px 24px;
   margin: 0;
 }
 
 .workbook-header__fact {
-  align-items: baseline;
-  display: flex;
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: start;
   gap: 8px;
   min-width: 0;
 }
 
-.workbook-header__fact dt,
-.workbook-header__filters-label {
+.workbook-header__fact--wide { grid-column: 1 / -1; }
+.workbook-header__fact dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
   color: var(--desk-muted);
-  flex-shrink: 0;
-  font-size: 12.5px;
-  font-weight: 500;
+  font: 500 12px var(--font-mono);
 }
-
+.workbook-header__fact dt svg { flex-shrink: 0; }
 .workbook-header__fact dd {
   color: var(--desk-strong);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
   margin: 0;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
-
-.workbook-header__fact:first-child dd {
+.workbook-header__period {
   font-family: var(--font-mono);
-  white-space: nowrap;
+  font-weight: 600;
+  line-height: 24px;
 }
-
-.workbook-header__filters {
-  align-items: baseline;
+.workbook-header__organizations .app-table-chip-label {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.workbook-header__description {
+  border-top: 1px solid var(--mantine-color-gray-2);
+  padding-top: 8px;
+}
+.workbook-header__description > summary {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px 8px;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  cursor: pointer;
+  color: var(--desk-muted);
+  font: 500 12px var(--font-mono);
+  list-style: none;
+}
+.workbook-header__description > summary::-webkit-details-marker { display: none; }
+.workbook-header__description > .mantine-Text-root {
+  margin-top: 8px;
+  color: var(--desk-text);
+  line-height: 1.5;
+  max-width: 1000px;
+}
+@media (max-width: 700px) {
+  .workbook-header__facts { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 440px) {
+  .workbook-header__fact { grid-template-columns: minmax(0, 1fr); gap: 3px; }
 }
 
 .workbook-header__resolving {
@@ -694,7 +721,16 @@
 .workbook-header__heading .app-role-pill { max-width: 100%; }
 .workbook-header__about { margin-left: auto; }
 .workbook-header__about[open] { flex-basis: 100%; margin-left: 0; }
-.workbook-header__details { display: grid; gap: 12px; padding-top: 12px; }
+.workbook-header__details {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: var(--mantine-radius-md);
+  background: var(--mantine-color-gray-0);
+}
+.workbook-header__details .workbook-chips > li { min-width: 0; max-width: 100%; }
 .workbook-header__warning, .workbook-header__resolving { flex-basis: 100%; }
 .workbook-actions__scroll { overflow-x: auto; }
 .workbook-toolbar { display: flex; min-width: 0; }

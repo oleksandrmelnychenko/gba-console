@@ -242,6 +242,33 @@ describe('ProductsPage inline movement table width', () => {
     expect(scrollArea?.parentElement?.querySelector(':scope > .data-table-sticky-scrollbar')).not.toBeNull()
   })
 
+  it('keeps saved narrow outcome columns readable without losing the saved order', async () => {
+    const storageKey = 'gba-data-table:product-outcome-movements:layout'
+    window.localStorage.setItem(storageKey, JSON.stringify({
+      version: 'product-outcome-movements-1',
+      columnOrder: ['documentNumber', 'client', 'responsible', 'price', 'qty', 'sourceHistory',
+        'sourceDocumentPrice', 'sourceDocumentAmount', 'sourceDocumentVat', 'sourceDocumentCurrency',
+        'date', 'documentType', 'storage', 'organization'],
+      columnSizing: { documentNumber: 20, responsible: 20, price: 20, qty: 20 },
+    }))
+    try {
+      await openIncomeTab()
+      fireEvent.click(screen.getByRole('button', { name: 'Розхід' }))
+      await waitFor(() => expect(getProductOutcomeMovements).toHaveBeenCalled())
+      const table = document.querySelector('.product-inline-tab-pane .data-table-table')!
+      const headers = Array.from(table.querySelectorAll('thead th'))
+      const widths = Array.from(table.querySelectorAll('col')).map(col => Number.parseFloat(col.style.width))
+      expect(headers[0].textContent).toContain('Номер')
+      for (const [label, minimum] of [['Номер', 140], ['Відповідальний', 170], ['Ціна', 100], ['Кількість', 110]] as const) {
+        const index = headers.findIndex(header => header.querySelector('.data-table-header-label')?.textContent === label)
+        expect(index).toBeGreaterThanOrEqual(0)
+        expect(widths[index]).toBeGreaterThanOrEqual(minimum)
+      }
+    } finally {
+      window.localStorage.removeItem(storageKey)
+    }
+  })
+
   it.each([
     { viewportWidth: 1560, shouldScroll: true },
     { viewportWidth: 2200, shouldScroll: false },
