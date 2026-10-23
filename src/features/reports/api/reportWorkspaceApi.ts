@@ -1,3 +1,4 @@
+import { cloneMovementSelection } from '../data/currentVparivanieMovements'
 import { readReportConfiguration, reportConfigurationError } from '../data/reportConfiguration'
 import { cloneNumberPresentationAliases, readValueSemantics, numberPresentationSupported, numberPresentationError } from '../data/reportNumberPresentation'
 import { cloneWorkbookAliases, normalizeWorkbookDataset, workbookConfigurationError } from '../data/workbookPresentation'
@@ -248,6 +249,7 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     selections: (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18 || value.Data.DataSource === 19 || value.Data.DataSource === 20 || value.Data.DataSource === 21 || value.Data.DataSource === 27) ? structuredClone(value.Data.Selections ?? []) : value.Data.Selections ?? [],
     dataSource: value.Data.DataSource,
     ...cloneCurrentVparivanieFullScope(value.Data),
+    ...cloneMovementSelection(value.Data),
     ...(Object.hasOwn(value.Data, 'returnsOnly') ? { returnsOnly: value.Data.returnsOnly }
       : Object.hasOwn(value.Data, 'ReturnsOnly') ? { returnsOnly: value.Data.ReturnsOnly } : {}),
     ...(Object.hasOwn(value.Data, 'settlementPeriod') ? { settlementPeriod: structuredClone(value.Data.settlementPeriod),

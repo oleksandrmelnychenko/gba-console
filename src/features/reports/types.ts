@@ -260,6 +260,8 @@ export type ReportRequestBody = {
   NumberPresentation?: unknown
   workbookPresentation?: unknown
   WorkbookPresentation?: unknown
+  currentVparivanieMovements?: unknown
+  CurrentVparivanieMovements?: unknown
   currentVparivanieFullScope?: unknown
   CurrentVparivanieFullScope?: unknown
   dataSource?: number

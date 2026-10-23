@@ -1,3 +1,4 @@
+import { MOVEMENT_FILTER_NOTICE } from '../data/currentVparivanieMovements'
 import { formatReportDecimal, moneyScaleLabel, reportValueUnit } from '../data/reportNumberPresentation'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { settlementAttributeText, type SettlementCounterpartyAttribute } from '../data/settlementSourceAttributes'
@@ -63,6 +64,12 @@ export function ReportInlinePreview({ preview, embedded = false }: { preview: Na
       <Text size="sm" className="report-inline-preview__count">{deskRowsText(preview.Page.ReturnedRows, preview.Page.TotalVisibleRows, preview.Page.HasMore)}</Text>
     </div>
     <ReportAttributionWarnings request={preview.Request} />
+    {preview.CurrentVparivanieMovements ? <Alert color={preview.CurrentVparivanieMovements.IncompleteProducts ? 'yellow' : 'blue'} title="Покриття руху товару">
+      <Text size="sm">{MOVEMENT_FILTER_NOTICE}</Text>
+      <Text size="sm">Неповна історія: {preview.CurrentVparivanieMovements.IncompleteProducts} із {preview.CurrentVparivanieMovements.TotalProducts} товарів. ∅ — кількість невідома.</Text>
+      {preview.CurrentVparivanieMovements.OldestCapturedAtUtc && preview.CurrentVparivanieMovements.NewestCapturedAtUtc
+        ? <Text size="sm">Історію прочитано: {kyivTimestamp(preview.CurrentVparivanieMovements.OldestCapturedAtUtc)} — {kyivTimestamp(preview.CurrentVparivanieMovements.NewestCapturedAtUtc)}.</Text> : null}
+    </Alert> : null}
     <div className="report-inline-preview__scroll" tabIndex={0} role="region" aria-label="Таблиця попереднього перегляду">
       <table className="app-static-table">
         <thead><tr>
@@ -172,8 +179,8 @@ function ReportAttributionWarnings({ request }: { request: NativeReportPreviewRe
 }
 
 function SnapshotAttribution({ request }: { request: NativeReportPreviewRequest }) {
-  if (request.DataSource === 'NativeCurrentVparivanie') return <Alert color="blue" title="Залишки на кінець періоду та період продажів">
-    Залишки показують вільний залишок GBA на кінець вибраного періоду; до останньої синхронізації залишків з 1С вони порожні. Вибраний період стосується продажів.
+  if (request.DataSource === 'NativeCurrentVparivanie') return <Alert color="blue" title={request.CurrentVparivanieMovements ? 'Залишки, продажі та рух товару' : 'Залишки на кінець періоду та період продажів'}>
+    Залишки показують вільний залишок GBA на кінець вибраного періоду; до останньої синхронізації залишків з 1С вони порожні. {request.CurrentVparivanieMovements ? 'Вибраний період стосується продажів, приходу та розходу.' : 'Вибраний період стосується продажів.'}
     {request.ObservationStartedAtUtc && request.ObservationCompletedAtUtc
       ? <Text size="sm">Дані прочитано: {kyivTimestamp(request.ObservationCompletedAtUtc)}</Text>
       : null}

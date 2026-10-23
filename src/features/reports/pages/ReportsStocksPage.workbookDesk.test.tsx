@@ -1,3 +1,4 @@
+import { movementDataset } from '../data/currentVparivanieMovements.test-fixtures'
 import { workbookDisplayFileName } from '../data/bug1274WorkbookGuide'
 import { changeReportPeriod, openReportPeriod, readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
@@ -297,4 +298,22 @@ it('retries a failed export against the same snapshot and keeps a missing PDF di
   expect(screen.getByRole('button', { name: 'Сформувати PDF' })).toHaveProperty('disabled', true)
   expect(createStockReport).not.toHaveBeenCalled()
   expect(previewStockReport).toHaveBeenCalledOnce()
+})
+
+
+it('offers physical income and outcome in the current workbook Measures section', async () => {
+  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, profitDayDataset, profitSupplierDataset,
+    movementDataset, cashModeDataset, settlementModeDataset])
+  render(page())
+  const switcher = await findOpenedWorkbook('ВП.xls')
+  fireEvent.click(within(switcher).getByRole('button', { name: `Відкрити ${workbookDisplayFileName('Впарювання.xls')}` }))
+  await findOpenedWorkbook('Впарювання.xls')
+  fireEvent.click(screen.getByRole('button', { name: /^Показники/ }))
+  const section = screen.getByRole('group', { name: 'Показники' })
+  expect((within(section).getByRole('checkbox', { name: 'Прихід' }) as HTMLInputElement).checked).toBe(false)
+  fireEvent.click(within(section).getByRole('checkbox', { name: 'Прихід' }))
+  fireEvent.click(within(section).getByRole('checkbox', { name: 'Розхід' }))
+  expect((within(section).getByRole('checkbox', { name: 'Прихід' }) as HTMLInputElement).checked).toBe(true)
+  expect((within(section).getByRole('checkbox', { name: 'Розхід' }) as HTMLInputElement).checked).toBe(true)
+  expect(within(section).getByText(/Відбори клієнта та його основного менеджера стосуються лише продажів/)).toBeTruthy()
 })

@@ -1,3 +1,5 @@
+import { CurrentVparivanieMovementSettings } from './CurrentVparivanieMovementSettings'
+import { EMPTY_MOVEMENT_SELECTION, movementSelection, type CurrentVparivanieMovementSelection } from '../data/currentVparivanieMovements'
 import { ReportPreviewPages } from './ReportPreviewPages'
 import { exportStockReportPreview } from '../api/reportsApi'
 import { ReportNumberPresentationPanel } from './ReportNumberPresentationPanel'
@@ -335,6 +337,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const [previousPeriod, setPreviousPeriod] = useValueState({ from: today, to: today })
   const datasetStorage = useReportDatasets(canGenerateReport)
   const [dataSource, setDataSource] = useValueState(0)
+  const [movementQuantities, setMovementQuantities] = useValueState<CurrentVparivanieMovementSelection>(EMPTY_MOVEMENT_SELECTION)
   const [fullCurrentVparivanie, setFullCurrentVparivanie] = useValueState(false)
   const [constructorSection, setConstructorSection] = useState<ReportConstructorSection>('structure')
   const navigateConstructorSection = (section: ReportConstructorSection) => {
@@ -441,8 +444,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const settlementDataset = useMemo(() => settlementFormDataset(priceTypeDataset, groupedSettlementPeriod, settlementReadMode), [priceTypeDataset, groupedSettlementPeriod, settlementReadMode])
   const cashDataset = useMemo(() => cashFormDataset(settlementDataset, groupedCashPeriod), [settlementDataset, groupedCashPeriod])
   const reportBody = useMemo<ReportRequestBody>(
-    () => ({ ...buildReportBuilderRequest({ supplierWarehouse, numberPresentation, dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }),
-    [supplierWarehouse, numberPresentation, fullCurrentVparivanie, abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbook.value, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => ({ ...buildReportBuilderRequest({ supplierWarehouse, numberPresentation, dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && (movementQuantities.Incoming || movementQuantities.Outgoing) ? { currentVparivanieMovements: movementQuantities } : {}), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }),
+    [supplierWarehouse, numberPresentation, movementQuantities, fullCurrentVparivanie, abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbook.value, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const effectiveConfiguration = effectiveReportConfiguration(dataset, reportBody)
   const effectiveFilterTypes = effectiveConfiguration?.filters
@@ -607,6 +610,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     if (workbookLaunch && openWorkbook(workbookLaunch)) return
     setActiveWorkbook(null)
     setFullCurrentVparivanie(false)
+    setMovementQuantities(EMPTY_MOVEMENT_SELECTION)
     setConstructorSection('structure')
     setCatalogueNotice(null)
     workspaceDraft.rememberBeforeReplace()
@@ -723,6 +727,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setActiveTemplate(null)
     const data = template.Data
     setFullCurrentVparivanie(currentVparivanieFullScope(data))
+    setMovementQuantities(movementSelection(data) ?? EMPTY_MOVEMENT_SELECTION)
     setComparison(structuredClone(requestComparison(data)))
     setXyz(structuredClone(xyzOptions(requestXyz(data)) ?? requestXyz(data)))
     setRateComparison(structuredClone(rateComparisonOptions(requestRateComparison(data)) ?? requestRateComparison(data)))
@@ -786,6 +791,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     }
     const data = structuredClone(snapshot.data)
     setFullCurrentVparivanie(currentVparivanieFullScope(data))
+    setMovementQuantities(movementSelection(data) ?? EMPTY_MOVEMENT_SELECTION)
     setCatalogueNotice(null)
     setActiveWorkbook(null)
     setRestoredData(data)
@@ -1185,7 +1191,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         compactSummary: String(filterChips.length), content: filtersContent },
       { id: 'measures', title: 'Показники', summary: checkedMeasurements
         ? `${checkedMeasurements} ${deskPlural(checkedMeasurements, ['показник', 'показники', 'показників'])}` : t('Не вибрано жодного'),
-        compactSummary: String(checkedMeasurements), content: <><LegacyReportBuilder part="measures" {...builder} /><ReportNumberPresentationPanel value={numberPresentation} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setNumberPresentation} /></> },
+        compactSummary: String(checkedMeasurements), content: <>{dataSource === 39 ? <CurrentVparivanieMovementSettings dataset={dataset} value={movementQuantities} onChange={setMovementQuantities} disabled={comparisonSettingsDisabled} /> : null}<LegacyReportBuilder part="measures" {...builder} /><ReportNumberPresentationPanel value={numberPresentation} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setNumberPresentation} /></> },
       { id: 'grouping', title: 'Групування', summary: reportAxesPolicy(dataset, reportBody).fixed ? t('Як у книзі 1С')
         : rowGroups.length ? `${groupingLabels(rowGroups)}${colGroups.length ? ` · ${t('стовпці')}: ${groupingLabels(colGroups)}` : ''}` : t('Не вибрано'),
         compactSummary: reportAxesPolicy(dataset, reportBody).fixed ? t('За формою')
@@ -1328,7 +1334,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           (oneCSpecialSpecification(dataSource) ? defaultOneCSpecialSettings(dataSource, dataset)[oneCSpecialSpecification(dataSource)!.key] : undefined)}
           disabled={comparisonSettingsDisabled} onChange={setOneCSpecialSettings} />}
         classificationPanel={<>{workbook.panel(dataset, reportBody, comparisonSettingsDisabled)}
-          {dataSource === 39 ? <>{!bug1274Only ? <OriginalVparivanieReportPanel request={reportBody} enabled={canGenerateReport}
+          {dataSource === 39 ? <><CurrentVparivanieMovementSettings dataset={dataset} value={movementQuantities} onChange={setMovementQuantities} disabled={comparisonSettingsDisabled} />{!bug1274Only ? <OriginalVparivanieReportPanel request={reportBody} enabled={canGenerateReport}
             disabled={comparisonSettingsDisabled} callerKey={ownerId} /> : null}
           <CurrentVparivanieRegionalPanel dataset={dataset ?? null} request={reportBody}
           enabled={canGenerateReport} disabled={comparisonSettingsDisabled}

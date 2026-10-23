@@ -18,10 +18,10 @@ export function validateCurrentVparivanieColumns(schema: Schema[], columns: Nati
     const groupIdentity = group.Identity
     const partyIdentity = party.Identity
     if (!groupIdentity || !partyIdentity) throw new Error('Сервер повернув некоректні ключі колонок матриці «Аналіз залишків і продажів».')
-    if (groupIdentity.Kind !== 'signedInteger' || !['1', '2', '3'].includes(groupIdentity.Value ?? '')
+    if (groupIdentity.Kind !== 'signedInteger' || !['1', '2', '3', '4', '5'].includes(groupIdentity.Value ?? '')
       || groupIdentity.Provenance !== 'columnAxisKey'
       || measureGroup.Caption !== 'Результат' || measure.Caption !== 'Результат') fail()
-    if (groupIdentity.Value === '1' || groupIdentity.Value === '2') {
+    if (groupIdentity.Value !== '3') {
       if (partyIdentity.Kind !== 'null' || partyIdentity.Value !== null) fail()
     } else if (partyIdentity.Kind === 'null') {
       if (partyIdentity.Value !== null) fail()
@@ -32,6 +32,7 @@ export function validateCurrentVparivanieColumns(schema: Schema[], columns: Nati
     } else if (partyIdentity.Kind !== 'signedInteger'
       || !/^[1-9]\d{0,18}$/.test(partyIdentity.Value ?? '')
       || BigInt(partyIdentity.Value!) > 9223372036854775807n) fail()
+    if (groupIdentity.Value === '4' && group.Caption !== 'Прихід' || groupIdentity.Value === '5' && group.Caption !== 'Розхід') fail()
     if (partyIdentity.Provenance !== 'columnAxisKey') fail()
     const key = `${groupIdentity.Value}:${partyIdentity.Kind}:${partyIdentity.Value ?? ''}`
     if (seen.has(key)) fail()

@@ -1,3 +1,4 @@
+import { isMovementSelection, readMovementCoverage, type CurrentVparivanieMovementCoverage, type CurrentVparivanieMovementSelection } from './currentVparivanieMovements'
 import { readNumberPresentation, readValueSemantics, type ReportNumberPresentation, type ReportValueSemantics } from './reportNumberPresentation'
 import { readWorkbookPreview, type WorkbookPreview } from './workbookPreview'
 import { readSettlementCounterpartyAttributes, type SettlementCounterpartyAttributes } from './settlementSourceAttributes'
@@ -15,6 +16,7 @@ export type NativeReportPreviewTotals = { State: 'materialized'; Values: NativeR
 export type NativeReportPreviewFilter = { Field: string; Condition: string; Values: string[]; IgnoredReason: string | null }
 export type NativeReportPreviewRequest = {
   DataSource: string
+  CurrentVparivanieMovements?: CurrentVparivanieMovementSelection
   ProfitReadMode?: 0 | 1
   SettlementReadMode?: 0 | 1
   CashReadMode?: 0 | 1
@@ -49,6 +51,7 @@ export type NativeReportPreview = {
   Columns: NativeReportPreviewAxis[]
   Cells: NativeReportPreviewCell[]
   CurrentVparivanieProducts?: CurrentVparivanieProducts
+  CurrentVparivanieMovements?: CurrentVparivanieMovementCoverage
   Totals?: NativeReportPreviewTotals
   SettlementCounterpartyAttributes?: SettlementCounterpartyAttributes
   ClientDiscountRecipientRegions?: ClientDiscountRegions
@@ -97,6 +100,8 @@ function normalizeRequest(value: unknown): NativeReportPreviewRequest | null {
   if (value === undefined || value === null) return null
   if (!record(value) || typeof value.IsCurrentSnapshot !== 'boolean' || typeof value.HasPeriod !== 'boolean')
     throw new Error('Сервер повернув некоректний опис розрахунку звіту.')
+  if (value.CurrentVparivanieMovements != null && !isMovementSelection(value.CurrentVparivanieMovements))
+    throw new Error('Сервер повернув некоректний вибір показників руху товару.')
   const mode = readMode(value, 'ProfitReadMode', 'Сервер повернув некоректне джерело розрахунку прибутку.')
   const settlementMode = readMode(value, 'SettlementReadMode', 'Сервер повернув некоректне джерело розрахунку взаєморозрахунків.')
   const cashMode = readMode(value, 'CashReadMode', 'Сервер повернув некоректне джерело розрахунку коштів.')
@@ -125,6 +130,7 @@ function normalizeRequest(value: unknown): NativeReportPreviewRequest | null {
     })
   }
   return {
+    ...(value.CurrentVparivanieMovements != null ? { CurrentVparivanieMovements: value.CurrentVparivanieMovements as CurrentVparivanieMovementSelection } : {}),
     ...(mode != null ? { ProfitReadMode: mode } : {}),
     ...(settlementMode != null ? { SettlementReadMode: settlementMode } : {}),
     ...(cashMode != null ? { CashReadMode: cashMode } : {}),
@@ -200,7 +206,8 @@ export function normalizeNativeReportPreview(response: unknown, fullCurrentVpari
   const workbook = readWorkbookPreview(preview.workbookPresentation, { ...preview, Request: request, SettlementCounterpartyAttributes: attributes } as NativeReportPreview)
   const productDisplay = normalizeCurrentVparivanieProducts(preview, request, fullCurrentVparivanie)
   const totals = normalizeTotals(preview.Totals, preview.Rows as NativeReportPreviewAxis[], columnIds, preview.RowSchema.length)
-  return { ...preview, Request: request, Totals: totals, ...(workbook ? { WorkbookPresentation: workbook } : {}), ...(productDisplay ? { CurrentVparivanieProducts: productDisplay } : {}), ...(attributes ? { SettlementCounterpartyAttributes: attributes } : {}), ...(regions ? { ClientDiscountRecipientRegions: regions } : {}) } as NativeReportPreview
+  const movements = readMovementCoverage({ ...preview, Request: request } as NativeReportPreview)
+  return { ...preview, Request: request, Totals: totals, ...(movements ? { CurrentVparivanieMovements: movements } : {}), ...(workbook ? { WorkbookPresentation: workbook } : {}), ...(productDisplay ? { CurrentVparivanieProducts: productDisplay } : {}), ...(attributes ? { SettlementCounterpartyAttributes: attributes } : {}), ...(regions ? { ClientDiscountRecipientRegions: regions } : {}) } as NativeReportPreview
 }
 
 function normalizeTotals(value: unknown, rows: NativeReportPreviewAxis[], columnIds: ReadonlySet<number>,

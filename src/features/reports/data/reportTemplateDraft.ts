@@ -6,6 +6,7 @@ import { requestSupplierBasis } from './supplierBasis'
 const managedFields = new Set([
   'dataSource', 'from', 'to', 'sorted', 'selections', 'valuationClientAgreementId',
   'agreementPriceComparison', 'AgreementPriceComparison',
+  'currentVparivanieMovements', 'CurrentVparivanieMovements',
   'returnsOnly', 'ReturnsOnly', 'currentVparivanieFullScope', 'CurrentVparivanieFullScope',
   'paymentComparison', 'PaymentComparison', 'marginComparison', 'MarginComparison',
   'rateComparison', 'RateComparison', 'returnComparison', 'ReturnComparison',
@@ -65,7 +66,7 @@ export function retainStoredMeasurementLabels(stored: ReportRequestBody | null |
 
 export function retainStoredTemplateFields(stored: ReportRequestBody, draft: ReportRequestBody): ReportRequestBody {
   const retained = Object.fromEntries(Object.entries(stored).filter(([key]) => !managedFields.has(key)
-    && key.toLowerCase() !== 'currentvparivaniefullscope' && key.toLowerCase() !== 'dayorganizationbasis' && key.toLowerCase() !== 'supplierbasis'
+    && key.toLowerCase() !== 'currentvparivaniemovements' && key.toLowerCase() !== 'currentvparivaniefullscope' && key.toLowerCase() !== 'dayorganizationbasis' && key.toLowerCase() !== 'supplierbasis'
     && key.toLowerCase() !== 'profitreadmode' && key.toLowerCase() !== 'pricetypesalescomparison'
     && key.toLowerCase() !== 'groupedcashperiod' && key.toLowerCase() !== 'cashreadmode'
     && key.toLowerCase() !== 'groupedsettlementperiod' && key.toLowerCase() !== 'settlementreadmode'

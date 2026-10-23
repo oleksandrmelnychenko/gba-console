@@ -1,3 +1,4 @@
+import { bindMovementPreview } from '../data/currentVparivanieMovements'
 import { reportConfigurationError } from '../data/reportConfiguration'
 import { numberPresentationError, readNumberPresentation, requestNumberPresentation } from '../data/reportNumberPresentation'
 import { workbookConfigurationError } from '../data/workbookPresentation'
@@ -71,6 +72,7 @@ export async function previewStockReport(body: ReportRequestBody, dataset?: Repo
   if (version2) preview.ResultSession = readReportResultSession(response, preview)
   assertNumberPresentation(request, preview)
   bindWorkbookPreview(request, preview)
+  bindMovementPreview(request, preview)
   if ((request.dataSource === 35 || request.dataSource === 38)
     && ((requestProfitReadMode(request) ?? null) !== (preview.Request?.ProfitReadMode ?? null)
       || requestProfitReadMode(request) != null && preview.Request?.DataSource !== (request.dataSource === 35
@@ -134,6 +136,7 @@ export async function getStockReportPreviewPage(session: ReportResultSession, re
     if (preview.Page.Offset !== offset) throw new Error('Сервер повернув іншу сторінку звіту.')
     assertNumberPresentation(request, preview)
     bindWorkbookPreview(request, preview)
+    bindMovementPreview(request, preview)
     bindProfitPreviewGrouping(request, preview)
     return preview
   } catch (error) { return cachedResultError(error) }

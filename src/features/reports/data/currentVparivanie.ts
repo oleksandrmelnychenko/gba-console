@@ -1,5 +1,6 @@
 import type { ReportDataset, ReportFilterCondition, ReportRequestBody } from '../types'
 import { revenueExactId } from './revenueComparison'
+import { movementSelectionError } from './currentVparivanieMovements'
 import { originalMatrixScope } from './originalVparivanieScope'
 
 export const CURRENT_VPARIVANIE_SOURCE = 39
@@ -137,6 +138,8 @@ function validDate(value: string): boolean {
 
 /** Keeps bounded native identities exact; no catalogue or Source request is made here. */
 export function currentVparivanieConfigurationError(data: ReportRequestBody, dataset?: ReportDataset, purpose: 'current' | 'workspace' = 'current'): string | null {
+  const movementError = movementSelectionError(data, dataset)
+  if (movementError) return movementError
   const modes = Object.entries(data).filter(([key]) => key.toLowerCase() === 'currentvparivaniefullscope')
   if (modes.length && (modes.length !== 1 || modes[0][1] !== true || data.dataSource !== CURRENT_VPARIVANIE_SOURCE))
     return 'Повний вибір доступний лише для поточної матриці «Аналіз залишків і продажів»; перемикач має бути явно увімкнений.'

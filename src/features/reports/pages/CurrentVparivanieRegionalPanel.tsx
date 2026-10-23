@@ -1,3 +1,4 @@
+import { movementSelection } from '../data/currentVparivanieMovements'
 import { Alert, Button, Checkbox, Group, Stack, Text } from '@mantine/core'
 import { useEffect, useRef, useState } from 'react'
 import { readCurrentVparivanieRegional } from '../api/currentVparivanieRegionalApi'
@@ -50,6 +51,14 @@ function RegionalFullScopeCheckbox({ dataset, checked, disabled, onChange }: {
     onChange={event => onChange(event.currentTarget.checked)} />
 }
 
+function regionalConfigurationError(dataset: ReportDataset | null, request: ReportRequestBody): string | null {
+  const invalid = dataset ? currentVparivanieConfigurationError(request, dataset) : null
+  if (invalid) return invalid
+  return movementSelection(request)
+    ? 'Прихід і розхід доступні у звичайній формі звіту. Для регіональної форми вимкніть ці показники.'
+    : null
+}
+
 export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disabled, fullScope, onFullScopeChange }: {
   dataset: ReportDataset | null; request: ReportRequestBody; enabled: boolean; disabled: boolean
   fullScope?: boolean; onFullScopeChange?: (value: boolean) => void
@@ -69,7 +78,7 @@ export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disa
   const result = snapshot?.key === requestKey ? snapshot.result : null
   const error = failure?.key === requestKey ? failure.message : null
   const busy = busyKey === requestKey, exporting = exportKey === requestKey
-  const rejected = dataset ? currentVparivanieConfigurationError(request, dataset) : null
+  const rejected = regionalConfigurationError(dataset, request)
 
   async function read() {
     if (!dataset || !available || !enabled || disabled || busy || rejected) return
@@ -107,6 +116,7 @@ export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disa
         {(['csv', 'xlsx', 'pdf'] as const).map(format => <Button key={format} variant="default"
           disabled={!result || !enabled || disabled || exporting || busy} onClick={() => void exportDocument(format)}>
           {`Завантажити ${format.toUpperCase()}`}</Button>)}</Group>
+      {rejected ? <Alert color="yellow">{rejected}</Alert> : null}
       {error ? <Alert color="red">{error}</Alert> : null}
       {result ? <><Text size="xs" c="dimmed">Продажі: {result.From} — {result.To}. {currentVparivanieStockSentence(result.StockAnchor)}
         Порожня клітинка — факт відсутній; ∅ — кількість невідома.</Text><RegionalTable key={requestKey} result={result} /></> : null}

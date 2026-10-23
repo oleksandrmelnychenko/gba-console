@@ -79,3 +79,29 @@ it.each([{reference:'ABCDEF1234567890ABCDEF1234567890',empty:false},{reference:'
   expect(request.selections[1]).toMatchObject({SelectedField:{Type:60},FilterCondition:{Type:0},Values:[{Data:{Id:reference},Value:0}]})
   expect(request.sorted.Col.map(c=>c.type)).toEqual([74,75]);expect(request.sorted.Measurements.map(m=>m.Type)).toEqual([83])
 })
+
+
+it('adds independently selected physical movement quantities and restores them from a saved report', async () => {
+  const enabled = { ...dataset, currentVparivanie: { ...dataset.currentVparivanie as object,
+    MovementQuantityVersion: 1, MovementQuantityColumns: ['Incoming', 'Outgoing'], MovementFilterScope: 'ProductGroupWarehouse' } }
+  const Data = { ...currentVparivanieRequest(), currentVparivanieMovements: { Incoming: true, Outgoing: false } }
+  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, enabled])
+  vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: 'movement-template', Revision: 1, Name: 'Рух AL-KO', Data }])
+  const { container } = render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>)
+  await screen.findByRole('button', { name: 'Продажі за днями' })
+  fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Рух AL-KO' }))
+  await waitFor(() => expect((screen.getByRole('checkbox', { name: 'Прихід' }) as HTMLInputElement).checked).toBe(true))
+  const outgoing = screen.getByRole('checkbox', { name: 'Розхід' })
+  expect((outgoing as HTMLInputElement).checked).toBe(false)
+  fireEvent.click(outgoing)
+  expect(screen.getByText(/Відбори клієнта та його основного менеджера стосуються лише продажів/)).toBeTruthy()
+  fireEvent.submit(container.querySelector('form')!)
+  await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+  expect(vi.mocked(createStockReport).mock.calls[0][0].currentVparivanieMovements).toEqual({ Incoming: true, Outgoing: true })
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Прихід' }))
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Розхід' }))
+  fireEvent.submit(container.querySelector('form')!)
+  await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(2))
+  expect(vi.mocked(createStockReport).mock.calls[1][0].currentVparivanieMovements).toBeUndefined()
+})

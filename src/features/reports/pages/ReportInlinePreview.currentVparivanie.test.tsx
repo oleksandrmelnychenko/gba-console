@@ -1,3 +1,4 @@
+import { movementPreview } from '../data/currentVparivanieMovements.test-fixtures'
 import { MantineProvider } from '@mantine/core'
 import { render, screen, within } from '@testing-library/react'
 import { expect, it } from 'vitest'
@@ -35,4 +36,14 @@ it('shows an unknown customer only in the customer arm, never in stock or sales 
   expect(screen.getAllByRole('columnheader', { name: 'Результат' })).toHaveLength(2)
   expect(screen.getByRole('columnheader', { name: 'Не вказано / Результат' })).toBeTruthy()
   expect(screen.getByRole('columnheader', { name: 'Одна назва / Результат' })).toBeTruthy()
+})
+
+it('shows physical movement columns with explicit incomplete history rather than reassuring zeros', () => {
+  const preview = normalizeNativeReportPreview({ Preview: movementPreview() })
+  render(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>)
+  expect(screen.getByRole('columnheader', { name: 'Прихід' })).toBeTruthy()
+  expect(screen.getByRole('columnheader', { name: 'Розхід' })).toBeTruthy()
+  expect(screen.getByText(/Неповна історія: 1 із 1 товарів/)).toBeTruthy()
+  const row = screen.getByRole('rowheader', { name: '0000123' }).closest('tr')!
+  expect(within(row).getAllByRole('cell').slice(-2).map(cell => cell.textContent)).toEqual(['∅', '∅'])
 })
