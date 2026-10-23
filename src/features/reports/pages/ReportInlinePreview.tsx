@@ -66,7 +66,9 @@ export function ReportInlinePreview({ preview, embedded = false }: { preview: Na
     <ReportAttributionWarnings request={preview.Request} />
     {preview.CurrentVparivanieMovements ? <Alert color={preview.CurrentVparivanieMovements.IncompleteProducts ? 'yellow' : 'blue'} title="Покриття руху товару">
       <Text size="sm">{MOVEMENT_FILTER_NOTICE}</Text>
-      <Text size="sm">Неповна історія: {preview.CurrentVparivanieMovements.IncompleteProducts} із {preview.CurrentVparivanieMovements.TotalProducts} товарів. ∅ — кількість невідома.</Text>
+      <Text size="sm">Неповне підтвердження руху: {preview.CurrentVparivanieMovements.IncompleteProducts} із {preview.CurrentVparivanieMovements.TotalProducts} товарів. ∅ — кількість невідома.</Text>
+      {preview.CurrentVparivanieMovements.ProductCoverage.some(product => product.Reasons.includes('MultipleSourceWorldsWithoutPhysicalOwnership'))
+        ? <Text size="sm">Для частини товарів на цій сторінці фізичний рух між контурами обліку не розмежовано. Їхні кількості не додаються, щоб не подвоїти рух.</Text> : null}
       {preview.CurrentVparivanieMovements.OldestCapturedAtUtc && preview.CurrentVparivanieMovements.NewestCapturedAtUtc
         ? <Text size="sm">Історію прочитано: {kyivTimestamp(preview.CurrentVparivanieMovements.OldestCapturedAtUtc)} — {kyivTimestamp(preview.CurrentVparivanieMovements.NewestCapturedAtUtc)}.</Text> : null}
     </Alert> : null}

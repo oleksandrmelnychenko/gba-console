@@ -39,11 +39,14 @@ it('shows an unknown customer only in the customer arm, never in stock or sales 
 })
 
 it('shows physical movement columns with explicit incomplete history rather than reassuring zeros', () => {
-  const preview = normalizeNativeReportPreview({ Preview: movementPreview() })
+  const source = movementPreview()
+  source.CurrentVparivanieMovements.ProductCoverage[0].Reasons.push('MultipleSourceWorldsWithoutPhysicalOwnership')
+  const preview = normalizeNativeReportPreview({ Preview: source })
   render(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>)
   expect(screen.getByRole('columnheader', { name: 'Прихід' })).toBeTruthy()
   expect(screen.getByRole('columnheader', { name: 'Розхід' })).toBeTruthy()
-  expect(screen.getByText(/Неповна історія: 1 із 1 товарів/)).toBeTruthy()
+  expect(screen.getByText(/Неповне підтвердження руху: 1 із 1 товарів/)).toBeTruthy()
+  expect(screen.getByText(/щоб не подвоїти рух/)).toBeTruthy()
   const row = screen.getByRole('rowheader', { name: '0000123' }).closest('tr')!
   expect(within(row).getAllByRole('cell').slice(-2).map(cell => cell.textContent)).toEqual(['∅', '∅'])
 })
