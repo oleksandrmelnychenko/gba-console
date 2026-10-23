@@ -78,11 +78,13 @@ const positiveId = (v: unknown) => typeof v === 'string' && /^[1-9]\d{0,18}$/.te
   || typeof v === 'number' && Number.isSafeInteger(v) && v > 0
 export function validAnalysisFilterValue(field: number, value: unknown, descriptor?: AnalysisFieldDescriptor): boolean {
   if (!record(value)) return false
-  if (field === 2) return typeof value.value === 'string' && value.value.trim().length > 0 && value.value.length <= 256
-  if (field === 3) return typeof value.name === 'string' && value.name.trim().length > 0 && value.name.length <= 256
+  if (field === 2 || field === 3 || descriptor?.valueKind === 'text') {
+    const entries = Object.entries(value)
+    return entries.length === 1 && ['value', 'Value', 'name', 'Name'].includes(entries[0][0])
+      && typeof entries[0][1] === 'string' && entries[0][1].length > 0 && entries[0][1].length <= 256
+  }
   if ([12, 13].includes(field)) return ['sale', 'return'].includes(String(value.kind)) && positiveId(value.id)
   if (field === 60 || descriptor?.valueKind === 'sourceRef') return typeof value.Id === 'string' && /^[0-9a-f]{32}$/i.test(value.Id)
-  if (descriptor?.valueKind === 'text') return typeof value.value === 'string' && !!value.value.trim()
   return positiveId(value.Id)
 }
 export function currentVparivanieAnalysisLayoutError(data: ReportRequestBody, dataset?: ReportDataset, draft = false): string | null {

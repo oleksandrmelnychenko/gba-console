@@ -19,7 +19,7 @@ beforeEach(() => {
   vi.mocked(getReportDatasets).mockResolvedValue([analysisDataset])
   vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: 'old', Revision: 1, Name: 'Збережена матриця', Data: currentVparivanieRequest() }])
   vi.mocked(createStockReport).mockResolvedValue({ document: {}, raw: {} })
-  vi.mocked(searchAnalysisValues).mockResolvedValue([{ id: 'top:A', name: 'A', data: { name: 'A' } }])
+  vi.mocked(searchAnalysisValues).mockResolvedValue([{ id: 'top:A', name: 'A', data: { value: 'A' } }])
 })
 async function open() {
   const result = render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage consoleScope={false} /></I18nProvider></MantineProvider>)
@@ -63,6 +63,6 @@ it('selects Top from the Product category and transports its exact text classifi
   fireEvent.submit(container.querySelector('form')!)
   await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
   expect(vi.mocked(createStockReport).mock.calls[0][0].selections.find(s => s.SelectedField.Type === 3)).toMatchObject({
-    SelectedField: { Type: 3 }, FilterCondition: { Type: 0 }, Values: [{ Data: { name: 'A' }, Name: 'A', Value: 0 }],
+    SelectedField: { Type: 3 }, FilterCondition: { Type: 0 }, Values: [{ Data: { value: 'A' }, Name: 'A', Value: 0 }],
   })
 })

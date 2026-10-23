@@ -2,7 +2,7 @@ import actualPreview from './currentVparivanieAnalysis.preview-fixture.json'
 import { describe, expect, it } from 'vitest'
 import { analysisDataset, analysisPreview, analysisRequest } from './currentVparivanieAnalysis.test-fixtures'
 import { currentVparivanieDataset, currentVparivanieRequest, exactSelection } from './currentVparivanie.test-fixtures'
-import { currentVparivanieAnalysisCapability, currentVparivanieAnalysisLayoutError, currentVparivanieAnalysisScopeError, upgradeCurrentVparivanieAnalysis, bindAnalysisPreview } from './currentVparivanieAnalysis'
+import { currentVparivanieAnalysisCapability, currentVparivanieAnalysisLayoutError, currentVparivanieAnalysisScopeError, upgradeCurrentVparivanieAnalysis, bindAnalysisPreview, validAnalysisFilterValue } from './currentVparivanieAnalysis'
 import { currentVparivanieConfigurationError, isCurrentVparivanieDataset } from './currentVparivanie'
 import { datasetConfigurationError } from './reportDatasets'
 import { normalizeNativeReportPreview } from './nativeReportPreview'
@@ -88,4 +88,12 @@ it('supports positive group unions and refuses the unavailable immutable creator
   const creator = currentVparivanieAnalysisCapability(analysisDataset)!.filters.find(f => f.type === 15)!
   expect(creator.available).toBe(false)
   expect(currentVparivanieAnalysisLayoutError({ ...request, selections: [...request.selections, exactSelection(15)] }, analysisDataset)).toBe(creator.unavailabilityReason)
+})
+
+it.each(['value', 'Value', 'name', 'Name'])('preserves the server-compatible text key %s for Top and article', key => {
+  for (const field of [2, 3]) {
+    expect(validAnalysisFilterValue(field, { [key]: 'A' })).toBe(true)
+    expect(validAnalysisFilterValue(field, { [key]: 'A', extra: 'A' })).toBe(false)
+  }
+  expect(validAnalysisFilterValue(3, { value: 'A', Name: 'A' })).toBe(false)
 })

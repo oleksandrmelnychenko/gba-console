@@ -23,8 +23,8 @@ it('keeps sale and return identities distinct and uses server canonical selectio
     { id: 'return:123', name: 'ПВ123 23.10.2026 15:00', data: { kind: 'return', id: 123 } },
   ])
   expect(api).toHaveBeenCalledWith('/report/datasets/current-vparivanie/analysis/lookup', expect.objectContaining({ query: { field: 12, value: '123', offset: 0, limit: 30, from: '2026-10-01', to: '2026-10-23', buyerId: '50' } }))
-  api.mockResolvedValueOnce([{ id: 'top:X9', name: 'X9', data: '{"name":"X9"}' }])
-  expect((await searchAnalysisValues(3, '', '', ''))[0].data).toEqual({ name: 'X9' })
+  api.mockResolvedValueOnce([{ id: 'top:X9', name: 'X9', data: '{"value":"X9"}' }])
+  expect((await searchAnalysisValues(3, '', '', ''))[0].data).toEqual({ value: 'X9' })
 })
 it.each(['{"Id":9223372036854775807}', 'null', '[]', '{bad'])('refuses invalid or rounded lookup data %s', async data => {
   api.mockResolvedValue([{ id: 'x', name: 'x', data }])
