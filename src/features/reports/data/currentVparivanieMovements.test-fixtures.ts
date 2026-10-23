@@ -2,6 +2,8 @@ import { currentVparivanieDataset, currentVparivaniePreview } from './currentVpa
 
 export const movementDataset = { ...currentVparivanieDataset, currentVparivanie: {
   ...currentVparivanieDataset.currentVparivanie as object, MovementQuantityVersion: 1,
+  FullScopeVersion: 1, FullScopeContract: 'OneOurSnapshotCompleteSelectedScope', FullScopeMaximumRows: 500000,
+  FullScopeMaximumSelectedProducts: 4096, FullScopeMaximumColumns: 256, FullScopeMaximumAddressedCells: 1000000,
   MovementQuantityColumns: ['Incoming', 'Outgoing'], MovementFilterScope: 'ProductGroupWarehouse',
 } }
 export function movementPreview() {

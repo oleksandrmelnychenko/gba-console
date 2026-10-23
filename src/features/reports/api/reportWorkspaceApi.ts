@@ -8,7 +8,7 @@ import { agreementPriceComparisonConfigurationError, cloneAgreementPriceComparis
 import { recordedSaleGrossProfitConfigurationError } from '../data/recordedSaleGrossProfit'
 import { dayOrganizationGrossProfitConfigurationError } from '../data/dayOrganizationGrossProfit'
 import { vparivanieConfigurationError } from '../data/vparivanie'
-import { currentVparivanieConfigurationError, isCurrentVparivanieDataset, cloneCurrentVparivanieFullScope } from '../data/currentVparivanie'
+import { currentVparivanieConfigurationError, isCurrentVparivanieDataset, cloneCurrentVparivanieFullScope, withCurrentVparivanieMovementScope } from '../data/currentVparivanie'
 import { cloneGroupedCashAliases, normalizeGroupedCashDataset } from '../data/groupedCashPeriod'
 import { cashPeriodConfigurationError, isCashPeriodDataset } from '../data/cashPeriod'
 import { supplierBatchGrossProfitConfigurationError } from '../data/supplierBatchGrossProfit'
@@ -243,7 +243,7 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
   if (!value?.Id || !Number.isInteger(value.Revision) || value.Revision < 1 || !value.Data?.Sorted) {
     throw new Error('Сервер повернув некоректний шаблон звіту.')
   }
-  return { ...value, Data: {
+  return { ...value, Data: withCurrentVparivanieMovementScope({
     from: value.Data.From ?? '', to: value.Data.To ?? '',
     sorted: (value.Data.DataSource === 39 || value.Data.DataSource === 41) ? normalizeNativeMeasurements(value.Data.Sorted) : (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18 || value.Data.DataSource === 19 || value.Data.DataSource === 20 || value.Data.DataSource === 21 || value.Data.DataSource === 27) ? structuredClone(value.Data.Sorted) : value.Data.Sorted,
     selections: (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18 || value.Data.DataSource === 19 || value.Data.DataSource === 20 || value.Data.DataSource === 21 || value.Data.DataSource === 27) ? structuredClone(value.Data.Selections ?? []) : value.Data.Selections ?? [],
@@ -298,7 +298,7 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     } : Object.hasOwn(value.Data, 'TopGroups') ? { topGroups: value.Data.TopGroups } : {}),
     ...(value.Data.ValuationClientAgreementId != null ? { valuationClientAgreementId: value.Data.ValuationClientAgreementId } : {}),
     ...((value.Data.OneC ?? value.Data.oneC) ? { oneC: value.Data.OneC ?? value.Data.oneC } : {}),
-  } }
+  }) }
 }
 
 export async function getServerReportTemplates(signal?: AbortSignal): Promise<ReportTemplate[]> {
@@ -309,6 +309,7 @@ export async function getServerReportTemplates(signal?: AbortSignal): Promise<Re
 
 export async function saveServerReportTemplate(template: ReportTemplate, signal?: AbortSignal): Promise<ReportTemplate> {
   const request = (template.Data.dataSource === 2 || template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21 || template.Data.dataSource === 22 || template.Data.dataSource === 23 || template.Data.dataSource === 24 || template.Data.dataSource === 25 || template.Data.dataSource === 27 || template.Data.dataSource === 28 || template.Data.dataSource === 35 || template.Data.dataSource === 39 || template.Data.dataSource === 40 || template.Data.dataSource === 41) ? structuredClone(template) : template
+  request.Data = withCurrentVparivanieMovementScope(request.Data)
   const numericError = numberPresentationError(request.Data) ?? reportConfigurationError(request.Data)
   if (numericError) throw new Error(numericError)
   const workbookError = workbookConfigurationError(request.Data)

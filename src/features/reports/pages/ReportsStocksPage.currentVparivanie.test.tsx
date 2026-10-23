@@ -1,3 +1,4 @@
+import { movementDataset } from '../data/currentVparivanieMovements.test-fixtures'
 import { changeReportPeriod } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
@@ -82,8 +83,7 @@ it.each([{reference:'ABCDEF1234567890ABCDEF1234567890',empty:false},{reference:'
 
 
 it('adds independently selected physical movement quantities and restores them from a saved report', async () => {
-  const enabled = { ...dataset, currentVparivanie: { ...dataset.currentVparivanie as object,
-    MovementQuantityVersion: 1, MovementQuantityColumns: ['Incoming', 'Outgoing'], MovementFilterScope: 'ProductGroupWarehouse' } }
+  const enabled = movementDataset
   const Data = { ...currentVparivanieRequest(), currentVparivanieMovements: { Incoming: true, Outgoing: false } }
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, enabled])
   vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: 'movement-template', Revision: 1, Name: 'Рух AL-KO', Data }])
@@ -98,10 +98,58 @@ it('adds independently selected physical movement quantities and restores them f
   expect(screen.getByText(/Відбори клієнта та його основного менеджера стосуються лише продажів/)).toBeTruthy()
   fireEvent.submit(container.querySelector('form')!)
   await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+  expect(vi.mocked(createStockReport).mock.calls[0][0].currentVparivanieFullScope).toBe(true)
+  expect(screen.getByText(/Обробляються всі товари вибраного відбору/)).toBeTruthy()
   expect(vi.mocked(createStockReport).mock.calls[0][0].currentVparivanieMovements).toEqual({ Incoming: true, Outgoing: true })
   fireEvent.click(screen.getByRole('checkbox', { name: 'Прихід' }))
   fireEvent.click(screen.getByRole('checkbox', { name: 'Розхід' }))
   fireEvent.submit(container.querySelector('form')!)
   await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(2))
   expect(vi.mocked(createStockReport).mock.calls[1][0].currentVparivanieMovements).toBeUndefined()
+})
+
+
+it('automatically enables complete scope and keeps the product selection when movement columns are removed', async () => {
+  const enabled = { ...movementDataset, currentVparivanie: { ...movementDataset.currentVparivanie,
+    CurrentRegionalAvailable: true, CurrentRegionalVersion: 3 } }
+  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, enabled])
+  vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: 'plain-template', Revision: 1, Name: 'Без руху', Data: currentVparivanieRequest() }])
+  const { container } = render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>)
+  await screen.findByRole('button', { name: 'Продажі за днями' })
+  fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Без руху' }))
+  const full = screen.getByRole('checkbox', { name: 'Повний вибраний набір товарів' }) as HTMLInputElement
+  expect(full.checked).toBe(false)
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Розхід' }))
+  expect(full.checked).toBe(true)
+  expect(full.disabled).toBe(true)
+  fireEvent.submit(container.querySelector('form')!)
+  await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+  expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({ currentVparivanieFullScope: true,
+    currentVparivanieMovements: { Incoming: false, Outgoing: true } })
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Розхід' }))
+  expect(full.checked).toBe(true)
+  expect(full.disabled).toBe(false)
+  fireEvent.submit(container.querySelector('form')!)
+  await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(2))
+  expect(vi.mocked(createStockReport).mock.calls[1][0]).not.toHaveProperty('currentVparivanieMovements')
+  expect(vi.mocked(createStockReport).mock.calls[1][0].currentVparivanieFullScope).toBe(true)
+  fireEvent.click(full)
+  expect(full.checked).toBe(false)
+  fireEvent.submit(container.querySelector('form')!)
+  await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(3))
+  expect(vi.mocked(createStockReport).mock.calls[2][0]).not.toHaveProperty('currentVparivanieFullScope')
+})
+
+it('does not offer physical movement selection without complete-scope server capability', async () => {
+  const capability = { ...movementDataset.currentVparivanie } as Record<string, unknown>
+  delete capability.FullScopeVersion
+  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, { ...movementDataset, currentVparivanie: capability }])
+  vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: 'plain-template', Revision: 1, Name: 'Без руху', Data: currentVparivanieRequest() }])
+  render(<Providers><ReportsStocksPage consoleScope={false} /></Providers>)
+  await screen.findByRole('button', { name: 'Продажі за днями' })
+  fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Без руху' }))
+  expect(screen.queryByRole('checkbox', { name: 'Прихід' })).toBeNull()
+  expect(screen.queryByRole('checkbox', { name: 'Розхід' })).toBeNull()
 })

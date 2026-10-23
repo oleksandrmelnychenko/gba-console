@@ -31,7 +31,7 @@ describe('physical movement selection', () => {
 })
 
 describe('movement result evidence', () => {
-  it('reads the real server HTTP serializer output including UTC capture metadata', () => {
+  it('retains explicit legacy bounded-preview parsing including UTC capture metadata', () => {
     const preview = normalizeNativeReportPreview({ Preview: serverPreview })
     expect(preview.CurrentVparivanieMovements?.OldestCapturedAtUtc).toBe('2026-10-23T10:00:00Z')
     expect(preview.CurrentVparivanieMovements?.IncompleteProducts).toBe(1)

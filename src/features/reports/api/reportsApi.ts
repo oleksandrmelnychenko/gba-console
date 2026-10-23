@@ -10,7 +10,7 @@ import { agreementPriceComparisonConfigurationError } from '../data/agreementPri
 import { recordedSaleGrossProfitConfigurationError } from '../data/recordedSaleGrossProfit'
 import { dayOrganizationGrossProfitConfigurationError } from '../data/dayOrganizationGrossProfit'
 import { vparivanieConfigurationError } from '../data/vparivanie'
-import { currentVparivanieConfigurationError, currentVparivanieManagerReference, currentVparivanieFullScope } from '../data/currentVparivanie'
+import { currentVparivanieConfigurationError, currentVparivanieManagerReference, currentVparivanieFullScope, withCurrentVparivanieMovementScope, currentVparivanieScopeError } from '../data/currentVparivanie'
 import { cashPeriodConfigurationError } from '../data/cashPeriod'
 import { supplierBatchGrossProfitConfigurationError } from '../data/supplierBatchGrossProfit'
 import { importedSaleDiscountConfigurationError } from '../data/importedSaleDiscount'
@@ -127,6 +127,9 @@ function cachedResultError(error: unknown): never {
   throw error
 }
 export async function getStockReportPreviewPage(session: ReportResultSession, request: ReportRequestBody, offset: number, signal?: AbortSignal): Promise<NativeReportPreview> {
+  request = withCurrentVparivanieMovementScope(request)
+  const scopeError = currentVparivanieScopeError(request)
+  if (scopeError) throw new Error(scopeError)
   if (!Number.isInteger(offset) || offset < 0 || offset > 500000) throw new Error('Некоректна сторінка звіту.')
   try {
     const response = await apiRequest<unknown>(`/report/stocks/preview/${session.ResultId}`, { query: { rowOffset: offset, rowLimit: 50 }, signal })
@@ -155,6 +158,7 @@ export function validateStockReportRequest(body: ReportRequestBody, dataset?: Re
 }
 
 function prepareStockReportRequest(body: ReportRequestBody, dataset?: ReportDataset): ReportRequestBody {
+  body = withCurrentVparivanieMovementScope(body)
   const presentationError = numberPresentationError(body, dataset) ?? reportConfigurationError(body, dataset)
   if (presentationError) throw new Error(presentationError)
   const request = (body.dataSource === 2 || body.dataSource === 17 || body.dataSource === 18 || body.dataSource === 19 || body.dataSource === 20 || body.dataSource === 21 || body.dataSource === 22 || body.dataSource === 23 || body.dataSource === 24 || body.dataSource === 25 || body.dataSource === 27 || body.dataSource === 28 || body.dataSource === 35 || body.dataSource === 38 || body.dataSource === 39 || body.dataSource === 40 || body.dataSource === 41) ? structuredClone(body) : body
@@ -170,7 +174,7 @@ function prepareStockReportRequest(body: ReportRequestBody, dataset?: ReportData
   if (grossProfitError) throw new Error(grossProfitError)
   const dayOrganizationProfitError = dayOrganizationGrossProfitConfigurationError(request, dataset)
   if (dayOrganizationProfitError) throw new Error(dayOrganizationProfitError)
-  const currentVparivanieError = currentVparivanieConfigurationError(request)
+  const currentVparivanieError = currentVparivanieConfigurationError(request, dataset)
   if (currentVparivanieError) throw new Error(currentVparivanieError)
   const settlementPeriodError = settlementPeriodConfigurationError(request)
   if (settlementPeriodError) throw new Error(settlementPeriodError)

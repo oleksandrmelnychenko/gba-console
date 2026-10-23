@@ -1,3 +1,4 @@
+import { movementDataset } from './currentVparivanieMovements.test-fixtures'
 import { describe, expect, it } from 'vitest'
 import type { ReportDataset } from '../types'
 import { defaultDatasetRequest, datasetMeasurements } from './reportDatasets'
@@ -86,4 +87,21 @@ describe('lossless draft editor compatibility', () => {
     expect(reportWorkspaceDraftCompatibility(value, reportDatasets[0])).toMatch(/неоднозначні/)
     expect(value.data).toMatchObject({ ordering: { Version: 1 }, Ordering: { Version: 999 } })
   })
+})
+
+
+it('restores unfinished movement drafts with automatic complete scope while refusing unavailable capabilities and ambiguous aliases', () => {
+  const value = snapshot(movementDataset)
+  value.data.currentVparivanieMovements = { Incoming: true, Outgoing: false }
+  const before = structuredClone(value)
+  expect(reportWorkspaceDraftCompatibility(value, movementDataset)).toBeNull()
+  expect(value).toEqual(before)
+  const capability = { ...movementDataset.currentVparivanie } as Record<string, unknown>
+  delete capability.FullScopeVersion
+  expect(reportWorkspaceDraftCompatibility(value, { ...movementDataset, currentVparivanie: capability })).toMatch(/не підтримує/)
+  value.data.CurrentVparivanieMovements = { Incoming: true, Outgoing: false }
+  expect(reportWorkspaceDraftCompatibility(value, movementDataset)).toMatch(/Некоректний/)
+  delete value.data.CurrentVparivanieMovements
+  value.data.currentVparivanieFullScope = false
+  expect(reportWorkspaceDraftCompatibility(value, movementDataset)).toMatch(/має бути явно увімкнений/)
 })

@@ -117,7 +117,7 @@ import './report-constructor.css'
 import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, datasetPresetRequest, datasetPresets, defaultDatasetRequest, withDefaultReadModes, type DatasetReportPresetId } from '../data/reportDatasets'
 import { useReportDatasets } from '../hooks/useReportDatasets'
 import { usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes, nativeReportMeasurementUnit } from '../data/nativeReportProfiles'
-import { CURRENT_VPARIVANIE_NOTICE, currentVparivanieConfigurationError, currentVparivanieFilterConditions, currentVparivanieNotice, currentVparivanieFullScope } from '../data/currentVparivanie'
+import { CURRENT_VPARIVANIE_NOTICE, currentVparivanieConfigurationError, currentVparivanieFilterConditions, currentVparivanieNotice, currentVparivanieFullScope, withCurrentVparivanieMovementScope } from '../data/currentVparivanie'
 import { previousKyivDay } from '../data/cashPeriod'
 import { availableBug1274WorkbookLaunches, bug1274WorkbookRequest, opensOnPreviousDay, type WorkbookLaunch } from '../data/bug1274WorkbookLaunch'
 import { workbookDisplayFileName, bug1274WorkbookGuide, bug1274WorkbookPeriod, reportPeriodPresets, type ReportPeriodPreset } from '../data/bug1274WorkbookGuide'
@@ -339,6 +339,11 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const [dataSource, setDataSource] = useValueState(0)
   const [movementQuantities, setMovementQuantities] = useValueState<CurrentVparivanieMovementSelection>(EMPTY_MOVEMENT_SELECTION)
   const [fullCurrentVparivanie, setFullCurrentVparivanie] = useValueState(false)
+  function changeMovementQuantities(value: CurrentVparivanieMovementSelection) {
+    setMovementQuantities(value)
+    if (value.Incoming || value.Outgoing) setFullCurrentVparivanie(true)
+  }
+
   const [constructorSection, setConstructorSection] = useState<ReportConstructorSection>('structure')
   const navigateConstructorSection = (section: ReportConstructorSection) => {
     setConstructorSection(section)
@@ -444,7 +449,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const settlementDataset = useMemo(() => settlementFormDataset(priceTypeDataset, groupedSettlementPeriod, settlementReadMode), [priceTypeDataset, groupedSettlementPeriod, settlementReadMode])
   const cashDataset = useMemo(() => cashFormDataset(settlementDataset, groupedCashPeriod), [settlementDataset, groupedCashPeriod])
   const reportBody = useMemo<ReportRequestBody>(
-    () => ({ ...buildReportBuilderRequest({ supplierWarehouse, numberPresentation, dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && (movementQuantities.Incoming || movementQuantities.Outgoing) ? { currentVparivanieMovements: movementQuantities } : {}), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }),
+    () => withCurrentVparivanieMovementScope({ ...buildReportBuilderRequest({ supplierWarehouse, numberPresentation, dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && (movementQuantities.Incoming || movementQuantities.Outgoing) ? { currentVparivanieMovements: movementQuantities } : {}), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }),
     [supplierWarehouse, numberPresentation, movementQuantities, fullCurrentVparivanie, abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbook.value, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const effectiveConfiguration = effectiveReportConfiguration(dataset, reportBody)
@@ -705,7 +710,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       setTemplateNotice(incompatible)
       return false
     }
-    const data = withDefaultReadModes(template.Data, nextDataset)
+    const data = withCurrentVparivanieMovementScope(withDefaultReadModes(template.Data, nextDataset))
     if (bug1274Only && lacksCurrentReadMode(data, nextDataset)) {
       setTemplateNotice(TEMPLATE_WITHOUT_READ_MODE_ERROR)
       return false
@@ -725,7 +730,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setRestoredData(null)
     setDraftRestoreError(null)
     setActiveTemplate(null)
-    const data = template.Data
+    const data = withCurrentVparivanieMovementScope(template.Data)
     setFullCurrentVparivanie(currentVparivanieFullScope(data))
     setMovementQuantities(movementSelection(data) ?? EMPTY_MOVEMENT_SELECTION)
     setComparison(structuredClone(requestComparison(data)))
@@ -789,7 +794,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       setDraftRestoreError(incompatible)
       return false
     }
-    const data = structuredClone(snapshot.data)
+    const data = withCurrentVparivanieMovementScope(structuredClone(snapshot.data))
     setFullCurrentVparivanie(currentVparivanieFullScope(data))
     setMovementQuantities(movementSelection(data) ?? EMPTY_MOVEMENT_SELECTION)
     setCatalogueNotice(null)
@@ -1172,7 +1177,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       {dataSource === 40 || dataSource === 41 ? cashSettlementPanels('source') : null}
       {dataSource === 39 ? <CurrentVparivanieRegionalPanel dataset={dataset ?? null} request={reportBody}
         enabled={canGenerateReport} disabled={comparisonSettingsDisabled}
-        fullScope={fullCurrentVparivanie} onFullScopeChange={setFullCurrentVparivanie} /> : null}
+        fullScope={currentVparivanieFullScope(reportBody)} onFullScopeChange={setFullCurrentVparivanie} /> : null}
       {dataSource !== 19 ? analysisPanels.filterExpression : null}
       {!hasFixedReportAxes(dataSource) ? <>
         {analysisPanels.topGroups}
@@ -1191,7 +1196,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         compactSummary: String(filterChips.length), content: filtersContent },
       { id: 'measures', title: 'Показники', summary: checkedMeasurements
         ? `${checkedMeasurements} ${deskPlural(checkedMeasurements, ['показник', 'показники', 'показників'])}` : t('Не вибрано жодного'),
-        compactSummary: String(checkedMeasurements), content: <>{dataSource === 39 ? <CurrentVparivanieMovementSettings dataset={dataset} value={movementQuantities} onChange={setMovementQuantities} disabled={comparisonSettingsDisabled} /> : null}<LegacyReportBuilder part="measures" {...builder} /><ReportNumberPresentationPanel value={numberPresentation} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setNumberPresentation} /></> },
+        compactSummary: String(checkedMeasurements), content: <>{dataSource === 39 ? <CurrentVparivanieMovementSettings dataset={dataset} value={movementQuantities} onChange={changeMovementQuantities} disabled={comparisonSettingsDisabled} /> : null}<LegacyReportBuilder part="measures" {...builder} /><ReportNumberPresentationPanel value={numberPresentation} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setNumberPresentation} /></> },
       { id: 'grouping', title: 'Групування', summary: reportAxesPolicy(dataset, reportBody).fixed ? t('Як у книзі 1С')
         : rowGroups.length ? `${groupingLabels(rowGroups)}${colGroups.length ? ` · ${t('стовпці')}: ${groupingLabels(colGroups)}` : ''}` : t('Не вибрано'),
         compactSummary: reportAxesPolicy(dataset, reportBody).fixed ? t('За формою')
@@ -1334,11 +1339,11 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           (oneCSpecialSpecification(dataSource) ? defaultOneCSpecialSettings(dataSource, dataset)[oneCSpecialSpecification(dataSource)!.key] : undefined)}
           disabled={comparisonSettingsDisabled} onChange={setOneCSpecialSettings} />}
         classificationPanel={<>{workbook.panel(dataset, reportBody, comparisonSettingsDisabled)}
-          {dataSource === 39 ? <><CurrentVparivanieMovementSettings dataset={dataset} value={movementQuantities} onChange={setMovementQuantities} disabled={comparisonSettingsDisabled} />{!bug1274Only ? <OriginalVparivanieReportPanel request={reportBody} enabled={canGenerateReport}
+          {dataSource === 39 ? <><CurrentVparivanieMovementSettings dataset={dataset} value={movementQuantities} onChange={changeMovementQuantities} disabled={comparisonSettingsDisabled} />{!bug1274Only ? <OriginalVparivanieReportPanel request={reportBody} enabled={canGenerateReport}
             disabled={comparisonSettingsDisabled} callerKey={ownerId} /> : null}
           <CurrentVparivanieRegionalPanel dataset={dataset ?? null} request={reportBody}
           enabled={canGenerateReport} disabled={comparisonSettingsDisabled}
-          fullScope={fullCurrentVparivanie} onFullScopeChange={setFullCurrentVparivanie} /></> : dataSource === 41 || dataSource === 40 ? cashSettlementPanels() : dataSource === 35 ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
+          fullScope={currentVparivanieFullScope(reportBody)} onFullScopeChange={setFullCurrentVparivanie} /></> : dataSource === 41 || dataSource === 40 ? cashSettlementPanels() : dataSource === 35 ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
           {dayProfitControls()}
         </Card> : dataSource === 38 && isSupplierSourceWorldCapability(dataset?.supplierSourceWorld)
           ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>

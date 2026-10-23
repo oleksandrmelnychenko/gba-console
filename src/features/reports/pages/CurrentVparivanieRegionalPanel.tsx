@@ -110,7 +110,7 @@ export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disa
   return <section className="app-section-card" aria-label="Регіональна форма Аналіз залишків і продажів">
     <Stack gap="sm"><Text component="h2" fw={600} size="sm">{CURRENT_REGIONAL_TITLE}</Text>
       <RegionalFullScopeCheckbox dataset={dataset} checked={fullScope}
-        disabled={!enabled || disabled || busy || exporting} onChange={onFullScopeChange} />
+        disabled={!enabled || disabled || busy || exporting || !!(request.currentVparivanieMovements ?? request.CurrentVparivanieMovements)} onChange={onFullScopeChange} />
       <Group><Button loading={busy} disabled={!enabled || disabled || !!rejected || exporting} onClick={() => void read()}>
         Показати регіональну форму</Button>
         {(['csv', 'xlsx', 'pdf'] as const).map(format => <Button key={format} variant="default"

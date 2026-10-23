@@ -1,3 +1,4 @@
+import { currentVparivanieScopeError, withCurrentVparivanieMovementScope } from './currentVparivanie'
 import { effectiveReportConfiguration, reportConfigurationError } from './reportConfiguration'
 import { numberPresentationError } from './reportNumberPresentation'
 import { cashPeriodConfigurationError } from './cashPeriod'
@@ -18,7 +19,8 @@ const options = ['comparison', 'xyz', 'paymentComparison', 'marginComparison', '
 
 /** Recovery checks what the current editor can represent, not whether an unfinished report can run. */
 export function reportWorkspaceDraftCompatibility(snapshot: ReportWorkspaceSnapshot, dataset?: ReportDataset): string | null {
-  const { data, measurements } = snapshot
+  const { measurements } = snapshot
+  const data = withCurrentVparivanieMovementScope(snapshot.data)
   if (!dataset || dataset.DataSource !== (data.dataSource ?? 0) || data.dataSource === 1
     || (data.oneC != null && data.dataSource !== 27)) {
     return 'Набір даних чернетки зараз недоступний. Чернетка збережена без змін.'
@@ -26,6 +28,8 @@ export function reportWorkspaceDraftCompatibility(snapshot: ReportWorkspaceSnaps
   if (dataset.PeriodSupported === false && (data.from || data.to)) {
     return 'Чернетка містить період, який цей набір даних не підтримує. Чернетка збережена без змін.'
   }
+  const scopeError = currentVparivanieScopeError(data, dataset)
+  if (scopeError) return `${scopeError} Чернетка збережена без змін.`
   const metadataError = numberPresentationError(data, dataset) ?? reportConfigurationError(data, dataset, true)
   if (metadataError) return `${metadataError} Чернетка збережена без змін.`
   const capabilityLayout = effectiveReportConfiguration(dataset, data) !== undefined

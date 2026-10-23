@@ -1,6 +1,6 @@
 import type { ReportDataset, ReportFilterCondition, ReportRequestBody } from '../types'
 import { revenueExactId } from './revenueComparison'
-import { movementSelectionError } from './currentVparivanieMovements'
+import { movementSelection, movementSelectionError } from './currentVparivanieMovements'
 import { originalMatrixScope } from './originalVparivanieScope'
 
 export const CURRENT_VPARIVANIE_SOURCE = 39
@@ -94,6 +94,22 @@ export function currentVparivanieFullScope(data: ReportRequestBody): boolean {
   return entries.length === 1 && entries[0][1] === true
 }
 
+/** Physical movements need the complete selected product census, including movement-only products.
+ * Preserve malformed aliases so validation refuses them instead of repairing an ambiguous request. */
+export function withCurrentVparivanieMovementScope(data: ReportRequestBody): ReportRequestBody {
+  if (data.dataSource !== CURRENT_VPARIVANIE_SOURCE) return data
+  let selection
+  try { selection = movementSelection(data) } catch { return data }
+  if (!selection) return data
+  const modes = Object.entries(data).filter(([key]) => key.toLowerCase() === 'currentvparivaniefullscope')
+  if (modes.length && (modes.length !== 1 || modes[0][1] !== true
+    || !['currentVparivanieFullScope', 'CurrentVparivanieFullScope'].includes(modes[0][0]))) return data
+  const canonical = { ...data, currentVparivanieMovements: selection, currentVparivanieFullScope: true }
+  delete canonical.CurrentVparivanieMovements
+  delete canonical.CurrentVparivanieFullScope
+  return canonical
+}
+
 /** Canonicalize the DTO alias; retain ambiguous or unknown aliases for explicit refusal. */
 export function cloneCurrentVparivanieFullScope(data: Record<string, unknown>): Partial<ReportRequestBody> {
   const entries = Object.entries(data).filter(([key]) => key.toLowerCase() === 'currentvparivaniefullscope')
@@ -136,17 +152,27 @@ function validDate(value: string): boolean {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
 }
 
-/** Keeps bounded native identities exact; no catalogue or Source request is made here. */
-export function currentVparivanieConfigurationError(data: ReportRequestBody, dataset?: ReportDataset, purpose: 'current' | 'workspace' = 'current'): string | null {
+/** Validate scope independently so unfinished workspace drafts remain editable. */
+export function currentVparivanieScopeError(data: ReportRequestBody, dataset?: ReportDataset): string | null {
+  data = withCurrentVparivanieMovementScope(data)
   const movementError = movementSelectionError(data, dataset)
   if (movementError) return movementError
   const modes = Object.entries(data).filter(([key]) => key.toLowerCase() === 'currentvparivaniefullscope')
-  if (modes.length && (modes.length !== 1 || modes[0][1] !== true || data.dataSource !== CURRENT_VPARIVANIE_SOURCE))
+  if (modes.length && (modes.length !== 1 || modes[0][1] !== true || !['currentVparivanieFullScope', 'CurrentVparivanieFullScope'].includes(modes[0][0]) || data.dataSource !== CURRENT_VPARIVANIE_SOURCE))
     return 'Повний вибір доступний лише для поточної матриці «Аналіз залишків і продажів»; перемикач має бути явно увімкнений.'
   if (data.dataSource !== CURRENT_VPARIVANIE_SOURCE) return null
-  const full = currentVparivanieFullScope(data)
-  if (full && dataset && !currentVparivanieFullScopeAvailable(dataset))
+  if (currentVparivanieFullScope(data) && dataset && !currentVparivanieFullScopeAvailable(dataset))
     return 'Сервер поки не підтримує повний вибраний набір матриці «Аналіз залишків і продажів».'
+  return null
+}
+
+/** Keeps native identities exact; no catalogue or Source request is made here. */
+export function currentVparivanieConfigurationError(data: ReportRequestBody, dataset?: ReportDataset, purpose: 'current' | 'workspace' = 'current'): string | null {
+  data = withCurrentVparivanieMovementScope(data)
+  const scopeError = currentVparivanieScopeError(data, dataset)
+  if (scopeError) return scopeError
+  if (data.dataSource !== CURRENT_VPARIVANIE_SOURCE) return null
+  const full = currentVparivanieFullScope(data)
   if (dataset && !isCurrentVparivanieDataset(dataset)) return 'Сервер не підтвердив поточну матрицю «Аналіз залишків і продажів».'
   if (!validDate(data.from) || !validDate(data.to) || data.from > data.to)
     return 'Оберіть коректний включний період продажів «Аналіз залишків і продажів».'
