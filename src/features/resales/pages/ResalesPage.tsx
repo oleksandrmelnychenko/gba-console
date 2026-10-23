@@ -2020,8 +2020,8 @@ function useResalesColumns({
       {
         id: 'created',
         header: t('Створено'),
-        width: 115,
-        minWidth: 105,
+        width: 180,
+        minWidth: 170,
         accessor: (resale) => resale.Created,
         cell: (resale) => (
           <span className="resales-registry-date">

@@ -797,7 +797,8 @@
 
 .resales-page .resales-registry-date {
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
+  gap: 6px;
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 1.4;
@@ -805,7 +806,7 @@
 }
 
 .resales-page .resales-registry-date > span + span {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-7);
 }
 
 .resales-page .resales-filter-bar {

@@ -502,8 +502,6 @@ function AssortmentDashboardPageContent() {
 
   return (
     <Stack className="assort-dash" gap={6}>
-      <Text size="xs" c="dimmed">{t('Розділи мають спільну дату й джерело історії, але обчислюються окремо; одночасність знімка бази не підтверджена. Прогноз майбутнього попиту цей екран не надає.')}</Text>
-      <Text size="sm" c="dimmed">{t('Оцінка запасу враховує лише товари з відомою собівартістю. Без оцінки')}: {stock?.unvalued_skus == null ? t('невідомо') : formatInt(stock.unvalued_skus)}. {t('Невідома собівартість не означає нульову ціну.')}</Text>
       <div className="assort-dash__shell">
         <AssortmentHeader
           avgHealth={avgHealth}
