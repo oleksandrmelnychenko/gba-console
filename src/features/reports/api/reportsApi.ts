@@ -1,3 +1,4 @@
+import { bindAnalysisPreview, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis } from '../data/currentVparivanieAnalysis'
 import { bindMovementPreview } from '../data/currentVparivanieMovements'
 import { reportConfigurationError } from '../data/reportConfiguration'
 import { numberPresentationError, readNumberPresentation, requestNumberPresentation } from '../data/reportNumberPresentation'
@@ -72,13 +73,14 @@ export async function previewStockReport(body: ReportRequestBody, dataset?: Repo
   if (version2) preview.ResultSession = readReportResultSession(response, preview)
   assertNumberPresentation(request, preview)
   bindWorkbookPreview(request, preview)
-  bindMovementPreview(request, preview)
+  bindAnalysisPreview(request, preview)
+  if (!requestCurrentVparivanieAnalysis(request)) bindMovementPreview(request, preview)
   if ((request.dataSource === 35 || request.dataSource === 38)
     && ((requestProfitReadMode(request) ?? null) !== (preview.Request?.ProfitReadMode ?? null)
       || requestProfitReadMode(request) != null && preview.Request?.DataSource !== (request.dataSource === 35
         ? 'NativeDayOrganizationGrossProfit' : 'NativeSupplierGrossProfit')))
     throw new Error('Сервер повернув інше джерело розрахунку прибутку.')
-  if (request.dataSource === 39 && (preview.Request?.DataSource !== 'NativeCurrentVparivanie' || !preview.CurrentVparivanieProducts))
+  if (request.dataSource === 39 && (preview.Request?.DataSource !== 'NativeCurrentVparivanie' || !preview.CurrentVparivanieProducts && !preview.currentVparivanieAnalysis))
     throw new Error('Сервер повернув результат іншого набору даних замість поточної матриці «Аналіз залишків і продажів».')
   if (request.dataSource === 41 && preview.Request?.DataSource !== 'NativeSettlementPeriod')
     throw new Error('Сервер повернув інший набір даних замість взаєморозрахунків за період.')
@@ -139,7 +141,8 @@ export async function getStockReportPreviewPage(session: ReportResultSession, re
     if (preview.Page.Offset !== offset) throw new Error('Сервер повернув іншу сторінку звіту.')
     assertNumberPresentation(request, preview)
     bindWorkbookPreview(request, preview)
-    bindMovementPreview(request, preview)
+    bindAnalysisPreview(request, preview)
+    if (!requestCurrentVparivanieAnalysis(request)) bindMovementPreview(request, preview)
     bindProfitPreviewGrouping(request, preview)
     return preview
   } catch (error) { return cachedResultError(error) }
@@ -158,7 +161,7 @@ export function validateStockReportRequest(body: ReportRequestBody, dataset?: Re
 }
 
 function prepareStockReportRequest(body: ReportRequestBody, dataset?: ReportDataset): ReportRequestBody {
-  body = withCurrentVparivanieMovementScope(body)
+  body = upgradeCurrentVparivanieAnalysis(withCurrentVparivanieMovementScope(body), dataset)
   const presentationError = numberPresentationError(body, dataset) ?? reportConfigurationError(body, dataset)
   if (presentationError) throw new Error(presentationError)
   const request = (body.dataSource === 2 || body.dataSource === 17 || body.dataSource === 18 || body.dataSource === 19 || body.dataSource === 20 || body.dataSource === 21 || body.dataSource === 22 || body.dataSource === 23 || body.dataSource === 24 || body.dataSource === 25 || body.dataSource === 27 || body.dataSource === 28 || body.dataSource === 35 || body.dataSource === 38 || body.dataSource === 39 || body.dataSource === 40 || body.dataSource === 41) ? structuredClone(body) : body
@@ -180,7 +183,7 @@ function prepareStockReportRequest(body: ReportRequestBody, dataset?: ReportData
   if (settlementPeriodError) throw new Error(settlementPeriodError)
   const cashPeriodError = cashPeriodConfigurationError(request)
   if (cashPeriodError) throw new Error(cashPeriodError)
-  if (request.dataSource === 39) for (const selection of request.selections) {
+  if (request.dataSource === 39 && !requestCurrentVparivanieAnalysis(request)) for (const selection of request.selections) {
     if (selection.SelectedField.Type === 60) for (const value of selection.Values)
       value.Data.Id = currentVparivanieManagerReference(value.Data)!
   }

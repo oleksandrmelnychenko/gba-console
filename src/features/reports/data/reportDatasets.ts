@@ -1,3 +1,4 @@
+import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis } from './currentVparivanieAnalysis'
 import { reportConfigurationError } from './reportConfiguration'
 import { numberPresentationError } from './reportNumberPresentation'
 import { cloneWorkbookAliases, workbookConfigurationError } from './workbookPresentation'
@@ -127,6 +128,8 @@ FILTER_KEYS.set(60, 'SourceBuyerManager')
 FILTER_KEYS.set(61, 'SourceBuyerRegionCode')
 
 export function datasetGroupings(dataset: ReportDataset | undefined): ReportGroupingItem[] {
+  const analysis = currentVparivanieAnalysisCapability(dataset)
+  if (analysis) return analysis.groupings.map(field => ({ key: GROUPING_KEYS.get(field.type) ?? field.name, label: field.name, type: field.type }))
   return dataset?.Groupings.map(field => ({ key: GROUPING_KEYS.get(field.Type) ?? field.Name, label: field.Name, type: field.Type })) ?? []
 }
 
@@ -275,10 +278,11 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
   if (!data.sorted || !Array.isArray(data.sorted.Row) || !Array.isArray(data.sorted.Col) || !Array.isArray(data.sorted.Measurements) || !Array.isArray(data.selections)) {
     return 'Шаблон містить некоректні налаштування. Налаштування не застосовано.'
   }
-  const groupingTypes = new Set(dataset.Groupings.map(field => field.Type))
+  const analysis = requestCurrentVparivanieAnalysis(data) ? currentVparivanieAnalysisCapability(dataset) : undefined
+  const groupingTypes = new Set(analysis ? analysis.groupings.map(field => field.type) : dataset.Groupings.map(field => field.Type))
   const measurementTypes = new Set(dataset.Measurements.map(field => field.Type))
-  const filterTypes = new Set(dataset.Filters.map(field => field.Type))
-  const conditionTypes = new Set([...REPORT_FILTER_CONDITIONS.map(field => field.Type), ...(dataset.DataSource === 39 ? [6] : [])])
+  const filterTypes = new Set(analysis ? analysis.filters.map(field => field.type) : dataset.Filters.map(field => field.Type))
+  const conditionTypes = new Set([...REPORT_FILTER_CONDITIONS.map(field => field.Type), ...(dataset.DataSource === 39 ? requestCurrentVparivanieAnalysis(data) ? currentVparivanieAnalysisCapability(dataset)?.filters.flatMap(f => f.conditions) ?? [] : [6] : [])])
   const unsupported = [
     ...[...data.sorted.Row, ...data.sorted.Col].flatMap(item => groupingTypes.has(item.type) ? [] : [item.label || item.key || `#${item.type}`]),
     ...data.sorted.Measurements.flatMap(item => measurementTypes.has(item.Type) ? [] : [item.Name || `#${item.Type}`]),

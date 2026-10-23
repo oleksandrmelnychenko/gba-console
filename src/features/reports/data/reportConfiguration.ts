@@ -1,3 +1,4 @@
+import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis } from './currentVparivanieAnalysis'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { hasFixedReportAxes } from './nativeReportProfiles'
@@ -29,6 +30,13 @@ function option(data: ReportRequestBody, name: string): unknown {
   return key === undefined ? undefined : (data as unknown as Record<string, unknown>)[key]
 }
 export function effectiveReportConfiguration(dataset: ReportDataset | undefined, data: ReportRequestBody): ReportConfiguration | undefined {
+  let analysis = false
+  try { analysis = !!requestCurrentVparivanieAnalysis(data) } catch { /* Strict request validation reports malformed aliases. */ }
+  const capability = analysis ? currentVparivanieAnalysisCapability(dataset) : undefined
+  if (capability) return { version: 1, axisMode: 'flexible', allowedRows: capability.groupings.map(f => f.type).filter(type => type !== 74),
+    allowedColumns: [...new Set([74, ...capability.groupings.map(f => f.type)])], minimumRows: 1, maximumRows: 8,
+    allowRowReorder: true, rowLayouts: [], columnLayouts: [], mutuallyExclusiveRows: [], filters: capability.filters.map(f => f.type),
+    period: { required: true, supported: true, maximumDays: 366, maximumMonths: null, minimumDate: null }, variants: [] }
   const base = readReportConfiguration(dataset?.configuration)
   if (!base) return undefined
   const mode = option(data, data.dataSource === 40 ? 'cashReadMode' : data.dataSource === 41 ? 'settlementReadMode' : 'profitReadMode')

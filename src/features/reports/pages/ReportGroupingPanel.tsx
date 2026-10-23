@@ -8,6 +8,7 @@ import { canTransferReportGrouping, type ReportGroupingAxis, type ReportGrouping
 import { getReportFieldLabel } from '../data/reportOptions'
 
 type Props = {
+  locked?: ReadonlySet<number>
   layout: ReportGroupingLayout
   axis: ReportGroupingAxis
   allowed: ReadonlySet<number>
@@ -18,7 +19,7 @@ type Props = {
   transferSupported?: boolean
 }
 
-export function ReportGroupingPanel({ layout, axis, allowed, onOpenPicker, onRemove, onReorder, onTransfer, transferSupported = true }: Props) {
+export function ReportGroupingPanel({ locked, layout, axis, allowed, onOpenPicker, onRemove, onReorder, onTransfer, transferSupported = true }: Props) {
   const { t } = useI18n()
   const isRows = axis === 'Row', groups = layout[axis]
   const title = isRows ? 'Групування рядків' : 'Групування стовпців'
@@ -35,19 +36,19 @@ export function ReportGroupingPanel({ layout, axis, allowed, onOpenPicker, onRem
     <div className="reports-stocks-legacy-group-list">
       {groups.length ? groups.map((group, index) => {
         const label = group.label || getReportFieldLabel(group.key)
-        const uniqueSupported = allowed.has(group.type) && groups.filter(item => item.type === group.type).length === 1
+        const uniqueSupported = !locked?.has(group.type) && allowed.has(group.type) && groups.filter(item => item.type === group.type).length === 1
         const transferLabel = t(isRows ? 'Перенести {field} до стовпців' : 'Перенести {field} до рядків', { field: label })
         return <div className="reports-stocks-legacy-group-row" key={`${group.type}-${groups.slice(0, index).filter(item => item.type === group.type).length}`}>
           <span className="reports-stocks-group-position" aria-label={t('Рівень {level}', { level: index + 1 })}><TableChip value={index + 1} /></span>
           <Text size="sm">{label}</Text>
           <Group gap={0} wrap="nowrap">
             <Tooltip label={t('Перемістити {field} вище', { field: label })}><ActionIcon type="button" variant="subtle" color="gray" size={28}
-              aria-label={t('Перемістити {field} вище', { field: label })} disabled={!uniqueSupported || index === 0} onClick={() => onReorder(group.type, -1)}><ArrowUp size={15} /></ActionIcon></Tooltip>
+              aria-label={t('Перемістити {field} вище', { field: label })} disabled={!uniqueSupported || index === 0 || !!locked?.has(groups[index - 1]?.type)} onClick={() => onReorder(group.type, -1)}><ArrowUp size={15} /></ActionIcon></Tooltip>
             <Tooltip label={t('Перемістити {field} нижче', { field: label })}><ActionIcon type="button" variant="subtle" color="gray" size={28}
-              aria-label={t('Перемістити {field} нижче', { field: label })} disabled={!uniqueSupported || index === groups.length - 1} onClick={() => onReorder(group.type, 1)}><ArrowDown size={15} /></ActionIcon></Tooltip>
+              aria-label={t('Перемістити {field} нижче', { field: label })} disabled={!uniqueSupported || index === groups.length - 1 || !!locked?.has(groups[index + 1]?.type)} onClick={() => onReorder(group.type, 1)}><ArrowDown size={15} /></ActionIcon></Tooltip>
             <Tooltip label={isRows && groups.length === 1 ? t('Залиште принаймні одне групування рядків') : transferLabel}><ActionIcon type="button" variant="subtle" color="gray" size={28}
-              aria-label={transferLabel} disabled={!transferSupported || !canTransferReportGrouping(layout, axis, group.type, allowed)} onClick={() => onTransfer(group.type)}><ArrowLeftRight size={15} /></ActionIcon></Tooltip>
-            <TableRowAction action="delete" label={t('Видалити {field}', { field: label })} onClick={() => onRemove(index)} />
+              aria-label={transferLabel} disabled={!!locked?.has(group.type) || !transferSupported || !canTransferReportGrouping(layout, axis, group.type, allowed)} onClick={() => onTransfer(group.type)}><ArrowLeftRight size={15} /></ActionIcon></Tooltip>
+            {!locked?.has(group.type) ? <TableRowAction action="delete" label={t('Видалити {field}', { field: label })} onClick={() => onRemove(index)} /> : null}
           </Group>
         </div>
       }) : <div className="reports-stocks-legacy-group-list__empty"><Text size="sm" c="gray.9">{isRows ? t('Додайте день, товар або інше поле') : t('Без поділу на стовпці')}</Text></div>}

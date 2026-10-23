@@ -1,3 +1,6 @@
+import { ANALYSIS_SCOPE_NOTICE, currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis, analysisFilterConditions } from '../data/currentVparivanieAnalysis'
+import { ReportFieldPicker } from './ReportFieldPicker'
+import { CurrentVparivanieAnalysisValuePicker } from './CurrentVparivanieAnalysisValuePicker'
 import { CurrentVparivanieMovementSettings } from './CurrentVparivanieMovementSettings'
 import { EMPTY_MOVEMENT_SELECTION, movementSelection, type CurrentVparivanieMovementSelection } from '../data/currentVparivanieMovements'
 import { ReportPreviewPages } from './ReportPreviewPages'
@@ -442,15 +445,16 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           ...(colGroups.some((group) => group.type === item.type) ? ['columns' as const] : []),
         ],
         label: item.label,
+        path: currentVparivanieAnalysisCapability(priceTypeDataset)?.groupings.find(f => f.type === item.type)?.path,
         value: String(item.type),
       }) satisfies GroupingOption),
-    [colGroups, groupingOptions, rowGroups],
+    [colGroups, groupingOptions, rowGroups, priceTypeDataset],
   )
   const settlementDataset = useMemo(() => settlementFormDataset(priceTypeDataset, groupedSettlementPeriod, settlementReadMode), [priceTypeDataset, groupedSettlementPeriod, settlementReadMode])
   const cashDataset = useMemo(() => cashFormDataset(settlementDataset, groupedCashPeriod), [settlementDataset, groupedCashPeriod])
   const reportBody = useMemo<ReportRequestBody>(
-    () => withCurrentVparivanieMovementScope({ ...buildReportBuilderRequest({ supplierWarehouse, numberPresentation, dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && (movementQuantities.Incoming || movementQuantities.Outgoing) ? { currentVparivanieMovements: movementQuantities } : {}), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }),
-    [supplierWarehouse, numberPresentation, movementQuantities, fullCurrentVparivanie, abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbook.value, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => upgradeCurrentVparivanieAnalysis(withCurrentVparivanieMovementScope({ ...(currentVparivanieAnalysisCapability(dataset) ? { currentVparivanieAnalysis: { version: 1 } } : {}), ...buildReportBuilderRequest({ supplierWarehouse, numberPresentation, dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && (movementQuantities.Incoming || movementQuantities.Outgoing) ? { currentVparivanieMovements: movementQuantities } : {}), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }), dataset),
+    [dataset, supplierWarehouse, numberPresentation, movementQuantities, fullCurrentVparivanie, abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbook.value, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const effectiveConfiguration = effectiveReportConfiguration(dataset, reportBody)
   const effectiveFilterTypes = effectiveConfiguration?.filters
@@ -705,6 +709,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
 
   function applyTemplate(template: ReportTemplate): boolean {
     const nextDataset = datasetStorage.datasets.find(item => item.DataSource === (template.Data.dataSource ?? 0))
+    template = { ...template, Data: upgradeCurrentVparivanieAnalysis(template.Data, nextDataset) }
     const incompatible = (consoleScope && !BUG_1274_ACTIVE_DATA_SOURCES.has(template.Data.dataSource ?? 0) ? BUG_1274_DISABLED_MESSAGE : null) ?? datasetConfigurationError(template.Data, nextDataset, 'workspace')
     if (incompatible || !nextDataset) {
       setTemplateNotice(incompatible)
@@ -730,7 +735,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setRestoredData(null)
     setDraftRestoreError(null)
     setActiveTemplate(null)
-    const data = withCurrentVparivanieMovementScope(template.Data)
+    const data = upgradeCurrentVparivanieAnalysis(withCurrentVparivanieMovementScope(template.Data), nextDataset)
     setFullCurrentVparivanie(currentVparivanieFullScope(data))
     setMovementQuantities(movementSelection(data) ?? EMPTY_MOVEMENT_SELECTION)
     setComparison(structuredClone(requestComparison(data)))
@@ -789,6 +794,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   function restoreWorkspace(snapshot: ReportWorkspaceSnapshot): boolean {
     if (!canGenerateReport || !datasetStorage.loaded) return false
     const nextDataset = datasetStorage.datasets.find(item => item.DataSource === (snapshot.data.dataSource ?? 0))
+    snapshot = { ...snapshot, data: upgradeCurrentVparivanieAnalysis(snapshot.data, nextDataset) }
     const incompatible = reportWorkspaceDraftCompatibility(snapshot, nextDataset)
     if (incompatible || !nextDataset) {
       setDraftRestoreError(incompatible)
@@ -1944,13 +1950,15 @@ function LegacyReportBuilder({
   const checkedMeasurements = flattenCheckedMeasurements(measurements).length
   const groupingLayout = { Row: rowGroups, Col: colGroups }
   const policy = reportAxesPolicy(dataset, request ?? { dataSource, from: '', to: '', selections, sorted: { ...groupingLayout, Measurements: [] } })
+  const analysis = !!currentVparivanieAnalysisCapability(dataset) && !!request && !!requestCurrentVparivanieAnalysis(request)
   const fixedAxes = policy.fixed
   const rowsOnly = policy.rowsOnly
   const allowedGroupingTypes = new Set(groupingOptions.map(item => item.type))
+  const lockedGroupingTypes = new Set(analysis ? [74] : [])
   const selectedGroupingTypes = new Set([...rowGroups, ...colGroups].map(item => item.type))
 
   const transferGrouping = (axis: ReportGroupingAxis, type: number) => {
-    if (rowsOnly || fixedAxes) return
+    if (rowsOnly || fixedAxes || lockedGroupingTypes.has(type)) return
     const next = transferReportGrouping(groupingLayout, axis, type, allowedGroupingTypes)
     if (next === groupingLayout) return
     onGroupingLayoutChange(next)
@@ -1978,7 +1986,7 @@ function LegacyReportBuilder({
   }
 
   const selectionPanel = dataSource === 19 ? null : <section className="reports-stocks-legacy__selections">
-    <ReportSelectionsCard dataSource={dataSource} description={null} filterFieldOptions={filterFieldOptions}
+    <ReportSelectionsCard dataset={dataset} dataSource={dataSource} description={null} filterFieldOptions={filterFieldOptions}
       from={lookupFrom} lookupProfitReadMode={lookupProfitReadMode} lookupProfitUnavailable={lookupProfitUnavailable} lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis} selections={selections} title={selectionTitle ?? t('Умови відбору')} to={lookupTo} onChange={onSelectionsChange}
       filter={selectionFilter} newSelection={newSelection} addLabel={addSelectionLabel} />
   </section>
@@ -2059,16 +2067,17 @@ function LegacyReportBuilder({
   const groupingSection = (
     <section className="app-section-card reports-stocks-structure">
       <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Групування')}</Text>
+      {analysis ? <Alert color="blue">{ANALYSIS_SCOPE_NOTICE}</Alert> : null}
       {fixedAxes ? part === 'grouping' ? (dataSource === 39
         ? <Text size="sm">Товари у рядках; залишки, продажі й контрагенти у стовпцях.</Text> : <Text size="sm">{rowGroups.map(group => group.label).join(' → ')}</Text>)
         : <Text size="sm">{dataSource === 39
         ? `Товар → сім атрибутів. Колонки: Остатки, Продажи та Контрагенты; один показник «Результат». ${currentVparivanieNotice(filterFieldOptions.some(option => option.field.Type === 60))}`
-        : dataSource === 41 ? settlementAxesDescription(rowGroups) : fixedAxesDescription[dataSource] ?? rowGroups.map(group => group.label).join(' → ')}</Text> : <ReportGroupingPanel layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={!rowsOnly}
+        : dataSource === 41 ? settlementAxesDescription(rowGroups) : fixedAxesDescription[dataSource] ?? rowGroups.map(group => group.label).join(' → ')}</Text> : <ReportGroupingPanel locked={lockedGroupingTypes} layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={!rowsOnly}
         onOpenPicker={() => setGroupingPickerTarget('rows')}
         onRemove={(index) => onRowGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
         onReorder={(type, direction) => onRowGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
         onTransfer={type => transferGrouping('Row', type)} />}
-      {fixedAxes ? null : !rowsOnly ? <ReportGroupingPanel layout={groupingLayout} axis="Col" allowed={allowedGroupingTypes}
+      {fixedAxes ? null : !rowsOnly ? <ReportGroupingPanel locked={lockedGroupingTypes} layout={groupingLayout} axis="Col" allowed={allowedGroupingTypes}
         onOpenPicker={() => setGroupingPickerTarget('columns')}
         onRemove={(index) => onColGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
         onReorder={(type, direction) => onColGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
@@ -2079,7 +2088,9 @@ function LegacyReportBuilder({
   const pickerAllowed = policy.config ? new Set(groupingPickerTarget === 'columns' ? policy.config.allowedColumns : policy.config.allowedRows) : null
   const pickerExcluded = new Set(policy.config?.mutuallyExclusiveRows.filter(group => group.some(type => selectedGroupingTypes.has(type))).flat())
   const groupingPicker = (
-    <LegacyGroupingPickerModal
+    analysis ? <ReportFieldPicker opened={groupingPickerTarget !== null} title={groupingPickerTarget === 'rows' ? 'Групування рядків' : 'Групування стовпців'}
+      options={groupingSelectData.filter(item => !selectedGroupingTypes.has(Number(item.value)) && Number(item.value) !== 74 && (!pickerAllowed || pickerAllowed.has(Number(item.value)))).map(item => ({ ...item, path: item.path ?? [] }))}
+      onSelect={addGroupingFromPicker} onClose={closeGroupingPicker} /> : <LegacyGroupingPickerModal
       opened={groupingPickerTarget !== null}
       options={groupingSelectData.filter(item => !selectedGroupingTypes.has(Number(item.value)) && (!pickerAllowed || pickerAllowed.has(Number(item.value))) && !pickerExcluded.has(Number(item.value)) && (groupingPickerTarget !== 'columns' || Number(item.value) !== ABC_CLASS_GROUPING))}
       target={groupingPickerTarget}
@@ -2216,6 +2227,7 @@ function LegacyGroupingPickerModal({
 }
 
 type GroupingOption = {
+  path?: string[]
   assignedTo: Array<'rows' | 'columns'>
   label: string
   value: string
@@ -2228,6 +2240,8 @@ type FilterFieldOption = {
 }
 
 type ReportSelectionsCardProps = {
+  dataset?: ReportDataset
+
   dataSource: number
   lookupProfitReadMode?: 0 | 1
   lookupProfitUnavailable?: boolean
@@ -2247,6 +2261,7 @@ type ReportSelectionsCardProps = {
 }
 
 function ReportSelectionsCard({
+  dataset,
   filter,
   newSelection,
   addLabel,
@@ -2267,7 +2282,9 @@ function ReportSelectionsCard({
   const { t } = useI18n()
   const [editorIndex, setEditorIndex] = useState<number | null>(null)
   const [draftSelection, setDraftSelection] = useState<ReportSelection | null>(null)
-  const filterConditions = dataSource === 39 ? currentVparivanieFilterConditions(draftSelection?.SelectedField.Type ?? 0) : REPORT_FILTER_CONDITIONS
+  const [fieldPickerOpen, setFieldPickerOpen] = useState(false)
+  const analysis = currentVparivanieAnalysisCapability(dataset)
+  const filterConditions = analysis ? analysisFilterConditions(dataset, draftSelection?.SelectedField.Type ?? 0) : dataSource === 39 ? currentVparivanieFilterConditions(draftSelection?.SelectedField.Type ?? 0) : REPORT_FILTER_CONDITIONS
   const visibleCount = filter ? selections.filter(filter).length : selections.length
   const resolvedDescription = description === undefined
     ? t('Необов’язково: звузьте звіт до клієнта, товару, документа або іншої ознаки.')
@@ -2375,7 +2392,15 @@ function ReportSelectionsCard({
       >
         {draftSelection ? (
           <Stack gap={10}>
-            <Select
+            {analysis ? <><Text size="sm">Поле</Text><Button variant="default" onClick={() => setFieldPickerOpen(true)}>
+              {analysis.filters.find(f => f.type === draftSelection.SelectedField.Type && draftSelection.SelectedField.Name)?.name ?? 'Оберіть поле'}</Button>
+              <ReportFieldPicker opened={fieldPickerOpen} title="Поле відбору" options={analysis.filters.map(f => ({ value: String(f.type), label: f.name, path: f.path, disabled: f.available === false, reason: f.unavailabilityReason }))}
+                onClose={() => setFieldPickerOpen(false)} onSelect={value => {
+                  const field = analysis.filters.find(f => String(f.type) === value)!
+                  setDraftSelection(current => current ? { ...current, SelectedField: { Type: field.type, Name: field.name },
+                    FilterCondition: analysisFilterConditions(dataset, field.type)[0], Values: [] } : current)
+                  setFieldPickerOpen(false)
+                }} /></> : <Select
               data={filterFieldOptions}
               label={t('Поле')}
               placeholder={t('Оберіть поле')}
@@ -2390,7 +2415,7 @@ function ReportSelectionsCard({
                   Values: [],
                 } : current)
               }}
-            />
+            />}
             <div className="reports-stocks-selection-modal__controls">
               <Select
                 allowDeselect={false}
@@ -2405,13 +2430,14 @@ function ReportSelectionsCard({
                   setDraftSelection((current) => current ? {
                     ...current,
                     FilterCondition: condition,
-                    Values: !isMultiValueReportCondition(condition.Type) && current.Values.length > 1
+                    Values: !(analysis ? [2, 3, 4, 5].includes(condition.Type) : isMultiValueReportCondition(condition.Type)) && current.Values.length > 1
                       ? current.Values.slice(0, 1)
                       : current.Values,
                   } : current)
                 }}
               />
-              <SelectionValuePicker
+              {analysis ? draftSelection.SelectedField.Name ? <CurrentVparivanieAnalysisValuePicker selection={draftSelection} selections={editorSelections} from={from} to={to}
+                onChange={Values => setDraftSelection(current => current ? { ...current, Values } : current)} /> : <Text size="sm">Оберіть поле відбору.</Text> : <SelectionValuePicker
                 dataSource={dataSource}
                 lookupProfitReadMode={lookupProfitReadMode} lookupProfitUnavailable={lookupProfitUnavailable} lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis}
                 from={from}
@@ -2421,7 +2447,7 @@ function ReportSelectionsCard({
                 to={to}
                 width="100%"
                 onChange={(values) => setDraftSelection((current) => current ? { ...current, Values: values } : current)}
-              />
+              />}
             </div>
             <AppModalFooter>
               <Button color="gray" type="button" variant="default" onClick={closeEditor}>{t('Скасувати')}</Button>

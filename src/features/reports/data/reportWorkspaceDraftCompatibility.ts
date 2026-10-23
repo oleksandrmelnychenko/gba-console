@@ -1,3 +1,4 @@
+import { currentVparivanieAnalysisLayoutError, requestCurrentVparivanieAnalysis } from './currentVparivanieAnalysis'
 import { currentVparivanieScopeError, withCurrentVparivanieMovementScope } from './currentVparivanie'
 import { effectiveReportConfiguration, reportConfigurationError } from './reportConfiguration'
 import { numberPresentationError } from './reportNumberPresentation'
@@ -41,6 +42,8 @@ export function reportWorkspaceDraftCompatibility(snapshot: ReportWorkspaceSnaps
   if (settlementModeError) return `${settlementModeError} Чернетка збережена без змін.`
   const cashModeError = cashReadModeConfigurationError(data, dataset)
   if (cashModeError) return `${cashModeError} Чернетка збережена без змін.`
+  const analysisError = currentVparivanieAnalysisLayoutError(data, dataset, true)
+  if (analysisError) return `${analysisError} Чернетка збережена без змін.`
   const workbookError = workbookConfigurationError(data, dataset)
   if (workbookError) return `${workbookError} Чернетка збережена без змін.`
   const presented = data.workbookPresentation != null || data.WorkbookPresentation != null
@@ -55,7 +58,7 @@ export function reportWorkspaceDraftCompatibility(snapshot: ReportWorkspaceSnaps
     return 'Склад полів набору даних змінився. Чернетка збережена; невідомі поля не видалено.'
   }
   if ((data.dataSource === 13 && data.sorted.Col.length > 0)
-    || (hasFixedReportAxes(dataset.DataSource) && ((dataset.DataSource === 39 ? data.sorted.Col.map(field => field.type).join(',') !== '74,75' : data.sorted.Col.length > 0)
+    || (hasFixedReportAxes(dataset.DataSource) && ((dataset.DataSource === 39 ? !requestCurrentVparivanieAnalysis(data) && data.sorted.Col.map(field => field.type).join(',') !== '74,75' : data.sorted.Col.length > 0)
       || !capabilityLayout && !legacyLayout && !presented && !originalSupplier && JSON.stringify(data.sorted.Row.map(field => field.type)) !== JSON.stringify(getNativeReportProfile(dataset.DataSource)?.rowGroupings)))
     || (data.dataSource === 19 && data.selections.length > 0)) {
     return 'Структура чернетки несумісна з цим набором даних. Чернетка збережена без змін.'

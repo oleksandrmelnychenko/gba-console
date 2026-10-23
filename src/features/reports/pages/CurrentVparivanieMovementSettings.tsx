@@ -1,3 +1,4 @@
+import { currentVparivanieAnalysisCapability } from '../data/currentVparivanieAnalysis'
 import { currentVparivanieFullScopeAvailable } from '../data/currentVparivanie'
 import { Alert, Checkbox, Group, Stack, Text } from '@mantine/core'
 import { currentVparivanieMovementsAvailable, MOVEMENT_FILTER_NOTICE, type CurrentVparivanieMovementSelection } from '../data/currentVparivanieMovements'
@@ -18,6 +19,6 @@ export function CurrentVparivanieMovementSettings({ dataset, value, onChange, di
       <Checkbox label="Розхід" checked={value.Outgoing} disabled={disabled}
         onChange={event => onChange({ ...value, Outgoing: event.currentTarget.checked })} />
     </Group>
-    {value.Incoming || value.Outgoing ? <Alert color="blue">Обробляються всі товари вибраного відбору. {MOVEMENT_FILTER_NOTICE}</Alert> : null}
+    {value.Incoming || value.Outgoing ? <Alert color="blue">Обробляються всі товари вибраного відбору. {currentVparivanieAnalysisCapability(dataset) ? 'Період застосовується до продажів і фізичного руху; склад — до залишків і руху. Відбори покупця, договору й менеджера застосовуються до всіх продажів, без розподілу складського руху за покупцями.' : MOVEMENT_FILTER_NOTICE}</Alert> : null}
   </Stack>
 }

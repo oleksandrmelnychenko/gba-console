@@ -1,3 +1,4 @@
+import { requestCurrentVparivanieAnalysis } from '../data/currentVparivanieAnalysis'
 import { movementSelection } from '../data/currentVparivanieMovements'
 import { Alert, Button, Checkbox, Group, Stack, Text } from '@mantine/core'
 import { useEffect, useRef, useState } from 'react'
@@ -54,6 +55,7 @@ function RegionalFullScopeCheckbox({ dataset, checked, disabled, onChange }: {
 function regionalConfigurationError(dataset: ReportDataset | null, request: ReportRequestBody): string | null {
   const invalid = dataset ? currentVparivanieConfigurationError(request, dataset) : null
   if (invalid) return invalid
+  if (requestCurrentVparivanieAnalysis(request)) return 'Регіональна форма поки не підтримує розширене групування. Використайте звичайний перегляд звіту.'
   return movementSelection(request)
     ? 'Прихід і розхід доступні у звичайній формі звіту. Для регіональної форми вимкніть ці показники.'
     : null

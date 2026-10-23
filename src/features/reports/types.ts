@@ -254,6 +254,8 @@ export type ReportSourceBuyerSubtreeCapabilities = {
 }
 
 export type ReportRequestBody = {
+  currentVparivanieAnalysis?: unknown
+  CurrentVparivanieAnalysis?: unknown
   supplierWarehouse?: unknown
   SupplierWarehouse?: unknown
   numberPresentation?: unknown

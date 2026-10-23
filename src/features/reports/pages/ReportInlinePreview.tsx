@@ -1,3 +1,4 @@
+import { ANALYSIS_SCOPE_NOTICE } from '../data/currentVparivanieAnalysis'
 import { MOVEMENT_FILTER_NOTICE } from '../data/currentVparivanieMovements'
 import { formatReportDecimal, moneyScaleLabel, reportValueUnit } from '../data/reportNumberPresentation'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -64,6 +65,12 @@ export function ReportInlinePreview({ preview, embedded = false }: { preview: Na
       <Text size="sm" className="report-inline-preview__count">{deskRowsText(preview.Page.ReturnedRows, preview.Page.TotalVisibleRows, preview.Page.HasMore)}</Text>
     </div>
     <ReportAttributionWarnings request={preview.Request} />
+    {preview.currentVparivanieAnalysis ? <Alert color={preview.currentVparivanieAnalysis.fieldCoverage.some(f => f.unknownFacts > 0) ? 'yellow' : 'blue'} title="Розрізи та покриття звіту">
+      <Text size="sm">{ANALYSIS_SCOPE_NOTICE}</Text>
+      {preview.currentVparivanieAnalysis.fieldCoverage.filter(f => f.unknownFacts > 0).map(f => <Text size="sm" key={`${f.scope}:${f.field}`}>
+        Для одного з вибраних розрізів не підтверджено реквізити {f.unknownFacts} записів. Вони залишаються у категорії «Невідомо».
+      </Text>)}
+    </Alert> : null}
     {preview.CurrentVparivanieMovements ? <Alert color={preview.CurrentVparivanieMovements.IncompleteProducts ? 'yellow' : 'blue'} title="Покриття руху товару">
       <Text size="sm">{MOVEMENT_FILTER_NOTICE}</Text>
       <Text size="sm">Неповне підтвердження руху: {preview.CurrentVparivanieMovements.IncompleteProducts} із {preview.CurrentVparivanieMovements.TotalProducts} товарів. ∅ — кількість невідома.</Text>

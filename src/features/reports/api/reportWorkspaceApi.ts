@@ -1,3 +1,4 @@
+import { cloneCurrentVparivanieAnalysis } from '../data/currentVparivanieAnalysis'
 import { cloneMovementSelection } from '../data/currentVparivanieMovements'
 import { readReportConfiguration, reportConfigurationError } from '../data/reportConfiguration'
 import { cloneNumberPresentationAliases, readValueSemantics, numberPresentationSupported, numberPresentationError } from '../data/reportNumberPresentation'
@@ -250,6 +251,7 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     dataSource: value.Data.DataSource,
     ...cloneCurrentVparivanieFullScope(value.Data),
     ...cloneMovementSelection(value.Data),
+    ...cloneCurrentVparivanieAnalysis(value.Data),
     ...(Object.hasOwn(value.Data, 'returnsOnly') ? { returnsOnly: value.Data.returnsOnly }
       : Object.hasOwn(value.Data, 'ReturnsOnly') ? { returnsOnly: value.Data.ReturnsOnly } : {}),
     ...(Object.hasOwn(value.Data, 'settlementPeriod') ? { settlementPeriod: structuredClone(value.Data.settlementPeriod),

@@ -1,3 +1,4 @@
+import { isAnalysisRequest, readAnalysisMetadata, type CurrentVparivanieAnalysisMetadata, type CurrentVparivanieAnalysisRequest } from './currentVparivanieAnalysis'
 import { isMovementSelection, readMovementCoverage, type CurrentVparivanieMovementCoverage, type CurrentVparivanieMovementSelection } from './currentVparivanieMovements'
 import { readNumberPresentation, readValueSemantics, type ReportNumberPresentation, type ReportValueSemantics } from './reportNumberPresentation'
 import { readWorkbookPreview, type WorkbookPreview } from './workbookPreview'
@@ -16,6 +17,7 @@ export type NativeReportPreviewTotals = { State: 'materialized'; Values: NativeR
 export type NativeReportPreviewFilter = { Field: string; Condition: string; Values: string[]; IgnoredReason: string | null }
 export type NativeReportPreviewRequest = {
   DataSource: string
+  currentVparivanieAnalysis?: CurrentVparivanieAnalysisRequest
   CurrentVparivanieMovements?: CurrentVparivanieMovementSelection
   ProfitReadMode?: 0 | 1
   SettlementReadMode?: 0 | 1
@@ -50,6 +52,7 @@ export type NativeReportPreview = {
   Rows: NativeReportPreviewAxis[]
   Columns: NativeReportPreviewAxis[]
   Cells: NativeReportPreviewCell[]
+  currentVparivanieAnalysis?: CurrentVparivanieAnalysisMetadata
   CurrentVparivanieProducts?: CurrentVparivanieProducts
   CurrentVparivanieMovements?: CurrentVparivanieMovementCoverage
   Totals?: NativeReportPreviewTotals
@@ -102,6 +105,7 @@ function normalizeRequest(value: unknown): NativeReportPreviewRequest | null {
     throw new Error('Сервер повернув некоректний опис розрахунку звіту.')
   if (value.CurrentVparivanieMovements != null && !isMovementSelection(value.CurrentVparivanieMovements))
     throw new Error('Сервер повернув некоректний вибір показників руху товару.')
+  if (value.currentVparivanieAnalysis != null && !isAnalysisRequest(value.currentVparivanieAnalysis)) throw new Error('Непідтримуваний режим групування результату.')
   const mode = readMode(value, 'ProfitReadMode', 'Сервер повернув некоректне джерело розрахунку прибутку.')
   const settlementMode = readMode(value, 'SettlementReadMode', 'Сервер повернув некоректне джерело розрахунку взаєморозрахунків.')
   const cashMode = readMode(value, 'CashReadMode', 'Сервер повернув некоректне джерело розрахунку коштів.')
@@ -130,6 +134,7 @@ function normalizeRequest(value: unknown): NativeReportPreviewRequest | null {
     })
   }
   return {
+    ...(value.currentVparivanieAnalysis != null ? { currentVparivanieAnalysis: { version: 1 as const } } : {}),
     ...(value.CurrentVparivanieMovements != null ? { CurrentVparivanieMovements: value.CurrentVparivanieMovements as CurrentVparivanieMovementSelection } : {}),
     ...(mode != null ? { ProfitReadMode: mode } : {}),
     ...(settlementMode != null ? { SettlementReadMode: settlementMode } : {}),
@@ -204,10 +209,13 @@ export function normalizeNativeReportPreview(response: unknown, fullCurrentVpari
   if (workbookAliases.length > 1 || workbookAliases.some(key => key !== 'workbookPresentation'))
     throw new Error('Сервер повернув неоднозначні додаткові поля форми.')
   const workbook = readWorkbookPreview(preview.workbookPresentation, { ...preview, Request: request, SettlementCounterpartyAttributes: attributes } as NativeReportPreview)
-  const productDisplay = normalizeCurrentVparivanieProducts(preview, request, fullCurrentVparivanie)
+  const analysis = readAnalysisMetadata(preview.currentVparivanieAnalysis, { ...preview, Request: request } as NativeReportPreview)
+  if (!!analysis !== !!request?.currentVparivanieAnalysis || analysis && (request?.DataSource !== 'NativeCurrentVparivanie' || preview.CurrentVparivanieProducts != null))
+    throw new Error('Сервер повернув іншу форму аналізу залишків і продажів.')
+  const productDisplay = analysis ? undefined : normalizeCurrentVparivanieProducts(preview, request, fullCurrentVparivanie)
   const totals = normalizeTotals(preview.Totals, preview.Rows as NativeReportPreviewAxis[], columnIds, preview.RowSchema.length)
-  const movements = readMovementCoverage({ ...preview, Request: request } as NativeReportPreview)
-  return { ...preview, Request: request, Totals: totals, ...(movements ? { CurrentVparivanieMovements: movements } : {}), ...(workbook ? { WorkbookPresentation: workbook } : {}), ...(productDisplay ? { CurrentVparivanieProducts: productDisplay } : {}), ...(attributes ? { SettlementCounterpartyAttributes: attributes } : {}), ...(regions ? { ClientDiscountRecipientRegions: regions } : {}) } as NativeReportPreview
+  const movements = analysis ? undefined : readMovementCoverage({ ...preview, Request: request } as NativeReportPreview)
+  return { ...preview, Request: request, Totals: totals, ...(analysis ? { currentVparivanieAnalysis: analysis } : {}), ...(movements ? { CurrentVparivanieMovements: movements } : {}), ...(workbook ? { WorkbookPresentation: workbook } : {}), ...(productDisplay ? { CurrentVparivanieProducts: productDisplay } : {}), ...(attributes ? { SettlementCounterpartyAttributes: attributes } : {}), ...(regions ? { ClientDiscountRecipientRegions: regions } : {}) } as NativeReportPreview
 }
 
 function normalizeTotals(value: unknown, rows: NativeReportPreviewAxis[], columnIds: ReadonlySet<number>,

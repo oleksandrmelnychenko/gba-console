@@ -1,3 +1,4 @@
+import { CURRENT_VPARIVANIE_ANALYSIS_TITLE, isCurrentVparivanieAnalysisSheet, validateCurrentVparivanieAnalysisSheet } from './data/currentVparivanieAnalysisSpreadsheet'
 import { CURRENT_VPARIVANIE_TITLE, CURRENT_VPARIVANIE_FULL_TITLE, CURRENT_VPARIVANIE_LEGACY_TITLES, CURRENT_VPARIVANIE_LEGACY_FULL_TITLES, isCurrentVparivanieTitle } from './data/currentVparivanie'
 import { currentVparivanieDisplayHeader, isCurrentVparivanieSheet, validateCurrentVparivanieSheet } from './data/currentVparivanieSpreadsheet'
 import { AGREEMENT_PRICES_TITLE, AGREEMENT_PRICES_CAPTION, AGREEMENT_PRICES_NOTE_PREFIXES } from './data/agreementPrices'
@@ -47,7 +48,7 @@ const HEADER_LEVEL_SEPARATOR = ' · '
 const STOCK_STATE_LINE = 'Поточний стан: знімок операційних записів GBA'
 const STOCK_READ_TIME_LINE = /^Час читання \(UTC\): \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}\.\d{3} – \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}\.\d{3}$/
 const SUPPLIER_RETURN_PERIOD_LINE = /^Період: \d{2}\.\d{2}\.\d{4} – \d{2}\.\d{2}\.\d{4}$/
-const REPORT_TITLES = new Set([CURRENT_VPARIVANIE_TITLE,CURRENT_VPARIVANIE_FULL_TITLE,...CURRENT_VPARIVANIE_LEGACY_TITLES,...CURRENT_VPARIVANIE_LEGACY_FULL_TITLES,PAYMENT_COMPARISON_TITLE, MARGIN_COMPARISON_TITLE, RATE_COMPARISON_TITLE, RETURN_COMPARISON_TITLE, BUYER_SALES_SHARE_TITLE, REVENUE_COMPARISON_TITLE, XYZ_TITLE, 'Звіт продажів', 'Звіт продажів і повернень', 'Звіт надходжень', SUPPLIER_RETURN_REPORT_TITLE, CLIENT_ACTIVITY_REPORT_TITLE, CLIENT_COMPARISON_TITLE, IMPORTED_PAYMENTS_TITLE, ...CURRENT_REPORT_TITLES])
+const REPORT_TITLES = new Set([CURRENT_VPARIVANIE_ANALYSIS_TITLE,CURRENT_VPARIVANIE_TITLE,CURRENT_VPARIVANIE_FULL_TITLE,...CURRENT_VPARIVANIE_LEGACY_TITLES,...CURRENT_VPARIVANIE_LEGACY_FULL_TITLES,PAYMENT_COMPARISON_TITLE, MARGIN_COMPARISON_TITLE, RATE_COMPARISON_TITLE, RETURN_COMPARISON_TITLE, BUYER_SALES_SHARE_TITLE, REVENUE_COMPARISON_TITLE, XYZ_TITLE, 'Звіт продажів', 'Звіт продажів і повернень', 'Звіт надходжень', SUPPLIER_RETURN_REPORT_TITLE, CLIENT_ACTIVITY_REPORT_TITLE, CLIENT_COMPARISON_TITLE, IMPORTED_PAYMENTS_TITLE, ...CURRENT_REPORT_TITLES])
 const clientCountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
 const clientCountCsvFormatter = new Intl.NumberFormat('en-US', { useGrouping: false, maximumFractionDigits: 0 })
 export const stockQuantityFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 8 })
@@ -71,14 +72,14 @@ export function isCurrentReportSheet(sheet: SpreadsheetSheet | null): boolean {
 
 /** As-of snapshots have no leaf event-date axis to filter in the file viewer. */
 export function supportsSpreadsheetDateFilters(sheet: SpreadsheetSheet | null): boolean {
-  return !isCurrentVparivanieSheet(sheet) && !isPaymentComparisonSheet(sheet) && !isCurrentReportSheet(sheet) && !isRateComparisonSheet(sheet) && !isMarginComparisonSheet(sheet)
+  return !isCurrentVparivanieAnalysisSheet(sheet) && !isCurrentVparivanieSheet(sheet) && !isPaymentComparisonSheet(sheet) && !isCurrentReportSheet(sheet) && !isRateComparisonSheet(sheet) && !isMarginComparisonSheet(sheet)
 }
 
 /** Only declared measure columns receive quantity/money formatting; numeric group identities remain axes. */
 export function getSpreadsheetNumberFormatter(sheet: SpreadsheetSheet | null, columnIndex: number, csv = false): Intl.NumberFormat | undefined {
   if (!sheet?.header || columnIndex < sheet.header.rowGroupings.length) return undefined
   const title = sheet.header.lines[0], caption = sheet.columns[columnIndex]?.split(HEADER_LEVEL_SEPARATOR).at(-1)
-  if (isCurrentVparivanieTitle(title)) return caption === 'Результат' ? (csv ? stockCsvQuantityFormatter : stockQuantityFormatter) : undefined
+  if (isCurrentVparivanieTitle(title) || title === CURRENT_VPARIVANIE_ANALYSIS_TITLE) return caption === 'Результат' ? (csv ? stockCsvQuantityFormatter : stockQuantityFormatter) : undefined
   if (title === AGREEMENT_PRICES_TITLE) return caption === AGREEMENT_PRICES_CAPTION ? (csv ? debtCsvAmountFormatter : debtAmountFormatter) : undefined
   if (title === PAYMENT_COMPARISON_TITLE) return paymentComparisonColumn(caption) < 0 ? undefined : paymentComparisonColumn(caption) === 3 ? (csv ? valuationCsvMoneyFormatter : valuationMoneyFormatter) : (csv ? paymentCsvMoneyFormatter : paymentMoneyFormatter)
   if (title === MARGIN_COMPARISON_TITLE) return marginComparisonColumn(caption) >= 0 ? (csv ? valuationCsvMoneyFormatter : valuationMoneyFormatter) : undefined
@@ -180,9 +181,9 @@ export function buildSpreadsheetSheet(name: string, rows: SpreadsheetCellValue[]
     // measure with no answer and must stay empty. Only the row-field columns may be carried, and there are
     // exactly as many of them as the block names in «Рядки».
     rows: reportHeader?.header.lines[0] === PAYMENT_COMPARISON_TITLE ? buildPaymentComparisonBodyRows(tableRows.slice(headerRowCount))
-      : buildBodyRows(tableRows.slice(headerRowCount), isReport && !isCurrentVparivanieTitle(reportHeader?.header.lines[0] ?? ''), format === 'flat' ? 0 : reportHeader?.header.rowGroupings.length),
+      : buildBodyRows(tableRows.slice(headerRowCount), isReport && !isCurrentVparivanieTitle(reportHeader?.header.lines[0] ?? '') && reportHeader?.header.lines[0] !== CURRENT_VPARIVANIE_ANALYSIS_TITLE, format === 'flat' ? 0 : reportHeader?.header.rowGroupings.length),
   })))))))), format)
-  return validateCurrentVparivanieSheet(validateAgreementPricesSheet(validatePaymentComparisonSheet(sheet)))
+  return validateCurrentVparivanieAnalysisSheet(validateCurrentVparivanieSheet(validateAgreementPricesSheet(validatePaymentComparisonSheet(sheet))))
 }
 
 // The rows the console's own CSV export writes: the engine's attribution block first, then the table. The export
@@ -194,6 +195,10 @@ export function buildSheetExportRows(
   rows: SpreadsheetRow[],
   totalsRow?: SpreadsheetCellValue[] | null,
 ): SpreadsheetCellValue[][] {
+  if (isCurrentVparivanieAnalysisSheet(sheet)) {
+    if (totalsRow) throw new Error('Аналіз не підтримує додавання різних показників у браузері.')
+    validateCurrentVparivanieAnalysisSheet({ ...sheet, rows })
+  }
   if (isCurrentVparivanieSheet(sheet)) {
     if (totalsRow) throw new Error('Поточна матриця «Аналіз залишків і продажів» не підтримує підсумки в браузері.')
     validateCurrentVparivanieSheet({ ...sheet, rows })
@@ -282,7 +287,7 @@ export function filterSheetRows(
 // does not add either — an article code or a percentage run down a column is not a total.
 export function getAdditiveColumns(sheet: SpreadsheetSheet | null): boolean[] {
   const columnCount = sheet?.columns.length || 0
-  if (isCurrentVparivanieSheet(sheet) || isAgreementPricesSheet(sheet)) return Array.from({ length: columnCount }, () => false)
+  if (isCurrentVparivanieAnalysisSheet(sheet) || isCurrentVparivanieSheet(sheet) || isAgreementPricesSheet(sheet)) return Array.from({ length: columnCount }, () => false)
   // Distinct counts can accidentally equal a sum on one selection. That never proves additivity.
   if (isPaymentComparisonSheet(sheet) || isMarginComparisonSheet(sheet) || isRateComparisonSheet(sheet) || isClientActivitySheet(sheet) || isClientComparisonSheet(sheet) || isImportedPaymentsSheet(sheet) || isSalesXyzSheet(sheet) || isRevenueComparisonSheet(sheet) || isBuyerSalesShareSheet(sheet) || isReturnComparisonSheet(sheet)) return Array.from({ length: columnCount }, () => false)
   const grandTotal = sheet?.rows.find((row) => row.kind === 'total')
@@ -331,12 +336,14 @@ export function detectDelimiter(text: string): ',' | '\t' | ';' {
 
 export function parseDelimitedText(text: string, delimiter: string): SpreadsheetCellValue[][] {
   const clean = text.replace(/^\uFEFF/, '')
-  const currentMatrix = isCurrentVparivanieTitle(parseDelimitedLine(clean.split(/\r?\n/, 1)[0] ?? '', delimiter)[0]?.trim() ?? '')
-  // The seven display attributes remain text, including digit-only articles and sizes.
-  // This route also retains quoted multiline descriptions in our own exported CSV.
-  const records = currentMatrix ? currentVparivanieCsvRecords(clean) : clean.split(/\r?\n/)
+  const title = parseDelimitedLine(clean.split(/\r?\n/, 1)[0] ?? '', delimiter)[0]?.trim() ?? ''
+  const currentMatrix = isCurrentVparivanieTitle(title), analysis = title === CURRENT_VPARIVANIE_ANALYSIS_TITLE
+  // Product attributes and grouped dimensions retain exact text, including leading-zero articles.
+  const records = currentMatrix || analysis ? currentVparivanieCsvRecords(clean) : clean.split(/\r?\n/)
+  const rowLine = analysis ? records.map(line => parseDelimitedLine(line, delimiter)[0]).find(line => line?.startsWith('Рядки: ')) : undefined
+  const textColumns = currentMatrix ? 7 : rowLine?.slice('Рядки: '.length).split(', ').length ?? 0
   return records.map(line => parseDelimitedLine(line, delimiter).map((cell, index) =>
-    currentMatrix && index < 7 ? cell : normalizeCellValue(cell)))
+    index < textColumns ? cell : normalizeCellValue(cell)))
 }
 
 function currentVparivanieCsvRecords(text: string): string[] {

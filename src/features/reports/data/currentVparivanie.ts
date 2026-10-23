@@ -1,3 +1,4 @@
+import { currentVparivanieAnalysisCapability, currentVparivanieAnalysisScopeError, currentVparivanieAnalysisLayoutError, requestCurrentVparivanieAnalysis, withCurrentVparivanieAnalysisScope } from './currentVparivanieAnalysis'
 import type { ReportDataset, ReportFilterCondition, ReportRequestBody } from '../types'
 import { revenueExactId } from './revenueComparison'
 import { movementSelection, movementSelectionError } from './currentVparivanieMovements'
@@ -97,6 +98,7 @@ export function currentVparivanieFullScope(data: ReportRequestBody): boolean {
 /** Physical movements need the complete selected product census, including movement-only products.
  * Preserve malformed aliases so validation refuses them instead of repairing an ambiguous request. */
 export function withCurrentVparivanieMovementScope(data: ReportRequestBody): ReportRequestBody {
+  data = withCurrentVparivanieAnalysisScope(data)
   if (data.dataSource !== CURRENT_VPARIVANIE_SOURCE) return data
   let selection
   try { selection = movementSelection(data) } catch { return data }
@@ -131,6 +133,11 @@ export function currentVparivanieManagerSupported(dataset: ReportDataset): boole
 }
 
 export function isCurrentVparivanieDataset(dataset: ReportDataset): boolean {
+  if (currentVparivanieAnalysisCapability(dataset)) return dataset.DataSource === 39 && dataset.PeriodRequired === true
+    && dataset.PeriodSupported === true && isCurrentVparivanieCapability(dataset.currentVparivanie)
+    && [5, 74].every(type => dataset.Groupings.some(f => f.Type === type && f.Selectable !== false))
+    && dataset.Measurements.length === 1 && dataset.Measurements[0].Type === 83
+    && dataset.Filters.some(f => f.Type === 1) && dataset.Filters.some(f => f.Type === 4)
   return dataset.DataSource === CURRENT_VPARIVANIE_SOURCE && dataset.PeriodRequired === true && dataset.PeriodSupported === true
     && isCurrentVparivanieCapability(dataset.currentVparivanie)
     && dataset.Groupings.map(item => item.Type).join(',') === '5,74,75'
@@ -155,6 +162,8 @@ function validDate(value: string): boolean {
 /** Validate scope independently so unfinished workspace drafts remain editable. */
 export function currentVparivanieScopeError(data: ReportRequestBody, dataset?: ReportDataset): string | null {
   data = withCurrentVparivanieMovementScope(data)
+  const analysisError = currentVparivanieAnalysisScopeError(data, dataset)
+  if (analysisError) return analysisError
   const movementError = movementSelectionError(data, dataset)
   if (movementError) return movementError
   const modes = Object.entries(data).filter(([key]) => key.toLowerCase() === 'currentvparivaniefullscope')
@@ -184,6 +193,7 @@ export function currentVparivanieConfigurationError(data: ReportRequestBody, dat
     if (!originalScope) return 'Період продажів «Аналіз залишків і продажів» — не більше 366 днів. Зменште період.'
   }
   if (Object.entries(data).some(([key, value]) => forbidden.has(key.toLowerCase()) && value != null)) return invalid
+  if (requestCurrentVparivanieAnalysis(data)) return currentVparivanieAnalysisLayoutError(data, dataset)
   const sorted = data.sorted
   if (!sorted || !Array.isArray(sorted.Row) || sorted.Row.map(item => item.type).join(',') !== '5'
     || !Array.isArray(sorted.Col) || sorted.Col.map(item => item.type).join(',') !== '74,75'
