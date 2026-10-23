@@ -1,23 +1,20 @@
 import { departmentPaceColor } from '../metricPresentation'
 import { CockpitSourceStatus } from '../components/CockpitSourceStatus'
 import {
-  ActionIcon,
   Alert,
-  Badge,
   Button,
   Card,
   Group,
   Progress,
   Stack,
   Text,
-  Tooltip,
   UnstyledButton,
 } from '@mantine/core'
-import { CircleAlert, Map, Radio, RefreshCw } from 'lucide-react'
+import { CircleAlert, Info, Map, RefreshCw, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ApiError } from '../../../shared/api/apiClient'
-import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
+import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
@@ -37,13 +34,8 @@ import './head-dashboard-page.css'
 
 const POLL_INTERVAL_MS = 60_000
 
-// Maps urgency to the shared outlined-pill variant (docs/ui-patterns.md §4);
-// normal keeps the default blue pill.
-const URGENCY_PILL: Record<CockpitUrgency, string> = {
-  critical: 'is-red',
-  high: 'is-orange',
-  normal: '',
-  low: 'is-gray',
+const URGENCY_TONE: Record<CockpitUrgency, TableChipTone> = {
+  critical: 'danger', high: 'warning', normal: 'document', low: 'neutral',
 }
 
 const URGENCY_LABEL: Record<CockpitUrgency, string> = {
@@ -53,12 +45,8 @@ const URGENCY_LABEL: Record<CockpitUrgency, string> = {
   low: 'Низький',
 }
 
-// Progress color (green/orange/red/gray) → shared pill variant for the plan chip.
-const PROGRESS_PILL: Record<string, string> = {
-  gray: 'is-gray',
-  green: 'is-green',
-  orange: 'is-orange',
-  red: 'is-red',
+const PROGRESS_TONE: Record<string, TableChipTone> = {
+  gray: 'neutral', green: 'success', orange: 'warning', red: 'danger',
 }
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
@@ -170,15 +158,11 @@ function HeadDashboardPageContent() {
           <Stack className="cockpit-head-title" gap={3}>
             <Group gap={6} wrap="nowrap">
               <Text className="app-section-title" component="h1" fw={600} size="sm">{t('Дашборд відділу продажів')}</Text>
-              <AiFeatureBadge compact size="sm" tooltip={t('AI-сервіс керівника продажів')} />
             </Group>
-            <Text c="dimmed" size="xs">{t('Поточний стан команди та задач')}</Text>
           </Stack>
 
           <Group className="app-filter-actions cockpit-command-actions" gap={10} justify="flex-end">
-            <Badge className={`app-role-pill ${error ? 'is-orange' : 'is-gray'}`} leftSection={<Radio size={12} />} variant="light">
-              {t(error ? 'Не вдалося оновити' : isLoading ? 'Оновлення…' : team.as_of ? 'Оновлюється щохвилини' : 'Немає даних')}
-            </Badge>
+            <TableChip tone={error ? 'warning' : 'neutral'} value={t(error ? 'Не вдалося оновити' : isLoading ? 'Оновлення…' : team.as_of ? 'Оновлюється щохвилини' : 'Немає даних')} />
             <Button color="brand" variant="filled" size="sm"
               className="cockpit-toolbar-button app-filter-primary-action"
               leftSection={<Map size={16} />}
@@ -186,11 +170,7 @@ function HeadDashboardPageContent() {
             >
               {t('Карта продажів і боргу')}
             </Button>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={triggerReload}>
-                <RefreshCw size={18} />
-              </ActionIcon>
-            </Tooltip>
+            <Button leftSection={<RefreshCw size={16} />} loading={isLoading} variant="default" onClick={triggerReload}>{t('Оновити')}</Button>
           </Group>
         </div>
       </Card>
@@ -211,7 +191,6 @@ function HeadDashboardPageContent() {
                 <div className="cockpit-head-section-heading">
                   <div>
                     <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Результат відділу')}</Text>
-                    <Text c="dimmed" size="xs">{t('Історичний орієнтир, темп на дату та результат AI-задач')}</Text>
                   </div>
                   {hasAiHistoryLineage(team) && <AiHistoryLineageNote lineage={team} />}
                 </div>
@@ -259,7 +238,6 @@ function HeadDashboardPageContent() {
               </Stack>
 
               <Stack className="cockpit-head-main" gap={8}>
-                <Text size="xs" c="dimmed">Історичний орієнтир за поточною клієнтською базою менеджера; передача клієнта змінює цей зріз. Це не персональна історична виручка і не затверджений план. Темп розподілено за умовним календарем Пн–Сб; свята не враховано. Повнота імпорту не підтверджена.</Text>
                 <HeadCoachingPanel managerId={selectedManagerId} onManagerChange={setSelectedManagerId} managers={rows.map(row => ({ id: row.manager_id, name: managerName(row) }))} onChanged={triggerReload} />
                 <HeadTaskBoard
                   managerId={selectedManagerId}
@@ -298,16 +276,13 @@ function DepartmentMetric({
     <div className={`cockpit-head-kpi is-${accent}`}>
       <Group gap="xs" justify="space-between" wrap="nowrap">
         <span className="cockpit-head-kpi__label">{label}</span>
-        <Badge className={`app-role-pill ${PROGRESS_PILL[progressColor] ?? 'is-gray'}`} size="sm" variant="light">
-          {target > 0 ? `${percent}% ${t('орієнтира')}` : t('Орієнтир відсутній')}
-        </Badge>
+        <TableChip tone={PROGRESS_TONE[progressColor] ?? 'neutral'} title={t('Частка історичного орієнтира')} value={target > 0 ? `${percent}%` : t('Орієнтир відсутній')} />
       </Group>
       <div className="cockpit-head-kpi__value">{formatMoney(value)}</div>
       <Group gap="xs" justify="space-between" wrap="nowrap">
         <span className="cockpit-head-kpi__sub">
           {t('Орієнтир')}: <span className="app-money">{formatMoney(target)}</span>
         </span>
-        <strong className="cockpit-head-kpi__percent">{target > 0 ? `${percent}%` : '—'}</strong>
       </Group>
       <Progress color={progressColor} radius="xl" size={4} value={Math.min(percent, 100)} />
     </div>
@@ -352,12 +327,17 @@ function TeamMonitor({
       <Group className="cockpit-side-header" gap="xs" justify="space-between">
         <div>
           <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Команда')}</Text>
-          <Text c="dimmed" size="xs">{t('Натисніть на менеджера, щоб побачити його задачі')}</Text>
+
         </div>
         {selectedManagerId !== null ? (
-          <Button color="orange" size="compact-xs" variant="subtle" onClick={() => onSelect(null)}>{t('Усі')}</Button>
+          <Button leftSection={<RotateCcw size={13} />} size="compact-xs" variant="default" onClick={() => onSelect(null)}>{t('Усі')}</Button>
         ) : null}
       </Group>
+
+      <details className="cockpit-head-data-note">
+        <summary><Info size={13} />{t('Про дані')}</summary>
+        <Text size="xs" c="dimmed">{t('Історичний орієнтир за поточною клієнтською базою менеджера; передача клієнта змінює цей зріз. Це не персональна історична виручка і не затверджений план. Темп розподілено за умовним календарем Пн–Сб; свята не враховано. Повнота імпорту не підтверджена.')}</Text>
+      </details>
 
       {isLoading && rows.length === 0 ? (
         <div className="cockpit-side-empty">{t('Завантаження')}</div>
@@ -370,15 +350,14 @@ function TeamMonitor({
             return (
               <UnstyledButton
                 key={row.manager_id}
+                title={t('Показати задачі менеджера')}
                 aria-pressed={selected}
                 className={`cockpit-manager-row${selected ? ' is-selected' : ''}`}
                 onClick={() => onSelect(selected ? null : row.manager_id)}
               >
                 <Group gap="xs" justify="space-between" wrap="nowrap">
                   <Text className="cockpit-manager-row__name">{managerName(row)}</Text>
-                  <Badge className={`app-role-pill ${row.tasks.active > 0 ? 'is-orange' : 'is-gray'}`} size="sm" variant="light">
-                    {row.tasks.active} {t('активних')}
-                  </Badge>
+                  <TableChip value={`${row.tasks.active} ${t('активних')}`} />
                 </Group>
                 <div className="cockpit-manager-row__metrics">
                   <span>{t('Накладні, брутто')} <strong className={paceClass(row.target.shipped.pace_status)}>{row.target.shipped.pace_status === 'no_target' ? t('Немає орієнтира') : formatPercent(row.target.shipped.attainment_pct)}</strong></span>
@@ -402,9 +381,9 @@ function EscalationsPanel({ escalated }: { escalated: EscalatedResponse }) {
       <Group className="cockpit-side-header" gap="xs" justify="space-between">
         <div>
           <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Потребують уваги')}</Text>
-          <Text c="dimmed" size="xs">{t('Прострочені та ескальовані задачі')}</Text>
+
         </div>
-        <Badge className={`app-role-pill ${escalated.count > 0 ? 'is-red' : 'is-gray'}`} variant="light">{escalated.count}</Badge>
+        <TableChip tone={escalated.count > 0 ? 'danger' : 'neutral'} value={escalated.count} />
       </Group>
 
       {escalated.tasks.length === 0 ? (
@@ -425,9 +404,7 @@ function EscalatedRow({ task }: { task: EscalatedTask }) {
     <div className="cockpit-escalated-row">
       <Group gap="xs" justify="space-between" wrap="nowrap">
         <Text className="cockpit-escalated-title">{task.title || t('Завдання')}</Text>
-        <Badge className={`app-role-pill ${urgencyPill(task.urgency)}`.trim()} size="sm" variant="light">
-          {urgencyLabel(task.urgency, t)}
-        </Badge>
+        <TableChip tone={URGENCY_TONE[task.urgency ?? 'normal']} value={urgencyLabel(task.urgency, t)} />
       </Group>
       <Text className="cockpit-escalated-client">{task.client_name || t('Клієнт не вказаний')}</Text>
     </div>
@@ -436,10 +413,6 @@ function EscalatedRow({ task }: { task: EscalatedTask }) {
 
 function managerName(row: HeadTeamRow): string {
   return row.manager_name?.trim() || `#${row.manager_id}`
-}
-
-function urgencyPill(urgency?: CockpitUrgency): string {
-  return urgency ? URGENCY_PILL[urgency] : ''
 }
 
 function urgencyLabel(urgency: CockpitUrgency | undefined, t: (key: string) => string): string {

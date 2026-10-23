@@ -1,4 +1,6 @@
-import { Alert, Badge, Button, Card, Group, Loader, Pagination, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Card, Group, Loader, Pagination, Stack, Text, TextInput } from '@mantine/core'
+import { ClipboardList, History, MessageSquare, RefreshCw, RotateCcw, Search } from 'lucide-react'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { useDebouncedValue } from '@mantine/hooks'
 import { useCallback, useReducer, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -25,19 +27,30 @@ export function WorkdayQueue({ revision, paused, actions, onContact }: {
   }, [debounced])
   const state = useWorkdayResource(load, `${debounced.bucket}:${debounced.search}:${debounced.page}:${revision}:${retry}`, paused || details !== null)
   const loading = state.loading || debounced !== filter
-  return <Stack gap="sm" style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
-    <Group justify="space-between"><Text fw={600}>{t('Робоча черга клієнтів')}</Text><Group gap="xs">
-      <Button aria-label={t('Скинути фільтри черги')} variant="default" disabled={filter.bucket === 'all' && !filter.search && filter.page === 1} onClick={() => setFilter({ bucket: 'all', search: '', page: 1 })}>{t('Скинути')}</Button>
-      <Button variant="default" onClick={refresh}>{t('Оновити чергу')}</Button>
-    </Group></Group>
-    <Text size="sm" c="dimmed">{t('Один клієнт — одна картка з усіма активними задачами та останньою домовленістю. Спочатку прострочені, далі сьогодні. Час Києва.')}</Text>
-    <TextInput label={t('Пошук у робочій черзі')} placeholder={t('Клієнт, завдання або наступна дія')} maxLength={200} value={filter.search} onChange={(event) => setFilter({ ...filter, search: event.currentTarget.value, page: 1 })} />
-    <Group gap="xs">{Object.entries(WORKDAY_BUCKETS).map(([bucket, label]) => <Button key={bucket} size="xs" aria-pressed={filter.bucket === bucket} variant={filter.bucket === bucket ? 'filled' : 'light'} onClick={() => setFilter({ ...filter, bucket: bucket as WorkdayBucket, page: 1 })}>{t(label)}{state.data && !loading ? ` (${state.data.counts[bucket as WorkdayBucket]})` : ''}</Button>)}</Group>
+  return <Stack gap={8} className="cockpit-workday-queue">
+    <Group justify="space-between" gap={8}>
+      <Text className="app-section-title" fw={600}>{t('Робоча черга клієнтів')}</Text>
+      {state.data && !loading && <Group gap={6}>
+        <Text className="cockpit-workday-asof">{t('Станом на')}: {state.data.as_of}</Text>
+        <TableChip value={`${t('Карток у черзі')}: ${state.data.total}`} />
+      </Group>}
+    </Group>
+    <div className="app-filter-bar cockpit-workday-toolbar">
+      <div className="app-filter-field cockpit-workday-search">
+        <TextInput leftSection={<Search size={16} />} label={t('Пошук у робочій черзі')} placeholder={t('Клієнт, завдання або наступна дія')} maxLength={200} value={filter.search} onChange={(event) => setFilter({ ...filter, search: event.currentTarget.value, page: 1 })} />
+      </div>
+      <Button leftSection={<RotateCcw size={16} />} aria-label={t('Скинути фільтри черги')} variant="default" disabled={filter.bucket === 'all' && !filter.search && filter.page === 1} onClick={() => setFilter({ bucket: 'all', search: '', page: 1 })}>{t('Скинути')}</Button>
+      <Button leftSection={<RefreshCw size={16} />} variant="default" onClick={refresh}>{t('Оновити чергу')}</Button>
+    </div>
+    <div className="cockpit-workday-buckets" role="group" aria-label={t('Статус робочої черги')}>
+      {Object.entries(WORKDAY_BUCKETS).map(([bucket, label]) => <button type="button" key={bucket} aria-label={`${t(label)}${state.data && !loading ? ` (${state.data.counts[bucket as WorkdayBucket]})` : ''}`} className="cockpit-workday-bucket" aria-pressed={filter.bucket === bucket} onClick={() => setFilter({ ...filter, bucket: bucket as WorkdayBucket, page: 1 })}>
+        {t(label)}{state.data && !loading && <TableChip value={state.data.counts[bucket as WorkdayBucket]} />}
+      </button>)}
+    </div>
     {loading ? <Loader aria-label={t('Завантаження робочої черги')} /> : state.error ? <Alert color="red">{state.error}</Alert> : state.data ? <>
-      <Text size="xs" c="dimmed">{t('Станом на')}: {state.data.as_of} · {t('Карток у черзі')}: {state.data.total}</Text>
-      {!state.data.total && <Text role="status">{t('За цими умовами роботи немає. Змініть фільтри або запишіть контакт у «Мої клієнти».')}</Text>}
-      {state.data.rows.map((row) => <Card key={row.key} withBorder padding="sm"><Stack gap={6}>
-        <Group justify="space-between"><Text fw={600}>{row.client_name || t('Завдання без клієнта')}</Text><Badge>{t(WORKDAY_BUCKETS[row.bucket])}</Badge></Group>
+      {!state.data.total && <div className="cockpit-workday-empty" role="status"><ClipboardList size={24} /><Text size="sm">{t('За цими умовами роботи немає. Змініть фільтри або запишіть контакт у «Мої клієнти».')}</Text></div>}
+      {state.data.rows.map((row) => <Card key={row.key} className="cockpit-workday-client" withBorder padding="sm"><Stack gap={6}>
+        <Group justify="space-between"><Text fw={600}>{row.client_name || t('Завдання без клієнта')}</Text><TableChip value={t(WORKDAY_BUCKETS[row.bucket])} tone={row.bucket === 'overdue' ? 'danger' : row.bucket === 'today' ? 'warning' : 'neutral'} /></Group>
         <Text size="sm">{t('Відповідальний')}: {row.manager_name || `#${row.manager_id}`} · {t('Активних задач')}: {row.task_count} · {t('У роботі')}: {row.in_progress_count} · {t('Від керівника')}: {row.manual_count}</Text>
         <Text size="sm">{t('Найближча дія')}: {row.due_at ? `${formatContactDate(row.due_at)} (${t('Київ')})` : t('Без дати')}</Text>
         {row.primary_task && <><Text size="sm" fw={500}>{row.primary_task.title || t('Завдання')}</Text>{row.primary_task.reason && <Text size="sm" c="dimmed">{row.primary_task.reason}</Text>}</>}
@@ -47,8 +60,8 @@ export function WorkdayQueue({ revision, paused, actions, onContact }: {
         </>}
         {!row.latest_contact && <Text size="sm" c="dimmed">{t('Контактів ще немає')} · {t('Наступну домовленість не визначено')}</Text>}
         {!row.can_contact && <Text size="xs" c="dimmed">{t('Клієнт поза вашим поточним списком. Доступні лише ваші завдання.')}</Text>}
-        <Group justify="flex-end"><Button size="xs" variant="light" onClick={() => setDetails(row)}>{t('Завдання та історія')}</Button>
-          {row.can_contact && row.client_id !== null && <Button size="xs" variant="light" onClick={() => onContact({ client_id: row.client_id!, client_name: row.client_name })}>{t(actions.canAddNote ? 'Записати контакт та історія' : 'Історія контактів')}</Button>}
+        <Group justify="flex-end"><Button size="xs" variant="default" leftSection={<History size={14} />} onClick={() => setDetails(row)}>{t('Завдання та історія')}</Button>
+          {row.can_contact && row.client_id !== null && <Button size="xs" variant="default" leftSection={<MessageSquare size={14} />} onClick={() => onContact({ client_id: row.client_id!, client_name: row.client_name })}>{t(actions.canAddNote ? 'Записати контакт та історія' : 'Історія контактів')}</Button>}
         </Group>
       </Stack></Card>)}
       {state.data.total > 20 && <Pagination value={filter.page} total={Math.ceil(state.data.total / 20)} onChange={(page) => setFilter({ ...filter, page })} />}

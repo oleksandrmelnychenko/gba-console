@@ -1,4 +1,8 @@
-import { Alert, Anchor, Button, Group, Loader, Modal, Pagination, Stack, Table, Text } from '@mantine/core'
+import { Alert, Anchor, Button, Group, Loader, Pagination, Stack, Text } from '@mantine/core'
+import { Info, RefreshCw } from 'lucide-react'
+import { AppModal } from '../../../shared/ui/AppModal'
+import { TableChip } from '../../../shared/ui/TableChip'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { useCallback, useReducer, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -33,13 +37,13 @@ function QueueModal({ request, expected, onClose }: { request: WorkspaceQueueReq
   const load = useCallback((signal: AbortSignal) => request ? getDashboardQueue({ ...request, offset: (page - 1) * 50 }, signal) : Promise.reject(new Error('Некоректні параметри черги')), [request, page])
   const state = useWorkdayResource(load, `${page}:${retry}`)
   const data = state.data
-  return <Modal opened onClose={onClose} title={data?.label || t('Точна черга показника')} size="xl" closeButtonProps={{ 'aria-label': t('Закрити чергу') }}>
-    <Stack gap="sm">
-      <Group justify="space-between"><Text size="sm">{t('Записи, з яких розраховано показник')}</Text><Button variant="default" size="xs" onClick={refresh}>{t('Оновити чергу')}</Button></Group>
-      <Text size="xs" c="dimmed">{t('Статуси та склад записів актуальні на час читання. Зафіксована дата розрахунку визначає вікові пороги, але не відновлює історичний стан бази.')}</Text>
+  return <AppModal opened onClose={onClose} title={data?.label || t('Точна черга показника')} size="min(1180px, calc(100vw - 32px))" closeButtonProps={{ 'aria-label': t('Закрити чергу') }}>
+    <Stack gap={8}>
+      <Group justify="space-between"><Text size="sm">{t('Записи, з яких розраховано показник')}</Text><Button leftSection={<RefreshCw size={14} />} variant="default" size="xs" onClick={refresh}>{t('Оновити чергу')}</Button></Group>
+      <details className="role-dashboard-data-details"><summary><Info size={14} />{t('Про дані')}</summary><Text size="xs" c="dimmed">{t('Статуси та склад записів актуальні на час читання. Зафіксована дата розрахунку визначає вікові пороги, але не відновлює історичний стан бази.')}</Text></details>
       {state.loading ? <Loader aria-label={t('Завантаження черги')} /> : state.error ? <Alert color="red">{state.error}</Alert> : data ? <QueueContents data={data} expected={expected} page={page} onPage={setPage} /> : null}
     </Stack>
-  </Modal>
+  </AppModal>
 }
 
 function QueueContents({ data, expected, page, onPage }: { data: WorkspaceQueue; expected: string | null; page: number; onPage: (page: number) => void }) {
@@ -53,14 +57,19 @@ function QueueContents({ data, expected, page, onPage }: { data: WorkspaceQueue;
         {[{ key: 'formula', text: data.formula }, { key: 'scope', text: data.scope }].filter(item => item.text).map(item => <Text key={item.key} size="xs">{item.text}</Text>)}
         <Text size="xs" c="dimmed">{t('Одиниця рядка')}: {data.grain}</Text>
         {!data.rows.length && <Text>{data.total === 0 ? t('Записів у цій черзі немає') : t('На цій сторінці записів більше немає. Перейдіть на попередню сторінку.')}</Text>}
-        {data.rows.length > 0 && <Table.ScrollContainer minWidth={620}><Table withTableBorder striped>
-          <Table.Thead><Table.Tr>{['Документ / запис', 'Дата джерела', 'Опис', 'Кількість / сума'].map(label => <Table.Th key={label}>{t(label)}</Table.Th>)}</Table.Tr></Table.Thead>
-          <Table.Tbody>{data.rows.map(row => <Table.Tr key={row.id}>
-            <Table.Td>{row.route && isNavigationPathAllowed(modules, row.route) ? <Anchor href={row.route}>{row.number || `#${row.id}`}</Anchor> : row.number || `#${row.id}`}</Table.Td>
-            <Table.Td>{row.documentDate?.slice(0, 10) || '—'}</Table.Td><Table.Td>{row.description}</Table.Td>
-            <Table.Td>{row.quantity === null ? '—' : number.format(row.quantity)}</Table.Td>
-          </Table.Tr>)}</Table.Tbody>
-        </Table></Table.ScrollContainer>}
+        {data.rows.length > 0 && <DataTable
+          tableId="dashboard-workspace-queue"
+          data={data.rows}
+          getRowId={row => String(row.id)}
+          minWidth={620}
+          columns={[
+            { id: 'document', header: t('Документ / запис'), accessor: row => row.number || `#${row.id}`, width: 180,
+              cell: row => row.route && isNavigationPathAllowed(modules, row.route) ? <Anchor href={row.route}><TableChip tone="document" value={row.number || `#${row.id}`} /></Anchor> : <TableChip tone="document" value={row.number || `#${row.id}`} /> },
+            { id: 'date', header: t('Дата джерела'), accessor: row => row.documentDate || '', width: 140, cell: row => <span className="role-dashboard-source-date">{row.documentDate?.slice(0, 10) || ''}</span> },
+            { id: 'description', header: t('Опис'), accessor: row => row.description, minWidth: 220, fill: true },
+            { id: 'quantity', header: t('Кількість / сума'), accessor: row => row.quantity, width: 160, align: 'right', cell: row => <span className="app-money">{row.quantity === null ? '' : number.format(row.quantity)}</span> },
+          ]}
+        />}
         {(data.total > 50 || page > 1) && <Pagination value={page} total={Math.max(page, Math.ceil(data.total / 50))} onChange={onPage} />}
       </>
 }

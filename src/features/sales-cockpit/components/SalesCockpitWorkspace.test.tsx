@@ -138,7 +138,9 @@ describe('Sales cockpit workspace', () => {
       { manager_id: 1, open_tasks: 12, critical: 1, value_at_risk_eur: 0, ai_active: 4, manual_backlog: 8 },
     ], escalated_count: 0, total_value_at_risk_eur: 0 })
     renderWithTheme(<HeadDashboardChartsPanel reloadKey={0} rows={[]} />)
-    expect(await screen.findByText('Усі активні, включно з відкладеними: 12 · AI-рекомендації: 4 · Ручні завдання: 8')).toBeTruthy()
+    expect((await screen.findByTitle('Усі активні, включно з відкладеними')).textContent).toBe('Активні 12')
+    expect(screen.getByText('AI-рекомендації', { exact: true }).textContent).toBe('AI-рекомендації 4')
+    expect(screen.getByText('Ручні завдання', { exact: true }).textContent).toBe('Ручні завдання 8')
     expect(screen.getAllByTestId('aging-chart')[1].textContent).toBe('[{"manager":"#1","open":12,"critical":1,"ai":4,"manual":8}]')
   })
 

@@ -102,8 +102,7 @@
 
 .login-card .mantine-Input-input:focus-within {
   border-color: var(--login-accent);
-  outline: 2px solid var(--app-focus-border);
-  outline-offset: 2px;
+  outline: none;
 }
 
 .login-card .mantine-Input-input[data-error] { border-color: var(--mantine-color-red-7); }

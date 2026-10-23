@@ -1,7 +1,6 @@
-import { Badge, Card, Group, Stack, Text, Tooltip } from '@mantine/core'
-import { CircleAlert, CircleCheck, Clock3 } from 'lucide-react'
+import { Card, Group, Stack, Text, Tooltip } from '@mantine/core'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { useEffect, useState } from 'react'
-import type { ReactNode } from 'react'
 import { getAiFleetServiceStatus } from '../../ai-fleet/api/aiFleetApi'
 import type { AiFleetServiceStatus, AiFleetState } from '../../ai-fleet/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -63,31 +62,27 @@ export function HeadAiFleetStatus() {
     <Card className="app-section-card cockpit-ai-status" withBorder radius="md" padding={0}>
       <Group align="center" justify="space-between" gap="md" wrap="wrap">
         <Stack gap={2}>
-          <Text className="app-section-title" fw={700}>{t('AI флот продажів')}</Text>
-          <Text c="dimmed" size="xs">
-            {t('gba-nba готує задачі менеджерам, SLA і пріоритети для керівника')}
-          </Text>
+          <Text className="app-section-title" fw={700}>{t('Сервіс продажів')}</Text>
+
         </Stack>
 
         <Group gap="xs" wrap="wrap">
           <StateBadge
-            icon={<CircleCheck size={13} />}
             label={t('API')}
             message={health?.message}
             state={isLoading && !health ? 'unknown' : health?.state ?? 'unknown'}
           />
           <StateBadge
-            icon={<Clock3 size={13} />}
             label="05:00"
             message={buildWarmupMessage(warmup?.message, warmup?.lastStartedAtUtc, warmup?.lastFinishedAtUtc, t)}
             state={isLoading && !warmup ? 'unknown' : warmup?.state ?? 'unknown'}
           />
-          <Badge className="app-role-pill is-gray" variant="light">
-            {finishedAtLabel ? `${t('фініш')} ${finishedAtLabel}` : t('05:00 ще не фіксувався')}
-          </Badge>
-          <Badge className="app-role-pill is-gray" variant="light">
-            {lastUpdated ? relativeUpdatedLabel(lastUpdated, t) : t('оновлення')}
-          </Badge>
+          <Text className="cockpit-workday-asof">
+            {finishedAtLabel ? `${t('Завершено')}: ${finishedAtLabel}` : t('05:00 ще не фіксувався')}
+          </Text>
+          <Text className="cockpit-workday-asof">
+            {lastUpdated ? `${t('Перевірено')}: ${formatDateTime(new Date(lastUpdated).toISOString())}` : t('Оновлення…')}
+          </Text>
         </Group>
       </Group>
     </Card>
@@ -95,23 +90,19 @@ export function HeadAiFleetStatus() {
 }
 
 function StateBadge({
-  icon,
   label,
   message,
   state,
 }: {
-  icon: ReactNode
   label: string
   message?: string
   state: AiFleetState
 }) {
   const { t } = useI18n()
-  const color = state === 'healthy' ? 'green' : state === 'down' ? 'red' : 'gray'
+  const tone = state === 'healthy' ? 'success' : state === 'down' ? 'danger' : 'neutral'
   const text = state === 'healthy' ? t('OK') : state === 'down' ? t('Down') : t('Немає даних')
   const badge = (
-    <Badge color={color} leftSection={state === 'down' ? <CircleAlert size={13} /> : icon} variant="light">
-      {label}: {text}
-    </Badge>
+    <TableChip tone={tone} value={`${label}: ${text}`} />
   )
 
   if (!message) {
@@ -120,19 +111,9 @@ function StateBadge({
 
   return (
     <Tooltip label={message} multiline openDelay={250} w={280}>
-      {badge}
+      <span>{badge}</span>
     </Tooltip>
   )
-}
-
-function relativeUpdatedLabel(lastUpdated: number, t: (key: string, params?: Record<string, number>) => string): string {
-  const seconds = Math.max(0, Math.floor((Date.now() - lastUpdated) / 1_000))
-
-  if (seconds < 5) {
-    return t('щойно')
-  }
-
-  return t('{seconds} с тому', { seconds })
 }
 
 function buildWarmupMessage(

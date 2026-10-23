@@ -1,7 +1,5 @@
 import {
-  ActionIcon,
   Alert,
-  Badge,
   Button,
   Card,
   Group,
@@ -13,23 +11,26 @@ import {
 import { notifications } from '@mantine/notifications'
 import {
   Ban,
+  CircleCheck,
+  CirclePlay,
+  ListTodo,
   CircleAlert,
-  CircleDashed,
   ClipboardList,
   ClipboardPen,
   Clock3,
   MessageSquare,
-  MessageSquarePlus,
   Plus,
   RefreshCw,
   Repeat,
   Shuffle,
-  Sparkles,
+  ListRestart,
   UserMinus,
   UserPlus,
   Wallet,
   type LucideIcon,
 } from 'lucide-react'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
+import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
@@ -56,21 +57,21 @@ const PAGE_SIZE = 50
 type BoardStatus = 'ready' | 'open' | 'in_progress' | 'done' | 'dismissed'
 type TFn = (key: string, params?: Record<string, number | string>) => string
 
-const STATUS_TABS: { value: BoardStatus; label: string; count: (status: HeadTaskByStatus) => number }[] = [
-  { value: 'ready', label: 'Готові', count: (status) => status.Open + status.InProgress },
-  { value: 'open', label: 'Нові', count: (status) => status.Open },
-  { value: 'in_progress', label: 'В роботі', count: (status) => status.InProgress },
-  { value: 'done', label: 'Виконано', count: (status) => status.Done },
-  { value: 'dismissed', label: 'Неактуальні', count: (status) => status.Dismissed },
+const STATUS_TABS: { value: BoardStatus; label: string; icon: LucideIcon; count: (status: HeadTaskByStatus) => number }[] = [
+  { value: 'ready', label: 'Готові', icon: ClipboardList, count: (status) => status.Open + status.InProgress },
+  { value: 'open', label: 'Нові', icon: ListTodo, count: (status) => status.Open },
+  { value: 'in_progress', label: 'В роботі', icon: CirclePlay, count: (status) => status.InProgress },
+  { value: 'done', label: 'Виконано', icon: CircleCheck, count: (status) => status.Done },
+  { value: 'dismissed', label: 'Неактуальні', icon: Ban, count: (status) => status.Dismissed },
 ]
 
 // Urgency → shared outlined-pill variant (docs/ui-patterns.md §4);
 // normal keeps the default blue pill.
-const URGENCY_PILL: Record<string, string> = {
-  critical: 'is-red',
-  high: 'is-orange',
-  normal: '',
-  low: 'is-gray',
+const URGENCY_PILL: Record<string, TableChipTone> = {
+  critical: 'danger',
+  high: 'warning',
+  normal: 'document',
+  low: 'neutral',
 }
 
 const URGENCY_LABEL: Record<string, string> = {
@@ -369,9 +370,7 @@ export function HeadTaskBoard({
       <Group align="center" className="cockpit-board-header" gap="sm" justify="space-between" wrap="wrap">
         <Group gap="xs">
           <Text className="app-section-title" fw={600} size="sm">{t('Черга задач')}</Text>
-          <Badge className="app-role-pill is-orange" leftSection={<CircleDashed size={12} />} variant="light">
-            {t('наживо')}
-          </Badge>
+          <TableChip value={t('Оновлюється щохвилини')} />
         </Group>
 
         <Group gap="xs">
@@ -382,20 +381,19 @@ export function HeadTaskBoard({
         </Group>
       </Group>
 
-      <div className="pill-tabs cockpit-board-tabs" role="tablist" aria-label={t('Статуси задач')}>
+      <div className="app-screen-tabs" role="tablist" aria-label={t('Статуси задач')}>
         {STATUS_TABS.map((tab) => (
           <button
             key={tab.value}
-            className={`pill-tab${tab.value === status ? ' is-active' : ''}`}
+            className={`app-screen-tab${tab.value === status ? ' is-active' : ''}`}
             role="tab"
             type="button"
             aria-selected={tab.value === status}
             onClick={() => handleStatusChange(tab.value)}
           >
+            <tab.icon size={16} aria-hidden="true" />
             {t(tab.label)}
-            <Badge className={`app-role-pill ${tab.value === status ? 'is-orange' : 'is-gray'}`} size="sm" variant="light">
-              {tab.count(data.ByStatus)}
-            </Badge>
+            <TableChip value={tab.count(data.ByStatus)} />
           </button>
         ))}
       </div>
@@ -441,26 +439,14 @@ export function HeadTaskBoard({
           )}
           {canGenerateTasks && (
             <Button color="gray" variant="default" size="sm"
-              leftSection={<Sparkles size={16} />}
+              leftSection={<ListRestart size={16} />}
               loading={isGenerating}
               onClick={handleGenerate}
             >
               {t('Перерахувати AI задачі')}
             </Button>
           )}
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              size={34}
-              variant="light"
-              onClick={() => {
-                triggerReload()
-              }}
-            >
-              <RefreshCw size={18} />
-            </ActionIcon>
-          </Tooltip>
+          <Button leftSection={<RefreshCw size={16} />} variant="default" onClick={triggerReload}>{t('Оновити')}</Button>
         </div>
       </div>
 
@@ -624,23 +610,13 @@ function HeadTaskRow({
       </div>
 
       <div className="cockpit-board-row__badges">
-        <Badge className={`app-role-pill ${urgencyPill(task.Urgency)}`.trim()} size="sm" variant="light">
-          {urgencyLabel(task.Urgency, t)}
-        </Badge>
+        <TableChip tone={urgencyPill(task.Urgency)} value={urgencyLabel(task.Urgency, t)} />
         {task.Status === 'in_progress' ? (
-          <Badge className="app-role-pill is-orange" leftSection={<CircleDashed size={12} />} size="sm" variant="light">
-            {inProgressLabel(task.InProgressSince, t)}
-          </Badge>
+          <TableChip tone="warning" value={inProgressLabel(task.InProgressSince, t)} />
         ) : task.Status !== 'open' ? (
-          <Badge className={`app-role-pill ${statusPill(task.Status)}`.trim()} size="sm" variant="light">
-            {statusLabel(task.Status, t)}
-          </Badge>
+          <TableChip tone={statusPill(task.Status)} value={statusLabel(task.Status, t)} />
         ) : null}
-        {task.SlaBreached ? (
-          <Badge className="app-role-pill is-red" size="sm" variant="light">
-            {t('Прострочено SLA')}
-          </Badge>
-        ) : null}
+        {task.SlaBreached && <TableChip tone="danger" value={t('Прострочено SLA')} />}
       </div>
 
       <div className="cockpit-board-row__updated">
@@ -649,30 +625,8 @@ function HeadTaskRow({
       </div>
 
       <Group className="cockpit-board-row__actions" gap={4} wrap="nowrap">
-        {canAddNote && <Tooltip label={t('Коментар керівника')}>
-          <ActionIcon
-            aria-label={t('Коментар керівника')}
-            color="blue"
-            size="sm"
-            variant="subtle"
-            onClick={() => onAddNote(task)}
-          >
-            <MessageSquarePlus size={16} />
-          </ActionIcon>
-        </Tooltip>}
-        {canDismiss && isManual && isActive && (
-          <Tooltip label={t('Скасувати задачу')}>
-            <ActionIcon
-              aria-label={t('Скасувати задачу')}
-              color="red"
-              size="sm"
-              variant="subtle"
-              onClick={() => onCancel(task)}
-            >
-              <Ban size={16} />
-            </ActionIcon>
-          </Tooltip>
-        )}
+        {canAddNote && <TableRowAction action="edit" label={t('Коментар керівника')} onClick={() => onAddNote(task)} />}
+        {canDismiss && isManual && isActive && <TableRowAction action="cancel" label={t('Скасувати задачу')} onClick={() => onCancel(task)} />}
       </Group>
     </div>
   )
@@ -708,8 +662,8 @@ function buildManagerOptions(managers: HeadTaskManager[]): { value: string; labe
   }))
 }
 
-function urgencyPill(urgency: string | null): string {
-  return (urgency && URGENCY_PILL[urgency]) || ''
+function urgencyPill(urgency: string | null): TableChipTone {
+  return (urgency && URGENCY_PILL[urgency]) || 'document'
 }
 
 function urgencyLabel(urgency: string | null, t: (key: string) => string): string {
@@ -721,13 +675,13 @@ function taskTypeLabel(taskType: string, t: (key: string) => string): string {
 }
 
 // Status → shared outlined-pill variant; open/generated keep the default blue pill.
-const STATUS_PILL: Record<string, string> = {
-  open: '',
-  in_progress: 'is-orange',
-  done: 'is-green',
-  snoozed: 'is-gray',
-  dismissed: 'is-gray',
-  generated: '',
+const STATUS_PILL: Record<string, TableChipTone> = {
+  open: 'document',
+  in_progress: 'warning',
+  done: 'success',
+  snoozed: 'neutral',
+  dismissed: 'neutral',
+  generated: 'document',
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -739,8 +693,8 @@ const STATUS_LABEL: Record<string, string> = {
   generated: 'Нова',
 }
 
-function statusPill(status: string | null): string {
-  return (status && STATUS_PILL[status]) ?? 'is-gray'
+function statusPill(status: string | null): TableChipTone {
+  return (status && STATUS_PILL[status]) || 'neutral'
 }
 
 function statusLabel(status: string | null, t: (key: string) => string): string {

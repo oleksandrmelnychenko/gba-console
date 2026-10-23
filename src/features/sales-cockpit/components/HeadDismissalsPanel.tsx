@@ -1,4 +1,5 @@
-import { Alert, Badge, Group, Loader, Select, Stack, Text } from '@mantine/core'
+import { TableChip } from '../../../shared/ui/TableChip'
+import { Alert, Group, Loader, Select, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -105,7 +106,7 @@ export function HeadDismissalsPanel({ managerId }: { managerId: number | null })
       <Stack gap="sm">
         <Group justify="space-between" wrap="wrap">
           <Group gap="xs">
-            <Text fw={600} size="sm">
+            <Text className="app-section-title" fw={600} size="sm">
               {t('Причини «не актуально»')}
             </Text>
             {!isLoading && data && (
@@ -115,6 +116,7 @@ export function HeadDismissalsPanel({ managerId }: { managerId: number | null })
             )}
           </Group>
           <Select
+            classNames={{ input: 'cockpit-mono-input', option: 'cockpit-mono-input' }}
             aria-label={t('Період')}
             data={WINDOW_OPTIONS}
             size="xs"
@@ -143,9 +145,7 @@ export function HeadDismissalsPanel({ managerId }: { managerId: number | null })
             {data.top_reasons.length > 0 && (
               <Group gap={6} wrap="wrap">
                 {data.top_reasons.slice(0, TOP_REASONS_SHOWN).map((reason) => (
-                  <Badge color="red" key={reason.reason} radius="sm" variant="light">
-                    {reason.reason} · {reason.count}
-                  </Badge>
+                  <TableChip key={reason.reason} value={`${reason.reason} · ${reason.count}`} tone="neutral" />
                 ))}
               </Group>
             )}

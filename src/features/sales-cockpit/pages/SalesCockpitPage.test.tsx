@@ -84,7 +84,7 @@ describe('Sales cockpit server workday queue', () => {
     await screen.findByText('Target unavailable')
     expect(screen.getByText('Клієнт 1')).toBeTruthy()
     fireEvent.change(screen.getByLabelText('Дата розрахунку плану'), { target: { value: '2026-10-01' } })
-    expect(screen.getByText('Черга задач — поточна')).toBeTruthy()
+    expect(screen.getByTitle('Черга задач — поточна')).toBeTruthy()
     await waitFor(() => expect(getCockpitTarget).toHaveBeenLastCalledWith('2026-10-01'))
     expect(getWorkday).toHaveBeenCalledTimes(1)
     fireEvent.click(screen.getByRole('button', { name: 'Згенерувати завдання' }))

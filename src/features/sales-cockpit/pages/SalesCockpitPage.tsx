@@ -1,6 +1,6 @@
 import { CockpitSourceStatus } from '../components/CockpitSourceStatus'
-import { Button, Group, Stack } from '@mantine/core'
-import { ClipboardList, FileText, MessagesSquare, Users } from 'lucide-react'
+import { Button, Stack } from '@mantine/core'
+import { ClipboardList, FileText, ListPlus, MessagesSquare, RefreshCw, Users } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { useCallback, useReducer, useState } from 'react'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
@@ -262,11 +262,10 @@ function SalesCockpitPageContent() {
       ) : (
         <>
           <div className="cockpit-page-content">
-            <Group justify="flex-end">
-              <Button variant="default" onClick={triggerReload}>{t('Оновити')}</Button>
-              {canGenerate && <Button loading={isRegenerating} onClick={handleRegenerate}>{t('Згенерувати завдання')}</Button>}
-            </Group>
-            <WorkdayPlanPanel revision={reloadKey} paused={busy} />
+            <WorkdayPlanPanel revision={reloadKey} paused={busy} toolbarActions={<>
+              <Button variant="default" leftSection={<RefreshCw size={16} />} onClick={triggerReload}>{t('Оновити')}</Button>
+              {canGenerate && <Button leftSection={<ListPlus size={16} />} loading={isRegenerating} onClick={handleRegenerate}>{t('Згенерувати завдання')}</Button>}
+            </>} />
             <WorkdayQueue revision={reloadKey} paused={busy} onContact={setContactClient} actions={taskActions} />
 
             <CockpitDashboardPanel reloadKey={reloadKey} />

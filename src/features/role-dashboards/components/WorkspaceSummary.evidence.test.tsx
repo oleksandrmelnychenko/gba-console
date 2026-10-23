@@ -18,7 +18,7 @@ describe('financial evidence presentation', () => {
     expect(screen.getByText('Немає даних')).toBeTruthy()
     expect(screen.getByText('Історичний курс відсутній')).toBeTruthy()
     expect(screen.queryByText('100%')).toBeNull()
-    expect(screen.getByText(/Час розрахунку не підтверджує/)).toBeTruthy()
+    expect(screen.queryByText(/Час розрахунку не підтверджує/)).toBeNull()
   })
   it('marks expired cached values even when the last response was successful', () => {
     show({ generatedAtUtc: new Date(Date.now() - 301_000).toISOString() })

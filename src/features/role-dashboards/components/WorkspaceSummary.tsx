@@ -91,7 +91,6 @@ export function WorkspaceSummary({
       {error && summary && (
         <Alert className="role-dashboard-inline-alert" color="orange" icon={<CircleAlert size={16} />} variant="light">{error}</Alert>
       )}
-      {summary && <Text size="xs" c="dimmed">{t('Час розрахунку не підтверджує свіжість синхронізації. Повнота джерел показана окремо.')}</Text>}
       {content}
     </section>
   )
@@ -107,8 +106,8 @@ function MetricCard({ metric, onOpen }: { metric: DashboardWorkspaceMetric; onOp
         <Tooltip multiline w={380} label={<MetricEvidence metric={metric} />}>
           <Text className="role-dashboard-kpi-label" lineClamp={2} title={metric.label}>{metric.label}</Text>
         </Tooltip>
-        <Text size="xs" c="dimmed">{t(metricTimeLabel(metric))}</Text>
-        {metric.unknownReason && <Text size="xs" c="orange" lineClamp={2} title={metric.unknownReason}>{metric.unknownReason}</Text>}
+        {metric.timeBasis !== 'unknown' && metric.timeBasis != null && <Text size="xs" c="dimmed">{t(metricTimeLabel(metric))}</Text>}
+        {!metric.hasData && metric.unknownReason && <Text size="xs" c="orange" lineClamp={2} title={metric.unknownReason}>{metric.unknownReason}</Text>}
         <span className="role-dashboard-kpi-value">
           {metric.hasData ? formatted.value : t(formatted.value)}
           {formatted.unit && <span className="role-dashboard-kpi-unit">{formatted.unit}</span>}
@@ -146,6 +145,8 @@ function MetricEvidence({ metric }: { metric: DashboardWorkspaceMetric }) {
     [t('Власник визначення'), metric.owner],
   ]
   return <div>
+    <div>{t(metricTimeLabel(metric))}</div>
+    <div>{t('Час розрахунку не підтверджує свіжість синхронізації. Повнота джерел показана окремо.')}</div>
     <div>{metric.formula || t('Формулу джерела не надано')}</div>
     {details.filter(([, value]) => value).map(([label, value]) => <div key={label}>{label}: {value}</div>)}
     <div>{metric.sourceWatermarkUtc ? `${t('Джерело оновлено')}: ${metric.sourceWatermarkUtc}` : t('Час останньої синхронізації джерела не підтверджено')}</div>

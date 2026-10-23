@@ -884,15 +884,15 @@
 }
 
 .role-dashboard-attention-item.is-critical {
-  background: var(--mantine-color-red-0);
-  border-color: var(--mantine-color-red-2);
+  background: var(--mantine-color-white);
+  border-color: var(--mantine-color-gray-2);
   border-left-color: var(--mantine-color-red-6);
 }
 
 .role-dashboard-attention-item.is-warning {
-  background: var(--mantine-color-orange-0);
-  border-color: var(--mantine-color-orange-2);
-  border-left-color: var(--brand-orange);
+  background: var(--mantine-color-white);
+  border-color: var(--mantine-color-gray-2);
+  border-left-color: var(--mantine-color-yellow-6);
 }
 
 button.role-dashboard-attention-item:hover {
@@ -942,11 +942,11 @@ button.role-dashboard-attention-item:focus-visible {
 }
 
 .role-dashboard-attention-item.is-critical .role-dashboard-attention-value {
-  color: var(--mantine-color-red-8);
+  color: var(--mantine-color-gray-8);
 }
 
 .role-dashboard-attention-item.is-warning .role-dashboard-attention-value {
-  color: var(--mantine-color-orange-8);
+  color: var(--mantine-color-gray-8);
 }
 
 .role-dashboard-attention-value small {
@@ -964,8 +964,8 @@ button.role-dashboard-attention-item:focus-visible {
   gap: 10px;
   padding: 14px;
   color: var(--mantine-color-green-8);
-  background: var(--mantine-color-green-0);
-  border: 1px dashed var(--mantine-color-green-3);
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
 }
 
@@ -1047,11 +1047,11 @@ button.role-dashboard-attention-item:focus-visible {
 }
 
 .role-dashboard-cash-net.is-positive b {
-  color: var(--mantine-color-green-8);
+  color: var(--mantine-color-gray-8);
 }
 
 .role-dashboard-cash-net.is-negative b {
-  color: var(--mantine-color-red-8);
+  color: var(--mantine-color-gray-8);
 }
 
 .role-dashboard-cash-ratio {
@@ -1111,3 +1111,61 @@ button.role-dashboard-attention-item:focus-visible {
     font-size: 21px;
   }
 }
+
+.role-dashboard-sync {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  background: var(--mantine-color-white);
+}
+.role-dashboard-sync__metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+}
+.role-dashboard-sync__metrics dt {
+  font-size: 12px;
+  color: var(--mantine-color-gray-6);
+  margin-bottom: 4px;
+}
+.role-dashboard-sync__metrics dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font: 12px var(--font-mono);
+}
+.role-dashboard-source-details summary {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  width: fit-content;
+  color: var(--mantine-color-gray-6);
+  font: 11px var(--font-mono);
+}
+.role-dashboard-source-details[open] summary { margin-bottom: 6px; }
+@media (max-width: 768px) {
+  .role-dashboard-sync__metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 420px) {
+  .role-dashboard-sync__metrics { grid-template-columns: minmax(0, 1fr); }
+}
+
+.role-dashboard-cash-caption b,
+.role-dashboard-cash-net b { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; font-weight: 600; }
+.role-dashboard-data-details { color: var(--mantine-color-gray-6); font-size: 12px; }
+.role-dashboard-data-details > summary { display: flex; align-items: center; gap: 6px; width: fit-content; cursor: pointer; font-family: var(--font-mono); }
+.role-dashboard-data-details[open] > summary { margin-bottom: 8px; }
+.role-dashboard-source-date { font-family: var(--font-mono); }
+
+.role-dashboard-comparison { display: grid; gap: 3px; min-width: 0; margin-top: 4px; }
+.role-dashboard-comparison > .mantine-Text-root { font-family: var(--font-mono); font-size: 10px; line-height: 1.4; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.role-dashboard-comparison > .role-dashboard-comparison-period { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.role-dashboard-kpi.is-warning .role-dashboard-kpi-value,
+.role-dashboard-kpi.is-critical .role-dashboard-kpi-value { color: var(--mantine-color-gray-8); }

@@ -1,4 +1,5 @@
-import { Alert, Stack, Text } from '@mantine/core'
+import { TableChip } from '../../../shared/ui/TableChip'
+import { Alert, Group, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -143,9 +144,8 @@ export function HeadDashboardChartsPanel({
         <div className="cockpit-head-section-heading">
           <div>
             <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Аналітика навантаження')}</Text>
-            <Text c="dimmed" size="xs">{t('Ризик і активні задачі за менеджерами')}</Text>
           </div>
-          {dashboard?.as_of && <Text size="xs" c="dimmed">{t('Поточний зріз')}: {dashboard.as_of}. {t('Це дата розрахунку, не підтвердження свіжості синхронізації.')}</Text>}
+          {dashboard?.as_of && <Text className="cockpit-workday-asof" title={t('Це дата розрахунку, не підтвердження свіжості синхронізації.')}>{t('Поточний зріз')}: {dashboard.as_of}</Text>}
         </div>
 
         {error && (
@@ -154,8 +154,12 @@ export function HeadDashboardChartsPanel({
           </Alert>
         )}
         {dashboard && (hasCompleteTaskSplit ? (
-          <Text size="sm">{t('Усі активні, включно з відкладеними')}: {dashboard.teams.reduce((sum, team) => sum + team.open_tasks, 0)} · {t('AI-рекомендації')}: {dashboard.teams.reduce((sum, team) => sum + (team.ai_active ?? 0), 0)} · {t('Ручні завдання')}: {dashboard.teams.reduce((sum, team) => sum + (team.manual_backlog ?? 0), 0)}</Text>
-        ) : <Text size="xs" c="dimmed">{t('Поділ активних завдань на AI та ручні недоступний.')}</Text>)}
+          <Group className="cockpit-analytics-counts" gap={12}>
+            <span title={t('Усі активні, включно з відкладеними')}>{t('Активні')} <TableChip value={dashboard.teams.reduce((sum, team) => sum + team.open_tasks, 0)} /></span>
+            <span>{t('AI-рекомендації')} <TableChip value={dashboard.teams.reduce((sum, team) => sum + (team.ai_active ?? 0), 0)} /></span>
+            <span>{t('Ручні завдання')} <TableChip value={dashboard.teams.reduce((sum, team) => sum + (team.manual_backlog ?? 0), 0)} /></span>
+          </Group>
+        ) : <Text className="cockpit-analytics-counts" size="xs" c="dimmed">{t('Поділ активних завдань на AI та ручні недоступний.')}</Text>)}
         {(dashboard?.teams.reduce((sum, team) => sum + (team.debt_unknown_terms_count ?? 0), 0) ?? 0) > 0 && <Alert color="yellow">
           {t('Є документи без визначеного терміну оплати. Вони не входять до відомого простроченого боргу.')}
         </Alert>}

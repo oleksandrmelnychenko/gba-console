@@ -1,7 +1,6 @@
-import { TableChip } from '../../../shared/ui/TableChip'
+import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 import {
   Alert,
-  Badge,
   Button,
   Card,
   Group,
@@ -32,11 +31,11 @@ const PERIOD_OPTIONS = [
   { label: '90 днів', value: '90' },
 ]
 
-const LIFECYCLE_PRESENTATION: Record<OfferLifecycle, { color: string; label: string }> = {
-  ordered: { color: 'green', label: 'Замовлена' },
-  viewed: { color: 'blue', label: 'Переглянута' },
-  expired: { color: 'red', label: 'Протермінована' },
-  sent: { color: 'gray', label: 'Надіслана' },
+const LIFECYCLE_PRESENTATION: Record<OfferLifecycle, { tone: TableChipTone; label: string; summaryLabel: string }> = {
+  ordered: { tone: 'success', label: 'Замовлена', summaryLabel: 'Замовлено' },
+  viewed: { tone: 'document', label: 'Переглянута', summaryLabel: 'Переглянуто' },
+  expired: { tone: 'danger', label: 'Протермінована', summaryLabel: 'Протерміновано' },
+  sent: { tone: 'neutral', label: 'Надіслана', summaryLabel: 'Надіслано' },
 }
 
 export function MyOffersPanel() {
@@ -205,7 +204,7 @@ export function MyOffersPanel() {
         cell: (offer) => (
           <span className="app-money">
             {formatMoney(offer.TotalAmount)}{' '}
-            <span className="app-money-meta">{offer.ClientAgreement?.Agreement?.Currency?.Code ?? 'EUR'}</span>
+            <TableChip tone="source" value={offer.ClientAgreement?.Agreement?.Currency?.Code ?? 'EUR'} />
           </span>
         ),
         align: 'right',
@@ -221,13 +220,11 @@ export function MyOffersPanel() {
           const viewedAt = offer.ViewedAt ? formatDateTime(offer.ViewedAt) : null
 
           return (
-            <Badge
-              className={'app-role-pill' + (presentation.color === 'blue' ? '' : ' is-' + presentation.color)}
+            <TableChip
+              tone={presentation.tone}
               title={viewedAt ? t('Переглянута') + ' ' + viewedAt : undefined}
-              variant="light"
-            >
-              {t(presentation.label)}
-            </Badge>
+              value={t(presentation.label)}
+            />
           )
         },
         width: 130,
@@ -279,29 +276,38 @@ export function MyOffersPanel() {
 
   return (
     <Card className="app-section-card cockpit-panel-card" withBorder padding={0} radius="md">
-      <div className="app-filter-bar cockpit-panel-bar">
-        <div className="cockpit-panel-heading">
+      <div className="cockpit-offers-header">
+        <Group gap={6}>
           <Text className="app-section-title" fw={600} size="sm">{t('Мої пропозиції')}</Text>
-          <Text className="cockpit-panel-meta" size="xs">
-            {isLoading ? t('Завантаження') : visibleOffers.length + ' · ' + t('замовлено') + ' ' + summary.ordered + ' · ' + t('переглянуто') + ' ' + summary.viewed + ' · ' + t('протерміновано') + ' ' + summary.expired}
-          </Text>
+          {!isLoading && !error && <TableChip value={visibleOffers.length} title={t('Всього пропозицій')} />}
+        </Group>
+        {!isLoading && !error && <div className="cockpit-offers-summary" aria-label={t('Статуси пропозицій')}>
+          {(Object.entries(LIFECYCLE_PRESENTATION) as [OfferLifecycle, { tone: TableChipTone; label: string; summaryLabel: string }][]).map(([lifecycle, presentation]) => (
+            <span className="cockpit-offers-summary-item" key={lifecycle}>
+              {t(presentation.summaryLabel)} <TableChip value={summary[lifecycle]} tone={summary[lifecycle] > 0 ? presentation.tone : 'neutral'} />
+            </span>
+          ))}
+        </div>}
+      </div>
+      <div className="app-filter-bar cockpit-panel-bar cockpit-offers-toolbar">
+        <div className="app-filter-field cockpit-offers-period">
+          <Select
+            allowDeselect={false}
+            data={PERIOD_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
+            label={t('Період')}
+            value={periodDays}
+            onChange={(value) => value && setPeriodDays(value)}
+          />
         </div>
-        <Select
-          allowDeselect={false}
-          data={PERIOD_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
-          label={t('Період')}
-          value={periodDays}
-          w={140}
-          onChange={(value) => value && setPeriodDays(value)}
-        />
-        <TextInput
-          label={t('Пошук')}
-          leftSection={<Search size={15} />}
-          placeholder={t('Номер або клієнт')}
-          value={search}
-          w={260}
-          onChange={(event) => setSearch(event.currentTarget.value)}
-        />
+        <div className="app-filter-field cockpit-offers-search">
+          <TextInput
+            label={t('Пошук')}
+            leftSection={<Search size={15} />}
+            placeholder={t('Номер або клієнт')}
+            value={search}
+            onChange={(event) => setSearch(event.currentTarget.value)}
+          />
+        </div>
         <div className="app-filter-actions">
           <Button
             leftSection={<RefreshCw size={16} />}

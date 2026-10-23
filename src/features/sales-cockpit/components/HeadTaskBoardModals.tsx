@@ -1,4 +1,5 @@
 import { Button, Stack, Text, Textarea } from '@mantine/core'
+import { Ban, Save } from 'lucide-react'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -47,12 +48,12 @@ export function BoardNoteModal({
         }
       }}
     >
-      <Stack className="app-compact-form" gap="md">
+      <Stack className="app-compact-form" gap={10}>
         <Text size="sm">{taskCaption(task, t('Завдання'))}</Text>
 
         {(task?.Notes.length ?? 0) > 0 && (
           <Stack gap={4}>
-            <Text c="dimmed" fw={600} size="xs" tt="uppercase">
+            <Text className="app-section-title" fw={600} size="xs">
               {t('Історія нотаток')}
             </Text>
             {task?.Notes.map((note) => (
@@ -83,6 +84,7 @@ export function BoardNoteModal({
             {t('Скасувати')}
           </Button>
           <Button
+            leftSection={<Save size={16} />}
             color={CREATE_ACTION_COLOR}
             disabled={!trimmedText}
             loading={saving}
@@ -131,7 +133,7 @@ export function BoardCancelModal({
         }
       }}
     >
-      <Stack className="app-compact-form" gap="md">
+      <Stack className="app-compact-form" gap={10}>
         <Text size="sm">{taskCaption(task, t('Завдання'))}</Text>
 
         <Textarea
@@ -149,6 +151,7 @@ export function BoardCancelModal({
             {t('Назад')}
           </Button>
           <Button
+            leftSection={<Ban size={16} />}
             color="red"
             loading={saving}
             onClick={() => {

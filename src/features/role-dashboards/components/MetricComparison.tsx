@@ -11,11 +11,11 @@ export function MetricComparison({ metric }: { metric: DashboardWorkspaceMetric 
   const comparison = metric.comparison
   if (!comparison) return null
   const { interval, previous, change } = comparisonText(metric, comparison, t)
-  return <span className="role-dashboard-comparison">
-    <Text component="span" display="block" size="xs" c="dimmed">{t('Попередній період такої самої тривалості')}{interval}</Text>
-    <Text component="span" display="block" size="xs">{t('Попереднє значення')}: {previous}</Text>
-    {change && <Text component="span" display="block" size="xs">{t('Зміна')}: {change}</Text>}
-    {comparison.unknownReason && <Text component="span" display="block" size="xs" c="orange">{t(comparison.unknownReason)}</Text>}
+  return <span className="role-dashboard-comparison" title={`${t('Попередній період такої самої тривалості')}${interval}\n${t('Попереднє значення')}: ${previous}${change ? `\n${t('Зміна')}: ${change}` : ''}${comparison.unknownReason ? `\n${t(comparison.unknownReason)}` : ''}`}>
+    <Text className="role-dashboard-comparison-period" component="span" size="xs" c="dimmed">{t('Попередній період такої самої тривалості')}{interval}</Text>
+    <Text component="span" size="xs">{t('Попереднє значення')}: {previous}</Text>
+    {change && <Text component="span" size="xs">{t('Зміна')}: {change}</Text>}
+    {comparison.unknownReason && <Text component="span" size="xs" c="orange">{t(comparison.unknownReason)}</Text>}
   </span>
 }
 

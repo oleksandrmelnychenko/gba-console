@@ -20,7 +20,7 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert, Link as LinkIcon, RefreshCw, Search, ShoppingCart } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -199,8 +199,8 @@ export function MyClientsPanel({ onContact, onTasks, revision = 0 }: { onContact
 
           return (
             <Group gap={4} justify="flex-end" wrap="nowrap">
-              {onTasks && <Button size="xs" variant="light" onClick={() => onTasks({ client_id: client.client_id, client_name: client.name || client.full_name || `#${client.client_id}` })}>{t('Завдання та історія')}</Button>}
-              {onContact && <Button size="xs" variant="light" onClick={() => onContact({ client_id: client.client_id, client_name: client.name || client.full_name || `#${client.client_id}` })}>{t(canRecordContact ? 'Записати контакт' : 'Історія контактів')}</Button>}
+              {onTasks && <TableRowAction action="history" label={t('Завдання та історія')} onClick={() => onTasks({ client_id: client.client_id, client_name: client.name || client.full_name || `#${client.client_id}` })} />}
+              {onContact && <TableRowAction action={canRecordContact ? 'edit' : 'details'} label={t(canRecordContact ? 'Записати контакт' : 'Історія контактів')} onClick={() => onContact({ client_id: client.client_id, client_name: client.name || client.full_name || `#${client.client_id}` })} />}
               {phone && (
                 <TableRowAction
                   action="call"
@@ -224,7 +224,7 @@ export function MyClientsPanel({ onContact, onTasks, revision = 0 }: { onContact
         },
         align: 'right',
         rowActions: true,
-        width: (onContact ? 250 : 96) + (onTasks ? 185 : 0),
+        width: 72 + (onContact ? 32 : 0) + (onTasks ? 32 : 0),
       },
     ],
     [navigate, t, canRecordContact, onContact, onTasks],
@@ -236,11 +236,11 @@ export function MyClientsPanel({ onContact, onTasks, revision = 0 }: { onContact
         <div className="cockpit-panel-heading">
           <Text className="app-section-title" fw={600} size="sm">{t('Мої клієнти')}</Text>
           <Group gap={6} wrap="nowrap">
-            <Badge className="app-role-pill is-gray" variant="light">{isLoading ? '…' : response?.total ?? '—'}</Badge>
-            <AiFeatureBadge size="sm" tooltip={t('AI-рекомендації товарів для кожного клієнта')} />
+            <TableChip value={isLoading ? '…' : response?.total ?? '—'} />
           </Group>
         </div>
         <Select
+          classNames={{ input: 'cockpit-mono-input', option: 'cockpit-mono-input' }}
           label={t('Сегмент клієнтів')}
           value={segment}
           allowDeselect={false}
@@ -281,7 +281,7 @@ export function MyClientsPanel({ onContact, onTasks, revision = 0 }: { onContact
           getRowId={(client) => String(client.client_id)}
           height="100%"
           isLoading={isLoading}
-          layoutVersion="clients-workday-4"
+          layoutVersion="clients-workday-5"
           minWidth={1180}
           renderExpandedRow={(client) => <Stack gap="xs"><ClientRepeatEvidence client={client} /><ClientRecommendationsInline client={client} onSaleCreated={() => setReloadKey((key) => key + 1)} /></Stack>}
           showLayoutControls
@@ -510,7 +510,7 @@ function ClientRecommendationsForAgreement({
                       leftSection={<LinkIcon size={14} />}
                       loading={isCreatingOffer}
                       size="xs"
-                      variant="light"
+                      variant="default"
                       onClick={handleCreateOffer}
                     >
                       {chosen.length > 0 ? `${t('Створити пропозицію')} (${chosen.length})` : t('Створити пропозицію')}
@@ -520,6 +520,7 @@ function ClientRecommendationsForAgreement({
               )}
               <Tooltip label={t('Термін дії пропозиції')} withArrow>
                 <Select
+                  classNames={{ input: 'cockpit-mono-input', option: 'cockpit-mono-input' }}
                   allowDeselect={false}
                   data={[
                     { value: '1', label: `1 ${t('дн')}` },

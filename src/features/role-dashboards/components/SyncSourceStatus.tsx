@@ -1,4 +1,6 @@
-import { Alert, Card, Stack, Text } from '@mantine/core'
+import { Alert, Group, Text } from '@mantine/core'
+import { Info } from 'lucide-react'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { useEffect, useState } from 'react'
 import { describeSyncSource } from './syncSourceEvidence'
 import { getSyncStatus } from '../../header-actions/api/syncApi'
@@ -30,15 +32,26 @@ export function SyncSourceStatus() {
     return () => { cancelled = true; window.clearInterval(timer) }
   }, [])
   const evidence = status ? describeSyncSource(status) : null
-  return <Card withBorder radius="md" padding="sm"><Stack gap={4}>
-    <Text fw={600}>Синхронізація джерела 1С</Text>
-    {error && <Alert color="orange">{error}</Alert>}
-    <Text size="sm">Стан: {!status ? 'Невідомо' : !status.IsGlobalLockStatusAvailable ? 'Не підтверджено: недоступна перевірка блокування' : status.IsInProgress ? 'Виконується' : 'Активного запуску не виявлено'}</Text>
-    <Text size="sm">Останній підтверджений успішний запуск: {displayInstant(evidence?.lastSuccess)}.</Text>
-    {!evidence?.lastSuccess && <Text size="xs" c="dimmed">Підтвердженого успішного запуску в доступному журналі не надано.</Text>}
-    <Text size="sm">Останній результат: {status?.LastTerminalRun?.Status ?? 'Невідомо'} · завершення: {displayInstant(status?.LastTerminalRun?.CompletedAtUtc)}</Text>
-    <Text size="sm">Прогрес сесії: {evidence?.total == null ? 'Невідомо' : `${evidence.completed} / ${evidence.total} завершених етапів`} · невдалих етапів цієї сесії: {evidence?.total == null ? 'Невідомо' : evidence.failed}</Text>
-    {evidence?.failedStep && <Text size="sm" c="red">Етап збою: {evidence.failedStep}</Text>}
-    <Text size="xs" c="dimmed">Затримка бізнес-джерела та загальна кількість помилок невідомі: статус запуску не містить підтвердженого часу останньої зміни у 1С або повного журналу помилок. Прогрів AI не є синхронізацією 1С.</Text>
-  </Stack></Card>
+  const runStatus = status?.LastTerminalRun?.Status
+  const runLabel = runStatus === 'Finished' ? 'Завершено' : runStatus === 'Failed' ? 'Помилка' : runStatus === 'Running' ? 'Виконується' : runStatus || 'Невідомо'
+  const currentLabel = !status ? 'Невідомо' : !status.IsGlobalLockStatusAvailable ? 'Стан не підтверджено' : status.IsInProgress ? 'Виконується' : 'Немає активного запуску'
+  return <section className="role-dashboard-sync" aria-label="Синхронізація 1С">
+    <Group justify="space-between" gap={8}>
+      <Text className="app-section-title" fw={600}>Синхронізація 1С</Text>
+      <TableChip value={currentLabel} tone={!status || !status.IsGlobalLockStatusAvailable ? 'warning' : status.IsInProgress ? 'document' : 'neutral'} />
+    </Group>
+    {error && <Alert color="yellow">{error}</Alert>}
+    <dl className="role-dashboard-sync__metrics">
+      <div><dt>Успішний запуск</dt><dd>{displayInstant(evidence?.lastSuccess)}</dd></div>
+      <div><dt>Останній результат</dt><dd><TableChip value={runLabel} tone={runStatus === 'Finished' ? 'success' : runStatus === 'Failed' ? 'danger' : 'neutral'} /><span>{displayInstant(status?.LastTerminalRun?.CompletedAtUtc)}</span></dd></div>
+      <div><dt>Завершено етапів</dt><dd><TableChip value={evidence?.total == null ? 'Невідомо' : `${evidence.completed} / ${evidence.total}`} /></dd></div>
+      <div><dt>Збоїв у сесії</dt><dd><TableChip value={evidence?.total == null ? 'Невідомо' : evidence.failed} tone={evidence?.failed ? 'danger' : 'neutral'} /></dd></div>
+    </dl>
+    {evidence?.failedStep && <Text size="xs" c="red">Етап збою: {evidence.failedStep}</Text>}
+    <details className="role-dashboard-source-details">
+      <summary><Info size={14} />Про дані</summary>
+      {!evidence?.lastSuccess && <Text size="xs" c="dimmed">Підтвердженого успішного запуску в доступному журналі не надано.</Text>}
+      <Text size="xs" c="dimmed">Затримка бізнес-джерела та загальна кількість помилок невідомі: статус запуску не містить підтвердженого часу останньої зміни у 1С або повного журналу помилок. Прогрів AI не є синхронізацією 1С.</Text>
+    </details>
+  </section>
 }

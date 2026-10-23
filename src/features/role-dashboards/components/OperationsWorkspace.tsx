@@ -1,4 +1,4 @@
-import { Badge, Card, Skeleton, Text, UnstyledButton } from '@mantine/core'
+import { Card, Skeleton, Text, UnstyledButton } from '@mantine/core'
 import {
   ArrowRight,
   Banknote,
@@ -22,6 +22,7 @@ import { isNavigationPathAllowed } from '../../navigation/navigationUtils'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { DashboardWorkspaceKey, DashboardWorkspaceMetric, DashboardWorkspaceSummary } from '../types'
 import { formatMetricValue, isAttentionMetric } from '../utils/metricView'
+import { TableChip } from '../../../shared/ui/TableChip'
 import { MetricIcon } from './MetricIcon'
 import { hasCompleteMetricCoverage, metricTimeLabel } from '../utils/metricScope'
 
@@ -113,7 +114,7 @@ export function OperationsWorkspace({
         <div className="role-dashboard-section-head">
           <div className="role-dashboard-section-copy">
             <Text component="h2" className="app-section-title" fw={600}>{t('Реєстри')}</Text>
-            <Text className="role-dashboard-section-subtitle">{t('Загальні реєстри. Їхні фільтри можуть відрізнятися від показників дашборда.')}</Text>
+
           </div>
         </div>
         <div className="role-dashboard-operations-body">
@@ -149,12 +150,10 @@ export function OperationsWorkspace({
           <div className="role-dashboard-section-head">
             <div className="role-dashboard-section-copy">
               <Text component="h2" className="app-section-title" fw={600}>{t('Потребує уваги')}</Text>
-              <Text className="role-dashboard-section-subtitle">{t('Поточний стан і події за період')}</Text>
+
             </div>
             {attention.length > 0 && (
-              <Badge className={`app-role-pill ${attention[0].tone === 'critical' ? 'is-red' : 'is-orange'}`} variant="light">
-                {attention.length}
-              </Badge>
+              <TableChip tone={attention[0].tone === 'critical' ? 'danger' : 'warning'} value={attention.length} />
             )}
           </div>
           <div className="role-dashboard-attention-body">
@@ -199,11 +198,11 @@ function QueueAction({
   const { t } = useI18n()
 
   return (
-    <UnstyledButton className="role-dashboard-action" onClick={onOpen}>
+    <UnstyledButton className="role-dashboard-action" title={t(action.description)} onClick={onOpen}>
       <span aria-hidden="true" className="role-dashboard-action-icon"><action.icon size={18} /></span>
       <span className="role-dashboard-action-copy">
         <span className="role-dashboard-action-title">{t(action.label)}</span>
-        <span className="role-dashboard-action-description">{t(action.description)}</span>
+
       </span>
       <ArrowRight aria-hidden="true" className="role-dashboard-action-arrow" size={17} />
     </UnstyledButton>
@@ -253,7 +252,7 @@ function CashFlowCard({
       <div className="role-dashboard-section-head">
         <div className="role-dashboard-section-copy">
           <Text component="h2" className="app-section-title" fw={600}>{t('Рух коштів')}</Text>
-          <Text className="role-dashboard-section-subtitle">{t('Надходження проти витрат за період')}</Text>
+
         </div>
       </div>
       <div className="role-dashboard-cash-body">
@@ -261,7 +260,7 @@ function CashFlowCard({
           <div className={`role-dashboard-cash-row is-${row.tone}`} key={row.tone}>
             <div className="role-dashboard-cash-caption">
               <span>{row.label}</span>
-              <b>{moneyFormatter.format(row.metric.value)} <small>{row.metric.unit}</small></b>
+              <b className="app-money">{moneyFormatter.format(row.metric.value)} <TableChip tone="source" value={row.metric.unit} /></b>
             </div>
             <div className="role-dashboard-cash-track" aria-hidden="true">
               <span style={{ width: `${(Math.abs(row.metric.value) / scale) * 100}%` }} />
@@ -271,7 +270,7 @@ function CashFlowCard({
         {netValue !== null && (
           <div className={`role-dashboard-cash-net ${netValue < 0 ? 'is-negative' : 'is-positive'}`}>
             <span>{t('Чистий рух')}</span>
-            <b>{netValue > 0 ? '+' : ''}{moneyFormatter.format(netValue)} <small>{netUnit}</small></b>
+            <b className="app-money">{netValue > 0 ? '+' : ''}{moneyFormatter.format(netValue)} <TableChip tone="source" value={netUnit} /></b>
           </div>
         )}
         {sameUnit && cashIn.value > 0 && (

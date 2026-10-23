@@ -1,3 +1,4 @@
+import { Factory, ShoppingCart } from 'lucide-react'
 import { Stack } from '@mantine/core'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -13,11 +14,11 @@ export function BuyerWorkspace() {
 
   return (
     <Stack className="buyer-workspace" gap={6}>
-      <div className="pill-tabs buyer-workspace__tabs" role="tablist" aria-label={t('Розділи закупівель')}>
-        {[{ value: 'plan', label: 'Конструктор закупівель' }, { value: 'producer', label: 'Умови виробника' }].map((tab) => (
+      <div className="app-screen-tabs buyer-workspace__tabs" role="tablist" aria-label={t('Розділи закупівель')}>
+        {[{ value: 'plan', label: 'Конструктор закупівель', icon: ShoppingCart }, { value: 'producer', label: 'Умови виробника', icon: Factory }].map((tab) => (
           <button
             aria-selected={view === tab.value}
-            className={'pill-tab' + (view === tab.value ? ' is-active' : '')}
+            className={'app-screen-tab' + (view === tab.value ? ' is-active' : '')}
             key={tab.value}
             onClick={() => {
               setView(tab.value)
@@ -26,7 +27,7 @@ export function BuyerWorkspace() {
             role="tab"
             type="button"
           >
-            {t(tab.label)}
+            <tab.icon size={16} aria-hidden="true" />{t(tab.label)}
           </button>
         ))}
       </div>
