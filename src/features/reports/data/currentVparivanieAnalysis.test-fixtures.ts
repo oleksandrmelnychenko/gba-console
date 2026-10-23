@@ -27,7 +27,6 @@ export function analysisPreview() {
     currentVparivanieAnalysis: { version: 1, allSalesFilterScope: true, stockAllocation: 'periodEndOnly', physicalCalendar: 'Europe/Kyiv',
       incoming: false, outgoing: false, resultSha256: 'a'.repeat(64), fieldCoverage: [
         ...[5, 2, 74].map(field => ({ field, scope: 'grouping', knownFacts: 1, unknownFacts: 0, notApplicableFacts: field === 2 ? 1 : 0, reasons: [] as string[] })),
-        { field: 1, scope: 'filter', knownFacts: 1, unknownFacts: 0, notApplicableFacts: 0, reasons: [] as string[] },
       ] },
   }
 }

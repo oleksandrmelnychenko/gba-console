@@ -2,7 +2,9 @@ import { beforeEach, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { searchAnalysisValues } from './currentVparivanieAnalysisApi'
 import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from './reportWorkspaceApi'
-import { createStockReport, previewStockReport, getStockReportPreviewPage } from './reportsApi'
+import captured from '../data/currentVparivanieAnalysis.live-fixture.json'
+import type { ReportRequestBody } from '../types'
+import { createStockReport, previewStockReport, getStockReportPreviewPage, exportStockReportPreview } from './reportsApi'
 import { analysisDataset, analysisPreview, analysisRequest } from '../data/currentVparivanieAnalysis.test-fixtures'
 import { currentVparivanieRequest } from '../data/currentVparivanie.test-fixtures'
 vi.mock('../../../shared/api/apiClient', async original => ({ ...await original<typeof import('../../../shared/api/apiClient')>(), apiRequest: vi.fn() }))
@@ -53,4 +55,33 @@ it('binds preview and pagination to the same grouped result and refuses a missin
   preview.currentVparivanieAnalysis.fieldCoverage = []
   api.mockResolvedValueOnce({ Preview: preview })
   await expect(previewStockReport(request)).rejects.toThrow('покриття')
+})
+
+it('accepts captured DEV grouping-only coverage with active filters and keeps page/export hash fences', async () => {
+  const wire = captured.response, raw = captured.request
+  const request: ReportRequestBody = { dataSource: raw.DataSource, from: raw.From, to: raw.To,
+    currentVparivanieAnalysis: raw.currentVparivanieAnalysis, currentVparivanieFullScope: true,
+    sorted: { Row: raw.Sorted.Row.map((f, i) => ({ type: f.type, key: wire.Preview.RowSchema[i].Identity, label: wire.Preview.RowSchema[i].Caption })),
+      Col: raw.Sorted.Col.map((f, i) => ({ type: f.type, key: wire.Preview.ColumnSchema[i].Identity, label: wire.Preview.ColumnSchema[i].Caption })),
+      Measurements: raw.Sorted.Measurements.map(f => ({ ...f, Name: 'Результат', Value: 0 })) },
+    selections: raw.Selections.map(s => ({ ...s, SelectedField: { ...s.SelectedField, Name: wire.Preview.Request.Filters[0].Field }, FilterCondition: { ...s.FilterCondition, Name: wire.Preview.Request.Filters[0].Condition },
+      Values: s.Values.map(v => ({ Data: JSON.parse(v.Data), Name: 'Control selection', Value: 0 })) })) }
+  expect(request.selections).not.toHaveLength(0)
+  expect(wire.Preview.Request.Filters).not.toHaveLength(0)
+  expect(wire.Preview.currentVparivanieAnalysis.fieldCoverage.every(f => f.scope === 'grouping')).toBe(true)
+  api.mockResolvedValueOnce(wire)
+  const first = await previewStockReport(request)
+  expect(first.preview.Rows).toHaveLength(wire.Preview.Page.ReturnedRows)
+  const session = { ResultId: wire.ResultId, RequestSha256: wire.RequestSha256, ResultSha256: wire.ResultSha256, ExpiresAtUtc: wire.ExpiresAtUtc }
+  api.mockResolvedValueOnce(wire)
+  expect((await getStockReportPreviewPage(session, request, 0)).ResultSession).toEqual(session)
+  api.mockResolvedValueOnce(wire)
+  await exportStockReportPreview(session)
+  expect(api).toHaveBeenLastCalledWith(`/report/stocks/preview/${wire.ResultId}/export`, expect.objectContaining({ method: 'POST', body: {} }))
+  api.mockResolvedValueOnce({ ...wire, RequestSha256: 'c'.repeat(64) })
+  await expect(getStockReportPreviewPage(session, request, 0)).rejects.toThrow('ідентичність')
+  const missingAxis = structuredClone(wire)
+  missingAxis.Preview.currentVparivanieAnalysis.fieldCoverage.pop()
+  api.mockResolvedValueOnce(missingAxis)
+  await expect(previewStockReport(request)).rejects.toThrow('покриття всіх групувань')
 })

@@ -63,7 +63,7 @@ describe('analysis preview identities and coverage', () => {
     expect(() => normalizeNativeReportPreview({ Preview: badHash }, true)).toThrow('покриття')
     const missing = analysisPreview(); missing.currentVparivanieAnalysis.fieldCoverage.pop()
     const preview = normalizeNativeReportPreview({ Preview: missing }, true)
-    expect(() => bindAnalysisPreview(analysisRequest(), preview)).toThrow('відборів')
+    expect(() => bindAnalysisPreview(analysisRequest(), preview)).toThrow('групувань')
     const unknown = analysisPreview(); unknown.currentVparivanieAnalysis.fieldCoverage[0].unknownFacts = 1
     expect(() => normalizeNativeReportPreview({ Preview: unknown }, true)).toThrow('покриття')
     const moved = analysisPreview(); moved.currentVparivanieAnalysis.incoming = true

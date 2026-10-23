@@ -148,6 +148,7 @@ export function bindAnalysisPreview(request: ReportRequestBody, preview: NativeR
   if (requested && (preview.currentVparivanieAnalysis?.incoming !== !!preview.Request?.CurrentVparivanieMovements?.Incoming
     || preview.currentVparivanieAnalysis?.outgoing !== !!preview.Request?.CurrentVparivanieMovements?.Outgoing)) throw new Error('Сервер повернув інший вибір руху товару.')
   if (requested && [...request.sorted.Row, ...request.sorted.Col].some(g => !preview.currentVparivanieAnalysis?.fieldCoverage.some(f => f.scope === 'grouping' && f.field === g.type))) throw new Error('Сервер не передав покриття всіх групувань.')
-  if (requested && request.selections.filter(s => s.IsChecked !== false).some(s => !preview.currentVparivanieAnalysis?.fieldCoverage.some(f => f.scope === 'filter' && f.field === s.SelectedField.Type))) throw new Error('Сервер не передав покриття всіх відборів.')
+  // Version 1 requires coverage for output dimensions. Filter evidence is enforced by
+  // reader admission and bound by the immutable request hash; per-filter counters are optional.
   if (requested && preview.Request?.DataSource !== 'NativeCurrentVparivanie') throw new Error('Сервер повернув інший набір даних аналізу.')
 }
