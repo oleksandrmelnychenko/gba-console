@@ -1,3 +1,6 @@
+import { OriginalWarehouseMovementPanel } from './OriginalWarehouseMovementPanel'
+import type { MovementLaunch } from './OriginalWarehouseMovementCatalogueLaunch'
+import { isMovementCapability, isWarehouseMovementCatalogueEntry, normalizeMovementPublications } from '../data/originalWarehouseMovement'
 import { OneCTurnoverResponsiblesPanel } from './OneCTurnoverResponsiblesPanel'
 import { isOrganizationOnlyTurnoverScope, ORGANIZATION_ONLY_TURNOVER_CHOICE } from '../data/oneCTurnoverScopes'
 import type { OneCTurnoverScopeSummary } from '../types'
@@ -388,6 +391,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const [oneCSpecialSettings, setOneCSpecialSettings] = useValueState<unknown>(undefined)
   const [oneCScope, setOneCScope] = useValueState<OneCTurnoverFilters | undefined>(undefined)
   const [responsiblesExportOpen, setResponsiblesExportOpen] = useState(false)
+  const [movementScope, setMovementScope] = useState<{ scope: MovementLaunch; caller: string | null } | null>(null)
   const [responsiblesScope, setResponsiblesScope] = useState<{ scope: OneCTurnoverScopeSummary; caller: string | null } | null>(null)
   const [oneCReportOpen, setOneCReportOpen] = useState(false)
   const [oneCReportGenerating, setOneCReportGenerating] = useState(false)
@@ -1067,6 +1071,10 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       notice={groupingOrdering.notice} onChange={groupingOrdering.changeOrdering} />,
   }
   const dialogs = <>
+    {movementScope && canGenerateReport && movementScope.caller === ownerId ? <ReportModal opened title="Рух товару за складськими документами" size={1250}
+      onClose={() => setMovementScope(null)} closeButtonProps={{ 'aria-label': 'Закрити рух товару' }}>
+      <OriginalWarehouseMovementPanel publications={movementScope.scope.publications} canGenerate={canGenerateReport} callerKey={ownerId} />
+    </ReportModal> : null}
     {responsiblesScope && canGenerateReport && responsiblesScope.caller === ownerId ? <ReportModal opened title="Продажі за відповідальними" size={960}
       closeOnEscape={!responsiblesExportOpen} closeOnClickOutside={!responsiblesExportOpen} trapFocus={!responsiblesExportOpen}
       closeButtonProps={{ 'aria-label': 'Закрити продажі за відповідальними', disabled: responsiblesExportOpen }}
@@ -1161,7 +1169,11 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     />
   )
 
-  const catalogueControl = (quiet: boolean) => <ReportCatalogueControl onOpenTurnoverResponsibles={(scope, catalogue) => {
+  const catalogueControl = (quiet: boolean) => <ReportCatalogueControl onOpenWarehouseMovement={(scope, report) => {
+    if (!canGenerateReport || isLoading || !isMovementCapability(scope.capability) || !isWarehouseMovementCatalogueEntry(report) || !scope.publications.length) return false
+    setMovementScope({ scope: { capability: structuredClone(scope.capability), publications: normalizeMovementPublications(scope.publications) }, caller: ownerId })
+    return true
+  }} onOpenTurnoverResponsibles={(scope, catalogue) => {
     if (!canGenerateReport || isLoading || !isOrganizationOnlyTurnoverScope(scope)
       || !isOneCTurnoverCatalogueChoice(catalogue, ORGANIZATION_ONLY_TURNOVER_CHOICE)) return false
     setResponsiblesExportOpen(false)

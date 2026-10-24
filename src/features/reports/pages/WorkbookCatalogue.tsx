@@ -1,3 +1,5 @@
+import { isWarehouseMovementCatalogueEntry } from '../data/originalWarehouseMovement'
+import { OriginalWarehouseMovementCatalogueLaunch, type OpenWarehouseMovement } from './OriginalWarehouseMovementCatalogueLaunch'
 import { OneCTurnoverResponsiblesLaunch, type OpenTurnoverResponsibles } from './OneCTurnoverResponsiblesLaunch'
 import { Alert, Button, Group, Select, Text, TextInput } from '@mantine/core'
 import { RotateCcw, Search } from 'lucide-react'
@@ -7,7 +9,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { availableBug1274WorkbookLaunches, BUG_1274_WORKBOOK_REPORT_IDS, type WorkbookLaunch } from '../data/bug1274WorkbookLaunch'
 import { workbookDisplayFileName, bug1274ReportTitle } from '../data/bug1274WorkbookGuide'
-import { filterConsoleMigrationCatalogue, inspectCatalogueMigration } from '../data/reportMigration'
+import { filterConsoleMigrationCatalogue, filterMigrationCatalogue, inspectCatalogueMigration } from '../data/reportMigration'
 import { workbookDeskEntry } from '../data/workbookDesk'
 import type { ReportCatalogue, ReportCatalogueEntry, ReportDataset } from '../types'
 
@@ -18,12 +20,13 @@ type Props = {
   canGenerate: boolean
   disabled: boolean
   callerKey?: string | null
+  onOpenWarehouseMovement?: OpenWarehouseMovement
   onOpenTurnoverResponsibles?: OpenTurnoverResponsibles
   onOpenWorkbook?: (launch: WorkbookLaunch) => boolean
   renderDetails: (report: ReportCatalogueEntry) => ReactNode
 }
 
-export function WorkbookCatalogue({ catalogue, inspection, datasets, canGenerate, disabled, onOpenWorkbook, renderDetails, callerKey = null, onOpenTurnoverResponsibles }: Props) {
+export function WorkbookCatalogue({ catalogue, inspection, datasets, canGenerate, disabled, onOpenWorkbook, renderDetails, callerKey = null, onOpenTurnoverResponsibles, onOpenWarehouseMovement }: Props) {
   const { t } = useI18n()
   const [search, setSearch] = useState('')
   const [world, setWorld] = useState<string | null>(null)
@@ -31,15 +34,18 @@ export function WorkbookCatalogue({ catalogue, inspection, datasets, canGenerate
   const launches = useMemo(() => availableBug1274WorkbookLaunches(datasets ?? []), [datasets])
   const reports = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('uk')
-    return filterConsoleMigrationCatalogue(catalogue, inspection, { search: '', world, kind: null, status: null, dependency: null })
+    const filters = { search: '', world, kind: null, status: null, dependency: null }
+    const visible = filterConsoleMigrationCatalogue(catalogue, inspection, filters)
+    const warehouse = filterMigrationCatalogue(catalogue, inspection, filters).filter(item => isWarehouseMovementCatalogueEntry(item.report, item.matchingSources.map(source => source.World)))
+    return [...visible, ...warehouse.filter(item => !visible.some(existing => existing.report.Id === item.report.Id))]
       .map(item => item.report)
-      .filter(report => [report.Name, report.Title, t(bug1274ReportTitle(report.Id) ?? report.Title)].join(' ').toLocaleLowerCase('uk').includes(query))
+      .filter(report => [report.Name, report.Title, t(isWarehouseMovementCatalogueEntry(report) ? 'Рух товару за складськими документами' : bug1274ReportTitle(report.Id) ?? report.Title)].join(' ').toLocaleLowerCase('uk').includes(query))
   }, [catalogue, inspection, search, world, t])
   const worlds = useMemo(() => [...new Set(catalogue.Reports.flatMap(report => report.Sources.map(source => source.World)))], [catalogue])
   const columns = useMemo<DataTableColumn<ReportCatalogueEntry>[]>(() => [
-    { id: 'report', header: t('Звіт'), accessor: report => bug1274ReportTitle(report.Id) ?? report.Title,
+    { id: 'report', header: t('Звіт'), accessor: report => isWarehouseMovementCatalogueEntry(report) ? 'Рух товару за складськими документами' : bug1274ReportTitle(report.Id) ?? report.Title,
       width: 400, minWidth: 220, fill: true, numeric: false,
-      cell: report => <span className="workbook-catalogue__name" title={bug1274ReportTitle(report.Id) ?? report.Title}>{t(bug1274ReportTitle(report.Id) ?? report.Title)}</span> },
+      cell: report => <span className="workbook-catalogue__name" title={isWarehouseMovementCatalogueEntry(report) ? 'Рух товару за складськими документами' : bug1274ReportTitle(report.Id) ?? report.Title}>{t(isWarehouseMovementCatalogueEntry(report) ? 'Рух товару за складськими документами' : bug1274ReportTitle(report.Id) ?? report.Title)}</span> },
     { id: 'worlds', header: t('Бази'), accessor: report => report.Sources.map(source => source.World.toUpperCase()).join(' · '),
       width: 130, minWidth: 110, numeric: false },
     { id: 'forms', header: t('Відкрити форму'), width: 400, minWidth: 300, enableSorting: false,
@@ -53,9 +59,9 @@ export function WorkbookCatalogue({ catalogue, inspection, datasets, canGenerate
             onClick={event => { event.stopPropagation(); if (!disabled && canGenerate) onOpenWorkbook?.(launch) }}>
             {t(workbookDeskEntry(launch.fileName)?.name ?? launch.label)}
           </Button>)}
-        </Group> : <Text size="sm" c="gray.7">{t(canGenerate ? 'Форми недоступні' : 'Немає права формування')}</Text>}{turnover}</Group>
+        </Group> : isWarehouseMovementCatalogueEntry(report) && canGenerate ? null : <Text size="sm" c="gray.7">{t(canGenerate ? 'Форми недоступні' : 'Немає права формування')}</Text>}{turnover}<OriginalWarehouseMovementCatalogueLaunch report={report} worlds={world ? [world] : ['fenix', 'amg']} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenWarehouseMovement} /></Group>
       } },
-  ], [t, launches, canGenerate, disabled, onOpenWorkbook, catalogue, callerKey, onOpenTurnoverResponsibles, world])
+  ], [t, launches, canGenerate, disabled, onOpenWorkbook, catalogue, callerKey, onOpenTurnoverResponsibles, onOpenWarehouseMovement, world])
   return <div className="report-catalogue workbook-catalogue">
     {!inspection.valid ? <Alert color="yellow">{t('Стан перенесення не підтверджений сервером. Перевірте відомості про звіт.')}</Alert> : null}
     <div className="workbook-catalogue__list">

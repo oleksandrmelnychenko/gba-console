@@ -1,0 +1,37 @@
+[
+  {
+    "capture": {
+      "scopeSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "manifestSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "from": "2025-01-01",
+      "through": "2026-10-24",
+      "sourceStartedUtc": "2026-10-24T10:04:36.4972755Z",
+      "sourceCompletedUtc": "2026-10-24T10:04:41.7425829Z",
+      "throughDayComplete": false
+    },
+    "products": [
+      {
+        "reference": "00000000000000000000000000000003",
+        "article": "94000",
+        "name": "Тестова назва 3",
+        "unit": null
+      },
+      {
+        "reference": "0000000000000000000000000000001F",
+        "article": "SEM9404",
+        "name": "Тестова назва 4",
+        "unit": null
+      }
+    ],
+    "warehouses": [
+      {
+        "reference": "00000000000000000000000000000001",
+        "name": "Тестова назва 1"
+      },
+      {
+        "reference": "00000000000000000000000000000002",
+        "name": "Тестова назва 2"
+      }
+    ]
+  }
+]

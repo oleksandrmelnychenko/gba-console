@@ -1,0 +1,72 @@
+{
+  "scope": {
+    "world": "fenix",
+    "from": "2026-09-01",
+    "through": "2026-09-30",
+    "article": "SEM9404",
+    "warehouses": [
+      "00000000000000000000000000000001",
+      "00000000000000000000000000000002"
+    ]
+  },
+  "available": true,
+  "code": "original_warehouse_movement_OUR_complete",
+  "ourSnapshotVerified": true,
+  "inputWitnessSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "resultSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "rows": [
+    {
+      "world": "fenix",
+      "sourceWarehouseReference": "00000000000000000000000000000001",
+      "article": "SEM9404",
+      "sourceProductReference": "0000000000000000000000000000001F",
+      "quantity": {
+        "opening": "0.000",
+        "incoming": "0.000",
+        "outgoing": "0.000",
+        "closing": "0.000"
+      },
+      "registrars": [],
+      "caption": "Тестова назва 1",
+      "captionAvailable": true
+    },
+    {
+      "world": "fenix",
+      "sourceWarehouseReference": "00000000000000000000000000000002",
+      "article": "SEM9404",
+      "sourceProductReference": "0000000000000000000000000000001F",
+      "quantity": {
+        "opening": "0.000",
+        "incoming": "0.000",
+        "outgoing": "0.000",
+        "closing": "0.000"
+      },
+      "registrars": [],
+      "caption": "Тестова назва 2",
+      "captionAvailable": true
+    }
+  ],
+  "totals": {
+    "opening": "0.000",
+    "incoming": "0.000",
+    "outgoing": "0.000",
+    "closing": "0.000"
+  },
+  "version": 1,
+  "unitPolicy": "SingleSourceProductNativeStoredQuantityNoCoefficientConversion",
+  "articlePolicy": "CurrentOURVendorCodeExactSingleSourceProduct",
+  "balancePolicy": "OpeningClosingAreStatesNotRegistrarSums",
+  "orderingPolicy": "SourcePeriod;DistinctRegistrarsAtSameTimeRefused",
+  "sourceParityVerified": false,
+  "originalFullTaskAccepted": false,
+  "capture": {
+    "scopeSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "manifestSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "from": "2025-01-01",
+    "through": "2026-10-24",
+    "sourceStartedUtc": "2026-10-24T10:04:36.4972755Z",
+    "sourceCompletedUtc": "2026-10-24T10:04:41.7425829Z",
+    "throughDayComplete": false
+  },
+  "missingCaptionMappings": []
+}

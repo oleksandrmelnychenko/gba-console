@@ -1,0 +1,426 @@
+{
+  "scope": {
+    "world": "fenix",
+    "from": "2026-09-01",
+    "through": "2026-09-30",
+    "article": "94000",
+    "warehouses": [
+      "00000000000000000000000000000001",
+      "00000000000000000000000000000002"
+    ]
+  },
+  "available": true,
+  "code": "original_warehouse_movement_OUR_complete",
+  "ourSnapshotVerified": true,
+  "inputWitnessSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "resultSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "rows": [
+    {
+      "world": "fenix",
+      "sourceWarehouseReference": "00000000000000000000000000000001",
+      "article": "94000",
+      "sourceProductReference": "00000000000000000000000000000003",
+      "quantity": {
+        "opening": "1.000",
+        "incoming": "5.000",
+        "outgoing": "6.000",
+        "closing": "0.000"
+      },
+      "registrars": [
+        {
+          "world": "fenix",
+          "recorderType": "00003f3d",
+          "recorderReference": "0000000000000000000000000000000E",
+          "sourcePeriod": "2026-09-29 16:21:53.000",
+          "sourceLineNumbers": [
+            16
+          ],
+          "quantity": {
+            "opening": "1.000",
+            "incoming": "2.000",
+            "outgoing": "0.000",
+            "closing": "3.000"
+          },
+          "number": "ТЕСТ-0001",
+          "sourceDate": "2026-09-29 16:21:53.000",
+          "caption": null,
+          "captionAvailable": false
+        },
+        {
+          "world": "fenix",
+          "recorderType": "00000122",
+          "recorderReference": "0000000000000000000000000000000F",
+          "sourcePeriod": "2026-09-29 16:23:38.000",
+          "sourceLineNumbers": [
+            13,
+            14
+          ],
+          "quantity": {
+            "opening": "3.000",
+            "incoming": "3.000",
+            "outgoing": "3.000",
+            "closing": "3.000"
+          },
+          "number": "ТЕСТ-0001",
+          "sourceDate": "2026-09-29 16:23:38.000",
+          "caption": null,
+          "captionAvailable": false
+        },
+        {
+          "world": "fenix",
+          "recorderType": "00000120",
+          "recorderReference": "00000000000000000000000000000010",
+          "sourcePeriod": "2026-09-29 16:23:52.000",
+          "sourceLineNumbers": [
+            9
+          ],
+          "quantity": {
+            "opening": "3.000",
+            "incoming": "0.000",
+            "outgoing": "3.000",
+            "closing": "0.000"
+          },
+          "number": "ТЕСТ-0001",
+          "sourceDate": "2026-09-29 16:23:52.000",
+          "caption": null,
+          "captionAvailable": false
+        }
+      ],
+      "caption": "Тестова назва 1",
+      "captionAvailable": true
+    },
+    {
+      "world": "fenix",
+      "sourceWarehouseReference": "00000000000000000000000000000002",
+      "article": "94000",
+      "sourceProductReference": "00000000000000000000000000000003",
+      "quantity": {
+        "opening": "39.000",
+        "incoming": "12.000",
+        "outgoing": "26.000",
+        "closing": "25.000"
+      },
+      "registrars": [
+        {
+          "world": "fenix",
+          "recorderType": "00000122",
+          "recorderReference": "00000000000000000000000000000011",
+          "sourcePeriod": "2026-09-07 17:07:40.000",
+          "sourceLineNumbers": [
+            3,
+            4
+          ],
+          "quantity": {
+            "opening": "39.000",
+            "incoming": "4.000",
+            "outgoing": "4.000",
+            "closing": "39.000"
+          },
+          "number": "ТЕСТ-0001",
+          "sourceDate": "2026-09-07 17:07:40.000",
+          "caption": null,
+          "captionAvailable": false
+        },
+        {
+          "world": "fenix",
+          "recorderType": "00000120",
+          "recorderReference": "00000000000000000000000000000012",
+          "sourcePeriod": "2026-09-07 17:08:35.000",
+          "sourceLineNumbers": [
+            2
+          ],
+          "quantity": {
+            "opening": "39.000",
+            "incoming": "0.000",
+            "outgoing": "4.000",
+            "closing": "35.000"
+          },
+          "number": "ТЕСТ-0001",
+          "sourceDate": "2026-09-07 17:08:35.000",
+          "caption": null,
+          "captionAvailable": false
+        },
+        {
+          "world": "fenix",
+          "recorderType": "00000122",
+          "recorderReference": "00000000000000000000000000000013",
+          "sourcePeriod": "2026-09-08 16:22:25.000",
+          "sourceLineNumbers": [
+            1,
+            2
+          ],
+          "quantity": {
+            "opening": "35.000",
+            "incoming": "1.000",
+            "outgoing": "1.000",
+            "closing": "35.000"
+          },
+          "number": "ТЕСТ-0001",
+          "sourceDate": "2026-09-08 16:22:25.000",
+          "caption": null,
+          "captionAvailable": false
+        },
+        {
+          "world": "fenix",
+          "recorderType": "00000120",
+          "recorderReference": "00000000000000000000000000000014",
+          "sourcePeriod": "2026-09-08 16:53:21.000",
+          "sourceLineNumbers": [
+            1
+          ],
+          "quantity": {
+            "opening": "35.000",
+            "incoming": "0.000",
+            "outgoing": "1.000",
+            "closing": "34.000"
+          },
+          "number": "ТЕСТ-0001",
+          "sourceDate": "2026-09-08 16:53:21.000",
+          "caption": null,
+          "captionAvailable": false
+        },
+        {
+          "world": "fenix",
+          "recorderType": "00000122",
+          "recorderReference": "00000000000000000000000000000015",
+          "sourcePeriod": "2026-09-08 17:02:44.000",
+          "sourceLineNumbers": [
+            1,
+            2
+          ],
+          "quantity": {
+            "opening": "34.000",
+            "incoming": "2.000",
+            "outgoing": "2.000",
+            "closing": "34.000"
+          },
+          "number": "ТЕСТ-0001",
+          "sourceDate": "2026-09-08 17:02:44.000",
+          "caption": null,
+          "captionAvailable": false
+        },
+        {
+          "world": "fenix",
+          "recorderType": "00000120",
+          "recorderReference": "00000000000000000000000000000016",
+          "sourcePeriod": "2026-09-08 17:03:10.000",
+          "sourceLineNumbers": [
+            1
+          ],
+          "quantity": {
+            "opening": "34.000",
+            "incoming": "0.000",
+            "outgoing": "2.000",
+            "closing": "32.000"
+          },
+          "number": "ТЕСТ-0001",
+          "sourceDate": "2026-09-08 17:03:10.000",
+          "caption": null,
+          "captionAvailable": false
+        },
+        {
+          "world": "fenix",
+          "recorderType": "00000122",
+          "recorderReference": "00000000000000000000000000000017",
+          "sourcePeriod": "2026-09-10 11:25:54.000",
+          "sourceLineNumbers": [
+            5,
+            6
+          ],
+          "quantity": {
+            "opening": "32.000",
+            "incoming": "1.000",
+            "outgoing": "1.000",
+            "closing": "32.000"
+          },
+          "number": "ТЕСТ-0001",
+          "sourceDate": "2026-09-10 11:25:54.000",
+          "caption": null,
+          "captionAvailable": false
+        },
+        {
+          "world": "fenix",
+          "recorderType": "00000120",
+          "recorderReference": "00000000000000000000000000000018",
+          "sourcePeriod": "2026-09-10 11:26:42.000",
+          "sourceLineNumbers": [
+            2
+          ],
+          "quantity": {
+            "opening": "32.000",
+            "incoming": "0.000",
+            "outgoing": "1.000",
+            "closing": "31.000"
+          },
+          "number": "ТЕСТ-0001",
+          "sourceDate": "2026-09-10 11:26:42.000",
+          "caption": null,
+          "captionAvailable": false
+        },
+        {
+          "world": "fenix",
+          "recorderType": "00000122",
+          "recorderReference": "00000000000000000000000000000019",
+          "sourcePeriod": "2026-09-11 11:56:53.000",
+          "sourceLineNumbers": [
+            1,
+            2
+          ],
+          "quantity": {
+            "opening": "31.000",
+            "incoming": "1.000",
+            "outgoing": "1.000",
+            "closing": "31.000"
+          },
+          "number": "ТЕСТ-0001",
+          "sourceDate": "2026-09-11 11:56:53.000",
+          "caption": null,
+          "captionAvailable": false
+        },
+        {
+          "world": "fenix",
+          "recorderType": "00000120",
+          "recorderReference": "0000000000000000000000000000001A",
+          "sourcePeriod": "2026-09-11 11:57:25.000",
+          "sourceLineNumbers": [
+            1
+          ],
+          "quantity": {
+            "opening": "31.000",
+            "incoming": "0.000",
+            "outgoing": "1.000",
+            "closing": "30.000"
+          },
+          "number": "ТЕСТ-0001",
+          "sourceDate": "2026-09-11 11:57:25.000",
+          "caption": null,
+          "captionAvailable": false
+        },
+        {
+          "world": "fenix",
+          "recorderType": "00000122",
+          "recorderReference": "0000000000000000000000000000001B",
+          "sourcePeriod": "2026-09-14 11:32:46.000",
+          "sourceLineNumbers": [
+            19,
+            20
+          ],
+          "quantity": {
+            "opening": "30.000",
+            "incoming": "2.000",
+            "outgoing": "2.000",
+            "closing": "30.000"
+          },
+          "number": "ТЕСТ-0001",
+          "sourceDate": "2026-09-14 11:32:46.000",
+          "caption": null,
+          "captionAvailable": false
+        },
+        {
+          "world": "fenix",
+          "recorderType": "00000120",
+          "recorderReference": "0000000000000000000000000000001C",
+          "sourcePeriod": "2026-09-14 11:33:27.000",
+          "sourceLineNumbers": [
+            5
+          ],
+          "quantity": {
+            "opening": "30.000",
+            "incoming": "0.000",
+            "outgoing": "2.000",
+            "closing": "28.000"
+          },
+          "number": "ТЕСТ-0001",
+          "sourceDate": "2026-09-14 11:33:27.000",
+          "caption": null,
+          "captionAvailable": false
+        },
+        {
+          "world": "fenix",
+          "recorderType": "00000122",
+          "recorderReference": "0000000000000000000000000000001D",
+          "sourcePeriod": "2026-09-23 10:58:32.000",
+          "sourceLineNumbers": [
+            3,
+            4
+          ],
+          "quantity": {
+            "opening": "28.000",
+            "incoming": "1.000",
+            "outgoing": "1.000",
+            "closing": "28.000"
+          },
+          "number": "ТЕСТ-0001",
+          "sourceDate": "2026-09-23 10:58:32.000",
+          "caption": null,
+          "captionAvailable": false
+        },
+        {
+          "world": "fenix",
+          "recorderType": "00000120",
+          "recorderReference": "0000000000000000000000000000001E",
+          "sourcePeriod": "2026-09-23 10:58:49.000",
+          "sourceLineNumbers": [
+            1
+          ],
+          "quantity": {
+            "opening": "28.000",
+            "incoming": "0.000",
+            "outgoing": "1.000",
+            "closing": "27.000"
+          },
+          "number": "ТЕСТ-0001",
+          "sourceDate": "2026-09-23 10:58:49.000",
+          "caption": null,
+          "captionAvailable": false
+        },
+        {
+          "world": "fenix",
+          "recorderType": "00003f3d",
+          "recorderReference": "0000000000000000000000000000000E",
+          "sourcePeriod": "2026-09-29 16:21:53.000",
+          "sourceLineNumbers": [
+            2
+          ],
+          "quantity": {
+            "opening": "27.000",
+            "incoming": "0.000",
+            "outgoing": "2.000",
+            "closing": "25.000"
+          },
+          "number": "ТЕСТ-0001",
+          "sourceDate": "2026-09-29 16:21:53.000",
+          "caption": null,
+          "captionAvailable": false
+        }
+      ],
+      "caption": "Тестова назва 2",
+      "captionAvailable": true
+    }
+  ],
+  "totals": {
+    "opening": "40.000",
+    "incoming": "17.000",
+    "outgoing": "32.000",
+    "closing": "25.000"
+  },
+  "version": 1,
+  "unitPolicy": "SingleSourceProductNativeStoredQuantityNoCoefficientConversion",
+  "articlePolicy": "CurrentOURVendorCodeExactSingleSourceProduct",
+  "balancePolicy": "OpeningClosingAreStatesNotRegistrarSums",
+  "orderingPolicy": "SourcePeriod;DistinctRegistrarsAtSameTimeRefused",
+  "sourceParityVerified": false,
+  "originalFullTaskAccepted": false,
+  "capture": {
+    "scopeSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "manifestSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "from": "2025-01-01",
+    "through": "2026-10-24",
+    "sourceStartedUtc": "2026-10-24T10:04:36.4972755Z",
+    "sourceCompletedUtc": "2026-10-24T10:04:41.7425829Z",
+    "throughDayComplete": false
+  },
+  "missingCaptionMappings": [
+    "MovementRegistrar"
+  ]
+}

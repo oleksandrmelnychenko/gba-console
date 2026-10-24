@@ -1,3 +1,4 @@
+import type { OpenWarehouseMovement } from './OriginalWarehouseMovementCatalogueLaunch'
 import type { OpenTurnoverResponsibles } from './OneCTurnoverResponsiblesLaunch'
 import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { Alert, Badge, Button, Group, Loader, Pagination, Select, Stack, Table, Text, TextInput } from '@mantine/core'
@@ -130,7 +131,8 @@ function useCatalogueLoad(canGenerate: boolean) {
     error: currentLoad?.error ?? false, retry: () => setAttempt(value => value + 1) }
 }
 
-export function ReportCataloguePanel({ onOpenTurnoverResponsibles, onOpen, onOpenDebtToSalesRatio, onOpenCollectionCoefficient, onOpenSalesMargin, onOpenCashMovement, onOpenSupplierDebt, onOpenEmployeeGrossProfit, onOpenOverdueReceivables, onOpenManagementReturns, onOpenManagementBalance, onOpenManagementOrders, onOpenDefectProduction, onOpenInventoryTurnover, onOpenCurrentLiquidity, onOpenPlannedCash, callerKey = null, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue, onOpenOriginalBuyerSalesShare, disabled = false, consoleScope = false, onOpenWorkbook }: {
+export function ReportCataloguePanel({ onOpenWarehouseMovement, onOpenTurnoverResponsibles, onOpen, onOpenDebtToSalesRatio, onOpenCollectionCoefficient, onOpenSalesMargin, onOpenCashMovement, onOpenSupplierDebt, onOpenEmployeeGrossProfit, onOpenOverdueReceivables, onOpenManagementReturns, onOpenManagementBalance, onOpenManagementOrders, onOpenDefectProduction, onOpenInventoryTurnover, onOpenCurrentLiquidity, onOpenPlannedCash, callerKey = null, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue, onOpenOriginalBuyerSalesShare, disabled = false, consoleScope = false, onOpenWorkbook }: {
+  onOpenWarehouseMovement?: OpenWarehouseMovement
   onOpenTurnoverResponsibles?: OpenTurnoverResponsibles
   consoleScope?: boolean; onOpenWorkbook?: (launch: WorkbookLaunch) => boolean; onOpen?: OpenReport; onOpenDebtToSalesRatio?: OpenDebtToSalesRatio; onOpenCollectionCoefficient?: OpenCollectionCoefficient; onOpenSalesMargin?: OpenSalesMargin; onOpenCashMovement?: OpenCashMovement; onOpenSupplierDebt?: OpenSupplierDebt; onOpenEmployeeGrossProfit?: OpenEmployeeGrossProfit; onOpenOverdueReceivables?: OpenOverdueReceivables; onOpenManagementReturns?: OpenManagementReturns; onOpenManagementBalance?: OpenManagementBalance; onOpenManagementOrders?: OpenManagementOrders; onOpenDefectProduction?: OpenDefectProduction; onOpenInventoryTurnover?: OpenInventoryTurnover; onOpenCurrentLiquidity?: OpenCurrentLiquidity; onOpenPlannedCash?: OpenPlannedCash; callerKey?: string | null; onOpenActiveClients?: OpenActiveClients; onOpenCurrencyRateDynamics?: OpenCurrencyRateDynamics; onOpenCashAggregateBalance?: OpenCashAggregateBalance; onOpenOriginalRevenue?: OpenOriginalRevenue; onOpenOriginalBuyerSalesShare?: OpenOriginalBuyerSalesShare; disabled?: boolean
 }) {
@@ -168,7 +170,7 @@ export function ReportCataloguePanel({ onOpenTurnoverResponsibles, onOpen, onOpe
     .filter(id => catalogue.Reports.some(report => report.Id === id)).length
   if (bug1274Scope) return <WorkbookCatalogue catalogue={catalogue} inspection={inspection} datasets={availableDatasets}
     canGenerate={canGenerate} disabled={disabled} onOpenWorkbook={onOpenWorkbook}
-    callerKey={callerKey} onOpenTurnoverResponsibles={onOpenTurnoverResponsibles}
+    callerKey={callerKey} onOpenWarehouseMovement={onOpenWarehouseMovement} onOpenTurnoverResponsibles={onOpenTurnoverResponsibles}
     renderDetails={report => <ReportMigrationDetails report={report} migrations={inspection.migrations}
       datasets={availableDatasets} canGenerate={canGenerate} launchEnabled={supportsLaunch} />} />
   return <div className="report-catalogue document-detail-drawer--compact">

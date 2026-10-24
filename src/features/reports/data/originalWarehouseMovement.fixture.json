@@ -1,0 +1,426 @@
+{
+  "Scope": {
+    "World": "fenix",
+    "From": "2026-09-01",
+    "Through": "2026-09-30",
+    "Article": "TEST-ARTICLE",
+    "Warehouses": [
+      "11111111111111111111111111111111",
+      "22222222222222222222222222222222"
+    ]
+  },
+  "Available": true,
+  "Code": "original_warehouse_movement_OUR_complete",
+  "OurSnapshotVerified": true,
+  "InputWitnessSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "ResultSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "Rows": [
+    {
+      "World": "fenix",
+      "SourceWarehouseReference": "11111111111111111111111111111111",
+      "Article": "TEST-ARTICLE",
+      "SourceProductReference": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "Quantity": {
+        "Opening": "1.000",
+        "Incoming": "5.000",
+        "Outgoing": "6.000",
+        "Closing": "0.000"
+      },
+      "Registrars": [
+        {
+          "World": "fenix",
+          "RecorderType": "00003f3d",
+          "RecorderReference": "0000000000000000000000000000000c",
+          "SourcePeriod": "2026-09-29 16:21:53.000",
+          "SourceLineNumbers": [
+            16
+          ],
+          "Quantity": {
+            "Opening": "1.000",
+            "Incoming": "2.000",
+            "Outgoing": "0.000",
+            "Closing": "3.000"
+          },
+          "Number": "TEST-1-01",
+          "SourceDate": "2026-09-29 16:21:53.000",
+          "Caption": null,
+          "CaptionAvailable": false
+        },
+        {
+          "World": "fenix",
+          "RecorderType": "00000122",
+          "RecorderReference": "0000000000000000000000000000000d",
+          "SourcePeriod": "2026-09-29 16:23:38.000",
+          "SourceLineNumbers": [
+            13,
+            14
+          ],
+          "Quantity": {
+            "Opening": "3.000",
+            "Incoming": "3.000",
+            "Outgoing": "3.000",
+            "Closing": "3.000"
+          },
+          "Number": "TEST-1-02",
+          "SourceDate": "2026-09-29 16:23:38.000",
+          "Caption": null,
+          "CaptionAvailable": false
+        },
+        {
+          "World": "fenix",
+          "RecorderType": "00000120",
+          "RecorderReference": "0000000000000000000000000000000e",
+          "SourcePeriod": "2026-09-29 16:23:52.000",
+          "SourceLineNumbers": [
+            9
+          ],
+          "Quantity": {
+            "Opening": "3.000",
+            "Incoming": "0.000",
+            "Outgoing": "3.000",
+            "Closing": "0.000"
+          },
+          "Number": "TEST-1-03",
+          "SourceDate": "2026-09-29 16:23:52.000",
+          "Caption": null,
+          "CaptionAvailable": false
+        }
+      ],
+      "Caption": "Тестовий склад 1",
+      "CaptionAvailable": true
+    },
+    {
+      "World": "fenix",
+      "SourceWarehouseReference": "22222222222222222222222222222222",
+      "Article": "TEST-ARTICLE",
+      "SourceProductReference": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "Quantity": {
+        "Opening": "39.000",
+        "Incoming": "12.000",
+        "Outgoing": "26.000",
+        "Closing": "25.000"
+      },
+      "Registrars": [
+        {
+          "World": "fenix",
+          "RecorderType": "00000122",
+          "RecorderReference": "00000000000000000000000000000010",
+          "SourcePeriod": "2026-09-07 17:07:40.000",
+          "SourceLineNumbers": [
+            3,
+            4
+          ],
+          "Quantity": {
+            "Opening": "39.000",
+            "Incoming": "4.000",
+            "Outgoing": "4.000",
+            "Closing": "39.000"
+          },
+          "Number": "TEST-2-01",
+          "SourceDate": "2026-09-07 17:07:40.000",
+          "Caption": null,
+          "CaptionAvailable": false
+        },
+        {
+          "World": "fenix",
+          "RecorderType": "00000120",
+          "RecorderReference": "00000000000000000000000000000011",
+          "SourcePeriod": "2026-09-07 17:08:35.000",
+          "SourceLineNumbers": [
+            2
+          ],
+          "Quantity": {
+            "Opening": "39.000",
+            "Incoming": "0.000",
+            "Outgoing": "4.000",
+            "Closing": "35.000"
+          },
+          "Number": "TEST-2-02",
+          "SourceDate": "2026-09-07 17:08:35.000",
+          "Caption": null,
+          "CaptionAvailable": false
+        },
+        {
+          "World": "fenix",
+          "RecorderType": "00000122",
+          "RecorderReference": "00000000000000000000000000000012",
+          "SourcePeriod": "2026-09-08 16:22:25.000",
+          "SourceLineNumbers": [
+            1,
+            2
+          ],
+          "Quantity": {
+            "Opening": "35.000",
+            "Incoming": "1.000",
+            "Outgoing": "1.000",
+            "Closing": "35.000"
+          },
+          "Number": "TEST-2-03",
+          "SourceDate": "2026-09-08 16:22:25.000",
+          "Caption": null,
+          "CaptionAvailable": false
+        },
+        {
+          "World": "fenix",
+          "RecorderType": "00000120",
+          "RecorderReference": "00000000000000000000000000000013",
+          "SourcePeriod": "2026-09-08 16:53:21.000",
+          "SourceLineNumbers": [
+            1
+          ],
+          "Quantity": {
+            "Opening": "35.000",
+            "Incoming": "0.000",
+            "Outgoing": "1.000",
+            "Closing": "34.000"
+          },
+          "Number": "TEST-2-04",
+          "SourceDate": "2026-09-08 16:53:21.000",
+          "Caption": null,
+          "CaptionAvailable": false
+        },
+        {
+          "World": "fenix",
+          "RecorderType": "00000122",
+          "RecorderReference": "00000000000000000000000000000014",
+          "SourcePeriod": "2026-09-08 17:02:44.000",
+          "SourceLineNumbers": [
+            1,
+            2
+          ],
+          "Quantity": {
+            "Opening": "34.000",
+            "Incoming": "2.000",
+            "Outgoing": "2.000",
+            "Closing": "34.000"
+          },
+          "Number": "TEST-2-05",
+          "SourceDate": "2026-09-08 17:02:44.000",
+          "Caption": null,
+          "CaptionAvailable": false
+        },
+        {
+          "World": "fenix",
+          "RecorderType": "00000120",
+          "RecorderReference": "00000000000000000000000000000015",
+          "SourcePeriod": "2026-09-08 17:03:10.000",
+          "SourceLineNumbers": [
+            1
+          ],
+          "Quantity": {
+            "Opening": "34.000",
+            "Incoming": "0.000",
+            "Outgoing": "2.000",
+            "Closing": "32.000"
+          },
+          "Number": "TEST-2-06",
+          "SourceDate": "2026-09-08 17:03:10.000",
+          "Caption": null,
+          "CaptionAvailable": false
+        },
+        {
+          "World": "fenix",
+          "RecorderType": "00000122",
+          "RecorderReference": "00000000000000000000000000000016",
+          "SourcePeriod": "2026-09-10 11:25:54.000",
+          "SourceLineNumbers": [
+            5,
+            6
+          ],
+          "Quantity": {
+            "Opening": "32.000",
+            "Incoming": "1.000",
+            "Outgoing": "1.000",
+            "Closing": "32.000"
+          },
+          "Number": "TEST-2-07",
+          "SourceDate": "2026-09-10 11:25:54.000",
+          "Caption": null,
+          "CaptionAvailable": false
+        },
+        {
+          "World": "fenix",
+          "RecorderType": "00000120",
+          "RecorderReference": "00000000000000000000000000000017",
+          "SourcePeriod": "2026-09-10 11:26:42.000",
+          "SourceLineNumbers": [
+            2
+          ],
+          "Quantity": {
+            "Opening": "32.000",
+            "Incoming": "0.000",
+            "Outgoing": "1.000",
+            "Closing": "31.000"
+          },
+          "Number": "TEST-2-08",
+          "SourceDate": "2026-09-10 11:26:42.000",
+          "Caption": null,
+          "CaptionAvailable": false
+        },
+        {
+          "World": "fenix",
+          "RecorderType": "00000122",
+          "RecorderReference": "00000000000000000000000000000018",
+          "SourcePeriod": "2026-09-11 11:56:53.000",
+          "SourceLineNumbers": [
+            1,
+            2
+          ],
+          "Quantity": {
+            "Opening": "31.000",
+            "Incoming": "1.000",
+            "Outgoing": "1.000",
+            "Closing": "31.000"
+          },
+          "Number": "TEST-2-09",
+          "SourceDate": "2026-09-11 11:56:53.000",
+          "Caption": null,
+          "CaptionAvailable": false
+        },
+        {
+          "World": "fenix",
+          "RecorderType": "00000120",
+          "RecorderReference": "00000000000000000000000000000019",
+          "SourcePeriod": "2026-09-11 11:57:25.000",
+          "SourceLineNumbers": [
+            1
+          ],
+          "Quantity": {
+            "Opening": "31.000",
+            "Incoming": "0.000",
+            "Outgoing": "1.000",
+            "Closing": "30.000"
+          },
+          "Number": "TEST-2-10",
+          "SourceDate": "2026-09-11 11:57:25.000",
+          "Caption": null,
+          "CaptionAvailable": false
+        },
+        {
+          "World": "fenix",
+          "RecorderType": "00000122",
+          "RecorderReference": "0000000000000000000000000000001a",
+          "SourcePeriod": "2026-09-14 11:32:46.000",
+          "SourceLineNumbers": [
+            19,
+            20
+          ],
+          "Quantity": {
+            "Opening": "30.000",
+            "Incoming": "2.000",
+            "Outgoing": "2.000",
+            "Closing": "30.000"
+          },
+          "Number": "TEST-2-11",
+          "SourceDate": "2026-09-14 11:32:46.000",
+          "Caption": null,
+          "CaptionAvailable": false
+        },
+        {
+          "World": "fenix",
+          "RecorderType": "00000120",
+          "RecorderReference": "0000000000000000000000000000001b",
+          "SourcePeriod": "2026-09-14 11:33:27.000",
+          "SourceLineNumbers": [
+            5
+          ],
+          "Quantity": {
+            "Opening": "30.000",
+            "Incoming": "0.000",
+            "Outgoing": "2.000",
+            "Closing": "28.000"
+          },
+          "Number": "TEST-2-12",
+          "SourceDate": "2026-09-14 11:33:27.000",
+          "Caption": null,
+          "CaptionAvailable": false
+        },
+        {
+          "World": "fenix",
+          "RecorderType": "00000122",
+          "RecorderReference": "0000000000000000000000000000001c",
+          "SourcePeriod": "2026-09-23 10:58:32.000",
+          "SourceLineNumbers": [
+            3,
+            4
+          ],
+          "Quantity": {
+            "Opening": "28.000",
+            "Incoming": "1.000",
+            "Outgoing": "1.000",
+            "Closing": "28.000"
+          },
+          "Number": "TEST-2-13",
+          "SourceDate": "2026-09-23 10:58:32.000",
+          "Caption": null,
+          "CaptionAvailable": false
+        },
+        {
+          "World": "fenix",
+          "RecorderType": "00000120",
+          "RecorderReference": "0000000000000000000000000000001d",
+          "SourcePeriod": "2026-09-23 10:58:49.000",
+          "SourceLineNumbers": [
+            1
+          ],
+          "Quantity": {
+            "Opening": "28.000",
+            "Incoming": "0.000",
+            "Outgoing": "1.000",
+            "Closing": "27.000"
+          },
+          "Number": "TEST-2-14",
+          "SourceDate": "2026-09-23 10:58:49.000",
+          "Caption": null,
+          "CaptionAvailable": false
+        },
+        {
+          "World": "fenix",
+          "RecorderType": "00003f3d",
+          "RecorderReference": "0000000000000000000000000000000c",
+          "SourcePeriod": "2026-09-29 16:21:53.000",
+          "SourceLineNumbers": [
+            2
+          ],
+          "Quantity": {
+            "Opening": "27.000",
+            "Incoming": "0.000",
+            "Outgoing": "2.000",
+            "Closing": "25.000"
+          },
+          "Number": "TEST-2-15",
+          "SourceDate": "2026-09-29 16:21:53.000",
+          "Caption": null,
+          "CaptionAvailable": false
+        }
+      ],
+      "Caption": "Тестовий склад 2",
+      "CaptionAvailable": true
+    }
+  ],
+  "Totals": {
+    "Opening": "40.000",
+    "Incoming": "17.000",
+    "Outgoing": "32.000",
+    "Closing": "25.000"
+  },
+  "Version": 1,
+  "UnitPolicy": "SingleSourceProductNativeStoredQuantityNoCoefficientConversion",
+  "ArticlePolicy": "CurrentOURVendorCodeExactSingleSourceProduct",
+  "BalancePolicy": "OpeningClosingAreStatesNotRegistrarSums",
+  "OrderingPolicy": "SourcePeriod;DistinctRegistrarsAtSameTimeRefused",
+  "SourceParityVerified": false,
+  "OriginalFullTaskAccepted": false,
+  "Capture": {
+    "ScopeSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "ManifestSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "From": "2025-01-01",
+    "Through": "2026-10-24",
+    "SourceStartedUtc": "2026-10-24T10:04:36.4972755Z",
+    "SourceCompletedUtc": "2026-10-24T10:04:41.7425829Z",
+    "ThroughDayComplete": false
+  },
+  "MissingCaptionMappings": [
+    "MovementRegistrar"
+  ]
+}
