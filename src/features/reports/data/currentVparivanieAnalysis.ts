@@ -4,10 +4,13 @@ import type { ReportDataset, ReportFilterCondition, ReportRequestBody, ReportSel
 import type { NativeReportPreview } from './nativeReportPreview'
 
 export type CurrentVparivanieAnalysisRequest = { version: 1 }
+export const ANALYSIS_GROUPS_ENDPOINT = '/report/datasets/current-vparivanie/analysis/groups'
+export type AnalysisHierarchyBrowse = { version: 1; endpoint: typeof ANALYSIS_GROUPS_ENDPOINT; maximumPageSize: number }
+export type AnalysisTextEntry = { version: 1; allowedValues: string[] }
 export type AnalysisGroupSelection = { version: 1; itemField: 1; itemKind: 'product'; groupKind: 'productGroup'; mixedConditions: [3, 5] }
 export type AnalysisFieldDescriptor = {
   type: number; name: string; path: string[]; valueKind: string; branches: number[]
-  conditions: number[]; lookupKind: string; coverage: string; groupSelection?: AnalysisGroupSelection; available?: boolean; unavailabilityReason?: string | null
+  conditions: number[]; lookupKind: string; coverage: string; groupSelection?: AnalysisGroupSelection; hierarchyBrowse?: AnalysisHierarchyBrowse; textEntry?: AnalysisTextEntry; available?: boolean; unavailabilityReason?: string | null
 }
 export type CurrentVparivanieAnalysisCapability = {
   version: 1; maximumDimensions: 8; requiredColumnGrouping: 74; measure: 83
@@ -56,6 +59,11 @@ export function currentVparivanieAnalysisCapability(dataset: ReportDataset | nul
       && ['nativeId', 'sourceRef', 'text', 'documentRef', 'groupRef', 'date', 'none'].includes(String(f.lookupKind)) && ['currentMasterData', 'documentEvidence', 'allocationEvidence'].includes(String(f.coverage)) && ids(f.branches) && f.branches.every(b => b >= 1 && b <= 5)
       && (f.available === undefined || typeof f.available === 'boolean') && (f.available !== false || typeof f.unavailabilityReason === 'string' && !!f.unavailabilityReason)
       && (f.groupSelection == null || f.type === 4 && isAnalysisGroupSelection(f.groupSelection))
+      && (f.hierarchyBrowse == null || f.type === 4 && record(f.hierarchyBrowse) && f.hierarchyBrowse.version === 1
+        && f.hierarchyBrowse.endpoint === ANALYSIS_GROUPS_ENDPOINT && Number.isInteger(f.hierarchyBrowse.maximumPageSize)
+        && Number(f.hierarchyBrowse.maximumPageSize) > 0 && Number(f.hierarchyBrowse.maximumPageSize) <= 50)
+      && (f.textEntry == null || f.type === 3 && record(f.textEntry) && f.textEntry.version === 1 && strings(f.textEntry.allowedValues)
+        && f.textEntry.allowedValues.length > 0 && f.textEntry.allowedValues.length <= 32 && new Set(f.textEntry.allowedValues).size === f.textEntry.allowedValues.length)
       && ids(f.conditions) && f.conditions.every(c => c <= 7)) && new Set(raw.map(f => f.type)).size === raw.length
   return fields(value.groupings) && fields(value.filters) ? value as unknown as CurrentVparivanieAnalysisCapability : undefined
 }
@@ -113,6 +121,8 @@ export function analysisGroupIdentity(value: ReportEntity): { kind: 'product' | 
 }
 export function analysisValueIdentity(field: number, value: ReportEntity): string {
   const group = field === 4 ? analysisGroupIdentity(value) : null
+  const entries = Object.entries(value)
+  if ([2, 3].includes(field) && entries.length === 1 && ['name', 'value'].includes(entries[0][0].toLowerCase()) && typeof entries[0][1] === 'string') return `text:${entries[0][1]}`
   return group ? `${group.kind}:${BigInt(group.id)}` : JSON.stringify(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)))
 }
 export function changeAnalysisSelectionCondition(selection: ReportSelection, condition: ReportFilterCondition): ReportSelection {

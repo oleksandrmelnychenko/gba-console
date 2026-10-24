@@ -1,6 +1,7 @@
+import groupsWire from '../data/currentVparivanieAnalysis.ua-groups-live-fixture.json'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { searchAnalysisValues } from './currentVparivanieAnalysisApi'
+import { getAnalysisGroupPage, searchAnalysisValues } from './currentVparivanieAnalysisApi'
 import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from './reportWorkspaceApi'
 import captured from '../data/currentVparivanieAnalysis.live-fixture.json'
 import type { ReportRequestBody } from '../types'
@@ -84,4 +85,35 @@ it('accepts captured DEV grouping-only coverage with active filters and keeps pa
   missingAxis.Preview.currentVparivanieAnalysis.fieldCoverage.pop()
   api.mockResolvedValueOnce(missingAxis)
   await expect(previewStockReport(request)).rejects.toThrow('покриття всіх групувань')
+})
+
+it('loads a bounded group level with exact int64 identities and checks the echoed parent', async () => {
+  api.mockResolvedValueOnce({ parentId: '1', hasMore: true, items: [{ id: '9223372036854775807', name: 'Child', data: '{"Id":"9223372036854775807"}', hasChildren: true }] })
+  expect((await getAnalysisGroupPage('1', 0, 50, ''))).toEqual({ parentId: '1', hasMore: true,
+    items: [{ id: '9223372036854775807', name: 'Child', data: { Id: '9223372036854775807' }, hasChildren: true }] })
+  expect(api).toHaveBeenLastCalledWith('/report/datasets/current-vparivanie/analysis/groups', expect.objectContaining({ query: { parentId: '1', offset: 0, limit: 50, value: '' } }))
+  api.mockResolvedValueOnce({ parentId: '2', hasMore: false, items: [] })
+  await expect(getAnalysisGroupPage('1', 0, 50, '')).rejects.toThrow('ієрархію')
+})
+it.each([
+  { parentId: null, items: [], hasMore: true },
+  { parentId: null, items: [{ id: '1', name: 'X', data: '{"Id":2}', hasChildren: false }], hasMore: false },
+  { parentId: null, items: [{ id: '1', name: 'X', data: '{"kind":"product","id":1}', hasChildren: false }], hasMore: false },
+  { parentId: null, items: [{ id: '1', name: 'X', data: '{"Id":1}', hasChildren: true }, { id: '01', name: 'X duplicate', data: '{"Id":"01"}', hasChildren: false }], hasMore: false },
+])('refuses malformed hierarchy pages without treating them as an empty tree', async page => {
+  api.mockResolvedValueOnce(page)
+  await expect(getAnalysisGroupPage(null, 0, 50, '')).rejects.toThrow()
+})
+
+it('accepts anonymized actual DEV group pages with root pagination and scoped direct children', async () => {
+  api.mockResolvedValueOnce(groupsWire.roots).mockResolvedValueOnce(groupsWire.rootsSecond).mockResolvedValueOnce(groupsWire.contech)
+  const roots = await getAnalysisGroupPage(null, 0, 50, '')
+  const second = await getAnalysisGroupPage(null, 50, 50, '')
+  const children = await getAnalysisGroupPage(groupsWire.contech.parentId, 0, 50, '')
+  expect(roots.items).toHaveLength(50)
+  expect(roots.hasMore).toBe(true)
+  expect(second.items).toHaveLength(31)
+  expect(second.hasMore).toBe(false)
+  expect(children.items).toHaveLength(14)
+  expect([...roots.items, ...second.items].some(item => item.id === children.parentId)).toBe(true)
 })

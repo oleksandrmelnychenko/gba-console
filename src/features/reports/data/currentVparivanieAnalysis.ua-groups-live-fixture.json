@@ -1,0 +1,614 @@
+{
+  "roots": {
+    "parentId": null,
+    "items": [
+      {
+        "id": "1",
+        "name": "Group 1",
+        "data": "{\"Id\":\"1\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "2",
+        "name": "Group 2",
+        "data": "{\"Id\":\"2\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "3",
+        "name": "Group 3",
+        "data": "{\"Id\":\"3\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "4",
+        "name": "Group 4",
+        "data": "{\"Id\":\"4\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "5",
+        "name": "Group 5",
+        "data": "{\"Id\":\"5\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "6",
+        "name": "Group 6",
+        "data": "{\"Id\":\"6\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "7",
+        "name": "Group 7",
+        "data": "{\"Id\":\"7\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "8",
+        "name": "Group 8",
+        "data": "{\"Id\":\"8\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "9",
+        "name": "Group 9",
+        "data": "{\"Id\":\"9\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "10",
+        "name": "Group 10",
+        "data": "{\"Id\":\"10\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "11",
+        "name": "Group 11",
+        "data": "{\"Id\":\"11\"}",
+        "hasChildren": true
+      },
+      {
+        "id": "12",
+        "name": "Group 12",
+        "data": "{\"Id\":\"12\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "13",
+        "name": "Group 13",
+        "data": "{\"Id\":\"13\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "14",
+        "name": "Group 14",
+        "data": "{\"Id\":\"14\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "15",
+        "name": "Group 15",
+        "data": "{\"Id\":\"15\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "16",
+        "name": "Group 16",
+        "data": "{\"Id\":\"16\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "17",
+        "name": "Group 17",
+        "data": "{\"Id\":\"17\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "18",
+        "name": "Group 18",
+        "data": "{\"Id\":\"18\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "19",
+        "name": "Group 19",
+        "data": "{\"Id\":\"19\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "20",
+        "name": "Group 20",
+        "data": "{\"Id\":\"20\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "21",
+        "name": "Group 21",
+        "data": "{\"Id\":\"21\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "22",
+        "name": "Group 22",
+        "data": "{\"Id\":\"22\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "23",
+        "name": "Group 23",
+        "data": "{\"Id\":\"23\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "24",
+        "name": "Group 24",
+        "data": "{\"Id\":\"24\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "25",
+        "name": "Group 25",
+        "data": "{\"Id\":\"25\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "26",
+        "name": "Group 26",
+        "data": "{\"Id\":\"26\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "27",
+        "name": "Group 27",
+        "data": "{\"Id\":\"27\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "28",
+        "name": "Group 28",
+        "data": "{\"Id\":\"28\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "29",
+        "name": "Group 29",
+        "data": "{\"Id\":\"29\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "30",
+        "name": "Group 30",
+        "data": "{\"Id\":\"30\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "31",
+        "name": "Group 31",
+        "data": "{\"Id\":\"31\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "32",
+        "name": "Group 32",
+        "data": "{\"Id\":\"32\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "33",
+        "name": "Group 33",
+        "data": "{\"Id\":\"33\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "34",
+        "name": "Group 34",
+        "data": "{\"Id\":\"34\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "35",
+        "name": "Group 35",
+        "data": "{\"Id\":\"35\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "36",
+        "name": "Group 36",
+        "data": "{\"Id\":\"36\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "37",
+        "name": "Group 37",
+        "data": "{\"Id\":\"37\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "38",
+        "name": "Group 38",
+        "data": "{\"Id\":\"38\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "39",
+        "name": "Group 39",
+        "data": "{\"Id\":\"39\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "40",
+        "name": "Group 40",
+        "data": "{\"Id\":\"40\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "41",
+        "name": "Group 41",
+        "data": "{\"Id\":\"41\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "42",
+        "name": "Group 42",
+        "data": "{\"Id\":\"42\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "43",
+        "name": "Group 43",
+        "data": "{\"Id\":\"43\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "44",
+        "name": "Group 44",
+        "data": "{\"Id\":\"44\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "45",
+        "name": "Group 45",
+        "data": "{\"Id\":\"45\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "46",
+        "name": "Group 46",
+        "data": "{\"Id\":\"46\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "47",
+        "name": "Group 47",
+        "data": "{\"Id\":\"47\"}",
+        "hasChildren": true
+      },
+      {
+        "id": "48",
+        "name": "Group 48",
+        "data": "{\"Id\":\"48\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "49",
+        "name": "Group 49",
+        "data": "{\"Id\":\"49\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "50",
+        "name": "Group 50",
+        "data": "{\"Id\":\"50\"}",
+        "hasChildren": false
+      }
+    ],
+    "hasMore": true
+  },
+  "rootsSecond": {
+    "parentId": null,
+    "items": [
+      {
+        "id": "51",
+        "name": "Group 51",
+        "data": "{\"Id\":\"51\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "52",
+        "name": "Group 52",
+        "data": "{\"Id\":\"52\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "53",
+        "name": "Group 53",
+        "data": "{\"Id\":\"53\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "54",
+        "name": "Group 54",
+        "data": "{\"Id\":\"54\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "55",
+        "name": "Group 55",
+        "data": "{\"Id\":\"55\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "56",
+        "name": "Group 56",
+        "data": "{\"Id\":\"56\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "57",
+        "name": "Group 57",
+        "data": "{\"Id\":\"57\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "58",
+        "name": "Group 58",
+        "data": "{\"Id\":\"58\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "59",
+        "name": "Group 59",
+        "data": "{\"Id\":\"59\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "60",
+        "name": "Group 60",
+        "data": "{\"Id\":\"60\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "61",
+        "name": "Group 61",
+        "data": "{\"Id\":\"61\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "62",
+        "name": "Group 62",
+        "data": "{\"Id\":\"62\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "63",
+        "name": "Group 63",
+        "data": "{\"Id\":\"63\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "64",
+        "name": "Group 64",
+        "data": "{\"Id\":\"64\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "65",
+        "name": "Group 65",
+        "data": "{\"Id\":\"65\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "66",
+        "name": "Group 66",
+        "data": "{\"Id\":\"66\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "67",
+        "name": "Group 67",
+        "data": "{\"Id\":\"67\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "68",
+        "name": "Group 68",
+        "data": "{\"Id\":\"68\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "69",
+        "name": "Group 69",
+        "data": "{\"Id\":\"69\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "70",
+        "name": "Group 70",
+        "data": "{\"Id\":\"70\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "71",
+        "name": "Group 71",
+        "data": "{\"Id\":\"71\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "72",
+        "name": "Group 72",
+        "data": "{\"Id\":\"72\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "73",
+        "name": "Group 73",
+        "data": "{\"Id\":\"73\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "74",
+        "name": "Group 74",
+        "data": "{\"Id\":\"74\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "75",
+        "name": "Group 75",
+        "data": "{\"Id\":\"75\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "76",
+        "name": "Group 76",
+        "data": "{\"Id\":\"76\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "77",
+        "name": "Group 77",
+        "data": "{\"Id\":\"77\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "78",
+        "name": "Group 78",
+        "data": "{\"Id\":\"78\"}",
+        "hasChildren": true
+      },
+      {
+        "id": "79",
+        "name": "Group 79",
+        "data": "{\"Id\":\"79\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "80",
+        "name": "Group 80",
+        "data": "{\"Id\":\"80\"}",
+        "hasChildren": true
+      },
+      {
+        "id": "81",
+        "name": "Group 81",
+        "data": "{\"Id\":\"81\"}",
+        "hasChildren": false
+      }
+    ],
+    "hasMore": false
+  },
+  "contech": {
+    "parentId": "11",
+    "items": [
+      {
+        "id": "82",
+        "name": "Group 82",
+        "data": "{\"Id\":\"82\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "83",
+        "name": "Group 83",
+        "data": "{\"Id\":\"83\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "84",
+        "name": "Group 84",
+        "data": "{\"Id\":\"84\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "85",
+        "name": "Group 85",
+        "data": "{\"Id\":\"85\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "86",
+        "name": "Group 86",
+        "data": "{\"Id\":\"86\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "87",
+        "name": "Group 87",
+        "data": "{\"Id\":\"87\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "88",
+        "name": "Group 88",
+        "data": "{\"Id\":\"88\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "89",
+        "name": "Group 89",
+        "data": "{\"Id\":\"89\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "90",
+        "name": "Group 90",
+        "data": "{\"Id\":\"90\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "91",
+        "name": "Group 91",
+        "data": "{\"Id\":\"91\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "92",
+        "name": "Group 92",
+        "data": "{\"Id\":\"92\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "93",
+        "name": "Group 93",
+        "data": "{\"Id\":\"93\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "94",
+        "name": "Group 94",
+        "data": "{\"Id\":\"94\"}",
+        "hasChildren": false
+      },
+      {
+        "id": "95",
+        "name": "Group 95",
+        "data": "{\"Id\":\"95\"}",
+        "hasChildren": false
+      }
+    ],
+    "hasMore": false
+  },
+  "contechFirst": {
+    "parentId": "11",
+    "items": [
+      {
+        "id": "82",
+        "name": "Group 82",
+        "data": "{\"Id\":\"82\"}",
+        "hasChildren": false
+      }
+    ],
+    "hasMore": true
+  },
+  "contechSecond": {
+    "parentId": "11",
+    "items": [
+      {
+        "id": "83",
+        "name": "Group 83",
+        "data": "{\"Id\":\"83\"}",
+        "hasChildren": false
+      }
+    ],
+    "hasMore": true
+  }
+}

@@ -88,3 +88,35 @@ it('ignores an old group response after switching the mixed lookup to products',
   fireEvent.click(screen.getByRole('option', { name: 'Current product' }))
   expect(screen.getByText('Товар: Current product')).toBeTruthy()
 })
+
+it('browses all 51 managers through bounded pages and keeps the original selected identity', async () => {
+  const values = Array.from({ length: 51 }, (_, i) => ({ id: String(i + 1), name: `Manager ${i + 1}`, data: { Id: (i + 1).toString(16).padStart(32, '0') } }))
+  vi.mocked(searchAnalysisValues).mockReset().mockResolvedValueOnce(values.slice(0, 30)).mockResolvedValueOnce(values.slice(30))
+  const onChange = vi.fn()
+  render(<MantineProvider env="test"><I18nProvider><CurrentVparivanieAnalysisValuePicker
+    selection={{ IsChecked: true, SelectedField: { Type: 60, Name: 'Manager' }, FilterCondition: { Type: 2, Name: 'У списку' }, Values: [{ Data: values[0].data, Name: values[0].name, Value: 0 }] }}
+    selections={[]} from="2026-01-01" to="2026-10-20" onChange={onChange} /></I18nProvider></MantineProvider>)
+  fireEvent.click(await screen.findByRole('button', { name: 'Ще значення' }))
+  await waitFor(() => expect(searchAnalysisValues).toHaveBeenLastCalledWith(60, '', '2026-01-01', '2026-10-20', undefined, expect.any(AbortSignal), 30))
+  await waitFor(() => expect(screen.queryByRole('button', { name: 'Ще значення' })).toBeNull())
+  fireEvent.click(screen.getByRole('button', { name: 'Значення' }))
+  fireEvent.click(await screen.findByRole('option', { name: 'Manager 51' }))
+  expect(screen.queryByRole('option', { name: 'Всі' })).toBeNull()
+  expect(onChange).toHaveBeenCalledWith([{ Data: values[0].data, Name: values[0].name, Value: 0 }, { Data: values[50].data, Name: values[50].name, Value: 0 }])
+})
+it('discards a previous period’s pending lookup page and does not merge stale users into new matches', async () => {
+  const first = Array.from({ length: 30 }, (_, i) => ({ id: String(i + 1), name: `Manager ${i + 1}`, data: { Id: i + 1 } }))
+  let resolvePage!: (values: typeof first) => void
+  vi.mocked(searchAnalysisValues).mockReset().mockResolvedValueOnce(first)
+    .mockImplementationOnce(() => new Promise(resolve => { resolvePage = resolve }))
+    .mockResolvedValueOnce([{ id: '100', name: 'New period', data: { Id: 100 } }])
+  const props = { selection: { IsChecked: true, SelectedField: { Type: 5, Name: 'Buyer' }, FilterCondition: { Type: 0, Name: 'Дорівнює' }, Values: [] }, selections: [], to: '2026-10-20', onChange: vi.fn() }
+  const view = render(<MantineProvider env="test"><CurrentVparivanieAnalysisValuePicker {...props} from="2026-01-01" /></MantineProvider>)
+  fireEvent.click(await screen.findByRole('button', { name: 'Ще значення' }))
+  view.rerender(<MantineProvider env="test"><CurrentVparivanieAnalysisValuePicker {...props} from="2026-10-01" /></MantineProvider>)
+  resolvePage([{ id: '99', name: 'Stale manager', data: { Id: 99 } }])
+  await waitFor(() => expect(searchAnalysisValues).toHaveBeenCalledTimes(3))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Значення' }))
+  await screen.findByRole('option', { name: 'New period' })
+  expect(screen.queryByRole('option', { name: 'Stale manager' })).toBeNull()
+})

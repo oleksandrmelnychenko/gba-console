@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react'
-import { Alert, Group, Loader, SegmentedControl, Select, Stack, Text } from '@mantine/core'
+import { AnalysisGroupBrowser } from './AnalysisGroupBrowser'
+import { AnalysisTopEntry } from './AnalysisTopEntry'
+import { useEffect, useRef, useState } from 'react'
+import { Alert, Button, Group, Loader, SegmentedControl, Select, Stack, Text } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
@@ -20,15 +22,36 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
   const buyer = selections.find(s => s.IsChecked !== false && [5, 6].includes(s.SelectedField.Type) && s.FilterCondition.Type === 0 && s.Values.length === 1)
   const buyerId = buyer?.Values[0].Data.Id
   const scope = JSON.stringify([selection.SelectedField.Type, selection.FilterCondition.Type, lookupField, from, to, buyerId ?? null, query])
-  const [result, setResult] = useState<{ scope: string; values: AnalysisLookupValue[]; error?: string } | null>(null)
+  const [result, setResult] = useState<{ scope: string; values: AnalysisLookupValue[]; nextOffset: number; hasMore: boolean; loadingMore?: boolean; error?: string } | null>(null)
+  const moreRequest = useRef<AbortController | null>(null)
   useEffect(() => {
     const controller = new AbortController()
     void searchAnalysisValues(lookupField, query, from, to, typeof buyerId === 'string' || typeof buyerId === 'number' && Number.isSafeInteger(buyerId) ? String(buyerId) : undefined, controller.signal)
-      .then(values => { if (!controller.signal.aborted) setResult({ scope, values }) })
-      .catch(error => { if (!controller.signal.aborted) setResult({ scope, values: [], error: error instanceof Error ? error.message : 'Не вдалося прочитати значення.' }) })
-    return () => controller.abort()
+      .then(values => { if (!controller.signal.aborted) setResult({ scope, values, nextOffset: values.length, hasMore: values.length === 30 }) })
+      .catch(error => { if (!controller.signal.aborted) setResult({ scope, values: [], nextOffset: 0, hasMore: false, error: error instanceof Error ? error.message : 'Не вдалося прочитати значення.' }) })
+    return () => { controller.abort(); moreRequest.current?.abort() }
   }, [lookupField, selection.FilterCondition.Type, query, from, to, buyerId, scope])
   const current = result?.scope === scope ? result : null
+  const loadMore = async () => {
+    if (!current?.hasMore || current.loadingMore || current.nextOffset >= 4080) return
+    const controller = new AbortController()
+    moreRequest.current = controller
+    setResult(previous => previous?.scope === scope ? { ...previous, loadingMore: true, error: undefined } : previous)
+    try {
+      const values = await searchAnalysisValues(lookupField, query, from, to,
+        typeof buyerId === 'string' || typeof buyerId === 'number' && Number.isSafeInteger(buyerId) ? String(buyerId) : undefined,
+        controller.signal, current.nextOffset)
+      if (!controller.signal.aborted) setResult(previous => {
+        if (previous?.scope !== scope) return previous
+        const existing = new Set(previous.values.map(value => value.id))
+        return { ...previous, values: [...previous.values, ...values.filter(value => !existing.has(value.id))],
+          nextOffset: current.nextOffset + values.length, hasMore: values.length === 30, loadingMore: false }
+      })
+    } catch (error) {
+      if (!controller.signal.aborted) setResult(previous => previous?.scope === scope ? { ...previous, loadingMore: false,
+        error: error instanceof Error ? error.message : 'Не вдалося прочитати наступні значення.' } : previous)
+    }
+  }
   const multiple = isMultiValueReportCondition(selection.FilterCondition.Type)
   const optionValues = (current?.values ?? []).flatMap(item => {
     const lookupIdentity = mixed ? analysisGroupIdentity(item.data) : null
@@ -62,9 +85,14 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
     {multiple ? <CheckboxMultiSelect label="Значення" placeholder="Оберіть значення" data={options} value={selectedKeys}
       onChange={changeMultiple} withinPortal={false} remoteSearch={{ value: search, onChange: setSearch, loading: !current }} />
       : <Select comboboxProps={{ withinPortal: false }} label="Значення" placeholder={isGroup ? 'Знайти групу' : 'Знайти значення'}
-        searchable searchValue={search} onSearchChange={setSearch}
+        searchable filter={({ options }) => options} searchValue={search} onSearchChange={setSearch}
         data={options} value={null} onChange={add}
         rightSection={!current ? <Loader size="xs" /> : undefined} nothingFoundMessage="Нічого не знайдено" />}
+    {current?.hasMore ? current.nextOffset < 4080
+      ? <Button type="button" variant="subtle" size="compact-sm" loading={current.loadingMore} onClick={() => void loadMore()}>Ще значення</Button>
+      : <Text size="xs" c="dimmed">Показано 4080 значень. Звузьте пошук, щоб знайти потрібне.</Text> : null}
+    {descriptor?.hierarchyBrowse && selection.SelectedField.Type === 4 ? <AnalysisGroupBrowser descriptor={descriptor} selection={selection} onChange={onChange} /> : null}
+    {descriptor?.textEntry && selection.SelectedField.Type === 3 ? <AnalysisTopEntry capability={descriptor.textEntry} selection={selection} onChange={onChange} /> : null}
     {current?.error ? <Alert color="red">{current.error}</Alert> : null}
     {multiple && selection.Values.length > 0 ? <Text size="xs">Вибрано: {selection.Values.length}</Text> : null}
     {selection.Values.map((v, index) => {
