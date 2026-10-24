@@ -403,12 +403,23 @@ export type ReportDataset = {
   Limitations: string[]
 }
 
-export type OneCTurnoverFilters = {
+export type LegacyOneCTurnoverFilters = {
+  ScopeVersion?: null
   OrganizationIds: string[]
   ProductKindId: string
   ExcludeServices: boolean
   BuyerRootId?: string | null
 }
+
+export type OrganizationOnlyTurnoverFilters = {
+  ScopeVersion: 3
+  OrganizationIds: string[]
+  ProductKindId?: null
+  ExcludeServices?: null
+  BuyerRootId?: null
+}
+
+export type OneCTurnoverFilters = LegacyOneCTurnoverFilters | OrganizationOnlyTurnoverFilters
 
 export type OneCTurnoverScopeSummary = {
   Key: string

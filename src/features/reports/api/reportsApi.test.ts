@@ -1,3 +1,5 @@
+import actualScope from '../data/oneCTurnoverScope.http-fixture.json'
+import { organizationOnlyScope } from '../data/oneCTurnoverScopes.test-fixtures'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { createStockReport, previewStockReport, getOneCTurnoverScopes, searchDatasetReportValues, searchReportUsers, searchValuationAgreements } from './reportsApi'
@@ -154,6 +156,44 @@ describe('reportsApi', () => {
     apiRequestMock.mockResolvedValueOnce([])
     await expect(getOneCTurnoverScopes(signal)).resolves.toEqual([])
     expect(apiRequestMock).toHaveBeenCalledWith('/report/stocks/one-c/scopes', { signal })
+  })
+
+
+  it('accepts the exact GBA HTTP serializer v3 scope with UTC instants intact', async () => {
+    apiRequestMock.mockResolvedValueOnce([actualScope])
+    const scopes = await getOneCTurnoverScopes()
+    expect(scopes).toEqual([actualScope])
+    expect(scopes[0].OldestReadCompletedUtc).toBe('2026-10-24T08:34:02.4248058Z')
+    expect(scopes[0].Filters).toMatchObject({ ScopeVersion: 3, ProductKindId: null, ExcludeServices: null, BuyerRootId: null })
+  })
+
+  it.each([{ FirstDay: '2026-02-30' }, { LastDay: '2026-08-01' }, { LoadedDayCount: 999 }])('rejects malformed v3 publication range %#', patch => {
+    apiRequestMock.mockResolvedValueOnce([{ ...organizationOnlyScope, ...patch }])
+    return expect(getOneCTurnoverScopes()).rejects.toThrow('Invalid 1C report scope catalogue')
+  })
+
+  it('keeps legacy v1/v2 and published v3 together without rewriting source filters', async () => {
+    const legacy = { ...organizationOnlyScope, Key: 'b'.repeat(64), Filters: {
+      OrganizationIds: ['1'.repeat(32)], ProductKindId: '2'.repeat(32), ExcludeServices: true,
+    } }
+    const exactCost = { ...legacy, Key: 'c'.repeat(64), Filters: { ...legacy.Filters, BuyerRootId: '8AB2005056C0000811DEFC4535BB4D40' } }
+    const scopes = [legacy, organizationOnlyScope, exactCost]
+    apiRequestMock.mockResolvedValueOnce(scopes)
+    await expect(getOneCTurnoverScopes()).resolves.toEqual(scopes)
+  })
+
+  it.each([
+    { ScopeVersion: 4 }, { ScopeVersion: 1 }, { ProductKindId: '2'.repeat(32) }, { ExcludeServices: false },
+    { BuyerRootId: '8AB2005056C0000811DEFC4535BB4D40' }, { OrganizationIds: ['1'.repeat(32)] },
+    { OrganizationIds: [...organizationOnlyScope.Filters.OrganizationIds, '88D1B8CB29DC7A6911ECFC60797DF65F'] },
+  ])('rejects changed v3 population or unsupported version %#', async patch => {
+    apiRequestMock.mockResolvedValueOnce([{ ...organizationOnlyScope, Filters: { ...organizationOnlyScope.Filters, ...patch } }])
+    await expect(getOneCTurnoverScopes()).rejects.toThrow('Invalid 1C report scope catalogue')
+  })
+
+  it('rejects unqualified v3 source timestamps instead of labeling local wall time UTC', async () => {
+    apiRequestMock.mockResolvedValueOnce([{ ...organizationOnlyScope, NewestReadCompletedUtc: '2026-10-24T11:01:00' }])
+    await expect(getOneCTurnoverScopes()).rejects.toThrow('Invalid 1C report scope catalogue')
   })
 
   it('rejects malformed scope metadata instead of inventing source filters', async () => {

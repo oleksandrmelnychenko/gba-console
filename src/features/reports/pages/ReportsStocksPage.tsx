@@ -1,3 +1,6 @@
+import { OneCTurnoverResponsiblesPanel } from './OneCTurnoverResponsiblesPanel'
+import { isOrganizationOnlyTurnoverScope, ORGANIZATION_ONLY_TURNOVER_CHOICE } from '../data/oneCTurnoverScopes'
+import type { OneCTurnoverScopeSummary } from '../types'
 import { ANALYSIS_SCOPE_NOTICE, currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis, analysisFilterConditions, analysisSelectionValueError, changeAnalysisSelectionCondition } from '../data/currentVparivanieAnalysis'
 import { ReportFieldPicker } from './ReportFieldPicker'
 import { CurrentVparivanieAnalysisValuePicker } from './CurrentVparivanieAnalysisValuePicker'
@@ -384,6 +387,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const [cashPeriod, setCashPeriod] = useValueState<unknown>(undefined)
   const [oneCSpecialSettings, setOneCSpecialSettings] = useValueState<unknown>(undefined)
   const [oneCScope, setOneCScope] = useValueState<OneCTurnoverFilters | undefined>(undefined)
+  const [responsiblesScope, setResponsiblesScope] = useState<{ scope: OneCTurnoverScopeSummary; caller: string | null } | null>(null)
   const [oneCReportOpen, setOneCReportOpen] = useState(false)
   const [oneCReportGenerating, setOneCReportGenerating] = useState(false)
   const [debtRatioCapability, setDebtRatioCapability] = useState<DebtToSalesRatioCapabilities | null>(null)
@@ -1062,6 +1066,11 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       notice={groupingOrdering.notice} onChange={groupingOrdering.changeOrdering} />,
   }
   const dialogs = <>
+    {responsiblesScope && canGenerateReport && responsiblesScope.caller === ownerId ? <ReportModal opened title="Продажі за відповідальними" size={960}
+      onClose={() => setResponsiblesScope(null)}>
+      <OneCTurnoverResponsiblesPanel scope={responsiblesScope.scope} canGenerate={canGenerateReport} callerKey={ownerId}
+        onClose={() => setResponsiblesScope(null)} />
+    </ReportModal> : null}
     {mountsDialog(oneCReportOpen) ? <ReportModal opened={oneCReportOpen} title={t('Валовий прибуток — як у 1С')} size={960}
       onClose={() => { if (!oneCReportGenerating) setOneCReportOpen(false) }}
       closeOnClickOutside={!oneCReportGenerating} closeOnEscape={!oneCReportGenerating}
@@ -1148,7 +1157,12 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     />
   )
 
-  const catalogueControl = (quiet: boolean) => <ReportCatalogueControl consoleScope={consoleScope} presentation="dialog" enabled={canGenerateReport}
+  const catalogueControl = (quiet: boolean) => <ReportCatalogueControl onOpenTurnoverResponsibles={(scope, catalogue) => {
+    if (!canGenerateReport || isLoading || !isOrganizationOnlyTurnoverScope(scope)
+      || !isOneCTurnoverCatalogueChoice(catalogue, ORGANIZATION_ONLY_TURNOVER_CHOICE)) return false
+    setResponsiblesScope({ scope: structuredClone(scope), caller: ownerId })
+    return true
+  }} consoleScope={consoleScope} presentation="dialog" enabled={canGenerateReport}
     quiet={quiet} onOpenWorkbook={openWorkbook}
     disabled={isLoading || workbookResolving} onOpen={openCatalogueReport}
     onOpenDebtToSalesRatio={openDebtToSalesRatio} onOpenCollectionCoefficient={collectionConstructor.open} onOpenSalesMargin={salesMarginConstructor.open} onOpenCashMovement={cashMovementConstructor.open} onOpenSupplierDebt={supplierDebtConstructor.open} onOpenEmployeeGrossProfit={employeeGrossProfitConstructor.open} onOpenOverdueReceivables={overdueReceivablesConstructor.open} onOpenManagementReturns={managementReturnsConstructor.open} onOpenManagementBalance={managementBalanceConstructor.open} onOpenManagementOrders={managementOrdersConstructor.open} onOpenDefectProduction={defectProductionConstructor.open} onOpenInventoryTurnover={inventoryTurnoverConstructor.open} onOpenCurrentLiquidity={currentLiquidityConstructor.open} onOpenPlannedCash={plannedCashConstructor.open} callerKey={ownerId} onOpenActiveClients={openActiveClients}

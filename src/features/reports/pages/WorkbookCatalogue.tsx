@@ -1,3 +1,4 @@
+import { OneCTurnoverResponsiblesLaunch, type OpenTurnoverResponsibles } from './OneCTurnoverResponsiblesLaunch'
 import { Alert, Button, Group, Select, Text, TextInput } from '@mantine/core'
 import { RotateCcw, Search } from 'lucide-react'
 import { useMemo, useState, type ReactNode } from 'react'
@@ -16,11 +17,13 @@ type Props = {
   datasets: ReportDataset[] | null
   canGenerate: boolean
   disabled: boolean
+  callerKey?: string | null
+  onOpenTurnoverResponsibles?: OpenTurnoverResponsibles
   onOpenWorkbook?: (launch: WorkbookLaunch) => boolean
   renderDetails: (report: ReportCatalogueEntry) => ReactNode
 }
 
-export function WorkbookCatalogue({ catalogue, inspection, datasets, canGenerate, disabled, onOpenWorkbook, renderDetails }: Props) {
+export function WorkbookCatalogue({ catalogue, inspection, datasets, canGenerate, disabled, onOpenWorkbook, renderDetails, callerKey = null, onOpenTurnoverResponsibles }: Props) {
   const { t } = useI18n()
   const [search, setSearch] = useState('')
   const [world, setWorld] = useState<string | null>(null)
@@ -42,15 +45,17 @@ export function WorkbookCatalogue({ catalogue, inspection, datasets, canGenerate
     { id: 'forms', header: t('Відкрити форму'), width: 400, minWidth: 300, enableSorting: false,
       cell: report => {
         const forms = launches.filter(launch => BUG_1274_WORKBOOK_REPORT_IDS[launch.fileName] === report.Id)
-        return forms.length ? <Group gap={6} wrap="nowrap">
+        const turnover = report.Id === 'builtin:ВаловаяПрибыль' ? <OneCTurnoverResponsiblesLaunch
+          catalogue={catalogue} canGenerate={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenTurnoverResponsibles} /> : null
+        return <Group gap={6}>{forms.length ? <Group gap={6} wrap="nowrap">
           {forms.map(launch => <Button key={launch.fileName} type="button" size="compact-sm" variant="default"
             aria-label={workbookDisplayFileName(launch.fileName)} title={workbookDisplayFileName(launch.fileName)} disabled={disabled || !canGenerate || !onOpenWorkbook}
             onClick={event => { event.stopPropagation(); if (!disabled && canGenerate) onOpenWorkbook?.(launch) }}>
             {t(workbookDeskEntry(launch.fileName)?.name ?? launch.label)}
           </Button>)}
-        </Group> : <Text size="sm" c="gray.7">{t(canGenerate ? 'Форми недоступні' : 'Немає права формування')}</Text>
+        </Group> : <Text size="sm" c="gray.7">{t(canGenerate ? 'Форми недоступні' : 'Немає права формування')}</Text>}{turnover}</Group>
       } },
-  ], [t, launches, canGenerate, disabled, onOpenWorkbook])
+  ], [t, launches, canGenerate, disabled, onOpenWorkbook, catalogue, callerKey, onOpenTurnoverResponsibles])
   return <div className="report-catalogue workbook-catalogue">
     {!inspection.valid ? <Alert color="yellow">{t('Стан перенесення не підтверджений сервером. Перевірте відомості про звіт.')}</Alert> : null}
     <div className="workbook-catalogue__list">

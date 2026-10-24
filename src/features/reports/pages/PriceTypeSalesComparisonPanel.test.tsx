@@ -1,3 +1,4 @@
+import { organizationOnlyScope } from '../data/oneCTurnoverScopes.test-fixtures'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -47,6 +48,15 @@ describe('PriceTypeSalesComparisonPanel', () => {
     fireEvent.click(screen.getByRole('combobox', { name: 'Глобальний тип ціни Fenix' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Оптова глобальна' }))
     expect(onChange).toHaveBeenCalledWith({ Version: 1, SourceWorld: 1, PriceTypeId: PRICE_TYPE_ID })
+  })
+
+  it('does not offer organization-only v3 coverage to the legacy price comparison', async () => {
+    vi.mocked(getOneCTurnoverScopes).mockResolvedValue([organizationOnlyScope])
+    render(<MantineProvider env="test"><PriceTypeSalesComparisonPanel dataSource={27} disabled={false}
+      value={{ Version: 1, SourceWorld: 1, PriceTypeId: '' }} scope={undefined}
+      onChange={vi.fn()} onScopeChange={vi.fn()} /></MantineProvider>)
+    expect(await screen.findByText(/немає завантажених продажів Fenix/)).toBeTruthy()
+    expect(screen.queryByText(/Організація 1/)).toBeNull()
   })
 
   it('explains the missing sales import when no local Fenix scope exists', async () => {

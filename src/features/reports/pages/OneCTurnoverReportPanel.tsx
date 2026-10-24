@@ -1,3 +1,4 @@
+import { isLegacyTurnoverScope } from '../data/oneCTurnoverScopes'
 import { ActionIcon, Alert, Button, Select, Stack, Text } from '@mantine/core'
 import { useEffect, useState } from 'react'
 import { CircleAlert, FileSpreadsheet, RefreshCw } from 'lucide-react'
@@ -107,7 +108,7 @@ function useOneCTurnoverCatalog(canGenerate: boolean) {
     if (!canGenerate) return
     const controller = new AbortController()
     getOneCTurnoverScopes(controller.signal).then(scopes => {
-      if (!controller.signal.aborted) setCatalog({ scopes, loading: false, error: null })
+      if (!controller.signal.aborted) setCatalog({ scopes: scopes.filter(isLegacyTurnoverScope), loading: false, error: null })
     }).catch(error => {
       if (!controller.signal.aborted) setCatalog({ scopes: [], loading: false, error: describeError(error) })
     })

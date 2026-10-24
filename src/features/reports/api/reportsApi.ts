@@ -37,6 +37,7 @@ import { importedPaymentsConfigurationError } from '../data/importedPayments'
 import { clientComparisonConfigurationError } from '../data/clientPeriodComparison'
 import { normalizeReportResult } from '../utils'
 import { nativeExactFiltersConfigurationError } from '../data/nativeExactFilters'
+import { isOneCTurnoverScope } from '../data/oneCTurnoverScopes'
 import { EXACT_ONE_C_BUYER_ROOT_ID } from '../data/oneCTurnoverReport'
 import { priceTypeSalesComparisonConfigurationError, priceTypeSalesSourceId } from '../data/priceTypeSalesComparison'
 import { oneCSpecialSettingsError } from '../data/oneCSpecialReports'
@@ -305,22 +306,6 @@ export async function getOneCTurnoverScopes(signal?: AbortSignal): Promise<OneCT
   const result = await apiRequest<unknown>('/report/stocks/one-c/scopes', { signal })
   if (!Array.isArray(result) || !result.every(isOneCTurnoverScope)) throw new Error('Invalid 1C report scope catalogue')
   return result
-}
-
-function isOneCTurnoverScope(value: unknown): value is OneCTurnoverScopeSummary {
-  if (!value || typeof value !== 'object') return false
-  const item = value as Record<string, unknown>
-  const filters = item.Filters as Record<string, unknown> | undefined
-  const isReference = (id: unknown) => typeof id === 'string' && /^[a-f\d]{32}$/i.test(id) && !/^0+$/.test(id)
-  return typeof item.Key === 'string' && /^[a-f\d]{64}$/i.test(item.Key)
-    && !!filters && Array.isArray(filters.OrganizationIds) && filters.OrganizationIds.length > 0 && filters.OrganizationIds.every(isReference)
-    && isReference(filters.ProductKindId) && typeof filters.ExcludeServices === 'boolean'
-    && (filters.BuyerRootId === undefined || filters.BuyerRootId === null
-      || typeof filters.BuyerRootId === 'string' && filters.BuyerRootId.toUpperCase() === EXACT_ONE_C_BUYER_ROOT_ID)
-    && Array.isArray(item.OrganizationNames) && item.OrganizationNames.every(name => typeof name === 'string')
-    && typeof item.FirstDay === 'string' && typeof item.LastDay === 'string'
-    && typeof item.LoadedDayCount === 'number' && Number.isInteger(item.LoadedDayCount) && item.LoadedDayCount > 0
-    && typeof item.OldestReadCompletedUtc === 'string' && typeof item.NewestReadCompletedUtc === 'string'
 }
 
 export async function getReportOrganizations(): Promise<ReportEntity[]> {

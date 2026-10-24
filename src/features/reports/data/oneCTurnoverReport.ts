@@ -1,3 +1,4 @@
+import { EXACT_ONE_C_BUYER_ROOT_ID, isOrganizationOnlyTurnoverScope } from './oneCTurnoverScopes'
 import type { OneCTurnoverScopeSummary, ReportRequestBody } from '../types'
 import { createDefaultMeasurementGroups, flattenCheckedMeasurements, flattenGroupingOptions } from './reportOptions'
 
@@ -10,9 +11,11 @@ export const ONE_C_REPORT_LAYOUTS = [
 ] as const
 
 export type OneCReportLayoutId = typeof ONE_C_REPORT_LAYOUTS[number]['id']
-export const EXACT_ONE_C_BUYER_ROOT_ID = '8AB2005056C0000811DEFC4535BB4D40'
+export { EXACT_ONE_C_BUYER_ROOT_ID } from './oneCTurnoverScopes'
 
 export function oneCReportScopeError(scope: OneCTurnoverScopeSummary, layoutId: OneCReportLayoutId): string | null {
+  if (scope.Filters.ScopeVersion === 3 && (!isOrganizationOnlyTurnoverScope(scope) || layoutId !== 'responsibles'))
+    return 'Це покриття підтримує лише продажі за відповідальними без ПДВ та з ПДВ у EUR.'
   if ((layoutId === 'daily' || layoutId === 'agreements' || layoutId === 'source-grain')
     && scope.Filters.BuyerRootId?.toUpperCase() !== EXACT_ONE_C_BUYER_ROOT_ID)
     return 'Цей набір завантажено без точної групи покупців і собівартості. Виконайте новий звітний синк.'
@@ -38,7 +41,7 @@ export function oneCReportPeriodError(from: string, to: string): string | null {
 export function createOneCTurnoverReport(
   scope: OneCTurnoverScopeSummary, layoutId: OneCReportLayoutId, from: string, to: string,
 ): ReportRequestBody {
-  const error = oneCReportPeriodError(from, to)
+  const error = scope.Filters.ScopeVersion === 3 ? organizationOnlyTurnoverPeriodError(from, to, scope) : oneCReportPeriodError(from, to)
   if (error) throw new Error(error)
   const layout = ONE_C_REPORT_LAYOUTS.find(item => item.id === layoutId)
   if (!layout) throw new Error('Невідома структура звіту 1С.')
@@ -62,4 +65,12 @@ export function createOneCTurnoverReport(
       Measurements: flattenCheckedMeasurements(allMeasures).filter(measure => measures.has(measure.Type)),
     },
   }
+}
+
+export function organizationOnlyTurnoverPeriodError(from: string, to: string, scope: OneCTurnoverScopeSummary): string | null {
+  const error = oneCReportPeriodError(from, to)
+  if (error) return error
+  if ((Date.parse(to) - Date.parse(from)) / 86_400_000 >= 31) return 'Продажі за відповідальними підтримують період від 1 до 31 дня.'
+  if (from < scope.FirstDay || to > scope.LastDay) return 'Період виходить за межі опублікованих днів. Відсутні дні не є нульовими оборотами.'
+  return null
 }

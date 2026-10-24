@@ -1,3 +1,4 @@
+import { organizationOnlyScope } from './oneCTurnoverScopes.test-fixtures'
 import { describe, expect, it } from 'vitest'
 import type { OneCTurnoverScopeSummary } from '../types'
 import { createOneCTurnoverReport, ONE_C_REPORT_LAYOUTS, oneCReportPeriodError, oneCReportScopeError } from './oneCTurnoverReport'
@@ -50,5 +51,20 @@ describe('consolidated 1C report payloads', () => {
     ])
     const salesOnly = { ...scopeFixture, Filters: { ...scopeFixture.Filters, BuyerRootId: undefined } }
     expect(oneCReportScopeError(salesOnly, 'source-grain')).toContain('собівартості')
+  })
+})
+
+
+describe('organization-only v3 report bounds', () => {
+  it('preserves exact filters and supports31days without widening to goods-only', () => {
+    const report = createOneCTurnoverReport(organizationOnlyScope, 'responsibles', '2026-09-01', '2026-10-01')
+    expect(report.oneC).toEqual(organizationOnlyScope.Filters)
+    expect(report.sorted.Measurements.map(item => item.Type)).toEqual([2, 4])
+  })
+  it.each(['articles', 'daily', 'agreements', 'source-grain'] as const)('rejects unsupported v3 layout %s', layout => {
+    expect(() => createOneCTurnoverReport(organizationOnlyScope, layout, '2026-10-01', '2026-10-24')).toThrow('лише продажі за відповідальними')
+  })
+  it('rejects32days before sending a request', () => {
+    expect(() => createOneCTurnoverReport(organizationOnlyScope, 'responsibles', '2026-09-01', '2026-10-02')).toThrow('31 дня')
   })
 })

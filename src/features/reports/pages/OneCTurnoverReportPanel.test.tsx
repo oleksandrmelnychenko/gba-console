@@ -1,3 +1,4 @@
+import { organizationOnlyScope } from '../data/oneCTurnoverScopes.test-fixtures'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -67,6 +68,13 @@ describe('consolidated 1C report panel', () => {
 
   it('explains empty catalogue without claiming ordinary document sync loaded the ledger', async () => {
     vi.mocked(getOneCTurnoverScopes).mockResolvedValue([])
+    mount()
+    await screen.findByText(/Ще немає завантажених відборів 1С/)
+    expect((screen.getByRole('button', { name: 'Сформувати звіт 1С' }) as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('does not expose v3 through incompatible legacy gross-profit layouts', async () => {
+    vi.mocked(getOneCTurnoverScopes).mockResolvedValue([organizationOnlyScope])
     mount()
     await screen.findByText(/Ще немає завантажених відборів 1С/)
     expect((screen.getByRole('button', { name: 'Сформувати звіт 1С' }) as HTMLButtonElement).disabled).toBe(true)

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { getCurrentPriceTypeSalesScopeChoices, type CurrentPriceTypeSalesScopeChoices } from '../api/reportsApi'
 import { EXACT_ONE_C_BUYER_ROOT_ID } from '../data/oneCTurnoverReport'
 import { priceTypeSalesSourceId } from '../data/priceTypeSalesComparison'
-import type { OneCTurnoverFilters, ReportEntity } from '../types'
+import type { LegacyOneCTurnoverFilters, OneCTurnoverFilters, ReportEntity } from '../types'
 
 type Props = {
   available: boolean
@@ -49,7 +49,7 @@ function useCurrentChoices(enabled: boolean) {
   return result
 }
 
-function scopeDraft(raw: unknown): OneCTurnoverFilters {
+function scopeDraft(raw: unknown): LegacyOneCTurnoverFilters {
   const item = raw && typeof raw === 'object' ? raw as Record<string, unknown> : {}
   return {
     OrganizationIds: Array.isArray(item.OrganizationIds) ? item.OrganizationIds.flatMap(id => {

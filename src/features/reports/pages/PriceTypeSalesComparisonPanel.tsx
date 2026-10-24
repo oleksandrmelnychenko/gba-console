@@ -1,3 +1,4 @@
+import { isLegacyTurnoverScope } from '../data/oneCTurnoverScopes'
 import { Alert, Card, Loader, Select, Stack, Text } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { useEffect, useState } from 'react'
@@ -130,7 +131,7 @@ function useFenixScopeLookup(disabled: boolean): LookupResult<OneCTurnoverScopeS
     void getOneCTurnoverScopes(controller.signal)
       .then(items => {
         if (controller.signal.aborted) return
-        setResult({ items: items.filter(item => item.Filters.BuyerRootId?.toUpperCase() === EXACT_ONE_C_BUYER_ROOT_ID), error: null })
+        setResult({ items: items.filter(item => isLegacyTurnoverScope(item) && item.Filters.BuyerRootId?.toUpperCase() === EXACT_ONE_C_BUYER_ROOT_ID), error: null })
       })
       .catch(() => {
         if (controller.signal.aborted) return
@@ -167,7 +168,8 @@ function scopeMatches(candidate: OneCTurnoverFilters, value: object): boolean {
   const ids = (items: unknown) => Array.isArray(items)
     ? items.filter((item): item is string => typeof item === 'string').map(item => item.toUpperCase()).toSorted()
     : []
-  return JSON.stringify(ids(candidate.OrganizationIds)) === JSON.stringify(ids(selected.OrganizationIds))
+  return candidate.ScopeVersion == null && selected.ScopeVersion == null
+    && JSON.stringify(ids(candidate.OrganizationIds)) === JSON.stringify(ids(selected.OrganizationIds))
     && candidate.ProductKindId.toUpperCase() === selected.ProductKindId?.toUpperCase()
     && candidate.ExcludeServices === selected.ExcludeServices
     && candidate.BuyerRootId?.toUpperCase() === selected.BuyerRootId?.toUpperCase()
