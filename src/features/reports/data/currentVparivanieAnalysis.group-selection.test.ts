@@ -1,3 +1,4 @@
+import type { ReportSelection } from '../types'
 import { encodeReportWorkspaceDraft, decodeReportWorkspaceDraft } from './reportWorkspaceDraft'
 import { normalizeSavedTemplate } from '../api/reportWorkspaceApi'
 import { expect, it } from 'vitest'
@@ -16,7 +17,7 @@ it('offers four flat operators and eight real group operators only from capabili
   expect(Array.from({ length: 8 }, (_, i) => isMultiValueReportCondition(i))).toEqual([false, false, true, true, true, true, false, false])
 })
 it.each([3, 5])('keeps mixed condition %i identities through validation and saved templates', condition => {
-  const selection = exactSelection(4, condition)
+  const selection: ReportSelection = exactSelection(4, condition)
   selection.Values = [
     { Data: { kind: 'product', id: '9223372036854775807' }, Name: 'Product', Value: 0 },
     { Data: { kind: 'productGroup', id: 1 }, Name: 'Group', Value: 0 },
@@ -26,7 +27,7 @@ it.each([3, 5])('keeps mixed condition %i identities through validation and save
   expect(currentVparivanieAnalysisLayoutError(request, mixedDataset)).toBeNull()
   const restored = normalizeSavedTemplate({ Id: 'mixed', Revision: 1, Name: 'Mixed groups', Data: {
     From: request.from, To: request.to, DataSource: 39, Sorted: request.sorted, Selections: request.selections,
-    CurrentVparivanieAnalysis: { version: 1 }, CurrentVparivanieFullScope: true,
+    ...{ CurrentVparivanieAnalysis: { version: 1 }, CurrentVparivanieFullScope: true },
   } })
   expect(restored.Data.selections).toEqual(request.selections)
   const draft = { version: 1 as const, ownerId: 'test-owner', savedAt: '2026-10-24T07:00:00.000Z',
@@ -53,7 +54,7 @@ it('preserves int64 strings and separates product/group identities while recogni
   expect(analysisValueIdentity(4, { kind: 'product', id: 1 })).not.toBe(analysisValueIdentity(4, { kind: 'productGroup', id: 1 }))
 })
 it('preserves every value when switching to one group and requires explicit correction', () => {
-  const selection = exactSelection(4, 3)
+  const selection: ReportSelection = exactSelection(4, 3)
   selection.Values = [
     { Data: { kind: 'product', id: 1 }, Name: 'Product', Value: 0 },
     { Data: { kind: 'productGroup', id: '2' }, Name: 'Group', Value: 0 },

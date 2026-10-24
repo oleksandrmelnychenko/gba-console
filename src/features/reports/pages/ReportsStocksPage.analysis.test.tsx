@@ -1,3 +1,4 @@
+import type { ReportRequestBody } from '../types'
 import { mixedDataset } from '../data/currentVparivanieAnalysis.group-selection.test-fixtures'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
@@ -70,7 +71,7 @@ it('selects Top from the Product category and transports its exact text classifi
 
 it('preserves restored mixed selections on many-to-one changes and saves only after an explicit correction', async () => {
   vi.mocked(getReportDatasets).mockResolvedValue([mixedDataset])
-  const request = currentVparivanieRequest()
+  const request: ReportRequestBody = currentVparivanieRequest()
   request.selections = [{ IsChecked: true, SelectedField: { Type: 4, Name: 'Товарна група' }, FilterCondition: { Type: 3, Name: 'У групі зі списку' },
     Values: [{ Data: { kind: 'productGroup', id: 1 }, Name: 'Group one', Value: 0 }, { Data: { kind: 'productGroup', id: 2 }, Name: 'Group two', Value: 0 }] }]
   vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: 'old', Revision: 1, Name: 'Збережена матриця', Data: request }])
@@ -79,12 +80,12 @@ it('preserves restored mixed selections on many-to-one changes and saves only af
     { id: '2', name: 'Group two', data: { Id: 2 } },
   ])
   const { container } = await open()
-  fireEvent.click(screen.getByRole('button', { name: 'Редагувати', exact: true }))
+  fireEvent.click(screen.getByRole('button', { name: 'Редагувати' }))
   const editor = screen.getByRole('dialog', { name: 'Редагувати умову відбору' })
   expect(within(editor).getByText('Група: Group one')).toBeTruthy()
   expect(within(editor).getByText('Група: Group two')).toBeTruthy()
   fireEvent.click(within(editor).getByRole('combobox', { name: 'Умова' }))
-  fireEvent.click(await screen.findByRole('option', { name: 'У групі', exact: true }))
+  fireEvent.click(await screen.findByRole('option', { name: 'У групі' }))
   expect(within(editor).getByText('Група: Group one')).toBeTruthy()
   expect(within(editor).getByText('Група: Group two')).toBeTruthy()
   expect(within(editor).getByText('Оберіть одну групу для цієї умови.')).toBeTruthy()
