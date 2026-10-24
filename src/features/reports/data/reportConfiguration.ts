@@ -1,3 +1,4 @@
+import { financialAxesCapability } from './financialAxes'
 import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis } from './currentVparivanieAnalysis'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import type { ReportDataset, ReportRequestBody } from '../types'
@@ -63,6 +64,10 @@ export function effectiveReportConfiguration(dataset: ReportDataset | undefined,
     const row = data.sorted.Row.map(item => item.type).join(',')
     result = { ...result, ...base.variants.find(variant => variant.key === (row === '40' ? 'presentationAccount' : row === '42' ? 'presentationCurrencyRecord' : '')) }
   }
+  const financial = financialAxesCapability(dataset)
+  if (data.dataSource === 35 && financial) result = { ...result, axisMode: 'flexible',
+    allowedRows: financial.allowedRows, allowedColumns: financial.allowedColumns,
+    minimumRows: financial.minimumRows, maximumRows: financial.maximumRows, maximumColumns: financial.maximumColumns }
   return result
 }
 export function reportAxesPolicy(dataset: ReportDataset | undefined, data: ReportRequestBody) {

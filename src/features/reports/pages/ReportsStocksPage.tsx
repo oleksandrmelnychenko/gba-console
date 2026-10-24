@@ -1,3 +1,4 @@
+import { financialAxesCapability } from '../data/financialAxes'
 import { ReportsSubmenu } from './workbook-desk/ReportsSubmenu'
 import { PublishedReportWorkspace } from './workbook-desk/PublishedReportWorkspace'
 import type { PublishedReportTab } from './workbook-desk/publishedReportTabs'
@@ -2144,6 +2145,9 @@ function LegacyReportBuilder({
         onRemove={(index) => onColGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
         onReorder={(type, direction) => onColGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
         onTransfer={type => transferGrouping('Col', type)} /> : <Text size="sm" c="dimmed">Вибрані показники відображаються у стовпцях.</Text>}
+      {financialAxesCapability(dataset) && colGroups.length > 0 ? <Text size="sm" c="dimmed">
+        {colGroups[0].type === 4 ? 'У файлі кожна організація в колонках буде окремим аркушем.' : 'У файлі кожен день у колонках буде окремим аркушем.'}
+      </Text> : null}
     </section>
   )
 

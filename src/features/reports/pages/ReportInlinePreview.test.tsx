@@ -102,7 +102,7 @@ it('shows the workbook names without technical ids, money with two decimals and 
   const preview = normalizeNativeReportPreview({ Preview: {
     Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true, Request: request,
     Page: { Offset: 0, Limit: 50, TotalVisibleRows: 1, ReturnedRows: 1, HasMore: false },
-    RowSchema: [{ Caption: 'Дата' }, { Caption: 'Організація' }], ColumnSchema: [{ Caption: 'Група' }, { Caption: 'Показник' }],
+    RowSchema: [{ Caption: 'Дата' }, { Caption: 'Організація' }], ColumnSchema: [{ Caption: 'Група', Identity: '$measureGroup' }, { Caption: 'Показник', Identity: '$measure' }],
     Rows: [{ Ordinal: 0, SourceIndex: 1, Values: [{ Caption: '01.09.2026' }, { Caption: 'ТОВ «АМГ «КОНКОРД» [10557]' }] }],
     Columns: [
       { Ordinal: 0, SourceIndex: 0, Values: [{ Caption: 'Валовий прибуток' }, { Caption: 'Продажі без ПДВ, EUR',
@@ -119,4 +119,33 @@ it('shows the workbook names without technical ids, money with two decimals and 
   expect(table.getByRole('columnheader', { name: 'Продажі без ПДВ, EUR' })).toBeTruthy()
   expect(table.getByRole('cell', { name: '2\u00a0260,30' })).toBeTruthy()
   expect(table.getByRole('cell', { name: '3\u00a0527' })).toBeTruthy()
+})
+
+function showFinancialMatrix(ids: string[], caption = 'Однакова організація', dimension = 'Organization') {
+  const preview = normalizeNativeReportPreview({ Preview: {
+    Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true, Request: request,
+    Page: { Offset: 0, Limit: 50, TotalVisibleRows: 1, ReturnedRows: 1, HasMore: false },
+    RowSchema: [{ Caption: 'Дата', Identity: 'Day' }],
+    ColumnSchema: [{ Caption: 'Організація', Identity: dimension }, { Caption: 'Група', Identity: '$measureGroup' }, { Caption: 'Показник', Identity: '$measure' }],
+    Rows: [{ Ordinal: 0, SourceIndex: 12, Values: [{ Caption: '17.10.2026' }] }],
+    Columns: ids.flatMap((id, index) => ['Продажі', 'Собівартість'].map((measure, measureIndex) => ({ Ordinal: index * 2 + measureIndex, SourceIndex: index * 2 + measureIndex,
+      Values: [{ Caption: caption, Identity: { Kind: 'signedInteger', Value: id, Provenance: 'columnAxisKey' } },
+        { Caption: 'Прибуток', Identity: { Kind: 'string', Value: 'profit', Provenance: 'columnAxisKey' } },
+        { Caption: measure, Identity: { Kind: 'reportField', Value: 'SalesValueWithoutVAT', Provenance: 'columnAxisKey' } }] }))),
+    Cells: [{ RowSourceIndex: 12, ColumnSourceIndex: 1, Value: { Kind: 'null', Value: null, Provenance: 'producerCell' } }],
+  } })
+  return render(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>)
+}
+it('keeps a single organization dimension visible instead of hiding it as a shared measure group', () => {
+  showFinancialMatrix(['9223372036854775807'], 'Організація [9223372036854775807]')
+  expect(screen.getByRole('columnheader', { name: 'Організація [9223372036854775807] / Прибуток / Продажі' })).toBeTruthy()
+  expect(screen.getByRole('columnheader', { name: 'Організація [9223372036854775807] / Прибуток / Собівартість' })).toBeTruthy()
+})
+it('distinguishes equal organization captions by exact Int64 identity and keeps blank cells distinct from unknown', () => {
+  const view = showFinancialMatrix(['9223372036854775806', '9223372036854775807'])
+  for (const id of ['9223372036854775806', '9223372036854775807']) {
+    expect(screen.getByRole('columnheader', { name: `Однакова організація [${id}] / Прибуток / Продажі` })).toBeTruthy()
+  }
+  expect(view.container.querySelectorAll('td[title="Клітинка відсутня"]')).toHaveLength(3)
+  expect(screen.getByRole('cell', { name: '∅' })).toBeTruthy()
 })

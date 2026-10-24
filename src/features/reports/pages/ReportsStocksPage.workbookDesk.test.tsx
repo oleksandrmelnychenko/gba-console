@@ -1,3 +1,4 @@
+import { financialDataset } from '../data/financialAxes.test-fixtures'
 import { movementDataset } from '../data/currentVparivanieMovements.test-fixtures'
 import { mixedDataset } from '../data/currentVparivanieAnalysis.group-selection.test-fixtures'
 import { workbookDisplayFileName } from '../data/bug1274WorkbookGuide'
@@ -374,4 +375,30 @@ it('keeps a newly added blank supplier filter in Filters until its field is sele
   const fields = within(filters).getAllByRole('combobox', { name: 'Поле' })
   expect(fields.at(-1)).toHaveProperty('value', '')
   expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toHaveProperty('disabled', true)
+})
+
+it('moves financial dimensions between axes only with server capability and retains them after a date edit', async () => {
+  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, financialDataset, profitSupplierDataset,
+    currentVparivanieDataset, cashModeDataset, settlementModeDataset])
+  await openDayWorkbook()
+  fireEvent.click(screen.getByRole('button', { name: 'Перенести Організація до стовпців' }))
+  expect(screen.getByText('У файлі кожна організація в колонках буде окремим аркушем.')).toBeTruthy()
+  expect(screen.getByRole('button', { name: 'Перенести Дата до стовпців' })).toHaveProperty('disabled', true)
+  changeReportPeriod({ from: dateInput('До').value })
+  for (const [row, column] of [[3, 4], [4, 3]]) {
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toHaveProperty('disabled', false))
+    vi.mocked(previewStockReport).mockClear()
+    fireEvent.click(screen.getByRole('button', { name: 'Застосувати й показати' }))
+    await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
+    const data = vi.mocked(previewStockReport).mock.calls[0][0]
+    expect(data.sorted.Row.map(field => field.type)).toEqual([row])
+    expect(data.sorted.Col.map(field => field.type)).toEqual([column])
+    expect(data.from).toBe(data.to)
+    expect(data.profitReadMode).toBe(0)
+    if (row === 3) {
+      fireEvent.click(screen.getByRole('button', { name: 'Перенести Організація до рядків' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Перенести Дата до стовпців' }))
+      expect(screen.getByText('У файлі кожен день у колонках буде окремим аркушем.')).toBeTruthy()
+    }
+  }
 })

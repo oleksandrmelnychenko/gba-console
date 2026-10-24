@@ -25,9 +25,11 @@ export function ReportInlinePreview({ preview, embedded = false, showPageNote = 
   const workbookRows = new Map(workbook?.rows.map(row => [row.rowSourceIndex, row]))
   const workbookColumns = workbook?.fields.filter(field => field.placement === 'column') ?? []
   const inlineFields = workbook?.fields.filter(field => field.placement === 'inline') ?? []
-  const sharedGroup = !products && preview.Columns.length > 1 && preview.Columns.every(column => column.Values.length > 1
+  const sharedGroup = !products && preview.ColumnSchema[0]?.Identity === '$measureGroup' && preview.Columns.length > 1 && preview.Columns.every(column => column.Values.length > 1
     && column.Values[0].Caption === preview.Columns[0].Values[0].Caption)
-  const rowCaption = (row: NativeReportPreviewAxis, index: number) => workbookRowCaption(row.Values[index]?.Caption ?? '—',
+  const rowIdentityCaption = organizationCaptions(preview.RowSchema, preview.Rows)
+  const columnIdentityCaption = organizationCaptions(preview.ColumnSchema, preview.Columns)
+  const rowCaption = (row: NativeReportPreviewAxis, index: number) => workbookRowCaption(rowIdentityCaption(row, index),
     index === preview.RowSchema.length - 1, workbookRows.get(row.SourceIndex), workbook?.fields ?? [])
   const sharedNames = preview.RowSchema.map((_, index) => previewSharedNames(preview.Rows.map(row => rowCaption(row, index))))
   const amountColumns = new Set(preview.Columns.filter(column => isAmountColumn(column)).map(column => column.SourceIndex))
@@ -85,7 +87,7 @@ export function ReportInlinePreview({ preview, embedded = false, showPageNote = 
         <thead><tr>
           {rowHeaders.map((header, index) => <th scope="col" rowSpan={products ? 2 : undefined} key={`row-${index}`}>{header}</th>)}
           {preview.Columns.map(column => <th scope="col" key={column.SourceIndex} title={semanticsByColumn.has(column.SourceIndex) ? reportValueUnit(semanticsByColumn.get(column.SourceIndex)!, preview.numberPresentation) : undefined}>
-            {(products ? column.Values.slice(0, 1) : sharedGroup ? column.Values.slice(1) : column.Values).map(value => value.Caption).filter(Boolean).join(' / ') || `Стовпець ${column.Ordinal + 1}`}
+            {(products ? column.Values.slice(0, 1) : sharedGroup ? column.Values.slice(1) : column.Values).map((value, index) => sharedGroup ? value.Caption : columnIdentityCaption(column, index)).filter(Boolean).join(' / ') || `Стовпець ${column.Ordinal + 1}`}
             {moneyScaleLabel(preview.numberPresentation, semanticsByColumn.get(column.SourceIndex)) ? `, ${moneyScaleLabel(preview.numberPresentation, semanticsByColumn.get(column.SourceIndex))}` : ''}
           </th>)}
         </tr>{products ? <tr>{preview.Columns.map(column => <th scope="col" key={column.SourceIndex}>
@@ -129,6 +131,24 @@ export function ReportInlinePreview({ preview, embedded = false, showPageNote = 
     {showPageNote && preview.Page.HasMore ? <Text size="xs" c="dimmed" className="report-inline-preview__more">Показано рядки {preview.Page.Offset + 1}–{preview.Page.Offset + preview.Page.ReturnedRows}. Повний результат доступний у Excel або PDF.{totals
       ? ` Загальний підсумок — за всіма ${preview.Page.TotalVisibleRows} рядками звіту.` : ''}</Text> : null}
   </section>
+}
+
+// Labels are presentation only: distinct organizations must remain distinguishable even
+// when the source gives them identical names. Existing captioned IDs remain intact.
+function organizationCaptions(schema: readonly { Caption: string; Identity?: string }[], axes: NativeReportPreviewAxis[]) {
+  const ambiguous = schema.map((field, index) => {
+    const byCaption = new Map<string, Set<string>>()
+    if (field.Identity === 'Organization') for (const axis of axes) {
+      const value = axis.Values[index], id = value?.Identity?.Value
+      if (typeof id === 'string') byCaption.set(value.Caption, (byCaption.get(value.Caption) ?? new Set()).add(id))
+    }
+    return new Set([...byCaption].filter(([, ids]) => ids.size > 1).map(([caption]) => caption))
+  })
+  return (axis: NativeReportPreviewAxis, index: number) => {
+    const value = axis.Values[index]
+    return value && ambiguous[index]?.has(value.Caption) && typeof value.Identity?.Value === 'string'
+      ? `${value.Caption} [${value.Identity.Value}]` : value?.Caption ?? '—'
+  }
 }
 
 function rowHeaderText({ index, row, preview, products, product, regions, region, attributes, workbookRow, workbookColumns, sharedNames, caption }: {

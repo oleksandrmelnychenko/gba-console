@@ -1,3 +1,4 @@
+import { financialDataset, axisFields } from '../data/financialAxes.test-fixtures'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { browserTemplateImportId, useServerReportTemplates } from './useServerReportTemplates'
@@ -181,6 +182,20 @@ describe('server report templates', () => {
     expect(result.current.notice).toContain('Відкрийте його знову')
     await act(async () => { expect(await result.current.remove(template.Id, template.Revision)).toEqual({ ok: false }) })
     expect(deleteServerReportTemplate).not.toHaveBeenCalled()
+  })
+
+  it('passes the advertised financial capability when saving an edited matrix and retains its axes', async () => {
+    const data = defaultDatasetRequest(financialDataset, '2026-10-17', '2026-10-17')
+    data.sorted.Row = axisFields([3]); data.sorted.Col = axisFields([4]); data.profitReadMode = 0
+    const template = { Name: 'Матриця', Id: crypto.randomUUID(), Revision: 1, Data: data }
+    vi.mocked(getServerReportTemplates).mockResolvedValue([template])
+    vi.mocked(saveServerReportTemplate).mockResolvedValue({ ...template, Revision: 2 })
+    const { result } = renderHook(() => useServerReportTemplates(true, [financialDataset]))
+    await waitFor(() => expect(result.current.ready).toBe(true))
+    vi.mocked(getServerReportTemplates).mockResolvedValue([{ ...template, Revision: 2 }])
+    await act(() => result.current.save(template.Name, template.Data, template.Id))
+    expect(saveServerReportTemplate).toHaveBeenCalledWith(template, expect.any(AbortSignal), financialDataset)
+    expect(result.current.templates[0].Data.sorted.Col.map(field => field.type)).toEqual([4])
   })
 
   it('keeps the saved value and returns failure on an update conflict', async () => {

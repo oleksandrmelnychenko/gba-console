@@ -1,3 +1,4 @@
+import { financialAxesCapability, validFinancialAxes } from './financialAxes'
 import { validProfitRows, readReportConfiguration } from './reportConfiguration'
 import { requestProfitReadMode, profitReadModeConfigurationError, currentProfitMaximumDays } from './profitReadMode'
 import { originalNormalPeriodError } from './originalNormalPeriod'
@@ -27,7 +28,7 @@ const unsupported = new Set(['onec', 'comparison', 'xyz', 'revenuecomparison', '
   'valuationclientagreementid', 'ordering', 'filterexpression', 'topgroups', 'threshold', 'hidezero',
   'abcclassification', 'returnsonly', 'discountmarkup',
   'provideddiscounts', 'priceanalysis'])
-const invalid = 'Валовий прибуток GBA за днем підтримує День → Організація, доступні показники й підтверджені точні відбори.'
+const invalid = 'Валовий прибуток GBA підтримує доступні групування Дата/Організація, показники й підтверджені точні відбори.'
 
 function validDate(value: string): boolean {
   if (!/^\d{4}-\d\d-\d\d$/.test(value)) return false
@@ -66,7 +67,7 @@ export function dayOrganizationGrossProfitConfigurationError(data: ReportRequest
   const sorted = data.sorted
   const availableMeasures = dataset?.Measurements.map(field => field.Type) ?? measures
   if (!sorted || !Array.isArray(sorted.Row) || !Array.isArray(sorted.Col) || !Array.isArray(sorted.Measurements)
-    || !validProfitRows(data, [3, 4], 2) || dataset && !readReportConfiguration(dataset.configuration) && sorted.Row.map(item => item.type).join(',') !== '3,4'
+    || !(financialAxesCapability(dataset) ? validFinancialAxes(data) : validProfitRows(data, [3, 4], 2)) || dataset && !financialAxesCapability(dataset) && !readReportConfiguration(dataset.configuration) && sorted.Row.map(item => item.type).join(',') !== '3,4'
     || sorted.Measurements.length < 1 || sorted.Measurements.length > availableMeasures.length
     || sorted.Measurements.some(item => !availableMeasures.includes(item.Type)
       || (item.IsChecked !== undefined && typeof item.IsChecked !== 'boolean'))
