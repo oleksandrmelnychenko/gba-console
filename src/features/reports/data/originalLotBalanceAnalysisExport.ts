@@ -16,7 +16,7 @@ export function lotAnalysisExportError(result: LotAnalysisResult): string | null
 export function lotAnalysisMatrix(result: LotAnalysisResult): string[][] {
   const error = lotAnalysisExportError(result)
   if (error || !result.Totals) throw new Error(error ?? 'Повний результат недоступний для експорту.')
-  return [lotAnalysisHeaders, ...lotAnalysisLines(result).map(row => row.cells), ['Разом', '', ...lotAnalysisValues(result.Totals)]]
+  return [[...lotAnalysisHeaders], ...lotAnalysisLines(result).map(row => row.cells), ['Разом', '', ...lotAnalysisValues(result.Totals)]]
 }
 const unitNote = 'Кількість — записані одиниці; вартість — управлінська собівартість із ПДВ без валютного перерахунку.'
 export function lotAnalysisFilterSummary(result: LotAnalysisResult): string[] {

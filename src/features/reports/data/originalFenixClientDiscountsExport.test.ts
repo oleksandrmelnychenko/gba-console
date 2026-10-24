@@ -1,3 +1,5 @@
+import { fenixDiscountHeaders } from './originalFenixClientDiscountsExport'
+import { assertPdfMatrixIsolation } from '../testing/pdfMatrixIsolation'
 import { expect, it, vi } from 'vitest'
 import { fenixEmpty, fenixMissing, fenixResult } from '../testing/originalFenixClientDiscountsFixtures'
 import { fenixDiscountCsv, fenixDiscountMatrix, fenixDiscountPdfDefinition, fenixDiscountXlsx } from './originalFenixClientDiscountsExport'
@@ -19,4 +21,8 @@ it('shares the same exact completed matrix in XLSX and PDF', async () => {
   expect(xlsx.aoa_to_sheet).toHaveBeenCalledWith([matrix[0]])
   expect(xlsx.sheet_add_aoa).toHaveBeenCalledWith(expect.anything(), matrix.slice(1), { origin: -1 })
   expect(JSON.stringify(fenixDiscountPdfDefinition(result))).toContain(JSON.stringify(matrix))
+})
+
+it('PDF cell normalization cannot mutate shared headers or the next fenixDiscount export', () => {
+  assertPdfMatrixIsolation(fenixDiscountHeaders, () => fenixDiscountMatrix(fenixResult()), () => fenixDiscountPdfDefinition(fenixResult()))
 })

@@ -1,3 +1,4 @@
+import { assertPdfMatrixIsolation } from '../testing/pdfMatrixIsolation'
 import { expect, it } from 'vitest'
 import { base, capability, order, product, productValue, response, stored } from '../testing/buyerOrdersFixtures'
 import { buyerOrdersPeriodError, buyerOrdersRequest, isBuyerOrdersCapability, isBuyerOrdersCatalogueEntry, normalizeBuyerOrders } from './originalBuyerOrders'
@@ -83,4 +84,8 @@ it('genuinely complete empty parents need no unit Current and export zero totals
 it('preserves own AMG unavailable capability and refuses its execution', () => {
   const amg = { ...capability, World: 'amg' as const, Executable: false }; expect(isBuyerOrdersCapability(amg)).toBe(true)
   expect(() => buyerOrdersRequest(amg, request.From, request.Through)).toThrow()
+})
+
+it('PDF cell normalization cannot mutate shared headers or the next buyerOrders export', () => {
+  assertPdfMatrixIsolation(buyerOrdersHeaders, () => buyerOrdersMatrix(response()), () => buyerOrdersPdfDefinition(response()))
 })

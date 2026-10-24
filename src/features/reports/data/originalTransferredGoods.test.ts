@@ -1,3 +1,4 @@
+import { assertPdfMatrixIsolation } from '../testing/pdfMatrixIsolation'
 import { describe, expect, it } from 'vitest'
 import { capability, product, resources, response } from '../testing/transferredGoodsFixtures'
 import { isTransferredCapability, isTransferredCatalogueEntry, normalizeTransferred, transferredPeriodError, transferredRequest,
@@ -102,4 +103,8 @@ describe('own transferred-goods original/default delivery', () => {
     const amg = { ...capability, World: 'amg' as const, Executable: false }
     expect(isTransferredCapability(amg)).toBe(true); expect(() => transferredRequest(amg, query.From, query.Through)).toThrow()
   })
+})
+
+it('PDF cell normalization cannot mutate shared headers or the next transferred export', () => {
+  assertPdfMatrixIsolation(transferredHeaders, () => transferredMatrix(response()), () => transferredPdfDefinition(response()))
 })

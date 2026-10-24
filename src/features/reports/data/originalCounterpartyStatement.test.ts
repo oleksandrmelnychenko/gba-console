@@ -1,3 +1,4 @@
+import { assertPdfMatrixIsolation } from '../testing/pdfMatrixIsolation'
 import { expect, it } from 'vitest'
 import { emptyStatement, missingStatement, statementAgreement, statementCapability, statementOrg, statementParty, statementResponse } from '../testing/counterpartyStatementFixtures'
 import { isStatementCapability, normalizeStatement, statementPeriodError, statementRequest } from './originalCounterpartyStatement'
@@ -66,4 +67,8 @@ it('one full hierarchy matrix feeds screen CSV XLSX source and PDF with all eigh
 it('formula-like human captions are escaped only in label columns and exact signed amounts remain unchanged', () => {
   const r = statementResponse(); r.Rows[0].Counterparties[0].Agreements[0].Caption = '=unsafe'
   expect(statementCsv(r)).toContain(`"'=unsafe"`); expect(statementCsv(r)).toContain('"-2.00"')
+})
+
+it('PDF cell normalization cannot mutate shared headers or the next statement export', () => {
+  assertPdfMatrixIsolation(statementHeaders, () => statementMatrix(statementResponse()), () => statementPdfDefinition(statementResponse()))
 })

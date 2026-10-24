@@ -16,7 +16,7 @@ export function warehouseMonetaryExportError(result: WarehouseMonetaryResult): s
 export function warehouseMonetaryMatrix(result: WarehouseMonetaryResult): string[][] {
   const error = warehouseMonetaryExportError(result)
   if (error || !result.Totals) throw new Error(error ?? 'Повний результат недоступний для експорту.')
-  return [warehouseMonetaryHeaders, ...result.Rows.flatMap(row => [[row.Caption, 'Підсумок товару', ...warehouseMonetaryValues(row.Resources)],
+  return [[...warehouseMonetaryHeaders], ...result.Rows.flatMap(row => [[row.Caption, 'Підсумок товару', ...warehouseMonetaryValues(row.Resources)],
     ...row.Receipts.map(child => [row.Caption, child.Caption, ...warehouseMonetaryValues(child.Resources)])]), ['Разом', '', ...warehouseMonetaryValues(result.Totals)]]
 }
 const unitDescription = 'Кількість — записані одиниці; вартість і ПДВ — суми управлінського обліку без валютного перерахунку.'

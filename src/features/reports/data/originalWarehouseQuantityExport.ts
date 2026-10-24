@@ -14,7 +14,7 @@ export function warehouseQuantityExportError(result: WarehouseQuantityResult): s
 export function warehouseQuantityMatrix(result: WarehouseQuantityResult): string[][] {
   const error = warehouseQuantityExportError(result)
   if (error || !result.Totals) throw new Error(error ?? 'Повний результат недоступний для експорту.')
-  return [warehouseQuantityHeaders, ...result.Rows.flatMap(row => [[row.Caption, 'Підсумок товару', ...values(row.Quantity)],
+  return [[...warehouseQuantityHeaders], ...result.Rows.flatMap(row => [[row.Caption, 'Підсумок товару', ...values(row.Quantity)],
     ...row.Receipts.map(child => [row.Caption, child.Caption, ...values(child.Quantity)])]), ['Разом', '', ...values(result.Totals)]]
 }
 export function warehouseQuantityCsv(result: WarehouseQuantityResult): string {

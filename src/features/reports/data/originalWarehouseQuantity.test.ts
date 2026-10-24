@@ -1,3 +1,5 @@
+import { warehouseQuantityHeaders } from './originalWarehouseQuantityExport'
+import { assertPdfMatrixIsolation } from '../testing/pdfMatrixIsolation'
 import { describe, expect, it } from 'vitest'
 import { isWarehouseQuantityCapability, isWarehouseQuantityCatalogueEntry, normalizeWarehouseQuantity, quantityScaled,
   warehouseQuantityPeriodError, warehouseQuantityRequest, WAREHOUSE_QUANTITY_DEFINITION, WAREHOUSE_QUANTITY_SOURCE,
@@ -141,4 +143,8 @@ describe('exact warehouse quantity period delivery', () => {
     expect(warehouseQuantityExportError(value)).not.toBeNull()
     expect(() => warehouseQuantityMatrix(value)).toThrow()
   })
+})
+
+it('PDF cell normalization cannot mutate shared headers or the next warehouseQuantity export', () => {
+  assertPdfMatrixIsolation(warehouseQuantityHeaders, () => warehouseQuantityMatrix(result()), () => warehouseQuantityPdfDefinition(result()))
 })

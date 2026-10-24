@@ -1,3 +1,4 @@
+import { assertPdfMatrixIsolation } from '../testing/pdfMatrixIsolation'
 import { describe, expect, it } from 'vitest'
 import { isWarehouseMonetaryCapability, isWarehouseMonetaryCatalogueEntry, normalizeWarehouseMonetary, warehouseMonetaryDefaultMeasures,
   warehouseMonetaryRequest, warehouseMonetaryScaled, WAREHOUSE_MONETARY_SOURCE, WAREHOUSE_MONETARY_DEFINITION,
@@ -109,4 +110,8 @@ describe('exact monetary warehouse period delivery', () => {
     expect(warehouseMonetaryExportError(value)).not.toBeNull()
     expect(() => warehouseMonetaryMatrix(value)).toThrow()
   })
+})
+
+it('PDF cell normalization cannot mutate shared headers or the next warehouseMonetary export', () => {
+  assertPdfMatrixIsolation(warehouseMonetaryHeaders, () => warehouseMonetaryMatrix(result()), () => warehouseMonetaryPdfDefinition(result()))
 })

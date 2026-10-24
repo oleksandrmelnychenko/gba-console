@@ -16,7 +16,7 @@ export function goodsAnalysisExportError(result: GoodsAnalysisResult): string | 
 export function goodsAnalysisMatrix(result: GoodsAnalysisResult): string[][] {
   const error = goodsAnalysisExportError(result)
   if (error || !result.Totals) throw new Error(error ?? 'Повний результат недоступний для експорту.')
-  return [goodsAnalysisHeaders, ...goodsAnalysisLines(result).map(row => row.cells), ['Разом', '', ...goodsAnalysisValues(result.Totals)]]
+  return [[...goodsAnalysisHeaders], ...goodsAnalysisLines(result).map(row => row.cells), ['Разом', '', ...goodsAnalysisValues(result.Totals)]]
 }
 const unitNote = 'Кількість — в облікових одиницях із трьома десятковими знаками.'
 export function goodsAnalysisFilterSummary(result: GoodsAnalysisResult): string[] {

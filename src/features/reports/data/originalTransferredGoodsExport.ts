@@ -13,7 +13,7 @@ export function transferredExportError(result: TransferredResult): string | null
 export function transferredMatrix(result: TransferredResult): string[][] {
   const error = transferredExportError(result)
   if (error || !result.Totals) throw new Error(error ?? 'Повний результат недоступний для експорту.')
-  return [transferredHeaders, ...result.Rows.flatMap(row => [[row.Caption, 'Підсумок документа', ...transferredValues(row.Resources)],
+  return [[...transferredHeaders], ...result.Rows.flatMap(row => [[row.Caption, 'Підсумок документа', ...transferredValues(row.Resources)],
     ...row.Products.map(child => [row.Caption, child.Caption, ...transferredValues(child.Resources)])]), ['Разом', '', ...transferredValues(result.Totals)]]
 }
 const units = 'Кількість — записані одиниці; вартість і ПДВ — суми управлінського обліку без валютного перерахунку.'

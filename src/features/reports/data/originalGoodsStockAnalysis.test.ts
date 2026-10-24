@@ -1,3 +1,5 @@
+import { goodsAnalysisHeaders } from './originalGoodsStockAnalysisExport'
+import { assertPdfMatrixIsolation } from '../testing/pdfMatrixIsolation'
 import { expect, it } from 'vitest'
 import { emptyGoodsAnalysis, goodsAnalysisCapability, goodsAnalysisResponse, goodsProduct, goodsWarehouse, missingGoodsAnalysis } from '../testing/originalGoodsStockAnalysisFixtures'
 import { isGoodsAnalysisCapability, goodsAnalysisRequest, normalizeGoodsAnalysis } from './originalGoodsStockAnalysis'
@@ -68,4 +70,8 @@ it('preserves quantities beyond Number precision through validation and every ex
 it('refuses a stale or missing complete snapshot witness before display or export', () => {
   for (const changed of [{ OurSnapshotVerified: false }, { NormalInputsComplete: false }, { InputWitnessSha256: null }, { ResultSha256: '0'.repeat(64) }])
     expect(() => normalizeGoodsAnalysis({ ...goodsAnalysisResponse(), ...changed }, request())).toThrow()
+})
+
+it('PDF cell normalization cannot mutate shared headers or the next goodsAnalysis export', () => {
+  assertPdfMatrixIsolation(goodsAnalysisHeaders, () => goodsAnalysisMatrix(goodsAnalysisResponse()), () => goodsAnalysisPdfDefinition(goodsAnalysisResponse()))
 })

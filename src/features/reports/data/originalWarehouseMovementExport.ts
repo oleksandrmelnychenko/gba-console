@@ -8,11 +8,12 @@ export function movementExportError(result: MovementResult): string | null {
   if (!result.Available || !result.OurSnapshotVerified || !result.Totals || !result.Capture || !result.ResultSha256) return 'Повний результат недоступний для експорту.'
   return (result.Rows.reduce((sum, row) => sum + 1 + row.Registrars.length, 2) * movementHeaders.length > 1_000_000) ? 'Файл перевищує межу 1 000 000 клітинок. Звузьте період; частковий файл не формується.' : null
 }
-/** Document balances are running states, not additive totals. Only warehouse/article states are displayed. */
+/** Registrar balances are the known states before/after that movement; only warehouse states form totals. */
 export function movementDisplayMatrix(result: MovementResult): string[][] {
   if (!result.Available || !result.Totals || !result.Capture) throw new Error('Результат недоступний.')
-  return [movementHeaders, ...result.Rows.flatMap(row => [[movementWarehouseCaption(row), row.Article, 'Підсумок товару на складі', '', ...values(row.Quantity)],
-    ...row.Registrars.map(child => [movementWarehouseCaption(row), row.Article, movementRegistrarCaption(child), child.SourcePeriod, '', child.Quantity.Incoming, child.Quantity.Outgoing, ''])]), ['Разом по складах', result.Scope.Article, '', '', ...values(result.Totals)]]
+  // pdfmake normalizes table cells in place; never share its header array with the screen.
+  return [[...movementHeaders], ...result.Rows.flatMap(row => [[movementWarehouseCaption(row), row.Article, 'Підсумок товару на складі', '', ...values(row.Quantity)],
+    ...row.Registrars.map(child => [movementWarehouseCaption(row), row.Article, movementRegistrarCaption(child), child.SourcePeriod, ...values(child.Quantity)])]), ['Разом по складах', result.Scope.Article, '', '', ...values(result.Totals)]]
 }
 export function movementMatrix(result: MovementResult): string[][] {
   const error = movementExportError(result)
@@ -23,7 +24,7 @@ export function movementNotes(result: MovementResult): string[] {
   if (!result.Capture) throw new Error('Немає підтвердженого зрізу.')
   return [`Період: ${result.Scope.From} — ${result.Scope.Through}`, `Дані з 1С станом на ${movementAsOf(result.Capture)} (Київ).`,
     'Обмежене покриття: лише вибраний товар і склади опублікованого зрізу Fenix. Повна відповідність звіту 1С не підтверджена.',
-    'Кількість — одиниці джерела, без перерахунку. Залишки показано для товару на складі; залишки документів не підсумовуються.',
+    'Кількість — одиниці джерела, без перерахунку. Залишки в рядках документів — стан до та після руху; підсумок обчислюється за складами.',
     ...(result.Scope.Through === result.Capture.Through && !result.Capture.ThroughDayComplete ? ['Останній день періоду ще не завершений у джерельному зрізі.'] : []),
     ...(result.MissingCaptionMappings.length ? ['Для документів без назви показано номер і дату; якщо їх немає — ідентифікатор. Склади без назви також позначено ідентифікатором.'] : []),
     `Зріз: ${result.Capture.ManifestSha256}`, `Результат: ${result.ResultSha256}`]

@@ -3,12 +3,12 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { readMovement } from '../api/originalWarehouseMovementApi'
-import { movementXlsx } from '../data/originalWarehouseMovementExport'
+import { movementPdf, movementPdfDefinition, movementXlsx } from '../data/originalWarehouseMovementExport'
 import { movementFixture, movementPublication } from '../data/originalWarehouseMovement.test-fixtures'
 import type { MovementResult } from '../data/originalWarehouseMovement'
 import { OriginalWarehouseMovementPanel } from './OriginalWarehouseMovementPanel'
 vi.mock('../api/originalWarehouseMovementApi', () => ({ readMovement: vi.fn() }))
-vi.mock('../data/originalWarehouseMovementExport', async original => ({ ...await original<typeof import('../data/originalWarehouseMovementExport')>(), movementXlsx: vi.fn() }))
+vi.mock('../data/originalWarehouseMovementExport', async original => ({ ...await original<typeof import('../data/originalWarehouseMovementExport')>(), movementXlsx: vi.fn(), movementPdf: vi.fn() }))
 const publication = { ...movementPublication, Capture: { ...movementPublication.Capture, Through: '2026-09-30' } }
 const panel = (caller = 'caller1', allowed = true) => <MantineProvider env="test"><I18nProvider><OriginalWarehouseMovementPanel publications={[publication]} callerKey={caller} canGenerate={allowed} /></I18nProvider></MantineProvider>
 beforeEach(() => {
@@ -62,4 +62,24 @@ it('shows partial final-day status from capture, regardless current date', async
   fireEvent.change(screen.getByLabelText('Від'), { target: { value: '01.09.2026' } }); fireEvent.blur(screen.getByLabelText('Від'))
   fireEvent.click(screen.getByRole('button', { name: 'Застосувати й показати' }))
   await screen.findByText('Останній день періоду ще не завершений у джерельному зрізі.')
+})
+
+it('keeps the table and editable draft alive after PDF normalizes its private table cells', async () => {
+  vi.mocked(movementPdf).mockImplementationOnce(async result => {
+    const definition = movementPdfDefinition(result)
+    const table = definition.content.find(item => typeof item === 'object' && item !== null && 'table' in item) as { table: { body: unknown[][] } }
+    table.table.body[0].forEach((text, index) => { table.table.body[0][index] = { text, fillColor: '#fff' } })
+    return new Blob(['%PDF-1.3'])
+  })
+  render(panel()); fireEvent.click(screen.getByRole('button', { name: 'Застосувати й показати' }))
+  await screen.findByRole('table')
+  fireEvent.click(screen.getByRole('button', { name: 'PDF' }))
+  await waitFor(() => expect(URL.createObjectURL).toHaveBeenCalledOnce())
+  await waitFor(() => expect((screen.getByRole('button', { name: 'PDF' }) as HTMLButtonElement).disabled).toBe(false))
+  expect(screen.getByRole('columnheader', { name: 'Початковий залишок' })).toBeTruthy()
+  fireEvent.change(screen.getByLabelText('Від'), { target: { value: '02.09.2026' } }); fireEvent.blur(screen.getByLabelText('Від'))
+  expect(screen.getByText(/Налаштування змінено/)).toBeTruthy()
+  expect(screen.getByRole('columnheader', { name: 'Прихід' })).toBeTruthy()
+  fireEvent.click(screen.getByRole('button', { name: 'XLSX' }))
+  await waitFor(() => expect(movementXlsx).toHaveBeenCalledWith(movementFixture))
 })

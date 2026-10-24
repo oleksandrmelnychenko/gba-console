@@ -5,7 +5,7 @@ import type { MovementRequest } from './originalWarehouseMovement'
 import { describe, expect, it } from 'vitest'
 import { isMovementCapability, normalizeMovementPublications, normalizeMovementResult, movementRequestError, normalizeMovementWire } from './originalWarehouseMovement'
 import { movementFixture, movementPublication, movementRequest, movementCapability } from './originalWarehouseMovement.test-fixtures'
-import { movementMatrix, movementCsv, movementPdfDefinition, movementXlsx } from './originalWarehouseMovementExport'
+import { movementHeaders, movementMatrix, movementCsv, movementPdf, movementPdfDefinition, movementXlsx } from './originalWarehouseMovementExport'
 import * as XLSX from 'xlsx'
 const clone = () => structuredClone(movementFixture)
 const camel = (v: unknown): unknown => Array.isArray(v) ? v.map(camel) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k.charAt(0).toLowerCase() + k.slice(1), camel(x)])) : v
@@ -50,10 +50,12 @@ it('constrains one article and selected source warehouses to the same publicatio
   expect(() => normalizeMovementPublications([{ ...movementPublication, Capture: { ...movementPublication.Capture, SourceCompletedUtc: '2026-10-24T10:04:41' } }])).toThrow()
   expect(isMovementCapability({ ...movementCapability, World: 'amg' })).toBe(false)
 })
-it('exports the complete immutable table with exact strings; registrar states are blank, never added', async () => {
+it('exports exact running registrar states while totals add only warehouses', async () => {
   const result = normalizeMovementResult(clone(), movementRequest, movementPublication), matrix = movementMatrix(result)
   expect(matrix).toHaveLength(22)
-  expect(matrix[2].slice(4)).toEqual(['', '2.000', '0.000', ''])
+  expect(matrix[2].slice(4)).toEqual(['1.000', '2.000', '0.000', '3.000'])
+  const registrarClosingSum = result.Rows.flatMap(row => row.Registrars).reduce((sum, row) => sum + BigInt(row.Quantity.Closing.replace('.', '')), 0n)
+  expect(registrarClosingSum).not.toBe(BigInt(result.Totals!.Closing.replace('.', '')))
   expect(matrix.at(-1)?.slice(4)).toEqual(['40.000', '17.000', '32.000', '25.000'])
   const definition = movementPdfDefinition(result)
   expect(JSON.stringify(definition)).toContain('17.000')
@@ -86,3 +88,24 @@ it('roundtrips independently produced camelCase source fixtures including genuin
     expect(movementMatrix(result).at(-1)?.slice(4)).toEqual(Object.values(actual.totals!))
   }
 })
+
+it('isolates PDF table normalization from shared headers, the accepted result and subsequent exports', () => {
+  const result = clone(), before = structuredClone(result), headers = [...movementHeaders], matrix = movementMatrix(result)
+  const definition = movementPdfDefinition(result)
+  const table = definition.content.find(item => typeof item === 'object' && item !== null && 'table' in item) as { table: { body: unknown[][] } }
+  expect(table.table.body[0]).not.toBe(movementHeaders)
+  table.table.body[0].forEach((text, index) => { table.table.body[0][index] = { text, fillColor: '#fff', _margin: null } })
+  table.table.body[1][4] = { text: table.table.body[1][4] }
+  expect(movementHeaders).toEqual(headers)
+  expect(movementMatrix(result)).toEqual(matrix)
+  expect(result).toEqual(before)
+  expect(movementCsv(result)).not.toContain('[object Object]')
+})
+it('the real PDF engine generates a PDF without mutating screen headers or the next matrix', async () => {
+  const result = clone(), before = movementMatrix(result), headers = [...movementHeaders]
+  const blob = await movementPdf(result)
+  const prefix = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsText(blob.slice(0, 5)) })
+  expect(prefix).toBe('%PDF-')
+  expect(movementHeaders).toEqual(headers)
+  expect(movementMatrix(result)).toEqual(before)
+}, 20_000)

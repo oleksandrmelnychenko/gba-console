@@ -1,3 +1,5 @@
+import { lotAnalysisHeaders } from './originalLotBalanceAnalysisExport'
+import { assertPdfMatrixIsolation } from '../testing/pdfMatrixIsolation'
 import { expect, it } from 'vitest'
 import { emptyLotAnalysis, lotAnalysisCapability, lotAnalysisResponse, lotProduct, lotWarehouse, missingLotAnalysis } from '../testing/originalLotBalanceAnalysisFixtures'
 import { isLotAnalysisCapability, lotAnalysisRequest, normalizeLotAnalysis } from './originalLotBalanceAnalysis'
@@ -51,4 +53,8 @@ it('protects formula-like human captions without altering signed numeric resourc
 it.each(['-0.000', '5', '1e3', '01.000'])('rejects noncanonical quantity %s', value => {
   const result = lotAnalysisResponse(); result.Rows[0].Products[0].Values.КоличествоНачальныйОстаток = value
   expect(() => normalizeLotAnalysis(result, request())).toThrow()
+})
+
+it('PDF cell normalization cannot mutate shared headers or the next lotAnalysis export', () => {
+  assertPdfMatrixIsolation(lotAnalysisHeaders, () => lotAnalysisMatrix(lotAnalysisResponse()), () => lotAnalysisPdfDefinition(lotAnalysisResponse()))
 })

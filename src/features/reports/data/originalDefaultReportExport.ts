@@ -9,7 +9,7 @@ export function defaultSheetExportError(sheet: OriginalDefaultSheet): string | n
 function matrix(sheet: OriginalDefaultSheet): string[][] {
   const error = defaultSheetExportError(sheet)
   if (error) throw new Error(error)
-  return [sheet.headers, ...sheet.lines.map(line => line.cells), ...(sheet.total ? [sheet.total] : [])]
+  return [[...sheet.headers], ...sheet.lines.map(line => [...line.cells]), ...(sheet.total ? [[...sheet.total]] : [])]
 }
 const metadata = (sheet: OriginalDefaultSheet) => [[sheet.title], [sheet.scopeLabel ?? `Період: ${sheet.from} – ${sheet.through}, включно`], [sheet.note]]
 export function defaultSheetCsv(sheet: OriginalDefaultSheet): string {

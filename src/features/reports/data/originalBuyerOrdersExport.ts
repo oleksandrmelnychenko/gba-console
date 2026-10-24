@@ -38,7 +38,7 @@ export function buyerOrdersLines(result: BuyerOrdersResult) {
 export function buyerOrdersMatrix(result: BuyerOrdersResult): string[][] {
   const error = buyerOrdersExportError(result)
   if (error || !result.BaseTotals || !result.StoredTotals) throw new Error(error ?? 'Повний результат недоступний для експорту.')
-  return [buyerOrdersHeaders, ...buyerOrdersLines(result).map(r => r.cells), ['Разом', '', ...buyerOrdersValues(result.BaseTotals, result.StoredTotals)]]
+  return [[...buyerOrdersHeaders], ...buyerOrdersLines(result).map(r => r.cells), ['Разом', '', ...buyerOrdersValues(result.BaseTotals, result.StoredTotals)]]
 }
 const units = 'Базова кількість = кількість зберігання × коефіцієнт одиниці зберігання товару до групування. Значення точні, без округлення.'
 const mapping = 'Назви замовлень недоступні; їхні окремі рядки збережено. Повна відповідність усім налаштуванням 1С не підтверджена.'

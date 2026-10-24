@@ -12,7 +12,7 @@ export function fenixDiscountExportError(result: FenixDiscountResult, format: 'c
 export function fenixDiscountMatrix(result: FenixDiscountResult): string[][] {
   const error = fenixDiscountExportError(result); if (error) throw new Error(error)
   validateFenixDiscountResult(result, fenixResultRequest(result))
-  return [fenixDiscountHeaders, ...fenixDiscountLines(result).map(row => row.cells)]
+  return [[...fenixDiscountHeaders], ...fenixDiscountLines(result).map(row => row.cells)]
 }
 const metadata = (result: FenixDiscountResult) => [[`FENIX · ОтчетПоСкидкам · зріз ${result.Through} до 23:59:59`],
   ['Максимальний відсоток на рівні отримувача й номенклатури. Відсотки не додаються.'],
