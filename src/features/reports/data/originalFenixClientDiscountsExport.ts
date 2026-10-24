@@ -17,7 +17,7 @@ export function fenixDiscountMatrix(result: FenixDiscountResult): string[][] {
 const metadata = (result: FenixDiscountResult) => [[`FENIX · Знижки · станом на ${result.Through}`],
   ['Максимальний відсоток на рівні отримувача й номенклатури. Відсотки не додаються.'],
   [`Максимальна знижка, %: ${result.MaximumPercentage ?? 'рядків немає'}`],
-  ['Дані не звірено з поточним звітом 1С.']]
+]
 export function fenixDiscountCsv(result: FenixDiscountResult): string {
   const safe = (v: string) => /^[\s\p{Cc}]*[=+\-@]/u.test(v) ? `'${v}` : v
   const quote = (v: string) => `"${v.replaceAll('"', '""')}"`

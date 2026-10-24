@@ -28,7 +28,7 @@ export async function warehouseQuantityXlsx(result: WarehouseQuantityResult): Pr
   XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(rows), 'Кількість')
   XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet([
     ['Період', `${result.From} — ${result.Through}`], ['Одиниці', 'Записана кількість без перерахунку одиниць'],
-    ['Назви документів', result.ReceiptCaptions ? receiptExportNote(result.ReceiptCaptions) : 'Зіставлення з документами GBA недоступне'], ['Відповідність 1С', 'Не підтверджена'], ...result.FilterSummary.map(s => ['Відбір', s])]), 'Про звіт')
+    ['Назви документів', result.ReceiptCaptions ? receiptExportNote(result.ReceiptCaptions) : 'Зіставлення з документами GBA недоступне'], ...result.FilterSummary.map(s => ['Відбір', s])]), 'Про звіт')
   return new Blob([XLSX.write(book, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
 }
 export function warehouseQuantityPdfDefinition(result: WarehouseQuantityResult): CurrentVparivanieV2PdfDefinition {

@@ -2,7 +2,7 @@ import { cashMovementsDefinitions, cashMovementsFilters, cashMovementsLabels, ca
   type CashMovementsResult, type CashMovementsRow, type CashMovementsTotals, type CashMovementsValues } from './originalCashMovements'
 import type { CurrentVparivanieV2PdfDefinition } from './currentVparivanieV2Export'
 const unitNote = 'Сума у валюті рахунку / каси та управлінська сума — два збережені ресурси без валютного перерахунку. Загальний підсумок арифметично об’єднує валюти.'
-const nullNote = '«—» означає відсутність внеску; 0.00 — спостережений нуль після взаємного погашення. Відповідність 1С не підтверджена.'
+const nullNote = '«—» означає відсутність внеску; 0.00 — нуль після взаємного погашення.'
 const textValues = (values: CashMovementsValues) => cashMovementsMeasures.map(measure => values[measure] ?? '—')
 export function cashMovementsHeaders(result: CashMovementsResult): string[] {
   return [...cashMovementsRows.map(field => cashMovementsLabels[field]), ...cashMovementsDefinitions.map(d => `Разом · ${d.Caption}`),
