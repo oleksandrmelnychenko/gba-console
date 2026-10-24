@@ -13,7 +13,7 @@ import './report-inline-preview.css'
 import { workbookAttributeText, type WorkbookRow } from '../data/workbookPreview'
 import { deskRowsText } from '../data/workbookDesk'
 
-export function ReportInlinePreview({ preview, embedded = false }: { preview: NativeReportPreview; embedded?: boolean }) {
+export function ReportInlinePreview({ preview, embedded = false, showPageNote = true }: { preview: NativeReportPreview; embedded?: boolean; showPageNote?: boolean }) {
   const cells = new Map(preview.Cells.map(cell => [`${cell.RowSourceIndex}:${cell.ColumnSourceIndex}`, cell.Value]))
   const products = preview.CurrentVparivanieProducts
   const regions = preview.ClientDiscountRecipientRegions
@@ -126,7 +126,7 @@ export function ReportInlinePreview({ preview, embedded = false }: { preview: Na
         </tr></tfoot> : null}
       </table>
     </ReportTableScrollArea>
-    {preview.Page.HasMore ? <Text size="xs" c="dimmed" className="report-inline-preview__more">Показано рядки {preview.Page.Offset + 1}–{preview.Page.Offset + preview.Page.ReturnedRows}. Повний результат доступний у Excel або PDF.{totals
+    {showPageNote && preview.Page.HasMore ? <Text size="xs" c="dimmed" className="report-inline-preview__more">Показано рядки {preview.Page.Offset + 1}–{preview.Page.Offset + preview.Page.ReturnedRows}. Повний результат доступний у Excel або PDF.{totals
       ? ` Загальний підсумок — за всіма ${preview.Page.TotalVisibleRows} рядками звіту.` : ''}</Text> : null}
   </section>
 }
