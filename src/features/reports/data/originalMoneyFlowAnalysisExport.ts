@@ -32,7 +32,7 @@ export function moneyFlowMatrix(result: MoneyFlowResult): string[][] {
 export function moneyFlowFilterSummary(result: MoneyFlowResult): string[] {
   return moneyFlowFilters.map(field => {
     const names = new Map(result.Choices[field].map(c => [c.Key, c.Caption]))
-    return `${moneyFlowLabels[field]}: ${result.Selectors[field].length ? result.Selectors[field].map(key => `${names.get(key) ?? 'Назва недоступна'} [${key}]`).join(', ') : 'усі'}`
+    return `${moneyFlowLabels[field]}: ${result.Selectors[field].length ? result.Selectors[field].map((key, index) => names.get(key) ?? `Назва недоступна (${index + 1})`).join(', ') : 'усі'}`
   })
 }
 function metadata(result: MoneyFlowResult): string[][] {

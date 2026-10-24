@@ -41,7 +41,7 @@ export function cashMovementsMatrix(result: CashMovementsResult): string[][] {
 export function cashMovementsFilterSummary(result: CashMovementsResult): string[] {
   return cashMovementsFilters.map(field => {
     const names = new Map(result.Choices[field].map(c => [c.Key, c.Caption]))
-    return `${cashMovementsLabels[field]}: ${result.Selectors[field].length ? result.Selectors[field].map(key => `${names.get(key) ?? 'Назва недоступна'} [${key}]`).join(', ') : 'усі'}`
+    return `${cashMovementsLabels[field]}: ${result.Selectors[field].length ? result.Selectors[field].map((key, index) => names.get(key) ?? `Назва недоступна (${index + 1})`).join(', ') : 'усі'}`
   })
 }
 function metadata(result: CashMovementsResult): string[][] {

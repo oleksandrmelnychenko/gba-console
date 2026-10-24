@@ -42,9 +42,13 @@ it('empty NULL totals export faithfully; unavailable or oversized results never 
   const result = full(); result.Rows = Array.from({ length: 125_000 }, () => result.Rows[0])
   expect(moneyFlowExportError(result)).toContain('1 000 000'); expect(() => moneyFlowMatrix(result)).toThrow()
 })
-it('completed filter names and exact identity keys remain bound despite later selection edits', () => {
+it('exports readable filters in all formats while retaining exact identity keys only in the result', async () => {
   const result = full(); result.Selectors.Организация = [moneyFlowRef(1)]
   const csv = moneyFlowCsv(result); expect(moneyFlowFilterSummary(result)).toHaveLength(3)
-  expect(csv).toContain(`Перша організація [${moneyFlowRef(1)}]`); expect(csv).toContain('980')
-  expect(csv).toContain('без валютного перерахунку'); expect(csv).toContain('1С не підтверджена')
+  expect(csv).toContain('Організація: Перша організація'); expect(csv).not.toContain(moneyFlowRef(1)); expect(csv).toContain('980')
+  expect(csv).toContain('без валютного перерахунку'); expect(csv).not.toContain('1С не підтверджена')
+  expect(JSON.stringify(moneyFlowPdfDefinition(result))).not.toContain(moneyFlowRef(1))
+  const XLSX = await import('xlsx'), book = XLSX.read(await (await moneyFlowXlsx(result)).arrayBuffer(), { type: 'array' })
+  expect(JSON.stringify(XLSX.utils.sheet_to_json(book.Sheets['Про звіт'], { header: 1 }))).not.toContain(moneyFlowRef(1))
+  expect(result.Selectors.Организация).toEqual([moneyFlowRef(1)])
 })
