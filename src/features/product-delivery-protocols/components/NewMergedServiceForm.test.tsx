@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NewMergedServiceForm } from './NewMergedServiceForm'
@@ -117,12 +117,12 @@ describe('product-delivery NewMergedServiceForm validation', () => {
     expect(await screen.findByText('Main agreement (EUR)')).toBeTruthy()
   })
 
-  it('keeps errors beside other invalid fields while one field is corrected', () => {
+  it('keeps errors beside other invalid fields while one field is corrected', async () => {
     renderForm()
     const supplier = getInput('Постачальник послуг')
     const invoice = getInput('Номер інвойса')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Зберегти' })) })
     fireEvent.change(invoice, { target: { value: 'INV-1' } })
 
     expect(invoice.getAttribute('aria-invalid')).not.toBe('true')
@@ -130,7 +130,7 @@ describe('product-delivery NewMergedServiceForm validation', () => {
     expect(screen.getByText('Оберіть постачальника послуг')).toBeTruthy()
 
     fireEvent.change(invoice, { target: { value: '   ' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Зберегти' })) })
 
     expect(invoice.getAttribute('aria-invalid')).toBe('true')
     expect(screen.getByText('Вкажіть номер інвойса')).toBeTruthy()

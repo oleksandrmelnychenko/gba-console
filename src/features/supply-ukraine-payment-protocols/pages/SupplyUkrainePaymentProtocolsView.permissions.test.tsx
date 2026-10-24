@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -242,8 +242,9 @@ describe('SupplyUkrainePaymentProtocolsView canonical permission guards', () => 
     allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.UnifiedService.Delete)
     const serviceView = renderPage()
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Додати сервіс' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Видалити сервіс' }))
+    const createService = await screen.findByRole('button', { name: 'Додати сервіс' })
+    await act(async () => { fireEvent.click(createService) })
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Видалити сервіс' })) })
     await waitFor(() => expect(uploadUkraineMergedService).toHaveBeenCalledWith('order-1', { Id: 14 }, []))
     expect(deleteUkraineMergedService).toHaveBeenCalledWith('order-1', { Id: 14 })
     expect(createUkraineMergedServicePaymentTask).not.toHaveBeenCalled()
@@ -256,11 +257,28 @@ describe('SupplyUkrainePaymentProtocolsView canonical permission guards', () => 
     allowedPermissions.add(PermissionKeys.OrdersUkraine.LogisticWay.DeletePaymentTask)
     renderPage()
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Додати задачу сервісу' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Видалити задачу сервісу' }))
+    const createTask = await screen.findByRole('button', { name: 'Додати задачу сервісу' })
+    await act(async () => { fireEvent.click(createTask) })
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Видалити задачу сервісу' })) })
     await waitFor(() => expect(createUkraineMergedServicePaymentTask).toHaveBeenCalled())
     expect(deleteUkraineMergedServicePaymentTask).toHaveBeenCalled()
     expect(screen.queryByRole('button', { name: 'Додати сервіс' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Видалити сервіс' })).toBeNull()
+  })
+
+  it('ignores repeated service creation while the upload is pending', async () => {
+    allowedPermissions.add(PermissionKeys.OrdersUkraine.Page.View)
+    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.UnifiedService.Create)
+    let finish!: () => void
+    vi.mocked(uploadUkraineMergedService).mockImplementationOnce(() => new Promise(resolve => {
+      finish = () => resolve(null)
+    }))
+    renderPage()
+    const button = await screen.findByRole('button', { name: 'Додати сервіс' })
+    act(() => {
+      for (let index = 0; index < 10; index += 1) fireEvent.click(button)
+    })
+    expect(uploadUkraineMergedService).toHaveBeenCalledTimes(1)
+    await act(async () => { finish() })
   })
 })

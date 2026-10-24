@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PermissionKeys } from '../../../../shared/auth/permissionKeys'
@@ -123,9 +123,9 @@ describe('ClientStructurePanel permissions', () => {
     expect(screen.getByTestId('workplaces-permission').getAttribute('data-manage')).toBe('false')
     expect(screen.getByTestId('workplaces-permission').getAttribute('data-delete')).toBe('false')
 
-    fireEvent.click(screen.getByText('mock-create-workplace'))
-    fireEvent.click(screen.getByText('mock-update-workplace'))
-    fireEvent.click(screen.getByText('mock-remove-workplace'))
+    await act(async () => { fireEvent.click(screen.getByText('mock-create-workplace')) })
+    await act(async () => { fireEvent.click(screen.getByText('mock-update-workplace')) })
+    await act(async () => { fireEvent.click(screen.getByText('mock-remove-workplace')) })
 
     expect(createClientWorkplaceMock).not.toHaveBeenCalled()
     expect(updateClientWorkplaceMock).not.toHaveBeenCalled()
@@ -165,9 +165,9 @@ describe('ClientStructurePanel permissions', () => {
     expect(screen.getByTestId('workplaces-permission').getAttribute('data-manage')).toBe('true')
     expect(screen.getByTestId('workplaces-permission').getAttribute('data-delete')).toBe('true')
 
-    fireEvent.click(screen.getByText('mock-create-workplace'))
-    fireEvent.click(screen.getByText('mock-update-workplace'))
-    fireEvent.click(screen.getByText('mock-remove-workplace'))
+    await act(async () => { fireEvent.click(screen.getByText('mock-create-workplace')) })
+    await act(async () => { fireEvent.click(screen.getByText('mock-update-workplace')) })
+    await act(async () => { fireEvent.click(screen.getByText('mock-remove-workplace')) })
 
     await waitFor(() => {
       expect(createClientWorkplaceMock).toHaveBeenCalledTimes(1)
