@@ -1,5 +1,6 @@
 import { requestCurrentVparivanieAnalysis } from '../data/currentVparivanieAnalysis'
 import { movementSelection } from '../data/currentVparivanieMovements'
+import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { Alert, Button, Checkbox, Group, Stack, Text } from '@mantine/core'
 import { useEffect, useRef, useState } from 'react'
 import { readCurrentVparivanieRegional } from '../api/currentVparivanieRegionalApi'
@@ -28,7 +29,7 @@ function RegionalTable({ result }: { result: CurrentVparivanieRegionalResult }) 
     <Button size="xs" variant="default" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>Попередні рядки</Button>
     <Text size="xs">{result.Rows.length ? first + 1 : 0}–{first + visible.length} / {result.Rows.length}</Text>
     <Button size="xs" variant="default" disabled={first + visible.length >= result.Rows.length} onClick={() => setPage(currentPage + 1)}>Наступні рядки</Button>
-  </Group><div className="report-inline-preview__scroll" tabIndex={0} role="region" aria-label="Регіональна форма Аналіз залишків і продажів">
+  </Group><ReportTableScrollArea minWidth={1100} label="Регіональна форма Аналіз залишків і продажів">
     <table className="app-static-table"><thead><tr>{CURRENT_VPARIVANIE_PRODUCT_CAPTIONS.map(caption => <th scope="col" key={caption}>{caption}</th>)}
       {columns.map(key => <th scope="col" key={key}>{currentRegionalColumnCaption(key)}</th>)}</tr></thead>
       <tbody>{visible.map(row => {
@@ -39,7 +40,7 @@ function RegionalTable({ result }: { result: CurrentVparivanieRegionalResult }) 
           {columns.map(key => <td key={key}>{currentRegionalCellText(cells.get(key)) || '—'}</td>)}
         </tr>
       })}</tbody></table>
-  </div></Stack>
+  </ReportTableScrollArea></Stack>
 }
 
 function RegionalFullScopeCheckbox({ dataset, checked, disabled, onChange }: {

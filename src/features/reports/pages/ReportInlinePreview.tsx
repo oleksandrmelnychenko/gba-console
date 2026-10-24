@@ -1,5 +1,6 @@
 import { ANALYSIS_SCOPE_NOTICE } from '../data/currentVparivanieAnalysis'
 import { MOVEMENT_FILTER_NOTICE } from '../data/currentVparivanieMovements'
+import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { formatReportDecimal, moneyScaleLabel, reportValueUnit } from '../data/reportNumberPresentation'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { settlementAttributeText, type SettlementCounterpartyAttribute } from '../data/settlementSourceAttributes'
@@ -79,7 +80,7 @@ export function ReportInlinePreview({ preview, embedded = false }: { preview: Na
       {preview.CurrentVparivanieMovements.OldestCapturedAtUtc && preview.CurrentVparivanieMovements.NewestCapturedAtUtc
         ? <Text size="sm">Історію прочитано: {kyivTimestamp(preview.CurrentVparivanieMovements.OldestCapturedAtUtc)} — {kyivTimestamp(preview.CurrentVparivanieMovements.NewestCapturedAtUtc)}.</Text> : null}
     </Alert> : null}
-    <div className="report-inline-preview__scroll" tabIndex={0} role="region" aria-label="Таблиця попереднього перегляду">
+    <ReportTableScrollArea label="Таблиця попереднього перегляду">
       <table className="app-static-table">
         <thead><tr>
           {rowHeaders.map((header, index) => <th scope="col" rowSpan={products ? 2 : undefined} key={`row-${index}`}>{header}</th>)}
@@ -124,7 +125,7 @@ export function ReportInlinePreview({ preview, embedded = false }: { preview: Na
           {totalCells(totals.Values)}
         </tr></tfoot> : null}
       </table>
-    </div>
+    </ReportTableScrollArea>
     {preview.Page.HasMore ? <Text size="xs" c="dimmed" className="report-inline-preview__more">Показано рядки {preview.Page.Offset + 1}–{preview.Page.Offset + preview.Page.ReturnedRows}. Повний результат доступний у Excel або PDF.{totals
       ? ` Загальний підсумок — за всіма ${preview.Page.TotalVisibleRows} рядками звіту.` : ''}</Text> : null}
   </section>

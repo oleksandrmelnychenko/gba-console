@@ -1,3 +1,4 @@
+import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { Table } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 
@@ -9,7 +10,7 @@ export function ServerReportCellsTable({ columns, cells }: {
   columns: readonly DisplayColumn[]; cells: readonly DisplayCell[]
 }) {
   const { t } = useI18n()
-  return <Table.ScrollContainer minWidth={640}>
+  return <ReportTableScrollArea minWidth={640}>
     <Table className="app-static-table">
       <Table.Thead><Table.Tr>{columns.map(column => <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
       <Table.Tbody><Table.Tr>{cells.map(cell => <Table.Td key={cell.Key}
@@ -17,5 +18,5 @@ export function ServerReportCellsTable({ columns, cells }: {
         {cell.FormattedValue ?? '—'}
       </Table.Td>)}</Table.Tr></Table.Tbody>
     </Table>
-  </Table.ScrollContainer>
+  </ReportTableScrollArea>
 }

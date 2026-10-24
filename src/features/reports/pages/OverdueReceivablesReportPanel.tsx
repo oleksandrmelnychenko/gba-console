@@ -1,3 +1,4 @@
+import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { Alert, Button, Group, Stack, Table, Text, TextInput } from '@mantine/core'
 import { useEffect, useRef, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
@@ -93,7 +94,7 @@ function OverdueReceivablesResult({ report }: { report: OverdueReceivablesReport
 
 function OverdueReceivablesGroups({ report }: { report: OverdueReceivablesReport }) {
   const { t } = useI18n()
-  return <Table.ScrollContainer minWidth={760}><Table className="app-static-table" aria-label={t('Контрагенти')}>
+  return <ReportTableScrollArea minWidth={760}><Table className="app-static-table" aria-label={t('Контрагенти')}>
     <Table.Thead><Table.Tr><Table.Th>Контрагент</Table.Th>{report.Columns.map(column => <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
     <Table.Tbody>{report.Rows.map(row => <Table.Tr key={row.CounterpartyReference}>
       <Table.Td>{row.CounterpartyName ?? t('Назва недоступна')}</Table.Td>
@@ -101,5 +102,5 @@ function OverdueReceivablesGroups({ report }: { report: OverdueReceivablesReport
         {cell.FormattedValue ?? '—'}
       </Table.Td>)}
     </Table.Tr>)}</Table.Tbody>
-  </Table></Table.ScrollContainer>
+  </Table></ReportTableScrollArea>
 }

@@ -1,3 +1,4 @@
+import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { Alert, Badge, Button, Group, Loader, Pagination, Select, Stack, Table, Text, TextInput } from '@mantine/core'
 import { ArrowRight, ChevronRight, RotateCcw, Search } from 'lucide-react'
 import { DocumentDetailMetric, DocumentDetailSummary } from '../../../shared/ui/document-detail/DocumentDetail'
@@ -246,7 +247,7 @@ function CatalogueTable({ consoleScope = false, onOpenWorkbook, visibleRows, cat
 }) {
   const { t } = useI18n()
   return (
-      <Table.ScrollContainer minWidth={720}>
+      <ReportTableScrollArea minWidth={720}>
         <Table className="app-static-table report-catalogue__table" highlightOnHover>
           <colgroup><col style={{ width: '46%' }} /><col style={{ width: '15%' }} /><col style={{ width: '39%' }} /></colgroup>
           <Table.Thead><Table.Tr><Table.Th>{t('Звіт')}</Table.Th><Table.Th>{t('Тип')}</Table.Th><Table.Th>{t('Стан за базами')}</Table.Th></Table.Tr></Table.Thead>
@@ -347,7 +348,7 @@ function CatalogueTable({ consoleScope = false, onOpenWorkbook, visibleRows, cat
             {expanded.has(report.Id) && <Table.Tr><Table.Td colSpan={3}><ReportMigrationDetails report={report} migrations={inspection.migrations} datasets={availableDatasets} canGenerate={canGenerate} launchEnabled={Boolean(onOpen)} /></Table.Td></Table.Tr>}
           </Fragment>)}</Table.Tbody>
         </Table>
-      </Table.ScrollContainer>
+      </ReportTableScrollArea>
   )
 }
 

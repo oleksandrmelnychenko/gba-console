@@ -1,3 +1,4 @@
+import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { receiptChoiceScope, receiptChoiceValues, warehouseReceiptKey, type ReceiptCaptionContext, type WarehouseReceiptKey } from '../data/warehouseReceiptCaptions'
 import { WarehouseReceiptCaptionControls, WarehouseReceiptCaptionStatus } from './WarehouseReceiptCaptionControls'
 import { Alert, Button, Group, Stack, Table, Text } from '@mantine/core'
@@ -34,7 +35,7 @@ function TransferredTable({ result }: { result: TransferredResult }) {
     <Group justify="space-between"><Button variant="light" size="xs" disabled={current === 0} onClick={() => setPage(current - 1)}>{t('Попередні рядки')}</Button>
       <Text size="xs">{lines.length ? offset + 1 : 0}–{Math.min(offset + 50, lines.length)} / {lines.length}</Text>
       <Button variant="light" size="xs" disabled={offset + 50 >= lines.length} onClick={() => setPage(current + 1)}>{t('Наступні рядки')}</Button></Group>
-    <Table.ScrollContainer minWidth={1900}><Table className="app-static-table" striped highlightOnHover>
+    <ReportTableScrollArea minWidth={1900}><Table className="app-static-table" striped highlightOnHover>
       <Table.Thead><Table.Tr>{transferredHeaders.map(label => <Table.Th key={label}>{t(label)}</Table.Th>)}</Table.Tr></Table.Thead>
       <Table.Tbody>{lines.slice(offset, offset + 50).map(line => <Table.Tr key={line.key} style={line.subtotal ? { fontWeight: 600 } : undefined}>
         {line.cells.map((cell, i) => <Table.Td key={transferredHeaders[i]} className={i >= 2 ? 'app-money' : undefined}>{cell}</Table.Td>)}
@@ -42,7 +43,7 @@ function TransferredTable({ result }: { result: TransferredResult }) {
       {result.Totals ? <Table.Tfoot><Table.Tr><Table.Th colSpan={2}>{t('Разом')}</Table.Th>
         {transferredValues(result.Totals).map((value, i) => <Table.Td key={transferredHeaders[i + 2]} className="app-money">{value}</Table.Td>)}
       </Table.Tr></Table.Tfoot> : null}
-    </Table></Table.ScrollContainer>
+    </Table></ReportTableScrollArea>
     {lines.length === 0 ? <Text>{t('У повністю перевіреному періоді рядків немає.')}</Text> : null}
   </Stack>
 }

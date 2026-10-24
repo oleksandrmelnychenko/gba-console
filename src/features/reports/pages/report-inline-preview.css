@@ -3,8 +3,6 @@
 .report-inline-preview__title { font-family: var(--font-mono); color: var(--mantine-color-gray-9); margin: 0; }
 .report-inline-preview__count { font-family: var(--font-mono); color: var(--mantine-color-gray-7); font-weight: 600; }
 .report-inline-preview__more { color: var(--mantine-color-gray-7) !important; }
-.report-inline-preview__scroll { max-height: min(38rem, 72vh); overflow: auto; border: 1px solid var(--mantine-color-gray-2); border-radius: 8px; }
-.report-inline-preview__scroll:focus-visible { outline: 2px solid rgba(var(--brand-orange-rgb), 0.7); outline-offset: 2px; }
 .report-inline-preview table { border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%; font-size: 0.8125rem; }
 .report-inline-preview th, .report-inline-preview td { background: var(--mantine-color-white); border-bottom: 1px solid var(--mantine-color-gray-2); border-right: 1px solid var(--mantine-color-gray-2); padding: 0.4375rem 0.625rem; text-align: left; min-width: 6.5rem; max-width: 20rem; overflow-wrap: anywhere; vertical-align: top; }
 .report-inline-preview tr > :last-child { border-right: 0; }

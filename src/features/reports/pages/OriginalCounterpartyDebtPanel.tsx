@@ -1,3 +1,4 @@
+import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { TextInput, Alert, Button, Checkbox, Group, MultiSelect, Select, Stack, Table, Text } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -31,13 +32,13 @@ function DebtTable({ result }: { result: DebtResult }) {
     <Button variant="light" size="xs" disabled={current === 0} onClick={() => setPage(current - 1)}>{t('Попередні рядки')}</Button>
     <Text size="xs">{lines.length ? offset + 1 : 0}–{Math.min(lines.length, offset + 50)} / {lines.length}</Text>
     <Button variant="light" size="xs" disabled={offset + 50 >= lines.length} onClick={() => setPage(current + 1)}>{t('Наступні рядки')}</Button>
-  </Group><Table.ScrollContainer minWidth={800}><Table className="app-static-table" striped><Table.Thead><Table.Tr>
+  </Group><ReportTableScrollArea minWidth={800}><Table className="app-static-table" striped><Table.Thead><Table.Tr>
     {headers.map(h => <Table.Th key={h}>{t(h)}</Table.Th>)}
   </Table.Tr></Table.Thead><Table.Tbody>{lines.slice(offset, offset + 50).map(line => <Table.Tr key={line.key} fw={line.subtotal ? 600 : undefined}>
     {line.cells.map((cell, i) => <Table.Td key={headers[i]} className={i >= 2 ? 'app-money' : undefined}>{cell}</Table.Td>)}
   </Table.Tr>)}</Table.Tbody>{result.Totals ? <Table.Tfoot><Table.Tr><Table.Th colSpan={2}>{t('Разом')}</Table.Th>
     {debtValues(result.Totals, result.IncludeSettlement).map((cell, i) => <Table.Td key={headers[i + 2]} className="app-money">{cell}</Table.Td>)}
-  </Table.Tr></Table.Tfoot> : null}</Table></Table.ScrollContainer>
+  </Table.Tr></Table.Tfoot> : null}</Table></ReportTableScrollArea>
     {!lines.length ? <Text>{t('У повністю перевіреному зрізі рядків немає.')}</Text> : null}
   </Stack>
 }

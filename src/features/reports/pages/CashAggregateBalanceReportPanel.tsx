@@ -1,3 +1,4 @@
+import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { Alert, Button, Group, Stack, Table, Text } from '@mantine/core'
 import { useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
@@ -52,13 +53,13 @@ export function CashAggregateBalanceReportPanel({ capability, initialPeriod, can
     </Group>
     {report ? <section aria-label={t('Результат сукупного залишку коштів')}>
       <Text size="sm">{t('Поточна дата')}: {report.CurrentPeriod.Day} · {t('Попередня дата')}: {report.PreviousPeriod.Day}</Text>
-      <Table.ScrollContainer minWidth={800}><Table className="app-static-table">
+      <ReportTableScrollArea minWidth={800}><Table className="app-static-table">
         <Table.Thead><Table.Tr><Table.Th>{t('БанковскийСчетКасса')}</Table.Th>{report.Columns.map(column =>
           <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
         <Table.Tbody>{report.Rows.map(row => <CashBalanceRow key={`${row.Account.Id}:${row.Account.NetUid}`}
           label={`${row.Account.Name || t('Рахунок')} [${row.Account.Id}]`} row={row} report={report} />)}</Table.Tbody>
         <Table.Tfoot><CashBalanceRow label={t('Разом')} row={report.Totals} report={report} /></Table.Tfoot>
-      </Table></Table.ScrollContainer>
+      </Table></ReportTableScrollArea>
       {!report.Rows.length ? <Text size="sm">{t('Рахунків за поточними даними немає.')}</Text> : null}
       {report.Rows.some(row => row.Cells.some(cell => !cell.Available)) || report.Totals.Cells.some(cell => !cell.Available)
         ? <Alert color="yellow">{t('Порожні клітинки позначають недоступні значення. Невідомі залишки не прирівнюються до нуля; підсумок залишається недоступним, якщо для нього бракує даних.')}</Alert> : null}

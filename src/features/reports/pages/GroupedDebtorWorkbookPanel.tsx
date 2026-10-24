@@ -1,3 +1,4 @@
+import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { Alert, Button, Card, Group, Stack, Table, Text } from '@mantine/core'
@@ -98,7 +99,7 @@ function GroupedDebtorWorkbookBody({ from, to, enabled, disabled }: {
             onClick={() => void download('pdf')}>Завантажити PDF · чернетка</Button>
         </Group>
       </> : null}
-      {statement ? <div style={{ overflowX: 'auto' }}><Table className="app-static-table" striped highlightOnHover>
+      {statement ? <ReportTableScrollArea minWidth={800}><Table className="app-static-table" striped highlightOnHover>
         <Table.Thead><Table.Tr><Table.Th>Організація / контрагент</Table.Th><Table.Th>Валюта</Table.Th>
           <Table.Th>Початок</Table.Th><Table.Th>Надходження</Table.Th>
           <Table.Th>Витрати</Table.Th><Table.Th>Кінець</Table.Th></Table.Tr></Table.Thead>
@@ -115,7 +116,7 @@ function GroupedDebtorWorkbookBody({ from, to, enabled, disabled }: {
               <Table.Td>{formatGroupedDebtorMoney(row.Closing)}</Table.Td></Table.Tr>
           </Fragment>
         })}</Table.Tbody>
-      </Table>{statement.Rows.length === 0 ? <Text size="sm">За повністю покритим періодом рядків немає.</Text> : null}</div> : null}
+      </Table>{statement.Rows.length === 0 ? <Text size="sm">За повністю покритим періодом рядків немає.</Text> : null}</ReportTableScrollArea> : null}
     </Stack>
   </Card>
 }

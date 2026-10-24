@@ -1,3 +1,4 @@
+import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { Button, Group, Stack, Table, Text } from '@mantine/core'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -15,10 +16,10 @@ export function DiscountAnalysisMatrixGrid<Cell>({ index, values, empty }: { ind
     <Button variant="light" disabled={!column} onClick={() => setProductPage(Math.max(0, productPage - 1))}>{t('Попередня номенклатура')}</Button>
     <Text>{index.products.length ? column + 1 : 0}–{Math.min(column + 10, index.products.length)} / {index.products.length}</Text>
     <Button variant="light" disabled={column + 10 >= index.products.length} onClick={() => setProductPage(productPage + 1)}>{t('Наступна номенклатура')}</Button>
-  </Group><Table.ScrollContainer minWidth={1000}><Table className="app-static-table" striped>
+  </Group><ReportTableScrollArea minWidth={1000}><Table className="app-static-table" striped>
     <Table.Thead><Table.Tr><Table.Th>{t('Контрагент')}</Table.Th>{products.flatMap(p => [
       <Table.Th key={`${p.key}:price`}>{p.caption} · {t('Тип ціни')}</Table.Th>, <Table.Th key={`${p.key}:percentage`}>{p.caption} · {t('Відсоток знижки/націнки')}</Table.Th>,
     ])}</Table.Tr></Table.Thead><Table.Tbody>{parties.map(p => <Table.Tr key={p.key}><Table.Td>{p.caption}</Table.Td>{products.flatMap(product =>
       values(index.cells.get(JSON.stringify([p.key, product.key]))).map((value, i) => <Table.Td key={`${product.key}:${i}`}>{value}</Table.Td>))}</Table.Tr>)}</Table.Tbody>
-  </Table></Table.ScrollContainer>{empty ? <Text>{t('У повністю перевіреному зрізі рядків немає.')}</Text> : null}</Stack>
+  </Table></ReportTableScrollArea>{empty ? <Text>{t('У повністю перевіреному зрізі рядків немає.')}</Text> : null}</Stack>
 }

@@ -1,3 +1,4 @@
+import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { receiptChoiceScope, receiptChoiceValues, type ReceiptCaptionContext, type WarehouseReceiptKey } from '../data/warehouseReceiptCaptions'
 import { WarehouseReceiptCaptionControls, WarehouseReceiptCaptionStatus } from './WarehouseReceiptCaptionControls'
 import { Alert, Button, Group, Stack, Table, Text } from '@mantine/core'
@@ -37,10 +38,10 @@ function QuantityTable({ result }: { result: WarehouseQuantityResult }) {
   return <Stack gap="xs"><Group><Button variant="light" size="xs" disabled={current === 0} onClick={() => setPage(current - 1)}>{t('Попередні рядки')}</Button>
     <Text size="xs">{rows.length ? first + 1 : 0}–{Math.min(first + 50, rows.length)} / {rows.length}</Text>
     <Button variant="light" size="xs" disabled={first + 50 >= rows.length} onClick={() => setPage(current + 1)}>{t('Наступні рядки')}</Button></Group>
-    <Table.ScrollContainer minWidth={900}><Table className="app-static-table"><Table.Thead><Table.Tr>{warehouseQuantityHeaders.map(label => <Table.Th key={label}>{t(label)}</Table.Th>)}</Table.Tr></Table.Thead>
+    <ReportTableScrollArea minWidth={900}><Table className="app-static-table"><Table.Thead><Table.Tr>{warehouseQuantityHeaders.map(label => <Table.Th key={label}>{t(label)}</Table.Th>)}</Table.Tr></Table.Thead>
       <Table.Tbody>{rows.slice(first, first + 50).map(row => <Table.Tr key={row.key}>{row.cells.map((cell, column) => <Table.Td key={warehouseQuantityHeaders[column]}>{cell}</Table.Td>)}</Table.Tr>)}</Table.Tbody>
       {result.Totals ? <Table.Tfoot><Table.Tr><Table.Th colSpan={2}>{t('Разом')}</Table.Th>{quantityKeys.map(key => <Table.Td key={key}>{result.Totals?.[key]}</Table.Td>)}</Table.Tr></Table.Tfoot> : null}
-    </Table></Table.ScrollContainer>{!rows.length ? <Text>{t('У повністю перевіреному періоді рядків немає.')}</Text> : null}</Stack>
+    </Table></ReportTableScrollArea>{!rows.length ? <Text>{t('У повністю перевіреному періоді рядків немає.')}</Text> : null}</Stack>
 }
 
 function useQuantityRun({ capability, callerKey, canGenerate, from, through, products, warehouses, receiptMode, receipts, key, onAvailable }: {

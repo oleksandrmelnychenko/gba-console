@@ -1,3 +1,4 @@
+import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { Alert, Button, Group, Stack, Table, Text, TextInput } from '@mantine/core'
 import { useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
@@ -56,11 +57,11 @@ export function CurrencyRateDynamicsReportPanel({ capability, initialMonth, canG
     {report ? <section aria-label={t('Результат динаміки курсу базової валюти')}>
       <Text size="sm">{t('Період')}: {report.Month}</Text>
       <Text size="sm">{currencyRateDynamicsDefinitionLabel(report.RateDefinition)}</Text>
-      <Table.ScrollContainer minWidth={640}><Table className="app-static-table">
+      <ReportTableScrollArea minWidth={640}><Table className="app-static-table">
         <Table.Thead><Table.Tr>{report.Columns.map(column => <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
         <Table.Tbody><Table.Tr>{report.Cells.map((cell, index) => <Table.Td key={cell.Key}
           title={cell.Available ? undefined : t('Недоступні дані')}>{currencyRateDynamicsCellText(cell.Value, report.Columns[index].DecimalPlaces)}</Table.Td>)}</Table.Tr></Table.Tbody>
-      </Table></Table.ScrollContainer>
+      </Table></ReportTableScrollArea>
       {report.Cells.some(cell => !cell.Available) ? <Alert color="yellow">{t('Порожні клітинки позначають недоступні значення розрахунку.')}</Alert> : null}
       <RateHistoryAvailability report={report} />
     </section> : null}
