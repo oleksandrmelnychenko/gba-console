@@ -7,7 +7,7 @@ import { useDebouncedValue } from '@mantine/hooks'
 import { ReportValueAutocomplete } from './ReportValueAutocomplete'
 import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
 import { searchAnalysisValues, type AnalysisLookupValue } from '../api/currentVparivanieAnalysisApi'
-import { analysisGroupIdentity, analysisValueIdentity, mixedAnalysisSelection, type AnalysisFieldDescriptor } from '../data/currentVparivanieAnalysis'
+import { analysisGroupIdentity, analysisListCondition, analysisValueIdentity, mixedAnalysisSelection, type AnalysisFieldDescriptor } from '../data/currentVparivanieAnalysis'
 import { isMultiValueReportCondition } from '../data/reportOptions'
 import type { ReportSelectedValue, ReportSelection } from '../types'
 
@@ -53,7 +53,7 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
         error: error instanceof Error ? error.message : 'Не вдалося прочитати наступні значення.' } : previous)
     }
   }
-  const multiple = isMultiValueReportCondition(selection.FilterCondition.Type)
+  const multiple = isMultiValueReportCondition(selection.FilterCondition.Type) || !!analysisListCondition(selection.FilterCondition.Type, descriptor)
   const optionValues = (current?.values ?? []).flatMap(item => {
     const lookupIdentity = mixed ? analysisGroupIdentity(item.data) : null
     if (mixed && !lookupIdentity) return []
@@ -97,7 +97,7 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
       : <Text size="xs" c="dimmed">Показано 4080 значень. Звузьте пошук, щоб знайти потрібне.</Text> : null}
     {descriptor?.hierarchyBrowse && selection.SelectedField.Type === 4 ? <AnalysisGroupBrowser descriptor={descriptor} selection={selection} onChange={onChange} /> : null}
     </Group>
-    {descriptor?.textEntry && selection.SelectedField.Type === 3 ? <AnalysisTopEntry capability={descriptor.textEntry} selection={selection} onChange={onChange} /> : null}
+    {descriptor?.textEntry && selection.SelectedField.Type === 3 ? <AnalysisTopEntry capability={descriptor.textEntry} selection={selection} multiple={multiple} onChange={onChange} /> : null}
     {current?.error ? <Alert color="red">{current.error}</Alert> : null}
     {!multiple ? <div className="report-analysis-values__selected">{selection.Values.map((v, index) => {
       const group = isGroup ? analysisGroupIdentity(v.Data) : null

@@ -5,7 +5,7 @@ import { FolderTree, Search } from 'lucide-react'
 import { AppModalFooter } from '../../../shared/ui/AppModal'
 import { TreeView, type TreeViewNode } from '../../../shared/ui/tree/TreeView'
 import { getAnalysisGroupPage, type AnalysisGroupNode } from '../api/currentVparivanieAnalysisApi'
-import { analysisSelectionValueError, analysisValueIdentity, mixedAnalysisSelection, type AnalysisFieldDescriptor } from '../data/currentVparivanieAnalysis'
+import { analysisListCondition, analysisSelectionValueError, analysisValueIdentity, changeAnalysisSelectionValues, mixedAnalysisSelection, type AnalysisFieldDescriptor } from '../data/currentVparivanieAnalysis'
 import { isMultiValueReportCondition } from '../data/reportOptions'
 import type { ReportSelectedValue, ReportSelection } from '../types'
 import { ReportModal } from './ReportModal'
@@ -24,10 +24,10 @@ function GroupBrowserDraft({ descriptor, selection, onChange, onClose }: Props &
   const [values, setValues] = useState(selection.Values)
   const [search, setSearch] = useState('')
   const [query] = useDebouncedValue(search.trim(), 200)
-  const multiple = isMultiValueReportCondition(selection.FilterCondition.Type)
+  const multiple = isMultiValueReportCondition(selection.FilterCondition.Type) || !!analysisListCondition(selection.FilterCondition.Type, descriptor)
   const mixed = mixedAnalysisSelection(descriptor, selection.FilterCondition.Type)
   const selected = new Set(values.map(v => analysisValueIdentity(4, v.Data)))
-  const error = analysisSelectionValueError({ ...selection, Values: values }, descriptor)
+  const error = analysisSelectionValueError(changeAnalysisSelectionValues(selection, values, descriptor), descriptor)
   const toggle = (node: AnalysisGroupNode) => {
     const key = `productGroup:${node.id}`
     const value = { Name: node.name, Value: 0, Data: mixed ? { kind: 'productGroup', id: node.id } : node.data }

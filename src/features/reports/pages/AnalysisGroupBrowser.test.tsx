@@ -64,3 +64,13 @@ it('paginates the current level and shows retryable errors instead of an empty s
   expect(getAnalysisGroupPage).toHaveBeenLastCalledWith(null, 1, 50, '', expect.any(AbortSignal))
   await waitFor(() => expect(within(dialog).queryByRole('button', { name: 'Ще кореневі групи' })).toBeNull())
 })
+
+it.each([0, 1])('keeps multiple exact groups for flat condition %i when a list operator is advertised', async condition => {
+  vi.mocked(getAnalysisGroupPage).mockResolvedValue({ parentId: null, items: [node('2', 'Other')], hasMore: false })
+  const first = { Data: { Id: '1' }, Name: 'First', Value: 0 }
+  const { onChange, dialog } = mount({ ...selection, FilterCondition: { Type: condition, Name: 'Condition' }, Values: [first] })
+  fireEvent.click(await within(dialog).findByRole('button', { name: 'Other' }))
+  expect(within(dialog).getByText('Вибрано значень: 2')).toBeTruthy()
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Застосувати' }))
+  expect(onChange).toHaveBeenCalledWith([first, { Data: { Id: '2' }, Name: 'Other', Value: 0 }])
+})

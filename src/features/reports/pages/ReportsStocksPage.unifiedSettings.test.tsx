@@ -201,3 +201,49 @@ it('does not resurrect a deleted template when cancelling edits to its applied r
   expect(screen.queryByRole('button', { name: 'Оновити шаблон' })).toBeNull()
   expect(saveServerReportTemplate).not.toHaveBeenCalled()
 })
+
+const screenshotChoices = [
+  { field: 0, name: 'Організація', condition: 0, values: [
+    { id: 'id:10562', name: 'Фенікс [10562]', data: { Id: 10562 } },
+    { id: 'id:10563', name: 'ФОП Самолюк Алла Дмитрівна [10563]', data: { Id: 10563 } },
+  ] },
+  { field: 5, name: 'Покупець', condition: 0, values: [
+    { id: 'id:626852', name: 'АФРАКО ТЗОВ · BRI00104 [626852]', data: { Id: 626852 } },
+    { id: 'id:628676', name: 'АФЕКС АВТОЗАПЧАСТИНИ ТОВ · BXN02404 [628676]', data: { Id: 628676 } },
+  ] },
+  { field: 60, name: 'Основний менеджер покупця (поточний)', condition: 0, values: [
+    { id: '5608315DD4C6B3419948F4C603F71C9B', name: 'Крицький Олег Русланович [10184]', data: { Id: '5608315DD4C6B3419948F4C603F71C9B' } },
+    { id: 'AB04BE440FA9D34490714004C8951C7E', name: 'Баранов Віталій Васильович [10146]', data: { Id: 'AB04BE440FA9D34490714004C8951C7E' } },
+  ] },
+  { field: 14, name: 'Повернення від клієнта', condition: 1, values: [
+    { id: 'return:110565', name: 'Повернення К0000000403 · 2026-07-17 17:45:24', data: { Id: 110565 } },
+    { id: 'return:111215', name: 'Повернення 00000000001 · 2026-01-05 11:23:12', data: { Id: 111215 } },
+  ] },
+]
+it.each(screenshotChoices)('retains both $name values from the screenshot and submits the corresponding list condition', async ({ field, name, condition, values }) => {
+  template.Data.selections.push({ IsChecked: true, SelectedField: { Type: field, Name: name },
+    FilterCondition: { Type: condition, Name: condition === 0 ? 'Дорівнює' : 'Не дорівнює' },
+    Values: [{ Data: values[0].data, Name: values[0].name, Value: 0 }] })
+  vi.mocked(searchAnalysisValues).mockResolvedValue(values)
+  await open()
+  const rule = screen.getByRole('group', { name: 'Умова відбору 2' })
+  fireEvent.click(within(rule).getByRole('combobox', { name: 'Значення' }))
+  await waitFor(() => {
+    fireEvent.click(within(rule).getByRole('option', { name: values[1].name }))
+    expect(within(rule).getByRole('button', { name: 'Вибрано: 2' })).toBeTruthy()
+  })
+  fireEvent.keyDown(within(rule).getByRole('combobox', { name: 'Значення' }), { key: 'Escape' })
+  await apply()
+  expect(vi.mocked(previewStockReport).mock.calls[0][0].selections[1]).toMatchObject({
+    FilterCondition: { Type: condition === 0 ? 2 : 4 },
+    Values: values.map(value => ({ Data: value.data, Name: value.name, Value: 0 })),
+  })
+  fireEvent.click(within(rule).getByRole('button', { name: 'Вибрано: 2' }))
+  fireEvent.click(within(rule).getByRole('option', { name: values[0].name }))
+  fireEvent.keyDown(within(rule).getByRole('combobox', { name: 'Значення' }), { key: 'Escape' })
+  await apply()
+  await waitFor(() => expect(previewStockReport).toHaveBeenCalledTimes(2))
+  expect(vi.mocked(previewStockReport).mock.calls[1][0].selections[1].Values).toEqual([
+    { Data: values[1].data, Name: values[1].name, Value: 0 },
+  ])
+})
