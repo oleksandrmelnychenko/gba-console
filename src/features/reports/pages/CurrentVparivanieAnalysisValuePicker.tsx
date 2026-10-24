@@ -86,7 +86,6 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
         searchable filter={({ options }) => options} searchValue={search} onSearchChange={setSearch}
         data={options} value={null} onChange={add}
         rightSection={!current ? <Loader size="xs" /> : undefined} nothingFoundMessage="Нічого не знайдено" />}
-    {mixed ? <Text size="xs" c="dimmed">Оберіть товари та групи. Товари з перетинів груп враховуються один раз.</Text> : null}
     <Group gap={6} className="report-analysis-values__actions">
     {current?.hasMore ? current.nextOffset < 4080
       ? <Button type="button" variant="default" size="compact-sm" leftSection={<ListPlus size={15} aria-hidden="true" />} loading={current.loadingMore} onClick={() => void loadMore()}>Ще значення</Button>

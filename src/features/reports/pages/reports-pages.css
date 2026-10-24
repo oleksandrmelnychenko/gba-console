@@ -372,7 +372,7 @@
 .reports-stocks-template-card .reports-stocks-template-secondary:disabled { opacity: 0.5; }
 .reports-stocks-template-back { justify-self: start; align-self: start; }
 
-.reports-stocks-template-editor { display: grid; gap: 18px; }
+.reports-stocks-template-editor { display: grid; gap: 12px; }
 .reports-stocks-template-section-title { font-family: var(--font-mono); font-size: 12px; color: var(--mantine-color-gray-7); }
 
 .reports-stocks-template-active {
@@ -527,7 +527,7 @@
   height: 30px;
 }
 
-.reports-group-picker-content { padding: 10px; background: var(--mantine-color-gray-0); border-radius: 10px; }
+.reports-group-picker-content { min-width: 0; }
 .reports-stocks-group-picker {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -547,8 +547,8 @@
   display: flex;
   gap: 10px;
   justify-content: space-between;
-  min-height: 54px;
-  padding: 9px 11px;
+  min-height: 40px;
+  padding: 8px 10px;
   text-align: left;
   transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
   width: 100%;

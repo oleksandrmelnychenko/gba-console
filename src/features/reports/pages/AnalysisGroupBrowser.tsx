@@ -35,9 +35,8 @@ function GroupBrowserDraft({ descriptor, selection, onChange, onClose }: Props &
       ? current.filter(v => analysisValueIdentity(4, v.Data) !== key) : [...current, value] : [value])
   }
   return <Stack gap="sm">
-    <Text size="xs" c="dimmed">{multiple ? 'Оберіть потрібні групи.' : 'Оберіть одну групу.'} Група зберігається один раз; умови «У групі» та «У групі зі списку» враховують її підгрупи. Пошук окремої вкладеної групи також доступний у полі «Значення».</Text>
     <TextInput label="Пошук кореневої групи" leftSection={<Search size={14} />} value={search} onChange={e => setSearch(e.currentTarget.value)} />
-    <HierarchyLevel key={query} query={query} limit={descriptor.hierarchyBrowse!.maximumPageSize} selected={selected} onToggle={toggle} />
+    <div className="report-modal__picker-list"><HierarchyLevel key={query} query={query} limit={descriptor.hierarchyBrowse!.maximumPageSize} selected={selected} onToggle={toggle} /></div>
     <Text size="xs">Вибрано значень: {values.length}</Text>
     {error ? <Alert color="yellow">{error}</Alert> : null}
     <AppModalFooter>

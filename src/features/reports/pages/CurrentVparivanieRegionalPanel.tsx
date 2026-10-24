@@ -56,7 +56,7 @@ function RegionalFullScopeCheckbox({ dataset, checked, disabled, onChange }: {
 function regionalConfigurationError(dataset: ReportDataset | null, request: ReportRequestBody): string | null {
   const invalid = dataset ? currentVparivanieConfigurationError(request, dataset) : null
   if (invalid) return invalid
-  if (requestCurrentVparivanieAnalysis(request)) return 'Регіональна форма поки не підтримує розширене групування. Використайте звичайний перегляд звіту.'
+  if (requestCurrentVparivanieAnalysis(request)) return 'Розширене групування доступне у звичайному перегляді.'
   return movementSelection(request)
     ? 'Прихід і розхід доступні у звичайній формі звіту. Для регіональної форми вимкніть ці показники.'
     : null
@@ -119,7 +119,7 @@ export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disa
         {(['csv', 'xlsx', 'pdf'] as const).map(format => <Button key={format} variant="default"
           disabled={!result || !enabled || disabled || exporting || busy} onClick={() => void exportDocument(format)}>
           {`Завантажити ${format.toUpperCase()}`}</Button>)}</Group>
-      {rejected ? <Alert color="yellow">{rejected}</Alert> : null}
+      {rejected ? <Text size="xs" c="gray.7" role="status">{rejected}</Text> : null}
       {error ? <Alert color="red">{error}</Alert> : null}
       {result ? <><Text size="xs" c="dimmed">Продажі: {result.From} — {result.To}. {currentVparivanieStockSentence(result.StockAnchor)}
         Порожня клітинка — факт відсутній; ∅ — кількість невідома.</Text><RegionalTable key={requestKey} result={result} /></> : null}

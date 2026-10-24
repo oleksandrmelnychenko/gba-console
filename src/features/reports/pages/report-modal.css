@@ -21,3 +21,66 @@
 .report-modal .mantine-Group-root > .mantine-InputWrapper-root:has(input[type='time']) {
   flex-basis: 120px;
 }
+
+/* Long constructors and pickers retain the shared modal chrome and side spacing. */
+.report-modal .app-modal-resize,
+.report-modal__picker-list,
+.report-modal .reports-stocks-group-picker {
+  scrollbar-width: thin;
+  scrollbar-color: var(--mantine-color-gray-4) transparent;
+  overscroll-behavior: contain;
+}
+
+.report-modal__picker-list {
+  min-width: 0;
+  max-height: min(420px, max(160px, calc(100dvh - 360px)));
+  overflow: auto;
+  padding: 2px;
+}
+
+.report-modal .app-modal-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  background: var(--mantine-color-body);
+  padding-bottom: 2px;
+}
+
+.report-modal .app-modal-footer .mantine-Button-label {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.report-modal .app-modal-footer .mantine-Button-root {
+  height: auto;
+  padding-block: 6px;
+  max-width: 100%;
+}
+
+.report-modal .mantine-Alert-root {
+  border-radius: 8px;
+}
+
+.report-modal__details {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  color: var(--mantine-color-gray-7);
+  overflow-wrap: anywhere;
+}
+.report-modal__details > summary {
+  cursor: pointer;
+  padding: 10px 12px;
+  font: 500 12px/1.4 var(--font-mono);
+}
+.report-modal__details > summary:focus-visible {
+  outline: 2px solid var(--app-focus-border);
+  outline-offset: -2px;
+  border-radius: 8px;
+}
+.report-modal__details[open] > summary { border-bottom: 1px solid var(--mantine-color-gray-2); }
+.report-modal__details > :not(summary) { margin: 10px 12px; }
+
+@media (max-width: 600px) {
+  .report-modal .mantine-Group-root > .mantine-InputWrapper-root { flex-basis: 100%; }
+  .report-modal .app-modal-footer { gap: 8px; }
+}

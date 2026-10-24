@@ -1,3 +1,4 @@
+import { AppModalFooter } from '../../../shared/ui/AppModal'
 import { ActionIcon, Alert, Badge, Button, Group, Menu, Skeleton, Stack, Text, TextInput } from '@mantine/core'
 import { ArrowLeft, ArrowRight, CalendarDays, Check, CircleAlert, Copy, Eye, LayoutTemplate, Pencil, Plus, RefreshCw, Save, Search, Trash2, X } from 'lucide-react'
 import { useId, useState } from 'react'
@@ -73,11 +74,11 @@ export function ReportTemplatesPanel({ initiallyCreating = false, storage, order
         autoFocus placeholder={t('Наприклад, продажі за регіонами')} disabled={blocked}
         onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void save() } }}
         onChange={event => onNameChange(event.currentTarget.value)} />
-      <Group justify="flex-end">
+      <AppModalFooter>
         <Button className="reports-stocks-template-secondary" variant="default" disabled={storage.busy} onClick={toList}>{t('Скасувати')}</Button>
         <Button color={CREATE_ACTION_COLOR} disabled={blocked || !configurationReady || !templateName.trim()} loading={storage.busy}
           leftSection={<Save size={16} />} type="button" onClick={() => void save()}>{t('Зберегти')}</Button>
-      </Group>
+      </AppModalFooter>
     </section> : action ? <TemplateActionController action={action} titleId={actionTitleId} blocked={blocked} storage={storage}
       onNameChange={name => setAction({ ...action, name })} onRenamed={onRenamed} onDeleted={onDeleted}
       onComplete={toList} /> : savedVariant ? <SavedNativeReportPanel template={savedVariant} datasets={datasets} callerKey={callerKey}
@@ -141,13 +142,13 @@ function TemplateActionConfirmation({ action, titleId, blocked, busy, onNameChan
     {action.kind === 'delete' ? <Text size="sm" c="gray.8">{t('Видалити цей шаблон? Поточний звіт залишиться без змін.')}</Text>
       : <TextInput label={action.kind === 'copy' ? t('Назва копії') : t('Нова назва')}
         autoFocus value={action.name} disabled={blocked} onChange={event => onNameChange(event.currentTarget.value)} />}
-    <Group justify="flex-end">
+    <AppModalFooter>
       <Button type="button" className="reports-stocks-template-secondary" variant="default" disabled={busy} onClick={onCancel}>{t('Скасувати')}</Button>
       <Button type="button" color={action.kind === 'delete' ? 'red' : CREATE_ACTION_COLOR} loading={busy}
         disabled={blocked || (action.kind !== 'delete' && !action.name.trim())} onClick={onConfirm}>
         {action.kind === 'delete' ? t('Підтвердити видалення') : t('Підтвердити')}
       </Button>
-    </Group>
+    </AppModalFooter>
   </Stack>
 }
 

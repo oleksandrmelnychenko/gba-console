@@ -29,7 +29,7 @@ export function ReportFieldPicker({ opened, title, options, onSelect, onClose }:
     <Stack gap="sm">
       <TextInput label="Пошук поля" placeholder="Назва поля або категорії" value={query}
         leftSection={<Search size={16} />} onChange={event => setQuery(event.currentTarget.value)} />
-      <TreeView key={normalized} nodes={nodes} defaultExpandedDepth={5} emptyText="Немає доступних полів" />
+      <div className="report-modal__picker-list"><TreeView key={normalized} nodes={nodes} defaultExpandedDepth={5} emptyText="Немає доступних полів" /></div>
     </Stack>
   </ReportModal>
 }

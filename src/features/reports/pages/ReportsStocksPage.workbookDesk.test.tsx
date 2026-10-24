@@ -159,7 +159,7 @@ it('keeps the report list beside the open report instead of hiding the report be
   expect(screen.queryByRole('button', { name: /^Повернутися до звіту/ })).toBeNull()
   expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toBeTruthy()
   expect(dateInput('Від').value).toBe(day)
-  expect(screen.getByRole('region', { name: 'Валовий прибуток' })).toBeTruthy()
+  expect(screen.queryByRole('heading', { name: 'Валовий прибуток' })).toBeNull()
 })
 
 it('shows period, filters, measures and grouping together in one settings form', async () => {
@@ -170,15 +170,12 @@ it('shows period, filters, measures and grouping together in one settings form',
   expect((screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }) as HTMLInputElement).checked).toBe(true)
 })
 
-it('keeps report details available in the collapsed header', async () => {
+it('keeps settings available without duplicating them in an about section', async () => {
   await openDayWorkbook()
-  const header = within(screen.getByRole('region', { name: 'Валовий прибуток' }))
-  fireEvent.click(header.getByText('Про звіт'))
-  expect(header.getByText('ВП.xls')).toBeTruthy()
-  expect(header.getByText(deskPeriodText(dateInput('Від').value, dateInput('До').value))).toBeTruthy()
-  expect(header.getByText('ТОВ «АМГ «КОНКОРД», Фенікс, ФОП Самолюк А.Д., ФОП Самолюк Ю.М.')).toBeTruthy()
-  const chips = within(header.getByRole('list', { name: 'Застосовані відбори' }))
-  expect(chips.getAllByRole('listitem').map(item => item.textContent)).toEqual(['Товари без послуг', 'Покупці з групи «Покупці»'])
+  expect(screen.queryByText('Про звіт')).toBeNull()
+  expect(dateInput('Від')).toBeTruthy()
+  expect(screen.getByRole('group', { name: 'Організації' })).toBeTruthy()
+  expect(screen.getByRole('group', { name: 'Відбори' })).toBeTruthy()
 })
 
 it('opens reports immediately while an earlier draft remains an optional recovery action', async () => {

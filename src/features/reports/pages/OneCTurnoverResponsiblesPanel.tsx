@@ -1,3 +1,4 @@
+import { AppModalFooter } from '../../../shared/ui/AppModal'
 import { Alert, Button, Group, Stack, Text } from '@mantine/core'
 import { useEffect, useRef, useState } from 'react'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
@@ -82,15 +83,15 @@ function ResponsiblesForm({ scope, canGenerate, onClose, onExportOpenChange }: O
       <Text size="xs">Дані з 1С при формуванні: {sourceAsOf(applied.sourceFrom, applied.sourceTo)} (за Києвом).</Text>
       {pending ? <Text c="orange">Є незастосовані зміни періоду. Відкриття файла показує попередній сформований звіт.</Text> : null}
     </Stack> : null}
-    <details>
+    <details className="report-modal__details">
       <summary>Відомості про дані</summary>
       <Text size="xs">Завантажено днів: {scope.LoadedDayCount}. Час читання опублікованого набору, UTC: {scope.OldestReadCompletedUtc} — {scope.NewestReadCompletedUtc}. Час читання вибраних днів зазначено у файлі.</Text>
     </details>
-    <Group justify="flex-end">
+    <AppModalFooter>
       {applied ? <Button variant="light" onClick={() => setOpened(true)}>Відкрити сформований звіт</Button> : null}
       <Button variant="default" disabled={loading} onClick={onClose}>Закрити</Button>
       <Button disabled={!validScope || !!periodError || loading} loading={loading} onClick={() => { void generate() }}>Застосувати й сформувати</Button>
-    </Group>
+    </AppModalFooter>
     <DocumentExportModal document={applied?.result.document} opened={opened && !!applied}
       title={applied ? `Продажі за відповідальними: ${applied.from} — ${applied.to}` : ''} onClose={() => setOpened(false)} />
   </Stack>

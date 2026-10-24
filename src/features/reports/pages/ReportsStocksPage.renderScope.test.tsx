@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { previewStockReport } from '../api/reportsApi'
@@ -78,12 +78,12 @@ it('does not re-render the finished preview while the template name is typed', a
   expect(vi.mocked(ReportInlinePreview).mock.calls.length).toBe(renders)
 })
 
-it('names the opened workbook in the report header and keeps its description behind «Про звіт»', async () => {
+it('uses the active tab without a repeated title or technical about section', async () => {
   render(page())
   await findWorkbookLanding()
   fireEvent.click(screen.getByRole('button', { name: 'Відкрити ВП.xls' }))
-  const header = await screen.findByRole('region', { name: 'Валовий прибуток' })
-  expect(within(header).getByText('ВП.xls')).toBeTruthy()
-  expect(within(header).getByText('Про звіт')).toBeTruthy()
-  expect(within(header).getByText(/По днях і організаціях, період до 62 днів/)).toBeTruthy()
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Відкрити ВП.xls' }).getAttribute('aria-current')).toBe('true'))
+  expect(screen.queryByRole('heading', { name: 'Валовий прибуток' })).toBeNull()
+  expect(screen.queryByText('Про звіт')).toBeNull()
+  expect(screen.queryByText(/По днях і організаціях, період до 62 днів/)).toBeNull()
 })

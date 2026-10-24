@@ -820,7 +820,11 @@
   .workbook-settings__control .reports-stocks-selection-summary__copy > span { border: 0; padding: 0; }
 }
 
-.workbook-advanced { display: grid; gap: 12px; min-width: 0; }
+.workbook-advanced { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 12px; min-width: 0; }
+.workbook-advanced > * { min-width: 0; }
+.workbook-advanced > :only-child,
+.workbook-advanced > .workbook-presentation,
+.workbook-advanced > :has(.report-table-scroll-area) { grid-column: 1 / -1; }
 .workbook-advanced > :is(section, .mantine-Card-root, .workbook-desk__group:not(:empty)) { border: 1px solid var(--desk-border); border-radius: 8px; padding: 12px; margin: 0; }
 .workbook-advanced > .workbook-desk__group:empty { display: none; }
 .workbook-advanced > .workbook-presentation { border: 0; padding: 0; background: transparent; }
@@ -852,15 +856,14 @@
 .workbook-settings__period .workbook-period { flex-wrap: wrap; }
 .workbook-settings__period .workbook-period__presets { display: block; max-width: calc(100% - 46px); }
 .workbook-settings__period .mantine-InputWrapper-label { font: 500 12px/1.4 var(--font-mono); margin-bottom: 4px; }
-.workbook-settings__grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 12px; align-items: start; }
+.workbook-settings__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
 .workbook-settings__unified-section { min-width: 0; border: 1px solid var(--desk-border); border-radius: 8px; }
 .workbook-settings__unified-section > .workbook-settings__control { padding: 12px; }
 .workbook-settings__section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; background: var(--mantine-color-gray-0); border-bottom: 1px solid var(--desk-border); border-radius: 8px 8px 0 0; }
 .workbook-settings__section-head h3 { display: flex; align-items: center; gap: 8px; font: 600 13px/1.4 var(--font-mono); color: var(--desk-text); }
 .workbook-settings__section-head svg { flex-shrink: 0; }
 .workbook-settings__section-count { font: 500 11px/1.4 var(--font-mono); color: var(--desk-muted); white-space: nowrap; }
-.workbook-settings__grid:has(.workbook-inline-selection) > .workbook-settings__unified-section--filters,
-.workbook-settings__grid:has(.workbook-inline-selection) > .workbook-settings__unified-section--organizations { grid-column: 1 / -1; }
+.workbook-settings__unified-section { container-type: inline-size; }
 .workbook-settings__advanced { border: 1px solid var(--desk-border); border-radius: 8px; }
 .workbook-settings__advanced > summary { display: flex; align-items: center; gap: 8px; cursor: pointer; font: 600 13px/1.5 var(--font-mono); color: var(--desk-text); padding: 10px 12px; list-style: none; }
 .workbook-settings__advanced > summary::-webkit-details-marker { display: none; }
@@ -877,8 +880,8 @@
 .workbook-actions__delivery { margin-left: auto; }
 .workbook-toolbar .workbook-actions__buttons { flex: 1 1 auto; justify-content: space-between; flex-wrap: wrap; }
 .workbook-actions__scroll { overflow: visible; }
-@media (max-width: 1000px) {
-  .workbook-settings__grid { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 900px) {
+  .workbook-settings__grid, .workbook-advanced { grid-template-columns: minmax(0, 1fr); }
   .workbook-inline-selection { grid-template-columns: auto minmax(0, 1fr) auto; }
   .workbook-inline-selection__field, .workbook-inline-selection__condition, .workbook-inline-selection__value { grid-column: 2; }
   .workbook-inline-selection > :last-child { grid-column: 3; grid-row: 1; }
@@ -918,4 +921,30 @@
 .workbook-settings--unified .workbook-settings__control :is(.reports-stocks-selection-card, .reports-stocks-legacy-measurements) .reports-stocks-legacy-panel__header { display: none; }
 @media (max-width: 600px) {
   .workbook-settings__section-actions { flex-basis: 100%; }
+}
+
+/* Each condition adapts to the width of its settings column. */
+@container (max-width: 760px) {
+  .workbook-inline-selection { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .workbook-inline-selection__field,
+  .workbook-inline-selection__condition,
+  .workbook-inline-selection__value { grid-column: 2; }
+  .workbook-inline-selection > :last-child { grid-column: 3; grid-row: 1; }
+  .workbook-settings__control .reports-stocks-selection-summary__copy { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .workbook-settings__control .reports-stocks-selection-summary__copy > span { border: 0; padding: 0; }
+}
+
+@media (min-width: 901px) {
+  .workbook-settings__grid:not(:has(.workbook-settings__unified-section--organizations)) {
+    grid-template-rows: min-content 1fr;
+  }
+  .workbook-settings__grid:not(:has(.workbook-settings__unified-section--organizations)) > .workbook-settings__unified-section--filters { grid-row: span 2; }
+  .workbook-settings__grid:not(:has(.workbook-settings__unified-section--organizations)) > .workbook-settings__unified-section--grouping { grid-column: 2; }
+}
+@container (min-width: 460px) and (max-width: 760px) {
+  .workbook-inline-selection { grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr) auto; }
+  .workbook-inline-selection__field { grid-column: 2; }
+  .workbook-inline-selection__condition { grid-column: 3; }
+  .workbook-inline-selection__value { grid-column: 2 / 4; }
+  .workbook-inline-selection > :last-child { grid-column: 4; }
 }

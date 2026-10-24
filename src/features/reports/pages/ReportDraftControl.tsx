@@ -1,4 +1,5 @@
-import { Alert, Button, Group, Stack, Text } from '@mantine/core'
+import { AppModalFooter } from '../../../shared/ui/AppModal'
+import { Alert, Button, Stack, Text } from '@mantine/core'
 import { History } from 'lucide-react'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -37,7 +38,7 @@ export function ReportDraftControl({ pending, canRestore, canUndo, disabled, sav
           : t('Налаштування збережено в цій вкладці.')}</Text>
         {savedAt ? <Text size="sm" c="gray.7">{t('Збережено')}: <time dateTime={savedAt}>{formatDateTime(savedAt)}</time></Text> : null}
         {error ? <Alert color="red">{error}</Alert> : null}
-        {pending || canUndo ? <Group gap="xs">
+        {pending || canUndo ? <AppModalFooter>
           <Button type="button" color={CREATE_ACTION_COLOR} disabled={disabled || (pending && !canRestore)}
             onClick={() => apply(pending ? onRestore : onUndo)}>
             {pending ? t('Відновити чернетку') : t('Повернути попередні налаштування')}
@@ -45,7 +46,7 @@ export function ReportDraftControl({ pending, canRestore, canUndo, disabled, sav
           {pending ? <Button type="button" variant="default" disabled={disabled} onClick={() => apply(onDiscard)}>
             {t('Відкинути чернетку')}
           </Button> : null}
-        </Group> : null}
+        </AppModalFooter> : null}
       </Stack>
     </ReportModal>
   </>

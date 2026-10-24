@@ -5,7 +5,7 @@ import { isMovementCapability, isWarehouseMovementCatalogueEntry, normalizeMovem
 import { OneCTurnoverResponsiblesPanel } from './OneCTurnoverResponsiblesPanel'
 import { isOrganizationOnlyTurnoverScope, ORGANIZATION_ONLY_TURNOVER_CHOICE } from '../data/oneCTurnoverScopes'
 import type { OneCTurnoverScopeSummary } from '../types'
-import { ANALYSIS_SCOPE_NOTICE, currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis, analysisFilterConditions, analysisSelectionValueError, changeAnalysisSelectionCondition } from '../data/currentVparivanieAnalysis'
+import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis, analysisFilterConditions, analysisSelectionValueError, changeAnalysisSelectionCondition } from '../data/currentVparivanieAnalysis'
 import { ReportFieldPicker } from './ReportFieldPicker'
 import { CurrentVparivanieAnalysisValuePicker } from './CurrentVparivanieAnalysisValuePicker'
 import { CurrentVparivanieMovementSettings } from './CurrentVparivanieMovementSettings'
@@ -1259,7 +1259,6 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           : rowGroups.length ? `${rowGroups.length} ${deskPlural(rowGroups.length, ['рівень', 'рівні', 'рівнів'])}` : t('Немає'),
         content: groupingContent },
     ]
-    const guide = activeWorkbook ? bug1274WorkbookGuide(activeWorkbook) : undefined
     const quietActions = <>
       {catalogueControl(true)}
       {canGenerateReport && ownerId ? <ReportDraftControl
@@ -1293,9 +1292,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           {t('Оберіть доступний звіт у вкладках або спробуйте оновити список.')}
           <Button variant="default" size="xs" mt="xs" onClick={datasetStorage.retry}>{t('Оновити')}</Button>
         </Alert> : <form className="reports-stocks-form workbook-desk__form" onSubmit={submitReport}>
-            <WorkbookHeader title={deskTitle} fileName={activeWorkbook ? workbookDisplayFileName(activeWorkbook) : null} templateName={activeTemplate?.Name ?? ''} summary={deskSummary}
-              resolving={workbookResolving} warning={catalogueNotice?.warning ?? null}
-              about={guide ? t(guide.summary) : catalogueNotice && !catalogueNotice.failed && !activeWorkbook ? catalogueNotice.text : null} />
+            <WorkbookHeader title={deskTitle} showTitle={!activeWorkbook} templateName={activeTemplate?.Name ?? ''}
+              resolving={workbookResolving} warning={catalogueNotice?.warning ?? null} />
             <WorkbookSettings unified sections={deskSections} advanced={advancedContent} disabled={comparisonSettingsDisabled}
               period={periodSupported ? <WorkbookPeriodField from={from} to={to}
                 minDate={effectiveConfiguration?.period.minimumDate ?? (supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE)} maxDate={maxDate}
@@ -2125,7 +2123,6 @@ function LegacyReportBuilder({
   const groupingSection = (
     <section className="app-section-card reports-stocks-structure">
       <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Групування')}</Text>
-      {analysis ? <Alert color="blue">{ANALYSIS_SCOPE_NOTICE}</Alert> : null}
       {fixedAxes ? part === 'grouping' ? (dataSource === 39
         ? <Text size="sm">Товари у рядках; залишки, продажі й контрагенти у стовпцях.</Text> : <Text size="sm">{rowGroups.map(group => group.label).join(' → ')}</Text>)
         : <Text size="sm">{dataSource === 39
