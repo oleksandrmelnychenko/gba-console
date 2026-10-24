@@ -103,6 +103,36 @@ it('restores editable measure checkboxes after switching from movement analysis 
   }
 })
 
+it('submits newly advertised profit measures from the unified form without losing them on date changes', async () => {
+  const marginVat = { Type: 11, Name: 'ПДВ прибутку, EUR' }
+  const grossMargin = { Type: 15, Name: 'Рентабельність з ПДВ, %' }
+  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets,
+    { ...profitDayDataset, Measurements: [...profitDayDataset.Measurements, marginVat] },
+    { ...profitSupplierDataset, Measurements: [...profitSupplierDataset.Measurements, marginVat, grossMargin] },
+    mixedDataset, cashModeDataset, settlementModeDataset])
+  await openDayWorkbook()
+  for (const [file, source, chosen] of [
+    ['ВП.xls', 35, [marginVat]],
+    ['ВП по постачальниках.xls', 38, [marginVat, grossMargin]],
+  ] as const) {
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Звіти' }))
+      .getByRole('button', { name: `Відкрити ${workbookDisplayFileName(file)}` }))
+    await findOpenedWorkbook(file)
+    await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/i)).toBeNull())
+    const controls = within(document.getElementById('workbook-settings-pane-measures')!)
+    fireEvent.click(controls.getByRole('button', { name: 'Очистити' }))
+    for (const measure of chosen) fireEvent.click(controls.getByRole('checkbox', { name: measure.Name }))
+    changeReportPeriod({ from: dateInput('До').value })
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toHaveProperty('disabled', false))
+    vi.mocked(previewStockReport).mockClear()
+    fireEvent.click(screen.getByRole('button', { name: 'Застосувати й показати' }))
+    await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
+    const request = vi.mocked(previewStockReport).mock.calls[0][0]
+    expect(request.dataSource).toBe(source)
+    expect(request.sorted.Measurements.map(measure => measure.Type)).toEqual(chosen.map(measure => measure.Type))
+  }
+})
+
 it('shows the table with its row count and turns Excel and PDF into direct downloads of the same run', async () => {
   await openDayWorkbook()
   expect(screen.getByRole('button', { name: 'Сформувати Excel' })).toBeTruthy()

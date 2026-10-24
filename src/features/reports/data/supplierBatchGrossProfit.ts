@@ -21,14 +21,15 @@ export function requestSupplierSourceWorld(data: ReportRequestBody): unknown {
   return Object.prototype.hasOwnProperty.call(data, 'supplierSourceWorld')
     ? data.supplierSourceWorld : data.SupplierSourceWorld
 }
-const measures = [0, 2, 3, 4, 6, 7, 8, 10, 12, 14]
+const legacyMeasures = [0, 2, 3, 4, 6, 7, 8, 10, 12, 14]
+const measures = [0, 2, 3, 4, 6, 7, 8, 10, 12, 14, 11, 15]
 const filters = new Set([0, 1, 17])
 const forbidden = new Set(['onec', 'comparison', 'xyz', 'revenuecomparison', 'buyersalesshare', 'returncomparison',
   'ratecomparison', 'margincomparison', 'paymentcomparison', 'pricetypesalescomparison', 'agreementpricecomparison',
   'valuationclientagreementid', 'ordering', 'topgroups', 'threshold', 'hidezero',
   'abcclassification', 'productclassification', 'sourceorganizations', 'returnsonly', 'discountmarkup',
   'provideddiscounts', 'priceanalysis'])
-const invalid = 'Прибуток за партіями підтримує склад надходження або продажу 1С → організацію → постачальника, 1–10 показників і точні локальні відбори.'
+const invalid = 'Прибуток за партіями підтримує склад надходження або продажу 1С → організацію → постачальника, доступні показники й точні локальні відбори.'
 
 function validDate(value: string): boolean {
   if (!/^\d{4}-\d\d-\d\d$/.test(value)) return false
@@ -42,7 +43,7 @@ export function isSupplierBatchGrossProfitDataset(dataset: ReportDataset): boole
   return dataset.DataSource === SUPPLIER_BATCH_GROSS_PROFIT_SOURCE && dataset.PeriodRequired === true
     && dataset.PeriodSupported === true && isSupplierSourceWorldCapability(dataset.supplierSourceWorld)
     && ['73,4,21', '73,78,4,21'].includes(dataset.Groupings.map(item => item.Type).join(','))
-    && dataset.Measurements.map(item => item.Type).join(',') === measures.join(',')
+    && [legacyMeasures.join(','), measures.join(',')].includes(dataset.Measurements.map(item => item.Type).join(','))
     && dataset.Filters.map(item => item.Type).join(',') === '0,1,17'
 }
 
@@ -78,10 +79,11 @@ export function supplierBatchGrossProfitConfigurationError(data: ReportRequestBo
     return `Період «Валового прибутку по постачальниках» — не більше ${maximumDays} календарних днів. Зменште період.`
   if (Object.entries(data).some(([key, value]) => forbidden.has(key.toLowerCase()) && value != null)) return invalid
   const sorted = data.sorted
+  const availableMeasures = dataset?.Measurements.map(field => field.Type) ?? measures
   if (!sorted || !validProfitRows(data, requestSupplierBasis(data) === 0 ? [78, 4, 21] : [73, 78, 4, 21], 3)
     || dataset && !readReportConfiguration(dataset.configuration) && !['73,4,21', '78,4,21'].includes(sorted.Row.map(item => item.type).join(','))
-    || !Array.isArray(sorted.Measurements) || sorted.Measurements.length < 1 || sorted.Measurements.length > 10
-    || sorted.Measurements.some(item => !measures.includes(item.Type)
+    || !Array.isArray(sorted.Measurements) || sorted.Measurements.length < 1 || sorted.Measurements.length > availableMeasures.length
+    || sorted.Measurements.some(item => !availableMeasures.includes(item.Type)
       || (item.IsChecked != null && typeof item.IsChecked !== 'boolean'))
     || new Set(sorted.Measurements.map(item => item.Type)).size !== sorted.Measurements.length
     || sorted.Measurements.every(item => item.IsChecked === false)) return invalid
