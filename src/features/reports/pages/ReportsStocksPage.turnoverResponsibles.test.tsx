@@ -1,4 +1,4 @@
-import { migrationFixture } from '../data/reportMigration.test-fixtures'
+import { changeReportPeriod } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -36,28 +36,27 @@ beforeEach(() => {
 })
 
 describe('production workbook route to published turnover', () => {
-  it('opens from the real console workbook catalogue, generates v3 and preserves the parent draft', async () => {
+  it('opens directly in a tab, generates v3 and preserves both workbook drafts', async () => {
     render(page())
     await findOpenedWorkbook('ВП.xls')
+    changeReportPeriod({ from: '2026-08-17' })
     const before = screen.getByRole('button', { name: /^Період:/ }).getAttribute('aria-label')
     expect(before).toMatch(/\d{2}\.\d{2}\.\d{4}/)
     expect(screen.queryByRole('combobox', { name: 'Звіт' })).toBeNull()
     expect(getReportCatalogue).not.toHaveBeenCalled()
-    fireEvent.click(screen.getByRole('button', { name: 'Каталог звітів' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Продажі за відповідальними' }))
     await waitFor(() => expect(getOneCTurnoverScopes).toHaveBeenCalledOnce())
-    const launch = await screen.findByRole('button', { name: 'Продажі за відповідальними' })
-    fireEvent.click(launch)
-    const form = await screen.findByRole('dialog', { name: 'Продажі за відповідальними' })
-    expect(within(form).getByText(/Усі товари та послуги/)).toBeTruthy()
+    const form = await screen.findByRole('region', { name: 'Продажі за відповідальними' })
+    expect(await within(form).findByText(/Усі товари та послуги/)).toBeTruthy()
     expect(screen.queryByRole('dialog', { name: 'Каталог звітів' })).toBeNull()
     fireEvent.click(within(form).getByRole('button', { name: 'Застосувати й сформувати' }))
     await screen.findByRole('dialog', { name: /Експорт.*Продажі за відповідальними/ })
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({ dataSource: 1, oneC: organizationOnlyScope.Filters,
       from: '2026-10-01', to: '2026-10-24', selections: [] })
-    await waitFor(() => expect((within(form).getByRole('button', { name: 'Закрити продажі за відповідальними' }) as HTMLButtonElement).disabled).toBe(true))
+    await waitFor(() => expect((screen.getByRole('button', { name: 'Рух товару' }) as HTMLButtonElement).disabled).toBe(true))
     fireEvent.keyDown(document.body, { key: 'Escape', code: 'Escape' })
     await waitFor(() => expect(screen.queryByRole('dialog', { name: /Експорт.*Продажі за відповідальними/ })).toBeNull())
-    expect(screen.getByRole('dialog', { name: 'Продажі за відповідальними' })).toBe(form)
+    expect(screen.getByRole('region', { name: 'Продажі за відповідальними' })).toBe(form)
     fireEvent.change(within(form).getByLabelText('Від'), { target: { value: '02.10.2026' } })
     fireEvent.blur(within(form).getByLabelText('Від'))
     expect(within(form).getByText(/Є незастосовані зміни періоду/)).toBeTruthy()
@@ -67,43 +66,41 @@ describe('production workbook route to published turnover', () => {
     const overlay = exportDialog.closest('.mantine-Modal-root')!.querySelector('.mantine-Modal-overlay')!
     fireEvent.click(overlay)
     await waitFor(() => expect(screen.queryByRole('dialog', { name: /Експорт.*Продажі за відповідальними/ })).toBeNull())
-    expect(screen.getByRole('dialog', { name: 'Продажі за відповідальними' })).toBe(form)
+    expect(screen.getByRole('region', { name: 'Продажі за відповідальними' })).toBe(form)
     expect(within(form).getByText(/Є незастосовані зміни періоду/)).toBeTruthy()
     expect(createStockReport).toHaveBeenCalledOnce()
-    fireEvent.click(within(form).getByRole('button', { name: /^Закрити$/ }))
-    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Продажі за відповідальними' })).toBeNull())
+    fireEvent.click(screen.getByRole('button', { name: 'Відкрити ВП.xls' }))
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Продажі за відповідальними' })).toBeNull())
     expect(screen.getByRole('button', { name: /^Період:/ }).getAttribute('aria-label')).toEqual(before)
+    fireEvent.click(screen.getByRole('button', { name: 'Продажі за відповідальними' }))
+    expect((within(form).getByLabelText('Від') as HTMLInputElement).value).toBe('02.10.2026')
+    expect(within(form).getByText(/Є незастосовані зміни періоду/)).toBeTruthy()
+    expect(getOneCTurnoverScopes).toHaveBeenCalledOnce()
   })
-  it('keeps the catalogue entry accessible but cannot launch unpublished v3 coverage', async () => {
+  it('keeps the tab accessible but cannot generate unpublished coverage', async () => {
     vi.mocked(getOneCTurnoverScopes).mockResolvedValue([])
     render(page())
     await findOpenedWorkbook('ВП.xls')
-    fireEvent.click(screen.getByRole('button', { name: 'Каталог звітів' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Продажі за відповідальними' }))
     await screen.findByText(/покриття чотирьох організацій ще не опубліковано/)
-    expect(screen.queryByRole('button', { name: 'Продажі за відповідальними' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Застосувати й сформувати' })).toBeNull()
     expect(createStockReport).not.toHaveBeenCalled()
   })
-  it('does not offer Fenix turnover while the catalogue is filtered to AMG', async () => {
+  it('does not read coverage when the catalogue does not authorize the source', async () => {
     const catalogue = structuredClone(actualCatalogue) as unknown as ReportCatalogue
-    catalogue.Reports[0].Sources.push({ ...catalogue.Reports[0].Sources[0], World: 'amg', Migration: migrationFixture('captured') })
-    catalogue.Migration!.Summary.SourceImplementations = 2
-    catalogue.Migration!.Summary.BuiltinImplementations = 2
-    catalogue.Migration!.Summary.ByStatus.Captured = 1
+    catalogue.Reports = []
     vi.mocked(getReportCatalogue).mockResolvedValue(catalogue)
-    render(page())
-    await findOpenedWorkbook('ВП.xls')
-    fireEvent.click(screen.getByRole('button', { name: 'Каталог звітів' }))
-    await screen.findByRole('button', { name: 'Продажі за відповідальними' })
-    fireEvent.click(screen.getByRole('combobox', { name: 'База' }))
-    fireEvent.click(await screen.findByRole('option', { name: 'AMG' }))
-    expect(screen.queryByRole('button', { name: 'Продажі за відповідальними' })).toBeNull()
+    render(page()); await findOpenedWorkbook('ВП.xls')
+    fireEvent.click(screen.getByRole('button', { name: 'Продажі за відповідальними' }))
+    await screen.findByText('Продажі за відповідальними недоступні в поточному каталозі.')
+    expect(getOneCTurnoverScopes).not.toHaveBeenCalled()
   })
 
-  it('keeps the real workbook catalogue permission gated', async () => {
+  it('keeps published tabs permission gated', async () => {
     const view = render(page())
     await findOpenedWorkbook('ВП.xls')
     allowed = false; view.rerender(page())
-    const trigger = screen.getByRole('button', { name: 'Каталог звітів' }) as HTMLButtonElement
+    const trigger = screen.getByRole('button', { name: 'Продажі за відповідальними' }) as HTMLButtonElement
     expect(trigger.disabled).toBe(true)
     fireEvent.click(trigger)
     expect(getReportCatalogue).not.toHaveBeenCalled()

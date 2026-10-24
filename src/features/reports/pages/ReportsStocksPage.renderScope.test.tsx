@@ -47,7 +47,8 @@ const page = (consoleScope?: boolean) => <MantineProvider env="test"><I18nProvid
 it('offers the scoped catalogue without mounting unsupported constructor dialogs', async () => {
   render(page())
   await findWorkbookLanding()
-  expect(screen.getByRole('button', { name: 'Каталог звітів' })).toBeTruthy()
+  expect(screen.queryByRole('button', { name: 'Каталог звітів' })).toBeNull()
+  expect(screen.getByRole('button', { name: 'Рух товару' })).toBeTruthy()
   expect(screen.queryByRole('button', { name: 'Каталог усіх звітів 1С' })).toBeNull()
   expect(CollectionCoefficientConstructorModal).not.toHaveBeenCalled()
   expect(PlannedCashConstructorModal).not.toHaveBeenCalled()

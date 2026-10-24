@@ -5,7 +5,7 @@ import { useAuth } from '../../../features/auth/useAuth'
 import { HeaderActionBar } from '../../../features/header-actions/components/HeaderActionBar'
 import gbaLogo from '../../../assets/brand/gba-logo.svg'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { PageHeaderTitleSlot } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { PageHeaderTitleSlot, PageSubmenuActionsSlot } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { ConsoleNav } from './ConsoleNav'
 import { DataEnvironmentSwitch } from './DataEnvironmentSwitch'
 import { NotificationCenter } from './NotificationCenter'
@@ -100,6 +100,7 @@ export function ConsoleHeader() {
 
         <Box className="console-header-bottom-nav">
           <ConsoleNav mode="items" availableWidth={navWidth} />
+          <PageSubmenuActionsSlot className="console-submenu-actions" availableWidth={navWidth} />
         </Box>
 
         <Group gap="xs" wrap="nowrap" className="console-header-user-panel">

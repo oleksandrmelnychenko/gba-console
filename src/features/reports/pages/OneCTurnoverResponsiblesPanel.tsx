@@ -9,7 +9,7 @@ import { createOneCTurnoverReport, organizationOnlyTurnoverPeriodError } from '.
 import { isOrganizationOnlyTurnoverScope } from '../data/oneCTurnoverScopes'
 import type { OneCTurnoverScopeSummary, ReportResult } from '../types'
 
-type Props = { scope: OneCTurnoverScopeSummary; canGenerate: boolean; callerKey: string | null; onClose: () => void; onExportOpenChange?: (opened: boolean) => void }
+type Props = { scope: OneCTurnoverScopeSummary; canGenerate: boolean; callerKey: string | null; onClose?: () => void; onBusyChange?: (busy: boolean) => void; onExportOpenChange?: (opened: boolean) => void }
 const kyivTimestamp = new Intl.DateTimeFormat('uk-UA', { timeZone: 'Europe/Kyiv', dateStyle: 'medium', timeStyle: 'medium' })
 function sourceAsOf(from: string, to: string): string {
   const first = kyivTimestamp.format(new Date(from)), last = kyivTimestamp.format(new Date(to))
@@ -20,25 +20,27 @@ const kyivDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Kyiv', year
 type Applied = { result: ReportResult; from: string; to: string; sourceFrom: string; sourceTo: string }
 
 /** Files remain tied to their applied period while dates are edited. Caller/permission changes remove them. */
-export function OneCTurnoverResponsiblesPanel({ scope, canGenerate, callerKey, onClose, onExportOpenChange }: Props) {
+export function OneCTurnoverResponsiblesPanel({ scope, canGenerate, callerKey, onClose, onExportOpenChange, onBusyChange }: Props) {
   const identity = `${callerKey ?? ''}:${canGenerate}:${scope.Key}`
-  return <ResponsiblesForm key={identity} scope={scope} canGenerate={canGenerate} onClose={onClose} onExportOpenChange={onExportOpenChange} />
+  return <ResponsiblesForm key={identity} scope={scope} canGenerate={canGenerate} onClose={onClose} onExportOpenChange={onExportOpenChange} onBusyChange={onBusyChange} />
 }
 
-function useResponsiblesReport(scope: OneCTurnoverScopeSummary, canGenerate: boolean) {
+function useResponsiblesReport(scope: OneCTurnoverScopeSummary, canGenerate: boolean, onBusyChange?: (busy: boolean) => void) {
   const [from, setFrom] = useState(() => [scope.FirstDay, `${scope.LastDay.slice(0, 7)}-01`].sort().at(-1)!)
   const [to, setTo] = useState(scope.LastDay)
   const [applied, setApplied] = useState<Applied | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [opened, setOpened] = useState(false)
+  const [opened, updateOpened] = useState(false)
+  const setOpened = (value: boolean) => { updateOpened(value); onBusyChange?.(value) }
   const alive = useRef(true)
-  useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
+  useEffect(() => { alive.current = true; return () => { alive.current = false; onBusyChange?.(false) } }, [onBusyChange])
   const validScope = isOrganizationOnlyTurnoverScope(scope)
   const periodError = validScope ? organizationOnlyTurnoverPeriodError(from, to, scope) : 'Опубліковане покриття цього звіту не підтверджено.'
   async function generate() {
     if (!canGenerate || !validScope || periodError || loading) return
-    setLoading(true); setError(null)
+    setLoading(true); setError(null); onBusyChange?.(true)
+    let openedResult = false
     const requested = { from, to, sourceFrom: scope.OldestReadCompletedUtc, sourceTo: scope.NewestReadCompletedUtc }
     try {
       const result = await createStockReport(createOneCTurnoverReport(scope, 'responsibles', from, to))
@@ -47,7 +49,7 @@ function useResponsiblesReport(scope: OneCTurnoverScopeSummary, canGenerate: boo
         setError('Сервер не повернув файл. Це не підтверджує нульові продажі.')
         return
       }
-      setApplied({ ...requested, result }); setOpened(true)
+      setApplied({ ...requested, result }); setOpened(true); openedResult = true
     } catch (failure) {
       if (!alive.current) return
       if (failure instanceof ApiError && [401, 403].includes(failure.status)) {
@@ -55,13 +57,13 @@ function useResponsiblesReport(scope: OneCTurnoverScopeSummary, canGenerate: boo
       }
       setError(failure instanceof ApiError && /\p{Script=Cyrillic}/u.test(failure.message)
         ? failure.message : 'Не вдалося сформувати звіт. Перевірте покриття періоду й повторіть запит.')
-    } finally { if (alive.current) setLoading(false) }
+    } finally { if (alive.current) { setLoading(false); if (!openedResult) onBusyChange?.(false) } }
   }
   return { from, setFrom, to, setTo, applied, loading, error, opened, setOpened, validScope, periodError, generate }
 }
 
-function ResponsiblesForm({ scope, canGenerate, onClose, onExportOpenChange }: Omit<Props, 'callerKey'>) {
-  const { from, setFrom, to, setTo, applied, loading, error, opened, setOpened, validScope, periodError, generate } = useResponsiblesReport(scope, canGenerate)
+function ResponsiblesForm({ scope, canGenerate, onClose, onExportOpenChange, onBusyChange }: Omit<Props, 'callerKey'>) {
+  const { from, setFrom, to, setTo, applied, loading, error, opened, setOpened, validScope, periodError, generate } = useResponsiblesReport(scope, canGenerate, onBusyChange)
   useEffect(() => {
     onExportOpenChange?.(opened)
     return () => onExportOpenChange?.(false)
@@ -89,7 +91,7 @@ function ResponsiblesForm({ scope, canGenerate, onClose, onExportOpenChange }: O
     </details>
     <AppModalFooter>
       {applied ? <Button variant="light" onClick={() => setOpened(true)}>Відкрити сформований звіт</Button> : null}
-      <Button variant="default" disabled={loading} onClick={onClose}>Закрити</Button>
+      {onClose ? <Button variant="default" disabled={loading} onClick={onClose}>Закрити</Button> : null}
       <Button disabled={!validScope || !!periodError || loading} loading={loading} onClick={() => { void generate() }}>Застосувати й сформувати</Button>
     </AppModalFooter>
     <DocumentExportModal document={applied?.result.document} opened={opened && !!applied}

@@ -1,3 +1,4 @@
+import { changeReportPeriod } from '../testing/reportPeriod'
 import { migrationFixture } from '../data/reportMigration.test-fixtures'
 import { getMovementCapability, getMovementPublications, readMovement } from '../api/originalWarehouseMovementApi'
 import { movementCapability, movementFixture, movementPublication } from '../data/originalWarehouseMovement.test-fixtures'
@@ -49,14 +50,14 @@ beforeEach(() => {
 })
 
 describe('production workbook route to source warehouse movement', () => {
-  it('opens the dedicated form from the visible catalogue, closes catalogue and preserves parent workbook', async () => {
+  it('opens the inline movement tab and preserves both the result and parent workbook', async () => {
     render(page()); await findOpenedWorkbook('ВП.xls')
+    changeReportPeriod({ from: '2026-08-17' })
     const before = screen.getByRole('button', { name: /^Період:/ }).getAttribute('aria-label')
-    fireEvent.click(screen.getByRole('button', { name: 'Каталог звітів' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Рух товару за складськими документами' }))
-    const form = await screen.findByRole('dialog', { name: 'Рух товару за складськими документами' })
+    fireEvent.click(screen.getByRole('button', { name: 'Рух товару' }))
+    const form = await screen.findByRole('region', { name: 'Рух товару' })
     expect(screen.queryByRole('dialog', { name: 'Каталог звітів' })).toBeNull()
-    expect(within(form).getByLabelText('Від')).toBeTruthy()
+    expect(await within(form).findByLabelText('Від')).toBeTruthy()
     expect(within(form).getByLabelText('До')).toBeTruthy()
     expect(within(form).getByRole('combobox', { name: 'Товар' })).toBeTruthy()
     expect(within(form).getByRole('combobox', { name: 'Склади' })).toBeTruthy()
@@ -65,20 +66,23 @@ describe('production workbook route to source warehouse movement', () => {
     fireEvent.click(within(form).getByRole('button', { name: 'Застосувати й показати' }))
     await within(form).findByRole('table')
     expect(vi.mocked(readMovement).mock.calls[0][0]).toMatchObject({ From: movementFixture.Scope.From, Through: movementFixture.Scope.Through })
-    fireEvent.keyDown(document.body, { key: 'Escape', code: 'Escape' })
-    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Рух товару за складськими документами' })).toBeNull())
+    fireEvent.click(screen.getByRole('button', { name: 'Відкрити ВП.xls' }))
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Рух товару' })).toBeNull())
     expect(screen.getByRole('button', { name: /^Період:/ }).getAttribute('aria-label')).toBe(before)
+    fireEvent.click(screen.getByRole('button', { name: 'Рух товару' }))
+    expect(within(form).getByRole('table')).toBeTruthy()
+    expect(getMovementPublications).toHaveBeenCalledOnce()
   })
-  it('does not expose launch with protocol alone and no publication', async () => {
+  it('does not expose generation with protocol alone and no publication', async () => {
     vi.mocked(getMovementPublications).mockResolvedValue([])
-    render(page()); await findOpenedWorkbook('ВП.xls'); fireEvent.click(screen.getByRole('button', { name: 'Каталог звітів' }))
+    render(page()); await findOpenedWorkbook('ВП.xls'); fireEvent.click(screen.getByRole('button', { name: 'Рух товару' }))
     await screen.findByText('Рух товару: опублікованих даних ще немає.')
     expect(screen.queryByRole('button', { name: 'Рух товару за складськими документами' })).toBeNull()
     expect(readMovement).not.toHaveBeenCalled()
   })
   it('does not fetch or launch when report permission is absent', async () => {
     const view = render(page()); await findOpenedWorkbook('ВП.xls'); allowed = false; view.rerender(page())
-    fireEvent.click(screen.getByRole('button', { name: 'Каталог звітів' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Рух товару' }))
     expect(getMovementCapability).not.toHaveBeenCalled(); expect(getMovementPublications).not.toHaveBeenCalled()
   })
 })

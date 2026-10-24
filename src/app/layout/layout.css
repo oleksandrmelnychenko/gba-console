@@ -1862,3 +1862,19 @@ html[data-gba-env='qa'] .console-header {
     font-size: 13px;
   }
 }
+
+/* Page actions share the existing submenu row and its overflow menu. */
+.console-header-bottom-nav:has(.console-submenu-actions:not(:empty)) > .console-subnav { display: none; }
+.console-submenu-actions:not(:empty) { display: flex; width: 100%; min-width: 0; align-items: stretch; }
+.console-submenu-actions .console-subnav-row { height: 100%; padding: 0 8px; }
+.console-submenu-actions .console-subnav-pill { height: 100%; }
+.console-subnav-pill:disabled { cursor: default; opacity: 0.45; }
+
+@media (max-width: 48em) {
+  .console-header-main:has(.console-submenu-actions:not(:empty)) .console-header-date { display: none; }
+  .console-header-bottom-nav:has(.console-submenu-actions:not(:empty)) {
+    grid-column: 1;
+    justify-self: stretch;
+    width: 100%;
+  }
+}

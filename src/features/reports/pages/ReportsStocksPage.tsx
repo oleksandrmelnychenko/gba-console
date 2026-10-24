@@ -1,3 +1,7 @@
+import { ReportsSubmenu } from './workbook-desk/ReportsSubmenu'
+import { PublishedReportWorkspace } from './workbook-desk/PublishedReportWorkspace'
+import type { PublishedReportTab } from './workbook-desk/publishedReportTabs'
+import { ReportValueAutocomplete } from './ReportValueAutocomplete'
 import { WorkbookSectionActions } from './workbook-desk/WorkbookSectionActions'
 import { OriginalWarehouseMovementPanel } from './OriginalWarehouseMovementPanel'
 import type { MovementLaunch } from './OriginalWarehouseMovementCatalogueLaunch'
@@ -74,7 +78,7 @@ import { ReportModal } from './ReportModal'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
-import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR, PageSubmenuActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useAuth } from '../../auth/useAuth'
 import {
@@ -391,6 +395,9 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const [cashPeriod, setCashPeriod] = useValueState<unknown>(undefined)
   const [oneCSpecialSettings, setOneCSpecialSettings] = useValueState<unknown>(undefined)
   const [oneCScope, setOneCScope] = useValueState<OneCTurnoverFilters | undefined>(undefined)
+  const [publishedTab, setPublishedTab] = useState<PublishedReportTab | null>(null)
+  const [visitedPublished, setVisitedPublished] = useState<PublishedReportTab[]>([])
+  const [publishedBusy, setPublishedBusy] = useState(false)
   const [responsiblesExportOpen, setResponsiblesExportOpen] = useState(false)
   const [movementScope, setMovementScope] = useState<{ scope: MovementLaunch; caller: string | null } | null>(null)
   const [responsiblesScope, setResponsiblesScope] = useState<{ scope: OneCTurnoverScopeSummary; caller: string | null } | null>(null)
@@ -1247,7 +1254,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     const deskSections: WorkbookSettingsSection[] = [
       ...(organizationsContent ? [{ id: 'organizations', title: 'Організації', summary: deskSummary.organizations ?? t('Усі'),
         compactSummary: t(workbookOrganizationScope(reportBody)), content: organizationsContent }] : []),
-      { id: 'filters', title: 'Відбори', summary: filterChips.length ? filterChips.map(chip => chip.label).join('; ') : t('Відборів немає'),
+      { id: 'filters', title: 'Фільтри', summary: filterChips.length ? filterChips.map(chip => chip.label).join('; ') : t('Фільтрів немає'),
         compactSummary: String(filterChips.length), content: filtersContent },
       { id: 'measures', title: 'Показники', summary: checkedMeasurements
         ? `${checkedMeasurements} ${deskPlural(checkedMeasurements, ['показник', 'показники', 'показників'])}` : t('Не вибрано жодного'),
@@ -1259,18 +1266,17 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           : rowGroups.length ? `${rowGroups.length} ${deskPlural(rowGroups.length, ['рівень', 'рівні', 'рівнів'])}` : t('Немає'),
         content: groupingContent },
     ]
-    const quietActions = <>
-      {catalogueControl(true)}
-      {canGenerateReport && ownerId ? <ReportDraftControl
+    const submenuProps = { onTemplates: () => openDeskTemplates(false), templatesDisabled: !canGenerateReport || isLoading || !!publishedTab,
+      templatesOpened: deskTemplatesOpened, onCatalogue: () => setPublishedTab(null), catalogueDisabled: isLoading || publishedBusy }
+    const quietActions = <PageSubmenuActions>
+      {canGenerateReport && ownerId ? <ReportDraftControl renderTrigger={trigger => <ReportsSubmenu {...submenuProps} onDraft={trigger.onOpen} draftDisabled={trigger.disabled} draftOpened={trigger.opened} />}
         pending={workspaceDraft.recovery === 'pending' || workspaceDraft.recovery === 'blocked'}
         canRestore={workspaceDraft.recovery === 'pending' && datasetStorage.loaded && !datasetStorage.error}
-        canUndo={Boolean(workspaceDraft.previousSnapshot)} disabled={isLoading || !datasetStorage.loaded}
+        canUndo={Boolean(workspaceDraft.previousSnapshot)} disabled={isLoading || !datasetStorage.loaded || !!publishedTab}
         savedAt={workspaceDraft.savedAt} error={draftRestoreError ?? workspaceDraft.message}
         onRestore={() => workspaceDraft.restore(restoreWorkspace)} onUndo={() => workspaceDraft.undo(restoreWorkspace)}
-        onDiscard={() => { const discarded = workspaceDraft.discardRecovery(); if (discarded) setDraftRestoreError(null); return discarded }} /> : null}
-      <Button type="button" variant="subtle" color="gray" className="workbook-quiet-action" leftSection={<LayoutTemplate size={15} />}
-        disabled={!canGenerateReport || isLoading} onClick={() => openDeskTemplates(false)}>{t('Шаблони')}</Button>
-    </>
+        onDiscard={() => { const discarded = workspaceDraft.discardRecovery(); if (discarded) setDraftRestoreError(null); return discarded }} /> : <ReportsSubmenu {...submenuProps} />}
+    </PageSubmenuActions>
     const excelUrl = result?.document.DocumentURL || null
     const pdfUrl = result?.document.PdfDocumentURL || null
     return (
@@ -1279,8 +1285,14 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         {canGenerateReport && catalogueNotice?.failed ? <Alert color="red" className="workbook-desk__notice" icon={<CircleAlert size={18} />}
           title={catalogueNotice.title ?? t('Не вдалося відкрити звіт')}
           withCloseButton closeButtonLabel={t('Закрити повідомлення')} onClose={() => setCatalogueNotice(null)}>{catalogueNotice.text}</Alert> : null}
-        <WorkbookSwitcher launches={workbookLaunches} active={activeWorkbook} disabled={isLoading || workbookResolving || !canGenerateReport}
-          extra={quietActions} onOpen={item => { openWorkbook(item) }} />
+        <WorkbookSwitcher compact launches={workbookLaunches} active={publishedTab ? null : activeWorkbook} disabled={isLoading || workbookResolving || !canGenerateReport || publishedBusy}
+          published={publishedTab} onOpenPublished={tab => {
+            setPublishedTab(tab); setVisitedPublished(current => current.includes(tab) ? current : [...current, tab])
+          }} extra={quietActions} onOpen={item => { setPublishedTab(null); if (item.fileName !== activeWorkbook) openWorkbook(item) }} />
+        {canGenerateReport && ownerId ? visitedPublished.map(tab => <div key={tab} style={{ display: publishedTab === tab ? undefined : 'none' }}>
+          <PublishedReportWorkspace tab={tab} callerKey={ownerId} onBusyChange={setPublishedBusy} />
+        </div>) : null}
+        <div style={{ display: publishedTab && canGenerateReport ? 'none' : undefined }}>
         {!canGenerateReport ? <Alert color="yellow" icon={<CircleAlert size={18} />} title={t('Немає доступу до звітів')}>
           {t('Ваша роль не дозволяє формувати звіти. Зверніться до адміністратора.')}
         </Alert> : datasetStorage.error ? <Alert color="red" icon={<CircleAlert size={18} />} title={t('Не вдалося завантажити список звітів')}>
@@ -1316,6 +1328,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
               table={preview ? <ReportPreviewPages key={preview.ResultSession?.ResultId ?? preview.ResultSha256} initial={preview} request={resultRequest} embedded /> : null}
               excelUrl={excelUrl} pdfUrl={pdfUrl} fileBaseName={lastRun?.fileName ?? null} />
           </form>}
+        </div>
         <ReportModal centered classNames={{ body: 'reports-stocks-template-modal__body', title: 'reports-stocks-modal-title' }}
           opened={deskTemplatesOpened} closeOnClickOutside={!templateStorage.busy} closeOnEscape={!templateStorage.busy}
           closeButtonProps={{ disabled: templateStorage.busy }} size={820} title={t('Шаблони звіту')}
@@ -3022,6 +3035,26 @@ export function SelectionValuePicker({ dataSource, lookupProfitReadMode, lookupP
             {t('Додати')}
           </Button>
         </Group>
+      ) : isMultiValueReportCondition(selection.FilterCondition.Type) ? (
+        <ReportValueAutocomplete label={label} search={search} onSearchChange={setSearch}
+          data={isLoading || lookupMode === 'search' && search.trim() !== normalizedSearch ? [] : selectOptions.filter(option =>
+            lookupMode !== 'search' || !search.trim() || options.some(entity => getReportEntityKey(entity, getEntityDisplayName(entity)) === option.value))}
+          selected={selection.Values.map(value => ({ value: getReportEntityKey(value.Data, value.Name), label: value.Name }))}
+          loading={isLoading || lookupMode === 'search' && search.trim() !== normalizedSearch} disabled={lookupProfitUnavailable}
+          remote={lookupMode === 'search'} error={error}
+          emptyMessage={lookupFailed ? t('Не вдалося завантажити значення. Змініть пошук, щоб спробувати ще раз.')
+            : needsPeriod && (!from || !to) ? t('Спочатку вкажіть коректний період')
+            : lookupMode === 'search' && normalizedSearch.length < minSearchLength ? t('Введіть мінімум 2 символи')
+            : lookupMode === 'dependent' && !dependentClientNetId ? t('Спочатку оберіть клієнта') : undefined}
+          onChange={keys => {
+            const desired = new Set(keys)
+            const previous = new Set(selection.Values.map(value => getReportEntityKey(value.Data, value.Name)))
+            const added = options.filter(entity => {
+              const key = getReportEntityKey(entity, getEntityDisplayName(entity))
+              return desired.has(key) && !previous.has(key)
+            }).map(entity => createSelectedValue(entity, dataSource))
+            onChange([...selection.Values.filter(value => desired.has(getReportEntityKey(value.Data, value.Name))), ...added])
+          }} />
       ) : (
         <Select
           clearable
@@ -3060,7 +3093,7 @@ export function SelectionValuePicker({ dataSource, lookupProfitReadMode, lookupP
           onSearchChange={setSearch}
         />
       )}
-      {selection.Values.length ? (
+      {selection.Values.length && (lookupMode === 'manual' || !isMultiValueReportCondition(selection.FilterCondition.Type)) ? (
         <Group gap={4}>
           {selection.Values.map((value, valueIndex) => (
             <Badge

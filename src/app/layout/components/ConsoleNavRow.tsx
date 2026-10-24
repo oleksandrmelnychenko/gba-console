@@ -7,6 +7,7 @@ import { fitConsoleNavEntries, sameConsoleNavMeasure, type ConsoleNavMeasure } f
 export type ConsoleNavEntry = {
   key: string
   label: string
+  disabled?: boolean
   active: boolean
   badge: ReactNode
   onSelect: () => void
@@ -67,6 +68,7 @@ export function ConsoleNavRow({ kind, className, entries, availableWidth }: Prop
           key={entry.key}
           type="button"
           className={`${pillClass}${entry.active ? ' is-active' : ''}`}
+          disabled={entry.disabled}
           aria-pressed={entry.active}
           onClick={entry.onSelect}
         >
@@ -91,6 +93,7 @@ export function ConsoleNavRow({ kind, className, entries, availableWidth }: Prop
               <Menu.Item
                 key={entry.key}
                 className={`console-subnav-menu-item${entry.active ? ' is-active' : ''}`}
+                disabled={entry.disabled}
                 aria-current={entry.active ? 'page' : undefined}
                 rightSection={entry.badge}
                 onClick={entry.onSelect}
