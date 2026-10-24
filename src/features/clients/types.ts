@@ -1,3 +1,4 @@
+import type { DebtAging, DebtCurrencyAging } from '../sales-debtors/types'
 export type RegionCode = {
   City?: string
   District?: string
@@ -253,15 +254,22 @@ export type ClientAgreement = {
 export type AgreementUpsert = Agreement
 
 export type Debt = {
+  Aging?: DebtCurrencyAging | null
   Id?: number
   NetUid?: string
   Name?: string
-  Days?: number
+  Days?: number | null
   Total?: number
-  EuroTotal?: number
+  EuroTotal?: number | null
+  OverdueEuroTotal?: number | null
+  CreditBalance?: number
+  CreditBalanceEuro?: number | null
+  UnknownEuroDebtCount?: number
 }
 
 export type ClientInDebt = {
+  Aging?: DebtAging | null
+  UnknownEuroDebtCount?: number
   Id?: number
   NetUid?: string
   ClientId?: number

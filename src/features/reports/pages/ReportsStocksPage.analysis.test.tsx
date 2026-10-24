@@ -104,3 +104,30 @@ it('preserves restored mixed selections on many-to-one changes and saves only af
     FilterCondition: { Type: 6 }, Values: [{ Data: { Id: 2 }, Name: 'Group two', Value: 0 }],
   })
 })
+
+it('promotes two TOP values in the filter editor and transports both through the report request', async () => {
+  vi.mocked(searchAnalysisValues).mockResolvedValue([
+    { id: 'top:A', name: 'A', data: { value: 'A' } }, { id: 'top:B', name: 'B', data: { value: 'B' } },
+  ])
+  const { container } = await open()
+  fireEvent.click(screen.getByRole('button', { name: 'Додати умову' }))
+  const editor = screen.getByRole('dialog', { name: 'Додати умову відбору' })
+  fireEvent.click(within(editor).getByRole('button', { name: 'Оберіть поле' }))
+  fireEvent.click(within(screen.getByRole('dialog', { name: 'Поле відбору' })).getByRole('button', { name: 'Топ' }))
+  fireEvent.click(within(editor).getByRole('combobox', { name: 'Значення' }))
+  await waitFor(() => {
+    fireEvent.click(within(editor).getByRole('option', { name: 'A' }))
+    expect(within(editor).getByRole('button', { name: 'Вибрано: 1' })).toBeTruthy()
+  })
+  expect(within(editor).getByRole('combobox', { name: 'Умова' })).toHaveProperty('value', 'Дорівнює')
+  await waitFor(() => {
+    fireEvent.click(within(editor).getByRole('option', { name: 'B' }))
+    expect(within(editor).getByRole('combobox', { name: 'Умова' })).toHaveProperty('value', 'У списку')
+  })
+  fireEvent.click(within(editor).getByRole('button', { name: 'Зберегти' }))
+  fireEvent.submit(container.querySelector('form')!)
+  await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+  expect(vi.mocked(createStockReport).mock.calls[0][0].selections.find(s => s.SelectedField.Type === 3)).toMatchObject({
+    FilterCondition: { Type: 2 }, Values: [{ Data: { value: 'A' }, Name: 'A', Value: 0 }, { Data: { value: 'B' }, Name: 'B', Value: 0 }],
+  })
+})

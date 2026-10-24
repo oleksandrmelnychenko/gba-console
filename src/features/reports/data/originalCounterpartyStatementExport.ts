@@ -18,7 +18,7 @@ export function statementMatrix(result: StatementResult): string[][] {
   if (error || !result.Totals) throw new Error(error ?? 'Повний результат недоступний.')
   return [[...statementHeaders], ...statementLines(result).map(line => line.cells), ['Разом', '', '', ...statementValues(result.Totals)]]
 }
-export const statementUnitNote = 'Записані управлінські суми та суми взаєморозрахунків без перерахунку. Позначення валюти й відповідність іншим налаштуванням 1С не підтверджені.'
+export const statementUnitNote = 'Записані управлінські суми та суми взаєморозрахунків без перерахунку. Позначення валюти недоступне.'
 const metadata = (r: StatementResult) => [[`Період: ${r.From} – ${r.Through}`], [statementUnitNote], ...r.FilterSummary.map(s => [s])]
 export function statementCsv(result: StatementResult): string {
   const quote = (s: string) => `"${s.replaceAll('"', '""')}"`

@@ -17,9 +17,13 @@ import {
 } from '../api/salesDebtorsApi'
 import { DebtorDetailDrawer } from '../components/DebtorDetailDrawer'
 import { DownloadDocumentModal } from '../components/DownloadDocumentModal'
+import { DebtAgingInfo } from '../components/DebtAgingInfo'
+import { getAgingDateLabel, getKnownAgingDays, getKnownOverdueEuro, hasIncompleteAging } from '../model/debtorAging'
 import {
   EURO_CURRENCY_CODE,
   formatCurrencyAmounts,
+  formatDebtAmount,
+  hasCreditBalance,
   getDebtorCurrencyAmounts,
   getDebtorEuroAmount,
   getSummaryCurrencyAmounts,
@@ -107,7 +111,7 @@ export function SalesDebtorsPage() {
 
   const offset = (page - 1) * pageSize
   const currencyCode = currencyCodeByType[typeCurrency]
-  const debtorColumns = useDebtorColumns(currencyCode, days)
+  const debtorColumns = useDebtorColumns(currencyCode, days, debtors.Aging !== undefined, debtors.DueCutoffBusinessDay)
   const totalPages = Math.max(1, Math.ceil(debtors.TotalQtyClients / pageSize))
   const debtorRows = debtors.ClientInDebtors
 
@@ -261,10 +265,10 @@ export function SalesDebtorsPage() {
             className="sales-debtors-filter is-type"
             data={[
               { label: t('Всі'), value: String(TypeOfClientAgreement.All) },
-              { label: t('Готівкові'), value: String(TypeOfClientAgreement.VAT) },
-              { label: t('Безготівкові'), value: String(TypeOfClientAgreement.WithoutVAT) },
+              { label: t('З ПДВ'), value: String(TypeOfClientAgreement.VAT) },
+              { label: t('Без ПДВ'), value: String(TypeOfClientAgreement.WithoutVAT) },
             ]}
-            label={t('Тип')}
+            label={t('Облік ПДВ')}
             value={String(typeAgreement)}
             onChange={(value) => {
               setPage(1)
@@ -368,7 +372,7 @@ export function SalesDebtorsPage() {
   )
 }
 
-function useDebtorColumns(currencyCode: string, days: number) {
+function useDebtorColumns(currencyCode: string, days: number, hasAging: boolean, cutoffDay?: string | null) {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<ClientInDebt>[]>(
@@ -400,7 +404,7 @@ function useDebtorColumns(currencyCode: string, days: number) {
       },
       {
         id: 'totalDebtInDays',
-        header: `${t('Борг через')} ${days} ${t('днів')}`,
+        header: getAgingDateLabel(cutoffDay || undefined) ? `${t('Борг до')} ${getAgingDateLabel(cutoffDay || undefined)}` : `${t('Борг через')} ${days} ${t('днів')}`,
         width: 180,
         minWidth: 160,
         align: 'right',
@@ -409,12 +413,15 @@ function useDebtorColumns(currencyCode: string, days: number) {
       },
       {
         id: 'missedDays',
-        header: t('Термін, днів'),
-        width: 132,
-        minWidth: 132,
+        header: t(hasAging ? 'Макс. відоме прострочення, днів' : 'Термін, днів'),
+        width: hasAging ? 180 : 132,
+        minWidth: hasAging ? 160 : 132,
         align: 'right',
-        accessor: (row) => row.MissedDays ?? 0,
-        cell: (row) => <DebtorDaysCell value={row.MissedDays ?? 0} />,
+        accessor: (row) => row.Aging !== undefined ? getKnownAgingDays(row.Aging) : row.MissedDays,
+        cell: (row) => row.Aging !== undefined ? <span className="sales-debtors-currency-cell">
+          <DebtorKnownDaysCell aging={row.Aging} />
+          {hasIncompleteAging(row.Aging) ? <DebtAgingInfo compact aging={row.Aging} currencies={row.CurrencyDebts} /> : null}
+        </span> : <DebtorDaysCell value={row.MissedDays} />,
       },
       {
         id: 'currencyDebt',
@@ -427,12 +434,21 @@ function useDebtorColumns(currencyCode: string, days: number) {
       },
       {
         id: 'currencyOverdueDebt',
-        header: t('Прострочено'),
+        header: t(hasAging ? 'Відоме прострочення' : 'Прострочено'),
         width: 168,
         minWidth: 140,
         align: 'right',
         accessor: (row) => getDebtorEuroAmount(row, 'OverdueDebt'),
         cell: (row) => <DebtorCurrencyAmountsCell currencyCode={currencyCode} debtor={row} field="OverdueDebt" tone="danger" />,
+      },
+      {
+        id: 'creditBalance',
+        header: t('Кредитовий залишок'),
+        width: 180,
+        minWidth: 160,
+        align: 'right',
+        accessor: (row) => getDebtorEuroAmount(row, 'CreditBalance'),
+        cell: (row) => <DebtorCreditCell debtor={row} />,
       },
       {
         id: 'remainderDebt',
@@ -445,7 +461,7 @@ function useDebtorColumns(currencyCode: string, days: number) {
       },
       {
         id: 'overdueDebt',
-        header: t('Прострочено, EUR'),
+        header: t(hasAging ? 'Відоме прострочення, EUR' : 'Прострочено, EUR'),
         width: 156,
         minWidth: 136,
         align: 'right',
@@ -453,11 +469,11 @@ function useDebtorColumns(currencyCode: string, days: number) {
         cell: (row) => {
           const amount = getDebtorEuroAmount(row, 'OverdueDebt')
 
-          return <DebtorAmountCell amount={amount} currencyCode={EURO_CURRENCY_CODE} tone={amount > 0 ? 'danger' : undefined} />
+          return <DebtorAmountCell amount={amount} currencyCode={EURO_CURRENCY_CODE} tone={amount !== null && amount > 0 ? 'danger' : undefined} />
         },
       },
     ],
-    [currencyCode, days, t],
+    [currencyCode, days, hasAging, cutoffDay, t],
   )
 }
 
@@ -474,15 +490,21 @@ function DebtorRegionCell({ value }: { value: string }) {
 }
 
 function DebtorClientCell({ debtor }: { debtor: ClientInDebt }) {
+  const { t } = useI18n()
   const title = debtor.ClientName?.trim() || ''
-  const subtitle = debtor.CreatedDebt ? formatDateTime(debtor.CreatedDebt) : ''
+  const hasAging = debtor.Aging !== undefined
+  const confirmedDay = hasAging ? getAgingDateLabel(debtor.CreatedDebt) : null
+  const subtitle = hasAging ? confirmedDay || t('Дата не визначена') : debtor.CreatedDebt ? formatDateTime(debtor.CreatedDebt) : ''
+  const subtitleHint = hasAging
+    ? t(confirmedDay ? 'Найраніша підтверджена дата боргу' : 'Підтверджена дата боргу відсутня')
+    : subtitle
 
   return (
     <div className="console-table-entity-cell sales-debtors-client-cell">
       <span className="console-table-entity-copy">
         <TableChip tone="warning" value={title} />
         {subtitle ? (
-          <span className="console-table-entity-subtitle sales-debtors-client-meta" title={subtitle}>{subtitle}</span>
+          <span className="console-table-entity-subtitle sales-debtors-client-meta" title={subtitleHint}>{subtitle}</span>
         ) : null}
       </span>
     </div>
@@ -504,11 +526,12 @@ function DebtorAmountCell({
   currencyCode,
   tone,
 }: {
-  amount: number | undefined
+  amount: number | null | undefined
   currencyCode: string
   tone?: 'danger'
 }) {
-  const value = moneyFormatter.format(amount ?? 0)
+  const { t } = useI18n()
+  const value = formatDebtAmount(amount, moneyFormatter.format, t('Не визначено'))
 
   return (
     <span className={`sales-debtors-amount-cell${tone === 'danger' ? ' is-danger' : ''}`}>
@@ -516,6 +539,18 @@ function DebtorAmountCell({
       {currencyCode ? <TableChip tone="source" value={currencyCode} /> : (
         <TableChip tone="neutral" value="За договорами" title="Сума у валютах договорів. Оберіть валюту у фільтрі, щоб бачити суму в одній валюті." />
       )}
+    </span>
+  )
+}
+
+function DebtorCreditCell({ debtor }: { debtor: ClientInDebt }) {
+  const amounts = getDebtorCurrencyAmounts(debtor, 'CreditBalance')
+  if (!hasCreditBalance(debtor) && amounts.length === 0) return <span className="sales-debtors-currency-empty">—</span>
+
+  return (
+    <span className="sales-debtors-currency-cell">
+      {amounts.length > 0 ? <DebtorCurrencyAmounts amounts={amounts} /> : null}
+      {debtor.CreditBalanceEuro !== undefined ? <DebtorAmountCell amount={debtor.CreditBalanceEuro} currencyCode={EURO_CURRENCY_CODE} /> : null}
     </span>
   )
 }
@@ -559,8 +594,17 @@ function DebtorCurrencyAmounts({ amounts, tone }: { amounts: CurrencyAmount[]; t
   )
 }
 
-function DebtorDaysCell({ value }: { value: number }) {
+function DebtorKnownDaysCell({ aging }: { aging: ClientInDebt['Aging'] }) {
   const { t } = useI18n()
+  const days = getKnownAgingDays(aging)
+  return <Tooltip label={t(hasIncompleteAging(aging) ? 'Максимум за боргами з відомою датою та строком. Дані неповні.' : 'Максимум за боргами з відомою датою та строком.')}>
+    <span><TableChip tone={days !== null && days > 0 ? 'danger' : hasIncompleteAging(aging) ? 'warning' : 'neutral'} value={days === null ? t('Не визначено') : days} /></span>
+  </Tooltip>
+}
+
+function DebtorDaysCell({ value }: { value: number | null | undefined }) {
+  const { t } = useI18n()
+  if (value === null || value === undefined) return <TableChip tone="neutral" value={t('Не визначено')} />
   const description = value < 0
     ? `${t('Прострочення')}: ${Math.abs(value)} ${t('днів')}`
     : value > 0
@@ -582,26 +626,37 @@ function SalesDebtorsSummary({ debtors }: { debtors: ClientDebtors }) {
   const { t } = useI18n()
   const remainderByCurrency = getSummaryCurrencyAmounts(debtors.CurrencyTotals, 'RemainderDebt')
   const overdueByCurrency = getSummaryCurrencyAmounts(debtors.CurrencyTotals, 'OverdueDebt')
+  const creditByCurrency = getSummaryCurrencyAmounts(debtors.CurrencyTotals, 'CreditBalance')
 
   return (
     <div className="sales-debtors-summary">
       <Badge className="app-role-pill is-gray" variant="light">
         {t('Клієнтів')}: {debtors.TotalQtyClients}
       </Badge>
+      <DebtAgingInfo aging={debtors.Aging} currencies={debtors.CurrencyTotals} />
+      {(debtors.UnknownEuroDebtCount ?? 0) > 0 ? <TableChip tone="neutral" value={`${t('Без оцінки в EUR')}: ${debtors.UnknownEuroDebtCount}`} /> : null}
       {remainderByCurrency.length > 0 ? (
         <SalesDebtorsSummaryCurrencies amounts={remainderByCurrency} label={t('Борг')} />
       ) : null}
       {overdueByCurrency.length > 0 ? (
-        <SalesDebtorsSummaryCurrencies amounts={overdueByCurrency} label={t('Прострочено')} />
+        <SalesDebtorsSummaryCurrencies amounts={overdueByCurrency} label={t(debtors.Aging !== undefined ? 'Відоме прострочення' : 'Прострочено')} />
+      ) : null}
+      {creditByCurrency.length > 0 ? <SalesDebtorsSummaryCurrencies amounts={creditByCurrency} label={t('Кредитовий залишок')} /> : null}
+      {creditByCurrency.length > 0 || hasCreditBalance({ CreditBalanceEuro: debtors.TotalCreditBalanceEuro }) ? (
+        <span className="sales-debtors-summary__amount">
+          <span>{t('Кредитовий залишок, EUR')}</span>
+          <strong>{formatDebtAmount(debtors.TotalCreditBalanceEuro, moneyFormatter.format, t('Не визначено'))}</strong>
+          <TableChip tone="source" value={EURO_CURRENCY_CODE} />
+        </span>
       ) : null}
       <span className="sales-debtors-summary__amount">
         <span>{t('Борг, EUR')}</span>
-        <strong>{moneyFormatter.format(debtors.TotalRemainderDebtorsValue)}</strong>
+        <strong>{formatDebtAmount(debtors.TotalRemainderDebtorsValue, moneyFormatter.format, t('Не визначено'))}</strong>
         <TableChip tone="source" value={EURO_CURRENCY_CODE} />
       </span>
       <span className="sales-debtors-summary__amount">
-        <span>{t('Прострочено, EUR')}</span>
-        <strong>{moneyFormatter.format(debtors.TotalOverdueDebtorsValue)}</strong>
+        <span>{t(debtors.Aging !== undefined ? 'Відоме прострочення, EUR' : 'Прострочено, EUR')}</span>
+        <strong>{formatDebtAmount(getKnownOverdueEuro(debtors, debtors.TotalOverdueDebtorsValue), moneyFormatter.format, t('Не визначено'))}</strong>
         <TableChip tone="source" value={EURO_CURRENCY_CODE} />
       </span>
     </div>

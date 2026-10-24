@@ -390,6 +390,7 @@ export type ReportDataset = {
   productClassification?: unknown
   sourceOrganizations?: unknown
   sourceBuyerSubtree?: unknown
+  financialAxes?: unknown
   profitReadModeLookup?: unknown
   profitReadMode?: unknown
   settlementReadMode?: unknown

@@ -1,3 +1,4 @@
+import { financialAxesCapability } from '../data/financialAxes'
 import { cloneCurrentVparivanieAnalysis } from '../data/currentVparivanieAnalysis'
 import { cloneMovementSelection } from '../data/currentVparivanieMovements'
 import { readReportConfiguration, reportConfigurationError } from '../data/reportConfiguration'
@@ -57,6 +58,7 @@ function isDataset(value: unknown): value is ReportDataset {
   const fieldsValid = [item.Groupings, item.Measurements, item.Filters].every(fields =>
     Array.isArray(fields) && fields.every(isDatasetField) && new Set(fields.map(field => field.Type)).size === fields.length)
   return Number.isSafeInteger(item.DataSource) && item.DataSource! >= 0 && item.DataSource !== 1 && typeof item.Name === 'string' && !!item.Name.trim()
+    && (item.financialAxes === undefined || !!financialAxesCapability(item as ReportDataset))
     && (item.configuration === undefined || !!readReportConfiguration(item.configuration))
     && (item.numberPresentation === undefined || numberPresentationSupported(item as ReportDataset))
     && typeof item.Description === 'string' && fieldsValid && !!item.Groupings?.length && !!item.Measurements?.length
@@ -309,7 +311,7 @@ export async function getServerReportTemplates(signal?: AbortSignal): Promise<Re
   return result.map(normalizeSavedTemplate)
 }
 
-export async function saveServerReportTemplate(template: ReportTemplate, signal?: AbortSignal): Promise<ReportTemplate> {
+export async function saveServerReportTemplate(template: ReportTemplate, signal?: AbortSignal, dataset?: ReportDataset): Promise<ReportTemplate> {
   const request = (template.Data.dataSource === 2 || template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21 || template.Data.dataSource === 22 || template.Data.dataSource === 23 || template.Data.dataSource === 24 || template.Data.dataSource === 25 || template.Data.dataSource === 27 || template.Data.dataSource === 28 || template.Data.dataSource === 35 || template.Data.dataSource === 39 || template.Data.dataSource === 40 || template.Data.dataSource === 41) ? structuredClone(template) : template
   request.Data = withCurrentVparivanieMovementScope(request.Data)
   const numericError = numberPresentationError(request.Data) ?? reportConfigurationError(request.Data)
@@ -324,7 +326,7 @@ export async function saveServerReportTemplate(template: ReportTemplate, signal?
   if (priceComparisonError) throw new Error(priceComparisonError)
   const grossProfitError = recordedSaleGrossProfitConfigurationError(request.Data)
   if (grossProfitError) throw new Error(grossProfitError)
-  const dayOrganizationProfitError = dayOrganizationGrossProfitConfigurationError(request.Data)
+  const dayOrganizationProfitError = dayOrganizationGrossProfitConfigurationError(request.Data, dataset)
   if (dayOrganizationProfitError) throw new Error(dayOrganizationProfitError)
   const currentVparivanieError = currentVparivanieConfigurationError(request.Data, undefined, 'workspace')
   if (currentVparivanieError) throw new Error(currentVparivanieError)

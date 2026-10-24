@@ -30,7 +30,7 @@ export async function warehouseMonetaryXlsx(result: WarehouseMonetaryResult): Pr
   const rows = warehouseMonetaryMatrix(result), XLSX = await import('xlsx'), book = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(rows), 'Партії')
   XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet([['Період', `${result.From} — ${result.Through}`], ['Одиниці', unitDescription],
-    ['Назви документів', result.ReceiptCaptions ? receiptExportNote(result.ReceiptCaptions) : 'Зіставлення з документами GBA недоступне'], ['Відповідність 1С', 'Не підтверджена'], ...result.FilterSummary.map(value => ['Відбір', value])]), 'Про звіт')
+    ['Назви документів', result.ReceiptCaptions ? receiptExportNote(result.ReceiptCaptions) : 'Зіставлення з документами GBA недоступне'], ...result.FilterSummary.map(value => ['Відбір', value])]), 'Про звіт')
   return new Blob([XLSX.write(book, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
 }
 export function warehouseMonetaryPdfDefinition(result: WarehouseMonetaryResult): CurrentVparivanieV2PdfDefinition {

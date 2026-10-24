@@ -1,3 +1,4 @@
+import { financialDataset, axisFields } from '../data/financialAxes.test-fixtures'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { createStockReport, previewStockReport, searchDatasetReportValues } from './reportsApi'
@@ -30,4 +31,26 @@ it('checks generation, preview and template save before any request', async () =
   await expect(previewStockReport(data)).rejects.toThrow(/31/)
   await expect(saveServerReportTemplate({ Name: 'Day profit', Data: data })).rejects.toThrow(/31/)
   expect(apiRequest).not.toHaveBeenCalled()
+})
+
+it.each([[[3], [4]], [[4], [3]]])('dispatches axes %j / %j unchanged only with server capability, including template save', async (rows, cols) => {
+  const request = defaultDatasetRequest(financialDataset, '2026-10-17', '2026-10-17')
+  request.sorted.Row = axisFields(rows); request.sorted.Col = axisFields(cols)
+  request.profitReadMode = 0
+  const before = structuredClone(request)
+  await expect(createStockReport(request)).rejects.toThrow()
+  await expect(previewStockReport(request)).rejects.toThrow()
+  await expect(saveServerReportTemplate({ Name: 'Матриця', Data: request })).rejects.toThrow()
+  expect(apiRequest).not.toHaveBeenCalled()
+  vi.mocked(apiRequest).mockResolvedValue({ document: {} })
+  await createStockReport(request, financialDataset)
+  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', expect.objectContaining({ body: request }))
+  vi.mocked(apiRequest).mockResolvedValue({ Id: '10000000-0000-4000-8000-000000000035', Revision: 1, Name: 'Матриця',
+    Data: { DataSource: 35, From: request.from, To: request.to, Sorted: request.sorted, Selections: request.selections,
+      ProfitReadMode: 0, DayOrganizationBasis: request.dayOrganizationBasis, WorkbookPresentation: request.workbookPresentation } })
+  const saved = await saveServerReportTemplate({ Name: 'Матриця', Data: request }, undefined, financialDataset)
+  expect(saved.Data.sorted.Row.map(field => field.type)).toEqual(rows)
+  expect(saved.Data.sorted.Col.map(field => field.type)).toEqual(cols)
+  expect(apiRequest).toHaveBeenLastCalledWith('/report/templates/save', expect.objectContaining({ body: expect.objectContaining({ Data: request }) }))
+  expect(request).toEqual(before)
 })

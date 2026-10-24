@@ -1,3 +1,6 @@
+import { formatDebtAmount, getDebtBalanceLines } from '../../../sales-debtors/model/debtorCurrency'
+import { DebtAgingInfo } from '../../../sales-debtors/components/DebtAgingInfo'
+import { getKnownAgingDays, getMaximumKnownAgingDays } from '../../../sales-debtors/model/debtorAging'
 import { ActionIcon, Badge, Box, Group, Paper, Popover, Stack, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { ArrowLeftRight, Copy, FileText, Network, TriangleAlert, X } from 'lucide-react'
@@ -224,12 +227,17 @@ function WizardSaleHeaderContent({
   const clientAgreements = client.ClientAgreements ?? []
   const subClientCount = client.SubClients?.length ?? 0
   const currentBalance = Math.round(clientAgreements.reduce((sum, item) => sum + (item.CurrentAmount ?? 0), 0) * 100) / 100
-  const maxOverdueDays = groupedDebts.reduce((max, item) => Math.max(max, getWizardClientDebtDays(item)), 0)
+  const hasCanonicalAging = debtTotal?.Aging !== undefined || groupedDebts.some((item) => item.Debt?.Aging !== undefined)
+  const maxOverdueDays = debtTotal?.Aging !== undefined ? getKnownAgingDays(debtTotal.Aging)
+    : hasCanonicalAging ? getMaximumKnownAgingDays(groupedDebts.map((item) => item.Debt?.Aging))
+      : groupedDebts.reduce((max, item) => Math.max(max, getWizardClientDebtDays(item)), 0)
   const subClients = structureClients.filter((item) => item.IsSubClient)
   const tradePoints = structureClients.filter((item) => item.IsTradePoint)
   const showStructureWarning = Boolean(
     structureDebtTotal && ((structureDebtTotal.TotalLocal ?? 0) > 0 || (structureDebtTotal.TotalSubClientDebt ?? 0) > 0),
   )
+  const debtBalanceLines = getDebtBalanceLines(debtTotal)
+  const creditDebts = groupedDebts.filter((item) => (item.Debt?.CreditBalance ?? 0) > 0)
   const isInline = mode === 'inline'
 
   return (
@@ -342,7 +350,7 @@ function WizardSaleHeaderContent({
                   <Text className="app-money" fw={600} size="sm">
                     {amountFormatter.format(structureDebtTotal.TotalLocal ?? 0)}{' '}
                     <Text className="app-money-meta" span c="dimmed" size="xs">
-                      UAH
+                      {t('Локальні валюти')}
                     </Text>
                   </Text>
                 )}
@@ -386,19 +394,25 @@ function WizardSaleHeaderContent({
             label={t('Борг за договорами')}
           />
         )}
-        {groupedDebts.length > 0 && maxOverdueDays > 0 && (
-          <WizardHeaderBadge color="red" items={[{ unit: t('Днів'), value: integerFormatter.format(maxOverdueDays) }]} label={t('прострочено')} />
+        {(hasCanonicalAging || (groupedDebts.length > 0 && (maxOverdueDays ?? 0) > 0)) && (
+          <WizardHeaderBadge color={(maxOverdueDays ?? 0) > 0 ? 'red' : 'gray'} items={[{ unit: t('Днів'), value: maxOverdueDays === null ? t('Не визначено') : integerFormatter.format(maxOverdueDays) }]} label={t(hasCanonicalAging ? 'Макс. відоме прострочення' : 'прострочено')} />
         )}
-        {debtTotal && ((debtTotal.TotalEuro ?? 0) > 0 || (debtTotal.TotalLocal ?? 0) > 0) && (
+        <DebtAgingInfo aging={debtTotal?.Aging} currencies={debtTotal?.Currencies} />
+        {creditDebts.length > 0 ? (
           <WizardHeaderBadge
-            color="red"
-            items={[
-              ...((debtTotal.TotalEuro ?? 0) > 0 ? [{ unit: 'EUR', value: amountFormatter.format(debtTotal.TotalEuro ?? 0) }] : []),
-              ...((debtTotal.TotalLocal ?? 0) > 0 ? [{ unit: 'UAH', value: amountFormatter.format(debtTotal.TotalLocal ?? 0) }] : []),
-            ]}
-            label={t('Загальний борг')}
+            color="gray"
+            items={creditDebts.map((item) => ({ unit: item.Agreement?.Currency?.Code || t('Локальні валюти'), value: amountFormatter.format(item.Debt?.CreditBalance ?? 0) }))}
+            label={t('Кредитовий залишок за договорами')}
           />
-        )}
+        ) : null}
+        {debtBalanceLines.map((line) => (
+          <WizardHeaderBadge
+            key={`${line.label}-${line.currencyCode}`}
+            color={line.label.startsWith('Кредитовий') ? 'gray' : 'red'}
+            items={[{ unit: line.currencyCode || t('Локальні валюти'), value: formatDebtAmount(line.value, amountFormatter.format, t('Не визначено')) }]}
+            label={t(line.label)}
+          />
+        ))}
       </Group>
 
       {sale && (
@@ -446,7 +460,7 @@ function WizardHeaderBadge({
   items,
   label,
 }: {
-  color: 'green' | 'red'
+  color: 'green' | 'red' | 'gray'
   items: { unit: string; value: string }[]
   label: string
 }) {

@@ -84,3 +84,11 @@ it('keeps quantity comparison exact instead of hiding a sub-cent-sized stock cha
   await screen.findByText('Лист-17')
   expect(screen.getByText(/Дані змінилися після розрахунку/)).toBeTruthy()
 })
+
+it('labels a missing receivable business date as unknown without substituting a source timestamp', async () => {
+  vi.mocked(getDashboardQueue).mockResolvedValue({ ...data, key: 'open-debts', workspace: 'finance', rows: [{ ...data.rows[0], documentDate: null }] })
+  render(<MantineProvider env="test"><MemoryRouter initialEntries={['/dashboard?view=finance&queue=open-debts&queueFrom=2026-10-01&queueTo=2026-11-01&queueAsOf=2026-10-22T12%3A00%3A00Z']}><WorkspaceQueueModal workspace="finance" /></MemoryRouter></MantineProvider>)
+  await screen.findByText('Лист-17')
+  expect(screen.getByText('Дата боргу')).toBeTruthy()
+  expect(screen.getByText('Не визначено')).toBeTruthy()
+})

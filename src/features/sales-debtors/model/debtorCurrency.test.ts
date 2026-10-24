@@ -4,6 +4,7 @@ import {
   formatCurrencyAmounts,
   getDebtorCurrencyAmounts,
   getDebtorEuroAmount,
+  getDebtBalanceLines,
   getStructureCurrencyTotals,
   getSummaryCurrencyAmounts,
   hasCurrencyBreakdown,
@@ -93,4 +94,45 @@ describe('debtorCurrency', () => {
     ])
     expect(getStructureCurrencyTotals(null)).toEqual([])
   })
+  it('preserves explicit unknown euro values rather than falling back to old amounts', () => {
+    const unknown: ClientInDebt = {
+      RemainderDebt: 999,
+      RemainderDebtEuro: null,
+      OverdueDebt: 888,
+      OverdueDebtEuro: null,
+      TotalDebtInDaysEuro: null,
+      CreditBalanceEuro: null,
+    }
+    for (const field of ['RemainderDebt', 'OverdueDebt', 'TotalDebtInDays', 'CreditBalance'] as const) {
+      expect(getDebtorEuroAmount(unknown, field)).toBeNull()
+    }
+    expect(getDebtorEuroAmount({ RemainderDebtEuro: 0, RemainderDebt: 999 }, 'RemainderDebt')).toBe(0)
+    expect(getDebtorEuroAmount({ RemainderDebt: null }, 'RemainderDebt')).toBeNull()
+    expect(getDebtorEuroAmount({ RemainderDebtEuro: 1.2345 }, 'RemainderDebt')).toBe(1.2345)
+  })
+
+  it('retains credit-only and unknown structure currencies without netting them into debt', () => {
+    const credit = { CurrencyCode: 'USD', Total: 0, TotalInEuro: 0, CreditBalance: 25, CreditBalanceEuro: null }
+    const unknown = { CurrencyCode: 'UAH', Total: 100, TotalInEuro: null }
+    expect(getStructureCurrencyTotals({ Currencies: [credit, unknown] })).toEqual([credit, unknown])
+    expect(getDebtorCurrencyAmounts({ CurrencyDebts: [{ CurrencyCode: 'USD', RemainderDebt: 100, CreditBalance: 25 }] }, 'RemainderDebt'))
+      .toEqual([{ currencyCode: 'USD', amount: 100 }])
+    expect(getDebtorCurrencyAmounts({ CurrencyDebts: [{ CurrencyCode: 'USD', RemainderDebt: 100, CreditBalance: 25 }] }, 'CreditBalance'))
+      .toEqual([{ currencyCode: 'USD', amount: 25 }])
+  })
+
+  it('uses currency breakdown and unknown total in sale/payment summaries without assuming UAH', () => {
+    expect(getDebtBalanceLines({
+      TotalEuro: 99, TotalLocal: 999, TotalInEuro: null, CreditBalanceEuro: null,
+      Currencies: [{ CurrencyCode: 'USD', Total: 100, CreditBalance: 20, CreditBalanceEuro: null }],
+    })).toEqual([
+      { label: 'Борг', currencyCode: 'USD', value: 100 },
+      { label: 'Кредитовий залишок', currencyCode: 'USD', value: 20 },
+      { label: 'Борг, EUR', currencyCode: 'EUR', value: null },
+      { label: 'Кредитовий залишок, EUR', currencyCode: 'EUR', value: null },
+    ])
+    expect(getDebtBalanceLines({ TotalLocal: 100 })).toEqual([{ label: 'Борг', currencyCode: '', value: 100 }])
+    expect(getDebtBalanceLines({ TotalInEuro: 0 })).toEqual([{ label: 'Борг, EUR', currencyCode: 'EUR', value: 0 }])
+  })
+
 })

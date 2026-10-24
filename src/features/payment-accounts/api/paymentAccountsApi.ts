@@ -1,3 +1,4 @@
+import { readEuroValuation } from '../euroValuation'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   executeAccountingMutation,
@@ -318,14 +319,14 @@ function normalizePaymentAccountsResponse(result: unknown): PaymentAccountsRespo
         }
         return acc
       }, []),
-      totalEuroAmount: 0,
+      totalEuroAmount: null,
     }
   }
 
   if (!result || typeof result !== 'object') {
     return {
       paymentRegisters: [],
-      totalEuroAmount: 0,
+      totalEuroAmount: null,
     }
   }
 
@@ -340,7 +341,7 @@ function normalizePaymentAccountsResponse(result: unknown): PaymentAccountsRespo
       }
       return acc
     }, []),
-    totalEuroAmount: readNumber(payload.TotalEuroAmount),
+    totalEuroAmount: readEuroValuation(payload.TotalEuroAmount),
   }
 }
 
@@ -353,6 +354,7 @@ function normalizePaymentAccount(result: unknown): PaymentAccount | null {
 
   return {
     ...account,
+    TotalEuroAmount: readEuroValuation(account.TotalEuroAmount),
     PaymentCurrencyRegisters: Array.isArray(account.PaymentCurrencyRegisters)
       ? account.PaymentCurrencyRegisters.filter(
           (currencyRegister): currencyRegister is PaymentCurrencyRegister =>

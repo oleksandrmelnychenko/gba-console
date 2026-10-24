@@ -17,6 +17,25 @@ const dataset: ReportDataset = {
   Filters: [0, 1, 17].map(Type => ({ Type, Name: `Фільтр ${Type}` })), Limitations: [],
 }
 
+it('accepts all twelve supplier measures only when advertised and restores them without changing old templates', () => {
+  const expanded: ReportDataset = { ...dataset,
+    Measurements: [0, 2, 3, 4, 6, 7, 8, 10, 12, 14, 11, 15].map(Type => ({ Type, Name: `Показник ${Type}` })) }
+  const previous = defaultDatasetRequest(dataset, '2026-09-01', '2026-09-23')
+  expect(datasetConfigurationError(previous, expanded)).toBeNull()
+  const all = { ...previous, sorted: { ...previous.sorted,
+    Measurements: expanded.Measurements.map(field => ({ ...field, IsChecked: true, parentName: '' })) } }
+  expect(supplierBatchGrossProfitConfigurationError(all, expanded)).toBeNull()
+  expect(datasetConfigurationError(all, expanded)).toBeNull()
+  expect(supplierBatchGrossProfitConfigurationError(all, dataset)).not.toBeNull()
+  const restored = normalizeSavedTemplate({ Id: '10000000-0000-4000-8000-000000000038', Revision: 1,
+    Name: 'Прибуток з ПДВ', Data: { DataSource: 38, From: all.from, To: all.to,
+      Sorted: all.sorted, Selections: [], SupplierSourceWorld: 0 } } as never)
+  expect(restored.Data.sorted.Measurements.map(item => item.Type)).toEqual(all.sorted.Measurements.map(item => item.Type))
+  expect(datasetConfigurationError(restored.Data, expanded)).toBeNull()
+  expect(supplierBatchGrossProfitConfigurationError(all, { ...expanded,
+    Measurements: expanded.Measurements.map(field => field.Type === 15 ? { ...field, Type: 99 } : field) })).not.toBeNull()
+})
+
 it('starts with the six XLS measures and exact source warehouse grouping', () => {
   const request = defaultDatasetRequest(dataset, '2026-07-01', '2026-07-31')
   expect(request.sorted.Row.map(item => item.type)).toEqual([73, 4, 21])

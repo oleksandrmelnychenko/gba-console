@@ -1,7 +1,7 @@
 import { moneyFlowDefinitions, moneyFlowFilters, moneyFlowLabels, moneyFlowRows, type MoneyFlowResult, type MoneyFlowValues } from './originalMoneyFlowAnalysis'
 import type { CurrentVparivanieV2PdfDefinition } from './currentVparivanieV2Export'
 const unitNote = 'Суми у валюті рахунку / каси та управлінські суми — окремі збережені ресурси. Валюти арифметично об’єднуються без валютного перерахунку.'
-const scopeNote = 'Період включає бізнес-дні до останньої цілої секунди. Відповідність ефективного періоду та результату 1С не підтверджена.'
+const scopeNote = 'Останній день періоду включено повністю.'
 const nullNote = '«—» означає відсутність внеску; 0.00 — спостережений нуль. Підсумки передано сервером без перерахунку в консолі.'
 const captions = new Map(moneyFlowDefinitions.map(d => [d.Key, d.Caption]))
 export const moneyFlowCells = (result: MoneyFlowResult, values: MoneyFlowValues) => result.Measures.map(measure => values[measure] ?? '—')
@@ -32,7 +32,7 @@ export function moneyFlowMatrix(result: MoneyFlowResult): string[][] {
 export function moneyFlowFilterSummary(result: MoneyFlowResult): string[] {
   return moneyFlowFilters.map(field => {
     const names = new Map(result.Choices[field].map(c => [c.Key, c.Caption]))
-    return `${moneyFlowLabels[field]}: ${result.Selectors[field].length ? result.Selectors[field].map(key => `${names.get(key) ?? 'Назва недоступна'} [${key}]`).join(', ') : 'усі'}`
+    return `${moneyFlowLabels[field]}: ${result.Selectors[field].length ? result.Selectors[field].map((key, index) => names.get(key) ?? `Назва недоступна (${index + 1})`).join(', ') : 'усі'}`
   })
 }
 function metadata(result: MoneyFlowResult): string[][] {

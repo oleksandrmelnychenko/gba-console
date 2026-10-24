@@ -80,12 +80,16 @@ function toClientDebtors(result: unknown): ClientDebtors {
     const record = parsed as Record<string, unknown>
 
     return {
+      Aging: record.Aging as ClientDebtors['Aging'],
+      DueCutoffBusinessDay: record.DueCutoffBusinessDay as ClientDebtors['DueCutoffBusinessDay'],
       ClientInDebtors: Array.isArray(record.ClientInDebtors) ? (record.ClientInDebtors as ClientInDebt[]) : [],
       CurrencyTotals: Array.isArray(record.CurrencyTotals) ? (record.CurrencyTotals as DebtorsCurrencyTotal[]) : [],
-      TotalMissedDays: toNumber(record.TotalMissedDays),
-      TotalOverdueDebtorsValue: toNumber(record.TotalOverdueDebtorsValue),
+      TotalMissedDays: toEuroNumber(record.TotalMissedDays),
+      TotalCreditBalanceEuro: record.TotalCreditBalanceEuro === undefined ? undefined : toEuroNumber(record.TotalCreditBalanceEuro),
+      UnknownEuroDebtCount: toNumber(record.UnknownEuroDebtCount),
+      TotalOverdueDebtorsValue: toEuroNumber(record.TotalOverdueDebtorsValue),
       TotalQtyClients: toNumber(record.TotalQtyClients),
-      TotalRemainderDebtorsValue: toNumber(record.TotalRemainderDebtorsValue),
+      TotalRemainderDebtorsValue: toEuroNumber(record.TotalRemainderDebtorsValue),
     }
   }
 
@@ -124,6 +128,11 @@ function toSecureUrl(url: string | null): string | null {
   }
 
   return url.startsWith('http://') ? `https://${url.slice('http://'.length)}` : url
+}
+
+function toEuroNumber(value: unknown): number | null {
+  if (value === undefined) return 0
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
 }
 
 function toNumber(value: unknown): number {

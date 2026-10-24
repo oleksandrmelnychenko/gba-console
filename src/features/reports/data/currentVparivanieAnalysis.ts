@@ -1,6 +1,6 @@
 import { isMultiValueReportCondition, reportSelectionCardinalityError } from './reportOptions'
 import { movementSelection } from './currentVparivanieMovements'
-import type { ReportDataset, ReportFilterCondition, ReportRequestBody, ReportSelection, ReportEntity } from '../types'
+import type { ReportDataset, ReportFilterCondition, ReportRequestBody, ReportSelection, ReportSelectedValue, ReportEntity } from '../types'
 import type { NativeReportPreview } from './nativeReportPreview'
 
 export type CurrentVparivanieAnalysisRequest = { version: 1 }
@@ -124,6 +124,15 @@ export function analysisValueIdentity(field: number, value: ReportEntity): strin
   const entries = Object.entries(value)
   if ([2, 3].includes(field) && entries.length === 1 && ['name', 'value'].includes(entries[0][0].toLowerCase()) && typeof entries[0][1] === 'string') return `text:${entries[0][1]}`
   return group ? `${group.kind}:${BigInt(group.id)}` : JSON.stringify(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)))
+}
+export function analysisListCondition(type: number, descriptor?: AnalysisFieldDescriptor): ReportFilterCondition | undefined {
+  const Type = type === 0 ? 2 : type === 1 ? 4 : undefined
+  return Type !== undefined && descriptor?.conditions.includes(Type)
+    ? { Type, Name: Type === 2 ? 'У списку' : 'Не у списку' } : undefined
+}
+export function changeAnalysisSelectionValues(selection: ReportSelection, Values: ReportSelectedValue[], descriptor?: AnalysisFieldDescriptor): ReportSelection {
+  return { ...selection, Values, FilterCondition: Values.length > 1
+    ? analysisListCondition(selection.FilterCondition.Type, descriptor) ?? selection.FilterCondition : selection.FilterCondition }
 }
 export function changeAnalysisSelectionCondition(selection: ReportSelection, condition: ReportFilterCondition): ReportSelection {
   // Re-encode a proven group without dropping it when leaving a mixed operator.

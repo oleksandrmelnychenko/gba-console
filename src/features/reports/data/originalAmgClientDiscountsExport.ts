@@ -16,7 +16,7 @@ export function amgDiscountMatrix(result: AmgDiscountResult): string[][] {
 const metadata = (result: AmgDiscountResult) => [[`AMG · Знижки · станом на ${result.Through}`],
   ['Максимальний відсоток на рівні отримувача й номенклатури. Відсотки не додаються.'],
   [`Максимальна знижка, %: ${result.MaximumPercentage ?? 'рядків немає'}`],
-  ['Дані не звірено з поточним звітом 1С.']]
+]
 export function amgDiscountCsv(result: AmgDiscountResult): string {
   const safe = (v: string) => /^[\s\p{Cc}]*[=+\-@]/u.test(v) ? `'${v}` : v
   const quote = (v: string) => `"${v.replaceAll('"', '""')}"`

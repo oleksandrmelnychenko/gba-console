@@ -16,7 +16,7 @@ export function debtMatrix(result: DebtResult): string[][] {
   if (error || !result.Totals) throw new Error(error ?? 'Повний результат недоступний.')
   return [debtHeaders(result), ...debtLines(result).map(r => r.cells), ['Разом', '', ...debtValues(result.Totals, result.IncludeSettlement)]]
 }
-export const debtUnitNote = 'Записані управлінські суми; додаткова сума взаєморозрахунків не конвертується. Позначення валюти та відповідність усім налаштуванням 1С не підтверджені.'
+export const debtUnitNote = 'Записані управлінські суми; додаткова сума взаєморозрахунків не конвертується. Позначення валюти недоступне.'
 const metadata = (r: DebtResult) => [[`Залишок до: ${r.AsOf}`], [debtUnitNote], ...r.FilterSummary.map(s => [s])]
 export function debtCsv(result: DebtResult): string {
   const quote = (s: string) => `"${s.replaceAll('"', '""')}"`

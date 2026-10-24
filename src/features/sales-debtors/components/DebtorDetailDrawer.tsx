@@ -7,8 +7,12 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { getDebtorDebtTotal, getDebtorGroupedDebts } from '../api/salesDebtorsApi'
+import { DebtAgingInfo } from './DebtAgingInfo'
+import { getKnownAgingDays, getKnownOverdueEuro, getGroupedDebtAging } from '../model/debtorAging'
 import {
   EURO_CURRENCY_CODE,
+  formatDebtAmount,
+  hasCreditBalance,
   getDebtorEuroAmount,
   getStructureCurrencyTotals,
   toFiniteNumber,
@@ -85,6 +89,7 @@ export function DebtorDetailDrawer({ debtor, onClose }: {
             <div className="debtor-detail__identity">
               <span className="debtor-detail__label">{t('Клієнт')}</span>
               <div className="debtor-detail__client"><TableChip tone="warning" value={debtor.ClientName} /></div>
+              <DebtAgingInfo aging={debtor.Aging} currencies={debtor.CurrencyDebts} />
               {(debtor.RegionCode || debtor.UserName) ? (
                 <div className="debtor-detail__meta">
                   {debtor.RegionCode ? <TableChip tone="document" value={debtor.RegionCode} /> : null}
@@ -95,12 +100,13 @@ export function DebtorDetailDrawer({ debtor, onClose }: {
             <div className="debtor-detail__metrics">
               <DetailMetric label={t('Борг, EUR')} unit={EURO_CURRENCY_CODE} value={getDebtorEuroAmount(debtor, 'RemainderDebt')} />
               <DetailMetric
-                danger={getDebtorEuroAmount(debtor, 'OverdueDebt') > 0}
-                label={t('Прострочено, EUR')}
+                danger={(getDebtorEuroAmount(debtor, 'OverdueDebt') ?? 0) > 0}
+                label={t(debtor.Aging !== undefined ? 'Відоме прострочення, EUR' : 'Прострочено, EUR')}
                 unit={EURO_CURRENCY_CODE}
                 value={getDebtorEuroAmount(debtor, 'OverdueDebt')}
               />
-              <DetailMetric danger={(debtor.MissedDays ?? 0) < 0} integer label={t('Термін, днів')} value={debtor.MissedDays} />
+              {hasCreditBalance(debtor) ? <DetailMetric label={t('Кредитовий залишок, EUR')} unit={EURO_CURRENCY_CODE} value={debtor.CreditBalanceEuro} /> : null}
+              <DetailMetric danger={debtor.Aging !== undefined ? (getKnownAgingDays(debtor.Aging) ?? 0) > 0 : (debtor.MissedDays ?? 0) < 0} integer label={t(debtor.Aging !== undefined ? 'Макс. відоме прострочення, днів' : 'Термін, днів')} value={debtor.Aging !== undefined ? getKnownAgingDays(debtor.Aging) : debtor.MissedDays} />
             </div>
           </section>
 
@@ -141,12 +147,13 @@ function DetailSection({ children, count, note, title }: { children: ReactNode; 
 }
 
 function DetailMetric({ danger, euro, integer, label, unit, value }: {
-  danger?: boolean; euro?: number; integer?: boolean; label: string; unit?: string; value?: number
+  danger?: boolean; euro?: number | null; integer?: boolean; label: string; unit?: string; value?: number | null
 }) {
+  const { t } = useI18n()
   return (
     <div className={`debtor-detail__metric${danger ? ' is-danger' : ''}`}>
       <span className="debtor-detail__label">{label}</span>
-      <div className="debtor-detail__number"><strong>{value === undefined ? '—' : integer ? String(value) : moneyFormatter.format(value)}</strong>{unit ? <TableChip tone="source" value={unit} /> : null}</div>
+      <div className="debtor-detail__number"><strong>{formatDebtAmount(value, integer ? String : moneyFormatter.format, t('Не визначено'))}</strong>{unit ? <TableChip tone="source" value={unit} /> : null}</div>
       {euro !== undefined ? <MoneyWithCurrency className="is-secondary" currencyCode={EURO_CURRENCY_CODE} value={euro} /> : null}
     </div>
   )
@@ -167,25 +174,37 @@ function DebtTotals({ total }: { total: DebtorDebtTotal | null }) {
           value={toFiniteNumber(item.Total)}
         />
       ))}
+      {currencies.filter(hasCreditBalance).map((item) => (
+        <DetailMetric
+          key={`credit-${item.CurrencyCode || 'local'}`}
+          euro={item.CurrencyCode !== EURO_CURRENCY_CODE ? item.CreditBalanceEuro : undefined}
+          label={`${t('Кредитовий залишок')} ${item.CurrencyCode || ''}`.trim()}
+          unit={item.CurrencyCode || undefined}
+          value={item.CreditBalance}
+        />
+      ))}
+      {total && hasCreditBalance(total) ? <DetailMetric label={t('Кредитовий залишок, EUR')} unit={EURO_CURRENCY_CODE} value={total.CreditBalanceEuro} /> : null}
       {total?.TotalInEuro !== undefined ? (
         <>
-          <DetailMetric label={t('Разом, EUR')} unit={EURO_CURRENCY_CODE} value={toFiniteNumber(total.TotalInEuro)} />
+          <DetailMetric label={t('Разом, EUR')} unit={EURO_CURRENCY_CODE} value={total.TotalInEuro} />
           <DetailMetric
-            danger={toFiniteNumber(total.OverdueInEuro) > 0}
-            label={t('Прострочено, EUR')}
+            danger={(getKnownOverdueEuro(total, total.OverdueInEuro) ?? 0) > 0}
+            label={t(total.Aging !== undefined ? 'Відоме прострочення, EUR' : 'Прострочено, EUR')}
             unit={EURO_CURRENCY_CODE}
-            value={toFiniteNumber(total.OverdueInEuro)}
+            value={getKnownOverdueEuro(total, total.OverdueInEuro)}
           />
         </>
       ) : null}
+      <DebtAgingInfo aging={total?.Aging} currencies={currencies} />
     </div>
   )
 }
 
-function MoneyWithCurrency({ className, currencyCode, value }: { className?: string; currencyCode?: string; value?: number }) {
+function MoneyWithCurrency({ className, currencyCode, value }: { className?: string; currencyCode?: string; value?: number | null }) {
+  const { t } = useI18n()
   return (
     <div className={`debtor-detail__number${className ? ` ${className}` : ''}`}>
-      <strong>{value === undefined ? '—' : moneyFormatter.format(value)}</strong>
+      <strong>{formatDebtAmount(value, moneyFormatter.format, t('Не визначено'))}</strong>
       {currencyCode ? <TableChip tone="source" value={currencyCode} /> : null}
     </div>
   )
@@ -201,40 +220,52 @@ function DebtCard({ item }: { item: DebtorDebtItem }) {
   const agreement = displayValue(item.Agreement?.Name || item.Agreement?.Number)
   const organization = getOrganizationDisplayName(item.Agreement?.Organization)
   const currencyCode = displayValue(item.Agreement?.Currency?.Code)
-  const overdueTotal = toFiniteNumber(debt?.OverdueTotal)
-  const overdueDays = toFiniteNumber(debt?.Days)
+  const aging = getGroupedDebtAging(debt)
 
   return (
     <article className="debtor-detail__debt">
       <div className="debtor-detail__debt-head">
         {currencyCode ? <TableChip tone="source" value={currencyCode} /> : <TableChip value={t('Без валюти')} />}
-        <TableChip
-          tone={overdueTotal > 0 ? 'danger' : 'success'}
-          value={overdueTotal > 0 ? `${t('Прострочено')} ${overdueDays} ${t('дн.')}` : t('Без прострочки')}
-        />
+        <DebtAgingBadge aging={aging} />
       </div>
       <div className="debtor-detail__debt-grid">
         <DetailRow label={t('Сума боргу')}><MoneyWithCurrency currencyCode={currencyCode} value={debt?.Total} /></DetailRow>
         <DetailRow label={t('Сума, EUR')}><MoneyWithCurrency currencyCode={EURO_CURRENCY_CODE} value={debt?.EuroTotal} /></DetailRow>
-        <DetailRow label={t('Прострочено')}>
-          <div className={overdueTotal > 0 ? 'debtor-detail__overdue' : undefined}>
-            <MoneyWithCurrency currencyCode={currencyCode} value={debt?.OverdueTotal} />
+        <DetailRow label={t(aging.canonical ? 'Відоме прострочення' : 'Прострочено')}>
+          <div className={aging.knownOverdue ? 'debtor-detail__overdue' : undefined}>
+            <MoneyWithCurrency currencyCode={currencyCode} value={aging.overdueTotal} />
             {currencyCode !== EURO_CURRENCY_CODE ? (
-              <MoneyWithCurrency className="is-secondary" currencyCode={EURO_CURRENCY_CODE} value={debt?.OverdueEuroTotal} />
+              <MoneyWithCurrency className="is-secondary" currencyCode={EURO_CURRENCY_CODE} value={aging.overdueEuro} />
             ) : null}
           </div>
         </DetailRow>
-        <DetailRow label={t('Днів прострочки')}><TableChip value={overdueDays} /></DetailRow>
+        {debt && hasCreditBalance(debt) ? (
+          <DetailRow label={t('Кредитовий залишок')}>
+            <MoneyWithCurrency currencyCode={currencyCode} value={debt.CreditBalance} />
+            {currencyCode !== EURO_CURRENCY_CODE ? <MoneyWithCurrency className="is-secondary" currencyCode={EURO_CURRENCY_CODE} value={debt.CreditBalanceEuro} /> : null}
+          </DetailRow>
+        ) : null}
+        <DetailRow label={t(aging.canonical ? 'Макс. відоме прострочення, днів' : 'Днів прострочки')}><TableChip value={aging.days === null ? t('Не визначено') : aging.days} /></DetailRow>
         {organization ? <DetailRow label={t('Організація')}><TableChip tone="product" value={organization} /></DetailRow> : null}
         {agreement ? <DetailRow label={t('Договір')}><TableChip value={agreement} /></DetailRow> : null}
       </div>
+      <DebtAgingInfo aging={debt?.Aging} currencies={[{ CurrencyCode: currencyCode, Aging: debt?.Aging }]} />
     </article>
   )
 }
 
+function DebtAgingBadge({ aging }: { aging: ReturnType<typeof getGroupedDebtAging> }) {
+  const { t } = useI18n()
+  if (aging.knownOverdue) {
+    return <TableChip tone="danger" value={`${t(aging.canonical ? 'Відоме прострочення' : 'Прострочено')} ${aging.days ?? t('Не визначено')} ${t('дн.')}`} />
+  }
+  return <TableChip tone={aging.incomplete ? 'warning' : 'success'} value={t(aging.incomplete ? 'Строки визначено частково' : 'Без прострочки')} />
+}
+
 function includesSubClients(debtor: ClientInDebt, total: DebtorDebtTotal | null): boolean {
-  return total?.TotalInEuro !== undefined &&
-    Math.abs(toFiniteNumber(total.TotalInEuro) - getDebtorEuroAmount(debtor, 'RemainderDebt')) >= 0.005
+  const rowEuro = getDebtorEuroAmount(debtor, 'RemainderDebt')
+  return typeof total?.TotalInEuro === 'number' && rowEuro !== null &&
+    Math.abs(total.TotalInEuro - rowEuro) >= 0.005
 }
 
 function displayValue(value?: string | null): string {

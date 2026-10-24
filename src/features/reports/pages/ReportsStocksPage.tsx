@@ -1,3 +1,4 @@
+import { financialAxesCapability } from '../data/financialAxes'
 import { ReportsSubmenu } from './workbook-desk/ReportsSubmenu'
 import { PublishedReportWorkspace } from './workbook-desk/PublishedReportWorkspace'
 import type { PublishedReportTab } from './workbook-desk/publishedReportTabs'
@@ -9,7 +10,7 @@ import { isMovementCapability, isWarehouseMovementCatalogueEntry, normalizeMovem
 import { OneCTurnoverResponsiblesPanel } from './OneCTurnoverResponsiblesPanel'
 import { isOrganizationOnlyTurnoverScope, ORGANIZATION_ONLY_TURNOVER_CHOICE } from '../data/oneCTurnoverScopes'
 import type { OneCTurnoverScopeSummary } from '../types'
-import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis, analysisFilterConditions, analysisSelectionValueError, changeAnalysisSelectionCondition } from '../data/currentVparivanieAnalysis'
+import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis, analysisFilterConditions, analysisSelectionValueError, changeAnalysisSelectionCondition, changeAnalysisSelectionValues } from '../data/currentVparivanieAnalysis'
 import { ReportFieldPicker } from './ReportFieldPicker'
 import { CurrentVparivanieAnalysisValuePicker } from './CurrentVparivanieAnalysisValuePicker'
 import { CurrentVparivanieMovementSettings } from './CurrentVparivanieMovementSettings'
@@ -2144,6 +2145,9 @@ function LegacyReportBuilder({
         onRemove={(index) => onColGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
         onReorder={(type, direction) => onColGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
         onTransfer={type => transferGrouping('Col', type)} /> : <Text size="sm" c="dimmed">Вибрані показники відображаються у стовпцях.</Text>}
+      {financialAxesCapability(dataset) && colGroups.length > 0 ? <Text size="sm" c="dimmed">
+        {colGroups[0].type === 4 ? 'У файлі кожна організація в колонках буде окремим аркушем.' : 'У файлі кожен день у колонках буде окремим аркушем.'}
+      </Text> : null}
     </section>
   )
 
@@ -2508,7 +2512,7 @@ function ReportSelectionsCard({
                 }}
               />
               {analysis ? draftSelection.SelectedField.Name ? <CurrentVparivanieAnalysisValuePicker selection={draftSelection} selections={editorSelections} descriptor={analysis.filters.find(field => field.type === draftSelection.SelectedField.Type)} from={from} to={to}
-                onChange={Values => setDraftSelection(current => current ? { ...current, Values } : current)} /> : <Text size="sm">Оберіть поле відбору.</Text> : <SelectionValuePicker
+                onChange={Values => setDraftSelection(current => current ? changeAnalysisSelectionValues(current, Values, analysis.filters.find(field => field.type === current.SelectedField.Type)) : current)} /> : <Text size="sm">Оберіть поле відбору.</Text> : <SelectionValuePicker
                 dataSource={dataSource}
                 lookupProfitReadMode={lookupProfitReadMode} lookupProfitUnavailable={lookupProfitUnavailable} lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis}
                 from={from}
@@ -2578,7 +2582,7 @@ function InlineReportSelection({ dataset, selection, selections, index, dataSour
     <div className="workbook-inline-selection__value">{!selection.SelectedField.Name ? <Text size="sm">Оберіть поле відбору.</Text>
       : analysis ? <CurrentVparivanieAnalysisValuePicker selection={selection} selections={selections}
         descriptor={analysis.filters.find(field => field.type === selection.SelectedField.Type)} from={from} to={to}
-        onChange={Values => change({ ...selection, Values })} />
+        onChange={Values => change(changeAnalysisSelectionValues(selection, Values, analysis.filters.find(field => field.type === selection.SelectedField.Type)))} />
       : <SelectionValuePicker dataSource={dataSource} lookupProfitReadMode={lookupProfitReadMode} lookupProfitUnavailable={lookupProfitUnavailable}
         lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis}
         from={from} to={to} label={t('Значення')} selection={selection} selections={selections} width="100%"

@@ -16,3 +16,13 @@ it('accepts a manual supported code without requiring a current catalogue match,
   fireEvent.keyDown(screen.getByLabelText('TOP вручну'), { key: 'Enter' })
   expect(onChange).toHaveBeenCalledTimes(1)
 })
+
+it.each([0, 1])('preserves the previous TOP value when the picker supports lists for condition %i', condition => {
+  const onChange = vi.fn()
+  const first = { Data: { value: 'A' }, Name: 'A', Value: 0 }
+  render(<MantineProvider env="test"><AnalysisTopEntry capability={capability} multiple onChange={onChange}
+    selection={{ IsChecked: true, SelectedField: { Type: 3, Name: 'TOP' }, FilterCondition: { Type: condition, Name: 'Condition' }, Values: [first] }} /></MantineProvider>)
+  fireEvent.change(screen.getByLabelText('TOP вручну'), { target: { value: 'B' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Додати TOP' }))
+  expect(onChange).toHaveBeenCalledWith([first, { Data: { value: 'B' }, Name: 'B', Value: 0 }])
+})

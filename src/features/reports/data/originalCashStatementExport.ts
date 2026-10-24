@@ -20,7 +20,7 @@ function metadata(result: CashResult): string[][] {
   return [['Відомість коштів Fenix'], [`Період: ${result.From} — ${result.Through}`], ['Сума у валюті рахунку / каси та управлінська сума: записані одиниці, без валютного перерахунку.'],
     ...result.Filters.map(filter => [`Відбір: ${cashLabels[filter.Field]} · ${choices.get(cashFilterKey(filter)) ?? 'Назва недоступна'}`]),
     ...(missing.size ? [[`Недоступні назви: ${cashFields.filter(field => missing.has(field)).map(field => cashLabels[field]).join(', ')}`]] : []),
-    ['Нульові спостережені рядки збережено; відповідність 1С не підтверджена.']]
+    ['Нульові рядки збережено.']]
 }
 export function cashCsv(result: CashResult): string {
   const safe = (value: string) => /^[\s\p{Cc}]*[=+\-@]/u.test(value) ? `'${value}` : value

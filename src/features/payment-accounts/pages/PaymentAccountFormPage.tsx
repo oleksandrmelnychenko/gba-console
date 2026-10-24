@@ -1,5 +1,7 @@
 import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
+import { exchangeCurrencyCode, exchangeDisplayAmount, exchangeRowId } from '../exchangePresentation'
+import { formatEuroValuation } from '../euroValuation'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -852,8 +854,8 @@ function PaymentAccountFormCard({
           {isEditMode && (
             <SimpleGrid className="payment-account-overview__meta" cols={{ base: 1, sm: 3 }}>
               <InfoCell
-                label={t('Всього в EUR')}
-                value={<span className="app-money app-table-number">{formatMoney(account.TotalEuroAmount)}</span>}
+                label={t('Поточний еквівалент EUR')}
+                value={<span className="app-money app-table-number">{t(formatEuroValuation(account.TotalEuroAmount))}</span>}
               />
               <InfoCell label={t('Тип')} value={getPaymentRegisterTypeLabel(form.type, t)} />
               <InfoCell label={t('Статус')} value={form.isActive ? t('Основний') : t('Звичайний')} />
@@ -1338,9 +1340,9 @@ export function PaymentAccountActivityPanel({
 
             <Tabs.Panel value="exchanges" pt="md">
               <ActivityTable
-                columns={getExchangeColumns(account, t, canCancelExchange ? setCancelExchange : undefined)}
+                columns={getExchangeColumns(t, canCancelExchange ? setCancelExchange : undefined)}
                 emptyText={t('Обмін валют відсутній')}
-                getRowKey={(item, index) => getEntityValue(item) || `exchange-${index}`}
+                getRowKey={exchangeRowId}
                 isLoading={state.isLoading}
                 rows={state.exchanges}
                 tableId="payment-account-edit-exchanges"
@@ -2126,9 +2128,9 @@ function PaymentCurrencyActivityView({
         title={t('Розхід')}
       />
       <ActivityTable
-        columns={getExchangeColumns(activity?.PaymentRegister || null, t, onCancelExchange)}
+        columns={getExchangeColumns(t, onCancelExchange)}
         emptyText={t('Обмін валют відсутній')}
-        getRowKey={(item, index) => getEntityValue(item) || `currency-exchange-${index}`}
+        getRowKey={exchangeRowId}
         isLoading={isLoading}
         rows={activity?.PaymentRegisterCurrencyExchanges || []}
         tableId="payment-account-edit-currency-exchanges"
@@ -2311,7 +2313,6 @@ function getTransferColumns(
 }
 
 function getExchangeColumns(
-  account: PaymentAccount | null,
   t: (value: string) => string,
   onCancel?: (exchange: PaymentRegisterCurrencyExchange) => void,
 ): ActivityColumn<PaymentRegisterCurrencyExchange>[] {
@@ -2320,11 +2321,11 @@ function getExchangeColumns(
     { key: 'number', header: t('Номер'), cell: (exchange) => displayValue(exchange.Number) },
     { key: 'incomeNumber', header: t('Вхідний номер'), cell: (exchange) => displayValue(exchange.IncomeNumber) },
     { key: 'status', header: t('Статус'), cell: (exchange) => <CanceledBadge canceled={Boolean(exchange.IsCanceled)} /> },
-    { key: 'operation', header: t('Операція'), cell: (exchange) => getExchangeOperationLabel(exchange, account, t) },
+    { key: 'operation', header: t('Операція'), cell: (exchange) => getPaymentRegisterTransferTypeLabel(exchange.Type, t) },
     { key: 'from', header: t('З рахунку'), cell: (exchange) => displayValue(exchange.FromPaymentCurrencyRegister?.PaymentRegister?.Name) },
     { key: 'to', header: t('На рахунок'), cell: (exchange) => displayValue(exchange.ToPaymentCurrencyRegister?.PaymentRegister?.Name) },
-    { key: 'amount', header: t('Сума'), align: 'right', cell: (exchange) => formatExchangeAmount(exchange, account) },
-    { key: 'currency', header: t('Валюта'), cell: (exchange) => renderCurrencyValue(getExchangeCurrencyCode(exchange, account)) },
+    { key: 'amount', header: t('Сума'), align: 'right', cell: (exchange) => formatMoney(exchangeDisplayAmount(exchange)) },
+    { key: 'currency', header: t('Валюта'), cell: (exchange) => renderCurrencyValue(exchangeCurrencyCode(exchange)) },
     { key: 'rate', header: t('Курс'), align: 'right', cell: (exchange) => displayValue(exchange.ExchangeRate) },
     { key: 'user', header: t('Відповідальний'), cell: (exchange) => displayValue(getPersonName(exchange.User)) },
     { key: 'comment', header: t('Коментар'), cell: (exchange) => displayValue(exchange.Comment) },
@@ -2789,57 +2790,6 @@ function getTransferOperationLabel(
   }
 
   return '—'
-}
-
-function getExchangeOperationLabel(
-  exchange: PaymentRegisterCurrencyExchange,
-  account: PaymentAccount | null,
-  t: (value: string) => string,
-): string {
-  if (account?.Type === PaymentRegisterType.Bank) {
-    const fromRegisterId = exchange.FromPaymentCurrencyRegister?.PaymentRegister?.Id
-
-    return fromRegisterId && account.Id && fromRegisterId === account.Id ? t('Розхід') : t('Прихід')
-  }
-
-  return getPaymentRegisterTransferTypeLabel(exchange.Type, t)
-}
-
-function formatExchangeAmount(exchange: PaymentRegisterCurrencyExchange, account: PaymentAccount | null): string {
-  if (account?.Type !== PaymentRegisterType.Bank) {
-    return formatMoney(exchange.Amount)
-  }
-
-  const fromRegisterId = exchange.FromPaymentCurrencyRegister?.PaymentRegister?.Id
-
-  if (!fromRegisterId || !account.Id || fromRegisterId === account.Id || !exchange.ExchangeRate) {
-    return formatMoney(exchange.Amount)
-  }
-
-  const defaultCurrency = exchange.Type === PaymentRegisterTransferType.Income
-    ? exchange.ToPaymentCurrencyRegister?.Currency?.Code
-    : exchange.FromPaymentCurrencyRegister?.Currency?.Code
-  const convertedAmount = defaultCurrency === 'UAH'
-    ? (exchange.Amount || 0) / exchange.ExchangeRate
-    : (exchange.Amount || 0) * exchange.ExchangeRate
-
-  return `${formatMoney(exchange.Amount)} / ${formatMoney(convertedAmount)}`
-}
-
-function getExchangeCurrencyCode(exchange: PaymentRegisterCurrencyExchange, account: PaymentAccount | null): string | undefined {
-  const defaultCurrency = exchange.Type === PaymentRegisterTransferType.Income
-    ? exchange.ToPaymentCurrencyRegister?.Currency?.Code
-    : exchange.FromPaymentCurrencyRegister?.Currency?.Code
-
-  if (account?.Type === PaymentRegisterType.Bank) {
-    const fromRegisterId = exchange.FromPaymentCurrencyRegister?.PaymentRegister?.Id
-
-    if (fromRegisterId && account.Id && fromRegisterId !== account.Id) {
-      return exchange.ToPaymentCurrencyRegister?.Currency?.Code || defaultCurrency
-    }
-  }
-
-  return defaultCurrency
 }
 
 function getPaymentMovementName(operation?: PaymentAccountIncomeOrder['PaymentMovementOperation'] | null): string | undefined {

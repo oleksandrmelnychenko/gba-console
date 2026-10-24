@@ -1,3 +1,4 @@
+import { validFinancialAxes } from './financialAxes'
 import type { NativeReportPreview } from './nativeReportPreview'
 import { readWorkbookSelection, sameWorkbookSelection, workbookSources, workbookText, workbookHasText,
   type WorkbookField, type WorkbookSelection } from './workbookPresentation'
@@ -122,9 +123,19 @@ export function bindProfitPreviewGrouping(request: ReportRequestBody, preview: N
     : { 73: 'SourceReceiptStorage', 78: 'SourceRegistrarWarehouse', 4: 'Organization', 21: 'Supplier' }
   const expected = request.sorted.Row.map(row => identities[row.type])
   const actual = preview.RowSchema.map(field => (field as { Identity?: string }).Identity)
+  const columns = request.sorted.Col.map(column => identities[column.type])
+  const matrix = columns.length > 0
+  const columnSchema = [...columns, '$measureGroup', '$measure']
+  const invalidColumns = matrix && (request.dataSource !== 35 || !validFinancialAxes(request)
+    || preview.ColumnSchema.length !== columnSchema.length
+    || preview.ColumnSchema.some((field, index) => field.Identity !== columnSchema[index])
+    || preview.Columns.some(column => column.Values.length !== columnSchema.length
+      || column.Values.some(value => !value.Identity || typeof value.Identity.Kind !== 'string'
+        || typeof value.Identity.Provenance !== 'string' || !(value.Identity.Value === null || typeof value.Identity.Value === 'string'))
+      || column.Values.at(-1)?.Identity?.Kind !== 'reportField'))
   if (preview.Request?.DataSource !== (request.dataSource === 35 ? 'NativeDayOrganizationGrossProfit' : 'NativeSupplierGrossProfit')
     || expected.length === 0 || expected.length > (request.dataSource === 35 ? 2 : 3) || expected.some(identity => !identity)
-    || new Set(expected).size !== expected.length || request.sorted.Col.length !== 0
+    || new Set(expected).size !== expected.length || invalidColumns
     || expected.includes('SourceReceiptStorage') && expected.includes('SourceRegistrarWarehouse')
     || actual.length !== expected.length || actual.some((identity, index) => identity !== expected[index])
     || preview.Rows.some(row => row.Values.length !== expected.length))

@@ -1,3 +1,4 @@
+import { financialAxesCapability, validFinancialAxes } from './financialAxes'
 import { validProfitRows, readReportConfiguration } from './reportConfiguration'
 import { requestProfitReadMode, profitReadModeConfigurationError, currentProfitMaximumDays } from './profitReadMode'
 import { originalNormalPeriodError } from './originalNormalPeriod'
@@ -18,7 +19,8 @@ export const DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS = [
   '94B4005056C0000811DF1A0C73BC9A12',
 ] as const
 export const DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS = ['88D1B8CB29DC7A6911ECFC60797DF65F'] as const
-const measures = [2, 3, 4, 6, 7, 8, 10, 12, 14, 15]
+const legacyMeasures = [2, 3, 4, 6, 7, 8, 10, 12, 14, 15]
+const measures = [2, 3, 4, 6, 7, 8, 10, 12, 14, 15, 11]
 const filters = new Set([0, 1, 2, 6, 9])
 const conditions = new Set([0, 2])
 const unsupported = new Set(['onec', 'comparison', 'xyz', 'revenuecomparison', 'buyersalesshare', 'returncomparison',
@@ -26,7 +28,7 @@ const unsupported = new Set(['onec', 'comparison', 'xyz', 'revenuecomparison', '
   'valuationclientagreementid', 'ordering', 'filterexpression', 'topgroups', 'threshold', 'hidezero',
   'abcclassification', 'returnsonly', 'discountmarkup',
   'provideddiscounts', 'priceanalysis'])
-const invalid = 'Валовий прибуток GBA за днем підтримує День → Організація, 1–10 показників і підтверджені точні відбори.'
+const invalid = 'Валовий прибуток GBA підтримує доступні групування Дата/Організація, показники й підтверджені точні відбори.'
 
 function validDate(value: string): boolean {
   if (!/^\d{4}-\d\d-\d\d$/.test(value)) return false
@@ -39,7 +41,7 @@ function validDate(value: string): boolean {
 export function isDayOrganizationGrossProfitDataset(dataset: ReportDataset): boolean {
   return dataset.DataSource === DAY_ORGANIZATION_GROSS_PROFIT_SOURCE && dataset.PeriodRequired === true
     && dataset.PeriodSupported === true && dataset.Groupings.map(field => field.Type).join(',') === '3,4'
-    && dataset.Measurements.map(field => field.Type).join(',') === measures.join(',')
+    && [legacyMeasures.join(','), measures.join(',')].includes(dataset.Measurements.map(field => field.Type).join(','))
     && dataset.Filters.map(field => field.Type).join(',') === '0,1,2,6,9'
 }
 
@@ -63,10 +65,11 @@ export function dayOrganizationGrossProfitConfigurationError(data: ReportRequest
     return `Період «Валового прибутку» — не більше ${maximumDays} календарних днів. Зменште період.`
   if (Object.entries(data).some(([key, value]) => unsupported.has(key.toLowerCase()) && value != null)) return invalid
   const sorted = data.sorted
+  const availableMeasures = dataset?.Measurements.map(field => field.Type) ?? measures
   if (!sorted || !Array.isArray(sorted.Row) || !Array.isArray(sorted.Col) || !Array.isArray(sorted.Measurements)
-    || !validProfitRows(data, [3, 4], 2) || dataset && !readReportConfiguration(dataset.configuration) && sorted.Row.map(item => item.type).join(',') !== '3,4'
-    || sorted.Measurements.length < 1 || sorted.Measurements.length > 10
-    || sorted.Measurements.some(item => !measures.includes(item.Type)
+    || !(financialAxesCapability(dataset) ? validFinancialAxes(data) : validProfitRows(data, [3, 4], 2)) || dataset && !financialAxesCapability(dataset) && !readReportConfiguration(dataset.configuration) && sorted.Row.map(item => item.type).join(',') !== '3,4'
+    || sorted.Measurements.length < 1 || sorted.Measurements.length > availableMeasures.length
+    || sorted.Measurements.some(item => !availableMeasures.includes(item.Type)
       || (item.IsChecked !== undefined && typeof item.IsChecked !== 'boolean'))
     || new Set(sorted.Measurements.map(item => item.Type)).size !== sorted.Measurements.length
     || sorted.Measurements.every(item => item.IsChecked === false)) return invalid

@@ -1,6 +1,7 @@
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { useState } from 'react'
-import { groupDescriptor } from '../data/currentVparivanieAnalysis.group-selection.test-fixtures'
+import { currentVparivanieAnalysisCapability } from '../data/currentVparivanieAnalysis'
+import { groupDescriptor, mixedDataset } from '../data/currentVparivanieAnalysis.group-selection.test-fixtures'
 import type { ReportSelectedValue } from '../types'
 import { MantineProvider } from '@mantine/core'
 import { render,screen,fireEvent,waitFor } from '@testing-library/react'
@@ -120,3 +121,22 @@ it('discards a previous period’s pending lookup page and does not merge stale 
   await screen.findByRole('option', { name: 'New period' })
   expect(screen.queryByRole('option', { name: 'Stale manager' })).toBeNull()
 })
+
+const availableFields = currentVparivanieAnalysisCapability(mixedDataset)!.filters.filter(field => field.available !== false)
+it.each(availableFields.flatMap(descriptor => [0, 1].map(condition => ({ descriptor, condition }))))(
+  'keeps the first value when selecting another for field $descriptor.type and condition $condition', async ({ descriptor, condition }) => {
+    const data = (id: number) => descriptor.valueKind === 'text' ? { value: id === 1 ? 'A' : 'B' }
+      : descriptor.valueKind === 'sourceRef' ? { Id: id === 1 ? '5608315DD4C6B3419948F4C603F71C9B' : 'AB04BE440FA9D34490714004C8951C7E' }
+      : descriptor.valueKind === 'documentRef' ? { kind: 'sale', id } : { Id: id }
+    const first = { Data: data(1), Name: 'First value', Value: 0 }
+    const second = { Data: data(2), Name: 'Second value', Value: 0 }
+    vi.mocked(searchAnalysisValues).mockReset().mockResolvedValue([{ id: 'second', name: second.Name, data: second.Data }])
+    const onChange = vi.fn()
+    render(<MantineProvider env="test"><I18nProvider><CurrentVparivanieAnalysisValuePicker descriptor={descriptor}
+      selection={{ IsChecked: true, SelectedField: { Type: descriptor.type, Name: descriptor.name }, FilterCondition: { Type: condition, Name: 'Condition' }, Values: [first] }}
+      selections={[]} from="2026-01-01" to="2026-10-24" onChange={onChange} /></I18nProvider></MantineProvider>)
+    fireEvent.click(screen.getByRole('combobox', { name: 'Значення' }))
+    fireEvent.click(await screen.findByRole('option', { name: second.Name }))
+    expect(onChange).toHaveBeenCalledWith([first, second])
+  },
+)

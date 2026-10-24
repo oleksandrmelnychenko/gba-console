@@ -1,4 +1,6 @@
+import { financialDataset } from '../data/financialAxes.test-fixtures'
 import { movementDataset } from '../data/currentVparivanieMovements.test-fixtures'
+import { mixedDataset } from '../data/currentVparivanieAnalysis.group-selection.test-fixtures'
 import { workbookDisplayFileName } from '../data/bug1274WorkbookGuide'
 import { changeReportPeriod, openReportPeriod, readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
@@ -82,6 +84,53 @@ it('opens every workbook from the switcher on its default period', async () => {
     await findOpenedWorkbook(file)
     await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/i)).toBeNull())
     expect(deskPeriodText(dateInput('Від').value, dateInput('До').value)).toBe(deskPeriodText(period.from, period.to))
+  }
+})
+
+it('restores editable measure checkboxes after switching from movement analysis back to profit workbooks', async () => {
+  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, profitDayDataset, profitSupplierDataset,
+    mixedDataset, cashModeDataset, settlementModeDataset])
+  await openDayWorkbook()
+  const measures = () => within(document.getElementById('workbook-settings-pane-measures')!)
+  const initial = measures().getAllByRole('checkbox').map(input => input.getAttribute('aria-label'))
+  const switcher = screen.getByRole('navigation', { name: 'Звіти' })
+  for (const file of ['Впарювання.xls', 'ВП.xls', 'ВП по постачальниках.xls', 'ВП.xls']) {
+    fireEvent.click(within(switcher).getByRole('button', { name: `Відкрити ${workbookDisplayFileName(file)}` }))
+    await findOpenedWorkbook(file)
+    await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/i)).toBeNull())
+    const inputs = measures().getAllByRole('checkbox')
+    if (file === 'ВП.xls') expect(inputs.map(input => input.getAttribute('aria-label'))).toEqual(initial)
+    else expect(inputs.length).toBeGreaterThan(0)
+  }
+})
+
+it('submits newly advertised profit measures from the unified form without losing them on date changes', async () => {
+  const marginVat = { Type: 11, Name: 'ПДВ прибутку, EUR' }
+  const grossMargin = { Type: 15, Name: 'Рентабельність з ПДВ, %' }
+  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets,
+    { ...profitDayDataset, Measurements: [...profitDayDataset.Measurements, marginVat] },
+    { ...profitSupplierDataset, Measurements: [...profitSupplierDataset.Measurements, marginVat, grossMargin] },
+    mixedDataset, cashModeDataset, settlementModeDataset])
+  await openDayWorkbook()
+  for (const [file, source, chosen] of [
+    ['ВП.xls', 35, [marginVat]],
+    ['ВП по постачальниках.xls', 38, [marginVat, grossMargin]],
+  ] as const) {
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Звіти' }))
+      .getByRole('button', { name: `Відкрити ${workbookDisplayFileName(file)}` }))
+    await findOpenedWorkbook(file)
+    await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/i)).toBeNull())
+    const controls = within(document.getElementById('workbook-settings-pane-measures')!)
+    fireEvent.click(controls.getByRole('button', { name: 'Очистити' }))
+    for (const measure of chosen) fireEvent.click(controls.getByRole('checkbox', { name: measure.Name }))
+    changeReportPeriod({ from: dateInput('До').value })
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toHaveProperty('disabled', false))
+    vi.mocked(previewStockReport).mockClear()
+    fireEvent.click(screen.getByRole('button', { name: 'Застосувати й показати' }))
+    await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
+    const request = vi.mocked(previewStockReport).mock.calls[0][0]
+    expect(request.dataSource).toBe(source)
+    expect(request.sorted.Measurements.map(measure => measure.Type)).toEqual(chosen.map(measure => measure.Type))
   }
 })
 
@@ -326,4 +375,30 @@ it('keeps a newly added blank supplier filter in Filters until its field is sele
   const fields = within(filters).getAllByRole('combobox', { name: 'Поле' })
   expect(fields.at(-1)).toHaveProperty('value', '')
   expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toHaveProperty('disabled', true)
+})
+
+it('moves financial dimensions between axes only with server capability and retains them after a date edit', async () => {
+  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, financialDataset, profitSupplierDataset,
+    currentVparivanieDataset, cashModeDataset, settlementModeDataset])
+  await openDayWorkbook()
+  fireEvent.click(screen.getByRole('button', { name: 'Перенести Організація до стовпців' }))
+  expect(screen.getByText('У файлі кожна організація в колонках буде окремим аркушем.')).toBeTruthy()
+  expect(screen.getByRole('button', { name: 'Перенести Дата до стовпців' })).toHaveProperty('disabled', true)
+  changeReportPeriod({ from: dateInput('До').value })
+  for (const [row, column] of [[3, 4], [4, 3]]) {
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toHaveProperty('disabled', false))
+    vi.mocked(previewStockReport).mockClear()
+    fireEvent.click(screen.getByRole('button', { name: 'Застосувати й показати' }))
+    await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
+    const data = vi.mocked(previewStockReport).mock.calls[0][0]
+    expect(data.sorted.Row.map(field => field.type)).toEqual([row])
+    expect(data.sorted.Col.map(field => field.type)).toEqual([column])
+    expect(data.from).toBe(data.to)
+    expect(data.profitReadMode).toBe(0)
+    if (row === 3) {
+      fireEvent.click(screen.getByRole('button', { name: 'Перенести Організація до рядків' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Перенести Дата до стовпців' }))
+      expect(screen.getByText('У файлі кожен день у колонках буде окремим аркушем.')).toBeTruthy()
+    }
+  }
 })

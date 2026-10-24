@@ -15,4 +15,3 @@ export function addWizardCartSplitItems(
 
   return addWizardSplitOrderItem(base, source, qty, comment, user)
 }
-

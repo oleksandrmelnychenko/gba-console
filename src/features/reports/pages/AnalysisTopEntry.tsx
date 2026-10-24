@@ -4,8 +4,8 @@ import { analysisValueIdentity, type AnalysisTextEntry } from '../data/currentVp
 import { isMultiValueReportCondition } from '../data/reportOptions'
 import type { ReportSelectedValue, ReportSelection } from '../types'
 
-export function AnalysisTopEntry({ capability, selection, onChange }: {
-  capability: AnalysisTextEntry; selection: ReportSelection; onChange: (values: ReportSelectedValue[]) => void
+export function AnalysisTopEntry({ capability, selection, onChange, multiple = isMultiValueReportCondition(selection.FilterCondition.Type) }: {
+  capability: AnalysisTextEntry; selection: ReportSelection; onChange: (values: ReportSelectedValue[]) => void; multiple?: boolean
 }) {
   const [draft, setDraft] = useState('')
   const code = draft.trim().toUpperCase()
@@ -14,7 +14,7 @@ export function AnalysisTopEntry({ capability, selection, onChange }: {
     if (!valid) return
     const value = { Data: { value: code }, Name: code, Value: 0 }
     const key = analysisValueIdentity(3, value.Data)
-    onChange(isMultiValueReportCondition(selection.FilterCondition.Type)
+    onChange(multiple
       ? [...selection.Values.filter(item => analysisValueIdentity(3, item.Data) !== key), value] : [value])
     setDraft('')
   }

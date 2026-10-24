@@ -1,3 +1,4 @@
+import type { DebtorDebtTotal } from '../sales-debtors/types'
 export type SalesUkraineStatusFilter =
   | 'all'
   | 'New'
@@ -79,10 +80,7 @@ export type SaleConsignmentDocument = {
   PdfDocumentURL?: string
 }
 
-export type SaleClientDebtTotal = {
-  TotalEuro?: number
-  TotalLocal?: number
-}
+export type SaleClientDebtTotal = DebtorDebtTotal
 
 export type SalesUkraineAgreement = SalesUkraineEntity & {
   Currency?: SalesUkraineCurrency

@@ -4,6 +4,7 @@ import type {
   DebtorDebtTotal,
   DebtorsCurrencyTotal,
 } from '../types'
+import { getKnownOverdueEuro, getKnownOverdueNative } from './debtorAging'
 
 export const EURO_CURRENCY_CODE = 'EUR'
 
@@ -12,33 +13,35 @@ export type CurrencyAmount = {
   amount: number
 }
 
-export type DebtorCurrencyField = 'RemainderDebt' | 'OverdueDebt' | 'TotalDebtInDays'
+export type DebtorCurrencyField = 'RemainderDebt' | 'OverdueDebt' | 'TotalDebtInDays' | 'CreditBalance'
 
 export function hasCurrencyBreakdown(debtor: ClientInDebt): boolean {
   return Array.isArray(debtor.CurrencyDebts)
 }
 
 export function getDebtorCurrencyAmounts(debtor: ClientInDebt, field: DebtorCurrencyField): CurrencyAmount[] {
-  return toCurrencyAmounts(debtor.CurrencyDebts ?? [], (item) => item[field])
+  return toCurrencyAmounts(debtor.CurrencyDebts ?? [], (item) => field === 'OverdueDebt' ? getKnownOverdueNative(item, item.OverdueDebt) : item[field])
 }
 
-export function getDebtorEuroAmount(debtor: ClientInDebt, field: DebtorCurrencyField): number {
+export function getDebtorEuroAmount(debtor: ClientInDebt, field: DebtorCurrencyField): number | null {
   if (field === 'RemainderDebt') {
-    return toFiniteNumber(debtor.RemainderDebtEuro ?? debtor.RemainderDebt)
+    return toEuroAmount(debtor.RemainderDebtEuro !== undefined ? debtor.RemainderDebtEuro : debtor.RemainderDebt)
   }
 
   if (field === 'OverdueDebt') {
-    return toFiniteNumber(debtor.OverdueDebtEuro ?? debtor.OverdueDebt)
+    return toEuroAmount(getKnownOverdueEuro(debtor, debtor.OverdueDebtEuro !== undefined ? debtor.OverdueDebtEuro : debtor.OverdueDebt))
   }
 
-  return toFiniteNumber(debtor.TotalDebtInDaysEuro)
+  if (field === 'CreditBalance') return toEuroAmount(debtor.CreditBalanceEuro)
+
+  return toEuroAmount(debtor.TotalDebtInDaysEuro)
 }
 
 export function getSummaryCurrencyAmounts(
   totals: DebtorsCurrencyTotal[],
-  field: 'RemainderDebt' | 'OverdueDebt',
+  field: 'RemainderDebt' | 'OverdueDebt' | 'CreditBalance',
 ): CurrencyAmount[] {
-  return toCurrencyAmounts(totals, (item) => item[field])
+  return toCurrencyAmounts(totals, (item) => field === 'OverdueDebt' ? getKnownOverdueNative(item, item.OverdueDebt) : item[field])
 }
 
 export function getStructureCurrencyTotals(total: DebtorDebtTotal | null): DebtorDebtCurrencyTotal[] {
@@ -47,7 +50,10 @@ export function getStructureCurrencyTotals(total: DebtorDebtTotal | null): Debto
   }
 
   if (Array.isArray(total.Currencies)) {
-    return total.Currencies.filter((item) => toFiniteNumber(item.Total) !== 0 || toFiniteNumber(item.TotalInEuro) !== 0)
+    return total.Currencies.filter((item) =>
+      toFiniteNumber(item.Total) !== 0 || item.TotalInEuro === null || toFiniteNumber(item.TotalInEuro) !== 0 ||
+      toFiniteNumber(item.CreditBalance) !== 0 || item.CreditBalanceEuro === null || toFiniteNumber(item.CreditBalanceEuro) !== 0,
+    )
   }
 
   const legacy: DebtorDebtCurrencyTotal[] = []
@@ -63,8 +69,51 @@ export function getStructureCurrencyTotals(total: DebtorDebtTotal | null): Debto
   return legacy
 }
 
+export type DebtBalanceLine = {
+  label: 'Борг' | 'Борг, EUR' | 'Кредитовий залишок' | 'Кредитовий залишок, EUR' | 'Відоме прострочення' | 'Відоме прострочення, EUR'
+  currencyCode: string
+  value: number | null
+}
+
+// Shared presentation for sale/payment cards that consume the same debt total endpoint.
+export function getDebtBalanceLines(total: DebtorDebtTotal | null): DebtBalanceLine[] {
+  if (!total) return []
+  const currencies = getStructureCurrencyTotals(total)
+  const lines: DebtBalanceLine[] = []
+  for (const item of currencies) {
+    if (toFiniteNumber(item.Total) !== 0) lines.push({ label: 'Борг', currencyCode: item.CurrencyCode || '', value: toFiniteNumber(item.Total) })
+    if (toFiniteNumber(item.CreditBalance) !== 0) lines.push({ label: 'Кредитовий залишок', currencyCode: item.CurrencyCode || '', value: toFiniteNumber(item.CreditBalance) })
+  }
+  if (total.TotalInEuro !== undefined) lines.push({ label: 'Борг, EUR', currencyCode: EURO_CURRENCY_CODE, value: toEuroAmount(total.TotalInEuro) })
+  if (total.CreditBalanceEuro !== undefined && (hasCreditBalance(total) || currencies.some(hasCreditBalance))) {
+    lines.push({ label: 'Кредитовий залишок, EUR', currencyCode: EURO_CURRENCY_CODE, value: toEuroAmount(total.CreditBalanceEuro) })
+  }
+  if (total.Aging !== undefined) {
+    for (const item of currencies) {
+      if ((item.Aging?.KnownOverdue ?? 0) > 0) lines.push({ label: 'Відоме прострочення', currencyCode: item.CurrencyCode || '', value: item.Aging?.KnownOverdue ?? null })
+    }
+    lines.push({ label: 'Відоме прострочення, EUR', currencyCode: EURO_CURRENCY_CODE, value: total.Aging?.KnownOverdueEuro ?? null })
+  }
+  return lines
+}
+
 export function formatCurrencyAmounts(amounts: CurrencyAmount[], format: (value: number) => string): string {
   return amounts.map((item) => `${format(item.amount)} ${item.currencyCode}`.trim()).join(' · ')
+}
+
+// Explicit null is an unknown valuation. Missing fields retain the legacy zero default.
+export function toEuroAmount(value: number | null | undefined): number | null {
+  if (value === undefined) return 0
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
+export function formatDebtAmount(value: number | null | undefined, format: (amount: number) => string, unknownLabel: string): string {
+  if (value === undefined) return '—'
+  return typeof value === 'number' && Number.isFinite(value) ? format(value) : unknownLabel
+}
+
+export function hasCreditBalance(value: { CreditBalance?: number; CreditBalanceEuro?: number | null }): boolean {
+  return toFiniteNumber(value.CreditBalance) > 0 || value.CreditBalanceEuro === null || toFiniteNumber(value.CreditBalanceEuro) > 0
 }
 
 export function toFiniteNumber(value: number | null | undefined): number {
@@ -73,7 +122,7 @@ export function toFiniteNumber(value: number | null | undefined): number {
 
 function toCurrencyAmounts<TItem extends { CurrencyCode?: string }>(
   items: TItem[],
-  pick: (item: TItem) => number | undefined,
+  pick: (item: TItem) => number | null | undefined,
 ): CurrencyAmount[] {
   return items
     .map((item) => ({ amount: toFiniteNumber(pick(item)), currencyCode: item.CurrencyCode?.trim() || '' }))

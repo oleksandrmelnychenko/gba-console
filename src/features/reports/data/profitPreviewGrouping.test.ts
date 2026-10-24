@@ -66,3 +66,37 @@ describe('editable profit grouping response proof', () => {
     expect(() => bindProfitPreviewGrouping(request, normalizeNativeReportPreview({ Preview: raw }))).toThrow('інше групування')
   })
 })
+
+function matrixFixture(columnType = 4) {
+  const rowType = columnType === 4 ? 3 : 4
+  const { request, raw } = fixture(35, [rowType])
+  request.sorted.Col = [{ type: columnType, key: String(columnType), label: String(columnType) }]
+  const key = (Caption: string, Kind: string, Value: string) => ({ Caption, Identity: { Kind, Value, Provenance: 'columnAxisKey' } })
+  return { request, raw: { ...raw,
+    ColumnSchema: [identities[columnType], '$measureGroup', '$measure'].map(Identity => ({ Caption: Identity, Identity })),
+    valueSemantics: [0, 1].map(columnSourceIndex => ({ ...raw.valueSemantics[0], columnSourceIndex })),
+    Columns: ['9223372036854775806', '9223372036854775807'].map((id, index) => ({ Ordinal: index, SourceIndex: index,
+      Values: [key('Однакова назва', columnType === 4 ? 'signedInteger' : 'date', id), key('Прибуток', 'string', 'profit'), key('Продажі', 'reportField', 'SalesValueWithoutVAT')] })),
+    Cells: [{ RowSourceIndex: raw.Rows[0].SourceIndex, ColumnSourceIndex: 1, Value: { Kind: 'null', Value: null, Provenance: 'producerCell' } }],
+  } }
+}
+it.each([3, 4])('binds financial column identity %i and preserves sparse versus explicit unknown cells', column => {
+  const { request, raw } = matrixFixture(column)
+  const preview = normalizeNativeReportPreview({ Preview: raw })
+  expect(() => bindProfitPreviewGrouping(request, preview)).not.toThrow()
+  expect(() => bindWorkbookPreview(request, preview)).not.toThrow()
+  expect(preview.Columns[0].Values[0].Identity?.Value).toBe('9223372036854775806')
+  expect(preview.Columns[1].Values[0].Identity?.Value).toBe('9223372036854775807')
+  expect(preview.Cells).toHaveLength(1)
+  expect(preview.Cells[0].Value).toMatchObject({ Kind: 'null', Value: null })
+})
+it('rejects wrong matrix schema, duplicate axes and missing typed column keys', () => {
+  const { request, raw } = matrixFixture()
+  const wrong = structuredClone(raw)
+  wrong.ColumnSchema[0].Identity = 'Day'
+  expect(() => bindProfitPreviewGrouping(request, normalizeNativeReportPreview({ Preview: wrong }))).toThrow('групування')
+  const missing = structuredClone(raw)
+  delete (missing.Columns[0].Values[0] as { Identity?: unknown }).Identity
+  expect(() => bindProfitPreviewGrouping(request, normalizeNativeReportPreview({ Preview: missing }))).toThrow('групування')
+  expect(() => bindProfitPreviewGrouping({ ...request, sorted: { ...request.sorted, Row: request.sorted.Col } }, normalizeNativeReportPreview({ Preview: raw }))).toThrow('групування')
+})

@@ -38,6 +38,25 @@ it('starts with ten day and organization measures and a bounded native preset', 
   expect(datasetPresetRequest(dataset, 'recorded-sale-gross-profit-by-day-organization', request)?.Data.dataSource).toBe(35)
 })
 
+it('accepts the complete margin VAT contract while preserving older templates and server capabilities', () => {
+  const expanded: ReportDataset = { ...dataset,
+    Measurements: [2, 3, 4, 6, 7, 8, 10, 12, 14, 15, 11].map(Type => ({ Type, Name: `Показник ${Type}` })) }
+  const previous = defaultDatasetRequest(dataset, '2026-09-01', '2026-09-23')
+  expect(datasetConfigurationError(previous, expanded)).toBeNull()
+  const all = { ...previous, sorted: { ...previous.sorted,
+    Measurements: expanded.Measurements.map(field => ({ ...field, IsChecked: true, parentName: '' })) } }
+  expect(dayOrganizationGrossProfitConfigurationError(all, expanded)).toBeNull()
+  expect(datasetConfigurationError(all, expanded)).toBeNull()
+  expect(dayOrganizationGrossProfitConfigurationError(all, dataset)).not.toBeNull()
+  const restored = normalizeSavedTemplate({ Id: '10000000-0000-4000-8000-000000000035', Revision: 1,
+    Name: 'ПДВ прибутку', Data: { DataSource: 35, From: all.from, To: all.to,
+      Sorted: all.sorted, Selections: [], DayOrganizationBasis: 0 } } as never)
+  expect(restored.Data.sorted.Measurements.map(item => item.Type)).toEqual(all.sorted.Measurements.map(item => item.Type))
+  expect(datasetConfigurationError(restored.Data, expanded)).toBeNull()
+  expect(dayOrganizationGrossProfitConfigurationError(all, { ...expanded,
+    Measurements: expanded.Measurements.map(field => field.Type === 11 ? { ...field, Type: 99 } : field) })).not.toBeNull()
+})
+
 it('accepts exact Fenix kind and service only with the advertised capability', () => {
   const request = defaultDatasetRequest(dataset, '2026-09-01', '2026-09-23')
   request.productClassification = { Version: 1, SourceWorld: 0,

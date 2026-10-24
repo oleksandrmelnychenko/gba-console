@@ -73,7 +73,7 @@ export type PaymentAccount = EntityFields & {
   SortCode?: string
   SwiftCode?: string
   ToDate?: string
-  TotalEuroAmount?: number
+  TotalEuroAmount?: number | null
   Type?: PaymentRegisterType
 }
 
@@ -94,7 +94,7 @@ export type PaymentAccountsSearchParams = {
 
 export type PaymentAccountsResponse = {
   paymentRegisters: PaymentAccount[]
-  totalEuroAmount: number
+  totalEuroAmount: number | null
 }
 
 export type PaymentAccountPayload = PaymentAccount & {
@@ -147,6 +147,7 @@ export type PaymentRegisterTransfer = EntityFields & {
 
 export type PaymentRegisterCurrencyExchange = EntityFields & {
   Amount?: number
+  TargetAmount?: number | null
   Comment?: string
   CurrencyTrader?: CurrencyTrader | null
   ExchangeRate?: number

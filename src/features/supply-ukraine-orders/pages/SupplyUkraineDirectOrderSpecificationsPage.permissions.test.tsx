@@ -56,12 +56,14 @@ vi.mock('../../../shared/ui/AppModal', () => ({
 
 vi.mock('../../product-delivery-protocols/components/SpecificationProductsGrid', () => ({
   SpecificationProductsGrid: ({
+    isLoading,
     onEditSpecification,
     onOpenProductCard,
   }: {
+    isLoading?: boolean
     onEditSpecification?: (item: { NetUid: string }) => void
     onOpenProductCard?: (productNetId: string) => void
-  }) => (
+  }) => isLoading ? <section aria-busy="true" /> : (
     <section>
       {onOpenProductCard && <button onClick={() => onOpenProductCard('product-1')}>product-card</button>}
       {onEditSpecification && <button onClick={() => onEditSpecification({ NetUid: 'item-1' })}>spec-edit</button>}

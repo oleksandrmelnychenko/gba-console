@@ -26,9 +26,16 @@ it('complete empty retains NULL totals; unavailable never exports a fabricated z
   expect(cashMovementsMatrix(emptyCashMovements()).at(-1)).toEqual(['Разом', '', '', '', '—', '—'])
   expect(cashMovementsExportError(unavailableCashMovements())).not.toBeNull(); expect(() => cashMovementsMatrix(unavailableCashMovements())).toThrow()
 })
-it('metadata includes all eight complete selected keys and source currency code without ISO or FX inference', () => {
+it('exports all eight readable filters without technical keys and preserves the source currency code', async () => {
   const result = response(); result.Selectors.ВидДенежныхСредств = [cashKind1]; result.Selectors.БанковскийСчетКасса = result.Choices.БанковскийСчетКасса.map(c => c.Key)
   expect(cashMovementsFilterSummary(result)).toHaveLength(8)
-  const csv = cashMovementsCsv(result); expect(csv).toContain('08:0000000F:'); expect(csv).toContain('08:00000038:')
+  const csv = cashMovementsCsv(result)
+  const XLSX = await import('xlsx'), book = XLSX.read(await (await cashMovementsXlsx(result)).arrayBuffer(), { type: 'array' })
+  const exported = [csv, JSON.stringify(cashMovementsPdfDefinition(result)), JSON.stringify(XLSX.utils.sheet_to_json(book.Sheets['Про звіт'], { header: 1 }))]
+  for (const text of exported) {
+    expect(text).not.toContain('08:0000000F:'); expect(text).not.toContain('08:00000038:')
+    for (const choice of result.Choices.БанковскийСчетКасса) expect(text).toContain(choice.Caption)
+  }
+  expect(result.Selectors.ВидДенежныхСредств).toEqual([cashKind1])
   expect(csv).toContain('980'); expect(csv).toContain('без валютного перерахунку'); expect(csv).toContain('відсутність внеску')
 })

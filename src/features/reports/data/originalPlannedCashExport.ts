@@ -19,7 +19,7 @@ export function plannedMatrix(result: OriginalPlannedResult): string[][] {
 function metadata(result: OriginalPlannedResult): string[][] {
   return [[plannedDefinitions[result.Variant].title], [`Період: ${result.From} — ${result.Through}`], ['Суми у записаних одиницях регістру, без валютного перерахунку.'],
     ...result.Filters.map(filter => [`Відбір: ${plannedFieldLabels[filter.Field]} · ${result.Choices.find(choice => choice.Field === filter.Field && choice.Type === filter.Type && choice.Table === filter.Table && choice.Reference === filter.Reference)?.Caption ?? 'Назва недоступна'}`]),
-    ['Нульові спостережені рядки збережено; назви, яких немає у довідниках, недоступні. Відповідність 1С не підтверджена.']]
+    ['Нульові рядки збережено; назви, яких немає у довідниках, недоступні.']]
 }
 export function plannedCsv(result: OriginalPlannedResult): string {
   const width = result.Grouping.length + 1, label = (value: string) => /^[\s\p{Cc}]*[=+\-@]/u.test(value) ? `'${value}` : value

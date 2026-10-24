@@ -1,3 +1,4 @@
+import type { DebtorDebtTotal } from '../sales-debtors/types'
 import {
   ACCOUNTING_PAYMENT_REGISTER_TYPE,
   INCOME_PAYMENT_OPERATION_CODE,
@@ -237,10 +238,7 @@ export type SupplyOrganization = NamedEntity & {
   SupplyOrganizationAgreements?: SupplyOrganizationAgreement[]
 }
 
-export type ClientDebtTotal = {
-  TotalEuro?: number
-  TotalLocal?: number
-}
+export type ClientDebtTotal = DebtorDebtTotal
 
 export type IncomeExchangeCalculation = {
   ConvertedAmount?: number
