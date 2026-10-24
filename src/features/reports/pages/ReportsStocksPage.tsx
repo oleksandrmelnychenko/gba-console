@@ -2522,6 +2522,7 @@ function InlineReportSelection({ dataset, selection, selections, index, dataSour
       onChange={event => change({ ...selection, IsChecked: event.currentTarget.checked })} />
     <div className="workbook-inline-selection__field"><Select label={t('Поле')} searchable allowDeselect={false}
       data={fields} placeholder={t('Оберіть поле')} value={selection.SelectedField.Name ? String(selection.SelectedField.Type) : null}
+      renderOption={({ option }) => <span title={analysis?.filters.find(field => String(field.type) === option.value)?.unavailabilityReason ?? undefined}>{option.label}</span>}
       onChange={value => {
         const field = analysis ? analysis.filters.find(item => String(item.type) === value) : null
         const option = filterFieldOptions.find(item => item.value === value)
@@ -2529,7 +2530,7 @@ function InlineReportSelection({ dataset, selection, selections, index, dataSour
           FilterCondition: field ? analysisFilterConditions(dataset, field.type)[0]
             : dataSource === 39 ? currentVparivanieFilterConditions(option?.field.Type ?? 0)[0] : conditions[0], Values: [] })
       }} />
-      {analysis?.filters.filter(field => field.available === false).map(field => <Text size="xs" c="dimmed" key={field.type}>{field.name}: {field.unavailabilityReason}</Text>)}
+      {analysis?.filters.filter(field => field.available === false && selection.SelectedField.Name && field.type === selection.SelectedField.Type).map(field => <Text size="xs" c="dimmed" key={field.type}>{field.name}: {field.unavailabilityReason}</Text>)}
     </div>
     <div className="workbook-inline-selection__condition"><Select label={t('Умова')} allowDeselect={false}
       data={conditions.map(condition => ({ value: String(condition.Type), label: condition.Name }))}

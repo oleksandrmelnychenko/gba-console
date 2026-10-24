@@ -4,7 +4,7 @@ import { beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { mixedDataset } from '../data/currentVparivanieAnalysis.group-selection.test-fixtures'
 import { currentVparivanieRequest } from '../data/currentVparivanie.test-fixtures'
-import { upgradeCurrentVparivanieAnalysis } from '../data/currentVparivanieAnalysis'
+import { currentVparivanieAnalysisCapability, upgradeCurrentVparivanieAnalysis } from '../data/currentVparivanieAnalysis'
 import { changeReportPeriod, readReportDateInput } from '../testing/reportPeriod'
 import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate, deleteServerReportTemplate } from '../api/reportWorkspaceApi'
 import { exportStockReportPreview, previewStockReport } from '../api/reportsApi'
@@ -87,6 +87,8 @@ it('preserves the whole draft across dates, cancels to the applied configuration
 it('edits filters inline, preserves values on incompatible operator changes and cancels the complete draft', async () => {
   await open()
   expect(screen.queryByRole('dialog')).toBeNull()
+  const unavailable = currentVparivanieAnalysisCapability(mixedDataset)!.filters.find(field => field.type === 15)!
+  expect(screen.queryByText(`${unavailable.name}: ${unavailable.unavailabilityReason}`)).toBeNull()
   for (const name of ['Відбори', 'Показники', 'Групування']) expect(screen.getByRole('group', { name })).toBeTruthy()
   const rule = screen.getByRole('group', { name: 'Умова відбору 1' })
   fireEvent.click(within(rule).getByRole('combobox', { name: 'Умова' }))
