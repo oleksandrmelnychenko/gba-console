@@ -15,9 +15,9 @@ export function PayablesSnapshotPanel({ workspace }: { workspace: PayablesWorksp
   const [selected, select] = useState<PayablesSelection | null>(null)
   const load = useCallback((signal: AbortSignal) => getPayablesSnapshot(workspace, signal), [workspace])
   const state = useWorkdayResource(load, `${workspace}:${revision}`)
-  return <Card withBorder className="app-section-card" data-testid="payables-snapshot-panel">
+  return <Card withBorder className="app-section-card role-dashboard-payables" data-workspace={workspace} data-testid="payables-snapshot-panel">
     <Stack gap={8}>
-      <Group justify="space-between" align="start">
+      <Group className="role-dashboard-payables__header" justify="space-between" align="center">
         <div><Text component="h2" className="app-section-title">{t('Кредиторська заборгованість')}</Text>
 </div>
         <Button leftSection={<RefreshCw size={14} />} size="xs" variant="default" onClick={refresh} loading={state.loading}>{t('Оновити відображення')}</Button>
@@ -35,7 +35,7 @@ export function PayablesSnapshotPanel({ workspace }: { workspace: PayablesWorksp
 
 function PayablesWorldCard({ world, onOpen }: { world: PayablesWorld; onOpen: (bucket: PayablesBucket) => void }) {
   const { t } = useI18n()
-  return <Card className="app-section-card" withBorder padding="sm" data-testid={`payables-world-${world.world}`}>
+  return <Card className="app-section-card role-dashboard-payables__world" withBorder padding="sm" data-testid={`payables-world-${world.world}`}>
     <Stack gap="xs">
       <Group justify="space-between"><TableChip tone="product" value={world.world === 'fenix' ? 'Fenix' : 'AMG'} />
         <TableChip tone={world.status === 'confirmed' ? 'document' : 'warning'} value={t(world.status === 'confirmed' ? 'Підтверджений зріз' : 'Дані недоступні')} /></Group>
@@ -70,13 +70,17 @@ export function PayablesSourceEvidence({ world }: { world: PayablesWorld }) {
 
 function PayablesCurrencyCard({ bucket, onOpen }: { bucket: PayablesBucket; onOpen: () => void }) {
   const { t } = useI18n()
-  return <Card className="app-section-card" withBorder padding="sm" data-testid={`payables-currency-${bucket.currencyCode}`}>
+  return <section className="role-dashboard-payables__currency" data-testid={`payables-currency-${bucket.currencyCode}`}>
     <Stack gap={5}>
-      <div><TableChip tone="source" value={payablesCurrencyLabel(bucket)} /></div>
-      <Group justify="space-between"><Text size="sm">{t('Борг постачальникам')}</Text><Text className="app-money">{formatPayablesAmount(bucket.payable)}</Text></Group>
-      <Group justify="space-between"><Text size="sm">{t('Аванси постачальникам')}</Text><Text className="app-money">{formatPayablesAmount(bucket.advance)}</Text></Group>
+      <Group justify="space-between" gap={8}>
+        <TableChip tone="source" value={payablesCurrencyLabel(bucket)} />
+        <Button leftSection={<List size={14} />} size="compact-xs" variant="default" onClick={onOpen}>{t('Розшифровка')} · {bucket.rowCount} {t('записів')}</Button>
+      </Group>
+      <dl className="role-dashboard-payables__amounts">
+        <div><dt>{t('Борг постачальникам')}</dt><dd className="app-money">{formatPayablesAmount(bucket.payable)}</dd></div>
+        <div><dt>{t('Аванси постачальникам')}</dt><dd className="app-money">{formatPayablesAmount(bucket.advance)}</dd></div>
+      </dl>
       <Text size="xs" c="dimmed">{t('Сальдо джерела')}: <span className="app-money">{formatPayablesAmount(bucket.signedBalance)}</span></Text>
-      <Button leftSection={<List size={14} />} size="xs" variant="default" onClick={onOpen}>{t('Розшифровка')} · {bucket.rowCount} {t('записів')}</Button>
     </Stack>
-  </Card>
+  </section>
 }

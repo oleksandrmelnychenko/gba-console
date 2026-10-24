@@ -72,6 +72,39 @@
 
 .workbook-switcher__title { font-size: 17px; }
 
+.workbook-switcher__navigation {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 4px;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: var(--mantine-radius-md);
+}
+.workbook-switcher__navigation .workbook-switcher__tabs {
+  flex: 1 1 auto;
+  width: auto;
+  border: 0;
+  border-radius: 4px;
+  padding: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--mantine-color-gray-4) transparent;
+  overscroll-behavior-x: contain;
+  scroll-padding-inline: 6px;
+}
+.workbook-switcher__tabs::-webkit-scrollbar { height: 5px; }
+.workbook-switcher__tabs::-webkit-scrollbar-thumb { background: var(--mantine-color-gray-4); border-radius: 3px; }
+.workbook-switcher__scroll { flex: 0 0 auto; }
+
+.published-report-workspace { min-width: 0; }
+:is(.published-movement, .published-responsibles) .workbook-settings__grid { align-items: start; }
+:is(.published-movement, .published-responsibles) .workbook-settings__control { padding: 8px; }
+:is(.published-movement, .published-responsibles) .workbook-result { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+:is(.published-movement, .published-responsibles) .workbook-result > * { min-width: 0; }
+:is(.published-movement, .published-responsibles) .workbook-result > .app-section-title { margin: 0; font-size: 14px; }
+.published-movement__empty { padding: 24px 12px; color: var(--mantine-color-gray-6); text-align: center; font-size: 13px; }
+
 .workbook-switcher__tabs .app-screen-tab:disabled { cursor: not-allowed; opacity: 0.55; }
 
 .workbook-switcher__extra {
@@ -801,13 +834,8 @@
 .workbook-settings__control .reports-stocks-selection-summary__condition { color: var(--desk-text); }
 .workbook-settings__control .reports-stocks-legacy-measurements__list {
   margin-top: 0;
-  border: 1px solid var(--desk-border);
-  border-radius: 8px;
-  overflow-x: auto;
 }
-.workbook-settings__control :is(.reports-stocks-measurement-columns, .reports-stocks-legacy-measurement) { min-width: 280px; padding: 8px 12px 8px 16px; }
-.workbook-settings__control .reports-stocks-measurement-columns { background: var(--mantine-color-gray-1); font-weight: 600; }
-.workbook-settings__control .reports-stocks-legacy-measurement { min-height: 44px; }
+.workbook-settings__control .reports-stocks-legacy-measurement { min-width: 0; padding: 12px; }
 .workbook-settings__control .reports-stocks-structure { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .workbook-settings__control .reports-stocks-grouping-field {
   align-content: start;
@@ -960,3 +988,29 @@
 /* The expanded section supplies the frame; its controls only need spacing. */
 .workbook-advanced .workbook-advanced-card { border: 0; border-radius: 0; padding: 0; }
 .workbook-advanced .workbook-presentation__option { border: 0; padding: 8px; }
+
+.published-responsibles__layout { display: grid; gap: 6px; margin: 0; padding-top: 8px; border-top: 1px solid var(--mantine-color-gray-2); font-size: 12px; }
+.published-responsibles__layout > div { display: grid; grid-template-columns: 86px minmax(0, 1fr); gap: 8px; }
+.published-responsibles__layout dt { color: var(--mantine-color-gray-6); }
+.published-responsibles__layout dd { margin: 0; }
+.published-responsibles .app-table-chip { max-width: 100%; }
+
+.published-responsibles__layout dt { display: flex; align-items: center; gap: 6px; }
+.published-responsibles__measures { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.published-responsibles__measures > span { padding: 10px 12px; background: var(--mantine-color-gray-0); border-radius: 8px; font-size: 13px; font-weight: 600; }
+.published-movement__actions { justify-content: flex-end; }
+.published-movement__date { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.published-movement__date > span { margin-left: 4px; color: var(--mantine-color-gray-7); }
+.published-movement__table tbody tr:not([data-summary]) { background: var(--mantine-color-white); }
+.published-movement__table tbody tr[data-summary] { background: var(--mantine-color-gray-1); font-weight: 600; }
+.published-movement__table tbody tr[data-summary]:not(:first-child) td { border-top: 2px solid var(--mantine-color-gray-3); }
+.published-movement__table .app-table-chip { max-width: 340px; }
+
+.published-responsibles__scope,
+.published-responsibles__layout { font-family: var(--font-mono); font-size: 13px; line-height: 1.5; color: var(--mantine-color-gray-7); }
+.published-responsibles__layout dt { color: var(--mantine-color-gray-7); }
+.published-responsibles__layout dd { color: var(--mantine-color-gray-8); }
+.published-movement__source { margin-left: auto; justify-content: flex-end; }
+
+/* Override the console-wide left alignment for numeric table headers and totals. */
+.published-movement__table > :is(thead, tfoot) > tr > .app-table-cell-number { text-align: right !important; }

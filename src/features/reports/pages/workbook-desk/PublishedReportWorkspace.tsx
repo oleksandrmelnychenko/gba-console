@@ -41,9 +41,8 @@ export function PublishedReportWorkspace({ tab, callerKey, onBusyChange }: {
   }, [tab, callerKey, attempt])
   const current = result?.attempt === attempt ? result : null
   const title = publishedReportTabs.find(item => item.key === tab)?.title ?? 'Звіт'
-  return <section className="app-section-card" aria-label={title}>
+  return <section className="published-report-workspace" aria-label={title}>
     <Stack gap="md">
-      <h2 className="app-section-title">{title}</h2>
       {!current ? <div role="status"><Loader size="sm" /><Text>Перевіряємо доступні дані звіту…</Text></div>
         : current.error ? <Alert color="yellow"><Text>{current.error}</Text><Button type="button" variant="default" mt="xs" onClick={() => setAttempt(value => value + 1)}>Повторити перевірку</Button></Alert>
         : current.content?.kind === 'responsibles' ? <OneCTurnoverResponsiblesPanel scope={current.content.scope} callerKey={callerKey} canGenerate onBusyChange={onBusyChange} />

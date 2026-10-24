@@ -1,7 +1,8 @@
-import { AppModalFooter } from '../../../shared/ui/AppModal'
-import { Alert, Button, Group, Stack, Text } from '@mantine/core'
+import { ActionIcon, Alert, Button, Group, Stack, Text, Tooltip } from '@mantine/core'
+import { Columns3, FileOutput, Info, ListTree, MonitorPlay, X } from 'lucide-react'
+import { TableChip } from '../../../shared/ui/TableChip'
+import { WorkbookPeriodField, WorkbookSettings } from './workbook-desk/WorkbookSettings'
 import { useEffect, useRef, useState } from 'react'
-import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { ApiError } from '../../../shared/api/apiClient'
 import { createStockReport } from '../api/reportsApi'
@@ -15,7 +16,6 @@ function sourceAsOf(from: string, to: string): string {
   const first = kyivTimestamp.format(new Date(from)), last = kyivTimestamp.format(new Date(to))
   return first === last ? first : `${first} — ${last}`
 }
-const kyivDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Kyiv', year: 'numeric', month: '2-digit', day: '2-digit' })
 
 type Applied = { result: ReportResult; from: string; to: string; sourceFrom: string; sourceTo: string }
 
@@ -69,53 +69,59 @@ function ResponsiblesForm({ scope, canGenerate, onClose, onExportOpenChange, onB
     return () => onExportOpenChange?.(false)
   }, [opened, onExportOpenChange])
   const pending = !!applied && (from !== applied.from || to !== applied.to)
-  const periodNotice = capturedPeriodNotice(scope, from, to, validScope)
   if (!canGenerate) return <Alert color="yellow">Немає права формування звітів.</Alert>
-  return <Stack gap="sm">
-    <ResponsiblesScopeSummary scope={scope} validScope={validScope} />
-    <Group align="start">
-      <AppDateInput type="date" label="Від" value={from} disabled={loading} onChange={event => setFrom(event.currentTarget.value)} />
-      <AppDateInput type="date" label="До" value={to} disabled={loading} onChange={event => setTo(event.currentTarget.value)} />
-    </Group>
-    {periodNotice ? <Alert color="yellow">{periodNotice}</Alert> : null}
+  const monthStart = `${scope.LastDay.slice(0, 7)}-01`
+  const periodStart = (days: number) => {
+    const start = new Date(Date.parse(scope.LastDay) - (days - 1) * 86400000).toISOString().slice(0, 10)
+    return start < scope.FirstDay ? scope.FirstDay : start
+  }
+  const presets = [
+    { label: 'Місяць', from: monthStart < scope.FirstDay ? scope.FirstDay : monthStart, to: scope.LastDay },
+    { label: '7 днів', from: periodStart(7), to: scope.LastDay },
+    { label: '30 днів', from: periodStart(30), to: scope.LastDay },
+  ]
+  const hasGaps = scope.LoadedDayCount < (Date.parse(scope.LastDay) - Date.parse(scope.FirstDay)) / 86_400_000 + 1
+  const sourceNote = `Доступний період: ${scope.FirstDay} — ${scope.LastDay}. Завантажено днів: ${scope.LoadedDayCount}.${validScope ? ` Дані з 1С станом на ${sourceAsOf(scope.OldestReadCompletedUtc, scope.NewestReadCompletedUtc)} (за Києвом). Час читання вибраних днів зазначено у файлі.` : ''}`
+  return <Stack gap={8} className="published-responsibles">
+    <WorkbookSettings unified disabled={loading} advanced={null}
+      period={<WorkbookPeriodField required from={from} to={to} minDate={scope.FirstDay} maxDate={scope.LastDay}
+        presets={presets} error={null} disabled={loading} onFromChange={setFrom} onToChange={setTo} />}
+      sections={[
+        { id: 'organizations', title: 'Організації', summary: scope.OrganizationNames.join(' · '), compactSummary: String(scope.OrganizationNames.length), content:
+          <Group gap={8}>{scope.OrganizationNames.map(name => <TableChip key={name} tone="product" value={name} />)}</Group> },
+        { id: 'measures', title: 'Показники', summary: 'Продажі й повернення', content:
+          <Stack gap={8}>
+            <Group gap={8}><Text size="sm" fw={600}>Продажі й повернення</Text><TableChip tone="source" value="EUR" /></Group>
+            <div className="published-responsibles__measures"><span>Сума без ПДВ</span><span>Сума з ПДВ</span></div>
+            <Text className="published-responsibles__scope">Усі товари та послуги</Text>
+            <dl className="published-responsibles__layout">
+              <div><dt><ListTree size={14} aria-hidden="true" />Рядки</dt><dd>Організація → відповідальний реалізації</dd></div>
+              <div><dt><Columns3 size={14} aria-hidden="true" />Колонки</dt><dd>Відповідальний замовлення</dd></div>
+            </dl>
+          </Stack> },
+      ]} />
+    {hasGaps ? <Alert color="yellow">У доступному періоді є пропуски. Оберіть період із завантаженими днями; відсутні дані не є нульовими продажами.</Alert> : null}
     {periodError ? <Alert color="yellow">{periodError}</Alert> : null}
     {error ? <Alert color="red">{error}</Alert> : null}
-    {applied ? <Stack gap={4}>
-      <Text aria-label="Період сформованого звіту">Сформований звіт: {applied.from} — {applied.to}.</Text>
-      <Text size="xs">Дані з 1С при формуванні: {sourceAsOf(applied.sourceFrom, applied.sourceTo)} (за Києвом).</Text>
-      {pending ? <Text c="orange">Є незастосовані зміни періоду. Відкриття файла показує попередній сформований звіт.</Text> : null}
-    </Stack> : null}
-    <details className="report-modal__details">
-      <summary>Відомості про дані</summary>
-      <Text size="xs">Завантажено днів: {scope.LoadedDayCount}. Час читання опублікованого набору, UTC: {scope.OldestReadCompletedUtc} — {scope.NewestReadCompletedUtc}. Час читання вибраних днів зазначено у файлі.</Text>
-    </details>
-    <AppModalFooter>
-      {applied ? <Button variant="light" onClick={() => setOpened(true)}>Відкрити сформований звіт</Button> : null}
-      {onClose ? <Button variant="default" disabled={loading} onClick={onClose}>Закрити</Button> : null}
-      <Button disabled={!validScope || !!periodError || loading} loading={loading} onClick={() => { void generate() }}>Застосувати й сформувати</Button>
-    </AppModalFooter>
+    {pending ? <Text size="xs" c="orange.8">Є незастосовані зміни періоду. Відкриття файла показує попередній сформований звіт.</Text> : null}
+    <div className="workbook-actions" role="region" aria-label="Дії зі звітом">
+      <div className="app-filter-bar workbook-toolbar"><div className="app-filter-actions workbook-actions__buttons">
+        <Tooltip label={sourceNote} multiline w={320}><ActionIcon variant="default" size={36} aria-label="Про дані продажів за відповідальними"><Info size={16} /></ActionIcon></Tooltip>
+        <div className="workbook-actions__delivery">
+          {onClose ? <Button variant="default" leftSection={<X size={16} />} disabled={loading} onClick={onClose}>Закрити</Button> : null}
+          {applied ? <Button variant="default" leftSection={<FileOutput size={16} />} disabled={loading} onClick={() => setOpened(true)}>Відкрити сформований звіт</Button> : null}
+          <Button leftSection={<MonitorPlay size={16} />} disabled={!validScope || !!periodError || loading} loading={loading} onClick={() => { void generate() }}>Застосувати й сформувати</Button>
+        </div>
+      </div></div>
+    </div>
+    {applied ? <section className="workbook-result" aria-label="Результат">
+      <h2 className="app-section-title">Результат</h2>
+      <Group justify="space-between" gap={8}>
+        <Text size="sm" fw={600} aria-label="Період сформованого звіту">{applied.from.split('-').reverse().join('.')} — {applied.to.split('-').reverse().join('.')}</Text>
+        <Text size="xs" c="dimmed">Дані з 1С при формуванні: {sourceAsOf(applied.sourceFrom, applied.sourceTo)} (за Києвом).</Text>
+      </Group>
+    </section> : null}
     <DocumentExportModal document={applied?.result.document} opened={opened && !!applied}
       title={applied ? `Продажі за відповідальними: ${applied.from} — ${applied.to}` : ''} onClose={() => setOpened(false)} />
   </Stack>
-}
-
-function ResponsiblesScopeSummary({ scope, validScope }: { scope: OneCTurnoverScopeSummary; validScope: boolean }) {
-  const hasGaps = scope.LoadedDayCount < (Date.parse(scope.LastDay) - Date.parse(scope.FirstDay)) / 86_400_000 + 1
-  return <>
-    <Text className="app-section-title" fw={600}>Організації та показники</Text>
-    <Text size="sm">{scope.OrganizationNames.join(' · ')}</Text>
-    <Text size="sm">Усі товари та послуги. Продажі й повернення: суми без ПДВ та з ПДВ у EUR.</Text>
-    <Text size="sm">Рядки: організація → відповідальний реалізації. Колонки: відповідальний замовлення.</Text>
-    <Text size="sm">Доступний період: {scope.FirstDay} — {scope.LastDay}.</Text>
-    {validScope ? <Text size="sm">Дані з 1С станом на {sourceAsOf(scope.OldestReadCompletedUtc, scope.NewestReadCompletedUtc)} (за Києвом).</Text> : null}
-    {hasGaps ? <Alert color="yellow">У доступному періоді є пропуски. Оберіть період із завантаженими днями; відсутні дані не є нульовими продажами.</Alert> : null}
-  </>
-}
-
-function capturedPeriodNotice(scope: OneCTurnoverScopeSummary, from: string, to: string, validScope: boolean): string | null {
-  if (!validScope || kyivDay.format(new Date(scope.OldestReadCompletedUtc)) > to) return null
-  const currentMonth = kyivDay.format(new Date()).slice(0, 7)
-  return from.slice(0, 7) <= currentMonth && to.slice(0, 7) >= currentMonth
-    ? 'Поточний місяць ще не завершено. Знімок отримано до завершення вибраного періоду.'
-    : 'Знімок отримано до завершення вибраного періоду. Дані за цей період ще не остаточні.'
 }

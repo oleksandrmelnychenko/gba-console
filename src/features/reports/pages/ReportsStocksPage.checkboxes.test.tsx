@@ -6,10 +6,6 @@ import { getReportDatasets, getServerReportTemplates } from '../api/reportWorksp
 import { profitDayDataset } from '../data/profitReadMode.test-fixtures'
 import { findOpenedWorkbook, openWorkbookSettingsSection } from '../testing/workbookDesk'
 import { ReportsStocksPage } from './ReportsStocksPage'
-const { readFileSync } = await import('node:fs' as string)
-const reportStyles = readFileSync('src/features/reports/pages/reports-pages.css', 'utf8')
-const workbookStyles = readFileSync('src/features/reports/pages/workbook-desk/workbook-desk.css', 'utf8')
-
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true, user: null }) }))
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(),
   getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn() }))
@@ -88,28 +84,17 @@ async function openMeasures() {
   return { ...view, panel: screen.getByRole('group', { name: 'Показники' }) }
 }
 
-it('keeps the entire VAT grid horizontally reachable in a panel narrower than its minimum columns', async () => {
+it('labels VAT choices inside each tile and omits unsupported variants', async () => {
   const { panel } = await openMeasures()
-  const style = document.createElement('style')
-  style.textContent = reportStyles + workbookStyles
-  document.head.append(style)
-  try {
-    const list = panel.querySelector<HTMLElement>('.reports-stocks-legacy-measurements__list')!
-    list.style.width = '220px'
-    const columns = [...list.querySelectorAll<HTMLElement>('.reports-stocks-measurement-columns, .reports-stocks-legacy-measurement')]
-    expect(columns.length).toBeGreaterThan(1)
-    expect(getComputedStyle(list).overflowX).toBe('auto')
-    const header = getComputedStyle(columns[0])
-    for (const column of columns) {
-      const css = getComputedStyle(column)
-      expect(css.gridTemplateColumns).toBe(header.gridTemplateColumns)
-      expect(parseFloat(css.minWidth)).toBeGreaterThanOrEqual(128 + 3 * 40 + 16 + 12)
-      expect(parseFloat(css.minWidth)).toBeGreaterThan(parseFloat(list.style.width))
-    }
-    expect(list.querySelectorAll('.reports-stocks-measurement-value input[type="checkbox"]')).toHaveLength(10)
-  } finally {
-    style.remove()
+  const tiles = [...panel.querySelectorAll('.reports-stocks-legacy-measurement')]
+  expect(tiles).toHaveLength(4)
+  for (const [index, tile] of tiles.entries()) {
+    const options = tile.querySelector('.reports-stocks-measurement-options')!
+    expect(within(options as HTMLElement).getByText('Без ПДВ')).toBeTruthy()
+    expect(within(options as HTMLElement).getByText('З ПДВ')).toBeTruthy()
+    expect(within(options as HTMLElement).queryByText('ПДВ') !== null).toBe(index < 2)
   }
+  expect(panel.querySelectorAll('.reports-stocks-measurement-value input[type="checkbox"]')).toHaveLength(10)
 })
 
 it('preserves all ten published measures and individual, group, all and clear selection', async () => {

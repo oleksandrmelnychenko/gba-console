@@ -78,14 +78,14 @@ export function WorkspaceSummary({
       <div className="role-dashboard-kpi-grid" style={kpiColumns(summary.metrics.length)}>
         {summary.metrics.map((metric) => {
           const route = metricDrilldownRoute(summary, metric)
-          return <MetricCard key={metric.key} metric={metric} onOpen={route ? () => navigate(route) : undefined} />
+          return <MetricCard key={metric.key} metric={metric} compact={summary.workspace === 'finance'} onOpen={route ? () => navigate(route) : undefined} />
         })}
       </div>
     )
   }
 
   return (
-    <section aria-label={t('Ключові показники')} className="role-dashboard-kpis">
+    <section aria-label={t('Ключові показники')} className="role-dashboard-kpis" data-workspace={summary?.workspace}>
       {toolbarTarget === undefined ? refreshStatus : toolbarTarget && createPortal(refreshStatus, toolbarTarget)}
       {isStale && <Alert color="orange" variant="light">{t('Показники застаріли: строк кешу минув. До успішного оновлення показано попередній розрахунок.')}</Alert>}
       {error && summary && (
@@ -96,7 +96,7 @@ export function WorkspaceSummary({
   )
 }
 
-function MetricCard({ metric, onOpen }: { metric: DashboardWorkspaceMetric; onOpen?: () => void }) {
+function MetricCard({ metric, onOpen, compact }: { metric: DashboardWorkspaceMetric; onOpen?: () => void; compact?: boolean }) {
   const { t } = useI18n()
   const formatted = formatMetricValue(metric)
   const content = (
@@ -107,12 +107,14 @@ function MetricCard({ metric, onOpen }: { metric: DashboardWorkspaceMetric; onOp
           <Text className="role-dashboard-kpi-label" lineClamp={2} title={metric.label}>{metric.label}</Text>
         </Tooltip>
         {metric.timeBasis !== 'unknown' && metric.timeBasis != null && <Text size="xs" c="dimmed">{t(metricTimeLabel(metric))}</Text>}
-        {!metric.hasData && metric.unknownReason && <Text size="xs" c="orange" lineClamp={2} title={metric.unknownReason}>{metric.unknownReason}</Text>}
         <span className="role-dashboard-kpi-value">
           {metric.hasData ? formatted.value : t(formatted.value)}
           {formatted.unit && <span className="role-dashboard-kpi-unit">{formatted.unit}</span>}
         </span>
-        <MetricComparison metric={metric} />
+        {!metric.hasData && metric.unknownReason && <Tooltip multiline w={320} label={metric.unknownReason}>
+          <Text className="role-dashboard-kpi-reason" size="xs" c="orange" lineClamp={2} title={metric.unknownReason}>{metric.unknownReason}</Text>
+        </Tooltip>}
+        <MetricComparison metric={metric} compact={compact} />
       </span>
       <span className="role-dashboard-kpi-aside">
         {onOpen && <ArrowUpRight aria-hidden="true" className="role-dashboard-kpi-open" size={16} />}

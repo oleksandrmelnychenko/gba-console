@@ -1,3 +1,4 @@
+import { saleAgreementLabel, saleAgreementTitle } from '../../../shared/saleAgreementLabel'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import './sales-online-toolbar.css'
@@ -1123,7 +1124,7 @@ export const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
   const clientName = getSaleClientDisplayName(sale)
   const retailClient = getRetailClientDetails(sale)
   const manager = getSaleUserName(sale)
-  const contract = sale.ClientAgreement?.Agreement?.Name
+  const contract = saleAgreementLabel(sale.ClientAgreement?.Agreement?.Name)
   const transporter = getSaleTransporterName(sale)
   const localAmount = getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount)
   const vat = getNumber(sale.Order?.TotalVat)
@@ -1264,7 +1265,7 @@ export const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
             {contract && (
               <>
                 <span className="sg-meta-sep">:</span>
-                <span className="sg-meta-contract">{contract}</span>
+                <span className="sg-meta-contract" title={saleAgreementTitle(sale.ClientAgreement?.Agreement?.Name)}>{contract}</span>
               </>
             )}
             {Array.isArray(sale.HistoryInvoiceEdit) && sale.HistoryInvoiceEdit.length > 0 && (
@@ -1397,7 +1398,7 @@ export function SaleDetail({ sale }: { sale: SalesOnlineShopSale }) {
   const uahRate = getSaleUahRate(sale)
   const clientRows: Array<[string, unknown]> = [
     [t('Клієнт'), getSaleClientName(sale)],
-    [t('Договір'), sale.ClientAgreement?.Agreement?.Name],
+    [t('Договір'), saleAgreementLabel(sale.ClientAgreement?.Agreement?.Name)],
     [t('Організація'), <TableChip tone="product" value={getOrganizationDisplayName(sale.ClientAgreement?.Agreement?.Organization)} />],
     [t('Телефон'), sale.ClientAgreement?.Client?.MobileNumber || sale.ClientAgreement?.Client?.PhoneNumber],
   ]
@@ -1426,7 +1427,7 @@ export function SaleDetail({ sale }: { sale: SalesOnlineShopSale }) {
             {displayValue(getSaleClientDisplayName(sale))}
           </OverflowTooltipText>
           <OverflowTooltipText className="sale-detail-subtitle">
-            {displayValue(sale.ClientAgreement?.Agreement?.Name)}
+            {displayValue(saleAgreementLabel(sale.ClientAgreement?.Agreement?.Name))}
           </OverflowTooltipText>
           <div className="sale-detail-status-strip">
             <Badge className={`app-role-pill sale-detail-pill ${getSaleStatusPillClass(sale)}`} variant="light">

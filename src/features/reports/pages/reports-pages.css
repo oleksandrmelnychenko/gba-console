@@ -499,6 +499,7 @@
 }
 
 .reports-stocks-legacy-measurements {
+  container-type: inline-size;
   min-width: 0;
 }
 
@@ -614,6 +615,9 @@
 }
 
 .reports-stocks-legacy-measurements__list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
   margin-top: 12px;
   min-width: 0;
 }
@@ -624,12 +628,17 @@
 }
 
 .reports-stocks-legacy-measurement {
-  align-items: center;
-  border-bottom: 1px solid var(--mantine-color-gray-2);
+  align-content: start;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
   display: grid;
-  grid-template-columns: minmax(128px, 1fr) repeat(3, minmax(40px, 80px));
-  min-height: 44px;
+  gap: 12px;
+  padding: 12px;
   min-width: 0;
+}
+
+@container (max-width: 520px) {
+  .reports-stocks-legacy-measurements__list { grid-template-columns: minmax(0, 1fr); }
 }
 
 .reports-stocks-legacy-measurement .mantine-Checkbox-body {
@@ -917,33 +926,19 @@
   }
 }
 
-.reports-stocks-measurement-columns {
-  align-items: center;
-  border-bottom: 1px solid var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-9);
-  display: grid;
-  font-size: 12px;
-  grid-template-columns: minmax(128px, 1fr) repeat(3, minmax(40px, 80px));
-  min-height: 30px;
+.reports-stocks-measurement-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding-top: 10px;
+  border-top: 1px solid var(--mantine-color-gray-2);
 }
 
-.reports-stocks-measurement-columns > span:not(:first-child) {
-  text-align: center;
-}
-
-.reports-stocks-measurement-value {
-  grid-row: 1;
-  justify-self: center;
-}
+.reports-stocks-measurement-value .mantine-Checkbox-label { font-size: 12px; }
 
 .reports-stocks-measurement-unit {
   color: var(--mantine-color-gray-9);
-  grid-column: 2 / -1;
-  text-align: center;
-}
-
-.reports-stocks-legacy-measurement:last-child {
-  border-bottom: 0;
+  padding-left: 28px;
 }
 
 .reports-stocks-count {

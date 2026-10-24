@@ -1,3 +1,4 @@
+import { saleAgreementLabel, saleAgreementTitle } from '../../../shared/saleAgreementLabel'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -1639,7 +1640,7 @@ const SaleGridRow = memo(function SaleGridRow({
   const retailLine = getRetailClientLine(sale)
   const date = getSaleDate(sale)
   const manager = getSaleUserName(sale)
-  const contract = sale.ClientAgreement?.Agreement?.Name
+  const contract = saleAgreementLabel(sale.ClientAgreement?.Agreement?.Name)
   const transporter = getSaleTransporterName(sale)
   const transporterData = sale.Transporter ?? sale.UpdateDataCarrier?.[0]?.Transporter
   const localAmount = getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount)
@@ -1841,7 +1842,7 @@ const SaleGridRow = memo(function SaleGridRow({
                 </span>
               </>
             )}
-            {contract && <span className="app-table-chip sg-meta-contract" title={contract}>{contract}</span>}
+            {contract && <span className="app-table-chip sg-meta-contract" title={saleAgreementTitle(sale.ClientAgreement?.Agreement?.Name)}>{contract}</span>}
             {isEdited && (
               <Tooltip label={t('Рахунок редаговано')}>
                 <Pencil size={12} style={{ color: 'var(--mantine-color-orange-6)' }} />
@@ -2244,7 +2245,7 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
         meta={<>
           <TableChip tone="document" value={sale.SaleNumber?.Value} />
           {date && <span className="sale-detail-date">{formatDate(date)} {formatTime(date)}</span>}
-          <TableChip value={sale.ClientAgreement?.Agreement?.Name} />
+          <TableChip value={saleAgreementLabel(sale.ClientAgreement?.Agreement?.Name)} title={saleAgreementTitle(sale.ClientAgreement?.Agreement?.Name)} />
           <div className="sale-detail-status-strip">
             <Badge className={`app-role-pill sale-detail-pill ${getSaleStatusPillClass(sale)}`} variant="light">
               {getSaleStatusLabel(sale)}
@@ -2288,7 +2289,7 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
           rows={[
             [t('Клієнт'), getSaleClientName(sale)],
             [t('Покупець'), getRetailClientLine(sale)],
-            [t('Договір'), <TableChip value={sale.ClientAgreement?.Agreement?.Name} />],
+            [t('Договір'), <TableChip value={saleAgreementLabel(sale.ClientAgreement?.Agreement?.Name)} title={saleAgreementTitle(sale.ClientAgreement?.Agreement?.Name)} />],
             [t('Організація'), <TableChip tone="product" value={getOrganizationDisplayName(sale.ClientAgreement?.Agreement?.Organization)} />],
             [
               t('Телефон'),

@@ -1,13 +1,15 @@
 import { WorkbookSectionToolbar } from './WorkbookSectionActions'
 import { ToolbarDateRangeFilter } from '../../../../shared/ui/ToolbarDateRangeFilter'
 import { Button, Select } from '@mantine/core'
-import { Building2, ChartNoAxesCombined, ChevronDown, ChevronRight, ChevronUp, ListFilter, ListTree, SlidersHorizontal } from 'lucide-react'
+import { Building2, ChartNoAxesCombined, ChevronDown, ChevronRight, ChevronUp, ListFilter, ListTree, Package, SlidersHorizontal, Warehouse } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import '../../../../shared/ui/selection-surface.css'
 import type { ReportPeriodPreset } from '../../data/bug1274WorkbookGuide'
 
 const SECTION_ICONS: Record<string, ReactNode> = {
+  product: <Package size={16} aria-hidden="true" />,
+  warehouses: <Warehouse size={16} aria-hidden="true" />,
   organizations: <Building2 size={16} aria-hidden="true" />,
   filters: <ListFilter size={16} aria-hidden="true" />,
   measures: <ChartNoAxesCombined size={16} aria-hidden="true" />,
@@ -63,9 +65,9 @@ export function WorkbookSettings({ sections, advanced, disabled = false, unified
         </WorkbookSectionToolbar>
       </section>)}
     </div>
-    <details className="workbook-settings__advanced"><summary><SlidersHorizontal size={16} aria-hidden="true" />{t('Додатково')}<ChevronDown size={15} aria-hidden="true" /></summary>
+    {advanced != null && <details className="workbook-settings__advanced"><summary><SlidersHorizontal size={16} aria-hidden="true" />{t('Додатково')}<ChevronDown size={15} aria-hidden="true" /></summary>
       <fieldset className="workbook-settings__control" disabled={disabled}>{advanced}</fieldset>
-    </details>
+    </details>}
   </section>
   return <section className="workbook-settings" aria-labelledby="workbook-settings-title">
     <div className="workbook-settings__head">
@@ -114,6 +116,7 @@ export function WorkbookSettings({ sections, advanced, disabled = false, unified
 }
 
 type PeriodProps = {
+  required?: boolean
   disabled?: boolean
   from: string
   to: string
@@ -125,7 +128,7 @@ type PeriodProps = {
   onToChange: (value: string) => void
 }
 
-export function WorkbookPeriodField({ from, to, minDate, maxDate, presets, error, disabled, onFromChange, onToChange }: PeriodProps) {
+export function WorkbookPeriodField({ from, to, minDate, maxDate, presets, error, disabled, required, onFromChange, onToChange }: PeriodProps) {
   const { t } = useI18n()
   const activePreset = presets.find(preset => preset.from === from && preset.to === to)
   return <div className="workbook-period">
@@ -137,7 +140,7 @@ export function WorkbookPeriodField({ from, to, minDate, maxDate, presets, error
         if (preset) { onFromChange(preset.from); onToChange(preset.to) }
       }} /> : null}
     <div role="group" aria-label={t('Період')} aria-describedby={error ? 'workbook-period-error' : undefined}>
-      <ToolbarDateRangeFilter from={from} to={to} min={minDate} max={maxDate} disabled={disabled}
+      <ToolbarDateRangeFilter from={from} to={to} min={minDate} max={maxDate} disabled={disabled} required={required}
         onChange={range => { onFromChange(range.from); onToChange(range.to) }} />
     </div>
     {error ? <p id="workbook-period-error" className="workbook-period__error" role="alert">{error}</p> : null}

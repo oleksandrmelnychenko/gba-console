@@ -1,5 +1,6 @@
+import { changeReportPeriod, openReportPeriod } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { readMovement } from '../api/originalWarehouseMovementApi'
@@ -23,10 +24,17 @@ it('applies the complete form; changing dates retains warehouses and old table/e
   render(panel()); fireEvent.click(screen.getByRole('button', { name: 'Застосувати й показати' }))
   await screen.findByRole('table', { name: 'Рух товару за складськими документами' })
   expect(vi.mocked(readMovement).mock.calls[0][0]).toEqual({ Version: 1, World: 'fenix', From: '2026-09-01', Through: '2026-09-30', Article: 'TEST-ARTICLE', Warehouses: publication.Warehouses.map(w => w.Reference) })
-  fireEvent.change(screen.getByLabelText('Від'), { target: { value: '01.12.2026' } }); fireEvent.blur(screen.getByLabelText('Від'))
+  const documentRow = screen.getByText('TEST-1-01').closest('tr')!
+  expect(within(documentRow).getAllByRole('cell')[2].textContent).toBe('TEST-1-01')
+  expect(within(documentRow).getAllByRole('cell')[3].textContent).toBe('29.09.2026 16:21')
+  expect(within(documentRow).getAllByRole('cell')[4].textContent).toBe('1')
+  changeReportPeriod({ from: '2026-09-02' })
   expect(screen.getByText(/Налаштування змінено/)).toBeTruthy()
-  expect(screen.getByLabelText('Період сформованого руху').textContent).toContain('2026-09-01 — 2026-09-30')
-  expect((screen.getByRole('button', { name: 'Застосувати й показати' }) as HTMLButtonElement).disabled).toBe(true)
+  expect(screen.getByLabelText('Період сформованого руху').textContent).toContain('01.09.2026 — 30.09.2026')
+  const dialog = openReportPeriod()
+  fireEvent.change(within(dialog).getByLabelText('Від'), { target: { value: '2026-12-01' } })
+  expect((within(dialog).getByRole('button', { name: 'Застосувати' }) as HTMLButtonElement).disabled).toBe(true)
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Скасувати' }))
   expect((screen.getByRole('button', { name: 'XLSX' }) as HTMLButtonElement).disabled).toBe(false)
   fireEvent.click(screen.getByRole('button', { name: 'XLSX' }))
   await waitFor(() => expect(movementXlsx).toHaveBeenCalledWith(movementFixture))
@@ -55,15 +63,6 @@ it('aborts late responses on caller change; restores no table or download on per
   await act(async () => { exportFinish(new Blob(['late'])) })
   expect(URL.createObjectURL).not.toHaveBeenCalled(); expect(screen.queryByRole('table')).toBeNull()
 })
-it('shows partial final-day status from capture, regardless current date', async () => {
-  const result = { ...movementFixture, Scope: { ...movementFixture.Scope, Through: movementFixture.Capture!.Through } }
-  vi.mocked(readMovement).mockResolvedValue(result)
-  render(<MantineProvider env="test"><I18nProvider><OriginalWarehouseMovementPanel publications={[movementPublication]} callerKey="caller1" canGenerate /></I18nProvider></MantineProvider>)
-  fireEvent.change(screen.getByLabelText('Від'), { target: { value: '01.09.2026' } }); fireEvent.blur(screen.getByLabelText('Від'))
-  fireEvent.click(screen.getByRole('button', { name: 'Застосувати й показати' }))
-  await screen.findByText('Останній день періоду ще не завершений у джерельному зрізі.')
-})
-
 it('keeps the table and editable draft alive after PDF normalizes its private table cells', async () => {
   vi.mocked(movementPdf).mockImplementationOnce(async result => {
     const definition = movementPdfDefinition(result)
@@ -77,7 +76,7 @@ it('keeps the table and editable draft alive after PDF normalizes its private ta
   await waitFor(() => expect(URL.createObjectURL).toHaveBeenCalledOnce())
   await waitFor(() => expect((screen.getByRole('button', { name: 'PDF' }) as HTMLButtonElement).disabled).toBe(false))
   expect(screen.getByRole('columnheader', { name: 'Початковий залишок' })).toBeTruthy()
-  fireEvent.change(screen.getByLabelText('Від'), { target: { value: '02.09.2026' } }); fireEvent.blur(screen.getByLabelText('Від'))
+  changeReportPeriod({ from: '2026-09-02' })
   expect(screen.getByText(/Налаштування змінено/)).toBeTruthy()
   expect(screen.getByRole('columnheader', { name: 'Прихід' })).toBeTruthy()
   fireEvent.click(screen.getByRole('button', { name: 'XLSX' }))

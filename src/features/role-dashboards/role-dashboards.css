@@ -1167,5 +1167,55 @@ button.role-dashboard-attention-item:focus-visible {
 .role-dashboard-comparison { display: grid; gap: 3px; min-width: 0; margin-top: 4px; }
 .role-dashboard-comparison > .mantine-Text-root { font-family: var(--font-mono); font-size: 10px; line-height: 1.4; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .role-dashboard-comparison > .role-dashboard-comparison-period { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* Finance keeps equal-width, top-aligned metrics without stretching short values. */
+.role-dashboard-kpis[data-workspace='finance'] .role-dashboard-kpi-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.role-dashboard-kpis[data-workspace='finance'] .role-dashboard-kpi {
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+}
+.role-dashboard-kpis[data-workspace='finance'] .role-dashboard-kpi-icon { width: 20px; height: 20px; }
+.role-dashboard-kpis[data-workspace='finance'] .role-dashboard-kpi-body { gap: 5px; }
+.role-dashboard-kpis[data-workspace='finance'] .role-dashboard-kpi-label { min-height: 30px; }
+.role-dashboard-kpis[data-workspace='finance'] .role-dashboard-kpi-value { margin-block: 3px; flex-wrap: wrap; line-height: 1.2; }
+.role-dashboard-kpis[data-workspace='finance'] .role-dashboard-kpi.is-empty .role-dashboard-kpi-value { color: var(--mantine-color-gray-7); }
+.role-dashboard-kpis[data-workspace='finance'] .role-dashboard-kpi-reason { font-size: 11px; line-height: 1.4; }
+.role-dashboard-kpis[data-workspace='finance'] .role-dashboard-comparison { padding-top: 7px; border-top: 1px solid var(--mantine-color-gray-2); }
+.role-dashboard-kpis[data-workspace='finance'] .role-dashboard-comparison > .mantine-Text-root { color: var(--mantine-color-gray-7); font-size: 11px; }
+
+.role-dashboard-payables { padding: 12px !important; margin-top: 6px; }
+.role-dashboard-payables__header { padding-bottom: 8px; border-bottom: 1px solid var(--mantine-color-gray-2); }
+.role-dashboard-payables__header .app-section-title { font-size: 14px; }
+.role-dashboard-payables .role-dashboard-payables__world {
+  align-self: start;
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  border-radius: 8px;
+  padding: 12px !important;
+  min-width: 0;
+}
+.role-dashboard-payables__currency { padding-block: 10px; border-top: 1px solid var(--mantine-color-gray-2); min-width: 0; }
+.role-dashboard-payables__currency:last-child { padding-bottom: 0; }
+.role-dashboard-payables__amounts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 4px 0; }
+.role-dashboard-payables__amounts dt { font-size: 12px; color: var(--mantine-color-gray-7); }
+.role-dashboard-payables__amounts dd { margin: 4px 0 0; font-size: 18px; line-height: 1.3; overflow-wrap: anywhere; }
+.role-dashboard-payables .role-dashboard-source-date { font-size: 12px; }
+.role-dashboard-payables .role-dashboard-data-details { font-size: 11px; }
+
+@media (max-width: 1100px) {
+  .role-dashboard-kpis[data-workspace='finance'] .role-dashboard-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .role-dashboard-kpis[data-workspace='finance'] .role-dashboard-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 480px) {
+  .role-dashboard-kpis[data-workspace='finance'] .role-dashboard-kpi-grid { grid-template-columns: minmax(0, 1fr); }
+  .role-dashboard-kpis[data-workspace='finance'] .role-dashboard-kpi-label { min-height: 0; }
+}
 .role-dashboard-kpi.is-warning .role-dashboard-kpi-value,
 .role-dashboard-kpi.is-critical .role-dashboard-kpi-value { color: var(--mantine-color-gray-8); }

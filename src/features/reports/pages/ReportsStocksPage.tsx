@@ -2093,12 +2093,6 @@ function LegacyReportBuilder({
       </div>
 
       <div className="reports-stocks-legacy-measurements__list">
-        {!hasFixedReportAxes(dataSource) || measurements.some(group => group.SubList.length > 1) ? <div className="reports-stocks-measurement-columns" aria-hidden="true">
-          <span>{t('Показник')}</span>
-          <span>{t('Без ПДВ')}</span>
-          <span>{t('ПДВ')}</span>
-          <span>{t('З ПДВ')}</span>
-        </div> : null}
         {measurements.map((group, groupIndex) => {
           const groupLabel = group.Label || grossProfitMeasureGroupLabel(dataSource, group.Name) || getReportFieldLabel(group.Name)
           const hasDistinctChildren =
@@ -2114,10 +2108,10 @@ function LegacyReportBuilder({
                 label={measurementGroupCaption(group.Name, groupLabel)}
                 onChange={() => toggleMeasurementGroup(measurements, groupIndex, onMeasurementsChange)}
               />
-              {hasDistinctChildren ? group.SubList.map((item, itemIndex) => (
+              {hasDistinctChildren ? <div className="reports-stocks-measurement-options">{group.SubList.map((item, itemIndex) => (
                 <Checkbox
                   className="reports-stocks-measurement-value"
-                  style={{ gridColumn: item.Name.endsWith('WithoutVAT') ? 2 : item.Name.endsWith('WithVAT') ? 4 : 3 }}
+                  label={item.Name.endsWith('WithoutVAT') ? t('Без ПДВ') : item.Name.endsWith('WithVAT') ? t('З ПДВ') : item.Name.endsWith('VAT') ? t('ПДВ') : (item.Label || getReportFieldLabel(item.Name))}
                   aria-label={(item.Label || getReportFieldLabel(item.Name))}
                   title={(item.Label || getReportFieldLabel(item.Name))}
                   checked={item.IsChecked}
@@ -2125,7 +2119,7 @@ function LegacyReportBuilder({
                   size="sm"
                   onChange={() => toggleMeasurementItem(measurements, groupIndex, itemIndex, onMeasurementsChange)}
                 />
-              )) : <Text className="reports-stocks-measurement-unit" size="xs">{measurementUnit(group.SubList[0]?.Type, groupLabel)}</Text>}
+              ))}</div> : <Text className="reports-stocks-measurement-unit" size="xs">{measurementUnit(group.SubList[0]?.Type, groupLabel)}</Text>}
             </div>
           )
         })}

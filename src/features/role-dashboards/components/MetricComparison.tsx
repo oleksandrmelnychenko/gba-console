@@ -6,7 +6,7 @@ import { formatMetricValue } from '../utils/metricView'
 const percent = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, signDisplay: 'exceptZero' })
 const displayDate = (value: string) => value.split('-').reverse().join('.')
 
-export function MetricComparison({ metric }: { metric: DashboardWorkspaceMetric }) {
+export function MetricComparison({ metric, compact = false }: { metric: DashboardWorkspaceMetric; compact?: boolean }) {
   const { t } = useI18n()
   const comparison = metric.comparison
   if (!comparison) return null
@@ -15,7 +15,7 @@ export function MetricComparison({ metric }: { metric: DashboardWorkspaceMetric 
     <Text className="role-dashboard-comparison-period" component="span" size="xs" c="dimmed">{t('Попередній період такої самої тривалості')}{interval}</Text>
     <Text component="span" size="xs">{t('Попереднє значення')}: {previous}</Text>
     {change && <Text component="span" size="xs">{t('Зміна')}: {change}</Text>}
-    {comparison.unknownReason && <Text component="span" size="xs" c="orange">{t(comparison.unknownReason)}</Text>}
+    {comparison.unknownReason && !compact && <Text component="span" size="xs" c="orange">{t(comparison.unknownReason)}</Text>}
   </span>
 }
 

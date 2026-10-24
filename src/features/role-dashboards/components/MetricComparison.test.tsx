@@ -34,6 +34,15 @@ it('renders nothing for older APIs without a comparison contract', () => {
   expect(container.querySelector('.role-dashboard-comparison')).toBeNull()
 })
 
+it('keeps unavailable previous data and its explanation accessible in compact mode', () => {
+  const reason = 'Історична собівартість відсутня'
+  const { container } = render(<MantineProvider><MetricComparison compact metric={{ ...metric, comparison: { ...metric.comparison!, value: null, delta: 50, deltaPercent: 50, unknownReason: reason } }} /></MantineProvider>)
+  expect(screen.getByText('Попереднє значення: Немає даних')).toBeTruthy()
+  expect(screen.queryByText(/Зміна:/)).toBeNull()
+  expect(screen.queryByText(reason)).toBeNull()
+  expect(container.querySelector('.role-dashboard-comparison')?.getAttribute('title')).toContain(reason)
+})
+
 it('distinguishes margin percentage points from relative percentage change', () => {
   show({ ...metric, unit: '%', value: 25.25, comparison: { ...metric.comparison!, value: 20.2, delta: 5.05, deltaPercent: 25 } })
   expect(screen.getByText('Попереднє значення: 20,2 %')).toBeTruthy()
