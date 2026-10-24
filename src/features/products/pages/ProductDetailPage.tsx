@@ -730,7 +730,8 @@ export function ProductStockSummary({
         {availabilityItems.map((availability, index) => (
           <ProductAvailabilityPlacementRow
             availability={availability}
-            key={`${availability.StorageId || availability.Storage?.Name || index}`}
+            key={`${product.NetUid}:${availability.StorageId || availability.Storage?.Name || index}`}
+            productNetId={product.NetUid}
             onProductSaved={onProductSaved}
           />
         ))}
@@ -746,28 +747,31 @@ export function ProductStockSummary({
 
 function ProductAvailabilityPlacementRow({
   availability,
+  productNetId,
   onProductSaved,
 }: {
   availability: ProductAvailability
+  productNetId?: string | null
   onProductSaved?: (product: Product | null) => void
 }) {
   const { t } = useI18n()
   const [opened, setOpened] = useState(false)
   const placements = availability.Storage?.ProductPlacements || []
-  const hasPlacements = placements.length > 0
+  const canOpenPlacements = placements.length > 0 || Boolean(productNetId)
   const amount = Number(availability.Amount) || 0
   const content = (
-    <Stack gap={0} style={{ cursor: hasPlacements ? 'pointer' : 'default', minWidth: 0 }}>
+    <Stack gap={0} style={{ cursor: canOpenPlacements ? 'pointer' : 'default', minWidth: 0 }}>
       <Group gap={6} align="center" wrap="nowrap">
         <Text className="app-money" size="xl" fw={700} lh={1.05}>
           {formatAmount(availability.Amount)}
         </Text>
         {amount > 0 && <span className="product-stock-dot" aria-hidden="true" />}
       </Group>
+      <Text size="xs" c="dimmed">{t('Вільно')}</Text>
       <Text size="xs" c="dimmed" lh={1.2} lineClamp={2} title={displayValue(availability.Storage?.Name)}>
         {displayValue(availability.Storage?.Name)}
       </Text>
-      {hasPlacements && (
+      {canOpenPlacements && (
         <Group className="product-stock-warehouse-hint" gap={4} wrap="nowrap">
           <Text size="xs">{t('Місця зберігання')}</Text>
           <ChevronRight size={13} aria-hidden="true" />
@@ -776,7 +780,7 @@ function ProductAvailabilityPlacementRow({
     </Stack>
   )
 
-  if (!hasPlacements) {
+  if (!canOpenPlacements) {
     return content
   }
 
@@ -793,19 +797,80 @@ function ProductAvailabilityPlacementRow({
         </Box>
       </Popover.Target>
       <Popover.Dropdown className="product-placement-popover" role="dialog" aria-label={t('Місця зберігання')}>
-        <ProductPlacementEditor
+        {opened && <FreshProductPlacements
           availability={availability}
-          key={getProductPlacementsKey(placements)}
+          productNetId={productNetId}
           onClose={() => setOpened(false)}
           onProductSaved={onProductSaved}
-          placements={placements}
-        />
+        />}
       </Popover.Dropdown>
     </Popover>
   )
 }
 
+function FreshProductPlacements({ availability, productNetId, onClose, onProductSaved }: {
+  availability: ProductAvailability
+  productNetId?: string | null
+  onClose: () => void
+  onProductSaved?: (product: Product | null) => void
+}) {
+  const { t } = useI18n()
+  const [snapshot, setSnapshot] = useState<ProductAvailability | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [revision, bumpRevision] = useReducer((value: number) => value + 1, 0)
+  function refresh() {
+    setSnapshot(null)
+    setError(null)
+    bumpRevision()
+  }
+  const storageId = availability.StorageId ?? availability.Storage?.Id
+
+  useEffect(() => {
+    let cancelled = false
+    const controller = new AbortController()
+    async function load() {
+      try {
+        if (!productNetId || !storageId) throw new Error(t('Не вдалося визначити товар або склад'))
+        const product = await getProductByNetId(productNetId, controller.signal)
+        const current = product?.ProductAvailabilities?.find(item => (item.StorageId ?? item.Storage?.Id) === storageId)
+        if (product?.NetUid !== productNetId || !current) throw new Error(t('Склад більше не доступний у даних товару. Оновіть картку.'))
+        if (!cancelled) setSnapshot(current)
+      } catch (loadError) {
+        if (!cancelled) setError(loadError instanceof Error ? loadError.message : t('Не вдалося оновити розміщення'))
+      }
+    }
+    void load()
+    return () => { cancelled = true; controller.abort() }
+  }, [productNetId, storageId, revision, t])
+
+  if (error) return <Stack gap="sm">
+    <Alert color="red">{t('Не вдалося оновити розміщення. Редагування недоступне.')}{' '}{error}</Alert>
+    <Button variant="default" onClick={refresh}>{t('Повторити')}</Button>
+  </Stack>
+  if (!snapshot) return <Group role="status"><Loader size="sm" /><Text>{t('Оновлення розміщень')}</Text></Group>
+  const placements = snapshot.Storage?.ProductPlacements ?? []
+  return <Stack gap="sm">
+    <Group>
+      <Text>{t('Вільно на складі')}: {formatAmount(snapshot.Amount)}</Text>
+      <Text>{t('Кількість за розміщеннями')}: {formatAmount(sumProductPlacementQty(placements))}</Text>
+    </Group>
+    <Text size="sm" c="dimmed">{t('Вільна кількість враховує резерви. Кількість за розміщеннями змінюється після складського руху; резерв не списує товар із комірки. Тут показані лише записані розміщення.')}</Text>
+    {placements.length === 0 ? <Stack gap="xs">
+      <Text>{t('Розміщення не записані')}</Text>
+      <Button variant="default" onClick={refresh}>{t('Оновити розміщення')}</Button>
+    </Stack> : <ProductPlacementEditor
+      availability={snapshot}
+      key={`${revision}:${getProductPlacementsKey(placements)}`}
+      placements={placements}
+      onClose={onClose}
+      onProductSaved={onProductSaved}
+      onRefresh={refresh}
+    />}
+  </Stack>
+}
+
 function ProductPlacementEditor({
+  onRefresh,
   availability,
   onClose,
   onProductSaved,
@@ -815,6 +880,7 @@ function ProductPlacementEditor({
   onClose: () => void
   onProductSaved?: (product: Product | null) => void
   placements: ProductPlacement[]
+  onRefresh: () => void
 }) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
@@ -881,7 +947,7 @@ function ProductPlacementEditor({
     }
 
     if (Math.abs(draftTotal - originalTotal) > 0.00001) {
-      setError(t('Сума кількості по місцях має збігатися із залишком складу'))
+      setError(t('Сума кількості по місцях має збігатися з кількістю за розміщеннями до редагування'))
       return
     }
 
@@ -911,6 +977,7 @@ function ProductPlacementEditor({
         </Group>
         <Group gap="xs" wrap="nowrap">
           <TableChip tone={Math.abs(draftTotal - originalTotal) > 0.00001 ? 'danger' : 'success'} value={`${formatAmount(draftTotal)} / ${formatAmount(originalTotal)}`} />
+          {!isEditing && <Button size="xs" variant="default" leftSection={<RefreshCw size={14} />} onClick={onRefresh}>{t('Оновити розміщення')}</Button>}
           {!isEditing ? (
             <PermissionGate permissionKey={PRODUCT_PLACEMENT_EDIT_PERMISSION}>
               <Button color={CREATE_ACTION_COLOR} size="xs" variant="default" leftSection={<SquarePen size={14} />} onClick={startEditing}>
