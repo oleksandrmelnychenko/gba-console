@@ -147,6 +147,7 @@ export type PaymentRegisterTransfer = EntityFields & {
 
 export type PaymentRegisterCurrencyExchange = EntityFields & {
   Amount?: number
+  TargetAmount?: number | null
   Comment?: string
   CurrencyTrader?: CurrencyTrader | null
   ExchangeRate?: number
