@@ -1,4 +1,5 @@
-import { Checkbox, Select, Stack } from '@mantine/core'
+import { Checkbox, Group, Select, Stack } from '@mantine/core'
+import { ArrowLeftRight } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { ReportDataset, ReportGroupingItem } from '../types'
 import { defaultGroupedSettlementBuyer, groupedSettlementPeriod, groupedSettlementRows,
@@ -53,7 +54,7 @@ export function SettlementPeriodModePanel({ dataset, grouped, exact, buyer, grou
           onBuyerChange(world === 'Fenix' ? defaultGroupedSettlementBuyer() : undefined)
           if (world === 'Amg') onGroupsChange(undefined)
         }} />}
-      {shows('form') && <Select label={t('Форма взаєморозрахунків')} disabled={disabled} allowDeselect={false}
+      {shows('form') && <Select label={<Group component="span" gap={6} wrap="nowrap"><ArrowLeftRight size={16} aria-hidden="true" />{t('Форма взаєморозрахунків')}</Group>} disabled={disabled} allowDeselect={false}
         value={rows.map(row => row.type).join(',')} data={[
           { value: '4,41,76', label: t('Організація → валюта → контрагент') },
           { value: '4,76', label: t('Організація → контрагент') },

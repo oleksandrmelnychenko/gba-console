@@ -1,5 +1,5 @@
 import { WorkbookSectionActions } from './workbook-desk/WorkbookSectionActions'
-import { ListPlus } from 'lucide-react'
+import { ListPlus, UserRoundMinus, UserRoundPlus } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Alert, Button, Group, MultiSelect, Stack } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
@@ -54,7 +54,10 @@ export function CounterpartyGroupFilters({ value, disabled, onChange }: {
   const count = selectedIds.length
   return <Stack gap="xs">
     {(['IncludeGroupIds', 'ExcludeGroupIds'] as const).map(list => <MultiSelect key={list}
-      label={list === 'IncludeGroupIds' ? 'Включити групи контрагентів (Fenix)' : 'Виключити групи контрагентів (Fenix)'}
+      label={<Group component="span" gap={6} wrap="nowrap">
+        {list === 'IncludeGroupIds' ? <UserRoundPlus size={16} aria-hidden="true" /> : <UserRoundMinus size={16} aria-hidden="true" />}
+        {list === 'IncludeGroupIds' ? 'Включити групи контрагентів (Fenix)' : 'Виключити групи контрагентів (Fenix)'}
+      </Group>}
       placeholder="Пошук групи або контрагента"
       data={[...options.values()]} value={selected?.[list].map(id => id.toUpperCase()) ?? []}
       disabled={disabled} searchable clearable searchValue={search}
@@ -69,6 +72,5 @@ export function CounterpartyGroupFilters({ value, disabled, onChange }: {
     </Group></WorkbookSectionActions>
     {error && <Alert color="orange">{error}</Alert>}
     {value != null && !selected && <Alert color="orange">Збережений відбір груп некоректний. Оберіть групи з поточного списку.</Alert>}
-    <p className="workbook-settings__field-note">Включає підгрупи. Виключення має пріоритет.</p>
   </Stack>
 }

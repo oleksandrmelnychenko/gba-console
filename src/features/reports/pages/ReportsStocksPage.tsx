@@ -2120,11 +2120,11 @@ function LegacyReportBuilder({
     </section>
   )
 
-  const groupingSection = (
+  const groupingSection = fixedAxes && part === 'grouping' && (dataSource === 40 || dataSource === 41) ? null : (
     <section className="app-section-card reports-stocks-structure">
       <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Групування')}</Text>
       {fixedAxes ? part === 'grouping' ? (dataSource === 39
-        ? <Text size="sm">Товари у рядках; залишки, продажі й контрагенти у стовпцях.</Text> : <Text size="sm">{rowGroups.map(group => group.label).join(' → ')}</Text>)
+        ? <Text size="sm">Товари у рядках; залишки, продажі й контрагенти у стовпцях.</Text> : dataSource === 40 || dataSource === 41 ? null : <Text size="sm">{rowGroups.map(group => group.label).join(' → ')}</Text>)
         : <Text size="sm">{dataSource === 39
         ? `Товар → сім атрибутів. Колонки: Остатки, Продажи та Контрагенты; один показник «Результат». ${currentVparivanieNotice(filterFieldOptions.some(option => option.field.Type === 60))}`
         : dataSource === 41 ? settlementAxesDescription(rowGroups) : fixedAxesDescription[dataSource] ?? rowGroups.map(group => group.label).join(' → ')}</Text> : <ReportGroupingPanel locked={lockedGroupingTypes} layout={groupingLayout} axis="Row" allowed={allowedGroupingTypes} transferSupported={!rowsOnly}

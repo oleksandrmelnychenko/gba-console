@@ -215,7 +215,7 @@ it('keeps an earlier draft untouched and recoverable across visits that only ope
     expect(sessionStorage.getItem(key)).toBe(stored)
     fireEvent.click(screen.getByRole('button', { name: 'Чернетка' }))
     const dialog = await screen.findByRole('dialog', { name: 'Чернетка звіту' })
-    expect(within(dialog).getByText('Налаштування з попереднього відкриття.')).toBeTruthy()
+    expect(within(dialog).getByText('Збережено')).toBeTruthy()
     expect(within(dialog).getByRole('button', { name: 'Відкинути чернетку' })).toBeTruthy()
     const restore = within(dialog).getByRole('button', { name: 'Відновити чернетку' }) as HTMLButtonElement
     expect(restore.disabled).toBe(false)

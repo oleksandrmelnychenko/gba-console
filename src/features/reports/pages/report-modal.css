@@ -84,3 +84,16 @@
   .report-modal .mantine-Group-root > .mantine-InputWrapper-root { flex-basis: 100%; }
   .report-modal .app-modal-footer { gap: 8px; }
 }
+
+.report-draft__saved {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+  padding-block: 4px;
+  font: 500 12px/1.5 var(--font-mono);
+}
+.report-draft__saved dt { color: var(--mantine-color-gray-7); }
+.report-draft__saved dd { margin: 0; color: var(--mantine-color-gray-8); }
