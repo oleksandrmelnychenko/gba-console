@@ -64,6 +64,14 @@ describe('published organization-only turnover form', () => {
     rerender(content(true, 'user3'))
     expect(screen.queryByRole('dialog')).toBeNull()
   })
+  it('keeps the unfinished-period warning after the calendar advances beyond the captured month', () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-11-01T10:00:00Z'))
+    try {
+      render(<MantineProvider env="test"><OneCTurnoverResponsiblesPanel scope={{ ...organizationOnlyScope, LastDay: '2026-10-31', LoadedDayCount: 61 }} canGenerate callerKey="u1" onClose={vi.fn()} /></MantineProvider>)
+      expect(screen.getByText('Знімок отримано до завершення вибраного періоду. Дані за цей період ще не остаточні.')).toBeTruthy()
+    } finally { vi.useRealTimers() }
+  })
+
   it('shows a gap notice only when published day count proves missing days', () => {
     render(<MantineProvider env="test"><OneCTurnoverResponsiblesPanel scope={{ ...organizationOnlyScope, LoadedDayCount: 2 }} canGenerate callerKey="u1" onClose={vi.fn()} /></MantineProvider>)
     expect(screen.getByText(/У доступному періоді є пропуски/)).toBeTruthy()

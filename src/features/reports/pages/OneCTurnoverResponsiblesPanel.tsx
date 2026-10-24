@@ -62,8 +62,7 @@ function useResponsiblesReport(scope: OneCTurnoverScopeSummary, canGenerate: boo
 function ResponsiblesForm({ scope, canGenerate, onClose }: Omit<Props, 'callerKey'>) {
   const { from, setFrom, to, setTo, applied, loading, error, opened, setOpened, validScope, periodError, generate } = useResponsiblesReport(scope, canGenerate)
   const pending = !!applied && (from !== applied.from || to !== applied.to)
-  const today = kyivDay.format(new Date())
-  const currentMonth = from.slice(0, 7) <= today.slice(0, 7) && to.slice(0, 7) >= today.slice(0, 7)
+  const periodNotice = capturedPeriodNotice(scope, from, to, validScope)
   if (!canGenerate) return <Alert color="yellow">Немає права формування звітів.</Alert>
   return <Stack gap="sm">
     <ResponsiblesScopeSummary scope={scope} validScope={validScope} />
@@ -71,7 +70,7 @@ function ResponsiblesForm({ scope, canGenerate, onClose }: Omit<Props, 'callerKe
       <AppDateInput type="date" label="Від" value={from} disabled={loading} onChange={event => setFrom(event.currentTarget.value)} />
       <AppDateInput type="date" label="До" value={to} disabled={loading} onChange={event => setTo(event.currentTarget.value)} />
     </Group>
-    {currentMonth ? <Alert color="yellow">Поточний місяць ще не завершено. Результат охоплює лише вибрані опубліковані дні, а не повний місяць.</Alert> : null}
+    {periodNotice ? <Alert color="yellow">{periodNotice}</Alert> : null}
     {periodError ? <Alert color="yellow">{periodError}</Alert> : null}
     {error ? <Alert color="red">{error}</Alert> : null}
     {applied ? <Stack gap={4}>
@@ -104,4 +103,12 @@ function ResponsiblesScopeSummary({ scope, validScope }: { scope: OneCTurnoverSc
     {validScope ? <Text size="sm">Дані з 1С станом на {sourceAsOf(scope.OldestReadCompletedUtc, scope.NewestReadCompletedUtc)} (за Києвом).</Text> : null}
     {hasGaps ? <Alert color="yellow">У доступному періоді є пропуски. Оберіть період із завантаженими днями; відсутні дані не є нульовими продажами.</Alert> : null}
   </>
+}
+
+function capturedPeriodNotice(scope: OneCTurnoverScopeSummary, from: string, to: string, validScope: boolean): string | null {
+  if (!validScope || kyivDay.format(new Date(scope.OldestReadCompletedUtc)) > to) return null
+  const currentMonth = kyivDay.format(new Date()).slice(0, 7)
+  return from.slice(0, 7) <= currentMonth && to.slice(0, 7) >= currentMonth
+    ? 'Поточний місяць ще не завершено. Знімок отримано до завершення вибраного періоду.'
+    : 'Знімок отримано до завершення вибраного періоду. Дані за цей період ще не остаточні.'
 }

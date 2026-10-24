@@ -1067,7 +1067,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   }
   const dialogs = <>
     {responsiblesScope && canGenerateReport && responsiblesScope.caller === ownerId ? <ReportModal opened title="Продажі за відповідальними" size={960}
-      onClose={() => setResponsiblesScope(null)}>
+      closeButtonProps={{ 'aria-label': 'Закрити продажі за відповідальними' }} onClose={() => setResponsiblesScope(null)}>
       <OneCTurnoverResponsiblesPanel scope={responsiblesScope.scope} canGenerate={canGenerateReport} callerKey={ownerId}
         onClose={() => setResponsiblesScope(null)} />
     </ReportModal> : null}
@@ -1243,6 +1243,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     ]
     const guide = activeWorkbook ? bug1274WorkbookGuide(activeWorkbook) : undefined
     const quietActions = <>
+      {catalogueControl(true)}
       {canGenerateReport && ownerId ? <ReportDraftControl
         pending={workspaceDraft.recovery === 'pending' || workspaceDraft.recovery === 'blocked'}
         canRestore={workspaceDraft.recovery === 'pending' && datasetStorage.loaded && !datasetStorage.error}

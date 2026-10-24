@@ -45,7 +45,7 @@ export function WorkbookCatalogue({ catalogue, inspection, datasets, canGenerate
     { id: 'forms', header: t('Відкрити форму'), width: 400, minWidth: 300, enableSorting: false,
       cell: report => {
         const forms = launches.filter(launch => BUG_1274_WORKBOOK_REPORT_IDS[launch.fileName] === report.Id)
-        const turnover = report.Id === 'builtin:ВаловаяПрибыль' ? <OneCTurnoverResponsiblesLaunch
+        const turnover = report.Id === 'builtin:ВаловаяПрибыль' && (!world || world === 'fenix') ? <OneCTurnoverResponsiblesLaunch
           catalogue={catalogue} canGenerate={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenTurnoverResponsibles} /> : null
         return <Group gap={6}>{forms.length ? <Group gap={6} wrap="nowrap">
           {forms.map(launch => <Button key={launch.fileName} type="button" size="compact-sm" variant="default"
@@ -55,7 +55,7 @@ export function WorkbookCatalogue({ catalogue, inspection, datasets, canGenerate
           </Button>)}
         </Group> : <Text size="sm" c="gray.7">{t(canGenerate ? 'Форми недоступні' : 'Немає права формування')}</Text>}{turnover}</Group>
       } },
-  ], [t, launches, canGenerate, disabled, onOpenWorkbook, catalogue, callerKey, onOpenTurnoverResponsibles])
+  ], [t, launches, canGenerate, disabled, onOpenWorkbook, catalogue, callerKey, onOpenTurnoverResponsibles, world])
   return <div className="report-catalogue workbook-catalogue">
     {!inspection.valid ? <Alert color="yellow">{t('Стан перенесення не підтверджений сервером. Перевірте відомості про звіт.')}</Alert> : null}
     <div className="workbook-catalogue__list">
