@@ -12,6 +12,7 @@ import {
 } from '../api/salesDebtorsApi'
 import type { ClientDebtors } from '../types'
 import { SalesDebtorsPage } from './SalesDebtorsPage'
+import { agingFixture } from '../model/debtorAging.testData'
 
 vi.mock('../api/salesDebtorsApi', () => ({
   exportDebtorsDocument: vi.fn(),
@@ -220,6 +221,46 @@ describe('SalesDebtorsPage debt currency', () => {
     expect(detail).toContain(`Кредитовий залишок${money.format(25)}UAHНе визначеноEUR`)
     expect(detail).toContain('Разом, EURНе визначеноEUR')
     expect(detail).not.toContain('Разом із субклієнтами')
+  })
+
+  it('shows known aging, unknown buckets and nullable days without classifying unknown debts as paid on time', async () => {
+    const Aging = agingFixture({ UnknownDateDebtCount: 1, UnknownDateDebt: 60, UnknownDateDebtEuro: 30, UnknownTermsDebtCount: 1, UnknownTermsDebt: 40, UnknownTermsDebtEuro: null, HasCompleteAging: false })
+    vi.mocked(getFilteredDebtors).mockResolvedValue({ ...debtors, Aging, DueCutoffBusinessDay: '2026-10-27T00:00:00', TotalOverdueDebtorsValue: null,
+      ClientInDebtors: [{ ...debtors.ClientInDebtors[0], Aging, MissedDays: null, OverdueDebtEuro: null,
+        CurrencyDebts: [{ CurrencyCode: 'USD', RemainderDebt: 100, OverdueDebt: null, Aging }] },
+      { ...debtors.ClientInDebtors[0], ClientName: 'Борг із підтвердженою датою', Aging: agingFixture(), CreatedDebt: '2026-10-24T00:00:00' }],
+      CurrencyTotals: [{ CurrencyCode: 'USD', RemainderDebt: 100, OverdueDebt: null, Aging }],
+    })
+    vi.mocked(getDebtorDebtTotal).mockResolvedValue({ Aging, TotalInEuro: null, OverdueInEuro: null, Currencies: [{ CurrencyCode: 'USD', Total: 100, Overdue: null, Aging }] })
+    vi.mocked(getDebtorGroupedDebts).mockResolvedValue([{ Id: 1, Agreement: { Currency: { Code: 'USD' } }, Debt: { Aging, Days: null, Total: 100, EuroTotal: null, OverdueTotal: null, OverdueEuroTotal: null } }])
+    renderWithMantine(<I18nProvider><SalesDebtorsPage /></I18nProvider>)
+    const row = await screen.findByTestId('row-0')
+    expect(screen.getByText('Борг до 27.10.2026')).toBeTruthy()
+    expect(within(row).getByTitle('Підтверджена дата боргу відсутня').textContent).toBe('Дата не визначена')
+    const datedRow = screen.getByTestId('row-1')
+    expect(within(datedRow).getByTitle('Найраніша підтверджена дата боргу').textContent).toBe('24.10.2026')
+    expect(text(datedRow)).not.toContain('00:00')
+    expect(text(row.querySelector('[data-column="missedDays"]')!)).toContain('Не визначено')
+    expect(text(row.querySelector('[data-column="overdueDebt"]')!)).toBe(`${money.format(0)}EUR`)
+    const footer = document.querySelector('.sales-debtors-summary') as HTMLElement
+    expect(text(footer)).toContain(`Відоме прострочення, EUR${money.format(0)}EUR`)
+    fireEvent.click(within(footer).getByRole('button', { name: 'Невідома дата: 1 · Невідомий строк: 1' }))
+    expect(await screen.findByText('Станом на: 24.10.2026 (Київ)')).toBeTruthy()
+    expect(screen.getByText('За чинними умовами договорів')).toBeTruthy()
+    expect(screen.getByText('60,00 USD')).toBeTruthy()
+    expect(screen.getByText('40,00 USD')).toBeTruthy()
+    expect(screen.getByText('Не визначено EUR')).toBeTruthy()
+    fireEvent.click(within(footer).getByRole('button', { name: 'Невідома дата: 1 · Невідомий строк: 1' }))
+    fireEvent.click(within(row).getByRole('button', { name: 'Неповні дані' }))
+    expect(await screen.findByText('За чинними умовами договорів')).toBeTruthy()
+    expect(screen.queryByLabelText('drawer')).toBeNull()
+    fireEvent.click(within(row).getByRole('button', { name: 'Неповні дані' }))
+    fireEvent.click(row)
+    const drawer = await screen.findByLabelText('drawer')
+    await waitFor(() => expect(within(drawer).getByText('Сума боргу')).toBeTruthy())
+    expect(within(drawer).getByText('Строки визначено частково')).toBeTruthy()
+    expect(within(drawer).queryByText('Без прострочки')).toBeNull()
+    expect(within(drawer).getAllByText('Не визначено').length).toBeGreaterThan(0)
   })
 
 })

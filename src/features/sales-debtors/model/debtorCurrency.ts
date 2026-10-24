@@ -4,6 +4,7 @@ import type {
   DebtorDebtTotal,
   DebtorsCurrencyTotal,
 } from '../types'
+import { getKnownOverdueEuro, getKnownOverdueNative } from './debtorAging'
 
 export const EURO_CURRENCY_CODE = 'EUR'
 
@@ -19,7 +20,7 @@ export function hasCurrencyBreakdown(debtor: ClientInDebt): boolean {
 }
 
 export function getDebtorCurrencyAmounts(debtor: ClientInDebt, field: DebtorCurrencyField): CurrencyAmount[] {
-  return toCurrencyAmounts(debtor.CurrencyDebts ?? [], (item) => item[field])
+  return toCurrencyAmounts(debtor.CurrencyDebts ?? [], (item) => field === 'OverdueDebt' ? getKnownOverdueNative(item, item.OverdueDebt) : item[field])
 }
 
 export function getDebtorEuroAmount(debtor: ClientInDebt, field: DebtorCurrencyField): number | null {
@@ -28,7 +29,7 @@ export function getDebtorEuroAmount(debtor: ClientInDebt, field: DebtorCurrencyF
   }
 
   if (field === 'OverdueDebt') {
-    return toEuroAmount(debtor.OverdueDebtEuro !== undefined ? debtor.OverdueDebtEuro : debtor.OverdueDebt)
+    return toEuroAmount(getKnownOverdueEuro(debtor, debtor.OverdueDebtEuro !== undefined ? debtor.OverdueDebtEuro : debtor.OverdueDebt))
   }
 
   if (field === 'CreditBalance') return toEuroAmount(debtor.CreditBalanceEuro)
@@ -40,7 +41,7 @@ export function getSummaryCurrencyAmounts(
   totals: DebtorsCurrencyTotal[],
   field: 'RemainderDebt' | 'OverdueDebt' | 'CreditBalance',
 ): CurrencyAmount[] {
-  return toCurrencyAmounts(totals, (item) => item[field])
+  return toCurrencyAmounts(totals, (item) => field === 'OverdueDebt' ? getKnownOverdueNative(item, item.OverdueDebt) : item[field])
 }
 
 export function getStructureCurrencyTotals(total: DebtorDebtTotal | null): DebtorDebtCurrencyTotal[] {
@@ -69,7 +70,7 @@ export function getStructureCurrencyTotals(total: DebtorDebtTotal | null): Debto
 }
 
 export type DebtBalanceLine = {
-  label: 'Борг' | 'Борг, EUR' | 'Кредитовий залишок' | 'Кредитовий залишок, EUR'
+  label: 'Борг' | 'Борг, EUR' | 'Кредитовий залишок' | 'Кредитовий залишок, EUR' | 'Відоме прострочення' | 'Відоме прострочення, EUR'
   currencyCode: string
   value: number | null
 }
@@ -86,6 +87,12 @@ export function getDebtBalanceLines(total: DebtorDebtTotal | null): DebtBalanceL
   if (total.TotalInEuro !== undefined) lines.push({ label: 'Борг, EUR', currencyCode: EURO_CURRENCY_CODE, value: toEuroAmount(total.TotalInEuro) })
   if (total.CreditBalanceEuro !== undefined && (hasCreditBalance(total) || currencies.some(hasCreditBalance))) {
     lines.push({ label: 'Кредитовий залишок, EUR', currencyCode: EURO_CURRENCY_CODE, value: toEuroAmount(total.CreditBalanceEuro) })
+  }
+  if (total.Aging !== undefined) {
+    for (const item of currencies) {
+      if ((item.Aging?.KnownOverdue ?? 0) > 0) lines.push({ label: 'Відоме прострочення', currencyCode: item.CurrencyCode || '', value: item.Aging?.KnownOverdue ?? null })
+    }
+    lines.push({ label: 'Відоме прострочення, EUR', currencyCode: EURO_CURRENCY_CODE, value: total.Aging?.KnownOverdueEuro ?? null })
   }
   return lines
 }
@@ -115,7 +122,7 @@ export function toFiniteNumber(value: number | null | undefined): number {
 
 function toCurrencyAmounts<TItem extends { CurrencyCode?: string }>(
   items: TItem[],
-  pick: (item: TItem) => number | undefined,
+  pick: (item: TItem) => number | null | undefined,
 ): CurrencyAmount[] {
   return items
     .map((item) => ({ amount: toFiniteNumber(pick(item)), currencyCode: item.CurrencyCode?.trim() || '' }))

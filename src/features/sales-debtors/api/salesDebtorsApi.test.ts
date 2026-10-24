@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { TypeOfClientAgreement, TypeOfCurrencyOfAgreement } from '../types'
 import { exportDebtorsDocument, getFilteredDebtors } from './salesDebtorsApi'
+import { agingFixture } from '../model/debtorAging.testData'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -12,6 +13,17 @@ const apiRequestMock = vi.mocked(apiRequest)
 describe('salesDebtorsApi', () => {
   beforeEach(() => {
     apiRequestMock.mockReset()
+  })
+
+  it('preserves nested aging and null days instead of inventing a complete overdue total', async () => {
+    const Aging = agingFixture({ KnownOverdueCount: 1, KnownOverdueEuro: 4, UnknownDateDebtCount: 1, UnknownDateDebtEuro: null, HasCompleteAging: false, MaxKnownDaysPastDue: 3 })
+    apiRequestMock.mockResolvedValueOnce({ Aging, DueCutoffBusinessDay: '2026-10-27T00:00:00', TotalMissedDays: null, TotalOverdueDebtorsValue: null, ClientInDebtors: [{ Aging, MissedDays: null, OverdueDebtEuro: null }] })
+    const result = await getFilteredDebtors({ days: 3, limit: 20, offset: 0, typeAgreement: 0, typeCurrency: 0, userNetId: null, organizationNetId: null })
+    expect(result.Aging).toEqual(Aging)
+    expect(result.DueCutoffBusinessDay).toBe('2026-10-27T00:00:00')
+    expect(result.TotalMissedDays).toBeNull()
+    expect(result.TotalOverdueDebtorsValue).toBeNull()
+    expect(result.ClientInDebtors[0].MissedDays).toBeNull()
   })
 
   it('exports debtors with the same days filter as the grid', async () => {

@@ -50,6 +50,7 @@ function QueueContents({ data, expected, page, onPage }: { data: WorkspaceQueue;
   const { t } = useI18n()
   const { modules } = useNavigation()
   const changed = hasAggregateChanged(data.aggregateValue, data.unit, expected)
+  const isReceivables = data.key === 'open-debts' || data.key === 'overdue-debts'
   return <>
         <Text size="sm">{t('Записів')}: {data.total} · {t('Значення показника')}: {data.aggregateValue === null ? t('Не визначено') : number.format(data.aggregateValue)} {data.unit === 'qty' ? t('шт.') : data.unit === 'count' ? '' : data.unit}</Text>
         {changed && <Alert color="yellow">{t('Дані змінилися після розрахунку дашборда. Тут показано значення за поточним складом записів; оновіть показники дашборда.')}</Alert>}
@@ -65,7 +66,7 @@ function QueueContents({ data, expected, page, onPage }: { data: WorkspaceQueue;
           columns={[
             { id: 'document', header: t('Документ / запис'), accessor: row => row.number || `#${row.id}`, width: 180,
               cell: row => row.route && isNavigationPathAllowed(modules, row.route) ? <Anchor href={row.route}><TableChip tone="document" value={row.number || `#${row.id}`} /></Anchor> : <TableChip tone="document" value={row.number || `#${row.id}`} /> },
-            { id: 'date', header: t('Дата джерела'), accessor: row => row.documentDate || '', width: 140, cell: row => <span className="role-dashboard-source-date">{row.documentDate?.slice(0, 10) || ''}</span> },
+            { id: 'date', header: t(isReceivables ? 'Дата боргу' : 'Дата джерела'), accessor: row => row.documentDate || '', width: 140, cell: row => <span className="role-dashboard-source-date">{row.documentDate?.slice(0, 10) || (isReceivables ? t('Не визначено') : '')}</span> },
             { id: 'description', header: t('Опис'), accessor: row => row.description, minWidth: 220, fill: true },
             { id: 'quantity', header: t('Кількість / сума'), accessor: row => row.quantity, width: 160, align: 'right', cell: row => <span className="app-money">{row.quantity === null ? '' : number.format(row.quantity)}</span> },
           ]}

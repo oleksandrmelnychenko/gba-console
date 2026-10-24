@@ -1,4 +1,6 @@
 import { formatDebtAmount, getDebtBalanceLines } from '../../../sales-debtors/model/debtorCurrency'
+import { DebtAgingInfo } from '../../../sales-debtors/components/DebtAgingInfo'
+import { getKnownAgingDays, getMaximumKnownAgingDays } from '../../../sales-debtors/model/debtorAging'
 import { ActionIcon, Badge, Box, Group, Paper, Popover, Stack, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { ArrowLeftRight, Copy, FileText, Network, TriangleAlert, X } from 'lucide-react'
@@ -225,7 +227,10 @@ function WizardSaleHeaderContent({
   const clientAgreements = client.ClientAgreements ?? []
   const subClientCount = client.SubClients?.length ?? 0
   const currentBalance = Math.round(clientAgreements.reduce((sum, item) => sum + (item.CurrentAmount ?? 0), 0) * 100) / 100
-  const maxOverdueDays = groupedDebts.reduce((max, item) => Math.max(max, getWizardClientDebtDays(item)), 0)
+  const hasCanonicalAging = debtTotal?.Aging !== undefined || groupedDebts.some((item) => item.Debt?.Aging !== undefined)
+  const maxOverdueDays = debtTotal?.Aging !== undefined ? getKnownAgingDays(debtTotal.Aging)
+    : hasCanonicalAging ? getMaximumKnownAgingDays(groupedDebts.map((item) => item.Debt?.Aging))
+      : groupedDebts.reduce((max, item) => Math.max(max, getWizardClientDebtDays(item)), 0)
   const subClients = structureClients.filter((item) => item.IsSubClient)
   const tradePoints = structureClients.filter((item) => item.IsTradePoint)
   const showStructureWarning = Boolean(
@@ -389,9 +394,10 @@ function WizardSaleHeaderContent({
             label={t('Борг за договорами')}
           />
         )}
-        {groupedDebts.length > 0 && maxOverdueDays > 0 && (
-          <WizardHeaderBadge color="red" items={[{ unit: t('Днів'), value: integerFormatter.format(maxOverdueDays) }]} label={t('прострочено')} />
+        {(hasCanonicalAging || (groupedDebts.length > 0 && (maxOverdueDays ?? 0) > 0)) && (
+          <WizardHeaderBadge color={(maxOverdueDays ?? 0) > 0 ? 'red' : 'gray'} items={[{ unit: t('Днів'), value: maxOverdueDays === null ? t('Не визначено') : integerFormatter.format(maxOverdueDays) }]} label={t(hasCanonicalAging ? 'Макс. відоме прострочення' : 'прострочено')} />
         )}
+        <DebtAgingInfo aging={debtTotal?.Aging} currencies={debtTotal?.Currencies} />
         {creditDebts.length > 0 ? (
           <WizardHeaderBadge
             color="gray"

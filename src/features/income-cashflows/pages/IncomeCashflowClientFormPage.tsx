@@ -1,4 +1,6 @@
 import { formatDebtAmount, getDebtBalanceLines } from '../../sales-debtors/model/debtorCurrency'
+import { DebtAgingInfo } from '../../sales-debtors/components/DebtAgingInfo'
+import { getKnownAgingDays } from '../../sales-debtors/model/debtorAging'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   ActionIcon,
@@ -1363,7 +1365,12 @@ function IncomeCashflowClientFormPageContent() {
                 </div>
 
                 <div className="income-cashflow-client-form__debt-metrics">
-                  {maxOverdueDays > 0 && (
+                  {clientDebtTotal?.Aging !== undefined ? (
+                    <div className="income-cashflow-client-form__debt-metric">
+                      <span>{t('Макс. відоме прострочення, днів')}</span>
+                      <strong>{getKnownAgingDays(clientDebtTotal.Aging) ?? t('Не визначено')}</strong>
+                    </div>
+                  ) : maxOverdueDays > 0 && (
                     <div className="income-cashflow-client-form__debt-metric is-danger">
                       <span>{t('Прострочено')}</span>
                       <strong>{maxOverdueDays} {t('днів')}</strong>
@@ -1375,6 +1382,7 @@ function IncomeCashflowClientFormPageContent() {
                       <strong className="app-money">{formatDebtAmount(line.value, formatMoney, t('Не визначено'))} {line.currencyCode || t('Локальні валюти')}</strong>
                     </div>
                   ))}
+                  <DebtAgingInfo aging={clientDebtTotal?.Aging} currencies={clientDebtTotal?.Currencies} />
                   {selectedClientAgreement?.CurrentAmount ? (
                     <div className="income-cashflow-client-form__debt-metric">
                       <span>{t('Баланс договору')}</span>

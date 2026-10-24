@@ -26,10 +26,33 @@ export type DebtorsFilters = {
   offset: number
 }
 
+export type DebtAging = {
+  KnownOverdueCount: number
+  KnownNotOverdueCount: number
+  UnknownDateDebtCount: number
+  UnknownTermsDebtCount: number
+  KnownOverdueEuro: number | null
+  KnownNotOverdueEuro: number | null
+  UnknownDateDebtEuro: number | null
+  UnknownTermsDebtEuro: number | null
+  MaxKnownDaysPastDue: number | null
+  HasCompleteAging: boolean
+  AsOfBusinessDay?: string
+  TermBasis?: string
+}
+
+export type DebtCurrencyAging = DebtAging & {
+  KnownOverdue: number
+  KnownNotOverdue: number
+  UnknownDateDebt: number
+  UnknownTermsDebt: number
+}
+
 export type ClientCurrencyDebt = {
+  Aging?: DebtCurrencyAging | null
   CurrencyCode?: string
   RemainderDebt?: number
-  OverdueDebt?: number
+  OverdueDebt?: number | null
   TotalDebtInDays?: number
   RemainderDebtEuro?: number | null
   OverdueDebtEuro?: number | null
@@ -40,12 +63,13 @@ export type ClientCurrencyDebt = {
 }
 
 export type ClientInDebt = {
+  Aging?: DebtAging | null
   CreatedDebt?: string
   ClientNetId?: string
   RegionCode?: string
   ClientName?: string
   UserName?: string
-  MissedDays?: number
+  MissedDays?: number | null
   RemainderDebt?: number | null
   OverdueDebt?: number | null
   TotalDebtInDays?: number
@@ -58,18 +82,20 @@ export type ClientInDebt = {
 }
 
 export type DebtorDebtCurrencyTotal = {
+  Aging?: DebtCurrencyAging | null
   CurrencyCode?: string
   Total?: number
-  Overdue?: number
+  Overdue?: number | null
   TotalInEuro?: number | null
   OverdueInEuro?: number | null
-  MaxOverdueDays?: number
+  MaxOverdueDays?: number | null
   CreditBalance?: number
   CreditBalanceEuro?: number | null
   UnknownEuroDebtCount?: number
 }
 
 export type DebtorDebtTotal = {
+  Aging?: DebtAging | null
   TotalEuro?: number
   TotalLocal?: number
   TotalInEuro?: number | null
@@ -80,9 +106,10 @@ export type DebtorDebtTotal = {
 }
 
 export type DebtorsCurrencyTotal = {
+  Aging?: DebtCurrencyAging | null
   CurrencyCode?: string
   RemainderDebt?: number
-  OverdueDebt?: number
+  OverdueDebt?: number | null
   RemainderDebtEuro?: number | null
   OverdueDebtEuro?: number | null
   CreditBalance?: number
@@ -125,10 +152,11 @@ export type DebtorDebtAgreement = DebtorDebtEntity & {
 }
 
 export type DebtorDebt = DebtorDebtEntity & {
-  Days?: number
+  Aging?: DebtCurrencyAging | null
+  Days?: number | null
   Total?: number
   EuroTotal?: number | null
-  OverdueTotal?: number
+  OverdueTotal?: number | null
   OverdueEuroTotal?: number | null
   CreditBalance?: number
   CreditBalanceEuro?: number | null
@@ -136,6 +164,7 @@ export type DebtorDebt = DebtorDebtEntity & {
 }
 
 export type DebtorDebtItem = DebtorDebtEntity & {
+  Aging?: DebtAging | null
   UnknownEuroDebtCount?: number
   Agreement?: DebtorDebtAgreement | null
   AgreementId?: number
@@ -148,9 +177,11 @@ export type DebtorDebtItem = DebtorDebtEntity & {
 }
 
 export type ClientDebtors = {
+  Aging?: DebtAging | null
+  DueCutoffBusinessDay?: string | null
   ClientInDebtors: ClientInDebt[]
   TotalQtyClients: number
-  TotalMissedDays: number
+  TotalMissedDays: number | null
   TotalRemainderDebtorsValue: number | null
   TotalOverdueDebtorsValue: number | null
   CurrencyTotals: DebtorsCurrencyTotal[]

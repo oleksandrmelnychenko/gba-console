@@ -80,9 +80,11 @@ function toClientDebtors(result: unknown): ClientDebtors {
     const record = parsed as Record<string, unknown>
 
     return {
+      Aging: record.Aging as ClientDebtors['Aging'],
+      DueCutoffBusinessDay: record.DueCutoffBusinessDay as ClientDebtors['DueCutoffBusinessDay'],
       ClientInDebtors: Array.isArray(record.ClientInDebtors) ? (record.ClientInDebtors as ClientInDebt[]) : [],
       CurrencyTotals: Array.isArray(record.CurrencyTotals) ? (record.CurrencyTotals as DebtorsCurrencyTotal[]) : [],
-      TotalMissedDays: toNumber(record.TotalMissedDays),
+      TotalMissedDays: toEuroNumber(record.TotalMissedDays),
       TotalCreditBalanceEuro: record.TotalCreditBalanceEuro === undefined ? undefined : toEuroNumber(record.TotalCreditBalanceEuro),
       UnknownEuroDebtCount: toNumber(record.UnknownEuroDebtCount),
       TotalOverdueDebtorsValue: toEuroNumber(record.TotalOverdueDebtorsValue),
