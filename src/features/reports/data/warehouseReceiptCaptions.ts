@@ -91,3 +91,11 @@ export function receiptCaptionNote(context: ReceiptCaptionContext | undefined): 
     ? 'Підписи — поточні дані документів GBA для цього відбору. Історична відповідність 1С не підтверджена.'
     : 'Показано підтверджені поточні підписи GBA; для решти документів підписи недоступні. Повний відбір документів вимкнений; усі рядки й суми збережено.'
 }
+
+/** Business-facing caption status for shared documents, without UI instructions. */
+export function receiptExportNote(context: ReceiptCaptionContext | undefined): string {
+  if (!context) return 'Назви документів недоступні.'
+  if (!context.NormalSourceGenerationBound) return 'Назви документів очікують оновлення.'
+  if (!context.SelectedReceiptScopeComplete || !context.CompleteReceiptChoices) return 'Назви частини документів недоступні.'
+  return 'Назви документів — поточні дані GBA.'
+}

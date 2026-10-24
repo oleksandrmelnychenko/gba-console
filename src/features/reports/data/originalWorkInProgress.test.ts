@@ -43,6 +43,7 @@ it('known empty complete response differs from missing ordinary input and never 
 })
 it('csv xlsx and pdf retain the complete same hierarchical matrix and native quantity note', async () => {
   const result = wipResult(wipWire(true)), matrix = wipMatrix(result), pdf = wipPdfDefinition(result)
+  expect(JSON.stringify(pdf)).not.toContain(result.ResultSha256); expect(wipCsv(result)).not.toContain(result.ResultSha256)
   expect(pdf.content.find(c => 'table' in c)?.table?.body).toEqual(matrix); expect(wipCsv(result)).toContain('Кількість матеріалів'); expect(wipCsv(result)).toContain('"3.000"')
   const XLSX = await import('xlsx'), book = XLSX.read(await (await wipXlsx(result)).arrayBuffer(), { type: 'array' })
   expect(XLSX.utils.sheet_to_json(book.Sheets[book.SheetNames[0]], { header: 1 })).toEqual(matrix)

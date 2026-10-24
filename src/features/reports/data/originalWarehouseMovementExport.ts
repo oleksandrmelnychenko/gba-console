@@ -22,12 +22,10 @@ export function movementMatrix(result: MovementResult): string[][] {
 }
 export function movementNotes(result: MovementResult): string[] {
   if (!result.Capture) throw new Error('Немає підтвердженого зрізу.')
-  return [`Період: ${result.Scope.From} — ${result.Scope.Through}`, `Дані з 1С станом на ${movementAsOf(result.Capture)} (Київ).`,
-    'Обмежене покриття: лише вибраний товар і склади опублікованого зрізу Fenix. Повна відповідність звіту 1С не підтверджена.',
-    'Кількість — одиниці джерела, без перерахунку. Залишки в рядках документів — стан до та після руху; підсумок обчислюється за складами.',
-    ...(result.Scope.Through === result.Capture.Through && !result.Capture.ThroughDayComplete ? ['Останній день періоду ще не завершений у джерельному зрізі.'] : []),
-    ...(result.MissingCaptionMappings.length ? ['Для документів без назви показано номер і дату; якщо їх немає — ідентифікатор. Склади без назви також позначено ідентифікатором.'] : []),
-    `Зріз: ${result.Capture.ManifestSha256}`, `Результат: ${result.ResultSha256}`]
+  return [`Період: ${result.Scope.From} — ${result.Scope.Through}`, `Дані станом на ${movementAsOf(result.Capture)} (Київ).`,
+    `Товар: ${result.Scope.Article}. Показано лише доступні дані вибраних складів.`,
+    'Кількість без перерахунку одиниць. Підсумок — за складами; у документах залишки до та після руху.',
+    ...(result.Scope.Through === result.Capture.Through && !result.Capture.ThroughDayComplete ? ['Дані за останній день неповні.'] : [])]
 }
 export function movementCsv(result: MovementResult): string {
   const quote = (s: string) => `"${s.replaceAll('"', '""')}"`
@@ -43,8 +41,9 @@ export async function movementXlsx(result: MovementResult): Promise<Blob> {
 }
 export function movementPdfDefinition(result: MovementResult): CurrentVparivanieV2PdfDefinition {
   return { pageSize: 'A3', pageOrientation: 'landscape', pageMargins: [24, 32, 24, 28], defaultStyle: { font: 'Roboto', fontSize: 8 },
-    content: [{ text: 'Рух товару за складськими документами', style: 'title' }, ...movementNotes(result).map(text => ({ text, margin: [0, 0, 0, 4] })),
-      { table: { headerRows: 1, widths: [130, 80, 220, 120, 95, 95, 95, 95], body: movementMatrix(result) }, layout: 'lightHorizontalLines' }],
+    content: [{ text: 'Рух товару за складськими документами', style: 'title' }, ...movementNotes(result).slice(0, 3).map(text => ({ text, margin: [0, 0, 0, 4] })),
+      { table: { headerRows: 1, widths: [130, 80, 220, 120, 95, 95, 95, 95], body: movementMatrix(result) }, layout: 'lightHorizontalLines' },
+      ...movementNotes(result).slice(3).map(text => ({ text, fontSize: 7, color: '#555555', margin: [0, 5, 0, 0] }))],
     styles: { title: { bold: true, fontSize: 13 } }, footer: (page, pages) => ({ text: `${page}/${pages}`, fontSize: 7, alignment: 'right', margin: [24, 0, 24, 0] }) }
 }
 export async function movementPdf(result: MovementResult): Promise<Blob> {

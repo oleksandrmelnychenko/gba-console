@@ -1,4 +1,4 @@
-import { formatGroupedDebtorMoney, GROUPED_DEBTOR_ROOT,
+import { formatGroupedDebtorMoney,
   type GroupedDebtorStatement } from './groupedDebtor'
 
 export const GROUPED_DEBTOR_DRAFT_LABEL = 'Чернетка на поточних даних · не підтверджена форма 1С'
@@ -32,8 +32,8 @@ export function groupedDebtorXlsxRows(statement: GroupedDebtorStatement): string
     ['Дебіторка · усі покупці'],
     [GROUPED_DEBTOR_DRAFT_LABEL],
     [`Період: ${statement.From} — ${statement.To}`],
-    [`Група «Покупці»: ${GROUPED_DEBTOR_ROOT}`],
-    ['Валюта взаєморозрахунків; суми різних валют не підсумовуються. Суми збережено як точний десятковий текст.'],
+    ['Група: Покупці'],
+    ['Валюта взаєморозрахунків; суми різних валют не підсумовуються.'],
     [],
     headers,
     ...groupedDebtorExportLines(statement).map(line => line.cells),
@@ -59,7 +59,7 @@ export function groupedDebtorPdfDefinition(statement: GroupedDebtorStatement) {
       { text: 'Дебіторка · усі покупці', bold: true, fontSize: 14, margin: [0, 0, 0, 5] },
       { text: GROUPED_DEBTOR_DRAFT_LABEL, color: '#9a4d00', bold: true, margin: [0, 0, 0, 5] },
       { text: `Період: ${statement.From} — ${statement.To}`, margin: [0, 0, 0, 2] },
-      { text: `Група «Покупці»: ${GROUPED_DEBTOR_ROOT}`, margin: [0, 0, 0, 2] },
+      { text: 'Група: Покупці', margin: [0, 0, 0, 2] },
       { text: 'Валюта взаєморозрахунків; суми різних валют не підсумовуються.', margin: [0, 0, 0, 10] },
       { table: { headerRows: 1, widths: [145, 42, '*', '*', '*', '*'], body },
         layout: 'lightHorizontalLines', fontSize: 8 },

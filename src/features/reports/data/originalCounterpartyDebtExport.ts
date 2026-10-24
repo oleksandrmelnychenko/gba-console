@@ -17,7 +17,7 @@ export function debtMatrix(result: DebtResult): string[][] {
   return [debtHeaders(result), ...debtLines(result).map(r => r.cells), ['Разом', '', ...debtValues(result.Totals, result.IncludeSettlement)]]
 }
 export const debtUnitNote = 'Записані управлінські суми; додаткова сума взаєморозрахунків не конвертується. Позначення валюти та відповідність усім налаштуванням 1С не підтверджені.'
-const metadata = (r: DebtResult) => [[`Залишок до: ${r.AsOf}`], [debtUnitNote], [`Результат: ${r.ResultSha256}`], ...r.FilterSummary.map(s => [s])]
+const metadata = (r: DebtResult) => [[`Залишок до: ${r.AsOf}`], [debtUnitNote], ...r.FilterSummary.map(s => [s])]
 export function debtCsv(result: DebtResult): string {
   const quote = (s: string) => `"${s.replaceAll('"', '""')}"`
   const label = (s: string) => /^[\s\p{Cc}]*[=+\-@]/u.test(s) ? `'${s}` : s

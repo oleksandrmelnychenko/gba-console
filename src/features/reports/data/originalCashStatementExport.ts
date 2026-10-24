@@ -19,7 +19,7 @@ function metadata(result: CashResult): string[][] {
   const choices = new Map(result.Choices.map(choice => [cashFilterKey(choice.Value), choice.Caption])), missing = new Set(result.MissingCaptionMappings)
   return [['Відомість коштів Fenix'], [`Період: ${result.From} — ${result.Through}`], ['Сума у валюті рахунку / каси та управлінська сума: записані одиниці, без валютного перерахунку.'],
     ...result.Filters.map(filter => [`Відбір: ${cashLabels[filter.Field]} · ${choices.get(cashFilterKey(filter)) ?? 'Назва недоступна'}`]),
-    [`Недоступні назви: ${cashFields.filter(field => missing.has(field)).map(field => cashLabels[field]).join(', ')}`],
+    ...(missing.size ? [[`Недоступні назви: ${cashFields.filter(field => missing.has(field)).map(field => cashLabels[field]).join(', ')}`]] : []),
     ['Нульові спостережені рядки збережено; відповідність 1С не підтверджена.']]
 }
 export function cashCsv(result: CashResult): string {

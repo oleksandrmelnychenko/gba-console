@@ -22,8 +22,7 @@ export function amgDiscountAnalysisMatrix(result: AmgDiscountAnalysisResult): st
   return typedMatrix(result).map(row => row.map(c => c.text))
 }
 const metadata = (result: AmgDiscountAnalysisResult) => [[`AMG · Аналіз знижок і націнок · на кінець дня ${result.Through}`],
-  ['Контрагент у рядках, номенклатура у стовпцях; тип ціни й відсоток знижки/націнки. Загальних підсумків немає.'],
-  ['Для кожної пари контрагента й товару показано тип ціни та відсоток.'],
+  ['Тип ціни та відсоток знижки/націнки для контрагента й товару. Відсотки не підсумовуються.'],
   [result.Counterparties.length || result.Products.length
     ? `Відбори: контрагенти ${result.Counterparties.length}, номенклатура ${result.Products.length}.`
     : 'Без відборів: усі контрагенти й номенклатура.']]

@@ -15,8 +15,9 @@ export function salesMatrix(r: SalesResult): string[][] {
   const error = salesExportError(r); if (error || !r.Totals) throw new Error(error ?? 'Повний результат недоступний.')
   return [salesHeaders(r), ...salesLines(r).map(line => line.cells), ['Разом', '', ...salesValues(r, r.Totals)]]
 }
-const metadata = (r: SalesResult) => [[`Період: ${r.From} – ${r.Through}, включно до 23:59:59`], [salesUnitNote], [`Результат: ${r.ResultSha256}`],
-  ...(['Counterparties', 'Products', 'Projects', 'Divisions'] as const).map(k => [`${k}: ${r[k].length} обрано`])]
+const metadata = (r: SalesResult) => [[`Період: ${r.From} – ${r.Through}`], [salesUnitNote],
+  ...([['Контрагенти', r.Counterparties], ['Товари', r.Products], ['Проєкти', r.Projects], ['Підрозділи', r.Divisions]] as const)
+    .map(([label, selected]) => [`${label}: ${selected.length ? `${selected.length} обрано` : 'усі'}`])]
 export function salesCsv(r: SalesResult): string {
   const quote = (s: string) => `"${s.replaceAll('"', '""')}"`, safe = (s: string) => /^[\s\p{Cc}]*[=+\-@]/u.test(s) ? `'${s}` : s
   return '\ufeff' + [...metadata(r).map(row => row.map(safe)), ...salesMatrix(r).map(row => row.map((s, i) => i < 2 ? safe(s) : s))].map(row => row.map(quote).join(',')).join('\r\n') + '\r\n'

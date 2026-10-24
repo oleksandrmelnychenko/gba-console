@@ -1,4 +1,4 @@
-import { receiptCaptionNote } from './warehouseReceiptCaptions'
+import { receiptExportNote } from './warehouseReceiptCaptions'
 import { warehouseMonetaryColumns, warehouseMonetaryValues } from './originalWarehouseMonetaryExport'
 import type { CurrentVparivanieV2PdfDefinition } from './currentVparivanieV2Export'
 import type { TransferredResult } from './originalTransferredGoods'
@@ -17,8 +17,8 @@ export function transferredMatrix(result: TransferredResult): string[][] {
     ...row.Products.map(child => [row.Caption, child.Caption, ...transferredValues(child.Resources)])]), ['Разом', '', ...transferredValues(result.Totals)]]
 }
 const units = 'Кількість — записані одиниці; вартість і ПДВ — суми управлінського обліку без валютного перерахунку.'
-const mapping = (result: TransferredResult) => result.ReceiptCaptions ? receiptCaptionNote(result.ReceiptCaptions)
-  : 'Назви документів недоступні; повна відповідність усім налаштуванням 1С не підтверджена.'
+const mapping = (result: TransferredResult) => result.ReceiptCaptions ? receiptExportNote(result.ReceiptCaptions)
+  : 'Назви документів недоступні.'
 export function transferredCsv(result: TransferredResult): string {
   const quote = (v: string) => `"${v.replaceAll('"', '""')}"`
   const label = (v: string) => /^[\s\p{Cc}]*[=+\-@]/u.test(v) ? `'${v}` : v

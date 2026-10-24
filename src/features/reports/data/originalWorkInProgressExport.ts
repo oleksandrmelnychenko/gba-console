@@ -16,8 +16,9 @@ export function wipMatrix(r: WipResult): string[][] {
   const error = wipExportError(r); if (error || !r.Totals) throw new Error(error ?? 'Повний результат недоступний.')
   return [wipHeaders(r), ...wipLines(r).map(line => line.cells), ['Разом', '', '', ...wipValues(r, r.Totals)]]
 }
-const metadata = (r: WipResult) => [[`Період: ${r.From} – ${r.Through}, включно до 23:59:59`], [wipUnitNote], [`Результат: ${r.ResultSha256}`],
-  ...(['Divisions', 'ProductGroups', 'CostArticles'] as const).map(k => [`${k}: ${r[k].length} обрано`])]
+const metadata = (r: WipResult) => [[`Період: ${r.From} – ${r.Through}`], [wipUnitNote],
+  ...([['Підрозділи', r.Divisions], ['Групи товарів', r.ProductGroups], ['Статті витрат', r.CostArticles]] as const)
+    .map(([label, selected]) => [`${label}: ${selected.length ? `${selected.length} обрано` : 'усі'}`])]
 export function wipCsv(r: WipResult): string {
   const quote = (s: string) => `"${s.replaceAll('"', '""')}"`, safe = (s: string) => /^[\s\p{Cc}]*[=+\-@]/u.test(s) ? `'${s}` : s
   return '\ufeff' + [...metadata(r).map(row => row.map(safe)), ...wipMatrix(r).map(row => row.map((s, i) => i < 3 ? safe(s) : s))].map(row => row.map(quote).join(',')).join('\r\n') + '\r\n'

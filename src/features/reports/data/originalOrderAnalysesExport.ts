@@ -31,5 +31,5 @@ export function orderAnalysisSheet(result: OrderAnalysisResult): OriginalDefault
       ...request.Measures.map(name => orderAnalysisNumberText(group.Measures[name])),
       statusText(group.Shipment, kind === 2 ? ['Не поступило', 'Поступило частично', 'Поступило полностью'] : ['Не отгружено', 'Отгружено частично', 'Отгружено полностью'], orderAnalysisShipmentLabels(kind)),
       ...(payment ? [statusText(group.Payment, ['Не оплачено', 'Оплачено частично', 'Оплачено полностью'], orderAnalysisPaymentLabels)] : [])] })),
-    total: null, note: 'Збережено групи й точні значення сервера. Підсумкові групи не додаються повторно. Невідомі суми й назви не замінено нулем. Курси валют тут не перераховуються.' }
+    total: null, note: 'Підсумкові групи не додаються повторно. Суми без валютного перерахунку; невідомі значення не дорівнюють нулю.' }
 }

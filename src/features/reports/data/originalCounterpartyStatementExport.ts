@@ -19,7 +19,7 @@ export function statementMatrix(result: StatementResult): string[][] {
   return [[...statementHeaders], ...statementLines(result).map(line => line.cells), ['Разом', '', '', ...statementValues(result.Totals)]]
 }
 export const statementUnitNote = 'Записані управлінські суми та суми взаєморозрахунків без перерахунку. Позначення валюти й відповідність іншим налаштуванням 1С не підтверджені.'
-const metadata = (r: StatementResult) => [[`Період: ${r.From} – ${r.Through}, включно до 23:59:59`], [statementUnitNote], [`Результат: ${r.ResultSha256}`], ...r.FilterSummary.map(s => [s])]
+const metadata = (r: StatementResult) => [[`Період: ${r.From} – ${r.Through}`], [statementUnitNote], ...r.FilterSummary.map(s => [s])]
 export function statementCsv(result: StatementResult): string {
   const quote = (s: string) => `"${s.replaceAll('"', '""')}"`
   const safe = (s: string) => /^[\s\p{Cc}]*[=+\-@]/u.test(s) ? `'${s}` : s

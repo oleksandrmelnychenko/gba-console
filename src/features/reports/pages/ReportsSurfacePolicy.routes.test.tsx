@@ -103,7 +103,7 @@ describe('BUG-1274-only report surface routes', () => {
     renderReports('/dashboard')
     expect(screen.queryByRole('button', { name: 'Перегляд звіту з файла' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Конструктор звітів' })).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Звіти' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Каталог' }))
     expect(screen.getByLabelText('Поточний маршрут').textContent).toBe('/reports/stocks')
     expect(await screen.findByRole('heading', { name: 'Звіти' })).toBeTruthy()
   })

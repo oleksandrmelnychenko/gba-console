@@ -38,7 +38,7 @@ it('unknown human names retain keys signed cells and the shared screen export ma
 it('one matrix supplies default and all optional CSV XLSX source and typed PDF payloads', () => {
   for (const r of [salesResponse(), salesResponse([...salesMeasures])]) { const matrix = salesMatrix(r); expect(matrix[0]).toEqual(salesHeaders(r)); expect(matrix[0]).toHaveLength(2 + r.Measures.length)
     expect(salesPdfDefinition(r).content).toContainEqual(expect.objectContaining({ table: expect.objectContaining({ body: matrix, widths: Array(matrix[0].length).fill('*') }) }))
-    expect(salesCsv(r)).toContain('"-12.00"'); expect(salesCsv(r)).toContain(r.ResultSha256)
+    expect(salesCsv(r)).toContain('"-12.00"'); expect(salesCsv(r)).not.toContain(r.ResultSha256); expect(JSON.stringify(salesPdfDefinition(r))).not.toContain(r.ResultSha256)
   }
 })
 it('CSV protects only text captions and retains signed quantities while incomplete export is refused', () => {

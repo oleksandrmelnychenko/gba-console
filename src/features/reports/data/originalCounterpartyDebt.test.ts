@@ -50,7 +50,7 @@ it('same full matrix feeds screen and exports with optional resource only when s
       widths: Array(debtMatrix(result)[0].length).fill('*'), body: debtMatrix(result),
     }) }))
   }
-  expect(debtCsv(optional)).toContain(optional.ResultSha256)
+  expect(debtCsv(optional)).not.toContain(optional.ResultSha256); expect(JSON.stringify(debtPdfDefinition(optional))).not.toContain(optional.ResultSha256)
 })
 it('export escapes label formulas while preserving exact signed monetary text', () => {
   const r = debtResponse(true); r.Rows[0].Caption = '=unsafe'

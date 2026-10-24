@@ -109,3 +109,26 @@ it('the real PDF engine generates a PDF without mutating screen headers or the n
   expect(movementHeaders).toEqual(headers)
   expect(movementMatrix(result)).toEqual(before)
 }, 20_000)
+
+it('prints a concise business header and keeps capture hashes out of shared files', async () => {
+  const result = clone()
+  result.Scope.Through = result.Capture!.Through
+  result.Capture!.ThroughDayComplete = false
+  const before = structuredClone(result), pdf = movementPdfDefinition(result)
+  const tableIndex = pdf.content.findIndex(item => 'table' in item)
+  expect(tableIndex).toBe(4)
+  const text = JSON.stringify(pdf)
+  expect(text).toContain(result.Scope.Article)
+  expect(text).toContain(result.Scope.From)
+  expect(text).toContain('Дані за останній день неповні.')
+  expect(pdf.content.slice(tableIndex + 1)).toContainEqual(expect.objectContaining({ text: 'Дані за останній день неповні.' }))
+  for (const hidden of [result.Capture!.ManifestSha256, result.ResultSha256!, 'Зріз:', 'Результат:', 'SourceWarehouseReference']) {
+    expect(text).not.toContain(hidden)
+    expect(movementCsv(result)).not.toContain(hidden)
+  }
+  const blob = await movementXlsx(result)
+  const bytes = await new Promise<ArrayBuffer>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result as ArrayBuffer); reader.onerror = reject; reader.readAsArrayBuffer(blob) })
+  const book = XLSX.read(bytes, { type: 'array' })
+  expect(JSON.stringify(XLSX.utils.sheet_to_json(book.Sheets['Про звіт'], { header: 1 }))).not.toContain(result.ResultSha256)
+  expect(result).toEqual(before)
+})

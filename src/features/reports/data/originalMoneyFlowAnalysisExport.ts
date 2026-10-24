@@ -37,9 +37,9 @@ export function moneyFlowFilterSummary(result: MoneyFlowResult): string[] {
 }
 function metadata(result: MoneyFlowResult): string[][] {
   return [['Аналіз руху коштів Fenix'], [`Період: ${result.From} — ${result.Through}`], [unitNote], [scopeNote], [nullNote],
-    [`Код управлінської валюти джерела: ${result.ManagementCurrency?.Code ?? 'не підтверджено'}`],
+    [`Управлінська валюта (код): ${result.ManagementCurrency?.Code ?? 'не підтверджено'}`],
     ...moneyFlowFilterSummary(result).map(text => [text]),
-    [`Назви не зіставлено: ${result.MissingCaptionMappings.map(field => moneyFlowLabels[field]).join(', ')}`]]
+    ...(result.MissingCaptionMappings.length ? [[`Назви недоступні: ${result.MissingCaptionMappings.map(field => moneyFlowLabels[field]).join(', ')}`]] : [])]
 }
 export function moneyFlowCsv(result: MoneyFlowResult): string {
   const quote = (value: string) => `"${value.replaceAll('"', '""')}"`

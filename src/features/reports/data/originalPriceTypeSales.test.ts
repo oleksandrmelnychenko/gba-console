@@ -45,7 +45,7 @@ it('one complete matrix feeds screen CSV XLSX source and PDF with default four a
   for (const r of [salesResponse(), salesResponse([...priceSalesMeasures])]) {
     const matrix = priceSalesMatrix(r); expect(matrix[0]).toEqual(priceSalesHeaders(r)); expect(matrix[0]).toHaveLength(2 + r.Measures.length)
     expect(priceSalesPdfDefinition(r).content).toContainEqual(expect.objectContaining({ table: expect.objectContaining({ body: matrix, widths: Array(matrix[0].length).fill('*') }) }))
-    expect(priceSalesCsv(r)).toContain('"-12.00"'); expect(priceSalesCsv(r)).toContain(r.ResultSha256)
+    expect(priceSalesCsv(r)).toContain('"-12.00"'); expect(priceSalesCsv(r)).not.toContain(r.ResultSha256); expect(JSON.stringify(priceSalesPdfDefinition(r))).not.toContain(r.ResultSha256)
   }
 })
 it('CSV protects formula-like human captions while every signed resource remains native text', () => {

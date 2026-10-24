@@ -8,7 +8,7 @@ const captions: Record<string, string> = {
   CounterpartyRegionCode: 'Регіон', CounterpartyUnknown: 'Невідомий регіон',
 }
 
-type PdfText = { text: string; style?: string; color?: string; margin?: number[] }
+type PdfText = { text: string; style?: string; color?: string; fontSize?: number; margin?: number[] }
 type PdfTable = { table: { headerRows: number; widths: Array<number | '*' | 'auto'>; body: string[][] }; layout: string }
 export type CurrentVparivanieV2PdfDefinition = {
   pageSize: 'A3' | 'A4'; pageOrientation: 'landscape'; pageMargins: number[]

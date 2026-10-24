@@ -14,10 +14,10 @@ export function fenixDiscountMatrix(result: FenixDiscountResult): string[][] {
   validateFenixDiscountResult(result, fenixResultRequest(result))
   return [[...fenixDiscountHeaders], ...fenixDiscountLines(result).map(row => row.cells)]
 }
-const metadata = (result: FenixDiscountResult) => [[`FENIX · ОтчетПоСкидкам · зріз ${result.Through} до 23:59:59`],
+const metadata = (result: FenixDiscountResult) => [[`FENIX · Знижки · станом на ${result.Through}`],
   ['Максимальний відсоток на рівні отримувача й номенклатури. Відсотки не додаються.'],
-  [`Максимум сервера: ${result.MaximumPercentage ?? 'рядків немає'}`],
-  ['Повна відповідність поточному оригіналу 1С ще не підтверджена. Валютна конвертація не застосовується.']]
+  [`Максимальна знижка, %: ${result.MaximumPercentage ?? 'рядків немає'}`],
+  ['Дані не звірено з поточним звітом 1С.']]
 export function fenixDiscountCsv(result: FenixDiscountResult): string {
   const safe = (v: string) => /^[\s\p{Cc}]*[=+\-@]/u.test(v) ? `'${v}` : v
   const quote = (v: string) => `"${v.replaceAll('"', '""')}"`

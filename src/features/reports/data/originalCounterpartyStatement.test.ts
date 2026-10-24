@@ -62,7 +62,7 @@ it('one full hierarchy matrix feeds screen CSV XLSX source and PDF with all eigh
   expect(matrix[0]).toEqual(statementHeaders); expect(matrix[0]).toHaveLength(11); expect(matrix).toHaveLength(5)
   expect(matrix.at(-1)).toEqual(['Разом', '', '', ...statementValues(r.Totals!)])
   expect(statementPdfDefinition(r).content).toContainEqual(expect.objectContaining({ table: expect.objectContaining({ body: matrix, widths: Array(11).fill('*') }) }))
-  expect(statementCsv(r)).toContain(r.ResultSha256); expect(statementCsv(r)).toContain('"-1.00"')
+  expect(statementCsv(r)).not.toContain(r.ResultSha256); expect(JSON.stringify(statementPdfDefinition(r))).not.toContain(r.ResultSha256); expect(statementCsv(r)).toContain('"-1.00"')
 })
 it('formula-like human captions are escaped only in label columns and exact signed amounts remain unchanged', () => {
   const r = statementResponse(); r.Rows[0].Counterparties[0].Agreements[0].Caption = '=unsafe'

@@ -13,10 +13,10 @@ export function amgDiscountMatrix(result: AmgDiscountResult): string[][] {
   normalizeAmgDiscounts(result, amgResultRequest(result))
   return [amgDiscountHeaders, ...amgDiscountLines(result).map(row => row.cells)]
 }
-const metadata = (result: AmgDiscountResult) => [[`AMG · ОтчетПоСкидкам · зріз ${result.Through} до 23:59:59`],
+const metadata = (result: AmgDiscountResult) => [[`AMG · Знижки · станом на ${result.Through}`],
   ['Максимальний відсоток на рівні отримувача й номенклатури. Відсотки не додаються.'],
-  [`Максимум сервера: ${result.MaximumPercentage ?? 'рядків немає'}`],
-  ['Повна відповідність поточному оригіналу 1С ще не підтверджена. Валютна конвертація не застосовується.']]
+  [`Максимальна знижка, %: ${result.MaximumPercentage ?? 'рядків немає'}`],
+  ['Дані не звірено з поточним звітом 1С.']]
 export function amgDiscountCsv(result: AmgDiscountResult): string {
   const safe = (v: string) => /^[\s\p{Cc}]*[=+\-@]/u.test(v) ? `'${v}` : v
   const quote = (v: string) => `"${v.replaceAll('"', '""')}"`

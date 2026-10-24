@@ -41,7 +41,7 @@ export function buyerOrdersMatrix(result: BuyerOrdersResult): string[][] {
   return [[...buyerOrdersHeaders], ...buyerOrdersLines(result).map(r => r.cells), ['Разом', '', ...buyerOrdersValues(result.BaseTotals, result.StoredTotals)]]
 }
 const units = 'Базова кількість = кількість зберігання × коефіцієнт одиниці зберігання товару до групування. Значення точні, без округлення.'
-const mapping = 'Назви замовлень недоступні; їхні окремі рядки збережено. Повна відповідність усім налаштуванням 1С не підтверджена.'
+const mapping = 'Назви замовлень недоступні; кожне замовлення показано окремо.'
 export function buyerOrdersCsv(result: BuyerOrdersResult): string {
   const quote = (v: string) => `"${v.replaceAll('"', '""')}"`
   const label = (v: string) => /^[\s\p{Cc}]*[=+\-@]/u.test(v) ? `'${v}` : v

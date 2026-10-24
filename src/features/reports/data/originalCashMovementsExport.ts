@@ -46,9 +46,9 @@ export function cashMovementsFilterSummary(result: CashMovementsResult): string[
 }
 function metadata(result: CashMovementsResult): string[][] {
   return [['Рухи коштів Fenix'], [`Період: ${result.From} — ${result.Through}`], [unitNote], [nullNote],
-    [`Код управлінської валюти джерела: ${result.ManagementCurrency?.Code ?? 'не підтверджено'}`],
+    [`Управлінська валюта (код): ${result.ManagementCurrency?.Code ?? 'не підтверджено'}`],
     ...cashMovementsFilterSummary(result).map(text => [text]),
-    [`Назви не зіставлено: ${result.MissingCaptionMappings.map(field => cashMovementsLabels[field]).join(', ')}`]]
+    ...(result.MissingCaptionMappings.length ? [[`Назви недоступні: ${result.MissingCaptionMappings.map(field => cashMovementsLabels[field]).join(', ')}`]] : [])]
 }
 export function cashMovementsCsv(result: CashMovementsResult): string {
   const quote = (value: string) => `"${value.replaceAll('"', '""')}"`
