@@ -21,9 +21,6 @@ vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<type
 vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(),
   createStockReport: vi.fn(), getOneCTurnoverScopes: vi.fn(), searchDatasetReportValues: vi.fn(),
 }))
-vi.mock('../../../shared/ui/document-export-modal/DocumentExportModal', () => ({
-  DocumentExportModal: ({ opened, title }: { opened: boolean; title: string }) => opened ? <div role="dialog" aria-label={title}>Файли сформовано</div> : null,
-}))
 const page = () => <MantineProvider env="test"><I18nProvider><ReportsStocksPage consoleScope /></I18nProvider></MantineProvider>
 beforeAll(async () => { await import('./ReportCataloguePanel') })
 beforeEach(() => {
@@ -54,9 +51,25 @@ describe('production workbook route to published turnover', () => {
     expect(within(form).getByText(/Усі товари та послуги/)).toBeTruthy()
     expect(screen.queryByRole('dialog', { name: 'Каталог звітів 1С' })).toBeNull()
     fireEvent.click(within(form).getByRole('button', { name: 'Застосувати й сформувати' }))
-    await screen.findByText('Файли сформовано')
+    await screen.findByRole('dialog', { name: /Експорт.*Продажі за відповідальними/ })
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({ dataSource: 1, oneC: organizationOnlyScope.Filters,
       from: '2026-10-01', to: '2026-10-24', selections: [] })
+    await waitFor(() => expect((within(form).getByRole('button', { name: 'Закрити продажі за відповідальними' }) as HTMLButtonElement).disabled).toBe(true))
+    fireEvent.keyDown(document.body, { key: 'Escape', code: 'Escape' })
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: /Експорт.*Продажі за відповідальними/ })).toBeNull())
+    expect(screen.getByRole('dialog', { name: 'Продажі за відповідальними' })).toBe(form)
+    fireEvent.change(within(form).getByLabelText('Від'), { target: { value: '02.10.2026' } })
+    fireEvent.blur(within(form).getByLabelText('Від'))
+    expect(within(form).getByText(/Є незастосовані зміни періоду/)).toBeTruthy()
+    fireEvent.click(within(form).getByRole('button', { name: 'Відкрити сформований звіт' }))
+    const exportDialog = await screen.findByRole('dialog', { name: /Експорт.*2026-10-01 — 2026-10-24/ })
+    expect(within(exportDialog).getByRole('link', { name: /Excel/ }).getAttribute('href')).toContain('/reports/v3.xlsx')
+    const overlay = exportDialog.closest('.mantine-Modal-root')!.querySelector('.mantine-Modal-overlay')!
+    fireEvent.click(overlay)
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: /Експорт.*Продажі за відповідальними/ })).toBeNull())
+    expect(screen.getByRole('dialog', { name: 'Продажі за відповідальними' })).toBe(form)
+    expect(within(form).getByText(/Є незастосовані зміни періоду/)).toBeTruthy()
+    expect(createStockReport).toHaveBeenCalledOnce()
     fireEvent.click(within(form).getByRole('button', { name: /^Закрити$/ }))
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Продажі за відповідальними' })).toBeNull())
     expect(screen.getByRole('button', { name: /^Період:/ }).getAttribute('aria-label')).toEqual(before)

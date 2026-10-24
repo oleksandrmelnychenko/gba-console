@@ -387,6 +387,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const [cashPeriod, setCashPeriod] = useValueState<unknown>(undefined)
   const [oneCSpecialSettings, setOneCSpecialSettings] = useValueState<unknown>(undefined)
   const [oneCScope, setOneCScope] = useValueState<OneCTurnoverFilters | undefined>(undefined)
+  const [responsiblesExportOpen, setResponsiblesExportOpen] = useState(false)
   const [responsiblesScope, setResponsiblesScope] = useState<{ scope: OneCTurnoverScopeSummary; caller: string | null } | null>(null)
   const [oneCReportOpen, setOneCReportOpen] = useState(false)
   const [oneCReportGenerating, setOneCReportGenerating] = useState(false)
@@ -1067,8 +1068,11 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   }
   const dialogs = <>
     {responsiblesScope && canGenerateReport && responsiblesScope.caller === ownerId ? <ReportModal opened title="Продажі за відповідальними" size={960}
-      closeButtonProps={{ 'aria-label': 'Закрити продажі за відповідальними' }} onClose={() => setResponsiblesScope(null)}>
+      closeOnEscape={!responsiblesExportOpen} closeOnClickOutside={!responsiblesExportOpen} trapFocus={!responsiblesExportOpen}
+      closeButtonProps={{ 'aria-label': 'Закрити продажі за відповідальними', disabled: responsiblesExportOpen }}
+      onClose={() => { if (!responsiblesExportOpen) setResponsiblesScope(null) }}>
       <OneCTurnoverResponsiblesPanel scope={responsiblesScope.scope} canGenerate={canGenerateReport} callerKey={ownerId}
+        onExportOpenChange={setResponsiblesExportOpen}
         onClose={() => setResponsiblesScope(null)} />
     </ReportModal> : null}
     {mountsDialog(oneCReportOpen) ? <ReportModal opened={oneCReportOpen} title={t('Валовий прибуток — як у 1С')} size={960}
@@ -1160,6 +1164,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const catalogueControl = (quiet: boolean) => <ReportCatalogueControl onOpenTurnoverResponsibles={(scope, catalogue) => {
     if (!canGenerateReport || isLoading || !isOrganizationOnlyTurnoverScope(scope)
       || !isOneCTurnoverCatalogueChoice(catalogue, ORGANIZATION_ONLY_TURNOVER_CHOICE)) return false
+    setResponsiblesExportOpen(false)
     setResponsiblesScope({ scope: structuredClone(scope), caller: ownerId })
     return true
   }} consoleScope={consoleScope} presentation="dialog" enabled={canGenerateReport}

@@ -8,7 +8,7 @@ import { createOneCTurnoverReport, organizationOnlyTurnoverPeriodError } from '.
 import { isOrganizationOnlyTurnoverScope } from '../data/oneCTurnoverScopes'
 import type { OneCTurnoverScopeSummary, ReportResult } from '../types'
 
-type Props = { scope: OneCTurnoverScopeSummary; canGenerate: boolean; callerKey: string | null; onClose: () => void }
+type Props = { scope: OneCTurnoverScopeSummary; canGenerate: boolean; callerKey: string | null; onClose: () => void; onExportOpenChange?: (opened: boolean) => void }
 const kyivTimestamp = new Intl.DateTimeFormat('uk-UA', { timeZone: 'Europe/Kyiv', dateStyle: 'medium', timeStyle: 'medium' })
 function sourceAsOf(from: string, to: string): string {
   const first = kyivTimestamp.format(new Date(from)), last = kyivTimestamp.format(new Date(to))
@@ -19,9 +19,9 @@ const kyivDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Kyiv', year
 type Applied = { result: ReportResult; from: string; to: string; sourceFrom: string; sourceTo: string }
 
 /** Files remain tied to their applied period while dates are edited. Caller/permission changes remove them. */
-export function OneCTurnoverResponsiblesPanel({ scope, canGenerate, callerKey, onClose }: Props) {
+export function OneCTurnoverResponsiblesPanel({ scope, canGenerate, callerKey, onClose, onExportOpenChange }: Props) {
   const identity = `${callerKey ?? ''}:${canGenerate}:${scope.Key}`
-  return <ResponsiblesForm key={identity} scope={scope} canGenerate={canGenerate} onClose={onClose} />
+  return <ResponsiblesForm key={identity} scope={scope} canGenerate={canGenerate} onClose={onClose} onExportOpenChange={onExportOpenChange} />
 }
 
 function useResponsiblesReport(scope: OneCTurnoverScopeSummary, canGenerate: boolean) {
@@ -59,8 +59,12 @@ function useResponsiblesReport(scope: OneCTurnoverScopeSummary, canGenerate: boo
   return { from, setFrom, to, setTo, applied, loading, error, opened, setOpened, validScope, periodError, generate }
 }
 
-function ResponsiblesForm({ scope, canGenerate, onClose }: Omit<Props, 'callerKey'>) {
+function ResponsiblesForm({ scope, canGenerate, onClose, onExportOpenChange }: Omit<Props, 'callerKey'>) {
   const { from, setFrom, to, setTo, applied, loading, error, opened, setOpened, validScope, periodError, generate } = useResponsiblesReport(scope, canGenerate)
+  useEffect(() => {
+    onExportOpenChange?.(opened)
+    return () => onExportOpenChange?.(false)
+  }, [opened, onExportOpenChange])
   const pending = !!applied && (from !== applied.from || to !== applied.to)
   const periodNotice = capturedPeriodNotice(scope, from, to, validScope)
   if (!canGenerate) return <Alert color="yellow">Немає права формування звітів.</Alert>
