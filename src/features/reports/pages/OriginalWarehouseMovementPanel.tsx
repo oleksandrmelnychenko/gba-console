@@ -35,18 +35,19 @@ function MovementResultView({ result }: { result: MovementResult }) {
   </Stack>
 }
 type MovementDelivery = { result: MovementResult | null; error: string | null; status: 'idle' | 'loading' | 'exporting'; owner: AbortController | null }
-function useMovementDelivery(publication: MovementPublication, request: MovementRequest, permitted: boolean) {
+function useMovementDelivery(publication: MovementPublication, request: MovementRequest, permitted: boolean, onBusyChange?: (busy: boolean) => void) {
   const [state, setState] = useState<MovementDelivery>({ result: null, error: null, status: 'idle', owner: null })
   const active = useRef<AbortController | null>(null), alive = useRef(true)
-  useEffect(() => { alive.current = true; return () => { alive.current = false; active.current?.abort() } }, [])
+  useEffect(() => { alive.current = true; return () => { alive.current = false; active.current?.abort(); onBusyChange?.(false) } }, [onBusyChange])
   const validation = movementRequestError(request, publication)
   function begin(status: MovementDelivery['status']) {
-    const owner = new AbortController(); active.current?.abort(); active.current = owner
+    const owner = new AbortController(); active.current?.abort(); active.current = owner; onBusyChange?.(true)
     setState(current => ({ ...current, owner, status, error: null }))
     return owner
   }
   function complete(owner: AbortController, patch: Partial<MovementDelivery>) {
     if (!alive.current || owner.signal.aborted) return
+    if (patch.status === 'idle') onBusyChange?.(false)
     setState(current => current.owner === owner ? { ...current, ...patch } : current)
   }
   async function generate() {
@@ -72,12 +73,12 @@ function useMovementDelivery(publication: MovementPublication, request: Movement
   }
   return { result: state.result, error: state.error, loading: state.status === 'loading', exporting: state.status === 'exporting', validation, generate, exportFile }
 }
-function MovementForm({ publication, canGenerate }: { publication: MovementPublication; canGenerate: boolean }) {
+function MovementForm({ publication, canGenerate, onBusyChange }: { publication: MovementPublication; canGenerate: boolean; onBusyChange?: (busy: boolean) => void }) {
   const [request, setRequest] = useState<MovementRequest>(() => ({ Version: 1, World: 'fenix',
     From: publication.Capture.From > `${publication.Capture.Through.slice(0, 7)}-01` ? publication.Capture.From : `${publication.Capture.Through.slice(0, 7)}-01`,
     Through: publication.Capture.Through, Article: publication.Products[0].Article, Warehouses: publication.Warehouses.slice(0, 32).map(w => w.Reference).sort() }))
   const { From: from, Through: through, Article: article, Warehouses: warehouses } = request
-  const run = useMovementDelivery(publication, request, canGenerate), busy = run.loading || run.exporting
+  const run = useMovementDelivery(publication, request, canGenerate, onBusyChange), busy = run.loading || run.exporting
   const pending = run.result && (run.result.Scope.From !== from || run.result.Scope.Through !== through || run.result.Scope.Article !== article
     || JSON.stringify(run.result.Scope.Warehouses) !== JSON.stringify(warehouses))
   const exportError = run.result ? movementExportError(run.result) : null
@@ -95,13 +96,13 @@ function MovementForm({ publication, canGenerate }: { publication: MovementPubli
     {run.result ? <MovementResultView result={run.result} /> : <Text size="sm" c="dimmed">Оберіть період, товар і склади та застосуйте налаштування.</Text>}
   </Stack>
 }
-export function OriginalWarehouseMovementPanel({ publications, callerKey, canGenerate }: { publications: MovementPublication[]; callerKey: string | null; canGenerate: boolean }) {
+export function OriginalWarehouseMovementPanel({ publications, callerKey, canGenerate, onBusyChange }: { publications: MovementPublication[]; callerKey: string | null; canGenerate: boolean; onBusyChange?: (busy: boolean) => void }) {
   const [selected, setSelected] = useState(publications[0]?.Capture.ManifestSha256 ?? '')
   const publication = publications.find(p => p.Capture.ManifestSha256 === selected)
   if (!canGenerate || !callerKey) return <Text>Немає права формування.</Text>
   return <Stack gap="md">{publications.length > 1 ? <Select label="Опублікований період" value={selected}
     data={publications.map(p => ({ value: p.Capture.ManifestSha256, label: `${p.Capture.From} — ${p.Capture.Through} · ${movementAsOf(p.Capture)}` }))}
     onChange={value => { if (value) setSelected(value) }} /> : null}
-    {publication ? <MovementForm key={`${callerKey}:${selected}`} publication={publication} canGenerate={canGenerate} /> : <Text>Опубліковані дані поки недоступні.</Text>}
+    {publication ? <MovementForm key={`${callerKey}:${selected}`} publication={publication} canGenerate={canGenerate} onBusyChange={onBusyChange} /> : <Text>Опубліковані дані поки недоступні.</Text>}
   </Stack>
 }

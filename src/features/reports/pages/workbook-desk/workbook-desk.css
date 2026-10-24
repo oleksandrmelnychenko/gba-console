@@ -215,6 +215,7 @@
 
 .workbook-header__resolving {
   align-items: center;
+  justify-content: center;
   color: var(--mantine-color-gray-7);
   display: inline-flex;
   font-size: 13px;
@@ -424,6 +425,12 @@
   border: 0 !important;
   padding: 0 !important;
 }
+
+.workbook-settings--unified .reports-stocks-selection-list { padding-top: 0; }
+.workbook-settings--unified .workbook-settings__unified-section--organizations > .workbook-settings__control,
+.workbook-settings--unified .workbook-settings__unified-section--filters > .workbook-settings__control { padding: 8px; gap: 8px; }
+.workbook-settings--unified .workbook-inline-selection { padding: 8px; gap: 6px 8px; }
+.workbook-settings--unified .workbook-filter-option { padding: 8px; }
 
 .workbook-settings__control .reports-stocks-structure > .app-section-title,
 .workbook-settings__control .reports-stocks-legacy-measurements .reports-stocks-legacy-panel__title {
@@ -793,6 +800,7 @@
 .workbook-settings__control .reports-stocks-selection-summary__copy > span { white-space: normal; overflow-wrap: anywhere; }
 .workbook-settings__control .reports-stocks-selection-summary__condition { color: var(--desk-text); }
 .workbook-settings__control .reports-stocks-legacy-measurements__list {
+  margin-top: 0;
   border: 1px solid var(--desk-border);
   border-radius: 8px;
   overflow-x: auto;
@@ -823,10 +831,9 @@
 .workbook-advanced { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 12px; min-width: 0; }
 .workbook-advanced > * { min-width: 0; }
 .workbook-advanced > :only-child,
-.workbook-advanced > .workbook-presentation,
 .workbook-advanced > :has(.report-table-scroll-area) { grid-column: 1 / -1; }
-.workbook-advanced > :is(section, .mantine-Card-root, .workbook-desk__group:not(:empty)) { border: 1px solid var(--desk-border); border-radius: 8px; padding: 12px; margin: 0; }
-.workbook-advanced > .workbook-desk__group:empty { display: none; }
+.workbook-advanced > :is(section, .mantine-Card-root, .workbook-desk__group:not(:empty)) { border: 0; border-radius: 0; padding: 0 !important; margin: 0; box-shadow: none; }
+.workbook-advanced > :empty { display: none; }
 .workbook-advanced > .workbook-presentation { border: 0; padding: 0; background: transparent; }
 .workbook-presentation__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 12px; }
 .workbook-advanced-card { border: 1px solid var(--desk-border); border-radius: 8px; padding: 12px; display: grid; align-content: start; gap: 12px; min-width: 0; }
@@ -852,10 +859,11 @@
 
 /* The whole draft stays visible, with the same compact section hierarchy. */
 .workbook-settings--unified { display: flex; flex-direction: column; gap: 12px; padding: 12px; }
-.workbook-settings__unified-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 20px; }
-.workbook-settings__period .workbook-period { flex-wrap: wrap; }
-.workbook-settings__period .workbook-period__presets { display: block; max-width: calc(100% - 46px); }
-.workbook-settings__period .mantine-InputWrapper-label { font: 500 12px/1.4 var(--font-mono); margin-bottom: 4px; }
+.workbook-settings__unified-head { display: flex; align-items: center; justify-content: center; gap: 10px 20px; }
+.workbook-settings__period .workbook-period { align-items: center; justify-content: center; flex-wrap: wrap; }
+.workbook-settings__period .workbook-period__presets { display: flex; align-items: center; gap: 10px; width: auto; max-width: calc(100% - 46px); min-width: 0; }
+.workbook-settings__period .workbook-period__presets .mantine-Input-wrapper { width: 185px; min-width: 0; }
+.workbook-settings__period .mantine-InputWrapper-label { flex-shrink: 0; font: 500 12px/1.4 var(--font-mono); margin: 0; }
 .workbook-settings__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
 .workbook-settings__unified-section { min-width: 0; border: 1px solid var(--desk-border); border-radius: 8px; }
 .workbook-settings__unified-section > .workbook-settings__control { padding: 12px; }
@@ -948,3 +956,7 @@
   .workbook-inline-selection__value { grid-column: 2 / 4; }
   .workbook-inline-selection > :last-child { grid-column: 4; }
 }
+
+/* The expanded section supplies the frame; its controls only need spacing. */
+.workbook-advanced .workbook-advanced-card { border: 0; border-radius: 0; padding: 0; }
+.workbook-advanced .workbook-presentation__option { border: 0; padding: 8px; }

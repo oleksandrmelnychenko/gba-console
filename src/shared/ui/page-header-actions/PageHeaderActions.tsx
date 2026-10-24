@@ -21,6 +21,7 @@ export function PageHeaderActionsProvider({
     useState<HTMLElement | null>(null)
   const [contentHeaderContainer, setContentHeaderContainer] =
     useState<HTMLElement | null>(null)
+  const [submenuContainer, setSubmenuContainer] = useState<HTMLElement | null>(null)
   const [titleContainer, setTitleContainer] = useState<HTMLElement | null>(null)
   const [breadcrumb, setBreadcrumb] = useState<string | null>(null)
 
@@ -30,6 +31,8 @@ export function PageHeaderActionsProvider({
         container,
         panelActionsContainer,
         contentHeaderContainer,
+        submenuContainer,
+        setSubmenuContainer,
         titleContainer,
         setContainer,
         setPanelActionsContainer,
@@ -125,4 +128,15 @@ export function PageContentHeader({ children }: { children: ReactNode }) {
   }
 
   return createPortal(children, contentHeaderContainer)
+}
+
+/** Page-owned actions alongside the shell submenu; removed automatically on navigation. */
+export function PageSubmenuActionsSlot({ className, availableWidth }: { className?: string; availableWidth?: number }) {
+  const { setSubmenuContainer } = useContext(PageHeaderActionsContext)
+  return <div ref={setSubmenuContainer} className={className} style={{ width: availableWidth, maxWidth: '100%' }} />
+}
+
+export function PageSubmenuActions({ children }: { children: ReactNode }) {
+  const { submenuContainer } = useContext(PageHeaderActionsContext)
+  return submenuContainer ? createPortal(children, submenuContainer) : <>{children}</>
 }

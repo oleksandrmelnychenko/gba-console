@@ -20,8 +20,8 @@ export function WorkbookHeader({ title, showTitle = true, templateName, resolvin
     {templateName.trim() ? <Text className="workbook-header__template">
       {t('Шаблон «{name}»', { name: templateName.trim() })}
     </Text> : null}
-    {resolving ? <span className="workbook-header__resolving" role="status">
-      <Loader size={14} />{t('Застосовуються відбори книги…')}
+    {resolving ? <span className="workbook-header__resolving" role="status" aria-label={t('Завантаження')}>
+      <Loader size={18} aria-hidden="true" />
     </span> : null}
     {warning ? <p className="workbook-header__warning" role="status">
       <CircleAlert size={16} aria-hidden="true" /><span>{warning}</span>

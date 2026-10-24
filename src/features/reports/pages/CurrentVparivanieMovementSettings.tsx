@@ -1,6 +1,7 @@
 import { currentVparivanieAnalysisCapability } from '../data/currentVparivanieAnalysis'
 import { currentVparivanieFullScopeAvailable } from '../data/currentVparivanie'
 import { Alert, Checkbox, Group, Stack, Text } from '@mantine/core'
+import { ArrowLeftRight } from 'lucide-react'
 import { currentVparivanieMovementsAvailable, MOVEMENT_FILTER_NOTICE, type CurrentVparivanieMovementSelection } from '../data/currentVparivanieMovements'
 import type { ReportDataset } from '../types'
 
@@ -12,7 +13,7 @@ export function CurrentVparivanieMovementSettings({ dataset, value, onChange, di
 }) {
   if (!currentVparivanieMovementsAvailable(dataset) || !currentVparivanieFullScopeAvailable(dataset)) return null
   return <Stack gap="xs" role="group" aria-label="Показники руху товару">
-    <Text size="sm" fw={600}>Рух товару за період</Text>
+    <Text size="sm" fw={600}><Group component="span" gap={6} wrap="nowrap"><ArrowLeftRight size={16} aria-hidden="true" />Рух товару за період</Group></Text>
     <Group>
       <Checkbox label="Прихід" checked={value.Incoming} disabled={disabled}
         onChange={event => onChange({ ...value, Incoming: event.currentTarget.checked })} />

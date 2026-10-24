@@ -132,7 +132,7 @@ export function ConsoleNav({ mode = 'all', availableWidth }: ConsoleNavProps) {
 
     return {
       key,
-      label: node.Module,
+      label: getNodePath(node) === '/reports/stocks' ? t('Каталог') : node.Module,
       active: activeNodeKey != null && key === activeNodeKey,
       badge: hasAi ? <AiFeatureBadge compact tooltip={t('AI-функція')} /> : null,
       onSelect: () => openNode(node),

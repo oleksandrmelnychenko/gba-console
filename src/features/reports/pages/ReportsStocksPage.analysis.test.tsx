@@ -32,7 +32,6 @@ async function open() {
 }
 it('upgrades a legacy UI template to all-sales analysis and adds a categorized time dimension', async () => {
   const { container } = await open()
-  expect(screen.getByText(/Відбори покупця, договору й менеджера застосовуються до всіх продажів/)).toBeTruthy()
   expect(screen.queryByRole('button', { name: 'Видалити Показник' })).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: 'Додати поле: Групування рядків' }))
   const picker = screen.getByRole('dialog', { name: 'Групування рядків' })

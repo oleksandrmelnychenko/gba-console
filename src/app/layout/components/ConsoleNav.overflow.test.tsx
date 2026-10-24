@@ -65,3 +65,14 @@ it('keeps the active module on screen with its highlight', () => {
   expect(active.className).toContain('is-active')
   expect(screen.getByRole('button', { name: 'Ще' }).className).not.toContain('is-active')
 })
+
+it('labels the reports submenu Catalogue while preserving the reports module and route', () => {
+  const reportNode = { Id: 200, Module: 'Звіти', Route: '/reports/stocks' }
+  const reportModule = { Id: 20, Module: 'Звіти', Children: [reportNode] }
+  navigation.value = { error: null, isLoading: false, modules: [reportModule], selectedModule: reportModule, selectedNode: reportNode,
+    getNodePath: (item: NavigationNode) => item.Route }
+  render(<MantineProvider env="test"><I18nProvider><ConsoleNav /></I18nProvider></MantineProvider>)
+  expect(screen.getByRole('button', { name: 'Звіти' })).toBeTruthy()
+  fireEvent.click(screen.getByRole('button', { name: 'Каталог' }))
+  expect(navigate).toHaveBeenCalledWith('/reports/stocks', { state: { nodeTitle: 'Звіти', moduleTitle: 'Звіти' } })
+})

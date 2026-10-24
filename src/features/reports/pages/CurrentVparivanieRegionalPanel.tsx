@@ -2,6 +2,7 @@ import { requestCurrentVparivanieAnalysis } from '../data/currentVparivanieAnaly
 import { movementSelection } from '../data/currentVparivanieMovements'
 import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { Alert, Button, Checkbox, Group, Stack, Text } from '@mantine/core'
+import { Map as MapIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { readCurrentVparivanieRegional } from '../api/currentVparivanieRegionalApi'
 import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, currentVparivanieConfigurationError, currentVparivanieFullScopeAvailable,
@@ -110,8 +111,8 @@ export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disa
   }
 
   if (!available) return null
-  return <section className="app-section-card" aria-label="Регіональна форма Аналіз залишків і продажів">
-    <Stack gap="sm"><Text component="h2" fw={600} size="sm">{CURRENT_REGIONAL_TITLE}</Text>
+  return <section aria-label="Регіональна форма Аналіз залишків і продажів">
+    <Stack gap="sm"><Text component="h2" fw={600} size="sm"><Group component="span" gap={6} wrap="nowrap"><MapIcon size={16} style={{ flexShrink: 0 }} aria-hidden="true" />{CURRENT_REGIONAL_TITLE}</Group></Text>
       <RegionalFullScopeCheckbox dataset={dataset} checked={fullScope}
         disabled={!enabled || disabled || busy || exporting || !!(request.currentVparivanieMovements ?? request.CurrentVparivanieMovements)} onChange={onFullScopeChange} />
       <Group><Button loading={busy} disabled={!enabled || disabled || !!rejected || exporting} onClick={() => void read()}>
@@ -119,7 +120,7 @@ export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disa
         {(['csv', 'xlsx', 'pdf'] as const).map(format => <Button key={format} variant="default"
           disabled={!result || !enabled || disabled || exporting || busy} onClick={() => void exportDocument(format)}>
           {`Завантажити ${format.toUpperCase()}`}</Button>)}</Group>
-      {rejected ? <Text size="xs" c="gray.7" role="status">{rejected}</Text> : null}
+      {rejected && !requestCurrentVparivanieAnalysis(request) ? <Text size="xs" c="gray.7" role="status">{rejected}</Text> : null}
       {error ? <Alert color="red">{error}</Alert> : null}
       {result ? <><Text size="xs" c="dimmed">Продажі: {result.From} — {result.To}. {currentVparivanieStockSentence(result.StockAnchor)}
         Порожня клітинка — факт відсутній; ∅ — кількість невідома.</Text><RegionalTable key={requestKey} result={result} /></> : null}

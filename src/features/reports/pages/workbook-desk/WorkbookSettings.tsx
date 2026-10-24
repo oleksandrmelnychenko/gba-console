@@ -48,10 +48,9 @@ export function WorkbookSettings({ sections, advanced, disabled = false, unified
     })
   }
   if (unified) return <section className="workbook-settings workbook-settings--unified" aria-label={t('Налаштування звіту')}>
-    <div className="workbook-settings__unified-head">
-      <h2 className="app-section-title workbook-settings__title">{t('Налаштування звіту')}</h2>
-      {period ? <fieldset className="workbook-settings__control workbook-settings__period" disabled={disabled}>{period}</fieldset> : null}
-    </div>
+    {period ? <div className="workbook-settings__unified-head">
+      <fieldset className="workbook-settings__control workbook-settings__period" disabled={disabled}>{period}</fieldset>
+    </div> : null}
     <div className="workbook-settings__grid">
       {sections.map(section => <section key={section.id} id={`workbook-settings-pane-${section.id}`}
         className={`workbook-settings__unified-section workbook-settings__unified-section--${section.id}`}

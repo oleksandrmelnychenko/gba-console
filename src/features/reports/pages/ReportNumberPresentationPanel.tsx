@@ -1,4 +1,5 @@
-import { Select, SimpleGrid, Stack, Text } from '@mantine/core'
+import { Group, Select, SimpleGrid, Stack, Text } from '@mantine/core'
+import { Hash } from 'lucide-react'
 import type { ReportDataset } from '../types'
 import { numberPrecisionKinds, numberPresentationSupported, readNumberPresentation, readValueSemantics, type ReportNumberPresentation } from '../data/reportNumberPresentation'
 const labels = { money: 'Грошові суми', quantity: 'Кількість', percent: 'Відсотки', unitPrice: 'Ціна за одиницю', rate: 'Курси' }
@@ -9,7 +10,7 @@ export function ReportNumberPresentationPanel({ value, dataset, disabled, onChan
   const supported = numberPresentationSupported(dataset)
   const kinds = new Set(dataset?.Measurements.map(field => readValueSemantics(field.valueSemantics)?.kind))
   return <Stack gap="sm">
-    <Select label="Формат чисел" value={value == null ? 'legacy' : 'custom'} disabled={disabled || !supported}
+    <Select label={<Group component="span" gap={6} wrap="nowrap"><Hash size={16} aria-hidden="true" />Формат чисел</Group>} value={value == null ? 'legacy' : 'custom'} disabled={disabled || !supported}
       data={[{ value: 'legacy', label: 'Як у звіті' }, { value: 'custom', label: 'Налаштувати' }]}
       onChange={next => onChange(next === 'custom' ? { version: 1, moneyScale: 1 } : undefined)} allowDeselect={false} />
     {!supported ? <Text size="xs" c="dimmed">Налаштування чисел недоступні на цьому сервері.</Text> : null}

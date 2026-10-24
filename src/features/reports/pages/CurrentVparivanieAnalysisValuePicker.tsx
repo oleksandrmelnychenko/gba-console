@@ -4,7 +4,7 @@ import { AnalysisTopEntry } from './AnalysisTopEntry'
 import { useEffect, useRef, useState } from 'react'
 import { Alert, Button, Group, Loader, SegmentedControl, Select, Stack, Text } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
+import { ReportValueAutocomplete } from './ReportValueAutocomplete'
 import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
 import { searchAnalysisValues, type AnalysisLookupValue } from '../api/currentVparivanieAnalysisApi'
 import { analysisGroupIdentity, analysisValueIdentity, mixedAnalysisSelection, type AnalysisFieldDescriptor } from '../data/currentVparivanieAnalysis'
@@ -80,8 +80,13 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
     {mixed ? <SegmentedControl aria-label="Тип значення" value={choiceKind}
       data={[{ value: 'productGroup', label: 'Групи' }, { value: 'product', label: 'Товари' }]}
       onChange={value => { setChoiceKind(value as 'product' | 'productGroup'); setSearch('') }} /> : null}
-    {multiple ? <CheckboxMultiSelect label="Значення" placeholder="Оберіть значення" data={options} value={selectedKeys}
-      onChange={changeMultiple} withinPortal={false} remoteSearch={{ value: search, onChange: setSearch, loading: !current }} />
+    {multiple ? <ReportValueAutocomplete label="Значення" data={search !== query ? [] : options}
+      selected={selection.Values.map(value => {
+        const group = isGroup ? analysisGroupIdentity(value.Data) : null
+        return { value: analysisValueIdentity(selection.SelectedField.Type, value.Data),
+          label: group ? `${group.kind === 'product' ? 'Товар' : 'Група'}: ${value.Name}` : value.Name }
+      })}
+      onChange={changeMultiple} search={search} onSearchChange={setSearch} loading={!current || search !== query} />
       : <Select comboboxProps={{ withinPortal: false }} label="Значення" placeholder={isGroup ? 'Знайти групу' : 'Знайти значення'}
         searchable filter={({ options }) => options} searchValue={search} onSearchChange={setSearch}
         data={options} value={null} onChange={add}
@@ -94,14 +99,13 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
     </Group>
     {descriptor?.textEntry && selection.SelectedField.Type === 3 ? <AnalysisTopEntry capability={descriptor.textEntry} selection={selection} onChange={onChange} /> : null}
     {current?.error ? <Alert color="red">{current.error}</Alert> : null}
-    {multiple && selection.Values.length > 0 ? <Text size="xs">Вибрано: {selection.Values.length}</Text> : null}
-    <div className="report-analysis-values__selected">{selection.Values.map((v, index) => {
+    {!multiple ? <div className="report-analysis-values__selected">{selection.Values.map((v, index) => {
       const group = isGroup ? analysisGroupIdentity(v.Data) : null
       const label = group ? `${group.kind === 'product' ? 'Товар' : 'Група'}: ${v.Name}` : v.Name
       return <Group key={analysisValueIdentity(selection.SelectedField.Type, v.Data)} className="report-analysis-values__chip" gap={4} wrap="nowrap">
         <Text size="sm">{label}</Text><TableRowAction action="delete" label={`Видалити значення ${label}`}
           onClick={() => onChange(selection.Values.filter((_, i) => i !== index))} />
       </Group>
-    })}</div>
+    })}</div> : null}
   </Stack>
 }

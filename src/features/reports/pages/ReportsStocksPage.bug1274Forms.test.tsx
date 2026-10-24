@@ -132,7 +132,7 @@ it('opens ВП.xls on the current month, says why a too long period is refused a
   expect((readReportDateInput('До') as HTMLInputElement).value).toBe(yesterday)
   changeReportPeriod({ from: '2026-01-01', to: '2026-09-30' })
   await waitFor(() => expect(document.getElementById('report-constructor-blocked-reason')?.textContent).toMatch(/\d+/))
-  openWorkbookSettingsSection('Відбори')
+  openWorkbookSettingsSection('Фільтри')
   fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }))
   fireEvent.click(screen.getByRole('button', { name: 'Скинути' }))
   await waitFor(() => expect(from()).toBe(`${yesterday.slice(0, 7)}-01`))

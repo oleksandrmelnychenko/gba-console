@@ -1,4 +1,5 @@
-import { Card, SegmentedControl, Select } from '@mantine/core'
+import { Card, Group, SegmentedControl, Select } from '@mantine/core'
+import { WalletCards } from 'lucide-react'
 import type { ReportDataset, ReportGroupingItem } from '../types'
 import { cashPeriodSupportsManagement, type CashPeriodScope } from '../data/cashPeriod'
 import { groupedCashSupported, groupedCashWorkbookSupported, CASH_WORKBOOK_ROWS } from '../data/groupedCashPeriod'
@@ -28,7 +29,7 @@ export function CashPeriodModePanel({ dataset, grouped, exact, disabled, enabled
           { value: 'accounts', label: 'Усі / вибрані рахунки' }, { value: 'account', label: 'Один валютний запис' },
         ]} onChange={value => onModeChange(value === 'accounts')} />}
       {part === 'form' ? null : source}
-      {multiple && (groupedCashWorkbookSupported(dataset) || cashWorkbookPresentationSupported(dataset)) ? <Select mt="sm" label="Форма руху коштів" disabled={disabled}
+      {multiple && (groupedCashWorkbookSupported(dataset) || cashWorkbookPresentationSupported(dataset)) ? <Select mt={part === 'form' && hideRegisterReadMode ? 0 : 'sm'} label={<Group component="span" gap={6} wrap="nowrap"><WalletCards size={16} aria-hidden="true" />Форма руху коштів</Group>} disabled={disabled}
         allowDeselect={false} value={rows.map(row => row.type).join(',')} data={[
           { value: '43,40,42,41', label: 'Організація / Рахунок / Запис / Валюта' },
           { value: '40,44,43', label: 'Рахунок / Тип / Організація' },
