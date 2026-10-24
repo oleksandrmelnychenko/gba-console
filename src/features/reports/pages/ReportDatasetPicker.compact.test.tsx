@@ -36,19 +36,20 @@ it('searches compact options without applying a selection until explicitly chose
   expect(options.onChange).not.toHaveBeenCalled()
   expect(await screen.findByRole('option', { name: valuationDataset.Name })).toBeTruthy()
   expect(screen.queryByRole('option', { name: grossDataset.Name })).toBeNull()
-  fireEvent.click(screen.getByRole('option', { name: valuationDataset.Name }))
+  await user.click(screen.getByRole('option', { name: valuationDataset.Name }))
   expect(options.onChange).toHaveBeenCalledExactlyOnceWith(valuationDataset)
 })
 
-it('keeps controlled selection and never substitutes an unavailable dataset', () => {
+it('keeps controlled selection and never substitutes an unavailable dataset', async () => {
+  const user = userEvent.setup()
   const options = props()
   const view = render(picker({ ...options, compact: true, selected: 99 }))
   expect((screen.getByRole('combobox') as HTMLInputElement).value).toBe('')
   expect(options.onChange).not.toHaveBeenCalled()
   view.rerender(picker({ ...options, compact: true, selected: stockDataset.DataSource }))
   expect((screen.getByRole('combobox') as HTMLInputElement).value).toBe(stockDataset.Name)
-  fireEvent.click(screen.getByRole('combobox'))
-  fireEvent.click(screen.getByRole('option', { name: stockDataset.Name }))
+  await user.click(screen.getByRole('combobox'))
+  await user.click(screen.getByRole('option', { name: stockDataset.Name }))
   expect(options.onChange).not.toHaveBeenCalled()
 })
 
@@ -90,13 +91,14 @@ it('shows no fabricated limitations or summary without an available dataset', ()
 
 
 it('disables datasets outside the active rollout while retaining their ready label', async () => {
+  const user = userEvent.setup()
   const options = props()
   render(picker({ ...options, compact: true, activeDataSources: new Set([valuationDataset.DataSource]) }))
-  fireEvent.click(screen.getByRole('combobox'))
+  await user.click(screen.getByRole('combobox'))
   const blocked = await screen.findByRole('option', { name: `${stockDataset.Name} · Готово (запуск вимкнено)` })
   expect(blocked.getAttribute('data-combobox-disabled')).toBe('true')
-  fireEvent.click(blocked)
+  await user.click(blocked)
   expect(options.onChange).not.toHaveBeenCalled()
-  fireEvent.click(screen.getByRole('option', { name: valuationDataset.Name }))
+  await user.click(screen.getByRole('option', { name: valuationDataset.Name }))
   expect(options.onChange).toHaveBeenCalledExactlyOnceWith(valuationDataset)
 })
