@@ -1,3 +1,4 @@
+import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { Alert, Button, Group, Stack, Table, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
@@ -50,12 +51,12 @@ function PlannedCashResult({ report }: { report: PlannedCashReport }) {
     {report.PlanEndpoint ? <Text size="sm">{t('Дата планового залишку')}: {report.PlanEndpoint.slice(0, 10)}</Text> : null}
     {report.AvailabilityMessage ? <Alert color={report.Complete && !report.HasRows ? 'blue' : 'yellow'}>{t(report.AvailabilityMessage)}</Alert> : null}
     {report.GroupLabelsAvailabilityMessage ? <Alert color="yellow">{t(report.GroupLabelsAvailabilityMessage)}</Alert> : null}
-    <Table.ScrollContainer minWidth={800}><Table className="app-static-table">
+    <ReportTableScrollArea minWidth={800}><Table className="app-static-table">
       <Table.Thead><Table.Tr><Table.Th>{t(report.Grouping === 'Контрагент' ? 'Контрагент' : 'Стаття руху коштів')}</Table.Th>
         {report.Columns.map(column => <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
       <Table.Tbody>{report.Rows.map(row => <Table.Tr key={row.Key}><Table.Td>{row.NameAvailable ? row.Name : t('Назва групи ще недоступна')}</Table.Td><PlannedCashCells cells={row.Cells} /></Table.Tr>)}
         <Table.Tr><Table.Th scope="row">{t('Разом')}</Table.Th><PlannedCashCells cells={report.Totals} /></Table.Tr></Table.Tbody>
-    </Table></Table.ScrollContainer>
+    </Table></ReportTableScrollArea>
     <Text size="xs" c="dimmed">{t('Управлінські суми без перерахунку валют. Суми у валюті рахунку та взаєморозрахунків не підміняють ці показники.')}</Text>
   </section>
 }

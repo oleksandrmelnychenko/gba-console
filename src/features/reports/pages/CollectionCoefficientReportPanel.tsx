@@ -1,3 +1,4 @@
+import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { Alert, Button, Group, Stack, Table, Text, TextInput } from '@mantine/core'
 import { useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
@@ -80,7 +81,7 @@ function CollectionCoefficientResult({ report }: { report: CollectionCoefficient
   return <section aria-label={t('Результат оригінального конструктора')}>
       <Text size="sm">{t('Період')}: {report.Month}</Text>
       {report.Complete && !report.HasRows ? <Alert color="blue">{t('У вибраних періодах немає оборотів покупців.')}</Alert> : null}
-      <Table.ScrollContainer minWidth={640}>
+      <ReportTableScrollArea minWidth={640}>
         <Table className="app-static-table">
           <Table.Thead><Table.Tr>{report.Columns.map(column => <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
           <Table.Tbody>{report.HasRows || !report.Complete ? <Table.Tr>{report.Cells.map((cell, index) => <Table.Td key={cell.Key}
@@ -88,7 +89,7 @@ function CollectionCoefficientResult({ report }: { report: CollectionCoefficient
             {collectionCoefficientCellText(cell.Value, report.Columns[index].DecimalPlaces)}
           </Table.Td>)}</Table.Tr> : null}</Table.Tbody>
         </Table>
-      </Table.ScrollContainer>
+      </ReportTableScrollArea>
       {!report.Complete ? <Alert color="yellow">{t('Звіт неповний: частина даних ще недоступна.')}</Alert> : null}
       {report.Complete && report.Code === 'change_arithmetic_overflow' ? <Alert color="yellow">{t('Не всі показники вдалося розрахувати.')}</Alert> : null}
       <UnavailableInputs report={report} />

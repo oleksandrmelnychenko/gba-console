@@ -1,0 +1,20 @@
+.report-table-scroll-area {
+  --report-table-max-height: clamp(12rem, calc(100dvh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 180px), 38rem);
+  min-width: 0;
+  isolation: isolate;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  background: var(--mantine-color-gray-0);
+}
+.report-table-scroll-area__content { width: 100%; }
+.report-table-scroll-area .mantine-ScrollArea-scrollbar { z-index: 5; background: var(--mantine-color-gray-0); border-radius: 0; padding: 1px; }
+.report-table-scroll-area .mantine-ScrollArea-thumb { background: var(--mantine-color-gray-4); border-radius: 3px; }
+.report-table-scroll-area .mantine-ScrollArea-thumb:hover { background: var(--mantine-color-gray-5); }
+.report-table-scroll-area:focus-within { outline: 2px solid rgba(var(--brand-orange-rgb), 0.7); outline-offset: 2px; }
+.report-table-scroll-area__content > table { margin: 0; }
+.report-table-scroll-area__content > table > thead { position: sticky; top: 0; z-index: 2; }
+.report-table-scroll-area__content > table > thead > tr > th { background: var(--mantine-color-white); }
+.report-table-scroll-area__content > table > tfoot > tr > :is(th, td) { position: sticky; bottom: 0; z-index: 2; background: var(--mantine-color-gray-1); border-top: 1px solid var(--mantine-color-gray-3); }
+@media (max-width: 600px) {
+  .report-table-scroll-area { --report-table-max-height: clamp(12rem, calc(100dvh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 360px), 38rem); }
+}

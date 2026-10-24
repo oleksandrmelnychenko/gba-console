@@ -1,3 +1,4 @@
+import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { Alert, Button, Group, Stack, Table, Text } from '@mantine/core'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -29,10 +30,10 @@ export function OriginalDefaultReportOutput({ sheet, filename, allowExport = tru
     <Group><Button size="xs" variant="light" disabled={current === 0} onClick={() => setPage(current - 1)}>{t('Попередні рядки')}</Button>
       <Text size="xs">{sheet.lines.length ? offset + 1 : 0}–{Math.min(offset + 50, sheet.lines.length)} / {sheet.lines.length}</Text>
       <Button size="xs" variant="light" disabled={offset + 50 >= sheet.lines.length} onClick={() => setPage(current + 1)}>{t('Наступні рядки')}</Button></Group>
-    <Table.ScrollContainer minWidth={1100}><Table className="app-static-table" striped><Table.Thead><Table.Tr>{sheet.headers.map(header => <Table.Th key={header}>{t(header)}</Table.Th>)}</Table.Tr></Table.Thead>
+    <ReportTableScrollArea minWidth={1100}><Table className="app-static-table" striped><Table.Thead><Table.Tr>{sheet.headers.map(header => <Table.Th key={header}>{t(header)}</Table.Th>)}</Table.Tr></Table.Thead>
       <Table.Tbody>{sheet.lines.slice(offset, offset + 50).map(line => <Table.Tr key={line.key} fw={line.subtotal ? 600 : undefined}>
         {line.cells.map((cell, index) => <Table.Td key={sheet.headers[index]} className={index >= sheet.labelColumns ? 'app-money' : undefined}>{cell}</Table.Td>)}</Table.Tr>)}</Table.Tbody>
       {sheet.total ? <Table.Tfoot><Table.Tr>{sheet.total.map((cell, index) => <Table.Th key={sheet.headers[index]}>{cell}</Table.Th>)}</Table.Tr></Table.Tfoot> : null}
-    </Table></Table.ScrollContainer>{!sheet.lines.length ? <Text>{t('У повністю перевіреному зрізі рядків немає.')}</Text> : null}
+    </Table></ReportTableScrollArea>{!sheet.lines.length ? <Text>{t('У повністю перевіреному зрізі рядків немає.')}</Text> : null}
   </Stack>
 }

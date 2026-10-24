@@ -1,3 +1,4 @@
+import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { Alert, Button, Group, Stack, Table, Text, TextInput } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
@@ -52,7 +53,7 @@ function CashMovementResult({ report }: { report: CashMovementReport }) {
     {report.ArticleFilter ? <Text size="sm">{t('Стаття руху коштів')}: {report.ArticleFilter.Caption}</Text> : null}
     <Text size="sm">{t('Валюта поточного періоду')}: {currencyName(report.Inputs.Current)}; {t('Валюта попереднього періоду')}: {currencyName(report.Inputs.Previous)}</Text>
     {report.Complete && !report.HasRows ? <Alert color="blue">{t('У вибраних періодах немає руху коштів.')}</Alert> : null}
-    <Table.ScrollContainer minWidth={800}>
+    <ReportTableScrollArea minWidth={800}>
       <Table className="app-static-table">
         <Table.Thead><Table.Tr><Table.Th>{t('Контрагент')}</Table.Th>{report.Columns.map(column => <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
         <Table.Tbody>{report.Rows.map(row => <Table.Tr key={row.GroupKey}><Table.Td>{row.NameAvailable ? row.Name : t('Назва контрагента недоступна')}</Table.Td>
@@ -60,7 +61,7 @@ function CashMovementResult({ report }: { report: CashMovementReport }) {
           <Table.Tr><Table.Th scope="row">{t('Разом')}</Table.Th>{renderCells(report.Totals)}</Table.Tr>
         </Table.Tbody>
       </Table>
-    </Table.ScrollContainer>
+    </ReportTableScrollArea>
     {!report.Complete ? <Alert color="yellow">{t('Звіт неповний: синхронізовані рухи коштів за вибрані періоди ще не підтверджені.')}</Alert> : null}
     {report.HasRows && unavailable ? <Alert color="yellow">{t('Не всі показники вдалося розрахувати.')}</Alert> : null}
     {report.Rows.some(row => !row.NameAvailable) ? <Alert color="yellow">{t('Для частини контрагентів назви ще недоступні. Суми збережено.')}</Alert> : null}

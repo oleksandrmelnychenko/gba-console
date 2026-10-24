@@ -1,3 +1,4 @@
+import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { Alert, Button, Group, Stack, Table, Text, TextInput } from '@mantine/core'
 import { useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
@@ -60,7 +61,7 @@ export function DebtToSalesRatioReportPanel({ capability, initialMonth, canGener
     </Group>
     {report ? <section aria-label={t('Результат оригінального конструктора')}>
       <Text size="sm">{t('Період')}: {report.Month}</Text>
-      <Table.ScrollContainer minWidth={640}>
+      <ReportTableScrollArea minWidth={640}>
         <Table className="app-static-table">
           <Table.Thead><Table.Tr>{report.Columns.map(column => <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
           <Table.Tbody><Table.Tr>{report.Cells.map((cell, index) => <Table.Td key={cell.Key}
@@ -68,7 +69,7 @@ export function DebtToSalesRatioReportPanel({ capability, initialMonth, canGener
             {debtToSalesRatioCellText(cell.Value, report.Columns[index].DecimalPlaces)}
           </Table.Td>)}</Table.Tr></Table.Tbody>
         </Table>
-      </Table.ScrollContainer>
+      </ReportTableScrollArea>
       {report.Cells.some(cell => !cell.Available) ? <Alert color="yellow">{t('Порожні клітинки позначають недоступні значення розрахунку.')}</Alert> : null}
       <UnavailableInputs report={report} />
     </section> : null}

@@ -1,3 +1,4 @@
+import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { Alert, Button, Group, Stack, Table, Text } from '@mantine/core'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -19,7 +20,7 @@ function AcceptedMatrix({ result }: { result: MatrixResult }) {
     <Group><Button size="xs" variant="light" disabled={current === 0} onClick={() => setPage(current - 1)}>{t('Попередні рядки')}</Button>
       <Text size="xs">{result.Rows.length ? first + 1 : 0}–{Math.min(first + 50, result.Rows.length)} / {result.Rows.length}</Text>
       <Button size="xs" variant="light" disabled={first + 50 >= result.Rows.length} onClick={() => setPage(current + 1)}>{t('Наступні рядки')}</Button></Group>
-    <Table.ScrollContainer minWidth={Math.max(640, 260 + result.Columns.length * 110)}>
+    <ReportTableScrollArea minWidth={Math.max(640, 260 + result.Columns.length * 110)}>
       <Table className="app-static-table" captionSide="top"><Table.Caption>{t('Матриця товарів')} · {result.From} – {result.Through}</Table.Caption>
         <Table.Thead><Table.Tr><Table.Th scope="col">{t('Номенклатура')}</Table.Th>
           {result.Columns.map(column => <Table.Th key={matrixColumnKey(column)} scope="col">
@@ -30,6 +31,6 @@ function AcceptedMatrix({ result }: { result: MatrixResult }) {
           <Table.Th scope="row">{row.Caption}</Table.Th>{row.Values.map((value, column) => <Table.Td key={matrixColumnKey(result.Columns[column])} className="app-money">{value ?? ''}</Table.Td>)}
         </Table.Tr>)}</Table.Tbody>
       </Table>
-    </Table.ScrollContainer>{!result.Rows.length ? <Text>{t('За обраний період рядків немає.')}</Text> : null}
+    </ReportTableScrollArea>{!result.Rows.length ? <Text>{t('За обраний період рядків немає.')}</Text> : null}
   </Stack>
 }
