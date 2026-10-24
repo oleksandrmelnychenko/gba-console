@@ -1,3 +1,4 @@
+import { formatEuroValuation } from '../euroValuation'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -848,8 +849,8 @@ function PaymentAccountFormCard({
           {isEditMode && (
             <SimpleGrid className="payment-account-overview__meta" cols={{ base: 1, sm: 3 }}>
               <InfoCell
-                label={t('Всього в EUR')}
-                value={<span className="app-money app-table-number">{formatMoney(account.TotalEuroAmount)}</span>}
+                label={t('Поточний еквівалент EUR')}
+                value={<span className="app-money app-table-number">{t(formatEuroValuation(account.TotalEuroAmount))}</span>}
               />
               <InfoCell label={t('Тип')} value={getPaymentRegisterTypeLabel(form.type, t)} />
               <InfoCell label={t('Статус')} value={form.isActive ? t('Основний') : t('Звичайний')} />

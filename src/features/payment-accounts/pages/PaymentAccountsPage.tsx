@@ -1,3 +1,4 @@
+import { formatEuroValuation } from '../euroValuation'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -73,7 +74,7 @@ function PaymentAccountsPageContent() {
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const [accounts, setAccounts] = useValueState<PaymentAccount[]>([])
-  const [totalEuroAmount, setTotalEuroAmount] = useValueState(0)
+  const [totalEuroAmount, setTotalEuroAmount] = useValueState<number | null>(null)
   const [organizations, setOrganizations] = useValueState<Organization[]>([])
   const [searchValue, setSearchValue] = useValueState(() => searchParams.get('value') || '')
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
@@ -177,7 +178,7 @@ function PaymentAccountsPageContent() {
       } catch (loadError) {
         if (isActive) {
           setAccounts([])
-          setTotalEuroAmount(0)
+          setTotalEuroAmount(null)
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити рахунки'))
         }
       } finally {
@@ -310,9 +311,10 @@ function PaymentAccountsPageContent() {
             />
           </div>
 
+          {totalEuroAmount === null && !isLoading && !error && <Text size="sm" c="orange">{t('Оцінка EUR недоступна: перевірте валюту та курс. Залишки у валюті рахунків збережені.')}</Text>}
           <Group className="payment-accounts-total-footer" gap="xs" justify="flex-end" wrap="nowrap">
             <Badge className="app-role-pill is-gray" variant="light">
-              {t('Всього в')} <span className="app-money">EUR</span>: <span className="app-money">{formatMoney(totalEuroAmount)}</span>
+              {t('Поточний еквівалент')} <span className="app-money">EUR</span>: <span className="app-money">{t(formatEuroValuation(totalEuroAmount))}</span>
             </Badge>
           </Group>
         </Stack>
@@ -418,7 +420,7 @@ function usePaymentAccountColumns(onOpen: (account: PaymentAccount) => void): Da
         minWidth: 140,
         align: 'right',
         accessor: (account) => account.TotalEuroAmount,
-        cell: (account) => formatMoney(account.TotalEuroAmount),
+        cell: (account) => t(formatEuroValuation(account.TotalEuroAmount)),
       },
       {
         id: 'actions',
