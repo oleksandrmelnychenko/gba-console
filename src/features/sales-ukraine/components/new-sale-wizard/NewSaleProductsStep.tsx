@@ -1,21 +1,19 @@
 import { Alert, Box, Button, Group, Select, Stack, Text } from '@mantine/core'
 import { useUncontrolled } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { FileSignature, Hash, Search, Sparkles, Trash2 } from 'lucide-react'
+import { Search, Sparkles } from 'lucide-react'
 import {
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
-  type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from 'react'
 import { PermissionKeys } from '../../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../../shared/realtime/events'
 import { AppDrawer } from '../../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../../shared/ui/AppModal'
 import { TableChip } from '../../../../shared/ui/TableChip'
 import { toProxiedAssetUrl } from '../../../../shared/url/proxiedAssetUrl'
 import { useAuth } from '../../../auth/useAuth'
@@ -29,6 +27,7 @@ import { getSaleLocalCurrencyCode, isNonVatEurSale } from '../../saleMoney'
 import { getSaleLifecycleTypeKey } from '../../saleStatus'
 import type { SalesUkraineOrderItem, SalesUkraineSale } from '../../types'
 import { SaleEditDrawer } from '../SaleEditDrawer'
+import { CartRowActionsModal } from './CartRowActionsModal'
 import { ChangeQtyModal } from './ChangeQtyModal'
 import { EditShoppingCartOverlay } from './EditShoppingCartOverlay'
 import { FutureReservationModal } from './FutureReservationModal'
@@ -51,18 +50,15 @@ import type {
   WizardTotalProductAvailabilities,
 } from './newSaleWizardApi'
 import { useWizardCartOperations } from './useWizardCartOperations'
+import { useWizardProductKeyboard } from './useWizardProductKeyboard'
 import { useWizardProductAnalogues } from './useWizardProductAnalogues'
 import { useWizardProductData } from './useWizardProductData'
 import { PRODUCT_SEARCH_MIN_QUERY_LENGTH, useWizardProductSearch } from './useWizardProductSearch'
 import {
   WIZARD_PRODUCT_KEYBOARD_STATES,
   getPreviousProductKeyboardState,
-  isEditableTarget,
   setWizardKeyboardState,
-  toWizardHotkey,
-  useWizardKeyHandler,
   useWizardKeyboard,
-  type WizardKeyEvent,
   type WizardProductKeyboardState,
 } from './wizardKeyboard'
 import type { ExactWizardProductSearchMatch } from './wizardProductSearchSelection'
@@ -174,7 +170,7 @@ export function NewSaleProductsStep({
   const [editingDescription, setEditingDescription] = useState(false)
   // The description draft lives in a ref (the TextInput inside
   // ProductFullDetailPanel keeps its own local state): typing must not re-render
-  // this 2600-line step. The ref is read on save (panel toggle or keyboard F2).
+  // the products step. The ref is read on save (panel toggle or keyboard F2).
   const descriptionDraftRef = useRef('')
   const [descriptionDraftSnapshot, setDescriptionDraftSnapshot] = useState('')
   const handleDescriptionDraftChange = useCallback((value: string) => {
@@ -184,7 +180,6 @@ export function NewSaleProductsStep({
 
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const handleProductKeyRef = useRef<(event: WizardKeyEvent) => boolean>(() => false)
   const cartNetIdRef = useRef<string | undefined>(undefined)
   const onCartChangedRef = useRef(onCartChanged)
 
@@ -294,7 +289,7 @@ export function NewSaleProductsStep({
     prepareAddToCart,
     qtyModal,
     removeConfirmOpen,
-    removeItem,
+    confirmRemoveRow,
     removeRowItem,
     retryCartReconciliation,
     retryPendingCartMutation,
@@ -667,35 +662,6 @@ export function NewSaleProductsStep({
     keyboard.setState(active?.source === 'analogue' ? 'AnalogueSelection' : active?.source === 'component' ? 'ComponentSelection' : 'ProductSelection')
   }
 
-  function handleProductDetailsKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
-    // Portaled child dialogs own their keyboard events; do not close this sheet
-    // when Escape is used in a nested window.
-    if (!event.currentTarget.contains(event.target as Node)) {
-      return
-    }
-    event.stopPropagation()
-    if (event.defaultPrevented || event.nativeEvent.isComposing) {
-      return
-    }
-    if (event.key === 'Escape') {
-      event.preventDefault()
-      closeProductDetails()
-      return
-    }
-    // Native buttons and description inputs must not trigger the wizard's
-    // Enter-to-add shortcut. Explicit Ctrl shortcuts still work in the sheet.
-    if (isEditableTarget(event.target) && !event.ctrlKey && event.key !== 'F2') {
-      return
-    }
-    if (isInteractiveTarget(event.target) && !event.ctrlKey && (event.key === 'Enter' || event.key === ' ')) {
-      return
-    }
-    const hotkey = toWizardHotkey(event)
-    if (hotkey && handleProductKey({ hotkey, inEditable: isEditableTarget(event.target), nativeEvent: event })) {
-      event.preventDefault()
-    }
-  }
-
   function escapeFromAnalogues() {
     resetDetail()
     setAnalogueIndex(null)
@@ -805,606 +771,38 @@ export function NewSaleProductsStep({
     })
   }
 
-  function handleSearchKeys(event: WizardKeyEvent): boolean {
-    const { hotkey } = event
-
-    if (hotkey === 'ArrowDown' || hotkey === 'ArrowUp') {
-      if (results.length === 0) {
-        return true
-      }
-
-      // Enter selection at the split centre (the first item just below the search
-      // input) rather than index 0 — otherwise the carousel's top half (slice
-      // before the focused index) would be empty and the upper list «пропадав».
-      // ArrowDown lands on the first item below the input; ArrowUp on the last
-      // item above it, keeping the barabanchik populated on both sides.
-      const splitCentre = Math.floor(results.length / 2)
-      const target = hotkey === 'ArrowDown' ? splitCentre : Math.max(splitCentre - 1, 0)
-
-      focusMain(Math.min(target, results.length - 1))
-      keyboard.setState('ProductSelection')
-
-      return true
-    }
-
-    if (hotkey === 'Enter') {
-      if (active?.source === 'main' && activeProduct) {
-        void prepareAddToCart(activeProduct)
-
-        return true
-      }
-
-      return false
-    }
-
-    if (hotkey === 'F2') {
-      openEditCart()
-
-      return true
-    }
-
-    if (hotkey === 'CtrlEnter') {
-      openMainFullDetail()
-
-      return true
-    }
-
-    if (hotkey === 'Escape') {
-      onRequestClose?.()
-
-      return true
-    }
-
-    return false
-  }
-
-  function handleSelectionKeys(event: WizardKeyEvent): boolean {
-    const { hotkey } = event
-
-    switch (hotkey) {
-      case 'ArrowDown':
-        focusMain(Math.min(mainIndex + 1, results.length - 1))
-
-        return true
-      case 'ArrowUp':
-        focusMain(Math.max(mainIndex - 1, 0))
-
-        return true
-      case 'Enter':
-        void prepareAddToCart(activeProduct)
-
-        return true
-      case 'CtrlEnter':
-        openMainFullDetail()
-
-        return true
-      case 'CtrlI':
-        openImage(activeProduct)
-
-        return true
-      case 'CtrlB':
-        openInterest(activeProduct)
-
-        return true
-      case 'Space':
-        spaceFromMain()
-
-        return true
-      case 'Escape':
-        clearSelection()
-
-        return true
-      case 'F2':
-        openEditCart()
-
-        return true
-      default:
-        return false
-    }
-  }
-
-  function handleFullDetailKeys(event: WizardKeyEvent): boolean {
-    const { hotkey } = event
-    const snapshot = getProductDetailSnapshot(activeProduct)
-    const rows = detail?.chipIndex != null ? getMainChipRows(snapshot?.availabilities, detail.chipIndex) : []
-    const isInvoiceRows = detail?.chipIndex === 0
-
-    switch (hotkey) {
-      case 'ArrowLeft':
-        cycleChips(-1, MAIN_CHIP_DEFS.length)
-
-        return true
-      case 'ArrowRight':
-        cycleChips(1, MAIN_CHIP_DEFS.length)
-
-        return true
-      case 'ArrowDown':
-      case 'ArrowUp': {
-        const direction = hotkey === 'ArrowDown' ? 1 : -1
-
-        if (isInvoiceRows && rows.length > 0) {
-          navigateChipRows(direction, rows.length)
-        } else {
-          focusMain(direction === 1 ? Math.min(mainIndex + 1, results.length - 1) : Math.max(mainIndex - 1, 0), { keepDetail: true })
-        }
-
-        return true
-      }
-      case 'Enter':
-        void prepareAddToCart(activeProduct)
-
-        return true
-      case 'Ctrl':
-        if (isInvoiceRows && detail?.rowIndex != null && rows[detail.rowIndex]) {
-          setShiftRow(rows[detail.rowIndex] ?? null)
-        }
-
-        return true
-      case 'CtrlEnter':
-        return true
-      case 'CtrlI':
-        openImage(activeProduct)
-
-        return true
-      case 'CtrlB':
-        openInterest(activeProduct)
-
-        return true
-      case 'Space':
-        spaceFromMain()
-
-        return true
-      case 'Escape':
-        resetDetail()
-        keyboard.setState('ProductSelection')
-
-        return true
-      case 'F2':
-        openEditCart()
-
-        return true
-      default:
-        return false
-    }
-  }
-
-  function handleAnalogueSelectionKeys(event: WizardKeyEvent): boolean {
-    const { hotkey } = event
-    const items = analogueState.items
-
-    switch (hotkey) {
-      case 'ArrowDown':
-        focusAnalogue(analogueIndex === null ? 0 : Math.min(analogueIndex + 1, items.length - 1))
-
-        return true
-      case 'ArrowUp':
-        focusAnalogue(analogueIndex === null ? 0 : Math.max(analogueIndex - 1, 0))
-
-        return true
-      case 'Space':
-        if (analogueIndex === null && items.length > 0) {
-          focusAnalogue(0)
-        }
-
-        return true
-      case 'Enter':
-        if (focusedAnalogue) {
-          void prepareAddToCart(focusedAnalogue)
-        }
-
-        return true
-      case 'CtrlEnter':
-        setDetail({ chipIndex: null, rowIndex: null })
-        keyboard.setState('AnalogueFullDetail')
-
-        return true
-      case 'CtrlI':
-        return true
-      case 'CtrlB':
-        return true
-      case 'Escape':
-        escapeFromAnalogues()
-
-        return true
-      case 'F2':
-        openEditCart()
-
-        return true
-      default:
-        return false
-    }
-  }
-
-  function handleAnalogueFullDetailKeys(event: WizardKeyEvent): boolean {
-    const { hotkey } = event
-    const snapshot = getProductDetailSnapshot(focusedAnalogue)
-    const rows = detail?.chipIndex != null ? getMainChipRows(snapshot?.availabilities, detail.chipIndex) : []
-
-    switch (hotkey) {
-      case 'ArrowLeft':
-        cycleChips(-1, MAIN_CHIP_DEFS.length)
-
-        return true
-      case 'ArrowRight':
-        cycleChips(1, MAIN_CHIP_DEFS.length)
-
-        return true
-      case 'ArrowDown':
-      case 'ArrowUp': {
-        const direction = hotkey === 'ArrowDown' ? 1 : -1
-
-        if (rows.length > 0) {
-          navigateChipRows(direction, rows.length)
-        } else if (analogueIndex !== null) {
-          focusAnalogue(
-            direction === 1 ? Math.min(analogueIndex + 1, analogueState.items.length - 1) : Math.max(analogueIndex - 1, 0),
-            { keepDetail: true },
-          )
-        }
-
-        return true
-      }
-      case 'Enter':
-        if (focusedAnalogue) {
-          void prepareAddToCart(focusedAnalogue)
-        }
-
-        return true
-      case 'Ctrl':
-        return true
-      case 'CtrlEnter':
-        return true
-      case 'Space':
-        return true
-      case 'CtrlI':
-        openImage(focusedAnalogue)
-
-        return true
-      case 'CtrlB':
-        openInterest(focusedAnalogue)
-
-        return true
-      case 'Escape':
-        if (detail?.chipIndex != null) {
-          setDetail({ chipIndex: null, rowIndex: null })
-        } else {
+  const { handleProductDetailsKeyDown } = useWizardProductKeyboard({
+    containerRef, searchInputRef,
+    blockingOverlay: Boolean(qtyModal || shiftRow || futureProduct || removeConfirmOpen || removeRowItem || cartActionItem || isActEditOpen),
+    cartSheetOpen, crossSellOpen: Boolean(crossSellProduct), productCardOpen: Boolean(productCardNetId),
+    setCartSheetOpen, closeProductDetails,
+    navigation: {
+      state: kbState,
+      isMainActive: active?.source === 'main',
+      main: { count: results.length, index: mainIndex, product: activeProduct, focus: focusMain },
+      analogue: { count: analogueState.items.length, index: analogueIndex, product: focusedAnalogue,
+        parentNetUid: analogueState.parentNetUid, focus: focusAnalogue, escape: escapeFromAnalogues },
+      component: { count: componentEntries.entries.length, index: componentIndex, product: focusedComponent, focus: focusComponent },
+      details: {
+        chipIndex: detail?.chipIndex ?? null, rowIndex: detail?.rowIndex ?? null, chipCount: MAIN_CHIP_DEFS.length,
+        rowsFor: (product) => detail?.chipIndex != null
+          ? getMainChipRows(getProductDetailSnapshot(product)?.availabilities, detail.chipIndex) : [],
+        cycle: cycleChips, navigate: navigateChipRows, reset: resetDetail, select: setDetail, shift: setShiftRow,
+      },
+      cart: { hasSelection: Boolean(editCart?.selected), open: openEditCart, move: moveCartSelection,
+        edit: editSelectedCartRow, toggleSplit: toggleSplitMode, remove: () => setRemoveConfirmOpen(true), exit: exitEditCart },
+      actions: {
+        setState: keyboard.setState, add: prepareAddToCart, openMainDetail: openMainFullDetail, openMainRelated: spaceFromMain,
+        clearSelection, openImage, openInterest, closeImage, closeInterest, toggleDescription: toggleDescriptionEdit,
+        requestClose: onRequestClose,
+        returnToMain: () => {
           resetDetail()
-          keyboard.setState('AnalogueSelection')
-        }
-
-        return true
-      case 'F2':
-        openEditCart()
-
-        return true
-      default:
-        return false
-    }
-  }
-
-  function handleComponentSelectionKeys(event: WizardKeyEvent): boolean {
-    const { hotkey } = event
-    const entries = componentEntries.entries
-
-    switch (hotkey) {
-      case 'ArrowDown':
-        focusComponent(componentIndex === null ? 0 : Math.min(componentIndex + 1, entries.length - 1))
-
-        return true
-      case 'ArrowUp':
-        focusComponent(componentIndex === null ? 0 : Math.max(componentIndex - 1, 0))
-
-        return true
-      case 'Space':
-        if (componentIndex === null && entries.length > 0) {
-          focusComponent(0)
-        } else if (
-          focusedComponent &&
-          focusedComponent.HasAnalogue &&
-          analogueState.parentNetUid === focusedComponent.NetUid &&
-          analogueState.items.length > 0
-        ) {
-          keyboard.setState('AnalogueSelection')
-          focusAnalogue(0)
-        }
-
-        return true
-      case 'Enter':
-        if (focusedComponent) {
-          void prepareAddToCart(focusedComponent)
-        }
-
-        return true
-      case 'CtrlEnter':
-        if (focusedComponent) {
-          setDetail({ chipIndex: null, rowIndex: null })
-          keyboard.setState('ComponentFullDetail')
-        }
-
-        return true
-      case 'CtrlI':
-        return true
-      case 'CtrlB':
-        return true
-      case 'Escape':
-        resetDetail()
-
-        if (mainProduct) {
-          setActive({ product: mainProduct, source: 'main' })
-        }
-
-        keyboard.setState('ProductSelection')
-
-        return true
-      case 'F2':
-        openEditCart()
-
-        return true
-      default:
-        return false
-    }
-  }
-
-  function handleComponentFullDetailKeys(event: WizardKeyEvent): boolean {
-    const { hotkey } = event
-    const snapshot = getProductDetailSnapshot(focusedComponent)
-    const rows = detail?.chipIndex != null ? getMainChipRows(snapshot?.availabilities, detail.chipIndex) : []
-    const entries = componentEntries.entries
-
-    switch (hotkey) {
-      case 'ArrowLeft':
-        cycleChips(-1, MAIN_CHIP_DEFS.length)
-
-        return true
-      case 'ArrowRight':
-        cycleChips(1, MAIN_CHIP_DEFS.length)
-
-        return true
-      case 'ArrowDown':
-      case 'ArrowUp': {
-        const direction = hotkey === 'ArrowDown' ? 1 : -1
-
-        if (rows.length > 0) {
-          navigateChipRows(direction, rows.length)
-        } else if (componentIndex !== null) {
-          focusComponent(direction === 1 ? Math.min(componentIndex + 1, entries.length - 1) : Math.max(componentIndex - 1, 0), {
-            keepDetail: true,
-          })
-        }
-
-        return true
-      }
-      case 'Enter':
-        if (focusedComponent) {
-          void prepareAddToCart(focusedComponent)
-        }
-
-        return true
-      case 'Ctrl':
-        return true
-      case 'CtrlEnter':
-        return true
-      case 'Space':
-        if (
-          focusedComponent?.HasAnalogue &&
-          analogueState.parentNetUid === focusedComponent.NetUid &&
-          analogueState.items.length > 0
-        ) {
-          resetDetail()
-          keyboard.setState('AnalogueSelection')
-          focusAnalogue(0)
-        }
-
-        return true
-      case 'CtrlI':
-        openImage(focusedComponent)
-
-        return true
-      case 'CtrlB':
-        openInterest(focusedComponent)
-
-        return true
-      case 'Escape':
-        if (detail?.chipIndex != null) {
-          setDetail({ chipIndex: null, rowIndex: null })
-        } else {
-          resetDetail()
-          keyboard.setState('ComponentSelection')
-        }
-
-        return true
-      case 'F2':
-        openEditCart()
-
-        return true
-      default:
-        return false
-    }
-  }
-
-  function handleEditCartKeys(event: WizardKeyEvent): boolean {
-    const { hotkey } = event
-
-    switch (hotkey) {
-      case 'ArrowDown':
-        moveCartSelection(1)
-
-        return true
-      case 'ArrowUp':
-        moveCartSelection(-1)
-
-        return true
-      case 'Enter':
-        void editSelectedCartRow()
-
-        return true
-      case 'Space':
-        toggleSplitMode()
-
-        return true
-      case 'Delete':
-        if (editCart?.selected) {
-          setRemoveConfirmOpen(true)
-        }
-
-        return true
-      case 'Escape':
-        void exitEditCart()
-
-        return true
-      case 'CtrlEnter':
-        return true
-      default:
-        return false
-    }
-  }
-
-  function handleModalStateKeys(event: WizardKeyEvent): boolean {
-    const { hotkey } = event
-
-    if (hotkey === 'Escape') {
-      if (kbState === 'ViewImage') {
-        closeImage()
-      } else {
-        closeInterest()
-      }
-
-      return true
-    }
-
-    if (hotkey === 'F2') {
-      if (kbState === 'ViewImage') {
-        closeImage()
-      } else {
-        closeInterest()
-      }
-
-      openEditCart()
-
-      return true
-    }
-
-    return hotkey === 'ArrowDown' || hotkey === 'ArrowUp' || hotkey === 'ArrowLeft' || hotkey === 'ArrowRight' || hotkey === 'Space' || hotkey === 'Enter' || hotkey === 'CtrlEnter'
-  }
-
-  function handleEditDescriptionKeys(event: WizardKeyEvent): boolean {
-    const { hotkey } = event
-
-    if (hotkey === 'Enter') {
-      void prepareAddToCart(activeProduct)
-
-      return true
-    }
-
-    if (hotkey === 'F2') {
-      void toggleDescriptionEdit()
-      openEditCart()
-
-      return true
-    }
-
-    return false
-  }
-
-  function handleProductKey(event: WizardKeyEvent): boolean {
-    if (event.hotkey === 'F3' && event.nativeEvent.repeat) return true
-    if (qtyModal || shiftRow || futureProduct || removeConfirmOpen || removeRowItem || cartActionItem || isActEditOpen) {
-      return false
-    }
-
-    // The cart sheet owns its controls; do not dispatch product shortcuts beneath it.
-    if (cartSheetOpen) {
-      const target = event.nativeEvent.target
-      // A nested modal may close in Mantine's window capture handler before
-      // this handler runs. Its Escape must not also close the underlying sheet.
-      if (target instanceof Element && target.closest('.mantine-Modal-content, .mantine-Drawer-content:not(.wizard-cart-sheet)')) {
-        return true
-      }
-      if (crossSellProduct) return false
-      if (event.hotkey === 'F2') {
-        setCartSheetOpen(false)
-        openEditCart()
-      } else if (event.hotkey === 'Escape' || event.hotkey === 'F3') {
-        setCartSheetOpen(false)
-      }
-      return true
-    }
-
-    if (event.hotkey === 'F3') {
-      if (productCardNetId || crossSellProduct) return false
-      if (['ProductSearch', 'ProductSelection', 'AnalogueSelection', 'ComponentSelection'].includes(kbState)) {
-        setCartSheetOpen(true)
-        return true
-      }
-      return false
-    }
-
-    switch (kbState) {
-      case 'ProductSearch':
-        return handleSearchKeys(event)
-      case 'ProductSelection':
-        return handleSelectionKeys(event)
-      case 'FullDetail':
-        return handleFullDetailKeys(event)
-      case 'AnalogueSelection':
-        return handleAnalogueSelectionKeys(event)
-      case 'AnalogueFullDetail':
-        return handleAnalogueFullDetailKeys(event)
-      case 'ComponentSelection':
-        return handleComponentSelectionKeys(event)
-      case 'ComponentFullDetail':
-        return handleComponentFullDetailKeys(event)
-      case 'EditShoppingCart':
-        return handleEditCartKeys(event)
-      case 'EditProductDescription':
-        return handleEditDescriptionKeys(event)
-      case 'ViewImage':
-      case 'Interest':
-        return handleModalStateKeys(event)
-      default:
-        return false
-    }
-  }
-
-  // Primary path: the wizard root onKeyDown dispatches here while focus is inside the step.
-  useWizardKeyHandler(handleProductKey)
-
-  // Max-priority fallback so adding via Enter/arrows and the Esc exit-confirm keep working
-  // even after a click moved focus onto a non-interactive area (<body>), where the root
-  // onKeyDown can no longer fire. Skips when focus is inside the step (root path handles it)
-  // or on a real control (let that control handle its own keys) to avoid double dispatch.
-  useEffect(() => {
-    handleProductKeyRef.current = handleProductKey
+          if (mainProduct) setActive({ product: mainProduct, source: 'main' })
+          keyboard.setState('ProductSelection')
+        },
+      },
+    },
   })
-
-  useEffect(() => {
-    const listener = (event: KeyboardEvent) => {
-      const target = event.target
-
-      if (
-        containerRef.current?.contains(target as Node) ||
-        isInteractiveTarget(target) ||
-        (target instanceof Element && target.closest('.new-sale-product-details-drawer, .new-sale-product-image-modal, .wizard-cart-sheet, [data-wizard-keyboard-help]'))
-      ) {
-        return
-      }
-
-      const hotkey = toWizardHotkey(event)
-
-      if (!hotkey) {
-        return
-      }
-
-      if (handleProductKeyRef.current({ hotkey, inEditable: isEditableTarget(target), nativeEvent: event })) {
-        event.preventDefault()
-        event.stopPropagation()
-      }
-    }
-
-    document.addEventListener('keydown', listener, true)
-
-    return () => document.removeEventListener('keydown', listener, true)
-  }, [])
 
   // Overlay states must not change the layout underneath them. In particular,
   // Ctrl+B used to remove `is-search-centered` while the interest modal was
@@ -1707,6 +1105,7 @@ export function NewSaleProductsStep({
               searchInputRef={searchInputRef}
               searchMode={kbState === 'ProductSearch'}
               searchValue={query}
+              searchContextKey={JSON.stringify([clientNetId, agreementNetId, sale?.NetUid])}
               onPick={(index) => {
                 focusMain(index)
 
@@ -1881,6 +1280,7 @@ export function NewSaleProductsStep({
 
       {editCart && (
         <EditShoppingCartOverlay
+          busy={busy}
           currentItems={orderItems}
           isSplit={editCart.isSplit}
           onClose={() => void exitEditCart()}
@@ -1926,18 +1326,21 @@ export function NewSaleProductsStep({
         initialComment={qtyModal?.item.Comment ?? ''}
         initialQty={getWizardProductNumber(qtyModal?.item.Qty) ?? 0}
         opened={Boolean(qtyModal)}
-        onAccept={(qty, comment) => void acceptQtyModal(qty, comment)}
+        sessionKey={`${qtyModal?.kind}:${qtyModal?.item.NetUid ?? qtyModal?.item.Id}:${qtyModal?.item.Product?.NetUid}`}
+        onAccept={acceptQtyModal}
         onCancel={cancelQtyModal}
       />
 
       <ShiftOrderItemModal
+        zIndex={cartSheetOpen ? 220 : undefined}
         amount={getWizardProductNumber(shiftRow?.Amount) ?? 0}
         analyst={shiftRow?.OrderItem?.User?.LastName ?? ''}
         busy={busy}
         opened={Boolean(shiftRow)}
+        sessionKey={`${shiftRow?.NetId}:${shiftRow?.OrderItem?.NetUid ?? shiftRow?.OrderItem?.Id}`}
         regionCode={shiftRow?.RegionCode ?? ''}
         sourceName={shiftRow?.Name ?? ''}
-        onApply={(qty) => void applyShift(qty)}
+        onApply={applyShift}
         onCancel={() => {
           setShiftRow(null)
           focusSearchInput()
@@ -1961,7 +1364,7 @@ export function NewSaleProductsStep({
         message={t('Видалити позицію з рахунку?')}
         opened={removeConfirmOpen}
         onCancel={() => setRemoveConfirmOpen(false)}
-        onConfirm={() => void confirmRemoveSelected()}
+        onConfirm={confirmRemoveSelected}
       />
 
       <WizardConfirmModal
@@ -1969,18 +1372,12 @@ export function NewSaleProductsStep({
         busy={busy}
         message={t('Видалити позицію з рахунку?')}
         opened={Boolean(removeRowItem)}
+        sessionKey={String(removeRowItem?.NetUid ?? removeRowItem?.Id ?? '')}
         onCancel={() => {
           setRemoveRowItem(null)
           focusSearchInput()
         }}
-        onConfirm={() => {
-          const item = removeRowItem
-          setRemoveRowItem(null)
-
-          if (item) {
-            void removeItem(item)
-          }
-        }}
+        onConfirm={confirmRemoveRow}
       />
 
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
@@ -2012,14 +1409,6 @@ export function NewSaleProductsStep({
 
 function isProductKeyboardState(state: string): state is WizardProductKeyboardState {
   return (WIZARD_PRODUCT_KEYBOARD_STATES as readonly string[]).includes(state)
-}
-
-// True when focus sits on a real control (button / link / input / etc.) so the focus-independent
-// fallback listener can leave that control's own keyboard handling alone. Note: NOT [tabindex] —
-// Mantine's modal wrapper is a tabindex=-1 focus-trap div, not a real control, and focus often
-// lands there after navigating to this step; treating it as interactive would swallow Escape.
-function isInteractiveTarget(target: EventTarget | null): boolean {
-  return target instanceof HTMLElement && Boolean(target.closest('a, button, input, select, textarea, [role="button"]'))
 }
 
 function resolveSaleNetId(payload: unknown): string | undefined {
@@ -2067,99 +1456,4 @@ function sortComponentCarouselEntries(
   const bottom = items.sort(byAvailabilityAsc)
 
   return { ...source, entries: [...top, ...bottom] }
-}
-
-/* Row-actions popup per docs/ui-patterns.md §7.1 for a cart row: mono title
-   (code — name), subtle buttons with the icon in an outlined circle. */
-function CartRowActionsModal({
-  isInvoice,
-  item,
-  onActEdit,
-  onChangeQty,
-  onClose,
-  onRemove,
-  zIndex,
-}: {
-  isInvoice: boolean
-  item: SalesUkraineOrderItem | null
-  onActEdit: () => void
-  onChangeQty: (item: SalesUkraineOrderItem) => void
-  onClose: () => void
-  onRemove: (item: SalesUkraineOrderItem) => void
-  zIndex?: number
-}) {
-  const { t } = useI18n()
-  const code = item?.Product?.VendorCode || item?.Product?.Articul || ''
-  const name = item?.Product?.NameUA || item?.Product?.Name || ''
-
-  return (
-    <AppModal
-      centered
-      zIndex={zIndex}
-      opened={Boolean(item)}
-      size={496}
-      title={
-        <span style={{ fontFamily: 'var(--font-mono)' }}>
-          {[code, name].filter(Boolean).join(' — ') || t('Виберіть опцію')}
-        </span>
-      }
-      onClose={onClose}
-    >
-      {item && (
-        <Stack className="app-modal-actions" gap="xs">
-          {isInvoice ? (
-            /* Invoice rows are edited only through the edit act. */
-            <Button
-              fullWidth
-              justify="flex-start"
-              color="dark"
-              size="md"
-              leftSection={
-                <span className="app-action-icon">
-                  <FileSignature size={20} color="var(--mantine-color-gray-7)" />
-                </span>
-              }
-              variant="subtle"
-              onClick={onActEdit}
-            >
-              {t('Акт редагування накладної')}
-            </Button>
-          ) : (
-            <>
-              <Button
-                fullWidth
-                justify="flex-start"
-                color="dark"
-                size="md"
-                leftSection={
-                  <span className="app-action-icon">
-                    <Hash size={20} color="var(--mantine-color-gray-7)" />
-                  </span>
-                }
-                variant="subtle"
-                onClick={() => onChangeQty(item)}
-              >
-                {t('Змінити кількість')}
-              </Button>
-              <Button
-                fullWidth
-                justify="flex-start"
-                color="dark"
-                size="md"
-                leftSection={
-                  <span className="app-action-icon">
-                    <Trash2 size={20} color="var(--mantine-color-gray-7)" />
-                  </span>
-                }
-                variant="subtle"
-                onClick={() => onRemove(item)}
-              >
-                {t('Видалити')}
-              </Button>
-            </>
-          )}
-        </Stack>
-      )}
-    </AppModal>
-  )
 }

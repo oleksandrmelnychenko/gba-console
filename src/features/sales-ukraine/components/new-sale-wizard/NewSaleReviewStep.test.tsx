@@ -20,6 +20,7 @@ import type { SalesUkraineOrderItem, SalesUkraineSale } from '../../types'
 import { persistSaleFileMutationRecord } from '../../usePersistentSaleFileMutation'
 import type { NewSaleReviewValue } from './newSaleWizardState'
 import { NewSaleReviewStep } from './NewSaleReviewStep'
+import type { WizardKeyEvent } from './wizardKeyboard'
 import { createWizardSplitOrderItem } from './wizardSplitSale'
 
 const mocks = vi.hoisted(() => ({
@@ -37,7 +38,7 @@ const mocks = vi.hoisted(() => ({
   getRetailPaymentStatusBySaleId: vi.fn(),
   getSaleTransporterTypes: vi.fn(),
   getSaleTransportersByType: vi.fn(),
-  keyHandler: null as ((event: { hotkey: string }) => boolean) | null,
+  keyHandler: null as ((event: WizardKeyEvent) => boolean | void) | null,
   markWizardSplitFinalMutationSubmitted: vi.fn(),
   markWizardSplitFinalMutationUnknown: vi.fn(),
   mergedSale: null as {
@@ -114,8 +115,10 @@ vi.mock('./newSaleWizardState', () => ({
 }))
 
 vi.mock('./wizardKeyboard', () => ({
+  getWizardKeyboardSnapshot: () => ({ activeStep: 2 }),
+  isEditableTarget: () => false,
   useWizardKeyboard: () => undefined,
-  useWizardKeyHandler: (handler: (event: { hotkey: string }) => boolean) => {
+  useWizardKeyHandler: (handler: (event: WizardKeyEvent) => boolean | void) => {
     mocks.keyHandler = handler
   },
 }))
@@ -627,7 +630,7 @@ describe('NewSaleReviewStep persistent file reconciliation', () => {
     await waitFor(() => expect(onBusyChange).toHaveBeenLastCalledWith(false))
 
     act(() => {
-      mocks.keyHandler?.({ hotkey: 'Escape' })
+      mocks.keyHandler?.({ hotkey: 'Escape', inEditable: false, nativeEvent: new KeyboardEvent('keydown', { key: 'Escape' }) })
     })
 
     expect(onRequestClose).toHaveBeenCalledTimes(1)
@@ -788,7 +791,7 @@ describe('NewSaleReviewStep persistent file reconciliation', () => {
     renderStep({ onClose })
 
     act(() => {
-      mocks.keyHandler?.({ hotkey: 'Escape' })
+      mocks.keyHandler?.({ hotkey: 'Escape', inEditable: false, nativeEvent: new KeyboardEvent('keydown', { key: 'Escape' }) })
     })
     fireEvent.click(await screen.findByRole('button', { name: 'Підтвердити закриття' }))
 

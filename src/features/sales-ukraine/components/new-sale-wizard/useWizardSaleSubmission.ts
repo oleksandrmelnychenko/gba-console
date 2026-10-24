@@ -40,7 +40,7 @@ import {
 } from '../../saleFileMutation'
 import { getSaleReviewIssues, type SaleReviewIssueCode } from '../../saleReviewGuards'
 import { getSalesTtnFileValidationError } from '../../salesPayloadGuards'
-import type { SaleDocumentResult, SalesUkraineRetailPaymentStatus, SalesUkraineSale } from '../../types'
+import type { SaleDocumentResult, SalesUkraineSale } from '../../types'
 import {
   getSaleFileMutationOperationIdentity,
   isPersistedSaleFileMutationRecord,
@@ -76,6 +76,7 @@ import {
   isWizardMergedSaleSubmission,
   type WizardMergedSaleSubmission,
 } from './wizardMergedSubmit'
+import { useWizardRetailPaymentStatus } from './useWizardRetailPaymentStatus'
 import { buildWizardSplitSale } from './wizardSplitSale'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
@@ -128,7 +129,6 @@ export type WizardSaleSubmissionOptions = {
   clientNetId: string | null
   sale: SalesUkraineSale | null
   value: NewSaleReviewValue
-  retailStatus: SalesUkraineRetailPaymentStatus | null
   submitDeniedReason: string
   submitFlow: 'create' | 'edit'
   onBusyChange?: (busy: boolean) => void
@@ -145,7 +145,6 @@ export function useWizardSaleSubmission({
   clientNetId,
   sale,
   value,
-  retailStatus,
   submitDeniedReason,
   submitFlow,
   onBusyChange,
@@ -189,6 +188,7 @@ export function useWizardSaleSubmission({
     ? createSalesUkraineVatSaleAndGetPaymentDocument
     : convertVatSaleAndGetPaymentDocument
   const retailSale = mergedSale?.unionSale ?? sale
+  const retailStatus = useWizardRetailPaymentStatus(retailSale)
   const pendingMutationUserKey = getSalesPendingMutationUserKey(session)
   const pendingMutationContext = getFinalMutationContext(clientNetId, sale)
   const pendingFileMutationContext = getSaleFileMutationContext(

@@ -165,3 +165,11 @@ describe('wizard client step API contracts', () => {
     })
   })
 })
+
+
+it('passes cancellation through to the sales register request', async () => {
+  apiRequestMock.mockResolvedValueOnce([])
+  const controller = new AbortController()
+  await getWizardSalesRegister({ clientNetId: 'client', from: '2026-10-01', to: '2026-10-24', type: 6, value: '' }, controller.signal)
+  expect(apiRequestMock).toHaveBeenLastCalledWith('/sales/all/register', expect.objectContaining({ signal: controller.signal }))
+})

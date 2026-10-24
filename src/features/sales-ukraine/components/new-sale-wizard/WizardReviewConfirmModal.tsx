@@ -15,13 +15,17 @@ export function WizardReviewConfirmModal({
   const { t } = useI18n()
 
   function handleKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (event.key !== 'Enter' && event.key !== 'Escape') return
+    event.stopPropagation()
+    if (event.defaultPrevented || event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229 || event.ctrlKey || event.metaKey || event.altKey) return
+    if (event.repeat) { event.preventDefault(); return }
     if (event.key === 'Enter') {
+      // Enter on Cancel must activate Cancel, not confirm the whole dialog.
+      if (event.target instanceof Element && event.target.closest('button')) return
       event.preventDefault()
-      event.stopPropagation()
       onConfirm()
     } else if (event.key === 'Escape') {
       event.preventDefault()
-      event.stopPropagation()
       onCancel()
     }
   }

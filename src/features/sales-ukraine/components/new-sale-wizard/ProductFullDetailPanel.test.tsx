@@ -6,7 +6,8 @@ import { I18nProvider } from '../../../../shared/i18n/I18nProvider'
 import { theme } from '../../../../shared/theme/theme'
 import { ProductFullDetailPanel } from './ProductFullDetailPanel'
 
-vi.mock('./WizardAiPriceHint', () => ({ WizardAiPriceHint: () => null }))
+const priceHint = vi.hoisted(() => vi.fn(() => null))
+vi.mock('./WizardAiPriceHint', () => ({ WizardAiPriceHint: priceHint }))
 
 type Props = ComponentProps<typeof ProductFullDetailPanel>
 
@@ -299,5 +300,39 @@ describe('ProductFullDetailPanel', () => {
     expect(screen.getByText('Опис відсутній')).toBeTruthy()
     expect(screen.getByText('Немає деталізації')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Редагувати' })).toBeNull()
+  })
+})
+
+
+describe('full product card render isolation', () => {
+  it('does not rebuild prices, stock rows or price hints while typing a description', () => {
+    const priceRead = vi.fn(() => 25)
+    const stockRead = vi.fn(() => 'Tracked stock')
+    const props = fixture({
+      isEditingDescription: true,
+      pricing: { get PriceEUR() { return priceRead() } },
+      rows: [{ key: 'tracked', amount: 1, get name() { return stockRead() } }],
+    })
+    render(panel(props))
+    const priceReads = priceRead.mock.calls.length
+    const stockReads = stockRead.mock.calls.length
+    const hintRenders = priceHint.mock.calls.length
+    expect(priceReads).toBeGreaterThan(0)
+    expect(stockReads).toBeGreaterThan(0)
+    for (const value of ['N', 'Ne', 'New']) {
+      fireEvent.change(screen.getByRole('textbox', { name: 'Опис' }), { target: { value } })
+    }
+    expect(props.onDescriptionDraftChange).toHaveBeenLastCalledWith('New')
+    expect(priceRead).toHaveBeenCalledTimes(priceReads)
+    expect(stockRead).toHaveBeenCalledTimes(stockReads)
+    expect(priceHint).toHaveBeenCalledTimes(hintRenders)
+  })
+
+  it('does not carry an unsaved draft into a different product', () => {
+    const props = fixture({ isEditingDescription: true })
+    const view = render(panel(props))
+    fireEvent.change(screen.getByRole('textbox', { name: 'Опис' }), { target: { value: 'Old draft' } })
+    view.rerender(panel({ ...props, product: { ...props.product, NetUid: 'product-2' }, descriptionDraft: 'Second description' }))
+    expect(screen.getByRole('textbox', { name: 'Опис' })).toHaveProperty('value', 'Second description')
   })
 })

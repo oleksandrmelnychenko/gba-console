@@ -42,8 +42,22 @@ export function useWizardProductAnalogues({
   }, [])
 
   const patchAnalogues = useCallback((patch: (product: WizardSaleProduct) => WizardSaleProduct) => {
-    cacheRef.current.forEach((items, key) => cacheRef.current.set(key, items.map(patch)))
-    setAnalogueState((previous) => ({ ...previous, items: previous.items.map(patch) }))
+    // The visible list normally shares its array with the cache. Transform each
+    // list once and retain its identity when the patch affects another product.
+    const patchedLists = new Map<WizardSaleProduct[], WizardSaleProduct[]>()
+    const patchItems = (items: WizardSaleProduct[]) => {
+      const existing = patchedLists.get(items)
+      if (existing) return existing
+      const next = items.map(patch)
+      const result = next.every((item, index) => item === items[index]) ? items : next
+      patchedLists.set(items, result)
+      return result
+    }
+    cacheRef.current.forEach((items, key) => cacheRef.current.set(key, patchItems(items)))
+    setAnalogueState((previous) => {
+      const items = patchItems(previous.items)
+      return items === previous.items ? previous : { ...previous, items }
+    })
   }, [])
 
   const restoreCachedAnalogues = useCallback((product: WizardSaleProduct) => {

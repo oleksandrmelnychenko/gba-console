@@ -323,7 +323,9 @@ describe('NewSaleProductsStep selected product summary', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Деталі' }))
     const drawer = await findDetailDrawer()
     await waitFor(() => expect(apiMocks.getProductCurrentPriceByAgreement).toHaveBeenCalledOnce())
-    fireEvent.click(within(drawer).getByRole('button', { name: 'Редагувати' }))
+    await act(async () => {
+      fireEvent.click(within(drawer).getByRole('button', { name: 'Редагувати' }))
+    })
     const input = within(drawer).getByRole('textbox', { name: 'Опис' })
     fireEvent.change(input, { target: { value: 'Оновлений опис' } })
     fireEvent.keyDown(input, { key: 'Enter' })
@@ -347,7 +349,9 @@ describe('NewSaleProductsStep selected product summary', () => {
     fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'SEM12081' } })
     fireEvent.click(await screen.findByRole('button', { name: 'Деталі' }))
     const drawer = await findDetailDrawer()
-    fireEvent.click(within(drawer).getByRole('button', { name: 'Редагувати' }))
+    await act(async () => {
+      fireEvent.click(within(drawer).getByRole('button', { name: 'Редагувати' }))
+    })
     const input = within(drawer).getByRole('textbox', { name: 'Опис' })
     fireEvent.change(input, { target: { value: 'Незбережена зміна' } })
     fireEvent.keyDown(input, { key: 'Escape' })
@@ -702,6 +706,29 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
     await waitFor(() => expect(loadSalesPendingMutation(scope)).toBe(null))
     expect(apiMocks.deleteOrderItem.mock.calls[1]?.[1]?.operationId).toBe(firstOperationId)
     expect(onPendingMutationChange).toHaveBeenLastCalledWith(false)
+  })
+
+  it.each(['quantity', 'remove'] as const)('restores a selected split row through %s and commits the remaining split quantity', async (action) => {
+    const sale = createSale()
+    const source = sale.Order?.OrderItems?.[0] as SalesUkraineOrderItem & { Product: WizardSaleProduct }
+    setWizardSplitOrderItems([createWizardSplitOrderItem(source, 2, source.Comment)], agreementNetId, {
+      agreementNetId, origin: 'ordinary', saleNetUid: 'sale-1', userKey: 'net:user-a',
+    })
+    apiMocks.acceptedQty = 1.25
+    const restoredQty = action === 'quantity' ? 1.25 : 2
+    const onCartChanged = vi.fn(async () => createSale(2 + restoredQty))
+    renderStep({ onCartChanged, sale })
+    fireEvent.keyDown(document.body, { key: 'F2' })
+    await screen.findByRole('button', { name: 'restore split items' })
+    fireEvent.keyDown(document.body, { key: 'ArrowDown' })
+    fireEvent.keyDown(document.body, { key: action === 'quantity' ? 'Enter' : 'Delete' })
+    fireEvent.click(await screen.findByRole('button', { name: action === 'quantity' ? 'accept quantity' : 'confirm mutation' }))
+
+    await waitFor(() => expect(apiMocks.updateOrderItem).toHaveBeenCalledOnce())
+    await waitFor(() => expect(onCartChanged).toHaveBeenCalled())
+    expect(apiMocks.updateOrderItem.mock.calls[0]?.[0]).toMatchObject({ NetUid: 'row-1', Qty: 2 + restoredQty })
+    expect(loadSalesPendingMutation(scope)).toBeNull()
+    expect(getWizardSplitOrderItems().map((row) => row.Qty)).toEqual(action === 'quantity' ? [0.75] : [])
   })
 
   it('clears the final pending operation after restored split reconciliation succeeds', async () => {

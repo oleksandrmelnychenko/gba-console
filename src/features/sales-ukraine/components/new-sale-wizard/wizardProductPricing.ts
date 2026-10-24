@@ -1,5 +1,5 @@
 import type { WizardCalculatedProductPricing } from './newSaleWizardApi'
-import type { WizardSaleProduct } from './wizardSaleProduct'
+import { getWizardProductNumber, type WizardSaleProduct } from './wizardSaleProduct'
 
 export type WizardProductPriceRow = {
   currency: string
@@ -7,6 +7,31 @@ export type WizardProductPriceRow = {
   label: string
   tone?: 'strong'
   value: number
+}
+
+export function buildWizardProductPriceMatrix({
+  currentPriceEur, localCurrency, pricing, product,
+}: {
+  currentPriceEur?: number | null
+  localCurrency: string
+  pricing: WizardCalculatedProductPricing | null
+  product: WizardSaleProduct
+}) {
+  const rows = new Map(buildWizardProductPriceRows({ localCurrency, pricing, product }).map((row) => [row.key, row]))
+  return [
+    {
+      key: 'current', label: 'Ціна',
+      eur: currentPriceEur ?? getWizardProductNumber(product.CurrentPrice),
+      local: getWizardProductNumber(product.CurrentPriceEurToUah) ?? getWizardProductNumber(product.CurrentLocalPrice),
+    },
+    ...(['base-eur', 'discount-eur'] as const).map((key) => ({
+      key,
+      label: rows.get(key)?.label ?? (key === 'base-eur' ? 'База' : 'Зі знижкою'),
+      eur: rows.get(key)?.value,
+      local: null,
+    })),
+    { key: 'retail', label: 'Роздріб', eur: rows.get('retail-eur')?.value, local: rows.get('retail-local')?.value },
+  ]
 }
 
 export function buildWizardProductPriceRows({

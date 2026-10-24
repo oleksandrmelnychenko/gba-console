@@ -1,3 +1,5 @@
+import { StrictMode } from 'react'
+import type { WizardSaleRegisterItem, WizardSaleRegisterQuery } from './wizardClientStepApi'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -7,7 +9,7 @@ import type { Client } from '../../../clients/types'
 const apiMocks = vi.hoisted(() => ({
   getWizardClientAgreements: vi.fn(async () => []),
   getWizardClientGroupedDebts: vi.fn(async () => []),
-  getWizardSalesRegister: vi.fn(async () => []),
+  getWizardSalesRegister: vi.fn<(query: WizardSaleRegisterQuery, signal?: AbortSignal) => Promise<WizardSaleRegisterItem[]>>(async () => []),
   searchWizardClients: vi.fn<() => Promise<Client[]>>(async () => []),
 }))
 
@@ -40,6 +42,22 @@ describe('new-sale client keyboard navigation', () => {
   beforeEach(() => {
     resetWizardKeyboard()
     vi.clearAllMocks()
+  })
+
+  it('reloads a preserved client after StrictMode retires the first mount requests', async () => {
+    const client = createClient(1, 'CN02101')
+    const onAgreementChange = vi.fn()
+    render(
+      <StrictMode><MantineProvider><I18nProvider>
+        <NewSaleClientStep clientNetId={client.NetUid ?? null} initialClient={client}
+          onAgreementChange={onAgreementChange} onClientChange={() => {}} onOpenSale={() => {}} />
+      </I18nProvider></MantineProvider></StrictMode>,
+    )
+    await waitFor(() => expect(apiMocks.getWizardSalesRegister).toHaveBeenCalledTimes(2))
+    expect(apiMocks.getWizardSalesRegister.mock.calls[0][1]?.aborted).toBe(true)
+    expect(apiMocks.getWizardSalesRegister.mock.calls[1][1]?.aborted).toBe(false)
+    expect(apiMocks.getWizardClientAgreements).toHaveBeenCalledTimes(2)
+    await waitFor(() => expect(screen.getByTestId('wizard-selected-client').getAttribute('data-client-net-uid')).toBe(client.NetUid))
   })
 
   it('previews a structural search result with an arrow and opens it only on Enter', async () => {
@@ -115,6 +133,29 @@ describe('new-sale client keyboard navigation', () => {
     await waitFor(() => expect(onClientChange).toHaveBeenCalledWith(client.NetUid), { timeout: 3_000 })
     expect(apiMocks.getWizardClientAgreements).toHaveBeenCalledWith(client.NetUid)
     expect(apiMocks.getWizardClientGroupedDebts).toHaveBeenCalledWith(client.NetUid)
+  })
+
+  it('clears the previous selection immediately on typing and does not reconfirm it with Enter', async () => {
+    const client = createClient(1, 'CN02101')
+    const onClientChange = vi.fn()
+    render(
+      <MantineProvider><I18nProvider>
+        <div onKeyDown={dispatchWizardKey}>
+          <NewSaleClientStep clientNetId={client.NetUid ?? null} initialClient={client}
+            onAgreementChange={() => {}} onClientChange={onClientChange} onOpenSale={() => {}} />
+        </div>
+      </I18nProvider></MantineProvider>,
+    )
+    await waitFor(() => expect(screen.getByTestId('wizard-selected-client')).toBeTruthy())
+    onClientChange.mockClear()
+    const search = screen.getByPlaceholderText('Місце вводу для пошуку')
+    fireEvent.change(search, { target: { value: 'new query' } })
+    expect(screen.queryByTestId('wizard-selected-client')).toBeNull()
+    expect(search.classList.contains('is-hidden')).toBe(false)
+    expect(onClientChange).toHaveBeenCalledWith(null)
+    onClientChange.mockClear()
+    fireEvent.keyDown(search, { key: 'Enter' })
+    expect(onClientChange).not.toHaveBeenCalled()
   })
 })
 

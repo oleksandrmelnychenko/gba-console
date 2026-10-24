@@ -50,7 +50,7 @@ afterEach(() => {
 })
 function options(): WizardSaleSubmissionOptions {
   return {
-    canSubmit: true, canConvertMergedToBill: false, clientNetId: 'client-1', sale, retailStatus: null,
+    canSubmit: true, canConvertMergedToBill: false, clientNetId: 'client-1', sale,
     submitDeniedReason: 'denied', submitFlow: 'create',
     value: {
       address: { Id: 1 }, addressValue: '', city: 'Kyiv', codAmount: '', comment: 'original', department: '1',

@@ -110,3 +110,33 @@ describe('wizard product analogues', () => {
     expect(mocks.load).toHaveBeenCalledTimes(3)
   })
 })
+
+
+describe('analogue patch identity', () => {
+  it('keeps the state and cached list when a patch does not change any product', async () => {
+    const { result } = renderHook(useWizardProductAnalogues, { initialProps })
+    await tick()
+    const before = result.current.analogueState
+    act(() => result.current.patchAnalogues((item) => item))
+    expect(result.current.analogueState).toBe(before)
+    act(() => result.current.restoreCachedAnalogues({ NetUid: 'parent-1', HasAnalogue: true }))
+    expect(result.current.analogueState.items).toBe(before.items)
+  })
+
+  it('patches a shared visible/cached list once and keeps unchanged product identities', async () => {
+    const first = analogue('a', 5)
+    const second = analogue('b', 2)
+    mocks.load.mockResolvedValueOnce([first, second])
+    const { result } = renderHook(useWizardProductAnalogues, { initialProps })
+    await tick()
+    const patch = vi.fn((item: WizardSaleProduct) => item.NetUid === 'a' ? { ...item, Description: 'updated' } : item)
+    act(() => result.current.patchAnalogues(patch))
+    expect(patch).toHaveBeenCalledTimes(2)
+    const visible = result.current.analogueState.items
+    expect(visible[0].Description).toBe('updated')
+    expect(visible[1]).toBe(second)
+    act(() => result.current.restoreCachedAnalogues({ NetUid: 'parent-1', HasAnalogue: true }))
+    expect(result.current.analogueState.items).toBe(visible)
+    expect(mocks.load).toHaveBeenCalledOnce()
+  })
+})

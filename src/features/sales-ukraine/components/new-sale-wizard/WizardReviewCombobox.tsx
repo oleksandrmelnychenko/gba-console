@@ -1,15 +1,11 @@
-import { Combobox, InputBase, ScrollArea, useCombobox } from '@mantine/core'
-import { useState } from 'react'
-
-export type WizardReviewComboboxOption<T> = {
-  entity: T
-  key: string
-  label: string
-}
+import { Combobox, InputBase, ScrollArea } from '@mantine/core'
+import { useWizardReviewCombobox, type WizardReviewComboboxOptions } from './useWizardReviewCombobox'
+export type { WizardReviewComboboxOption } from './useWizardReviewCombobox'
 
 export function WizardReviewCombobox<T>({
   allowFreeForm = false,
   classNames,
+  contextKey,
   draftValue,
   label,
   onDraftChange,
@@ -19,116 +15,39 @@ export function WizardReviewCombobox<T>({
   selectedKey,
   tabIndex,
 }: {
-  allowFreeForm?: boolean
   classNames?: {
     input?: string
     label?: string
     root?: string
   }
-  draftValue?: string
   label: string
-  onDraftChange?: (input: string) => void
-  onFreeText?: (input: string) => void
-  onSelect: (entity: T) => void
-  options: WizardReviewComboboxOption<T>[]
-  selectedKey: string | null
   tabIndex?: number
-}) {
-  const combobox = useCombobox({ onDropdownClose: () => combobox.resetSelectedOption() })
-  const [search, setSearch] = useState<string | null>(null)
-
-  const selectedLabel = options.find((option) => option.key === selectedKey)?.label ?? ''
-  const filtered =
-    search === null || search === selectedLabel
-      ? options
-      : options.filter((option) => option.label.toLowerCase().includes(search.toLowerCase()))
-
-  function commit(input: string) {
-    const match = options.find((option) => option.label.toLowerCase() === input.toLowerCase())
-
-    if (match) {
-      onSelect(match.entity)
-    } else if (allowFreeForm) {
-      if (input) {
-        onFreeText?.(input)
-      }
-    } else if (options.length > 0) {
-      onSelect(options[0].entity)
-    }
-
-    setSearch(null)
-  }
+} & WizardReviewComboboxOptions<T>) {
+  const { combobox, filtered, inputValue, handleOptionSubmit, handleBlur, handleChange,
+    handleClick, handleKeyDownCapture, handleKeyDown } = useWizardReviewCombobox({
+    allowFreeForm, contextKey, draftValue, onDraftChange, onFreeText, onSelect, options, selectedKey,
+  })
 
   return (
     <Combobox
       store={combobox}
       withinPortal
-      onOptionSubmit={(key) => {
-        const option = options.find((item) => item.key === key)
-
-        if (option) {
-          onSelect(option.entity)
-        }
-
-        setSearch(null)
-        combobox.closeDropdown()
-      }}
+      onOptionSubmit={handleOptionSubmit}
     >
       <Combobox.Target>
         <InputBase
           classNames={classNames}
+          data-review-combobox
           label={label}
           rightSection={<Combobox.Chevron />}
           rightSectionPointerEvents="none"
           tabIndex={tabIndex}
-          value={search ?? (draftValue || selectedLabel)}
-          onBlur={() => {
-            combobox.closeDropdown()
-
-            if (search !== null && search !== selectedLabel) {
-              commit(search)
-            } else {
-              setSearch(null)
-            }
-          }}
-          onChange={(event) => {
-            const input = event.currentTarget.value
-
-            setSearch(input)
-            onDraftChange?.(input)
-            combobox.openDropdown()
-            combobox.updateSelectedOptionIndex()
-          }}
-          onClick={() => combobox.openDropdown()}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape') {
-              event.preventDefault()
-              event.stopPropagation()
-              setSearch(null)
-              onDraftChange?.('')
-              combobox.closeDropdown()
-
-              return
-            }
-
-            if (event.key !== 'Enter') {
-              return
-            }
-
-            event.stopPropagation()
-
-            if (combobox.dropdownOpened && combobox.getSelectedOptionIndex() !== -1) {
-              return
-            }
-
-            event.preventDefault()
-
-            if (search !== null && search !== selectedLabel) {
-              commit(search)
-            }
-
-            combobox.closeDropdown()
-          }}
+          value={inputValue}
+          onBlur={handleBlur}
+          onChange={(event) => handleChange(event.currentTarget.value)}
+          onClick={handleClick}
+          onKeyDownCapture={handleKeyDownCapture}
+          onKeyDown={handleKeyDown}
         />
       </Combobox.Target>
 

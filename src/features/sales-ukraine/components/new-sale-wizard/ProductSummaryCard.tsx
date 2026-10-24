@@ -1,12 +1,13 @@
 import { TableChip, type TableChipTone } from '../../../../shared/ui/TableChip'
 import { Button } from '@mantine/core'
+import { useMemo } from 'react'
 import { Eye } from 'lucide-react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getProductMainOriginalNumber, isCriticalProductTop } from '../../../products/utils'
 import type { WizardCalculatedProductPricing } from './newSaleWizardApi'
-import { buildWizardProductPriceRows } from './wizardProductPricing'
-import { getWizardProductNumber, type WizardSaleProduct } from './wizardSaleProduct'
+import { buildWizardProductPriceMatrix } from './wizardProductPricing'
+import type { WizardSaleProduct } from './wizardSaleProduct'
 import { WizardProductPhoto } from './WizardProductPhoto'
 import './product-summary-card.css'
 
@@ -39,24 +40,8 @@ export function ProductSummaryCard({
   const name = product.NameUA || product.Name || t('Без назви')
   const top = product.Top?.trim()
   const unit = product.MeasureUnit?.Name || t('шт')
-  const currentPrice = currentPriceEur ?? getWizardProductNumber(product.CurrentPrice)
-  const localPrice = getWizardProductNumber(product.CurrentPriceEurToUah) ?? getWizardProductNumber(product.CurrentLocalPrice)
-  const priceRows = buildWizardProductPriceRows({ localCurrency: localCurrencyCode, pricing, product })
-  const matrixRows = [
-    { key: 'current', label: t('Ціна'), eur: currentPrice, local: localPrice },
-    ...(['base-eur', 'discount-eur'] as const).map((key) => ({
-      key,
-      label: t(priceRows.find((row) => row.key === key)?.label ?? (key === 'base-eur' ? 'База' : 'Зі знижкою')),
-      eur: priceRows.find((row) => row.key === key)?.value,
-      local: null,
-    })),
-    {
-      key: 'retail',
-      label: t('Роздріб'),
-      eur: priceRows.find((row) => row.key === 'retail-eur')?.value,
-      local: priceRows.find((row) => row.key === 'retail-local')?.value,
-    },
-  ]
+  const matrixRows = useMemo(() => buildWizardProductPriceMatrix({ currentPriceEur, localCurrency: localCurrencyCode, pricing, product }),
+    [currentPriceEur, localCurrencyCode, pricing, product])
   const facts: { label: string; value: string | null | undefined; tone?: TableChipTone }[] = [
     { label: t('Оригінальний номер'), value: getProductMainOriginalNumber(product), tone: 'warning' as const },
     { label: t('Розмір'), value: product.Size, tone: 'warning' as const },
@@ -123,7 +108,7 @@ export function ProductSummaryCard({
           <tbody>
             {matrixRows.map((row) => (
               <tr key={row.key}>
-                <th scope="row">{row.label}</th>
+                <th scope="row">{t(row.label)}</th>
                 <td className="app-table-cell-number">{row.eur == null ? '—' : priceFormatter.format(row.eur)}</td>
                 <td className="app-table-cell-number">{row.local == null ? null : priceFormatter.format(row.local)}</td>
               </tr>

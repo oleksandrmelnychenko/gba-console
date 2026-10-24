@@ -60,8 +60,9 @@ export async function searchWizardClients(
   return Array.isArray(result) ? (result as Client[]) : []
 }
 
-export async function getWizardSalesRegister(query: WizardSaleRegisterQuery): Promise<WizardSaleRegisterItem[]> {
+export async function getWizardSalesRegister(query: WizardSaleRegisterQuery, signal?: AbortSignal): Promise<WizardSaleRegisterItem[]> {
   const result = await apiRequest<unknown>('/sales/all/register', {
+    ...(signal ? { signal } : {}),
     query: {
       clientNetId: query.clientNetId,
       from: query.from,

@@ -1,0 +1,124 @@
+import { act, cleanup, renderHook } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { useWizardClientSalesRegister } from './useWizardClientSalesRegister'
+import type { WizardSaleRegisterItem } from './wizardClientStepApi'
+
+const mocks = vi.hoisted(() => ({ load: vi.fn(), row: vi.fn(), realtime: new Map<string, () => void>() }))
+vi.mock('./wizardClientStepApi', async (original) => ({ ...await original<typeof import('./wizardClientStepApi')>(), getWizardSalesRegister: mocks.load }))
+vi.mock('../../../../shared/sale-audit/saleAuditApi', () => ({ getSalesUkraineEditSaleStatistic: mocks.row, getSalesUkraineSaleAudit: mocks.row }))
+vi.mock('../../../../shared/realtime/events', () => ({
+  realtimeEvents: { saleAdded: 'added', saleUpdated: 'updated' },
+  useRealtimeEvent: (event: string, handler: () => void) => { mocks.realtime.set(event, handler) },
+}))
+const rows = (id: string): WizardSaleRegisterItem[] => [{ SaleStatistic: { Sale: { NetUid: id } } }]
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  const promise = new Promise<T>((next) => { resolve = next })
+  return { promise, resolve }
+}
+beforeEach(() => { vi.useFakeTimers(); mocks.load.mockReset().mockResolvedValue(rows('sale-1')); mocks.row.mockReset(); mocks.realtime.clear() })
+afterEach(() => { cleanup(); vi.useRealTimers() })
+function setup() {
+  const hook = renderHook(useWizardClientSalesRegister)
+  act(() => hook.result.current.resetRegister('client-1'))
+  return hook
+}
+
+describe('wizard client sales register', () => {
+  it('shares the in-flight promise so callers wait until the register has actually loaded', async () => {
+    const pending = deferred<WizardSaleRegisterItem[]>()
+    mocks.load.mockReturnValueOnce(pending.promise)
+    const { result } = setup()
+    let first!: Promise<void>
+    let second!: Promise<void>
+    act(() => { first = result.current.fetchRegister(); second = result.current.fetchRegister() })
+    expect(second).toBe(first)
+    expect(mocks.load).toHaveBeenCalledOnce()
+    expect(result.current.isRegistryLoading).toBe(true)
+    await act(async () => { pending.resolve(rows('sale-1')); await second })
+    expect(result.current.registryItems[0].Sale?.NetUid).toBe('sale-1')
+    expect(result.current.isRegistryLoading).toBe(false)
+  })
+
+  it('does not let an old A request clear the newer A request after A-B-A filter changes', async () => {
+    const old = deferred<WizardSaleRegisterItem[]>()
+    const current = deferred<WizardSaleRegisterItem[]>()
+    mocks.load.mockReturnValueOnce(old.promise).mockResolvedValueOnce([]).mockReturnValueOnce(current.promise)
+    const { result } = setup()
+    let first!: Promise<void>
+    let latest!: Promise<void>
+    act(() => {
+      first = result.current.fetchRegister()
+      result.current.handleStatusChange(0)
+      result.current.handleStatusChange(6)
+      latest = result.current.fetchRegister()
+    })
+    await act(async () => { old.resolve(rows('old')); await first })
+    expect(result.current.isRegistryLoading).toBe(true)
+    expect(result.current.fetchRegister()).toBe(latest)
+    expect(mocks.load).toHaveBeenCalledTimes(3)
+    await act(async () => { current.resolve(rows('current')); await latest })
+    expect(result.current.registryItems[0].Sale?.NetUid).toBe('current')
+  })
+
+  it('combines same-turn filter changes and cancels the superseded search timer', async () => {
+    const { result } = setup()
+    await act(async () => {
+      result.current.handleSaleSearchChange('invoice')
+      result.current.handleStatusChange(1)
+      result.current.handleDateFromChange('2026-10-01')
+    })
+    expect(mocks.load.mock.calls.at(-1)?.[0]).toMatchObject({ value: 'invoice', type: 1, from: '2026-10-01' })
+    await act(async () => { await vi.advanceTimersByTimeAsync(500) })
+    expect(mocks.load).toHaveBeenCalledTimes(2)
+  })
+
+  it('cancels pending search and ignores the old client response after selection changes', async () => {
+    const old = deferred<WizardSaleRegisterItem[]>()
+    mocks.load.mockReturnValueOnce(old.promise)
+    const { result } = setup()
+    let request!: Promise<void>
+    act(() => { request = result.current.fetchRegister() })
+    const signal = mocks.load.mock.calls[0][1] as AbortSignal
+    act(() => { result.current.handleSaleSearchChange('draft'); result.current.resetRegister('client-2') })
+    await act(async () => { old.resolve(rows('old')); await request; await vi.advanceTimersByTimeAsync(500) })
+    expect(signal.aborted).toBe(true)
+    expect(result.current.registryItems).toEqual([])
+    expect(mocks.load).toHaveBeenCalledOnce()
+    await act(async () => result.current.fetchRegister())
+    expect(mocks.load.mock.calls[1][0].clientNetId).toBe('client-2')
+  })
+
+  it('coalesces realtime events and retires the timer when a manual refresh already handles them', async () => {
+    const { result } = setup()
+    act(() => { mocks.realtime.get('added')?.(); mocks.realtime.get('updated')?.() })
+    await act(async () => result.current.fetchRegister())
+    await act(async () => { await vi.advanceTimersByTimeAsync(500) })
+    expect(mocks.load).toHaveBeenCalledOnce()
+  })
+
+  it('ignores a row refresh started for the previous register, even if the new list includes the same sale', async () => {
+    const old = deferred<{ Sale: { NetUid: string; Id: number } }>()
+    mocks.row.mockReturnValueOnce(old.promise)
+    const { result } = setup()
+    await act(async () => result.current.fetchRegister())
+    let request!: Promise<void>
+    act(() => { request = result.current.refreshRegistryRow({ NetUid: 'sale-1' }, false); result.current.resetRegister('client-2') })
+    await act(async () => result.current.fetchRegister())
+    await act(async () => { old.resolve({ Sale: { NetUid: 'sale-1', Id: 99 } }); await request })
+    expect(result.current.registryItems[0].Sale?.Id).toBeUndefined()
+  })
+
+  it('aborts requests and clears timers on unmount', async () => {
+    const pending = deferred<WizardSaleRegisterItem[]>()
+    mocks.load.mockReturnValueOnce(pending.promise)
+    const { result, unmount } = setup()
+    let request!: Promise<void>
+    act(() => { request = result.current.fetchRegister(); mocks.realtime.get('added')?.() })
+    const signal = mocks.load.mock.calls[0][1] as AbortSignal
+    unmount()
+    await act(async () => { pending.resolve([]); await request; await vi.advanceTimersByTimeAsync(500) })
+    expect(signal.aborted).toBe(true)
+    expect(mocks.load).toHaveBeenCalledOnce()
+  })
+})
