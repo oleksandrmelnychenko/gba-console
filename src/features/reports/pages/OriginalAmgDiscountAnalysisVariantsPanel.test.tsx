@@ -1,6 +1,7 @@
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { expect, it, vi } from 'vitest'
+import userEvent from '@testing-library/user-event'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { getAmgDiscountAnalysisReadiness, readAmgDiscountAnalysis, readAmgDiscountAnalysisChoices } from '../api/originalAmgDiscountAnalysisApi'
 import { deleteAmgDiscountVariant, listAmgDiscountVariants, loadAmgDiscountVariant, saveAmgDiscountVariant } from '../api/originalAmgDiscountAnalysisVariantsApi'
@@ -18,16 +19,30 @@ function setup() {
   vi.mocked(readAmgDiscountAnalysisChoices).mockImplementation(async request => ({ ...amgNames(), Through: request.Through, RequestedCounterparties: [...request.Counterparties], RequestedProducts: [...request.Products] }))
   vi.mocked(readAmgDiscountAnalysis).mockImplementation(async request => amgResult(request))
 }
-async function choose() {
-  fireEvent.click(button('Оновити варіанти AMG')); await waitFor(() => expect((screen.getByRole('combobox', { name: 'Збережений варіант AMG' }) as HTMLInputElement).disabled).toBe(false))
-  fireEvent.click(screen.getByRole('combobox', { name: 'Збережений варіант AMG' })); fireEvent.click(await screen.findByRole('option', { name: 'Мій AMG' }))
+async function choose(user = userEvent.setup()) {
+  await user.click(button('Оновити варіанти AMG')); await waitFor(() => expect((screen.getByRole('combobox', { name: 'Збережений варіант AMG' }) as HTMLInputElement).disabled).toBe(false))
+  await user.click(screen.getByRole('combobox', { name: 'Збережений варіант AMG' })); await user.click(await screen.findByRole('option', { name: 'Мій AMG' }))
 }
 it('loads exact saved date and filters then refreshes own names before binding a new preview witness', async () => {
   setup(); const saved = amgVariant(); saved.Scope.Request.Through = '2026-10-01'; vi.mocked(loadAmgDiscountVariant).mockResolvedValue(saved)
-  render(panel()); await choose(); fireEvent.click(button('Відкрити варіант AMG')); await waitFor(() => expect(button('Сформувати').disabled).toBe(false))
+  const user = userEvent.setup()
+  let finishPreview!: (value: ReturnType<typeof amgResult>) => void
+  vi.mocked(readAmgDiscountAnalysis).mockImplementationOnce(() => new Promise(resolve => { finishPreview = resolve }))
+  render(panel()); await choose(user); await user.click(button('Відкрити варіант AMG')); await waitFor(() => expect(button('Сформувати').disabled).toBe(false))
   expect((screen.getByLabelText('Дата зрізу') as HTMLInputElement).value).toBe('01.10.2026'); expect(readAmgDiscountAnalysisChoices).toHaveBeenCalledTimes(1)
   const namesRequest = vi.mocked(readAmgDiscountAnalysisChoices).mock.calls[0][0]; expect(namesRequest.Counterparties).toEqual([amgParty]); expect(namesRequest.Products).toEqual([amgProduct]); expect(namesRequest.ChoicesWitnessSha256).toBeUndefined()
-  fireEvent.click(button('Сформувати')); await screen.findByRole('table'); expect(vi.mocked(readAmgDiscountAnalysis).mock.calls[0][0].ChoicesWitnessSha256).toBe(amgChoiceWitness)
+  // Complete the interaction/effects before delivering the asynchronous API response.
+  await user.click(button('Сформувати'))
+  expect(readAmgDiscountAnalysis).toHaveBeenCalledTimes(1)
+  const [previewRequest, signal] = vi.mocked(readAmgDiscountAnalysis).mock.calls[0]
+  expect(previewRequest).toMatchObject({ Through: '2026-10-01', Counterparties: [amgParty], Products: [amgProduct], ChoicesWitnessSha256: amgChoiceWitness })
+  expect(signal?.aborted).toBe(false)
+  expect(button('Сформувати').disabled).toBe(true)
+  expect(button('CSV').disabled).toBe(true)
+  await act(async () => { finishPreview(amgResult(previewRequest)) })
+  await screen.findByRole('table')
+  expect(signal?.aborted).toBe(false)
+  expect(readAmgDiscountAnalysis).toHaveBeenCalledTimes(1)
   expect(button('CSV').disabled).toBe(false)
 })
 it('keeps unavailable saved refs intact and blocks generation until an explicit clear rather than silently broadening scope', async () => {
