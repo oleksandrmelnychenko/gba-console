@@ -1,4 +1,5 @@
 import { movementDataset } from '../data/currentVparivanieMovements.test-fixtures'
+import { mixedDataset } from '../data/currentVparivanieAnalysis.group-selection.test-fixtures'
 import { workbookDisplayFileName } from '../data/bug1274WorkbookGuide'
 import { changeReportPeriod, openReportPeriod, readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
@@ -82,6 +83,23 @@ it('opens every workbook from the switcher on its default period', async () => {
     await findOpenedWorkbook(file)
     await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/i)).toBeNull())
     expect(deskPeriodText(dateInput('Від').value, dateInput('До').value)).toBe(deskPeriodText(period.from, period.to))
+  }
+})
+
+it('restores editable measure checkboxes after switching from movement analysis back to profit workbooks', async () => {
+  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, profitDayDataset, profitSupplierDataset,
+    mixedDataset, cashModeDataset, settlementModeDataset])
+  await openDayWorkbook()
+  const measures = () => within(document.getElementById('workbook-settings-pane-measures')!)
+  const initial = measures().getAllByRole('checkbox').map(input => input.getAttribute('aria-label'))
+  const switcher = screen.getByRole('navigation', { name: 'Звіти' })
+  for (const file of ['Впарювання.xls', 'ВП.xls', 'ВП по постачальниках.xls', 'ВП.xls']) {
+    fireEvent.click(within(switcher).getByRole('button', { name: `Відкрити ${workbookDisplayFileName(file)}` }))
+    await findOpenedWorkbook(file)
+    await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/i)).toBeNull())
+    const inputs = measures().getAllByRole('checkbox')
+    if (file === 'ВП.xls') expect(inputs.map(input => input.getAttribute('aria-label'))).toEqual(initial)
+    else expect(inputs.length).toBeGreaterThan(0)
   }
 })
 

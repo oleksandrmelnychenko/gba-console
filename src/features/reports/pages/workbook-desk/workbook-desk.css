@@ -481,6 +481,12 @@
   width: 100%;
 }
 
+/* The unified section owns the query container. A nested container inside the
+   grid fieldset can lose its child layout when movement controls are inserted. */
+.workbook-settings--unified .reports-stocks-legacy-measurements {
+  container-type: normal;
+}
+
 .workbook-settings__summary {
   display: grid;
   gap: 8px;
