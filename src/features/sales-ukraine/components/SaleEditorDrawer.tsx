@@ -1,3 +1,4 @@
+import { formatDebtAmount, getDebtBalanceLines } from '../../sales-debtors/model/debtorCurrency'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -1593,12 +1594,9 @@ function ClientTab({ canReassign, sale, onSwitched }: { canReassign: boolean; on
           </Text>
         </Group>
         <DetailRow label={t('Коментар')} value={sale.Comment} />
-        {debt && (
-          <>
-            <DetailRow mono label={t('Борг (локальна)')} value={formatAmount(getNumber(debt.TotalLocal))} />
-            <DetailRow mono label={t('Борг (EUR)')} value={formatAmount(getNumber(debt.TotalEuro))} />
-          </>
-        )}
+        {getDebtBalanceLines(debt).map((line) => (
+          <DetailRow key={`${line.label}-${line.currencyCode}`} mono label={line.label.endsWith(', EUR') ? t(line.label) : `${t(line.label)} (${line.currencyCode || t('Локальні валюти')})`} value={formatDebtAmount(line.value, formatAmount, t('Не визначено'))} />
+        ))}
       </Stack>
 
       <Group className="sale-editor-client__agreement" align="end" gap={8} wrap="wrap">

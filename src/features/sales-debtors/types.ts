@@ -31,9 +31,12 @@ export type ClientCurrencyDebt = {
   RemainderDebt?: number
   OverdueDebt?: number
   TotalDebtInDays?: number
-  RemainderDebtEuro?: number
-  OverdueDebtEuro?: number
-  TotalDebtInDaysEuro?: number
+  RemainderDebtEuro?: number | null
+  OverdueDebtEuro?: number | null
+  TotalDebtInDaysEuro?: number | null
+  CreditBalance?: number
+  CreditBalanceEuro?: number | null
+  UnknownEuroDebtCount?: number
 }
 
 export type ClientInDebt = {
@@ -43,38 +46,48 @@ export type ClientInDebt = {
   ClientName?: string
   UserName?: string
   MissedDays?: number
-  RemainderDebt?: number
-  OverdueDebt?: number
+  RemainderDebt?: number | null
+  OverdueDebt?: number | null
   TotalDebtInDays?: number
-  RemainderDebtEuro?: number
-  OverdueDebtEuro?: number
-  TotalDebtInDaysEuro?: number
+  RemainderDebtEuro?: number | null
+  OverdueDebtEuro?: number | null
+  TotalDebtInDaysEuro?: number | null
   CurrencyDebts?: ClientCurrencyDebt[]
+  CreditBalanceEuro?: number | null
+  UnknownEuroDebtCount?: number
 }
 
 export type DebtorDebtCurrencyTotal = {
   CurrencyCode?: string
   Total?: number
   Overdue?: number
-  TotalInEuro?: number
-  OverdueInEuro?: number
+  TotalInEuro?: number | null
+  OverdueInEuro?: number | null
   MaxOverdueDays?: number
+  CreditBalance?: number
+  CreditBalanceEuro?: number | null
+  UnknownEuroDebtCount?: number
 }
 
 export type DebtorDebtTotal = {
   TotalEuro?: number
   TotalLocal?: number
-  TotalInEuro?: number
-  OverdueInEuro?: number
+  TotalInEuro?: number | null
+  OverdueInEuro?: number | null
   Currencies?: DebtorDebtCurrencyTotal[]
+  CreditBalanceEuro?: number | null
+  UnknownEuroDebtCount?: number
 }
 
 export type DebtorsCurrencyTotal = {
   CurrencyCode?: string
   RemainderDebt?: number
   OverdueDebt?: number
-  RemainderDebtEuro?: number
-  OverdueDebtEuro?: number
+  RemainderDebtEuro?: number | null
+  OverdueDebtEuro?: number | null
+  CreditBalance?: number
+  CreditBalanceEuro?: number | null
+  UnknownEuroDebtCount?: number
 }
 
 export type DebtorDebtEntity = {
@@ -114,12 +127,16 @@ export type DebtorDebtAgreement = DebtorDebtEntity & {
 export type DebtorDebt = DebtorDebtEntity & {
   Days?: number
   Total?: number
-  EuroTotal?: number
+  EuroTotal?: number | null
   OverdueTotal?: number
-  OverdueEuroTotal?: number
+  OverdueEuroTotal?: number | null
+  CreditBalance?: number
+  CreditBalanceEuro?: number | null
+  UnknownEuroDebtCount?: number
 }
 
 export type DebtorDebtItem = DebtorDebtEntity & {
+  UnknownEuroDebtCount?: number
   Agreement?: DebtorDebtAgreement | null
   AgreementId?: number
   Debt?: DebtorDebt | null
@@ -134,9 +151,11 @@ export type ClientDebtors = {
   ClientInDebtors: ClientInDebt[]
   TotalQtyClients: number
   TotalMissedDays: number
-  TotalRemainderDebtorsValue: number
-  TotalOverdueDebtorsValue: number
+  TotalRemainderDebtorsValue: number | null
+  TotalOverdueDebtorsValue: number | null
   CurrencyTotals: DebtorsCurrencyTotal[]
+  TotalCreditBalanceEuro?: number | null
+  UnknownEuroDebtCount?: number
 }
 
 export type DebtorsManagerOption = {

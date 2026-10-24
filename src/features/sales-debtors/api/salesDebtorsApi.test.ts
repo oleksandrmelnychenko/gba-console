@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { TypeOfClientAgreement, TypeOfCurrencyOfAgreement } from '../types'
-import { exportDebtorsDocument } from './salesDebtorsApi'
+import { exportDebtorsDocument, getFilteredDebtors } from './salesDebtorsApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -35,4 +35,25 @@ describe('salesDebtorsApi', () => {
       },
     })
   })
+  it('keeps unknown summary and row valuations distinct from zero across API decoding', async () => {
+    const row = { RemainderDebtEuro: null, CreditBalanceEuro: null, CurrencyDebts: [{ CurrencyCode: 'UAH', RemainderDebt: 100 }] }
+    apiRequestMock.mockResolvedValueOnce(JSON.stringify({
+      ClientInDebtors: [row], TotalRemainderDebtorsValue: null, TotalOverdueDebtorsValue: 0,
+      TotalCreditBalanceEuro: null, UnknownEuroDebtCount: 1,
+    }))
+    const result = await getFilteredDebtors({ days: 3, limit: 20, offset: 0, typeAgreement: 0, typeCurrency: 0, userNetId: null, organizationNetId: null })
+    expect(result.TotalRemainderDebtorsValue).toBeNull()
+    expect(result.TotalOverdueDebtorsValue).toBe(0)
+    expect(result.TotalCreditBalanceEuro).toBeNull()
+    expect(result.UnknownEuroDebtCount).toBe(1)
+    expect(result.ClientInDebtors).toEqual([row])
+  })
+
+  it('retains the legacy empty summary defaults for absent properties', async () => {
+    apiRequestMock.mockResolvedValueOnce({ ClientInDebtors: [] })
+    const result = await getFilteredDebtors({ days: 3, limit: 20, offset: 0, typeAgreement: 0, typeCurrency: 0, userNetId: null, organizationNetId: null })
+    expect(result.TotalRemainderDebtorsValue).toBe(0)
+    expect(result.TotalCreditBalanceEuro).toBeUndefined()
+  })
+
 })

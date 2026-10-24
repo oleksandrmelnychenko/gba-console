@@ -9,6 +9,8 @@ import { TableChip } from '../../../shared/ui/TableChip'
 import { getDebtorDebtTotal, getDebtorGroupedDebts } from '../api/salesDebtorsApi'
 import {
   EURO_CURRENCY_CODE,
+  formatDebtAmount,
+  hasCreditBalance,
   getDebtorEuroAmount,
   getStructureCurrencyTotals,
   toFiniteNumber,
@@ -95,11 +97,12 @@ export function DebtorDetailDrawer({ debtor, onClose }: {
             <div className="debtor-detail__metrics">
               <DetailMetric label={t('Борг, EUR')} unit={EURO_CURRENCY_CODE} value={getDebtorEuroAmount(debtor, 'RemainderDebt')} />
               <DetailMetric
-                danger={getDebtorEuroAmount(debtor, 'OverdueDebt') > 0}
+                danger={(getDebtorEuroAmount(debtor, 'OverdueDebt') ?? 0) > 0}
                 label={t('Прострочено, EUR')}
                 unit={EURO_CURRENCY_CODE}
                 value={getDebtorEuroAmount(debtor, 'OverdueDebt')}
               />
+              {hasCreditBalance(debtor) ? <DetailMetric label={t('Кредитовий залишок, EUR')} unit={EURO_CURRENCY_CODE} value={debtor.CreditBalanceEuro} /> : null}
               <DetailMetric danger={(debtor.MissedDays ?? 0) < 0} integer label={t('Термін, днів')} value={debtor.MissedDays} />
             </div>
           </section>
@@ -141,12 +144,13 @@ function DetailSection({ children, count, note, title }: { children: ReactNode; 
 }
 
 function DetailMetric({ danger, euro, integer, label, unit, value }: {
-  danger?: boolean; euro?: number; integer?: boolean; label: string; unit?: string; value?: number
+  danger?: boolean; euro?: number | null; integer?: boolean; label: string; unit?: string; value?: number | null
 }) {
+  const { t } = useI18n()
   return (
     <div className={`debtor-detail__metric${danger ? ' is-danger' : ''}`}>
       <span className="debtor-detail__label">{label}</span>
-      <div className="debtor-detail__number"><strong>{value === undefined ? '—' : integer ? String(value) : moneyFormatter.format(value)}</strong>{unit ? <TableChip tone="source" value={unit} /> : null}</div>
+      <div className="debtor-detail__number"><strong>{formatDebtAmount(value, integer ? String : moneyFormatter.format, t('Не визначено'))}</strong>{unit ? <TableChip tone="source" value={unit} /> : null}</div>
       {euro !== undefined ? <MoneyWithCurrency className="is-secondary" currencyCode={EURO_CURRENCY_CODE} value={euro} /> : null}
     </div>
   )
@@ -167,14 +171,24 @@ function DebtTotals({ total }: { total: DebtorDebtTotal | null }) {
           value={toFiniteNumber(item.Total)}
         />
       ))}
+      {currencies.filter(hasCreditBalance).map((item) => (
+        <DetailMetric
+          key={`credit-${item.CurrencyCode || 'local'}`}
+          euro={item.CurrencyCode !== EURO_CURRENCY_CODE ? item.CreditBalanceEuro : undefined}
+          label={`${t('Кредитовий залишок')} ${item.CurrencyCode || ''}`.trim()}
+          unit={item.CurrencyCode || undefined}
+          value={item.CreditBalance}
+        />
+      ))}
+      {total && hasCreditBalance(total) ? <DetailMetric label={t('Кредитовий залишок, EUR')} unit={EURO_CURRENCY_CODE} value={total.CreditBalanceEuro} /> : null}
       {total?.TotalInEuro !== undefined ? (
         <>
-          <DetailMetric label={t('Разом, EUR')} unit={EURO_CURRENCY_CODE} value={toFiniteNumber(total.TotalInEuro)} />
+          <DetailMetric label={t('Разом, EUR')} unit={EURO_CURRENCY_CODE} value={total.TotalInEuro} />
           <DetailMetric
             danger={toFiniteNumber(total.OverdueInEuro) > 0}
             label={t('Прострочено, EUR')}
             unit={EURO_CURRENCY_CODE}
-            value={toFiniteNumber(total.OverdueInEuro)}
+            value={total.OverdueInEuro}
           />
         </>
       ) : null}
@@ -182,10 +196,11 @@ function DebtTotals({ total }: { total: DebtorDebtTotal | null }) {
   )
 }
 
-function MoneyWithCurrency({ className, currencyCode, value }: { className?: string; currencyCode?: string; value?: number }) {
+function MoneyWithCurrency({ className, currencyCode, value }: { className?: string; currencyCode?: string; value?: number | null }) {
+  const { t } = useI18n()
   return (
     <div className={`debtor-detail__number${className ? ` ${className}` : ''}`}>
-      <strong>{value === undefined ? '—' : moneyFormatter.format(value)}</strong>
+      <strong>{formatDebtAmount(value, moneyFormatter.format, t('Не визначено'))}</strong>
       {currencyCode ? <TableChip tone="source" value={currencyCode} /> : null}
     </div>
   )
@@ -224,6 +239,12 @@ function DebtCard({ item }: { item: DebtorDebtItem }) {
             ) : null}
           </div>
         </DetailRow>
+        {debt && hasCreditBalance(debt) ? (
+          <DetailRow label={t('Кредитовий залишок')}>
+            <MoneyWithCurrency currencyCode={currencyCode} value={debt.CreditBalance} />
+            {currencyCode !== EURO_CURRENCY_CODE ? <MoneyWithCurrency className="is-secondary" currencyCode={EURO_CURRENCY_CODE} value={debt.CreditBalanceEuro} /> : null}
+          </DetailRow>
+        ) : null}
         <DetailRow label={t('Днів прострочки')}><TableChip value={overdueDays} /></DetailRow>
         {organization ? <DetailRow label={t('Організація')}><TableChip tone="product" value={organization} /></DetailRow> : null}
         {agreement ? <DetailRow label={t('Договір')}><TableChip value={agreement} /></DetailRow> : null}
@@ -233,8 +254,9 @@ function DebtCard({ item }: { item: DebtorDebtItem }) {
 }
 
 function includesSubClients(debtor: ClientInDebt, total: DebtorDebtTotal | null): boolean {
-  return total?.TotalInEuro !== undefined &&
-    Math.abs(toFiniteNumber(total.TotalInEuro) - getDebtorEuroAmount(debtor, 'RemainderDebt')) >= 0.005
+  const rowEuro = getDebtorEuroAmount(debtor, 'RemainderDebt')
+  return typeof total?.TotalInEuro === 'number' && rowEuro !== null &&
+    Math.abs(total.TotalInEuro - rowEuro) >= 0.005
 }
 
 function displayValue(value?: string | null): string {

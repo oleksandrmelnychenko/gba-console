@@ -258,10 +258,15 @@ export type Debt = {
   Name?: string
   Days?: number
   Total?: number
-  EuroTotal?: number
+  EuroTotal?: number | null
+  OverdueEuroTotal?: number | null
+  CreditBalance?: number
+  CreditBalanceEuro?: number | null
+  UnknownEuroDebtCount?: number
 }
 
 export type ClientInDebt = {
+  UnknownEuroDebtCount?: number
   Id?: number
   NetUid?: string
   ClientId?: number

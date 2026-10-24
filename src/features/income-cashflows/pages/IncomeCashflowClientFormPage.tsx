@@ -1,3 +1,4 @@
+import { formatDebtAmount, getDebtBalanceLines } from '../../sales-debtors/model/debtorCurrency'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   ActionIcon,
@@ -1368,18 +1369,12 @@ function IncomeCashflowClientFormPageContent() {
                       <strong>{maxOverdueDays} {t('днів')}</strong>
                     </div>
                   )}
-                  {clientDebtTotal?.TotalEuro ? (
-                    <div className="income-cashflow-client-form__debt-metric">
-                      <span>{t('Загальний борг')}</span>
-                      <strong className="app-money">{formatMoney(clientDebtTotal.TotalEuro)} EUR</strong>
+                  {getDebtBalanceLines(clientDebtTotal).map((line) => (
+                    <div key={`${line.label}-${line.currencyCode}`} className="income-cashflow-client-form__debt-metric">
+                      <span>{t(line.label)}</span>
+                      <strong className="app-money">{formatDebtAmount(line.value, formatMoney, t('Не визначено'))} {line.currencyCode || t('Локальні валюти')}</strong>
                     </div>
-                  ) : null}
-                  {clientDebtTotal?.TotalLocal ? (
-                    <div className="income-cashflow-client-form__debt-metric">
-                      <span>{t('Загальний борг')}</span>
-                      <strong className="app-money">{formatMoney(clientDebtTotal.TotalLocal)} UAH</strong>
-                    </div>
-                  ) : null}
+                  ))}
                   {selectedClientAgreement?.CurrentAmount ? (
                     <div className="income-cashflow-client-form__debt-metric">
                       <span>{t('Баланс договору')}</span>

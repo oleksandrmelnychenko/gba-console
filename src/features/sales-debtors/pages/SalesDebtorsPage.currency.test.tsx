@@ -181,4 +181,45 @@ describe('SalesDebtorsPage debt currency', () => {
     expect(drawerText).toContain('Прострочено 38 дн.')
     expect(drawerText).not.toContain('Разом із субклієнтами')
   })
+  it('shows unknown EUR valuations and separate credit balances without hiding local amounts', async () => {
+    vi.mocked(getFilteredDebtors).mockResolvedValue({
+      ...debtors,
+      ClientInDebtors: [{
+        ...debtors.ClientInDebtors[0], RemainderDebt: 999, RemainderDebtEuro: null,
+        OverdueDebtEuro: 0, TotalDebtInDaysEuro: null, CreditBalanceEuro: null,
+        CurrencyDebts: [{ CurrencyCode: 'UAH', RemainderDebt: 100, OverdueDebt: 0, CreditBalance: 25, CreditBalanceEuro: null }],
+      }],
+      CurrencyTotals: [{ CurrencyCode: 'UAH', RemainderDebt: 100, CreditBalance: 25, CreditBalanceEuro: null }],
+      TotalRemainderDebtorsValue: null, TotalOverdueDebtorsValue: 0, TotalCreditBalanceEuro: null, UnknownEuroDebtCount: 1,
+    })
+    vi.mocked(getDebtorGroupedDebts).mockResolvedValue([{
+      Id: 1, Agreement: { Currency: { Code: 'UAH' } },
+      Debt: { Total: 100, EuroTotal: null, OverdueTotal: 0, OverdueEuroTotal: 0, CreditBalance: 25, CreditBalanceEuro: null },
+    }])
+    vi.mocked(getDebtorDebtTotal).mockResolvedValue({
+      TotalInEuro: null, OverdueInEuro: 0, CreditBalanceEuro: null,
+      Currencies: [{ CurrencyCode: 'UAH', Total: 100, TotalInEuro: null, CreditBalance: 25, CreditBalanceEuro: null }],
+    })
+    renderWithMantine(<I18nProvider><SalesDebtorsPage /></I18nProvider>)
+    const row = await screen.findByTestId('row-0')
+    expect(text(row.querySelector('[data-column="remainderDebt"]')!)).toBe('Не визначеноEUR')
+    expect(text(row.querySelector('[data-column="overdueDebt"]')!)).toBe(`${money.format(0)}EUR`)
+    expect(text(row.querySelector('[data-column="currencyDebt"]')!)).toContain(`${money.format(100)}UAH`)
+    expect(text(row.querySelector('[data-column="creditBalance"]')!)).toContain(`${money.format(25)}UAHНе визначеноEUR`)
+    expect(screen.getByText('Без оцінки в EUR: 1')).toBeTruthy()
+    const footer = document.querySelector('.sales-debtors-summary')!
+    expect(text(footer)).toContain('Борг, EURНе визначеноEUR')
+    expect(text(footer)).toContain('Кредитовий залишок, EURНе визначеноEUR')
+    expect(text(footer)).not.toContain(money.format(999))
+    fireEvent.click(row)
+    const drawer = await screen.findByLabelText('drawer')
+    await waitFor(() => expect(within(drawer).getByText('Сума боргу')).toBeTruthy())
+    const detail = text(drawer)
+    expect(detail).toContain(`Сума боргу${money.format(100)}UAH`)
+    expect(detail).toContain('Сума, EURНе визначеноEUR')
+    expect(detail).toContain(`Кредитовий залишок${money.format(25)}UAHНе визначеноEUR`)
+    expect(detail).toContain('Разом, EURНе визначеноEUR')
+    expect(detail).not.toContain('Разом із субклієнтами')
+  })
+
 })
