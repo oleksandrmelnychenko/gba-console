@@ -14,7 +14,12 @@ type FileFormat = 'excel' | 'pdf'
 
 type Props = {
   period?: ReactNode
+  pending?: boolean
+  onCancel?: () => void
+  onSaveTemplate?: () => void
+  applyLabel?: string
   canSubmit: boolean
+  canExport?: boolean
   isLoading: boolean
   blockedReason: string | null
   ran: boolean
@@ -29,7 +34,7 @@ type Props = {
 }
 
 export function WorkbookActionBar({ period, canSubmit, isLoading, blockedReason, ran, previewNeedsExport = false, excelUrl, pdfUrl, fileBaseName, resetDisabled,
-  onPreview, onGenerate, onReset }: Props) {
+  onPreview, onGenerate, onReset, pending = false, canExport = canSubmit, onCancel, onSaveTemplate, applyLabel }: Props) {
   const { t } = useI18n()
   const blocked = !canSubmit && !isLoading && blockedReason ? blockedReason : null
   const describedBy = blocked ? BLOCKED_REASON_ID : undefined
@@ -42,11 +47,11 @@ export function WorkbookActionBar({ period, canSubmit, isLoading, blockedReason,
       download={deskDownloadName(fileBaseName, url, format)}
       aria-label={t('Завантажити {format}', { format: label })}>{label}</Button>
     const missing = ran && !isLoading && !previewNeedsExport
-    return <Button type={format === 'excel' ? 'submit' : 'button'} variant="default" className="workbook-actions__file"
-      leftSection={icon} disabled={!canSubmit || isLoading || missing} aria-describedby={describedBy}
+    return <Button type="button" variant="default" className="workbook-actions__file"
+      leftSection={icon} disabled={!canExport || isLoading || missing} aria-describedby={describedBy}
       title={missing ? t('Сервер не повернув файл {format} для цього звіту.', { format: label }) : undefined}
       aria-label={t('Сформувати {format}', { format: label })}
-      onClick={format === 'pdf' ? onGenerate : undefined}>{label}</Button>
+      onClick={onGenerate}>{label}</Button>
   }
   return <div className="workbook-actions" role="region" aria-label={t('Дії зі звітом')}>
     <div className="workbook-actions__scroll">
@@ -56,11 +61,13 @@ export function WorkbookActionBar({ period, canSubmit, isLoading, blockedReason,
       <Button type="button"
         disabled={resetDisabled} aria-label={t('Скинути')}
         title={t('Повернути період і відбори за замовчуванням')} onClick={onReset} className="reports-toolbar-action" variant="default" leftSection={<RotateCcw size={16} aria-hidden="true" />}>{t('Скинути')}</Button>
+      {onCancel ? <Button type="button" variant="default" disabled={!pending || isLoading} onClick={onCancel}>{t('Скасувати зміни')}</Button> : null}
+      {onSaveTemplate ? <Button type="button" variant="default" disabled={isLoading} onClick={onSaveTemplate}>{t('Зберегти набір як шаблон')}</Button> : null}
       {file('excel', excelUrl)}
       {file('pdf', pdfUrl)}
       <Button type="button" color={CREATE_ACTION_COLOR} className="workbook-actions__preview"
         leftSection={<MonitorPlay size={16} aria-hidden="true" />} disabled={!canSubmit || isLoading}
-        aria-describedby={describedBy} onClick={onPreview}>{t('Показати на екрані')}</Button>
+        aria-describedby={describedBy} onClick={onPreview}>{t(applyLabel ?? 'Показати на екрані')}</Button>
     </div>
     </div>
     </div>

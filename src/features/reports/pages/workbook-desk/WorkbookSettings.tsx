@@ -26,9 +26,11 @@ type Props = {
   sections: readonly WorkbookSettingsSection[]
   advanced: ReactNode
   disabled?: boolean
+  unified?: boolean
+  period?: ReactNode
 }
 
-export function WorkbookSettings({ sections, advanced, disabled = false }: Props) {
+export function WorkbookSettings({ sections, advanced, disabled = false, unified = false, period }: Props) {
   const { t } = useI18n()
   const [expanded, setExpanded] = useState(false)
   const [selectedSection, setSelectedSection] = useState<string | null>(null)
@@ -44,6 +46,20 @@ export function WorkbookSettings({ sections, advanced, disabled = false }: Props
       heading?.focus({ preventScroll: true })
     })
   }
+  if (unified) return <section className="workbook-settings workbook-settings--unified" aria-label={t('Налаштування звіту')}>
+    <h2 className="app-section-title">{t('Налаштування звіту')}</h2>
+    {period ? <fieldset className="workbook-settings__control" disabled={disabled}>{period}</fieldset> : null}
+    <div className="workbook-settings__grid">
+      {sections.map(section => <section key={section.id} id={`workbook-settings-pane-${section.id}`}
+        className={`workbook-settings__unified-section workbook-settings__unified-section--${section.id}`}
+        role="group" aria-label={t(section.title)}>
+        <fieldset className="workbook-settings__control" disabled={disabled}>{section.content}</fieldset>
+      </section>)}
+    </div>
+    <details className="workbook-settings__advanced"><summary>{t('Додатково')}</summary>
+      <fieldset className="workbook-settings__control" disabled={disabled}>{advanced}</fieldset>
+    </details>
+  </section>
   return <section className="workbook-settings" aria-labelledby="workbook-settings-title">
     <div className="workbook-settings__head">
       <h2 id="workbook-settings-title" className="app-section-title workbook-settings__title">{t('Налаштування звіту')}</h2>

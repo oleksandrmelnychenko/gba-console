@@ -1,4 +1,4 @@
-import { currentVparivanieAnalysisLayoutError, requestCurrentVparivanieAnalysis } from './currentVparivanieAnalysis'
+import { currentVparivanieAnalysisCapability, currentVparivanieAnalysisLayoutError, requestCurrentVparivanieAnalysis } from './currentVparivanieAnalysis'
 import { currentVparivanieScopeError, withCurrentVparivanieMovementScope } from './currentVparivanie'
 import { effectiveReportConfiguration, reportConfigurationError } from './reportConfiguration'
 import { numberPresentationError } from './reportNumberPresentation'
@@ -50,7 +50,8 @@ export function reportWorkspaceDraftCompatibility(snapshot: ReportWorkspaceSnaps
   const originalSupplier = dataset.DataSource === 38 && requestSupplierBasis(data) === 0
     && (requestSupplierSourceWorld(data) === 0 || requestProfitReadMode(data) === 0)
     && supplierBatchGrossProfitConfigurationError(data, dataset) === null
-  const groupings = new Set(dataset.Groupings.map(field => field.Type))
+  const analysis = requestCurrentVparivanieAnalysis(data) ? currentVparivanieAnalysisCapability(dataset) : null
+  const groupings = new Set(analysis ? analysis.groupings.map(field => field.type) : dataset.Groupings.map(field => field.Type))
   const measures = new Set(dataset.Measurements.map(field => field.Type))
   if ([...data.sorted.Row, ...data.sorted.Col].some(field => !groupings.has(field.type))
     || measurements.some(group => group.SubList.some(field => field.IsChecked && !measures.has(field.Type)))
@@ -58,7 +59,7 @@ export function reportWorkspaceDraftCompatibility(snapshot: ReportWorkspaceSnaps
     return 'Склад полів набору даних змінився. Чернетка збережена; невідомі поля не видалено.'
   }
   if ((data.dataSource === 13 && data.sorted.Col.length > 0)
-    || (hasFixedReportAxes(dataset.DataSource) && ((dataset.DataSource === 39 ? !requestCurrentVparivanieAnalysis(data) && data.sorted.Col.map(field => field.type).join(',') !== '74,75' : data.sorted.Col.length > 0)
+    || (hasFixedReportAxes(dataset.DataSource) && !requestCurrentVparivanieAnalysis(data) && ((dataset.DataSource === 39 ? !requestCurrentVparivanieAnalysis(data) && data.sorted.Col.map(field => field.type).join(',') !== '74,75' : data.sorted.Col.length > 0)
       || !capabilityLayout && !legacyLayout && !presented && !originalSupplier && JSON.stringify(data.sorted.Row.map(field => field.type)) !== JSON.stringify(getNativeReportProfile(dataset.DataSource)?.rowGroupings)))
     || (data.dataSource === 19 && data.selections.length > 0)) {
     return 'Структура чернетки несумісна з цим набором даних. Чернетка збережена без змін.'

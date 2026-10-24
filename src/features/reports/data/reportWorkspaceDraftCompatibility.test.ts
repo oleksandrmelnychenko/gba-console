@@ -1,3 +1,5 @@
+import { analysisDataset } from './currentVparivanieAnalysis.test-fixtures'
+import { upgradeCurrentVparivanieAnalysis } from './currentVparivanieAnalysis'
 import { movementDataset } from './currentVparivanieMovements.test-fixtures'
 import { describe, expect, it } from 'vitest'
 import type { ReportDataset } from '../types'
@@ -104,4 +106,13 @@ it('restores unfinished movement drafts with automatic complete scope while refu
   delete value.data.CurrentVparivanieMovements
   value.data.currentVparivanieFullScope = false
   expect(reportWorkspaceDraftCompatibility(value, movementDataset)).toMatch(/має бути явно увімкнений/)
+})
+
+it('restores analysis39 article/product axes while keeping its own configurable layout validation', () => {
+  const value = snapshot(analysisDataset)
+  value.data = upgradeCurrentVparivanieAnalysis(value.data, analysisDataset)
+  expect(value.data.sorted.Row.map(row => row.type)).toEqual([6, 5])
+  expect(reportWorkspaceDraftCompatibility(value, analysisDataset)).toBeNull()
+  value.data.sorted.Col = []
+  expect(reportWorkspaceDraftCompatibility(value, analysisDataset)).not.toBeNull()
 })

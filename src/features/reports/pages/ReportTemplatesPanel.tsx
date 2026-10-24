@@ -14,6 +14,7 @@ import { ReportTemplateOrderingControls } from './ReportTemplateOrderingControls
 type Action = { kind: 'rename' | 'copy' | 'delete'; template: ReportTemplate; name: string }
 const emptyDatasets: readonly ReportDataset[] = []
 type Props = {
+  initiallyCreating?: boolean
   storage: Pick<ReturnType<typeof useServerReportTemplates>, 'templates' | 'busy' | 'ready' | 'notice' | 'browserTemplates'
     | 'reload' | 'save' | 'update' | 'rename' | 'copy' | 'remove' | 'importBrowserTemplate'>
     & Partial<Pick<ReturnType<typeof useServerReportTemplates>, 'noticeKind'>>
@@ -38,11 +39,11 @@ type Props = {
   onRefresh: () => void
 }
 
-export function ReportTemplatesPanel({ storage, ordering, configurationReady, configurationName, disabled = false, datasets = emptyDatasets, dataSources, callerKey = null, requireReadMode = false, notice, templateName,
+export function ReportTemplatesPanel({ initiallyCreating = false, storage, ordering, configurationReady, configurationName, disabled = false, datasets = emptyDatasets, dataSources, callerKey = null, requireReadMode = false, notice, templateName,
   activeTemplate, onNameChange, onApply, onSave, onUpdate, onRenamed, onDeleted, onClearNotice, onRefresh }: Props) {
   const { t } = useI18n()
   const [action, setAction] = useState<Action | null>(null)
-  const [creating, setCreating] = useState(false)
+  const [creating, setCreating] = useState(initiallyCreating)
   const [search, setSearch] = useState('')
   const [savedVariant, setSavedVariant] = useState<ReportTemplate | null>(null)
   const actionTitleId = useId()

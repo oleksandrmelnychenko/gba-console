@@ -24,5 +24,8 @@ export function openWorkbookAdvanced() {
 
 export function openWorkbookSettingsSection(name: string) {
   expandWorkbookSettings()
-  fireEvent.click(screen.getByRole('button', { name }))
+  const button = screen.queryByRole('button', { name })
+  if (button) fireEvent.click(button)
+  else if (name === 'Додатково') { const summary = screen.getByText(name, { selector: 'summary' }); if (!summary.closest('details')?.open) fireEvent.click(summary) }
+  else expect(screen.getByRole('group', { name })).toBeTruthy()
 }

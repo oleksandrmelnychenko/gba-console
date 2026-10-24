@@ -26,7 +26,7 @@ export function WorkbookSwitcher({ launches, active, disabled, extra, onOpen }: 
         const Icon = workbookIcon(launch.fileName, launch.dataset.DataSource)
         return <button key={launch.fileName} type="button" className={`app-screen-tab${current ? ' is-active' : ''}`}
           aria-current={current ? 'true' : undefined} disabled={disabled} title={workbookDisplayFileName(launch.fileName)}
-          aria-label={t('Відкрити {file}', { file: workbookDisplayFileName(launch.fileName) })} onClick={() => onOpen(launch)}>
+          aria-label={t('Відкрити {file}', { file: workbookDisplayFileName(launch.fileName) })} onClick={() => { if (!current) onOpen(launch) }}>
           <Icon size={16} strokeWidth={1.7} aria-hidden="true" />
           {t(workbookDeskEntry(launch.fileName)?.name ?? launch.label)}
         </button>

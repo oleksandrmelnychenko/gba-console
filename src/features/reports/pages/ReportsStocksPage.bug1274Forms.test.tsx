@@ -4,7 +4,7 @@ import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
-import { createStockReport, searchDatasetReportValues } from '../api/reportsApi'
+import { previewStockReport, searchDatasetReportValues } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
 import { reportDatasets } from '../data/reportDatasets.test-fixtures'
 import { profitDayDataset, profitSupplierDataset } from '../data/profitReadMode.test-fixtures'
@@ -20,7 +20,7 @@ import { expandWorkbookSettings, findOpenedWorkbook, openWorkbookSettingsSection
 vi.mock('../reportSurfacePolicy', () => ({ BUG_1274_ONLY_REPORT_SURFACE: true }))
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
 vi.mock('../../../shared/ui/document-export-modal/DocumentExportModal', () => ({ DocumentExportModal: () => null }))
-vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(), createStockReport: vi.fn(), searchDatasetReportValues: vi.fn() }))
+vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(), previewStockReport: vi.fn(), searchDatasetReportValues: vi.fn() }))
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(), getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn() }))
 
 const bug1274Datasets = [profitDayDataset, profitSupplierDataset, currentVparivanieDataset, cashModeDataset, settlementModeDataset]
@@ -30,7 +30,11 @@ beforeEach(() => {
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, ...bug1274Datasets])
   vi.mocked(getServerReportTemplates).mockResolvedValue([])
   vi.mocked(searchDatasetReportValues).mockResolvedValue([])
-  vi.mocked(createStockReport).mockResolvedValue({ document: {}, raw: {} })
+  vi.mocked(previewStockReport).mockResolvedValue({ result: { document: {}, raw: {} }, preview: {
+    Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true, Request: null,
+    Page: { Offset: 0, Limit: 50, TotalVisibleRows: 0, ReturnedRows: 0, HasMore: false },
+    RowSchema: [], ColumnSchema: [], Rows: [], Columns: [], Cells: [],
+  } })
 })
 const page = () => <MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>
 async function openWorkbook(label: string) {
@@ -62,8 +66,8 @@ it.each([
   const view = await openWorkbook(label)
   for (const name of ['Джерело розрахунку', ...locked]) expect(screen.queryByRole('combobox', { name })).toBeNull()
   fireEvent.submit(view.container.querySelector('form')!)
-  await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
-  expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({ dataSource, [modeKey]: 0 })
+  await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
+  expect(vi.mocked(previewStockReport).mock.calls[0][0]).toMatchObject({ dataSource, [modeKey]: 0 })
 })
 
 it('opens the product matrix form without the original matrix', async () => {
@@ -85,8 +89,8 @@ it('opens the supplier workbook with its organizations, saved supplier list and 
   const view = await openWorkbook('Валовий прибуток за постачальниками')
   expect(screen.getByText(/Не знайдено однозначно в GBA, тому не застосовано: YPS GLOBAL/)).toBeTruthy()
   fireEvent.submit(view.container.querySelector('form')!)
-  await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
-  const request = vi.mocked(createStockReport).mock.calls[0][0]
+  await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
+  const request = vi.mocked(previewStockReport).mock.calls[0][0]
   expect(request).toMatchObject({ dataSource: 38, profitReadMode: 0,
     sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: '8AB2005056C0000811DEFC4535BB4D40' } })
   expect(request.selections.map(selection => [selection.SelectedField.Type, selection.FilterCondition.Type,
@@ -98,8 +102,8 @@ it('opens the product matrix workbook with the AL-KO group and АФРАКО reso
     : field === 4 ? [{ Id: '3996', Name: 'AL-KO [3996]' }] : field === 5 ? [{ Id: '613989', Name: 'АФРАКО ТЗОВ [613989]' }] : [])
   const view = await openWorkbook('Матриця товарів')
   fireEvent.submit(view.container.querySelector('form')!)
-  await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
-  expect(vi.mocked(createStockReport).mock.calls[0][0].selections.map(selection => [selection.SelectedField.Type,
+  await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
+  expect(vi.mocked(previewStockReport).mock.calls[0][0].selections.map(selection => [selection.SelectedField.Type,
     selection.FilterCondition.Type, selection.Values.map(value => value.Data.Id)])).toEqual([[4, 6, ['3996']], [5, 0, ['613989']]])
 })
 

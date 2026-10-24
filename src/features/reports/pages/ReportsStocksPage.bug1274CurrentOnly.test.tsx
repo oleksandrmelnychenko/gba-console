@@ -2,7 +2,7 @@ import { MantineProvider } from '@mantine/core'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
-import { createStockReport, searchDatasetReportValues } from '../api/reportsApi'
+import { previewStockReport, searchDatasetReportValues } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
 import { getSettlementCounterpartyGroups } from '../api/counterpartyGroupsApi'
 import { defaultDatasetRequest } from '../data/reportDatasets'
@@ -22,7 +22,7 @@ import { expandWorkbookSettings, findWorkbookLanding, openWorkbookAdvanced } fro
 vi.mock('../reportSurfacePolicy', () => ({ BUG_1274_ONLY_REPORT_SURFACE: true }))
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
 vi.mock('../../../shared/ui/document-export-modal/DocumentExportModal', () => ({ DocumentExportModal: () => null }))
-vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(), createStockReport: vi.fn(), searchDatasetReportValues: vi.fn() }))
+vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(), previewStockReport: vi.fn(), searchDatasetReportValues: vi.fn() }))
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(),
   getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn() }))
 vi.mock('../api/counterpartyGroupsApi', () => ({ getSettlementCounterpartyGroups: vi.fn() }))
@@ -35,7 +35,11 @@ beforeEach(() => {
   vi.mocked(getServerReportTemplates).mockResolvedValue([])
   vi.mocked(searchDatasetReportValues).mockResolvedValue([])
   vi.mocked(getSettlementCounterpartyGroups).mockResolvedValue([])
-  vi.mocked(createStockReport).mockResolvedValue({ document: { DocumentURL: '/files/current.xlsx' }, raw: {} })
+  vi.mocked(previewStockReport).mockResolvedValue({ result: { document: {}, raw: {} }, preview: {
+    Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true, Request: null,
+    Page: { Offset: 0, Limit: 50, TotalVisibleRows: 0, ReturnedRows: 0, HasMore: false },
+    RowSchema: [], ColumnSchema: [], Rows: [], Columns: [], Cells: [],
+  } })
 })
 afterEach(() => { cleanup(); localStorage.clear(); sessionStorage.clear() })
 
@@ -50,8 +54,8 @@ async function openWorkbook(label: string) {
 }
 async function submitted(view: ReturnType<typeof render>, count = 1) {
   fireEvent.submit(view.container.querySelector('form')!)
-  await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(count))
-  return vi.mocked(createStockReport).mock.calls[count - 1][0]
+  await waitFor(() => expect(previewStockReport).toHaveBeenCalledTimes(count))
+  return vi.mocked(previewStockReport).mock.calls[count - 1][0]
 }
 function template(name: string, data: ReportRequestBody) {
   return { Id: crypto.randomUUID(), Revision: 1, Name: name, Data: data }

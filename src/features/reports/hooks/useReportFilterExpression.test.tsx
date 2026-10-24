@@ -34,3 +34,15 @@ it('adds an unassigned condition atomically without widening OR and leaves inval
   expect(result.current.expression).toBeUndefined(); expect(result.current.selections).toEqual(data.selections)
   expect(result.current.notice).toContain('через І')
 })
+
+it('keeps independent UI row identities across value edits and removes only the deleted row key', () => {
+  const { result } = renderHook(useReportFilterExpression), data = expressionRequest()
+  act(() => result.current.load(data.selections))
+  const keys = result.current.selectionKeys
+  expect(new Set(keys).size).toBe(data.selections.length)
+  act(() => result.current.editSelection({ kind: 'replace', index: 0, selection: { ...data.selections[0], Values: [] } }))
+  expect(result.current.selectionKeys).toEqual(keys)
+  act(() => result.current.editSelection({ kind: 'delete', index: 0 }))
+  expect(result.current.selectionKeys).toEqual(keys.slice(1))
+  expect(JSON.stringify(result.current.selections)).not.toContain(keys[1])
+})

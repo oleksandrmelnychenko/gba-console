@@ -23,7 +23,7 @@ afterEach(() => { vi.useRealTimers() })
 it('forms the files before a run and downloads them directly once the run has them', () => {
   const onGenerate = vi.fn()
   const view = render(bar({ onGenerate }))
-  expect((screen.getByRole('button', { name: 'Сформувати Excel' }) as HTMLButtonElement).type).toBe('submit')
+  expect((screen.getByRole('button', { name: 'Сформувати Excel' }) as HTMLButtonElement).type).toBe('button')
   fireEvent.click(screen.getByRole('button', { name: 'Сформувати PDF' }))
   expect(onGenerate).toHaveBeenCalledOnce()
   view.rerender(bar({ ran: true, excelUrl: '/Data/a.xlsx', pdfUrl: '/Data/a.pdf' }))

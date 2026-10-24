@@ -65,7 +65,7 @@ const workbookDataSources: Readonly<Record<string, number>> = {
 
 async function findOpenedDayWorkbook() {
   await findOpenedWorkbook('ВП.xls')
-  await waitFor(() => expect((screen.getByRole('button', { name: 'Показати на екрані' }) as HTMLButtonElement).disabled).toBe(false))
+  await waitFor(() => expect((screen.getByRole('button', { name: 'Застосувати й показати' }) as HTMLButtonElement).disabled).toBe(false))
 }
 
 async function openDayWorkbook() {
@@ -89,7 +89,7 @@ it('shows the table with its row count and turns Excel and PDF into direct downl
   await openDayWorkbook()
   expect(screen.getByRole('button', { name: 'Сформувати Excel' })).toBeTruthy()
   expect(screen.getByText('Таблиці ще немає')).toBeTruthy()
-  fireEvent.click(screen.getByRole('button', { name: 'Показати на екрані' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Застосувати й показати' }))
   await screen.findByRole('region', { name: 'Таблиця попереднього перегляду' })
   expect(vi.mocked(previewStockReport).mock.calls[0][0]).toMatchObject({ dataSource: 35, profitReadMode: 0 })
   expect(createStockReport).not.toHaveBeenCalled()
@@ -99,9 +99,9 @@ it('shows the table with its row count and turns Excel and PDF into direct downl
   expect(excel.getAttribute('download')).toMatch(/^ВП \d\d\.\d\d\.\d{4}-\d\d\.\d\d\.\d{4}\.xlsx$/)
   expect(screen.getByRole('link', { name: 'Завантажити PDF' }).getAttribute('download')).toMatch(/\.pdf$/)
   changeReportPeriod({ from: dateInput('До').value })
-  await waitFor(() => expect(screen.queryByRole('region', { name: 'Таблиця попереднього перегляду' })).toBeNull())
-  expect(screen.getByText('Налаштування змінено')).toBeTruthy()
-  expect(screen.getByRole('button', { name: 'Сформувати Excel' })).toBeTruthy()
+  expect(screen.getByRole('region', { name: 'Таблиця попереднього перегляду' })).toBeTruthy()
+  expect(screen.getByText(/Налаштування змінено\. Застосуйте/)).toBeTruthy()
+  expect(screen.getByRole('link', { name: 'Завантажити Excel' })).toBeTruthy()
 })
 
 it('forms a file with the request of the former «Сформувати» and opens the export dialog', async () => {
@@ -125,7 +125,7 @@ it('says why the actions are blocked and points the buttons at that reason', asy
   fireEvent.click(within(period).getByRole('button', { name: 'Скасувати' }))
   changeReportPeriod({ from: '' })
   await waitFor(() => expect(document.getElementById('report-constructor-blocked-reason')?.textContent).toMatch(/період/))
-  for (const name of ['Показати на екрані', 'Сформувати Excel', 'Сформувати PDF']) {
+  for (const name of ['Застосувати й показати', 'Сформувати Excel', 'Сформувати PDF']) {
     const button = screen.getByRole('button', { name }) as HTMLButtonElement
     expect(button.disabled).toBe(true)
     expect(button.getAttribute('aria-describedby')).toBe('report-constructor-blocked-reason')
@@ -136,16 +136,16 @@ it('shows what is happening while the report is formed and the server reason whe
   let fail: (error: unknown) => void = () => {}
   vi.mocked(previewStockReport).mockImplementation(() => new Promise((_, reject) => { fail = reject }))
   await openDayWorkbook()
-  fireEvent.click(screen.getByRole('button', { name: 'Показати на екрані' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Застосувати й показати' }))
   expect(await screen.findByText(/^Формуємо «Валовий прибуток» за /)).toBeTruthy()
   expect(screen.getByText('Звіт формується…')).toBeTruthy()
   expect(screen.getByText('0 с')).toBeTruthy()
-  expect((screen.getByRole('button', { name: 'Показати на екрані' }) as HTMLButtonElement).disabled).toBe(true)
+  expect((screen.getByRole('button', { name: 'Застосувати й показати' }) as HTMLButtonElement).disabled).toBe(true)
   expect((screen.getByRole('button', { name: 'Скинути' }) as HTMLButtonElement).disabled).toBe(true)
   await act(async () => fail(new ApiError('Internal', 500, null)))
   expect(await screen.findByText('Звіт не сформовано')).toBeTruthy()
   expect(screen.getByText('Сервер звітів недоступний. Спробуйте ще раз пізніше.')).toBeTruthy()
-  expect((screen.getByRole('button', { name: 'Показати на екрані' }) as HTMLButtonElement).disabled).toBe(false)
+  expect((screen.getByRole('button', { name: 'Застосувати й показати' }) as HTMLButtonElement).disabled).toBe(false)
 })
 
 it('keeps the report list beside the open report instead of hiding the report behind «Усі звіти»', async () => {
@@ -157,23 +157,17 @@ it('keeps the report list beside the open report instead of hiding the report be
   expect(within(switcher).getByRole('button', { name: 'Відкрити ВП.xls' }).getAttribute('aria-current')).toBe('true')
   expect(screen.queryByRole('button', { name: 'Усі звіти' })).toBeNull()
   expect(screen.queryByRole('button', { name: /^Повернутися до звіту/ })).toBeNull()
-  expect(screen.getByRole('button', { name: 'Показати на екрані' })).toBeTruthy()
+  expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toBeTruthy()
   expect(dateInput('Від').value).toBe(day)
   expect(screen.getByRole('region', { name: 'Валовий прибуток' })).toBeTruthy()
 })
 
-it('keeps the settings collapsed behind a summary and opens them at the clicked section', async () => {
+it('shows period, filters, measures and grouping together in one settings form', async () => {
   await openDayWorkbook()
-  const toggle = screen.getByRole('button', { name: 'Змінити налаштування' })
-  expect(toggle.getAttribute('aria-expanded')).toBe('false')
-  expect(screen.queryByRole('checkbox', { name: 'Група «Покупці» Fenix' })).toBeNull()
+  expect(screen.queryByRole('button', { name: 'Змінити налаштування' })).toBeNull()
   expect(dateInput('Від')).toBeTruthy()
-  fireEvent.click(screen.getByRole('button', { name: /^Відбори/ }))
-  expect(screen.getByRole('button', { name: 'Згорнути налаштування' }).getAttribute('aria-expanded')).toBe('true')
+  for (const name of ['Організації', 'Відбори', 'Показники', 'Групування']) expect(screen.getByRole('group', { name })).toBeTruthy()
   expect((screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }) as HTMLInputElement).checked).toBe(true)
-  expect(screen.queryByRole('group', { name: 'Організації' })).toBeNull()
-  fireEvent.click(screen.getByRole('button', { name: 'Показники' }))
-  expect(screen.getByRole('group', { name: 'Показники' })).toBeTruthy()
 })
 
 it('keeps report details available in the collapsed header', async () => {
@@ -240,27 +234,26 @@ it('keeps an earlier draft untouched and recoverable across visits that only ope
 })
 
 
-it('uses server editable supplier rows, preserves warehouse basis when hidden, and clears old result after a layout edit', async () => {
+it('uses server editable supplier rows, preserves warehouse basis when hidden, and retains the applied result after a layout edit', async () => {
   const configuration = { version: 1, axisMode: 'profitRows', allowedRows: [73, 78, 4, 21], allowedColumns: [], minimumRows: 1, maximumRows: 3, allowRowReorder: true, rowLayouts: [], columnLayouts: [[]], mutuallyExclusiveRows: [[73, 78]], period: { required: true, supported: true, maximumDays: 62, maximumMonths: null, minimumDate: null }, variants: [{ key: 'currentDocuments', allowedRows: [78, 4, 21] }] }
   vi.mocked(getReportDatasets).mockResolvedValue([profitDayDataset, { ...profitSupplierDataset, configuration }])
   render(page())
   const switcher = await findOpenedWorkbook('ВП.xls')
   fireEvent.click(within(switcher).getByRole('button', { name: `Відкрити ${workbookDisplayFileName('ВП по постачальниках.xls')}` }))
   await findOpenedWorkbook('ВП по постачальниках.xls')
-  fireEvent.click(screen.getByRole('button', { name: /^Групування:/ }))
   const rows = screen.getByRole('region', { name: 'Групування рядків' })
   const deleteButtons = within(rows).getAllByRole('button', { name: /^Видалити / })
   fireEvent.click(deleteButtons[0])
-  await waitFor(() => expect((screen.getByRole('button', { name: 'Показати на екрані' }) as HTMLButtonElement).disabled).toBe(false))
-  fireEvent.click(screen.getByRole('button', { name: 'Показати на екрані' }))
+  await waitFor(() => expect((screen.getByRole('button', { name: 'Застосувати й показати' }) as HTMLButtonElement).disabled).toBe(false))
+  fireEvent.click(screen.getByRole('button', { name: 'Застосувати й показати' }))
   await screen.findByRole('region', { name: 'Таблиця попереднього перегляду' })
   const request = vi.mocked(previewStockReport).mock.calls.at(-1)![0]
   expect(request).toMatchObject({ dataSource: 38, supplierBasis: 0, supplierWarehouse: 78, profitReadMode: 0 })
   expect(request.sorted.Row.map(row => row.type)).toEqual([4, 21])
   expect(request.sorted.Col).toEqual([])
   fireEvent.click(within(rows).getAllByRole('button', { name: /^Перемістити .* нижче$/ })[0])
-  await waitFor(() => expect(screen.queryByRole('region', { name: 'Таблиця попереднього перегляду' })).toBeNull())
-  expect(screen.queryByRole('link', { name: 'Завантажити Excel' })).toBeNull()
+  expect(screen.getByRole('region', { name: 'Таблиця попереднього перегляду' })).toBeTruthy()
+  expect(screen.getByRole('link', { name: 'Завантажити Excel' })).toBeTruthy()
 })
 
 const resultSession = { ResultId: '11111111-2222-3333-4444-555555555555', RequestSha256: 'b'.repeat(64), ResultSha256: 'a'.repeat(64), ExpiresAtUtc: '2030-01-01T00:00:00Z' }
@@ -268,7 +261,7 @@ async function openImmutablePreview() {
   vi.mocked(previewStockReport).mockResolvedValue({ result: { document: { DocumentURL: '', PdfDocumentURL: '' }, raw: {} },
     preview: { ...preview, ResultSession: resultSession } })
   await openDayWorkbook()
-  fireEvent.click(screen.getByRole('button', { name: 'Показати на екрані' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Застосувати й показати' }))
   await screen.findByRole('region', { name: 'Таблиця попереднього перегляду' })
 }
 it.each(['Excel', 'PDF'])('exports the immutable preview through %s, locking both actions while export is pending', async format => {
@@ -308,7 +301,6 @@ it('offers physical income and outcome in the current workbook Measures section'
   const switcher = await findOpenedWorkbook('ВП.xls')
   fireEvent.click(within(switcher).getByRole('button', { name: `Відкрити ${workbookDisplayFileName('Впарювання.xls')}` }))
   await findOpenedWorkbook('Впарювання.xls')
-  fireEvent.click(screen.getByRole('button', { name: /^Показники/ }))
   const section = screen.getByRole('group', { name: 'Показники' })
   expect((within(section).getByRole('checkbox', { name: 'Прихід' }) as HTMLInputElement).checked).toBe(false)
   fireEvent.click(within(section).getByRole('checkbox', { name: 'Прихід' }))
@@ -316,4 +308,25 @@ it('offers physical income and outcome in the current workbook Measures section'
   expect((within(section).getByRole('checkbox', { name: 'Прихід' }) as HTMLInputElement).checked).toBe(true)
   expect((within(section).getByRole('checkbox', { name: 'Розхід' }) as HTMLInputElement).checked).toBe(true)
   expect(within(section).getByText(/Відбори клієнта та його основного менеджера стосуються лише продажів/)).toBeTruthy()
+})
+
+it('does not reset a configured workbook when its active tab is clicked, but explicit Reset still restores defaults', async () => {
+  await openDayWorkbook()
+  const original = readReportDateInput('Від').value
+  changeReportPeriod({ from: '2026-09-02' })
+  fireEvent.click(screen.getByRole('button', { name: 'Відкрити ВП.xls' }))
+  expect(readReportDateInput('Від').value).toBe('2026-09-02')
+  fireEvent.click(screen.getByRole('button', { name: 'Скинути' }))
+  await waitFor(() => expect(readReportDateInput('Від').value).toBe(original))
+})
+
+it('keeps a newly added blank supplier filter in Filters until its field is selected', async () => {
+  await openDayWorkbook()
+  fireEvent.click(screen.getByRole('button', { name: `Відкрити ${workbookDisplayFileName('ВП по постачальниках.xls')}` }))
+  await findOpenedWorkbook('ВП по постачальниках.xls')
+  const filters = screen.getByRole('group', { name: 'Відбори' })
+  fireEvent.click(within(filters).getByRole('button', { name: 'Додати умову' }))
+  const fields = within(filters).getAllByRole('combobox', { name: 'Поле' })
+  expect(fields.at(-1)).toHaveProperty('value', '')
+  expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toHaveProperty('disabled', true)
 })
