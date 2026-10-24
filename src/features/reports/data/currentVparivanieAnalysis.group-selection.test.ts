@@ -25,7 +25,7 @@ it.each([3, 5])('keeps mixed condition %i identities through validation and save
   ]
   const request = { ...analysisRequest(), selections: [exactSelection(1), selection] }
   expect(currentVparivanieAnalysisLayoutError(request, mixedDataset)).toBeNull()
-  const restored = normalizeSavedTemplate({ Id: 'mixed', Revision: 1, Name: 'Mixed groups', Data: {
+  const restored = normalizeSavedTemplate({ Id: 'mixed', Revision: 1, Name: 'Mixed groups', UpdatedAtUtc: '2026-10-24T07:00:00.000Z', Data: {
     From: request.from, To: request.to, DataSource: 39, Sorted: request.sorted, Selections: request.selections,
     ...{ CurrentVparivanieAnalysis: { version: 1 }, CurrentVparivanieFullScope: true },
   } })
