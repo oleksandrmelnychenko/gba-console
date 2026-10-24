@@ -1,3 +1,4 @@
+import { currentFinancialDataset } from '../data/currentFinancialAxes.test-fixtures'
 import { financialDataset } from '../data/financialAxes.test-fixtures'
 import { movementDataset } from '../data/currentVparivanieMovements.test-fixtures'
 import { mixedDataset } from '../data/currentVparivanieAnalysis.group-selection.test-fixtures'
@@ -399,6 +400,41 @@ it('moves financial dimensions between axes only with server capability and reta
       fireEvent.click(screen.getByRole('button', { name: 'Перенести Організація до рядків' }))
       fireEvent.click(screen.getByRole('button', { name: 'Перенести Дата до стовпців' }))
       expect(screen.getByText('У файлі кожен день у колонках буде окремим аркушем.')).toBeTruthy()
+    }
+  }
+})
+
+
+it('transposes client/agreement columns and keeps edited dates and source filters', async () => {
+  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, currentFinancialDataset, profitSupplierDataset,
+    currentVparivanieDataset, cashModeDataset, settlementModeDataset])
+  await openDayWorkbook()
+  fireEvent.click(screen.getByRole('button', { name: 'Видалити Дата' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Видалити Організація' }))
+  for (const [axis, label] of [['рядків', 'Клієнт'], ['стовпців', 'Договір']]) {
+    fireEvent.click(screen.getByRole('button', { name: `Додати поле: Групування ${axis}` }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: label }))
+  }
+  changeReportPeriod({ from: '2026-10-17', to: '2026-10-23' })
+  let initial: Parameters<typeof previewStockReport>[0] | undefined
+  for (const [row, column] of [[12, 15], [15, 12]]) {
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toHaveProperty('disabled', false))
+    vi.mocked(previewStockReport).mockClear()
+    fireEvent.click(screen.getByRole('button', { name: 'Застосувати й показати' }))
+    await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
+    const data = vi.mocked(previewStockReport).mock.calls[0][0]
+    expect(data.sorted.Row.map(f => f.type)).toEqual([row])
+    expect(data.sorted.Col.map(f => f.type)).toEqual([column])
+    expect(data).toMatchObject({ from: '2026-10-17', to: '2026-10-23', profitReadMode: 0, dayOrganizationBasis: 0 })
+    if (initial) {
+      expect(data.selections).toEqual(initial.selections)
+      expect(data.sourceOrganizations).toEqual(initial.sourceOrganizations)
+      expect(data.sourceBuyerSubtree).toEqual(initial.sourceBuyerSubtree)
+    } else {
+      initial = structuredClone(data)
+      fireEvent.click(screen.getByRole('button', { name: 'Перенести Договір до рядків' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Перенести Клієнт до стовпців' }))
+      expect(screen.getByText('У файлі кожен клієнт у колонках буде окремим аркушем.')).toBeTruthy()
     }
   }
 })

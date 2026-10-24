@@ -1,4 +1,5 @@
 import { financialAxesCapability } from '../data/financialAxes'
+import { currentFinancialAxesError } from '../data/currentFinancialAxes'
 import { ReportsSubmenu } from './workbook-desk/ReportsSubmenu'
 import { PublishedReportWorkspace } from './workbook-desk/PublishedReportWorkspace'
 import type { PublishedReportTab } from './workbook-desk/publishedReportTabs'
@@ -461,7 +462,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   }
   const [shownReport, setShownReport] = useState<string | null>(null)
   const workbookLaunchToken = useRef(0)
-  const groupingOptions = useMemo(() => datasetGroupings(priceTypeDataset).filter(field => field.type !== ABC_CLASS_GROUPING || abcClassification != null), [abcClassification, priceTypeDataset])
+  const groupingOptions = useMemo(() => datasetGroupings(priceTypeDataset, { dataSource, profitReadMode, dayOrganizationBasis }).filter(field => field.type !== ABC_CLASS_GROUPING || abcClassification != null), [abcClassification, priceTypeDataset, dataSource, profitReadMode, dayOrganizationBasis])
   const workbook = useWorkbookPresentation({ dataSource, groupingOptions, setRowGroups, setGroupedCashPeriod })
   const groupingSelectData = useMemo(
     () =>
@@ -806,7 +807,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     groupingOrdering.loadOrdering(requestOrdering(data))
     const nextAgreementId = data.valuationClientAgreementId ?? undefined
     setValuationAgreementId(nextAgreementId)
-    const groupingByType = new Map(datasetGroupings(nextDataset).map(item => [item.type, item]))
+    const groupingByType = new Map(datasetGroupings(nextDataset, data).map(item => [item.type, item]))
     if (periodSupported && !getPeriodError(from, to, maxDate, t)) setPreviousPeriod({ from, to })
     setDataSource(nextDataset.DataSource)
     setTemplateName(template.Name)
@@ -2024,6 +2025,7 @@ function LegacyReportBuilder({
   const analysis = !!currentVparivanieAnalysisCapability(dataset) && !!request && !!requestCurrentVparivanieAnalysis(request)
   const fixedAxes = policy.fixed
   const rowsOnly = policy.rowsOnly
+  const currentAxesError = request ? currentFinancialAxesError(request, dataset) : null
   const allowedGroupingTypes = new Set(groupingOptions.map(item => item.type))
   const lockedGroupingTypes = new Set(analysis ? [74] : [])
   const selectedGroupingTypes = new Set([...rowGroups, ...colGroups].map(item => item.type))
@@ -2146,8 +2148,12 @@ function LegacyReportBuilder({
         onReorder={(type, direction) => onColGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
         onTransfer={type => transferGrouping('Col', type)} /> : <Text size="sm" c="dimmed">Вибрані показники відображаються у стовпцях.</Text>}
       {financialAxesCapability(dataset) && colGroups.length > 0 ? <Text size="sm" c="dimmed">
-        {colGroups[0].type === 4 ? 'У файлі кожна організація в колонках буде окремим аркушем.' : 'У файлі кожен день у колонках буде окремим аркушем.'}
+        {colGroups[0].type === 4 ? 'У файлі кожна організація в колонках буде окремим аркушем.'
+          : colGroups[0].type === 12 ? 'У файлі кожен клієнт у колонках буде окремим аркушем.'
+          : colGroups[0].type === 15 ? 'У файлі кожен договір у колонках буде окремим аркушем.'
+          : 'У файлі кожен день у колонках буде окремим аркушем.'}
       </Text> : null}
+      {currentAxesError ? <Alert color="orange" title="Перевірте групування">{currentAxesError}</Alert> : null}
     </section>
   )
 

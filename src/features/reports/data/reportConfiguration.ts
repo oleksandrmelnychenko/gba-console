@@ -1,4 +1,5 @@
-import { financialAxesCapability } from './financialAxes'
+import { requestFinancialAxesCapability } from './financialAxes'
+import { currentFinancialAxesError } from './currentFinancialAxes'
 import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis } from './currentVparivanieAnalysis'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import type { ReportDataset, ReportRequestBody } from '../types'
@@ -6,7 +7,7 @@ import { hasFixedReportAxes } from './nativeReportProfiles'
 
 export type ReportConfiguration = {
   version: 1; axisMode: 'flexible' | 'rowsOnly' | 'fixedLayouts' | 'profitRows'
-  allowedRows: number[]; allowedColumns: number[]; maximumColumns?: number; filters?: number[]; minimumRows: number; maximumRows: number
+  allowedRows: number[]; allowedColumns: number[]; maximumColumns?: number; maximumTotalDimensions?: number; filters?: number[]; minimumRows: number; maximumRows: number
   allowRowReorder: boolean; rowLayouts: number[][]; columnLayouts: number[][]; mutuallyExclusiveRows: number[][]
   period: { required: boolean; supported: boolean; maximumDays: number | null; maximumMonths: number | null; minimumDate: string | null; maximumDate?: string | null; endDatePolicy?: 'unrestricted' | 'beforeKyivToday' | 'throughKyivToday'; inclusiveEnd?: boolean }
   variants: Array<Partial<Omit<ReportConfiguration, 'variants'>> & { key: string; filters?: number[] }>
@@ -64,10 +65,11 @@ export function effectiveReportConfiguration(dataset: ReportDataset | undefined,
     const row = data.sorted.Row.map(item => item.type).join(',')
     result = { ...result, ...base.variants.find(variant => variant.key === (row === '40' ? 'presentationAccount' : row === '42' ? 'presentationCurrencyRecord' : '')) }
   }
-  const financial = financialAxesCapability(dataset)
+  const financial = requestFinancialAxesCapability(dataset, data)
   if (data.dataSource === 35 && financial) result = { ...result, axisMode: 'flexible',
     allowedRows: financial.allowedRows, allowedColumns: financial.allowedColumns,
-    minimumRows: financial.minimumRows, maximumRows: financial.maximumRows, maximumColumns: financial.maximumColumns }
+    minimumRows: financial.minimumRows, maximumRows: financial.maximumRows, maximumColumns: financial.maximumColumns,
+    maximumTotalDimensions: 'maximumTotalDimensions' in financial ? financial.maximumTotalDimensions : undefined }
   return result
 }
 export function reportAxesPolicy(dataset: ReportDataset | undefined, data: ReportRequestBody) {
@@ -76,6 +78,8 @@ export function reportAxesPolicy(dataset: ReportDataset | undefined, data: Repor
   return { config, fixed, rowsOnly: config ? config.axisMode === 'profitRows' || config.axisMode === 'rowsOnly' || config.allowedColumns.length === 0 : fixed || data.dataSource === 13 }
 }
 export function reportConfigurationError(data: ReportRequestBody, dataset?: ReportDataset, draft = false): string | null {
+  const currentAxesError = currentFinancialAxesError(data, dataset)
+  if (currentAxesError) return currentAxesError
   const warehouseKeys = Object.keys(data).filter(key => key.toLowerCase() === 'supplierwarehouse')
   const warehouse = option(data, 'supplierWarehouse')
   if (warehouseKeys.length > 1 || warehouse != null && (data.dataSource !== 38 || warehouse !== 73 && warehouse !== 78
@@ -90,6 +94,7 @@ export function reportConfigurationError(data: ReportRequestBody, dataset?: Repo
   if ((!draft && rows.length < config.minimumRows) || rows.length > config.maximumRows
     || rows.some(row => !allowedRows.has(row)) || columns.some(column => !allowedColumns.has(column))
     || config.maximumColumns !== undefined && columns.length > config.maximumColumns
+    || config.maximumTotalDimensions !== undefined && rows.length + columns.length > config.maximumTotalDimensions
     || new Set([...rows, ...columns]).size !== rows.length + columns.length
     || config.mutuallyExclusiveRows.some(group => rows.filter(row => group.includes(row)).length > 1)
     || config.axisMode === 'fixedLayouts' && (!config.rowLayouts.some(layout => same(layout, rows)) || !config.columnLayouts.some(layout => same(layout, columns))))

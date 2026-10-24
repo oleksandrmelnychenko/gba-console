@@ -1,4 +1,4 @@
-import { financialAxesCapability, validFinancialAxes } from './financialAxes'
+import { requestFinancialAxesCapability, validFinancialAxes } from './financialAxes'
 import { validProfitRows, readReportConfiguration } from './reportConfiguration'
 import { requestProfitReadMode, profitReadModeConfigurationError, currentProfitMaximumDays } from './profitReadMode'
 import { originalNormalPeriodError } from './originalNormalPeriod'
@@ -67,7 +67,7 @@ export function dayOrganizationGrossProfitConfigurationError(data: ReportRequest
   const sorted = data.sorted
   const availableMeasures = dataset?.Measurements.map(field => field.Type) ?? measures
   if (!sorted || !Array.isArray(sorted.Row) || !Array.isArray(sorted.Col) || !Array.isArray(sorted.Measurements)
-    || !(financialAxesCapability(dataset) ? validFinancialAxes(data) : validProfitRows(data, [3, 4], 2)) || dataset && !financialAxesCapability(dataset) && !readReportConfiguration(dataset.configuration) && sorted.Row.map(item => item.type).join(',') !== '3,4'
+    || !(requestFinancialAxesCapability(dataset, data) ? validFinancialAxes(data, dataset) : validProfitRows(data, [3, 4], 2)) || dataset && !requestFinancialAxesCapability(dataset, data) && !readReportConfiguration(dataset.configuration) && sorted.Row.map(item => item.type).join(',') !== '3,4'
     || sorted.Measurements.length < 1 || sorted.Measurements.length > availableMeasures.length
     || sorted.Measurements.some(item => !availableMeasures.includes(item.Type)
       || (item.IsChecked !== undefined && typeof item.IsChecked !== 'boolean'))

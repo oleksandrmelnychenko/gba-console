@@ -1,4 +1,5 @@
 import { financialAxesCapability } from '../data/financialAxes'
+import { currentFinancialAxesCapability } from '../data/currentFinancialAxes'
 import { cloneCurrentVparivanieAnalysis } from '../data/currentVparivanieAnalysis'
 import { cloneMovementSelection } from '../data/currentVparivanieMovements'
 import { readReportConfiguration, reportConfigurationError } from '../data/reportConfiguration'
@@ -59,6 +60,7 @@ function isDataset(value: unknown): value is ReportDataset {
     Array.isArray(fields) && fields.every(isDatasetField) && new Set(fields.map(field => field.Type)).size === fields.length)
   return Number.isSafeInteger(item.DataSource) && item.DataSource! >= 0 && item.DataSource !== 1 && typeof item.Name === 'string' && !!item.Name.trim()
     && (item.financialAxes === undefined || !!financialAxesCapability(item as ReportDataset))
+    && (item.currentFinancialAxes === undefined || !!currentFinancialAxesCapability(item as ReportDataset))
     && (item.configuration === undefined || !!readReportConfiguration(item.configuration))
     && (item.numberPresentation === undefined || numberPresentationSupported(item as ReportDataset))
     && typeof item.Description === 'string' && fieldsValid && !!item.Groupings?.length && !!item.Measurements?.length
@@ -314,7 +316,7 @@ export async function getServerReportTemplates(signal?: AbortSignal): Promise<Re
 export async function saveServerReportTemplate(template: ReportTemplate, signal?: AbortSignal, dataset?: ReportDataset): Promise<ReportTemplate> {
   const request = (template.Data.dataSource === 2 || template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21 || template.Data.dataSource === 22 || template.Data.dataSource === 23 || template.Data.dataSource === 24 || template.Data.dataSource === 25 || template.Data.dataSource === 27 || template.Data.dataSource === 28 || template.Data.dataSource === 35 || template.Data.dataSource === 39 || template.Data.dataSource === 40 || template.Data.dataSource === 41) ? structuredClone(template) : template
   request.Data = withCurrentVparivanieMovementScope(request.Data)
-  const numericError = numberPresentationError(request.Data) ?? reportConfigurationError(request.Data)
+  const numericError = numberPresentationError(request.Data) ?? reportConfigurationError(request.Data, request.Data.dataSource === 35 ? dataset : undefined)
   if (numericError) throw new Error(numericError)
   const workbookError = workbookConfigurationError(request.Data)
   if (workbookError) throw new Error(workbookError)

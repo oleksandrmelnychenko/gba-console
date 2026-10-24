@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport, searchDatasetReportValues } from '../api/reportsApi'
@@ -10,6 +10,8 @@ import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS
 import { FENIX_BUYERS_ROOT_ID } from '../data/nativeExactFilters'
 import { ReportsStocksPage } from './ReportsStocksPage'
 import { WORKBOOK_FILES } from '../testing/workbookFiles'
+import { currentFinancialDataset } from '../data/currentFinancialAxes.test-fixtures'
+import { changeReportPeriod } from '../testing/reportPeriod'
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true, user: { NetUid: 'profit-mode-owner' } }) }))
 vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(), createStockReport: vi.fn(), searchDatasetReportValues: vi.fn() }))
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(),
@@ -89,4 +91,29 @@ it('uses the complete legacy Fenix scope for the date picker after opting out of
   fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }))
   fireEvent.click(screen.getByRole('button', { name: /^Період:/ }))
   expect(screen.getByLabelText('До').getAttribute('max')).toBe('2030-12-31')
+})
+
+it('selects client/agreement axes and blocks a mode switch without dropping dates, filters or groupings', async () => {
+  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, currentFinancialDataset, profitSupplierDataset])
+  const view = await openWorkbook('Валовий прибуток за днем')
+  fireEvent.click(screen.getByRole('button', { name: 'Видалити Дата' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Видалити Організація' }))
+  for (const [axis, label] of [['рядків', 'Клієнт'], ['стовпців', 'Договір']]) {
+    fireEvent.click(screen.getByRole('button', { name: `Додати поле: Групування ${axis}` }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: label }))
+  }
+  expect(screen.getByText('У файлі кожен договір у колонках буде окремим аркушем.')).toBeTruthy()
+  changeReportPeriod({ from: '2026-10-17', to: '2026-10-23' })
+  const before = await submitted(view, 1)
+  expect(before.sorted.Row.map(f => f.type)).toEqual([12])
+  expect(before.sorted.Col.map(f => f.type)).toEqual([15])
+  mode('Збережені регістри 1С')
+  expect(screen.getAllByText(/Групування за клієнтом і договором доступне лише/).length).toBeGreaterThan(0)
+  fireEvent.submit(view.container.querySelector('form')!)
+  expect(createStockReport).toHaveBeenCalledTimes(1)
+  expect(screen.getByRole('button', { name: 'Видалити Клієнт' })).toBeTruthy()
+  expect(screen.getByRole('button', { name: 'Видалити Договір' })).toBeTruthy()
+  mode('Поточні документи GBA')
+  const after = await submitted(view, 2)
+  expect(after).toEqual(before)
 })

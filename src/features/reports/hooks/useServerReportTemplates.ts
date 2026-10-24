@@ -220,7 +220,7 @@ export function useServerReportTemplates(enabled: boolean, datasets: ReportDatas
         if (hideZeroError) throw new Error(hideZeroError)
         controller.signal.throwIfAborted()
         if (!isCurrent()) return { ok: false }
-        const financialDataset = request.Data.dataSource === 35 && request.Data.sorted.Col.length
+        const financialDataset = request.Data.dataSource === 35
           ? datasets.find(item => item.DataSource === 35) : undefined
         const saved = financialDataset
           ? await saveServerReportTemplate(request, controller.signal, financialDataset)

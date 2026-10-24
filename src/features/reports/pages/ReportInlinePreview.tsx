@@ -27,8 +27,8 @@ export function ReportInlinePreview({ preview, embedded = false, showPageNote = 
   const inlineFields = workbook?.fields.filter(field => field.placement === 'inline') ?? []
   const sharedGroup = !products && preview.ColumnSchema[0]?.Identity === '$measureGroup' && preview.Columns.length > 1 && preview.Columns.every(column => column.Values.length > 1
     && column.Values[0].Caption === preview.Columns[0].Values[0].Caption)
-  const rowIdentityCaption = organizationCaptions(preview.RowSchema, preview.Rows)
-  const columnIdentityCaption = organizationCaptions(preview.ColumnSchema, preview.Columns)
+  const rowIdentityCaption = dimensionCaptions(preview.RowSchema, preview.Rows)
+  const columnIdentityCaption = dimensionCaptions(preview.ColumnSchema, preview.Columns)
   const rowCaption = (row: NativeReportPreviewAxis, index: number) => workbookRowCaption(rowIdentityCaption(row, index),
     index === preview.RowSchema.length - 1, workbookRows.get(row.SourceIndex), workbook?.fields ?? [])
   const sharedNames = preview.RowSchema.map((_, index) => previewSharedNames(preview.Rows.map(row => rowCaption(row, index))))
@@ -133,14 +133,14 @@ export function ReportInlinePreview({ preview, embedded = false, showPageNote = 
   </section>
 }
 
-// Labels are presentation only: distinct organizations must remain distinguishable even
+// Labels are presentation only: distinct organizations, clients and agreements remain distinguishable even
 // when the source gives them identical names. Existing captioned IDs remain intact.
-function organizationCaptions(schema: readonly { Caption: string; Identity?: string }[], axes: NativeReportPreviewAxis[]) {
+function dimensionCaptions(schema: readonly { Caption: string; Identity?: string }[], axes: NativeReportPreviewAxis[]) {
   const ambiguous = schema.map((field, index) => {
     const byCaption = new Map<string, Set<string>>()
-    if (field.Identity === 'Organization') for (const axis of axes) {
+    if (['Organization', 'CustomerName', 'CustomerContract'].includes(field.Identity ?? '')) for (const axis of axes) {
       const value = axis.Values[index], id = value?.Identity?.Value
-      if (typeof id === 'string') byCaption.set(value.Caption, (byCaption.get(value.Caption) ?? new Set()).add(id))
+      if (value?.Identity) byCaption.set(value.Caption, (byCaption.get(value.Caption) ?? new Set()).add(`${value.Identity.Kind}:${id}`))
     }
     return new Set([...byCaption].filter(([, ids]) => ids.size > 1).map(([caption]) => caption))
   })

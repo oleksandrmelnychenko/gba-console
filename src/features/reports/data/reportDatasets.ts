@@ -1,3 +1,4 @@
+import { currentFinancialAxesCapability, usesCurrentFinancialAxes } from './currentFinancialAxes'
 import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis } from './currentVparivanieAnalysis'
 import { reportConfigurationError } from './reportConfiguration'
 import { numberPresentationError } from './reportNumberPresentation'
@@ -127,10 +128,11 @@ FILTER_KEYS.set(54, 'OneCPriceComparisonDivision')
 FILTER_KEYS.set(60, 'SourceBuyerManager')
 FILTER_KEYS.set(61, 'SourceBuyerRegionCode')
 
-export function datasetGroupings(dataset: ReportDataset | undefined): ReportGroupingItem[] {
+export function datasetGroupings(dataset: ReportDataset | undefined, data?: object): ReportGroupingItem[] {
   const analysis = currentVparivanieAnalysisCapability(dataset)
   if (analysis) return analysis.groupings.map(field => ({ key: GROUPING_KEYS.get(field.type) ?? field.name, label: field.name, type: field.type }))
-  return dataset?.Groupings.map(field => ({ key: GROUPING_KEYS.get(field.Type) ?? field.Name, label: field.Name, type: field.Type })) ?? []
+  const current = data && usesCurrentFinancialAxes(data) ? currentFinancialAxesCapability(dataset) : undefined
+  return [...(dataset?.Groupings ?? []), ...(current?.groupings ?? [])].map(field => ({ key: GROUPING_KEYS.get(field.Type) ?? field.Name, label: field.Name, type: field.Type }))
 }
 
 export function datasetFilters(dataset: ReportDataset | undefined): Array<{ label: string; value: string; field: ReportFilterField }> {
@@ -279,7 +281,7 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
     return 'Шаблон містить некоректні налаштування. Налаштування не застосовано.'
   }
   const analysis = requestCurrentVparivanieAnalysis(data) ? currentVparivanieAnalysisCapability(dataset) : undefined
-  const groupingTypes = new Set(analysis ? analysis.groupings.map(field => field.type) : dataset.Groupings.map(field => field.Type))
+  const groupingTypes = new Set(analysis ? analysis.groupings.map(field => field.type) : datasetGroupings(dataset, data).map(field => field.type))
   const measurementTypes = new Set(dataset.Measurements.map(field => field.Type))
   const filterTypes = new Set(analysis ? analysis.filters.map(field => field.type) : dataset.Filters.map(field => field.Type))
   const conditionTypes = new Set([...REPORT_FILTER_CONDITIONS.map(field => field.Type), ...(dataset.DataSource === 39 ? requestCurrentVparivanieAnalysis(data) ? currentVparivanieAnalysisCapability(dataset)?.filters.flatMap(f => f.conditions) ?? [] : [6] : [])])
