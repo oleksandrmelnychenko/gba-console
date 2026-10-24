@@ -13,6 +13,8 @@ import {
   getPaymentAccountPaymentMovements,
   getPaymentAccountTransfers,
   getPaymentAccountsByBank,
+  getPaymentAccounts,
+  getPaymentAccount,
   updatePaymentAccount,
 } from './paymentAccountsApi'
 import type {
@@ -31,6 +33,16 @@ const apiRequestMock = vi.mocked(apiRequest)
 describe('paymentAccountsApi', () => {
   beforeEach(() => {
     apiRequestMock.mockReset()
+  })
+
+  it('preserves unknown EUR valuation in list and details without replacing it with zero', async () => {
+    const account = { Id: 1, TotalEuroAmount: null, PaymentCurrencyRegisters: [{ Amount: 4200, Currency: { Code: 'UAH' } }] }
+    apiRequestMock.mockResolvedValueOnce({ Collection: [account], TotalEuroAmount: null }).mockResolvedValueOnce(account)
+    const list = await getPaymentAccounts()
+    expect(list.totalEuroAmount).toBeNull()
+    expect(list.paymentRegisters[0].TotalEuroAmount).toBeNull()
+    expect((await getPaymentAccount('account-1'))?.TotalEuroAmount).toBeNull()
+    expect(list.paymentRegisters[0].PaymentCurrencyRegisters?.[0].Amount).toBe(4200)
   })
 
   it('does not expose destructive payment account deletion', async () => {
