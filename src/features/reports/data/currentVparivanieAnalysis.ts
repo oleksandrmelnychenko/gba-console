@@ -1,11 +1,13 @@
+import { isMultiValueReportCondition, reportSelectionCardinalityError } from './reportOptions'
 import { movementSelection } from './currentVparivanieMovements'
-import type { ReportDataset, ReportFilterCondition, ReportRequestBody } from '../types'
+import type { ReportDataset, ReportFilterCondition, ReportRequestBody, ReportSelection, ReportEntity } from '../types'
 import type { NativeReportPreview } from './nativeReportPreview'
 
 export type CurrentVparivanieAnalysisRequest = { version: 1 }
+export type AnalysisGroupSelection = { version: 1; itemField: 1; itemKind: 'product'; groupKind: 'productGroup'; mixedConditions: [3, 5] }
 export type AnalysisFieldDescriptor = {
   type: number; name: string; path: string[]; valueKind: string; branches: number[]
-  conditions: number[]; lookupKind: string; coverage: string; available?: boolean; unavailabilityReason?: string | null
+  conditions: number[]; lookupKind: string; coverage: string; groupSelection?: AnalysisGroupSelection; available?: boolean; unavailabilityReason?: string | null
 }
 export type CurrentVparivanieAnalysisCapability = {
   version: 1; maximumDimensions: 8; requiredColumnGrouping: 74; measure: 83
@@ -38,6 +40,13 @@ export function cloneCurrentVparivanieAnalysis(data: Record<string, unknown>): R
   return structuredClone(Object.fromEntries(data.DataSource === 39 && entries.length === 1 && entries[0][0] === 'CurrentVparivanieAnalysis'
     ? [['currentVparivanieAnalysis', entries[0][1]]] : entries))
 }
+function isAnalysisGroupSelection(value: unknown): value is AnalysisGroupSelection {
+  return record(value) && value.version === 1 && value.itemField === 1 && value.itemKind === 'product'
+    && value.groupKind === 'productGroup' && Array.isArray(value.mixedConditions) && value.mixedConditions.length === 2 && value.mixedConditions[0] === 3 && value.mixedConditions[1] === 5
+}
+export function mixedAnalysisSelection(descriptor: AnalysisFieldDescriptor | undefined, condition: number): boolean {
+  return !!descriptor?.groupSelection && descriptor.groupSelection.mixedConditions.some(type => type === condition)
+}
 export function currentVparivanieAnalysisCapability(dataset: ReportDataset | null | undefined): CurrentVparivanieAnalysisCapability | undefined {
   const value = record(dataset?.currentVparivanie) ? dataset.currentVparivanie.analysis : undefined
   if (dataset?.DataSource !== 39 || !record(value) || !scope(value) || value.maximumDimensions !== 8 || value.requiredColumnGrouping !== 74 || value.measure !== 83) return undefined
@@ -46,6 +55,7 @@ export function currentVparivanieAnalysisCapability(dataset: ReportDataset | nul
       && strings(f.path) && f.path.length <= 5 && ['nativeId', 'sourceRef', 'text', 'documentRef', 'groupRef', 'date'].includes(String(f.valueKind))
       && ['nativeId', 'sourceRef', 'text', 'documentRef', 'groupRef', 'date', 'none'].includes(String(f.lookupKind)) && ['currentMasterData', 'documentEvidence', 'allocationEvidence'].includes(String(f.coverage)) && ids(f.branches) && f.branches.every(b => b >= 1 && b <= 5)
       && (f.available === undefined || typeof f.available === 'boolean') && (f.available !== false || typeof f.unavailabilityReason === 'string' && !!f.unavailabilityReason)
+      && (f.groupSelection == null || f.type === 4 && isAnalysisGroupSelection(f.groupSelection))
       && ids(f.conditions) && f.conditions.every(c => c <= 7)) && new Set(raw.map(f => f.type)).size === raw.length
   return fields(value.groupings) && fields(value.filters) ? value as unknown as CurrentVparivanieAnalysisCapability : undefined
 }
@@ -74,10 +84,14 @@ export function currentVparivanieAnalysisScopeError(data: ReportRequestBody, dat
   } catch (e) { return (e as Error).message }
   return null
 }
-const positiveId = (v: unknown) => typeof v === 'string' && /^[1-9]\d{0,18}$/.test(v)
+const positiveId = (v: unknown) => typeof v === 'string' && v.length <= 8192 && /^\d+$/.test(v) && BigInt(v) > 0n && BigInt(v) <= 9223372036854775807n
   || typeof v === 'number' && Number.isSafeInteger(v) && v > 0
-export function validAnalysisFilterValue(field: number, value: unknown, descriptor?: AnalysisFieldDescriptor): boolean {
+export function validAnalysisFilterValue(field: number, value: unknown, descriptor?: AnalysisFieldDescriptor, condition?: number): boolean {
   if (!record(value)) return false
+  if (field === 4) {
+    const group = analysisGroupIdentity(value)
+    return !!group && (!group.typed || [3, 5].includes(condition ?? -1) && (!descriptor || !!descriptor.groupSelection))
+  }
   if (field === 2 || field === 3 || descriptor?.valueKind === 'text') {
     const entries = Object.entries(value)
     return entries.length === 1 && ['value', 'Value', 'name', 'Name'].includes(entries[0][0])
@@ -86,6 +100,37 @@ export function validAnalysisFilterValue(field: number, value: unknown, descript
   if ([12, 13].includes(field)) return ['sale', 'return'].includes(String(value.kind)) && positiveId(value.id)
   if (field === 60 || descriptor?.valueKind === 'sourceRef') return typeof value.Id === 'string' && /^[0-9a-f]{32}$/i.test(value.Id)
   return positiveId(value.Id)
+}
+export function analysisGroupIdentity(value: ReportEntity): { kind: 'product' | 'productGroup'; id: string | number; typed: boolean } | null {
+  const entries = Object.entries(value), lower = new Map(entries.map(([key, v]) => [key.toLowerCase(), v]))
+  if (lower.size !== entries.length) return null
+  if (lower.has('kind')) {
+    const kind = lower.get('kind'), id = lower.get('id')
+    return entries.length === 2 && (kind === 'product' || kind === 'productGroup') && positiveId(id)
+      ? { kind, id: id as string | number, typed: true } : null
+  }
+  return positiveId(lower.get('id')) ? { kind: 'productGroup', id: lower.get('id') as string | number, typed: false } : null
+}
+export function analysisValueIdentity(field: number, value: ReportEntity): string {
+  const group = field === 4 ? analysisGroupIdentity(value) : null
+  return group ? `${group.kind}:${BigInt(group.id)}` : JSON.stringify(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)))
+}
+export function changeAnalysisSelectionCondition(selection: ReportSelection, condition: ReportFilterCondition): ReportSelection {
+  // Re-encode a proven group without dropping it when leaving a mixed operator.
+  // Individual products remain visible and invalid until explicitly replaced/removed.
+  const Values = selection.SelectedField.Type === 4 && ![3, 5].includes(condition.Type)
+    ? selection.Values.map(value => {
+      const group = analysisGroupIdentity(value.Data)
+      return group?.typed && group.kind === 'productGroup' ? { ...value, Data: { Id: group.id } } : value
+    }) : selection.Values
+  return { ...selection, FilterCondition: condition, Values }
+}
+export function analysisSelectionValueError(selection: ReportSelection, descriptor?: AnalysisFieldDescriptor): string | null {
+  const cardinality = reportSelectionCardinalityError(selection)
+  if (cardinality) return cardinality
+  if (selection.Values.some(v => !validAnalysisFilterValue(selection.SelectedField.Type, v.Data, descriptor, selection.FilterCondition.Type)))
+    return selection.SelectedField.Type === 4 ? 'Для цієї умови оберіть групи товарів; окремі товари доступні в умовах «У групі зі списку» та «Не у групі зі списку».' : 'Некоректне значення відбору аналізу.'
+  return null
 }
 export function currentVparivanieAnalysisLayoutError(data: ReportRequestBody, dataset?: ReportDataset, draft = false): string | null {
   const invalid = currentVparivanieAnalysisScopeError(data, dataset)
@@ -108,9 +153,10 @@ export function currentVparivanieAnalysisLayoutError(data: ReportRequestBody, da
     if (f?.available === false) return f.unavailabilityReason ?? 'Цей відбір поки недоступний.'
     if (cap && (!f || !f.conditions.includes(selection.FilterCondition.Type))) return 'Сервер не підтримує вибраний відбір або умову для цього поля.'
     if (!draft && selection.Values.length === 0) return 'Оберіть значення відбору.'
-    if (selection.Values.some(v => !validAnalysisFilterValue(field, v.Data, f))) return 'Некоректне значення відбору аналізу.'
+    const valueError = analysisSelectionValueError(selection, f)
+    if (valueError) return valueError
     if (field === 21 && selection.Values.length > 32) return 'Оберіть до 32 складів.'
-    if (selection.Values.length > 4096 || ![2, 3, 4, 5].includes(condition) && selection.Values.length > 1) return 'Кількість значень не відповідає умові відбору.'
+    if (selection.Values.length > 4096 || !isMultiValueReportCondition(condition) && selection.Values.length > 1) return 'Кількість значень не відповідає умові відбору.'
   }
   return !draft && !anchor ? 'Оберіть товари або групи товарів для аналізу.' : null
 }

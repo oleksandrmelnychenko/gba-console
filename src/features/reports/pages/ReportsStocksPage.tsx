@@ -1,4 +1,4 @@
-import { ANALYSIS_SCOPE_NOTICE, currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis, analysisFilterConditions } from '../data/currentVparivanieAnalysis'
+import { ANALYSIS_SCOPE_NOTICE, currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis, analysisFilterConditions, analysisSelectionValueError, changeAnalysisSelectionCondition } from '../data/currentVparivanieAnalysis'
 import { ReportFieldPicker } from './ReportFieldPicker'
 import { CurrentVparivanieAnalysisValuePicker } from './CurrentVparivanieAnalysisValuePicker'
 import { CurrentVparivanieMovementSettings } from './CurrentVparivanieMovementSettings'
@@ -91,6 +91,7 @@ import {
 import {
   REPORT_FILTER_CONDITIONS,
   isMultiValueReportCondition,
+  reportSelectionCardinalityError,
   REPORT_FILTER_FIELD_TYPES,
   createDefaultMeasurementGroups,
   flattenCheckedMeasurements,
@@ -2285,6 +2286,9 @@ function ReportSelectionsCard({
   const [fieldPickerOpen, setFieldPickerOpen] = useState(false)
   const analysis = currentVparivanieAnalysisCapability(dataset)
   const filterConditions = analysis ? analysisFilterConditions(dataset, draftSelection?.SelectedField.Type ?? 0) : dataSource === 39 ? currentVparivanieFilterConditions(draftSelection?.SelectedField.Type ?? 0) : REPORT_FILTER_CONDITIONS
+  const draftValueError = draftSelection ? (analysis
+    ? analysisSelectionValueError(draftSelection, analysis.filters.find(field => field.type === draftSelection.SelectedField.Type))
+    : reportSelectionCardinalityError(draftSelection)) : null
   const visibleCount = filter ? selections.filter(filter).length : selections.length
   const resolvedDescription = description === undefined
     ? t('Необов’язково: звузьте звіт до клієнта, товару, документа або іншої ознаки.')
@@ -2306,7 +2310,7 @@ function ReportSelectionsCard({
   }
 
   function saveDraft() {
-    if (!draftSelection || editorIndex === null || !draftSelection.SelectedField.Name || !draftSelection.Values.length) {
+    if (!draftSelection || editorIndex === null || !draftSelection.SelectedField.Name || !draftSelection.Values.length || draftValueError) {
       return
     }
 
@@ -2427,16 +2431,12 @@ function ReportSelectionsCard({
                 value={String(draftSelection.FilterCondition.Type)}
                 onChange={(value) => {
                   const condition = filterConditions.find((item) => String(item.Type) === value) || filterConditions[0]
-                  setDraftSelection((current) => current ? {
-                    ...current,
-                    FilterCondition: condition,
-                    Values: !(analysis ? [2, 3, 4, 5].includes(condition.Type) : isMultiValueReportCondition(condition.Type)) && current.Values.length > 1
-                      ? current.Values.slice(0, 1)
-                      : current.Values,
-                  } : current)
+                  setDraftSelection(current => current ? analysis
+                    ? changeAnalysisSelectionCondition(current, condition)
+                    : { ...current, FilterCondition: condition } : current)
                 }}
               />
-              {analysis ? draftSelection.SelectedField.Name ? <CurrentVparivanieAnalysisValuePicker selection={draftSelection} selections={editorSelections} from={from} to={to}
+              {analysis ? draftSelection.SelectedField.Name ? <CurrentVparivanieAnalysisValuePicker selection={draftSelection} selections={editorSelections} descriptor={analysis.filters.find(field => field.type === draftSelection.SelectedField.Type)} from={from} to={to}
                 onChange={Values => setDraftSelection(current => current ? { ...current, Values } : current)} /> : <Text size="sm">Оберіть поле відбору.</Text> : <SelectionValuePicker
                 dataSource={dataSource}
                 lookupProfitReadMode={lookupProfitReadMode} lookupProfitUnavailable={lookupProfitUnavailable} lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis}
@@ -2449,11 +2449,12 @@ function ReportSelectionsCard({
                 onChange={(values) => setDraftSelection((current) => current ? { ...current, Values: values } : current)}
               />}
             </div>
+            {draftValueError ? <Alert color="yellow">{draftValueError}</Alert> : null}
             <AppModalFooter>
               <Button color="gray" type="button" variant="default" onClick={closeEditor}>{t('Скасувати')}</Button>
               <Button
                 color={CREATE_ACTION_COLOR}
-                disabled={!draftSelection.SelectedField.Name || !draftSelection.Values.length}
+                disabled={!draftSelection.SelectedField.Name || !draftSelection.Values.length || !!draftValueError}
                 leftSection={<Save size={16} />}
                 type="button"
                 onClick={saveDraft}
@@ -2832,16 +2833,11 @@ export function SelectionValuePicker({ dataSource, lookupProfitReadMode, lookupP
   function addEntity(entity: ReportEntity) {
     const key = getReportEntityKey(entity, getEntityDisplayName(entity))
 
-    if (selection.Values.some((value) => getReportEntityKey(value.Data, value.Name) === key)) {
-      return
-    }
-
-    // Equals/NotEquals (and single-group) conditions hold exactly one value — replace rather than accumulate;
-    // only the list conditions build up multiple values (legacy parity).
     if (!isMultiValueReportCondition(selection.FilterCondition.Type)) {
       onChange([createSelectedValue(entity, dataSource)])
       return
     }
+    if (selection.Values.some((value) => getReportEntityKey(value.Data, value.Name) === key)) return
 
     onChange([...selection.Values, createSelectedValue(entity, dataSource)])
   }

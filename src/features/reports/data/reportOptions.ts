@@ -17,12 +17,8 @@ const REPORT_CONDITION_TYPES = {
   notInList: 4,
 } as const
 
-// Codes 3/5/6/7 (InGroupFromList, NotInGroupFromList, InGroup, NotInGroup) are not offered: the report engine
-// keeps only Equals/NotEquals/InList/NotInList and drops everything else («if (!membership) continue» in
-// SalesReportProjectionRepository.BuildFilters), so the report comes back unfiltered while the screen claims it is
-// filtered — and each negative twin returns exactly the positive twin's numbers. There is no product group
-// hierarchy to implement them against either. The codes survive here only so saved templates that still carry one
-// can be recognised and dropped.
+// The generic legacy engine only admits flat comparisons. Hierarchical conditions
+// are enabled separately by a dataset capability, never by this default list.
 const UNSUPPORTED_CONDITION_TYPES = new Set<number>([3, 5, 6, 7])
 
 export const REPORT_FILTER_FIELD_TYPES = {
@@ -114,14 +110,22 @@ export const REPORT_FILTER_CONDITIONS: ReportFilterCondition[] = [
   { Name: 'Не у списку', Type: REPORT_CONDITION_TYPES.notInList },
 ]
 
-// Legacy accepted multiple filter values only for the list conditions; Equals/NotEquals take exactly one value.
+// Cardinality is independent of availability: a dataset must separately admit group operators.
 const MULTI_VALUE_CONDITION_TYPES = new Set<number>([
   REPORT_CONDITION_TYPES.inList,
   REPORT_CONDITION_TYPES.notInList,
+  3, // InGroupFromList
+  5, // NotInGroupFromList
 ])
 
 export function isMultiValueReportCondition(type: number): boolean {
   return MULTI_VALUE_CONDITION_TYPES.has(type)
+}
+
+export function reportSelectionCardinalityError(selection: ReportSelection): string | null {
+  return selection.Values.length > 1 && !isMultiValueReportCondition(selection.FilterCondition.Type)
+    ? [6, 7].includes(selection.FilterCondition.Type) ? 'Оберіть одну групу для цієї умови.' : 'Оберіть одне значення для цієї умови.'
+    : null
 }
 
 const REPORT_GROUPING_GROUPS: ReportGroupingGroup[] = [

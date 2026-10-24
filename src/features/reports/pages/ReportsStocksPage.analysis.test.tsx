@@ -1,3 +1,4 @@
+import { mixedDataset } from '../data/currentVparivanieAnalysis.group-selection.test-fixtures'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
@@ -64,5 +65,42 @@ it('selects Top from the Product category and transports its exact text classifi
   await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
   expect(vi.mocked(createStockReport).mock.calls[0][0].selections.find(s => s.SelectedField.Type === 3)).toMatchObject({
     SelectedField: { Type: 3 }, FilterCondition: { Type: 0 }, Values: [{ Data: { value: 'A' }, Name: 'A', Value: 0 }],
+  })
+})
+
+it('preserves restored mixed selections on many-to-one changes and saves only after an explicit correction', async () => {
+  vi.mocked(getReportDatasets).mockResolvedValue([mixedDataset])
+  const request = currentVparivanieRequest()
+  request.selections = [{ IsChecked: true, SelectedField: { Type: 4, Name: 'Товарна група' }, FilterCondition: { Type: 3, Name: 'У групі зі списку' },
+    Values: [{ Data: { kind: 'productGroup', id: 1 }, Name: 'Group one', Value: 0 }, { Data: { kind: 'productGroup', id: 2 }, Name: 'Group two', Value: 0 }] }]
+  vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: 'old', Revision: 1, Name: 'Збережена матриця', Data: request }])
+  vi.mocked(searchAnalysisValues).mockResolvedValue([
+    { id: '1', name: 'Group one', data: { Id: 1 } },
+    { id: '2', name: 'Group two', data: { Id: 2 } },
+  ])
+  const { container } = await open()
+  fireEvent.click(screen.getByRole('button', { name: 'Редагувати', exact: true }))
+  const editor = screen.getByRole('dialog', { name: 'Редагувати умову відбору' })
+  expect(within(editor).getByText('Група: Group one')).toBeTruthy()
+  expect(within(editor).getByText('Група: Group two')).toBeTruthy()
+  fireEvent.click(within(editor).getByRole('combobox', { name: 'Умова' }))
+  fireEvent.click(await screen.findByRole('option', { name: 'У групі', exact: true }))
+  expect(within(editor).getByText('Група: Group one')).toBeTruthy()
+  expect(within(editor).getByText('Група: Group two')).toBeTruthy()
+  expect(within(editor).getByText('Оберіть одну групу для цієї умови.')).toBeTruthy()
+  expect(within(editor).getByRole('button', { name: 'Зберегти' }).hasAttribute('disabled')).toBe(true)
+  expect(within(editor).queryByRole('radio', { name: 'Товари' })).toBeNull()
+  fireEvent.click(within(editor).getByRole('combobox', { name: 'Значення' }))
+  await waitFor(() => {
+    const option = within(editor).getByRole('option', { name: 'Group two' })
+    expect(option.isConnected).toBe(true)
+    fireEvent.click(option)
+    expect(within(editor).queryByText('Група: Group one')).toBeNull()
+  })
+  fireEvent.click(within(editor).getByRole('button', { name: 'Зберегти' }))
+  fireEvent.submit(container.querySelector('form')!)
+  await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+  expect(vi.mocked(createStockReport).mock.calls[0][0].selections.find(s => s.SelectedField.Type === 4)).toMatchObject({
+    FilterCondition: { Type: 6 }, Values: [{ Data: { Id: 2 }, Name: 'Group two', Value: 0 }],
   })
 })

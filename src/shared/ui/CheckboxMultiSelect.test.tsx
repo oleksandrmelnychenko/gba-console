@@ -93,3 +93,25 @@ describe('CheckboxMultiSelect', () => {
     expect(onChange).toHaveBeenCalledWith(['second'])
   })
 })
+
+it('keeps remote selections outside the current matches, delegates search, and does not offer an incomplete select-all', () => {
+  const onChange = vi.fn(), onSearch = vi.fn()
+  const view = render(<MantineProvider env="test"><I18nProvider>
+    <CheckboxMultiSelect data={options} label="Склади" value={['outside', 'first']} onChange={onChange}
+      withinPortal={false} remoteSearch={{ value: 'sku-123', onChange: onSearch, loading: false }} />
+  </I18nProvider></MantineProvider>)
+  openDropdown()
+  expect(screen.queryByRole('option', { name: 'Всі' })).toBeNull()
+  // Server matched by code; client-side caption filtering must not erase that result.
+  expect(screen.getByRole('option', { name: 'Другий склад' })).toBeTruthy()
+  fireEvent.click(screen.getByRole('option', { name: 'Другий склад' }))
+  expect(onChange).toHaveBeenCalledWith(['outside', 'first', 'second'])
+  fireEvent.change(screen.getByPlaceholderText('Пошук'), { target: { value: 'new query' } })
+  expect(onSearch).toHaveBeenCalledWith('new query')
+  view.rerender(<MantineProvider env="test"><I18nProvider>
+    <CheckboxMultiSelect data={[]} label="Склади" value={['outside', 'first']} onChange={onChange}
+      withinPortal={false} remoteSearch={{ value: 'new query', onChange: onSearch, loading: true }} />
+  </I18nProvider></MantineProvider>)
+  expect(screen.getByText('Завантаження…')).toBeTruthy()
+  expect(screen.queryByRole('option', { name: 'Другий склад' })).toBeNull()
+})

@@ -27,6 +27,8 @@ export function CheckboxMultiSelect({
   maxDropdownHeight = 260,
   searchable = true,
   disabled,
+  remoteSearch,
+  withinPortal = true,
 }: {
   data: CheckboxMultiSelectOption[]
   value: string[]
@@ -39,9 +41,14 @@ export function CheckboxMultiSelect({
   maxDropdownHeight?: number
   searchable?: boolean
   disabled?: boolean
+  /** Remote matches are complete only for the current query: never offer bulk select-all. */
+  remoteSearch?: { value: string; onChange: (value: string) => void; loading: boolean }
+  withinPortal?: boolean
 }) {
   const { t } = useI18n()
-  const [search, setSearch] = useState('')
+  const [localSearch, setLocalSearch] = useState('')
+  const search = remoteSearch?.value ?? localSearch
+  const setSearch = remoteSearch?.onChange ?? setLocalSearch
   const combobox = useCombobox({ onDropdownClose: () => setSearch('') })
 
   const allValues = useMemo(() => data.map((item) => item.value), [data])
@@ -54,8 +61,8 @@ export function CheckboxMultiSelect({
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase()
 
-    return query ? data.filter((item) => item.label.toLowerCase().includes(query)) : data
-  }, [data, search])
+    return query && !remoteSearch ? data.filter((item) => item.label.toLowerCase().includes(query)) : data
+  }, [data, search, remoteSearch])
   const visibleOptions = typeof limit === 'number' ? filtered.slice(0, Math.max(0, limit)) : filtered
 
   function toggle(optionValue: string) {
@@ -66,7 +73,7 @@ export function CheckboxMultiSelect({
     <Combobox
       store={combobox}
       position="bottom-start"
-      withinPortal
+      withinPortal={withinPortal}
       onOptionSubmit={(optionValue) => {
         if (optionValue === '__all__') {
           onChange(allSelected ? [] : allValues)
@@ -110,7 +117,7 @@ export function CheckboxMultiSelect({
         )}
         <Combobox.Options>
           <ScrollArea.Autosize mah={maxDropdownHeight} type="scroll">
-            {!search.trim() && allValues.length > 1 && (
+            {!remoteSearch && !search.trim() && allValues.length > 1 && (
               <Combobox.Option value="__all__" active={allSelected}>
                 <Group gap="sm" wrap="nowrap">
                   <Checkbox checked={allSelected} readOnly size="xs" tabIndex={-1} aria-hidden />
@@ -126,7 +133,7 @@ export function CheckboxMultiSelect({
                 </Group>
               </Combobox.Option>
             ))}
-            {filtered.length === 0 && <Combobox.Empty>{t('Нічого не знайдено')}</Combobox.Empty>}
+            {remoteSearch?.loading ? <Combobox.Empty>{t('Завантаження…')}</Combobox.Empty> : filtered.length === 0 && <Combobox.Empty>{t('Нічого не знайдено')}</Combobox.Empty>}
           </ScrollArea.Autosize>
         </Combobox.Options>
       </Combobox.Dropdown>
