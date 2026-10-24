@@ -44,10 +44,11 @@ const page = (consoleScope?: boolean) => <MantineProvider env="test"><I18nProvid
   <ReportsStocksPage {...(consoleScope === undefined ? {} : { consoleScope })} />
 </I18nProvider></MantineProvider>
 
-it('does not mount the constructor dialogs the console catalogue cannot open', async () => {
+it('offers the scoped catalogue without mounting unsupported constructor dialogs', async () => {
   render(page())
   await findWorkbookLanding()
-  expect(screen.queryByRole('button', { name: /Каталог.*звітів/ })).toBeNull()
+  expect(screen.getByRole('button', { name: 'Каталог звітів 1С' })).toBeTruthy()
+  expect(screen.queryByRole('button', { name: 'Каталог усіх звітів 1С' })).toBeNull()
   expect(CollectionCoefficientConstructorModal).not.toHaveBeenCalled()
   expect(PlannedCashConstructorModal).not.toHaveBeenCalled()
 })
@@ -63,11 +64,11 @@ it('does not re-render the finished preview while the template name is typed', a
   render(page())
   await findWorkbookLanding()
   fireEvent.click(screen.getByRole('button', { name: 'Відкрити ВП.xls' }))
-  await waitFor(() => expect((screen.getByRole('button', { name: 'Показати на екрані' }) as HTMLButtonElement).disabled).toBe(false))
-  fireEvent.click(screen.getByRole('button', { name: 'Показати на екрані' }))
+  await waitFor(() => expect((screen.getByRole('button', { name: 'Застосувати й показати' }) as HTMLButtonElement).disabled).toBe(false))
+  fireEvent.click(screen.getByRole('button', { name: 'Застосувати й показати' }))
   await screen.findByRole('region', { name: 'Попередній перегляд звіту' })
   const renders = vi.mocked(ReportInlinePreview).mock.calls.length
-  expect(vi.mocked(ReportInlinePreview).mock.calls.at(-1)?.[0]).toEqual({ preview, embedded: true })
+  expect(vi.mocked(ReportInlinePreview).mock.calls.at(-1)?.[0]).toEqual({ preview, embedded: true, showPageNote: true })
   fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
   fireEvent.click(screen.getByRole('button', { name: 'Новий шаблон' }))
   const name = await screen.findByRole('textbox', { name: 'Назва шаблону' })
