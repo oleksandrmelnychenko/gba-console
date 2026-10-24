@@ -1,3 +1,5 @@
+import { WorkbookSectionActions } from './workbook-desk/WorkbookSectionActions'
+import { ListPlus } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Alert, Button, Group, MultiSelect, Stack } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
@@ -60,11 +62,11 @@ export function CounterpartyGroupFilters({ value, disabled, onChange }: {
       onSearchChange={next => { const text = next.slice(0, 120); if (text !== search) { setSearch(text); setLoading(true) } }}
       filter={({ options: items }) => items}
       onChange={ids => onChange(changeCounterpartyGroupList(value, list, ids))} />)}
-    <Group gap="xs">
-      {hasMore && <Button size="xs" variant="subtle" disabled={disabled} loading={loading} onClick={() => void loadMore()}>Завантажити ще групи</Button>}
+    <WorkbookSectionActions><Group gap="xs">
+      {hasMore && <Button size="compact-xs" variant="default" leftSection={<ListPlus size={14} aria-hidden="true" />} disabled={disabled} loading={loading} onClick={() => void loadMore()}>Завантажити ще групи</Button>}
       {error && <Button size="xs" variant="subtle" disabled={disabled || loading}
         onClick={() => { setLoading(true); setAttempt(current => current + 1) }}>Повторити</Button>}
-    </Group>
+    </Group></WorkbookSectionActions>
     {error && <Alert color="orange">{error}</Alert>}
     {value != null && !selected && <Alert color="orange">Збережений відбір груп некоректний. Оберіть групи з поточного списку.</Alert>}
     <p className="workbook-settings__field-note">Включає підгрупи. Виключення має пріоритет.</p>

@@ -1,3 +1,4 @@
+import { WorkbookSectionActions } from './workbook-desk/WorkbookSectionActions'
 import { OriginalWarehouseMovementPanel } from './OriginalWarehouseMovementPanel'
 import type { MovementLaunch } from './OriginalWarehouseMovementCatalogueLaunch'
 import { isMovementCapability, isWarehouseMovementCatalogueEntry, normalizeMovementPublications } from '../data/originalWarehouseMovement'
@@ -2056,7 +2057,7 @@ function LegacyReportBuilder({
           <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Показники')}</Text>
           <TableChip value={checkedMeasurements} tone="neutral" />
         </Group>
-        <Group gap={4} wrap="nowrap">
+        <WorkbookSectionActions><Group gap={4} wrap="nowrap">
           <Button
             color={CREATE_ACTION_COLOR}
             size="compact-xs"
@@ -2077,7 +2078,7 @@ function LegacyReportBuilder({
           >
             Очистити
           </Button>
-        </Group>
+        </Group></WorkbookSectionActions>
       </div>
 
       <div className="reports-stocks-legacy-measurements__list">
@@ -2095,7 +2096,6 @@ function LegacyReportBuilder({
 
           return (
             <div className="reports-stocks-legacy-measurement app-selection-surface" data-selected={group.IsChecked || group.SubList.some(item => item.IsChecked)} key={group.Name}>
-              <span className="app-selection-surface__marker" aria-hidden="true" />
               <Checkbox
                 checked={group.IsChecked}
                 indeterminate={!group.IsChecked && group.SubList.some((item) => item.IsChecked)}
@@ -2392,6 +2392,7 @@ function ReportSelectionsCard({
               {visibleCount ? <Badge className="app-role-pill is-gray" variant="light">{visibleCount}</Badge> : null}
             </Group>
           </div>
+          <WorkbookSectionActions>
           <Button
             className="reports-stocks-legacy-panel__add"
             color={CREATE_ACTION_COLOR}
@@ -2402,6 +2403,7 @@ function ReportSelectionsCard({
           >
             {addLabel ?? t('Додати умову')}
           </Button>
+          </WorkbookSectionActions>
         </div>
 
         {resolvedDescription ? <Text className="reports-stocks-panel-description">{resolvedDescription}</Text> : null}
@@ -2418,7 +2420,6 @@ function ReportSelectionsCard({
 
               return (
                 <div className="reports-stocks-selection-summary app-selection-surface" data-selected={hasFixedReportAxes(dataSource) ? selection.IsChecked !== false : selection.IsChecked} key={getSelectionRenderKey(selection, index)}>
-                  <span className="app-selection-surface__marker" aria-hidden="true" />
                   <Checkbox
                     aria-label={`${t('Умова відбору')} ${index + 1}`}
                     checked={hasFixedReportAxes(dataSource) ? selection.IsChecked !== false : selection.IsChecked}

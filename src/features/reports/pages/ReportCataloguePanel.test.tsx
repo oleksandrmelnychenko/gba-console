@@ -250,7 +250,7 @@ it('keeps the catalogue and selection when the constructor rejects an outdated c
   expect(screen.getByRole('button', { name: 'Каталог усіх звітів 1С' }).getAttribute('aria-expanded')).toBe('true')
   expect(screen.getByText(/Не вдалося відкрити цей варіант/)).toBeTruthy()
   fireEvent.click(screen.getByRole('button', { name: 'Відкрити в конструкторі' }))
-  await waitFor(() => expect(screen.queryByText('Каталог звітів 1С', { exact: true })).toBeNull())
+  await waitFor(() => expect(screen.queryByText('Каталог звітів', { exact: true })).toBeNull())
   expect(onOpen).toHaveBeenCalledTimes(2)
   expect(screen.getByRole('button', { name: 'Каталог усіх звітів 1С' })).toBeTruthy()
 })

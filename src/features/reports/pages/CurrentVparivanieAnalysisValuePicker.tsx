@@ -1,3 +1,4 @@
+import { ListPlus } from 'lucide-react'
 import { AnalysisGroupBrowser } from './AnalysisGroupBrowser'
 import { AnalysisTopEntry } from './AnalysisTopEntry'
 import { useEffect, useRef, useState } from 'react'
@@ -75,33 +76,33 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
   }
   const options = [...optionMap].map(([value, selected]) => ({ value, label: selected.Name }))
   const isGroup = selection.SelectedField.Type === 4
-  return <Stack gap="xs">
+  return <Stack gap={6} className="report-analysis-values">
     {mixed ? <SegmentedControl aria-label="Тип значення" value={choiceKind}
       data={[{ value: 'productGroup', label: 'Групи' }, { value: 'product', label: 'Товари' }]}
       onChange={value => { setChoiceKind(value as 'product' | 'productGroup'); setSearch('') }} /> : null}
-    <Text size="xs" c="dimmed">{mixed ? 'Оберіть товари та групи. Товари з перетинів груп враховуються один раз.'
-      : isGroup ? multiple ? 'Оберіть кілька груп товарів.' : 'Оберіть одну групу товарів.'
-        : multiple ? 'Оберіть кілька значень.' : 'Оберіть одне значення.'}</Text>
     {multiple ? <CheckboxMultiSelect label="Значення" placeholder="Оберіть значення" data={options} value={selectedKeys}
       onChange={changeMultiple} withinPortal={false} remoteSearch={{ value: search, onChange: setSearch, loading: !current }} />
       : <Select comboboxProps={{ withinPortal: false }} label="Значення" placeholder={isGroup ? 'Знайти групу' : 'Знайти значення'}
         searchable filter={({ options }) => options} searchValue={search} onSearchChange={setSearch}
         data={options} value={null} onChange={add}
         rightSection={!current ? <Loader size="xs" /> : undefined} nothingFoundMessage="Нічого не знайдено" />}
+    {mixed ? <Text size="xs" c="dimmed">Оберіть товари та групи. Товари з перетинів груп враховуються один раз.</Text> : null}
+    <Group gap={6} className="report-analysis-values__actions">
     {current?.hasMore ? current.nextOffset < 4080
-      ? <Button type="button" variant="subtle" size="compact-sm" loading={current.loadingMore} onClick={() => void loadMore()}>Ще значення</Button>
+      ? <Button type="button" variant="default" size="compact-sm" leftSection={<ListPlus size={15} aria-hidden="true" />} loading={current.loadingMore} onClick={() => void loadMore()}>Ще значення</Button>
       : <Text size="xs" c="dimmed">Показано 4080 значень. Звузьте пошук, щоб знайти потрібне.</Text> : null}
     {descriptor?.hierarchyBrowse && selection.SelectedField.Type === 4 ? <AnalysisGroupBrowser descriptor={descriptor} selection={selection} onChange={onChange} /> : null}
+    </Group>
     {descriptor?.textEntry && selection.SelectedField.Type === 3 ? <AnalysisTopEntry capability={descriptor.textEntry} selection={selection} onChange={onChange} /> : null}
     {current?.error ? <Alert color="red">{current.error}</Alert> : null}
     {multiple && selection.Values.length > 0 ? <Text size="xs">Вибрано: {selection.Values.length}</Text> : null}
-    {selection.Values.map((v, index) => {
+    <div className="report-analysis-values__selected">{selection.Values.map((v, index) => {
       const group = isGroup ? analysisGroupIdentity(v.Data) : null
       const label = group ? `${group.kind === 'product' ? 'Товар' : 'Група'}: ${v.Name}` : v.Name
-      return <Group key={analysisValueIdentity(selection.SelectedField.Type, v.Data)} justify="space-between" wrap="nowrap">
+      return <Group key={analysisValueIdentity(selection.SelectedField.Type, v.Data)} className="report-analysis-values__chip" gap={4} wrap="nowrap">
         <Text size="sm">{label}</Text><TableRowAction action="delete" label={`Видалити значення ${label}`}
           onClick={() => onChange(selection.Values.filter((_, i) => i !== index))} />
       </Group>
-    })}
+    })}</div>
   </Stack>
 }

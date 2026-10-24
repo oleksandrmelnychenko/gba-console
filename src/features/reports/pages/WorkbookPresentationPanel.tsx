@@ -77,7 +77,6 @@ function WorkbookFieldItem({ field, selection, disabled, fenix, onChange }: {
   const fields = selection?.additionalFields ?? []
   const locked = disabled || [60, 61].includes(field.type) && !fenix
   return <div className="workbook-presentation__option app-selection-surface" data-selected={fields.includes(field.type)} data-disabled={locked}>
-    <span className="app-selection-surface__marker" aria-hidden="true" />
     <Checkbox label={field.caption.replace(/^Номенклатура\./, '').replace(/\s*\((?:Окремо|Вместе|Разом),.*\)$/, '')} checked={fields.includes(field.type)} disabled={locked}
     onChange={event => onChange({ version: 1, ordering: selection?.ordering ?? null,
       additionalFields: event.currentTarget.checked ? [...fields, field.type] : fields.filter(type => type !== field.type) })} />

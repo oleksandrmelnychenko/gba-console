@@ -1,3 +1,4 @@
+import { WorkbookSectionToolbar } from './WorkbookSectionActions'
 import { ToolbarDateRangeFilter } from '../../../../shared/ui/ToolbarDateRangeFilter'
 import { Button, Select } from '@mantine/core'
 import { Building2, ChartNoAxesCombined, ChevronDown, ChevronRight, ChevronUp, ListFilter, ListTree, SlidersHorizontal } from 'lucide-react'
@@ -47,16 +48,23 @@ export function WorkbookSettings({ sections, advanced, disabled = false, unified
     })
   }
   if (unified) return <section className="workbook-settings workbook-settings--unified" aria-label={t('Налаштування звіту')}>
-    <h2 className="app-section-title">{t('Налаштування звіту')}</h2>
-    {period ? <fieldset className="workbook-settings__control" disabled={disabled}>{period}</fieldset> : null}
+    <div className="workbook-settings__unified-head">
+      <h2 className="app-section-title workbook-settings__title">{t('Налаштування звіту')}</h2>
+      {period ? <fieldset className="workbook-settings__control workbook-settings__period" disabled={disabled}>{period}</fieldset> : null}
+    </div>
     <div className="workbook-settings__grid">
       {sections.map(section => <section key={section.id} id={`workbook-settings-pane-${section.id}`}
         className={`workbook-settings__unified-section workbook-settings__unified-section--${section.id}`}
         role="group" aria-label={t(section.title)}>
-        <fieldset className="workbook-settings__control" disabled={disabled}>{section.content}</fieldset>
+        <WorkbookSectionToolbar disabled={disabled} heading={<>
+          <h3>{SECTION_ICONS[section.id]}{t(section.title)}</h3>
+          {section.compactSummary ? <span className="workbook-settings__section-count" title={section.summary}>{section.compactSummary}</span> : null}
+        </>}>
+          <fieldset className="workbook-settings__control" disabled={disabled}>{section.content}</fieldset>
+        </WorkbookSectionToolbar>
       </section>)}
     </div>
-    <details className="workbook-settings__advanced"><summary>{t('Додатково')}</summary>
+    <details className="workbook-settings__advanced"><summary><SlidersHorizontal size={16} aria-hidden="true" />{t('Додатково')}<ChevronDown size={15} aria-hidden="true" /></summary>
       <fieldset className="workbook-settings__control" disabled={disabled}>{advanced}</fieldset>
     </details>
   </section>

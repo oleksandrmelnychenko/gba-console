@@ -1,6 +1,6 @@
 import { Button, Loader } from '@mantine/core'
 import type { ReactNode } from 'react'
-import { CircleAlert, CircleCheck, MonitorPlay, RotateCcw } from 'lucide-react'
+import { CircleAlert, CircleCheck, MonitorPlay, RotateCcw, Save, Undo2 } from 'lucide-react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../../shared/url/getDocumentHref'
 import { ExcelIcon } from '../../../../shared/ui/ExcelIcon'
@@ -58,16 +58,20 @@ export function WorkbookActionBar({ period, canSubmit, isLoading, blockedReason,
     <div className="app-filter-bar workbook-toolbar">
       {period}
     <div className="app-filter-actions workbook-actions__buttons">
+      <div className="workbook-actions__edit">
       <Button type="button"
         disabled={resetDisabled} aria-label={t('Скинути')}
         title={t('Повернути період і відбори за замовчуванням')} onClick={onReset} className="reports-toolbar-action" variant="default" leftSection={<RotateCcw size={16} aria-hidden="true" />}>{t('Скинути')}</Button>
-      {onCancel ? <Button type="button" variant="default" disabled={!pending || isLoading} onClick={onCancel}>{t('Скасувати зміни')}</Button> : null}
-      {onSaveTemplate ? <Button type="button" variant="default" disabled={isLoading} onClick={onSaveTemplate}>{t('Зберегти набір як шаблон')}</Button> : null}
+      {onCancel ? <Button type="button" variant="default" leftSection={<Undo2 size={16} aria-hidden="true" />} aria-label={t('Скасувати зміни')} title={t('Скасувати зміни')} disabled={!pending || isLoading} onClick={onCancel}>{t('Скасувати зміни')}</Button> : null}
+      {onSaveTemplate ? <Button type="button" variant="default" leftSection={<Save size={16} aria-hidden="true" />} aria-label={t('Зберегти набір як шаблон')} title={t('Зберегти набір як шаблон')} disabled={isLoading} onClick={onSaveTemplate}>{t('Зберегти шаблон')}</Button> : null}
+      </div>
+      <div className="workbook-actions__delivery">
       {file('excel', excelUrl)}
       {file('pdf', pdfUrl)}
       <Button type="button" color={CREATE_ACTION_COLOR} className="workbook-actions__preview"
         leftSection={<MonitorPlay size={16} aria-hidden="true" />} disabled={!canSubmit || isLoading}
         aria-describedby={describedBy} onClick={onPreview}>{t(applyLabel ?? 'Показати на екрані')}</Button>
+      </div>
     </div>
     </div>
     </div>

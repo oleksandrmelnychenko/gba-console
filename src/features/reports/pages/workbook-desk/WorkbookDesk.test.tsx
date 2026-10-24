@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../../shared/i18n/I18nProvider'
 import { WorkbookActionBar } from './WorkbookActionBar'
+import { WorkbookSectionActions } from './WorkbookSectionActions'
 import { WorkbookResult } from './WorkbookResult'
 import { WorkbookPeriodField, WorkbookSettings } from './WorkbookSettings'
 
@@ -129,4 +130,21 @@ it('disables settings while retaining section navigation during a run', () => {
   expect(screen.getByRole('textbox', { name: 'Товар' }).closest('fieldset')?.disabled).toBe(true)
   fireEvent.click(screen.getByRole('button', { name: 'Додатково' }))
   expect(screen.getByRole('button', { name: 'Додати групу' }).closest('fieldset')?.disabled).toBe(true)
+})
+
+it('keeps section actions disabled with the settings while a report is running', () => {
+  const onClear = vi.fn()
+  const settings = (disabled: boolean) => wrap(<WorkbookSettings unified disabled={disabled} advanced={null} sections={[
+    { id: 'measures', title: 'Показники', summary: '1', content: <WorkbookSectionActions>
+      <button type="button" onClick={onClear}>Очистити</button>
+    </WorkbookSectionActions> },
+  ]} />)
+  const view = render(settings(false))
+  const clear = screen.getByRole('button', { name: 'Очистити' })
+  fireEvent.click(clear)
+  expect(onClear).toHaveBeenCalledOnce()
+  view.rerender(settings(true))
+  expect(clear.matches(':disabled')).toBe(true)
+  view.rerender(settings(false))
+  expect(clear.matches(':disabled')).toBe(false)
 })

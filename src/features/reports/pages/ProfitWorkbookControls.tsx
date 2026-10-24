@@ -18,7 +18,6 @@ type Setter = Dispatch<SetStateAction<unknown>>
 
 function FilterOption({ selected, children }: { selected: boolean; children: ReactNode }) {
   return <div className="workbook-filter-option app-selection-surface" data-selected={selected}>
-    <span className="app-selection-surface__marker" aria-hidden="true" />
     {children}
   </div>
 }

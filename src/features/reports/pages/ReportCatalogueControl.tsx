@@ -95,15 +95,15 @@ export function ReportCatalogueControl({ onOpenWarehouseMovement, onOpenTurnover
       <Button ref={trigger} type="button" variant={quiet ? 'subtle' : dialog ? 'filled' : 'subtle'} color={quiet ? 'gray' : undefined}
         className={quiet ? 'report-catalogue-trigger workbook-quiet-action' : 'report-catalogue-trigger'} disabled={!enabled || disabled}
         leftSection={<LibraryBig size={15} aria-hidden="true" />}
-        aria-label={t(consoleScope && BUG_1274_ONLY_REPORT_SURFACE ? 'Каталог звітів 1С' : 'Каталог усіх звітів 1С')}
-        title={t(consoleScope && BUG_1274_ONLY_REPORT_SURFACE ? 'Каталог звітів 1С' : 'Каталог усіх звітів 1С')}
+        aria-label={t(consoleScope && BUG_1274_ONLY_REPORT_SURFACE ? 'Каталог звітів' : 'Каталог усіх звітів 1С')}
+        title={t(consoleScope && BUG_1274_ONLY_REPORT_SURFACE ? 'Каталог звітів' : 'Каталог усіх звітів 1С')}
         aria-haspopup={dialog ? 'dialog' : undefined} aria-expanded={enabled && opened}
         onClick={() => setOpened(value => !value)}>
-        {!dialog && opened ? t('Сховати каталог звітів 1С') : t(consoleScope && BUG_1274_ONLY_REPORT_SURFACE ? 'Каталог звітів 1С' : 'Каталог усіх звітів 1С')}
+        {!dialog && opened ? t('Сховати каталог звітів') : t(consoleScope && BUG_1274_ONLY_REPORT_SURFACE ? 'Каталог звітів' : 'Каталог усіх звітів 1С')}
       </Button>
     </Group>
     {dialog ? <ReportModal opened={enabled && opened} onClose={() => setOpened(false)}
-      title={t(consoleScope && BUG_1274_ONLY_REPORT_SURFACE ? 'Каталог звітів 1С' : 'Каталог усіх звітів 1С')} size={1280} className="report-catalogue-dialog"
+      title={t(consoleScope && BUG_1274_ONLY_REPORT_SURFACE ? 'Каталог звітів' : 'Каталог усіх звітів 1С')} size={1280} className="report-catalogue-dialog"
       closeButtonProps={{ 'aria-label': t('Закрити каталог звітів') }} returnFocus={false}
       onExitTransitionEnd={() => trigger.current?.focus()}>
       {panel}

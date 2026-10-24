@@ -800,7 +800,6 @@
 .workbook-settings__control :is(.reports-stocks-measurement-columns, .reports-stocks-legacy-measurement) { min-width: 280px; padding: 8px 12px 8px 16px; }
 .workbook-settings__control .reports-stocks-measurement-columns { background: var(--mantine-color-gray-1); font-weight: 600; }
 .workbook-settings__control .reports-stocks-legacy-measurement { min-height: 44px; }
-.workbook-settings__control .reports-stocks-legacy-measurement .app-selection-surface__marker { inset-block: 10px; }
 .workbook-settings__control .reports-stocks-structure { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .workbook-settings__control .reports-stocks-grouping-field {
   align-content: start;
@@ -847,20 +846,76 @@
 
 .workbook-toolbar .reports-toolbar-action { flex: 0 0 auto; white-space: nowrap; }
 
-/* One configuration draft: every core section remains visible. */
-.workbook-settings--unified { display: flex; flex-direction: column; gap: 12px; }
-.workbook-settings__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; }
-.workbook-settings__unified-section { min-width: 0; }
-.workbook-settings__unified-section--filters,
-.workbook-settings__unified-section--organizations { grid-column: 1 / -1; }
-.workbook-settings__advanced > summary { cursor: pointer; font: 600 13px/1.5 var(--font-mono); padding: 6px 0; }
-.workbook-settings__advanced[open] > summary { margin-bottom: 8px; }
-.workbook-inline-selection { display: grid; grid-template-columns: auto minmax(160px, 1fr) minmax(150px, .8fr) minmax(220px, 1.5fr) auto; align-items: start; gap: 8px; padding: 8px 0; border-top: 1px solid var(--desk-border); }
+/* The whole draft stays visible, with the same compact section hierarchy. */
+.workbook-settings--unified { display: flex; flex-direction: column; gap: 12px; padding: 12px; }
+.workbook-settings__unified-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 20px; }
+.workbook-settings__period .workbook-period { flex-wrap: wrap; }
+.workbook-settings__period .workbook-period__presets { display: block; max-width: calc(100% - 46px); }
+.workbook-settings__period .mantine-InputWrapper-label { font: 500 12px/1.4 var(--font-mono); margin-bottom: 4px; }
+.workbook-settings__grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 12px; align-items: start; }
+.workbook-settings__unified-section { min-width: 0; border: 1px solid var(--desk-border); border-radius: 8px; }
+.workbook-settings__unified-section > .workbook-settings__control { padding: 12px; }
+.workbook-settings__section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; background: var(--mantine-color-gray-0); border-bottom: 1px solid var(--desk-border); border-radius: 8px 8px 0 0; }
+.workbook-settings__section-head h3 { display: flex; align-items: center; gap: 8px; font: 600 13px/1.4 var(--font-mono); color: var(--desk-text); }
+.workbook-settings__section-head svg { flex-shrink: 0; }
+.workbook-settings__section-count { font: 500 11px/1.4 var(--font-mono); color: var(--desk-muted); white-space: nowrap; }
+.workbook-settings__grid:has(.workbook-inline-selection) > .workbook-settings__unified-section--filters,
+.workbook-settings__grid:has(.workbook-inline-selection) > .workbook-settings__unified-section--organizations { grid-column: 1 / -1; }
+.workbook-settings__advanced { border: 1px solid var(--desk-border); border-radius: 8px; }
+.workbook-settings__advanced > summary { display: flex; align-items: center; gap: 8px; cursor: pointer; font: 600 13px/1.5 var(--font-mono); color: var(--desk-text); padding: 10px 12px; list-style: none; }
+.workbook-settings__advanced > summary::-webkit-details-marker { display: none; }
+.workbook-settings__advanced > summary > svg:last-child { margin-left: auto; }
+.workbook-settings__advanced[open] > summary { border-bottom: 1px solid var(--desk-border); background: var(--mantine-color-gray-0); }
+.workbook-settings__advanced[open] > summary > svg:last-child { transform: rotate(180deg); }
+.workbook-settings__advanced > .workbook-settings__control { padding: 12px; }
+.workbook-settings__advanced > summary:focus-visible { outline: 2px solid var(--brand-orange); outline-offset: 2px; border-radius: 8px; }
+.workbook-inline-selection { display: grid; grid-template-columns: auto minmax(160px, 1fr) minmax(150px, .8fr) minmax(220px, 1.5fr) auto; align-items: start; gap: 8px; padding: 10px; border: 1px solid var(--desk-border); border-radius: 8px; background: var(--mantine-color-gray-0); }
 .workbook-inline-selection > :first-child, .workbook-inline-selection > :last-child { margin-top: 28px; }
 .workbook-inline-selection__error { grid-column: 2 / -1; }
+.workbook-inline-selection .mantine-InputWrapper-label { font: 500 12px/1.5 var(--font-mono); margin-bottom: 4px; }
+.workbook-actions__edit, .workbook-actions__delivery { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.workbook-actions__delivery { margin-left: auto; }
+.workbook-toolbar .workbook-actions__buttons { flex: 1 1 auto; justify-content: space-between; flex-wrap: wrap; }
+.workbook-actions__scroll { overflow: visible; }
 @media (max-width: 1000px) {
   .workbook-settings__grid { grid-template-columns: minmax(0, 1fr); }
   .workbook-inline-selection { grid-template-columns: auto minmax(0, 1fr) auto; }
   .workbook-inline-selection__field, .workbook-inline-selection__condition, .workbook-inline-selection__value { grid-column: 2; }
   .workbook-inline-selection > :last-child { grid-column: 3; grid-row: 1; }
+}
+@media (max-width: 600px) {
+  .workbook-settings--unified { padding: 8px; gap: 8px; }
+  .workbook-settings__unified-head { align-items: flex-start; }
+  .workbook-settings__period { width: 100%; }
+  .workbook-settings__unified-section > .workbook-settings__control { padding: 8px; }
+  .workbook-actions__delivery { margin-left: 0; }
+  .workbook-actions__buttons .mantine-Button-section { display: inline-flex; }
+}
+
+.workbook-settings--unified .reports-stocks-structure { grid-template-columns: minmax(0, 1fr); }
+.report-analysis-values { --app-multi-select-width: 100%; min-width: 0; }
+.report-analysis-values__actions:empty, .report-analysis-values__selected:empty { display: none; }
+.report-analysis-values__actions > .mantine-Button-root { width: auto; }
+.report-analysis-values__selected { display: flex; flex-wrap: wrap; gap: 6px; max-height: 160px; overflow: auto; scrollbar-width: thin; }
+.report-analysis-values__chip { min-width: 0; max-width: 100%; border: 1px solid var(--mantine-color-gray-3); border-radius: 6px; padding: 2px 4px 2px 8px; background: var(--mantine-color-white); }
+.report-analysis-values__chip .mantine-Text-root { font: 500 12px/1.4 var(--font-mono); color: var(--mantine-color-gray-8); overflow-wrap: anywhere; }
+.report-analysis-values__chip button { flex-shrink: 0; }
+
+@media (max-width: 600px) {
+  .workbook-toolbar .workbook-actions__buttons { justify-content: flex-start; gap: 6px; }
+  .workbook-actions__edit, .workbook-actions__delivery { display: contents; }
+  .workbook-actions__edit .mantine-Button-root { width: 36px; height: 36px; padding: 0; flex: 0 0 36px; }
+  .workbook-actions__edit .mantine-Button-label { display: none; }
+  .workbook-actions__edit .mantine-Button-section { margin: 0; }
+  .workbook-actions__preview { flex-basis: 100%; }
+}
+
+.workbook-settings__section-head { flex-wrap: wrap; }
+.workbook-settings__section-count { margin-left: auto; }
+.workbook-settings__section-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px; border: 0; margin: 0; padding: 0; min-width: 0; }
+.workbook-settings__section-actions:empty { display: none; }
+.workbook-settings__section-actions .mantine-Button-root { height: 28px; padding-inline: 8px; font-size: 12px; }
+.workbook-settings--unified .workbook-settings__control :is(.reports-stocks-selection-card, .reports-stocks-legacy-measurements) .reports-stocks-legacy-panel__header { display: none; }
+@media (max-width: 600px) {
+  .workbook-settings__section-actions { flex-basis: 100%; }
 }
