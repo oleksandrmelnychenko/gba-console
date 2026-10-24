@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { Alert, Button, Card, getDefaultZIndex, Group, NumberInput, SimpleGrid, Stack, Table, Text, TextInput } from '@mantine/core'
 import { Check, CircleAlert } from 'lucide-react'
@@ -50,6 +51,7 @@ function ProductSpecificationEditDrawerContent({
   onClose,
   onSave,
 }: ProductSpecificationEditDrawerProps) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const product = item?.SupplyInvoiceOrderItem?.Product || null
   const initialDraft = useMemo(() => buildDraft(product), [product])
@@ -60,25 +62,27 @@ function ProductSpecificationEditDrawerContent({
   const isDraftDirty = canSave && !areDraftsEqual(draft, initialDraft)
 
   async function submit() {
-    if (!product || isSaving || !canSave) {
-      return
-    }
+    return runActionOnce('submit', async () => {
+      if (!product || isSaving || !canSave) {
+        return
+      }
 
-    const specificationCode = draft.specificationCode.trim()
+      const specificationCode = draft.specificationCode.trim()
 
-    if (!specificationCode) {
-      setError(`${t('Заповніть поле')} - ${t('Митний код')}`)
-      return
-    }
+      if (!specificationCode) {
+        setError(`${t('Заповніть поле')} - ${t('Митний код')}`)
+        return
+      }
 
-    setError(null)
+      setError(null)
 
-    await onSave({
-      CustomsValue: toFiniteNumber(draft.customsValue),
-      Duty: toFiniteNumber(draft.duty),
-      ProductId: product.Id,
-      SpecificationCode: specificationCode,
-      VATValue: toFiniteNumber(draft.vatValue),
+      await onSave({
+        CustomsValue: toFiniteNumber(draft.customsValue),
+        Duty: toFiniteNumber(draft.duty),
+        ProductId: product.Id,
+        SpecificationCode: specificationCode,
+        VATValue: toFiniteNumber(draft.vatValue),
+      })
     })
   }
 

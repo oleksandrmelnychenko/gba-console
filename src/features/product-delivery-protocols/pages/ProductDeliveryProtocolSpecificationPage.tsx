@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
   Alert,
   Button,
@@ -153,12 +154,12 @@ function useSpecificationModel(netId: string | undefined) {
   const [withManagementServices, setWithManagementServices] = useValueState(false)
 
   const [isUploadOpen, setUploadOpen] = useValueState(false)
-  const [isUploading, setUploading] = useValueState(false)
+  const [isUploading, setUploading, tryStartUploading] = useBusyState()
   const [uploadResult, setUploadResult] = useValueState<UploadProductSpecificationResult | null>(null)
 
   const [isDocumentsOpen, setDocumentsOpen] = useValueState(false)
   const [isDocumentsCloseConfirmOpen, setDocumentsCloseConfirmOpen] = useValueState(false)
-  const [isSavingDocuments, setSavingDocuments] = useValueState(false)
+  const [isSavingDocuments, setSavingDocuments, tryStartSavingDocuments] = useBusyState()
   const [existingDocuments, setExistingDocuments] = useValueState<DeliveryDocumentDraft[]>([])
   const [newDocuments, setNewDocuments] = useValueState<DeliveryDocumentDraft[]>([])
   const [numberCustomDeclaration, setNumberCustomDeclaration] = useValueState('')
@@ -173,14 +174,14 @@ function useSpecificationModel(netId: string | undefined) {
   )
 
   const [isMergeOpen, setMergeOpen] = useValueState(false)
-  const [isMerging, setMerging] = useValueState(false)
+  const [isMerging, setMerging, tryStartMerging] = useBusyState()
 
   const [isDownloadOpen, setDownloadOpen] = useValueState(false)
   const [isDownloading, setDownloading] = useValueState(false)
   const [downloadDocument, setDownloadDocument] = useValueState<SpecificationDownloadDocument | null>(null)
   const [downloadError, setDownloadError] = useValueState<string | null>(null)
   const [editingSpecificationItem, setEditingSpecificationItem] = useValueState<PackingListPackageOrderItem | null>(null)
-  const [isSavingSpecification, setSavingSpecification] = useValueState(false)
+  const [isSavingSpecification, setSavingSpecification, tryStartSavingSpecification] = useBusyState()
   const uploadRequestRef = useRef(0)
   const downloadRequestRef = useRef(0)
   const specificationSaveRequestRef = useRef(0)
@@ -466,7 +467,9 @@ function useSpecificationModel(netId: string | undefined) {
     uploadRequestRef.current = requestId
     const isCurrentUpload = () => uploadRequestRef.current === requestId
 
-    setUploading(true)
+    if (!tryStartUploading()) {
+      return
+    }
 
     try {
       const result = await uploadProductSpecificationForInvoice(
@@ -665,7 +668,9 @@ function useSpecificationModel(netId: string | undefined) {
     documentsSaveRequestRef.current = requestId
     const isCurrentDocumentsSave = () => documentsSaveRequestRef.current === requestId
 
-    setSavingDocuments(true)
+    if (!tryStartSavingDocuments()) {
+      return
+    }
 
     try {
       const invoicePayload: SpecificationSupplyInvoice = {
@@ -751,7 +756,9 @@ function useSpecificationModel(netId: string | undefined) {
       return
     }
 
-    setMerging(true)
+    if (!tryStartMerging()) {
+      return
+    }
 
     try {
       await mergeSupplyInvoices(netId, selectedMergeNetIds)
@@ -829,7 +836,9 @@ function useSpecificationModel(netId: string | undefined) {
     specificationSaveRequestRef.current = requestId
     const isCurrentSpecificationSave = () => specificationSaveRequestRef.current === requestId
 
-    setSavingSpecification(true)
+    if (!tryStartSavingSpecification()) {
+      return
+    }
 
     try {
       await addOrUpdateProductSpecification(invoiceNetUid, payload)

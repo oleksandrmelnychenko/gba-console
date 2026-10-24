@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Alert, Button, Checkbox, Group, MultiSelect, Stack, Text } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -23,7 +24,7 @@ function SalesTable({ result }: { result: SalesResult }) {
 }
 function useSalesRun(capability: SalesCapability, caller: string | null, allowed: boolean, from: string, through: string,
   selection: SalesSelection, measures: SalesMeasure[], key: string, accept: (r: SalesResult) => void) {
-  const run = useReportRunState<SalesResult>(key), active = useRef<AbortController | null>(null), latest = useRef(key), [exporting, setExporting] = useState(false)
+  const run = useReportRunState<SalesResult>(key), active = useRef<AbortController | null>(null), latest = useRef(key), [exporting, setExporting, tryStartExporting] = useBusyState()
   useEffect(() => { latest.current = key; return () => { latest.current = ''; active.current?.abort() } }, [key])
   const permitted = allowed && !!caller && capability.Executable, error = salesPeriodError(from, through) ?? (!measures.length ? 'Оберіть хоча б один ресурс.' : null), report = run.lastRun
   function invalidate() { latest.current = ''; active.current?.abort(); run.clear() }
@@ -38,7 +39,9 @@ function useSalesRun(capability: SalesCapability, caller: string | null, allowed
   }
   async function exportFile(format: typeof formats[number]) {
     if (!permitted || !report?.Available || exporting || salesExportError(report)) return
-    setExporting(true)
+    if (!tryStartExporting()) {
+      return
+    }
     try { const blob = format === 'csv' ? new Blob([salesCsv(report)], { type: 'text/csv;charset=utf-8' }) : format === 'xlsx' ? await salesXlsx(report) : await salesPdf(report)
       if (latest.current === key) download(blob, `sales-${report.From}-${report.Through}.${format}`)
     } catch (failure) { if (latest.current === key) run.update({ error: failure instanceof Error ? failure.message : 'Не вдалося сформувати файл.' }) }

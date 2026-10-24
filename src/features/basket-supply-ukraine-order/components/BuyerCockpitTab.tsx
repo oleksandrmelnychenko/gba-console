@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
   ActionIcon,
   Alert,
@@ -186,13 +187,13 @@ function BuyerCockpitTabContent() {
   const [termsStatus, setTermsStatus] = useState<Record<number, TermsSaveStatus>>({})
   const [profileLeadTime, setProfileLeadTime] = useState<number | ''>('')
   const [profileServiceLevel, setProfileServiceLevel] = useState<number | ''>('')
-  const [isProfileSaving, setProfileSaving] = useState(false)
+  const [isProfileSaving, setProfileSaving, tryStartProfileSaving] = useBusyState()
   const [feedbackDecision, setFeedbackDecision] = useState<Record<number, FeedbackDecision>>({})
   const [feedbackPending, setFeedbackPending] = useState<Record<number, boolean>>({})
   const [editStatus, setEditStatus] = useState<Record<number, EditFeedbackStatus>>({})
   const lastEditedQty = useRef<Record<number, number>>({})
   const [isConfirmOpen, { open: openConfirm, close: closeConfirm }] = useDisclosure(false)
-  const [isCreatingOrder, setCreatingOrder] = useState(false)
+  const [isCreatingOrder, setCreatingOrder, tryStartCreatingOrder] = useBusyState()
   const { plan, error, isLoading } = state
 
   const focusedProductId = useMemo(() => normalizeRouteNumber(routeProductId), [routeProductId])
@@ -543,7 +544,9 @@ function BuyerCockpitTabContent() {
       return
     }
 
-    setProfileSaving(true)
+    if (!tryStartProfileSaving()) {
+      return
+    }
 
     try {
       await upsertProducerProfile({
@@ -588,7 +591,9 @@ function BuyerCockpitTabContent() {
       return
     }
 
-    setCreatingOrder(true)
+    if (!tryStartCreatingOrder()) {
+      return
+    }
 
     try {
       const created = await createCockpitDraftOrder(producerId, items)

@@ -1,3 +1,5 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -146,6 +148,7 @@ type TaxFreeDocumentDetailsCarrierState = {
 }
 
 function useTaxFreeDocumentsPageModel() {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const { can } = usePermissions()
   const canOpenDetails = can(PermissionKeys.TaxFreeDocuments.Document.OpenDetails)
@@ -184,7 +187,7 @@ function useTaxFreeDocumentsPageModel() {
   const [outcomeSource, setOutcomeSource] = useValueState<DocumentOutcomePaymentSource | null>(null)
   const [printingId, setPrintingId] = useValueState<string | number | null>(null)
   const [downloadingId, setDownloadingId] = useValueState<string | number | null>(null)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const { documents, isLoading, total } = documentsState
   const offset = (page - 1) * pageSize
@@ -396,7 +399,9 @@ function useTaxFreeDocumentsPageModel() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -422,7 +427,9 @@ function useTaxFreeDocumentsPageModel() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -444,26 +451,28 @@ function useTaxFreeDocumentsPageModel() {
   }
 
   async function printDocument(document: TaxFreeDocument) {
-    const documentId = document.NetUid || document.Id
+    return runActionOnce('printDocument', async () => {
+      const documentId = document.NetUid || document.Id
 
-    if (!canPrint || !documentId) {
-      return
-    }
+      if (!canPrint || !documentId) {
+        return
+      }
 
-    setPrintingId(documentId)
-    setError(null)
+      setPrintingId(documentId)
+      setError(null)
 
-    try {
-      const response = await printTaxFreeDocument(document)
+      try {
+        const response = await printTaxFreeDocument(document)
 
-      notifications.show({ color: 'green', message: response.Message || t('Tax Free відправлено на друк') })
-      setPreviewDocument(null)
-      reload()
-    } catch (printError) {
-      setError(printError instanceof Error ? printError.message : t('Не вдалося надрукувати Tax Free'))
-    } finally {
-      setPrintingId(null)
-    }
+        notifications.show({ color: 'green', message: response.Message || t('Tax Free відправлено на друк') })
+        setPreviewDocument(null)
+        reload()
+      } catch (printError) {
+        setError(printError instanceof Error ? printError.message : t('Не вдалося надрукувати Tax Free'))
+      } finally {
+        setPrintingId(null)
+      }
+    })
   }
 
   async function downloadTaxFreeDocument(document: TaxFreeDocument) {

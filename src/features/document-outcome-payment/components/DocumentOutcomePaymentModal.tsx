@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { Alert, Button, Grid, NumberInput, Select, Stack, Text, Textarea } from '@mantine/core'
@@ -74,7 +75,7 @@ export function DocumentOutcomePaymentModal({
   const [form, setForm] = useValueState<FormState>(() => createInitialForm())
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
 
   const documentNetId = source?.documentNetId || ''
   const dateBounds = getExternalDocumentPaymentDateBounds(source?.documentDate)
@@ -255,7 +256,9 @@ export function DocumentOutcomePaymentModal({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -327,7 +330,9 @@ export function DocumentOutcomePaymentModal({
       },
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

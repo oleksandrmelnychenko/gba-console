@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   ActionIcon,
@@ -251,7 +252,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
   const { id } = useParams<{ id: string }>()
   const [order, setOrder] = useState<DirectSupplyOrder | null>(null)
   const [isLoading, setLoading] = useState(true)
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [error, setError] = useState<string | null>(null)
   const [amountEditState, dispatchAmountEdit] = useReducer(amountEditReducer, INITIAL_AMOUNT_EDIT_STATE)
   const [statusModalState, dispatchStatusModal] = useReducer(statusModalReducer, CLOSED_STATUS_MODAL_STATE)
@@ -377,7 +378,9 @@ function SupplyUkraineDirectOrderDetailPageContent() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -414,7 +417,9 @@ function SupplyUkraineDirectOrderDetailPageContent() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -468,7 +473,9 @@ function SupplyUkraineDirectOrderDetailPageContent() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -573,7 +580,9 @@ function SupplyUkraineDirectOrderDetailPageContent() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { AppModalFooter } from '../../../shared/ui/AppModal'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -114,14 +115,14 @@ function useProductPlacementsPageModel({
   const [isLoadingStorages, setLoadingStorages] = useValueState(true)
   const [downloadDocument, setDownloadDocument] = useValueState<ProductPlacementsExportDocument | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
-  const [isExporting, setExporting] = useValueState(false)
+  const [isExporting, setExporting, tryStartExporting] = useBusyState()
   const [importModalOpened, setImportModalOpened] = useValueState(false)
   const [importError, setImportError] = useValueState<string | null>(null)
-  const [isUploading, setUploading] = useValueState(false)
+  const [isUploading, setUploading, tryStartUploading] = useBusyState()
   const [returnModalOpened, setReturnModalOpened] = useValueState(false)
   const [returnError, setReturnError] = useValueState<string | null>(null)
   const [returnedRows, setReturnedRows] = useValueState<ProductPlacementRow[]>([])
-  const [isSubmittingReturned, setSubmittingReturned] = useValueState(false)
+  const [isSubmittingReturned, setSubmittingReturned, tryStartSubmittingReturned] = useBusyState()
   const [productCardNetId, setProductCardNetId] = useValueState<string | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const { isLoading, placements, total } = listState
@@ -265,7 +266,9 @@ function useProductPlacementsPageModel({
       return
     }
 
-    setExporting(true)
+    if (!tryStartExporting()) {
+      return
+    }
     setError(null)
 
     try {
@@ -302,7 +305,9 @@ function useProductPlacementsPageModel({
       return
     }
 
-    setUploading(true)
+    if (!tryStartUploading()) {
+      return
+    }
     setImportError(null)
 
     try {
@@ -354,7 +359,9 @@ function useProductPlacementsPageModel({
       return
     }
 
-    setSubmittingReturned(true)
+    if (!tryStartSubmittingReturned()) {
+      return
+    }
     setReturnError(null)
 
     try {
@@ -390,7 +397,9 @@ function useProductPlacementsPageModel({
       return
     }
 
-    setExporting(true)
+    if (!tryStartExporting()) {
+      return
+    }
     setReturnError(null)
 
     try {

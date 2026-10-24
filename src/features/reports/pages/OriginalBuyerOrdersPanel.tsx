@@ -1,3 +1,5 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
+import { ReportRowPagination } from './ReportRowPagination'
 import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { Alert, Button, Group, MultiSelect, Stack, Table, Text } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -26,18 +28,17 @@ function BuyerOrdersTable({ result }: { result: BuyerOrdersResult }) {
   const lines = useMemo(() => buyerOrdersLines(result), [result])
   const current = Math.min(page, Math.max(0, Math.ceil(lines.length / 50) - 1)), offset = current * 50
   return <Stack gap="xs">
-    <Group justify="space-between"><Button variant="light" size="xs" disabled={current === 0} onClick={() => setPage(current - 1)}>{t('Попередні рядки')}</Button>
-      <Text size="xs">{lines.length ? offset + 1 : 0}–{Math.min(offset + 50, lines.length)} / {lines.length}</Text>
-      <Button variant="light" size="xs" disabled={offset + 50 >= lines.length} onClick={() => setPage(current + 1)}>{t('Наступні рядки')}</Button></Group>
+
     <ReportTableScrollArea minWidth={1900}><Table className="app-static-table" striped highlightOnHover>
-      <Table.Thead><Table.Tr>{buyerOrdersHeaders.map(label => <Table.Th key={label}>{t(label)}</Table.Th>)}</Table.Tr></Table.Thead>
-      <Table.Tbody>{lines.slice(offset, offset + 50).map(line => <Table.Tr key={line.key} style={line.subtotal ? { fontWeight: 600 } : undefined}>
-        {line.cells.map((cell, i) => <Table.Td key={buyerOrdersHeaders[i]} className={i >= 2 ? 'app-money' : undefined}>{cell}</Table.Td>)}
+      <Table.Thead><Table.Tr>{buyerOrdersHeaders.map((label, index) => <Table.Th key={label} className={index >= 2 ? 'app-table-cell-number' : undefined}>{t(label)}</Table.Th>)}</Table.Tr></Table.Thead>
+      <Table.Tbody>{lines.slice(offset, offset + 50).map(line => <Table.Tr key={line.key} data-subtotal={line.subtotal || undefined}>
+        {line.cells.map((cell, i) => <Table.Td key={buyerOrdersHeaders[i]} className={i >= 2 ? 'app-table-cell-number' : undefined}>{cell}</Table.Td>)}
       </Table.Tr>)}</Table.Tbody>
       {result.BaseTotals && result.StoredTotals ? <Table.Tfoot><Table.Tr><Table.Th colSpan={2}>{t('Разом')}</Table.Th>
-        {buyerOrdersValues(result.BaseTotals, result.StoredTotals).map((value, i) => <Table.Td key={buyerOrdersHeaders[i + 2]} className="app-money">{value}</Table.Td>)}
+        {buyerOrdersValues(result.BaseTotals, result.StoredTotals).map((value, i) => <Table.Td key={buyerOrdersHeaders[i + 2]} className="app-table-cell-number">{value}</Table.Td>)}
       </Table.Tr></Table.Tfoot> : null}
     </Table></ReportTableScrollArea>
+    <ReportRowPagination total={lines.length} offset={offset} onChange={offset => setPage(offset / 50)} />
     {lines.length === 0 ? <Text>{t('У повністю перевіреному періоді рядків немає.')}</Text> : null}
   </Stack>
 }
@@ -45,7 +46,7 @@ function BuyerOrdersTable({ result }: { result: BuyerOrdersResult }) {
 function useBuyerOrdersRun(capability: BuyerOrdersCapability, callerKey: string | null, canGenerate: boolean,
   from: string, through: string, filters: BuyerOrdersGroupValue[], key: string, onAvailable: (result: BuyerOrdersResult) => void) {
   const run = useReportRunState<BuyerOrdersResult>(key), active = useRef<AbortController | null>(null), latest = useRef(key)
-  const [exporting, setExporting] = useState(false)
+  const [exporting, setExporting, tryStartExporting] = useBusyState()
   useEffect(() => { latest.current = key; return () => { latest.current = ''; active.current?.abort() } }, [key])
   const error = buyerOrdersPeriodError(from, through), report = run.lastRun
   const permitted = canGenerate && !!callerKey && capability.Executable && capability.World === 'fenix'
@@ -63,7 +64,9 @@ function useBuyerOrdersRun(capability: BuyerOrdersCapability, callerKey: string 
   }
   async function exportFile(format: typeof formats[number]) {
     if (!permitted || !report?.Available || exporting) return
-    setExporting(true)
+    if (!tryStartExporting()) {
+      return
+    }
     try {
       const blob = format === 'csv' ? new Blob([buyerOrdersCsv(report)], { type: 'text/csv;charset=utf-8' })
         : format === 'xlsx' ? await buyerOrdersXlsx(report) : await buyerOrdersPdf(report)

@@ -1,3 +1,5 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import './advance-report-entry.css'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -107,6 +109,7 @@ export function AdvanceReportConsumableOrderModal({
   opened: boolean
   outcomeOrder: AdvanceReportOrder
 }) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const [order, setOrder] = useValueState<AdvanceReportConsumablesOrder>(() => createEmptyOrder())
   const [form, setForm] = useValueState<FormState>(() => createEmptyForm())
@@ -119,7 +122,7 @@ export function AdvanceReportConsumableOrderModal({
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
   const [isLoadingStorages, setLoadingStorages] = useValueState(false)
-  const [isCalculating, setCalculating] = useValueState(false)
+  const [isCalculating, setCalculating, tryStartCalculating] = useBusyState()
   const [confirmCloseOpen, setConfirmCloseOpen] = useValueState(false)
   const calcSeq = useRef(0)
   const initialFormRef = useRef<FormState | null>(null)
@@ -362,7 +365,9 @@ export function AdvanceReportConsumableOrderModal({
     async (nextOrder: AdvanceReportConsumablesOrder) => {
       const normalizedOrder = normalizeOrderTotals(nextOrder)
       const seq = (calcSeq.current += 1)
-      setCalculating(true)
+      if (!tryStartCalculating()) {
+        return
+      }
 
       try {
         const calculated = await calculateAdvanceReportConsumableOrder(normalizedOrder)
@@ -380,7 +385,7 @@ export function AdvanceReportConsumableOrderModal({
         }
       }
     },
-    [setCalculating, setOrder],
+    [setCalculating, setOrder, tryStartCalculating],
   )
 
   function updateForm(patch: Partial<FormState>) {
@@ -472,13 +477,15 @@ export function AdvanceReportConsumableOrderModal({
   }
 
   async function removeItem(index: number) {
-    if (isBusy) {
-      return
-    }
+    return runActionOnce('removeItem', async () => {
+      if (isBusy) {
+        return
+      }
 
-    await recalculateOrder({
-      ...order,
-      ConsumablesOrderItems: activeItems.filter((_, currentIndex) => currentIndex !== index),
+      await recalculateOrder({
+        ...order,
+        ConsumablesOrderItems: activeItems.filter((_, currentIndex) => currentIndex !== index),
+      })
     })
   }
 

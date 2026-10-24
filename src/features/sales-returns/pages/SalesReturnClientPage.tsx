@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -118,7 +119,7 @@ export function SalesReturnClientPage() {
   const [isSearchingClients, setSearchingClients] = useState(false)
   const [isSearchingProducts, setSearchingProducts] = useState(false)
   const [isLoadingBatches, setLoadingBatches] = useState(false)
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
 
   const selectedOrganization = useMemo(
     () => organizations.find((organization) => getEntityKey(organization) === organizationId) || null,
@@ -485,7 +486,9 @@ export function SalesReturnClientPage() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
     setWarning(null)
 

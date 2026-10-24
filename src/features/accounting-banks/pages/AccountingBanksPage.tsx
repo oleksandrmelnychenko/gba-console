@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
@@ -80,7 +81,7 @@ function AccountingBanksPageContent() {
   const [formError, setFormError] = useState<string | null>(null)
   const [isEditorOpen, setEditorOpen] = useState(false)
   const [isLoading, setLoading] = useState(true)
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const visibleBanks = useMemo(() => filterBanks(banks, searchValue), [banks, searchValue])
@@ -185,7 +186,9 @@ function AccountingBanksPageContent() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
     setFormError(null)
 
@@ -210,7 +213,9 @@ function AccountingBanksPageContent() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

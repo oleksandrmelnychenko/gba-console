@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -148,7 +149,7 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
     INCOME_DOCUMENT_STRUCTURE_CALCULATION_IDLE,
   )
   const [cancelRow, setCancelRow] = useValueState<IncomeCashflowRow | null>(null)
-  const [isCanceling, setCanceling] = useValueState(false)
+  const [isCanceling, setCanceling, tryStartCanceling] = useBusyState()
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
@@ -467,7 +468,9 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
       return
     }
 
-    setCanceling(true)
+    if (!tryStartCanceling()) {
+      return
+    }
     setError(null)
 
     try {
@@ -479,7 +482,7 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
     } finally {
       setCanceling(false)
     }
-  }, [cancelRow, hasPermission, loadIncomeOrders, page, setCancelRow, setCanceling, setError, t])
+  }, [cancelRow, hasPermission, loadIncomeOrders, page, setCancelRow, setCanceling, setError, t, tryStartCanceling])
 
   useEffect(() => {
     if (!canOpenDetails) {
@@ -1487,7 +1490,7 @@ export function ReassignIncomeClientModal({
   const [clientAgreements, setClientAgreements] = useValueState<ClientAgreement[]>([])
   const [selectedAgreementValue, setSelectedAgreementValue] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [debouncedSearch] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
   const [agreementRequestGuard] = useState(
     () => createLatestRequestGuard<string>(),
@@ -1662,7 +1665,9 @@ export function ReassignIncomeClientModal({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -1677,7 +1682,7 @@ export function ReassignIncomeClientModal({
     } finally {
       setSaving(false)
     }
-  }, [handleSaved, hasPermission, row, selectedAgreementValue, selectedClientValue, setError, setSaving, t])
+  }, [handleSaved, hasPermission, row, selectedAgreementValue, selectedClientValue, setError, setSaving, t, tryStartSaving])
 
   return (
     <AppModal

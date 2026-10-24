@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { Alert, Button, Grid, NumberInput, Select, Stack, Text, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
@@ -84,7 +85,7 @@ export function SadPaymentFromSadModal({
   const [form, setForm] = useState<FormState>(() => createInitialForm())
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(false)
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
 
   const client = sad?.Client || null
   const isOrganizationClient = Boolean(sad?.OrganizationClient)
@@ -286,7 +287,9 @@ export function SadPaymentFromSadModal({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

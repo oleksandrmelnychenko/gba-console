@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { getClientDisplayName } from '../clientDisplayName'
 import { ClientActionsModal, ClientStructureModal, ReserveDaysModal } from '../components/ClientActionModals'
 export { ClientActionsModal } from '../components/ClientActionModals'
@@ -154,6 +155,7 @@ const CLIENT_TABLE_CELL_STYLE = {
 } as const
 
 function useClientsPageModel() {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const location = useLocation()
   const navigate = useNavigate()
@@ -679,27 +681,29 @@ function useClientsPageModel() {
   }
 
   async function handleExport() {
-    if (!canExportClients) {
-      return
-    }
+    return runActionOnce('handleExport', async () => {
+      if (!canExportClients) {
+        return
+      }
 
-    setClientAction('export')
-    setError(null)
+      setClientAction('export')
+      setError(null)
 
-    try {
-      const document = await exportClientsDocumentForRegistry({
-        ...searchParams,
-        limit: totalCount && totalCount > 0 ? totalCount : pageSize,
-        offset: 0,
-      })
+      try {
+        const document = await exportClientsDocumentForRegistry({
+          ...searchParams,
+          limit: totalCount && totalCount > 0 ? totalCount : pageSize,
+          offset: 0,
+        })
 
-      setDownloadDocument(document)
-      setDownloadModalOpened(true)
-    } catch (actionError) {
-      setError(actionError instanceof Error ? actionError.message : t('Не вдалося підготувати документ'))
-    } finally {
-      setClientAction(null)
-    }
+        setDownloadDocument(document)
+        setDownloadModalOpened(true)
+      } catch (actionError) {
+        setError(actionError instanceof Error ? actionError.message : t('Не вдалося підготувати документ'))
+      } finally {
+        setClientAction(null)
+      }
+    })
   }
 
   return {

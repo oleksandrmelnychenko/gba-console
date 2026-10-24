@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
   ActionIcon,
   Alert,
@@ -81,7 +82,7 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
   const [form, setForm] = useValueState<CreateFormState>(() => createInitialForm())
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [movementOptionSubmitGuard] = useState(
     createAutocompleteOptionSubmitGuard,
   )
@@ -323,7 +324,9 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -391,7 +394,9 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
       selectedRegister: selectedRegister as CreatePaymentRegister,
     })
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

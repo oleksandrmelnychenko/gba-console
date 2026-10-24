@@ -55,7 +55,7 @@ export function CashAggregateBalanceReportPanel({ capability, initialPeriod, can
       <Text size="sm">{t('Поточна дата')}: {report.CurrentPeriod.Day} · {t('Попередня дата')}: {report.PreviousPeriod.Day}</Text>
       <ReportTableScrollArea minWidth={800}><Table className="app-static-table">
         <Table.Thead><Table.Tr><Table.Th>{t('БанковскийСчетКасса')}</Table.Th>{report.Columns.map(column =>
-          <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
+          <Table.Th key={column.Key} className="app-table-cell-number">{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
         <Table.Tbody>{report.Rows.map(row => <CashBalanceRow key={`${row.Account.Id}:${row.Account.NetUid}`}
           label={`${row.Account.Name || t('Рахунок')} [${row.Account.Id}]`} row={row} report={report} />)}</Table.Tbody>
         <Table.Tfoot><CashBalanceRow label={t('Разом')} row={report.Totals} report={report} /></Table.Tfoot>
@@ -81,7 +81,7 @@ export function CashAggregateBalanceReportPanel({ capability, initialPeriod, can
 }
 function CashBalanceRow({ label, row, report }: { label: string; row: CashAggregateBalanceRow | CashAggregateBalanceTotals; report: CashAggregateBalanceReport }) {
   const { t } = useI18n()
-  return <Table.Tr><Table.Th scope="row">{label}</Table.Th>{row.Cells.map((cell, index) => <Table.Td key={cell.Key}
+  return <Table.Tr><Table.Th scope="row">{label}</Table.Th>{row.Cells.map((cell, index) => <Table.Td key={cell.Key} className="app-table-cell-number"
     title={cell.Available ? undefined : t('Недоступні дані')}>{cashAggregateBalanceCellText(cell.Value, report.Columns[index].DecimalPlaces)}</Table.Td>)}</Table.Tr>
 }
 const unavailableMessages: Record<string, string> = {

@@ -1,3 +1,5 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
+import { ReportRowPagination } from './ReportRowPagination'
 import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { Alert, Button, Checkbox, Group, MultiSelect, Stack, Table, Text } from '@mantine/core'
 import { useEffect, useRef, useState } from 'react'
@@ -27,19 +29,18 @@ function CashSelections({ choices, filters, busy, select }: { choices: CashChoic
 function CashTable({ result }: { result: CashResult }) {
   const { t } = useI18n(), [page, setPage] = useState(0), headers = cashHeaders(result.IncludeTurnover)
   const current = Math.min(page, Math.max(0, Math.ceil(result.Rows.length / 50) - 1)), first = current * 50
-  return <Stack gap="xs"><Group><Button size="xs" variant="light" disabled={current === 0} onClick={() => setPage(current - 1)}>{t('Попередні рядки')}</Button>
-    <Text size="xs">{result.Rows.length ? first + 1 : 0}–{Math.min(first + 50, result.Rows.length)} / {result.Rows.length}</Text>
-    <Button size="xs" variant="light" disabled={first + 50 >= result.Rows.length} onClick={() => setPage(current + 1)}>{t('Наступні рядки')}</Button></Group>
-    <ReportTableScrollArea minWidth={1400}><Table className="app-static-table"><Table.Thead><Table.Tr>{headers.map(header => <Table.Th key={header}>{t(header)}</Table.Th>)}</Table.Tr></Table.Thead>
+  return <Stack gap="xs">
+    <ReportTableScrollArea minWidth={1400}><Table className="app-static-table"><Table.Thead><Table.Tr>{headers.map((header, index) => <Table.Th key={header} className={index >= 1 ? 'app-table-cell-number' : undefined}>{t(header)}</Table.Th>)}</Table.Tr></Table.Thead>
       <Table.Tbody>{result.Rows.slice(first, first + 50).map(row => <Table.Tr key={cashAccountKey(row.Account)}><Table.Td>{cashRowCaption(row) ?? t('Назва недоступна')}</Table.Td>
-        {cashValues(row.Amounts, result.IncludeTurnover).map((value, column) => <Table.Td key={headers[column + 1]} className="app-money">{value}</Table.Td>)}</Table.Tr>)}</Table.Tbody>
-      {result.Totals ? <Table.Tfoot><Table.Tr><Table.Th>{t('Разом')}</Table.Th>{cashValues(result.Totals, result.IncludeTurnover).map((value, column) => <Table.Td key={headers[column + 1]} className="app-money">{value}</Table.Td>)}</Table.Tr></Table.Tfoot> : null}
-    </Table></ReportTableScrollArea>{!result.Rows.length ? <Text>{t('У повністю перевіреному періоді рядків немає.')}</Text> : null}</Stack>
+        {cashValues(row.Amounts, result.IncludeTurnover).map((value, column) => <Table.Td key={headers[column + 1]} className="app-table-cell-number">{value}</Table.Td>)}</Table.Tr>)}</Table.Tbody>
+      {result.Totals ? <Table.Tfoot><Table.Tr><Table.Th>{t('Разом')}</Table.Th>{cashValues(result.Totals, result.IncludeTurnover).map((value, column) => <Table.Td key={headers[column + 1]} className="app-table-cell-number">{value}</Table.Td>)}</Table.Tr></Table.Tfoot> : null}
+    </Table></ReportTableScrollArea>
+    <ReportRowPagination total={result.Rows.length} offset={first} onChange={offset => setPage(offset / 50)} />{!result.Rows.length ? <Text>{t('У повністю перевіреному періоді рядків немає.')}</Text> : null}</Stack>
 }
 function useCashRun({ capability, callerKey, canGenerate, from, through, filters, turnover, key, receive }: {
   capability: CashCapability; callerKey: string | null; canGenerate: boolean; from: string; through: string; filters: CashFilter[]; turnover: boolean; key: string; receive: (result: CashResult) => void
 }) {
-  const run = useReportRunState<CashResult>(key), active = useRef<AbortController | null>(null), latest = useRef(key), [exporting, setExporting] = useState(false)
+  const run = useReportRunState<CashResult>(key), active = useRef<AbortController | null>(null), latest = useRef(key), [exporting, setExporting, tryStartExporting] = useBusyState()
   const activeExport = useRef<AbortController | null>(null)
   useEffect(() => { latest.current = key; return () => { latest.current = ''; active.current?.abort(); activeExport.current?.abort() } }, [key])
   const allowed = canGenerate && !!callerKey && capability.Executable && capability.World === 'fenix', error = cashPeriodError(from, through), result = run.lastRun
@@ -57,7 +58,9 @@ function useCashRun({ capability, callerKey, canGenerate, from, through, filters
   async function exportFile(format: typeof formats[number]) {
     if (!allowed || !result?.Available || exporting || cashExportError(result)) return
     const controller = new AbortController(); activeExport.current?.abort(); activeExport.current = controller
-    setExporting(true)
+    if (!tryStartExporting()) {
+      return
+    }
     try {
       const file = format === 'csv' ? new Blob([cashCsv(result)], { type: 'text/csv;charset=utf-8' }) : format === 'xlsx' ? await cashXlsx(result) : await cashPdf(result)
       if (!controller.signal.aborted && latest.current === key) download(file, `cash-statement-${result.From}-${result.Through}.${format}`)

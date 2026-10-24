@@ -1,3 +1,4 @@
+import { useBusyState } from '../../shared/hooks/useBusyState'
 import { Alert, Button, PasswordInput, Stack, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { ArrowRight, CircleAlert } from 'lucide-react'
@@ -12,7 +13,7 @@ export function LoginPage() {
   const { isAuthenticated, isLoading, login } = useAuth()
   const { t } = useI18n()
   const [error, setError] = useState<string | null>(null)
-  const [isSubmitting, setSubmitting] = useState(false)
+  const [isSubmitting, setSubmitting, tryStartSubmitting] = useBusyState()
   const [passwordVisible, setPasswordVisible] = useState(false)
   const form = useForm({
     initialValues: { username: '', password: '' },
@@ -46,7 +47,9 @@ export function LoginPage() {
             onSubmit={form.onSubmit(async values => {
               if (isSubmitting || isLoading) return
               setError(null)
-              setSubmitting(true)
+              if (!tryStartSubmitting()) {
+                return
+              }
               try {
                 await login(values.username.trim(), values.password)
               } catch (loginError) {

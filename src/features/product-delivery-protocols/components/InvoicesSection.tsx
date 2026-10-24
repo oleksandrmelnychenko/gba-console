@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import {
   ActionIcon,
   Alert,
@@ -85,6 +86,7 @@ function InvoiceViewCard({
   isSaving: boolean
   onSaveDocuments: (invoice: SupplyInvoice, documents: File[]) => Promise<void>
 }) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const currencyCode = getInvoiceCurrencyCode(invoice)
   const invoiceNetPrice = getInvoiceTotalNetPrice(invoice)
@@ -115,16 +117,18 @@ function InvoiceViewCard({
   }
 
   async function handleSaveDocuments() {
-    if (!canEditDeliveryDocuments || isSaving) {
-      return
-    }
+    return runActionOnce('handleSaveDocuments', async () => {
+      if (!canEditDeliveryDocuments || isSaving) {
+        return
+      }
 
-    try {
-      await onSaveDocuments({ ...invoice, SupplyInvoiceDeliveryDocuments: deliveryDocuments }, files)
-      setFiles([])
-    } catch {
-      // Parent already shows the concrete API error; keep the draft open.
-    }
+      try {
+        await onSaveDocuments({ ...invoice, SupplyInvoiceDeliveryDocuments: deliveryDocuments }, files)
+        setFiles([])
+      } catch {
+        // Parent already shows the concrete API error; keep the draft open.
+      }
+    })
   }
 
   function handleChangeFiles(nextFiles: File[] | null) {
@@ -569,6 +573,7 @@ export function InvoicesSection({
   protocol: ProtocolDetail
   status: InvoicesSectionStatus
 }) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const [drawerOpened, setDrawerOpened] = useValueState(false)
@@ -590,16 +595,18 @@ export function InvoicesSection({
   ) : null
 
   async function handleAssign(selectedInvoices: SupplyInvoice[]) {
-    if (!canManageInvoices) {
-      return
-    }
+    return runActionOnce('handleAssign', async () => {
+      if (!canManageInvoices) {
+        return
+      }
 
-    try {
-      await onAssignInvoices(selectedInvoices)
-      setDrawerOpened(false)
-    } catch {
-      // Parent reports the API error; keep selection open for retry.
-    }
+      try {
+        await onAssignInvoices(selectedInvoices)
+        setDrawerOpened(false)
+      } catch {
+        // Parent reports the API error; keep selection open for retry.
+      }
+    })
   }
 
   return (

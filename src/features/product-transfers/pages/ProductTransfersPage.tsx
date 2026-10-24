@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { AppModalFooter } from '../../../shared/ui/AppModal'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
@@ -135,7 +136,7 @@ function useProductTransfersPageModel({
   const [createForm, setCreateForm] = useValueState<CreateFormState>(() => createInitialForm(today))
   const [createError, setCreateError] = useValueState<string | null>(null)
   const [exceptionMessages, setExceptionMessages] = useValueState<string[]>([])
-  const [isCreating, setCreating] = useValueState(false)
+  const [isCreating, setCreating, tryStartCreating] = useBusyState()
   const [error, setError] = useValueState<string | null>(null)
   const [storageError, setStorageError] = useValueState<string | null>(null)
   const [downloadOpened, setDownloadOpened] = useValueState(false)
@@ -362,7 +363,9 @@ function useProductTransfersPageModel({
       return
     }
 
-    setCreating(true)
+    if (!tryStartCreating()) {
+      return
+    }
 
     try {
       const messages = await addProductTransferFromFile({

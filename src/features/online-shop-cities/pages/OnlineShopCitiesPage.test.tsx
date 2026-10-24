@@ -1,9 +1,9 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
-import { getOnlineShopCities } from '../api/onlineShopCitiesApi'
+import { getOnlineShopCities, saveOnlineShopCity } from '../api/onlineShopCitiesApi'
 import type { OnlineShopCity } from '../types'
 import { OnlineShopCitiesPage } from './OnlineShopCitiesPage'
 
@@ -70,6 +70,7 @@ beforeEach(() => {
   canMock.mockReset()
   vi.mocked(getOnlineShopCities).mockReset()
   vi.mocked(getOnlineShopCities).mockResolvedValue(CITIES)
+  vi.mocked(saveOnlineShopCity).mockReset()
 })
 
 describe('OnlineShopCitiesPage rail', () => {
@@ -117,6 +118,26 @@ describe('OnlineShopCitiesPage rail', () => {
 })
 
 describe('OnlineShopCitiesPage business permissions', () => {
+  it('submits a new city once despite rapid clicks and repeated Enter submissions', async () => {
+    let finish!: (cities: OnlineShopCity[]) => void
+    vi.mocked(saveOnlineShopCity).mockImplementation(() => new Promise(resolve => { finish = resolve }))
+    renderPage()
+    fireEvent.click(await screen.findByRole('button', { name: 'Нове місто' }))
+    fireEvent.change(screen.getByRole('textbox', { name: /Назва \[UA\]/ }), { target: { value: 'Тестове місто' } })
+    fireEvent.change(screen.getByRole('textbox', { name: /Назва \[RU\]/ }), { target: { value: 'Тестовий переклад' } })
+    const button = screen.getByRole('button', { name: 'Зберегти' }) as HTMLButtonElement
+    const form = button.closest('form')!
+    act(() => {
+      fireEvent.click(button)
+      fireEvent.click(button)
+      for (let index = 0; index < 10; index += 1) fireEvent.submit(form)
+    })
+    expect(saveOnlineShopCity).toHaveBeenCalledTimes(1)
+    expect(button.disabled).toBe(true)
+    await act(async () => { finish(CITIES) })
+    await waitFor(() => { expect(screen.queryByRole('button', { name: 'Зберегти' })).toBeNull() })
+  })
+
   it('does not expose create, edit or archive through technical UI without their rights', async () => {
     renderPage([])
 

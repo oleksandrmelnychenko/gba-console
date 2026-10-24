@@ -1,3 +1,5 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -225,6 +227,7 @@ type ResalesRouteState = {
 }
 
 export function ResalesPage() {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
@@ -342,50 +345,54 @@ export function ResalesPage() {
   }, [filterError, fromDate, offset, page, pageSize, reloadKey, setError, setListState, status, t, toDate])
 
   async function handleExport(resale: ReSale, type: ResaleDownloadDocumentType) {
-    if (!canExportDocuments || !resale.NetUid) {
-      return
-    }
+    return runActionOnce('handleExport', async () => {
+      if (!canExportDocuments || !resale.NetUid) {
+        return
+      }
 
-    const key = `${resale.NetUid}:${type}`
-    setExportingKey(key)
-    setError(null)
+      const key = `${resale.NetUid}:${type}`
+      setExportingKey(key)
+      setError(null)
 
-    try {
-      const document = await exportResaleDocument({
-        netId: resale.NetUid,
-        type,
-      })
+      try {
+        const document = await exportResaleDocument({
+          netId: resale.NetUid,
+          type,
+        })
 
-      setDownloadDocument(document)
-      setDownloadModalOpened(true)
-    } catch (exportError) {
-      setError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ'))
-    } finally {
-      setExportingKey(null)
-    }
+        setDownloadDocument(document)
+        setDownloadModalOpened(true)
+      } catch (exportError) {
+        setError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ'))
+      } finally {
+        setExportingKey(null)
+      }
+    })
   }
 
   async function confirmDelete() {
-    if (!canDelete || !deleteCandidate?.NetUid) {
-      return
-    }
+    return runActionOnce('confirmDelete', async () => {
+      if (!canDelete || !deleteCandidate?.NetUid) {
+        return
+      }
 
-    setRemovingNetId(deleteCandidate.NetUid)
-    setError(null)
+      setRemovingNetId(deleteCandidate.NetUid)
+      setError(null)
 
-    try {
-      await removeResale(deleteCandidate.NetUid)
-      setDeleteCandidate(null)
-      reload()
-      notifications.show({
-        color: 'green',
-        message: t('Перепродаж видалено'),
-      })
-    } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити перепродаж'))
-    } finally {
-      setRemovingNetId(null)
-    }
+      try {
+        await removeResale(deleteCandidate.NetUid)
+        setDeleteCandidate(null)
+        reload()
+        notifications.show({
+          color: 'green',
+          message: t('Перепродаж видалено'),
+        })
+      } catch (deleteError) {
+        setError(deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити перепродаж'))
+      } finally {
+        setRemovingNetId(null)
+      }
+    })
   }
 
   function resetFilters() {
@@ -606,8 +613,8 @@ function NewResalePageContent({
   const [generateStorageNetId, setGenerateStorageNetId] = useValueState<string | null>(null)
   const [isLoadingOptions, setLoadingOptions] = useValueState(true)
   const [isLoadingAvailabilities, setLoadingAvailabilities] = useValueState(false)
-  const [isProcessing, setProcessing] = useValueState(false)
-  const [isExporting, setExporting] = useValueState(false)
+  const [isProcessing, setProcessing, tryStartProcessing] = useBusyState()
+  const [isExporting, setExporting, tryStartExporting] = useBusyState()
   const [error, setError] = useValueState<string | null>(null)
   const [warning, setWarning] = useValueState<ResaleBackendWarning | null>(null)
   const [downloadDocument, setDownloadDocument] = useValueState<ResaleExportDocument | null>(null)
@@ -764,7 +771,9 @@ function NewResalePageContent({
       return
     }
 
-    setExporting(true)
+    if (!tryStartExporting()) {
+      return
+    }
     setError(null)
 
     setDownloadDocument(null)
@@ -822,7 +831,9 @@ function NewResalePageContent({
       return
     }
 
-    setProcessing(true)
+    if (!tryStartProcessing()) {
+      return
+    }
     setError(null)
     setWarning(null)
     setProcessConfirmOpened(false)
@@ -851,7 +862,9 @@ function NewResalePageContent({
       return
     }
 
-    setProcessing(true)
+    if (!tryStartProcessing()) {
+      return
+    }
     setError(null)
     setWarning(null)
 
@@ -933,7 +946,9 @@ function NewResalePageContent({
       return
     }
 
-    setProcessing(true)
+    if (!tryStartProcessing()) {
+      return
+    }
     setError(null)
     setWarning(null)
 
@@ -1268,8 +1283,8 @@ function ResaleDetailContent() {
   })
   const [rows, setRows] = useValueState<UpdatedResaleItemModel[]>([])
   const [isLoading, setLoading] = useValueState(true)
-  const [isSaving, setSaving] = useValueState(false)
-  const [isExporting, setExporting] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
+  const [isExporting, setExporting, tryStartExporting] = useBusyState()
   const [error, setError] = useValueState<string | null>(null)
   const [warning, setWarning] = useValueState<ResaleBackendWarning | null>(null)
   const [downloadDocument, setDownloadDocument] = useValueState<ResaleExportDocument | null>(null)
@@ -1488,7 +1503,9 @@ function ResaleDetailContent() {
     detailRequestRef.current = requestId
     const isCurrentRequest = () => detailRequestRef.current === requestId
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
     setWarning(null)
 
@@ -1522,7 +1539,9 @@ function ResaleDetailContent() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
     setWarning(null)
 
@@ -1565,7 +1584,9 @@ function ResaleDetailContent() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
     setWarning(null)
 
@@ -1603,7 +1624,9 @@ function ResaleDetailContent() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
     setWarning(null)
 
@@ -1633,7 +1656,9 @@ function ResaleDetailContent() {
       return
     }
 
-    setExporting(true)
+    if (!tryStartExporting()) {
+      return
+    }
     setError(null)
 
     try {
@@ -2916,7 +2941,7 @@ function ResaleProcessDrawer({
 }) {
   const { t } = useI18n()
   const [processForm, setProcessForm] = useValueState<ProcessDrawerState>(() => createProcessDrawerState(processData))
-  const [isRecalculating, setRecalculating] = useValueState(false)
+  const [isRecalculating, setRecalculating, tryStartRecalculating] = useBusyState()
   const [productCardNetId, setProductCardNetId] = useValueState<string | null>(null)
   const recalculateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const recalculateRequestRef = useRef(0)
@@ -3008,7 +3033,9 @@ function ResaleProcessDrawer({
       return
     }
 
-    setRecalculating(true)
+    if (!tryStartRecalculating()) {
+      return
+    }
     setProcessForm((currentForm) => ({ ...currentForm, warning: null }))
 
     try {
@@ -3311,8 +3338,8 @@ function ConsignmentNoteSettingsDrawer({
   const [settings, setSettings] = useValueState<ResaleConsignmentNoteSetting[]>([])
   const [noteState, setNoteState] = useValueState<ConsignmentNoteDrawerState>(() => createConsignmentNoteDrawerState(defaultSetting))
   const [isLoading, setLoading] = useValueState(false)
-  const [isSaving, setSaving] = useValueState(false)
-  const [isPrinting, setPrinting] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
+  const [isPrinting, setPrinting, tryStartPrinting] = useBusyState()
   const [downloadDocument, setDownloadDocument] = useValueState<ResaleExportDocument | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const settingOptions = useMemo(() => buildConsignmentSettingOptions(settings), [settings])
@@ -3430,7 +3457,9 @@ function ConsignmentNoteSettingsDrawer({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setNoteState((currentState) => ({ ...currentState, error: null }))
 
     try {
@@ -3472,7 +3501,9 @@ function ConsignmentNoteSettingsDrawer({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setNoteState((currentState) => ({ ...currentState, error: null }))
 
     try {
@@ -3507,7 +3538,9 @@ function ConsignmentNoteSettingsDrawer({
       return
     }
 
-    setPrinting(true)
+    if (!tryStartPrinting()) {
+      return
+    }
     setNoteState((currentState) => ({ ...currentState, error: null }))
 
     try {

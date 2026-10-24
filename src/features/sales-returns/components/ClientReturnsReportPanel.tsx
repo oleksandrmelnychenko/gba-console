@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Anchor, Button, Card, Checkbox, Group, Select, Stack, Text } from '@mantine/core'
 import { FileChartColumn, FileText } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
@@ -29,7 +30,7 @@ export function ClientReturnsReportPanel({ opened, onClose }: ClientReturnsRepor
   const [clientSearch, setClientSearch] = useState('')
   const [clients, setClients] = useState<SalesReturnClient[]>([])
   const [selectedClient, setSelectedClient] = useState<SalesReturnClient | null>(null)
-  const [isGenerating, setIsGenerating] = useState(false)
+  const [isGenerating, setIsGenerating, tryStartIsGenerating] = useBusyState()
   const [error, setError] = useState<string | null>(null)
   const [reportDocument, setReportDocument] = useState<SalesReturnDocument | null>(null)
 
@@ -92,7 +93,9 @@ export function ClientReturnsReportPanel({ opened, onClose }: ClientReturnsRepor
   }
 
   async function handleGenerate() {
-    setIsGenerating(true)
+    if (!tryStartIsGenerating()) {
+      return
+    }
     setError(null)
 
     try {

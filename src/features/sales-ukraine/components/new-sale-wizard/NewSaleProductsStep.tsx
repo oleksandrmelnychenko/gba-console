@@ -1,87 +1,71 @@
-import { TableChip } from '../../../../shared/ui/TableChip'
 import { Alert, Box, Button, Group, Select, Stack, Text } from '@mantine/core'
 import { useUncontrolled } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { FileSignature, Hash, Search, Sparkles, Trash2 } from 'lucide-react'
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react'
-import { useAuth } from '../../../auth/useAuth'
-import { useI18n } from '../../../../shared/i18n/useI18n'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+} from 'react'
 import { PermissionKeys } from '../../../../shared/auth/permissionKeys'
-import { AppModal } from '../../../../shared/ui/AppModal'
-import { AppDrawer } from '../../../../shared/ui/AppDrawer'
-import { toProxiedAssetUrl } from '../../../../shared/url/proxiedAssetUrl'
+import { useI18n } from '../../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../../shared/realtime/events'
-import { getMostPurchasedProductsByClientId } from '../../../clients/api/clientRecommendationsApi'
+import { AppDrawer } from '../../../../shared/ui/AppDrawer'
+import { AppModal } from '../../../../shared/ui/AppModal'
+import { TableChip } from '../../../../shared/ui/TableChip'
+import { toProxiedAssetUrl } from '../../../../shared/url/proxiedAssetUrl'
+import { useAuth } from '../../../auth/useAuth'
 import type { Client } from '../../../clients/types'
 import { updateProduct } from '../../../products/api/productsApi'
+import { ProductCardModal } from '../../../products/components/ProductCardModal'
 import type { Product } from '../../../products/types'
 import { getProductMainImage, getProductShopImageUrl, getRelatedProductRowColor } from '../../../products/utils'
-import { ProductCardModal } from '../../../products/components/ProductCardModal'
 import { ProductInterestModal } from '../../../sales-preorders'
-import {
-  getSalesPendingMutationUserKey,
-  loadSalesPendingMutation,
-  markSalesPendingMutationCorrupt,
-  markSalesPendingMutationSubmitted,
-  markSalesPendingMutationUnknown,
-  resolveSalesPendingMutation,
-  subscribeSalesPendingMutations,
-  synchronizeSalesPendingMutationUser,
-  withSalesPendingMutationLock,
-  type SalesPendingMutationLease,
-  type SalesPendingMutationScope,
-} from '../../pendingSalesMutationRegistry'
 import { getSaleLocalCurrencyCode, isNonVatEurSale } from '../../saleMoney'
 import { getSaleLifecycleTypeKey } from '../../saleStatus'
-import type { SalesUkraineOrderItem, SalesUkraineSale, SalesUkraineUser } from '../../types'
-import {
-  attemptPersistentSalesCartMutation,
-  createAddOrUpdateSalesCartMutation,
-} from '../../usePersistentSalesCartMutation'
+import type { SalesUkraineOrderItem, SalesUkraineSale } from '../../types'
 import { SaleEditDrawer } from '../SaleEditDrawer'
 import { ChangeQtyModal } from './ChangeQtyModal'
-import { EditShoppingCartOverlay, type WizardCartSelection } from './EditShoppingCartOverlay'
+import { EditShoppingCartOverlay } from './EditShoppingCartOverlay'
 import { FutureReservationModal } from './FutureReservationModal'
-import {
-  getAllProductAvailabilities,
-  getNearestSupplyOrder,
-  getProductAnalogues,
-  getProductAvailabilityBuckets,
-  getProductCalculatedPricingsByAgreement,
-  getProductCurrentPriceByAgreement,
-  getProductReservationsByAgreement,
-  searchSaleProductsWithAvailability,
-  type WizardAvailabilityRow,
-  type WizardCalculatedProductPricing,
-  type WizardNearestSupplyOrder,
-  type WizardProductReservation,
-  type WizardTotalProductAvailabilities,
-} from './newSaleWizardApi'
-import {
-  assertWizardSplitRecoveryOperationFence,
-  clearWizardSplitOrderItems,
-  commitWizardSplitExtraction,
-  getWizardMergedSaleNetUid,
-  getWizardSplitAgreementNetId,
-  getWizardSplitOrderItems,
-  getWizardSplitRecovery,
-  hasWizardSplitRecoveryOperation,
-  markWizardSplitExtractionSubmitted,
-  markWizardSplitExtractionUnknown,
-  setWizardSplitOrderItems,
-  stageWizardSplitExtraction,
-} from './newSaleWizardState'
 import { ProductFullDetailPanel, type WizardDetailChip, type WizardDetailRow } from './ProductFullDetailPanel'
 import { ProductImageViewModal } from './ProductImageViewModal'
 import { ProductSummaryCard } from './ProductSummaryCard'
 import { ShiftOrderItemModal } from './ShiftOrderItemModal'
+import { WizardCartSheet } from './WizardCartSheet'
+import { WizardClientHeroHeader } from './WizardClientHeroHeader'
 import { WizardConfirmModal } from './WizardConfirmModal'
 import { WizardCrossSellModal } from './WizardCrossSellModal'
 import { WizardProductCarousel } from './WizardProductCarousel'
+import { WizardProductSummarySkeleton, WizardRelatedProductsSkeleton } from './WizardProductSkeletons'
 import { WizardRelatedProductRows } from './WizardRelatedProductRows'
 import { WizardRelatedProductsFrame } from './WizardRelatedProductsFrame'
-import { WizardProductSummarySkeleton, WizardRelatedProductsSkeleton } from './WizardProductSkeletons'
-import { WizardClientHeroHeader } from './WizardClientHeroHeader'
+import type {
+  WizardAvailabilityRow,
+  WizardCalculatedProductPricing,
+  WizardProductReservation,
+  WizardTotalProductAvailabilities,
+} from './newSaleWizardApi'
+import { useWizardCartOperations } from './useWizardCartOperations'
+import { useWizardProductAnalogues } from './useWizardProductAnalogues'
+import { useWizardProductData } from './useWizardProductData'
+import { PRODUCT_SEARCH_MIN_QUERY_LENGTH, useWizardProductSearch } from './useWizardProductSearch'
+import {
+  WIZARD_PRODUCT_KEYBOARD_STATES,
+  getPreviousProductKeyboardState,
+  isEditableTarget,
+  setWizardKeyboardState,
+  toWizardHotkey,
+  useWizardKeyHandler,
+  useWizardKeyboard,
+  type WizardKeyEvent,
+  type WizardProductKeyboardState,
+} from './wizardKeyboard'
+import type { ExactWizardProductSearchMatch } from './wizardProductSearchSelection'
 import {
   getWizardAvailabilityChipCount,
   getWizardAvailabilityRows,
@@ -89,72 +73,21 @@ import {
   type WizardAvailabilityKey,
 } from './wizardSaleAvailability'
 import {
-  getPreviousProductKeyboardState,
-  getWizardKeyboardState,
-  isEditableTarget,
-  setWizardKeyboardState,
-  toWizardHotkey,
-  useWizardKeyboard,
-  useWizardKeyHandler,
-  WIZARD_PRODUCT_KEYBOARD_STATES,
-  type WizardKeyEvent,
-  type WizardProductKeyboardState,
-} from './wizardKeyboard'
-import {
   getComponentCarouselEntries,
   getWizardProductNumber,
   getWizardSellableQty,
   getWizardStorageQty,
-  normalizeWizardProductAvailability,
   patchWizardProductAvailability,
   type WizardCarouselEntry,
   type WizardProductAvailability,
   type WizardSaleProduct,
 } from './wizardSaleProduct'
-import { findUniqueExactWizardProductSearchMatch } from './wizardProductSearchSelection'
-import {
-  addWizardSplitOrderItem,
-  clearWizardSplitRestoreTracking,
-  ensureWizardSplitRestoreOperationNetUids,
-  findRestorableWizardOrderItem,
-  getWizardMutationContextKey,
-  isWizardMutationAgreementContextCurrent,
-  isWizardMutationContextCurrent,
-  mapWizardSplitOrderItem,
-  resizeWizardSplitOrderItem,
-  restoreWizardSplitItemsSequentially,
-  stageWizardSplitRestoreMutation,
-  toWizardSplitMutationSnapshot,
-  updateWizardSplitOrderItemQty,
-  type WizardSplitOrderItem,
-  type WizardSplitRecoverySource,
-} from './wizardSplitSale'
-import {
-  createWizardOperationId,
-  inspectWizardCartMutation,
-  retryWizardMutation,
-  toWizardCartReconciliationSnapshot,
-  type WizardCartMutationExpectation,
-  type WizardMutationAttemptResult,
-  type WizardMutationOperation,
-} from './wizardMutationOperation'
-import {
-  createPersistedWizardCartMutation,
-  executeWizardCartMutationRequest,
-  isPersistedWizardCartMutation,
-  type PersistedWizardCartMutation,
-  type WizardCartLocalCommit,
-  type WizardCartMutationRequest,
-} from './wizardCartMutation'
-import { WizardCartSheet } from './WizardCartSheet'
 
-const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const CHANGE_PRODUCT_DESCRIPTION_PERMISSION = PermissionKeys.SalesUkraine.Sale.EditProductComment
 const CREATE_PREORDER_PERMISSION = PermissionKeys.SalesUkraineInterest.Preorder.Create
 const CREATE_FUTURE_RESERVATION_PERMISSION = PermissionKeys.SalesUkraine.Sale.CreateFutureReservation
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 const qtyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
-const PRODUCT_SEARCH_MIN_QUERY_LENGTH = 3
 
 const SEARCH_MODE_OPTIONS = [
   { label: 'Всі', value: '5' },
@@ -184,70 +117,7 @@ const MAIN_CHIP_DEFS = [
 const MAIN_CHIP_INDEX_STORAGE_UKR_VAT = 1
 const MAIN_CHIP_INDEX_STORAGE_UKR_NOT_VAT = 2
 
-type ProductPricingSnapshot = {
-  calculatedPricings: WizardCalculatedProductPricing[]
-  currentPrice: number | null
-  reservation?: WizardProductReservation
-}
-
-type ProductDetailSnapshot = {
-  availabilities: WizardTotalProductAvailabilities | null
-  detailsError: string | null
-  detailsLoaded: boolean
-  nearestOrder: WizardNearestSupplyOrder | null
-  reservationRows: WizardProductReservation[]
-}
-
-type ProductDetailState = {
-  agreementNetId: string | null
-  saleNetId: string
-  values: Map<string, ProductDetailSnapshot>
-}
-
 type ActiveProductSource = 'main' | 'analogue' | 'component'
-
-type QtyModalState =
-  | { available: number; item: SalesUkraineOrderItem; kind: 'add' }
-  | { available: number; item: SalesUkraineOrderItem; kind: 'edit-current' }
-  | { available: number; item: WizardSplitOrderItem; kind: 'edit-split' }
-
-type EditCartState = {
-  isSplit: boolean
-  selected: WizardCartSelection | null
-  splitItems: WizardSplitOrderItem[]
-}
-
-const EMPTY_PRODUCT_PRICING = new Map<string, ProductPricingSnapshot>()
-const EMPTY_PRODUCT_DETAILS = new Map<string, ProductDetailSnapshot>()
-const EMPTY_RESERVATIONS = new Map<string, WizardProductReservation>()
-
-async function loadPricingSnapshot(productNetUid: string, clientAgreementNetId: string): Promise<ProductPricingSnapshot | null> {
-  try {
-    const [currentPrice, calculatedPricings] = await Promise.all([
-      getProductCurrentPriceByAgreement(productNetUid, clientAgreementNetId),
-      getProductCalculatedPricingsByAgreement(productNetUid, clientAgreementNetId),
-    ])
-
-    return { calculatedPricings, currentPrice }
-  } catch {
-    return null
-  }
-}
-
-type PendingCartMutation = WizardMutationOperation<SalesUkraineSale> & PersistedWizardCartMutation & {
-  localCommitted: boolean
-}
-
-function toPersistedCartMutation(operation: PendingCartMutation): PersistedWizardCartMutation {
-  return {
-    context: operation.context,
-    expectation: operation.expectation,
-    fallbackMessage: operation.fallbackMessage,
-    localCommit: operation.localCommit,
-    operationId: operation.operationId,
-    request: operation.request,
-  }
-}
 
 export function NewSaleProductsStep({
   agreementNetId,
@@ -286,46 +156,21 @@ export function NewSaleProductsStep({
     finalValue: false,
     onChange: onCartOpenedChange,
   })
-  const { hasPermission, session, user } = useAuth()
+  const { hasPermission } = useAuth()
   const canCreatePreorder = hasPermission(CREATE_PREORDER_PERMISSION)
   const canCreateFutureReservation = hasPermission(CREATE_FUTURE_RESERVATION_PERMISSION)
   const keyboard = useWizardKeyboard(1)
 
-  const [searchMode, setSearchMode] = useState('5')
-  const [sortMode, setSortMode] = useState('2')
-  const [query, setQuery] = useState('')
-  const [results, setResults] = useState<WizardSaleProduct[]>([])
-  const [isSearching, setSearching] = useState(false)
-  const [searchError, setSearchError] = useState<string | null>(null)
-  const [searchRequestRevision, setSearchRequestRevision] = useState(0)
-  const [isLoadingRecommendations, setLoadingRecommendations] = useState(false)
   const [crossSellProduct, setCrossSellProduct] = useState<WizardSaleProduct | null>(null)
   const [mainIndex, setMainIndex] = useState(0)
   const [active, setActive] = useState<{ product: WizardSaleProduct; source: ActiveProductSource } | null>(null)
-  const [analogueState, setAnalogueState] = useState<{ items: WizardSaleProduct[]; parentNetUid: string | null; scopeKey: string | null }>({
-    items: [],
-    parentNetUid: null,
-    scopeKey: null,
-  })
-  const analogueCacheRef = useRef(new Map<string, WizardSaleProduct[]>())
-  const [analogueCacheRevision, setAnalogueCacheRevision] = useState(0)
   const [analogueIndex, setAnalogueIndex] = useState<number | null>(null)
   const [componentParent, setComponentParent] = useState<WizardSaleProduct | null>(null)
   const [componentIndex, setComponentIndex] = useState<number | null>(null)
   const [detail, setDetail] = useState<{ chipIndex: number | null; rowIndex: number | null; rowsOpen?: boolean } | null>(null)
-  const [productDetailState, setProductDetailState] = useState<ProductDetailState>({
-    agreementNetId: null,
-    saleNetId: EMPTY_GUID,
-    values: EMPTY_PRODUCT_DETAILS,
-  })
-  const [editCart, setEditCart] = useState<EditCartState | null>(null)
-  const [qtyModal, setQtyModal] = useState<QtyModalState | null>(null)
-  const [shiftRow, setShiftRow] = useState<WizardAvailabilityRow | null>(null)
   const [interestProduct, setInterestProduct] = useState<WizardSaleProduct | null>(null)
   const [futureProduct, setFutureProduct] = useState<WizardSaleProduct | null>(null)
   const [imagePreview, setImagePreview] = useState<{ url: string; fallbackUrl: string; name: string } | null>(null)
-  const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false)
-  const [removeRowItem, setRemoveRowItem] = useState<SalesUkraineOrderItem | null>(null)
   const [editingDescription, setEditingDescription] = useState(false)
   // The description draft lives in a ref (the TextInput inside
   // ProductFullDetailPanel keeps its own local state): typing must not re-render
@@ -336,102 +181,147 @@ export function NewSaleProductsStep({
     descriptionDraftRef.current = value
   }, [])
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [reconciliationError, setReconciliationError] = useState<string | null>(null)
-  const [pendingMutationError, setPendingMutationError] = useState<string | null>(null)
-  const [mutationStorageRevision, setMutationStorageRevision] = useState(0)
-  const [refreshTick, setRefreshTick] = useState(0)
-  const [productDetailsRevision, setProductDetailsRevision] = useState(0)
 
-  const busyRef = useRef(false)
-  const mountedRef = useRef(false)
-  const mutationContextRef = useRef('')
-  const activeMutationContextRef = useRef<string | null>(null)
-  const reconciliationErrorRef = useRef<string | null>(null)
-  const reconciliationContextRef = useRef<string | null>(null)
-  const pendingMutationRef = useRef<PendingCartMutation | null>(null)
-  const forceSearchRef = useRef(false)
-  const searchAbortRef = useRef<AbortController | null>(null)
-  const loadMoreAbortRef = useRef<AbortController | null>(null)
-  const recommendationsAbortRef = useRef<AbortController | null>(null)
-  const searchGenerationRef = useRef(0)
-  const virtualLoadingRef = useRef(false)
-  const virtualExhaustedRef = useRef(false)
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const handleProductKeyRef = useRef<(event: WizardKeyEvent) => boolean>(() => false)
   const cartNetIdRef = useRef<string | undefined>(undefined)
   const onCartChangedRef = useRef(onCartChanged)
-  const pricingCacheGenerationRef = useRef(0)
 
-  const mutationContextKey = getWizardMutationContextKey(agreementNetId, sale?.NetUid)
-  const pendingMutationUserKey = getSalesPendingMutationUserKey(session)
-  const getPendingCartMutationScope = useCallback((context: string): SalesPendingMutationScope | null => (
-    pendingMutationUserKey && context && context !== ':'
-      ? { context, kind: 'cart', userKey: pendingMutationUserKey }
-      : null
-  ), [pendingMutationUserKey])
+  const isVatSale = Boolean(sale?.IsVatSale)
+  const activeProduct = active?.product ?? null
+  const kbState = isProductKeyboardState(keyboard.state) ? keyboard.state : 'ProductSearch'
+  const detailKeyboardState = kbState === 'EditProductDescription' ? getPreviousProductKeyboardState() : kbState
+  const isActiveProductFullDetail =
+    (active?.source === 'main' && detailKeyboardState === 'FullDetail') ||
+    (active?.source === 'analogue' && detailKeyboardState === 'AnalogueFullDetail') ||
+    (active?.source === 'component' && detailKeyboardState === 'ComponentFullDetail')
+  const {
+    dataRevision,
+    getProductDetailSnapshot,
+    invalidateProductData,
+    productPricing,
+    resetProductDetails,
+    retryProductDetails,
+  } = useWizardProductData({
+    agreementNetId,
+    productNetUid: activeProduct?.NetUid,
+    saleNetUid: sale?.NetUid,
+    detailsOpened: isActiveProductFullDetail,
+    isVatSale,
+  })
+  const resetAnalogueFocus = useCallback(() => setAnalogueIndex(null), [])
+  const { analogueState, analogueScopeKey, patchAnalogues, resetAnalogues, restoreCachedAnalogues } = useWizardProductAnalogues({
+    agreementNetId,
+    saleNetUid: sale?.NetUid,
+    isVatSale,
+    dataRevision,
+    productNetUid: activeProduct?.NetUid,
+    hasAnalogue: Boolean(activeProduct?.HasAnalogue),
+    isAnalogueSource: active?.source === 'analogue',
+    onResetFocus: resetAnalogueFocus,
+  })
+  const clearProductPricingCache = useCallback(() => {
+    invalidateProductData()
+    resetAnalogues()
+  }, [invalidateProductData, resetAnalogues])
 
-  const getSplitRecoverySource = useCallback((
-    targetAgreementNetId: string | null = agreementNetId,
-    targetSaleNetUid: string | null | undefined = sale?.NetUid,
-  ): WizardSplitRecoverySource => {
-    const existing = getWizardSplitRecovery()
+  const resetDetail = useCallback(() => {
+    setDetail(null)
+    setEditingDescription(false)
+  }, [])
 
-    if (
-      existing &&
-      existing.agreementNetId === targetAgreementNetId?.trim().toLowerCase() &&
-      existing.saleNetUid === targetSaleNetUid?.trim().toLowerCase() &&
-      existing.userKey === pendingMutationUserKey
-    ) {
-      return {
-        agreementNetId: existing.agreementNetId,
-        origin: existing.origin,
-        saleNetUid: existing.saleNetUid,
-        userKey: existing.userKey,
-      }
+  const clearActiveProductData = useCallback(() => {
+    setActive(null)
+    resetProductDetails()
+    resetAnalogues()
+    setAnalogueIndex(null)
+    setComponentParent(null)
+    setComponentIndex(null)
+    resetDetail()
+  }, [resetDetail, resetProductDetails, resetAnalogues])
+
+  const handleSearchResults = useCallback((match: ExactWizardProductSearchMatch | null) => {
+    clearActiveProductData()
+    setMainIndex(match?.index ?? 0)
+
+    if (match) {
+      setActive({ product: match.product, source: 'main' })
+      setComponentParent(match.product)
+      setWizardKeyboardState('ProductSelection')
     }
+  }, [clearActiveProductData])
 
-    if (!targetAgreementNetId || !targetSaleNetUid || targetSaleNetUid === EMPTY_GUID || !pendingMutationUserKey) {
-      throw new Error(t('Неможливо безпечно зберегти розділення без поточного рахунку та користувача'))
-    }
+  const {
+    cancelPendingSearch,
+    clearSearch,
+    handleQueryChange,
+    handleSearchSettingsChange,
+    isLoadingRecommendations,
+    isSearching,
+    loadClientRecommendations: loadRecommendations,
+    loadMoreResults,
+    query,
+    results,
+    retryProductSearch,
+    searchError,
+    searchMode,
+    setResults,
+    setSearchError,
+    sortMode,
+  } = useWizardProductSearch({
+    agreementNetId,
+    clientNetId,
+    onResetSelection: clearActiveProductData,
+    onResults: handleSearchResults,
+  })
 
-    return {
-      agreementNetId: targetAgreementNetId,
-      origin: getWizardMergedSaleNetUid()?.trim().toLowerCase() === targetSaleNetUid.trim().toLowerCase()
-        ? 'merged'
-        : 'ordinary',
-      saleNetUid: targetSaleNetUid,
-      userKey: pendingMutationUserKey,
-    }
-  }, [agreementNetId, pendingMutationUserKey, sale?.NetUid, t])
-
-  const persistSplitItems = useCallback((
-    items: WizardSplitOrderItem[],
-    targetAgreementNetId: string | null = agreementNetId,
-  ) => {
-    if (items.length === 0) {
-      setWizardSplitOrderItems([], null)
-
-      return
-    }
-
-    setWizardSplitOrderItems(items, targetAgreementNetId, getSplitRecoverySource(targetAgreementNetId))
-  }, [agreementNetId, getSplitRecoverySource])
-
-  const [reservationsState, setReservationsState] = useState<{
-    agreementNetId: string | null
-    values: Map<string, WizardProductReservation>
-  }>({ agreementNetId: null, values: EMPTY_RESERVATIONS })
-  const [productPricingState, setProductPricingState] = useState<{
-    agreementNetId: string | null
-    values: Map<string, ProductPricingSnapshot>
-  }>({ agreementNetId: null, values: EMPTY_PRODUCT_PRICING })
-
-  // Memoized: the sort clones + Date.parses per comparison; unmemoized it also
-  // returned a fresh array identity every render, invalidating the cart grid's
-  // column defs and TanStack row model on every search keystroke.
-  const orderItems = useMemo(() => getOrderItemsNewestFirst(sale), [sale])
+  const {
+    acceptQtyModal,
+    applyShift,
+    busy,
+    cancelQtyModal,
+    confirmRemoveSelected,
+    currentReconciliationError,
+    editCart,
+    editSelectedCartRow,
+    exitEditCart,
+    moveCartSelection,
+    onEditOrderItem,
+    openEditCart,
+    orderItems,
+    pendingMutationError,
+    prepareAddToCart,
+    qtyModal,
+    removeConfirmOpen,
+    removeItem,
+    removeRowItem,
+    retryCartReconciliation,
+    retryPendingCartMutation,
+    setRemoveConfirmOpen,
+    setRemoveRowItem,
+    setShiftRow,
+    shiftRow,
+    toggleSplitMode,
+  } = useWizardCartOperations({
+    agreementNetId,
+    sale,
+    activeProductNetUid: activeProduct?.NetUid,
+    hasSearchResults: results.length > 0,
+    canCreateFutureReservation,
+    keyboard,
+    onBusyChange,
+    onPendingMutationChange,
+    onCartChanged,
+    onRestoreSplitItems,
+    cancelPendingSearch,
+    clearProductPricingCache,
+    clearSelection,
+    focusSearchInput,
+    onFutureReservation: setFutureProduct,
+    onProductAvailabilityChanged: applyVisibleProductAvailability,
+    onProductAvailabilityFailure: handleVisibleProductAvailabilityFailure,
+  })
   const excludedCrossSellProductNetUids = useMemo(() => {
     const netUids = new Set<string>()
 
@@ -449,8 +339,7 @@ export function NewSaleProductsStep({
   // capturing fresh state each render — route the call through a ref.
   const onEditOrderItemRef = useRef<(item: SalesUkraineOrderItem) => Promise<void>>(async () => {})
 
-  // (onEditOrderItem is a hoisted function declaration below — this captures the
-  // current-render closure, refreshed every render.)
+  // Keep the latest cart controller callback without changing the grid handler.
   useEffect(() => {
     onEditOrderItemRef.current = onEditOrderItem
   })
@@ -461,161 +350,27 @@ export function NewSaleProductsStep({
   const [isActEditOpen, setActEditOpen] = useState(false)
   const handleCartRowClick = useCallback((item: SalesUkraineOrderItem) => {
     setCartActionItem(item)
-  }, [])
-  const handleCartRowRemove = useCallback((item: SalesUkraineOrderItem) => setRemoveRowItem(item), [])
+  }, [setCartActionItem])
+  const handleCartRowRemove = useCallback((item: SalesUkraineOrderItem) => setRemoveRowItem(item), [setRemoveRowItem])
   const handleCartCrossSell = useCallback((item: SalesUkraineOrderItem) => {
     const product = item.Product as WizardSaleProduct | undefined
 
     if (product?.NetUid) {
       setCrossSellProduct(product)
     }
-  }, [])
-  const isVatSale = Boolean(sale?.IsVatSale)
-  const analogueScopeKey = JSON.stringify([agreementNetId, isVatSale, sale?.NetUid || EMPTY_GUID, refreshTick, analogueCacheRevision])
+  }, [setCrossSellProduct])
   const isSaleLifecycleNew = getSaleLifecycleTypeKey(sale?.BaseLifeCycleStatus?.SaleLifeCycleType) === '0'
-  const currentReconciliationError = reconciliationContextRef.current === mutationContextKey ? reconciliationError : null
   const useEurToUah = isNonVatEurSale(sale)
   const localCurrencyCode = getSaleLocalCurrencyCode(sale)
   const totalVat = getWizardProductNumber(sale?.Order?.TotalVat) ?? 0
-  const productPricing = productPricingState.agreementNetId === agreementNetId ? productPricingState.values : EMPTY_PRODUCT_PRICING
-  const reservations = reservationsState.agreementNetId === agreementNetId ? reservationsState.values : EMPTY_RESERVATIONS
 
   const componentEntries = useMemo(
     () => sortComponentCarouselEntries(getComponentCarouselEntries(componentParent), isVatSale),
     [componentParent, isVatSale],
   )
-  const activeProduct = active?.product ?? null
   const mainProduct = results[mainIndex] ?? null
   const focusedAnalogue = analogueIndex !== null ? analogueState.items[analogueIndex] ?? null : null
   const focusedComponent = componentIndex !== null ? componentEntries.entries[componentIndex]?.product ?? null : null
-  const kbState = isProductKeyboardState(keyboard.state) ? keyboard.state : 'ProductSearch'
-  const detailKeyboardState = kbState === 'EditProductDescription' ? getPreviousProductKeyboardState() : kbState
-
-  useLayoutEffect(() => {
-    mountedRef.current = true
-
-    return () => {
-      mountedRef.current = false
-      onBusyChange?.(false)
-      onPendingMutationChange?.(false)
-    }
-  }, [onBusyChange, onPendingMutationChange])
-
-  useEffect(() => subscribeSalesPendingMutations(({ external }) => {
-    if (external) {
-      setMutationStorageRevision((revision) => revision + 1)
-    }
-  }), [])
-
-  useLayoutEffect(() => {
-    let cancelled = false
-    mutationContextRef.current = mutationContextKey
-    const scope = getPendingCartMutationScope(mutationContextKey)
-
-    try {
-      synchronizeSalesPendingMutationUser(pendingMutationUserKey)
-      const stored = scope
-        ? loadSalesPendingMutation<PersistedWizardCartMutation>(scope)
-        : null
-
-      if (stored) {
-        if (
-          !stored.resumable ||
-          !isPersistedWizardCartMutation(stored.payload) ||
-          stored.payload.operationId !== stored.operationId ||
-          stored.payload.context !== mutationContextKey
-        ) {
-          markSalesPendingMutationCorrupt(
-            scope as SalesPendingMutationScope,
-            stored.operationId,
-            'Persisted wizard cart payload does not match its durable scope',
-          )
-        }
-
-        const operation = hydrateCartMutation(stored.payload)
-        pendingMutationRef.current = operation
-        const localCommit = operation.localCommit
-
-        if (
-          localCommit.kind === 'replace-split-items' &&
-          localCommit.failureSplitItems &&
-          !hasWizardSplitRecoveryOperation(operation.operationId)
-        ) {
-          persistSplitItems(localCommit.failureSplitItems, localCommit.agreementNetId)
-        }
-
-        onBusyChange?.(false)
-        onPendingMutationChange?.(true)
-        queueMicrotask(() => {
-          if (!cancelled && mountedRef.current && mutationContextRef.current === mutationContextKey) {
-            if (sale && localCommit.kind === 'none' && operation.inspect(sale) === 'committed') {
-              void withSalesPendingMutationLock(
-                scope as SalesPendingMutationScope,
-                operation.operationId,
-                toPersistedCartMutation(operation),
-                async (lease) => {
-                  resolveSalesPendingMutation(lease, 'committed')
-
-                  if (
-                    !cancelled &&
-                    mountedRef.current &&
-                    mutationContextRef.current === mutationContextKey &&
-                    pendingMutationRef.current?.operationId === operation.operationId
-                  ) {
-                    pendingMutationRef.current = null
-                    setPendingMutationError(null)
-                    onPendingMutationChange?.(false)
-                  }
-                },
-              ).catch(() => {
-                if (!cancelled && mountedRef.current && mutationContextRef.current === mutationContextKey) {
-                  setPendingMutationError(t('Операція не була підтверджена. Перевірте результат і повторіть з тим самим ключем'))
-                }
-              })
-
-              return
-            }
-
-            setPendingMutationError(t('Операція не була підтверджена. Перевірте результат і повторіть з тим самим ключем'))
-          }
-        })
-
-        return () => {
-          cancelled = true
-        }
-      }
-    } catch (storageError) {
-      pendingMutationRef.current = null
-      onBusyChange?.(false)
-      onPendingMutationChange?.(true)
-      queueMicrotask(() => {
-        if (!cancelled && mountedRef.current && mutationContextRef.current === mutationContextKey) {
-          setPendingMutationError(getRequestErrorMessage(
-            storageError,
-            t('Журнал операції недоступний; нові зміни заблоковано'),
-          ))
-        }
-      })
-
-      return () => {
-        cancelled = true
-      }
-    }
-
-    pendingMutationRef.current = null
-
-    onBusyChange?.(false)
-    onPendingMutationChange?.(false)
-    queueMicrotask(() => {
-      if (!cancelled && mountedRef.current && mutationContextRef.current === mutationContextKey) {
-        setPendingMutationError(null)
-      }
-    })
-
-    return () => {
-      cancelled = true
-    }
-  }, [getPendingCartMutationScope, mutationContextKey, mutationStorageRevision, onBusyChange, onPendingMutationChange, pendingMutationUserKey, persistSplitItems, sale, t])
 
   useEffect(() => {
     setWizardKeyboardState('ProductSearch')
@@ -629,30 +384,6 @@ export function NewSaleProductsStep({
     cartNetIdRef.current = sale?.NetUid
     onCartChangedRef.current = onCartChanged
   })
-
-  const clearProductPricingCache = useCallback(() => {
-    pricingCacheGenerationRef.current += 1
-    analogueCacheRef.current.clear()
-    setAnalogueCacheRevision((revision) => revision + 1)
-    setReservationsState((previous) => ({ agreementNetId: previous.agreementNetId, values: EMPTY_RESERVATIONS }))
-    setProductPricingState((previous) => ({ agreementNetId: previous.agreementNetId, values: EMPTY_PRODUCT_PRICING }))
-    setProductDetailState((previous) => ({ ...previous, values: EMPTY_PRODUCT_DETAILS }))
-  }, [])
-
-  const resetDetail = useCallback(() => {
-    setDetail(null)
-    setEditingDescription(false)
-  }, [])
-
-  const clearActiveProductData = useCallback(() => {
-    setActive(null)
-    setProductDetailState({ agreementNetId: null, saleNetId: EMPTY_GUID, values: EMPTY_PRODUCT_DETAILS })
-    setAnalogueState({ items: [], parentNetUid: null, scopeKey: null })
-    setAnalogueIndex(null)
-    setComponentParent(null)
-    setComponentIndex(null)
-    resetDetail()
-  }, [resetDetail])
 
   const handleRealtimeSale = useCallback(
     (payload: unknown) => {
@@ -674,311 +405,6 @@ export function NewSaleProductsStep({
   useRealtimeEvent(realtimeEvents.saleAdded, handleRealtimeSale)
   useRealtimeEvent(realtimeEvents.productReservationUpdated, handleReservationSignal)
 
-  useEffect(() => {
-    const value = query.trim()
-
-    if (value.length < PRODUCT_SEARCH_MIN_QUERY_LENGTH || !agreementNetId) {
-      searchGenerationRef.current += 1
-      searchAbortRef.current?.abort()
-      searchAbortRef.current = null
-      loadMoreAbortRef.current?.abort()
-      loadMoreAbortRef.current = null
-      virtualLoadingRef.current = false
-      setSearching(false)
-
-      return
-    }
-
-    const forced = forceSearchRef.current
-    forceSearchRef.current = false
-
-    if (!forced && getWizardKeyboardState(1) !== 'ProductSearch') {
-      return
-    }
-
-    const searchAgreementNetId = agreementNetId
-    const controller = new AbortController()
-    const generation = ++searchGenerationRef.current
-
-    searchAbortRef.current?.abort()
-    searchAbortRef.current = controller
-    loadMoreAbortRef.current?.abort()
-    loadMoreAbortRef.current = null
-    virtualLoadingRef.current = false
-    virtualExhaustedRef.current = false
-    setSearchError(null)
-
-    void (async () => {
-      try {
-        const next = await searchSaleProductsWithAvailability(value, searchAgreementNetId, {
-          limit: 20,
-          mode: searchMode,
-          offset: 0,
-          signal: controller.signal,
-          sortMode,
-        })
-
-        if (controller.signal.aborted || generation !== searchGenerationRef.current) {
-          return
-        }
-
-        const nextResults = next.length === 1 && next[0]
-          ? [next[0], ...(next[0].NextSearchedProducts ?? [])]
-          : next
-        const exactMatch = findUniqueExactWizardProductSearchMatch(value, nextResults)
-
-        setResults(nextResults)
-        clearActiveProductData()
-
-        if (exactMatch) {
-          setMainIndex(exactMatch.index)
-          setActive({ product: exactMatch.product, source: 'main' })
-          setComponentParent(exactMatch.product)
-          setWizardKeyboardState('ProductSelection')
-        } else {
-          setMainIndex(0)
-        }
-      } catch (loadError) {
-        if (!controller.signal.aborted && generation === searchGenerationRef.current) {
-          setResults([])
-          setSearchError(getRequestErrorMessage(loadError, t('Не вдалося виконати пошук товарів')))
-        }
-      } finally {
-        if (!controller.signal.aborted && generation === searchGenerationRef.current) {
-          setSearching(false)
-        }
-      }
-    })()
-
-    return () => {
-      controller.abort()
-
-      if (searchAbortRef.current === controller) {
-        searchAbortRef.current = null
-      }
-    }
-  }, [query, agreementNetId, searchMode, sortMode, searchRequestRevision, clearActiveProductData, t])
-
-  useEffect(() => () => {
-    searchAbortRef.current?.abort()
-    loadMoreAbortRef.current?.abort()
-    recommendationsAbortRef.current?.abort()
-    searchAbortRef.current = null
-    loadMoreAbortRef.current = null
-    recommendationsAbortRef.current = null
-  }, [])
-
-  function storePricingSnapshot(
-    productNetUid: string,
-    clientAgreementNetId: string,
-    snapshot: ProductPricingSnapshot,
-    productReservations: WizardProductReservation[],
-  ) {
-    const reservation =
-      productReservations.find((item) => item.ProductNetUid === productNetUid) ??
-      (productReservations.length === 1 ? productReservations[0] : undefined)
-    const stored: ProductPricingSnapshot = { ...snapshot }
-
-    if (reservation) {
-      stored.reservation = reservation
-    }
-
-    setProductPricingState((previous) => {
-      const next = new Map(previous.agreementNetId === clientAgreementNetId ? previous.values : EMPTY_PRODUCT_PRICING)
-      next.set(productNetUid, stored)
-
-      return { agreementNetId: clientAgreementNetId, values: next }
-    })
-
-    if (reservation) {
-      setReservationsState((previous) => {
-        const next = new Map(previous.agreementNetId === clientAgreementNetId ? previous.values : EMPTY_RESERVATIONS)
-        next.set(productNetUid, { ...reservation, ProductNetUid: reservation.ProductNetUid || productNetUid })
-
-        return { agreementNetId: clientAgreementNetId, values: next }
-      })
-    }
-  }
-
-  useEffect(() => {
-    const netUid = activeProduct?.NetUid
-    const source = active?.source
-
-    if (!netUid || !agreementNetId) {
-      return
-    }
-
-    const requestAgreementNetId = agreementNetId
-    const requestProduct = activeProduct
-    const saleNetId = sale?.NetUid || EMPTY_GUID
-    const controller = new AbortController()
-    const analogueCacheKey = `${analogueScopeKey}:${netUid}`
-    const cachedAnalogues = analogueCacheRef.current.get(analogueCacheKey)
-    let cancelled = false
-    if (source !== 'analogue' && (cachedAnalogues || !requestProduct?.HasAnalogue)) {
-      setAnalogueState({ items: cachedAnalogues ?? [], parentNetUid: netUid, scopeKey: analogueScopeKey })
-      setAnalogueIndex(null)
-    }
-    const handle = setTimeout(() => {
-      if (source !== 'analogue' && requestProduct?.HasAnalogue && !cachedAnalogues) {
-        // Related cards can render as soon as their own request completes;
-        // pricing and reservations must not keep their loading frame visible.
-        void getProductAnalogues(netUid, requestAgreementNetId, controller.signal).then((analogues) => {
-          if (cancelled) return
-          const filtered = analogues
-            .filter((item) => (item.ProductAvailabilities?.length ?? 0) > 0)
-            .sort((a, b) => getAvailabilitySortKey(b, isVatSale) - getAvailabilitySortKey(a, isVatSale))
-          const cache = analogueCacheRef.current
-          cache.set(analogueCacheKey, filtered)
-          if (cache.size > 100) {
-            const oldestKey = cache.keys().next().value
-            if (oldestKey) cache.delete(oldestKey)
-          }
-          setAnalogueState({ items: filtered, parentNetUid: netUid, scopeKey: analogueScopeKey })
-          setAnalogueIndex(null)
-        }).catch(() => {
-          if (cancelled) return
-          // Keep the previous empty-result behavior, but do not cache failures.
-          setAnalogueState({ items: [], parentNetUid: netUid, scopeKey: analogueScopeKey })
-          setAnalogueIndex(null)
-        })
-      }
-      void (async () => {
-        const [pricing, productReservations] = await Promise.all([
-          loadPricingSnapshot(netUid, requestAgreementNetId),
-          getProductReservationsByAgreement(requestAgreementNetId, netUid).catch(() => [] as WizardProductReservation[]),
-        ])
-
-        if (cancelled) {
-          return
-        }
-
-        setProductDetailState((previous) => {
-          const next = new Map(
-            previous.agreementNetId === requestAgreementNetId && previous.saleNetId === saleNetId
-              ? previous.values
-              : EMPTY_PRODUCT_DETAILS,
-          )
-          const existing = next.get(netUid)
-          next.set(netUid, {
-            availabilities: existing?.availabilities ?? null,
-            detailsError: existing?.detailsError ?? null,
-            detailsLoaded: existing?.detailsLoaded ?? false,
-            nearestOrder: existing?.nearestOrder ?? null,
-            reservationRows: productReservations,
-          })
-
-          return { agreementNetId: requestAgreementNetId, saleNetId, values: next }
-        })
-
-        if (pricing) {
-          storePricingSnapshot(netUid, requestAgreementNetId, pricing, productReservations)
-        }
-
-      })()
-    }, 240)
-
-    return () => {
-      cancelled = true
-      controller.abort()
-      clearTimeout(handle)
-    }
-  }, [activeProduct, active?.source, agreementNetId, analogueScopeKey, isVatSale, refreshTick, sale?.NetUid])
-
-  const isActiveProductFullDetail =
-    (active?.source === 'main' && detailKeyboardState === 'FullDetail') ||
-    (active?.source === 'analogue' && detailKeyboardState === 'AnalogueFullDetail') ||
-    (active?.source === 'component' && detailKeyboardState === 'ComponentFullDetail')
-
-  useEffect(() => {
-    const netUid = activeProduct?.NetUid
-
-    if (!netUid || !agreementNetId || !isActiveProductFullDetail) {
-      return
-    }
-
-    const requestAgreementNetId = agreementNetId
-    const saleNetId = sale?.NetUid || EMPTY_GUID
-    const controller = new AbortController()
-    let cancelled = false
-
-    setProductDetailState((previous) => {
-      const next = new Map(
-        previous.agreementNetId === requestAgreementNetId && previous.saleNetId === saleNetId
-          ? previous.values
-          : EMPTY_PRODUCT_DETAILS,
-      )
-      const existing = next.get(netUid)
-      next.set(netUid, {
-        availabilities: existing?.availabilities ?? null,
-        detailsError: null,
-        detailsLoaded: false,
-        nearestOrder: existing?.nearestOrder ?? null,
-        reservationRows: existing?.reservationRows ?? [],
-      })
-
-      return { agreementNetId: requestAgreementNetId, saleNetId, values: next }
-    })
-
-    const handle = setTimeout(() => {
-      void Promise.allSettled([
-        getNearestSupplyOrder(netUid, controller.signal),
-        getAllProductAvailabilities(netUid, requestAgreementNetId, saleNetId, controller.signal),
-      ]).then(([nearestResult, totalsResult]) => {
-        if (cancelled) {
-          return
-        }
-
-        const nearest = nearestResult.status === 'fulfilled' ? nearestResult.value : null
-        const totals = totalsResult.status === 'fulfilled' ? totalsResult.value : null
-        const detailsError = totalsResult.status === 'rejected'
-          ? getRequestErrorMessage(totalsResult.reason, t('Не вдалося завантажити деталі залишків'))
-          : null
-
-        setProductDetailState((previous) => {
-          const next = new Map(
-            previous.agreementNetId === requestAgreementNetId && previous.saleNetId === saleNetId
-              ? previous.values
-              : EMPTY_PRODUCT_DETAILS,
-          )
-          const existing = next.get(netUid)
-          next.set(netUid, {
-            availabilities: totals,
-            detailsError,
-            detailsLoaded: true,
-            nearestOrder: nearest,
-            reservationRows: existing?.reservationRows ?? [],
-          })
-
-          return { agreementNetId: requestAgreementNetId, saleNetId, values: next }
-        })
-      })
-    }, 240)
-
-    return () => {
-      cancelled = true
-      controller.abort()
-      clearTimeout(handle)
-    }
-  }, [activeProduct?.NetUid, agreementNetId, isActiveProductFullDetail, productDetailsRevision, refreshTick, sale?.NetUid, t])
-
-  const getProductDetailSnapshot = useCallback(
-    (product: WizardSaleProduct | null): ProductDetailSnapshot | null => {
-      if (!product?.NetUid || !agreementNetId) {
-        return null
-      }
-
-      const saleNetId = sale?.NetUid || EMPTY_GUID
-
-      if (productDetailState.agreementNetId !== agreementNetId || productDetailState.saleNetId !== saleNetId) {
-        return null
-      }
-
-      return productDetailState.values.get(product.NetUid) ?? null
-    },
-    [agreementNetId, productDetailState, sale?.NetUid],
-  )
-
   const getDisplayedAvailableQty = useCallback(
     (product: WizardSaleProduct) => {
       const snapshot = getProductDetailSnapshot(product)
@@ -993,11 +419,10 @@ export function NewSaleProductsStep({
 
   const getProductMeta = useCallback(
     (product: WizardSaleProduct) => {
-      const reservation = product.NetUid ? reservations.get(product.NetUid) : undefined
       const pricing = product.NetUid ? productPricing.get(product.NetUid) : undefined
       const available = getDisplayedAvailableQty(product)
       const price =
-        pricing?.currentPrice ?? getReservationPrice(pricing?.reservation) ?? getReservationPrice(reservation) ?? product.CurrentPrice
+        pricing?.currentPrice ?? getReservationPrice(pricing?.reservation) ?? product.CurrentPrice
       const reSaleAvailable = isVatSale ? undefined : getWizardProductNumber(product.AvailableQtyUkReSale) ?? undefined
       const reSalePrice = isVatSale
         ? undefined
@@ -1010,486 +435,32 @@ export function NewSaleProductsStep({
 
       return { available, price, reSaleAvailable, reSaleCurrency, reSalePrice }
     },
-    [getDisplayedAvailableQty, productPricing, reservations, isVatSale, useEurToUah],
+    [getDisplayedAvailableQty, productPricing, isVatSale, useEurToUah],
   )
-
-  function beginBusy(options?: { allowPendingMutation?: boolean }): string | null {
-    if (busyRef.current) {
-      return null
-    }
-
-    if (
-      !options?.allowPendingMutation &&
-      pendingMutationRef.current?.context === mutationContextRef.current
-    ) {
-      notifications.show({
-        color: 'orange',
-        message: t('Спочатку перевірте незавершену операцію'),
-      })
-
-      return null
-    }
-
-    if (
-      reconciliationErrorRef.current &&
-      reconciliationContextRef.current === mutationContextRef.current
-    ) {
-      notifications.show({
-        color: 'orange',
-        message: t('Спочатку повторіть завантаження кошика'),
-      })
-
-      return null
-    }
-
-    const context = mutationContextRef.current
-    busyRef.current = true
-    activeMutationContextRef.current = context
-    onBusyChange?.(true)
-    setBusy(true)
-
-    return context
-  }
-
-  function endBusy(context: string) {
-    if (activeMutationContextRef.current !== context) {
-      return
-    }
-
-    activeMutationContextRef.current = null
-    busyRef.current = false
-
-    if (mountedRef.current) {
-      setBusy(false)
-    }
-
-    onBusyChange?.(false)
-  }
-
-  function isCurrentMutationContext(context: string): boolean {
-    return isWizardMutationContextCurrent(context, mutationContextRef.current, mountedRef.current)
-  }
-
-  function isCurrentAvailabilityContext(context: string): boolean {
-    return isWizardMutationAgreementContextCurrent(
-      context,
-      mutationContextRef.current,
-      mountedRef.current,
-    )
-  }
-
-  function hydrateCartMutation(
-    persisted: PersistedWizardCartMutation,
-    beforeMutate?: () => void,
-  ): PendingCartMutation {
-    return {
-      ...persisted,
-      inspect: (snapshot) => inspectWizardCartMutation(
-        snapshot,
-        persisted.operationId,
-        persisted.expectation,
-      ),
-      localCommitted: false,
-      mutate: (operationId) => {
-        beforeMutate?.()
-        return executeWizardCartMutationRequest(persisted.request, operationId)
-      },
-    }
-  }
-
-  function persistPendingCartMutation(operation: PendingCartMutation) {
-    const scope = getPendingCartMutationScope(operation.context)
-
-    if (!scope) {
-      throw new Error(t('Неможливо безпечно зберегти операцію без авторизованого користувача'))
-    }
-
-    pendingMutationRef.current = operation
-  }
-
-  async function reconcileCartAfterMutation(context: string): Promise<boolean> {
-    try {
-      const freshSale = await onCartChanged()
-
-      if (!isCurrentMutationContext(context)) {
-        return false
-      }
-
-      if (!freshSale) {
-        throw new Error(t('Сервер не повернув оновлений кошик'))
-      }
-
-      reconciliationErrorRef.current = null
-      reconciliationContextRef.current = null
-      setReconciliationError(null)
-
-      return true
-    } catch (reconcileError) {
-      if (!isCurrentMutationContext(context)) {
-        return false
-      }
-
-      const message = getRequestErrorMessage(reconcileError, t('Не вдалося оновити кошик після збереження'))
-      reconciliationErrorRef.current = message
-      reconciliationContextRef.current = context
-      setReconciliationError(message)
-      notifications.show({
-        autoClose: false,
-        color: 'orange',
-        message: `${t('Зміни збережено, але кошик не оновлено')}: ${message}`,
-      })
-
-      return false
-    }
-  }
-
-  async function getFreshCartForOperation(): Promise<SalesUkraineSale> {
-    const freshSale = await onCartChanged()
-
-    return toWizardCartReconciliationSnapshot(freshSale)
-  }
-
-  function finishCartMutation(operation: PendingCartMutation) {
-    if (operation.localCommitted) {
-      return
-    }
-
-    if (operation.localCommit.kind === 'replace-split-items') {
-      const localCommit = operation.localCommit
-
-      if (isCurrentMutationContext(operation.context)) {
-        persistSplitItems(localCommit.splitItems, localCommit.agreementNetId)
-        setEditCart((previous) => previous
-          ? {
-              ...previous,
-              ...(localCommit.isSplit === undefined ? {} : { isSplit: localCommit.isSplit }),
-              ...(localCommit.selected === undefined ? {} : { selected: localCommit.selected }),
-              splitItems: localCommit.splitItems,
-            }
-          : previous)
-      }
-    }
-
-    operation.localCommitted = true
-  }
-
-  function clearPendingCartMutation(operation: PendingCartMutation) {
-    if (pendingMutationRef.current !== operation) {
-      return
-    }
-
-    pendingMutationRef.current = null
-
-    if (mountedRef.current) {
-      setPendingMutationError(null)
-      onPendingMutationChange?.(false)
-    }
-  }
-
-  function retainPendingCartMutation(
-    operation: PendingCartMutation,
-    result: Extract<WizardMutationAttemptResult<SalesUkraineSale>, { status: 'pending-retry' }>,
-  ) {
-    pendingMutationRef.current = operation
-    const mutationMessage = getRequestErrorMessage(result.mutationError, operation.fallbackMessage)
-    const reconciliationMessage = result.reconciliationError
-      ? getRequestErrorMessage(result.reconciliationError, t('Не вдалося перевірити кошик'))
-      : null
-    setPendingMutationError(
-      reconciliationMessage
-        ? `${mutationMessage}. ${t('Перевірка кошика')}: ${reconciliationMessage}`
-        : mutationMessage,
-    )
-    onPendingMutationChange?.(true)
-  }
-
-  async function handleCartMutationResult(
-    operation: PendingCartMutation,
-    context: string,
-    lease: SalesPendingMutationLease<PersistedWizardCartMutation>,
-    result: WizardMutationAttemptResult<SalesUkraineSale>,
-  ): Promise<boolean> {
-    if (result.status === 'pending-retry' || result.status === 'definitive-failure') {
-      markSalesPendingMutationUnknown(lease)
-      markWizardSplitExtractionUnknown(lease.operationId)
-
-      if (isCurrentMutationContext(context)) {
-        if (result.status === 'pending-retry') {
-          retainPendingCartMutation(operation, result)
-        } else {
-          pendingMutationRef.current = operation
-          setPendingMutationError(getRequestErrorMessage(result.mutationError, operation.fallbackMessage))
-          onPendingMutationChange?.(true)
-        }
-      }
-
-      return false
-    }
-
-    // Keep both journals conservative until the split extraction is durable.
-    // If committing either record fails, recovery must still see an unknown
-    // submitted operation instead of a cleared cart journal and hidden items.
-    markSalesPendingMutationUnknown(lease)
-    markWizardSplitExtractionUnknown(lease.operationId)
-    commitWizardSplitExtraction(lease.operationId)
-    resolveSalesPendingMutation(lease, 'committed')
-
-    if (!isCurrentMutationContext(context)) {
-      return false
-    }
-
-    finishCartMutation(operation)
-    clearPendingCartMutation(operation)
-
-    if (result.status === 'acknowledged') {
-      await reconcileCartAfterMutation(context)
-    } else {
-      reconciliationErrorRef.current = null
-      reconciliationContextRef.current = null
-      setReconciliationError(null)
-    }
-
-    return true
-  }
-
-  async function runCartMutation(
-    context: string,
-    operation: PendingCartMutation,
-    retry = false,
-  ): Promise<boolean> {
-    const scope = getPendingCartMutationScope(operation.context)
-
-    if (!scope) {
-      throw new Error(t('Неможливо безпечно зберегти операцію без авторизованого користувача'))
-    }
-
-    const persisted = toPersistedCartMutation(operation)
-    const cartMutationProductNetUid = getCartMutationProductNetUid(operation.request, orderItems)
-    const normalizedCartProductNetUid = cartMutationProductNetUid?.trim().toLowerCase() || ''
-    const visibleProductNetUid = (
-      results.length > 0
-      || active?.product.NetUid?.trim().toLowerCase() === normalizedCartProductNetUid
-    )
-      ? cartMutationProductNetUid
-      : null
-
-    const completed = await withSalesPendingMutationLock(scope, operation.operationId, persisted, async (lease) => {
-      if (!isPersistedWizardCartMutation(lease.entry.payload)) {
-        markSalesPendingMutationCorrupt(scope, lease.operationId, 'Durable wizard cart payload failed schema validation')
-      }
-
-      assertWizardSplitRecoveryOperationFence(lease.operationId)
-
-      let submitted = lease.entry.phase !== 'prepared'
-      const durableOperation = hydrateCartMutation(
-        lease.entry.payload,
-        () => {
-          if (markWizardSplitExtractionSubmitted(lease.operationId)) {
-            submitted = true
-          }
-
-          markSalesPendingMutationSubmitted(lease)
-          submitted = true
-        },
-      )
-      pendingMutationRef.current = durableOperation
-
-      try {
-        const result = retry
-          ? await retryWizardMutation(durableOperation, getFreshCartForOperation)
-          : await attemptPersistentSalesCartMutation(durableOperation, getFreshCartForOperation)
-
-        return await handleCartMutationResult(durableOperation, context, lease, result)
-      } catch (error) {
-        if (submitted) {
-          try {
-            markWizardSplitExtractionUnknown(lease.operationId)
-          } finally {
-            markSalesPendingMutationUnknown(lease)
-          }
-        }
-
-        throw error
-      }
-    })
-
-    if (completed && visibleProductNetUid && isCurrentAvailabilityContext(context)) {
-      await refreshVisibleProductAvailability(context, visibleProductNetUid)
-    }
-
-    return completed
-  }
-
-  async function refreshVisibleProductAvailability(context: string, productNetUid: string) {
-    const refreshErrorMessage = t('Не вдалося оновити залишок товару. Повторіть пошук.')
-
-    if (!agreementNetId) {
-      handleVisibleProductAvailabilityFailure(refreshErrorMessage)
-
-      return
-    }
-
-    searchGenerationRef.current += 1
-    searchAbortRef.current?.abort()
-    loadMoreAbortRef.current?.abort()
-    recommendationsAbortRef.current?.abort()
-    searchAbortRef.current = null
-    loadMoreAbortRef.current = null
-    recommendationsAbortRef.current = null
-    virtualLoadingRef.current = false
-    setSearching(false)
-    setLoadingRecommendations(false)
-
-    try {
-      const buckets = await getProductAvailabilityBuckets(productNetUid, agreementNetId)
-      const availability = normalizeWizardProductAvailability(buckets, isVatSale)
-
-      if (!availability) {
-        throw new Error('Product availability response is incomplete or invalid.')
-      }
-
-      if (!isCurrentAvailabilityContext(context)) {
-        return
-      }
-
-      applyVisibleProductAvailability(productNetUid, availability)
-      setSearchError(null)
-    } catch {
-      if (isCurrentAvailabilityContext(context)) {
-        handleVisibleProductAvailabilityFailure(refreshErrorMessage)
-      }
-    }
-  }
 
   function applyVisibleProductAvailability(productNetUid: string, availability: WizardProductAvailability) {
     const patchProduct = (product: WizardSaleProduct) =>
       patchWizardProductAvailability(product, productNetUid, availability)
 
-    analogueCacheRef.current.forEach((items, key) => analogueCacheRef.current.set(key, items.map(patchProduct)))
+    patchAnalogues(patchProduct)
     setResults((previous) => previous.map(patchProduct))
     setActive((previous) => (previous ? { ...previous, product: patchProduct(previous.product) } : previous))
-    setAnalogueState((previous) => ({ ...previous, items: previous.items.map(patchProduct) }))
     setComponentParent((previous) => (previous ? patchProduct(previous) : previous))
     setCrossSellProduct((previous) => (previous ? patchProduct(previous) : previous))
     setInterestProduct((previous) => (previous ? patchProduct(previous) : previous))
     setFutureProduct((previous) => (previous ? patchProduct(previous) : previous))
-    setProductDetailState((previous) => {
-      const values = new Map(previous.values)
-      const normalizedNetUid = productNetUid.trim().toLowerCase()
-
-      for (const key of values.keys()) {
-        if (key.trim().toLowerCase() === normalizedNetUid) {
-          values.delete(key)
-        }
-      }
-
-      return values.size === previous.values.size ? previous : { ...previous, values }
-    })
-    setRefreshTick((tick) => tick + 1)
+    invalidateProductData()
+    setSearchError(null)
   }
 
   function handleVisibleProductAvailabilityFailure(message: string) {
     setResults([])
     clearActiveProductData()
     setSearchError(message)
-    setSearching(false)
-    setLoadingRecommendations(false)
+    cancelPendingSearch()
     keyboard.setState('ProductSearch')
     focusSearchInput()
     notifications.show({ color: 'red', message })
-  }
-
-  function createCartMutation(
-    context: string,
-    options: {
-      expectation: WizardCartMutationExpectation
-      fallbackMessage: string
-      localCommit?: WizardCartLocalCommit
-      operationId?: string
-      request: WizardCartMutationRequest
-    },
-  ): PendingCartMutation {
-    const operationId = options.operationId ?? createWizardOperationId()
-
-    const persisted = createPersistedWizardCartMutation({
-      context,
-      expectation: options.expectation,
-      fallbackMessage: options.fallbackMessage,
-      localCommit: options.localCommit ?? { kind: 'none' },
-      operationId,
-      request: options.request,
-    })
-
-    return hydrateCartMutation(persisted)
-  }
-
-  async function retryPendingCartMutation() {
-    const operation = pendingMutationRef.current
-
-    if (!operation || operation.context !== mutationContextRef.current) {
-      return
-    }
-
-    const context = beginBusy({ allowPendingMutation: true })
-
-    if (!context) {
-      return
-    }
-
-    try {
-      const completed = await runCartMutation(context, operation, true)
-
-      if (completed && isCurrentMutationContext(context)) {
-        clearProductPricingCache()
-        notifications.show({ color: 'green', message: t('Операцію підтверджено, кошик оновлено') })
-      }
-    } catch (mutationError) {
-      if (isCurrentMutationContext(context)) {
-        setPendingMutationError(getRequestErrorMessage(mutationError, operation.fallbackMessage))
-        notifications.show({ color: 'red', message: getRequestErrorMessage(mutationError, operation.fallbackMessage) })
-      }
-    } finally {
-      endBusy(context)
-    }
-  }
-
-  async function retryCartReconciliation() {
-    if (busyRef.current) {
-      return
-    }
-
-    const context = mutationContextRef.current
-    busyRef.current = true
-    activeMutationContextRef.current = context
-    onBusyChange?.(true)
-    setBusy(true)
-
-    try {
-      const freshSale = await onCartChanged()
-
-      if (!isCurrentMutationContext(context)) {
-        return
-      }
-
-      if (!freshSale) {
-        throw new Error(t('Сервер не повернув оновлений кошик'))
-      }
-
-      reconciliationErrorRef.current = null
-      reconciliationContextRef.current = null
-      setReconciliationError(null)
-      notifications.show({ color: 'green', message: t('Кошик оновлено') })
-    } catch (reconcileError) {
-      if (isCurrentMutationContext(context)) {
-        const message = getRequestErrorMessage(reconcileError, t('Не вдалося оновити кошик'))
-        reconciliationErrorRef.current = message
-        reconciliationContextRef.current = context
-        setReconciliationError(message)
-        notifications.show({ color: 'red', message })
-      }
-    } finally {
-      endBusy(context)
-    }
   }
 
   function focusSearchInput() {
@@ -1561,1091 +532,9 @@ export function NewSaleProductsStep({
     }
   }
 
-  function restoreCachedAnalogues(product: WizardSaleProduct) {
-    const items = product.NetUid ? analogueCacheRef.current.get(`${analogueScopeKey}:${product.NetUid}`) : undefined
-    if (items || !product.HasAnalogue) {
-      setAnalogueState({ items: items ?? [], parentNetUid: product.NetUid ?? null, scopeKey: analogueScopeKey })
-    }
-  }
-
-  async function loadMoreResults() {
-    const value = query.trim()
-
-    if (virtualLoadingRef.current || virtualExhaustedRef.current || value.length < PRODUCT_SEARCH_MIN_QUERY_LENGTH || !agreementNetId) {
-      return
-    }
-
-    const generation = searchGenerationRef.current
-    const requestAgreementNetId = agreementNetId
-    const requestOffset = results.length
-    const controller = new AbortController()
-
-    virtualLoadingRef.current = true
-    loadMoreAbortRef.current?.abort()
-    loadMoreAbortRef.current = controller
-
-    try {
-      const next = await searchSaleProductsWithAvailability(value, requestAgreementNetId, {
-        limit: 10,
-        mode: searchMode,
-        offset: requestOffset,
-        signal: controller.signal,
-        sortMode,
-      })
-
-      if (controller.signal.aborted || generation !== searchGenerationRef.current) {
-        return
-      }
-
-      if (next.length === 0) {
-        virtualExhaustedRef.current = true
-      } else {
-        setResults((previous) => [...previous, ...next.filter((item) => !previous.some((existing) => existing.NetUid === item.NetUid))])
-      }
-    } catch (loadError) {
-      if (!controller.signal.aborted && generation === searchGenerationRef.current) {
-        notifications.show({
-          color: 'red',
-          message: getRequestErrorMessage(loadError, t('Не вдалося завантажити наступні товари')),
-        })
-      }
-    } finally {
-      if (loadMoreAbortRef.current === controller) {
-        loadMoreAbortRef.current = null
-        virtualLoadingRef.current = false
-      }
-    }
-  }
-
-  function handleQueryChange(value: string) {
-    if (getWizardKeyboardState(1) !== 'ProductSearch') {
-      return
-    }
-
-    searchGenerationRef.current += 1
-    searchAbortRef.current?.abort()
-    searchAbortRef.current = null
-    loadMoreAbortRef.current?.abort()
-    loadMoreAbortRef.current = null
-    recommendationsAbortRef.current?.abort()
-    recommendationsAbortRef.current = null
-    virtualLoadingRef.current = false
-    virtualExhaustedRef.current = false
-    setSearchError(null)
-    setLoadingRecommendations(false)
-    setQuery(value)
-    setResults([])
-    clearActiveProductData()
-
-    if (value.trim().length < PRODUCT_SEARCH_MIN_QUERY_LENGTH) {
-      setSearching(false)
-    } else if (agreementNetId) {
-      setSearching(true)
-    }
-  }
-
-  function handleSearchSettingsChange(nextMode: string | null, nextSort: string | null) {
-    searchGenerationRef.current += 1
-    searchAbortRef.current?.abort()
-    searchAbortRef.current = null
-    loadMoreAbortRef.current?.abort()
-    loadMoreAbortRef.current = null
-    recommendationsAbortRef.current?.abort()
-    recommendationsAbortRef.current = null
-    virtualLoadingRef.current = false
-    virtualExhaustedRef.current = false
-    setSearchError(null)
-    setLoadingRecommendations(false)
-
-    if (nextMode) {
-      setSearchMode(nextMode)
-    }
-
-    if (nextSort) {
-      setSortMode(nextSort)
-    }
-
-    setResults([])
-    clearActiveProductData()
-
-    if (query.trim().length >= PRODUCT_SEARCH_MIN_QUERY_LENGTH) {
-      forceSearchRef.current = true
-      setSearching(true)
-      setSearchRequestRevision((revision) => revision + 1)
-    }
-  }
-
-  function retryProductSearch() {
-    if (query.trim().length < PRODUCT_SEARCH_MIN_QUERY_LENGTH || !agreementNetId) {
-      return
-    }
-
-    searchGenerationRef.current += 1
-    searchAbortRef.current?.abort()
-    loadMoreAbortRef.current?.abort()
-    recommendationsAbortRef.current?.abort()
-    searchAbortRef.current = null
-    loadMoreAbortRef.current = null
-    recommendationsAbortRef.current = null
-    virtualLoadingRef.current = false
-    virtualExhaustedRef.current = false
-    forceSearchRef.current = true
-    setSearchError(null)
-    setLoadingRecommendations(false)
-    setSearching(true)
-    setSearchRequestRevision((revision) => revision + 1)
-  }
-
   async function loadClientRecommendations() {
-    if (!clientNetId || isLoadingRecommendations) {
-      return
-    }
-
-    const generation = ++searchGenerationRef.current
-    const controller = new AbortController()
-
-    searchAbortRef.current?.abort()
-    loadMoreAbortRef.current?.abort()
-    recommendationsAbortRef.current?.abort()
-    searchAbortRef.current = null
-    loadMoreAbortRef.current = null
-    recommendationsAbortRef.current = controller
-    virtualLoadingRef.current = false
-    virtualExhaustedRef.current = false
-    setSearchError(null)
-    setLoadingRecommendations(true)
-    setSearching(true)
-
-    try {
-      const recommended = (await getMostPurchasedProductsByClientId(clientNetId, false, {
-        clientAgreementNetId: agreementNetId ?? undefined,
-        signal: controller.signal,
-      })) as unknown as WizardSaleProduct[]
-
-      if (controller.signal.aborted || generation !== searchGenerationRef.current) {
-        return
-      }
-
-      setQuery('')
-      setResults(recommended)
-      setMainIndex(0)
-      clearActiveProductData()
-      keyboard.setState('ProductSearch')
+    if (await loadRecommendations()) {
       focusSearchInput()
-
-      if (recommended.length === 0) {
-        notifications.show({ color: 'orange', message: t('Рекомендацій для клієнта не знайдено') })
-      }
-    } catch {
-      if (!controller.signal.aborted && generation === searchGenerationRef.current) {
-        notifications.show({ color: 'red', message: t('Не вдалося завантажити рекомендації') })
-      }
-    } finally {
-      if (recommendationsAbortRef.current === controller) {
-        recommendationsAbortRef.current = null
-        setSearching(false)
-        setLoadingRecommendations(false)
-      }
-    }
-  }
-
-  function canChangePrintedSale(): boolean {
-    if (sale?.IsPrinted) {
-      const approved = (sale.HistoryInvoiceEdit ?? []).some((entry) => Boolean((entry as { ApproveUpdate?: boolean }).ApproveUpdate))
-
-      if (!approved) {
-        notifications.show({ color: 'red', message: t('Зміни заборонені') })
-
-        return false
-      }
-    }
-
-    return true
-  }
-
-  async function prepareAddToCart(product: WizardSaleProduct | null) {
-    if (!product?.NetUid) {
-      return
-    }
-
-    if (!canChangePrintedSale()) {
-      return
-    }
-
-    if (!agreementNetId || !sale?.NetUid) {
-      notifications.show({ color: 'orange', message: t('Сесія поточного клієнта була видалена відкриттям іншої вкладки') })
-
-      return
-    }
-
-    const sellable = getWizardSellableQty(product, isVatSale)
-
-    if (typeof sellable === 'number' && sellable === 0) {
-      if (!canCreateFutureReservation) {
-        notifications.show({ color: 'red', message: t('Недостатньо прав для резервування під поставку') })
-
-        return
-      }
-
-      setFutureProduct(product)
-
-      return
-    }
-
-    const context = beginBusy()
-
-    if (!context) {
-      return
-    }
-
-    try {
-      const buckets = await getProductAvailabilityBuckets(product.NetUid, agreementNetId)
-      const available = isVatSale
-        ? buckets?.AvailableQtyUkVAT ?? 0
-        : (buckets?.AvailableQtyUk ?? 0) + (buckets?.AvailableQtyUkReSale ?? 0)
-      const item: SalesUkraineOrderItem = {
-        Deleted: false,
-        Id: 0,
-        NetUid: EMPTY_GUID,
-        Product: product,
-        Qty: 0,
-      }
-
-      if (isCurrentMutationContext(context)) {
-        setQtyModal({ available, item, kind: 'add' })
-      }
-    } catch (loadError) {
-      if (isCurrentMutationContext(context)) {
-        notifications.show({ color: 'red', message: getRequestErrorMessage(loadError, t('Не вдалося додати товар')) })
-      }
-    } finally {
-      endBusy(context)
-    }
-  }
-
-  async function acceptQtyModal(qty: number, comment: string) {
-    const modal = qtyModal
-
-    if (!modal) {
-      return
-    }
-
-    const context = beginBusy()
-
-    if (!context) {
-      return
-    }
-
-    setQtyModal(null)
-
-    try {
-      if (modal.kind === 'add') {
-        if (!agreementNetId || !sale?.NetUid) {
-          return
-        }
-
-        const requestItem = { ...modal.item, Comment: comment, Qty: qty }
-        const mutation = createAddOrUpdateSalesCartMutation({
-          clientAgreementNetId: agreementNetId,
-          orderItem: requestItem,
-          orderItems,
-          saleNetId: sale.NetUid,
-        })
-        const completed = await runCartMutation(
-          context,
-          createCartMutation(context, {
-            expectation: mutation.expectation,
-            fallbackMessage: t('Не вдалося додати товар'),
-            request: mutation.request,
-          }),
-        )
-
-        if (completed && isCurrentMutationContext(context)) {
-          focusSearchInput()
-        }
-      } else if (modal.kind === 'edit-current') {
-        if (editCart?.isSplit) {
-          const ordered = getWizardProductNumber(modal.item.Qty) ?? 0
-          const rest = ordered - qty
-
-          if (rest < 0) {
-            return
-          }
-
-          if (rest === 0 && (!modal.item.NetUid || modal.item.NetUid === EMPTY_GUID)) {
-            throw new Error('Cannot split an order item without a persisted uid')
-          }
-
-          const product = modal.item.Product as WizardSaleProduct | undefined
-
-          if (!product) {
-            throw new Error('Cannot split an order item without a product')
-          }
-
-          const splitItems = addToSplitItems(
-            editCart.splitItems,
-            { ...modal.item, Product: product },
-            qty,
-            comment,
-            user as unknown as SalesUkraineUser,
-            agreementNetId,
-          )
-
-          const expectation: WizardCartMutationExpectation = rest > 0
-            ? {
-                afterQty: rest,
-                beforeQty: ordered,
-                kind: 'row-quantity',
-                rowNetUid: modal.item.NetUid ?? '',
-              }
-            : {
-                beforeQty: ordered,
-                kind: 'row-deleted',
-                rowNetUid: modal.item.NetUid ?? '',
-              }
-          const operation = createCartMutation(context, {
-            localCommit: {
-              agreementNetId,
-              failureSplitItems: editCart.splitItems,
-              kind: 'replace-split-items',
-              splitItems,
-            },
-            expectation,
-            fallbackMessage: t('Не вдалося розділити позицію'),
-            request: rest > 0
-              ? { kind: 'update', orderItem: { ...modal.item, Qty: rest } }
-              : {
-                  kind: 'delete',
-                  orderItemNetId: modal.item.NetUid as string,
-                },
-          })
-
-          stageWizardSplitExtraction({
-            fallbackItems: editCart.splitItems,
-            items: splitItems,
-            mutation: toWizardSplitMutationSnapshot(operation),
-            source: getSplitRecoverySource(),
-          })
-
-          await runCartMutation(context, operation)
-        } else {
-          await runCartMutation(
-            context,
-            createCartMutation(context, {
-              expectation: {
-                afterQty: qty,
-                beforeQty: getWizardProductNumber(modal.item.Qty) ?? 0,
-                kind: 'row-quantity',
-                rowNetUid: modal.item.NetUid ?? '',
-              },
-              fallbackMessage: t('Не вдалося оновити кількість'),
-              request: {
-                kind: 'update',
-                orderItem: { ...modal.item, Comment: comment, Qty: qty },
-              },
-            }),
-          )
-        }
-      } else {
-        if (!editCart) {
-          throw new Error('Cannot restore a split item outside cart edit mode')
-        }
-
-        const splitIndex = editCart.splitItems.indexOf(modal.item)
-        const trackedSplitItems = ensureWizardSplitRestoreOperationNetUids(editCart.splitItems)
-        const trackedItem = trackedSplitItems[splitIndex]
-
-        if (!trackedItem?.RestoreOperationNetUid) {
-          throw new Error('Cannot create a stable restore operation')
-        }
-
-        const rest = trackedItem.Qty - qty
-
-        if (rest < 0) {
-          return
-        }
-
-        const existing = findRestorableWizardOrderItem(orderItems, trackedItem)
-        const saleNetUid = sale?.NetUid
-        const existingQty = getWizardProductNumber(existing?.Qty) ?? 0
-
-        if (!existing && (!agreementNetId || !saleNetUid)) {
-          throw new Error('Cannot restore a split item without a current sale')
-        }
-
-        const splitItems = clearWizardSplitRestoreTracking(
-          updateWizardSplitOrderItemQty(trackedSplitItems, trackedItem, rest),
-          trackedItem.RestoreOperationNetUid,
-        )
-        const operation = createCartMutation(context, {
-          localCommit: {
-            agreementNetId,
-            failureSplitItems: clearWizardSplitRestoreTracking(
-              trackedSplitItems,
-              trackedItem.RestoreOperationNetUid,
-            ),
-            isSplit: splitItems.length > 0,
-            kind: 'replace-split-items',
-            splitItems,
-          },
-          expectation: existing?.NetUid
-            ? {
-                afterQty: existingQty + qty,
-                beforeQty: existingQty,
-                kind: 'row-quantity',
-                rowNetUid: existing.NetUid,
-              }
-            : { kind: 'operation-marker' },
-          fallbackMessage: t('Не вдалося відновити позицію'),
-          operationId: trackedItem.RestoreOperationNetUid,
-          request: existing
-            ? { kind: 'update', orderItem: { ...existing, Qty: existingQty + qty } }
-            : {
-                clientAgreementNetId: agreementNetId as string,
-                kind: 'add',
-                orderItem: mapWizardSplitOrderItem(resizeWizardSplitOrderItem(trackedItem, qty)),
-                saleNetId: saleNetUid as string,
-              },
-        })
-        const stagedSplitItems = stageWizardSplitRestoreMutation(
-          trackedSplitItems,
-          splitIndex,
-          toWizardSplitMutationSnapshot(operation),
-        )
-
-        persistSplitItems(stagedSplitItems, agreementNetId)
-        setEditCart((previous) => (previous ? { ...previous, splitItems: stagedSplitItems } : previous))
-        await runCartMutation(context, operation)
-      }
-
-      if (isCurrentMutationContext(context)) {
-        clearProductPricingCache()
-      }
-    } catch (mutationError) {
-      if (isCurrentMutationContext(context)) {
-        notifications.show({ color: 'red', message: getRequestErrorMessage(mutationError, t('Не вдалося оновити кількість')) })
-      }
-    } finally {
-      endBusy(context)
-    }
-  }
-
-  function cancelQtyModal() {
-    setQtyModal(null)
-    keyboard.consumeNextEscape()
-    focusSearchInput()
-  }
-
-  async function removeItem(item: SalesUkraineOrderItem) {
-    if (!item.NetUid) {
-      return
-    }
-
-    const context = beginBusy()
-
-    if (!context) {
-      return
-    }
-
-    try {
-      const completed = await runCartMutation(
-        context,
-        createCartMutation(context, {
-          expectation: {
-            beforeQty: getWizardProductNumber(item.Qty) ?? 0,
-            kind: 'row-deleted',
-            rowNetUid: item.NetUid,
-          },
-          fallbackMessage: t('Не вдалося видалити товар'),
-          request: { kind: 'delete', orderItemNetId: item.NetUid },
-        }),
-      )
-
-      if (completed && isCurrentMutationContext(context)) {
-        clearProductPricingCache()
-      }
-    } catch (mutationError) {
-      if (isCurrentMutationContext(context)) {
-        notifications.show({ color: 'red', message: getRequestErrorMessage(mutationError, t('Не вдалося видалити товар')) })
-      }
-    } finally {
-      endBusy(context)
-    }
-  }
-
-  async function onEditOrderItem(item: SalesUkraineOrderItem) {
-    if (!isSaleLifecycleNew) {
-      if (sale?.IsPrinted) {
-        const approved = (sale.HistoryInvoiceEdit ?? []).some((entry) => Boolean((entry as { ApproveUpdate?: boolean }).ApproveUpdate))
-
-        if (!approved) {
-          notifications.show({ color: 'red', message: t('Зміни заборонені') })
-
-          return
-        }
-      } else {
-        // Was a silent return — from the row-actions popup that read as "nothing works".
-        notifications.show({ color: 'red', message: t('Неможливо редагувати накладну') })
-
-        return
-      }
-    }
-
-    if (!item.Product?.NetUid || !agreementNetId) {
-      return
-    }
-
-    const context = beginBusy()
-
-    if (!context) {
-      return
-    }
-
-    try {
-      const buckets = await getProductAvailabilityBuckets(item.Product.NetUid, agreementNetId)
-      const available = isVatSale
-        ? buckets?.AvailableQtyUkVAT ?? 0
-        : (buckets?.AvailableQtyUk ?? 0) + (buckets?.AvailableQtyUkReSale ?? 0)
-
-      if (isCurrentMutationContext(context)) {
-        setQtyModal({ available: (getWizardProductNumber(item.Qty) ?? 0) + available, item, kind: 'edit-current' })
-      }
-    } catch {
-      if (isCurrentMutationContext(context)) {
-        setQtyModal({ available: getWizardProductNumber(item.Qty) ?? 0, item, kind: 'edit-current' })
-      }
-    } finally {
-      endBusy(context)
-    }
-  }
-
-  function openEditCart() {
-    if (orderItems.length === 0) {
-      notifications.show({ color: 'orange', message: t('Немає позицій для редагування') })
-
-      return
-    }
-
-    if (!sale?.NetUid) {
-      notifications.show({ color: 'orange', message: t('Завантаження рахунку') })
-
-      return
-    }
-
-    if (getSaleLifecycleTypeKey(sale.BaseLifeCycleStatus?.SaleLifeCycleType) !== '0') {
-      notifications.show({ color: 'red', message: t('Неможливо редагувати накладну') })
-
-      return
-    }
-
-    const splitItems = getWizardSplitOrderItems()
-    setEditCart({ isSplit: splitItems.length > 0, selected: { index: 0, list: 'current' }, splitItems })
-    keyboard.setState('EditShoppingCart')
-  }
-
-  function closeEditCartAfterRestoration() {
-    clearWizardSplitOrderItems()
-    setEditCart(null)
-
-    const previousState = getPreviousProductKeyboardState()
-
-    if (previousState === 'ProductSearch' || previousState === 'ProductSelection') {
-      clearSelection()
-    } else {
-      keyboard.restorePreviousProductState()
-    }
-  }
-
-  async function exitEditCart() {
-    const cart = editCart
-
-    if (!cart) {
-      return
-    }
-
-    if (cart.splitItems.length > 0 && onRestoreSplitItems) {
-      const context = beginBusy()
-
-      if (!context) {
-        return
-      }
-
-      try {
-        if (!(await onRestoreSplitItems()) || !isCurrentMutationContext(context)) {
-          return
-        }
-
-        clearProductPricingCache()
-        closeEditCartAfterRestoration()
-      } catch (restoreError) {
-        if (isCurrentMutationContext(context)) {
-          notifications.show({
-            color: 'red',
-            message: getRequestErrorMessage(restoreError, t('Не вдалося відновити всі позиції')),
-          })
-        }
-      } finally {
-        endBusy(context)
-      }
-
-      return
-    }
-
-    if (cart.splitItems.length > 0) {
-      if (!agreementNetId || !sale?.NetUid) {
-        notifications.show({ color: 'red', message: t('Не вдалося відновити позиції без поточного рахунку') })
-
-        return
-      }
-
-      const currentAgreementNetId = agreementNetId
-      const saleNetUid = sale.NetUid
-      const trackedSplitItems = ensureWizardSplitRestoreOperationNetUids(cart.splitItems)
-
-      persistSplitItems(trackedSplitItems, currentAgreementNetId)
-      setEditCart((previous) => (previous ? { ...previous, splitItems: trackedSplitItems } : previous))
-
-      const context = beginBusy()
-
-      if (!context) {
-        return
-      }
-
-      const restoredQtyByOrderItem = new Map<string, number>()
-      const restoreOperations = new Map<string, PendingCartMutation>()
-
-      try {
-        const result = await restoreWizardSplitItemsSequentially(
-          trackedSplitItems,
-          async (item, index, operationId, isRetry) => {
-            const existing = findRestorableWizardOrderItem(orderItems, item)
-            const existingQty = getWizardProductNumber(existing?.Qty) ?? 0
-            const restoredQty = existing?.NetUid
-              ? restoredQtyByOrderItem.get(existing.NetUid) ?? 0
-              : 0
-            const remainingAfterCommit = trackedSplitItems.slice(index + 1)
-            const operation = createCartMutation(context, {
-              expectation: existing?.NetUid
-                ? {
-                    afterQty: existingQty + restoredQty + item.Qty,
-                    beforeQty: existingQty + restoredQty,
-                    kind: 'row-quantity',
-                    rowNetUid: existing.NetUid,
-                  }
-                : { kind: 'operation-marker' },
-              fallbackMessage: t('Не вдалося відновити всі позиції'),
-              localCommit: {
-                agreementNetId: currentAgreementNetId,
-                failureSplitItems: clearWizardSplitRestoreTracking(
-                  trackedSplitItems.slice(index),
-                  operationId,
-                ),
-                isSplit: remainingAfterCommit.length > 0,
-                kind: 'replace-split-items',
-                selected: remainingAfterCommit.length > 0
-                  ? { index: 0, list: 'split' }
-                  : orderItems.length > 0
-                    ? { index: 0, list: 'current' }
-                    : null,
-                splitItems: remainingAfterCommit,
-              },
-              operationId,
-              request: existing
-                ? {
-                    kind: 'update',
-                    orderItem: { ...existing, Qty: existingQty + restoredQty + item.Qty },
-                  }
-                : {
-                    clientAgreementNetId: currentAgreementNetId,
-                    kind: 'add',
-                    orderItem: mapWizardSplitOrderItem(item),
-                    saleNetId: saleNetUid,
-                  },
-            })
-            restoreOperations.set(operationId, operation)
-            const stagedItem = stageWizardSplitRestoreMutation(
-              [item],
-              0,
-              toWizardSplitMutationSnapshot(operation),
-            )[0] as WizardSplitOrderItem
-            Object.assign(item, stagedItem)
-            trackedSplitItems[index] = item
-            persistSplitItems(trackedSplitItems.slice(index), currentAgreementNetId)
-            persistPendingCartMutation(operation)
-            const completed = await runCartMutation(context, operation, isRetry)
-
-            if (!completed) {
-              throw new Error(t('Операція відновлення не підтверджена; повторіть звірку тим самим ключем'))
-            }
-
-            if (existing?.NetUid) {
-              restoredQtyByOrderItem.set(existing.NetUid, restoredQty + item.Qty)
-            }
-          },
-          ({ remaining }) => {
-            if (isCurrentMutationContext(context)) {
-              persistSplitItems(remaining, currentAgreementNetId)
-              setEditCart((previous) =>
-                previous
-                  ? {
-                      ...previous,
-                      isSplit: remaining.length > 0,
-                      selected: remaining.length > 0
-                        ? { index: 0, list: 'split' }
-                        : orderItems.length > 0
-                          ? { index: 0, list: 'current' }
-                          : null,
-                      splitItems: remaining,
-                    }
-                  : previous,
-              )
-            }
-          },
-          async (item, _index, operationId, error) => {
-            const operation = restoreOperations.get(operationId)
-
-            if (!operation) {
-              return 'pending'
-            }
-
-            const completed = await runCartMutation(context, operation, true)
-
-            if (completed) {
-              const existing = findRestorableWizardOrderItem(orderItems, item)
-
-              if (existing?.NetUid) {
-                restoredQtyByOrderItem.set(
-                  existing.NetUid,
-                  (restoredQtyByOrderItem.get(existing.NetUid) ?? 0) + item.Qty,
-                )
-              }
-
-              return 'committed'
-            }
-
-            setPendingMutationError(getRequestErrorMessage(error, operation.fallbackMessage))
-
-            return 'pending'
-          },
-          ({ remaining }) => {
-            if (isCurrentMutationContext(context)) {
-              persistSplitItems(remaining, currentAgreementNetId)
-              setEditCart((previous) => (previous ? { ...previous, splitItems: remaining } : previous))
-            }
-          },
-        )
-
-        if ((result.committed.length > 0 || result.error) && isCurrentMutationContext(context)) {
-          clearProductPricingCache()
-        }
-
-        if (result.error) {
-          if (isCurrentMutationContext(context)) {
-            persistSplitItems(result.remaining, currentAgreementNetId)
-            setEditCart((previous) => previous
-              ? {
-                  ...previous,
-                  isSplit: result.remaining.length > 0,
-                  selected: result.remaining.length > 0 ? { index: 0, list: 'split' } : null,
-                  splitItems: result.remaining,
-                }
-              : previous)
-            notifications.show({
-              color: 'red',
-              message: getRequestErrorMessage(result.error, t('Не вдалося відновити всі позиції')),
-            })
-          }
-
-          return
-        }
-      } catch (mutationError) {
-        if (isCurrentMutationContext(context)) {
-          notifications.show({ color: 'red', message: getRequestErrorMessage(mutationError, t('Не вдалося оновити кількість')) })
-        }
-
-        return
-      } finally {
-        endBusy(context)
-      }
-
-      if (!isCurrentMutationContext(context)) {
-        return
-      }
-    }
-
-    closeEditCartAfterRestoration()
-  }
-
-  async function editSelectedCartRow() {
-    const cart = editCart
-
-    if (!cart?.selected) {
-      return
-    }
-
-    if (!canChangePrintedSale()) {
-      return
-    }
-
-    if (cart.selected.list === 'current') {
-      const item = orderItems[cart.selected.index]
-
-      if (item) {
-        await onEditOrderItem(item)
-      }
-    } else {
-      const item = cart.splitItems[cart.selected.index]
-
-      if (item) {
-        setQtyModal({ available: item.Qty, item, kind: 'edit-split' })
-      }
-    }
-  }
-
-  async function confirmRemoveSelected() {
-    setRemoveConfirmOpen(false)
-    const cart = editCart
-    const selected = cart?.selected
-
-    if (!cart || !selected) {
-      return
-    }
-
-    const context = beginBusy()
-
-    if (!context) {
-      return
-    }
-
-    try {
-      if (selected.list === 'current') {
-        const item = orderItems[selected.index]
-
-        if (item) {
-          const product = item.Product as WizardSaleProduct | undefined
-          const splitItems = cart.isSplit && product
-            ? addToSplitItems(
-                cart.splitItems,
-                { ...item, Product: product },
-                getWizardProductNumber(item.Qty) ?? 0,
-                item.Comment,
-                user as unknown as SalesUkraineUser,
-                agreementNetId,
-              )
-            : null
-
-          if (!item.NetUid || item.NetUid === EMPTY_GUID) {
-            throw new Error('Cannot remove an order item without a persisted uid')
-          }
-          const itemNetUid = item.NetUid
-          const operation = createCartMutation(context, {
-            expectation: {
-              beforeQty: getWizardProductNumber(item.Qty) ?? 0,
-              kind: 'row-deleted',
-              rowNetUid: itemNetUid,
-            },
-            fallbackMessage: t('Не вдалося видалити товар'),
-            localCommit: splitItems
-              ? {
-                  agreementNetId,
-                  failureSplitItems: cart.splitItems,
-                  kind: 'replace-split-items',
-                  selected: { index: Math.max(0, selected.index - 1), list: 'current' },
-                  splitItems,
-                }
-              : { kind: 'none' },
-            request: { kind: 'delete', orderItemNetId: itemNetUid },
-          })
-
-          if (splitItems) {
-            stageWizardSplitExtraction({
-              fallbackItems: cart.splitItems,
-              items: splitItems,
-              mutation: toWizardSplitMutationSnapshot(operation),
-              source: getSplitRecoverySource(),
-            })
-          }
-
-          await runCartMutation(context, operation)
-        }
-      } else {
-        const item = cart.splitItems[selected.index]
-
-        if (item) {
-          const trackedSplitItems = ensureWizardSplitRestoreOperationNetUids(cart.splitItems)
-          const trackedItem = trackedSplitItems[selected.index]
-
-          if (!trackedItem?.RestoreOperationNetUid) {
-            throw new Error('Cannot create a stable restore operation')
-          }
-
-          const existing = findRestorableWizardOrderItem(orderItems, trackedItem)
-          const saleNetUid = sale?.NetUid
-          const existingQty = getWizardProductNumber(existing?.Qty) ?? 0
-
-          if (!existing && (!agreementNetId || !saleNetUid)) {
-            throw new Error('Cannot restore a split item without a current sale')
-          }
-
-          const splitItems = trackedSplitItems.filter((_, index) => index !== selected.index)
-
-          const operation = createCartMutation(context, {
-            localCommit: {
-              agreementNetId,
-              failureSplitItems: clearWizardSplitRestoreTracking(
-                trackedSplitItems,
-                trackedItem.RestoreOperationNetUid,
-              ),
-              isSplit: splitItems.length > 0,
-              kind: 'replace-split-items',
-              selected: splitItems.length > 0
-                ? { index: Math.max(0, selected.index - 1), list: 'split' }
-                : null,
-              splitItems,
-            },
-            expectation: existing?.NetUid
-              ? {
-                  afterQty: existingQty + trackedItem.Qty,
-                  beforeQty: existingQty,
-                  kind: 'row-quantity',
-                  rowNetUid: existing.NetUid,
-                }
-              : { kind: 'operation-marker' },
-            fallbackMessage: t('Не вдалося відновити позицію'),
-            operationId: trackedItem.RestoreOperationNetUid,
-            request: existing
-              ? { kind: 'update', orderItem: { ...existing, Qty: existingQty + trackedItem.Qty } }
-              : {
-                  clientAgreementNetId: agreementNetId as string,
-                  kind: 'add',
-                  orderItem: mapWizardSplitOrderItem(trackedItem),
-                  saleNetId: saleNetUid as string,
-                },
-          })
-          const stagedSplitItems = stageWizardSplitRestoreMutation(
-            trackedSplitItems,
-            selected.index,
-            toWizardSplitMutationSnapshot(operation),
-          )
-
-          persistSplitItems(stagedSplitItems, agreementNetId)
-          setEditCart((previous) => (previous ? { ...previous, splitItems: stagedSplitItems } : previous))
-          await runCartMutation(context, operation)
-        }
-      }
-
-      if (isCurrentMutationContext(context)) {
-        clearProductPricingCache()
-      }
-    } catch (mutationError) {
-      if (isCurrentMutationContext(context)) {
-        notifications.show({ color: 'red', message: getRequestErrorMessage(mutationError, t('Не вдалося видалити товар')) })
-      }
-    } finally {
-      endBusy(context)
-    }
-  }
-
-  function moveCartSelection(direction: 1 | -1) {
-    const items = orderItems
-
-    setEditCart((previous) => {
-      if (!previous) {
-        return previous
-      }
-
-      const flat: WizardCartSelection[] = []
-
-      for (let index = 0; index < items.length; index += 1) {
-        flat.push({ index, list: 'current' })
-      }
-
-      if (previous.isSplit) {
-        for (let index = 0; index < previous.splitItems.length; index += 1) {
-          flat.push({ index, list: 'split' })
-        }
-      }
-
-      if (flat.length === 0) {
-        return { ...previous, selected: null }
-      }
-
-      const selected = previous.selected
-      const currentIndex = selected ? flat.findIndex((entry) => entry.list === selected.list && entry.index === selected.index) : -1
-      const nextIndex =
-        currentIndex === -1
-          ? direction === 1
-            ? 0
-            : flat.length - 1
-          : direction === 1 && currentIndex === flat.length - 1 && previous.isSplit && previous.splitItems.length > 0
-            ? items.length
-            : (currentIndex + direction + flat.length) % flat.length
-
-      return { ...previous, selected: flat[nextIndex] ?? null }
-    })
-  }
-
-  function toggleSplitMode() {
-    const items = orderItems
-
-    setEditCart((previous) => {
-      if (!previous) {
-        return previous
-      }
-
-      const isSplit = !previous.isSplit
-      let selected = previous.selected
-
-      if (!isSplit && (!selected || selected.list === 'split')) {
-        selected = items.length > 0 ? { index: 0, list: 'current' } : null
-      }
-
-      return { ...previous, isSplit, selected }
-    })
-  }
-
-  async function applyShift(qty: number) {
-    const row = shiftRow
-
-    if (!row?.NetId || !row.OrderItem) {
-      return
-    }
-
-    setShiftRow(null)
-
-    const context = beginBusy()
-
-    if (!context) {
-      return
-    }
-
-    try {
-      const saleToNetId = sale?.NetUid && sale.NetUid !== EMPTY_GUID ? sale.NetUid : agreementNetId || ''
-      const completed = await runCartMutation(
-        context,
-        createCartMutation(context, {
-          expectation: { kind: 'operation-marker' },
-          fallbackMessage: t('Не вдалося перемістити'),
-          request: {
-            kind: 'shift',
-            orderItem: { ...row.OrderItem, Qty: qty },
-            saleFromNetId: row.NetId,
-            saleToNetId,
-          },
-        }),
-      )
-
-      if (completed && isCurrentMutationContext(context)) {
-        clearProductPricingCache()
-        setRefreshTick((tick) => tick + 1)
-        focusSearchInput()
-      }
-    } catch (mutationError) {
-      if (isCurrentMutationContext(context)) {
-        notifications.show({ color: 'red', message: getRequestErrorMessage(mutationError, t('Не вдалося перемістити')) })
-      }
-    } finally {
-      endBusy(context)
     }
   }
 
@@ -2714,34 +603,13 @@ export function NewSaleProductsStep({
   }
 
   function applyProductPatch(updated: WizardSaleProduct) {
-    analogueCacheRef.current.forEach((items, key) => analogueCacheRef.current.set(
-      key,
-      items.map((item) => item.NetUid === updated.NetUid ? { ...item, Description: updated.Description } : item),
-    ))
+    patchAnalogues((item) => item.NetUid === updated.NetUid ? { ...item, Description: updated.Description } : item)
     setActive((previous) => (previous ? { ...previous, product: updated } : previous))
     setResults((previous) => previous.map((item) => (item.NetUid === updated.NetUid ? { ...item, Description: updated.Description } : item)))
-    setAnalogueState((previous) => ({
-      ...previous,
-      items: previous.items.map((item) => (item.NetUid === updated.NetUid ? { ...item, Description: updated.Description } : item)),
-    }))
   }
 
   function clearSelection() {
-    searchGenerationRef.current += 1
-    searchAbortRef.current?.abort()
-    loadMoreAbortRef.current?.abort()
-    recommendationsAbortRef.current?.abort()
-    searchAbortRef.current = null
-    loadMoreAbortRef.current = null
-    recommendationsAbortRef.current = null
-    virtualLoadingRef.current = false
-    virtualExhaustedRef.current = false
-    clearActiveProductData()
-    setQuery('')
-    setResults([])
-    setSearchError(null)
-    setSearching(false)
-    setLoadingRecommendations(false)
+    clearSearch()
     keyboard.setState('ProductSearch')
     focusSearchInput()
   }
@@ -3644,7 +1512,7 @@ export function NewSaleProductsStep({
             keyboard.setState('FullDetail')
           }
         }}
-        onRetryDetails={() => setProductDetailsRevision((revision) => revision + 1)}
+        onRetryDetails={retryProductDetails}
         onToggleDescription={() => void toggleDescriptionEdit()}
       />
     ) : null
@@ -3958,7 +1826,7 @@ export function NewSaleProductsStep({
               showRowDetails={focusedAnalogueChipIndex === 0}
               onDescriptionDraftChange={handleDescriptionDraftChange}
               onOpenImage={() => openImage(focusedAnalogue)}
-              onRetryDetails={() => setProductDetailsRevision((revision) => revision + 1)}
+              onRetryDetails={retryProductDetails}
               onSelectChip={(chipIndex) => setDetail({ chipIndex, rowIndex: null })}
               onToggleDescription={() => void toggleDescriptionEdit()}
             />
@@ -3986,7 +1854,7 @@ export function NewSaleProductsStep({
               showRowDetails={focusedComponentChipIndex === 0}
               onDescriptionDraftChange={handleDescriptionDraftChange}
               onOpenImage={() => openImage(focusedComponent)}
-              onRetryDetails={() => setProductDetailsRevision((revision) => revision + 1)}
+              onRetryDetails={retryProductDetails}
               onSelectChip={(chipIndex) => setDetail({ chipIndex, rowIndex: null })}
               onToggleDescription={() => void toggleDescriptionEdit()}
             />
@@ -4146,70 +2014,12 @@ function isProductKeyboardState(state: string): state is WizardProductKeyboardSt
   return (WIZARD_PRODUCT_KEYBOARD_STATES as readonly string[]).includes(state)
 }
 
-function getRequestErrorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message.trim() ? error.message : fallback
-}
-
 // True when focus sits on a real control (button / link / input / etc.) so the focus-independent
 // fallback listener can leave that control's own keyboard handling alone. Note: NOT [tabindex] —
 // Mantine's modal wrapper is a tabindex=-1 focus-trap div, not a real control, and focus often
 // lands there after navigating to this step; treating it as interactive would swallow Escape.
 function isInteractiveTarget(target: EventTarget | null): boolean {
   return target instanceof HTMLElement && Boolean(target.closest('a, button, input, select, textarea, [role="button"]'))
-}
-
-function getOrderItemsNewestFirst(sale: SalesUkraineSale | null): SalesUkraineOrderItem[] {
-  const items = Array.isArray(sale?.Order?.OrderItems) ? sale.Order.OrderItems : []
-
-  // Parse each Created once (Date.parse per comparator call is O(n log n) parses).
-  return items
-    .map((item) => [getCreatedTime(item), item] as const)
-    .sort((a, b) => b[0] - a[0])
-    .map(([, item]) => item)
-}
-
-function getCartMutationProductNetUid(
-  request: WizardCartMutationRequest,
-  orderItems: SalesUkraineOrderItem[],
-): string | null {
-  const requestedOrderItemNetUid = request.kind === 'delete'
-    ? request.orderItemNetId.trim().toLowerCase()
-    : null
-  const product = request.kind === 'delete'
-    ? orderItems.find((item) => item.NetUid?.trim().toLowerCase() === requestedOrderItemNetUid)?.Product
-    : request.orderItem.Product
-  const productNetUid = product?.NetUid?.trim()
-
-  return productNetUid || null
-}
-
-function getCreatedTime(item: SalesUkraineOrderItem): number {
-  const created = item.Created
-
-  if (created instanceof Date) {
-    return created.getTime()
-  }
-
-  if (typeof created === 'string') {
-    const parsed = Date.parse(created)
-
-    return Number.isNaN(parsed) ? 0 : parsed
-  }
-
-  return 0
-}
-
-function addToSplitItems(
-  items: WizardSplitOrderItem[],
-  source: SalesUkraineOrderItem & { Product: WizardSaleProduct },
-  qty: number,
-  comment: string | undefined,
-  user: SalesUkraineUser | undefined,
-  agreementNetId: string | null,
-): WizardSplitOrderItem[] {
-  const base = items.length > 0 && getWizardSplitAgreementNetId() === agreementNetId ? items : []
-
-  return addWizardSplitOrderItem(base, source, qty, comment, user)
 }
 
 function resolveSaleNetId(payload: unknown): string | undefined {

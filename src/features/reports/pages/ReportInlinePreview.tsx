@@ -84,11 +84,11 @@ export function ReportInlinePreview({ preview, embedded = false, showPageNote = 
       <table className="app-static-table">
         <thead><tr>
           {rowHeaders.map((header, index) => <th scope="col" rowSpan={products ? 2 : undefined} key={`row-${index}`}>{header}</th>)}
-          {preview.Columns.map(column => <th scope="col" key={column.SourceIndex} title={semanticsByColumn.has(column.SourceIndex) ? reportValueUnit(semanticsByColumn.get(column.SourceIndex)!, preview.numberPresentation) : undefined}>
+          {preview.Columns.map(column => <th scope="col" className="report-inline-preview__value-heading" key={column.SourceIndex} title={semanticsByColumn.has(column.SourceIndex) ? reportValueUnit(semanticsByColumn.get(column.SourceIndex)!, preview.numberPresentation) : undefined}>
             {(products ? column.Values.slice(0, 1) : sharedGroup ? column.Values.slice(1) : column.Values).map(value => value.Caption).filter(Boolean).join(' / ') || `Стовпець ${column.Ordinal + 1}`}
             {moneyScaleLabel(preview.numberPresentation, semanticsByColumn.get(column.SourceIndex)) ? `, ${moneyScaleLabel(preview.numberPresentation, semanticsByColumn.get(column.SourceIndex))}` : ''}
           </th>)}
-        </tr>{products ? <tr>{preview.Columns.map(column => <th scope="col" key={column.SourceIndex}>
+        </tr>{products ? <tr>{preview.Columns.map(column => <th scope="col" className="report-inline-preview__value-heading" key={column.SourceIndex}>
           {currentVparivanieSecondTier(column)}
         </th>)}</tr> : null}</thead>
         <tbody>{preview.Rows.map((row, rowIndex) => <Fragment key={row.SourceIndex}>

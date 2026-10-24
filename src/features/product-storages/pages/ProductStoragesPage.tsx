@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -137,7 +138,7 @@ function useProductStoragesPageModel() {
   const [error, setError] = useValueState<string | null>(null)
   const [downloadDocument, setDownloadDocument] = useValueState<ProductStoragesExportDocument | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
-  const [isExporting, setExporting] = useValueState(false)
+  const [isExporting, setExporting, tryStartExporting] = useBusyState()
   const [isLoading, setLoading] = useValueState(false)
   const [isLoadingStorages, setLoadingStorages] = useValueState(true)
   const [previewOpened, setPreviewOpened] = useValueState(false)
@@ -145,7 +146,7 @@ function useProductStoragesPageModel() {
   const [actionModal, setActionModal] = useValueState<ProductStorageActionModalState>(null)
   const [actionForm, setActionForm] = useValueState<ProductStorageActionForm>(() => createActionForm())
   const [actionError, setActionError] = useValueState<string | null>(null)
-  const [isActionSubmitting, setActionSubmitting] = useValueState(false)
+  const [isActionSubmitting, setActionSubmitting, tryStartActionSubmitting] = useBusyState()
   const [returnConsignmentsState, setReturnConsignmentsState] = useValueState<ReturnConsignmentsState>({
     error: null,
     isLoading: false,
@@ -688,7 +689,9 @@ function useProductStoragesPageModel() {
       return
     }
 
-    setActionSubmitting(true)
+    if (!tryStartActionSubmitting()) {
+      return
+    }
     setActionError(null)
 
     try {
@@ -778,7 +781,9 @@ function useProductStoragesPageModel() {
     const isLatestExport = () => exportRequestRef.current === requestId
     const isCurrentExport = () => isLatestExport() && exportScopeKeyRef.current === requestKey
 
-    setExporting(true)
+    if (!tryStartExporting()) {
+      return
+    }
     setError(null)
 
     try {

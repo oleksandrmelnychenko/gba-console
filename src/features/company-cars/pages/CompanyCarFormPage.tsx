@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
   Alert,
   Button,
@@ -100,8 +101,8 @@ function CompanyCarFormPageContent() {
   const isEditMode = Boolean(id)
   const [pageState, dispatchPageState] = useReducer(companyCarFormPageReducer, undefined, createCompanyCarFormPageState)
   const { companyCar, error, form, isLoading, organizations } = pageState
-  const [isSaving, setSaving] = useValueState(false)
-  const [isDeleting, setDeleting] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
+  const [isDeleting, setDeleting, tryStartDeleting] = useBusyState()
   const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
   const canSave = hasPermission(isEditMode ? COMPANY_CAR_EDIT_PERMISSION : COMPANY_CAR_CREATE_PERMISSION)
   const canDelete = isEditMode && hasPermission(COMPANY_CAR_DELETE_PERMISSION)
@@ -202,7 +203,9 @@ function CompanyCarFormPageContent() {
       TankCapacity: tankCapacity,
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     dispatchPageState({ error: null, type: 'set-error' })
 
     try {
@@ -234,7 +237,9 @@ function CompanyCarFormPageContent() {
       return
     }
 
-    setDeleting(true)
+    if (!tryStartDeleting()) {
+      return
+    }
     dispatchPageState({ error: null, type: 'set-error' })
 
     try {

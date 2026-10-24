@@ -10,11 +10,28 @@
 .report-table-scroll-area .mantine-ScrollArea-scrollbar { z-index: 5; background: var(--mantine-color-gray-0); border-radius: 0; padding: 1px; }
 .report-table-scroll-area .mantine-ScrollArea-thumb { background: var(--mantine-color-gray-4); border-radius: 3px; }
 .report-table-scroll-area .mantine-ScrollArea-thumb:hover { background: var(--mantine-color-gray-5); }
-.report-table-scroll-area:focus-within { outline: 2px solid rgba(var(--brand-orange-rgb), 0.7); outline-offset: 2px; }
+.report-table-scroll-area:has(.mantine-ScrollArea-viewport:focus-visible) { outline: 2px solid rgba(var(--brand-orange-rgb), 0.7); outline-offset: 2px; }
 .report-table-scroll-area__content > table { margin: 0; }
 .report-table-scroll-area__content > table > thead { position: sticky; top: 0; z-index: 2; }
 .report-table-scroll-area__content > table > thead > tr > th { background: var(--mantine-color-white); }
 .report-table-scroll-area__content > table > tfoot > tr > :is(th, td) { position: sticky; bottom: 0; z-index: 2; background: var(--mantine-color-gray-1); border-top: 1px solid var(--mantine-color-gray-3); }
 @media (max-width: 600px) {
   .report-table-scroll-area { --report-table-max-height: clamp(12rem, calc(100dvh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 360px), 38rem); }
+}
+
+/* Keep wide report grids inside their panel, including flex and grid parents. */
+.report-table-scroll-area { width: 100%; max-width: 100%; }
+.report-table-scroll-area .app-static-table > :is(thead, tbody, tfoot) > tr > .app-table-cell-number {
+  text-align: right !important;
+}
+.report-table-scroll-area .app-static-table > tbody > tr[data-subtotal] > :is(th, td) {
+  background: var(--mantine-color-gray-1);
+  font-weight: 600;
+}
+.report-table-scroll-area .app-static-table > tbody > tr[data-subtotal]:not(:first-child) > :is(th, td) {
+  border-top: 1px solid var(--mantine-color-gray-3);
+}
+.report-table-scroll-area .app-static-table > thead > tr > .app-table-cell-number {
+  font-family: inherit;
+  white-space: normal;
 }

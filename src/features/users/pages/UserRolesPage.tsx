@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
   ActionIcon,
   Alert,
@@ -72,7 +73,7 @@ function UserRolesPageContent() {
   const [searchValue, setSearchValue] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [eventPermissionsDirty, setEventPermissionsDirty] = useValueState(false)
   const [eventPermissionsSaving, setEventPermissionsSaving] = useValueState(false)
   const [pendingWorkspaceAction, setPendingWorkspaceAction] =
@@ -253,7 +254,9 @@ function UserRolesPageContent() {
       setError(t('Недостатньо прав для збереження ролі'))
       return
     }
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -298,7 +301,9 @@ function UserRolesPageContent() {
 
     const deleteRoleKey = getUserRoleKey(roleToDelete)
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

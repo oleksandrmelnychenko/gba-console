@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Button,
@@ -76,7 +77,7 @@ function useProductAvailabilitiesPageModel() {
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const [isLoading, setLoading] = useValueState(false)
   const [isLoadingStorages, setLoadingStorages] = useValueState(true)
-  const [isExporting, setExporting] = useValueState(false)
+  const [isExporting, setExporting, tryStartExporting] = useBusyState()
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const offset = (page - 1) * pageSize
   const filterError = getFilterError(dateFrom, dateTo)
@@ -238,7 +239,9 @@ function useProductAvailabilitiesPageModel() {
       return
     }
 
-    setExporting(true)
+    if (!tryStartExporting()) {
+      return
+    }
     setError(null)
 
     setDownloadDocument(null)

@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
   Alert,
   Button,
@@ -115,12 +116,12 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
   const [withManagementServices, setWithManagementServices] = useState(false)
 
   const [isUploadOpen, setUploadOpen] = useState(false)
-  const [isUploading, setUploading] = useState(false)
+  const [isUploading, setUploading, tryStartUploading] = useBusyState()
   const [uploadResult, setUploadResult] = useState<UploadProductSpecificationResult | null>(null)
 
   const [isDocumentsOpen, setDocumentsOpen] = useState(false)
   const [isDocumentsCloseConfirmOpen, setDocumentsCloseConfirmOpen] = useState(false)
-  const [isSavingDocuments, setSavingDocuments] = useState(false)
+  const [isSavingDocuments, setSavingDocuments, tryStartSavingDocuments] = useBusyState()
   const [existingDocuments, setExistingDocuments] = useState<DeliveryDocumentDraft[]>([])
   const [newDocuments, setNewDocuments] = useState<DeliveryDocumentDraft[]>([])
   const [numberCustomDeclaration, setNumberCustomDeclaration] = useState('')
@@ -139,7 +140,7 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
   const [downloadDocument, setDownloadDocument] = useState<SpecificationDownloadDocument | null>(null)
   const [downloadError, setDownloadError] = useState<string | null>(null)
   const [editingSpecificationItem, setEditingSpecificationItem] = useState<PackingListPackageOrderItem | null>(null)
-  const [isSavingSpecification, setSavingSpecification] = useState(false)
+  const [isSavingSpecification, setSavingSpecification, tryStartSavingSpecification] = useBusyState()
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
   const [vendorCodeFilter, setVendorCodeFilter] = useState('')
   const uploadRequestRef = useRef(0)
@@ -418,7 +419,9 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
     uploadRequestRef.current = requestId
     const isCurrentUpload = () => uploadRequestRef.current === requestId
 
-    setUploading(true)
+    if (!tryStartUploading()) {
+      return
+    }
 
     try {
       const result = await uploadProductSpecificationForInvoice(
@@ -590,7 +593,9 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
     documentsSaveRequestRef.current = requestId
     const isCurrentDocumentsSave = () => documentsSaveRequestRef.current === requestId
 
-    setSavingDocuments(true)
+    if (!tryStartSavingDocuments()) {
+      return
+    }
 
     try {
       const invoicePayload: SpecificationSupplyInvoice = {
@@ -687,7 +692,9 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
     specificationSaveRequestRef.current = requestId
     const isCurrentSpecificationSave = () => specificationSaveRequestRef.current === requestId
 
-    setSavingSpecification(true)
+    if (!tryStartSavingSpecification()) {
+      return
+    }
 
     try {
       await addOrUpdateProductSpecification(invoiceNetId, payload, SPECIFICATION_API_SCOPE)

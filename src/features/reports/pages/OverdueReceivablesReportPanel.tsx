@@ -95,10 +95,10 @@ function OverdueReceivablesResult({ report }: { report: OverdueReceivablesReport
 function OverdueReceivablesGroups({ report }: { report: OverdueReceivablesReport }) {
   const { t } = useI18n()
   return <ReportTableScrollArea minWidth={760}><Table className="app-static-table" aria-label={t('Контрагенти')}>
-    <Table.Thead><Table.Tr><Table.Th>Контрагент</Table.Th>{report.Columns.map(column => <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
+    <Table.Thead><Table.Tr><Table.Th>Контрагент</Table.Th>{report.Columns.map(column => <Table.Th key={column.Key} className="app-table-cell-number">{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
     <Table.Tbody>{report.Rows.map(row => <Table.Tr key={row.CounterpartyReference}>
       <Table.Td>{row.CounterpartyName ?? t('Назва недоступна')}</Table.Td>
-      {row.Cells.map(cell => <Table.Td key={cell.Key} title={!cell.Available ? t('Недоступні дані') : cell.Value === null ? t('У періоді немає даних') : undefined}>
+      {row.Cells.map(cell => <Table.Td key={cell.Key} className="app-table-cell-number" title={!cell.Available ? t('Недоступні дані') : cell.Value === null ? t('У періоді немає даних') : undefined}>
         {cell.FormattedValue ?? '—'}
       </Table.Td>)}
     </Table.Tr>)}</Table.Tbody>

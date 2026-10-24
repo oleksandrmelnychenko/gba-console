@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
@@ -102,7 +103,7 @@ export function ClientProductMovementPage() {
   const [clientHasMore, setClientHasMore] = useValueState(false)
   const [isLoading, setLoading] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
-  const [isExporting, setExporting] = useValueState(false)
+  const [isExporting, setExporting, tryStartExporting] = useBusyState()
   const [downloadDocument, setDownloadDocument] = useValueState<ClientProductMovementDocumentResult | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
@@ -273,7 +274,9 @@ export function ClientProductMovementPage() {
       return
     }
 
-    setExporting(true)
+    if (!tryStartExporting()) {
+      return
+    }
 
     try {
       const result = await exportClientProductMovementDocument(activeFilters)

@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { Alert, Button, Card, Group, NumberInput, Select, Stack, Text, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
@@ -94,7 +95,7 @@ export function TaxFreePaymentFromTaxFreeModal({
   const [form, setForm] = useState<FormState>(() => createInitialForm())
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(false)
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
 
   const client = document?.TaxFreePackList?.Client || null
   const dateBounds =
@@ -233,7 +234,9 @@ export function TaxFreePaymentFromTaxFreeModal({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -275,7 +278,9 @@ export function TaxFreePaymentFromTaxFreeModal({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

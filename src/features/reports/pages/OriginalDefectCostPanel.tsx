@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Alert, Button, Group, MultiSelect, Stack, Text } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -26,7 +27,7 @@ function download(blob: Blob, name: string) {
 }
 function useDefectCostRun(capability: DefectCostCapability, callerKey: string | null, canGenerate: boolean,
   from: string, through: string, measures: DefectCostMeasure[], divisions: string[], articles: string[], witness: string | null, key: string) {
-  const run = useReportRunState<DefectCostResult>(key), [exporting, setExporting] = useState(false)
+  const run = useReportRunState<DefectCostResult>(key), [exporting, setExporting, tryStartExporting] = useBusyState()
   const active = useRef<AbortController | null>(null), activeExport = useRef<AbortController | null>(null), latest = useRef(key)
   useEffect(() => { latest.current = key; return () => { latest.current = ''; active.current?.abort(); activeExport.current?.abort() } }, [key])
   const error = defectCostPeriodError(from, through) ?? (!measures.length ? 'Виберіть хоча б один показник.' : null)
@@ -46,7 +47,9 @@ function useDefectCostRun(capability: DefectCostCapability, callerKey: string | 
     const result = run.lastRun
     if (!permitted || !result?.Available || exporting || defectCostExportError(result)) return
     const controller = new AbortController(); activeExport.current?.abort(); activeExport.current = controller
-    setExporting(true)
+    if (!tryStartExporting()) {
+      return
+    }
     try {
       const file = format === 'csv' ? new Blob([defectCostCsv(result)], { type: 'text/csv;charset=utf-8' })
         : format === 'xlsx' ? await defectCostXlsx(result) : await defectCostPdf(result)

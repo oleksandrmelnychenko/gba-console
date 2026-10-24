@@ -1,3 +1,5 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   ActionIcon,
@@ -146,6 +148,7 @@ export function OutgoingPaymentGroupForm({
   onCreated,
   onTitleChange,
 }: OutgoingPaymentGroupFormProps) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const [searchParams] = useSearchParams()
@@ -171,7 +174,7 @@ export function OutgoingPaymentGroupForm({
   const [isLoading, setLoading] = useValueState(true)
   const [isLoadingUnpaidOrders, setLoadingUnpaidOrders] = useValueState(false)
   const [isResolvingCounterparty, setResolvingCounterparty] = useValueState(false)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [counterpartySelectionRequestGuard] = useState(
     () => createLatestRequestGuard<string>(),
   )
@@ -532,27 +535,29 @@ export function OutgoingPaymentGroupForm({
   }
 
   async function handleCounterpartySubmit(value: string) {
-    const counterparty = counterparties.find((item) => getEntityName(item) === value)
+    return runActionOnce('handleCounterpartySubmit', async () => {
+      const counterparty = counterparties.find((item) => getEntityName(item) === value)
 
-    if (!counterparty) {
-      return
-    }
+      if (!counterparty) {
+        return
+      }
 
-    const payloadKind = resolveOutgoingCounterpartyPayloadKind(
-      operationType,
-      form.searchType,
-    )
+      const payloadKind = resolveOutgoingCounterpartyPayloadKind(
+        operationType,
+        form.searchType,
+      )
 
-    if (payloadKind === 'supplier') {
-      counterpartyOptionSubmitGuard.markSubmitted(value)
-      await selectSupplyOrganization(counterparty as SupplyOrganization, value)
-      return
-    }
+      if (payloadKind === 'supplier') {
+        counterpartyOptionSubmitGuard.markSubmitted(value)
+        await selectSupplyOrganization(counterparty as SupplyOrganization, value)
+        return
+      }
 
-    if (payloadKind === 'client') {
-      counterpartyOptionSubmitGuard.markSubmitted(value)
-      await selectClient(counterparty, value)
-    }
+      if (payloadKind === 'client') {
+        counterpartyOptionSubmitGuard.markSubmitted(value)
+        await selectClient(counterparty, value)
+      }
+    })
   }
 
   async function selectClient(client: Client, label: string) {
@@ -782,7 +787,9 @@ export function OutgoingPaymentGroupForm({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -855,7 +862,9 @@ export function OutgoingPaymentGroupForm({
       selectedUnpaidOrders: isSupplierSearch ? selectedUnpaidOrders : [],
     })
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

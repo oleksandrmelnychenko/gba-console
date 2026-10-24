@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { procurementBasketCost, procurementCostSnapshotKey } from '../procurementBasketCost'
 import type { ProcurementSessionBasketLine } from '../procurementSessions'
 import { formatUnitCost } from '../procurementMoneyFormat'
@@ -202,6 +203,7 @@ export function ProcurementConstructor() {
 }
 
 function ProcurementConstructorContent() {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const { can } = usePermissions()
   const canCreateDraft = can(PermissionKeys.PurchaseCockpit.DraftOrder.Create)
@@ -541,28 +543,30 @@ function ProcurementConstructorContent() {
   )
 
   async function createDraft(producerId: number, lines: BasketLine[]) {
-    if (!can(PermissionKeys.PurchaseCockpit.DraftOrder.Create)) {
-      return
-    }
+    return runActionOnce('createDraft', async () => {
+      if (!can(PermissionKeys.PurchaseCockpit.DraftOrder.Create)) {
+        return
+      }
 
-    setCreatingProducer(producerId)
-    try {
-      await createCockpitDraftOrder(
-        producerId,
-        lines.map((line) => ({ productId: line.suggestion.product_id, qty: line.qty })),
-      )
-      notifications.show({ color: 'green', message: t('Чернетку замовлення створено') })
-      setBasket((previous) => {
-        const next = new Map(previous)
-        lines.forEach((line) => next.delete(procurementLineKey(line.suggestion)))
+      setCreatingProducer(producerId)
+      try {
+        await createCockpitDraftOrder(
+          producerId,
+          lines.map((line) => ({ productId: line.suggestion.product_id, qty: line.qty })),
+        )
+        notifications.show({ color: 'green', message: t('Чернетку замовлення створено') })
+        setBasket((previous) => {
+          const next = new Map(previous)
+          lines.forEach((line) => next.delete(procurementLineKey(line.suggestion)))
 
-        return next
-      })
-    } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося створити чернетку') })
-    } finally {
-      setCreatingProducer(null)
-    }
+          return next
+        })
+      } catch {
+        notifications.show({ color: 'red', message: t('Не вдалося створити чернетку') })
+      } finally {
+        setCreatingProducer(null)
+      }
+    })
   }
 
   const basketCount = basket.size

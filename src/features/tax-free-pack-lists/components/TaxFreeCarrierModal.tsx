@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Alert, Button, Select, Stack, TextInput } from '@mantine/core'
 import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { CircleAlert, Search } from 'lucide-react'
@@ -23,7 +24,7 @@ export function TaxFreeCarrierModal({ canEdit, opened, taxFree, onClose, onUpdat
   const [selectedCarrierNetId, setSelectedCarrierNetId] = useState<string | null>(null)
   const [selectedPassportNetId, setSelectedPassportNetId] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(false)
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [error, setError] = useState<string | null>(null)
 
   const selectedCarrier = useMemo(
@@ -97,7 +98,9 @@ export function TaxFreeCarrierModal({ canEdit, opened, taxFree, onClose, onUpdat
     const passport = selectedCarrier.StathamPassports?.find((item) => item.NetUid === selectedPassportNetId)
       || selectedCarrier.StathamPassports?.[0]
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

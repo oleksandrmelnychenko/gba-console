@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Alert, Button, Card, Group, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Save, Trash2 } from 'lucide-react'
@@ -56,8 +57,8 @@ export function CurrencyConvertorFormPage() {
     createCurrencyTraderFormPageState,
   )
   const { error, form, isLoading, trader } = pageState
-  const [isSaving, setSaving] = useValueState(false)
-  const [isDeleting, setDeleting] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
+  const [isDeleting, setDeleting, tryStartDeleting] = useBusyState()
   const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
   const canView = can(PermissionKeys.FinancialAdministration.CurrencyConvertors.Page.View)
   const canSave = can(isEditMode ? CURRENCY_CONVERTOR_EDIT_PERMISSION : CURRENCY_CONVERTOR_CREATE_PERMISSION)
@@ -142,7 +143,9 @@ export function CurrencyConvertorFormPage() {
     }
 
     const payload = toPayload(trader, form)
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     dispatchPageState({ error: null, type: 'set-error' })
 
     try {
@@ -168,7 +171,9 @@ export function CurrencyConvertorFormPage() {
       return
     }
 
-    setDeleting(true)
+    if (!tryStartDeleting()) {
+      return
+    }
     dispatchPageState({ error: null, type: 'set-error' })
 
     try {

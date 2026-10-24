@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import {
   Alert,
@@ -114,7 +115,7 @@ function CompanyCarRoadListsPageContent() {
   const [isFormOpen, setFormOpen] = useValueState(false)
   const [editTarget, setEditTarget] = useValueState<CompanyCarRoadList | null>(null)
   const [deleteTarget, setDeleteTarget] = useValueState<CompanyCarRoadList | null>(null)
-  const [isDeleting, setDeleting] = useValueState(false)
+  const [isDeleting, setDeleting, tryStartDeleting] = useBusyState()
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const { density, toggleDensity } = useDataTableDensity('company-car-road-lists', TABLE_DEFAULT_LAYOUT.density)
@@ -223,7 +224,9 @@ function CompanyCarRoadListsPageContent() {
       return
     }
 
-    setDeleting(true)
+    if (!tryStartDeleting()) {
+      return
+    }
     dispatchLoadState({ error: null, type: 'set-error' })
 
     try {

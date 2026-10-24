@@ -1,3 +1,5 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Alert, Card, Group, Loader, Select, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useCallback, useEffect, useMemo } from 'react'
@@ -53,6 +55,7 @@ export function DirectOrderPaymentTasksCard({
   onError?: (message: string) => void
   order: DirectSupplyOrder
 }) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const canCreatePaymentTask = !disabled && hasPermission(PermissionKeys.OrdersUkraine.LogisticWay.CreatePaymentTask)
@@ -76,7 +79,7 @@ export function DirectOrderPaymentTasksCard({
   const [protocolKeys, setProtocolKeys] = useValueState<SupplyOrderPaymentDeliveryProtocolKey[]>([])
   const [users, setUsers] = useValueState<User[]>([])
   const [isLoading, setLoading] = useValueState(false)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [error, setLocalError] = useValueState<string | null>(null)
   const selectedInvoice = invoice?.NetUid === selectedInvoiceNetId ? invoice : null
 
@@ -204,7 +207,9 @@ export function DirectOrderPaymentTasksCard({
       throw new Error(message)
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setLocalError(null)
 
     try {
@@ -230,7 +235,9 @@ export function DirectOrderPaymentTasksCard({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setLocalError(null)
 
     try {
@@ -253,63 +260,67 @@ export function DirectOrderPaymentTasksCard({
   }
 
   async function handleCreate(values: NewPaymentProtocolFormValues): Promise<void> {
-    if (selectedPaymentSource === PRO_FORM_PAYMENT_SOURCE && proForm) {
-      const nextProForm = addPaymentProtocol(proForm, values, {
-        SupplyInvoiceId: null,
-        SupplyProFormId: proForm.Id,
+    return runActionOnce('handleCreate', async () => {
+      if (selectedPaymentSource === PRO_FORM_PAYMENT_SOURCE && proForm) {
+        const nextProForm = addPaymentProtocol(proForm, values, {
+          SupplyInvoiceId: null,
+          SupplyProFormId: proForm.Id,
+        })
+        const targetProtocol = nextProForm.PaymentDeliveryProtocols?.at(-1)
+
+        if (!targetProtocol) {
+          throw new Error(t('Не вдалося підготувати платіжний протокол'))
+        }
+
+        await persistProForm(nextProForm, [targetProtocol])
+        return
+      }
+
+      if (!selectedInvoice) {
+        return
+      }
+
+      const nextInvoice = addPaymentProtocol(selectedInvoice, values, {
+        SupplyInvoiceId: selectedInvoice.Id,
+        SupplyProFormId: null,
       })
-      const targetProtocol = nextProForm.PaymentDeliveryProtocols?.at(-1)
+      const targetProtocol = nextInvoice.PaymentDeliveryProtocols?.at(-1)
 
       if (!targetProtocol) {
         throw new Error(t('Не вдалося підготувати платіжний протокол'))
       }
 
-      await persistProForm(nextProForm, [targetProtocol])
-      return
-    }
-
-    if (!selectedInvoice) {
-      return
-    }
-
-    const nextInvoice = addPaymentProtocol(selectedInvoice, values, {
-      SupplyInvoiceId: selectedInvoice.Id,
-      SupplyProFormId: null,
+      await persistInvoice(nextInvoice, [targetProtocol], 'create')
     })
-    const targetProtocol = nextInvoice.PaymentDeliveryProtocols?.at(-1)
-
-    if (!targetProtocol) {
-      throw new Error(t('Не вдалося підготувати платіжний протокол'))
-    }
-
-    await persistInvoice(nextInvoice, [targetProtocol], 'create')
   }
 
   async function handleRemove(protocol: SupplyOrderUkrainePaymentDeliveryProtocol): Promise<void> {
-    if (selectedPaymentSource === PRO_FORM_PAYMENT_SOURCE && proForm) {
-      const nextProForm = removePaymentProtocol(proForm, protocol.NetUid, protocol.Id)
-      const targetProtocol = findDeletedPaymentProtocol(nextProForm, protocol)
+    return runActionOnce('handleRemove', async () => {
+      if (selectedPaymentSource === PRO_FORM_PAYMENT_SOURCE && proForm) {
+        const nextProForm = removePaymentProtocol(proForm, protocol.NetUid, protocol.Id)
+        const targetProtocol = findDeletedPaymentProtocol(nextProForm, protocol)
+
+        if (!targetProtocol) {
+          throw new Error(t('Не вдалося знайти платіжний протокол'))
+        }
+
+        await persistProForm(nextProForm, [targetProtocol])
+        return
+      }
+
+      if (!selectedInvoice) {
+        return
+      }
+
+      const nextInvoice = removePaymentProtocol(selectedInvoice, protocol.NetUid, protocol.Id)
+      const targetProtocol = findDeletedPaymentProtocol(nextInvoice, protocol)
 
       if (!targetProtocol) {
         throw new Error(t('Не вдалося знайти платіжний протокол'))
       }
 
-      await persistProForm(nextProForm, [targetProtocol])
-      return
-    }
-
-    if (!selectedInvoice) {
-      return
-    }
-
-    const nextInvoice = removePaymentProtocol(selectedInvoice, protocol.NetUid, protocol.Id)
-    const targetProtocol = findDeletedPaymentProtocol(nextInvoice, protocol)
-
-    if (!targetProtocol) {
-      throw new Error(t('Не вдалося знайти платіжний протокол'))
-    }
-
-    await persistInvoice(nextInvoice, [targetProtocol], 'delete')
+      await persistInvoice(nextInvoice, [targetProtocol], 'delete')
+    })
   }
 
   const activePaymentDocument = selectedPaymentSource === PRO_FORM_PAYMENT_SOURCE ? proForm : selectedInvoice

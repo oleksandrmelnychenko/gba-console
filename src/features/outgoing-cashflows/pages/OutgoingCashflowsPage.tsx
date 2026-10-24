@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -129,7 +130,7 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
   const [structureCalculationError, setStructureCalculationError] = useValueState<string | null>(null)
   const [isCalculatingStructure, setCalculatingStructure] = useValueState(false)
   const [cancelRow, setCancelRow] = useValueState<OutgoingCashflowRow | null>(null)
-  const [isCanceling, setCanceling] = useValueState(false)
+  const [isCanceling, setCanceling, tryStartCanceling] = useBusyState()
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
@@ -463,7 +464,9 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
       return
     }
 
-    setCanceling(true)
+    if (!tryStartCanceling()) {
+      return
+    }
     setError(null)
 
     try {
@@ -475,7 +478,7 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
     } finally {
       setCanceling(false)
     }
-  }, [cancelRow, hasPermission, isCanceling, loadCashflows, page, setCancelRow, setCanceling, setError, t])
+  }, [cancelRow, hasPermission, isCanceling, loadCashflows, page, setCancelRow, setCanceling, setError, t, tryStartCanceling])
 
   return {
     cancelRow,

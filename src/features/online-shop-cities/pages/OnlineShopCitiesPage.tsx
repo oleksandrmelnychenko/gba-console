@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
   Alert,
   Box,
@@ -86,7 +87,7 @@ export function OnlineShopCitiesPage() {
   const [error, setError] = useValueState<string | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [isEditorOpen, setEditorOpen] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const visibleCities = useMemo(
@@ -221,7 +222,9 @@ export function OnlineShopCitiesPage() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
     setFormError(null)
 
@@ -246,7 +249,9 @@ export function OnlineShopCitiesPage() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

@@ -12,8 +12,8 @@ export function ServerReportCellsTable({ columns, cells }: {
   const { t } = useI18n()
   return <ReportTableScrollArea minWidth={640}>
     <Table className="app-static-table">
-      <Table.Thead><Table.Tr>{columns.map(column => <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
-      <Table.Tbody><Table.Tr>{cells.map(cell => <Table.Td key={cell.Key}
+      <Table.Thead><Table.Tr>{columns.map(column => <Table.Th key={column.Key} className="app-table-cell-number">{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
+      <Table.Tbody><Table.Tr>{cells.map(cell => <Table.Td key={cell.Key} className="app-table-cell-number"
         title={!cell.Available ? t('Недоступні дані') : cell.Value === null ? t('У періоді немає даних') : undefined}>
         {cell.FormattedValue ?? '—'}
       </Table.Td>)}</Table.Tr></Table.Tbody>

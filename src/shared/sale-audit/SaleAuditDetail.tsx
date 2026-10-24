@@ -1,3 +1,4 @@
+import { useBusyState } from '../hooks/useBusyState'
 import { Alert, Button, Group, Skeleton, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { ChevronRight, CircleAlert, FileText, History, Package, PackageCheck, ReceiptText, Truck } from 'lucide-react'
@@ -78,7 +79,7 @@ export function SaleAuditDetail({
   const [isPrinting, setPrinting] = useValueState(false)
   const [printError, setPrintError] = useValueState<string | null>(null)
   const [confirmHistoryNetId, setConfirmHistoryNetId] = useValueState<string | null>(null)
-  const [isConfirmingHistory, setConfirmingHistory] = useValueState(false)
+  const [isConfirmingHistory, setConfirmingHistory, tryStartConfirmingHistory] = useBusyState()
   const confirmRequestRef = useRef(false)
   const runInvoiceEdit = usePersistentSaleJsonMutationRunner('protocol-invoice-edit')
 
@@ -152,7 +153,9 @@ export function SaleAuditDetail({
     }
 
     confirmRequestRef.current = true
-    setConfirmingHistory(true)
+    if (!tryStartConfirmingHistory()) {
+      return
+    }
 
     try {
       const mutation = await runInvoiceEdit(

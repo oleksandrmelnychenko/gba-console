@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { Alert, Button, Checkbox, Group, MultiSelect, Select, Stack, Text } from '@mantine/core'
 import { useEffect, useState } from 'react'
 import { getOneCTurnoverSyncCatalog } from '../api/syncApi'
@@ -29,6 +30,7 @@ export function OneCTurnoverSyncPanel(props: Props) {
 }
 
 function TurnoverConfiguration({ range, types, today, minimumDate, blocked, loading, onRun }: Props) {
+  const runActionOnce = useSingleFlight()
   const [catalog, setCatalog] = useState<OneCTurnoverSyncCatalog | null>(null)
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
@@ -62,9 +64,11 @@ function TurnoverConfiguration({ range, types, today, minimumDate, blocked, load
     setFilters(next)
   }
   async function confirm() {
-    if (blocked || validation) return
-    setConfirming(false)
-    await onRun(filters)
+    return runActionOnce('confirm', async () => {
+      if (blocked || validation) return
+      setConfirming(false)
+      await onRun(filters)
+    })
   }
   return <Stack gap="xs">
     <Text size="xs" c="dimmed">Окремо: вибрані документи → звітні рухи й повернення Fenix. Режим DocumentsOnly, без перебудови поточних залишків і балансів. Звичайна сесія вище не змінюється.</Text>

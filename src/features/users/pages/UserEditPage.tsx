@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
   Alert,
   Box,
@@ -91,9 +92,9 @@ function UserEditPageContent() {
   const [confirmPassword, setConfirmPassword] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
-  const [isSaving, setSaving] = useValueState(false)
-  const [isDeleting, setDeleting] = useValueState(false)
-  const [isResettingPassword, setResettingPassword] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
+  const [isDeleting, setDeleting, tryStartDeleting] = useBusyState()
+  const [isResettingPassword, setResettingPassword, tryStartResettingPassword] = useBusyState()
   const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
   const canEdit = hasPermission(PermissionKeys.Users.User.Edit)
   const canDelete = hasPermission(PermissionKeys.Users.User.Delete)
@@ -183,7 +184,9 @@ function UserEditPageContent() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -210,7 +213,9 @@ function UserEditPageContent() {
       return
     }
 
-    setDeleting(true)
+    if (!tryStartDeleting()) {
+      return
+    }
     setError(null)
 
     try {
@@ -247,7 +252,9 @@ function UserEditPageContent() {
       return
     }
 
-    setResettingPassword(true)
+    if (!tryStartResettingPassword()) {
+      return
+    }
     setError(null)
 
     try {

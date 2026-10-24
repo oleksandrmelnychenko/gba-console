@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
@@ -119,9 +120,9 @@ function SupplyUkraineOrderOverviewPageContent() {
   const { hasPermission } = useAuth()
   const [order, setOrder] = useState<SupplyOrderUkraine | null>(null)
   const [isLoading, setLoading] = useState(true)
-  const [isSavingDocuments, setSavingDocuments] = useState(false)
-  const [isSavingVat, setSavingVat] = useState(false)
-  const [isSavingVatItems, setSavingVatItems] = useState(false)
+  const [isSavingDocuments, setSavingDocuments, tryStartSavingDocuments] = useBusyState()
+  const [isSavingVat, setSavingVat, tryStartSavingVat] = useBusyState()
+  const [isSavingVatItems, setSavingVatItems, tryStartSavingVatItems] = useBusyState()
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [documentsOpened, setDocumentsOpened] = useState(false)
@@ -253,7 +254,9 @@ function SupplyUkraineOrderOverviewPageContent() {
       return
     }
 
-    setSavingVat(true)
+    if (!tryStartSavingVat()) {
+      return
+    }
     setError(null)
 
     try {
@@ -323,7 +326,9 @@ function SupplyUkraineOrderOverviewPageContent() {
       return
     }
 
-    setSavingVatItems(true)
+    if (!tryStartSavingVatItems()) {
+      return
+    }
     setError(null)
 
     try {
@@ -465,7 +470,9 @@ function SupplyUkraineOrderOverviewPageContent() {
       return
     }
 
-    setSavingDocuments(true)
+    if (!tryStartSavingDocuments()) {
+      return
+    }
     setError(null)
 
     try {

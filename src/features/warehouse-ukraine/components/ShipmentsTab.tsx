@@ -1,3 +1,5 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -438,6 +440,7 @@ function runAfterAutoShipmentLoadInFlight<TResult>(
 }
 
 function useShipmentsTabModel({ canCarryOut, canEdit, canPrintShipment, onCarriedOut }: ShipmentsTabModelOptions) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const runRecipientMutation = usePersistentSaleJsonMutationRunner('sale-recipient')
   const runRecipientAddressMutation = usePersistentSaleJsonMutationRunner('sale-recipient-address')
@@ -472,7 +475,7 @@ function useShipmentsTabModel({ canCarryOut, canEdit, canPrintShipment, onCarrie
   const [qtyEdits, setQtyEdits] = useValueState<Record<string, string>>({})
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [activeModal, setActiveModal] = useState<ActiveModal>(null)
   const [confirmCarryOut, setConfirmCarryOut] = useState(false)
   const [docOpened, setDocOpened] = useState(false)
@@ -676,7 +679,9 @@ function useShipmentsTabModel({ canCarryOut, canEdit, canPrintShipment, onCarrie
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -720,7 +725,9 @@ function useShipmentsTabModel({ canCarryOut, canEdit, canPrintShipment, onCarrie
     }
 
     setConfirmCarryOut(false)
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -786,7 +793,9 @@ function useShipmentsTabModel({ canCarryOut, canEdit, canPrintShipment, onCarrie
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -824,7 +833,9 @@ function useShipmentsTabModel({ canCarryOut, canEdit, canPrintShipment, onCarrie
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -862,7 +873,9 @@ function useShipmentsTabModel({ canCarryOut, canEdit, canPrintShipment, onCarrie
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -886,42 +899,44 @@ function useShipmentsTabModel({ canCarryOut, canEdit, canPrintShipment, onCarrie
   }
 
   async function printShipments() {
-    if (!canPrintShipment || !selectedTransporterNetId || filterError) {
-      return
-    }
-
-    setDocOpened(true)
-    setDocLoading(true)
-    setDocError(null)
-    setPrintDoc(null)
-
-    try {
-      const request: AutoShipmentListParams = {
-        transporterNetId: selectedTransporterNetId,
-        from: filterDraft.from,
-        to: filterDraft.to,
-      }
-      const attempt = await runShipmentDocumentMutation<
-        AutoShipmentListParams,
-        WarehouseUkraineExportDocument
-      >(
-        `shipment-list-document:${request.transporterNetId}:${request.from}:${request.to}`,
-        request,
-        (payload, operation) => getShipmentCreatePageDocument(payload, operation),
-      )
-
-      if (!attempt.completed) {
-        throw attempt.error
+    return runActionOnce('printShipments', async () => {
+      if (!canPrintShipment || !selectedTransporterNetId || filterError) {
+        return
       }
 
-      const result = attempt.result
-      setPrintDoc(hasWarehouseDocumentUrl(result) ? result : null)
-      setDocError(hasWarehouseDocumentUrl(result) ? null : t('Немає документів для завантаження'))
-    } catch (printError) {
-      setDocError(printError instanceof Error ? printError.message : t('Не вдалося виконати запит'))
-    } finally {
-      setDocLoading(false)
-    }
+      setDocOpened(true)
+      setDocLoading(true)
+      setDocError(null)
+      setPrintDoc(null)
+
+      try {
+        const request: AutoShipmentListParams = {
+          transporterNetId: selectedTransporterNetId,
+          from: filterDraft.from,
+          to: filterDraft.to,
+        }
+        const attempt = await runShipmentDocumentMutation<
+          AutoShipmentListParams,
+          WarehouseUkraineExportDocument
+        >(
+          `shipment-list-document:${request.transporterNetId}:${request.from}:${request.to}`,
+          request,
+          (payload, operation) => getShipmentCreatePageDocument(payload, operation),
+        )
+
+        if (!attempt.completed) {
+          throw attempt.error
+        }
+
+        const result = attempt.result
+        setPrintDoc(hasWarehouseDocumentUrl(result) ? result : null)
+        setDocError(hasWarehouseDocumentUrl(result) ? null : t('Немає документів для завантаження'))
+      } catch (printError) {
+        setDocError(printError instanceof Error ? printError.message : t('Не вдалося виконати запит'))
+      } finally {
+        setDocLoading(false)
+      }
+    })
   }
 
   return {
@@ -1216,7 +1231,7 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
   const [error, setError] = useValueState<string | null>(null)
   const [editError, setEditError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [docOpened, setDocOpened] = useState(false)
   const [docLoading, setDocLoading] = useState(false)
   const [docError, setDocError] = useState<string | null>(null)
@@ -1674,7 +1689,9 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setEditError(null)
 
     try {
@@ -1728,7 +1745,9 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setEditError(null)
 
     try {
@@ -1774,7 +1793,9 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setEditError(null)
 
     try {
@@ -1820,7 +1841,9 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setEditError(null)
 
     try {

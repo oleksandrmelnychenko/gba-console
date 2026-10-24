@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -132,7 +133,7 @@ function ConsumableStoragesPageContent() {
   const [isLoading, setLoading] = useValueState(true)
   const [selectedStorage, setSelectedStorage] = useValueState<ConsumablesStorage | null>(null)
   const [deleteStorageTarget, setDeleteStorageTarget] = useValueState<ConsumablesStorage | null>(null)
-  const [isDeleting, setDeleting] = useValueState(false)
+  const [isDeleting, setDeleting, tryStartDeleting] = useBusyState()
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const normalizedSearchValue = debouncedSearchValue.trim()
@@ -217,7 +218,9 @@ function ConsumableStoragesPageContent() {
       return
     }
 
-    setDeleting(true)
+    if (!tryStartDeleting()) {
+      return
+    }
     setError(null)
 
     try {
@@ -752,7 +755,7 @@ function DeprecatedConsumableOrdersPanel({
   )
   const [editorOrder, setEditorOrder] = useValueState<DeprecatedConsumableOrder | null>(null)
   const [deleteOrderTarget, setDeleteOrderTarget] = useValueState<DeprecatedConsumableOrder | null>(null)
-  const [isDeletingOrder, setDeletingOrder] = useValueState(false)
+  const [isDeletingOrder, setDeletingOrder, tryStartDeletingOrder] = useBusyState()
   const [reloadKey, reloadOrders] = useReducer((key: number) => key + 1, 0)
   const [debouncedSearchValue] = useDebouncedValue(searchValue, DEPRECATED_SEARCH_DEBOUNCE_MS)
   const normalizedSearchValue = debouncedSearchValue.trim()
@@ -833,7 +836,9 @@ function DeprecatedConsumableOrdersPanel({
       return
     }
 
-    setDeletingOrder(true)
+    if (!tryStartDeletingOrder()) {
+      return
+    }
     setOrdersState((current) => ({ ...current, error: null }))
 
     try {
@@ -1100,7 +1105,7 @@ function DeprecatedConsumableOrderEditorModal({
   const [productValue, setProductValue] = useValueState('')
   const [expensiveFirst, setExpensiveFirst] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const isEditMode = Boolean(order?.Id || order?.NetUid)
   const savePermission = isEditMode
     ? CONSUMABLE_STORAGE_WRITE_OFF_EDIT_PERMISSION
@@ -1230,7 +1235,9 @@ function DeprecatedConsumableOrderEditorModal({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

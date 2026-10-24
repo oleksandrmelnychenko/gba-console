@@ -1,3 +1,5 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Box,
@@ -57,14 +59,17 @@ function PlacementUnorderedProductsContent({
   onSaved: (order: PlacementSupplyOrder) => void
   order: PlacementSupplyOrder
 }) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const items = Array.isArray(order.SupplyOrderUkraineItems) ? order.SupplyOrderUkraineItems : []
   const unorderedItems = items.filter((item) => item.NotOrdered)
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [isAdding, setAdding] = useState(false)
 
   async function persist(nextItems: PlacementOrderItem[]) {
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
 
     try {
       const updated = await updateSupplyOrderUkraineForReconciliation({ ...order, SupplyOrderUkraineItems: nextItems })
@@ -79,23 +84,27 @@ function PlacementUnorderedProductsContent({
   }
 
   async function addItem(product: PlacementProduct, qty: number, unitPrice: number, netWeight: number) {
-    const newItem: PlacementOrderItem = {
-      Id: 0,
-      NetUid: EMPTY_GUID,
-      Deleted: false,
-      NotOrdered: true,
-      Product: product,
-      ProductId: product.Id,
-      Qty: qty,
-      UnitPrice: unitPrice,
-      NetWeight: netWeight,
-    }
+    return runActionOnce('addItem', async () => {
+      const newItem: PlacementOrderItem = {
+        Id: 0,
+        NetUid: EMPTY_GUID,
+        Deleted: false,
+        NotOrdered: true,
+        Product: product,
+        ProductId: product.Id,
+        Qty: qty,
+        UnitPrice: unitPrice,
+        NetWeight: netWeight,
+      }
 
-    await persist([...items, newItem])
+      await persist([...items, newItem])
+    })
   }
 
   async function deleteItem(target: PlacementOrderItem) {
-    await persist(items.filter((item) => item !== target))
+    return runActionOnce('deleteItem', async () => {
+      await persist(items.filter((item) => item !== target))
+    })
   }
 
   return (

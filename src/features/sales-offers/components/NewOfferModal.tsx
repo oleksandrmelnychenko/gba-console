@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { ActionIcon, Anchor, Button, Group, Loader, NumberInput, Select, Stack, Table, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { Copy, Search } from 'lucide-react'
@@ -135,7 +136,7 @@ function NewOfferForm({
   const [productQuery, setProductQuery] = useState('')
   const [productOptions, setProductOptions] = useState<OffersProduct[]>([])
   const [lines, setLines] = useState<OffersNewLine[]>([])
-  const [isCreating, setCreating] = useState(false)
+  const [isCreating, setCreating, tryStartCreating] = useBusyState()
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
   const runCreateOffer = usePersistentCreateMutation('offer', 'new')
 
@@ -350,7 +351,9 @@ function NewOfferForm({
       return
     }
 
-    setCreating(true)
+    if (!tryStartCreating()) {
+      return
+    }
 
     const offer: ClientShoppingCart = {
       ClientAgreement: agreement,

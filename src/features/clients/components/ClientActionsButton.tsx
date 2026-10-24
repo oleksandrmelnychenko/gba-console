@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getClientDisplayName } from '../clientDisplayName'
 import { Button } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
@@ -22,7 +23,7 @@ export function ClientActionsButton({ netUid, onChanged }: { netUid: string; onC
   const [client, setClient] = useState<Client | null>(null)
   const [panel, setPanel] = useState<'actions' | 'reserve' | 'structure' | null>(null)
   const [loading, setLoading] = useState(false)
-  const [saving, setSaving] = useState(false)
+  const [saving, setSaving, tryStartSaving] = useBusyState()
   const [days, setDays] = useState(0)
   const request = useRef(0)
   const keys = PermissionKeys.Clients
@@ -89,7 +90,9 @@ export function ClientActionsButton({ netUid, onChanged }: { netUid: string; onC
       }}
       onSwitchActive={async (selected) => {
         if (saving || !hasPermission(keys.Status.ToggleActive) || !selected.NetUid || isSourceManagedClient(selected)) return
-        setSaving(true)
+        if (!tryStartSaving()) {
+          return
+        }
         try {
           await switchClientActiveStateForRegistry(selected.NetUid)
           setClient({ ...selected, IsActive: selected.IsActive === false })
@@ -108,7 +111,9 @@ export function ClientActionsButton({ netUid, onChanged }: { netUid: string; onC
         event.preventDefault()
         if (saving || !hasPermission(keys.ReservationDays.Edit) || !client?.NetUid) return
         const nextDays = Math.max(0, Math.trunc(days))
-        setSaving(true)
+        if (!tryStartSaving()) {
+          return
+        }
         try {
           await updateClientOrderExpireDaysForRegistry(client.NetUid, nextDays)
           setClient({ ...client, OrderExpireDays: nextDays })

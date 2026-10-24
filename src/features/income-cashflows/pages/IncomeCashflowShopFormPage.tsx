@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   ActionIcon,
@@ -190,7 +191,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isResolvingClient, setResolvingClient] = useValueState(false)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [retailClientSelectionRequestGuard] = useState(
     () => createLatestRequestGuard<string>(),
   )
@@ -710,7 +711,9 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -858,7 +861,9 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
       selectedRegister: selectedRegister as PaymentRegister,
     })
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

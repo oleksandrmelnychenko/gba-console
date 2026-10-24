@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
   Alert,
   Button,
@@ -60,7 +61,7 @@ function OrganizationClientNewPageContent({ canCreate }: { canCreate: boolean })
   const [currencies, setCurrencies] = useValueState<Currency[]>([])
   const [error, setError] = useValueState<string | null>(null)
   const [isLoadingCurrencies, setLoadingCurrencies] = useValueState(true)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
 
   useEffect(() => {
     let cancelled = false
@@ -141,7 +142,9 @@ function OrganizationClientNewPageContent({ canCreate }: { canCreate: boolean })
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

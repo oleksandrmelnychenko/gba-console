@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import {
   ActionIcon,
   Alert,
@@ -229,6 +230,7 @@ function useRoadListFormModel({
   opened: boolean
   roadList: CompanyCarRoadList | null
 }) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const { user } = useAuth()
   const [state, dispatchState] = useReducer(roadListModalReducer, undefined, createRoadListModalState)
@@ -423,45 +425,47 @@ function useRoadListFormModel({
   }
 
   async function handleSave() {
-    if (!canSave) {
-      dispatchState({ error: t('Немає прав для зміни шляхового листа'), type: 'failed' })
-      return
-    }
-
-    if (!companyCarNetUid) {
-      return
-    }
-
-    if (outcomeError) {
-      dispatchState({ error: outcomeError, type: 'failed' })
-      return
-    }
-
-    dispatchState({ type: 'started-saving' })
-
-    try {
-      const payload = buildRoadListPayload({
-        baseRoadList: editedRoadList,
-        calculated,
-        companyCar: effectiveCompanyCar,
-        drivers,
-        form,
-        outcomeOrder: selectedOutcomeOrder,
-        responsible: effectiveResponsible,
-      })
-      const saved = isEditMode ? await updateCompanyCarRoadList(payload) : await createCompanyCarRoadList(payload)
-
-      if (saved) {
-        onSaved(saved)
+    return runActionOnce('handleSave', async () => {
+      if (!canSave) {
+        dispatchState({ error: t('Немає прав для зміни шляхового листа'), type: 'failed' })
+        return
       }
-    } catch (saveError) {
-      dispatchState({
-        error: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти шляховий лист'),
-        type: 'failed',
-      })
-    } finally {
-      dispatchState({ type: 'finished-saving' })
-    }
+
+      if (!companyCarNetUid) {
+        return
+      }
+
+      if (outcomeError) {
+        dispatchState({ error: outcomeError, type: 'failed' })
+        return
+      }
+
+      dispatchState({ type: 'started-saving' })
+
+      try {
+        const payload = buildRoadListPayload({
+          baseRoadList: editedRoadList,
+          calculated,
+          companyCar: effectiveCompanyCar,
+          drivers,
+          form,
+          outcomeOrder: selectedOutcomeOrder,
+          responsible: effectiveResponsible,
+        })
+        const saved = isEditMode ? await updateCompanyCarRoadList(payload) : await createCompanyCarRoadList(payload)
+
+        if (saved) {
+          onSaved(saved)
+        }
+      } catch (saveError) {
+        dispatchState({
+          error: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти шляховий лист'),
+          type: 'failed',
+        })
+      } finally {
+        dispatchState({ type: 'finished-saving' })
+      }
+    })
   }
 
   return {

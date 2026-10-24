@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
@@ -91,7 +92,7 @@ function ConsumableProductsPageContent() {
   const [selectedCategoryKey, setSelectedCategoryKey] = useValueState<string | null>(null)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [categoryEditor, setCategoryEditor] = useValueState<CategoryEditor | null>(null)
   const [productEditor, setProductEditor] = useValueState<ProductEditor | null>(null)
   const [productActions, setProductActions] = useValueState<ConsumableProduct | null>(null)
@@ -191,7 +192,9 @@ function ConsumableProductsPageContent() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -240,7 +243,9 @@ function ConsumableProductsPageContent() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -298,7 +303,9 @@ function ConsumableProductsPageContent() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

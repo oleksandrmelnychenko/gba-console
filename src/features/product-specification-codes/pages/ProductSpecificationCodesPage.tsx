@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
@@ -168,7 +169,7 @@ function ProductSpecificationCodesPageContent() {
   const columns = useProductSpecificationColumns(model.specifications)
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [uploadResult, setUploadResult] = useValueState<SpecificationCodeUploadResult | null>(null)
-  const [isUploading, setUploading] = useValueState(false)
+  const [isUploading, setUploading, tryStartUploading] = useBusyState()
 
   useEffect(() => {
     if (!canChange && selectedSpecification) {
@@ -181,7 +182,9 @@ function ProductSpecificationCodesPageContent() {
       return
     }
 
-    setUploading(true)
+    if (!tryStartUploading()) {
+      return
+    }
 
     try {
       const result = await uploadSpecificationCodesFile(file)

@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Alert, Box, Button, Group, NumberInput, Select, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Truck } from 'lucide-react'
@@ -67,8 +68,8 @@ export function ConsignmentNoteSettingsDrawer({
     createConsignmentNoteDrawerState(defaultSetting),
   )
   const [isLoading, setLoading] = useValueState(false)
-  const [isSaving, setSaving] = useValueState(false)
-  const [isPrinting, setPrinting] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
+  const [isPrinting, setPrinting, tryStartPrinting] = useBusyState()
   const [downloadDocument, setDownloadDocument] = useValueState<SaleConsignmentDocument | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const settingOptions = useMemo(() => buildConsignmentSettingOptions(settings), [settings])
@@ -164,7 +165,9 @@ export function ConsignmentNoteSettingsDrawer({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setNoteState((currentState) => ({ ...currentState, error: null }))
 
     try {
@@ -209,7 +212,9 @@ export function ConsignmentNoteSettingsDrawer({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setNoteState((currentState) => ({ ...currentState, error: null }))
 
     try {
@@ -247,7 +252,9 @@ export function ConsignmentNoteSettingsDrawer({
       return
     }
 
-    setPrinting(true)
+    if (!tryStartPrinting()) {
+      return
+    }
     setNoteState((currentState) => ({ ...currentState, error: null }))
 
     try {

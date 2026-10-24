@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
@@ -333,7 +334,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
   const [vatPercent, setVatPercent] = useValueState<number>(DEFAULT_VAT_PERCENT)
   const [isDirty, setDirty] = useValueState(false)
   const [isLoading, setLoading] = useValueState(true)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [error, setError] = useValueState<string | null>(null)
   const [reloadKey, setReloadKey] = useValueState(0)
   const [columnModalOpen, setColumnModalOpen] = useValueState(false)
@@ -678,7 +679,9 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
         return
       }
 
-      setSaving(true)
+      if (!tryStartSaving()) {
+        return
+      }
       setError(null)
 
       try {
@@ -720,6 +723,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
     [
       applyLoadedPackingList, canUseIncome, hasPermission, invoice, isSaving, permissions.editPlacement,
       selectedInvoiceId, setDirty, setError, setInvoice, setSaving, source, t,
+      tryStartSaving,
     ],
   )
 
@@ -753,7 +757,9 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
       const { columnId, item, row } = drawer
 
       setDrawer(null)
-      setSaving(true)
+      if (!tryStartSaving()) {
+        return
+      }
       setError(null)
 
       try {
@@ -808,6 +814,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
     [
       canUseIncome, drawer, hasPermission, invoice, isSaving, packingList, permissions.editPlacement,
       setDrawer, setError, setPackingList, setSaving, source, t,
+      tryStartSaving,
     ],
   )
 
@@ -1010,7 +1017,9 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -1045,6 +1054,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
   }, [
     canUseIncome, hasPermission, invoice, isDirty, isSaving, packingList, permissions.editPlacement,
     selectPackingList, setError, setInvoice, setSaving, source, t, vatPercent,
+    tryStartSaving,
   ])
 
   const handleAllReadyToPlace = useCallback(async () => {
@@ -1063,7 +1073,9 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -1077,6 +1089,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
   }, [
     canUseIncome, hasPermission, invoice, isDirty, isSaving, packingList, permissions.updateReadiness,
     setError, setPackingList, setSaving, source, t,
+    tryStartSaving,
   ])
 
   const handleCarryOut = useCallback(async () => {
@@ -1101,7 +1114,9 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -1118,6 +1133,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
   }, [
     canUseIncome, fromDate, hasPermission, invoice, isDirty, isSaving, packingList, permissions.post,
     reloadFromServer, selectedStorage, setConfirmCarryOut, setError, setSaving, source, t,
+    tryStartSaving,
   ])
 
   const handleProductIncome = useCallback(async () => {
@@ -1140,7 +1156,9 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -1160,6 +1178,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
   }, [
     canUseIncome, fromDate, hasPermission, invoice, isDirty, isSaving, packingList, permissions.capitalize,
     reloadFromServer, selectedStorage, setError, setSaving, source, t,
+    tryStartSaving,
   ])
 
   const placementStatus = useMemo(() => {

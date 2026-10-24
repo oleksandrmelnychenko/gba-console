@@ -1,3 +1,5 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { ProductSourceHistoryRefresh } from '../../../shared/ui/product-movement-history/ProductSourceHistoryRefresh'
 import { withProductSourceHistoryColumns } from '../../../shared/ui/product-movement-history/productSourceHistory'
@@ -1739,7 +1741,7 @@ function ProductOriginalNumbersTab({
   const [codeDraft, setCodeDraft] = useState('')
   const [isMainDraft, setMainDraft] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const normalizedCode = codeDraft.trim()
   const selectedCode = selectedItem ? getOriginalNumberText(selectedItem) : ''
   const isDuplicate = Boolean(normalizedCode)
@@ -1817,7 +1819,9 @@ function ProductOriginalNumbersTab({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -1849,7 +1853,9 @@ function ProductOriginalNumbersTab({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -1872,7 +1878,9 @@ function ProductOriginalNumbersTab({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -2035,6 +2043,7 @@ function ProductRelatedProductsTab({
   product: Product
   type: 'analogues' | 'components'
 }) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const productNetUid = product.NetUid?.trim() || ''
@@ -2045,43 +2054,45 @@ function ProductRelatedProductsTab({
   const canEditRelatedProducts = hasPermission(PRODUCT_EDIT_PERMISSION)
 
   async function removeRelatedProduct(row: RelatedProductRow) {
-    const relatedNetUid = row.product.NetUid?.trim()
+    return runActionOnce('removeRelatedProduct', async () => {
+      const relatedNetUid = row.product.NetUid?.trim()
 
-    if (!canEditRelatedProducts || !productNetUid || !relatedNetUid || removingNetUid) {
-      return
-    }
-
-    const confirmed = window.confirm(t('Видалити повʼязаний товар?'))
-
-    if (!confirmed) {
-      return
-    }
-
-    setRemovingNetUid(relatedNetUid)
-    setError(null)
-
-    try {
-      if (type === 'analogues') {
-        await removeProductAnalogue({
-          analogueNetId: relatedNetUid,
-          baseProductNetId: productNetUid,
-          removeIndirectAnalogues,
-        })
-      } else {
-        await removeProductComponent({
-          baseProductNetId: productNetUid,
-          componentNetId: relatedNetUid,
-          isProductSet: row.isProductSet,
-        })
+      if (!canEditRelatedProducts || !productNetUid || !relatedNetUid || removingNetUid) {
+        return
       }
 
-      notifications.show({ color: 'green', message: t('Повʼязаний товар видалено') })
-      onProductChanged(null)
-    } catch (removeError) {
-      setError(removeError instanceof Error ? removeError.message : t('Не вдалося видалити повʼязаний товар'))
-    } finally {
-      setRemovingNetUid(null)
-    }
+      const confirmed = window.confirm(t('Видалити повʼязаний товар?'))
+
+      if (!confirmed) {
+        return
+      }
+
+      setRemovingNetUid(relatedNetUid)
+      setError(null)
+
+      try {
+        if (type === 'analogues') {
+          await removeProductAnalogue({
+            analogueNetId: relatedNetUid,
+            baseProductNetId: productNetUid,
+            removeIndirectAnalogues,
+          })
+        } else {
+          await removeProductComponent({
+            baseProductNetId: productNetUid,
+            componentNetId: relatedNetUid,
+            isProductSet: row.isProductSet,
+          })
+        }
+
+        notifications.show({ color: 'green', message: t('Повʼязаний товар видалено') })
+        onProductChanged(null)
+      } catch (removeError) {
+        setError(removeError instanceof Error ? removeError.message : t('Не вдалося видалити повʼязаний товар'))
+      } finally {
+        setRemovingNetUid(null)
+      }
+    })
   }
 
   const relatedColumns: DataTableColumn<RelatedProductRow>[] = [
@@ -2361,8 +2372,8 @@ function ProductPlacementStorageUploadModal({
   const [columnQty, setColumnQty] = useState(2)
   const [columnPlacement, setColumnPlacement] = useState(3)
   const [error, setError] = useState<string | null>(null)
-  const [isUploading, setUploading] = useState(false)
-  const [isSavingReturn, setSavingReturn] = useState(false)
+  const [isUploading, setUploading, tryStartUploading] = useBusyState()
+  const [isSavingReturn, setSavingReturn, tryStartSavingReturn] = useBusyState()
   const { rows: notPassedRows, storageId } = correctionState
   const canUpload = Boolean(file && storageId && startRow > 0 && endRow > 0 && !isUploading && !isSavingReturn)
 
@@ -2432,7 +2443,9 @@ function ProductPlacementStorageUploadModal({
       return
     }
 
-    setUploading(true)
+    if (!tryStartUploading()) {
+      return
+    }
     setError(null)
 
     try {
@@ -2476,7 +2489,9 @@ function ProductPlacementStorageUploadModal({
       return
     }
 
-    setSavingReturn(true)
+    if (!tryStartSavingReturn()) {
+      return
+    }
     setError(null)
 
     try {
@@ -2617,7 +2632,7 @@ export function ProductFileUploadModal({
     isLoading: true,
   })
   const [error, setError] = useState<string | null>(null)
-  const [isUploading, setUploading] = useState(false)
+  const [isUploading, setUploading, tryStartUploading] = useBusyState()
   const hasPriceRows = form.prices.length > 0
   const duplicatePricingIds = getDuplicateProductUploadPricingIds(form.prices)
   const hasDuplicatePricingRows = duplicatePricingIds.length > 0
@@ -2759,7 +2774,9 @@ export function ProductFileUploadModal({
       return
     }
 
-    setUploading(true)
+    if (!tryStartUploading()) {
+      return
+    }
     setError(null)
 
     try {
@@ -2978,7 +2995,7 @@ function ProductUploadDocumentModal({
   const { t } = useI18n()
   const [form, setForm] = useState<ProductUploadDocumentForm>(() => createProductUploadDocumentForm(product))
   const [error, setError] = useState<string | null>(null)
-  const [isUploading, setUploading] = useState(false)
+  const [isUploading, setUploading, tryStartUploading] = useBusyState()
   const labels = productUploadDocumentLabels[type]
   const canSubmit = Boolean(form.file && form.vendorCode.trim() && !isUploading)
 
@@ -3004,7 +3021,9 @@ function ProductUploadDocumentModal({
       return
     }
 
-    setUploading(true)
+    if (!tryStartUploading()) {
+      return
+    }
     setError(null)
 
     try {

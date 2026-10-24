@@ -1,5 +1,6 @@
+import { ReportRowPagination } from './ReportRowPagination'
 import { ReportTableScrollArea } from './ReportTableScrollArea'
-import { Alert, Button, Group, Stack, Table, Text } from '@mantine/core'
+import { Alert, Stack, Table, Text } from '@mantine/core'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { matrixColumnKey, type MatrixResult } from '../data/originalVparivanie'
@@ -17,20 +18,19 @@ function AcceptedMatrix({ result }: { result: MatrixResult }) {
   const { t } = useI18n(), [page, setPage] = useState(0)
   const current = Math.min(page, Math.max(0, Math.ceil(result.Rows.length / 50) - 1)), first = current * 50
   return <Stack gap="xs"><Text fw={600}>{result.GroupCaption}</Text>
-    <Group><Button size="xs" variant="light" disabled={current === 0} onClick={() => setPage(current - 1)}>{t('Попередні рядки')}</Button>
-      <Text size="xs">{result.Rows.length ? first + 1 : 0}–{Math.min(first + 50, result.Rows.length)} / {result.Rows.length}</Text>
-      <Button size="xs" variant="light" disabled={first + 50 >= result.Rows.length} onClick={() => setPage(current + 1)}>{t('Наступні рядки')}</Button></Group>
+
     <ReportTableScrollArea minWidth={Math.max(640, 260 + result.Columns.length * 110)}>
       <Table className="app-static-table" captionSide="top"><Table.Caption>{t('Матриця товарів')} · {result.From} – {result.Through}</Table.Caption>
         <Table.Thead><Table.Tr><Table.Th scope="col">{t('Номенклатура')}</Table.Th>
-          {result.Columns.map(column => <Table.Th key={matrixColumnKey(column)} scope="col">
+          {result.Columns.map(column => <Table.Th key={matrixColumnKey(column)} scope="col" className="app-table-cell-number">
             <div>{column.Caption}</div>{column.RegionCode === null ? <div>{t('Разом')}</div> : <><div>{column.RegionCode || '\u00a0'}</div><div>{column.MeasureCaption}</div></>}
           </Table.Th>)}
         </Table.Tr></Table.Thead>
         <Table.Tbody>{result.Rows.slice(first, first + 50).map(row => <Table.Tr key={row.ProductReference}>
-          <Table.Th scope="row">{row.Caption}</Table.Th>{row.Values.map((value, column) => <Table.Td key={matrixColumnKey(result.Columns[column])} className="app-money">{value ?? ''}</Table.Td>)}
+          <Table.Th scope="row">{row.Caption}</Table.Th>{row.Values.map((value, column) => <Table.Td key={matrixColumnKey(result.Columns[column])} className="app-table-cell-number">{value ?? ''}</Table.Td>)}
         </Table.Tr>)}</Table.Tbody>
       </Table>
-    </ReportTableScrollArea>{!result.Rows.length ? <Text>{t('За обраний період рядків немає.')}</Text> : null}
+    </ReportTableScrollArea>
+    <ReportRowPagination total={result.Rows.length} offset={first} onChange={offset => setPage(offset / 50)} />{!result.Rows.length ? <Text>{t('За обраний період рядків немає.')}</Text> : null}
   </Stack>
 }

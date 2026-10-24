@@ -404,7 +404,6 @@ function useOrganisationServicesPageModel() {
 
   async function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-
     if (!selectedOrganization && !organizationSearch.trim()) {
       setError(t('Оберіть організацію'))
       return

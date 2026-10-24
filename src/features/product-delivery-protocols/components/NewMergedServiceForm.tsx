@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import {
   Alert,
   Button,
@@ -115,6 +116,7 @@ export function NewMergedServiceForm({
   onSubmit: (values: NewMergedServiceFormValues) => Promise<void>
   opened: boolean
 }) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const [values, setValues] = useValueState<NewMergedServiceFormValues>(createInitialValues)
   const [organizations, setOrganizations] = useValueState<SupplyOrganization[]>([])
@@ -337,22 +339,24 @@ export function NewMergedServiceForm({
   }
 
   async function handleSubmit() {
-    if (isSaving) {
-      return
-    }
+    return runActionOnce('handleSubmit', async () => {
+      if (isSaving) {
+        return
+      }
 
-    const validation = validateNewMergedService(values, t)
+      const validation = validateNewMergedService(values, t)
 
-    if (validation.summary) {
-      setValidationError(validation.summary)
-      setFieldErrors(validation.fieldErrors)
+      if (validation.summary) {
+        setValidationError(validation.summary)
+        setFieldErrors(validation.fieldErrors)
 
-      return
-    }
+        return
+      }
 
-    setValidationError(null)
-    setFieldErrors({})
-    await onSubmit(values)
+      setValidationError(null)
+      setFieldErrors({})
+      await onSubmit(values)
+    })
   }
 
   return (

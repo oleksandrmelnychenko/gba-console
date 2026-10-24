@@ -5,9 +5,13 @@ import {
 } from '../../salesMutationOperation'
 import type { SalesUkraineOrderItem } from '../../types'
 import { shiftOrderItemFromSale, type WizardReservationOrderItem } from './newSaleWizardApi'
-import type { WizardCartSelection } from './EditShoppingCartOverlay'
 import type { WizardCartMutationExpectation } from './wizardMutationOperation'
 import type { WizardSplitOrderItem } from './wizardSplitSale'
+
+export type WizardCartSelection = {
+  index: number
+  list: 'current' | 'split'
+}
 
 export type WizardCartMutationRequest =
   | {

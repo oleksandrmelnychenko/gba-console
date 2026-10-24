@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { ActionIcon, Alert, FileInput, Group, Stack, Text } from '@mantine/core'
 import { CircleAlert, File, Trash2, Upload } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
@@ -29,52 +30,57 @@ export function TaxFreeDocumentsPanel({
   onSavingChange,
   onUpdated,
 }: TaxFreeDocumentsPanelProps) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const [error, setError] = useState<string | null>(null)
   const documents = taxFree.TaxFreeDocuments || []
 
   async function removeDocument(document: TaxFreeDocument) {
-    if (!canDelete || !document.NetUid) {
-      return
-    }
+    return runActionOnce('removeDocument', async () => {
+      if (!canDelete || !document.NetUid) {
+        return
+      }
 
-    onSavingChange(true)
-    setError(null)
+      onSavingChange(true)
+      setError(null)
 
-    try {
-      await deleteTaxFreeDocument(document.NetUid)
-      onUpdated({
-        ...taxFree,
-        TaxFreeDocuments: documents.filter((item) => item.NetUid !== document.NetUid),
-      })
-      notifications.show({ color: 'green', message: t('Документ видалено') })
-    } catch (removeError) {
-      setError(removeError instanceof Error ? removeError.message : t('Не вдалося видалити документ'))
-    } finally {
-      onSavingChange(false)
-    }
+      try {
+        await deleteTaxFreeDocument(document.NetUid)
+        onUpdated({
+          ...taxFree,
+          TaxFreeDocuments: documents.filter((item) => item.NetUid !== document.NetUid),
+        })
+        notifications.show({ color: 'green', message: t('Документ видалено') })
+      } catch (removeError) {
+        setError(removeError instanceof Error ? removeError.message : t('Не вдалося видалити документ'))
+      } finally {
+        onSavingChange(false)
+      }
+    })
   }
 
   async function uploadDocuments() {
-    if (!canUpload || !taxFree.NetUid || files.length === 0) {
-      return
-    }
-
-    onSavingChange(true)
-    setError(null)
-
-    try {
-      const updatedTaxFree = await uploadTaxFreeDocuments(taxFree.NetUid, files)
-      if (updatedTaxFree) {
-        onUpdated(updatedTaxFree)
+    return runActionOnce('uploadDocuments', async () => {
+      if (!canUpload || !taxFree.NetUid || files.length === 0) {
+        return
       }
-      onFilesChange([])
-      notifications.show({ color: 'green', message: t('Документи завантажено') })
-    } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : t('Не вдалося завантажити документи'))
-    } finally {
-      onSavingChange(false)
-    }
+
+      onSavingChange(true)
+      setError(null)
+
+      try {
+        const updatedTaxFree = await uploadTaxFreeDocuments(taxFree.NetUid, files)
+        if (updatedTaxFree) {
+          onUpdated(updatedTaxFree)
+        }
+        onFilesChange([])
+        notifications.show({ color: 'green', message: t('Документи завантажено') })
+      } catch (uploadError) {
+        setError(uploadError instanceof Error ? uploadError.message : t('Не вдалося завантажити документи'))
+      } finally {
+        onSavingChange(false)
+      }
+    })
   }
 
   return (

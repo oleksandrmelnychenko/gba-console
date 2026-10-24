@@ -1,3 +1,5 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Alert, Box, Button, Card, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react'
@@ -44,6 +46,7 @@ function createNewRateDraft(): NewRateDraft {
 }
 
 function useCurrencyConvertorsPageModel() {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
@@ -63,7 +66,7 @@ function useCurrencyConvertorsPageModel() {
   const [ratesError, setRatesError] = useValueState<string | null>(null)
   const [from, setFrom] = useValueState(initialFrom)
   const [to, setTo] = useValueState(initialTo)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [isAdding, setAdding] = useValueState(false)
   const [newRateDraft, setNewRateDraft] = useValueState<NewRateDraft>(createNewRateDraft)
   const [editingRate, setEditingRate] = useValueState<CurrencyTraderExchangeRate | null>(null)
@@ -187,7 +190,9 @@ function useCurrencyConvertorsPageModel() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setRatesError(null)
 
     try {
@@ -230,23 +235,25 @@ function useCurrencyConvertorsPageModel() {
   }
 
   async function saveNewRate() {
-    if (!selectedTrader || !canEdit) {
-      return
-    }
+    return runActionOnce('saveNewRate', async () => {
+      if (!selectedTrader || !canEdit) {
+        return
+      }
 
-    const addedRates = CURRENCY_ORDER.map((currency) => ({
-      CurrencyName: currency,
-      ExchangeRate: parseAmount(newRateDraft.rates[currency]),
-      FromDate: newRateDraft.date,
-    }))
+      const addedRates = CURRENCY_ORDER.map((currency) => ({
+        CurrencyName: currency,
+        ExchangeRate: parseAmount(newRateDraft.rates[currency]),
+        FromDate: newRateDraft.date,
+      }))
 
-    const payload: CurrencyTraderPayload = {
-      ...selectedTrader,
-      CurrencyTraderExchangeRates: [...rates, ...addedRates],
-    }
+      const payload: CurrencyTraderPayload = {
+        ...selectedTrader,
+        CurrencyTraderExchangeRates: [...rates, ...addedRates],
+      }
 
-    setAdding(false)
-    await persistTrader(payload, t('Курс валют збережено'))
+      setAdding(false)
+      await persistTrader(payload, t('Курс валют збережено'))
+    })
   }
 
   function startEdit(rate: CurrencyTraderExchangeRate) {
@@ -263,26 +270,28 @@ function useCurrencyConvertorsPageModel() {
   }
 
   async function saveEdit() {
-    if (!selectedTrader || !editingRate || !canEdit) {
-      return
-    }
+    return runActionOnce('saveEdit', async () => {
+      if (!selectedTrader || !editingRate || !canEdit) {
+        return
+      }
 
-    const updatedValue = parseAmount(editingValue)
+      const updatedValue = parseAmount(editingValue)
 
-    if (!(updatedValue > 0)) {
-      setRatesError(t('Курс валют має бути більшим за нуль'))
-      return
-    }
+      if (!(updatedValue > 0)) {
+        setRatesError(t('Курс валют має бути більшим за нуль'))
+        return
+      }
 
-    const nextRates = rates.map((rate) => (rate === editingRate ? { ...rate, ExchangeRate: updatedValue } : rate))
+      const nextRates = rates.map((rate) => (rate === editingRate ? { ...rate, ExchangeRate: updatedValue } : rate))
 
-    const payload: CurrencyTraderPayload = {
-      ...selectedTrader,
-      CurrencyTraderExchangeRates: nextRates,
-    }
+      const payload: CurrencyTraderPayload = {
+        ...selectedTrader,
+        CurrencyTraderExchangeRates: nextRates,
+      }
 
-    setEditingRate(null)
-    await persistTrader(payload, t('Курс валют збережено'))
+      setEditingRate(null)
+      await persistTrader(payload, t('Курс валют збережено'))
+    })
   }
 
   async function deleteRate(rate: CurrencyTraderExchangeRate) {

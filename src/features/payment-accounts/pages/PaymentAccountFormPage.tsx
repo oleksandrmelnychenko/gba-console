@@ -1,3 +1,5 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -310,7 +312,7 @@ function PaymentAccountFormPageContent() {
   const isEditMode = Boolean(id)
   const [pageState, dispatchPageState] = useReducer(pageStateReducer, true, createInitialPageState)
   const [isEditing, setEditing] = useValueState(!isEditMode)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   // Створення редіректить у edit-оверлей, тож список дізнається про мутацію
   // лише при фінальному закритті — прапорець переживає цей проміжок.
   const hasMutatedRef = useRef(false)
@@ -464,7 +466,9 @@ function PaymentAccountFormPageContent() {
     }
 
     const payload = toPayload(account, form, selectedOrganization as Organization, currencyDrafts, hiddenCurrencyRegisters, isEditMode)
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     dispatchPageState({ error: null })
 
     try {
@@ -1163,6 +1167,7 @@ export function PaymentAccountActivityPanel({
   onSelectedCurrencyChange: (value: string) => void
   onToChange: (value: string) => void
 }) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const currencyOptions = getCurrencyRegisterOptions(account.PaymentCurrencyRegisters || [])
   const [transferModalOpened, setTransferModalOpened] = useValueState(false)
@@ -1172,59 +1177,63 @@ export function PaymentAccountActivityPanel({
   const [isMutating, setMutating] = useValueState(false)
 
   async function handleCancelTransfer() {
-    if (!canCancelTransfer) {
-      return
-    }
+    return runActionOnce('handleCancelTransfer', async () => {
+      if (!canCancelTransfer) {
+        return
+      }
 
-    const netId = getEntityValue(cancelTransfer)
+      const netId = getEntityValue(cancelTransfer)
 
-    if (!netId) {
-      return
-    }
+      if (!netId) {
+        return
+      }
 
-    setMutating(true)
+      setMutating(true)
 
-    try {
-      await cancelPaymentAccountTransfer(netId)
-      notifications.show({ color: 'green', message: t('Переказ скасовано') })
-      setCancelTransfer(null)
-      await onMutationComplete()
-    } catch (cancelError) {
-      notifications.show({
-        color: 'red',
-        message: cancelError instanceof Error ? cancelError.message : t('Не вдалося скасувати переказ'),
-      })
-    } finally {
-      setMutating(false)
-    }
+      try {
+        await cancelPaymentAccountTransfer(netId)
+        notifications.show({ color: 'green', message: t('Переказ скасовано') })
+        setCancelTransfer(null)
+        await onMutationComplete()
+      } catch (cancelError) {
+        notifications.show({
+          color: 'red',
+          message: cancelError instanceof Error ? cancelError.message : t('Не вдалося скасувати переказ'),
+        })
+      } finally {
+        setMutating(false)
+      }
+    })
   }
 
   async function handleCancelExchange() {
-    if (!canCancelExchange) {
-      return
-    }
+    return runActionOnce('handleCancelExchange', async () => {
+      if (!canCancelExchange) {
+        return
+      }
 
-    const netId = getEntityValue(cancelExchange)
+      const netId = getEntityValue(cancelExchange)
 
-    if (!netId) {
-      return
-    }
+      if (!netId) {
+        return
+      }
 
-    setMutating(true)
+      setMutating(true)
 
-    try {
-      await cancelPaymentAccountExchange(netId)
-      notifications.show({ color: 'green', message: t('Обмін валют скасовано') })
-      setCancelExchange(null)
-      await onMutationComplete()
-    } catch (cancelError) {
-      notifications.show({
-        color: 'red',
-        message: cancelError instanceof Error ? cancelError.message : t('Не вдалося скасувати обмін валют'),
-      })
-    } finally {
-      setMutating(false)
-    }
+      try {
+        await cancelPaymentAccountExchange(netId)
+        notifications.show({ color: 'green', message: t('Обмін валют скасовано') })
+        setCancelExchange(null)
+        await onMutationComplete()
+      } catch (cancelError) {
+        notifications.show({
+          color: 'red',
+          message: cancelError instanceof Error ? cancelError.message : t('Не вдалося скасувати обмін валют'),
+        })
+      } finally {
+        setMutating(false)
+      }
+    })
   }
 
   return (
@@ -1408,7 +1417,7 @@ export function PaymentAccountTransferModal({
   const [draft, setDraft] = useValueState(() => createTransferDraft(account))
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
-  const [isSubmitting, setSubmitting] = useValueState(false)
+  const [isSubmitting, setSubmitting, tryStartSubmitting] = useBusyState()
   const [movements, setMovements] = useValueState<PaymentMovement[]>([])
   const [paymentAccounts, setPaymentAccounts] = useValueState<PaymentAccount[]>([])
   const currencyRegisters = getVisibleCurrencyRegisters(account)
@@ -1469,7 +1478,9 @@ export function PaymentAccountTransferModal({
       return
     }
 
-    setSubmitting(true)
+    if (!tryStartSubmitting()) {
+      return
+    }
     setError(null)
 
     try {
@@ -1634,7 +1645,7 @@ export function PaymentAccountExchangeModal({
   const [draft, setDraft] = useValueState(() => createExchangeDraft(account))
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
-  const [isSubmitting, setSubmitting] = useValueState(false)
+  const [isSubmitting, setSubmitting, tryStartSubmitting] = useBusyState()
   const [isLoadingTraders, setLoadingTraders] = useValueState(false)
   const [isCalculatingExchange, setCalculatingExchange] = useValueState(false)
   const [bankAccounts, setBankAccounts] = useValueState<PaymentAccount[]>([])
@@ -1819,7 +1830,9 @@ export function PaymentAccountExchangeModal({
       return
     }
 
-    setSubmitting(true)
+    if (!tryStartSubmitting()) {
+      return
+    }
     setError(null)
 
     try {

@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import {
   Alert,
   Anchor,
@@ -157,6 +158,7 @@ export function MergedServiceEditCard({
   opened: boolean
   service: MergedService
 }) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const [draft, setDraft] = useValueState<EditDraft>(() => toDraft(service))
   const [accountDocuments, setAccountDocuments] = useValueState<File[]>([])
@@ -340,38 +342,40 @@ export function MergedServiceEditCard({
   }
 
   async function handleSave() {
-    if (isSaving) {
-      return
-    }
+    return runActionOnce('handleSave', async () => {
+      if (isSaving) {
+        return
+      }
 
-    const validation = getMergedServiceValidation(draft, service, t)
+      const validation = getMergedServiceValidation(draft, service, t)
 
-    if (validation.summary) {
-      setValidationError(validation.summary)
-      setFieldErrors(validation.fieldErrors)
-      return
-    }
+      if (validation.summary) {
+        setValidationError(validation.summary)
+        setFieldErrors(validation.fieldErrors)
+        return
+      }
 
-    setValidationError(null)
-    setFieldErrors({})
+      setValidationError(null)
+      setFieldErrors({})
 
-    const updatedService = buildMergedServiceSavePayload({
-      actDocuments,
-      deletedAccountDocuments,
-      deletedAccountingTaskDocuments,
-      deletedActDocuments,
-      deletedInvoiceDocuments,
-      deletedTaskDocuments,
-      draft,
-      service,
-    })
+      const updatedService = buildMergedServiceSavePayload({
+        actDocuments,
+        deletedAccountDocuments,
+        deletedAccountingTaskDocuments,
+        deletedActDocuments,
+        deletedInvoiceDocuments,
+        deletedTaskDocuments,
+        draft,
+        service,
+      })
 
-    await onSave(updatedService, {
-      accountDocuments,
-      accountingTaskDocuments,
-      actDocuments,
-      files,
-      taskDocuments,
+      await onSave(updatedService, {
+        accountDocuments,
+        accountingTaskDocuments,
+        actDocuments,
+        files,
+        taskDocuments,
+      })
     })
   }
 

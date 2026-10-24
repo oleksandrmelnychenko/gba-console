@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Alert, Button, Card, Group, NumberInput, Stack } from '@mantine/core'
 import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { CircleAlert } from 'lucide-react'
@@ -27,7 +28,7 @@ type TaxFreeBreakModalProps = {
 export function TaxFreeBreakModal({ canBreak, opened, packList, onClose, onUpdated }: TaxFreeBreakModalProps) {
   const { t } = useI18n()
   const [form, setForm] = useState<BreakForm>(() => createForm(packList))
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [error, setError] = useState<string | null>(null)
 
   function resetModalState(nextPackList: TaxFreePackList | null) {
@@ -51,7 +52,9 @@ export function TaxFreeBreakModal({ canBreak, opened, packList, onClose, onUpdat
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

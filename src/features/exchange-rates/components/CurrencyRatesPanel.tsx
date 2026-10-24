@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import {
   ActionIcon,
@@ -230,6 +231,7 @@ function historyReducer(state: HistoryState, action: HistoryAction): HistoryStat
 }
 
 export function CurrencyRatesPanel({ group, onClose, onRefresh, style, opened = true }: CurrencyRatesPanelProps) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const formId = useId()
   const editButtonRef = useRef<HTMLButtonElement>(null)
@@ -320,41 +322,42 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style, opened = 
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    return runActionOnce('handleSubmit', async () => {
+      const nextRates = amountEntries.map(({ key, rate }) => {
+        const amount = Number(panelState.rateAmounts[key])
 
-    const nextRates = amountEntries.map(({ key, rate }) => {
-      const amount = Number(panelState.rateAmounts[key])
+        return {
+          ...rate,
+          Amount: amount,
+          Created: panelState.formDate,
+          Updated: panelState.formDate,
+        }
+      })
 
-      return {
-        ...rate,
-        Amount: amount,
-        Created: panelState.formDate,
-        Updated: panelState.formDate,
+      if (nextRates.some((rate) => !Number.isFinite(rate.Amount) || rate.Amount <= 0)) {
+        dispatchPanel({ type: 'formValidationFailed', message: t('Некоректне значення курсу') })
+        return
+      }
+
+      dispatchPanel({ type: 'saveStarted' })
+
+      try {
+        await updateExchangeRates(group.updateMode, nextRates)
+        await onRefresh()
+        dispatchPanel({ type: 'saveSucceeded' })
+        notifications.show({
+          color: 'green',
+          message: t('Курси оновлено'),
+        })
+      } catch (error) {
+        const message = error instanceof Error ? error.message : t('Не вдалося оновити курси')
+        dispatchPanel({ type: 'saveFailed', message })
+        notifications.show({
+          color: 'red',
+          message,
+        })
       }
     })
-
-    if (nextRates.some((rate) => !Number.isFinite(rate.Amount) || rate.Amount <= 0)) {
-      dispatchPanel({ type: 'formValidationFailed', message: t('Некоректне значення курсу') })
-      return
-    }
-
-    dispatchPanel({ type: 'saveStarted' })
-
-    try {
-      await updateExchangeRates(group.updateMode, nextRates)
-      await onRefresh()
-      dispatchPanel({ type: 'saveSucceeded' })
-      notifications.show({
-        color: 'green',
-        message: t('Курси оновлено'),
-      })
-    } catch (error) {
-      const message = error instanceof Error ? error.message : t('Не вдалося оновити курси')
-      dispatchPanel({ type: 'saveFailed', message })
-      notifications.show({
-        color: 'red',
-        message,
-      })
-    }
   }
 
   function resetFilter() {

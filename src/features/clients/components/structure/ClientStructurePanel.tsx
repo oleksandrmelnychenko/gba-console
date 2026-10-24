@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../../shared/hooks/useBusyState'
 import { Alert, Button, Card, Group, Stack, Tabs } from '@mantine/core'
 import { Building2, CircleAlert, FolderTree, Monitor, UserPlus, Users } from 'lucide-react'
 import { useEffect } from 'react'
@@ -36,8 +37,8 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
   const [groups, setGroups] = useValueState<ClientGroup[]>([])
   const [workplaces, setWorkplaces] = useValueState<ClientWorkplace[]>([])
   const [isLoading, setLoading] = useValueState(false)
-  const [isSaving, setSaving] = useValueState(false)
-  const [isRemoving, setRemoving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
+  const [isRemoving, setRemoving, tryStartRemoving] = useBusyState()
   const [error, setError] = useValueState<string | null>(null)
   const [groupsModalOpened, setGroupsModalOpened] = useValueState(false)
   const canViewStructure = hasPermission(PermissionKeys.Clients.Structure.Open)
@@ -122,7 +123,9 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -140,7 +143,9 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -158,7 +163,9 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
       return
     }
 
-    setRemoving(true)
+    if (!tryStartRemoving()) {
+      return
+    }
     setError(null)
 
     try {

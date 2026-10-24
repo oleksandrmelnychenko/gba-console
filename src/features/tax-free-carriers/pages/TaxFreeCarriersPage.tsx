@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
   Alert,
   Box,
@@ -61,7 +62,7 @@ function useTaxFreeCarriersPageModel() {
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [carrierToDelete, setCarrierToDelete] = useValueState<TaxFreeCarrier | null>(null)
-  const [isDeleting, setDeleting] = useValueState(false)
+  const [isDeleting, setDeleting, tryStartDeleting] = useBusyState()
   const [downloadOpened, setDownloadOpened] = useValueState(false)
   const [downloadDocument, setDownloadDocument] = useValueState<TaxFreeCarrierExportDocument | null>(null)
   const [downloadError, setDownloadError] = useValueState<string | null>(null)
@@ -122,7 +123,9 @@ function useTaxFreeCarriersPageModel() {
       return
     }
 
-    setDeleting(true)
+    if (!tryStartDeleting()) {
+      return
+    }
     setError(null)
 
     try {

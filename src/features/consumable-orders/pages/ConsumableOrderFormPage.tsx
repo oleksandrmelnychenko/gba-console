@@ -1,3 +1,5 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   Alert,
@@ -126,6 +128,7 @@ export function ConsumableOrderFormPage() {
 }
 
 function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const { id } = useParams<{ id?: string }>()
   const routeLocation = useLocation()
@@ -144,8 +147,8 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
   const [costMovements, setCostMovements] = useValueState<PaymentCostMovement[]>([])
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
-  const [isSaving, setSaving] = useValueState(false)
-  const [isCalculating, setCalculating] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
+  const [isCalculating, setCalculating, tryStartCalculating] = useBusyState()
   const mutationIdentityRef = useRef<object>({})
   const recalculateRequestRef = useRef(0)
   const searchRequestRef = useRef<Record<string, number>>({})
@@ -332,7 +335,9 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
     async (nextOrder: ConsumablesOrder) => {
       const requestId = recalculateRequestRef.current + 1
       recalculateRequestRef.current = requestId
-      setCalculating(true)
+      if (!tryStartCalculating()) {
+        return
+      }
 
       try {
         const calculationPayload = buildOrderPayload({
@@ -366,6 +371,7 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
       selectedSupplier,
       setCalculating,
       setOrder,
+      tryStartCalculating,
     ],
   )
 
@@ -527,23 +533,25 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
   }
 
   async function toggleItemDeleted(item: ConsumablesOrderItem, index: number) {
-    if (isEconomicMutationLocked || isMutationLocked) {
-      return
-    }
+    return runActionOnce('toggleItemDeleted', async () => {
+      if (isEconomicMutationLocked || isMutationLocked) {
+        return
+      }
 
-    const nextItems = toggleDeletedItemAtIndex(activeItems, index)
+      const nextItems = toggleDeletedItemAtIndex(activeItems, index)
 
-    const nextOrder = {
-      ...order,
-      ConsumablesOrderItems: nextItems,
-    }
+      const nextOrder = {
+        ...order,
+        ConsumablesOrderItems: nextItems,
+      }
 
-    if (item.Deleted) {
-      setOrder(nextOrder)
-      return
-    }
+      if (item.Deleted) {
+        setOrder(nextOrder)
+        return
+      }
 
-    await recalculateOrder(nextOrder)
+      await recalculateOrder(nextOrder)
+    })
   }
 
   function updateEditorItem(patch: Partial<ConsumablesOrderItem>) {
@@ -629,7 +637,9 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

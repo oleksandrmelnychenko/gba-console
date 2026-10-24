@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { ActionIcon, Box, Group, Indicator, Loader, Popover, ScrollArea, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { Package, Trash2 } from 'lucide-react'
@@ -84,6 +85,7 @@ function rulesReducer(state: RulesState, action: RulesAction): RulesState {
 }
 
 export function ProductWriteOffRulesControl() {
+  const runActionOnce = useSingleFlight()
   const { isAuthenticated, session } = useAuth()
   const { t } = useI18n()
   const [state, dispatch] = useReducer(rulesReducer, initialRulesState)
@@ -114,21 +116,23 @@ export function ProductWriteOffRulesControl() {
   }, [isAuthenticated, session?.csrfToken])
 
   async function removeRule(rule: ProductWriteOffRule) {
-    if (!rule.NetUid) {
-      return
-    }
+    return runActionOnce('removeRule', async () => {
+      if (!rule.NetUid) {
+        return
+      }
 
-    dispatch({ type: 'removeStarted', netUid: rule.NetUid })
+      dispatch({ type: 'removeStarted', netUid: rule.NetUid })
 
-    try {
-      await deleteProductWriteOffRule(rule.NetUid)
-      dispatch({ type: 'removeSucceeded', netUid: rule.NetUid })
-      notifications.show({ color: 'green', message: t('Правило списання видалено') })
-    } catch (error) {
-      const message = error instanceof Error ? error.message : t('Не вдалося видалити правило списання')
-      dispatch({ type: 'removeFailed', error: error as Error })
-      notifications.show({ color: 'red', message })
-    }
+      try {
+        await deleteProductWriteOffRule(rule.NetUid)
+        dispatch({ type: 'removeSucceeded', netUid: rule.NetUid })
+        notifications.show({ color: 'green', message: t('Правило списання видалено') })
+      } catch (error) {
+        const message = error instanceof Error ? error.message : t('Не вдалося видалити правило списання')
+        dispatch({ type: 'removeFailed', error: error as Error })
+        notifications.show({ color: 'red', message })
+      }
+    })
   }
 
   return (

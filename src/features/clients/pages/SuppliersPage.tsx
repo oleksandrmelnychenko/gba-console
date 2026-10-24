@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
@@ -206,6 +207,7 @@ type SupplierPermissions = {
 }
 
 function useSuppliersPageModel(permissions: SupplierPermissions) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const location = useLocation()
   const navigate = useNavigate()
@@ -393,27 +395,29 @@ function useSuppliersPageModel(permissions: SupplierPermissions) {
   }
 
   async function handleExport() {
-    if (!permissions.canExport) {
-      return
-    }
+    return runActionOnce('handleExport', async () => {
+      if (!permissions.canExport) {
+        return
+      }
 
-    setSupplierAction('export')
-    setError(null)
+      setSupplierAction('export')
+      setError(null)
 
-    try {
-      const document = await exportSuppliersDocument({
-        ...searchParams,
-        limit: totalCount && totalCount > 0 ? totalCount : pageSize,
-        offset: 0,
-      })
+      try {
+        const document = await exportSuppliersDocument({
+          ...searchParams,
+          limit: totalCount && totalCount > 0 ? totalCount : pageSize,
+          offset: 0,
+        })
 
-      setDownloadDocument(document)
-      setDownloadModalOpened(true)
-    } catch (actionError) {
-      setError(actionError instanceof Error ? actionError.message : t('Не вдалося підготувати документ'))
-    } finally {
-      setSupplierAction(null)
-    }
+        setDownloadDocument(document)
+        setDownloadModalOpened(true)
+      } catch (actionError) {
+        setError(actionError instanceof Error ? actionError.message : t('Не вдалося підготувати документ'))
+      } finally {
+        setSupplierAction(null)
+      }
+    })
   }
 
   return {

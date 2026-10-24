@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
   Alert,
   Button,
@@ -73,7 +74,7 @@ function UserNewPageContent() {
   const [confirmPassword, setConfirmPassword] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoadingRoles, setLoadingRoles] = useValueState(true)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
 
   useEffect(() => {
     let cancelled = false
@@ -151,7 +152,9 @@ function UserNewPageContent() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Button, Group, Select, Stack, TextInput, Textarea } from '@mantine/core'
 import { UserPlus } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
@@ -41,7 +42,7 @@ export function NewHeadTaskModal({
   const [description, setDescription] = useValueState('')
   const [urgency, setUrgency] = useValueState<CockpitUrgency>('high')
   const [dueDate, setDueDate] = useValueState('')
-  const [saving, setSaving] = useState(false)
+  const [saving, setSaving, tryStartSaving] = useBusyState()
 
   useEffect(() => {
     if (!isOpen) {
@@ -112,7 +113,9 @@ export function NewHeadTaskModal({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
 
     try {
       await createHeadTask({

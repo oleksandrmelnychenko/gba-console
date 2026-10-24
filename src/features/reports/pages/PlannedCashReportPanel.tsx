@@ -41,7 +41,7 @@ export function PlannedCashReportPanel(props: { capability: PlannedCashCapabilit
 }
 function PlannedCashCells({ cells }: { cells: PlannedCashCell[] }) {
   const { t } = useI18n()
-  return cells.map(cell => <Table.Td key={cell.Key} className="app-money"
+  return cells.map(cell => <Table.Td key={cell.Key} className="app-table-cell-number"
     title={!cell.Available ? t('Недоступні дані') : cell.Value === null ? t('У періоді немає даних') : undefined}>{cell.FormattedValue ?? ''}</Table.Td>)
 }
 function PlannedCashResult({ report }: { report: PlannedCashReport }) {
@@ -53,9 +53,9 @@ function PlannedCashResult({ report }: { report: PlannedCashReport }) {
     {report.GroupLabelsAvailabilityMessage ? <Alert color="yellow">{t(report.GroupLabelsAvailabilityMessage)}</Alert> : null}
     <ReportTableScrollArea minWidth={800}><Table className="app-static-table">
       <Table.Thead><Table.Tr><Table.Th>{t(report.Grouping === 'Контрагент' ? 'Контрагент' : 'Стаття руху коштів')}</Table.Th>
-        {report.Columns.map(column => <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
-      <Table.Tbody>{report.Rows.map(row => <Table.Tr key={row.Key}><Table.Td>{row.NameAvailable ? row.Name : t('Назва групи ще недоступна')}</Table.Td><PlannedCashCells cells={row.Cells} /></Table.Tr>)}
-        <Table.Tr><Table.Th scope="row">{t('Разом')}</Table.Th><PlannedCashCells cells={report.Totals} /></Table.Tr></Table.Tbody>
+        {report.Columns.map(column => <Table.Th key={column.Key} className="app-table-cell-number">{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
+      <Table.Tbody>{report.Rows.map(row => <Table.Tr key={row.Key}><Table.Td>{row.NameAvailable ? row.Name : t('Назва групи ще недоступна')}</Table.Td><PlannedCashCells cells={row.Cells} /></Table.Tr>)}</Table.Tbody>
+      <Table.Tfoot><Table.Tr><Table.Th scope="row">{t('Разом')}</Table.Th><PlannedCashCells cells={report.Totals} /></Table.Tr></Table.Tfoot>
     </Table></ReportTableScrollArea>
     <Text size="xs" c="dimmed">{t('Управлінські суми без перерахунку валют. Суми у валюті рахунку та взаєморозрахунків не підміняють ці показники.')}</Text>
   </section>

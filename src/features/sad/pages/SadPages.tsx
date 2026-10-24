@@ -1,3 +1,5 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -206,7 +208,7 @@ export function AllSadsPage() {
   const [supplyOrderSad, setSupplyOrderSad] = useState<Sad | null>(null)
   const [incomePaymentSad, setIncomePaymentSad] = useState<Sad | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Sad | null>(null)
-  const [isDeleting, setDeleting] = useState(false)
+  const [isDeleting, setDeleting, tryStartDeleting] = useBusyState()
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   const loadSads = useCallback(async (offset: number) => {
@@ -367,7 +369,9 @@ export function AllSadsPage() {
       return
     }
 
-    setDeleting(true)
+    if (!tryStartDeleting()) {
+      return
+    }
 
     try {
       await deleteSad(deleteTarget.NetUid)
@@ -560,7 +564,7 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
   const [selectedStathamCarNetId, setSelectedStathamCarNetId] = useState('')
   const [marginAmount, setMarginAmount] = useState<number | ''>('')
   const [isLoading, setLoading] = useState(true)
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [error, setError] = useState<string | null>(null)
   const [documentsOpen, setDocumentsOpen] = useState(false)
   const [downloadDocument, setDownloadDocument] = useState<SadPrintDocument | null>(null)
@@ -844,7 +848,9 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
 
     try {
       const payload = isSend ? null : buildSadPayload({
@@ -912,7 +918,9 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
       selectedStathamCar,
     })
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
 
     try {
       const updatedSad = await updateSad(payload)
@@ -1106,7 +1114,9 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
           sad={sad}
           setSad={setSad}
           onPersist={async (nextSad) => {
-            setSaving(true)
+            if (!tryStartSaving()) {
+              return
+            }
             try {
               const updatedSad = await updateSadPallets(nextSad)
               if (updatedSad) {
@@ -2124,16 +2134,19 @@ function SadDocumentsModal({
   opened: boolean
   sad: Sad
 }) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const [files, setFiles] = useState<File[]>([])
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
 
   async function uploadFiles() {
     if (!canUpload || !sad.NetUid || !files.length) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
 
     try {
       const nextSad = await uploadSadDocuments(sad.NetUid, files)
@@ -2148,20 +2161,22 @@ function SadDocumentsModal({
   }
 
   async function removeDocument(document: SadDocument) {
-    if (!canDelete || !document.NetUid) {
-      return
-    }
+    return runActionOnce('removeDocument', async () => {
+      if (!canDelete || !document.NetUid) {
+        return
+      }
 
-    try {
-      await deleteSadDocument(document.NetUid)
-      notifications.show({ color: 'green', message: t('Документ видалено') })
-      onUpdated({
-        ...sad,
-        SadDocuments: (sad.SadDocuments || []).filter((item) => item.NetUid !== document.NetUid),
-      })
-    } catch (deleteError) {
-      notifications.show({ color: 'red', message: getErrorMessage(deleteError, t('Не вдалося видалити документ')) })
-    }
+      try {
+        await deleteSadDocument(document.NetUid)
+        notifications.show({ color: 'green', message: t('Документ видалено') })
+        onUpdated({
+          ...sad,
+          SadDocuments: (sad.SadDocuments || []).filter((item) => item.NetUid !== document.NetUid),
+        })
+      } catch (deleteError) {
+        notifications.show({ color: 'red', message: getErrorMessage(deleteError, t('Не вдалося видалити документ')) })
+      }
+    })
   }
 
   return (
@@ -2244,14 +2259,16 @@ function SpecificationEditorModal({
   const [draft, setDraft] = useState<SadProductSpecification>(() =>
     editor.specification ? { ...editor.specification } : { ProductId: editor.product.Id, Product: editor.product },
   )
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
 
   async function save() {
     if (!sadNetId || !editor.product) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
 
     try {
       await updateProductSpecification(sadNetId, {
@@ -2344,7 +2361,7 @@ function SpecificationUploadModal({
     VATValue: '',
     VendorCode: '',
   })
-  const [isUploading, setUploading] = useState(false)
+  const [isUploading, setUploading, tryStartUploading] = useBusyState()
 
   async function upload() {
     if (!sadNetId || !file) {
@@ -2358,7 +2375,9 @@ function SpecificationUploadModal({
       return
     }
 
-    setUploading(true)
+    if (!tryStartUploading()) {
+      return
+    }
 
     try {
       await uploadProductSpecificationForSad(sadNetId, file, normalizedConfiguration)

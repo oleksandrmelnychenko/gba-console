@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Alert, Button, Card, Group, Pagination, Select, Stack, Text, Textarea } from '@mantine/core'
 import { ClipboardList, Info, RefreshCw, RotateCcw, Save, UserRoundPen } from 'lucide-react'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -41,7 +42,7 @@ export function HeadCoachingPanel({ managerId, managers, onChanged, onManagerCha
   const [editing, setEditing] = useState<CoachingRow | null>(null)
   const [assignee, setAssignee] = useState<string | null>(null)
   const [clarification, setClarification] = useState('')
-  const [saving, setSaving] = useState(false)
+  const [saving, setSaving, tryStartSaving] = useBusyState()
   const [saveError, setSaveError] = useState<string | null>(null)
   useEffect(() => {
     const timer = setInterval(reload, 60_000)
@@ -69,7 +70,9 @@ export function HeadCoachingPanel({ managerId, managers, onChanged, onManagerCha
   const resetPage = () => setPage(1)
   async function save() {
     if (!editing || !assignee || !clarification.trim()) return
-    setSaving(true); setSaveError(null)
+    if (!tryStartSaving()) {
+      return
+    } setSaveError(null)
     try {
       await assignHeadTask(editing, Number(assignee), clarification.trim())
       setEditing(null); reload(); onChanged()

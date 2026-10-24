@@ -65,8 +65,8 @@ export function ActiveClientsReportPanel({ capability, initialMonth, canGenerate
       <Text size="sm">{t('Період')}: {report.Month}</Text>
       <ReportTableScrollArea minWidth={640}>
         <Table className="app-static-table">
-          <Table.Thead><Table.Tr>{report.Columns.map(column => <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
-          <Table.Tbody><Table.Tr>{report.Cells.map((cell, index) => <Table.Td key={cell.Key}
+          <Table.Thead><Table.Tr>{report.Columns.map(column => <Table.Th key={column.Key} className="app-table-cell-number">{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
+          <Table.Tbody><Table.Tr>{report.Cells.map((cell, index) => <Table.Td key={cell.Key} className="app-table-cell-number"
             title={cell.Available ? undefined : t('Недоступні дані')}>
             {activeClientsCellText(cell.Value, report.Columns[index].DecimalPlaces)}
           </Table.Td>)}</Table.Tr></Table.Tbody>

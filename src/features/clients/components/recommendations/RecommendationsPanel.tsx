@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../../shared/hooks/useSingleFlight'
 import './recommendations-panel.css'
 import {
   ActionIcon,
@@ -147,6 +148,7 @@ export function RecommendationsPanel(props: RecommendationsPanelProps) {
 function RecommendationsForAgreement({
   client, productNetId, agreement,
 }: RecommendationsPanelProps & { agreement: ClientAgreement }) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const [state, dispatch] = useReducer(recommendationsReducer, initialRecommendationsState)
@@ -253,19 +255,21 @@ function RecommendationsForAgreement({
   }
 
   async function handleCreateOffer() {
-    if (!agreement) {
-      return
-    }
+    return runActionOnce('handleCreateOffer', async () => {
+      if (!agreement) {
+        return
+      }
 
-    const chosen = getChosenProducts()
+      const chosen = getChosenProducts()
 
-    if (chosen.length > 0) {
-      await createOfferFromSelection(
-        agreement as unknown as OfferClientAgreement,
-        chosen,
-        Number(offerValidDays) || undefined,
-      )
-    }
+      if (chosen.length > 0) {
+        await createOfferFromSelection(
+          agreement as unknown as OfferClientAgreement,
+          chosen,
+          Number(offerValidDays) || undefined,
+        )
+      }
+    })
   }
 
   async function handleExcludeProduct(product: RecommendationProduct, index: number) {

@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
   Alert,
   Button,
@@ -163,7 +164,7 @@ export function HeadTaskBoard({
   }, [managerId])
   const [error, setError] = useValueState<string | null>(null)
   const [forbidden, setForbidden] = useState(false)
-  const [isGenerating, setGenerating] = useState(false)
+  const [isGenerating, setGenerating, tryStartGenerating] = useBusyState()
   const [isLoading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<number | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
@@ -340,7 +341,9 @@ export function HeadTaskBoard({
       return
     }
 
-    setGenerating(true)
+    if (!tryStartGenerating()) {
+      return
+    }
 
     try {
       await regenerateHeadCockpit()
@@ -359,7 +362,7 @@ export function HeadTaskBoard({
     } finally {
       setGenerating(false)
     }
-  }, [can, scheduleReload, t])
+  }, [can, scheduleReload, setGenerating, t, tryStartGenerating])
 
   if (forbidden) {
     return null

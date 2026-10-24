@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import {
   ActionIcon,
   Box,
@@ -55,6 +56,7 @@ import { OneCExportPanel } from './OneCExportPanel'
 const STATUS_POLL_INTERVAL_MS = 3_000
 
 export function SyncControl() {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const [direction, setDirection] = useState<string | null>('import')
   const dataSyncProgress = useDataSyncProgress()
@@ -149,40 +151,42 @@ export function SyncControl() {
   }
 
   async function runConfirmedSync() {
-    const mode = state.pendingRun
-    if (!mode) {
-      return
-    }
+    return runActionOnce('runConfirmedSync', async () => {
+      const mode = state.pendingRun
+      if (!mode) {
+        return
+      }
 
-    const range = state.dateRanges[mode]
-    const errors = validateSyncDateRange(range, today, minimumDate)
-    if (hasSyncDateRangeErrors(errors)) {
-      notifications.show({ color: 'red', message: t(getFirstSyncDateRangeError(errors)) })
-      dispatch({ type: 'confirmationCanceled' })
-      return
-    }
+      const range = state.dateRanges[mode]
+      const errors = validateSyncDateRange(range, today, minimumDate)
+      if (hasSyncDateRangeErrors(errors)) {
+        notifications.show({ color: 'red', message: t(getFirstSyncDateRangeError(errors)) })
+        dispatch({ type: 'confirmationCanceled' })
+        return
+      }
 
-    const sessionMode = mode === 'full' ? DataSyncSessionMode.Full : DataSyncSessionMode.Daily
-    const types = getSessionDocumentTypes(mode, state.selectedDailyDocumentTypes)
+      const sessionMode = mode === 'full' ? DataSyncSessionMode.Full : DataSyncSessionMode.Daily
+      const types = getSessionDocumentTypes(mode, state.selectedDailyDocumentTypes)
 
-    await runSyncRequest(
-      {
-        forAmg: sourceForAmg,
-        from: range.from,
-        mode,
-        to: range.to,
-        types,
-      },
-      (operationId) =>
-        startSyncSession({
+      await runSyncRequest(
+        {
           forAmg: sourceForAmg,
           from: range.from,
-          mode: sessionMode,
-          operationId,
+          mode,
           to: range.to,
           types,
-        }),
-    )
+        },
+        (operationId) =>
+          startSyncSession({
+            forAmg: sourceForAmg,
+            from: range.from,
+            mode: sessionMode,
+            operationId,
+            to: range.to,
+            types,
+          }),
+      )
+    })
   }
 
   async function runSyncRequest(

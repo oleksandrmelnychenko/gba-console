@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { DocumentDetailLayout, DocumentDetailSection, DocumentDetailRow, DocumentDetailSummary } from '../../../shared/ui/document-detail/DocumentDetail'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { ClientActionsButton } from '../../clients/components/ClientActionsButton'
@@ -240,7 +241,7 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
   const [cashFlowError, setCashFlowError] = useState<string | null>(null)
   const [isCounterpartyLoading, setCounterpartyLoading] = useState(true)
   const [isCashFlowLoading, setCashFlowLoading] = useState(true)
-  const [isExporting, setExporting] = useState(false)
+  const [isExporting, setExporting, tryStartExporting] = useBusyState()
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const agreements = useMemo(() => counterparty?.ClientAgreements || [], [counterparty?.ClientAgreements])
   const selectedAgreement = useMemo(
@@ -408,7 +409,9 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
       return
     }
 
-    setExporting(true)
+    if (!tryStartExporting()) {
+      return
+    }
     setCashFlowError(null)
 
     try {
@@ -426,7 +429,7 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
     } finally {
       setExporting(false)
     }
-  }, [activeFilters.from, activeFilters.to, hasPermission, mode, selectedAgreement, t])
+  }, [activeFilters.from, activeFilters.to, hasPermission, mode, selectedAgreement, setExporting, t, tryStartExporting])
 
   return {
     routeNetId,

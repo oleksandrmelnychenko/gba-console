@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Alert, Button, Card, NumberInput, Stack, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert } from 'lucide-react'
@@ -47,7 +48,7 @@ export function ProductInterestModal({
   const canCreate = can(PermissionKeys.SalesUkraineInterest.Preorder.Create)
   const [form, setForm] = useValueState<InterestFormState>(createInitialForm)
   const [touched, setTouched] = useValueState(false)
-  const [isCreating, setCreating] = useValueState(false)
+  const [isCreating, setCreating, tryStartCreating] = useBusyState()
   const [previousOpened, setPreviousOpened] = useValueState(opened)
   const runCreatePreorder = usePersistentCreateMutation(
     'preorder',
@@ -78,7 +79,9 @@ export function ProductInterestModal({
       return
     }
 
-    setCreating(true)
+    if (!tryStartCreating()) {
+      return
+    }
 
     try {
       const message = await runCreatePreorder(

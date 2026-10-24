@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Alert, Button, Select, Stack, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Search } from 'lucide-react'
@@ -42,7 +43,7 @@ export function SadSupplyOrderFromSadModal({
   const [selectedAgreementNetUid, setSelectedAgreementNetUid] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(false)
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
 
   const selectedOrganization = useMemo(
     () => organizations.find((organization) => getEntityValue(organization) === selectedOrganizationNetUid) || null,
@@ -144,7 +145,9 @@ export function SadSupplyOrderFromSadModal({
       Supplier: supplier,
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

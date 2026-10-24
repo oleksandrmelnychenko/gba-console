@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
   ActionIcon,
   Alert,
@@ -109,7 +110,7 @@ export const EventPermissionsCatalog = forwardRef<
   )
   const [isCatalogLoading, setCatalogLoading] = useState(true)
   const [isRoleLoading, setRoleLoading] = useState(false)
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [catalogError, setCatalogError] = useState<string | null>(null)
   const [roleError, setRoleError] = useState<string | null>(null)
   const [conflict, setConflict] = useState<ConflictState | null>(null)
@@ -332,7 +333,9 @@ export const EventPermissionsCatalog = forwardRef<
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setRoleError(null)
     setConflict(null)
     const operationId = saveOperationRef.current + 1

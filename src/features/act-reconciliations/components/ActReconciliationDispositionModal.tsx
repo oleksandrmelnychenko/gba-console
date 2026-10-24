@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Alert, Button, Group, Select, Stack, Text, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert } from 'lucide-react'
@@ -52,7 +53,7 @@ export function ActReconciliationDispositionModal({
   const [reasonCode, setReasonCode] = useValueState<ActReconciliationDispositionReasonCode | null>(null)
   const [comment, setComment] = useValueState('')
   const [operationNetUid, setOperationNetUid] = useValueState('')
-  const [isSubmitting, setSubmitting] = useValueState(false)
+  const [isSubmitting, setSubmitting, tryStartSubmitting] = useBusyState()
   const [submitError, setSubmitError] = useValueState<string | null>(null)
   const itemKey = useMemo(
     () => items.map((item) => item.NetUid || item.Id).join(','),
@@ -99,7 +100,9 @@ export function ActReconciliationDispositionModal({
       return
     }
 
-    setSubmitting(true)
+    if (!tryStartSubmitting()) {
+      return
+    }
     setSubmitError(null)
 
     try {

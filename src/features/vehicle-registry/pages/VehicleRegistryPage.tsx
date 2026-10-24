@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
   Alert,
   Badge,
@@ -129,7 +130,7 @@ export function VehicleRegistryPage() {
   const [importTotal, setImportTotal] = useState<number | null>(null)
   const [page, setPage] = useState(1)
   const [isLoading, setLoading] = useState(true)
-  const [isUploading, setUploading] = useState(false)
+  const [isUploading, setUploading, tryStartUploading] = useBusyState()
   const [error, setError] = useState<string | null>(null)
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null)
   const [selectedImport, setSelectedImport] = useState<VehicleRegistryImport | null>(null)
@@ -260,7 +261,9 @@ export function VehicleRegistryPage() {
       return
     }
 
-    setUploading(true)
+    if (!tryStartUploading()) {
+      return
+    }
     let completed = 0
 
     try {
@@ -633,7 +636,7 @@ function VehicleDetailDrawer({
   const [selectedClientNetUid, setSelectedClientNetUid] = useState<string | null>(null)
   const [note, setNote] = useState('')
   const [isLoading, setLoading] = useState(false)
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -675,7 +678,9 @@ function VehicleDetailDrawer({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
 
     try {
       await updateVehicleRegistryWorkflow(netUid, {

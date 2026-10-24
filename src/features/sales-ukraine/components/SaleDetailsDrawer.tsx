@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
   Anchor,
   Alert,
@@ -132,7 +133,7 @@ function SaleDetailsContent({
   const showShipmentDate = lifecycleStatusKey === 'Packaging' || lifecycleStatusKey === 'Packaged'
 
   const [isEditMode, setEditMode] = useState(false)
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [transporters, setTransporters] = useState<SalesUkraineTransporter[]>([])
 
   const [transporterId, setTransporterId] = useState(() => getTransporterValue(sale.Transporter))
@@ -271,7 +272,9 @@ function SaleDetailsContent({
   }
 
   async function save() {
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
 
     try {
       const result = fileMutation.reconciliationRequired

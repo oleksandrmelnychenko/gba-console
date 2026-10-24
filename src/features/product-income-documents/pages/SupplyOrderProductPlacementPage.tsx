@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 import { Alert, Badge, Button, Card, Group, Stack, Text } from '@mantine/core'
@@ -129,7 +130,7 @@ function SupplyOrderProductPlacementContent({
   const [isLoading, setLoading] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
   const [placementDetailsRow, setPlacementDetailsRow] = useValueState<SupplyPlacementRow | null>(null)
-  const [isExporting, setExporting] = useValueState(false)
+  const [isExporting, setExporting, tryStartExporting] = useBusyState()
   const [downloadDocument, setDownloadDocument] = useValueState<ProductIncomeDocumentsExportDocument | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
 
@@ -195,7 +196,9 @@ function SupplyOrderProductPlacementContent({
       return
     }
 
-    setExporting(true)
+    if (!tryStartExporting()) {
+      return
+    }
     setError(null)
 
     try {

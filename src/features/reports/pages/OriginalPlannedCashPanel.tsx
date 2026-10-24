@@ -1,3 +1,5 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
+import { ReportRowPagination } from './ReportRowPagination'
 import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { Alert, Button, Group, MultiSelect, Stack, Table, Text } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -45,13 +47,12 @@ function PlannedTable({ report }: { report: OriginalPlannedResult }) {
   const { t } = useI18n(), [page, setPage] = useState(0)
   const matrix = useMemo(() => plannedMatrix(report), [report]), body = matrix.slice(1, report.Totals ? -1 : undefined)
   const current = Math.min(page, Math.max(0, Math.ceil(body.length / 50) - 1)), start = current * 50
-  return <Stack gap="xs"><Group><Button size="xs" variant="light" disabled={current === 0} onClick={() => setPage(current - 1)}>{t('Попередні рядки')}</Button>
-    <Text size="xs">{body.length ? start + 1 : 0}–{Math.min(start + 50, body.length)} / {body.length}</Text>
-    <Button size="xs" variant="light" disabled={start + 50 >= body.length} onClick={() => setPage(current + 1)}>{t('Наступні рядки')}</Button></Group>
-    <ReportTableScrollArea minWidth={1500}><Table className="app-static-table"><Table.Thead><Table.Tr>{matrix[0].map(label => <Table.Th key={label}>{t(label)}</Table.Th>)}</Table.Tr></Table.Thead>
-      <Table.Tbody>{body.slice(start, start + 50).map(row => <Table.Tr key={row[0]}>{row.map((value, column) => <Table.Td key={matrix[0][column]}>{value}</Table.Td>)}</Table.Tr>)}</Table.Tbody>
-      {report.Totals ? <Table.Tfoot><Table.Tr>{matrix.at(-1)?.map((value, column) => <Table.Th key={matrix[0][column]}>{value}</Table.Th>)}</Table.Tr></Table.Tfoot> : null}
-    </Table></ReportTableScrollArea>{!body.length ? <Text>{t('У повністю перевіреному періоді рядків немає.')}</Text> : null}</Stack>
+  return <Stack gap="xs">
+    <ReportTableScrollArea minWidth={1500}><Table className="app-static-table"><Table.Thead><Table.Tr>{matrix[0].map((label, column) => <Table.Th key={label} className={column > report.Grouping.length ? 'app-table-cell-number' : undefined}>{t(label)}</Table.Th>)}</Table.Tr></Table.Thead>
+      <Table.Tbody>{body.slice(start, start + 50).map(row => <Table.Tr key={row[0]}>{row.map((value, column) => <Table.Td key={matrix[0][column]} className={column > report.Grouping.length ? 'app-table-cell-number' : undefined}>{value}</Table.Td>)}</Table.Tr>)}</Table.Tbody>
+      {report.Totals ? <Table.Tfoot><Table.Tr>{matrix.at(-1)?.map((value, column) => <Table.Th key={matrix[0][column]} className={column > report.Grouping.length ? 'app-table-cell-number' : undefined}>{value}</Table.Th>)}</Table.Tr></Table.Tfoot> : null}
+    </Table></ReportTableScrollArea>
+    <ReportRowPagination total={body.length} offset={start} onChange={offset => setPage(offset / 50)} />{!body.length ? <Text>{t('У повністю перевіреному періоді рядків немає.')}</Text> : null}</Stack>
 }
 function PlannedResult({ report, exportError }: { report: OriginalPlannedResult | null; exportError: string | null }) {
   const { t } = useI18n()
@@ -64,7 +65,7 @@ function PlannedResult({ report, exportError }: { report: OriginalPlannedResult 
 function usePlannedRun({ capability, callerKey, permitted, from, through, rows, filters, key, receiveChoices }: {
   capability: PlannedCapability; callerKey: string | null; permitted: boolean; from: string; through: string; rows: PlannedField[]; filters: PlannedFilter[]; key: string; receiveChoices: (value: PlannedChoice[]) => void
 }) {
-  const run = useReportRunState<OriginalPlannedResult>(key), active = useRef<AbortController | null>(null), latest = useRef(key), [exporting, setExporting] = useState(false)
+  const run = useReportRunState<OriginalPlannedResult>(key), active = useRef<AbortController | null>(null), latest = useRef(key), [exporting, setExporting, tryStartExporting] = useBusyState()
   useEffect(() => { latest.current = key; return () => { latest.current = ''; active.current?.abort() } }, [key])
   const allowed = permitted && !!callerKey && capability.Executable && capability.World === 'fenix', error = plannedPeriodError(from, through), report = run.lastRun
   function invalidate() { latest.current = ''; active.current?.abort(); run.clear() }
@@ -81,7 +82,9 @@ function usePlannedRun({ capability, callerKey, permitted, from, through, rows, 
   }
   async function exportFile(format: typeof formats[number]) {
     if (!allowed || !report?.Available || exporting) return
-    setExporting(true)
+    if (!tryStartExporting()) {
+      return
+    }
     try {
       const blob = format === 'csv' ? new Blob([plannedCsv(report)], { type: 'text/csv;charset=utf-8' }) : format === 'xlsx' ? await plannedXlsx(report) : await plannedPdf(report)
       if (latest.current === key) download(blob, `${report.Variant}-${report.From}-${report.Through}.${format}`)

@@ -101,19 +101,19 @@ function GroupedDebtorWorkbookBody({ from, to, enabled, disabled }: {
       </> : null}
       {statement ? <ReportTableScrollArea minWidth={800}><Table className="app-static-table" striped highlightOnHover>
         <Table.Thead><Table.Tr><Table.Th>Організація / контрагент</Table.Th><Table.Th>Валюта</Table.Th>
-          <Table.Th>Початок</Table.Th><Table.Th>Надходження</Table.Th>
-          <Table.Th>Витрати</Table.Th><Table.Th>Кінець</Table.Th></Table.Tr></Table.Thead>
+          <Table.Th className="app-table-cell-number">Початок</Table.Th><Table.Th className="app-table-cell-number">Надходження</Table.Th>
+          <Table.Th className="app-table-cell-number">Витрати</Table.Th><Table.Th className="app-table-cell-number">Кінець</Table.Th></Table.Tr></Table.Thead>
         <Table.Tbody>{statement.Rows.map((row, index) => {
           const previous = statement.Rows[index - 1]
           const firstOrganization = !previous || previous.OrganizationId !== row.OrganizationId
             || previous.OrganizationNetUid !== row.OrganizationNetUid
           return <Fragment key={`${row.OrganizationId}:${row.CounterpartyId}:${row.CurrencyId}`}>
-            {firstOrganization ? <Table.Tr><Table.Td colSpan={6}><Text fw={600}>{row.OrganizationName}</Text></Table.Td></Table.Tr> : null}
+            {firstOrganization ? <Table.Tr data-subtotal><Table.Td colSpan={6}><Text fw={600}>{row.OrganizationName}</Text></Table.Td></Table.Tr> : null}
             <Table.Tr><Table.Td>{row.CounterpartyName}</Table.Td><Table.Td><TableChip tone="neutral" value={row.CurrencyCode} /></Table.Td>
-              <Table.Td>{formatGroupedDebtorMoney(row.Opening)}</Table.Td>
-              <Table.Td>{formatGroupedDebtorMoney(row.Incoming)}</Table.Td>
-              <Table.Td>{formatGroupedDebtorMoney(row.Outgoing)}</Table.Td>
-              <Table.Td>{formatGroupedDebtorMoney(row.Closing)}</Table.Td></Table.Tr>
+              <Table.Td className="app-table-cell-number">{formatGroupedDebtorMoney(row.Opening)}</Table.Td>
+              <Table.Td className="app-table-cell-number">{formatGroupedDebtorMoney(row.Incoming)}</Table.Td>
+              <Table.Td className="app-table-cell-number">{formatGroupedDebtorMoney(row.Outgoing)}</Table.Td>
+              <Table.Td className="app-table-cell-number">{formatGroupedDebtorMoney(row.Closing)}</Table.Td></Table.Tr>
           </Fragment>
         })}</Table.Tbody>
       </Table>{statement.Rows.length === 0 ? <Text size="sm">За повністю покритим періодом рядків немає.</Text> : null}</ReportTableScrollArea> : null}

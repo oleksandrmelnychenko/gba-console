@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Alert, Button, Stack, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus, RefreshCw, RotateCcw } from 'lucide-react'
@@ -68,7 +69,7 @@ function OffersPageContent() {
   const [isReasonOpen, setReasonOpen] = useValueState(false)
   const [isNewOpen, setNewOpen] = useValueState(false)
   const [confirmState, setConfirmState] = useValueState<ConfirmState | null>(null)
-  const [isConfirming, setConfirming] = useValueState(false)
+  const [isConfirming, setConfirming, tryStartConfirming] = useBusyState()
   const operationIdsRef = useRef(new Map<string, string>())
 
   function getOperationId(key: string): string {
@@ -214,7 +215,9 @@ function OffersPageContent() {
       return
     }
 
-    setConfirming(true)
+    if (!tryStartConfirming()) {
+      return
+    }
 
     try {
       await confirmState.onConfirm()

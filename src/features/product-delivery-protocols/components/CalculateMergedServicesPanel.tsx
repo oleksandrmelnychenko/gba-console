@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { Alert, Button, Checkbox, Group, SegmentedControl, Select, Stack, Text, TextInput } from '@mantine/core'
 import { useMemo } from 'react'
 import { Calculator } from 'lucide-react'
@@ -44,6 +45,7 @@ function CalculateMergedServicesPanelContent({
   onClose,
   onSubmit,
 }: CalculateMergedServicesPanelProps) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const currencyCode = service.SupplyOrganizationAgreement?.Currency?.Code || ''
 
@@ -76,28 +78,30 @@ function CalculateMergedServicesPanelContent({
   }
 
   async function handleSubmit() {
-    if (isSaving) {
-      return
-    }
+    return runActionOnce('handleSubmit', async () => {
+      if (isSaving) {
+        return
+      }
 
-    const selectedItems = items.filter((item) => item.isSelected)
+      const selectedItems = items.filter((item) => item.isSelected)
 
-    if (!isAuto && selectedItems.some((item) => !item.value.trim() && !item.accountingValue.trim())) {
-      setError(t('Для ручного розрахунку заповніть вартість або бух. вартість для кожного вибраного інвойсу'))
+      if (!isAuto && selectedItems.some((item) => !item.value.trim() && !item.accountingValue.trim())) {
+        setError(t('Для ручного розрахунку заповніть вартість або бух. вартість для кожного вибраного інвойсу'))
 
-      return
-    }
+        return
+      }
 
-    setError(null)
-    const updatedService = await onSubmit({ extraChargeType, isAuto, items: selectedItems })
+      setError(null)
+      const updatedService = await onSubmit({ extraChargeType, isAuto, items: selectedItems })
 
-    if (!updatedService) {
-      return
-    }
+      if (!updatedService) {
+        return
+      }
 
-    setItems(toCalculationItems(updatedService))
-    setIsAuto(Boolean(updatedService.IsAutoCalculatedValue))
-    setExtraChargeType(updatedService.SupplyExtraChargeType ?? extraChargeType)
+      setItems(toCalculationItems(updatedService))
+      setIsAuto(Boolean(updatedService.IsAutoCalculatedValue))
+      setExtraChargeType(updatedService.SupplyExtraChargeType ?? extraChargeType)
+    })
   }
 
   return (

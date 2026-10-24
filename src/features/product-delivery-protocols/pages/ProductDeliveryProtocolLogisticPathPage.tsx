@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Alert, Badge, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert } from 'lucide-react'
@@ -55,10 +56,10 @@ function useLogisticPathModel(netId: string | undefined) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const [loadState, setLoadState] = useValueState<LogisticPathLoadState>(INITIAL_LOGISTIC_PATH_LOAD_STATE)
-  const [isUpdating, setUpdating] = useValueState(false)
-  const [isAssigning, setAssigning] = useValueState(false)
-  const [isSavingInvoiceDocuments, setSavingInvoiceDocuments] = useValueState(false)
-  const [isSavingService, setSavingService] = useValueState(false)
+  const [isUpdating, setUpdating, tryStartUpdating] = useBusyState()
+  const [isAssigning, setAssigning, tryStartAssigning] = useBusyState()
+  const [isSavingInvoiceDocuments, setSavingInvoiceDocuments, tryStartSavingInvoiceDocuments] = useBusyState()
+  const [isSavingService, setSavingService, tryStartSavingService] = useBusyState()
   const { error, isLoading, protocol } = loadState
 
   useEffect(() => {
@@ -141,7 +142,9 @@ function useLogisticPathModel(netId: string | undefined) {
       return
     }
 
-    setUpdating(true)
+    if (!tryStartUpdating()) {
+      return
+    }
 
     try {
       const updated = await updateProtocolStatus(protocol.NetUid)
@@ -164,7 +167,9 @@ function useLogisticPathModel(netId: string | undefined) {
       return
     }
 
-    setAssigning(true)
+    if (!tryStartAssigning()) {
+      return
+    }
 
     try {
       const updated = await assignInvoicesToProtocol(protocol, invoices)
@@ -188,7 +193,9 @@ function useLogisticPathModel(netId: string | undefined) {
       return
     }
 
-    setSavingInvoiceDocuments(true)
+    if (!tryStartSavingInvoiceDocuments()) {
+      return
+    }
 
     try {
       const updated = await addDocumentsToSupplyInvoice(invoice, documents)
@@ -214,7 +221,9 @@ function useLogisticPathModel(netId: string | undefined) {
       return
     }
 
-    setSavingService(true)
+    if (!tryStartSavingService()) {
+      return
+    }
 
     try {
       const updated = await saveMergedService(protocol.NetUid, payload.service, payload.files)
@@ -238,7 +247,9 @@ function useLogisticPathModel(netId: string | undefined) {
       return null
     }
 
-    setSavingService(true)
+    if (!tryStartSavingService()) {
+      return null
+    }
 
     try {
       const updated = await calculateMergedServiceExtraCharge(
@@ -273,7 +284,9 @@ function useLogisticPathModel(netId: string | undefined) {
       return
     }
 
-    setSavingService(true)
+    if (!tryStartSavingService()) {
+      return
+    }
 
     try {
       const updated = await assignInvoicesToMergedService(service, invoices)
@@ -297,7 +310,9 @@ function useLogisticPathModel(netId: string | undefined) {
       return
     }
 
-    setSavingService(true)
+    if (!tryStartSavingService()) {
+      return
+    }
 
     try {
       const updated = await removeMergedService(service.NetUid)

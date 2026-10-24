@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   ActionIcon,
@@ -122,7 +123,7 @@ function IncomeCashflowUserFormPageContent() {
   const [form, setForm] = useValueState<FormState>(() => createInitialForm())
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [userOptionSubmitGuard] = useState(
     createAutocompleteOptionSubmitGuard,
   )
@@ -357,7 +358,9 @@ function IncomeCashflowUserFormPageContent() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -447,7 +450,9 @@ function IncomeCashflowUserFormPageContent() {
       selectedRegister: selectedRegister as PaymentRegister,
     })
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

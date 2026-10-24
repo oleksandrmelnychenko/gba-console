@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { Alert, Anchor, Badge, Button, Checkbox, Group, SimpleGrid, Stack, Text } from '@mantine/core'
@@ -70,7 +71,7 @@ export function EditingList({ canProcess, kind, layoutVersion, loader, onLoaded,
   const [page, setPage] = useValueState(1)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
-  const [isProcessing, setProcessing] = useValueState(false)
+  const [isProcessing, setProcessing, tryStartProcessing] = useBusyState()
   const processingRef = useRef(false)
   const [confirmItem, setConfirmItem] = useValueState<EditingActItem | null>(null)
   const [auditStatistic, setAuditStatistic] = useValueState<SaleAuditStatistic | null>(null)
@@ -242,7 +243,9 @@ export function EditingList({ canProcess, kind, layoutVersion, loader, onLoaded,
     }
 
     processingRef.current = true
-    setProcessing(true)
+    if (!tryStartProcessing()) {
+      return
+    }
     setError(null)
 
     try {

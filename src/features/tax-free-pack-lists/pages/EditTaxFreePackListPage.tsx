@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
@@ -140,8 +141,8 @@ export function EditTaxFreePackListPage() {
   const [documentFiles, setDocumentFiles] = useState<File[]>([])
   const [confirmCloseDocumentsOpen, setConfirmCloseDocumentsOpen] = useState(false)
   const [isSavingDocuments, setSavingDocuments] = useState(false)
-  const [isSaving, setSaving] = useState(false)
-  const [isPrinting, setPrinting] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
+  const [isPrinting, setPrinting, tryStartPrinting] = useBusyState()
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const packList = state.packList
   const isDirty = useMemo(
@@ -267,7 +268,9 @@ export function EditTaxFreePackListPage() {
       return null
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -302,7 +305,9 @@ export function EditTaxFreePackListPage() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -447,7 +452,9 @@ export function EditTaxFreePackListPage() {
       return
     }
 
-    setPrinting(true)
+    if (!tryStartPrinting()) {
+      return
+    }
 
     try {
       const document = await getTaxFreePrintDocuments(selectedIds)
@@ -768,7 +775,9 @@ export function EditTaxFreePackListPage() {
                     if (!canExport || !taxFree.NetUid) {
                       return
                     }
-                    setPrinting(true)
+                    if (!tryStartPrinting()) {
+                      return
+                    }
                     try {
                       const document = await getTaxFreePrintDocument(taxFree.NetUid)
                       if (!hasTaxFreePrintDocumentUrl(document)) {

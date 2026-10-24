@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../../shared/hooks/useBusyState'
 import { Alert, Button, Group, Loader, NumberInput, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CalendarClock } from 'lucide-react'
@@ -59,7 +60,7 @@ function FutureReservationForm({
   const [order, setOrder] = useState<WizardNearestSupplyOrder | null>(null)
   const [isLoading, setLoading] = useState(() => Boolean(product.NetUid))
   const [count, setCount] = useState<number | string>(1)
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const runCreateFutureReservation = usePersistentCreateMutation(
     'future-reservation',
     `${clientNetId ?? 'no-client'}:${product.NetUid ?? product.Id ?? 'no-product'}`,
@@ -112,7 +113,9 @@ function FutureReservationForm({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
 
     try {
       await runCreateFutureReservation(

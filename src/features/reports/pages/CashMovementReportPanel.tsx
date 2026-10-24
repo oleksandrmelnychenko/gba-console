@@ -44,7 +44,7 @@ function CashMovementResult({ report }: { report: CashMovementReport }) {
   const currencyName = (input: CashMovementReport['Inputs']['Current']) => input.Publication.ManagementCurrency.Available
     && input.Publication.ManagementCurrency.Currency?.Name.trim() ? input.Publication.ManagementCurrency.Currency.Name : t('Назва валюти недоступна')
   function renderCells(cells: CashMovementCell[]) {
-    return cells.map(cell => <Table.Td key={cell.Key} title={!cell.Available ? t('Недоступні дані') : cell.Value === null ? t('У періоді немає даних') : undefined}>
+    return cells.map(cell => <Table.Td key={cell.Key} className="app-table-cell-number" title={!cell.Available ? t('Недоступні дані') : cell.Value === null ? t('У періоді немає даних') : undefined}>
       {cell.FormattedValue ?? '—'}
     </Table.Td>)
   }
@@ -55,11 +55,10 @@ function CashMovementResult({ report }: { report: CashMovementReport }) {
     {report.Complete && !report.HasRows ? <Alert color="blue">{t('У вибраних періодах немає руху коштів.')}</Alert> : null}
     <ReportTableScrollArea minWidth={800}>
       <Table className="app-static-table">
-        <Table.Thead><Table.Tr><Table.Th>{t('Контрагент')}</Table.Th>{report.Columns.map(column => <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
+        <Table.Thead><Table.Tr><Table.Th>{t('Контрагент')}</Table.Th>{report.Columns.map(column => <Table.Th key={column.Key} className="app-table-cell-number">{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
         <Table.Tbody>{report.Rows.map(row => <Table.Tr key={row.GroupKey}><Table.Td>{row.NameAvailable ? row.Name : t('Назва контрагента недоступна')}</Table.Td>
-          {renderCells(row.Cells)}</Table.Tr>)}
-          <Table.Tr><Table.Th scope="row">{t('Разом')}</Table.Th>{renderCells(report.Totals)}</Table.Tr>
-        </Table.Tbody>
+          {renderCells(row.Cells)}</Table.Tr>)}</Table.Tbody>
+        <Table.Tfoot><Table.Tr><Table.Th scope="row">{t('Разом')}</Table.Th>{renderCells(report.Totals)}</Table.Tr></Table.Tfoot>
       </Table>
     </ReportTableScrollArea>
     {!report.Complete ? <Alert color="yellow">{t('Звіт неповний: синхронізовані рухи коштів за вибрані періоди ще не підтверджені.')}</Alert> : null}

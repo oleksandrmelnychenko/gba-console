@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
   ActionIcon,
   Alert,
@@ -49,7 +50,7 @@ export function TaxFreeCarrierFormPage() {
   const [passports, setPassports] = useValueState<TaxFreeCarrierPassport[]>([])
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(isEditMode)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [isCarModalOpen, setCarModalOpen] = useValueState(false)
   const [editingPassportIndex, setEditingPassportIndex] = useValueState<number | null>(null)
   const [isPassportDrawerOpen, setPassportDrawerOpen] = useValueState(false)
@@ -174,7 +175,9 @@ export function TaxFreeCarrierFormPage() {
     }
 
     const payload = toPayload(carrier, form, cars, passports)
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

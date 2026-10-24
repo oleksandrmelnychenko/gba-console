@@ -1,3 +1,5 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -103,6 +105,7 @@ type ListAction =
   | { type: 'errorChanged'; error: string | null }
 
 export function TaxFreePackListsPage() {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const navigate = useNavigate()
   const { can } = usePermissions()
@@ -115,7 +118,7 @@ export function TaxFreePackListsPage() {
   const [deleteCandidate, setDeleteCandidate] = useState<TaxFreePackList | null>(null)
   const [orderPackList, setOrderPackList] = useState<TaxFreePackList | null>(null)
   const [downloadDocument, setDownloadDocument] = useState<TaxFreePrintDocument | null>(null)
-  const [isExporting, setExporting] = useState(false)
+  const [isExporting, setExporting, tryStartExporting] = useBusyState()
   const { error, filters, isLoading, packLists, page, pageSize, reloadKey, totalQty } = listState
   const filterError = filters.from > filters.to ? t('Початкова дата має бути не пізніше кінцевої') : null
   const offset = (page - 1) * pageSize
@@ -182,21 +185,23 @@ export function TaxFreePackListsPage() {
   }
 
   async function confirmDelete() {
-    if (!canDelete || !deleteCandidate?.NetUid) {
-      return
-    }
+    return runActionOnce('confirmDelete', async () => {
+      if (!canDelete || !deleteCandidate?.NetUid) {
+        return
+      }
 
-    try {
-      await deleteTaxFreePackList(deleteCandidate.NetUid)
-      notifications.show({ color: 'green', message: t('Пакувальний лист видалено') })
-      setDeleteCandidate(null)
-      dispatchList({ type: 'reloadRequested' })
-    } catch (deleteError) {
-      notifications.show({
-        color: 'red',
-        message: deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити пакувальний лист'),
-      })
-    }
+      try {
+        await deleteTaxFreePackList(deleteCandidate.NetUid)
+        notifications.show({ color: 'green', message: t('Пакувальний лист видалено') })
+        setDeleteCandidate(null)
+        dispatchList({ type: 'reloadRequested' })
+      } catch (deleteError) {
+        notifications.show({
+          color: 'red',
+          message: deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити пакувальний лист'),
+        })
+      }
+    })
   }
 
   async function exportPackLists() {
@@ -209,7 +214,9 @@ export function TaxFreePackListsPage() {
       return
     }
 
-    setExporting(true)
+    if (!tryStartExporting()) {
+      return
+    }
     dispatchList({ type: 'errorChanged', error: null })
 
     try {

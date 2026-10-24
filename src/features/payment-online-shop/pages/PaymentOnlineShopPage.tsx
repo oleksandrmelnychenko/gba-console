@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -105,8 +106,8 @@ function usePaymentOnlineShopModel() {
   const [editError, setEditError] = useValueState<string | null>(null)
   const [editNotice, setEditNotice] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
-  const [isCreating, setCreating] = useValueState(false)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isCreating, setCreating, tryStartCreating] = useBusyState()
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [isRefreshingEdit, setRefreshingEdit] = useValueState(false)
   const isEditOpenRef = useRef(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
@@ -243,7 +244,9 @@ function usePaymentOnlineShopModel() {
 
     setCreateError(null)
     setCreateNotice(null)
-    setCreating(true)
+    if (!tryStartCreating()) {
+      return false
+    }
 
     try {
       const requestPayload: AddPaymentImagePayload = {
@@ -585,7 +588,9 @@ function usePaymentOnlineShopModel() {
     }
 
     setEditError(null)
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
 
     try {
       const requestPayload = {

@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Alert, Button, Group, MultiSelect, Stack, Text } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -29,7 +30,7 @@ function download(blob: Blob, name: string) {
 }
 function usePurchasesRun(capability: PurchasesCapability, callerKey: string | null, canGenerate: boolean,
   from: string, through: string, measures: PurchasesMeasure[], selection: PurchasesSelections, named: PurchasesChoices | null, key: string) {
-  const run = useReportRunState<PurchasesResult>(key), [exporting, setExporting] = useState(false)
+  const run = useReportRunState<PurchasesResult>(key), [exporting, setExporting, tryStartExporting] = useBusyState()
   const active = useRef<AbortController | null>(null), activeExport = useRef<AbortController | null>(null), latest = useRef(key)
   useEffect(() => { latest.current = key; return () => { latest.current = ''; active.current?.abort(); activeExport.current?.abort() } }, [key])
   const error = purchasesPeriodError(from, through) ?? (!measures.length ? 'Виберіть хоча б один показник.' : null)
@@ -49,7 +50,10 @@ function usePurchasesRun(capability: PurchasesCapability, callerKey: string | nu
   async function exportFile(format: typeof formats[number]) {
     const result = run.lastRun
     if (!permitted || !result?.Available || exporting || purchasesExportError(result)) return
-    const controller = new AbortController(); activeExport.current?.abort(); activeExport.current = controller; setExporting(true)
+    if (!tryStartExporting()) {
+      return
+    }
+    const controller = new AbortController(); activeExport.current?.abort(); activeExport.current = controller;
     try {
       const file = format === 'csv' ? new Blob([purchasesCsv(result)], { type: 'text/csv;charset=utf-8' })
         : format === 'xlsx' ? await purchasesXlsx(result) : await purchasesPdf(result)

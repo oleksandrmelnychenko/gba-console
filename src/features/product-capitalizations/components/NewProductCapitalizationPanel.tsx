@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
@@ -332,7 +333,7 @@ function useNewProductCapitalizationModel(
   const [vendorCodeQuery, setVendorCodeQuery] = useValueState('')
   const [searchedProducts, setSearchedProducts] = useValueState<ProductCapitalizationSearchProduct[]>([])
   const [error, setError] = useValueState<string | null>(null)
-  const [isSubmitting, setSubmitting] = useValueState(false)
+  const [isSubmitting, setSubmitting, tryStartSubmitting] = useBusyState()
   const [uploadModalOpened, setUploadModalOpened] = useValueState(false)
   const [uploadError, setUploadError] = useValueState<string | null>(null)
   const [isParsing, setParsing] = useValueState(false)
@@ -875,7 +876,9 @@ function useNewProductCapitalizationModel(
       return
     }
 
-    setSubmitting(true)
+    if (!tryStartSubmitting()) {
+      return
+    }
     setError(null)
 
     try {
@@ -925,6 +928,7 @@ function useNewProductCapitalizationModel(
     setSubmitting,
     storages,
     t,
+    tryStartSubmitting,
   ])
 
   const hasDraftChanges = useMemo(

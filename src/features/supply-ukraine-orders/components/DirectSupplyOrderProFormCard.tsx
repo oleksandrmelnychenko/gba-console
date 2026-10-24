@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import {
   ActionIcon,
   Badge,
@@ -68,6 +69,7 @@ export function DirectSupplyOrderProFormCard({
   onReload: () => Promise<void>
   order: DirectSupplyOrder
 }) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const [state, dispatch] = useReducer(proFormCardReducer, order, createInitialProFormCardState)
@@ -87,79 +89,83 @@ export function DirectSupplyOrderProFormCard({
   }, [canEdit, isEditing, order])
 
   async function removeDocument(document: SupplyProFormDocument) {
-    if (!hasPermission(PermissionKeys.OrdersUkraine.LogisticWay.CreateProforma)) {
-      onError(t('Право на цю дію було відкликано'))
-      return
-    }
-
-    if (document.NetUid) {
-      dispatch({ type: 'setSaving', value: true })
-
-      try {
-        await deleteDirectSupplyOrderLogisticProformDocument(document.NetUid)
-        await onReload()
-        notifications.show({ color: 'green', message: t('Документ видалено') })
-      } catch (deleteError) {
-        onError(deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити документ'))
-      } finally {
-        dispatch({ type: 'setSaving', value: false })
+    return runActionOnce('removeDocument', async () => {
+      if (!hasPermission(PermissionKeys.OrdersUkraine.LogisticWay.CreateProforma)) {
+        onError(t('Право на цю дію було відкликано'))
+        return
       }
-      return
-    }
 
-    dispatch({ type: 'removeLocalDocument', document })
+      if (document.NetUid) {
+        dispatch({ type: 'setSaving', value: true })
+
+        try {
+          await deleteDirectSupplyOrderLogisticProformDocument(document.NetUid)
+          await onReload()
+          notifications.show({ color: 'green', message: t('Документ видалено') })
+        } catch (deleteError) {
+          onError(deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити документ'))
+        } finally {
+          dispatch({ type: 'setSaving', value: false })
+        }
+        return
+      }
+
+      dispatch({ type: 'removeLocalDocument', document })
+    })
   }
 
   async function saveProForm() {
-    if (!order.NetUid) {
-      return
-    }
-
-    if (!hasPermission(PermissionKeys.OrdersUkraine.LogisticWay.CreateProforma)) {
-      onError(t('Право на цю дію було відкликано'))
-      return
-    }
-
-    const validationError = validateProFormDraft(draft, t)
-
-    if (validationError) {
-      onError(validationError)
-      return
-    }
-
-    const payloadProForm = toProFormPayload(draft)
-
-    dispatch({ type: 'setSaving', value: true })
-
-    try {
-      const updatedWithProForm = await updateDirectSupplyOrderProForm({
-        ...order,
-        SupplyProForm: payloadProForm,
-      })
-      const uploadSource = updatedWithProForm?.SupplyProForm || payloadProForm
-      const uploadOrderNetId = updatedWithProForm?.NetUid || order.NetUid
-      const uploadedOrder = files.length > 0
-        ? await uploadDirectSupplyOrderLogisticProformDocuments({
-          files,
-          orderNetId: uploadOrderNetId,
-          proForm: uploadSource,
-        })
-        : null
-      const nextOrder = uploadedOrder || updatedWithProForm
-
-      if (nextOrder) {
-        onOrderUpdated(nextOrder)
-        dispatch({ type: 'sync', order: nextOrder })
-      } else {
-        await onReload()
+    return runActionOnce('saveProForm', async () => {
+      if (!order.NetUid) {
+        return
       }
 
-      notifications.show({ color: 'green', message: t('Проформу збережено') })
-    } catch (saveError) {
-      onError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти проформу'))
-    } finally {
-      dispatch({ type: 'setSaving', value: false })
-    }
+      if (!hasPermission(PermissionKeys.OrdersUkraine.LogisticWay.CreateProforma)) {
+        onError(t('Право на цю дію було відкликано'))
+        return
+      }
+
+      const validationError = validateProFormDraft(draft, t)
+
+      if (validationError) {
+        onError(validationError)
+        return
+      }
+
+      const payloadProForm = toProFormPayload(draft)
+
+      dispatch({ type: 'setSaving', value: true })
+
+      try {
+        const updatedWithProForm = await updateDirectSupplyOrderProForm({
+          ...order,
+          SupplyProForm: payloadProForm,
+        })
+        const uploadSource = updatedWithProForm?.SupplyProForm || payloadProForm
+        const uploadOrderNetId = updatedWithProForm?.NetUid || order.NetUid
+        const uploadedOrder = files.length > 0
+          ? await uploadDirectSupplyOrderLogisticProformDocuments({
+            files,
+            orderNetId: uploadOrderNetId,
+            proForm: uploadSource,
+          })
+          : null
+        const nextOrder = uploadedOrder || updatedWithProForm
+
+        if (nextOrder) {
+          onOrderUpdated(nextOrder)
+          dispatch({ type: 'sync', order: nextOrder })
+        } else {
+          await onReload()
+        }
+
+        notifications.show({ color: 'green', message: t('Проформу збережено') })
+      } catch (saveError) {
+        onError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти проформу'))
+      } finally {
+        dispatch({ type: 'setSaving', value: false })
+      }
+    })
   }
 
   return (

@@ -1,3 +1,5 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
+import { ReportRowPagination } from './ReportRowPagination'
 import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { TextInput, Alert, Button, Checkbox, Group, MultiSelect, Select, Stack, Table, Text } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -28,24 +30,21 @@ function retainChoices(current: DebtChoice[], previous: DebtChoice[], selected: 
 function DebtTable({ result }: { result: DebtResult }) {
   const { t } = useI18n(), [page, setPage] = useState(0), lines = useMemo(() => debtLines(result), [result]), headers = debtHeaders(result)
   const current = Math.min(page, Math.max(0, Math.ceil(lines.length / 50) - 1)), offset = current * 50
-  return <Stack gap="xs"><Group justify="space-between">
-    <Button variant="light" size="xs" disabled={current === 0} onClick={() => setPage(current - 1)}>{t('Попередні рядки')}</Button>
-    <Text size="xs">{lines.length ? offset + 1 : 0}–{Math.min(lines.length, offset + 50)} / {lines.length}</Text>
-    <Button variant="light" size="xs" disabled={offset + 50 >= lines.length} onClick={() => setPage(current + 1)}>{t('Наступні рядки')}</Button>
-  </Group><ReportTableScrollArea minWidth={800}><Table className="app-static-table" striped><Table.Thead><Table.Tr>
-    {headers.map(h => <Table.Th key={h}>{t(h)}</Table.Th>)}
-  </Table.Tr></Table.Thead><Table.Tbody>{lines.slice(offset, offset + 50).map(line => <Table.Tr key={line.key} fw={line.subtotal ? 600 : undefined}>
-    {line.cells.map((cell, i) => <Table.Td key={headers[i]} className={i >= 2 ? 'app-money' : undefined}>{cell}</Table.Td>)}
+  return <Stack gap="xs"><ReportTableScrollArea minWidth={800}><Table className="app-static-table" striped><Table.Thead><Table.Tr>
+    {headers.map((h, index) => <Table.Th key={h} className={index >= 2 ? 'app-table-cell-number' : undefined}>{t(h)}</Table.Th>)}
+  </Table.Tr></Table.Thead><Table.Tbody>{lines.slice(offset, offset + 50).map(line => <Table.Tr key={line.key} data-subtotal={line.subtotal || undefined}>
+    {line.cells.map((cell, i) => <Table.Td key={headers[i]} className={i >= 2 ? 'app-table-cell-number' : undefined}>{cell}</Table.Td>)}
   </Table.Tr>)}</Table.Tbody>{result.Totals ? <Table.Tfoot><Table.Tr><Table.Th colSpan={2}>{t('Разом')}</Table.Th>
-    {debtValues(result.Totals, result.IncludeSettlement).map((cell, i) => <Table.Td key={headers[i + 2]} className="app-money">{cell}</Table.Td>)}
+    {debtValues(result.Totals, result.IncludeSettlement).map((cell, i) => <Table.Td key={headers[i + 2]} className="app-table-cell-number">{cell}</Table.Td>)}
   </Table.Tr></Table.Tfoot> : null}</Table></ReportTableScrollArea>
+    <ReportRowPagination total={lines.length} offset={offset} onChange={offset => setPage(offset / 50)} />
     {!lines.length ? <Text>{t('У повністю перевіреному зрізі рядків немає.')}</Text> : null}
   </Stack>
 }
 
 function useDebtRun(capability: DebtCapability, callerKey: string | null, canGenerate: boolean, asOf: string, kind: number,
   settlement: boolean, orgs: string[], parties: string[], key: string, accepted: (result: DebtResult) => void) {
-  const run = useReportRunState<DebtResult>(key), active = useRef<AbortController | null>(null), latest = useRef(key), [exporting, setExporting] = useState(false)
+  const run = useReportRunState<DebtResult>(key), active = useRef<AbortController | null>(null), latest = useRef(key), [exporting, setExporting, tryStartExporting] = useBusyState()
   useEffect(() => { latest.current = key; return () => { latest.current = ''; active.current?.abort() } }, [key])
   const permitted = canGenerate && !!callerKey && capability.Executable, error = debtInstantError(asOf), report = run.lastRun
   function invalidate() { latest.current = ''; active.current?.abort(); run.clear() }
@@ -61,7 +60,9 @@ function useDebtRun(capability: DebtCapability, callerKey: string | null, canGen
   }
   async function exportFile(format: typeof formats[number]) {
     if (!permitted || !report?.Available || exporting || debtExportError(report)) return
-    setExporting(true)
+    if (!tryStartExporting()) {
+      return
+    }
     try {
       const blob = format === 'csv' ? new Blob([debtCsv(report)], { type: 'text/csv;charset=utf-8' }) : format === 'xlsx' ? await debtXlsx(report) : await debtPdf(report)
       if (latest.current === key) download(blob, `counterparty-debt-${report.AsOf.replaceAll(':', '-')}.${format}`)

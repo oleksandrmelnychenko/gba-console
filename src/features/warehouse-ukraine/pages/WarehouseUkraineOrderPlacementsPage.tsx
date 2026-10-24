@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { ActionIcon, Alert, Badge, Button, Card, Group, NumberInput, Select, Stack, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
@@ -198,7 +199,7 @@ function useOrderPlacementsModel() {
   const [selectedStorageId, setSelectedStorageId] = useValueState<string | null>(null)
   const [isDirty, setDirty] = useValueState(false)
   const [isLoading, setLoading] = useValueState(true)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [error, setError] = useValueState<string | null>(null)
   const [reloadKey, setReloadKey] = useValueState(0)
   const [columnModalOpen, setColumnModalOpen] = useValueState(false)
@@ -277,7 +278,9 @@ function useOrderPlacementsModel() {
         return
       }
 
-      setSaving(true)
+      if (!tryStartSaving()) {
+        return
+      }
       setError(null)
 
       try {
@@ -293,7 +296,7 @@ function useOrderPlacementsModel() {
         setSaving(false)
       }
     },
-    [isBusy, setDirty, setError, setOrder, setSaving, t],
+    [isBusy, setDirty, setError, setOrder, setSaving, t, tryStartSaving],
   )
 
   const applyColumnRowQty = useCallback(
@@ -416,7 +419,9 @@ function useOrderPlacementsModel() {
         DynamicProductPlacements: placements,
       }
 
-      setSaving(true)
+      if (!tryStartSaving()) {
+        return
+      }
       setError(null)
 
       try {
@@ -482,7 +487,7 @@ function useOrderPlacementsModel() {
         setSaving(false)
       }
     },
-    [drawer, isBusy, isDirty, order, setDrawer, setError, setOrder, setSaving, t],
+    [drawer, isBusy, isDirty, order, setDrawer, setError, setOrder, setSaving, t, tryStartSaving],
   )
 
   const handleAddColumn = useCallback(

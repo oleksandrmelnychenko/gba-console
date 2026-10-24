@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import {
   Alert,
   Badge,
@@ -1752,6 +1753,7 @@ export function OfficialCostsModal({
   onClose: () => void
   onSaved: () => void
 }) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const expense = row.order?.DeliveryExpenses?.[0] || null
@@ -1882,58 +1884,60 @@ export function OfficialCostsModal({
   }
 
   async function saveOfficialCosts() {
-    if (!hasPermission(PERMISSION_TO_UKRAINE_OFFICIAL_COSTS)) {
-      dispatch({ error: t('Недостатньо прав для збереження офіційних витрат доставки'), type: 'setError' })
-      return
-    }
-
-    if (!row.order?.Id) {
-      dispatch({ error: t('Поставка не завантажена'), type: 'setError' })
-      return
-    }
-
-    if (!selectedOrganization || !selectedAgreement || !form.invoiceNumber.trim()) {
-      dispatch({ error: t('Заповніть організацію, договір і номер інвойса'), type: 'setError' })
-      return
-    }
-
-    dispatch({ isSaving: true, type: 'setSaving' })
-    dispatch({ error: null, type: 'setError' })
-
-    const payload: ProductDeliveryExpense = {
-      ...expense,
-      AccountingGrossAmount: Number(form.accountingGrossAmount || 0),
-      AccountingVatPercent: Number(form.accountingVatPercent || 0),
-      ConsumableProduct: selectedProduct,
-      ConsumableProductId: selectedProduct?.Id ?? null,
-      FromDate: normalizeDateTimeInput(form.fromDate),
-      GrossAmount: Number(form.grossAmount || 0),
-      InvoiceNumber: form.invoiceNumber.trim(),
-      SupplyOrderUkraineId: row.order.Id,
-      SupplyOrganization: selectedOrganization,
-      SupplyOrganizationAgreement: selectedAgreement,
-      SupplyOrganizationAgreementId: selectedAgreement.Id,
-      SupplyOrganizationId: selectedOrganization.Id,
-      VatPercent: Number(form.vatPercent || 0),
-    }
-
-    try {
-      if (expense?.Id) {
-        await updateSupplyOrderUkraineDeliveryExpense(payload)
-      } else {
-        await createSupplyOrderUkraineDeliveryExpense(payload, form.actDocuments)
+    return runActionOnce('saveOfficialCosts', async () => {
+      if (!hasPermission(PERMISSION_TO_UKRAINE_OFFICIAL_COSTS)) {
+        dispatch({ error: t('Недостатньо прав для збереження офіційних витрат доставки'), type: 'setError' })
+        return
       }
 
-      notifications.show({ color: 'green', message: t('Офіційні витрати доставки збережено') })
-      onSaved()
-    } catch (saveError) {
-      dispatch({
-        error: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти офіційні витрати доставки'),
-        type: 'setError',
-      })
-    } finally {
-      dispatch({ isSaving: false, type: 'setSaving' })
-    }
+      if (!row.order?.Id) {
+        dispatch({ error: t('Поставка не завантажена'), type: 'setError' })
+        return
+      }
+
+      if (!selectedOrganization || !selectedAgreement || !form.invoiceNumber.trim()) {
+        dispatch({ error: t('Заповніть організацію, договір і номер інвойса'), type: 'setError' })
+        return
+      }
+
+      dispatch({ isSaving: true, type: 'setSaving' })
+      dispatch({ error: null, type: 'setError' })
+
+      const payload: ProductDeliveryExpense = {
+        ...expense,
+        AccountingGrossAmount: Number(form.accountingGrossAmount || 0),
+        AccountingVatPercent: Number(form.accountingVatPercent || 0),
+        ConsumableProduct: selectedProduct,
+        ConsumableProductId: selectedProduct?.Id ?? null,
+        FromDate: normalizeDateTimeInput(form.fromDate),
+        GrossAmount: Number(form.grossAmount || 0),
+        InvoiceNumber: form.invoiceNumber.trim(),
+        SupplyOrderUkraineId: row.order.Id,
+        SupplyOrganization: selectedOrganization,
+        SupplyOrganizationAgreement: selectedAgreement,
+        SupplyOrganizationAgreementId: selectedAgreement.Id,
+        SupplyOrganizationId: selectedOrganization.Id,
+        VatPercent: Number(form.vatPercent || 0),
+      }
+
+      try {
+        if (expense?.Id) {
+          await updateSupplyOrderUkraineDeliveryExpense(payload)
+        } else {
+          await createSupplyOrderUkraineDeliveryExpense(payload, form.actDocuments)
+        }
+
+        notifications.show({ color: 'green', message: t('Офіційні витрати доставки збережено') })
+        onSaved()
+      } catch (saveError) {
+        dispatch({
+          error: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти офіційні витрати доставки'),
+          type: 'setError',
+        })
+      } finally {
+        dispatch({ isSaving: false, type: 'setSaving' })
+      }
+    })
   }
 
   return (

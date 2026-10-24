@@ -1,6 +1,6 @@
 import { MantineProvider } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../../../shared/api/apiClient'
 import { I18nProvider } from '../../../../shared/i18n/I18nProvider'
@@ -322,6 +322,7 @@ describe('NewSaleProductsStep selected product summary', () => {
     fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'SEM12081' } })
     fireEvent.click(await screen.findByRole('button', { name: 'Деталі' }))
     const drawer = await findDetailDrawer()
+    await waitFor(() => expect(apiMocks.getProductCurrentPriceByAgreement).toHaveBeenCalledOnce())
     fireEvent.click(within(drawer).getByRole('button', { name: 'Редагувати' }))
     const input = within(drawer).getByRole('textbox', { name: 'Опис' })
     fireEvent.change(input, { target: { value: 'Оновлений опис' } })
@@ -334,6 +335,8 @@ describe('NewSaleProductsStep selected product summary', () => {
     ))
     expect(within(drawer).getByText('Оновлений опис')).toBeTruthy()
     expect(within(drawer).queryByRole('textbox', { name: 'Опис' })).toBeNull()
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 300)) })
+    expect(apiMocks.getProductCurrentPriceByAgreement).toHaveBeenCalledOnce()
   })
 
   it('closes only the detail drawer on Escape from the description without saving a draft', async () => {

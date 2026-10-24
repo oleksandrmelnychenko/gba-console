@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   Alert,
@@ -104,7 +105,7 @@ function useProtocolsPageModel() {
   const [incomeProtocol, setIncomeProtocol] = useValueState<DeliveryProductProtocol | null>(null)
   const [isCreateModalOpen, setCreateModalOpen] = useValueState(false)
   const [createError, setCreateError] = useValueState<string | null>(null)
-  const [isCreating, setCreating] = useValueState(false)
+  const [isCreating, setCreating, tryStartCreating] = useBusyState()
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [page, setPage] = useValueState(1)
@@ -238,7 +239,9 @@ function useProtocolsPageModel() {
 
   async function handleCreate(payload: CreateProtocolPayload) {
     setCreateError(null)
-    setCreating(true)
+    if (!tryStartCreating()) {
+      return
+    }
 
     try {
       const created = await createProtocol(payload)

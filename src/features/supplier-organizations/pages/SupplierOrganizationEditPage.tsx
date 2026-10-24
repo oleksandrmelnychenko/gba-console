@@ -1,3 +1,5 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
@@ -115,6 +117,7 @@ export function SupplierOrganizationEditPage() {
 }
 
 function SupplierOrganizationEditPageContent({ canOpenOverview }: { canOpenOverview: boolean }) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const { can } = usePermissions()
   const navigate = useNavigate()
@@ -137,11 +140,11 @@ function SupplierOrganizationEditPageContent({ canOpenOverview }: { canOpenOverv
   const [activeTab, setActiveTab] = useValueState<string | null>('general')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   // Збереження в edit-режимі не закриває ша, тож список дізнається про
   // мутацію лише при фінальному закритті — прапорець доносить її туди.
   const hasMutatedRef = useRef(false)
-  const [isDeleting, setDeleting] = useValueState(false)
+  const [isDeleting, setDeleting, tryStartDeleting] = useBusyState()
   const [deleteOpened, setDeleteOpened] = useValueState(false)
   const [drawerOpened, setDrawerOpened] = useValueState(false)
   const requestRef = useRef(0)
@@ -215,33 +218,39 @@ function SupplierOrganizationEditPageContent({ canOpenOverview }: { canOpenOverv
   }
 
   async function saveGeneral(values: SupplyOrganizationGeneralFormValues) {
-    const validationError = firstSupplierOrganizationValidationError(
-      validateSupplierOrganizationGeneralForm(values),
-    )
+    return runActionOnce('saveGeneral', async () => {
+      const validationError = firstSupplierOrganizationValidationError(
+        validateSupplierOrganizationGeneralForm(values),
+      )
 
-    if (validationError) {
-      setError(t(validationError))
-      return
-    }
+      if (validationError) {
+        setError(t(validationError))
+        return
+      }
 
-    await saveOrganizationPayload(normalizeSupplierOrganizationGeneralForm(values))
+      await saveOrganizationPayload(normalizeSupplierOrganizationGeneralForm(values))
+    })
   }
 
   async function saveBank(values: SupplyOrganizationBankFormValues) {
-    await saveOrganizationPayload(values)
+    return runActionOnce('saveBank', async () => {
+      await saveOrganizationPayload(values)
+    })
   }
 
   async function saveContact(values: SupplyOrganizationContactFormValues) {
-    const validationError = firstSupplierOrganizationValidationError(
-      validateSupplierOrganizationContactForm(values),
-    )
+    return runActionOnce('saveContact', async () => {
+      const validationError = firstSupplierOrganizationValidationError(
+        validateSupplierOrganizationContactForm(values),
+      )
 
-    if (validationError) {
-      setError(t(validationError))
-      return
-    }
+      if (validationError) {
+        setError(t(validationError))
+        return
+      }
 
-    await saveOrganizationPayload(normalizeSupplierOrganizationContactForm(values))
+      await saveOrganizationPayload(normalizeSupplierOrganizationContactForm(values))
+    })
   }
 
   async function saveOrganizationPayload(values: Partial<SupplyOrganization>) {
@@ -250,7 +259,9 @@ function SupplierOrganizationEditPageContent({ canOpenOverview }: { canOpenOverv
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -302,7 +313,9 @@ function SupplierOrganizationEditPageContent({ canOpenOverview }: { canOpenOverv
       return
     }
 
-    setDeleting(true)
+    if (!tryStartDeleting()) {
+      return
+    }
     setError(null)
 
     try {

@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../../shared/hooks/useBusyState'
 import { Box, Button, Group, Loader, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useEffect, useState } from 'react'
@@ -72,7 +73,7 @@ function WizardReassignSaleForm({
   const [rootClient, setRootClient] = useState<Client | null>(null)
   const [structureClients, setStructureClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(Boolean(client.NetUid))
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy, tryStartBusy] = useBusyState()
   const [selectedNetUid, setSelectedNetUid] = useState<string | null>(null)
   const runSaleSwitch = usePersistentSaleJsonMutationRunner('sale-switch')
 
@@ -132,7 +133,9 @@ function WizardReassignSaleForm({
       return
     }
 
-    setBusy(true)
+    if (!tryStartBusy()) {
+      return
+    }
 
     try {
       const attempt = await runSaleSwitch<SwitchSalePayload, SalesUkraineSale | null>(

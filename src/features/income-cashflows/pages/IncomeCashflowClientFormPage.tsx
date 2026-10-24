@@ -1,3 +1,5 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   ActionIcon,
@@ -188,6 +190,7 @@ export function IncomeCashflowClientFormPage() {
 }
 
 function IncomeCashflowClientFormPageContent() {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const navigate = useNavigate()
@@ -215,7 +218,7 @@ function IncomeCashflowClientFormPageContent() {
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isResolvingCounterparty, setResolvingCounterparty] = useValueState(false)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [pendingSubmission, setPendingSubmission] =
     useValueState<PendingIncomeCashflowSubmission | null>(null)
   const [counterpartySelectionRequestGuard] = useState(
@@ -606,27 +609,29 @@ function IncomeCashflowClientFormPageContent() {
   }
 
   async function handleCounterpartySubmit(value: string) {
-    const counterparty = findIncomeCashflowCounterpartyByOption(
-      counterparties,
-      value,
-    ) || payerClients.find((item) => getEntityName(item) === value)
+    return runActionOnce('handleCounterpartySubmit', async () => {
+      const counterparty = findIncomeCashflowCounterpartyByOption(
+        counterparties,
+        value,
+      ) || payerClients.find((item) => getEntityName(item) === value)
 
-    if (!counterparty) {
-      return
-    }
+      if (!counterparty) {
+        return
+      }
 
-    const payloadKind = resolveIncomeCounterpartyPayloadKind(
-      operationType,
-      form.searchType,
-    )
+      const payloadKind = resolveIncomeCounterpartyPayloadKind(
+        operationType,
+        form.searchType,
+      )
 
-    if (payloadKind === 'supplier') {
-      counterpartyOptionSubmitGuard.markSubmitted(value)
-      await selectSupplyOrganization(counterparty as SupplyOrganization, value)
-    } else if (payloadKind === 'client') {
-      counterpartyOptionSubmitGuard.markSubmitted(value)
-      await selectClient(counterparty, value)
-    }
+      if (payloadKind === 'supplier') {
+        counterpartyOptionSubmitGuard.markSubmitted(value)
+        await selectSupplyOrganization(counterparty as SupplyOrganization, value)
+      } else if (payloadKind === 'client') {
+        counterpartyOptionSubmitGuard.markSubmitted(value)
+        await selectClient(counterparty, value)
+      }
+    })
   }
 
   async function selectClient(client: Client, label: string) {
@@ -912,7 +917,9 @@ function IncomeCashflowClientFormPageContent() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -934,83 +941,84 @@ function IncomeCashflowClientFormPageContent() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    return runActionOnce('handleSubmit', async () => {
+      if (!hasPermission(createPermission)) {
+        setError(t('Немає права створювати цей прибутковий ордер'))
+        return
+      }
 
-    if (!hasPermission(createPermission)) {
-      setError(t('Немає права створювати цей прибутковий ордер'))
-      return
-    }
+      const paymentAmountInDebtCurrency = currenciesMatch(
+        selectedCurrency,
+        agreementCurrency,
+      )
+        ? form.amount
+        : null
 
-    const paymentAmountInDebtCurrency = currenciesMatch(
-      selectedCurrency,
-      agreementCurrency,
-    )
-      ? form.amount
-      : null
-
-    const validationError = validateForm({
-      activeMovement,
-      agreementsLoadState,
-      amount: form.amount,
-      operationType,
-      searchType: form.searchType,
-      selectedClient,
-      selectedClientAgreement,
-      selectedCurrency,
-      selectedOrganization,
-      selectedRegister,
-      selectedSupplyAgreement,
-      selectedSupplyOrganization,
-      t,
-    }) || validateIncomeCashflowContract(
-      {
+      const validationError = validateForm({
+        activeMovement,
+        agreementsLoadState,
         amount: form.amount,
-        arrivalNumber: form.entranceNumber,
-        comment: form.comment,
-        date: form.date,
-        paymentPurpose: form.paymentPurpose,
-        time: form.time,
-        vatAmount: form.vatAmount,
-        vatRate: form.vatRate,
-      },
-      t,
-    ) || validateDebtSelection({
-      autoAllocate: form.autoAllocate,
-      operationType,
-      paymentAmountInDebtCurrency,
-      selectedDebtValues: form.selectedDebtValues,
-      t,
-      visibleDebts,
-    })
+        operationType,
+        searchType: form.searchType,
+        selectedClient,
+        selectedClientAgreement,
+        selectedCurrency,
+        selectedOrganization,
+        selectedRegister,
+        selectedSupplyAgreement,
+        selectedSupplyOrganization,
+        t,
+      }) || validateIncomeCashflowContract(
+        {
+          amount: form.amount,
+          arrivalNumber: form.entranceNumber,
+          comment: form.comment,
+          date: form.date,
+          paymentPurpose: form.paymentPurpose,
+          time: form.time,
+          vatAmount: form.vatAmount,
+          vatRate: form.vatRate,
+        },
+        t,
+      ) || validateDebtSelection({
+        autoAllocate: form.autoAllocate,
+        operationType,
+        paymentAmountInDebtCurrency,
+        selectedDebtValues: form.selectedDebtValues,
+        t,
+        visibleDebts,
+      })
 
-    if (validationError) {
-      setError(validationError)
-      return
-    }
+      if (validationError) {
+        setError(validationError)
+        return
+      }
 
-    const payload = buildIncomePaymentOrder({
-      debts: visibleDebts,
-      form,
-      counterpartyPayloadKind,
-      operationType,
-      paymentAmountInDebtCurrency,
-      registerType,
-      selectedClient,
-      selectedClientAgreement,
-      selectedCurrency: selectedCurrency as Currency,
-      selectedCurrencyRegister: selectedCurrencyRegister as PaymentCurrencyRegister,
-      selectedMovement: activeMovement as PaymentMovement,
-      selectedOrganization: selectedOrganization as Organization,
-      selectedRegister: selectedRegister as PaymentRegister,
-      selectedSupplyAgreement,
-      selectedSupplyOrganization,
-    })
+      const payload = buildIncomePaymentOrder({
+        debts: visibleDebts,
+        form,
+        counterpartyPayloadKind,
+        operationType,
+        paymentAmountInDebtCurrency,
+        registerType,
+        selectedClient,
+        selectedClientAgreement,
+        selectedCurrency: selectedCurrency as Currency,
+        selectedCurrencyRegister: selectedCurrencyRegister as PaymentCurrencyRegister,
+        selectedMovement: activeMovement as PaymentMovement,
+        selectedOrganization: selectedOrganization as Organization,
+        selectedRegister: selectedRegister as PaymentRegister,
+        selectedSupplyAgreement,
+        selectedSupplyOrganization,
+      })
 
-    setError(null)
-    setPendingSubmission({
-      autoAllocate:
-        operationType === IncomePaymentOperationType.ClientPayment &&
-        form.autoAllocate,
-      payload,
+      setError(null)
+      setPendingSubmission({
+        autoAllocate:
+          operationType === IncomePaymentOperationType.ClientPayment &&
+          form.autoAllocate,
+        payload,
+      })
     })
   }
 
@@ -1020,7 +1028,9 @@ function IncomeCashflowClientFormPageContent() {
     }
 
     const submission = pendingSubmission
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

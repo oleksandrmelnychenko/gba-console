@@ -1,3 +1,5 @@
+import { useSingleFlight } from '../../../../shared/hooks/useSingleFlight'
+import { useBusyState } from '../../../../shared/hooks/useBusyState'
 import {
   ActionIcon,
   Alert,
@@ -57,10 +59,11 @@ export function DeliveryRecipientsPanel({
   includeDeleted = true,
   onChange,
 }: DeliveryRecipientsPanelProps) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const [recipients, setRecipients] = useValueState<DeliveryRecipient[]>([])
   const [isLoading, setLoading] = useValueState(false)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [deletingNetUid, setDeletingNetUid] = useValueState<string | null>(null)
   const [error, setError] = useValueState<string | null>(null)
   const [modalOpened, setModalOpened] = useValueState(false)
@@ -125,7 +128,9 @@ export function DeliveryRecipientsPanel({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -149,26 +154,28 @@ export function DeliveryRecipientsPanel({
   }
 
   async function handleDelete() {
-    if (!canDelete || !removeTarget || !removeTarget.NetUid || isBusy) {
-      setRemoveTarget(null)
-      return
-    }
+    return runActionOnce('handleDelete', async () => {
+      if (!canDelete || !removeTarget || !removeTarget.NetUid || isBusy) {
+        setRemoveTarget(null)
+        return
+      }
 
-    const netUid = removeTarget.NetUid
-    setDeletingNetUid(netUid)
-    setError(null)
+      const netUid = removeTarget.NetUid
+      setDeletingNetUid(netUid)
+      setError(null)
 
-    try {
-      await removeDeliveryRecipient(netUid)
-      await reload()
-      setRemoveTarget(null)
-    } catch (deleteError) {
-      setError(
-        deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити отримувача'),
-      )
-    } finally {
-      setDeletingNetUid(null)
-    }
+      try {
+        await removeDeliveryRecipient(netUid)
+        await reload()
+        setRemoveTarget(null)
+      } catch (deleteError) {
+        setError(
+          deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити отримувача'),
+        )
+      } finally {
+        setDeletingNetUid(null)
+      }
+    })
   }
 
   return (

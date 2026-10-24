@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import {
   Alert,
   Anchor,
@@ -308,6 +309,7 @@ function ClientRecommendationsInline({ client, onSaleCreated }: { client: Cockpi
 function ClientRecommendationsForAgreement({
   client, agreement, onSaleCreated,
 }: { client: CockpitClient; agreement: SalesUkraineClientAgreement; onSaleCreated: () => void }) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const { can } = usePermissions()
@@ -408,19 +410,21 @@ function ClientRecommendationsForAgreement({
       : ''
 
   async function handleCreateOffer() {
-    if (!can(PermissionKeys.SalesUkraineOffers.Offer.Create) || !state.agreement || chosen.length === 0) {
-      return
-    }
+    return runActionOnce('handleCreateOffer', async () => {
+      if (!can(PermissionKeys.SalesUkraineOffers.Offer.Create) || !state.agreement || chosen.length === 0) {
+        return
+      }
 
-    const created = await createOfferFromSelection(
-      state.agreement as OfferClientAgreement,
-      chosen,
-      Number(offerValidDays) || undefined,
-    )
+      const created = await createOfferFromSelection(
+        state.agreement as OfferClientAgreement,
+        chosen,
+        Number(offerValidDays) || undefined,
+      )
 
-    if (created) {
-      setSelectedKeys(new Set())
-    }
+      if (created) {
+        setSelectedKeys(new Set())
+      }
+    })
   }
 
   function handleOpenSaleWizard() {

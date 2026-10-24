@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   Alert,
@@ -87,8 +88,8 @@ function useAdvanceReportViewModel() {
   const locationState = routeLocation.state as { returnPath?: string } | null
   const returnPath = locationState?.returnPath || OUTGOING_CASHFLOW_ROUTE
   const [viewState, setViewState] = useValueState<AdvanceReportViewState>(INITIAL_ADVANCE_REPORT_VIEW_STATE)
-  const [isSaving, setSaving] = useValueState(false)
-  const [isRecalculating, setRecalculating] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
+  const [isRecalculating, setRecalculating, tryStartRecalculating] = useBusyState()
   const [isConsumableModalOpen, setConsumableModalOpen] = useValueState(false)
   const [isFuelModalOpen, setFuelModalOpen] = useValueState(false)
   const [createIncomeAutomatically, setCreateIncomeAutomatically] = useValueState(false)
@@ -216,7 +217,9 @@ function useAdvanceReportViewModel() {
       const requestId = recalculateRef.current + 1
       recalculateRef.current = requestId
       setViewState((current) => ({ ...current, error: null }))
-      setRecalculating(true)
+      if (!tryStartRecalculating()) {
+        return
+      }
 
       try {
         const calculated = await calculateAdvanceReportOrder(nextOrder)
@@ -241,7 +244,7 @@ function useAdvanceReportViewModel() {
         }
       }
     },
-    [setRecalculating, setViewState, t],
+    [setRecalculating, setViewState, t, tryStartRecalculating],
   )
 
   const removeConsumableRow = useCallback(
@@ -356,7 +359,9 @@ function useAdvanceReportViewModel() {
       }
 
       const consumableDocumentFiles = getConsumableDocumentFiles(consumableDocumentFilesByOrderKey)
-      setSaving(true)
+      if (!tryStartSaving()) {
+        return
+      }
       setViewState((current) => ({ ...current, error: null }))
 
       const payload: AdvanceReportOrder = {
@@ -398,6 +403,7 @@ function useAdvanceReportViewModel() {
       setSaving,
       setViewState,
       t,
+      tryStartSaving,
     ],
   )
 
@@ -407,7 +413,9 @@ function useAdvanceReportViewModel() {
     }
 
     const consumableDocumentFiles = getConsumableDocumentFiles(consumableDocumentFilesByOrderKey)
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setViewState((current) => ({ ...current, error: null }))
 
     try {
@@ -437,6 +445,7 @@ function useAdvanceReportViewModel() {
     setSaving,
     setViewState,
     t,
+    tryStartSaving,
   ])
 
   return {

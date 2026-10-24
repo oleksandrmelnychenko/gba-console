@@ -9,6 +9,8 @@ import { roundMoney } from '../../saleMoney'
 import type { SalesUkraineOrderItem } from '../../types'
 import { getOrderItemDiscount, getWizardProductNumber, type WizardSaleProduct } from './wizardSaleProduct'
 import type { WizardSplitOrderItem } from './wizardSplitSale'
+import type { WizardCartSelection } from './wizardCartMutation'
+export type { WizardCartSelection } from './wizardCartMutation'
 
 const qtyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
 const priceFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
@@ -30,11 +32,6 @@ const CART_EDIT_TABLE_LAYOUT: DataTableDefaultLayout = {
     vendorCode: 132,
   },
   density: 'normal',
-}
-
-export type WizardCartSelection = {
-  index: number
-  list: 'current' | 'split'
 }
 
 export function EditShoppingCartOverlay({

@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Box, Button, Group, Select, SimpleGrid, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { FileUp } from 'lucide-react'
@@ -17,7 +18,7 @@ export function OneCExportPanel() {
   const { t } = useI18n()
   const [documentType, setDocumentType] = useState(String(TypeOfXmlDocument.Sales))
   const [fromDate, setFromDate] = useState(() => new Date())
-  const [isExporting, setIsExporting] = useState(false)
+  const [isExporting, setIsExporting, tryStartIsExporting] = useBusyState()
   const [toDate, setToDate] = useState(() => new Date())
 
   async function runExport() {
@@ -26,7 +27,9 @@ export function OneCExportPanel() {
       return
     }
 
-    setIsExporting(true)
+    if (!tryStartIsExporting()) {
+      return
+    }
 
     try {
       const response = await startGbaToOneCSync({

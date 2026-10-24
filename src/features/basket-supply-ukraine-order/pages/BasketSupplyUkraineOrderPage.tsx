@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { AppModalFooter } from '../../../shared/ui/AppModal'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -257,9 +258,9 @@ function BasketCartWorkflow() {
   const [createError, setCreateError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(true)
   const [isReferenceLoading, setReferenceLoading] = useState(true)
-  const [isUploading, setUploading] = useState(false)
-  const [isUpdatingReserve, setUpdatingReserve] = useState(false)
-  const [isCreatingDocument, setCreatingDocument] = useState(false)
+  const [isUploading, setUploading, tryStartUploading] = useBusyState()
+  const [isUpdatingReserve, setUpdatingReserve, tryStartUpdatingReserve] = useBusyState()
+  const [isCreatingDocument, setCreatingDocument, tryStartCreatingDocument] = useBusyState()
   const [isTotalsLoading, setTotalsLoading] = useState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [sourceTableToolbarSlot, setSourceTableToolbarSlot] = useState<HTMLDivElement | null>(null)
@@ -436,7 +437,9 @@ function BasketCartWorkflow() {
       return
     }
 
-    setUploading(true)
+    if (!tryStartUploading()) {
+      return
+    }
     setUploadError(null)
 
     try {
@@ -572,7 +575,9 @@ function BasketCartWorkflow() {
       return
     }
 
-    setUpdatingReserve(true)
+    if (!tryStartUpdatingReserve()) {
+      return
+    }
 
     try {
       const updatedCartItem = await updateUkraineCartItem({
@@ -614,7 +619,9 @@ function BasketCartWorkflow() {
       return
     }
 
-    setCreatingDocument(true)
+    if (!tryStartCreatingDocument()) {
+      return
+    }
 
     try {
       const documentItems = toCartItemsForDocument(destinationItems)
@@ -989,7 +996,7 @@ function SalesWorkflowTab() {
   const [createError, setCreateError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(true)
   const [isReferenceLoading, setReferenceLoading] = useState(true)
-  const [isCreatingDocument, setCreatingDocument] = useState(false)
+  const [isCreatingDocument, setCreatingDocument, tryStartCreatingDocument] = useBusyState()
   const [isTotalsLoading, setTotalsLoading] = useState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [debouncedSearchValue] = useDebouncedValue(filterDraft.value, 400)
@@ -1262,7 +1269,9 @@ function SalesWorkflowTab() {
       return
     }
 
-    setCreatingDocument(true)
+    if (!tryStartCreatingDocument()) {
+      return
+    }
 
     try {
       const result =

@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -131,7 +132,7 @@ function SupplierOrganizationCashFlowPageContent() {
   const [error, setError] = useValueState<string | null>(null)
   const [isLoadingOrganization, setLoadingOrganization] = useValueState(false)
   const [isLoadingCashFlow, setLoadingCashFlow] = useValueState(false)
-  const [isExporting, setExporting] = useValueState(false)
+  const [isExporting, setExporting, tryStartExporting] = useBusyState()
   const organizationRequestRef = useRef(0)
   const cashFlowRequestRef = useRef(0)
   const filterError = getDateRangeError(fromDate, toDate)
@@ -230,7 +231,9 @@ function SupplierOrganizationCashFlowPageContent() {
       return
     }
 
-    setExporting(true)
+    if (!tryStartExporting()) {
+      return
+    }
     setExportingFormat(format)
     setError(null)
 

@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { ActionIcon, Alert, Badge, Select, Stack, Tooltip } from '@mantine/core'
 import { CircleAlert, FileDown } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
@@ -97,7 +98,7 @@ export function SalesDebtorsPage() {
   const [debtors, setDebtors] = useValueState<ClientDebtors>(emptyDebtors)
   const [isLoading, setLoading] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
-  const [isExporting, setExporting] = useValueState(false)
+  const [isExporting, setExporting, tryStartExporting] = useBusyState()
   const [downloadDocument, setDownloadDocument] = useValueState<DebtorsDocumentResult | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const [selectedDebtor, setSelectedDebtor] = useValueState<ClientInDebt | null>(null)
@@ -198,7 +199,9 @@ export function SalesDebtorsPage() {
   }, [days, offset, organizationNetId, pageSize, reloadKey, setDebtors, setError, setLoading, t, typeAgreement, typeCurrency, userNetId])
 
   async function handleExport() {
-    setExporting(true)
+    if (!tryStartExporting()) {
+      return
+    }
     setError(null)
 
     try {

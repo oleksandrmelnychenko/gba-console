@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
@@ -145,7 +146,7 @@ function ConsumableOrderPayPageContent({
   const [movementDraft, setMovementDraft] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const selectedOrganization = useMemo(
     () => organizations.find((organization) => getEntityValue(organization) === form.organizationValue) || null,
     [form.organizationValue, organizations],
@@ -339,7 +340,9 @@ function ConsumableOrderPayPageContent({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -406,7 +409,9 @@ function ConsumableOrderPayPageContent({
       time: form.time,
     })
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

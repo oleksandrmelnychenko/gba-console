@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { Button, Group, Stack, Text } from '@mantine/core'
 import { Plus } from 'lucide-react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -46,6 +47,7 @@ export function MergedServicesSection({
   services: MergedService[]
   users: ProtocolUser[]
 }) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const [isNewOpen, setNewOpen] = useValueState(false)
   const [removeTarget, setRemoveTarget] = useValueState<MergedService | null>(null)
@@ -53,25 +55,29 @@ export function MergedServicesSection({
   const visibleServices = services.filter((service) => !service.Deleted)
 
   async function handleNewSubmit(values: NewMergedServiceFormValues) {
-    try {
-      await onCreateService(buildUkraineMergedServiceFromForm(values), values.files)
-      setNewOpen(false)
-    } catch {
-      // Parent renders the action error; keep the drawer open so the user does not lose form context.
-    }
+    return runActionOnce('handleNewSubmit', async () => {
+      try {
+        await onCreateService(buildUkraineMergedServiceFromForm(values), values.files)
+        setNewOpen(false)
+      } catch {
+        // Parent renders the action error; keep the drawer open so the user does not lose form context.
+      }
+    })
   }
 
   async function handleRemoveConfirm() {
-    if (!removeTarget) {
-      return
-    }
+    return runActionOnce('handleRemoveConfirm', async () => {
+      if (!removeTarget) {
+        return
+      }
 
-    try {
-      await onRemoveService(removeTarget)
-      setRemoveTarget(null)
-    } catch {
-      // Parent renders the action error; keep the confirmation open on failure.
-    }
+      try {
+        await onRemoveService(removeTarget)
+        setRemoveTarget(null)
+      } catch {
+        // Parent renders the action error; keep the confirmation open on failure.
+      }
+    })
   }
 
   return (

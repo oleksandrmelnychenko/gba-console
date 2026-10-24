@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Alert, NumberInput, Table, Tabs, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert } from 'lucide-react'
@@ -56,7 +57,7 @@ export function ActReconciliationActionsModal({
   const [storages, setStorages] = useValueState<ReconciliationStorageOption[]>([])
   const [storagesLoading, setStoragesLoading] = useValueState(false)
   const [storagesError, setStoragesError] = useValueState<string | null>(null)
-  const [isSubmitting, setSubmitting] = useValueState(false)
+  const [isSubmitting, setSubmitting, tryStartSubmitting] = useBusyState()
   const [submitError, setSubmitError] = useValueState<string | null>(null)
   const [quantityDrafts, setQuantityDrafts] = useValueState<Record<string, string>>({})
   const [activeTab, setActiveTab] = useValueState<ActionTab>('placement')
@@ -122,7 +123,9 @@ export function ActReconciliationActionsModal({
   }, [opened, setQuantityDrafts, target])
 
   async function runSubmit(action: () => Promise<void>) {
-    setSubmitting(true)
+    if (!tryStartSubmitting()) {
+      return
+    }
     setSubmitError(null)
 
     try {

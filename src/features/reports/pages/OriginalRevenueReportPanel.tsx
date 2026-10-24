@@ -53,7 +53,7 @@ export function OriginalRevenueReportPanel({ capability, initialMonth, canGenera
       <Text size="sm">{t('Поточний місяць')}: {report.CurrentPeriod.From.slice(0, 7)} · {t('Попередній місяць')}: {report.PreviousPeriod.From.slice(0, 7)} · EUR</Text>
       <ReportTableScrollArea minWidth={800}><Table className="app-static-table">
         <Table.Thead><Table.Tr><Table.Th>{report.RowCaption}</Table.Th>{report.Columns.map(column =>
-          <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
+          <Table.Th key={column.Key} className="app-table-cell-number">{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
         <Table.Tbody>{report.Rows.map(row => <RevenueRow key={row.ClientId ?? 'unattributed'} label={row.Caption} row={row} report={report} />)}</Table.Tbody>
         <Table.Tfoot><RevenueRow label={t('Разом')} row={report.Totals} report={report} /></Table.Tfoot>
       </Table></ReportTableScrollArea>
@@ -69,6 +69,6 @@ export function OriginalRevenueReportPanel({ capability, initialMonth, canGenera
 }
 function RevenueRow({ label, row, report }: { label: string; row: OriginalRevenueTotals; report: OriginalRevenueReport }) {
   const { t } = useI18n()
-  return <Table.Tr><Table.Th scope="row">{label}</Table.Th>{row.Cells.map((cell, index) => <Table.Td key={cell.Key}
+  return <Table.Tr><Table.Th scope="row">{label}</Table.Th>{row.Cells.map((cell, index) => <Table.Td key={cell.Key} className="app-table-cell-number"
     title={cell.Available ? undefined : t('Недоступні дані')}>{originalRevenueCellText(cell.Value, report.Columns[index].DecimalPlaces)}</Table.Td>)}</Table.Tr>
 }

@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
   Alert,
   Button,
@@ -80,8 +81,8 @@ export function PaymentCashflowArticleFormPage() {
     createInitialArticleFormState,
   )
   const { article, operationName, error, isLoading } = formState
-  const [isSaving, setSaving] = useValueState(false)
-  const [isDeleting, setDeleting] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
+  const [isDeleting, setDeleting, tryStartDeleting] = useBusyState()
   const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
   const canView = can(PERMISSION_VIEW_CASHFLOW_ARTICLES)
   const canCreate = can(PERMISSION_CREATE_CASHFLOW_ARTICLE)
@@ -198,7 +199,9 @@ export function PaymentCashflowArticleFormPage() {
       OperationName: trimmedOperationName,
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setFormState({ error: null })
 
     try {
@@ -233,7 +236,9 @@ export function PaymentCashflowArticleFormPage() {
       return
     }
 
-    setDeleting(true)
+    if (!tryStartDeleting()) {
+      return
+    }
     setFormState({ error: null })
 
     try {

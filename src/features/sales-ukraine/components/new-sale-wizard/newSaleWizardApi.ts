@@ -342,17 +342,24 @@ export async function updateSaleDeliveryRecipientAddress(
 export async function getProductReservationsByAgreement(
   clientAgreementNetId: string,
   productNetId: string,
+  signal?: AbortSignal,
 ): Promise<WizardProductReservation[]> {
   const result = await apiRequest<unknown>('/products/reservations/current/carousel/agreement', {
     query: { clientAgreementNetId, productNetId },
+    ...(signal ? { signal } : {}),
   })
 
   return asArrayOrSingle<WizardProductReservation>(result)
 }
 
-export async function getProductCurrentPriceByAgreement(productNetId: string, clientAgreementNetId: string): Promise<number | null> {
+export async function getProductCurrentPriceByAgreement(
+  productNetId: string,
+  clientAgreementNetId: string,
+  signal?: AbortSignal,
+): Promise<number | null> {
   const result = await apiRequest<unknown>('/products/pricings/current', {
     query: { clientAgreementNetId, productNetId },
+    ...(signal ? { signal } : {}),
   })
 
   return asNumber(result)
@@ -361,9 +368,11 @@ export async function getProductCurrentPriceByAgreement(productNetId: string, cl
 export async function getProductCalculatedPricingsByAgreement(
   productNetId: string,
   clientAgreementNetId: string,
+  signal?: AbortSignal,
 ): Promise<WizardCalculatedProductPricing[]> {
   const result = await apiRequest<unknown>('/products/pricings/all', {
     query: { clientAgreementNetId, productNetId },
+    ...(signal ? { signal } : {}),
   })
 
   return asArrayOrSingle<WizardCalculatedProductPricing>(result)

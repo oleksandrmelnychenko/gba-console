@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Alert, Button, NumberInput, Radio, Stack, Text, TextInput } from '@mantine/core'
 import { Check, CircleAlert } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
@@ -40,7 +41,7 @@ export function ChangeProductSpecificationPanel({
   const [form, setForm] = useValueState<ChangeForm>(() => buildForm(productSpecification))
   const [initialForm, setInitialForm] = useValueState<ChangeForm>(() => buildForm(productSpecification))
   const [error, setError] = useValueState<string | null>(null)
-  const [isSubmitting, setSubmitting] = useValueState(false)
+  const [isSubmitting, setSubmitting, tryStartSubmitting] = useBusyState()
   const [confirmCloseOpen, setConfirmCloseOpen] = useValueState(false)
   const [previousNetUid, setPreviousNetUid] = useValueState(productSpecification?.NetUid)
 
@@ -92,7 +93,9 @@ export function ChangeProductSpecificationPanel({
       return
     }
 
-    setSubmitting(true)
+    if (!tryStartSubmitting()) {
+      return
+    }
     setError(null)
 
     try {

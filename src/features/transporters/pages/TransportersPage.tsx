@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
@@ -155,8 +156,8 @@ function TransportersPageContent({
   const [error, setError] = useValueState<string | null>(null)
   const [isLoadingTypes, setLoadingTypes] = useValueState(true)
   const [isLoadingTransporters, setLoadingTransporters] = useValueState(false)
-  const [isArchiving, setArchiving] = useValueState(false)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isArchiving, setArchiving, tryStartArchiving] = useBusyState()
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [archiveTarget, setArchiveTarget] = useValueState<Transporter | null>(null)
   const [actionsTransporter, setActionsTransporter] = useValueState<Transporter | null>(null)
   const [editor, setEditor] = useValueState<TransporterEditorState | null>(null)
@@ -279,7 +280,9 @@ function TransportersPageContent({
       return
     }
 
-    setArchiving(true)
+    if (!tryStartArchiving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -361,7 +364,9 @@ function TransportersPageContent({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setFormError(null)
 
     try {

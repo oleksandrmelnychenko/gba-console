@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
   Alert,
   Badge,
@@ -84,7 +85,7 @@ function ProductGroupsPageContent() {
   const [createError, setCreateError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isLoadingRootGroups, setLoadingRootGroups] = useValueState(false)
-  const [isCreating, setCreating] = useValueState(false)
+  const [isCreating, setCreating, tryStartCreating] = useBusyState()
   const [createModalOpened, setCreateModalOpened] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
@@ -213,7 +214,9 @@ function ProductGroupsPageContent() {
       return
     }
 
-    setCreating(true)
+    if (!tryStartCreating()) {
+      return
+    }
     setCreateError(null)
 
     try {

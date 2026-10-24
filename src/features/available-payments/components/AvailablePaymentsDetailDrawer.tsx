@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { DocumentDetailLayout, DocumentDetailSection, DocumentDetailRow } from '../../../shared/ui/document-detail/DocumentDetail'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -216,7 +217,7 @@ function useAvailablePaymentsDetailDrawerModel({
   const [movements, setMovements] = useValueState<AvailablePaymentMovement[]>([])
   const [form, setForm] = useValueState<OutcomeFormState>(() => createInitialOutcomeForm())
   const [isLoadingDictionaries, setLoadingDictionaries] = useValueState(false)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [error, setError] = useValueState<string | null>(null)
   const [confirmCloseOutcomeOpen, setConfirmCloseOutcomeOpen] = useValueState(false)
   const cashFlowRequestRef = useRef<Record<string, number>>({})
@@ -589,7 +590,9 @@ function useAvailablePaymentsDetailDrawerModel({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -782,7 +785,9 @@ function useAvailablePaymentsDetailDrawerModel({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -821,7 +826,9 @@ function useAvailablePaymentsDetailDrawerModel({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -929,7 +936,9 @@ function useAvailablePaymentsDetailDrawerModel({
     }
     let operationId: string
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

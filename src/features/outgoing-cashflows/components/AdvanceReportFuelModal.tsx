@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import './advance-report-entry.css'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -84,7 +85,7 @@ export function AdvanceReportFuelModal({
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
   const [isLoadingCostMovements, setLoadingCostMovements] = useValueState(false)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [confirmCloseOpen, setConfirmCloseOpen] = useValueState(false)
   const supplierSearchSeq = useRef(0)
   const companyCarSearchSeq = useRef(0)
@@ -302,7 +303,9 @@ export function AdvanceReportFuelModal({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     const requestId = submitSeq.current + 1
     submitSeq.current = requestId
     const isCurrentSubmit = () => submitSeq.current === requestId

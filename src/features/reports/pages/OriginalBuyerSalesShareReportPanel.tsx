@@ -66,12 +66,12 @@ export function OriginalBuyerSalesShareReportPanel({ capability, initialMonth, c
       <Text size="sm">{t('Період')}: {report.Month}</Text>
       <ReportTableScrollArea minWidth={640}>
         <Table className="app-static-table">
-          <Table.Thead><Table.Tr>{report.Columns.map(column => <Table.Th key={column.Key}>{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
-          <Table.Tbody><Table.Tr>{report.Cells.map((cell, index) => <Table.Td key={cell.Key}
+          <Table.Thead><Table.Tr>{report.Columns.map(column => <Table.Th key={column.Key} className="app-table-cell-number">{column.Caption}</Table.Th>)}</Table.Tr></Table.Thead>
+          <Table.Tbody><Table.Tr>{report.Cells.map((cell, index) => <Table.Td key={cell.Key} className="app-table-cell-number"
             title={cell.Available ? undefined : t('Недоступні дані')}>
             {originalBuyerSalesShareCellText(cell.Value, report.Columns[index].DecimalPlaces)}
           </Table.Td>)}</Table.Tr></Table.Tbody>
-          <Table.Tfoot><Table.Tr aria-label={t('Загальний підсумок')}>{report.TotalCells.map((cell, index) => <Table.Td key={cell.Key}
+          <Table.Tfoot><Table.Tr aria-label={t('Загальний підсумок')}>{report.TotalCells.map((cell, index) => <Table.Td key={cell.Key} className="app-table-cell-number"
             title={cell.Available ? undefined : t('Недоступні дані')}>
             {originalBuyerSalesShareCellText(cell.Value, report.Columns[index].DecimalPlaces)}
           </Table.Td>)}</Table.Tr></Table.Tfoot>

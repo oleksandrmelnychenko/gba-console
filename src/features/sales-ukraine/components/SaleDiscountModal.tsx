@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Alert, Button, NumberInput, Stack, Text, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useState } from 'react'
@@ -79,7 +80,7 @@ function SaleDiscountForm({
   const [comment, setComment] = useState(() =>
     orderItem ? orderItem.OneTimeDiscountComment || '' : sale.OneTimeDiscountComment || '',
   )
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const discountMutation = usePersistentSaleJsonMutation(
     `sale-discount:${String(sale.NetUid || sale.Id || '')}:${String(
       orderItem?.NetUid || orderItem?.Id || 'sale',
@@ -95,7 +96,9 @@ function SaleDiscountForm({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
 
     try {
       if (discountMutation.hasPendingOperation()) {

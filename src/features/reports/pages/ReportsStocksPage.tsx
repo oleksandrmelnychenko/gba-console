@@ -1314,7 +1314,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
                 : <Text size="sm">{t('Поточний стан на час читання даних. Історичний період не застосовується.')}</Text>} />
             {appliedSettings.pending ? <Alert color="yellow" role="status">{t('Налаштування змінено. Застосуйте весь набір, щоб оновити звіт.')}{lastRun ? <> {t('Показаний результат та його експорт відповідають попередньому застосованому набору.')}</> : null}</Alert> : null}
             <WorkbookActionBar canSubmit={canSubmit && !workbookResolving} isLoading={isLoading}
-              blockedReason={workbookResolving ? t('Зачекайте: застосовуються відбори книги…') : submitBlockedReason || null}
+              blockedReason={workbookResolving ? null : submitBlockedReason || null}
               ran={Boolean(result)} previewNeedsExport={Boolean(lastRun?.previewNeedsExport)} excelUrl={excelUrl} pdfUrl={pdfUrl} fileBaseName={lastRun?.fileName ?? null}
               resetDisabled={!canGenerateReport || isLoading} onPreview={() => void runReport(true)}
               onGenerate={() => void runReport(false)} onReset={resetReport}

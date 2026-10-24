@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../../shared/hooks/useSingleFlight'
 import {
   Alert,
   Button,
@@ -154,6 +155,7 @@ export function PerfectClientPanel({
   disabled = false,
   onChange,
 }: PerfectClientPanelProps) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const roleId = getRoleId(client)
   const [search, setSearch] = useValueState('')
@@ -249,44 +251,46 @@ export function PerfectClientPanel({
   }
 
   async function handleAddPerfectClient(values: PerfectClientFormValues) {
-    if (!roleId || !canCreateDefinition) {
-      return
-    }
-
-    if (!values.Name.trim() || !values.TranslationName.trim()) {
-      setAddError(t('Вкажіть назву параметра'))
-      return
-    }
-
-    if (
-      Number(values.Type) === PerfectClientType.Toggle
-      && (
-        !values.ToggleValueLeft.trim()
-        || !values.ToggleValueLeftTranslation.trim()
-        || !values.ToggleValueRight.trim()
-        || !values.ToggleValueRightTranslation.trim()
-      )
-    ) {
-      setAddError(t('Вкажіть обидва значення перемикача'))
-      return
-    }
-
-    setAdding(true)
-    setAddError(null)
-
-    try {
-      const created = await createClientResourcePerfectClient(buildNewPerfectClientPayload(values, roleId))
-
-      if (created) {
-        commit([...perfectClients, created as unknown as PerfectClient])
+    return runActionOnce('handleAddPerfectClient', async () => {
+      if (!roleId || !canCreateDefinition) {
+        return
       }
 
-      setAddModalOpened(false)
-    } catch (createError) {
-      setAddError(createError instanceof Error ? createError.message : t('Не вдалося створити параметр'))
-    } finally {
-      setAdding(false)
-    }
+      if (!values.Name.trim() || !values.TranslationName.trim()) {
+        setAddError(t('Вкажіть назву параметра'))
+        return
+      }
+
+      if (
+        Number(values.Type) === PerfectClientType.Toggle
+        && (
+          !values.ToggleValueLeft.trim()
+          || !values.ToggleValueLeftTranslation.trim()
+          || !values.ToggleValueRight.trim()
+          || !values.ToggleValueRightTranslation.trim()
+        )
+      ) {
+        setAddError(t('Вкажіть обидва значення перемикача'))
+        return
+      }
+
+      setAdding(true)
+      setAddError(null)
+
+      try {
+        const created = await createClientResourcePerfectClient(buildNewPerfectClientPayload(values, roleId))
+
+        if (created) {
+          commit([...perfectClients, created as unknown as PerfectClient])
+        }
+
+        setAddModalOpened(false)
+      } catch (createError) {
+        setAddError(createError instanceof Error ? createError.message : t('Не вдалося створити параметр'))
+      } finally {
+        setAdding(false)
+      }
+    })
   }
 
   function openAddModal() {

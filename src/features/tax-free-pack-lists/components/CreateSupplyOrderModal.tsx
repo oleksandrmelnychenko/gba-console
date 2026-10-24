@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { Alert, Button, Select, Stack, Text, TextInput } from '@mantine/core'
 import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { CircleAlert, Search } from 'lucide-react'
@@ -50,6 +51,7 @@ type CreateSupplyOrderAction =
   | { type: 'supplierSelected'; value: string | null }
 
 export function CreateSupplyOrderModal({ canCreate, opened, packList, onClose, onCreated }: CreateSupplyOrderModalProps) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const [state, dispatch] = useReducer(createSupplyOrderReducer, undefined, createInitialCreateSupplyOrderState)
   const {
@@ -125,48 +127,50 @@ export function CreateSupplyOrderModal({ canCreate, opened, packList, onClose, o
   }, [supplierSearch, suppliers])
 
   async function createOrder() {
-    if (!canCreate || !packList?.NetUid) {
-      return
-    }
-
-    const organization = selectedOrganization
-    const supplier = selectedSupplier
-    const clientAgreement = agreements.find((item) => getAgreementValue(item) === effectiveAgreementValue)
-
-    if (!organization || !supplier || !clientAgreement) {
-      dispatch({ error: t('Оберіть постачальника, організацію та договір'), type: 'setError' })
-      return
-    }
-
-    if (!incomeDate) {
-      dispatch({ error: t('Оберіть дату приходу'), type: 'setError' })
-      return
-    }
-
-    dispatch({ type: 'saveStarted' })
-
-    try {
-      const createdOrder = await createSupplyOrderFromPackList(packList.NetUid, {
-        ClientAgreement: clientAgreement,
-        FromDate: formatLocalInputDateTime(incomeDate),
-        Number: '',
-        Organization: organization,
-        Supplier: supplier,
-      })
-
-      notifications.show({ color: 'green', message: t('Замовлення створено') })
-      if (createdOrder?.NetUid) {
-        onCreated?.(createdOrder.NetUid)
+    return runActionOnce('createOrder', async () => {
+      if (!canCreate || !packList?.NetUid) {
+        return
       }
-      onClose()
-    } catch (saveError) {
-      dispatch({
-        error: saveError instanceof Error ? saveError.message : t('Не вдалося створити замовлення'),
-        type: 'saveFailed',
-      })
-    } finally {
-      dispatch({ type: 'saveFinished' })
-    }
+
+      const organization = selectedOrganization
+      const supplier = selectedSupplier
+      const clientAgreement = agreements.find((item) => getAgreementValue(item) === effectiveAgreementValue)
+
+      if (!organization || !supplier || !clientAgreement) {
+        dispatch({ error: t('Оберіть постачальника, організацію та договір'), type: 'setError' })
+        return
+      }
+
+      if (!incomeDate) {
+        dispatch({ error: t('Оберіть дату приходу'), type: 'setError' })
+        return
+      }
+
+      dispatch({ type: 'saveStarted' })
+
+      try {
+        const createdOrder = await createSupplyOrderFromPackList(packList.NetUid, {
+          ClientAgreement: clientAgreement,
+          FromDate: formatLocalInputDateTime(incomeDate),
+          Number: '',
+          Organization: organization,
+          Supplier: supplier,
+        })
+
+        notifications.show({ color: 'green', message: t('Замовлення створено') })
+        if (createdOrder?.NetUid) {
+          onCreated?.(createdOrder.NetUid)
+        }
+        onClose()
+      } catch (saveError) {
+        dispatch({
+          error: saveError instanceof Error ? saveError.message : t('Не вдалося створити замовлення'),
+          type: 'saveFailed',
+        })
+      } finally {
+        dispatch({ type: 'saveFinished' })
+      }
+    })
   }
 
   return (

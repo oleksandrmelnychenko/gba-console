@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../../shared/hooks/useBusyState'
 import {
   ActionIcon,
   Alert,
@@ -114,8 +115,8 @@ export function PricingPanel({
   const [lookupsError, setLookupsError] = useState<string | null>(null)
   const [selectedAgreementNetId, setSelectedAgreementNetId] = useState<string | undefined>(undefined)
   const [exportDocument, setExportDocument] = useState<ClientPrintDocument | null>(null)
-  const [isExporting, setIsExporting] = useState(false)
-  const [isUploadingDocuments, setUploadingDocuments] = useState(false)
+  const [isExporting, setIsExporting, tryStartIsExporting] = useBusyState()
+  const [isUploadingDocuments, setUploadingDocuments, tryStartUploadingDocuments] = useBusyState()
   const pendingDocumentsRef = useRef<File[]>([])
   const [documentsError, setDocumentsError] = useState<string | null>(null)
   const discountDraftRef = useRef<DiscountsTreeDraft | null>(null)
@@ -303,7 +304,9 @@ export function PricingPanel({
   }
 
   async function handleExportAgreementDocument(netId: string): Promise<ExportDocument | null> {
-    setIsExporting(true)
+    if (!tryStartIsExporting()) {
+      return null
+    }
     setExportDocument(null)
 
     try {
@@ -319,7 +322,9 @@ export function PricingPanel({
   }
 
   async function handleExportAgreementWarranty(netId: string): Promise<ExportDocument | null> {
-    setIsExporting(true)
+    if (!tryStartIsExporting()) {
+      return null
+    }
     setExportDocument(null)
 
     try {
@@ -404,7 +409,9 @@ export function PricingPanel({
       return
     }
 
-    setUploadingDocuments(true)
+    if (!tryStartUploadingDocuments()) {
+      return
+    }
     setDocumentsError(null)
 
     try {

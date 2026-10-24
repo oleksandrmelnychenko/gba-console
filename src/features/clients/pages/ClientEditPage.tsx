@@ -1,3 +1,5 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
   Alert,
   Badge,
@@ -204,6 +206,7 @@ function useAutoDismissNotice(noticeKey: string | null) {
 }
 
 export function ClientEditPage() {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const { netid, step, productNetId } = useParams()
   const location = useLocation()
@@ -221,12 +224,12 @@ export function ClientEditPage() {
   const [isLoading, setLoading] = useValueState(true)
   const [isStructureLoading, setStructureLoading] = useValueState(true)
   const [isFolderClientLoading, setFolderClientLoading] = useValueState(false)
-  const [isSaving, setSaving] = useValueState(false)
-  const [isDeleting, setDeleting] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
+  const [isDeleting, setDeleting, tryStartDeleting] = useBusyState()
   const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
   const [typePanelOpened, setTypePanelOpened] = useValueState(false)
   const [isLoadingRegionCode, setLoadingRegionCode] = useValueState(false)
-  const [isUploadingDocuments, setUploadingDocuments] = useValueState(false)
+  const [isUploadingDocuments, setUploadingDocuments, tryStartUploadingDocuments] = useBusyState()
   const [formErrors, setFormErrors] = useValueState<ClientFormErrors>({})
   const [pendingDocuments, setPendingDocuments] = useValueState<File[]>([])
   const [manualSourceOverrideClientNetId, setManualSourceOverrideClientNetId] = useValueState<string | null>(null)
@@ -831,7 +834,9 @@ export function ClientEditPage() {
       return
     }
 
-    setUploadingDocuments(true)
+    if (!tryStartUploadingDocuments()) {
+      return
+    }
     setError(null)
 
     try {
@@ -854,48 +859,54 @@ export function ClientEditPage() {
   }
 
   async function handleCreateIncoterm(name: string) {
-    setError(null)
+    return runActionOnce('handleCreateIncoterm', async () => {
+      setError(null)
 
-    try {
-      const created = await createIncoterm({ IncotermName: name })
-      await reloadIncoterms()
+      try {
+        const created = await createIncoterm({ IncotermName: name })
+        await reloadIncoterms()
 
-      if (created) {
-        setField('Incoterm', created)
+        if (created) {
+          setField('Incoterm', created)
+        }
+      } catch (createError) {
+        setError(createError instanceof Error ? createError.message : t('Не вдалося створити Incoterms'))
       }
-    } catch (createError) {
-      setError(createError instanceof Error ? createError.message : t('Не вдалося створити Incoterms'))
-    }
+    })
   }
 
   async function handleCreateCountry(name: string, code: string) {
-    setError(null)
+    return runActionOnce('handleCreateCountry', async () => {
+      setError(null)
 
-    try {
-      const created = await createCountry({ Name: name, Code: code })
-      await reloadCountries()
+      try {
+        const created = await createCountry({ Name: name, Code: code })
+        await reloadCountries()
 
-      if (created) {
-        setField('Country', created)
+        if (created) {
+          setField('Country', created)
+        }
+      } catch (createError) {
+        setError(createError instanceof Error ? createError.message : t('Не вдалося створити країну'))
       }
-    } catch (createError) {
-      setError(createError instanceof Error ? createError.message : t('Не вдалося створити країну'))
-    }
+    })
   }
 
   async function handleCreateRegion(name: string) {
-    setError(null)
+    return runActionOnce('handleCreateRegion', async () => {
+      setError(null)
 
-    try {
-      const created = await createRegion({ Name: name })
-      await reloadRegions()
+      try {
+        const created = await createRegion({ Name: name })
+        await reloadRegions()
 
-      if (created) {
-        await handleRegionChange(created)
+        if (created) {
+          await handleRegionChange(created)
+        }
+      } catch (createError) {
+        setError(createError instanceof Error ? createError.message : t('Не вдалося створити регіон'))
       }
-    } catch (createError) {
-      setError(createError instanceof Error ? createError.message : t('Не вдалося створити регіон'))
-    }
+    })
   }
 
   function goToStep(nextStep: string) {
@@ -935,7 +946,9 @@ export function ClientEditPage() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -972,7 +985,9 @@ export function ClientEditPage() {
       return
     }
 
-    setDeleting(true)
+    if (!tryStartDeleting()) {
+      return
+    }
     setError(null)
 
     try {

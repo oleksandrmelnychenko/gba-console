@@ -1,3 +1,5 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
+import { ReportRowPagination } from './ReportRowPagination'
 import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { receiptChoiceScope, receiptChoiceValues, type ReceiptCaptionContext, type WarehouseReceiptKey } from '../data/warehouseReceiptCaptions'
 import { WarehouseReceiptCaptionControls, WarehouseReceiptCaptionStatus } from './WarehouseReceiptCaptionControls'
@@ -35,20 +37,19 @@ function QuantityTable({ result }: { result: WarehouseQuantityResult }) {
       cells: [row.Caption, child.Caption, ...quantityKeys.map(key => child.Quantity[key])] })),
   ]), [result])
   const current = Math.min(page, Math.max(0, Math.ceil(rows.length / 50) - 1)), first = current * 50
-  return <Stack gap="xs"><Group><Button variant="light" size="xs" disabled={current === 0} onClick={() => setPage(current - 1)}>{t('Попередні рядки')}</Button>
-    <Text size="xs">{rows.length ? first + 1 : 0}–{Math.min(first + 50, rows.length)} / {rows.length}</Text>
-    <Button variant="light" size="xs" disabled={first + 50 >= rows.length} onClick={() => setPage(current + 1)}>{t('Наступні рядки')}</Button></Group>
-    <ReportTableScrollArea minWidth={900}><Table className="app-static-table"><Table.Thead><Table.Tr>{warehouseQuantityHeaders.map(label => <Table.Th key={label}>{t(label)}</Table.Th>)}</Table.Tr></Table.Thead>
-      <Table.Tbody>{rows.slice(first, first + 50).map(row => <Table.Tr key={row.key}>{row.cells.map((cell, column) => <Table.Td key={warehouseQuantityHeaders[column]}>{cell}</Table.Td>)}</Table.Tr>)}</Table.Tbody>
-      {result.Totals ? <Table.Tfoot><Table.Tr><Table.Th colSpan={2}>{t('Разом')}</Table.Th>{quantityKeys.map(key => <Table.Td key={key}>{result.Totals?.[key]}</Table.Td>)}</Table.Tr></Table.Tfoot> : null}
-    </Table></ReportTableScrollArea>{!rows.length ? <Text>{t('У повністю перевіреному періоді рядків немає.')}</Text> : null}</Stack>
+  return <Stack gap="xs">
+    <ReportTableScrollArea minWidth={900}><Table className="app-static-table"><Table.Thead><Table.Tr>{warehouseQuantityHeaders.map((label, index) => <Table.Th key={label} className={index >= 2 ? 'app-table-cell-number' : undefined}>{t(label)}</Table.Th>)}</Table.Tr></Table.Thead>
+      <Table.Tbody>{rows.slice(first, first + 50).map(row => <Table.Tr key={row.key}>{row.cells.map((cell, column) => <Table.Td key={warehouseQuantityHeaders[column]} className={column >= 2 ? 'app-table-cell-number' : undefined}>{cell}</Table.Td>)}</Table.Tr>)}</Table.Tbody>
+      {result.Totals ? <Table.Tfoot><Table.Tr><Table.Th colSpan={2}>{t('Разом')}</Table.Th>{quantityKeys.map(key => <Table.Td key={key} className="app-table-cell-number">{result.Totals?.[key]}</Table.Td>)}</Table.Tr></Table.Tfoot> : null}
+    </Table></ReportTableScrollArea>
+    <ReportRowPagination total={rows.length} offset={first} onChange={offset => setPage(offset / 50)} />{!rows.length ? <Text>{t('У повністю перевіреному періоді рядків немає.')}</Text> : null}</Stack>
 }
 
 function useQuantityRun({ capability, callerKey, canGenerate, from, through, products, warehouses, receiptMode, receipts, key, onAvailable }: {
   capability: WarehouseQuantityCapability; callerKey: string | null; canGenerate: boolean; from: string; through: string;
   products: string[]; warehouses: string[]; receiptMode: boolean; receipts: WarehouseReceiptKey[]; key: string; onAvailable: (result: WarehouseQuantityResult) => void
 }) {
-  const [exporting, setExporting] = useState(false)
+  const [exporting, setExporting, tryStartExporting] = useBusyState()
   const run = useReportRunState<WarehouseQuantityResult>(key), active = useRef<AbortController | null>(null), latest = useRef(key)
   const activeExport = useRef<AbortController | null>(null)
   useEffect(() => { latest.current = key; return () => { latest.current = ''; active.current?.abort(); activeExport.current?.abort() } }, [key])
@@ -69,7 +70,9 @@ function useQuantityRun({ capability, callerKey, canGenerate, from, through, pro
   async function exportFile(format: typeof exportFormats[number]) {
     if (!permitted || !report?.Available || exporting) return
     const controller = new AbortController(); activeExport.current?.abort(); activeExport.current = controller
-    setExporting(true)
+    if (!tryStartExporting()) {
+      return
+    }
     try {
       const blob = format === 'csv' ? new Blob([warehouseQuantityCsv(report)], { type: 'text/csv;charset=utf-8' })
         : format === 'xlsx' ? await warehouseQuantityXlsx(report) : await warehouseQuantityPdf(report)

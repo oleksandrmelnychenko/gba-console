@@ -1,3 +1,5 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
   Alert,
   Button,
@@ -253,6 +255,7 @@ function isSameNewClientSessionContext(
 }
 
 export function ClientNewPage() {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const { step } = useParams()
   const navigate = useNavigate()
@@ -272,7 +275,7 @@ export function ClientNewPage() {
   const [error, setError] = useValueState<string | null>(null)
   const [formErrors, setFormErrors] = useValueState<ClientFormErrors>({})
   const [isLoading, setLoading] = useValueState(true)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [isLoadingRegionCode, setLoadingRegionCode] = useValueState(false)
   const [regionCodeError, setRegionCodeError] = useValueState<string | undefined>(undefined)
   const pendingDocumentsRef = useRef<File[]>([])
@@ -584,48 +587,54 @@ export function ClientNewPage() {
   }
 
   async function handleCreateIncoterm(name: string) {
-    setError(null)
+    return runActionOnce('handleCreateIncoterm', async () => {
+      setError(null)
 
-    try {
-      const created = await createIncoterm({ IncotermName: name })
-      await reloadIncoterms()
+      try {
+        const created = await createIncoterm({ IncotermName: name })
+        await reloadIncoterms()
 
-      if (created) {
-        setDraftField('Incoterm', created)
+        if (created) {
+          setDraftField('Incoterm', created)
+        }
+      } catch (createError) {
+        setError(createError instanceof Error ? createError.message : t('Не вдалося створити Incoterms'))
       }
-    } catch (createError) {
-      setError(createError instanceof Error ? createError.message : t('Не вдалося створити Incoterms'))
-    }
+    })
   }
 
   async function handleCreateCountry(name: string, code: string) {
-    setError(null)
+    return runActionOnce('handleCreateCountry', async () => {
+      setError(null)
 
-    try {
-      const created = await createCountry({ Name: name, Code: code })
-      await reloadCountries()
+      try {
+        const created = await createCountry({ Name: name, Code: code })
+        await reloadCountries()
 
-      if (created) {
-        setDraftField('Country', created)
+        if (created) {
+          setDraftField('Country', created)
+        }
+      } catch (createError) {
+        setError(createError instanceof Error ? createError.message : t('Не вдалося створити країну'))
       }
-    } catch (createError) {
-      setError(createError instanceof Error ? createError.message : t('Не вдалося створити країну'))
-    }
+    })
   }
 
   async function handleCreateRegion(name: string) {
-    setError(null)
+    return runActionOnce('handleCreateRegion', async () => {
+      setError(null)
 
-    try {
-      const created = await createRegion({ Name: name })
-      await reloadRegions()
+      try {
+        const created = await createRegion({ Name: name })
+        await reloadRegions()
 
-      if (created) {
-        await handleRegionChange(created)
+        if (created) {
+          await handleRegionChange(created)
+        }
+      } catch (createError) {
+        setError(createError instanceof Error ? createError.message : t('Не вдалося створити регіон'))
       }
-    } catch (createError) {
-      setError(createError instanceof Error ? createError.message : t('Не вдалося створити регіон'))
-    }
+    })
   }
 
   function handleAddDocuments(files: File[]) {
@@ -725,7 +734,9 @@ export function ClientNewPage() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

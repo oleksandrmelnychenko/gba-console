@@ -1,3 +1,5 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
 import '../../../shared/ui/document-detail/document-detail.css'
@@ -126,6 +128,7 @@ type ItemEditorState = {
 }
 
 export function NewUkraineSaleReturnPage() {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const runCancelMutation = usePersistentSalesMutation(
     'sale-return-cancel',
@@ -154,7 +157,7 @@ export function NewUkraineSaleReturnPage() {
   const [downloadModalOpened, setDownloadModalOpened] = useState(false)
   const [exportingNetId, setExportingNetId] = useState<string | null>(null)
   const [cancelCandidate, setCancelCandidate] = useState<SalesReturn | null>(null)
-  const [isCanceling, setCanceling] = useState(false)
+  const [isCanceling, setCanceling, tryStartCanceling] = useBusyState()
   const [createOpened, setCreateOpened] = useState(false)
   const [createTableToolbarSlot, setCreateTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [organizations, setOrganizations] = useState<SalesReturnOrganization[]>([])
@@ -176,7 +179,7 @@ export function NewUkraineSaleReturnPage() {
   const [createWarning, setCreateWarning] = useState<string | null>(null)
   const [reviewOpened, setReviewOpened] = useState(false)
   const [reviewError, setReviewError] = useState<string | null>(null)
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [editor, setEditor] = useState<ItemEditorState | null>(null)
   const [editorQty, setEditorQty] = useState<number | ''>('')
   const [editorStatus, setEditorStatus] = useState<SalesReturnItemStatusValue | undefined>()
@@ -483,21 +486,23 @@ export function NewUkraineSaleReturnPage() {
   }, [createOpened, loadSales])
 
   async function handleExport(saleReturn: SalesReturn) {
-    if (!saleReturn.NetUid) {
-      return
-    }
+    return runActionOnce('handleExport', async () => {
+      if (!saleReturn.NetUid) {
+        return
+      }
 
-    setExportingNetId(saleReturn.NetUid)
-    setListError(null)
+      setExportingNetId(saleReturn.NetUid)
+      setListError(null)
 
-    try {
-      setDownloadDocument(await exportSaleReturnDocument(saleReturn.NetUid))
-      setDownloadModalOpened(true)
-    } catch (exportError) {
-      setListError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ'))
-    } finally {
-      setExportingNetId(null)
-    }
+      try {
+        setDownloadDocument(await exportSaleReturnDocument(saleReturn.NetUid))
+        setDownloadModalOpened(true)
+      } catch (exportError) {
+        setListError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ'))
+      } finally {
+        setExportingNetId(null)
+      }
+    })
   }
 
   async function confirmCancel() {
@@ -505,7 +510,9 @@ export function NewUkraineSaleReturnPage() {
       return
     }
 
-    setCanceling(true)
+    if (!tryStartCanceling()) {
+      return
+    }
     setListError(null)
 
     try {
@@ -716,7 +723,9 @@ export function NewUkraineSaleReturnPage() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setReviewError(null)
 
     try {

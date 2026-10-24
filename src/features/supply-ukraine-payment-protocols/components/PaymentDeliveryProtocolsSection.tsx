@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import {
   ActionIcon,
   Alert,
@@ -128,6 +129,7 @@ export function PaymentDeliveryProtocolsSection({
   totalGrossPriceLocal: number
   users: ProtocolUser[]
 }) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const [isFormOpen, setFormOpen] = useValueState(false)
   const [removeTarget, setRemoveTarget] = useValueState<SupplyOrderUkrainePaymentDeliveryProtocol | null>(null)
@@ -222,68 +224,72 @@ export function PaymentDeliveryProtocolsSection({
   }
 
   async function handleSubmit() {
-    if (!canCreateProtocol) {
-      return
-    }
+    return runActionOnce('handleSubmit', async () => {
+      if (!canCreateProtocol) {
+        return
+      }
 
-    if (!protocolKey?.Key) {
-      setValidationError(t('Оберіть форму платежу'))
+      if (!protocolKey?.Key) {
+        setValidationError(t('Оберіть форму платежу'))
 
-      return
-    }
+        return
+      }
 
-    if (!currentValue) {
-      setValidationError(t('Введіть вартість брутто'))
+      if (!currentValue) {
+        setValidationError(t('Введіть вартість брутто'))
 
-      return
-    }
+        return
+      }
 
-    if (hasKnownTotal && !currentDiscount) {
-      setValidationError(t('Введіть відсоток'))
+      if (hasKnownTotal && !currentDiscount) {
+        setValidationError(t('Введіть відсоток'))
 
-      return
-    }
+        return
+      }
 
-    if (hasKnownTotal && roundNumber(existingValue + currentValue) > roundNumber(totalGrossPriceLocal)) {
-      setValidationError(t('Сума платежів не може бути більшою за суму замовлення'))
+      if (hasKnownTotal && roundNumber(existingValue + currentValue) > roundNumber(totalGrossPriceLocal)) {
+        setValidationError(t('Сума платежів не може бути більшою за суму замовлення'))
 
-      return
-    }
+        return
+      }
 
-    if (hasKnownTotal && roundNumber(existingDiscount + currentDiscount) > PERCENT_MAX) {
-      setValidationError(t('Сума платежів не може бути більшою за суму замовлення'))
+      if (hasKnownTotal && roundNumber(existingDiscount + currentDiscount) > PERCENT_MAX) {
+        setValidationError(t('Сума платежів не може бути більшою за суму замовлення'))
 
-      return
-    }
+        return
+      }
 
-    setValidationError(null)
-    try {
-      await onCreateProtocol({
-        comment,
-        discount,
-        isAccounting,
-        payToDate,
-        protocolKey,
-        responsible,
-        value,
-      })
-      setFormOpen(false)
-    } catch {
-      // Parent renders the action error; keep the form open on failure.
-    }
+      setValidationError(null)
+      try {
+        await onCreateProtocol({
+          comment,
+          discount,
+          isAccounting,
+          payToDate,
+          protocolKey,
+          responsible,
+          value,
+        })
+        setFormOpen(false)
+      } catch {
+        // Parent renders the action error; keep the form open on failure.
+      }
+    })
   }
 
   async function handleRemoveConfirm() {
-    if (!canRemoveProtocol || !removeTarget) {
-      return
-    }
+    return runActionOnce('handleRemoveConfirm', async () => {
+      if (!canRemoveProtocol || !removeTarget) {
+        return
+      }
 
-    try {
-      await onRemoveProtocol(removeTarget)
-      setRemoveTarget(null)
-    } catch {
-      // Parent renders the action error; keep the confirmation open on failure.
-    }
+      try {
+        await onRemoveProtocol(removeTarget)
+        setRemoveTarget(null)
+      } catch {
+        // Parent renders the action error; keep the confirmation open on failure.
+      }
+    })
   }
 
   return (

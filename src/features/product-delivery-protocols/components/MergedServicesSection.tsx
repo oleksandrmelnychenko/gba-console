@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { useState } from 'react'
 import { Button, Group, Stack, Text } from '@mantine/core'
 import { Plus } from 'lucide-react'
@@ -131,6 +132,7 @@ export function MergedServicesSection({
   onSaveService: (payload: SaveMergedServicePayload) => Promise<void>
   protocol: ProtocolDetail
 }) {
+  const runActionOnce = useSingleFlight()
   const [actionsTarget, setActionsTarget] = useState<HTMLDivElement | null>(null)
   const { t } = useI18n()
   const { hasPermission } = useAuth()
@@ -148,47 +150,51 @@ export function MergedServicesSection({
   const canDeleteService = canEdit && hasPermission(DELETE_MERGED_SERVICE_PERMISSION)
 
   async function handleNewSubmit(values: NewMergedServiceFormValues) {
-    if (!canAddService) {
-      return
-    }
+    return runActionOnce('handleNewSubmit', async () => {
+      if (!canAddService) {
+        return
+      }
 
-    try {
-      await onSaveService({
-        files: {
-          accountDocuments: values.accountDocuments,
-          accountingTaskDocuments: values.accountingTaskFiles,
-          actDocuments: values.actDocuments,
-          documents: values.files,
-          taskDocuments: values.taskFiles,
-        },
-        service: buildServiceFromForm(values),
-      })
-      setNewOpen(false)
-    } catch {
-      // Parent reports API errors; keep the form open for correction/retry.
-    }
+      try {
+        await onSaveService({
+          files: {
+            accountDocuments: values.accountDocuments,
+            accountingTaskDocuments: values.accountingTaskFiles,
+            actDocuments: values.actDocuments,
+            documents: values.files,
+            taskDocuments: values.taskFiles,
+          },
+          service: buildServiceFromForm(values),
+        })
+        setNewOpen(false)
+      } catch {
+        // Parent reports API errors; keep the form open for correction/retry.
+      }
+    })
   }
 
   async function handleEditSave(service: MergedService, files: MergedServiceEditFiles) {
-    if (!canEditService) {
-      return
-    }
+    return runActionOnce('handleEditSave', async () => {
+      if (!canEditService) {
+        return
+      }
 
-    try {
-      await onSaveService({
-        files: {
-          accountDocuments: files.accountDocuments,
-          accountingTaskDocuments: files.accountingTaskDocuments,
-          actDocuments: files.actDocuments,
-          documents: files.files,
-          taskDocuments: files.taskDocuments,
-        },
-        service,
-      })
-      setEditService(null)
-    } catch {
-      // Parent reports API errors; keep edited values.
-    }
+      try {
+        await onSaveService({
+          files: {
+            accountDocuments: files.accountDocuments,
+            accountingTaskDocuments: files.accountingTaskDocuments,
+            actDocuments: files.actDocuments,
+            documents: files.files,
+            taskDocuments: files.taskDocuments,
+          },
+          service,
+        })
+        setEditService(null)
+      } catch {
+        // Parent reports API errors; keep edited values.
+      }
+    })
   }
 
   async function handleCalculate(payload: {
@@ -224,29 +230,33 @@ export function MergedServicesSection({
   }
 
   async function handleAssign(invoices: SupplyInvoice[]) {
-    if (!canAssignInvoices || !assignService) {
-      return
-    }
+    return runActionOnce('handleAssign', async () => {
+      if (!canAssignInvoices || !assignService) {
+        return
+      }
 
-    try {
-      await onAssignServiceInvoices(assignService, invoices)
-      setAssignService(null)
-    } catch {
-      // Parent reports API errors; keep selected invoices.
-    }
+      try {
+        await onAssignServiceInvoices(assignService, invoices)
+        setAssignService(null)
+      } catch {
+        // Parent reports API errors; keep selected invoices.
+      }
+    })
   }
 
   async function handleRemoveConfirm() {
-    if (!canDeleteService || !removeTarget) {
-      return
-    }
+    return runActionOnce('handleRemoveConfirm', async () => {
+      if (!canDeleteService || !removeTarget) {
+        return
+      }
 
-    try {
-      await onRemoveService(removeTarget)
-      setRemoveTarget(null)
-    } catch {
-      // Parent reports API errors; keep confirmation open.
-    }
+      try {
+        await onRemoveService(removeTarget)
+        setRemoveTarget(null)
+      } catch {
+        // Parent reports API errors; keep confirmation open.
+      }
+    })
   }
 
   return (

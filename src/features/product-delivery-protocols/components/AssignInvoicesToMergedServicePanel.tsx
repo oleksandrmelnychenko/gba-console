@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { Alert, Button, Skeleton, Stack } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useEffect } from 'react'
@@ -28,6 +29,7 @@ export function AssignInvoicesToMergedServicePanel({
   opened: boolean
   service: MergedService
 }) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const [invoices, setInvoices] = useValueState<SupplyInvoice[]>([])
   const [selected, setSelected] = useValueState<Record<string, boolean>>({})
@@ -101,11 +103,13 @@ export function AssignInvoicesToMergedServicePanel({
   }
 
   async function handleAssign() {
-    if (isSaving) {
-      return
-    }
+    return runActionOnce('handleAssign', async () => {
+      if (isSaving) {
+        return
+      }
 
-    await onAssign(getSelectedProtocolInvoices(invoices, selected))
+      await onAssign(getSelectedProtocolInvoices(invoices, selected))
+    })
   }
 
   return (

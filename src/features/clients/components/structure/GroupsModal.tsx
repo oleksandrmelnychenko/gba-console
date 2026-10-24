@@ -1,3 +1,5 @@
+import { useSingleFlight } from '../../../../shared/hooks/useSingleFlight'
+import { useBusyState } from '../../../../shared/hooks/useBusyState'
 import {
   ActionIcon,
   Alert,
@@ -34,12 +36,13 @@ export type GroupsModalProps = {
 }
 
 export function GroupsModal({ canManage, opened, clientId, clientNetId, onClose, onChange }: GroupsModalProps) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const [groups, setGroups] = useValueState<ClientGroup[]>([])
   const [name, setName] = useValueState('')
   const [editingGroup, setEditingGroup] = useValueState<ClientGroup | null>(null)
   const [isLoading, setLoading] = useValueState(false)
-  const [isSubmitting, setSubmitting] = useValueState(false)
+  const [isSubmitting, setSubmitting, tryStartSubmitting] = useBusyState()
   const [deletingNetUid, setDeletingNetUid] = useValueState<string | null>(null)
   const [error, setError] = useValueState<string | null>(null)
   const [dirty, setDirty] = useValueState(false)
@@ -119,7 +122,9 @@ export function GroupsModal({ canManage, opened, clientId, clientNetId, onClose,
       return
     }
 
-    setSubmitting(true)
+    if (!tryStartSubmitting()) {
+      return
+    }
     setError(null)
 
     try {
@@ -145,28 +150,30 @@ export function GroupsModal({ canManage, opened, clientId, clientNetId, onClose,
   }
 
   async function handleDelete(group: ClientGroup) {
-    if (!canManage || isBusy || !group.NetUid) {
-      return
-    }
-
-    setDeletingNetUid(group.NetUid)
-    setError(null)
-
-    try {
-      await deleteClientGroup(group)
-
-      if (editingGroup && editingGroup.NetUid === group.NetUid) {
-        resetForm()
+    return runActionOnce('handleDelete', async () => {
+      if (!canManage || isBusy || !group.NetUid) {
+        return
       }
 
-      const nextGroups = await getClientGroups(clientNetId)
-      setGroups(nextGroups)
-      setDirty(true)
-    } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити групу'))
-    } finally {
-      setDeletingNetUid(null)
-    }
+      setDeletingNetUid(group.NetUid)
+      setError(null)
+
+      try {
+        await deleteClientGroup(group)
+
+        if (editingGroup && editingGroup.NetUid === group.NetUid) {
+          resetForm()
+        }
+
+        const nextGroups = await getClientGroups(clientNetId)
+        setGroups(nextGroups)
+        setDirty(true)
+      } catch (deleteError) {
+        setError(deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити групу'))
+      } finally {
+        setDeletingNetUid(null)
+      }
+    })
   }
 
   function handleClose() {

@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import {
   Alert,
   Anchor,
@@ -240,6 +241,7 @@ function SupplyUkraineOrderFileCreatePageGuard({ mode }: { mode: CreateMode }) {
 }
 
 function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const navigate = useNavigate()
@@ -371,93 +373,94 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
 
   async function submitForm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    return runActionOnce('submitForm', async () => {
+      const permission = isToUkraineMode
+        ? PermissionKeys.OrdersUkraine.Order.OpenArrival
+        : PermissionKeys.OrdersUkraine.Order.OpenOrder
 
-    const permission = isToUkraineMode
-      ? PermissionKeys.OrdersUkraine.Order.OpenArrival
-      : PermissionKeys.OrdersUkraine.Order.OpenOrder
-
-    if (!hasPermission(permission)) {
-      dispatchPage({ type: 'setError', error: t('Право на цю дію було відкликано') })
-      return
-    }
-
-    if (commentValidationError) {
-      dispatchPage({ type: 'setError', error: commentValidationError })
-      return
-    }
-
-    if (!selectedSupplier || !selectedOrganization || !selectedClientAgreement) {
-      dispatchPage({ type: 'setError', error: t('Оберіть постачальника, організацію та договір') })
-      return
-    }
-
-    const dateFrom = normalizeDateTimeInput(form.dateFrom)
-
-    if (!dateFrom) {
-      dispatchPage({ type: 'setError', error: t('Оберіть дату') })
-      return
-    }
-
-    if (!form.file || !isExcelFile(form.file)) {
-      dispatchPage({ type: 'setError', error: t('Оберіть Excel файл') })
-      return
-    }
-
-    const directParseConfiguration = isToUkraineMode ? null : toDirectParseConfiguration(parseForm)
-    const toUkraineParseConfiguration = isToUkraineMode ? toUkraineParseConfigurationFromForm(parseForm) : null
-
-    if ((isToUkraineMode && !toUkraineParseConfiguration) || (!isToUkraineMode && !directParseConfiguration)) {
-      dispatchPage({ type: 'setError', error: t('Заповніть колонки імпорту') })
-      return
-    }
-
-    dispatchPage({ type: 'setSaving', isSaving: true })
-    dispatchPage({ type: 'setError', error: null })
-    dispatchPage({ type: 'setUploadResponse', uploadResponse: null })
-
-    try {
-      const response = isToUkraineMode
-        ? await createToUkraineOrderFromFile({
-            dateFrom,
-            file: form.file,
-            form,
-            parseConfiguration: toUkraineParseConfiguration!,
-            selectedClientAgreement,
-            selectedOrganization,
-            selectedSupplier,
-          })
-        : await createDirectOrderFromFile({
-            dateFrom,
-            file: form.file,
-            form,
-            parseConfiguration: directParseConfiguration!,
-            selectedClientAgreement,
-            selectedOrganization,
-            selectedSupplier,
-          })
-
-      const successNavigation = prepareSupplyUkraineOrderCreateNavigation(response, mode, {
-        canOpenDirectOrderLogisticWay: hasPermission(
-          PermissionKeys.OrdersUkraine.Order.OpenLogisticWay,
-        ),
-      })
-
-      if (!successNavigation) {
-        dispatchPage({ type: 'setUploadResponse', uploadResponse: response })
-        notifications.show({ color: 'red', message: t('Файл містить помилки') })
+      if (!hasPermission(permission)) {
+        dispatchPage({ type: 'setError', error: t('Право на цю дію було відкликано') })
         return
       }
 
-      notifications.show({ color: 'green', message: t('Замовлення створено') })
-      navigate(successNavigation.path, { state: successNavigation.state })
-    } catch (saveError) {
-      dispatchPage({
-        type: 'setError',
-        error: saveError instanceof Error ? saveError.message : t('Не вдалося створити замовлення'),
-      })
-    } finally {
-      dispatchPage({ type: 'setSaving', isSaving: false })
-    }
+      if (commentValidationError) {
+        dispatchPage({ type: 'setError', error: commentValidationError })
+        return
+      }
+
+      if (!selectedSupplier || !selectedOrganization || !selectedClientAgreement) {
+        dispatchPage({ type: 'setError', error: t('Оберіть постачальника, організацію та договір') })
+        return
+      }
+
+      const dateFrom = normalizeDateTimeInput(form.dateFrom)
+
+      if (!dateFrom) {
+        dispatchPage({ type: 'setError', error: t('Оберіть дату') })
+        return
+      }
+
+      if (!form.file || !isExcelFile(form.file)) {
+        dispatchPage({ type: 'setError', error: t('Оберіть Excel файл') })
+        return
+      }
+
+      const directParseConfiguration = isToUkraineMode ? null : toDirectParseConfiguration(parseForm)
+      const toUkraineParseConfiguration = isToUkraineMode ? toUkraineParseConfigurationFromForm(parseForm) : null
+
+      if ((isToUkraineMode && !toUkraineParseConfiguration) || (!isToUkraineMode && !directParseConfiguration)) {
+        dispatchPage({ type: 'setError', error: t('Заповніть колонки імпорту') })
+        return
+      }
+
+      dispatchPage({ type: 'setSaving', isSaving: true })
+      dispatchPage({ type: 'setError', error: null })
+      dispatchPage({ type: 'setUploadResponse', uploadResponse: null })
+
+      try {
+        const response = isToUkraineMode
+          ? await createToUkraineOrderFromFile({
+              dateFrom,
+              file: form.file,
+              form,
+              parseConfiguration: toUkraineParseConfiguration!,
+              selectedClientAgreement,
+              selectedOrganization,
+              selectedSupplier,
+            })
+          : await createDirectOrderFromFile({
+              dateFrom,
+              file: form.file,
+              form,
+              parseConfiguration: directParseConfiguration!,
+              selectedClientAgreement,
+              selectedOrganization,
+              selectedSupplier,
+            })
+
+        const successNavigation = prepareSupplyUkraineOrderCreateNavigation(response, mode, {
+          canOpenDirectOrderLogisticWay: hasPermission(
+            PermissionKeys.OrdersUkraine.Order.OpenLogisticWay,
+          ),
+        })
+
+        if (!successNavigation) {
+          dispatchPage({ type: 'setUploadResponse', uploadResponse: response })
+          notifications.show({ color: 'red', message: t('Файл містить помилки') })
+          return
+        }
+
+        notifications.show({ color: 'green', message: t('Замовлення створено') })
+        navigate(successNavigation.path, { state: successNavigation.state })
+      } catch (saveError) {
+        dispatchPage({
+          type: 'setError',
+          error: saveError instanceof Error ? saveError.message : t('Не вдалося створити замовлення'),
+        })
+      } finally {
+        dispatchPage({ type: 'setSaving', isSaving: false })
+      }
+    })
   }
 
   return (

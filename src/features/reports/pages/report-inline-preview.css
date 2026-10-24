@@ -35,3 +35,5 @@
 .report-preview-footer__note:empty { display: none; }
 .report-preview-footer__pagination { margin-left: auto; flex-shrink: 0; height: 36px; }
 .report-preview-footer__range { padding: 0 8px; color: var(--mantine-color-gray-7); font-family: var(--font-mono); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.report-inline-preview .report-inline-preview__value-heading { text-align: right; }
+.report-inline-preview__value-heading { white-space: normal; }

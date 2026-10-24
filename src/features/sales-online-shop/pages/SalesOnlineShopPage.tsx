@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { saleAgreementLabel, saleAgreementTitle } from '../../../shared/saleAgreementLabel'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
@@ -293,7 +294,7 @@ function SalesOnlineShopOrdersPage() {
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [confirmState, setConfirmState] = useValueState<ConfirmState | null>(null)
-  const [isConfirming, setConfirming] = useValueState(false)
+  const [isConfirming, setConfirming, tryStartConfirming] = useBusyState()
   const [discountSale, setDiscountSale] = useValueState<SalesOnlineShopSale | null>(null)
   const [detailsSale, setDetailsSale] = useValueState<SalesOnlineShopSale | null>(null)
   const [consignmentSale, setConsignmentSale] = useValueState<SalesOnlineShopSale | null>(null)
@@ -655,7 +656,9 @@ function SalesOnlineShopOrdersPage() {
       return
     }
 
-    setConfirming(true)
+    if (!tryStartConfirming()) {
+      return
+    }
 
     try {
       await confirmState.onConfirm()

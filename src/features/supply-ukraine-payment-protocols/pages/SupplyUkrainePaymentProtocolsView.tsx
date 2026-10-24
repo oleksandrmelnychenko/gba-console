@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Alert, Badge, Card, Group, Loader, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useEffect } from 'react'
@@ -70,7 +71,7 @@ function SupplyUkrainePaymentProtocolsContent() {
   const [protocolKeys, setProtocolKeys] = useValueState<SupplyOrderUkrainePaymentDeliveryProtocolKey[]>([])
   const [users, setUsers] = useValueState<ProtocolUser[]>([])
   const [isLoading, setLoading] = useValueState(true)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [error, setError] = useValueState<string | null>(null)
   const [actionError, setActionError] = useValueState<string | null>(null)
   const canCreatePaymentProtocol = can(PERMISSION_CREATE_PAYMENT_PROTOCOL)
@@ -148,7 +149,9 @@ function SupplyUkrainePaymentProtocolsContent() {
       rejectAction(t('Не задано замовлення'))
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setActionError(null)
 
     try {
@@ -175,7 +178,9 @@ function SupplyUkrainePaymentProtocolsContent() {
       rejectAction(t('Не задано замовлення'))
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setActionError(null)
     try {
       const updated = await deleteUkraineMergedService(order.NetUid, service)
@@ -208,7 +213,9 @@ function SupplyUkrainePaymentProtocolsContent() {
       User: values.responsible,
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setActionError(null)
     try {
       const updated = await createUkraineMergedServicePaymentTask(
@@ -241,7 +248,9 @@ function SupplyUkrainePaymentProtocolsContent() {
       rejectAction(t('Платіжну задачу не знайдено'))
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setActionError(null)
     try {
       const updated = await deleteUkraineMergedServicePaymentTask(
@@ -281,7 +290,9 @@ function SupplyUkrainePaymentProtocolsContent() {
       Value: Number(values.value) || 0,
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setActionError(null)
     try {
       const updated = await createSupplyOrderUkrainePaymentProtocol(order.NetUid, protocol)
@@ -306,7 +317,9 @@ function SupplyUkrainePaymentProtocolsContent() {
       rejectAction(t('Не задано замовлення'))
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setActionError(null)
     try {
       const updated = await deleteSupplyOrderUkrainePaymentProtocol(order.NetUid, protocol)

@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
@@ -111,6 +112,7 @@ const STATUS_COLORS: Record<IncompleteSalesOnlineShopStatus, string> = {
 }
 
 function useIncompleteSalesOnlineShopPageModel() {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const { user } = useAuth()
   const { can } = usePermissions()
@@ -236,72 +238,74 @@ function useIncompleteSalesOnlineShopPageModel() {
   }
 
   async function confirmStatusAction() {
-    if (!pendingStatusAction) {
-      return
-    }
+    return runActionOnce('confirmStatusAction', async () => {
+      if (!pendingStatusAction) {
+        return
+      }
 
-    const { operationId, sale, status } = pendingStatusAction
+      const { operationId, sale, status } = pendingStatusAction
 
-    if ((status === 1 && !canAssignToSelf) || (status === 2 && !canMarkCompleted)) {
-      setPendingStatusAction(null)
-      return
-    }
-
-    let nextSale: IncompleteSalesOnlineShopItem
-
-    if (status === 1) {
-      if (!user || user.Id == null) {
-        notifications.show({ color: 'red', message: t('Користувача не визначено') })
+      if ((status === 1 && !canAssignToSelf) || (status === 2 && !canMarkCompleted)) {
         setPendingStatusAction(null)
         return
       }
 
-      nextSale = {
-        ...sale,
-        MisplacedSaleStatus: 1,
-        User: user,
-        UserId: user.Id,
-      }
-    } else {
-      nextSale = {
-        ...sale,
-        MisplacedSaleStatus: 2,
-      }
-    }
+      let nextSale: IncompleteSalesOnlineShopItem
 
-    const rowKey = getIncompleteSaleKey(sale)
+      if (status === 1) {
+        if (!user || user.Id == null) {
+          notifications.show({ color: 'red', message: t('Користувача не визначено') })
+          setPendingStatusAction(null)
+          return
+        }
 
-    setUpdatingId(rowKey)
-
-    try {
-      const updatedSales = (await updateIncompleteSale(nextSale, {
-        operationId,
-      })) as IncompleteSalesOnlineShopItem[]
-      const updatedSale = findSaleByKey(updatedSales, rowKey) || nextSale
-
-      if (updatedSales.length > 0) {
-        setSales((currentSales) => replaceSaleByKey(currentSales, rowKey, updatedSale))
-        setSelectedSale((currentSale) => syncSelectedSale(currentSale, updatedSales, rowKey, updatedSale))
+        nextSale = {
+          ...sale,
+          MisplacedSaleStatus: 1,
+          User: user,
+          UserId: user.Id,
+        }
       } else {
-        setSales((currentSales) => replaceSaleByKey(currentSales, rowKey, nextSale))
-        setSelectedSale((currentSale) =>
-          currentSale && getIncompleteSaleKey(currentSale) === rowKey ? nextSale : currentSale,
-        )
+        nextSale = {
+          ...sale,
+          MisplacedSaleStatus: 2,
+        }
       }
 
-      notifications.show({
-        color: 'green',
-        message: status === 1 ? t('Продаж закріплено') : t('Продаж виконано'),
-      })
-      setPendingStatusAction(null)
-    } catch (updateError) {
-      notifications.show({
-        color: 'red',
-        message: updateError instanceof Error ? updateError.message : t('Не вдалося оновити продаж'),
-      })
-    } finally {
-      setUpdatingId(null)
-    }
+      const rowKey = getIncompleteSaleKey(sale)
+
+      setUpdatingId(rowKey)
+
+      try {
+        const updatedSales = (await updateIncompleteSale(nextSale, {
+          operationId,
+        })) as IncompleteSalesOnlineShopItem[]
+        const updatedSale = findSaleByKey(updatedSales, rowKey) || nextSale
+
+        if (updatedSales.length > 0) {
+          setSales((currentSales) => replaceSaleByKey(currentSales, rowKey, updatedSale))
+          setSelectedSale((currentSale) => syncSelectedSale(currentSale, updatedSales, rowKey, updatedSale))
+        } else {
+          setSales((currentSales) => replaceSaleByKey(currentSales, rowKey, nextSale))
+          setSelectedSale((currentSale) =>
+            currentSale && getIncompleteSaleKey(currentSale) === rowKey ? nextSale : currentSale,
+          )
+        }
+
+        notifications.show({
+          color: 'green',
+          message: status === 1 ? t('Продаж закріплено') : t('Продаж виконано'),
+        })
+        setPendingStatusAction(null)
+      } catch (updateError) {
+        notifications.show({
+          color: 'red',
+          message: updateError instanceof Error ? updateError.message : t('Не вдалося оновити продаж'),
+        })
+      } finally {
+        setUpdatingId(null)
+      }
+    })
   }
 
   return {

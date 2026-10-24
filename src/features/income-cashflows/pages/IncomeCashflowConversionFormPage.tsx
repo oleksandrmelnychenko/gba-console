@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   ActionIcon,
@@ -134,7 +135,7 @@ function IncomeCashflowConversionFormPageContent() {
   const [euroExchangeRate, setEuroExchangeRate] = useValueState(0)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [counterpartyOptionSubmitGuard] = useState(
     createAutocompleteOptionSubmitGuard,
   )
@@ -387,7 +388,9 @@ function IncomeCashflowConversionFormPageContent() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -487,7 +490,9 @@ function IncomeCashflowConversionFormPageContent() {
       selectedRegister: selectedRegister as PaymentRegister,
     })
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

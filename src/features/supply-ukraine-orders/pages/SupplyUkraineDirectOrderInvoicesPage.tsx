@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
@@ -290,6 +291,7 @@ function SupplyUkraineDirectOrderInvoicesPageContent() {
 }
 
 function useSupplyUkraineDirectOrderInvoicesPageModel() {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const navigate = useNavigate()
@@ -580,133 +582,137 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   }
 
   async function submitInvoice(form: InvoiceUploadForm) {
-    if (!hasPermission(PERMISSION_ADD_INVOICE)) {
-      notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
-      return
-    }
-
-    if (!id) {
-      return
-    }
-
-    const validationMessage = getInvoiceUploadValidationMessage(form)
-
-    if (validationMessage) {
-      notifications.show({ color: 'red', message: t(validationMessage) })
-      return
-    }
-
-    const parseConfiguration = toInvoiceParseConfiguration(form)
-
-    if (!parseConfiguration) {
-      notifications.show({ color: 'red', message: t('Перевірте колонки імпорту') })
-      return
-    }
-
-    const file = form.file
-
-    if (!file) {
-      return
-    }
-
-    setPageState({ isSaving: true })
-
-    try {
-      const invoice = await uploadSupplyInvoiceFile({
-        file,
-        invoice: {
-          Comment: form.comment.trim(),
-          DateFrom: normalizeDateTimeInput(form.dateFrom),
-          Number: form.number.trim(),
-        },
-        parseConfiguration,
-        supplyOrderNetId: id,
-      })
-
-      notifications.show({ color: 'green', message: t('Інвойс завантажено') })
-      setPageState({ invoiceUploadOpen: false })
-      await reloadOrder(invoice?.NetUid || selectedInvoiceNetId)
-      if (invoice) {
-        mergeUploadedInvoice(invoice)
+    return runActionOnce('submitInvoice', async () => {
+      if (!hasPermission(PERMISSION_ADD_INVOICE)) {
+        notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
+        return
       }
-    } catch (saveError) {
-      notifications.show({
-        color: 'red',
-        message: formatExcelArticleColumnError(
-          saveError,
-          parseConfiguration.VendorCodeColumnNumber,
-          t('Не вдалося виконати запит'),
-        ),
-      })
-    } finally {
-      setPageState({ isSaving: false })
-    }
+
+      if (!id) {
+        return
+      }
+
+      const validationMessage = getInvoiceUploadValidationMessage(form)
+
+      if (validationMessage) {
+        notifications.show({ color: 'red', message: t(validationMessage) })
+        return
+      }
+
+      const parseConfiguration = toInvoiceParseConfiguration(form)
+
+      if (!parseConfiguration) {
+        notifications.show({ color: 'red', message: t('Перевірте колонки імпорту') })
+        return
+      }
+
+      const file = form.file
+
+      if (!file) {
+        return
+      }
+
+      setPageState({ isSaving: true })
+
+      try {
+        const invoice = await uploadSupplyInvoiceFile({
+          file,
+          invoice: {
+            Comment: form.comment.trim(),
+            DateFrom: normalizeDateTimeInput(form.dateFrom),
+            Number: form.number.trim(),
+          },
+          parseConfiguration,
+          supplyOrderNetId: id,
+        })
+
+        notifications.show({ color: 'green', message: t('Інвойс завантажено') })
+        setPageState({ invoiceUploadOpen: false })
+        await reloadOrder(invoice?.NetUid || selectedInvoiceNetId)
+        if (invoice) {
+          mergeUploadedInvoice(invoice)
+        }
+      } catch (saveError) {
+        notifications.show({
+          color: 'red',
+          message: formatExcelArticleColumnError(
+            saveError,
+            parseConfiguration.VendorCodeColumnNumber,
+            t('Не вдалося виконати запит'),
+          ),
+        })
+      } finally {
+        setPageState({ isSaving: false })
+      }
+    })
   }
 
   async function submitPackList(form: PackListUploadForm) {
-    if (!hasPermission(PERMISSION_ADD_PACK_LIST)) {
-      notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
-      return
-    }
-
-    if (!selectedInvoice?.NetUid) {
-      notifications.show({ color: 'red', message: t('Оберіть інвойс') })
-      return
-    }
-
-    const validationMessage = getPackListUploadValidationMessage(form)
-
-    if (validationMessage) {
-      notifications.show({ color: 'red', message: t(validationMessage) })
-      return
-    }
-
-    const parseConfiguration = toPackListParseConfiguration(form)
-
-    if (!parseConfiguration) {
-      notifications.show({ color: 'red', message: t('Перевірте колонки імпорту') })
-      return
-    }
-
-    const file = form.file
-
-    if (!file) {
-      return
-    }
-
-    setPageState({ isSaving: true })
-
-    try {
-      const packList = await uploadPackingListFile({
-        file,
-        packingList: {
-          Comment: form.comment.trim(),
-          FromDate: normalizeDateTimeInput(form.dateFrom),
-          InvNo: form.number.trim(),
-          No: form.number.trim(),
-        },
-        parseConfiguration,
-        supplyInvoiceNetId: selectedInvoice.NetUid,
-      })
-
-      notifications.show({ color: 'green', message: t('Пак лист завантажено') })
-      setPageState({ packListUploadOpen: false })
-      await reloadOrder(selectedInvoice.NetUid)
-      if (packList) {
-        mergeUploadedPackList(selectedInvoice.NetUid, packList)
+    return runActionOnce('submitPackList', async () => {
+      if (!hasPermission(PERMISSION_ADD_PACK_LIST)) {
+        notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
+        return
       }
-    } catch (saveError) {
-      notifications.show({
-        color: 'red',
-        message: formatExcelArticleColumnError(
-          saveError,
-          parseConfiguration.VendorCodeColumnNumber,
-          t('Не вдалося виконати запит'),
-        ),
-      })
-    } finally {
-      setPageState({ isSaving: false })
-    }
+
+      if (!selectedInvoice?.NetUid) {
+        notifications.show({ color: 'red', message: t('Оберіть інвойс') })
+        return
+      }
+
+      const validationMessage = getPackListUploadValidationMessage(form)
+
+      if (validationMessage) {
+        notifications.show({ color: 'red', message: t(validationMessage) })
+        return
+      }
+
+      const parseConfiguration = toPackListParseConfiguration(form)
+
+      if (!parseConfiguration) {
+        notifications.show({ color: 'red', message: t('Перевірте колонки імпорту') })
+        return
+      }
+
+      const file = form.file
+
+      if (!file) {
+        return
+      }
+
+      setPageState({ isSaving: true })
+
+      try {
+        const packList = await uploadPackingListFile({
+          file,
+          packingList: {
+            Comment: form.comment.trim(),
+            FromDate: normalizeDateTimeInput(form.dateFrom),
+            InvNo: form.number.trim(),
+            No: form.number.trim(),
+          },
+          parseConfiguration,
+          supplyInvoiceNetId: selectedInvoice.NetUid,
+        })
+
+        notifications.show({ color: 'green', message: t('Пак лист завантажено') })
+        setPageState({ packListUploadOpen: false })
+        await reloadOrder(selectedInvoice.NetUid)
+        if (packList) {
+          mergeUploadedPackList(selectedInvoice.NetUid, packList)
+        }
+      } catch (saveError) {
+        notifications.show({
+          color: 'red',
+          message: formatExcelArticleColumnError(
+            saveError,
+            parseConfiguration.VendorCodeColumnNumber,
+            t('Не вдалося виконати запит'),
+          ),
+        })
+      } finally {
+        setPageState({ isSaving: false })
+      }
+    })
   }
 
   function mergeUploadedInvoice(invoice: SupplyInvoice) {
@@ -760,91 +766,97 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   }
 
   async function confirmDeleteInvoice() {
-    if (!hasPermission(PERMISSION_REMOVE_INVOICE)) {
-      setPageState({ deleteInvoiceCandidate: null })
-      notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
-      return
-    }
+    return runActionOnce('confirmDeleteInvoice', async () => {
+      if (!hasPermission(PERMISSION_REMOVE_INVOICE)) {
+        setPageState({ deleteInvoiceCandidate: null })
+        notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
+        return
+      }
 
-    if (!deleteInvoiceCandidate?.NetUid) {
-      setPageState({ deleteInvoiceCandidate: null })
-      return
-    }
+      if (!deleteInvoiceCandidate?.NetUid) {
+        setPageState({ deleteInvoiceCandidate: null })
+        return
+      }
 
-    setPageState({ isSaving: true })
+      setPageState({ isSaving: true })
 
-    try {
-      await deleteSupplyInvoice(deleteInvoiceCandidate.NetUid)
-      notifications.show({ color: 'green', message: t('Інвойс видалено') })
-      setPageState({
-        deleteInvoiceCandidate: null,
-        selectedInvoiceNetId: null,
-        selectedPackListNetId: null,
-      })
-      await reloadOrder(null)
-    } catch (deleteError) {
-      notifications.show({ color: 'red', message: deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити інвойс') })
-    } finally {
-      setPageState({ isSaving: false })
-    }
+      try {
+        await deleteSupplyInvoice(deleteInvoiceCandidate.NetUid)
+        notifications.show({ color: 'green', message: t('Інвойс видалено') })
+        setPageState({
+          deleteInvoiceCandidate: null,
+          selectedInvoiceNetId: null,
+          selectedPackListNetId: null,
+        })
+        await reloadOrder(null)
+      } catch (deleteError) {
+        notifications.show({ color: 'red', message: deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити інвойс') })
+      } finally {
+        setPageState({ isSaving: false })
+      }
+    })
   }
 
   async function confirmDeletePackList() {
-    if (!hasPermission(PERMISSION_REMOVE_PACK_LIST)) {
-      setPageState({ deletePackListCandidate: null })
-      notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
-      return
-    }
+    return runActionOnce('confirmDeletePackList', async () => {
+      if (!hasPermission(PERMISSION_REMOVE_PACK_LIST)) {
+        setPageState({ deletePackListCandidate: null })
+        notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
+        return
+      }
 
-    if (!deletePackListCandidate?.NetUid) {
-      setPageState({ deletePackListCandidate: null })
-      return
-    }
+      if (!deletePackListCandidate?.NetUid) {
+        setPageState({ deletePackListCandidate: null })
+        return
+      }
 
-    setPageState({ isSaving: true })
+      setPageState({ isSaving: true })
 
-    try {
-      await deletePackingList(deletePackListCandidate.NetUid)
-      notifications.show({ color: 'green', message: t('Пак лист видалено') })
-      setPageState({ deletePackListCandidate: null })
-      await reloadOrder(selectedInvoiceNetId)
-    } catch (deleteError) {
-      notifications.show({ color: 'red', message: deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити пак лист') })
-    } finally {
-      setPageState({ isSaving: false })
-    }
+      try {
+        await deletePackingList(deletePackListCandidate.NetUid)
+        notifications.show({ color: 'green', message: t('Пак лист видалено') })
+        setPageState({ deletePackListCandidate: null })
+        await reloadOrder(selectedInvoiceNetId)
+      } catch (deleteError) {
+        notifications.show({ color: 'red', message: deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити пак лист') })
+      } finally {
+        setPageState({ isSaving: false })
+      }
+    })
   }
 
   async function saveInvoiceItems() {
-    if (!hasPermission(PERMISSION_EDIT_INVOICE)) {
-      notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
-      return
-    }
+    return runActionOnce('saveInvoiceItems', async () => {
+      if (!hasPermission(PERMISSION_EDIT_INVOICE)) {
+        notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
+        return
+      }
 
-    if (!selectedInvoice?.NetUid) {
-      notifications.show({ color: 'red', message: t('Оберіть інвойс') })
-      return
-    }
+      if (!selectedInvoice?.NetUid) {
+        notifications.show({ color: 'red', message: t('Оберіть інвойс') })
+        return
+      }
 
-    if (hasInvoiceMismatch) {
-      notifications.show({ color: 'red', message: t('Кількості інвойсів не збігаються із замовленням') })
-      return
-    }
+      if (hasInvoiceMismatch) {
+        notifications.show({ color: 'red', message: t('Кількості інвойсів не збігаються із замовленням') })
+        return
+      }
 
-    setPageState({ isSaving: true })
+      setPageState({ isSaving: true })
 
-    try {
-      const updatedInvoice = await updateDirectSupplyOrderInvoiceItems(toSupplyInvoiceItemsPayload(selectedInvoice))
-      const nextDetails = mergeInvoiceDetails(invoiceDetailsByNetId, [updatedInvoice])
+      try {
+        const updatedInvoice = await updateDirectSupplyOrderInvoiceItems(toSupplyInvoiceItemsPayload(selectedInvoice))
+        const nextDetails = mergeInvoiceDetails(invoiceDetailsByNetId, [updatedInvoice])
 
-      setPageState({ invoiceDetailsByNetId: nextDetails })
-      notifications.show({ color: 'green', message: t('Рядки інвойсів збережено') })
-      await reloadOrder(selectedInvoiceNetId)
-    } catch (saveError) {
-      notifications.show({ color: 'red', message: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти інвойси') })
-    } finally {
-      setPageState({ isSaving: false })
-    }
+        setPageState({ invoiceDetailsByNetId: nextDetails })
+        notifications.show({ color: 'green', message: t('Рядки інвойсів збережено') })
+        await reloadOrder(selectedInvoiceNetId)
+      } catch (saveError) {
+        notifications.show({ color: 'red', message: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти інвойси') })
+      } finally {
+        setPageState({ isSaving: false })
+      }
+    })
   }
 
   async function savePackingLists() {
@@ -887,140 +899,146 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   }
 
   async function saveInvoiceMetadata(form: InvoiceMetadataForm) {
-    if (!hasPermission(PERMISSION_EDIT_INVOICE)) {
-      notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
-      return
-    }
-
-    if (!id || !selectedInvoice?.NetUid) {
-      notifications.show({ color: 'red', message: t('Оберіть інвойс') })
-      return
-    }
-
-    const validationMessage = getInvoiceMetadataValidationMessage(form, selectedInvoice)
-
-    if (validationMessage) {
-      notifications.show({ color: 'red', message: t(validationMessage) })
-      return
-    }
-
-    const deletedDocumentNetIds = form.documents.reduce<string[]>((result, document) => {
-      if (document.Deleted && document.NetUid) {
-        result.push(document.NetUid)
+    return runActionOnce('saveInvoiceMetadata', async () => {
+      if (!hasPermission(PERMISSION_EDIT_INVOICE)) {
+        notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
+        return
       }
 
-      return result
-    }, [])
-    const invoicePayload = createInvoiceMetadataPayload(selectedInvoice, form)
-
-    setPageState({ isSaving: true })
-
-    try {
-      const updatedInvoice = await updateDirectSupplyOrderInvoice(id, invoicePayload)
-      const invoiceForUpload = updatedInvoice || invoicePayload
-
-      await Promise.all(deletedDocumentNetIds.map(deleteDirectSupplyOrderInvoiceDocument))
-
-      if (form.files.length > 0) {
-        await uploadDirectSupplyOrderInvoiceDocuments({
-          files: form.files,
-          invoice: invoiceForUpload,
-          supplyOrderNetId: id,
-        })
+      if (!id || !selectedInvoice?.NetUid) {
+        notifications.show({ color: 'red', message: t('Оберіть інвойс') })
+        return
       }
 
-      notifications.show({ color: 'green', message: t('Інвойс збережено') })
-      setPageState({ invoiceEditor: null })
-      await reloadOrder(selectedInvoice.NetUid)
-    } catch (saveError) {
-      notifications.show({ color: 'red', message: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти інвойс') })
-    } finally {
-      setPageState({ isSaving: false })
-    }
+      const validationMessage = getInvoiceMetadataValidationMessage(form, selectedInvoice)
+
+      if (validationMessage) {
+        notifications.show({ color: 'red', message: t(validationMessage) })
+        return
+      }
+
+      const deletedDocumentNetIds = form.documents.reduce<string[]>((result, document) => {
+        if (document.Deleted && document.NetUid) {
+          result.push(document.NetUid)
+        }
+
+        return result
+      }, [])
+      const invoicePayload = createInvoiceMetadataPayload(selectedInvoice, form)
+
+      setPageState({ isSaving: true })
+
+      try {
+        const updatedInvoice = await updateDirectSupplyOrderInvoice(id, invoicePayload)
+        const invoiceForUpload = updatedInvoice || invoicePayload
+
+        await Promise.all(deletedDocumentNetIds.map(deleteDirectSupplyOrderInvoiceDocument))
+
+        if (form.files.length > 0) {
+          await uploadDirectSupplyOrderInvoiceDocuments({
+            files: form.files,
+            invoice: invoiceForUpload,
+            supplyOrderNetId: id,
+          })
+        }
+
+        notifications.show({ color: 'green', message: t('Інвойс збережено') })
+        setPageState({ invoiceEditor: null })
+        await reloadOrder(selectedInvoice.NetUid)
+      } catch (saveError) {
+        notifications.show({ color: 'red', message: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти інвойс') })
+      } finally {
+        setPageState({ isSaving: false })
+      }
+    })
   }
 
   async function saveInvoiceProtocols(invoice: SupplyInvoice) {
-    if (!hasPermission(PERMISSION_EDIT_INVOICE)) {
-      notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
-      return
-    }
-
-    if (!id || !selectedInvoice?.NetUid) {
-      notifications.show({ color: 'red', message: t('Оберіть інвойс') })
-      return
-    }
-
-    setPageState({ isSaving: true })
-
-    try {
-      const invoicePayload = createInvoiceProtocolsPayload(invoice)
-      const updatedInvoice = await updateDirectSupplyOrderInvoice(id, invoicePayload)
-      const invoiceForReload = updatedInvoice?.NetUid || invoice.NetUid || selectedInvoice.NetUid
-
-      if (updatedInvoice) {
-        setPageState((current) => ({
-          invoiceDetailsByNetId: mergeInvoiceDetails(current.invoiceDetailsByNetId, [updatedInvoice]),
-        }))
+    return runActionOnce('saveInvoiceProtocols', async () => {
+      if (!hasPermission(PERMISSION_EDIT_INVOICE)) {
+        notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
+        return
       }
 
-      notifications.show({ color: 'green', message: t('Протоколи інвойса збережено') })
-      await reloadOrder(invoiceForReload)
-    } catch (saveError) {
-      notifications.show({ color: 'red', message: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти протоколи') })
-    } finally {
-      setPageState({ isSaving: false })
-    }
+      if (!id || !selectedInvoice?.NetUid) {
+        notifications.show({ color: 'red', message: t('Оберіть інвойс') })
+        return
+      }
+
+      setPageState({ isSaving: true })
+
+      try {
+        const invoicePayload = createInvoiceProtocolsPayload(invoice)
+        const updatedInvoice = await updateDirectSupplyOrderInvoice(id, invoicePayload)
+        const invoiceForReload = updatedInvoice?.NetUid || invoice.NetUid || selectedInvoice.NetUid
+
+        if (updatedInvoice) {
+          setPageState((current) => ({
+            invoiceDetailsByNetId: mergeInvoiceDetails(current.invoiceDetailsByNetId, [updatedInvoice]),
+          }))
+        }
+
+        notifications.show({ color: 'green', message: t('Протоколи інвойса збережено') })
+        await reloadOrder(invoiceForReload)
+      } catch (saveError) {
+        notifications.show({ color: 'red', message: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти протоколи') })
+      } finally {
+        setPageState({ isSaving: false })
+      }
+    })
   }
 
   async function savePackListMetadata(form: PackListMetadataForm) {
-    if (!hasPermission(PERMISSION_ADD_PACK_LIST)) {
-      notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
-      return
-    }
-
-    if (!selectedInvoice?.NetUid) {
-      notifications.show({ color: 'red', message: t('Оберіть інвойс') })
-      return
-    }
-
-    const savePlan = createPackListMetadataSavePlan(
-      createPackListMetadataDraft(packListEditor?.packList, form),
-    )
-    const invoiceForMetadata = upsertPackListMetadata(selectedInvoice, savePlan.metadataDraft)
-
-    setPageState({ isSaving: true })
-
-    try {
-      const updatedInvoice = await updateDirectSupplyOrderPackingLists(toPackingListsPayload(invoiceForMetadata))
-      const invoiceAfterMetadata = updatedInvoice || selectedInvoice
-      const savedPackList = findSavedPackList(invoiceAfterMetadata, savePlan.metadataDraft)
-
-      if (form.files.length > 0) {
-        if (!savedPackList) {
-          throw new Error(t('Не вдалося знайти збережений пак лист для документів'))
-        }
-
-        if (savePlan.pendingDocuments.length !== form.files.length) {
-          throw new Error(t('Не вдалося зіставити вибрані файли з документами пак листа'))
-        }
-
-        await uploadPackingListDocuments({
-          ...savedPackList,
-          InvoiceDocuments: savePlan.pendingDocuments.map((document) => ({
-            ...document,
-            PackingListId: savedPackList.Id,
-          })),
-        }, form.files)
+    return runActionOnce('savePackListMetadata', async () => {
+      if (!hasPermission(PERMISSION_ADD_PACK_LIST)) {
+        notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
+        return
       }
 
-      notifications.show({ color: 'green', message: t('Пак лист збережено') })
-      setPageState({ packListEditor: null })
-      await reloadOrder(invoiceAfterMetadata.NetUid || selectedInvoice.NetUid)
-    } catch (saveError) {
-      notifications.show({ color: 'red', message: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти пак лист') })
-    } finally {
-      setPageState({ isSaving: false })
-    }
+      if (!selectedInvoice?.NetUid) {
+        notifications.show({ color: 'red', message: t('Оберіть інвойс') })
+        return
+      }
+
+      const savePlan = createPackListMetadataSavePlan(
+        createPackListMetadataDraft(packListEditor?.packList, form),
+      )
+      const invoiceForMetadata = upsertPackListMetadata(selectedInvoice, savePlan.metadataDraft)
+
+      setPageState({ isSaving: true })
+
+      try {
+        const updatedInvoice = await updateDirectSupplyOrderPackingLists(toPackingListsPayload(invoiceForMetadata))
+        const invoiceAfterMetadata = updatedInvoice || selectedInvoice
+        const savedPackList = findSavedPackList(invoiceAfterMetadata, savePlan.metadataDraft)
+
+        if (form.files.length > 0) {
+          if (!savedPackList) {
+            throw new Error(t('Не вдалося знайти збережений пак лист для документів'))
+          }
+
+          if (savePlan.pendingDocuments.length !== form.files.length) {
+            throw new Error(t('Не вдалося зіставити вибрані файли з документами пак листа'))
+          }
+
+          await uploadPackingListDocuments({
+            ...savedPackList,
+            InvoiceDocuments: savePlan.pendingDocuments.map((document) => ({
+              ...document,
+              PackingListId: savedPackList.Id,
+            })),
+          }, form.files)
+        }
+
+        notifications.show({ color: 'green', message: t('Пак лист збережено') })
+        setPageState({ packListEditor: null })
+        await reloadOrder(invoiceAfterMetadata.NetUid || selectedInvoice.NetUid)
+      } catch (saveError) {
+        notifications.show({ color: 'red', message: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти пак лист') })
+      } finally {
+        setPageState({ isSaving: false })
+      }
+    })
   }
 
   return {

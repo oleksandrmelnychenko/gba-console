@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { ProductSourceHistoryRefresh } from '../../../shared/ui/product-movement-history/ProductSourceHistoryRefresh'
 import { withProductSourceHistoryColumns } from '../../../shared/ui/product-movement-history/productSourceHistory'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
@@ -887,7 +888,7 @@ function ProductPlacementEditor({
   const [drafts, setDrafts] = useState<ProductPlacementDraft[]>(() => cloneProductPlacements(placements))
   const [error, setError] = useState<string | null>(null)
   const [isEditing, setEditing] = useState(false)
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const originalTotal = useMemo(() => sumProductPlacementQty(placements), [placements])
   const draftTotal = useMemo(() => sumProductPlacementQty(drafts), [drafts])
   const groupedPlacements = useMemo(() => groupProductPlacements(drafts), [drafts])
@@ -951,7 +952,9 @@ function ProductPlacementEditor({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -1230,7 +1233,7 @@ function ProductEditPanel({ onClose, onProductSaved, product }: { onClose: () =>
   const [form, setForm] = useState<ProductEditForm>(() => createProductEditForm(product))
   const canEditClassification = canEditNativeProductClassification(product)
   const [error, setError] = useState<string | null>(null)
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
 
   function setField<K extends keyof ProductEditForm>(field: K, value: ProductEditForm[K]) {
     setForm((currentForm) => ({
@@ -1241,7 +1244,9 @@ function ProductEditPanel({ onClose, onProductSaved, product }: { onClose: () =>
 
   async function submitForm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -1345,7 +1350,7 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
   const [files, setFiles] = useState<File[]>([])
   const [filePreviews, setFilePreviews] = useState<SelectedProductImagePreview[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null)
   const originalImages = product.ProductImages || []
   const hasExistingImageChanges = images.some((image, index) => image !== originalImages[index])
@@ -1410,7 +1415,9 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
   }
 
   async function saveImages() {
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -1664,7 +1671,7 @@ function ProductSpecificationPanel({
     VATValue: '',
   })
   const [error, setError] = useState<string | null>(null)
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
 
   function updateDraft<K extends keyof ProductSpecificationDraft>(key: K, value: ProductSpecificationDraft[K]) {
     setDraft((currentDraft) => ({
@@ -1681,7 +1688,9 @@ function ProductSpecificationPanel({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {
@@ -2331,7 +2340,7 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
   const [groupError, setGroupError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(Boolean(productNetUid))
   const [isLoadingGroups, setLoadingGroups] = useState(Boolean(productNetUid))
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [removingNetUid, setRemovingNetUid] = useState<string | null>(null)
   const selectedProductGroup = useMemo(
     () => productGroups.find((group) => group.NetUid === selectedProductGroupNetUid) || null,
@@ -2504,7 +2513,9 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
     const requestedScopeKey = activeRuleScopeKey
 

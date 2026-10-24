@@ -1,3 +1,4 @@
+import { ReportRowPagination } from './ReportRowPagination'
 import { requestCurrentVparivanieAnalysis } from '../data/currentVparivanieAnalysis'
 import { movementSelection } from '../data/currentVparivanieMovements'
 import { ReportTableScrollArea } from './ReportTableScrollArea'
@@ -26,22 +27,19 @@ function RegionalTable({ result }: { result: CurrentVparivanieRegionalResult }) 
   const currentPage = Math.min(page, Math.max(0, Math.ceil(result.Rows.length / 50) - 1))
   const first = currentPage * 50
   const visible = result.Rows.slice(first, first + 50)
-  return <Stack gap="xs"><Group>
-    <Button size="xs" variant="default" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>Попередні рядки</Button>
-    <Text size="xs">{result.Rows.length ? first + 1 : 0}–{first + visible.length} / {result.Rows.length}</Text>
-    <Button size="xs" variant="default" disabled={first + visible.length >= result.Rows.length} onClick={() => setPage(currentPage + 1)}>Наступні рядки</Button>
-  </Group><ReportTableScrollArea minWidth={1100} label="Регіональна форма Аналіз залишків і продажів">
+  return <Stack gap="xs"><ReportTableScrollArea minWidth={1100} label="Регіональна форма Аналіз залишків і продажів">
     <table className="app-static-table"><thead><tr>{CURRENT_VPARIVANIE_PRODUCT_CAPTIONS.map(caption => <th scope="col" key={caption}>{caption}</th>)}
-      {columns.map(key => <th scope="col" key={key}>{currentRegionalColumnCaption(key)}</th>)}</tr></thead>
+      {columns.map(key => <th scope="col" key={key} className="app-table-cell-number">{currentRegionalColumnCaption(key)}</th>)}</tr></thead>
       <tbody>{visible.map(row => {
         const cells = new Map(row.Cells.map(cell => [currentVparivanieV2CellKey(cell), cell]))
         return <tr key={row.ProductId}>
           {[row.Article, row.Name, row.Description, row.Group, row.OE, row.Size, row.Top].map((value, index) =>
             <th scope="row" key={index}>{value ?? '—'}</th>)}
-          {columns.map(key => <td key={key}>{currentRegionalCellText(cells.get(key)) || '—'}</td>)}
+          {columns.map(key => <td key={key} className="app-table-cell-number">{currentRegionalCellText(cells.get(key)) || '—'}</td>)}
         </tr>
       })}</tbody></table>
-  </ReportTableScrollArea></Stack>
+  </ReportTableScrollArea>
+    <ReportRowPagination total={result.Rows.length} offset={first} onChange={offset => setPage(offset / 50)} /></Stack>
 }
 
 function RegionalFullScopeCheckbox({ dataset, checked, disabled, onChange }: {

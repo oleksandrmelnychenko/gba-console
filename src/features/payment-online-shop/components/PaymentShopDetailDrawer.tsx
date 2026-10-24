@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { AppModalFooter } from '../../../shared/ui/AppModal'
 import {
@@ -75,6 +76,7 @@ export function PaymentShopDetailDrawer({
   onClose,
   onEditItem,
 }: PaymentShopDetailDrawerProps) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const [draft, setDraft] = useValueState<CreateFormDraft>(INITIAL_DRAFT)
   const [validationError, setValidationError] = useValueState<string | null>(null)
@@ -96,35 +98,37 @@ export function PaymentShopDetailDrawer({
   }
 
   async function handleCreate() {
-    const amount = typeof draft.amount === 'number' ? draft.amount : Number.parseFloat(String(draft.amount))
+    return runActionOnce('handleCreate', async () => {
+      const amount = typeof draft.amount === 'number' ? draft.amount : Number.parseFloat(String(draft.amount))
 
-    if (!(amount > 0)) {
-      setValidationError(t('Вкажіть суму оплати або передплати'))
-      return
-    }
+      if (!(amount > 0)) {
+        setValidationError(t('Вкажіть суму оплати або передплати'))
+        return
+      }
 
-    if (draft.paymentType === null) {
-      setValidationError(t('Оберіть тип оплати'))
-      return
-    }
+      if (draft.paymentType === null) {
+        setValidationError(t('Оберіть тип оплати'))
+        return
+      }
 
-    if (!draft.image) {
-      setValidationError(t('Додайте зображення підтвердження оплати'))
-      return
-    }
+      if (!draft.image) {
+        setValidationError(t('Додайте зображення підтвердження оплати'))
+        return
+      }
 
-    setValidationError(null)
+      setValidationError(null)
 
-    const created = await onAddPayment({
-      amount,
-      comment: draft.comment,
-      image: draft.image,
-      paymentType: draft.paymentType,
+      const created = await onAddPayment({
+        amount,
+        comment: draft.comment,
+        image: draft.image,
+        paymentType: draft.paymentType,
+      })
+
+      if (created) {
+        setDraft(INITIAL_DRAFT)
+      }
     })
-
-    if (created) {
-      setDraft(INITIAL_DRAFT)
-    }
   }
 
   const status = getRetailPaymentStatusPresentation(statusType)

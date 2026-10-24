@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Alert, Button, Group, Stack, Text } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -21,7 +22,7 @@ function AnalysisGrid({ result }: { result: LotAnalysisResult }) {
 type Choice = { value: string; label: string }
 function useAnalysisRun(capability: LotAnalysisCapability, callerKey: string | null, canGenerate: boolean,
   from: string, through: string, warehouses: string[], products: string[], key: string, received: (result: LotAnalysisResult) => void) {
-  const run = useReportRunState<LotAnalysisResult>(key), [exporting, setExporting] = useState(false)
+  const run = useReportRunState<LotAnalysisResult>(key), [exporting, setExporting, tryStartExporting] = useBusyState()
   const active = useRef<AbortController | null>(null), latest = useRef(key)
   const activeExport = useRef<AbortController | null>(null)
   useEffect(() => { latest.current = key; return () => { latest.current = ''; active.current?.abort(); activeExport.current?.abort() } }, [key])
@@ -42,7 +43,9 @@ function useAnalysisRun(capability: LotAnalysisCapability, callerKey: string | n
     const result = run.lastRun
     if (!permitted || !result?.Available || exporting || lotAnalysisExportError(result)) return
     const controller = new AbortController(); activeExport.current?.abort(); activeExport.current = controller
-    setExporting(true)
+    if (!tryStartExporting()) {
+      return
+    }
     try {
       const blob = format === 'csv' ? new Blob([lotAnalysisCsv(result)], { type: 'text/csv;charset=utf-8' })
         : format === 'xlsx' ? await lotAnalysisXlsx(result) : await lotAnalysisPdf(result)

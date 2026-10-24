@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
   Alert,
   Button,
@@ -79,7 +80,7 @@ function ProductGroupDetailPageContent() {
   const [activeTab, setActiveTab] = useValueState<ProductGroupContentTab>('subGroups')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [isLoadingRootGroups, setLoadingRootGroups] = useValueState(true)
   const rootGroupsForForm = useMemo(() => {
     const currentRootProductGroup = getCurrentRootProductGroup(productGroup)
@@ -196,7 +197,9 @@ function ProductGroupDetailPageContent() {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setError(null)
 
     try {

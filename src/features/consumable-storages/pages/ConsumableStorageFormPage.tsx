@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
   Alert,
   Button,
@@ -99,7 +100,7 @@ function ConsumableStorageFormPageContent() {
   const isEditMode = Boolean(id)
   const [pageState, dispatchPageState] = useReducer(pageStateReducer, true, createInitialPageState)
   const [userSearchValue, setUserSearchValue] = useValueState('')
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const { error, form, isLoading, organizations, storage, users } = pageState
   const [debouncedUserSearchValue] = useDebouncedValue(userSearchValue, USER_SEARCH_DEBOUNCE_MS)
   const canSave = hasPermission(isEditMode ? CONSUMABLE_STORAGE_EDIT_PERMISSION : CONSUMABLE_STORAGE_CREATE_PERMISSION)
@@ -237,7 +238,9 @@ function ConsumableStorageFormPageContent() {
       ResponsibleUser: selectedUser,
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     dispatchPageState({ error: null })
 
     try {

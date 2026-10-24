@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { saleAgreementLabel, saleAgreementTitle } from '../../../shared/saleAgreementLabel'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
@@ -398,7 +399,7 @@ function SalesUkrainePageContent() {
   const [organizations, setOrganizations] = useValueState<SalesUkraineOrganizationOption[]>([])
   const [organisationQuery, setOrganisationQuery] = useState('')
   const [confirmState, setConfirmState] = useValueState<ConfirmState | null>(null)
-  const [isConfirming, setConfirming] = useValueState(false)
+  const [isConfirming, setConfirming, tryStartConfirming] = useBusyState()
   const [discountTarget, setDiscountTarget] = useValueState<{
     orderItem?: SalesUkraineOrderItem
     sale: SalesUkraineSale
@@ -1070,7 +1071,9 @@ function SalesUkrainePageContent() {
       return
     }
 
-    setConfirming(true)
+    if (!tryStartConfirming()) {
+      return
+    }
 
     try {
       await confirmState.onConfirm()

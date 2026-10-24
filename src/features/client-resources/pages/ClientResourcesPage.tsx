@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -674,7 +675,7 @@ function useRegionsPanelModel(section: ClientResourceSection) {
   const [regionCodeEditor, setRegionCodeEditor] = useValueState<RegionCodeEditorState | null>(null)
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const filteredRegions = useMemo(
     () =>
       state.data.filter((region) =>
@@ -732,7 +733,9 @@ function useRegionsPanelModel(section: ClientResourceSection) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setFormError(null)
 
     try {
@@ -771,7 +774,9 @@ function useRegionsPanelModel(section: ClientResourceSection) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setFormError(null)
 
     try {
@@ -808,7 +813,9 @@ function useRegionsPanelModel(section: ClientResourceSection) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setFormError(null)
 
     try {
@@ -1223,7 +1230,7 @@ function PerfectClientsPanel({ section }: { section: ClientResourceSection }) {
   const [editor, setEditor] = useValueState<PerfectClientEditorState | null>(null)
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [search, setSearch] = useValueState('')
   const buyerRoles = useMemo(() => getBuyerRoles(clientTypesState.data), [clientTypesState.data])
   const roleOptions = useMemo(() => getRoleSelectOptions(buyerRoles), [buyerRoles])
@@ -1304,7 +1311,9 @@ function PerfectClientsPanel({ section }: { section: ClientResourceSection }) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setFormError(null)
 
     try {
@@ -1341,7 +1350,9 @@ function PerfectClientsPanel({ section }: { section: ClientResourceSection }) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setFormError(null)
 
     try {
@@ -2242,7 +2253,7 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
   const [editor, setEditor] = useValueState<OrganizationEditorState | null>(null)
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const filtered = useMemo(
     () =>
       state.data.filter((organization) =>
@@ -2285,7 +2296,9 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setFormError(null)
 
     try {
@@ -2327,7 +2340,9 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setFormError(null)
 
     try {
@@ -2550,7 +2565,7 @@ function OrganizationEditorModal({
   const [extraVatRates, setExtraVatRates] = useValueState<ClientResourceVatRate[]>([])
   const [newVatRateValue, setNewVatRateValue] = useValueState<number | ''>('')
   const [isVatPopoverOpen, setVatPopoverOpen] = useValueState(false)
-  const [isCreatingVatRate, setCreatingVatRate] = useValueState(false)
+  const [isCreatingVatRate, setCreatingVatRate, tryStartCreatingVatRate] = useBusyState()
   const availableVatRates = useMemo(() => [...vatRates, ...extraVatRates], [vatRates, extraVatRates])
 
   async function handleCreateVatRate() {
@@ -2566,7 +2581,9 @@ function OrganizationEditorModal({
       return
     }
 
-    setCreatingVatRate(true)
+    if (!tryStartCreatingVatRate()) {
+      return
+    }
 
     try {
       const created = await createClientResourceVatRate(newVatRateValue)
@@ -2803,7 +2820,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
   const [editor, setEditor] = useValueState<TaxInspectionEditorState | null>(null)
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const filtered = useMemo(
     () =>
       state.data.filter((inspection) =>
@@ -2832,7 +2849,9 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
   }
 
   async function saveTaxInspection(values: TaxInspectionFormValues) {
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setFormError(null)
 
     try {
@@ -2869,7 +2888,9 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setFormError(null)
 
     try {
@@ -3042,7 +3063,7 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
   const [editor, setEditor] = useValueState<PricingEditorState | null>(null)
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const filtered = useMemo(
     () =>
       state.data.filter((pricing) =>
@@ -3120,7 +3141,9 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setFormError(null)
 
     try {
@@ -3162,7 +3185,9 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setFormError(null)
 
     try {
@@ -3183,7 +3208,9 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
 
     try {
       await changeClientResourcePricingPriority(pricing.Id, raise)
@@ -3437,7 +3464,7 @@ function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
   const [editor, setEditor] = useValueState<CurrencyEditorState | null>(null)
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const filtered = useMemo(
     () =>
       state.data.filter((currency) =>
@@ -3465,7 +3492,9 @@ function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setFormError(null)
 
     try {
@@ -3502,7 +3531,9 @@ function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setFormError(null)
 
     try {
@@ -3641,7 +3672,7 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
   const [editor, setEditor] = useValueState<StorageEditorState | null>(null)
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const saleOrganizationsByStorageId = useMemo(
     () => buildSaleOrganizationsByStorageId(organizationsState.data),
     [organizationsState.data],
@@ -3680,7 +3711,9 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setFormError(null)
 
     try {
@@ -3717,7 +3750,9 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setFormError(null)
 
     try {
@@ -3932,7 +3967,7 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
   const [editor, setEditor] = useValueState<MeasureUnitEditorState | null>(null)
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const filtered = useMemo(
     () =>
       state.data.filter((measureUnit) =>
@@ -3960,7 +3995,9 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setFormError(null)
 
     try {
@@ -3997,7 +4034,9 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setFormError(null)
 
     try {
@@ -4135,7 +4174,7 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
   const [search, setSearch] = useValueState('')
   const [editor, setEditor] = useValueState<ReserveEditorState | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const roles = useMemo(() => getBuyerRoles(state.data), [state.data])
   const filteredRoles = useMemo(
     () => roles.filter((role) => matchesSearch(search, [role.Name, role.Description])),
@@ -4155,7 +4194,9 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setFormError(null)
 
     try {
@@ -4290,7 +4331,7 @@ function CarrierPanel({ section }: { section: ClientResourceSection }) {
   const [editor, setEditor] = useValueState<TransporterEditorState | null>(null)
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
-  const [isSaving, setSaving] = useValueState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const ukraineTransporterTypes = useMemo(
     () => typesState.data.filter(isUkraineTransporterType),
     [typesState.data],
@@ -4372,7 +4413,9 @@ function CarrierPanel({ section }: { section: ClientResourceSection }) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setFormError(null)
 
     try {
@@ -4421,7 +4464,9 @@ function CarrierPanel({ section }: { section: ClientResourceSection }) {
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
     setFormError(null)
 
     try {

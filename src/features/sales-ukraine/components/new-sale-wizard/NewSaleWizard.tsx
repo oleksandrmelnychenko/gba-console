@@ -1,3 +1,5 @@
+import { useSingleFlight } from '../../../../shared/hooks/useSingleFlight'
+import { useBusyState } from '../../../../shared/hooks/useBusyState'
 import { ActionIcon, Alert, Box, Button, Center, FileInput, Group, Loader, Stack, Text, UnstyledButton } from '@mantine/core'
 import { ArrowRight, Check, ChevronRight, X } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
@@ -498,6 +500,7 @@ function NewSaleWizardContent({
   onRestoreSplit: () => Promise<WizardSplitRecoveryRunResult>
   onVatDocuments: (result: SaleDocumentResult) => void
 }) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const [active, setActive] = useState(0)
   const [cartOpened, setCartOpened] = useState(Boolean(initialSale))
@@ -506,7 +509,7 @@ function NewSaleWizardContent({
   // Preserved across step switches so the client step can restore instantly on remount.
   const [selectedClient, setSelectedClient] = useState<Client | null>(() => prefill?.client ?? null)
   const [review, setReview] = useState<NewSaleReviewValue>(NEW_SALE_REVIEW_INITIAL)
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy, tryStartBusy] = useBusyState()
   const [reviewBusy, setReviewBusy] = useState(false)
   const [productsBusy, setProductsBusy] = useState(false)
   const [productsPending, setProductsPending] = useState(false)
@@ -599,7 +602,7 @@ function NewSaleWizardContent({
     } finally {
       setBusy(false)
     }
-  }, [onBusyChange, onRestoreSplit, t])
+  }, [onBusyChange, onRestoreSplit, setBusy, t])
 
   function invalidateCartReloads() {
     cartReloadCoordinator.invalidate()
@@ -629,12 +632,14 @@ function NewSaleWizardContent({
   }
 
   async function confirmExit() {
-    if (isShellBusyNow()) {
-      return
-    }
+    return runActionOnce('confirmExit', async () => {
+      if (isShellBusyNow()) {
+        return
+      }
 
-    setExitConfirmOpen(false)
-    await closeWizard()
+      setExitConfirmOpen(false)
+      await closeWizard()
+    })
   }
   const reviewSubmitRef = useRef<(() => Promise<void>) | null>(null)
 
@@ -1132,7 +1137,9 @@ function NewSaleWizardContent({
         return
       }
 
-      setBusy(true)
+      if (!tryStartBusy()) {
+        return
+      }
 
       try {
         await submit()

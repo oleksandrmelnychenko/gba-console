@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -90,7 +91,7 @@ function useDepreciatedOrdersPageModel() {
   const [isCreateModalOpen, setCreateModalOpen] = useValueState(false)
   const [createError, setCreateError] = useValueState<string | null>(null)
   const [exceptionMessages, setExceptionMessages] = useValueState<string[]>([])
-  const [isCreating, setCreating] = useValueState(false)
+  const [isCreating, setCreating, tryStartCreating] = useBusyState()
   const [error, setError] = useValueState<string | null>(null)
   const [storageError, setStorageError] = useValueState<string | null>(null)
   const [downloadOpened, setDownloadOpened] = useValueState(false)
@@ -287,7 +288,9 @@ function useDepreciatedOrdersPageModel() {
     }
 
     setCreateError(null)
-    setCreating(true)
+    if (!tryStartCreating()) {
+      return
+    }
 
     try {
       const result = await createDepreciatedOrderFromFile(payload)

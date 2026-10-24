@@ -41,6 +41,23 @@ describe('new sale wizard pricing API contracts', () => {
     })
   })
 
+  it('forwards cancellation to pricing and reservation reads', async () => {
+    const controller = new AbortController()
+    apiRequestMock.mockResolvedValue([])
+    await Promise.all([
+      getProductCurrentPriceByAgreement('product-1', 'agreement-1', controller.signal),
+      getProductCalculatedPricingsByAgreement('product-1', 'agreement-1', controller.signal),
+      getProductReservationsByAgreement('agreement-1', 'product-1', controller.signal),
+    ])
+    expect(apiRequestMock).toHaveBeenCalledTimes(3)
+    for (const [, options] of apiRequestMock.mock.calls) {
+      expect(options).toMatchObject({
+        query: { clientAgreementNetId: 'agreement-1', productNetId: 'product-1' },
+        signal: controller.signal,
+      })
+    }
+  })
+
   it('requests advanced product search with client agreement and default modes', async () => {
     apiRequestMock.mockResolvedValueOnce([])
 

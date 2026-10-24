@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../../shared/hooks/useBusyState'
 import { Alert, Button, Group, Menu, SimpleGrid, Stack, Text, Textarea, ThemeIcon } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { Ban, Building2, ChevronRight, CircleAlert, Copy, Landmark, Link2, MoreHorizontal, Star, Store, Unlink } from 'lucide-react'
@@ -45,7 +46,7 @@ export function ClientCommercialStructureView({
 }: ClientCommercialStructureViewProps) {
   const [pendingDecision, setPendingDecision] = useState<PendingIdentityDecision | null>(null)
   const [comment, setComment] = useState('')
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const groupTitle = getCommercialGroupTitle(structure, t)
   const reviewIssues = getStructureReviewIssues(structure, t)
   const { activeParties, rejectedCards } = partitionStructureCards(structure)
@@ -192,7 +193,9 @@ export function ClientCommercialStructureView({
               loading={isSaving}
               onClick={async () => {
                 if (!pendingDecision) return
-                setSaving(true)
+                if (!tryStartSaving()) {
+                  return
+                }
                 try {
                   await mutateIdentity(pendingDecision.kind, {
                     ClientNetUid: pendingDecision.anchorClientNetUid,

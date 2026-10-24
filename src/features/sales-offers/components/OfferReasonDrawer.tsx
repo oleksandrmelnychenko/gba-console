@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { Anchor, Button, Card, Group, Stack, Text, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useState } from 'react'
@@ -86,6 +87,7 @@ function OfferReasonForm({
   onSaved: () => void
   onSavingChange: (value: boolean) => void
 }) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const { can } = usePermissions()
   const notProcessedItems = (offer.OrderItems ?? []).filter((item) => getItemNotProcessed(item) > 0)
@@ -96,33 +98,35 @@ function OfferReasonForm({
   const [operationId] = useState(createWizardOperationId)
 
   async function save() {
-    if (!can(PermissionKeys.SalesUkraineOffers.Offer.Edit)) {
-      return
-    }
+    return runActionOnce('save', async () => {
+      if (!can(PermissionKeys.SalesUkraineOffers.Offer.Edit)) {
+        return
+      }
 
-    onSavingChange(true)
+      onSavingChange(true)
 
-    const payload: ClientShoppingCart = {
-      ...offer,
-      Comment: isSingleItem ? offer.Comment : offerComment,
-      OrderItems: (offer.OrderItems ?? []).map((item) => ({
-        ...item,
-        Comment: item.NetUid && item.NetUid in reasons ? reasons[item.NetUid] : item.Comment,
-      })),
-    }
+      const payload: ClientShoppingCart = {
+        ...offer,
+        Comment: isSingleItem ? offer.Comment : offerComment,
+        OrderItems: (offer.OrderItems ?? []).map((item) => ({
+          ...item,
+          Comment: item.NetUid && item.NetUid in reasons ? reasons[item.NetUid] : item.Comment,
+        })),
+      }
 
-    try {
-      await processOffer(payload, { operationId })
-      notifications.show({ color: 'green', message: t('Пропозицію успішно оновлено') })
-      onSaved()
-    } catch (error) {
-      notifications.show({
-        color: 'red',
-        message: error instanceof Error ? error.message : t('Не вдалося зберегти причини'),
-      })
-    } finally {
-      onSavingChange(false)
-    }
+      try {
+        await processOffer(payload, { operationId })
+        notifications.show({ color: 'green', message: t('Пропозицію успішно оновлено') })
+        onSaved()
+      } catch (error) {
+        notifications.show({
+          color: 'red',
+          message: error instanceof Error ? error.message : t('Не вдалося зберегти причини'),
+        })
+      } finally {
+        onSavingChange(false)
+      }
+    })
   }
 
   return (

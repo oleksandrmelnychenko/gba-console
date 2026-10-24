@@ -1,3 +1,4 @@
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { ActionIcon, Alert, Badge, Button, Group, Loader, SegmentedControl, Stack, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { AlertTriangle, ClipboardCopy, Clock3, ExternalLink, Play, RefreshCw, Sparkles } from 'lucide-react'
@@ -54,7 +55,7 @@ export function AiFleetControl({ canRunWarmup = false }: { canRunWarmup?: boolea
   const { t } = useI18n()
   const navigate = useNavigate()
   const [opened, setOpened] = useState(false)
-  const [isTriggering, setTriggering] = useState(false)
+  const [isTriggering, setTriggering, tryStartTriggering] = useBusyState()
   const [filter, setFilter] = useState<'all' | 'issues'>('all')
   const [lastUpdated, setLastUpdated] = useState<number | null>(null)
   const [observations, setObservations] = useState<AiFleetObservation[]>([])
@@ -143,7 +144,9 @@ export function AiFleetControl({ canRunWarmup = false }: { canRunWarmup?: boolea
   }
 
   async function runWarmup() {
-    setTriggering(true)
+    if (!tryStartTriggering()) {
+      return
+    }
 
     try {
       await triggerAiFleetWarmup()

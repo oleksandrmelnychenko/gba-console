@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { expect, it, vi } from 'vitest'
@@ -10,8 +11,8 @@ import { CurrentVparivanieRegionalPanel } from './CurrentVparivanieRegionalPanel
 
 vi.mock('../api/currentVparivanieRegionalApi', () => ({ readCurrentVparivanieRegional: vi.fn() }))
 const panel = (request: ReportRequestBody = regionalRequest(), dataset: ReportDataset = regionalDataset, enabled = true) =>
-  <MantineProvider env="test"><CurrentVparivanieRegionalPanel dataset={dataset} request={request}
-    enabled={enabled} disabled={false} /></MantineProvider>
+  <MantineProvider env="test"><I18nProvider><CurrentVparivanieRegionalPanel dataset={dataset} request={request}
+    enabled={enabled} disabled={false} /></I18nProvider></MantineProvider>
 
 it('offers the current regional form only with capability and report permission', () => {
   vi.clearAllMocks()
@@ -58,11 +59,11 @@ it('offers full scope only on the negotiated server and keeps it an explicit con
   const fullDataset = { ...regionalDataset, currentVparivanie: { ...(regionalDataset.currentVparivanie as object),
     FullScopeVersion: 1, FullScopeContract: 'OneOurSnapshotCompleteSelectedScope', FullScopeMaximumRows: 500000,
     FullScopeMaximumSelectedProducts: 4096, FullScopeMaximumColumns: 256, FullScopeMaximumAddressedCells: 1000000 } }
-  const view = render(<MantineProvider env="test"><CurrentVparivanieRegionalPanel dataset={regionalDataset}
-    request={regionalRequest()} enabled disabled={false} fullScope={false} onFullScopeChange={onChange} /></MantineProvider>)
+  const view = render(<MantineProvider env="test"><I18nProvider><CurrentVparivanieRegionalPanel dataset={regionalDataset}
+    request={regionalRequest()} enabled disabled={false} fullScope={false} onFullScopeChange={onChange} /></I18nProvider></MantineProvider>)
   expect(screen.queryByRole('checkbox', { name: 'Повний вибраний набір товарів' })).toBeNull()
-  view.rerender(<MantineProvider env="test"><CurrentVparivanieRegionalPanel dataset={fullDataset}
-    request={regionalRequest()} enabled disabled={false} fullScope={false} onFullScopeChange={onChange} /></MantineProvider>)
+  view.rerender(<MantineProvider env="test"><I18nProvider><CurrentVparivanieRegionalPanel dataset={fullDataset}
+    request={regionalRequest()} enabled disabled={false} fullScope={false} onFullScopeChange={onChange} /></I18nProvider></MantineProvider>)
   fireEvent.click(screen.getByRole('checkbox', { name: 'Повний вибраний набір товарів' }))
   expect(onChange).toHaveBeenCalledWith(true)
 })

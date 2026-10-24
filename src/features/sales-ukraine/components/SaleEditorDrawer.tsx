@@ -1,3 +1,5 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -140,7 +142,7 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
   const [error, setError] = useValueState<string | null>(null)
   const [editingItem, setEditingItem] = useValueState<SalesUkraineOrderItem | null>(null)
   const [deletingItem, setDeletingItem] = useValueState<SalesUkraineOrderItem | null>(null)
-  const [isDeleting, setDeleting] = useValueState(false)
+  const [isDeleting, setDeleting, tryStartDeleting] = useBusyState()
   const [isAddOpen, setAddOpen] = useValueState(false)
   const [isDetailsOpen, setDetailsOpen] = useValueState(false)
   const [isConvertOpen, setConvertOpen] = useValueState(false)
@@ -296,7 +298,9 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
       return
     }
 
-    setDeleting(true)
+    if (!tryStartDeleting()) {
+      return
+    }
 
     try {
       const completed = await cartMutation.run(
@@ -962,7 +966,7 @@ function OrderItemQtyForm({
 }) {
   const { t } = useI18n()
   const [qty, setQty] = useState<number | string>(() => getNumber(item.Qty) ?? '')
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const numericQty = typeof qty === 'number' ? qty : Number(String(qty).replace(',', '.'))
   const exceedsAvailable = maxQty !== null && Number.isFinite(numericQty) && numericQty > maxQty
   const isValid = Number.isFinite(numericQty) && numericQty > 0 && !exceedsAvailable
@@ -977,7 +981,9 @@ function OrderItemQtyForm({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
 
     try {
       const orderItemNetUid = normalizePersistedGuid(item.NetUid)
@@ -1082,7 +1088,7 @@ function AddProductForm({
   const [isSearching, setSearching] = useState(false)
   const [selected, setSelected] = useState<SalesUkraineProduct | null>(null)
   const [qty, setQty] = useState<number | string>(1)
-  const [isSaving, setSaving] = useState(false)
+  const [isSaving, setSaving, tryStartSaving] = useBusyState()
 
   const numericQty = typeof qty === 'number' ? qty : Number(String(qty).replace(',', '.'))
   const isValid = Boolean(selected) && Number.isFinite(numericQty) && numericQty > 0
@@ -1131,7 +1137,9 @@ function AddProductForm({
       return
     }
 
-    setSaving(true)
+    if (!tryStartSaving()) {
+      return
+    }
 
     try {
       const mutation = createAddOrUpdateSalesCartMutation({
@@ -1308,6 +1316,7 @@ function OnlineShopSaleReassignForm({
   onReassigned: () => void
   sale: SalesUkraineSale
 }) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const [query, setQuery] = useState('')
   const [clients, setClients] = useState<SalesUkraineClientOption[]>([])
@@ -1408,33 +1417,35 @@ function OnlineShopSaleReassignForm({
   }, [])
 
   async function reassign() {
-    if (!sale.NetUid || !selectedAgreement) {
-      return
-    }
-
-    setReassigning(true)
-
-    try {
-      const attempt = await runSaleSwitch<SwitchSalePayload, SalesUkraineSale | null>(
-        `sale-switch:${sale.NetUid}`,
-        { ClientAgreementNetId: selectedAgreement, SaleNetId: sale.NetUid },
-        (payload, operation) => switchSale(payload.SaleNetId, payload.ClientAgreementNetId, operation),
-      )
-
-      if (!attempt.completed) {
-        throw attempt.error
+    return runActionOnce('reassign', async () => {
+      if (!sale.NetUid || !selectedAgreement) {
+        return
       }
 
-      notifications.show({ color: 'green', message: t('Продаж переназначено') })
-      onReassigned()
-    } catch (error) {
-      notifications.show({
-        color: 'red',
-        message: error instanceof Error ? error.message : t('Не вдалося переназначити продаж'),
-      })
-    } finally {
-      setReassigning(false)
-    }
+      setReassigning(true)
+
+      try {
+        const attempt = await runSaleSwitch<SwitchSalePayload, SalesUkraineSale | null>(
+          `sale-switch:${sale.NetUid}`,
+          { ClientAgreementNetId: selectedAgreement, SaleNetId: sale.NetUid },
+          (payload, operation) => switchSale(payload.SaleNetId, payload.ClientAgreementNetId, operation),
+        )
+
+        if (!attempt.completed) {
+          throw attempt.error
+        }
+
+        notifications.show({ color: 'green', message: t('Продаж переназначено') })
+        onReassigned()
+      } catch (error) {
+        notifications.show({
+          color: 'red',
+          message: error instanceof Error ? error.message : t('Не вдалося переназначити продаж'),
+        })
+      } finally {
+        setReassigning(false)
+      }
+    })
   }
 
   return (
