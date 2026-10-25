@@ -1,3 +1,4 @@
+import { useProductImageDraft } from '../useProductImageDraft'
 import { useProductDetailData } from '../useProductDetailData'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { ProductSourceHistoryRefresh } from '../../../shared/ui/product-movement-history/ProductSourceHistoryRefresh'
@@ -45,7 +46,7 @@ import { Archive, ArrowLeft, ArrowLeftRight, CalendarDays, Check, ChevronRight, 
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
-import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { type FormEvent, type ReactNode, memo, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import './products.css'
 import './product-detail-forms.css'
@@ -81,7 +82,6 @@ import type {
   ProductAvailability,
   ProductConsignmentRemaining,
   ProductGroup,
-  ProductImage,
   ProductMovement,
   ProductMovementExportDocument,
   ProductPlacement,
@@ -166,11 +166,6 @@ type ProductEditForm = {
   Top: string
   Volume: string
   Weight: number | null
-}
-
-type SelectedProductImagePreview = {
-  file: File
-  url: string
 }
 
 type ProductPlacementGroup = {
@@ -848,7 +843,7 @@ function ProductPlacementEditor({
   const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const originalTotal = useMemo(() => sumProductPlacementQty(placements), [placements])
   const draftTotal = useMemo(() => sumProductPlacementQty(drafts), [drafts])
-  const groupedPlacements = useMemo(() => groupProductPlacements(drafts), [drafts])
+  const groupedPlacements = useMemo(() => isEditing ? [] : groupProductPlacements(drafts), [drafts, isEditing])
   const canEditPlacements = hasPermission(PRODUCT_PLACEMENT_EDIT_PERMISSION)
 
   function startEditing() {
@@ -882,7 +877,7 @@ function ProductPlacementEditor({
     ])
   }
 
-  function updatePlacementDraft(index: number, field: keyof ProductPlacement, value: string | number) {
+  const updatePlacementDraft = useCallback((index: number, field: keyof ProductPlacement, value: string | number) => {
     setDrafts((currentDrafts) =>
       currentDrafts.map((draft, draftIndex) => (
         draftIndex === index
@@ -893,11 +888,11 @@ function ProductPlacementEditor({
           : draft
       )),
     )
-  }
+  }, [])
 
-  function removeLocalPlacement(index: number) {
+  const removeLocalPlacement = useCallback((index: number) => {
     setDrafts((currentDrafts) => currentDrafts.filter((draft, draftIndex) => draftIndex !== index || isPersistedPlacement(draft)))
-  }
+  }, [])
 
   async function savePlacements() {
     if (!canEditPlacements) {
@@ -969,59 +964,13 @@ function ProductPlacementEditor({
               </Table.Thead>
               <Table.Tbody>
                 {drafts.map((placement, index) => (
-                  <Table.Tr key={placement.DraftKey}>
-                    <Table.Td>
-                      <TextInput
-                        className="product-placement-editor__field"
-                        maxLength={5}
-                        size="xs"
-                        value={placement.StorageNumber || ''}
-                        onChange={(event) => updatePlacementDraft(index, 'StorageNumber', event.currentTarget.value)}
-                      />
-                    </Table.Td>
-                    <Table.Td>
-                      <TextInput
-                        className="product-placement-editor__field"
-                        maxLength={5}
-                        size="xs"
-                        value={placement.RowNumber || ''}
-                        onChange={(event) => updatePlacementDraft(index, 'RowNumber', event.currentTarget.value)}
-                      />
-                    </Table.Td>
-                    <Table.Td>
-                      <TextInput
-                        className="product-placement-editor__field"
-                        maxLength={5}
-                        size="xs"
-                        value={placement.CellNumber || ''}
-                        onChange={(event) => updatePlacementDraft(index, 'CellNumber', event.currentTarget.value)}
-                      />
-                    </Table.Td>
-                    <Table.Td className="app-table-number">
-                      <NumberInput
-                        className="product-placement-editor__field product-placement-editor__field--qty"
-                        hideControls
-                        min={0}
-                        size="xs"
-                        value={placement.Qty || 0}
-                        onChange={(value) => updatePlacementDraft(index, 'Qty', readPlacementNumber(value))}
-                      />
-                    </Table.Td>
-                    <Table.Td>
-                      <TableRowAction
-                        action="delete"
-                        disabled={isPersistedPlacement(placement)}
-                        label={t('Видалити новий рядок')}
-                        onClick={() => removeLocalPlacement(index)}
-                      />
-                    </Table.Td>
-                  </Table.Tr>
+                  <ProductPlacementDraftRow key={placement.DraftKey} placement={placement} index={index} isSaving={isSaving} onChange={updatePlacementDraft} onRemove={removeLocalPlacement} />
                 ))}
               </Table.Tbody>
             </Table>
           </ScrollArea.Autosize>
           <Group className="product-placement-editor__footer" justify="space-between" gap="sm">
-            <Button color={CREATE_ACTION_COLOR} size="xs" leftSection={<Plus size={14} />} onClick={addPlacement}>
+            <Button color={CREATE_ACTION_COLOR} size="xs" leftSection={<Plus size={14} />} disabled={isSaving} onClick={addPlacement}>
               {t('Додати місце')}
             </Button>
             <Group gap="xs">
@@ -1059,6 +1008,69 @@ function ProductPlacementEditor({
     </Stack>
   )
 }
+
+const ProductPlacementDraftRow = memo(function ProductPlacementDraftRow({ placement, index, isSaving, onChange, onRemove }: {
+  placement: ProductPlacementDraft
+  index: number
+  isSaving: boolean
+  onChange: (index: number, field: keyof ProductPlacement, value: string | number) => void
+  onRemove: (index: number) => void
+}) {
+  const { t } = useI18n()
+  return (
+    <Table.Tr>
+      <Table.Td>
+        <TextInput
+          disabled={isSaving}
+          className="product-placement-editor__field"
+          maxLength={5}
+          size="xs"
+          value={placement.StorageNumber || ''}
+          onChange={(event) => onChange(index, 'StorageNumber', event.currentTarget.value)}
+        />
+      </Table.Td>
+      <Table.Td>
+        <TextInput
+          disabled={isSaving}
+          className="product-placement-editor__field"
+          maxLength={5}
+          size="xs"
+          value={placement.RowNumber || ''}
+          onChange={(event) => onChange(index, 'RowNumber', event.currentTarget.value)}
+        />
+      </Table.Td>
+      <Table.Td>
+        <TextInput
+          disabled={isSaving}
+          className="product-placement-editor__field"
+          maxLength={5}
+          size="xs"
+          value={placement.CellNumber || ''}
+          onChange={(event) => onChange(index, 'CellNumber', event.currentTarget.value)}
+        />
+      </Table.Td>
+      <Table.Td className="app-table-number">
+        <NumberInput
+          disabled={isSaving}
+          className="product-placement-editor__field product-placement-editor__field--qty"
+          hideControls
+          min={0}
+          size="xs"
+          value={placement.Qty || 0}
+          onChange={(value) => onChange(index, 'Qty', readPlacementNumber(value))}
+        />
+      </Table.Td>
+      <Table.Td>
+        <TableRowAction
+          action="delete"
+          disabled={isSaving || isPersistedPlacement(placement)}
+          label={t('Видалити новий рядок')}
+          onClick={() => onRemove(index)}
+        />
+      </Table.Td>
+    </Table.Tr>
+  )
+})
 
 function TotalQtyTile({ label, value }: { label: string; value?: number | null }) {
   const numeric = Number(value) || 0
@@ -1303,75 +1315,23 @@ function ProductEditPanel({ onClose, onProductSaved, product }: { onClose: () =>
 function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (product: Product | null) => void; product: Product }) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
-  const [images, setImages] = useState<ProductImage[]>(() => [...(product.ProductImages || [])])
-  const [files, setFiles] = useState<File[]>([])
-  const [filePreviews, setFilePreviews] = useState<SelectedProductImagePreview[]>([])
+  const { images, setImages, files, filePreviews, displayedImages, hasChanges, hasExistingImageChanges,
+    makeMain, removeImage, updateSelectedFiles, reset } = useProductImageDraft(product.ProductImages)
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null)
-  const originalImages = product.ProductImages || []
-  const hasExistingImageChanges = images.some((image, index) => image !== originalImages[index])
-  const hasChanges = files.length > 0 || hasExistingImageChanges
   const canSaveChanges =
     (!files.length || hasPermission(PRODUCT_IMAGE_ADD_PERMISSION)) &&
     (!hasExistingImageChanges || hasPermission(PRODUCT_IMAGE_DELETE_PERMISSION))
-  const displayedImages = images.reduce<Array<{ image: ProductImage; index: number }>>((currentImages, image, index) => {
-    if (!image.Deleted || (image.Deleted && !originalImages[index]?.Deleted)) {
-      currentImages.push({ image, index })
-    }
-
-    return currentImages
-  }, [])
-
-  useEffect(() => {
-    return () => {
-      revokeFilePreviewUrls(filePreviews.map((preview) => preview.url))
-    }
-  }, [filePreviews])
-
-  function makeMain(image: ProductImage) {
-    const imageKey = getProductImageKey(image)
-
-    setImages((currentImages) =>
-      currentImages.map((item) => ({
-        ...item,
-        IsMainImage: imageKey ? getProductImageKey(item) === imageKey : item === image,
-      })),
-    )
-  }
-
-  function removeImage(image: ProductImage) {
-    const imageKey = getProductImageKey(image)
-
-    setImages((currentImages) =>
-      currentImages.map((item) =>
-        (imageKey ? getProductImageKey(item) === imageKey : item === image)
-          ? {
-              ...item,
-              Deleted: true,
-            }
-          : item,
-      ),
-    )
-  }
-
-  function updateSelectedFiles(nextFiles: File[]) {
-    const nextPreviews = nextFiles.map((file) => ({
-      file,
-      url: URL.createObjectURL(file),
-    }))
-
-    setFiles(nextFiles)
-    setFilePreviews(nextPreviews)
-  }
 
   function resetImageChanges() {
-    setImages([...originalImages])
-    updateSelectedFiles([])
+    reset()
+    setPreviewImageUrl(null)
     setError(null)
   }
 
   async function saveImages() {
+    if (!hasChanges || !canSaveChanges) return
     if (!tryStartSaving()) {
       return
     }
@@ -1619,10 +1579,10 @@ function ProductSpecificationPanel({
   const { user } = useAuth()
   const specifications = useMemo(
     () => dedupeSpecificationsByCodeAndRate(sortSpecificationsByCreatedDesc(product.ProductSpecifications || [])),
-    [product],
+    [product.ProductSpecifications],
   )
   const currentSpecification = specifications[0] || null
-  const historySpecifications = specifications.slice(1)
+  const historySpecifications = useMemo(() => specifications.slice(1), [specifications])
   const [draft, setDraft] = useState<ProductSpecificationDraft>({
     CustomsValue: '',
     Duty: '',
@@ -1719,39 +1679,25 @@ function ProductSpecificationPanel({
                 <TextInput
                   classNames={{ input: 'app-money' }}
                   label={t('Код специфікації')}
+                  disabled={isSaving}
                   value={draft.SpecificationCode}
                   onChange={(event) => updateDraft('SpecificationCode', event.currentTarget.value)}
                 />
                 <div className="product-specification-values">
-                  <NumberInput classNames={{ input: 'app-money' }} decimalScale={2} label={t('Митна вартість')} min={0} hideControls
+                  <NumberInput classNames={{ input: 'app-money' }} decimalScale={2} disabled={isSaving} label={t('Митна вартість')} min={0} hideControls
                     value={draft.CustomsValue}
                     onChange={(value) => updateDraft('CustomsValue', typeof value === 'number' ? value : '')} />
-                  <NumberInput classNames={{ input: 'app-money' }} decimalScale={2} label={t('Мито')} min={0} hideControls
+                  <NumberInput classNames={{ input: 'app-money' }} decimalScale={2} disabled={isSaving} label={t('Мито')} min={0} hideControls
                     value={draft.Duty}
                     onChange={(value) => updateDraft('Duty', typeof value === 'number' ? value : '')} />
-                  <NumberInput classNames={{ input: 'app-money' }} decimalScale={2} label={t('ПДВ')} min={0} hideControls
+                  <NumberInput classNames={{ input: 'app-money' }} decimalScale={2} disabled={isSaving} label={t('ПДВ')} min={0} hideControls
                     value={draft.VATValue}
                     onChange={(value) => updateDraft('VATValue', typeof value === 'number' ? value : '')} />
                 </div>
               </DocumentDetailSection>
             </PermissionGate>
           </Stack>
-          <DocumentDetailSection title={t('Історія')} subtitle={String(historySpecifications.length)} stacked>
-            {historySpecifications.length === 0 ? (
-              <div className="product-specification-empty">
-                <Text size="sm">{t(specifications.length === 0 ? 'Специфікацій не знайдено' : 'Історію не знайдено')}</Text>
-              </div>
-            ) : (
-              <Stack gap={10}>
-                {historySpecifications.map((specification, index) => (
-                  <Stack className="product-specification-history-item" gap={8} key={specification.NetUid || specification.Id || index}>
-                    <SpecificationCodeChips specification={specification} />
-                    <SpecificationMetadata specification={specification} />
-                  </Stack>
-                ))}
-              </Stack>
-            )}
-          </DocumentDetailSection>
+          <ProductSpecificationHistory items={historySpecifications} hasCurrent={Boolean(currentSpecification)} />
         </div>
       </DocumentDetailLayout>
       <AppModalFooter>
@@ -1765,6 +1711,28 @@ function ProductSpecificationPanel({
     </>
   )
 }
+
+const ProductSpecificationHistory = memo(function ProductSpecificationHistory({ items, hasCurrent }: { items: ProductSpecification[]; hasCurrent: boolean }) {
+  const { t } = useI18n()
+  return (
+    <DocumentDetailSection title={t('Історія')} subtitle={String(items.length)} stacked>
+      {items.length === 0 ? (
+        <div className="product-specification-empty">
+          <Text size="sm">{t(!hasCurrent ? 'Специфікацій не знайдено' : 'Історію не знайдено')}</Text>
+        </div>
+      ) : (
+        <Stack gap={10}>
+          {items.map((specification, index) => (
+            <Stack className="product-specification-history-item" gap={8} key={specification.NetUid || specification.Id || index}>
+              <SpecificationCodeChips specification={specification} />
+              <SpecificationMetadata specification={specification} />
+            </Stack>
+          ))}
+        </Stack>
+      )}
+    </DocumentDetailSection>
+  )
+})
 
 function SpecificationCodeChips({ specification }: { specification: ProductSpecification }) {
   const { t } = useI18n()
@@ -2765,26 +2733,6 @@ function createProductEditForm(product: Product): ProductEditForm {
     Volume: product.Volume || '',
     Weight: typeof product.Weight === 'number' ? product.Weight : null,
   }
-}
-
-function getProductImageKey(image: ProductImage): string {
-  if (image.NetUid) {
-    return `net:${image.NetUid}`
-  }
-
-  if (typeof image.Id === 'number') {
-    return `id:${image.Id}`
-  }
-
-  if (image.FileName || image.ImageUrl) {
-    return `file:${image.FileName || ''}:${image.ImageUrl || ''}`
-  }
-
-  return ''
-}
-
-function revokeFilePreviewUrls(urls: string[]) {
-  urls.forEach((url) => URL.revokeObjectURL(url))
 }
 
 function cloneProductPlacements(placements: ProductPlacement[]): ProductPlacementDraft[] {
