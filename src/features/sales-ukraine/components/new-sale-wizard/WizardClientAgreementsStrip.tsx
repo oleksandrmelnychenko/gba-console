@@ -66,7 +66,7 @@ export const WizardClientAgreementsStrip = memo(function WizardClientAgreementsS
   )
 })
 
-function WizardAgreementCard({
+const WizardAgreementCard = memo(function WizardAgreementCard({
   clientAgreement,
   isSelected,
   onSelect,
@@ -159,7 +159,7 @@ function WizardAgreementCard({
       </Box>
     </UnstyledButton>
   )
-}
+})
 
 function formatAgreementAmount(value: number): string {
   return agreementAmountFormatter.format(Math.round(value * 100) / 100)

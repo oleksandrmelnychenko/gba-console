@@ -11,7 +11,7 @@ type Options = {
   selectNextAgreement: () => void
   selectPreviousAgreement: () => void
   setQuery: (value: string) => void
-  handleQueryChange: (value: string) => void
+  handleQueryChange: (value: string) => boolean | void
   onRequestClose?: () => void
 }
 
@@ -19,10 +19,10 @@ export function useWizardClientKeyboard(options: Options) {
   const { state: keyboardState, setState } = useWizardKeyboard(0)
   const latestRef = useRef(options)
   useLayoutEffect(() => { latestRef.current = options })
-  const { hasOpenOverlay, navigation: { cancelPendingFocus } } = options
+  const { hasOpenOverlay, navigation: { cancelPendingFocus, cancelPendingMove } } = options
   useLayoutEffect(() => {
-    if (hasOpenOverlay) cancelPendingFocus()
-  }, [hasOpenOverlay, cancelPendingFocus])
+    if (hasOpenOverlay) { cancelPendingFocus(); cancelPendingMove() }
+  }, [hasOpenOverlay, cancelPendingFocus, cancelPendingMove])
 
   // Both the document capture listener and the wizard's React dispatcher use
   // the same rules, so portals and focus changes cannot bypass overlay guards.
@@ -50,6 +50,7 @@ export function useWizardClientKeyboard(options: Options) {
       case 'ArrowLeft':
       case 'ArrowRight':
         if (state !== 'ClientSelection' && state !== 'ClientAgreementSelection') return false
+        navigation.cancelPendingMove()
         setState('ClientAgreementSelection')
         if (hotkey === 'ArrowRight') current.selectNextAgreement()
         else current.selectPreviousAgreement()
@@ -90,9 +91,10 @@ export function useWizardClientKeyboard(options: Options) {
 
   const handleSearchChange = useCallback((value: string) => {
     setState('ClientSearch')
+    latestRef.current.navigation.cancelPendingMove()
+    if (latestRef.current.handleQueryChange(value) === false) return
     latestRef.current.unselectClient()
     latestRef.current.navigation.applySearchResults([])
-    latestRef.current.handleQueryChange(value)
   }, [setState])
   return { keyboardState, handleSearchChange }
 }

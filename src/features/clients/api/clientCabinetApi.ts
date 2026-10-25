@@ -177,8 +177,9 @@ export async function getSubClientAgreements(netId: string): Promise<ClientAgree
   return normalizeCabinetList<ClientAgreement>(result)
 }
 
-export async function getClientOrderedProducts(netId: string): Promise<ClientOrderedProduct[]> {
+export async function getClientOrderedProducts(netId: string, signal?: AbortSignal): Promise<ClientOrderedProduct[]> {
   const result = await apiRequest<unknown>('/clients/get/orders/items', {
+    ...(signal ? { signal } : {}),
     query: {
       netId,
     },

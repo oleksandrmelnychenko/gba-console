@@ -12,6 +12,7 @@ type Options = {
 export function useWizardClientCarousel(options: Options) {
   const [carousel, setCarousel] = useState(WIZARD_CLIENT_CAROUSEL_INITIAL)
   const carouselRef = useRef(carousel)
+  const pendingMoveRef = useRef<WizardClientCarouselState | null>(null)
   const canLoadMoreRef = useRef(false)
   const latestRef = useRef(options)
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -22,6 +23,7 @@ export function useWizardClientCarousel(options: Options) {
     carouselRef.current = next
     setCarousel(next)
   }, [])
+  const cancelPendingMove = useCallback(() => { pendingMoveRef.current = null }, [])
   const cancelPendingFocus = useCallback(() => {
     if (focusFrameRef.current !== null) window.cancelAnimationFrame(focusFrameRef.current)
     focusFrameRef.current = null
@@ -36,11 +38,13 @@ export function useWizardClientCarousel(options: Options) {
   }, [cancelPendingFocus])
 
   const showClient = useCallback((client: Client) => {
+    pendingMoveRef.current = null
     canLoadMoreRef.current = false
     const { bottom, top } = buildWizardClientStacks(client)
     publish({ dataBottom: bottom, dataTop: top, selected: client, showDetails: true })
   }, [publish])
   const applySearchResults = useCallback((clients: Client[]) => {
+    pendingMoveRef.current = null
     if (clients.length === 1) {
       showClient(clients[0])
       latestRef.current.confirmClient(clients[0])
@@ -50,18 +54,17 @@ export function useWizardClientCarousel(options: Options) {
     canLoadMoreRef.current = clients.length > 1
     publish({ dataBottom: clients.slice(middle), dataTop: clients.slice(0, middle), selected: null, showDetails: false })
   }, [publish, showClient])
-  const appendSearchResults = useCallback((clients: Client[]) => {
-    if (!canLoadMoreRef.current || !clients.length) return
-    const current = carouselRef.current
-    publish({ ...current, dataBottom: [...current.dataBottom, ...clients] })
-  }, [publish])
   const move = useCallback((direction: 'up' | 'down') => {
+    pendingMoveRef.current = null
     const current = carouselRef.current
     const item = direction === 'up' ? current.dataTop.at(-1) : current.dataBottom[0]
     // At the boundary retain the selected client and agreement instead of
     // clearing the business selection while leaving the same card visible.
     if (!item) {
-      if (direction === 'down' && canLoadMoreRef.current) void latestRef.current.loadMore()
+      if (direction === 'down' && canLoadMoreRef.current) {
+        pendingMoveRef.current = current
+        void latestRef.current.loadMore()
+      }
       return
     }
     const previous = current.selected && (current.selected.Id ?? 0) > 0 ? [current.selected] : []
@@ -77,13 +80,24 @@ export function useWizardClientCarousel(options: Options) {
     if (isWizardSaleClientSelectable(item)) latestRef.current.confirmClient(item, { debounceDetails: true })
     else latestRef.current.unselectClient()
   }, [publish])
+  const appendSearchResults = useCallback((clients: Client[]) => {
+    if (!canLoadMoreRef.current || !clients.length) return
+    const current = carouselRef.current
+    const advance = pendingMoveRef.current === current
+    pendingMoveRef.current = null
+    publish({ ...current, dataBottom: [...current.dataBottom, ...clients] })
+    // Coalesce repeated boundary keys into one move, only if the user is still waiting here.
+    if (advance) move('down')
+  }, [publish, move])
   const confirmFocusedClient = useCallback(() => {
+    pendingMoveRef.current = null
     const item = carouselRef.current.selected
     if (!item) return
     if (item.SubClients?.length) showClient(item)
     latestRef.current.confirmClient(item)
   }, [showClient])
   const pickClient = useCallback((client: Client) => {
+    pendingMoveRef.current = null
     const current = carouselRef.current
     const all = [...current.dataTop, ...(current.selected ? [current.selected] : []), ...current.dataBottom]
     const key = String(client.NetUid || client.Id || '')
@@ -96,13 +110,14 @@ export function useWizardClientCarousel(options: Options) {
     focusSearchInput()
   }, [publish, focusSearchInput])
   const hideDetails = useCallback(() => {
+    pendingMoveRef.current = null
     const current = carouselRef.current
     if (current.showDetails) publish({ ...current, showDetails: false })
   }, [publish])
   const getCarousel = useCallback(() => carouselRef.current, [])
 
   return { carousel, getCarousel, searchInputRef, showClient, applySearchResults, appendSearchResults,
-    move, confirmFocusedClient, pickClient, hideDetails, focusSearchInput, cancelPendingFocus }
+    move, confirmFocusedClient, pickClient, hideDetails, focusSearchInput, cancelPendingFocus, cancelPendingMove }
 }
 
 export type WizardClientCarouselController = ReturnType<typeof useWizardClientCarousel>

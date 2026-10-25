@@ -9,10 +9,11 @@ import { dispatchWizardKey, getWizardKeyboardState, initializeWizardKeyboard, re
 const clients: Client[] = [1, 2, 3, 4].map((id) => ({ Id: id, NetUid: `client-${id}`, FullName: `Client ${id}`, IsActive: true }))
 const mocks = { confirm: vi.fn(), unselect: vi.fn(), loadMore: vi.fn(async () => {}), next: vi.fn(), previous: vi.fn(),
   query: vi.fn(), clear: vi.fn(), close: vi.fn() }
-function Harness({ overlay = false, onClose = mocks.close }: { overlay?: boolean; onClose?: () => void }) {
+function Harness({ overlay = false, onClose = mocks.close, page }: { overlay?: boolean; onClose?: () => void; page?: Client[] }) {
   const navigation = useWizardClientCarousel({ confirmClient: mocks.confirm, unselectClient: mocks.unselect, loadMore: mocks.loadMore })
-  const { applySearchResults, carousel, pickClient, searchInputRef } = navigation
+  const { applySearchResults, appendSearchResults, carousel, pickClient, searchInputRef } = navigation
   useEffect(() => applySearchResults(clients), [applySearchResults])
+  useEffect(() => { if (page) appendSearchResults(page) }, [page, appendSearchResults])
   const { keyboardState, handleSearchChange } = useWizardClientKeyboard({ navigation, hasOpenOverlay: overlay,
     selectNextAgreement: mocks.next, selectPreviousAgreement: mocks.previous, unselectClient: mocks.unselect,
     handleQueryChange: mocks.query, setQuery: mocks.clear, onRequestClose: onClose })
@@ -160,4 +161,25 @@ describe('client keyboard navigation', () => {
     act(() => { initializeWizardKeyboard(1); fireEvent.keyDown(document.body, { key: 'ArrowDown' }) })
     expect(mocks.confirm).not.toHaveBeenCalled()
   })
+
+  it('preserves the carousel and agreement selection for an unchanged effective search', () => {
+    const ui = render(<Harness />)
+    const input = ui.getByLabelText('Client search')
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    mocks.query.mockReturnValueOnce(false)
+    fireEvent.change(input, { target: { value: ' same query ' } })
+    expect(mocks.unselect).not.toHaveBeenCalled()
+    expect(ui.getByTestId('selection').textContent).toBe('client-3')
+  })
+
+
+  it('does not advance a waiting carousel when a page arrives after a drawer opens', () => {
+    const ui = render(<Harness />)
+    const input = ui.getByLabelText('Client search')
+    for (let i = 0; i < 3; i += 1) fireEvent.keyDown(input, { key: 'ArrowDown' })
+    expect(ui.getByTestId('selection').textContent).toBe('client-4')
+    ui.rerender(<Harness overlay page={[{ Id: 5, NetUid: 'client-5' }]} />)
+    expect(ui.getByTestId('selection').textContent).toBe('client-4')
+  })
+
 })

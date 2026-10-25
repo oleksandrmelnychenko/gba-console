@@ -64,12 +64,21 @@
       window.performanceFixture.requests.push(url.pathname+url.search)
       if(url.pathname.endsWith('/clients/sales-ukraine/create/search')) {
         const offset=Number(url.searchParams.get('offset')),limit=Number(url.searchParams.get('limit'))
-        return Promise.resolve(response(pickerClients.slice(offset,offset+limit)))
+        const page=pickerClients.slice(offset,offset+limit)
+        if(offset>0&&window.performanceFixture.holdClientPages) return new Promise((resolve,reject)=>{
+          window.performanceFixture.finishClientPage=()=>resolve(response(page))
+          options.signal?.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true})
+        })
+        return Promise.resolve(response(page))
       }
       const pickerNetId=url.searchParams.get('netId')||url.searchParams.get('clientNetId')||''
       if(pickerNetId.startsWith('picker-client-')) {
         const id=Number(pickerNetId.split('-').at(-1))
         if(url.pathname.endsWith('/agreements/client/all')) return Promise.resolve(response([{NetUid:`picker-agreement-${id}`,ClientId:id,Client:{Id:id},Agreement:{IsActive:true,PricingId:1,Name:`Договір клієнта ${id}`,Currency:{Code:'EUR'}}}]))
+        if(url.pathname.endsWith('/clients/get/orders/items')) return new Promise((resolve,reject)=>{
+          window.performanceFixture.finishOrderedProducts=()=>resolve(response([{ProductVendorCode:'ORDER-001',ProductName:`Замовлення клієнта ${id}`,Qty:3}]))
+          options.signal?.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true})
+        })
         if(url.pathname.endsWith('/clients/get/identity-attention')) return holdClientDetail(url,options,null)
         if(url.pathname.endsWith('/clients/get/debt/grouped')) return holdClientDetail(url,options,[{Debt:{Total:id,Days:1}}])
         if(url.pathname.endsWith('/sales/all/register')) return Promise.resolve(response([{SaleStatistic:{Sale:{Id:id,NetUid:`picker-sale-${id}`,SaleNumber:{Value:`DOC-${id}`},Created:'2026-10-25T10:00:00Z',BaseLifeCycleStatus:{SaleLifeCycleType:0},ClientAgreement:{Client:{Id:id},Agreement:{Currency:{Code:'EUR'}}},TotalAmount:100,Order:{OrderItems:[]}}}}]))

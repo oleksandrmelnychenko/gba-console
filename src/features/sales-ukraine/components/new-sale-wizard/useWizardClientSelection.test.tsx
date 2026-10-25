@@ -205,4 +205,21 @@ describe('wizard client selection', () => {
     expect(currentSignal.aborted).toBe(true)
   })
 
+
+  it('retries only failed details while preserving the chosen agreement and register', async () => {
+    mocks.debts.mockRejectedValueOnce(new Error('offline'))
+    const props = options()
+    const { result } = renderHook(useWizardClientSelection, { initialProps: props })
+    await act(async () => result.current.confirmClient(client(1)))
+    act(() => result.current.selectAgreement(first))
+    props.onAgreementChange.mockClear()
+    await act(async () => result.current.confirmClient(client(1)))
+    expect(result.current.selectedAgreement).toBe(first)
+    expect(mocks.debts).toHaveBeenCalledTimes(2)
+    expect(mocks.agreements).toHaveBeenCalledOnce()
+    expect(mocks.identity).toHaveBeenCalledOnce()
+    expect(props.fetchRegister).toHaveBeenCalledOnce()
+    expect(props.onAgreementChange).not.toHaveBeenCalled()
+  })
+
 })

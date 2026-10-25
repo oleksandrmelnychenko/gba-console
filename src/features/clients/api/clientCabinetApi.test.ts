@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   changeClientPassword,
+  getClientOrderedProducts,
   createClientWorkplace,
   updateClientWorkplace,
   uploadClientContract,
@@ -237,3 +238,11 @@ function createWorkplacePayload(): ClientWorkplace {
     ],
   }
 }
+
+
+it('forwards cancellation to ordered-product reads', async () => {
+  apiRequestMock.mockReset().mockResolvedValue([])
+  const signal = new AbortController().signal
+  await getClientOrderedProducts('client-a', signal)
+  expect(apiRequestMock).toHaveBeenCalledWith('/clients/get/orders/items', { query: { netId: 'client-a' }, signal })
+})

@@ -12,6 +12,7 @@ export function useWizardClientSearch({ permissionFlow, onResults, onAppendResul
 }) {
   const [query, setQueryValue] = useState('')
   const queryRef = useRef('')
+  const requestedQueryRef = useRef<string | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const searchRef = useRef<AbortController | null>(null)
   const pageRef = useRef<AbortController | null>(null)
@@ -36,25 +37,35 @@ export function useWizardClientSearch({ permissionFlow, onResults, onAppendResul
     offsetRef.current = 0
     exhaustedRef.current = false
     loadedRef.current = false
+    requestedQueryRef.current = null
     seenRef.current.clear()
     return cancel
   }, [permissionFlow, cancel])
 
   const setQuery = useCallback((value: string) => {
     cancel()
+    requestedQueryRef.current = null
     queryRef.current = value
     setQueryValue(value)
   }, [cancel])
 
-  const handleQueryChange = useCallback((value: string) => {
+  // false tells keyboard navigation to retain the current carousel and business selection.
+  const handleQueryChange = useCallback((value: string): boolean => {
+    const effectiveQuery = value.trim()
+    if (requestedQueryRef.current === effectiveQuery && (timerRef.current !== null || searchRef.current || loadedRef.current)) {
+      queryRef.current = value
+      setQueryValue(value)
+      return false
+    }
     setQuery(value)
+    requestedQueryRef.current = effectiveQuery
     offsetRef.current = 0
     exhaustedRef.current = false
     loadedRef.current = false
     seenRef.current.clear()
     if (value.trim().length < MIN_QUERY_LENGTH) {
       latestRef.current.onResults([])
-      return
+      return true
     }
     timerRef.current = setTimeout(() => {
       timerRef.current = null
@@ -72,6 +83,7 @@ export function useWizardClientSearch({ permissionFlow, onResults, onAppendResul
         if (searchRef.current === controller) searchRef.current = null
       })
     }, 260)
+    return true
   }, [setQuery, permissionFlow])
 
   const runVirtualLoad = useCallback(async () => {
@@ -84,12 +96,7 @@ export function useWizardClientSearch({ permissionFlow, onResults, onAppendResul
       if (controller.signal.aborted) return
       offsetRef.current += data.length
       exhaustedRef.current = data.length === 0
-      const added = data.filter((client) => {
-        const key = clientKey(client)
-        if (key && seenRef.current.has(key)) return false
-        if (key) seenRef.current.add(key)
-        return true
-      })
+      const added = takeUnseenClients(data, seenRef.current)
       if (added.length > 0) latestRef.current.onAppendResults(added)
     } catch {
       // Preserve the server offset so a failed page can be retried.
@@ -103,4 +110,13 @@ export function useWizardClientSearch({ permissionFlow, onResults, onAppendResul
 
 function clientKey(client: Client): string {
   return client.NetUid || (client.Id ? String(client.Id) : '')
+}
+
+function takeUnseenClients(clients: Client[], seen: Set<string>): Client[] {
+  return clients.filter(client => {
+    const key = clientKey(client)
+    if (key && seen.has(key)) return false
+    if (key) seen.add(key)
+    return true
+  })
 }

@@ -1,9 +1,9 @@
 import { Box, Stack, Text } from '@mantine/core'
 import { UserSearch } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useCallback, type ReactNode } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getClientFolderChildren } from '../../../clients/clientFolder'
-import type { Client } from '../../../clients/types'
+import type { Client, ClientAgreement } from '../../../clients/types'
 import type { SalesUkraineClientAgreement, SalesUkraineSale } from '../../types'
 import { WizardClientAgreementsStrip } from './WizardClientAgreementsStrip'
 import { WizardClientCarousel } from './WizardClientCarousel'
@@ -68,7 +68,7 @@ export function NewSaleClientStep({
     unselectClient: () => unselectClient(),
     loadMore: () => runVirtualLoad(),
   })
-  const { carousel, searchInputRef, pickClient } = navigation
+  const { carousel, searchInputRef, pickClient, cancelPendingMove } = navigation
   const {
     registryItems, isRegistryLoading, statusFilter, saleSearch, dateFrom, dateTo,
     resetRegister, fetchRegister, handleStatusChange, handleSaleSearchChange,
@@ -82,6 +82,10 @@ export function NewSaleClientStep({
     onClientChange, onClientResolved, onAgreementChange, resetRegister, fetchRegister,
     onShowClient: navigation.showClient,
   })
+  const handleSelectAgreement = useCallback((agreement: ClientAgreement) => {
+    cancelPendingMove()
+    selectAgreement(agreement)
+  }, [cancelPendingMove, selectAgreement])
   const { query, setQuery, handleQueryChange, runVirtualLoad } = useWizardClientSearch({
     permissionFlow,
     onResults: navigation.applySearchResults,
@@ -147,7 +151,7 @@ export function NewSaleClientStep({
                   isLoading={agreementsLoading}
                   agreements={agreements}
                   selectedKey={selectedAgreementKey}
-                  onSelect={selectAgreement}
+                  onSelect={handleSelectAgreement}
                 />
               </Box>
               <WizardClientRegistry

@@ -93,4 +93,38 @@ describe('wizard client search', () => {
     await tick()
     expect(mocks.search).toHaveBeenCalledOnce()
   })
+
+  it('preserves a pending search and loaded pagination when only surrounding whitespace changes', async () => {
+    const pending = deferred()
+    mocks.search.mockReturnValueOnce(pending.promise)
+    const props = options()
+    const { result } = renderHook(useWizardClientSearch, { initialProps: props })
+    act(() => result.current.handleQueryChange('query'))
+    await tick()
+    const signal = mocks.search.mock.calls[0][3] as AbortSignal
+    act(() => { expect(result.current.handleQueryChange(' query ')).toBe(false) })
+    expect(signal.aborted).toBe(false)
+    await act(async () => pending.resolve([client(1), client(2)]))
+    act(() => { expect(result.current.handleQueryChange('query ')).toBe(false) })
+    await tick()
+    expect(mocks.search).toHaveBeenCalledOnce()
+    mocks.search.mockResolvedValueOnce([client(3)])
+    await act(() => result.current.runVirtualLoad())
+    expect(mocks.search.mock.calls[1][2]).toBe(2)
+    expect(props.onAppendResults).toHaveBeenCalledExactlyOnceWith([client(3)])
+  })
+
+  it('permits retrying the same failed search and searching it again after Escape', async () => {
+    mocks.search.mockRejectedValueOnce(new Error('offline'))
+    const { result } = renderHook(useWizardClientSearch, { initialProps: options() })
+    act(() => result.current.handleQueryChange('query'))
+    await tick()
+    act(() => result.current.handleQueryChange('query'))
+    await tick()
+    expect(mocks.search).toHaveBeenCalledTimes(2)
+    act(() => { result.current.setQuery(''); result.current.handleQueryChange('query') })
+    await tick()
+    expect(mocks.search).toHaveBeenCalledTimes(3)
+  })
+
 })

@@ -1,11 +1,10 @@
 import { TableChip } from '../../../../shared/ui/TableChip'
 import { Alert, Group, Loader, Table, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { memo } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../../shared/ui/AppDrawer'
-import { getClientOrderedProducts } from '../../../clients/api/clientCabinetApi'
-import type { ClientOrderedProduct } from '../../../clients/types'
+import { useWizardOrderedProducts } from './useWizardOrderedProducts'
 
 export function WizardOrderedProductsDrawer({
   clientNetId,
@@ -17,51 +16,19 @@ export function WizardOrderedProductsDrawer({
   onClose: () => void
 }) {
   const { t } = useI18n()
+  const products = useWizardOrderedProducts(clientNetId, opened)
 
   return (
     <AppDrawer opened={opened} position="right" size="standard" title={t('Замовлені товари')} onClose={onClose}>
-      {opened && clientNetId && <WizardOrderedProductsContent clientNetId={clientNetId} />}
+      {opened && clientNetId && <WizardOrderedProductsContent {...products} />}
     </AppDrawer>
   )
 }
 
-function WizardOrderedProductsContent({ clientNetId }: { clientNetId: string }) {
+const WizardOrderedProductsContent = memo(function WizardOrderedProductsContent({
+  products, isLoading, error,
+}: ReturnType<typeof useWizardOrderedProducts>) {
   const { t } = useI18n()
-  const [products, setProducts] = useState<ClientOrderedProduct[]>([])
-  const [isLoading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-
-    async function load(netId: string) {
-      setLoading(true)
-      setError(null)
-
-      try {
-        const next = await getClientOrderedProducts(netId)
-
-        if (!cancelled) {
-          setProducts(next)
-        }
-      } catch (loadError) {
-        if (!cancelled) {
-          setProducts([])
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити дані'))
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void load(clientNetId)
-
-    return () => {
-      cancelled = true
-    }
-  }, [clientNetId, t])
 
   if (isLoading) {
     return (
@@ -109,4 +76,4 @@ function WizardOrderedProductsContent({ clientNetId }: { clientNetId: string }) 
       </Table.Tbody>
     </Table>
   )
-}
+})

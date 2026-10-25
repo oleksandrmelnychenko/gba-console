@@ -106,4 +106,28 @@ describe('client carousel controller', () => {
     expect(result.current.carousel.dataBottom.map(item => item.Id)).toEqual([18, 19, 20, 21, 22])
   })
 
+
+  it('fulfills one queued downward movement when a pending page arrives', () => {
+    const { result } = setup()
+    act(() => { result.current.applySearchResults(clients); result.current.move('down'); result.current.move('down') })
+    act(() => { result.current.move('down'); result.current.move('down') })
+    expect(result.current.carousel.selected?.Id).toBe(4)
+    act(() => result.current.appendSearchResults([client(5), client(6)]))
+    expect(result.current.carousel.selected?.Id).toBe(5)
+    expect(result.current.carousel.dataBottom.map(item => item.Id)).toEqual([6])
+  })
+
+  it.each(['up', 'confirm', 'search'] as const)('cancels pending navigation after %s', action => {
+    const { result } = setup()
+    act(() => { result.current.applySearchResults(clients); result.current.move('down'); result.current.move('down'); result.current.move('down') })
+    act(() => {
+      if (action === 'up') result.current.move('up')
+      if (action === 'confirm') result.current.confirmFocusedClient()
+      if (action === 'search') result.current.applySearchResults([client(10), client(11)])
+    })
+    const selected = result.current.carousel.selected
+    act(() => result.current.appendSearchResults([client(5)]))
+    expect(result.current.carousel.selected).toBe(selected)
+  })
+
 })
