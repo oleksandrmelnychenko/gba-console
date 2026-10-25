@@ -28,7 +28,7 @@ const unsupported = new Set(['onec', 'comparison', 'xyz', 'revenuecomparison', '
   'valuationclientagreementid', 'ordering', 'filterexpression', 'topgroups', 'threshold', 'hidezero',
   'abcclassification', 'returnsonly', 'discountmarkup',
   'provideddiscounts', 'priceanalysis'])
-const invalid = 'Валовий прибуток GBA підтримує доступні групування Дата/Організація, показники й підтверджені точні відбори.'
+const invalid = 'Валовий прибуток GBA підтримує підтверджені сервером групування, показники й точні відбори.'
 
 function validDate(value: string): boolean {
   if (!/^\d{4}-\d\d-\d\d$/.test(value)) return false

@@ -11,6 +11,7 @@ import { FENIX_BUYERS_ROOT_ID } from '../data/nativeExactFilters'
 import { ReportsStocksPage } from './ReportsStocksPage'
 import { WORKBOOK_FILES } from '../testing/workbookFiles'
 import { currentFinancialDataset } from '../data/currentFinancialAxes.test-fixtures'
+import { productTimeDataset } from '../data/currentFinancialProductTimeAxes.test-fixtures'
 import { changeReportPeriod } from '../testing/reportPeriod'
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true, user: { NetUid: 'profit-mode-owner' } }) }))
 vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(), createStockReport: vi.fn(), searchDatasetReportValues: vi.fn() }))
@@ -116,4 +117,28 @@ it('selects client/agreement axes and blocks a mode switch without dropping date
   mode('Поточні документи GBA')
   const after = await submitted(view, 2)
   expect(after).toEqual(before)
+})
+
+it('selects product/month axes, keeps them during an incompatible mode switch and submits the exact retained settings', async () => {
+  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, productTimeDataset, profitSupplierDataset])
+  const view = await openWorkbook('Валовий прибуток за днем')
+  fireEvent.click(screen.getByRole('button', { name: 'Видалити Дата' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Видалити Організація' }))
+  for (const [axis, label] of [['рядків', 'Товар'], ['стовпців', 'Місяць']]) {
+    fireEvent.click(screen.getByRole('button', { name: `Додати поле: Групування ${axis}` }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: label }))
+  }
+  expect(screen.getByText('У файлі кожен місяць у колонках буде окремим аркушем.')).toBeTruthy()
+  changeReportPeriod({ from: '2026-10-17', to: '2026-10-23' })
+  const before = await submitted(view, 1)
+  expect(before.sorted.Row.map(f => f.type)).toEqual([5])
+  expect(before.sorted.Col.map(f => f.type)).toEqual([2])
+  mode('Збережені регістри 1С')
+  expect(screen.getAllByText(/Групування за товаром, роком, кварталом і місяцем доступне лише/).length).toBeGreaterThan(0)
+  await act(async () => { fireEvent.submit(view.container.querySelector('form')!) })
+  expect(createStockReport).toHaveBeenCalledTimes(1)
+  expect(screen.getByRole('button', { name: 'Видалити Товар' })).toBeTruthy()
+  expect(screen.getByRole('button', { name: 'Видалити Місяць' })).toBeTruthy()
+  mode('Поточні документи GBA')
+  expect(await submitted(view, 2)).toEqual(before)
 })

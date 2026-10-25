@@ -138,7 +138,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
 function dimensionCaptions(schema: readonly { Caption: string; Identity?: string }[], axes: NativeReportPreviewAxis[]) {
   const ambiguous = schema.map((field, index) => {
     const byCaption = new Map<string, Set<string>>()
-    if (['Organization', 'CustomerName', 'CustomerContract'].includes(field.Identity ?? '')) for (const axis of axes) {
+    if (['Organization', 'Product', 'CustomerName', 'CustomerContract'].includes(field.Identity ?? '')) for (const axis of axes) {
       const value = axis.Values[index], id = value?.Identity?.Value
       if (value?.Identity) byCaption.set(value.Caption, (byCaption.get(value.Caption) ?? new Set()).add(`${value.Identity.Kind}:${id}`))
     }

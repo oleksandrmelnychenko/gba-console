@@ -1,5 +1,6 @@
 import { financialDataset, axisFields } from '../data/financialAxes.test-fixtures'
 import { currentFinancialDataset, currentFinancialRequest } from '../data/currentFinancialAxes.test-fixtures'
+import { productTimeDataset, productTimeRequest } from '../data/currentFinancialProductTimeAxes.test-fixtures'
 import { requestProfitReadMode } from '../data/profitReadMode'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
@@ -77,5 +78,26 @@ it('requires current capability before generation, preview or saving client/agre
   const saved = await saveServerReportTemplate({ Name: 'Клієнти', Data: request }, undefined, currentFinancialDataset)
   expect(saved.Data.sorted).toEqual(request.sorted)
   expect(requestProfitReadMode(saved.Data)).toBe(0)
+  expect(request).toEqual(before)
+})
+
+it.each([[[5], [2]], [[0, 5], []]])('keeps product/time axes %j / %j in generate/save and rejects old-server requests before dispatch', async (rows, cols) => {
+  const request = productTimeRequest(rows, cols), before = structuredClone(request)
+  for (const dataset of [undefined, financialDataset, currentFinancialDataset]) {
+    await expect(createStockReport(request, dataset)).rejects.toThrow('не підтвердив')
+    await expect(previewStockReport(request, dataset)).rejects.toThrow('не підтвердив')
+    await expect(saveServerReportTemplate({ Name: 'Товари', Data: request }, undefined, dataset)).rejects.toThrow('не підтвердив')
+  }
+  expect(apiRequest).not.toHaveBeenCalled()
+  vi.mocked(apiRequest).mockResolvedValue({ document: {} })
+  await createStockReport(request, productTimeDataset)
+  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', expect.objectContaining({ body: request }))
+  vi.mocked(apiRequest).mockResolvedValue({ Id: '10000000-0000-4000-8000-000000000035', Revision: 1, Name: 'Товари',
+    Data: { DataSource: 35, From: request.from, To: request.to, Sorted: request.sorted, Selections: request.selections,
+      ProfitReadMode: 0, DayOrganizationBasis: 0 } })
+  const saved = await saveServerReportTemplate({ Name: 'Товари', Data: request }, undefined, productTimeDataset)
+  expect(saved.Data.sorted).toEqual(request.sorted)
+  expect(saved.Data.from).toBe(request.from)
+  expect(saved.Data.to).toBe(request.to)
   expect(request).toEqual(before)
 })

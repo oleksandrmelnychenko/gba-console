@@ -1,5 +1,4 @@
-import { requestFinancialAxesCapability } from './financialAxes'
-import { currentFinancialAxesError } from './currentFinancialAxes'
+import { financialAxesConfigurationError, requestFinancialAxesCapability } from './financialAxes'
 import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis } from './currentVparivanieAnalysis'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import type { ReportDataset, ReportRequestBody } from '../types'
@@ -78,7 +77,7 @@ export function reportAxesPolicy(dataset: ReportDataset | undefined, data: Repor
   return { config, fixed, rowsOnly: config ? config.axisMode === 'profitRows' || config.axisMode === 'rowsOnly' || config.allowedColumns.length === 0 : fixed || data.dataSource === 13 }
 }
 export function reportConfigurationError(data: ReportRequestBody, dataset?: ReportDataset, draft = false): string | null {
-  const currentAxesError = currentFinancialAxesError(data, dataset)
+  const currentAxesError = financialAxesConfigurationError(data, dataset)
   if (currentAxesError) return currentAxesError
   const warehouseKeys = Object.keys(data).filter(key => key.toLowerCase() === 'supplierwarehouse')
   const warehouse = option(data, 'supplierWarehouse')

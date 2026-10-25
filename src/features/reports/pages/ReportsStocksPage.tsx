@@ -23,8 +23,7 @@ import {
   OriginalRevenueReportPanel,
   OriginalBuyerSalesShareReportPanel,
 } from './lazyReportDialogs'
-import { financialAxesCapability } from '../data/financialAxes'
-import { currentFinancialAxesError } from '../data/currentFinancialAxes'
+import { financialAxesCapability, financialAxesConfigurationError } from '../data/financialAxes'
 import { ReportsSubmenu } from './workbook-desk/ReportsSubmenu'
 import type { PublishedReportTab } from './workbook-desk/publishedReportTabs'
 import { ReportValueAutocomplete } from './ReportValueAutocomplete'
@@ -2028,7 +2027,7 @@ function LegacyReportBuilder({
   const analysis = !!currentVparivanieAnalysisCapability(dataset) && !!request && !!requestCurrentVparivanieAnalysis(request)
   const fixedAxes = policy.fixed
   const rowsOnly = policy.rowsOnly
-  const currentAxesError = request ? currentFinancialAxesError(request, dataset) : null
+  const currentAxesError = request ? financialAxesConfigurationError(request, dataset) : null
   const allowedGroupingTypes = new Set(groupingOptions.map(item => item.type))
   const lockedGroupingTypes = new Set(analysis ? [74] : [])
   const selectedGroupingTypes = new Set([...rowGroups, ...colGroups].map(item => item.type))
@@ -2154,6 +2153,10 @@ function LegacyReportBuilder({
         {colGroups[0].type === 4 ? 'У файлі кожна організація в колонках буде окремим аркушем.'
           : colGroups[0].type === 12 ? 'У файлі кожен клієнт у колонках буде окремим аркушем.'
           : colGroups[0].type === 15 ? 'У файлі кожен договір у колонках буде окремим аркушем.'
+          : colGroups[0].type === 5 ? 'У файлі кожен товар у колонках буде окремим аркушем.'
+          : colGroups[0].type === 0 ? 'У файлі кожен рік у колонках буде окремим аркушем.'
+          : colGroups[0].type === 1 ? 'У файлі кожен квартал у колонках буде окремим аркушем.'
+          : colGroups[0].type === 2 ? 'У файлі кожен місяць у колонках буде окремим аркушем.'
           : 'У файлі кожен день у колонках буде окремим аркушем.'}
       </Text> : null}
       {currentAxesError ? <Alert color="orange" title="Перевірте групування">{currentAxesError}</Alert> : null}

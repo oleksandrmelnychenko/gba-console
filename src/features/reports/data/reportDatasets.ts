@@ -1,4 +1,5 @@
 import { currentFinancialAxesCapability, usesCurrentFinancialAxes } from './currentFinancialAxes'
+import { currentFinancialProductTimeAxesCapability } from './currentFinancialProductTimeAxes'
 import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis } from './currentVparivanieAnalysis'
 import { reportConfigurationError } from './reportConfiguration'
 import { numberPresentationError } from './reportNumberPresentation'
@@ -131,8 +132,9 @@ FILTER_KEYS.set(61, 'SourceBuyerRegionCode')
 export function datasetGroupings(dataset: ReportDataset | undefined, data?: object): ReportGroupingItem[] {
   const analysis = currentVparivanieAnalysisCapability(dataset)
   if (analysis) return analysis.groupings.map(field => ({ key: GROUPING_KEYS.get(field.type) ?? field.name, label: field.name, type: field.type }))
-  const current = data && usesCurrentFinancialAxes(data) ? currentFinancialAxesCapability(dataset) : undefined
-  return [...(dataset?.Groupings ?? []), ...(current?.groupings ?? [])].map(field => ({ key: GROUPING_KEYS.get(field.Type) ?? field.Name, label: field.Name, type: field.Type }))
+  const current = data && usesCurrentFinancialAxes(data) ? currentFinancialProductTimeAxesCapability(dataset) ?? currentFinancialAxesCapability(dataset) : undefined
+  const fields = new Map([...(dataset?.Groupings ?? []), ...(current?.groupings ?? [])].map(field => [field.Type, field]))
+  return [...fields.values()].map(field => ({ key: GROUPING_KEYS.get(field.Type) ?? field.Name, label: field.Name, type: field.Type }))
 }
 
 export function datasetFilters(dataset: ReportDataset | undefined): Array<{ label: string; value: string; field: ReportFilterField }> {

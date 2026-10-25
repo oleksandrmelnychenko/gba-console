@@ -1,5 +1,6 @@
 import { financialDataset, axisFields } from '../data/financialAxes.test-fixtures'
 import { currentFinancialDataset, currentFinancialRequest } from '../data/currentFinancialAxes.test-fixtures'
+import { productTimeDataset, productTimeRequest } from '../data/currentFinancialProductTimeAxes.test-fixtures'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { browserTemplateImportId, useServerReportTemplates } from './useServerReportTemplates'
@@ -186,7 +187,8 @@ describe('server report templates', () => {
   })
 
   it.each([[financialDataset, [3], [4]], [currentFinancialDataset, [12], [15]],
-    [currentFinancialDataset, [12], []], [currentFinancialDataset, [12, 15], []]] as const)('passes the advertised financial capability when saving profit axes %j', async (dataset, rows, columns) => {
+    [currentFinancialDataset, [12], []], [currentFinancialDataset, [12, 15], []],
+    [productTimeDataset, [5], [2]], [productTimeDataset, [0, 5], []]] as const)('passes the advertised financial capability when saving profit axes %j', async (dataset, rows, columns) => {
     const data = defaultDatasetRequest(dataset, '2026-10-17', '2026-10-17')
     data.sorted.Row = axisFields([...rows]); data.sorted.Col = axisFields([...columns]); data.profitReadMode = 0
     const template = { Name: 'Матриця', Id: crypto.randomUUID(), Revision: 1, Data: data }
@@ -222,6 +224,31 @@ describe('server report templates', () => {
     })
     expect(saveServerReportTemplate).toHaveBeenCalledOnce()
     expect(vi.mocked(saveServerReportTemplate).mock.calls[0][2]).toBe(currentFinancialDataset)
+    expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data).toEqual(template.Data)
+    expect(template).toEqual(before)
+  })
+
+  it.each(['create', 'update', 'rename', 'copy', 'import'] as const)('preserves product/time capability and exact row-only settings during %s', async operation => {
+    const template = { Name: 'Товари за місяцями', Id: crypto.randomUUID(), Revision: 1, Data: productTimeRequest([2, 5], []) }
+    const before = structuredClone(template)
+    vi.mocked(getServerReportTemplates).mockResolvedValue([template])
+    vi.mocked(saveServerReportTemplate).mockImplementation(async request => {
+      const saved = { ...request, Revision: (request.Revision ?? 0) + 1 }
+      vi.mocked(getServerReportTemplates).mockResolvedValue([saved])
+      return saved
+    })
+    const { result } = renderHook(() => useServerReportTemplates(true, [productTimeDataset]))
+    await waitFor(() => expect(result.current.ready).toBe(true))
+    await act(async () => {
+      const answer = operation === 'create' ? await result.current.save('Копія', template.Data)
+        : operation === 'update' ? await result.current.update(template, template.Data)
+        : operation === 'rename' ? await result.current.rename(template, 'Інша назва')
+        : operation === 'copy' ? await result.current.copy(template, 'Копія')
+        : await result.current.importBrowserTemplate(template)
+      expect(answer).toMatchObject({ ok: true })
+    })
+    expect(saveServerReportTemplate).toHaveBeenCalledOnce()
+    expect(vi.mocked(saveServerReportTemplate).mock.calls[0][2]).toBe(productTimeDataset)
     expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data).toEqual(template.Data)
     expect(template).toEqual(before)
   })
