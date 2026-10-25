@@ -178,7 +178,7 @@ describe('products API upload contracts', () => {
     apiRequestMock.mockResolvedValueOnce(comparison)
 
     await expect(getProductSourcePriceComparison('product-1', controller.signal)).resolves.toEqual(comparison)
-    expect(apiRequestMock).toHaveBeenCalledWith('/products/pricings/sources', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/assortment/pricings/sources', {
       errorMessages: {
         default: 'Не вдалося завантажити ціни з джерел',
         network: 'Джерела цін недоступні',

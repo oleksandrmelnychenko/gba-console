@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { getPriceRecommendation, PricingContractError, searchCompetitorPrices } from './pricingApi'
+import {
+  getPriceRecommendation,
+  getSalesUkrainePriceRecommendation,
+  PricingContractError,
+  searchCompetitorPrices,
+} from './pricingApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -60,7 +65,23 @@ describe('pricingApi canonical AI contract', () => {
       effective_start: '2025-07-25',
       history_complete: true,
     })
-    expect(apiRequestMock).toHaveBeenCalledWith('/pricing/recommend', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/pricing/product-pricing/recommend', {
+      query: {
+        productNetId: PRODUCT_NET_ID,
+        clientAgreementNetId: AGREEMENT_NET_ID,
+        culture: 'uk',
+        withVat: true,
+      },
+    })
+  })
+
+  it('uses the Sales Ukraine permission-scoped recommendation route', async () => {
+    apiRequestMock.mockResolvedValueOnce(recommendation())
+
+    await expect(
+      getSalesUkrainePriceRecommendation(PRODUCT_NET_ID, AGREEMENT_NET_ID),
+    ).resolves.toMatchObject({ recommended_price: 95.01 })
+    expect(apiRequestMock).toHaveBeenCalledWith('/pricing/sales-ukraine/recommend', {
       query: {
         productNetId: PRODUCT_NET_ID,
         clientAgreementNetId: AGREEMENT_NET_ID,

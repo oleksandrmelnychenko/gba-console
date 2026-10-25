@@ -128,7 +128,7 @@ describe('new sale wizard pricing API contracts', () => {
     const result = await getProductCurrentPriceByAgreement('product-1', 'agreement-1')
 
     expect(result).toBe(42)
-    expect(apiRequestMock).toHaveBeenCalledWith('/products/pricings/current', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/sales-ukraine/pricings/current', {
       query: {
         clientAgreementNetId: 'agreement-1',
         productNetId: 'product-1',
@@ -142,7 +142,7 @@ describe('new sale wizard pricing API contracts', () => {
     const result = await getProductCalculatedPricingsByAgreement('product-1', 'agreement-1')
 
     expect(result).toEqual([{ DiscountRate: 10, ProductNetUid: 'product-1' }])
-    expect(apiRequestMock).toHaveBeenCalledWith('/products/pricings/all', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/sales-ukraine/pricings/all', {
       query: {
         clientAgreementNetId: 'agreement-1',
         productNetId: 'product-1',

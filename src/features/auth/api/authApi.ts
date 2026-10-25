@@ -1,4 +1,9 @@
-import { apiRequest, expiresAtFromNow } from '../../../shared/api/apiClient'
+import {
+  apiRequest,
+  expiresAtFromNow,
+  withAuthSessionLock,
+} from '../../../shared/api/apiClient'
+import { clearSession } from '../../../shared/auth/session'
 import { translate } from '../../../shared/i18n/translate'
 import type { AuthSession, AuthUser, ServerSessionResponse, SignInResponse } from '../types'
 
@@ -51,8 +56,21 @@ export async function getServerSession(): Promise<AuthSession | null> {
 }
 
 export async function signOut(): Promise<void> {
-  await apiRequest('/usermanagement/token/logout', {
-    method: 'POST',
+  await withAuthSessionLock(async () => {
+    await apiRequest('/usermanagement/token/logout', {
+      method: 'POST',
+      auth: false,
+      errorMessages: {
+        409: 'Сесія змінилася. Повторіть вихід.',
+        503: 'Не вдалося завершити сеанс. Спробуйте ще раз.',
+        default: 'Не вдалося вийти. Спробуйте ще раз.',
+        network: 'Сервер авторизації недоступний. Спробуйте ще раз пізніше.',
+      },
+    })
+
+    // Keep this inside the same refresh/logout lock: a queued refresh in this or another tab
+    // must observe the cleared shared session before it can issue another refresh request.
+    clearSession()
   })
 }
 

@@ -11,7 +11,7 @@ export type AuthContextValue = {
   permissions: readonly string[]
   hasPermission: (permissionKey: string) => boolean
   login: (username: string, password: string) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
 }
 
 export type SignInResponse = {

@@ -4,7 +4,7 @@ import { useEffect, useReducer } from 'react'
 import { Link } from 'react-router-dom'
 import { AiFeatureBadge } from '../../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../../shared/i18n/useI18n'
-import { getPriceRecommendation } from '../../../pricing/api/pricingApi'
+import { getSalesUkrainePriceRecommendation } from '../../../pricing/api/pricingApi'
 import type { PriceRecommendation } from '../../../pricing/pricingTypes'
 
 type WizardAiPriceHintProps = {
@@ -75,7 +75,7 @@ export function WizardAiPriceHint({ productNetId, clientAgreementNetId, withVat 
     dispatch({ type: 'loading', scopeKey })
 
     const timer = setTimeout(() => {
-      void getPriceRecommendation(product, agreement, 'uk', withVat, controller.signal)
+      void getSalesUkrainePriceRecommendation(product, agreement, 'uk', withVat, controller.signal)
         .then((recommendation) => {
           if (!cancelled) {
             dispatch({ recommendation, type: 'loaded', scopeKey })

@@ -154,7 +154,7 @@ export async function getProductSourcePriceComparison(
   netId: string,
   signal?: AbortSignal,
 ): Promise<ProductSourcePriceComparison | null> {
-  const result = await apiRequest<unknown>('/products/pricings/sources', {
+  const result = await apiRequest<unknown>('/products/assortment/pricings/sources', {
     query: { netId },
     signal,
     errorMessages: {

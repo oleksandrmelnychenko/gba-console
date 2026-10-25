@@ -26,8 +26,7 @@ export async function downloadGroupedDebtorPdf(statement: GroupedDebtorStatement
   const [{ default: pdfMake }, { default: vfs }] = await Promise.all([
     import('pdfmake/build/pdfmake'), import('pdfmake/build/vfs_fonts'),
   ])
-  const blob = await new Promise<Blob>(resolve => {
-    pdfMake.createPdf(groupedDebtorPdfDefinition(statement), undefined, undefined, vfs).getBlob(resolve)
-  })
+  pdfMake.addVirtualFileSystem(vfs)
+  const blob = await pdfMake.createPdf(groupedDebtorPdfDefinition(statement)).getBlob()
   downloadBlob(blob, groupedDebtorExportFileName(statement, 'pdf'))
 }

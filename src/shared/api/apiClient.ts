@@ -276,7 +276,7 @@ async function sendApiRequest<T>(path: string, options: ApiRequestOptions, allow
   const payload = await readPayload(response)
 
   if (!response.ok) {
-    if (response.status === 401) {
+    if (response.status === 401 && auth) {
       clearSession()
       notifyUnauthorized()
     }
@@ -353,6 +353,7 @@ function withCallerSignal<T>(
 }
 
 let refreshPromise: Promise<AuthSession | null> | null = null
+let fallbackSessionLockTail: Promise<void> = Promise.resolve()
 
 export function expiresAtFromNow(seconds: number | null | undefined, now = Date.now()): string | undefined {
   return typeof seconds === 'number' && Number.isFinite(seconds) && seconds >= 0
@@ -365,11 +366,23 @@ export function refreshAuthSession(observedExpiresAt?: string): Promise<AuthSess
 }
 
 async function refreshStoredSession(observedExpiresAt?: string): Promise<AuthSession | null> {
+  if (
+    typeof window !== 'undefined'
+    && (typeof navigator === 'undefined' || typeof navigator.locks?.request !== 'function')
+  ) {
+    // A refresh response can install a new HttpOnly access cookie after another tab has
+    // completed logout. Without a browser-wide lock there is no safe way to serialize those
+    // two responses, so older browsers must reauthenticate when the access token expires.
+    clearSession()
+    notifyUnauthorized()
+    return null
+  }
+
   if (refreshPromise) {
     return refreshPromise
   }
 
-  refreshPromise = withSessionRefreshLock(() => {
+  refreshPromise = withAuthSessionLock(() => {
     const current = readSession()
 
     if (current && wasRefreshedElsewhere(current, observedExpiresAt)) {
@@ -395,14 +408,25 @@ function wasRefreshedElsewhere(session: AuthSession, observedExpiresAt?: string)
   return Number.isFinite(expiresAtMs) && expiresAtMs - Date.now() > REFRESHED_ELSEWHERE_MARGIN_MS
 }
 
-function withSessionRefreshLock<T>(work: () => Promise<T>): Promise<T> {
+export function withAuthSessionLock<T>(work: () => Promise<T>): Promise<T> {
   const locks = typeof navigator === 'undefined' ? undefined : navigator.locks
 
-  if (!locks?.request) {
-    return work()
+  if (locks?.request) {
+    return locks.request(SESSION_REFRESH_LOCK, work) as Promise<T>
   }
 
-  return locks.request(SESSION_REFRESH_LOCK, work) as Promise<T>
+  // Refresh fails closed before reaching this fallback in browsers without Web Locks. The queue
+  // remains useful for non-browser callers and for serializing explicit logout in older webviews.
+  const previous = fallbackSessionLockTail
+  let release!: () => void
+  fallbackSessionLockTail = new Promise<void>((resolve) => {
+    release = resolve
+  })
+
+  return previous
+    .catch(() => undefined)
+    .then(work)
+    .finally(release)
 }
 
 async function refreshStoredSessionCore(): Promise<AuthSession | null> {

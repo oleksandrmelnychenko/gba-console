@@ -6,7 +6,17 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores([
+    '.claude',
+    '.playwright-cli',
+    'dist',
+    'e2e/.artifacts',
+    'e2e/.auth',
+    'output',
+    'playwright-report',
+    'playwright-report-live-sync',
+    'test-results',
+  ]),
   {
     files: ['scripts/**/*.mjs'],
     extends: [js.configs.recommended],

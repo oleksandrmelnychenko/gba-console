@@ -73,6 +73,47 @@ for (const storageKey of ['localStorage', 'sessionStorage'] as const) {
   }
 }
 
+if (typeof navigator.locks?.request !== 'function') {
+  const lockTails = new Map<string, Promise<void>>()
+  const locks = {
+    async request<T>(
+      name: string,
+      optionsOrCallback: LockOptions | ((lock: Lock | null) => T | PromiseLike<T>),
+      optionalCallback?: (lock: Lock | null) => T | PromiseLike<T>,
+    ) {
+      const callback = typeof optionsOrCallback === 'function'
+        ? optionsOrCallback
+        : optionalCallback
+      if (!callback) {
+        throw new TypeError('A Web Locks callback is required')
+      }
+
+      const previous = lockTails.get(name) ?? Promise.resolve()
+      let release!: () => void
+      const gate = new Promise<void>((resolve) => {
+        release = resolve
+      })
+      const queued = previous.catch(() => undefined).then(() => gate)
+      lockTails.set(name, queued)
+
+      await previous.catch(() => undefined)
+      try {
+        return await callback({ name, mode: 'exclusive' } as Lock)
+      } finally {
+        release()
+        if (lockTails.get(name) === queued) {
+          lockTails.delete(name)
+        }
+      }
+    },
+  }
+
+  Object.defineProperty(navigator, 'locks', {
+    configurable: true,
+    value: locks as LockManager,
+  })
+}
+
 globalThis.ResizeObserver = ResizeObserverStub as unknown as typeof ResizeObserver
 
 HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {

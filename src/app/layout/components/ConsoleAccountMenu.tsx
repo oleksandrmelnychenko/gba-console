@@ -8,7 +8,7 @@ type Props = {
   displayName: string
   email?: string
   roleName?: string
-  onLogout: () => void
+  onLogout: () => Promise<void>
 }
 
 export function ConsoleAccountMenu({ displayName, email, roleName, onLogout }: Props) {
@@ -44,7 +44,11 @@ export function ConsoleAccountMenu({ displayName, email, roleName, onLogout }: P
           )}
         </div>
         <Menu.Divider />
-        <Menu.Item className="console-account-menu-item" leftSection={<LogOut size={16} />} onClick={onLogout}>
+        <Menu.Item
+          className="console-account-menu-item"
+          leftSection={<LogOut size={16} />}
+          onClick={() => void onLogout()}
+        >
           {t('Вийти')}
         </Menu.Item>
       </Menu.Dropdown>

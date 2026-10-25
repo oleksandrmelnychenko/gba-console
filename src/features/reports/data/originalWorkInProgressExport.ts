@@ -37,5 +37,6 @@ export function wipPdfDefinition(result: WipResult): CurrentVparivanieV2PdfDefin
 }
 export async function wipPdf(result: WipResult): Promise<Blob> {
   const definition = wipPdfDefinition(result), [pdfMake, fonts] = await Promise.all([import('pdfmake/build/pdfmake'), import('pdfmake/build/vfs_fonts')])
-  return new Promise((resolve, reject) => { try { pdfMake.default.createPdf(definition, undefined, undefined, fonts.default).getBlob(resolve) } catch (error) { reject(error) } })
+  pdfMake.default.addVirtualFileSystem(fonts.default)
+  return pdfMake.default.createPdf(definition).getBlob()
 }

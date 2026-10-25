@@ -64,5 +64,6 @@ export function buyerOrdersPdfDefinition(result: BuyerOrdersResult): CurrentVpar
 export async function buyerOrdersPdf(result: BuyerOrdersResult): Promise<Blob> {
   const definition = buyerOrdersPdfDefinition(result)
   const [pdfMake, fonts] = await Promise.all([import('pdfmake/build/pdfmake'), import('pdfmake/build/vfs_fonts')])
-  return new Promise((resolve, reject) => { try { pdfMake.default.createPdf(definition, undefined, undefined, fonts.default).getBlob(resolve) } catch (error) { reject(error) } })
+  pdfMake.default.addVirtualFileSystem(fonts.default)
+  return pdfMake.default.createPdf(definition).getBlob()
 }

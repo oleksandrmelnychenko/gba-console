@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react'
+import { notifications } from '@mantine/notifications'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   getEffectivePermissionKeys,
@@ -70,12 +71,22 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
   }, [])
 
-  const logout = useCallback(() => {
-    if (readSession()?.csrfToken) {
-      void signOut().catch(() => undefined)
+  const logout = useCallback(async () => {
+    try {
+      await signOut()
+    } catch (error) {
+      notifications.show({
+        color: 'red',
+        message: error instanceof Error
+          ? error.message
+          : 'Не вдалося вийти. Спробуйте ще раз.',
+      })
+      return
     }
 
     clearAuthReturnPath()
+    // signOut clears storage while holding the refresh/logout lock; repeat locally so the
+    // provider also remains correct if the transport implementation is replaced or mocked.
     clearSession()
     permissionRequestRef.current += 1
     setSession(null)
@@ -85,10 +96,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [navigate])
   const logoutAfterUnauthorized = useCallback(() => {
     rememberAuthReturnPath(location)
-
-    if (readSession()?.csrfToken) {
-      void signOut().catch(() => undefined)
-    }
 
     clearSession()
     permissionRequestRef.current += 1

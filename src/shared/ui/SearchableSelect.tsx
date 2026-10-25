@@ -85,7 +85,7 @@ export function SearchableSelect({
           return
         }
 
-        onChange?.(option.label)
+        onChange?.(option?.label ?? nextValue)
       }}
       onClear={onClear}
       onDropdownClose={onDropdownClose}

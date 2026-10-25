@@ -61,8 +61,8 @@ it('generates a real Unicode PDF with the same group and currency rows and a vis
     '1 234 567 890 123 456 789 012 340,17',
   ])
   expect(body?.[3].map(cell => cell.text)).toEqual(['Інший покупець', '978', '−10,00', '3,25', '0,00', '−6,75'])
-  const bytes = await new Promise<Uint8Array>(resolve => pdfMake.createPdf(definition, undefined, undefined, vfs)
-    .getBuffer(resolve))
+  pdfMake.addVirtualFileSystem(vfs)
+  const bytes = await pdfMake.createPdf(definition).getBuffer()
   expect(new TextDecoder().decode(bytes.subarray(0, 5))).toBe('%PDF-')
   expect(bytes.length).toBeGreaterThan(5000)
 })

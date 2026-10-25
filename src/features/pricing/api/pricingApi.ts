@@ -41,9 +41,44 @@ export async function getPriceRecommendation(
   withVat = true,
   signal?: AbortSignal,
 ): Promise<PriceRecommendation> {
+  return requestPriceRecommendation(
+    '/pricing/product-pricing/recommend',
+    productNetId,
+    clientAgreementNetId,
+    culture,
+    withVat,
+    signal,
+  )
+}
+
+export async function getSalesUkrainePriceRecommendation(
+  productNetId: string,
+  clientAgreementNetId: string,
+  culture = 'uk',
+  withVat = true,
+  signal?: AbortSignal,
+): Promise<PriceRecommendation> {
+  return requestPriceRecommendation(
+    '/pricing/sales-ukraine/recommend',
+    productNetId,
+    clientAgreementNetId,
+    culture,
+    withVat,
+    signal,
+  )
+}
+
+async function requestPriceRecommendation(
+  endpoint: string,
+  productNetId: string,
+  clientAgreementNetId: string,
+  culture: string,
+  withVat: boolean,
+  signal?: AbortSignal,
+): Promise<PriceRecommendation> {
   const requestedProductNetId = requireGuid(productNetId, 'request.product_net_uid')
   const requestedAgreementNetId = requireGuid(clientAgreementNetId, 'request.client_agreement_netuid')
-  const result = await apiRequest<unknown>('/pricing/recommend', {
+  const result = await apiRequest<unknown>(endpoint, {
     query: {
       productNetId: requestedProductNetId,
       clientAgreementNetId: requestedAgreementNetId,

@@ -37,5 +37,6 @@ export function amgDiscountPdfDefinition(result: AmgDiscountResult): CurrentVpar
 }
 export async function amgDiscountPdf(result: AmgDiscountResult): Promise<Blob> {
   const definition = amgDiscountPdfDefinition(result), [pdfMake, fonts] = await Promise.all([import('pdfmake/build/pdfmake'), import('pdfmake/build/vfs_fonts')])
-  return new Promise((resolve, reject) => { try { pdfMake.default.createPdf(definition, undefined, undefined, fonts.default).getBlob(resolve) } catch (error) { reject(error) } })
+  pdfMake.default.addVirtualFileSystem(fonts.default)
+  return pdfMake.default.createPdf(definition).getBlob()
 }

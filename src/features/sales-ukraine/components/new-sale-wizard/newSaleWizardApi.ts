@@ -359,7 +359,7 @@ export async function getProductCurrentPriceByAgreement(
   clientAgreementNetId: string,
   signal?: AbortSignal,
 ): Promise<number | null> {
-  const result = await apiRequest<unknown>('/products/pricings/current', {
+  const result = await apiRequest<unknown>('/products/sales-ukraine/pricings/current', {
     query: { clientAgreementNetId, productNetId },
     ...(signal ? { signal } : {}),
   })
@@ -372,7 +372,7 @@ export async function getProductCalculatedPricingsByAgreement(
   clientAgreementNetId: string,
   signal?: AbortSignal,
 ): Promise<WizardCalculatedProductPricing[]> {
-  const result = await apiRequest<unknown>('/products/pricings/all', {
+  const result = await apiRequest<unknown>('/products/sales-ukraine/pricings/all', {
     query: { clientAgreementNetId, productNetId },
     ...(signal ? { signal } : {}),
   })

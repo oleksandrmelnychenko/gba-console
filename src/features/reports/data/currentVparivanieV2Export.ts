@@ -117,10 +117,6 @@ export async function currentVparivanieV2Pdf(result: CurrentVparivanieV2Result):
   const [pdfMake, fontModule] = await Promise.all([
     import('pdfmake/build/pdfmake'), import('pdfmake/build/vfs_fonts'),
   ])
-  return new Promise((resolve, reject) => {
-    try {
-      pdfMake.default.createPdf(currentVparivanieV2PdfDefinition(result), undefined, undefined,
-        fontModule.default).getBlob(resolve)
-    } catch (error) { reject(error) }
-  })
+  pdfMake.default.addVirtualFileSystem(fontModule.default)
+  return pdfMake.default.createPdf(currentVparivanieV2PdfDefinition(result)).getBlob()
 }

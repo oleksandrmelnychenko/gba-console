@@ -28,7 +28,8 @@ async function pdf(sheet: OriginalDefaultSheet): Promise<Blob> {
     content: [...metadata(sheet).map(row => ({ text: row.join(' · ') })), { table: { headerRows: 1, widths: sheet.headers.map(() => '*' as const), body: matrix(sheet) }, layout: 'lightHorizontalLines' }],
     styles: { title: { bold: true, fontSize: 14 } }, footer: (page, pages) => ({ text: `${page}/${pages}`, fontSize: 7, alignment: 'right', margin: [24, 0, 24, 0] }) }
   const [pdfMake, fonts] = await Promise.all([import('pdfmake/build/pdfmake'), import('pdfmake/build/vfs_fonts')])
-  return new Promise((resolve, reject) => { try { pdfMake.default.createPdf(definition, undefined, undefined, fonts.default).getBlob(resolve) } catch (error) { reject(error) } })
+  pdfMake.default.addVirtualFileSystem(fonts.default)
+  return pdfMake.default.createPdf(definition).getBlob()
 }
 export const defaultSheetBlob = (sheet: OriginalDefaultSheet, format: 'csv' | 'xlsx' | 'pdf') => format === 'csv'
   ? Promise.resolve(new Blob([defaultSheetCsv(sheet)], { type: 'text/csv;charset=utf-8' })) : format === 'xlsx' ? xlsx(sheet) : pdf(sheet)

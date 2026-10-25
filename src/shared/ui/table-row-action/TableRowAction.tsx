@@ -137,7 +137,7 @@ type TableRowActionButtonProps = TableRowActionProps &
     component?: ElementType
   }
 
-const ACTION_ICONS: Record<TableRowActionKind, ComponentType<LucideProps>> = {
+const actionIcons: Record<TableRowActionKind, ComponentType<LucideProps>> = {
   add: Plus,
   approve: ThumbsUp,
   archive: Archive,
@@ -183,7 +183,7 @@ const ACTION_ICONS: Record<TableRowActionKind, ComponentType<LucideProps>> = {
   'will-not-ship': TriangleAlert,
 }
 
-const ACTION_TONES: Partial<Record<TableRowActionKind, TableRowActionTone>> = {
+const actionTones: Partial<Record<TableRowActionKind, TableRowActionTone>> = {
   add: 'brand',
   approve: 'success',
   assign: 'brand',
@@ -218,8 +218,8 @@ export const TableRowAction = createPolymorphicComponent<'button', TableRowActio
     },
     ref,
   ) {
-    const resolvedTone = tone ?? ACTION_TONES[action] ?? 'neutral'
-    const Icon = ACTION_ICONS[action]
+    const resolvedTone = tone ?? actionTones[action] ?? 'neutral'
+    const Icon = actionIcons[action]
     const isLinkLike = Boolean(component)
     const isInteractionDisabled = Boolean(disabled || loading)
 

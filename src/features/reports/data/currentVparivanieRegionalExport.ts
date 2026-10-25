@@ -86,8 +86,6 @@ export async function currentRegionalXlsx(result: CurrentVparivanieRegionalResul
 
 export async function currentRegionalPdf(result: CurrentVparivanieRegionalResult): Promise<Blob> {
   const [pdfMake, fonts] = await Promise.all([import('pdfmake/build/pdfmake'), import('pdfmake/build/vfs_fonts')])
-  return new Promise((resolve, reject) => {
-    try { pdfMake.default.createPdf(currentRegionalPdfDefinition(result), undefined, undefined, fonts.default).getBlob(resolve) }
-    catch (error) { reject(error) }
-  })
+  pdfMake.default.addVirtualFileSystem(fonts.default)
+  return pdfMake.default.createPdf(currentRegionalPdfDefinition(result)).getBlob()
 }
