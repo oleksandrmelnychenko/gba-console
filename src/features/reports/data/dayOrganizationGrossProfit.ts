@@ -1,3 +1,4 @@
+import { currentFinancialBuyerManagerFilterError, financialBuyerManagerReference } from './currentFinancialBuyerManagerFilter'
 import { currentFinancialDocumentFilterError, financialDocumentReference } from './currentFinancialDocumentFilter'
 import { requestFinancialAxesCapability, validFinancialAxes } from './financialAxes'
 import { currentFinancialFilterConditionsError, financialFilterConditionTypes } from './currentFinancialFilterConditions'
@@ -49,12 +50,15 @@ export function isDayOrganizationGrossProfitDataset(dataset: ReportDataset): boo
 export function dayOrganizationGrossProfitConfigurationError(data: ReportRequestBody, dataset?: ReportDataset): string | null {
   const modeError = profitReadModeConfigurationError(data, dataset)
   if (modeError) return modeError
+  const managerFilterError = currentFinancialBuyerManagerFilterError(data, dataset)
+  if (managerFilterError) return managerFilterError
   const documentFilterError = currentFinancialDocumentFilterError(data, dataset)
   if (documentFilterError) return documentFilterError
   const filterError = currentFinancialFilterConditionsError(data, dataset)
   if (filterError) return filterError
   const conditions = new Set(financialFilterConditionTypes(dataset, data))
   const documentConditions = new Set(financialFilterConditionTypes(dataset, data, 12))
+  const managerConditions = new Set(financialFilterConditionTypes(dataset, data, 60))
   const basisError = dayOrganizationBasisConfigurationError(data, dataset)
   if (basisError) return basisError
   if (data.dataSource !== DAY_ORGANIZATION_GROSS_PROFIT_SOURCE) return null
@@ -85,11 +89,14 @@ export function dayOrganizationGrossProfitConfigurationError(data: ReportRequest
   for (const selection of data.selections) {
     if (!Array.isArray(selection?.Values)) return invalid
     count += selection.Values.length
+    const field = selection.SelectedField?.Type
+    const admittedConditions = field === 60 ? managerConditions : field === 12 ? documentConditions : conditions
+    const reference = field === 60 ? financialBuyerManagerReference : field === 12 ? financialDocumentReference : revenueExactId
     if (count > 100 || (selection.IsChecked !== undefined && typeof selection.IsChecked !== 'boolean')
-      || !(filters.has(selection.SelectedField?.Type) || selection.SelectedField?.Type === 12)
-      || !(selection.SelectedField?.Type === 12 ? documentConditions : conditions).has(selection.FilterCondition?.Type) || !selection.Values.length
+      || !(filters.has(field) || field === 12 || field === 60)
+      || !admittedConditions.has(selection.FilterCondition?.Type) || !selection.Values.length
       || ([0, 1].includes(selection.FilterCondition?.Type) && selection.Values.length !== 1)
-      || selection.Values.some(value => !value || !(selection.SelectedField?.Type === 12 ? financialDocumentReference(value.Data) : revenueExactId(value.Data))
+      || selection.Values.some(value => !value || !reference(value.Data)
         || (value.Value !== undefined && (!Number.isInteger(value.Value)
           || value.Value < -2147483648 || value.Value > 2147483647)))) return invalid
   }

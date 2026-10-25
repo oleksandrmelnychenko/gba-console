@@ -398,6 +398,7 @@ export type ReportDataset = {
   currentFinancialProductTimeAxes?: unknown
   currentFinancialDocumentAxes?: unknown
   currentFinancialDocumentFilter?: unknown
+  currentFinancialBuyerManagerFilter?: unknown
   currentFinancialFilterConditions?: unknown
   profitReadModeLookup?: unknown
   profitReadMode?: unknown
