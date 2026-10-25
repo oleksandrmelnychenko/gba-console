@@ -135,7 +135,7 @@ describe('product movement drawer with sibling cards', () => {
     await waitFor(() => expect(getProductMovementsMock).toHaveBeenLastCalledWith(expect.objectContaining({
       includeSiblings: true,
       productNetId: currentNetId,
-    })))
+    }), expect.any(AbortSignal)))
     await screen.findByText('AMG-SALE')
 
     expect(movementHeaders()).toContain('Картка')

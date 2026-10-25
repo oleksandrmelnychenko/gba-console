@@ -37,6 +37,7 @@ function deferred<T>() {
 }
 beforeEach(() => {
   vi.useFakeTimers()
+  mocks.t = value => value
   mocks.current.mockReset().mockResolvedValue(20)
   mocks.calculated.mockReset().mockResolvedValue([{ DiscountRate: 5 }])
   mocks.reservations.mockReset().mockResolvedValue([{ ProductNetUid: 'product-1', Price: 18 }])
@@ -245,4 +246,18 @@ describe('wizard product data', () => {
     await tick()
     expect(mocks.current).toHaveBeenCalledOnce()
   })
+  it('does not refetch completed details when translation changes', async () => {
+    const props = { ...initialProps, detailsOpened: true }
+    const { result, rerender } = renderHook(useWizardProductData, { initialProps: props })
+    await tick()
+    const previous = result.current.getProductDetailSnapshot(product)
+    mocks.t = value => `translated: ${value}`
+    rerender({ ...props })
+    await tick()
+    expect(result.current.getProductDetailSnapshot(product)).toBe(previous)
+    expect(mocks.current).toHaveBeenCalledOnce()
+    expect(mocks.nearest).toHaveBeenCalledOnce()
+    expect(mocks.totals).toHaveBeenCalledOnce()
+  })
+
 })

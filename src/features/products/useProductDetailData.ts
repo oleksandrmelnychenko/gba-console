@@ -1,50 +1,26 @@
-import { useCallback, useEffect, useReducer, useState } from 'react'
+import { useCallback } from 'react'
 import { useI18n } from '../../shared/i18n/useI18n'
 import { getProductByNetId, getProductReservationByNetId } from './api/productsApi'
 import type { Product, ProductReservation } from './types'
+import { useProductResource } from './useProductResource'
 
-function emptySnapshot(netId?: string) {
-  return {
-    netId, product: null as Product | null, reservation: {} as ProductReservation,
-    error: null as string | null, reservationError: null as string | null,
-    isLoading: Boolean(netId), reservationLoading: Boolean(netId),
-  }
-}
+const EMPTY_RESERVATION: ProductReservation = {}
 
-/** Product and reservation requests start together, but neither delays the other's display. */
+/** Product and reservation reads recover independently without discarding known data. */
 export function useProductDetailData(netId?: string) {
   const { t } = useI18n()
-  const [revision, reload] = useReducer((value: number) => value + 1, 0)
-  const [snapshot, setSnapshot] = useState(() => ({ ...emptySnapshot(netId), revision, translate: t }))
-  const setProduct = useCallback((product: Product | null) => {
-    setSnapshot(current => ({ ...current, product }))
-  }, [])
+  const product = useProductResource(netId, getProductByNetId, null, t('Не вдалося завантажити товар'))
+  const reservation = useProductResource(netId, getProductReservationByNetId, EMPTY_RESERVATION, t('Не вдалося завантажити резерви товару'))
+  const { refresh: refreshProduct, setValue } = product
+  const { refresh: refreshReservation } = reservation
+  const reload = useCallback(() => Promise.all([refreshProduct(true), refreshReservation(true)]), [refreshProduct, refreshReservation])
+  const retryReservation = useCallback(() => refreshReservation(), [refreshReservation])
+  const setProduct = useCallback((next: Product | null) => {
+    if (next?.NetUid && next.NetUid.toLowerCase() !== netId?.toLowerCase()) return
+    setValue(next)
+  }, [netId, setValue])
 
-  // Reset during render so consumers never commit stale data or an extra loading render.
-  if (snapshot.netId !== netId || snapshot.revision !== revision || snapshot.translate !== t) {
-    setSnapshot({ ...emptySnapshot(netId), revision, translate: t,
-      product: snapshot.netId === netId ? snapshot.product : null })
-  }
-
-  useEffect(() => {
-    if (!netId) return
-    const controller = new AbortController()
-    const { signal } = controller
-    void getProductByNetId(netId, signal).then(product => {
-      if (!signal.aborted) setSnapshot(current => ({ ...current, product, isLoading: false }))
-    }).catch((error: unknown) => {
-      if (!signal.aborted) setSnapshot(current => ({ ...current, product: null, isLoading: false,
-        error: error instanceof Error ? error.message : t('Не вдалося завантажити товар') }))
-    })
-    void getProductReservationByNetId(netId, signal).then(reservation => {
-      if (!signal.aborted) setSnapshot(current => ({ ...current, reservation, reservationLoading: false }))
-    }).catch((error: unknown) => {
-      if (!signal.aborted) setSnapshot(current => ({ ...current, reservationLoading: false,
-        reservationError: error instanceof Error ? error.message : t('Не вдалося завантажити резерви товару') }))
-    })
-    return () => controller.abort()
-  }, [netId, revision, t])
-
-  const { product, reservation, reservationError, reservationLoading, error, isLoading } = snapshot
-  return { product, reservation, reservationError, reservationLoading, error, isLoading, reload, setProduct }
+  return { product: product.value, reservation: reservation.value, reservationError: reservation.error,
+    reservationLoading: reservation.isLoading, error: product.error, isLoading: product.isLoading,
+    reload, retryReservation, setProduct }
 }

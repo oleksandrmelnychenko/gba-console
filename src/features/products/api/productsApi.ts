@@ -168,8 +168,9 @@ export async function getProductSourcePriceComparison(
     : null
 }
 
-export async function getProductAuditEntities(netId: string, fieldName: ProductAuditField): Promise<AuditEntity[]> {
+export async function getProductAuditEntities(netId: string, fieldName: ProductAuditField, signal?: AbortSignal): Promise<AuditEntity[]> {
   const result = await apiRequest<unknown>('/auditing/products/assortment/history', {
+    ...(signal ? { signal } : {}),
     query: {
       fieldName,
       netId,
@@ -362,8 +363,10 @@ export async function uploadProductPlacementStorageReturn(
 
 export async function getProductStorageLocationHistory(
   params: ProductStorageLocationHistoryParams,
+  signal?: AbortSignal,
 ): Promise<ProductStorageLocationHistory[]> {
   const result = await apiRequest<unknown>('/products/placements/history/assortment/all/filtered', {
+    ...(signal ? { signal } : {}),
     query: {
       ProductNetId: params.productNetId,
       from: params.from,
@@ -380,8 +383,9 @@ export async function getProductStorageLocationHistory(
   return normalizeArray(result) as ProductStorageLocationHistory[]
 }
 
-export async function getProductConsignmentRemainings(netId: string): Promise<ProductConsignmentRemaining[]> {
+export async function getProductConsignmentRemainings(netId: string, signal?: AbortSignal): Promise<ProductConsignmentRemaining[]> {
   const result = await apiRequest<unknown>('/consignments/remaining/assortment/product', {
+    ...(signal ? { signal } : {}),
     query: {
       netId,
     },
@@ -394,8 +398,9 @@ export async function getProductConsignmentRemainings(netId: string): Promise<Pr
   return normalizeArray(result) as ProductConsignmentRemaining[]
 }
 
-export async function getProductMovements(params: ProductMovementsParams): Promise<ProductMovement[]> {
+export async function getProductMovements(params: ProductMovementsParams, signal?: AbortSignal): Promise<ProductMovement[]> {
   const result = await apiRequest<unknown>('/consignments/info/assortment/movement/filtered', {
+    ...(signal ? { signal } : {}),
     query: {
       from: params.from,
       movementType: params.movementType,

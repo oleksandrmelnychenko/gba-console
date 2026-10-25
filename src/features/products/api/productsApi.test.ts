@@ -7,6 +7,8 @@ import {
   exportProductMovementsDocument,
   exportProductOutcomeMovementsDocument,
   getProductAuditEntities,
+  getProductConsignmentRemainings,
+  getProductMovements,
   getProductForOrderInvoices,
   getProductForOrderOverview,
   getProductForOrderSpecifications,
@@ -587,4 +589,15 @@ describe('native product classification wire contract', () => {
     await updateProduct({ NativeIsService: 'false' } as unknown as Product)
     expect(apiRequestMock.mock.calls.at(-1)?.[1]?.body).not.toHaveProperty('NativeIsService')
   })
+})
+
+it('forwards cancellation for product history, stock lots, storage and movement reads', async () => {
+  apiRequestMock.mockReset().mockResolvedValue([])
+  const signal = new AbortController().signal
+  await getProductAuditEntities('product', 'Description', signal)
+  await getProductConsignmentRemainings('product', signal)
+  await getProductStorageLocationHistory({ productNetId: 'product', from: '2026-10-01', to: '2026-10-25', limit: 20, offset: 0 }, signal)
+  await getProductMovements({ productNetId: 'product', from: '2026-10-01', to: '2026-10-25', movementType: 0, types: [1] }, signal)
+  expect(apiRequestMock).toHaveBeenCalledTimes(4)
+  expect(apiRequestMock.mock.calls.every(([, options]) => options?.signal === signal)).toBe(true)
 })

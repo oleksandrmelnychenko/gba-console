@@ -269,7 +269,7 @@ function ProductDetailPageContent() {
   const { netId } = useParams<{ netId?: string }>()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { product, setProduct, reservation, reservationError, reservationLoading, error, isLoading, reload } = useProductDetailData(netId)
+  const { product, setProduct, reservation, reservationError, reservationLoading, error, isLoading, reload, retryReservation } = useProductDetailData(netId)
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null)
   const activePanel = useMemo(() => getPanelFromQuery(searchParams), [searchParams])
 
@@ -443,6 +443,7 @@ function ProductDetailPageContent() {
                   reservation={reservation}
                   reservationError={reservationError}
                   reservationLoading={reservationLoading}
+                  onRetryReservation={retryReservation}
                   onProductSaved={handleProductSaved}
                 />
             </Card>
@@ -648,6 +649,7 @@ export function ProductStockSummary({
   reservation,
   reservationError,
   reservationLoading = false,
+  onRetryReservation,
 }: {
   combinedStockQty?: number | null
   onProductSaved?: (product: Product | null) => void
@@ -655,6 +657,7 @@ export function ProductStockSummary({
   reservation: ProductReservation
   reservationError: string | null
   reservationLoading?: boolean
+  onRetryReservation?: () => Promise<void>
 }) {
   const { t } = useI18n()
   const availabilityItems = product.ProductAvailabilities || []
@@ -665,10 +668,15 @@ export function ProductStockSummary({
     <Stack gap="xs">
       {reservationError && (
         <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
-          {reservationError}
+          <Stack gap="xs">
+            <Text size="sm">{reservationError}</Text>
+            {onRetryReservation && <Button size="xs" variant="light" loading={reservationLoading} onClick={onRetryReservation} style={{ alignSelf: 'flex-start' }}>
+              {t('Повторити завантаження резервів')}
+            </Button>}
+          </Stack>
         </Alert>
       )}
-      {reservationLoading && <Group gap="xs" role="status"><Loader size="xs" /><Text size="sm">{t('Завантаження резервів')}</Text></Group>}
+      {reservationLoading && !reservationError && <Group gap="xs" role="status"><Loader size="xs" /><Text size="sm">{t('Завантаження резервів')}</Text></Group>}
       <div className="product-stock-bar">
         {/* Static reserve fields, in the legacy stock-bar order. */}
         <TotalQtyTile label={t('В рахунку в ресейлі')} value={reservation.TotalProductReSaleQty} />
@@ -1525,6 +1533,7 @@ function ProductAuditPanel({ product }: { product: Product }) {
     }
 
     let cancelled = false
+    const controller = new AbortController()
     const netUid = productNetUid
     const auditField = field
 
@@ -1533,7 +1542,7 @@ function ProductAuditPanel({ product }: { product: Product }) {
       setError(null)
 
       try {
-        const nextEntries = await getProductAuditEntities(netUid, auditField)
+        const nextEntries = await getProductAuditEntities(netUid, auditField, controller.signal)
 
         if (!cancelled) {
           setEntries(nextEntries)
@@ -1554,6 +1563,7 @@ function ProductAuditPanel({ product }: { product: Product }) {
 
     return () => {
       cancelled = true
+      controller.abort()
     }
   }, [field, productNetUid, t])
 
@@ -1811,6 +1821,7 @@ function ProductConsignmentRemainingsPanel({ product }: { product: Product }) {
     }
 
     let cancelled = false
+    const controller = new AbortController()
     const netUid = productNetUid
 
     async function loadRows() {
@@ -1818,7 +1829,7 @@ function ProductConsignmentRemainingsPanel({ product }: { product: Product }) {
       setError(null)
 
       try {
-        const nextRows = await getProductConsignmentRemainings(netUid)
+        const nextRows = await getProductConsignmentRemainings(netUid, controller.signal)
 
         if (!cancelled) {
           setRows(nextRows)
@@ -1839,6 +1850,7 @@ function ProductConsignmentRemainingsPanel({ product }: { product: Product }) {
 
     return () => {
       cancelled = true
+      controller.abort()
     }
   }, [productNetUid, reloadKey, t])
 
@@ -1935,6 +1947,7 @@ function ProductStorageHistoryPanel({ product }: { product: Product }) {
     }
 
     let cancelled = false
+    const controller = new AbortController()
     const netUid = productNetUid
     const offset = (page - 1) * pageSize
 
@@ -1949,7 +1962,7 @@ function ProductStorageHistoryPanel({ product }: { product: Product }) {
           offset,
           productNetId: netUid,
           to: dateTo,
-        })
+        }, controller.signal)
 
         if (!cancelled) {
           setRows(nextRows)
@@ -1970,6 +1983,7 @@ function ProductStorageHistoryPanel({ product }: { product: Product }) {
 
     return () => {
       cancelled = true
+      controller.abort()
     }
   }, [dateFrom, dateTo, filterError, page, pageSize, productNetUid, reloadKey, t])
 
@@ -2111,6 +2125,7 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
     }
 
     let cancelled = false
+    const controller = new AbortController()
     const netUid = productNetUid
     const types = selectedTypes
 
@@ -2126,7 +2141,7 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
           to: dateTo,
           types,
           ...(includeSiblings ? { includeSiblings: true } : {}),
-        })
+        }, controller.signal)
 
         if (!cancelled) {
           setRows(nextRows)
@@ -2147,6 +2162,7 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
 
     return () => {
       cancelled = true
+      controller.abort()
     }
   }, [dateFrom, dateTo, filterError, includeSiblings, movementType, productNetUid, reloadKey, selectedTypes, t, typesError])
 

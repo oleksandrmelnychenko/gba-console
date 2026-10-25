@@ -14,26 +14,27 @@ type WizardAiPriceHintProps = {
 }
 
 type HintState = {
+  scopeKey?: string
   isLoading: boolean
   failed: boolean
   recommendation: PriceRecommendation | null
 }
 
 type HintAction =
-  | { type: 'loading' }
-  | { type: 'loaded'; recommendation: PriceRecommendation }
-  | { type: 'failed' }
+  | { type: 'loading'; scopeKey: string }
+  | { type: 'loaded'; recommendation: PriceRecommendation; scopeKey: string }
+  | { type: 'failed'; scopeKey: string }
 
 const INITIAL_STATE: HintState = { isLoading: false, failed: false, recommendation: null }
 
 function reducer(_state: HintState, action: HintAction): HintState {
   switch (action.type) {
     case 'loading':
-      return { isLoading: true, failed: false, recommendation: null }
+      return { scopeKey: action.scopeKey, isLoading: true, failed: false, recommendation: null }
     case 'loaded':
-      return { isLoading: false, failed: false, recommendation: action.recommendation }
+      return { scopeKey: action.scopeKey, isLoading: false, failed: false, recommendation: action.recommendation }
     case 'failed':
-      return { isLoading: false, failed: true, recommendation: null }
+      return { scopeKey: action.scopeKey, isLoading: false, failed: true, recommendation: null }
   }
 }
 
@@ -61,6 +62,8 @@ export function WizardAiPriceHint({ productNetId, clientAgreementNetId, withVat 
 
   const product = productNetId || ''
   const agreement = clientAgreementNetId || ''
+  const scopeKey = JSON.stringify([product, agreement, withVat])
+  const current = state.scopeKey === scopeKey ? state : { ...INITIAL_STATE, isLoading: true }
 
   useEffect(() => {
     if (!product || !agreement) {
@@ -69,31 +72,34 @@ export function WizardAiPriceHint({ productNetId, clientAgreementNetId, withVat 
 
     let cancelled = false
     const controller = new AbortController()
-    dispatch({ type: 'loading' })
+    dispatch({ type: 'loading', scopeKey })
 
-    getPriceRecommendation(product, agreement, 'uk', withVat, controller.signal)
-      .then((recommendation) => {
-        if (!cancelled) {
-          dispatch({ recommendation, type: 'loaded' })
-        }
-      })
-      .catch(() => {
-        if (!cancelled && !controller.signal.aborted) {
-          dispatch({ type: 'failed' })
-        }
-      })
+    const timer = setTimeout(() => {
+      void getPriceRecommendation(product, agreement, 'uk', withVat, controller.signal)
+        .then((recommendation) => {
+          if (!cancelled) {
+            dispatch({ recommendation, type: 'loaded', scopeKey })
+          }
+        })
+        .catch(() => {
+          if (!cancelled && !controller.signal.aborted) {
+            dispatch({ type: 'failed', scopeKey })
+          }
+        })
+    }, 240)
 
     return () => {
       cancelled = true
+      clearTimeout(timer)
       controller.abort()
     }
-  }, [product, agreement, withVat])
+  }, [product, agreement, withVat, scopeKey])
 
   if (!product || !agreement) {
     return null
   }
 
-  if (state.isLoading) {
+  if (current.isLoading) {
     return (
       <Group gap={6} wrap="nowrap">
         <AiFeatureBadge compact size="xs" tooltip={t('AI-рекомендація ціни')} />
@@ -102,11 +108,11 @@ export function WizardAiPriceHint({ productNetId, clientAgreementNetId, withVat 
     )
   }
 
-  const recommendation = state.recommendation
+  const recommendation = current.recommendation
 
   // Suppress silently on error or when the model is not confident enough to anchor a price —
   // the pricing screen is one click away for the full breakdown.
-  if (state.failed || !recommendation || recommendation.confidence === 'low' || recommendation.recommended_price === null) {
+  if (current.failed || !recommendation || recommendation.confidence === 'low' || recommendation.recommended_price === null) {
     return null
   }
 

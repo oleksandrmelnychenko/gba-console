@@ -1,12 +1,11 @@
-import { Alert, Anchor, Group, Image, Loader, Stack, Text } from '@mantine/core'
+import { Alert, Anchor, Button, Group, Image, Loader, Stack, Text } from '@mantine/core'
 import { CircleAlert, ExternalLink, Image as ImageIcon, ZoomIn } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DocumentDetailRow, DocumentDetailSection } from '../../../shared/ui/document-detail/DocumentDetail'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 import { getProductByNetId } from '../api/productsApi'
-import type { Product } from '../types'
+import { useProductResource } from '../useProductResource'
 import { getProductMainImage, getProductTitle, isCriticalProductTop } from '../utils'
 import { ShopImageGallery } from './ShopImageGallery'
 import './product-card-modal.css'
@@ -46,58 +45,19 @@ function ProductCardContent({
   salePrices?: readonly ProductCardSalePrice[]
 }) {
   const { t } = useI18n()
-  const [product, setProduct] = useState<Product | null>(null)
-  const [isLoading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { value: product, isLoading, error, refresh } = useProductResource(productNetId, loadProduct, null, t('Не вдалося завантажити товар'))
 
-  useEffect(() => {
-    let cancelled = false
-    const controller = new AbortController()
-
-    async function load() {
-      setLoading(true)
-      setError(null)
-
-      try {
-        const next = await loadProduct(productNetId, controller.signal)
-
-        if (!cancelled) {
-          setProduct(next)
-        }
-      } catch (loadError) {
-        if (!cancelled && !controller.signal.aborted) {
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити товар'))
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void load()
-
-    return () => {
-      cancelled = true
-      controller.abort()
-    }
-  }, [loadProduct, productNetId, t])
-
-  if (isLoading) {
-    return (
-      <Group justify="center" py="xl">
-        <Loader />
-      </Group>
-    )
-  }
-
-  if (error) {
-    return (
-      <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-        {error}
-      </Alert>
-    )
-  }
+  if (error) return (
+    <Alert color="red" icon={<CircleAlert size={18} />} variant="light" role="alert">
+      <Stack gap="xs">
+        <Text size="sm">{error}</Text>
+        <Button size="xs" variant="light" loading={isLoading} onClick={() => refresh()} style={{ alignSelf: 'flex-start' }}>
+          {t('Повторити завантаження товару')}
+        </Button>
+      </Stack>
+    </Alert>
+  )
+  if (isLoading) return <Group justify="center" py="xl"><Loader /></Group>
 
   if (!product) {
     return (

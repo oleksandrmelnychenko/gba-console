@@ -11,7 +11,7 @@
     import { createElement as h, Profiler, useState } from 'react'
     import { createRoot } from 'react-dom/client'
     import { MantineProvider } from '@mantine/core'
-    import { MemoryRouter, Routes, Route } from 'react-router-dom'
+    import { MemoryRouter, Routes, Route, useNavigate } from 'react-router-dom'
     import { AuthContext } from '/src/features/auth/AuthContext.ts'
     import { realtimeBus, realtimeEvents } from '/src/shared/realtime/events.ts'
     import { I18nProvider } from '/src/shared/i18n/I18nProvider.tsx'
@@ -42,6 +42,7 @@
       Order:{OrderItems:items.slice(0,2)}}))
     window.performanceFixture.requests = []
     window.performanceFixture.finishReserves = () => {}
+    window.performanceFixture.productReads=[]
     window.performanceFixture.finishWizardReserves = () => {}
     window.performanceFixture.finishSupply = () => {}
     const relatedProduct = (id, name, qty) => ({NetUid:id,VendorCode:id,NameUA:name,AvailableQtyUk:qty,CurrentPrice:15,CurrentPriceEurToUah:600,ProductAvailabilities:[{Amount:qty}]})
@@ -156,10 +157,14 @@
       if (url.pathname.endsWith('/pricing/recommend')) return Promise.resolve(response({confidence:'low',recommended_price:null}))
       if (url.pathname.endsWith('/sales/ukraine/registry')) return Promise.resolve(response(sales))
       if (url.pathname.endsWith('/organizations/all')) return Promise.resolve(response([]))
-      if (url.pathname.endsWith('/products/assortment/details')) return Promise.resolve(response({NetUid:'product-1',VendorCode:'FAST-PRODUCT',Name:'Тестовий товар',CurrentPrice:42.75}))
-      if (url.pathname.endsWith('/products/reservations/get/info')) return new Promise((resolve,reject) => {
-        window.performanceFixture.finishReserves = () => resolve(response({TotalReservedUK:17}))
-        options.signal?.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true})
+      if (url.pathname.endsWith('/products/assortment/details') || url.pathname.endsWith('/products/reservations/get/info')) return new Promise((resolve,reject)=>{
+        const isProduct=url.pathname.endsWith('/products/assortment/details'),id=url.searchParams.get('netId')
+        const data=isProduct?{NetUid:id,VendorCode:id==='product-1'?'FAST-PRODUCT':'SECOND-PRODUCT',Name:'Тестовий товар',CurrentPrice:id==='product-1'?42.75:84.5}:{TotalReservedUK:17}
+        const read={url:url.pathname+url.search,aborted:false,finish:()=>resolve(response(data)),fail:()=>resolve(new Response('{}',{status:503}))}
+        window.performanceFixture.productReads.push(read)
+        if(isProduct&&!window.performanceFixture.holdProductCard) read.finish()
+        if(!isProduct) window.performanceFixture.finishReserves=read.finish
+        options.signal?.addEventListener('abort',()=>{read.aborted=true;if(!window.performanceFixture.ignoreProductAbort) reject(new DOMException('Aborted','AbortError'))},{once:true})
       })
       return Promise.reject(new Error(`Unexpected fixture request: ${url.pathname}`))
     }
@@ -167,6 +172,10 @@
     const onRender = (id,phase,duration) => window.performanceFixture.samples.push({id,phase,duration})
     const onRowClick = item => { window.performanceFixture.selected = item.NetUid }
     const cartSale = rows => ({NetUid:'fixture-sale',BaseLifeCycleStatus:{SaleLifeCycleType:0},ClientAgreement:{NetUid:'agreement-1',Agreement:{Currency:{Code:'EUR'}}},Order:{OrderItems:rows,OrderSource:1}})
+    function ProductCardFixture() {
+      const navigate=useNavigate()
+      return h('section',null,h('button',{onClick:()=>navigate('/products/product-1')},'Початковий товар'),h('button',{onClick:()=>navigate('/products/product-2')},'Інший товар'),h(ProductDetailPage))
+    }
     function DeliveryFixture({cart}) {
       const [value,setValue]=useState(NEW_SALE_REVIEW_INITIAL)
       return h(NewSaleReviewStep,{clientNetId:'client-1',sale:cartSale(cart),value,onChange:patch=>setValue(current=>({...current,...patch}))})
@@ -217,7 +226,7 @@
         view==='cart' ? h(Profiler,{id:'cart',onRender},h(WizardCartCards,{items:cart,busy:false,localCurrencyCode:'UAH',useEurToUah:false,onRowClick}))
           : view==='report' ? h(Profiler,{id:'report',onRender},h(ReportInlinePreview,{preview}))
           : h(AuthContext.Provider,{value:auth},h(MemoryRouter,{initialEntries:['/products/product-1']},h(Profiler,{id:view,onRender},
-            view==='client-picker'?h(ClientPickerFixture):view==='split-editor'?h(SplitEditorFixture):view==='delivery'?h(DeliveryFixture,{cart}):view==='recommendations'?h(RecommendationsPanel,{client:{NetUid:'client-1'},productNetId:'panel-seed'}):view==='crosssell'?h(CrossSellFixture):view==='sales'?h(SalesUkrainePage):view==='wizard'?h(NewSaleProductsStep,{agreementNetId:'agreement-1',clientNetId:'client-1',client:null,sale:cartSale(cart),onCartChanged:()=>{}}):h(Routes,null,h(Route,{path:'/products/:netId',element:h(ProductDetailPage)}))))))
+            view==='client-picker'?h(ClientPickerFixture):view==='split-editor'?h(SplitEditorFixture):view==='delivery'?h(DeliveryFixture,{cart}):view==='recommendations'?h(RecommendationsPanel,{client:{NetUid:'client-1'},productNetId:'panel-seed'}):view==='crosssell'?h(CrossSellFixture):view==='sales'?h(SalesUkrainePage):view==='wizard'?h(NewSaleProductsStep,{agreementNetId:'agreement-1',clientNetId:'client-1',client:null,sale:cartSale(cart),onCartChanged:()=>{}}):h(Routes,null,h(Route,{path:'/products/:netId',element:h(ProductCardFixture)}))))))
     }
     createRoot(document.getElementById('root')).render(h(MantineProvider,null,h(I18nProvider,null,h(Fixture))))
   </script>

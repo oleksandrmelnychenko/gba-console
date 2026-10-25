@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import {
   getAllProductAvailabilities,
@@ -46,6 +46,7 @@ export function useWizardProductData({
   detailsOpened: boolean
 }) {
   const { t } = useI18n()
+  const detailsFailureMessage = useEffectEvent((error: unknown) => getErrorMessage(error, t('Не вдалося завантажити деталі залишків')))
   const saleNetId = saleNetUid || EMPTY_GUID
   const scopeKey = JSON.stringify([agreementNetId, saleNetId, isVatSale])
   const [pricingState, setPricingState] = useState<ScopedValues<ProductPricingSnapshot>>({ scopeKey, values: EMPTY_PRICING })
@@ -160,7 +161,7 @@ export function useWizardProductData({
       })
       const stock = getAllProductAvailabilities(productNetUid, agreementNetId, saleNetId, controller.signal)
         .then(availabilities => ({ availabilities, detailsError: null }))
-        .catch((error: unknown) => ({ availabilities: null, detailsError: getErrorMessage(error, t('Не вдалося завантажити деталі залишків')) }))
+        .catch((error: unknown) => ({ availabilities: null, detailsError: detailsFailureMessage(error) }))
         .then(snapshot => {
           if (controller.signal.aborted) return
           setDetailState(previous => {
@@ -177,7 +178,7 @@ export function useWizardProductData({
       clearTimeout(handle)
       if (!started) controller.abort()
     }
-  }, [productNetUid, agreementNetId, saleNetId, scopeKey, detailsOpened, dataRevision, detailsRevision, t])
+  }, [productNetUid, agreementNetId, saleNetId, scopeKey, detailsOpened, dataRevision, detailsRevision])
 
   const getProductDetailSnapshot = useCallback((product: { NetUid?: string } | null) => (
     product?.NetUid && detailState.scopeKey === scopeKey
