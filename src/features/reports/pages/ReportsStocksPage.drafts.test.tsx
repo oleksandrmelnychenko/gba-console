@@ -8,7 +8,10 @@ import { createStockReport, searchValuationAgreements } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from '../api/reportWorkspaceApi'
 import { reportDatasets, stockDataset, valuationDataset } from '../data/reportDatasets.test-fixtures'
 import { createSalesReportPreset } from '../data/reportPresets'
-import { defaultDatasetRequest } from '../data/reportDatasets'
+import { datasetGroupings, datasetMeasurements, defaultDatasetRequest } from '../data/reportDatasets'
+import { documentDataset, documentRequest } from '../data/currentFinancialDocumentAxes.test-fixtures'
+import { productTimeDataset } from '../data/currentFinancialProductTimeAxes.test-fixtures'
+import { encodeReportWorkspaceDraft, reportWorkspaceDraftKey } from '../data/reportWorkspaceDraft'
 import { ReportsStocksPage } from './ReportsStocksPage'
 
 let owner = 'draft-owner-a'
@@ -55,6 +58,51 @@ describe('constructor draft recovery', () => {
     vi.mocked(searchValuationAgreements).mockResolvedValue([{ Id: 42, Name: 'Договір 42' }, { Id: 43, Name: 'Договір 43' }])
   })
   afterEach(clearSession)
+
+  function stageFinancial(rows: number[], columns: number[], mode = 0) {
+    const data = { ...documentRequest(rows, columns), profitReadMode: mode }
+    const fields = datasetGroupings(documentDataset, { ...data, profitReadMode: 0 })
+    data.sorted.Row = rows.map(type => fields.find(field => field.type === type)!)
+    data.sorted.Col = columns.map(type => fields.find(field => field.type === type)!)
+    const measurements = datasetMeasurements(documentDataset, documentDataset.Measurements.map(field => ({ ...field, IsChecked: true, parentName: '' })))
+    data.sorted.Measurements = measurements.flatMap(group => group.SubList.map(field => ({ ...field, parentName: group.Name })))
+    const encoded = encodeReportWorkspaceDraft({ version: 1, ownerId: owner, savedAt: new Date().toISOString(),
+      snapshot: { name: 'Фінансова чернетка', data, measurements, activeTemplate: null, previousPeriod: { from: data.from, to: data.to } } })
+    expect(encoded.ok).toBe(true)
+    if (!encoded.ok) throw new Error('Invalid test draft')
+    sessionStorage.setItem(reportWorkspaceDraftKey(owner), encoded.value)
+    return { data, raw: encoded.value }
+  }
+
+  it.each([[[81], [5]], [[5], [81]], [[0], [2]], [[12], [15]]])('restores stored financial axes %j / %j through the real workspace action', async (rows, columns) => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, documentDataset])
+    const { data } = stageFinancial(rows, columns)
+    await restored()
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Відновити чернетку' })).toBeNull())
+    for (const field of [...data.sorted.Row, ...data.sorted.Col]) expect(screen.getByRole('button', { name: `Видалити ${field.label}` })).toBeTruthy()
+    expect((readReportDateInput('Від') as HTMLInputElement).value).toBe(data.from)
+    expect((readReportDateInput('До') as HTMLInputElement).value).toBe(data.to)
+    changeReportPeriod({ from: '2026-10-18' })
+    await waitFor(() => {
+      const stored = JSON.parse(sessionStorage.getItem(reportWorkspaceDraftKey(owner))!)
+      expect(stored.snapshot.data.from).toBe('2026-10-18')
+      expect(stored.snapshot.data.to).toBe(data.to)
+      expect(stored.snapshot.data.sorted).toEqual(data.sorted)
+      expect(stored.snapshot.data.selections).toEqual(data.selections)
+    })
+    expect(createStockReport).not.toHaveBeenCalled()
+    expect(saveServerReportTemplate).not.toHaveBeenCalled()
+  })
+
+  it.each(['missing-capability', 'unsupported-mode'])('refuses a stored document draft on %s without rewriting it', async reason => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, reason === 'missing-capability' ? productTimeDataset : documentDataset])
+    const { raw } = stageFinancial([81], [5], reason === 'unsupported-mode' ? 1 : 0)
+    await restored()
+    await screen.findByText(reason === 'missing-capability' ? /сервер не підтвердив/ : /Групування за документом/)
+    expect(sessionStorage.getItem(reportWorkspaceDraftKey(owner))).toBe(raw)
+    expect(createStockReport).not.toHaveBeenCalled()
+    expect(saveServerReportTemplate).not.toHaveBeenCalled()
+  })
 
   it('recovers an unfinished period after remount only on request, without generating or updating a template', async () => {
     const view = await ready()

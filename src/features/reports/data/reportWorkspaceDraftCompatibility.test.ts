@@ -8,6 +8,10 @@ import { reportDatasets, valuationDataset } from './reportDatasets.test-fixtures
 import { getNativeReportProfile } from './nativeReportProfiles'
 import type { ReportWorkspaceSnapshot } from './reportWorkspaceDraft'
 import { reportWorkspaceDraftCompatibility } from './reportWorkspaceDraftCompatibility'
+import { documentDataset, documentRequest } from './currentFinancialDocumentAxes.test-fixtures'
+import { currentFinancialDataset, currentFinancialRequest } from './currentFinancialAxes.test-fixtures'
+import { productTimeDataset, productTimeRequest } from './currentFinancialProductTimeAxes.test-fixtures'
+import { financialDataset } from './financialAxes.test-fixtures'
 
 function snapshot(dataset: ReportDataset = reportDatasets[0]): ReportWorkspaceSnapshot {
   const data = defaultDatasetRequest(dataset, '', '')
@@ -115,4 +119,49 @@ it('restores analysis39 article/product axes while keeping its own configurable 
   expect(reportWorkspaceDraftCompatibility(value, analysisDataset)).toBeNull()
   value.data.sorted.Col = []
   expect(reportWorkspaceDraftCompatibility(value, analysisDataset)).not.toBeNull()
+})
+
+describe('financial capability fields in saved drafts', () => {
+  const financialSnapshot = (dataset: ReportDataset, data: ReportWorkspaceSnapshot['data']): ReportWorkspaceSnapshot => ({
+    ...snapshot(dataset), data, measurements: datasetMeasurements(dataset, data.sorted.Measurements),
+  })
+
+  it.each([12, 15])('admits client capability field %s without widening base metadata', type => {
+    const value = financialSnapshot(currentFinancialDataset, currentFinancialRequest([type], [3]))
+    const before = structuredClone(value)
+    expect(reportWorkspaceDraftCompatibility(value, currentFinancialDataset)).toBeNull()
+    expect(currentFinancialDataset.Groupings.map(field => field.Type)).toEqual([3, 4])
+    expect(value).toEqual(before)
+  })
+
+  it.each([0, 1, 2, 5, 12, 15])('admits product/time capability field %s in either axis', type => {
+    for (const [rows, columns] of [[[type], [3]], [[3], [type]]]) {
+      const value = financialSnapshot(productTimeDataset, productTimeRequest(rows, columns))
+      const before = structuredClone(value)
+      expect(reportWorkspaceDraftCompatibility(value, productTimeDataset)).toBeNull()
+      expect(value).toEqual(before)
+    }
+  })
+
+  it.each([[[81], [5]], [[5], [81]], [[81, 15], []]])('admits document draft %j / %j with retained presentation and exact negative filter', (rows, columns) => {
+    const value = financialSnapshot(documentDataset, { ...documentRequest(rows, columns),
+      workbookPresentation: { version: 1, additionalFields: [2, 3], ordering: 'MonthAscending' } })
+    const before = structuredClone(value)
+    expect(reportWorkspaceDraftCompatibility(value, documentDataset)).toBeNull()
+    expect(value).toEqual(before)
+  })
+
+  it.each([currentFinancialRequest([12], [3]), productTimeRequest([5], [3]), documentRequest([81], [5])])('retains but refuses a capability-only draft with old metadata', data => {
+    const value = financialSnapshot(documentDataset, data)
+    const before = structuredClone(value)
+    expect(reportWorkspaceDraftCompatibility(value, financialDataset)).not.toBeNull()
+    expect(value).toEqual(before)
+  })
+
+  it.each([1, 2])('refuses current financial fields in mode %s without dropping them', mode => {
+    const value = financialSnapshot(documentDataset, { ...documentRequest([81], [5]), profitReadMode: mode })
+    const before = structuredClone(value)
+    expect(reportWorkspaceDraftCompatibility(value, documentDataset)).toMatch(/лише|несумісн|не підтримує/)
+    expect(value).toEqual(before)
+  })
 })

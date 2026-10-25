@@ -13,6 +13,7 @@ import { requestSupplierSourceWorld, supplierBatchGrossProfitConfigurationError 
 import type { ReportDataset } from '../types'
 import { getNativeReportProfile, hasFixedReportAxes } from './nativeReportProfiles'
 import type { ReportWorkspaceSnapshot } from './reportWorkspaceDraft'
+import { datasetGroupings } from './reportDatasets'
 
 const options = ['comparison', 'xyz', 'paymentComparison', 'marginComparison', 'rateComparison',
   'returnComparison', 'buyerSalesShare', 'revenueComparison', 'ordering', 'filterExpression',
@@ -51,7 +52,8 @@ export function reportWorkspaceDraftCompatibility(snapshot: ReportWorkspaceSnaps
     && (requestSupplierSourceWorld(data) === 0 || requestProfitReadMode(data) === 0)
     && supplierBatchGrossProfitConfigurationError(data, dataset) === null
   const analysis = requestCurrentVparivanieAnalysis(data) ? currentVparivanieAnalysisCapability(dataset) : null
-  const groupings = new Set(analysis ? analysis.groupings.map(field => field.type) : dataset.Groupings.map(field => field.Type))
+  const groupings = new Set(analysis ? analysis.groupings.map(field => field.type)
+    : dataset.DataSource === 35 ? datasetGroupings(dataset, data).map(field => field.type) : dataset.Groupings.map(field => field.Type))
   const measures = new Set(dataset.Measurements.map(field => field.Type))
   if ([...data.sorted.Row, ...data.sorted.Col].some(field => !groupings.has(field.type))
     || measurements.some(group => group.SubList.some(field => field.IsChecked && !measures.has(field.Type)))
