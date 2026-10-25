@@ -7,18 +7,16 @@ import {
   Stack,
   Text,
 } from '@mantine/core'
-import { notifications } from '@mantine/notifications'
 import { ArrowLeftRight, CircleAlert, Package, Receipt, Warehouse } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DocumentDetailChip, DocumentDetailLayout, DocumentDetailMetric, DocumentDetailSection, DocumentDetailSummary } from '../../../shared/ui/document-detail/DocumentDetail'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { shiftOrderItemsCurrent } from '../api/salesUkraineApi'
 import { getSaleLifecycleStatusKey } from '../saleStatus'
-import { usePersistentSaleJsonMutation } from '../usePersistentSaleJsonMutation'
+import { useSaleEditSubmit } from './useSaleEditSubmit'
 import {
   OrderItemShiftStatusType,
   type SalesUkraineOrderItem,
@@ -67,7 +65,6 @@ type SaleEditState = {
   draft: ShiftDraft
   error: string | null
   isLoading: boolean
-  isSaving: boolean
   sale: SalesUkraineSale
 }
 type SaleEditFooterState = {
@@ -80,8 +77,7 @@ type SaleEditAction =
   | { type: 'draftEntryChanged'; key: string; patch: Partial<ShiftDraftEntry> }
   | { type: 'draftReplaced'; draft: ShiftDraft }
   | SaleEditLoadAction
-  | { type: 'savingFinished' }
-  | { type: 'savingStarted' }
+
 
 const HIDDEN_SALE_EDIT_FOOTER: SaleEditFooterState = {
   hasPending: false,
@@ -97,7 +93,7 @@ export function SaleEditDrawer({
   onSaved,
 }: {
   onClose: () => void
-  onSaved: () => void
+  onSaved: () => void | Promise<void>
   sale: SalesUkraineSale | null
   zIndex?: number
 }) {
@@ -154,7 +150,6 @@ function createInitialSaleEditState(initialSale: SalesUkraineSale): SaleEditStat
     draft: buildDraft(getOrderItems(initialSale)),
     error: null,
     isLoading: Boolean(initialSale.NetUid),
-    isSaving: false,
     sale: initialSale,
   }
 }
@@ -186,10 +181,6 @@ function saleEditReducer(state: SaleEditState, action: SaleEditAction): SaleEdit
         isLoading: false,
         sale: action.sale,
       }
-    case 'savingFinished':
-      return { ...state, isSaving: false }
-    case 'savingStarted':
-      return { ...state, isSaving: true }
     default:
       return state
   }
@@ -204,20 +195,20 @@ function SaleEditContent({
   initialSale: SalesUkraineSale
   saleKey: string
   onFooterStateChange: (state: SaleEditFooterState) => void
-  onSaved: () => void
+  onSaved: () => void | Promise<void>
 }) {
   const { t } = useI18n()
-  const [{ draft, error, isLoading, isSaving, sale }, dispatch] = useReducer(
+  const [{ draft, error, isLoading, sale }, dispatch] = useReducer(
     saleEditReducer,
     initialSale,
     createInitialSaleEditState,
   )
-  const shiftMutation = usePersistentSaleJsonMutation(
-    `sale-shift-current:${String(initialSale.NetUid || initialSale.Id || '')}`,
-    'sale-shift-current',
-  )
-  const resumeShiftMutation = shiftMutation.resume
-  const recoveryAttemptedRef = useRef(false)
+  const shiftMutation = useSaleEditSubmit({
+    context: `sale-shift-current:${String(initialSale.NetUid || initialSale.Id || '')}`,
+    ready: !isLoading && !error,
+    onSaved,
+  })
+  const { isSaving, submit: submitShift, recover: recoverPendingShift } = shiftMutation
 
   useSaleEditLoad(initialSale.NetUid, dispatch)
 
@@ -263,76 +254,6 @@ function SaleEditContent({
     dispatch({ draft: buildBulkDraft(orderItems, 'store'), type: 'draftReplaced' })
     void submitShift(buildBulkShiftPayload(sale, 'store'))
   }
-
-  async function submitShift(payload: SalesUkraineSale) {
-    dispatch({ type: 'savingStarted' })
-
-    try {
-      const result = await shiftMutation.run(payload, shiftOrderItemsCurrent)
-
-      if (!result.completed) {
-        return
-      }
-
-      notifications.show({ color: 'green', message: t('Зсув виконано') })
-      onSaved()
-    } catch (shiftError) {
-      notifications.show({
-        color: 'red',
-        message: shiftError instanceof Error && shiftError.message.trim()
-          ? shiftError.message
-          : t('Не вдалося виконати зсув'),
-      })
-    } finally {
-      dispatch({ type: 'savingFinished' })
-    }
-  }
-
-  const recoverPendingShift = useCallback(async (isCancelled: () => boolean = () => false) => {
-    dispatch({ type: 'savingStarted' })
-
-    try {
-      const result = await resumeShiftMutation(shiftOrderItemsCurrent)
-
-      if (!isCancelled() && result.completed) {
-        notifications.show({ color: 'green', message: t('Попередню операцію підтверджено') })
-        onSaved()
-      }
-    } catch (recoveryError) {
-      if (!isCancelled()) {
-        notifications.show({
-          color: 'red',
-          message: recoveryError instanceof Error && recoveryError.message.trim()
-            ? recoveryError.message
-            : t('Не вдалося перевірити попередню операцію'),
-        })
-      }
-    } finally {
-      if (!isCancelled()) {
-        dispatch({ type: 'savingFinished' })
-      }
-    }
-  }, [onSaved, resumeShiftMutation, t])
-
-  useEffect(() => {
-    if (
-      isLoading ||
-      error ||
-      !shiftMutation.hasPending ||
-      recoveryAttemptedRef.current
-    ) {
-      return
-    }
-
-    recoveryAttemptedRef.current = true
-    let cancelled = false
-
-    void recoverPendingShift(() => cancelled)
-
-    return () => {
-      cancelled = true
-    }
-  }, [error, isLoading, recoverPendingShift, shiftMutation.hasPending])
 
   function doShift() {
     return submitShift(buildShiftPayload(sale, draft))

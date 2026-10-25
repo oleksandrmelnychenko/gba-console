@@ -60,9 +60,10 @@ export async function searchWizardClients(
   return Array.isArray(result) ? (result as Client[]) : []
 }
 
-export async function getWizardSalesRegister(query: WizardSaleRegisterQuery, signal?: AbortSignal): Promise<WizardSaleRegisterItem[]> {
+export async function getWizardSalesRegister(query: WizardSaleRegisterQuery, signal?: AbortSignal, options?: { fresh?: boolean }): Promise<WizardSaleRegisterItem[]> {
   const result = await apiRequest<unknown>('/sales/all/register', {
     ...(signal ? { signal } : {}),
+    ...(options?.fresh ? { dedupe: false } : {}),
     query: {
       clientNetId: query.clientNetId,
       from: query.from,
@@ -89,9 +90,10 @@ export function mapWizardSaleRegisterItems(items: WizardSaleRegisterItem[]): Wiz
   }, [])
 }
 
-export async function getWizardClientGroupedDebts(clientNetId: string, signal?: AbortSignal): Promise<ClientInDebt[]> {
+export async function getWizardClientGroupedDebts(clientNetId: string, signal?: AbortSignal, options?: { fresh?: boolean }): Promise<ClientInDebt[]> {
   const result = await apiRequest<unknown>('/clients/get/debt/grouped', {
     ...(signal ? { signal } : {}),
+    ...(options?.fresh ? { dedupe: false } : {}),
     query: { netId: clientNetId },
   })
 

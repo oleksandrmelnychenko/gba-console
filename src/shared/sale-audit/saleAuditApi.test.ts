@@ -85,4 +85,10 @@ describe('sale audit protocol mutation', () => {
     ])
   })
 
+  it('bypasses pre-save statistic reads when refreshing an edited sale', async () => {
+    const signal = new AbortController().signal
+    await getSalesUkraineEditSaleStatistic('sale-1', signal, { fresh: true })
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/ukraine/edit/shifted', { signal, dedupe: false, query: { netId: 'sale-1' } })
+  })
+
 })

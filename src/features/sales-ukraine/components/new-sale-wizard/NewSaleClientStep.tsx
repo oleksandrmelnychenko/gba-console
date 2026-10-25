@@ -71,7 +71,7 @@ export function NewSaleClientStep({
   const { carousel, searchInputRef, pickClient, cancelPendingMove } = navigation
   const {
     registryItems, isRegistryLoading, statusFilter, saleSearch, dateFrom, dateTo,
-    resetRegister, fetchRegister, handleStatusChange, handleSaleSearchChange,
+    resetRegister, fetchRegister, refreshAfterSave, handleStatusChange, handleSaleSearchChange,
     handleDateFromChange, handleDateToChange, replaceRegistryRow, refreshRegistryRow,
   } = useWizardClientSalesRegister()
   const {
@@ -95,7 +95,7 @@ export function NewSaleClientStep({
     clientKey: selectedClient ? String(selectedClient.NetUid || selectedClient.Id || '') : null,
     canConvertMergedToBill, canEdit, canOpenDeliveryDetails, canOpenDetails, canViewAudit,
     permissionScopedSalesUkraineApi, onOpenSale, onCreateMergedMainClientSale, onEditMergedSale, onInvoiceMergedSale,
-    fetchRegister, refreshGroupedDebts, refreshRegistryRow, replaceRegistryRow,
+    fetchRegister, refreshAfterSave, refreshGroupedDebts, refreshRegistryRow, replaceRegistryRow,
   })
   const { keyboardState, handleSearchChange } = useWizardClientKeyboard({
     navigation, hasOpenOverlay: actions.hasOpenOverlay, unselectClient,

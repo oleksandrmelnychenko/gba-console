@@ -222,4 +222,19 @@ describe('wizard client selection', () => {
     expect(props.onAgreementChange).not.toHaveBeenCalled()
   })
 
+  it('replaces a pre-save debt read with a fresh read and rejects its late result', async () => {
+    const old = deferred<ClientInDebt[]>()
+    const fresh = deferred<ClientInDebt[]>()
+    mocks.debts.mockReturnValueOnce(old.promise).mockReturnValueOnce(fresh.promise)
+    const { result } = renderHook(useWizardClientSelection, { initialProps: options() })
+    act(() => result.current.confirmClient(client(1)))
+    let refreshed!: Promise<boolean>
+    act(() => { refreshed = result.current.refreshGroupedDebts({ fresh: true }) })
+    expect(mocks.debts.mock.calls[0][1].aborted).toBe(true)
+    expect(mocks.debts.mock.calls[1][2]).toEqual({ fresh: true })
+    await act(async () => { fresh.resolve([{ Debt: { Total: 20 } }]); await refreshed })
+    await act(async () => { old.resolve([{ Debt: { Total: 999 } }]) })
+    expect(result.current.groupedDebts).toEqual([{ Debt: { Total: 20 } }])
+  })
+
 })

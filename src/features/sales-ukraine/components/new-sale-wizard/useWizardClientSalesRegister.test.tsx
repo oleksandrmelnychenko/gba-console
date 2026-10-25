@@ -186,4 +186,52 @@ describe('wizard client sales register', () => {
     await act(async () => { pending.resolve({ Sale: { NetUid: 'sale-1' } }); await Promise.all([first, audit]) })
   })
 
+  it('refreshes list and edited totals concurrently after save, bypassing the pre-save request', async () => {
+    const old = deferred<WizardSaleRegisterItem[]>()
+    const list = deferred<WizardSaleRegisterItem[]>()
+    const statistic = deferred<{ Sale: { NetUid: string; TotalAmount: number } }>()
+    mocks.load.mockReturnValueOnce(old.promise).mockReturnValueOnce(list.promise)
+    mocks.row.mockReturnValueOnce(statistic.promise)
+    const { result } = setup()
+    let before!: Promise<void>
+    let saved!: Promise<void>
+    act(() => { before = result.current.fetchRegister(); saved = result.current.refreshAfterSave({ NetUid: 'sale-1' }) })
+    expect(mocks.load.mock.calls[0][1].aborted).toBe(true)
+    expect(mocks.load.mock.calls[1][2]).toEqual({ fresh: true })
+    expect(mocks.row).toHaveBeenCalledWith('sale-1', expect.any(AbortSignal), { fresh: true })
+    await act(async () => { statistic.resolve({ Sale: { NetUid: 'sale-1', TotalAmount: 20 } }) })
+    expect(result.current.registryItems).toEqual([])
+    await act(async () => { list.resolve([...rows('sale-1'), ...rows('child')]); await saved })
+    expect(result.current.registryItems.map(item => item.Sale?.NetUid)).toEqual(['sale-1', 'child'])
+    expect(result.current.registryItems[0].Sale?.TotalAmount).toBe(20)
+    const current = result.current.registryItems
+    await act(async () => { old.resolve(rows('stale')); await before })
+    expect(result.current.registryItems).toBe(current)
+  })
+
+  it('does not insert an edited sale excluded by the current filter and tolerates a failed total read', async () => {
+    const { result } = setup()
+    mocks.load.mockResolvedValue(rows('other'))
+    mocks.row.mockResolvedValue({ Sale: { NetUid: 'sale-1' } })
+    await act(async () => result.current.refreshAfterSave({ NetUid: 'sale-1' }))
+    expect(result.current.registryItems.map(item => item.Sale?.NetUid)).toEqual(['other'])
+    mocks.row.mockRejectedValueOnce(new Error('offline'))
+    await act(async () => result.current.refreshAfterSave({ NetUid: 'sale-1' }))
+    expect(result.current.registryItems.map(item => item.Sale?.NetUid)).toEqual(['other'])
+  })
+
+  it('retires both post-save reads when the client changes', async () => {
+    const list = deferred<WizardSaleRegisterItem[]>()
+    const statistic = deferred<{ Sale: { NetUid: string } }>()
+    mocks.load.mockReturnValueOnce(list.promise)
+    mocks.row.mockReturnValueOnce(statistic.promise)
+    const { result } = setup()
+    let saved!: Promise<void>
+    act(() => { saved = result.current.refreshAfterSave({ NetUid: 'sale-1' }); result.current.resetRegister('client-2') })
+    expect(mocks.load.mock.calls[0][1].aborted).toBe(true)
+    expect(mocks.row.mock.calls[0][1].aborted).toBe(true)
+    await act(async () => { list.resolve(rows('sale-1')); statistic.resolve({ Sale: { NetUid: 'sale-1' } }); await saved })
+    expect(result.current.registryItems).toEqual([])
+  })
+
 })

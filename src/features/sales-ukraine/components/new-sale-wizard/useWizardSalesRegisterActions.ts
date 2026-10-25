@@ -41,7 +41,8 @@ type Options = {
   onEditMergedSale?: (sale: SalesUkraineSale, unionSale: SalesUkraineSale | null) => void
   onInvoiceMergedSale?: (sale: SalesUkraineSale, unionSale: SalesUkraineSale | null) => void
   fetchRegister: () => Promise<void>
-  refreshGroupedDebts: () => Promise<boolean>
+  refreshGroupedDebts: (options?: { fresh?: boolean }) => Promise<boolean>
+  refreshAfterSave: (sale?: SalesUkraineSale) => Promise<void>
   refreshRegistryRow: (sale: SalesUkraineSale, autoExpand: boolean, semantic?: 'audit' | 'edit') => Promise<void>
   replaceRegistryRow: (statistic: WizardSaleRegisterStatistic, autoExpand: boolean) => void
 }
@@ -133,11 +134,8 @@ export function useWizardSalesRegisterActions(options: Options) {
     if (!edit || !isCurrent(edit) || stateRef.current.edit !== edit) return
     closeEdit()
     bumpWizardDebtRefresh()
-    void latestRef.current.refreshGroupedDebts()
-    // A shift may create a child sale. Load the list first, then replace the
-    // edited row with its recomputed sum from the per-sale endpoint.
-    await latestRef.current.fetchRegister()
-    if (isCurrent(edit)) await latestRef.current.refreshRegistryRow(edit.sale, false)
+    void latestRef.current.refreshGroupedDebts({ fresh: true })
+    await latestRef.current.refreshAfterSave(edit.sale)
   }, [edit, isCurrent, closeEdit])
 
   const openDeliveryRow = useCallback((sale: SalesUkraineSale) => {
@@ -148,7 +146,7 @@ export function useWizardSalesRegisterActions(options: Options) {
   const handleDetailsSaved = useCallback(() => {
     if (!details || !isCurrent(details) || stateRef.current.details !== details) return
     closeDetails()
-    return latestRef.current.fetchRegister()
+    return latestRef.current.refreshAfterSave()
   }, [details, isCurrent, closeDetails])
   const openOrderedProducts = useCallback(() => publish({ isOrderedProductsOpen: true }), [publish])
   const closeOrderedProducts = useCallback(() => publish({ isOrderedProductsOpen: false }), [publish])

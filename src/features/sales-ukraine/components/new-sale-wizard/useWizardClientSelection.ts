@@ -21,6 +21,7 @@ type SelectionSession = {
   controller: AbortController
   phase: 'waiting' | 'loading' | 'ready' | 'failed'
   debtPromise?: Promise<boolean>
+  debtController?: AbortController
   agreementsLoaded?: boolean
   debtsLoaded?: boolean
   supplementaryStarted?: boolean
@@ -59,6 +60,7 @@ export function useWizardClientSelection(options: Options) {
     if (timerRef.current !== null) clearTimeout(timerRef.current)
     timerRef.current = null
     sessionRef.current?.controller.abort()
+    sessionRef.current?.debtController?.abort()
     sessionRef.current = null
     generationRef.current += 1
   }, [])
@@ -69,23 +71,31 @@ export function useWizardClientSelection(options: Options) {
     setWizardKeyboardState('ClientSearch')
   }, [retireSelection])
 
-  const loadDebts = useCallback((session: SelectionSession): Promise<boolean> => {
+  const loadDebts = useCallback((session: SelectionSession, options?: { fresh?: boolean }): Promise<boolean> => {
     const netId = session.client.NetUid
     if (!netId || sessionRef.current !== session) return Promise.resolve(false)
-    if (session.debtPromise) return session.debtPromise
-    session.debtPromise = getWizardClientGroupedDebts(netId, session.controller.signal).then((debts) => {
-      if (sessionRef.current === session) {
-        session.debtsLoaded = true
-        publish({ groupedDebts: debts })
-      }
+    if (session.debtPromise && !options?.fresh) return session.debtPromise
+    session.debtController?.abort()
+    const controller = new AbortController()
+    session.debtController = controller
+    const isCurrent = () => sessionRef.current === session && session.debtController === controller && !controller.signal.aborted
+    const request = options?.fresh
+      ? getWizardClientGroupedDebts(netId, controller.signal, options)
+      : getWizardClientGroupedDebts(netId, controller.signal)
+    session.debtPromise = request.then((debts) => {
+      if (!isCurrent()) return false
+      session.debtsLoaded = true
+      publish({ groupedDebts: debts })
       return true
     }).catch(() => {
-      if (sessionRef.current === session) {
+      if (isCurrent()) {
         session.debtsLoaded = false
         publish({ groupedDebts: [] })
       }
       return false
-    }).finally(() => { session.debtPromise = undefined })
+    }).finally(() => {
+      if (session.debtController === controller) session.debtPromise = undefined
+    })
     return session.debtPromise
   }, [publish])
 
@@ -201,7 +211,7 @@ export function useWizardClientSelection(options: Options) {
   }, [selectAgreement])
   const selectNextAgreement = useCallback(() => moveAgreement(1), [moveAgreement])
   const selectPreviousAgreement = useCallback(() => moveAgreement(-1), [moveAgreement])
-  const refreshGroupedDebts = useCallback(() => sessionRef.current ? loadDebts(sessionRef.current) : Promise.resolve(false), [loadDebts])
+  const refreshGroupedDebts = useCallback((options?: { fresh?: boolean }) => sessionRef.current ? loadDebts(sessionRef.current, options) : Promise.resolve(false), [loadDebts])
 
   useEffect(() => {
     if (clientNetId) setWizardKeyboardState('ClientSelection')

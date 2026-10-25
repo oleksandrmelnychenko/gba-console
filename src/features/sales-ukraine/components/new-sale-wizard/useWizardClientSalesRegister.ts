@@ -5,6 +5,7 @@ import { getSalesUkraineEditSaleStatistic, getSalesUkraineSaleAudit } from '../.
 import type { SalesUkraineSale } from '../../types'
 import { getWizardSalesRegister, mapWizardSaleRegisterItems, WIZARD_SALE_REGISTER_STATUS_ALL,
   type WizardSaleRegisterQuery, type WizardSaleRegisterStatistic } from './wizardClientStepApi'
+import { getWizardRegisterAfterSave } from './wizardClientRegisterRefresh'
 
 type RegisterRequest = { key: string; controller: AbortController; promise: Promise<void> }
 
@@ -51,13 +52,13 @@ export function useWizardClientSalesRegister() {
     setRegistryLoading(loading && Boolean(clientNetId))
   }, [clearTimers, retireRequest])
 
-  const fetchRegister = useCallback((overrides?: Partial<WizardSaleRegisterQuery>): Promise<void> => {
+  const loadRegister = useCallback((overrides?: Partial<WizardSaleRegisterQuery>, afterSave = false, editedSale?: SalesUkraineSale): Promise<void> => {
     const args = { ...argsRef.current, ...overrides }
     if (!args.clientNetId || args.clientNetId !== argsRef.current.clientNetId) return Promise.resolve()
     clearTimers()
     args.value = args.value.trim()
     const key = getRegisterKey(args)
-    if (requestRef.current?.key === key) return requestRef.current.promise
+    if (!afterSave && requestRef.current?.key === key) return requestRef.current.promise
     retireRequest()
     setRegistryLoading(true)
     const controller = new AbortController()
@@ -65,10 +66,12 @@ export function useWizardClientSalesRegister() {
     requestRef.current = request
     request.promise = (async () => {
       try {
-        const items = await getWizardSalesRegister(args, controller.signal)
+        const items = afterSave
+          ? await getWizardRegisterAfterSave(args, controller.signal, editedSale)
+          : mapWizardSaleRegisterItems(await getWizardSalesRegister(args, controller.signal))
         if (!controller.signal.aborted) {
           loadedKeyRef.current = key
-          setRegistryItems(mapWizardSaleRegisterItems(items))
+          setRegistryItems(items)
         }
       } catch {
         if (!controller.signal.aborted) {
@@ -84,6 +87,9 @@ export function useWizardClientSalesRegister() {
     })()
     return request.promise
   }, [clearTimers, retireRequest])
+
+  const fetchRegister = useCallback((overrides?: Partial<WizardSaleRegisterQuery>) => loadRegister(overrides), [loadRegister])
+  const refreshAfterSave = useCallback((editedSale?: SalesUkraineSale) => loadRegister(undefined, true, editedSale), [loadRegister])
 
   // Only input no-ops reuse a successful result. Explicit/realtime refreshes
   // always read current server data, and a failed filter can be retried.
@@ -164,7 +170,7 @@ export function useWizardClientSalesRegister() {
   useRealtimeEvent(realtimeEvents.saleAdded, scheduleRealtimeRegister)
   useRealtimeEvent(realtimeEvents.saleUpdated, scheduleRealtimeRegister)
 
-  return { registryItems, isRegistryLoading, statusFilter, saleSearch, dateFrom, dateTo, resetRegister, fetchRegister,
+  return { registryItems, isRegistryLoading, statusFilter, saleSearch, dateFrom, dateTo, resetRegister, fetchRegister, refreshAfterSave,
     handleStatusChange, handleSaleSearchChange, handleDateFromChange, handleDateToChange, replaceRegistryRow, refreshRegistryRow }
 }
 

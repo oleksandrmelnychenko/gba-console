@@ -34,7 +34,7 @@ function options(overrides: Partial<Options> = {}): Options {
     clientKey: 'client-a', canEdit: true, canViewAudit: true, canOpenDetails: true,
     canOpenDeliveryDetails: true, canConvertMergedToBill: true, permissionScopedSalesUkraineApi: false,
     onOpenSale: vi.fn(), onCreateMergedMainClientSale: vi.fn(), onEditMergedSale: vi.fn(), onInvoiceMergedSale: vi.fn(),
-    fetchRegister: vi.fn(async () => {}), refreshGroupedDebts: vi.fn(async () => true),
+    fetchRegister: vi.fn(async () => {}), refreshAfterSave: vi.fn(async () => {}), refreshGroupedDebts: vi.fn(async () => true),
     refreshRegistryRow: vi.fn(async () => {}), replaceRegistryRow: vi.fn(), ...overrides,
   }
 }
@@ -246,9 +246,9 @@ describe('wizard register actions', () => {
     expect(result.current.printState).toBeNull()
   })
 
-  it('refreshes debts and the whole register before fetching the edited row, without repeating save', async () => {
+  it('starts one fresh post-save refresh and debt refresh without repeating the completion', async () => {
     const pending = deferred<void>()
-    const { result, props } = setup({ fetchRegister: vi.fn(() => pending.promise) })
+    const { result, props } = setup({ refreshAfterSave: vi.fn(() => pending.promise) })
     await act(async () => { await result.current.openEditRow(sale); await result.current.openEditRow(sale) })
     expect(props.refreshRegistryRow).toHaveBeenCalledOnce()
     let saved!: Promise<void>
@@ -256,17 +256,18 @@ describe('wizard register actions', () => {
     act(() => { saved = onSaved(); void onSaved() })
     expect(mocks.bumpDebt).toHaveBeenCalledOnce()
     expect(props.refreshGroupedDebts).toHaveBeenCalledOnce()
-    expect(props.fetchRegister).toHaveBeenCalledOnce()
+    expect(props.refreshAfterSave).toHaveBeenCalledExactlyOnceWith(sale)
+    expect(props.refreshGroupedDebts).toHaveBeenCalledWith({ fresh: true })
     expect(result.current.editShiftSale).toBeNull()
     expect(props.refreshRegistryRow).toHaveBeenCalledOnce()
     await act(async () => { pending.resolve(); await saved })
-    expect(props.refreshRegistryRow).toHaveBeenCalledTimes(2)
+    expect(props.refreshRegistryRow).toHaveBeenCalledOnce()
     expect(props.refreshRegistryRow).toHaveBeenLastCalledWith(sale, false)
   })
 
   it('does not refresh an edited row in a different client register after the list finishes', async () => {
     const pending = deferred<void>()
-    const { result, props, rerender } = setup({ fetchRegister: vi.fn(() => pending.promise) })
+    const { result, props, rerender } = setup({ refreshAfterSave: vi.fn(() => pending.promise) })
     await act(async () => result.current.openEditRow(sale))
     let saved!: Promise<void>
     act(() => { saved = result.current.handleShiftSaved() })
@@ -289,6 +290,7 @@ describe('wizard register actions', () => {
       old.handleMergedNewSale?.()
     })
     expect(props.fetchRegister).not.toHaveBeenCalled()
+    expect(props.refreshAfterSave).not.toHaveBeenCalled()
     expect(props.onEditMergedSale).not.toHaveBeenCalled()
     expect(props.onInvoiceMergedSale).not.toHaveBeenCalled()
     expect(props.onCreateMergedMainClientSale).not.toHaveBeenCalled()
@@ -300,10 +302,10 @@ describe('wizard register actions', () => {
     const saved = result.current.handleDetailsSaved
     await act(async () => { await saved(); await saved() })
     expect(result.current.detailsSale).toBeNull()
-    expect(props.fetchRegister).toHaveBeenCalledOnce()
+    expect(props.refreshAfterSave).toHaveBeenCalledExactlyOnceWith()
     act(() => result.current.openRow(union))
     await act(async () => result.current.handleMergedChanged())
-    expect(props.fetchRegister).toHaveBeenCalledTimes(2)
+    expect(props.fetchRegister).toHaveBeenCalledOnce()
   })
 
   it('clears overlays and fences A-B-A client responses, including StrictMode remount cleanup', async () => {

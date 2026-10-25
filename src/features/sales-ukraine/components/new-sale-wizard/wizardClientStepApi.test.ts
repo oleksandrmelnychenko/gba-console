@@ -186,3 +186,12 @@ it('forwards cancellation to all client-preview details', async () => {
   expect(apiRequestMock).toHaveBeenCalledTimes(3)
   for (const [, options] of apiRequestMock.mock.calls) expect(options?.signal).toBe(signal)
 })
+
+it('bypasses pre-save shared reads for fresh register and debt refreshes', async () => {
+    apiRequestMock.mockReset().mockResolvedValue([])
+    const signal = new AbortController().signal
+    await getWizardSalesRegister({ clientNetId: 'client-1', from: '', to: '', type: 6, value: '' }, signal, { fresh: true })
+    await getWizardClientGroupedDebts('client-1', signal, { fresh: true })
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/all/register', expect.objectContaining({ signal, dedupe: false }))
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/get/debt/grouped', { signal, dedupe: false, query: { netId: 'client-1' } })
+  })

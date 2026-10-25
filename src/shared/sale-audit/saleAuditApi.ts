@@ -27,10 +27,11 @@ export async function getSalesUkraineSaleAudit(netId: string, signal?: AbortSign
   return normalizeObject<SaleAuditStatistic>(result)
 }
 
-export async function getSalesUkraineEditSaleStatistic(netId: string, signal?: AbortSignal): Promise<SaleAuditStatistic | null> {
+export async function getSalesUkraineEditSaleStatistic(netId: string, signal?: AbortSignal, options?: { fresh?: boolean }): Promise<SaleAuditStatistic | null> {
   const result = await apiRequest<unknown>('/sales/ukraine/edit/shifted', {
     query: { netId },
     ...(signal ? { signal } : {}),
+    ...(options?.fresh ? { dedupe: false } : {}),
   })
 
   return normalizeObject<SaleAuditStatistic>(result)
