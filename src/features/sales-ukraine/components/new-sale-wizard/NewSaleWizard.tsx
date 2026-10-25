@@ -1,3 +1,4 @@
+import { reuseSaleSnapshot } from '../../saleSnapshot'
 import { useSingleFlight } from '../../../../shared/hooks/useSingleFlight'
 import { useBusyState } from '../../../../shared/hooks/useBusyState'
 import { ActionIcon, Alert, Box, Button, Center, FileInput, Group, Loader, Stack, Text, UnstyledButton } from '@mantine/core'
@@ -830,7 +831,7 @@ function NewSaleWizardContent({
             return null
           }
 
-          const updated = { ...current, sale: next }
+          const updated = { ...current, sale: reuseSaleSnapshot(current.sale, next) }
           stateRef.current = updated
           setState(updated)
           bumpWizardDebtRefresh()
@@ -851,7 +852,7 @@ function NewSaleWizardContent({
           return null
         }
 
-        const updated = { ...current, sale: next }
+        const updated = { ...current, sale: reuseSaleSnapshot(current.sale, next) }
         stateRef.current = updated
         setState(updated)
         bumpWizardDebtRefresh()

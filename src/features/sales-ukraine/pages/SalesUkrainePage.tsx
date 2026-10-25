@@ -1,3 +1,4 @@
+import { reuseSaleSnapshot, reuseSaleSnapshots } from '../saleSnapshot'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { saleAgreementLabel, saleAgreementTitle } from '../../../shared/saleAgreementLabel'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -991,7 +992,7 @@ function SalesUkrainePageContent() {
         if (!cancelled) {
           const { sales: mergedSales, rehydrate } = mergeExpandedSaleDetails(next, salesRef.current, expandedKeysRef.current)
 
-          setSales(mergedSales)
+          setSales(current => reuseSaleSnapshots(current, mergedSales))
 
           for (const netUid of rehydrate) {
             void getSalesUkraineSaleDetails(netUid).then((fresh) => {
@@ -1348,58 +1349,29 @@ function SalesUkrainePageContent() {
                     </span>
                   ))}
                 </div>
-                {sales.map((sale, index) => {
-                  const key = String(sale.NetUid || sale.Id || index)
-                  const canExpand = canOpenSale && getOrderItemCount(sale) > 0
-                  const isExpanded = expandedKeys.has(key)
-
-                  return (
-                    <Fragment key={key}>
-                      <SaleGridRow
-                        sale={sale}
-                        saleKey={key}
-                        canEditSale={canEditSale}
-                        canOpenActions={canOpenContextMenu && hasAvailableSaleActions(sale, {
-                          canEditSale,
-                          canOpenDeliveryDetails,
-                          canPrintConsignmentNote,
-                          canUnlock,
-                          canViewAudit,
-                          canWillNotShip,
-                          canExportBeforePacking,
-                        })}
-                        canOpenDeliveryDetails={canOpenDeliveryDetails}
-                        canExportSaleDocuments={canExportSaleDocuments}
-                        canOpenSale={canOpenSale}
-                        canWillNotShip={canWillNotShip}
-                        canExportBeforePacking={canExportBeforePacking}
-                        canExpand={canExpand}
-                        isExpanded={isExpanded}
-                        onToggleExpand={handleRowToggleExpand}
-                        onOpenSale={handleRowOpenSale}
-                        onOpenEditor={handleRowOpenEditor}
-                        onOpenDetails={handleRowOpenDetails}
-                        onOpenDocuments={handleRowOpenDocuments}
-                        onOpenActions={handleRowOpenActions}
-                        onWillNotShip={handleRowWillNotShip}
-                        onOpenDiscount={handleRowOpenDiscount}
-                      />
-                      {isExpanded && (
-                        <div className="sales-grid-expand">
-                          <Suspense
-                            fallback={(
-                              <div className="sale-expand-content is-empty">
-                                <Text c="dimmed" size="sm">{t('Завантаження')}</Text>
-                              </div>
-                            )}
-                          >
-                            <LazySaleExpandContent sale={sale} onOpenItemDiscount={handleRowItemDiscount} />
-                          </Suspense>
-                        </div>
-                      )}
-                    </Fragment>
-                  )
-                })}
+                <SalesGridRows
+                  sales={sales}
+                  expandedKeys={expandedKeys}
+                  canOpenSale={canOpenSale}
+                  canEditSale={canEditSale}
+                  canOpenContextMenu={canOpenContextMenu}
+                  canOpenDeliveryDetails={canOpenDeliveryDetails}
+                  canPrintConsignmentNote={canPrintConsignmentNote}
+                  canUnlock={canUnlock}
+                  canViewAudit={canViewAudit}
+                  canWillNotShip={canWillNotShip}
+                  canExportBeforePacking={canExportBeforePacking}
+                  canExportSaleDocuments={canExportSaleDocuments}
+                  handleRowToggleExpand={handleRowToggleExpand}
+                  handleRowOpenSale={handleRowOpenSale}
+                  handleRowOpenEditor={handleRowOpenEditor}
+                  handleRowOpenDetails={handleRowOpenDetails}
+                  handleRowOpenDocuments={handleRowOpenDocuments}
+                  handleRowOpenActions={handleRowOpenActions}
+                  handleRowWillNotShip={handleRowWillNotShip}
+                  handleRowOpenDiscount={handleRowOpenDiscount}
+                  handleRowItemDiscount={handleRowItemDiscount}
+                />
               </>
             )}
           </div>
@@ -1588,6 +1560,109 @@ function SalesUkrainePageContent() {
     </Stack>
   )
 }
+
+type SalesGridRowsProps = {
+  sales: SalesUkraineSale[]
+  expandedKeys: Set<string>
+  canOpenSale: boolean
+  canEditSale: boolean
+  canOpenContextMenu: boolean
+  canOpenDeliveryDetails: boolean
+  canPrintConsignmentNote: boolean
+  canUnlock: boolean
+  canViewAudit: boolean
+  canWillNotShip: boolean
+  canExportBeforePacking: boolean
+  canExportSaleDocuments: boolean
+  handleRowToggleExpand: SaleGridRowProps['onToggleExpand']
+  handleRowOpenSale: SaleGridRowProps['onOpenSale']
+  handleRowOpenEditor: SaleGridRowProps['onOpenEditor']
+  handleRowOpenDetails: SaleGridRowProps['onOpenDetails']
+  handleRowOpenDocuments: SaleGridRowProps['onOpenDocuments']
+  handleRowOpenActions: SaleGridRowProps['onOpenActions']
+  handleRowWillNotShip: SaleGridRowProps['onWillNotShip']
+  handleRowOpenDiscount: SaleGridRowProps['onOpenDiscount']
+  handleRowItemDiscount: (sale: SalesUkraineSale, orderItem?: SalesUkraineOrderItem) => void
+}
+
+// Filter text and drawer state must not traverse every sale or rebuild expanded content.
+const SalesGridRows = memo(function SalesGridRows({
+  sales,
+  expandedKeys,
+  canOpenSale,
+  canEditSale,
+  canOpenContextMenu,
+  canOpenDeliveryDetails,
+  canPrintConsignmentNote,
+  canUnlock,
+  canViewAudit,
+  canWillNotShip,
+  canExportBeforePacking,
+  canExportSaleDocuments,
+  handleRowToggleExpand,
+  handleRowOpenSale,
+  handleRowOpenEditor,
+  handleRowOpenDetails,
+  handleRowOpenDocuments,
+  handleRowOpenActions,
+  handleRowWillNotShip,
+  handleRowOpenDiscount,
+  handleRowItemDiscount,
+}: SalesGridRowsProps) {
+  const { t } = useI18n()
+  return sales.map((sale, index) => {
+    const key = String(sale.NetUid || sale.Id || index)
+    const canExpand = canOpenSale && getOrderItemCount(sale) > 0
+    const isExpanded = expandedKeys.has(key)
+
+    return (
+      <Fragment key={key}>
+        <SaleGridRow
+          sale={sale}
+          saleKey={key}
+          canEditSale={canEditSale}
+          canOpenActions={canOpenContextMenu && hasAvailableSaleActions(sale, {
+            canEditSale,
+            canOpenDeliveryDetails,
+            canPrintConsignmentNote,
+            canUnlock,
+            canViewAudit,
+            canWillNotShip,
+            canExportBeforePacking,
+          })}
+          canOpenDeliveryDetails={canOpenDeliveryDetails}
+          canExportSaleDocuments={canExportSaleDocuments}
+          canOpenSale={canOpenSale}
+          canWillNotShip={canWillNotShip}
+          canExportBeforePacking={canExportBeforePacking}
+          canExpand={canExpand}
+          isExpanded={isExpanded}
+          onToggleExpand={handleRowToggleExpand}
+          onOpenSale={handleRowOpenSale}
+          onOpenEditor={handleRowOpenEditor}
+          onOpenDetails={handleRowOpenDetails}
+          onOpenDocuments={handleRowOpenDocuments}
+          onOpenActions={handleRowOpenActions}
+          onWillNotShip={handleRowWillNotShip}
+          onOpenDiscount={handleRowOpenDiscount}
+        />
+        {isExpanded && (
+          <div className="sales-grid-expand">
+            <Suspense
+              fallback={(
+                <div className="sale-expand-content is-empty">
+                  <Text c="dimmed" size="sm">{t('Завантаження')}</Text>
+                </div>
+              )}
+            >
+              <LazySaleExpandContent sale={sale} onOpenItemDiscount={handleRowItemDiscount} />
+            </Suspense>
+          </div>
+        )}
+      </Fragment>
+    )
+  })
+})
 
 type SaleGridRowProps = {
   sale: SalesUkraineSale
@@ -2786,7 +2861,7 @@ function needsSaleDetails(sale: SalesUkraineSale): boolean {
 }
 
 function replaceSaleInList(sales: SalesUkraineSale[], nextSale: SalesUkraineSale): SalesUkraineSale[] {
-  return sales.map((sale) => (isSameSale(sale, nextSale) ? nextSale : sale))
+  return sales.map((sale) => (isSameSale(sale, nextSale) ? reuseSaleSnapshot(sale, nextSale) : sale))
 }
 
 function mergeExpandedSaleDetails(

@@ -10,7 +10,8 @@ import type { SalesUkraineSale } from '../types'
 
 // ── Mocks: network-facing modules only; rendering stays 100% real ──────────────
 
-const SALES_COUNT = 30
+const SALES_COUNT = 100
+let orderReads = 0
 
 function buildFakeSale(index: number): SalesUkraineSale {
   return {
@@ -29,12 +30,15 @@ function buildFakeSale(index: number): SalesUkraineSale {
       },
       Agreement: { Name: `Договір ${index + 1}`, Currency: { Code: 'EUR' } },
     },
-    Order: {
+    get Order() {
+      orderReads += 1
+      return {
       TotalVat: 21,
       OrderItems: [
         { Id: index * 10 + 1, NetUid: `oi-${index}-1`, Qty: 2, TotalAmount: 50 },
         { Id: index * 10 + 2, NetUid: `oi-${index}-2`, Qty: 1, TotalAmount: 50 },
       ],
+      }
     },
     User: { FirstName: 'Олег', LastName: 'Менеджер' },
   } as unknown as SalesUkraineSale
@@ -72,7 +76,7 @@ vi.mock('../../../shared/realtime/events', async (importOriginal) => {
 import { SalesUkrainePage } from './SalesUkrainePage'
 
 // ── Profiler-based render benchmark ─────────────────────────────────────────────
-// Regression guard for the sales-registry hot path: renders the page with 30
+// Regression guard for the sales-registry hot path: renders the page with 100
 // sales, types QUERY into the search box, and counts React commits + fetches.
 // Before optimization every keystroke fired an un-debounced un-aborted fetch and
 // swapped the whole grid to a skeleton (unmount/remount of all rows); rows were
@@ -116,6 +120,7 @@ describe('sales grid performance', () => {
     totalDuration = 0
 
     const input = screen.getByPlaceholderText(/Товар або номер продажу/)
+    orderReads = 0
     const started = performance.now()
 
     for (let index = 1; index <= QUERY.length; index += 1) {
@@ -124,6 +129,8 @@ describe('sales grid performance', () => {
       })
     }
 
+    console.info(`[sales-grid-perf] reads of orders while typing: ${orderReads}`)
+    expect(orderReads).toBe(0)
     const typingCommits = commits
     const typingDuration = totalDuration
     const wallMs = performance.now() - started

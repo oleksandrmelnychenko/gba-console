@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { Button, Group, Text } from '@mantine/core'
 import { Ellipsis, ShoppingCart, Trash2 } from 'lucide-react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -11,7 +12,7 @@ import { getOrderItemLocalPrice, getOrderItemLocalTotal, getWizardProductNumber,
 const money = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const qty = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
 
-export function WizardCartCards({ items, busy, localCurrencyCode, useEurToUah, onRowClick, onRemove, onCrossSell }: {
+type WizardCartCardsProps = {
   items: SalesUkraineOrderItem[]
   busy: boolean
   localCurrencyCode: string
@@ -19,12 +20,14 @@ export function WizardCartCards({ items, busy, localCurrencyCode, useEurToUah, o
   onRowClick?: (item: SalesUkraineOrderItem) => void
   onRemove?: (item: SalesUkraineOrderItem) => void
   onCrossSell?: (item: SalesUkraineOrderItem) => void
-}) {
+}
+
+export const WizardCartCards = memo(function WizardCartCards({ items, ...cardProps }: WizardCartCardsProps) {
   const { t } = useI18n()
   if (items.length === 0) return <div className="wizard-cart-cards__empty"><ShoppingCart size={28} /><Text>{t('Кошик порожній')}</Text></div>
 
   return (
-    <div className="wizard-cart-cards app-table-chips" role="list" aria-label={t('Товари в кошику')} aria-busy={busy} onKeyDown={(event) => {
+    <div className="wizard-cart-cards app-table-chips" role="list" aria-label={t('Товари в кошику')} aria-busy={cardProps.busy} onKeyDown={(event) => {
       if (!(event.target instanceof HTMLElement) || !event.target.matches('[data-cart-card-action]')) return
       if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) return
       event.preventDefault()
@@ -34,41 +37,44 @@ export function WizardCartCards({ items, busy, localCurrencyCode, useEurToUah, o
       const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : Math.max(0, Math.min(buttons.length - 1, index + (event.key === 'ArrowDown' ? 1 : -1)))
       buttons[next]?.focus()
     }}>
-      {items.map((item, index) => {
-        const product = item.Product as WizardSaleProduct | undefined
-        const code = product?.VendorCode || product?.Articul || '—'
-        const name = product?.NameUA || product?.Name || t('Без назви')
-        const original = product ? getProductMainOriginalNumber(product) : null
-        return (
-          <article className="wizard-cart-card" role="listitem" key={item.NetUid || item.Id || `${code}-${index}`}>
-            <span className="wizard-cart-card__index">{String(index + 1).padStart(2, '0')}</span>
-            {product ? <WizardProductPhoto className="wizard-cart-card__photo" product={product} /> : <div className="wizard-cart-card__photo"><ShoppingCart size={24} /></div>}
-            <div className="wizard-cart-card__identity">
-              <Group gap={8}><TableChip tone="product" value={code} />{onCrossSell && <TableRowAction action="recommend" disabled={busy} label={t('Кросс-продажі до товару')} onClick={() => onCrossSell(item)} />}</Group>
-              <h3>{name}</h3>
-              <div className="wizard-cart-card__facts">
-                {original && <span>OEM <TableChip tone="warning" value={original} /></span>}
-                {product?.Size && <span>{t('Розмір')} <TableChip tone="warning" value={product.Size} /></span>}
-              </div>
-              {item.Comment && <Text size="xs" c="dimmed">{item.Comment}</Text>}
-              <Group gap={10} className="wizard-cart-card__actions">
-                <span className="wizard-cart-card__quantity">{t('К-сть')} <TableChip value={`${qty.format(getWizardProductNumber(item.Qty) ?? 0)} ${product?.MeasureUnit?.Name || t('шт')}`} /></span>
-                {onRowClick && <Button data-cart-card-action disabled={busy} variant="default" size="compact-xs" leftSection={<Ellipsis size={14} />} aria-label={`${t('Дії з товаром')} · ${code}`} onClick={() => onRowClick(item)}>{t('Дії')}</Button>}
-                {onRemove && <Button disabled={busy} color="red" variant="subtle" size="compact-xs" leftSection={<Trash2 size={14} />} onClick={() => onRemove(item)}>{t('Видалити')}</Button>}
-              </Group>
-            </div>
-            <div className="wizard-cart-card__prices">
-              <table aria-label={`${t('Ціни')} · ${code}`}>
-                <thead><tr><th /><th><TableChip tone="source" value="EUR" /></th><th><TableChip tone="source" value={localCurrencyCode} /></th></tr></thead>
-                <tbody>
-                  <tr><th scope="row">{t('Ціна')}</th><td>{money.format(getWizardProductNumber(product?.CurrentPrice) ?? 0)}</td><td>{money.format(getOrderItemLocalPrice(item, useEurToUah))}</td></tr>
-                  <tr className="wizard-cart-card__total"><th scope="row">{t('Сума')}</th><td>{money.format(getWizardProductNumber(item.TotalAmount) ?? 0)}</td><td>{money.format(getOrderItemLocalTotal(item, useEurToUah))}</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </article>
-        )
-      })}
+      {items.map((item, index) => <WizardCartCard key={item.NetUid || item.Id || `${item.Product?.VendorCode || item.Product?.Articul || '—'}-${index}`} item={item} index={index} {...cardProps} />)}
     </div>
   )
-}
+})
+
+const WizardCartCard = memo(function WizardCartCard({ item, index, busy, localCurrencyCode, useEurToUah, onRowClick, onRemove, onCrossSell }: Omit<WizardCartCardsProps, 'items'> & { item: SalesUkraineOrderItem; index: number }) {
+  const { t } = useI18n()
+  const product = item.Product as WizardSaleProduct | undefined
+  const code = product?.VendorCode || product?.Articul || '—'
+  const name = product?.NameUA || product?.Name || t('Без назви')
+  const original = product ? getProductMainOriginalNumber(product) : null
+  return (
+  <article className="wizard-cart-card" role="listitem">
+    <span className="wizard-cart-card__index">{String(index + 1).padStart(2, '0')}</span>
+    {product ? <WizardProductPhoto className="wizard-cart-card__photo" product={product} /> : <div className="wizard-cart-card__photo"><ShoppingCart size={24} /></div>}
+    <div className="wizard-cart-card__identity">
+      <Group gap={8}><TableChip tone="product" value={code} />{onCrossSell && <TableRowAction action="recommend" disabled={busy} label={t('Кросс-продажі до товару')} onClick={() => onCrossSell(item)} />}</Group>
+      <h3>{name}</h3>
+      <div className="wizard-cart-card__facts">
+        {original && <span>OEM <TableChip tone="warning" value={original} /></span>}
+        {product?.Size && <span>{t('Розмір')} <TableChip tone="warning" value={product.Size} /></span>}
+      </div>
+      {item.Comment && <Text size="xs" c="dimmed">{item.Comment}</Text>}
+      <Group gap={10} className="wizard-cart-card__actions">
+        <span className="wizard-cart-card__quantity">{t('К-сть')} <TableChip value={`${qty.format(getWizardProductNumber(item.Qty) ?? 0)} ${product?.MeasureUnit?.Name || t('шт')}`} /></span>
+        {onRowClick && <Button data-cart-card-action disabled={busy} variant="default" size="compact-xs" leftSection={<Ellipsis size={14} />} aria-label={`${t('Дії з товаром')} · ${code}`} onClick={() => onRowClick(item)}>{t('Дії')}</Button>}
+        {onRemove && <Button disabled={busy} color="red" variant="subtle" size="compact-xs" leftSection={<Trash2 size={14} />} onClick={() => onRemove(item)}>{t('Видалити')}</Button>}
+      </Group>
+    </div>
+    <div className="wizard-cart-card__prices">
+      <table aria-label={`${t('Ціни')} · ${code}`}>
+        <thead><tr><th /><th><TableChip tone="source" value="EUR" /></th><th><TableChip tone="source" value={localCurrencyCode} /></th></tr></thead>
+        <tbody>
+          <tr><th scope="row">{t('Ціна')}</th><td>{money.format(getWizardProductNumber(product?.CurrentPrice) ?? 0)}</td><td>{money.format(getOrderItemLocalPrice(item, useEurToUah))}</td></tr>
+          <tr className="wizard-cart-card__total"><th scope="row">{t('Сума')}</th><td>{money.format(getWizardProductNumber(item.TotalAmount) ?? 0)}</td><td>{money.format(getOrderItemLocalTotal(item, useEurToUah))}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </article>
+  )
+})
