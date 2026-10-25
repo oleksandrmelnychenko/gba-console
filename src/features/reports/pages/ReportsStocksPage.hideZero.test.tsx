@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -56,12 +56,12 @@ describe('server-proven HideZero constructor', () => {
     vi.mocked(getServerReportTemplates).mockResolvedValue([saved()]); const { container } = await ready(); await applySaved()
     fireEvent.click(screen.getByRole('button', { name: 'Перенести Запис залишку рахунку до стовпців' }))
     expect(screen.getByText(/Приховування нулів потребує лише поля/)).toBeTruthy()
-    fireEvent.submit(container.querySelector('form')!); expect(createStockReport).not.toHaveBeenCalled()
+    await act(async () => { fireEvent.submit(container.querySelector('form')!) }); expect(createStockReport).not.toHaveBeenCalled()
     expect(screen.getByRole('button', { name: 'Показувати підтверджені нулі' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Перенести Запис залишку рахунку до рядків' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Записаний залишок рахунку' }))
     expect(screen.getByText(/Приховування нулів потребує одного увімкненого показника/)).toBeTruthy()
-    fireEvent.submit(container.querySelector('form')!); expect(createStockReport).not.toHaveBeenCalled()
+    await act(async () => { fireEvent.submit(container.querySelector('form')!) }); expect(createStockReport).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('checkbox', { name: 'Записаний залишок рахунку' }))
     fireEvent.submit(container.querySelector('form')!); await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0].hideZero).toEqual({ Version: 1 })
@@ -70,7 +70,7 @@ describe('server-proven HideZero constructor', () => {
     vi.mocked(getServerReportTemplates).mockResolvedValue([saved()]); const { container } = await ready(); await applySaved()
     fireEvent.click(screen.getByRole('button', { name: 'Рахунки за призначенням і валютою' }))
     expect(screen.getByText(/Приховування нулів потребує лише поля/)).toBeTruthy()
-    fireEvent.submit(container.querySelector('form')!); expect(createStockReport).not.toHaveBeenCalled()
+    await act(async () => { fireEvent.submit(container.querySelector('form')!) }); expect(createStockReport).not.toHaveBeenCalled()
     expect(screen.getByRole('button', { name: 'Показувати підтверджені нулі' })).toBeTruthy()
     await select('Звіт', reportDatasets[0].Name); fireEvent.click(screen.getByRole('button', { name: 'Продажі за днями' }))
     fireEvent.submit(container.querySelector('form')!); await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())

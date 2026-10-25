@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv, type Plugin, type ProxyOptions } from 'vite'
 import react from '@vitejs/plugin-react'
+import { uiActionGuardPlugin } from './scripts/ui-action-guard-plugin.mjs'
 
 type ProxyConfigure = NonNullable<ProxyOptions['configure']>
 
@@ -56,7 +57,7 @@ export default defineConfig(({ mode }) => {
   define: {
     __BUILD_NUMBER__: JSON.stringify(buildNumber),
   },
-  plugins: [stripSignalRPureAnnotations(), emitBuildInfo(buildNumber), react()],
+  plugins: [uiActionGuardPlugin(), stripSignalRPureAnnotations(), emitBuildInfo(buildNumber), react()],
   build: {
     rolldownOptions: {
       output: {

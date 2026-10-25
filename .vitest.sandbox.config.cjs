@@ -1,8 +1,9 @@
 const react = require('@vitejs/plugin-react').default
+const { uiActionGuardPlugin } = require('./scripts/ui-action-guard-plugin.mjs')
 const { defineConfig } = require('vitest/config')
 
 module.exports = defineConfig({
-  plugins: [react()],
+  plugins: [uiActionGuardPlugin(), react()],
   test: {
     globals: true,
     environment: 'jsdom',

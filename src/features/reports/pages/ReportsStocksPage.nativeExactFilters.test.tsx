@@ -1,6 +1,6 @@
 import { changeReportPeriod, readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -233,7 +233,7 @@ describe('exact Fenix filters in the report constructor', () => {
     fireEvent.click(screen.getByRole('option', { name: 'Продажі з поверненнями за день' }))
     expect(screen.queryByRole('dialog')).toBeNull()
     expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(true)
-    fireEvent.submit(container.querySelector('form')!)
+    await act(async () => { fireEvent.submit(container.querySelector('form')!) })
     expect(createStockReport).toHaveBeenCalledOnce()
     changeReportPeriod({ from: '2026-07-31' })
     fireEvent.submit(container.querySelector('form')!)

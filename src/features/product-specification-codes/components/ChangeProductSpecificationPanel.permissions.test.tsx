@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -50,11 +50,11 @@ describe('ChangeProductSpecificationPanel permission guards', () => {
     const submit = screen.getByRole('button', { name: 'Змінити' })
 
     allowedPermissions.delete(PermissionKeys.ProductSpecificationCodes.Code.Edit)
-    fireEvent.click(submit)
+    await act(async () => { fireEvent.click(submit) })
     expect(changeProductSpecification).not.toHaveBeenCalled()
 
     allowedPermissions.add(PermissionKeys.ProductSpecificationCodes.Code.Edit)
-    fireEvent.click(submit)
+    await act(async () => { fireEvent.click(submit) })
     await waitFor(() => expect(changeProductSpecification).toHaveBeenCalledTimes(1))
   })
 })

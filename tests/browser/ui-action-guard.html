@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8"><title>Automatic action guard QA</title><link rel="icon" href="data:,">
+  <style>[data-menu-dropdown] { position: static !important; }</style>
+</head>
+<body>
+  <div id="metrics" role="status">Requests: 0; Completed: 0</div>
+  <button id="finish">Finish pending requests</button>
+  <div id="root"></div>
+  <script type="module">
+    import '@mantine/core/styles.css'
+    import { createElement } from 'react'
+    import { createRoot } from 'react-dom/client'
+    import { AutomaticActionFixture } from '/src/shared/ui/action-guard/fixtures/AutomaticActionFixture.tsx'
+    let requests = 0, completed = 0
+    const pending = []
+    function update() { document.getElementById('metrics').textContent = `Requests: ${requests}; Completed: ${completed}` }
+    const work = () => { requests += 1; update(); return new Promise(resolve => pending.push(() => { completed += 1; update(); resolve() })) }
+    document.getElementById('finish').onclick = () => { pending.splice(0).forEach(resolve => resolve()) }
+    createRoot(document.getElementById('root')).render(createElement(AutomaticActionFixture, { work }))
+  </script>
+</body>
+</html>

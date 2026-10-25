@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -174,11 +174,11 @@ describe('Supplier Organizations canonical permission guards', () => {
 
     const exportButton = await screen.findByRole('button', { name: 'Друк' })
     allowedPermissions.delete(PermissionKeys.SupplierOrganizations.Document.Export)
-    fireEvent.click(exportButton)
+    await act(async () => { fireEvent.click(exportButton) })
     expect(exportSupplyOrganizations).not.toHaveBeenCalled()
 
     allowedPermissions.add(PermissionKeys.SupplierOrganizations.Document.Export)
-    fireEvent.click(exportButton)
+    await act(async () => { fireEvent.click(exportButton) })
     await waitFor(() => expect(exportSupplyOrganizations).toHaveBeenCalledTimes(1))
   })
 

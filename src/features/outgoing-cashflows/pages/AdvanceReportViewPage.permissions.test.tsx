@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -108,11 +108,11 @@ describe('advance report view permissions', () => {
 
     const save = await screen.findByRole('button', { name: 'Зберегти' })
     allowedPermissions.delete(PermissionKeys.AdvancedReports.Report.Edit)
-    fireEvent.click(save)
+    await act(async () => { fireEvent.click(save) })
     expect(updateAdvanceReportOrder).not.toHaveBeenCalled()
 
     allowedPermissions.add(PermissionKeys.AdvancedReports.Report.Edit)
-    fireEvent.click(save)
+    await act(async () => { fireEvent.click(save) })
     await waitFor(() => expect(updateAdvanceReportOrder).toHaveBeenCalled())
   })
 })

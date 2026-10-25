@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -57,7 +57,7 @@ describe('constructor typed group ordering', () => {
     expect(screen.getByText('Сортування поля «Рахунок»: виберіть один увімкнений показник. Правило збережено.')).toBeTruthy()
     expect((screen.getByRole('combobox', { name: 'Показник сортування — Рядки: Рахунок' }) as HTMLInputElement).value).toBe('Вимкнений показник: Записаний залишок рахунку')
     expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(true)
-    fireEvent.submit(container.querySelector('form')!); expect(createStockReport).not.toHaveBeenCalled()
+    await act(async () => { fireEvent.submit(container.querySelector('form')!) }); expect(createStockReport).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('checkbox', { name: 'Записаний залишок рахунку' }))
     fireEvent.submit(container.querySelector('form')!); await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0].ordering).toEqual(accountOrdering)

@@ -273,22 +273,24 @@ function RecommendationsForAgreement({
   }
 
   async function handleExcludeProduct(product: RecommendationProduct, index: number) {
-    if (!canExcludeProduct || !clientNetId || !(product.Id ?? 0)) {
-      return
-    }
+    return runActionOnce('exclude:' + getProductKey(product, index), async () => {
+      if (!canExcludeProduct || !clientNetId || !(product.Id ?? 0)) {
+        return
+      }
 
-    const key = getProductKey(product, index)
+      const key = getProductKey(product, index)
 
-    try {
-      await sendRecommendationFeedback(clientNetId, [product.Id as number])
-      dispatch({ key, type: 'removeProduct' })
-      notifications.show({ color: 'green', message: t('Більше не пропонуватимемо цей товар клієнту') })
-    } catch (feedbackError) {
-      notifications.show({
-        color: 'red',
-        message: feedbackError instanceof Error ? feedbackError.message : t('Не вдалося зберегти відгук'),
-      })
-    }
+      try {
+        await sendRecommendationFeedback(clientNetId, [product.Id as number])
+        dispatch({ key, type: 'removeProduct' })
+        notifications.show({ color: 'green', message: t('Більше не пропонуватимемо цей товар клієнту') })
+      } catch (feedbackError) {
+        notifications.show({
+          color: 'red',
+          message: feedbackError instanceof Error ? feedbackError.message : t('Не вдалося зберегти відгук'),
+        })
+      }
+    })
   }
 
 

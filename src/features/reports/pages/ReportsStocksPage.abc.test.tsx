@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -52,9 +52,9 @@ describe('server-computed ABC constructor', () => {
     expect(a.value).toBe('101')
     expect((screen.getByRole('textbox', { name: 'Частка C для ABC, %' }) as HTMLInputElement).value).toBe('5')
     expect(screen.getByText(/ABC: введіть цілі відсотки/)).toBeTruthy()
-    fireEvent.submit(container.querySelector('form')!); expect(createStockReport).not.toHaveBeenCalled()
+    await act(async () => { fireEvent.submit(container.querySelector('form')!) }); expect(createStockReport).not.toHaveBeenCalled()
     fireEvent.change(a, { target: { value: '' } }); fireEvent.blur(a); expect(a.value).toBe('')
-    fireEvent.submit(container.querySelector('form')!); expect(createStockReport).not.toHaveBeenCalled()
+    await act(async () => { fireEvent.submit(container.querySelector('form')!) }); expect(createStockReport).not.toHaveBeenCalled()
     fireEvent.change(a, { target: { value: '79' } });
     fireEvent.change(screen.getByRole('textbox', { name: 'Частка B для ABC, %' }), { target: { value: '16' } })
     fireEvent.submit(container.querySelector('form')!); await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())

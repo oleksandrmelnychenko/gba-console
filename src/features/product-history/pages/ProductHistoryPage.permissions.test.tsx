@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -91,11 +91,11 @@ describe('ProductHistoryPage canonical permission guards', () => {
 
     const exportButton = await screen.findByRole('button', { name: 'Друк PDF' })
     allowedPermissions.delete(PermissionKeys.ProductHistory.Document.Export)
-    fireEvent.click(exportButton)
+    await act(async () => { fireEvent.click(exportButton) })
     expect(exportProductHistory).not.toHaveBeenCalled()
 
     allowedPermissions.add(PermissionKeys.ProductHistory.Document.Export)
-    fireEvent.click(exportButton)
+    await act(async () => { fireEvent.click(exportButton) })
     await waitFor(() => expect(exportProductHistory).toHaveBeenCalledTimes(1))
   })
 

@@ -25,6 +25,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:action-guard": "node --test scripts/ui-action-guard-plugin.test.mjs && vitest run src/shared/ui/action-guard",
     "preview": "vite preview",
     "e2e:smoke": "playwright test --project=smoke",
     "e2e:full": "playwright test --project=full",

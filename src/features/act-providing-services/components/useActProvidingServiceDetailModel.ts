@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { notifications } from '@mantine/notifications'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -36,6 +37,7 @@ export function useActProvidingServiceDetailModel(
   loadActRequest: typeof getActProvidingService = getActProvidingService,
   canEdit = false,
 ) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const [state, setState] = useValueState<ActProvidingServiceDetailState>(INITIAL_ACT_PROVIDING_SERVICE_DETAIL_STATE)
   const requestRef = useRef(0)
@@ -133,50 +135,52 @@ export function useActProvidingServiceDetailModel(
       return
     }
 
-    const requestId = saveRequestRef.current + 1
-    saveRequestRef.current = requestId
-    setState((currentState) => ({ ...currentState, error: null, isSaving: true }))
+    return runActionOnce('save:' + id, () => {
+      const requestId = saveRequestRef.current + 1
+      saveRequestRef.current = requestId
+      setState((currentState) => ({ ...currentState, error: null, isSaving: true }))
 
-    void updateActProvidingService({
-      ...act,
-      Comment: comment,
-      FromDate: nextDate.toISOString(),
+      return updateActProvidingService({
+        ...act,
+        Comment: comment,
+        FromDate: nextDate.toISOString(),
+      })
+        .then((savedAct) => {
+          if (saveRequestRef.current !== requestId) {
+            return
+          }
+
+          if (!savedAct) {
+            setState((currentState) => ({
+              ...currentState,
+              error: t('Backend не повернув оновлений акт надання послуг'),
+              isSaving: false,
+            }))
+            return
+          }
+
+          setState((currentState) => ({
+            ...currentState,
+            act: savedAct,
+            comment: savedAct.Comment || '',
+            error: null,
+            fromDate: toDateTimeLocal(savedAct.FromDate),
+            isDirty: false,
+            isSaving: false,
+          }))
+          notifications.show({ color: 'green', message: t('Акт надання послуг оновлено') })
+        })
+        .catch((saveError: unknown) => {
+          if (saveRequestRef.current === requestId) {
+            setState((currentState) => ({
+              ...currentState,
+              error: saveError instanceof Error ? saveError.message : t('Не вдалося оновити акт надання послуг'),
+              isSaving: false,
+            }))
+          }
+        })
     })
-      .then((savedAct) => {
-        if (saveRequestRef.current !== requestId) {
-          return
-        }
-
-        if (!savedAct) {
-          setState((currentState) => ({
-            ...currentState,
-            error: t('Backend не повернув оновлений акт надання послуг'),
-            isSaving: false,
-          }))
-          return
-        }
-
-        setState((currentState) => ({
-          ...currentState,
-          act: savedAct,
-          comment: savedAct.Comment || '',
-          error: null,
-          fromDate: toDateTimeLocal(savedAct.FromDate),
-          isDirty: false,
-          isSaving: false,
-        }))
-        notifications.show({ color: 'green', message: t('Акт надання послуг оновлено') })
-      })
-      .catch((saveError: unknown) => {
-        if (saveRequestRef.current === requestId) {
-          setState((currentState) => ({
-            ...currentState,
-            error: saveError instanceof Error ? saveError.message : t('Не вдалося оновити акт надання послуг'),
-            isSaving: false,
-          }))
-        }
-      })
-  }, [act, canEdit, comment, fromDate, setState, t])
+  }, [act, canEdit, comment, fromDate, id, runActionOnce, setState, t])
 
   return {
     act,

@@ -441,30 +441,32 @@ function ClientRecommendationsForAgreement({
   }
 
   async function handleExcludeProduct(product: RecommendationProduct, index: number) {
-    if (!can(PermissionKeys.Clients.Recommendations.ExcludeProduct) || !(product.Id ?? 0)) {
-      return
-    }
+    return runActionOnce('exclude:' + getProductKey(product, index), async () => {
+      if (!can(PermissionKeys.Clients.Recommendations.ExcludeProduct) || !(product.Id ?? 0)) {
+        return
+      }
 
-    const key = getProductKey(product, index)
+      const key = getProductKey(product, index)
 
-    try {
-      await sendRecommendationFeedback(clientNetId, [product.Id as number])
-      setState((current) => ({
-        ...current,
-        products: current.products.filter((item, itemIndex) => getProductKey(item, itemIndex) !== key),
-      }))
-      setSelectedKeys((current) => {
-        const next = new Set(current)
-        next.delete(key)
-        return next
-      })
-      notifications.show({ color: 'green', message: t('Більше не пропонуватимемо цей товар клієнту') })
-    } catch (feedbackError) {
-      notifications.show({
-        color: 'red',
-        message: feedbackError instanceof Error ? feedbackError.message : t('Не вдалося зберегти відгук'),
-      })
-    }
+      try {
+        await sendRecommendationFeedback(clientNetId, [product.Id as number])
+        setState((current) => ({
+          ...current,
+          products: current.products.filter((item, itemIndex) => getProductKey(item, itemIndex) !== key),
+        }))
+        setSelectedKeys((current) => {
+          const next = new Set(current)
+          next.delete(key)
+          return next
+        })
+        notifications.show({ color: 'green', message: t('Більше не пропонуватимемо цей товар клієнту') })
+      } catch (feedbackError) {
+        notifications.show({
+          color: 'red',
+          message: feedbackError instanceof Error ? feedbackError.message : t('Не вдалося зберегти відгук'),
+        })
+      }
+    })
   }
 
   return (

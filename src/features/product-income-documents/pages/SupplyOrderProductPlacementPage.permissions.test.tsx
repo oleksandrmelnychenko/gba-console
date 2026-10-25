@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -117,11 +117,11 @@ describe('SupplyOrderProductPlacementPage canonical permission guards', () => {
 
     const exportButton = await screen.findByRole('button', { name: 'Експорт' })
     allowedPermissions.delete(PermissionKeys.ProductIncomeDocuments.Document.Export)
-    fireEvent.click(exportButton)
+    await act(async () => { fireEvent.click(exportButton) })
     expect(exportProductIncomeDocument).not.toHaveBeenCalled()
 
     allowedPermissions.add(PermissionKeys.ProductIncomeDocuments.Document.Export)
-    fireEvent.click(exportButton)
+    await act(async () => { fireEvent.click(exportButton) })
     await waitFor(() => expect(exportProductIncomeDocument).toHaveBeenCalledWith('income-1'))
   })
 

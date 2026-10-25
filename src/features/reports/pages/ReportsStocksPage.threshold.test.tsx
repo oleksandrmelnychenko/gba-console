@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -62,7 +62,7 @@ describe('server-computed threshold constructor', () => {
     const percent = screen.getByRole('textbox', { name: 'Поріг частки суми, %' }) as HTMLInputElement
     for (const value of ['101', '']) {
       fireEvent.change(percent, { target: { value } }); fireEvent.blur(percent); expect(percent.value).toBe(value)
-      fireEvent.submit(container.querySelector('form')!); expect(createStockReport).not.toHaveBeenCalled()
+      await act(async () => { fireEvent.submit(container.querySelector('form')!) }); expect(createStockReport).not.toHaveBeenCalled()
     }
     fireEvent.change(percent, { target: { value: '37' } }); fireEvent.blur(percent)
     fireEvent.submit(container.querySelector('form')!); await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
@@ -72,12 +72,12 @@ describe('server-computed threshold constructor', () => {
     vi.mocked(getServerReportTemplates).mockResolvedValue([saved()]); const { container } = await ready(); await applySaved()
     fireEvent.click(screen.getByRole('button', { name: 'Перенести Рахунок до стовпців' }))
     expect(screen.getByText(/Поріг потребує рівно одного початкового поля рядків/)).toBeTruthy()
-    fireEvent.submit(container.querySelector('form')!); expect(createStockReport).not.toHaveBeenCalled()
+    await act(async () => { fireEvent.submit(container.querySelector('form')!) }); expect(createStockReport).not.toHaveBeenCalled()
     expect((screen.getByRole('textbox', { name: 'Поріг частки суми, %' }) as HTMLInputElement).value).toBe('20')
     fireEvent.click(screen.getByRole('button', { name: 'Перенести Рахунок до рядків' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Записаний залишок рахунку' }))
     expect(screen.getByText(/Поріг потребує рівно одного увімкненого показника/)).toBeTruthy()
-    fireEvent.submit(container.querySelector('form')!); expect(createStockReport).not.toHaveBeenCalled()
+    await act(async () => { fireEvent.submit(container.querySelector('form')!) }); expect(createStockReport).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('checkbox', { name: 'Записаний залишок рахунку' }))
     fireEvent.submit(container.querySelector('form')!); await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0].threshold).toEqual(accountThreshold)
@@ -86,7 +86,7 @@ describe('server-computed threshold constructor', () => {
     vi.mocked(getServerReportTemplates).mockResolvedValue([saved()]); const { container } = await ready(); await applySaved()
     fireEvent.click(screen.getByRole('button', { name: 'Рахунки за призначенням і валютою' }))
     expect(screen.getByText(/Поріг потребує рівно одного початкового поля рядків/)).toBeTruthy()
-    fireEvent.submit(container.querySelector('form')!); expect(createStockReport).not.toHaveBeenCalled()
+    await act(async () => { fireEvent.submit(container.querySelector('form')!) }); expect(createStockReport).not.toHaveBeenCalled()
     expect((screen.getByRole('textbox', { name: 'Поріг частки суми, %' }) as HTMLInputElement).value).toBe('20')
     await select('Звіт', reportDatasets[0].Name); fireEvent.click(screen.getByRole('button', { name: 'Продажі за днями' }))
     fireEvent.submit(container.querySelector('form')!); await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())

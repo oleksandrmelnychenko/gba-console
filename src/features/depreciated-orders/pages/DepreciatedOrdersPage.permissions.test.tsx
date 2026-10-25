@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
@@ -195,11 +195,11 @@ describe('Depreciated orders canonical permission guards', () => {
     const download = await screen.findByRole('button', { name: 'Завантажити' })
 
     allowedPermissions.delete(PermissionKeys.WarehouseAccounting.WriteOff.Document.Export)
-    fireEvent.click(download)
+    await act(async () => { fireEvent.click(download) })
     expect(exportDepreciatedOrderDocument).not.toHaveBeenCalled()
 
     allowedPermissions.add(PermissionKeys.WarehouseAccounting.WriteOff.Document.Export)
-    fireEvent.click(download)
+    await act(async () => { fireEvent.click(download) })
     await waitFor(() => expect(exportDepreciatedOrderDocument).toHaveBeenCalledWith('order-1'))
   })
 })

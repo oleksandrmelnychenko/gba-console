@@ -1,0 +1,3 @@
+:is(button, input, a, [role='button'])[data-ui-action-pending] {
+  cursor: progress;
+}

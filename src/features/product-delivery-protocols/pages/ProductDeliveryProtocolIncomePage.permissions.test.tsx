@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -169,12 +169,12 @@ describe('Product delivery protocol income permission guards', () => {
 
     const capitalize = await screen.findByRole('button', { name: 'Оприходувати' })
     allowedPermissions.delete(PermissionKeys.ProductDeliveryProtocols.ProductIncome.Capitalize)
-    fireEvent.click(capitalize)
+    await act(async () => { fireEvent.click(capitalize) })
 
     expect(createProductIncomeFromPackingListDynamic).not.toHaveBeenCalled()
 
     allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.ProductIncome.Capitalize)
-    fireEvent.click(capitalize)
+    await act(async () => { fireEvent.click(capitalize) })
 
     await waitFor(() => expect(createProductIncomeFromPackingListDynamic).toHaveBeenCalledWith(
       'delivery-protocol',

@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -52,7 +52,7 @@ describe('whole-group TOP constructor controls', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Перенести Рахунок до стовпців' }))
     expect(screen.getByText(/TOP груп «Рахунок»: поле має бути вибране/)).toBeTruthy()
     expect((screen.getByRole('combobox', { name: 'Поле рядків для TOP' }) as HTMLInputElement).value).toContain('Поза рядками')
-    fireEvent.submit(container.querySelector('form')!); expect(createStockReport).not.toHaveBeenCalled()
+    await act(async () => { fireEvent.submit(container.querySelector('form')!) }); expect(createStockReport).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Перенести Рахунок до рядків' }))
     fireEvent.submit(container.querySelector('form')!); await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0].topGroups).toEqual(accountTop)
@@ -71,7 +71,7 @@ describe('whole-group TOP constructor controls', () => {
     const value = screen.getByRole('textbox', { name: 'Відсоток кількості груп TOP' }) as HTMLInputElement
     fireEvent.blur(value); expect(value.value).toBe('500')
     expect(screen.getByText(/від 1 до 100 відсотків кількості груп/)).toBeTruthy()
-    fireEvent.change(value, { target: { value: '' } }); fireEvent.submit(container.querySelector('form')!)
+    fireEvent.change(value, { target: { value: '' } }); await act(async () => { fireEvent.submit(container.querySelector('form')!) })
     expect(createStockReport).not.toHaveBeenCalled(); expect(value.value).toBe('')
     fireEvent.change(value, { target: { value: '50' } }); fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())

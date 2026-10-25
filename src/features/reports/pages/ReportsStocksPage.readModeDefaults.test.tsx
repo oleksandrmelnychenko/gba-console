@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport, searchDatasetReportValues } from '../api/reportsApi'
@@ -49,8 +49,8 @@ async function submitted(view: ReturnType<typeof render>, count: number) {
   await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(count))
   return vi.mocked(createStockReport).mock.calls[count - 1][0]
 }
-function blocked(view: ReturnType<typeof render>) {
-  fireEvent.submit(view.container.querySelector('form')!)
+async function blocked(view: ReturnType<typeof render>) {
+  await act(async () => { fireEvent.submit(view.container.querySelector('form')!) })
   expect(createStockReport).not.toHaveBeenCalled()
   return view.container.querySelector('.reports-stocks-generate')?.getAttribute('title')
 }
@@ -58,7 +58,7 @@ function blocked(view: ReturnType<typeof render>) {
 it('reads a saved profit variant without a mode from current documents and reports the current-document period limit', async () => {
   const view = await apply(saved(profitSupplierDataset, '2026-07-01', '2026-08-31', { supplierSourceWorld: 0 }))
   expect(source()).toBe('Поточні документи GBA')
-  expect(blocked(view)).toBe('Період «Валового прибутку по постачальниках» — не більше 31 календарних днів. Зменште період.')
+  expect(await blocked(view)).toBe('Період «Валового прибутку по постачальниках» — не більше 31 календарних днів. Зменште період.')
   mode('Збережені регістри 1С')
   expect(await submitted(view, 1)).toMatchObject({ profitReadMode: 1, supplierSourceWorld: 0, from: '2026-07-01', to: '2026-08-31' })
 })
@@ -72,7 +72,7 @@ it('keeps the saved registers choice of a profit variant', async () => {
 it('reads a saved cash variant without a mode from current documents and leaves the earlier period to the opt-out', async () => {
   const view = await apply(saved(cashModeDataset, '2024-12-01', '2024-12-31'))
   expect(source()).toBe('Поточні документи GBA')
-  expect(blocked(view)).toBe('Оберіть коректний період від 01.01.2025 до 120 календарних місяців.')
+  expect(await blocked(view)).toBe('Оберіть коректний період від 01.01.2025 до 120 календарних місяців.')
   mode('За налаштуваннями звіту')
   const unmarked = await submitted(view, 1)
   expect(Object.keys(unmarked).some(key => key.toLowerCase() === 'cashreadmode')).toBe(false)

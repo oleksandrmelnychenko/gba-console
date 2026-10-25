@@ -258,20 +258,18 @@ export function NewMergedServiceForm({
   }
 
   async function handleSubmit() {
-    return runActionOnce('handleSubmit', async () => {
-      const validation = validateNewMergedService(values, t)
+    const validation = validateNewMergedService(values, t)
 
-      if (validation.summary) {
-        setValidationError(validation.summary)
-        setFieldErrors(validation.fieldErrors)
+    if (validation.summary) {
+      setValidationError(validation.summary)
+      setFieldErrors(validation.fieldErrors)
 
-        return
-      }
+      return
+    }
 
-      setValidationError(null)
-      setFieldErrors({})
-      await onSubmit(values)
-    })
+    setValidationError(null)
+    setFieldErrors({})
+    await runActionOnce('handleSubmit', () => onSubmit(values))
   }
 
   return (

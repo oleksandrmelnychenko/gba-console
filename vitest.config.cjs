@@ -3,10 +3,11 @@
 process.env.NODE_ENV = 'test'
 
 const react = require('@vitejs/plugin-react').default
+const { uiActionGuardPlugin } = require('./scripts/ui-action-guard-plugin.mjs')
 const { configDefaults, defineConfig } = require('vitest/config')
 
 module.exports = defineConfig({
-  plugins: [react()],
+  plugins: [uiActionGuardPlugin(), react()],
   test: {
     // Playwright owns these suites; importing them through Vitest fails before
     // collection and makes the unit-test release gate report false failures.

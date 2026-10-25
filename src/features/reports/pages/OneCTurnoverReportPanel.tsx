@@ -1,3 +1,4 @@
+import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { isLegacyTurnoverScope } from '../data/oneCTurnoverScopes'
 import { ActionIcon, Alert, Button, Select, Stack, Text } from '@mantine/core'
 import { useEffect, useState } from 'react'
@@ -24,6 +25,7 @@ type Props = {
 }
 
 export function OneCTurnoverReportPanel({ canGenerate, from, to, onFromChange, onToChange, onLoadingChange, onClose }: Props) {
+  const runActionOnce = useSingleFlight()
   const { t } = useI18n()
   const { catalog, refresh } = useOneCTurnoverCatalog(canGenerate)
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
@@ -37,20 +39,22 @@ export function OneCTurnoverReportPanel({ canGenerate, from, to, onFromChange, o
   const canSubmit = canGenerate && !!scope && !catalog.loading && !periodError && !scopeError && !run.loading
 
   async function generate() {
-    if (!canSubmit || !scope || !selectedLayout) return
-    const title = `${selectedLayout.name}: ${from} — ${to}`
-    setRun({ loading: true, error: null, result: null, title })
-    onLoadingChange?.(true)
-    try {
-      const result = await createStockReport(createOneCTurnoverReport(scope, layout, from, to))
-      const hasFile = !!(result.document.DocumentURL || result.document.PdfDocumentURL)
-      setRun({ loading: false, error: hasFile ? null : 'Сервер не повернув файл звіту 1С. Це не підтверджує нульові обороти.', result, title })
-      setOpened(hasFile)
-    } catch (error) {
-      setRun({ loading: false, error: describeError(error), result: null, title })
-    } finally {
-      onLoadingChange?.(false)
-    }
+    return runActionOnce('generate', async () => {
+      if (!canSubmit || !scope || !selectedLayout) return
+      const title = `${selectedLayout.name}: ${from} — ${to}`
+      setRun({ loading: true, error: null, result: null, title })
+      onLoadingChange?.(true)
+      try {
+        const result = await createStockReport(createOneCTurnoverReport(scope, layout, from, to))
+        const hasFile = !!(result.document.DocumentURL || result.document.PdfDocumentURL)
+        setRun({ loading: false, error: hasFile ? null : 'Сервер не повернув файл звіту 1С. Це не підтверджує нульові обороти.', result, title })
+        setOpened(hasFile)
+      } catch (error) {
+        setRun({ loading: false, error: describeError(error), result: null, title })
+      } finally {
+        onLoadingChange?.(false)
+      }
+    })
   }
 
   return (
