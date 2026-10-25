@@ -1,3 +1,4 @@
+import { DocumentaryDebtNotice } from '../../../../shared/debt/DocumentaryDebtNotice'
 import { Box, Group, Text, Tooltip } from '@mantine/core'
 import { TableChip } from '../../../../shared/ui/TableChip'
 import { CircleHelp } from 'lucide-react'
@@ -25,7 +26,7 @@ export function WizardAgreementItem({
   }
 
   const debt = getWizardAgreementDebtPresentation(clientAgreement)
-  const amountLimitExceeded = debt.creditLimit !== null && debt.outstandingDebt > debt.creditLimit
+  const amountLimitExceeded = debt.creditLimit !== null && (debt.outstandingDebt ?? 0) > debt.creditLimit
   const hasDebtAlert = debt.isOverdue || amountLimitExceeded
   const isInactive = agreement.IsActive === false
   const organizationName = agreement.Organization?.Name || ''
@@ -35,6 +36,8 @@ export function WizardAgreementItem({
     ? 'Прострочено'
     : amountLimitExceeded
       ? 'Перевищено ліміт'
+      : debt.documentary && !debt.documentary.complete
+        ? debt.overdueDays === null ? 'Прострочення не визначено' : 'Прострочення визначено частково'
       : isInactive
         ? 'Неактивний'
         : 'Активний'
@@ -73,20 +76,23 @@ export function WizardAgreementItem({
         <Box className="new-sale-hero-agreement__metrics">
           <AgreementOptionMetric label="Доступний аванс" value={formatAgreementAmount(debt.availableAdvance)} />
           <AgreementOptionMetric
-            danger={debt.outstandingDebt > 0}
+            danger={(debt.outstandingDebt ?? 0) > 0}
             label="Непогашений борг"
             value={formatAgreementAmount(debt.outstandingDebt)}
           />
           <AgreementOptionMetric
-            danger={debt.overdueDays > 0}
-            label="Вік боргу"
+            danger={(debt.overdueDays ?? 0) > 0}
+            label={debt.documentary ? "Макс. відомий вік боргу" : "Вік боргу"}
             value={formatAgreementDays(debt.debtAgeDays)}
           />
           <AgreementOptionMetric
-            danger={debt.overdueDays > 0}
-            label="Днів прострочення"
+            danger={(debt.overdueDays ?? 0) > 0}
+            label={debt.documentary ? "Макс. відоме прострочення" : "Днів прострочення"}
             value={formatAgreementDays(debt.overdueDays)}
           />
+          {debt.documentary && (
+            <AgreementOptionMetric label="Кредитовий залишок" value={formatAgreementAmount(debt.documentary.creditBalance)} />
+          )}
           <AgreementOptionMetric
             danger={amountLimitExceeded}
             label="Кредитний ліміт"
@@ -94,6 +100,7 @@ export function WizardAgreementItem({
           />
         </Box>
 
+        {debt.documentary && <DocumentaryDebtNotice presentation={debt.documentary} asOf={debt.documentary.asOf} />}
         {clientAgreement.OriginalClientName && (
           <Tooltip label={clientAgreement.OriginalClientName} multiline maw={320} position="top">
             <Group className="new-sale-hero-agreement__origin" gap={4} wrap="nowrap">
@@ -116,10 +123,12 @@ function AgreementOptionMetric({ danger, label, value }: { danger?: boolean; lab
   )
 }
 
-function formatAgreementAmount(value: number): string {
+function formatAgreementAmount(value: number | null): string {
+  if (value === null) return 'Не визначено'
   return agreementAmountFormatter.format(Math.round(value * 100) / 100)
 }
 
-function formatAgreementDays(value: number): string {
+function formatAgreementDays(value: number | null): string {
+  if (value === null) return 'Не визначено'
   return `${value} дн.`
 }

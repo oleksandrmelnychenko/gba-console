@@ -15,6 +15,7 @@ import type {
 } from '../types'
 
 const CLIENT_SAVE_OMIT_KEYS = [
+  'DocumentaryDebtAging',
   'ClientContractDocuments',
   'ClientInDebts',
   'SubClients',
@@ -25,7 +26,7 @@ const CLIENT_SAVE_OMIT_KEYS = [
   'IsSelected',
 ]
 
-const CLIENT_AGREEMENT_SAVE_OMIT_KEYS = ['Client']
+const CLIENT_AGREEMENT_SAVE_OMIT_KEYS = ['Client', 'DocumentaryDebtAging']
 const AGREEMENT_SAVE_OMIT_KEYS = ['ClientAgreements', 'ClientInDebts', 'IsSelected', 'TempId']
 const CLIENT_SOURCE_OVERRIDE_HEADER = 'X-Client-Source-Override'
 

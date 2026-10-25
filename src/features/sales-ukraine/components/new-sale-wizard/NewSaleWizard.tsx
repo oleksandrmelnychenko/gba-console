@@ -1,3 +1,4 @@
+import { omitDocumentaryAgreementRead } from '../../../../shared/debt/documentaryDebtAging'
 import { reuseSaleSnapshot } from '../../saleSnapshot'
 import { useSingleFlight } from '../../../../shared/hooks/useSingleFlight'
 import { useBusyState } from '../../../../shared/hooks/useBusyState'
@@ -1180,7 +1181,7 @@ function NewSaleWizardContent({
   const nextLabel = active === 2 ? t('Створити продаж') : t('Далі')
   const productsCart: SalesUkraineSale =
     state.sale ?? {
-      ClientAgreement: state.agreement ?? undefined,
+      ClientAgreement: state.agreement ? omitDocumentaryAgreementRead(state.agreement) : undefined,
       IsVatSale: Boolean(state.agreement?.Agreement?.WithVATAccounting),
       NetUid: EMPTY_GUID,
     }

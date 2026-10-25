@@ -1,3 +1,5 @@
+import { documentaryAgreementPresentation, documentaryDebtAge, indexDocumentaryDebt, type DocumentaryDebtIndex } from '../../../shared/debt/documentaryDebtAging'
+import { DocumentaryDebtNotice } from '../../../shared/debt/DocumentaryDebtNotice'
 import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { formatDebtAmount, getDebtBalanceLines } from '../../sales-debtors/model/debtorCurrency'
@@ -295,6 +297,10 @@ function IncomeCashflowClientFormPageContent() {
 
     return filterClientDebts(selectedClient.ClientInDebts || [], selectedOrganization, selectedClientAgreement)
   }, [selectedClient, selectedClientAgreement, selectedOrganization])
+  const documentaryIndex = useMemo(() => indexDocumentaryDebt(selectedClientAgreement, selectedClient), [selectedClientAgreement, selectedClient])
+  const documentaryPresentation = useMemo(() => documentaryAgreementPresentation(documentaryIndex, {
+    ...selectedClientAgreement, ClientId: selectedClientAgreement?.ClientId ?? selectedClient?.Id,
+  }), [documentaryIndex, selectedClientAgreement, selectedClient])
   const debtSummary = useMemo(() => summarizeClientDebts(visibleDebts), [visibleDebts])
   const totalDebt = debtSummary.totalDebt
   const maxOverdueDays = debtSummary.maxOverdueDays
@@ -1380,9 +1386,14 @@ function IncomeCashflowClientFormPageContent() {
                       <span>{t('Макс. відоме прострочення, днів')}</span>
                       <strong>{getKnownAgingDays(clientDebtTotal.Aging) ?? t('Не визначено')}</strong>
                     </div>
+                  ) : documentaryPresentation.present ? (
+                    <div className="income-cashflow-client-form__debt-metric">
+                      <span>{t('Макс. відоме прострочення, днів')}</span>
+                      <strong>{documentaryPresentation.overdueDays ?? t('Не визначено')}</strong>
+                    </div>
                   ) : maxOverdueDays > 0 && (
                     <div className="income-cashflow-client-form__debt-metric is-danger">
-                      <span>{t('Прострочено')}</span>
+                      <span>{t('Макс. вік боргу')}</span>
                       <strong>{maxOverdueDays} {t('днів')}</strong>
                     </div>
                   )}
@@ -1420,9 +1431,20 @@ function IncomeCashflowClientFormPageContent() {
                 />
               ) : null}
 
+              {documentaryPresentation.present && (
+                <Stack gap="xs">
+                  <Text size="sm">
+                    {t('Відоме прострочення')}: {documentaryPresentation.knownOverdue === null ? t('Не визначено') : formatMoney(documentaryPresentation.knownOverdue)} {agreementCurrency?.Code || ''}
+                    {' · '}{t('Кредитовий залишок')}: {documentaryPresentation.creditBalance === null ? t('Не визначено') : formatMoney(documentaryPresentation.creditBalance)} {agreementCurrency?.Code || ''}
+                  </Text>
+                  <DocumentaryDebtNotice presentation={documentaryPresentation} asOf={documentaryIndex.overlay?.AsOfBusinessDay} />
+                </Stack>
+              )}
+
               {visibleDebts.length > 0 ? (
                   <div className="income-cashflow-client-form__debts-table-shell">
                     <IncomeCashflowDebtTable
+                      documentaryIndex={documentaryIndex}
                       currencyCode={agreementCurrency?.Code || ''}
                       debts={visibleDebts}
                       disabled={isSaving}
@@ -1477,12 +1499,14 @@ function IncomeCashflowClientFormPageContent() {
 }
 
 function IncomeCashflowDebtTable({
+  documentaryIndex,
   currencyCode,
   debts,
   disabled,
   selectedDebtValues,
   onChecked,
 }: {
+  documentaryIndex: DocumentaryDebtIndex
   currencyCode: string
   debts: ClientInDebt[]
   disabled: boolean
@@ -1542,13 +1566,13 @@ function IncomeCashflowDebtTable({
       },
       {
         id: 'days',
-        header: t('Днів'),
+        header: t('Вік боргу, днів'),
         width: 110,
         minWidth: 96,
         align: 'right',
         numeric: true,
-        accessor: (debt) => debt.Debt?.Days,
-        cell: (debt) => debt.Debt?.Days || '',
+        accessor: (debt) => documentaryDebtAge(documentaryIndex, debt),
+        cell: (debt) => documentaryDebtAge(documentaryIndex, debt) ?? t('Не визначено'),
       },
       {
         id: 'debt',
@@ -1565,7 +1589,7 @@ function IncomeCashflowDebtTable({
         },
       },
     ],
-    [currencyCode, disabled, onChecked, selectedValues, t],
+    [documentaryIndex, currencyCode, disabled, onChecked, selectedValues, t],
   )
 
   return (

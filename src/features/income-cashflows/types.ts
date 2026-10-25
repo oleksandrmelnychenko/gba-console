@@ -1,3 +1,4 @@
+import type { DocumentaryDebtAging } from '../../shared/debt/documentaryDebtAging'
 import type { DebtorDebtTotal } from '../sales-debtors/types'
 import {
   ACCOUNTING_PAYMENT_REGISTER_TYPE,
@@ -89,7 +90,7 @@ export type ClientRegionCode = EntityFields & {
 }
 
 export type Debt = EntityFields & {
-  Days?: number
+  Days?: number | null
   Total?: number
 }
 
@@ -145,6 +146,8 @@ export type Agreement = EntityFields & {
 }
 
 export type ClientInDebt = EntityFields & {
+  DebtId?: number
+  ClientId?: number
   Agreement?: Agreement | null
   AgreementId?: number
   Debt?: Debt | null
@@ -189,6 +192,8 @@ export type AssignedPaymentOrder = EntityFields & {
 }
 
 export type ClientAgreement = EntityFields & {
+  ClientId?: number
+  DocumentaryDebtAging?: DocumentaryDebtAging | null
   Agreement?: Agreement | null
   AgreementId?: number
   AccountBalance?: number
@@ -217,6 +222,7 @@ export type SupplyOrganizationAgreement = EntityFields & {
 }
 
 export type Client = NamedEntity & {
+  DocumentaryDebtAging?: DocumentaryDebtAging | null
   ClientAgreements?: ClientAgreement[]
   ClientInDebts?: ClientInDebt[]
   PhoneNumber?: string

@@ -1,3 +1,4 @@
+import type { documentaryAgreementPresentation, DocumentaryDebtAging } from '../../shared/debt/documentaryDebtAging'
 export type AccountingCashFlowMode = 'client' | 'supplier'
 
 export type AccountingCashFlowDocument = {
@@ -6,6 +7,7 @@ export type AccountingCashFlowDocument = {
 }
 
 export type AccountingCashFlowCounterparty = {
+  DocumentaryDebtAging?: DocumentaryDebtAging | null
   ClientAgreements?: AccountingCashFlowClientAgreement[]
   FullName?: string
   Id?: number
@@ -16,6 +18,9 @@ export type AccountingCashFlowCounterparty = {
 }
 
 export type AccountingCashFlowClientAgreement = {
+  ClientId?: number
+  AgreementId?: number
+  DocumentaryDebtAging?: DocumentaryDebtAging | null
   AccountBalance?: number
   Agreement?: AccountingCashFlowAgreement
   Id?: number
@@ -51,20 +56,22 @@ export type AccountingCashFlowClientInDebt = {
 }
 
 export type AccountingCashFlowDebt = {
-  Days?: number
+  Days?: number | null
   Total?: number
   [key: string]: unknown
 }
 
 export type AccountingCashFlowAgreementDebtSummary = {
+  amountLimitExceeded: boolean
   accountBalance: number
   allowedDays: number
   debtLimit: number
   isControlAmountDebt: boolean
   isControlNumberDaysDebt: boolean
   isOverdue: boolean
-  overdueDays: number
-  totalOverdueDebt: number
+  overdueDays: number | null
+  totalOverdueDebt: number | null
+  documentary?: ReturnType<typeof documentaryAgreementPresentation>
 }
 
 export type AccountingCashFlowSaleReturn = {

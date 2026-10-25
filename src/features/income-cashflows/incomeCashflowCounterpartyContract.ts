@@ -1,3 +1,4 @@
+import { paymentAgreementWithoutDocumentaryRead, paymentClientWithoutDocumentaryRead } from './incomeDocumentaryReadBoundary'
 import {
   type Client,
   type ClientAgreement,
@@ -91,13 +92,13 @@ export function attachIncomeCounterpartyToOrder(
     return {
       ...order,
       Client: {
-        ...selectedClient,
+        ...paymentClientWithoutDocumentaryRead(selectedClient),
         ClientAgreements: selectedClientAgreement
-          ? [selectedClientAgreement]
-          : selectedClient.ClientAgreements,
+          ? [paymentAgreementWithoutDocumentaryRead(selectedClientAgreement)]
+          : selectedClient.ClientAgreements?.map(paymentAgreementWithoutDocumentaryRead),
         ClientInDebts: selectedClientDebts,
       },
-      ClientAgreement: selectedClientAgreement || undefined,
+      ClientAgreement: selectedClientAgreement ? paymentAgreementWithoutDocumentaryRead(selectedClientAgreement) : undefined,
     }
   }
 

@@ -1,8 +1,9 @@
+import { documentaryDebtFixture, documentaryOverlayFixture, documentarySummaryFixture } from '../../../shared/debt/documentaryDebtAging.test-fixtures'
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import {
   calculateIncomeCashflowExchange,
@@ -233,6 +234,43 @@ describe('IncomeCashflowClientFormPage payment dependencies', () => {
     vi.mocked(calculateIncomeCashflowExchange).mockResolvedValue({
       ConvertedAmount: 0,
     })
+  })
+
+  it('uses documentary known zero for the displayed client-level debt and preserves payment selection', async () => {
+    // jsdom has no layout; the real DataTable waits for a measured positive viewport.
+    const originalWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth')?.get
+      ?? Object.getOwnPropertyDescriptor(Element.prototype, 'clientWidth')?.get
+    const viewportWidth = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.classList.contains('data-table-scroll') ? 1100 : originalWidth?.call(this) ?? 0
+    })
+    onTestFinished(() => viewportWidth.mockRestore())
+
+    const knownDebt = { Id: 81, DebtId: 41, AgreementId: 400, Debt: { Id: 41, Days: 999999, Total: 100 }, Sale: { Id: 31, SaleNumber: { Value: 'DOC-DAY-ZERO' } }, SaleId: 31 }
+    const sourceClient = { ...client, ClientInDebts: [knownDebt] }
+    const overlay = documentaryOverlayFixture({
+      Debts: [documentaryDebtFixture({ ClientId: '200', AgreementId: '400' })],
+      Agreements: [documentarySummaryFixture({ ClientId: '200', AgreementId: '400' })],
+    })
+    vi.mocked(searchIncomeCashflowCounterpartiesForOperation).mockResolvedValue([sourceClient])
+    vi.mocked(getIncomeCashflowClientAgreements).mockResolvedValue([{ ...agreements[0], ClientId: 200, DocumentaryDebtAging: overlay }])
+    renderPage()
+    const organizationInput = await screen.findByRole<HTMLInputElement>('combobox', { name: 'Організація' })
+    await waitFor(() => expect(organizationInput.disabled).toBe(false))
+    fireEvent.change(screen.getByRole('combobox', { name: 'Контрагент' }), { target: { value: 'двома' } })
+    fireEvent.click(await screen.findByRole('option', { name: client.FullName }))
+    const dialog = screen.getByRole('dialog')
+    const invoice = await within(dialog).findByRole('cell', { name: 'DOC-DAY-ZERO' })
+    const table = invoice.closest('table')
+    const row = invoice.closest('tr')
+    expect(table).not.toBeNull()
+    expect(row).not.toBeNull()
+    expect(within(table!).getByRole('columnheader', { name: /Вік боргу, днів/ })).toBeTruthy()
+    expect(within(row!).getByRole('cell', { name: '0' })).toBeTruthy()
+    expect(within(row!).queryByText('999999')).toBeNull()
+    const checkbox = within(row!).getByRole<HTMLInputElement>('checkbox', { name: 'Вибрати борг' })
+    fireEvent.click(checkbox)
+    expect(checkbox.checked).toBe(true)
+    expect(sourceClient.ClientInDebts[0].Debt.Days).toBe(999999)
   })
 
   it('places the company-resource organization beside the counterparty', async () => {

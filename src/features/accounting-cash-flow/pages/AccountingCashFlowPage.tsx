@@ -1,3 +1,5 @@
+import { documentaryAgreementPresentation, indexDocumentaryDebt, type DocumentaryDebtIndex } from '../../../shared/debt/documentaryDebtAging'
+import { DocumentaryDebtNotice } from '../../../shared/debt/DocumentaryDebtNotice'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { DocumentDetailLayout, DocumentDetailSection, DocumentDetailRow, DocumentDetailSummary } from '../../../shared/ui/document-detail/DocumentDetail'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
@@ -494,6 +496,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
     agreements,
     cashFlow,
     cashFlowError,
+    counterparty,
     counterpartyError,
     counterpartyName,
     document,
@@ -901,6 +904,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
 
             <div className="accounting-cash-flow-agreements">
               <AgreementScopePicker
+                counterparty={counterparty}
                 agreements={agreements}
                 isLoading={isCounterpartyLoading}
                 selectedAgreementNetUid={selectedAgreementNetUid}
@@ -1078,17 +1082,20 @@ function CashFlowStatementHero({
 }
 
 function AgreementScopePicker({
+  counterparty,
   agreements,
   isLoading,
   selectedAgreementNetUid,
   onSelectAgreement,
 }: {
+  counterparty: AccountingCashFlowCounterparty | null
   agreements: AccountingCashFlowClientAgreement[]
   isLoading: boolean
   selectedAgreementNetUid: string | null
   onSelectAgreement: (netUid: string | null) => void
 }) {
   const { t } = useI18n()
+  const rootDocumentaryIndex = useMemo(() => indexDocumentaryDebt(counterparty), [counterparty])
 
   return (
     <div className="accounting-cash-flow-agreement-picker">
@@ -1109,6 +1116,8 @@ function AgreementScopePicker({
           <AgreementDebtTile
             key={agreement.NetUid || index}
             agreement={agreement}
+            rootDocumentaryIndex={rootDocumentaryIndex}
+            clientId={counterparty?.Id}
             isSelected={agreement.NetUid === selectedAgreementNetUid}
             onSelect={() => onSelectAgreement(agreement.NetUid || null)}
           />
@@ -1124,22 +1133,34 @@ function AgreementScopePicker({
 }
 
 function AgreementDebtTile({
+  rootDocumentaryIndex,
+  clientId,
   agreement,
   isSelected,
   onSelect,
 }: {
+  rootDocumentaryIndex: DocumentaryDebtIndex
+  clientId?: number
   agreement: AccountingCashFlowClientAgreement
   isSelected: boolean
   onSelect: () => void
 }) {
   const { t } = useI18n()
-  const debt = useMemo(() => getAgreementDebtSummary(agreement), [agreement])
+  const documentaryIndex = useMemo(() => agreement.DocumentaryDebtAging !== undefined
+    ? indexDocumentaryDebt(agreement) : rootDocumentaryIndex, [agreement, rootDocumentaryIndex])
+  const debt = useMemo(() => getAgreementDebtSummary(agreement, documentaryIndex, clientId), [agreement, documentaryIndex, clientId])
   const currency = getAgreementCurrency(agreement)
   const tooltip = getAgreementTooltip(agreement)
-  const hasAmountControl = debt.isControlAmountDebt
-  const hasDaysControl = debt.isControlNumberDaysDebt
+  const hasAmountControl = debt.documentary !== undefined || debt.isControlAmountDebt
+  const hasDaysControl = debt.documentary !== undefined || debt.isControlNumberDaysDebt
   const isInactive = agreement.Agreement?.IsActive === false
-  const statusLabel = debt.isOverdue ? t('Прострочено') : isInactive ? t('Неактивний') : t('Активний')
+  const amountLimitExceeded = debt.amountLimitExceeded
+  const statusLabel = debt.documentary
+    ? debt.documentary.overdue === true ? t('Прострочено')
+      : amountLimitExceeded ? t('Перевищено ліміт')
+        : !debt.documentary.complete ? t('Прострочення не визначено повністю')
+          : isInactive ? t('Неактивний') : t('Активний')
+    : debt.isOverdue ? t('Прострочено') : isInactive ? t('Неактивний') : t('Активний')
 
   return (
     <Tooltip label={tooltip} disabled={!tooltip}>
@@ -1149,7 +1170,7 @@ function AgreementDebtTile({
         aria-pressed={isSelected}
         onClick={onSelect}
       >
-        <span className="accounting-cash-flow-agreement-card__status"><TableChip tone={debt.isOverdue ? 'danger' : isInactive ? 'neutral' : 'success'} value={statusLabel} /></span>
+        <span className="accounting-cash-flow-agreement-card__status"><TableChip tone={debt.isOverdue ? 'danger' : isInactive || (debt.documentary && !debt.documentary.complete) ? 'neutral' : 'success'} value={statusLabel} /></span>
         <span className="accounting-cash-flow-agreement-card__content">
           <span className="accounting-cash-flow-agreement-card__head">
             <span className="accounting-cash-flow-agreement-card__title-row">
@@ -1166,23 +1187,30 @@ function AgreementDebtTile({
         <span className="accounting-cash-flow-agreement-card__stats">
           {hasAmountControl ? (
             <>
-              <span className={`accounting-cash-flow-agreement-card__stat${debt.totalOverdueDebt > 0 ? ' is-danger' : ''}`}>
-                <small>{t('Борг')}</small>
-                <strong>{formatMoney(debt.totalOverdueDebt)}</strong>
+              <span className={`accounting-cash-flow-agreement-card__stat${(debt.totalOverdueDebt ?? 0) > 0 ? ' is-danger' : ''}`}>
+                <small>{t(debt.documentary ? 'Відоме прострочення' : 'Борг')}</small>
+                <strong>{debt.totalOverdueDebt === null ? t('Не визначено') : formatMoney(debt.totalOverdueDebt)}</strong>
               </span>
-              <span className={`accounting-cash-flow-agreement-card__stat${Math.abs(debt.accountBalance) > debt.debtLimit ? ' is-danger' : ''}`}>
+              <span className={`accounting-cash-flow-agreement-card__stat${amountLimitExceeded ? ' is-danger' : ''}`}>
                 <small>{t('Баланс')}</small>
                 <strong>{formatMoney(debt.accountBalance)}</strong>
               </span>
             </>
           ) : null}
           {hasDaysControl ? (
-            <span className={`accounting-cash-flow-agreement-card__stat${debt.overdueDays > 0 ? ' is-danger' : ''}`}>
-              <small>{t('Дні')}</small>
-              <strong>{debt.overdueDays} / {debt.allowedDays}</strong>
+            <span className={`accounting-cash-flow-agreement-card__stat${(debt.overdueDays ?? 0) > 0 ? ' is-danger' : ''}`}>
+              <small>{t(debt.documentary ? 'Макс. відоме прострочення' : 'Дні')}</small>
+              <strong>{debt.overdueDays === null ? t('Не визначено') : debt.overdueDays}{!debt.documentary ? ` / ${debt.allowedDays}` : ''}</strong>
               <em>{t('днів')}</em>
             </span>
           ) : null}
+          {debt.documentary && (
+            <span className="accounting-cash-flow-agreement-card__stat">
+              <small>{t('Кредитовий залишок')}</small>
+              <strong>{debt.documentary.creditBalance === null ? t('Не визначено') : formatMoney(debt.documentary.creditBalance)}</strong>
+              <DocumentaryDebtNotice presentation={debt.documentary} asOf={documentaryIndex.overlay?.AsOfBusinessDay} />
+            </span>
+          )}
         </span>
       </button>
     </Tooltip>
@@ -1432,7 +1460,7 @@ function getAgreementCurrency(agreement: AccountingCashFlowClientAgreement): str
   return stringValue(agreement.Agreement?.Currency?.Code)
 }
 
-function getAgreementDebtSummary(clientAgreement: AccountingCashFlowClientAgreement): AccountingCashFlowAgreementDebtSummary {
+function getAgreementDebtSummary(clientAgreement: AccountingCashFlowClientAgreement, documentaryIndex: DocumentaryDebtIndex, clientId?: number): AccountingCashFlowAgreementDebtSummary {
   const agreement: AccountingCashFlowAgreement = clientAgreement.Agreement || {}
   const accountBalance = numberValue(clientAgreement.AccountBalance) || 0
   const debtLimit = numberValue(agreement.AmountDebt) || 0
@@ -1444,15 +1472,23 @@ function getAgreementDebtSummary(clientAgreement: AccountingCashFlowClientAgreem
   const overdueDays = maxDaysOwed > allowedDays ? maxDaysOwed - allowedDays : 0
   const isOverdue = totalOverdueDebt > 0 || Math.abs(accountBalance) > debtLimit || maxDaysOwed > allowedDays
 
+  const documentary = documentaryAgreementPresentation(documentaryIndex, { ...clientAgreement, ClientId: clientAgreement.ClientId ?? clientId })
+  const configuredLimit = numberValue(agreement.AmountDebt)
+  const amountLimitExceeded = documentary.present
+    ? agreement.IsControlAmountDebt === true && configuredLimit !== undefined && configuredLimit >= 0
+      && Math.abs(accountBalance) > configuredLimit
+    : Math.abs(accountBalance) > debtLimit
   return {
+    amountLimitExceeded,
     accountBalance,
     allowedDays,
     debtLimit,
     isControlAmountDebt,
     isControlNumberDaysDebt,
-    isOverdue,
-    overdueDays,
-    totalOverdueDebt,
+    isOverdue: documentary.present ? documentary.overdue === true || amountLimitExceeded : isOverdue,
+    overdueDays: documentary.present ? documentary.overdueDays : overdueDays,
+    totalOverdueDebt: documentary.present ? documentary.knownOverdue : totalOverdueDebt,
+    ...(documentary.present ? { documentary } : {}),
   }
 }
 

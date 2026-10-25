@@ -1,3 +1,4 @@
+import { documentaryOverlayFixture } from '../../../shared/debt/documentaryDebtAging.test-fixtures'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { executeAccountingMutation } from '../../../shared/api/accountingMutationOperation'
@@ -159,6 +160,7 @@ describe('client form API contracts', () => {
     const client: Client = {
       NetUid: 'client-net-id',
       FullName: 'Client',
+      DocumentaryDebtAging: documentaryOverlayFixture(),
       ClientContractDocuments: [{ NetUid: 'document-1', FileName: 'contract.pdf' }],
       ClientInDebts: [{ NetUid: 'debt-1', Debt: { Name: 'Debt' } }],
       SubClients: [{ NetUid: 'sub-link-1', SubClient: { NetUid: 'sub-client-1' } }],
@@ -171,6 +173,7 @@ describe('client form API contracts', () => {
         {
           Id: 10,
           NetUid: 'client-agreement-1',
+          DocumentaryDebtAging: documentaryOverlayFixture(),
           Client: { NetUid: 'nested-client', SubClients: [{ NetUid: 'nested-sub-link' }] },
           Agreement: {
             Id: 11,

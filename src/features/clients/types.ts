@@ -1,3 +1,4 @@
+import type { DocumentaryDebtAging } from '../../shared/debt/documentaryDebtAging'
 import type { DebtAging, DebtCurrencyAging } from '../sales-debtors/types'
 export type RegionCode = {
   City?: string
@@ -232,6 +233,7 @@ export type Agreement = {
 }
 
 export type ClientAgreement = {
+  DocumentaryDebtAging?: DocumentaryDebtAging | null
   Agreement?: Agreement
   Id?: number
   NetUid?: string
@@ -696,6 +698,7 @@ export type ClientBankDetails = {
 }
 
 export type Client = {
+  DocumentaryDebtAging?: DocumentaryDebtAging | null
   [key: string]: unknown
   Abbreviation?: string
   AccountantNumber?: string

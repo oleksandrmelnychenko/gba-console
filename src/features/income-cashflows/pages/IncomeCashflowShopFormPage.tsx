@@ -1,3 +1,6 @@
+import { paymentAgreementWithoutDocumentaryRead, paymentClientWithoutDocumentaryRead } from '../incomeDocumentaryReadBoundary'
+import { documentaryAgreementPresentation, documentaryDebtAge, indexDocumentaryDebt, type DocumentaryDebtIndex } from '../../../shared/debt/documentaryDebtAging'
+import { DocumentaryDebtNotice } from '../../../shared/debt/DocumentaryDebtNotice'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
@@ -239,6 +242,10 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
     () => selectedAgreement?.Client || selectedAgreement?.Agreement?.Client || selectedRetailClient?.Client || null,
     [selectedAgreement, selectedRetailClient],
   )
+  const documentaryIndex = useMemo(() => indexDocumentaryDebt(selectedAgreement, selectedPaymentClient), [selectedAgreement, selectedPaymentClient])
+  const documentaryPresentation = useMemo(() => documentaryAgreementPresentation(documentaryIndex, {
+    ...selectedAgreement, ClientId: selectedAgreement?.ClientId ?? selectedPaymentClient?.Id,
+  }), [documentaryIndex, selectedAgreement, selectedPaymentClient])
   const allClientDebts = useMemo(
     () => collectClientDebts(selectedPaymentClient, retailAgreements),
     [retailAgreements, selectedPaymentClient],
@@ -1140,6 +1147,16 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
                 onOptionSubmit={handleClientInvoiceSubmit}
               />
 
+              {documentaryPresentation.present && (
+                <Stack gap="xs">
+                  <Text size="sm">
+                    {t('Відоме прострочення')}: {documentaryPresentation.knownOverdue === null ? t('Не визначено') : formatMoney(documentaryPresentation.knownOverdue)} {selectedAgreement?.Agreement?.Currency?.Code || ''}
+                    {' · '}{t('Кредитовий залишок')}: {documentaryPresentation.creditBalance === null ? t('Не визначено') : formatMoney(documentaryPresentation.creditBalance)} {selectedAgreement?.Agreement?.Currency?.Code || ''}
+                  </Text>
+                  <DocumentaryDebtNotice presentation={documentaryPresentation} asOf={documentaryIndex.overlay?.AsOfBusinessDay} />
+                </Stack>
+              )}
+
               {visibleDebts.length > 0 ? (
                 <>
                   <Checkbox
@@ -1151,6 +1168,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
                   />
                   <div className="income-cashflow-client-form__debts-table-shell">
                     <IncomeCashflowShopDebtTable
+                      documentaryIndex={documentaryIndex}
                       currencyCode={selectedAgreementCurrency?.Code || ''}
                       debts={visibleDebts}
                       disabled={isSaving}
@@ -1173,12 +1191,14 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
 }
 
 function IncomeCashflowShopDebtTable({
+  documentaryIndex,
   currencyCode,
   debts,
   disabled,
   selectedDebtValues,
   onChecked,
 }: {
+  documentaryIndex: DocumentaryDebtIndex
   currencyCode: string
   debts: ClientInDebt[]
   disabled: boolean
@@ -1238,13 +1258,13 @@ function IncomeCashflowShopDebtTable({
       },
       {
         id: 'days',
-        header: t('Днів'),
+        header: t('Вік боргу, днів'),
         width: 110,
         minWidth: 96,
         align: 'right',
         numeric: true,
-        accessor: (debt) => debt.Debt?.Days,
-        cell: (debt) => debt.Debt?.Days || '',
+        accessor: (debt) => documentaryDebtAge(documentaryIndex, debt),
+        cell: (debt) => documentaryDebtAge(documentaryIndex, debt) ?? t('Не визначено'),
       },
       {
         id: 'debt',
@@ -1261,7 +1281,7 @@ function IncomeCashflowShopDebtTable({
         },
       },
     ],
-    [currencyCode, disabled, onChecked, selectedValues, t],
+    [documentaryIndex, currencyCode, disabled, onChecked, selectedValues, t],
   )
 
   return (
@@ -1390,11 +1410,11 @@ function buildIncomePaymentOrder({
     Amount: form.amount,
     ArrivalNumber: form.clientInvoiceSearch.trim() || getSaleDocumentNumber(explicitSale),
     Client: {
-      ...selectedPaymentClient,
-      ClientAgreements: [selectedAgreement],
+      ...paymentClientWithoutDocumentaryRead(selectedPaymentClient),
+      ClientAgreements: [paymentAgreementWithoutDocumentaryRead(selectedAgreement)],
       ClientInDebts: selectedClientDebts,
     },
-    ClientAgreement: selectedAgreement,
+    ClientAgreement: paymentAgreementWithoutDocumentaryRead(selectedAgreement),
     Comment: form.comment.trim(),
     Currency: selectedCurrency,
     ExchangeRate: form.exchangeRate || undefined,

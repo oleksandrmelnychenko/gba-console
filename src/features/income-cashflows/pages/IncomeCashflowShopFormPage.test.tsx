@@ -1,9 +1,10 @@
+import { documentaryOverlayFixture, documentarySummaryFixture } from '../../../shared/debt/documentaryDebtAging.test-fixtures'
 import { MantineProvider } from '@mantine/core'
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import {
@@ -307,6 +308,33 @@ describe('IncomeCashflowShopFormPage retail client selection', () => {
     vi.mocked(getIncomeCashflowRetailClientSales).mockResolvedValue([shopSale])
     vi.mocked(getIncomeCashflowSpecificExchangeRate).mockResolvedValue(1)
     vi.mocked(createOnlineShopIncomeCashflow).mockResolvedValue({ NetUid: 'income-1' })
+  })
+
+  it('shows missing documentary debt as unknown in the actual shop payment table', async () => {
+    // jsdom has no layout; the real DataTable waits for a measured positive viewport.
+    const originalWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth')?.get
+      ?? Object.getOwnPropertyDescriptor(Element.prototype, 'clientWidth')?.get
+    const viewportWidth = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.classList.contains('data-table-scroll') ? 1100 : originalWidth?.call(this) ?? 0
+    })
+    onTestFinished(() => viewportWidth.mockRestore())
+
+    const invoiceDebt = { Id: 102, AgreementId: 70, Debt: { Id: 101, Days: 999999, Total: 500 }, Sale: { Id: 201, SaleNumber: { Value: 'DOC-UNKNOWN-DATE' } }, SaleId: 201 }
+    vi.mocked(getIncomeCashflowRetailClientAgreements).mockResolvedValue([{
+      ...agreement, ClientId: 80,
+      Agreement: { ...agreement.Agreement, ClientInDebts: [invoiceDebt] },
+      DocumentaryDebtAging: documentaryOverlayFixture({ Debts: [], Agreements: [documentarySummaryFixture({ ClientId: '80', AgreementId: '70', PositiveDebtTotal: null, UnknownScopeDebtCount: 1, HasCompleteAging: false, OverdueTotal: null, MaxKnownDebtAgeDays: null, MaxKnownDaysPastDue: null })] }),
+    }])
+    renderPage()
+    await selectRetailClientAndOrganization(organization.Name)
+    const dialog = screen.getByRole('dialog')
+    const invoice = await within(dialog).findByRole('cell', { name: 'DOC-UNKNOWN-DATE' })
+    const row = invoice.closest('tr')
+    expect(row).not.toBeNull()
+    expect(within(row!).getByRole('cell', { name: 'Не визначено' })).toBeTruthy()
+    expect(within(row!).queryByText('999999')).toBeNull()
+    expect(within(dialog).getByRole('note').textContent).toContain('Без підтвердженої належності: 1')
+    expect(createOnlineShopIncomeCashflow).not.toHaveBeenCalled()
   })
 
   it('does not mount shop-order resources without income_order.create', () => {

@@ -1,3 +1,4 @@
+import { DocumentaryDebtNotice } from '../../../../shared/debt/DocumentaryDebtNotice'
 import { Box, Group, Text, Tooltip, UnstyledButton } from '@mantine/core'
 import { memo, useLayoutEffect, useRef } from 'react'
 import { TableChip } from '../../../../shared/ui/TableChip'
@@ -90,7 +91,7 @@ const WizardAgreementCard = memo(function WizardAgreementCard({
   const { t } = useI18n()
   const agreement = clientAgreement.Agreement
   const debt = getWizardAgreementDebtPresentation(clientAgreement)
-  const amountLimitExceeded = debt.creditLimit !== null && debt.outstandingDebt > debt.creditLimit
+  const amountLimitExceeded = debt.creditLimit !== null && (debt.outstandingDebt ?? 0) > debt.creditLimit
   const hasDebtAlert = debt.isOverdue || amountLimitExceeded
   const agreementName = agreement?.Name || clientAgreement.AgreementName || ''
   const organizationName = agreement?.Organization?.Name || ''
@@ -100,6 +101,8 @@ const WizardAgreementCard = memo(function WizardAgreementCard({
     ? t('Прострочено')
     : amountLimitExceeded
       ? t('Перевищено ліміт')
+      : debt.documentary && !debt.documentary.complete
+        ? t(debt.overdueDays === null ? 'Прострочення не визначено' : 'Прострочення визначено частково')
       : isInactive
         ? t('Неактивний')
         : t('Активний')
@@ -124,7 +127,7 @@ const WizardAgreementCard = memo(function WizardAgreementCard({
               <Text className="new-sale-agreement-card__name" title={agreementName} truncate>
                 {agreementName}
               </Text>
-              <TableChip tone={hasDebtAlert ? "danger" : isInactive ? "neutral" : "success"} value={statusLabel} />
+              <TableChip tone={hasDebtAlert ? "danger" : isInactive || (debt.documentary && !debt.documentary.complete) ? "neutral" : "success"} value={statusLabel} />
             </Group>
             <Group gap={6} wrap="nowrap" className="new-sale-agreement-card__chips">
               <TableChip tone="product" value={organizationName || t('Організація не вказана')} />
@@ -134,6 +137,7 @@ const WizardAgreementCard = memo(function WizardAgreementCard({
 
         </Box>
 
+        {debt.documentary && <DocumentaryDebtNotice presentation={debt.documentary} asOf={debt.documentary.asOf} />}
         {clientAgreement.OriginalClientName && (
           <Tooltip label={clientAgreement.OriginalClientName} multiline maw={320} position="top">
             <Text className="new-sale-agreement-card__origin" truncate>
@@ -147,18 +151,24 @@ const WizardAgreementCard = memo(function WizardAgreementCard({
             <span>{t('Доступний аванс')}</span>
             <strong>{formatAgreementAmount(debt.availableAdvance)}</strong>
           </Box>
-          <Box className={`new-sale-agreement-card__metric ${debt.outstandingDebt > 0 ? 'is-danger' : ''}`}>
+          <Box className={`new-sale-agreement-card__metric ${(debt.outstandingDebt ?? 0) > 0 ? 'is-danger' : ''}`}>
             <span>{t('Непогашений борг')}</span>
             <strong>{formatAgreementAmount(debt.outstandingDebt)}</strong>
           </Box>
-          <Box className={`new-sale-agreement-card__metric ${debt.overdueDays > 0 ? 'is-danger' : ''}`}>
-            <span>{t('Вік боргу')}</span>
+          <Box className={`new-sale-agreement-card__metric ${(debt.overdueDays ?? 0) > 0 ? 'is-danger' : ''}`}>
+            <span>{t(debt.documentary ? 'Макс. відомий вік боргу' : 'Вік боргу')}</span>
             <strong>{formatAgreementDays(debt.debtAgeDays)}</strong>
           </Box>
-          <Box className={`new-sale-agreement-card__metric ${debt.overdueDays > 0 ? 'is-danger' : ''}`}>
-            <span>{t('Днів прострочення')}</span>
+          <Box className={`new-sale-agreement-card__metric ${(debt.overdueDays ?? 0) > 0 ? 'is-danger' : ''}`}>
+            <span>{t(debt.documentary ? 'Макс. відоме прострочення' : 'Днів прострочення')}</span>
             <strong>{formatAgreementDays(debt.overdueDays)}</strong>
           </Box>
+          {debt.documentary && (
+            <Box className="new-sale-agreement-card__metric">
+              <span>{t('Кредитовий залишок')}</span>
+              <strong>{formatAgreementAmount(debt.documentary.creditBalance)}</strong>
+            </Box>
+          )}
           <Box className={`new-sale-agreement-card__metric ${amountLimitExceeded ? 'is-danger' : ''}`}>
             <span>{t('Кредитний ліміт')}</span>
             <strong title={debt.creditLimit === null ? t('Ліміт не налаштовано') : undefined}>
@@ -173,10 +183,12 @@ const WizardAgreementCard = memo(function WizardAgreementCard({
   )
 })
 
-function formatAgreementAmount(value: number): string {
+function formatAgreementAmount(value: number | null): string {
+  if (value === null) return 'Не визначено'
   return agreementAmountFormatter.format(Math.round(value * 100) / 100)
 }
 
-function formatAgreementDays(value: number): string {
+function formatAgreementDays(value: number | null): string {
+  if (value === null) return 'Не визначено'
   return `${value} дн.`
 }

@@ -1,3 +1,4 @@
+import { documentaryAgreementPresentation, indexDocumentaryDebt } from '../../../../shared/debt/documentaryDebtAging'
 import type { Agreement, Client, ClientAgreement, ClientInDebt } from '../../../clients/types'
 import {
   getClientFolderChildren,
@@ -15,10 +16,11 @@ export type WizardClientCarouselState = {
 export type WizardAgreementDebtPresentation = {
   availableAdvance: number
   creditLimit: number | null
-  debtAgeDays: number
-  isOverdue: boolean
-  outstandingDebt: number
-  overdueDays: number
+  debtAgeDays: number | null
+  isOverdue: boolean | null
+  outstandingDebt: number | null
+  overdueDays: number | null
+  documentary?: ReturnType<typeof documentaryAgreementPresentation>
 }
 
 export const WIZARD_CLIENT_CAROUSEL_INITIAL: WizardClientCarouselState = {
@@ -82,13 +84,16 @@ export function getWizardAgreementDebtPresentation(
       ? configuredLimit
       : null
 
+  const documentary = documentaryAgreementPresentation(indexDocumentaryDebt(clientAgreement, clientAgreement.Client), clientAgreement)
+
   return {
     availableAdvance,
     creditLimit,
-    debtAgeDays,
-    isOverdue: agreement?.IsOverdue ?? overdueDays > 0,
-    outstandingDebt,
-    overdueDays,
+    debtAgeDays: documentary.present ? documentary.ageDays : debtAgeDays,
+    isOverdue: documentary.present ? documentary.overdue : agreement?.IsOverdue ?? overdueDays > 0,
+    outstandingDebt: documentary.present ? documentary.positiveDebt : outstandingDebt,
+    overdueDays: documentary.present ? documentary.overdueDays : overdueDays,
+    ...(documentary.present ? { documentary } : {}),
   }
 }
 
