@@ -21,7 +21,7 @@ type ProductPricingSnapshot = {
   reservation?: WizardProductReservation
 }
 
-type ProductDetailSnapshot = {
+export type ProductDetailSnapshot = {
   availabilities: WizardTotalProductAvailabilities | null
   detailsError: string | null
   detailsLoaded: boolean

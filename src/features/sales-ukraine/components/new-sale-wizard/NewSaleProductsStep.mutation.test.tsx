@@ -18,6 +18,7 @@ const apiMocks = vi.hoisted(() => ({
   addOrderItem: vi.fn(),
   deleteOrderItem: vi.fn(),
   getProductAvailabilityBuckets: vi.fn(),
+  getProductAnalogues: vi.fn(),
   getProductCurrentPriceByAgreement: vi.fn(),
   searchSaleProductsWithAvailability: vi.fn(),
   updateOrderItem: vi.fn(),
@@ -42,7 +43,7 @@ vi.mock('./newSaleWizardApi', async (importOriginal) => {
     ...original,
     getAllProductAvailabilities: vi.fn(async () => ({ Rows: [], Total: 0 })),
     getNearestSupplyOrder: vi.fn(async () => null),
-    getProductAnalogues: vi.fn(async () => []),
+    getProductAnalogues: apiMocks.getProductAnalogues,
     getProductAvailabilityBuckets: apiMocks.getProductAvailabilityBuckets,
     getProductCalculatedPricingsByAgreement: vi.fn(async () => []),
     getProductCurrentPriceByAgreement: apiMocks.getProductCurrentPriceByAgreement,
@@ -184,10 +185,10 @@ function renderStep({
   )
 }
 
-async function findDetailDrawer() {
+async function findDetailDrawer(code = 'SEM12081') {
   const drawer = await screen.findByRole('dialog', { name: 'Деталі товару' })
   const summary = within(within(drawer).getByRole('region', { name: 'Коротка інформація про товар' }))
-  expect(summary.getByText('SEM12081')).toBeTruthy()
+  expect(summary.getByText(code)).toBeTruthy()
   expect(summary.getByRole('heading', { name: 'Комплект ремонтний вала розжимного' })).toBeTruthy()
   return drawer
 }
@@ -212,6 +213,7 @@ beforeEach(() => {
   apiMocks.acceptedQty = 3
   apiMocks.addOrderItem.mockReset().mockResolvedValue(null)
   apiMocks.deleteOrderItem.mockReset().mockResolvedValue(null)
+  apiMocks.getProductAnalogues.mockReset().mockResolvedValue([])
   apiMocks.getProductCurrentPriceByAgreement.mockReset().mockResolvedValue(null)
   apiMocks.searchSaleProductsWithAvailability.mockReset().mockResolvedValue([])
   apiMocks.updateOrderItem.mockReset().mockResolvedValue(null)
@@ -228,6 +230,32 @@ afterEach(() => {
 })
 
 describe('NewSaleProductsStep selected product summary', () => {
+  it.each(['analogue', 'component'] as const)('opens and edits the shared detail card for a %s', async (source) => {
+    const related = createSearchProduct(7, { NetUid: 'related-product', VendorCode: 'RELATED', HasAnalogue: false,
+      Description: 'Опис пов’язаного товару', ProductAvailabilities: [{ Amount: 7 }] })
+    apiMocks.getProductAnalogues.mockResolvedValue(source === 'analogue' ? [related] : [])
+    apiMocks.searchSaleProductsWithAvailability.mockResolvedValueOnce([createSearchProduct(10, {
+      HasAnalogue: source === 'analogue', HasComponent: source === 'component',
+      ComponentProducts: source === 'component' ? [{ ComponentProduct: related, SetComponentsQty: 2 }] : [],
+    })])
+    renderStep()
+    fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'SEM12081' } })
+    fireEvent.click(await screen.findByText('RELATED'))
+    fireEvent.keyDown(document.body, { key: 'Enter', ctrlKey: true })
+    const drawer = await findDetailDrawer('RELATED')
+    expect(within(drawer).getByText('Опис пов’язаного товару')).toBeTruthy()
+    expect(getWizardKeyboardState()).toBe(source === 'analogue' ? 'AnalogueFullDetail' : 'ComponentFullDetail')
+    await act(async () => { fireEvent.click(within(drawer).getByRole('button', { name: 'Редагувати' })) })
+    fireEvent.change(within(drawer).getByRole('textbox', { name: 'Опис' }), { target: { value: 'Новий опис' } })
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Зберегти' }))
+    await waitFor(() => expect(apiMocks.updateProduct).toHaveBeenCalledWith(
+      expect.objectContaining({ NetUid: 'related-product', Description: 'Новий опис' }), false,
+    ))
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Закрити деталі товару' }))
+    expect(getWizardKeyboardState()).toBe(source === 'analogue' ? 'AnalogueSelection' : 'ComponentSelection')
+    expect(apiMocks.addOrderItem).not.toHaveBeenCalled()
+  })
+
   it('opens the selected photo and closes it without losing the selection or changing the cart', async () => {
     apiMocks.searchSaleProductsWithAvailability.mockResolvedValueOnce([createSearchProduct(10)])
     renderStep()

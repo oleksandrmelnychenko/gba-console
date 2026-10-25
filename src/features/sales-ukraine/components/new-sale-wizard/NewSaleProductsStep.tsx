@@ -31,7 +31,8 @@ import { CartRowActionsModal } from './CartRowActionsModal'
 import { ChangeQtyModal } from './ChangeQtyModal'
 import { EditShoppingCartOverlay } from './EditShoppingCartOverlay'
 import { FutureReservationModal } from './FutureReservationModal'
-import { ProductFullDetailPanel, type WizardDetailChip, type WizardDetailRow } from './ProductFullDetailPanel'
+import { WizardProductDetailsPanel } from './WizardProductDetailsPanel'
+import { WIZARD_PRODUCT_AVAILABILITY_CHIPS, getDefaultWizardProductChipIndex, getWizardProductChipRows } from './wizardProductAvailabilityModel'
 import { ProductImageViewModal } from './ProductImageViewModal'
 import { ProductSummaryCard } from './ProductSummaryCard'
 import { ShiftOrderItemModal } from './ShiftOrderItemModal'
@@ -44,10 +45,8 @@ import { WizardProductSummarySkeleton, WizardRelatedProductsSkeleton } from './W
 import { WizardRelatedProductRows } from './WizardRelatedProductRows'
 import { WizardRelatedProductsFrame } from './WizardRelatedProductsFrame'
 import type {
-  WizardAvailabilityRow,
   WizardCalculatedProductPricing,
   WizardProductReservation,
-  WizardTotalProductAvailabilities,
 } from './newSaleWizardApi'
 import { useWizardCartOperations } from './useWizardCartOperations'
 import { useWizardProductKeyboard } from './useWizardProductKeyboard'
@@ -62,12 +61,7 @@ import {
   type WizardProductKeyboardState,
 } from './wizardKeyboard'
 import type { ExactWizardProductSearchMatch } from './wizardProductSearchSelection'
-import {
-  getWizardAvailabilityChipCount,
-  getWizardAvailabilityRows,
-  getWizardDetailedSellableQty,
-  type WizardAvailabilityKey,
-} from './wizardSaleAvailability'
+import { getWizardDetailedSellableQty } from './wizardSaleAvailability'
 import {
   getComponentCarouselEntries,
   getWizardProductNumber,
@@ -99,19 +93,6 @@ const SORT_MODE_OPTIONS = [
   { label: 'Топ', value: '0' },
   { label: 'Код Виробника', value: '1' },
 ]
-
-const MAIN_CHIP_DEFS = [
-  { index: 0, key: 'InAccount', label: 'В рахунках' },
-  { index: 1, key: 'StorageUkrVat', label: 'Склади Україна (ПДВ)' },
-  { index: 2, key: 'StorageUkrNotVat', label: 'Склади Україна' },
-  { index: 6, key: 'AvailableQtyUkReSale', label: 'Перепродаж' },
-  { index: 3, key: 'StoragePl', label: 'Склади Польща' },
-  { index: 4, key: 'OnWayToPl', label: 'До Польщі' },
-  { index: 5, key: 'OnWayToUkr', label: 'До України' },
-] as const
-
-const MAIN_CHIP_INDEX_STORAGE_UKR_VAT = 1
-const MAIN_CHIP_INDEX_STORAGE_UKR_NOT_VAT = 2
 
 type ActiveProductSource = 'main' | 'analogue' | 'component'
 
@@ -651,7 +632,7 @@ export function NewSaleProductsStep({
     }
 
     focusMainProduct(product)
-    setDetail({ chipIndex: getDefaultMainDetailChipIndex(), rowIndex: null })
+    setDetail({ chipIndex: getDefaultWizardProductChipIndex(isVatSale), rowIndex: null })
     keyboard.setState('FullDetail')
 
     return true
@@ -685,60 +666,6 @@ export function NewSaleProductsStep({
     }
 
     keyboard.setState('ProductSelection')
-  }
-
-  function getMainChips(availabilities: WizardTotalProductAvailabilities | null | undefined): WizardDetailChip[] {
-    return MAIN_CHIP_DEFS.map((def) => ({
-      count: getMainChipCount(availabilities, def.key, def.index),
-      key: def.key,
-      name: t(def.label),
-    }))
-  }
-
-  function getMainChipCount(
-    availabilities: WizardTotalProductAvailabilities | null | undefined,
-    key: WizardAvailabilityKey,
-    index: number,
-  ): number {
-    return getWizardAvailabilityChipCount(availabilities, key, index)
-  }
-
-  function getMainChipRows(
-    availabilities: WizardTotalProductAvailabilities | null | undefined,
-    chipIndex: number,
-  ): WizardAvailabilityRow[] {
-    if (!availabilities) {
-      return []
-    }
-
-    const key = MAIN_CHIP_DEFS[chipIndex]?.key
-
-    if (!key) {
-      return []
-    }
-
-    return getWizardAvailabilityRows(availabilities, key)
-  }
-
-  function getMainDetailRows(
-    availabilities: WizardTotalProductAvailabilities | null | undefined,
-    chipIndex: number | null,
-  ): WizardDetailRow[] {
-    if (chipIndex == null) {
-      return []
-    }
-
-    return getMainChipRows(availabilities, chipIndex).map((row) => ({
-      amount: getWizardProductNumber(row.Amount) ?? 0,
-      analyst: row.OrderItem?.User?.LastName ?? '',
-      key: String(row.NetId || row.OrderItem?.NetUid || row.OrderItem?.Id || `${row.Name || ''}|${row.RegionCode || ''}`),
-      name: row.Name ?? '',
-      regionCode: row.RegionCode ?? '',
-    }))
-  }
-
-  function getDefaultMainDetailChipIndex(): number {
-    return isVatSale ? MAIN_CHIP_INDEX_STORAGE_UKR_VAT : MAIN_CHIP_INDEX_STORAGE_UKR_NOT_VAT
   }
 
   function cycleChips(direction: 1 | -1, chipCount: number) {
@@ -784,9 +711,9 @@ export function NewSaleProductsStep({
         parentNetUid: analogueState.parentNetUid, focus: focusAnalogue, escape: escapeFromAnalogues },
       component: { count: componentEntries.entries.length, index: componentIndex, product: focusedComponent, focus: focusComponent },
       details: {
-        chipIndex: detail?.chipIndex ?? null, rowIndex: detail?.rowIndex ?? null, chipCount: MAIN_CHIP_DEFS.length,
+        chipIndex: detail?.chipIndex ?? null, rowIndex: detail?.rowIndex ?? null, chipCount: WIZARD_PRODUCT_AVAILABILITY_CHIPS.length,
         rowsFor: (product) => detail?.chipIndex != null
-          ? getMainChipRows(getProductDetailSnapshot(product)?.availabilities, detail.chipIndex) : [],
+          ? getWizardProductChipRows(getProductDetailSnapshot(product)?.availabilities, detail.chipIndex) : [],
         cycle: cycleChips, navigate: navigateChipRows, reset: resetDetail, select: setDetail, shift: setShiftRow,
       },
       cart: { hasSelection: Boolean(editCart?.selected), open: openEditCart, move: moveCartSelection,
@@ -859,7 +786,6 @@ export function NewSaleProductsStep({
 
   // Keep the complete summary pinned; detailed sections live in a separate work window.
   const selectedMainProduct = mainProduct ? (active?.source === 'main' && activeProduct ? activeProduct : mainProduct) : null
-  const selectedMainSnapshot = getProductDetailSnapshot(selectedMainProduct)
   const isMainFullDetail = detailKeyboardState === 'FullDetail' && active?.source === 'main'
   const detailProduct = isMainFullDetail
     ? selectedMainProduct
@@ -868,52 +794,9 @@ export function NewSaleProductsStep({
       : detailKeyboardState === 'ComponentFullDetail'
         ? focusedComponent
         : null
-  const selectedMainChipIndex =
-    selectedMainProduct && isMainFullDetail && detail?.chipIndex != null
-      ? detail.chipIndex
-      : selectedMainProduct && isMainFullDetail
-        ? getDefaultMainDetailChipIndex()
-        : null
-  const focusedAnalogueSnapshot = getProductDetailSnapshot(focusedAnalogue)
-  const focusedComponentSnapshot = getProductDetailSnapshot(focusedComponent)
-  const focusedAnalogueChipIndex = focusedAnalogue ? (detail?.chipIndex ?? getDefaultMainDetailChipIndex()) : null
-  const focusedComponentChipIndex = focusedComponent ? (detail?.chipIndex ?? getDefaultMainDetailChipIndex()) : null
-  // Build chips/rows only while the detail window is open, not on search keystrokes.
-  const selectedMainProductPanel =
-    selectedMainProduct && isMainFullDetail ? (
-      <ProductFullDetailPanel
-        canEditDescription={canEditMainDescription && active?.source === 'main'}
-        chips={getMainChips(selectedMainSnapshot?.availabilities)}
-        currentPriceEur={getWizardProductNumber(getProductMeta(selectedMainProduct)?.price)}
-        descriptionDraft={descriptionDraftSnapshot}
-        displayQty={getDisplayedAvailableQty(selectedMainProduct) ?? 0}
-        detailsError={selectedMainSnapshot?.detailsError}
-        isFullDetail={isMainFullDetail}
-        isEditingDescription={editingDescription && active?.source === 'main'}
-        isLoadingDetails={!selectedMainSnapshot?.detailsLoaded}
-        isVatSale={isVatSale}
-        localCurrencyCode={localCurrencyCode}
-        clientAgreementNetId={agreementNetId}
-        nearestSupplyOrder={selectedMainSnapshot?.nearestOrder}
-        pricing={detailPricingFor(selectedMainProduct)}
-        product={selectedMainProduct}
-        rows={getMainDetailRows(selectedMainSnapshot?.availabilities, selectedMainChipIndex)}
-        selectedChipIndex={selectedMainChipIndex}
-        selectedRowIndex={active?.source === 'main' ? (detail?.rowIndex ?? null) : null}
-        showRowDetails={selectedMainChipIndex === 0}
-        onDescriptionDraftChange={handleDescriptionDraftChange}
-        onOpenImage={() => openImage(selectedMainProduct)}
-        onSelectChip={(chipIndex) => {
-          setDetail({ chipIndex, rowIndex: null })
-
-          if (!isMainFullDetail) {
-            keyboard.setState('FullDetail')
-          }
-        }}
-        onRetryDetails={retryProductDetails}
-        onToggleDescription={() => void toggleDescriptionEdit()}
-      />
-    ) : null
+  const detailSource: ActiveProductSource = detailKeyboardState === 'AnalogueFullDetail' ? 'analogue'
+    : detailKeyboardState === 'ComponentFullDetail' ? 'component' : 'main'
+  const selectedDetailChipIndex = detail?.chipIndex ?? getDefaultWizardProductChipIndex(isVatSale)
   const selectedMainProductSummary = selectedMainProduct ? (
     <ProductSummaryCard
       currentPriceEur={getWizardProductNumber(getProductMeta(selectedMainProduct)?.price)}
@@ -1201,58 +1084,22 @@ export function NewSaleProductsStep({
         onKeyDown={handleProductDetailsKeyDown}
       >
         <Stack gap="md">
-          {selectedMainProductPanel}
-
-          {detailKeyboardState === 'AnalogueFullDetail' && focusedAnalogue && (
-            <ProductFullDetailPanel
-              canEditDescription
-              chips={getMainChips(focusedAnalogueSnapshot?.availabilities)}
+          {detailProduct && (
+            <WizardProductDetailsPanel
+              canEditDescription={detailSource !== 'main' || canEditMainDescription}
+              currentPriceEur={detailSource === 'main' ? getWizardProductNumber(getProductMeta(detailProduct)?.price) : undefined}
               descriptionDraft={descriptionDraftSnapshot}
-              displayQty={getDisplayedAvailableQty(focusedAnalogue) ?? 0}
-              detailsError={focusedAnalogueSnapshot?.detailsError}
-              isFullDetail
-              isEditingDescription={editingDescription && active?.source === 'analogue'}
-              isLoadingDetails={!focusedAnalogueSnapshot?.detailsLoaded}
+              isEditingDescription={editingDescription && active?.source === detailSource}
               isVatSale={isVatSale}
               localCurrencyCode={localCurrencyCode}
               clientAgreementNetId={agreementNetId}
-              nearestSupplyOrder={focusedAnalogueSnapshot?.nearestOrder}
-              pricing={detailPricingFor(focusedAnalogue)}
-              product={focusedAnalogue}
-              rows={getMainDetailRows(focusedAnalogueSnapshot?.availabilities, focusedAnalogueChipIndex)}
-              selectedChipIndex={focusedAnalogueChipIndex}
+              pricing={detailPricingFor(detailProduct)}
+              product={detailProduct}
+              snapshot={getProductDetailSnapshot(detailProduct)}
+              selectedChipIndex={selectedDetailChipIndex}
               selectedRowIndex={detail?.rowIndex ?? null}
-              showRowDetails={focusedAnalogueChipIndex === 0}
               onDescriptionDraftChange={handleDescriptionDraftChange}
-              onOpenImage={() => openImage(focusedAnalogue)}
-              onRetryDetails={retryProductDetails}
-              onSelectChip={(chipIndex) => setDetail({ chipIndex, rowIndex: null })}
-              onToggleDescription={() => void toggleDescriptionEdit()}
-            />
-          )}
-
-          {detailKeyboardState === 'ComponentFullDetail' && focusedComponent && (
-            <ProductFullDetailPanel
-              canEditDescription
-              chips={getMainChips(focusedComponentSnapshot?.availabilities)}
-              descriptionDraft={descriptionDraftSnapshot}
-              displayQty={getDisplayedAvailableQty(focusedComponent) ?? 0}
-              detailsError={focusedComponentSnapshot?.detailsError}
-              isFullDetail
-              isEditingDescription={editingDescription && active?.source === 'component'}
-              isLoadingDetails={!focusedComponentSnapshot?.detailsLoaded}
-              isVatSale={isVatSale}
-              localCurrencyCode={localCurrencyCode}
-              clientAgreementNetId={agreementNetId}
-              nearestSupplyOrder={focusedComponentSnapshot?.nearestOrder}
-              pricing={detailPricingFor(focusedComponent)}
-              product={focusedComponent}
-              rows={getMainDetailRows(focusedComponentSnapshot?.availabilities, focusedComponentChipIndex)}
-              selectedChipIndex={focusedComponentChipIndex}
-              selectedRowIndex={detail?.rowIndex ?? null}
-              showRowDetails={focusedComponentChipIndex === 0}
-              onDescriptionDraftChange={handleDescriptionDraftChange}
-              onOpenImage={() => openImage(focusedComponent)}
+              onOpenImage={() => openImage(detailProduct)}
               onRetryDetails={retryProductDetails}
               onSelectChip={(chipIndex) => setDetail({ chipIndex, rowIndex: null })}
               onToggleDescription={() => void toggleDescriptionEdit()}
