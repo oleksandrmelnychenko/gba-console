@@ -40,6 +40,7 @@ import { EMPTY_MOVEMENT_SELECTION, movementSelection, type CurrentVparivanieMove
 import { ReportPreviewPages } from './ReportPreviewPages'
 import { exportStockReportPreview } from '../api/reportsApi'
 import { ReportNumberPresentationPanel } from './ReportNumberPresentationPanel'
+import { financialFilterConditionTypes } from '../data/currentFinancialFilterConditions'
 import { requestNumberPresentation, readNumberPresentation, readValueSemantics, reportValueUnit } from '../data/reportNumberPresentation'
 import { effectiveReportConfiguration, reportAxesPolicy, reportMaximumDate } from '../data/reportConfiguration'
 import { BUG_1274_ACTIVE_DATA_SOURCES, BUG_1274_DISABLED_MESSAGE } from '../data/reportMigration'
@@ -2062,7 +2063,7 @@ function LegacyReportBuilder({
 
   const selectionPanel = dataSource === 19 ? null : <section className="reports-stocks-legacy__selections">
     <ReportSelectionsCard inline={inlineSelections} selectionKeys={selectionKeys} dataset={dataset} dataSource={dataSource} description={null} filterFieldOptions={filterFieldOptions}
-      from={lookupFrom} lookupProfitReadMode={lookupProfitReadMode} lookupProfitUnavailable={lookupProfitUnavailable} lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis} selections={selections} title={selectionTitle ?? t('Умови відбору')} to={lookupTo} onChange={onSelectionsChange}
+      request={request} from={lookupFrom} lookupProfitReadMode={lookupProfitReadMode} lookupProfitUnavailable={lookupProfitUnavailable} lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis} selections={selections} title={selectionTitle ?? t('Умови відбору')} to={lookupTo} onChange={onSelectionsChange}
       filter={selectionFilter} newSelection={newSelection} addLabel={addSelectionLabel} />
   </section>
 
@@ -2318,6 +2319,7 @@ type FilterFieldOption = {
 }
 
 type ReportSelectionsCardProps = {
+  request?: ReportRequestBody
   inline?: boolean
   selectionKeys?: string[]
   dataset?: ReportDataset
@@ -2341,6 +2343,7 @@ type ReportSelectionsCardProps = {
 }
 
 function ReportSelectionsCard({
+  request,
   inline = false,
   selectionKeys,
   dataset,
@@ -2366,7 +2369,8 @@ function ReportSelectionsCard({
   const [draftSelection, setDraftSelection] = useState<ReportSelection | null>(null)
   const [fieldPickerOpen, setFieldPickerOpen] = useState(false)
   const analysis = currentVparivanieAnalysisCapability(dataset)
-  const filterConditions = analysis ? analysisFilterConditions(dataset, draftSelection?.SelectedField.Type ?? 0) : dataSource === 39 ? currentVparivanieFilterConditions(draftSelection?.SelectedField.Type ?? 0) : REPORT_FILTER_CONDITIONS
+  const financialConditions = dataSource === 35 ? new Set(financialFilterConditionTypes(dataset, request)) : null
+  const filterConditions = analysis ? analysisFilterConditions(dataset, draftSelection?.SelectedField.Type ?? 0) : dataSource === 39 ? currentVparivanieFilterConditions(draftSelection?.SelectedField.Type ?? 0) : financialConditions ? REPORT_FILTER_CONDITIONS.filter(condition => (financialConditions.has(condition.Type) || condition.Type === draftSelection?.FilterCondition.Type)) : REPORT_FILTER_CONDITIONS
   const draftValueError = draftSelection ? (analysis
     ? analysisSelectionValueError(draftSelection, analysis.filters.find(field => field.type === draftSelection.SelectedField.Type))
     : reportSelectionCardinalityError(draftSelection)) : null
@@ -2431,7 +2435,7 @@ function ReportSelectionsCard({
           <div className="reports-stocks-selection-list">
             {selections.map((selection, index) => {
               if (filter && !filter(selection)) return null
-              if (inline) return <InlineReportSelection key={selectionKeys?.[index]} dataset={dataset}
+              if (inline) return <InlineReportSelection key={selectionKeys?.[index]} dataset={dataset} request={request}
                 selection={selection} selections={selections} index={index} dataSource={dataSource} from={from} to={to}
                 filterFieldOptions={filterFieldOptions} lookupProfitReadMode={lookupProfitReadMode} lookupProfitUnavailable={lookupProfitUnavailable}
                 lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis}
@@ -2513,6 +2517,7 @@ function ReportSelectionsCard({
                 data={filterConditions.map((condition) => ({
                   label: condition.Name,
                   value: String(condition.Type),
+                  disabled: financialConditions !== null && !financialConditions.has(condition.Type),
                 }))}
                 label={t('Умова')}
                 value={String(draftSelection.FilterCondition.Type)}
@@ -2556,14 +2561,16 @@ function ReportSelectionsCard({
   )
 }
 
-function InlineReportSelection({ dataset, selection, selections, index, dataSource, from, to, filterFieldOptions,
+function InlineReportSelection({ dataset, request, selection, selections, index, dataSource, from, to, filterFieldOptions,
   lookupProfitReadMode, lookupProfitUnavailable, lookupSourceWorld, lookupSalesBasis, lookupProvidedDiscountBasis, onChange,
-}: Pick<ReportSelectionsCardProps, 'dataset' | 'selections' | 'dataSource' | 'from' | 'to' | 'filterFieldOptions' | 'lookupProfitReadMode'
+}: Pick<ReportSelectionsCardProps, 'dataset' | 'request' | 'selections' | 'dataSource' | 'from' | 'to' | 'filterFieldOptions' | 'lookupProfitReadMode'
   | 'lookupProfitUnavailable' | 'lookupSourceWorld' | 'lookupSalesBasis' | 'lookupProvidedDiscountBasis' | 'onChange'> & { selection: ReportSelection; index: number }) {
   const { t } = useI18n()
   const analysis = currentVparivanieAnalysisCapability(dataset)
+  const financialConditions = dataSource === 35 ? new Set(financialFilterConditionTypes(dataset, request)) : null
   const conditions = analysis ? analysisFilterConditions(dataset, selection.SelectedField.Type)
-    : dataSource === 39 ? currentVparivanieFilterConditions(selection.SelectedField.Type) : REPORT_FILTER_CONDITIONS
+    : dataSource === 39 ? currentVparivanieFilterConditions(selection.SelectedField.Type)
+      : financialConditions ? REPORT_FILTER_CONDITIONS.filter(condition => (financialConditions.has(condition.Type) || condition.Type === selection.FilterCondition.Type)) : REPORT_FILTER_CONDITIONS
   const change = (value: ReportSelection) => onChange({ kind: 'replace', index, selection: value })
   const valueError = analysis ? analysisSelectionValueError(selection, analysis.filters.find(field => field.type === selection.SelectedField.Type))
     : reportSelectionCardinalityError(selection)
@@ -2586,7 +2593,8 @@ function InlineReportSelection({ dataset, selection, selections, index, dataSour
       {analysis?.filters.filter(field => field.available === false && selection.SelectedField.Name && field.type === selection.SelectedField.Type).map(field => <Text size="xs" c="dimmed" key={field.type}>{field.name}: {field.unavailabilityReason}</Text>)}
     </div>
     <div className="workbook-inline-selection__condition"><Select label={t('Умова')} allowDeselect={false}
-      data={conditions.map(condition => ({ value: String(condition.Type), label: condition.Name }))}
+      data={conditions.map(condition => ({ value: String(condition.Type), label: condition.Name,
+        disabled: financialConditions !== null && !financialConditions.has(condition.Type) }))}
       value={String(selection.FilterCondition.Type)} onChange={value => {
         const condition = conditions.find(item => String(item.Type) === value) ?? conditions[0]
         change(analysis ? changeAnalysisSelectionCondition(selection, condition) : { ...selection, FilterCondition: condition })

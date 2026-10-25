@@ -1,4 +1,5 @@
 import { requestFinancialAxesCapability, validFinancialAxes } from './financialAxes'
+import { currentFinancialFilterConditionsError, financialFilterConditionTypes } from './currentFinancialFilterConditions'
 import { validProfitRows, readReportConfiguration } from './reportConfiguration'
 import { requestProfitReadMode, profitReadModeConfigurationError, currentProfitMaximumDays } from './profitReadMode'
 import { originalNormalPeriodError } from './originalNormalPeriod'
@@ -22,7 +23,6 @@ export const DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS = ['88D1B8CB29DC7A69
 const legacyMeasures = [2, 3, 4, 6, 7, 8, 10, 12, 14, 15]
 const measures = [2, 3, 4, 6, 7, 8, 10, 12, 14, 15, 11]
 const filters = new Set([0, 1, 2, 6, 9])
-const conditions = new Set([0, 2])
 const unsupported = new Set(['onec', 'comparison', 'xyz', 'revenuecomparison', 'buyersalesshare', 'returncomparison',
   'ratecomparison', 'margincomparison', 'paymentcomparison', 'pricetypesalescomparison', 'agreementpricecomparison',
   'valuationclientagreementid', 'ordering', 'filterexpression', 'topgroups', 'threshold', 'hidezero',
@@ -48,6 +48,9 @@ export function isDayOrganizationGrossProfitDataset(dataset: ReportDataset): boo
 export function dayOrganizationGrossProfitConfigurationError(data: ReportRequestBody, dataset?: ReportDataset): string | null {
   const modeError = profitReadModeConfigurationError(data, dataset)
   if (modeError) return modeError
+  const filterError = currentFinancialFilterConditionsError(data, dataset)
+  if (filterError) return filterError
+  const conditions = new Set(financialFilterConditionTypes(dataset, data))
   const basisError = dayOrganizationBasisConfigurationError(data, dataset)
   if (basisError) return basisError
   if (data.dataSource !== DAY_ORGANIZATION_GROSS_PROFIT_SOURCE) return null
@@ -81,7 +84,7 @@ export function dayOrganizationGrossProfitConfigurationError(data: ReportRequest
     if (count > 100 || (selection.IsChecked !== undefined && typeof selection.IsChecked !== 'boolean')
       || !filters.has(selection.SelectedField?.Type)
       || !conditions.has(selection.FilterCondition?.Type) || !selection.Values.length
-      || (selection.FilterCondition?.Type === 0 && selection.Values.length !== 1)
+      || ([0, 1].includes(selection.FilterCondition?.Type) && selection.Values.length !== 1)
       || selection.Values.some(value => !value || !revenueExactId(value.Data)
         || (value.Value !== undefined && (!Number.isInteger(value.Value)
           || value.Value < -2147483648 || value.Value > 2147483647)))) return invalid
