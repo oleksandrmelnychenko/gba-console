@@ -19,7 +19,7 @@ export function AutomaticActionFixture({ work, after = () => undefined, other = 
   return <MantineProvider env="test">
     <button onClick={async () => { await work(); after() }}>Native</button>
     <Button onClick={() => void work()}>Mantine</Button>
-    <ActionIcon aria-label="Icon" onClick={() => { work() }}><span>+</span></ActionIcon>
+    <ActionIcon aria-label="Run icon action" onClick={() => { work() }}><span>+</span></ActionIcon>
     <button onClick={() => discardInHelper(work)}>Nested void</button>
     <button onClick={() => { work(); other(); after() }}>Parallel</button>
     <button onClick={() => { discardInHelper(work); setCount(value => value + 1) }}>Rerender {count}</button>

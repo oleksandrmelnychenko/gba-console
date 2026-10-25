@@ -11,7 +11,7 @@ function deferred() {
 // This fixture is ordinary application JSX. The same Vite plugin used in production
 // adds protection; none of these buttons or forms imports a guard or hook.
 describe('automatic JSX action protection', () => {
-  it.each(['Native', 'Mantine', 'Icon', 'Nested void', 'Spread', 'Menu action'])('protects %s without manual setup', async label => {
+  it.each(['Native', 'Mantine', 'Run icon action', 'Nested void', 'Spread', 'Menu action'])('protects %s without manual setup', async label => {
     const request = deferred(), work = vi.fn(() => request.promise), after = vi.fn()
     render(<AutomaticActionFixture work={work} after={after} />)
     const button = screen.getByRole(label === 'Menu action' ? 'menuitem' : 'button', { name: label })
