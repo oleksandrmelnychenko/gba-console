@@ -1,0 +1,49 @@
+import { lazy } from 'react'
+
+// Dialogs load when opened; their code is not needed by the initial workspace.
+export const CollectionCoefficientConstructorModal = lazy(() =>
+  import('./CollectionCoefficientConstructorModal').then(module => ({ default: module.CollectionCoefficientConstructorModal })))
+export const SalesMarginConstructorModal = lazy(() =>
+  import('./SalesMarginConstructorModal').then(module => ({ default: module.SalesMarginConstructorModal })))
+export const CashMovementConstructorModal = lazy(() =>
+  import('./CashMovementConstructorModal').then(module => ({ default: module.CashMovementConstructorModal })))
+export const SupplierDebtConstructorModal = lazy(() =>
+  import('./SupplierDebtConstructorModal').then(module => ({ default: module.SupplierDebtConstructorModal })))
+export const EmployeeGrossProfitConstructorModal = lazy(() =>
+  import('./EmployeeGrossProfitConstructorModal').then(module => ({ default: module.EmployeeGrossProfitConstructorModal })))
+export const OverdueReceivablesConstructorModal = lazy(() =>
+  import('./OverdueReceivablesConstructorModal').then(module => ({ default: module.OverdueReceivablesConstructorModal })))
+export const ManagementReturnsConstructorModal = lazy(() =>
+  import('./ManagementReturnsConstructorModal').then(module => ({ default: module.ManagementReturnsConstructorModal })))
+export const ManagementBalanceConstructorModal = lazy(() =>
+  import('./ManagementBalanceConstructorModal').then(module => ({ default: module.ManagementBalanceConstructorModal })))
+export const ManagementOrdersConstructorModal = lazy(() =>
+  import('./ManagementOrdersConstructorModal').then(module => ({ default: module.ManagementOrdersConstructorModal })))
+export const DefectProductionConstructorModal = lazy(() =>
+  import('./DefectProductionConstructorModal').then(module => ({ default: module.DefectProductionConstructorModal })))
+export const InventoryTurnoverConstructorModal = lazy(() =>
+  import('./InventoryTurnoverConstructorModal').then(module => ({ default: module.InventoryTurnoverConstructorModal })))
+export const PlannedCashConstructorModal = lazy(() =>
+  import('./PlannedCashConstructorModal').then(module => ({ default: module.PlannedCashConstructorModal })))
+export const CurrentLiquidityConstructorModal = lazy(() =>
+  import('./CurrentLiquidityConstructorModal').then(module => ({ default: module.CurrentLiquidityConstructorModal })))
+export const OriginalWarehouseMovementPanel = lazy(() =>
+  import('./OriginalWarehouseMovementPanel').then(module => ({ default: module.OriginalWarehouseMovementPanel })))
+export const OneCTurnoverResponsiblesPanel = lazy(() =>
+  import('./OneCTurnoverResponsiblesPanel').then(module => ({ default: module.OneCTurnoverResponsiblesPanel })))
+export const OneCTurnoverReportPanel = lazy(() =>
+  import('./OneCTurnoverReportPanel').then(module => ({ default: module.OneCTurnoverReportPanel })))
+export const DebtToSalesRatioReportPanel = lazy(() =>
+  import('./DebtToSalesRatioReportPanel').then(module => ({ default: module.DebtToSalesRatioReportPanel })))
+export const ActiveClientsReportPanel = lazy(() =>
+  import('./ActiveClientsReportPanel').then(module => ({ default: module.ActiveClientsReportPanel })))
+export const CurrencyRateDynamicsReportPanel = lazy(() =>
+  import('./CurrencyRateDynamicsReportPanel').then(module => ({ default: module.CurrencyRateDynamicsReportPanel })))
+export const CashAggregateBalanceReportPanel = lazy(() =>
+  import('./CashAggregateBalanceReportPanel').then(module => ({ default: module.CashAggregateBalanceReportPanel })))
+export const OriginalRevenueReportPanel = lazy(() =>
+  import('./OriginalRevenueReportPanel').then(module => ({ default: module.OriginalRevenueReportPanel })))
+export const OriginalBuyerSalesShareReportPanel = lazy(() =>
+  import('./OriginalBuyerSalesShareReportPanel').then(module => ({ default: module.OriginalBuyerSalesShareReportPanel })))
+export const PublishedReportWorkspace = lazy(() =>
+  import('./workbook-desk/PublishedReportWorkspace').then(module => ({ default: module.PublishedReportWorkspace })))

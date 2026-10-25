@@ -1,14 +1,36 @@
+import {
+  PublishedReportWorkspace,
+  CollectionCoefficientConstructorModal,
+  SalesMarginConstructorModal,
+  CashMovementConstructorModal,
+  SupplierDebtConstructorModal,
+  EmployeeGrossProfitConstructorModal,
+  OverdueReceivablesConstructorModal,
+  ManagementReturnsConstructorModal,
+  ManagementBalanceConstructorModal,
+  ManagementOrdersConstructorModal,
+  DefectProductionConstructorModal,
+  InventoryTurnoverConstructorModal,
+  PlannedCashConstructorModal,
+  CurrentLiquidityConstructorModal,
+  OriginalWarehouseMovementPanel,
+  OneCTurnoverResponsiblesPanel,
+  OneCTurnoverReportPanel,
+  DebtToSalesRatioReportPanel,
+  ActiveClientsReportPanel,
+  CurrencyRateDynamicsReportPanel,
+  CashAggregateBalanceReportPanel,
+  OriginalRevenueReportPanel,
+  OriginalBuyerSalesShareReportPanel,
+} from './lazyReportDialogs'
 import { financialAxesCapability } from '../data/financialAxes'
 import { currentFinancialAxesError } from '../data/currentFinancialAxes'
 import { ReportsSubmenu } from './workbook-desk/ReportsSubmenu'
-import { PublishedReportWorkspace } from './workbook-desk/PublishedReportWorkspace'
 import type { PublishedReportTab } from './workbook-desk/publishedReportTabs'
 import { ReportValueAutocomplete } from './ReportValueAutocomplete'
 import { WorkbookSectionActions } from './workbook-desk/WorkbookSectionActions'
-import { OriginalWarehouseMovementPanel } from './OriginalWarehouseMovementPanel'
 import type { MovementLaunch } from './OriginalWarehouseMovementCatalogueLaunch'
 import { isMovementCapability, isWarehouseMovementCatalogueEntry, normalizeMovementPublications } from '../data/originalWarehouseMovement'
-import { OneCTurnoverResponsiblesPanel } from './OneCTurnoverResponsiblesPanel'
 import { isOrganizationOnlyTurnoverScope, ORGANIZATION_ONLY_TURNOVER_CHOICE } from '../data/oneCTurnoverScopes'
 import type { OneCTurnoverScopeSummary } from '../types'
 import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis, analysisFilterConditions, analysisSelectionValueError, changeAnalysisSelectionCondition, changeAnalysisSelectionValues } from '../data/currentVparivanieAnalysis'
@@ -68,7 +90,7 @@ import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowActi
 import { requestProfitReadMode } from '../data/profitReadMode'
 import { isSettlementReadModeCapability, requestSettlementReadMode } from '../data/settlementReadMode'
 import { requestCashReadMode } from '../data/cashReadMode'
-import { type FormEvent, type ReactNode, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
+import { Suspense, type FormEvent, type ReactNode, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -159,41 +181,21 @@ import { ValuationAgreementPicker } from './ValuationAgreementPicker'
 import { ReportDatasetPicker, ReportDatasetSummary } from './ReportDatasetPicker'
 import { ReportConstructorHeader, ReportConstructorNavigation, ReportConstructorResultEmpty, ReportSectionPanel, type ReportConstructorSection } from './ReportConstructorNavigation'
 import { ReportQuickPresets } from './ReportQuickPresets'
-import { OneCTurnoverReportPanel } from './OneCTurnoverReportPanel'
-import { DebtToSalesRatioReportPanel } from './DebtToSalesRatioReportPanel'
 import { isDebtToSalesRatioCapabilities, type DebtToSalesRatioCapabilities } from '../data/debtToSalesRatio'
-import { CollectionCoefficientConstructorModal } from './CollectionCoefficientConstructorModal'
 import { useCollectionCoefficientConstructor } from '../hooks/useCollectionCoefficientConstructor'
-import { SalesMarginConstructorModal } from './SalesMarginConstructorModal'
 import { useSalesMarginConstructor } from '../hooks/useSalesMarginConstructor'
-import { CashMovementConstructorModal } from './CashMovementConstructorModal'
 import { useCashMovementConstructor } from '../hooks/useCashMovementConstructor'
-import { SupplierDebtConstructorModal } from './SupplierDebtConstructorModal'
 import { useSupplierDebtConstructor } from '../hooks/useSupplierDebtConstructor'
-import { EmployeeGrossProfitConstructorModal } from './EmployeeGrossProfitConstructorModal'
 import { useEmployeeGrossProfitConstructor } from '../hooks/useEmployeeGrossProfitConstructor'
-import { OverdueReceivablesConstructorModal } from './OverdueReceivablesConstructorModal'
 import { useOverdueReceivablesConstructor } from '../hooks/useOverdueReceivablesConstructor'
-import { ManagementReturnsConstructorModal } from './ManagementReturnsConstructorModal'
 import { useManagementReturnsConstructor } from '../hooks/useManagementReturnsConstructor'
-import { ManagementBalanceConstructorModal } from './ManagementBalanceConstructorModal'
 import { useManagementBalanceConstructor } from '../hooks/useManagementBalanceConstructor'
-import { ManagementOrdersConstructorModal } from './ManagementOrdersConstructorModal'
 import { useManagementOrdersConstructor } from '../hooks/useManagementOrdersConstructor'
-import { DefectProductionConstructorModal } from './DefectProductionConstructorModal'
 import { useDefectProductionConstructor } from '../hooks/useDefectProductionConstructor'
-import { InventoryTurnoverConstructorModal } from './InventoryTurnoverConstructorModal'
 import { useInventoryTurnoverConstructor } from '../hooks/useInventoryTurnoverConstructor'
-import { PlannedCashConstructorModal } from './PlannedCashConstructorModal'
 import { usePlannedCashConstructor } from '../hooks/usePlannedCashConstructor'
-import { CurrentLiquidityConstructorModal } from './CurrentLiquidityConstructorModal'
 import { useCurrentLiquidityConstructor } from '../hooks/useCurrentLiquidityConstructor'
-import { ActiveClientsReportPanel } from './ActiveClientsReportPanel'
 import { isActiveClientsCapabilities, type ActiveClientsCapabilities } from '../data/activeClients'
-import { CurrencyRateDynamicsReportPanel } from './CurrencyRateDynamicsReportPanel'
-import { CashAggregateBalanceReportPanel } from './CashAggregateBalanceReportPanel'
-import { OriginalRevenueReportPanel } from './OriginalRevenueReportPanel'
-import { OriginalBuyerSalesShareReportPanel } from './OriginalBuyerSalesShareReportPanel'
 import { isOriginalBuyerSalesShareCapabilities, type OriginalBuyerSalesShareCapabilities } from '../data/originalBuyerSalesShare'
 import { isOriginalRevenueCapabilities, type OriginalRevenueCapabilities } from '../data/originalRevenue'
 import { isCashAggregateBalanceCapabilities, type CashAggregateBalanceCapabilities } from '../data/cashAggregateBalance'
@@ -1011,7 +1013,6 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     openInitialWorkbook(initialWorkbookLaunch)
   }, [initialWorkbookLaunch])
 
-  const mountsDialog = (open: boolean) => !consoleScope || open
   const analysisRules = bug1274Only ? supportedAnalysisRules(templateBody, dataset, settlementDataset)
     : { topGroups: true, threshold: true, abc: true, ordering: true, filterExpression: true }
   const lookup: { from: string; to: string; profitReadMode: 0 | 1 | undefined; profitUnavailable: boolean
@@ -1080,7 +1081,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     ordering: !analysisRules.ordering ? null : <ReportOrderingPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled}
       notice={groupingOrdering.notice} onChange={groupingOrdering.changeOrdering} />,
   }
-  const dialogs = <>
+  const dialogs = <Suspense fallback={<Group role="status" gap="xs"><Loader size="sm" /><Text>{t('Завантаження звіту…')}</Text></Group>}>
     {movementScope && canGenerateReport && movementScope.caller === ownerId ? <ReportModal opened title="Рух товару за складськими документами" size={1250}
       onClose={() => setMovementScope(null)} closeButtonProps={{ 'aria-label': 'Закрити рух товару' }}>
       <OriginalWarehouseMovementPanel publications={movementScope.scope.publications} canGenerate={canGenerateReport} callerKey={ownerId} />
@@ -1093,7 +1094,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         onExportOpenChange={setResponsiblesExportOpen}
         onClose={() => setResponsiblesScope(null)} />
     </ReportModal> : null}
-    {mountsDialog(oneCReportOpen) ? <ReportModal opened={oneCReportOpen} title={t('Валовий прибуток — як у 1С')} size={960}
+    {oneCReportOpen ? <ReportModal opened={oneCReportOpen} title={t('Валовий прибуток — як у 1С')} size={960}
       onClose={() => { if (!oneCReportGenerating) setOneCReportOpen(false) }}
       closeOnClickOutside={!oneCReportGenerating} closeOnEscape={!oneCReportGenerating}
       closeButtonProps={{ disabled: oneCReportGenerating, 'aria-label': t('Закрити звіт 1С') }}>
@@ -1101,14 +1102,14 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         onFromChange={setFrom} onToChange={setTo} onLoadingChange={setOneCReportGenerating}
         onClose={() => setOneCReportOpen(false)} /> : null}
     </ReportModal> : null}
-    {mountsDialog(debtRatioCapability !== null) ? <ReportModal opened={canGenerateReport && debtRatioCapability !== null} title={debtRatioCapability?.Title ?? ''} size={960}
+    {debtRatioCapability !== null ? <ReportModal opened={canGenerateReport && debtRatioCapability !== null} title={debtRatioCapability?.Title ?? ''} size={960}
       onClose={() => { if (!debtRatioGenerating) setDebtRatioCapability(null) }}
       closeOnClickOutside={!debtRatioGenerating} closeOnEscape={!debtRatioGenerating}
       closeButtonProps={{ disabled: debtRatioGenerating, 'aria-label': t('Закрити оригінальний конструктор') }}>
       {canGenerateReport && debtRatioCapability ? <DebtToSalesRatioReportPanel capability={debtRatioCapability}
         initialMonth={(from || today).slice(0, 7)} canGenerate={canGenerateReport} onLoadingChange={setDebtRatioGenerating} /> : null}
     </ReportModal> : null}
-    {mountsDialog(activeClientsCapability !== null) ? <ReportModal opened={canGenerateReport && activeClientsCapability !== null} title={activeClientsCapability?.Title ?? ''} size={960}
+    {activeClientsCapability !== null ? <ReportModal opened={canGenerateReport && activeClientsCapability !== null} title={activeClientsCapability?.Title ?? ''} size={960}
       onClose={() => { if (!activeClientsGenerating) setActiveClientsCapability(null) }}
       closeOnClickOutside={!activeClientsGenerating} closeOnEscape={!activeClientsGenerating}
       closeButtonProps={{ disabled: activeClientsGenerating, 'aria-label': t('Закрити конструктор активних клієнтів') }}>
@@ -1116,20 +1117,20 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         initialMonth={(from || today).slice(0, 7)} canGenerate={canGenerateReport} callerKey={ownerId}
         onLoadingChange={setActiveClientsGenerating} /> : null}
     </ReportModal> : null}
-    {mountsDialog(collectionConstructor.modalProps.capability !== null) ? <CollectionCoefficientConstructorModal {...collectionConstructor.modalProps} /> : null}
-    {mountsDialog(salesMarginConstructor.modalProps.capability !== null) ? <SalesMarginConstructorModal {...salesMarginConstructor.modalProps} /> : null}
-    {mountsDialog(cashMovementConstructor.modalProps.capability !== null) ? <CashMovementConstructorModal {...cashMovementConstructor.modalProps} /> : null}
-    {mountsDialog(supplierDebtConstructor.modalProps.capability !== null) ? <SupplierDebtConstructorModal {...supplierDebtConstructor.modalProps} /> : null}
-    {mountsDialog(employeeGrossProfitConstructor.modalProps.capability !== null) ? <EmployeeGrossProfitConstructorModal {...employeeGrossProfitConstructor.modalProps} /> : null}
-    {mountsDialog(overdueReceivablesConstructor.modalProps.capability !== null) ? <OverdueReceivablesConstructorModal {...overdueReceivablesConstructor.modalProps} /> : null}
-    {mountsDialog(managementReturnsConstructor.modalProps.capability !== null) ? <ManagementReturnsConstructorModal {...managementReturnsConstructor.modalProps} /> : null}
-    {mountsDialog(managementBalanceConstructor.modalProps.capability !== null) ? <ManagementBalanceConstructorModal {...managementBalanceConstructor.modalProps} /> : null}
-    {mountsDialog(managementOrdersConstructor.modalProps.capability !== null) ? <ManagementOrdersConstructorModal {...managementOrdersConstructor.modalProps} /> : null}
-    {mountsDialog(defectProductionConstructor.modalProps.capability !== null) ? <DefectProductionConstructorModal {...defectProductionConstructor.modalProps} /> : null}
-    {mountsDialog(inventoryTurnoverConstructor.modalProps.capability !== null) ? <InventoryTurnoverConstructorModal {...inventoryTurnoverConstructor.modalProps} /> : null}
-    {mountsDialog(currentLiquidityConstructor.modalProps.capability !== null) ? <CurrentLiquidityConstructorModal {...currentLiquidityConstructor.modalProps} /> : null}
-    {mountsDialog(plannedCashConstructor.modalProps.capability !== null) ? <PlannedCashConstructorModal {...plannedCashConstructor.modalProps} /> : null}
-    {mountsDialog(currencyDynamicsCapability !== null) ? <ReportModal opened={canGenerateReport && currencyDynamicsCapability !== null} title={currencyDynamicsCapability?.Title ?? ''} size={960}
+    {collectionConstructor.modalProps.capability !== null ? <CollectionCoefficientConstructorModal {...collectionConstructor.modalProps} /> : null}
+    {salesMarginConstructor.modalProps.capability !== null ? <SalesMarginConstructorModal {...salesMarginConstructor.modalProps} /> : null}
+    {cashMovementConstructor.modalProps.capability !== null ? <CashMovementConstructorModal {...cashMovementConstructor.modalProps} /> : null}
+    {supplierDebtConstructor.modalProps.capability !== null ? <SupplierDebtConstructorModal {...supplierDebtConstructor.modalProps} /> : null}
+    {employeeGrossProfitConstructor.modalProps.capability !== null ? <EmployeeGrossProfitConstructorModal {...employeeGrossProfitConstructor.modalProps} /> : null}
+    {overdueReceivablesConstructor.modalProps.capability !== null ? <OverdueReceivablesConstructorModal {...overdueReceivablesConstructor.modalProps} /> : null}
+    {managementReturnsConstructor.modalProps.capability !== null ? <ManagementReturnsConstructorModal {...managementReturnsConstructor.modalProps} /> : null}
+    {managementBalanceConstructor.modalProps.capability !== null ? <ManagementBalanceConstructorModal {...managementBalanceConstructor.modalProps} /> : null}
+    {managementOrdersConstructor.modalProps.capability !== null ? <ManagementOrdersConstructorModal {...managementOrdersConstructor.modalProps} /> : null}
+    {defectProductionConstructor.modalProps.capability !== null ? <DefectProductionConstructorModal {...defectProductionConstructor.modalProps} /> : null}
+    {inventoryTurnoverConstructor.modalProps.capability !== null ? <InventoryTurnoverConstructorModal {...inventoryTurnoverConstructor.modalProps} /> : null}
+    {currentLiquidityConstructor.modalProps.capability !== null ? <CurrentLiquidityConstructorModal {...currentLiquidityConstructor.modalProps} /> : null}
+    {plannedCashConstructor.modalProps.capability !== null ? <PlannedCashConstructorModal {...plannedCashConstructor.modalProps} /> : null}
+    {currencyDynamicsCapability !== null ? <ReportModal opened={canGenerateReport && currencyDynamicsCapability !== null} title={currencyDynamicsCapability?.Title ?? ''} size={960}
       onClose={() => { if (!currencyDynamicsGenerating) setCurrencyDynamicsCapability(null) }}
       closeOnClickOutside={!currencyDynamicsGenerating} closeOnEscape={!currencyDynamicsGenerating}
       closeButtonProps={{ disabled: currencyDynamicsGenerating, 'aria-label': t('Закрити конструктор динаміки курсу') }}>
@@ -1137,7 +1138,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         initialMonth={defaultCurrencyRateDynamicsMonth(today)} canGenerate={canGenerateReport} callerKey={ownerId}
         onLoadingChange={setCurrencyDynamicsGenerating} /> : null}
     </ReportModal> : null}
-    {mountsDialog(originalBuyerSalesShareCapability !== null) ? <ReportModal opened={canGenerateReport && originalBuyerSalesShareCapability !== null} title={originalBuyerSalesShareCapability?.Title ?? ''} size={960}
+    {originalBuyerSalesShareCapability !== null ? <ReportModal opened={canGenerateReport && originalBuyerSalesShareCapability !== null} title={originalBuyerSalesShareCapability?.Title ?? ''} size={960}
       onClose={() => { if (!originalBuyerSalesShareGenerating) setOriginalBuyerSalesShareCapability(null) }}
       closeOnClickOutside={!originalBuyerSalesShareGenerating} closeOnEscape={!originalBuyerSalesShareGenerating}
       closeButtonProps={{ disabled: originalBuyerSalesShareGenerating, 'aria-label': t('Закрити конструктор частки продажів') }}>
@@ -1145,7 +1146,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         initialMonth={defaultCurrencyRateDynamicsMonth(today)} canGenerate={canGenerateReport} callerKey={ownerId}
         onLoadingChange={setOriginalBuyerSalesShareGenerating} /> : null}
     </ReportModal> : null}
-    {mountsDialog(originalRevenueCapability !== null) ? <ReportModal opened={canGenerateReport && originalRevenueCapability !== null} title={originalRevenueCapability?.Title ?? ''} size={1100}
+    {originalRevenueCapability !== null ? <ReportModal opened={canGenerateReport && originalRevenueCapability !== null} title={originalRevenueCapability?.Title ?? ''} size={1100}
       onClose={() => { if (!originalRevenueGenerating) setOriginalRevenueCapability(null) }}
       closeOnClickOutside={!originalRevenueGenerating} closeOnEscape={!originalRevenueGenerating}
       closeButtonProps={{ disabled: originalRevenueGenerating, 'aria-label': t('Закрити конструктор виручки') }}>
@@ -1153,7 +1154,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         initialMonth={defaultCurrencyRateDynamicsMonth(today)} canGenerate={canGenerateReport} callerKey={ownerId}
         onLoadingChange={setOriginalRevenueGenerating} /> : null}
     </ReportModal> : null}
-    {mountsDialog(cashAggregateCapability !== null) ? <ReportModal opened={canGenerateReport && cashAggregateCapability !== null} title={cashAggregateCapability?.Title ?? ''} size={1100}
+    {cashAggregateCapability !== null ? <ReportModal opened={canGenerateReport && cashAggregateCapability !== null} title={cashAggregateCapability?.Title ?? ''} size={1100}
       onClose={() => { if (!cashAggregateGenerating) setCashAggregateCapability(null) }}
       closeOnClickOutside={!cashAggregateGenerating} closeOnEscape={!cashAggregateGenerating}
       closeButtonProps={{ disabled: cashAggregateGenerating, 'aria-label': t('Закрити конструктор залишків коштів') }}>
@@ -1161,7 +1162,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         initialPeriod={previousKyivDay(today)} canGenerate={canGenerateReport} callerKey={ownerId}
         onLoadingChange={setCashAggregateGenerating} /> : null}
     </ReportModal> : null}
-  </>
+  </Suspense>
   const exportModal = (
     <DocumentExportModal
       document={result?.document}
@@ -1292,7 +1293,9 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
             setPublishedTab(tab); setVisitedPublished(current => current.includes(tab) ? current : [...current, tab])
           }} extra={quietActions} onOpen={item => { setPublishedTab(null); if (item.fileName !== activeWorkbook) openWorkbook(item) }} />
         {canGenerateReport && ownerId ? visitedPublished.map(tab => <div key={tab} style={{ display: publishedTab === tab ? undefined : 'none' }}>
-          <PublishedReportWorkspace tab={tab} callerKey={ownerId} onBusyChange={setPublishedBusy} />
+          <Suspense fallback={<Group role="status" gap="xs"><Loader size="sm" /><Text>{t('Завантаження звіту…')}</Text></Group>}>
+            <PublishedReportWorkspace tab={tab} callerKey={ownerId} onBusyChange={setPublishedBusy} />
+          </Suspense>
         </div>) : null}
         <div style={{ display: publishedTab && canGenerateReport ? 'none' : undefined }}>
         {!canGenerateReport ? <Alert color="yellow" icon={<CircleAlert size={18} />} title={t('Немає доступу до звітів')}>

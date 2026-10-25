@@ -40,3 +40,27 @@ it('retains the previous page on failure and cancels a pending page when the for
   await waitFor(() => expect(screen.queryByText('Наступний товар')).toBeNull())
   expect(screen.getByText('Перший товар')).toBeTruthy()
 })
+
+
+it('does not rebuild 3000 unchanged cells for a pending page or an error', async () => {
+  const value = initial()
+  value.Columns = Array.from({ length: 60 }, (_, index) => ({ Ordinal: index, SourceIndex: index, Values: [{ Caption: `Column ${index}` }] }))
+  value.Rows = Array.from({ length: 50 }, (_, index) => ({ Ordinal: index, SourceIndex: index, Values: [{ Caption: `Row ${index}` }] }))
+  value.Cells = value.Rows.flatMap(row => value.Columns.map(column => ({ RowSourceIndex: row.SourceIndex, ColumnSourceIndex: column.SourceIndex, Value: { Kind: 'decimal' as const, Value: '42.50', Provenance: 'producerCell' as const } })))
+  const reads = vi.spyOn(value.Cells, 'map')
+  let reject!: (reason: Error) => void
+  vi.mocked(getStockReportPreviewPage).mockImplementationOnce(() => new Promise((_resolve, fail) => { reject = fail }))
+  const view = render(<MantineProvider><ReportPreviewPages initial={value} request={request} /></MantineProvider>)
+  expect(view.container.querySelectorAll('td')).toHaveLength(3000)
+  reads.mockClear()
+  fireEvent.click(screen.getByRole('button', { name: 'Наступні рядки' }))
+  expect(screen.getByText('Завантаження…')).toBeTruthy()
+  expect(reads).not.toHaveBeenCalled()
+  await act(async () => reject(new Error('Retry this page')))
+  expect(screen.getByText('Retry this page')).toBeTruthy()
+  expect(reads).not.toHaveBeenCalled()
+  vi.mocked(getStockReportPreviewPage).mockResolvedValueOnce(next())
+  fireEvent.click(screen.getByRole('button', { name: 'Наступні рядки' }))
+  await screen.findByText('Наступний товар')
+  expect(screen.queryByText('Row 0')).toBeNull()
+})

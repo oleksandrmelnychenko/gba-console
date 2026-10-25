@@ -4,16 +4,16 @@ import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { formatReportDecimal, moneyScaleLabel, reportValueUnit } from '../data/reportNumberPresentation'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { settlementAttributeText, type SettlementCounterpartyAttribute } from '../data/settlementSourceAttributes'
-import { Fragment } from 'react'
+import { Fragment, memo } from 'react'
 import { Alert, Text } from '@mantine/core'
 import { isZeroPreviewScalar, previewAmountText, previewBlanksZero, previewCaptionText, previewCellText, previewNumberText, previewSharedNames, type CurrentVparivanieProduct, type NativeReportPreview, type NativeReportPreviewAxis, type NativeReportPreviewCell, type NativeReportPreviewFilter, type NativeReportPreviewRequest, type NativeReportPreviewScalar } from '../data/nativeReportPreview'
 import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, CURRENT_VPARIVANIE_PRODUCT_FIELDS, currentVparivanieQuantityText } from '../data/currentVparivanie'
 import { currentVparivanieSecondTier } from '../data/currentVparivanieColumns'
 import './report-inline-preview.css'
 import { workbookAttributeText, type WorkbookRow } from '../data/workbookPreview'
-import { deskRowsText } from '../data/workbookDesk'
+import { deskRowsText } from '../data/reportCountPresentation'
 
-export function ReportInlinePreview({ preview, embedded = false, showPageNote = true }: { preview: NativeReportPreview; embedded?: boolean; showPageNote?: boolean }) {
+export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, embedded = false, showPageNote = true }: { preview: NativeReportPreview; embedded?: boolean; showPageNote?: boolean }) {
   const cells = new Map(preview.Cells.map(cell => [`${cell.RowSourceIndex}:${cell.ColumnSourceIndex}`, cell.Value]))
   const products = preview.CurrentVparivanieProducts
   const regions = preview.ClientDiscountRecipientRegions
@@ -131,7 +131,7 @@ export function ReportInlinePreview({ preview, embedded = false, showPageNote = 
     {showPageNote && preview.Page.HasMore ? <Text size="xs" c="dimmed" className="report-inline-preview__more">Показано рядки {preview.Page.Offset + 1}–{preview.Page.Offset + preview.Page.ReturnedRows}. Повний результат доступний у Excel або PDF.{totals
       ? ` Загальний підсумок — за всіма ${preview.Page.TotalVisibleRows} рядками звіту.` : ''}</Text> : null}
   </section>
-}
+})
 
 // Labels are presentation only: distinct organizations, clients and agreements remain distinguishable even
 // when the source gives them identical names. Existing captioned IDs remain intact.

@@ -54,11 +54,11 @@ it('offers the scoped catalogue without mounting unsupported constructor dialogs
   expect(PlannedCashConstructorModal).not.toHaveBeenCalled()
 })
 
-it('keeps the constructor dialogs mounted where the full catalogue can open them', async () => {
+it('does not mount unopened constructor dialogs in the full catalogue either', async () => {
   render(page(false))
   await waitFor(() => expect(getReportDatasets).toHaveBeenCalled())
-  await waitFor(() => expect(CollectionCoefficientConstructorModal).toHaveBeenCalled())
-  expect(PlannedCashConstructorModal).toHaveBeenCalled()
+  expect(CollectionCoefficientConstructorModal).not.toHaveBeenCalled()
+  expect(PlannedCashConstructorModal).not.toHaveBeenCalled()
 })
 
 it('does not re-render the finished preview while the template name is typed', async () => {

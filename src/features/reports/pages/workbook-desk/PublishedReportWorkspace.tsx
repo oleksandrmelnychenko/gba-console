@@ -1,6 +1,6 @@
 import { publishedReportTabs, type PublishedReportTab } from './publishedReportTabs'
 import { Alert, Button, Loader, Stack, Text } from '@mantine/core'
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import { getReportCatalogue } from '../../api/reportWorkspaceApi'
 import { getOneCTurnoverScopes } from '../../api/reportsApi'
 import { getMovementCapability, getMovementPublications } from '../../api/originalWarehouseMovementApi'
@@ -14,7 +14,7 @@ import { OriginalWarehouseMovementPanel } from '../OriginalWarehouseMovementPane
 type Content = { kind: 'responsibles'; scope: OneCTurnoverScopeSummary } | { kind: 'movement'; publications: MovementPublication[] }
 
 /** Mounted on first visit; hidden tabs retain their own dates and applied result. */
-export function PublishedReportWorkspace({ tab, callerKey, onBusyChange }: {
+export const PublishedReportWorkspace = memo(function PublishedReportWorkspace({ tab, callerKey, onBusyChange }: {
   tab: PublishedReportTab; callerKey: string; onBusyChange: (busy: boolean) => void
 }) {
   const [attempt, setAttempt] = useState(0)
@@ -49,4 +49,4 @@ export function PublishedReportWorkspace({ tab, callerKey, onBusyChange }: {
         : current.content?.kind === 'movement' ? <OriginalWarehouseMovementPanel publications={current.content.publications} callerKey={callerKey} canGenerate onBusyChange={onBusyChange} /> : null}
     </Stack>
   </section>
-}
+})
