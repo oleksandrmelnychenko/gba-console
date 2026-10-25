@@ -93,6 +93,20 @@ describe('wizard product search lifecycle', () => {
     expect(onResults).toHaveBeenCalledTimes(1)
   })
 
+  it('shares the single active client-recommendation action across repeated activation', async () => {
+    const pending = deferred()
+    mocks.recommendations.mockReturnValueOnce(pending.promise)
+    const { result, onResults } = setup()
+    let first!: Promise<boolean>, second!: Promise<boolean>
+    act(() => { first = result.current.loadClientRecommendations(); second = result.current.loadClientRecommendations() })
+    expect(mocks.recommendations).toHaveBeenCalledOnce()
+    expect(await second).toBe(false)
+    await act(async () => pending.resolve([product('recommended')]))
+    expect(await first).toBe(true)
+    expect(onResults).toHaveBeenCalledOnce()
+    expect(result.current.results).toEqual([product('recommended')])
+  })
+
   it.each(['clientNetId', 'agreementNetId'] as const)('retires recommendations on %s change', async (field) => {
     const pending = deferred()
     mocks.recommendations.mockReturnValueOnce(pending.promise)

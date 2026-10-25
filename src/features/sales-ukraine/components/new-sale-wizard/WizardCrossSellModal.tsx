@@ -1,12 +1,12 @@
 import { Alert, Badge, Box, Button, Group, Progress, Skeleton, Text } from '@mantine/core'
 import { CircleAlert, Package, ShoppingCart, Sparkles } from 'lucide-react'
-import { memo, useEffect, useMemo, useState } from 'react'
+import { memo, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { TableChip, type TableChipTone } from '../../../../shared/ui/TableChip'
 import { AppModal } from '../../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getProductMainImage, getProductMainOriginalNumber, getProductShopImageUrl, isCriticalProductTop } from '../../../products/utils'
-import { getProductCoPurchaseRecommendations } from '../../../clients/api/clientRecommendationsApi'
+import { useWizardCrossSellProducts } from './useWizardCrossSellProducts'
 import { getWizardProductNumber, getWizardSellableQty, type WizardSaleProduct } from './wizardSaleProduct'
 import './wizard-cross-sell-modal.css'
 
@@ -42,46 +42,12 @@ export function WizardCrossSellModal({
   onPick: (product: WizardSaleProduct) => void
 }) {
   const { t } = useI18n()
-  const [products, setProducts] = useState<WizardSaleProduct[]>([])
-  const [isLoading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!opened || !clientNetId) {
-      return
-    }
-
-    const controller = new AbortController()
-    const loadTimer = window.setTimeout(() => {
-      setLoading(true)
-      setError(null)
-
-      getProductCoPurchaseRecommendations(seedProduct?.NetUid ?? '', clientNetId, false, {
-        clientAgreementNetId: agreementNetId ?? undefined,
-        signal: controller.signal,
-      })
-        .then((items) => {
-          if (!controller.signal.aborted) {
-            setProducts(items as unknown as WizardSaleProduct[])
-          }
-        })
-        .catch(() => {
-          if (!controller.signal.aborted) {
-            setError(t('Не вдалося завантажити кросс-продажі'))
-          }
-        })
-        .finally(() => {
-          if (!controller.signal.aborted) {
-            setLoading(false)
-          }
-        })
-    }, 0)
-
-    return () => {
-      window.clearTimeout(loadTimer)
-      controller.abort()
-    }
-  }, [opened, clientNetId, agreementNetId, seedProduct?.NetUid, t])
+  const { products, isLoading, error } = useWizardCrossSellProducts({
+    agreementNetId, clientNetId, productNetId: seedProduct?.NetUid, opened,
+  })
+  const pickRef = useRef(onPick)
+  useLayoutEffect(() => { pickRef.current = onPick })
+  const handlePick = useCallback((product: WizardSaleProduct) => pickRef.current(product), [])
 
   const visibleProducts = useMemo(
     () => products.filter((product) => !product.NetUid || !excludeNetUids.has(product.NetUid)),
@@ -156,7 +122,7 @@ export function WizardCrossSellModal({
                     product={product}
                     rank={index + 1}
                     useEurToUah={useEurToUah}
-                    onPick={onPick}
+                    onPick={handlePick}
                   />
                 ))}
               </div>
@@ -168,7 +134,7 @@ export function WizardCrossSellModal({
   )
 }
 
-function SeedProductCard({
+const SeedProductCard = memo(function SeedProductCard({
   isVatSale,
   localCurrencyCode,
   product,
@@ -209,7 +175,7 @@ function SeedProductCard({
       </div>
     </section>
   )
-}
+})
 
 const CrossSellProductCard = memo(function CrossSellProductCard({
   isVatSale,
