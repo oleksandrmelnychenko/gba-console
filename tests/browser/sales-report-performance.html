@@ -6,6 +6,7 @@
   <script type="module">
     import '@mantine/core/styles.css'
     import '/src/features/sales-ukraine/components/new-sale-wizard/wizard-cart-sheet.css'
+    import '/src/features/sales-ukraine/components/new-sale-wizard/new-sale-wizard.css'
     import { createElement as h, Profiler, useState } from 'react'
     import { createRoot } from 'react-dom/client'
     import { MantineProvider } from '@mantine/core'
@@ -19,6 +20,8 @@
     import { WizardCrossSellModal } from '/src/features/sales-ukraine/components/new-sale-wizard/WizardCrossSellModal.tsx'
     import { NewSaleReviewStep } from '/src/features/sales-ukraine/components/new-sale-wizard/NewSaleReviewStep.tsx'
     import { NEW_SALE_REVIEW_INITIAL } from '/src/features/sales-ukraine/components/new-sale-wizard/newSaleWizardState.ts'
+    import { EditShoppingCartOverlay } from '/src/features/sales-ukraine/components/new-sale-wizard/EditShoppingCartOverlay.tsx'
+    import { moveWizardCartSelection, toggleWizardCartSplit } from '/src/features/sales-ukraine/components/new-sale-wizard/wizardCartEditor.ts'
     import { NewSaleProductsStep } from '/src/features/sales-ukraine/components/new-sale-wizard/NewSaleProductsStep.tsx'
     import { dispatchWizardKey, initializeWizardKeyboard } from '/src/features/sales-ukraine/components/new-sale-wizard/wizardKeyboard.ts'
     import { ProductDetailPage } from '/src/features/products/pages/ProductDetailPage.tsx'
@@ -67,6 +70,10 @@
         options.signal?.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true})
       })
       if (url.pathname.endsWith('/products/get/analogues')) return Promise.resolve(response([relatedProduct('ANA-1','Аналог 1',5),relatedProduct('ANA-2','Аналог 2',4)]))
+      if (url.pathname.endsWith('/products/all/availabilities/product')) return new Promise((resolve,reject)=>{
+        window.performanceFixture.finishCartStock=()=>resolve(response({AvailableQtyUk:4,AvailableQtyUkReSale:2}))
+        options.signal?.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true})
+      })
       if (url.pathname.endsWith('/products/search/advanced')) return Promise.resolve(response([wizardProduct]))
       if (url.pathname.endsWith('/products/pricings/current')) return Promise.resolve(response(123.45))
       if (url.pathname.endsWith('/products/pricings/all')) return Promise.resolve(response([{PriceEUR:123.45,DiscountRate:0}]))
@@ -92,7 +99,7 @@
     const auth = {hasPermission:()=>true,isLoading:false,user:{NetUid:'fixture-user',FirstName:'Test',LastName:'User'}}
     const onRender = (id,phase,duration) => window.performanceFixture.samples.push({id,phase,duration})
     const onRowClick = item => { window.performanceFixture.selected = item.NetUid }
-    const cartSale = rows => ({NetUid:'fixture-sale',ClientAgreement:{NetUid:'agreement-1',Agreement:{Currency:{Code:'EUR'}}},Order:{OrderItems:rows,OrderSource:1}})
+    const cartSale = rows => ({NetUid:'fixture-sale',BaseLifeCycleStatus:{SaleLifeCycleType:0},ClientAgreement:{NetUid:'agreement-1',Agreement:{Currency:{Code:'EUR'}}},Order:{OrderItems:rows,OrderSource:1}})
     function DeliveryFixture({cart}) {
       const [value,setValue]=useState(NEW_SALE_REVIEW_INITIAL)
       return h(NewSaleReviewStep,{clientNetId:'client-1',sale:cartSale(cart),value,onChange:patch=>setValue(current=>({...current,...patch}))})
@@ -102,11 +109,23 @@
       return h('section',null,h('button',{onClick:()=>setOpened(true)},'Відкрити крос-продажі'),
         h(WizardCrossSellModal,{opened,onClose:()=>setOpened(false),agreementNetId:'agreement-1',clientNetId:'client-1',excludeNetUids:new Set(),isVatSale:false,localCurrencyCode:'UAH',useEurToUah:true,seedProduct:wizardProduct,onPick:product=>{window.performanceFixture.crossSellPicked=product.NetUid}}))
     }
+    const editorItems=items.slice(0,70), editorSplitItems=items.slice(70)
+    function SplitEditorFixture() {
+      const [cart,setCart]=useState({isSplit:true,selected:{list:'current',index:69},splitItems:editorSplitItems})
+      const [opened,setOpened]=useState(true)
+      return h('section',{tabIndex:0,onKeyDown:event=>{
+        if(event.key==='ArrowDown'||event.key==='ArrowUp') {event.preventDefault();setCart(current=>moveWizardCartSelection(current,editorItems.length,event.key==='ArrowDown'?1:-1))}
+        if(event.key===' ') {event.preventDefault();setCart(current=>toggleWizardCartSplit(current,editorItems.length))}
+      }},h('button',{onClick:()=>setOpened(true)},'Відкрити редактор розділення'),opened&&h(EditShoppingCartOverlay,{
+        currentItems:editorItems,...cart,onClose:()=>setOpened(false),
+      }))
+    }
     function Fixture() {
       const [cart,setCart] = useState(items), [revision,setRevision] = useState(0), [view,setView] = useState('cart')
       return h('main',{style:{padding:16,minWidth:0},onKeyDown:event=>{if(view==='wizard') dispatchWizardKey(event)}},
         h('nav',null,
           h('button',{onClick:()=>setView('cart')},'Кошик'),
+          h('button',{onClick:()=>setView('split-editor')},'Розділений кошик'),
           h('button',{onClick:()=>setView('report')},'Звіт'),
           h('button',{onClick:()=>setView('sales')},'Реєстр продажів'),
           h('button',{onClick:()=>setView('product')},'Картка товару'),
@@ -123,7 +142,7 @@
         view==='cart' ? h(Profiler,{id:'cart',onRender},h(WizardCartCards,{items:cart,busy:false,localCurrencyCode:'UAH',useEurToUah:false,onRowClick}))
           : view==='report' ? h(Profiler,{id:'report',onRender},h(ReportInlinePreview,{preview}))
           : h(AuthContext.Provider,{value:auth},h(MemoryRouter,{initialEntries:['/products/product-1']},h(Profiler,{id:view,onRender},
-            view==='delivery'?h(DeliveryFixture,{cart}):view==='recommendations'?h(RecommendationsPanel,{client:{NetUid:'client-1'},productNetId:'panel-seed'}):view==='crosssell'?h(CrossSellFixture):view==='sales'?h(SalesUkrainePage):view==='wizard'?h(NewSaleProductsStep,{agreementNetId:'agreement-1',clientNetId:'client-1',client:null,sale:cartSale(cart),onCartChanged:()=>{}}):h(Routes,null,h(Route,{path:'/products/:netId',element:h(ProductDetailPage)}))))))
+            view==='split-editor'?h(SplitEditorFixture):view==='delivery'?h(DeliveryFixture,{cart}):view==='recommendations'?h(RecommendationsPanel,{client:{NetUid:'client-1'},productNetId:'panel-seed'}):view==='crosssell'?h(CrossSellFixture):view==='sales'?h(SalesUkrainePage):view==='wizard'?h(NewSaleProductsStep,{agreementNetId:'agreement-1',clientNetId:'client-1',client:null,sale:cartSale(cart),onCartChanged:()=>{}}):h(Routes,null,h(Route,{path:'/products/:netId',element:h(ProductDetailPage)}))))))
     }
     createRoot(document.getElementById('root')).render(h(MantineProvider,null,h(I18nProvider,null,h(Fixture))))
   </script>

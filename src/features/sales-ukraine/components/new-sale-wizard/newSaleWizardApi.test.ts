@@ -96,6 +96,16 @@ describe('new sale wizard pricing API contracts', () => {
     })
   })
 
+  it('forwards cancellation without caching quantity-dialog stock', async () => {
+    const controller = new AbortController()
+    apiRequestMock.mockResolvedValue({ AvailableQtyUk: 2 })
+    await getProductAvailabilityBuckets('product-1', 'agreement-1', controller.signal)
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/all/availabilities/product', {
+      cache: 'no-store', signal: controller.signal,
+      query: { clientAgreementNetId: 'agreement-1', netId: 'product-1' },
+    })
+  })
+
   it('bypasses the browser cache when reading live agreement-scoped availability', async () => {
     apiRequestMock.mockResolvedValueOnce({ AvailableQtyUk: 1, AvailableQtyUkReSale: 0 })
 

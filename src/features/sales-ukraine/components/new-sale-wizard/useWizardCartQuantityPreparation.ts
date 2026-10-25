@@ -2,7 +2,7 @@ import { notifications } from '@mantine/notifications'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getSaleLifecycleTypeKey } from '../../saleStatus'
 import type { SalesUkraineOrderItem, SalesUkraineSale } from '../../types'
-import { getProductAvailabilityBuckets } from './newSaleWizardApi'
+import { useWizardCartAvailability } from './useWizardCartAvailability'
 import type { useWizardCartMutation } from './useWizardCartMutation'
 import { getWizardProductNumber, getWizardSellableQty, type WizardSaleProduct } from './wizardSaleProduct'
 import type { WizardSplitOrderItem } from './wizardSplitSale'
@@ -30,6 +30,7 @@ export function useWizardCartQuantityPreparation({
   const { t } = useI18n()
   const { beginBusy, endBusy, isCurrentMutationContext } = mutation
   const isVatSale = Boolean(sale?.IsVatSale)
+  const loadAvailability = useWizardCartAvailability(agreementNetId, sale?.NetUid, isVatSale)
   const isSaleLifecycleNew = getSaleLifecycleTypeKey(sale?.BaseLifeCycleStatus?.SaleLifeCycleType) === '0'
 
   function canChangePrintedSale(): boolean {
@@ -82,8 +83,10 @@ export function useWizardCartQuantityPreparation({
     }
 
     try {
-      const buckets = await getProductAvailabilityBuckets(product.NetUid, agreementNetId)
-      const available = getWizardSellableQty(buckets ?? {}, isVatSale) ?? 0
+      const available = await loadAvailability(product.NetUid)
+
+      if (available === null) return
+
       const item: SalesUkraineOrderItem = {
         Deleted: false,
         Id: 0,
@@ -127,8 +130,9 @@ export function useWizardCartQuantityPreparation({
     }
 
     try {
-      const buckets = await getProductAvailabilityBuckets(item.Product.NetUid, agreementNetId)
-      const available = getWizardSellableQty(buckets ?? {}, isVatSale) ?? 0
+      const available = await loadAvailability(item.Product.NetUid)
+
+      if (available === null) return
 
       if (isCurrentMutationContext(context)) {
         onReady({ available: (getWizardProductNumber(item.Qty) ?? 0) + available, item, kind: 'edit-current' })

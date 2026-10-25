@@ -43,7 +43,7 @@ type DataTableBodyRowProps<TData> = {
   row: Row<TData>
   totalColumnCount: number
   onRowClick?: (row: TData) => void
-  rowClassName?: (row: TData) => string | undefined
+  className?: string
 }
 
 /* Row extracted and memoized: on large pages (500 rows × 30+ columns) the mount
@@ -60,7 +60,7 @@ function DataTableBodyRowInner<TData>({
   row,
   totalColumnCount,
   onRowClick,
-  rowClassName,
+  className,
 }: DataTableBodyRowProps<TData>) {
   const canExpand = expand ? expand.canExpandRow(row.original) : false
   const { leading, rightPinned } = splitRightPinnedCells(row.getVisibleCells())
@@ -91,7 +91,7 @@ function DataTableBodyRowInner<TData>({
   return (
     <Fragment>
       <Table.Tr
-        className={`data-table-row ${onRowClick ? 'data-table-row-clickable' : ''} ${rowClassName?.(row.original) ?? ''}`}
+        className={`data-table-row ${onRowClick ? 'data-table-row-clickable' : ''} ${className ?? ''}`}
         onClick={onRowClick
           ? (event) => {
               if (!hasTextSelectionWithin(event.currentTarget)) {
@@ -279,7 +279,7 @@ export function DataTableBody<TData>({
           row={row}
           totalColumnCount={totalColumnCount}
           onRowClick={onRowClick}
-          rowClassName={rowClassName}
+          className={rowClassName?.(row.original)}
         />
       ))}
     </Table.Tbody>

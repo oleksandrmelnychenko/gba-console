@@ -38,7 +38,7 @@ describe('cart quantity preparation', () => {
     props.sale.IsVatSale = vat
     const { result } = renderHook(() => useWizardCartQuantityPreparation(props))
     await act(() => result.current.prepareAddToCart(product))
-    expect(mocks.load).toHaveBeenLastCalledWith('product-a', 'agreement-a')
+    expect(mocks.load).toHaveBeenLastCalledWith('product-a', 'agreement-a', expect.any(AbortSignal))
     expect(props.onReady).toHaveBeenLastCalledWith({ kind: 'add', available: vat ? 9 : 6, item: {
       Deleted: false, Id: 0, NetUid: '00000000-0000-0000-0000-000000000000', Product: product, Qty: 0,
     } })
@@ -83,7 +83,7 @@ describe('cart quantity preparation', () => {
     const props = options()
     const { result } = renderHook(() => useWizardCartQuantityPreparation(props))
     await act(() => result.current.prepareAddToCart({ NetUid: 'unknown-stock' }))
-    expect(mocks.load).toHaveBeenCalledWith('unknown-stock', 'agreement-a')
+    expect(mocks.load).toHaveBeenCalledWith('unknown-stock', 'agreement-a', expect.any(AbortSignal))
     expect(props.onFutureReservation).not.toHaveBeenCalled()
   })
 
@@ -175,5 +175,61 @@ describe('cart quantity preparation', () => {
     expect(props.onReady).not.toHaveBeenCalled()
     expect(mocks.notify).not.toHaveBeenCalled()
     expect(props.mutation.endBusy).toHaveBeenCalledTimes(2)
+  })
+
+  it.each(['add', 'edit'] as const)('aborts pending %s stock on unmount without opening a dialog or reporting an error', async (action) => {
+    mocks.load.mockImplementation((_product, _agreement, signal?: AbortSignal) => new Promise((_resolve, reject) => {
+      signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
+    }))
+    const props = options()
+    const { result, unmount } = renderHook(() => useWizardCartQuantityPreparation(props))
+    let request!: Promise<void>
+    act(() => { request = action === 'add' ? result.current.prepareAddToCart(product) : result.current.onEditOrderItem(item) })
+    const signal = mocks.load.mock.calls[0][2] as AbortSignal
+    unmount()
+    expect(signal?.aborted).toBe(true)
+    await act(() => request)
+    expect(props.onReady).not.toHaveBeenCalled()
+    expect(mocks.notify).not.toHaveBeenCalled()
+    expect(props.mutation.endBusy).toHaveBeenCalledOnce()
+  })
+
+  it.each(['agreement', 'sale', 'vat'] as const)('retires pending stock after a %s change even if transport ignores cancellation', async (scope) => {
+    const props = options()
+    const pending = deferred<{ AvailableQtyUk: number }>()
+    mocks.load.mockReturnValueOnce(pending.promise)
+    const { result, rerender } = renderHook(useWizardCartQuantityPreparation, { initialProps: props as Options })
+    let request!: Promise<void>
+    act(() => { request = result.current.onEditOrderItem(item) })
+    const signal = mocks.load.mock.calls[0][2] as AbortSignal
+    rerender({ ...props,
+      agreementNetId: scope === 'agreement' ? 'agreement-b' : props.agreementNetId,
+      sale: { ...props.sale, NetUid: scope === 'sale' ? 'sale-b' : props.sale.NetUid, IsVatSale: scope === 'vat' },
+    })
+    expect(signal?.aborted).toBe(true)
+    await act(async () => { pending.resolve({ AvailableQtyUk: 100 }); await request })
+    expect(props.onReady).not.toHaveBeenCalled()
+    expect(mocks.notify).not.toHaveBeenCalled()
+    await act(() => result.current.onEditOrderItem(item))
+    expect(props.onReady).toHaveBeenCalledOnce()
+    expect(props.onReady).toHaveBeenLastCalledWith(expect.objectContaining({ available: scope === 'vat' ? 12 : 9 }))
+  })
+
+  it('keeps a pending read through unrelated sale updates and reads fresh stock for the next edit', async () => {
+    const props = options()
+    const pending = deferred<{ AvailableQtyUk: number }>()
+    mocks.load.mockReturnValueOnce(pending.promise)
+    const { result, rerender } = renderHook(useWizardCartQuantityPreparation, { initialProps: props as Options })
+    let request!: Promise<void>
+    act(() => { request = result.current.onEditOrderItem(item) })
+    const signal = mocks.load.mock.calls[0][2] as AbortSignal
+    rerender({ ...props, sale: { ...props.sale, Comment: 'updated' } })
+    expect(signal.aborted).toBe(false)
+    expect(mocks.load).toHaveBeenCalledOnce()
+    await act(async () => { pending.resolve({ AvailableQtyUk: 2 }); await request })
+    expect(props.onReady).toHaveBeenLastCalledWith(expect.objectContaining({ available: 5 }))
+    await act(() => result.current.onEditOrderItem(item))
+    expect(mocks.load).toHaveBeenCalledTimes(2)
+    expect(props.onReady).toHaveBeenLastCalledWith(expect.objectContaining({ available: 9 }))
   })
 })

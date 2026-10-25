@@ -223,8 +223,10 @@ export async function getAllProductAvailabilities(
 export async function getProductAvailabilityBuckets(
   productNetId: string,
   clientAgreementNetId: string,
+  signal?: AbortSignal,
 ): Promise<WizardProductAvailabilityBuckets | null> {
   const result = await apiRequest<unknown>('/products/all/availabilities/product', {
+    ...(signal ? { signal } : {}),
     cache: 'no-store',
     query: { clientAgreementNetId, netId: productNetId },
   })
