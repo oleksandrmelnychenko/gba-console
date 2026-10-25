@@ -234,4 +234,71 @@ describe('wizard client sales register', () => {
     expect(result.current.registryItems).toEqual([])
   })
 
+  it('retains the last register on a failed post-save read and shares a read-only retry', async () => {
+    const { result } = setup()
+    await act(async () => result.current.fetchRegister())
+    const previous = result.current.registryItems
+    mocks.load.mockRejectedValueOnce(new Error('offline'))
+    mocks.row.mockResolvedValue({ Sale: { NetUid: 'sale-1', TotalAmount: 80 } })
+    await act(async () => result.current.refreshAfterSave({ NetUid: 'sale-1' }))
+    expect(result.current.registryItems).toBe(previous)
+    expect(result.current.registryError).toBe('saved-list')
+    const retry = deferred<WizardSaleRegisterItem[]>()
+    mocks.load.mockReturnValueOnce(retry.promise)
+    let first!: Promise<void>
+    let second!: Promise<void>
+    act(() => { first = result.current.retryRegister(); second = result.current.retryRegister() })
+    expect(second).toBe(first)
+    expect(mocks.load).toHaveBeenCalledTimes(3)
+    expect(mocks.load.mock.calls[2][2]).toEqual({ fresh: true })
+    expect(result.current.registryError).toBe('saved-list')
+    await act(async () => { retry.resolve([...rows('sale-1'), ...rows('child')]); await first })
+    expect(result.current.registryError).toBeNull()
+    expect(result.current.registryItems[0].Sale?.TotalAmount).toBe(80)
+    expect(result.current.registryItems[1].Sale?.NetUid).toBe('child')
+  })
+
+  it.each([null, { Sale: { NetUid: 'wrong-sale' } }])('reports missing edited totals while retaining the new list (%j)', async (statistic) => {
+    const { result } = setup()
+    mocks.load.mockResolvedValue([...rows('sale-1'), ...rows('child')])
+    mocks.row.mockResolvedValue(statistic)
+    await act(async () => result.current.refreshAfterSave({ NetUid: 'sale-1' }))
+    expect(result.current.registryError).toBe('saved-details')
+    expect(result.current.registryItems.map(row => row.Sale?.NetUid)).toEqual(['sale-1', 'child'])
+    mocks.row.mockResolvedValue({ Sale: { NetUid: 'sale-1', TotalAmount: 80 } })
+    await act(async () => result.current.fetchRegister())
+    expect(mocks.row).toHaveBeenCalledTimes(2)
+    expect(result.current.registryError).toBeNull()
+    expect(result.current.registryItems[0].Sale?.TotalAmount).toBe(80)
+  })
+
+  it('retires the failed query and retry on client or search changes', async () => {
+    const { result } = setup()
+    mocks.load.mockRejectedValue(new Error('offline'))
+    await act(async () => result.current.refreshAfterSave())
+    expect(result.current.registryError).toBe('saved-list')
+    act(() => result.current.handleSaleSearchChange('new query'))
+    expect(result.current.registryError).toBeNull()
+    await act(async () => result.current.retryRegister())
+    expect(mocks.load).toHaveBeenCalledOnce()
+    act(() => result.current.resetRegister('client-2'))
+    await act(async () => { await result.current.retryRegister(); await vi.advanceTimersByTimeAsync(300) })
+    expect(result.current.registryError).toBeNull()
+    expect(mocks.load).toHaveBeenCalledOnce()
+  })
+
+  it('shows ordinary load failures separately and ignores an aborted retry response', async () => {
+    const { result } = setup()
+    mocks.load.mockRejectedValueOnce(new Error('offline'))
+    await act(async () => result.current.fetchRegister())
+    expect(result.current.registryError).toBe('load')
+    const retry = deferred<WizardSaleRegisterItem[]>()
+    mocks.load.mockReturnValueOnce(retry.promise)
+    let pending!: Promise<void>
+    act(() => { pending = result.current.retryRegister(); result.current.resetRegister('client-2') })
+    await act(async () => { retry.resolve(rows('stale')); await pending })
+    expect(result.current.registryError).toBeNull()
+    expect(result.current.registryItems).toEqual([])
+  })
+
 })

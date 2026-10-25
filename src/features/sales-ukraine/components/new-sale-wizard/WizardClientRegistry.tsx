@@ -1,6 +1,6 @@
 import { TableChip } from '../../../../shared/ui/TableChip'
-import { Box, Button, Group, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
-import { Package } from 'lucide-react'
+import { Alert, Box, Button, Group, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { CircleAlert, Package } from 'lucide-react'
 import { memo, useMemo } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { DataTable } from '../../../../shared/ui/data-table/DataTable'
@@ -9,6 +9,7 @@ import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/P
 import { TableRowAction } from '../../../../shared/ui/table-row-action'
 import { getSaleLifecycleStatusKey, getStatusTypeKey } from '../../saleStatus'
 import type { SalesUkraineOrderItem, SalesUkraineSale } from '../../types'
+import type { WizardRegisterError } from './wizardClientRegisterRefresh'
 import type { WizardSaleRegisterStatistic } from './wizardClientStepApi'
 import {
   WIZARD_SALE_REGISTER_STATUS_ALL,
@@ -79,6 +80,8 @@ export const WizardClientRegistry = memo(function WizardClientRegistry({
   dateFrom,
   dateTo,
   isLoading,
+  error,
+  onRetry,
   items,
   saleSearch,
   selectedAgreementClientId,
@@ -101,6 +104,8 @@ export const WizardClientRegistry = memo(function WizardClientRegistry({
   dateFrom: string
   dateTo: string
   isLoading: boolean
+  error?: WizardRegisterError | null
+  onRetry?: () => void | Promise<void>
   items: WizardSaleRegisterStatistic[]
   saleSearch: string
   selectedAgreementClientId: number | undefined
@@ -224,6 +229,22 @@ export const WizardClientRegistry = memo(function WizardClientRegistry({
 
   return (
     <Stack className="new-sale-register" gap={0}>
+      {error && (
+        <Alert color="orange" icon={<CircleAlert size={18} />} mb="xs" role="alert">
+          <Stack gap="xs">
+            <Text size="sm">
+              {error === 'saved-list'
+                ? t('Зміни збережено, але реєстр не оновлено. Показано попередні дані.')
+                : error === 'saved-details'
+                  ? t('Зміни збережено, але підсумки замовлення не оновлено. Дані можуть бути застарілими.')
+                  : t('Не вдалося завантажити реєстр.')}
+            </Text>
+            {onRetry && <Button size="xs" variant="light" loading={isLoading} onClick={onRetry} style={{ alignSelf: 'flex-start' }}>
+              {t('Повторити завантаження')}
+            </Button>}
+          </Stack>
+        </Alert>
+      )}
       <Box className="app-filter-bar new-sale-register-toolbar">
         <Group align="end" className="app-filter-fields new-sale-register-toolbar__controls" gap={8} wrap="wrap">
           <Select

@@ -102,6 +102,7 @@
         if(url.pathname.endsWith('/clients/get/identity-attention')) return holdClientDetail(url,options,null)
         if(url.pathname.endsWith('/clients/get/debt/grouped')) return holdClientDetail(url,options,[{Debt:{Total:window.performanceFixture.savedPickerSales[`picker-sale-${id}`]?20:id,Days:1}}])
         if(url.pathname.endsWith('/sales/all/register')) {
+          if(window.performanceFixture.savedPickerSales[`picker-sale-${id}`]&&window.performanceFixture.failSavedRegister) return Promise.resolve(new Response('{}',{status:503}))
           const data=[{SaleStatistic:{Sale:pickerSale(id)}}]
           if(window.performanceFixture.savedPickerSales[`picker-sale-${id}`]) data.push({SaleStatistic:{Sale:{...pickerSale(id),NetUid:`picker-child-${id}`,SaleNumber:{Value:`DOC-${id}-SPLIT`},TotalAmountLocal:20}}})
           return window.performanceFixture.holdRegistry ? holdRegistryRead(url,options,data) : Promise.resolve(response(data))
@@ -109,6 +110,7 @@
       }
       if(pickerNetId.startsWith('picker-sale-')) {
         const sale=pickerSale(Number(pickerNetId.split('-').at(-1)))
+        if(url.pathname.endsWith('/sales/ukraine/edit/shifted')&&window.performanceFixture.savedPickerSales[pickerNetId]&&window.performanceFixture.failSavedDetails) return Promise.resolve(new Response('{}',{status:503}))
         if(url.pathname.endsWith('/sales/ukraine/edit/shifted')) return holdRegistryRead(url,options,{Sale:{...sale,TotalAmountLocal:window.performanceFixture.savedPickerSales[pickerNetId]?80:300,Order:{OrderItems:Array.from({length:30},(_,index)=>({...items[index],Qty:12}))}}})
         if(url.pathname.endsWith('/sales/ukraine/audit')) return holdRegistryRead(url,options,{Sale:sale})
         if(url.pathname.endsWith('/sales/ukraine/audit/edit-act-document')) return holdRegistryRead(url,options,{})

@@ -70,7 +70,7 @@ export function NewSaleClientStep({
   })
   const { carousel, searchInputRef, pickClient, cancelPendingMove } = navigation
   const {
-    registryItems, isRegistryLoading, statusFilter, saleSearch, dateFrom, dateTo,
+    registryItems, isRegistryLoading, registryError, retryRegister, statusFilter, saleSearch, dateFrom, dateTo,
     resetRegister, fetchRegister, refreshAfterSave, handleStatusChange, handleSaleSearchChange,
     handleDateFromChange, handleDateToChange, replaceRegistryRow, refreshRegistryRow,
   } = useWizardClientSalesRegister()
@@ -162,6 +162,8 @@ export function NewSaleClientStep({
                 dateFrom={dateFrom}
                 dateTo={dateTo}
                 isLoading={isRegistryLoading}
+                error={registryError}
+                onRetry={retryRegister}
                 items={registryItems}
                 saleSearch={saleSearch}
                 selectedAgreementClientId={selectedAgreementClientId}

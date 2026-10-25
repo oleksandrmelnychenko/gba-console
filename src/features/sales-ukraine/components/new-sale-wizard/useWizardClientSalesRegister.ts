@@ -5,7 +5,9 @@ import { getSalesUkraineEditSaleStatistic, getSalesUkraineSaleAudit } from '../.
 import type { SalesUkraineSale } from '../../types'
 import { getWizardSalesRegister, mapWizardSaleRegisterItems, WIZARD_SALE_REGISTER_STATUS_ALL,
   type WizardSaleRegisterQuery, type WizardSaleRegisterStatistic } from './wizardClientStepApi'
-import { getWizardRegisterAfterSave } from './wizardClientRegisterRefresh'
+import { getWizardRegisterAfterSave, type WizardRegisterError } from './wizardClientRegisterRefresh'
+
+type RegisterFailure = { key: string; afterSave: boolean; editedSale?: SalesUkraineSale }
 
 type RegisterRequest = { key: string; controller: AbortController; promise: Promise<void> }
 
@@ -16,6 +18,8 @@ function getRegisterKey(args: WizardSaleRegisterQuery): string {
 export function useWizardClientSalesRegister() {
   const [registryItems, setRegistryItems] = useState<WizardSaleRegisterStatistic[]>([])
   const [isRegistryLoading, setRegistryLoading] = useState(false)
+  const [registryError, setRegistryError] = useState<WizardRegisterError | null>(null)
+  const failureRef = useRef<RegisterFailure | null>(null)
   const [statusFilter, setStatusFilter] = useState(WIZARD_SALE_REGISTER_STATUS_ALL)
   const [saleSearch, setSaleSearch] = useState('')
   const [dateFrom, setDateFrom] = useState(() => formatLocalDate(getDateDaysAgo(7)))
@@ -28,6 +32,10 @@ export function useWizardClientSalesRegister() {
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const realtimeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const clearFailure = useCallback(() => {
+    failureRef.current = null
+    setRegistryError(null)
+  }, [])
   const clearTimers = useCallback(() => {
     if (searchTimerRef.current !== null) clearTimeout(searchTimerRef.current)
     if (realtimeTimerRef.current !== null) clearTimeout(realtimeTimerRef.current)
@@ -47,10 +55,11 @@ export function useWizardClientSalesRegister() {
     clearTimers()
     retireRequest()
     loadedKeyRef.current = null
+    clearFailure()
     argsRef.current = { ...argsRef.current, clientNetId }
     setRegistryItems([])
     setRegistryLoading(loading && Boolean(clientNetId))
-  }, [clearTimers, retireRequest])
+  }, [clearFailure, clearTimers, retireRequest])
 
   const loadRegister = useCallback((overrides?: Partial<WizardSaleRegisterQuery>, afterSave = false, editedSale?: SalesUkraineSale): Promise<void> => {
     const args = { ...argsRef.current, ...overrides }
@@ -59,6 +68,10 @@ export function useWizardClientSalesRegister() {
     args.value = args.value.trim()
     const key = getRegisterKey(args)
     if (!afterSave && requestRef.current?.key === key) return requestRef.current.promise
+    const failed = failureRef.current?.key === key ? failureRef.current : null
+    const refreshSaved = afterSave || Boolean(failed?.afterSave)
+    const sale = afterSave ? editedSale : failed?.editedSale
+    if (!failed || afterSave) clearFailure()
     retireRequest()
     setRegistryLoading(true)
     const controller = new AbortController()
@@ -66,17 +79,25 @@ export function useWizardClientSalesRegister() {
     requestRef.current = request
     request.promise = (async () => {
       try {
-        const items = afterSave
-          ? await getWizardRegisterAfterSave(args, controller.signal, editedSale)
-          : mapWizardSaleRegisterItems(await getWizardSalesRegister(args, controller.signal))
+        const result = refreshSaved
+          ? await getWizardRegisterAfterSave(args, controller.signal, sale)
+          : { items: mapWizardSaleRegisterItems(await getWizardSalesRegister(args, controller.signal)), detailsFailed: false }
         if (!controller.signal.aborted) {
-          loadedKeyRef.current = key
-          setRegistryItems(items)
+          loadedKeyRef.current = result.detailsFailed ? null : key
+          setRegistryItems(result.items)
+          if (result.detailsFailed) {
+            failureRef.current = { key, afterSave: true, editedSale: sale }
+            setRegistryError('saved-details')
+          } else clearFailure()
         }
       } catch {
         if (!controller.signal.aborted) {
           loadedKeyRef.current = null
-          setRegistryItems([])
+          failureRef.current = { key, afterSave: refreshSaved, editedSale: sale }
+          setRegistryError(refreshSaved ? 'saved-list' : 'load')
+          // A confirmed write must not make the last visible documents vanish
+          // just because its follow-up read failed.
+          if (!refreshSaved) setRegistryItems([])
         }
       } finally {
         if (requestRef.current === request) {
@@ -86,10 +107,17 @@ export function useWizardClientSalesRegister() {
       }
     })()
     return request.promise
-  }, [clearTimers, retireRequest])
+  }, [clearFailure, clearTimers, retireRequest])
 
   const fetchRegister = useCallback((overrides?: Partial<WizardSaleRegisterQuery>) => loadRegister(overrides), [loadRegister])
   const refreshAfterSave = useCallback((editedSale?: SalesUkraineSale) => loadRegister(undefined, true, editedSale), [loadRegister])
+
+  const retryRegister = useCallback((): Promise<void> => {
+    const failed = failureRef.current
+    if (!failed || failed.key !== getRegisterKey(argsRef.current)) return Promise.resolve()
+    // Reuse the same read while retry is pending; never invoke the save action.
+    return loadRegister()
+  }, [loadRegister])
 
   // Only input no-ops reuse a successful result. Explicit/realtime refreshes
   // always read current server data, and a failed filter can be retried.
@@ -108,13 +136,14 @@ export function useWizardClientSalesRegister() {
     const unchanged = argsRef.current.value.trim() === value.trim()
     setSaleSearch(value)
     if (unchanged && hasCurrentQuery()) return
+    if (!unchanged) clearFailure()
     argsRef.current = { ...argsRef.current, value: value.trim() }
     clearTimers()
     retireRequest()
     setRegistryLoading(Boolean(argsRef.current.clientNetId))
     if (!argsRef.current.clientNetId) return
     searchTimerRef.current = setTimeout(() => { searchTimerRef.current = null; void fetchRegister() }, 200)
-  }, [clearTimers, retireRequest, fetchRegister, hasCurrentQuery])
+  }, [clearFailure, clearTimers, retireRequest, fetchRegister, hasCurrentQuery])
   const handleDateFromChange = useCallback((value: string) => {
     const from = value || formatLocalDate(getDateDaysAgo(7))
     if (argsRef.current.from === from && hasCurrentQuery()) return
@@ -170,7 +199,7 @@ export function useWizardClientSalesRegister() {
   useRealtimeEvent(realtimeEvents.saleAdded, scheduleRealtimeRegister)
   useRealtimeEvent(realtimeEvents.saleUpdated, scheduleRealtimeRegister)
 
-  return { registryItems, isRegistryLoading, statusFilter, saleSearch, dateFrom, dateTo, resetRegister, fetchRegister, refreshAfterSave,
+  return { registryItems, isRegistryLoading, registryError, retryRegister, statusFilter, saleSearch, dateFrom, dateTo, resetRegister, fetchRegister, refreshAfterSave,
     handleStatusChange, handleSaleSearchChange, handleDateFromChange, handleDateToChange, replaceRegistryRow, refreshRegistryRow }
 }
 
