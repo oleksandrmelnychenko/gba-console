@@ -44,6 +44,7 @@ import { WizardCrossSellModal } from './WizardCrossSellModal'
 import { WizardProductCarousel } from './WizardProductCarousel'
 import { WizardProductSummarySkeleton, WizardRelatedProductsSkeleton } from './WizardProductSkeletons'
 import { WizardRelatedProductRows } from './WizardRelatedProductRows'
+import { WizardRelatedProductMetrics } from './WizardRelatedProductMetrics'
 import { WizardRelatedProductsFrame } from './WizardRelatedProductsFrame'
 import type {
   WizardCalculatedProductPricing,
@@ -77,8 +78,6 @@ import {
 const CHANGE_PRODUCT_DESCRIPTION_PERMISSION = PermissionKeys.SalesUkraine.Sale.EditProductComment
 const CREATE_PREORDER_PERMISSION = PermissionKeys.SalesUkraineInterest.Preorder.Create
 const CREATE_FUTURE_RESERVATION_PERMISSION = PermissionKeys.SalesUkraine.Sale.CreateFutureReservation
-const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
-const qtyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
 
 const SEARCH_MODE_OPTIONS = [
   { label: 'Всі', value: '5' },
@@ -742,13 +741,14 @@ export function NewSaleProductsStep({
   const analogueStatesActive = visualProductState === 'AnalogueSelection' || visualProductState === 'AnalogueFullDetail'
   const componentStatesActive = visualProductState === 'ComponentSelection' || visualProductState === 'ComponentFullDetail'
   const keepMainPickerCentered = visualProductState === 'ProductSearch' || visualProductState === 'ProductSelection' || visualProductState === 'FullDetail'
-  const setQtyByNetUid = new Map<string, number>()
-
-  componentEntries.entries.forEach((entry) => {
-    if (entry.product.NetUid && entry.setQty != null) {
-      setQtyByNetUid.set(entry.product.NetUid, entry.setQty)
-    }
-  })
+  const componentProducts = useMemo(() => componentEntries.entries.map(entry => entry.product), [componentEntries])
+  const setQtyByNetUid = useMemo(() => {
+    const quantities = new Map<string, number>()
+    componentEntries.entries.forEach(entry => {
+      if (entry.product.NetUid && entry.setQty != null) quantities.set(entry.product.NetUid, entry.setQty)
+    })
+    return quantities
+  }, [componentEntries])
 
   const detailPricingFor = (product: WizardSaleProduct | null): WizardCalculatedProductPricing | null => {
     const snapshot = product?.NetUid ? productPricing.get(product.NetUid) : undefined
@@ -758,32 +758,13 @@ export function NewSaleProductsStep({
 
   const canEditMainDescription = hasPermission(CHANGE_PRODUCT_DESCRIPTION_PERMISSION)
 
-  function renderPriceExtra(product: WizardSaleProduct, setQty?: number) {
-    const localPrice = getWizardProductNumber(product.CurrentPriceEurToUah) ?? getWizardProductNumber(product.CurrentLocalPrice) ?? 0
-
-    return (
-      <Box className="new-sale-related-row__metrics">
-        <Box className="new-sale-related-row__metric">
-          <Text className="new-sale-related-row__metric-label">{t('Доступно')}</Text>
-          {/* Search-payload sellable qty (stable across focus) so the number does
-              not jump when switching between analogues as the detailed snapshot
-              loads for the focused row (bug #17). */}
-          <TableChip value={`${qtyFormatter.format(getWizardSellableQty(product, isVatSale) ?? 0)} ${product.MeasureUnit?.Name ?? ''}`} />
-          {setQty != null && (
-            <Text className="new-sale-related-row__set-qty">{t('У комплекті')}: {qtyFormatter.format(setQty)}</Text>
-          )}
-        </Box>
-        <Box className="new-sale-related-row__metric">
-          <TableChip tone="source" value="EUR" />
-          <Text className="new-sale-related-row__amount app-money">{amountFormatter.format(getWizardProductNumber(product.CurrentPrice) ?? 0)}</Text>
-        </Box>
-        <Box className="new-sale-related-row__metric">
-          <TableChip tone="source" value={localCurrencyCode} />
-          <Text className="new-sale-related-row__amount app-money">{amountFormatter.format(localPrice)}</Text>
-        </Box>
-      </Box>
-    )
-  }
+  const renderAnalogueMetrics = useCallback((product: WizardSaleProduct) => (
+    <WizardRelatedProductMetrics product={product} isVatSale={isVatSale} localCurrencyCode={localCurrencyCode} />
+  ), [isVatSale, localCurrencyCode])
+  const renderComponentMetrics = useCallback((product: WizardSaleProduct) => (
+    <WizardRelatedProductMetrics product={product} isVatSale={isVatSale} localCurrencyCode={localCurrencyCode}
+      setQty={product.NetUid ? setQtyByNetUid.get(product.NetUid) : undefined} />
+  ), [isVatSale, localCurrencyCode, setQtyByNetUid])
 
   // Keep the complete summary pinned; detailed sections live in a separate work window.
   const selectedMainProduct = mainProduct ? (active?.source === 'main' && activeProduct ? activeProduct : mainProduct) : null
@@ -852,9 +833,9 @@ export function NewSaleProductsStep({
           <WizardRelatedProductRows
             active={analogueStatesActive}
             focusedIndex={analogueIndex ?? -1}
-            getItemColor={(product) => getRelatedProductRowColor(product)}
+            getItemColor={getRelatedProductRowColor}
             products={analogueState.items}
-            renderExtra={(product) => renderPriceExtra(product)}
+            renderExtra={renderAnalogueMetrics}
             onOpenCard={setProductCardNetId}
             onOpenImage={openImage}
             onProductInterest={canCreatePreorder && agreementNetId ? (product) => openInterest(product) : undefined}
@@ -885,9 +866,9 @@ export function NewSaleProductsStep({
           <WizardRelatedProductRows
             active={componentStatesActive}
             focusedIndex={componentIndex ?? -1}
-            getItemColor={(product) => getRelatedProductRowColor(product)}
-            products={componentEntries.entries.map((entry) => entry.product)}
-            renderExtra={(product) => renderPriceExtra(product, product.NetUid ? setQtyByNetUid.get(product.NetUid) : undefined)}
+            getItemColor={getRelatedProductRowColor}
+            products={componentProducts}
+            renderExtra={renderComponentMetrics}
             onOpenCard={setProductCardNetId}
             onOpenImage={openImage}
             onProductInterest={canCreatePreorder && agreementNetId ? (product) => openInterest(product) : undefined}
@@ -993,7 +974,7 @@ export function NewSaleProductsStep({
             <WizardProductCarousel
               active={mainStatesActive}
               focusedIndex={mainIndex}
-              getItemColor={(product) => getRelatedProductRowColor(product)}
+              getItemColor={getRelatedProductRowColor}
               getItemQty={(product) => getWizardSellableQty(product, isVatSale)}
               // Keep the selected main product pinned on the left while drilling into its
               // analogues/components (active.source switches to 'analogue'/'component'); otherwise

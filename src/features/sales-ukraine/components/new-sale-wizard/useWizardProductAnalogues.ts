@@ -29,6 +29,13 @@ export function useWizardProductAnalogues({
   const [resetRevision, setResetRevision] = useState(0)
   const cacheRef = useRef(new Map<string, WizardSaleProduct[]>())
   const abortRef = useRef<AbortController | null>(null)
+  const resetFocusRef = useRef(onResetFocus)
+  useLayoutEffect(() => { resetFocusRef.current = onResetFocus })
+
+  const publish = useCallback((items: WizardSaleProduct[], parentNetUid: string | null, scopeKey: string) => {
+    setAnalogueState(previous => previous.items === items && previous.parentNetUid === parentNetUid && previous.scopeKey === scopeKey
+      ? previous : { items, parentNetUid, scopeKey })
+  }, [])
 
   useLayoutEffect(() => {
     cacheRef.current.clear()
@@ -63,17 +70,17 @@ export function useWizardProductAnalogues({
   const restoreCachedAnalogues = useCallback((product: WizardSaleProduct) => {
     const items = product.NetUid ? cacheRef.current.get(product.NetUid) : undefined
     if (items || !product.HasAnalogue) {
-      setAnalogueState({ items: items ?? [], parentNetUid: product.NetUid ?? null, scopeKey })
+      publish(items ?? EMPTY_ANALOGUES.items, product.NetUid ?? null, scopeKey)
     }
-  }, [scopeKey])
+  }, [scopeKey, publish])
 
   useEffect(() => {
     // Selecting an analogue retains the original parent's list and focus.
     if (!productNetUid || !agreementNetId || isAnalogueSource) return
     const cached = cacheRef.current.get(productNetUid)
     if (cached || !hasAnalogue) {
-      setAnalogueState({ items: cached ?? [], parentNetUid: productNetUid, scopeKey })
-      onResetFocus()
+      publish(cached ?? EMPTY_ANALOGUES.items, productNetUid, scopeKey)
+      resetFocusRef.current()
       return
     }
     const controller = new AbortController()
@@ -90,20 +97,20 @@ export function useWizardProductAnalogues({
           const oldestKey = cache.keys().next().value
           if (oldestKey) cache.delete(oldestKey)
         }
-        setAnalogueState({ items: filtered, parentNetUid: productNetUid, scopeKey })
-        onResetFocus()
+        publish(filtered, productNetUid, scopeKey)
+        resetFocusRef.current()
       }).catch(() => {
         if (controller.signal.aborted) return
         // Failures remain retryable when the product is selected again.
-        setAnalogueState({ items: [], parentNetUid: productNetUid, scopeKey })
-        onResetFocus()
+        publish(EMPTY_ANALOGUES.items, productNetUid, scopeKey)
+        resetFocusRef.current()
       })
     }, 240)
     return () => {
       controller.abort()
       clearTimeout(handle)
     }
-  }, [productNetUid, agreementNetId, isAnalogueSource, hasAnalogue, isVatSale, scopeKey, resetRevision, onResetFocus])
+  }, [productNetUid, agreementNetId, isAnalogueSource, hasAnalogue, isVatSale, scopeKey, resetRevision, publish])
 
   return { analogueState, analogueScopeKey: scopeKey, patchAnalogues, resetAnalogues, restoreCachedAnalogues }
 }

@@ -42,6 +42,43 @@ beforeEach(() => {
 })
 
 describe('wizard product search lifecycle', () => {
+  it('keeps an identical pending query alive and ignores whitespace-only query and settings changes', async () => {
+    const pending = deferred()
+    mocks.search.mockReturnValueOnce(pending.promise)
+    const { result, onResetSelection } = setup()
+    act(() => result.current.handleQueryChange('parts'))
+    const signal = mocks.search.mock.calls[0][2].signal as AbortSignal
+    act(() => result.current.handleQueryChange('parts'))
+    act(() => result.current.handleQueryChange(' parts '))
+    act(() => result.current.handleSearchSettingsChange('5', '2'))
+    expect(signal.aborted).toBe(false)
+    expect(mocks.search).toHaveBeenCalledOnce()
+    expect(onResetSelection).toHaveBeenCalledOnce()
+    await act(async () => pending.resolve([product('a')]))
+    expect(result.current.isSearching).toBe(false)
+    const before = result.current.results
+    act(() => result.current.handleQueryChange('parts'))
+    expect(result.current.results).toBe(before)
+    expect(mocks.search).toHaveBeenCalledOnce()
+  })
+
+  it('does not restart requests when result callbacks change and uses the latest callback', async () => {
+    const pending = deferred()
+    mocks.search.mockReturnValueOnce(pending.promise)
+    const first = vi.fn(), latest = vi.fn()
+    const { result, rerender } = renderHook(({ onResults }) => useWizardProductSearch({
+      agreementNetId: 'agreement-1', clientNetId: 'client-1', onResetSelection: () => {}, onResults,
+    }), { initialProps: { onResults: first } })
+    act(() => result.current.handleQueryChange('parts'))
+    const signal = mocks.search.mock.calls[0][2].signal as AbortSignal
+    rerender({ onResults: latest })
+    expect(signal.aborted).toBe(false)
+    expect(mocks.search).toHaveBeenCalledOnce()
+    await act(async () => pending.resolve([product('parts')]))
+    expect(latest).toHaveBeenCalledOnce()
+    expect(first).not.toHaveBeenCalled()
+  })
+
   it('ignores a late search response after a newer query finishes', async () => {
     const oldSearch = deferred()
     mocks.search.mockReturnValueOnce(oldSearch.promise).mockResolvedValueOnce([product('new')])

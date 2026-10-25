@@ -16,7 +16,7 @@
     import { ReportInlinePreview } from '/src/features/reports/pages/ReportInlinePreview.tsx'
     import { SalesUkrainePage } from '/src/features/sales-ukraine/pages/SalesUkrainePage.tsx'
     import { NewSaleProductsStep } from '/src/features/sales-ukraine/components/new-sale-wizard/NewSaleProductsStep.tsx'
-    import { initializeWizardKeyboard } from '/src/features/sales-ukraine/components/new-sale-wizard/wizardKeyboard.ts'
+    import { dispatchWizardKey, initializeWizardKeyboard } from '/src/features/sales-ukraine/components/new-sale-wizard/wizardKeyboard.ts'
     import { ProductDetailPage } from '/src/features/products/pages/ProductDetailPage.tsx'
     const items = Array.from({length:100}, (_,i) => ({NetUid:`item-${i}`,Qty:1,TotalAmount:10,TotalAmountLocal:420,
       Product:{NetUid:`product-${i}`,VendorCode:`CODE-${i}`,Name:`Товар ${i}`,CurrentPrice:10}}))
@@ -34,7 +34,8 @@
     window.performanceFixture.finishReserves = () => {}
     window.performanceFixture.finishWizardReserves = () => {}
     window.performanceFixture.finishSupply = () => {}
-    const wizardProduct = {NetUid:'wizard-product',VendorCode:'TEST-001',NameUA:'Товар майстра',AvailableQtyUk:4,CurrentPrice:10}
+    const relatedProduct = (id, name, qty) => ({NetUid:id,VendorCode:id,NameUA:name,AvailableQtyUk:qty,CurrentPrice:15,CurrentPriceEurToUah:600,ProductAvailabilities:[{Amount:qty}]})
+    const wizardProduct = {HasAnalogue:true,HasComponent:true,ComponentProducts:[{ComponentProduct:relatedProduct('COMP-1','Комплектуюча 1',3),SetComponentsQty:2},{ComponentProduct:relatedProduct('COMP-2','Комплектуюча 2',2),SetComponentsQty:1}],NetUid:'wizard-product',VendorCode:'TEST-001',NameUA:'Товар майстра',AvailableQtyUk:4,CurrentPrice:10}
     const response = data => new Response(JSON.stringify(data), {headers:{'Content-Type':'application/json'}})
     // Standalone read-only fixture: no request is forwarded to a real API.
     window.fetch = (input,options={}) => {
@@ -43,6 +44,7 @@
       if (url.pathname.endsWith('/clients/get/identity-attention')) return Promise.resolve(response(null))
       if (url.pathname.endsWith('/clients/sales-ukraine/create/details')) return Promise.resolve(response({NetUid:'client-1',FullName:'Тестовий клієнт'}))
       if (['/agreements/client/all','/clients/get/debt/grouped','/sales/all/register'].some(path => url.pathname.endsWith(path))) return Promise.resolve(response([]))
+      if (url.pathname.endsWith('/products/get/analogues')) return Promise.resolve(response([relatedProduct('ANA-1','Аналог 1',5),relatedProduct('ANA-2','Аналог 2',4)]))
       if (url.pathname.endsWith('/products/search/advanced')) return Promise.resolve(response([wizardProduct]))
       if (url.pathname.endsWith('/products/pricings/current')) return Promise.resolve(response(123.45))
       if (url.pathname.endsWith('/products/pricings/all')) return Promise.resolve(response([{PriceEUR:123.45,DiscountRate:0}]))
@@ -70,7 +72,7 @@
     const onRowClick = item => { window.performanceFixture.selected = item.NetUid }
     function Fixture() {
       const [cart,setCart] = useState(items), [revision,setRevision] = useState(0), [view,setView] = useState('cart')
-      return h('main',{style:{padding:16,minWidth:0}},
+      return h('main',{style:{padding:16,minWidth:0},onKeyDown:event=>{if(view==='wizard') dispatchWizardKey(event)}},
         h('nav',null,
           h('button',{onClick:()=>setView('cart')},'Кошик'),
           h('button',{onClick:()=>setView('report')},'Звіт'),

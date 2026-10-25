@@ -27,6 +27,30 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers())
 
 describe('wizard product analogues', () => {
+  it('keeps a pending request across callback changes and resets the latest focus handler', async () => {
+    const pending = deferred()
+    mocks.load.mockReturnValueOnce(pending.promise)
+    const { rerender } = renderHook(useWizardProductAnalogues, { initialProps })
+    await tick()
+    const signal = mocks.load.mock.calls[0][2] as AbortSignal
+    const latest = vi.fn()
+    rerender({ ...initialProps, onResetFocus: latest })
+    await tick()
+    expect(signal.aborted).toBe(false)
+    expect(mocks.load).toHaveBeenCalledOnce()
+    await act(async () => pending.resolve([analogue('a', 2)]))
+    expect(latest).toHaveBeenCalledOnce()
+    expect(mocks.resetFocus).not.toHaveBeenCalled()
+  })
+
+  it('does not publish another state when restoring the already visible cached list', async () => {
+    const { result } = renderHook(useWizardProductAnalogues, { initialProps })
+    await tick()
+    const before = result.current.analogueState
+    act(() => result.current.restoreCachedAnalogues({ NetUid: 'parent-1', HasAnalogue: true }))
+    expect(result.current.analogueState).toBe(before)
+  })
+
   it('filters unavailable rows and sorts by stock while retaining the parent list on analogue focus', async () => {
     mocks.load.mockResolvedValueOnce([analogue('a', 2), { NetUid: 'unavailable' }, analogue('b', 5)])
     const { result, rerender } = renderHook(useWizardProductAnalogues, { initialProps })

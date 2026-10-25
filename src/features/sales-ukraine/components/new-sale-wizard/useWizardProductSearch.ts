@@ -23,6 +23,8 @@ export function useWizardProductSearch({
   onResults: (match: ExactWizardProductSearchMatch | null) => void
 }) {
   const { t } = useI18n()
+  const callbacksRef = useRef({ onResetSelection, onResults })
+  useLayoutEffect(() => { callbacksRef.current = { onResetSelection, onResults } })
   const [searchMode, setSearchMode] = useState('5')
   const [sortMode, setSortMode] = useState('2')
   const [query, setQuery] = useState('')
@@ -62,8 +64,8 @@ export function useWizardProductSearch({
     setQuery('')
     setResults([])
     setSearchError(null)
-    onResetSelection()
-  }, [cancelPendingSearch, onResetSelection])
+    callbacksRef.current.onResetSelection()
+  }, [cancelPendingSearch])
 
   useLayoutEffect(() => {
     const previous = contextRef.current
@@ -79,8 +81,9 @@ export function useWizardProductSearch({
     return abortRequests
   }, [agreementNetId, clientNetId, clearSearch, abortRequests])
 
+  const searchValue = query.trim()
   useEffect(() => {
-    const value = query.trim()
+    const value = searchValue
     if (value.length < PRODUCT_SEARCH_MIN_QUERY_LENGTH || !agreementNetId) return
 
     const forced = forceSearchRef.current
@@ -109,7 +112,7 @@ export function useWizardProductSearch({
           : next
         nextOffsetRef.current = nextResults.length
         setResults(nextResults)
-        onResults(findUniqueExactWizardProductSearchMatch(value, nextResults))
+        callbacksRef.current.onResults(findUniqueExactWizardProductSearchMatch(value, nextResults))
       } catch (error) {
         if (!controller.signal.aborted) {
           setResults([])
@@ -127,7 +130,7 @@ export function useWizardProductSearch({
       controller.abort()
       if (searchAbortRef.current === controller) searchAbortRef.current = null
     }
-  }, [query, agreementNetId, searchMode, sortMode, searchRequestRevision, abortRequests, onResults, t])
+  }, [searchValue, agreementNetId, searchMode, sortMode, searchRequestRevision, abortRequests, t])
 
   async function loadMoreResults() {
     const value = query.trim()
@@ -178,19 +181,26 @@ export function useWizardProductSearch({
 
   function handleQueryChange(value: string) {
     if (getWizardKeyboardState(1) !== 'ProductSearch') return
+    // A repeated settled input must neither abort its request nor clear its rows.
+    // Keep the raw input for the carousel; the API uses the normalized value.
+    if (searchValue.length >= PRODUCT_SEARCH_MIN_QUERY_LENGTH && value.trim() === searchValue) {
+      setQuery(value)
+      return
+    }
     prepareSearch()
     setQuery(value)
     setResults([])
-    onResetSelection()
+    callbacksRef.current.onResetSelection()
     setSearching(value.trim().length >= PRODUCT_SEARCH_MIN_QUERY_LENGTH && Boolean(agreementNetId))
   }
 
   function handleSearchSettingsChange(nextMode: string | null, nextSort: string | null) {
+    if ((!nextMode || nextMode === searchMode) && (!nextSort || nextSort === sortMode)) return
     prepareSearch()
     if (nextMode) setSearchMode(nextMode)
     if (nextSort) setSortMode(nextSort)
     setResults([])
-    onResetSelection()
+    callbacksRef.current.onResetSelection()
     requestSearch()
   }
 
@@ -224,7 +234,7 @@ export function useWizardProductSearch({
 
       setQuery('')
       setResults(recommended)
-      onResults(null)
+      callbacksRef.current.onResults(null)
       setWizardKeyboardState('ProductSearch')
       if (recommended.length === 0) {
         notifications.show({ color: 'orange', message: t('Рекомендацій для клієнта не знайдено') })
