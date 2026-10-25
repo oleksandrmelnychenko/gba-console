@@ -1,3 +1,4 @@
+import { currentFinancialDocumentFilterCapability, currentFinancialDocumentFilterSupported } from './currentFinancialDocumentFilter'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { usesCurrentFinancialAxes } from './currentFinancialAxes'
 
@@ -22,14 +23,15 @@ export function currentFinancialFilterConditionsCapability(dataset?: ReportDatas
 }
 
 /** Metadata absence and historical modes keep positive-only membership. */
-export function financialFilterConditionTypes(dataset?: ReportDataset, request?: ReportRequestBody): readonly number[] {
+export function financialFilterConditionTypes(dataset?: ReportDataset, request?: ReportRequestBody, field?: number): readonly number[] {
+  if (field === 12) return currentFinancialDocumentFilterSupported(dataset, request) ? currentFinancialDocumentFilterCapability(dataset)!.conditions : legacyConditions
   return request && usesCurrentFinancialAxes(request) && currentFinancialFilterConditionsCapability(dataset)
     ? currentConditions : legacyConditions
 }
 
 export function currentFinancialFilterConditionsError(data: ReportRequestBody, dataset?: ReportDataset): string | null {
   if (data.dataSource !== 35 || !Array.isArray(data.selections)
-    || !data.selections.some(selection => [1, 4].includes(selection?.FilterCondition?.Type))) return null
+    || !data.selections.some(selection => selection?.SelectedField?.Type !== 12 && [1, 4].includes(selection?.FilterCondition?.Type))) return null
   if (!usesCurrentFinancialAxes(data))
     return 'Умови «Не дорівнює» та «Не у списку» доступні лише для поточних документів GBA та основи «Продажі мінус повернення». Поверніть цей режим або змініть умову; відбори й дати збережено.'
   if (!currentFinancialFilterConditionsCapability(dataset))

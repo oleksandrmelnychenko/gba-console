@@ -1,3 +1,4 @@
+import { currentFinancialDocumentFilterCapability, currentFinancialDocumentFilterSupported } from './currentFinancialDocumentFilter'
 import { currentFinancialAxesCapability, usesCurrentFinancialAxes } from './currentFinancialAxes'
 import { currentFinancialProductTimeAxesCapability } from './currentFinancialProductTimeAxes'
 import { currentFinancialDocumentAxesCapability } from './currentFinancialDocumentAxes'
@@ -140,10 +141,11 @@ export function datasetGroupings(dataset: ReportDataset | undefined, data?: obje
   return [...fields.values()].map(field => ({ key: GROUPING_KEYS.get(field.Type) ?? field.Name, label: field.Name, type: field.Type }))
 }
 
-export function datasetFilters(dataset: ReportDataset | undefined): Array<{ label: string; value: string; field: ReportFilterField }> {
-  return dataset?.Filters.filter(field => dataset.DataSource !== 39 || field.Type !== 60 || currentVparivanieManagerSupported(dataset)).map(field => ({ label: field.Name, value: String(field.Type), field: {
+export function datasetFilters(dataset: ReportDataset | undefined, data?: object): Array<{ label: string; value: string; field: ReportFilterField }> {
+  const document = currentFinancialDocumentFilterSupported(dataset, data) ? currentFinancialDocumentFilterCapability(dataset)!.field : undefined
+  return [...(dataset?.Filters ?? []), ...(document ? [document] : [])].filter(field => dataset?.DataSource !== 39 || field.Type !== 60 || currentVparivanieManagerSupported(dataset)).map(field => ({ label: field.Name, value: String(field.Type), field: {
     Name: FILTER_KEYS.get(field.Type) ?? field.Name, Type: field.Type,
-  } })) ?? []
+  } }))
 }
 
 /** Captions come from the selected dataset; numeric identities remain the wire contract. */
@@ -288,7 +290,7 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
   const analysis = requestCurrentVparivanieAnalysis(data) ? currentVparivanieAnalysisCapability(dataset) : undefined
   const groupingTypes = new Set(analysis ? analysis.groupings.map(field => field.type) : datasetGroupings(dataset, data).map(field => field.type))
   const measurementTypes = new Set(dataset.Measurements.map(field => field.Type))
-  const filterTypes = new Set(analysis ? analysis.filters.map(field => field.type) : dataset.Filters.map(field => field.Type))
+  const filterTypes = new Set(analysis ? analysis.filters.map(field => field.type) : datasetFilters(dataset, data).map(item => item.field.Type))
   const conditionTypes = new Set([...REPORT_FILTER_CONDITIONS.map(field => field.Type), ...(dataset.DataSource === 39 ? requestCurrentVparivanieAnalysis(data) ? currentVparivanieAnalysisCapability(dataset)?.filters.flatMap(f => f.conditions) ?? [] : [6] : [])])
   const unsupported = [
     ...[...data.sorted.Row, ...data.sorted.Col].flatMap(item => groupingTypes.has(item.type) ? [] : [item.label || item.key || `#${item.type}`]),

@@ -1,3 +1,4 @@
+import { currentFinancialDocumentFilterError, currentFinancialDocumentFilterSupported } from './currentFinancialDocumentFilter'
 import { presentationCurrencyError } from './reportPresentationCurrency'
 import { financialAxesConfigurationError, requestFinancialAxesCapability } from './financialAxes'
 import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis } from './currentVparivanieAnalysis'
@@ -70,6 +71,8 @@ export function effectiveReportConfiguration(dataset: ReportDataset | undefined,
     allowedRows: financial.allowedRows, allowedColumns: financial.allowedColumns,
     minimumRows: financial.minimumRows, maximumRows: financial.maximumRows, maximumColumns: financial.maximumColumns,
     maximumTotalDimensions: 'maximumTotalDimensions' in financial ? financial.maximumTotalDimensions : undefined }
+  if (currentFinancialDocumentFilterSupported(dataset, data) && result.filters)
+    result = { ...result, filters: [...new Set([...result.filters, 12])] }
   return result
 }
 export function reportAxesPolicy(dataset: ReportDataset | undefined, data: ReportRequestBody) {
@@ -78,6 +81,8 @@ export function reportAxesPolicy(dataset: ReportDataset | undefined, data: Repor
   return { config, fixed, rowsOnly: config ? config.axisMode === 'profitRows' || config.axisMode === 'rowsOnly' || config.allowedColumns.length === 0 : fixed || data.dataSource === 13 }
 }
 export function reportConfigurationError(data: ReportRequestBody, dataset?: ReportDataset, draft = false): string | null {
+  const documentFilterError = currentFinancialDocumentFilterError(data, dataset, draft)
+  if (documentFilterError) return documentFilterError
   const currencyError = presentationCurrencyError(data, dataset)
   if (currencyError) return currencyError
   const currentAxesError = financialAxesConfigurationError(data, dataset)

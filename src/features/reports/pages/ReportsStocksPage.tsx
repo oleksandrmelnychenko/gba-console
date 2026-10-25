@@ -1,3 +1,5 @@
+import { searchCurrentFinancialDocuments } from '../api/currentFinancialDocumentLookup'
+import { financialDocumentReference, financialDocumentEntityReference, financialDocumentSelectedEntity, financialDocumentKey, financialDocumentLookupPolicy } from '../data/currentFinancialDocumentFilter'
 import { ReportPresentationCurrencyPanel } from './ReportPresentationCurrencyPanel'
 import { requestPresentationCurrency, readPresentationCurrency, presentationCurrencySupported, presentationCurrencyModeSupported, isPresentationCurrencyMoneyMeasure, currencyNeutralMeasureLabel } from '../data/reportPresentationCurrency'
 import {
@@ -492,8 +494,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const effectiveFilterTypes = effectiveConfiguration?.filters
   const filterFieldOptions = useMemo(() => {
     const allowed = effectiveFilterTypes ? new Set(effectiveFilterTypes) : null
-    return datasetFilters(cashDataset).filter(option => !allowed || allowed.has(option.field.Type))
-  }, [cashDataset, effectiveFilterTypes])
+    return datasetFilters(cashDataset, reportBody).filter(option => !allowed || allowed.has(option.field.Type))
+  }, [cashDataset, effectiveFilterTypes, reportBody])
   const maxDate = reportMaximumDate(effectiveConfiguration, today) ?? settlementMaximumDate(dataSource, groupedSettlementPeriod, today, cashReadMode)
     ?? (supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MAX_DATE : `${today.slice(0, 4)}-12-31`)
   const [debouncedFrom] = useDebouncedValue(from, DATE_INPUT_DEBOUNCE_MS)
@@ -2387,7 +2389,8 @@ function ReportSelectionsCard({
   const [draftSelection, setDraftSelection] = useState<ReportSelection | null>(null)
   const [fieldPickerOpen, setFieldPickerOpen] = useState(false)
   const analysis = currentVparivanieAnalysisCapability(dataset)
-  const financialConditions = dataSource === 35 ? new Set(financialFilterConditionTypes(dataset, request)) : null
+  const documentLookup = financialDocumentLookupPolicy(dataset, request, draftSelection?.SelectedField.Type, lookupProfitReadMode, lookupProfitUnavailable)
+  const financialConditions = dataSource === 35 ? new Set(financialFilterConditionTypes(dataset, request, draftSelection?.SelectedField.Type)) : null
   const filterConditions = analysis ? analysisFilterConditions(dataset, draftSelection?.SelectedField.Type ?? 0) : dataSource === 39 ? currentVparivanieFilterConditions(draftSelection?.SelectedField.Type ?? 0) : financialConditions ? REPORT_FILTER_CONDITIONS.filter(condition => (financialConditions.has(condition.Type) || condition.Type === draftSelection?.FilterCondition.Type)) : REPORT_FILTER_CONDITIONS
   const draftValueError = draftSelection ? (analysis
     ? analysisSelectionValueError(draftSelection, analysis.filters.find(field => field.type === draftSelection.SelectedField.Type))
@@ -2549,7 +2552,7 @@ function ReportSelectionsCard({
               {analysis ? draftSelection.SelectedField.Name ? <CurrentVparivanieAnalysisValuePicker selection={draftSelection} selections={editorSelections} descriptor={analysis.filters.find(field => field.type === draftSelection.SelectedField.Type)} from={from} to={to}
                 onChange={Values => setDraftSelection(current => current ? changeAnalysisSelectionValues(current, Values, analysis.filters.find(field => field.type === current.SelectedField.Type)) : current)} /> : <Text size="sm">Оберіть поле відбору.</Text> : <SelectionValuePicker
                 dataSource={dataSource}
-                lookupProfitReadMode={lookupProfitReadMode} lookupProfitUnavailable={lookupProfitUnavailable} lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis}
+                lookupProfitReadMode={documentLookup.mode} lookupProfitUnavailable={documentLookup.unavailable} lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis}
                 from={from}
                 label={t('Значення')}
                 selection={draftSelection}
@@ -2585,7 +2588,8 @@ function InlineReportSelection({ dataset, request, selection, selections, index,
   | 'lookupProfitUnavailable' | 'lookupSourceWorld' | 'lookupSalesBasis' | 'lookupProvidedDiscountBasis' | 'onChange'> & { selection: ReportSelection; index: number }) {
   const { t } = useI18n()
   const analysis = currentVparivanieAnalysisCapability(dataset)
-  const financialConditions = dataSource === 35 ? new Set(financialFilterConditionTypes(dataset, request)) : null
+  const documentLookup = financialDocumentLookupPolicy(dataset, request, selection.SelectedField.Type, lookupProfitReadMode, lookupProfitUnavailable)
+  const financialConditions = dataSource === 35 ? new Set(financialFilterConditionTypes(dataset, request, selection.SelectedField.Type)) : null
   const conditions = analysis ? analysisFilterConditions(dataset, selection.SelectedField.Type)
     : dataSource === 39 ? currentVparivanieFilterConditions(selection.SelectedField.Type)
       : financialConditions ? REPORT_FILTER_CONDITIONS.filter(condition => (financialConditions.has(condition.Type) || condition.Type === selection.FilterCondition.Type)) : REPORT_FILTER_CONDITIONS
@@ -2621,7 +2625,7 @@ function InlineReportSelection({ dataset, request, selection, selections, index,
       : analysis ? <CurrentVparivanieAnalysisValuePicker selection={selection} selections={selections}
         descriptor={analysis.filters.find(field => field.type === selection.SelectedField.Type)} from={from} to={to}
         onChange={Values => change(changeAnalysisSelectionValues(selection, Values, analysis.filters.find(field => field.type === selection.SelectedField.Type)))} />
-      : <SelectionValuePicker dataSource={dataSource} lookupProfitReadMode={lookupProfitReadMode} lookupProfitUnavailable={lookupProfitUnavailable}
+      : <SelectionValuePicker dataSource={dataSource} lookupProfitReadMode={documentLookup.mode} lookupProfitUnavailable={documentLookup.unavailable}
         lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis}
         from={from} to={to} label={t('Значення')} selection={selection} selections={selections} width="100%"
         onChange={Values => change({ ...selection, Values })} />}</div>
@@ -2635,7 +2639,8 @@ function cloneReportSelection(selection: ReportSelection): ReportSelection {
     ...selection,
     FilterCondition: { ...selection.FilterCondition },
     SelectedField: { ...selection.SelectedField },
-    Values: selection.Values.map((value) => ({ ...value, Data: { ...value.Data } })),
+    Values: selection.Values.map((value) => ({ ...value, Data: selection.SelectedField.Type === 12
+      ? financialDocumentReference(value.Data) ?? { ...value.Data } : { ...value.Data } })),
   }
 }
 
@@ -2831,7 +2836,7 @@ export function SelectionValuePicker({ dataSource, lookupProfitReadMode, lookupP
   const { t } = useI18n()
   const [search, setSearch] = useValueState('')
   const [manualValue, setManualValue] = useValueState('')
-  const lookupScope = JSON.stringify([dataSource, selection.SelectedField.Type, lookupProfitReadMode ?? null, lookupProfitUnavailable === true])
+  const lookupScope = JSON.stringify([dataSource, selection.SelectedField.Type, lookupProfitReadMode ?? null, lookupProfitUnavailable === true, ...(dataSource === 35 && selection.SelectedField.Type === 12 ? [from, to] : [])])
   const [optionResult, setOptionResult] = useValueState<{ scope: string; items: ReportEntity[]; failed?: boolean }>({ scope: '', items: [] })
   const options = optionResult.scope === lookupScope ? optionResult.items : EMPTY_LOOKUP_OPTIONS
   const lookupFailed = optionResult.scope === lookupScope && optionResult.failed === true
@@ -2865,15 +2870,15 @@ export function SelectionValuePicker({ dataSource, lookupProfitReadMode, lookupP
   )
   const normalizedSearch = lookupMode === 'search' ? debouncedSearch.trim() : ''
   const minSearchLength = nativeLookup ? 0 : getSelectionLookupMinLength(selection.SelectedField.Type)
-  const needsPeriod = isSaleDocumentFilter
+  const needsPeriod = isSaleDocumentFilter || dataSource === 35 && selection.SelectedField.Type === 12
   const dependentClientNetId = lookupMode === 'dependent' ? getDependentClientNetId(selections) : ''
   const selectOptions = useMemo(
     () =>
-      mergeReportEntities([...selection.Values.map((value) => value.Data), ...options]).map((entity) => ({
+      mergeReportEntities([...selection.Values.map((value) => dataSource === 35 && selection.SelectedField.Type === 12 ? financialDocumentSelectedEntity(value) : value.Data), ...options]).map((entity) => ({
         label: getEntityDisplayName(entity),
         value: getReportEntityKey(entity, getEntityDisplayName(entity)),
       })),
-    [options, selection.Values],
+    [options, selection.Values, dataSource, selection.SelectedField.Type],
   )
 
   useEffect(() => {
@@ -2995,12 +3000,12 @@ export function SelectionValuePicker({ dataSource, lookupProfitReadMode, lookupP
     const key = getReportEntityKey(entity, getEntityDisplayName(entity))
 
     if (!isMultiValueReportCondition(selection.FilterCondition.Type)) {
-      onChange([createSelectedValue(entity, dataSource)])
+      onChange([createSelectedValue(entity, dataSource, selection.SelectedField.Type)])
       return
     }
     if (selection.Values.some((value) => getReportEntityKey(value.Data, value.Name) === key)) return
 
-    onChange([...selection.Values, createSelectedValue(entity, dataSource)])
+    onChange([...selection.Values, createSelectedValue(entity, dataSource, selection.SelectedField.Type)])
   }
 
   function addManualValue() {
@@ -3088,7 +3093,7 @@ export function SelectionValuePicker({ dataSource, lookupProfitReadMode, lookupP
             const added = options.filter(entity => {
               const key = getReportEntityKey(entity, getEntityDisplayName(entity))
               return desired.has(key) && !previous.has(key)
-            }).map(entity => createSelectedValue(entity, dataSource))
+            }).map(entity => createSelectedValue(entity, dataSource, selection.SelectedField.Type))
             onChange([...selection.Values.filter(value => desired.has(getReportEntityKey(value.Data, value.Name))), ...added])
           }} />
       ) : (
@@ -3117,7 +3122,7 @@ export function SelectionValuePicker({ dataSource, lookupProfitReadMode, lookupP
           value={null}
           onChange={(value) => {
             const entity = value
-              ? mergeReportEntities([...selection.Values.map((selectedValue) => selectedValue.Data), ...options])
+              ? mergeReportEntities([...selection.Values.map((selectedValue) => dataSource === 35 && selection.SelectedField.Type === 12 ? financialDocumentSelectedEntity(selectedValue) : selectedValue.Data), ...options])
                   .find((option) => getReportEntityKey(option, getEntityDisplayName(option)) === value)
               : undefined
 
@@ -3452,6 +3457,10 @@ async function loadSelectionLookupOptions(
   lookupProvidedDiscountBasis?: 0,
   lookupProfitReadMode?: 0 | 1,
 ): Promise<ReportEntity[]> {
+  if (dataSource === 35 && fieldType === 12) {
+    if (lookupProfitReadMode !== 0) throw new Error('Документи доступні лише для поточного розрахунку GBA.')
+    return searchCurrentFinancialDocuments(from, to, { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
+  }
   if (usesNativeReportLookup(dataSource)) {
     const params = { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }
     if ((dataSource === 35 || dataSource === 38) && lookupProfitReadMode !== undefined)
@@ -3564,15 +3573,17 @@ function mergeReportEntities(entities: ReportEntity[]): ReportEntity[] {
   return result
 }
 
-function createSelectedValue(entity: ReportEntity, dataSource?: number): ReportSelectedValue {
+function createSelectedValue(entity: ReportEntity, dataSource?: number, field?: number): ReportSelectedValue {
   return {
-    Data: entity,
+    Data: dataSource === 35 && field === 12 ? financialDocumentEntityReference(entity) ?? entity : entity,
     Name: getEntityDisplayName(entity),
     Value: (dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 20 || dataSource === 21 || dataSource === 23 || dataSource === 24 || dataSource === 25 || dataSource === 28 || dataSource === 39 || dataSource === 41) ? 0 : getReportEntityNumericValue(entity),
   }
 }
 
 function getReportEntityKey(entity: ReportEntity, fallback = ''): string {
+  const document = financialDocumentEntityReference(entity)
+  if (document) return financialDocumentKey(document)
   return [
     entity.NetUid,
     entity.Id,

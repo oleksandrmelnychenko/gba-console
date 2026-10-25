@@ -1,3 +1,4 @@
+import { currentFinancialDocumentFilterCapability } from '../data/currentFinancialDocumentFilter'
 import { clonePresentationCurrencyAliases, presentationCurrencySupported } from '../data/reportPresentationCurrency'
 import { financialAxesCapability } from '../data/financialAxes'
 import { currentFinancialAxesCapability } from '../data/currentFinancialAxes'
@@ -67,6 +68,7 @@ function isDataset(value: unknown): value is ReportDataset {
     && (item.currentFinancialAxes === undefined || !!currentFinancialAxesCapability(item as ReportDataset))
     && (item.currentFinancialProductTimeAxes === undefined || !!currentFinancialProductTimeAxesCapability(item as ReportDataset))
     && (item.currentFinancialDocumentAxes === undefined || !!currentFinancialDocumentAxesCapability(item as ReportDataset))
+    && (item.currentFinancialDocumentFilter === undefined || !!currentFinancialDocumentFilterCapability(item as ReportDataset))
     && (item.currentFinancialFilterConditions === undefined || !!currentFinancialFilterConditionsCapability(item as ReportDataset))
     && (item.configuration === undefined || !!readReportConfiguration(item.configuration))
     && (item.currentFinancialPresentationCurrency === undefined || presentationCurrencySupported(item as ReportDataset))
