@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport, searchDatasetReportValues } from '../api/reportsApi'
@@ -109,7 +109,7 @@ it('selects client/agreement axes and blocks a mode switch without dropping date
   expect(before.sorted.Col.map(f => f.type)).toEqual([15])
   mode('Збережені регістри 1С')
   expect(screen.getAllByText(/Групування за клієнтом і договором доступне лише/).length).toBeGreaterThan(0)
-  fireEvent.submit(view.container.querySelector('form')!)
+  await act(async () => { fireEvent.submit(view.container.querySelector('form')!) })
   expect(createStockReport).toHaveBeenCalledTimes(1)
   expect(screen.getByRole('button', { name: 'Видалити Клієнт' })).toBeTruthy()
   expect(screen.getByRole('button', { name: 'Видалити Договір' })).toBeTruthy()
