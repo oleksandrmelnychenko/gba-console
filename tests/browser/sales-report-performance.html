@@ -17,10 +17,12 @@
     import { SalesUkrainePage } from '/src/features/sales-ukraine/pages/SalesUkrainePage.tsx'
     import { RecommendationsPanel } from '/src/features/clients/components/recommendations/RecommendationsPanel.tsx'
     import { WizardCrossSellModal } from '/src/features/sales-ukraine/components/new-sale-wizard/WizardCrossSellModal.tsx'
+    import { NewSaleReviewStep } from '/src/features/sales-ukraine/components/new-sale-wizard/NewSaleReviewStep.tsx'
+    import { NEW_SALE_REVIEW_INITIAL } from '/src/features/sales-ukraine/components/new-sale-wizard/newSaleWizardState.ts'
     import { NewSaleProductsStep } from '/src/features/sales-ukraine/components/new-sale-wizard/NewSaleProductsStep.tsx'
     import { dispatchWizardKey, initializeWizardKeyboard } from '/src/features/sales-ukraine/components/new-sale-wizard/wizardKeyboard.ts'
     import { ProductDetailPage } from '/src/features/products/pages/ProductDetailPage.tsx'
-    const items = Array.from({length:100}, (_,i) => ({NetUid:`item-${i}`,Qty:1,TotalAmount:10,TotalAmountLocal:420,
+    const items = Array.from({length:100}, (_,i) => ({NetUid:`item-${i}`,Qty:1,TotalAmount:10,TotalAmountLocal:420,TotalAmountEurToUah:420,
       Product:{NetUid:`product-${i}`,VendorCode:`CODE-${i}`,Name:`Товар ${i}`,CurrentPrice:10}}))
     const rows = Array.from({length:50}, (_,i) => ({Ordinal:i,SourceIndex:i,Values:[{Caption:`Товар ${i}`}]}))
     const columns = Array.from({length:60}, (_,i) => ({Ordinal:i,SourceIndex:i,Values:[{Caption:`Показник ${i}`}]}))
@@ -47,6 +49,7 @@
     window.fetch = (input,options={}) => {
       const url = new URL(typeof input==='string'?input:input.url,location.href)
       window.performanceFixture.requests.push(url.pathname+url.search)
+      if (['/transporters/types/sales-ukraine/edit','/deliveries/recipients/all/client'].some(path=>url.pathname.endsWith(path))) return Promise.resolve(response([]))
       if (url.pathname.endsWith('/clients/get/identity-attention')) return Promise.resolve(response(null))
       if (url.pathname.endsWith('/clients/sales-ukraine/create/details')) return Promise.resolve(response({NetUid:'client-1',FullName:'Тестовий клієнт'}))
       if (url.pathname.endsWith('/agreements/client/all')) return Promise.resolve(response([agreement]))
@@ -89,6 +92,11 @@
     const auth = {hasPermission:()=>true,isLoading:false,user:{NetUid:'fixture-user',FirstName:'Test',LastName:'User'}}
     const onRender = (id,phase,duration) => window.performanceFixture.samples.push({id,phase,duration})
     const onRowClick = item => { window.performanceFixture.selected = item.NetUid }
+    const cartSale = rows => ({NetUid:'fixture-sale',ClientAgreement:{NetUid:'agreement-1',Agreement:{Currency:{Code:'EUR'}}},Order:{OrderItems:rows,OrderSource:1}})
+    function DeliveryFixture({cart}) {
+      const [value,setValue]=useState(NEW_SALE_REVIEW_INITIAL)
+      return h(NewSaleReviewStep,{clientNetId:'client-1',sale:cartSale(cart),value,onChange:patch=>setValue(current=>({...current,...patch}))})
+    }
     function CrossSellFixture() {
       const [opened,setOpened]=useState(false)
       return h('section',null,h('button',{onClick:()=>setOpened(true)},'Відкрити крос-продажі'),
@@ -104,17 +112,18 @@
           h('button',{onClick:()=>setView('product')},'Картка товару'),
           h('button',{onClick:()=>setView('recommendations')},'Рекомендації клієнта'),
           h('button',{onClick:()=>setView('crosssell')},'Крос-продажі'),
+          h('button',{onClick:()=>{initializeWizardKeyboard(2);setView('delivery')}},'Доставка'),
           h('button',{onClick:()=>{initializeWizardKeyboard(1);setView('wizard')}},'Майстер продажу'),
           h('button',{onClick:()=>window.performanceFixture.finishWizardReserves()},'Завершити резерви майстра'),
           h('button',{onClick:()=>window.performanceFixture.finishSupply()},'Завершити постачання'),
           h('button',{onClick:()=>window.performanceFixture.finishReserves()},'Завершити резерви'),
-          h('button',{onClick:()=>setCart(previous=>previous.map((item,i)=>i===50?{...item,Qty:item.Qty+1}:item))},'Змінити одну позицію'),
+          h('button',{onClick:()=>setCart(previous=>previous.map((item,i)=>i===50?{...item,Qty:item.Qty+1,TotalAmount:item.TotalAmount+10,TotalAmountLocal:item.TotalAmountLocal+420,TotalAmountEurToUah:item.TotalAmountEurToUah+420}:item))},'Змінити одну позицію'),
           h('button',{onClick:()=>setRevision(value=>value+1)},'Оновити панель'),
           h('output',null,revision)),
         view==='cart' ? h(Profiler,{id:'cart',onRender},h(WizardCartCards,{items:cart,busy:false,localCurrencyCode:'UAH',useEurToUah:false,onRowClick}))
           : view==='report' ? h(Profiler,{id:'report',onRender},h(ReportInlinePreview,{preview}))
           : h(AuthContext.Provider,{value:auth},h(MemoryRouter,{initialEntries:['/products/product-1']},h(Profiler,{id:view,onRender},
-            view==='recommendations'?h(RecommendationsPanel,{client:{NetUid:'client-1'},productNetId:'panel-seed'}):view==='crosssell'?h(CrossSellFixture):view==='sales'?h(SalesUkrainePage):view==='wizard'?h(NewSaleProductsStep,{agreementNetId:'agreement-1',clientNetId:'client-1',client:null,sale:null,onCartChanged:()=>{}}):h(Routes,null,h(Route,{path:'/products/:netId',element:h(ProductDetailPage)}))))))
+            view==='delivery'?h(DeliveryFixture,{cart}):view==='recommendations'?h(RecommendationsPanel,{client:{NetUid:'client-1'},productNetId:'panel-seed'}):view==='crosssell'?h(CrossSellFixture):view==='sales'?h(SalesUkrainePage):view==='wizard'?h(NewSaleProductsStep,{agreementNetId:'agreement-1',clientNetId:'client-1',client:null,sale:cartSale(cart),onCartChanged:()=>{}}):h(Routes,null,h(Route,{path:'/products/:netId',element:h(ProductDetailPage)}))))))
     }
     createRoot(document.getElementById('root')).render(h(MantineProvider,null,h(I18nProvider,null,h(Fixture))))
   </script>

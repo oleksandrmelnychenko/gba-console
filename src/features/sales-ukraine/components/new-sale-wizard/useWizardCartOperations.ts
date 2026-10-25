@@ -1,14 +1,15 @@
 import { notifications } from '@mantine/notifications'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { useAuth } from '../../../auth/useAuth'
 import { getSalesPendingMutationUserKey } from '../../pendingSalesMutationRegistry'
 import { getSaleLifecycleTypeKey } from '../../saleStatus'
-import type { SalesUkraineOrderItem, SalesUkraineSale, SalesUkraineUser } from '../../types'
+import type { SalesUkraineSale, SalesUkraineUser } from '../../types'
 import { createAddOrUpdateSalesCartMutation } from '../../usePersistentSalesCartMutation'
 import { getProductAvailabilityBuckets } from './newSaleWizardApi'
 import { stageWizardSplitExtraction } from './newSaleWizardState'
 import { addWizardCartSplitItems } from './wizardCartSplitItems'
+import { useWizardCartItems } from './useWizardCartItems'
 import { useWizardCartItemActions } from './useWizardCartItemActions'
 import { useWizardCartSplitState } from './useWizardCartSplitState'
 import { useWizardCartEditor } from './useWizardCartEditor'
@@ -76,7 +77,7 @@ export function useWizardCartOperations({
   const isVatSale = Boolean(sale?.IsVatSale)
   const [qtyModal, setQtyModal] = useState<WizardCartQuantityModalState | null>(null)
   // Keep row sorting independent from editor selection and recovery progress.
-  const orderItems = useMemo(() => getOrderItemsNewestFirst(sale), [sale])
+  const orderItems = useWizardCartItems(sale)
   const { editCart, setEditCart, moveCartSelection, toggleSplitMode } = useWizardCartEditor(orderItems.length)
   const { getSplitRecoverySource, persistSplitItems, readSplitItems, commitLocalChange } = useWizardCartSplitState({
     agreementNetId, saleNetUid: sale?.NetUid, userKey: pendingMutationUserKey, setEditCart,
@@ -423,33 +424,6 @@ export function useWizardCartOperations({
     toggleSplitMode,
   }
 }
-
-function getOrderItemsNewestFirst(sale: SalesUkraineSale | null): SalesUkraineOrderItem[] {
-  const items = Array.isArray(sale?.Order?.OrderItems) ? sale.Order.OrderItems : []
-
-  // Parse each Created once (Date.parse per comparator call is O(n log n) parses).
-  return items
-    .map((item) => [getCreatedTime(item), item] as const)
-    .sort((a, b) => b[0] - a[0])
-    .map(([, item]) => item)
-}
-
-function getCreatedTime(item: SalesUkraineOrderItem): number {
-  const created = item.Created
-
-  if (created instanceof Date) {
-    return created.getTime()
-  }
-
-  if (typeof created === 'string') {
-    const parsed = Date.parse(created)
-
-    return Number.isNaN(parsed) ? 0 : parsed
-  }
-
-  return 0
-}
-
 
 function getRequestErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message.trim() ? error.message : fallback

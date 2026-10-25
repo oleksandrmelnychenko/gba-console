@@ -6,7 +6,7 @@ import { AppBottomSheet } from '../../../../shared/ui/AppBottomSheet'
 import { TableChip } from '../../../../shared/ui/TableChip'
 import { roundMoney } from '../../saleMoney'
 import type { SalesUkraineOrderItem } from '../../types'
-import { getOrderItemLocalTotal, getWizardProductNumber } from './wizardSaleProduct'
+import { getWizardCartTotals } from './wizardCartTotals'
 import { WizardShoppingCartGrid } from './WizardShoppingCartGrid'
 import { WizardCartCards } from './WizardCartCards'
 import './wizard-cart-sheet.css'
@@ -50,11 +50,7 @@ export function WizardCartSheet({
   const cartOpenerRef = useRef<HTMLElement | null>(null)
   const wasOpenedRef = useRef(opened)
   const overlayWasActiveRef = useRef(overlayActive)
-  const totals = useMemo(() => items.reduce((result, item) => ({
-    qty: result.qty + (getWizardProductNumber(item.Qty) ?? 0),
-    eur: result.eur + (getWizardProductNumber(item.TotalAmount) ?? 0),
-    local: result.local + getOrderItemLocalTotal(item, useEurToUah),
-  }), { qty: 0, eur: 0, local: 0 }), [items, useEurToUah])
+  const totals = useMemo(() => getWizardCartTotals(items, useEurToUah), [items, useEurToUah])
 
   useEffect(() => {
     const wasOpened = wasOpenedRef.current
@@ -113,10 +109,10 @@ export function WizardCartSheet({
         </Group>
         <div className="wizard-cart-sheet-summary__totals">
           <span className="wizard-cart-sheet-summary__quantity">
-            {t('К-сть')}: <strong className="app-money">{qtyFormatter.format(totals.qty)}</strong>
+            {t('К-сть')}: <strong className="app-money">{qtyFormatter.format(totals.quantity)}</strong>
           </span>
-          <span><strong className="app-money">{amountFormatter.format(roundMoney(totals.eur))}</strong><TableChip tone="source" value="EUR" /></span>
-          <span><strong className="app-money">{amountFormatter.format(roundMoney(totals.local))}</strong><TableChip tone="source" value={localCurrencyCode} /></span>
+          <span><strong className="app-money">{amountFormatter.format(totals.eur)}</strong><TableChip tone="source" value="EUR" /></span>
+          <span><strong className="app-money">{amountFormatter.format(totals.local)}</strong><TableChip tone="source" value={localCurrencyCode} /></span>
         </div>
         <Button
           aria-expanded={opened}
@@ -173,12 +169,13 @@ export function WizardCartSheet({
               />
               <div className="wizard-cart-sheet__footer app-table-chips">
                 <span className="wizard-cart-sheet__footer-label">{t('Разом')}</span>
-                <div><span>{t('К-сть')}</span><strong className="app-money">{qtyFormatter.format(totals.qty)}</strong></div>
-                <div><TableChip tone="source" value="EUR" /><strong className="app-money">{amountFormatter.format(roundMoney(totals.eur))}</strong></div>
-                <div><TableChip tone="source" value={localCurrencyCode} /><strong className="app-money">{amountFormatter.format(roundMoney(totals.local))}</strong></div>
+                <div><span>{t('К-сть')}</span><strong className="app-money">{qtyFormatter.format(totals.quantity)}</strong></div>
+                <div><TableChip tone="source" value="EUR" /><strong className="app-money">{amountFormatter.format(totals.eur)}</strong></div>
+                <div><TableChip tone="source" value={localCurrencyCode} /><strong className="app-money">{amountFormatter.format(totals.local)}</strong></div>
               </div>
             </>
           ) : <WizardShoppingCartGrid
+            totals={totals}
             busy={busy}
             items={items}
             localCurrencyCode={localCurrencyCode}

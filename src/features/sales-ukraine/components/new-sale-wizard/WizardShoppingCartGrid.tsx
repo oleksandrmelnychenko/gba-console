@@ -6,7 +6,7 @@ import { useI18n } from '../../../../shared/i18n/useI18n'
 import { DataTable } from '../../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../../shared/ui/table-row-action'
-import { roundMoney } from '../../saleMoney'
+import { getWizardCartTotals, type WizardCartTotals } from './wizardCartTotals'
 import type { SalesUkraineOrderItem } from '../../types'
 import {
   getOrderItemDiscount,
@@ -54,6 +54,7 @@ export const WizardShoppingCartGrid = memo(function WizardShoppingCartGrid({
   localCurrencyCode,
   useEurToUah,
   toolbarPortalTarget,
+  totals: providedTotals,
   onCrossSell,
   onRemove,
   onRowClick,
@@ -62,25 +63,14 @@ export const WizardShoppingCartGrid = memo(function WizardShoppingCartGrid({
   items: SalesUkraineOrderItem[]
   localCurrencyCode: string
   useEurToUah: boolean
+  totals?: WizardCartTotals
   toolbarPortalTarget?: Element | null
   onCrossSell?: (item: SalesUkraineOrderItem) => void
   onRemove?: (item: SalesUkraineOrderItem) => void
   onRowClick?: (item: SalesUkraineOrderItem) => void
 }) {
   const { t } = useI18n()
-  const totals = useMemo(() => {
-    let qty = 0
-    let amount = 0
-    let amountLocal = 0
-
-    for (const item of items) {
-      qty += getWizardProductNumber(item.Qty) ?? 0
-      amount += getWizardProductNumber(item.TotalAmount) ?? 0
-      amountLocal += getOrderItemLocalTotal(item, useEurToUah)
-    }
-
-    return { amount: roundMoney(amount), amountLocal: roundMoney(amountLocal), qty }
-  }, [items, useEurToUah])
+  const totals = useMemo(() => providedTotals ?? getWizardCartTotals(items, useEurToUah), [items, useEurToUah, providedTotals])
 
   const indexByItem = useMemo(() => new Map(items.map((item, index) => [item, index])), [items])
 
@@ -248,15 +238,15 @@ export const WizardShoppingCartGrid = memo(function WizardShoppingCartGrid({
         <div className="new-sale-cart__totals">
           <div className="new-sale-cart__total">
             <span>{t('К-сть')}</span>
-            <strong>{qtyFormatter.format(totals.qty)}</strong>
+            <strong>{qtyFormatter.format(totals.quantity)}</strong>
           </div>
           <div className="new-sale-cart__total">
             <span>EUR</span>
-            <strong>{priceFormatter.format(totals.amount)}</strong>
+            <strong>{priceFormatter.format(totals.eur)}</strong>
           </div>
           <div className="new-sale-cart__total is-strong">
             <span>{localCurrencyCode}</span>
-            <strong>{priceFormatter.format(totals.amountLocal)}</strong>
+            <strong>{priceFormatter.format(totals.local)}</strong>
           </div>
         </div>
       )}

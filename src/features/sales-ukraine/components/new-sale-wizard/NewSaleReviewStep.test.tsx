@@ -21,6 +21,7 @@ import { persistSaleFileMutationRecord } from '../../usePersistentSaleFileMutati
 import type { NewSaleReviewValue } from './newSaleWizardState'
 import { NewSaleReviewStep } from './NewSaleReviewStep'
 import type { WizardKeyEvent } from './wizardKeyboard'
+import type { WizardSaleProduct } from './wizardSaleProduct'
 import { createWizardSplitOrderItem } from './wizardSplitSale'
 
 const mocks = vi.hoisted(() => ({
@@ -275,6 +276,27 @@ describe('NewSaleReviewStep persistent file reconciliation', () => {
         removeEventListener: vi.fn(),
       },
     })
+  })
+
+  it('does not recalculate the order when delivery fields change, and updates it when cart items change', async () => {
+    const readQty = vi.fn(() => 2)
+    const item: SalesUkraineOrderItem = { NetUid: 'cart-item', TotalAmount: 20, TotalAmountLocal: 800,
+      Product: { NetUid: 'product', VendorCode: 'CART', Name: 'Cart product', CurrentPrice: 10 } as WizardSaleProduct }
+    Object.defineProperty(item, 'Qty', { get: readQty })
+    const cartSale = { ...sale, Order: { OrderItems: [item] } }
+    const onChange = vi.fn()
+    const ui = (comment: string, currentSale = cartSale) => <MantineProvider theme={theme}>
+      <NewSaleReviewStep clientNetId="client-1" sale={currentSale} value={{ ...reviewValue(), comment }} onChange={onChange} />
+    </MantineProvider>
+    const view = render(ui(''))
+    await act(async () => {})
+    readQty.mockClear()
+    for (let i = 0; i < 20; i++) view.rerender(ui(`Delivery comment ${i}`))
+    expect(readQty).not.toHaveBeenCalled()
+    view.rerender(ui('Delivery comment', { ...cartSale, Order: { OrderItems: [{ ...item, Qty: 3, TotalAmount: 30 }] } }))
+    const totals = screen.getByLabelText('Підсумок замовлення')
+    expect(within(totals).getByText('3')).toBeTruthy()
+    expect(within(totals).getByText('30,00')).toBeTruthy()
   })
 
   it('blocks the final submit when the current wizard flow lacks permission', () => {

@@ -1,3 +1,4 @@
+import { EMPTY_WIZARD_CART_ITEMS } from './useWizardCartItems'
 import { notifications } from '@mantine/notifications'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -171,7 +172,7 @@ export function useWizardSaleSubmission({
   const mountedRef = useRef(false)
   const splitItems = useWizardSplitOrderItems()
   const mergedSale = useWizardMergedSale()
-  const reviewItems = splitItems.length > 0 ? splitItems : mergedSale?.orderItems ?? sale?.Order?.OrderItems ?? []
+  const reviewItems = splitItems.length > 0 ? splitItems : mergedSale?.orderItems ?? sale?.Order?.OrderItems ?? EMPTY_WIZARD_CART_ITEMS
   const isMergedMode = Boolean(mergedSale)
   const mergedConversionDenied = submitFlow === 'edit' && isMergedMode && !canConvertMergedToBill
   const submitPermissionDenied = !canSubmit || mergedConversionDenied

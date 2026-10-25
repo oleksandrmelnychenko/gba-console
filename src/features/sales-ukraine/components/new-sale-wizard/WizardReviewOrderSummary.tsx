@@ -1,17 +1,17 @@
+import { memo, useMemo } from 'react'
 import { ShoppingCart } from 'lucide-react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { TableChip } from '../../../../shared/ui/TableChip'
-import { roundMoney } from '../../saleMoney'
 import type { SalesUkraineOrderItem } from '../../types'
 import { WizardCartCards } from './WizardCartCards'
-import { getOrderItemLocalTotal, getWizardProductNumber } from './wizardSaleProduct'
+import { getWizardCartTotals } from './wizardCartTotals'
 import './wizard-cart-sheet.css'
 import './wizard-review-order-summary.css'
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const quantityFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
 
-export function WizardReviewOrderSummary({ items, localCurrencyCode, useEurToUah }: {
+export const WizardReviewOrderSummary = memo(function WizardReviewOrderSummary({ items, localCurrencyCode, useEurToUah }: {
   items: SalesUkraineOrderItem[]
   localCurrencyCode: string
   useEurToUah: boolean
@@ -33,19 +33,15 @@ export function WizardReviewOrderSummary({ items, localCurrencyCode, useEurToUah
       />
     </section>
   )
-}
+})
 
-export function WizardReviewOrderTotals({ items, localCurrencyCode, useEurToUah }: {
+export const WizardReviewOrderTotals = memo(function WizardReviewOrderTotals({ items, localCurrencyCode, useEurToUah }: {
   items: SalesUkraineOrderItem[]
   localCurrencyCode: string
   useEurToUah: boolean
 }) {
   const { t } = useI18n()
-  const totals = items.reduce((result, item) => ({
-    quantity: result.quantity + (getWizardProductNumber(item.Qty) ?? 0),
-    eur: result.eur + (getWizardProductNumber(item.TotalAmount) ?? 0),
-    local: result.local + getOrderItemLocalTotal(item, useEurToUah),
-  }), { quantity: 0, eur: 0, local: 0 })
+  const totals = useMemo(() => getWizardCartTotals(items, useEurToUah), [items, useEurToUah])
 
   return (
     <footer className="wizard-review-order-summary__totals app-table-chips" aria-label={t('Підсумок замовлення')}>
@@ -56,14 +52,14 @@ export function WizardReviewOrderTotals({ items, localCurrencyCode, useEurToUah 
       <div className="wizard-review-order-summary__amounts">
         <span>{t('Разом')}</span>
         <div>
-          <strong>{moneyFormatter.format(roundMoney(totals.eur))}</strong>
+          <strong>{moneyFormatter.format(totals.eur)}</strong>
           <TableChip tone="source" value="EUR" />
         </div>
         <div>
-          <strong>{moneyFormatter.format(roundMoney(totals.local))}</strong>
+          <strong>{moneyFormatter.format(totals.local)}</strong>
           <TableChip tone="source" value={localCurrencyCode} />
         </div>
       </div>
     </footer>
   )
-}
+})
