@@ -33,7 +33,7 @@ import { notifications } from '@mantine/notifications'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { PdfIcon } from '../../../shared/ui/PdfIcon'
 import { ArrowDownLeft, ArrowUpRight, Hash, Layers, ArrowLeftRight, Box as BoxIcon, ChevronDown, CircleAlert, ClipboardList, Copy, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, Save, Settings, Sparkles, SquarePen, Trash2, TriangleAlert, Upload } from 'lucide-react'
-import { lazy, Suspense, type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { lazy, Suspense, type KeyboardEvent, type ReactNode, useCallback, useEffect, useEffectEvent, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
@@ -52,7 +52,6 @@ import {
   getProductByNetId,
   getProductIncomeMovements,
   getProductOutcomeMovements,
-  getProductReservationByNetId,
   getProductSiblingCounts,
   getProductSiblings,
   getProductUploadPricings,
@@ -119,6 +118,7 @@ import {
   type ProductFileUploadPriceRow,
 } from '../productFileUpload'
 import { ShopImageGallery } from '../components/ShopImageGallery'
+import { useProductDetailData } from '../useProductDetailData'
 import { ProductPriceSourcePanel } from '../components/ProductPriceSourcePanel'
 import { getProductAnalyticsId } from '../components/ProductAnalyticsPanel'
 import {
@@ -262,13 +262,6 @@ type InlineMovementState = {
   isLoading: boolean
   rows: InlineMovementRow[]
 }
-type InlineDetailState = {
-  error: string | null
-  isLoading: boolean
-  product: Product | null
-  reservation: ProductReservation
-  reservationError: string | null
-}
 type InlineMovementAction =
   | { type: 'export-clear' }
   | { type: 'export-error'; error: string }
@@ -277,12 +270,6 @@ type InlineMovementAction =
   | { type: 'error'; error: string }
   | { type: 'loading' }
   | { type: 'success'; rows: InlineMovementRow[] }
-type InlineDetailAction =
-  | { type: 'clear' }
-  | { type: 'error'; error: string; product: Product | null }
-  | { type: 'loading' }
-  | { type: 'saved'; product: Product }
-  | { type: 'success'; product: Product | null; reservation: ProductReservation; reservationError: string | null }
 type RelatedProductRow = {
   isProductSet: boolean
   product: Partial<Product>
@@ -330,6 +317,7 @@ function ProductsPageContent() {
   const routeProductNetId = rawRouteProductNetId === ROUTE_ASSORTMENT_SENTINEL ? '' : rawRouteProductNetId
   const [topProducts, setTopProducts] = useValueState<Product[]>([])
   const [bottomProducts, setBottomProducts] = useValueState<Product[]>([])
+  const [routeLoadedProduct, setRouteLoadedProduct] = useState<Product | undefined>(undefined)
   const [selectedProduct, setSelectedProduct] = useValueState<Product | null>(null)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
@@ -345,24 +333,26 @@ function ProductsPageContent() {
   const [informationalDataOpened, setInformationalDataOpened] = useState(false)
   const [siblingCardsState, setSiblingCardsState] = useState<ProductSiblingCardsState>({ cards: noProductSiblingCards, productNetId: '' })
   const [siblingCounts, setSiblingCounts] = useState<Record<string, number>>({})
-  const [detailState, dispatchDetail] = useReducer(inlineDetailReducer, {
-    error: null,
-    isLoading: false,
-    product: null,
-    reservation: {},
-    reservationError: null,
-  })
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const [detailReloadKey, reloadProductDetail] = useReducer((key: number) => key + 1, 0)
+  const [detailReloadKey, bumpDetailReloadKey] = useReducer((key: number) => key + 1, 0)
   const searchRequestRef = useRef(0)
-  const detailRequestRef = useRef(0)
   const routeProductRequestRef = useRef(0)
   const hasRouteSeededProductsRef = useRef(false)
   const selectedProductNetUid = selectedProduct?.NetUid?.trim() || ''
+  const detailState = useProductDetailData(selectedProductNetUid || undefined, DETAIL_LOAD_DEBOUNCE_MS,
+    routeLoadedProduct?.NetUid === selectedProductNetUid ? routeLoadedProduct : undefined)
+  const refreshDetail = detailState.reload
+  const reloadProductDetail = useCallback(() => {
+    bumpDetailReloadKey()
+    return refreshDetail()
+  }, [refreshDetail])
   const productForView = detailState.product || selectedProduct
   const siblingCards = siblingCardsState.productNetId && siblingCardsState.productNetId === selectedProductNetUid
     ? siblingCardsState.cards
     : noProductSiblingCards
+
+  // Retire the one-time route snapshot before rendering a different selection.
+  if (routeLoadedProduct && routeLoadedProduct.NetUid !== selectedProductNetUid) setRouteLoadedProduct(undefined)
 
   const clearRouteProductParam = useCallback(() => {
     routeProductRequestRef.current += 1
@@ -434,7 +424,6 @@ function ProductsPageContent() {
   const applySearchResults = useCallback(
     (nextProducts: Product[]) => {
       setActivePanel(null)
-      dispatchDetail({ type: 'clear' })
       hasRouteSeededProductsRef.current = false
 
       if (nextProducts.length === 0) {
@@ -525,7 +514,6 @@ function ProductsPageContent() {
           setTopProducts([])
           setBottomProducts([])
           setSelectedProduct(null)
-          dispatchDetail({ type: 'clear' })
           setCarouselMode('search')
           setLoadedProductsCount(0)
           hasRouteSeededProductsRef.current = false
@@ -577,15 +565,17 @@ function ProductsPageContent() {
     }
   }, [hasRequestedProducts, loadProducts, reloadKey, searchValue, searchMode, sortMode])
 
+  const routeLoadError = useEffectEvent((error: unknown) => error instanceof Error ? error.message : t('Не вдалося завантажити товар'))
+
   useEffect(() => {
     if (!routeProductNetId) {
       return
     }
 
     const requestId = ++routeProductRequestRef.current
+    const controller = new AbortController()
 
     searchRequestRef.current += 1
-    detailRequestRef.current += 1
     setLoading(true)
     setVirtualLoad(false)
     setError(null)
@@ -596,16 +586,15 @@ function ProductsPageContent() {
       }
 
       try {
-        const nextProduct = await getProductByNetId(routeProductNetId)
+        const nextProduct = await getProductByNetId(routeProductNetId, controller.signal)
 
-        if (requestId === routeProductRequestRef.current) {
+        if (requestId === routeProductRequestRef.current && !controller.signal.aborted) {
           setVirtualLoad(false)
 
           if (!nextProduct) {
             setTopProducts([])
             setBottomProducts([])
             setSelectedProduct(null)
-            dispatchDetail({ type: 'clear' })
             setActivePanel(null)
             setCarouselMode('search')
             setLoadedProductsCount(0)
@@ -623,8 +612,8 @@ function ProductsPageContent() {
             setBottomProducts(nextSearchedProducts)
             setLoadedProductsCount(1 + nextSearchedProducts.length)
             hasRouteSeededProductsRef.current = nextSearchedProducts.length > 0
+            setRouteLoadedProduct(nextProduct)
             setSelectedProduct(nextProduct)
-            dispatchDetail({ type: 'clear' })
             setActivePanel(null)
             setCarouselMode('selection')
             setHasRequestedProducts(false)
@@ -635,11 +624,10 @@ function ProductsPageContent() {
           }
         }
       } catch (loadError) {
-        if (requestId === routeProductRequestRef.current) {
+        if (requestId === routeProductRequestRef.current && !controller.signal.aborted) {
           setTopProducts([])
           setBottomProducts([])
           setSelectedProduct(null)
-          dispatchDetail({ type: 'clear' })
           setActivePanel(null)
           setCarouselMode('search')
           setLoadedProductsCount(0)
@@ -647,16 +635,17 @@ function ProductsPageContent() {
           setHasRequestedProducts(false)
           setSearchDraft('')
           setSearchValue('')
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити товар'))
+          setError(routeLoadError(loadError))
         }
       } finally {
-        if (requestId === routeProductRequestRef.current) {
+        if (requestId === routeProductRequestRef.current && !controller.signal.aborted) {
           setLoading(false)
         }
       }
     }
 
     void loadRouteProduct()
+    return () => controller.abort()
   }, [
     loadSiblingCounts,
     routeProductNetId,
@@ -672,75 +661,6 @@ function ProductsPageContent() {
     setSelectedProduct,
     setTopProducts,
     setVirtualLoad,
-    t,
-  ])
-
-  useEffect(() => {
-    // Invalidate any in-flight load FIRST so clearing the selection (emptying the drum) discards a
-    // late response instead of loading a product card that is no longer needed.
-    const requestId = ++detailRequestRef.current
-
-    if (!selectedProductNetUid) {
-      return
-    }
-
-    dispatchDetail({ type: 'loading' })
-
-    // Abort the in-flight detail + reservation requests when the selection changes or is cleared —
-    // the legacy carousel does this via RxJS switchMap. Without it, stale requests keep running on
-    // the (slow) server and pile up, which is what made the card loading "hang".
-    const controller = new AbortController()
-
-    async function loadProductDetails() {
-      try {
-        const [nextProduct, nextReservationResult] = await Promise.all([
-          getProductByNetId(selectedProductNetUid, controller.signal),
-          getProductReservationByNetId(selectedProductNetUid, controller.signal)
-            .then((value) => ({ error: null, value }))
-            .catch((reservationLoadError: unknown) => ({
-              error: reservationLoadError instanceof Error ? reservationLoadError.message : t('Не вдалося завантажити резерви товару'),
-              value: {},
-            })),
-        ])
-
-        if (requestId === detailRequestRef.current) {
-          dispatchDetail({
-            product: nextProduct || selectedProduct,
-            reservation: nextReservationResult.value,
-            reservationError: nextReservationResult.error,
-            type: 'success',
-          })
-        }
-      } catch (loadError) {
-        if (controller.signal.aborted) {
-          return
-        }
-
-        if (requestId === detailRequestRef.current) {
-          dispatchDetail({
-            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити товар'),
-            product: selectedProduct,
-            type: 'error',
-          })
-        }
-      }
-    }
-
-    // Debounce the actual fetch so rapid drum navigation doesn't queue a request per product:
-    // each new selection clears the pending one and only the product you stop on is loaded.
-    const timeoutId = window.setTimeout(() => {
-      void loadProductDetails()
-    }, DETAIL_LOAD_DEBOUNCE_MS)
-
-    return () => {
-      window.clearTimeout(timeoutId)
-      controller.abort()
-    }
-  }, [
-    detailReloadKey,
-    selectedProduct,
-    selectedProductNetUid,
-    t,
   ])
 
   useEffect(() => {
@@ -753,7 +673,7 @@ function ProductsPageContent() {
     const timeoutId = window.setTimeout(() => {
       getProductSiblings(productNetId, controller.signal)
         .then((group) => {
-          setSiblingCardsState({ cards: group.Cards, productNetId })
+          if (!controller.signal.aborted) setSiblingCardsState({ cards: group.Cards, productNetId })
         })
         .catch(() => {
           if (!controller.signal.aborted) {
@@ -776,7 +696,6 @@ function ProductsPageContent() {
     setHasRequestedProducts(true)
     setCarouselMode('search')
     setSelectedProduct(null)
-    dispatchDetail({ type: 'clear' })
     setActivePanel(null)
   }
 
@@ -794,7 +713,6 @@ function ProductsPageContent() {
     setTopProducts([])
     setBottomProducts([])
     setSelectedProduct(null)
-    dispatchDetail({ type: 'clear' })
     setError(null)
     setLoading(false)
     setVirtualLoad(false)
@@ -829,10 +747,7 @@ function ProductsPageContent() {
 
     setTopProducts((currentProducts) => currentProducts.filter((item) => getProductIdentity(item) !== productId))
     setBottomProducts((currentProducts) => currentProducts.filter((item) => getProductIdentity(item) !== productId))
-    dispatchDetail({ type: 'loading' })
     setSelectedProduct(product)
-    // The loading state retains the previous detail to preserve page height; ProductInlineView
-    // makes that stale content inert until the newly selected product arrives.
     setActivePanel(null)
     setCarouselMode('selection')
     setSearchDraft('')
@@ -853,7 +768,6 @@ function ProductsPageContent() {
     setTopProducts([])
     setBottomProducts(getNextSearchedProducts(nextProduct))
     setLoadedProductsCount(1)
-    dispatchDetail({ type: 'loading' })
     setSelectedProduct(nextProduct)
     setActivePanel(null)
     setCarouselMode('selection')
@@ -873,7 +787,6 @@ function ProductsPageContent() {
     }
 
     setTopProducts((currentProducts) => currentProducts.slice(0, -1))
-    dispatchDetail({ type: 'loading' })
     setSelectedProduct(nextProduct)
     setActivePanel(null)
     setCarouselMode('selection')
@@ -893,7 +806,6 @@ function ProductsPageContent() {
     }
 
     setBottomProducts((currentProducts) => currentProducts.slice(1))
-    dispatchDetail({ type: 'loading' })
     setSelectedProduct(nextProduct)
     setActivePanel(null)
     setCarouselMode('selection')
@@ -991,8 +903,7 @@ function ProductsPageContent() {
 
   function handleProductSaved(nextProduct: Product | null) {
     if (nextProduct) {
-      dispatchDetail({ product: nextProduct, type: 'saved' })
-      setSelectedProduct(nextProduct)
+      if (detailState.setProduct(nextProduct)) setSelectedProduct(nextProduct)
       return
     }
 
@@ -1060,10 +971,12 @@ function ProductsPageContent() {
 
           <ProductInlineView
             detailError={detailState.error}
-            isLoading={detailState.isLoading}
+            isLoading={detailState.isLoading && !detailState.product}
             product={productForView}
             reservation={detailState.reservation}
             reservationError={detailState.reservationError}
+            reservationLoading={detailState.reservationLoading}
+            onRetryReservation={detailState.retryReservation}
             onOpenPanel={setActivePanel}
             onProductChanged={handleProductSaved}
             priceRefreshKey={detailReloadKey}
@@ -1330,6 +1243,8 @@ function ProductInlineView({
   product,
   reservation,
   reservationError,
+  reservationLoading,
+  onRetryReservation,
   siblingCards,
 }: {
   detailError: string | null
@@ -1342,6 +1257,8 @@ function ProductInlineView({
   product: Product | null
   reservation: ProductReservation
   reservationError: string | null
+  reservationLoading: boolean
+  onRetryReservation: () => Promise<void>
   siblingCards: ProductSiblingCard[]
 }) {
   const { t } = useI18n()
@@ -1451,7 +1368,7 @@ function ProductInlineView({
         </Box>
 
         <Box className="product-inline-prices">
-          <ProductPriceSourcePanel key={`${product.NetUid}:${priceRefreshKey}`} effectivePrices={prices} productNetId={product.NetUid} refreshKey={priceRefreshKey} />
+          <ProductPriceSourcePanel key={product.NetUid} effectivePrices={prices} productNetId={product.NetUid} refreshKey={priceRefreshKey} />
           <Group gap="xs" mt={8}>
             <Badge className={`app-role-pill ${product.IsForZeroSale ? 'is-green' : 'is-gray'}`} variant="light">{t('Нульовий продаж')}</Badge>
             <Badge className={`app-role-pill ${product.IsForSale ? 'is-green' : 'is-gray'}`} variant="light">{t('Продаж')}</Badge>
@@ -1466,6 +1383,8 @@ function ProductInlineView({
           product={product}
           reservation={reservation}
           reservationError={reservationError}
+          reservationLoading={reservationLoading}
+          onRetryReservation={onRetryReservation}
           onProductSaved={onProductChanged}
         />
       </Box>
@@ -3786,49 +3705,6 @@ function inlineMovementReducer(state: InlineMovementState, action: InlineMovemen
         error: null,
         isLoading: false,
         rows: action.rows,
-      }
-  }
-}
-
-function inlineDetailReducer(state: InlineDetailState, action: InlineDetailAction): InlineDetailState {
-  switch (action.type) {
-    case 'clear':
-      return {
-        error: null,
-        isLoading: false,
-        product: null,
-        reservation: {},
-        reservationError: null,
-      }
-    case 'error':
-      return {
-        error: action.error,
-        isLoading: false,
-        product: action.product,
-        reservation: {},
-        reservationError: null,
-      }
-    case 'loading':
-      return {
-        ...state,
-        error: null,
-        isLoading: true,
-        reservationError: null,
-      }
-    case 'saved':
-      return {
-        ...state,
-        error: null,
-        isLoading: false,
-        product: action.product,
-      }
-    case 'success':
-      return {
-        error: null,
-        isLoading: false,
-        product: action.product,
-        reservation: action.reservation,
-        reservationError: action.reservationError,
       }
   }
 }

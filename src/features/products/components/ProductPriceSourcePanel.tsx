@@ -2,6 +2,7 @@ import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
   Box,
+  Button,
   Group,
   SegmentedControl,
   Skeleton,
@@ -9,9 +10,9 @@ import {
   Text,
 } from '@mantine/core'
 import { Building2, CircleAlert, Warehouse } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { getProductSourcePriceComparison } from '../api/productsApi'
+import { useProductSourcePrices } from '../useProductSourcePrices'
 import {
   buildEffectivePricingOrder,
   compareSourcePricingNames,
@@ -20,22 +21,11 @@ import {
 import type {
   CalculatedProductPrice,
   ProductSourcePrice,
-  ProductSourcePriceComparison,
   ProductSourcePriceSet,
 } from '../types'
 import { formatAmount, formatPrice } from '../utils'
 
 type PriceViewMode = 'amg' | 'fenix'
-
-type SourcePriceCacheEntry = {
-  expiresAt: number
-  value: ProductSourcePriceComparison
-}
-
-const SOURCE_PRICE_CACHE_TTL_MS = 2 * 60 * 1000
-const SOURCE_PRICE_CACHE_LIMIT = 100
-const sourcePriceCache = new Map<string, SourcePriceCacheEntry>()
-
 
 export function ProductPriceSourcePanel({
   effectivePrices,
@@ -48,50 +38,7 @@ export function ProductPriceSourcePanel({
 }) {
   const { t } = useI18n()
   const [viewMode, setViewMode] = useState<PriceViewMode>('amg')
-  const [comparison, setComparison] = useState<ProductSourcePriceComparison | null>(null)
-  const [failedProductNetId, setFailedProductNetId] = useState<string | null>(null)
-  const cacheKey = `${productNetId}:${refreshKey}`
-  const shouldLoadSources = Boolean(productNetId)
-  const currentComparison = comparison?.ProductNetId === productNetId
-    ? comparison
-    : productNetId
-      ? getCachedSourcePrices(cacheKey)
-      : null
-  const hasError = failedProductNetId === productNetId
-  const isLoading = shouldLoadSources && !currentComparison && !hasError
-
-  useEffect(() => {
-    if (!shouldLoadSources || !productNetId) {
-      return
-    }
-
-    const cached = getCachedSourcePrices(cacheKey)
-
-    if (cached) {
-      return
-    }
-
-    const controller = new AbortController()
-
-    void getProductSourcePriceComparison(productNetId, controller.signal)
-      .then((result) => {
-        if (!result) {
-          setFailedProductNetId(productNetId)
-          return
-        }
-
-        cacheSourcePrices(cacheKey, result)
-        setComparison({ ...result })
-        setFailedProductNetId(null)
-      })
-      .catch((error: unknown) => {
-        if (!isAbortError(error)) {
-          setFailedProductNetId(productNetId)
-        }
-      })
-
-    return () => controller.abort()
-  }, [cacheKey, productNetId, shouldLoadSources])
+  const { comparison: currentComparison, error, isLoading, retry } = useProductSourcePrices(productNetId, refreshKey)
 
   // Keep the established GBA price-type order while showing only source data.
   const effectiveOrder = useMemo(() => buildEffectivePricingOrder(effectivePrices), [effectivePrices])
@@ -117,7 +64,7 @@ export function ProductPriceSourcePanel({
       </Group>
 
       <div className="product-price-source-pane">
-        {isLoading && !currentComparison ? (
+        {isLoading && !currentComparison && !error ? (
           <Stack gap={10} py={4}>
             {Array.from({ length: 8 }, (_, index) => (
               <Group gap="sm" key={index} wrap="nowrap">
@@ -127,9 +74,14 @@ export function ProductPriceSourcePanel({
               </Group>
             ))}
           </Stack>
-        ) : hasError ? (
-          <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
-            {t('Не вдалося завантажити ціни з джерел')}
+        ) : error ? (
+          <Alert color="red" icon={<CircleAlert size={16} />} variant="light" role="alert">
+            <Stack gap="xs">
+              <Text size="sm">{error}</Text>
+              <Button size="xs" variant="light" loading={isLoading} onClick={() => retry()}>
+                {t('Повторити завантаження цін')}
+              </Button>
+            </Stack>
           </Alert>
         ) : (
           <SourcePricesView
@@ -236,40 +188,6 @@ function SourceState({ color, text }: { color: string; text: string }) {
       {text}
     </Alert>
   )
-}
-
-function getCachedSourcePrices(productNetId: string): ProductSourcePriceComparison | null {
-  const cached = sourcePriceCache.get(productNetId)
-
-  if (!cached) {
-    return null
-  }
-
-  if (cached.expiresAt <= Date.now()) {
-    sourcePriceCache.delete(productNetId)
-    return null
-  }
-
-  return cached.value
-}
-
-function cacheSourcePrices(productNetId: string, value: ProductSourcePriceComparison) {
-  if (sourcePriceCache.size >= SOURCE_PRICE_CACHE_LIMIT) {
-    const oldestKey = sourcePriceCache.keys().next().value
-
-    if (oldestKey) {
-      sourcePriceCache.delete(oldestKey)
-    }
-  }
-
-  sourcePriceCache.set(productNetId, {
-    expiresAt: Date.now() + SOURCE_PRICE_CACHE_TTL_MS,
-    value,
-  })
-}
-
-function isAbortError(error: unknown): boolean {
-  return error instanceof DOMException && error.name === 'AbortError'
 }
 
 function hasSourcePriceValue(price?: ProductSourcePrice): boolean {

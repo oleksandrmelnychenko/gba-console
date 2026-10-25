@@ -213,7 +213,7 @@ describe('ProductsPage', () => {
       </MemoryRouter>,
     )
 
-    await screen.findByText('Тестовий товар')
+    await screen.findAllByText('Тестовий товар')
     expect(screen.queryByRole('button', { name: 'AI-аналітика товару' })).toBeNull()
   })
 })

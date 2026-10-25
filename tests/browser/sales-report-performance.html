@@ -27,6 +27,7 @@
     import { NewSaleClientStep } from '/src/features/sales-ukraine/components/new-sale-wizard/NewSaleClientStep.tsx'
     import { NewSaleProductsStep } from '/src/features/sales-ukraine/components/new-sale-wizard/NewSaleProductsStep.tsx'
     import { dispatchWizardKey, initializeWizardKeyboard } from '/src/features/sales-ukraine/components/new-sale-wizard/wizardKeyboard.ts'
+    import { ProductsPage } from '/src/features/products/pages/ProductsPage.tsx'
     import { ProductDetailPage } from '/src/features/products/pages/ProductDetailPage.tsx'
     const items = Array.from({length:100}, (_,i) => ({NetUid:`item-${i}`,Qty:1,TotalAmount:10,TotalAmountLocal:420,TotalAmountEurToUah:420,
       Product:{NetUid:`product-${i}`,VendorCode:`CODE-${i}`,Name:`Товар ${i}`,CurrentPrice:10}}))
@@ -43,6 +44,7 @@
     window.performanceFixture.requests = []
     window.performanceFixture.finishReserves = () => {}
     window.performanceFixture.productReads=[]
+    window.performanceFixture.sourcePriceReads=[]
     window.performanceFixture.descriptionWrites=[]
     window.performanceFixture.finishWizardReserves = () => {}
     window.performanceFixture.finishSupply = () => {}
@@ -77,6 +79,14 @@
     window.fetch = (input,options={}) => {
       const url = new URL(typeof input==='string'?input:input.url,location.href)
       window.performanceFixture.requests.push(url.pathname+url.search)
+      if(url.pathname.endsWith('/products/pricings/sources')) return new Promise((resolve,reject)=>{
+        const id=url.searchParams.get('netId')
+        const read={aborted:false,finish:()=>resolve(response({ProductNetId:id,Amg:{IsLinked:true,IsAvailable:true,Prices:[{PricingName:'ЦР',PriceEur:42.75}]},Fenix:{IsLinked:true,IsAvailable:true,Prices:[{PricingName:'ЦР',PriceEur:43.5}]}})),fail:()=>resolve(new Response('{}',{status:503}))}
+        window.performanceFixture.sourcePriceReads.push(read)
+        options.signal?.addEventListener('abort',()=>{read.aborted=true;reject(new DOMException('Aborted','AbortError'))},{once:true})
+      })
+      if(url.pathname.endsWith('/products/assortment/siblings')) return Promise.resolve(response({Cards:[]}))
+      if(url.pathname.endsWith('/products/assortment/siblings/counts')) return Promise.resolve(response([]))
       if(url.pathname.endsWith('/products/assortment/update')&&window.performanceFixture.allowDescriptionSave) {
         const product=JSON.parse(options.body)
         return new Promise(resolve=>window.performanceFixture.descriptionWrites.push({product,
@@ -219,6 +229,7 @@
           h('button',{onClick:()=>setView('report')},'Звіт'),
           h('button',{onClick:()=>setView('sales')},'Реєстр продажів'),
           h('button',{onClick:()=>setView('product')},'Картка товару'),
+          h('button',{onClick:()=>setView('assortment')},'Картка асортименту'),
           h('button',{onClick:()=>setView('recommendations')},'Рекомендації клієнта'),
           h('button',{onClick:()=>setView('crosssell')},'Крос-продажі'),
           h('button',{onClick:()=>{initializeWizardKeyboard(2);setView('delivery')}},'Доставка'),
@@ -231,8 +242,8 @@
           h('output',null,revision)),
         view==='cart' ? h(Profiler,{id:'cart',onRender},h(WizardCartCards,{items:cart,busy:false,localCurrencyCode:'UAH',useEurToUah:false,onRowClick}))
           : view==='report' ? h(Profiler,{id:'report',onRender},h(ReportInlinePreview,{preview}))
-          : h(AuthContext.Provider,{value:auth},h(MemoryRouter,{initialEntries:['/products/product-1']},h(Profiler,{id:view,onRender},
-            view==='client-picker'?h(ClientPickerFixture):view==='split-editor'?h(SplitEditorFixture):view==='delivery'?h(DeliveryFixture,{cart}):view==='recommendations'?h(RecommendationsPanel,{client:{NetUid:'client-1'},productNetId:'panel-seed'}):view==='crosssell'?h(CrossSellFixture):view==='sales'?h(SalesUkrainePage):view==='wizard'?h(NewSaleProductsStep,{agreementNetId:'agreement-1',clientNetId:'client-1',client:null,sale:cartSale(cart),onCartChanged:()=>{}}):h(Routes,null,h(Route,{path:'/products/:netId',element:h(ProductCardFixture)}))))))
+          : h(AuthContext.Provider,{value:auth},h(MemoryRouter,{key:view==='assortment'?'assortment':'default',initialEntries:[view==='assortment'?'/products?netId=product-1':'/products/product-1']},h(Profiler,{id:view,onRender},
+            view==='assortment'?h(ProductsPage):view==='client-picker'?h(ClientPickerFixture):view==='split-editor'?h(SplitEditorFixture):view==='delivery'?h(DeliveryFixture,{cart}):view==='recommendations'?h(RecommendationsPanel,{client:{NetUid:'client-1'},productNetId:'panel-seed'}):view==='crosssell'?h(CrossSellFixture):view==='sales'?h(SalesUkrainePage):view==='wizard'?h(NewSaleProductsStep,{agreementNetId:'agreement-1',clientNetId:'client-1',client:null,sale:cartSale(cart),onCartChanged:()=>{}}):h(Routes,null,h(Route,{path:'/products/:netId',element:h(ProductCardFixture)}))))))
     }
     createRoot(document.getElementById('root')).render(h(MantineProvider,null,h(I18nProvider,null,h(Fixture))))
   </script>

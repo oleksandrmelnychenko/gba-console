@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { theme } from '../../../shared/theme/theme'
@@ -90,6 +90,38 @@ describe('ProductPriceSourcePanel', () => {
     expect(getProductSourcePriceComparison).toHaveBeenCalledTimes(2)
   })
 
+  it('retries a failed source read in place without duplicate requests', async () => {
+    getProductSourcePriceComparison.mockRejectedValueOnce(new Error('Source offline'))
+    const view = renderPanel('source-retry-ui')
+    await view.findByText('Source offline')
+    let finish!: (value: unknown) => void
+    getProductSourcePriceComparison.mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+    const retry = view.getByRole('button', { name: 'Повторити завантаження цін' })
+    fireEvent.click(retry)
+    fireEvent.click(retry)
+    expect(getProductSourcePriceComparison).toHaveBeenCalledTimes(2)
+    expect(view.getByRole('alert').textContent).toContain('Source offline')
+    await act(async () => finish({ ProductNetId: 'source-retry-ui', Amg: { IsAvailable: true, IsLinked: true, Prices: [{ PriceEur: 18, PricingName: 'ЦР' }] } }))
+    expect(view.getByText('18,00')).toBeTruthy()
+    expect(view.queryByRole('alert')).toBeNull()
+  })
+
+  it('refreshes in place while retaining the selected source tab', async () => {
+    const id = 'source-tab-refresh'
+    const comparison = { ProductNetId: id, Amg: { IsAvailable: true, IsLinked: true, Prices: [{ PriceEur: 1, PricingName: 'ЦР' }] },
+      Fenix: { IsAvailable: true, IsLinked: true, Prices: [{ PriceEur: 2, PricingName: 'ЦР' }] } }
+    getProductSourcePriceComparison.mockResolvedValueOnce(comparison)
+    const view = renderPanel(id)
+    await view.findByText('1,00')
+    fireEvent.click(view.getByRole('radio', { name: 'Контех' }))
+    expect(view.getByText('2,00')).toBeTruthy()
+    getProductSourcePriceComparison.mockResolvedValueOnce({ ...comparison, Fenix: { ...comparison.Fenix, Prices: [{ PriceEur: 3, PricingName: 'ЦР' }] } })
+    view.rerender(panel(id, 1))
+    await view.findByText('3,00')
+    expect((view.getByRole('radio', { name: 'Контех' }) as HTMLInputElement).checked).toBe(true)
+    expect(getProductSourcePriceComparison).toHaveBeenCalledTimes(2)
+  })
+
   it('omits sync timestamps for both price sources', async () => {
     getProductSourcePriceComparison.mockResolvedValue({
       Amg: {
@@ -168,7 +200,11 @@ describe('ProductPriceSourcePanel', () => {
 })
 
 function renderPanel(productNetId: string, refreshKey = 0) {
-  return render(
+  return render(panel(productNetId, refreshKey))
+}
+
+function panel(productNetId: string, refreshKey = 0) {
+  return (
     <MantineProvider theme={theme}>
       <I18nProvider>
         <ProductPriceSourcePanel
@@ -181,6 +217,6 @@ function renderPanel(productNetId: string, refreshKey = 0) {
           refreshKey={refreshKey}
         />
       </I18nProvider>
-    </MantineProvider>,
+    </MantineProvider>
   )
 }
