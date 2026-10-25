@@ -9,6 +9,7 @@ import { WizardClientAgreementsStrip } from './WizardClientAgreementsStrip'
 import { WizardClientCarousel } from './WizardClientCarousel'
 import { WizardClientHeroHeader } from './WizardClientHeroHeader'
 import { WizardClientRegistry } from './WizardClientRegistry'
+import { WizardClientLoadFeedback } from './WizardClientLoadFeedback'
 import { isWizardSaleClientSelectable } from './wizardClientStepModel'
 import type { WizardSalesPermissionFlow } from './wizardSaleHeaderApi'
 import { useWizardClientCarousel } from './useWizardClientCarousel'
@@ -75,8 +76,9 @@ export function NewSaleClientStep({
     handleDateFromChange, handleDateToChange, replaceRegistryRow, refreshRegistryRow,
   } = useWizardClientSalesRegister()
   const {
-    selectedClient, groupedDebts, identityAttention, agreements, agreementsLoading, selectedAgreementKey, selectedAgreement,
+    selectedClient, groupedDebts, identityAttention, agreements, agreementsLoading, agreementsError, debtsLoading, debtsError, selectedAgreementKey, selectedAgreement,
     confirmClient, unselectClient, selectAgreement, selectNextAgreement, selectPreviousAgreement, refreshGroupedDebts,
+    retryAgreements, retryGroupedDebts,
   } = useWizardClientSelection({
     clientNetId, initialClient, permissionFlow, hasRegistryItems: registryItems.length > 0,
     onClientChange, onClientResolved, onAgreementChange, resetRegister, fetchRegister,
@@ -149,11 +151,21 @@ export function NewSaleClientStep({
               <Box className="new-sale-client-agreements-zone">
                 <WizardClientAgreementsStrip
                   isLoading={agreementsLoading}
+                  error={agreementsError}
+                  onRetry={retryAgreements}
                   agreements={agreements}
                   selectedKey={selectedAgreementKey}
                   onSelect={handleSelectAgreement}
                 />
               </Box>
+              <WizardClientLoadFeedback
+                error={debtsError} loading={debtsLoading} onRetry={retryGroupedDebts}
+                errorText={groupedDebts.length > 0
+                  ? 'Не вдалося оновити борги. Показано попередні дані.'
+                  : 'Не вдалося завантажити борги. Відсутність боргу не підтверджено.'}
+                loadingText="Завантаження боргів"
+                retryLabel="Повторити завантаження боргів"
+              />
               <WizardClientRegistry
                 canEdit={canEdit}
                 canOpenDeliveryDetails={canOpenDeliveryDetails}

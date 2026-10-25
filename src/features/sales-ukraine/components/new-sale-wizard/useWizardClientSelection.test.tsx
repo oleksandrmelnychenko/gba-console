@@ -20,8 +20,9 @@ function options() {
 }
 function deferred<T>() {
   let resolve!: (value: T) => void
-  const promise = new Promise<T>((next) => { resolve = next })
-  return { promise, resolve }
+  let reject!: (reason: unknown) => void
+  const promise = new Promise<T>((next, fail) => { resolve = next; reject = fail })
+  return { promise, resolve, reject }
 }
 beforeEach(() => {
   vi.useFakeTimers()
@@ -235,6 +236,95 @@ describe('wizard client selection', () => {
     await act(async () => { fresh.resolve([{ Debt: { Total: 20 } }]); await refreshed })
     await act(async () => { old.resolve([{ Debt: { Total: 999 } }]) })
     expect(result.current.groupedDebts).toEqual([{ Debt: { Total: 20 } }])
+  })
+
+  it('retries failed agreements while debts are still pending without restarting either reader', async () => {
+    const debt = deferred<ClientInDebt[]>()
+    const retry = deferred<ClientAgreement[]>()
+    mocks.debts.mockReturnValueOnce(debt.promise)
+    mocks.agreements.mockRejectedValueOnce(new Error('offline')).mockReturnValueOnce(retry.promise)
+    const props = options()
+    const { result } = renderHook(useWizardClientSelection, { initialProps: props })
+    await act(async () => result.current.confirmClient(client(1)))
+    expect(result.current.agreementsError).toBe(true)
+    expect(result.current.debtsLoading).toBe(true)
+    let one!: Promise<boolean>
+    let two!: Promise<boolean>
+    act(() => { result.current.confirmClient(client(1)); one = result.current.retryAgreements(); two = result.current.retryAgreements() })
+    expect(one).toBe(two)
+    expect(mocks.agreements).toHaveBeenCalledTimes(2)
+    expect(mocks.debts).toHaveBeenCalledOnce()
+    expect(props.fetchRegister).toHaveBeenCalledOnce()
+    await act(async () => { retry.resolve([active]); await one })
+    expect(result.current.agreementsError).toBe(false)
+    expect(result.current.selectedAgreement).toBe(active)
+    expect(result.current.debtsLoading).toBe(true)
+    await act(async () => debt.resolve([]))
+    expect(result.current.debtsLoading).toBe(false)
+  })
+
+  it('preserves known debt on refresh failure and retries independently of agreements and register', async () => {
+    const known = [{ Debt: { Total: 45 } }]
+    mocks.debts.mockResolvedValueOnce(known).mockRejectedValueOnce(new Error('offline'))
+    const props = options()
+    const { result } = renderHook(useWizardClientSelection, { initialProps: props })
+    await act(async () => result.current.confirmClient(client(1)))
+    act(() => result.current.selectAgreement(first))
+    await act(async () => { await result.current.refreshGroupedDebts({ fresh: true }) })
+    expect(result.current.groupedDebts).toBe(known)
+    expect(result.current.debtsError).toBe(true)
+    const pending = deferred<ClientInDebt[]>()
+    mocks.debts.mockReturnValueOnce(pending.promise)
+    let one!: Promise<boolean>
+    act(() => { one = result.current.retryGroupedDebts(); expect(result.current.retryGroupedDebts()).toBe(one) })
+    expect(mocks.debts.mock.calls[2][2]).toEqual({ fresh: true })
+    expect(result.current.debtsLoading).toBe(true)
+    expect(result.current.debtsError).toBe(true)
+    await act(async () => { pending.resolve([{ Debt: { Total: 20 } }]); await one })
+    expect(result.current.debtsError).toBe(false)
+    expect(result.current.groupedDebts[0].Debt?.Total).toBe(20)
+    expect(result.current.selectedAgreement).toBe(first)
+    expect(mocks.agreements).toHaveBeenCalledOnce()
+    expect(props.fetchRegister).toHaveBeenCalledOnce()
+  })
+
+  it('retires pending retries across A to B to A and ignores late failures', async () => {
+    mocks.agreements.mockRejectedValueOnce(new Error('offline'))
+    mocks.debts.mockRejectedValueOnce(new Error('offline'))
+    const { result } = renderHook(useWizardClientSelection, { initialProps: options() })
+    await act(async () => result.current.confirmClient(client(1)))
+    const agreements = deferred<ClientAgreement[]>()
+    const debts = deferred<ClientInDebt[]>()
+    mocks.agreements.mockReturnValueOnce(agreements.promise)
+    mocks.debts.mockReturnValueOnce(debts.promise)
+    act(() => { void result.current.retryAgreements(); void result.current.retryGroupedDebts() })
+    const signals = [mocks.agreements.mock.calls[1][1], mocks.debts.mock.calls[1][1]] as AbortSignal[]
+    act(() => result.current.confirmClient(client(2), { debounceDetails: true }))
+    expect(signals.every(signal => signal.aborted)).toBe(true)
+    expect(result.current.agreementsError).toBe(false)
+    expect(result.current.debtsError).toBe(false)
+    await act(async () => result.current.confirmClient(client(1)))
+    await act(async () => { agreements.reject(new Error('late')); debts.reject(new Error('late')) })
+    expect(result.current.selectedAgreement).toBe(active)
+    expect(result.current.agreementsError).toBe(false)
+    expect(result.current.debtsError).toBe(false)
+    expect(result.current.debtsLoading).toBe(false)
+    expect(mocks.agreements).toHaveBeenCalledTimes(3)
+    expect(mocks.debts).toHaveBeenCalledTimes(3)
+  })
+
+  it('does not let a replaced debt read mark a successful fresh result as failed', async () => {
+    const old = deferred<ClientInDebt[]>()
+    mocks.debts.mockReturnValueOnce(old.promise).mockResolvedValueOnce([{ Debt: { Total: 20 } }])
+    const { result } = renderHook(useWizardClientSelection, { initialProps: options() })
+    await act(async () => result.current.confirmClient(client(1)))
+    await act(async () => { await result.current.refreshGroupedDebts({ fresh: true }) })
+    await act(async () => old.reject(new Error('late abort')))
+    await act(async () => result.current.confirmClient(client(1)))
+    expect(result.current.debtsError).toBe(false)
+    expect(result.current.debtsLoading).toBe(false)
+    expect(result.current.groupedDebts[0].Debt?.Total).toBe(20)
+    expect(mocks.debts).toHaveBeenCalledTimes(2)
   })
 
 })

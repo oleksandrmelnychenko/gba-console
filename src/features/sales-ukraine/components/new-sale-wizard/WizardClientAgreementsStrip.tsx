@@ -3,6 +3,7 @@ import { memo, useLayoutEffect, useRef } from 'react'
 import { TableChip } from '../../../../shared/ui/TableChip'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { ClientAgreement } from '../../../clients/types'
+import { WizardClientLoadFeedback } from './WizardClientLoadFeedback'
 import {
   getWizardAgreementDebtPresentation,
   getWizardAgreementKey,
@@ -16,11 +17,15 @@ const agreementAmountFormatter = new Intl.NumberFormat('uk-UA', {
 export const WizardClientAgreementsStrip = memo(function WizardClientAgreementsStrip({
   agreements,
   isLoading = false,
+  error = false,
+  onRetry,
   selectedKey,
   onSelect,
 }: {
   agreements: ClientAgreement[]
   isLoading?: boolean
+  error?: boolean
+  onRetry?: () => Promise<boolean>
   selectedKey: string
   onSelect: (agreement: ClientAgreement) => void
 }) {
@@ -39,6 +44,13 @@ export const WizardClientAgreementsStrip = memo(function WizardClientAgreementsS
     observer.observe(strip)
     return () => observer.disconnect()
   }, [isLoading, agreements])
+
+  if (error && onRetry) return <WizardClientLoadFeedback
+    error loading={isLoading} onRetry={onRetry}
+    errorText="Не вдалося завантажити договори."
+    loadingText="Завантаження договорів"
+    retryLabel="Повторити завантаження договорів"
+  />
 
   return (
     <Box className="new-sale-agreements-strip" ref={stripRef} aria-busy={isLoading}>

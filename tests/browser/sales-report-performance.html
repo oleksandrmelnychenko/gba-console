@@ -55,9 +55,9 @@
     window.performanceFixture.clientDetailReads=[]
     window.performanceFixture.finishClientDetails=()=>window.performanceFixture.clientDetailReads.forEach(read=>read.finish())
     const holdClientDetail=(url,options,data)=>new Promise((resolve,reject)=>{
-      const read={url:url.pathname+url.search,aborted:false,finish:()=>resolve(response(data))}
+      const read={url:url.pathname+url.search,aborted:false,finish:()=>resolve(response(data)),fail:()=>resolve(new Response('{}',{status:503}))}
       window.performanceFixture.clientDetailReads.push(read)
-      options.signal?.addEventListener('abort',()=>{read.aborted=true;reject(new DOMException('Aborted','AbortError'))},{once:true})
+      options.signal?.addEventListener('abort',()=>{read.aborted=true;if(!window.performanceFixture.ignoreClientDetailAbort) reject(new DOMException('Aborted','AbortError'))},{once:true})
     })
     window.performanceFixture.savedPickerSales={}
     window.performanceFixture.shiftWrites=[]
@@ -66,6 +66,7 @@
     window.performanceFixture.registryReads=[]
     const holdRegistryRead=(url,options,data)=>new Promise((resolve,reject)=>{
       const read={url:url.pathname+url.search,aborted:false,finish:()=>resolve(response(data))}
+      read.fail=()=>resolve(new Response('{}',{status:503}))
       window.performanceFixture.registryReads.push(read)
       options.signal?.addEventListener('abort',()=>{read.aborted=true;reject(new DOMException('Aborted','AbortError'))},{once:true})
     })
@@ -94,7 +95,10 @@
       const pickerNetId=url.searchParams.get('netId')||url.searchParams.get('clientNetId')||''
       if(pickerNetId.startsWith('picker-client-')) {
         const id=Number(pickerNetId.split('-').at(-1))
-        if(url.pathname.endsWith('/agreements/client/all')) return Promise.resolve(response([{NetUid:`picker-agreement-${id}`,ClientId:id,Client:{Id:id},Agreement:{IsActive:true,PricingId:1,Name:`Договір клієнта ${id}`,Currency:{Code:'EUR'}}}]))
+        if(url.pathname.endsWith('/agreements/client/all')) {
+          const data=[{NetUid:`picker-agreement-${id}`,ClientId:id,Client:{Id:id},Agreement:{IsActive:true,PricingId:1,Name:`Договір клієнта ${id}`,Currency:{Code:'EUR'}}}]
+          return window.performanceFixture.holdClientAgreements ? holdClientDetail(url,options,data) : Promise.resolve(response(data))
+        }
         if(url.pathname.endsWith('/clients/get/orders/items')) return new Promise((resolve,reject)=>{
           window.performanceFixture.finishOrderedProducts=()=>resolve(response([{ProductVendorCode:'ORDER-001',ProductName:`Замовлення клієнта ${id}`,Qty:3}]))
           options.signal?.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true})

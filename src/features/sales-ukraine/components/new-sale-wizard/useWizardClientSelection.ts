@@ -13,17 +13,22 @@ type Selection = {
   agreements: ClientAgreement[]
   groupedDebts: ClientInDebt[]
   agreementsLoading: boolean
+  agreementsError: boolean
+  debtsLoading: boolean
+  debtsError: boolean
   selectedAgreementKey: string
 }
-const EMPTY_SELECTION: Selection = { identityAttention: null, selectedClient: null, agreements: [], groupedDebts: [], agreementsLoading: false, selectedAgreementKey: '' }
+const EMPTY_SELECTION: Selection = { identityAttention: null, selectedClient: null, agreements: [], groupedDebts: [], agreementsLoading: false, agreementsError: false, debtsLoading: false, debtsError: false, selectedAgreementKey: '' }
 type SelectionSession = {
   client: Client
   controller: AbortController
-  phase: 'waiting' | 'loading' | 'ready' | 'failed'
+  phase: 'waiting' | 'started'
+  agreementsPromise?: Promise<boolean>
   debtPromise?: Promise<boolean>
   debtController?: AbortController
   agreementsLoaded?: boolean
   debtsLoaded?: boolean
+  debtsNeedFresh?: boolean
   supplementaryStarted?: boolean
 }
 type Options = {
@@ -75,35 +80,70 @@ export function useWizardClientSelection(options: Options) {
     const netId = session.client.NetUid
     if (!netId || sessionRef.current !== session) return Promise.resolve(false)
     if (session.debtPromise && !options?.fresh) return session.debtPromise
+    if (options?.fresh) session.debtsNeedFresh = true
     session.debtController?.abort()
     const controller = new AbortController()
     session.debtController = controller
+    publish({ debtsLoading: true })
     const isCurrent = () => sessionRef.current === session && session.debtController === controller && !controller.signal.aborted
-    const request = options?.fresh
-      ? getWizardClientGroupedDebts(netId, controller.signal, options)
+    // Preserve post-save freshness across failed retries, while still sharing
+    // an already pending retry above.
+    const request = session.debtsNeedFresh
+      ? getWizardClientGroupedDebts(netId, controller.signal, { fresh: true })
       : getWizardClientGroupedDebts(netId, controller.signal)
     session.debtPromise = request.then((debts) => {
       if (!isCurrent()) return false
       session.debtsLoaded = true
-      publish({ groupedDebts: debts })
+      session.debtsNeedFresh = false
+      publish({ groupedDebts: debts, debtsError: false })
       return true
     }).catch(() => {
       if (isCurrent()) {
         session.debtsLoaded = false
-        publish({ groupedDebts: [] })
+        // Keep the last known balance; a failed read does not mean no debt.
+        publish({ debtsError: true })
       }
       return false
     }).finally(() => {
-      if (session.debtController === controller) session.debtPromise = undefined
+      if (session.debtController === controller) {
+        session.debtPromise = undefined
+        if (isCurrent()) publish({ debtsLoading: false })
+      }
     })
     return session.debtPromise
   }, [publish])
 
+  const loadAgreements = useCallback((session: SelectionSession): Promise<boolean> => {
+    const netId = session.client.NetUid
+    if (!netId || sessionRef.current !== session) return Promise.resolve(false)
+    if (session.agreementsPromise) return session.agreementsPromise
+    if (session.agreementsLoaded) return Promise.resolve(true)
+    publish({ agreementsLoading: true })
+    session.agreementsPromise = getWizardClientAgreements(netId, session.controller.signal).then((list) => {
+      if (sessionRef.current !== session) return false
+      session.agreementsLoaded = true
+      const active = list.find((item) => item.Agreement?.IsActive) ?? list[0]
+      publish({ agreements: list, agreementsError: false, selectedAgreementKey: active ? getWizardAgreementKey(active) : '' })
+      latestRef.current.onAgreementChange(active?.NetUid ?? null, active ? toSalesAgreement(active) : null)
+      return true
+    }).catch(() => {
+      if (sessionRef.current === session) {
+        publish({ agreementsError: true, selectedAgreementKey: '' })
+        latestRef.current.onAgreementChange(null, null)
+      }
+      return false
+    }).finally(() => {
+      session.agreementsPromise = undefined
+      if (sessionRef.current === session) publish({ agreementsLoading: false })
+    })
+    return session.agreementsPromise
+  }, [publish])
+
   const loadDetails = useCallback((session: SelectionSession) => {
     if (sessionRef.current !== session) return
+    session.phase = 'started'
     const netId = session.client.NetUid
-    if (!netId) { session.phase = 'ready'; return }
-    session.phase = 'loading'
+    if (!netId) return
     if (!session.supplementaryStarted) {
       session.supplementaryStarted = true
       void latestRef.current.fetchRegister({ clientNetId: netId })
@@ -114,26 +154,19 @@ export function useWizardClientSelection(options: Options) {
         if (sessionRef.current === session) publish({ identityAttention: null })
       })
     }
-    const debts = session.debtsLoaded ? Promise.resolve(true) : loadDebts(session)
-    if (!session.agreementsLoaded && !selectionRef.current.agreementsLoading) publish({ agreementsLoading: true })
-    const agreements = session.agreementsLoaded ? Promise.resolve(true) : getWizardClientAgreements(netId, session.controller.signal).then((list) => {
-      if (sessionRef.current !== session) return false
-      session.agreementsLoaded = true
-      const active = list.find((item) => item.Agreement?.IsActive) ?? list[0]
-      publish({ agreements: list, agreementsLoading: false, selectedAgreementKey: active ? getWizardAgreementKey(active) : '' })
-      latestRef.current.onAgreementChange(active?.NetUid ?? null, active ? toSalesAgreement(active) : null)
-      return true
-    }).catch(() => {
-      if (sessionRef.current === session) {
-        publish({ agreements: [], agreementsLoading: false, selectedAgreementKey: '' })
-        latestRef.current.onAgreementChange(null, null)
-      }
-      return false
-    })
-    void Promise.all([debts, agreements]).then((results) => {
-      if (sessionRef.current === session) session.phase = results.every(Boolean) ? 'ready' : 'failed'
-    })
-  }, [loadDebts, publish])
+    // Each resource can fail, settle and retry independently of the others.
+    if (!session.debtsLoaded) void loadDebts(session)
+    void loadAgreements(session)
+  }, [loadAgreements, loadDebts, publish])
+
+  const retryAgreements = useCallback(() => {
+    const session = sessionRef.current
+    return session && selectionRef.current.agreementsError ? loadAgreements(session) : Promise.resolve(false)
+  }, [loadAgreements])
+  const retryGroupedDebts = useCallback(() => {
+    const session = sessionRef.current
+    return session && selectionRef.current.debtsError ? loadDebts(session) : Promise.resolve(false)
+  }, [loadDebts])
 
   const clearSelection = useCallback(() => {
     retireSelection()
@@ -158,7 +191,7 @@ export function useWizardClientSelection(options: Options) {
     if (current && clientKey(current.client) === clientKey(client)) {
       // Enter while previewing flushes the existing debounce. Repeated clicks
       // while loading/ready retain the chosen agreement and in-flight requests.
-      if (current.phase === 'failed') loadDetails(current)
+      if (current.phase === 'started') loadDetails(current)
       if (current.phase === 'waiting' && !debounceDetails) {
         if (timerRef.current !== null) clearTimeout(timerRef.current)
         timerRef.current = null
@@ -168,9 +201,9 @@ export function useWizardClientSelection(options: Options) {
       return
     }
     retireSelection()
-    const session: SelectionSession = { client, controller: new AbortController(), phase: debounceDetails ? 'waiting' : 'loading' }
+    const session: SelectionSession = { client, controller: new AbortController(), phase: debounceDetails ? 'waiting' : 'started' }
     sessionRef.current = session
-    publish({ ...EMPTY_SELECTION, selectedClient: client, agreementsLoading: Boolean(client.NetUid) })
+    publish({ ...EMPTY_SELECTION, selectedClient: client, agreementsLoading: Boolean(client.NetUid), debtsLoading: Boolean(client.NetUid) })
     latestRef.current.onClientResolved?.(client)
     latestRef.current.onAgreementChange(null, null)
     latestRef.current.resetRegister(client.NetUid ?? '', true)
@@ -247,7 +280,7 @@ export function useWizardClientSelection(options: Options) {
 
   const selectedAgreement = selection.agreements.find((item) => getWizardAgreementKey(item) === selection.selectedAgreementKey) ?? null
   return { ...selection, selectedAgreement, confirmClient, unselectClient, selectAgreement,
-    selectNextAgreement, selectPreviousAgreement, refreshGroupedDebts }
+    selectNextAgreement, selectPreviousAgreement, refreshGroupedDebts, retryAgreements, retryGroupedDebts }
 }
 
 function clientKey(client: Client) { return client.NetUid || String(client.Id) }
