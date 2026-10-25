@@ -91,4 +91,19 @@ describe('client carousel controller', () => {
     expect(focus).toHaveBeenCalledOnce()
     input.remove()
   })
+
+  it('prefetches the next search page while three rows remain and preserves navigation when it arrives', () => {
+    const { result, options } = setup()
+    const page = Array.from({ length: 20 }, (_, index) => client(index + 1))
+    act(() => result.current.applySearchResults(page))
+    act(() => { for (let step = 0; step < 6; step += 1) result.current.move('down') })
+    expect(options.loadMore).not.toHaveBeenCalled()
+    act(() => result.current.move('down'))
+    expect(result.current.carousel.dataBottom).toHaveLength(3)
+    expect(options.loadMore).toHaveBeenCalledOnce()
+    act(() => result.current.appendSearchResults([client(21), client(22)]))
+    expect(result.current.carousel.selected?.Id).toBe(17)
+    expect(result.current.carousel.dataBottom.map(item => item.Id)).toEqual([18, 19, 20, 21, 22])
+  })
+
 })

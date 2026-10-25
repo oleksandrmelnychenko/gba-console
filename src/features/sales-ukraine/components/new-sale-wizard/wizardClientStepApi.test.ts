@@ -173,3 +173,16 @@ it('passes cancellation through to the sales register request', async () => {
   await getWizardSalesRegister({ clientNetId: 'client', from: '2026-10-01', to: '2026-10-24', type: 6, value: '' }, controller.signal)
   expect(apiRequestMock).toHaveBeenLastCalledWith('/sales/all/register', expect.objectContaining({ signal: controller.signal }))
 })
+
+
+it('forwards cancellation to all client-preview details', async () => {
+  apiRequestMock.mockReset().mockResolvedValue([])
+  const signal = new AbortController().signal
+  await Promise.all([
+    getWizardClientAgreements('client-1', signal),
+    getWizardClientGroupedDebts('client-1', signal),
+    getWizardClientIdentityAttention('client-1', signal),
+  ])
+  expect(apiRequestMock).toHaveBeenCalledTimes(3)
+  for (const [, options] of apiRequestMock.mock.calls) expect(options?.signal).toBe(signal)
+})

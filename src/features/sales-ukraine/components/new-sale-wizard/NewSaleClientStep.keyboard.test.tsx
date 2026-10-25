@@ -9,6 +9,7 @@ import type { Client } from '../../../clients/types'
 const apiMocks = vi.hoisted(() => ({
   getWizardClientAgreements: vi.fn(async () => []),
   getWizardClientGroupedDebts: vi.fn(async () => []),
+  getWizardClientIdentityAttention: vi.fn(async () => null),
   getWizardSalesRegister: vi.fn<(query: WizardSaleRegisterQuery, signal?: AbortSignal) => Promise<WizardSaleRegisterItem[]>>(async () => []),
   searchWizardClients: vi.fn<() => Promise<Client[]>>(async () => []),
 }))
@@ -20,6 +21,7 @@ vi.mock('./wizardClientStepApi', async (importOriginal) => {
     ...original,
     getWizardClientAgreements: apiMocks.getWizardClientAgreements,
     getWizardClientGroupedDebts: apiMocks.getWizardClientGroupedDebts,
+    getWizardClientIdentityAttention: apiMocks.getWizardClientIdentityAttention,
     getWizardSalesRegister: apiMocks.getWizardSalesRegister,
     searchWizardClients: apiMocks.searchWizardClients,
   }
@@ -131,8 +133,8 @@ describe('new-sale client keyboard navigation', () => {
     })
 
     await waitFor(() => expect(onClientChange).toHaveBeenCalledWith(client.NetUid), { timeout: 3_000 })
-    expect(apiMocks.getWizardClientAgreements).toHaveBeenCalledWith(client.NetUid)
-    expect(apiMocks.getWizardClientGroupedDebts).toHaveBeenCalledWith(client.NetUid)
+    expect(apiMocks.getWizardClientAgreements).toHaveBeenCalledWith(client.NetUid, expect.any(AbortSignal))
+    expect(apiMocks.getWizardClientGroupedDebts).toHaveBeenCalledWith(client.NetUid, expect.any(AbortSignal))
   })
 
   it('clears the previous selection immediately on typing and does not reconfirm it with Enter', async () => {

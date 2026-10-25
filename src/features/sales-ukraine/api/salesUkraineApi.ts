@@ -491,8 +491,9 @@ export async function addOrderItem(
   return result && typeof result === 'object' && !Array.isArray(result) ? (result as SalesUkraineOrderItem) : null
 }
 
-export async function getSaleClientAgreements(clientNetId: string): Promise<SalesUkraineClientAgreement[]> {
+export async function getSaleClientAgreements(clientNetId: string, signal?: AbortSignal): Promise<SalesUkraineClientAgreement[]> {
   const result = await apiRequest<unknown>('/agreements/client/all', {
+    ...(signal ? { signal } : {}),
     query: { netId: clientNetId },
   })
 

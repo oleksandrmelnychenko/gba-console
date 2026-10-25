@@ -69,7 +69,9 @@ export function useWizardClientCarousel(options: Options) {
       ? { dataBottom: [...previous, ...current.dataBottom], dataTop: current.dataTop.slice(0, -1), selected: item, showDetails: true }
       : { dataBottom: current.dataBottom.slice(1), dataTop: [...current.dataTop, ...previous], selected: item, showDetails: true }
     publish(next)
-    if (!next.dataBottom.length && canLoadMoreRef.current) void latestRef.current.loadMore()
+    // Start the next page while three rows remain, rather than stopping the drum at the boundary.
+    const approachingEnd = direction === 'down' && current.dataBottom.length > 3 && next.dataBottom.length <= 3
+    if ((approachingEnd || !next.dataBottom.length) && canLoadMoreRef.current) void latestRef.current.loadMore()
     // Structural folders expand only on Enter; preview must retire any
     // pending details request without replacing the drum with child rows.
     if (isWizardSaleClientSelectable(item)) latestRef.current.confirmClient(item, { debounceDetails: true })

@@ -75,7 +75,7 @@ export function NewSaleClientStep({
     handleDateFromChange, handleDateToChange, replaceRegistryRow, refreshRegistryRow,
   } = useWizardClientSalesRegister()
   const {
-    selectedClient, groupedDebts, agreements, agreementsLoading, selectedAgreementKey, selectedAgreement,
+    selectedClient, groupedDebts, identityAttention, agreements, agreementsLoading, selectedAgreementKey, selectedAgreement,
     confirmClient, unselectClient, selectAgreement, selectNextAgreement, selectPreviousAgreement, refreshGroupedDebts,
   } = useWizardClientSelection({
     clientNetId, initialClient, permissionFlow, hasRegistryItems: registryItems.length > 0,
@@ -114,6 +114,7 @@ export function NewSaleClientStep({
             client={headerClient}
             groupSize={focusedGroup ? getClientFolderChildren(focusedGroup).length : undefined}
             debts={groupedDebts}
+            identityAttention={identityAttention}
             headerClose={headerClose}
             headerTools={focusedGroup ? undefined : headerTools}
             permissionFlow={permissionFlow}

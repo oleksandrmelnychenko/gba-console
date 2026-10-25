@@ -1,7 +1,7 @@
 import { TableChip } from '../../../../shared/ui/TableChip'
 import { Box, Button, Group, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { Package } from 'lucide-react'
-import { useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { DataTable } from '../../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../../shared/ui/data-table/types'
@@ -71,7 +71,7 @@ const WIZARD_REGISTER_ITEMS_TABLE_LAYOUT: DataTableDefaultLayout = {
   density: 'normal',
 }
 
-export function WizardClientRegistry({
+export const WizardClientRegistry = memo(function WizardClientRegistry({
   canEdit,
   canOpenDeliveryDetails,
   canOpenDetails,
@@ -118,7 +118,7 @@ export function WizardClientRegistry({
 }) {
   const { t } = useI18n()
 
-  const visibleSales = items
+  const visibleSales = useMemo(() => items
     .reduce<SalesUkraineSale[]>((acc, item) => {
       if (item.Sale && getClientAgreementClientId(item.Sale) === selectedAgreementClientId) {
         acc.push(item.Sale)
@@ -126,7 +126,7 @@ export function WizardClientRegistry({
 
       return acc
     }, [])
-    .sort((a, b) => getTime(b.Created) - getTime(a.Created))
+    .sort((a, b) => getTime(b.Created) - getTime(a.Created)), [items, selectedAgreementClientId])
 
   const columns = useMemo<DataTableColumn<SalesUkraineSale>[]>(
     () => [
@@ -302,7 +302,7 @@ export function WizardClientRegistry({
       </Box>
     </Stack>
   )
-}
+})
 
 function WizardSaleDocumentCell({ sale }: { sale: SalesUkraineSale }) {
   return (

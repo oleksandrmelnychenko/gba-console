@@ -1,11 +1,11 @@
 import { Box } from '@mantine/core'
-import type { RefObject } from 'react'
+import { memo, type RefObject } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { Client } from '../../../clients/types'
 import type { WizardClientCarouselState } from './wizardClientStepModel'
 import { WizardClientMiniCard, WizardClientStack } from './WizardClientPickerItems'
 
-export function WizardClientCarousel({
+export const WizardClientCarousel = memo(function WizardClientCarousel({
   carousel,
   hasDebt,
   hideName,
@@ -56,4 +56,4 @@ export function WizardClientCarousel({
       </Box>
     </Box>
   )
-}
+})

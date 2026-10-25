@@ -1,5 +1,5 @@
 import { Box, Group, Text, Tooltip, UnstyledButton } from '@mantine/core'
-import { useLayoutEffect, useRef } from 'react'
+import { memo, useLayoutEffect, useRef } from 'react'
 import { TableChip } from '../../../../shared/ui/TableChip'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { ClientAgreement } from '../../../clients/types'
@@ -13,7 +13,7 @@ const agreementAmountFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 0,
 })
 
-export function WizardClientAgreementsStrip({
+export const WizardClientAgreementsStrip = memo(function WizardClientAgreementsStrip({
   agreements,
   isLoading = false,
   selectedKey,
@@ -64,7 +64,7 @@ export function WizardClientAgreementsStrip({
       ))}
     </Box>
   )
-}
+})
 
 function WizardAgreementCard({
   clientAgreement,

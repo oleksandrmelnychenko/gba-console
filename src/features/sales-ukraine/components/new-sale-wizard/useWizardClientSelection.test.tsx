@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Client, ClientAgreement, ClientInDebt } from '../../../clients/types'
 import { useWizardClientSelection } from './useWizardClientSelection'
 
-const mocks = vi.hoisted(() => ({ agreements: vi.fn(), debts: vi.fn(), header: vi.fn(), children: vi.fn(), keyboard: vi.fn() }))
-vi.mock('./wizardClientStepApi', () => ({ getWizardClientAgreements: mocks.agreements, getWizardClientGroupedDebts: mocks.debts }))
+const mocks = vi.hoisted(() => ({ agreements: vi.fn(), debts: vi.fn(), identity: vi.fn(), header: vi.fn(), children: vi.fn(), keyboard: vi.fn() }))
+vi.mock('./wizardClientStepApi', () => ({ getWizardClientAgreements: mocks.agreements, getWizardClientGroupedDebts: mocks.debts, getWizardClientIdentityAttention: mocks.identity }))
 vi.mock('./wizardSaleHeaderApi', () => ({ getWizardHeaderClient: mocks.header }))
 vi.mock('../../../clients/api/clientCabinetApi', () => ({ getClientSubClients: mocks.children }))
 vi.mock('./wizardKeyboard', () => ({ setWizardKeyboardState: mocks.keyboard }))
@@ -28,6 +28,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   mocks.agreements.mockReset().mockResolvedValue([first, active])
   mocks.debts.mockReset().mockResolvedValue([])
+  mocks.identity.mockReset().mockResolvedValue(null)
   mocks.header.mockReset().mockResolvedValue(null)
   mocks.children.mockReset().mockResolvedValue(null)
 })
@@ -41,7 +42,7 @@ describe('wizard client selection', () => {
     const props = options()
     const { result } = renderHook(useWizardClientSelection, { initialProps: props })
     await act(async () => result.current.confirmClient(client(1)))
-    expect(mocks.debts).toHaveBeenCalledWith('client-1')
+    expect(mocks.debts).toHaveBeenCalledWith('client-1', expect.any(AbortSignal))
     expect(props.fetchRegister).toHaveBeenCalledOnce()
     expect(result.current.selectedAgreement).toBe(active)
     act(() => { result.current.selectAgreement(first); result.current.confirmClient(client(1)) })
@@ -64,7 +65,7 @@ describe('wizard client selection', () => {
     expect(mocks.agreements).not.toHaveBeenCalled()
     await act(async () => result.current.confirmClient(client(2)))
     await tick()
-    expect(mocks.agreements).toHaveBeenCalledExactlyOnceWith('client-2')
+    expect(mocks.agreements).toHaveBeenCalledExactlyOnceWith('client-2', expect.any(AbortSignal))
     expect(props.onClientChange).toHaveBeenLastCalledWith('client-2')
   })
 
@@ -172,4 +173,36 @@ describe('wizard client selection', () => {
     await tick()
     expect(mocks.agreements).not.toHaveBeenCalled()
   })
+
+  it('debounces identity attention with the other preview details and flushes it on confirmation', async () => {
+    const { result } = renderHook(useWizardClientSelection, { initialProps: options() })
+    act(() => result.current.confirmClient(client(1), { debounceDetails: true }))
+    act(() => result.current.confirmClient(client(2), { debounceDetails: true }))
+    expect(mocks.identity).not.toHaveBeenCalled()
+    await tick()
+    expect(mocks.identity).toHaveBeenCalledExactlyOnceWith('client-2', expect.any(AbortSignal))
+    act(() => result.current.confirmClient(client(2)))
+    expect(mocks.identity).toHaveBeenCalledOnce()
+  })
+
+  it('aborts all retired detail reads and ignores late responses while keeping agreements independent', async () => {
+    const oldDebt = deferred<ClientInDebt[]>()
+    const oldIdentity = deferred<{ ClientNetUid: string }>()
+    mocks.debts.mockReturnValueOnce(oldDebt.promise)
+    mocks.identity.mockReturnValueOnce(oldIdentity.promise)
+    const { result, unmount } = renderHook(useWizardClientSelection, { initialProps: options() })
+    await act(async () => result.current.confirmClient(client(1)))
+    expect(result.current.selectedAgreement).toBe(active)
+    const signals = [mocks.agreements, mocks.debts, mocks.identity].map(mock => mock.mock.calls[0][1] as AbortSignal)
+    act(() => result.current.confirmClient(client(2), { debounceDetails: true }))
+    expect(signals.every(signal => signal?.aborted)).toBe(true)
+    await act(async () => { oldDebt.resolve([{ Debt: { Total: 999 } }]); oldIdentity.resolve({ ClientNetUid: 'client-1' }) })
+    expect(result.current.groupedDebts).toEqual([])
+    expect(result.current.identityAttention).toBeNull()
+    await tick()
+    const currentSignal = mocks.agreements.mock.calls[1][1] as AbortSignal
+    unmount()
+    expect(currentSignal.aborted).toBe(true)
+  })
+
 })

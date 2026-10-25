@@ -89,8 +89,9 @@ export function mapWizardSaleRegisterItems(items: WizardSaleRegisterItem[]): Wiz
   }, [])
 }
 
-export async function getWizardClientGroupedDebts(clientNetId: string): Promise<ClientInDebt[]> {
+export async function getWizardClientGroupedDebts(clientNetId: string, signal?: AbortSignal): Promise<ClientInDebt[]> {
   const result = await apiRequest<unknown>('/clients/get/debt/grouped', {
+    ...(signal ? { signal } : {}),
     query: { netId: clientNetId },
   })
 
@@ -99,12 +100,13 @@ export async function getWizardClientGroupedDebts(clientNetId: string): Promise<
 
 export async function getWizardClientIdentityAttention(
   clientNetId: string,
+  signal?: AbortSignal,
 ): Promise<ClientIdentityAttentionSummary | null> {
-  return getClientIdentityAttention(clientNetId)
+  return getClientIdentityAttention(clientNetId, signal)
 }
 
-export async function getWizardClientAgreements(clientNetId: string): Promise<ClientAgreement[]> {
-  const agreements = (await getSaleClientAgreements(clientNetId)) as unknown as ClientAgreement[]
+export async function getWizardClientAgreements(clientNetId: string, signal?: AbortSignal): Promise<ClientAgreement[]> {
+  const agreements = (await getSaleClientAgreements(clientNetId, signal)) as unknown as ClientAgreement[]
 
   return agreements.filter(isSalesAgreement)
 }

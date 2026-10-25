@@ -34,6 +34,7 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
   groupSize,
   headerClose,
   headerTools,
+  identityAttention: providedIdentityAttention,
   permissionFlow = 'create',
   registryCount,
 }: {
@@ -45,6 +46,8 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
   groupSize?: number
   headerClose?: ReactNode
   headerTools?: ReactNode
+  // A supplied value, including null, means the caller owns loading.
+  identityAttention?: ClientIdentityAttentionSummary | null
   permissionFlow?: WizardSalesPermissionFlow
   registryCount?: number
 }) {
@@ -62,27 +65,15 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
   const resolvedNetId = clientNetId ?? resolvedClient?.NetUid ?? null
 
   useEffect(() => {
-    if (!resolvedNetId || groupSize !== undefined) {
-      return
-    }
+    if (!resolvedNetId || groupSize !== undefined || providedIdentityAttention !== undefined) return
 
     const id = resolvedNetId
-    let cancelled = false
-
-    async function load() {
-      const next = await getWizardClientIdentityAttention(id).catch(() => null)
-
-      if (!cancelled) {
-        setLoadedIdentityAttention({ key: id, value: next })
-      }
-    }
-
-    void load()
-
-    return () => {
-      cancelled = true
-    }
-  }, [resolvedNetId, groupSize])
+    const controller = new AbortController()
+    void getWizardClientIdentityAttention(id, controller.signal).catch(() => null).then((next) => {
+      if (!controller.signal.aborted) setLoadedIdentityAttention({ key: id, value: next })
+    })
+    return () => controller.abort()
+  }, [resolvedNetId, groupSize, providedIdentityAttention])
 
   useEffect(() => {
     if (client || !clientNetId) {
@@ -217,7 +208,7 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
   const visibleAgreements = agreements ?? (resolvedNetId && loadedAgreements?.key === resolvedNetId ? loadedAgreements.value : [])
   const visibleDebts = debts ?? (resolvedNetId && loadedDebts?.key === resolvedNetId ? loadedDebts.value : [])
   const visibleRegistryCount = registryCount ?? (resolvedNetId && loadedRegistryCount?.key === resolvedNetId ? loadedRegistryCount.value : 0)
-  const identityAttention =
+  const identityAttention = providedIdentityAttention !== undefined ? providedIdentityAttention :
     resolvedNetId && loadedIdentityAttention?.key === resolvedNetId
       ? loadedIdentityAttention.value
       : null

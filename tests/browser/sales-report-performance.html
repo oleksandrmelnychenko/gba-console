@@ -5,6 +5,7 @@
   <div id="root"></div>
   <script type="module">
     import '@mantine/core/styles.css'
+    import '/src/shared/ui/selection-surface.css'
     import '/src/features/sales-ukraine/components/new-sale-wizard/wizard-cart-sheet.css'
     import '/src/features/sales-ukraine/components/new-sale-wizard/new-sale-wizard.css'
     import { createElement as h, Profiler, useState } from 'react'
@@ -22,6 +23,7 @@
     import { NEW_SALE_REVIEW_INITIAL } from '/src/features/sales-ukraine/components/new-sale-wizard/newSaleWizardState.ts'
     import { EditShoppingCartOverlay } from '/src/features/sales-ukraine/components/new-sale-wizard/EditShoppingCartOverlay.tsx'
     import { moveWizardCartSelection, toggleWizardCartSplit } from '/src/features/sales-ukraine/components/new-sale-wizard/wizardCartEditor.ts'
+    import { NewSaleClientStep } from '/src/features/sales-ukraine/components/new-sale-wizard/NewSaleClientStep.tsx'
     import { NewSaleProductsStep } from '/src/features/sales-ukraine/components/new-sale-wizard/NewSaleProductsStep.tsx'
     import { dispatchWizardKey, initializeWizardKeyboard } from '/src/features/sales-ukraine/components/new-sale-wizard/wizardKeyboard.ts'
     import { ProductDetailPage } from '/src/features/products/pages/ProductDetailPage.tsx'
@@ -48,10 +50,30 @@
     window.performanceFixture.finishCrossSell = () => {}
     window.performanceFixture.finishRecommendationSeed = () => {}
     const response = data => new Response(JSON.stringify(data), {headers:{'Content-Type':'application/json'}})
+    const pickerClients=Array.from({length:40},(_,index)=>({Id:index+1,NetUid:`picker-client-${index+1}`,FullName:`Клієнт барабанчика ${index+1}`,RegionCode:{Value:`CN${String(index+1).padStart(5,'0')}`},IsActive:true}))
+    window.performanceFixture.clientDetailReads=[]
+    window.performanceFixture.finishClientDetails=()=>window.performanceFixture.clientDetailReads.forEach(read=>read.finish())
+    const holdClientDetail=(url,options,data)=>new Promise((resolve,reject)=>{
+      const read={url:url.pathname+url.search,aborted:false,finish:()=>resolve(response(data))}
+      window.performanceFixture.clientDetailReads.push(read)
+      options.signal?.addEventListener('abort',()=>{read.aborted=true;reject(new DOMException('Aborted','AbortError'))},{once:true})
+    })
     // Standalone read-only fixture: no request is forwarded to a real API.
     window.fetch = (input,options={}) => {
       const url = new URL(typeof input==='string'?input:input.url,location.href)
       window.performanceFixture.requests.push(url.pathname+url.search)
+      if(url.pathname.endsWith('/clients/sales-ukraine/create/search')) {
+        const offset=Number(url.searchParams.get('offset')),limit=Number(url.searchParams.get('limit'))
+        return Promise.resolve(response(pickerClients.slice(offset,offset+limit)))
+      }
+      const pickerNetId=url.searchParams.get('netId')||url.searchParams.get('clientNetId')||''
+      if(pickerNetId.startsWith('picker-client-')) {
+        const id=Number(pickerNetId.split('-').at(-1))
+        if(url.pathname.endsWith('/agreements/client/all')) return Promise.resolve(response([{NetUid:`picker-agreement-${id}`,ClientId:id,Client:{Id:id},Agreement:{IsActive:true,PricingId:1,Name:`Договір клієнта ${id}`,Currency:{Code:'EUR'}}}]))
+        if(url.pathname.endsWith('/clients/get/identity-attention')) return holdClientDetail(url,options,null)
+        if(url.pathname.endsWith('/clients/get/debt/grouped')) return holdClientDetail(url,options,[{Debt:{Total:id,Days:1}}])
+        if(url.pathname.endsWith('/sales/all/register')) return Promise.resolve(response([{SaleStatistic:{Sale:{Id:id,NetUid:`picker-sale-${id}`,SaleNumber:{Value:`DOC-${id}`},Created:'2026-10-25T10:00:00Z',BaseLifeCycleStatus:{SaleLifeCycleType:0},ClientAgreement:{Client:{Id:id},Agreement:{Currency:{Code:'EUR'}}},TotalAmount:100,Order:{OrderItems:[]}}}}]))
+      }
       if (['/transporters/types/sales-ukraine/edit','/deliveries/recipients/all/client'].some(path=>url.pathname.endsWith(path))) return Promise.resolve(response([]))
       if (url.pathname.endsWith('/clients/get/identity-attention')) return Promise.resolve(response(null))
       if (url.pathname.endsWith('/clients/sales-ukraine/create/details')) return Promise.resolve(response({NetUid:'client-1',FullName:'Тестовий клієнт'}))
@@ -120,11 +142,19 @@
         currentItems:editorItems,...cart,onClose:()=>setOpened(false),
       }))
     }
+    function ClientPickerFixture() {
+      const [clientNetId,setClientNetId]=useState(null)
+      return h('div',{className:'new-sale-wizard-frame',style:{height:800}},h('div',{className:'new-sale-wizard-stage',style:{overflow:'visible'}},h(NewSaleClientStep,{
+        clientNetId,onClientChange:id=>{setClientNetId(id);window.performanceFixture.pickerSelected=id},
+        onAgreementChange:id=>{window.performanceFixture.pickerAgreement=id},onOpenSale:()=>{},
+      })))
+    }
     function Fixture() {
       const [cart,setCart] = useState(items), [revision,setRevision] = useState(0), [view,setView] = useState('cart')
       return h('main',{style:{padding:16,minWidth:0},onKeyDown:event=>{if(view==='wizard') dispatchWizardKey(event)}},
         h('nav',null,
           h('button',{onClick:()=>setView('cart')},'Кошик'),
+          h('button',{onClick:()=>{initializeWizardKeyboard(0);setView('client-picker')}},'Вибір клієнта'),
           h('button',{onClick:()=>setView('split-editor')},'Розділений кошик'),
           h('button',{onClick:()=>setView('report')},'Звіт'),
           h('button',{onClick:()=>setView('sales')},'Реєстр продажів'),
@@ -142,7 +172,7 @@
         view==='cart' ? h(Profiler,{id:'cart',onRender},h(WizardCartCards,{items:cart,busy:false,localCurrencyCode:'UAH',useEurToUah:false,onRowClick}))
           : view==='report' ? h(Profiler,{id:'report',onRender},h(ReportInlinePreview,{preview}))
           : h(AuthContext.Provider,{value:auth},h(MemoryRouter,{initialEntries:['/products/product-1']},h(Profiler,{id:view,onRender},
-            view==='split-editor'?h(SplitEditorFixture):view==='delivery'?h(DeliveryFixture,{cart}):view==='recommendations'?h(RecommendationsPanel,{client:{NetUid:'client-1'},productNetId:'panel-seed'}):view==='crosssell'?h(CrossSellFixture):view==='sales'?h(SalesUkrainePage):view==='wizard'?h(NewSaleProductsStep,{agreementNetId:'agreement-1',clientNetId:'client-1',client:null,sale:cartSale(cart),onCartChanged:()=>{}}):h(Routes,null,h(Route,{path:'/products/:netId',element:h(ProductDetailPage)}))))))
+            view==='client-picker'?h(ClientPickerFixture):view==='split-editor'?h(SplitEditorFixture):view==='delivery'?h(DeliveryFixture,{cart}):view==='recommendations'?h(RecommendationsPanel,{client:{NetUid:'client-1'},productNetId:'panel-seed'}):view==='crosssell'?h(CrossSellFixture):view==='sales'?h(SalesUkrainePage):view==='wizard'?h(NewSaleProductsStep,{agreementNetId:'agreement-1',clientNetId:'client-1',client:null,sale:cartSale(cart),onCartChanged:()=>{}}):h(Routes,null,h(Route,{path:'/products/:netId',element:h(ProductDetailPage)}))))))
     }
     createRoot(document.getElementById('root')).render(h(MantineProvider,null,h(I18nProvider,null,h(Fixture))))
   </script>

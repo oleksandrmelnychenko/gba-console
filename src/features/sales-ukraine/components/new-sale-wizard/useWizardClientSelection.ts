@@ -1,22 +1,24 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { getClientSubClients } from '../../../clients/api/clientCabinetApi'
-import type { Client, ClientAgreement, ClientInDebt } from '../../../clients/types'
+import type { Client, ClientAgreement, ClientIdentityAttentionSummary, ClientInDebt } from '../../../clients/types'
 import type { SalesUkraineClientAgreement } from '../../types'
-import { getWizardClientAgreements, getWizardClientGroupedDebts, type WizardSaleRegisterQuery } from './wizardClientStepApi'
+import { getWizardClientAgreements, getWizardClientGroupedDebts, getWizardClientIdentityAttention, type WizardSaleRegisterQuery } from './wizardClientStepApi'
 import { getWizardAgreementKey, isWizardSaleClientSelectable } from './wizardClientStepModel'
 import { setWizardKeyboardState } from './wizardKeyboard'
 import { getWizardHeaderClient, type WizardSalesPermissionFlow } from './wizardSaleHeaderApi'
 
 type Selection = {
+  identityAttention: ClientIdentityAttentionSummary | null
   selectedClient: Client | null
   agreements: ClientAgreement[]
   groupedDebts: ClientInDebt[]
   agreementsLoading: boolean
   selectedAgreementKey: string
 }
-const EMPTY_SELECTION: Selection = { selectedClient: null, agreements: [], groupedDebts: [], agreementsLoading: false, selectedAgreementKey: '' }
+const EMPTY_SELECTION: Selection = { identityAttention: null, selectedClient: null, agreements: [], groupedDebts: [], agreementsLoading: false, selectedAgreementKey: '' }
 type SelectionSession = {
   client: Client
+  controller: AbortController
   phase: 'waiting' | 'loading' | 'ready' | 'failed'
   debtPromise?: Promise<boolean>
 }
@@ -53,6 +55,7 @@ export function useWizardClientSelection(options: Options) {
   const retireSelection = useCallback(() => {
     if (timerRef.current !== null) clearTimeout(timerRef.current)
     timerRef.current = null
+    sessionRef.current?.controller.abort()
     sessionRef.current = null
     generationRef.current += 1
   }, [])
@@ -67,7 +70,7 @@ export function useWizardClientSelection(options: Options) {
     const netId = session.client.NetUid
     if (!netId || sessionRef.current !== session) return Promise.resolve(false)
     if (session.debtPromise) return session.debtPromise
-    session.debtPromise = getWizardClientGroupedDebts(netId).then((debts) => {
+    session.debtPromise = getWizardClientGroupedDebts(netId, session.controller.signal).then((debts) => {
       if (sessionRef.current === session) publish({ groupedDebts: debts })
       return true
     }).catch(() => {
@@ -83,8 +86,14 @@ export function useWizardClientSelection(options: Options) {
     if (!netId) { session.phase = 'ready'; return }
     session.phase = 'loading'
     void latestRef.current.fetchRegister({ clientNetId: netId })
+    // Supplementary risk information must not delay agreements or the register.
+    void getWizardClientIdentityAttention(netId, session.controller.signal).then((identityAttention) => {
+      if (sessionRef.current === session) publish({ identityAttention })
+    }).catch(() => {
+      if (sessionRef.current === session) publish({ identityAttention: null })
+    })
     const debts = loadDebts(session)
-    const agreements = getWizardClientAgreements(netId).then((list) => {
+    const agreements = getWizardClientAgreements(netId, session.controller.signal).then((list) => {
       if (sessionRef.current !== session) return false
       const active = list.find((item) => item.Agreement?.IsActive) ?? list[0]
       publish({ agreements: list, agreementsLoading: false, selectedAgreementKey: active ? getWizardAgreementKey(active) : '' })
@@ -134,7 +143,7 @@ export function useWizardClientSelection(options: Options) {
       return
     }
     retireSelection()
-    const session: SelectionSession = { client, phase: debounceDetails ? 'waiting' : 'loading' }
+    const session: SelectionSession = { client, controller: new AbortController(), phase: debounceDetails ? 'waiting' : 'loading' }
     sessionRef.current = session
     publish({ ...EMPTY_SELECTION, selectedClient: client, agreementsLoading: Boolean(client.NetUid) })
     latestRef.current.onClientResolved?.(client)
