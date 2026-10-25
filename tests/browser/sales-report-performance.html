@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="uk">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sales and reports performance fixture</title><link rel="icon" href="data:,"></head>
+<body>
+  <div id="root"></div>
+  <script type="module">
+    import '@mantine/core/styles.css'
+    import '/src/features/sales-ukraine/components/new-sale-wizard/wizard-cart-sheet.css'
+    import { createElement as h, Profiler, useState } from 'react'
+    import { createRoot } from 'react-dom/client'
+    import { MantineProvider } from '@mantine/core'
+    import { MemoryRouter, Routes, Route } from 'react-router-dom'
+    import { AuthContext } from '/src/features/auth/AuthContext.ts'
+    import { I18nProvider } from '/src/shared/i18n/I18nProvider.tsx'
+    import { WizardCartCards } from '/src/features/sales-ukraine/components/new-sale-wizard/WizardCartCards.tsx'
+    import { ReportInlinePreview } from '/src/features/reports/pages/ReportInlinePreview.tsx'
+    import { SalesUkrainePage } from '/src/features/sales-ukraine/pages/SalesUkrainePage.tsx'
+    import { ProductDetailPage } from '/src/features/products/pages/ProductDetailPage.tsx'
+    const items = Array.from({length:100}, (_,i) => ({NetUid:`item-${i}`,Qty:1,TotalAmount:10,TotalAmountLocal:420,
+      Product:{NetUid:`product-${i}`,VendorCode:`CODE-${i}`,Name:`Товар ${i}`,CurrentPrice:10}}))
+    const rows = Array.from({length:50}, (_,i) => ({Ordinal:i,SourceIndex:i,Values:[{Caption:`Товар ${i}`}]}))
+    const columns = Array.from({length:60}, (_,i) => ({Ordinal:i,SourceIndex:i,Values:[{Caption:`Показник ${i}`}]}))
+    const preview = {Version:1,ResultSha256:'a'.repeat(64),PresentationOnly:true,Request:null,
+      Page:{Offset:0,Limit:50,TotalVisibleRows:50,ReturnedRows:50,HasMore:false},RowSchema:[{Caption:'Товар'}],ColumnSchema:[],
+      Rows:rows,Columns:columns,Cells:rows.flatMap(row=>columns.map(col=>({RowSourceIndex:row.SourceIndex,ColumnSourceIndex:col.SourceIndex,Value:{Kind:'decimal',Value:'42.50',Provenance:'producerCell'}})))}
+    window.performanceFixture = { samples: [], selected: null }
+    const sales = Array.from({length:100}, (_,i) => ({Id:i+1,NetUid:`sale-${i}`,TotalAmount:100+i,TotalAmountLocal:4200+i,
+      Created:'2026-10-01T10:00:00Z',SaleNumber:{Value:`SALE-${i}`},BaseLifeCycleStatus:{Name:'New',SaleLifeCycleType:0},
+      ClientAgreement:{Client:{FullName:`Клієнт ${i}`,RegionCode:{Value:`k${i}`}},Agreement:{Name:`Договір ${i}`,Currency:{Code:'EUR'}}},
+      Order:{OrderItems:items.slice(0,2)}}))
+    window.performanceFixture.requests = []
+    window.performanceFixture.finishReserves = () => {}
+    const response = data => new Response(JSON.stringify(data), {headers:{'Content-Type':'application/json'}})
+    // Standalone read-only fixture: no request is forwarded to a real API.
+    window.fetch = (input,options={}) => {
+      const url = new URL(typeof input==='string'?input:input.url,location.href)
+      window.performanceFixture.requests.push(url.pathname+url.search)
+      if (url.pathname.endsWith('/sales/ukraine/registry')) return Promise.resolve(response(sales))
+      if (url.pathname.endsWith('/organizations/all')) return Promise.resolve(response([]))
+      if (url.pathname.endsWith('/products/assortment/details')) return Promise.resolve(response({NetUid:'product-1',VendorCode:'FAST-PRODUCT',Name:'Тестовий товар',CurrentPrice:42.75}))
+      if (url.pathname.endsWith('/products/reservations/get/info')) return new Promise((resolve,reject) => {
+        window.performanceFixture.finishReserves = () => resolve(response({TotalReservedUK:17}))
+        options.signal?.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true})
+      })
+      return Promise.reject(new Error(`Unexpected fixture request: ${url.pathname}`))
+    }
+    const auth = {hasPermission:()=>true,isLoading:false,user:{NetUid:'fixture-user',FirstName:'Test',LastName:'User'}}
+    const onRender = (id,phase,duration) => window.performanceFixture.samples.push({id,phase,duration})
+    const onRowClick = item => { window.performanceFixture.selected = item.NetUid }
+    function Fixture() {
+      const [cart,setCart] = useState(items), [revision,setRevision] = useState(0), [view,setView] = useState('cart')
+      return h('main',{style:{padding:16,minWidth:0}},
+        h('nav',null,
+          h('button',{onClick:()=>setView('cart')},'Кошик'),
+          h('button',{onClick:()=>setView('report')},'Звіт'),
+          h('button',{onClick:()=>setView('sales')},'Реєстр продажів'),
+          h('button',{onClick:()=>setView('product')},'Картка товару'),
+          h('button',{onClick:()=>window.performanceFixture.finishReserves()},'Завершити резерви'),
+          h('button',{onClick:()=>setCart(previous=>previous.map((item,i)=>i===50?{...item,Qty:item.Qty+1}:item))},'Змінити одну позицію'),
+          h('button',{onClick:()=>setRevision(value=>value+1)},'Оновити панель'),
+          h('output',null,revision)),
+        view==='cart' ? h(Profiler,{id:'cart',onRender},h(WizardCartCards,{items:cart,busy:false,localCurrencyCode:'UAH',useEurToUah:false,onRowClick}))
+          : view==='report' ? h(Profiler,{id:'report',onRender},h(ReportInlinePreview,{preview}))
+          : h(AuthContext.Provider,{value:auth},h(MemoryRouter,{initialEntries:['/products/product-1']},h(Profiler,{id:view,onRender},
+            view==='sales'?h(SalesUkrainePage):h(Routes,null,h(Route,{path:'/products/:netId',element:h(ProductDetailPage)}))))))
+    }
+    createRoot(document.getElementById('root')).render(h(MantineProvider,null,h(I18nProvider,null,h(Fixture))))
+  </script>
+</body>
+</html>
