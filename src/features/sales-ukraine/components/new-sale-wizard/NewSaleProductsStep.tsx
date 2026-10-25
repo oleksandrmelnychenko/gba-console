@@ -5,6 +5,7 @@ import { Search, Sparkles } from 'lucide-react'
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -797,6 +798,21 @@ export function NewSaleProductsStep({
   const detailSource: ActiveProductSource = detailKeyboardState === 'AnalogueFullDetail' ? 'analogue'
     : detailKeyboardState === 'ComponentFullDetail' ? 'component' : 'main'
   const selectedDetailChipIndex = detail?.chipIndex ?? getDefaultWizardProductChipIndex(isVatSale)
+  // The summary stays unchanged while stock selection, overlays or cart state move.
+  // Stable callbacks still dispatch to the current product and keyboard state.
+  const summaryActionsRef = useRef({ openMainFullDetail, openImage, selectedMainProduct, detailProduct })
+  useLayoutEffect(() => {
+    summaryActionsRef.current = { openMainFullDetail, openImage, selectedMainProduct, detailProduct }
+  })
+  const handleOpenSummaryDetails = useCallback(() => { summaryActionsRef.current.openMainFullDetail() }, [])
+  const handleOpenSummaryImage = useCallback(() => {
+    const actions = summaryActionsRef.current
+    actions.openImage(actions.selectedMainProduct)
+  }, [])
+  const handleOpenDetailImage = useCallback(() => {
+    const actions = summaryActionsRef.current
+    actions.openImage(actions.detailProduct)
+  }, [])
   const selectedMainProductSummary = selectedMainProduct ? (
     <ProductSummaryCard
       currentPriceEur={getWizardProductNumber(getProductMeta(selectedMainProduct)?.price)}
@@ -805,8 +821,8 @@ export function NewSaleProductsStep({
       localCurrencyCode={localCurrencyCode}
       pricing={detailPricingFor(selectedMainProduct)}
       product={selectedMainProduct}
-      onOpenDetails={() => { openMainFullDetail() }}
-      onOpenImage={() => openImage(selectedMainProduct)}
+      onOpenDetails={handleOpenSummaryDetails}
+      onOpenImage={handleOpenSummaryImage}
     />
   ) : null
   const isSearchPristine = query.trim().length < PRODUCT_SEARCH_MIN_QUERY_LENGTH
@@ -1099,7 +1115,7 @@ export function NewSaleProductsStep({
               selectedChipIndex={selectedDetailChipIndex}
               selectedRowIndex={detail?.rowIndex ?? null}
               onDescriptionDraftChange={handleDescriptionDraftChange}
-              onOpenImage={() => openImage(detailProduct)}
+              onOpenImage={handleOpenDetailImage}
               onRetryDetails={retryProductDetails}
               onSelectChip={(chipIndex) => setDetail({ chipIndex, rowIndex: null })}
               onToggleDescription={() => void toggleDescriptionEdit()}

@@ -1,6 +1,6 @@
 import { TableChip, type TableChipTone } from '../../../../shared/ui/TableChip'
 import { Button } from '@mantine/core'
-import { useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import { Eye } from 'lucide-react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -14,7 +14,7 @@ import './product-summary-card.css'
 const qtyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
 const priceFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 
-export function ProductSummaryCard({
+export const ProductSummaryCard = memo(function ProductSummaryCard({
   currentPriceEur,
   detailsExpanded,
   displayQty = 0,
@@ -119,4 +119,4 @@ export function ProductSummaryCard({
       </div>
     </section>
   )
-}
+})

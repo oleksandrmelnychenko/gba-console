@@ -46,6 +46,40 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers())
 
 describe('wizard product data', () => {
+  it('publishes prices before a slow reservation lookup finishes', async () => {
+    const pending = deferred<unknown[]>()
+    mocks.reservations.mockReturnValueOnce(pending.promise)
+    const { result } = renderHook(useWizardProductData, { initialProps })
+    await tick()
+    expect(result.current.productPricing.get('product-1')?.currentPrice).toBe(20)
+    await act(async () => pending.resolve([{ ProductNetUid: 'product-1', Price: 18 }]))
+    expect(result.current.productPricing.get('product-1')?.reservation?.Price).toBe(18)
+    expect(mocks.current).toHaveBeenCalledOnce()
+  })
+
+  it('shows stock before slow supply data and shares the in-flight reads across reopening details', async () => {
+    const supply = deferred<object>()
+    mocks.nearest.mockReturnValueOnce(supply.promise)
+    const { result, rerender } = renderHook(useWizardProductData, { initialProps: { ...initialProps, detailsOpened: true } })
+    await tick()
+    expect(result.current.getProductDetailSnapshot(product)).toMatchObject({ detailsLoaded: true, detailsError: null,
+      availabilities: { TotalAvailabilities: { StorageUkrNotVat: 5 } }, nearestOrder: null })
+    const signal = mocks.nearest.mock.calls[0][1] as AbortSignal
+    rerender(initialProps)
+    rerender({ ...initialProps, detailsOpened: true })
+    await tick()
+    expect(signal.aborted).toBe(false)
+    expect(mocks.nearest).toHaveBeenCalledOnce()
+    expect(mocks.totals).toHaveBeenCalledOnce()
+    await act(async () => supply.resolve({ Number: 'SUP-LATE' }))
+    expect(result.current.getProductDetailSnapshot(product)?.nearestOrder?.Number).toBe('SUP-LATE')
+    // A completed snapshot is not a cache of live stock: a later visit refreshes it.
+    rerender(initialProps)
+    rerender({ ...initialProps, detailsOpened: true })
+    await tick()
+    expect(mocks.totals).toHaveBeenCalledTimes(2)
+  })
+
   it('loads prices concurrently after focus settles and keeps details lazy', async () => {
     const current = deferred<number>()
     mocks.current.mockReturnValueOnce(current.promise)
@@ -60,6 +94,38 @@ describe('wizard product data', () => {
     expect(result.current.productPricing.size).toBe(0)
     await act(async () => current.resolve(20))
     expect(result.current.productPricing.get('product-1')).toMatchObject({ currentPrice: 20, reservation: { Price: 18 } })
+  })
+
+  it('does not dispatch details closed before the focus delay, and aborts a dispatched read on unmount even while closed', async () => {
+    const pending = deferred<object>()
+    mocks.totals.mockReturnValueOnce(pending.promise)
+    const { rerender, unmount } = renderHook(useWizardProductData, { initialProps: { ...initialProps, detailsOpened: true } })
+    rerender(initialProps)
+    await tick()
+    expect(mocks.totals).not.toHaveBeenCalled()
+    rerender({ ...initialProps, detailsOpened: true })
+    await tick()
+    const signal = mocks.totals.mock.calls[0][3] as AbortSignal
+    rerender(initialProps)
+    expect(signal.aborted).toBe(false)
+    unmount()
+    expect(signal.aborted).toBe(true)
+    await act(async () => pending.resolve({ stale: true }))
+  })
+
+  it('reports a stock failure without waiting for supply and retires that supply on manual retry', async () => {
+    const pending = deferred<object>()
+    mocks.nearest.mockReturnValueOnce(pending.promise)
+    mocks.totals.mockRejectedValueOnce(new Error('Stock unavailable'))
+    const { result } = renderHook(useWizardProductData, { initialProps: { ...initialProps, detailsOpened: true } })
+    await tick()
+    expect(result.current.getProductDetailSnapshot(product)).toMatchObject({ detailsLoaded: true, detailsError: 'Stock unavailable' })
+    const signal = mocks.nearest.mock.calls[0][1] as AbortSignal
+    act(() => result.current.retryProductDetails())
+    expect(signal.aborted).toBe(true)
+    await tick()
+    await act(async () => pending.resolve({ Number: 'STALE' }))
+    expect(result.current.getProductDetailSnapshot(product)).toMatchObject({ detailsError: null, nearestOrder: { Number: 'SUP-1' } })
   })
 
   it('does not reload prices for unrelated renders or opening and retrying details', async () => {

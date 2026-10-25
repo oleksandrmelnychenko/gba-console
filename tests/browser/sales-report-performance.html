@@ -15,6 +15,8 @@
     import { WizardCartCards } from '/src/features/sales-ukraine/components/new-sale-wizard/WizardCartCards.tsx'
     import { ReportInlinePreview } from '/src/features/reports/pages/ReportInlinePreview.tsx'
     import { SalesUkrainePage } from '/src/features/sales-ukraine/pages/SalesUkrainePage.tsx'
+    import { NewSaleProductsStep } from '/src/features/sales-ukraine/components/new-sale-wizard/NewSaleProductsStep.tsx'
+    import { initializeWizardKeyboard } from '/src/features/sales-ukraine/components/new-sale-wizard/wizardKeyboard.ts'
     import { ProductDetailPage } from '/src/features/products/pages/ProductDetailPage.tsx'
     const items = Array.from({length:100}, (_,i) => ({NetUid:`item-${i}`,Qty:1,TotalAmount:10,TotalAmountLocal:420,
       Product:{NetUid:`product-${i}`,VendorCode:`CODE-${i}`,Name:`Товар ${i}`,CurrentPrice:10}}))
@@ -30,11 +32,30 @@
       Order:{OrderItems:items.slice(0,2)}}))
     window.performanceFixture.requests = []
     window.performanceFixture.finishReserves = () => {}
+    window.performanceFixture.finishWizardReserves = () => {}
+    window.performanceFixture.finishSupply = () => {}
+    const wizardProduct = {NetUid:'wizard-product',VendorCode:'TEST-001',NameUA:'Товар майстра',AvailableQtyUk:4,CurrentPrice:10}
     const response = data => new Response(JSON.stringify(data), {headers:{'Content-Type':'application/json'}})
     // Standalone read-only fixture: no request is forwarded to a real API.
     window.fetch = (input,options={}) => {
       const url = new URL(typeof input==='string'?input:input.url,location.href)
       window.performanceFixture.requests.push(url.pathname+url.search)
+      if (url.pathname.endsWith('/clients/get/identity-attention')) return Promise.resolve(response(null))
+      if (url.pathname.endsWith('/clients/sales-ukraine/create/details')) return Promise.resolve(response({NetUid:'client-1',FullName:'Тестовий клієнт'}))
+      if (['/agreements/client/all','/clients/get/debt/grouped','/sales/all/register'].some(path => url.pathname.endsWith(path))) return Promise.resolve(response([]))
+      if (url.pathname.endsWith('/products/search/advanced')) return Promise.resolve(response([wizardProduct]))
+      if (url.pathname.endsWith('/products/pricings/current')) return Promise.resolve(response(123.45))
+      if (url.pathname.endsWith('/products/pricings/all')) return Promise.resolve(response([{PriceEUR:123.45,DiscountRate:0}]))
+      if (url.pathname.endsWith('/products/reservations/current/carousel/agreement')) return new Promise((resolve,reject) => {
+        window.performanceFixture.finishWizardReserves = () => resolve(response([]))
+        options.signal?.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true})
+      })
+      if (url.pathname.endsWith('/products/availabilities/all')) return Promise.resolve(response({TotalAvailabilities:{StorageUkrNotVat:7},InStorageUkrNotVat:[{NetId:'stock-1',Name:'Тестовий склад',Amount:7}]}))
+      if (url.pathname.endsWith('/supplies/orders/sales-ukraine/future-reservations/nearest')) return new Promise((resolve,reject) => {
+        window.performanceFixture.finishSupply = () => resolve(response({Number:'SUPPLY-READY',Qty:3}))
+        options.signal?.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true})
+      })
+      if (url.pathname.endsWith('/pricing/recommend')) return Promise.resolve(response({confidence:'low',recommended_price:null}))
       if (url.pathname.endsWith('/sales/ukraine/registry')) return Promise.resolve(response(sales))
       if (url.pathname.endsWith('/organizations/all')) return Promise.resolve(response([]))
       if (url.pathname.endsWith('/products/assortment/details')) return Promise.resolve(response({NetUid:'product-1',VendorCode:'FAST-PRODUCT',Name:'Тестовий товар',CurrentPrice:42.75}))
@@ -55,6 +76,9 @@
           h('button',{onClick:()=>setView('report')},'Звіт'),
           h('button',{onClick:()=>setView('sales')},'Реєстр продажів'),
           h('button',{onClick:()=>setView('product')},'Картка товару'),
+          h('button',{onClick:()=>{initializeWizardKeyboard(1);setView('wizard')}},'Майстер продажу'),
+          h('button',{onClick:()=>window.performanceFixture.finishWizardReserves()},'Завершити резерви майстра'),
+          h('button',{onClick:()=>window.performanceFixture.finishSupply()},'Завершити постачання'),
           h('button',{onClick:()=>window.performanceFixture.finishReserves()},'Завершити резерви'),
           h('button',{onClick:()=>setCart(previous=>previous.map((item,i)=>i===50?{...item,Qty:item.Qty+1}:item))},'Змінити одну позицію'),
           h('button',{onClick:()=>setRevision(value=>value+1)},'Оновити панель'),
@@ -62,7 +86,7 @@
         view==='cart' ? h(Profiler,{id:'cart',onRender},h(WizardCartCards,{items:cart,busy:false,localCurrencyCode:'UAH',useEurToUah:false,onRowClick}))
           : view==='report' ? h(Profiler,{id:'report',onRender},h(ReportInlinePreview,{preview}))
           : h(AuthContext.Provider,{value:auth},h(MemoryRouter,{initialEntries:['/products/product-1']},h(Profiler,{id:view,onRender},
-            view==='sales'?h(SalesUkrainePage):h(Routes,null,h(Route,{path:'/products/:netId',element:h(ProductDetailPage)}))))))
+            view==='sales'?h(SalesUkrainePage):view==='wizard'?h(NewSaleProductsStep,{agreementNetId:'agreement-1',clientNetId:'client-1',client:null,sale:null,onCartChanged:()=>{}}):h(Routes,null,h(Route,{path:'/products/:netId',element:h(ProductDetailPage)}))))))
     }
     createRoot(document.getElementById('root')).render(h(MantineProvider,null,h(I18nProvider,null,h(Fixture))))
   </script>

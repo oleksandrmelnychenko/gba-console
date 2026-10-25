@@ -54,13 +54,14 @@ export function useWizardProductData({
   const [detailsRevision, setDetailsRevision] = useState(0)
   const pricingAbortRef = useRef<AbortController | null>(null)
   const detailsAbortRef = useRef<AbortController | null>(null)
+  const detailsPendingRef = useRef(false)
 
   const abortRequests = useCallback(() => {
     pricingAbortRef.current?.abort()
     detailsAbortRef.current?.abort()
   }, [])
 
-  useLayoutEffect(() => abortRequests, [scopeKey, abortRequests])
+  useLayoutEffect(() => abortRequests, [scopeKey, productNetUid, abortRequests])
 
   const invalidateProductData = useCallback(() => {
     // Retire responses synchronously, before React runs the effects again.
@@ -88,23 +89,31 @@ export function useWizardProductData({
     const controller = new AbortController()
     pricingAbortRef.current = controller
     const handle = setTimeout(() => {
-      void (async () => {
-        const [pricing, reservations] = await Promise.all([
-          Promise.all([
-            getProductCurrentPriceByAgreement(productNetUid, agreementNetId, controller.signal),
-            getProductCalculatedPricingsByAgreement(productNetUid, agreementNetId, controller.signal),
-          ]).catch(() => null),
-          getProductReservationsByAgreement(agreementNetId, productNetUid, controller.signal).catch(() => []),
-        ])
+      let pricing: [number | null, WizardCalculatedProductPricing[]] | null = null
+      let reservation: WizardProductReservation | undefined
+      const publish = () => {
         if (controller.signal.aborted || !pricing) return
-        const reservation = reservations.find((item) => item.ProductNetUid === productNetUid)
-          ?? (reservations.length === 1 ? reservations[0] : undefined)
+        const [currentPrice, calculatedPricings] = pricing
         setPricingState((previous) => {
+          const existing = previous.scopeKey === scopeKey ? previous.values.get(productNetUid) : undefined
+          if (existing?.currentPrice === currentPrice && existing.calculatedPricings === calculatedPricings && existing.reservation === reservation) return previous
           const values = new Map(previous.scopeKey === scopeKey ? previous.values : EMPTY_PRICING)
-          values.set(productNetUid, { currentPrice: pricing[0], calculatedPricings: pricing[1], reservation })
+          values.set(productNetUid, { currentPrice, calculatedPricings, reservation })
           return { scopeKey, values }
         })
-      })()
+      }
+      // Neither a slow reserve lookup nor its failure should hold back prices.
+      void Promise.all([
+        getProductCurrentPriceByAgreement(productNetUid, agreementNetId, controller.signal),
+        getProductCalculatedPricingsByAgreement(productNetUid, agreementNetId, controller.signal),
+      ]).then((values) => { pricing = values; publish() }).catch(() => {})
+      void getProductReservationsByAgreement(agreementNetId, productNetUid, controller.signal)
+        .catch(() => [])
+        .then((reservations) => {
+          reservation = reservations.find((item) => item.ProductNetUid === productNetUid)
+            ?? (reservations.length === 1 ? reservations[0] : undefined)
+          publish()
+        })
     }, FOCUS_DELAY_MS)
     return () => {
       controller.abort()
@@ -116,8 +125,13 @@ export function useWizardProductData({
   // Both manual retry and realtime/cart invalidation refresh that panel.
   useEffect(() => {
     if (!productNetUid || !agreementNetId || !detailsOpened) return
+    // Closing a panel does not restart an already dispatched read on reopening.
+    // Product/context changes, explicit invalidation and unmount still abort it.
+    if (detailsPendingRef.current && detailsAbortRef.current && !detailsAbortRef.current.signal.aborted) return
     const controller = new AbortController()
     detailsAbortRef.current = controller
+    detailsPendingRef.current = true
+    let started = false
     queueMicrotask(() => {
       if (controller.signal.aborted) return
       setDetailState((previous) => {
@@ -127,35 +141,41 @@ export function useWizardProductData({
           availabilities: existing?.availabilities ?? null,
           detailsError: null,
           detailsLoaded: false,
-          nearestOrder: existing?.nearestOrder ?? null,
+          nearestOrder: null,
         })
         return { scopeKey, values }
       })
     })
     const handle = setTimeout(() => {
-      void Promise.allSettled([
-        getNearestSupplyOrder(productNetUid, controller.signal),
-        getAllProductAvailabilities(productNetUid, agreementNetId, saleNetId, controller.signal),
-      ]).then(([nearest, totals]) => {
+      started = true
+      const supply = getNearestSupplyOrder(productNetUid, controller.signal).catch(() => null).then(nearestOrder => {
         if (controller.signal.aborted) return
-        const detailsError = totals.status === 'rejected'
-          ? getErrorMessage(totals.reason, t('Не вдалося завантажити деталі залишків'))
-          : null
-        setDetailState((previous) => {
-          const values = new Map(previous.scopeKey === scopeKey ? previous.values : EMPTY_DETAILS)
-          values.set(productNetUid, {
-            availabilities: totals.status === 'fulfilled' ? totals.value : null,
-            detailsError,
-            detailsLoaded: true,
-            nearestOrder: nearest.status === 'fulfilled' ? nearest.value : null,
-          })
+        setDetailState(previous => {
+          const existing = previous.scopeKey === scopeKey ? previous.values.get(productNetUid) : undefined
+          if (!existing || existing.nearestOrder === nearestOrder) return previous
+          const values = new Map(previous.values)
+          values.set(productNetUid, { ...existing, nearestOrder })
           return { scopeKey, values }
         })
       })
+      const stock = getAllProductAvailabilities(productNetUid, agreementNetId, saleNetId, controller.signal)
+        .then(availabilities => ({ availabilities, detailsError: null }))
+        .catch((error: unknown) => ({ availabilities: null, detailsError: getErrorMessage(error, t('Не вдалося завантажити деталі залишків')) }))
+        .then(snapshot => {
+          if (controller.signal.aborted) return
+          setDetailState(previous => {
+            const values = new Map(previous.scopeKey === scopeKey ? previous.values : EMPTY_DETAILS)
+            values.set(productNetUid, { ...snapshot, detailsLoaded: true, nearestOrder: values.get(productNetUid)?.nearestOrder ?? null })
+            return { scopeKey, values }
+          })
+        })
+      void Promise.all([supply, stock]).finally(() => {
+        if (detailsAbortRef.current === controller) detailsPendingRef.current = false
+      })
     }, FOCUS_DELAY_MS)
     return () => {
-      controller.abort()
       clearTimeout(handle)
+      if (!started) controller.abort()
     }
   }, [productNetUid, agreementNetId, saleNetId, scopeKey, detailsOpened, dataRevision, detailsRevision, t])
 

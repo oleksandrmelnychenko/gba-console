@@ -336,3 +336,22 @@ describe('full product card render isolation', () => {
     expect(screen.getByRole('textbox', { name: 'Опис' })).toHaveProperty('value', 'Second description')
   })
 })
+
+it('keeps the product summary unchanged while navigating stock rows, but refreshes price and image actions', () => {
+  const props = fixture({ onOpenImage: vi.fn() })
+  const readNumber = vi.fn(() => '2376002000*')
+  Object.defineProperty(props.product, 'MainOriginalNumber', { get: readNumber, configurable: true })
+  const ui = (value: Props) => <MantineProvider env="test"><I18nProvider><ProductFullDetailPanel {...value} /></I18nProvider></MantineProvider>
+  const view = render(ui(props))
+  readNumber.mockClear()
+  for (let index = 0; index < 20; index++) view.rerender(ui({ ...props, selectedRowIndex: index }))
+  expect(readNumber).not.toHaveBeenCalled()
+  view.rerender(ui({ ...props, currentPriceEur: 123.45 }))
+  expect(readNumber).toHaveBeenCalled()
+  expect(screen.getAllByText('123,45').length).toBeGreaterThan(0)
+  const onOpenImage = vi.fn()
+  view.rerender(ui({ ...props, onOpenImage }))
+  fireEvent.click(screen.getByRole('button', { name: 'Збільшити фото · Амортизатор' }))
+  expect(onOpenImage).toHaveBeenCalledOnce()
+  expect(props.onOpenImage).not.toHaveBeenCalled()
+})
