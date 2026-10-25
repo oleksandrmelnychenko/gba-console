@@ -10,6 +10,7 @@ import {
   deleteOrderItem,
   getSaleActForEditingHistoryDocument,
   getSaleActProtocolEditDocument,
+  getSalesUkraineSaleAuditEditActDocument,
   getSaleById,
   getSaleTransporterTypes,
   getSalesUkraine,
@@ -64,6 +65,15 @@ const paymentDocumentOperation = {
 describe('sales Ukraine document request contracts', () => {
   beforeEach(() => {
     apiRequestMock.mockReset()
+  })
+
+  it.each([getSaleActProtocolEditDocument, getSalesUkraineSaleAuditEditActDocument])('forwards preview cancellation without mutation headers', async (load) => {
+    apiRequestMock.mockResolvedValueOnce({ PdfDocumentURL: '/preview.pdf' })
+    const signal = new AbortController().signal
+    await load('sale-1', signal)
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/ukraine/audit/edit-act-document', {
+      query: { netId: 'sale-1' }, signal,
+    })
   })
 
   it('accepts an invoiced sale for packing through the dedicated idempotent endpoint', async () => {

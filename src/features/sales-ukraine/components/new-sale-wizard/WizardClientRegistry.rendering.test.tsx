@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { MantineProvider } from '@mantine/core'
 import { render } from '@testing-library/react'
 import { expect, it, vi } from 'vitest'
@@ -5,15 +6,19 @@ import { I18nProvider } from '../../../../shared/i18n/I18nProvider'
 import { WizardClientRegistry } from './WizardClientRegistry'
 import type { SalesUkraineSale } from '../../types'
 
-const snapshots = vi.hoisted(() => ({ data: [] as SalesUkraineSale[][] }))
+const snapshots = vi.hoisted(() => ({ data: [] as SalesUkraineSale[][], expandedRenders: 0 }))
 vi.mock('../../../../shared/ui/data-table/DataTable', () => ({
-  DataTable: ({ data }: { data: SalesUkraineSale[] }) => { snapshots.data.push(data); return null },
+  DataTable: ({ data, renderExpandedRow }: { data: SalesUkraineSale[]; renderExpandedRow?: (sale: SalesUkraineSale) => ReactNode }) => {
+    if (!renderExpandedRow) { snapshots.expandedRenders += 1; return null }
+    snapshots.data.push(data)
+    return <>{data.map(sale => <div key={sale.NetUid}>{renderExpandedRow(sale)}</div>)}</>
+  },
 }))
 
 it('retains sorted rows while filters are being edited and updates them when server data or agreement changes', () => {
-  const first = { NetUid: 'sale-1', Created: '2026-10-01', ClientAgreement: { Client: { Id: 1 } } }
-  const second = { NetUid: 'sale-2', Created: '2026-10-02', ClientAgreement: { Client: { Id: 1 } } }
-  const third = { NetUid: 'sale-3', ClientAgreement: { Client: { Id: 2 } } }
+  const first: SalesUkraineSale = { NetUid: 'sale-1', Created: '2026-10-01', Order: { OrderItems: [{ NetUid: 'item-1', Qty: 1 }] }, ClientAgreement: { Client: { Id: 1 } } }
+  const second: SalesUkraineSale = { NetUid: 'sale-2', Created: '2026-10-02', ClientAgreement: { Client: { Id: 1 } } }
+  const third: SalesUkraineSale = { NetUid: 'sale-3', ClientAgreement: { Client: { Id: 2 } } }
   const props = {
     canEdit: true, canOpenDeliveryDetails: true, canOpenDetails: true, canViewAudit: true,
     dateFrom: '2026-10-01', dateTo: '2026-10-25', isLoading: false,
@@ -26,8 +31,13 @@ it('retains sorted rows while filters are being edited and updates them when ser
   const { rerender } = render(view())
   const rows = snapshots.data.at(-1)
   expect(rows).toEqual([second, first])
+  const expandedRenders = snapshots.expandedRenders
+  expect(expandedRenders).toBeGreaterThan(0)
   rerender(view({ saleSearch: 'search', isLoading: true }))
+  expect(snapshots.expandedRenders).toBe(expandedRenders)
   expect(snapshots.data.at(-1)).toBe(rows)
+  rerender(view({ items: [{ Sale: { ...first, Order: { OrderItems: [{ NetUid: 'item-1', Qty: 2 }] } } }, { Sale: second }] }))
+  expect(snapshots.expandedRenders).toBe(expandedRenders + 1)
   rerender(view({ selectedAgreementClientId: 2 }))
   expect(snapshots.data.at(-1)).toEqual([third])
   const updated = { ...first, Created: '2026-10-03' }

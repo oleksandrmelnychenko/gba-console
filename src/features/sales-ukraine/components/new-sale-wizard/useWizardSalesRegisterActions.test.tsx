@@ -191,9 +191,9 @@ describe('wizard register actions', () => {
     mocks.runUpdate.mockResolvedValueOnce({ completed: false, error: new Error('pending') })
     const { result } = setup({ permissionScopedSalesUkraineApi: true })
     await act(async () => result.current.printRow(sale))
-    expect(mocks.getEdit).toHaveBeenCalledWith('sale-a')
+    expect(mocks.getEdit).toHaveBeenCalledWith('sale-a', expect.any(AbortSignal))
     expect(mocks.getSale).not.toHaveBeenCalled()
-    expect(mocks.auditDocument).toHaveBeenCalledWith('sale-a')
+    expect(mocks.auditDocument).toHaveBeenCalledWith('sale-a', expect.any(AbortSignal))
     expect(mocks.document).not.toHaveBeenCalled()
     expect(result.current.printState?.document?.pdfUrl).toBe('/audit.pdf')
   })
@@ -212,6 +212,7 @@ describe('wizard register actions', () => {
     const { result, props } = setup()
     let request!: Promise<void>
     act(() => { request = result.current.printRow(sale); result.current.closePrint() })
+    expect(mocks.getSale.mock.calls[0][1].aborted).toBe(true)
     await act(async () => { pending.resolve(sale); await request })
     expect(mocks.runUpdate).not.toHaveBeenCalled()
     expect(mocks.document).not.toHaveBeenCalled()
@@ -330,9 +331,56 @@ describe('wizard register actions', () => {
     let request!: Promise<void>
     act(() => { request = result.current.printRow(sale) })
     rerender({ ...props, canEdit: false })
+    expect(mocks.getSale.mock.calls[0][1].aborted).toBe(true)
     await act(async () => { pending.resolve(sale); await request })
     expect(mocks.runUpdate).not.toHaveBeenCalled()
     expect(mocks.document).not.toHaveBeenCalled()
     expect(result.current.hasOpenOverlay).toBe(false)
   })
+  it('aborts audit reads on replacement, close, context changes and unmount', async () => {
+    mocks.audit.mockImplementation((_id, signal: AbortSignal) => new Promise((_resolve, reject) => {
+      signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), { once: true })
+    }))
+    const { result, rerender, props, unmount } = setup()
+    const requests: Promise<void>[] = []
+    act(() => { requests.push(result.current.openAudit(sale)); requests.push(result.current.openAudit(other)) })
+    expect(mocks.audit.mock.calls[0][1].aborted).toBe(true)
+    act(() => result.current.closeAudit())
+    expect(mocks.audit.mock.calls[1][1].aborted).toBe(true)
+    act(() => { requests.push(result.current.openAudit(sale)) })
+    rerender({ ...props, clientKey: 'client-b' })
+    expect(mocks.audit.mock.calls[2][1].aborted).toBe(true)
+    act(() => { requests.push(result.current.openAudit(other)) })
+    unmount()
+    expect(mocks.audit.mock.calls[3][1].aborted).toBe(true)
+    await act(async () => { await Promise.all(requests) })
+    expect(props.replaceRegistryRow).not.toHaveBeenCalled()
+  })
+
+  it('retains an already open successful audit but refreshes after closing it', async () => {
+    const { result } = setup()
+    await act(async () => result.current.openAudit(sale))
+    const statistic = result.current.auditStatistic
+    await act(async () => result.current.openAudit(sale))
+    expect(result.current.auditStatistic).toBe(statistic)
+    expect(mocks.audit).toHaveBeenCalledOnce()
+    act(() => result.current.closeAudit())
+    await act(async () => result.current.openAudit(sale))
+    expect(mocks.audit).toHaveBeenCalledTimes(2)
+  })
+
+  it('aborts preview document reads when the preview closes without an error notification', async () => {
+    const pending = deferred<{ pdfUrl: string }>()
+    mocks.document.mockReturnValueOnce(pending.promise)
+    const { result } = setup({ canEdit: false })
+    let request!: Promise<void>
+    act(() => { request = result.current.printRow(sale) })
+    const signal = mocks.document.mock.calls[0][1] as AbortSignal
+    act(() => result.current.closePrint())
+    expect(signal.aborted).toBe(true)
+    await act(async () => { pending.resolve({ pdfUrl: '/late.pdf' }); await request })
+    expect(result.current.printState).toBeNull()
+    expect(mocks.notify).not.toHaveBeenCalled()
+  })
+
 })

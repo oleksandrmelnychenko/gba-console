@@ -18,17 +18,19 @@ export async function getWarehouseUkraineSaleAudit(netId: string): Promise<SaleA
   return normalizeObject<SaleAuditStatistic>(result)
 }
 
-export async function getSalesUkraineSaleAudit(netId: string): Promise<SaleAuditStatistic | null> {
+export async function getSalesUkraineSaleAudit(netId: string, signal?: AbortSignal): Promise<SaleAuditStatistic | null> {
   const result = await apiRequest<unknown>('/sales/ukraine/audit', {
     query: { netId },
+    ...(signal ? { signal } : {}),
   })
 
   return normalizeObject<SaleAuditStatistic>(result)
 }
 
-export async function getSalesUkraineEditSaleStatistic(netId: string): Promise<SaleAuditStatistic | null> {
+export async function getSalesUkraineEditSaleStatistic(netId: string, signal?: AbortSignal): Promise<SaleAuditStatistic | null> {
   const result = await apiRequest<unknown>('/sales/ukraine/edit/shifted', {
     query: { netId },
+    ...(signal ? { signal } : {}),
   })
 
   return normalizeObject<SaleAuditStatistic>(result)

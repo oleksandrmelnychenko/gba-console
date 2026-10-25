@@ -75,4 +75,14 @@ describe('sale audit protocol mutation', () => {
       }],
     ])
   })
+  it('forwards cancellation for audit and edit-statistic reads', async () => {
+    const signal = new AbortController().signal
+    await getSalesUkraineSaleAudit('sale-1', signal)
+    await getSalesUkraineEditSaleStatistic('sale-1', signal)
+    expect(apiRequestMock.mock.calls).toEqual([
+      ['/sales/ukraine/audit', { query: { netId: 'sale-1' }, signal }],
+      ['/sales/ukraine/edit/shifted', { query: { netId: 'sale-1' }, signal }],
+    ])
+  })
+
 })

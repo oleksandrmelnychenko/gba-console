@@ -11,7 +11,7 @@ import { bumpWizardDebtRefresh } from './newSaleWizardState'
 import type { WizardSaleRegisterStatistic } from './wizardClientStepApi'
 
 type SaleSession = { sale: SalesUkraineSale; generation: number }
-type PendingSession = SaleSession & { promise?: Promise<void> }
+type PendingSession = SaleSession & { promise?: Promise<void>; controller: AbortController }
 type ActionState = {
   edit: SaleSession | null
   details: SaleSession | null
@@ -68,7 +68,11 @@ export function useWizardSalesRegisterActions(options: Options) {
   useLayoutEffect(() => {
     stateRef.current = EMPTY_STATE
     // Retire old responses and saved drawer callbacks, including A -> B -> A.
-    return () => { generationRef.current += 1 }
+    return () => {
+      generationRef.current += 1
+      stateRef.current.audit?.controller.abort()
+      stateRef.current.print?.controller.abort()
+    }
   }, [contextKey])
   const createSession = useCallback((sale: SalesUkraineSale): SaleSession => ({ sale, generation: generationRef.current }), [])
   const isCurrent = useCallback((session: SaleSession) => session.generation === generationRef.current, [])
@@ -132,18 +136,23 @@ export function useWizardSalesRegisterActions(options: Options) {
   const openOrderedProducts = useCallback(() => publish({ isOrderedProductsOpen: true }), [publish])
   const closeOrderedProducts = useCallback(() => publish({ isOrderedProductsOpen: false }), [publish])
 
-  const closeAudit = useCallback(() => publish({ audit: null, auditStatistic: null, auditError: null, isAuditLoading: false }), [publish])
+  const closeAudit = useCallback(() => {
+    stateRef.current.audit?.controller.abort()
+    publish({ audit: null, auditStatistic: null, auditError: null, isAuditLoading: false })
+  }, [publish])
   const openAudit = useCallback((sale: SalesUkraineSale): Promise<void> => {
     if (!latestRef.current.canViewAudit) return Promise.resolve()
     const pending = stateRef.current.audit
     if (sale.NetUid && pending?.sale.NetUid === sale.NetUid && pending.promise) return pending.promise
-    const session: PendingSession = createSession(sale)
+    if (sale.NetUid && pending?.sale.NetUid === sale.NetUid && !stateRef.current.auditError) return Promise.resolve()
+    pending?.controller.abort()
+    const session: PendingSession = { ...createSession(sale), controller: new AbortController() }
     publish({ audit: session, auditStatistic: null, auditError: null, isAuditLoading: Boolean(sale.NetUid) })
     if (!sale.NetUid) return Promise.resolve()
     const isActive = () => isCurrent(session) && stateRef.current.audit === session
     session.promise = (async () => {
       try {
-        const statistic = await getSalesUkraineSaleAudit(sale.NetUid as string)
+        const statistic = await getSalesUkraineSaleAudit(sale.NetUid as string, session.controller.signal)
         if (!isActive()) return
         publish({ auditStatistic: statistic })
         if (statistic?.Sale) latestRef.current.replaceRegistryRow(statistic as unknown as WizardSaleRegisterStatistic, false)
@@ -157,14 +166,18 @@ export function useWizardSalesRegisterActions(options: Options) {
     return session.promise
   }, [createSession, isCurrent, publish])
 
-  const closePrint = useCallback(() => publish({ print: null, printState: null }), [publish])
+  const closePrint = useCallback(() => {
+    stateRef.current.print?.controller.abort()
+    publish({ print: null, printState: null })
+  }, [publish])
   const printRow = useCallback((sale: SalesUkraineSale): Promise<void> => {
     const current = latestRef.current
     const netId = sale.NetUid
     if (!current.canViewAudit || !netId) return Promise.resolve()
     const pending = stateRef.current.print
     if (pending?.sale.NetUid === netId && pending.promise) return pending.promise
-    const session: PendingSession = createSession(sale)
+    pending?.controller.abort()
+    const session: PendingSession = { ...createSession(sale), controller: new AbortController() }
     publish({ print: session, printState: { document: null, isLoading: true } })
     const isActive = () => isCurrent(session) && stateRef.current.print === session
     session.promise = (async () => {
@@ -172,7 +185,7 @@ export function useWizardSalesRegisterActions(options: Options) {
       // flag, otherwise /sales/update could remove the sale's OrderPackages.
       if (current.canEdit && !sale.IsPrintedActProtocolEdit) {
         try {
-          const hydrated = await (current.permissionScopedSalesUkraineApi ? getSalesUkraineEditDetails : getSaleById)(netId)
+          const hydrated = await (current.permissionScopedSalesUkraineApi ? getSalesUkraineEditDetails : getSaleById)(netId, session.controller.signal)
           if (!isActive()) return
           if (hydrated) {
             const attempt = await current.runSaleUpdate(`sale-update:invoice-print:${netId}`,
@@ -187,7 +200,7 @@ export function useWizardSalesRegisterActions(options: Options) {
       if (!isActive()) return
       void latestRef.current.refreshRegistryRow(sale, true, 'audit')
       try {
-        const document = await (current.permissionScopedSalesUkraineApi ? getSalesUkraineSaleAuditEditActDocument : getSaleActProtocolEditDocument)(netId)
+        const document = await (current.permissionScopedSalesUkraineApi ? getSalesUkraineSaleAuditEditActDocument : getSaleActProtocolEditDocument)(netId, session.controller.signal)
         if (isActive()) publish({ printState: { document, isLoading: false } })
       } catch {
         if (isActive()) {

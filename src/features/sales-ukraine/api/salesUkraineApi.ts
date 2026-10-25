@@ -1087,13 +1087,14 @@ async function fetchSaleDocument(
   path: string,
   query: Record<string, string>,
   operation?: SalesMutationOperationOptions,
+  signal = operation?.signal,
 ): Promise<SaleDocumentResult> {
   const result = await apiRequest<unknown>(path, {
     query,
     ...(operation
       ? { headers: getSalesMutationOperationHeaders(operation.operationId) }
       : {}),
-    ...(operation?.signal ? { signal: operation.signal } : {}),
+    ...(signal ? { signal } : {}),
   })
 
   return extractDocumentResult(result)
@@ -1142,12 +1143,12 @@ export function getSaleInvoiceHistoryDocument(netId: string, historyNetId: strin
   return fetchSaleDocument('/sales/ukraine/documents/revisions/invoice', { historyNetId, netId })
 }
 
-export function getSaleActProtocolEditDocument(netId: string): Promise<SaleDocumentResult> {
-  return fetchSaleDocument('/sales/ukraine/audit/edit-act-document', { netId })
+export function getSaleActProtocolEditDocument(netId: string, signal?: AbortSignal): Promise<SaleDocumentResult> {
+  return fetchSaleDocument('/sales/ukraine/audit/edit-act-document', { netId }, undefined, signal)
 }
 
-export function getSalesUkraineSaleAuditEditActDocument(netId: string): Promise<SaleDocumentResult> {
-  return fetchSaleDocument('/sales/ukraine/audit/edit-act-document', { netId })
+export function getSalesUkraineSaleAuditEditActDocument(netId: string, signal?: AbortSignal): Promise<SaleDocumentResult> {
+  return fetchSaleDocument('/sales/ukraine/audit/edit-act-document', { netId }, undefined, signal)
 }
 
 export function getSaleActForEditingHistoryDocument(netId: string, historyNetId: string): Promise<SaleDocumentResult> {

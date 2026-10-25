@@ -458,7 +458,7 @@ function WizardSaleActionsCell({
   )
 }
 
-function WizardSaleRegistryRowContent({ sale }: { sale: SalesUkraineSale }) {
+const WizardSaleRegistryRowContent = memo(function WizardSaleRegistryRowContent({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
   const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
   const currencyCode = sale.ClientAgreement?.Agreement?.Currency?.Code || ''
@@ -605,7 +605,7 @@ function WizardSaleRegistryRowContent({ sale }: { sale: SalesUkraineSale }) {
       </Box>
     </Box>
   )
-}
+})
 
 function WizardSaleItemProductCell({
   fallbackName,
