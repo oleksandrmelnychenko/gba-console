@@ -383,4 +383,49 @@ describe('wizard register actions', () => {
     expect(mocks.notify).not.toHaveBeenCalled()
   })
 
+  it('shares a pending ordinary opening, permits a different target, and retries after settlement', async () => {
+    const first = deferred<boolean>()
+    const second = deferred<boolean>()
+    const onOpenSale = vi.fn().mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise).mockResolvedValue(true)
+    const { result } = setup({ onOpenSale })
+    let a: unknown
+    let repeated: unknown
+    let b: unknown
+    act(() => { a = result.current.openRow(sale); repeated = result.current.openRow(sale) })
+    expect(onOpenSale).toHaveBeenCalledOnce()
+    expect(repeated).toBe(a)
+    act(() => { b = result.current.openRow(other) })
+    await act(async () => { first.resolve(true); await a })
+    act(() => { repeated = result.current.openRow(other) })
+    expect(repeated).toBe(b)
+    expect(onOpenSale).toHaveBeenCalledTimes(2)
+    await act(async () => { second.resolve(false); await b })
+    await act(async () => result.current.openRow(other))
+    expect(onOpenSale).toHaveBeenCalledTimes(3)
+  })
+
+  it('retires the opening lock with its client and allows retry after a rejected opening', async () => {
+    const pending = deferred<boolean>()
+    const onOpenSale = vi.fn().mockReturnValueOnce(pending.promise).mockRejectedValueOnce(new Error('offline')).mockResolvedValue(true)
+    const { result, rerender, props } = setup({ onOpenSale })
+    let old: unknown
+    act(() => { old = result.current.openRow(sale) })
+    rerender({ ...props, clientKey: 'client-b' })
+    await act(async () => { await expect(result.current.openRow(sale)).rejects.toThrow('offline') })
+    await act(async () => result.current.openRow(sale))
+    expect(onOpenSale).toHaveBeenCalledTimes(3)
+    await act(async () => { pending.resolve(true); await old })
+  })
+
+  it('opens the edit drawer immediately while the register refresh is pending', async () => {
+    const pending = deferred<void>()
+    const { result, props } = setup({ refreshRegistryRow: vi.fn(() => pending.promise) })
+    act(() => { expect(result.current.openEditRow(sale)).toBeUndefined() })
+    expect(result.current.editShiftSale).toBe(sale)
+    act(() => { result.current.closeEdit(); expect(result.current.openEditRow(sale)).toBeUndefined() })
+    expect(result.current.editShiftSale).toBe(sale)
+    expect(props.refreshRegistryRow).toHaveBeenCalledTimes(2)
+    await act(async () => { pending.resolve(); await pending.promise })
+  })
+
 })

@@ -321,6 +321,13 @@ describe('sales Ukraine document request contracts', () => {
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/ukraine/edit/shifted', { query: { netId: 'sale-net-id' } })
   })
 
+  it('forwards cancellation for the edit-shift read', async () => {
+    const signal = new AbortController().signal
+    apiRequestMock.mockResolvedValueOnce({ Sale: { NetUid: 'sale-1' } })
+    await expect(getShiftedSaleById('sale-1', signal)).resolves.toEqual({ NetUid: 'sale-1' })
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/ukraine/edit/shifted', { query: { netId: 'sale-1' }, signal })
+  })
+
   it('loads sale by id from the sale statistic envelope', async () => {
     apiRequestMock.mockResolvedValueOnce({
       Sale: {

@@ -1373,7 +1373,7 @@ function NewSaleWizardContent({
             onCreateMergedMainClientSale={(sale) => void startMergedMainClientSale(sale)}
             onEditMergedSale={(sale, unionSale) => void openMergedSaleEdit(sale, unionSale)}
             onInvoiceMergedSale={(sale, unionSale) => void openMergedSaleInvoice(sale, unionSale)}
-            onOpenSale={(sale) => void openRegistrySale(sale)}
+            onOpenSale={openRegistrySale}
             onRequestClose={requestExit}
           />
         )}

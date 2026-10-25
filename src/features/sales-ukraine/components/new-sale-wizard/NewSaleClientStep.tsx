@@ -57,7 +57,7 @@ export function NewSaleClientStep({
   onCreateMergedMainClientSale?: (unionSale: SalesUkraineSale) => void
   onEditMergedSale?: (sale: SalesUkraineSale, unionSale: SalesUkraineSale | null) => void
   onInvoiceMergedSale?: (sale: SalesUkraineSale, unionSale: SalesUkraineSale | null) => void
-  onOpenSale: (sale: SalesUkraineSale) => void
+  onOpenSale: (sale: SalesUkraineSale) => void | Promise<unknown>
   onRequestClose?: () => void
   permissionFlow?: WizardSalesPermissionFlow
   permissionScopedSalesUkraineApi?: boolean

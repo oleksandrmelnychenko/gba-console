@@ -313,9 +313,10 @@ function normalizeSaleDetails(result: unknown): SalesUkraineSale | null {
   return result as SalesUkraineSale
 }
 
-export async function getShiftedSaleById(netId: string): Promise<SalesUkraineSale | null> {
+export async function getShiftedSaleById(netId: string, signal?: AbortSignal): Promise<SalesUkraineSale | null> {
   const result = await apiRequest<unknown>('/sales/ukraine/edit/shifted', {
     query: { netId },
+    ...(signal ? { signal } : {}),
   })
 
   return normalizeSale(result)

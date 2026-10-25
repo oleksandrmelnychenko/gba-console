@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { notifications } from '@mantine/notifications'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getSalesUkraineSaleAudit } from '../../../../shared/sale-audit/saleAuditApi'
@@ -36,7 +36,7 @@ type Options = {
   canOpenDetails: boolean
   canViewAudit: boolean
   permissionScopedSalesUkraineApi: boolean
-  onOpenSale: (sale: SalesUkraineSale) => void
+  onOpenSale: (sale: SalesUkraineSale) => void | Promise<unknown>
   onCreateMergedMainClientSale?: (sale: SalesUkraineSale) => void
   onEditMergedSale?: (sale: SalesUkraineSale, unionSale: SalesUkraineSale | null) => void
   onInvoiceMergedSale?: (sale: SalesUkraineSale, unionSale: SalesUkraineSale | null) => void
@@ -58,6 +58,7 @@ export function useWizardSalesRegisterActions(options: Options) {
   if (model.contextKey !== contextKey) setModel({ contextKey, state: EMPTY_STATE })
   const stateRef = useRef(state)
   const generationRef = useRef(0)
+  const openingRef = useRef<{ key: string; promise: Promise<unknown> } | null>(null)
   const latestRef = useRef({ ...options, t, runSaleUpdate })
   useLayoutEffect(() => { latestRef.current = { ...options, t, runSaleUpdate } })
   const publish = useCallback((patch: Partial<ActionState>) => {
@@ -70,6 +71,7 @@ export function useWizardSalesRegisterActions(options: Options) {
     // Retire old responses and saved drawer callbacks, including A -> B -> A.
     return () => {
       generationRef.current += 1
+      openingRef.current = null
       stateRef.current.audit?.controller.abort()
       stateRef.current.print?.controller.abort()
     }
@@ -80,7 +82,18 @@ export function useWizardSalesRegisterActions(options: Options) {
   const openRow = useCallback((sale: SalesUkraineSale) => {
     if (!latestRef.current.canOpenDetails) return
     if (sale.InputSaleMerges?.length) publish({ merged: createSession(sale) })
-    else latestRef.current.onOpenSale(sale)
+    else {
+      const key = JSON.stringify([generationRef.current, sale.NetUid || sale.Id])
+      if (openingRef.current?.key === key) return openingRef.current.promise
+      const opened = latestRef.current.onOpenSale(sale)
+      if (!opened) { openingRef.current = null; return }
+      const request = { key, promise: Promise.resolve(opened) }
+      request.promise = request.promise.finally(() => {
+        if (openingRef.current === request) openingRef.current = null
+      })
+      openingRef.current = request
+      return request.promise
+    }
   }, [createSession, publish])
   const closeMerged = useCallback(() => publish({ merged: null }), [publish])
   const merged = state.merged
@@ -108,10 +121,14 @@ export function useWizardSalesRegisterActions(options: Options) {
     if (!latestRef.current.canEdit) return
     if (stateRef.current.edit?.sale.NetUid && stateRef.current.edit.sale.NetUid === sale.NetUid) return
     publish({ edit: createSession(sale) })
-    return latestRef.current.refreshRegistryRow(sale, false)
   }, [createSession, publish])
   const closeEdit = useCallback(() => publish({ edit: null }), [publish])
   const edit = state.edit
+  useEffect(() => {
+    // Refresh belongs to the opened edit session, independently of the opener's
+    // action guard. Closing the drawer must allow another opening immediately.
+    if (edit) void latestRef.current.refreshRegistryRow(edit.sale, false)
+  }, [edit])
   const handleShiftSaved = useCallback(async () => {
     if (!edit || !isCurrent(edit) || stateRef.current.edit !== edit) return
     closeEdit()

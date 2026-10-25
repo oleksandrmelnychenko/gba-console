@@ -4,10 +4,8 @@ import {
   Box,
   Button,
   Group,
-  NumberInput,
   Stack,
   Text,
-  Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { ArrowLeftRight, CircleAlert, Package, Receipt, Warehouse } from 'lucide-react'
@@ -18,17 +16,18 @@ import { DocumentDetailChip, DocumentDetailLayout, DocumentDetailMetric, Documen
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { getShiftedSaleById, shiftOrderItemsCurrent } from '../api/salesUkraineApi'
+import { shiftOrderItemsCurrent } from '../api/salesUkraineApi'
 import { getSaleLifecycleStatusKey } from '../saleStatus'
 import { usePersistentSaleJsonMutation } from '../usePersistentSaleJsonMutation'
 import {
   OrderItemShiftStatusType,
-  type OrderItemShiftStatusTypeValue,
   type SalesUkraineOrderItem,
   type SalesUkraineOrderItemShiftStatus,
   type SalesUkraineSale,
 } from '../types'
 import { buildBulkShiftPayload, hasShiftableQuantity } from './saleEditShiftPayload'
+import { useSaleEditLoad, type SaleEditLoadAction } from './useSaleEditLoad'
+import { SaleEditShiftInput } from './SaleEditShiftInput'
 import './sales-drawers.css'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
@@ -80,9 +79,7 @@ type SaleEditFooterState = {
 type SaleEditAction =
   | { type: 'draftEntryChanged'; key: string; patch: Partial<ShiftDraftEntry> }
   | { type: 'draftReplaced'; draft: ShiftDraft }
-  | { type: 'loadFailed'; error: string }
-  | { type: 'loadStarted' }
-  | { type: 'loadSucceeded'; sale: SalesUkraineSale }
+  | SaleEditLoadAction
   | { type: 'savingFinished' }
   | { type: 'savingStarted' }
 
@@ -222,68 +219,34 @@ function SaleEditContent({
   const resumeShiftMutation = shiftMutation.resume
   const recoveryAttemptedRef = useRef(false)
 
-  useEffect(() => {
-    const netId = initialSale.NetUid
+  useSaleEditLoad(initialSale.NetUid, dispatch)
 
-    if (!netId) {
-      return
-    }
-
-    let cancelled = false
-
-    async function load(id: string) {
-      dispatch({ type: 'loadStarted' })
-
-      try {
-        const next = await getShiftedSaleById(id)
-
-        if (!cancelled) {
-          if (next) {
-            dispatch({ sale: next, type: 'loadSucceeded' })
-          } else {
-            dispatch({ error: t('Не вдалося завантажити продаж'), type: 'loadFailed' })
-          }
-        }
-      } catch (loadError) {
-        if (!cancelled) {
-          dispatch({
-            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити продаж'),
-            type: 'loadFailed',
-          })
-        }
-      }
-    }
-
-    void load(netId)
-
-    return () => {
-      cancelled = true
-    }
-  }, [initialSale.NetUid, t])
-
-  const orderItems = getOrderItems(sale)
-  const hasShiftableItems = orderItems.some(hasShiftableQuantity)
+  const orderItems = useMemo(() => getOrderItems(sale), [sale])
+  const { hasShiftableItems, totalAmount, totalQty, baseRows } = useMemo(() => ({
+    hasShiftableItems: orderItems.some(hasShiftableQuantity),
+    totalAmount: orderItems.reduce((sum, item) => sum + (getNumber(item.TotalAmount) ?? 0), 0),
+    totalQty: orderItems.reduce((sum, item) => sum + (getNumber(item.Qty) ?? 0), 0),
+    baseRows: orderItems.map((item, index) => ({
+      key: itemKey(item, index), item, qty: getNumber(item.Qty) ?? 0,
+      billNum: getExistingShiftQty(item, OrderItemShiftStatusType.Bill),
+      storeNum: getExistingShiftQty(item, OrderItemShiftStatusType.Store),
+    })),
+  }), [orderItems])
   const isNew = isNewSale(sale)
-  const totalAmount = orderItems.reduce((sum, item) => sum + (getNumber(item.TotalAmount) ?? 0), 0)
-  const totalQty = orderItems.reduce((sum, item) => sum + (getNumber(item.Qty) ?? 0), 0)
-  const billShiftTotal = sumShiftQty(orderItems, draft, OrderItemShiftStatusType.Bill)
-  const storeShiftTotal = sumShiftQty(orderItems, draft, OrderItemShiftStatusType.Store)
-  const tableRows = orderItems.map((item, index) => {
-    const key = itemKey(item, index)
-    const qty = getNumber(item.Qty) ?? 0
-    const entry = draft[key] || EMPTY_DRAFT_ENTRY
-
+  const tableRows = useMemo(() => baseRows.map(row => {
+    const entry = draft[row.key] || EMPTY_DRAFT_ENTRY
     return {
-      billNum: entry.billTouched ? toNumber(entry.bill) : getExistingShiftQty(item, OrderItemShiftStatusType.Bill),
-      entry,
-      item,
-      key,
-      qty,
-      storeNum: entry.storeTouched ? toNumber(entry.store) : getExistingShiftQty(item, OrderItemShiftStatusType.Store),
+      ...row, entry,
+      billNum: entry.billTouched ? toNumber(entry.bill) : row.billNum,
+      storeNum: entry.storeTouched ? toNumber(entry.store) : row.storeNum,
     }
-  })
-  const updateEntry = useCallback((key: string, patch: Partial<ShiftDraftEntry>) => {
-    dispatch({ key, patch, type: 'draftEntryChanged' })
+  }), [baseRows, draft])
+  const { billShiftTotal, storeShiftTotal } = useMemo(() => tableRows.reduce((sum, row) => ({
+    billShiftTotal: sum.billShiftTotal + row.billNum,
+    storeShiftTotal: sum.storeShiftTotal + row.storeNum,
+  }), { billShiftTotal: 0, storeShiftTotal: 0 }), [tableRows])
+  const updateEntry = useCallback((key: string, target: 'bill' | 'store', value: number | string) => {
+    dispatch({ key, patch: target === 'bill' ? { bill: value, billTouched: true } : { store: value, storeTouched: true }, type: 'draftEntryChanged' })
   }, [])
   const isMutationLocked = isSaving || shiftMutation.hasPending
   const tableColumns = useMemo(
@@ -520,7 +483,7 @@ function createSaleEditColumns({
   isNew: boolean
   isSaving: boolean
   t: (key: string) => string
-  updateEntry: (key: string, patch: Partial<ShiftDraftEntry>) => void
+  updateEntry: (key: string, target: 'bill' | 'store', value: number | string) => void
 }): DataTableColumn<SaleEditOrderItemRow>[] {
   const columns: DataTableColumn<SaleEditOrderItemRow>[] = [
     {
@@ -599,23 +562,17 @@ function createSaleEditColumns({
         const label = storageName ? `${t('Скасувати резерв на склад')}: ${storageName}` : t('Скасувати резерв на склад')
 
         return (
-          <Tooltip label={label} disabled={!storageName} withArrow>
-            <NumberInput
-              allowDecimal={false}
-              allowNegative={false}
-              clampBehavior="strict"
-              hideControls
-              max={Math.max(0, row.qty - (isNew ? 0 : row.billNum))}
-              min={0}
-              className="sale-edit-shift-input"
-              aria-label={`${t('На склад')}: ${getOrderItemProductName(row.item)}`}
-              placeholder="0"
-              disabled={isSaving}
-              size="xs"
-              value={row.entry.store}
-              onChange={(value) => updateEntry(row.key, { store: value, storeTouched: true })}
-            />
-          </Tooltip>
+          <SaleEditShiftInput
+            itemKey={row.key}
+            target="store"
+            value={row.entry.store}
+            max={Math.max(0, row.qty - (isNew ? 0 : row.billNum))}
+            disabled={isSaving}
+            label={`${t('На склад')}: ${getOrderItemProductName(row.item)}`}
+            hint={label}
+            showHint={Boolean(storageName)}
+            onChange={updateEntry}
+          />
         )
       },
       width: 104,
@@ -649,23 +606,17 @@ function createSaleEditColumns({
       header: t('В рахунок'),
       accessor: (row) => row.entry.bill,
       cell: (row) => (
-        <Tooltip label={t('Скасувати резерв у рахунку')} withArrow>
-          <NumberInput
-            allowDecimal={false}
-            allowNegative={false}
-            clampBehavior="strict"
-            hideControls
-            max={Math.max(0, row.qty - row.storeNum)}
-            min={0}
-            className="sale-edit-shift-input"
-            aria-label={`${t('В рахунок')}: ${getOrderItemProductName(row.item)}`}
-            placeholder="0"
-            disabled={isSaving}
-            size="xs"
-            value={row.entry.bill}
-            onChange={(value) => updateEntry(row.key, { bill: value, billTouched: true })}
-          />
-        </Tooltip>
+        <SaleEditShiftInput
+          itemKey={row.key}
+          target="bill"
+          value={row.entry.bill}
+          max={Math.max(0, row.qty - row.storeNum)}
+          disabled={isSaving}
+          label={`${t('В рахунок')}: ${getOrderItemProductName(row.item)}`}
+          hint={t('Скасувати резерв у рахунку')}
+          showHint
+          onChange={updateEntry}
+        />
       ),
       width: 112,
       minWidth: 112,
@@ -675,27 +626,6 @@ function createSaleEditColumns({
   }
 
   return columns
-}
-
-function sumShiftQty(
-  orderItems: SalesUkraineOrderItem[],
-  draft: ShiftDraft,
-  shiftStatus: OrderItemShiftStatusTypeValue,
-): number {
-  return orderItems.reduce((sum, item, index) => {
-    const key = itemKey(item, index)
-    const entry = draft[key] || EMPTY_DRAFT_ENTRY
-    const value =
-      shiftStatus === OrderItemShiftStatusType.Bill
-        ? entry.billTouched
-          ? toNumber(entry.bill)
-          : getExistingShiftQty(item, OrderItemShiftStatusType.Bill)
-        : entry.storeTouched
-          ? toNumber(entry.store)
-          : getExistingShiftQty(item, OrderItemShiftStatusType.Store)
-
-    return sum + value
-  }, 0)
 }
 
 function buildShiftPayload(sale: SalesUkraineSale, draft: ShiftDraft): SalesUkraineSale {
