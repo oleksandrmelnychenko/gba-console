@@ -1,3 +1,4 @@
+import { useProductDetailData } from '../useProductDetailData'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { ProductSourceHistoryRefresh } from '../../../shared/ui/product-movement-history/ProductSourceHistoryRefresh'
 import { withProductSourceHistoryColumns } from '../../../shared/ui/product-movement-history/productSourceHistory'
@@ -64,7 +65,6 @@ import {
   getProductConsignmentRemainings,
   getProductGroupsByProductNetId,
   getProductMovements,
-  getProductReservationByNetId,
   getProductStorageLocationHistory,
   getProductWriteOffRulesByProductGroupNetId,
   getProductWriteOffRulesByProductNetId,
@@ -269,13 +269,8 @@ function ProductDetailPageContent() {
   const { netId } = useParams<{ netId?: string }>()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [product, setProduct] = useState<Product | null>(null)
-  const [reservation, setReservation] = useState<ProductReservation>({})
-  const [reservationError, setReservationError] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setLoading] = useState(true)
+  const { product, setProduct, reservation, reservationError, reservationLoading, error, isLoading, reload } = useProductDetailData(netId)
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null)
-  const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const activePanel = useMemo(() => getPanelFromQuery(searchParams), [searchParams])
 
   useEffect(() => {
@@ -287,56 +282,6 @@ function ProductDetailPageContent() {
       }, { replace: true })
     }
   }, [activePanel, searchParams, setSearchParams])
-
-  useEffect(() => {
-    if (!netId) {
-      return
-    }
-
-    const productNetId = netId
-    let cancelled = false
-
-    async function loadProduct() {
-      setLoading(true)
-      setError(null)
-      setReservationError(null)
-
-      try {
-        const [nextProduct, nextReservationResult] = await Promise.all([
-          getProductByNetId(productNetId),
-          getProductReservationByNetId(productNetId)
-            .then((value) => ({ error: null, value }))
-            .catch((reservationLoadError: unknown) => ({
-              error: reservationLoadError instanceof Error ? reservationLoadError.message : t('Не вдалося завантажити резерви товару'),
-              value: {},
-            })),
-        ])
-
-        if (!cancelled) {
-          setProduct(nextProduct)
-          setReservation(nextReservationResult.value)
-          setReservationError(nextReservationResult.error)
-        }
-      } catch (loadError) {
-        if (!cancelled) {
-          setProduct(null)
-          setReservation({})
-          setReservationError(null)
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити товар'))
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void loadProduct()
-
-    return () => {
-      cancelled = true
-    }
-  }, [netId, reloadKey, t])
 
   const mainImage = useMemo(() => getProductMainImage(product), [product])
   const originalNumbers = useMemo(() => getProductOriginalNumbers(product).slice(0, 8), [product])
@@ -368,12 +313,12 @@ function ProductDetailPageContent() {
     }
 
     reload()
-  }, [])
+  }, [reload, setProduct])
   const handleRealtimeProductUpdate = useCallback((payload: unknown) => {
     if (isProductRealtimePayloadForProduct(payload, product || { NetUid: netId })) {
       reload()
     }
-  }, [netId, product])
+  }, [netId, product, reload])
 
   useRealtimeEvent(realtimeEvents.productReservationUpdated, handleRealtimeProductUpdate)
 
@@ -497,6 +442,7 @@ function ProductDetailPageContent() {
                   product={product}
                   reservation={reservation}
                   reservationError={reservationError}
+                  reservationLoading={reservationLoading}
                   onProductSaved={handleProductSaved}
                 />
             </Card>
@@ -701,12 +647,14 @@ export function ProductStockSummary({
   product,
   reservation,
   reservationError,
+  reservationLoading = false,
 }: {
   combinedStockQty?: number | null
   onProductSaved?: (product: Product | null) => void
   product: Product
   reservation: ProductReservation
   reservationError: string | null
+  reservationLoading?: boolean
 }) {
   const { t } = useI18n()
   const availabilityItems = product.ProductAvailabilities || []
@@ -720,6 +668,7 @@ export function ProductStockSummary({
           {reservationError}
         </Alert>
       )}
+      {reservationLoading && <Group gap="xs" role="status"><Loader size="xs" /><Text size="sm">{t('Завантаження резервів')}</Text></Group>}
       <div className="product-stock-bar">
         {/* Static reserve fields, in the legacy stock-bar order. */}
         <TotalQtyTile label={t('В рахунку в ресейлі')} value={reservation.TotalProductReSaleQty} />
