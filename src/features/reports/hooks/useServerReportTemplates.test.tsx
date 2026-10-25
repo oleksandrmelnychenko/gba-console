@@ -1,4 +1,5 @@
 import { financialDataset, axisFields } from '../data/financialAxes.test-fixtures'
+import { currentFinancialDataset, currentFinancialRequest } from '../data/currentFinancialAxes.test-fixtures'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { browserTemplateImportId, useServerReportTemplates } from './useServerReportTemplates'
@@ -184,18 +185,45 @@ describe('server report templates', () => {
     expect(deleteServerReportTemplate).not.toHaveBeenCalled()
   })
 
-  it('passes the advertised financial capability when saving an edited matrix and retains its axes', async () => {
-    const data = defaultDatasetRequest(financialDataset, '2026-10-17', '2026-10-17')
-    data.sorted.Row = axisFields([3]); data.sorted.Col = axisFields([4]); data.profitReadMode = 0
+  it.each([[financialDataset, [3], [4]], [currentFinancialDataset, [12], [15]],
+    [currentFinancialDataset, [12], []], [currentFinancialDataset, [12, 15], []]] as const)('passes the advertised financial capability when saving profit axes %j', async (dataset, rows, columns) => {
+    const data = defaultDatasetRequest(dataset, '2026-10-17', '2026-10-17')
+    data.sorted.Row = axisFields([...rows]); data.sorted.Col = axisFields([...columns]); data.profitReadMode = 0
     const template = { Name: 'Матриця', Id: crypto.randomUUID(), Revision: 1, Data: data }
     vi.mocked(getServerReportTemplates).mockResolvedValue([template])
     vi.mocked(saveServerReportTemplate).mockResolvedValue({ ...template, Revision: 2 })
-    const { result } = renderHook(() => useServerReportTemplates(true, [financialDataset]))
+    const { result } = renderHook(() => useServerReportTemplates(true, [dataset]))
     await waitFor(() => expect(result.current.ready).toBe(true))
     vi.mocked(getServerReportTemplates).mockResolvedValue([{ ...template, Revision: 2 }])
     await act(() => result.current.save(template.Name, template.Data, template.Id))
-    expect(saveServerReportTemplate).toHaveBeenCalledWith(template, expect.any(AbortSignal), financialDataset)
-    expect(result.current.templates[0].Data.sorted.Col.map(field => field.type)).toEqual([4])
+    expect(saveServerReportTemplate).toHaveBeenCalledWith(template, expect.any(AbortSignal), dataset)
+    expect(result.current.templates[0].Data.sorted.Row.map(field => field.type)).toEqual(rows)
+    expect(result.current.templates[0].Data.sorted.Col.map(field => field.type)).toEqual(columns)
+  })
+
+  it.each(['create', 'update', 'rename', 'copy', 'import'] as const)('keeps server capabilities and exact row-only settings during %s', async operation => {
+    const template = { Name: 'Клієнт та договори', Id: crypto.randomUUID(), Revision: 1, Data: currentFinancialRequest([12, 15], []) }
+    const before = structuredClone(template)
+    vi.mocked(getServerReportTemplates).mockResolvedValue([template])
+    vi.mocked(saveServerReportTemplate).mockImplementation(async request => {
+      const saved = { ...request, Revision: (request.Revision ?? 0) + 1 }
+      vi.mocked(getServerReportTemplates).mockResolvedValue([saved])
+      return saved
+    })
+    const { result } = renderHook(() => useServerReportTemplates(true, [currentFinancialDataset]))
+    await waitFor(() => expect(result.current.ready).toBe(true))
+    await act(async () => {
+      const answer = operation === 'create' ? await result.current.save('Копія', template.Data)
+        : operation === 'update' ? await result.current.update(template, template.Data)
+        : operation === 'rename' ? await result.current.rename(template, 'Інша назва')
+        : operation === 'copy' ? await result.current.copy(template, 'Копія')
+        : await result.current.importBrowserTemplate(template)
+      expect(answer).toMatchObject({ ok: true })
+    })
+    expect(saveServerReportTemplate).toHaveBeenCalledOnce()
+    expect(vi.mocked(saveServerReportTemplate).mock.calls[0][2]).toBe(currentFinancialDataset)
+    expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data).toEqual(template.Data)
+    expect(template).toEqual(before)
   })
 
   it('keeps the saved value and returns failure on an update conflict', async () => {

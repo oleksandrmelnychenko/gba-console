@@ -121,7 +121,7 @@ it('shows the workbook names without technical ids, money with two decimals and 
   expect(table.getByRole('cell', { name: '3\u00a0527' })).toBeTruthy()
 })
 
-function showFinancialMatrix(ids: string[], caption = 'Однакова організація', dimension = 'Organization') {
+function showFinancialMatrix(ids: (string | null)[], caption = 'Однакова організація', dimension = 'Organization') {
   const preview = normalizeNativeReportPreview({ Preview: {
     Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true, Request: request,
     Page: { Offset: 0, Limit: 50, TotalVisibleRows: 1, ReturnedRows: 1, HasMore: false },
@@ -129,7 +129,7 @@ function showFinancialMatrix(ids: string[], caption = 'Однакова орга
     ColumnSchema: [{ Caption: 'Організація', Identity: dimension }, { Caption: 'Група', Identity: '$measureGroup' }, { Caption: 'Показник', Identity: '$measure' }],
     Rows: [{ Ordinal: 0, SourceIndex: 12, Values: [{ Caption: '17.10.2026' }] }],
     Columns: ids.flatMap((id, index) => ['Продажі', 'Собівартість'].map((measure, measureIndex) => ({ Ordinal: index * 2 + measureIndex, SourceIndex: index * 2 + measureIndex,
-      Values: [{ Caption: caption, Identity: { Kind: 'signedInteger', Value: id, Provenance: 'columnAxisKey' } },
+      Values: [{ Caption: caption, Identity: { Kind: id === null ? 'null' : 'signedInteger', Value: id, Provenance: 'columnAxisKey' } },
         { Caption: 'Прибуток', Identity: { Kind: 'string', Value: 'profit', Provenance: 'columnAxisKey' } },
         { Caption: measure, Identity: { Kind: 'reportField', Value: 'SalesValueWithoutVAT', Provenance: 'columnAxisKey' } }] }))),
     Cells: [{ RowSourceIndex: 12, ColumnSourceIndex: 1, Value: { Kind: 'null', Value: null, Provenance: 'producerCell' } }],
@@ -147,5 +147,15 @@ it('distinguishes equal organization captions by exact Int64 identity and keeps 
     expect(screen.getByRole('columnheader', { name: `Однакова організація [${id}] / Прибуток / Продажі` })).toBeTruthy()
   }
   expect(view.container.querySelectorAll('td[title="Клітинка відсутня"]')).toHaveLength(3)
+  expect(screen.getByRole('cell', { name: '∅' })).toBeTruthy()
+})
+
+it.each(['CustomerName', 'CustomerContract'])('keeps distinct %s identities visible even with equal names and an unknown identity', dimension => {
+  const view = showFinancialMatrix(['9223372036854775806', '9223372036854775807', null], 'Не вказано', dimension)
+  for (const id of ['9223372036854775806', '9223372036854775807'])
+    expect(screen.getByRole('columnheader', { name: `Не вказано [${id}] / Прибуток / Продажі` })).toBeTruthy()
+  expect(screen.getByRole('columnheader', { name: 'Не вказано / Прибуток / Продажі' })).toBeTruthy()
+  expect(view.container.textContent).not.toContain('[0]')
+  expect(view.container.querySelectorAll('td[title="Клітинка відсутня"]')).toHaveLength(5)
   expect(screen.getByRole('cell', { name: '∅' })).toBeTruthy()
 })

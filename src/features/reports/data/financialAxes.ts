@@ -1,4 +1,5 @@
 import type { ReportDataset, ReportRequestBody } from '../types'
+import { currentFinancialAxesCapability, usesCurrentFinancialAxes, validCurrentFinancialAxes } from './currentFinancialAxes'
 
 export type FinancialAxes = {
   version: 1; allowedRows: [3, 4]; allowedColumns: [3, 4]
@@ -18,8 +19,13 @@ export function financialAxesCapability(dataset?: ReportDataset): FinancialAxes 
   return value as FinancialAxes
 }
 
+export function requestFinancialAxesCapability(dataset: ReportDataset | undefined, data: object) {
+  return usesCurrentFinancialAxes(data) && currentFinancialAxesCapability(dataset) || financialAxesCapability(dataset)
+}
+
 /** Valid for every existing calculation basis; those bases retain their own period and filter checks. */
-export function validFinancialAxes(data: ReportRequestBody): boolean {
+export function validFinancialAxes(data: ReportRequestBody, dataset?: ReportDataset): boolean {
+  if (currentFinancialAxesCapability(dataset) && usesCurrentFinancialAxes(data)) return validCurrentFinancialAxes(data)
   const rows = data.sorted?.Row, columns = data.sorted?.Col
   if (!Array.isArray(rows) || !Array.isArray(columns) || rows.length < 1 || rows.length > 2 || columns.length > 1) return false
   const types = [...rows, ...columns].map(field => field.type)

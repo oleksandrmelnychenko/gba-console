@@ -1,4 +1,5 @@
 import { validFinancialAxes } from './financialAxes'
+import { validCurrentFinancialAxes, usesCurrentFinancialAxes } from './currentFinancialAxes'
 import type { NativeReportPreview } from './nativeReportPreview'
 import { readWorkbookSelection, sameWorkbookSelection, workbookSources, workbookText, workbookHasText,
   type WorkbookField, type WorkbookSelection } from './workbookPresentation'
@@ -58,7 +59,8 @@ export function readWorkbookPreview(raw: unknown, preview: NativeReportPreview):
   if (source === 35) {
     const identities = preview.RowSchema.map(field => (field as { Identity?: string }).Identity)
     if (raw.rows.length !== 0 || identities.length < 1 || identities.length > 2
-      || new Set(identities).size !== identities.length || identities.some(identity => identity !== 'Day' && identity !== 'Organization')) return fail()
+      || new Set(identities).size !== identities.length || identities.some(identity => !['Day', 'Organization'].includes(identity ?? '')
+        && !(preview.Request?.ProfitReadMode === 0 && ['CustomerName', 'CustomerContract'].includes(identity ?? '')))) return fail()
   } else if (raw.rows.length !== preview.Rows.length || preview.SettlementCounterpartyAttributes
     || source === 40 && !['PaymentRegister', 'PaymentBalanceRecord']
       .includes(preview.RowSchema.map(field => (field as { Identity?: string }).Identity).join(','))
@@ -119,21 +121,29 @@ export function workbookAttributeText(value?: WorkbookAttribute): string {
 export function bindProfitPreviewGrouping(request: ReportRequestBody, preview: NativeReportPreview): void {
   if (request.dataSource !== 35 && request.dataSource !== 38) return
   const identities: Readonly<Record<number, string>> = request.dataSource === 35
-    ? { 3: 'Day', 4: 'Organization' }
+    ? { 3: 'Day', 4: 'Organization', 12: 'CustomerName', 15: 'CustomerContract' }
     : { 73: 'SourceReceiptStorage', 78: 'SourceRegistrarWarehouse', 4: 'Organization', 21: 'Supplier' }
   const expected = request.sorted.Row.map(row => identities[row.type])
   const actual = preview.RowSchema.map(field => (field as { Identity?: string }).Identity)
   const columns = request.sorted.Col.map(column => identities[column.type])
   const matrix = columns.length > 0
   const columnSchema = [...columns, '$measureGroup', '$measure']
-  const invalidColumns = matrix && (request.dataSource !== 35 || !validFinancialAxes(request)
+  const invalidColumns = matrix && (request.dataSource !== 35 || !(validFinancialAxes(request) || validCurrentFinancialAxes(request))
     || preview.ColumnSchema.length !== columnSchema.length
     || preview.ColumnSchema.some((field, index) => field.Identity !== columnSchema[index])
     || preview.Columns.some(column => column.Values.length !== columnSchema.length
       || column.Values.some(value => !value.Identity || typeof value.Identity.Kind !== 'string'
         || typeof value.Identity.Provenance !== 'string' || !(value.Identity.Value === null || typeof value.Identity.Value === 'string'))
       || column.Values.at(-1)?.Identity?.Kind !== 'reportField'))
-  if (preview.Request?.DataSource !== (request.dataSource === 35 ? 'NativeDayOrganizationGrossProfit' : 'NativeSupplierGrossProfit')
+  const clientDimensions = [...request.sorted.Row, ...request.sorted.Col].some(field => field.type === 12 || field.type === 15)
+  const validIdentity = (identity: NativeReportPreview['Rows'][number]['Values'][number]['Identity']) => !!identity
+    && (identity.Kind === 'null' && identity.Value === null || identity.Kind === 'signedInteger'
+      && typeof identity.Value === 'string' && /^[1-9]\d{0,18}$/.test(identity.Value) && BigInt(identity.Value) <= 9223372036854775807n)
+  const invalidClientAxes = request.dataSource === 35 && clientDimensions && (!usesCurrentFinancialAxes(request)
+    || !validCurrentFinancialAxes(request) || preview.Request?.ProfitReadMode !== 0
+    || preview.Rows.some(row => expected.some((identity, index) => ['CustomerName', 'CustomerContract'].includes(identity) && !validIdentity(row.Values[index]?.Identity)))
+    || preview.Columns.some(column => columns.some((identity, index) => ['CustomerName', 'CustomerContract'].includes(identity) && !validIdentity(column.Values[index]?.Identity))))
+  if (invalidClientAxes || preview.Request?.DataSource !== (request.dataSource === 35 ? 'NativeDayOrganizationGrossProfit' : 'NativeSupplierGrossProfit')
     || expected.length === 0 || expected.length > (request.dataSource === 35 ? 2 : 3) || expected.some(identity => !identity)
     || new Set(expected).size !== expected.length || invalidColumns
     || expected.includes('SourceReceiptStorage') && expected.includes('SourceRegistrarWarehouse')

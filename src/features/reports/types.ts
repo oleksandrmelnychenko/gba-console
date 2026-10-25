@@ -391,6 +391,7 @@ export type ReportDataset = {
   sourceOrganizations?: unknown
   sourceBuyerSubtree?: unknown
   financialAxes?: unknown
+  currentFinancialAxes?: unknown
   profitReadModeLookup?: unknown
   profitReadMode?: unknown
   settlementReadMode?: unknown

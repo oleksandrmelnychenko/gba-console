@@ -1,4 +1,6 @@
 import { financialDataset, axisFields } from '../data/financialAxes.test-fixtures'
+import { currentFinancialDataset, currentFinancialRequest } from '../data/currentFinancialAxes.test-fixtures'
+import { requestProfitReadMode } from '../data/profitReadMode'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { createStockReport, previewStockReport, searchDatasetReportValues } from './reportsApi'
@@ -52,5 +54,28 @@ it.each([[[3], [4]], [[4], [3]]])('dispatches axes %j / %j unchanged only with s
   expect(saved.Data.sorted.Row.map(field => field.type)).toEqual(rows)
   expect(saved.Data.sorted.Col.map(field => field.type)).toEqual(cols)
   expect(apiRequest).toHaveBeenLastCalledWith('/report/templates/save', expect.objectContaining({ body: expect.objectContaining({ Data: request }) }))
+  expect(request).toEqual(before)
+})
+
+it('requires current capability before generation, preview or saving client/agreement settings', async () => {
+  const request = currentFinancialRequest(), before = structuredClone(request)
+  for (const dataset of [undefined, financialDataset]) {
+    await expect(createStockReport(request, dataset)).rejects.toThrow()
+    await expect(previewStockReport(request, dataset)).rejects.toThrow()
+    await expect(saveServerReportTemplate({ Name: 'Клієнти', Data: request }, undefined, dataset)).rejects.toThrow()
+  }
+  const incompatible = { ...request, profitReadMode: 1 }
+  await expect(createStockReport(incompatible, currentFinancialDataset)).rejects.toThrow('Поточних документів GBA')
+  await expect(saveServerReportTemplate({ Name: 'Клієнти', Data: incompatible }, undefined, currentFinancialDataset)).rejects.toThrow()
+  expect(apiRequest).not.toHaveBeenCalled()
+  vi.mocked(apiRequest).mockResolvedValue({ document: {} })
+  await createStockReport(request, currentFinancialDataset)
+  expect(apiRequest).toHaveBeenLastCalledWith('/report/stocks/generate', expect.objectContaining({ body: request }))
+  vi.mocked(apiRequest).mockResolvedValue({ Id: '10000000-0000-4000-8000-000000000035', Revision: 1, Name: 'Клієнти',
+    Data: { DataSource: 35, From: request.from, To: request.to, Sorted: request.sorted, Selections: request.selections,
+      ProfitReadMode: 0, DayOrganizationBasis: 0 } })
+  const saved = await saveServerReportTemplate({ Name: 'Клієнти', Data: request }, undefined, currentFinancialDataset)
+  expect(saved.Data.sorted).toEqual(request.sorted)
+  expect(requestProfitReadMode(saved.Data)).toBe(0)
   expect(request).toEqual(before)
 })
