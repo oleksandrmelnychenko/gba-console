@@ -1,3 +1,5 @@
+import { ReportPresentationCurrencyPanel } from './ReportPresentationCurrencyPanel'
+import { requestPresentationCurrency, readPresentationCurrency, presentationCurrencySupported, presentationCurrencyModeSupported, isPresentationCurrencyMoneyMeasure, currencyNeutralMeasureLabel } from '../data/reportPresentationCurrency'
 import {
   PublishedReportWorkspace,
   CollectionCoefficientConstructorModal,
@@ -384,6 +386,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const [profitReadMode, setProfitReadMode] = useValueState<unknown>(undefined)
   const [dayOrganizationBasis, setDayOrganizationBasis] = useValueState<unknown>(undefined)
   const [supplierWarehouse, setSupplierWarehouse] = useValueState<unknown>(undefined)
+  const [presentationCurrency, setPresentationCurrency] = useValueState<unknown>(undefined)
   const [numberPresentation, setNumberPresentation] = useValueState<unknown>(undefined)
   const [supplierBasis, setSupplierBasis] = useValueState<unknown>(undefined)
   const [supplierSourceWorld, setSupplierSourceWorld] = useValueState<unknown>(undefined)
@@ -482,8 +485,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const settlementDataset = useMemo(() => settlementFormDataset(priceTypeDataset, groupedSettlementPeriod, settlementReadMode), [priceTypeDataset, groupedSettlementPeriod, settlementReadMode])
   const cashDataset = useMemo(() => cashFormDataset(settlementDataset, groupedCashPeriod), [settlementDataset, groupedCashPeriod])
   const reportBody = useMemo<ReportRequestBody>(
-    () => upgradeCurrentVparivanieAnalysis(withCurrentVparivanieMovementScope({ ...(currentVparivanieAnalysisCapability(dataset) ? { currentVparivanieAnalysis: { version: 1 } } : {}), ...buildReportBuilderRequest({ supplierWarehouse, numberPresentation, dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && (movementQuantities.Incoming || movementQuantities.Outgoing) ? { currentVparivanieMovements: movementQuantities } : {}), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }), dataset),
-    [dataset, supplierWarehouse, numberPresentation, movementQuantities, fullCurrentVparivanie, abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbook.value, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => upgradeCurrentVparivanieAnalysis(withCurrentVparivanieMovementScope({ ...(currentVparivanieAnalysisCapability(dataset) ? { currentVparivanieAnalysis: { version: 1 } } : {}), ...buildReportBuilderRequest({ supplierWarehouse, presentationCurrency, numberPresentation, dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && (movementQuantities.Incoming || movementQuantities.Outgoing) ? { currentVparivanieMovements: movementQuantities } : {}), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }), dataset),
+    [dataset, supplierWarehouse, presentationCurrency, numberPresentation, movementQuantities, fullCurrentVparivanie, abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbook.value, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, supplierSourceWorld, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const effectiveConfiguration = effectiveReportConfiguration(dataset, reportBody)
   const effectiveFilterTypes = effectiveConfiguration?.filters
@@ -597,13 +600,15 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     }
 
     const request = exportingApplied ? resultRequest : bug1274Only ? appliedSettings.apply() : reportBody
-    const existingPreview = !showPreview ? preview : null
+    const selectedCurrency = requestPresentationCurrency(request) != null
+    const existingPreview = !showPreview && (exportingApplied || !selectedCurrency && !preview?.Request?.presentationCurrency) ? preview : null
     const updateAttempt = beginRun()
     if (constructorMode) setConstructorSection('result')
 
     try {
-      const previewResult = showPreview ? await previewStockReport(request, dataset) : null
-      const nextResult = previewResult?.result ?? (existingPreview?.ResultSession ? await exportStockReportPreview(existingPreview.ResultSession) : await createStockReport(request, dataset))
+      const previewResult = showPreview || selectedCurrency && !existingPreview?.ResultSession ? await previewStockReport(request, dataset) : null
+      if (selectedCurrency && previewResult && !previewResult.preview.ResultSession) throw new Error('Сервер не підтвердив збережений результат для вибраної валюти. Файл не сформовано.')
+      const nextResult = !showPreview && previewResult?.preview.ResultSession ? await exportStockReportPreview(previewResult.preview.ResultSession) : previewResult?.result ?? (existingPreview?.ResultSession ? await exportStockReportPreview(existingPreview.ResultSession) : await createStockReport(request, dataset))
       const outcome: ReportRunOutcome = exportingApplied ? { ...lastRun!,
         hasDocument: Boolean(nextResult.document.DocumentURL || nextResult.document.PdfDocumentURL), previewNeedsExport: false } : {
         ...(rateComparisonOptions(rateComparison) ? { rateComparison: structuredClone(rateComparisonOptions(rateComparison)!) } : {}),
@@ -618,7 +623,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         from,
         hasDocument: Boolean(nextResult.document.DocumentURL || nextResult.document.PdfDocumentURL),
         previewNeedsExport: Boolean(showPreview && previewResult?.preview.ResultSession),
-        measures: reportBody.sorted.Measurements.map((measurement) => measurement.Label || getReportFieldLabel(measurement.Name)),
+        measures: selectedCurrency && previewResult?.preview.Request?.Measures ? previewResult.preview.Request.Measures
+          : reportBody.sorted.Measurements.map((measurement) => measurement.Label || getReportFieldLabel(measurement.Name)),
         name: templateName.trim(),
         fileName: reportFileBaseName(activeWorkbook ?? dataset?.Name ?? '', from, to, periodSupported),
         title: activeWorkbook && bug1274WorkbookGuide(activeWorkbook)
@@ -681,6 +687,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setProfitReadMode(snapshotDefaults?.profitReadMode)
     setDayOrganizationBasis(snapshotDefaults?.dayOrganizationBasis)
     setSupplierWarehouse(snapshotDefaults?.supplierWarehouse)
+    setPresentationCurrency(snapshotDefaults ? requestPresentationCurrency(snapshotDefaults) : undefined)
     setNumberPresentation(snapshotDefaults?.numberPresentation)
     setSupplierBasis(snapshotDefaults?.supplierBasis)
     setSupplierSourceWorld(snapshotDefaults?.supplierSourceWorld)
@@ -802,6 +809,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setGroupedCashPeriod(structuredClone(requestGroupedCashPeriod(data)))
     setCashReadMode(structuredClone(requestCashReadMode(data)))
     setSupplierWarehouse(structuredClone(data.supplierWarehouse ?? data.SupplierWarehouse))
+    setPresentationCurrency(structuredClone(requestPresentationCurrency(data)))
     setNumberPresentation(structuredClone(requestNumberPresentation(data)))
     workbook.restore(data)
     setOneCSpecialSettings(structuredClone(requestOneCSpecialSettings(data, nextDataset.DataSource)))
@@ -881,6 +889,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setGroupedCashPeriod(structuredClone(requestGroupedCashPeriod(data)))
     setCashReadMode(structuredClone(requestCashReadMode(data)))
     setSupplierWarehouse(structuredClone(data.supplierWarehouse ?? data.SupplierWarehouse))
+    setPresentationCurrency(structuredClone(requestPresentationCurrency(data)))
     setNumberPresentation(structuredClone(requestNumberPresentation(data)))
     workbook.restore(data)
     setOneCSpecialSettings(structuredClone(requestOneCSpecialSettings(data, nextDataset.DataSource)))
@@ -1261,7 +1270,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         compactSummary: String(filterChips.length), content: filtersContent },
       { id: 'measures', title: 'Показники', summary: checkedMeasurements
         ? `${checkedMeasurements} ${deskPlural(checkedMeasurements, ['показник', 'показники', 'показників'])}` : t('Не вибрано жодного'),
-        compactSummary: String(checkedMeasurements), content: <>{dataSource === 39 ? <CurrentVparivanieMovementSettings dataset={dataset} value={movementQuantities} onChange={changeMovementQuantities} disabled={comparisonSettingsDisabled} /> : null}<LegacyReportBuilder part="measures" {...builder} /><ReportNumberPresentationPanel value={numberPresentation} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setNumberPresentation} /></> },
+        compactSummary: String(checkedMeasurements), content: <>{dataSource === 39 ? <CurrentVparivanieMovementSettings dataset={dataset} value={movementQuantities} onChange={changeMovementQuantities} disabled={comparisonSettingsDisabled} /> : null}<LegacyReportBuilder part="measures" {...builder} /><ReportPresentationCurrencyPanel dataset={dataset} request={reportBody} disabled={comparisonSettingsDisabled} onChange={setPresentationCurrency} /><ReportNumberPresentationPanel value={numberPresentation} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setNumberPresentation} /></> },
       { id: 'grouping', title: 'Групування', summary: reportAxesPolicy(dataset, reportBody).fixed ? t('Як у книзі 1С')
         : rowGroups.length ? `${groupingLabels(rowGroups)}${colGroups.length ? ` · ${t('стовпці')}: ${groupingLabels(colGroups)}` : ''}` : t('Не вибрано'),
         compactSummary: reportAxesPolicy(dataset, reportBody).fixed ? t('За формою')
@@ -1416,6 +1425,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           (oneCSpecialSpecification(dataSource) ? defaultOneCSpecialSettings(dataSource, dataset)[oneCSpecialSpecification(dataSource)!.key] : undefined)}
           disabled={comparisonSettingsDisabled} onChange={setOneCSpecialSettings} />}
         classificationPanel={<>{workbook.panel(dataset, reportBody, comparisonSettingsDisabled)}
+          <ReportPresentationCurrencyPanel dataset={dataset} request={reportBody} disabled={comparisonSettingsDisabled} onChange={setPresentationCurrency} />
           {dataSource === 39 ? <><CurrentVparivanieMovementSettings dataset={dataset} value={movementQuantities} onChange={changeMovementQuantities} disabled={comparisonSettingsDisabled} />{!bug1274Only ? <OriginalVparivanieReportPanel request={reportBody} enabled={canGenerateReport}
             disabled={comparisonSettingsDisabled} callerKey={ownerId} /> : null}
           <CurrentVparivanieRegionalPanel dataset={dataset ?? null} request={reportBody}
@@ -2055,10 +2065,15 @@ function LegacyReportBuilder({
     closeGroupingPicker()
   }
 
+  const useReportCurrency = !!request && !!readPresentationCurrency(requestPresentationCurrency(request))
+    && presentationCurrencySupported(dataset) && presentationCurrencyModeSupported(request)
+  const measurementLabel = (type: number | undefined, label: string) => useReportCurrency && isPresentationCurrencyMoneyMeasure(type)
+    ? currencyNeutralMeasureLabel(label) : label
   const measurementUnit = (type: number | undefined, label: string) => {
     const semantics = readValueSemantics(dataset?.Measurements.find(field => field.Type === type)?.valueSemantics)
-    return semantics ? reportValueUnit(semantics, readNumberPresentation(request?.numberPresentation))
+    const unit = semantics ? reportValueUnit(semantics, readNumberPresentation(request?.numberPresentation))
       : nativeReportMeasurementUnit(dataSource, label, type) ?? t('Без поділу за ПДВ')
+    return measurementLabel(type, unit)
   }
 
   const selectionPanel = dataSource === 19 ? null : <section className="reports-stocks-legacy__selections">
@@ -2100,10 +2115,12 @@ function LegacyReportBuilder({
 
       <div className="reports-stocks-legacy-measurements__list">
         {measurements.map((group, groupIndex) => {
-          const groupLabel = group.Label || grossProfitMeasureGroupLabel(dataSource, group.Name) || getReportFieldLabel(group.Name)
+          const rawGroupLabel = group.Label || grossProfitMeasureGroupLabel(dataSource, group.Name) || getReportFieldLabel(group.Name)
+          const groupLabel = useReportCurrency && group.SubList.every(item => isPresentationCurrencyMoneyMeasure(item.Type))
+            ? currencyNeutralMeasureLabel(rawGroupLabel) : rawGroupLabel
           const hasDistinctChildren =
             group.SubList.length > 1
-            || (group.SubList[0]?.Label || getReportFieldLabel(group.SubList[0]?.Name ?? '')) !== groupLabel
+            || (group.SubList[0]?.Label || getReportFieldLabel(group.SubList[0]?.Name ?? '')) !== rawGroupLabel
 
           return (
             <div className="reports-stocks-legacy-measurement app-selection-surface" data-selected={group.IsChecked || group.SubList.some(item => item.IsChecked)} key={group.Name}>
@@ -2117,9 +2134,9 @@ function LegacyReportBuilder({
               {hasDistinctChildren ? <div className="reports-stocks-measurement-options">{group.SubList.map((item, itemIndex) => (
                 <Checkbox
                   className="reports-stocks-measurement-value"
-                  label={item.Name.endsWith('WithoutVAT') ? t('Без ПДВ') : item.Name.endsWith('WithVAT') ? t('З ПДВ') : item.Name.endsWith('VAT') ? t('ПДВ') : (item.Label || getReportFieldLabel(item.Name))}
-                  aria-label={(item.Label || getReportFieldLabel(item.Name))}
-                  title={(item.Label || getReportFieldLabel(item.Name))}
+                  label={item.Name.endsWith('WithoutVAT') ? t('Без ПДВ') : item.Name.endsWith('WithVAT') ? t('З ПДВ') : item.Name.endsWith('VAT') ? t('ПДВ') : measurementLabel(item.Type, item.Label || getReportFieldLabel(item.Name))}
+                  aria-label={measurementLabel(item.Type, item.Label || getReportFieldLabel(item.Name))}
+                  title={measurementLabel(item.Type, item.Label || getReportFieldLabel(item.Name))}
                   checked={item.IsChecked}
                   key={item.Name}
                   size="sm"

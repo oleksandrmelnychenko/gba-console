@@ -1,3 +1,5 @@
+import { currencyDataset, currencySelection } from '../data/reportPresentationCurrency.test-fixtures'
+import { getReportPresentationCurrencies } from '../api/reportPresentationCurrencies'
 import { changeReportPeriod, readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
@@ -13,6 +15,8 @@ import { documentDataset, documentRequest } from '../data/currentFinancialDocume
 import { productTimeDataset } from '../data/currentFinancialProductTimeAxes.test-fixtures'
 import { encodeReportWorkspaceDraft, reportWorkspaceDraftKey } from '../data/reportWorkspaceDraft'
 import { ReportsStocksPage } from './ReportsStocksPage'
+
+vi.mock('../api/reportPresentationCurrencies', () => ({ getReportPresentationCurrencies: vi.fn() }))
 
 let owner = 'draft-owner-a'
 let allowed = true
@@ -51,6 +55,7 @@ describe('constructor draft recovery', () => {
   beforeEach(() => {
     owner = 'draft-owner-a'; allowed = true
     vi.clearAllMocks(); sessionStorage.clear(); localStorage.clear()
+    vi.mocked(getReportPresentationCurrencies).mockResolvedValue([{ value: currencySelection.currencyNetUid, code: 'UAH', label: 'UAH — Гривня' }])
     saveSession({ userNetUid: owner, csrfToken: 'draft-fixture-csrf-a' })
     Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, stockDataset, valuationDataset])
@@ -59,8 +64,8 @@ describe('constructor draft recovery', () => {
   })
   afterEach(clearSession)
 
-  function stageFinancial(rows: number[], columns: number[], mode = 0) {
-    const data = { ...documentRequest(rows, columns), profitReadMode: mode }
+  function stageFinancial(rows: number[], columns: number[], mode = 0, currency = false) {
+    const data = { ...documentRequest(rows, columns), profitReadMode: mode, ...(currency ? { presentationCurrency: currencySelection } : {}) }
     const fields = datasetGroupings(documentDataset, { ...data, profitReadMode: 0 })
     data.sorted.Row = rows.map(type => fields.find(field => field.type === type)!)
     data.sorted.Col = columns.map(type => fields.find(field => field.type === type)!)
@@ -73,6 +78,45 @@ describe('constructor draft recovery', () => {
     sessionStorage.setItem(reportWorkspaceDraftKey(owner), encoded.value)
     return { data, raw: encoded.value }
   }
+
+  it('restores report currency through workspace, keeps it across date edits and a second recovery', async () => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, currencyDataset])
+    const { data } = stageFinancial([81], [5], 0, true)
+    const view = await restored()
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Відновити чернетку' })).toBeNull())
+    changeReportPeriod({ from: '2026-10-18' })
+    await waitFor(() => {
+      const stored = JSON.parse(sessionStorage.getItem(reportWorkspaceDraftKey(owner))!)
+      expect(stored.snapshot.data.presentationCurrency).toEqual(currencySelection)
+      expect(stored.snapshot.data.from).toBe('2026-10-18')
+      expect(stored.snapshot.data.sorted).toEqual(data.sorted)
+      expect(stored.snapshot.data.selections).toEqual(data.selections)
+    })
+    view.unmount()
+    await restored()
+    expect((readReportDateInput('Від') as HTMLInputElement).value).toBe('2026-10-18')
+    const currency = await screen.findByRole('combobox', { name: 'Валюта звіту' })
+    fireEvent.click(currency)
+    fireEvent.click(screen.getByRole('option', { name: 'EUR — за замовчуванням' }))
+    await waitFor(() => {
+      const cleared = JSON.parse(sessionStorage.getItem(reportWorkspaceDraftKey(owner))!)
+      expect(cleared.snapshot.data).not.toHaveProperty('presentationCurrency')
+      expect(cleared.snapshot.data).not.toHaveProperty('PresentationCurrency')
+      expect(cleared.snapshot.data.sorted).toEqual(data.sorted)
+      expect(cleared.snapshot.data.selections).toEqual(data.selections)
+    })
+    expect(createStockReport).not.toHaveBeenCalled()
+    expect(saveServerReportTemplate).not.toHaveBeenCalled()
+  })
+
+  it.each(['old-metadata', 'unsupported-mode'])('refuses a currency draft on %s without dropping it', async reason => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, reason === 'old-metadata' ? documentDataset : currencyDataset])
+    const { raw } = stageFinancial([3], [4], reason === 'unsupported-mode' ? 1 : 0, true)
+    await restored()
+    await screen.findByText(reason === 'old-metadata' ? /Сервер не підтвердив вибір валюти/ : /Валюта звіту доступна лише/)
+    expect(sessionStorage.getItem(reportWorkspaceDraftKey(owner))).toBe(raw)
+    expect(createStockReport).not.toHaveBeenCalled()
+  })
 
   it.each([[[81], [5]], [[5], [81]], [[0], [2]], [[12], [15]]])('restores stored financial axes %j / %j through the real workspace action', async (rows, columns) => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, documentDataset])

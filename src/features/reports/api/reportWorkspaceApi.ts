@@ -1,3 +1,4 @@
+import { clonePresentationCurrencyAliases, presentationCurrencySupported } from '../data/reportPresentationCurrency'
 import { financialAxesCapability } from '../data/financialAxes'
 import { currentFinancialAxesCapability } from '../data/currentFinancialAxes'
 import { currentFinancialProductTimeAxesCapability } from '../data/currentFinancialProductTimeAxes'
@@ -68,6 +69,7 @@ function isDataset(value: unknown): value is ReportDataset {
     && (item.currentFinancialDocumentAxes === undefined || !!currentFinancialDocumentAxesCapability(item as ReportDataset))
     && (item.currentFinancialFilterConditions === undefined || !!currentFinancialFilterConditionsCapability(item as ReportDataset))
     && (item.configuration === undefined || !!readReportConfiguration(item.configuration))
+    && (item.currentFinancialPresentationCurrency === undefined || presentationCurrencySupported(item as ReportDataset))
     && (item.numberPresentation === undefined || numberPresentationSupported(item as ReportDataset))
     && typeof item.Description === 'string' && fieldsValid && !!item.Groupings?.length && !!item.Measurements?.length
     && (item.PeriodRequired === undefined || typeof item.PeriodRequired === 'boolean')
@@ -274,6 +276,7 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     ...cloneCashReadModeAliases(value.Data),
     ...cloneWorkbookAliases(value.Data),
     ...cloneNumberPresentationAliases(value.Data),
+    ...clonePresentationCurrencyAliases(value.Data),
     ...(Object.hasOwn(value.Data, 'cashPeriod') ? { cashPeriod: value.Data.cashPeriod,
       ...(Object.hasOwn(value.Data, 'CashPeriod') ? { CashPeriod: value.Data.CashPeriod } : {}),
     } : Object.hasOwn(value.Data, 'CashPeriod') ? { cashPeriod: value.Data.CashPeriod } : {}),

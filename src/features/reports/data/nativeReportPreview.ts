@@ -1,3 +1,4 @@
+import { readResolvedPresentationCurrency, type ResolvedReportPresentationCurrency } from './reportPresentationCurrency'
 import { isAnalysisRequest, readAnalysisMetadata, type CurrentVparivanieAnalysisMetadata, type CurrentVparivanieAnalysisRequest } from './currentVparivanieAnalysis'
 import { isMovementSelection, readMovementCoverage, type CurrentVparivanieMovementCoverage, type CurrentVparivanieMovementSelection } from './currentVparivanieMovements'
 import { readNumberPresentation, readValueSemantics, type ReportNumberPresentation, type ReportValueSemantics } from './reportNumberPresentation'
@@ -18,6 +19,7 @@ export type NativeReportPreviewGroupTotal = { Level: number; RowSourceIndex: num
 export type NativeReportPreviewTotals = { State: 'materialized'; Values: NativeReportPreviewCell[]; Groups: NativeReportPreviewGroupTotal[] }
 export type NativeReportPreviewFilter = { Field: string; Condition: string; Values: string[]; IgnoredReason: string | null }
 export type NativeReportPreviewRequest = {
+  presentationCurrency?: ResolvedReportPresentationCurrency
   DataSource: string
   currentVparivanieAnalysis?: CurrentVparivanieAnalysisRequest
   CurrentVparivanieMovements?: CurrentVparivanieMovementSelection
@@ -108,6 +110,8 @@ function normalizeRequest(value: unknown): NativeReportPreviewRequest | null {
   if (value.CurrentVparivanieMovements != null && !isMovementSelection(value.CurrentVparivanieMovements))
     throw new Error('Сервер повернув некоректний вибір показників руху товару.')
   if (value.currentVparivanieAnalysis != null && !isAnalysisRequest(value.currentVparivanieAnalysis)) throw new Error('Непідтримуваний режим групування результату.')
+  const currency = readResolvedPresentationCurrency(value.presentationCurrency)
+  if (value.presentationCurrency != null && !currency) throw new Error('Сервер повернув некоректну валюту звіту.')
   const mode = readMode(value, 'ProfitReadMode', 'Сервер повернув некоректне джерело розрахунку прибутку.')
   const settlementMode = readMode(value, 'SettlementReadMode', 'Сервер повернув некоректне джерело розрахунку взаєморозрахунків.')
   const cashMode = readMode(value, 'CashReadMode', 'Сервер повернув некоректне джерело розрахунку коштів.')
@@ -138,6 +142,7 @@ function normalizeRequest(value: unknown): NativeReportPreviewRequest | null {
   return {
     ...(value.currentVparivanieAnalysis != null ? { currentVparivanieAnalysis: { version: 1 as const } } : {}),
     ...(value.CurrentVparivanieMovements != null ? { CurrentVparivanieMovements: value.CurrentVparivanieMovements as CurrentVparivanieMovementSelection } : {}),
+    ...(currency ? { presentationCurrency: currency } : {}),
     ...(mode != null ? { ProfitReadMode: mode } : {}),
     ...(settlementMode != null ? { SettlementReadMode: settlementMode } : {}),
     ...(cashMode != null ? { CashReadMode: cashMode } : {}),

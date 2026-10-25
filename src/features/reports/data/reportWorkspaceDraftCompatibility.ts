@@ -17,7 +17,7 @@ import { datasetGroupings } from './reportDatasets'
 
 const options = ['comparison', 'xyz', 'paymentComparison', 'marginComparison', 'rateComparison',
   'returnComparison', 'buyerSalesShare', 'revenueComparison', 'ordering', 'filterExpression',
-  'abcClassification', 'hideZero', 'threshold', 'topGroups', 'priceTypeSalesComparison', 'workbookPresentation', 'numberPresentation']
+  'abcClassification', 'hideZero', 'threshold', 'topGroups', 'priceTypeSalesComparison', 'workbookPresentation', 'numberPresentation', 'presentationCurrency']
 
 /** Recovery checks what the current editor can represent, not whether an unfinished report can run. */
 export function reportWorkspaceDraftCompatibility(snapshot: ReportWorkspaceSnapshot, dataset?: ReportDataset): string | null {

@@ -1,3 +1,4 @@
+import { bindPresentationCurrency, requestPresentationCurrency } from '../data/reportPresentationCurrency'
 import { bindAnalysisPreview, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis } from '../data/currentVparivanieAnalysis'
 import { bindMovementPreview } from '../data/currentVparivanieMovements'
 import { reportConfigurationError } from '../data/reportConfiguration'
@@ -51,6 +52,7 @@ const CLIENT_FILTER_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
 
 export async function createStockReport(body: ReportRequestBody, dataset?: ReportDataset): Promise<ReportResult> {
   const request = prepareStockReportRequest(body, dataset)
+  if (requestPresentationCurrency(request) != null) throw new Error('Для вибраної валюти спочатку сформуйте попередній перегляд, потім експортуйте цей результат.')
   const result = await apiRequest<unknown>('/report/stocks/generate', {
     method: 'POST',
     dedupe: false,
@@ -64,6 +66,7 @@ export async function createStockReport(body: ReportRequestBody, dataset?: Repor
 export async function previewStockReport(body: ReportRequestBody, dataset?: ReportDataset): Promise<{ result: ReportResult; preview: NativeReportPreview }> {
   const request = prepareStockReportRequest(body, dataset)
   const version2 = dataset?.configuration !== undefined && await supportsImmutableReportPreview()
+  if (requestPresentationCurrency(request) != null && !version2) throw new Error('Сервер не підтвердив збережений перегляд для вибраної валюти. Експорт не виконувався.')
   const response = await apiRequest<unknown>('/report/stocks/preview', {
     method: 'POST',
     dedupe: false,
@@ -96,6 +99,7 @@ export async function previewStockReport(body: ReportRequestBody, dataset?: Repo
 }
 
 function assertNumberPresentation(request: ReportRequestBody, preview: NativeReportPreview): void {
+  bindPresentationCurrency(request, preview)
   const expected = readNumberPresentation(requestNumberPresentation(request)), actual = preview.numberPresentation
   if (expected?.moneyScale !== actual?.moneyScale || expected?.version !== actual?.version
     || (['money', 'quantity', 'percent', 'unitPrice', 'rate'] as const).some(kind => expected?.decimalPlacesByKind?.[kind] !== actual?.decimalPlacesByKind?.[kind]))

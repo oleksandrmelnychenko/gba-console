@@ -1,3 +1,4 @@
+import { presentationCurrencyError } from './reportPresentationCurrency'
 import { financialAxesConfigurationError, requestFinancialAxesCapability } from './financialAxes'
 import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis } from './currentVparivanieAnalysis'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
@@ -77,6 +78,8 @@ export function reportAxesPolicy(dataset: ReportDataset | undefined, data: Repor
   return { config, fixed, rowsOnly: config ? config.axisMode === 'profitRows' || config.axisMode === 'rowsOnly' || config.allowedColumns.length === 0 : fixed || data.dataSource === 13 }
 }
 export function reportConfigurationError(data: ReportRequestBody, dataset?: ReportDataset, draft = false): string | null {
+  const currencyError = presentationCurrencyError(data, dataset)
+  if (currencyError) return currencyError
   const currentAxesError = financialAxesConfigurationError(data, dataset)
   if (currentAxesError) return currentAxesError
   const warehouseKeys = Object.keys(data).filter(key => key.toLowerCase() === 'supplierwarehouse')

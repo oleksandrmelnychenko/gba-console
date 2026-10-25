@@ -4,6 +4,7 @@ import { reportSelectionsForRequest } from './reportFilterExpression'
 import { oneCSpecialSpecification } from './oneCSpecialReports'
 
 type BuilderValues = {
+  presentationCurrency?: unknown
   numberPresentation?: unknown
   supplierWarehouse?: unknown
   returnsOnly?: boolean
@@ -47,7 +48,7 @@ type BuilderValues = {
 export function buildReportBuilderRequest(values: BuilderValues): ReportRequestBody {
   const { dataSource, returnsOnly, from, to, ordering, filterExpression, topGroups, abcClassification, threshold, hideZero, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, oneCSpecialSettings, oneC, valuationClientAgreementId, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, cashPeriod, rowGroups, colGroups, measurements, selections } = values
   const special = oneCSpecialSpecification(dataSource)
-  return { dataSource, from, to, ...(values.supplierWarehouse !== undefined ? { supplierWarehouse: values.supplierWarehouse } : {}), ...(values.numberPresentation !== undefined ? { numberPresentation: values.numberPresentation } : {}), ...(returnsOnly === true ? { returnsOnly: true } : {}),
+  return { dataSource, from, to, ...(values.presentationCurrency !== undefined ? { presentationCurrency: values.presentationCurrency } : {}), ...(values.supplierWarehouse !== undefined ? { supplierWarehouse: values.supplierWarehouse } : {}), ...(values.numberPresentation !== undefined ? { numberPresentation: values.numberPresentation } : {}), ...(returnsOnly === true ? { returnsOnly: true } : {}),
     ...(special && oneCSpecialSettings !== undefined ? { [special.key]: oneCSpecialSettings } : {}),
     ...(paymentComparison !== undefined ? { paymentComparison } : {}),
     ...(marginComparison !== undefined ? { marginComparison } : {}),

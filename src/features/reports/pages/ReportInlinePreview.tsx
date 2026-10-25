@@ -68,6 +68,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
       <Text size="sm" className="report-inline-preview__count">{deskRowsText(preview.Page.ReturnedRows, preview.Page.TotalVisibleRows, preview.Page.HasMore)}</Text>
     </div>
     <ReportAttributionWarnings request={preview.Request} />
+    {preview.Request?.presentationCurrency ? <Text size="sm">Валюта звіту: {preview.Request.presentationCurrency.code}. Комерційний курс GBA на дату кожного документа, включно з поверненнями.</Text> : null}
     {preview.currentVparivanieAnalysis ? <Alert color={preview.currentVparivanieAnalysis.fieldCoverage.some(f => f.unknownFacts > 0) ? 'yellow' : 'blue'} title="Розрізи та покриття звіту">
       <Text size="sm">{ANALYSIS_SCOPE_NOTICE}</Text>
       {preview.currentVparivanieAnalysis.fieldCoverage.filter(f => f.unknownFacts > 0).map(f => <Text size="sm" key={`${f.scope}:${f.field}`}>
@@ -86,7 +87,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
       <table className="app-static-table">
         <thead><tr>
           {rowHeaders.map((header, index) => <th scope="col" rowSpan={products ? 2 : undefined} key={`row-${index}`}>{header}</th>)}
-          {preview.Columns.map(column => <th scope="col" className="report-inline-preview__value-heading" key={column.SourceIndex} title={semanticsByColumn.has(column.SourceIndex) ? reportValueUnit(semanticsByColumn.get(column.SourceIndex)!, preview.numberPresentation) : undefined}>
+          {preview.Columns.map(column => <th scope="col" className="report-inline-preview__value-heading" key={column.SourceIndex} title={semanticsByColumn.has(column.SourceIndex) ? reportValueUnit(semanticsByColumn.get(column.SourceIndex)!, preview.numberPresentation, preview.Request?.presentationCurrency?.code) : undefined}>
             {(products ? column.Values.slice(0, 1) : sharedGroup ? column.Values.slice(1) : column.Values).map((value, index) => sharedGroup ? value.Caption : columnIdentityCaption(column, index)).filter(Boolean).join(' / ') || `Стовпець ${column.Ordinal + 1}`}
             {moneyScaleLabel(preview.numberPresentation, semanticsByColumn.get(column.SourceIndex)) ? `, ${moneyScaleLabel(preview.numberPresentation, semanticsByColumn.get(column.SourceIndex))}` : ''}
           </th>)}

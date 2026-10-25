@@ -25,6 +25,7 @@ const managedFields = new Set([
   'sourceCounterpartyGroups', 'SourceCounterpartyGroups',
   'cashPeriod', 'CashPeriod', 'groupedCashPeriod', 'GroupedCashPeriod', 'cashReadMode', 'CashReadMode',
   'workbookPresentation', 'WorkbookPresentation', 'numberPresentation', 'NumberPresentation',
+  'presentationCurrency', 'PresentationCurrency',
   'priceTypeSalesComparison', 'PriceTypeSalesComparison', 'oneC', 'OneC',
   'discountMarkup', 'DiscountMarkup', 'providedDiscounts', 'ProvidedDiscounts',
   'priceAnalysis', 'PriceAnalysis',

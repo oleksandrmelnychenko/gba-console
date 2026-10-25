@@ -68,12 +68,12 @@ export function formatReportDecimal(raw: string, semantics: ReportValueSemantics
   return `${match[1] && rounded !== 0n ? '-' : ''}${integer}${decimal ? ',' + decimal : ''}`
 }
 
-export function reportValueUnit(semantics: ReportValueSemantics, presentation?: ReportNumberPresentation): string {
+export function reportValueUnit(semantics: ReportValueSemantics, presentation?: ReportNumberPresentation, resolvedCurrency?: string): string {
   if (semantics.kind === 'percent') return semantics.unitPolicy === 'percentagePoints' ? 'в.п.' : '%'
   if (semantics.kind === 'count') return 'Кількість, ціле число'
   if (semantics.kind === 'quantity') return semantics.unitPolicy === 'sourceStorageUnit' ? 'Одиниці зберігання' : 'Одиниці товару'
   const currencies: Record<string, string> = { EUR: 'EUR', accountCurrency: 'Валюта рахунку', settlementCurrency: 'Валюта договору', documentCurrency: 'Валюта документа', sourceCurrency: 'Джерельна валюта', sourceManagementCurrency: 'Валюта управлінського обліку', confirmedSingleCurrency: 'Підтверджена валюта', quotePerBaseCurrency: 'Курс за одиницю базової валюти' }
-  const currency = currencies[semantics.currencyPolicy] ?? ''
+  const currency = resolvedCurrency && semantics.currencyPolicy === resolvedCurrency ? resolvedCurrency : currencies[semantics.currencyPolicy] ?? ''
   return [moneyScaleLabel(presentation, semantics), currency, semantics.kind === 'unitPrice' ? 'за одиницю' : ''].filter(Boolean).join(' ')
 }
 export function cloneNumberPresentationAliases(value: object): Partial<ReportRequestBody> {
