@@ -1,16 +1,18 @@
-import { ActionIcon, TextInput } from '@mantine/core'
+import { ActionIcon, Alert, TextInput } from '@mantine/core'
 import { Check, Pencil } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { DocumentDetailSection } from '../../../../shared/ui/document-detail/DocumentDetail'
 
 export function ProductDescriptionSection({
-  canEditDescription, description, descriptionDraft, isEditingDescription, onDescriptionDraftChange, onToggleDescription,
+  canEditDescription, description, descriptionDraft, isEditingDescription, isSaving = false, error, onDescriptionDraftChange, onToggleDescription,
 }: {
   canEditDescription: boolean
   description?: string | null
   descriptionDraft: string
   isEditingDescription: boolean
+  isSaving?: boolean
+  error?: string | null
   onDescriptionDraftChange: (value: string) => void
   onToggleDescription: () => void
 }) {
@@ -38,6 +40,8 @@ export function ProductDescriptionSection({
           size="sm"
           title={isEditingDescription ? t('Зберегти') : t('Редагувати')}
           variant="subtle"
+          loading={isSaving}
+          disabled={isSaving}
           onClick={onToggleDescription}
         >
           {isEditingDescription ? <Check size={15} /> : <Pencil size={15} />}
@@ -47,6 +51,7 @@ export function ProductDescriptionSection({
       {isEditingDescription ? (
         <TextInput
           aria-label={t('Опис')}
+          disabled={isSaving}
           autoFocus
           size="xs"
           value={draft}
@@ -59,6 +64,7 @@ export function ProductDescriptionSection({
       ) : (
         <p className="new-sale-product-detail__description">{description || t('Опис відсутній')}</p>
       )}
+      {error && <Alert color="red" role="alert">{error}</Alert>}
     </DocumentDetailSection>
   )
 }

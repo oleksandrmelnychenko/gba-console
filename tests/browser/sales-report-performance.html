@@ -43,10 +43,11 @@
     window.performanceFixture.requests = []
     window.performanceFixture.finishReserves = () => {}
     window.performanceFixture.productReads=[]
+    window.performanceFixture.descriptionWrites=[]
     window.performanceFixture.finishWizardReserves = () => {}
     window.performanceFixture.finishSupply = () => {}
     const relatedProduct = (id, name, qty) => ({NetUid:id,VendorCode:id,NameUA:name,AvailableQtyUk:qty,CurrentPrice:15,CurrentPriceEurToUah:600,ProductAvailabilities:[{Amount:qty}]})
-    const wizardProduct = {HasAnalogue:true,HasComponent:true,ComponentProducts:[{ComponentProduct:relatedProduct('COMP-1','Комплектуюча 1',3),SetComponentsQty:2},{ComponentProduct:relatedProduct('COMP-2','Комплектуюча 2',2),SetComponentsQty:1}],NetUid:'wizard-product',VendorCode:'TEST-001',NameUA:'Товар майстра',AvailableQtyUk:4,CurrentPrice:10}
+    const wizardProduct = {Description:'Початковий опис товару',HasAnalogue:true,HasComponent:true,ComponentProducts:[{ComponentProduct:relatedProduct('COMP-1','Комплектуюча 1',3),SetComponentsQty:2},{ComponentProduct:relatedProduct('COMP-2','Комплектуюча 2',2),SetComponentsQty:1}],NetUid:'wizard-product',VendorCode:'TEST-001',NameUA:'Товар майстра',AvailableQtyUk:4,CurrentPrice:10}
     const recommended = Array.from({length:30}, (_,index)=>({Product:{Id:index+1,NetUid:`reco-${index}`,VendorCode:`REC-${index}`,Name:`Рекомендація ${index}`,AvailableQtyUk:5,CurrentPrice:12,CurrentPriceEurToUah:480},ClientAgreementNetId:'agreement-1',Rank:index+1,Score:0.8,Source:'discovery',SourceDetail:'copurchase',SourceHistoryStart:'2024-01-01',EffectiveStart:'2024-01-01',HistoryComplete:true}))
     const agreement = {NetUid:'agreement-1',Agreement:{IsActive:true,PricingId:1,Name:'Тестовий договір'}}
     window.performanceFixture.finishCrossSell = () => {}
@@ -76,6 +77,11 @@
     window.fetch = (input,options={}) => {
       const url = new URL(typeof input==='string'?input:input.url,location.href)
       window.performanceFixture.requests.push(url.pathname+url.search)
+      if(url.pathname.endsWith('/products/assortment/update')&&window.performanceFixture.allowDescriptionSave) {
+        const product=JSON.parse(options.body)
+        return new Promise(resolve=>window.performanceFixture.descriptionWrites.push({product,
+          finish:()=>resolve(response(null)),fail:()=>resolve(new Response('{}',{status:503}))}))
+      }
       if(url.pathname.endsWith('/clients/sales-ukraine/create/search')) {
         const offset=Number(url.searchParams.get('offset')),limit=Number(url.searchParams.get('limit'))
         const page=pickerClients.slice(offset,offset+limit)

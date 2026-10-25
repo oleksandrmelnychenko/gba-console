@@ -19,7 +19,6 @@ import { TableChip } from '../../../../shared/ui/TableChip'
 import { toProxiedAssetUrl } from '../../../../shared/url/proxiedAssetUrl'
 import { useAuth } from '../../../auth/useAuth'
 import type { Client } from '../../../clients/types'
-import { updateProduct } from '../../../products/api/productsApi'
 import { ProductCardModal } from '../../../products/components/ProductCardModal'
 import type { Product } from '../../../products/types'
 import { getProductMainImage, getProductShopImageUrl, getRelatedProductRowColor } from '../../../products/utils'
@@ -54,10 +53,12 @@ import { useWizardCartOperations } from './useWizardCartOperations'
 import { useWizardProductKeyboard } from './useWizardProductKeyboard'
 import { useWizardProductAnalogues } from './useWizardProductAnalogues'
 import { useWizardProductData } from './useWizardProductData'
+import { useWizardProductDescription } from './useWizardProductDescription'
 import { PRODUCT_SEARCH_MIN_QUERY_LENGTH, useWizardProductSearch } from './useWizardProductSearch'
 import {
   WIZARD_PRODUCT_KEYBOARD_STATES,
   getPreviousProductKeyboardState,
+  getWizardKeyboardState,
   setWizardKeyboardState,
   useWizardKeyboard,
   type WizardProductKeyboardState,
@@ -148,15 +149,6 @@ export function NewSaleProductsStep({
   const [interestProduct, setInterestProduct] = useState<WizardSaleProduct | null>(null)
   const [futureProduct, setFutureProduct] = useState<WizardSaleProduct | null>(null)
   const [imagePreview, setImagePreview] = useState<{ url: string; fallbackUrl: string; name: string } | null>(null)
-  const [editingDescription, setEditingDescription] = useState(false)
-  // The description draft lives in a ref (the TextInput inside
-  // ProductFullDetailPanel keeps its own local state): typing must not re-render
-  // the products step. The ref is read on save (panel toggle or keyboard F2).
-  const descriptionDraftRef = useRef('')
-  const [descriptionDraftSnapshot, setDescriptionDraftSnapshot] = useState('')
-  const handleDescriptionDraftChange = useCallback((value: string) => {
-    descriptionDraftRef.current = value
-  }, [])
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
 
   const searchInputRef = useRef<HTMLInputElement | null>(null)
@@ -202,10 +194,21 @@ export function NewSaleProductsStep({
     resetAnalogues()
   }, [invalidateProductData, resetAnalogues])
 
+  const descriptionEditor = useWizardProductDescription({
+    product: activeProduct,
+    source: active?.source,
+    onSaved: applyProductPatch,
+    onBegin: () => keyboard.setState('EditProductDescription'),
+    onFinish: () => {
+      if (getWizardKeyboardState(1) === 'EditProductDescription') keyboard.restorePreviousProductState()
+    },
+  })
+  const resetDescription = descriptionEditor.reset
+
   const resetDetail = useCallback(() => {
     setDetail(null)
-    setEditingDescription(false)
-  }, [])
+    resetDescription()
+  }, [resetDescription])
 
   const clearActiveProductData = useCallback(() => {
     setActive(null)
@@ -548,39 +551,10 @@ export function NewSaleProductsStep({
     keyboard.restorePreviousProductState()
   }
 
-  async function toggleDescriptionEdit() {
-    const product = activeProduct
-
-    if (!product) {
-      return
-    }
-
-    if (!editingDescription) {
-      const nextDescriptionDraft = product.Description ?? ''
-      descriptionDraftRef.current = nextDescriptionDraft
-      setDescriptionDraftSnapshot(nextDescriptionDraft)
-      setEditingDescription(true)
-      keyboard.setState('EditProductDescription')
-
-      return
-    }
-
-    setEditingDescription(false)
-    keyboard.restorePreviousProductState()
-    const updated: WizardSaleProduct = { ...product, Description: descriptionDraftRef.current }
-    setDescriptionDraftSnapshot(updated.Description ?? '')
-    applyProductPatch(updated)
-
-    try {
-      await updateProduct(updated as Product, active?.source === 'main')
-    } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося зберегти товар') })
-    }
-  }
-
   function applyProductPatch(updated: WizardSaleProduct) {
     patchAnalogues((item) => item.NetUid === updated.NetUid ? { ...item, Description: updated.Description } : item)
-    setActive((previous) => (previous ? { ...previous, product: updated } : previous))
+    setActive((previous) => previous && previous.product.NetUid === updated.NetUid
+      ? { ...previous, product: { ...previous.product, Description: updated.Description } } : previous)
     setResults((previous) => previous.map((item) => (item.NetUid === updated.NetUid ? { ...item, Description: updated.Description } : item)))
   }
 
@@ -720,7 +694,7 @@ export function NewSaleProductsStep({
         edit: editSelectedCartRow, toggleSplit: toggleSplitMode, remove: () => setRemoveConfirmOpen(true), exit: exitEditCart },
       actions: {
         setState: keyboard.setState, add: prepareAddToCart, openMainDetail: openMainFullDetail, openMainRelated: spaceFromMain,
-        clearSelection, openImage, openInterest, closeImage, closeInterest, toggleDescription: toggleDescriptionEdit,
+        clearSelection, openImage, openInterest, closeImage, closeInterest, toggleDescription: descriptionEditor.toggle,
         requestClose: onRequestClose,
         returnToMain: () => {
           resetDetail()
@@ -1085,8 +1059,10 @@ export function NewSaleProductsStep({
             <WizardProductDetailsPanel
               canEditDescription={detailSource !== 'main' || canEditMainDescription}
               currentPriceEur={detailSource === 'main' ? getWizardProductNumber(getProductMeta(detailProduct)?.price) : undefined}
-              descriptionDraft={descriptionDraftSnapshot}
-              isEditingDescription={editingDescription && active?.source === detailSource}
+              descriptionDraft={descriptionEditor.draft}
+              descriptionError={descriptionEditor.error}
+              isSavingDescription={descriptionEditor.isSaving}
+              isEditingDescription={descriptionEditor.isEditing && active?.source === detailSource}
               isVatSale={isVatSale}
               localCurrencyCode={localCurrencyCode}
               clientAgreementNetId={agreementNetId}
@@ -1095,11 +1071,11 @@ export function NewSaleProductsStep({
               snapshot={getProductDetailSnapshot(detailProduct)}
               selectedChipIndex={selectedDetailChipIndex}
               selectedRowIndex={detail?.rowIndex ?? null}
-              onDescriptionDraftChange={handleDescriptionDraftChange}
+              onDescriptionDraftChange={descriptionEditor.changeDraft}
               onOpenImage={handleOpenDetailImage}
               onRetryDetails={retryProductDetails}
               onSelectChip={(chipIndex) => setDetail({ chipIndex, rowIndex: null })}
-              onToggleDescription={() => void toggleDescriptionEdit()}
+              onToggleDescription={descriptionEditor.toggle}
             />
           )}
         </Stack>

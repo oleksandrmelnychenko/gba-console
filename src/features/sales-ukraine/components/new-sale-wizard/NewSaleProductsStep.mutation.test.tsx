@@ -369,6 +369,59 @@ describe('NewSaleProductsStep selected product summary', () => {
     expect(apiMocks.getProductCurrentPriceByAgreement).toHaveBeenCalledOnce()
   })
 
+  it('retains a failed description draft and retries without duplicate writes or price reloads', async () => {
+    let fail!: (error: unknown) => void
+    apiMocks.updateProduct.mockImplementationOnce(() => new Promise((_resolve, reject) => { fail = reject }))
+    apiMocks.searchSaleProductsWithAvailability.mockResolvedValueOnce([
+      createSearchProduct(10, { Description: 'Початковий опис' }),
+    ])
+    renderStep()
+    fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'SEM12081' } })
+    fireEvent.click(await screen.findByRole('button', { name: 'Деталі' }))
+    const drawer = await findDetailDrawer()
+    await waitFor(() => expect(apiMocks.getProductCurrentPriceByAgreement).toHaveBeenCalledOnce())
+    await act(async () => { fireEvent.click(within(drawer).getByRole('button', { name: 'Редагувати' })) })
+    const input = within(drawer).getByRole('textbox', { name: 'Опис' }) as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'Чернетка для повтору' } })
+    const save = within(drawer).getByRole('button', { name: 'Зберегти' }) as HTMLButtonElement
+    fireEvent.click(save)
+    fireEvent.click(save)
+    expect(apiMocks.updateProduct).toHaveBeenCalledOnce()
+    expect(save.disabled).toBe(true)
+    expect(input.disabled).toBe(true)
+    await act(async () => fail(new Error('Тестова помилка збереження')))
+    expect(within(drawer).getByRole('alert').textContent).toContain('Тестова помилка збереження')
+    expect(input.value).toBe('Чернетка для повтору')
+    expect(input.disabled).toBe(false)
+    fireEvent.click(save)
+    await waitFor(() => expect(within(drawer).queryByRole('textbox', { name: 'Опис' })).toBeNull())
+    expect(within(drawer).getByText('Чернетка для повтору')).toBeTruthy()
+    expect(within(drawer).queryByRole('alert')).toBeNull()
+    expect(apiMocks.updateProduct).toHaveBeenCalledTimes(2)
+    expect(apiMocks.getProductCurrentPriceByAgreement).toHaveBeenCalledOnce()
+  })
+
+  it('does not move keyboard focus out of the cart when a description save finishes', async () => {
+    let finish!: (value: null) => void
+    apiMocks.updateProduct.mockImplementationOnce(() => new Promise((resolve) => { finish = resolve }))
+    apiMocks.searchSaleProductsWithAvailability.mockResolvedValueOnce([
+      createSearchProduct(10, { Description: 'Початковий опис' }),
+    ])
+    renderStep()
+    fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'SEM12081' } })
+    fireEvent.click(await screen.findByRole('button', { name: 'Деталі' }))
+    const drawer = await findDetailDrawer()
+    await act(async () => { fireEvent.click(within(drawer).getByRole('button', { name: 'Редагувати' })) })
+    const input = within(drawer).getByRole('textbox', { name: 'Опис' })
+    fireEvent.change(input, { target: { value: 'Опис перед кошиком' } })
+    fireEvent.keyDown(input, { key: 'F2' })
+    expect(apiMocks.updateProduct).toHaveBeenCalledOnce()
+    const cartState = getWizardKeyboardState()
+    expect(cartState).not.toBe('EditProductDescription')
+    await act(async () => finish(null))
+    expect(getWizardKeyboardState()).toBe(cartState)
+  })
+
   it('closes only the detail drawer on Escape from the description without saving a draft', async () => {
     apiMocks.searchSaleProductsWithAvailability.mockResolvedValueOnce([
       createSearchProduct(10, { Description: 'Початковий опис' }),

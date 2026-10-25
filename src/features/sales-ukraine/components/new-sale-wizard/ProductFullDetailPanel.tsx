@@ -18,6 +18,8 @@ export function ProductFullDetailPanel({
   clientAgreementNetId,
   currentPriceEur,
   descriptionDraft,
+  descriptionError,
+  isSavingDescription,
   detailsError,
   isFullDetail,
   isEditingDescription,
@@ -44,6 +46,8 @@ export function ProductFullDetailPanel({
   clientAgreementNetId?: string | null
   currentPriceEur?: number | null
   descriptionDraft: string
+  descriptionError?: string | null
+  isSavingDescription?: boolean
   detailsError?: string | null
   isFullDetail: boolean
   isEditingDescription: boolean
@@ -85,6 +89,8 @@ export function ProductFullDetailPanel({
             canEditDescription={canEditDescription}
             description={product.Description}
             descriptionDraft={descriptionDraft}
+            error={descriptionError}
+            isSaving={isSavingDescription}
             isEditingDescription={isEditingDescription}
             onDescriptionDraftChange={onDescriptionDraftChange}
             onToggleDescription={onToggleDescription}
