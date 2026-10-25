@@ -1,3 +1,4 @@
+import { documentDataset, documentRequest } from '../data/currentFinancialDocumentAxes.test-fixtures'
 import { financialDataset, axisFields } from '../data/financialAxes.test-fixtures'
 import { currentFinancialDataset, currentFinancialRequest } from '../data/currentFinancialAxes.test-fixtures'
 import { productTimeDataset, productTimeRequest } from '../data/currentFinancialProductTimeAxes.test-fixtures'
@@ -249,6 +250,31 @@ describe('server report templates', () => {
     })
     expect(saveServerReportTemplate).toHaveBeenCalledOnce()
     expect(vi.mocked(saveServerReportTemplate).mock.calls[0][2]).toBe(productTimeDataset)
+    expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data).toEqual(template.Data)
+    expect(template).toEqual(before)
+  })
+
+  it.each(['create', 'update', 'rename', 'copy', 'import'] as const)('preserves document capability, negative filter and exact row-only settings during %s', async operation => {
+    const template = { Name: 'Документи за товарами', Id: crypto.randomUUID(), Revision: 1, Data: documentRequest([81, 5], []) }
+    const before = structuredClone(template)
+    vi.mocked(getServerReportTemplates).mockResolvedValue([template])
+    vi.mocked(saveServerReportTemplate).mockImplementation(async request => {
+      const saved = { ...request, Revision: (request.Revision ?? 0) + 1 }
+      vi.mocked(getServerReportTemplates).mockResolvedValue([saved])
+      return saved
+    })
+    const { result } = renderHook(() => useServerReportTemplates(true, [documentDataset]))
+    await waitFor(() => expect(result.current.ready).toBe(true))
+    await act(async () => {
+      const answer = operation === 'create' ? await result.current.save('Копія', template.Data)
+        : operation === 'update' ? await result.current.update(template, template.Data)
+        : operation === 'rename' ? await result.current.rename(template, 'Інша назва')
+        : operation === 'copy' ? await result.current.copy(template, 'Копія')
+        : await result.current.importBrowserTemplate(template)
+      expect(answer).toMatchObject({ ok: true })
+    })
+    expect(saveServerReportTemplate).toHaveBeenCalledOnce()
+    expect(vi.mocked(saveServerReportTemplate).mock.calls[0][2]).toBe(documentDataset)
     expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data).toEqual(template.Data)
     expect(template).toEqual(before)
   })

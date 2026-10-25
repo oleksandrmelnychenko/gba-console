@@ -1,4 +1,5 @@
 import type { ReportDataset, ReportRequestBody } from '../types'
+import { currentFinancialDocumentAxesCapability, currentFinancialDocumentAxesError, hasFinancialDocumentAxes, validCurrentFinancialDocumentAxes } from './currentFinancialDocumentAxes'
 import { currentFinancialAxesCapability, currentFinancialAxesError, usesCurrentFinancialAxes, validCurrentFinancialAxes } from './currentFinancialAxes'
 import { currentFinancialProductTimeAxesCapability, currentFinancialProductTimeAxesError, hasFinancialProductTimeAxes, validCurrentFinancialProductTimeAxes } from './currentFinancialProductTimeAxes'
 
@@ -21,10 +22,11 @@ export function financialAxesCapability(dataset?: ReportDataset): FinancialAxes 
 }
 
 export function requestFinancialAxesCapability(dataset: ReportDataset | undefined, data: object) {
-  return usesCurrentFinancialAxes(data) && (currentFinancialProductTimeAxesCapability(dataset) ?? currentFinancialAxesCapability(dataset)) || financialAxesCapability(dataset)
+  return usesCurrentFinancialAxes(data) && (currentFinancialDocumentAxesCapability(dataset) ?? currentFinancialProductTimeAxesCapability(dataset) ?? currentFinancialAxesCapability(dataset)) || financialAxesCapability(dataset)
 }
 
 export function financialAxesConfigurationError(data: ReportRequestBody, dataset?: ReportDataset): string | null {
+  if (hasFinancialDocumentAxes(data)) return currentFinancialDocumentAxesError(data, dataset)
   if (hasFinancialProductTimeAxes(data)) return currentFinancialProductTimeAxesError(data, dataset)
   if (usesCurrentFinancialAxes(data) && currentFinancialProductTimeAxesCapability(dataset))
     return validCurrentFinancialProductTimeAxes(data) ? null : 'Оберіть до двох різних групувань: у рядках або одне в рядках і одне у стовпцях.'
@@ -33,6 +35,7 @@ export function financialAxesConfigurationError(data: ReportRequestBody, dataset
 
 /** Valid for every existing calculation basis; those bases retain their own period and filter checks. */
 export function validFinancialAxes(data: ReportRequestBody, dataset?: ReportDataset): boolean {
+  if (currentFinancialDocumentAxesCapability(dataset) && usesCurrentFinancialAxes(data)) return validCurrentFinancialDocumentAxes(data)
   if (currentFinancialProductTimeAxesCapability(dataset) && usesCurrentFinancialAxes(data)) return validCurrentFinancialProductTimeAxes(data)
   if (currentFinancialAxesCapability(dataset) && usesCurrentFinancialAxes(data)) return validCurrentFinancialAxes(data)
   const rows = data.sorted?.Row, columns = data.sorted?.Col

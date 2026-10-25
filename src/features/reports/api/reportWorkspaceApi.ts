@@ -1,6 +1,7 @@
 import { financialAxesCapability } from '../data/financialAxes'
 import { currentFinancialAxesCapability } from '../data/currentFinancialAxes'
 import { currentFinancialProductTimeAxesCapability } from '../data/currentFinancialProductTimeAxes'
+import { currentFinancialDocumentAxesCapability } from '../data/currentFinancialDocumentAxes'
 import { currentFinancialFilterConditionsCapability } from '../data/currentFinancialFilterConditions'
 import { cloneCurrentVparivanieAnalysis } from '../data/currentVparivanieAnalysis'
 import { cloneMovementSelection } from '../data/currentVparivanieMovements'
@@ -64,6 +65,7 @@ function isDataset(value: unknown): value is ReportDataset {
     && (item.financialAxes === undefined || !!financialAxesCapability(item as ReportDataset))
     && (item.currentFinancialAxes === undefined || !!currentFinancialAxesCapability(item as ReportDataset))
     && (item.currentFinancialProductTimeAxes === undefined || !!currentFinancialProductTimeAxesCapability(item as ReportDataset))
+    && (item.currentFinancialDocumentAxes === undefined || !!currentFinancialDocumentAxesCapability(item as ReportDataset))
     && (item.currentFinancialFilterConditions === undefined || !!currentFinancialFilterConditionsCapability(item as ReportDataset))
     && (item.configuration === undefined || !!readReportConfiguration(item.configuration))
     && (item.numberPresentation === undefined || numberPresentationSupported(item as ReportDataset))

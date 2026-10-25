@@ -7,6 +7,7 @@ import { readClientDiscountRegions, type ClientDiscountRegions } from './origina
 import { CURRENT_VPARIVANIE_PRODUCT_FIELDS, CURRENT_VPARIVANIE_FULL_NOTE } from './currentVparivanie'
 import { validateCurrentVparivanieColumns } from './currentVparivanieColumns'
 import { validateFinancialProductTimePreview } from './currentFinancialProductTimePreview'
+import { validateFinancialDocumentPreview } from './currentFinancialDocumentPreview'
 
 export type NativeReportPreviewScalar = { Kind: string; Value: string | null; Provenance: string }
 export type CurrentVparivanieProduct = { RowSourceIndex: number } & Record<typeof CURRENT_VPARIVANIE_PRODUCT_FIELDS[number], string | null>
@@ -197,6 +198,7 @@ export function normalizeNativeReportPreview(response: unknown, fullCurrentVpari
   }
   const request = normalizeRequest(preview.Request)
   validateFinancialProductTimePreview({ ...preview, Request: request } as NativeReportPreview)
+  validateFinancialDocumentPreview({ ...preview, Request: request } as NativeReportPreview)
   const attributes = readSettlementCounterpartyAttributes(preview.SettlementCounterpartyAttributes,
     preview.ResultSha256 as string, (preview.Rows as NativeReportPreviewAxis[]).map(row => row.SourceIndex))
   if (attributes && (request?.DataSource !== 'NativeSettlementPeriod'
