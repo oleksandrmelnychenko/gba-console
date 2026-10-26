@@ -77,6 +77,11 @@ it('builds «Покупець не у групі» from a captured folder and se
   await waitFor(() => expect(within(editor).getByRole('button', { name: 'Зберегти' }).hasAttribute('disabled')).toBe(false))
   fireEvent.click(within(editor).getByRole('button', { name: 'Зберегти' }))
   await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Додати умову відбору' })).toBeNull())
+  fireEvent.click(screen.getAllByRole('button', { name: 'Редагувати' }).at(-1)!)
+  const reopened = screen.getByRole('dialog', { name: 'Редагувати умову відбору' })
+  expect(within(reopened).getByRole('combobox', { name: 'Умова' })).toHaveProperty('value', 'Не у групі')
+  expect(await within(reopened).findByText('Група: Покупці / Київ')).toBeTruthy()
+  fireEvent.click(within(reopened).getByRole('button', { name: 'Скасувати' }))
   fireEvent.submit(container.querySelector('form')!)
   await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
   expect(vi.mocked(createStockReport).mock.calls[0][0].selections.find(s => s.SelectedField.Type === 5)).toMatchObject({
