@@ -6,7 +6,7 @@ const axes = [0, 1, 2, 3, 4, 5, 12, 15, 81] as const
 const axisTypes: ReadonlySet<number> = new Set(axes)
 export type CurrentFinancialDocumentAxes = {
   version: 1; allowedRows: number[]; allowedColumns: number[]
-  minimumRows: 1; maximumRows: 2; maximumColumns: 1; maximumTotalDimensions: 2
+  minimumRows: 1; maximumRows: 2; maximumColumns: 1; maximumTotalDimensions: 2; maximumTotalDimensionsWithColumns?: 3
   maximumOutputColumns: 256; uniqueAcrossAxes: true; quantitySupported: false
   requiredProfitReadMode: 0; requiredDayOrganizationBasis: 0
   groupings: ReportDatasetField[]
@@ -21,6 +21,7 @@ export function currentFinancialDocumentAxesCapability(dataset?: ReportDataset):
     && value.every((type, index) => type === axes[index])
   if (cap.version !== 1 || !exactAxes(cap.allowedRows) || !exactAxes(cap.allowedColumns)
     || cap.minimumRows !== 1 || cap.maximumRows !== 2 || cap.maximumColumns !== 1 || cap.maximumTotalDimensions !== 2
+    || cap.maximumTotalDimensionsWithColumns !== undefined && cap.maximumTotalDimensionsWithColumns !== 3
     || cap.maximumOutputColumns !== 256 || cap.uniqueAcrossAxes !== true || cap.quantitySupported !== false
     || cap.requiredProfitReadMode !== 0 || cap.requiredDayOrganizationBasis !== 0
     || !Array.isArray(cap.groupings) || cap.groupings.length !== 1
@@ -35,10 +36,10 @@ export function hasFinancialDocumentAxes(data: ReportRequestBody): boolean {
     .some(field => field.type === 81)
 }
 
-export function validCurrentFinancialDocumentAxes(data: ReportRequestBody): boolean {
+export function validCurrentFinancialDocumentAxes(data: ReportRequestBody, maximumTotalDimensions = 3): boolean {
   const rows = data.sorted?.Row, cols = data.sorted?.Col
   if (!usesCurrentFinancialAxes(data) || !Array.isArray(rows) || !Array.isArray(cols)
-    || rows.length < 1 || rows.length > 2 || cols.length > 1 || rows.length + cols.length > 2) return false
+    || rows.length < 1 || rows.length > 2 || cols.length > 1 || rows.length + cols.length > maximumTotalDimensions) return false
   const types = [...rows, ...cols].map(field => field.type)
   return types.every(type => axisTypes.has(type)) && new Set(types).size === types.length
 }
@@ -47,9 +48,12 @@ export function currentFinancialDocumentAxesError(data: ReportRequestBody, datas
   if (!hasFinancialDocumentAxes(data)) return null
   if (!usesCurrentFinancialAxes(data))
     return 'Групування за документом доступне лише для «Поточних документів GBA» та «Продажі мінус повернення». Поверніть цей режим або змініть групування; дати й відбори збережено.'
-  if (!currentFinancialDocumentAxesCapability(dataset))
+  const capability = currentFinancialDocumentAxesCapability(dataset)
+  if (!capability)
     return 'Поточний сервер не підтвердив групування прибутку за документом. Налаштування збережено без змін.'
-  if (!validCurrentFinancialDocumentAxes(data))
-    return 'Оберіть до двох різних групувань: у рядках або одне в рядках і одне у стовпцях.'
+  if (!validCurrentFinancialDocumentAxes(data, capability.maximumTotalDimensionsWithColumns ?? capability.maximumTotalDimensions))
+    return capability.maximumTotalDimensionsWithColumns === 3
+      ? 'Оберіть різні групування: до двох у рядках і одне у стовпцях.'
+      : 'Оберіть до двох різних групувань: у рядках або одне в рядках і одне у стовпцях.'
   return null
 }

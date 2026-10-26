@@ -1,3 +1,4 @@
+import { productTimeDataset } from '../data/currentFinancialProductTimeAxes.test-fixtures'
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
@@ -246,4 +247,29 @@ it.each(screenshotChoices)('retains both $name values from the screenshot and su
   expect(vi.mocked(previewStockReport).mock.calls[1][0].selections[1].Values).toEqual([
     { Data: values[1].data, Name: values[1].name, Value: 0 },
   ])
+})
+
+it('BUG-1453 adds month columns to date and organization rows and applies the complete workbook settings', async () => {
+  const dataset = { ...productTimeDataset, currentFinancialProductTimeAxes: {
+    ...productTimeDataset.currentFinancialProductTimeAxes as object, maximumTotalDimensionsWithColumns: 3,
+  } }
+  vi.mocked(getReportDatasets).mockResolvedValue([dataset])
+  vi.mocked(getServerReportTemplates).mockResolvedValue([])
+  render(page())
+  fireEvent.click(await screen.findByRole('button', { name: 'Відкрити ВП.xls' }))
+  changeReportPeriod({ from: '2026-10-17', to: '2026-10-23' })
+  await apply()
+  const before = displayedRequest()
+  expect(before.sorted.Row.map(field => field.type)).toEqual([3, 4])
+  fireEvent.click(screen.getByRole('button', { name: 'Додати поле: Групування стовпців' }))
+  fireEvent.click(within(screen.getByRole('dialog', { name: 'Додати поле · Групування стовпців' })).getByRole('button', { name: 'Місяць' }))
+  expect(screen.queryByText('Перевірте групування')).toBeNull()
+  expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toHaveProperty('disabled', false)
+  await apply()
+  await waitFor(() => expect(previewStockReport).toHaveBeenCalledTimes(2))
+  const after = displayedRequest()
+  expect(after.sorted.Col.map(field => field.type)).toEqual([2])
+  expect({ ...after, sorted: { ...after.sorted, Col: before.sorted.Col } }).toEqual(before)
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати Excel' }))
+  await waitFor(() => expect(exportStockReportPreview).toHaveBeenCalledExactlyOnceWith(session))
 })

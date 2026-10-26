@@ -28,15 +28,20 @@ export function requestFinancialAxesCapability(dataset: ReportDataset | undefine
 export function financialAxesConfigurationError(data: ReportRequestBody, dataset?: ReportDataset): string | null {
   if (hasFinancialDocumentAxes(data)) return currentFinancialDocumentAxesError(data, dataset)
   if (hasFinancialProductTimeAxes(data)) return currentFinancialProductTimeAxesError(data, dataset)
-  if (usesCurrentFinancialAxes(data) && currentFinancialProductTimeAxesCapability(dataset))
-    return validCurrentFinancialProductTimeAxes(data) ? null : 'Оберіть до двох різних групувань: у рядках або одне в рядках і одне у стовпцях.'
+  const capability = currentFinancialDocumentAxesCapability(dataset) ?? currentFinancialProductTimeAxesCapability(dataset)
+  if (usesCurrentFinancialAxes(data) && capability)
+    return validCurrentFinancialProductTimeAxes(data, capability.maximumTotalDimensionsWithColumns ?? capability.maximumTotalDimensions) ? null
+      : capability.maximumTotalDimensionsWithColumns === 3
+        ? 'Оберіть різні групування: до двох у рядках і одне у стовпцях.'
+        : 'Оберіть до двох різних групувань: у рядках або одне в рядках і одне у стовпцях.'
   return currentFinancialAxesError(data, dataset)
 }
 
 /** Valid for every existing calculation basis; those bases retain their own period and filter checks. */
 export function validFinancialAxes(data: ReportRequestBody, dataset?: ReportDataset): boolean {
-  if (currentFinancialDocumentAxesCapability(dataset) && usesCurrentFinancialAxes(data)) return validCurrentFinancialDocumentAxes(data)
-  if (currentFinancialProductTimeAxesCapability(dataset) && usesCurrentFinancialAxes(data)) return validCurrentFinancialProductTimeAxes(data)
+  const document = currentFinancialDocumentAxesCapability(dataset), productTime = currentFinancialProductTimeAxesCapability(dataset)
+  if (document && usesCurrentFinancialAxes(data)) return validCurrentFinancialDocumentAxes(data, document.maximumTotalDimensionsWithColumns ?? document.maximumTotalDimensions)
+  if (productTime && usesCurrentFinancialAxes(data)) return validCurrentFinancialProductTimeAxes(data, productTime.maximumTotalDimensionsWithColumns ?? productTime.maximumTotalDimensions)
   if (currentFinancialAxesCapability(dataset) && usesCurrentFinancialAxes(data)) return validCurrentFinancialAxes(data)
   const rows = data.sorted?.Row, columns = data.sorted?.Col
   if (!Array.isArray(rows) || !Array.isArray(columns) || rows.length < 1 || rows.length > 2 || columns.length > 1) return false

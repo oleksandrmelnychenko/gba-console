@@ -74,3 +74,19 @@ describe('CurrentDocuments financial product/time capability', () => {
     expect(saved.Data.to).toBe(request.to)
   })
 })
+
+it('BUG-1453 admits date/organization by month only with the additive server capability', () => {
+  const request = productTimeRequest([3, 4], [2])
+  const dataset = { ...productTimeDataset, currentFinancialProductTimeAxes: {
+    ...productTimeAxes, maximumTotalDimensionsWithColumns: 3,
+  } }
+  expect(datasetConfigurationError(request, productTimeDataset)).not.toBeNull()
+  expect(datasetConfigurationError(request, parseReportDatasets([dataset])[0])).toBeNull()
+  expect(reportAxesPolicy(dataset, request).config?.maximumTotalDimensions).toBe(3)
+  for (const [rows, columns] of [[[3, 4, 5], [2]], [[3, 4], [2, 5]], [[3, 4], [3]], [[], [2]]])
+    expect(datasetConfigurationError(productTimeRequest(rows, columns), dataset)).not.toBeNull()
+  for (const maximumTotalDimensionsWithColumns of [null, 2, 4, '3'])
+    expect(() => parseReportDatasets([{ ...dataset, currentFinancialProductTimeAxes: {
+      ...productTimeAxes, maximumTotalDimensionsWithColumns,
+    } }])).toThrow()
+})

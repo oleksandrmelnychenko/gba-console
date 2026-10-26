@@ -52,3 +52,19 @@ it.each([{ profitReadMode: 1 }, { profitReadMode: undefined }, { profitReadMode:
 })
 it.each([[[], [81]], [[81, 5], [3]], [[81], [5, 3]], [[81], [81]], [[81, 81], []], [[81], [17]]])(
   'rejects incompatible layout %j / %j', (rows, cols) => expect(datasetConfigurationError(documentRequest(rows, cols), documentDataset)).not.toBeNull())
+
+it('accepts two rows with one column only when the document capability confirms it', () => {
+  const dataset = { ...documentDataset, currentFinancialDocumentAxes: { ...documentAxes, maximumTotalDimensionsWithColumns: 3 } }
+  for (const rows of [[3, 4], [81, 4]]) {
+    const request = documentRequest(rows, [2])
+    const confirmed = { ...dataset, currentFinancialProductTimeAxes: {
+      ...productTimeDataset.currentFinancialProductTimeAxes as object, maximumTotalDimensionsWithColumns: 3,
+    } }
+    expect(datasetConfigurationError(request, documentDataset)).not.toBeNull()
+    expect(datasetConfigurationError(request, parseReportDatasets([confirmed])[0])).toBeNull()
+  }
+  for (const maximumTotalDimensionsWithColumns of [null, 2, 4, '3'])
+    expect(() => parseReportDatasets([{ ...dataset, currentFinancialDocumentAxes: {
+      ...documentAxes, maximumTotalDimensionsWithColumns,
+    } }])).toThrow()
+})

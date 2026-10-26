@@ -71,7 +71,8 @@ export function effectiveReportConfiguration(dataset: ReportDataset | undefined,
   if (data.dataSource === 35 && financial) result = { ...result, axisMode: 'flexible',
     allowedRows: financial.allowedRows, allowedColumns: financial.allowedColumns,
     minimumRows: financial.minimumRows, maximumRows: financial.maximumRows, maximumColumns: financial.maximumColumns,
-    maximumTotalDimensions: 'maximumTotalDimensions' in financial ? financial.maximumTotalDimensions : undefined }
+    maximumTotalDimensions: 'maximumTotalDimensionsWithColumns' in financial && financial.maximumTotalDimensionsWithColumns !== undefined && (data.sorted?.Col?.length ?? 0) > 0
+      ? financial.maximumTotalDimensionsWithColumns : 'maximumTotalDimensions' in financial ? financial.maximumTotalDimensions : undefined }
   if (currentFinancialDocumentFilterSupported(dataset, data) && result.filters)
     result = { ...result, filters: [...new Set([...result.filters, 12])] }
   if (currentFinancialBuyerManagerFilterSupported(dataset, data) && result.filters)

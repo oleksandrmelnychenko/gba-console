@@ -1,3 +1,4 @@
+import { documentPreviewPayload } from '../data/currentFinancialDocumentAxes.test-fixtures'
 import { financialDataset, axisFields } from '../data/financialAxes.test-fixtures'
 import { currentFinancialDataset, currentFinancialRequest } from '../data/currentFinancialAxes.test-fixtures'
 import { productTimeDataset, productTimeRequest } from '../data/currentFinancialProductTimeAxes.test-fixtures'
@@ -100,4 +101,22 @@ it.each([[[5], [2]], [[0, 5], []]])('keeps product/time axes %j / %j in generate
   expect(saved.Data.from).toBe(request.from)
   expect(saved.Data.to).toBe(request.to)
   expect(request).toEqual(before)
+})
+
+it('BUG-1453 previews date and organization rows by month without losing axes or money', async () => {
+  const request = productTimeRequest([3, 4], [2])
+  await expect(previewStockReport(request, productTimeDataset)).rejects.toThrow()
+  expect(apiRequest).not.toHaveBeenCalled()
+  const dataset = { ...productTimeDataset, currentFinancialProductTimeAxes: {
+    ...productTimeDataset.currentFinancialProductTimeAxes as object, maximumTotalDimensionsWithColumns: 3,
+  } }
+  vi.mocked(apiRequest).mockImplementation(async path => path.endsWith('/capabilities')
+    ? { Version: 2, ExplicitExport: true, MaximumPageRows: 50, TimeToLiveSeconds: 300 }
+    : { Preview: { ...documentPreviewPayload([3, 4], [2]), RequestSha256: 'b'.repeat(64) }, ResultSha256: 'a'.repeat(64), ResultId: '11111111-2222-3333-4444-555555555555',
+      PreviewVersion: 2, RequestSha256: 'b'.repeat(64), ExpiresAtUtc: '2030-01-01T00:00:00Z' })
+  const result = await previewStockReport(request, dataset)
+  expect(apiRequest).toHaveBeenCalledWith('/report/stocks/preview', expect.objectContaining({ body: request }))
+  expect(result.preview.RowSchema).toMatchObject([{ Identity: 'Day' }, { Identity: 'Organization' }])
+  expect(result.preview.ColumnSchema.map(field => field.Identity)).toEqual(['Month', '$measureGroup', '$measure'])
+  expect(result.preview.Cells[0].Value.Value).toBe('-7.00')
 })
