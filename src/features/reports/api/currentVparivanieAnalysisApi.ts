@@ -1,4 +1,5 @@
-import { ANALYSIS_GROUPS_ENDPOINT, analysisGroupIdentity } from '../data/currentVparivanieAnalysis'
+import { ANALYSIS_GROUPS_ENDPOINT, ANALYSIS_HIERARCHY_ENDPOINT, ANALYSIS_HIERARCHY_STATUS_ENDPOINT, analysisGroupIdentity,
+  type AnalysisHierarchyKind, type AnalysisHierarchyStatus } from '../data/currentVparivanieAnalysis'
 import { apiRequest } from '../../../shared/api/apiClient'
 import type { ReportEntity } from '../types'
 export type AnalysisLookupValue = { id: string; name: string; data: ReportEntity }
@@ -49,4 +50,50 @@ export async function getAnalysisGroupPage(parentId: string | null, offset: numb
     return { id: canonical, name: item.name, data: data as ReportEntity, hasChildren: item.hasChildren }
   })
   return { parentId, items, hasMore: page.hasMore }
+}
+
+export type AnalysisSourceGroupKind = Exclude<AnalysisHierarchyKind, 'productGroup'>
+export type AnalysisHierarchyNode = AnalysisGroupNode & { path: string }
+export type AnalysisHierarchyPage = { parentId: string | null; items: AnalysisHierarchyNode[]; hasMore: boolean }
+const NODE_ID = /^(fenix|amg):[0-9A-F]{32}$/
+export async function getAnalysisHierarchyPage(kind: AnalysisSourceGroupKind, parentId: string | null, offset: number, limit: number,
+  value: string, signal?: AbortSignal): Promise<AnalysisHierarchyPage> {
+  const result = await apiRequest<unknown>(ANALYSIS_HIERARCHY_ENDPOINT, {
+    query: { kind, ...(parentId ? { parentId } : {}), offset, limit, value }, signal,
+  })
+  const fail = () => { throw new Error('Сервер повернув некоректну ієрархію груп.') }
+  if (!result || typeof result !== 'object') return fail()
+  const page = result as Record<string, unknown>
+  if (page.kind !== kind || page.parentId !== parentId || typeof page.hasMore !== 'boolean' || !Array.isArray(page.items)
+    || page.items.length > limit || page.hasMore && page.items.length === 0) return fail()
+  const seen = new Set<string>()
+  const items = page.items.map(item => {
+    if (!item || typeof item !== 'object' || typeof item.id !== 'string' || !NODE_ID.test(item.id) || seen.has(item.id)
+      || typeof item.name !== 'string' || !item.name || typeof item.path !== 'string' || !item.path
+      || typeof item.data !== 'string' || typeof item.hasChildren !== 'boolean') return fail()
+    const data: unknown = JSON.parse(item.data)
+    const [world, id] = item.id.split(':')
+    if (!data || typeof data !== 'object' || Array.isArray(data) || Object.keys(data).length !== 3) return fail()
+    const record = data as Record<string, unknown>
+    if (record.kind !== kind || record.world !== world || record.id !== id) return fail()
+    seen.add(item.id)
+    return { id: item.id, name: item.name, path: item.path, data: record as ReportEntity, hasChildren: item.hasChildren }
+  })
+  return { parentId, items, hasMore: page.hasMore }
+}
+
+const KINDS: AnalysisHierarchyKind[] = ['productGroup', 'counterpartyGroup', 'warehouseGroup']
+export async function getAnalysisHierarchyStatus(signal?: AbortSignal): Promise<AnalysisHierarchyStatus> {
+  const result = await apiRequest<unknown>(ANALYSIS_HIERARCHY_STATUS_ENDPOINT, { signal })
+  const fail = () => { throw new Error('Сервер повернув некоректний стан ієрархій груп.') }
+  if (!result || typeof result !== 'object') return fail()
+  const body = result as Record<string, unknown>
+  if (body.version !== 1 || !Array.isArray(body.kinds)) return fail()
+  const status: AnalysisHierarchyStatus = {}
+  for (const item of body.kinds) {
+    if (!item || typeof item !== 'object' || !KINDS.includes(item.kind) || item.kind in status || typeof item.available !== 'boolean'
+      || (item.available ? item.unavailabilityReason != null : typeof item.unavailabilityReason !== 'string' || !item.unavailabilityReason)) return fail()
+    status[item.kind as AnalysisHierarchyKind] = item.available ? null : item.unavailabilityReason
+  }
+  return status
 }

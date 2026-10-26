@@ -1,0 +1,1052 @@
+{
+  "version": 1,
+  "maximumDimensions": 8,
+  "requiredColumnGrouping": 74,
+  "measure": 83,
+  "allSalesFilterScope": true,
+  "stockAllocation": "periodEndOnly",
+  "physicalCalendar": "Europe/Kyiv",
+  "groupings": [
+    {
+      "type": 0,
+      "name": "Рік",
+      "path": [
+        "Період"
+      ],
+      "valueKind": "date",
+      "branches": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "conditions": [],
+      "lookupKind": "date",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 1,
+      "name": "Квартал",
+      "path": [
+        "Період"
+      ],
+      "valueKind": "date",
+      "branches": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "conditions": [],
+      "lookupKind": "date",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 2,
+      "name": "Місяць",
+      "path": [
+        "Період"
+      ],
+      "valueKind": "date",
+      "branches": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "conditions": [],
+      "lookupKind": "date",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 3,
+      "name": "День",
+      "path": [
+        "Період"
+      ],
+      "valueKind": "date",
+      "branches": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "conditions": [],
+      "lookupKind": "date",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 4,
+      "name": "Організація",
+      "path": [
+        "Документ"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [],
+      "lookupKind": "nativeId",
+      "coverage": "documentEvidence",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 5,
+      "name": "Товар",
+      "path": [
+        "Товар"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "conditions": [],
+      "lookupKind": "nativeId",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 6,
+      "name": "Артикул",
+      "path": [
+        "Товар"
+      ],
+      "valueKind": "text",
+      "branches": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "conditions": [],
+      "lookupKind": "text",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 7,
+      "name": "Назва",
+      "path": [
+        "Товар"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "conditions": [],
+      "lookupKind": "nativeId",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 8,
+      "name": "Опис",
+      "path": [
+        "Товар"
+      ],
+      "valueKind": "text",
+      "branches": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "conditions": [],
+      "lookupKind": "text",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 9,
+      "name": "Топ",
+      "path": [
+        "Товар"
+      ],
+      "valueKind": "text",
+      "branches": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "conditions": [],
+      "lookupKind": "text",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 10,
+      "name": "Товарна група",
+      "path": [
+        "Товар"
+      ],
+      "valueKind": "groupRef",
+      "branches": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "conditions": [],
+      "lookupKind": "groupRef",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 12,
+      "name": "Назва покупця",
+      "path": [
+        "Покупець"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [],
+      "lookupKind": "nativeId",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 13,
+      "name": "Регіон покупця",
+      "path": [
+        "Покупець"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [],
+      "lookupKind": "nativeId",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 14,
+      "name": "Код регіону покупця",
+      "path": [
+        "Покупець"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [],
+      "lookupKind": "nativeId",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 15,
+      "name": "Договір покупця",
+      "path": [
+        "Покупець"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [],
+      "lookupKind": "nativeId",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 79,
+      "name": "Основний менеджер покупця (поточний)",
+      "path": [
+        "Покупець"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [],
+      "lookupKind": "nativeId",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 80,
+      "name": "Тип ціни договору (поточний)",
+      "path": [
+        "Покупець"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [],
+      "lookupKind": "nativeId",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 17,
+      "name": "Документ продажу / повернення",
+      "path": [
+        "Документ продажу"
+      ],
+      "valueKind": "documentRef",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [],
+      "lookupKind": "documentRef",
+      "coverage": "documentEvidence",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 18,
+      "name": "Повернення від клієнта",
+      "path": [
+        "Документ продажу"
+      ],
+      "valueKind": "documentRef",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [],
+      "lookupKind": "documentRef",
+      "coverage": "documentEvidence",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 19,
+      "name": "Автор введення товару",
+      "path": [
+        "Документ продажу"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [],
+      "lookupKind": "nativeId",
+      "coverage": "documentEvidence",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 20,
+      "name": "Автор підтвердження накладної",
+      "path": [
+        "Документ продажу"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [],
+      "lookupKind": "nativeId",
+      "coverage": "documentEvidence",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 21,
+      "name": "Постачальник партії",
+      "path": [
+        "Постачальник"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [],
+      "lookupKind": "nativeId",
+      "coverage": "allocationEvidence",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 74,
+      "name": "Показник",
+      "path": [
+        "Показники"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "conditions": [],
+      "lookupKind": "nativeId",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 75,
+      "name": "Покупець (деталізація)",
+      "path": [
+        "Покупець"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [],
+      "lookupKind": "nativeId",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    }
+  ],
+  "filters": [
+    {
+      "type": 0,
+      "name": "Організація",
+      "path": [
+        "Документ"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "lookupKind": "nativeId",
+      "coverage": "documentEvidence",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 1,
+      "name": "Товар",
+      "path": [
+        "Товар"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "conditions": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "lookupKind": "nativeId",
+      "coverage": "currentMasterData",
+      "hierarchy": {
+        "groupKind": "productGroup",
+        "itemKind": "product",
+        "itemField": 1,
+        "version": 1,
+        "groupConditions": [
+          3,
+          5,
+          6,
+          7
+        ],
+        "mixedConditions": [
+          3,
+          5
+        ],
+        "source": "Товарні групи GBA (дерево груп номенклатури)",
+        "browseEndpoint": "/report/datasets/current-vparivanie/analysis/groups",
+        "maximumPageSize": 50,
+        "statusEndpoint": "/report/datasets/current-vparivanie/analysis/hierarchy-status"
+      },
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 2,
+      "name": "Артикул",
+      "path": [
+        "Товар"
+      ],
+      "valueKind": "text",
+      "branches": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "conditions": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "lookupKind": "text",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 3,
+      "name": "Топ",
+      "path": [
+        "Товар"
+      ],
+      "valueKind": "text",
+      "branches": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "conditions": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "lookupKind": "text",
+      "coverage": "currentMasterData",
+      "textEntry": {
+        "version": 1,
+        "allowedValues": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "O",
+          "X9",
+          "N"
+        ]
+      },
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 4,
+      "name": "Товарна група",
+      "path": [
+        "Товар"
+      ],
+      "valueKind": "groupRef",
+      "branches": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "conditions": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "lookupKind": "groupRef",
+      "coverage": "currentMasterData",
+      "groupSelection": {
+        "version": 1,
+        "itemField": 1,
+        "itemKind": "product",
+        "groupKind": "productGroup",
+        "mixedConditions": [
+          3,
+          5
+        ]
+      },
+      "hierarchyBrowse": {
+        "version": 1,
+        "endpoint": "/report/datasets/current-vparivanie/analysis/groups",
+        "maximumPageSize": 50
+      },
+      "hierarchy": {
+        "groupKind": "productGroup",
+        "itemKind": "product",
+        "itemField": 1,
+        "version": 1,
+        "groupConditions": [
+          3,
+          5,
+          6,
+          7
+        ],
+        "mixedConditions": [
+          3,
+          5
+        ],
+        "source": "Товарні групи GBA (дерево груп номенклатури)",
+        "browseEndpoint": "/report/datasets/current-vparivanie/analysis/groups",
+        "maximumPageSize": 50,
+        "statusEndpoint": "/report/datasets/current-vparivanie/analysis/hierarchy-status"
+      },
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 5,
+      "name": "Покупець",
+      "path": [
+        "Покупець"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "lookupKind": "nativeId",
+      "coverage": "currentMasterData",
+      "hierarchy": {
+        "groupKind": "counterpartyGroup",
+        "itemKind": "buyer",
+        "itemField": 5,
+        "version": 1,
+        "groupConditions": [
+          3,
+          5,
+          6,
+          7
+        ],
+        "mixedConditions": [
+          3,
+          5
+        ],
+        "source": "Папки довідника «Контрагенти» 1С Fenix, захоплені синхронізацією",
+        "browseEndpoint": "/report/datasets/current-vparivanie/analysis/hierarchy",
+        "maximumPageSize": 50,
+        "statusEndpoint": "/report/datasets/current-vparivanie/analysis/hierarchy-status"
+      },
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 6,
+      "name": "Назва покупця",
+      "path": [
+        "Покупець"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "lookupKind": "nativeId",
+      "coverage": "currentMasterData",
+      "hierarchy": {
+        "groupKind": "counterpartyGroup",
+        "itemKind": "buyer",
+        "itemField": 6,
+        "version": 1,
+        "groupConditions": [
+          3,
+          5,
+          6,
+          7
+        ],
+        "mixedConditions": [
+          3,
+          5
+        ],
+        "source": "Папки довідника «Контрагенти» 1С Fenix, захоплені синхронізацією",
+        "browseEndpoint": "/report/datasets/current-vparivanie/analysis/hierarchy",
+        "maximumPageSize": 50,
+        "statusEndpoint": "/report/datasets/current-vparivanie/analysis/hierarchy-status"
+      },
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 7,
+      "name": "Регіон покупця",
+      "path": [
+        "Покупець"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "lookupKind": "nativeId",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 8,
+      "name": "Код регіону покупця",
+      "path": [
+        "Покупець"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "lookupKind": "nativeId",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 9,
+      "name": "Договір покупця",
+      "path": [
+        "Покупець"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "lookupKind": "nativeId",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 11,
+      "name": "Тип ціни договору (поточний)",
+      "path": [
+        "Покупець"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "lookupKind": "nativeId",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 12,
+      "name": "Документ продажу / повернення",
+      "path": [
+        "Документ продажу"
+      ],
+      "valueKind": "documentRef",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "lookupKind": "documentRef",
+      "coverage": "documentEvidence",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 13,
+      "name": "Документ: номер, дата, час",
+      "path": [
+        "Документ продажу"
+      ],
+      "valueKind": "documentRef",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "lookupKind": "documentRef",
+      "coverage": "documentEvidence",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 14,
+      "name": "Повернення від клієнта",
+      "path": [
+        "Документ продажу"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "lookupKind": "nativeId",
+      "coverage": "documentEvidence",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 15,
+      "name": "Автор введення товару",
+      "path": [
+        "Документ продажу"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "lookupKind": "nativeId",
+      "coverage": "documentEvidence",
+      "available": false,
+      "unavailabilityReason": "Незмінний автор створення рядка не зафіксований; поточний користувач рядка не доводить авторство."
+    },
+    {
+      "type": 16,
+      "name": "Автор підтвердження накладної",
+      "path": [
+        "Документ продажу"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "lookupKind": "nativeId",
+      "coverage": "documentEvidence",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 17,
+      "name": "Постачальник партії",
+      "path": [
+        "Постачальник"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "lookupKind": "nativeId",
+      "coverage": "allocationEvidence",
+      "hierarchy": {
+        "groupKind": "counterpartyGroup",
+        "itemKind": "supplier",
+        "itemField": 17,
+        "version": 1,
+        "groupConditions": [
+          3,
+          5,
+          6,
+          7
+        ],
+        "mixedConditions": [
+          3,
+          5
+        ],
+        "source": "Папки довідника «Контрагенти» 1С Fenix, захоплені синхронізацією",
+        "browseEndpoint": "/report/datasets/current-vparivanie/analysis/hierarchy",
+        "maximumPageSize": 50,
+        "statusEndpoint": "/report/datasets/current-vparivanie/analysis/hierarchy-status"
+      },
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 21,
+      "name": "Склад",
+      "path": [
+        "Склад"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        1,
+        4,
+        5
+      ],
+      "conditions": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "lookupKind": "nativeId",
+      "coverage": "currentMasterData",
+      "hierarchy": {
+        "groupKind": "warehouseGroup",
+        "itemKind": "warehouse",
+        "itemField": 21,
+        "version": 1,
+        "groupConditions": [
+          3,
+          5,
+          6,
+          7
+        ],
+        "mixedConditions": [
+          3,
+          5
+        ],
+        "source": "Папки довідника «Склади» 1С Fenix і AMG, захоплені синхронізацією",
+        "browseEndpoint": "/report/datasets/current-vparivanie/analysis/hierarchy",
+        "maximumPageSize": 50,
+        "statusEndpoint": "/report/datasets/current-vparivanie/analysis/hierarchy-status"
+      },
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
+      "type": 60,
+      "name": "Основний менеджер покупця (поточний)",
+      "path": [
+        "Покупець"
+      ],
+      "valueKind": "sourceRef",
+      "branches": [
+        2,
+        3
+      ],
+      "conditions": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "lookupKind": "sourceRef",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    }
+  ]
+}

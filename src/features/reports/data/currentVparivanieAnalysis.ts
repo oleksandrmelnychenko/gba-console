@@ -8,9 +8,19 @@ export const ANALYSIS_GROUPS_ENDPOINT = '/report/datasets/current-vparivanie/ana
 export type AnalysisHierarchyBrowse = { version: 1; endpoint: typeof ANALYSIS_GROUPS_ENDPOINT; maximumPageSize: number }
 export type AnalysisTextEntry = { version: 1; allowedValues: string[] }
 export type AnalysisGroupSelection = { version: 1; itemField: 1; itemKind: 'product'; groupKind: 'productGroup'; mixedConditions: [3, 5] }
+export const ANALYSIS_HIERARCHY_ENDPOINT = '/report/datasets/current-vparivanie/analysis/hierarchy'
+export const ANALYSIS_HIERARCHY_STATUS_ENDPOINT = '/report/datasets/current-vparivanie/analysis/hierarchy-status'
+export type AnalysisHierarchyKind = 'productGroup' | 'counterpartyGroup' | 'warehouseGroup'
+export type AnalysisItemKind = 'product' | 'buyer' | 'supplier' | 'warehouse'
+export type AnalysisHierarchy = {
+  version: 1; groupKind: AnalysisHierarchyKind; itemKind: AnalysisItemKind; itemField: number
+  groupConditions: number[]; mixedConditions: number[]; source: string; browseEndpoint: string; maximumPageSize: number; statusEndpoint: string
+}
+export type AnalysisHierarchyStatus = Partial<Record<AnalysisHierarchyKind, string | null>>
 export type AnalysisFieldDescriptor = {
   type: number; name: string; path: string[]; valueKind: string; branches: number[]
   conditions: number[]; lookupKind: string; coverage: string; groupSelection?: AnalysisGroupSelection; hierarchyBrowse?: AnalysisHierarchyBrowse; textEntry?: AnalysisTextEntry; available?: boolean; unavailabilityReason?: string | null
+  hierarchy?: AnalysisHierarchy
 }
 export type CurrentVparivanieAnalysisCapability = {
   version: 1; maximumDimensions: 8; requiredColumnGrouping: 74; measure: 83
@@ -43,6 +53,42 @@ export function cloneCurrentVparivanieAnalysis(data: Record<string, unknown>): R
   return structuredClone(Object.fromEntries(data.DataSource === 39 && entries.length === 1 && entries[0][0] === 'CurrentVparivanieAnalysis'
     ? [['currentVparivanieAnalysis', entries[0][1]]] : entries))
 }
+const HIERARCHY_ITEMS: Record<number, [AnalysisItemKind, AnalysisHierarchyKind]> = {
+  1: ['product', 'productGroup'], 4: ['product', 'productGroup'], 5: ['buyer', 'counterpartyGroup'], 6: ['buyer', 'counterpartyGroup'],
+  17: ['supplier', 'counterpartyGroup'], 21: ['warehouse', 'warehouseGroup'],
+}
+const sameIds = (value: unknown, expected: number[]) => Array.isArray(value) && value.length === expected.length && value.every((x, i) => x === expected[i])
+function isAnalysisHierarchy(value: unknown, field: number): value is AnalysisHierarchy {
+  const expected = HIERARCHY_ITEMS[field]
+  return record(value) && !!expected && value.version === 1 && value.itemKind === expected[0] && value.groupKind === expected[1]
+    && Number.isSafeInteger(value.itemField) && sameIds(value.groupConditions, [3, 5, 6, 7]) && sameIds(value.mixedConditions, [3, 5])
+    && typeof value.source === 'string' && value.statusEndpoint === ANALYSIS_HIERARCHY_STATUS_ENDPOINT
+    && value.browseEndpoint === (expected[1] === 'productGroup' ? ANALYSIS_GROUPS_ENDPOINT : ANALYSIS_HIERARCHY_ENDPOINT)
+    && Number.isInteger(value.maximumPageSize) && Number(value.maximumPageSize) > 0 && Number(value.maximumPageSize) <= 50
+}
+const PRODUCT_HIERARCHY: AnalysisHierarchy = {
+  version: 1, groupKind: 'productGroup', itemKind: 'product', itemField: 1, groupConditions: [3, 5, 6, 7], mixedConditions: [3, 5],
+  source: 'Товарні групи GBA', browseEndpoint: ANALYSIS_GROUPS_ENDPOINT, maximumPageSize: 50, statusEndpoint: ANALYSIS_HIERARCHY_STATUS_ENDPOINT,
+}
+export function analysisHierarchy(descriptor: AnalysisFieldDescriptor | undefined): AnalysisHierarchy | undefined {
+  if (!descriptor) return undefined
+  if (descriptor.hierarchy) return descriptor.hierarchy
+  return descriptor.type === 4 && descriptor.groupSelection ? PRODUCT_HIERARCHY : undefined
+}
+export function isAnalysisGroupCondition(descriptor: AnalysisFieldDescriptor | undefined, condition: number): boolean {
+  return !!analysisHierarchy(descriptor)?.groupConditions.includes(condition)
+}
+export const ANALYSIS_HIERARCHY_PENDING = 'Перевіряємо, чи є в GBA ієрархія груп для цього поля…'
+export function analysisHierarchyUnavailableReason(descriptor: AnalysisFieldDescriptor | undefined, status: AnalysisHierarchyStatus | null | undefined): string | null {
+  const hierarchy = analysisHierarchy(descriptor)
+  if (!hierarchy) return null
+  if (!status) return hierarchy.groupKind === 'productGroup' ? null : ANALYSIS_HIERARCHY_PENDING
+  if (!(hierarchy.groupKind in status)) return hierarchy.groupKind === 'productGroup' ? null : 'Сервер не повідомив стан ієрархії груп для цього поля.'
+  return status[hierarchy.groupKind] ?? null
+}
+export function analysisConditionUnavailableReason(descriptor: AnalysisFieldDescriptor | undefined, condition: number, status: AnalysisHierarchyStatus | null | undefined): string | null {
+  return isAnalysisGroupCondition(descriptor, condition) ? analysisHierarchyUnavailableReason(descriptor, status) : null
+}
 function isAnalysisGroupSelection(value: unknown): value is AnalysisGroupSelection {
   return record(value) && value.version === 1 && value.itemField === 1 && value.itemKind === 'product'
     && value.groupKind === 'productGroup' && Array.isArray(value.mixedConditions) && value.mixedConditions.length === 2 && value.mixedConditions[0] === 3 && value.mixedConditions[1] === 5
@@ -59,6 +105,7 @@ export function currentVparivanieAnalysisCapability(dataset: ReportDataset | nul
       && ['nativeId', 'sourceRef', 'text', 'documentRef', 'groupRef', 'date', 'none'].includes(String(f.lookupKind)) && ['currentMasterData', 'documentEvidence', 'allocationEvidence'].includes(String(f.coverage)) && ids(f.branches) && f.branches.every(b => b >= 1 && b <= 5)
       && (f.available === undefined || typeof f.available === 'boolean') && (f.available !== false || typeof f.unavailabilityReason === 'string' && !!f.unavailabilityReason)
       && (f.groupSelection == null || f.type === 4 && isAnalysisGroupSelection(f.groupSelection))
+      && (f.hierarchy == null || isAnalysisHierarchy(f.hierarchy, Number(f.type)))
       && (f.hierarchyBrowse == null || f.type === 4 && record(f.hierarchyBrowse) && f.hierarchyBrowse.version === 1
         && f.hierarchyBrowse.endpoint === ANALYSIS_GROUPS_ENDPOINT && Number.isInteger(f.hierarchyBrowse.maximumPageSize)
         && Number(f.hierarchyBrowse.maximumPageSize) > 0 && Number(f.hierarchyBrowse.maximumPageSize) <= 50)
@@ -94,11 +141,43 @@ export function currentVparivanieAnalysisScopeError(data: ReportRequestBody, dat
 }
 const positiveId = (v: unknown) => typeof v === 'string' && v.length <= 8192 && /^\d+$/.test(v) && BigInt(v) > 0n && BigInt(v) <= 9223372036854775807n
   || typeof v === 'number' && Number.isSafeInteger(v) && v > 0
+const GROUP_CONDITIONS = [3, 5, 6, 7]
+const SOURCE_ID = /^[0-9A-Fa-f]{32}$/
+const hasKind = (value: Record<string, unknown>) => Object.keys(value).some(key => key.toLowerCase() === 'kind')
+const legacyId = (value: Record<string, unknown>) => {
+  const ids = Object.entries(value).filter(([key]) => key.toLowerCase() === 'id')
+  return ids.length === 1 && !hasKind(value) && positiveId(ids[0][1]) ? ids[0][1] as string | number : null
+}
+export type AnalysisHierarchyIdentity = { kind: string; id: string | number; world?: 'fenix' | 'amg'; group: boolean; typed: boolean }
+export function analysisHierarchyIdentity(field: number, value: ReportEntity): AnalysisHierarchyIdentity | null {
+  if (field === 4) {
+    const group = analysisGroupIdentity(value)
+    return group ? { kind: group.kind, id: group.id, group: group.kind === 'productGroup', typed: group.typed } : null
+  }
+  const expected = HIERARCHY_ITEMS[field]
+  if (!expected || !record(value)) return null
+  const entries = Object.entries(value), lower = new Map(entries.map(([key, v]) => [key.toLowerCase(), v]))
+  if (lower.size !== entries.length || !lower.has('kind')) return null
+  const kind = lower.get('kind'), id = lower.get('id'), world = lower.get('world')
+  if (kind === expected[0]) return entries.length === 2 && positiveId(id) ? { kind: expected[0], id: id as string | number, group: false, typed: true } : null
+  if (kind !== expected[1]) return null
+  if (kind === 'productGroup') return entries.length === 2 && positiveId(id) ? { kind, id: id as string | number, group: true, typed: true } : null
+  return entries.length === 3 && typeof id === 'string' && SOURCE_ID.test(id) && /[1-9A-Fa-f]/.test(id)
+    && (world === 'fenix' || world === 'amg' && kind === 'warehouseGroup')
+    ? { kind: expected[1], id: id.toUpperCase(), world: world as 'fenix' | 'amg', group: true, typed: true } : null
+}
 export function validAnalysisFilterValue(field: number, value: unknown, descriptor?: AnalysisFieldDescriptor, condition?: number): boolean {
   if (!record(value)) return false
   if (field === 4) {
     const group = analysisGroupIdentity(value)
     return !!group && (!group.typed || [3, 5].includes(condition ?? -1) && (!descriptor || !!descriptor.groupSelection))
+  }
+  if (HIERARCHY_ITEMS[field]) {
+    if (GROUP_CONDITIONS.includes(condition ?? -1)) {
+      const identity = analysisHierarchyIdentity(field, value)
+      return !!identity && (identity.group || [3, 5].includes(condition ?? -1)) && (!descriptor || !!analysisHierarchy(descriptor))
+    }
+    if (hasKind(value)) return false
   }
   if (field === 2 || field === 3 || descriptor?.valueKind === 'text') {
     const entries = Object.entries(value)
@@ -123,7 +202,15 @@ export function analysisValueIdentity(field: number, value: ReportEntity): strin
   const group = field === 4 ? analysisGroupIdentity(value) : null
   const entries = Object.entries(value)
   if ([2, 3].includes(field) && entries.length === 1 && ['name', 'value'].includes(entries[0][0].toLowerCase()) && typeof entries[0][1] === 'string') return `text:${entries[0][1]}`
-  return group ? `${group.kind}:${BigInt(group.id)}` : JSON.stringify(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)))
+  if (group) return `${group.kind}:${BigInt(group.id)}`
+  const expected = field === 4 ? undefined : HIERARCHY_ITEMS[field]
+  if (expected) {
+    const typed = analysisHierarchyIdentity(field, value)
+    if (typed) return typed.world ? `${typed.kind}:${typed.world}:${typed.id}` : `${typed.kind}:${BigInt(typed.id)}`
+    const id = legacyId(value)
+    if (id !== null) return `${expected[0]}:${BigInt(id)}`
+  }
+  return JSON.stringify(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)))
 }
 export function analysisListCondition(type: number, descriptor?: AnalysisFieldDescriptor): ReportFilterCondition | undefined {
   const Type = type === 0 ? 2 : type === 1 ? 4 : undefined
@@ -137,7 +224,20 @@ export function changeAnalysisSelectionValues(selection: ReportSelection, Values
 export function changeAnalysisSelectionCondition(selection: ReportSelection, condition: ReportFilterCondition): ReportSelection {
   // Re-encode a proven group without dropping it when leaving a mixed operator.
   // Individual products remain visible and invalid until explicitly replaced/removed.
-  const Values = selection.SelectedField.Type === 4 && ![3, 5].includes(condition.Type)
+  const field = selection.SelectedField.Type
+  if (field !== 4 && HIERARCHY_ITEMS[field]) {
+    const toGroup = GROUP_CONDITIONS.includes(condition.Type)
+    const Values = selection.Values.map(value => {
+      const typed = analysisHierarchyIdentity(field, value.Data)
+      if (toGroup) {
+        const id = typed ? null : legacyId(value.Data)
+        return id === null ? value : { ...value, Data: { kind: HIERARCHY_ITEMS[field][0], id } }
+      }
+      return typed && !typed.group ? { ...value, Data: { Id: typed.id } } : value
+    })
+    return { ...selection, FilterCondition: condition, Values }
+  }
+  const Values = field === 4 && ![3, 5].includes(condition.Type)
     ? selection.Values.map(value => {
       const group = analysisGroupIdentity(value.Data)
       return group?.typed && group.kind === 'productGroup' ? { ...value, Data: { Id: group.id } } : value
@@ -147,11 +247,18 @@ export function changeAnalysisSelectionCondition(selection: ReportSelection, con
 export function analysisSelectionValueError(selection: ReportSelection, descriptor?: AnalysisFieldDescriptor): string | null {
   const cardinality = reportSelectionCardinalityError(selection)
   if (cardinality) return cardinality
-  if (selection.Values.some(v => !validAnalysisFilterValue(selection.SelectedField.Type, v.Data, descriptor, selection.FilterCondition.Type)))
-    return selection.SelectedField.Type === 4 ? 'Для цієї умови оберіть групи товарів; окремі товари доступні в умовах «У групі зі списку» та «Не у групі зі списку».' : 'Некоректне значення відбору аналізу.'
+  const field = selection.SelectedField.Type, condition = selection.FilterCondition.Type
+  if (selection.Values.some(v => !validAnalysisFilterValue(field, v.Data, descriptor, condition))) {
+    if (field === 4) return 'Для цієї умови оберіть групи товарів; окремі товари доступні в умовах «У групі зі списку» та «Не у групі зі списку».'
+    if (HIERARCHY_ITEMS[field] && [6, 7].includes(condition))
+      return 'Для умов «У групі» та «Не у групі» оберіть групу; окремі значення доступні в умовах «У групі зі списку» та «Не у групі зі списку».'
+    if (HIERARCHY_ITEMS[field] && !GROUP_CONDITIONS.includes(condition) && selection.Values.some(v => analysisHierarchyIdentity(field, v.Data)?.group))
+      return 'Групи можна обрати лише в умовах «У групі…»; приберіть групи або змініть умову.'
+    return 'Некоректне значення відбору аналізу.'
+  }
   return null
 }
-export function currentVparivanieAnalysisLayoutError(data: ReportRequestBody, dataset?: ReportDataset, draft = false): string | null {
+export function currentVparivanieAnalysisLayoutError(data: ReportRequestBody, dataset?: ReportDataset, draft = false, status?: AnalysisHierarchyStatus | null): string | null {
   const invalid = currentVparivanieAnalysisScopeError(data, dataset)
   if (invalid) return invalid
   if (!requestCurrentVparivanieAnalysis(data)) return null
@@ -163,14 +270,18 @@ export function currentVparivanieAnalysisLayoutError(data: ReportRequestBody, da
     return 'Оберіть до восьми різних групувань; показник «Результат» і колонка показників залишаються у звіті.'
   if (data.selections.length > 24 || new Set(data.selections.filter(s => s.IsChecked !== false).map(s => s.SelectedField.Type)).size !== data.selections.filter(s => s.IsChecked !== false).length) return 'Задайте одне правило на поле відбору, до 24 правил.'
   const descriptors = new Map(cap?.filters.map(field => [field.type, field]) ?? [])
+  const active = data.selections.filter(selection => selection.IsChecked !== false)
+  if (active.filter(s => s.SelectedField.Type === 4 || s.SelectedField.Type === 1 && GROUP_CONDITIONS.includes(s.FilterCondition.Type)).length > 1)
+    return 'Задайте відбір за групами товарів одним правилом: «Товар» або «Товарна група».'
   let anchor = false
-  for (const selection of data.selections) {
-    if (selection.IsChecked === false) continue
+  for (const selection of active) {
     const field = selection.SelectedField.Type, condition = selection.FilterCondition.Type
-    if (selection.Values.length > 0 && (field === 1 && [0, 2].includes(condition) || field === 4 && [0, 2, 3, 6].includes(condition))) anchor = true
+    if (selection.Values.length > 0 && [1, 4].includes(field) && [0, 2, 3, 6].includes(condition)) anchor = true
     const f = descriptors.get(field)
     if (f?.available === false) return f.unavailabilityReason ?? 'Цей відбір поки недоступний.'
     if (cap && (!f || !f.conditions.includes(selection.FilterCondition.Type))) return 'Сервер не підтримує вибраний відбір або умову для цього поля.'
+    const unavailable = status === undefined ? null : analysisConditionUnavailableReason(f, condition, status)
+    if (unavailable) return unavailable
     if (!draft && selection.Values.length === 0) return 'Оберіть значення відбору.'
     const valueError = analysisSelectionValueError(selection, f)
     if (valueError) return valueError

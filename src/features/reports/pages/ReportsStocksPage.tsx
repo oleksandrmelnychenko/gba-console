@@ -38,7 +38,8 @@ import type { MovementLaunch } from './OriginalWarehouseMovementCatalogueLaunch'
 import { isMovementCapability, isWarehouseMovementCatalogueEntry, normalizeMovementPublications } from '../data/originalWarehouseMovement'
 import { isOrganizationOnlyTurnoverScope, ORGANIZATION_ONLY_TURNOVER_CHOICE } from '../data/oneCTurnoverScopes'
 import type { OneCTurnoverScopeSummary } from '../types'
-import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis, analysisFilterConditions, analysisSelectionValueError, changeAnalysisSelectionCondition, changeAnalysisSelectionValues } from '../data/currentVparivanieAnalysis'
+import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis, analysisFilterConditions, analysisSelectionValueError, changeAnalysisSelectionCondition, changeAnalysisSelectionValues, analysisConditionUnavailableReason, analysisHierarchy, analysisHierarchyUnavailableReason, type AnalysisFieldDescriptor, type AnalysisHierarchyStatus } from '../data/currentVparivanieAnalysis'
+import { useAnalysisHierarchyStatus } from '../hooks/useAnalysisHierarchyStatus'
 import { ReportFieldPicker } from './ReportFieldPicker'
 import { CurrentVparivanieAnalysisValuePicker } from './CurrentVparivanieAnalysisValuePicker'
 import { CurrentVparivanieMovementSettings } from './CurrentVparivanieMovementSettings'
@@ -2395,8 +2396,10 @@ function ReportSelectionsCard({
   const documentLookup = financialDocumentLookupPolicy(dataset, request, draftSelection?.SelectedField.Type, managerLookup.mode, managerLookup.unavailable)
   const financialConditions = dataSource === 35 ? new Set(financialFilterConditionTypes(dataset, request, draftSelection?.SelectedField.Type)) : null
   const filterConditions = analysis ? analysisFilterConditions(dataset, draftSelection?.SelectedField.Type ?? 0) : dataSource === 39 ? currentVparivanieFilterConditions(draftSelection?.SelectedField.Type ?? 0) : financialConditions ? REPORT_FILTER_CONDITIONS.filter(condition => (financialConditions.has(condition.Type) || condition.Type === draftSelection?.FilterCondition.Type)) : REPORT_FILTER_CONDITIONS
+  const draftDescriptor = analysis?.filters.find(field => field.type === draftSelection?.SelectedField.Type)
+  const hierarchyStatus = useAnalysisHierarchyStatus(needsHierarchyStatus(draftDescriptor))
   const draftValueError = draftSelection ? (analysis
-    ? analysisSelectionValueError(draftSelection, analysis.filters.find(field => field.type === draftSelection.SelectedField.Type))
+    ? hierarchyStatusError(draftDescriptor, draftSelection.FilterCondition.Type, hierarchyStatus) ?? analysisSelectionValueError(draftSelection, draftDescriptor)
     : reportSelectionCardinalityError(draftSelection)) : null
   const visibleCount = filter ? selections.filter(filter).length : selections.length
   const resolvedDescription = description === undefined
@@ -2541,9 +2544,11 @@ function ReportSelectionsCard({
                 data={filterConditions.map((condition) => ({
                   label: condition.Name,
                   value: String(condition.Type),
-                  disabled: financialConditions !== null && !financialConditions.has(condition.Type),
+                  disabled: financialConditions !== null && !financialConditions.has(condition.Type)
+                    || !!analysisConditionUnavailableReason(draftDescriptor, condition.Type, hierarchyStatus),
                 }))}
                 label={t('Умова')}
+                description={groupConditionsNotice(draftDescriptor, hierarchyStatus)}
                 value={String(draftSelection.FilterCondition.Type)}
                 onChange={(value) => {
                   const condition = filterConditions.find((item) => String(item.Type) === value) || filterConditions[0]
@@ -2552,7 +2557,7 @@ function ReportSelectionsCard({
                     : { ...current, FilterCondition: condition } : current)
                 }}
               />
-              {analysis ? draftSelection.SelectedField.Name ? <CurrentVparivanieAnalysisValuePicker selection={draftSelection} selections={editorSelections} descriptor={analysis.filters.find(field => field.type === draftSelection.SelectedField.Type)} from={from} to={to}
+              {analysis ? draftSelection.SelectedField.Name ? <CurrentVparivanieAnalysisValuePicker selection={draftSelection} selections={editorSelections} descriptor={draftDescriptor} status={hierarchyStatus} from={from} to={to}
                 onChange={Values => setDraftSelection(current => current ? changeAnalysisSelectionValues(current, Values, analysis.filters.find(field => field.type === current.SelectedField.Type)) : current)} /> : <Text size="sm">Оберіть поле відбору.</Text> : <SelectionValuePicker
                 dataSource={dataSource}
                 lookupProfitReadMode={documentLookup.mode} lookupProfitUnavailable={documentLookup.unavailable} lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis}
@@ -2598,7 +2603,9 @@ function InlineReportSelection({ dataset, request, selection, selections, index,
     : dataSource === 39 ? currentVparivanieFilterConditions(selection.SelectedField.Type)
       : financialConditions ? REPORT_FILTER_CONDITIONS.filter(condition => (financialConditions.has(condition.Type) || condition.Type === selection.FilterCondition.Type)) : REPORT_FILTER_CONDITIONS
   const change = (value: ReportSelection) => onChange({ kind: 'replace', index, selection: value })
-  const valueError = analysis ? analysisSelectionValueError(selection, analysis.filters.find(field => field.type === selection.SelectedField.Type))
+  const descriptor = analysis?.filters.find(field => field.type === selection.SelectedField.Type)
+  const hierarchyStatus = useAnalysisHierarchyStatus(needsHierarchyStatus(descriptor))
+  const valueError = analysis ? hierarchyStatusError(descriptor, selection.FilterCondition.Type, hierarchyStatus) ?? analysisSelectionValueError(selection, descriptor)
     : reportSelectionCardinalityError(selection)
   const fields = analysis ? [...new Set(analysis.filters.map(field => field.path.join(' / ')))].map(group => ({ group,
     items: analysis.filters.filter(field => field.path.join(' / ') === group).map(field => ({ value: String(field.type), label: field.name,
@@ -2619,15 +2626,17 @@ function InlineReportSelection({ dataset, request, selection, selections, index,
       {analysis?.filters.filter(field => field.available === false && selection.SelectedField.Name && field.type === selection.SelectedField.Type).map(field => <Text size="xs" c="dimmed" key={field.type}>{field.name}: {field.unavailabilityReason}</Text>)}
     </div>
     <div className="workbook-inline-selection__condition"><Select label={t('Умова')} allowDeselect={false}
+      description={groupConditionsNotice(descriptor, hierarchyStatus)}
       data={conditions.map(condition => ({ value: String(condition.Type), label: condition.Name,
-        disabled: financialConditions !== null && !financialConditions.has(condition.Type) }))}
+        disabled: financialConditions !== null && !financialConditions.has(condition.Type)
+          || !!analysisConditionUnavailableReason(descriptor, condition.Type, hierarchyStatus) }))}
       value={String(selection.FilterCondition.Type)} onChange={value => {
         const condition = conditions.find(item => String(item.Type) === value) ?? conditions[0]
         change(analysis ? changeAnalysisSelectionCondition(selection, condition) : { ...selection, FilterCondition: condition })
       }} /></div>
     <div className="workbook-inline-selection__value">{!selection.SelectedField.Name ? <Text size="sm">Оберіть поле відбору.</Text>
       : analysis ? <CurrentVparivanieAnalysisValuePicker selection={selection} selections={selections}
-        descriptor={analysis.filters.find(field => field.type === selection.SelectedField.Type)} from={from} to={to}
+        descriptor={descriptor} status={hierarchyStatus} from={from} to={to}
         onChange={Values => change(changeAnalysisSelectionValues(selection, Values, analysis.filters.find(field => field.type === selection.SelectedField.Type)))} />
       : <SelectionValuePicker dataSource={dataSource} lookupProfitReadMode={documentLookup.mode} lookupProfitUnavailable={documentLookup.unavailable}
         lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis}
@@ -2636,6 +2645,20 @@ function InlineReportSelection({ dataset, request, selection, selections, index,
     <TableRowAction action="delete" label={t('Видалити умову {position}', { position: index + 1 })} onClick={() => onChange({ kind: 'delete', index })} />
     {valueError && selection.IsChecked !== false ? <div className="workbook-inline-selection__error"><Alert color="yellow">{valueError}</Alert></div> : null}
   </section>
+}
+
+function needsHierarchyStatus(descriptor: AnalysisFieldDescriptor | undefined): boolean {
+  const hierarchy = analysisHierarchy(descriptor)
+  return !!hierarchy && hierarchy.groupKind !== 'productGroup'
+}
+
+function hierarchyStatusError(descriptor: AnalysisFieldDescriptor | undefined, condition: number, status: AnalysisHierarchyStatus | null): string | null {
+  return status ? analysisConditionUnavailableReason(descriptor, condition, status) : null
+}
+
+function groupConditionsNotice(descriptor: AnalysisFieldDescriptor | undefined, status: AnalysisHierarchyStatus | null): string | undefined {
+  const reason = analysisHierarchyUnavailableReason(descriptor, status)
+  return reason ? `Умови «У групі…» недоступні: ${reason}` : undefined
 }
 
 function cloneReportSelection(selection: ReportSelection, dataSource: number): ReportSelection {
