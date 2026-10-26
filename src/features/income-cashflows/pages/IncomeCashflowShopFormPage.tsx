@@ -580,7 +580,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
 
     setResolvingClient(true)
     setError(null)
-    setSelectedRetailClient(null)
+    setSelectedRetailClient(retailClient)
     setRetailAgreements([])
     setRetailSales([])
     setForm((current) => ({
