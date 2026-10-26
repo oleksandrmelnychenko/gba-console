@@ -1,7 +1,7 @@
-import { ArrowLeftRight, ChartNoAxesCombined, PackageSearch, ReceiptText, Truck, WalletCards, type LucideIcon } from 'lucide-react'
+import { ArrowLeftRight, ChartNoAxesCombined, PackageSearch, ReceiptText, Truck, UsersRound, WalletCards, type LucideIcon } from 'lucide-react'
 
 const REPORT_ICONS: Record<number, LucideIcon> = {
-  35: ChartNoAxesCombined, 38: Truck, 39: PackageSearch, 40: WalletCards, 41: ArrowLeftRight,
+  35: ChartNoAxesCombined, 38: Truck, 39: PackageSearch, 40: WalletCards, 41: ArrowLeftRight, 43: UsersRound,
 }
 
 export function workbookIcon(fileName: string, dataSource: number): LucideIcon {

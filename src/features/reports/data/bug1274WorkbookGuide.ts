@@ -1,4 +1,5 @@
 import { previousKyivDay } from './cashPeriod'
+import { SALES_BY_RESPONSIBLES_SOURCE, SALES_BY_RESPONSIBLES_TITLE, SALES_BY_RESPONSIBLES_WORKBOOK_FILE } from './salesByResponsibles'
 
 export type WorkbookGuide = { title: string; summary: string }
 export type ReportPeriodPreset = { label: string; from: string; to: string }
@@ -41,13 +42,20 @@ const GUIDES: Readonly<Record<string, WorkbookGuide>> = {
     summary: 'Організація → контрагент, договори контрагента в різних валютах — в одному рядку, як у 1С. Покупці з групи «Покупці». '
       + `Період від 01.01.2025. ${DEBT_ADJUSTMENT_NOTE}`,
   },
+  [SALES_BY_RESPONSIBLES_WORKBOOK_FILE]: {
+    title: SALES_BY_RESPONSIBLES_TITLE,
+    summary: 'Як звіт 1С «Продажі»: рядки — організація → відповідальний документа продажу, колонки — відповідальний замовлення покупця, '
+      + 'суми продажу в EUR без ПДВ і з ПДВ. Повернення віднімаються окремою колонкою «Повернення (без замовлення)» за відповідальним продажу. '
+      + 'Відбір книги: чотири організації GBA; ФОП Пархоменко не синхронізується. Будь-який період до 120 місяців.',
+  },
 }
 
 export function bug1274WorkbookGuide(fileName: string): WorkbookGuide | undefined {
   return GUIDES[fileName]
 }
 
-const MONTH_PERIOD_WORKBOOKS: ReadonlySet<string> = new Set(['ВП.xls', 'ВП по постачальниках.xls', 'ДБіторка.xls'])
+const MONTH_PERIOD_WORKBOOKS: ReadonlySet<string> = new Set(['ВП.xls', 'ВП по постачальниках.xls', 'ДБіторка.xls',
+  SALES_BY_RESPONSIBLES_WORKBOOK_FILE])
 
 function monthStart(day: string): string {
   return `${day.slice(0, 7)}-01`
@@ -67,7 +75,7 @@ export function bug1274WorkbookPeriod(fileName: string, today: string): { from: 
 }
 
 export function reportPeriodPresets(dataSource: number, today: string): ReportPeriodPreset[] {
-  if (![35, 38, 39, 40, 41].includes(dataSource)) return []
+  if (![35, 38, 39, 40, 41, SALES_BY_RESPONSIBLES_SOURCE].includes(dataSource)) return []
   const yesterday = previousKyivDay(today)
   if (!yesterday) return []
   const end = dataSource === 39 ? today : yesterday
@@ -99,6 +107,7 @@ const DATASET_TITLES: Readonly<Record<number, string>> = {
   39: 'Аналіз залишків і продажів',
   40: 'Відомість по коштах',
   41: 'Взаєморозрахунки з контрагентами',
+  [SALES_BY_RESPONSIBLES_SOURCE]: SALES_BY_RESPONSIBLES_TITLE,
 }
 
 export function bug1274DatasetTitle(dataSource: number): string | undefined {

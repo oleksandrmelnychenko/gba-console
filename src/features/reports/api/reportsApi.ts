@@ -1,3 +1,4 @@
+import { isSalesResponsibleKey, SALES_BY_RESPONSIBLES_RESPONSIBLE_FILTERS, SALES_BY_RESPONSIBLES_SOURCE } from '../data/salesByResponsibles'
 import { bindPresentationCurrency, requestPresentationCurrency } from '../data/reportPresentationCurrency'
 import { bindAnalysisPreview, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis } from '../data/currentVparivanieAnalysis'
 import { bindMovementPreview } from '../data/currentVparivanieMovements'
@@ -248,7 +249,9 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
       ...(dataSource === 27 && salesBasis !== undefined ? { salesBasis } : {}),
       ...(dataSource === 24 && providedDiscountBasis !== undefined ? { providedDiscountBasis } : {}) }, signal,
   })
-  if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && (dataSource === 41 && [60, 61].includes(field) ? settlementAttributeKey(field, item) === item.Id
+  if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && (dataSource === SALES_BY_RESPONSIBLES_SOURCE
+    ? SALES_BY_RESPONSIBLES_RESPONSIBLE_FILTERS.has(field) ? isSalesResponsibleKey(item.Id) : typeof item.Id === 'string' && revenueExactId(item) !== null
+    : dataSource === 41 && [60, 61].includes(field) ? settlementAttributeKey(field, item) === item.Id
     : dataSource === 39 && field === 60
     ? typeof item.Id === 'string' && currentVparivanieManagerReference(item) === item.Id
     : dataSource === 27
@@ -263,6 +266,8 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
       ? typeof item.Id === 'string' && revenueExactId(item) !== null
       : (dataSource === 16 || dataSource === 17) ? revenueExactId(item) !== null : Number.isSafeInteger(item.Id) && item.Id > 0)
     && typeof item.Name === 'string' && item.Name.trim().length > 0)) throw new Error('Сервер повернув некоректні значення відбору звіту.')
+  if (dataSource === SALES_BY_RESPONSIBLES_SOURCE && new Set(result.map(item => item.Id)).size !== result.length)
+    throw new Error('Сервер повернув неоднозначні значення відбору звіту «Продажі по менеджерах».')
   if (dataSource === 41 && [60, 61].includes(field) && new Set(result.map(item => item.Id)).size !== result.length)
     throw new Error('Сервер повернув неоднозначні реквізити покупця.')
   if (dataSource === 39 && field === 60 && new Set(result.map(item => item.Id)).size !== result.length)

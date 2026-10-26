@@ -126,7 +126,7 @@ export function isCurrentReportSource(dataSource: number | undefined): boolean {
   return isCurrentStockSource(dataSource) || dataSource === 10 || dataSource === 11 || dataSource === 22 || dataSource === 29 || dataSource === 31
 }
 export function usesNativeReportLookup(dataSource: number | undefined): boolean {
-  return isCurrentReportSource(dataSource) || dataSource === 9 || dataSource === 12 || dataSource === 13 || dataSource === 14 || dataSource === 15 || dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 20 || dataSource === 21 || dataSource === 23 || dataSource === 24 || dataSource === 25 || dataSource === 26 || dataSource === 27 || dataSource === 28 || dataSource === 30 || dataSource === 32 || dataSource === 35 || dataSource === 36 || dataSource === 38 || dataSource === 39 || dataSource === 40 || dataSource === 41
+  return isCurrentReportSource(dataSource) || dataSource === 9 || dataSource === 12 || dataSource === 13 || dataSource === 14 || dataSource === 15 || dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 20 || dataSource === 21 || dataSource === 23 || dataSource === 24 || dataSource === 25 || dataSource === 26 || dataSource === 27 || dataSource === 28 || dataSource === 30 || dataSource === 32 || dataSource === 35 || dataSource === 36 || dataSource === 38 || dataSource === 39 || dataSource === 40 || dataSource === 41 || dataSource === 43
 }
 
 const FULL_DATE_RANGE_SOURCES = new Set([13, 14, 15, 16, 17, 18, 20, 21, 24, 30, 32, 36, 38, 39, 40, 41])

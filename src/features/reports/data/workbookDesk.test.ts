@@ -20,7 +20,7 @@ function selection(field: number, name: string, condition: number, values: strin
 const label = (item: ReportSelection) => item.SelectedField.Name
 
 describe('workbook desk names', () => {
-  it('names the six workbooks the way accountants call them and keeps their 1C report names', () => {
+  it('names the workbooks the way accountants call them and keeps their 1C report names', () => {
     expect(workbookDeskEntries().map(entry => [entry.fileName, entry.name, entry.reportName])).toEqual([
       ['ВП.xls', 'ВП', 'Валовий прибуток'],
       ['ВП по постачальниках.xls', 'ВП по постачальниках', 'Валовий прибуток по постачальниках'],
@@ -28,6 +28,7 @@ describe('workbook desk names', () => {
       ['Ведомость по денежным средствам.xls', 'Відомість по коштах', 'Відомість по коштах'],
       ['Взаємороз всі.xls', 'Взаєморозрахунки всі', 'Взаєморозрахунки з контрагентами'],
       ['ДБіторка.xls', 'Дебіторська заборгованість', 'Відомість по взаєморозрахунках з контрагентами'],
+      ['Продажі по менеджерам.xls', 'Продажі по менеджерах', 'Продажі по менеджерах'],
     ])
     expect(workbookDeskEntries().every(entry => !/GBA|Fenix|AMG|набір|\d{2}/.test(entry.description))).toBe(true)
   })

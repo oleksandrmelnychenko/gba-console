@@ -17,7 +17,7 @@ export const savedNativeReportSources: Readonly<Record<number, string>> = {
   28: 'NativeOneCPriceAnalysis', 29: 'NativeCurrentAgreementGroupDiscounts', 30: 'NativeRecordedSaleGrossProfit',
   31: 'NativeCurrentAgreementPriceComparison', 32: 'NativeImportedSaleDiscount',
   35: 'NativeDayOrganizationGrossProfit', 36: 'NativeVparivanie', 38: 'NativeSupplierGrossProfit',
-  39: 'NativeCurrentVparivanie', 40: 'NativeCashPeriod', 41: 'NativeSettlementPeriod',
+  39: 'NativeCurrentVparivanie', 40: 'NativeCashPeriod', 41: 'NativeSettlementPeriod', 43: 'NativeSalesByResponsibles',
 }
 
 export function savedNativeReportConfigurationError(template: ReportTemplate, datasets: readonly ReportDataset[],

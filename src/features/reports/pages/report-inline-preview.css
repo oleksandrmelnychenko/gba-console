@@ -10,6 +10,7 @@
 .report-inline-preview thead th { position: sticky; top: 0; z-index: 2; background: #f8f9fa; color: var(--mantine-color-gray-8); font-weight: 600; vertical-align: bottom; line-height: 1.3; }
 .report-inline-preview td { color: var(--mantine-color-gray-9); font-family: var(--font-mono); font-size: 12.5px; font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; white-space: nowrap; }
 .report-inline-preview tbody th { color: var(--mantine-color-gray-9); font-weight: 500; }
+.report-inline-preview td.is-negative { color: var(--mantine-color-red-7); }
 .report-inline-preview tbody th[data-level="0"] { font-weight: 600; }
 .report-inline-preview tbody th.is-repeat { color: var(--mantine-color-gray-7); font-weight: 400; }
 .report-inline-preview thead tr > :first-child, .report-inline-preview tbody tr:not(.report-inline-preview__group-total) > th:first-child { position: sticky; left: 0; border-right-color: var(--mantine-color-gray-3); }

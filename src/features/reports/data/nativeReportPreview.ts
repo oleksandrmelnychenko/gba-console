@@ -255,7 +255,14 @@ function normalizeTotals(value: unknown, rows: NativeReportPreviewAxis[], column
 }
 
 const ONE_C_BLANK_ZERO_SOURCES = new Set(['NativeDayOrganizationGrossProfit', 'NativeSupplierGrossProfit', 'NativeCurrentVparivanie',
-  'NativeCashPeriod', 'NativeSettlementPeriod'])
+  'NativeCashPeriod', 'NativeSettlementPeriod', 'NativeSalesByResponsibles'])
+const NEGATIVE_RED_SOURCES = new Set(['NativeSalesByResponsibles'])
+export const previewNegativeRed = (dataSource: string | undefined): boolean => !!dataSource && NEGATIVE_RED_SOURCES.has(dataSource)
+
+export function isNegativePreviewScalar(value: NativeReportPreviewScalar | undefined): boolean {
+  return !!value && value.Value != null && ['decimal', 'signedInteger', 'float32', 'float64'].includes(value.Kind)
+    && value.Value.trim().startsWith('-') && Number(value.Value) < 0
+}
 export const previewBlanksZero = (dataSource: string | undefined): boolean => !!dataSource && ONE_C_BLANK_ZERO_SOURCES.has(dataSource)
 
 export function isZeroPreviewScalar(value: NativeReportPreviewScalar | undefined): boolean {

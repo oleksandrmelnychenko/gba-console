@@ -1,3 +1,4 @@
+import { SALES_BY_RESPONSIBLES_COLUMNS, SALES_BY_RESPONSIBLES_MEASURES, SALES_BY_RESPONSIBLES_ROWS, SALES_BY_RESPONSIBLES_SOURCE } from './salesByResponsibles'
 import { currentFinancialBuyerManagerFilterCapability, currentFinancialBuyerManagerFilterSupported } from './currentFinancialBuyerManagerFilter'
 import { isDatasetGroupSelection } from './reportHierarchyFilters'
 import { currentFinancialDocumentFilterCapability, currentFinancialDocumentFilterSupported } from './currentFinancialDocumentFilter'
@@ -189,7 +190,9 @@ export function defaultDatasetRequest(dataset: ReportDataset, from: string, to: 
   const unit = groupings.find(item => item.type === 28)
   const profile = getNativeReportProfile(dataset.DataSource)
   const available = dataset.Measurements.filter(field => field.Selectable !== false)
-  const preferred = available.filter(field => profile ? profile.measurements.some(type => type === field.Type)
+  const salesByResponsibles = dataset.DataSource === SALES_BY_RESPONSIBLES_SOURCE
+  const preferred = available.filter(field => salesByResponsibles ? SALES_BY_RESPONSIBLES_MEASURES.includes(field.Type)
+    : profile ? profile.measurements.some(type => type === field.Type)
     : field.Type === 0 || field.Type === (dataset.DataSource === 3 ? 2 : 4))
   const fields = preferred.length ? preferred : available.slice(0, 1)
   const selected = fields.map(field => ({ ...field, IsChecked: true, parentName: '' }))
@@ -197,12 +200,15 @@ export function defaultDatasetRequest(dataset: ReportDataset, from: string, to: 
     && groupings.some(field => field.type === 78)
   const supplierCurrent = supplierOperational && isProfitReadModeCapability(dataset.profitReadMode)
   const groupedSettlement = isGroupedSettlementDataset(dataset)
-  const profileRows = groupedSettlement ? [4, 41, 76] : supplierOperational ? [78, 4, 21] : profile?.rowGroupings
+  const profileRows = groupedSettlement ? [4, 41, 76] : supplierOperational ? [78, 4, 21]
+    : salesByResponsibles ? SALES_BY_RESPONSIBLES_ROWS : profile?.rowGroupings
   const request: ReportRequestBody = { dataSource: dataset.DataSource, ...(groupedCashSupported(dataset) ? { groupedCashPeriod: defaultGroupedCashPeriod() } : {}), ...(groupedSettlement ? { groupedSettlementPeriod: defaultGroupedSettlementPeriod(), sourceBuyerSubtree: defaultGroupedSettlementBuyer() } : {}), ...(supplierOperational ? { supplierBasis: 0 } : {}), ...(dataset.DataSource === 35 && isDayOrganizationBasisCapability(dataset.dayOrganizationBasis) ? { dayOrganizationBasis: 0 } : {}), ...(dataset.DataSource === 38 && isSupplierSourceWorldCapability(dataset.supplierSourceWorld) && !supplierCurrent ? { supplierSourceWorld: 0 } : {}), ...defaultOneCSpecialSettings(dataset.DataSource, dataset), ...(dataset.DataSource === 31 ? { agreementPriceComparison: defaultAgreementPriceComparison() } : {}), ...(dataset.DataSource === 26 ? { abcClassification: { Version: 1, Axis: 1, Grouping: 5, Measure: 4, PercentA: 80, PercentB: 15, PercentC: 5 } } : {}), ...(dataset.DataSource === 27 ? { priceTypeSalesComparison: defaultPriceTypeSalesComparison(dataset.priceTypeSalesComparison) } : {}), ...(dataset.DataSource === 21 ? { paymentComparison: defaultPaymentComparison() } : {}), ...(dataset.DataSource === 20 ? { marginComparison: defaultMarginComparison() } : {}), ...(dataset.DataSource === 19 ? { rateComparison: defaultRateComparison() } : {}), ...(dataset.DataSource === 18 ? { returnComparison: defaultReturnComparison() } : {}), ...(dataset.DataSource === 17 ? { buyerSalesShare: defaultBuyerSalesShare() } : {}), ...(dataset.DataSource === 16 ? { revenueComparison: defaultRevenueComparison() } : {}), ...(dataset.DataSource === 15 ? { xyz: defaultXyzOptions() } : {}), ...(dataset.DataSource === 13 ? { comparison: { Version: 1, From: '', To: '' } } : {}), from: dataset.PeriodSupported === false ? '' : from,
     to: dataset.PeriodSupported === false ? '' : to, selections: [], sorted: {
     Row: (profileRows ? profileRows.map(type => groupings.find(item => item.type === type)) : [unit, row])
       .filter((item, index, items): item is ReportGroupingItem => Boolean(item) && items.indexOf(item) === index),
-    Col: dataset.DataSource === 39 ? groupings.filter(item => item.type === 74 || item.type === 75) : [], Measurements: flattenCheckedMeasurements(datasetMeasurements(dataset, selected)),
+    Col: dataset.DataSource === 39 ? groupings.filter(item => item.type === 74 || item.type === 75)
+      : salesByResponsibles ? SALES_BY_RESPONSIBLES_COLUMNS.flatMap(type => groupings.filter(item => item.type === type)) : [],
+    Measurements: flattenCheckedMeasurements(datasetMeasurements(dataset, selected)),
   } }
   if (originalClientDiscountsSupported(dataset)) applyOriginalClientDiscounts(request, dataset)
   return withDefaultReadModes(request, dataset)

@@ -10,6 +10,7 @@ import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZAT
 import { requestSourceCounterpartyGroups, SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS, sourceCounterpartyGroups } from './sourceCounterpartyGroups'
 import { readWorkbookCapability, readWorkbookSelection, requestWorkbookPresentation } from './workbookPresentation'
 import { hasFixedReportAxes } from './nativeReportProfiles'
+import { SALES_BY_RESPONSIBLES_TITLE, SALES_BY_RESPONSIBLES_WORKBOOK_FILE } from './salesByResponsibles'
 
 export type WorkbookDeskEntry = {
   fileName: string
@@ -35,13 +36,15 @@ const ENTRIES: readonly WorkbookDeskEntry[] = [
     description: 'Борги покупців: організація → валюта → контрагент, з менеджером і кодом регіону.' },
   { fileName: 'ДБіторка.xls', name: 'Дебіторська заборгованість', reportName: 'Відомість по взаєморозрахунках з контрагентами',
     description: 'Дебіторська заборгованість покупців: організація → контрагент, усі валюти договорів в одному рядку.' },
+  { fileName: SALES_BY_RESPONSIBLES_WORKBOOK_FILE, name: SALES_BY_RESPONSIBLES_TITLE, reportName: SALES_BY_RESPONSIBLES_TITLE,
+    description: 'Продажі мінус повернення в EUR без ПДВ і з ПДВ: організація → відповідальний документа продажу, у колонках — відповідальний замовлення покупця.' },
 ]
 
 const TYPICAL_SECONDS: Readonly<Record<number, readonly [number, number]>> = {
-  35: [15, 25], 38: [10, 20], 39: [5, 10], 40: [5, 15], 41: [10, 30],
+  35: [15, 25], 38: [10, 20], 39: [5, 10], 40: [5, 15], 41: [10, 30], 43: [2, 20],
 }
 
-const ORGANIZATION_FILTER_FIELDS: Readonly<Record<number, number>> = { 35: 0, 38: 0, 40: 32, 41: 0 }
+const ORGANIZATION_FILTER_FIELDS: Readonly<Record<number, number>> = { 35: 0, 38: 0, 40: 32, 41: 0, 43: 0 }
 
 const SAVED_ORGANIZATION_NAMES = 'ТОВ «АМГ «КОНКОРД», Фенікс, ФОП Самолюк А.Д., ФОП Самолюк Ю.М.'
 

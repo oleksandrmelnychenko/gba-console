@@ -1,6 +1,7 @@
 import type { ReportDataset, ReportEntity, ReportFilterCondition, ReportSelection } from '../types'
 import { datasetFilters } from './reportDatasets'
 import { REPORT_FILTER_CONDITIONS } from './reportOptions'
+import { SALES_BY_RESPONSIBLES_WORKBOOK_FILE } from './salesByResponsibles'
 
 export const SUPPLIER_WORKBOOK_FILE = 'ВП по постачальниках.xls'
 export const VPARIVANIE_WORKBOOK_FILE = 'Впарювання.xls'
@@ -80,6 +81,9 @@ function targets(fileName: string): Target[] {
   if (fileName === SUPPLIER_WORKBOOK_FILE) return [
     { field: 0, condition: IN_LIST, names: SUPPLIER_WORKBOOK_ORGANIZATIONS, listQuery: '' },
     { field: 17, condition: IN_LIST, names: SUPPLIER_WORKBOOK_SUPPLIERS, aliases: SUPPLIER_WORKBOOK_AMG_NAMES },
+  ]
+  if (fileName === SALES_BY_RESPONSIBLES_WORKBOOK_FILE) return [
+    { field: 0, condition: IN_LIST, names: SUPPLIER_WORKBOOK_ORGANIZATIONS, listQuery: '' },
   ]
   if (fileName === VPARIVANIE_WORKBOOK_FILE) return [
     { field: 4, condition: IN_GROUP, names: [VPARIVANIE_WORKBOOK_GROUP] },

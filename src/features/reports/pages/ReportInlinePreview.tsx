@@ -6,7 +6,7 @@ import { TableChip } from '../../../shared/ui/TableChip'
 import { settlementAttributeText, type SettlementCounterpartyAttribute } from '../data/settlementSourceAttributes'
 import { Fragment, memo } from 'react'
 import { Alert, Text } from '@mantine/core'
-import { isZeroPreviewScalar, previewAmountText, previewBlanksZero, previewCaptionText, previewCellText, previewNumberText, previewSharedNames, type CurrentVparivanieProduct, type NativeReportPreview, type NativeReportPreviewAxis, type NativeReportPreviewCell, type NativeReportPreviewFilter, type NativeReportPreviewRequest, type NativeReportPreviewScalar } from '../data/nativeReportPreview'
+import { isNegativePreviewScalar, isZeroPreviewScalar, previewAmountText, previewBlanksZero, previewNegativeRed, previewCaptionText, previewCellText, previewNumberText, previewSharedNames, type CurrentVparivanieProduct, type NativeReportPreview, type NativeReportPreviewAxis, type NativeReportPreviewCell, type NativeReportPreviewFilter, type NativeReportPreviewRequest, type NativeReportPreviewScalar } from '../data/nativeReportPreview'
 import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, CURRENT_VPARIVANIE_PRODUCT_FIELDS, currentVparivanieQuantityText } from '../data/currentVparivanie'
 import { currentVparivanieSecondTier } from '../data/currentVparivanieColumns'
 import './report-inline-preview.css'
@@ -35,6 +35,8 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
   const amountColumns = new Set(preview.Columns.filter(column => isAmountColumn(column)).map(column => column.SourceIndex))
   const semanticsByColumn = new Map(preview.valueSemantics?.map(item => [item.columnSourceIndex, item.semantics]))
   const blanksZero = previewBlanksZero(preview.Request?.DataSource)
+  const negativeRed = previewNegativeRed(preview.Request?.DataSource)
+  const valueClass = (value: NativeReportPreviewScalar | undefined) => negativeRed && isNegativePreviewScalar(value) ? 'is-negative' : undefined
   const totals = preview.Totals
   const groupTotals = new Map<number, NonNullable<NativeReportPreview['Totals']>['Groups']>()
   for (const group of totals?.Groups ?? []) groupTotals.set(group.RowSourceIndex, [...(groupTotals.get(group.RowSourceIndex) ?? []), group]
@@ -51,7 +53,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
     const byColumn = new Map(values.map(cell => [cell.ColumnSourceIndex, cell.Value]))
     return preview.Columns.map(column => {
       const value = byColumn.get(column.SourceIndex)
-      return <td key={column.SourceIndex}>{value === undefined ? '' : valueText(value, column.SourceIndex)}</td>
+      return <td key={column.SourceIndex} className={valueClass(value)}>{value === undefined ? '' : valueText(value, column.SourceIndex)}</td>
     })
   }
   const rowHeaders = products ? CURRENT_VPARIVANIE_PRODUCT_CAPTIONS : [...preview.RowSchema.map((level, index) => [level.Caption || `Рівень ${index + 1}`,
@@ -117,7 +119,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
           })}
           {preview.Columns.map(column => {
             const value = cells.get(`${row.SourceIndex}:${column.SourceIndex}`)
-            return <td key={column.SourceIndex} title={value === undefined ? 'Клітинка відсутня' : value.Kind === 'null' ? 'Явне значення NULL' : undefined}>
+            return <td key={column.SourceIndex} className={valueClass(value)} title={value === undefined ? 'Клітинка відсутня' : value.Kind === 'null' ? 'Явне значення NULL' : undefined}>
               {valueText(value, column.SourceIndex)}
             </td>
           })}

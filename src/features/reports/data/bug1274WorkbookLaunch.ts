@@ -24,6 +24,8 @@ import { requestSupplierBasis } from './supplierBasis'
 import { requestSupplierSourceWorld } from './supplierBatchGrossProfit'
 import { SUPPLIER_WORKBOOK_FILE, SUPPLIER_WORKBOOK_FILTERS_NOTICE, VPARIVANIE_WORKBOOK_FILE, VPARIVANIE_WORKBOOK_FILTERS_NOTICE,
   type ResolvedWorkbookFilters } from './bug1274WorkbookFilters'
+import { isSalesByResponsiblesDataset, SALES_BY_RESPONSIBLES_SOURCE, SALES_BY_RESPONSIBLES_TITLE,
+  SALES_BY_RESPONSIBLES_WORKBOOK_FILE } from './salesByResponsibles'
 
 export type WorkbookLaunch = {
   fileName: string
@@ -94,6 +96,13 @@ const supported = [
     notice: `Організація → контрагент, поточні договори покупців і чотири показники залишків та руху. Недоступні суми й залежні підсумки залишаються порожніми. ${DEBTOR_WORKBOOK_CURRENCY_NOTICE}`,
     dataSource: 41,
     accepts: isGroupedSettlementDataset,
+  },
+  {
+    fileName: SALES_BY_RESPONSIBLES_WORKBOOK_FILE,
+    label: SALES_BY_RESPONSIBLES_TITLE,
+    notice: 'Організація → відповідальний документа продажу, у колонках — відповідальний замовлення покупця; продажі мінус повернення в EUR без ПДВ і з ПДВ з документів GBA. Відповідального не підставляють з картки клієнта: відсутні дані показано як «не визначено».',
+    dataSource: SALES_BY_RESPONSIBLES_SOURCE,
+    accepts: isSalesByResponsiblesDataset,
   },
 ] as const
 
@@ -210,8 +219,9 @@ function supplierWorkbookRequest(request: ReportRequestBody, launch: WorkbookLau
 function filtersWorkbookRequest(request: ReportRequestBody, launch: WorkbookLaunch,
   resolved?: ResolvedWorkbookFilters): ReportRequestBody {
   if (!resolved || resolved.fileName !== launch.fileName || !resolved.selections.length
-    || ![SUPPLIER_WORKBOOK_FILE, VPARIVANIE_WORKBOOK_FILE].includes(launch.fileName)
-    || request.dataSource !== (launch.fileName === SUPPLIER_WORKBOOK_FILE ? 38 : 39)
+    || ![SUPPLIER_WORKBOOK_FILE, VPARIVANIE_WORKBOOK_FILE, SALES_BY_RESPONSIBLES_WORKBOOK_FILE].includes(launch.fileName)
+    || request.dataSource !== (launch.fileName === SUPPLIER_WORKBOOK_FILE ? 38
+      : launch.fileName === SALES_BY_RESPONSIBLES_WORKBOOK_FILE ? SALES_BY_RESPONSIBLES_SOURCE : 39)
     || !Array.isArray(request.selections) || request.selections.length) return request
   return { ...structuredClone(request), selections: structuredClone(resolved.selections) }
 }

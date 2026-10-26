@@ -260,7 +260,7 @@ import {
   currentPriceTypeSalesLookupBasis,
   PRICE_TYPE_SALES_COMPARISON_SOURCE,
 } from '../data/priceTypeSalesComparison'
-const LOOKUP_SEARCH_DEBOUNCE_MS = 300
+const LOOKUP_SEARCH_DEBOUNCE_MS = 400
 const LOOKUP_SEARCH_LIMIT = 30
 const DATE_INPUT_DEBOUNCE_MS = 400
 // A native <input type="date"> carries no bounds of its own and reports every intermediate value while the
