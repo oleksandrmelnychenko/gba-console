@@ -4,7 +4,7 @@ import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SalesUkraineSale } from '../../types'
 import type { WizardDeliveryRecipient, WizardDeliveryRecipientAddress } from './newSaleWizardApi'
-import { NEW_SALE_REVIEW_INITIAL } from './newSaleWizardState'
+import { NEW_SALE_REVIEW_INITIAL, type NewSaleReviewValue } from './newSaleWizardState'
 import { useWizardDeliveryDetails } from './useWizardDeliveryDetails'
 
 const mocks = vi.hoisted(() => ({
@@ -49,7 +49,7 @@ describe('wizard delivery details', () => {
     const address = { Id: 14, NetUid: 'address-14', Value: 'Lviv address', City: 'Lviv', Department: '7' }
     const selected: WizardDeliveryRecipient = { Id: 12, NetUid: 'recipient-12', FullName: 'Selected', MobilePhone: 'new-phone', DeliveryRecipientAddresses: [address] }
     const { result } = renderHook(() => {
-      const [value, setValue] = useState({ ...props.value, mobilePhone: oldPhone, city: 'Old city', department: '99' })
+      const [value, setValue] = useState<NewSaleReviewValue>({ ...props.value, mobilePhone: oldPhone, city: 'Old city', department: '99' })
       const details = useWizardDeliveryDetails({ ...props, value, onChange: (patch) => setValue((current) => ({ ...current, ...patch })) })
       return { ...details, value }
     })
@@ -72,7 +72,7 @@ describe('wizard delivery details', () => {
   it('selects and clears address fields together while preserving the recipient phone', async () => {
     const props = options()
     const { result } = renderHook(() => {
-      const [value, setValue] = useState({ ...props.value, mobilePhone: 'manual-phone', city: 'Old city', department: '99' })
+      const [value, setValue] = useState<NewSaleReviewValue>({ ...props.value, mobilePhone: 'manual-phone', city: 'Old city', department: '99' })
       const details = useWizardDeliveryDetails({ ...props, value, onChange: (patch) => setValue((current) => ({ ...current, ...patch })) })
       return { ...details, value }
     })
