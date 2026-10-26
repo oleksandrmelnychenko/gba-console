@@ -24,9 +24,12 @@ function analysisValueLabel(field: number, value: ReportSelectedValue, itemKind?
   return typed?.group ? `Група: ${value.Name}` : `${ITEM_LABELS[itemKind!][0]}: ${value.Name}`
 }
 
-export function CurrentVparivanieAnalysisValuePicker({ selection, selections, descriptor, from, to, onChange, status }: {
+export type AnalysisItemSearch = (value: string, offset: number, signal: AbortSignal) => Promise<AnalysisLookupValue[]>
+
+export function CurrentVparivanieAnalysisValuePicker({ selection, selections, descriptor, from, to, onChange, status, searchItems }: {
   selection: ReportSelection; selections: ReportSelection[]; descriptor?: AnalysisFieldDescriptor
   from: string; to: string; onChange: (values: ReportSelectedValue[]) => void; status?: AnalysisHierarchyStatus | null
+  searchItems?: AnalysisItemSearch
 }) {
   const [search, setSearch] = useState('')
   const [query] = useDebouncedValue(search, 400)
@@ -45,12 +48,14 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
   const scope = JSON.stringify([field, condition, choice, sourceKind, lookupField, from, to, buyerId ?? null, query, unavailable])
   const [result, setResult] = useState<{ scope: string; values: AnalysisLookupValue[]; nextOffset: number; hasMore: boolean; loadingMore?: boolean; error?: string } | null>(null)
   const moreRequest = useRef<AbortController | null>(null)
+  const itemSearch = choice === 'item' ? searchItems : undefined
   const fetchPage = useCallback((offset: number, signal: AbortSignal): Promise<{ values: AnalysisLookupValue[]; hasMore: boolean }> => sourceKind
     ? getAnalysisHierarchyPage(sourceKind, null, offset, 30, query, signal)
       .then(page => ({ values: page.items.map(item => ({ id: item.id, name: item.path, data: item.data })), hasMore: page.hasMore }))
+    : itemSearch ? itemSearch(query, offset, signal).then(values => ({ values, hasMore: false }))
     : (offset ? searchAnalysisValues(lookupField, query, from, to, buyerParam, signal, offset) : searchAnalysisValues(lookupField, query, from, to, buyerParam, signal))
       .then(values => ({ values, hasMore: values.length === 30 })),
-  [sourceKind, query, lookupField, from, to, buyerParam])
+  [sourceKind, itemSearch, query, lookupField, from, to, buyerParam])
   useEffect(() => {
     if (unavailable) return
     const controller = new AbortController()

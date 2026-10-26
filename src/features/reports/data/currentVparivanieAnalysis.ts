@@ -58,7 +58,7 @@ const HIERARCHY_ITEMS: Record<number, [AnalysisItemKind, AnalysisHierarchyKind]>
   17: ['supplier', 'counterpartyGroup'], 21: ['warehouse', 'warehouseGroup'],
 }
 const sameIds = (value: unknown, expected: number[]) => Array.isArray(value) && value.length === expected.length && value.every((x, i) => x === expected[i])
-function isAnalysisHierarchy(value: unknown, field: number): value is AnalysisHierarchy {
+export function isAnalysisHierarchy(value: unknown, field: number): value is AnalysisHierarchy {
   const expected = HIERARCHY_ITEMS[field]
   return record(value) && !!expected && value.version === 1 && value.itemKind === expected[0] && value.groupKind === expected[1]
     && Number.isSafeInteger(value.itemField) && sameIds(value.groupConditions, [3, 5, 6, 7]) && sameIds(value.mixedConditions, [3, 5])

@@ -37,9 +37,11 @@ import { WorkbookSectionActions } from './workbook-desk/WorkbookSectionActions'
 import type { MovementLaunch } from './OriginalWarehouseMovementCatalogueLaunch'
 import { isMovementCapability, isWarehouseMovementCatalogueEntry, normalizeMovementPublications } from '../data/originalWarehouseMovement'
 import { isOrganizationOnlyTurnoverScope, ORGANIZATION_ONLY_TURNOVER_CHOICE } from '../data/oneCTurnoverScopes'
-import type { OneCTurnoverScopeSummary } from '../types'
+import type { OneCTurnoverScopeSummary, ReportFilterCondition } from '../types'
 import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis, analysisFilterConditions, analysisSelectionValueError, changeAnalysisSelectionCondition, changeAnalysisSelectionValues, analysisConditionUnavailableReason, analysisHierarchy, analysisHierarchyUnavailableReason, type AnalysisFieldDescriptor, type AnalysisHierarchyStatus } from '../data/currentVparivanieAnalysis'
 import { useAnalysisHierarchyStatus } from '../hooks/useAnalysisHierarchyStatus'
+import { datasetGroupConditionTypes, datasetGroupSelectionError, datasetHierarchyDescriptor, isDatasetGroupSelection, withDatasetGroupConditions } from '../data/reportHierarchyFilters'
+import type { AnalysisItemSearch } from './CurrentVparivanieAnalysisValuePicker'
 import { ReportFieldPicker } from './ReportFieldPicker'
 import { CurrentVparivanieAnalysisValuePicker } from './CurrentVparivanieAnalysisValuePicker'
 import { CurrentVparivanieMovementSettings } from './CurrentVparivanieMovementSettings'
@@ -2395,12 +2397,19 @@ function ReportSelectionsCard({
   const managerLookup = financialBuyerManagerLookupPolicy(dataset, request, draftSelection?.SelectedField.Type, lookupProfitReadMode, lookupProfitUnavailable)
   const documentLookup = financialDocumentLookupPolicy(dataset, request, draftSelection?.SelectedField.Type, managerLookup.mode, managerLookup.unavailable)
   const financialConditions = dataSource === 35 ? new Set(financialFilterConditionTypes(dataset, request, draftSelection?.SelectedField.Type)) : null
-  const filterConditions = analysis ? analysisFilterConditions(dataset, draftSelection?.SelectedField.Type ?? 0) : dataSource === 39 ? currentVparivanieFilterConditions(draftSelection?.SelectedField.Type ?? 0) : financialConditions ? REPORT_FILTER_CONDITIONS.filter(condition => (financialConditions.has(condition.Type) || condition.Type === draftSelection?.FilterCondition.Type)) : REPORT_FILTER_CONDITIONS
-  const draftDescriptor = analysis?.filters.find(field => field.type === draftSelection?.SelectedField.Type)
+  const draftField = draftSelection?.SelectedField.Type
+  const filterConditions = analysis ? analysisFilterConditions(dataset, draftField ?? 0) : dataSource === 39 ? currentVparivanieFilterConditions(draftField ?? 0)
+    : withCurrentGroupCondition(withDatasetGroupConditions(dataset, draftField, financialConditions ? REPORT_FILTER_CONDITIONS.filter(condition => (financialConditions.has(condition.Type) || condition.Type === draftSelection?.FilterCondition.Type)) : REPORT_FILTER_CONDITIONS,
+      financialConditions ?? REPORT_FILTER_CONDITIONS.map(condition => condition.Type)), draftSelection)
+  const admittedConditions = financialConditions ? new Set([...financialConditions, ...datasetGroupConditionTypes(dataset, draftField, financialConditions)]) : null
+  const draftDescriptor = analysis ? analysis.filters.find(field => field.type === draftField)
+    : draftSelection ? datasetHierarchyDescriptor(dataset, draftSelection.SelectedField.Type, draftSelection.SelectedField.Name) : undefined
   const hierarchyStatus = useAnalysisHierarchyStatus(needsHierarchyStatus(draftDescriptor))
+  const draftItemSearch = useDatasetItemSearch(dataSource, draftField, documentLookup.mode)
   const draftValueError = draftSelection ? (analysis
     ? hierarchyStatusError(draftDescriptor, draftSelection.FilterCondition.Type, hierarchyStatus) ?? analysisSelectionValueError(draftSelection, draftDescriptor)
-    : reportSelectionCardinalityError(draftSelection)) : null
+    : hierarchyStatusError(draftDescriptor, draftSelection.FilterCondition.Type, hierarchyStatus) ?? reportSelectionCardinalityError(draftSelection)
+      ?? datasetGroupSelectionError(dataset, draftSelection)) : null
   const visibleCount = filter ? selections.filter(filter).length : selections.length
   const resolvedDescription = description === undefined
     ? t('Необов’язково: звузьте звіт до клієнта, товару, документа або іншої ознаки.')
@@ -2544,7 +2553,7 @@ function ReportSelectionsCard({
                 data={filterConditions.map((condition) => ({
                   label: condition.Name,
                   value: String(condition.Type),
-                  disabled: financialConditions !== null && !financialConditions.has(condition.Type)
+                  disabled: admittedConditions !== null && !admittedConditions.has(condition.Type)
                     || !!analysisConditionUnavailableReason(draftDescriptor, condition.Type, hierarchyStatus),
                 }))}
                 label={t('Умова')}
@@ -2552,13 +2561,16 @@ function ReportSelectionsCard({
                 value={String(draftSelection.FilterCondition.Type)}
                 onChange={(value) => {
                   const condition = filterConditions.find((item) => String(item.Type) === value) || filterConditions[0]
-                  setDraftSelection(current => current ? analysis
+                  setDraftSelection(current => current ? analysis || draftDescriptor?.hierarchy
                     ? changeAnalysisSelectionCondition(current, condition)
                     : { ...current, FilterCondition: condition } : current)
                 }}
               />
               {analysis ? draftSelection.SelectedField.Name ? <CurrentVparivanieAnalysisValuePicker selection={draftSelection} selections={editorSelections} descriptor={draftDescriptor} status={hierarchyStatus} from={from} to={to}
-                onChange={Values => setDraftSelection(current => current ? changeAnalysisSelectionValues(current, Values, analysis.filters.find(field => field.type === current.SelectedField.Type)) : current)} /> : <Text size="sm">Оберіть поле відбору.</Text> : <SelectionValuePicker
+                onChange={Values => setDraftSelection(current => current ? changeAnalysisSelectionValues(current, Values, analysis.filters.find(field => field.type === current.SelectedField.Type)) : current)} /> : <Text size="sm">Оберіть поле відбору.</Text>
+                : isDatasetGroupSelection(dataset, draftSelection) ? <CurrentVparivanieAnalysisValuePicker selection={draftSelection} selections={editorSelections}
+                  descriptor={draftDescriptor} status={hierarchyStatus} from={from} to={to} searchItems={draftItemSearch}
+                  onChange={Values => setDraftSelection(current => current ? { ...current, Values } : current)} /> : <SelectionValuePicker
                 dataSource={dataSource}
                 lookupProfitReadMode={documentLookup.mode} lookupProfitUnavailable={documentLookup.unavailable} lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis}
                 from={from}
@@ -2601,12 +2613,16 @@ function InlineReportSelection({ dataset, request, selection, selections, index,
   const financialConditions = dataSource === 35 ? new Set(financialFilterConditionTypes(dataset, request, selection.SelectedField.Type)) : null
   const conditions = analysis ? analysisFilterConditions(dataset, selection.SelectedField.Type)
     : dataSource === 39 ? currentVparivanieFilterConditions(selection.SelectedField.Type)
-      : financialConditions ? REPORT_FILTER_CONDITIONS.filter(condition => (financialConditions.has(condition.Type) || condition.Type === selection.FilterCondition.Type)) : REPORT_FILTER_CONDITIONS
+      : withCurrentGroupCondition(withDatasetGroupConditions(dataset, selection.SelectedField.Type, financialConditions ? REPORT_FILTER_CONDITIONS.filter(condition => (financialConditions.has(condition.Type) || condition.Type === selection.FilterCondition.Type)) : REPORT_FILTER_CONDITIONS,
+        financialConditions ?? REPORT_FILTER_CONDITIONS.map(condition => condition.Type)), selection)
+  const admittedConditions = financialConditions ? new Set([...financialConditions, ...datasetGroupConditionTypes(dataset, selection.SelectedField.Type, financialConditions)]) : null
   const change = (value: ReportSelection) => onChange({ kind: 'replace', index, selection: value })
-  const descriptor = analysis?.filters.find(field => field.type === selection.SelectedField.Type)
+  const descriptor = analysis ? analysis.filters.find(field => field.type === selection.SelectedField.Type)
+    : datasetHierarchyDescriptor(dataset, selection.SelectedField.Type, selection.SelectedField.Name)
   const hierarchyStatus = useAnalysisHierarchyStatus(needsHierarchyStatus(descriptor))
+  const itemSearch = useDatasetItemSearch(dataSource, selection.SelectedField.Type, documentLookup.mode)
   const valueError = analysis ? hierarchyStatusError(descriptor, selection.FilterCondition.Type, hierarchyStatus) ?? analysisSelectionValueError(selection, descriptor)
-    : reportSelectionCardinalityError(selection)
+    : hierarchyStatusError(descriptor, selection.FilterCondition.Type, hierarchyStatus) ?? reportSelectionCardinalityError(selection) ?? datasetGroupSelectionError(dataset, selection)
   const fields = analysis ? [...new Set(analysis.filters.map(field => field.path.join(' / ')))].map(group => ({ group,
     items: analysis.filters.filter(field => field.path.join(' / ') === group).map(field => ({ value: String(field.type), label: field.name,
       disabled: field.available === false })) })) : filterFieldOptions
@@ -2628,16 +2644,18 @@ function InlineReportSelection({ dataset, request, selection, selections, index,
     <div className="workbook-inline-selection__condition"><Select label={t('Умова')} allowDeselect={false}
       description={groupConditionsNotice(descriptor, hierarchyStatus)}
       data={conditions.map(condition => ({ value: String(condition.Type), label: condition.Name,
-        disabled: financialConditions !== null && !financialConditions.has(condition.Type)
+        disabled: admittedConditions !== null && !admittedConditions.has(condition.Type)
           || !!analysisConditionUnavailableReason(descriptor, condition.Type, hierarchyStatus) }))}
       value={String(selection.FilterCondition.Type)} onChange={value => {
         const condition = conditions.find(item => String(item.Type) === value) ?? conditions[0]
-        change(analysis ? changeAnalysisSelectionCondition(selection, condition) : { ...selection, FilterCondition: condition })
+        change(analysis || descriptor?.hierarchy ? changeAnalysisSelectionCondition(selection, condition) : { ...selection, FilterCondition: condition })
       }} /></div>
     <div className="workbook-inline-selection__value">{!selection.SelectedField.Name ? <Text size="sm">Оберіть поле відбору.</Text>
       : analysis ? <CurrentVparivanieAnalysisValuePicker selection={selection} selections={selections}
         descriptor={descriptor} status={hierarchyStatus} from={from} to={to}
         onChange={Values => change(changeAnalysisSelectionValues(selection, Values, analysis.filters.find(field => field.type === selection.SelectedField.Type)))} />
+      : isDatasetGroupSelection(dataset, selection) ? <CurrentVparivanieAnalysisValuePicker selection={selection} selections={selections}
+        descriptor={descriptor} status={hierarchyStatus} from={from} to={to} searchItems={itemSearch} onChange={Values => change({ ...selection, Values })} />
       : <SelectionValuePicker dataSource={dataSource} lookupProfitReadMode={documentLookup.mode} lookupProfitUnavailable={documentLookup.unavailable}
         lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis}
         from={from} to={to} label={t('Значення')} selection={selection} selections={selections} width="100%"
@@ -2645,6 +2663,20 @@ function InlineReportSelection({ dataset, request, selection, selections, index,
     <TableRowAction action="delete" label={t('Видалити умову {position}', { position: index + 1 })} onClick={() => onChange({ kind: 'delete', index })} />
     {valueError && selection.IsChecked !== false ? <div className="workbook-inline-selection__error"><Alert color="yellow">{valueError}</Alert></div> : null}
   </section>
+}
+
+function withCurrentGroupCondition(conditions: ReportFilterCondition[], selection: ReportSelection | null | undefined): ReportFilterCondition[] {
+  const current = selection?.FilterCondition
+  return current && [3, 5, 6, 7].includes(current.Type) && !conditions.some(condition => condition.Type === current.Type)
+    ? [...conditions, current].sort((a, b) => a.Type - b.Type) : conditions
+}
+
+function useDatasetItemSearch(dataSource: number, field: number | undefined, profitReadMode: 0 | 1 | undefined): AnalysisItemSearch | undefined {
+  return useMemo(() => field === undefined || dataSource === 39 ? undefined : (value: string, offset: number, signal: AbortSignal) =>
+    searchDatasetReportValues(dataSource, field, { value, offset, limit: LOOKUP_SEARCH_LIMIT }, signal, undefined, undefined, undefined,
+      dataSource === 35 || dataSource === 38 ? profitReadMode : undefined)
+      .then(items => items.flatMap(item => item.Id === undefined || item.Id === null ? []
+        : [{ id: String(item.Id), name: getEntityDisplayName(item), data: { Id: item.Id } }])), [dataSource, field, profitReadMode])
 }
 
 function needsHierarchyStatus(descriptor: AnalysisFieldDescriptor | undefined): boolean {

@@ -1,4 +1,5 @@
 import { currentFinancialBuyerManagerFilterCapability, currentFinancialBuyerManagerFilterSupported } from './currentFinancialBuyerManagerFilter'
+import { isDatasetGroupSelection } from './reportHierarchyFilters'
 import { currentFinancialDocumentFilterCapability, currentFinancialDocumentFilterSupported } from './currentFinancialDocumentFilter'
 import { currentFinancialAxesCapability, usesCurrentFinancialAxes } from './currentFinancialAxes'
 import { currentFinancialProductTimeAxesCapability } from './currentFinancialProductTimeAxes'
@@ -297,7 +298,7 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
   const unsupported = [
     ...[...data.sorted.Row, ...data.sorted.Col].flatMap(item => groupingTypes.has(item.type) ? [] : [item.label || item.key || `#${item.type}`]),
     ...data.sorted.Measurements.flatMap(item => measurementTypes.has(item.Type) ? [] : [item.Name || `#${item.Type}`]),
-    ...data.selections.flatMap(item => (dataset.DataSource === 15 || dataset.DataSource === 16 || dataset.DataSource === 17 || dataset.DataSource === 18 || dataset.DataSource === 19 || dataset.DataSource === 20 || dataset.DataSource === 21 || dataset.DataSource === 27) && item.IsChecked === false ? [] : (!item.IsChecked || filterTypes.has(item.SelectedField?.Type)) && conditionTypes.has(item.FilterCondition?.Type)
+    ...data.selections.flatMap(item => (dataset.DataSource === 15 || dataset.DataSource === 16 || dataset.DataSource === 17 || dataset.DataSource === 18 || dataset.DataSource === 19 || dataset.DataSource === 20 || dataset.DataSource === 21 || dataset.DataSource === 27) && item.IsChecked === false ? [] : (!item.IsChecked || filterTypes.has(item.SelectedField?.Type)) && (conditionTypes.has(item.FilterCondition?.Type) || isDatasetGroupSelection(dataset, item))
       ? [] : [item.SelectedField?.Name || 'Умова відбору']),
   ]
   return unsupported.length ? `Набір «${dataset.Name}» не підтримує налаштування: ${unsupported.join(', ')}. Налаштування не застосовано.` : reportAbcClassificationError(data, dataset) ?? reportOrderingError(data, dataset) ?? reportFilterExpressionError(data, dataset) ?? reportTopGroupsError(data, dataset) ?? reportThresholdError(data, dataset) ?? reportHideZeroError(data, dataset)

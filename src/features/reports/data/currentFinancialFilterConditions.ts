@@ -33,7 +33,7 @@ export function financialFilterConditionTypes(dataset?: ReportDataset, request?:
 
 export function currentFinancialFilterConditionsError(data: ReportRequestBody, dataset?: ReportDataset): string | null {
   if (data.dataSource !== 35 || !Array.isArray(data.selections)
-    || !data.selections.some(selection => ![12, 60].includes(selection?.SelectedField?.Type) && [1, 4].includes(selection?.FilterCondition?.Type))) return null
+    || !data.selections.some(selection => ![12, 60].includes(selection?.SelectedField?.Type) && [1, 4, 5, 7].includes(selection?.FilterCondition?.Type))) return null
   if (!usesCurrentFinancialAxes(data))
     return 'Умови «Не дорівнює» та «Не у списку» доступні лише для поточних документів GBA та основи «Продажі мінус повернення». Поверніть цей режим або змініть умову; відбори й дати збережено.'
   if (!currentFinancialFilterConditionsCapability(dataset))

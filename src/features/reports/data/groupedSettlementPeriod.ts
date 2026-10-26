@@ -5,6 +5,7 @@ import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { EXACT_ONE_C_BUYER_ROOT_ID } from './oneCTurnoverReport'
 import { readFilterExpressionCapabilities, reportFilterExpressionError } from './reportFilterExpression'
 import { revenueExactId } from './revenueComparison'
+import { datasetGroupSelectionError, isDatasetGroupSelection } from './reportHierarchyFilters'
 import { settlementAttributeKey } from './settlementSourceAttributes'
 import { previousKyivDay } from './cashPeriod'
 import { sourceCounterpartyGroupsConfigurationError } from './sourceCounterpartyGroups'
@@ -233,7 +234,11 @@ export function groupedSettlementConfigurationError(data: ReportRequestBody, dat
   // Without a catalogue argument, validate the native wire fields; the server remains final authority.
   const filters = cap?.Filters ?? [...GROUPED_SETTLEMENT_SUPPLIER_FILTERS, 60, 61]
   const allowedFilters = new Set<number>(filters)
-  if (!Array.isArray(data.selections) || data.selections.some(selection => selection?.IsChecked !== false
+  const groupError = Array.isArray(data.selections) ? data.selections.filter(selection => selection?.IsChecked !== false
+    && allowedFilters.has(selection?.SelectedField?.Type) && Array.isArray(selection?.Values) && isDatasetGroupSelection(dataset, selection))
+    .map(selection => selection.Values.length ? datasetGroupSelectionError(dataset, selection) : 'Оберіть групу або значення.').find(error => error) : undefined
+  if (groupError) return groupError
+  if (!Array.isArray(data.selections) || data.selections.some(selection => selection?.IsChecked !== false && !isDatasetGroupSelection(dataset, selection)
     && (!allowedFilters.has(selection?.SelectedField?.Type)
       || ![0, 1, 2, 4].includes(selection?.FilterCondition?.Type) || !Array.isArray(selection?.Values)
       || !selection.Values.length || selection.Values.some(value => [60, 61].includes(selection.SelectedField.Type)

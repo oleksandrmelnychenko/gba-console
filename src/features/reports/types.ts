@@ -350,7 +350,7 @@ export type ReportRequestBody = {
   to: string
 }
 
-export type ReportDatasetField = { Type: number; Name: string; Selectable?: boolean; valueSemantics?: import('./data/reportNumberPresentation').ReportValueSemantics }
+export type ReportDatasetField = { Type: number; Name: string; Selectable?: boolean; valueSemantics?: import('./data/reportNumberPresentation').ReportValueSemantics; hierarchy?: import('./data/currentVparivanieAnalysis').AnalysisHierarchy }
 
 export type ReportDataset = {
   currentFinancialPresentationCurrency?: unknown

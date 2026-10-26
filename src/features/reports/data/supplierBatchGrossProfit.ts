@@ -3,6 +3,7 @@ import { requestProfitReadMode, profitReadModeConfigurationError, currentProfitM
 import { originalNormalPeriodError } from './originalNormalPeriod'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { revenueExactId } from './revenueComparison'
+import { datasetGroupSelectionError, isDatasetGroupSelection } from './reportHierarchyFilters'
 import { requestSourceBuyerSubtree, sourceBuyerSubtree } from './nativeExactFilters'
 import { readFilterExpressionCapabilities, reportFilterExpressionError, requestFilterExpression } from './reportFilterExpression'
 import { requestSupplierBasis, supplierBasisConfigurationError } from './supplierBasis'
@@ -95,6 +96,21 @@ export function supplierBatchGrossProfitConfigurationError(data: ReportRequestBo
   let values = 0
   const activeFields = new Set<number>()
   for (const selection of data.selections) {
+    if (selection && isDatasetGroupSelection(dataset, selection)) {
+      if ((selection.IsChecked != null && typeof selection.IsChecked !== 'boolean') || !filters.has(selection.SelectedField.Type)
+        || !Array.isArray(selection.Values) || !selection.Values.length) return invalid
+      if ([5, 7].includes(selection.FilterCondition.Type) && !advancedFilters)
+        return 'Сервер не підтвердив виключення для партійного прибутку. Налаштування не змінено.'
+      values += selection.Values.length
+      if (selection.IsChecked !== false) {
+        if (filterExpression == null && activeFields.has(selection.SelectedField.Type)) return invalid
+        activeFields.add(selection.SelectedField.Type)
+      }
+      const groupError = datasetGroupSelectionError(dataset, selection)
+      if (groupError) return groupError
+      if (values > 100) return invalid
+      continue
+    }
     if (!selection || (selection.IsChecked != null && typeof selection.IsChecked !== 'boolean')
       || !filters.has(selection.SelectedField?.Type) || ![0, 1, 2, 4].includes(selection.FilterCondition?.Type)
       || !Array.isArray(selection.Values) || !selection.Values.length

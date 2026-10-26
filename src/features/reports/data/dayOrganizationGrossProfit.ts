@@ -7,6 +7,7 @@ import { requestProfitReadMode, profitReadModeConfigurationError, currentProfitM
 import { originalNormalPeriodError } from './originalNormalPeriod'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { revenueExactId } from './revenueComparison'
+import { datasetGroupConditionTypes, datasetGroupSelectionError, isDatasetGroupSelection } from './reportHierarchyFilters'
 import { dayOrganizationBasisConfigurationError, requestDayOrganizationBasis } from './dayOrganizationBasis'
 import { productClassification, requestProductClassification, requestSourceOrganizations,
   requestSourceBuyerSubtree, sourceOrganizations, sourceBuyerSubtree } from './nativeExactFilters'
@@ -91,6 +92,13 @@ export function dayOrganizationGrossProfitConfigurationError(data: ReportRequest
     count += selection.Values.length
     const field = selection.SelectedField?.Type
     const admittedConditions = field === 60 ? managerConditions : field === 12 ? documentConditions : conditions
+    if (isDatasetGroupSelection(dataset, selection)) {
+      if (count > 100 || (selection.IsChecked !== undefined && typeof selection.IsChecked !== 'boolean') || !selection.Values.length
+        || !datasetGroupConditionTypes(dataset, field, admittedConditions).includes(selection.FilterCondition.Type)) return invalid
+      const groupError = datasetGroupSelectionError(dataset, selection)
+      if (groupError) return groupError
+      continue
+    }
     const reference = field === 60 ? financialBuyerManagerReference : field === 12 ? financialDocumentReference : revenueExactId
     if (count > 100 || (selection.IsChecked !== undefined && typeof selection.IsChecked !== 'boolean')
       || !(filters.has(field) || field === 12 || field === 60)
