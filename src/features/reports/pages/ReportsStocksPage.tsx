@@ -19,7 +19,6 @@ import {
   InventoryTurnoverConstructorModal,
   PlannedCashConstructorModal,
   CurrentLiquidityConstructorModal,
-  OriginalWarehouseMovementPanel,
   OneCTurnoverResponsiblesPanel,
   OneCTurnoverReportPanel,
   DebtToSalesRatioReportPanel,
@@ -34,8 +33,6 @@ import { ReportsSubmenu } from './workbook-desk/ReportsSubmenu'
 import type { PublishedReportTab } from './workbook-desk/publishedReportTabs'
 import { ReportValueAutocomplete } from './ReportValueAutocomplete'
 import { WorkbookSectionActions } from './workbook-desk/WorkbookSectionActions'
-import type { MovementLaunch } from './OriginalWarehouseMovementCatalogueLaunch'
-import { isMovementCapability, isWarehouseMovementCatalogueEntry, normalizeMovementPublications } from '../data/originalWarehouseMovement'
 import { isOrganizationOnlyTurnoverScope, ORGANIZATION_ONLY_TURNOVER_CHOICE } from '../data/oneCTurnoverScopes'
 import type { OneCTurnoverScopeSummary, ReportFilterCondition } from '../types'
 import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis, analysisFilterConditions, analysisSelectionValueError, changeAnalysisSelectionCondition, changeAnalysisSelectionValues, analysisConditionUnavailableReason, analysisHierarchy, analysisHierarchyUnavailableReason, type AnalysisFieldDescriptor, type AnalysisHierarchyStatus } from '../data/currentVparivanieAnalysis'
@@ -413,7 +410,6 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const [visitedPublished, setVisitedPublished] = useState<PublishedReportTab[]>([])
   const [publishedBusy, setPublishedBusy] = useState(false)
   const [responsiblesExportOpen, setResponsiblesExportOpen] = useState(false)
-  const [movementScope, setMovementScope] = useState<{ scope: MovementLaunch; caller: string | null } | null>(null)
   const [responsiblesScope, setResponsiblesScope] = useState<{ scope: OneCTurnoverScopeSummary; caller: string | null } | null>(null)
   const [oneCReportOpen, setOneCReportOpen] = useState(false)
   const [oneCReportGenerating, setOneCReportGenerating] = useState(false)
@@ -1098,10 +1094,6 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       notice={groupingOrdering.notice} onChange={groupingOrdering.changeOrdering} />,
   }
   const dialogs = <Suspense fallback={<Group role="status" gap="xs"><Loader size="sm" /><Text>{t('Завантаження звіту…')}</Text></Group>}>
-    {movementScope && canGenerateReport && movementScope.caller === ownerId ? <ReportModal opened title="Рух товару за складськими документами" size={1250}
-      onClose={() => setMovementScope(null)} closeButtonProps={{ 'aria-label': 'Закрити рух товару' }}>
-      <OriginalWarehouseMovementPanel publications={movementScope.scope.publications} canGenerate={canGenerateReport} callerKey={ownerId} />
-    </ReportModal> : null}
     {responsiblesScope && canGenerateReport && responsiblesScope.caller === ownerId ? <ReportModal opened title="Продажі за відповідальними" size={960}
       closeOnEscape={!responsiblesExportOpen} closeOnClickOutside={!responsiblesExportOpen} trapFocus={!responsiblesExportOpen}
       closeButtonProps={{ 'aria-label': 'Закрити продажі за відповідальними', disabled: responsiblesExportOpen }}
@@ -1196,9 +1188,10 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     />
   )
 
-  const catalogueControl = (quiet: boolean) => <ReportCatalogueControl onOpenWarehouseMovement={(scope, report) => {
-    if (!canGenerateReport || isLoading || !isMovementCapability(scope.capability) || !isWarehouseMovementCatalogueEntry(report) || !scope.publications.length) return false
-    setMovementScope({ scope: { capability: structuredClone(scope.capability), publications: normalizeMovementPublications(scope.publications) }, caller: ownerId })
+  const catalogueControl = (quiet: boolean) => <ReportCatalogueControl onOpenStockMovement={() => {
+    if (!canGenerateReport || isLoading || publishedBusy || !ownerId) return false
+    setPublishedTab('movement')
+    setVisitedPublished(current => current.includes('movement') ? current : [...current, 'movement'])
     return true
   }} onOpenTurnoverResponsibles={(scope, catalogue) => {
     if (!canGenerateReport || isLoading || !isOrganizationOnlyTurnoverScope(scope)

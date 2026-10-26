@@ -1,0 +1,14 @@
+.stock-movement__table td[data-negative='true'],
+.stock-movement__table th[data-negative='true'] { color: var(--mantine-color-red-7); }
+.stock-movement__table .app-table-cell-number { white-space: nowrap; font-variant-numeric: tabular-nums; text-align: right; }
+.stock-movement__label { display: flex; align-items: center; min-width: 0; gap: 6px; }
+.stock-movement__label-head { min-width: 320px; }
+.stock-movement__label-head > span { display: block; }
+.stock-movement__label-head > span + span { padding-left: 16px; }
+.stock-movement__unit { font-weight: 400; color: var(--mantine-color-gray-6); font-size: 12px; }
+.stock-movement__registrar { font-size: 13px; overflow-wrap: anywhere; }
+.stock-movement__source { color: var(--mantine-color-gray-6); font-size: 12px; }
+.stock-movement__table tbody tr[data-level='registrar'] { font-weight: 400; }
+.stock-movement__level { min-height: 28px; }
+.stock-movement__notes summary { cursor: pointer; font-size: 12px; color: var(--mantine-color-gray-7); }
+.stock-movement__notes { display: grid; gap: 4px; }

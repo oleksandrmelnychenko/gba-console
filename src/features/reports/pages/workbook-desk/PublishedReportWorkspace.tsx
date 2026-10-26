@@ -3,15 +3,13 @@ import { Alert, Button, Loader, Stack, Text } from '@mantine/core'
 import { memo, useEffect, useState } from 'react'
 import { getReportCatalogue } from '../../api/reportWorkspaceApi'
 import { getOneCTurnoverScopes } from '../../api/reportsApi'
-import { getMovementCapability, getMovementPublications } from '../../api/originalWarehouseMovementApi'
 import { isOneCTurnoverCatalogueChoice } from '../../data/reportCatalogueLaunch'
 import { isOrganizationOnlyTurnoverScope, ORGANIZATION_ONLY_TURNOVER_CHOICE } from '../../data/oneCTurnoverScopes'
-import { isMovementCapability, isWarehouseMovementCatalogueEntry, type MovementPublication } from '../../data/originalWarehouseMovement'
 import type { OneCTurnoverScopeSummary } from '../../types'
 import { OneCTurnoverResponsiblesPanel } from '../OneCTurnoverResponsiblesPanel'
-import { OriginalWarehouseMovementPanel } from '../OriginalWarehouseMovementPanel'
+import { WarehouseStockMovementPanel } from '../WarehouseStockMovementPanel'
 
-type Content = { kind: 'responsibles'; scope: OneCTurnoverScopeSummary } | { kind: 'movement'; publications: MovementPublication[] }
+type Content = { kind: 'responsibles'; scope: OneCTurnoverScopeSummary } | { kind: 'movement' }
 
 /** Mounted on first visit; hidden tabs retain their own dates and applied result. */
 export const PublishedReportWorkspace = memo(function PublishedReportWorkspace({ tab, callerKey, onBusyChange }: {
@@ -22,6 +20,7 @@ export const PublishedReportWorkspace = memo(function PublishedReportWorkspace({
   useEffect(() => {
     const controller = new AbortController()
     async function load(): Promise<Content> {
+      if (tab === 'movement') return { kind: tab }
       const catalogue = await getReportCatalogue(controller.signal)
       if (tab === 'responsibles') {
         if (!isOneCTurnoverCatalogueChoice(catalogue, ORGANIZATION_ONLY_TURNOVER_CHOICE)) throw new Error('Продажі за відповідальними недоступні в поточному каталозі.')
@@ -29,11 +28,7 @@ export const PublishedReportWorkspace = memo(function PublishedReportWorkspace({
         if (scopes.length !== 1) throw new Error(scopes.length ? 'Не вдалося однозначно визначити опубліковане покриття продажів.' : 'Продажі за відповідальними: покриття чотирьох організацій ще не опубліковано.')
         return { kind: tab, scope: scopes[0] }
       }
-      if (!catalogue.Reports.some(report => isWarehouseMovementCatalogueEntry(report, ['fenix']))) throw new Error('Рух товару недоступний у поточному каталозі.')
-      const [capability, publications] = await Promise.all([getMovementCapability(controller.signal), getMovementPublications(controller.signal)])
-      if (!isMovementCapability(capability)) throw new Error('Сервер не підтримує цей звіт руху товару.')
-      if (!publications.length) throw new Error('Рух товару: опублікованих даних ще немає.')
-      return { kind: tab, publications }
+      throw new Error('Невідомий звіт.')
     }
     void load().then(content => { if (!controller.signal.aborted) setResult({ attempt, content }) })
       .catch(failure => { if (!controller.signal.aborted) setResult({ attempt, error: failure instanceof Error ? failure.message : 'Не вдалося завантажити звіт.' }) })
@@ -46,7 +41,7 @@ export const PublishedReportWorkspace = memo(function PublishedReportWorkspace({
       {!current ? <div role="status"><Loader size="sm" /><Text>Перевіряємо доступні дані звіту…</Text></div>
         : current.error ? <Alert color="yellow"><Text>{current.error}</Text><Button type="button" variant="default" mt="xs" onClick={() => setAttempt(value => value + 1)}>Повторити перевірку</Button></Alert>
         : current.content?.kind === 'responsibles' ? <OneCTurnoverResponsiblesPanel scope={current.content.scope} callerKey={callerKey} canGenerate onBusyChange={onBusyChange} />
-        : current.content?.kind === 'movement' ? <OriginalWarehouseMovementPanel publications={current.content.publications} callerKey={callerKey} canGenerate onBusyChange={onBusyChange} /> : null}
+        : current.content?.kind === 'movement' ? <WarehouseStockMovementPanel callerKey={callerKey} canGenerate onBusyChange={onBusyChange} /> : null}
     </Stack>
   </section>
 })

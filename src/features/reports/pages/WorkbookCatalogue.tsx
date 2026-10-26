@@ -1,5 +1,6 @@
 import { isWarehouseMovementCatalogueEntry } from '../data/originalWarehouseMovement'
-import { OriginalWarehouseMovementCatalogueLaunch, type OpenWarehouseMovement } from './OriginalWarehouseMovementCatalogueLaunch'
+import { WarehouseStockMovementCatalogueLaunch, type OpenStockMovement } from './WarehouseStockMovementCatalogueLaunch'
+import { WAREHOUSE_STOCK_MOVEMENT_TITLE } from '../data/warehouseStockMovement'
 import { OneCTurnoverResponsiblesLaunch, type OpenTurnoverResponsibles } from './OneCTurnoverResponsiblesLaunch'
 import { Alert, Button, Group, Select, Text, TextInput } from '@mantine/core'
 import { RotateCcw, Search } from 'lucide-react'
@@ -20,13 +21,13 @@ type Props = {
   canGenerate: boolean
   disabled: boolean
   callerKey?: string | null
-  onOpenWarehouseMovement?: OpenWarehouseMovement
+  onOpenStockMovement?: OpenStockMovement
   onOpenTurnoverResponsibles?: OpenTurnoverResponsibles
   onOpenWorkbook?: (launch: WorkbookLaunch) => boolean
   renderDetails: (report: ReportCatalogueEntry) => ReactNode
 }
 
-export function WorkbookCatalogue({ catalogue, inspection, datasets, canGenerate, disabled, onOpenWorkbook, renderDetails, callerKey = null, onOpenTurnoverResponsibles, onOpenWarehouseMovement }: Props) {
+export function WorkbookCatalogue({ catalogue, inspection, datasets, canGenerate, disabled, onOpenWorkbook, renderDetails, callerKey = null, onOpenTurnoverResponsibles, onOpenStockMovement }: Props) {
   const { t } = useI18n()
   const [search, setSearch] = useState('')
   const [world, setWorld] = useState<string | null>(null)
@@ -39,13 +40,13 @@ export function WorkbookCatalogue({ catalogue, inspection, datasets, canGenerate
     const warehouse = filterMigrationCatalogue(catalogue, inspection, filters).filter(item => isWarehouseMovementCatalogueEntry(item.report, item.matchingSources.map(source => source.World)))
     return [...visible, ...warehouse.filter(item => !visible.some(existing => existing.report.Id === item.report.Id))]
       .map(item => item.report)
-      .filter(report => [report.Name, report.Title, t(isWarehouseMovementCatalogueEntry(report) ? 'Рух товару за складськими документами' : bug1274ReportTitle(report.Id) ?? report.Title)].join(' ').toLocaleLowerCase('uk').includes(query))
+      .filter(report => [report.Name, report.Title, (isWarehouseMovementCatalogueEntry(report) ? WAREHOUSE_STOCK_MOVEMENT_TITLE : t(bug1274ReportTitle(report.Id) ?? report.Title))].join(' ').toLocaleLowerCase('uk').includes(query))
   }, [catalogue, inspection, search, world, t])
   const worlds = useMemo(() => [...new Set(catalogue.Reports.flatMap(report => report.Sources.map(source => source.World)))], [catalogue])
   const columns = useMemo<DataTableColumn<ReportCatalogueEntry>[]>(() => [
-    { id: 'report', header: t('Звіт'), accessor: report => isWarehouseMovementCatalogueEntry(report) ? 'Рух товару за складськими документами' : bug1274ReportTitle(report.Id) ?? report.Title,
+    { id: 'report', header: t('Звіт'), accessor: report => isWarehouseMovementCatalogueEntry(report) ? WAREHOUSE_STOCK_MOVEMENT_TITLE : bug1274ReportTitle(report.Id) ?? report.Title,
       width: 400, minWidth: 220, fill: true, numeric: false,
-      cell: report => <span className="workbook-catalogue__name" title={isWarehouseMovementCatalogueEntry(report) ? 'Рух товару за складськими документами' : bug1274ReportTitle(report.Id) ?? report.Title}>{t(isWarehouseMovementCatalogueEntry(report) ? 'Рух товару за складськими документами' : bug1274ReportTitle(report.Id) ?? report.Title)}</span> },
+      cell: report => <span className="workbook-catalogue__name" title={isWarehouseMovementCatalogueEntry(report) ? WAREHOUSE_STOCK_MOVEMENT_TITLE : bug1274ReportTitle(report.Id) ?? report.Title}>{(isWarehouseMovementCatalogueEntry(report) ? WAREHOUSE_STOCK_MOVEMENT_TITLE : t(bug1274ReportTitle(report.Id) ?? report.Title))}</span> },
     { id: 'worlds', header: t('Бази'), accessor: report => report.Sources.map(source => source.World.toUpperCase()).join(' · '),
       width: 130, minWidth: 110, numeric: false },
     { id: 'forms', header: t('Відкрити форму'), width: 400, minWidth: 300, enableSorting: false,
@@ -59,9 +60,9 @@ export function WorkbookCatalogue({ catalogue, inspection, datasets, canGenerate
             onClick={event => { event.stopPropagation(); if (!disabled && canGenerate) onOpenWorkbook?.(launch) }}>
             {t(workbookDeskEntry(launch.fileName)?.name ?? launch.label)}
           </Button>)}
-        </Group> : isWarehouseMovementCatalogueEntry(report) && canGenerate ? null : <Text size="sm" c="gray.7">{t(canGenerate ? 'Форми недоступні' : 'Немає права формування')}</Text>}{turnover}<OriginalWarehouseMovementCatalogueLaunch report={report} worlds={world ? [world] : ['fenix', 'amg']} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenWarehouseMovement} /></Group>
+        </Group> : isWarehouseMovementCatalogueEntry(report) && canGenerate ? null : <Text size="sm" c="gray.7">{t(canGenerate ? 'Форми недоступні' : 'Немає права формування')}</Text>}{turnover}<WarehouseStockMovementCatalogueLaunch report={report} worlds={world ? [world] : ['fenix', 'amg']} enabled={canGenerate} disabled={disabled} callerKey={callerKey} onOpen={onOpenStockMovement} /></Group>
       } },
-  ], [t, launches, canGenerate, disabled, onOpenWorkbook, catalogue, callerKey, onOpenTurnoverResponsibles, onOpenWarehouseMovement, world])
+  ], [t, launches, canGenerate, disabled, onOpenWorkbook, catalogue, callerKey, onOpenTurnoverResponsibles, onOpenStockMovement, world])
   return <div className="report-catalogue workbook-catalogue">
     {!inspection.valid ? <Alert color="yellow">{t('Стан перенесення не підтверджений сервером. Перевірте відомості про звіт.')}</Alert> : null}
     <div className="workbook-catalogue__list">

@@ -1,4 +1,4 @@
-import type { OpenWarehouseMovement } from './OriginalWarehouseMovementCatalogueLaunch'
+import type { OpenStockMovement } from './WarehouseStockMovementCatalogueLaunch'
 import type { OpenTurnoverResponsibles } from './OneCTurnoverResponsiblesLaunch'
 import { Button, Group, Loader } from '@mantine/core'
 import { LibraryBig } from 'lucide-react'
@@ -31,8 +31,8 @@ import type { ReportCatalogue } from '../types'
 
 const ReportCataloguePanel = lazy(() => import('./ReportCataloguePanel').then(module => ({ default: module.ReportCataloguePanel })))
 
-export function ReportCatalogueControl({ onOpenWarehouseMovement, onOpenTurnoverResponsibles, enabled, disabled = false, presentation = 'inline', consoleScope = true, quiet = false, onOpenWorkbook, onOpen, onOpenDebtToSalesRatio, onOpenCollectionCoefficient, onOpenSalesMargin, onOpenCashMovement, onOpenSupplierDebt, onOpenEmployeeGrossProfit, onOpenOverdueReceivables, onOpenManagementReturns, onOpenManagementBalance, onOpenManagementOrders, onOpenDefectProduction, onOpenInventoryTurnover, onOpenCurrentLiquidity, onOpenPlannedCash, callerKey = null, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue, onOpenOriginalBuyerSalesShare }: {
-  onOpenWarehouseMovement?: OpenWarehouseMovement
+export function ReportCatalogueControl({ onOpenStockMovement, onOpenTurnoverResponsibles, enabled, disabled = false, presentation = 'inline', consoleScope = true, quiet = false, onOpenWorkbook, onOpen, onOpenDebtToSalesRatio, onOpenCollectionCoefficient, onOpenSalesMargin, onOpenCashMovement, onOpenSupplierDebt, onOpenEmployeeGrossProfit, onOpenOverdueReceivables, onOpenManagementReturns, onOpenManagementBalance, onOpenManagementOrders, onOpenDefectProduction, onOpenInventoryTurnover, onOpenCurrentLiquidity, onOpenPlannedCash, callerKey = null, onOpenActiveClients, onOpenCurrencyRateDynamics, onOpenCashAggregateBalance, onOpenOriginalRevenue, onOpenOriginalBuyerSalesShare }: {
+  onOpenStockMovement?: OpenStockMovement
   onOpenTurnoverResponsibles?: OpenTurnoverResponsibles
   enabled: boolean
   consoleScope?: boolean
@@ -68,7 +68,7 @@ export function ReportCatalogueControl({ onOpenWarehouseMovement, onOpenTurnover
   const dialog = presentation === 'dialog'
   const canOpen = enabled && !disabled
   const panel = enabled && opened ? <Suspense fallback={<Loader size="sm" aria-label={t('Завантаження каталогу звітів')} />}>
-    <ReportCataloguePanel onOpenWarehouseMovement={closeAfterAccepted(onOpenWarehouseMovement, canOpen, () => setOpened(false))} onOpenTurnoverResponsibles={closeAfterAccepted(onOpenTurnoverResponsibles, canOpen, () => setOpened(false))} consoleScope={consoleScope} onOpenWorkbook={closeAfterAccepted(onOpenWorkbook, canOpen, () => setOpened(false))} disabled={disabled} callerKey={callerKey}
+    <ReportCataloguePanel onOpenStockMovement={closeAfterAccepted(onOpenStockMovement, canOpen, () => setOpened(false))} onOpenTurnoverResponsibles={closeAfterAccepted(onOpenTurnoverResponsibles, canOpen, () => setOpened(false))} consoleScope={consoleScope} onOpenWorkbook={closeAfterAccepted(onOpenWorkbook, canOpen, () => setOpened(false))} disabled={disabled} callerKey={callerKey}
       onOpen={closeAfterAccepted(onOpen, canOpen, () => setOpened(false))}
       onOpenDebtToSalesRatio={closeAfterAccepted(onOpenDebtToSalesRatio, canOpen, () => setOpened(false))}
       onOpenCollectionCoefficient={closeAfterAccepted(onOpenCollectionCoefficient, canOpen, () => setOpened(false))}
