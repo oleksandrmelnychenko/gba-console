@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { getSaleReviewIssues } from '../../saleReviewGuards'
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SalesUkraineSale } from '../../types'
@@ -42,6 +44,57 @@ beforeEach(() => {
 afterEach(cleanup)
 
 describe('wizard delivery details', () => {
+  it.each(['', 'old-phone'])('selects the recipient phone and address instead of retaining %s', async (oldPhone) => {
+    const props = options()
+    const address = { Id: 14, NetUid: 'address-14', Value: 'Lviv address', City: 'Lviv', Department: '7' }
+    const selected: WizardDeliveryRecipient = { Id: 12, NetUid: 'recipient-12', FullName: 'Selected', MobilePhone: 'new-phone', DeliveryRecipientAddresses: [address] }
+    const { result } = renderHook(() => {
+      const [value, setValue] = useState({ ...props.value, mobilePhone: oldPhone, city: 'Old city', department: '99' })
+      const details = useWizardDeliveryDetails({ ...props, value, onChange: (patch) => setValue((current) => ({ ...current, ...patch })) })
+      return { ...details, value }
+    })
+    await waitFor(() => expect(result.current.transporterOptions).toHaveLength(1))
+    act(() => result.current.selectRecipient(selected))
+    expect(result.current.value).toMatchObject({ recipient: selected, recipientName: 'Selected', mobilePhone: 'new-phone', address, city: 'Lviv', department: '7' })
+    const payload = { Transporter: { Id: 2 }, DeliveryRecipient: { ...result.current.value.recipient, MobilePhone: result.current.value.mobilePhone } }
+    expect(getSaleReviewIssues(payload)).not.toContain('recipientPhone')
+  })
+
+  it('clears fields missing from a newly selected recipient instead of reusing another person', async () => {
+    const props = options()
+    const { result } = renderHook(useWizardDeliveryDetails, { initialProps: { ...props, value: { ...props.value, mobilePhone: 'old-phone', city: 'Old city', department: '99' } } })
+    await waitFor(() => expect(result.current.transporterOptions).toHaveLength(1))
+    const selected = { Id: 12, NetUid: 'recipient-12', FullName: 'No contact yet' }
+    act(() => result.current.selectRecipient(selected))
+    expect(props.onChange).toHaveBeenLastCalledWith(expect.objectContaining({ recipient: selected, mobilePhone: '', address: null, city: '', department: '' }))
+  })
+
+  it('selects and clears address fields together while preserving the recipient phone', async () => {
+    const props = options()
+    const { result } = renderHook(() => {
+      const [value, setValue] = useState({ ...props.value, mobilePhone: 'manual-phone', city: 'Old city', department: '99' })
+      const details = useWizardDeliveryDetails({ ...props, value, onChange: (patch) => setValue((current) => ({ ...current, ...patch })) })
+      return { ...details, value }
+    })
+    await waitFor(() => expect(result.current.transporterOptions).toHaveLength(1))
+    const address = { Id: 14, NetUid: 'address-14', Value: 'Lviv address', City: 'Lviv', Department: '7' }
+    act(() => result.current.selectAddress(address))
+    expect(result.current.value).toMatchObject({ address, city: 'Lviv', department: '7', mobilePhone: 'manual-phone' })
+    act(() => result.current.clearAddress())
+    expect(result.current.value).toMatchObject({ address: null, city: '', department: '', mobilePhone: 'manual-phone' })
+  })
+
+  it('does not overwrite subsequent manual delivery edits on an unrelated rerender', async () => {
+    const props = options()
+    const { result, rerender } = renderHook(useWizardDeliveryDetails, { initialProps: props })
+    await waitFor(() => expect(result.current.transporterOptions).toHaveLength(1))
+    act(() => result.current.selectRecipient({ Id: 12, FullName: 'Selected', MobilePhone: 'stored-phone' }))
+    props.onChange.mockClear()
+    rerender({ ...props, value: { ...props.value, recipient: { Id: 12, FullName: 'Selected' }, mobilePhone: 'manual-phone', city: 'manual-city', department: 'manual-department' } })
+    await act(async () => {})
+    expect(props.onChange).not.toHaveBeenCalled()
+  })
+
   it('keeps option lists and requests stable while editing unrelated form fields', async () => {
     const props = options()
     const { result, rerender } = renderHook(useWizardDeliveryDetails, { initialProps: props })
@@ -136,7 +189,7 @@ describe('wizard delivery details', () => {
     const props = options()
     const { result } = renderHook(useWizardDeliveryDetails, { initialProps: props })
     await act(async () => { await result.current.createAddress(' KYIV ') })
-    expect(props.onChange).toHaveBeenCalledWith({ address: recipient.DeliveryRecipientAddresses?.[0], addressValue: '' })
+    expect(props.onChange).toHaveBeenCalledWith({ address: recipient.DeliveryRecipientAddresses?.[0], addressValue: '', city: '', department: '' })
     expect(mocks.createAddress).not.toHaveBeenCalled()
     let request!: Promise<void>
     act(() => { request = result.current.createAddress('Lviv'); void result.current.createAddress('Lviv') })

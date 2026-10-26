@@ -246,25 +246,22 @@ export function useWizardDeliveryDetails({ clientNetId, sale, value, onChange, s
   }
 
   function selectRecipient(recipient: WizardDeliveryRecipient) {
-    const addresses = recipient.DeliveryRecipientAddresses ?? []
-
-    onChange({
-      address: addresses[0] ?? null,
-      addressValue: '',
-      isNewRecipient: false,
-      recipient,
-      recipientName: recipient.FullName || '',
-    })
+    const patch: Partial<NewSaleReviewValue> = {}
+    applyRecipientSelection(patch, recipient, undefined)
+    onChange(patch)
   }
 
   function selectAddress(address: WizardDeliveryRecipientAddress) {
-    onChange({ address, addressValue: '' })
+    const patch: Partial<NewSaleReviewValue> = {}
+    applyAddressSelection(patch, address)
+    onChange(patch)
   }
 
   function clearAddress() {
     const empty = recipientAddresses.find((item) => item.Value === '')
-
-    onChange({ address: empty ?? null, addressValue: '' })
+    const patch: Partial<NewSaleReviewValue> = {}
+    applyAddressSelection(patch, empty ?? null)
+    onChange(patch)
   }
 
   async function createRecipient(fullName: string) {
@@ -378,6 +375,13 @@ function applyRecipientSelection(
   const preferred = preferredAddressNetUid ? addresses.find((item) => item.NetUid === preferredAddressNetUid) : undefined
   const address = preferred ?? addresses[0] ?? null
 
+  applyAddressSelection(patch, address)
+}
+
+function applyAddressSelection(
+  patch: Partial<NewSaleReviewValue>,
+  address: WizardDeliveryRecipientAddress | null,
+) {
   patch.address = address
   patch.addressValue = ''
   patch.city = address?.City || ''
