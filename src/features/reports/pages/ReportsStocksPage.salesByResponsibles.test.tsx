@@ -48,7 +48,7 @@ beforeEach(() => {
 it('opens «Продажі по менеджерах» as a workbook tab and previews the native 1C layout', async () => {
   render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>)
   const switcher = await findOpenedWorkbook('ВП.xls')
-  expect(within(switcher).getByRole('button', { name: 'Знімок 1С: продажі за відповідальними' })).toBeTruthy()
+  expect(within(switcher).queryByRole('button', { name: 'Знімок 1С: продажі за відповідальними' })).toBeNull()
   fireEvent.click(within(switcher).getByRole('button', { name: 'Відкрити Продажі по менеджерам.xls' }))
   await findOpenedWorkbook('Продажі по менеджерам.xls')
   await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/i)).toBeNull())

@@ -14,7 +14,7 @@ function show(dataset: ReportDataset, extra: { readMode?: 0 | 1; hideRegisterRea
   const onBuyerChange = vi.fn(), onModeChange = vi.fn()
   const props = { dataset, grouped: request.groupedSettlementPeriod, exact: undefined, buyer: request.sourceBuyerSubtree,
     groups: undefined, available: datasetGroupings(dataset), rows: request.sorted.Row, from: request.from, to: request.to,
-    disabled: false, enabled: true, onModeChange, onGroupedChange: vi.fn(), onExactChange: vi.fn(),
+    disabled: false, enabled: true, onModeChange, onExactChange: vi.fn(),
     onBuyerChange, onRowsChange: vi.fn(), onGroupsChange: vi.fn(), onReadModeChange: vi.fn(), ...extra }
   const view = render(<MantineProvider env="test"><I18nProvider><SettlementPeriodModePanel {...props} /></I18nProvider></MantineProvider>)
   return { ...view, onBuyerChange, onModeChange }
@@ -40,14 +40,13 @@ it('hides the locked Fenix base and buyer group under the BUG-1274 surface but k
   expect(screen.queryByRole('checkbox', { name: 'Контрагенти у групі «Покупці» (Fenix)' })).toBeNull()
   expect((screen.getByRole('combobox', { name: 'Форма взаєморозрахунків' }) as HTMLInputElement).disabled).toBe(false)
 })
-it('keeps the locked base and buyer group visible but disabled outside the BUG-1274 surface', () => {
+it('never offers a Fenix/AMG base choice and keeps the buyer group disabled for an explicit source', () => {
   show(settlementModeDataset, { readMode: 0 })
-  const world = screen.getByRole('combobox', { name: 'База взаєморозрахунків' }) as HTMLInputElement
-  expect(world.value).toBe('Fenix'); expect(world.disabled).toBe(true)
+  expect(screen.queryByRole('combobox', { name: 'База взаєморозрахунків' })).toBeNull()
   expect((screen.getByRole('checkbox', { name: 'Контрагенти у групі «Покупці» (Fenix)' }) as HTMLInputElement).disabled).toBe(true)
 })
-it('keeps the base and buyer group choosable under the BUG-1274 surface without an explicit source', () => {
+it('keeps only the buyer group choosable under the BUG-1274 surface without an explicit source', () => {
   show(settlementModeDataset, { hideRegisterReadMode: true })
-  expect((screen.getByRole('combobox', { name: 'База взаєморозрахунків' }) as HTMLInputElement).disabled).toBe(false)
+  expect(screen.queryByRole('combobox', { name: 'База взаєморозрахунків' })).toBeNull()
   expect((screen.getByRole('checkbox', { name: 'Контрагенти у групі «Покупці» (Fenix)' }) as HTMLInputElement).disabled).toBe(false)
 })

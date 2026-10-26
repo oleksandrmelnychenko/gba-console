@@ -49,12 +49,3 @@ it('keeps a deferred old workbook unavailable after caller changes even if the o
   expect(screen.queryByRole('dialog')).toBeNull()
   expect(view.container.querySelector('a[href="/files/old-caller.xlsx"]')).toBeNull()
 })
-it('preserves selected Fenix manager on an AMG switch while refusing submission until explicitly cleared', async () => {
-  const view = await debtor()
-  fireEvent.click(screen.getByRole('checkbox', { name: 'Основний менеджер покупця' }))
-  fireEvent.click(screen.getByRole('combobox', { name: 'База взаєморозрахунків' }))
-  fireEvent.click(screen.getByRole('option', { name: 'AMG' }))
-  expect((screen.getByRole('checkbox', { name: 'Основний менеджер покупця' }) as HTMLInputElement).checked).toBe(true)
-  fireEvent.submit(view.container.querySelector('form')!); expect(createStockReport).not.toHaveBeenCalled()
-  expect(screen.getByText(/Збережені налаштування не змінено/)).toBeTruthy()
-})

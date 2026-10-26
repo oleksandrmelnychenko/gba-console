@@ -24,7 +24,7 @@ beforeEach(() => {
   vi.mocked(createStockReport).mockResolvedValue({ document: { DocumentURL: '/files/groups.xlsx', PdfDocumentURL: '/files/groups.pdf' }, raw: {} })
 })
 
-it('selects independent current inclusion/exclusion groups, invalidates old files and clears Fenix groups when AMG is selected', async () => {
+it('selects independent current inclusion/exclusion groups, invalidates old files and offers no Fenix/AMG base', async () => {
   const { container } = render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage consoleScope={false} /></I18nProvider></MantineProvider>)
   await screen.findByRole('button', { name: 'Продажі за днями' })
   fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
@@ -41,13 +41,5 @@ it('selects independent current inclusion/exclusion groups, invalidates old file
   fireEvent.submit(container.querySelector('form')!)
   await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(2))
   expect(vi.mocked(createStockReport).mock.calls[1][0].sourceCounterpartyGroups).toEqual({ Version: 1, SourceWorld: 'fenix', IncludeGroupIds: [groupId(1)], ExcludeGroupIds: [groupId(2)] })
-  await screen.findByRole('dialog')
-  fireEvent.click(screen.getByRole('combobox', { name: 'База взаєморозрахунків' }))
-  fireEvent.click(screen.getByRole('option', { name: 'AMG' }))
-  expect(screen.queryByRole('dialog')).toBeNull()
-  expect(screen.queryByRole('combobox', { name: 'Включити групи контрагентів (Fenix)' })).toBeNull()
-  fireEvent.submit(container.querySelector('form')!)
-  await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(3))
-  expect(vi.mocked(createStockReport).mock.calls[2][0]).not.toHaveProperty('sourceCounterpartyGroups')
-  expect(vi.mocked(createStockReport).mock.calls[2][0]).not.toHaveProperty('sourceBuyerSubtree')
+  expect(screen.queryByRole('combobox', { name: 'База взаєморозрахунків' })).toBeNull()
 })

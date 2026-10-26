@@ -217,7 +217,7 @@ it('shows period, filters, measures and grouping together in one settings form',
   expect(screen.queryByRole('button', { name: 'Змінити налаштування' })).toBeNull()
   expect(dateInput('Від')).toBeTruthy()
   for (const name of ['Організації', 'Фільтри', 'Показники', 'Групування']) expect(screen.getByRole('group', { name })).toBeTruthy()
-  expect((screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }) as HTMLInputElement).checked).toBe(true)
+  expect((screen.getByRole('checkbox', { name: 'Група «Покупці»' }) as HTMLInputElement).checked).toBe(true)
 })
 
 it('keeps settings available without duplicating them in an about section', async () => {

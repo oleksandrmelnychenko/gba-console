@@ -4,9 +4,6 @@ import { currentVparivanieConfigurationError, currentVparivanieFilterConditions,
 import { currentVparivanieDataset as dataset, currentVparivanieRequest as request, exactSelection } from './currentVparivanie.test-fixtures'
 import { datasetConfigurationError, datasetFilters, datasetMeasurements, datasetPresetRequest } from './reportDatasets'
 import { reportWorkspaceDraftCompatibility } from './reportWorkspaceDraftCompatibility'
-import { catalogueLaunchOptions, resolveCatalogueLaunch } from './reportCatalogueLaunch'
-import { migrationFixture } from './reportMigration.test-fixtures'
-import type { ReportCatalogue } from '../types'
 import { hasFixedReportAxes, isCurrentReportSource, nativeReportMeasurementUnit, supportsFullReportDateRange, usesNativeReportLookup } from './nativeReportProfiles'
 
 describe('current native Vparivanie form contract', () => {
@@ -99,23 +96,6 @@ it('restores fixed dynamic axes in an unfinished draft without changing the sour
   expect(reportWorkspaceDraftCompatibility(snapshot, dataset)).toContain('Структура')
   expect(snapshot.data.sorted.Col.map(col => col.type)).toEqual([75,74])
 })
-it('offers the new matrix only when exact catalogue source and advertised capability both match', () => {
-  const reportId = 'builtin:ОтчетВпаривание', sourceId = '069dfc76-74b6-491d-b039-f7fb54e0ea81'
-  const catalogue: ReportCatalogue = { CapturedOn: '2026-09-27', Presentations: [], Reports: [{ Id: reportId, Name: 'Впаривание',
-    Title: 'Впаривание', Kind: 'builtin', Sources: [{ World: 'fenix', SourceId: sourceId, DefinitionSha256: 'a'.repeat(64), Attributes: [],
-      Migration: { ...migrationFixture('native_partial'), NativeDataSources: [39,36] } }] }],
-    Migration: { Version: 'current-fixture', GeneratedAtUtc: '2026-09-27T00:00:00Z', Summary: { CatalogueEntries: 1, SourceImplementations: 1,
-      BuiltinImplementations: 1, FullyVerifiedEntries: 0, ByStatus: { Captured: 0, NativePartial: 1, ParityVerified: 0, Unassessed: 0 } } } }
-  const options = catalogueLaunchOptions(catalogue, reportId, [dataset])
-  expect(options).toHaveLength(1)
-  const launch = resolveCatalogueLaunch(catalogue, options[0].choice, [dataset], { from: '2026-09-01', to: '2026-09-27' })
-  expect(launch.ok).toBe(true)
-  if (launch.ok) { expect(launch.template.Data.sorted.Col.map(col => col.type)).toEqual([74,75]); expect(launch.template.Data.selections).toEqual([]) }
-  expect(catalogueLaunchOptions(catalogue, reportId, [{ ...dataset, currentVparivanie: undefined }])).toEqual([])
-  catalogue.Reports[0].Sources[0].SourceId = 'other-source'
-  expect(catalogueLaunchOptions(catalogue, reportId, [dataset])).toEqual([])
-})
-
 it('prints matrix quantities without padded decimals like the 1C «0» format', () => {
   expect(['2.00000000', '0.00000000', '-2.00000000', '-0.00000000', '2.50000000', '161', '0', '9.00000001', '007.10', 'abc']
     .map(currentVparivanieQuantityText)).toEqual(['2', '0', '-2', '0', '2.5', '161', '0', '9.00000001', '7.1', 'abc'])

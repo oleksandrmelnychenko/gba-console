@@ -9,7 +9,7 @@ import { groupedSettlementDataset as dataset } from '../data/groupedSettlementPe
 import { settlementPeriodAgreement, settlementPeriodRequest } from '../data/settlementPeriod.test-fixtures'
 import { defaultDatasetRequest } from '../data/reportDatasets'
 import { reportDatasets } from '../data/reportDatasets.test-fixtures'
-import { settlementAttributesDataset, settlementAttributesRequest } from '../data/settlementSourceAttributes.test-fixtures'
+import { settlementAttributesDataset } from '../data/settlementSourceAttributes.test-fixtures'
 import { ReportsStocksPage } from './ReportsStocksPage'
 
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
@@ -54,28 +54,6 @@ it('selects genuine Fenix manager and region keys and submits them without numer
   expect(vi.mocked(createStockReport).mock.calls[0][0].selections.map(selection => ({ field: selection.SelectedField.Type,
     key: selection.Values[0].Data.Id, value: selection.Values[0].Value }))).toEqual([
     { field: 60, key: 'A'.repeat(32), value: 0 }, { field: 61, key: 'region:00420020', value: 0 }])
-})
-
-it('keeps a saved source filter intact but refuses generation and source lookup after switching to AMG', async () => {
-  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, settlementAttributesDataset])
-  const data = settlementAttributesRequest()
-  data.selections = [{ IsChecked: true, SelectedField: { Type: 61, Name: 'SourceBuyerRegionCode' },
-    FilterCondition: { Type: 0, Name: 'Дорівнює' }, Values: [{ Data: { Id: 'region:0042', Name: 'B' }, Name: 'B', Value: 0 }] }]
-  vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: crypto.randomUUID(), Revision: 1, Name: 'Saved source region', Data: data }])
-  const { container } = await ready()
-  fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
-  fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Saved source region' }))
-  fireEvent.click(screen.getByRole('combobox', { name: 'База взаєморозрахунків' }))
-  fireEvent.click(screen.getByRole('option', { name: 'AMG' }))
-  expect(screen.getByText('B', { selector: '.reports-stocks-selection-summary__value .app-table-chip.is-document .app-table-chip-label' })).toBeTruthy()
-  fireEvent.submit(container.querySelector('form')!)
-  expect(createStockReport).not.toHaveBeenCalled()
-  fireEvent.click(screen.getByRole('button', { name: 'Додати умову' }))
-  const dialog = screen.getByRole('dialog', { name: 'Додати умову відбору' })
-  fireEvent.click(within(dialog).getByRole('combobox', { name: 'Поле' }))
-  expect(screen.queryByRole('option', { name: 'Код по региону (джерело покупця)' })).toBeNull()
-  expect(screen.queryByRole('option', { name: 'Основний менеджер покупця (ID джерела)' })).toBeNull()
-  expect(searchDatasetReportValues).not.toHaveBeenCalled()
 })
 
 async function ready() {
@@ -124,7 +102,7 @@ it.each([undefined, null])('keeps saved exact-agreement templates with grouped o
   if (grouped === undefined) expect(saved).not.toHaveProperty('groupedSettlementPeriod')
 })
 
-it('invalidates stale XLSX/PDF links when the grouped workbook layout or source world changes', async () => {
+it('invalidates stale XLSX/PDF links when the grouped workbook layout changes and offers no Fenix/AMG base', async () => {
   vi.mocked(createStockReport).mockResolvedValue({ document: { DocumentURL: '/files/grouped.xlsx', PdfDocumentURL: '/files/grouped.pdf' }, raw: {} })
   const { container } = await ready()
   fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
@@ -137,15 +115,7 @@ it('invalidates stale XLSX/PDF links when the grouped workbook layout or source 
   fireEvent.submit(container.querySelector('form')!)
   await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(2))
   expect(vi.mocked(createStockReport).mock.calls[1][0].sorted.Row.map(field => field.type)).toEqual([4, 76])
-  await screen.findByRole('dialog')
-  fireEvent.click(screen.getByRole('combobox', { name: 'База взаєморозрахунків' }))
-  fireEvent.click(screen.getByRole('option', { name: 'AMG' }))
-  expect(screen.queryByRole('dialog')).toBeNull()
-  fireEvent.submit(container.querySelector('form')!)
-  await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(3))
-  const amg = vi.mocked(createStockReport).mock.calls[2][0]
-  expect(amg.groupedSettlementPeriod).toMatchObject({ SourceWorld: 'Amg' })
-  expect(amg).not.toHaveProperty('sourceBuyerSubtree')
+  expect(screen.queryByRole('combobox', { name: 'База взаєморозрахунків' })).toBeNull()
 })
 
 

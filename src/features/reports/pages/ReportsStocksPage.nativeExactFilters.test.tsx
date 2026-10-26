@@ -1,6 +1,6 @@
 import { changeReportPeriod, readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -9,7 +9,7 @@ import { createStockReport } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate } from '../api/reportWorkspaceApi'
 import { defaultDatasetRequest } from '../data/reportDatasets'
 import { netDataset, reportDatasets } from '../data/reportDatasets.test-fixtures'
-import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from '../data/dayOrganizationGrossProfit'
+import { DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from '../data/dayOrganizationGrossProfit'
 import { FENIX_BUYERS_ROOT_ID } from '../data/nativeExactFilters'
 import { previousKyivDay } from '../data/cashPeriod'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
@@ -130,50 +130,48 @@ describe('exact Fenix filters in the report constructor', () => {
     expect(saveServerReportTemplate).not.toHaveBeenCalled()
   })
 
-  it('selects the saved XLS Goods and non-service scope without typing a source ID', async () => {
+  it('selects the workbook organizations and the «Покупці» group without typing a source ID or a Fenix goods filter', async () => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dayDataset])
     const { container } = await ready()
     fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
     fireEvent.click(await screen.findByRole('option', { name: dayDataset.Name }))
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Товар без послуг (Fenix)' }))
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Організації зі збереженого налаштування 1С' }))
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }))
+    expect(screen.queryByRole('checkbox', { name: 'Товар без послуг (Fenix)' })).toBeNull()
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Організації книги ВП' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці»' }))
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+    expect(vi.mocked(createStockReport).mock.calls[0][0]).not.toHaveProperty('productClassification')
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({
       dataSource: 35, dayOrganizationBasis: 0,
-      productClassification: { Version: 1, SourceWorld: 0,
-        ProductKindId: DAY_ORGANIZATION_GOODS_KIND_ID, IsService: false },
       sourceOrganizations: { Version: 1, SourceWorld: 'fenix',
         OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
       sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID },
     })
   })
 
-  it('opens the VP workbook with all three retained filters and lets the user change that scope before submission', async () => {
+  it('opens the VP workbook with its organization and buyer-group filters and lets the user change that scope before submission', async () => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dayDataset])
     const { container } = await ready()
     fireEvent.click(screen.getByRole('button', { name: 'Відкрити ВП.xls' }))
     expect((readReportDateInput('Від') as HTMLInputElement).value).toBe(`${previousKyivDay(formatKyivBusinessDate()).slice(0, 7)}-01`)
     expect((readReportDateInput('До') as HTMLInputElement).value).toBe(previousKyivDay(formatKyivBusinessDate()))
-    expect((screen.getByRole('checkbox', { name: 'Товар без послуг (Fenix)' }) as HTMLInputElement).checked).toBe(true)
-    expect((screen.getByRole('checkbox', { name: 'Організації зі збереженого налаштування 1С' }) as HTMLInputElement).checked).toBe(true)
-    expect((screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }) as HTMLInputElement).checked).toBe(true)
+    expect(screen.queryByRole('checkbox', { name: 'Товар без послуг (Fenix)' })).toBeNull()
+    expect((screen.getByRole('checkbox', { name: 'Організації книги ВП' }) as HTMLInputElement).checked).toBe(true)
+    expect((screen.getByRole('checkbox', { name: 'Група «Покупці»' }) as HTMLInputElement).checked).toBe(true)
     changeReportPeriod({ from: '2026-09-01', to: '2026-09-30' })
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+    expect(vi.mocked(createStockReport).mock.calls[0][0]).not.toHaveProperty('productClassification')
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({
       dataSource: 35, dayOrganizationBasis: 0, from: '2026-09-01', to: '2026-09-30',
-      productClassification: { Version: 1, SourceWorld: 0, ProductKindId: DAY_ORGANIZATION_GOODS_KIND_ID, IsService: false },
       sourceOrganizations: { Version: 1, SourceWorld: 'fenix', OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
       sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID },
     })
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці»' }))
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(2))
     expect(vi.mocked(createStockReport).mock.calls[1][0]).not.toHaveProperty('sourceBuyerSubtree')
     expect(vi.mocked(createStockReport).mock.calls[1][0]).toMatchObject({
-      productClassification: { Version: 1, SourceWorld: 0, ProductKindId: DAY_ORGANIZATION_GOODS_KIND_ID, IsService: false },
       sourceOrganizations: { Version: 1, SourceWorld: 'fenix', OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
     })
   })
@@ -190,7 +188,7 @@ describe('exact Fenix filters in the report constructor', () => {
     expect(vi.mocked(createStockReport).mock.calls[0][0]).not.toHaveProperty('dayOrganizationBasis')
   })
 
-  it.each([null, 1])('loads and updates saved basis %s without replacing it with the new default', async basis => {
+  it.each([null])('loads and updates saved basis %s without replacing it with the new default', async basis => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dayDataset])
     const data = defaultDatasetRequest(dayDataset, '2026-07-01', '2026-07-01')
     delete data.dayOrganizationBasis
@@ -203,7 +201,7 @@ describe('exact Fenix filters in the report constructor', () => {
     const { container } = await ready()
     await applySaved()
     expect((screen.getByRole('combobox', { name: 'Розрахунок валового прибутку' }) as HTMLInputElement).value)
-      .toBe(basis === 1 ? 'Продажі з поверненнями за день' : 'Збережений спосіб розрахунку')
+      .toBe('Збережений спосіб розрахунку')
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0].dayOrganizationBasis).toBe(basis)
@@ -215,34 +213,6 @@ describe('exact Fenix filters in the report constructor', () => {
     expect(saved).not.toHaveProperty('DayOrganizationBasis')
   })
 
-  it('removes the previous file when the calculation changes and refuses an unsupported signed period before HTTP', async () => {
-    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dayDataset])
-    vi.mocked(createStockReport).mockResolvedValue({ document: { DocumentURL: '/files/period-sales.xlsx' }, raw: {} })
-    const { container } = await ready()
-    fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
-    fireEvent.click(await screen.findByRole('option', { name: dayDataset.Name }))
-    changeReportPeriod({ from: '2026-07-01', to: '2026-07-31' })
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Товар без послуг (Fenix)' }))
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Організації зі збереженого налаштування 1С' }))
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }))
-    fireEvent.submit(container.querySelector('form')!)
-    await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
-    expect(vi.mocked(createStockReport).mock.calls[0][0].dayOrganizationBasis).toBe(0)
-    await screen.findByRole('dialog')
-    fireEvent.click(screen.getByRole('combobox', { name: 'Розрахунок валового прибутку' }))
-    fireEvent.click(screen.getByRole('option', { name: 'Продажі з поверненнями за день' }))
-    expect(screen.queryByRole('dialog')).toBeNull()
-    expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(true)
-    await act(async () => { fireEvent.submit(container.querySelector('form')!) })
-    expect(createStockReport).toHaveBeenCalledOnce()
-    changeReportPeriod({ from: '2026-07-31' })
-    fireEvent.submit(container.querySelector('form')!)
-    await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(2))
-    expect(vi.mocked(createStockReport).mock.calls[1][0]).toMatchObject({
-      dataSource: 35, dayOrganizationBasis: 1, from: '2026-07-31', to: '2026-07-31',
-    })
-  })
-
   it('explains a 409 without an authored message as missing coverage for day profit', async () => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dayDataset])
     vi.mocked(createStockReport).mockResolvedValueOnce({ document: { DocumentURL: '/files/previous.xlsx' }, raw: {} })
@@ -250,9 +220,8 @@ describe('exact Fenix filters in the report constructor', () => {
     const { container } = await ready()
     fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
     fireEvent.click(await screen.findByRole('option', { name: dayDataset.Name }))
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Товар без послуг (Fenix)' }))
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Організації зі збереженого налаштування 1С' }))
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Організації книги ВП' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці»' }))
     expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(false)
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
@@ -272,9 +241,8 @@ describe('exact Fenix filters in the report constructor', () => {
     const { container } = await ready()
     fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
     fireEvent.click(await screen.findByRole('option', { name: dayDataset.Name }))
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Товар без послуг (Fenix)' }))
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Організації зі збереженого налаштування 1С' }))
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Організації книги ВП' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці»' }))
     expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(false)
     fireEvent.submit(container.querySelector('form')!)
 
@@ -363,50 +331,19 @@ describe('exact Fenix filters in the report constructor', () => {
     expect(submitted.selections).toEqual(data.selections)
   })
 
-  it('sends the exact Buyers subtree with Fenix for supplier gross profit', async () => {
-    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, supplierDataset])
+  it('sends the exact Buyers subtree for supplier gross profit without a Fenix/AMG base', async () => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, ordinarySupplierDataset])
     const { container } = await ready()
     fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
     fireEvent.click(await screen.findByRole('option', { name: supplierDataset.Name }))
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }))
+    expect(screen.queryByRole('combobox', { name: 'База продажів для прибутку за постачальниками' })).toBeNull()
+    changeReportPeriod({ from: '2026-07-01', to: '2026-07-31' })
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці»' }))
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+    expect(vi.mocked(createStockReport).mock.calls[0][0]).not.toHaveProperty('supplierSourceWorld')
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({
-      dataSource: 38, supplierSourceWorld: 0,
-      sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID },
-    })
-  })
-
-  it.each(['AMG', 'Обидві бази'])('clears the Fenix Buyers filter when supplier world changes to %s', async world => {
-    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, supplierDataset])
-    const { container } = await ready()
-    fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
-    fireEvent.click(await screen.findByRole('option', { name: supplierDataset.Name }))
-    const buyers = screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }) as HTMLInputElement
-    fireEvent.click(buyers)
-    expect(buyers.checked).toBe(true)
-    fireEvent.click(screen.getByRole('combobox', { name: 'База продажів для прибутку за постачальниками' }))
-    fireEvent.click(screen.getByRole('option', { name: world }))
-    expect(buyers.checked).toBe(false)
-    fireEvent.submit(container.querySelector('form')!)
-    await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
-    const request = vi.mocked(createStockReport).mock.calls[0][0]
-    expect(request.supplierSourceWorld).toBe(world === 'AMG' ? 1 : undefined)
-    expect(request.sourceBuyerSubtree).toBeUndefined()
-  })
-
-  it('selecting Buyers after AMG selects Fenix before submitting the supplier report', async () => {
-    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, supplierDataset])
-    const { container } = await ready()
-    fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
-    fireEvent.click(await screen.findByRole('option', { name: supplierDataset.Name }))
-    fireEvent.click(screen.getByRole('combobox', { name: 'База продажів для прибутку за постачальниками' }))
-    fireEvent.click(screen.getByRole('option', { name: 'AMG' }))
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }))
-    fireEvent.submit(container.querySelector('form')!)
-    await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
-    expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({
-      dataSource: 38, supplierSourceWorld: 0,
+      dataSource: 38, supplierBasis: 0,
       sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID },
     })
   })

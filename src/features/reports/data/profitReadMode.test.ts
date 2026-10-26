@@ -10,7 +10,7 @@ import { encodeReportWorkspaceSnapshot } from './reportWorkspaceDraft'
 import { reportWorkspaceDraftCompatibility } from './reportWorkspaceDraftCompatibility'
 import { isProfitReadModeCapability, profitReadModeConfigurationError, requestProfitReadMode } from './profitReadMode'
 import { profitDayDataset, profitSupplierDataset, profitReadModeCapability } from './profitReadMode.test-fixtures'
-import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from './dayOrganizationGrossProfit'
+import { DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from './dayOrganizationGrossProfit'
 import { FENIX_BUYERS_ROOT_ID } from './nativeExactFilters'
 
 const presetId = (dataset: typeof profitDayDataset) => dataset.DataSource === 35
@@ -32,10 +32,10 @@ it.each([profitDayDataset, profitSupplierDataset])('opens new requests and the w
   const workbook = bug1274WorkbookRequest(current, launch)
   if (dataset.DataSource === 35) {
     expect(workbook).toMatchObject({ profitReadMode: 0, dayOrganizationBasis: 0,
-      productClassification: { ProductKindId: DAY_ORGANIZATION_GOODS_KIND_ID, IsService: false },
       sourceOrganizations: { OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
       sourceBuyerSubtree: { BuyerRootId: FENIX_BUYERS_ROOT_ID },
       workbookPresentation: { version: 1, additionalFields: [2, 3], ordering: 'MonthAscending' } })
+    expect(workbook).not.toHaveProperty('productClassification')
     expect(datasetConfigurationError(workbook, dataset)).toBeNull()
     expect(launch.notice).toContain('ФОП Пархоменко не синхронізується в GBA')
     expect(current).not.toHaveProperty('sourceOrganizations')
@@ -70,8 +70,10 @@ it.each([profitDayDataset, profitSupplierDataset])('keeps the request mode or it
 it.each([profitDayDataset, profitSupplierDataset])('applies current documents to a saved request without a mode and reports its limits for source $DataSource', dataset => {
   const launch = availableBug1274WorkbookLaunches([dataset])[0]
   const saved = bug1274WorkbookRequest(unmarked(dataset, '2026-08-01', '2026-09-30'), launch)
-  expect(datasetConfigurationError(saved, dataset)).toBeNull()
-  expect(datasetConfigurationError({ ...saved, profitReadMode: 1 }, dataset)).toBeNull()
+  if (dataset.DataSource === 38) {
+    expect(datasetConfigurationError(saved, dataset)).toBeNull()
+    expect(datasetConfigurationError({ ...saved, profitReadMode: 1 }, dataset)).toBeNull()
+  } else expect(datasetConfigurationError(saved, dataset)).toContain('31')
   const current = withDefaultReadModes(saved, dataset)
   expect(current.profitReadMode).toBe(0)
   expect(saved).not.toHaveProperty('profitReadMode')

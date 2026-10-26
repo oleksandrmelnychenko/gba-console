@@ -1,5 +1,5 @@
 import { ActionIcon, VisuallyHidden } from '@mantine/core'
-import { ArrowLeftRight, ChevronLeft, ChevronRight, Users } from 'lucide-react'
+import { ArrowLeftRight, ChevronLeft, ChevronRight } from 'lucide-react'
 import { publishedReportTabs, type PublishedReportTab } from './publishedReportTabs'
 import { workbookDisplayFileName } from '../../data/bug1274WorkbookGuide'
 import { workbookIcon } from './workbookIcons'
@@ -69,7 +69,7 @@ export function WorkbookSwitcher({ compact = false, launches, active, disabled, 
         </button>
       })}
       {onOpenPublished ? publishedReportTabs.map(tab => {
-        const current = published === tab.key, Icon = tab.key === 'movement' ? ArrowLeftRight : Users
+        const current = published === tab.key, Icon = ArrowLeftRight
         return <button key={tab.key} type="button" className={`app-screen-tab${current ? ' is-active' : ''}`}
           disabled={disabled} aria-current={current ? 'true' : undefined} onClick={() => { if (!current) onOpenPublished(tab.key) }}>
           <Icon size={16} strokeWidth={1.7} aria-hidden="true" />{t(tab.title)}

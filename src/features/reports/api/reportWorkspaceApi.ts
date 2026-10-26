@@ -30,10 +30,9 @@ import { cloneBuyerSalesShareAliases, isBuyerSalesShareCapability, buyerSalesSha
 import { cloneRevenueComparisonAliases, isRevenueComparisonCapability, revenueComparisonConfigurationError } from '../data/revenueComparison'
 import { cloneXyzAliases, isXyzCapability, salesXyzConfigurationError } from '../data/salesXyz'
 import { apiRequest } from '../../../shared/api/apiClient'
-import type { ReportCatalogue, ReportDataset, ReportDatasetField, ReportRequestBody, ReportTemplate } from '../types'
+import type { ReportDataset, ReportDatasetField, ReportRequestBody, ReportTemplate } from '../types'
 import { isCurrentReportSource } from '../data/nativeReportProfiles'
 import { isClientComparisonCapability } from '../data/clientPeriodComparison'
-import { isReportCatalogue } from '../data/reportMigration'
 import { cloneNativeExactFilterAliases, nativeExactFiltersConfigurationError, normalizeNativeExactFilterDataset } from '../data/nativeExactFilters'
 import {
   clonePriceTypeSalesComparisonAliases,
@@ -151,12 +150,6 @@ export function parseReportDatasets(result: unknown): ReportDataset[] {
     throw new Error('Сервер повернув некоректний список наборів даних звітів.')
   }
   return normalized
-}
-
-export async function getReportCatalogue(signal?: AbortSignal): Promise<ReportCatalogue> {
-  const result = await apiRequest<unknown>('/report/catalogue', { signal })
-  if (!isReportCatalogue(result)) throw new Error('Сервер повернув некоректний каталог джерельних звітів.')
-  return result
 }
 
 type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {

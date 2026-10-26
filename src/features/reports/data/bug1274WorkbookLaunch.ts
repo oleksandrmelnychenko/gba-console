@@ -8,15 +8,13 @@ import { CASH_WORKBOOK_ROWS, groupedCashPeriod, groupedCashSupported, groupedCas
 import { cashPeriodSupportsManagement, isCashPeriodDataset } from './cashPeriod'
 import { isSettlementPeriodDataset } from './settlementPeriod'
 import { isDayOrganizationBasisCapability, requestDayOrganizationBasis } from './dayOrganizationBasis'
-import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS,
-  isDayOrganizationGrossProfitDataset } from './dayOrganizationGrossProfit'
+import { DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS, isDayOrganizationGrossProfitDataset } from './dayOrganizationGrossProfit'
 import { isSupplierBatchGrossProfitDataset } from './supplierBatchGrossProfit'
 import { isSupplierBasisCapability } from './supplierBasis'
 import { groupedSettlementPeriod, requestGroupedSettlementPeriod, groupedSettlementSupportsSuppliers, groupedWorkbookRequest, isGroupedSettlementDataset } from './groupedSettlementPeriod'
 import { datasetGroupings } from './reportDatasets'
 import { isCurrentVparivanieDataset } from './currentVparivanie'
-import { FENIX_BUYERS_ROOT_ID, isProductClassificationCapability, isSourceBuyerSubtreeCapability,
-  isSourceOrganizationsCapability } from './nativeExactFilters'
+import { FENIX_BUYERS_ROOT_ID, isSourceBuyerSubtreeCapability, isSourceOrganizationsCapability } from './nativeExactFilters'
 import { BUG_1274_ONLY_REPORT_SURFACE } from '../reportSurfacePolicy'
 import { BUG_1274_PARITY_NOTICE } from './reportMigration'
 import { SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS, sourceCounterpartyGroupCapability } from './sourceCounterpartyGroups'
@@ -53,10 +51,9 @@ const supported = [
   {
     fileName: 'ВП.xls',
     label: 'Валовий прибуток за днем',
-    notice: 'Часткова форма Excel: день → організація, суми EUR та рентабельність %. Для врахування повернень оберіть один завершений день і всі три точні відбори Fenix: товар без послуг, організації та групу покупців. Сервер відхилить неповне покриття; без цих відборів діє звичайний звіт продажів без повернень.',
+    notice: 'Часткова форма Excel: день → організація, суми EUR та рентабельність % з документів GBA.',
     dataSource: 35,
     accepts: (dataset: ReportDataset) => isDayOrganizationGrossProfitDataset(dataset)
-      && isProductClassificationCapability(dataset.productClassification)
       && isSourceOrganizationsCapability(dataset.sourceOrganizations)
       && isSourceBuyerSubtreeCapability(dataset.sourceBuyerSubtree),
   },
@@ -118,7 +115,7 @@ export function availableBug1274WorkbookLaunches(datasets: readonly ReportDatase
         notice: (spec.dataSource === 35 || spec.dataSource === 38) && isProfitReadModeCapability(candidate.profitReadMode)
           ? profitReadModeNotice(spec.dataSource, candidate)
           : spec.dataSource === 35 && isDayOrganizationBasisCapability(candidate.dayOrganizationBasis)
-          ? 'Часткова форма Excel: день → організація, суми EUR та рентабельність %. Для нового запиту застосовано відбори книги: товар без послуг, чотири організації GBA (ФОП Пархоменко не синхронізується) і група «Покупці» Fenix. Їх можна змінити у формі. «Продажі мінус повернення за період» підтримують до 31 дня. Недоступні собівартість, ПДВ і залежні показники залишаються порожніми.'
+          ? 'Часткова форма Excel: день → організація, суми EUR та рентабельність %. Для нового запиту застосовано відбори книги: чотири організації GBA (ФОП Пархоменко не синхронізується) і група «Покупці». Їх можна змінити у формі. «Продажі мінус повернення за період» підтримують до 31 дня. Недоступні собівартість, ПДВ і залежні показники залишаються порожніми.'
           : spec.dataSource === 40 && groupedCashSupported(candidate)
             ? groupedCashNotice(candidate)
           : spec.dataSource === 40 && cashPeriodSupportsManagement(candidate)
@@ -144,7 +141,7 @@ function profitReadModeNotice(dataSource: number, dataset: ReportDataset): strin
 }
 
 export const BUG_1274_AMG_PARITY_NOTICE = `${BUG_1274_PARITY_NOTICE} ТОВ «АМГ «КОНКОРД» розраховано й звірено за базою 1С AMG.`
-export const DAY_WORKBOOK_FILTERS_NOTICE = 'Застосовано відбори книги: товар без послуг, організації ТОВ «АМГ «КОНКОРД», Фенікс, ФОП Самолюк А.Д. і ФОП Самолюк Ю.М. (ФОП Пархоменко не синхронізується в GBA), група «Покупці» Fenix і додаткові поля Артикул/Топ із порядком за місяцями.'
+export const DAY_WORKBOOK_FILTERS_NOTICE = 'Застосовано відбори книги: організації ТОВ «АМГ «КОНКОРД», Фенікс, ФОП Самолюк А.Д. і ФОП Самолюк Ю.М. (ФОП Пархоменко не синхронізується в GBA), група «Покупці» і додаткові поля Артикул/Топ із порядком за місяцями.'
 export const SETTLEMENT_WORKBOOK_EXCLUSIONS_NOTICE = `Застосовано виключення книги: ${SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS.map(group => group.Name).join('; ')}.`
 
 export const CASH_CURRENCY_RECORD_NOTICE = 'Як в 1С, кожна валюта рахунку чи каси — окремий рядок із сумами у своїй валюті.'
@@ -173,15 +170,13 @@ function dayWorkbookRequest(request: ReportRequestBody, launch: WorkbookLaunch):
   if (launch.fileName !== 'ВП.xls' || request.dataSource !== 35 || !isDayOrganizationGrossProfitDataset(dataset)
     || !isDayOrganizationBasisCapability(dataset.dayOrganizationBasis) || requestDayOrganizationBasis(request) !== 0
     || Object.keys(request).filter(key => key.toLowerCase() === 'dayorganizationbasis').length !== 1
-    || !isProductClassificationCapability(dataset.productClassification)
     || !isSourceOrganizationsCapability(dataset.sourceOrganizations)
     || !isSourceBuyerSubtreeCapability(dataset.sourceBuyerSubtree)) return request
   const explicit = new Set(Object.keys(request).map(key => key.toLowerCase()))
-  if (explicit.has('productclassification') || explicit.has('sourceorganizations') || explicit.has('sourcebuyersubtree')
+  if (explicit.has('sourceorganizations') || explicit.has('sourcebuyersubtree')
     || !Array.isArray(request.selections)
     || request.selections.some(selection => selection?.IsChecked !== false && selection?.SelectedField?.Type === 0)) return request
   return { ...structuredClone(request),
-    productClassification: { Version: 1, SourceWorld: 0, ProductKindId: DAY_ORGANIZATION_GOODS_KIND_ID, IsService: false },
     sourceOrganizations: { Version: 1, SourceWorld: 'fenix', OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
     sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID },
   }

@@ -78,7 +78,7 @@ it('blocks generic datasets and the old special launch, then accepts the actual 
   surface.only = false
   const view = render(page())
   await screen.findByRole('button', { name: 'Продажі за днями' })
-  expect(screen.getByRole('button', { name: 'Валовий прибуток — як у 1С' }).hasAttribute('disabled')).toBe(true)
+  expect(screen.queryByRole('button', { name: 'Валовий прибуток — як у 1С' })).toBeNull()
   expect(view.container.querySelector('a[href="/reports/registers"]')).toBeNull()
   fireEvent.submit(view.container.querySelector('form')!)
   expect(createStockReport).not.toHaveBeenCalled()

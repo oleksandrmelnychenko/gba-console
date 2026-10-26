@@ -38,13 +38,13 @@ async function submitted(view: ReturnType<typeof render>, count: number) {
   return vi.mocked(createStockReport).mock.calls[count - 1][0]
 }
 const source = () => (screen.getByRole('combobox', { name: 'Джерело розрахунку' }) as HTMLInputElement).value
-const world = () => screen.getByRole('combobox', { name: 'База взаєморозрахунків' }) as HTMLInputElement
+const world = () => screen.queryByRole('combobox', { name: 'База взаєморозрахунків' })
 it.each([['Взаєморозрахунки за період', [4, 41, 76]], ['Дебіторка за період', [4, 76]]] as const)(
   'opens %s on current documents, then keeps deliberate registers and opt-out choices', async (name, rows) => {
     const view = await openWorkbook(name)
     expect(screen.getAllByText(/^(Взаємороз всі|ДБіторка)\.xls — /).length).toBeGreaterThan(0)
     expect(source()).toBe('Поточні документи GBA')
-    expect(world().disabled).toBe(true)
+    expect(world()).toBeNull()
     expect((screen.getByRole('checkbox', { name: 'Контрагенти у групі «Покупці» (Fenix)' }) as HTMLInputElement).disabled).toBe(true)
     expect(screen.queryByText(/Період — до 31 дня/)).toBeNull()
     const current = await submitted(view, 1)
@@ -55,7 +55,7 @@ it.each([['Взаєморозрахунки за період', [4, 41, 76]], ['
     mode('Збережені регістри 1С')
     expect(await submitted(view, 2)).toEqual({ ...current, settlementReadMode: 1 })
     mode('За налаштуваннями звіту')
-    expect(world().disabled).toBe(false)
+    expect(world()).toBeNull()
     expect(screen.getByText(/^Джерело не передається: звіт визначає його за налаштуваннями/)).toBeTruthy()
     const unmarked = await submitted(view, 3)
     expect(Object.keys(unmarked).some(key => key.toLowerCase() === 'settlementreadmode')).toBe(false)
@@ -63,16 +63,12 @@ it.each([['Взаєморозрахунки за період', [4, 41, 76]], ['
     void _mode
     expect(unmarked).toEqual(rest)
   })
-it('reaches AMG only through the opt-out and returns to Fenix buyers when a source is chosen', async () => {
+it('offers no AMG base through the opt-out and keeps the Fenix-shaped unified request', async () => {
   const view = await openWorkbook('Дебіторка за період')
   mode('За налаштуваннями звіту')
-  fireEvent.click(world())
-  fireEvent.click(screen.getByRole('option', { name: 'AMG' }))
-  const amg = await submitted(view, 1)
-  expect(amg.groupedSettlementPeriod).toEqual({ Version: 1, SourceWorld: 'Amg', CurrencyBasis: 'SettlementCurrency' })
-  expect(Object.keys(amg).some(key => key.toLowerCase() === 'settlementreadmode')).toBe(false)
+  expect(world()).toBeNull()
   mode('Поточні документи GBA')
-  const current = await submitted(view, 2)
+  const current = await submitted(view, 1)
   expect(current.settlementReadMode).toBe(0)
   expect(current.groupedSettlementPeriod).toEqual({ Version: 1, SourceWorld: 'Fenix', CurrencyBasis: 'SettlementCurrency' })
   expect(current.sourceBuyerSubtree).toMatchObject({ Version: 1, SourceWorld: 'fenix' })

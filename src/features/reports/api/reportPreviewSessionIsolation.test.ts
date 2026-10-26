@@ -1,25 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { clearSession, saveSession } from '../../../shared/auth/session'
-import { cashAggregateCapability, cashAggregateReport } from '../data/cashAggregateBalance.test-fixtures'
-import { previewCashAggregateBalance } from './cashAggregateBalanceApi'
-import { originalRevenueCapability, originalRevenueReport } from '../data/originalRevenue.test-fixtures'
-import { previewOriginalRevenue } from './originalRevenueApi'
-import { activeClientsCapability, activeClientsReport } from '../data/activeClients.test-fixtures'
-import { currencyDynamicsCapability, currencyDynamicsDefinition, currencyDynamicsReport } from '../data/currencyRateDynamics.test-fixtures'
-import { debtRatioCapability, debtRatioReport } from '../data/debtToSalesRatio.test-fixtures'
 import type { ReportRequestBody } from '../types'
-import { previewActiveClients } from './activeClientsApi'
-import { previewCurrencyRateDynamics } from './currencyRateDynamicsApi'
-import { previewDebtToSalesRatio } from './debtToSalesRatioApi'
-import { collectionCoefficientCapability, collectionCoefficientReport } from '../data/collectionCoefficient.test-fixtures'
-import { previewCollectionCoefficient } from './collectionCoefficientApi'
 import { createStockReport, previewStockReport } from './reportsApi'
-
-import { originalBuyerSalesShareCapability, originalBuyerSalesShareReport } from '../data/originalBuyerSalesShare.test-fixtures'
-import { previewOriginalBuyerSalesShare } from './originalBuyerSalesShareApi'
-
-import { overdueReceivablesCapability, overdueReceivablesReport } from '../data/overdueReceivables.test-fixtures'
-import { previewOverdueReceivables } from './overdueReceivablesApi'
 
 const fetchMock = vi.fn()
 const month = '2026-09'
@@ -29,24 +11,6 @@ const nativePayload = () => ({ Preview: { Version: 1, ResultSha256: 'b'.repeat(6
   Page: { Offset: 0, Limit: 50, TotalVisibleRows: 0, ReturnedRows: 0, HasMore: false },
   RowSchema: [], ColumnSchema: [], Rows: [], Columns: [], Cells: [] } })
 const cases = [
-  { name: 'overdue receivables', route: '/report/constructors/overdue-receivables/preview',
-    run: () => previewOverdueReceivables(overdueReceivablesCapability(), month), payload: overdueReceivablesReport },
-  { name: 'new buyer share', route: '/report/constructors/sales-new-buyer-share/preview',
-    run: () => previewOriginalBuyerSalesShare(originalBuyerSalesShareCapability('new'), month), payload: () => originalBuyerSalesShareReport(month, 'new') },
-  { name: 'repeat buyer share', route: '/report/constructors/sales-repeat-buyer-share/preview',
-    run: () => previewOriginalBuyerSalesShare(originalBuyerSalesShareCapability('repeat'), month), payload: () => originalBuyerSalesShareReport(month, 'repeat') },
-  { name: 'original revenue', route: '/report/constructors/revenue-comparison/preview',
-    run: () => previewOriginalRevenue(originalRevenueCapability(), month), payload: originalRevenueReport },
-  { name: 'cash aggregate', route: '/report/constructors/cash-aggregate-balance/preview',
-    run: () => previewCashAggregateBalance(cashAggregateCapability(), '2026-09-30'), payload: cashAggregateReport },
-  { name: 'currency dynamics', route: '/report/constructors/currency-rate-dynamics/preview',
-    run: () => previewCurrencyRateDynamics(currencyDynamicsCapability(), month, currencyDynamicsDefinition()), payload: currencyDynamicsReport },
-  { name: 'active clients', route: '/report/constructors/active-clients/preview',
-    run: () => previewActiveClients(activeClientsCapability(), month), payload: activeClientsReport },
-  { name: 'debt ratio', route: '/report/constructors/debt-to-sales-ratio/preview',
-    run: () => previewDebtToSalesRatio(debtRatioCapability(), month), payload: debtRatioReport },
-  { name: 'collection coefficient', route: '/report/constructors/collection-coefficient/preview',
-    run: () => previewCollectionCoefficient(collectionCoefficientCapability(), month), payload: collectionCoefficientReport },
   { name: 'native generation', route: '/report/stocks/generate',
     run: async () => (await createStockReport(nativeRequest())).document, payload: nativePayload },
   { name: 'native preview', route: '/report/stocks/preview',

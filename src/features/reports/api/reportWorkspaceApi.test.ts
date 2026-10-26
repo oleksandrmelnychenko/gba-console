@@ -1,11 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { deleteServerReportTemplate, getReportCatalogue, getReportDatasets, getServerReportTemplates, saveServerReportTemplate, normalizeSavedTemplate } from './reportWorkspaceApi'
+import { deleteServerReportTemplate, getReportDatasets, getServerReportTemplates, saveServerReportTemplate, normalizeSavedTemplate } from './reportWorkspaceApi'
 import { createSalesReportPreset } from '../data/reportPresets'
 import { reportDatasets, stockDataset, currentStockDatasets, valuationDataset, nativeDocumentDatasets, currentDebtDataset } from '../data/reportDatasets.test-fixtures'
 import { defaultDatasetRequest } from '../data/reportDatasets'
 import { accountBalanceDataset, accountBalanceSelections } from '../data/accountBalances.test-fixtures'
-import { catalogueFixture } from '../data/reportMigration.test-fixtures'
 import { originalScopeRequest, originalScopeWireTemplate } from '../testing/originalVparivanieScopeFixtures'
 import { originalMatrixScope } from '../data/originalVparivanieScope'
 import { currentVparivanieConfigurationError } from '../data/currentVparivanie'
@@ -108,26 +107,6 @@ describe('report workspace wire contract', () => {
     expect(apiRequest).toHaveBeenLastCalledWith('/report/templates/delete', { method: 'POST', body: { Id: template.Id, Revision: 2 }, signal })
     await deleteServerReportTemplate(template)
     expect(apiRequest).toHaveBeenLastCalledWith('/report/templates/delete', { method: 'POST', body: { Id: template.Id, Revision: 2 } })
-  })
-
-  it('loads exact per-world migration metadata without changing the source inventory or cancellation', async () => {
-    const controller = new AbortController(), catalogue = catalogueFixture()
-    vi.mocked(apiRequest).mockResolvedValue(catalogue)
-    await expect(getReportCatalogue(controller.signal)).resolves.toEqual(catalogue)
-    expect(apiRequest).toHaveBeenLastCalledWith('/report/catalogue', { signal: controller.signal })
-  })
-
-  it('preserves an old catalogue without fabricating migration metadata', async () => {
-    const catalogue = { ...catalogueFixture(), Migration: undefined }
-    vi.mocked(apiRequest).mockResolvedValue(catalogue)
-    await expect(getReportCatalogue()).resolves.toEqual(catalogue)
-  })
-
-  it('rejects duplicate exact implementation identities instead of dropping source rows', async () => {
-    const catalogue = catalogueFixture()
-    catalogue.Reports[0].Sources.push(catalogue.Reports[0].Sources[0])
-    vi.mocked(apiRequest).mockResolvedValue(catalogue)
-    await expect(getReportCatalogue()).rejects.toThrow('некоректний каталог джерельних звітів')
   })
 
   it('loads native capabilities and passes cancellation to the authenticated request', async () => {

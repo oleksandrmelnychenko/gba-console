@@ -7,8 +7,6 @@ import { getReportDatasets, getServerReportTemplates } from '../api/reportWorksp
 import { reportDatasets } from '../data/reportDatasets.test-fixtures'
 import { profitDayDataset } from '../data/profitReadMode.test-fixtures'
 import type { NativeReportPreview } from '../data/nativeReportPreview'
-import { CollectionCoefficientConstructorModal } from './CollectionCoefficientConstructorModal'
-import { PlannedCashConstructorModal } from './PlannedCashConstructorModal'
 import { ReportInlinePreview } from './ReportInlinePreview'
 import { ReportsStocksPage } from './ReportsStocksPage'
 import { findWorkbookLanding } from '../testing/workbookDesk'
@@ -16,8 +14,6 @@ import { findWorkbookLanding } from '../testing/workbookDesk'
 vi.mock('../reportSurfacePolicy', () => ({ BUG_1274_ONLY_REPORT_SURFACE: true }))
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
 vi.mock('../../../shared/ui/document-export-modal/DocumentExportModal', () => ({ DocumentExportModal: () => null }))
-vi.mock('./CollectionCoefficientConstructorModal', () => ({ CollectionCoefficientConstructorModal: vi.fn(() => null) }))
-vi.mock('./PlannedCashConstructorModal', () => ({ PlannedCashConstructorModal: vi.fn(() => null) }))
 vi.mock('./ReportInlinePreview', () => ({ ReportInlinePreview: vi.fn(() => <section aria-label="Попередній перегляд звіту" />) }))
 vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(), previewStockReport: vi.fn() }))
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(),
@@ -44,21 +40,13 @@ const page = (consoleScope?: boolean) => <MantineProvider env="test"><I18nProvid
   <ReportsStocksPage {...(consoleScope === undefined ? {} : { consoleScope })} />
 </I18nProvider></MantineProvider>
 
-it('offers the scoped catalogue without mounting unsupported constructor dialogs', async () => {
+it('offers the report tabs without the 1C catalogue or the 1C snapshot tab', async () => {
   render(page())
   await findWorkbookLanding()
   expect(screen.queryByRole('button', { name: 'Каталог звітів' })).toBeNull()
   expect(screen.getByRole('button', { name: 'Рух товару' })).toBeTruthy()
   expect(screen.queryByRole('button', { name: 'Каталог усіх звітів 1С' })).toBeNull()
-  expect(CollectionCoefficientConstructorModal).not.toHaveBeenCalled()
-  expect(PlannedCashConstructorModal).not.toHaveBeenCalled()
-})
-
-it('does not mount unopened constructor dialogs in the full catalogue either', async () => {
-  render(page(false))
-  await waitFor(() => expect(getReportDatasets).toHaveBeenCalled())
-  expect(CollectionCoefficientConstructorModal).not.toHaveBeenCalled()
-  expect(PlannedCashConstructorModal).not.toHaveBeenCalled()
+  expect(screen.queryByRole('button', { name: 'Знімок 1С: продажі за відповідальними' })).toBeNull()
 })
 
 it('does not re-render the finished preview while the template name is typed', async () => {

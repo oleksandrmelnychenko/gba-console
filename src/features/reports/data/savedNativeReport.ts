@@ -2,6 +2,7 @@ import { datasetConfigurationError } from './reportDatasets'
 import { validateStockReportRequest } from '../api/reportsApi'
 import type { ReportDataset, ReportTemplate } from '../types'
 import { lacksCurrentReadMode, SAVED_VARIANT_WITHOUT_READ_MODE_ERROR } from './currentReadModePolicy'
+import { carriesSourceWorld, UNIFIED_SOURCE_SAVED_VARIANT_ERROR } from './unifiedReportSource'
 
 // Names emitted by the b4 server's ReportDataSource contract, including the retained legacy pilot.
 export const savedNativeReportSources: Readonly<Record<number, string>> = {
@@ -24,6 +25,7 @@ export function savedNativeReportConfigurationError(template: ReportTemplate, da
   requireReadMode = false): string | null {
   const matches = datasets.filter(dataset => dataset.DataSource === (template.Data.dataSource ?? 0))
   if (matches.length !== 1) return 'Набір даних збереженого варіанта зараз недоступний.'
+  if (carriesSourceWorld(template.Data)) return UNIFIED_SOURCE_SAVED_VARIANT_ERROR
   if (requireReadMode && lacksCurrentReadMode(template.Data, matches[0])) return SAVED_VARIANT_WITHOUT_READ_MODE_ERROR
   const error = datasetConfigurationError(template.Data, matches[0])
   if (error) return error

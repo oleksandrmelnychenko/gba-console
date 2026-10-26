@@ -12,7 +12,6 @@ import { ReportsStocksPage } from './ReportsStocksPage'
 
 let allowed = true
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => allowed }) }))
-vi.mock('./ReportCatalogueControl', () => ({ ReportCatalogueControl: () => null }))
 vi.mock('../../../shared/ui/document-export-modal/DocumentExportModal', () => ({
   DocumentExportModal: ({ opened, document }: { opened: boolean; document?: { DocumentURL?: string } }) =>
     opened ? <div role="dialog" aria-label="Файли сформованого звіту">{document?.DocumentURL}</div> : null,

@@ -55,18 +55,23 @@ async function blocked(view: ReturnType<typeof render>) {
   return view.container.querySelector('.reports-stocks-generate')?.getAttribute('title')
 }
 
-it('reads a saved profit variant without a mode from current documents and reports the current-document period limit', async () => {
-  const view = await apply(saved(profitSupplierDataset, '2026-07-01', '2026-08-31', { supplierSourceWorld: 0 }))
+it('reads a saved profit variant without a mode from current documents, ignores its Fenix base and refuses the registers', async () => {
+  const view = await apply(saved(profitSupplierDataset, '2026-08-01', '2026-08-31', { supplierSourceWorld: 0 }))
   expect(source()).toBe('Поточні документи GBA')
-  expect(await blocked(view)).toBe('Період «Валового прибутку по постачальниках» — не більше 31 календарних днів. Зменште період.')
   mode('Збережені регістри 1С')
-  expect(await submitted(view, 1)).toMatchObject({ profitReadMode: 1, supplierSourceWorld: 0, from: '2026-07-01', to: '2026-08-31' })
+  await blocked(view)
+  mode('Поточні документи GBA')
+  const request = await submitted(view, 1)
+  expect(request).toMatchObject({ profitReadMode: 0, from: '2026-08-01', to: '2026-08-31' })
+  expect(Object.keys(request).some(key => key.toLowerCase() === 'suppliersourceworld')).toBe(false)
 })
 
-it('keeps the saved registers choice of a profit variant', async () => {
-  const view = await apply(saved(profitSupplierDataset, '2026-07-01', '2026-08-31', { supplierSourceWorld: 0, ProfitReadMode: 1 }))
-  expect(source()).toBe('Збережені регістри 1С')
-  expect((await submitted(view, 1)).profitReadMode).toBe(1)
+it('opens a saved registers profit variant on current documents and ignores its Fenix base', async () => {
+  const view = await apply(saved(profitSupplierDataset, '2026-08-01', '2026-08-31', { supplierSourceWorld: 0, ProfitReadMode: 1 }))
+  expect(source()).toBe('Поточні документи GBA')
+  const request = await submitted(view, 1)
+  expect(request.profitReadMode).toBe(0)
+  expect(Object.keys(request).some(key => key.toLowerCase() === 'suppliersourceworld')).toBe(false)
 })
 
 it('reads a saved cash variant without a mode from current documents and leaves the earlier period to the opt-out', async () => {
@@ -79,7 +84,7 @@ it('reads a saved cash variant without a mode from current documents and leaves 
   expect(unmarked).toMatchObject({ from: '2024-12-01', to: '2024-12-31' })
 })
 
-it.each([[undefined, 0, 'Поточні документи GBA'], [1, 1, 'Збережені регістри 1С']] as const)(
+it.each([[undefined, 0, 'Поточні документи GBA'], [1, 0, 'Поточні документи GBA']] as const)(
   'opens a saved settlement variant with mode %s as %s', async (stored, sent, label) => {
     const view = await apply(saved(settlementModeDataset, '2025-01-01', '2026-09-30', stored === undefined ? {} : { SettlementReadMode: stored }))
     expect(source()).toBe(label)

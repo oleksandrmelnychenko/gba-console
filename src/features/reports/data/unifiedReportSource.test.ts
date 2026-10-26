@@ -1,0 +1,67 @@
+import { expect, it } from 'vitest'
+import { carriesSourceWorld, UNIFIED_SOURCE_SAVED_VARIANT_ERROR, withUnifiedSource } from './unifiedReportSource'
+import { defaultDatasetRequest } from './reportDatasets'
+import { profitDayDataset, profitSupplierDataset } from './profitReadMode.test-fixtures'
+import { cashModeDataset } from './cashReadMode.test-fixtures'
+import { settlementModeDataset } from './settlementReadMode.test-fixtures'
+import { savedNativeReportConfigurationError } from './savedNativeReport'
+import { FENIX_BUYERS_ROOT_ID } from './nativeExactFilters'
+
+const goods = { Version: 1, SourceWorld: 0, ProductKindId: '8AB2005056C0000811DEF956DA4CFDA0', IsService: false }
+
+it('drops the supplier base and reads 1C-register profit variants from GBA documents', () => {
+  const defaults = defaultDatasetRequest(profitSupplierDataset, '2026-09-01', '2026-09-30')
+  delete defaults.profitReadMode
+  const request = { ...defaults, SupplierSourceWorld: 0, ProfitReadMode: 1 }
+  expect(carriesSourceWorld(request)).toBe(true)
+  const unified = withUnifiedSource(request, profitSupplierDataset)
+  expect(Object.keys(unified).filter(key => key.toLowerCase() === 'suppliersourceworld')).toEqual([])
+  expect(Object.keys(unified).filter(key => key.toLowerCase() === 'profitreadmode')).toEqual(['profitReadMode'])
+  expect(unified.profitReadMode).toBe(0)
+  expect(carriesSourceWorld(unified)).toBe(false)
+  expect(request.SupplierSourceWorld).toBe(0)
+})
+
+it('removes the Fenix goods classification from day gross profit and keeps the organization and buyer filters', () => {
+  const request = { ...defaultDatasetRequest(profitDayDataset, '2026-09-01', '2026-09-30'), productClassification: goods,
+    sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID } }
+  expect(carriesSourceWorld(request)).toBe(true)
+  const unified = withUnifiedSource(request, profitDayDataset)
+  expect(unified).not.toHaveProperty('productClassification')
+  expect(unified.sourceBuyerSubtree).toEqual(request.sourceBuyerSubtree)
+  expect(unified.profitReadMode).toBe(0)
+})
+
+it('defaults an unmarked operational profit variant to GBA documents', () => {
+  const request = defaultDatasetRequest(profitSupplierDataset, '2026-09-01', '2026-09-30')
+  delete request.profitReadMode
+  expect(withUnifiedSource(request, profitSupplierDataset).profitReadMode).toBe(0)
+})
+
+it('reads a 1C-register cash variant from GBA documents', () => {
+  const request = { ...defaultDatasetRequest(cashModeDataset, '2026-09-01', '2026-09-30'), cashReadMode: 1 }
+  expect(carriesSourceWorld(request)).toBe(true)
+  expect(withUnifiedSource(request, cashModeDataset).cashReadMode).toBe(0)
+})
+
+it('turns AMG and 1C-register settlement variants into the unified GBA-documents request', () => {
+  const base = defaultDatasetRequest(settlementModeDataset, '2026-09-01', '2026-09-30')
+  delete base.sourceBuyerSubtree
+  const amg = { ...base, groupedSettlementPeriod: { Version: 1, SourceWorld: 'Amg', CurrencyBasis: 'SettlementCurrency' } }
+  delete amg.settlementReadMode
+  expect(carriesSourceWorld(amg)).toBe(true)
+  const unified = withUnifiedSource(amg, settlementModeDataset)
+  expect(unified.groupedSettlementPeriod).toEqual({ Version: 1, SourceWorld: 'Fenix', CurrencyBasis: 'SettlementCurrency' })
+  expect(unified.sourceBuyerSubtree).toMatchObject({ Version: 1, SourceWorld: 'fenix' })
+  expect(unified.settlementReadMode).toBe(0)
+  const settlement = defaultDatasetRequest(settlementModeDataset, '2026-09-01', '2026-09-30')
+  delete settlement.settlementReadMode
+  const registers = withUnifiedSource({ ...settlement, SettlementReadMode: 1 }, settlementModeDataset)
+  expect(Object.keys(registers).filter(key => key.toLowerCase() === 'settlementreadmode').map(key => (registers as unknown as Record<string, unknown>)[key])).toEqual([0])
+})
+
+it('refuses to run a saved variant that still carries a Fenix/AMG base without opening it first', () => {
+  const data = { ...defaultDatasetRequest(profitSupplierDataset, '2026-09-01', '2026-09-30'), supplierSourceWorld: 0 }
+  expect(savedNativeReportConfigurationError({ Id: '10000000-0000-4000-8000-000000000001', Revision: 1, Name: 'Saved', Data: data },
+    [profitSupplierDataset])).toBe(UNIFIED_SOURCE_SAVED_VARIANT_ERROR)
+})

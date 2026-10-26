@@ -15,7 +15,6 @@ import { ReportsStocksPage } from './ReportsStocksPage'
 const caller = { userNetUid: 'caller-a', csrfToken: 'csrf-a' }
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true,
   session: { userNetUid: 'caller-a', csrfToken: 'csrf-a' } }) }))
-vi.mock('./ReportCatalogueControl', () => ({ ReportCatalogueControl: () => null }))
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(),
   getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn(), saveServerReportTemplate: vi.fn(),
 }))

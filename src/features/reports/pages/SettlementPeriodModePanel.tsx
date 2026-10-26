@@ -17,7 +17,7 @@ type Props = {
   available: readonly ReportGroupingItem[]; rows: ReportGroupingItem[]; from: string; to: string
   disabled: boolean; enabled: boolean
   onModeChange: (mode: 'buyers' | 'agreement') => void
-  onGroupedChange: (value: unknown) => void; onExactChange: (value: unknown) => void
+  onExactChange: (value: unknown) => void
   onBuyerChange: (value: unknown) => void; onRowsChange: (value: ReportGroupingItem[]) => void
   onGroupsChange: (value: unknown) => void
   readMode?: unknown; onReadModeChange?: (value: 0 | 1 | undefined) => void; hideRegisterReadMode?: boolean
@@ -25,7 +25,7 @@ type Props = {
 }
 
 export function SettlementPeriodModePanel({ dataset, grouped, exact, buyer, groups, available, rows, from, to,
-  disabled, enabled, onModeChange, onGroupedChange, onExactChange, onBuyerChange, onRowsChange, onGroupsChange,
+  disabled, enabled, onModeChange, onExactChange, onBuyerChange, onRowsChange, onGroupsChange,
   readMode, onReadModeChange, hideRegisterReadMode = false, part }: Props) {
   const { t } = useI18n()
   if (!dataset || !isSettlementPeriodDataset(dataset)) return null
@@ -33,7 +33,6 @@ export function SettlementPeriodModePanel({ dataset, grouped, exact, buyer, grou
   const selector = groupedSettlementPeriod(grouped)
   const isGroup = grouped != null
   const explicitSource = readMode != null
-  const worlds = [{ value: 'Fenix', label: 'Fenix' }, ...(hideRegisterReadMode && selector?.SourceWorld !== 'Amg' ? [] : [{ value: 'Amg', label: 'AMG' }])]
   const lockedSource = hideRegisterReadMode && explicitSource
   const shows = (name: 'source' | 'filters' | 'form') => part === undefined || part === name
   if (part === 'form' && !(isGroup && supported)) return null
@@ -46,14 +45,6 @@ export function SettlementPeriodModePanel({ dataset, grouped, exact, buyer, grou
     {isGroup && supported ? <>
       {shows('source') && onReadModeChange && <SettlementReadModeSelect capability={dataset.settlementReadMode} value={readMode}
         disabled={disabled} hideRegister={hideRegisterReadMode} onChange={onReadModeChange} />}
-      {shows('source') && !(lockedSource && worlds.length <= 1) && <Select label={t('База взаєморозрахунків')} disabled={disabled || explicitSource} allowDeselect={false}
-        value={selector?.SourceWorld ?? null} data={worlds}
-        onChange={world => {
-          if (world !== 'Fenix' && world !== 'Amg') return
-          onGroupedChange({ Version: 1, SourceWorld: world, CurrencyBasis: 'SettlementCurrency' })
-          onBuyerChange(world === 'Fenix' ? defaultGroupedSettlementBuyer() : undefined)
-          if (world === 'Amg') onGroupsChange(undefined)
-        }} />}
       {shows('form') && <Select label={<Group component="span" gap={6} wrap="nowrap"><ArrowLeftRight size={16} aria-hidden="true" />{t('Форма взаєморозрахунків')}</Group>} disabled={disabled} allowDeselect={false}
         value={rows.map(row => row.type).join(',')} data={[
           { value: '4,41,76', label: t('Організація → валюта → контрагент') },

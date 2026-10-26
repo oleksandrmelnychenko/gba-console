@@ -21,7 +21,6 @@ vi.mock('../api/reportPresentationCurrencies', () => ({ getReportPresentationCur
 let owner = 'draft-owner-a'
 let allowed = true
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ user: { NetUid: owner }, hasPermission: () => allowed }) }))
-vi.mock('./ReportCatalogueControl', () => ({ ReportCatalogueControl: () => null }))
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(),
   getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn(), saveServerReportTemplate: vi.fn(),
 }))
@@ -109,7 +108,7 @@ describe('constructor draft recovery', () => {
     expect(saveServerReportTemplate).not.toHaveBeenCalled()
   })
 
-  it.each(['old-metadata', 'unsupported-mode'])('refuses a currency draft on %s without dropping it', async reason => {
+  it.each(['old-metadata'])('refuses a currency draft on %s without dropping it', async reason => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, reason === 'old-metadata' ? documentDataset : currencyDataset])
     const { raw } = stageFinancial([3], [4], reason === 'unsupported-mode' ? 1 : 0, true)
     await restored()
@@ -138,7 +137,22 @@ describe('constructor draft recovery', () => {
     expect(saveServerReportTemplate).not.toHaveBeenCalled()
   })
 
-  it.each(['missing-capability', 'unsupported-mode'])('refuses a stored document draft on %s without rewriting it', async reason => {
+  it('restores a 1C-registers financial draft on current GBA documents', async () => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, documentDataset])
+    const { data } = stageFinancial([81], [5], 1)
+    await restored()
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Відновити чернетку' })).toBeNull())
+    for (const field of [...data.sorted.Row, ...data.sorted.Col]) expect(screen.getByRole('button', { name: `Видалити ${field.label}` })).toBeTruthy()
+    changeReportPeriod({ from: '2026-10-18' })
+    await waitFor(() => {
+      const stored = JSON.parse(sessionStorage.getItem(reportWorkspaceDraftKey(owner))!)
+      expect(stored.snapshot.data.profitReadMode).toBe(0)
+      expect(stored.snapshot.data.sorted).toEqual(data.sorted)
+    })
+    expect(createStockReport).not.toHaveBeenCalled()
+  })
+
+  it.each(['missing-capability'])('refuses a stored document draft on %s without rewriting it', async reason => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, reason === 'missing-capability' ? productTimeDataset : documentDataset])
     const { raw } = stageFinancial([81], [5], reason === 'unsupported-mode' ? 1 : 0)
     await restored()

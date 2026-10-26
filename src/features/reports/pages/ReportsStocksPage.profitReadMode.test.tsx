@@ -6,7 +6,7 @@ import { createStockReport, searchDatasetReportValues } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
 import { reportDatasets } from '../data/reportDatasets.test-fixtures'
 import { profitDayDataset, profitSupplierDataset } from '../data/profitReadMode.test-fixtures'
-import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from '../data/dayOrganizationGrossProfit'
+import { DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from '../data/dayOrganizationGrossProfit'
 import { FENIX_BUYERS_ROOT_ID } from '../data/nativeExactFilters'
 import { ReportsStocksPage } from './ReportsStocksPage'
 import { WORKBOOK_FILES } from '../testing/workbookFiles'
@@ -51,47 +51,32 @@ it.each(['Валовий прибуток за днем', 'Валовий при
   expect(current.profitReadMode).toBe(0)
   expect(current.dataSource === 35 ? current.dayOrganizationBasis : current.supplierBasis).toBe(0)
   if (current.dataSource === 35) {
-    expect(current).toMatchObject({ productClassification: { ProductKindId: DAY_ORGANIZATION_GOODS_KIND_ID, IsService: false },
+    expect(current).not.toHaveProperty('productClassification')
+    expect(current).toMatchObject({
       sourceOrganizations: { OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] }, sourceBuyerSubtree: { BuyerRootId: FENIX_BUYERS_ROOT_ID },
       workbookPresentation: { version: 1, additionalFields: [2, 3], ordering: 'MonthAscending' } })
-    for (const label of ['Товар без послуг (Fenix)', 'Організації зі збереженого налаштування 1С', 'Група «Покупці» Fenix'])
+    for (const label of ['Організації книги ВП', 'Група «Покупці»'])
       expect((screen.getByRole('checkbox', { name: label }) as HTMLInputElement).checked).toBe(true)
+    expect(screen.queryByRole('checkbox', { name: 'Товар без послуг (Fenix)' })).toBeNull()
   } else {
     expect(current.workbookPresentation).toBeUndefined()
     expect(current.supplierSourceWorld).toBeUndefined()
-    expect((screen.getByRole('combobox', { name: 'База продажів для прибутку за постачальниками' }) as HTMLInputElement).value).toBe('Усі документи, включно з GBA')
+    expect(screen.queryByRole('combobox', { name: 'База продажів для прибутку за постачальниками' })).toBeNull()
     expect(current.sorted.Row.map(row => row.type)).toEqual([78, 4, 21])
   }
   mode('Збережені регістри 1С')
   expect(screen.queryByRole('dialog')).toBeNull()
-  const original = await submitted(view, 2)
-  expect(original.profitReadMode).toBe(1)
-  if (original.dataSource === 38) expect(original.supplierSourceWorld).toBe(0)
+  await act(async () => { fireEvent.submit(view.container.querySelector('form')!) })
+  expect(createStockReport).toHaveBeenCalledTimes(1)
   mode('За налаштуваннями звіту')
   expect(source()).toBe('За налаштуваннями звіту')
-  const unmarked = await submitted(view, 3)
+  const unmarked = await submitted(view, 2)
   expect(Object.hasOwn(unmarked, 'profitReadMode')).toBe(false)
 })
 it('hides current opt-in without a confirmed capability', async () => {
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, { ...profitDayDataset, profitReadMode: undefined }])
   await openWorkbook('Валовий прибуток за днем')
   expect(screen.queryByRole('combobox', { name: 'Джерело розрахунку' })).toBeNull()
-})
-
-it('uses the complete legacy Fenix scope for the date picker after opting out of an explicit read mode', async () => {
-  const period = { required: true, supported: true, maximumDays: 31, maximumMonths: null, minimumDate: null, maximumDate: '2030-12-31' }
-  const configuration = { version: 1, axisMode: 'profitRows', allowedRows: [3, 4], allowedColumns: [], minimumRows: 1,
-    maximumRows: 2, allowRowReorder: true, rowLayouts: [], columnLayouts: [[]], mutuallyExclusiveRows: [], period,
-    variants: [{ key: 'originalNormal', period: { ...period, maximumDays: null, maximumMonths: 120, maximumDate: '2099-12-31' } }] }
-  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, { ...profitDayDataset, configuration }])
-  await openWorkbook('Валовий прибуток за днем')
-  mode('За налаштуваннями звіту')
-  fireEvent.click(screen.getByRole('button', { name: /^Період:/ }))
-  expect(screen.getByLabelText('До').getAttribute('max')).toBe('2099-12-31')
-  fireEvent.click(screen.getByRole('button', { name: 'Скасувати' }))
-  fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці» Fenix' }))
-  fireEvent.click(screen.getByRole('button', { name: /^Період:/ }))
-  expect(screen.getByLabelText('До').getAttribute('max')).toBe('2030-12-31')
 })
 
 it('selects client/agreement axes and blocks a mode switch without dropping dates, filters or groupings', async () => {

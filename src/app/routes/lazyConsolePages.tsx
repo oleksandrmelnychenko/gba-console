@@ -132,4 +132,3 @@ export const HeadDashboardPage = lazy(() => import('../../features/sales-cockpit
 export const SalesGeographyPage = lazy(() => import('../../features/sales-geography').then((module) => ({ default: module.SalesGeographyPage })))
 export const AssortmentDashboardPage = lazy(() => import('../../features/assortment').then((module) => ({ default: module.AssortmentDashboardPage })))
 
-export const SourceRegisterReportsPage = lazy(() => import('../../features/source-register-reports/SourceRegisterReportsPage').then(module => ({ default: module.SourceRegisterReportsPage })))

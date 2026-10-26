@@ -1,0 +1,43 @@
+import type { ReportDataset, ReportRequestBody } from '../types'
+import { isProfitReadModeCapability, requestProfitReadMode, withDefaultProfitReadMode } from './profitReadMode'
+import { isSettlementReadModeCapability, requestSettlementReadMode } from './settlementReadMode'
+import { isCashReadModeCapability, requestCashReadMode } from './cashReadMode'
+import { defaultGroupedSettlementBuyer, groupedSettlementPeriod, requestGroupedSettlementPeriod } from './groupedSettlementPeriod'
+import { requestGroupedCashPeriod } from './groupedCashPeriod'
+import { requestSourceBuyerSubtree } from './nativeExactFilters'
+
+export const UNIFIED_SOURCE_SAVED_VARIANT_ERROR = 'Шаблон збережено з вибором бази Fenix/AMG або регістрів 1С. Відкрийте його у формі (буде застосовано дані GBA) і збережіть повторно.'
+
+const keysOf = (value: object, name: string) => Object.keys(value).filter(key => key.toLowerCase() === name.toLowerCase())
+
+function replaced(data: ReportRequestBody, name: string, value?: unknown): ReportRequestBody {
+  const next: Record<string, unknown> = { ...data }
+  for (const key of keysOf(data, name)) delete next[key]
+  if (value !== undefined) next[name] = value
+  return next as ReportRequestBody
+}
+
+export function carriesSourceWorld(data: ReportRequestBody): boolean {
+  return keysOf(data, 'supplierSourceWorld').length > 0
+    || data.dataSource === 35 && keysOf(data, 'productClassification').some(key => (data as Record<string, unknown>)[key] != null)
+    || requestProfitReadMode(data) === 1 || requestSettlementReadMode(data) === 1 || requestCashReadMode(data) === 1
+    || groupedSettlementPeriod(requestGroupedSettlementPeriod(data))?.SourceWorld === 'Amg'
+}
+
+export function withUnifiedSource(data: ReportRequestBody, dataset?: ReportDataset): ReportRequestBody {
+  let result = replaced(data, 'supplierSourceWorld')
+  if (result.dataSource === 35) result = replaced(result, 'productClassification')
+  if (!dataset || dataset.DataSource !== result.dataSource) return result
+  if ((result.dataSource === 35 || result.dataSource === 38) && isProfitReadModeCapability(dataset.profitReadMode)
+    && requestProfitReadMode(result) === 1) result = replaced(result, 'profitReadMode', 0)
+  if (result.dataSource === 40 && isCashReadModeCapability(dataset.cashReadMode) && requestGroupedCashPeriod(result) != null
+    && requestCashReadMode(result) === 1) result = replaced(result, 'cashReadMode', 0)
+  const grouped = groupedSettlementPeriod(requestGroupedSettlementPeriod(result))
+  if (result.dataSource === 41 && grouped && isSettlementReadModeCapability(dataset.settlementReadMode)
+    && (grouped.SourceWorld !== 'Fenix' || requestSettlementReadMode(result) === 1)) {
+    result = replaced(result, 'groupedSettlementPeriod', { ...grouped, SourceWorld: 'Fenix' })
+    if (requestSourceBuyerSubtree(result) == null) result = replaced(result, 'sourceBuyerSubtree', defaultGroupedSettlementBuyer())
+    result = replaced(result, 'settlementReadMode', 0)
+  }
+  return withDefaultProfitReadMode(result, dataset)
+}

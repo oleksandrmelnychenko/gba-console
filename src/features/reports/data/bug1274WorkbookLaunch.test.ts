@@ -12,7 +12,7 @@ import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { profitDayDataset, profitSupplierDataset } from './profitReadMode.test-fixtures'
 import { cashModeDataset } from './cashReadMode.test-fixtures'
 import { settlementModeDataset } from './settlementReadMode.test-fixtures'
-import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from './dayOrganizationGrossProfit'
+import { DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from './dayOrganizationGrossProfit'
 import { groupCapability } from './sourceCounterpartyGroups.test-fixtures'
 import { SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS } from './sourceCounterpartyGroups'
 import { BUG_1274_AMG_PARITY_NOTICE, DAY_WORKBOOK_FILTERS_NOTICE, DEBTOR_WORKBOOK_CURRENCY_NOTICE, SETTLEMENT_WORKBOOK_CURRENCY_NOTICE,
@@ -186,11 +186,11 @@ const currentDayDataset: ReportDataset = { ...dayDataset,
 const dayDefaults = () => defaultDatasetRequest(currentDayDataset, '2026-09-01', '2026-09-30')
 const dayLaunch = (dataset = currentDayDataset): WorkbookLaunch => ({ fileName: 'ВП.xls', label: '', notice: '', dataset })
 
-it('opens the day workbook with its three exact retained filters and keeps the ordinary request detached', () => {
+it('opens the day workbook with its organization and buyer-group filters, without the Fenix goods filter, and keeps the ordinary request detached', () => {
   const request = dayDefaults(), before = structuredClone(request)
   const result = bug1274WorkbookRequest(request, dayLaunch())
+  expect(result).not.toHaveProperty('productClassification')
   expect(result).toMatchObject({ dataSource: 35, from: '2026-09-01', to: '2026-09-30', dayOrganizationBasis: 0,
-    productClassification: { Version: 1, SourceWorld: 0, ProductKindId: DAY_ORGANIZATION_GOODS_KIND_ID, IsService: false },
     sourceOrganizations: { Version: 1, SourceWorld: 'fenix', OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
     sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID } })
   expect(result.sorted).toEqual(request.sorted)
@@ -204,7 +204,7 @@ it('opens the day workbook with its three exact retained filters and keeps the o
   expect(DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS).not.toContain(DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS[0])
 })
 
-it.each(['productClassification', 'sourceOrganizations', 'sourceBuyerSubtree'] as const)(
+it.each(['sourceOrganizations', 'sourceBuyerSubtree'] as const)(
   'preserves an explicit %s scope including saved aliases, null and undefined', field => {
     for (const key of [field, field[0].toUpperCase() + field.slice(1)]) {
       for (const value of [null, undefined, { Version: 9, UserChoice: 'Keep this exact saved scope' }]) {
@@ -231,7 +231,7 @@ it('keeps an active native organization selection and admits only inactive selec
 it('does not infer workbook filters for an old or malformed server, an explicit legacy basis or another launch', () => {
   const request = dayDefaults()
   for (const dataset of [{ ...currentDayDataset, dayOrganizationBasis: undefined },
-    { ...currentDayDataset, productClassification: undefined }, { ...currentDayDataset, sourceOrganizations: undefined },
+    { ...currentDayDataset, sourceOrganizations: undefined },
     { ...currentDayDataset, sourceBuyerSubtree: undefined },
     { ...currentDayDataset, sourceBuyerSubtree: { ...(currentDayDataset.sourceBuyerSubtree as object), BuyerRootId: '1'.repeat(32) } }]) {
     expect(bug1274WorkbookRequest(request, dayLaunch(dataset))).toBe(request)
@@ -261,8 +261,8 @@ it('opens every workbook with an advertised source on current GBA documents and 
     expect(launch.notice).not.toContain('«Збережені регістри 1С»')
   }
   const current = bug1274WorkbookRequest(defaultDatasetRequest(profitDayDataset, day, day), launches[0])
+  expect(current).not.toHaveProperty('productClassification')
   expect(current).toMatchObject({ profitReadMode: 0, dayOrganizationBasis: 0,
-    productClassification: { Version: 1, SourceWorld: 0, ProductKindId: DAY_ORGANIZATION_GOODS_KIND_ID, IsService: false },
     sourceOrganizations: { Version: 1, SourceWorld: 'fenix', OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
     sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID },
     workbookPresentation: { version: 1, additionalFields: [2, 3], ordering: 'MonthAscending' } })
@@ -276,7 +276,7 @@ it('opens every workbook with an advertised source on current GBA documents and 
   expect(original).toMatchObject({ profitReadMode: 1, dayOrganizationBasis: 0,
     sourceOrganizations: { OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
     workbookPresentation: { version: 1, additionalFields: [2, 3], ordering: 'MonthAscending' } })
-  expect(datasetConfigurationError(original, profitDayDataset)).toBeNull()
+  expect(datasetConfigurationError(original, profitDayDataset)).toContain('регістрів 1С')
   for (const launch of launches.slice(2)) {
     const explicit = { ...defaultDatasetRequest(launch.dataset, day, day), ...(launch.dataset.DataSource === 40 ? { cashReadMode: 1 } : { settlementReadMode: 1 }) }
     expect(mode(bug1274WorkbookRequest(explicit, launch))).toBe(1)
