@@ -109,6 +109,7 @@ export type OutcomePaymentOrder = EntityFields & {
   FromDate?: string
   IsAccounting?: boolean
   IsCanceled?: boolean
+  IsImportLocked?: boolean
   IsManagementAccounting?: boolean
   IsUnderReport?: boolean
   IsUnderReportDone?: boolean

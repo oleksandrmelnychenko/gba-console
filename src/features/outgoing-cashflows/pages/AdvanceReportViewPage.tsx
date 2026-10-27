@@ -22,6 +22,7 @@ import { TableChip } from '../../../shared/ui/TableChip'
 import { DocumentDetailLayout, DocumentDetailSummary, DocumentDetailSection as AdvanceReportDetailSection, DocumentDetailRow as AdvanceReportDetailRow } from '../../../shared/ui/document-detail/DocumentDetail'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
+import { getImportedDocumentLockReason } from '../../../shared/accounting/importedDocumentLock'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useAuth } from '../../auth/useAuth'
@@ -163,7 +164,8 @@ function useAdvanceReportViewModel() {
   const currencyCode = order?.PaymentCurrencyRegister?.Currency?.Code || order?.PaymentCurrencyRegister?.Currency?.Name
   const headerTitle = useMemo(() => buildHeaderTitle(order, t), [order, t])
   const reportTitle = useMemo(() => buildReportTitle(order, t), [order, t])
-  const canEdit = hasPermission(PermissionKeys.AdvancedReports.Report.Edit)
+  const importLockReason = getImportedDocumentLockReason(order, t)
+  const canEdit = hasPermission(PermissionKeys.AdvancedReports.Report.Edit) && !importLockReason
   const ensureEditPermission = useCallback(() => {
     if (hasPermission(PermissionKeys.AdvancedReports.Report.Edit)) {
       return true
@@ -452,6 +454,7 @@ function useAdvanceReportViewModel() {
     addConsumableOrder,
     addFueling,
     canEdit,
+    importLockReason,
     canAppendRows,
     canSave,
     confirmLeave,
@@ -562,6 +565,12 @@ function AdvanceReportViewPageContent() {
         {model.error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {model.error}
+          </Alert>
+        )}
+
+        {model.importLockReason && (
+          <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
+            {model.importLockReason}
           </Alert>
         )}
 

@@ -135,6 +135,7 @@ export type PaymentRegisterTransfer = EntityFields & {
   FromPaymentCurrencyRegister?: PaymentCurrencyRegister | null
   FromPaymentCurrencyRegisterId?: number
   IsCanceled?: boolean
+  IsImportLocked?: boolean
   IsUpdated?: boolean
   Number?: number | string
   PaymentMovementOperation?: PaymentMovementOperation | null

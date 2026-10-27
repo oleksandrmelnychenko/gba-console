@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { IMPORTED_DOCUMENT_LOCK_REASON } from '../../../shared/accounting/importedDocumentLock'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
@@ -180,6 +181,32 @@ describe('outgoing cashflows permissions', () => {
     renderPage()
 
     expect(await screen.findByText('Недостатньо прав для цієї дії.')).toBeTruthy()
+  })
+
+  it('explains the 1C import lock instead of offering cancel or report edit', async () => {
+    allowedPermissions.add(PermissionKeys.SystemPages.OutgoingCashflows.View)
+    allowedPermissions.add(PermissionKeys.OutgoingCashflows.Order.Cancel)
+    allowedPermissions.add(PermissionKeys.AdvancedReports.Report.Open)
+    vi.mocked(getOutgoingCashflows).mockResolvedValue({
+      Collection: [{
+        IsImportLocked: true,
+        IsUnderReport: true,
+        NetUid: 'order-1',
+        Number: 'К0000002147',
+      }],
+      NegativeDifferenceAmount: 0,
+      PositiveDifferenceAmount: 0,
+    })
+    renderPage()
+
+    const cancel = await screen.findByRole('button', { name: 'Скасувати' })
+    const edit = screen.getByRole('button', { name: 'Редагувати звіт' })
+    expect((cancel as HTMLButtonElement).disabled).toBe(true)
+    expect((edit as HTMLButtonElement).disabled).toBe(true)
+    expect(cancel.getAttribute('title')).toBe(IMPORTED_DOCUMENT_LOCK_REASON)
+    expect(edit.getAttribute('title')).toBe(IMPORTED_DOCUMENT_LOCK_REASON)
+    fireEvent.click(cancel)
+    expect(cancelOutgoingCashflow).not.toHaveBeenCalled()
   })
 
   it('rechecks order.cancel after confirmation was opened', async () => {

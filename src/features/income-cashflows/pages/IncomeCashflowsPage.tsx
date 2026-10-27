@@ -64,6 +64,7 @@ import {
   INCOME_CASHFLOWS_PAGE_PERMISSION,
   INCOME_CASHFLOWS_REASSIGN_CLIENT_PERMISSION,
 } from '../permissions'
+import { getImportedDocumentLockReason } from '../../../shared/accounting/importedDocumentLock'
 import '../../../shared/ui/console-table-page.css'
 import './income-cashflows-page.css'
 import './income-cashflow-detail.css'
@@ -1049,17 +1050,26 @@ function useIncomeCashflowColumns({
         enableHiding: false,
         enablePinning: false,
         enableReorder: false,
-        cell: (row) =>
-          canReassign && isClientPaymentReassignable(row.income) ? (
+        cell: (row) => {
+          if (!canReassign || !isClientPaymentReassignable(row.income)) {
+            return null
+          }
+
+          const reassignUnavailableReason = getImportedDocumentLockReason(row.income, t)
+
+          return (
             <TableRowAction
               action="reassign"
+              disabled={Boolean(reassignUnavailableReason)}
+              hint={reassignUnavailableReason || undefined}
               label={t('Переназначити клієнта')}
               onClick={(event) => {
                 event.stopPropagation()
                 onReassign(row)
               }}
             />
-          ) : null,
+          )
+        },
       },
       {
         id: 'cancel',
@@ -1816,6 +1826,11 @@ function getIncomeCancelUnavailableReason(income: IncomePaymentOrder, t: (key: s
 
   if (!income.NetUid) {
     return t('Документ недоступний для скасування')
+  }
+
+  const importedLockReason = getImportedDocumentLockReason(income, t)
+  if (importedLockReason) {
+    return importedLockReason
   }
 
   if (!isSameLocalDate(income.Created, new Date())) {

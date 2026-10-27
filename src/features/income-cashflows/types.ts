@@ -265,6 +265,7 @@ export type IncomePaymentOrder = EntityFields & {
   FromDate?: string
   IsAccounting?: boolean
   IsCanceled?: boolean
+  IsImportLocked?: boolean
   IsManagementAccounting?: boolean
   IncomePaymentOrderType?: IncomePaymentOrderType
   IncomePaymentOrderSales?: IncomePaymentOrderSale[]

@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import type { ReactNode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { IMPORTED_DOCUMENT_LOCK_REASON } from '../../../shared/accounting/importedDocumentLock'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import {
@@ -156,6 +157,23 @@ describe('Income cashflows canonical permission guards', () => {
     expect(await screen.findByLabelText('Скасувати')).toBeTruthy()
     expect(screen.queryByLabelText('Деталі')).toBeNull()
     expect(screen.queryByLabelText('Переназначити клієнта')).toBeNull()
+  })
+
+  it('explains the 1C import lock instead of offering cancel or reassignment', async () => {
+    allowedPermissions.add(pagePermission)
+    allowedPermissions.add(incomePermissions.Order.Cancel)
+    allowedPermissions.add(incomePermissions.Order.ReassignClient)
+    vi.mocked(getIncomeCashflows).mockResolvedValue([{ ...incomeOrder, IsImportLocked: true }])
+    renderPage()
+
+    const cancel = await screen.findByLabelText('Скасувати')
+    const reassign = screen.getByLabelText('Переназначити клієнта')
+    expect((cancel as HTMLButtonElement).disabled).toBe(true)
+    expect((reassign as HTMLButtonElement).disabled).toBe(true)
+    expect(cancel.getAttribute('title')).toBe(IMPORTED_DOCUMENT_LOCK_REASON)
+    expect(reassign.getAttribute('title')).toBe(IMPORTED_DOCUMENT_LOCK_REASON)
+    fireEvent.click(cancel)
+    expect(cancelIncomeCashflow).not.toHaveBeenCalled()
   })
 
   it('loads the exact registry with page permission without a foreign payments denial', async () => {

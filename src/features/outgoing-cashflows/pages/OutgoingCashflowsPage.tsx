@@ -69,6 +69,7 @@ import type {
   PaymentMovement,
   PaymentRegister,
 } from '../types'
+import { getImportedDocumentLockReason } from '../../../shared/accounting/importedDocumentLock'
 import '../../../shared/ui/console-table-page.css'
 import './outgoing-cashflows-page.css'
 import './outgoing-cashflow-detail.css'
@@ -1027,7 +1028,8 @@ function useOutgoingCashflowColumns({
             {canOpenReport && row.isUnderReport && (
               <TableRowAction
                 action="edit"
-                disabled={!row.order.NetUid}
+                disabled={!row.order.NetUid || Boolean(getImportedDocumentLockReason(row.order, t))}
+                hint={getImportedDocumentLockReason(row.order, t) ?? undefined}
                 label={t('Редагувати звіт')}
                 onClick={() => onEditReport(row)}
               />
@@ -1035,8 +1037,8 @@ function useOutgoingCashflowColumns({
             {canCancel && (
               <TableRowAction
                 action="cancel"
-                disabled={row.isCanceled || !row.order.NetUid}
-                hint={row.isCanceled ? t('Уже скасовано') : undefined}
+                disabled={row.isCanceled || !row.order.NetUid || Boolean(getImportedDocumentLockReason(row.order, t))}
+                hint={row.isCanceled ? t('Уже скасовано') : getImportedDocumentLockReason(row.order, t) ?? undefined}
                 label={t('Скасувати')}
                 onClick={() => onCancel(row)}
               />

@@ -7,6 +7,7 @@ import { TableChip } from '../../../shared/ui/TableChip'
 import {
   Alert,
   Badge,
+  Box,
   Button,
   Card,
   Checkbox,
@@ -18,6 +19,7 @@ import {
   Tabs,
   Text,
   TextInput,
+  Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import {
@@ -91,6 +93,7 @@ import type {
 import { PaymentRegisterTransferType, PaymentRegisterType, TransferOperationType } from '../types'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import { PAYMENT_BALANCE_SOURCE_NOTE } from '../balanceSource'
+import { getTransferCancelUnavailableReason } from '../transferCancelPolicy'
 import './payment-accounts-page.css'
 
 type LocationState = {
@@ -2295,19 +2298,29 @@ function getTransferColumns(
       rowActions: true,
       width: 116,
       minWidth: 116,
-      cell: (transfer) => (
-        <Button
-          color="red"
-          disabled={Boolean(transfer.IsCanceled) || !getEntityValue(transfer)}
-          leftSection={<X size={14} />}
-          size="xs"
-          type="button"
-          variant="light"
-          onClick={() => onCancel(transfer)}
-        >
-          {t('Скасувати')}
-        </Button>
-      ),
+      cell: (transfer) => {
+        const cancelUnavailableReason = getEntityValue(transfer)
+          ? getTransferCancelUnavailableReason(transfer, t)
+          : t('Документ недоступний для скасування')
+
+        return (
+          <Tooltip disabled={!cancelUnavailableReason} label={cancelUnavailableReason || ''}>
+            <Box component="span">
+              <Button
+                color="red"
+                disabled={Boolean(cancelUnavailableReason)}
+                leftSection={<X size={14} />}
+                size="xs"
+                type="button"
+                variant="light"
+                onClick={() => onCancel(transfer)}
+              >
+                {t('Скасувати')}
+              </Button>
+            </Box>
+          </Tooltip>
+        )
+      },
     })
   }
 
