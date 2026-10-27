@@ -142,11 +142,15 @@ export type CalculatedProductPrice = {
   RetailPriceLocal?: number
 }
 
+export type ProductSourcePriceOwner = 'gba' | '1c'
+
 export type ProductSourcePrice = {
   BasePriceEur?: number | null
   ExtraChargePercent?: number | null
   ForVat?: boolean
+  FromOtherWorld?: boolean
   IsCalculated?: boolean
+  Owner?: ProductSourcePriceOwner | string | null
   PriceEur?: number | null
   PriceLocal?: number | null
   PricingName?: string
@@ -157,6 +161,7 @@ export type ProductSourcePriceSet = {
   ErrorCode?: string | null
   IsAvailable?: boolean
   IsLinked?: boolean
+  IsNative?: boolean
   Prices?: ProductSourcePrice[]
   ProductCode?: number | null
   Source?: 'amg' | 'fenix' | string

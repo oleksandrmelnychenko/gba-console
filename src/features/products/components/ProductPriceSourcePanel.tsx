@@ -88,6 +88,7 @@ export function ProductPriceSourcePanel({
             currencyCode={currentComparison?.LocalCurrencyCode || 'UAH'}
             effectiveOrder={effectiveOrder}
             label={viewMode === 'amg' ? 'AMG' : t('Контех')}
+            otherLabel={viewMode === 'amg' ? t('Контех') : 'AMG'}
             source={viewMode === 'amg' ? currentComparison?.Amg : currentComparison?.Fenix}
           />
         )}
@@ -100,16 +101,18 @@ function SourcePricesView({
   currencyCode,
   effectiveOrder,
   label,
+  otherLabel,
   source,
 }: {
   currencyCode: string
   effectiveOrder: Map<string, number>
   label: string
+  otherLabel: string
   source?: ProductSourcePriceSet | null
 }) {
   const { t } = useI18n()
 
-  if (!source?.IsLinked) {
+  if (!source?.IsLinked && !source?.IsNative) {
     return <SourceState color="gray" text={t('Товар не прив’язаний до джерела')} />
   }
 
@@ -126,25 +129,32 @@ function SourcePricesView({
       <PriceHeader localCurrencyCode={currencyCode} />
       <Stack className="product-price-source-list" gap={2}>
         {prices.length > 0 ? (
-          prices.map((price) => <SourcePriceRow key={price.PricingName} price={price} />)
+          prices.map((price) => <SourcePriceRow key={price.PricingName} otherLabel={otherLabel} price={price} />)
         ) : (
-          <Text c="gray.8" size="sm">{t('Цін не знайдено')}</Text>
+          <Text c="gray.8" size="sm">{source.IsNative ? t('Ціни ще не задано') : t('Цін не знайдено')}</Text>
         )}
       </Stack>
     </>
   )
 }
 
-function SourcePriceRow({ price }: { price: ProductSourcePrice }) {
+function SourcePriceRow({ otherLabel, price }: { otherLabel: string; price: ProductSourcePrice }) {
   const { t } = useI18n()
   const showDetails = price.IsCalculated || (
     typeof price.BasePriceEur === 'number' && price.BasePriceEur !== price.PriceEur
   )
+  const owner = price.Owner === 'gba' ? 'GBA' : price.Owner === '1c' ? '1С' : null
 
   return (
     <Box className="product-inline-price-row">
       <Group gap="sm" wrap="nowrap">
         <Text lineClamp={1} size="sm" style={{ flex: 1, minWidth: 0 }}>{price.PricingName || '-'}</Text>
+        {owner || price.FromOtherWorld ? (
+          <Group className="product-price-source-owner" gap={4} wrap="nowrap" style={{ flexShrink: 0 }}>
+            {owner ? <TableChip tone={price.Owner === 'gba' ? 'product' : 'source'} value={owner} /> : null}
+            {price.FromOtherWorld ? <TableChip tone="warning" value={t('з {source}', { source: otherLabel })} /> : null}
+          </Group>
+        ) : null}
         <PriceValue value={price.PriceEur} />
         <PriceValue value={price.PriceLocal} />
       </Group>

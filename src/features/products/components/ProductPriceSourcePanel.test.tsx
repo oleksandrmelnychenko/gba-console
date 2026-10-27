@@ -197,6 +197,45 @@ describe('ProductPriceSourcePanel', () => {
       'ЦО2 (НДС)',
     ])
   })
+
+  it('shows a GBA product its own prices instead of the unlinked notice', async () => {
+    getProductSourcePriceComparison.mockResolvedValue({
+      Amg: {
+        IsAvailable: true,
+        IsLinked: true,
+        IsNative: true,
+        Prices: [
+          { Owner: 'gba', PriceEur: 7, PricingName: 'ЦР' },
+          { FromOtherWorld: true, Owner: '1c', PriceEur: 9, PricingName: 'ЦО1' },
+        ],
+      },
+      Fenix: { IsAvailable: true, IsLinked: true, IsNative: true, Prices: [] },
+      LocalCurrencyCode: 'UAH',
+      ProductNetId: 'product-source-panel-native',
+    })
+
+    const view = renderPanel('product-source-panel-native')
+
+    expect(await view.findByText('7,00')).toBeTruthy()
+    expect(view.queryByText('Товар не прив’язаний до джерела')).toBeNull()
+    expect(view.getByText('GBA')).toBeTruthy()
+    expect(view.getByText('1С')).toBeTruthy()
+    expect(view.getByText('з Контех')).toBeTruthy()
+    fireEvent.click(view.getByRole('radio', { name: 'Контех' }))
+    expect(await view.findByText('Ціни ще не задано')).toBeTruthy()
+  })
+
+  it('keeps the unlinked notice for an older server without native sets', async () => {
+    getProductSourcePriceComparison.mockResolvedValue({
+      Amg: { IsAvailable: false, IsLinked: false },
+      Fenix: { IsAvailable: false, IsLinked: false },
+      ProductNetId: 'product-source-panel-unlinked',
+    })
+
+    const view = renderPanel('product-source-panel-unlinked')
+
+    expect(await view.findByText('Товар не прив’язаний до джерела')).toBeTruthy()
+  })
 })
 
 function renderPanel(productNetId: string, refreshKey = 0) {
