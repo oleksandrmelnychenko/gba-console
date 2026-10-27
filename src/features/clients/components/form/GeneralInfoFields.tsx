@@ -19,8 +19,10 @@ import {
 import { Plus, Trash2, Upload, X } from 'lucide-react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
+import { RegionManualEditNote } from './RegionManualEditNote'
 import type {
   Client,
+  ClientRegionManualEdit,
   ClientContractDocument,
   Country,
   Incoterm,
@@ -58,6 +60,7 @@ export type GeneralInfoFieldsProps = {
   sourceManaged?: boolean
   sourceStructureManaged?: boolean
   regionCodeError?: string
+  regionManualEdit?: ClientRegionManualEdit | null
   onChange: <K extends keyof Client>(key: K, value: Client[K]) => void
   onRegionChange: (region: Region | null) => void
   onRegionCodeFieldChange: (key: 'Value' | 'City' | 'District', value: string) => void
@@ -150,6 +153,7 @@ function BuyerInformationSummary(props: GeneralInfoFieldsProps) {
               </div>
             ))}
           </dl>
+          {section.title === 'Регіон' && <RegionManualEditNote edit={props.regionManualEdit} />}
         </section>
       ))}
       <section className="client-info-section">
@@ -434,6 +438,7 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
                 onChange={(event) => props.onRegionCodeFieldChange('District', event.currentTarget.value)}
               />
             </SimpleGrid>
+            <RegionManualEditNote edit={props.regionManualEdit} />
           </Stack>
         </Card>
       )}

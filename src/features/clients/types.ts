@@ -353,6 +353,14 @@ export type ClientIdentityAttentionCandidate = {
   SourceSystems: string[]
 }
 
+export type ClientRegionManualEdit = {
+  ClientId: number
+  EditedByName?: string | null
+  EditedAtUtc: string
+  Source: number | string
+  RegionCodeValue?: string | null
+}
+
 export type ClientIdentityAttentionSummary = {
   ClientNetUid: string
   AsOfUtc: string

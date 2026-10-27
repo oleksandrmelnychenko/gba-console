@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
-import type { Client, ClientCommercialCard, ClientCommercialStructure } from '../types'
+import type { Client, ClientCommercialCard, ClientCommercialStructure, ClientRegionManualEdit } from '../types'
 import { ClientEditPage } from './ClientEditPage'
 
 const ROOT_NET_UID = '11111111-1111-4111-8111-111111111111'
@@ -16,6 +16,7 @@ const apiMocks = vi.hoisted(() => ({
   getClientForRegistryById: vi.fn(),
   getClientCommercialStructureForRegistry: vi.fn(),
   getClientIdentityAttention: vi.fn(),
+  getClientRegionManualEdit: vi.fn(),
   updateClient: vi.fn(),
   uploadClientContract: vi.fn(),
 }))
@@ -33,6 +34,7 @@ vi.mock('../api/clientFormApi', () => ({
 vi.mock('../api/clientsApi', () => ({
   getClientCommercialStructureForRegistry: apiMocks.getClientCommercialStructureForRegistry,
   getClientIdentityAttention: apiMocks.getClientIdentityAttention,
+  getClientRegionManualEdit: apiMocks.getClientRegionManualEdit,
 }))
 
 vi.mock('../api/clientCabinetApi', () => ({
@@ -62,8 +64,11 @@ vi.mock('../components/form/validateClientForm', () => ({
 }))
 
 vi.mock('../components/form/GeneralInfoFields', () => ({
-  GeneralInfoFields: ({ client }: { client: Client }) => (
-    <div>general:{client.NetUid}</div>
+  GeneralInfoFields: ({ client, regionManualEdit }: { client: Client, regionManualEdit?: ClientRegionManualEdit | null }) => (
+    <div>
+      general:{client.NetUid}
+      {regionManualEdit && <span>region-edit:{regionManualEdit.EditedByName}</span>}
+    </div>
   ),
 }))
 
@@ -169,6 +174,7 @@ describe('ClientEditPage root folder form', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     apiMocks.getClientIdentityAttention.mockResolvedValue(null)
+    apiMocks.getClientRegionManualEdit.mockResolvedValue(null)
     apiMocks.getClientForRegistryById.mockImplementation(async (netUid: string) => {
       if (netUid === ROOT_NET_UID) return ROOT_CLIENT
       if (netUid === CHILD_NET_UID) return CHILD_CLIENT
@@ -274,6 +280,19 @@ describe('ClientEditPage root folder form', () => {
     fireEvent.click(screen.getByRole('button', { name: /Договори$/ }))
     expect(await screen.findByText(`agreements:${ORDINARY_NET_UID}`)).toBeTruthy()
     expect(apiMocks.getClientForRegistryById).toHaveBeenCalledTimes(1)
+  })
+
+  it('passes the manual region edit of the open client to the general information', async () => {
+    apiMocks.getClientRegionManualEdit.mockImplementation(async (netUid: string) => (
+      netUid === ORDINARY_NET_UID
+        ? { ClientId: 20, EditedByName: 'Петренко Олена Іванівна', EditedAtUtc: '2026-10-27T09:30:00', Source: 1 }
+        : null
+    ))
+
+    renderPage(ORDINARY_NET_UID)
+
+    expect(await screen.findByText('region-edit:Петренко Олена Іванівна')).toBeTruthy()
+    expect(apiMocks.getClientRegionManualEdit).toHaveBeenCalledWith(ORDINARY_NET_UID, expect.any(AbortSignal))
   })
 
   it('does not replace a newly selected card when an earlier save completes', async () => {

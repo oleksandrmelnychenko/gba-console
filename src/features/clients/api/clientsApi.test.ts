@@ -13,6 +13,7 @@ import {
   getClientIdentityAttention,
   getClientIdentityAttentionBatch,
   getClientIdentityAttentionBatchForRegistry,
+  getClientRegionManualEdit,
   getClientSourceQualityBatch,
   getClientSourceQualityBatchForRegistry,
   getClientsForRegistry,
@@ -817,6 +818,27 @@ describe('clients permission-scoped registry and structure contracts', () => {
         RelationshipKind: 'related',
       },
       headers: { 'Idempotency-Key': expect.any(String) },
+    })
+  })
+
+  it('reads the manual region edit of a client and ignores an empty answer', async () => {
+    const edit = {
+      ClientId: 10,
+      EditedByUserId: 7,
+      EditedByName: 'Петренко Олена Іванівна',
+      EditedAtUtc: '2026-10-27T09:30:00',
+      Source: 1,
+      RegionCodeValue: 'XM01000',
+    }
+    apiRequestMock.mockResolvedValueOnce(edit)
+    apiRequestMock.mockResolvedValueOnce(null)
+    apiRequestMock.mockResolvedValueOnce({ ClientId: 10 })
+
+    await expect(getClientRegionManualEdit('client-1')).resolves.toEqual(edit)
+    await expect(getClientRegionManualEdit('client-1')).resolves.toBeNull()
+    await expect(getClientRegionManualEdit('client-1')).resolves.toBeNull()
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/get/region-manual-edit', {
+      query: { netId: 'client-1' },
     })
   })
 })

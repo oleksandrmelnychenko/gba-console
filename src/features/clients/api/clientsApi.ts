@@ -16,6 +16,7 @@ import type {
   ClientPrintDocument,
   ClientSearchParams,
   ClientType,
+  ClientRegionManualEdit,
 } from '../types'
 
 const CLIENT_SEARCH_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
@@ -137,6 +138,20 @@ export async function getClientIdentityAttention(
   })
 
   return isIdentityAttentionSummary(result)
+    ? result
+    : null
+}
+
+export async function getClientRegionManualEdit(
+  clientNetId: string,
+  signal?: AbortSignal,
+): Promise<ClientRegionManualEdit | null> {
+  const result = await apiRequest<unknown>('/clients/get/region-manual-edit', {
+    query: { netId: clientNetId },
+    ...(signal ? { signal } : {}),
+  })
+
+  return isClientRegionManualEdit(result)
     ? result
     : null
 }
@@ -486,6 +501,20 @@ function normalizeCount(result: unknown): number {
   }
 
   return 0
+}
+
+function isClientRegionManualEdit(
+  value: unknown,
+): value is ClientRegionManualEdit {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+
+  const edit = value as Partial<ClientRegionManualEdit>
+  return typeof edit.ClientId === 'number'
+    && typeof edit.EditedAtUtc === 'string'
+    && edit.EditedAtUtc.length > 0
+    && (typeof edit.Source === 'number' || typeof edit.Source === 'string')
 }
 
 function isIdentityAttentionSummary(

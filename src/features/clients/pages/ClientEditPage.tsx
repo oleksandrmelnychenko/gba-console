@@ -39,6 +39,7 @@ import {
   getAvailableRegionCode,
 } from '../api/clientLookupsApi'
 import { useClientFormLookups } from '../hooks/useClientFormLookups'
+import { useClientRegionManualEdit } from '../hooks/useClientRegionManualEdit'
 import { BankDetailsFields } from '../components/form/BankDetailsFields'
 import { ContactInfoFields } from '../components/form/ContactInfoFields'
 import { EditClientTypePanel } from '../components/EditClientTypePanel'
@@ -1744,6 +1745,11 @@ function EditStepContent({
 }: EditStepContentProps) {
   const sourceManaged = isSourceManagedClient(client)
   const sourceFieldsLocked = !canEditClient || (sourceManaged && !allowSourceOverride)
+  const regionManualEdit = useClientRegionManualEdit(
+    client.NetUid,
+    String(client.Updated ?? ''),
+    step === 'general-information' && role.isBuyer,
+  )
 
   if (step === 'contact-information') {
     return <ContactInfoFields client={client} errors={errors} role={role} sourceManaged={sourceFieldsLocked} onChange={setField} />
@@ -1858,6 +1864,7 @@ function EditStepContent({
       isUploadingDocuments={isUploadingDocuments}
       packingMarkingPayments={lookups.packingMarkingPayments}
       packingMarkings={lookups.packingMarkings}
+      regionManualEdit={regionManualEdit}
       regions={lookups.regions}
       role={role}
       sourceManaged={sourceFieldsLocked}
