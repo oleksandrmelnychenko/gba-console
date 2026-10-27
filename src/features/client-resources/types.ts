@@ -80,6 +80,7 @@ export type ClientResourceOrganization = ClientResourceEntity & {
   PaymentRegisters?: ClientResourcePaymentRegister[]
   MainPaymentRegister?: ClientResourcePaymentRegister
   PhoneNumber?: string
+  PriceSourceIsAmg?: boolean
   SROI?: string
   Storage?: ClientResourceStorage
   StorageId?: number

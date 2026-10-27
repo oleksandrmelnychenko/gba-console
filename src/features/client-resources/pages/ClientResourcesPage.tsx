@@ -13,6 +13,7 @@ import {
   Loader,
   NumberInput,
   Popover,
+  SegmentedControl,
   Select,
   SimpleGrid,
   Stack,
@@ -393,6 +394,7 @@ type OrganizationFormValues = {
   PFURegistrationDate: string
   PFURegistrationNumber: string
   PhoneNumber: string
+  PriceSourceIsAmg: boolean
   RegistrationDate: string
   RegistrationNumber: string
   SROI: string
@@ -2876,6 +2878,22 @@ function OrganizationEditorModal({
               onChange={(event) => setField('IsVatAgreements', event.currentTarget.checked)}
             />
           </Group>
+          <Box component="fieldset" m={0} p={0} style={{ border: 0, minWidth: 0 }}>
+            <Text component="legend" c="gray.9" fw={500} mb={4} size="xs">{translate('Світ цін')}</Text>
+            <SegmentedControl
+              data={[
+                { label: translate('Контех'), value: 'fenix' },
+                { label: 'AMG', value: 'amg' },
+              ]}
+              value={values.PriceSourceIsAmg ? 'amg' : 'fenix'}
+              onChange={(value) => setField('PriceSourceIsAmg', value === 'amg')}
+            />
+          </Box>
+          {organization && values.PriceSourceIsAmg !== (organization.PriceSourceIsAmg === true) ? (
+            <Alert color="orange" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
+              {translate('Світ цін визначає ціни й націнки для всіх договорів організації. Змінити його можна лише поки в організації немає документів.')}
+            </Alert>
+          ) : null}
           <AppModalFooter>
             <Button color="gray" disabled={isSaving} type="button" variant="default" onClick={onClose}>
               Скасувати
@@ -5664,6 +5682,7 @@ function organizationToFormValues(
     PFURegistrationDate: toDateFieldValue(organization?.PFURegistrationDate),
     PFURegistrationNumber: organization?.PFURegistrationNumber || '',
     PhoneNumber: organization?.PhoneNumber || '',
+    PriceSourceIsAmg: organization?.PriceSourceIsAmg === true,
     RegistrationDate: toDateFieldValue(organization?.RegistrationDate),
     RegistrationNumber: organization?.RegistrationNumber || '',
     SROI: organization?.SROI || '',
@@ -5720,6 +5739,7 @@ function buildOrganizationPayload(
     PFURegistrationDate: dateInputToIsoString(values.PFURegistrationDate),
     PFURegistrationNumber: values.PFURegistrationNumber.trim(),
     PhoneNumber: values.PhoneNumber.trim(),
+    PriceSourceIsAmg: values.PriceSourceIsAmg,
     RegistrationDate: dateInputToIsoString(values.RegistrationDate),
     RegistrationNumber: values.RegistrationNumber.trim(),
     SROI: values.SROI.trim(),
