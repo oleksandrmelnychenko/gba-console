@@ -120,6 +120,7 @@ export type AccountingCashFlow = {
   AfterRangeInAmountEuro?: number
   AfterRangeOutAmount?: number
   AfterRangeOutAmountEuro?: number
+  EstimatedEuroDocuments?: number
   BeforeRangeBalance?: number
   BeforeRangeBalanceEuro?: number
   BeforeRangeInAmount?: number
@@ -140,6 +141,7 @@ export type AccountingCashFlowHeadItem = {
   CurrentBalanceEuro?: number
   CurrentValue?: number
   CurrentValueLocal?: number
+  AdvanceAmount?: number
   CustomAgencyService?: unknown
   CustomService?: unknown
   FromDate?: string

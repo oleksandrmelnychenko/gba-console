@@ -38,6 +38,7 @@ import { CashFlowDetailContent } from '../components/CashFlowDetailContent'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { getAccountingCashFlowPaymentStatus } from '../accountingCashFlowPaymentStatus'
 import { getAccountingCashFlowClosingBalance } from '../cashFlowTotals'
+import { ADVANCE_LABEL, getCashFlowAdvanceAmount, getCashFlowStatementNotes } from '../cashFlowAdvance'
 import { getAccountingCashFlowDrilldownRoute } from '../cashFlowDrilldown'
 import { getIncomeCashflowForAccountingCashFlow } from '../../income-cashflows/api/incomeCashflowsApi'
 import { buildIncomeCashflowRow } from '../../income-cashflows/incomeCashflowRows'
@@ -707,7 +708,18 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
         minWidth: 160,
         align: 'right',
         accessor: (item) => getCashFlowTypeLabel(item.Type),
-        cell: (item) => <TableChip tone="document" value={getCashFlowTypeLabel(item.Type)} />,
+        cell: (item) => {
+          const advance = getCashFlowAdvanceAmount(item)
+
+          return advance == null ? (
+            <TableChip tone="document" value={getCashFlowTypeLabel(item.Type)} />
+          ) : (
+            <Group gap={4} justify="flex-end" wrap="nowrap">
+              <TableChip tone="document" value={getCashFlowTypeLabel(item.Type)} />
+              <TableChip tone="warning" value={`${t(ADVANCE_LABEL)} ${formatMoney(advance)}`} />
+            </Group>
+          )
+        },
       },
       {
         id: 'organization',
@@ -803,6 +815,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
     }),
     [cashFlow, lastItem],
   )
+  const statementNotes = getCashFlowStatementNotes({ cashFlow, hasAgreement: Boolean(selectedAgreement?.NetUid), mode })
   return (
     <Stack className="cash-flow-page accounting-cash-flow-page" gap={10}>
       {(counterpartyError || cashFlowError) && (
@@ -914,6 +927,11 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
           </div>
 
           <div className="cash-flow-page__grid-card accounting-cash-flow-grid-card">
+            {statementNotes.map((note) => (
+              <Text key={note} c="dimmed" size="xs">
+                {t(note)}
+              </Text>
+            ))}
             <DataTable
               columns={tableColumns}
               data={filteredItems}
