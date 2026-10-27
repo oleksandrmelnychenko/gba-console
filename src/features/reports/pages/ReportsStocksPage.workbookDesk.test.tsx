@@ -383,7 +383,7 @@ it('moves financial dimensions between axes only with server capability and reta
     currentVparivanieDataset, cashModeDataset, settlementModeDataset])
   await openDayWorkbook()
   fireEvent.click(screen.getByRole('button', { name: 'Перенести Організація до стовпців' }))
-  expect(screen.getByText('У файлі кожна організація в колонках буде окремим аркушем.')).toBeTruthy()
+  expect(screen.getByText('До 100 організацій у колонках — кожна організація окремим аркушем, більше — одна таблиця.')).toBeTruthy()
   expect(screen.getByRole('button', { name: 'Перенести Дата до стовпців' })).toHaveProperty('disabled', true)
   changeReportPeriod({ from: dateInput('До').value })
   for (const [row, column] of [[3, 4], [4, 3]]) {
@@ -399,7 +399,7 @@ it('moves financial dimensions between axes only with server capability and reta
     if (row === 3) {
       fireEvent.click(screen.getByRole('button', { name: 'Перенести Організація до рядків' }))
       fireEvent.click(screen.getByRole('button', { name: 'Перенести Дата до стовпців' }))
-      expect(screen.getByText('У файлі кожен день у колонках буде окремим аркушем.')).toBeTruthy()
+      expect(screen.getByText('До 100 днів у колонках — кожен день окремим аркушем, більше — одна таблиця.')).toBeTruthy()
     }
   }
 })
@@ -434,7 +434,35 @@ it('transposes client/agreement columns and keeps edited dates and source filter
       initial = structuredClone(data)
       fireEvent.click(screen.getByRole('button', { name: 'Перенести Договір до рядків' }))
       fireEvent.click(screen.getByRole('button', { name: 'Перенести Клієнт до стовпців' }))
-      expect(screen.getByText('У файлі кожен клієнт у колонках буде окремим аркушем.')).toBeTruthy()
+      expect(screen.getByText('До 100 клієнтів у колонках — кожен клієнт окремим аркушем, більше — одна таблиця.')).toBeTruthy()
     }
   }
+})
+
+it('exports agreement columns in the explicitly chosen workbook layout and leaves automatic to the server', async () => {
+  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, currentFinancialDataset, profitSupplierDataset,
+    currentVparivanieDataset, cashModeDataset, settlementModeDataset])
+  vi.mocked(previewStockReport).mockResolvedValue({ result: { document: { DocumentURL: '', PdfDocumentURL: '' }, raw: {} },
+    preview: { ...preview, ResultSession: resultSession } })
+  vi.mocked(exportStockReportPreview).mockResolvedValue({ document: files, raw: {} })
+  await openDayWorkbook()
+  fireEvent.click(screen.getByRole('button', { name: 'Видалити Дата' }))
+  for (const [axis, label] of [['стовпців', 'Договір']]) {
+    fireEvent.click(screen.getByRole('button', { name: `Додати поле: Групування ${axis}` }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: label }))
+  }
+  changeReportPeriod({ from: '2026-10-01', to: '2026-10-31' })
+  expect(screen.getByText('До 100 договорів у колонках — кожен договір окремим аркушем, більше — одна таблиця.')).toBeTruthy()
+  fireEvent.click(screen.getByRole('radio', { name: 'Одна таблиця' }))
+  expect(screen.getByText('У файлі одна таблиця: кожен договір займає свої колонки показників.')).toBeTruthy()
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toHaveProperty('disabled', false))
+  fireEvent.click(screen.getByRole('button', { name: 'Застосувати й показати' }))
+  await screen.findByRole('region', { name: 'Таблиця попереднього перегляду' })
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати Excel' }))
+  await waitFor(() => expect(exportStockReportPreview).toHaveBeenCalledExactlyOnceWith(resultSession, 'table'))
+  fireEvent.click(screen.getByRole('radio', { name: 'Окремі аркуші' }))
+  expect(screen.getByText('У файлі кожен договір у колонках буде окремим аркушем.')).toBeTruthy()
+  fireEvent.click(screen.getByRole('radio', { name: 'Автоматично' }))
+  expect(vi.mocked(previewStockReport).mock.calls[0][0].sorted.Col.map(field => field.type)).toEqual([15])
+  expect(previewStockReport).toHaveBeenCalledOnce()
 })

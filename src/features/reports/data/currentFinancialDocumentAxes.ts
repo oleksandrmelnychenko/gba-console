@@ -1,13 +1,14 @@
 import type { ReportDataset, ReportDatasetField, ReportRequestBody } from '../types'
 import { usesCurrentFinancialAxes } from './currentFinancialAxes'
 import { currentFinancialProductTimeAxesCapability } from './currentFinancialProductTimeAxes'
+import { validMaximumResultColumns } from './reportWideColumns'
 
 const axes = [0, 1, 2, 3, 4, 5, 12, 15, 81] as const
 const axisTypes: ReadonlySet<number> = new Set(axes)
 export type CurrentFinancialDocumentAxes = {
   version: 1; allowedRows: number[]; allowedColumns: number[]
   minimumRows: 1; maximumRows: 2; maximumColumns: 1; maximumTotalDimensions: 2; maximumTotalDimensionsWithColumns?: 3
-  maximumOutputColumns: 256; uniqueAcrossAxes: true; quantitySupported: false
+  maximumOutputColumns: 256; maximumResultColumns?: number; uniqueAcrossAxes: true; quantitySupported: false
   requiredProfitReadMode: 0; requiredDayOrganizationBasis: 0
   groupings: ReportDatasetField[]
 }
@@ -22,7 +23,7 @@ export function currentFinancialDocumentAxesCapability(dataset?: ReportDataset):
   if (cap.version !== 1 || !exactAxes(cap.allowedRows) || !exactAxes(cap.allowedColumns)
     || cap.minimumRows !== 1 || cap.maximumRows !== 2 || cap.maximumColumns !== 1 || cap.maximumTotalDimensions !== 2
     || cap.maximumTotalDimensionsWithColumns !== undefined && cap.maximumTotalDimensionsWithColumns !== 3
-    || cap.maximumOutputColumns !== 256 || cap.uniqueAcrossAxes !== true || cap.quantitySupported !== false
+    || cap.maximumOutputColumns !== 256 || !validMaximumResultColumns(cap.maximumResultColumns) || cap.uniqueAcrossAxes !== true || cap.quantitySupported !== false
     || cap.requiredProfitReadMode !== 0 || cap.requiredDayOrganizationBasis !== 0
     || !Array.isArray(cap.groupings) || cap.groupings.length !== 1
     || !cap.groupings[0] || typeof cap.groupings[0] !== 'object' || Array.isArray(cap.groupings[0])

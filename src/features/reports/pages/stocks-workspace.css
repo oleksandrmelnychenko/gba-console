@@ -62,3 +62,4 @@
 .reports-stocks-workspace .report-constructor-fields > section:not(.reports-stocks-legacy) {
   margin-top: 14px;
 }
+.reports-stocks-export-layout { display: grid; gap: 0.375rem; justify-items: start; }

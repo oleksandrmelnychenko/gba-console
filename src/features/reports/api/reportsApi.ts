@@ -47,6 +47,7 @@ import { requestProfitReadMode } from '../data/profitReadMode'
 import { requestSettlementReadMode } from '../data/settlementReadMode'
 import { requestCashReadMode } from '../data/cashReadMode'
 import { normalizeNativeReportPreview, type NativeReportPreview } from '../data/nativeReportPreview'
+import { readPreviewColumnPaging, type ReportPreviewColumnPaging } from '../data/reportWideColumns'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const CLIENT_FILTER_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
@@ -66,16 +67,20 @@ export async function createStockReport(body: ReportRequestBody, dataset?: Repor
 /** Calculates one bounded on-screen page and file links from the same report run. */
 export async function previewStockReport(body: ReportRequestBody, dataset?: ReportDataset): Promise<{ result: ReportResult; preview: NativeReportPreview }> {
   const request = prepareStockReportRequest(body, dataset)
-  const version2 = dataset?.configuration !== undefined && await supportsImmutableReportPreview()
+  const capability = dataset?.configuration !== undefined ? await immutableReportPreviewCapability() : null
+  const version2 = capability !== null
   if (requestPresentationCurrency(request) != null && !version2) throw new Error('Сервер не підтвердив збережений перегляд для вибраної валюти. Експорт не виконувався.')
+  const columns = capability?.columnPaging ? { columnOffset: 0, columnLimit: capability.columnPaging.pageColumns } : {}
   const response = await apiRequest<unknown>('/report/stocks/preview', {
     method: 'POST',
     dedupe: false,
-    query: { rowOffset: 0, rowLimit: 50, ...(version2 ? { previewVersion: 2 } : {}) },
+    query: { rowOffset: 0, rowLimit: 50, ...(version2 ? { previewVersion: 2, ...columns } : {}) },
     body: request,
   })
   const preview = normalizeNativeReportPreview(response, currentVparivanieFullScope(request))
   if (version2) preview.ResultSession = readReportResultSession(response, preview)
+  if (capability?.columnPaging && (preview.Page.ColumnOffset !== 0 || preview.Page.ColumnLimit !== capability.columnPaging.pageColumns))
+    throw new Error('Сервер повернув інше вікно колонок звіту.')
   assertNumberPresentation(request, preview)
   bindWorkbookPreview(request, preview)
   bindAnalysisPreview(request, preview)
@@ -107,15 +112,17 @@ function assertNumberPresentation(request: ReportRequestBody, preview: NativeRep
     throw new Error('Сервер повернув інший формат чисел результату.')
 }
 type ReportResultSession = NonNullable<NativeReportPreview['ResultSession']>
-async function supportsImmutableReportPreview(): Promise<boolean> {
+async function immutableReportPreviewCapability(): Promise<{ columnPaging: ReportPreviewColumnPaging | null } | null> {
   let value: unknown
   try { value = await apiRequest<unknown>('/report/stocks/preview/capabilities') }
-  catch (error) { if (error instanceof ApiError && error.status === 404) return false; throw error }
+  catch (error) { if (error instanceof ApiError && error.status === 404) return null; throw error }
   if (!value || typeof value !== 'object') throw new Error('Сервер не підтвердив можливості перегляду звіту.')
   const capability = value as Record<string, unknown>
   if (capability.Version !== 2 || capability.ExplicitExport !== true || typeof capability.MaximumPageRows !== 'number'
     || capability.MaximumPageRows < 50 || typeof capability.TimeToLiveSeconds !== 'number') throw new Error('Непідтримувана версія перегляду звіту.')
-  return true
+  const columnPaging = readPreviewColumnPaging(capability)
+  if (columnPaging === undefined) throw new Error('Непідтримувана версія перегляду звіту.')
+  return { columnPaging }
 }
 function readReportResultSession(value: unknown, preview?: NativeReportPreview): ReportResultSession {
   const item = value as Record<string, unknown> | null
@@ -134,17 +141,24 @@ function cachedResultError(error: unknown): never {
   if (error instanceof ApiError && error.status === 404) throw new Error('Строк зберігання результату завершився або він недоступний. Сформуйте звіт повторно; автоматичний перерахунок не виконувався.')
   throw error
 }
-export async function getStockReportPreviewPage(session: ReportResultSession, request: ReportRequestBody, offset: number, signal?: AbortSignal): Promise<NativeReportPreview> {
+export type ReportPreviewColumnRequest = { offset: number; limit: number }
+export async function getStockReportPreviewPage(session: ReportResultSession, request: ReportRequestBody, offset: number, signal?: AbortSignal,
+  columns?: ReportPreviewColumnRequest): Promise<NativeReportPreview> {
   request = withCurrentVparivanieMovementScope(request)
   const scopeError = currentVparivanieScopeError(request)
   if (scopeError) throw new Error(scopeError)
   if (!Number.isInteger(offset) || offset < 0 || offset > 500000) throw new Error('Некоректна сторінка звіту.')
+  if (columns && (!Number.isInteger(columns.offset) || columns.offset < 0 || columns.offset > 16000
+    || !Number.isInteger(columns.limit) || columns.limit < 1 || columns.limit > 256)) throw new Error('Некоректне вікно колонок звіту.')
   try {
-    const response = await apiRequest<unknown>(`/report/stocks/preview/${session.ResultId}`, { query: { rowOffset: offset, rowLimit: 50 }, signal })
+    const response = await apiRequest<unknown>(`/report/stocks/preview/${session.ResultId}`, {
+      query: { rowOffset: offset, rowLimit: 50, ...(columns ? { columnOffset: columns.offset, columnLimit: columns.limit } : {}) }, signal })
     const preview = normalizeNativeReportPreview(response, currentVparivanieFullScope(request))
     preview.ResultSession = readReportResultSession(response, preview)
     assertSameResult(session, preview.ResultSession)
     if (preview.Page.Offset !== offset) throw new Error('Сервер повернув іншу сторінку звіту.')
+    if (columns && (preview.Page.ColumnOffset !== columns.offset || preview.Page.ColumnLimit !== columns.limit))
+      throw new Error('Сервер повернув інше вікно колонок звіту.')
     assertNumberPresentation(request, preview)
     bindWorkbookPreview(request, preview)
     bindAnalysisPreview(request, preview)
@@ -153,9 +167,11 @@ export async function getStockReportPreviewPage(session: ReportResultSession, re
     return preview
   } catch (error) { return cachedResultError(error) }
 }
-export async function exportStockReportPreview(session: ReportResultSession): Promise<ReportResult> {
+export async function exportStockReportPreview(session: ReportResultSession, layout?: 'sheets' | 'table'): Promise<ReportResult> {
+  if (layout !== undefined && layout !== 'sheets' && layout !== 'table') throw new Error('Некоректний вигляд файла звіту.')
   try {
-    const response = await apiRequest<unknown>(`/report/stocks/preview/${session.ResultId}/export`, { method: 'POST', body: {}, dedupe: false })
+    const response = await apiRequest<unknown>(`/report/stocks/preview/${session.ResultId}/export`, {
+      method: 'POST', body: {}, dedupe: false, ...(layout ? { query: { layout } } : {}) })
     assertSameResult(session, readReportResultSession(response))
     return normalizeReportResult(response)
   } catch (error) { return cachedResultError(error) }

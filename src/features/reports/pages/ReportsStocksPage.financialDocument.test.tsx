@@ -70,7 +70,7 @@ it('selects document/product, preserves dates and a negative filter through mode
   expect(vi.mocked(createStockReport).mock.calls[1][0]).toEqual(before)
   fireEvent.click(screen.getByRole('button', { name: 'Видалити Документ' }));fireEvent.click(screen.getByRole('button', { name: 'Видалити Товар' }))
   addAxis('рядків', 'Товар');addAxis('стовпців', 'Документ')
-  expect(screen.getByText('У файлі кожен документ у колонках буде окремим аркушем.')).toBeTruthy()
+  expect(screen.getByText('До 100 документів у колонках — кожен документ окремим аркушем, більше — одна таблиця.')).toBeTruthy()
   await act(async () => { fireEvent.submit(view.container.querySelector('form')!) })
   await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(3))
   const transposed = vi.mocked(createStockReport).mock.calls[2][0]

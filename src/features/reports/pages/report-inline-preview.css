@@ -38,3 +38,8 @@
 .report-preview-footer__range { padding: 0 8px; color: var(--mantine-color-gray-7); font-family: var(--font-mono); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .report-inline-preview .report-inline-preview__value-heading { text-align: right; }
 .report-inline-preview__value-heading { white-space: normal; }
+
+.report-inline-preview--wide .is-sticky-row-header { position: sticky; z-index: 1; box-sizing: border-box; width: 12rem; min-width: 12rem; max-width: 12rem; border-right-color: var(--mantine-color-gray-3); }
+.report-inline-preview--wide thead .is-sticky-row-header { z-index: 3; }
+.report-inline-preview--wide .report-inline-preview__group-total > th, .report-inline-preview--wide tfoot th { position: sticky; left: 0; z-index: 2; }
+.report-inline-preview--wide tfoot th { z-index: 4; }

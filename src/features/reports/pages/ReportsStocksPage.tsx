@@ -57,6 +57,7 @@ import {
   Group,
   Loader,
   type OptionsFilter,
+  SegmentedControl,
   Select,
   Stack,
   Switch,
@@ -64,6 +65,8 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { FINANCIAL_EXPORT_LAYOUT_OPTIONS, financialExportLayoutQuery, financialExportLayoutText, isFinancialExportLayout,
+  type FinancialExportLayout } from '../data/financialExportLayout'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { CheckCheck, CircleAlert, LayoutTemplate, MonitorPlay, Plus, RotateCcw, Save, Search, SearchX, Trash2 } from 'lucide-react'
@@ -319,6 +322,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const [dataSource, setDataSource] = useValueState(0)
   const [movementQuantities, setMovementQuantities] = useValueState<CurrentVparivanieMovementSelection>(EMPTY_MOVEMENT_SELECTION)
   const [fullCurrentVparivanie, setFullCurrentVparivanie] = useValueState(false)
+  const [exportLayout, setExportLayout] = useState<FinancialExportLayout>('auto')
   function changeMovementQuantities(value: CurrentVparivanieMovementSelection) {
     setMovementQuantities(value)
     if (value.Incoming || value.Outgoing) setFullCurrentVparivanie(true)
@@ -523,7 +527,9 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     try {
       const previewResult = showPreview || selectedCurrency && !existingPreview?.ResultSession ? await previewStockReport(request, dataset) : null
       if (selectedCurrency && previewResult && !previewResult.preview.ResultSession) throw new Error('Сервер не підтвердив збережений результат для вибраної валюти. Файл не сформовано.')
-      const nextResult = !showPreview && previewResult?.preview.ResultSession ? await exportStockReportPreview(previewResult.preview.ResultSession) : previewResult?.result ?? (existingPreview?.ResultSession ? await exportStockReportPreview(existingPreview.ResultSession) : await createStockReport(request, dataset))
+      const layout = financialAxesCapability(dataset) && request.sorted.Col.length > 0 ? financialExportLayoutQuery(exportLayout) : undefined
+      const exportPreview = (session: NonNullable<NativeReportPreview['ResultSession']>) => layout ? exportStockReportPreview(session, layout) : exportStockReportPreview(session)
+      const nextResult = !showPreview && previewResult?.preview.ResultSession ? await exportPreview(previewResult.preview.ResultSession) : previewResult?.result ?? (existingPreview?.ResultSession ? await exportPreview(existingPreview.ResultSession) : await createStockReport(request, dataset))
       const outcome: ReportRunOutcome = exportingApplied ? { ...lastRun!,
         hasDocument: Boolean(nextResult.document.DocumentURL || nextResult.document.PdfDocumentURL), previewNeedsExport: false } : {
         ...(rateComparisonOptions(rateComparison) ? { rateComparison: structuredClone(rateComparisonOptions(rateComparison)!) } : {}),
@@ -987,6 +993,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         groupingOrdering.changeAxis('Row', next)
       },
       onMeasurementsChange: setMeasurements, onSelectionsChange: filterLogic.editSelection, onGroupingLayoutChange: groupingOrdering.changeLayout,
+      exportLayout, onExportLayoutChange: setExportLayout,
     }
     const supplierControls = dataSource === 38 && isSupplierSourceWorldCapability(dataset?.supplierSourceWorld)
     const organizationsContent = dataSource === 35 || organizationOption ? <>
@@ -1155,6 +1162,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           ? <CurrentDiscountAgreementInput value={valuationClientAgreementId} enabled={canGenerateReport} disabled={isLoading} onChange={setValuationAgreementId} />
           : null}</> : null}
       <ReportBuilderForm dataset={dataset} reportBody={reportBody}
+        exportLayout={exportLayout} onExportLayoutChange={setExportLayout}
         constructorMode={constructorMode}
         constructorSection={constructorSection}
         onConstructorSectionChange={navigateConstructorSection}
@@ -1272,6 +1280,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
 type ReportBuilderFormProps = {
   dataset?: ReportDataset
   reportBody: ReportRequestBody
+  exportLayout: FinancialExportLayout
+  onExportLayoutChange: (layout: FinancialExportLayout) => void
   constructorMode: boolean
   constructorSection: ReportConstructorSection
   onConstructorSectionChange: (section: ReportConstructorSection) => void
@@ -1604,6 +1614,7 @@ function ReportBuilderContent(props: ReportBuilderFormProps) {
             onMeasurementsChange={onMeasurementsChange}
             onRowGroupsChange={onRowGroupsChange}
             onSelectionsChange={onSelectionsChange}
+            exportLayout={props.exportLayout} onExportLayoutChange={props.onExportLayoutChange}
           />
           {!constructorMode && dataSource !== 19 ? filterExpressionPanel : null}
           <ReportSectionPanel className={constructorMode ? 'report-constructor-analysis' : 'stocks-workspace-analysis'} active={constructorMode ? constructorSection : undefined} section="analysis">
@@ -1727,6 +1738,8 @@ type LegacyReportBuilderProps = {
   onMeasurementsChange: StateSetter<ReportMeasurementGroup[]>
   onRowGroupsChange: StateSetter<ReportGroupingItem[]>
   onSelectionsChange: (edit: ReportSelectionEdit) => void
+  exportLayout?: FinancialExportLayout
+  onExportLayoutChange?: (layout: FinancialExportLayout) => void
 }
 
 const fixedAxesDescription: Partial<Record<number, string>> = {
@@ -1774,6 +1787,8 @@ function LegacyReportBuilder({
   onMeasurementsChange,
   onRowGroupsChange,
   onSelectionsChange,
+  exportLayout = 'auto',
+  onExportLayoutChange,
 }: LegacyReportBuilderProps) {
   const { t } = useI18n()
   const [groupingPickerTarget, setGroupingPickerTarget] = useState<'rows' | 'columns' | null>(null)
@@ -1912,17 +1927,12 @@ function LegacyReportBuilder({
         onRemove={(index) => onColGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
         onReorder={(type, direction) => onColGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
         onTransfer={type => transferGrouping('Col', type)} /> : <Text size="sm" c="dimmed">Вибрані показники відображаються у стовпцях.</Text>}
-      {financialAxesCapability(dataset) && colGroups.length > 0 ? <Text size="sm" c="dimmed">
-        {colGroups[0].type === 4 ? 'У файлі кожна організація в колонках буде окремим аркушем.'
-          : colGroups[0].type === 12 ? 'У файлі кожен клієнт у колонках буде окремим аркушем.'
-          : colGroups[0].type === 15 ? 'У файлі кожен договір у колонках буде окремим аркушем.'
-          : colGroups[0].type === 5 ? 'У файлі кожен товар у колонках буде окремим аркушем.'
-          : colGroups[0].type === 81 ? 'У файлі кожен документ у колонках буде окремим аркушем.'
-          : colGroups[0].type === 0 ? 'У файлі кожен рік у колонках буде окремим аркушем.'
-          : colGroups[0].type === 1 ? 'У файлі кожен квартал у колонках буде окремим аркушем.'
-          : colGroups[0].type === 2 ? 'У файлі кожен місяць у колонках буде окремим аркушем.'
-          : 'У файлі кожен день у колонках буде окремим аркушем.'}
-      </Text> : null}
+      {financialAxesCapability(dataset) && colGroups.length > 0 ? <div className="reports-stocks-export-layout">
+        {onExportLayoutChange ? <SegmentedControl size="xs" aria-label={t('Файл Excel')} value={exportLayout}
+          data={FINANCIAL_EXPORT_LAYOUT_OPTIONS.map(option => ({ value: option.value, label: t(option.label) }))}
+          onChange={value => { if (isFinancialExportLayout(value)) onExportLayoutChange(value) }} /> : null}
+        <Text size="sm" c="dimmed">{financialExportLayoutText(colGroups[0].type, exportLayout)}</Text>
+      </div> : null}
       {currentAxesError ? <Alert color="orange" title="Перевірте групування">{currentAxesError}</Alert> : null}
     </section>
   )

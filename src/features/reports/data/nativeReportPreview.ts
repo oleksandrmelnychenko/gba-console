@@ -9,6 +9,7 @@ import { CURRENT_VPARIVANIE_PRODUCT_FIELDS, CURRENT_VPARIVANIE_FULL_NOTE } from 
 import { validateCurrentVparivanieColumns } from './currentVparivanieColumns'
 import { validateFinancialProductTimePreview } from './currentFinancialProductTimePreview'
 import { validateFinancialDocumentPreview } from './currentFinancialDocumentPreview'
+import { LEGACY_PREVIEW_COLUMNS, MAXIMUM_PREVIEW_PAGE_COLUMNS, MAXIMUM_RESULT_COLUMNS } from './reportWideColumns'
 
 export type NativeReportPreviewScalar = { Kind: string; Value: string | null; Provenance: string }
 export type CurrentVparivanieProduct = { RowSourceIndex: number } & Record<typeof CURRENT_VPARIVANIE_PRODUCT_FIELDS[number], string | null>
@@ -41,6 +42,9 @@ export type NativeReportPreviewRequest = {
   IgnoredFilters: NativeReportPreviewFilter[] | null
   Notes: string[] | null
 }
+export type NativeReportPreviewColumnWindow = { ColumnOffset: number; ColumnLimit: number; TotalColumns: number; ReturnedColumns: number; HasMoreColumns: boolean }
+export type NativeReportPreviewPage = { Offset: number; Limit: number; TotalVisibleRows: number; ReturnedRows: number; HasMore: boolean }
+  & Partial<NativeReportPreviewColumnWindow>
 export type NativeReportPreview = {
   numberPresentation?: ReportNumberPresentation
   valueSemantics?: Array<{ columnSourceIndex: number; measureType: number | null; semantics: ReportValueSemantics }>
@@ -50,7 +54,7 @@ export type NativeReportPreview = {
   RequestSha256?: string
   PresentationOnly: boolean
   Request: NativeReportPreviewRequest | null
-  Page: { Offset: number; Limit: number; TotalVisibleRows: number; ReturnedRows: number; HasMore: boolean }
+  Page: NativeReportPreviewPage
   RowSchema: { Caption: string }[]
   ColumnSchema: { Caption: string; Identity?: string; KeyKind?: string }[]
   Rows: NativeReportPreviewAxis[]
@@ -172,29 +176,34 @@ export function normalizeNativeReportPreview(response: unknown, fullCurrentVpari
     || !Array.isArray(preview.ColumnSchema) || preview.ColumnSchema.length > 66
     || !preview.ColumnSchema.every(item => record(item) && typeof item.Caption === 'string')
     || !Array.isArray(preview.Rows) || preview.Rows.length > 50
-    || !Array.isArray(preview.Columns) || preview.Columns.length > 256
+    || !Array.isArray(preview.Columns) || preview.Columns.length > MAXIMUM_PREVIEW_PAGE_COLUMNS
     || !Array.isArray(preview.Cells) || preview.Cells.length > 12800)
     throw new Error('Сервер повернув некоректний попередній перегляд звіту.')
+  const columnWindow = readColumnWindow(preview.Page, preview.Columns.length)
+  const columnBound = columnWindow ? MAXIMUM_RESULT_COLUMNS : LEGACY_PREVIEW_COLUMNS
 
   if (preview.numberPresentation != null && !readNumberPresentation(preview.numberPresentation)) throw new Error('Непідтримуваний формат чисел результату.')
-  if (preview.valueSemantics !== undefined && (!Array.isArray(preview.valueSemantics) || preview.valueSemantics.some(item => !record(item) || !Number.isInteger(item.columnSourceIndex) || !readValueSemantics(item.semantics)))) throw new Error('Некоректні одиниці показників результату.')
+  if (preview.valueSemantics !== undefined && (!Array.isArray(preview.valueSemantics) || preview.valueSemantics.some(item => !record(item) || !Number.isInteger(item.columnSourceIndex) || !readValueSemantics(item.semantics)
+    || columnWindow && !((item.columnSourceIndex as number) >= columnWindow.ColumnOffset && (item.columnSourceIndex as number) < columnWindow.ColumnOffset + columnWindow.ReturnedColumns)))) throw new Error('Некоректні одиниці показників результату.')
   if (preview.numberPresentation != null && (!Array.isArray(preview.valueSemantics) || preview.Columns.some(column => !record(column) || !(preview.valueSemantics as Array<Record<string, unknown>>).some(item => item.columnSourceIndex === column.SourceIndex)))) throw new Error('Сервер не передав одиниці всіх показників.')
   const axis = (item: unknown, max: number): item is NativeReportPreviewAxis => record(item)
     && boundedInteger(item.Ordinal, max) && boundedInteger(item.SourceIndex, 500000)
     && Array.isArray(item.Values) && item.Values.length <= 66
     && item.Values.every(value => record(value) && typeof value.Caption === 'string')
   const page = preview.Page as NativeReportPreview['Page']
-  if (!preview.Rows.every(item => axis(item, 500000)) || !preview.Columns.every(item => axis(item, 256))
+  if (!preview.Rows.every(item => axis(item, 500000)) || !preview.Columns.every(item => axis(item, columnBound))
     || page.ReturnedRows !== preview.Rows.length
     || preview.Rows.some((row, index) => row.Ordinal !== page.Offset + index)
-    || preview.Columns.some((column, index) => column.Ordinal !== index))
+    || preview.Columns.some((column, index) => columnWindow
+      ? column.Ordinal !== columnWindow.ColumnOffset + index || column.SourceIndex !== column.Ordinal
+      : column.Ordinal !== index))
     throw new Error('Сервер повернув некоректні осі попереднього перегляду.')
 
   const rowIds = new Set(preview.Rows.map(row => row.SourceIndex))
   const columnIds = new Set(preview.Columns.map(column => column.SourceIndex))
   const coordinates = new Set<string>()
   for (const cell of preview.Cells) {
-    if (!record(cell) || !boundedInteger(cell.RowSourceIndex, 500000) || !boundedInteger(cell.ColumnSourceIndex, 256)
+    if (!record(cell) || !boundedInteger(cell.RowSourceIndex, 500000) || !boundedInteger(cell.ColumnSourceIndex, columnBound)
       || !rowIds.has(cell.RowSourceIndex) || !columnIds.has(cell.ColumnSourceIndex) || !scalar(cell.Value))
       throw new Error('Сервер повернув некоректні клітинки попереднього перегляду.')
     const coordinate = `${cell.RowSourceIndex}:${cell.ColumnSourceIndex}`
@@ -222,21 +231,46 @@ export function normalizeNativeReportPreview(response: unknown, fullCurrentVpari
   if (!!analysis !== !!request?.currentVparivanieAnalysis || analysis && (request?.DataSource !== 'NativeCurrentVparivanie' || preview.CurrentVparivanieProducts != null))
     throw new Error('Сервер повернув іншу форму аналізу залишків і продажів.')
   const productDisplay = analysis ? undefined : normalizeCurrentVparivanieProducts(preview, request, fullCurrentVparivanie)
-  const totals = normalizeTotals(preview.Totals, preview.Rows as NativeReportPreviewAxis[], columnIds, preview.RowSchema.length)
+  const totals = normalizeTotals(preview.Totals, preview.Rows as NativeReportPreviewAxis[], columnIds, preview.RowSchema.length, columnBound)
   const movements = analysis ? undefined : readMovementCoverage({ ...preview, Request: request } as NativeReportPreview)
   return { ...preview, Request: request, Totals: totals, ...(analysis ? { currentVparivanieAnalysis: analysis } : {}), ...(movements ? { CurrentVparivanieMovements: movements } : {}), ...(workbook ? { WorkbookPresentation: workbook } : {}), ...(productDisplay ? { CurrentVparivanieProducts: productDisplay } : {}), ...(attributes ? { SettlementCounterpartyAttributes: attributes } : {}), ...(regions ? { ClientDiscountRecipientRegions: regions } : {}) } as NativeReportPreview
 }
 
+function readColumnWindow(page: Record<string, unknown>, returned: number): NativeReportPreviewColumnWindow | null {
+  const fields = ['ColumnOffset', 'ColumnLimit', 'TotalColumns', 'ReturnedColumns', 'HasMoreColumns'] as const
+  const present = fields.filter(field => page[field] !== undefined)
+  if (present.length === 0) return null
+  const fail = () => { throw new Error('Сервер повернув некоректне вікно колонок попереднього перегляду.') }
+  if (present.length !== fields.length) return fail()
+  const { ColumnOffset: offset, ColumnLimit: limit, TotalColumns: total, ReturnedColumns: count, HasMoreColumns: more } = page
+  if (!boundedInteger(total, MAXIMUM_RESULT_COLUMNS) || !boundedInteger(offset, total) || !boundedInteger(limit, MAXIMUM_PREVIEW_PAGE_COLUMNS)
+    || limit === 0 && total !== 0 || !boundedInteger(count, limit) || count !== returned || typeof more !== 'boolean'
+    || offset + count > total || offset === total && total !== 0 || more !== offset + count < total || more && count === 0)
+    return fail()
+  return { ColumnOffset: offset, ColumnLimit: limit, TotalColumns: total, ReturnedColumns: count, HasMoreColumns: more }
+}
+
+export function previewColumnWindow(preview: NativeReportPreview): NativeReportPreviewColumnWindow | null {
+  const page = preview.Page
+  return page.ColumnOffset === undefined || page.ColumnLimit === undefined || page.TotalColumns === undefined
+    || page.ReturnedColumns === undefined || page.HasMoreColumns === undefined ? null
+    : { ColumnOffset: page.ColumnOffset, ColumnLimit: page.ColumnLimit, TotalColumns: page.TotalColumns,
+      ReturnedColumns: page.ReturnedColumns, HasMoreColumns: page.HasMoreColumns }
+}
+
+export const isPartialColumnWindow = (columns: NativeReportPreviewColumnWindow | null): boolean =>
+  !!columns && (columns.ColumnOffset > 0 || columns.HasMoreColumns)
+
 function normalizeTotals(value: unknown, rows: NativeReportPreviewAxis[], columnIds: ReadonlySet<number>,
-  levels: number): NativeReportPreviewTotals | undefined {
+  levels: number, columnBound: number): NativeReportPreviewTotals | undefined {
   if (!record(value) || value.State !== 'materialized') return undefined
   const fail = () => { throw new Error('Сервер повернув некоректні підсумки попереднього перегляду.') }
   const rowIds = new Set(rows.map(row => row.SourceIndex))
   const cells = (list: unknown, row: number): NativeReportPreviewCell[] => {
-    if (!Array.isArray(list) || list.length > 256) return fail()
+    if (!Array.isArray(list) || list.length > MAXIMUM_PREVIEW_PAGE_COLUMNS) return fail()
     const seen = new Set<number>()
     return list.map(cell => {
-      if (!record(cell) || cell.RowSourceIndex !== row || !boundedInteger(cell.ColumnSourceIndex, 256)
+      if (!record(cell) || cell.RowSourceIndex !== row || !boundedInteger(cell.ColumnSourceIndex, columnBound)
         || !columnIds.has(cell.ColumnSourceIndex) || seen.has(cell.ColumnSourceIndex) || !scalar(cell.Value)) return fail()
       seen.add(cell.ColumnSourceIndex)
       return { RowSourceIndex: row, ColumnSourceIndex: cell.ColumnSourceIndex, Value: cell.Value }

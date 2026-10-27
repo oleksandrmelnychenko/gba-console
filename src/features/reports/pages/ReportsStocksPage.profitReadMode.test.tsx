@@ -88,7 +88,7 @@ it('selects client/agreement axes and blocks a mode switch without dropping date
     fireEvent.click(screen.getByRole('button', { name: `Додати поле: Групування ${axis}` }))
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: label }))
   }
-  expect(screen.getByText('У файлі кожен договір у колонках буде окремим аркушем.')).toBeTruthy()
+  expect(screen.getByText('До 100 договорів у колонках — кожен договір окремим аркушем, більше — одна таблиця.')).toBeTruthy()
   changeReportPeriod({ from: '2026-10-17', to: '2026-10-23' })
   const before = await submitted(view, 1)
   expect(before.sorted.Row.map(f => f.type)).toEqual([12])
@@ -113,7 +113,7 @@ it('selects product/month axes, keeps them during an incompatible mode switch an
     fireEvent.click(screen.getByRole('button', { name: `Додати поле: Групування ${axis}` }))
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: label }))
   }
-  expect(screen.getByText('У файлі кожен місяць у колонках буде окремим аркушем.')).toBeTruthy()
+  expect(screen.getByText('До 100 місяців у колонках — кожен місяць окремим аркушем, більше — одна таблиця.')).toBeTruthy()
   changeReportPeriod({ from: '2026-10-17', to: '2026-10-23' })
   const before = await submitted(view, 1)
   expect(before.sorted.Row.map(f => f.type)).toEqual([5])

@@ -2,11 +2,12 @@ import type { ReportDataset, ReportRequestBody } from '../types'
 import { currentFinancialDocumentAxesCapability, currentFinancialDocumentAxesError, hasFinancialDocumentAxes, validCurrentFinancialDocumentAxes } from './currentFinancialDocumentAxes'
 import { currentFinancialAxesCapability, currentFinancialAxesError, usesCurrentFinancialAxes, validCurrentFinancialAxes } from './currentFinancialAxes'
 import { currentFinancialProductTimeAxesCapability, currentFinancialProductTimeAxesError, hasFinancialProductTimeAxes, validCurrentFinancialProductTimeAxes } from './currentFinancialProductTimeAxes'
+import { validMaximumResultColumns } from './reportWideColumns'
 
 export type FinancialAxes = {
   version: 1; allowedRows: [3, 4]; allowedColumns: [3, 4]
   minimumRows: 1; maximumRows: 2; maximumColumns: 1
-  maximumOutputColumns: 256; uniqueAcrossAxes: true
+  maximumOutputColumns: 256; maximumResultColumns?: number; uniqueAcrossAxes: true
 }
 
 /** The explicit server capability is required; configuration alone cannot unlock financial columns. */
@@ -17,7 +18,7 @@ export function financialAxesCapability(dataset?: ReportDataset): FinancialAxes 
   if (cap.version !== 1 || !Array.isArray(cap.allowedRows) || cap.allowedRows.length !== 2 || cap.allowedRows[0] !== 3 || cap.allowedRows[1] !== 4
     || !Array.isArray(cap.allowedColumns) || cap.allowedColumns.length !== 2 || cap.allowedColumns[0] !== 3 || cap.allowedColumns[1] !== 4
     || cap.minimumRows !== 1 || cap.maximumRows !== 2 || cap.maximumColumns !== 1
-    || cap.maximumOutputColumns !== 256 || cap.uniqueAcrossAxes !== true) return undefined
+    || cap.maximumOutputColumns !== 256 || !validMaximumResultColumns(cap.maximumResultColumns) || cap.uniqueAcrossAxes !== true) return undefined
   return value as FinancialAxes
 }
 

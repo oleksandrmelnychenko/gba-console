@@ -1,11 +1,12 @@
 import type { ReportDataset, ReportDatasetField, ReportRequestBody } from '../types'
 import { requestProfitReadMode } from './profitReadMode'
 import { requestDayOrganizationBasis } from './dayOrganizationBasis'
+import { validMaximumResultColumns } from './reportWideColumns'
 
 export type CurrentFinancialAxes = {
   version: 1; allowedRows: [3, 4, 12, 15]; allowedColumns: [3, 4, 12, 15]
   minimumRows: 1; maximumRows: 2; maximumColumns: 1; maximumTotalDimensions: 2
-  maximumOutputColumns: 256; uniqueAcrossAxes: true
+  maximumOutputColumns: 256; maximumResultColumns?: number; uniqueAcrossAxes: true
   requiredProfitReadMode: 0; requiredDayOrganizationBasis: 0
   groupings: ReportDatasetField[]
 }
@@ -18,7 +19,7 @@ export function currentFinancialAxesCapability(dataset?: ReportDataset): Current
   const axis = (value: unknown) => Array.isArray(value) && value.length === 4 && value.every((type, index) => type === [3, 4, 12, 15][index])
   if (cap.version !== 1 || !axis(cap.allowedRows) || !axis(cap.allowedColumns)
     || cap.minimumRows !== 1 || cap.maximumRows !== 2 || cap.maximumColumns !== 1 || cap.maximumTotalDimensions !== 2
-    || cap.maximumOutputColumns !== 256 || cap.uniqueAcrossAxes !== true
+    || cap.maximumOutputColumns !== 256 || !validMaximumResultColumns(cap.maximumResultColumns) || cap.uniqueAcrossAxes !== true
     || cap.requiredProfitReadMode !== 0 || cap.requiredDayOrganizationBasis !== 0
     || !Array.isArray(cap.groupings) || cap.groupings.length !== 2
     || cap.groupings.some((field, index) => !field || typeof field !== 'object' || Array.isArray(field)

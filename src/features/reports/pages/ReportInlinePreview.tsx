@@ -6,7 +6,8 @@ import { TableChip } from '../../../shared/ui/TableChip'
 import { settlementAttributeText, type SettlementCounterpartyAttribute } from '../data/settlementSourceAttributes'
 import { Fragment, memo } from 'react'
 import { Alert, Text } from '@mantine/core'
-import { isNegativePreviewScalar, isZeroPreviewScalar, previewAmountText, previewBlanksZero, previewNegativeRed, previewCaptionText, previewCellText, previewNumberText, previewSharedNames, type CurrentVparivanieProduct, type NativeReportPreview, type NativeReportPreviewAxis, type NativeReportPreviewCell, type NativeReportPreviewFilter, type NativeReportPreviewRequest, type NativeReportPreviewScalar } from '../data/nativeReportPreview'
+import { columnWindowText } from '../data/reportWideColumns'
+import { isPartialColumnWindow, previewColumnWindow, isNegativePreviewScalar, isZeroPreviewScalar, previewAmountText, previewBlanksZero, previewNegativeRed, previewCaptionText, previewCellText, previewNumberText, previewSharedNames, type CurrentVparivanieProduct, type NativeReportPreview, type NativeReportPreviewAxis, type NativeReportPreviewCell, type NativeReportPreviewFilter, type NativeReportPreviewRequest, type NativeReportPreviewScalar } from '../data/nativeReportPreview'
 import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, CURRENT_VPARIVANIE_PRODUCT_FIELDS, currentVparivanieQuantityText } from '../data/currentVparivanie'
 import { currentVparivanieSecondTier } from '../data/currentVparivanieColumns'
 import './report-inline-preview.css'
@@ -62,12 +63,17 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
     ...workbookColumns.map(field => field.caption)]
   const levelCount = products ? 0 : preview.RowSchema.length
   const totalledLevels = new Set(totals?.Groups.map(group => group.Level))
+  const columnWindow = previewColumnWindow(preview)
+  const wide = isPartialColumnWindow(columnWindow)
+  const stickyRowHeader = (index: number) => wide ? { className: 'is-sticky-row-header', style: { left: `${index * WIDE_ROW_HEADER_REM}rem` } } : {}
   const repeated = preview.Rows.map((row, rowIndex) => preview.RowSchema.map((_, level) => level < levelCount - 1 && (totalledLevels.has(level)
     || rowIndex > 0 && preview.RowSchema.slice(0, level + 1).every((__, upper) => rowCaption(row, upper) === rowCaption(preview.Rows[rowIndex - 1], upper)))))
-  return <section className="app-section-card report-inline-preview" aria-label="Попередній перегляд звіту">
+  return <section className={wide ? 'app-section-card report-inline-preview report-inline-preview--wide' : 'app-section-card report-inline-preview'} aria-label="Попередній перегляд звіту">
     <div className="report-inline-preview__heading">
       {!embedded ? <Text component="h2" fw={600} size="sm" className="report-inline-preview__title">Таблиця на екрані</Text> : null}
       <Text size="sm" className="report-inline-preview__count">{deskRowsText(preview.Page.ReturnedRows, preview.Page.TotalVisibleRows, preview.Page.HasMore)}</Text>
+      {wide && columnWindow ? <Text size="sm" className="report-inline-preview__count" data-testid="report-preview-column-window">
+        {columnWindowText(columnWindow.ColumnOffset, columnWindow.ReturnedColumns, columnWindow.TotalColumns)}</Text> : null}
     </div>
     <ReportAttributionWarnings request={preview.Request} />
     {preview.Request?.presentationCurrency ? <Text size="sm">Валюта звіту: {preview.Request.presentationCurrency.code}. Комерційний курс GBA на дату кожного документа, включно з поверненнями.</Text> : null}
@@ -88,7 +94,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
     <ReportTableScrollArea label="Таблиця попереднього перегляду">
       <table className="app-static-table">
         <thead><tr>
-          {rowHeaders.map((header, index) => <th scope="col" rowSpan={products ? 2 : undefined} key={`row-${index}`}>{header}</th>)}
+          {rowHeaders.map((header, index) => <th scope="col" rowSpan={products ? 2 : undefined} key={`row-${index}`} {...stickyRowHeader(index)}>{header}</th>)}
           {preview.Columns.map(column => <th scope="col" className="report-inline-preview__value-heading" key={column.SourceIndex} title={semanticsByColumn.has(column.SourceIndex) ? reportValueUnit(semanticsByColumn.get(column.SourceIndex)!, preview.numberPresentation, preview.Request?.presentationCurrency?.code) : undefined}>
             {(products ? column.Values.slice(0, 1) : sharedGroup ? column.Values.slice(1) : column.Values).map((value, index) => sharedGroup ? value.Caption : columnIdentityCaption(column, index)).filter(Boolean).join(' / ') || `Стовпець ${column.Ordinal + 1}`}
             {moneyScaleLabel(preview.numberPresentation, semanticsByColumn.get(column.SourceIndex)) ? `, ${moneyScaleLabel(preview.numberPresentation, semanticsByColumn.get(column.SourceIndex))}` : ''}
@@ -112,8 +118,9 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
               caption: rowCaption })
             const isOrganization = !products && index < levelCount
               && /^(Організація|Организация|Організація партії)$/iu.test(preview.RowSchema[index]?.Caption?.trim() ?? '')
-            return <th scope="row" key={header} data-level={index < levelCount ? index : undefined}
-              className={repeated[rowIndex]?.[index] ? 'is-repeat' : undefined}>
+            const sticky = stickyRowHeader(index)
+            return <th scope="row" key={header} data-level={index < levelCount ? index : undefined} style={sticky.style}
+              className={[repeated[rowIndex]?.[index] ? 'is-repeat' : '', sticky.className ?? ''].filter(Boolean).join(' ') || undefined}>
               {isOrganization && !repeated[rowIndex]?.[index] ? <TableChip tone="product" value={caption} /> : caption}
             </th>
           })}
@@ -133,8 +140,12 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
     </ReportTableScrollArea>
     {showPageNote && preview.Page.HasMore ? <Text size="xs" c="dimmed" className="report-inline-preview__more">Показано рядки {preview.Page.Offset + 1}–{preview.Page.Offset + preview.Page.ReturnedRows}. Повний результат доступний у Excel або PDF.{totals
       ? ` Загальний підсумок — за всіма ${preview.Page.TotalVisibleRows} рядками звіту.` : ''}</Text> : null}
+    {showPageNote && wide && columnWindow ? <Text size="xs" c="dimmed" className="report-inline-preview__more">
+      {columnWindowText(columnWindow.ColumnOffset, columnWindow.ReturnedColumns, columnWindow.TotalColumns)}. Решта колонок — у Excel.</Text> : null}
   </section>
 })
+
+const WIDE_ROW_HEADER_REM = 12
 
 // Labels are presentation only: distinct organizations, clients and agreements remain distinguishable even
 // when the source gives them identical names. Existing captioned IDs remain intact.
