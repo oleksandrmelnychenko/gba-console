@@ -20,7 +20,7 @@ it('shows the actual seven flat attributes and separate customer identities with
   expect(view.container.querySelectorAll('script')).toHaveLength(0)
   expect(screen.getByText('<script>name</script>')).toBeTruthy()
   expect(screen.getByText('Залишки на кінець періоду та період продажів')).toBeTruthy()
-  expect(screen.getByText(/до останньої синхронізації залишків з 1С/)).toBeTruthy()
+  expect(screen.getByText(/на дату раніше 01\.01\.2025 вони порожні/)).toBeTruthy()
   expect(screen.getByText(/Вибраний період стосується продажів/)).toBeTruthy()
   expect(screen.queryByText('Період розрахунку: 01.09.2026 — 27.09.2026')).toBeNull()
   expect(view.container.textContent).not.toContain('a'.repeat(64))

@@ -68,7 +68,7 @@ const supported = [
   {
     fileName: 'Впарювання.xls',
     label: 'Матриця товарів',
-    notice: `Часткова форма Excel: залишки GBA на кінець періоду і продажі за вибраний період. ${VPARIVANIE_WORKBOOK_FILTERS_NOTICE} До останньої синхронізації залишків з 1С залишок порожній. Продажі: ${BUG_1274_PARITY_NOTICE}`,
+    notice: `Часткова форма Excel: залишки GBA на кінець періоду і продажі за вибраний період. ${VPARIVANIE_WORKBOOK_FILTERS_NOTICE} Залишок на дату раніше 01.01.2025 порожній. Продажі: ${BUG_1274_PARITY_NOTICE}`,
     dataSource: 39,
     accepts: isCurrentVparivanieDataset,
   },

@@ -224,7 +224,7 @@ function ReportAttributionWarnings({ request }: { request: NativeReportPreviewRe
 
 function SnapshotAttribution({ request }: { request: NativeReportPreviewRequest }) {
   if (request.DataSource === 'NativeCurrentVparivanie') return <Alert color="blue" title={request.CurrentVparivanieMovements ? 'Залишки, продажі та рух товару' : 'Залишки на кінець періоду та період продажів'}>
-    Залишки показують вільний залишок GBA на кінець вибраного періоду; до останньої синхронізації залишків з 1С вони порожні. {request.CurrentVparivanieMovements ? 'Вибраний період стосується продажів, приходу та розходу.' : 'Вибраний період стосується продажів.'}
+    Залишки показують вільний залишок GBA на кінець вибраного періоду; на дату раніше 01.01.2025 вони порожні. {request.CurrentVparivanieMovements ? 'Вибраний період стосується продажів, приходу та розходу.' : 'Вибраний період стосується продажів.'}
     {request.ObservationStartedAtUtc && request.ObservationCompletedAtUtc
       ? <Text size="sm">Дані прочитано: {kyivTimestamp(request.ObservationCompletedAtUtc)}</Text>
       : null}
