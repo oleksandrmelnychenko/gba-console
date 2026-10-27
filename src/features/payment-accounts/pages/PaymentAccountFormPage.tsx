@@ -90,6 +90,7 @@ import type {
 } from '../types'
 import { PaymentRegisterTransferType, PaymentRegisterType, TransferOperationType } from '../types'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
+import { PAYMENT_BALANCE_SOURCE_NOTE } from '../balanceSource'
 import './payment-accounts-page.css'
 
 type LocationState = {
@@ -2083,7 +2084,7 @@ function PaymentAccountBalancesView({ account }: { account: PaymentAccount }) {
   )
 }
 
-function PaymentCurrencyActivityView({
+export function PaymentCurrencyActivityView({
   activity,
   isLoading,
   onCancelExchange,
@@ -2100,6 +2101,7 @@ function PaymentCurrencyActivityView({
 
   return (
     <Stack gap="md">
+      <Text size="xs" c="dimmed">{t(PAYMENT_BALANCE_SOURCE_NOTE)}</Text>
       <ActivityTable
         columns={getTransferColumns(activity?.PaymentRegister || null, t, onCancelTransfer)}
         emptyText={t('Перекази відсутні')}

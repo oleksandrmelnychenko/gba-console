@@ -34,6 +34,7 @@ import {
 import { PAYMENT_ACCOUNT_CREATE_PERMISSION, PAYMENT_ACCOUNT_EDIT_PERMISSION } from '../permissions'
 import type { Organization, PaymentAccount, PaymentCurrencyRegister } from '../types'
 import { PaymentRegisterType } from '../types'
+import { PAYMENT_BALANCE_SOURCE_NOTE } from '../balanceSource'
 import './payment-accounts-page.css'
 
 const SEARCH_DEBOUNCE_MS = 350
@@ -311,6 +312,7 @@ function PaymentAccountsPageContent() {
             />
           </div>
 
+          <Text size="xs" c="dimmed">{t(PAYMENT_BALANCE_SOURCE_NOTE)}</Text>
           {totalEuroAmount === null && !isLoading && !error && <Text size="sm" c="orange">{t('Оцінка EUR недоступна: перевірте валюту та курс. Залишки у валюті рахунків збережені.')}</Text>}
           <Group className="payment-accounts-total-footer" gap="xs" justify="flex-end" wrap="nowrap">
             <Badge className="app-role-pill is-gray" variant="light">

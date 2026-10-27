@@ -11,7 +11,8 @@ import {
 } from '../api/paymentAccountsApi'
 import type { PaymentAccount } from '../types'
 import { PaymentRegisterType } from '../types'
-import { PaymentAccountExchangeModal, PaymentAccountTransferModal } from './PaymentAccountFormPage'
+import { PaymentAccountExchangeModal, PaymentAccountTransferModal, PaymentCurrencyActivityView } from './PaymentAccountFormPage'
+import { PAYMENT_BALANCE_SOURCE_NOTE } from '../balanceSource'
 
 vi.mock('../api/paymentAccountsApi', async (importOriginal) => ({
   ...await importOriginal<typeof import('../api/paymentAccountsApi')>(),
@@ -110,5 +111,14 @@ describe('PaymentAccount transfer and exchange inputs', () => {
       fireEvent.change(input, { target: { value } })
       expect(input.value).toBe(value)
     }
+  })
+})
+
+describe('PaymentAccount currency activity', () => {
+  it('explains that the balance is stored and the period movement comes from GBA documents', () => {
+    renderModal(<PaymentCurrencyActivityView activity={null} isLoading={false} />)
+
+    expect(screen.getByText(PAYMENT_BALANCE_SOURCE_NOTE)).toBeTruthy()
+    expect(PAYMENT_BALANCE_SOURCE_NOTE).toBe('Залишок — збережений баланс рахунку; рух за період — за документами GBA')
   })
 })
