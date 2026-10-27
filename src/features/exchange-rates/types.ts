@@ -13,11 +13,21 @@ export type ExchangeRate = {
   GovCrossExchangeRateHistories?: ExchangeRate[]
 }
 
+export type ExchangeRateFreshness = {
+  GbaOwnsRates: boolean
+  Today: string
+  CommercialRateDate?: string | null
+  CommercialBusinessDaysOld?: number | null
+  IsCommercialRateStale: boolean
+  GovernmentRateDate?: string | null
+}
+
 export type ExchangeRatesSnapshot = {
   commercial: ExchangeRate[]
   commercialCross: ExchangeRate[]
   government: ExchangeRate[]
   governmentCross: ExchangeRate[]
+  freshness?: ExchangeRateFreshness | null
 }
 
 export type ExchangeRateGroupId =

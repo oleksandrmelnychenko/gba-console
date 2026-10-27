@@ -104,6 +104,11 @@ export function formatHistoryDate(value?: string | Date): string {
   return historyDateFormatter.format(date)
 }
 
+export function formatBusinessDate(value?: string | null): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value || '')
+  return match ? `${match[3]}.${match[2]}.${match[1]}` : ''
+}
+
 export function getDefaultHistoryFromDate(now = new Date()): Date {
   const date = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   date.setDate(date.getDate() - DEFAULT_HISTORY_LOOKBACK_DAYS)

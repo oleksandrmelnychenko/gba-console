@@ -1,11 +1,12 @@
-import { Group, Loader, Portal, Text, Transition } from '@mantine/core'
+import { Group, Loader, Portal, Text, Tooltip, Transition } from '@mantine/core'
 import { useReducedMotion } from '@mantine/hooks'
+import { TriangleAlert } from 'lucide-react'
 import './currency-rates.css'
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useExchangeRates } from '../hooks/useExchangeRates'
-import type { ExchangeRate, ExchangeRateGroup } from '../types'
-import { buildExchangeRateGroups, formatRate, getRateKey } from '../utils'
+import type { ExchangeRate, ExchangeRateFreshness, ExchangeRateGroup } from '../types'
+import { buildExchangeRateGroups, formatBusinessDate, formatRate, getRateKey } from '../utils'
 import { CurrencyRatesPanel } from './CurrencyRatesPanel'
 
 const PANEL_WIDTH = 520
@@ -111,6 +112,7 @@ export function CurrencyRatesFooter() {
   return (
     <>
       <Group gap={0} wrap="nowrap" className="rates-footer-groups" aria-label={t('Курси валют')}>
+        {data.freshness?.IsCommercialRateStale && <StaleCommercialRate freshness={data.freshness} />}
         {groups.map((group) => (
           <RateGroup
             key={group.id}
@@ -140,6 +142,23 @@ export function CurrencyRatesFooter() {
         </Portal>
       )}
     </>
+  )
+}
+
+function StaleCommercialRate({ freshness }: { freshness: ExchangeRateFreshness }) {
+  const { t } = useI18n()
+  const date = formatBusinessDate(freshness.CommercialRateDate)
+  const details = date
+    ? t('Комерційний курс не оновлювався з {date}. Ціни продажу, борг у EUR, кошик, форми 40/41 та NBA рахуються за ним — оновіть курс.', { date })
+    : t('Комерційного курсу немає. Ціни продажу, борг у EUR, кошик, форми 40/41 та NBA рахуються за ним — внесіть курс.')
+
+  return (
+    <Tooltip label={details} multiline w={320} withArrow>
+      <span className="rate-stale-warning" role="status" aria-label={details} tabIndex={0}>
+        <TriangleAlert size={14} aria-hidden="true" />
+        <span>{t('Курс застарів')}</span>
+      </span>
+    </Tooltip>
   )
 }
 

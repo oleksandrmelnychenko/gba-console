@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   buildExchangeRateGroups,
+  formatBusinessDate,
   formatHistoryDate,
   getDefaultFormDate,
   getDefaultHistoryFromDate,
@@ -61,5 +62,12 @@ describe('exchange rate groups', () => {
   it('does not render invalid or missing history dates', () => {
     expect(formatHistoryDate()).toBe('')
     expect(formatHistoryDate('not-a-date')).toBe('')
+  })
+})
+
+describe('formatBusinessDate', () => {
+  it('shows a server business date as a Ukrainian calendar date', () => {
+    expect(formatBusinessDate('2026-11-06T00:00:00')).toBe('06.11.2026')
+    expect(formatBusinessDate(null)).toBe('')
   })
 })

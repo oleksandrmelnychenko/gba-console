@@ -1,6 +1,7 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type {
   ExchangeRate,
+  ExchangeRateFreshness,
   ExchangeRateHistoryRequest,
   ExchangeRateUpdateMode,
   ExchangeRatesSnapshot,
@@ -19,16 +20,18 @@ const endpoints = {
   updateCommercialCross: '/exchangerates/cross/update',
   updateGovernment: '/exchangerates/gov/update',
   updateGovernmentCross: '/exchangerates/cross/gov/update',
+  freshness: '/exchangerates/freshness',
 }
 
 export const exchangeRateEndpoints = endpoints
 
 export async function getExchangeRatesSnapshot(): Promise<ExchangeRatesSnapshot> {
-  const [commercial, commercialCross, government, governmentCross] = await Promise.all([
+  const [commercial, commercialCross, government, governmentCross, freshness] = await Promise.all([
     getRates(endpoints.commercial),
     getRates(endpoints.commercialCross),
     getRates(endpoints.government),
     getRates(endpoints.governmentCross),
+    getExchangeRateFreshness().catch(() => null),
   ])
 
   return {
@@ -36,7 +39,12 @@ export async function getExchangeRatesSnapshot(): Promise<ExchangeRatesSnapshot>
     commercialCross,
     government,
     governmentCross,
+    freshness,
   }
+}
+
+export async function getExchangeRateFreshness(): Promise<ExchangeRateFreshness> {
+  return apiRequest<ExchangeRateFreshness>(endpoints.freshness)
 }
 
 async function getRates(endpoint: string): Promise<ExchangeRate[]> {

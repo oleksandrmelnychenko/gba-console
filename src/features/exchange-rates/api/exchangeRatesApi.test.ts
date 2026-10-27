@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { getExchangeRateHistory, updateExchangeRates } from './exchangeRatesApi'
+import { getExchangeRateHistory, getExchangeRatesSnapshot, updateExchangeRates } from './exchangeRatesApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -77,5 +77,19 @@ describe('exchangeRatesApi', () => {
       method: 'POST',
       body: { Amount: 51.4, Code: 'EUR', Culture: 'uk', NetUid: 'uah-eur' },
     })
+  })
+
+  it('loads the rate freshness with the snapshot and keeps the rates when it fails', async () => {
+    const freshness = { GbaOwnsRates: true, Today: '2026-11-10T00:00:00', IsCommercialRateStale: true, CommercialRateDate: '2026-11-06T00:00:00' }
+    apiRequestMock.mockImplementation(async (endpoint: string) => (endpoint === '/exchangerates/freshness' ? freshness : []))
+
+    await expect(getExchangeRatesSnapshot()).resolves.toMatchObject({ commercial: [], freshness })
+
+    apiRequestMock.mockImplementation(async (endpoint: string) => {
+      if (endpoint === '/exchangerates/freshness') throw new Error('down')
+      return [{ Amount: 51.4, Code: 'EUR' }]
+    })
+
+    await expect(getExchangeRatesSnapshot()).resolves.toMatchObject({ commercial: [{ Amount: 51.4, Code: 'EUR' }], freshness: null })
   })
 })

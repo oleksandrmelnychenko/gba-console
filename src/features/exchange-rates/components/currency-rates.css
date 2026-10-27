@@ -2,6 +2,22 @@
 .rates-footer-groups { width: max-content; padding-block: 0; gap: 0; }
 .rates-footer-state { color: #fff; white-space: nowrap; padding-inline: 10px; }
 .rates-footer-state.is-error { font-weight: 600; }
+.rate-stale-warning {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  margin-inline: 6px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: var(--mantine-color-orange-6);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.rate-stale-warning:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
 .rate-group-button {
   display: inline-flex;
   position: relative;
