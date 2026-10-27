@@ -117,6 +117,7 @@ import {
   type ProductFileUploadForm,
   type ProductFileUploadPriceRow,
 } from '../productFileUpload'
+import { NATIVE_PRODUCT_CLASSIFICATION_REQUIRED } from '../productNativeClassification'
 import { ShopImageGallery } from '../components/ShopImageGallery'
 import { useProductDetailData } from '../useProductDetailData'
 import { ProductPriceSourcePanel } from '../components/ProductPriceSourcePanel'
@@ -2553,6 +2554,7 @@ export function ProductFileUploadModal({
   const [error, setError] = useState<string | null>(null)
   const [isUploading, setUploading, tryStartUploading] = useBusyState()
   const hasPriceRows = form.prices.length > 0
+  const requiresClassification = form.mode === 0
   const duplicatePricingIds = getDuplicateProductUploadPricingIds(form.prices)
   const hasDuplicatePricingRows = duplicatePricingIds.length > 0
   const canSubmit = Boolean(
@@ -2562,6 +2564,7 @@ export function ProductFileUploadModal({
     && form.vendorCode > 0
     && !hasDuplicatePricingRows
     && (!hasPriceRows || form.priceSourceIsAmg !== null)
+    && (!requiresClassification || form.nativeIsService !== null)
     && !isUploading,
   )
   const pricingOptions = pricingState.data.reduce<Array<{ label: string; value: string }>>((options, pricing) => {
@@ -2678,6 +2681,11 @@ export function ProductFileUploadModal({
       return
     }
 
+    if (requiresClassification && form.nativeIsService === null) {
+      setError(t(NATIVE_PRODUCT_CLASSIFICATION_REQUIRED))
+      return
+    }
+
     if (!canSubmit) {
       setError(t('Виберіть файл і заповніть обовʼязкові колонки'))
       return
@@ -2743,6 +2751,24 @@ export function ProductFileUploadModal({
                 onChange={(nextFile) => setField('file', nextFile)}
               />
             </SimpleGrid>
+            {requiresClassification ? (
+              <Box component="fieldset" m={0} p={0} style={{ border: 0, minWidth: 0 }}>
+                <Text component="legend" c="gray.9" fw={500} mb={4} size="xs">
+                  {t('Тип позиції')} <Text component="span" c="red">*</Text>
+                </Text>
+                <SegmentedControl
+                  data={[
+                    { label: t('Товар'), value: 'goods' },
+                    { label: t('Послуга'), value: 'service' },
+                  ]}
+                  value={form.nativeIsService === null ? '' : form.nativeIsService ? 'service' : 'goods'}
+                  onChange={(value) => setField('nativeIsService', value === 'service')}
+                />
+                {form.nativeIsService === null ? (
+                  <Text c="red" mt={4} size="xs">{t('Оберіть, нові позиції з файлу — товари чи послуги')}</Text>
+                ) : null}
+              </Box>
+            ) : null}
           </Stack>
         </Card>
 

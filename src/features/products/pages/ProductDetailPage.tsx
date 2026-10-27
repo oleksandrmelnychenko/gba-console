@@ -1272,6 +1272,7 @@ function ProductEditPanel({ onClose, onProductSaved, product }: { onClose: () =>
                     { value: 'service', label: t('Послуга') },
                   ]}
                   value={form.NativeIsService === null ? 'unknown' : form.NativeIsService ? 'service' : 'goods'}
+                  error={form.NativeIsService === null ? t('Оберіть товар або послугу: без цього позиція випадає з ВП у звітах 35 і 39') : undefined}
                   allowDeselect={false}
                   disabled={isSaving}
                   onChange={(value) => {

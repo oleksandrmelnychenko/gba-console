@@ -48,6 +48,14 @@ describe('native product classification editor', () => {
     },
   )
 
+  it('flags an unknown classification until goods or service is chosen', async () => {
+    const hint = 'Оберіть товар або послугу: без цього позиція випадає з ВП у звітах 35 і 39'
+    openEditor({ NativeIsService: null })
+    expect(screen.getByText(hint)).toBeTruthy()
+    await choose('Послуга')
+    expect(screen.queryByText(hint)).toBeNull()
+  })
+
   it('lets a manager explicitly classify unknown as goods without a false default', async () => {
     openEditor({ NativeIsService: null })
     await choose('Товар')

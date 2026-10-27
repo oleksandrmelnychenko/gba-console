@@ -1,4 +1,8 @@
-import { canEditNativeProductClassification } from '../productNativeClassification'
+import {
+  canEditNativeProductClassification,
+  hasNativeProductClassificationChoice,
+  NATIVE_PRODUCT_CLASSIFICATION_REQUIRED,
+} from '../productNativeClassification'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { readSession } from '../../../shared/auth/session'
 import { normalizeExportDocument } from '../../../shared/documents/exportDocument'
@@ -91,6 +95,10 @@ function normalizeProductFileUploadConfiguration(
     throw new Error('Оберіть джерело цін: Контех (Fenix) або AMG')
   }
 
+  if (configuration.Mode === 0 && typeof configuration.NativeIsService !== 'boolean') {
+    throw new Error(NATIVE_PRODUCT_CLASSIFICATION_REQUIRED)
+  }
+
   const normalizedConfiguration: ProductFileUploadConfiguration = {
     ...configuration,
     WithPrices: withPrices,
@@ -98,6 +106,10 @@ function normalizeProductFileUploadConfiguration(
 
   if (!withPrices) {
     delete normalizedConfiguration.ImportedForAmg
+  }
+
+  if (configuration.Mode !== 0) {
+    delete normalizedConfiguration.NativeIsService
   }
 
   return normalizedConfiguration
@@ -251,6 +263,10 @@ export async function updateProductWithImages(
 }
 
 export async function createProductWithImages(product: Product, files: File[]): Promise<Product | null> {
+  if (!hasNativeProductClassificationChoice(product)) {
+    throw new Error(NATIVE_PRODUCT_CLASSIFICATION_REQUIRED)
+  }
+
   const formData = new FormData()
 
   files.forEach((file) => formData.append('images', file))

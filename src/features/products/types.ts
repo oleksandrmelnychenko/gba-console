@@ -469,6 +469,7 @@ export type ProductFileUploadConfiguration = {
   MainOriginalNumber: number
   MeasureUnit: number
   Mode: ProductFileUploadMode
+  NativeIsService?: boolean | null
   NamePL: number
   NameRU: number
   NameUA: number

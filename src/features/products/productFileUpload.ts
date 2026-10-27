@@ -33,6 +33,7 @@ export type ProductFileUploadPriceRow = {
 export type ProductFileUploadForm = ProductFileUploadColumnForm & {
   file: File | null
   mode: ProductFileUploadMode
+  nativeIsService: boolean | null
   priceSourceIsAmg: boolean | null
   prices: ProductFileUploadPriceRow[]
 }
@@ -49,6 +50,7 @@ export function createProductFileUploadForm(): ProductFileUploadForm {
     measureUnit: 0,
     mode: 0,
     nameRU: 0,
+    nativeIsService: null,
     nameUA: 0,
     newVendorCode: 0,
     orderStandard: 0,
@@ -80,6 +82,7 @@ export function buildProductFileUploadConfiguration(form: ProductFileUploadForm)
     MainOriginalNumber: form.mainOriginalNumber,
     MeasureUnit: form.measureUnit,
     Mode: form.mode,
+    ...(form.mode === 0 ? { NativeIsService: form.nativeIsService } : {}),
     NamePL: 0,
     NameRU: form.nameRU,
     NameUA: form.nameUA,

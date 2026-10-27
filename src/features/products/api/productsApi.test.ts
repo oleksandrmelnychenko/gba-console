@@ -83,6 +83,27 @@ describe('products API upload contracts', () => {
     expect(apiRequestMock).not.toHaveBeenCalled()
   })
 
+  it('rejects adding products from a file without an explicit goods or service choice', async () => {
+    const configuration = { Mode: 0, PriceConfigurations: [], WithPrices: false } as unknown as ProductFileUploadConfiguration
+
+    await expect(uploadProductsFromFile(configuration, new File(['vendor'], 'products.xlsx')))
+      .rejects.toThrow('Оберіть тип позиції: товар або послуга')
+    await expect(uploadProductsFromFile({ ...configuration, NativeIsService: null }, new File(['vendor'], 'products.xlsx')))
+      .rejects.toThrow('Оберіть тип позиції: товар або послуга')
+    expect(apiRequestMock).not.toHaveBeenCalled()
+  })
+
+  it.each([false, true])('sends the goods or service choice %s only when adding products', async (NativeIsService) => {
+    const add = { Mode: 0, NativeIsService, PriceConfigurations: [], WithPrices: false } as unknown as ProductFileUploadConfiguration
+    await uploadProductsFromFile(add, new File(['vendor'], 'products.xlsx'))
+    expect(JSON.parse(String((apiRequestMock.mock.calls.at(-1)?.[1]?.body as FormData).get('configuration'))))
+      .toHaveProperty('NativeIsService', NativeIsService)
+
+    await uploadProductsFromFile({ ...add, Mode: 1 }, new File(['vendor'], 'products.xlsx'))
+    expect(JSON.parse(String((apiRequestMock.mock.calls.at(-1)?.[1]?.body as FormData).get('configuration'))))
+      .not.toHaveProperty('NativeIsService')
+  })
+
   it('omits the pricing source when the upload has no price columns', async () => {
     const configuration: Partial<ProductFileUploadConfiguration> = {
       ImportedForAmg: true,
@@ -549,7 +570,7 @@ function createProductWithRelations(): Product {
 describe('native product classification wire contract', () => {
   beforeEach(() => apiRequestMock.mockReset())
 
-  it.each([null, false, true])('preserves explicit %s in detail, update and creation payloads', async (NativeIsService) => {
+  it.each([false, true])('preserves explicit %s in detail, update and creation payloads', async (NativeIsService) => {
     apiRequestMock.mockResolvedValue({ Id: 42, NativeIsService })
     const product = await getProductByNetId('native-product')
     expect(product).toHaveProperty('NativeIsService', NativeIsService)
@@ -560,15 +581,25 @@ describe('native product classification wire contract', () => {
     expect(JSON.parse(String(body.get('entity')))).toHaveProperty('NativeIsService', NativeIsService)
   })
 
-  it('keeps omitted capability omitted across old detail, update and creation', async () => {
+  it('keeps an unknown classification on update but refuses to create a product without one', async () => {
+    apiRequestMock.mockResolvedValue({ Id: 42, NativeIsService: null })
+    const product = await getProductByNetId('native-product')
+    await updateProduct(product!)
+    expect(apiRequestMock.mock.calls.at(-1)?.[1]?.body).toHaveProperty('NativeIsService', null)
+    const calls = apiRequestMock.mock.calls.length
+    await expect(createProductWithImages(product!, [])).rejects.toThrow('Оберіть тип позиції: товар або послуга')
+    expect(apiRequestMock.mock.calls.length).toBe(calls)
+  })
+
+  it('keeps omitted capability omitted on update and refuses an unclassified native creation', async () => {
     apiRequestMock.mockResolvedValue({ Id: 42 })
     const product = await getProductByNetId('old-product')
     expect(product).not.toHaveProperty('NativeIsService')
     await updateProduct(product!)
     expect(apiRequestMock.mock.calls.at(-1)?.[1]?.body).not.toHaveProperty('NativeIsService')
-    await createProductWithImages(product!, [])
-    const body = apiRequestMock.mock.calls.at(-1)?.[1]?.body as FormData
-    expect(JSON.parse(String(body.get('entity')))).not.toHaveProperty('NativeIsService')
+    const calls = apiRequestMock.mock.calls.length
+    await expect(createProductWithImages(product!, [])).rejects.toThrow('Оберіть тип позиції: товар або послуга')
+    expect(apiRequestMock.mock.calls.length).toBe(calls)
   })
 
   it.each([

@@ -91,6 +91,46 @@ describe('ProductFileUploadModal price source', () => {
   })
 })
 
+describe('ProductFileUploadModal goods or service choice', () => {
+  it('requires an explicit choice with no default before adding products', async () => {
+    renderModal()
+
+    expect(await screen.findByText('Тип позиції')).toBeTruthy()
+    expect((screen.getByRole('radio', { name: 'Товар' }) as HTMLInputElement).checked).toBe(false)
+    expect((screen.getByRole('radio', { name: 'Послуга' }) as HTMLInputElement).checked).toBe(false)
+    expect(screen.queryByRole('radio', { name: 'Не визначено' })).toBeNull()
+    expect(screen.getByText('Оберіть, нові позиції з файлу — товари чи послуги')).toBeTruthy()
+    fillRequiredUploadFields()
+    expect((screen.getByRole('button', { name: 'Завантажити' }) as HTMLButtonElement).disabled).toBe(true)
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Послуга' }))
+
+    expect(screen.queryByText('Оберіть, нові позиції з файлу — товари чи послуги')).toBeNull()
+    await waitFor(() => expect((screen.getByRole('button', { name: 'Завантажити' }) as HTMLButtonElement).disabled).toBe(false))
+    fireEvent.click(screen.getByRole('button', { name: 'Завантажити' }))
+    await waitFor(() => expect(uploadProductsFromFileMock).toHaveBeenCalledTimes(1))
+    expect(uploadProductsFromFileMock.mock.calls[0][0]).toMatchObject({ Mode: 0, NativeIsService: true })
+  })
+
+  it('serializes the choice only for the add operation', () => {
+    const baseForm = createProductFileUploadForm()
+
+    expect(baseForm.nativeIsService).toBeNull()
+    expect(buildProductFileUploadConfiguration({ ...baseForm, nativeIsService: false }))
+      .toMatchObject({ Mode: 0, NativeIsService: false })
+    expect(buildProductFileUploadConfiguration({ ...baseForm, mode: 1, nativeIsService: true }))
+      .not.toHaveProperty('NativeIsService')
+  })
+})
+
+function fillRequiredUploadFields() {
+  fireEvent.change(screen.getByRole('textbox', { name: /^З(\s|\*|$)/ }), { target: { value: '2' } })
+  fireEvent.change(screen.getByRole('textbox', { name: /^По(\s|\*|$)/ }), { target: { value: '3' } })
+  fireEvent.change(screen.getByRole('textbox', { name: /^Код виробника(\s|\*|$)/ }), { target: { value: '1' } })
+  const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+  fireEvent.change(fileInput, { target: { files: [new File(['vendor'], 'products.xlsx')] } })
+}
+
 function renderModal() {
   render(
     <MantineProvider>
