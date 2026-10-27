@@ -3,12 +3,13 @@ import { withoutProductClassification, withUnifiedSource } from './unifiedReport
 import { defaultDatasetRequest } from './reportDatasets'
 import { profitDayDataset } from './profitReadMode.test-fixtures'
 import { GOODS_KIND_ID, nativeExactFiltersConfigurationError, PRODUCT_CLASSIFICATION_RESAVE_ERROR, productClassificationReviewError,
-  productServiceFromClassification, SERVICE_KIND_ID, unmappedProductClassificationError } from './nativeExactFilters'
+  productServiceFromClassification, unmappedProductClassificationError } from './nativeExactFilters'
 import { savedNativeReportConfigurationError } from './savedNativeReport'
 import type { ReportDataset, ReportRequestBody } from '../types'
 
 const serviceDataset: ReportDataset = { ...profitDayDataset, productServiceFilter: { Version: 1, IsServiceValues: [false, true],
   GoodsKind: 'Товар', Basis: 'GbaProductClassification' } }
+const SERVICE_KIND_ID = '8FC4005056C0000811DF10AE5525F8C8'
 const classification = (ProductKindId: string, IsService: boolean) => ({ Version: 1, SourceWorld: 0, ProductKindId, IsService })
 const otherGoodsKind = classification('8AB2005056C0000811DF05C7D73CB155', false)
 const request = (productClassification: unknown): ReportRequestBody =>
@@ -17,6 +18,8 @@ const saved = (data: ReportRequestBody) => ({ Id: '10000000-0000-4000-8000-00000
 
 it.each([
   ['a goods kind other than «Товар»', otherGoodsKind, 'вид 8AB2005056C0000811DF05C7D73CB155, без послуг'],
+  ['services of the «Послуга» kind, which GBA «Послуги» could widen to every service kind', classification(SERVICE_KIND_ID, true), `вид ${SERVICE_KIND_ID}, лише послуги`],
+  ['services of the «Товар» kind', classification(GOODS_KIND_ID, true), `вид ${GOODS_KIND_ID}, лише послуги`],
   ['services of a kind other than «Послуга»', classification('BF4C005056C0000811DF2D0E690520B9', true), 'вид BF4C005056C0000811DF2D0E690520B9, лише послуги'],
   ['goods of the services kind', classification(SERVICE_KIND_ID, false), `вид ${SERVICE_KIND_ID}, без послуг`],
   ['a malformed classification', { Version: 1, SourceWorld: 0, ProductKindId: 'not-a-kind', IsService: false }, 'некоректний відбір'],
@@ -34,18 +37,26 @@ it.each([
   expect(nativeExactFiltersConfigurationError(withoutProductClassification(unified), serviceDataset)).toBeNull()
 })
 
-it('maps only the exact «Товар» and «Послуга» kinds onto the GBA goods and services filters', () => {
+it('maps only «Товар» without services, the one kind the GBA filter expresses exactly', () => {
   expect(productServiceFromClassification(classification(GOODS_KIND_ID.toLowerCase(), false))).toEqual({ Version: 1, IsService: false })
-  expect(productServiceFromClassification(classification(SERVICE_KIND_ID, true))).toEqual({ Version: 1, IsService: true })
-  expect(productServiceFromClassification(classification(GOODS_KIND_ID, true))).toBeNull()
-  expect(productServiceFromClassification(otherGoodsKind)).toBeNull()
-  for (const [value, mapped] of [[classification(GOODS_KIND_ID, false), false], [classification(SERVICE_KIND_ID, true), true]] as const) {
-    const unified = withUnifiedSource(request(value), serviceDataset)
-    expect(unified).not.toHaveProperty('productClassification')
-    expect(unified.productServiceFilter).toEqual({ Version: 1, IsService: mapped })
-    expect(nativeExactFiltersConfigurationError(unified, serviceDataset)).toBeNull()
-    expect(savedNativeReportConfigurationError(saved(request(value)), [serviceDataset])).toBe(PRODUCT_CLASSIFICATION_RESAVE_ERROR)
-  }
+  for (const value of [classification(SERVICE_KIND_ID, true), classification(GOODS_KIND_ID, true), classification(SERVICE_KIND_ID, false), otherGoodsKind])
+    expect(productServiceFromClassification(value)).toBeNull()
+  const value = classification(GOODS_KIND_ID, false)
+  const unified = withUnifiedSource(request(value), serviceDataset)
+  expect(unified).not.toHaveProperty('productClassification')
+  expect(unified.productServiceFilter).toEqual({ Version: 1, IsService: false })
+  expect(nativeExactFiltersConfigurationError(unified, serviceDataset)).toBeNull()
+  expect(savedNativeReportConfigurationError(saved(request(value)), [serviceDataset])).toBe(PRODUCT_CLASSIFICATION_RESAVE_ERROR)
+  expect(PRODUCT_CLASSIFICATION_RESAVE_ERROR).not.toContain('«Послуги»')
+})
+
+it('never turns a «Послуга» services template into the GBA filter for every service, even when a template already carries one', () => {
+  const services = classification(SERVICE_KIND_ID, true)
+  const unified = withUnifiedSource(request(services), serviceDataset)
+  expect(unified).not.toHaveProperty('productServiceFilter')
+  const both = { ...request(services), productServiceFilter: { Version: 1, IsService: true } } as ReportRequestBody
+  expect(withUnifiedSource(both, serviceDataset).productClassification).toEqual(services)
+  expect(nativeExactFiltersConfigurationError(withUnifiedSource(both, serviceDataset), serviceDataset)).not.toBeNull()
 })
 
 it('leaves the old Fenix classification untouched when the server does not advertise the GBA goods filter', () => {

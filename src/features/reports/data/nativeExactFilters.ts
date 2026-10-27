@@ -28,8 +28,7 @@ const BUYER_CAPABILITY_FIELDS = ['Version', 'SourceWorld', 'BuyerRootId', 'Requi
 const SERVICE_FIELDS = ['Version', 'IsService'] as const
 const SERVICE_CAPABILITY_FIELDS = ['Version', 'IsServiceValues', 'GoodsKind', 'Basis'] as const
 export const GOODS_KIND_ID = '8AB2005056C0000811DEF956DA4CFDA0'
-export const SERVICE_KIND_ID = '8FC4005056C0000811DF10AE5525F8C8'
-export const PRODUCT_CLASSIFICATION_RESAVE_ERROR = 'Шаблон містить відбір виду товару 1С. Відкрийте його у формі: відбір буде замінено на рівнозначний відбір GBA («Товар без послуг» або «Послуги»). Перегляньте налаштування й збережіть шаблон повторно.'
+export const PRODUCT_CLASSIFICATION_RESAVE_ERROR = 'Шаблон містить відбір виду товару 1С. Відкрийте його у формі: відбір буде замінено на рівнозначний відбір GBA «Товар без послуг». Перегляньте налаштування й збережіть шаблон повторно.'
 export type ReportProductServiceFilter = { Version: 1; IsService: boolean }
 export const goodsWithoutServices = (): ReportProductServiceFilter => ({ Version: 1, IsService: false })
 
@@ -93,9 +92,7 @@ export function isProductServiceFilterCapability(value: unknown): boolean {
 export function productServiceFromClassification(value: unknown): ReportProductServiceFilter | null {
   const classification = productClassification(value)
   if (!classification) return null
-  const kind = classification.ProductKindId.toUpperCase()
-  if (classification.IsService) return kind === SERVICE_KIND_ID ? { Version: 1, IsService: true } : null
-  return kind === GOODS_KIND_ID ? goodsWithoutServices() : null
+  return !classification.IsService && classification.ProductKindId.toUpperCase() === GOODS_KIND_ID ? goodsWithoutServices() : null
 }
 
 export function unmappedProductClassificationError(value: unknown): string {

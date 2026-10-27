@@ -72,7 +72,7 @@ export function DayProfitControls({ part, dataset, disabled, hideRegister, profi
           {replacement ? <Button size="xs" variant="light" disabled={disabled} onClick={() => {
             setProductServiceFilter(replacement)
             setProductClassification?.(undefined)
-          }}>{replacement.IsService ? t('Замінити на «Послуги»') : t('Замінити на «Товар без послуг»')}</Button>
+          }}>{t('Замінити на «Товар без послуг»')}</Button>
             : <Button size="xs" variant="light" color="red" disabled={disabled} onClick={() => setProductClassification?.(undefined)}>
               {t('Вилучити відбір виду товару 1С')}</Button>}
         </Group>

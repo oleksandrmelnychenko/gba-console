@@ -38,3 +38,13 @@ it('offers the equivalent GBA filter for a mappable kind that is still in the fo
   expect(setProductServiceFilter).toHaveBeenCalledExactlyOnceWith({ Version: 1, IsService: false })
   expect(setProductClassification).toHaveBeenCalledExactlyOnceWith(undefined)
 })
+
+it('treats a «Послуга» services template as unmappable and offers only its removal', () => {
+  const services = { ...otherGoodsKind, ProductKindId: '8FC4005056C0000811DF10AE5525F8C8', IsService: true }
+  const { setProductClassification, setProductServiceFilter } = show(services)
+  expect(screen.getByText(unmappedProductClassificationError(services))).toBeTruthy()
+  expect(screen.queryByRole('button', { name: /Замінити/ })).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Вилучити відбір виду товару 1С' }))
+  expect(setProductClassification).toHaveBeenCalledExactlyOnceWith(undefined)
+  expect(setProductServiceFilter).not.toHaveBeenCalled()
+})

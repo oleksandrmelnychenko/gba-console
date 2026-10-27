@@ -177,18 +177,22 @@ describe('exact Fenix filters in the report constructor', () => {
   })
 
 
-  it('opens an old day template whose 1C goods kind has no GBA equivalent for review and never runs or resaves it widened', async () => {
+  it.each([
+    ['a goods kind other than «Товар»', '8AB2005056C0000811DF05C7D73CB155', false, 'без послуг'],
+    ['the «Послуга» kind with services', '8FC4005056C0000811DF10AE5525F8C8', true, 'лише послуги'],
+  ])('opens an old day template with %s for review and never runs or resaves it widened', async (_name, kindId, isService, scope) => {
     const gbaDay: ReportDataset = { ...dayDataset, productServiceFilter: { Version: 1, IsServiceValues: [false, true],
       GoodsKind: 'Товар', Basis: 'GbaProductClassification' } }
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, gbaDay])
-    const kind = { ...productClassification, ProductKindId: '8AB2005056C0000811DF05C7D73CB155' }
+    const kind = { ...productClassification, ProductKindId: kindId, IsService: isService }
     const data = { ...defaultDatasetRequest(gbaDay, '2026-07-01', '2026-07-01'), productClassification: kind }
     const template = { Id: crypto.randomUUID(), Revision: 2, Name: 'Daily exact', Data: data }
     vi.mocked(getServerReportTemplates).mockResolvedValue([template])
     const { container } = await ready()
     await applySaved()
     expect((screen.getByRole('combobox', { name: 'Звіт' }) as HTMLInputElement).value).toBe(gbaDay.Name)
-    expect(screen.getAllByText(/\(вид 8AB2005056C0000811DF05C7D73CB155, без послуг\), для якого в GBA немає рівнозначного відбору/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(`Шаблон містить відбір виду товару 1С (вид ${kindId}, ${scope}), для якого в GBA немає рівнозначного відбору. Без нього звіт охопив би більше товарів, тому його не сформовано. Вилучіть цей відбір у розділі «Відбори», перегляньте налаштування й збережіть шаблон повторно.`).length).toBeGreaterThan(0)
+    expect(screen.queryByRole('button', { name: /Замінити/ })).toBeNull()
     fireEvent.submit(container.querySelector('form')!)
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(screen.getByRole('button', { name: 'Оновити шаблон' }))
