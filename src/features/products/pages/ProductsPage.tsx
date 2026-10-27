@@ -116,6 +116,7 @@ import {
   type ProductFileUploadColumnForm,
   type ProductFileUploadForm,
   type ProductFileUploadPriceRow,
+  type ProductFileUploadPriceSource,
 } from '../productFileUpload'
 import { NATIVE_PRODUCT_CLASSIFICATION_REQUIRED } from '../productNativeClassification'
 import { ShopImageGallery } from '../components/ShopImageGallery'
@@ -2563,7 +2564,7 @@ export function ProductFileUploadModal({
     && form.endRow > 0
     && form.vendorCode > 0
     && !hasDuplicatePricingRows
-    && (!hasPriceRows || form.priceSourceIsAmg !== null)
+    && (!hasPriceRows || form.priceSource !== null)
     && (!requiresClassification || form.nativeIsService !== null)
     && !isUploading,
   )
@@ -2664,7 +2665,7 @@ export function ProductFileUploadModal({
 
       return {
         ...currentForm,
-        priceSourceIsAmg: prices.length > 0 ? currentForm.priceSourceIsAmg : null,
+        priceSource: prices.length > 0 ? currentForm.priceSource : null,
         prices,
       }
     })
@@ -2676,8 +2677,8 @@ export function ProductFileUploadModal({
       return
     }
 
-    if (hasPriceRows && form.priceSourceIsAmg === null) {
-      setError(t('Оберіть джерело цін: Контех (Fenix) або AMG'))
+    if (hasPriceRows && form.priceSource === null) {
+      setError(t('Оберіть джерело цін: Контех (Fenix), AMG або обидва світи'))
       return
     }
 
@@ -2856,12 +2857,15 @@ export function ProductFileUploadModal({
                   data={[
                     { label: t('Контех (Fenix)'), value: 'fenix' },
                     { label: 'AMG', value: 'amg' },
+                    { label: t('Обидва світи'), value: 'both' },
                   ]}
-                  value={form.priceSourceIsAmg === null ? '' : form.priceSourceIsAmg ? 'amg' : 'fenix'}
-                  onChange={(value) => setField('priceSourceIsAmg', value === 'amg')}
+                  value={form.priceSource ?? ''}
+                  onChange={(value) => setField('priceSource', value as ProductFileUploadPriceSource)}
                 />
-                {form.priceSourceIsAmg === null ? (
+                {form.priceSource === null ? (
                   <Text c="red" mt={4} size="xs">{t('Оберіть джерело цін перед завантаженням')}</Text>
+                ) : form.priceSource === 'both' ? (
+                  <Text c="dimmed" mt={4} size="xs">{t('Нові товари без коду 1С отримають ціну в Контех і AMG; товари з кодом 1С — у своєму світі.')}</Text>
                 ) : null}
               </Box>
             ) : null}

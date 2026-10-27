@@ -30,11 +30,13 @@ export type ProductFileUploadPriceRow = {
   pricingId: string
 }
 
+export type ProductFileUploadPriceSource = 'fenix' | 'amg' | 'both'
+
 export type ProductFileUploadForm = ProductFileUploadColumnForm & {
   file: File | null
   mode: ProductFileUploadMode
   nativeIsService: boolean | null
-  priceSourceIsAmg: boolean | null
+  priceSource: ProductFileUploadPriceSource | null
   prices: ProductFileUploadPriceRow[]
 }
 
@@ -55,7 +57,7 @@ export function createProductFileUploadForm(): ProductFileUploadForm {
     newVendorCode: 0,
     orderStandard: 0,
     packingStandard: 0,
-    priceSourceIsAmg: null,
+    priceSource: null,
     prices: [],
     productGroup: 0,
     size: 0,
@@ -78,7 +80,7 @@ export function buildProductFileUploadConfiguration(form: ProductFileUploadForm)
     EndRow: form.endRow,
     IsForSale: form.isForSale,
     IsForWeb: form.isForWeb,
-    ...(priceConfigurations.length > 0 ? { ImportedForAmg: form.priceSourceIsAmg } : {}),
+    ...(priceConfigurations.length > 0 ? buildPriceSourceConfiguration(form.priceSource) : {}),
     MainOriginalNumber: form.mainOriginalNumber,
     MeasureUnit: form.measureUnit,
     Mode: form.mode,
@@ -119,4 +121,14 @@ export function buildProductFileUploadConfiguration(form: ProductFileUploadForm)
     WithVolume: form.volume !== 0,
     WithWeight: form.weight !== 0,
   }
+}
+
+function buildPriceSourceConfiguration(
+  priceSource: ProductFileUploadPriceSource | null,
+): Pick<ProductFileUploadConfiguration, 'ImportedForAmg' | 'ImportedForBothWorlds'> {
+  if (priceSource === 'both') {
+    return { ImportedForBothWorlds: true }
+  }
+
+  return { ImportedForAmg: priceSource === null ? null : priceSource === 'amg' }
 }

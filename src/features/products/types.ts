@@ -466,6 +466,7 @@ export type ProductFileUploadConfiguration = {
   IsForSale: number
   IsForWeb: number
   ImportedForAmg?: boolean | null
+  ImportedForBothWorlds?: boolean
   MainOriginalNumber: number
   MeasureUnit: number
   Mode: ProductFileUploadMode

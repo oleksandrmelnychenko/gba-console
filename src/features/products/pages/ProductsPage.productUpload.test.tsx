@@ -44,6 +44,7 @@ describe('ProductFileUploadModal price source', () => {
     expect(screen.getByText('Оберіть джерело цін перед завантаженням')).toBeTruthy()
     expect((screen.getByRole('radio', { name: 'Контех (Fenix)' }) as HTMLInputElement).checked).toBe(false)
     expect((screen.getByRole('radio', { name: 'AMG' }) as HTMLInputElement).checked).toBe(false)
+    expect((screen.getByRole('radio', { name: 'Обидва світи' }) as HTMLInputElement).checked).toBe(false)
     expect((screen.getByRole('button', { name: 'Завантажити' }) as HTMLButtonElement).disabled).toBe(true)
   })
 
@@ -59,21 +60,38 @@ describe('ProductFileUploadModal price source', () => {
     expect(screen.queryByText('Оберіть джерело цін перед завантаженням')).toBeNull()
   })
 
+  it('explains that both worlds price new products in Контех and AMG', async () => {
+    renderModal()
+
+    const addPriceButton = await screen.findByRole('button', { name: 'Додати ціну' })
+    await waitFor(() => expect((addPriceButton as HTMLButtonElement).disabled).toBe(false))
+    fireEvent.click(addPriceButton)
+    fireEvent.click(screen.getByRole('radio', { name: 'Обидва світи' }))
+
+    expect((screen.getByRole('radio', { name: 'Обидва світи' }) as HTMLInputElement).checked).toBe(true)
+    expect(screen.getByText('Нові товари без коду 1С отримають ціну в Контех і AMG; товари з кодом 1С — у своєму світі.')).toBeTruthy()
+  })
+
   it('serializes the selected source only for priced form rows', () => {
     const baseForm = createProductFileUploadForm()
     const pricedConfiguration = buildProductFileUploadConfiguration({
       ...baseForm,
-      priceSourceIsAmg: true,
+      priceSource: 'amg',
       prices: [{ columnNumber: 4, key: 'price-1', pricingId: '12' }],
     })
     const fenixConfiguration = buildProductFileUploadConfiguration({
       ...baseForm,
-      priceSourceIsAmg: false,
+      priceSource: 'fenix',
       prices: [{ columnNumber: 6, key: 'price-2', pricingId: '15' }],
+    })
+    const bothConfiguration = buildProductFileUploadConfiguration({
+      ...baseForm,
+      priceSource: 'both',
+      prices: [{ columnNumber: 8, key: 'price-3', pricingId: '17' }],
     })
     const unpricedConfiguration = buildProductFileUploadConfiguration({
       ...baseForm,
-      priceSourceIsAmg: false,
+      priceSource: 'fenix',
     })
 
     expect(pricedConfiguration).toMatchObject({
@@ -86,8 +104,15 @@ describe('ProductFileUploadModal price source', () => {
       PriceConfigurations: [{ ColumnNumber: 6, PricingId: 15 }],
       WithPrices: true,
     })
+    expect(bothConfiguration).toMatchObject({
+      ImportedForBothWorlds: true,
+      PriceConfigurations: [{ ColumnNumber: 8, PricingId: 17 }],
+      WithPrices: true,
+    })
+    expect(bothConfiguration).not.toHaveProperty('ImportedForAmg')
     expect(unpricedConfiguration.WithPrices).toBe(false)
     expect(unpricedConfiguration).not.toHaveProperty('ImportedForAmg')
+    expect(unpricedConfiguration).not.toHaveProperty('ImportedForBothWorlds')
   })
 })
 

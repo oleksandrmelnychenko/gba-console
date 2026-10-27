@@ -90,9 +90,10 @@ function normalizeProductFileUploadConfiguration(
   configuration: ProductFileUploadConfiguration,
 ): ProductFileUploadConfiguration {
   const withPrices = configuration.WithPrices || configuration.PriceConfigurations.length > 0
+  const forBothWorlds = configuration.ImportedForBothWorlds === true
 
-  if (withPrices && typeof configuration.ImportedForAmg !== 'boolean') {
-    throw new Error('Оберіть джерело цін: Контех (Fenix) або AMG')
+  if (withPrices && !forBothWorlds && typeof configuration.ImportedForAmg !== 'boolean') {
+    throw new Error('Оберіть джерело цін: Контех (Fenix), AMG або обидва світи')
   }
 
   if (configuration.Mode === 0 && typeof configuration.NativeIsService !== 'boolean') {
@@ -104,12 +105,16 @@ function normalizeProductFileUploadConfiguration(
     WithPrices: withPrices,
   }
 
-  if (!withPrices) {
+  if (!withPrices || forBothWorlds) {
     delete normalizedConfiguration.ImportedForAmg
   }
 
   if (configuration.Mode !== 0) {
     delete normalizedConfiguration.NativeIsService
+  }
+
+  if (!withPrices || !forBothWorlds) {
+    delete normalizedConfiguration.ImportedForBothWorlds
   }
 
   return normalizedConfiguration

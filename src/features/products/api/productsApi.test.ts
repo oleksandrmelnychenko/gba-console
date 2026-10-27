@@ -79,7 +79,7 @@ describe('products API upload contracts', () => {
     } as ProductFileUploadConfiguration
 
     await expect(uploadProductsFromFile(configuration, new File(['vendor'], 'products.xlsx')))
-      .rejects.toThrow('Оберіть джерело цін: Контех (Fenix) або AMG')
+      .rejects.toThrow('Оберіть джерело цін: Контех (Fenix), AMG або обидва світи')
     expect(apiRequestMock).not.toHaveBeenCalled()
   })
 
@@ -104,9 +104,27 @@ describe('products API upload contracts', () => {
       .not.toHaveProperty('NativeIsService')
   })
 
+  it('sends a both-worlds upload without a single price source', async () => {
+    const configuration = {
+      ImportedForAmg: false,
+      ImportedForBothWorlds: true,
+      PriceConfigurations: [{ ColumnNumber: 7, PricingId: 15 }],
+      WithPrices: true,
+    } as ProductFileUploadConfiguration
+
+    await uploadProductsFromFile(configuration, new File(['vendor'], 'products.xlsx'))
+
+    const body = apiRequestMock.mock.calls[0]?.[1]?.body as FormData
+    const serializedConfiguration = JSON.parse(String(body.get('configuration')))
+
+    expect(serializedConfiguration).toMatchObject({ ImportedForBothWorlds: true, WithPrices: true })
+    expect(serializedConfiguration).not.toHaveProperty('ImportedForAmg')
+  })
+
   it('omits the pricing source when the upload has no price columns', async () => {
     const configuration: Partial<ProductFileUploadConfiguration> = {
       ImportedForAmg: true,
+      ImportedForBothWorlds: true,
       PriceConfigurations: [],
       WithPrices: false,
     }
@@ -118,6 +136,7 @@ describe('products API upload contracts', () => {
 
     expect(serializedConfiguration.WithPrices).toBe(false)
     expect(serializedConfiguration).not.toHaveProperty('ImportedForAmg')
+    expect(serializedConfiguration).not.toHaveProperty('ImportedForBothWorlds')
   })
 
   it('updates scalar product fields without sending heavy relation collections', async () => {
