@@ -32,7 +32,7 @@ import type {
   Organization,
   Pricing,
 } from '../../types'
-import { isSourceManagedAgreement, type SourceEditMode } from '../../clientSourceOwnership'
+import { useClientSourceOwnership, type SourceEditMode } from '../../clientSourceOwnership'
 
 const EDIT_AGREEMENT_PERMISSION = PermissionKeys.Clients.Contract.Edit
 const EXPORT_AGREEMENT_DOCUMENT_PERMISSION = PermissionKeys.Clients.Contract.ExportDocument
@@ -145,6 +145,7 @@ export function ClientAgreementsPanel({
 }: ClientAgreementsPanelProps) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
+  const { isSourceManagedAgreement } = useClientSourceOwnership()
   const canEdit = hasPermission(EDIT_AGREEMENT_PERMISSION)
   const canExportDocument = hasPermission(EXPORT_AGREEMENT_DOCUMENT_PERMISSION)
 

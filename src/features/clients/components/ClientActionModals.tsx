@@ -7,7 +7,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getClientDisplayName } from '../clientDisplayName'
 import { getClientCommercialStructureForRegistry, mutateClientIdentityForStructure } from '../api/clientsApi'
-import { isSourceManagedClient } from '../clientSourceOwnership'
+import { useClientSourceOwnership } from '../clientSourceOwnership'
 import { ClientCommercialStructureView } from './structure/ClientCommercialStructureView'
 import type { Client, ClientCommercialStructure } from '../types'
 import '../pages/clients-page.css'
@@ -44,6 +44,7 @@ export function ClientActionsModal({
   onSwitchActive,
 }: ClientActionsModalProps) {
   const { t } = useI18n()
+  const { isSourceManagedClient } = useClientSourceOwnership()
   const isActive = client?.IsActive !== false
   const canSwitchActive = canToggleActive && !isSourceManagedClient(client)
   const [structureCountResult, setStructureCountResult] = useState<{

@@ -71,7 +71,8 @@ import type { SolvencyScore } from '../solvencyTypes'
 import { clientNetUidKey, indexByClientNetUid } from '../clientNetUidIndex'
 import { getClientIdentityAttentionTitle } from '../clientIdentityAttentionMessage'
 import { getClientFolderSelection, isClientFolder } from '../clientFolder'
-import { isSourceManagedClient } from '../clientSourceOwnership'
+import { useClientSourceOwnership } from '../clientSourceOwnership'
+import { useSystemOfRecordCutover } from '../../../shared/system-of-record/systemOfRecordCutover'
 import './clients-page.css'
 
 const pageSizeOptions = PAGINATOR_PAGE_SIZE_OPTIONS
@@ -157,6 +158,7 @@ const CLIENT_TABLE_CELL_STYLE = {
 function useClientsPageModel() {
   const runActionOnce = useSingleFlight()
   const { t } = useI18n()
+  const { isSourceManagedClient } = useClientSourceOwnership()
   const location = useLocation()
   const navigate = useNavigate()
   const [urlSearchParams, setUrlSearchParams] = useSearchParams()
@@ -432,7 +434,7 @@ function useClientsPageModel() {
         if (!cancelled) {
           setSourceQuality(new Map())
           setSourceQualityError(
-            loadError instanceof Error ? loadError.message : t('Маркери синхронізації 1С недоступні'),
+            loadError instanceof Error ? loadError.message : t('Маркери походження даних недоступні'),
           )
         }
       }
@@ -1189,6 +1191,7 @@ function useClientColumns(
   canOpenStructure: boolean,
 ) {
   const { t } = useI18n()
+  const { isActive: afterCutover } = useSystemOfRecordCutover()
 
   return useMemo<DataTableColumn<Client>[]>(
     () => [
@@ -1230,7 +1233,7 @@ function useClientColumns(
       },
       {
         id: 'sourceQuality',
-        header: t('Дані 1С'),
+        header: afterCutover ? t('Походження') : t('Дані 1С'),
         width: 118,
         minWidth: 108,
         maxWidth: 132,
@@ -1369,6 +1372,7 @@ function useClientColumns(
       },
     ],
     [
+      afterCutover,
       identityAttention,
       canOpenActions,
       canOpenIdentityReview,
@@ -1612,7 +1616,7 @@ function getIdentityReasonLabel(reason: string, t: (value: string) => string): s
   const labels: Record<string, string> = {
     invalid_legal_code: 'ЄДРПОУ / ІПН має некоректний формат',
     missing_legal_code: 'В активного покупця не заповнений ЄДРПОУ / ІПН',
-    missing_manager: 'Не визначено відповідального менеджера з даних 1С',
+    missing_manager: 'Не визначено основного менеджера',
     multiple_buyer_cards: 'Знайдено кілька карток покупця',
     own_blocked_card: 'Поточна картка клієнта заблокована',
     own_overdue_debt: 'У поточній картці є прострочений борг',

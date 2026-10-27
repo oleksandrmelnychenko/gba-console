@@ -43,7 +43,7 @@ import { useClientRegionManualEdit } from '../hooks/useClientRegionManualEdit'
 import { BankDetailsFields } from '../components/form/BankDetailsFields'
 import { ContactInfoFields } from '../components/form/ContactInfoFields'
 import { EditClientTypePanel } from '../components/EditClientTypePanel'
-import { canEditClientLifecycle, isSourceManagedClient } from '../clientSourceOwnership'
+import { useClientSourceOwnership } from '../clientSourceOwnership'
 import {
   getClientIdentityAttentionMessage,
   getClientIdentityAttentionTitle,
@@ -263,6 +263,7 @@ export function ClientEditPage() {
   const contentClient = usesFolderClient ? selectedFolderClient : client
   const role = useMemo(() => getClientRole(contentClient || client), [client, contentClient])
   const lookupRole = useMemo(() => getClientRole(client), [client])
+  const { canEditClientLifecycle, isSourceManagedClient } = useClientSourceOwnership()
   const rootSourceManaged = isSourceManagedClient(client)
   const sourceManaged = isSourceManagedClient(contentClient)
   const canCreateClient = hasPermission(PermissionKeys.Clients.Client.Create)
@@ -1743,6 +1744,7 @@ function EditStepContent({
   onSaveDocuments,
   step,
 }: EditStepContentProps) {
+  const { isSourceManagedClient } = useClientSourceOwnership()
   const sourceManaged = isSourceManagedClient(client)
   const sourceFieldsLocked = !canEditClient || (sourceManaged && !allowSourceOverride)
   const regionManualEdit = useClientRegionManualEdit(

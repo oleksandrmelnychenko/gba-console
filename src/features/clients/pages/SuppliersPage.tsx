@@ -39,7 +39,7 @@ import {
 } from '../api/clientsApi'
 import { getSupplierPassportById } from '../api/clientFormApi'
 import type { Client, ClientAgreement, ClientFilterItem, ClientPrintDocument } from '../types'
-import { isSourceManagedClient } from '../clientSourceOwnership'
+import { useClientSourceOwnership } from '../clientSourceOwnership'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { usePermissions } from '../../auth/usePermissions'
 import '../../../shared/ui/console-table-page.css'
@@ -209,6 +209,7 @@ type SupplierPermissions = {
 function useSuppliersPageModel(permissions: SupplierPermissions) {
   const runActionOnce = useSingleFlight()
   const { t } = useI18n()
+  const { isSourceManagedClient } = useClientSourceOwnership()
   const location = useLocation()
   const navigate = useNavigate()
   const hasLoadedSuppliersRef = useRef(false)
@@ -798,6 +799,7 @@ function SupplierDetailDrawer({
   onSwitchActive,
 }: SupplierDetailDrawerProps) {
   const { t } = useI18n()
+  const { isSourceManagedClient } = useClientSourceOwnership()
   const isActive = supplier?.IsActive !== false
   const canSwitchActive = canSwitchActivePermission && !isSourceManagedClient(supplier)
 

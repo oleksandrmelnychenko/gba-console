@@ -1,7 +1,8 @@
 import { MantineProvider } from '@mantine/core'
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../../shared/i18n/I18nProvider'
+import { resetSystemOfRecordCutoverForTests } from '../../../../shared/system-of-record/systemOfRecordCutover'
 import { theme } from '../../../../shared/theme/theme'
 import type { ClientAgreement } from '../../types'
 import { ClientAgreementsPanel } from './ClientAgreementsPanel'
@@ -42,6 +43,18 @@ function renderPanel(sourceEditMode: 'locked' | 'manual') {
 }
 
 describe('source-managed agreement override', () => {
+  afterEach(() => {
+    resetSystemOfRecordCutoverForTests()
+  })
+
+  it('lets an imported agreement be edited without override after the cutover', () => {
+    resetSystemOfRecordCutoverForTests({ cutoverUtc: '2026-11-01T00:00:00Z', isActive: true, loaded: true })
+
+    renderPanel('locked')
+
+    expect(screen.getByRole('button', { name: 'Редагувати' })).not.toBeNull()
+  })
+
   it('shows the edit action only after manual override is enabled', () => {
     const locked = renderPanel('locked')
 

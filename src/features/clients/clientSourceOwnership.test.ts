@@ -25,6 +25,13 @@ describe('client source ownership', () => {
     expect(canEditClientLifecycle({} as Client, false)).toBe(false)
   })
 
+  it('treats imported clients and agreements as native after the cutover', () => {
+    expect(isSourceManagedClient({ SourceFenixCode: 7630 } as Client, true)).toBe(false)
+    expect(isSourceManagedAgreement({ SourceAmgId: '' }, true)).toBe(false)
+    expect(canEditClientLifecycle({ SourceAmgCode: 3968 } as Client, true, true)).toBe(true)
+    expect(canEditClientLifecycle({ SourceAmgCode: 3968 } as Client, false, true)).toBe(false)
+  })
+
   it('detects source-managed agreements by code or source id', () => {
     expect(isSourceManagedAgreement({ SourceFenixCode: 0 })).toBe(true)
     expect(isSourceManagedAgreement({ SourceAmgId: '' })).toBe(true)

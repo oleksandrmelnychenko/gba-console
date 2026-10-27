@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { TableChip, type TableChipTone } from '../../../../shared/ui/TableChip'
 import { AppModal, AppModalFooter } from '../../../../shared/ui/AppModal'
 import { mutateClientIdentity } from '../../api/clientsApi'
+import { useSystemOfRecordCutover } from '../../../../shared/system-of-record/systemOfRecordCutover'
 import type {
   ClientCommercialCard,
   ClientCommercialLegalParty,
@@ -603,6 +604,7 @@ function ClientCard({
   t: (value: string) => string
   onDecision?: (decision: PendingIdentityDecision) => void
 }) {
+  const { isActive: afterCutover } = useSystemOfRecordCutover()
   const fallbackAnchor = findConfirmedAnchor(structure, card.ClientNetUid)
   const anchorClientNetUid = structure.ClientNetUid === card.ClientNetUid
     ? fallbackAnchor?.ClientNetUid
@@ -690,7 +692,7 @@ function ClientCard({
       {sourceSnapshots.length > 0 ? (
         <div className="client-source-card__source-tree">
           <Text className="client-source-card__agreements-title">
-            {t('Дані 1С')} · {sourceSnapshots.length}
+            {afterCutover ? t('Імпортовано з 1С') : t('Дані 1С')} · {sourceSnapshots.length}
           </Text>
           <div className="client-source-card__source-list">
             {sourceSnapshots.map((snapshot) => (
@@ -704,7 +706,7 @@ function ClientCard({
           </div>
         </div>
       ) : (
-        <Text className="client-source-card__source-empty">{t('Очікує синку')}</Text>
+        <Text className="client-source-card__source-empty">{afterCutover ? t('Створено в GBA') : t('Очікує синку')}</Text>
       )}
     </div>
   )

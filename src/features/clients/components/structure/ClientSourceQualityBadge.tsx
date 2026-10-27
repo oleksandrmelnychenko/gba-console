@@ -1,5 +1,6 @@
 import { Badge, Text } from '@mantine/core'
 import { Network } from 'lucide-react'
+import { useSystemOfRecordCutover } from '../../../../shared/system-of-record/systemOfRecordCutover'
 import type { ClientSourceQualitySummary } from '../../types'
 
 type ClientSourceQualityBadgeProps = {
@@ -13,6 +14,8 @@ export function ClientSourceQualityBadge({
   t,
   onClick,
 }: ClientSourceQualityBadgeProps) {
+  const { isActive: afterCutover } = useSystemOfRecordCutover()
+
   if (!quality) {
     return <Text c="dimmed" size="xs">—</Text>
   }
@@ -26,11 +29,17 @@ export function ClientSourceQualityBadge({
       : isCritical
         ? 'red'
         : 'orange'
-  const label = quality.State === 'clean'
-    ? t('1С: перевірено')
-    : quality.State === 'not_synced'
-      ? t('Очікує синку')
-      : t('Перевірити 1С')
+  const label = afterCutover
+    ? quality.State === 'clean'
+      ? t('Імпортовано з 1С')
+      : quality.State === 'not_synced'
+        ? t('Створено в GBA')
+        : t('Перевірити дані')
+    : quality.State === 'clean'
+      ? t('1С: перевірено')
+      : quality.State === 'not_synced'
+        ? t('Очікує синку')
+        : t('Перевірити 1С')
   const sourceSystems = [
     quality.HasFenixSnapshot ? 'Fenix' : null,
     quality.HasAmgSnapshot ? 'AMG' : null,
@@ -38,8 +47,9 @@ export function ClientSourceQualityBadge({
   const title = [
     label,
     sourceSystems || null,
-    ...quality.Reasons.map((reason) =>
-      getSourceQualityReasonLabel(reason, t)),
+    ...quality.Reasons
+      .filter((reason) => !afterCutover || reason !== 'source_snapshot_missing')
+      .map((reason) => getSourceQualityReasonLabel(reason, t)),
   ].filter(Boolean).join(' · ')
 
   if (!onClick) {

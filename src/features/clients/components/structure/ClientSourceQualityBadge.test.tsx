@@ -1,6 +1,7 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { resetSystemOfRecordCutoverForTests } from '../../../../shared/system-of-record/systemOfRecordCutover'
 import { theme } from '../../../../shared/theme/theme'
 import type { ClientSourceQualitySummary } from '../../types'
 import { ClientSourceQualityBadge } from './ClientSourceQualityBadge'
@@ -8,6 +9,42 @@ import { ClientSourceQualityBadge } from './ClientSourceQualityBadge'
 const t = (value: string) => value
 
 describe('ClientSourceQualityBadge', () => {
+  afterEach(() => {
+    resetSystemOfRecordCutoverForTests()
+  })
+
+  it('drops the sync wording after the cutover', () => {
+    resetSystemOfRecordCutoverForTests({ cutoverUtc: '2026-11-01T00:00:00Z', isActive: true, loaded: true })
+    const { rerender } = renderBadge({
+      ...createQuality(),
+      State: 'not_synced',
+      RequiresReview: false,
+      SourceSnapshotCount: 0,
+      SourceSystemCount: 0,
+      HasFenixSnapshot: false,
+      HasAmgSnapshot: false,
+      LastSeenAtUtc: null,
+      Reasons: ['source_snapshot_missing'],
+    })
+    const native = screen.getByRole('button', { name: 'Створено в GBA' })
+    expect(native.getAttribute('title')).toBe('Створено в GBA')
+    expect(screen.queryByText('Очікує синку')).toBeNull()
+
+    rerender(
+      <MantineProvider theme={theme}>
+        <ClientSourceQualityBadge quality={{ ...createQuality(), State: 'clean', RequiresReview: false, Reasons: [] }} t={t} onClick={vi.fn()} />
+      </MantineProvider>,
+    )
+    expect(screen.getByRole('button', { name: /Імпортовано з 1С/ })).toBeTruthy()
+
+    rerender(
+      <MantineProvider theme={theme}>
+        <ClientSourceQualityBadge quality={createQuality()} t={t} onClick={vi.fn()} />
+      </MantineProvider>,
+    )
+    expect(screen.getByRole('button', { name: /Перевірити дані/ })).toBeTruthy()
+  })
+
   it('shows a review marker with source systems and opens the structure', () => {
     const onClick = vi.fn()
     renderBadge(createQuality(), onClick)

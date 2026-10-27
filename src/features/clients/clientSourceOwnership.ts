@@ -1,3 +1,5 @@
+import { useMemo } from 'react'
+import { useSystemOfRecordCutover } from '../../shared/system-of-record/systemOfRecordCutover'
 import type { Agreement, Client } from './types'
 
 export type SourceEditMode = 'locked' | 'manual'
@@ -14,14 +16,32 @@ function hasSourceIdentity(value: SourceIdentity | null | undefined): boolean {
     || value?.SourceFenixId != null
 }
 
-export function isSourceManagedClient(client: Client | null | undefined): boolean {
-  return hasSourceIdentity(client)
+export function isSourceManagedClient(client: Client | null | undefined, afterCutover = false): boolean {
+  return !afterCutover && hasSourceIdentity(client)
 }
 
-export function isSourceManagedAgreement(agreement: Agreement | null | undefined): boolean {
-  return hasSourceIdentity(agreement)
+export function isSourceManagedAgreement(agreement: Agreement | null | undefined, afterCutover = false): boolean {
+  return !afterCutover && hasSourceIdentity(agreement)
 }
 
-export function canEditClientLifecycle(client: Client | null | undefined, hasPermission: boolean): boolean {
-  return hasPermission && !isSourceManagedClient(client)
+export function canEditClientLifecycle(
+  client: Client | null | undefined,
+  hasPermission: boolean,
+  afterCutover = false,
+): boolean {
+  return hasPermission && !isSourceManagedClient(client, afterCutover)
+}
+
+export function useClientSourceOwnership() {
+  const { isActive } = useSystemOfRecordCutover()
+
+  return useMemo(() => ({
+    afterCutover: isActive,
+    canEditClientLifecycle: (client: Client | null | undefined, hasPermission: boolean) =>
+      canEditClientLifecycle(client, hasPermission, isActive),
+    isSourceManagedAgreement: (agreement: Agreement | null | undefined) =>
+      isSourceManagedAgreement(agreement, isActive),
+    isSourceManagedClient: (client: Client | null | undefined) =>
+      isSourceManagedClient(client, isActive),
+  }), [isActive])
 }

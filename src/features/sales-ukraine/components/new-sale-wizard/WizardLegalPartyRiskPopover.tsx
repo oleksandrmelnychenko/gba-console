@@ -110,7 +110,7 @@ function getAttentionReasonLabel(
   const labels: Record<string, string> = {
     invalid_legal_code: 'ЄДРПОУ / ІПН має некоректний формат',
     missing_legal_code: 'Для активного договору не заповнений ЄДРПОУ / ІПН',
-    missing_manager: 'Не визначено відповідального менеджера з даних 1С',
+    missing_manager: 'Не визначено основного менеджера',
     multiple_buyer_cards: 'Знайдено кілька карток покупця',
     own_blocked_card: 'Поточна картка клієнта заблокована',
     own_overdue_debt: 'У поточній картці є прострочений борг',

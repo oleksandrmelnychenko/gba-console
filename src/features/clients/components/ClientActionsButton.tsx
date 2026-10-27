@@ -10,7 +10,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
 import { getClientForRegistryById } from '../api/clientFormApi'
 import { switchClientActiveStateForRegistry, updateClientOrderExpireDaysForRegistry } from '../api/clientsApi'
-import { isSourceManagedClient } from '../clientSourceOwnership'
+import { useClientSourceOwnership } from '../clientSourceOwnership'
 import type { Client } from '../types'
 import { ClientActionsModal, ClientStructureModal, ReserveDaysModal } from './ClientActionModals'
 
@@ -18,6 +18,7 @@ import { ClientActionsModal, ClientStructureModal, ReserveDaysModal } from './Cl
 export function ClientActionsButton({ netUid, onChanged }: { netUid: string; onChanged: () => void }) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
+  const { isSourceManagedClient } = useClientSourceOwnership()
   const location = useLocation()
   const navigate = useNavigate()
   const [client, setClient] = useState<Client | null>(null)
