@@ -86,6 +86,8 @@ function toClientDebtors(result: unknown): ClientDebtors {
       CurrencyTotals: Array.isArray(record.CurrencyTotals) ? (record.CurrencyTotals as DebtorsCurrencyTotal[]) : [],
       TotalMissedDays: toEuroNumber(record.TotalMissedDays),
       TotalCreditBalanceEuro: record.TotalCreditBalanceEuro === undefined ? undefined : toEuroNumber(record.TotalCreditBalanceEuro),
+      TotalAdvanceEuro: record.TotalAdvanceEuro === undefined ? undefined : toNumber(record.TotalAdvanceEuro),
+      TotalNetBalanceEuro: record.TotalNetBalanceEuro === undefined ? undefined : toEuroNumber(record.TotalNetBalanceEuro),
       UnknownEuroDebtCount: toNumber(record.UnknownEuroDebtCount),
       TotalOverdueDebtorsValue: toEuroNumber(record.TotalOverdueDebtorsValue),
       TotalQtyClients: toNumber(record.TotalQtyClients),

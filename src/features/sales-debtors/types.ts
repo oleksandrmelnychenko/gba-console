@@ -50,6 +50,12 @@ export type DebtCurrencyAging = DebtAging & {
 
 export type ClientCurrencyDebt = {
   Aging?: DebtCurrencyAging | null
+  Advance?: number | null
+  AdvanceEuro?: number
+  NetBalance?: number | null
+  NetBalanceEuro?: number | null
+  EuroRate?: number | null
+  EuroRateDate?: string | null
   CurrencyCode?: string
   RemainderDebt?: number
   OverdueDebt?: number | null
@@ -64,6 +70,8 @@ export type ClientCurrencyDebt = {
 
 export type ClientInDebt = {
   Aging?: DebtAging | null
+  AdvanceEuro?: number
+  NetBalanceEuro?: number | null
   CreatedDebt?: string
   ClientNetId?: string
   RegionCode?: string
@@ -83,6 +91,12 @@ export type ClientInDebt = {
 
 export type DebtorDebtCurrencyTotal = {
   Aging?: DebtCurrencyAging | null
+  Advance?: number | null
+  AdvanceEuro?: number
+  NetBalance?: number | null
+  NetBalanceEuro?: number | null
+  EuroRate?: number | null
+  EuroRateDate?: string | null
   CurrencyCode?: string
   Total?: number
   Overdue?: number | null
@@ -96,6 +110,8 @@ export type DebtorDebtCurrencyTotal = {
 
 export type DebtorDebtTotal = {
   Aging?: DebtAging | null
+  AdvanceEuro?: number
+  NetBalanceEuro?: number | null
   TotalEuro?: number
   TotalLocal?: number
   TotalInEuro?: number | null
@@ -107,6 +123,12 @@ export type DebtorDebtTotal = {
 
 export type DebtorsCurrencyTotal = {
   Aging?: DebtCurrencyAging | null
+  Advance?: number | null
+  AdvanceEuro?: number
+  NetBalance?: number | null
+  NetBalanceEuro?: number | null
+  EuroRate?: number | null
+  EuroRateDate?: string | null
   CurrencyCode?: string
   RemainderDebt?: number
   OverdueDebt?: number | null
@@ -153,6 +175,12 @@ export type DebtorDebtAgreement = DebtorDebtEntity & {
 
 export type DebtorDebt = DebtorDebtEntity & {
   Aging?: DebtCurrencyAging | null
+  Advance?: number | null
+  AdvanceEuro?: number
+  NetBalance?: number | null
+  NetBalanceEuro?: number | null
+  EuroRate?: number | null
+  EuroRateDate?: string | null
   Days?: number | null
   Total?: number
   EuroTotal?: number | null
@@ -186,6 +214,8 @@ export type ClientDebtors = {
   TotalOverdueDebtorsValue: number | null
   CurrencyTotals: DebtorsCurrencyTotal[]
   TotalCreditBalanceEuro?: number | null
+  TotalAdvanceEuro?: number
+  TotalNetBalanceEuro?: number | null
   UnknownEuroDebtCount?: number
 }
 

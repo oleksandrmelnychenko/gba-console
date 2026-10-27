@@ -1,5 +1,5 @@
 import { useBusyState } from '../../../shared/hooks/useBusyState'
-import { ActionIcon, Alert, Badge, Select, Stack, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Badge, Select, Stack, Text, Tooltip } from '@mantine/core'
 import { CircleAlert, FileDown } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -23,7 +23,9 @@ import {
   EURO_CURRENCY_CODE,
   formatCurrencyAmounts,
   formatDebtAmount,
+  formatCurrentRateNote,
   hasCreditBalance,
+  hasForeignAdvance,
   getDebtorCurrencyAmounts,
   getDebtorEuroAmount,
   getSummaryCurrencyAmounts,
@@ -350,7 +352,7 @@ export function SalesDebtorsPage() {
             getRowId={(row, index) => String(row.ClientNetId || `${row.ClientName || 'debtor'}-${index}`)}
             height="100%"
             isLoading={isLoading}
-            layoutVersion="sales-debtors-table-2"
+            layoutVersion="sales-debtors-table-3"
             minWidth={1320}
             showLayoutControls
             tableId="sales-debtors"
@@ -360,6 +362,7 @@ export function SalesDebtorsPage() {
         </div>
 
         <SalesDebtorsSummary debtors={debtors} />
+        <SalesDebtorsNotes debtors={debtors} />
       </div>
 
       <DownloadDocumentModal
@@ -449,6 +452,26 @@ function useDebtorColumns(currencyCode: string, days: number, hasAging: boolean,
         align: 'right',
         accessor: (row) => getDebtorEuroAmount(row, 'CreditBalance'),
         cell: (row) => <DebtorCreditCell debtor={row} />,
+      },
+      {
+        id: 'advance',
+        header: <ColumnHint hint={t('Аванс клієнта: передоплата за договорами, збережена в EUR; у валюті договору — за поточним курсом.')} label={t('Аванс')} />,
+        width: 180,
+        minWidth: 160,
+        align: 'right',
+        numeric: true,
+        accessor: (row) => getDebtorEuroAmount(row, 'Advance'),
+        cell: (row) => <DebtorBalanceCell debtor={row} field="Advance" />,
+      },
+      {
+        id: 'netBalance',
+        header: <ColumnHint hint={t('Сальдо = борг − кредитовий залишок − аванс, як закриття у «Взаєморозрахунках».')} label={t('Сальдо')} />,
+        width: 180,
+        minWidth: 160,
+        align: 'right',
+        numeric: true,
+        accessor: (row) => getDebtorEuroAmount(row, 'NetBalance'),
+        cell: (row) => <DebtorBalanceCell debtor={row} field="NetBalance" />,
       },
       {
         id: 'remainderDebt',
@@ -555,6 +578,27 @@ function DebtorCreditCell({ debtor }: { debtor: ClientInDebt }) {
   )
 }
 
+function ColumnHint({ hint, label }: { hint: string; label: string }) {
+  return (
+    <Tooltip label={hint} multiline w={280} withinPortal>
+      <span className="sales-debtors-column-hint">{label}</span>
+    </Tooltip>
+  )
+}
+
+function DebtorBalanceCell({ debtor, field }: { debtor: ClientInDebt; field: 'Advance' | 'NetBalance' }) {
+  const amounts = getDebtorCurrencyAmounts(debtor, field)
+  const euro = field === 'Advance' ? debtor.AdvanceEuro : debtor.NetBalanceEuro
+  if (amounts.length === 0 && (euro === undefined || euro === 0)) return <span className="sales-debtors-currency-empty">—</span>
+
+  return (
+    <span className="sales-debtors-currency-cell">
+      {amounts.length > 0 ? <DebtorCurrencyAmounts amounts={amounts} /> : null}
+      {euro !== undefined ? <DebtorAmountCell amount={euro} currencyCode={EURO_CURRENCY_CODE} /> : null}
+    </span>
+  )
+}
+
 function DebtorCurrencyAmountsCell({
   currencyCode,
   debtor,
@@ -627,6 +671,8 @@ function SalesDebtorsSummary({ debtors }: { debtors: ClientDebtors }) {
   const remainderByCurrency = getSummaryCurrencyAmounts(debtors.CurrencyTotals, 'RemainderDebt')
   const overdueByCurrency = getSummaryCurrencyAmounts(debtors.CurrencyTotals, 'OverdueDebt')
   const creditByCurrency = getSummaryCurrencyAmounts(debtors.CurrencyTotals, 'CreditBalance')
+  const advanceByCurrency = getSummaryCurrencyAmounts(debtors.CurrencyTotals, 'Advance')
+  const netByCurrency = getSummaryCurrencyAmounts(debtors.CurrencyTotals, 'NetBalance')
 
   return (
     <div className="sales-debtors-summary">
@@ -654,11 +700,47 @@ function SalesDebtorsSummary({ debtors }: { debtors: ClientDebtors }) {
         <strong>{formatDebtAmount(debtors.TotalRemainderDebtorsValue, moneyFormatter.format, t('Не визначено'))}</strong>
         <TableChip tone="source" value={EURO_CURRENCY_CODE} />
       </span>
+      {advanceByCurrency.length > 0 ? <SalesDebtorsSummaryCurrencies amounts={advanceByCurrency} label={t('Аванс')} /> : null}
+      {debtors.TotalAdvanceEuro !== undefined ? (
+        <span className="sales-debtors-summary__amount">
+          <span>{t('Аванс, EUR')}</span>
+          <strong>{formatDebtAmount(debtors.TotalAdvanceEuro, moneyFormatter.format, t('Не визначено'))}</strong>
+          <TableChip tone="source" value={EURO_CURRENCY_CODE} />
+        </span>
+      ) : null}
+      {netByCurrency.length > 0 ? <SalesDebtorsSummaryCurrencies amounts={netByCurrency} label={t('Сальдо')} /> : null}
+      {debtors.TotalNetBalanceEuro !== undefined ? (
+        <span className="sales-debtors-summary__amount">
+          <span>{t('Сальдо, EUR')}</span>
+          <strong>{formatDebtAmount(debtors.TotalNetBalanceEuro, moneyFormatter.format, t('Не визначено'))}</strong>
+          <TableChip tone="source" value={EURO_CURRENCY_CODE} />
+        </span>
+      ) : null}
       <span className="sales-debtors-summary__amount">
         <span>{t(debtors.Aging !== undefined ? 'Відоме прострочення, EUR' : 'Прострочено, EUR')}</span>
         <strong>{formatDebtAmount(getKnownOverdueEuro(debtors, debtors.TotalOverdueDebtorsValue), moneyFormatter.format, t('Не визначено'))}</strong>
         <TableChip tone="source" value={EURO_CURRENCY_CODE} />
       </span>
+    </div>
+  )
+}
+
+function SalesDebtorsNotes({ debtors }: { debtors: ClientDebtors }) {
+  const { t } = useI18n()
+  const rateNote = formatCurrentRateNote(debtors.CurrencyTotals)
+  const hasNetColumns = debtors.TotalAdvanceEuro !== undefined
+
+  return (
+    <div className="sales-debtors-notes">
+      {rateNote ? <Text c="dimmed" size="xs">{t('Борг і аванс в EUR')} — {rateNote}</Text> : null}
+      {rateNote && hasForeignAdvance(debtors.CurrencyTotals) ? (
+        <Text c="dimmed" size="xs">{t('Аванс зберігається в EUR; у валюті договору')} — {rateNote}</Text>
+      ) : null}
+      {hasNetColumns ? (
+        <Text c="dimmed" size="xs">
+          {t('Дебітори — усі контрагенти з боргом; «Взаєморозрахунки» показують лише покупців без власних і групових компаній. Клієнти лише з авансом без боргу тут не показані — дивіться «Взаєморозрахунки».')}
+        </Text>
+      ) : null}
     </div>
   )
 }

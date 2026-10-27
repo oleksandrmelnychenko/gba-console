@@ -198,3 +198,10 @@
   .debtor-detail__metrics .debtor-detail__metric { padding: 7px; }
   .debtor-detail__number strong { font-size: 14px; }
 }
+
+.debtor-detail__notes {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  grid-column: 1 / -1;
+}

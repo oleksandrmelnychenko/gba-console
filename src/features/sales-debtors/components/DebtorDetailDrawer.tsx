@@ -1,5 +1,5 @@
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
-import { Alert, Skeleton } from '@mantine/core'
+import { Alert, Skeleton, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useEffect, type ReactNode } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -11,8 +11,10 @@ import { DebtAgingInfo } from './DebtAgingInfo'
 import { getKnownAgingDays, getKnownOverdueEuro, getGroupedDebtAging } from '../model/debtorAging'
 import {
   EURO_CURRENCY_CODE,
+  formatCurrentRateNote,
   formatDebtAmount,
   hasCreditBalance,
+  hasForeignAdvance,
   getDebtorEuroAmount,
   getStructureCurrencyTotals,
   toFiniteNumber,
@@ -106,6 +108,8 @@ export function DebtorDetailDrawer({ debtor, onClose }: {
                 value={getDebtorEuroAmount(debtor, 'OverdueDebt')}
               />
               {hasCreditBalance(debtor) ? <DetailMetric label={t('Кредитовий залишок, EUR')} unit={EURO_CURRENCY_CODE} value={debtor.CreditBalanceEuro} /> : null}
+              {debtor.AdvanceEuro !== undefined ? <DetailMetric label={t('Аванс, EUR')} unit={EURO_CURRENCY_CODE} value={debtor.AdvanceEuro} /> : null}
+              {debtor.NetBalanceEuro !== undefined ? <DetailMetric label={t('Сальдо, EUR')} unit={EURO_CURRENCY_CODE} value={debtor.NetBalanceEuro} /> : null}
               <DetailMetric danger={debtor.Aging !== undefined ? (getKnownAgingDays(debtor.Aging) ?? 0) > 0 : (debtor.MissedDays ?? 0) < 0} integer label={t(debtor.Aging !== undefined ? 'Макс. відоме прострочення, днів' : 'Термін, днів')} value={debtor.Aging !== undefined ? getKnownAgingDays(debtor.Aging) : debtor.MissedDays} />
             </div>
           </section>
@@ -184,9 +188,29 @@ function DebtTotals({ total }: { total: DebtorDebtTotal | null }) {
         />
       ))}
       {total && hasCreditBalance(total) ? <DetailMetric label={t('Кредитовий залишок, EUR')} unit={EURO_CURRENCY_CODE} value={total.CreditBalanceEuro} /> : null}
+      {currencies.filter((item) => toFiniteNumber(item.AdvanceEuro) !== 0).map((item) => (
+        <DetailMetric
+          key={`advance-${item.CurrencyCode || 'local'}`}
+          euro={item.CurrencyCode !== EURO_CURRENCY_CODE ? item.AdvanceEuro : undefined}
+          label={`${t('Аванс')} ${item.CurrencyCode || ''}`.trim()}
+          unit={item.CurrencyCode || undefined}
+          value={item.Advance}
+        />
+      ))}
+      {currencies.filter((item) => toFiniteNumber(item.AdvanceEuro) !== 0).map((item) => (
+        <DetailMetric
+          key={`net-${item.CurrencyCode || 'local'}`}
+          euro={item.CurrencyCode !== EURO_CURRENCY_CODE ? item.NetBalanceEuro : undefined}
+          label={`${t('Сальдо')} ${item.CurrencyCode || ''}`.trim()}
+          unit={item.CurrencyCode || undefined}
+          value={item.NetBalance}
+        />
+      ))}
       {total?.TotalInEuro !== undefined ? (
         <>
           <DetailMetric label={t('Разом, EUR')} unit={EURO_CURRENCY_CODE} value={total.TotalInEuro} />
+          {total.AdvanceEuro !== undefined ? <DetailMetric label={t('Аванс, EUR')} unit={EURO_CURRENCY_CODE} value={total.AdvanceEuro} /> : null}
+          {total.NetBalanceEuro !== undefined ? <DetailMetric label={t('Сальдо, EUR')} unit={EURO_CURRENCY_CODE} value={total.NetBalanceEuro} /> : null}
           <DetailMetric
             danger={(getKnownOverdueEuro(total, total.OverdueInEuro) ?? 0) > 0}
             label={t(total.Aging !== undefined ? 'Відоме прострочення, EUR' : 'Прострочено, EUR')}
@@ -196,6 +220,20 @@ function DebtTotals({ total }: { total: DebtorDebtTotal | null }) {
         </>
       ) : null}
       <DebtAgingInfo aging={total?.Aging} currencies={currencies} />
+      <DebtValuationNotes currencies={currencies} />
+    </div>
+  )
+}
+
+function DebtValuationNotes({ currencies }: { currencies: Parameters<typeof formatCurrentRateNote>[0] & Parameters<typeof hasForeignAdvance>[0] }) {
+  const { t } = useI18n()
+  const rateNote = formatCurrentRateNote(currencies)
+  if (!rateNote) return null
+
+  return (
+    <div className="debtor-detail__notes">
+      <Text c="dimmed" size="xs">{t('Борг і аванс в EUR')} — {rateNote}</Text>
+      {hasForeignAdvance(currencies) ? <Text c="dimmed" size="xs">{t('Аванс зберігається в EUR; у валюті договору')} — {rateNote}</Text> : null}
     </div>
   )
 }
@@ -231,6 +269,18 @@ function DebtCard({ item }: { item: DebtorDebtItem }) {
       <div className="debtor-detail__debt-grid">
         <DetailRow label={t('Сума боргу')}><MoneyWithCurrency currencyCode={currencyCode} value={debt?.Total} /></DetailRow>
         <DetailRow label={t('Сума, EUR')}><MoneyWithCurrency currencyCode={EURO_CURRENCY_CODE} value={debt?.EuroTotal} /></DetailRow>
+        {debt && toFiniteNumber(debt.AdvanceEuro) !== 0 ? (
+          <DetailRow label={t('Аванс')}>
+            <MoneyWithCurrency currencyCode={currencyCode} value={debt.Advance} />
+            {currencyCode !== EURO_CURRENCY_CODE ? <MoneyWithCurrency className="is-secondary" currencyCode={EURO_CURRENCY_CODE} value={debt.AdvanceEuro} /> : null}
+          </DetailRow>
+        ) : null}
+        {debt && debt.NetBalance !== undefined ? (
+          <DetailRow label={t('Сальдо')}>
+            <MoneyWithCurrency currencyCode={currencyCode} value={debt.NetBalance} />
+            {currencyCode !== EURO_CURRENCY_CODE ? <MoneyWithCurrency className="is-secondary" currencyCode={EURO_CURRENCY_CODE} value={debt.NetBalanceEuro} /> : null}
+          </DetailRow>
+        ) : null}
         <DetailRow label={t(aging.canonical ? 'Відоме прострочення' : 'Прострочено')}>
           <div className={aging.knownOverdue ? 'debtor-detail__overdue' : undefined}>
             <MoneyWithCurrency currencyCode={currencyCode} value={aging.overdueTotal} />
@@ -250,6 +300,9 @@ function DebtCard({ item }: { item: DebtorDebtItem }) {
         {agreement ? <DetailRow label={t('Договір')}><TableChip value={agreement} /></DetailRow> : null}
       </div>
       <DebtAgingInfo aging={debt?.Aging} currencies={[{ CurrencyCode: currencyCode, Aging: debt?.Aging }]} />
+      {currencyCode && currencyCode !== EURO_CURRENCY_CODE && debt?.EuroRate !== undefined ? (
+        <Text c="dimmed" size="xs">{t('Сума в EUR')} — {formatCurrentRateNote([{ CurrencyCode: currencyCode, EuroRate: debt.EuroRate, EuroRateDate: debt.EuroRateDate }])}</Text>
+      ) : null}
     </article>
   )
 }

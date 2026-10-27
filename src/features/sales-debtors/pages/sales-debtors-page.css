@@ -172,6 +172,21 @@
 }
 
 
+.sales-debtors-notes {
+  background: var(--mantine-color-white);
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 12px 6px;
+  text-align: right;
+}
+
+.sales-debtors-column-hint {
+  border-bottom: 1px dotted currentColor;
+  cursor: help;
+}
+
 .sales-debtors-summary {
   align-items: center;
   background: var(--mantine-color-white);

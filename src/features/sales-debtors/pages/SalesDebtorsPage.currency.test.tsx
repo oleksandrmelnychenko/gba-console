@@ -223,6 +223,61 @@ describe('SalesDebtorsPage debt currency', () => {
     expect(detail).not.toContain('Разом із субклієнтами')
   })
 
+  it('shows advances and net balances at the current rate with the explanatory notes', async () => {
+    vi.mocked(getFilteredDebtors).mockResolvedValue({
+      ...debtors,
+      Aging: agingFixture(),
+      ClientInDebtors: [{
+        ...debtors.ClientInDebtors[0], Aging: agingFixture(), AdvanceEuro: 33, NetBalanceEuro: 857.02,
+        CurrencyDebts: [
+          { CurrencyCode: 'EUR', RemainderDebt: 804.11, RemainderDebtEuro: 804.11, Advance: 30, AdvanceEuro: 30, NetBalance: 774.11, NetBalanceEuro: 774.11, EuroRate: 1 },
+          { CurrencyCode: 'UAH', RemainderDebt: 4389.78, RemainderDebtEuro: 85.41, Advance: 154.2, AdvanceEuro: 3, NetBalance: 4235.58, NetBalanceEuro: 82.41, EuroRate: 51.4, EuroRateDate: '2026-10-26T00:00:00' },
+        ],
+      }],
+      CurrencyTotals: [
+        { CurrencyCode: 'EUR', RemainderDebt: 804.11, RemainderDebtEuro: 804.11, Advance: 30, AdvanceEuro: 30, NetBalance: 774.11, NetBalanceEuro: 774.11, EuroRate: 1 },
+        { CurrencyCode: 'UAH', RemainderDebt: 4389.78, RemainderDebtEuro: 85.41, Advance: 154.2, AdvanceEuro: 3, NetBalance: 4235.58, NetBalanceEuro: 82.41, EuroRate: 51.4, EuroRateDate: '2026-10-26T00:00:00' },
+      ],
+      TotalRemainderDebtorsValue: 889.52, TotalAdvanceEuro: 33, TotalNetBalanceEuro: 856.52,
+    })
+    vi.mocked(getDebtorDebtTotal).mockResolvedValue({
+      Aging: agingFixture(), TotalInEuro: 889.52, OverdueInEuro: 0, AdvanceEuro: 33, NetBalanceEuro: 856.52,
+      Currencies: [
+        { CurrencyCode: 'UAH', Total: 4389.78, TotalInEuro: 85.41, Advance: 154.2, AdvanceEuro: 3, NetBalance: 4235.58, NetBalanceEuro: 82.41, EuroRate: 51.4, EuroRateDate: '2026-10-26T00:00:00' },
+      ],
+    })
+    vi.mocked(getDebtorGroupedDebts).mockResolvedValue([{
+      Id: 2, Agreement: { Currency: { Code: 'UAH' } },
+      Debt: { Days: 38, Total: 4389.78, EuroTotal: 85.41, OverdueTotal: 0, OverdueEuroTotal: 0, Advance: 154.2, AdvanceEuro: 3, NetBalance: 4235.58, NetBalanceEuro: 82.41, EuroRate: 51.4, EuroRateDate: '2026-10-26T00:00:00' },
+    }])
+    renderWithMantine(<I18nProvider><SalesDebtorsPage /></I18nProvider>)
+    const row = await screen.findByTestId('row-0')
+    const headers = screen.getAllByRole('columnheader').map((header) => header.textContent)
+    expect(headers).toEqual(expect.arrayContaining(['Аванс', 'Сальдо']))
+    expect(text(row.querySelector('[data-column="advance"]')!)).toBe(`${money.format(30)}EUR${money.format(154.2)}UAH${money.format(33)}EUR`)
+    expect(text(row.querySelector('[data-column="netBalance"]')!)).toBe(`${money.format(774.11)}EUR${money.format(4235.58)}UAH${money.format(857.02)}EUR`)
+    const footer = text(document.querySelector('.sales-debtors-summary')!)
+    expect(footer).toContain(`Аванс, EUR${money.format(33)}EUR`)
+    expect(footer).toContain(`Сальдо, EUR${money.format(856.52)}EUR`)
+    const notes = text(document.querySelector('.sales-debtors-notes')!)
+    expect(notes).toContain('Борг і аванс в EUR — за поточним курсом 51,40 UAH/EUR на 26.10.2026')
+    expect(notes).toContain('Аванс зберігається в EUR; у валюті договору — за поточним курсом 51,40 UAH/EUR на 26.10.2026')
+    expect(notes).toContain('Дебітори — усі контрагенти з боргом; «Взаєморозрахунки» показують лише покупців без власних і групових компаній.')
+    fireEvent.click(within(document.querySelector('.sales-debtors-summary') as HTMLElement).getByRole('button', { name: 'Розрахунок строків' }))
+    expect(await screen.findByText('Початкові залишки з 1С віковані від дати документа 1С.')).toBeTruthy()
+    fireEvent.click(row)
+    const drawer = await screen.findByLabelText('drawer')
+    await waitFor(() => expect(within(drawer).getByText('Сума боргу')).toBeTruthy())
+    const detail = text(drawer)
+    expect(detail).toContain(`Аванс, EUR${money.format(33)}EUR`)
+    expect(detail).toContain(`Сальдо, EUR${money.format(857.02)}EUR`)
+    expect(detail).toContain(`Аванс UAH${money.format(154.2)}UAH${money.format(3)}EUR`)
+    expect(detail).toContain(`Сальдо UAH${money.format(4235.58)}UAH${money.format(82.41)}EUR`)
+    expect(detail).toContain(`Аванс${money.format(154.2)}UAH${money.format(3)}EUR`)
+    expect(detail).toContain('Сума в EUR — за поточним курсом 51,40 UAH/EUR на 26.10.2026')
+    expect(detail).toContain('Аванс зберігається в EUR; у валюті договору — за поточним курсом 51,40 UAH/EUR на 26.10.2026')
+  })
+
   it('shows known aging, unknown buckets and nullable days without classifying unknown debts as paid on time', async () => {
     const Aging = agingFixture({ UnknownDateDebtCount: 1, UnknownDateDebt: 60, UnknownDateDebtEuro: 30, UnknownTermsDebtCount: 1, UnknownTermsDebt: 40, UnknownTermsDebtEuro: null, HasCompleteAging: false })
     vi.mocked(getFilteredDebtors).mockResolvedValue({ ...debtors, Aging, DueCutoffBusinessDay: '2026-10-27T00:00:00', TotalOverdueDebtorsValue: null,

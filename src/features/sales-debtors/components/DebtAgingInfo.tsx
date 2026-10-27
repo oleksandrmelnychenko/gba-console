@@ -40,6 +40,7 @@ function AgingBreakdown({ aging, currencies }: { aging: DebtAging; currencies: A
     {aging.UnknownDateDebtCount > 0 ? <AgingBucket aging={aging} currencies={currencies} field="UnknownDateDebt" label={t('Невідома дата')} /> : null}
     {aging.UnknownTermsDebtCount > 0 ? <AgingBucket aging={aging} currencies={currencies} field="UnknownTermsDebt" label={t('Невідомий строк')} /> : null}
     {!aging.HasCompleteAging ? <Text size="xs" c="dimmed">{t('Суми з невідомою датою або строком входять у борг, але не у відоме прострочення.')}</Text> : null}
+    <Text size="xs" c="dimmed">{t('Початкові залишки з 1С віковані від дати документа 1С.')}</Text>
   </>
 }
 

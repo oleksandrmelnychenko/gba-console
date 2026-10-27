@@ -2,12 +2,15 @@ import { describe, expect, it } from 'vitest'
 import type { ClientInDebt } from '../types'
 import {
   formatCurrencyAmounts,
+  formatCurrentRateNote,
+  getCurrentRateLabels,
   getDebtorCurrencyAmounts,
   getDebtorEuroAmount,
   getDebtBalanceLines,
   getStructureCurrencyTotals,
   getSummaryCurrencyAmounts,
   hasCurrencyBreakdown,
+  hasForeignAdvance,
 } from './debtorCurrency'
 
 const multiCurrencyDebtor: ClientInDebt = {
@@ -135,4 +138,29 @@ describe('debtorCurrency', () => {
     expect(getDebtBalanceLines({ TotalInEuro: 0 })).toEqual([{ label: 'Борг, EUR', currencyCode: 'EUR', value: 0 }])
   })
 
+})
+
+describe('current-rate debt notes', () => {
+  it('names each foreign currency rate once, skips EUR and legacy payloads, and marks missing rates', () => {
+    expect(getCurrentRateLabels([
+      { CurrencyCode: 'UAH', EuroRate: 51.4, EuroRateDate: '2026-10-26T00:00:00' },
+      { CurrencyCode: 'EUR', EuroRate: 1 },
+      { CurrencyCode: 'UAH', EuroRate: 99 },
+      { CurrencyCode: 'USD', EuroRate: 1.12227074 },
+      { CurrencyCode: 'PLN', EuroRate: null },
+      { CurrencyCode: 'CZK' },
+    ])).toEqual(['PLN: курс не визначено', '51,40 UAH/EUR на 26.10.2026', '1,1223 USD/EUR'])
+    expect(formatCurrentRateNote([{ CurrencyCode: 'UAH', EuroRate: 51.4, EuroRateDate: '2026-10-26T00:00:00' }]))
+      .toBe('за поточним курсом 51,40 UAH/EUR на 26.10.2026')
+    expect(formatCurrentRateNote([{ CurrencyCode: 'EUR', EuroRate: 1 }])).toBeNull()
+  })
+
+  it('reports foreign advances and exposes advance and net balance in EUR', () => {
+    expect(hasForeignAdvance([{ CurrencyCode: 'EUR', AdvanceEuro: 5 }])).toBe(false)
+    expect(hasForeignAdvance([{ CurrencyCode: 'UAH', AdvanceEuro: 3 }])).toBe(true)
+    expect(getDebtorEuroAmount({ AdvanceEuro: 33, NetBalanceEuro: 117 }, 'Advance')).toBe(33)
+    expect(getDebtorEuroAmount({ AdvanceEuro: 33, NetBalanceEuro: 117 }, 'NetBalance')).toBe(117)
+    expect(getDebtorEuroAmount({ RemainderDebtEuro: 10 }, 'NetBalance')).toBe(10)
+    expect(getDebtorEuroAmount({ NetBalanceEuro: null }, 'NetBalance')).toBeNull()
+  })
 })
