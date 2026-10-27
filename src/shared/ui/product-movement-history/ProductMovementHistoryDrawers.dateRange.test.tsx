@@ -13,7 +13,6 @@ vi.mock('../../api/apiClient', async importOriginal => ({
   ...await importOriginal<typeof import('../../api/apiClient')>(), apiRequest: vi.fn(),
 }))
 vi.mock('../../../features/auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
-vi.mock('./ProductSourceHistoryRefresh', () => ({ ProductSourceHistoryRefresh: () => null }))
 
 const product = { Id: 42, NetUid: 'product-42', NameUA: 'Товар з історією', VendorCode: 'CARD-42' } as Product
 const rows = {

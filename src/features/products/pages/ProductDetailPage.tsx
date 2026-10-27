@@ -1,7 +1,6 @@
 import { useProductImageDraft } from '../useProductImageDraft'
 import { useProductDetailData } from '../useProductDetailData'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
-import { ProductSourceHistoryRefresh } from '../../../shared/ui/product-movement-history/ProductSourceHistoryRefresh'
 import { withProductSourceHistoryColumns } from '../../../shared/ui/product-movement-history/productSourceHistory'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -2191,11 +2190,6 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
 
   return (
     <div className="console-table-shell product-data-table-shell">
-      <ProductSourceHistoryRefresh hideControls productNetId={productNetUid} includeSiblings={includeSiblings} onRefreshed={() => {
-        exportRequestRef.current += 1
-        dispatchExport({ document: null, error: null, isExporting: false })
-        reload()
-      }} />
       <div className="app-filter-bar product-movement-sheet-toolbar">
         <div className="app-filter-fields product-movement-sheet-filters">
           <ToolbarDateRangeFilter from={dateFrom} to={dateTo} fromLabel={t('З')} toLabel={t('По')}

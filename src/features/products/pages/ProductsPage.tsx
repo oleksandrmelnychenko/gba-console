@@ -1,7 +1,6 @@
 import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
-import { ProductSourceHistoryRefresh } from '../../../shared/ui/product-movement-history/ProductSourceHistoryRefresh'
 import { withProductSourceHistoryColumns } from '../../../shared/ui/product-movement-history/productSourceHistory'
 import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 import {
@@ -3241,11 +3240,6 @@ function ProductInlineMovementsTab({
 
   return (
     <Stack className="product-inline-movements product-inline-table-frame" gap={0}>
-      <ProductSourceHistoryRefresh hideControls productNetId={productNetUid} includeSiblings={includeSiblings} onRefreshed={() => {
-        exportRequestRef.current += 1
-        dispatch({ type: 'export-clear' })
-        reload()
-      }} />
       <Group className="app-filter-bar product-movement-toolbar" align="end" gap={10} wrap="nowrap">
         <ToolbarDateRangeFilter from={dateFrom} to={dateTo} fromLabel={t('З')} toLabel={t('По')}
           min="1900-01-01" max="9999-12-30" required

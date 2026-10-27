@@ -44,7 +44,7 @@ describe('native warehouse stock movement', () => {
   it('applies all GBA history and renders the 1C layout with totals and red negatives', async () => {
     const busy = vi.fn()
     render(panel(true, busy))
-    expect(await screen.findByText('Залишки з 1С синхронізовано 19.10.2026 12:46 (Київ)')).toBeTruthy()
+    expect(screen.queryByText(/синхронізовано/)).toBeNull()
     const table = await applyReport()
     expect(previews()[0]).toMatchObject({ From: '2025-01-01', To: '2026-10-26', Levels: ['warehouse', 'product', 'registrar'], Offset: 0, Limit: 200 })
     const rows = within(table).getAllByRole('row')

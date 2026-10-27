@@ -10,7 +10,6 @@ import type { InformationalMovement } from './informationalMovements'
 vi.mock('../../api/apiClient', async importOriginal => ({
   ...await importOriginal<typeof import('../../api/apiClient')>(), apiRequest: vi.fn(),
 }))
-vi.mock('./ProductSourceHistoryRefresh', () => ({ ProductSourceHistoryRefresh: () => null }))
 vi.mock('../data-table/DataTable', () => ({
   DataTable: ({ data, emptyText, isLoading }: { data: InformationalMovement[]; emptyText: string; isLoading: boolean }) =>
     <div>{isLoading ? 'loading' : data.length ? data.map(row => <div key={row.InfoKey}>{row.DocumentNumber}</div>) : emptyText}</div>,

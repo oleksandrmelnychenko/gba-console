@@ -264,7 +264,6 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
   return <Stack gap={8} className="published-movement stock-movement">
     <Group justify="space-between" gap={8} wrap="wrap">
       <Text fw={600}>{WAREHOUSE_STOCK_MOVEMENT_TITLE}</Text>
-      {capability.StockSyncAt ? <Text size="xs" c="dimmed">Залишки з 1С синхронізовано {displayDateTime(capability.StockSyncAt)} (Київ)</Text> : null}
     </Group>
     <WorkbookSettings unified disabled={locked}
       period={<WorkbookPeriodField required from={draft.from} to={draft.to} minDate={capability.MinimumFrom} maxDate={capability.Today}

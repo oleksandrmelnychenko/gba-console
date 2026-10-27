@@ -1,5 +1,4 @@
 import { ToolbarDateRangeFilter } from '../ToolbarDateRangeFilter'
-import { ProductSourceHistoryRefresh } from './ProductSourceHistoryRefresh'
 import { withProductSourceHistoryColumns, type ProductSourceHistoryInfo } from './productSourceHistory'
 import { TableChip } from '../TableChip'
 import {
@@ -932,11 +931,6 @@ function ProductMovementPanel({
 
   return (
     <Stack className="product-movement-history-panel" gap={0}>
-      <ProductSourceHistoryRefresh hideControls productNetId={productNetUid} active={active && requestPath.includes('/assortment/')} onRefreshed={() => {
-        exportRequestRef.current += 1
-        dispatchExportModalState({ type: 'close-document' })
-        reload()
-      }} />
       <div className="app-filter-bar product-movement-history-filter-bar product-movement-history-filter-bar--extended">
       <Group align="end" gap={10} wrap="wrap" className="product-movement-history-filter-row">
         <ToolbarDateRangeFilter from={dateFrom} to={dateTo} fromLabel={t('З')} toLabel={t('По')}
@@ -1843,11 +1837,6 @@ function ProductIncomeMovementPanel({
 
   return (
     <Stack className="product-movement-history-panel" gap={0}>
-      <ProductSourceHistoryRefresh hideControls productNetId={productNetUid} active={active && requestPath.includes('/assortment/')} onRefreshed={() => {
-        exportRequestRef.current += 1
-        dispatchExportModalState({ type: 'close-document' })
-        reload()
-      }} />
       <div className="app-filter-bar product-movement-history-filter-bar">
       <MovementDateToolbar
         canExport={canExport}
@@ -2057,11 +2046,6 @@ function ProductOutcomeMovementPanel({
 
   return (
     <Stack className="product-movement-history-panel" gap={0}>
-      <ProductSourceHistoryRefresh hideControls productNetId={productNetUid} active={active && requestPath.includes('/assortment/')} onRefreshed={() => {
-        exportRequestRef.current += 1
-        dispatchExportModalState({ type: 'close-document' })
-        reload()
-      }} />
       <div className="app-filter-bar product-movement-history-filter-bar">
       <MovementDateToolbar
         canExport={canExport}

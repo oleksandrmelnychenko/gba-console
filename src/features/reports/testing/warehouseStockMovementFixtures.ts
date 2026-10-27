@@ -6,7 +6,7 @@ export const stockMovementCapability: StockMovementCapability = {
   Version: 1,
   MinimumFrom: '2025-01-01',
   Today: '2026-10-26',
-  StockSyncAt: '2026-10-19 12:46:36',
+  StockSyncAt: null,
   Levels: ['warehouse', 'product', 'month', 'day', 'registrar'],
   DefaultLevels: ['warehouse', 'product', 'registrar'],
   Measures: ['opening', 'incoming', 'outgoing', 'closing'],
@@ -47,10 +47,10 @@ export function stockMovementResult(request: StockMovementRequest, rows: StockMo
   const page = rows.slice(request.Offset, request.Offset + request.Limit)
   return {
     Version: 1, From: request.From, To: request.To, Levels: request.Levels, Measures: request.Measures,
-    ObservedAt: '2026-10-26 15:04:05', StockSyncAt: '2026-10-19 12:46:36', Totals: quantity(-2, 10, 3), Keys: 1, Registrars: 2,
+    ObservedAt: '2026-10-26 15:04:05', StockSyncAt: null, Totals: quantity(-2, 10, 3), Keys: 1, Registrars: 2,
     TotalRows: Math.max(totalRows, rows.length), Offset: request.Offset, Limit: request.Limit,
     Rows: page.map((row, index) => ({ ...row, Index: request.Offset + index })),
-    Notes: ['Рух до синхронізації залишків узято з регістра 1С, після неї — з документів GBA.'],
+    Notes: ['Рух — складські документи GBA: імпортовані з 1С і створені в GBA, кожен документ один раз, незалежно від часу синхронізації. Резерви в рахунках не є рухом.'],
   }
 }
 
