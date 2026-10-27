@@ -1,5 +1,6 @@
 import { ToolbarDateRangeFilter } from '../ToolbarDateRangeFilter'
 import { withProductSourceHistoryColumns, type ProductSourceHistoryInfo } from './productSourceHistory'
+import { withMovementDocumentStateColumns } from './movementDocumentState'
 import { TableChip } from '../TableChip'
 import {
   ActionIcon,
@@ -73,6 +74,8 @@ type EntityFields = {
 }
 
 type ProductMovement = EntityFields & {
+  DocumentState?: string | null
+  InformationalQty?: number | null
   SourceHistory?: ProductSourceHistoryInfo | null
   AccountingPrice?: number
   ClientName?: string
@@ -128,6 +131,8 @@ type ProductIncomeMovement = EntityFields & {
 }
 
 type ProductOutcomeMovement = EntityFields & {
+  DocumentState?: string | null
+  InformationalQty?: number | null
   SourceHistory?: ProductSourceHistoryInfo | null
   ClientName?: string
   DocumentNumber?: string | number
@@ -2152,7 +2157,7 @@ function useProductMovementColumns(): DataTableColumn<ProductMovement>[] {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<ProductMovement>[]>(
-    () => withProductSourceHistoryColumns([
+    () => withMovementDocumentStateColumns(withProductSourceHistoryColumns([
       {
         id: 'incomeDocumentNumber',
         header: t('Номер прихідної накладної'),
@@ -2291,7 +2296,7 @@ function useProductMovementColumns(): DataTableColumn<ProductMovement>[] {
         accessor: (row) => row.Comment,
         cell: (row) => displayValue(row.Comment),
       },
-    ], t),
+    ], t), t),
     [t],
   )
 }
@@ -2546,7 +2551,7 @@ function useProductOutcomeMovementColumns(): DataTableColumn<ProductOutcomeMovem
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<ProductOutcomeMovement>[]>(
-    () => withProductSourceHistoryColumns([
+    () => withMovementDocumentStateColumns(withProductSourceHistoryColumns([
       {
         id: 'fromDate',
         header: t('Дата'),
@@ -2621,7 +2626,7 @@ function useProductOutcomeMovementColumns(): DataTableColumn<ProductOutcomeMovem
         accessor: (row) => row.Qty,
         cell: (row) => formatAmount(row.Qty),
       },
-    ], t),
+    ], t), t),
     [t],
   )
 }

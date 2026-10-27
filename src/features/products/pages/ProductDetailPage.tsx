@@ -2,6 +2,7 @@ import { useProductImageDraft } from '../useProductImageDraft'
 import { useProductDetailData } from '../useProductDetailData'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { withProductSourceHistoryColumns } from '../../../shared/ui/product-movement-history/productSourceHistory'
+import { withMovementDocumentStateColumns } from '../../../shared/ui/product-movement-history/movementDocumentState'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { PdfIcon } from '../../../shared/ui/PdfIcon'
@@ -2159,7 +2160,7 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
     }
   }
 
-  const cardMovementColumns = useMemo<DataTableColumn<ProductMovement>[]>(() => withProductSourceHistoryColumns([
+  const cardMovementColumns = useMemo<DataTableColumn<ProductMovement>[]>(() => withMovementDocumentStateColumns(withProductSourceHistoryColumns([
     { id: 'incomeNumber', header: t('Номер прихідної накладної'), minWidth: 160, accessor: (row) => row.IncomeDocumentNumber, cell: (row) => <TableChip tone="document" value={displayValue(row.IncomeDocumentNumber)} /> },
     { id: 'incomeDate', header: t('Дата прихідної накладної'), minWidth: 160, accessor: (row) => row.IncomeDocumentFromDate, cell: (row) => <span className="app-money">{formatDateTime(row.IncomeDocumentFromDate)}</span> },
     { id: 'document', header: t('Документ'), minWidth: 150, accessor: (row) => row.DocumentType || row.MovementType, cell: (row) => displayValue(row.DocumentType || row.MovementType) },
@@ -2180,7 +2181,7 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
     { id: 'income', header: t('Прихід'), minWidth: 110, align: 'right', accessor: (row) => row.IncomeQty, cell: (row) => <span className="app-money">{formatAmount(row.IncomeQty)}</span> },
     { id: 'outcome', header: t('Розхід'), minWidth: 110, align: 'right', accessor: (row) => row.OutcomeQty, cell: (row) => <span className="app-money">{formatAmount(row.OutcomeQty)}</span> },
     { id: 'comment', header: t('Коментар'), minWidth: 220, accessor: (row) => row.Comment, cell: (row) => displayValue(row.Comment) },
-  ], t), [t])
+  ], t), t), [t])
   const movementColumns = useMemo<DataTableColumn<ProductMovement>[]>(
     () => includeSiblings
       ? [createProductSiblingCardColumn<ProductMovement>(t('Картка')), ...cardMovementColumns]

@@ -2,6 +2,7 @@ import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { withProductSourceHistoryColumns } from '../../../shared/ui/product-movement-history/productSourceHistory'
+import { withInlineMovementDocumentState } from '../../../shared/ui/product-movement-history/movementDocumentState'
 import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 import {
   ActionIcon,
@@ -3545,7 +3546,7 @@ function ProductOutcomeMovementsGrid({
 }) {
   const { t } = useI18n()
   const cardColumns = useMemo<DataTableColumn<ProductOutcomeMovement>[]>(
-    () => withProductSourceHistoryColumns([
+    () => withInlineMovementDocumentState(withProductSourceHistoryColumns([
       {
         id: 'date',
         header: t('Дата'),
@@ -3620,7 +3621,7 @@ function ProductOutcomeMovementsGrid({
         accessor: (row) => row.Qty,
         cell: (row) => renderMovementAmount(row.Qty),
       },
-    ], t),
+    ], t), 'qty', t),
     [t],
   )
   const columns = useMemo<DataTableColumn<ProductOutcomeMovement>[]>(

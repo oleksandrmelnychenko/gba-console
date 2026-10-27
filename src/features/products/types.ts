@@ -285,6 +285,8 @@ export type ProductConsignmentRemaining = EntityFields & {
 }
 
 export type ProductMovement = EntityFields & {
+  DocumentState?: string | null
+  InformationalQty?: number | null
   SourceHistory?: ProductSourceHistoryInfo | null
   AccountingGrossPrice?: number
   AccountingPrice?: number
@@ -342,6 +344,8 @@ export type ProductIncomeMovement = EntityFields & {
 }
 
 export type ProductOutcomeMovement = EntityFields & {
+  DocumentState?: string | null
+  InformationalQty?: number | null
   SourceHistory?: ProductSourceHistoryInfo | null
   Card?: ProductSiblingCardRef | null
   ClientName?: string
