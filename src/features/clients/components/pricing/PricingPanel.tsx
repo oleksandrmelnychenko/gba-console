@@ -39,6 +39,7 @@ import type {
   ClientContractDocument,
   ClientPrintDocument,
   Currency,
+  Manager,
   Organization,
   Pricing,
   ProductGroupDiscount,
@@ -63,6 +64,7 @@ export type PricingPanelProps = {
   onAddContractDocuments?: (files: File[]) => void
   onPendingDiscountDraftChange?: (draft: DiscountsTreeDraft | null) => void
   onRemoveContractDocument?: (document: ClientContractDocument) => void
+  onSetMainManager?: (manager: Manager) => Promise<void>
 }
 
 const AGREEMENT_DEFAULT_NAME = 'Default'
@@ -106,6 +108,7 @@ export function PricingPanel({
   onAddContractDocuments,
   onPendingDiscountDraftChange,
   onRemoveContractDocument,
+  onSetMainManager,
 }: PricingPanelProps) {
   const { t } = useI18n()
   const [organizations, setOrganizations] = useState<Organization[]>([])
@@ -446,8 +449,10 @@ export function PricingPanel({
         <ManagerPicker
           client={client}
           disabled={disabled || (sourceManaged && sourceEditMode !== 'manual')}
+          mainManagerDisabled={disabled}
           role={isProvider ? 'provider' : 'buyer'}
           onChange={onChange}
+          onSetMainManager={onSetMainManager}
         />
       </Card>
 

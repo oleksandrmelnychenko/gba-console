@@ -3,6 +3,7 @@ import {
   Avatar,
   Badge,
   Box,
+  Button,
   Group,
   Loader,
   Stack,
@@ -25,6 +26,8 @@ export type ManagerPickerProps = {
   role: ManagerPickerRole
   onChange: (client: Client) => void
   disabled?: boolean
+  mainManagerDisabled?: boolean
+  onSetMainManager?: (manager: Manager) => Promise<void>
 }
 
 function getSelectedManagerNetUid(client: Client): string | undefined {
@@ -45,12 +48,22 @@ function getManagerFullName(manager: Manager): string {
     .join(' ')
 }
 
-export function ManagerPicker({ client, role, onChange, disabled = false }: ManagerPickerProps) {
+export function ManagerPicker({
+  client,
+  role,
+  onChange,
+  disabled = false,
+  mainManagerDisabled = false,
+  onSetMainManager,
+}: ManagerPickerProps) {
   const { t } = useI18n()
   const [managers, setManagers] = useState<Manager[]>([])
   const [search, setSearch] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(true)
+  const [mainManagerBusyNetUid, setMainManagerBusyNetUid] = useState<string | null>(null)
+  const [mainManagerError, setMainManagerError] = useState<string | null>(null)
+  const canSetMainManager = Boolean(onSetMainManager) && !mainManagerDisabled
 
   useEffect(() => {
     let cancelled = false
@@ -140,6 +153,24 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
     })
   }
 
+  async function handleSetMainManager(manager: Manager) {
+    if (!onSetMainManager || !manager.NetUid || mainManagerBusyNetUid) {
+      return
+    }
+
+    setMainManagerBusyNetUid(manager.NetUid)
+    setMainManagerError(null)
+    try {
+      await onSetMainManager(manager)
+    } catch (assignError) {
+      setMainManagerError(
+        assignError instanceof Error ? assignError.message : t('Не вдалося змінити основного менеджера'),
+      )
+    } finally {
+      setMainManagerBusyNetUid(null)
+    }
+  }
+
   return (
     <Stack className="manager-pick" gap="sm">
       <Stack gap={6}>
@@ -169,6 +200,12 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
         </Alert>
       )}
 
+      {mainManagerError && (
+        <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
+          {mainManagerError}
+        </Alert>
+      )}
+
       {isLoading ? (
         <Group justify="center" py="md">
           <Loader size="sm" />
@@ -186,56 +223,70 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
                 typeof client.MainManagerId === 'number' && client.MainManagerId === manager.Id
 
               return (
-                <UnstyledButton
-                  key={manager.NetUid || manager.Id || index}
-                  aria-pressed={isSelected}
-                  className="manager-pick-button"
-                  disabled={disabled}
-                  onClick={() => handleSelect(manager)}
-                >
-                  <div className={`manager-pick-item${isSelected ? ' is-selected' : ''}`}>
-                    <Group gap="sm" align="center" wrap="nowrap" w="100%">
-                      <Avatar
-                        className="manager-pick-avatar"
-                        color="gray"
-                        radius="xl"
-                        size={46}
-                        variant="light"
-                      >
-                        <User size={22} strokeWidth={1.6} />
-                      </Avatar>
+                <div key={manager.NetUid || manager.Id || index} className="manager-pick-row">
+                  <UnstyledButton
+                    aria-pressed={isSelected}
+                    className="manager-pick-button"
+                    disabled={disabled}
+                    onClick={() => handleSelect(manager)}
+                  >
+                    <div className={`manager-pick-item${isSelected ? ' is-selected' : ''}`}>
+                      <Group gap="sm" align="center" wrap="nowrap" w="100%">
+                        <Avatar
+                          className="manager-pick-avatar"
+                          color="gray"
+                          radius="xl"
+                          size={46}
+                          variant="light"
+                        >
+                          <User size={22} strokeWidth={1.6} />
+                        </Avatar>
 
-                      <Stack flex={1} gap={4} miw={0}>
-                        <Group gap="xs" miw={0} wrap="nowrap">
-                          <Text className="manager-pick-name" fw={600} size="sm" truncate>
-                            {getManagerFullName(manager)}
-                          </Text>
-                          {isMainManager && (
+                        <Stack flex={1} gap={4} miw={0}>
+                          <Group gap="xs" miw={0} wrap="nowrap">
+                            <Text className="manager-pick-name" fw={600} size="sm" truncate>
+                              {getManagerFullName(manager)}
+                            </Text>
+                            {isMainManager && (
+                              <Badge
+                                className="app-role-pill manager-pick-pill"
+                                color="yellow"
+                                size="xs"
+                                variant="light"
+                              >
+                                {t('Головний')}
+                              </Badge>
+                            )}
+                          </Group>
+                          {manager.UserRole?.Name && (
                             <Badge
-                              className="app-role-pill manager-pick-pill"
-                              color="yellow"
-                              size="xs"
+                              className="app-role-pill manager-pick-pill manager-pick-role"
+                              color="gray"
+                              radius="sm"
+                              size="sm"
                               variant="light"
                             >
-                              {t('Головний')}
+                              {manager.UserRole.Name}
                             </Badge>
                           )}
-                        </Group>
-                        {manager.UserRole?.Name && (
-                          <Badge
-                            className="app-role-pill manager-pick-pill manager-pick-role"
-                            color="gray"
-                            radius="sm"
-                            size="sm"
-                            variant="light"
-                          >
-                            {manager.UserRole.Name}
-                          </Badge>
-                        )}
-                      </Stack>
-                    </Group>
-                  </div>
-                </UnstyledButton>
+                        </Stack>
+                      </Group>
+                    </div>
+                  </UnstyledButton>
+                  {canSetMainManager && !isMainManager && manager.NetUid ? (
+                    <Button
+                      className="manager-pick-main-action"
+                      color="gray"
+                      disabled={Boolean(mainManagerBusyNetUid) && mainManagerBusyNetUid !== manager.NetUid}
+                      loading={mainManagerBusyNetUid === manager.NetUid}
+                      size="compact-xs"
+                      variant="subtle"
+                      onClick={() => void handleSetMainManager(manager)}
+                    >
+                      {t('Зробити головним')}
+                    </Button>
+                  ) : null}
+                </div>
               )
             })}
           </Stack>

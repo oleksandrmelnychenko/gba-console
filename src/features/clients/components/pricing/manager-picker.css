@@ -112,3 +112,19 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.manager-pick-row {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.manager-pick-row .manager-pick-button {
+  flex: 1;
+  min-width: 0;
+}
+
+.manager-pick-main-action {
+  flex: 0 0 auto;
+}

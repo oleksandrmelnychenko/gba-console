@@ -799,6 +799,15 @@ export type ClientUserProfile = {
 
 export type ClientUpsertResult = Client | null
 
+export type ClientMainManagerAssignment = {
+  ClientId: number
+  ClientNetUid: string
+  MainManagerId?: number | null
+  MainManagerNetUid?: string | null
+  MainManagerName?: string | null
+  Updated: string
+}
+
 export type ClientSearchParams = {
   active?: boolean | null
   filterEntityType?: number

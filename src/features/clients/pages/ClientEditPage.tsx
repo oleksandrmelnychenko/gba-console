@@ -27,6 +27,7 @@ import { useAuth } from '../../auth/useAuth'
 import {
   deleteClient,
   getClientForRegistryById,
+  setClientMainManager,
   updateClient,
   updateClientEcommerceSettings,
 } from '../api/clientFormApi'
@@ -84,6 +85,7 @@ import type {
   ClientType,
   ClientTypeRole,
   Currency,
+  Manager,
   Region,
 } from '../types'
 import './client-edit-page.css'
@@ -167,6 +169,7 @@ type EditStepContentProps = {
   onCreateRegion: (name: string) => void
   onClientChange: (client: Client) => void
   onPendingDiscountDraftChange: (draft: DiscountsTreeDraft | null) => void
+  onSetMainManager: (client: Client, manager: Manager) => Promise<void>
   step: string
   productNetId?: string
 }
@@ -587,6 +590,28 @@ export function ClientEditPage() {
     }
 
     setClient(updatedClient)
+  }
+
+  async function handleSetMainManager(target: Client, manager: Manager) {
+    if (!target.NetUid || !target.Updated || !manager.NetUid) {
+      return
+    }
+
+    const assignment = await setClientMainManager(target.NetUid, manager.NetUid, target.Updated)
+    const applyAssignment = (current: Client | null) =>
+      current && current.NetUid === assignment.ClientNetUid
+        ? {
+            ...current,
+            MainManagerId: assignment.MainManagerId ?? undefined,
+            Updated: assignment.Updated,
+          }
+        : current
+    setClient(applyAssignment)
+    setFolderClient(applyAssignment)
+    notifications.show({
+      color: 'green',
+      message: t('Основного менеджера змінено'),
+    })
   }
 
   function handleFolderClientSelect(clientNetUid: string) {
@@ -1110,6 +1135,7 @@ export function ClientEditPage() {
         steps={steps}
         onAddDocuments={handleAddDocuments}
         onClientChange={handleClientChange}
+        onSetMainManager={handleSetMainManager}
         onCreateCountry={handleCreateCountry}
         onCreateIncoterm={handleCreateIncoterm}
         onCreateRegion={handleCreateRegion}
@@ -1347,6 +1373,7 @@ function ClientEditBody({
   steps,
   onAddDocuments,
   onClientChange,
+  onSetMainManager,
   onCreateCountry,
   onCreateIncoterm,
   onCreateRegion,
@@ -1393,6 +1420,7 @@ function ClientEditBody({
   steps: EditStep[]
   onAddDocuments: (files: File[]) => void
   onClientChange: (client: Client) => void
+  onSetMainManager: (client: Client, manager: Manager) => Promise<void>
   onCreateCountry: (name: string, code: string) => void
   onCreateIncoterm: (name: string) => void
   onCreateRegion: (name: string) => void
@@ -1509,6 +1537,7 @@ function ClientEditBody({
                   step={selectedStepValue}
                   onAddDocuments={onAddDocuments}
                   onClientChange={onClientChange}
+                  onSetMainManager={onSetMainManager}
                   onCreateCountry={onCreateCountry}
                   onCreateIncoterm={onCreateIncoterm}
                   onCreateRegion={onCreateRegion}
@@ -1734,6 +1763,7 @@ function EditStepContent({
   setIbanNumberCurrency,
   onAddDocuments,
   onClientChange,
+  onSetMainManager,
   onCreateCountry,
   onCreateIncoterm,
   onCreateRegion,
@@ -1770,6 +1800,7 @@ function EditStepContent({
         section={step === 'pricing' ? undefined : step}
         onChange={onClientChange}
         onPendingDiscountDraftChange={onPendingDiscountDraftChange}
+        onSetMainManager={(manager) => onSetMainManager(client, manager)}
       />
     )
   }

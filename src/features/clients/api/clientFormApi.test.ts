@@ -9,6 +9,7 @@ import {
   getClientById,
   getClientForRegistryById,
   getSupplierPassportById,
+  setClientMainManager,
   updateClient,
   updateClientEcommerceSettings,
 } from './clientFormApi'
@@ -35,6 +36,33 @@ describe('client form API contracts', () => {
         headers: clientUpdateHeaders,
         operationId: clientUpdateHeaders['Idempotency-Key'],
       }))
+  })
+
+  it('sets the main manager under the card version', async () => {
+    const assignment = {
+      ClientId: 42,
+      ClientNetUid: 'client-net-id',
+      MainManagerId: 8,
+      MainManagerNetUid: 'manager-net-id',
+      MainManagerName: 'Іваненко Іван',
+      Updated: '2026-10-27T10:00:01Z',
+    }
+    apiRequestMock.mockResolvedValue(assignment)
+
+    await expect(setClientMainManager('client-net-id', 'manager-net-id', '2026-10-27T10:00:00Z')).resolves.toBe(assignment)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/main-manager', {
+      method: 'POST',
+      dedupe: false,
+      body: {
+        ClientNetUid: 'client-net-id',
+        MainManagerNetUid: 'manager-net-id',
+        ExpectedUpdated: '2026-10-27T10:00:00Z',
+      },
+      errorMessages: {
+        default: 'Не вдалося змінити основного менеджера',
+      },
+    })
   })
 
   it('gets a client by net id', async () => {

@@ -11,6 +11,7 @@ import type {
   Pricing,
   ProviderPricing,
   VatRate,
+  ClientMainManagerAssignment,
   ClientUpsertResult,
 } from '../types'
 
@@ -104,6 +105,25 @@ export async function updateClient(
   })
 
   return normalizeClient(result)
+}
+
+export async function setClientMainManager(
+  clientNetUid: string,
+  mainManagerNetUid: string | null,
+  expectedUpdated: Date | string,
+): Promise<ClientMainManagerAssignment> {
+  return apiRequest<ClientMainManagerAssignment>('/clients/main-manager', {
+    method: 'POST',
+    dedupe: false,
+    body: {
+      ClientNetUid: clientNetUid,
+      MainManagerNetUid: mainManagerNetUid,
+      ExpectedUpdated: expectedUpdated,
+    },
+    errorMessages: {
+      default: 'Не вдалося змінити основного менеджера',
+    },
+  })
 }
 
 export async function updateClientEcommerceSettings(
