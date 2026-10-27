@@ -92,6 +92,14 @@ export type ClientResourceOrganization = ClientResourceEntity & {
   VatRateId?: number
 }
 
+export type ClientResourcePricingSourceDefinition = {
+  BasePricingId: number | null
+  CalculatedExtraCharge: number
+  ExtraCharge: number
+  ForVat: boolean
+  ImportedForAmg: boolean
+}
+
 export type ClientResourcePricing = ClientResourceEntity & {
   BasePricing?: Pick<ClientResourcePricing, 'Id' | 'Name' | 'NetUid' | 'PricingTranslations'>
   BasePricingId?: number
@@ -106,6 +114,8 @@ export type ClientResourcePricing = ClientResourceEntity & {
   PriceTypeId?: number
   PricingTranslations?: ClientResourceTranslation[]
   SortingPriority?: number
+  SourceDefinitions?: ClientResourcePricingSourceDefinition[]
+  SourceFieldsEditable?: boolean
 }
 
 export type ClientResourcePricingType = ClientResourceEntity & {

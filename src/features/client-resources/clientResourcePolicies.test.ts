@@ -40,4 +40,16 @@ describe('client resource business policies', () => {
     expect(canEditPricing({ ExtraCharge: 30, IsSourceManaged: true })).toBe(true)
     expect(canEditPricing({ ExtraCharge: 0, IsSourceManaged: true })).toBe(false)
   })
+
+  it('allows an AMG-only markup edit and every source-managed pricing once GBA owns pricing', () => {
+    expect(canEditPricing({
+      ExtraCharge: 0,
+      IsSourceManaged: true,
+      SourceDefinitions: [
+        { BasePricingId: null, CalculatedExtraCharge: 0, ExtraCharge: 0, ForVat: false, ImportedForAmg: false },
+        { BasePricingId: 849, CalculatedExtraCharge: 12, ExtraCharge: 12, ForVat: false, ImportedForAmg: true },
+      ],
+    })).toBe(true)
+    expect(canEditPricing({ ExtraCharge: 0, IsSourceManaged: true, SourceFieldsEditable: true })).toBe(true)
+  })
 })

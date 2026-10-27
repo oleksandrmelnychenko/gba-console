@@ -25,9 +25,19 @@ export function canDeletePricing(pricing: ClientResourcePricing): boolean {
 }
 
 export function canEditPricing(pricing: ClientResourcePricing): boolean {
-  if (pricing.IsSourceManaged !== true) {
+  if (pricing.IsSourceManaged !== true || pricing.SourceFieldsEditable === true) {
+    return true
+  }
+
+  if ((pricing.SourceDefinitions || []).some((definition) => definition.BasePricingId || definition.ExtraCharge)) {
     return true
   }
 
   return Boolean(pricing.BasePricingId || pricing.BasePricing || pricing.ExtraCharge)
+}
+
+export function getSortedPricingSourceDefinitions(pricing?: ClientResourcePricing) {
+  return [...(pricing?.SourceDefinitions || [])].sort(
+    (left, right) => Number(left.ImportedForAmg) - Number(right.ImportedForAmg),
+  )
 }

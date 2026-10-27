@@ -112,7 +112,12 @@ import type {
   ClientResourceVatRate,
 } from '../types'
 import { CLIENT_RESOURCE_STEPS } from '../types'
-import { canDeletePricing, canEditPricing, isBusinessOrganizationVisible } from '../clientResourcePolicies'
+import {
+  canDeletePricing,
+  canEditPricing,
+  getSortedPricingSourceDefinitions,
+  isBusinessOrganizationVisible,
+} from '../clientResourcePolicies'
 import { buildSaleOrganizationsByStorageId } from '../clientResourceStorageOrganizations'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import '../../../shared/ui/console-table-page.css'
@@ -430,6 +435,13 @@ type PricingEditorState = {
   pricing?: ClientResourcePricing
 }
 
+type PricingSourceFormValues = {
+  BasePricingId: string
+  ExtraCharge: string
+  ForVat: boolean
+  ImportedForAmg: boolean
+}
+
 type PricingFormValues = {
   BasePricingId: string
   Comment: string
@@ -438,6 +450,7 @@ type PricingFormValues = {
   ForVat: boolean
   Name: string
   PriceTypeId: string
+  SourceDefinitions: PricingSourceFormValues[]
 }
 
 type StorageEditorState = {
@@ -1745,13 +1758,29 @@ function PricingEditorModal({
     pricingToFormValues(pricing, { basePricings, currencies, priceTypes }),
   )
   const selectedPriceType = findEntityById(priceTypes, values.PriceTypeId) || pricing?.PriceType
-  const showCalculatedPriceOptions = shouldShowCalculatedPriceOptions(selectedPriceType, pricing)
   const isSourceManaged = pricing?.IsSourceManaged === true
+  const hasSourceDefinitions = isSourceManaged && values.SourceDefinitions.length > 0
+  const sourceFieldsEditable = isSourceManaged && pricing?.SourceFieldsEditable === true
+  const lockSharedFields = isSourceManaged && !sourceFieldsEditable
+  const showCalculatedPriceOptions = !hasSourceDefinitions && shouldShowCalculatedPriceOptions(selectedPriceType, pricing)
 
   function setField<K extends keyof PricingFormValues>(key: K, value: PricingFormValues[K]) {
     setValues((currentValues) => ({
       ...currentValues,
       [key]: value,
+    }))
+  }
+
+  function setSourceField<K extends keyof PricingSourceFormValues>(
+    importedForAmg: boolean,
+    key: K,
+    value: PricingSourceFormValues[K],
+  ) {
+    setValues((currentValues) => ({
+      ...currentValues,
+      SourceDefinitions: currentValues.SourceDefinitions.map((definition) =>
+        definition.ImportedForAmg === importedForAmg ? { ...definition, [key]: value } : definition,
+      ),
     }))
   }
 
@@ -1770,21 +1799,27 @@ function PricingEditorModal({
             </Alert>
           ) : null}
           {isSourceManaged ? (
-            <Text c="gray.8" size="xs">{translate('Можна змінити лише націнку')}</Text>
+            <Text c="gray.8" size="xs">
+              {translate(!hasSourceDefinitions
+                ? 'Можна змінити лише націнку'
+                : sourceFieldsEditable
+                  ? 'Націнки, базові ціни й ПДВ задаються окремо для Контех і AMG'
+                  : 'Націнки задаються окремо для Контех і AMG')}
+            </Text>
           ) : null}
           <div className="client-resources-form-card">
           <Text className="app-section-title" size="sm">{translate('Параметри ціни')}</Text>
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
             <TextInput
               autoFocus
-              disabled={isSourceManaged}
+              disabled={lockSharedFields}
               label={translate("Назва")}
               required
               value={values.Name}
               onChange={(event) => setField('Name', event.currentTarget.value)}
             />
             <TextInput
-              disabled={isSourceManaged}
+              disabled={lockSharedFields}
               label={translate("Коментар")}
               value={values.Comment}
               onChange={(event) => setField('Comment', event.currentTarget.value)}
@@ -1792,7 +1827,7 @@ function PricingEditorModal({
             <Select
               allowDeselect={false}
               data={toEntityOptions(currencies, (currency) => displayCurrency(currency))}
-              disabled={isSourceManaged}
+              disabled={lockSharedFields}
               label={translate("Валюта")}
               value={values.CurrencyId}
               onChange={(value) => setField('CurrencyId', value || toOptionalEntityId(currencies[0]?.Id))}
@@ -1800,7 +1835,7 @@ function PricingEditorModal({
             <Select
               allowDeselect={false}
               data={toEntityOptions(priceTypes, (priceType) => displayValue(priceType.Name))}
-              disabled={isSourceManaged}
+              disabled={lockSharedFields}
               label={translate("Тип ціни")}
               value={values.PriceTypeId}
               onChange={(value) => {
@@ -1838,13 +1873,54 @@ function PricingEditorModal({
               </>
             ) : null}
           </SimpleGrid>
-          <Checkbox
-            checked={values.ForVat}
-            disabled={isSourceManaged}
-            label={translate("Для ПДВ")}
-            onChange={(event) => setField('ForVat', event.currentTarget.checked)}
-          />
+          {hasSourceDefinitions ? null : (
+            <Checkbox
+              checked={values.ForVat}
+              disabled={isSourceManaged}
+              label={translate("Для ПДВ")}
+              onChange={(event) => setField('ForVat', event.currentTarget.checked)}
+            />
+          )}
           </div>
+          {hasSourceDefinitions ? (
+            <div className="client-resources-form-card">
+              <Text className="app-section-title" size="sm">{translate('Контех і AMG')}</Text>
+              {values.SourceDefinitions.map((definition) => {
+                const world = definition.ImportedForAmg ? 'AMG' : translate('Контех')
+
+                return (
+                  <Stack gap={6} key={definition.ImportedForAmg ? 'amg' : 'fenix'}>
+                    <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                      {definition.BasePricingId || sourceFieldsEditable ? (
+                        <Select
+                          clearable={sourceFieldsEditable}
+                          data={toEntityOptions(basePricings, (basePricing) =>
+                            displayTranslatedEntity(basePricing.Name, basePricing.PricingTranslations),
+                          )}
+                          disabled={!sourceFieldsEditable}
+                          label={translate('Базова ціна {world}', { world })}
+                          value={definition.BasePricingId || null}
+                          onChange={(value) => setSourceField(definition.ImportedForAmg, 'BasePricingId', value || '')}
+                        />
+                      ) : null}
+                      <TextInput
+                        label={translate('Націнка {world}, %', { world })}
+                        type="number"
+                        value={definition.ExtraCharge}
+                        onChange={(event) => setSourceField(definition.ImportedForAmg, 'ExtraCharge', event.currentTarget.value)}
+                      />
+                    </SimpleGrid>
+                    <Checkbox
+                      checked={definition.ForVat}
+                      disabled={!sourceFieldsEditable}
+                      label={translate('Для ПДВ {world}', { world })}
+                      onChange={(event) => setSourceField(definition.ImportedForAmg, 'ForVat', event.currentTarget.checked)}
+                    />
+                  </Stack>
+                )
+              })}
+            </div>
+          ) : null}
           <ModalActions isSaving={isSaving} onClose={onClose} />
         </Stack>
       </form>
@@ -3279,7 +3355,7 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
         priceTypes={priceTypesState.data}
         pricing={editor?.pricing}
         title={editor?.mode === 'edit'
-          ? translate(editor.pricing?.IsSourceManaged ? 'Редагувати націнку' : 'Редагувати правило')
+          ? translate(editor.pricing?.IsSourceManaged && !editor.pricing.SourceFieldsEditable ? 'Редагувати націнку' : 'Редагувати правило')
           : translate('Нове правило')}
         onClose={() => {
           if (!isSaving) {
@@ -3345,16 +3421,26 @@ function PricingResourceTable({
         id: 'markup',
         header: 'Націнка',
         accessor: (pricing) => pricing.ExtraCharge,
-        cell: (pricing) => (
-          <Group gap={6} wrap="nowrap">
-            <TableChip tone="document" value={formatPercent(pricing.ExtraCharge)} />
-            {pricing.IsSourceManaged ? (
-              <TableChip tone="source" value="1С" />
-            ) : null}
-          </Group>
-        ),
-        maxWidth: 130,
-        width: 130,
+        cell: (pricing) => {
+          const definitions = pricing.IsSourceManaged ? getSortedPricingSourceDefinitions(pricing) : []
+
+          return (
+            <Group gap={6} wrap="nowrap">
+              {definitions.length > 0 ? definitions.map((definition) => (
+                <TableChip
+                  key={definition.ImportedForAmg ? 'amg' : 'fenix'}
+                  tone="document"
+                  value={`${definition.ImportedForAmg ? 'AMG' : translate('Контех')} ${formatPercent(definition.ExtraCharge)}`}
+                />
+              )) : <TableChip tone="document" value={formatPercent(pricing.ExtraCharge)} />}
+              {pricing.IsSourceManaged && !pricing.SourceFieldsEditable ? (
+                <TableChip tone="source" value="1С" />
+              ) : null}
+            </Group>
+          )
+        },
+        maxWidth: 260,
+        width: 200,
       },
       {
         id: 'currency',
@@ -3423,7 +3509,7 @@ function PricingResourceTable({
               <TableRowAction
                 action="edit"
                 disabled={!pricing.NetUid || !canEditPricing(pricing) || isSaving}
-                label={pricing.IsSourceManaged
+                label={pricing.IsSourceManaged && !pricing.SourceFieldsEditable
                   ? translate(canEditPricing(pricing) ? 'Редагувати націнку' : 'Керується синхронізацією з 1С')
                   : translate('Редагувати правило')}
                 onClick={() => onEdit(pricing)}
@@ -5270,6 +5356,14 @@ function pricingToFormValues(
     ForVat: pricing?.ForVat === true,
     Name: getTranslatedFormName(pricing?.Name, pricing?.PricingTranslations),
     PriceTypeId: toOptionalEntityId(pricing?.PriceTypeId ?? pricing?.PriceType?.Id ?? defaults?.priceTypes[0]?.Id),
+    SourceDefinitions: pricing?.IsSourceManaged
+      ? getSortedPricingSourceDefinitions(pricing).map((definition) => ({
+        BasePricingId: toOptionalEntityId(definition.BasePricingId ?? undefined),
+        ExtraCharge: String(definition.ExtraCharge ?? 0),
+        ForVat: definition.ForVat === true,
+        ImportedForAmg: definition.ImportedForAmg === true,
+      }))
+      : [],
   }
 }
 
@@ -5280,6 +5374,12 @@ function validatePricingForm(
 ): string | null {
   if (!values.Name.trim()) {
     return translate('Вкажіть назву правила')
+  }
+
+  if (pricing?.IsSourceManaged && values.SourceDefinitions.length > 0) {
+    return values.SourceDefinitions.every((definition) => Number.isFinite(Number(definition.ExtraCharge || 0)))
+      ? null
+      : translate('Вкажіть коректну націнку')
   }
 
   const extraCharge = Number(values.ExtraCharge || 0)
@@ -5314,6 +5414,38 @@ function buildPricingPayload(
   const priceType = findEntityById(resources.priceTypes, values.PriceTypeId) || resources.priceTypes[0]
   const isCalculated = shouldShowCalculatedPriceOptions(priceType, pricing)
   const name = values.Name.trim()
+
+  if (pricing?.IsSourceManaged && values.SourceDefinitions.length > 0) {
+    const editable = pricing.SourceFieldsEditable === true
+    const original = getSortedPricingSourceDefinitions(pricing)
+    const sourceDefinitions = values.SourceDefinitions.map((definition) => {
+      const stored = original.find((item) => item.ImportedForAmg === definition.ImportedForAmg)
+
+      return {
+        BasePricingId: editable
+          ? (definition.BasePricingId ? Number(definition.BasePricingId) : null)
+          : stored?.BasePricingId ?? null,
+        CalculatedExtraCharge: stored?.CalculatedExtraCharge ?? 0,
+        ExtraCharge: Number(definition.ExtraCharge || 0),
+        ForVat: editable ? definition.ForVat : stored?.ForVat === true,
+        ImportedForAmg: definition.ImportedForAmg,
+      }
+    })
+    const fenix = sourceDefinitions.find((definition) => !definition.ImportedForAmg) || sourceDefinitions[0]
+
+    return {
+      ...pricing,
+      Comment: values.Comment.trim(),
+      Currency: currency,
+      CurrencyId: currency?.Id,
+      ExtraCharge: fenix.ExtraCharge,
+      Name: name,
+      PriceType: priceType,
+      PriceTypeId: priceType?.Id,
+      PricingTranslations: buildNameTranslations(pricing.PricingTranslations, name),
+      SourceDefinitions: sourceDefinitions,
+    }
+  }
 
   return {
     ...(pricing || {}),
