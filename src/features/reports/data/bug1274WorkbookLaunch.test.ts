@@ -186,18 +186,18 @@ const currentDayDataset: ReportDataset = { ...dayDataset,
 const dayDefaults = () => defaultDatasetRequest(currentDayDataset, '2026-09-01', '2026-09-30')
 const dayLaunch = (dataset = currentDayDataset): WorkbookLaunch => ({ fileName: 'ВП.xls', label: '', notice: '', dataset })
 
-it('opens the day workbook with its organization and buyer-group filters, without the Fenix goods filter, and keeps the ordinary request detached', () => {
+it('opens the day workbook on every GBA organization with the buyer-group filter, without the Fenix goods filter, and keeps the ordinary request detached', () => {
   const request = dayDefaults(), before = structuredClone(request)
   const result = bug1274WorkbookRequest(request, dayLaunch())
   expect(result).not.toHaveProperty('productClassification')
+  expect(result).not.toHaveProperty('sourceOrganizations')
   expect(result).toMatchObject({ dataSource: 35, from: '2026-09-01', to: '2026-09-30', dayOrganizationBasis: 0,
-    sourceOrganizations: { Version: 1, SourceWorld: 'fenix', OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
     sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID } })
   expect(result.sorted).toEqual(request.sorted)
   expect(result.selections).toEqual(request.selections)
   expect(nativeExactFiltersConfigurationError(result, currentDayDataset)).toBeNull()
-  const organizations = result.sourceOrganizations as { OrganizationIds: string[] }
-  organizations.OrganizationIds.pop(); result.sorted.Row[0].label = 'Changed'
+  const buyers = result.sourceBuyerSubtree as { BuyerRootId: string }
+  buyers.BuyerRootId = 'changed'; result.sorted.Row[0].label = 'Changed'
   expect(request).toEqual(before)
   expect(defaultDatasetRequest(currentDayDataset, request.from, request.to)).toEqual(before)
   expect(DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS).toHaveLength(4)
@@ -237,7 +237,8 @@ it('keeps an active native organization selection and admits only inactive selec
   expect(bug1274WorkbookRequest(request, dayLaunch())).toBe(request)
   request.selections[0].IsChecked = false
   const result = bug1274WorkbookRequest(request, dayLaunch())
-  expect(result.sourceOrganizations).toMatchObject({ OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] })
+  expect(result).not.toHaveProperty('sourceOrganizations')
+  expect(result.sourceBuyerSubtree).toMatchObject({ BuyerRootId: FENIX_BUYERS_ROOT_ID })
   expect(result.selections).toEqual(request.selections)
   expect(nativeExactFiltersConfigurationError(result, currentDayDataset)).toBeNull()
 })
@@ -276,8 +277,8 @@ it('opens every workbook with an advertised source on current GBA documents and 
   }
   const current = bug1274WorkbookRequest(defaultDatasetRequest(profitDayDataset, day, day), launches[0])
   expect(current).not.toHaveProperty('productClassification')
+  expect(current).not.toHaveProperty('sourceOrganizations')
   expect(current).toMatchObject({ profitReadMode: 0, dayOrganizationBasis: 0,
-    sourceOrganizations: { Version: 1, SourceWorld: 'fenix', OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
     sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID },
     workbookPresentation: { version: 1, additionalFields: [2, 3], ordering: 'MonthAscending' } })
   expect(launches[0].notice).toContain(DAY_WORKBOOK_FILTERS_NOTICE)

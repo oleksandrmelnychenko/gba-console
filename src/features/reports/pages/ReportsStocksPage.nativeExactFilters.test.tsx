@@ -130,50 +130,62 @@ describe('exact Fenix filters in the report constructor', () => {
     expect(saveServerReportTemplate).not.toHaveBeenCalled()
   })
 
-  it('selects the workbook organizations and the «Покупці» group without typing a source ID or a Fenix goods filter', async () => {
+  it('selects the «Покупці» group for every GBA organization without typing a source ID or a Fenix goods filter', async () => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dayDataset])
     const { container } = await ready()
     fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
     fireEvent.click(await screen.findByRole('option', { name: dayDataset.Name }))
     expect(screen.queryByRole('checkbox', { name: 'Товар без послуг (Fenix)' })).toBeNull()
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Організації книги ВП' }))
+    expect(screen.queryByRole('checkbox', { name: 'Організації книги ВП' })).toBeNull()
     fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці»' }))
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0]).not.toHaveProperty('productClassification')
+    expect(vi.mocked(createStockReport).mock.calls[0][0]).not.toHaveProperty('sourceOrganizations')
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({
       dataSource: 35, dayOrganizationBasis: 0,
-      sourceOrganizations: { Version: 1, SourceWorld: 'fenix',
-        OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
       sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID },
     })
   })
 
-  it('opens the VP workbook with its organization and buyer-group filters and lets the user change that scope before submission', async () => {
+  it('moves a template from the 1C organization list to GBA organizations', async () => {
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dayDataset])
+    const data = { ...defaultDatasetRequest(dayDataset, '2026-07-01', '2026-07-01'), dayOrganizationBasis: 0,
+      sourceOrganizations: { Version: 1, SourceWorld: 'fenix', OrganizationIds: [DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS[1]] } }
+    vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: crypto.randomUUID(), Revision: 2, Name: 'Daily exact', Data: data }])
+    const { container } = await ready()
+    await applySaved()
+    expect(screen.getByText(/Шаблон обмежує організації за довідником 1С/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Перейти на організації GBA' }))
+    expect(screen.queryByText(/Шаблон обмежує організації за довідником 1С/)).toBeNull()
+    fireEvent.submit(container.querySelector('form')!)
+    await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+    expect(vi.mocked(createStockReport).mock.calls[0][0]).not.toHaveProperty('sourceOrganizations')
+  })
+
+  it('opens the VP workbook on every GBA organization with its buyer-group filter and lets the user change that scope before submission', async () => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dayDataset])
     const { container } = await ready()
     fireEvent.click(screen.getByRole('button', { name: 'Відкрити ВП.xls' }))
     expect((readReportDateInput('Від') as HTMLInputElement).value).toBe(`${previousKyivDay(formatKyivBusinessDate()).slice(0, 7)}-01`)
     expect((readReportDateInput('До') as HTMLInputElement).value).toBe(previousKyivDay(formatKyivBusinessDate()))
     expect(screen.queryByRole('checkbox', { name: 'Товар без послуг (Fenix)' })).toBeNull()
-    expect((screen.getByRole('checkbox', { name: 'Організації книги ВП' }) as HTMLInputElement).checked).toBe(true)
+    expect(screen.queryByRole('checkbox', { name: 'Організації книги ВП' })).toBeNull()
     expect((screen.getByRole('checkbox', { name: 'Група «Покупці»' }) as HTMLInputElement).checked).toBe(true)
     changeReportPeriod({ from: '2026-09-01', to: '2026-09-30' })
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     expect(vi.mocked(createStockReport).mock.calls[0][0]).not.toHaveProperty('productClassification')
+    expect(vi.mocked(createStockReport).mock.calls[0][0]).not.toHaveProperty('sourceOrganizations')
     expect(vi.mocked(createStockReport).mock.calls[0][0]).toMatchObject({
       dataSource: 35, dayOrganizationBasis: 0, from: '2026-09-01', to: '2026-09-30',
-      sourceOrganizations: { Version: 1, SourceWorld: 'fenix', OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
       sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID },
     })
     fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці»' }))
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(2))
     expect(vi.mocked(createStockReport).mock.calls[1][0]).not.toHaveProperty('sourceBuyerSubtree')
-    expect(vi.mocked(createStockReport).mock.calls[1][0]).toMatchObject({
-      sourceOrganizations: { Version: 1, SourceWorld: 'fenix', OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
-    })
+    expect(vi.mocked(createStockReport).mock.calls[1][0]).not.toHaveProperty('sourceOrganizations')
   })
 
 
@@ -252,7 +264,6 @@ describe('exact Fenix filters in the report constructor', () => {
     const { container } = await ready()
     fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
     fireEvent.click(await screen.findByRole('option', { name: dayDataset.Name }))
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Організації книги ВП' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці»' }))
     expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(false)
     fireEvent.submit(container.querySelector('form')!)
@@ -273,7 +284,6 @@ describe('exact Fenix filters in the report constructor', () => {
     const { container } = await ready()
     fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
     fireEvent.click(await screen.findByRole('option', { name: dayDataset.Name }))
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Організації книги ВП' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Група «Покупці»' }))
     expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(false)
     fireEvent.submit(container.querySelector('form')!)

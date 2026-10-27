@@ -85,7 +85,14 @@ export function DayProfitControls({ part, dataset, disabled, hideRegister, profi
       {productServiceFilter != null && !goods
         ? <Text size="xs" c="orange">{t('Шаблон містить відбір «Послуги». Увімкнення перемикача замінить його на «Товар без послуг».')}</Text> : null}
     </> : null}
-    {shows('organizations') ? <>
+    {shows('organizations') && profitReadMode !== 1 && sourceOrganizations != null ? <Stack gap={6} mt="sm">
+      <Text size="xs" c="orange">{t('Шаблон обмежує організації за довідником 1С. Звіт рахує організації GBA: залиште всі або оберіть потрібні у відборі організацій.')}</Text>
+      <Group gap="xs">
+        <Button size="xs" variant="light" disabled={disabled} onClick={() => setSourceOrganizations(undefined)}>
+          {t('Перейти на організації GBA')}</Button>
+      </Group>
+    </Stack> : null}
+    {shows('organizations') && profitReadMode === 1 ? <>
       <Checkbox mt="sm" label={t('Організації книги ВП')}
         checked={usesSavedFenixOrganizations(sourceOrganizations)}
         disabled={disabled}

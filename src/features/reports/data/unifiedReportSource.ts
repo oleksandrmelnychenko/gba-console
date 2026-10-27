@@ -5,7 +5,8 @@ import { isCashReadModeCapability, requestCashReadMode } from './cashReadMode'
 import { defaultGroupedSettlementBuyer, groupedSettlementPeriod, requestGroupedSettlementPeriod } from './groupedSettlementPeriod'
 import { requestGroupedCashPeriod } from './groupedCashPeriod'
 import { isProductServiceFilterCapability, productServiceFromClassification, requestProductClassification,
-  requestProductServiceFilter, requestSourceBuyerSubtree } from './nativeExactFilters'
+  requestProductServiceFilter, requestSourceBuyerSubtree, requestSourceOrganizations, sourceOrganizations } from './nativeExactFilters'
+import { DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from './dayOrganizationGrossProfit'
 
 export const UNIFIED_SOURCE_SAVED_VARIANT_ERROR = 'Шаблон збережено з вибором бази Fenix/AMG або регістрів 1С. Відкрийте його у формі (буде застосовано дані GBA) і збережіть повторно.'
 
@@ -16,6 +17,13 @@ function replaced(data: ReportRequestBody, name: string, value?: unknown): Repor
   for (const key of keysOf(data, name)) delete next[key]
   if (value !== undefined) next[name] = value
   return next as ReportRequestBody
+}
+
+function savedWorkbookOrganizations(value: unknown): boolean {
+  const ids = sourceOrganizations(value)?.OrganizationIds.map(id => id.toUpperCase())
+    .filter(id => !(DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS as readonly string[]).includes(id))
+  return ids?.length === DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS.length
+    && DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS.every(id => ids.includes(id))
 }
 
 export function carriesSourceWorld(data: ReportRequestBody): boolean {
@@ -34,6 +42,8 @@ export function withUnifiedSource(data: ReportRequestBody, dataset?: ReportDatas
   }
   if ((result.dataSource === 35 || result.dataSource === 38) && isProfitReadModeCapability(dataset.profitReadMode)
     && requestProfitReadMode(result) === 1) result = replaced(result, 'profitReadMode', 0)
+  if (result.dataSource === 35 && requestProfitReadMode(result) !== 1 && savedWorkbookOrganizations(requestSourceOrganizations(result)))
+    result = replaced(result, 'sourceOrganizations')
   if (result.dataSource === 40 && isCashReadModeCapability(dataset.cashReadMode) && requestGroupedCashPeriod(result) != null
     && requestCashReadMode(result) === 1) result = replaced(result, 'cashReadMode', 0)
   const grouped = groupedSettlementPeriod(requestGroupedSettlementPeriod(result))

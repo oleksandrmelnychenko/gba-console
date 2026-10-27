@@ -10,7 +10,6 @@ import { encodeReportWorkspaceSnapshot } from './reportWorkspaceDraft'
 import { reportWorkspaceDraftCompatibility } from './reportWorkspaceDraftCompatibility'
 import { isProfitReadModeCapability, profitReadModeConfigurationError, requestProfitReadMode } from './profitReadMode'
 import { profitDayDataset, profitSupplierDataset, profitReadModeCapability } from './profitReadMode.test-fixtures'
-import { DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from './dayOrganizationGrossProfit'
 import { FENIX_BUYERS_ROOT_ID } from './nativeExactFilters'
 
 const presetId = (dataset: typeof profitDayDataset) => dataset.DataSource === 35
@@ -32,12 +31,12 @@ it.each([profitDayDataset, profitSupplierDataset])('opens new requests and the w
   const workbook = bug1274WorkbookRequest(current, launch)
   if (dataset.DataSource === 35) {
     expect(workbook).toMatchObject({ profitReadMode: 0, dayOrganizationBasis: 0,
-      sourceOrganizations: { OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
       sourceBuyerSubtree: { BuyerRootId: FENIX_BUYERS_ROOT_ID },
       workbookPresentation: { version: 1, additionalFields: [2, 3], ordering: 'MonthAscending' } })
     expect(workbook).not.toHaveProperty('productClassification')
+    expect(workbook).not.toHaveProperty('sourceOrganizations')
     expect(datasetConfigurationError(workbook, dataset)).toBeNull()
-    expect(launch.notice).toContain('ФОП Пархоменко не синхронізується в GBA')
+    expect(launch.notice).toContain('усі організації GBA')
     expect(current).not.toHaveProperty('sourceOrganizations')
   } else {
     expect(workbook).toEqual({ ...current, sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID } })

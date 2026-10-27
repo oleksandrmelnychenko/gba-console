@@ -6,6 +6,7 @@ import { cashModeDataset } from './cashReadMode.test-fixtures'
 import { settlementModeDataset } from './settlementReadMode.test-fixtures'
 import { savedNativeReportConfigurationError } from './savedNativeReport'
 import { FENIX_BUYERS_ROOT_ID } from './nativeExactFilters'
+import { DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from './dayOrganizationGrossProfit'
 
 const SERVICE_KIND_ID = '8FC4005056C0000811DF10AE5525F8C8'
 
@@ -76,4 +77,18 @@ it('refuses to run a saved variant that still carries a Fenix/AMG base without o
   const data = { ...defaultDatasetRequest(profitSupplierDataset, '2026-09-01', '2026-09-30'), supplierSourceWorld: 0 }
   expect(savedNativeReportConfigurationError({ Id: '10000000-0000-4000-8000-000000000001', Revision: 1, Name: 'Saved', Data: data },
     [profitSupplierDataset])).toBe(UNIFIED_SOURCE_SAVED_VARIANT_ERROR)
+})
+
+it('reads the day workbook organizations of the 1C list as every GBA organization and keeps any other list for review', () => {
+  const book = { Version: 1, SourceWorld: 'fenix', OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS.map(id => id.toLowerCase()),
+    DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS[0]] }
+  const request = { ...defaultDatasetRequest(profitDayDataset, '2026-09-01', '2026-09-30'), SourceOrganizations: book }
+  const unified = withUnifiedSource(request, profitDayDataset)
+  expect(Object.keys(unified).filter(key => key.toLowerCase() === 'sourceorganizations')).toEqual([])
+  expect(request.SourceOrganizations).toBe(book)
+  const fenixOnly = { ...request, SourceOrganizations: { ...book, OrganizationIds: [DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS[1]] } }
+  expect(withUnifiedSource(fenixOnly, profitDayDataset).SourceOrganizations).toEqual(fenixOnly.SourceOrganizations)
+  const registers = { ...request, profitReadMode: 1 }
+  const kept = withUnifiedSource(registers, { ...profitDayDataset, profitReadMode: undefined })
+  expect(kept.SourceOrganizations).toEqual(book)
 })

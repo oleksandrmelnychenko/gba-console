@@ -142,7 +142,7 @@ function profitReadModeNotice(dataSource: number, dataset: ReportDataset): strin
 }
 
 export const BUG_1274_AMG_PARITY_NOTICE = `${BUG_1274_PARITY_NOTICE} ТОВ «АМГ «КОНКОРД» розраховано й звірено за базою 1С AMG.`
-export const DAY_WORKBOOK_FILTERS_NOTICE = 'Застосовано відбори книги: товар без послуг, організації ТОВ «АМГ «КОНКОРД», Фенікс, ФОП Самолюк А.Д. і ФОП Самолюк Ю.М. (ФОП Пархоменко не синхронізується в GBA), група «Покупці» і додаткові поля Артикул/Топ із порядком за місяцями.'
+export const DAY_WORKBOOK_FILTERS_NOTICE = 'Застосовано відбори книги: товар без послуг, усі організації GBA (зокрема створені в GBA; звузити — у відборі організацій), група «Покупці» і додаткові поля Артикул/Топ із порядком за місяцями.'
 export const SETTLEMENT_WORKBOOK_EXCLUSIONS_NOTICE = `Застосовано виключення книги: ${SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS.map(group => group.Name).join('; ')}.`
 
 export const CASH_CURRENCY_RECORD_NOTICE = 'Як в 1С, кожна валюта рахунку чи каси — окремий рядок із сумами у своїй валюті.'
@@ -179,7 +179,8 @@ function dayWorkbookRequest(request: ReportRequestBody, launch: WorkbookLaunch):
     || request.selections.some(selection => selection?.IsChecked !== false && selection?.SelectedField?.Type === 0)) return request
   return { ...structuredClone(request),
     ...(isProductServiceFilterCapability(dataset.productServiceFilter) ? { productServiceFilter: goodsWithoutServices() } : {}),
-    sourceOrganizations: { Version: 1, SourceWorld: 'fenix', OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
+    ...(requestProfitReadMode(request) === 1
+      ? { sourceOrganizations: { Version: 1, SourceWorld: 'fenix', OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] } } : {}),
     sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID },
   }
 }

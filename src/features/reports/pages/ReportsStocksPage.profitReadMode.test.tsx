@@ -6,7 +6,6 @@ import { createStockReport, searchDatasetReportValues } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
 import { reportDatasets } from '../data/reportDatasets.test-fixtures'
 import { profitDayDataset, profitSupplierDataset } from '../data/profitReadMode.test-fixtures'
-import { DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from '../data/dayOrganizationGrossProfit'
 import { FENIX_BUYERS_ROOT_ID } from '../data/nativeExactFilters'
 import { ReportsStocksPage } from './ReportsStocksPage'
 import { WORKBOOK_FILES } from '../testing/workbookFiles'
@@ -52,11 +51,11 @@ it.each(['Валовий прибуток за днем', 'Валовий при
   expect(current.dataSource === 35 ? current.dayOrganizationBasis : current.supplierBasis).toBe(0)
   if (current.dataSource === 35) {
     expect(current).not.toHaveProperty('productClassification')
-    expect(current).toMatchObject({
-      sourceOrganizations: { OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] }, sourceBuyerSubtree: { BuyerRootId: FENIX_BUYERS_ROOT_ID },
+    expect(current).not.toHaveProperty('sourceOrganizations')
+    expect(current).toMatchObject({ sourceBuyerSubtree: { BuyerRootId: FENIX_BUYERS_ROOT_ID },
       workbookPresentation: { version: 1, additionalFields: [2, 3], ordering: 'MonthAscending' } })
-    for (const label of ['Організації книги ВП', 'Група «Покупці»'])
-      expect((screen.getByRole('checkbox', { name: label }) as HTMLInputElement).checked).toBe(true)
+    expect((screen.getByRole('checkbox', { name: 'Група «Покупці»' }) as HTMLInputElement).checked).toBe(true)
+    expect(screen.queryByRole('checkbox', { name: 'Організації книги ВП' })).toBeNull()
     expect(screen.queryByRole('checkbox', { name: 'Товар без послуг (Fenix)' })).toBeNull()
   } else {
     expect(current.workbookPresentation).toBeUndefined()
