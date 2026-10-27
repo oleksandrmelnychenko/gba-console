@@ -201,7 +201,7 @@ import { WorkbookResult } from './workbook-desk/WorkbookResult'
 import './workbook-desk/workbook-desk.css'
 import { requestDayOrganizationBasis } from '../data/dayOrganizationBasis'
 import { supplierWarehouseAfterRowEdit, requestSupplierBasis, supplierBasisFormDataset } from '../data/supplierBasis'
-import { requestProductClassification, requestSourceOrganizations, requestSourceBuyerSubtree } from '../data/nativeExactFilters'
+import { requestProductClassification, requestProductServiceFilter, requestSourceOrganizations, requestSourceBuyerSubtree } from '../data/nativeExactFilters'
 import { isSupplierSourceWorldCapability } from '../data/supplierBatchGrossProfit'
 import PriceTypeSalesComparisonPanel from './PriceTypeSalesComparisonPanel'
 import AgreementPriceComparisonPanel from './AgreementPriceComparisonPanel'
@@ -338,6 +338,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const [revenueComparison, setRevenueComparison] = useValueState<unknown>(undefined)
   const [xyz, setXyz] = useValueState<unknown>(undefined)
   const [productClassification, setProductClassification] = useValueState<unknown>(undefined)
+  const [productServiceFilter, setProductServiceFilter] = useValueState<unknown>(undefined)
   const [sourceOrganizations, setSourceOrganizations] = useValueState<unknown>(undefined)
   const [sourceBuyerSubtree, setSourceBuyerSubtree] = useValueState<unknown>(undefined)
   const [profitReadMode, setProfitReadMode] = useValueState<unknown>(undefined)
@@ -424,8 +425,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const settlementDataset = useMemo(() => settlementFormDataset(priceTypeDataset, groupedSettlementPeriod, settlementReadMode), [priceTypeDataset, groupedSettlementPeriod, settlementReadMode])
   const cashDataset = useMemo(() => cashFormDataset(settlementDataset, groupedCashPeriod), [settlementDataset, groupedCashPeriod])
   const reportBody = useMemo<ReportRequestBody>(
-    () => upgradeCurrentVparivanieAnalysis(withCurrentVparivanieMovementScope({ ...(currentVparivanieAnalysisCapability(dataset) ? { currentVparivanieAnalysis: { version: 1 } } : {}), ...buildReportBuilderRequest({ supplierWarehouse, presentationCurrency, numberPresentation, dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && (movementQuantities.Incoming || movementQuantities.Outgoing) ? { currentVparivanieMovements: movementQuantities } : {}), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }), dataset),
-    [dataset, supplierWarehouse, presentationCurrency, numberPresentation, movementQuantities, fullCurrentVparivanie, abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbook.value, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => upgradeCurrentVparivanieAnalysis(withCurrentVparivanieMovementScope({ ...(currentVparivanieAnalysisCapability(dataset) ? { currentVparivanieAnalysis: { version: 1 } } : {}), ...buildReportBuilderRequest({ supplierWarehouse, presentationCurrency, numberPresentation, dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && (movementQuantities.Incoming || movementQuantities.Outgoing) ? { currentVparivanieMovements: movementQuantities } : {}), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }), dataset),
+    [dataset, supplierWarehouse, presentationCurrency, numberPresentation, movementQuantities, fullCurrentVparivanie, abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbook.value, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const effectiveConfiguration = effectiveReportConfiguration(dataset, reportBody)
   const effectiveFilterTypes = effectiveConfiguration?.filters
@@ -596,6 +597,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setBuyerSalesShare(snapshotDefaults?.buyerSalesShare)
     setRevenueComparison(snapshotDefaults?.revenueComparison)
     setProductClassification(undefined)
+    setProductServiceFilter(undefined)
     setSourceOrganizations(undefined)
     setSourceBuyerSubtree(snapshotDefaults?.sourceBuyerSubtree)
     setProfitReadMode(snapshotDefaults?.profitReadMode)
@@ -705,6 +707,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setBuyerSalesShare(structuredClone(buyerSalesShareOptions(requestBuyerSalesShare(data)) ?? requestBuyerSalesShare(data)))
     setRevenueComparison(structuredClone(revenueComparisonOptions(requestRevenueComparison(data)) ?? requestRevenueComparison(data)))
     setProductClassification(structuredClone(requestProductClassification(data)))
+    setProductServiceFilter(structuredClone(requestProductServiceFilter(data)))
     setSourceOrganizations(structuredClone(requestSourceOrganizations(data)))
     setSourceBuyerSubtree(structuredClone(requestSourceBuyerSubtree(data)))
     setProfitReadMode(structuredClone(requestProfitReadMode(data)))
@@ -785,6 +788,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setBuyerSalesShare(structuredClone(requestBuyerSalesShare(data)))
     setRevenueComparison(structuredClone(requestRevenueComparison(data)))
     setProductClassification(structuredClone(requestProductClassification(data)))
+    setProductServiceFilter(structuredClone(requestProductServiceFilter(data)))
     setSourceOrganizations(structuredClone(requestSourceOrganizations(data)))
     setSourceBuyerSubtree(structuredClone(requestSourceBuyerSubtree(data)))
     setProfitReadMode(structuredClone(requestProfitReadMode(data)))
@@ -911,9 +915,9 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     onCashMeasurementsChange={setMeasurements} onClearCashFilters={() => filterLogic.load([])} />
   const dayProfitControls = (part?: ProfitControlsPart) => <DayProfitControls part={part} dataset={dataset}
     disabled={comparisonSettingsDisabled} hideRegister={bug1274Only} profitReadMode={profitReadMode}
-    dayOrganizationBasis={dayOrganizationBasis}
+    dayOrganizationBasis={dayOrganizationBasis} productServiceFilter={productServiceFilter}
     sourceOrganizations={sourceOrganizations} sourceBuyerSubtree={sourceBuyerSubtree} setProfitReadMode={setProfitReadMode}
-    setDayOrganizationBasis={setDayOrganizationBasis}
+    setDayOrganizationBasis={setDayOrganizationBasis} setProductServiceFilter={setProductServiceFilter}
     setSourceOrganizations={setSourceOrganizations} setSourceBuyerSubtree={setSourceBuyerSubtree} />
   const supplierProfitControls = (part?: ProfitControlsPart) => <SupplierProfitControls part={part} dataset={dataset}
     disabled={comparisonSettingsDisabled} hideRegister={bug1274Only} profitReadMode={profitReadMode}

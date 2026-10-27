@@ -204,6 +204,20 @@ it('opens the day workbook with its organization and buyer-group filters, withou
   expect(DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS).not.toContain(DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS[0])
 })
 
+it('opens the day workbook on «Товар без послуг» from the GBA classification when the server advertises it', () => {
+  const dataset = { ...currentDayDataset, productServiceFilter: { Version: 1, IsServiceValues: [false, true],
+    GoodsKind: 'Товар', Basis: 'GbaProductClassification' } }
+  const request = defaultDatasetRequest(dataset, '2026-09-01', '2026-09-30')
+  const result = bug1274WorkbookRequest(request, dayLaunch(dataset))
+  expect(result.productServiceFilter).toEqual({ Version: 1, IsService: false })
+  expect(result).not.toHaveProperty('productClassification')
+  expect(nativeExactFiltersConfigurationError(result, dataset)).toBeNull()
+  expect(DAY_WORKBOOK_FILTERS_NOTICE).toContain('товар без послуг')
+  const saved = { ...request, productServiceFilter: { Version: 1, IsService: true } }
+  expect(bug1274WorkbookRequest(saved, dayLaunch(dataset))).toBe(saved)
+  expect(nativeExactFiltersConfigurationError({ ...result, productServiceFilter: { Version: 2, IsService: false } }, dataset)).not.toBeNull()
+})
+
 it.each(['sourceOrganizations', 'sourceBuyerSubtree'] as const)(
   'preserves an explicit %s scope including saved aliases, null and undefined', field => {
     for (const key of [field, field[0].toUpperCase() + field.slice(1)]) {

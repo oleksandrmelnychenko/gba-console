@@ -23,7 +23,7 @@ export function isSettlementReadModeCapability(value: unknown): boolean {
   }
   return fields.Version === 1 && Array.isArray(fields.SupportedModes)
     && fields.SupportedModes.length === 2 && fields.SupportedModes[0] === 0 && fields.SupportedModes[1] === 1
-    && fields.CurrentDocumentsMaximumMonths === 120 && fields.LegacyInferencePreserved === true
+    && fields.CurrentDocumentsMaximumMonths === 120 && typeof fields.LegacyInferencePreserved === 'boolean'
 }
 
 export function normalizeSettlementReadModeDataset(value: Record<string, unknown>): Record<string, unknown> {

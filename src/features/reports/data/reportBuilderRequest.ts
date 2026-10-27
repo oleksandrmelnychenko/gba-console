@@ -21,6 +21,7 @@ type BuilderValues = {
   hideZero?: unknown
   threshold?: unknown
   productClassification?: unknown
+  productServiceFilter?: unknown
   sourceOrganizations?: unknown
   sourceBuyerSubtree?: unknown
   profitReadMode?: unknown
@@ -65,6 +66,7 @@ export function buildReportBuilderRequest(values: BuilderValues): ReportRequestB
     ...(threshold !== undefined ? { threshold } : {}),
     ...(topGroups !== undefined ? { topGroups } : {}),
     ...(productClassification !== undefined ? { productClassification } : {}),
+    ...(values.productServiceFilter !== undefined ? { productServiceFilter: values.productServiceFilter } : {}),
     ...(sourceOrganizations !== undefined ? { sourceOrganizations } : {}),
     ...(sourceBuyerSubtree !== undefined ? { sourceBuyerSubtree } : {}),
     ...(values.profitReadMode !== undefined ? { profitReadMode: values.profitReadMode } : {}),

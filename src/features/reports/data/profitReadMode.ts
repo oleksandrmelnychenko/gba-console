@@ -21,7 +21,7 @@ export function isProfitReadModeCapability(value: unknown): boolean {
   return fields.Version === 1 && Array.isArray(fields.SupportedModes)
     && fields.SupportedModes.join(',') === '0,1' && fields.SupportedModes.every(mode => typeof mode === 'number')
     && (fields.CurrentDocumentsMaximumDays === 31 || fields.CurrentDocumentsMaximumDays === 62)
-    && fields.LegacyInferencePreserved === true
+    && typeof fields.LegacyInferencePreserved === 'boolean'
 }
 
 /** Uses only an understood server limit; older or absent capabilities retain 31 days. */

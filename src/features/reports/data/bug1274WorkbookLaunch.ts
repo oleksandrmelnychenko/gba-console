@@ -14,7 +14,8 @@ import { isSupplierBasisCapability } from './supplierBasis'
 import { groupedSettlementPeriod, requestGroupedSettlementPeriod, groupedSettlementSupportsSuppliers, groupedWorkbookRequest, isGroupedSettlementDataset } from './groupedSettlementPeriod'
 import { datasetGroupings } from './reportDatasets'
 import { isCurrentVparivanieDataset } from './currentVparivanie'
-import { FENIX_BUYERS_ROOT_ID, isSourceBuyerSubtreeCapability, isSourceOrganizationsCapability } from './nativeExactFilters'
+import { FENIX_BUYERS_ROOT_ID, goodsWithoutServices, isProductServiceFilterCapability, isSourceBuyerSubtreeCapability,
+  isSourceOrganizationsCapability } from './nativeExactFilters'
 import { BUG_1274_ONLY_REPORT_SURFACE } from '../reportSurfacePolicy'
 import { BUG_1274_PARITY_NOTICE } from './reportMigration'
 import { SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS, sourceCounterpartyGroupCapability } from './sourceCounterpartyGroups'
@@ -141,7 +142,7 @@ function profitReadModeNotice(dataSource: number, dataset: ReportDataset): strin
 }
 
 export const BUG_1274_AMG_PARITY_NOTICE = `${BUG_1274_PARITY_NOTICE} ТОВ «АМГ «КОНКОРД» розраховано й звірено за базою 1С AMG.`
-export const DAY_WORKBOOK_FILTERS_NOTICE = 'Застосовано відбори книги: організації ТОВ «АМГ «КОНКОРД», Фенікс, ФОП Самолюк А.Д. і ФОП Самолюк Ю.М. (ФОП Пархоменко не синхронізується в GBA), група «Покупці» і додаткові поля Артикул/Топ із порядком за місяцями.'
+export const DAY_WORKBOOK_FILTERS_NOTICE = 'Застосовано відбори книги: товар без послуг, організації ТОВ «АМГ «КОНКОРД», Фенікс, ФОП Самолюк А.Д. і ФОП Самолюк Ю.М. (ФОП Пархоменко не синхронізується в GBA), група «Покупці» і додаткові поля Артикул/Топ із порядком за місяцями.'
 export const SETTLEMENT_WORKBOOK_EXCLUSIONS_NOTICE = `Застосовано виключення книги: ${SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS.map(group => group.Name).join('; ')}.`
 
 export const CASH_CURRENCY_RECORD_NOTICE = 'Як в 1С, кожна валюта рахунку чи каси — окремий рядок із сумами у своїй валюті.'
@@ -173,10 +174,11 @@ function dayWorkbookRequest(request: ReportRequestBody, launch: WorkbookLaunch):
     || !isSourceOrganizationsCapability(dataset.sourceOrganizations)
     || !isSourceBuyerSubtreeCapability(dataset.sourceBuyerSubtree)) return request
   const explicit = new Set(Object.keys(request).map(key => key.toLowerCase()))
-  if (explicit.has('sourceorganizations') || explicit.has('sourcebuyersubtree')
+  if (explicit.has('sourceorganizations') || explicit.has('sourcebuyersubtree') || explicit.has('productservicefilter')
     || !Array.isArray(request.selections)
     || request.selections.some(selection => selection?.IsChecked !== false && selection?.SelectedField?.Type === 0)) return request
   return { ...structuredClone(request),
+    ...(isProductServiceFilterCapability(dataset.productServiceFilter) ? { productServiceFilter: goodsWithoutServices() } : {}),
     sourceOrganizations: { Version: 1, SourceWorld: 'fenix', OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
     sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID },
   }

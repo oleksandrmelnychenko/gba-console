@@ -3,8 +3,8 @@ import { previousKyivDay } from './cashPeriod'
 import { bug1274DatasetTitle, bug1274WorkbookGuide, bug1274WorkbookPeriod } from './bug1274WorkbookGuide'
 import { opensOnPreviousDay } from './bug1274WorkbookLaunch'
 import { workbookCaption } from './bug1274WorkbookFilters'
-import { productClassification, requestProductClassification, requestSourceBuyerSubtree, requestSourceOrganizations,
-  sourceBuyerSubtree, sourceOrganizations } from './nativeExactFilters'
+import { productClassification, productServiceFilter, requestProductClassification, requestProductServiceFilter,
+  requestSourceBuyerSubtree, requestSourceOrganizations, sourceBuyerSubtree, sourceOrganizations } from './nativeExactFilters'
 import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS,
   DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from './dayOrganizationGrossProfit'
 import { requestSourceCounterpartyGroups, SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS, sourceCounterpartyGroups } from './sourceCounterpartyGroups'
@@ -193,6 +193,10 @@ export function workbookRequestSummary(request: ReportRequestBody, dataset: Repo
   const selections = Array.isArray(request.selections) ? request.selections : []
   const organizationField = organizationFilterField(dataSource)
   const chips: DeskChip[] = []
+  const service = productServiceFilter(requestProductServiceFilter(request))
+  if (service) chips.push(service.IsService
+    ? { kind: 'filter', label: 'Послуги', title: 'Ознака послуги з картки товару GBA' }
+    : { kind: 'filter', label: 'Товари без послуг', title: 'Вид товару — Товар, Послуга — Ні (картка товару GBA)' })
   const goods = productClassification(requestProductClassification(request))
   if (goods) chips.push(goods.ProductKindId.toUpperCase() === DAY_ORGANIZATION_GOODS_KIND_ID && goods.IsService === false
     ? { kind: 'filter', label: 'Товари без послуг', title: 'Вид номенклатури — Товар, Послуга — Ні' }

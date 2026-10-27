@@ -25,6 +25,11 @@ const BUYER_FIELDS = ['Version', 'SourceWorld', 'BuyerRootId'] as const
 const PRODUCT_CAPABILITY_FIELDS = ['Version', 'SourceWorld', 'RequiresIsService', 'RequiresProductKindId', 'ProductKindIdFormat'] as const
 const ORGANIZATION_CAPABILITY_FIELDS = ['Version', 'SourceWorlds', 'MaximumOrganizationIds', 'OrganizationIdFormat', 'RequiresDurableNativeBinding', 'RequiresCompleteFactLineage'] as const
 const BUYER_CAPABILITY_FIELDS = ['Version', 'SourceWorld', 'BuyerRootId', 'RequiresCompletePeriodLineage', 'UsesCurrentCapturedHierarchy'] as const
+const SERVICE_FIELDS = ['Version', 'IsService'] as const
+const SERVICE_CAPABILITY_FIELDS = ['Version', 'IsServiceValues', 'GoodsKind', 'Basis'] as const
+export const GOODS_KIND_ID = '8AB2005056C0000811DEF956DA4CFDA0'
+export type ReportProductServiceFilter = { Version: 1; IsService: boolean }
+export const goodsWithoutServices = (): ReportProductServiceFilter => ({ Version: 1, IsService: false })
 
 type JsonRecord = Record<string, unknown>
 
@@ -55,7 +60,7 @@ function sourceReference(value: unknown): value is string {
 export function cloneNativeExactFilterAliases(value: object): Record<string, unknown> {
   return Object.fromEntries(Object.entries(value).flatMap(([key, item]) => {
     const name = key.toLowerCase()
-    return name === 'productclassification' || name === 'sourceorganizations' || name === 'sourcebuyersubtree'
+    return name === 'productclassification' || name === 'productservicefilter' || name === 'sourceorganizations' || name === 'sourcebuyersubtree'
       || name === 'dayorganizationbasis' || name === 'supplierbasis' || name === 'profitreadmode'
       ? [[key, structuredClone(item)]]
       : []
@@ -65,6 +70,29 @@ export function cloneNativeExactFilterAliases(value: object): Record<string, unk
 export function requestProductClassification(value: object): unknown {
   const key = aliases(value, 'ProductClassification')[0]
   return key === undefined ? undefined : (value as JsonRecord)[key]
+}
+
+export function requestProductServiceFilter(value: object): unknown {
+  const key = aliases(value, 'ProductServiceFilter')[0]
+  return key === undefined ? undefined : (value as JsonRecord)[key]
+}
+
+export function productServiceFilter(value: unknown): ReportProductServiceFilter | null {
+  const fields = exactFields(value, SERVICE_FIELDS)
+  return fields && fields.Version === 1 && typeof fields.IsService === 'boolean' ? fields as ReportProductServiceFilter : null
+}
+
+export function isProductServiceFilterCapability(value: unknown): boolean {
+  const fields = exactFields(value, SERVICE_CAPABILITY_FIELDS)
+  return fields?.Version === 1 && Array.isArray(fields.IsServiceValues) && fields.IsServiceValues.includes(false)
+    && fields.Basis === 'GbaProductClassification'
+}
+
+export function productServiceFromClassification(value: unknown): ReportProductServiceFilter | null {
+  const classification = productClassification(value)
+  if (!classification) return null
+  if (classification.IsService) return { Version: 1, IsService: true }
+  return classification.ProductKindId.toUpperCase() === GOODS_KIND_ID ? goodsWithoutServices() : null
 }
 
 export function requestSourceOrganizations(value: object): unknown {
@@ -184,6 +212,17 @@ export function nativeExactFiltersConfigurationError(data: ReportRequestBody, da
   const buyerKeys = aliases(data, 'SourceBuyerSubtree')
   if (productKeys.length > 1 || organizationKeys.length > 1 || buyerKeys.length > 1) {
     return 'Точні відбори Fenix задані двічі. Налаштування не застосовано.'
+  }
+  const serviceKeys = aliases(data, 'ProductServiceFilter')
+  if (serviceKeys.length > 1) return 'Відбір «Товар без послуг» задано двічі. Налаштування не застосовано.'
+  const service = requestProductServiceFilter(data)
+  if (service != null) {
+    if (data.dataSource !== DAY_ORGANIZATION_EXACT_FILTER_SOURCE || !productServiceFilter(service))
+      return 'Відбір «Товар без послуг» доступний лише для валового прибутку за днем.'
+    if (dataset && !isProductServiceFilterCapability(dataset.productServiceFilter))
+      return 'Сервер не підтвердив відбір «Товар без послуг».'
+    if (requestProductClassification(data) != null)
+      return 'Не поєднуйте відбір «Товар без послуг» з відбором виду товару 1С.'
   }
   const product = requestProductClassification(data)
   const organizations = requestSourceOrganizations(data)

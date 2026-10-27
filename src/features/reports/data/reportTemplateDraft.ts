@@ -15,7 +15,7 @@ const managedFields = new Set([
   'xyz', 'Xyz', 'comparison', 'Comparison', 'ordering', 'Ordering',
   'filterExpression', 'FilterExpression', 'abcClassification', 'AbcClassification',
   'hideZero', 'HideZero', 'threshold', 'Threshold', 'topGroups', 'TopGroups',
-  'productClassification', 'ProductClassification', 'sourceOrganizations', 'SourceOrganizations',
+  'productClassification', 'ProductClassification', 'productServiceFilter', 'ProductServiceFilter', 'sourceOrganizations', 'SourceOrganizations',
   'sourceBuyerSubtree', 'SourceBuyerSubtree',
   'dayOrganizationBasis', 'DayOrganizationBasis', 'profitReadMode', 'ProfitReadMode',
   'supplierBasis', 'SupplierBasis', 'supplierWarehouse', 'SupplierWarehouse',

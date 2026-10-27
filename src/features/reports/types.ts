@@ -323,6 +323,8 @@ export type ReportRequestBody = {
   TopGroups?: unknown
   productClassification?: unknown
   ProductClassification?: unknown
+  productServiceFilter?: unknown
+  ProductServiceFilter?: unknown
   sourceOrganizations?: unknown
   SourceOrganizations?: unknown
   sourceBuyerSubtree?: unknown
@@ -391,6 +393,7 @@ export type ReportDataset = {
   Threshold?: unknown
   AbcClassification?: unknown
   productClassification?: unknown
+  productServiceFilter?: unknown
   sourceOrganizations?: unknown
   sourceBuyerSubtree?: unknown
   financialAxes?: unknown

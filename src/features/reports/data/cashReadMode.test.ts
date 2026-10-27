@@ -30,6 +30,7 @@ const cashLaunch = (datasets: ReportDataset[]) => availableBug1274WorkbookLaunch
   .find(launch => launch.fileName === 'Ведомость по денежным средствам.xls')!
 
 it('accepts only the exact four-field capability with case-insensitive names', () => {
+  expect(isCashReadModeCapability({ ...capability, LegacyInferencePreserved: false })).toBe(true)
   expect(isCashReadModeCapability(capability)).toBe(true)
   expect(isCashReadModeCapability(Object.fromEntries(Object.entries(capability).map(([key, value]) => [key.toLowerCase(), value])))).toBe(true)
   const { LegacyInferencePreserved: _legacy, ...missing } = capability
@@ -38,7 +39,7 @@ it('accepts only the exact four-field capability with case-insensitive names', (
     { ...missing, CurrentDocumentsMaximumDays: 120 }, { ...capability, Version: 2 }, { ...capability, SupportedModes: [1, 0] },
     { ...capability, SupportedModes: ['0', '1'] }, { ...capability, SupportedModes: [0] }, { ...capability, SupportedModes: [0, 1, 2] },
     { ...capability, CurrentDocumentsMaximumMonths: 121 }, { ...capability, CurrentDocumentsMaximumMonths: '120' },
-    { ...capability, LegacyInferencePreserved: false }])
+    { ...capability, LegacyInferencePreserved: 'false' }])
     expect(isCashReadModeCapability(value)).toBe(false)
 })
 

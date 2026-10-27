@@ -22,14 +22,20 @@ it('drops the supplier base and reads 1C-register profit variants from GBA docum
   expect(request.SupplierSourceWorld).toBe(0)
 })
 
-it('removes the Fenix goods classification from day gross profit and keeps the organization and buyer filters', () => {
-  const request = { ...defaultDatasetRequest(profitDayDataset, '2026-09-01', '2026-09-30'), productClassification: goods,
+it('maps the Fenix goods classification of day gross profit onto the GBA goods filter and keeps the buyer filter', () => {
+  const serviceDataset = { ...profitDayDataset, productServiceFilter: { Version: 1, IsServiceValues: [false, true],
+    GoodsKind: 'Товар', Basis: 'GbaProductClassification' } }
+  const request = { ...defaultDatasetRequest(serviceDataset, '2026-09-01', '2026-09-30'), productClassification: goods,
     sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID } }
-  expect(carriesSourceWorld(request)).toBe(true)
-  const unified = withUnifiedSource(request, profitDayDataset)
+  expect(carriesSourceWorld(request)).toBe(false)
+  const unified = withUnifiedSource(request, serviceDataset)
   expect(unified).not.toHaveProperty('productClassification')
+  expect(unified.productServiceFilter).toEqual({ Version: 1, IsService: false })
   expect(unified.sourceBuyerSubtree).toEqual(request.sourceBuyerSubtree)
   expect(unified.profitReadMode).toBe(0)
+  const services = withUnifiedSource({ ...request, productClassification: { ...goods, IsService: true } }, serviceDataset)
+  expect(services.productServiceFilter).toEqual({ Version: 1, IsService: true })
+  expect(withUnifiedSource(request, profitDayDataset).productClassification).toEqual(goods)
 })
 
 it('defaults an unmarked operational profit variant to GBA documents', () => {
