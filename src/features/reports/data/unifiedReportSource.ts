@@ -30,8 +30,7 @@ export function withUnifiedSource(data: ReportRequestBody, dataset?: ReportDatas
   if (result.dataSource === 35 && requestProductClassification(result) != null
     && isProductServiceFilterCapability(dataset.productServiceFilter) && requestProductServiceFilter(result) == null) {
     const service = productServiceFromClassification(requestProductClassification(result))
-    result = replaced(result, 'productClassification')
-    if (service) result = replaced(result, 'productServiceFilter', service)
+    if (service) result = replaced(replaced(result, 'productClassification'), 'productServiceFilter', service)
   }
   if ((result.dataSource === 35 || result.dataSource === 38) && isProfitReadModeCapability(dataset.profitReadMode)
     && requestProfitReadMode(result) === 1) result = replaced(result, 'profitReadMode', 0)
@@ -46,3 +45,5 @@ export function withUnifiedSource(data: ReportRequestBody, dataset?: ReportDatas
   }
   return withDefaultProfitReadMode(result, dataset)
 }
+
+export const withoutProductClassification = (data: ReportRequestBody): ReportRequestBody => replaced(data, 'productClassification')

@@ -28,7 +28,7 @@ import { effectiveReportConfiguration, reportAxesPolicy, reportMaximumDate } fro
 import { BUG_1274_ACTIVE_DATA_SOURCES, BUG_1274_DISABLED_MESSAGE } from '../data/reportMigration'
 import { BUG_1274_ONLY_REPORT_SURFACE } from '../reportSurfacePolicy'
 import { lacksCurrentReadMode, TEMPLATE_WITHOUT_READ_MODE_ERROR } from '../data/currentReadModePolicy'
-import { withUnifiedSource } from '../data/unifiedReportSource'
+import { withoutProductClassification, withUnifiedSource } from '../data/unifiedReportSource'
 import { useWorkbookPresentation } from '../hooks/useWorkbookPresentation'
 import './stocks-workspace.css'
 import PaymentComparisonPanel from './PaymentComparisonPanel'
@@ -201,7 +201,7 @@ import { WorkbookResult } from './workbook-desk/WorkbookResult'
 import './workbook-desk/workbook-desk.css'
 import { requestDayOrganizationBasis } from '../data/dayOrganizationBasis'
 import { supplierWarehouseAfterRowEdit, requestSupplierBasis, supplierBasisFormDataset } from '../data/supplierBasis'
-import { requestProductClassification, requestProductServiceFilter, requestSourceOrganizations, requestSourceBuyerSubtree } from '../data/nativeExactFilters'
+import { productClassificationReviewError, requestProductClassification, requestProductServiceFilter, requestSourceOrganizations, requestSourceBuyerSubtree } from '../data/nativeExactFilters'
 import { isSupplierSourceWorldCapability } from '../data/supplierBatchGrossProfit'
 import PriceTypeSalesComparisonPanel from './PriceTypeSalesComparisonPanel'
 import AgreementPriceComparisonPanel from './AgreementPriceComparisonPanel'
@@ -669,7 +669,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   function applyTemplate(template: ReportTemplate): boolean {
     const nextDataset = datasetStorage.datasets.find(item => item.DataSource === (template.Data.dataSource ?? 0))
     template = { ...template, Data: upgradeCurrentVparivanieAnalysis(withUnifiedSource(template.Data, nextDataset), nextDataset) }
-    const incompatible = (consoleScope && !BUG_1274_ACTIVE_DATA_SOURCES.has(template.Data.dataSource ?? 0) ? BUG_1274_DISABLED_MESSAGE : null) ?? datasetConfigurationError(template.Data, nextDataset, 'workspace')
+    const reviewed = productClassificationReviewError(template.Data, nextDataset) ? withoutProductClassification(template.Data) : template.Data
+    const incompatible = (consoleScope && !BUG_1274_ACTIVE_DATA_SOURCES.has(template.Data.dataSource ?? 0) ? BUG_1274_DISABLED_MESSAGE : null) ?? datasetConfigurationError(reviewed, nextDataset, 'workspace')
     if (incompatible || !nextDataset) {
       setTemplateNotice(incompatible)
       return false
@@ -915,9 +916,9 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     onCashMeasurementsChange={setMeasurements} onClearCashFilters={() => filterLogic.load([])} />
   const dayProfitControls = (part?: ProfitControlsPart) => <DayProfitControls part={part} dataset={dataset}
     disabled={comparisonSettingsDisabled} hideRegister={bug1274Only} profitReadMode={profitReadMode}
-    dayOrganizationBasis={dayOrganizationBasis} productServiceFilter={productServiceFilter}
+    dayOrganizationBasis={dayOrganizationBasis} productClassification={productClassification} productServiceFilter={productServiceFilter}
     sourceOrganizations={sourceOrganizations} sourceBuyerSubtree={sourceBuyerSubtree} setProfitReadMode={setProfitReadMode}
-    setDayOrganizationBasis={setDayOrganizationBasis} setProductServiceFilter={setProductServiceFilter}
+    setDayOrganizationBasis={setDayOrganizationBasis} setProductClassification={setProductClassification} setProductServiceFilter={setProductServiceFilter}
     setSourceOrganizations={setSourceOrganizations} setSourceBuyerSubtree={setSourceBuyerSubtree} />
   const supplierProfitControls = (part?: ProfitControlsPart) => <SupplierProfitControls part={part} dataset={dataset}
     disabled={comparisonSettingsDisabled} hideRegister={bug1274Only} profitReadMode={profitReadMode}

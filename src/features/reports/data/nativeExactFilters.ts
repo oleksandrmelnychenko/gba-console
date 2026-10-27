@@ -28,6 +28,8 @@ const BUYER_CAPABILITY_FIELDS = ['Version', 'SourceWorld', 'BuyerRootId', 'Requi
 const SERVICE_FIELDS = ['Version', 'IsService'] as const
 const SERVICE_CAPABILITY_FIELDS = ['Version', 'IsServiceValues', 'GoodsKind', 'Basis'] as const
 export const GOODS_KIND_ID = '8AB2005056C0000811DEF956DA4CFDA0'
+export const SERVICE_KIND_ID = '8FC4005056C0000811DF10AE5525F8C8'
+export const PRODUCT_CLASSIFICATION_RESAVE_ERROR = 'Шаблон містить відбір виду товару 1С. Відкрийте його у формі: відбір буде замінено на рівнозначний відбір GBA («Товар без послуг» або «Послуги»). Перегляньте налаштування й збережіть шаблон повторно.'
 export type ReportProductServiceFilter = { Version: 1; IsService: boolean }
 export const goodsWithoutServices = (): ReportProductServiceFilter => ({ Version: 1, IsService: false })
 
@@ -91,8 +93,24 @@ export function isProductServiceFilterCapability(value: unknown): boolean {
 export function productServiceFromClassification(value: unknown): ReportProductServiceFilter | null {
   const classification = productClassification(value)
   if (!classification) return null
-  if (classification.IsService) return { Version: 1, IsService: true }
-  return classification.ProductKindId.toUpperCase() === GOODS_KIND_ID ? goodsWithoutServices() : null
+  const kind = classification.ProductKindId.toUpperCase()
+  if (classification.IsService) return kind === SERVICE_KIND_ID ? { Version: 1, IsService: true } : null
+  return kind === GOODS_KIND_ID ? goodsWithoutServices() : null
+}
+
+export function unmappedProductClassificationError(value: unknown): string {
+  const classification = productClassification(value)
+  const dropped = classification
+    ? `вид ${classification.ProductKindId.toUpperCase()}, ${classification.IsService ? 'лише послуги' : 'без послуг'}`
+    : 'некоректний відбір'
+  return `Шаблон містить відбір виду товару 1С (${dropped}), для якого в GBA немає рівнозначного відбору. Без нього звіт охопив би більше товарів, тому його не сформовано. Вилучіть цей відбір у розділі «Відбори», перегляньте налаштування й збережіть шаблон повторно.`
+}
+
+export function productClassificationReviewError(data: object, dataset?: ReportDataset): string | null {
+  const product = requestProductClassification(data)
+  if (product == null || (data as { dataSource?: unknown }).dataSource !== DAY_ORGANIZATION_EXACT_FILTER_SOURCE
+    || !dataset || !isProductServiceFilterCapability(dataset.productServiceFilter)) return null
+  return productServiceFromClassification(product) ? PRODUCT_CLASSIFICATION_RESAVE_ERROR : unmappedProductClassificationError(product)
 }
 
 export function requestSourceOrganizations(value: object): unknown {
@@ -224,6 +242,8 @@ export function nativeExactFiltersConfigurationError(data: ReportRequestBody, da
     if (requestProductClassification(data) != null)
       return 'Не поєднуйте відбір «Товар без послуг» з відбором виду товару 1С.'
   }
+  const classificationReview = productClassificationReviewError(data, dataset)
+  if (classificationReview) return classificationReview
   const product = requestProductClassification(data)
   const organizations = requestSourceOrganizations(data)
   const buyers = requestSourceBuyerSubtree(data)

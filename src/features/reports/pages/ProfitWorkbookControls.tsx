@@ -1,10 +1,11 @@
-import { Checkbox, Group, Text } from '@mantine/core'
+import { Button, Checkbox, Group, Stack, Text } from '@mantine/core'
 import type { Dispatch, ReactNode, SetStateAction } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { TableChip } from '../../../shared/ui/TableChip'
 import type { ReportDataset, ReportGroupingItem } from '../types'
 import { sourceOrganizations as parseSourceOrganizations, sourceBuyerSubtree as parseSourceBuyerSubtree,
-  FENIX_BUYERS_ROOT_ID, goodsWithoutServices, isProductServiceFilterCapability, productServiceFilter as parseProductServiceFilter } from '../data/nativeExactFilters'
+  FENIX_BUYERS_ROOT_ID, goodsWithoutServices, isProductServiceFilterCapability, productServiceFilter as parseProductServiceFilter,
+  productServiceFromClassification, unmappedProductClassificationError } from '../data/nativeExactFilters'
 import { DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS, DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS } from '../data/dayOrganizationGrossProfit'
 import { rowGroupsForSupplierBasis } from '../data/supplierBasis'
 import { ProfitReadModeSelect } from './ProfitReadModeSelect'
@@ -29,19 +30,21 @@ function usesSavedFenixOrganizations(value: unknown): boolean {
 }
 
 export function DayProfitControls({ part, dataset, disabled, hideRegister, profitReadMode, dayOrganizationBasis,
-  productServiceFilter, sourceOrganizations, sourceBuyerSubtree, setProfitReadMode, setDayOrganizationBasis,
-  setProductServiceFilter, setSourceOrganizations, setSourceBuyerSubtree }: {
+  productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, setProfitReadMode, setDayOrganizationBasis,
+  setProductClassification, setProductServiceFilter, setSourceOrganizations, setSourceBuyerSubtree }: {
   part?: ProfitControlsPart
   dataset?: ReportDataset
   disabled: boolean
   hideRegister: boolean
   profitReadMode: unknown
   dayOrganizationBasis: unknown
+  productClassification?: unknown
   productServiceFilter: unknown
   sourceOrganizations: unknown
   sourceBuyerSubtree: unknown
   setProfitReadMode: Setter
   setDayOrganizationBasis: Setter
+  setProductClassification?: Setter
   setProductServiceFilter: Setter
   setSourceOrganizations: Setter
   setSourceBuyerSubtree: Setter
@@ -59,7 +62,22 @@ export function DayProfitControls({ part, dataset, disabled, hideRegister, profi
       <DayOrganizationBasisSelect capability={dataset?.dayOrganizationBasis} value={dayOrganizationBasis}
         disabled={disabled || profitReadMode != null} hideLocked={hideRegister && profitReadMode != null} onChange={setDayOrganizationBasis} />
     </> : null}
-    {shows('filters') && isProductServiceFilterCapability(dataset?.productServiceFilter) ? <>
+    {shows('filters') && isProductServiceFilterCapability(dataset?.productServiceFilter) && productClassification != null ? (() => {
+      const replacement = productServiceFromClassification(productClassification)
+      return <Stack gap={6}>
+        <Text size="xs" c="red">{replacement
+          ? t('Шаблон містить відбір виду товару 1С. Замініть його на рівнозначний відбір GBA і збережіть шаблон повторно.')
+          : unmappedProductClassificationError(productClassification)}</Text>
+        <Group gap="xs">
+          {replacement ? <Button size="xs" variant="light" disabled={disabled} onClick={() => {
+            setProductServiceFilter(replacement)
+            setProductClassification?.(undefined)
+          }}>{replacement.IsService ? t('Замінити на «Послуги»') : t('Замінити на «Товар без послуг»')}</Button>
+            : <Button size="xs" variant="light" color="red" disabled={disabled} onClick={() => setProductClassification?.(undefined)}>
+              {t('Вилучити відбір виду товару 1С')}</Button>}
+        </Group>
+      </Stack>
+    })() : shows('filters') && isProductServiceFilterCapability(dataset?.productServiceFilter) ? <>
       <FilterOption selected={goods}>
       <Checkbox label={t('Товар без послуг')} checked={goods} disabled={disabled}
         onChange={event => setProductServiceFilter(event.currentTarget.checked ? goodsWithoutServices() : undefined)} />

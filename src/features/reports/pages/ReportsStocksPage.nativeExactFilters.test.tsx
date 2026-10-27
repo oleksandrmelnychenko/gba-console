@@ -177,6 +177,34 @@ describe('exact Fenix filters in the report constructor', () => {
   })
 
 
+  it('opens an old day template whose 1C goods kind has no GBA equivalent for review and never runs or resaves it widened', async () => {
+    const gbaDay: ReportDataset = { ...dayDataset, productServiceFilter: { Version: 1, IsServiceValues: [false, true],
+      GoodsKind: 'Товар', Basis: 'GbaProductClassification' } }
+    vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, gbaDay])
+    const kind = { ...productClassification, ProductKindId: '8AB2005056C0000811DF05C7D73CB155' }
+    const data = { ...defaultDatasetRequest(gbaDay, '2026-07-01', '2026-07-01'), productClassification: kind }
+    const template = { Id: crypto.randomUUID(), Revision: 2, Name: 'Daily exact', Data: data }
+    vi.mocked(getServerReportTemplates).mockResolvedValue([template])
+    const { container } = await ready()
+    await applySaved()
+    expect((screen.getByRole('combobox', { name: 'Звіт' }) as HTMLInputElement).value).toBe(gbaDay.Name)
+    expect(screen.getAllByText(/\(вид 8AB2005056C0000811DF05C7D73CB155, без послуг\), для якого в GBA немає рівнозначного відбору/).length).toBeGreaterThan(0)
+    fireEvent.submit(container.querySelector('form')!)
+    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Оновити шаблон' }))
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(createStockReport).not.toHaveBeenCalled()
+    expect(saveServerReportTemplate).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Вилучити відбір виду товару 1С' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Оновити шаблон' }))
+    await waitFor(() => expect(saveServerReportTemplate).toHaveBeenCalledOnce())
+    expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data).not.toHaveProperty('productClassification')
+    fireEvent.submit(container.querySelector('form')!)
+    await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+    expect(vi.mocked(createStockReport).mock.calls[0][0]).not.toHaveProperty('productClassification')
+    expect(vi.mocked(createStockReport).mock.calls[0][0]).not.toHaveProperty('productServiceFilter')
+  })
+
   it('keeps new requests compatible when the server has no basis capability', async () => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, { ...dayDataset, dayOrganizationBasis: undefined }])
     const { container } = await ready()

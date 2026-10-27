@@ -5,7 +5,7 @@ import { profitDayDataset, profitSupplierDataset } from './profitReadMode.test-f
 import { cashModeDataset } from './cashReadMode.test-fixtures'
 import { settlementModeDataset } from './settlementReadMode.test-fixtures'
 import { savedNativeReportConfigurationError } from './savedNativeReport'
-import { FENIX_BUYERS_ROOT_ID } from './nativeExactFilters'
+import { FENIX_BUYERS_ROOT_ID, SERVICE_KIND_ID } from './nativeExactFilters'
 
 const goods = { Version: 1, SourceWorld: 0, ProductKindId: '8AB2005056C0000811DEF956DA4CFDA0', IsService: false }
 
@@ -33,8 +33,10 @@ it('maps the Fenix goods classification of day gross profit onto the GBA goods f
   expect(unified.productServiceFilter).toEqual({ Version: 1, IsService: false })
   expect(unified.sourceBuyerSubtree).toEqual(request.sourceBuyerSubtree)
   expect(unified.profitReadMode).toBe(0)
-  const services = withUnifiedSource({ ...request, productClassification: { ...goods, IsService: true } }, serviceDataset)
+  const services = withUnifiedSource({ ...request, productClassification: { ...goods, ProductKindId: SERVICE_KIND_ID, IsService: true } }, serviceDataset)
   expect(services.productServiceFilter).toEqual({ Version: 1, IsService: true })
+  const goodsKindServices = { ...goods, IsService: true }
+  expect(withUnifiedSource({ ...request, productClassification: goodsKindServices }, serviceDataset).productClassification).toEqual(goodsKindServices)
   expect(withUnifiedSource(request, profitDayDataset).productClassification).toEqual(goods)
 })
 
