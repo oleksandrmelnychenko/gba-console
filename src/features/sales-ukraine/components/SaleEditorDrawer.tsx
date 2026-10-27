@@ -4,6 +4,7 @@ import { formatDebtAmount, getDebtBalanceLines } from '../../sales-debtors/model
 import { DebtAgingInfo } from '../../sales-debtors/components/DebtAgingInfo'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
+import { getEurToUahNote } from '../eurToUahNote'
 import {
   Alert,
   Button,
@@ -495,7 +496,13 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
               )}
               {isLoading && <Loader size="xs" />}
             </Group>
-            <Group gap={6} wrap="nowrap"><Text className="app-money sale-editor-summary__amount">{amountFormatter.format(headerTotal)}</Text><TableChip tone="source" value={editorCurrencyCode} /></Group>
+            <Group gap={6} wrap="nowrap">{useEurToUah ? (
+              <Tooltip label={t(getEurToUahNote(sale))}>
+                <Text className="app-money sale-editor-summary__amount">{amountFormatter.format(headerTotal)}</Text>
+              </Tooltip>
+            ) : (
+              <Text className="app-money sale-editor-summary__amount">{amountFormatter.format(headerTotal)}</Text>
+            )}<TableChip tone="source" value={editorCurrencyCode} /></Group>
             <Text size="xs" c="dimmed">
               {t('ПДВ')}: <span className="app-money app-money-meta">{amountFormatter.format(getNumber(sale.Order?.TotalVat) ?? 0)}</span>
             </Text>

@@ -301,6 +301,8 @@ export type SalesUkraineSale = SalesUkraineEntity & {
   IsPrinted?: boolean
   IsPrintedActProtocolEdit?: boolean
   IsPrintedPaymentInvoice?: boolean
+  IsImported?: boolean
+  IsPaymentBillDownloaded?: boolean
   IsSent?: boolean
   IsVatSale?: boolean
   OneTimeDiscountComment?: string

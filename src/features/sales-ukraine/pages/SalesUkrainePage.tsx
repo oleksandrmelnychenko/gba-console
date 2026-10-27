@@ -1,4 +1,5 @@
 import { reuseSaleSnapshot, reuseSaleSnapshots } from '../saleSnapshot'
+import { getEurToUahNote } from '../eurToUahNote'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { saleAgreementLabel, saleAgreementTitle } from '../../../shared/saleAgreementLabel'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -1940,7 +1941,13 @@ const SaleGridRow = memo(function SaleGridRow({
         <TableChip tone="source" value={displayValue(getSaleCurrencyCode(sale))} />
       </div>
       <div className={`sg-amt${unpaid ? ' is-unpaid' : ''}`}>
-        <span className="sg-amt-val">{formatAmount(getSecondaryAmount(sale))}</span>
+        {isNonVatEurAgreement(sale) ? (
+          <Tooltip label={t(getEurToUahNote(sale))}>
+            <span className="sg-amt-val">{formatAmount(getSecondaryAmount(sale))}</span>
+          </Tooltip>
+        ) : (
+          <span className="sg-amt-val">{formatAmount(getSecondaryAmount(sale))}</span>
+        )}
         <TableChip tone="source" value={getSecondaryAmountCode(sale)} />
       </div>
       <div className={`sg-amt${unpaid ? ' is-unpaid' : ''}`}>
@@ -2346,7 +2353,14 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
       <div className="sale-detail-metrics">
         <SaleDetailMetric label={t('Позиції')} value={displayValue(orderItems.length)} />
         <SaleDetailMetric label={t('ПДВ')} value={formatAmount(vatAmount)} />
-        <SaleDetailMetric label={<TableChip tone="source" value={secondaryCurrencyCode} />} value={formatAmount(secondaryAmount)} />
+        <SaleDetailMetric
+          label={<TableChip tone="source" value={secondaryCurrencyCode} />}
+          value={isNonVatEurAgreement(sale) ? (
+            <Tooltip label={t(getEurToUahNote(sale))}>
+              <span>{formatAmount(secondaryAmount)}</span>
+            </Tooltip>
+          ) : formatAmount(secondaryAmount)}
+        />
         <SaleDetailMetric label={t('Менеджер')} value={<TableChip tone="warning" value={getSaleUserName(sale)} />} />
       </div>
 
