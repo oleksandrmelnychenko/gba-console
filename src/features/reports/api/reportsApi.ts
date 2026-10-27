@@ -112,6 +112,9 @@ function assertNumberPresentation(request: ReportRequestBody, preview: NativeRep
     throw new Error('Сервер повернув інший формат чисел результату.')
 }
 type ReportResultSession = NonNullable<NativeReportPreview['ResultSession']>
+export async function reportPreviewColumnPaging(): Promise<ReportPreviewColumnPaging | null> {
+  return (await immutableReportPreviewCapability())?.columnPaging ?? null
+}
 async function immutableReportPreviewCapability(): Promise<{ columnPaging: ReportPreviewColumnPaging | null } | null> {
   let value: unknown
   try { value = await apiRequest<unknown>('/report/stocks/preview/capabilities') }

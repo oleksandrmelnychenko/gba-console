@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { clearSession, saveSession } from '../../../shared/auth/session'
 import { generateSavedNativeReport, previewSavedNativeReport, type SavedNativeReportTarget } from './savedNativeReportApi'
+import { widePreview } from '../data/reportWideColumns.test-fixtures'
 
 const fetchMock = vi.fn()
 const session = { userNetUid: 'caller-a', csrfToken: 'csrf-a' }
@@ -137,4 +138,18 @@ it('cancels a pending body and never returns partial files after abort', async (
   abort.abort()
   await expect(pending).rejects.toMatchObject({ name: 'AbortError' })
   expect(cancel).toHaveBeenCalledOnce()
+})
+
+it('previews a saved wide day-profit template through the first column window the server advertises', async () => {
+  const capabilities = { Version: 2, MaximumPageRows: 200, TimeToLiveSeconds: 900, ExplicitExport: true, ColumnPaging: true,
+    MaximumPageColumns: 256, MaximumResultColumns: 16000, MaximumOccupiedCells: 1000000, MaximumResponseBytes: 1048576 }
+  const preview = { ...widePreview({ total: 3660, offset: 0, returned: 256 }), RequestSha256: definition, ResultSha256: resultHash,
+    Request: { DataSource: 'NativeDayOrganizationGrossProfit', IsCurrentSnapshot: false, HasPeriod: true } }
+  fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ Body: capabilities }), { headers: { 'Content-Type': 'application/json' } }))
+  fetchMock.mockResolvedValueOnce(response({ DocumentURL: '/reports/saved.xlsx', PdfDocumentURL: '/reports/saved.pdf', Preview: preview } as never))
+  const observed = await previewSavedNativeReport({ ...target, dataSource: 35 }, context())
+  const [url] = fetchMock.mock.calls[1] as [string, RequestInit]
+  expect(new URL(url).search).toBe('?rowOffset=0&rowLimit=50&columnOffset=0&columnLimit=256')
+  expect(observed.preview?.Page).toMatchObject({ ColumnOffset: 0, ColumnLimit: 256, TotalColumns: 3660, ReturnedColumns: 256, HasMoreColumns: true })
+  expect(observed.preview?.Columns).toHaveLength(256)
 })

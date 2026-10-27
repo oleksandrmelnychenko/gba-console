@@ -2,6 +2,7 @@ import { ApiError, unwrapApiResponse } from '../../../shared/api/apiClient'
 import { apiRequestStream, assertApiStreamCurrent, type ApiStreamSession } from '../../../shared/api/apiStreamClient'
 import { normalizeNativeReportPreview, type NativeReportPreview } from '../data/nativeReportPreview'
 import { savedNativeReportSources } from '../data/savedNativeReport'
+import { reportPreviewColumnPaging } from './reportsApi'
 import type { ReportResult } from '../types'
 import { normalizeReportResult } from '../utils'
 
@@ -69,8 +70,10 @@ function binding(response: Response, target: SavedNativeReportTarget): SavedNati
 
 async function run(target: SavedNativeReportTarget, context: SavedNativeReportContext, action: 'preview' | 'generate'): Promise<SavedNativeReportResult> {
   const captured = { ...target }, path = targetPath(captured, action)
+  const columns = action === 'preview' && captured.dataSource === 35 ? await reportPreviewColumnPaging() : null
+  const columnQuery = columns ? `&columnOffset=0&columnLimit=${columns.pageColumns}` : ''
   // Route identities are the command. Never send the editor's ReportsModel or a replacement body.
-  const response = await apiRequestStream(action === 'preview' ? `${path}?rowOffset=0&rowLimit=50` : path,
+  const response = await apiRequestStream(action === 'preview' ? `${path}?rowOffset=0&rowLimit=50${columnQuery}` : path,
     { ...context, method: 'POST' })
   try {
     const actual = binding(response, captured)
@@ -85,6 +88,7 @@ async function run(target: SavedNativeReportTarget, context: SavedNativeReportCo
       throw invalidBinding()
     const preview = normalizeNativeReportPreview(payload)
     if (preview.Page.Offset !== 0 || preview.Page.Limit !== 50
+      || columns && (preview.Page.ColumnOffset !== 0 || preview.Page.ColumnLimit !== columns.pageColumns)
       || response.headers.get('Gba-Report-Result-Sha256')?.toLowerCase() !== preview.ResultSha256.toLowerCase()
       || preview.Request?.DataSource !== savedNativeReportSources[captured.dataSource]
       || (captured.dataSource === 39 && !preview.CurrentVparivanieProducts))
