@@ -627,6 +627,65 @@ describe('NewSaleReviewStep persistent file reconciliation', () => {
     expect(loadSalesPendingMutation(managementFileScope)?.operationId).toBe(operationId)
   })
 
+  it.each(['create', 'edit'] as const)('releases the %s submit after verified warehouse rollback and permits an explicit corrected request', async (submitFlow) => {
+    const message = 'Склад документа не збігається зі складом резерву товару. Узгодьте склад документа та резерв перед проведенням продажу.'
+    const request = submitFlow === 'create' ? mocks.createSalesUkraineSaleFromData : mocks.updateSaleFromData
+    request.mockRejectedValueOnce(new ApiError(message, 400, null, {
+      'X-Mutation-Ledger-State': 'rolled-back',
+    })).mockResolvedValueOnce({ message: 'saved', sale })
+    const view = renderStep({ submitFlow })
+    fireEvent.click(document.querySelector<HTMLButtonElement>('.new-sale-review-actions__primary')!)
+    await waitFor(() => expect(mocks.notificationsShow).toHaveBeenCalledWith(expect.objectContaining({
+      color: 'red', message,
+    })))
+    await waitFor(() => expect(view.onBusyChange).toHaveBeenLastCalledWith(false))
+    expect(loadSalesPendingMutation(wizardFileScope)).toBeNull()
+    expect(request).toHaveBeenCalledTimes(1)
+    expect(view.onCreated).not.toHaveBeenCalled()
+    expect(view.onClose).not.toHaveBeenCalled()
+    expect(screen.queryByRole('button', { name: 'Перевірити результат' })).toBeNull()
+    const firstKey = request.mock.calls[0]?.[2]?.operationId
+
+    view.rerender(<MantineProvider theme={theme}>
+      <NewSaleReviewStep clientNetId="client-1" sale={sale} submitFlow={submitFlow}
+        value={{ ...reviewValue(), registrarStorageId: 8 }} onChange={view.onChange}
+        onCreated={view.onCreated} onClose={view.onClose} onBusyChange={view.onBusyChange} />
+    </MantineProvider>)
+    expect(request).toHaveBeenCalledTimes(1)
+    fireEvent.click(document.querySelector<HTMLButtonElement>('.new-sale-review-actions__primary')!)
+    await waitFor(() => expect(request).toHaveBeenCalledTimes(2))
+    expect(request.mock.calls[1]?.[0]).toMatchObject({ RegistrarStorageId: 8 })
+    expect(request.mock.calls[1]?.[2]?.operationId).not.toBe(firstKey)
+    await waitFor(() => expect(view.onCreated).toHaveBeenCalledOnce())
+  })
+
+  it.each([
+    ['unmarked validation', 400],
+    ['existing operation conflict', 409],
+    ['uncertain server result', 503],
+  ] as const)('preserves the frozen request for %s without a blind new submission', async (_reason, status) => {
+    const message = 'Склад документа не збігається зі складом резерву товару.'
+    mocks.updateSaleFromData.mockRejectedValueOnce(new ApiError(message, status, null))
+    const view = renderStep()
+    fireEvent.click(document.querySelector<HTMLButtonElement>('.new-sale-review-actions__primary')!)
+    await screen.findByRole('button', { name: 'Перевірити результат' })
+    await waitFor(() => expect(view.onBusyChange).toHaveBeenLastCalledWith(false))
+    const pending = loadSalesPendingMutation(wizardFileScope)
+    expect(pending?.operationId).toBe(mocks.updateSaleFromData.mock.calls[0]?.[2]?.operationId)
+    expect(mocks.notificationsShow).toHaveBeenCalledWith(expect.objectContaining({
+      color: 'orange', message: expect.stringContaining(message),
+    }))
+    view.rerender(<MantineProvider theme={theme}>
+      <NewSaleReviewStep clientNetId="client-1" sale={sale} submitFlow="edit"
+        value={{ ...reviewValue(), registrarStorageId: 8 }} onChange={view.onChange} />
+    </MantineProvider>)
+    await act(async () => {})
+    expect(loadSalesPendingMutation(wizardFileScope)?.operationId).toBe(pending?.operationId)
+    expect(mocks.updateSaleFromData).toHaveBeenCalledOnce()
+    expect(view.onCreated).not.toHaveBeenCalled()
+    expect(view.onClose).not.toHaveBeenCalled()
+  })
+
   it('persists a new wizard submission with explicit submit intent before sending', async () => {
     mocks.updateSaleFromData.mockRejectedValue(new ApiError('response lost', 500, null))
     const { onClose, onCreated } = renderStep()
