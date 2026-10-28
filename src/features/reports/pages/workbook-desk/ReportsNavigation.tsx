@@ -3,7 +3,7 @@ import { CUSTOMER_RETURN_WORKBOOK } from '../../data/customerReturnReport'
 import { Menu } from '@mantine/core'
 import { BarChart3, Boxes, ChevronDown, FileText, ShoppingCart, Wallet } from 'lucide-react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
-import { PURCHASES_CONSTRUCTOR_FILE, type WorkbookLaunch } from '../../data/bug1274WorkbookLaunch'
+import { PURCHASES_CONSTRUCTOR_FILE, STOCK_PERIOD_CONSTRUCTOR_FILE, type WorkbookLaunch } from '../../data/bug1274WorkbookLaunch'
 import { GROSS_PROFIT_CONSTRUCTOR_WORKBOOK, SALES_CONSTRUCTOR_WORKBOOK } from '../../data/salesConstructorProfiles'
 import './reports-navigation.css'
 
@@ -36,6 +36,7 @@ const special = [
 export function ReportsNavigation({ launches, active, movement, disabled, onOpen, onStocks }: Props) {
   const { t } = useI18n()
   const activeSource = movement ? null : launches.find(launch => launch.fileName === active)?.dataset.DataSource
+  const stocks = launches.find(launch => launch.fileName === STOCK_PERIOD_CONSTRUCTOR_FILE)
   const purchases = launches.find(launch => launch.fileName === PURCHASES_CONSTRUCTOR_FILE)
   const unavailable = t('Звіт ще не доступний у поточному каталозі.')
   const pill = (selected: boolean) => `console-subnav-pill console-subnav-item${selected ? ' is-active' : ''}`
@@ -60,8 +61,9 @@ export function ReportsNavigation({ launches, active, movement, disabled, onOpen
   }
   return <nav className="reports-navigation" aria-label={t('Розділи звітів')}>
     <div className="console-subnav-row console-subnav-items reports-navigation__row">
-      {dropdown('Продажі', BarChart3, sales, activeSource === 2 || activeSource === 35 || activeSource === 38 || activeSource === 43)}
-      <button type="button" className={pill(movement)} disabled={disabled} aria-pressed={movement} onClick={onStocks}>
+      {dropdown('Продажі', BarChart3, sales, active === SALES_CONSTRUCTOR_WORKBOOK || active === GROSS_PROFIT_CONSTRUCTOR_WORKBOOK || activeSource === 35 || activeSource === 38 || activeSource === 43)}
+      <button type="button" className={pill(movement || activeSource === 45)} disabled={disabled} aria-pressed={movement || activeSource === 45}
+        onClick={() => { if (stocks) onOpen(stocks); else onStocks() }}>
         <Boxes size={16} aria-hidden="true" /><span>{t('Залишки')}</span>
       </button>
       <button type="button" className={pill(activeSource === 3)} disabled={disabled || !purchases}

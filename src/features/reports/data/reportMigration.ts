@@ -13,7 +13,7 @@ export const BUG_1274_ACTIVE_REPORT_IDS = new Set([
   'builtin:ВаловаяПрибыль',
   'builtin:ОтчетВпаривание',
 ])
-export const BUG_1274_ACTIVE_DATA_SOURCES: ReadonlySet<number> = new Set([2, 3, 35, 38, 39, 40, 41, 43, 44])
+export const BUG_1274_ACTIVE_DATA_SOURCES: ReadonlySet<number> = new Set([2, 3, 35, 38, 39, 40, 41, 43, 44, 45])
 
 export const BUG_1274_PARITY_LABEL = 'Розраховано з документів GBA; звірено з 1С'
 export const BUG_1274_PARITY_NOTICE = `${BUG_1274_PARITY_LABEL}.`

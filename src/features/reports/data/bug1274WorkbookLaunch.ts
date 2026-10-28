@@ -52,6 +52,7 @@ export const DEBTOR_WORKBOOK_CURRENCY_NOTICE = 'Як в 1С: суми догов
 export const SETTLEMENT_WORKBOOK_CURRENCY_NOTICE = 'Як в 1С: рядки розділено за валютою взаєморозрахунків; підсумки організацій і загальний підсумок додають суми різних валют без перерахунку.'
 
 export const PURCHASES_CONSTRUCTOR_FILE = 'gba:purchases-constructor:v1'
+export const STOCK_PERIOD_CONSTRUCTOR_FILE = 'gba:stock-period-constructor:v1'
 
 const supported = [
   { fileName: CUSTOMER_GROUPS_WORKBOOK, label: 'Порівняння роботи клієнтів', dataSource: 44,
@@ -122,6 +123,14 @@ const supported = [
     dataSource: 3,
     accepts: (dataset: ReportDataset) => [0, 2, 3, 96].every(type => dataset.Measurements.some(field => field.Type === type && field.Selectable !== false))
       && [21, 24, 25].every(type => dataset.Groupings.some(field => field.Type === type && field.Selectable !== false)),
+  },
+  {
+    fileName: STOCK_PERIOD_CONSTRUCTOR_FILE,
+    label: 'Звіт по залишкам',
+    notice: 'Рух товарів GBA: початковий залишок, прихід, розхід і кінцевий залишок у кількості, собівартості з витратами та ПДВ. Непідтверджені суми й підсумки залишаються порожніми.',
+    dataSource: 45,
+    accepts: (dataset: ReportDataset) => Array.from({ length: 12 }, (_, i) => 97 + i).every(type => dataset.Measurements.some(field => field.Type === type && field.Selectable !== false))
+      && [29, 5, 24].every(type => dataset.Groupings.some(field => field.Type === type && field.Selectable !== false)),
   },
 ] as const
 
@@ -212,6 +221,12 @@ export function bug1274WorkbookRequest(request: ReportRequestBody, launch?: Work
   if (!launch || launch.dataset.DataSource !== request.dataSource) return request
   if (launch.fileName === CUSTOMER_GROUPS_WORKBOOK) return customerGroupsRequest(request, launch.dataset)
   if (launch.fileName === CUSTOMER_RETURN_WORKBOOK) return customerReturnRequest(request, launch.dataset)
+  if (launch.fileName === STOCK_PERIOD_CONSTRUCTOR_FILE && request.dataSource === 45) {
+    const groups = datasetGroupings(launch.dataset)
+    return { ...structuredClone(request), sorted: { ...structuredClone(request.sorted),
+      Row: [29, 5, 24].flatMap(type => groups.filter(field => field.type === type)), Col: [],
+      Measurements: launch.dataset.Measurements.filter(field => field.Selectable !== false).map(field => ({ ...field, IsChecked: true, parentName: '' })) } }
+  }
   if (launch.fileName === PURCHASES_CONSTRUCTOR_FILE && request.dataSource === 3) {
     const groups = datasetGroupings(launch.dataset)
     return { ...structuredClone(request), sorted: { ...structuredClone(request.sorted),
