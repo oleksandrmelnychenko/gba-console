@@ -24,7 +24,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeft, CircleAlert, ClipboardList, ReceiptText, Tag, Calculator, FileInput as FileInputIcon, FileUp, Package, RefreshCw, Save, Trash2, X } from 'lucide-react'
+import { ArrowLeft, Check, CircleAlert, ClipboardList, ReceiptText, Tag, Calculator, FileInput as FileInputIcon, FileUp, Package, RefreshCw, Save, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState, type CSSProperties, type Dispatch, type SetStateAction, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import './supply-order-detail.css'
@@ -1336,10 +1336,11 @@ function InvoiceSelector({
         return (
           <Group className="supply-invoice-selector-group" key={invoice.NetUid || invoice.Id} gap={4} wrap="nowrap">
             <Button
-              className="supply-invoice-selector app-selection-surface"
+              className="supply-invoice-selector"
               data-selected={invoice.NetUid === model.selectedInvoiceNetId || undefined}
               aria-pressed={invoice.NetUid === model.selectedInvoiceNetId}
               disabled={model.isBusy}
+              leftSection={invoice.NetUid === model.selectedInvoiceNetId ? <Check size={16} /> : <ReceiptText size={16} />}
               styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
               variant="default"
               onClick={() => {
@@ -1363,7 +1364,6 @@ function InvoiceSelector({
                 })
               }}
             >
-              {invoice.NetUid === model.selectedInvoiceNetId && <span className="app-selection-surface__marker" aria-hidden="true" />}
               <span className="supply-invoice-selector-kind">{t('Інвойс')}</span>
               <TableChip tone="document" value={invoice.Number || t('Інвойс')} />
               <span className="supply-invoice-selector-date">{formatDate(invoice.DateFrom)}</span>
