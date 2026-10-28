@@ -85,6 +85,13 @@ type CashFlowViewSummary = {
   closingBalance?: number
 }
 
+// Keep the statement's dot separator while matching summary and Excel decimal rounding.
+const moneyFormatter = new Intl.NumberFormat('en-US', {
+  useGrouping: false,
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})
+
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 3,
 })
@@ -1693,7 +1700,7 @@ function formatDateTime(value: unknown): string {
 }
 
 function formatMoney(value?: number): string {
-  return (typeof value === 'number' && Number.isFinite(value) ? value : 0).toFixed(2)
+  return moneyFormatter.format(typeof value === 'number' && Number.isFinite(value) ? value : 0)
 }
 
 function formatAmount(value?: number): string {
