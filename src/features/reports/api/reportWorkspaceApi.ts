@@ -164,6 +164,8 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     DataSource: ReportRequestBody['dataSource']
     CurrentVparivanieFullScope?: unknown
     currentVparivanieFullScope?: unknown
+    CustomerGroups?: import('../data/customerGroups').CustomerGroups
+    customerGroups?: import('../data/customerGroups').CustomerGroups
     ReturnsOnly?: boolean
     returnsOnly?: boolean
     SettlementPeriod?: unknown
@@ -264,6 +266,7 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     ...cloneCurrentVparivanieFullScope(value.Data),
     ...cloneMovementSelection(value.Data),
     ...cloneCurrentVparivanieAnalysis(value.Data),
+    ...(value.Data.CustomerGroups || value.Data.customerGroups ? {customerGroups: structuredClone(value.Data.customerGroups ?? value.Data.CustomerGroups)} : {}),
     ...(Object.hasOwn(value.Data, 'returnsOnly') ? { returnsOnly: value.Data.returnsOnly }
       : Object.hasOwn(value.Data, 'ReturnsOnly') ? { returnsOnly: value.Data.ReturnsOnly } : {}),
     ...(Object.hasOwn(value.Data, 'settlementPeriod') ? { settlementPeriod: structuredClone(value.Data.settlementPeriod),

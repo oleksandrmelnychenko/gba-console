@@ -1,3 +1,4 @@
+import { CUSTOMER_GROUPS_WORKBOOK } from '../../data/customerGroups'
 import { CUSTOMER_RETURN_WORKBOOK } from '../../data/customerReturnReport'
 import { Menu } from '@mantine/core'
 import { BarChart3, Boxes, ChevronDown, FileText, ShoppingCart, Wallet } from 'lucide-react'
@@ -29,7 +30,7 @@ const special = [
   { label: 'Звіт повернення', file: CUSTOMER_RETURN_WORKBOOK },
   { label: 'Звіт по скидкам клієнтів', file: null },
   { label: 'Продажі порівнянням по групам цін', file: null },
-  { label: 'Порівняння роботи клієнтів', file: null },
+  { label: 'Порівняння роботи клієнтів', file: CUSTOMER_GROUPS_WORKBOOK },
 ]
 
 export function ReportsNavigation({ launches, active, movement, disabled, onOpen, onStocks }: Props) {
@@ -69,7 +70,7 @@ export function ReportsNavigation({ launches, active, movement, disabled, onOpen
         <ShoppingCart size={16} aria-hidden="true" /><span>{t('Закупи')}</span>
       </button>
       {dropdown('Грошові кошти', Wallet, cash, activeSource === 40 || activeSource === 41)}
-      {dropdown('Особливі звіти', FileText, special, activeSource === 39 || active === CUSTOMER_RETURN_WORKBOOK)}
+      {dropdown('Особливі звіти', FileText, special, activeSource === 39 || active === CUSTOMER_RETURN_WORKBOOK || activeSource === 44)}
     </div>
   </nav>
 }

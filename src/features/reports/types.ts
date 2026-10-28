@@ -283,6 +283,8 @@ export type ReportRequestBody = {
   CashPeriod?: unknown
   returnsOnly?: boolean
   ReturnsOnly?: boolean
+  customerGroups?: import('./data/customerGroups').CustomerGroups
+  CustomerGroups?: import('./data/customerGroups').CustomerGroups
   priceTypeSalesComparison?: unknown
   PriceTypeSalesComparison?: unknown
   paymentComparison?: unknown
