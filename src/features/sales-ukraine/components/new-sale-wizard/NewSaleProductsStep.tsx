@@ -1027,6 +1027,7 @@ export function NewSaleProductsStep({
             )}
           </Box>
           <WizardCartSheet
+            agreementNetId={agreementNetId}
             busy={busy}
             items={orderItems}
             localCurrencyCode={localCurrencyCode}

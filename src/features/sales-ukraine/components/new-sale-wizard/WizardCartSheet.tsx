@@ -9,12 +9,14 @@ import type { SalesUkraineOrderItem } from '../../types'
 import { getWizardCartTotals } from './wizardCartTotals'
 import { WizardShoppingCartGrid } from './WizardShoppingCartGrid'
 import { WizardCartCards } from './WizardCartCards'
+import { useWizardCartPricing } from './useWizardCartPricing'
 import './wizard-cart-sheet.css'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const qtyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
 
 export function WizardCartSheet({
+  agreementNetId,
   busy,
   items,
   localCurrencyCode,
@@ -29,6 +31,7 @@ export function WizardCartSheet({
   onRemove,
   onRowClick,
 }: {
+  agreementNetId?: string | null
   busy: boolean
   items: SalesUkraineOrderItem[]
   localCurrencyCode: string
@@ -46,6 +49,7 @@ export function WizardCartSheet({
   const { t } = useI18n()
   const [toolbarTarget, setToolbarTarget] = useState<HTMLDivElement | null>(null)
   const [view, setView] = useState('cards')
+  const { prices, retry } = useWizardCartPricing(items, agreementNetId, opened && view === 'cards')
   const lastCartFocusRef = useRef<HTMLElement | null>(null)
   const cartOpenerRef = useRef<HTMLElement | null>(null)
   const wasOpenedRef = useRef(opened)
@@ -159,9 +163,12 @@ export function WizardCartSheet({
           {view === 'cards' ? (
             <>
               <WizardCartCards
+                agreementNetId={agreementNetId}
                 busy={busy}
                 items={items}
                 localCurrencyCode={localCurrencyCode}
+                prices={prices}
+                onRetryPricing={retry}
                 useEurToUah={useEurToUah}
                 onCrossSell={onCrossSell}
                 onRemove={onRemove}
