@@ -2,8 +2,9 @@ import type { ReportMeasurementGroup, ReportMeasurementSelection } from '../type
 
 /** Presentation categories only: the dataset still decides which fields are executable. */
 export function reportGroupingPath(type: number): string[] {
+  if (type === 82) return ['Джерело даних']
   if ([0, 1, 2, 3].includes(type)) return ['Період']
-  if ([5, 6, 7, 8, 9, 10, 28].includes(type)) return ['Товар']
+  if ([5, 6, 7, 8, 9, 10, 28, 83].includes(type)) return ['Товар']
   if ([11, 12, 13, 14, 15, 16, 79, 80].includes(type)) return ['Покупець']
   if ([17, 18, 19, 20, 22, 23, 66, 67, 81].includes(type)) return ['Документ продажу']
   if ([21, 24, 25].includes(type)) return ['Постачальник']
