@@ -31,11 +31,11 @@ export type ProductPlacement = EntityFields & {
 
 export type ConsignmentAvailabilityItem = EntityFields & {
   AccountingGrossPrice?: number
-  ExchangeRate?: number
-  FromDate?: string
+  ExchangeRate?: number | null
+  FromDate?: string | null
   GrossPrice?: number
   IncomeQty?: number
-  NetPrice?: number
+  NetPrice?: number | null
   Placements?: ProductPlacement[]
   ProductId?: number
   ProductName?: string
@@ -45,8 +45,8 @@ export type ConsignmentAvailabilityItem = EntityFields & {
   StorageName?: string
   StorageNetId?: string
   TotalNetPrice?: number
-  UnitAccountingGrossPrice?: number
-  UnitGrossPrice?: number
+  UnitAccountingGrossPrice?: number | null
+  UnitGrossPrice?: number | null
   VendorCode?: string
 }
 

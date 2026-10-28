@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { exportProductAvailabilities, getProductAvailabilities } from './productAvailabilitiesApi'
+import { exportProductAvailabilities, getProductAvailabilities, getProductAvailabilityStorages } from './productAvailabilitiesApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -9,6 +9,12 @@ vi.mock('../../../shared/api/apiClient', () => ({
 const apiRequestMock = vi.mocked(apiRequest)
 
 describe('productAvailabilitiesApi', () => {
+  it('loads warehouses through the availability page permission scope', async () => {
+    const storages = [{ Id: 2975, NetUid: '7d2f6f3c-7c9a-42f0-abc8-7e6c06284a7c', Name: 'СКЛАД -1' }]
+    apiRequestMock.mockResolvedValueOnce(storages)
+    await expect(getProductAvailabilityStorages()).resolves.toEqual(storages)
+    expect(apiRequestMock).toHaveBeenCalledWith('/storages/product-availabilities/all')
+  })
   beforeEach(() => {
     apiRequestMock.mockReset()
   })
