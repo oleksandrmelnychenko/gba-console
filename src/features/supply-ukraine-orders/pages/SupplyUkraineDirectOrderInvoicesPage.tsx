@@ -204,7 +204,7 @@ const INITIAL_PAGE_STATE: PageState = {
 
 const EMPTY_INVOICE_FORM: InvoiceUploadForm = {
   comment: '',
-  dateFrom: formatDateTimeInput(new Date()),
+  dateFrom: '',
   endRow: '',
   file: null,
   number: '',
@@ -219,7 +219,7 @@ const EMPTY_INVOICE_FORM: InvoiceUploadForm = {
 
 const EMPTY_PACK_LIST_FORM: PackListUploadForm = {
   comment: '',
-  dateFrom: formatDateTimeInput(new Date()),
+  dateFrom: '',
   endRow: '',
   file: null,
   grossWeightColumnNumber: '',
@@ -1483,18 +1483,22 @@ function DirectOrderInvoicesModals({ model }: { model: DirectOrderInvoicesPageMo
 
   return (
     <>
-      <InvoiceUploadModal
-        isSaving={model.isSaving}
-        opened={model.invoiceUploadOpen && model.canAddInvoice}
-        onClose={() => model.setPageState({ invoiceUploadOpen: false })}
-        onSubmit={model.submitInvoice}
-      />
-      <PackListUploadModal
-        isSaving={model.isSaving}
-        opened={model.packListUploadOpen && model.canAddPackList}
-        onClose={() => model.setPageState({ packListUploadOpen: false })}
-        onSubmit={model.submitPackList}
-      />
+      {model.invoiceUploadOpen && model.canAddInvoice && (
+        <InvoiceUploadModal
+          isSaving={model.isSaving}
+          opened
+          onClose={() => model.setPageState({ invoiceUploadOpen: false })}
+          onSubmit={model.submitInvoice}
+        />
+      )}
+      {model.packListUploadOpen && model.canAddPackList && (
+        <PackListUploadModal
+          isSaving={model.isSaving}
+          opened
+          onClose={() => model.setPageState({ packListUploadOpen: false })}
+          onSubmit={model.submitPackList}
+        />
+      )}
       <InvoiceMetadataModal
         editor={model.canEditInvoice ? model.invoiceEditor : null}
         isSaving={model.isSaving}
@@ -1544,15 +1548,13 @@ function InvoiceUploadModal({
   onSubmit: (form: InvoiceUploadForm) => void
 }) {
   const { t } = useI18n()
-  const [form, setForm] = useState<InvoiceUploadForm>(EMPTY_INVOICE_FORM)
-
-  function close() {
-    setForm({ ...EMPTY_INVOICE_FORM, dateFrom: formatDateTimeInput(new Date()) })
-    onClose()
-  }
+  const [form, setForm] = useState<InvoiceUploadForm>(() => ({
+    ...EMPTY_INVOICE_FORM,
+    dateFrom: formatDateTimeInput(new Date()),
+  }))
 
   return (
-    <AppModal className="supply-invoice-upload-modal" centered opened={opened} size={760} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Додати інвойс')}</span>} onClose={close}>
+    <AppModal className="supply-invoice-upload-modal" centered opened={opened} size={760} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Додати інвойс')}</span>} onClose={onClose}>
       <Stack className="app-compact-form" gap={12}>
         <div className="supply-invoice-upload-scroll">
           <Card className="app-section-card" withBorder radius="md" padding="sm">
@@ -1617,7 +1619,7 @@ function InvoiceUploadModal({
           </Card>
         </div>
         <AppModalFooter>
-          <Button disabled={isSaving} variant="default" onClick={close}>{t('Скасувати')}</Button>
+          <Button disabled={isSaving} variant="default" onClick={onClose}>{t('Скасувати')}</Button>
           <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={() => onSubmit(form)}>{t('Створити')}</Button>
         </AppModalFooter>
       </Stack>
@@ -1637,15 +1639,13 @@ function PackListUploadModal({
   onSubmit: (form: PackListUploadForm) => void
 }) {
   const { t } = useI18n()
-  const [form, setForm] = useState<PackListUploadForm>(EMPTY_PACK_LIST_FORM)
-
-  function close() {
-    setForm({ ...EMPTY_PACK_LIST_FORM, dateFrom: formatDateTimeInput(new Date()) })
-    onClose()
-  }
+  const [form, setForm] = useState<PackListUploadForm>(() => ({
+    ...EMPTY_PACK_LIST_FORM,
+    dateFrom: formatDateTimeInput(new Date()),
+  }))
 
   return (
-    <AppModal className="supply-invoice-upload-modal" centered opened={opened} size={760} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Додати пак лист')}</span>} onClose={close}>
+    <AppModal className="supply-invoice-upload-modal" centered opened={opened} size={760} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Додати пак лист')}</span>} onClose={onClose}>
       <Stack className="app-compact-form" gap={12}>
         <div className="supply-invoice-upload-scroll">
           <Card className="app-section-card" withBorder radius="md" padding="sm">
@@ -1708,7 +1708,7 @@ function PackListUploadModal({
           </Card>
         </div>
         <AppModalFooter>
-          <Button disabled={isSaving} variant="default" onClick={close}>{t('Скасувати')}</Button>
+          <Button disabled={isSaving} variant="default" onClick={onClose}>{t('Скасувати')}</Button>
           <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={() => onSubmit(form)}>{t('Створити')}</Button>
         </AppModalFooter>
       </Stack>
