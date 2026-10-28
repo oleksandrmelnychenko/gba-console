@@ -17,6 +17,7 @@ const apiMocks = vi.hoisted(() => ({
   getClientCommercialStructureForRegistry: vi.fn(),
   getClientIdentityAttention: vi.fn(),
   getClientRegionManualEdit: vi.fn(),
+  setClientMainClient: vi.fn(),
   updateClient: vi.fn(),
   uploadClientContract: vi.fn(),
 }))
@@ -28,6 +29,7 @@ vi.mock('../../auth/useAuth', () => ({
 vi.mock('../api/clientFormApi', () => ({
   deleteClient: apiMocks.deleteClient,
   getClientForRegistryById: apiMocks.getClientForRegistryById,
+  setClientMainClient: apiMocks.setClientMainClient,
   updateClient: apiMocks.updateClient,
 }))
 
@@ -68,6 +70,19 @@ vi.mock('../components/form/GeneralInfoFields', () => ({
     <div>
       general:{client.NetUid}
       {regionManualEdit && <span>region-edit:{regionManualEdit.EditedByName}</span>}
+    </div>
+  ),
+}))
+
+vi.mock('../components/form/MainClientEditor', () => ({
+  MainClientEditor: ({ client, lockedReason, onSetMainClient }: {
+    client: Client
+    lockedReason?: string | null
+    onSetMainClient: (mainClientNetUid: string | null) => Promise<void>
+  }) => (
+    <div>
+      main-client:{client.NetUid}:{String(client.MainClientId ?? 'none')}:{lockedReason ?? 'editable'}
+      <button type="button" onClick={() => void onSetMainClient('root-x').catch(() => undefined)}>set-main-client</button>
     </div>
   ),
 }))
@@ -280,6 +295,48 @@ describe('ClientEditPage root folder form', () => {
     fireEvent.click(screen.getByRole('button', { name: /Договори$/ }))
     expect(await screen.findByText(`agreements:${ORDINARY_NET_UID}`)).toBeTruthy()
     expect(apiMocks.getClientForRegistryById).toHaveBeenCalledTimes(1)
+  })
+
+  it('sets the main client of the open card under its version and keeps the new version', async () => {
+    apiMocks.getClientForRegistryById.mockImplementation(async (netUid: string) => (
+      netUid === ORDINARY_NET_UID ? { ...ORDINARY_CLIENT, Updated: '2026-10-27T10:00:00' } : null
+    ))
+    apiMocks.setClientMainClient.mockResolvedValue({
+      ClientId: 20,
+      ClientNetUid: ORDINARY_NET_UID,
+      MainClientId: 7,
+      MainClientNetUid: 'root-x',
+      MainClientName: 'ТОВ «Корінь»',
+      IsSubClient: true,
+      IsTradePoint: false,
+      Updated: '2026-10-27T10:00:01',
+    })
+
+    renderPage(ORDINARY_NET_UID)
+
+    expect(await screen.findByText(`main-client:${ORDINARY_NET_UID}:none:editable`)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'set-main-client' }))
+
+    expect(await screen.findByText(`main-client:${ORDINARY_NET_UID}:7:editable`)).toBeTruthy()
+    expect(apiMocks.setClientMainClient).toHaveBeenCalledWith(ORDINARY_NET_UID, 'root-x', '2026-10-27T10:00:00')
+    fireEvent.click(screen.getByRole('button', { name: 'set-main-client' }))
+    await waitFor(() => expect(apiMocks.setClientMainClient).toHaveBeenLastCalledWith(
+      ORDINARY_NET_UID,
+      'root-x',
+      '2026-10-27T10:00:01',
+    ))
+  })
+
+  it('explains the 1C lock of an imported client before cutover', async () => {
+    apiMocks.getClientForRegistryById.mockImplementation(async (netUid: string) => (
+      netUid === ORDINARY_NET_UID ? { ...ORDINARY_CLIENT, SourceFenixCode: 7630 } : null
+    ))
+
+    renderPage(ORDINARY_NET_UID)
+
+    expect(await screen.findByText(
+      `main-client:${ORDINARY_NET_UID}:none:Клієнт імпортований з 1С: до переходу на GBA його головного клієнта змінюють в 1С.`,
+    )).toBeTruthy()
   })
 
   it('passes the manual region edit of the open client to the general information', async () => {

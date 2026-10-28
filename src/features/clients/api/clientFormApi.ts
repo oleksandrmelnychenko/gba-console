@@ -11,6 +11,7 @@ import type {
   Pricing,
   ProviderPricing,
   VatRate,
+  ClientMainClientAssignment,
   ClientMainManagerAssignment,
   ClientUpsertResult,
 } from '../types'
@@ -122,6 +123,25 @@ export async function setClientMainManager(
     },
     errorMessages: {
       default: 'Не вдалося змінити основного менеджера',
+    },
+  })
+}
+
+export async function setClientMainClient(
+  clientNetUid: string,
+  mainClientNetUid: string | null,
+  expectedUpdated: Date | string,
+): Promise<ClientMainClientAssignment> {
+  return apiRequest<ClientMainClientAssignment>('/clients/main-client', {
+    method: 'POST',
+    dedupe: false,
+    body: {
+      ClientNetUid: clientNetUid,
+      MainClientNetUid: mainClientNetUid,
+      ExpectedUpdated: expectedUpdated,
+    },
+    errorMessages: {
+      default: 'Не вдалося змінити головного клієнта',
     },
   })
 }

@@ -753,6 +753,7 @@ export type Client = {
   IsTradePoint?: boolean
   LastName?: string
   LegalAddress?: string
+  MainClientId?: number | null
   MainManagerId?: number
   Manufacturer?: string
   Manager?: string
@@ -805,6 +806,17 @@ export type ClientMainManagerAssignment = {
   MainManagerId?: number | null
   MainManagerNetUid?: string | null
   MainManagerName?: string | null
+  Updated: string
+}
+
+export type ClientMainClientAssignment = {
+  ClientId: number
+  ClientNetUid: string
+  MainClientId?: number | null
+  MainClientNetUid?: string | null
+  MainClientName?: string | null
+  IsSubClient: boolean
+  IsTradePoint: boolean
   Updated: string
 }
 

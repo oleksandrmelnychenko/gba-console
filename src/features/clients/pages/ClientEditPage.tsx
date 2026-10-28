@@ -27,6 +27,7 @@ import { useAuth } from '../../auth/useAuth'
 import {
   deleteClient,
   getClientForRegistryById,
+  setClientMainClient,
   setClientMainManager,
   updateClient,
   updateClientEcommerceSettings,
@@ -51,6 +52,7 @@ import {
 } from '../clientIdentityAttentionMessage'
 import { EcommercePanel } from '../components/ecommerce/EcommercePanel'
 import { GeneralInfoFields, type ClientFormRole } from '../components/form/GeneralInfoFields'
+import { MainClientEditor } from '../components/form/MainClientEditor'
 import { PerfectClientPanel } from '../components/perfect-client/PerfectClientPanel'
 import { PricingPanel } from '../components/pricing/PricingPanel'
 import { applyPendingDiscountDraft } from '../components/pricing/pendingDiscountDraft'
@@ -170,6 +172,7 @@ type EditStepContentProps = {
   onClientChange: (client: Client) => void
   onPendingDiscountDraftChange: (draft: DiscountsTreeDraft | null) => void
   onSetMainManager: (client: Client, manager: Manager) => Promise<void>
+  onSetMainClient: (client: Client, mainClientNetUid: string | null) => Promise<void>
   step: string
   productNetId?: string
 }
@@ -611,6 +614,31 @@ export function ClientEditPage() {
     notifications.show({
       color: 'green',
       message: t('Основного менеджера змінено'),
+    })
+  }
+
+  async function handleSetMainClient(target: Client, mainClientNetUid: string | null) {
+    if (!target.NetUid || !target.Updated) {
+      return
+    }
+
+    const assignment = await setClientMainClient(target.NetUid, mainClientNetUid, target.Updated)
+    const applyAssignment = (current: Client | null) =>
+      current && current.NetUid === assignment.ClientNetUid
+        ? {
+            ...current,
+            MainClientId: assignment.MainClientId ?? null,
+            IsSubClient: assignment.IsSubClient,
+            IsTradePoint: assignment.IsTradePoint,
+            Updated: assignment.Updated,
+          }
+        : current
+    setClient(applyAssignment)
+    setFolderClient(applyAssignment)
+    setStructureRevision((current) => current + 1)
+    notifications.show({
+      color: 'green',
+      message: mainClientNetUid ? t('Головного клієнта змінено') : t('Клієнта відʼєднано від головного клієнта'),
     })
   }
 
@@ -1136,6 +1164,7 @@ export function ClientEditPage() {
         onAddDocuments={handleAddDocuments}
         onClientChange={handleClientChange}
         onSetMainManager={handleSetMainManager}
+        onSetMainClient={handleSetMainClient}
         onCreateCountry={handleCreateCountry}
         onCreateIncoterm={handleCreateIncoterm}
         onCreateRegion={handleCreateRegion}
@@ -1374,6 +1403,7 @@ function ClientEditBody({
   onAddDocuments,
   onClientChange,
   onSetMainManager,
+  onSetMainClient,
   onCreateCountry,
   onCreateIncoterm,
   onCreateRegion,
@@ -1421,6 +1451,7 @@ function ClientEditBody({
   onAddDocuments: (files: File[]) => void
   onClientChange: (client: Client) => void
   onSetMainManager: (client: Client, manager: Manager) => Promise<void>
+  onSetMainClient: (client: Client, mainClientNetUid: string | null) => Promise<void>
   onCreateCountry: (name: string, code: string) => void
   onCreateIncoterm: (name: string) => void
   onCreateRegion: (name: string) => void
@@ -1538,6 +1569,7 @@ function ClientEditBody({
                   onAddDocuments={onAddDocuments}
                   onClientChange={onClientChange}
                   onSetMainManager={onSetMainManager}
+                  onSetMainClient={onSetMainClient}
                   onCreateCountry={onCreateCountry}
                   onCreateIncoterm={onCreateIncoterm}
                   onCreateRegion={onCreateRegion}
@@ -1764,6 +1796,7 @@ function EditStepContent({
   onAddDocuments,
   onClientChange,
   onSetMainManager,
+  onSetMainClient,
   onCreateCountry,
   onCreateIncoterm,
   onCreateRegion,
@@ -1774,6 +1807,7 @@ function EditStepContent({
   onSaveDocuments,
   step,
 }: EditStepContentProps) {
+  const { t } = useI18n()
   const { isSourceManagedClient } = useClientSourceOwnership()
   const sourceManaged = isSourceManagedClient(client)
   const sourceFieldsLocked = !canEditClient || (sourceManaged && !allowSourceOverride)
@@ -1883,35 +1917,46 @@ function EditStepContent({
   }
 
   return (
-    <GeneralInfoFields
-      canCreateCountry={canCreateCountry}
-      canCreateIncoterm={canCreateIncoterm}
-      canCreateRegion={canCreateRegion}
-      canEditDocuments={canEditContract}
-      canSaveDocuments={canEditContract}
-      client={client}
-      countries={lookups.countries}
-      errors={errors}
-      incoterms={lookups.incoterms}
-      isLoadingRegionCode={isLoadingRegionCode}
-      isUploadingDocuments={isUploadingDocuments}
-      packingMarkingPayments={lookups.packingMarkingPayments}
-      packingMarkings={lookups.packingMarkings}
-      regionManualEdit={regionManualEdit}
-      regions={lookups.regions}
-      role={role}
-      sourceManaged={sourceFieldsLocked}
-      sourceStructureManaged={!canEditClient || sourceManaged}
-      onAddDocuments={onAddDocuments}
-      onChange={setField}
-      onCreateCountry={onCreateCountry}
-      onCreateIncoterm={onCreateIncoterm}
-      onCreateRegion={onCreateRegion}
-      onRegionChange={onRegionChange}
-      onRegionCodeFieldChange={onRegionCodeFieldChange}
-      onRemoveDocument={onRemoveDocument}
-      onSaveDocuments={onSaveDocuments}
-    />
+    <Stack gap="md">
+      <GeneralInfoFields
+        canCreateCountry={canCreateCountry}
+        canCreateIncoterm={canCreateIncoterm}
+        canCreateRegion={canCreateRegion}
+        canEditDocuments={canEditContract}
+        canSaveDocuments={canEditContract}
+        client={client}
+        countries={lookups.countries}
+        errors={errors}
+        incoterms={lookups.incoterms}
+        isLoadingRegionCode={isLoadingRegionCode}
+        isUploadingDocuments={isUploadingDocuments}
+        packingMarkingPayments={lookups.packingMarkingPayments}
+        packingMarkings={lookups.packingMarkings}
+        regionManualEdit={regionManualEdit}
+        regions={lookups.regions}
+        role={role}
+        sourceManaged={sourceFieldsLocked}
+        sourceStructureManaged={!canEditClient || sourceManaged}
+        onAddDocuments={onAddDocuments}
+        onChange={setField}
+        onCreateCountry={onCreateCountry}
+        onCreateIncoterm={onCreateIncoterm}
+        onCreateRegion={onCreateRegion}
+        onRegionChange={onRegionChange}
+        onRegionCodeFieldChange={onRegionCodeFieldChange}
+        onRemoveDocument={onRemoveDocument}
+        onSaveDocuments={onSaveDocuments}
+      />
+      {role.isBuyer || role.isProvider ? (
+        <MainClientEditor
+          client={client}
+          disabled={!canEditClient}
+          isProvider={role.isProvider}
+          lockedReason={sourceManaged ? t('Клієнт імпортований з 1С: до переходу на GBA його головного клієнта змінюють в 1С.') : null}
+          onSetMainClient={(mainClientNetUid) => onSetMainClient(client, mainClientNetUid)}
+        />
+      ) : null}
+    </Stack>
   )
 }
 
