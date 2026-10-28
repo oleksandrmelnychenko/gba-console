@@ -42,6 +42,7 @@ import {
 } from '../api/clientLookupsApi'
 import { useClientFormLookups } from '../hooks/useClientFormLookups'
 import { useClientRegionManualEdit } from '../hooks/useClientRegionManualEdit'
+import { ClientCounterpartyGroupCard } from '../components/ClientCounterpartyGroupCard'
 import { BankDetailsFields } from '../components/form/BankDetailsFields'
 import { ContactInfoFields } from '../components/form/ContactInfoFields'
 import { EditClientTypePanel } from '../components/EditClientTypePanel'
@@ -1956,6 +1957,7 @@ function EditStepContent({
           onSetMainClient={(mainClientNetUid) => onSetMainClient(client, mainClientNetUid)}
         />
       ) : null}
+      {client.NetUid ? <ClientCounterpartyGroupCard canEdit={canEditClient} clientNetUid={client.NetUid} /> : null}
     </Stack>
   )
 }

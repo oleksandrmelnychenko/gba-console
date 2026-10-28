@@ -12,6 +12,7 @@ export const ClientResourcesPage = lazy(() => import('../../features/client-reso
 export const ClientEditPage = lazy(() => import('../../features/clients/pages/ClientEditPage').then((module) => ({ default: module.ClientEditPage })))
 export const ClientNewPage = lazy(() => import('../../features/clients/pages/ClientNewPage').then((module) => ({ default: module.ClientNewPage })))
 export const ClientsPage = lazy(() => import('../../features/clients/pages/ClientsPage').then((module) => ({ default: module.ClientsPage })))
+export const CounterpartyGroupsPage = lazy(() => import('../../features/clients/pages/CounterpartyGroupsPage').then((module) => ({ default: module.CounterpartyGroupsPage })))
 export const ConsumableOrdersPage = lazy(() => import('../../features/consumable-orders').then((module) => ({ default: module.ConsumableOrdersPage })))
 export const ConsumableOrderFormPage = lazy(() => import('../../features/consumable-orders').then((module) => ({ default: module.ConsumableOrderFormPage })))
 export const ConsumableOrderPayPage = lazy(() => import('../../features/consumable-orders').then((module) => ({ default: module.ConsumableOrderPayPage })))

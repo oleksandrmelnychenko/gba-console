@@ -19,6 +19,7 @@ import {
   ClientNewPage,
   ClientResourcesPage,
   ClientsPage,
+  CounterpartyGroupsPage,
   ConsumableOrderFormPage,
   ConsumableOrderPayPage,
   ConsumableOrdersPage,
@@ -328,6 +329,7 @@ const migratedConsoleRoutes: ConsoleRoute[] = [
 const clientMigrationRoutes: ConsoleRoute[] = [
   { path: '/clients', element: lazyRoute(<ClientsPage />) },
   { path: '/clients/structure', element: <Navigate replace to="/clients" /> },
+  { path: '/clients/groups', element: lazyRoute(<CounterpartyGroupsPage />), permissionKey: PermissionKeys.Clients.Page.View },
   { path: '/clients/new/:step', element: lazyRoute(<ClientNewPage />), permissionKey: PermissionKeys.Clients.Client.Create },
   { path: '/clients/new', element: lazyRoute(<ClientNewPage />), permissionKey: PermissionKeys.Clients.Client.Create },
   {

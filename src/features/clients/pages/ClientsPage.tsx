@@ -21,7 +21,7 @@ import {
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Plus, RotateCcw, Search } from 'lucide-react'
+import { CircleAlert, Folders, Plus, RotateCcw, Search } from 'lucide-react'
 import { useDebouncedValue } from '@mantine/hooks'
 import { type FormEvent, type RefObject, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { ClientTypeRoleFilter } from '../components/ClientTypeRoleFilter'
@@ -586,6 +586,10 @@ function useClientsPageModel() {
     setSelectedClient(null)
   }
 
+  function openCounterpartyGroups() {
+    navigate('/clients/groups')
+  }
+
   function openCreateClient() {
     if (!canCreateClient) {
       return
@@ -754,6 +758,7 @@ function useClientsPageModel() {
     openCashFlow,
     openClient,
     openClientStructure,
+    openCounterpartyGroups,
     openCreateClient,
     openReserveDays,
     resetSearch,
@@ -846,6 +851,7 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
     openCashFlow,
     openClient,
     openClientStructure,
+    openCounterpartyGroups,
     openCreateClient,
     openReserveDays,
     resetSearch,
@@ -899,6 +905,16 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             onSetSearchValue={setSearchValue}
           />
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot clients-table-toolbar-slot" />
+          <Button
+            className="clients-groups-button"
+            color="gray"
+            size="sm"
+            variant="default"
+            leftSection={<Folders size={16} />}
+            onClick={openCounterpartyGroups}
+          >
+            {t('Групи контрагентів')}
+          </Button>
           {canCreateClient && (
             <Button
               className="clients-create-button"

@@ -1,0 +1,9 @@
+.counterparty-groups-search {
+  flex: 1 1 260px;
+  min-width: 200px;
+}
+
+.counterparty-groups-tree {
+  max-height: calc(100vh - 260px);
+  overflow: auto;
+}
