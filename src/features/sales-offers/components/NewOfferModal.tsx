@@ -452,7 +452,7 @@ function NewOfferForm({
         placeholder={t('Пошук товару — мінімум 2 символи')}
         renderOption={({ option }) => {
           const product = productOptions.find((item) => item.NetUid === option.value)
-          return product ? <OfferLineProduct product={product} /> : option.label
+          return product ? <OfferSearchProduct product={product} /> : option.label
         }}
         searchValue={productQuery}
         value={null}
@@ -538,6 +538,28 @@ function NewOfferForm({
       </AppModalFooter>
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </Stack>
+  )
+}
+
+function OfferSearchProduct({ product }: { product: OffersProduct }) {
+  const { t } = useI18n()
+  const quantities = [
+    { label: 'Без ПДВ', value: product.AvailableQtyUk },
+    { label: 'ПДВ', value: product.AvailableQtyUkVAT },
+    { label: 'Перепродаж', value: product.AvailableQtyUkReSale },
+  ]
+
+  return (
+    <span className="offers-create-modal__product-option">
+      <OfferLineProduct product={product} />
+      <span className="offers-create-modal__product-stock" title={t('Залишки в Україні')}>
+        {quantities.map(({ label, value }) => (
+          <span key={label}>
+            {t(label)}: {typeof value === 'number' && Number.isFinite(value) ? value : t('Невідомо')}
+          </span>
+        ))}
+      </span>
+    </span>
   )
 }
 
