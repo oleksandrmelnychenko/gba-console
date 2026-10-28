@@ -1,4 +1,5 @@
 import { CUSTOMER_RETURN_WORKBOOK } from '../data/customerReturnReport'
+import { readReportProfile, requestReportProfile, salesConstructorDataset, salesConstructorTitle, salesConstructorWorkbook } from '../data/salesConstructorProfiles'
 import { searchCurrentFinancialBuyerManagers } from '../api/currentFinancialBuyerManagerLookup'
 import { financialBuyerManagerReference, financialBuyerManagerEntityReference, financialBuyerManagerSelectedEntity, financialBuyerManagerLookupPolicy } from '../data/currentFinancialBuyerManagerFilter'
 import { searchCurrentFinancialDocuments } from '../api/currentFinancialDocumentLookup'
@@ -72,7 +73,7 @@ import { FINANCIAL_EXPORT_LAYOUT_OPTIONS, financialExportLayoutQuery, financialE
   type FinancialExportLayout } from '../data/financialExportLayout'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
-import { CheckCheck, CircleAlert, LayoutTemplate, MonitorPlay, Plus, RotateCcw, Save, Search, SearchX, Trash2 } from 'lucide-react'
+import { CheckCheck, CircleAlert, LayoutTemplate, MonitorPlay, Plus, RotateCcw, Save, Trash2 } from 'lucide-react'
 import { IconFileSpreadsheet } from '@tabler/icons-react'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
@@ -167,6 +168,8 @@ import { ReportDraftRecoveryPanel, ReportDraftStatus } from './ReportDraftRecove
 import { ReportDraftControl } from './ReportDraftControl'
 import { ValuationAgreementPicker } from './ValuationAgreementPicker'
 import { ReportDatasetPicker, ReportDatasetSummary } from './ReportDatasetPicker'
+import { ReportMeasureTree } from './ReportMeasureTree'
+import { reportGroupingPath } from '../data/reportConstructorTree'
 import { ReportConstructorHeader, ReportConstructorNavigation, ReportConstructorResultEmpty, ReportSectionPanel, type ReportConstructorSection } from './ReportConstructorNavigation'
 import { ReportQuickPresets } from './ReportQuickPresets'
 import { ReportGroupingPanel } from './ReportGroupingPanel'
@@ -352,6 +355,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const [dayOrganizationBasis, setDayOrganizationBasis] = useValueState<unknown>(undefined)
   const [supplierWarehouse, setSupplierWarehouse] = useValueState<unknown>(undefined)
   const [presentationCurrency, setPresentationCurrency] = useValueState<unknown>(undefined)
+  const [reportProfile, setReportProfile] = useValueState<unknown>(undefined)
   const [numberPresentation, setNumberPresentation] = useValueState<unknown>(undefined)
   const [supplierBasis, setSupplierBasis] = useValueState<unknown>(undefined)
   const [returnsOnly, setReturnsOnly] = useValueState<boolean | undefined>(undefined)
@@ -382,8 +386,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const priceTypeDataset = useMemo(() => priceTypeSalesFormDataset(dataset, priceTypeSalesComparison), [dataset, priceTypeSalesComparison])
   const supplierDataset = useMemo(() => supplierBasisFormDataset(priceTypeDataset, supplierBasis), [priceTypeDataset, supplierBasis])
   const measurements = useMemo(() => retainStoredMeasurementLabels(retainedData, { dataSource, supplierBasis },
-    datasetMeasurements(supplierDataset, flattenCheckedMeasurements(selectedMeasurements))),
-  [dataSource, retainedData, selectedMeasurements, supplierBasis, supplierDataset])
+    datasetMeasurements(salesConstructorDataset(supplierDataset, reportProfile), flattenCheckedMeasurements(selectedMeasurements))),
+  [dataSource, retainedData, reportProfile, selectedMeasurements, supplierBasis, supplierDataset])
   const presets = useMemo(() => datasetHidden || bug1274Only ? [] : datasetPresets(dataset), [bug1274Only, dataset, datasetHidden])
   const groupingOrdering = useReportGroupingOrdering()
   const { rowGroups, setRowGroups, colGroups, setColGroups, ordering } = groupingOrdering
@@ -424,7 +428,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           ...(colGroups.some((group) => group.type === item.type) ? ['columns' as const] : []),
         ],
         label: item.label,
-        path: currentVparivanieAnalysisCapability(priceTypeDataset)?.groupings.find(f => f.type === item.type)?.path,
+        path: currentVparivanieAnalysisCapability(priceTypeDataset)?.groupings.find(f => f.type === item.type)?.path ?? reportGroupingPath(item.type),
         value: String(item.type),
       }) satisfies GroupingOption),
     [colGroups, groupingOptions, rowGroups, priceTypeDataset],
@@ -432,15 +436,15 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const settlementDataset = useMemo(() => settlementFormDataset(priceTypeDataset, groupedSettlementPeriod, settlementReadMode), [priceTypeDataset, groupedSettlementPeriod, settlementReadMode])
   const cashDataset = useMemo(() => cashFormDataset(settlementDataset, groupedCashPeriod), [settlementDataset, groupedCashPeriod])
   const reportBody = useMemo<ReportRequestBody>(
-    () => upgradeCurrentVparivanieAnalysis(withCurrentVparivanieMovementScope({ ...(currentVparivanieAnalysisCapability(dataset) ? { currentVparivanieAnalysis: { version: 1 } } : {}), ...buildReportBuilderRequest({ supplierWarehouse, presentationCurrency, numberPresentation, dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && (movementQuantities.Incoming || movementQuantities.Outgoing) ? { currentVparivanieMovements: movementQuantities } : {}), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }), dataset),
-    [dataset, supplierWarehouse, presentationCurrency, numberPresentation, movementQuantities, fullCurrentVparivanie, abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbook.value, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => upgradeCurrentVparivanieAnalysis(withCurrentVparivanieMovementScope({ ...(currentVparivanieAnalysisCapability(dataset) ? { currentVparivanieAnalysis: { version: 1 } } : {}), ...buildReportBuilderRequest({ reportProfile, supplierWarehouse, presentationCurrency, numberPresentation, dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && (movementQuantities.Incoming || movementQuantities.Outgoing) ? { currentVparivanieMovements: movementQuantities } : {}), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }), dataset),
+    [dataset, reportProfile, supplierWarehouse, presentationCurrency, numberPresentation, movementQuantities, fullCurrentVparivanie, abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbook.value, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const effectiveConfiguration = effectiveReportConfiguration(dataset, reportBody)
   const effectiveFilterTypes = effectiveConfiguration?.filters
   const filterFieldOptions = useMemo(() => {
     const allowed = effectiveFilterTypes ? new Set(effectiveFilterTypes) : null
-    return datasetFilters(cashDataset, reportBody).filter(option => !allowed || allowed.has(option.field.Type))
-  }, [cashDataset, effectiveFilterTypes, reportBody])
+    return datasetFilters(salesConstructorDataset(cashDataset, reportProfile), reportBody).filter(option => !allowed || allowed.has(option.field.Type))
+  }, [cashDataset, effectiveFilterTypes, reportBody, reportProfile])
   const maxDate = reportMaximumDate(effectiveConfiguration, today) ?? settlementMaximumDate(dataSource, groupedSettlementPeriod, today, cashReadMode)
     ?? (supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MAX_DATE : `${today.slice(0, 4)}-12-31`)
   const [debouncedFrom] = useDebouncedValue(from, DATE_INPUT_DEBOUNCE_MS)
@@ -613,6 +617,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setDayOrganizationBasis(snapshotDefaults?.dayOrganizationBasis)
     setSupplierWarehouse(snapshotDefaults?.supplierWarehouse)
     setPresentationCurrency(snapshotDefaults ? requestPresentationCurrency(snapshotDefaults) : undefined)
+    setReportProfile(snapshotDefaults?.reportProfile)
     setNumberPresentation(snapshotDefaults?.numberPresentation)
     setSupplierBasis(snapshotDefaults?.supplierBasis)
     setPriceTypeSalesComparison(snapshotDefaults?.priceTypeSalesComparison)
@@ -690,7 +695,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       return false
     }
     applyConfiguration({ ...template, Data: data }, nextDataset)
-    setActiveWorkbook(null)
+    setActiveWorkbook(readReportProfile(requestReportProfile(data)) ? salesConstructorWorkbook(readReportProfile(requestReportProfile(data))!) : null)
     setActiveTemplate(structuredClone(template))
     return true
   }
@@ -735,6 +740,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setCashReadMode(structuredClone(requestCashReadMode(data)))
     setSupplierWarehouse(structuredClone(data.supplierWarehouse ?? data.SupplierWarehouse))
     setPresentationCurrency(structuredClone(requestPresentationCurrency(data)))
+    setReportProfile(structuredClone(requestReportProfile(data)))
     setNumberPresentation(structuredClone(requestNumberPresentation(data)))
     workbook.restore(data)
     setOneCSpecialSettings(structuredClone(requestOneCSpecialSettings(data, nextDataset.DataSource)))
@@ -816,6 +822,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setCashReadMode(structuredClone(requestCashReadMode(data)))
     setSupplierWarehouse(structuredClone(data.supplierWarehouse ?? data.SupplierWarehouse))
     setPresentationCurrency(structuredClone(requestPresentationCurrency(data)))
+    setReportProfile(structuredClone(requestReportProfile(data)))
     setNumberPresentation(structuredClone(requestNumberPresentation(data)))
     workbook.restore(data)
     setOneCSpecialSettings(structuredClone(requestOneCSpecialSettings(data, nextDataset.DataSource)))
@@ -981,7 +988,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
 
   if (bug1274Only) {
     const selectionOnly = activeWorkbook === 'Впарювання.xls' || activeWorkbook === CUSTOMER_RETURN_WORKBOOK
-    const deskTitle = workbookDeskTitle(activeWorkbook, dataSource)
+    const activeProfile = readReportProfile(reportProfile)
+    const deskTitle = activeProfile ? salesConstructorTitle(activeProfile) : workbookDeskTitle(activeWorkbook, dataSource)
     const deskReportKey = `${activeWorkbook ?? ''}|${dataSource}`
     const deskSummary = workbookRequestSummary(reportBody, dataset, selection => getSelectionFieldSummary(selection, filterFieldOptions, t))
     const organizationField = organizationFilterField(dataSource)
@@ -1891,40 +1899,13 @@ function LegacyReportBuilder({
         </Group></WorkbookSectionActions>
       </div>
 
-      <div className="reports-stocks-legacy-measurements__list">
-        {measurements.map((group, groupIndex) => {
-          const rawGroupLabel = group.Label || grossProfitMeasureGroupLabel(dataSource, group.Name) || getReportFieldLabel(group.Name)
-          const groupLabel = useReportCurrency && group.SubList.every(item => isPresentationCurrencyMoneyMeasure(item.Type))
-            ? currencyNeutralMeasureLabel(rawGroupLabel) : rawGroupLabel
-          const hasDistinctChildren =
-            group.SubList.length > 1
-            || (group.SubList[0]?.Label || getReportFieldLabel(group.SubList[0]?.Name ?? '')) !== rawGroupLabel
-
-          return (
-            <div className="reports-stocks-legacy-measurement app-selection-surface" data-selected={group.IsChecked || group.SubList.some(item => item.IsChecked)} key={group.Name}>
-              <Checkbox
-                checked={group.IsChecked}
-                indeterminate={!group.IsChecked && group.SubList.some((item) => item.IsChecked)}
-                aria-label={groupLabel}
-                label={measurementGroupCaption(group.Name, groupLabel)}
-                onChange={() => toggleMeasurementGroup(measurements, groupIndex, onMeasurementsChange)}
-              />
-              {hasDistinctChildren ? <div className="reports-stocks-measurement-options">{group.SubList.map((item, itemIndex) => (
-                <Checkbox
-                  className="reports-stocks-measurement-value"
-                  label={item.Name.endsWith('WithoutVAT') ? t('Без ПДВ') : item.Name.endsWith('WithVAT') ? t('З ПДВ') : item.Name.endsWith('VAT') ? t('ПДВ') : measurementLabel(item.Type, item.Label || getReportFieldLabel(item.Name))}
-                  aria-label={measurementLabel(item.Type, item.Label || getReportFieldLabel(item.Name))}
-                  title={measurementLabel(item.Type, item.Label || getReportFieldLabel(item.Name))}
-                  checked={item.IsChecked}
-                  key={item.Name}
-                  size="sm"
-                  onChange={() => toggleMeasurementItem(measurements, groupIndex, itemIndex, onMeasurementsChange)}
-                />
-              ))}</div> : <Text className="reports-stocks-measurement-unit" size="xs">{measurementUnit(group.SubList[0]?.Type, groupLabel)}</Text>}
-            </div>
-          )
-        })}
-      </div>
+      <ReportMeasureTree groups={measurements} onChange={onMeasurementsChange}
+        groupLabel={group => {
+          const label = group.Label || grossProfitMeasureGroupLabel(dataSource, group.Name) || getReportFieldLabel(group.Name)
+          return measurementGroupCaption(group.Name, useReportCurrency && group.SubList.every(item => isPresentationCurrencyMoneyMeasure(item.Type)) ? currencyNeutralMeasureLabel(label) : label)
+        }}
+        itemLabel={item => measurementLabel(item.Type, item.Label || getReportFieldLabel(item.Name))}
+        itemUnit={item => measurementUnit(item.Type, item.Label || getReportFieldLabel(item.Name))} />
     </section>
   )
 
@@ -1957,18 +1938,22 @@ function LegacyReportBuilder({
 
   const pickerAllowed = policy.config ? new Set(groupingPickerTarget === 'columns' ? policy.config.allowedColumns : policy.config.allowedRows) : null
   const pickerExcluded = new Set(policy.config?.mutuallyExclusiveRows.filter(group => group.some(type => selectedGroupingTypes.has(type))).flat())
-  const groupingPicker = (
-    analysis ? <ReportFieldPicker opened={groupingPickerTarget !== null} title={groupingPickerTarget === 'rows' ? 'Групування рядків' : 'Групування стовпців'}
-      options={groupingSelectData.filter(item => !selectedGroupingTypes.has(Number(item.value)) && Number(item.value) !== 74 && (!pickerAllowed || pickerAllowed.has(Number(item.value)))).map(item => ({ ...item, path: item.path ?? [] }))}
-      onSelect={addGroupingFromPicker} onClose={closeGroupingPicker} /> : <LegacyGroupingPickerModal
-      opened={groupingPickerTarget !== null}
-      options={groupingSelectData.filter(item => !selectedGroupingTypes.has(Number(item.value)) && (!pickerAllowed || pickerAllowed.has(Number(item.value))) && !pickerExcluded.has(Number(item.value)) && (groupingPickerTarget !== 'columns' || Number(item.value) !== ABC_CLASS_GROUPING))}
-      target={groupingPickerTarget}
-      title={groupingPickerTarget === 'rows' ? 'Групування рядків' : 'Групування стовпців'}
-      onAdd={addGroupingFromPicker}
-      onClose={closeGroupingPicker}
-    />
-  )
+  const pickerOptions = groupingSelectData.filter(item => !selectedGroupingTypes.has(Number(item.value))
+    && (!analysis || Number(item.value) !== 74) && (!pickerAllowed || pickerAllowed.has(Number(item.value)))
+    && !pickerExcluded.has(Number(item.value)) && (groupingPickerTarget !== 'columns' || Number(item.value) !== ABC_CLASS_GROUPING))
+  const groupingPicker = <ReportFieldPicker key={groupingPickerTarget ?? 'closed'}
+    opened={groupingPickerTarget !== null}
+    title={`Додати поле · ${groupingPickerTarget === 'rows' ? 'Групування рядків' : 'Групування стовпців'}`}
+    options={pickerOptions.map(item => ({ ...item, path: item.path ?? reportGroupingPath(Number(item.value)) }))}
+    onSelect={addGroupingFromPicker}
+    onSelectMany={values => {
+      if (fixedAxes || !groupingPickerTarget || (rowsOnly && groupingPickerTarget === 'columns')) return
+      const allowed = new Set(pickerOptions.map(item => item.value))
+      const added = values.filter(value => allowed.has(value)).flatMap(value => groupingOptions.filter(item => String(item.type) === value))
+      const change = groupingPickerTarget === 'rows' ? onRowGroupsChange : onColGroupsChange
+      change(current => added.reduce((result, item) => addGrouping(result, item), current))
+      closeGroupingPicker()
+    }} onClose={closeGroupingPicker} />
 
   if (part === 'measures') return measuresSection
   if (part === 'grouping') return <>{groupingSection}{groupingPicker}</>
@@ -1990,109 +1975,6 @@ function LegacyReportBuilder({
       {groupingPicker}
 
     </section>
-  )
-}
-
-type LegacyGroupingPickerModalProps = {
-  opened: boolean
-  options: GroupingOption[]
-  target: 'rows' | 'columns' | null
-  title: string
-  onAdd: (value: string) => void
-  onClose: () => void
-}
-
-function LegacyGroupingPickerModal({
-  opened,
-  options,
-  target,
-  title,
-  onAdd,
-  onClose,
-}: LegacyGroupingPickerModalProps) {
-  const { t } = useI18n()
-  const [pickerQuery, setPickerQuery] = useState('')
-  const normalizedPickerQuery = pickerQuery.trim().toLocaleLowerCase('uk-UA')
-  const visibleOptions = useMemo(
-    () =>
-      normalizedPickerQuery
-        ? options.filter((option) => option.label.toLocaleLowerCase('uk-UA').includes(normalizedPickerQuery))
-        : options,
-    [normalizedPickerQuery, options],
-  )
-
-  const closePicker = () => {
-    setPickerQuery('')
-    onClose()
-  }
-
-  const addOption = (value: string) => {
-    setPickerQuery('')
-    onAdd(value)
-  }
-
-  return (
-    <ReportModal
-      centered
-      className="reports-group-picker-modal"
-      opened={opened}
-      size={560}
-      title={`Додати поле · ${title}`}
-      onClose={closePicker}
-    >
-      <Stack gap="sm" className="reports-group-picker-content">
-        <TextInput
-          aria-label={`Пошук поля: ${title}`}
-          autoFocus
-          placeholder={t('Знайти поле')}
-          leftSection={<Search size={16} aria-hidden="true" />}
-          value={pickerQuery}
-          onChange={(event) => setPickerQuery(event.currentTarget.value)}
-        />
-        {visibleOptions.length ? (
-          <div className="reports-stocks-group-picker">
-            {visibleOptions.map((option) => {
-              const [groupLabel, ...fieldLabelParts] = option.label.split(': ')
-              const fieldLabel = fieldLabelParts.join(': ') || groupLabel
-              const isAssignedToTarget = target ? option.assignedTo.includes(target) : false
-
-              return (
-                <button
-                  className="reports-stocks-group-picker__option app-selection-surface"
-                  data-selected={isAssignedToTarget}
-                  disabled={isAssignedToTarget}
-                  key={option.value}
-                  type="button"
-                  onClick={() => addOption(option.value)}
-                >
-                  <span className="app-selection-surface__marker" aria-hidden="true" />
-                  <span className="reports-stocks-group-picker__copy">
-                    {fieldLabelParts.length > 0 && <span className="reports-stocks-group-picker__group">{groupLabel}</span>}
-                    <span className="reports-stocks-group-picker__label">{fieldLabel}</span>
-                  </span>
-                  {isAssignedToTarget ? (
-                    <Badge
-                      className="app-role-pill is-orange"
-                      variant="light"
-                    >
-                      {target === 'rows' ? 'У рядках' : 'У колонках'}
-                    </Badge>
-                  ) : (
-                    <Plus aria-hidden="true" size={15} />
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        ) : (
-          <div className="reports-stocks-group-picker__empty" role="status">
-            <SearchX size={24} strokeWidth={1.5} aria-hidden="true" />
-            <Text size="sm">{t(normalizedPickerQuery ? 'Нічого не знайдено' : 'Немає доступних полів')}</Text>
-            {normalizedPickerQuery && <Button variant="default" size="xs" onClick={() => setPickerQuery('')}>{t('Очистити пошук')}</Button>}
-          </div>
-        )}
-      </Stack>
-    </ReportModal>
   )
 }
 
@@ -3170,48 +3052,7 @@ function setAllMeasurements(
   )
 }
 
-function toggleMeasurementGroup(
-  groups: ReportMeasurementGroup[],
-  groupIndex: number,
-  setter: (value: ReportMeasurementGroup[]) => void,
-) {
-  setter(groups.map((group, index) => {
-    if (index !== groupIndex) {
-      return group
-    }
 
-    const checked = !group.IsChecked
-
-    return {
-      ...group,
-      IsChecked: checked,
-      SubList: group.SubList.map((item) => ({ ...item, IsChecked: checked })),
-    }
-  }))
-}
-
-function toggleMeasurementItem(
-  groups: ReportMeasurementGroup[],
-  groupIndex: number,
-  itemIndex: number,
-  setter: (value: ReportMeasurementGroup[]) => void,
-) {
-  setter(groups.map((group, index) => {
-    if (index !== groupIndex) {
-      return group
-    }
-
-    const subList = group.SubList.map((item, subIndex) =>
-      subIndex === itemIndex ? { ...item, IsChecked: !item.IsChecked } : item,
-    )
-
-    return {
-      ...group,
-      IsChecked: subList.every((item) => item.IsChecked),
-      SubList: subList,
-    }
-  }))
-}
 
 // The searched lookups match on fields the option label never shows — a user's по батькові, e-mail or phone
 // number, a client's ЄДРПОУ or code of region — and Mantine's default filter then drops those very rows because

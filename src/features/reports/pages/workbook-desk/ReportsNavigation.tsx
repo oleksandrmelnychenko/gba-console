@@ -3,7 +3,7 @@ import { Menu } from '@mantine/core'
 import { BarChart3, Boxes, ChevronDown, FileText, ShoppingCart, Wallet } from 'lucide-react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { PURCHASES_CONSTRUCTOR_FILE, type WorkbookLaunch } from '../../data/bug1274WorkbookLaunch'
-import { SALES_BY_RESPONSIBLES_WORKBOOK_FILE } from '../../data/salesByResponsibles'
+import { GROSS_PROFIT_CONSTRUCTOR_WORKBOOK, SALES_CONSTRUCTOR_WORKBOOK } from '../../data/salesConstructorProfiles'
 import './reports-navigation.css'
 
 type Props = {
@@ -16,8 +16,8 @@ type Props = {
 }
 
 const sales = [
-  { label: 'Звіт по продажам', file: SALES_BY_RESPONSIBLES_WORKBOOK_FILE },
-  { label: 'Валовий прибуток', file: 'ВП.xls' },
+  { label: 'Звіт по продажам', file: SALES_CONSTRUCTOR_WORKBOOK },
+  { label: 'Валовий прибуток', file: GROSS_PROFIT_CONSTRUCTOR_WORKBOOK },
 ]
 const cash = [
   { label: 'Відомість по коштах', file: 'Ведомость по денежным средствам.xls' },
@@ -59,7 +59,7 @@ export function ReportsNavigation({ launches, active, movement, disabled, onOpen
   }
   return <nav className="reports-navigation" aria-label={t('Розділи звітів')}>
     <div className="console-subnav-row console-subnav-items reports-navigation__row">
-      {dropdown('Продажі', BarChart3, sales, activeSource === 35 || activeSource === 38 || activeSource === 43)}
+      {dropdown('Продажі', BarChart3, sales, activeSource === 2 || activeSource === 35 || activeSource === 38 || activeSource === 43)}
       <button type="button" className={pill(movement)} disabled={disabled} aria-pressed={movement} onClick={onStocks}>
         <Boxes size={16} aria-hidden="true" /><span>{t('Залишки')}</span>
       </button>
@@ -69,7 +69,7 @@ export function ReportsNavigation({ launches, active, movement, disabled, onOpen
         <ShoppingCart size={16} aria-hidden="true" /><span>{t('Закупи')}</span>
       </button>
       {dropdown('Грошові кошти', Wallet, cash, activeSource === 40 || activeSource === 41)}
-      {dropdown('Особливі звіти', FileText, special, activeSource === 39 || activeSource === 2)}
+      {dropdown('Особливі звіти', FileText, special, activeSource === 39 || active === CUSTOMER_RETURN_WORKBOOK)}
     </div>
   </nav>
 }

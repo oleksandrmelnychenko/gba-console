@@ -9,6 +9,7 @@ import { profitDayDataset, profitSupplierDataset } from '../data/profitReadMode.
 import { currentVparivanieDataset } from '../data/currentVparivanie.test-fixtures'
 import { cashModeDataset } from '../data/cashReadMode.test-fixtures'
 import { settlementModeDataset } from '../data/settlementReadMode.test-fixtures'
+import { netDataset, grossDataset } from '../data/reportDatasets.test-fixtures'
 import { salesByResponsiblesDataset } from '../data/salesByResponsibles.test-fixtures'
 import { findOpenedWorkbook } from '../testing/workbookDesk'
 import { ReportsStocksPage } from './ReportsStocksPage'
@@ -46,15 +47,17 @@ it('renders exactly the five requested report groups in the header strip', async
 })
 
 it('opens both sales choices through the real report page and retains the supplier workbook', async () => {
-  render(page()); await findOpenedWorkbook('ВП.xls')
+  vi.mocked(getReportDatasets).mockResolvedValue([profitDayDataset, profitSupplierDataset, { ...netDataset, reportProfiles: ['sales', 'grossProfit'], Groupings: grossDataset.Groupings }])
+  render(page())
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Відкрити Звіт по продажам' }).getAttribute('aria-current')).toBe('true'))
   fireEvent.click(screen.getByRole('button', { name: 'Продажі' }))
   expect((await screen.findAllByRole('menuitem')).map(item => item.textContent)).toEqual(['Звіт по продажам', 'Валовий прибуток'])
   fireEvent.click(screen.getByRole('menuitem', { name: 'Звіт по продажам' }))
-  await findOpenedWorkbook('Продажі по менеджерам.xls')
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Відкрити Звіт по продажам' }).getAttribute('aria-current')).toBe('true'))
   await waitFor(() => expect((screen.getByRole('button', { name: 'Продажі' }) as HTMLButtonElement).disabled).toBe(false))
   fireEvent.click(screen.getByRole('button', { name: 'Продажі' }))
   fireEvent.click(await screen.findByRole('menuitem', { name: 'Валовий прибуток' }))
-  await findOpenedWorkbook('ВП.xls')
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Відкрити Валовий прибуток' }).getAttribute('aria-current')).toBe('true'))
   expect(screen.getByRole('button', { name: 'Відкрити ВП по постачальниках.xls' })).toBeTruthy()
   expect(previewStockReport).not.toHaveBeenCalled()
 })

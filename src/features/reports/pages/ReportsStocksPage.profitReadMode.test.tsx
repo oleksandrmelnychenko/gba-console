@@ -85,7 +85,8 @@ it('selects client/agreement axes and blocks a mode switch without dropping date
   fireEvent.click(screen.getByRole('button', { name: 'Видалити Організація' }))
   for (const [axis, label] of [['рядків', 'Клієнт'], ['стовпців', 'Договір']]) {
     fireEvent.click(screen.getByRole('button', { name: `Додати поле: Групування ${axis}` }))
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: label }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('checkbox', { name: `Вибрати ${label}` }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Додати вибрані (1)' }))
   }
   expect(screen.getByText('До 100 договорів у колонках — кожен договір окремим аркушем, більше — одна таблиця.')).toBeTruthy()
   changeReportPeriod({ from: '2026-10-17', to: '2026-10-23' })
@@ -110,7 +111,8 @@ it('selects product/month axes, keeps them during an incompatible mode switch an
   fireEvent.click(screen.getByRole('button', { name: 'Видалити Організація' }))
   for (const [axis, label] of [['рядків', 'Товар'], ['стовпців', 'Місяць']]) {
     fireEvent.click(screen.getByRole('button', { name: `Додати поле: Групування ${axis}` }))
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: label }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('checkbox', { name: `Вибрати ${label}` }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Додати вибрані (1)' }))
   }
   expect(screen.getByText('До 100 місяців у колонках — кожен місяць окремим аркушем, більше — одна таблиця.')).toBeTruthy()
   changeReportPeriod({ from: '2026-10-17', to: '2026-10-23' })

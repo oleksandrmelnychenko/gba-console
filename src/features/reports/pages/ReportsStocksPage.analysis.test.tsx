@@ -34,10 +34,11 @@ it('upgrades a legacy UI template to all-sales analysis and adds a categorized t
   const { container } = await open()
   expect(screen.queryByRole('button', { name: 'Видалити Показник' })).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: 'Додати поле: Групування рядків' }))
-  const picker = screen.getByRole('dialog', { name: 'Групування рядків' })
+  const picker = screen.getByRole('dialog', { name: 'Додати поле · Групування рядків' })
   expect(within(picker).getByRole('button', { name: 'Період' })).toBeTruthy()
   fireEvent.change(within(picker).getByLabelText('Пошук поля'), { target: { value: 'місяць' } })
-  fireEvent.click(within(picker).getByRole('button', { name: 'Місяць' }))
+  fireEvent.click(within(picker).getByRole('checkbox', { name: 'Вибрати Місяць' }))
+  fireEvent.click(within(picker).getByRole('button', { name: 'Додати вибрані (1)' }))
   fireEvent.submit(container.querySelector('form')!)
   await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
   const request = vi.mocked(createStockReport).mock.calls[0][0]

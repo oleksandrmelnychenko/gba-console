@@ -1,3 +1,4 @@
+import { GROSS_PROFIT_CONSTRUCTOR_WORKBOOK, SALES_CONSTRUCTOR_WORKBOOK, profileForWorkbook, salesConstructorTitle } from './salesConstructorProfiles'
 import { previousKyivDay } from './cashPeriod'
 import { SALES_BY_RESPONSIBLES_SOURCE, SALES_BY_RESPONSIBLES_TITLE, SALES_BY_RESPONSIBLES_WORKBOOK_FILE } from './salesByResponsibles'
 
@@ -12,6 +13,8 @@ export const BUG_1274_WORKBOOKS_INTRO = 'Кожна форма відкрива�
 const DEBT_ADJUSTMENT_NOTE = 'Документи 1С «Корректировка долга» в GBA не переносяться: у 1С надходження й видаток більші на їхню суму, залишки однакові.'
 
 const GUIDES: Readonly<Record<string, WorkbookGuide>> = {
+  [SALES_CONSTRUCTOR_WORKBOOK]: { title: 'Звіт по продажам', summary: 'Продажі мінус повернення за датами документів GBA. Групування, показники та відбори зберігаються при зміні періоду.' },
+  [GROSS_PROFIT_CONSTRUCTOR_WORKBOOK]: { title: 'Валовий прибуток', summary: 'Продажі, повернення і собівартість GBA. Непідтверджені суми й одиниці залишаються порожніми.' },
   'ВП.xls': {
     title: 'Валовий прибуток',
     summary: 'По днях і організаціях, період до 62 днів. Відбори книги: товари без послуг, чотири організації, покупці з групи «Покупці»; '
@@ -70,7 +73,7 @@ export function bug1274WorkbookPeriod(fileName: string, today: string): { from: 
   const yesterday = previousKyivDay(today)
   if (!yesterday) return null
   if (fileName === 'Впарювання.xls') return { from: `${today.slice(0, 4)}-01-01`, to: today }
-  if (MONTH_PERIOD_WORKBOOKS.has(fileName)) return { from: monthStart(yesterday), to: yesterday }
+  if (profileForWorkbook(fileName) || MONTH_PERIOD_WORKBOOKS.has(fileName)) return { from: monthStart(yesterday), to: yesterday }
   return null
 }
 
@@ -116,5 +119,7 @@ export function bug1274DatasetTitle(dataSource: number): string | undefined {
 
 /** Display-only name; persisted workbook identity and import lookup stay unchanged. */
 export function workbookDisplayFileName(fileName: string): string {
+  const profile = profileForWorkbook(fileName)
+  if (profile) return salesConstructorTitle(profile)
   return fileName === 'Впарювання.xls' ? 'Аналіз залишків і продажів.xls' : fileName
 }

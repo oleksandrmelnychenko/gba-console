@@ -24,7 +24,7 @@ const managedFields = new Set([
   'groupedSettlementPeriod', 'GroupedSettlementPeriod', 'settlementReadMode', 'SettlementReadMode',
   'sourceCounterpartyGroups', 'SourceCounterpartyGroups',
   'cashPeriod', 'CashPeriod', 'groupedCashPeriod', 'GroupedCashPeriod', 'cashReadMode', 'CashReadMode',
-  'workbookPresentation', 'WorkbookPresentation', 'numberPresentation', 'NumberPresentation',
+  'reportProfile', 'ReportProfile', 'workbookPresentation', 'WorkbookPresentation', 'numberPresentation', 'NumberPresentation',
   'presentationCurrency', 'PresentationCurrency',
   'priceTypeSalesComparison', 'PriceTypeSalesComparison', 'oneC', 'OneC',
   'discountMarkup', 'DiscountMarkup', 'providedDiscounts', 'ProvidedDiscounts',

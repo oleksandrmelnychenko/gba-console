@@ -1,3 +1,4 @@
+import { salesConstructorError } from '../data/salesConstructorProfiles'
 import { isSalesResponsibleKey, SALES_BY_RESPONSIBLES_RESPONSIBLE_FILTERS, SALES_BY_RESPONSIBLES_SOURCE } from '../data/salesByResponsibles'
 import { bindPresentationCurrency, requestPresentationCurrency } from '../data/reportPresentationCurrency'
 import { bindAnalysisPreview, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis } from '../data/currentVparivanieAnalysis'
@@ -187,7 +188,7 @@ export function validateStockReportRequest(body: ReportRequestBody, dataset?: Re
 
 function prepareStockReportRequest(body: ReportRequestBody, dataset?: ReportDataset): ReportRequestBody {
   body = upgradeCurrentVparivanieAnalysis(withCurrentVparivanieMovementScope(body), dataset)
-  const presentationError = numberPresentationError(body, dataset) ?? reportConfigurationError(body, dataset)
+  const presentationError = salesConstructorError(body, dataset) ?? numberPresentationError(body, dataset) ?? reportConfigurationError(body, dataset)
   if (presentationError) throw new Error(presentationError)
   const request = (body.dataSource === 2 || body.dataSource === 17 || body.dataSource === 18 || body.dataSource === 19 || body.dataSource === 20 || body.dataSource === 21 || body.dataSource === 22 || body.dataSource === 23 || body.dataSource === 24 || body.dataSource === 25 || body.dataSource === 27 || body.dataSource === 28 || body.dataSource === 35 || body.dataSource === 38 || body.dataSource === 39 || body.dataSource === 40 || body.dataSource === 41) ? structuredClone(body) : body
   const workbookError = workbookConfigurationError(request)

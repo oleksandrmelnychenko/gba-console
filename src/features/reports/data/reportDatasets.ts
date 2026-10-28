@@ -1,3 +1,5 @@
+import { cloneReportProfile, salesConstructorError } from './salesConstructorProfiles'
+import { retainMeasurementOrder } from './reportConstructorTree'
 import { SALES_BY_RESPONSIBLES_COLUMNS, SALES_BY_RESPONSIBLES_MEASURES, SALES_BY_RESPONSIBLES_ROWS, SALES_BY_RESPONSIBLES_SOURCE } from './salesByResponsibles'
 import { currentFinancialBuyerManagerFilterCapability, currentFinancialBuyerManagerFilterSupported } from './currentFinancialBuyerManagerFilter'
 import { isDatasetGroupSelection } from './reportHierarchyFilters'
@@ -176,12 +178,7 @@ export function datasetMeasurements(dataset: ReportDataset | undefined, selected
     groups.push({ Name: field.Name, Label: field.Name, IsChecked: checked.has(field.Type),
       SubList: [{ Name: field.Name, Label: field.Name, Type: field.Type, IsChecked: checked.has(field.Type) }] })
   }
-  if (dataset.DataSource === 16 || dataset.DataSource === 17 || dataset.DataSource === 18 || dataset.DataSource === 19 || dataset.DataSource === 20 || dataset.DataSource === 21) {
-    const order = new Map<number, number>()
-    for (const item of selected) if (item.IsChecked !== false && !order.has(item.Type)) order.set(item.Type, order.size)
-    return groups.toSorted((a, b) => (order.get(a.SubList[0].Type) ?? selected.length) - (order.get(b.SubList[0].Type) ?? selected.length))
-  }
-  return groups
+  return retainMeasurementOrder(groups, selected)
 }
 
 export function defaultDatasetRequest(dataset: ReportDataset, from: string, to: string): ReportRequestBody {
@@ -220,7 +217,7 @@ export function withDefaultReadModes(data: ReportRequestBody, dataset?: ReportDa
 
 /** Refuse incompatible saved settings before mutating the form. Never remove or remap a filter. */
 export function datasetConfigurationError(data: ReportRequestBody, dataset: ReportDataset | undefined, purpose: 'current' | 'workspace' = 'current'): string | null {
-  const metadataError = numberPresentationError(data, dataset) ?? reportConfigurationError(data, dataset)
+  const metadataError = salesConstructorError(data, dataset) ?? numberPresentationError(data, dataset) ?? reportConfigurationError(data, dataset)
   if (metadataError) return metadataError
   if (data.dataSource !== 38 && (data.supplierSourceWorld !== undefined || data.SupplierSourceWorld !== undefined))
     return 'Вибір бази Fenix або AMG доступний лише для партійного прибутку за постачальниками.'
@@ -355,7 +352,7 @@ export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPr
   // Preserve both raw aliases, including invalid imported material, without reconstructing the tree.
   const preservedOptions = { ...(Object.hasOwn(current, 'settlementPeriod') ? { settlementPeriod: structuredClone(current.settlementPeriod) } : {}),
     ...(Object.hasOwn(current, 'SettlementPeriod') ? { SettlementPeriod: structuredClone(current.SettlementPeriod) } : {}), ...cloneGroupedSettlementAliases(current), ...cloneSettlementReadModeAliases(current), ...clonePaymentComparisonAliases(current), ...cloneMarginComparisonAliases(current), ...cloneRateComparisonAliases(current), ...cloneReturnComparisonAliases(current), ...cloneBuyerSalesShareAliases(current), ...cloneRevenueComparisonAliases(current), ...cloneXyzAliases(current), ...(Object.hasOwn(current, 'comparison') ? { comparison: structuredClone(current.comparison) } : {}),
-    ...cloneSourceCounterpartyGroupAliases(current), ...cloneGroupedCashAliases(current), ...cloneCashReadModeAliases(current), ...cloneWorkbookAliases(current),
+    ...cloneReportProfile(current), ...cloneSourceCounterpartyGroupAliases(current), ...cloneGroupedCashAliases(current), ...cloneCashReadModeAliases(current), ...cloneWorkbookAliases(current),
     ...(Object.hasOwn(current, 'cashPeriod') ? { cashPeriod: structuredClone(current.cashPeriod) } : {}),
     ...(Object.hasOwn(current, 'CashPeriod') ? { CashPeriod: structuredClone(current.CashPeriod) } : {}),
     ...(Object.hasOwn(current, 'Comparison') ? { Comparison: structuredClone(current.Comparison) } : {}),

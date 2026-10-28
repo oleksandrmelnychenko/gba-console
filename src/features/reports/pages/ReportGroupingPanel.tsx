@@ -1,5 +1,6 @@
-import { ActionIcon, Button, Group, Text, Tooltip } from '@mantine/core'
-import { ArrowDown, ArrowLeftRight, ArrowUp, Columns3, Plus, Rows3 } from 'lucide-react'
+import { useState } from 'react'
+import { ActionIcon, Button, Group, Text, TextInput, Tooltip } from '@mantine/core'
+import { ArrowDown, ArrowLeftRight, ArrowUp, Columns3, Plus, Rows3, Search } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -21,6 +22,8 @@ type Props = {
 
 export function ReportGroupingPanel({ locked, layout, axis, allowed, onOpenPicker, onRemove, onReorder, onTransfer, transferSupported = true }: Props) {
   const { t } = useI18n()
+  const [query, setQuery] = useState('')
+  const normalized = query.trim().toLocaleLowerCase('uk-UA')
   const isRows = axis === 'Row', groups = layout[axis]
   const title = isRows ? 'Групування рядків' : 'Групування стовпців'
   return <section className="reports-stocks-grouping-field" aria-label={t(title)}>
@@ -33,9 +36,12 @@ export function ReportGroupingPanel({ locked, layout, axis, allowed, onOpenPicke
       <Button aria-label={`Додати поле: ${title}`} className="reports-stocks-legacy-panel__add" color={CREATE_ACTION_COLOR}
         leftSection={<Plus size={14} />} size="xs" type="button" onClick={onOpenPicker}>Додати</Button>
     </div>
+    <TextInput aria-label={`Пошук: ${title}`} placeholder="Пошук поля" value={query}
+      leftSection={<Search size={14} aria-hidden="true" />} onChange={event => setQuery(event.currentTarget.value)} />
     <div className="reports-stocks-legacy-group-list">
       {groups.length ? groups.map((group, index) => {
         const label = group.label || getReportFieldLabel(group.key)
+        if (normalized && !label.toLocaleLowerCase('uk-UA').includes(normalized)) return null
         const uniqueSupported = !locked?.has(group.type) && allowed.has(group.type) && groups.filter(item => item.type === group.type).length === 1
         const transferLabel = t(isRows ? 'Перенести {field} до стовпців' : 'Перенести {field} до рядків', { field: label })
         return <div className="reports-stocks-legacy-group-row" key={`${group.type}-${groups.slice(0, index).filter(item => item.type === group.type).length}`}>
@@ -52,6 +58,7 @@ export function ReportGroupingPanel({ locked, layout, axis, allowed, onOpenPicke
           </Group>
         </div>
       }) : <div className="reports-stocks-legacy-group-list__empty"><Text size="sm" c="gray.9">{isRows ? t('Додайте день, товар або інше поле') : t('Без поділу на стовпці')}</Text></div>}
+      {groups.length > 0 && !groups.some(group => (group.label || getReportFieldLabel(group.key)).toLocaleLowerCase('uk-UA').includes(normalized)) ? <Text size="sm" role="status">Нічого не знайдено</Text> : null}
     </div>
   </section>
 }

@@ -1,4 +1,5 @@
 import { CUSTOMER_RETURN_WORKBOOK, supportsCustomerReturnReport, customerReturnRequest } from './customerReturnReport'
+import { GROSS_PROFIT_CONSTRUCTOR_WORKBOOK, SALES_CONSTRUCTOR_WORKBOOK, salesConstructorRequest, salesConstructorSupported } from './salesConstructorProfiles'
 import { currentProfitMaximumDays, isProfitReadModeCapability, requestProfitReadMode } from './profitReadMode'
 import { isSettlementReadModeCapability, requestSettlementReadMode } from './settlementReadMode'
 import { isCashReadModeCapability } from './cashReadMode'
@@ -55,6 +56,8 @@ const supported = [
   { fileName: CUSTOMER_RETURN_WORKBOOK, label: 'Звіт повернення', dataSource: 2,
     notice: 'Повернення GBA за датою документа. Відбори: контрагент, товар, склад рядка та причина. Кількість — записана в поверненнях, без перерахунку одиниць.',
     accepts: supportsCustomerReturnReport },
+  { fileName: SALES_CONSTRUCTOR_WORKBOOK, label: 'Звіт по продажам', notice: 'Продажі й повернення GBA за датами документів.', dataSource: 2, accepts: (dataset: ReportDataset) => salesConstructorSupported(dataset, 'sales') },
+  { fileName: GROSS_PROFIT_CONSTRUCTOR_WORKBOOK, label: 'Валовий прибуток', notice: 'Продажі, повернення і собівартість GBA за датами документів.', dataSource: 2, accepts: (dataset: ReportDataset) => salesConstructorSupported(dataset, 'grossProfit') },
   {
     fileName: 'ВП.xls',
     label: 'Валовий прибуток за днем',
@@ -210,6 +213,7 @@ export function bug1274WorkbookRequest(request: ReportRequestBody, launch?: Work
       Row: [21, 24].flatMap(type => groups.filter(field => field.type === type)),
       Col: groups.filter(field => field.type === 25) } }
   }
+  if (request.dataSource === 2) return salesConstructorRequest(request, launch.fileName, launch.dataset)
   const selected = filtersWorkbookRequest(supplierWorkbookRequest(settlementWorkbookRequest(
     groupedWorkbookRequest(dayWorkbookRequest(request, launch), launch.currencyAxis), launch), launch), launch, resolved)
   const presented = presentationWorkbookRequest(selected, launch)

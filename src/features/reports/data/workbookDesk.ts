@@ -1,3 +1,4 @@
+import { GROSS_PROFIT_CONSTRUCTOR_WORKBOOK, SALES_CONSTRUCTOR_WORKBOOK } from './salesConstructorProfiles'
 import type { ReportDataset, ReportRequestBody, ReportSelection } from '../types'
 import { previousKyivDay } from './cashPeriod'
 import { bug1274DatasetTitle, bug1274WorkbookGuide, bug1274WorkbookPeriod } from './bug1274WorkbookGuide'
@@ -24,6 +25,8 @@ export type DeskChip = { label: string; title: string; kind: 'filter' | 'view' }
 export type DeskSummary = { period: string; organizations: string | null; chips: DeskChip[] }
 
 const ENTRIES: readonly WorkbookDeskEntry[] = [
+  { fileName: SALES_CONSTRUCTOR_WORKBOOK, name: 'Звіт по продажам', reportName: 'Звіт по продажам', description: 'Продажі й повернення за датами документів.' },
+  { fileName: GROSS_PROFIT_CONSTRUCTOR_WORKBOOK, name: 'Валовий прибуток', reportName: 'Валовий прибуток', description: 'Продажі, повернення і собівартість.' },
   { fileName: 'ВП.xls', name: 'ВП', reportName: 'Валовий прибуток',
     description: 'Продажі, собівартість і прибуток по днях та організаціях.' },
   { fileName: 'ВП по постачальниках.xls', name: 'ВП по постачальниках', reportName: 'Валовий прибуток по постачальниках',
@@ -44,7 +47,7 @@ const TYPICAL_SECONDS: Readonly<Record<number, readonly [number, number]>> = {
   35: [15, 25], 38: [10, 20], 39: [5, 10], 40: [5, 15], 41: [10, 30], 43: [2, 20],
 }
 
-const ORGANIZATION_FILTER_FIELDS: Readonly<Record<number, number>> = { 35: 0, 38: 0, 40: 32, 41: 0, 43: 0 }
+const ORGANIZATION_FILTER_FIELDS: Readonly<Record<number, number>> = { 2: 0, 35: 0, 38: 0, 40: 32, 41: 0, 43: 0 }
 
 const SAVED_ORGANIZATION_NAMES = 'ТОВ «АМГ «КОНКОРД», Фенікс, ФОП Самолюк А.Д., ФОП Самолюк Ю.М.'
 
