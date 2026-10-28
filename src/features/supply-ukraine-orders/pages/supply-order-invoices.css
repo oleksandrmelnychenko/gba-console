@@ -77,15 +77,31 @@
 
 .supply-invoice-selector-row { flex-shrink: 0; }
 .supply-invoice-selector-group { max-width: 100%; min-width: 0; }
-.supply-invoices-workspace .supply-invoice-selector.mantine-Button-root {
+.supply-invoices-workspace .supply-invoice-selector.mantine-Button-root[data-variant] {
   position: relative;
   min-height: 34px;
   height: auto;
   max-width: 100%;
   padding: 5px 8px 5px 11px;
-  border: 1px solid transparent;
+  border: 1px solid var(--mantine-color-gray-4);
   border-radius: 8px;
+  background: var(--mantine-color-gray-0);
   color: var(--mantine-color-gray-8);
+}
+.supply-invoices-workspace .supply-invoice-selector.mantine-Button-root[data-variant]:hover:not(:disabled) {
+  background: var(--mantine-color-gray-1);
+  border-color: var(--mantine-color-gray-6);
+}
+.supply-invoices-workspace .supply-invoice-selector.mantine-Button-root[data-variant][data-selected='true'] {
+  background: var(--mantine-color-orange-1);
+  border-color: var(--mantine-color-orange-7);
+}
+.supply-invoices-workspace .supply-invoice-selector.mantine-Button-root[data-variant][data-selected='true']:hover:not(:disabled) {
+  background: var(--mantine-color-orange-2);
+}
+.supply-invoices-workspace .supply-invoice-selector.mantine-Button-root[data-variant]:focus-visible {
+  outline: 2px solid var(--mantine-color-orange-7);
+  outline-offset: 2px;
 }
 .supply-invoice-selector .mantine-Button-label {
   display: flex;
