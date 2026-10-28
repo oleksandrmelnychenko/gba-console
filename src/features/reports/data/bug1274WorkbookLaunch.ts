@@ -1,3 +1,4 @@
+import { CUSTOMER_RETURN_WORKBOOK, supportsCustomerReturnReport, customerReturnRequest } from './customerReturnReport'
 import { currentProfitMaximumDays, isProfitReadModeCapability, requestProfitReadMode } from './profitReadMode'
 import { isSettlementReadModeCapability, requestSettlementReadMode } from './settlementReadMode'
 import { isCashReadModeCapability } from './cashReadMode'
@@ -49,6 +50,9 @@ export const DEBTOR_WORKBOOK_CURRENCY_NOTICE = 'Як в 1С: суми догов
 export const SETTLEMENT_WORKBOOK_CURRENCY_NOTICE = 'Як в 1С: рядки розділено за валютою взаєморозрахунків; підсумки організацій і загальний підсумок додають суми різних валют без перерахунку.'
 
 const supported = [
+  { fileName: CUSTOMER_RETURN_WORKBOOK, label: 'Звіт повернення', dataSource: 2,
+    notice: 'Повернення GBA за датою документа. Відбори: контрагент, товар, склад рядка та причина. Кількість — записана в поверненнях, без перерахунку одиниць.',
+    accepts: supportsCustomerReturnReport },
   {
     fileName: 'ВП.xls',
     label: 'Валовий прибуток за днем',
@@ -189,6 +193,7 @@ function dayWorkbookRequest(request: ReportRequestBody, launch: WorkbookLaunch):
 export function bug1274WorkbookRequest(request: ReportRequestBody, launch?: WorkbookLaunch,
   resolved?: ResolvedWorkbookFilters): ReportRequestBody {
   if (!launch || launch.dataset.DataSource !== request.dataSource) return request
+  if (launch.fileName === CUSTOMER_RETURN_WORKBOOK) return customerReturnRequest(request, launch.dataset)
   const selected = filtersWorkbookRequest(supplierWorkbookRequest(settlementWorkbookRequest(
     groupedWorkbookRequest(dayWorkbookRequest(request, launch), launch.currencyAxis), launch), launch), launch, resolved)
   const presented = presentationWorkbookRequest(selected, launch)

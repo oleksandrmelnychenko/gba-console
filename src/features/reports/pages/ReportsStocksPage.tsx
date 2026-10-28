@@ -1,3 +1,4 @@
+import { CUSTOMER_RETURN_WORKBOOK } from '../data/customerReturnReport'
 import { searchCurrentFinancialBuyerManagers } from '../api/currentFinancialBuyerManagerLookup'
 import { financialBuyerManagerReference, financialBuyerManagerEntityReference, financialBuyerManagerSelectedEntity, financialBuyerManagerLookupPolicy } from '../data/currentFinancialBuyerManagerFilter'
 import { searchCurrentFinancialDocuments } from '../api/currentFinancialDocumentLookup'
@@ -979,7 +980,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   )
 
   if (bug1274Only) {
-    const selectionOnly = activeWorkbook === 'Впарювання.xls'
+    const selectionOnly = activeWorkbook === 'Впарювання.xls' || activeWorkbook === CUSTOMER_RETURN_WORKBOOK
     const deskTitle = workbookDeskTitle(activeWorkbook, dataSource)
     const deskReportKey = `${activeWorkbook ?? ''}|${dataSource}`
     const deskSummary = workbookRequestSummary(reportBody, dataset, selection => getSelectionFieldSummary(selection, filterFieldOptions, t))
@@ -1012,7 +1013,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       {dataSource === 35 ? <div className="workbook-desk__group">{dayProfitControls('filters')}</div> : null}
       {supplierControls ? <div className="workbook-desk__group">{supplierProfitControls('filters')}</div> : null}
       {dataSource === 41 ? cashSettlementPanels('filters') : null}
-      <LegacyReportBuilder part="selections" {...builder} dataset={selectionOnly ? vparivanieSelectionDataset(dataset) : dataset}
+      <LegacyReportBuilder part="selections" {...builder} dataset={activeWorkbook === 'Впарювання.xls' ? vparivanieSelectionDataset(dataset) : dataset}
         selectionFilter={organizationOption ? selection => !isOrganizationSelection(selection) : undefined} />
     </>
     const groupingContent = <>
@@ -3296,6 +3297,8 @@ async function loadSelectionLookupOptions(
     if (lookupProfitReadMode !== 0) throw new Error('Документи доступні лише для поточного розрахунку GBA.')
     return searchCurrentFinancialDocuments(from, to, { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
   }
+  if (dataSource === 2 && [6, 1, 2, 21, 64].includes(fieldType))
+    return searchDatasetReportValues(dataSource, fieldType, { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
   if (usesNativeReportLookup(dataSource)) {
     const params = { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }
     if ((dataSource === 35 || dataSource === 38) && lookupProfitReadMode !== undefined)

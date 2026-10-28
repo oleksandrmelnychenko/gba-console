@@ -230,11 +230,12 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
       || data.sorted?.Row?.map(item => item.type).join(',') !== '12,5,3'
       || data.sorted.Col.length !== 0
       || data.sorted.Measurements.filter(item => item.IsChecked !== false).map(item => item.Type).join(',') !== '0'
-      || data.sorted.Measurements.length !== 1 || data.selections.length !== 0
+      || data.sorted.Measurements.length !== 1
+      || data.selections.some(selection => selection.IsChecked !== false && (dataset?.customerReturnFilters !== true || ![6, 1, 2, 21, 64].includes(selection.SelectedField.Type)))
       || data.filterExpression != null || data.ordering != null || data.topGroups != null
       || data.threshold != null || data.hideZero != null || data.abcClassification != null
       || data.productClassification != null || data.sourceOrganizations != null || data.sourceBuyerSubtree != null)
-      return 'Режим лише повернень підтримує тільки клієнта, товар, день і кількість без додаткових відборів чи перетворень.'
+      return 'Режим лише повернень підтримує тільки клієнта, товар, день і кількість з відборами клієнта, товару, складу та причини без додаткових перетворень.'
   }
   if (data.dataSource === 1 || (data.oneC && data.dataSource !== 27)) return 'Шаблон використовує архівне джерело 1С, яке більше не доступне. Налаштування не застосовано.'
   if (!dataset || (data.dataSource ?? 0) !== dataset.DataSource) return 'Набір даних цього звіту недоступний. Налаштування не застосовано.'
