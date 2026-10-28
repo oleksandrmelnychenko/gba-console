@@ -899,6 +899,7 @@
 .workbook-settings__period .workbook-period__presets .mantine-Input-wrapper { width: 185px; min-width: 0; }
 .workbook-settings__period .mantine-InputWrapper-label { flex-shrink: 0; font: 500 12px/1.4 var(--font-mono); margin: 0; }
 .workbook-settings__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.workbook-settings__grid > .workbook-settings__unified-section:only-child { grid-column: 1 / -1; }
 .workbook-settings__unified-section { min-width: 0; border: 1px solid var(--desk-border); border-radius: 8px; }
 .workbook-settings__unified-section > .workbook-settings__control { padding: 12px; }
 .workbook-settings__section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; background: var(--mantine-color-gray-0); border-bottom: 1px solid var(--desk-border); border-radius: 8px 8px 0 0; }

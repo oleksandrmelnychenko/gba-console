@@ -19,6 +19,7 @@ import type { AnalysisItemSearch } from './CurrentVparivanieAnalysisValuePicker'
 import { ReportFieldPicker } from './ReportFieldPicker'
 import { CurrentVparivanieAnalysisValuePicker } from './CurrentVparivanieAnalysisValuePicker'
 import { CurrentVparivanieMovementSettings } from './CurrentVparivanieMovementSettings'
+import { vparivanieSelectionDataset, vparivanieSelectionRequest } from '../data/vparivanieWorkbookSelection'
 import { EMPTY_MOVEMENT_SELECTION, movementSelection, type CurrentVparivanieMovementSelection } from '../data/currentVparivanieMovements'
 import { ReportPreviewPages } from './ReportPreviewPages'
 import { exportStockReportPreview } from '../api/reportsApi'
@@ -834,7 +835,9 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     const period = periodSupported ? { from, to } : previousPeriod
     const day = opensOnPreviousDay(nextDataset.DataSource) ? previousKyivDay(today) : null
     const opened = (workbook ? bug1274WorkbookPeriod(workbook.fileName, today) : null) ?? { from: day ?? period.from, to: day ?? period.to }
-    applyConfiguration({ Name: '', Data: bug1274WorkbookRequest(defaultDatasetRequest(nextDataset, opened.from, opened.to), workbook, resolved) }, nextDataset)
+    const request = bug1274WorkbookRequest(defaultDatasetRequest(nextDataset, opened.from, opened.to), workbook, resolved)
+    applyConfiguration({ Name: '', Data: bug1274Only && workbook?.fileName === 'Впарювання.xls'
+      ? vparivanieSelectionRequest(request, nextDataset) : request }, nextDataset)
   }
 
   function pickDataset(nextDataset: ReportDataset) {
@@ -976,6 +979,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   )
 
   if (bug1274Only) {
+    const selectionOnly = activeWorkbook === 'Впарювання.xls'
     const deskTitle = workbookDeskTitle(activeWorkbook, dataSource)
     const deskReportKey = `${activeWorkbook ?? ''}|${dataSource}`
     const deskSummary = workbookRequestSummary(reportBody, dataset, selection => getSelectionFieldSummary(selection, filterFieldOptions, t))
@@ -1008,7 +1012,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       {dataSource === 35 ? <div className="workbook-desk__group">{dayProfitControls('filters')}</div> : null}
       {supplierControls ? <div className="workbook-desk__group">{supplierProfitControls('filters')}</div> : null}
       {dataSource === 41 ? cashSettlementPanels('filters') : null}
-      <LegacyReportBuilder part="selections" {...builder}
+      <LegacyReportBuilder part="selections" {...builder} dataset={selectionOnly ? vparivanieSelectionDataset(dataset) : dataset}
         selectionFilter={organizationOption ? selection => !isOrganizationSelection(selection) : undefined} />
     </>
     const groupingContent = <>
@@ -1101,7 +1105,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         </Alert> : <form className="reports-stocks-form workbook-desk__form" onSubmit={submitReport}>
             <WorkbookHeader title={deskTitle} showTitle={!activeWorkbook} templateName={activeTemplate?.Name ?? ''}
               resolving={workbookResolving} warning={catalogueNotice?.warning ?? null} />
-            <WorkbookSettings unified sections={deskSections} advanced={advancedContent} disabled={comparisonSettingsDisabled}
+            <WorkbookSettings unified sections={selectionOnly ? deskSections.filter(section => section.id === 'filters') : deskSections}
+              advanced={selectionOnly ? null : advancedContent} disabled={comparisonSettingsDisabled}
               period={periodSupported ? <WorkbookPeriodField from={from} to={to}
                 minDate={effectiveConfiguration?.period.minimumDate ?? (supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE)} maxDate={maxDate}
                 presets={reportPeriodPresets(dataSource, today)} error={periodError} disabled={isLoading || workbookResolving}

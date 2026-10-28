@@ -43,7 +43,7 @@ async function openWorkbook(label: string) {
   fireEvent.click(screen.getByRole('button', { name: `Відкрити ${workbookDisplayFileName(WORKBOOK_FILES[label] ?? label)}` }))
   await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/i)).toBeNull())
   expandWorkbookSettings()
-  openWorkbookAdvanced()
+  if ((WORKBOOK_FILES[label] ?? label) !== 'Впарювання.xls') openWorkbookAdvanced()
   return view
 }
 it('offers the six workbook forms of the five BUG-1274 reports and only their datasets', async () => {
@@ -75,8 +75,9 @@ it('opens the product matrix form without the original matrix', async () => {
   expect(screen.queryByRole('heading', { name: 'Аналіз залишків і продажів' })).toBeNull()
   expect(screen.queryByText('Впарювання.xls')).toBeNull()
   expect(screen.getByRole('button', { name: 'Відкрити Аналіз залишків і продажів.xls' }).getAttribute('aria-current')).toBe('true')
-  openWorkbookSettingsSection('Групування')
-  expect(screen.getByText('Товари у рядках; залишки, продажі й контрагенти у стовпцях.')).toBeTruthy()
+  openWorkbookSettingsSection('Фільтри')
+  expect(screen.queryByRole('group', { name: 'Групування' })).toBeNull()
+  expect(screen.queryByText('Додатково', { selector: 'summary' })).toBeNull()
   expect(screen.queryByRole('button', { name: 'Переглянути оригінальну матрицю' })).toBeNull()
   expect(screen.queryByText('Відкрийте звіт 1С за зразком Excel вище або оберіть звіт у полі «Звіт».')).toBeNull()
 })

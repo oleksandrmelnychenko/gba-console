@@ -18,7 +18,7 @@ import { reportDatasets } from '../data/reportDatasets.test-fixtures'
 import { profitDayDataset, profitSupplierDataset } from '../data/profitReadMode.test-fixtures'
 import { cashModeDataset } from '../data/cashReadMode.test-fixtures'
 import { settlementModeDataset } from '../data/settlementReadMode.test-fixtures'
-import { currentVparivanieDataset } from '../data/currentVparivanie.test-fixtures'
+import { currentVparivanieDataset, currentVparivanieRequest } from '../data/currentVparivanie.test-fixtures'
 import { previousKyivDay } from '../data/cashPeriod'
 import type { NativeReportPreview } from '../data/nativeReportPreview'
 import { deskPeriodText, workbookDefaultPeriod } from '../data/workbookDesk'
@@ -99,6 +99,10 @@ it('restores editable measure checkboxes after switching from movement analysis 
     fireEvent.click(within(switcher).getByRole('button', { name: `Відкрити ${workbookDisplayFileName(file)}` }))
     await findOpenedWorkbook(file)
     await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/i)).toBeNull())
+    if (file === 'Впарювання.xls') {
+      expect(screen.queryByRole('group', { name: 'Показники' })).toBeNull()
+      continue
+    }
     const inputs = measures().getAllByRole('checkbox')
     if (file === 'ВП.xls') expect(inputs.map(input => input.getAttribute('aria-label'))).toEqual(initial)
     else expect(inputs.length).toBeGreaterThan(0)
@@ -341,13 +345,15 @@ it('retries a failed export against the same snapshot and keeps a missing PDF di
 })
 
 
-it('offers physical income and outcome in the current workbook Measures section', async () => {
+it('retains physical income and outcome settings when opening an existing custom analysis template', async () => {
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, profitDayDataset, profitSupplierDataset,
     movementDataset, cashModeDataset, settlementModeDataset])
+  vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: 'movement-analysis', Revision: 1,
+    Name: 'Аналіз руху', Data: currentVparivanieRequest() }])
   render(page())
-  const switcher = await findOpenedWorkbook('ВП.xls')
-  fireEvent.click(within(switcher).getByRole('button', { name: `Відкрити ${workbookDisplayFileName('Впарювання.xls')}` }))
-  await findOpenedWorkbook('Впарювання.xls')
+  await findOpenedWorkbook('ВП.xls')
+  fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Аналіз руху' }))
   const section = screen.getByRole('group', { name: 'Показники' })
   expect((within(section).getByRole('checkbox', { name: 'Прихід' }) as HTMLInputElement).checked).toBe(false)
   fireEvent.click(within(section).getByRole('checkbox', { name: 'Прихід' }))
