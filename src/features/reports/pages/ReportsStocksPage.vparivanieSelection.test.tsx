@@ -46,7 +46,7 @@ async function open() {
   </PageHeaderActionsProvider></I18nProvider></MantineProvider>)
   await findOpenedWorkbook("ВП.xls")
   fireEvent.click(screen.getByRole("button", { name: "Особливі звіти" }))
-  fireEvent.click(await screen.findByRole("menuitem", { name: "Звіт впарювання" }))
+  fireEvent.click(await screen.findByRole("menuitem", { name: "Аналіз залишків і продажів" }))
   await findOpenedWorkbook("Впарювання.xls")
   await waitFor(() => expect(screen.getByRole("button", { name: "Особливі звіти" })).toHaveProperty("disabled", false))
 }

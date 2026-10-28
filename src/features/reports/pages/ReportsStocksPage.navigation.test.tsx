@@ -67,7 +67,7 @@ it('lists all five special reports and opens the available analysis without enab
   fireEvent.click(screen.getByRole('button', { name: 'Особливі звіти' }))
   const items = await screen.findAllByRole('menuitem')
   expect(items.map(item => item.textContent)).toEqual(['Аналіз залишків і продажів', 'Звіт повернення', 'Звіт по скидкам клієнтів',
-    'Продажі порівнянням по групам цін', 'Порівняння роботи клієнтів'])
+    'Продажі порівнянням за типами цін', 'Порівняння роботи клієнтів'])
   for (const item of items.slice(1)) expect(item.getAttribute('data-disabled')).toBeTruthy()
   fireEvent.click(items[0])
   await findOpenedWorkbook('Впарювання.xls')
