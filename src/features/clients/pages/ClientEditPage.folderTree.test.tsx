@@ -13,6 +13,7 @@ const ORDINARY_NET_UID = '33333333-3333-4333-8333-333333333333'
 
 const apiMocks = vi.hoisted(() => ({
   deleteClient: vi.fn(),
+  getClientCounterpartyGroup: vi.fn(),
   getClientForRegistryById: vi.fn(),
   getClientCommercialStructureForRegistry: vi.fn(),
   getClientIdentityAttention: vi.fn(),
@@ -41,6 +42,12 @@ vi.mock('../api/clientsApi', () => ({
 
 vi.mock('../api/clientCabinetApi', () => ({
   uploadClientContract: apiMocks.uploadClientContract,
+}))
+
+vi.mock('../api/counterpartyGroupsApi', () => ({
+  getClientCounterpartyGroup: apiMocks.getClientCounterpartyGroup,
+  getCounterpartyGroupTree: vi.fn(),
+  moveClientsToCounterpartyGroup: vi.fn(),
 }))
 
 vi.mock('../hooks/useClientFormLookups', () => ({
@@ -188,6 +195,7 @@ vi.mock('@mantine/notifications', () => ({
 describe('ClientEditPage root folder form', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    apiMocks.getClientCounterpartyGroup.mockResolvedValue({ ClientNetUid: ORDINARY_NET_UID, GroupNetUid: 'group', GroupName: 'Київ', GroupPath: 'Покупці / Київ', IsPlaced: true, IsManuallyPlaced: false })
     apiMocks.getClientIdentityAttention.mockResolvedValue(null)
     apiMocks.getClientRegionManualEdit.mockResolvedValue(null)
     apiMocks.getClientForRegistryById.mockImplementation(async (netUid: string) => {
