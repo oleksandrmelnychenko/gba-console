@@ -419,7 +419,8 @@ it('transposes client/agreement columns and keeps edited dates and source filter
   fireEvent.click(screen.getByRole('button', { name: 'Видалити Організація' }))
   for (const [axis, label] of [['рядків', 'Клієнт'], ['стовпців', 'Договір']]) {
     fireEvent.click(screen.getByRole('button', { name: `Додати поле: Групування ${axis}` }))
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: label }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('checkbox', { name: `Вибрати ${label}` }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Додати вибрані (1)' }))
   }
   changeReportPeriod({ from: '2026-10-17', to: '2026-10-23' })
   let initial: Parameters<typeof previewStockReport>[0] | undefined
@@ -455,7 +456,8 @@ it('exports agreement columns in the explicitly chosen workbook layout and leave
   fireEvent.click(screen.getByRole('button', { name: 'Видалити Дата' }))
   for (const [axis, label] of [['стовпців', 'Договір']]) {
     fireEvent.click(screen.getByRole('button', { name: `Додати поле: Групування ${axis}` }))
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: label }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('checkbox', { name: `Вибрати ${label}` }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Додати вибрані (1)' }))
   }
   changeReportPeriod({ from: '2026-10-01', to: '2026-10-31' })
   expect(screen.getByText('До 100 договорів у колонках — кожен договір окремим аркушем, більше — одна таблиця.')).toBeTruthy()

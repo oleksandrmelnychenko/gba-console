@@ -84,17 +84,11 @@ async function openMeasures() {
   return { ...view, panel: screen.getByRole('group', { name: 'Показники' }) }
 }
 
-it('labels VAT choices inside each tile and omits unsupported variants', async () => {
+it('labels every published VAT measure in the searchable tree and omits unsupported variants', async () => {
   const { panel } = await openMeasures()
-  const tiles = [...panel.querySelectorAll('.reports-stocks-legacy-measurement')]
-  expect(tiles).toHaveLength(4)
-  for (const [index, tile] of tiles.entries()) {
-    const options = tile.querySelector('.reports-stocks-measurement-options')!
-    expect(within(options as HTMLElement).getByText('Без ПДВ')).toBeTruthy()
-    expect(within(options as HTMLElement).getByText('З ПДВ')).toBeTruthy()
-    expect(within(options as HTMLElement).queryByText('ПДВ') !== null).toBe(index < 2)
-  }
-  expect(panel.querySelectorAll('.reports-stocks-measurement-value input[type="checkbox"]')).toHaveLength(10)
+  expect(panel.querySelectorAll('.report-measure-tree__group')).toHaveLength(4)
+  for (const measure of publishedMeasurements) expect(within(panel).getByRole('checkbox', { name: measure.Name })).toBeTruthy()
+  expect(panel.querySelectorAll('.report-measure-tree__children input[type="checkbox"]')).toHaveLength(10)
 })
 
 it('preserves all ten published measures and individual, group, all and clear selection', async () => {
@@ -106,7 +100,7 @@ it('preserves all ten published measures and individual, group, all and clear se
   expect(inputs.every(input => !input.checked)).toBe(true)
   fireEvent.click(inputs[2])
   expect(inputs.filter(input => input.checked)).toEqual([inputs[2]])
-  const row = inputs[2].closest('.reports-stocks-legacy-measurement')!
+  const row = inputs[2].closest('.report-measure-tree__group')!
   const group = row.querySelector<HTMLInputElement>('input[type="checkbox"]')!
   expect(group.indeterminate).toBe(true)
   fireEvent.click(group)

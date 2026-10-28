@@ -33,7 +33,13 @@ async function ready() {
 }
 async function agreement(id: number) {
   fireEvent.click(screen.getByRole('combobox', { name: 'Договір для оцінки' }))
-  fireEvent.click(await screen.findByRole('option', { name: `Договір ${id}` }))
+  await screen.findByRole('option', { name: `Договір ${id}` })
+  // A debounced lookup can replace an option while findByRole resolves.
+  // Dispatch to the current node, without carrying a DOM reference across await.
+  fireEvent.click(screen.getByRole('option', { name: `Договір ${id}` }))
+  // The old agreement already enables Submit; wait for the new exact-ID lookup
+  // and the controlled picker label before asserting the new request's result.
+  await waitFor(() => expect((screen.getByRole('combobox', { name: 'Договір для оцінки' }) as HTMLInputElement).value).toBe(`Договір ${id}`))
   await waitFor(() => expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(false))
 }
 const file: ReportResult = { document: { DocumentURL: '/files/exact-contract.xlsx' }, raw: {} }

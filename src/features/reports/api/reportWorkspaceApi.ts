@@ -1,3 +1,5 @@
+import { cloneConstructorPresentation } from '../data/constructorPresentation'
+import { cloneReportProfile, salesConstructorError } from '../data/salesConstructorProfiles'
 import { currentFinancialBuyerManagerFilterCapability } from '../data/currentFinancialBuyerManagerFilter'
 import { currentFinancialDocumentFilterCapability } from '../data/currentFinancialDocumentFilter'
 import { clonePresentationCurrencyAliases, presentationCurrencySupported } from '../data/reportPresentationCurrency'
@@ -154,6 +156,10 @@ export function parseReportDatasets(result: unknown): ReportDataset[] {
 
 type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
   Data: {
+    constructorPresentation?: unknown
+    ConstructorPresentation?: unknown
+    reportProfile?: unknown
+    ReportProfile?: unknown
     From: string | null
     To: string | null
     Sorted: ReportRequestBody['sorted']
@@ -161,6 +167,10 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     DataSource: ReportRequestBody['dataSource']
     CurrentVparivanieFullScope?: unknown
     currentVparivanieFullScope?: unknown
+    CustomerGroups?: import('../data/customerGroups').CustomerGroups
+    nativePriceComparison?: ReportRequestBody['nativePriceComparison']
+    NativePriceComparison?: ReportRequestBody['nativePriceComparison']
+    customerGroups?: import('../data/customerGroups').CustomerGroups
     ReturnsOnly?: boolean
     returnsOnly?: boolean
     SettlementPeriod?: unknown
@@ -261,6 +271,8 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     ...cloneCurrentVparivanieFullScope(value.Data),
     ...cloneMovementSelection(value.Data),
     ...cloneCurrentVparivanieAnalysis(value.Data),
+    ...(value.Data.NativePriceComparison || value.Data.nativePriceComparison ? {nativePriceComparison: structuredClone(value.Data.nativePriceComparison ?? value.Data.NativePriceComparison)} : {}),
+    ...(value.Data.CustomerGroups || value.Data.customerGroups ? {customerGroups: structuredClone(value.Data.customerGroups ?? value.Data.CustomerGroups)} : {}),
     ...(Object.hasOwn(value.Data, 'returnsOnly') ? { returnsOnly: value.Data.returnsOnly }
       : Object.hasOwn(value.Data, 'ReturnsOnly') ? { returnsOnly: value.Data.ReturnsOnly } : {}),
     ...(Object.hasOwn(value.Data, 'settlementPeriod') ? { settlementPeriod: structuredClone(value.Data.settlementPeriod),
@@ -271,6 +283,7 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     ...cloneSourceCounterpartyGroupAliases(value.Data),
     ...cloneGroupedCashAliases(value.Data),
     ...cloneCashReadModeAliases(value.Data),
+    ...cloneConstructorPresentation(value.Data), ...cloneReportProfile(value.Data),
     ...cloneWorkbookAliases(value.Data),
     ...cloneNumberPresentationAliases(value.Data),
     ...clonePresentationCurrencyAliases(value.Data),
@@ -322,7 +335,7 @@ export async function getServerReportTemplates(signal?: AbortSignal): Promise<Re
 export async function saveServerReportTemplate(template: ReportTemplate, signal?: AbortSignal, dataset?: ReportDataset): Promise<ReportTemplate> {
   const request = (template.Data.dataSource === 2 || template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21 || template.Data.dataSource === 22 || template.Data.dataSource === 23 || template.Data.dataSource === 24 || template.Data.dataSource === 25 || template.Data.dataSource === 27 || template.Data.dataSource === 28 || template.Data.dataSource === 35 || template.Data.dataSource === 39 || template.Data.dataSource === 40 || template.Data.dataSource === 41) ? structuredClone(template) : template
   request.Data = withCurrentVparivanieMovementScope(request.Data)
-  const numericError = numberPresentationError(request.Data) ?? reportConfigurationError(request.Data, request.Data.dataSource === 35 ? dataset : undefined)
+  const numericError = salesConstructorError(request.Data) ?? numberPresentationError(request.Data) ?? reportConfigurationError(request.Data, request.Data.dataSource === 35 ? dataset : undefined)
   if (numericError) throw new Error(numericError)
   const workbookError = workbookConfigurationError(request.Data)
   if (workbookError) throw new Error(workbookError)

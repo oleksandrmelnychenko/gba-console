@@ -1,0 +1,20 @@
+.report-measure-tree { display: grid; gap: 8px; }
+.report-measure-tree__list { max-height: 420px; overflow: auto; }
+.report-measure-tree__group { padding: 4px 0; }
+.report-measure-tree__row { display: flex; align-items: center; gap: 5px; min-height: 30px; }
+.report-measure-tree__row > :last-child { margin-inline-start: auto; }
+.report-measure-tree__children { padding-inline-start: 24px; }
+.report-measure-tree__disclosure { border: 0; background: transparent; cursor: pointer; width: 18px; color: inherit; }
+.report-measure-tree .mantine-Checkbox-label { font-size: 12px; }
+
+@media (min-width: 1100px) {
+  .workbook-settings--unified .workbook-settings__grid:has(.report-measure-tree):has(.reports-stocks-structure) {
+    grid-template-columns: minmax(240px, 1fr) minmax(0, 2fr);
+  }
+  .workbook-settings--unified .workbook-settings__grid:has(.report-measure-tree) > .workbook-settings__unified-section--organizations { grid-column: 1 / -1; order: 0; }
+  .workbook-settings--unified .workbook-settings__grid:has(.report-measure-tree) > .workbook-settings__unified-section--measures { grid-column: 1; order: 1; }
+  .workbook-settings--unified .workbook-settings__grid:has(.report-measure-tree) > .workbook-settings__unified-section--grouping { grid-column: 2; order: 2; }
+  .workbook-settings--unified .workbook-settings__grid:has(.report-measure-tree) > .workbook-settings__unified-section--filters { grid-column: 1 / -1; grid-row: auto; order: 3; }
+  .workbook-settings--unified .workbook-settings__grid:has(.report-measure-tree) .reports-stocks-structure { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .workbook-settings--unified .workbook-settings__grid:has(.report-measure-tree) .reports-stocks-export-layout { grid-column: 1 / -1; }
+}
