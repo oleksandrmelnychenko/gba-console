@@ -20,6 +20,7 @@ const apiMocks = vi.hoisted(() => ({
   getProductAvailabilityBuckets: vi.fn(),
   getProductAnalogues: vi.fn(),
   getProductCurrentPriceByAgreement: vi.fn(),
+  getProductCalculatedPricingsByAgreement: vi.fn(),
   searchSaleProductsWithAvailability: vi.fn(),
   updateOrderItem: vi.fn(),
   updateProduct: vi.fn(),
@@ -45,7 +46,7 @@ vi.mock('./newSaleWizardApi', async (importOriginal) => {
     getNearestSupplyOrder: vi.fn(async () => null),
     getProductAnalogues: apiMocks.getProductAnalogues,
     getProductAvailabilityBuckets: apiMocks.getProductAvailabilityBuckets,
-    getProductCalculatedPricingsByAgreement: vi.fn(async () => []),
+    getProductCalculatedPricingsByAgreement: apiMocks.getProductCalculatedPricingsByAgreement,
     getProductCurrentPriceByAgreement: apiMocks.getProductCurrentPriceByAgreement,
     getProductReservationsByAgreement: vi.fn(async () => []),
     searchSaleProductsWithAvailability: apiMocks.searchSaleProductsWithAvailability,
@@ -215,6 +216,7 @@ beforeEach(() => {
   apiMocks.deleteOrderItem.mockReset().mockResolvedValue(null)
   apiMocks.getProductAnalogues.mockReset().mockResolvedValue([])
   apiMocks.getProductCurrentPriceByAgreement.mockReset().mockResolvedValue(null)
+  apiMocks.getProductCalculatedPricingsByAgreement.mockReset().mockResolvedValue([])
   apiMocks.searchSaleProductsWithAvailability.mockReset().mockResolvedValue([])
   apiMocks.updateOrderItem.mockReset().mockResolvedValue(null)
   apiMocks.updateProduct.mockReset().mockResolvedValue(null)
@@ -230,6 +232,27 @@ afterEach(() => {
 })
 
 describe('NewSaleProductsStep selected product summary', () => {
+  it('loads agreement prices directly in the expanded cart without opening product details', async () => {
+    const sale = createSale(4)
+    sale.Order!.OrderItems![0].Product = {
+      NetUid: 'babb5a2f-80e3-43b3-b8c4-15679a5250ea', VendorCode: '926012630077-SL', CurrentPrice: 20,
+    } as WizardSaleProduct
+    apiMocks.getProductCalculatedPricingsByAgreement.mockResolvedValue([{
+      Pricing: { Name: 'ЦО2' }, PriceEUR: 20, DiscountPriceEUR: 20, RetailPriceEUR: 26.2, RetailPriceLocal: 1359.78,
+    }])
+    renderStep({ sale })
+    expect(apiMocks.getProductCalculatedPricingsByAgreement).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Показати кошик' }))
+    const cart = await screen.findByRole('list', { name: 'Товари в кошику' })
+    expect(await within(cart).findByRole('rowheader', { name: 'ЦО2' })).toBeTruthy()
+    expect(within(cart).getByRole('rowheader', { name: 'Зі знижкою' })).toBeTruthy()
+    expect(within(cart).getByRole('rowheader', { name: 'Роздріб' }).parentElement?.textContent?.replace(/\s/g, '')).toBe('Роздріб26,201359,78')
+    expect(apiMocks.getProductCalculatedPricingsByAgreement).toHaveBeenCalledWith('babb5a2f-80e3-43b3-b8c4-15679a5250ea', agreementNetId, expect.any(AbortSignal))
+    expect(screen.queryByRole('dialog', { name: 'Деталі товару' })).toBeNull()
+    expect(apiMocks.addOrderItem).not.toHaveBeenCalled()
+    expect(apiMocks.updateOrderItem).not.toHaveBeenCalled()
+  })
+
   it('shows the searched 40773CNT description before opening details', async () => {
     const description = 'чорний, напис "LONG VEHICLE", 2D!!, "Мітла"'
     apiMocks.searchSaleProductsWithAvailability.mockResolvedValueOnce([createSearchProduct(15, {

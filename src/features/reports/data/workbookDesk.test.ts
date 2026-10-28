@@ -22,6 +22,8 @@ const label = (item: ReportSelection) => item.SelectedField.Name
 describe('workbook desk names', () => {
   it('names the workbooks the way accountants call them and keeps their 1C report names', () => {
     expect(workbookDeskEntries().map(entry => [entry.fileName, entry.name, entry.reportName])).toEqual([
+      ['gba:sales-constructor:v1', 'Звіт по продажам', 'Звіт по продажам'],
+      ['gba:gross-profit-constructor:v1', 'Валовий прибуток', 'Валовий прибуток'],
       ['ВП.xls', 'ВП', 'Валовий прибуток'],
       ['ВП по постачальниках.xls', 'ВП по постачальниках', 'Валовий прибуток по постачальниках'],
       ['Впарювання.xls', 'Аналіз залишків і продажів', 'Аналіз залишків і продажів'],

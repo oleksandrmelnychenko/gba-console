@@ -1,3 +1,4 @@
+import { salesConstructorError } from './salesConstructorProfiles'
 import { currentVparivanieAnalysisCapability, currentVparivanieAnalysisLayoutError, requestCurrentVparivanieAnalysis } from './currentVparivanieAnalysis'
 import { currentVparivanieScopeError, withCurrentVparivanieMovementScope } from './currentVparivanie'
 import { effectiveReportConfiguration, reportConfigurationError } from './reportConfiguration'
@@ -15,7 +16,7 @@ import { getNativeReportProfile, hasFixedReportAxes } from './nativeReportProfil
 import type { ReportWorkspaceSnapshot } from './reportWorkspaceDraft'
 import { datasetGroupings } from './reportDatasets'
 
-const options = ['comparison', 'xyz', 'paymentComparison', 'marginComparison', 'rateComparison',
+const options = ['constructorPresentation', 'ConstructorPresentation', 'reportProfile', 'comparison', 'xyz', 'paymentComparison', 'marginComparison', 'rateComparison',
   'returnComparison', 'buyerSalesShare', 'revenueComparison', 'ordering', 'filterExpression',
   'abcClassification', 'hideZero', 'threshold', 'topGroups', 'priceTypeSalesComparison', 'workbookPresentation', 'numberPresentation', 'presentationCurrency']
 
@@ -32,7 +33,7 @@ export function reportWorkspaceDraftCompatibility(snapshot: ReportWorkspaceSnaps
   }
   const scopeError = currentVparivanieScopeError(data, dataset)
   if (scopeError) return `${scopeError} Чернетка збережена без змін.`
-  const metadataError = numberPresentationError(data, dataset) ?? reportConfigurationError(data, dataset, true)
+  const metadataError = salesConstructorError(data, dataset) ?? numberPresentationError(data, dataset) ?? reportConfigurationError(data, dataset, true)
   if (metadataError) return `${metadataError} Чернетка збережена без змін.`
   const capabilityLayout = effectiveReportConfiguration(dataset, data) !== undefined
   const legacyLayout = dataset.DataSource === 40 ? cashPeriodConfigurationError(data, dataset) === null

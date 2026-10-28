@@ -4,7 +4,7 @@ import { beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport, exportStockReportPreview, previewStockReport, searchDatasetReportValues } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
-import { reportDatasets, purchaseDataset } from '../data/reportDatasets.test-fixtures'
+import { reportDatasets, purchaseDataset, stockDataset } from '../data/reportDatasets.test-fixtures'
 import { groupedCashWorkbookDataset } from '../data/groupedCashPeriod.test-fixtures'
 import { defaultDatasetRequest } from '../data/reportDatasets'
 import { BUG_1274_DISABLED_MESSAGE } from '../data/reportMigration'
@@ -61,16 +61,18 @@ it('shows only BUG-1274 entry points, then previews and exports the actual cash 
   expect(createStockReport).not.toHaveBeenCalled()
 })
 
-it('lists only BUG-1274 templates and hides the full-list template order', async () => {
+it('lists enabled purchase and cash templates, hides unsupported stock templates and template order', async () => {
   vi.mocked(getServerReportTemplates).mockResolvedValue([
     { Id: '10000000-0000-0000-0000-000000000001', Revision: 1, Name: 'Шаблон надходжень', Data: defaultDatasetRequest(purchaseDataset, '2026-09-01', '2026-09-03') },
+    { Id: '10000000-0000-0000-0000-000000000003', Revision: 1, Name: 'Старий склад', Data: defaultDatasetRequest(stockDataset, '2026-09-01', '2026-09-03') },
     { Id: '10000000-0000-0000-0000-000000000002', Revision: 1, Name: 'Шаблон коштів', Data: defaultDatasetRequest(groupedCashWorkbookDataset, '2026-09-01', '2026-09-03') },
   ])
   render(page())
   await findWorkbookLanding()
   fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
   expect(await screen.findByRole('button', { name: 'Відкрити для редагування: Шаблон коштів' })).toBeTruthy()
-  expect(screen.queryByRole('button', { name: /Шаблон надходжень/ })).toBeNull()
+  expect(screen.getByRole('button', { name: 'Відкрити для редагування: Шаблон надходжень' })).toBeTruthy()
+  expect(screen.queryByRole('button', { name: /Старий склад/ })).toBeNull()
   expect(screen.queryByRole('button', { name: 'Порядок шаблонів' })).toBeNull()
 })
 
@@ -93,11 +95,11 @@ it('blocks generic datasets and the old special launch, then accepts the actual 
 
 it('refuses an existing template outside BUG-1274 instead of opening or submitting it when the BUG-1274-only surface is off', async () => {
   surface.only = false
-  vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: '10000000-0000-0000-0000-000000000001', Revision: 1, Name: 'Шаблон надходжень', Data: defaultDatasetRequest(purchaseDataset, '2026-09-01', '2026-09-03') }])
+  vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: '10000000-0000-0000-0000-000000000001', Revision: 1, Name: 'Старий склад', Data: defaultDatasetRequest(stockDataset, '2026-09-01', '2026-09-03') }])
   const view = render(page())
   await screen.findByRole('button', { name: 'Продажі за днями' })
   fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
-  fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Шаблон надходжень' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Старий склад' }))
   expect(screen.getAllByText(BUG_1274_DISABLED_MESSAGE).length).toBeGreaterThan(0)
   fireEvent.submit(view.container.querySelector('form')!)
   expect(createStockReport).not.toHaveBeenCalled()

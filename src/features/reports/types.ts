@@ -254,6 +254,10 @@ export type ReportSourceBuyerSubtreeCapabilities = {
 }
 
 export type ReportRequestBody = {
+  constructorPresentation?: unknown
+  ConstructorPresentation?: unknown
+  reportProfile?: unknown
+  ReportProfile?: unknown
   presentationCurrency?: unknown
   PresentationCurrency?: unknown
   currentVparivanieAnalysis?: unknown
@@ -281,6 +285,10 @@ export type ReportRequestBody = {
   CashPeriod?: unknown
   returnsOnly?: boolean
   ReturnsOnly?: boolean
+  nativePriceComparison?: import('./data/nativePriceComparison').NativePriceComparison
+  NativePriceComparison?: import('./data/nativePriceComparison').NativePriceComparison
+  customerGroups?: import('./data/customerGroups').CustomerGroups
+  CustomerGroups?: import('./data/customerGroups').CustomerGroups
   priceTypeSalesComparison?: unknown
   PriceTypeSalesComparison?: unknown
   paymentComparison?: unknown
@@ -355,10 +363,13 @@ export type ReportRequestBody = {
 export type ReportDatasetField = { Type: number; Name: string; Selectable?: boolean; valueSemantics?: import('./data/reportNumberPresentation').ReportValueSemantics; hierarchy?: import('./data/currentVparivanieAnalysis').AnalysisHierarchy }
 
 export type ReportDataset = {
+  constructorPresentation?: unknown
+  reportProfiles?: unknown
   currentFinancialPresentationCurrency?: unknown
   configuration?: unknown
   numberPresentation?: unknown
   workbookPresentation?: unknown
+  customerReturnFilters?: boolean
   returnsOnly?: boolean
   groupedSettlementPeriod?: unknown
   sourceCounterpartyGroups?: unknown

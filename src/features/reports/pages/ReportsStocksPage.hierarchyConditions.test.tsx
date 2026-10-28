@@ -73,7 +73,9 @@ it('builds «Покупець не у групі» from a captured folder and se
   fireEvent.click(screen.getByRole('option', { name: 'Не у групі' }))
   await waitFor(() => expect(getAnalysisHierarchyPage).toHaveBeenCalledWith('counterpartyGroup', null, 0, 30, '', expect.any(AbortSignal)))
   fireEvent.click(within(editor).getByRole('combobox', { name: 'Значення' }))
-  fireEvent.click(await screen.findByRole('option', { name: 'Покупці / Київ' }))
+  await screen.findByRole('option', { name: 'Покупці / Київ' })
+  // Lookup completion may replace the option while the asynchronous query resolves.
+  fireEvent.click(screen.getByRole('option', { name: 'Покупці / Київ' }))
   await waitFor(() => expect(within(editor).getByRole('button', { name: 'Зберегти' }).hasAttribute('disabled')).toBe(false))
   fireEvent.click(within(editor).getByRole('button', { name: 'Зберегти' }))
   await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Додати умову відбору' })).toBeNull())

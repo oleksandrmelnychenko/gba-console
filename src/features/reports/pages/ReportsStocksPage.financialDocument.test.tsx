@@ -33,7 +33,8 @@ async function open(admitted: boolean) {
 }
 function addAxis(axis: 'рядків' | 'стовпців', label: string) {
   fireEvent.click(screen.getByRole('button', { name: `Додати поле: Групування ${axis}` }))
-  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: label }))
+  fireEvent.click(within(screen.getByRole('dialog')).getByRole('checkbox', { name: `Вибрати ${label}` }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Додати вибрані (1)' }))
 }
 it('does not offer document grouping with the previous server capability', async () => {
   await open(false)
