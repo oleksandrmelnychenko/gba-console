@@ -54,6 +54,26 @@
 
 .new-sale-product-summary__heading { min-width: 0; }
 
+.new-sale-product-summary__description {
+  flex: 1;
+  min-width: 0;
+  max-height: 6em;
+  overflow-y: auto;
+  color: var(--mantine-color-gray-9);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.new-sale-product-summary__description-label {
+  color: var(--mantine-color-gray-6);
+}
+
+.new-sale-product-summary__description p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
 .new-sale-product-summary__name {
   color: var(--mantine-color-gray-9);
   font-family: var(--mantine-font-family);
