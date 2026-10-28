@@ -17,7 +17,6 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -62,9 +61,8 @@ function useProductAvailabilitiesPageModel() {
   const [availabilities, setAvailabilities] = useValueState<ConsignmentAvailabilityItem[]>([])
   const [storages, setStorages] = useValueState<Storage[]>([])
   const [selectedStorageNetId, setSelectedStorageNetId] = useValueState('')
-  const initialBusinessDate = useMemo(() => formatKyivBusinessDate(), [])
-  const [dateFrom, setDateFrom] = useValueState(initialBusinessDate)
-  const [dateTo, setDateTo] = useValueState(initialBusinessDate)
+  const [dateFrom, setDateFrom] = useValueState('')
+  const [dateTo, setDateTo] = useValueState('')
   const [searchDraft, setSearchDraft] = useValueState('')
   const [searchValue, setSearchValue] = useValueState('')
   const [debouncedSearch] = useDebouncedValue(searchDraft, 400)
@@ -219,11 +217,9 @@ function useProductAvailabilitiesPageModel() {
   }
 
   function resetFilters() {
-    const businessDate = formatKyivBusinessDate()
-
     setPage(1)
-    setDateFrom(businessDate)
-    setDateTo(businessDate)
+    setDateFrom('')
+    setDateTo('')
     setSearchDraft('')
     setSearchValue('')
     setSelectedStorageNetId(storageOptions[0]?.value || '')
@@ -696,7 +692,7 @@ function formatAmount(value?: number): string {
   return amountFormatter.format(numberValue)
 }
 
-function formatMoney(value?: number): string {
+function formatMoney(value?: number | null): string {
   const numberValue = toFiniteNumber(value)
 
   if (numberValue === null) {
@@ -714,7 +710,7 @@ function displayValue(value: unknown): string {
   return String(value)
 }
 
-function toFiniteNumber(value?: number): number | null {
+function toFiniteNumber(value?: number | null): number | null {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     return null
   }

@@ -25,7 +25,7 @@ export async function getProductAvailabilities(
 }
 
 export async function getProductAvailabilityStorages(): Promise<Storage[]> {
-  const result = await apiRequest<unknown>('/storages/get/all')
+  const result = await apiRequest<unknown>('/storages/product-availabilities/all')
 
   return normalizeStorages(result)
 }

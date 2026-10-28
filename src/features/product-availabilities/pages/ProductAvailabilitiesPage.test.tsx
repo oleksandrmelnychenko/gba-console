@@ -2,12 +2,13 @@ import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
-import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import {
   exportProductAvailabilities,
   getProductAvailabilities,
   getProductAvailabilityStorages,
 } from '../api/productAvailabilitiesApi'
+import type { ConsignmentAvailabilityItem } from '../types'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { ProductAvailabilitiesPage } from './ProductAvailabilitiesPage'
 
 vi.mock('../api/productAvailabilitiesApi', () => ({
@@ -25,7 +26,11 @@ vi.mock('../../auth/useAuth', () => ({
 }))
 
 vi.mock('../../../shared/ui/data-table/DataTable', () => ({
-  DataTable: () => <div data-testid="availability-table" />,
+  DataTable: ({ data, columns }: { data: ConsignmentAvailabilityItem[]; columns: DataTableColumn<ConsignmentAvailabilityItem>[] }) => (
+    <table data-testid="availability-table"><tbody>{data.map((item) => (
+      <tr key={item.Id}>{columns.map((column) => <td key={column.id} data-testid={column.id}>{column.cell?.(item)}</td>)}</tr>
+    ))}</tbody></table>
+  ),
 }))
 
 vi.mock('../../../shared/ui/paginator/Paginator', () => ({
@@ -61,25 +66,56 @@ describe('ProductAvailabilitiesPage date range', () => {
     vi.restoreAllMocks()
   })
 
-  it('requests exactly the current Kyiv business day by default', async () => {
-    const today = formatKyivBusinessDate()
-
+  it('includes older remaining lots by default without an implicit date filter', async () => {
     renderPage()
 
     await waitFor(() => {
       expect(getProductAvailabilities).toHaveBeenCalledWith({
-        from: today,
+        from: undefined,
         limit: expect.any(Number),
         offset: 0,
         storageNetId: 'storage-3',
-        to: today,
+        to: undefined,
         vendorCode: '',
       })
     })
 
     fireEvent.click(screen.getByRole('button', { name: /^Період:/ }))
-    expect((await screen.findByLabelText('Від') as HTMLInputElement).value).toBe(today)
-    expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe(today)
+    expect((await screen.findByLabelText('Від') as HTMLInputElement).value).toBe('')
+    expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe('')
+  })
+
+  it('shows 101151CNT as three units with one N/N/N placement and the full remaining cost', async () => {
+    vi.mocked(getProductAvailabilityStorages).mockResolvedValue([
+      { Name: 'СКЛАД -1', NetUid: '7d2f6f3c-7c9a-42f0-abc8-7e6c06284a7c' },
+    ])
+    vi.mocked(getProductAvailabilities).mockImplementation(async ({ from, to }) => ({
+      Availabilities: from || to ? [] : [{
+        Id: 38266787, ProductNetId: '9a4931c2-4f96-492b-82ad-df75fb022580',
+        VendorCode: '101151CNT', ProductName: 'Підніжка кабіни', Qty: 3,
+        GrossPrice: 110.66, AccountingGrossPrice: 110.66, UnitGrossPrice: 36.89,
+        StorageName: 'СКЛАД -1',
+        Placements: [{ StorageNumber: 'N', RowNumber: 'N', CellNumber: 'N', Qty: 3 }],
+      }],
+      Total: from || to ? 0 : 1,
+    }))
+    renderPage()
+    expect(await screen.findByText('101151CNT')).toBeTruthy()
+    expect(screen.getByTestId('qty').textContent).toBe('3')
+    expect(screen.getByTestId('placing').textContent).toBe('Позиція N-N-N. Кількість 3')
+    expect(screen.getByTestId('grossPrice').textContent).toBe('110,66')
+    expect(screen.getByTestId('unitGrossPrice').textContent).toBe('36,89')
+    expect(within(screen.getByTestId('availability-table')).getAllByRole('row')).toHaveLength(1)
+  })
+
+  it('does not invent a single unit price for lots with different costs', async () => {
+    vi.mocked(getProductAvailabilities).mockResolvedValue({
+      Availabilities: [{ Id: 1, Qty: 3, GrossPrice: 120, UnitGrossPrice: null }], Total: 1,
+    })
+    renderPage()
+    expect((await screen.findByTestId('unitGrossPrice')).textContent).toBe('—')
+    expect(screen.getByTestId('qty').textContent).toBe('3')
+    expect(screen.getByTestId('grossPrice').textContent).toBe('120,00')
   })
 
   it('keeps filtering by Kyiv business dates when the user explicitly selects both bounds', async () => {
@@ -112,9 +148,7 @@ describe('ProductAvailabilitiesPage date range', () => {
     })
   })
 
-  it('restores the current Kyiv business day when filters are reset', async () => {
-    const today = formatKyivBusinessDate()
-
+  it('restores all current stock when filters are reset', async () => {
     renderPage()
 
     await waitFor(() => expect(getProductAvailabilities).toHaveBeenCalledTimes(1))
@@ -129,17 +163,16 @@ describe('ProductAvailabilitiesPage date range', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Застосувати' }))
     await waitFor(() => expect(getProductAvailabilities).toHaveBeenLastCalledWith(expect.objectContaining({ from: '2026-08-01', to: '2026-08-08' })))
     fireEvent.click(screen.getByLabelText('Скинути'))
-    await waitFor(() => expect(getProductAvailabilities).toHaveBeenLastCalledWith(expect.objectContaining({ from: today, to: today })))
+    await waitFor(() => expect(getProductAvailabilities).toHaveBeenLastCalledWith(expect.objectContaining({ from: undefined, to: undefined })))
     fireEvent.click(screen.getByRole('button', { name: /^Період:/ }))
 
     await waitFor(() => {
-      expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe(today)
-      expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe(today)
+      expect((screen.getByLabelText('Від') as HTMLInputElement).value).toBe('')
+      expect((screen.getByLabelText('До') as HTMLInputElement).value).toBe('')
     })
   })
 
-  it('exports the same one-day Kyiv range shown in the filter', async () => {
-    const today = formatKyivBusinessDate()
+  it('exports all current stock when no period is selected', async () => {
     vi.mocked(exportProductAvailabilities).mockResolvedValue({})
 
     renderPage()
@@ -149,9 +182,9 @@ describe('ProductAvailabilitiesPage date range', () => {
 
     await waitFor(() => {
       expect(exportProductAvailabilities).toHaveBeenCalledWith({
-        from: today,
+        from: undefined,
         storageNetId: 'storage-3',
-        to: today,
+        to: undefined,
         vendorCode: '',
       })
     })
