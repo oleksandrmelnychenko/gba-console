@@ -8,7 +8,7 @@ const managedFields = new Set([
   'agreementPriceComparison', 'AgreementPriceComparison',
   'currentVparivanieAnalysis', 'CurrentVparivanieAnalysis',
   'currentVparivanieMovements', 'CurrentVparivanieMovements',
-  'customerGroups', 'CustomerGroups', 'returnsOnly', 'ReturnsOnly', 'currentVparivanieFullScope', 'CurrentVparivanieFullScope',
+  'nativePriceComparison', 'NativePriceComparison', 'customerGroups', 'CustomerGroups', 'returnsOnly', 'ReturnsOnly', 'currentVparivanieFullScope', 'CurrentVparivanieFullScope',
   'paymentComparison', 'PaymentComparison', 'marginComparison', 'MarginComparison',
   'rateComparison', 'RateComparison', 'returnComparison', 'ReturnComparison',
   'buyerSalesShare', 'BuyerSalesShare', 'revenueComparison', 'RevenueComparison',

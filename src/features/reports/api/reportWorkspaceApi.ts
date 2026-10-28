@@ -168,6 +168,8 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     CurrentVparivanieFullScope?: unknown
     currentVparivanieFullScope?: unknown
     CustomerGroups?: import('../data/customerGroups').CustomerGroups
+    nativePriceComparison?: ReportRequestBody['nativePriceComparison']
+    NativePriceComparison?: ReportRequestBody['nativePriceComparison']
     customerGroups?: import('../data/customerGroups').CustomerGroups
     ReturnsOnly?: boolean
     returnsOnly?: boolean
@@ -269,6 +271,7 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     ...cloneCurrentVparivanieFullScope(value.Data),
     ...cloneMovementSelection(value.Data),
     ...cloneCurrentVparivanieAnalysis(value.Data),
+    ...(value.Data.NativePriceComparison || value.Data.nativePriceComparison ? {nativePriceComparison: structuredClone(value.Data.nativePriceComparison ?? value.Data.NativePriceComparison)} : {}),
     ...(value.Data.CustomerGroups || value.Data.customerGroups ? {customerGroups: structuredClone(value.Data.customerGroups ?? value.Data.CustomerGroups)} : {}),
     ...(Object.hasOwn(value.Data, 'returnsOnly') ? { returnsOnly: value.Data.returnsOnly }
       : Object.hasOwn(value.Data, 'ReturnsOnly') ? { returnsOnly: value.Data.ReturnsOnly } : {}),

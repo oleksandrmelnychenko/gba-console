@@ -1,3 +1,4 @@
+import { NATIVE_PRICE_COMPARISON_WORKBOOK, nativePriceComparisonRequest } from './nativePriceComparison'
 import { CUSTOMER_GROUPS_WORKBOOK, customerGroupsRequest } from './customerGroups'
 import { CUSTOMER_RETURN_WORKBOOK, supportsCustomerReturnReport, customerReturnRequest } from './customerReturnReport'
 import { GROSS_PROFIT_CONSTRUCTOR_WORKBOOK, SALES_CONSTRUCTOR_WORKBOOK, salesConstructorRequest, salesConstructorSupported } from './salesConstructorProfiles'
@@ -55,6 +56,9 @@ export const PURCHASES_CONSTRUCTOR_FILE = 'gba:purchases-constructor:v1'
 export const STOCK_PERIOD_CONSTRUCTOR_FILE = 'gba:stock-period-constructor:v1'
 
 const supported = [
+  { fileName: NATIVE_PRICE_COMPARISON_WORKBOOK, label: 'Продажі порівнянням за типами цін', dataSource: 46,
+    notice: 'Фактичні продажі мінус повернення GBA; історична ціна та різниця доступні лише за підтверджених даних.',
+    accepts: (dataset: ReportDataset) => [4,70,71].every(type=>dataset.Measurements.some(field=>field.Type===type)) },
   { fileName: CUSTOMER_GROUPS_WORKBOOK, label: 'Порівняння роботи клієнтів', dataSource: 44,
     notice: 'Іменовані набори клієнтів за одним періодом GBA; перший набір є еталоном.',
     accepts: (dataset: ReportDataset) => dataset.Groupings.some(field=>field.Type===82) && [109,110,111,112,113,114].every(type=>dataset.Measurements.some(field=>field.Type===type)) },
@@ -219,6 +223,7 @@ function dayWorkbookRequest(request: ReportRequestBody, launch: WorkbookLaunch):
 export function bug1274WorkbookRequest(request: ReportRequestBody, launch?: WorkbookLaunch,
   resolved?: ResolvedWorkbookFilters): ReportRequestBody {
   if (!launch || launch.dataset.DataSource !== request.dataSource) return request
+  if (launch.fileName === NATIVE_PRICE_COMPARISON_WORKBOOK) return nativePriceComparisonRequest(request, launch.dataset)
   if (launch.fileName === CUSTOMER_GROUPS_WORKBOOK) return customerGroupsRequest(request, launch.dataset)
   if (launch.fileName === CUSTOMER_RETURN_WORKBOOK) return customerReturnRequest(request, launch.dataset)
   if (launch.fileName === STOCK_PERIOD_CONSTRUCTOR_FILE && request.dataSource === 45) {

@@ -285,6 +285,8 @@ export type ReportRequestBody = {
   CashPeriod?: unknown
   returnsOnly?: boolean
   ReturnsOnly?: boolean
+  nativePriceComparison?: import('./data/nativePriceComparison').NativePriceComparison
+  NativePriceComparison?: import('./data/nativePriceComparison').NativePriceComparison
   customerGroups?: import('./data/customerGroups').CustomerGroups
   CustomerGroups?: import('./data/customerGroups').CustomerGroups
   priceTypeSalesComparison?: unknown

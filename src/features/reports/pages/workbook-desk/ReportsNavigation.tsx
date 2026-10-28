@@ -1,3 +1,4 @@
+import { NATIVE_PRICE_COMPARISON_WORKBOOK } from '../../data/nativePriceComparison'
 import { CUSTOMER_GROUPS_WORKBOOK } from '../../data/customerGroups'
 import { CUSTOMER_RETURN_WORKBOOK } from '../../data/customerReturnReport'
 import { Menu } from '@mantine/core'
@@ -29,7 +30,7 @@ const special = [
   { label: 'Аналіз залишків і продажів', file: 'Впарювання.xls' },
   { label: 'Звіт повернення', file: CUSTOMER_RETURN_WORKBOOK },
   { label: 'Звіт по скидкам клієнтів', file: null },
-  { label: 'Продажі порівнянням по групам цін', file: null },
+  { label: 'Продажі порівнянням за типами цін', file: NATIVE_PRICE_COMPARISON_WORKBOOK },
   { label: 'Порівняння роботи клієнтів', file: CUSTOMER_GROUPS_WORKBOOK },
 ]
 
@@ -72,7 +73,7 @@ export function ReportsNavigation({ launches, active, movement, disabled, onOpen
         <ShoppingCart size={16} aria-hidden="true" /><span>{t('Закупи')}</span>
       </button>
       {dropdown('Грошові кошти', Wallet, cash, activeSource === 40 || activeSource === 41)}
-      {dropdown('Особливі звіти', FileText, special, activeSource === 39 || active === CUSTOMER_RETURN_WORKBOOK || activeSource === 44)}
+      {dropdown('Особливі звіти', FileText, special, activeSource === 39 || active === CUSTOMER_RETURN_WORKBOOK || activeSource === 44 || activeSource === 46)}
     </div>
   </nav>
 }
