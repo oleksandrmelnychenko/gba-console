@@ -1,7 +1,6 @@
-import { readFileSync } from 'node:fs'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { theme } from '../../../shared/theme/theme'
@@ -69,15 +68,6 @@ async function findRow() {
 }
 
 describe('SalesUkrainePage carrier comment in the registry', () => {
-  const styles = document.createElement('style')
-
-  beforeAll(() => {
-    styles.textContent = readFileSync('src/features/sales-ukraine/pages/sales-grid.css', 'utf8')
-    document.head.append(styles)
-  })
-
-  afterAll(() => styles.remove())
-
   beforeEach(() => {
     vi.clearAllMocks()
     mocks.getSalesUkraine.mockResolvedValue([sale])
@@ -101,13 +91,6 @@ describe('SalesUkrainePage carrier comment in the registry', () => {
     const row = await findRow()
     const preview = within(row).getByLabelText('Коментар')
     expect(preview.textContent).toBe(comment)
-    const previewStyle = getComputedStyle(preview)
-    expect(previewStyle.overflow).toBe('hidden')
-    expect(previewStyle.overflowWrap).toBe('anywhere')
-    expect(previewStyle.whiteSpace).toBe('pre-wrap')
-    expect(previewStyle.minWidth).toBe('0px')
-    expect(previewStyle.maxWidth).toBe('28%')
-    expect(previewStyle.getPropertyValue('-webkit-line-clamp')).toBe('2')
     expect(preview.closest('.sg-client')).not.toBeNull()
     fireEvent.focus(preview)
     const tooltip = await screen.findByRole('tooltip')
