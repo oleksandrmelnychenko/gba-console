@@ -1224,16 +1224,18 @@ function ProductDeliveryProtocolSpecificationModals({
 
   return (
     <>
-      <UploadProductSpecificationModal
-        isLoading={model.isUploading}
-        opened={model.isUploadOpen}
-        onClose={() => {
-          if (!model.isUploading) {
-            model.setUploadOpen(false)
-          }
-        }}
-        onSubmit={model.submitUpload}
-      />
+      {model.isUploadOpen && (
+        <UploadProductSpecificationModal
+          isLoading={model.isUploading}
+          opened={model.isUploadOpen}
+          onClose={() => {
+            if (!model.isUploading) {
+              model.setUploadOpen(false)
+            }
+          }}
+          onSubmit={model.submitUpload}
+        />
+      )}
 
       <UploadProductSpecificationResultModal result={model.uploadResult} onClose={() => model.setUploadResult(null)} />
 
