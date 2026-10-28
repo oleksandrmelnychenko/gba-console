@@ -1,3 +1,4 @@
+import { constructorPresentationError } from './constructorPresentation'
 import type { ReportDataset, ReportRequestBody } from '../types'
 
 export type SalesConstructorProfile = 'sales' | 'grossProfit'
@@ -26,18 +27,18 @@ export function salesConstructorSupported(dataset: ReportDataset | undefined, pr
 }
 export function salesConstructorDataset(dataset: ReportDataset | undefined, profile: unknown): ReportDataset | undefined {
   if (!dataset || !readReportProfile(profile)) return dataset
-  const allowed: readonly number[] = profile === 'grossProfit' ? GROSS_PROFIT_CONSTRUCTOR_MEASURES : SALES_CONSTRUCTOR_MEASURES
-  return { ...dataset, Measurements: dataset.Measurements.filter(field => allowed.includes(field.Type)), Filters: dataset.Filters.filter(field => ![21, 64].includes(field.Type)) }
+  const allowed = new Set<number>(profile === 'grossProfit' ? GROSS_PROFIT_CONSTRUCTOR_MEASURES : SALES_CONSTRUCTOR_MEASURES)
+  return { ...dataset, Measurements: dataset.Measurements.filter(field => allowed.has(field.Type)), Filters: dataset.Filters.filter(field => ![21, 64].includes(field.Type)) }
 }
 export function salesConstructorError(request: ReportRequestBody, dataset?: ReportDataset): string | null {
   const raw = requestReportProfile(request)
-  if (raw === undefined) return null
+  if (raw === undefined) return constructorPresentationError(request, dataset)
   const profile = readReportProfile(raw)
   if (!profile || request.dataSource !== 2) return 'Невідомий профіль конструктора продажів.'
   if (dataset && !salesConstructorSupported(dataset, profile)) return 'Цей сервер ще не підтримує вибраний конструктор продажів.'
-  const measures: readonly number[] = profile === 'grossProfit' ? GROSS_PROFIT_CONSTRUCTOR_MEASURES : SALES_CONSTRUCTOR_MEASURES
-  if (!Array.isArray(request.sorted?.Measurements) || request.sorted.Measurements.some(item => !measures.includes(item.Type))) return 'Показник не належить до вибраного звіту.'
-  return null
+  const measures = new Set<number>(profile === 'grossProfit' ? GROSS_PROFIT_CONSTRUCTOR_MEASURES : SALES_CONSTRUCTOR_MEASURES)
+  if (!Array.isArray(request.sorted?.Measurements) || request.sorted.Measurements.some(item => !measures.has(item.Type))) return 'Показник не належить до вибраного звіту.'
+  return constructorPresentationError(request, dataset)
 }
 export function salesConstructorRequest(request: ReportRequestBody, marker: string, dataset: ReportDataset): ReportRequestBody {
   const profile = profileForWorkbook(marker)

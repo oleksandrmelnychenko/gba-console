@@ -254,6 +254,8 @@ export type ReportSourceBuyerSubtreeCapabilities = {
 }
 
 export type ReportRequestBody = {
+  constructorPresentation?: unknown
+  ConstructorPresentation?: unknown
   reportProfile?: unknown
   ReportProfile?: unknown
   presentationCurrency?: unknown
@@ -359,6 +361,7 @@ export type ReportRequestBody = {
 export type ReportDatasetField = { Type: number; Name: string; Selectable?: boolean; valueSemantics?: import('./data/reportNumberPresentation').ReportValueSemantics; hierarchy?: import('./data/currentVparivanieAnalysis').AnalysisHierarchy }
 
 export type ReportDataset = {
+  constructorPresentation?: unknown
   reportProfiles?: unknown
   currentFinancialPresentationCurrency?: unknown
   configuration?: unknown

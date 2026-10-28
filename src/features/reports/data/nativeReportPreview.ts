@@ -1,3 +1,4 @@
+import { readConstructorPresentation, type ConstructorPresentation } from './constructorPresentation'
 import { readResolvedPresentationCurrency, type ResolvedReportPresentationCurrency } from './reportPresentationCurrency'
 import { isAnalysisRequest, readAnalysisMetadata, type CurrentVparivanieAnalysisMetadata, type CurrentVparivanieAnalysisRequest } from './currentVparivanieAnalysis'
 import { isMovementSelection, readMovementCoverage, type CurrentVparivanieMovementCoverage, type CurrentVparivanieMovementSelection } from './currentVparivanieMovements'
@@ -46,6 +47,7 @@ export type NativeReportPreviewColumnWindow = { ColumnOffset: number; ColumnLimi
 export type NativeReportPreviewPage = { Offset: number; Limit: number; TotalVisibleRows: number; ReturnedRows: number; HasMore: boolean }
   & Partial<NativeReportPreviewColumnWindow>
 export type NativeReportPreview = {
+  constructorPresentation?: ConstructorPresentation
   numberPresentation?: ReportNumberPresentation
   valueSemantics?: Array<{ columnSourceIndex: number; measureType: number | null; semantics: ReportValueSemantics }>
   ResultSession?: { ResultId: string; RequestSha256: string; ResultSha256: string; ExpiresAtUtc: string }
@@ -182,6 +184,7 @@ export function normalizeNativeReportPreview(response: unknown, fullCurrentVpari
   const columnWindow = readColumnWindow(preview.Page, preview.Columns.length)
   const columnBound = columnWindow ? MAXIMUM_RESULT_COLUMNS : LEGACY_PREVIEW_COLUMNS
 
+  if (preview.constructorPresentation != null && (!readConstructorPresentation(preview.constructorPresentation) || !record(preview.Request) || preview.Request.DataSource !== 'NativeSalesNet')) throw new Error('Непідтримуване оформлення результату.')
   if (preview.numberPresentation != null && !readNumberPresentation(preview.numberPresentation)) throw new Error('Непідтримуваний формат чисел результату.')
   if (preview.valueSemantics !== undefined && (!Array.isArray(preview.valueSemantics) || preview.valueSemantics.some(item => !record(item) || !Number.isInteger(item.columnSourceIndex) || !readValueSemantics(item.semantics)
     || columnWindow && !((item.columnSourceIndex as number) >= columnWindow.ColumnOffset && (item.columnSourceIndex as number) < columnWindow.ColumnOffset + columnWindow.ReturnedColumns)))) throw new Error('Некоректні одиниці показників результату.')

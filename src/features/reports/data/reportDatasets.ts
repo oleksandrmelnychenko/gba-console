@@ -1,3 +1,4 @@
+import { cloneConstructorPresentation } from './constructorPresentation'
 import { cloneReportProfile, salesConstructorError } from './salesConstructorProfiles'
 import { retainMeasurementOrder } from './reportConstructorTree'
 import { SALES_BY_RESPONSIBLES_COLUMNS, SALES_BY_RESPONSIBLES_MEASURES, SALES_BY_RESPONSIBLES_ROWS, SALES_BY_RESPONSIBLES_SOURCE } from './salesByResponsibles'
@@ -352,7 +353,7 @@ export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPr
   // Preserve both raw aliases, including invalid imported material, without reconstructing the tree.
   const preservedOptions = { ...(Object.hasOwn(current, 'settlementPeriod') ? { settlementPeriod: structuredClone(current.settlementPeriod) } : {}),
     ...(Object.hasOwn(current, 'SettlementPeriod') ? { SettlementPeriod: structuredClone(current.SettlementPeriod) } : {}), ...cloneGroupedSettlementAliases(current), ...cloneSettlementReadModeAliases(current), ...clonePaymentComparisonAliases(current), ...cloneMarginComparisonAliases(current), ...cloneRateComparisonAliases(current), ...cloneReturnComparisonAliases(current), ...cloneBuyerSalesShareAliases(current), ...cloneRevenueComparisonAliases(current), ...cloneXyzAliases(current), ...(Object.hasOwn(current, 'comparison') ? { comparison: structuredClone(current.comparison) } : {}),
-    ...cloneReportProfile(current), ...cloneSourceCounterpartyGroupAliases(current), ...cloneGroupedCashAliases(current), ...cloneCashReadModeAliases(current), ...cloneWorkbookAliases(current),
+    ...cloneConstructorPresentation(current), ...cloneReportProfile(current), ...cloneSourceCounterpartyGroupAliases(current), ...cloneGroupedCashAliases(current), ...cloneCashReadModeAliases(current), ...cloneWorkbookAliases(current),
     ...(Object.hasOwn(current, 'cashPeriod') ? { cashPeriod: structuredClone(current.cashPeriod) } : {}),
     ...(Object.hasOwn(current, 'CashPeriod') ? { CashPeriod: structuredClone(current.CashPeriod) } : {}),
     ...(Object.hasOwn(current, 'Comparison') ? { Comparison: structuredClone(current.Comparison) } : {}),

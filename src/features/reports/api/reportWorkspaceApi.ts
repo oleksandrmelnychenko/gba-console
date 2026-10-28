@@ -1,3 +1,4 @@
+import { cloneConstructorPresentation } from '../data/constructorPresentation'
 import { cloneReportProfile, salesConstructorError } from '../data/salesConstructorProfiles'
 import { currentFinancialBuyerManagerFilterCapability } from '../data/currentFinancialBuyerManagerFilter'
 import { currentFinancialDocumentFilterCapability } from '../data/currentFinancialDocumentFilter'
@@ -155,6 +156,8 @@ export function parseReportDatasets(result: unknown): ReportDataset[] {
 
 type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
   Data: {
+    constructorPresentation?: unknown
+    ConstructorPresentation?: unknown
     reportProfile?: unknown
     ReportProfile?: unknown
     From: string | null
@@ -277,7 +280,7 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     ...cloneSourceCounterpartyGroupAliases(value.Data),
     ...cloneGroupedCashAliases(value.Data),
     ...cloneCashReadModeAliases(value.Data),
-    ...cloneReportProfile(value.Data),
+    ...cloneConstructorPresentation(value.Data), ...cloneReportProfile(value.Data),
     ...cloneWorkbookAliases(value.Data),
     ...cloneNumberPresentationAliases(value.Data),
     ...clonePresentationCurrencyAliases(value.Data),

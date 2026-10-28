@@ -36,9 +36,10 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
   const amountColumns = new Set(preview.Columns.filter(column => isAmountColumn(column)).map(column => column.SourceIndex))
   const semanticsByColumn = new Map(preview.valueSemantics?.map(item => [item.columnSourceIndex, item.semantics]))
   const blanksZero = previewBlanksZero(preview.Request?.DataSource)
-  const negativeRed = previewNegativeRed(preview.Request?.DataSource)
+  const negativeRed = preview.constructorPresentation?.negativeRed ?? previewNegativeRed(preview.Request?.DataSource)
   const valueClass = (value: NativeReportPreviewScalar | undefined) => negativeRed && isNegativePreviewScalar(value) ? 'is-negative' : undefined
   const totals = preview.Totals
+  const grandTotals = preview.constructorPresentation?.grandTotals !== false
   const groupTotals = new Map<number, NonNullable<NativeReportPreview['Totals']>['Groups']>()
   for (const group of totals?.Groups ?? []) groupTotals.set(group.RowSourceIndex, [...(groupTotals.get(group.RowSourceIndex) ?? []), group]
     .sort((left, right) => left.Level - right.Level))
@@ -132,13 +133,13 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
           })}
           </tr>
         </Fragment>)}</tbody>
-        {totals ? <tfoot><tr className="report-inline-preview__grand-total">
+        {totals && grandTotals ? <tfoot><tr className="report-inline-preview__grand-total">
           <th scope="row" colSpan={rowHeaders.length}>Загальний підсумок</th>
           {totalCells(totals.Values)}
         </tr></tfoot> : null}
       </table>
     </ReportTableScrollArea>
-    {showPageNote && preview.Page.HasMore ? <Text size="xs" c="dimmed" className="report-inline-preview__more">Показано рядки {preview.Page.Offset + 1}–{preview.Page.Offset + preview.Page.ReturnedRows}. Повний результат доступний у Excel або PDF.{totals
+    {showPageNote && preview.Page.HasMore ? <Text size="xs" c="dimmed" className="report-inline-preview__more">Показано рядки {preview.Page.Offset + 1}–{preview.Page.Offset + preview.Page.ReturnedRows}. Повний результат доступний у Excel або PDF.{totals && grandTotals
       ? ` Загальний підсумок — за всіма ${preview.Page.TotalVisibleRows} рядками звіту.` : ''}</Text> : null}
     {showPageNote && wide && columnWindow ? <Text size="xs" c="dimmed" className="report-inline-preview__more">
       {columnWindowText(columnWindow.ColumnOffset, columnWindow.ReturnedColumns, columnWindow.TotalColumns)}. Решта колонок — у Excel.</Text> : null}

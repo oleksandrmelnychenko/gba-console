@@ -16,7 +16,7 @@ import { getNativeReportProfile, hasFixedReportAxes } from './nativeReportProfil
 import type { ReportWorkspaceSnapshot } from './reportWorkspaceDraft'
 import { datasetGroupings } from './reportDatasets'
 
-const options = ['reportProfile', 'comparison', 'xyz', 'paymentComparison', 'marginComparison', 'rateComparison',
+const options = ['constructorPresentation', 'ConstructorPresentation', 'reportProfile', 'comparison', 'xyz', 'paymentComparison', 'marginComparison', 'rateComparison',
   'returnComparison', 'buyerSalesShare', 'revenueComparison', 'ordering', 'filterExpression',
   'abcClassification', 'hideZero', 'threshold', 'topGroups', 'priceTypeSalesComparison', 'workbookPresentation', 'numberPresentation', 'presentationCurrency']
 
