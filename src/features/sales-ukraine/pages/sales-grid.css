@@ -735,6 +735,26 @@
   gap: 2px;
 }
 
+.sg-carrier-comment {
+  color: var(--mantine-color-gray-7);
+  display: -webkit-box;
+  flex: 0 1 240px;
+  font-size: 12px;
+  line-height: 16px;
+  max-width: 28%;
+  min-width: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.sg-carrier-comment:focus-visible {
+  outline: 2px solid var(--mantine-color-orange-6);
+  outline-offset: 2px;
+}
+
 .sg-client-name {
   display: flex;
   align-items: center;

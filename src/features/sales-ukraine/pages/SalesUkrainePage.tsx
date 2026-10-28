@@ -1934,6 +1934,19 @@ const SaleGridRow = memo(function SaleGridRow({
             )}
           </div>
         </div>
+        {sale.Comment?.trim() && (
+          <Tooltip
+            label={sale.Comment}
+            multiline
+            maw={360}
+            events={{ hover: true, focus: true, touch: false }}
+            styles={{ tooltip: { overflowWrap: 'anywhere', whiteSpace: 'pre-wrap' } }}
+          >
+            <span className="sg-carrier-comment" aria-label={t('Коментар')} tabIndex={0} data-row-stop="true">
+              {sale.Comment}
+            </span>
+          </Tooltip>
+        )}
       </div>
 
       <div className={`sg-amt${unpaid ? ' is-unpaid' : ''}`}>
