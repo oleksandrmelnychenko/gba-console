@@ -87,6 +87,9 @@ export type OfferSubClientLink = OfferEntity & {
 }
 
 export type OffersProduct = OfferEntity & {
+  AvailableQtyUk?: number | null
+  AvailableQtyUkVAT?: number | null
+  AvailableQtyUkReSale?: number | null
   MainOriginalNumber?: string
   Name?: string
   VendorCode?: string
