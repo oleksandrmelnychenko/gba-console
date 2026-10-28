@@ -11,10 +11,11 @@ export function CustomerGroupsPanel({ value, onChange, disabled }: Props) {
   const groups=value ?? initial
   const [editors,setEditors]=useState(()=>({groups:groups.Groups,keys:groups.Groups.map(()=>crypto.randomUUID())}))
   if(editors.groups!==groups.Groups) {
-    const localEdit=groups.Groups.some(group=>editors.groups.includes(group)) && groups.Groups.length===editors.groups.length
+    const previousPositions=new Map(editors.groups.map((group,index)=>[group,index]))
+    const localEdit=groups.Groups.some(group=>previousPositions.has(group)) && groups.Groups.length===editors.groups.length
     setEditors({groups:groups.Groups,keys:groups.Groups.map((group,index)=>{
-      const previous=editors.groups.indexOf(group)
-      return previous>=0?editors.keys[previous]:localEdit?editors.keys[index]:crypto.randomUUID()
+      const previous=previousPositions.get(group)
+      return previous!==undefined?editors.keys[previous]:localEdit?editors.keys[index]:crypto.randomUUID()
     })})
   }
   const [known,setKnown]=useState<Record<string,ClientOption>>({})
@@ -29,21 +30,10 @@ export function CustomerGroupsPanel({ value, onChange, disabled }: Props) {
     const missing=selectedIds.split(',').filter(id=>!known[id])
     if(!missing.length)return
     const controller=new AbortController()
-    void (async()=>{
-      const resolved:ClientOption[]=[];let failed=false
-      // Share names across sets and bound concurrency when reopening a large saved selection.
-      for(let start=0;start<missing.length && !controller.signal.aborted;start+=4) {
-        await Promise.all(missing.slice(start,start+4).map(async id=>{
-          try {
-            const rows=await searchDatasetReportValues(44,6,{value:`id:${id}`,offset:0,limit:1},controller.signal)
-            const client=rows.find(row=>String(row.Id)===id)
-            resolved.push({value:id,label:client?.Name?String(client.Name):`Клієнт [${id}] — не знайдено`})
-          } catch {failed=true}
-        }))
-      }
+    void resolveClientLabels(missing,controller.signal).then(({resolved,failed})=>{
       if(controller.signal.aborted)return
       remember(resolved);setRestoreError(failed?'Не вдалося відновити частину назв клієнтів. Вибрані клієнти збережені.':null)
-    })()
+    })
     return()=>controller.abort()
   },[disabled,known,remember,selectedIds])
   return <Stack gap="sm">
@@ -83,4 +73,19 @@ function CustomerGroupEditor({group,index,disabled,onChange,onRemove,known,onFou
       filter={({options})=>options} value={group.ClientIds.map(String)} disabled={disabled} maxValues={100} error={error}
       onChange={ids=>onChange({...group,ClientIds:ids.map(Number)})} nothingFoundMessage="Клієнтів не знайдено" />
   </Stack>
+}
+
+async function resolveClientLabels(ids:string[],signal:AbortSignal) {
+  const resolved:ClientOption[]=[];let failed=false
+  // Share names across sets and bound concurrency when reopening a large saved selection.
+  for(let start=0;start<ids.length && !signal.aborted;start+=4) {
+    await Promise.all(ids.slice(start,start+4).map(async id=>{
+      try {
+        const rows=await searchDatasetReportValues(44,6,{value:`id:${id}`,offset:0,limit:1},signal)
+        const client=rows.find(row=>String(row.Id)===id)
+        resolved.push({value:id,label:client?.Name?String(client.Name):`Клієнт [${id}] — не знайдено`})
+      } catch {failed=true}
+    }))
+  }
+  return {resolved,failed}
 }
