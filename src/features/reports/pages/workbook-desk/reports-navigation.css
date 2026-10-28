@@ -1,0 +1,22 @@
+.reports-navigation {
+  width: 100%;
+  min-width: 0;
+}
+
+.reports-navigation__row {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.reports-navigation__row > .console-subnav-pill {
+  flex-shrink: 0;
+  gap: 6px;
+}
+
+.reports-navigation__dropdown {
+  max-width: calc(100vw - 16px);
+}
+
+.reports-navigation__dropdown .mantine-Menu-itemLabel {
+  white-space: normal;
+}
