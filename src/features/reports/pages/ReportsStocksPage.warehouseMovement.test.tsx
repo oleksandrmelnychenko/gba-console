@@ -51,7 +51,7 @@ describe('native warehouse stock movement on the reports page', () => {
     render(page()); await findOpenedWorkbook('ВП.xls')
     changeReportPeriod({ from: '2026-08-17' })
     const before = screen.getByRole('button', { name: /^Період:/ }).getAttribute('aria-label')
-    fireEvent.click(screen.getByRole('button', { name: 'Рух товару' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Залишки' }))
     const form = await screen.findByRole('region', { name: 'Рух товару' })
     expect(await within(form).findByRole('button', { name: /^Період:/ })).toBeTruthy()
     expect(within(form).getByRole('group', { name: 'Склади' })).toBeTruthy()

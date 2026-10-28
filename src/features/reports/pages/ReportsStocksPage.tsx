@@ -6,6 +6,7 @@ import { ReportPresentationCurrencyPanel } from './ReportPresentationCurrencyPan
 import { requestPresentationCurrency, readPresentationCurrency, presentationCurrencySupported, presentationCurrencyModeSupported, isPresentationCurrencyMoneyMeasure, currencyNeutralMeasureLabel } from '../data/reportPresentationCurrency'
 import { PublishedReportWorkspace } from './lazyReportDialogs'
 import { financialAxesCapability, financialAxesConfigurationError } from '../data/financialAxes'
+import { ReportsNavigation } from './workbook-desk/ReportsNavigation'
 import { ReportsSubmenu } from './workbook-desk/ReportsSubmenu'
 import type { PublishedReportTab } from './workbook-desk/publishedReportTabs'
 import { ReportValueAutocomplete } from './ReportValueAutocomplete'
@@ -1050,7 +1051,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     ]
     const submenuProps = { onTemplates: () => openDeskTemplates(false), templatesDisabled: !canGenerateReport || isLoading || !!publishedTab,
       templatesOpened: deskTemplatesOpened, onCatalogue: () => setPublishedTab(null), catalogueDisabled: isLoading || publishedBusy }
-    const quietActions = <PageSubmenuActions>
+    const quietActions = <>
       {canGenerateReport && ownerId ? <ReportDraftControl renderTrigger={trigger => <ReportsSubmenu {...submenuProps} onDraft={trigger.onOpen} draftDisabled={trigger.disabled} draftOpened={trigger.opened} />}
         pending={workspaceDraft.recovery === 'pending' || workspaceDraft.recovery === 'blocked'}
         canRestore={workspaceDraft.recovery === 'pending' && datasetStorage.loaded && !datasetStorage.error}
@@ -1058,18 +1059,29 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         savedAt={workspaceDraft.savedAt} error={draftRestoreError ?? workspaceDraft.message}
         onRestore={() => workspaceDraft.restore(restoreWorkspace)} onUndo={() => workspaceDraft.undo(restoreWorkspace)}
         onDiscard={() => { const discarded = workspaceDraft.discardRecovery(); if (discarded) setDraftRestoreError(null); return discarded }} /> : <ReportsSubmenu {...submenuProps} />}
-    </PageSubmenuActions>
+    </>
+    const navigationDisabled = isLoading || workbookResolving || !canGenerateReport || publishedBusy
+    const openNavigationWorkbook = (item: WorkbookLaunch) => {
+      setPublishedTab(null)
+      if (item.fileName !== activeWorkbook) openWorkbook(item)
+    }
+    const openPublishedReport = (tab: PublishedReportTab) => {
+      setPublishedTab(tab)
+      setVisitedPublished(current => current.includes(tab) ? current : [...current, tab])
+    }
     const excelUrl = result?.document.DocumentURL || null
     const pdfUrl = result?.document.PdfDocumentURL || null
     return (
       <Stack className="reports-stocks-page workbook-desk" gap={6}>
+        <PageSubmenuActions>
+          <ReportsNavigation launches={workbookLaunches} active={activeWorkbook} movement={publishedTab === 'movement'}
+            disabled={navigationDisabled} onOpen={openNavigationWorkbook} onStocks={() => openPublishedReport('movement')} />
+        </PageSubmenuActions>
         {canGenerateReport && catalogueNotice?.failed ? <Alert color="red" className="workbook-desk__notice" icon={<CircleAlert size={18} />}
           title={catalogueNotice.title ?? t('Не вдалося відкрити звіт')}
           withCloseButton closeButtonLabel={t('Закрити повідомлення')} onClose={() => setCatalogueNotice(null)}>{catalogueNotice.text}</Alert> : null}
-        <WorkbookSwitcher compact launches={workbookLaunches} active={publishedTab ? null : activeWorkbook} disabled={isLoading || workbookResolving || !canGenerateReport || publishedBusy}
-          published={publishedTab} onOpenPublished={tab => {
-            setPublishedTab(tab); setVisitedPublished(current => current.includes(tab) ? current : [...current, tab])
-          }} extra={quietActions} onOpen={item => { setPublishedTab(null); if (item.fileName !== activeWorkbook) openWorkbook(item) }} />
+        <WorkbookSwitcher compact launches={workbookLaunches} active={publishedTab ? null : activeWorkbook} disabled={navigationDisabled}
+          published={publishedTab} onOpenPublished={openPublishedReport} extra={quietActions} onOpen={openNavigationWorkbook} />
         {canGenerateReport && ownerId ? visitedPublished.map(tab => <div key={tab} style={{ display: publishedTab === tab ? undefined : 'none' }}>
           <Suspense fallback={<Group role="status" gap="xs"><Loader size="sm" /><Text>{t('Завантаження звіту…')}</Text></Group>}>
             <PublishedReportWorkspace tab={tab} callerKey={ownerId} onBusyChange={setPublishedBusy} />
