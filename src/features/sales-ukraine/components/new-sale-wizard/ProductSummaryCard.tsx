@@ -78,6 +78,12 @@ export const ProductSummaryCard = memo(function ProductSummaryCard({
             <strong>{qtyFormatter.format(displayQty)}</strong>
             <TableChip tone="neutral" value={unit} />
           </div>
+          {variant === 'compact' && (
+            <section aria-label={t('Опис')} className="new-sale-product-summary__description">
+              <span className="new-sale-product-summary__description-label">{t('Опис')}</span>
+              <p>{product.Description?.trim() ? product.Description : t('Опис відсутній')}</p>
+            </section>
+          )}
           {onOpenDetails && (
             <Button
               aria-expanded={detailsExpanded}

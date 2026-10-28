@@ -230,6 +230,43 @@ afterEach(() => {
 })
 
 describe('NewSaleProductsStep selected product summary', () => {
+  it('shows the searched 40773CNT description before opening details', async () => {
+    const description = 'чорний, напис "LONG VEHICLE", 2D!!, "Мітла"'
+    apiMocks.searchSaleProductsWithAvailability.mockResolvedValueOnce([createSearchProduct(15, {
+      NetUid: 'a0a0485e-1ae2-4fad-b130-e59adaf0d2b0',
+      VendorCode: '40773CNT', NameUA: undefined, Name: 'Бризговик причіпу гума',
+      Description: description, MainOriginalNumber: 'GP825', Size: '350x2400', CurrentPrice: 22.1,
+    })])
+    renderStep()
+    fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: '40773CNT' } })
+    const summary = await screen.findByRole('region', { name: 'Коротка інформація про товар' })
+    expect(within(within(summary).getByRole('region', { name: 'Опис' })).getByText(description)).toBeTruthy()
+    expect(within(summary).getByText('15')).toBeTruthy()
+    expect(summaryPrices(summary)[0]).toBe('22,10')
+    expect(screen.queryByRole('dialog', { name: 'Деталі товару' })).toBeNull()
+    expect(apiMocks.updateProduct).not.toHaveBeenCalled()
+    expect(apiMocks.addOrderItem).not.toHaveBeenCalled()
+    fireEvent.click(within(summary).getByRole('button', { name: 'Деталі' }))
+    const drawer = await screen.findByRole('dialog', { name: 'Деталі товару' })
+    expect(within(drawer).getAllByText(description)).toHaveLength(1)
+  })
+
+  it.each([undefined, '', '   '])('replaces the previous description when the next product has %j description', async (description) => {
+    apiMocks.searchSaleProductsWithAvailability.mockResolvedValueOnce([
+      createSearchProduct(15, { Description: 'Опис першого товару' }),
+      createSearchProduct(3, { NetUid: 'product-2', VendorCode: 'SECOND', Description: description }),
+    ])
+    renderStep()
+    fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'SEM' } })
+    const summary = await screen.findByRole('region', { name: 'Коротка інформація про товар' })
+    expect(within(summary).getByText('Опис першого товару')).toBeTruthy()
+    fireEvent.click(screen.getByText('SECOND'))
+    await waitFor(() => expect(within(summary).getByText('Опис відсутній')).toBeTruthy())
+    expect(within(summary).queryByText('Опис першого товару')).toBeNull()
+    expect(within(summary).getByText('SECOND')).toBeTruthy()
+    expect(screen.queryByRole('dialog', { name: 'Деталі товару' })).toBeNull()
+  })
+
   it.each(['analogue', 'component'] as const)('opens and edits the shared detail card for a %s', async (source) => {
     const related = createSearchProduct(7, { NetUid: 'related-product', VendorCode: 'RELATED', HasAnalogue: false,
       Description: 'Опис пов’язаного товару', ProductAvailabilities: [{ Amount: 7 }] })
@@ -365,6 +402,10 @@ describe('NewSaleProductsStep selected product summary', () => {
     ))
     expect(within(drawer).getByText('Оновлений опис')).toBeTruthy()
     expect(within(drawer).queryByRole('textbox', { name: 'Опис' })).toBeNull()
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Закрити деталі товару' }))
+    const summary = screen.getByRole('region', { name: 'Коротка інформація про товар' })
+    expect(within(summary).getByText('Оновлений опис')).toBeTruthy()
+    expect(within(summary).queryByText('Початковий опис')).toBeNull()
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 300)) })
     expect(apiMocks.getProductCurrentPriceByAgreement).toHaveBeenCalledOnce()
   })
