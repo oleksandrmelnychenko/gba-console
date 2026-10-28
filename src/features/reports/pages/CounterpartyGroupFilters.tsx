@@ -56,7 +56,7 @@ export function CounterpartyGroupFilters({ value, disabled, onChange }: {
     {(['IncludeGroupIds', 'ExcludeGroupIds'] as const).map(list => <MultiSelect key={list}
       label={<Group component="span" gap={6} wrap="nowrap">
         {list === 'IncludeGroupIds' ? <UserRoundPlus size={16} aria-hidden="true" /> : <UserRoundMinus size={16} aria-hidden="true" />}
-        {list === 'IncludeGroupIds' ? 'Включити групи контрагентів (Fenix)' : 'Виключити групи контрагентів (Fenix)'}
+        {list === 'IncludeGroupIds' ? 'Включити групи контрагентів' : 'Виключити групи контрагентів'}
       </Group>}
       placeholder="Пошук групи або контрагента"
       data={[...options.values()]} value={selected?.[list].map(id => id.toUpperCase()) ?? []}
