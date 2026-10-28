@@ -27,7 +27,7 @@ vi.mock('../../../shared/ui/data-table/DataTable', () => ({
     data: AccountingCashFlowHeadItem[]
     columns: DataTableColumn<AccountingCashFlowHeadItem>[]
   }) => <div>{data.map((item, index) => (
-    <div data-testid={`money-row-${index}`} key={item.NetUid}>
+    <div data-testid={`money-row-${index}`} key={String(item.NetUid)}>
       {columns.map((column) => <span data-testid={column.id} key={column.id}>{column.cell?.(item)}</span>)}
     </div>
   ))}</div>,
