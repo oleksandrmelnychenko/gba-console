@@ -2,7 +2,7 @@ import { CUSTOMER_RETURN_WORKBOOK } from '../../data/customerReturnReport'
 import { Menu } from '@mantine/core'
 import { BarChart3, Boxes, ChevronDown, FileText, ShoppingCart, Wallet } from 'lucide-react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
-import type { WorkbookLaunch } from '../../data/bug1274WorkbookLaunch'
+import { PURCHASES_CONSTRUCTOR_FILE, type WorkbookLaunch } from '../../data/bug1274WorkbookLaunch'
 import { SALES_BY_RESPONSIBLES_WORKBOOK_FILE } from '../../data/salesByResponsibles'
 import './reports-navigation.css'
 
@@ -35,6 +35,7 @@ const special = [
 export function ReportsNavigation({ launches, active, movement, disabled, onOpen, onStocks }: Props) {
   const { t } = useI18n()
   const activeSource = movement ? null : launches.find(launch => launch.fileName === active)?.dataset.DataSource
+  const purchases = launches.find(launch => launch.fileName === PURCHASES_CONSTRUCTOR_FILE)
   const unavailable = t('Звіт ще не доступний у поточному каталозі.')
   const pill = (selected: boolean) => `console-subnav-pill console-subnav-item${selected ? ' is-active' : ''}`
   function dropdown(label: string, Icon: typeof BarChart3, entries: readonly { label: string; file: string | null }[], selected: boolean) {
@@ -62,7 +63,9 @@ export function ReportsNavigation({ launches, active, movement, disabled, onOpen
       <button type="button" className={pill(movement)} disabled={disabled} aria-pressed={movement} onClick={onStocks}>
         <Boxes size={16} aria-hidden="true" /><span>{t('Залишки')}</span>
       </button>
-      <button type="button" className={pill(false)} disabled title={unavailable}>
+      <button type="button" className={pill(activeSource === 3)} disabled={disabled || !purchases}
+        aria-pressed={activeSource === 3} title={!purchases ? unavailable : undefined}
+        onClick={() => { if (purchases && !disabled) onOpen(purchases) }}>
         <ShoppingCart size={16} aria-hidden="true" /><span>{t('Закупи')}</span>
       </button>
       {dropdown('Грошові кошти', Wallet, cash, activeSource === 40 || activeSource === 41)}

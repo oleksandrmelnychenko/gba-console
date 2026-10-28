@@ -49,6 +49,8 @@ export const CASH_READ_MODE_NOTICE = SETTLEMENT_READ_MODE_NOTICE
 export const DEBTOR_WORKBOOK_CURRENCY_NOTICE = 'Як в 1С: суми договорів контрагента в різних валютах додаються в один рядок без перерахунку; підсумки організацій і загальний підсумок також додають валюти без перерахунку.'
 export const SETTLEMENT_WORKBOOK_CURRENCY_NOTICE = 'Як в 1С: рядки розділено за валютою взаєморозрахунків; підсумки організацій і загальний підсумок додають суми різних валют без перерахунку.'
 
+export const PURCHASES_CONSTRUCTOR_FILE = 'gba:purchases-constructor:v1'
+
 const supported = [
   { fileName: CUSTOMER_RETURN_WORKBOOK, label: 'Звіт повернення', dataSource: 2,
     notice: 'Повернення GBA за датою документа. Відбори: контрагент, товар, склад рядка та причина. Кількість — записана в поверненнях, без перерахунку одиниць.',
@@ -105,6 +107,14 @@ const supported = [
     notice: 'Організація → відповідальний документа продажу, у колонках — відповідальний замовлення покупця; продажі мінус повернення в EUR без ПДВ і з ПДВ з документів GBA. Відповідального не підставляють з картки клієнта: відсутні дані показано як «не визначено».',
     dataSource: SALES_BY_RESPONSIBLES_SOURCE,
     accepts: isSalesByResponsiblesDataset,
+  },
+  {
+    fileName: PURCHASES_CONSTRUCTOR_FILE,
+    label: 'Звіт по закупам',
+    notice: 'Проведені надходження GBA: кількість без перерахунку, вартість без ПДВ, ПДВ у EUR і вага нетто у кг. Непідтверджені суми й залежні підсумки залишаються порожніми.',
+    dataSource: 3,
+    accepts: (dataset: ReportDataset) => [0, 2, 3, 96].every(type => dataset.Measurements.some(field => field.Type === type && field.Selectable !== false))
+      && [21, 24, 25].every(type => dataset.Groupings.some(field => field.Type === type && field.Selectable !== false)),
   },
 ] as const
 
@@ -194,6 +204,12 @@ export function bug1274WorkbookRequest(request: ReportRequestBody, launch?: Work
   resolved?: ResolvedWorkbookFilters): ReportRequestBody {
   if (!launch || launch.dataset.DataSource !== request.dataSource) return request
   if (launch.fileName === CUSTOMER_RETURN_WORKBOOK) return customerReturnRequest(request, launch.dataset)
+  if (launch.fileName === PURCHASES_CONSTRUCTOR_FILE && request.dataSource === 3) {
+    const groups = datasetGroupings(launch.dataset)
+    return { ...structuredClone(request), sorted: { ...structuredClone(request.sorted),
+      Row: [21, 24].flatMap(type => groups.filter(field => field.type === type)),
+      Col: groups.filter(field => field.type === 25) } }
+  }
   const selected = filtersWorkbookRequest(supplierWorkbookRequest(settlementWorkbookRequest(
     groupedWorkbookRequest(dayWorkbookRequest(request, launch), launch.currencyAxis), launch), launch), launch, resolved)
   const presented = presentationWorkbookRequest(selected, launch)
