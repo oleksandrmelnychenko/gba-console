@@ -18,6 +18,11 @@ const sales = [
   { label: 'Звіт по продажам', file: SALES_BY_RESPONSIBLES_WORKBOOK_FILE },
   { label: 'Валовий прибуток', file: 'ВП.xls' },
 ]
+const cash = [
+  { label: 'Відомість по коштах', file: 'Ведомость по денежным средствам.xls' },
+  { label: 'Взаєморозрахунки всі', file: 'Взаємороз всі.xls' },
+  { label: 'Дебіторська заборгованість', file: 'ДБіторка.xls' },
+]
 const special = [
   { label: 'Звіт впарювання', file: 'Впарювання.xls' },
   { label: 'Звіт по поверненням', file: null },
@@ -30,7 +35,6 @@ export function ReportsNavigation({ launches, active, movement, disabled, onOpen
   const { t } = useI18n()
   const activeSource = movement ? null : launches.find(launch => launch.fileName === active)?.dataset.DataSource
   const unavailable = t('Звіт ще не доступний у поточному каталозі.')
-  const cash = launches.find(launch => launch.dataset.DataSource === 40)
   const pill = (selected: boolean) => `console-subnav-pill console-subnav-item${selected ? ' is-active' : ''}`
   function dropdown(label: string, Icon: typeof BarChart3, entries: readonly { label: string; file: string | null }[], selected: boolean) {
     return <Menu position="bottom-start" withinPortal shadow="md" radius="md" trigger="click-hover">
@@ -60,11 +64,7 @@ export function ReportsNavigation({ launches, active, movement, disabled, onOpen
       <button type="button" className={pill(false)} disabled title={unavailable}>
         <ShoppingCart size={16} aria-hidden="true" /><span>{t('Закупи')}</span>
       </button>
-      <button type="button" className={pill(activeSource === 40 || activeSource === 41)} disabled={disabled || !cash}
-        title={!cash ? unavailable : undefined} aria-pressed={activeSource === 40 || activeSource === 41}
-        onClick={() => { if (cash && !disabled) onOpen(cash) }}>
-        <Wallet size={16} aria-hidden="true" /><span>{t('Грошові кошти')}</span>
-      </button>
+      {dropdown('Грошові кошти', Wallet, cash, activeSource === 40 || activeSource === 41)}
       {dropdown('Особливі звіти', FileText, special, activeSource === 39)}
     </div>
   </nav>

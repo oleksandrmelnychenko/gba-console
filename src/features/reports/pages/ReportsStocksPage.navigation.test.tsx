@@ -8,6 +8,7 @@ import { searchDatasetReportValues, previewStockReport } from '../api/reportsApi
 import { profitDayDataset, profitSupplierDataset } from '../data/profitReadMode.test-fixtures'
 import { currentVparivanieDataset } from '../data/currentVparivanie.test-fixtures'
 import { cashModeDataset } from '../data/cashReadMode.test-fixtures'
+import { settlementModeDataset } from '../data/settlementReadMode.test-fixtures'
 import { salesByResponsiblesDataset } from '../data/salesByResponsibles.test-fixtures'
 import { findOpenedWorkbook } from '../testing/workbookDesk'
 import { ReportsStocksPage } from './ReportsStocksPage'
@@ -22,7 +23,7 @@ vi.mock('../api/reportsApi', async original => ({ ...await original<typeof impor
 beforeEach(() => {
   vi.clearAllMocks(); localStorage.clear(); sessionStorage.clear(); auth.allowed = true
   vi.mocked(getReportDatasets).mockResolvedValue([profitDayDataset, profitSupplierDataset, currentVparivanieDataset,
-    cashModeDataset, salesByResponsiblesDataset])
+    cashModeDataset, settlementModeDataset, salesByResponsiblesDataset])
   vi.mocked(getServerReportTemplates).mockResolvedValue([])
   vi.mocked(searchDatasetReportValues).mockResolvedValue([])
 })
@@ -69,7 +70,43 @@ it('lists all five special reports and opens the available analysis without enab
   await findOpenedWorkbook('Впарювання.xls')
   expect(screen.getByRole('button', { name: 'Особливі звіти' }).getAttribute('aria-pressed')).toBe('true')
   fireEvent.click(screen.getByRole('button', { name: 'Грошові кошти' }))
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Відомість по коштах' }))
   await findOpenedWorkbook('Ведомость по денежным средствам.xls')
+})
+
+it('opens all three cash reports from the header menu and marks the selected form', async () => {
+  render(page()); await findOpenedWorkbook('ВП.xls')
+  const reports = [
+    ['Відомість по коштах', 'Ведомость по денежным средствам.xls'],
+    ['Взаєморозрахунки всі', 'Взаємороз всі.xls'],
+    ['Дебіторська заборгованість', 'ДБіторка.xls'],
+  ]
+  for (const [label, file] of reports) {
+    const cash = screen.getByRole('button', { name: 'Грошові кошти' })
+    await waitFor(() => expect((cash as HTMLButtonElement).disabled).toBe(false))
+    fireEvent.click(cash)
+    const items = await screen.findAllByRole('menuitem')
+    expect(items.map(item => item.textContent)).toEqual(reports.map(([name]) => name))
+    fireEvent.click(screen.getByRole('menuitem', { name: label }))
+    await findOpenedWorkbook(file)
+    expect(cash.getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Продажі' }).getAttribute('aria-pressed')).toBe('false')
+    await waitFor(() => expect((cash as HTMLButtonElement).disabled).toBe(false))
+    fireEvent.click(cash)
+    expect((await screen.findByRole('menuitem', { name: label })).getAttribute('aria-current')).toBe('page')
+    fireEvent.click(screen.getByRole('menuitem', { name: label }))
+  }
+  expect(previewStockReport).not.toHaveBeenCalled()
+})
+
+it('keeps settlement reports available when the cash dataset is missing', async () => {
+  vi.mocked(getReportDatasets).mockResolvedValue([profitDayDataset, settlementModeDataset])
+  render(page()); await findOpenedWorkbook('ВП.xls')
+  fireEvent.click(screen.getByRole('button', { name: 'Грошові кошти' }))
+  expect((await screen.findByRole('menuitem', { name: 'Відомість по коштах' })).getAttribute('data-disabled')).toBeTruthy()
+  expect(screen.getByText('Звіт ще не доступний у поточному каталозі.')).toBeTruthy()
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Взаєморозрахунки всі' }))
+  await findOpenedWorkbook('Взаємороз всі.xls')
 })
 
 it('keeps navigation visible but blocks report launches when permission is absent', async () => {
