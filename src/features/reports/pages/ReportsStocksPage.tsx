@@ -1,6 +1,5 @@
 import { CustomerGroupsPanel } from './CustomerGroupsPanel'
 import { customerGroupsError, type CustomerGroups } from '../data/customerGroups'
-import { CUSTOMER_RETURN_WORKBOOK } from '../data/customerReturnReport'
 import { readReportProfile, requestReportProfile, salesConstructorDataset, salesConstructorTitle, salesConstructorWorkbook } from '../data/salesConstructorProfiles'
 import { searchCurrentFinancialBuyerManagers } from '../api/currentFinancialBuyerManagerLookup'
 import { financialBuyerManagerReference, financialBuyerManagerEntityReference, financialBuyerManagerSelectedEntity, financialBuyerManagerLookupPolicy } from '../data/currentFinancialBuyerManagerFilter'
@@ -992,7 +991,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   )
 
   if (bug1274Only) {
-    const selectionOnly = activeWorkbook === 'Впарювання.xls' || activeWorkbook === CUSTOMER_RETURN_WORKBOOK
+    const selectionOnly = activeWorkbook === 'Впарювання.xls' || (dataSource === 2 && returnsOnly === true)
     const activeProfile = readReportProfile(reportProfile)
     const deskTitle = activeProfile ? salesConstructorTitle(activeProfile) : workbookDeskTitle(activeWorkbook, dataSource)
     const deskReportKey = `${activeWorkbook ?? ''}|${dataSource}`

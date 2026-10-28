@@ -5,6 +5,8 @@ import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { previewStockReport, searchDatasetReportValues } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
 import { grossDataset, netDataset } from '../data/reportDatasets.test-fixtures'
+import { customerReturnRequest } from '../data/customerReturnReport'
+import { defaultDatasetRequest } from '../data/reportDatasets'
 import { changeReportPeriod } from '../testing/reportPeriod'
 import { ReportsStocksPage } from './ReportsStocksPage'
 
@@ -40,4 +42,21 @@ it('opens sales and gross-profit profiles, submits one GBA request and preserves
   expect(vi.mocked(previewStockReport).mock.calls[1][0]).toMatchObject({ dataSource: 2, reportProfile: 'grossProfit', from: '2026-09-01', to: '2026-09-30' })
   expect(vi.mocked(previewStockReport).mock.calls[1][0].sorted.Row.map(item => item.type)).toEqual([4, 10, 7])
   expect(vi.mocked(previewStockReport).mock.calls[1][0].sorted.Col.map(item => item.type)).toEqual([2])
+})
+
+it('keeps a saved customer-return template filters-only after the workbook marker is cleared', async () => {
+  const dataset = { ...netDataset, returnsOnly: true, customerReturnFilters: true,
+    Filters: [...netDataset.Filters, { Type: 1, Name: 'Товар' }, { Type: 21, Name: 'Склад' }, { Type: 64, Name: 'Причина' }] }
+  const data = customerReturnRequest(defaultDatasetRequest(dataset, '2026-10-01', '2026-10-27'), dataset)
+  vi.mocked(getReportDatasets).mockResolvedValue([dataset])
+  vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: crypto.randomUUID(), Revision: 1, Name: 'Мої повернення', Data: data }])
+  const { container } = render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>)
+  await screen.findByRole('button', { name: /Відкрити Звіт повернення/ })
+  fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Мої повернення' }))
+  expect(screen.queryByRole('region', { name: 'Групування рядків' })).toBeNull()
+  changeReportPeriod({ from: '2026-09-01', to: '2026-09-30' })
+  await act(async () => fireEvent.submit(container.querySelector('form')!))
+  await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
+  expect(vi.mocked(previewStockReport).mock.calls[0][0]).toMatchObject({ dataSource: 2, returnsOnly: true, from: '2026-09-01' })
 })
