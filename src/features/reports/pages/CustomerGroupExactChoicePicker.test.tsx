@@ -143,3 +143,18 @@ it('keeps remote choices disabled and exposes a labelled query error without inv
  view.rerender(<Form condition={0} values={[]}/>);search('id:0')
  expect(screen.getByText(/Вкажіть точний ID товару/)).toBeTruthy();expect(api).not.toHaveBeenCalled();expect(selected()).toEqual([])
 })
+
+it.each(['pointer','keyboard'])('does not mutate an open saved list after disabling the picker via %s',async method=>{
+ const view=render(<Form/>);
+ await userEvent.click(screen.getByRole('button',{name:'Вибрано: 2'}))
+ await screen.findByRole('option',{name:'Стара назва'})
+ if(method==='keyboard') {
+  await userEvent.click(screen.getByRole('combobox',{name:'Значення'}))
+  await userEvent.keyboard('{ArrowDown}')
+ }
+ view.rerender(<Form disabled/>);
+ expect(screen.getByRole('combobox',{name:'Значення'})).toHaveProperty('disabled',true)
+ if(method==='pointer') await userEvent.click(screen.getByRole('option',{name:'Стара назва'}))
+ else await userEvent.keyboard('{Enter}')
+ expect(selected()).toEqual(rawSaved)
+})
