@@ -1,0 +1,1087 @@
+{
+  "request": {
+    "DataSource": 44,
+    "OneC": null,
+    "NativePriceComparison": null,
+    "CustomerGroups": {
+      "Version": 1,
+      "Groups": [
+        {
+          "Name": "Еталон",
+          "ClientIds": [
+            1
+          ]
+        },
+        {
+          "Name": "Набір B",
+          "ClientIds": [
+            2
+          ]
+        }
+      ]
+    },
+    "ValuationClientAgreementId": null,
+    "ProvidedDiscounts": null,
+    "From": "2026-09-01",
+    "To": "2026-09-03",
+    "Sorted": {
+      "Col": [
+        {
+          "type": 82,
+          "label": null,
+          "key": null
+        }
+      ],
+      "Row": [
+        {
+          "type": 5,
+          "label": null,
+          "key": null
+        }
+      ],
+      "Measurements": [
+        {
+          "Type": 109,
+          "ParentName": null,
+          "Name": null,
+          "IsChecked": null
+        },
+        {
+          "Type": 110,
+          "ParentName": null,
+          "Name": null,
+          "IsChecked": null
+        },
+        {
+          "Type": 111,
+          "ParentName": null,
+          "Name": null,
+          "IsChecked": null
+        },
+        {
+          "Type": 112,
+          "ParentName": null,
+          "Name": null,
+          "IsChecked": null
+        },
+        {
+          "Type": 113,
+          "ParentName": null,
+          "Name": null,
+          "IsChecked": null
+        },
+        {
+          "Type": 114,
+          "ParentName": null,
+          "Name": null,
+          "IsChecked": null
+        }
+      ]
+    },
+    "Selections": [],
+    "FilterExpression": null,
+    "Ordering": null,
+    "TopGroups": null,
+    "Threshold": null,
+    "HideZero": null,
+    "AbcClassification": null
+  },
+  "response": {
+    "DocumentURL": "",
+    "PdfDocumentURL": "",
+    "Preview": {
+      "Version": 1,
+      "RequestSha256": "64c07e68955b00d8b389b25228386772ec096c74505d7378084eaa2abd75db62",
+      "CanonicalRequestBytes": 927,
+      "ResultSha256": "f9763ac74dbc49acd3ea1649141e063a78259c07589d72d4783d7dcd950f05b4",
+      "PresentationOnly": true,
+      "RecommendationEligible": false,
+      "AgreementPricingSupported": false,
+      "Agreement": null,
+      "Page": {
+        "Offset": 0,
+        "Limit": 1,
+        "TotalVisibleRows": 2,
+        "MaterializedRows": 2,
+        "ReturnedRows": 1,
+        "HasMore": true,
+        "ColumnOffset": 0,
+        "ColumnLimit": 12,
+        "TotalColumns": 12,
+        "ReturnedColumns": 12,
+        "HasMoreColumns": false
+      },
+      "Request": {
+        "DataSource": "NativeCustomerGroupComparison",
+        "IsCurrentSnapshot": false,
+        "ObservationStartedAtUtc": null,
+        "ObservationCompletedAtUtc": null,
+        "HasPeriod": true,
+        "PeriodFrom": "01.09.2026",
+        "PeriodTo": "03.09.2026",
+        "ComparisonPeriodFrom": null,
+        "ComparisonPeriodTo": null,
+        "RowGroupings": [
+          "Товар"
+        ],
+        "ColumnGroupings": [
+          "Джерело даних"
+        ],
+        "Measures": [
+          "Кількість",
+          "Відхилення кількості, абс.",
+          "Відхилення кількості, %",
+          "Вартість без ПДВ, EUR",
+          "Відхилення вартості, EUR",
+          "Відхилення вартості, %"
+        ],
+        "Filters": [
+          {
+            "Field": "Еталон",
+            "Condition": "Клієнти",
+            "Values": [
+              "Клієнт"
+            ],
+            "IgnoredReason": null
+          },
+          {
+            "Field": "Набір B",
+            "Condition": "Клієнти",
+            "Values": [
+              "Клієнт [2]"
+            ],
+            "IgnoredReason": null
+          }
+        ],
+        "IgnoredFilters": [],
+        "Notes": [
+          "Продажі мінус повернення GBA за одним періодом. Вартість без ПДВ у EUR.",
+          "Еталон: Еталон. Відхилення = поточний набір мінус еталон; % від еталона, при нулі — порожньо.",
+          "Джерело даних — іменований набір клієнтів. Через можливий перетин наборів спільний підсумок між ними не обчислюється.",
+          "Без підтвердженої одиниці документа кількість та її відхилення не визначено. Грошові показники розраховано окремо."
+        ]
+      },
+      "RowSchema": [
+        {
+          "Position": 0,
+          "Identity": "Product",
+          "Caption": "Товар",
+          "DisplayKind": "Text",
+          "KeyKind": "Numeric",
+          "Captioned": true,
+          "AgreementRole": "none"
+        }
+      ],
+      "ColumnSchema": [
+        {
+          "Position": 0,
+          "Identity": "CustomerComparisonSource",
+          "Caption": "Джерело даних",
+          "DisplayKind": "Text",
+          "KeyKind": "Text",
+          "Captioned": false,
+          "AgreementRole": "none"
+        },
+        {
+          "Position": 1,
+          "Identity": "$measureGroup",
+          "Caption": "Група показників",
+          "DisplayKind": "Text",
+          "KeyKind": "Text",
+          "Captioned": false,
+          "AgreementRole": "none"
+        },
+        {
+          "Position": 2,
+          "Identity": "$measure",
+          "Caption": "Показник",
+          "DisplayKind": "Text",
+          "KeyKind": "Text",
+          "Captioned": false,
+          "AgreementRole": "none"
+        }
+      ],
+      "Rows": [
+        {
+          "Ordinal": 0,
+          "SourceIndex": 0,
+          "Values": [
+            {
+              "Identity": {
+                "Kind": "signedInteger",
+                "Value": "1",
+                "Provenance": "rowAxisKey"
+              },
+              "Caption": "Product (арт. P-1)"
+            }
+          ]
+        }
+      ],
+      "Columns": [
+        {
+          "Ordinal": 0,
+          "SourceIndex": 0,
+          "Values": [
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Еталон",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Еталон"
+            },
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Інше",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Інше"
+            },
+            {
+              "Identity": {
+                "Kind": "reportField",
+                "Value": "CustomerGroupQuantity",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Кількість"
+            }
+          ]
+        },
+        {
+          "Ordinal": 1,
+          "SourceIndex": 1,
+          "Values": [
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Еталон",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Еталон"
+            },
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Інше",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Інше"
+            },
+            {
+              "Identity": {
+                "Kind": "reportField",
+                "Value": "CustomerGroupQuantityDelta",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Відхилення кількості, абс."
+            }
+          ]
+        },
+        {
+          "Ordinal": 2,
+          "SourceIndex": 2,
+          "Values": [
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Еталон",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Еталон"
+            },
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Інше",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Інше"
+            },
+            {
+              "Identity": {
+                "Kind": "reportField",
+                "Value": "CustomerGroupQuantityDeltaPercent",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Відхилення кількості, %"
+            }
+          ]
+        },
+        {
+          "Ordinal": 3,
+          "SourceIndex": 3,
+          "Values": [
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Еталон",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Еталон"
+            },
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Інше",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Інше"
+            },
+            {
+              "Identity": {
+                "Kind": "reportField",
+                "Value": "CustomerGroupValue",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Вартість без ПДВ, EUR"
+            }
+          ]
+        },
+        {
+          "Ordinal": 4,
+          "SourceIndex": 4,
+          "Values": [
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Еталон",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Еталон"
+            },
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Інше",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Інше"
+            },
+            {
+              "Identity": {
+                "Kind": "reportField",
+                "Value": "CustomerGroupValueDelta",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Відхилення вартості, EUR"
+            }
+          ]
+        },
+        {
+          "Ordinal": 5,
+          "SourceIndex": 5,
+          "Values": [
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Еталон",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Еталон"
+            },
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Інше",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Інше"
+            },
+            {
+              "Identity": {
+                "Kind": "reportField",
+                "Value": "CustomerGroupValueDeltaPercent",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Відхилення вартості, %"
+            }
+          ]
+        },
+        {
+          "Ordinal": 6,
+          "SourceIndex": 6,
+          "Values": [
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Набір B",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Набір B"
+            },
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Інше",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Інше"
+            },
+            {
+              "Identity": {
+                "Kind": "reportField",
+                "Value": "CustomerGroupQuantity",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Кількість"
+            }
+          ]
+        },
+        {
+          "Ordinal": 7,
+          "SourceIndex": 7,
+          "Values": [
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Набір B",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Набір B"
+            },
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Інше",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Інше"
+            },
+            {
+              "Identity": {
+                "Kind": "reportField",
+                "Value": "CustomerGroupQuantityDelta",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Відхилення кількості, абс."
+            }
+          ]
+        },
+        {
+          "Ordinal": 8,
+          "SourceIndex": 8,
+          "Values": [
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Набір B",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Набір B"
+            },
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Інше",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Інше"
+            },
+            {
+              "Identity": {
+                "Kind": "reportField",
+                "Value": "CustomerGroupQuantityDeltaPercent",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Відхилення кількості, %"
+            }
+          ]
+        },
+        {
+          "Ordinal": 9,
+          "SourceIndex": 9,
+          "Values": [
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Набір B",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Набір B"
+            },
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Інше",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Інше"
+            },
+            {
+              "Identity": {
+                "Kind": "reportField",
+                "Value": "CustomerGroupValue",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Вартість без ПДВ, EUR"
+            }
+          ]
+        },
+        {
+          "Ordinal": 10,
+          "SourceIndex": 10,
+          "Values": [
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Набір B",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Набір B"
+            },
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Інше",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Інше"
+            },
+            {
+              "Identity": {
+                "Kind": "reportField",
+                "Value": "CustomerGroupValueDelta",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Відхилення вартості, EUR"
+            }
+          ]
+        },
+        {
+          "Ordinal": 11,
+          "SourceIndex": 11,
+          "Values": [
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Набір B",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Набір B"
+            },
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Інше",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Інше"
+            },
+            {
+              "Identity": {
+                "Kind": "reportField",
+                "Value": "CustomerGroupValueDeltaPercent",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Відхилення вартості, %"
+            }
+          ]
+        }
+      ],
+      "Cells": [
+        {
+          "RowSourceIndex": 0,
+          "ColumnSourceIndex": 0,
+          "Value": {
+            "Kind": "null",
+            "Value": null,
+            "Provenance": "producerCell"
+          }
+        },
+        {
+          "RowSourceIndex": 0,
+          "ColumnSourceIndex": 1,
+          "Value": {
+            "Kind": "null",
+            "Value": null,
+            "Provenance": "producerCell"
+          }
+        },
+        {
+          "RowSourceIndex": 0,
+          "ColumnSourceIndex": 2,
+          "Value": {
+            "Kind": "null",
+            "Value": null,
+            "Provenance": "producerCell"
+          }
+        },
+        {
+          "RowSourceIndex": 0,
+          "ColumnSourceIndex": 3,
+          "Value": {
+            "Kind": "decimal",
+            "Value": "60",
+            "Provenance": "producerCell"
+          }
+        },
+        {
+          "RowSourceIndex": 0,
+          "ColumnSourceIndex": 4,
+          "Value": {
+            "Kind": "decimal",
+            "Value": "0",
+            "Provenance": "producerCell"
+          }
+        },
+        {
+          "RowSourceIndex": 0,
+          "ColumnSourceIndex": 5,
+          "Value": {
+            "Kind": "decimal",
+            "Value": "0",
+            "Provenance": "producerCell"
+          }
+        },
+        {
+          "RowSourceIndex": 0,
+          "ColumnSourceIndex": 6,
+          "Value": {
+            "Kind": "decimal",
+            "Value": "0",
+            "Provenance": "producerCell"
+          }
+        },
+        {
+          "RowSourceIndex": 0,
+          "ColumnSourceIndex": 7,
+          "Value": {
+            "Kind": "null",
+            "Value": null,
+            "Provenance": "producerCell"
+          }
+        },
+        {
+          "RowSourceIndex": 0,
+          "ColumnSourceIndex": 8,
+          "Value": {
+            "Kind": "null",
+            "Value": null,
+            "Provenance": "producerCell"
+          }
+        },
+        {
+          "RowSourceIndex": 0,
+          "ColumnSourceIndex": 9,
+          "Value": {
+            "Kind": "decimal",
+            "Value": "0",
+            "Provenance": "producerCell"
+          }
+        },
+        {
+          "RowSourceIndex": 0,
+          "ColumnSourceIndex": 10,
+          "Value": {
+            "Kind": "decimal",
+            "Value": "-60",
+            "Provenance": "producerCell"
+          }
+        },
+        {
+          "RowSourceIndex": 0,
+          "ColumnSourceIndex": 11,
+          "Value": {
+            "Kind": "decimal",
+            "Value": "-100",
+            "Provenance": "producerCell"
+          }
+        }
+      ],
+      "Totals": {
+        "State": "materialized",
+        "Values": [
+          {
+            "RowSourceIndex": -1,
+            "ColumnSourceIndex": 0,
+            "Value": {
+              "Kind": "null",
+              "Value": null,
+              "Provenance": "presentationTotal"
+            }
+          },
+          {
+            "RowSourceIndex": -1,
+            "ColumnSourceIndex": 1,
+            "Value": {
+              "Kind": "null",
+              "Value": null,
+              "Provenance": "presentationTotal"
+            }
+          },
+          {
+            "RowSourceIndex": -1,
+            "ColumnSourceIndex": 2,
+            "Value": {
+              "Kind": "null",
+              "Value": null,
+              "Provenance": "presentationTotal"
+            }
+          },
+          {
+            "RowSourceIndex": -1,
+            "ColumnSourceIndex": 3,
+            "Value": {
+              "Kind": "decimal",
+              "Value": "70",
+              "Provenance": "presentationTotal"
+            }
+          },
+          {
+            "RowSourceIndex": -1,
+            "ColumnSourceIndex": 4,
+            "Value": {
+              "Kind": "decimal",
+              "Value": "0",
+              "Provenance": "presentationTotal"
+            }
+          },
+          {
+            "RowSourceIndex": -1,
+            "ColumnSourceIndex": 5,
+            "Value": {
+              "Kind": "decimal",
+              "Value": "0",
+              "Provenance": "presentationTotal"
+            }
+          },
+          {
+            "RowSourceIndex": -1,
+            "ColumnSourceIndex": 6,
+            "Value": {
+              "Kind": "decimal",
+              "Value": "0",
+              "Provenance": "presentationTotal"
+            }
+          },
+          {
+            "RowSourceIndex": -1,
+            "ColumnSourceIndex": 7,
+            "Value": {
+              "Kind": "null",
+              "Value": null,
+              "Provenance": "presentationTotal"
+            }
+          },
+          {
+            "RowSourceIndex": -1,
+            "ColumnSourceIndex": 8,
+            "Value": {
+              "Kind": "null",
+              "Value": null,
+              "Provenance": "presentationTotal"
+            }
+          },
+          {
+            "RowSourceIndex": -1,
+            "ColumnSourceIndex": 9,
+            "Value": {
+              "Kind": "decimal",
+              "Value": "0",
+              "Provenance": "presentationTotal"
+            }
+          },
+          {
+            "RowSourceIndex": -1,
+            "ColumnSourceIndex": 10,
+            "Value": {
+              "Kind": "decimal",
+              "Value": "-70",
+              "Provenance": "presentationTotal"
+            }
+          },
+          {
+            "RowSourceIndex": -1,
+            "ColumnSourceIndex": 11,
+            "Value": {
+              "Kind": "decimal",
+              "Value": "-100",
+              "Provenance": "presentationTotal"
+            }
+          }
+        ],
+        "Groups": [
+          {
+            "Level": 0,
+            "RowSourceIndex": 0,
+            "RowCount": 1,
+            "Values": [
+              {
+                "RowSourceIndex": 0,
+                "ColumnSourceIndex": 0,
+                "Value": {
+                  "Kind": "null",
+                  "Value": null,
+                  "Provenance": "presentationTotal"
+                }
+              },
+              {
+                "RowSourceIndex": 0,
+                "ColumnSourceIndex": 1,
+                "Value": {
+                  "Kind": "null",
+                  "Value": null,
+                  "Provenance": "presentationTotal"
+                }
+              },
+              {
+                "RowSourceIndex": 0,
+                "ColumnSourceIndex": 2,
+                "Value": {
+                  "Kind": "null",
+                  "Value": null,
+                  "Provenance": "presentationTotal"
+                }
+              },
+              {
+                "RowSourceIndex": 0,
+                "ColumnSourceIndex": 3,
+                "Value": {
+                  "Kind": "decimal",
+                  "Value": "60",
+                  "Provenance": "presentationTotal"
+                }
+              },
+              {
+                "RowSourceIndex": 0,
+                "ColumnSourceIndex": 4,
+                "Value": {
+                  "Kind": "decimal",
+                  "Value": "0",
+                  "Provenance": "presentationTotal"
+                }
+              },
+              {
+                "RowSourceIndex": 0,
+                "ColumnSourceIndex": 5,
+                "Value": {
+                  "Kind": "decimal",
+                  "Value": "0",
+                  "Provenance": "presentationTotal"
+                }
+              },
+              {
+                "RowSourceIndex": 0,
+                "ColumnSourceIndex": 6,
+                "Value": {
+                  "Kind": "decimal",
+                  "Value": "0",
+                  "Provenance": "presentationTotal"
+                }
+              },
+              {
+                "RowSourceIndex": 0,
+                "ColumnSourceIndex": 7,
+                "Value": {
+                  "Kind": "null",
+                  "Value": null,
+                  "Provenance": "presentationTotal"
+                }
+              },
+              {
+                "RowSourceIndex": 0,
+                "ColumnSourceIndex": 8,
+                "Value": {
+                  "Kind": "null",
+                  "Value": null,
+                  "Provenance": "presentationTotal"
+                }
+              },
+              {
+                "RowSourceIndex": 0,
+                "ColumnSourceIndex": 9,
+                "Value": {
+                  "Kind": "decimal",
+                  "Value": "0",
+                  "Provenance": "presentationTotal"
+                }
+              },
+              {
+                "RowSourceIndex": 0,
+                "ColumnSourceIndex": 10,
+                "Value": {
+                  "Kind": "decimal",
+                  "Value": "-60",
+                  "Provenance": "presentationTotal"
+                }
+              },
+              {
+                "RowSourceIndex": 0,
+                "ColumnSourceIndex": 11,
+                "Value": {
+                  "Kind": "decimal",
+                  "Value": "-100",
+                  "Provenance": "presentationTotal"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "valueSemantics": [
+        {
+          "columnSourceIndex": 0,
+          "measureType": 109,
+          "semantics": {
+            "kind": "quantity",
+            "currencyPolicy": "notApplicable",
+            "unitPolicy": "confirmedCompatibleUnit",
+            "aggregation": "sumWithinCompatibleUnit",
+            "scalable": false,
+            "defaultDecimalPlaces": 8,
+            "defaultMinimumDecimalPlaces": 8
+          }
+        },
+        {
+          "columnSourceIndex": 1,
+          "measureType": 110,
+          "semantics": {
+            "kind": "quantity",
+            "currencyPolicy": "notApplicable",
+            "unitPolicy": "confirmedCompatibleUnit",
+            "aggregation": "sumWithinCompatibleUnit",
+            "scalable": false,
+            "defaultDecimalPlaces": 8,
+            "defaultMinimumDecimalPlaces": 8
+          }
+        },
+        {
+          "columnSourceIndex": 2,
+          "measureType": 111,
+          "semantics": {
+            "kind": "percent",
+            "currencyPolicy": "notApplicable",
+            "unitPolicy": "percentAlreadyMultipliedBy100",
+            "aggregation": "recomputeFromBase",
+            "scalable": false,
+            "defaultDecimalPlaces": 2,
+            "defaultMinimumDecimalPlaces": 2
+          }
+        },
+        {
+          "columnSourceIndex": 3,
+          "measureType": 112,
+          "semantics": {
+            "kind": "money",
+            "currencyPolicy": "EUR",
+            "unitPolicy": "currency",
+            "aggregation": "sum",
+            "scalable": true,
+            "defaultDecimalPlaces": 2,
+            "defaultMinimumDecimalPlaces": 2
+          }
+        },
+        {
+          "columnSourceIndex": 4,
+          "measureType": 113,
+          "semantics": {
+            "kind": "money",
+            "currencyPolicy": "EUR",
+            "unitPolicy": "currency",
+            "aggregation": "sum",
+            "scalable": true,
+            "defaultDecimalPlaces": 2,
+            "defaultMinimumDecimalPlaces": 2
+          }
+        },
+        {
+          "columnSourceIndex": 5,
+          "measureType": 114,
+          "semantics": {
+            "kind": "percent",
+            "currencyPolicy": "notApplicable",
+            "unitPolicy": "percentAlreadyMultipliedBy100",
+            "aggregation": "recomputeFromBase",
+            "scalable": false,
+            "defaultDecimalPlaces": 2,
+            "defaultMinimumDecimalPlaces": 2
+          }
+        },
+        {
+          "columnSourceIndex": 6,
+          "measureType": 109,
+          "semantics": {
+            "kind": "quantity",
+            "currencyPolicy": "notApplicable",
+            "unitPolicy": "confirmedCompatibleUnit",
+            "aggregation": "sumWithinCompatibleUnit",
+            "scalable": false,
+            "defaultDecimalPlaces": 8,
+            "defaultMinimumDecimalPlaces": 8
+          }
+        },
+        {
+          "columnSourceIndex": 7,
+          "measureType": 110,
+          "semantics": {
+            "kind": "quantity",
+            "currencyPolicy": "notApplicable",
+            "unitPolicy": "confirmedCompatibleUnit",
+            "aggregation": "sumWithinCompatibleUnit",
+            "scalable": false,
+            "defaultDecimalPlaces": 8,
+            "defaultMinimumDecimalPlaces": 8
+          }
+        },
+        {
+          "columnSourceIndex": 8,
+          "measureType": 111,
+          "semantics": {
+            "kind": "percent",
+            "currencyPolicy": "notApplicable",
+            "unitPolicy": "percentAlreadyMultipliedBy100",
+            "aggregation": "recomputeFromBase",
+            "scalable": false,
+            "defaultDecimalPlaces": 2,
+            "defaultMinimumDecimalPlaces": 2
+          }
+        },
+        {
+          "columnSourceIndex": 9,
+          "measureType": 112,
+          "semantics": {
+            "kind": "money",
+            "currencyPolicy": "EUR",
+            "unitPolicy": "currency",
+            "aggregation": "sum",
+            "scalable": true,
+            "defaultDecimalPlaces": 2,
+            "defaultMinimumDecimalPlaces": 2
+          }
+        },
+        {
+          "columnSourceIndex": 10,
+          "measureType": 113,
+          "semantics": {
+            "kind": "money",
+            "currencyPolicy": "EUR",
+            "unitPolicy": "currency",
+            "aggregation": "sum",
+            "scalable": true,
+            "defaultDecimalPlaces": 2,
+            "defaultMinimumDecimalPlaces": 2
+          }
+        },
+        {
+          "columnSourceIndex": 11,
+          "measureType": 114,
+          "semantics": {
+            "kind": "percent",
+            "currencyPolicy": "notApplicable",
+            "unitPolicy": "percentAlreadyMultipliedBy100",
+            "aggregation": "recomputeFromBase",
+            "scalable": false,
+            "defaultDecimalPlaces": 2,
+            "defaultMinimumDecimalPlaces": 2
+          }
+        }
+      ]
+    },
+    "PreviewVersion": 2,
+    "ResultId": "5c952ea8-5d7f-4da6-995f-759d3d76ba87",
+    "ExpiresAtUtc": "2026-10-29T18:59:37.2151215",
+    "RequestSha256": "64c07e68955b00d8b389b25228386772ec096c74505d7378084eaa2abd75db62",
+    "ResultSha256": "f9763ac74dbc49acd3ea1649141e063a78259c07589d72d4783d7dcd950f05b4"
+  }
+}
