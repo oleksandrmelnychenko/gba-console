@@ -128,6 +128,21 @@
   row-gap: 2px;
 }
 
+.supplier-organizations-name-copy {
+  justify-items: start;
+}
+
+.supplier-organizations-name-copy > .app-table-chip {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.supplier-organizations-agreement-cell {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
 .supplier-organizations-name-title,
 .supplier-organizations-name-subtitle,
 .supplier-organizations-two-line-cell > span,

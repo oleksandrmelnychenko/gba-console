@@ -509,14 +509,26 @@ function SupplierOrganizationIdentifiersCell({ organization }: { organization: S
 
 function SupplierOrganizationAgreementCell({ organization }: { organization: SupplyOrganization }) {
   const { primary, secondary } = getSupplyOrganizationAgreementCellText(organization)
-  const organizationNames = [...new Set((organization.SupplyOrganizationAgreements || []).map((agreement) => getOrganizationDisplayName(agreement.Organization)).filter(Boolean))]
+  const agreements = organization.SupplyOrganizationAgreements || []
+  const organizationNames = [...new Set(agreements.map((agreement) => getOrganizationDisplayName(agreement.Organization)).filter(Boolean))]
+  const agreementNames = [...new Set(compactStrings(agreements.map((agreement) => agreement.Name || agreement.Number)))]
+  const currencies = [...new Set(compactStrings(agreements.map((agreement) => agreement.Currency?.Code || agreement.Currency?.Name)))]
   const tooltip = compactStrings([primary, secondary]).join('\n')
 
   return (
-    <span className="supplier-organizations-two-line-cell" title={nativeTitle(tooltip)}>
-      {organizationNames.length ? <Group component="span" gap={4}>{organizationNames.map((name) => <TableChip key={name} tone="product" value={name} />)}</Group> : primary ? <span>{primary}</span> : null}
-      {secondary ? <small className="supplier-organizations-agreement-meta">{secondary}</small> : null}
-    </span>
+    <div className="supplier-organizations-agreement-cell" title={nativeTitle(tooltip)}>
+      {organizationNames.length > 0 && (
+        <Group gap={4}>
+          {organizationNames.map((name) => <TableChip key={name} tone="product" value={name} />)}
+        </Group>
+      )}
+      {(agreementNames.length > 0 || currencies.length > 0) && (
+        <Group gap={4}>
+          {agreementNames.map((name) => <TableChip key={`agreement:${name}`} tone="document" value={name} />)}
+          {currencies.map((currency) => <TableChip key={`currency:${currency}`} tone="source" value={currency} />)}
+        </Group>
+      )}
+    </div>
   )
 }
 
