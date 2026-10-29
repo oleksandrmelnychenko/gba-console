@@ -1,3 +1,4 @@
+import { searchNativeSalesDocuments, usesSalesDocumentLookup, salesDocumentSelectedEntity, salesDocumentKey } from '../api/nativeSalesDocumentLookup'
 import { NativePriceComparisonPanel } from './NativePriceComparisonPanel'
 import { nativePriceComparisonError, type NativePriceComparison } from '../data/nativePriceComparison'
 import { CustomerGroupsPanel } from './CustomerGroupsPanel'
@@ -2563,7 +2564,8 @@ export function SelectionValuePicker({ dataSource, lookupProfitReadMode, lookupP
   const { t } = useI18n()
   const [search, setSearch] = useValueState('')
   const [manualValue, setManualValue] = useValueState('')
-  const lookupScope = JSON.stringify([dataSource, selection.SelectedField.Type, lookupProfitReadMode ?? null, lookupProfitUnavailable === true, ...(dataSource === 35 && selection.SelectedField.Type === 12 ? [from, to] : [])])
+  const nativeSalesDocument = usesSalesDocumentLookup(dataSource, selection.SelectedField.Type)
+  const lookupScope = JSON.stringify([dataSource, selection.SelectedField.Type, lookupProfitReadMode ?? null, lookupProfitUnavailable === true, ...(nativeSalesDocument || dataSource === 35 && selection.SelectedField.Type === 12 ? [from, to] : [])])
   const [optionResult, setOptionResult] = useValueState<{ scope: string; items: ReportEntity[]; failed?: boolean }>({ scope: '', items: [] })
   const options = optionResult.scope === lookupScope ? optionResult.items : EMPTY_LOOKUP_OPTIONS
   const lookupFailed = optionResult.scope === lookupScope && optionResult.failed === true
@@ -2576,8 +2578,8 @@ export function SelectionValuePicker({ dataSource, lookupProfitReadMode, lookupP
   const nativeLookup = usesNativeReportLookup(dataSource)
   // Current reservations resolve exact ClientAgreement identities from their own
   // facts; the sales-only dependent customer-agreement picker must not run here.
-  const lookupMode = nativeLookup ? 'search' : getSelectionLookupMode(selection.SelectedField.Type)
-  const isSaleDocumentFilter = !nativeLookup && PERIOD_SCOPED_FILTER_FIELD_TYPES.has(selection.SelectedField.Type)
+  const lookupMode = nativeLookup || nativeSalesDocument ? 'search' : getSelectionLookupMode(selection.SelectedField.Type)
+  const isSaleDocumentFilter = !nativeLookup && !nativeSalesDocument && PERIOD_SCOPED_FILTER_FIELD_TYPES.has(selection.SelectedField.Type)
   const saleDocumentFilters = useMemo(
     () => ({
       organisationIds: docOrganisationIds.map((id) => Number(id)),
@@ -2596,8 +2598,8 @@ export function SelectionValuePicker({ dataSource, lookupProfitReadMode, lookupP
     [organizationOptions],
   )
   const normalizedSearch = lookupMode === 'search' ? debouncedSearch.trim() : ''
-  const minSearchLength = nativeLookup ? 0 : getSelectionLookupMinLength(selection.SelectedField.Type)
-  const needsPeriod = isSaleDocumentFilter || dataSource === 35 && selection.SelectedField.Type === 12
+  const minSearchLength = nativeLookup || nativeSalesDocument ? 0 : getSelectionLookupMinLength(selection.SelectedField.Type)
+  const needsPeriod = nativeSalesDocument || isSaleDocumentFilter || dataSource === 35 && selection.SelectedField.Type === 12
   const dependentClientNetId = lookupMode === 'dependent' ? getDependentClientNetId(selections) : ''
   const selectOptions = useMemo(
     () =>
@@ -3147,6 +3149,8 @@ async function loadSelectionLookupOptions(
   lookupProvidedDiscountBasis?: 0,
   lookupProfitReadMode?: 0 | 1,
 ): Promise<ReportEntity[]> {
+  if (usesSalesDocumentLookup(dataSource, fieldType))
+    return searchNativeSalesDocuments(fieldType, from, to, {limit: LOOKUP_SEARCH_LIMIT, offset: 0, value}, signal)
   if (dataSource === 35 && fieldType === 60) {
     if (lookupProfitReadMode !== 0) throw new Error('Менеджери покупця доступні лише для поточного розрахунку GBA.')
     return searchCurrentFinancialBuyerManagers({ limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
@@ -3272,6 +3276,7 @@ function mergeReportEntities(entities: ReportEntity[]): ReportEntity[] {
 }
 
 function financialSelectionEntity(value: ReportSelectedValue, dataSource: number, field: number): ReportEntity {
+  if (usesSalesDocumentLookup(dataSource, field)) return salesDocumentSelectedEntity(value, field)
   if (dataSource !== 35) return value.Data
   if (field === 60) return financialBuyerManagerSelectedEntity(value)
   return field === 12 ? financialDocumentSelectedEntity(value) : value.Data
@@ -3281,13 +3286,15 @@ function createSelectedValue(entity: ReportEntity, dataSource?: number, field?: 
   const reference = dataSource === 35 && field === 60 ? financialBuyerManagerEntityReference(entity)
     : dataSource === 35 && field === 12 ? financialDocumentEntityReference(entity) : null
   return {
-    Data: reference ?? entity,
+    Data: usesSalesDocumentLookup(dataSource ?? -1, field ?? -1) ? { Id: entity.Id } : reference ?? entity,
     Name: getEntityDisplayName(entity),
     Value: (dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 20 || dataSource === 21 || dataSource === 23 || dataSource === 24 || dataSource === 25 || dataSource === 28 || dataSource === 39 || dataSource === 41) ? 0 : getReportEntityNumericValue(entity),
   }
 }
 
 function getReportEntityKey(entity: ReportEntity, fallback = ''): string {
+  const salesDocument = salesDocumentKey(entity)
+  if (salesDocument) return salesDocument
   const manager = financialBuyerManagerEntityReference(entity)
   if (manager) return manager.Id
   const document = financialDocumentEntityReference(entity)
