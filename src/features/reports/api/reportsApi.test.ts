@@ -16,6 +16,38 @@ describe('reportsApi', () => {
     apiRequestMock.mockReset()
   })
 
+  it('accepts native price catalogue string IDs without rounding through the real lookup adapter', async () => {
+    const items = ['844', '9007199254740993', '9223372036854775807'].map(Id => ({ Id, Name: `Тип ${Id}` }))
+    const signal = new AbortController().signal
+    apiRequestMock.mockResolvedValue(items)
+    await expect(searchDatasetReportValues(46, 46, { value: '  ЦО ', offset: 0, limit: 30 }, signal)).resolves.toEqual(items)
+    expect(apiRequestMock).toHaveBeenLastCalledWith('/report/datasets/lookup', {
+      query: { dataSource: 46, field: 46, value: 'ЦО', offset: 0, limit: 30 }, signal,
+    })
+    apiRequestMock.mockResolvedValue([items[1]])
+    await expect(searchDatasetReportValues(46, 46, { value: 'id:9007199254740993', offset: 0, limit: 2 })).resolves.toEqual([items[1]])
+  })
+
+  it.each([844, 9007199254740992, '0', '0844', '-1', '9223372036854775808', '1e3', 'A'.repeat(32)])(
+    'rejects malformed or non-native catalogue identity %s', async Id => {
+      apiRequestMock.mockResolvedValue([{ Id: '844', Name: 'ЦЗ' }, { Id, Name: 'Invalid' }])
+      await expect(searchDatasetReportValues(46, 46, { value: '', offset: 0, limit: 30 })).rejects.toThrow('некоректні значення')
+    },
+  )
+
+  it('restores only the exact saved legacy price identity without mixing native choices', async () => {
+    const Id = 'ABCDEF0123456789ABCDEF0123456789'
+    const params = { value: `legacy:${Id}`, offset: 0, limit: 2 }
+    apiRequestMock.mockResolvedValue([{ Id, Name: 'Історичний тип' }])
+    await expect(searchDatasetReportValues(46, 46, params)).resolves.toEqual([{ Id, Name: 'Історичний тип' }])
+    for (const invalid of ['844', '0'.repeat(32), 'B'.repeat(32), 844]) {
+      apiRequestMock.mockResolvedValue([{ Id: invalid, Name: 'Не цей тип' }])
+      await expect(searchDatasetReportValues(46, 46, params)).rejects.toThrow('некоректні значення')
+    }
+    apiRequestMock.mockResolvedValue([{ Id, Name: 'Історичний' }, { Id: '844', Name: 'Поточний' }])
+    await expect(searchDatasetReportValues(46, 46, params)).rejects.toThrow('некоректні значення')
+  })
+
   it('uses exact native purchase contract identities without substituting AgreementId', async () => {
     const signal = new AbortController().signal
     apiRequestMock.mockResolvedValue([{ Id: 42, Name: 'Постачальник · договір 42' }])
