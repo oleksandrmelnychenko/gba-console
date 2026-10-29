@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import type { ClientShoppingCart } from '../types'
-import { createOffer, getCockpitOffers, processOffer, restartOfferValidity, searchOffersClients } from './salesOffersApi'
+import { createOffer, getCockpitOffers, getOfferProductAvailableQtyUk, processOffer, restartOfferValidity, searchOffersClients } from './salesOffersApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -128,5 +128,52 @@ describe('sales offer client search', () => {
     expect(apiRequestMock).toHaveBeenCalledWith('/clients/sales-ukraine/offers/create/search', {
       query: { limit: 50, offset: 0, value: 'тов' },
     })
+  })
+})
+
+describe('offer agreement-scoped availability', () => {
+  beforeEach(() => {
+    apiRequestMock.mockReset()
+  })
+
+  it('reads VAT stock from the availability object, without adding the resale bucket', async () => {
+    apiRequestMock.mockResolvedValue({ AvailableQtyUk: 0, AvailableQtyUkVAT: 2, AvailableQtyUkReSale: 2 })
+    await expect(getOfferProductAvailableQtyUk(productNetUid, agreementNetUid, true)).resolves.toBe(2)
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/all/availabilities/product', {
+      query: { netId: productNetUid, clientAgreementNetId: agreementNetUid },
+    })
+  })
+
+  it('includes eligible resale stock for a non-VAT agreement without rounding', async () => {
+    apiRequestMock.mockResolvedValue({ AvailableQtyUk: 1.25, AvailableQtyUkVAT: 99, AvailableQtyUkReSale: 2.5 })
+    await expect(getOfferProductAvailableQtyUk(productNetUid, agreementNetUid, false)).resolves.toBe(3.75)
+  })
+
+  it('preserves genuine zero stock', async () => {
+    apiRequestMock.mockResolvedValue({ AvailableQtyUk: 0, AvailableQtyUkVAT: 0, AvailableQtyUkReSale: 0 })
+    await expect(getOfferProductAvailableQtyUk(productNetUid, agreementNetUid, true)).resolves.toBe(0)
+    await expect(getOfferProductAvailableQtyUk(productNetUid, agreementNetUid, false)).resolves.toBe(0)
+  })
+
+  it.each([null, [], [{ Qty: 2 }], {}, { AvailableQtyUkVAT: null }, { AvailableQtyUkVAT: Number.NaN }, { AvailableQtyUkVAT: Infinity }])(
+    'rejects malformed or missing VAT availability: %s', async (response) => {
+      apiRequestMock.mockResolvedValue(response)
+      await expect(getOfferProductAvailableQtyUk(productNetUid, agreementNetUid, true)).rejects.toThrow('Не вдалося отримати наявність товару')
+    },
+  )
+
+  it('does not invent missing resale stock for non-VAT agreements', async () => {
+    apiRequestMock.mockResolvedValue({ AvailableQtyUk: 1 })
+    await expect(getOfferProductAvailableQtyUk(productNetUid, agreementNetUid, false)).rejects.toThrow('Не вдалося отримати наявність товару')
+  })
+
+  it('rejects an unknown agreement VAT mode before querying stock', async () => {
+    await expect(getOfferProductAvailableQtyUk(productNetUid, agreementNetUid, undefined)).rejects.toThrow('Не визначено облік ПДВ договору')
+    expect(apiRequestMock).not.toHaveBeenCalled()
+  })
+
+  it('propagates availability request failures', async () => {
+    apiRequestMock.mockRejectedValue(new Error('Unavailable'))
+    await expect(getOfferProductAvailableQtyUk(productNetUid, agreementNetUid, true)).rejects.toThrow('Unavailable')
   })
 })

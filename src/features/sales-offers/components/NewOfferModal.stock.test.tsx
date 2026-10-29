@@ -10,7 +10,10 @@ import { NewOfferModal } from './NewOfferModal'
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
 vi.mock('@mantine/notifications', () => ({ notifications: { show: vi.fn() } }))
 vi.mock('../../auth/usePermissions', () => ({ usePermissions: () => ({ can: () => state.canCreate }) }))
-vi.mock('../../sales-ukraine/persistentCreateMutation', () => ({ usePersistentCreateMutation: () => vi.fn() }))
+vi.mock('../../sales-ukraine/persistentCreateMutation', () => ({
+  usePersistentCreateMutation: () => (payload: unknown, create: (body: unknown, operation: object) => unknown) =>
+    create(payload, { operationId: 'fc5d941e-7382-4c29-b459-7ed373b66916' }),
+}))
 vi.mock('../../products/components/ProductCardModal', () => ({ ProductCardModal: () => null }))
 
 const state = vi.hoisted(() => ({ canCreate: true }))
@@ -33,21 +36,41 @@ const stockedProduct = {
   AvailableQtyUkVAT: 0,
   AvailableQtyUkReSale: 0,
 }
+const screenshotProduct = {
+  Id: 38286744,
+  NetUid: '1678ef9f-0d8c-492b-a784-2dc9ea6abc18',
+  VendorCode: '02235030FSS',
+  Name: 'Кран гальмівний ножний',
+  MainOriginalNumber: '461 494 501 0',
+  AvailableQtyUk: 0,
+  AvailableQtyUkVAT: 2,
+  AvailableQtyUkReSale: 2,
+}
+const agreementNetId = '90838e82-2079-418c-a8fc-27fdab365892'
 let products: object[]
+let availability: unknown
+let withVatAccounting: boolean | undefined
 
 beforeEach(() => {
   vi.clearAllMocks()
   state.canCreate = true
   products = screenshotProducts
+  availability = { AvailableQtyUk: 1, AvailableQtyUkVAT: 0, AvailableQtyUkReSale: 0 }
+  withVatAccounting = false
   apiMock.mockImplementation(async (path) => {
     if (path === '/clients/sales-ukraine/offers/create/search') {
       return [{ NetUid: 'client-1', FullName: 'Муляр Іван Сергійович' }]
     }
     if (path === '/agreements/client/all') {
-      return [{ NetUid: 'agreement-1', Agreement: { Name: 'Основной договор' } }]
+      return [{ Id: 503943, NetUid: agreementNetId, Agreement: { Name: 'Основной договор', WithVATAccounting: withVatAccounting } }]
     }
     if (path === '/products/search/vendorcode') return products
-    if (path === '/products/reservations/current/carousel/agreement') return [{ AvailableQtyUk: 1 }]
+    if (path === '/products/reservations/current/carousel/agreement') return []
+    if (path === '/products/all/availabilities/product') {
+      if (availability instanceof Error) throw availability
+      return availability
+    }
+    if (path === '/sales/offers/new') return { NetUid: '8c351eb4-9b28-4efe-80c9-a78a831bec8f' }
     return []
   })
 })
@@ -97,8 +120,8 @@ describe('NewOfferModal product search stock', () => {
     expect(within(option).getByText('ПДВ: 0', { exact: true })).toBeTruthy()
     fireEvent.click(option)
     expect(await screen.findByRole('table')).toBeTruthy()
-    expect(apiMock).toHaveBeenCalledWith('/products/reservations/current/carousel/agreement', {
-      query: { productNetId: stockedProduct.NetUid, clientAgreementNetId: 'agreement-1' },
+    expect(apiMock).toHaveBeenCalledWith('/products/all/availabilities/product', {
+      query: { netId: stockedProduct.NetUid, clientAgreementNetId: agreementNetId },
     })
     expect(within(screen.getByRole('table')).getByText(stockedProduct.VendorCode)).toBeTruthy()
     expect(notifications.show).not.toHaveBeenCalled()
@@ -127,4 +150,75 @@ describe('NewOfferModal product search stock', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(apiMock).not.toHaveBeenCalled()
   })
+})
+
+describe('BUG-1485 offer product addition', () => {
+  beforeEach(() => {
+    products = [screenshotProduct]
+    withVatAccounting = true
+    availability = { AvailableQtyUk: 0, AvailableQtyUkVAT: 2, AvailableQtyUkReSale: 0 }
+  })
+
+  it('adds the screenshot VAT product without reservations and submits its edited quantity and comment', async () => {
+    const [option] = await searchProducts('02235030FSS')
+    expect(within(option).getByText('Без ПДВ: 0')).toBeTruthy()
+    expect(within(option).getByText('ПДВ: 2', { exact: true })).toBeTruthy()
+    expect(within(option).getByText('Перепродаж: 2')).toBeTruthy()
+    fireEvent.click(option)
+    const table = await screen.findByRole('table')
+    expect(within(table).getByText('02235030FSS')).toBeTruthy()
+    expect(apiMock).toHaveBeenCalledWith('/products/all/availabilities/product', {
+      query: { netId: screenshotProduct.NetUid, clientAgreementNetId: agreementNetId },
+    })
+    expect(apiMock.mock.calls.some(([path]) => path.includes('/reservations/'))).toBe(false)
+    fireEvent.change(within(table).getByRole('textbox', { name: 'Кількість' }), { target: { value: '2' } })
+    fireEvent.change(within(table).getByRole('textbox', { name: 'Коментар' }), { target: { value: 'Для клієнта' } })
+    const createButton = screen.getByRole('button', { name: 'Створити' })
+    expect(createButton.hasAttribute('disabled')).toBe(false)
+    fireEvent.click(createButton)
+    await waitFor(() => expect(apiMock).toHaveBeenCalledWith('/sales/offers/new', expect.objectContaining({
+      body: {
+        ClientAgreement: { Id: 503943, NetUid: agreementNetId, Agreement: { Name: 'Основной договор', WithVATAccounting: true } },
+        OrderItems: [{ Product: screenshotProduct, Qty: 2, Comment: 'Для клієнта' }],
+      },
+    })))
+  })
+
+  it('adds eligible resale stock for a non-VAT agreement and does not duplicate the line', async () => {
+    withVatAccounting = false
+    availability = { AvailableQtyUk: 0, AvailableQtyUkVAT: 0, AvailableQtyUkReSale: 2 }
+    const [option] = await searchProducts('02235030FSS')
+    fireEvent.click(option)
+    const table = await screen.findByRole('table')
+    fireEvent.click(screen.getByRole('combobox', { name: 'Товар' }))
+    fireEvent.click(await screen.findByRole('option', { name: /02235030FSS/, hidden: true }))
+    expect(within(table).getAllByRole('row')).toHaveLength(2)
+    expect(apiMock.mock.calls.filter(([path]) => path === '/products/all/availabilities/product')).toHaveLength(1)
+  })
+
+  it('blocks a genuine zero in the agreement scope even when global search shows stock', async () => {
+    availability = { AvailableQtyUk: 0, AvailableQtyUkVAT: 0, AvailableQtyUkReSale: 2 }
+    const [option] = await searchProducts('02235030FSS')
+    fireEvent.click(option)
+    await waitFor(() => expect(notifications.show).toHaveBeenCalledWith({ color: 'red', message: 'Немає товарів на складі' }))
+    expect(screen.queryByRole('table')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Створити' }).hasAttribute('disabled')).toBe(true)
+  })
+
+  it.each([new Error('Unavailable'), null, {}, { AvailableQtyUkVAT: Number.NaN }])(
+    'reports unavailable stock data without inventing zero: %s', async (response) => {
+      availability = response
+      const [option] = await searchProducts('02235030FSS')
+      fireEvent.click(option)
+      await waitFor(() => expect(notifications.show).toHaveBeenCalledWith({
+        color: 'red', message: 'Не вдалося перевірити наявність товару. Спробуйте ще раз',
+      }))
+      expect(screen.queryByRole('table')).toBeNull()
+      expect(notifications.show).not.toHaveBeenCalledWith(expect.objectContaining({ message: 'Немає товарів на складі' }))
+      availability = { AvailableQtyUk: 0, AvailableQtyUkVAT: 2, AvailableQtyUkReSale: 0 }
+      fireEvent.click(screen.getByRole('combobox', { name: 'Товар' }))
+      fireEvent.click(await screen.findByRole('option', { name: /02235030FSS/, hidden: true }))
+      expect(await screen.findByRole('table')).toBeTruthy()
+    },
+  )
 })

@@ -31,6 +31,7 @@ export type OfferCurrency = OfferEntity & {
 export type OfferAgreement = OfferEntity & {
   Currency?: OfferCurrency
   Name?: string
+  WithVATAccounting?: boolean
 }
 
 export type OfferClient = OfferEntity & {
@@ -93,12 +94,6 @@ export type OffersProduct = OfferEntity & {
   MainOriginalNumber?: string
   Name?: string
   VendorCode?: string
-}
-
-export type OfferProductReservation = {
-  AvailableQty?: number
-  AvailableQtyUk?: number
-  ProductNetUid?: string
 }
 
 export type OffersNewLine = {

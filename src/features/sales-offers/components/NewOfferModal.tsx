@@ -309,9 +309,18 @@ function NewOfferForm({
       return
     }
 
-    const availableQtyUk = await getOfferProductAvailableQtyUk(netUid, agreementNetId).catch(() => 0)
+    let availableQtyUk: number
 
-    if (availableQtyUk === 0) {
+    try {
+      const agreement = agreements.find((item) => item.NetUid === agreementNetId)
+      availableQtyUk = await getOfferProductAvailableQtyUk(netUid, agreementNetId, agreement?.Agreement?.WithVATAccounting)
+    } catch {
+      notifications.show({ color: 'red', message: t('Не вдалося перевірити наявність товару. Спробуйте ще раз') })
+
+      return
+    }
+
+    if (availableQtyUk <= 0) {
       notifications.show({ color: 'red', message: t('Немає товарів на складі') })
       setProductQuery('')
 

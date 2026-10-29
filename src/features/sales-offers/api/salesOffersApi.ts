@@ -14,7 +14,6 @@ import type {
   ClientShoppingCart,
   OfferClientAgreement,
   OfferOrderItem,
-  OfferProductReservation,
   OfferSubClientLink,
   OffersClientOption,
   OffersFilters,
@@ -136,14 +135,31 @@ export async function searchOffersProducts(value: string): Promise<OffersProduct
   return normalizeArray(result) as OffersProduct[]
 }
 
-export async function getOfferProductAvailableQtyUk(productNetId: string, clientAgreementNetId: string): Promise<number> {
-  const result = await apiRequest<unknown>('/products/reservations/current/carousel/agreement', {
-    query: { clientAgreementNetId, productNetId },
+export async function getOfferProductAvailableQtyUk(
+  productNetId: string,
+  clientAgreementNetId: string,
+  withVatAccounting: boolean | undefined,
+): Promise<number> {
+  if (typeof withVatAccounting !== 'boolean') {
+    throw new Error('Не визначено облік ПДВ договору')
+  }
+
+  const result = await apiRequest<unknown>('/products/all/availabilities/product', {
+    query: { clientAgreementNetId, netId: productNetId },
   })
 
-  const reservation = normalizeArray(result)[0] as OfferProductReservation | undefined
+  const availability = result && typeof result === 'object' && !Array.isArray(result)
+    ? result as Record<string, unknown>
+    : null
+  const quantities = withVatAccounting
+    ? [availability?.AvailableQtyUkVAT]
+    : [availability?.AvailableQtyUk, availability?.AvailableQtyUkReSale]
 
-  return reservation?.AvailableQtyUk ?? reservation?.AvailableQty ?? 0
+  if (!quantities.every((value): value is number => typeof value === 'number' && Number.isFinite(value))) {
+    throw new Error('Не вдалося отримати наявність товару')
+  }
+
+  return quantities.reduce((total, value) => total + value, 0)
 }
 
 function normalizeArray(result: unknown): unknown[] {
