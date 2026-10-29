@@ -9,7 +9,7 @@ import { reconcileReportOrdering } from './reportOrdering'
 import { canTransferReportGrouping, transferReportGrouping } from './reportGroupingLayout'
 import { detailDataset, detailGrouping, detailRequest, documentDetails } from './reportDocumentDetails.test-fixtures'
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
-beforeEach(() => vi.mocked(apiRequest).mockReset())
+beforeEach(() => { vi.mocked(apiRequest).mockReset() })
 it.each(['sales', 'grossProfit'])('admits %s details from exact capability and preserves attributes, order, template and API wire', async profile => {
   const [dataset] = parseReportDatasets([detailDataset]), request = detailRequest(profile)
   const before = structuredClone(request)

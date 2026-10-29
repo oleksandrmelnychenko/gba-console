@@ -1111,434 +1111,443 @@
       "HideZero": null,
       "AbcClassification": null
     },
-    "preview": {
-      "Version": 1,
-      "RequestSha256": "466f68630f1931d7c919f6e9137af87b2b0445e83fb252c8e8c076bb65d58885",
-      "CanonicalRequestBytes": 621,
-      "ResultSha256": "29483149f87998029a243ff6b1147bc7dd76cb59b12217c71f5e6a7272411b70",
-      "PresentationOnly": true,
-      "RecommendationEligible": false,
-      "AgreementPricingSupported": false,
-      "Agreement": null,
-      "Page": {
-        "Offset": 0,
-        "Limit": 20,
-        "TotalVisibleRows": 3,
-        "MaterializedRows": 3,
-        "ReturnedRows": 3,
-        "HasMore": false,
-        "ColumnOffset": 0,
-        "ColumnLimit": 3,
-        "TotalColumns": 3,
-        "ReturnedColumns": 3,
-        "HasMoreColumns": false
-      },
-      "Request": {
-        "DataSource": "NativeSalesNet",
-        "IsCurrentSnapshot": false,
-        "ObservationStartedAtUtc": null,
-        "ObservationCompletedAtUtc": null,
-        "HasPeriod": true,
-        "PeriodFrom": "01.09.2026",
-        "PeriodTo": "03.09.2026",
-        "ComparisonPeriodFrom": null,
-        "ComparisonPeriodTo": null,
-        "RowGroupings": [
-          "Товар",
-          "Детальний запис GBA"
-        ],
-        "ColumnGroupings": [],
-        "Measures": [
-          "Продажі з ПДВ з урахуванням повернень",
-          "Собівартість без ПДВ",
-          "Кількість з урахуванням повернень"
-        ],
-        "Filters": [],
-        "IgnoredFilters": [],
-        "Notes": [
-          "Продажі мінус повернення: проведені продажі за датою продажу, активні повернення від'ємно за власною датою повернення. Грошові показники в EUR доступні лише за підтвердженої валюти всіх складових.",
-          "Відбір за поверненням вибирає події повернення. Продаж не приписується документу повернення.",
-          "Для локального повернення ПДВ визначено з записаного ПДВ початкового рядка, його збереженого курсу й частки поверненої кількості за точного зв'язку та незмінної суми. Імпортоване повернення потребує чинної збереженої фінансової ревізії та повної відповідності рядків. Неоднозначність або непідтверджений розрахунок залишають ПДВ і суми без ПДВ невідомими.",
-          "Собівартість повернення без ПДВ доступна лише за повного покриття кількості рухами, коли облікова ціна дорівнює підтвердженій ціні партії без ПДВ. Якщо облікова ціна містить додаткові суми без розкладу, собівартість залишено невідомою. ПДВ собівартості не підставляється.",
-          "Без збереженої одиниці документа кількість не визначено. Грошові показники перевіряються окремо.",
-          "Дати повернень переведено з UTC до Europe/Kyiv.",
-          "Період і групування дат — за київським часом (Europe/Kyiv), з урахуванням літнього часу.",
-          "Для імпортованих продажів собівартість без ПДВ та її ПДВ взято окремо з партійних розподілів 1С у EUR. Собівартість з ПДВ — сума цих складових."
-        ]
-      },
-      "RowSchema": [
-        {
-          "Position": 0,
-          "Identity": "Product",
-          "Caption": "Товар",
-          "DisplayKind": "Text",
-          "KeyKind": "Numeric",
-          "Captioned": true,
-          "AgreementRole": "none"
+    "response": {
+      "DocumentURL": "",
+      "PdfDocumentURL": "",
+      "Preview": {
+        "Version": 1,
+        "RequestSha256": "466f68630f1931d7c919f6e9137af87b2b0445e83fb252c8e8c076bb65d58885",
+        "CanonicalRequestBytes": 621,
+        "ResultSha256": "29483149f87998029a243ff6b1147bc7dd76cb59b12217c71f5e6a7272411b70",
+        "PresentationOnly": true,
+        "RecommendationEligible": false,
+        "AgreementPricingSupported": false,
+        "Agreement": null,
+        "Page": {
+          "Offset": 0,
+          "Limit": 20,
+          "TotalVisibleRows": 3,
+          "MaterializedRows": 3,
+          "ReturnedRows": 3,
+          "HasMore": false,
+          "ColumnOffset": 0,
+          "ColumnLimit": 3,
+          "TotalColumns": 3,
+          "ReturnedColumns": 3,
+          "HasMoreColumns": false
         },
-        {
-          "Position": 1,
-          "Identity": "GbaDocumentDetail",
-          "Caption": "Детальний запис GBA",
-          "DisplayKind": "Text",
-          "KeyKind": "Text",
-          "Captioned": true,
-          "AgreementRole": "none"
-        }
-      ],
-      "ColumnSchema": [
-        {
-          "Position": 0,
-          "Identity": "$measureGroup",
-          "Caption": "Група показників",
-          "DisplayKind": "Text",
-          "KeyKind": "Text",
-          "Captioned": false,
-          "AgreementRole": "none"
-        },
-        {
-          "Position": 1,
-          "Identity": "$measure",
-          "Caption": "Показник",
-          "DisplayKind": "Text",
-          "KeyKind": "Text",
-          "Captioned": false,
-          "AgreementRole": "none"
-        }
-      ],
-      "Rows": [
-        {
-          "Ordinal": 0,
-          "SourceIndex": 0,
-          "Values": [
-            {
-              "Identity": {
-                "Kind": "signedInteger",
-                "Value": "1",
-                "Provenance": "rowAxisKey"
-              },
-              "Caption": "Product"
-            },
-            {
-              "Identity": {
-                "Kind": "text",
-                "Value": "R:1:1:1",
-                "Provenance": "rowAxisKey"
-              },
-              "Caption": "Повернення R-1 · 2026-09-03 13:00:00 · Product · Рядок GBA 1"
-            }
+        "Request": {
+          "DataSource": "NativeSalesNet",
+          "IsCurrentSnapshot": false,
+          "ObservationStartedAtUtc": null,
+          "ObservationCompletedAtUtc": null,
+          "HasPeriod": true,
+          "PeriodFrom": "01.09.2026",
+          "PeriodTo": "03.09.2026",
+          "ComparisonPeriodFrom": null,
+          "ComparisonPeriodTo": null,
+          "RowGroupings": [
+            "Товар",
+            "Детальний запис GBA"
+          ],
+          "ColumnGroupings": [],
+          "Measures": [
+            "Продажі з ПДВ з урахуванням повернень",
+            "Собівартість без ПДВ",
+            "Кількість з урахуванням повернень"
+          ],
+          "Filters": [],
+          "IgnoredFilters": [],
+          "Notes": [
+            "Продажі мінус повернення: проведені продажі за датою продажу, активні повернення від'ємно за власною датою повернення. Грошові показники в EUR доступні лише за підтвердженої валюти всіх складових.",
+            "Відбір за поверненням вибирає події повернення. Продаж не приписується документу повернення.",
+            "Для локального повернення ПДВ визначено з записаного ПДВ початкового рядка, його збереженого курсу й частки поверненої кількості за точного зв'язку та незмінної суми. Імпортоване повернення потребує чинної збереженої фінансової ревізії та повної відповідності рядків. Неоднозначність або непідтверджений розрахунок залишають ПДВ і суми без ПДВ невідомими.",
+            "Собівартість повернення без ПДВ доступна лише за повного покриття кількості рухами, коли облікова ціна дорівнює підтвердженій ціні партії без ПДВ. Якщо облікова ціна містить додаткові суми без розкладу, собівартість залишено невідомою. ПДВ собівартості не підставляється.",
+            "Без збереженої одиниці документа кількість не визначено. Грошові показники перевіряються окремо.",
+            "Дати повернень переведено з UTC до Europe/Kyiv.",
+            "Період і групування дат — за київським часом (Europe/Kyiv), з урахуванням літнього часу.",
+            "Для імпортованих продажів собівартість без ПДВ та її ПДВ взято окремо з партійних розподілів 1С у EUR. Собівартість з ПДВ — сума цих складових."
           ]
         },
-        {
-          "Ordinal": 1,
-          "SourceIndex": 1,
-          "Values": [
-            {
-              "Identity": {
-                "Kind": "signedInteger",
-                "Value": "1",
-                "Provenance": "rowAxisKey"
-              },
-              "Caption": "Product"
-            },
-            {
-              "Identity": {
-                "Kind": "text",
-                "Value": "S:1:1:1",
-                "Provenance": "rowAxisKey"
-              },
-              "Caption": "Продаж S-1 · 2026-09-01 15:00:00 · Product · Рядок GBA 1"
-            }
-          ]
-        },
-        {
-          "Ordinal": 2,
-          "SourceIndex": 2,
-          "Values": [
-            {
-              "Identity": {
-                "Kind": "signedInteger",
-                "Value": "1",
-                "Provenance": "rowAxisKey"
-              },
-              "Caption": "Product"
-            },
-            {
-              "Identity": {
-                "Kind": "text",
-                "Value": "S:1:1:2",
-                "Provenance": "rowAxisKey"
-              },
-              "Caption": "Продаж S-1 · 2026-09-01 15:00:00 · Product · Рядок GBA 2"
-            }
-          ]
-        }
-      ],
-      "Columns": [
-        {
-          "Ordinal": 0,
-          "SourceIndex": 0,
-          "Values": [
-            {
-              "Identity": {
-                "Kind": "text",
-                "Value": "Вартість продажу, EUR",
-                "Provenance": "columnAxisKey"
-              },
-              "Caption": "Вартість продажу, EUR"
-            },
-            {
-              "Identity": {
-                "Kind": "reportField",
-                "Value": "SalesValueWithVAT",
-                "Provenance": "columnAxisKey"
-              },
-              "Caption": "Продажі з ПДВ з урахуванням повернень"
-            }
-          ]
-        },
-        {
-          "Ordinal": 1,
-          "SourceIndex": 1,
-          "Values": [
-            {
-              "Identity": {
-                "Kind": "text",
-                "Value": "Собівартість, EUR",
-                "Provenance": "columnAxisKey"
-              },
-              "Caption": "Собівартість, EUR"
-            },
-            {
-              "Identity": {
-                "Kind": "reportField",
-                "Value": "CostWithoutVAT",
-                "Provenance": "columnAxisKey"
-              },
-              "Caption": "Собівартість без ПДВ"
-            }
-          ]
-        },
-        {
-          "Ordinal": 2,
-          "SourceIndex": 2,
-          "Values": [
-            {
-              "Identity": {
-                "Kind": "text",
-                "Value": "Кількість продажу",
-                "Provenance": "columnAxisKey"
-              },
-              "Caption": "Кількість продажу"
-            },
-            {
-              "Identity": {
-                "Kind": "reportField",
-                "Value": "SalesQuantity",
-                "Provenance": "columnAxisKey"
-              },
-              "Caption": "Кількість з урахуванням повернень"
-            }
-          ]
-        }
-      ],
-      "Cells": [
-        {
-          "RowSourceIndex": 0,
-          "ColumnSourceIndex": 0,
-          "Value": {
-            "Kind": "decimal",
-            "Value": "-48",
-            "Provenance": "producerCell"
-          }
-        },
-        {
-          "RowSourceIndex": 0,
-          "ColumnSourceIndex": 1,
-          "Value": {
-            "Kind": "decimal",
-            "Value": "-20.00",
-            "Provenance": "producerCell"
-          }
-        },
-        {
-          "RowSourceIndex": 0,
-          "ColumnSourceIndex": 2,
-          "Value": {
-            "Kind": "null",
-            "Value": null,
-            "Provenance": "producerCell"
-          }
-        },
-        {
-          "RowSourceIndex": 1,
-          "ColumnSourceIndex": 0,
-          "Value": {
-            "Kind": "decimal",
-            "Value": "120",
-            "Provenance": "producerCell"
-          }
-        },
-        {
-          "RowSourceIndex": 1,
-          "ColumnSourceIndex": 1,
-          "Value": {
-            "Kind": "decimal",
-            "Value": "50.00",
-            "Provenance": "producerCell"
-          }
-        },
-        {
-          "RowSourceIndex": 1,
-          "ColumnSourceIndex": 2,
-          "Value": {
-            "Kind": "null",
-            "Value": null,
-            "Provenance": "producerCell"
-          }
-        },
-        {
-          "RowSourceIndex": 2,
-          "ColumnSourceIndex": 0,
-          "Value": {
-            "Kind": "decimal",
-            "Value": "36",
-            "Provenance": "producerCell"
-          }
-        },
-        {
-          "RowSourceIndex": 2,
-          "ColumnSourceIndex": 1,
-          "Value": {
-            "Kind": "decimal",
-            "Value": "20.00",
-            "Provenance": "producerCell"
-          }
-        },
-        {
-          "RowSourceIndex": 2,
-          "ColumnSourceIndex": 2,
-          "Value": {
-            "Kind": "null",
-            "Value": null,
-            "Provenance": "producerCell"
-          }
-        }
-      ],
-      "Totals": {
-        "State": "materialized",
-        "Values": [
+        "RowSchema": [
           {
-            "RowSourceIndex": -1,
+            "Position": 0,
+            "Identity": "Product",
+            "Caption": "Товар",
+            "DisplayKind": "Text",
+            "KeyKind": "Numeric",
+            "Captioned": true,
+            "AgreementRole": "none"
+          },
+          {
+            "Position": 1,
+            "Identity": "GbaDocumentDetail",
+            "Caption": "Детальний запис GBA",
+            "DisplayKind": "Text",
+            "KeyKind": "Text",
+            "Captioned": true,
+            "AgreementRole": "none"
+          }
+        ],
+        "ColumnSchema": [
+          {
+            "Position": 0,
+            "Identity": "$measureGroup",
+            "Caption": "Група показників",
+            "DisplayKind": "Text",
+            "KeyKind": "Text",
+            "Captioned": false,
+            "AgreementRole": "none"
+          },
+          {
+            "Position": 1,
+            "Identity": "$measure",
+            "Caption": "Показник",
+            "DisplayKind": "Text",
+            "KeyKind": "Text",
+            "Captioned": false,
+            "AgreementRole": "none"
+          }
+        ],
+        "Rows": [
+          {
+            "Ordinal": 0,
+            "SourceIndex": 0,
+            "Values": [
+              {
+                "Identity": {
+                  "Kind": "signedInteger",
+                  "Value": "1",
+                  "Provenance": "rowAxisKey"
+                },
+                "Caption": "Product"
+              },
+              {
+                "Identity": {
+                  "Kind": "text",
+                  "Value": "R:1:1:1",
+                  "Provenance": "rowAxisKey"
+                },
+                "Caption": "Повернення R-1 · 2026-09-03 13:00:00 · Product · Рядок GBA 1"
+              }
+            ]
+          },
+          {
+            "Ordinal": 1,
+            "SourceIndex": 1,
+            "Values": [
+              {
+                "Identity": {
+                  "Kind": "signedInteger",
+                  "Value": "1",
+                  "Provenance": "rowAxisKey"
+                },
+                "Caption": "Product"
+              },
+              {
+                "Identity": {
+                  "Kind": "text",
+                  "Value": "S:1:1:1",
+                  "Provenance": "rowAxisKey"
+                },
+                "Caption": "Продаж S-1 · 2026-09-01 15:00:00 · Product · Рядок GBA 1"
+              }
+            ]
+          },
+          {
+            "Ordinal": 2,
+            "SourceIndex": 2,
+            "Values": [
+              {
+                "Identity": {
+                  "Kind": "signedInteger",
+                  "Value": "1",
+                  "Provenance": "rowAxisKey"
+                },
+                "Caption": "Product"
+              },
+              {
+                "Identity": {
+                  "Kind": "text",
+                  "Value": "S:1:1:2",
+                  "Provenance": "rowAxisKey"
+                },
+                "Caption": "Продаж S-1 · 2026-09-01 15:00:00 · Product · Рядок GBA 2"
+              }
+            ]
+          }
+        ],
+        "Columns": [
+          {
+            "Ordinal": 0,
+            "SourceIndex": 0,
+            "Values": [
+              {
+                "Identity": {
+                  "Kind": "text",
+                  "Value": "Вартість продажу, EUR",
+                  "Provenance": "columnAxisKey"
+                },
+                "Caption": "Вартість продажу, EUR"
+              },
+              {
+                "Identity": {
+                  "Kind": "reportField",
+                  "Value": "SalesValueWithVAT",
+                  "Provenance": "columnAxisKey"
+                },
+                "Caption": "Продажі з ПДВ з урахуванням повернень"
+              }
+            ]
+          },
+          {
+            "Ordinal": 1,
+            "SourceIndex": 1,
+            "Values": [
+              {
+                "Identity": {
+                  "Kind": "text",
+                  "Value": "Собівартість, EUR",
+                  "Provenance": "columnAxisKey"
+                },
+                "Caption": "Собівартість, EUR"
+              },
+              {
+                "Identity": {
+                  "Kind": "reportField",
+                  "Value": "CostWithoutVAT",
+                  "Provenance": "columnAxisKey"
+                },
+                "Caption": "Собівартість без ПДВ"
+              }
+            ]
+          },
+          {
+            "Ordinal": 2,
+            "SourceIndex": 2,
+            "Values": [
+              {
+                "Identity": {
+                  "Kind": "text",
+                  "Value": "Кількість продажу",
+                  "Provenance": "columnAxisKey"
+                },
+                "Caption": "Кількість продажу"
+              },
+              {
+                "Identity": {
+                  "Kind": "reportField",
+                  "Value": "SalesQuantity",
+                  "Provenance": "columnAxisKey"
+                },
+                "Caption": "Кількість з урахуванням повернень"
+              }
+            ]
+          }
+        ],
+        "Cells": [
+          {
+            "RowSourceIndex": 0,
             "ColumnSourceIndex": 0,
             "Value": {
               "Kind": "decimal",
-              "Value": "108",
-              "Provenance": "presentationTotal"
+              "Value": "-48",
+              "Provenance": "producerCell"
             }
           },
           {
-            "RowSourceIndex": -1,
+            "RowSourceIndex": 0,
             "ColumnSourceIndex": 1,
             "Value": {
               "Kind": "decimal",
-              "Value": "50.00",
-              "Provenance": "presentationTotal"
+              "Value": "-20.00",
+              "Provenance": "producerCell"
             }
           },
           {
-            "RowSourceIndex": -1,
+            "RowSourceIndex": 0,
             "ColumnSourceIndex": 2,
             "Value": {
               "Kind": "null",
               "Value": null,
-              "Provenance": "presentationTotal"
+              "Provenance": "producerCell"
+            }
+          },
+          {
+            "RowSourceIndex": 1,
+            "ColumnSourceIndex": 0,
+            "Value": {
+              "Kind": "decimal",
+              "Value": "120",
+              "Provenance": "producerCell"
+            }
+          },
+          {
+            "RowSourceIndex": 1,
+            "ColumnSourceIndex": 1,
+            "Value": {
+              "Kind": "decimal",
+              "Value": "50.00",
+              "Provenance": "producerCell"
+            }
+          },
+          {
+            "RowSourceIndex": 1,
+            "ColumnSourceIndex": 2,
+            "Value": {
+              "Kind": "null",
+              "Value": null,
+              "Provenance": "producerCell"
+            }
+          },
+          {
+            "RowSourceIndex": 2,
+            "ColumnSourceIndex": 0,
+            "Value": {
+              "Kind": "decimal",
+              "Value": "36",
+              "Provenance": "producerCell"
+            }
+          },
+          {
+            "RowSourceIndex": 2,
+            "ColumnSourceIndex": 1,
+            "Value": {
+              "Kind": "decimal",
+              "Value": "20.00",
+              "Provenance": "producerCell"
+            }
+          },
+          {
+            "RowSourceIndex": 2,
+            "ColumnSourceIndex": 2,
+            "Value": {
+              "Kind": "null",
+              "Value": null,
+              "Provenance": "producerCell"
             }
           }
         ],
-        "Groups": [
-          {
-            "Level": 0,
-            "RowSourceIndex": 0,
-            "RowCount": 3,
-            "Values": [
-              {
-                "RowSourceIndex": 0,
-                "ColumnSourceIndex": 0,
-                "Value": {
-                  "Kind": "decimal",
-                  "Value": "108",
-                  "Provenance": "presentationTotal"
-                }
-              },
-              {
-                "RowSourceIndex": 0,
-                "ColumnSourceIndex": 1,
-                "Value": {
-                  "Kind": "decimal",
-                  "Value": "50.00",
-                  "Provenance": "presentationTotal"
-                }
-              },
-              {
-                "RowSourceIndex": 0,
-                "ColumnSourceIndex": 2,
-                "Value": {
-                  "Kind": "null",
-                  "Value": null,
-                  "Provenance": "presentationTotal"
-                }
+        "Totals": {
+          "State": "materialized",
+          "Values": [
+            {
+              "RowSourceIndex": -1,
+              "ColumnSourceIndex": 0,
+              "Value": {
+                "Kind": "decimal",
+                "Value": "108",
+                "Provenance": "presentationTotal"
               }
-            ]
+            },
+            {
+              "RowSourceIndex": -1,
+              "ColumnSourceIndex": 1,
+              "Value": {
+                "Kind": "decimal",
+                "Value": "50.00",
+                "Provenance": "presentationTotal"
+              }
+            },
+            {
+              "RowSourceIndex": -1,
+              "ColumnSourceIndex": 2,
+              "Value": {
+                "Kind": "null",
+                "Value": null,
+                "Provenance": "presentationTotal"
+              }
+            }
+          ],
+          "Groups": [
+            {
+              "Level": 0,
+              "RowSourceIndex": 0,
+              "RowCount": 3,
+              "Values": [
+                {
+                  "RowSourceIndex": 0,
+                  "ColumnSourceIndex": 0,
+                  "Value": {
+                    "Kind": "decimal",
+                    "Value": "108",
+                    "Provenance": "presentationTotal"
+                  }
+                },
+                {
+                  "RowSourceIndex": 0,
+                  "ColumnSourceIndex": 1,
+                  "Value": {
+                    "Kind": "decimal",
+                    "Value": "50.00",
+                    "Provenance": "presentationTotal"
+                  }
+                },
+                {
+                  "RowSourceIndex": 0,
+                  "ColumnSourceIndex": 2,
+                  "Value": {
+                    "Kind": "null",
+                    "Value": null,
+                    "Provenance": "presentationTotal"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "constructorPresentation": {
+          "version": 1,
+          "negativeRed": true,
+          "grandTotals": true
+        },
+        "valueSemantics": [
+          {
+            "columnSourceIndex": 0,
+            "measureType": 4,
+            "semantics": {
+              "kind": "money",
+              "currencyPolicy": "EUR",
+              "unitPolicy": "currency",
+              "aggregation": "sum",
+              "scalable": true,
+              "defaultDecimalPlaces": 2,
+              "defaultMinimumDecimalPlaces": 2
+            }
+          },
+          {
+            "columnSourceIndex": 1,
+            "measureType": 6,
+            "semantics": {
+              "kind": "money",
+              "currencyPolicy": "EUR",
+              "unitPolicy": "currency",
+              "aggregation": "sum",
+              "scalable": true,
+              "defaultDecimalPlaces": 2,
+              "defaultMinimumDecimalPlaces": 2
+            }
+          },
+          {
+            "columnSourceIndex": 2,
+            "measureType": 0,
+            "semantics": {
+              "kind": "quantity",
+              "currencyPolicy": "notApplicable",
+              "unitPolicy": "confirmedCompatibleUnit",
+              "aggregation": "sumWithinCompatibleUnit",
+              "scalable": false,
+              "defaultDecimalPlaces": 3,
+              "defaultMinimumDecimalPlaces": 0
+            }
           }
         ]
       },
-      "constructorPresentation": {
-        "version": 1,
-        "negativeRed": true,
-        "grandTotals": true
-      },
-      "valueSemantics": [
-        {
-          "columnSourceIndex": 0,
-          "measureType": 4,
-          "semantics": {
-            "kind": "money",
-            "currencyPolicy": "EUR",
-            "unitPolicy": "currency",
-            "aggregation": "sum",
-            "scalable": true,
-            "defaultDecimalPlaces": 2,
-            "defaultMinimumDecimalPlaces": 2
-          }
-        },
-        {
-          "columnSourceIndex": 1,
-          "measureType": 6,
-          "semantics": {
-            "kind": "money",
-            "currencyPolicy": "EUR",
-            "unitPolicy": "currency",
-            "aggregation": "sum",
-            "scalable": true,
-            "defaultDecimalPlaces": 2,
-            "defaultMinimumDecimalPlaces": 2
-          }
-        },
-        {
-          "columnSourceIndex": 2,
-          "measureType": 0,
-          "semantics": {
-            "kind": "quantity",
-            "currencyPolicy": "notApplicable",
-            "unitPolicy": "confirmedCompatibleUnit",
-            "aggregation": "sumWithinCompatibleUnit",
-            "scalable": false,
-            "defaultDecimalPlaces": 3,
-            "defaultMinimumDecimalPlaces": 0
-          }
-        }
-      ]
+      "PreviewVersion": 2,
+      "ResultId": "9a8ccee3-5ce7-4f70-bbe8-e6ef2eb9692a",
+      "ExpiresAtUtc": "2026-10-29T16:52:15.2895021",
+      "RequestSha256": "466f68630f1931d7c919f6e9137af87b2b0445e83fb252c8e8c076bb65d58885",
+      "ResultSha256": "29483149f87998029a243ff6b1147bc7dd76cb59b12217c71f5e6a7272411b70"
     }
   },
   "grossProfit": {
@@ -1595,434 +1604,443 @@
       "HideZero": null,
       "AbcClassification": null
     },
-    "preview": {
-      "Version": 1,
-      "RequestSha256": "7fe511d111fa811856e718668c6bf8522106a15edc9be261ad32ad94233e4139",
-      "CanonicalRequestBytes": 627,
-      "ResultSha256": "3e7d387f05442849df144dd019771422f38c306059c24c097837a153873b2946",
-      "PresentationOnly": true,
-      "RecommendationEligible": false,
-      "AgreementPricingSupported": false,
-      "Agreement": null,
-      "Page": {
-        "Offset": 0,
-        "Limit": 20,
-        "TotalVisibleRows": 3,
-        "MaterializedRows": 3,
-        "ReturnedRows": 3,
-        "HasMore": false,
-        "ColumnOffset": 0,
-        "ColumnLimit": 3,
-        "TotalColumns": 3,
-        "ReturnedColumns": 3,
-        "HasMoreColumns": false
-      },
-      "Request": {
-        "DataSource": "NativeSalesNet",
-        "IsCurrentSnapshot": false,
-        "ObservationStartedAtUtc": null,
-        "ObservationCompletedAtUtc": null,
-        "HasPeriod": true,
-        "PeriodFrom": "01.09.2026",
-        "PeriodTo": "03.09.2026",
-        "ComparisonPeriodFrom": null,
-        "ComparisonPeriodTo": null,
-        "RowGroupings": [
-          "Товар",
-          "Детальний запис GBA"
-        ],
-        "ColumnGroupings": [],
-        "Measures": [
-          "Продажі з ПДВ з урахуванням повернень",
-          "Собівартість без ПДВ",
-          "Кількість з урахуванням повернень"
-        ],
-        "Filters": [],
-        "IgnoredFilters": [],
-        "Notes": [
-          "Продажі мінус повернення: проведені продажі за датою продажу, активні повернення від'ємно за власною датою повернення. Грошові показники в EUR доступні лише за підтвердженої валюти всіх складових.",
-          "Відбір за поверненням вибирає події повернення. Продаж не приписується документу повернення.",
-          "Для локального повернення ПДВ визначено з записаного ПДВ початкового рядка, його збереженого курсу й частки поверненої кількості за точного зв'язку та незмінної суми. Імпортоване повернення потребує чинної збереженої фінансової ревізії та повної відповідності рядків. Неоднозначність або непідтверджений розрахунок залишають ПДВ і суми без ПДВ невідомими.",
-          "Собівартість повернення без ПДВ доступна лише за повного покриття кількості рухами, коли облікова ціна дорівнює підтвердженій ціні партії без ПДВ. Якщо облікова ціна містить додаткові суми без розкладу, собівартість залишено невідомою. ПДВ собівартості не підставляється.",
-          "Без збереженої одиниці документа кількість не визначено. Грошові показники перевіряються окремо.",
-          "Дати повернень переведено з UTC до Europe/Kyiv.",
-          "Період і групування дат — за київським часом (Europe/Kyiv), з урахуванням літнього часу.",
-          "Для імпортованих продажів собівартість без ПДВ та її ПДВ взято окремо з партійних розподілів 1С у EUR. Собівартість з ПДВ — сума цих складових."
-        ]
-      },
-      "RowSchema": [
-        {
-          "Position": 0,
-          "Identity": "Product",
-          "Caption": "Товар",
-          "DisplayKind": "Text",
-          "KeyKind": "Numeric",
-          "Captioned": true,
-          "AgreementRole": "none"
+    "response": {
+      "DocumentURL": "",
+      "PdfDocumentURL": "",
+      "Preview": {
+        "Version": 1,
+        "RequestSha256": "7fe511d111fa811856e718668c6bf8522106a15edc9be261ad32ad94233e4139",
+        "CanonicalRequestBytes": 627,
+        "ResultSha256": "3e7d387f05442849df144dd019771422f38c306059c24c097837a153873b2946",
+        "PresentationOnly": true,
+        "RecommendationEligible": false,
+        "AgreementPricingSupported": false,
+        "Agreement": null,
+        "Page": {
+          "Offset": 0,
+          "Limit": 20,
+          "TotalVisibleRows": 3,
+          "MaterializedRows": 3,
+          "ReturnedRows": 3,
+          "HasMore": false,
+          "ColumnOffset": 0,
+          "ColumnLimit": 3,
+          "TotalColumns": 3,
+          "ReturnedColumns": 3,
+          "HasMoreColumns": false
         },
-        {
-          "Position": 1,
-          "Identity": "GbaDocumentDetail",
-          "Caption": "Детальний запис GBA",
-          "DisplayKind": "Text",
-          "KeyKind": "Text",
-          "Captioned": true,
-          "AgreementRole": "none"
-        }
-      ],
-      "ColumnSchema": [
-        {
-          "Position": 0,
-          "Identity": "$measureGroup",
-          "Caption": "Група показників",
-          "DisplayKind": "Text",
-          "KeyKind": "Text",
-          "Captioned": false,
-          "AgreementRole": "none"
-        },
-        {
-          "Position": 1,
-          "Identity": "$measure",
-          "Caption": "Показник",
-          "DisplayKind": "Text",
-          "KeyKind": "Text",
-          "Captioned": false,
-          "AgreementRole": "none"
-        }
-      ],
-      "Rows": [
-        {
-          "Ordinal": 0,
-          "SourceIndex": 0,
-          "Values": [
-            {
-              "Identity": {
-                "Kind": "signedInteger",
-                "Value": "1",
-                "Provenance": "rowAxisKey"
-              },
-              "Caption": "Product"
-            },
-            {
-              "Identity": {
-                "Kind": "text",
-                "Value": "R:1:1:1",
-                "Provenance": "rowAxisKey"
-              },
-              "Caption": "Повернення R-1 · 2026-09-03 13:00:00 · Product · Рядок GBA 1"
-            }
+        "Request": {
+          "DataSource": "NativeSalesNet",
+          "IsCurrentSnapshot": false,
+          "ObservationStartedAtUtc": null,
+          "ObservationCompletedAtUtc": null,
+          "HasPeriod": true,
+          "PeriodFrom": "01.09.2026",
+          "PeriodTo": "03.09.2026",
+          "ComparisonPeriodFrom": null,
+          "ComparisonPeriodTo": null,
+          "RowGroupings": [
+            "Товар",
+            "Детальний запис GBA"
+          ],
+          "ColumnGroupings": [],
+          "Measures": [
+            "Продажі з ПДВ з урахуванням повернень",
+            "Собівартість без ПДВ",
+            "Кількість з урахуванням повернень"
+          ],
+          "Filters": [],
+          "IgnoredFilters": [],
+          "Notes": [
+            "Продажі мінус повернення: проведені продажі за датою продажу, активні повернення від'ємно за власною датою повернення. Грошові показники в EUR доступні лише за підтвердженої валюти всіх складових.",
+            "Відбір за поверненням вибирає події повернення. Продаж не приписується документу повернення.",
+            "Для локального повернення ПДВ визначено з записаного ПДВ початкового рядка, його збереженого курсу й частки поверненої кількості за точного зв'язку та незмінної суми. Імпортоване повернення потребує чинної збереженої фінансової ревізії та повної відповідності рядків. Неоднозначність або непідтверджений розрахунок залишають ПДВ і суми без ПДВ невідомими.",
+            "Собівартість повернення без ПДВ доступна лише за повного покриття кількості рухами, коли облікова ціна дорівнює підтвердженій ціні партії без ПДВ. Якщо облікова ціна містить додаткові суми без розкладу, собівартість залишено невідомою. ПДВ собівартості не підставляється.",
+            "Без збереженої одиниці документа кількість не визначено. Грошові показники перевіряються окремо.",
+            "Дати повернень переведено з UTC до Europe/Kyiv.",
+            "Період і групування дат — за київським часом (Europe/Kyiv), з урахуванням літнього часу.",
+            "Для імпортованих продажів собівартість без ПДВ та її ПДВ взято окремо з партійних розподілів 1С у EUR. Собівартість з ПДВ — сума цих складових."
           ]
         },
-        {
-          "Ordinal": 1,
-          "SourceIndex": 1,
-          "Values": [
-            {
-              "Identity": {
-                "Kind": "signedInteger",
-                "Value": "1",
-                "Provenance": "rowAxisKey"
-              },
-              "Caption": "Product"
-            },
-            {
-              "Identity": {
-                "Kind": "text",
-                "Value": "S:1:1:1",
-                "Provenance": "rowAxisKey"
-              },
-              "Caption": "Продаж S-1 · 2026-09-01 15:00:00 · Product · Рядок GBA 1"
-            }
-          ]
-        },
-        {
-          "Ordinal": 2,
-          "SourceIndex": 2,
-          "Values": [
-            {
-              "Identity": {
-                "Kind": "signedInteger",
-                "Value": "1",
-                "Provenance": "rowAxisKey"
-              },
-              "Caption": "Product"
-            },
-            {
-              "Identity": {
-                "Kind": "text",
-                "Value": "S:1:1:2",
-                "Provenance": "rowAxisKey"
-              },
-              "Caption": "Продаж S-1 · 2026-09-01 15:00:00 · Product · Рядок GBA 2"
-            }
-          ]
-        }
-      ],
-      "Columns": [
-        {
-          "Ordinal": 0,
-          "SourceIndex": 0,
-          "Values": [
-            {
-              "Identity": {
-                "Kind": "text",
-                "Value": "Вартість продажу, EUR",
-                "Provenance": "columnAxisKey"
-              },
-              "Caption": "Вартість продажу, EUR"
-            },
-            {
-              "Identity": {
-                "Kind": "reportField",
-                "Value": "SalesValueWithVAT",
-                "Provenance": "columnAxisKey"
-              },
-              "Caption": "Продажі з ПДВ з урахуванням повернень"
-            }
-          ]
-        },
-        {
-          "Ordinal": 1,
-          "SourceIndex": 1,
-          "Values": [
-            {
-              "Identity": {
-                "Kind": "text",
-                "Value": "Собівартість, EUR",
-                "Provenance": "columnAxisKey"
-              },
-              "Caption": "Собівартість, EUR"
-            },
-            {
-              "Identity": {
-                "Kind": "reportField",
-                "Value": "CostWithoutVAT",
-                "Provenance": "columnAxisKey"
-              },
-              "Caption": "Собівартість без ПДВ"
-            }
-          ]
-        },
-        {
-          "Ordinal": 2,
-          "SourceIndex": 2,
-          "Values": [
-            {
-              "Identity": {
-                "Kind": "text",
-                "Value": "Кількість продажу",
-                "Provenance": "columnAxisKey"
-              },
-              "Caption": "Кількість продажу"
-            },
-            {
-              "Identity": {
-                "Kind": "reportField",
-                "Value": "SalesQuantity",
-                "Provenance": "columnAxisKey"
-              },
-              "Caption": "Кількість з урахуванням повернень"
-            }
-          ]
-        }
-      ],
-      "Cells": [
-        {
-          "RowSourceIndex": 0,
-          "ColumnSourceIndex": 0,
-          "Value": {
-            "Kind": "decimal",
-            "Value": "-48",
-            "Provenance": "producerCell"
-          }
-        },
-        {
-          "RowSourceIndex": 0,
-          "ColumnSourceIndex": 1,
-          "Value": {
-            "Kind": "decimal",
-            "Value": "-20.00",
-            "Provenance": "producerCell"
-          }
-        },
-        {
-          "RowSourceIndex": 0,
-          "ColumnSourceIndex": 2,
-          "Value": {
-            "Kind": "null",
-            "Value": null,
-            "Provenance": "producerCell"
-          }
-        },
-        {
-          "RowSourceIndex": 1,
-          "ColumnSourceIndex": 0,
-          "Value": {
-            "Kind": "decimal",
-            "Value": "120",
-            "Provenance": "producerCell"
-          }
-        },
-        {
-          "RowSourceIndex": 1,
-          "ColumnSourceIndex": 1,
-          "Value": {
-            "Kind": "decimal",
-            "Value": "50.00",
-            "Provenance": "producerCell"
-          }
-        },
-        {
-          "RowSourceIndex": 1,
-          "ColumnSourceIndex": 2,
-          "Value": {
-            "Kind": "null",
-            "Value": null,
-            "Provenance": "producerCell"
-          }
-        },
-        {
-          "RowSourceIndex": 2,
-          "ColumnSourceIndex": 0,
-          "Value": {
-            "Kind": "decimal",
-            "Value": "36",
-            "Provenance": "producerCell"
-          }
-        },
-        {
-          "RowSourceIndex": 2,
-          "ColumnSourceIndex": 1,
-          "Value": {
-            "Kind": "decimal",
-            "Value": "20.00",
-            "Provenance": "producerCell"
-          }
-        },
-        {
-          "RowSourceIndex": 2,
-          "ColumnSourceIndex": 2,
-          "Value": {
-            "Kind": "null",
-            "Value": null,
-            "Provenance": "producerCell"
-          }
-        }
-      ],
-      "Totals": {
-        "State": "materialized",
-        "Values": [
+        "RowSchema": [
           {
-            "RowSourceIndex": -1,
+            "Position": 0,
+            "Identity": "Product",
+            "Caption": "Товар",
+            "DisplayKind": "Text",
+            "KeyKind": "Numeric",
+            "Captioned": true,
+            "AgreementRole": "none"
+          },
+          {
+            "Position": 1,
+            "Identity": "GbaDocumentDetail",
+            "Caption": "Детальний запис GBA",
+            "DisplayKind": "Text",
+            "KeyKind": "Text",
+            "Captioned": true,
+            "AgreementRole": "none"
+          }
+        ],
+        "ColumnSchema": [
+          {
+            "Position": 0,
+            "Identity": "$measureGroup",
+            "Caption": "Група показників",
+            "DisplayKind": "Text",
+            "KeyKind": "Text",
+            "Captioned": false,
+            "AgreementRole": "none"
+          },
+          {
+            "Position": 1,
+            "Identity": "$measure",
+            "Caption": "Показник",
+            "DisplayKind": "Text",
+            "KeyKind": "Text",
+            "Captioned": false,
+            "AgreementRole": "none"
+          }
+        ],
+        "Rows": [
+          {
+            "Ordinal": 0,
+            "SourceIndex": 0,
+            "Values": [
+              {
+                "Identity": {
+                  "Kind": "signedInteger",
+                  "Value": "1",
+                  "Provenance": "rowAxisKey"
+                },
+                "Caption": "Product"
+              },
+              {
+                "Identity": {
+                  "Kind": "text",
+                  "Value": "R:1:1:1",
+                  "Provenance": "rowAxisKey"
+                },
+                "Caption": "Повернення R-1 · 2026-09-03 13:00:00 · Product · Рядок GBA 1"
+              }
+            ]
+          },
+          {
+            "Ordinal": 1,
+            "SourceIndex": 1,
+            "Values": [
+              {
+                "Identity": {
+                  "Kind": "signedInteger",
+                  "Value": "1",
+                  "Provenance": "rowAxisKey"
+                },
+                "Caption": "Product"
+              },
+              {
+                "Identity": {
+                  "Kind": "text",
+                  "Value": "S:1:1:1",
+                  "Provenance": "rowAxisKey"
+                },
+                "Caption": "Продаж S-1 · 2026-09-01 15:00:00 · Product · Рядок GBA 1"
+              }
+            ]
+          },
+          {
+            "Ordinal": 2,
+            "SourceIndex": 2,
+            "Values": [
+              {
+                "Identity": {
+                  "Kind": "signedInteger",
+                  "Value": "1",
+                  "Provenance": "rowAxisKey"
+                },
+                "Caption": "Product"
+              },
+              {
+                "Identity": {
+                  "Kind": "text",
+                  "Value": "S:1:1:2",
+                  "Provenance": "rowAxisKey"
+                },
+                "Caption": "Продаж S-1 · 2026-09-01 15:00:00 · Product · Рядок GBA 2"
+              }
+            ]
+          }
+        ],
+        "Columns": [
+          {
+            "Ordinal": 0,
+            "SourceIndex": 0,
+            "Values": [
+              {
+                "Identity": {
+                  "Kind": "text",
+                  "Value": "Вартість продажу, EUR",
+                  "Provenance": "columnAxisKey"
+                },
+                "Caption": "Вартість продажу, EUR"
+              },
+              {
+                "Identity": {
+                  "Kind": "reportField",
+                  "Value": "SalesValueWithVAT",
+                  "Provenance": "columnAxisKey"
+                },
+                "Caption": "Продажі з ПДВ з урахуванням повернень"
+              }
+            ]
+          },
+          {
+            "Ordinal": 1,
+            "SourceIndex": 1,
+            "Values": [
+              {
+                "Identity": {
+                  "Kind": "text",
+                  "Value": "Собівартість, EUR",
+                  "Provenance": "columnAxisKey"
+                },
+                "Caption": "Собівартість, EUR"
+              },
+              {
+                "Identity": {
+                  "Kind": "reportField",
+                  "Value": "CostWithoutVAT",
+                  "Provenance": "columnAxisKey"
+                },
+                "Caption": "Собівартість без ПДВ"
+              }
+            ]
+          },
+          {
+            "Ordinal": 2,
+            "SourceIndex": 2,
+            "Values": [
+              {
+                "Identity": {
+                  "Kind": "text",
+                  "Value": "Кількість продажу",
+                  "Provenance": "columnAxisKey"
+                },
+                "Caption": "Кількість продажу"
+              },
+              {
+                "Identity": {
+                  "Kind": "reportField",
+                  "Value": "SalesQuantity",
+                  "Provenance": "columnAxisKey"
+                },
+                "Caption": "Кількість з урахуванням повернень"
+              }
+            ]
+          }
+        ],
+        "Cells": [
+          {
+            "RowSourceIndex": 0,
             "ColumnSourceIndex": 0,
             "Value": {
               "Kind": "decimal",
-              "Value": "108",
-              "Provenance": "presentationTotal"
+              "Value": "-48",
+              "Provenance": "producerCell"
             }
           },
           {
-            "RowSourceIndex": -1,
+            "RowSourceIndex": 0,
             "ColumnSourceIndex": 1,
             "Value": {
               "Kind": "decimal",
-              "Value": "50.00",
-              "Provenance": "presentationTotal"
+              "Value": "-20.00",
+              "Provenance": "producerCell"
             }
           },
           {
-            "RowSourceIndex": -1,
+            "RowSourceIndex": 0,
             "ColumnSourceIndex": 2,
             "Value": {
               "Kind": "null",
               "Value": null,
-              "Provenance": "presentationTotal"
+              "Provenance": "producerCell"
+            }
+          },
+          {
+            "RowSourceIndex": 1,
+            "ColumnSourceIndex": 0,
+            "Value": {
+              "Kind": "decimal",
+              "Value": "120",
+              "Provenance": "producerCell"
+            }
+          },
+          {
+            "RowSourceIndex": 1,
+            "ColumnSourceIndex": 1,
+            "Value": {
+              "Kind": "decimal",
+              "Value": "50.00",
+              "Provenance": "producerCell"
+            }
+          },
+          {
+            "RowSourceIndex": 1,
+            "ColumnSourceIndex": 2,
+            "Value": {
+              "Kind": "null",
+              "Value": null,
+              "Provenance": "producerCell"
+            }
+          },
+          {
+            "RowSourceIndex": 2,
+            "ColumnSourceIndex": 0,
+            "Value": {
+              "Kind": "decimal",
+              "Value": "36",
+              "Provenance": "producerCell"
+            }
+          },
+          {
+            "RowSourceIndex": 2,
+            "ColumnSourceIndex": 1,
+            "Value": {
+              "Kind": "decimal",
+              "Value": "20.00",
+              "Provenance": "producerCell"
+            }
+          },
+          {
+            "RowSourceIndex": 2,
+            "ColumnSourceIndex": 2,
+            "Value": {
+              "Kind": "null",
+              "Value": null,
+              "Provenance": "producerCell"
             }
           }
         ],
-        "Groups": [
-          {
-            "Level": 0,
-            "RowSourceIndex": 0,
-            "RowCount": 3,
-            "Values": [
-              {
-                "RowSourceIndex": 0,
-                "ColumnSourceIndex": 0,
-                "Value": {
-                  "Kind": "decimal",
-                  "Value": "108",
-                  "Provenance": "presentationTotal"
-                }
-              },
-              {
-                "RowSourceIndex": 0,
-                "ColumnSourceIndex": 1,
-                "Value": {
-                  "Kind": "decimal",
-                  "Value": "50.00",
-                  "Provenance": "presentationTotal"
-                }
-              },
-              {
-                "RowSourceIndex": 0,
-                "ColumnSourceIndex": 2,
-                "Value": {
-                  "Kind": "null",
-                  "Value": null,
-                  "Provenance": "presentationTotal"
-                }
+        "Totals": {
+          "State": "materialized",
+          "Values": [
+            {
+              "RowSourceIndex": -1,
+              "ColumnSourceIndex": 0,
+              "Value": {
+                "Kind": "decimal",
+                "Value": "108",
+                "Provenance": "presentationTotal"
               }
-            ]
+            },
+            {
+              "RowSourceIndex": -1,
+              "ColumnSourceIndex": 1,
+              "Value": {
+                "Kind": "decimal",
+                "Value": "50.00",
+                "Provenance": "presentationTotal"
+              }
+            },
+            {
+              "RowSourceIndex": -1,
+              "ColumnSourceIndex": 2,
+              "Value": {
+                "Kind": "null",
+                "Value": null,
+                "Provenance": "presentationTotal"
+              }
+            }
+          ],
+          "Groups": [
+            {
+              "Level": 0,
+              "RowSourceIndex": 0,
+              "RowCount": 3,
+              "Values": [
+                {
+                  "RowSourceIndex": 0,
+                  "ColumnSourceIndex": 0,
+                  "Value": {
+                    "Kind": "decimal",
+                    "Value": "108",
+                    "Provenance": "presentationTotal"
+                  }
+                },
+                {
+                  "RowSourceIndex": 0,
+                  "ColumnSourceIndex": 1,
+                  "Value": {
+                    "Kind": "decimal",
+                    "Value": "50.00",
+                    "Provenance": "presentationTotal"
+                  }
+                },
+                {
+                  "RowSourceIndex": 0,
+                  "ColumnSourceIndex": 2,
+                  "Value": {
+                    "Kind": "null",
+                    "Value": null,
+                    "Provenance": "presentationTotal"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "constructorPresentation": {
+          "version": 1,
+          "negativeRed": true,
+          "grandTotals": true
+        },
+        "valueSemantics": [
+          {
+            "columnSourceIndex": 0,
+            "measureType": 4,
+            "semantics": {
+              "kind": "money",
+              "currencyPolicy": "EUR",
+              "unitPolicy": "currency",
+              "aggregation": "sum",
+              "scalable": true,
+              "defaultDecimalPlaces": 2,
+              "defaultMinimumDecimalPlaces": 2
+            }
+          },
+          {
+            "columnSourceIndex": 1,
+            "measureType": 6,
+            "semantics": {
+              "kind": "money",
+              "currencyPolicy": "EUR",
+              "unitPolicy": "currency",
+              "aggregation": "sum",
+              "scalable": true,
+              "defaultDecimalPlaces": 2,
+              "defaultMinimumDecimalPlaces": 2
+            }
+          },
+          {
+            "columnSourceIndex": 2,
+            "measureType": 0,
+            "semantics": {
+              "kind": "quantity",
+              "currencyPolicy": "notApplicable",
+              "unitPolicy": "confirmedCompatibleUnit",
+              "aggregation": "sumWithinCompatibleUnit",
+              "scalable": false,
+              "defaultDecimalPlaces": 3,
+              "defaultMinimumDecimalPlaces": 0
+            }
           }
         ]
       },
-      "constructorPresentation": {
-        "version": 1,
-        "negativeRed": true,
-        "grandTotals": true
-      },
-      "valueSemantics": [
-        {
-          "columnSourceIndex": 0,
-          "measureType": 4,
-          "semantics": {
-            "kind": "money",
-            "currencyPolicy": "EUR",
-            "unitPolicy": "currency",
-            "aggregation": "sum",
-            "scalable": true,
-            "defaultDecimalPlaces": 2,
-            "defaultMinimumDecimalPlaces": 2
-          }
-        },
-        {
-          "columnSourceIndex": 1,
-          "measureType": 6,
-          "semantics": {
-            "kind": "money",
-            "currencyPolicy": "EUR",
-            "unitPolicy": "currency",
-            "aggregation": "sum",
-            "scalable": true,
-            "defaultDecimalPlaces": 2,
-            "defaultMinimumDecimalPlaces": 2
-          }
-        },
-        {
-          "columnSourceIndex": 2,
-          "measureType": 0,
-          "semantics": {
-            "kind": "quantity",
-            "currencyPolicy": "notApplicable",
-            "unitPolicy": "confirmedCompatibleUnit",
-            "aggregation": "sumWithinCompatibleUnit",
-            "scalable": false,
-            "defaultDecimalPlaces": 3,
-            "defaultMinimumDecimalPlaces": 0
-          }
-        }
-      ]
+      "PreviewVersion": 2,
+      "ResultId": "a67e7996-402f-4d92-a07f-7c76d48d959a",
+      "ExpiresAtUtc": "2026-10-29T16:52:19.6675766",
+      "RequestSha256": "7fe511d111fa811856e718668c6bf8522106a15edc9be261ad32ad94233e4139",
+      "ResultSha256": "3e7d387f05442849df144dd019771422f38c306059c24c097837a153873b2946"
     }
   }
 }

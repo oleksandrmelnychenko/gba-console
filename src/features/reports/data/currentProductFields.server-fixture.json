@@ -1,0 +1,898 @@
+{
+  "provenance": "Synthetic SQL producer and actual NativeReportPreviewResponse serialized with GbaJsonOptions; backend runtime52ac69803 tests3dce79321, 2026-10-29. No live data.",
+  "capability": {
+    "version": 2,
+    "additionalFields": [
+      {
+        "type": 2,
+        "caption": "Артикул (поточний товар)",
+        "placement": "column"
+      },
+      {
+        "type": 3,
+        "caption": "TOP (поточний товар)",
+        "placement": "column"
+      },
+      {
+        "type": 65,
+        "caption": "Опис (поточний товар)",
+        "placement": "column"
+      },
+      {
+        "type": 66,
+        "caption": "Розмір (поточний товар)",
+        "placement": "column"
+      }
+    ],
+    "orderings": [],
+    "attributeKind": "currentProductScalar",
+    "requiredRowGroupings": [
+      5,
+      7
+    ],
+    "supportedReportProfiles": [
+      "sales",
+      "grossProfit"
+    ]
+  },
+  "request": {
+    "DataSource": 2,
+    "ReportProfile": "sales",
+    "OneC": null,
+    "NativePriceComparison": null,
+    "CustomerGroups": null,
+    "ValuationClientAgreementId": null,
+    "ProvidedDiscounts": null,
+    "WorkbookPresentation": {
+      "Version": 2,
+      "AdditionalFields": [
+        66,
+        2,
+        65,
+        3
+      ],
+      "Ordering": null
+    },
+    "From": "2026-09-01",
+    "To": "2026-09-03",
+    "Sorted": {
+      "Col": [],
+      "Row": [
+        {
+          "type": 7,
+          "label": null,
+          "key": null
+        }
+      ],
+      "Measurements": [
+        {
+          "Type": 4,
+          "ParentName": null,
+          "Name": null,
+          "IsChecked": null
+        },
+        {
+          "Type": 6,
+          "ParentName": null,
+          "Name": null,
+          "IsChecked": null
+        },
+        {
+          "Type": 0,
+          "ParentName": null,
+          "Name": null,
+          "IsChecked": null
+        }
+      ]
+    },
+    "Selections": [],
+    "FilterExpression": null,
+    "Ordering": null,
+    "TopGroups": null,
+    "Threshold": null,
+    "HideZero": null,
+    "AbcClassification": null
+  },
+  "page0": {
+    "DocumentURL": "",
+    "PdfDocumentURL": "",
+    "Preview": {
+      "Version": 1,
+      "RequestSha256": "27c196c2bfdff58a4aa4407d8df38ac932bdf009f53f90522eb29d65a2b91b75",
+      "CanonicalRequestBytes": 669,
+      "ResultSha256": "ec540752c25aabdabe1f2c42c8776eb7c99203238c7b1105bf47583e4efb9df7",
+      "PresentationOnly": true,
+      "RecommendationEligible": false,
+      "AgreementPricingSupported": false,
+      "Agreement": null,
+      "Page": {
+        "Offset": 0,
+        "Limit": 1,
+        "TotalVisibleRows": 2,
+        "MaterializedRows": 2,
+        "ReturnedRows": 1,
+        "HasMore": true,
+        "ColumnOffset": 0,
+        "ColumnLimit": 3,
+        "TotalColumns": 3,
+        "ReturnedColumns": 3,
+        "HasMoreColumns": false
+      },
+      "Request": {
+        "DataSource": "NativeSalesNet",
+        "IsCurrentSnapshot": false,
+        "ObservationStartedAtUtc": null,
+        "ObservationCompletedAtUtc": null,
+        "HasPeriod": true,
+        "PeriodFrom": "01.09.2026",
+        "PeriodTo": "03.09.2026",
+        "ComparisonPeriodFrom": null,
+        "ComparisonPeriodTo": null,
+        "RowGroupings": [
+          "Назва товару"
+        ],
+        "ColumnGroupings": [],
+        "Measures": [
+          "Продажі з ПДВ з урахуванням повернень",
+          "Собівартість без ПДВ",
+          "Кількість з урахуванням повернень"
+        ],
+        "Filters": [],
+        "IgnoredFilters": [],
+        "Notes": [
+          "Продажі мінус повернення: проведені продажі за датою продажу, активні повернення від'ємно за власною датою повернення. Грошові показники в EUR доступні лише за підтвердженої валюти всіх складових.",
+          "Відбір за поверненням вибирає події повернення. Продаж не приписується документу повернення.",
+          "Для локального повернення ПДВ визначено з записаного ПДВ початкового рядка, його збереженого курсу й частки поверненої кількості за точного зв'язку та незмінної суми. Імпортоване повернення потребує чинної збереженої фінансової ревізії та повної відповідності рядків. Неоднозначність або непідтверджений розрахунок залишають ПДВ і суми без ПДВ невідомими.",
+          "Собівартість повернення без ПДВ доступна лише за повного покриття кількості рухами, коли облікова ціна дорівнює підтвердженій ціні партії без ПДВ. Якщо облікова ціна містить додаткові суми без розкладу, собівартість залишено невідомою. ПДВ собівартості не підставляється.",
+          "Без збереженої одиниці документа кількість не визначено. Грошові показники перевіряються окремо.",
+          "Дати повернень переведено з UTC до Europe/Kyiv.",
+          "Період і групування дат — за київським часом (Europe/Kyiv), з урахуванням літнього часу.",
+          "ПДВ: 2 рядк(ів) мають суму ПДВ без курсу документа, тому її неможливо перевести в EUR. Показники, що залежать від ПДВ, у таких групах залишено порожніми.",
+          "Для імпортованих продажів собівартість без ПДВ та її ПДВ взято окремо з партійних розподілів 1С у EUR. Собівартість з ПДВ — сума цих складових.",
+          "Собівартість: для 1 рядк(ів) немає підтвердженого повного покриття кількості. Собівартість і залежні від неї показники у таких групах залишено порожніми, а не замінено частковою сумою чи нулем.",
+          "Назви: 2 груп(и) мають однакову назву, тому до назви додано те, що їх розрізняє (артикул, номер, код, а якщо в даних нічого іншого немає — внутрішній ID). Це різні позиції, а не одна.",
+          "Додаткові поля — поточні скалярні атрибути товару GBA на момент формування, не історичні дані документа. ∅ — значення не заповнено; — — точний товар або атрибут недоступний."
+        ]
+      },
+      "RowSchema": [
+        {
+          "Position": 0,
+          "Identity": "ProductName",
+          "Caption": "Назва товару",
+          "DisplayKind": "Text",
+          "KeyKind": "Numeric",
+          "Captioned": true,
+          "AgreementRole": "none"
+        }
+      ],
+      "ColumnSchema": [
+        {
+          "Position": 0,
+          "Identity": "$measureGroup",
+          "Caption": "Група показників",
+          "DisplayKind": "Text",
+          "KeyKind": "Text",
+          "Captioned": false,
+          "AgreementRole": "none"
+        },
+        {
+          "Position": 1,
+          "Identity": "$measure",
+          "Caption": "Показник",
+          "DisplayKind": "Text",
+          "KeyKind": "Text",
+          "Captioned": false,
+          "AgreementRole": "none"
+        }
+      ],
+      "Rows": [
+        {
+          "Ordinal": 0,
+          "SourceIndex": 0,
+          "Values": [
+            {
+              "Identity": {
+                "Kind": "signedInteger",
+                "Value": "1",
+                "Provenance": "rowAxisKey"
+              },
+              "Caption": "Товар (арт. A-1)"
+            }
+          ]
+        }
+      ],
+      "Columns": [
+        {
+          "Ordinal": 0,
+          "SourceIndex": 0,
+          "Values": [
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Вартість продажу, EUR",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Вартість продажу, EUR"
+            },
+            {
+              "Identity": {
+                "Kind": "reportField",
+                "Value": "SalesValueWithVAT",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Продажі з ПДВ з урахуванням повернень"
+            }
+          ]
+        },
+        {
+          "Ordinal": 1,
+          "SourceIndex": 1,
+          "Values": [
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Собівартість, EUR",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Собівартість, EUR"
+            },
+            {
+              "Identity": {
+                "Kind": "reportField",
+                "Value": "CostWithoutVAT",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Собівартість без ПДВ"
+            }
+          ]
+        },
+        {
+          "Ordinal": 2,
+          "SourceIndex": 2,
+          "Values": [
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Кількість продажу",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Кількість продажу"
+            },
+            {
+              "Identity": {
+                "Kind": "reportField",
+                "Value": "SalesQuantity",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Кількість з урахуванням повернень"
+            }
+          ]
+        }
+      ],
+      "Cells": [
+        {
+          "RowSourceIndex": 0,
+          "ColumnSourceIndex": 0,
+          "Value": {
+            "Kind": "decimal",
+            "Value": "72",
+            "Provenance": "producerCell"
+          }
+        },
+        {
+          "RowSourceIndex": 0,
+          "ColumnSourceIndex": 1,
+          "Value": {
+            "Kind": "decimal",
+            "Value": "30.00",
+            "Provenance": "producerCell"
+          }
+        },
+        {
+          "RowSourceIndex": 0,
+          "ColumnSourceIndex": 2,
+          "Value": {
+            "Kind": "null",
+            "Value": null,
+            "Provenance": "producerCell"
+          }
+        }
+      ],
+      "Totals": {
+        "State": "materialized",
+        "Values": [
+          {
+            "RowSourceIndex": -1,
+            "ColumnSourceIndex": 0,
+            "Value": {
+              "Kind": "decimal",
+              "Value": "82",
+              "Provenance": "presentationTotal"
+            }
+          },
+          {
+            "RowSourceIndex": -1,
+            "ColumnSourceIndex": 1,
+            "Value": {
+              "Kind": "null",
+              "Value": null,
+              "Provenance": "presentationTotal"
+            }
+          },
+          {
+            "RowSourceIndex": -1,
+            "ColumnSourceIndex": 2,
+            "Value": {
+              "Kind": "null",
+              "Value": null,
+              "Provenance": "presentationTotal"
+            }
+          }
+        ],
+        "Groups": [
+          {
+            "Level": 0,
+            "RowSourceIndex": 0,
+            "RowCount": 1,
+            "Values": [
+              {
+                "RowSourceIndex": 0,
+                "ColumnSourceIndex": 0,
+                "Value": {
+                  "Kind": "decimal",
+                  "Value": "72",
+                  "Provenance": "presentationTotal"
+                }
+              },
+              {
+                "RowSourceIndex": 0,
+                "ColumnSourceIndex": 1,
+                "Value": {
+                  "Kind": "decimal",
+                  "Value": "30.00",
+                  "Provenance": "presentationTotal"
+                }
+              },
+              {
+                "RowSourceIndex": 0,
+                "ColumnSourceIndex": 2,
+                "Value": {
+                  "Kind": "null",
+                  "Value": null,
+                  "Provenance": "presentationTotal"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "workbookPresentation": {
+        "version": 2,
+        "resultSha256": "ec540752c25aabdabe1f2c42c8776eb7c99203238c7b1105bf47583e4efb9df7",
+        "selection": {
+          "version": 2,
+          "additionalFields": [
+            66,
+            2,
+            65,
+            3
+          ],
+          "ordering": null
+        },
+        "fields": [
+          {
+            "type": 66,
+            "caption": "Розмір (поточний товар)",
+            "placement": "column"
+          },
+          {
+            "type": 2,
+            "caption": "Артикул (поточний товар)",
+            "placement": "column"
+          },
+          {
+            "type": 65,
+            "caption": "Опис (поточний товар)",
+            "placement": "column"
+          },
+          {
+            "type": 3,
+            "caption": "TOP (поточний товар)",
+            "placement": "column"
+          }
+        ],
+        "rows": [
+          {
+            "rowSourceIndex": 0,
+            "rowKeySha256": "080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+            "values": [
+              {
+                "type": 66,
+                "state": "known",
+                "values": [
+                  "66x80"
+                ],
+                "inputSha256": "37d8af231a14f9ae57cb5df8c748f93a276a69448f55461e4f36b229facea400"
+              },
+              {
+                "type": 2,
+                "state": "known",
+                "values": [
+                  "A-1"
+                ],
+                "inputSha256": "b9cfe7bafc8273c6708c4c26fc5aaa74e0a3137e2954e29b1bbb08bfb0438e40"
+              },
+              {
+                "type": 65,
+                "state": "known",
+                "values": [
+                  "Description 1"
+                ],
+                "inputSha256": "1202b727db832e2590b0a31f1baffd590570c221c211d863a780c71a70e9e1ac"
+              },
+              {
+                "type": 3,
+                "state": "known",
+                "values": [
+                  "C"
+                ],
+                "inputSha256": "9fa622acc081175b06c972d06f74587e1a838594a41065f9870432c77d16a89c"
+              }
+            ],
+            "currencyWitnesses": []
+          }
+        ]
+      },
+      "constructorPresentation": {
+        "version": 1,
+        "negativeRed": true,
+        "grandTotals": true
+      },
+      "valueSemantics": [
+        {
+          "columnSourceIndex": 0,
+          "measureType": 4,
+          "semantics": {
+            "kind": "money",
+            "currencyPolicy": "EUR",
+            "unitPolicy": "currency",
+            "aggregation": "sum",
+            "scalable": true,
+            "defaultDecimalPlaces": 2,
+            "defaultMinimumDecimalPlaces": 2
+          }
+        },
+        {
+          "columnSourceIndex": 1,
+          "measureType": 6,
+          "semantics": {
+            "kind": "money",
+            "currencyPolicy": "EUR",
+            "unitPolicy": "currency",
+            "aggregation": "sum",
+            "scalable": true,
+            "defaultDecimalPlaces": 2,
+            "defaultMinimumDecimalPlaces": 2
+          }
+        },
+        {
+          "columnSourceIndex": 2,
+          "measureType": 0,
+          "semantics": {
+            "kind": "quantity",
+            "currencyPolicy": "notApplicable",
+            "unitPolicy": "confirmedCompatibleUnit",
+            "aggregation": "sumWithinCompatibleUnit",
+            "scalable": false,
+            "defaultDecimalPlaces": 3,
+            "defaultMinimumDecimalPlaces": 0
+          }
+        }
+      ]
+    },
+    "PreviewVersion": 2,
+    "ResultId": "855e50f9-5006-4e92-b0af-352efebf70a3",
+    "ExpiresAtUtc": "2026-10-29T16:54:19.651806",
+    "RequestSha256": "27c196c2bfdff58a4aa4407d8df38ac932bdf009f53f90522eb29d65a2b91b75",
+    "ResultSha256": "ec540752c25aabdabe1f2c42c8776eb7c99203238c7b1105bf47583e4efb9df7"
+  },
+  "page1": {
+    "DocumentURL": "",
+    "PdfDocumentURL": "",
+    "Preview": {
+      "Version": 1,
+      "RequestSha256": "27c196c2bfdff58a4aa4407d8df38ac932bdf009f53f90522eb29d65a2b91b75",
+      "CanonicalRequestBytes": 669,
+      "ResultSha256": "ec540752c25aabdabe1f2c42c8776eb7c99203238c7b1105bf47583e4efb9df7",
+      "PresentationOnly": true,
+      "RecommendationEligible": false,
+      "AgreementPricingSupported": false,
+      "Agreement": null,
+      "Page": {
+        "Offset": 1,
+        "Limit": 1,
+        "TotalVisibleRows": 2,
+        "MaterializedRows": 2,
+        "ReturnedRows": 1,
+        "HasMore": false,
+        "ColumnOffset": 0,
+        "ColumnLimit": 3,
+        "TotalColumns": 3,
+        "ReturnedColumns": 3,
+        "HasMoreColumns": false
+      },
+      "Request": {
+        "DataSource": "NativeSalesNet",
+        "IsCurrentSnapshot": false,
+        "ObservationStartedAtUtc": null,
+        "ObservationCompletedAtUtc": null,
+        "HasPeriod": true,
+        "PeriodFrom": "01.09.2026",
+        "PeriodTo": "03.09.2026",
+        "ComparisonPeriodFrom": null,
+        "ComparisonPeriodTo": null,
+        "RowGroupings": [
+          "Назва товару"
+        ],
+        "ColumnGroupings": [],
+        "Measures": [
+          "Продажі з ПДВ з урахуванням повернень",
+          "Собівартість без ПДВ",
+          "Кількість з урахуванням повернень"
+        ],
+        "Filters": [],
+        "IgnoredFilters": [],
+        "Notes": [
+          "Продажі мінус повернення: проведені продажі за датою продажу, активні повернення від'ємно за власною датою повернення. Грошові показники в EUR доступні лише за підтвердженої валюти всіх складових.",
+          "Відбір за поверненням вибирає події повернення. Продаж не приписується документу повернення.",
+          "Для локального повернення ПДВ визначено з записаного ПДВ початкового рядка, його збереженого курсу й частки поверненої кількості за точного зв'язку та незмінної суми. Імпортоване повернення потребує чинної збереженої фінансової ревізії та повної відповідності рядків. Неоднозначність або непідтверджений розрахунок залишають ПДВ і суми без ПДВ невідомими.",
+          "Собівартість повернення без ПДВ доступна лише за повного покриття кількості рухами, коли облікова ціна дорівнює підтвердженій ціні партії без ПДВ. Якщо облікова ціна містить додаткові суми без розкладу, собівартість залишено невідомою. ПДВ собівартості не підставляється.",
+          "Без збереженої одиниці документа кількість не визначено. Грошові показники перевіряються окремо.",
+          "Дати повернень переведено з UTC до Europe/Kyiv.",
+          "Період і групування дат — за київським часом (Europe/Kyiv), з урахуванням літнього часу.",
+          "ПДВ: 2 рядк(ів) мають суму ПДВ без курсу документа, тому її неможливо перевести в EUR. Показники, що залежать від ПДВ, у таких групах залишено порожніми.",
+          "Для імпортованих продажів собівартість без ПДВ та її ПДВ взято окремо з партійних розподілів 1С у EUR. Собівартість з ПДВ — сума цих складових.",
+          "Собівартість: для 1 рядк(ів) немає підтвердженого повного покриття кількості. Собівартість і залежні від неї показники у таких групах залишено порожніми, а не замінено частковою сумою чи нулем.",
+          "Назви: 2 груп(и) мають однакову назву, тому до назви додано те, що їх розрізняє (артикул, номер, код, а якщо в даних нічого іншого немає — внутрішній ID). Це різні позиції, а не одна.",
+          "Додаткові поля — поточні скалярні атрибути товару GBA на момент формування, не історичні дані документа. ∅ — значення не заповнено; — — точний товар або атрибут недоступний."
+        ]
+      },
+      "RowSchema": [
+        {
+          "Position": 0,
+          "Identity": "ProductName",
+          "Caption": "Назва товару",
+          "DisplayKind": "Text",
+          "KeyKind": "Numeric",
+          "Captioned": true,
+          "AgreementRole": "none"
+        }
+      ],
+      "ColumnSchema": [
+        {
+          "Position": 0,
+          "Identity": "$measureGroup",
+          "Caption": "Група показників",
+          "DisplayKind": "Text",
+          "KeyKind": "Text",
+          "Captioned": false,
+          "AgreementRole": "none"
+        },
+        {
+          "Position": 1,
+          "Identity": "$measure",
+          "Caption": "Показник",
+          "DisplayKind": "Text",
+          "KeyKind": "Text",
+          "Captioned": false,
+          "AgreementRole": "none"
+        }
+      ],
+      "Rows": [
+        {
+          "Ordinal": 1,
+          "SourceIndex": 1,
+          "Values": [
+            {
+              "Identity": {
+                "Kind": "signedInteger",
+                "Value": "2",
+                "Provenance": "rowAxisKey"
+              },
+              "Caption": "Товар (арт. A-2)"
+            }
+          ]
+        }
+      ],
+      "Columns": [
+        {
+          "Ordinal": 0,
+          "SourceIndex": 0,
+          "Values": [
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Вартість продажу, EUR",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Вартість продажу, EUR"
+            },
+            {
+              "Identity": {
+                "Kind": "reportField",
+                "Value": "SalesValueWithVAT",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Продажі з ПДВ з урахуванням повернень"
+            }
+          ]
+        },
+        {
+          "Ordinal": 1,
+          "SourceIndex": 1,
+          "Values": [
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Собівартість, EUR",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Собівартість, EUR"
+            },
+            {
+              "Identity": {
+                "Kind": "reportField",
+                "Value": "CostWithoutVAT",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Собівартість без ПДВ"
+            }
+          ]
+        },
+        {
+          "Ordinal": 2,
+          "SourceIndex": 2,
+          "Values": [
+            {
+              "Identity": {
+                "Kind": "text",
+                "Value": "Кількість продажу",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Кількість продажу"
+            },
+            {
+              "Identity": {
+                "Kind": "reportField",
+                "Value": "SalesQuantity",
+                "Provenance": "columnAxisKey"
+              },
+              "Caption": "Кількість з урахуванням повернень"
+            }
+          ]
+        }
+      ],
+      "Cells": [
+        {
+          "RowSourceIndex": 1,
+          "ColumnSourceIndex": 0,
+          "Value": {
+            "Kind": "decimal",
+            "Value": "10",
+            "Provenance": "producerCell"
+          }
+        },
+        {
+          "RowSourceIndex": 1,
+          "ColumnSourceIndex": 1,
+          "Value": {
+            "Kind": "null",
+            "Value": null,
+            "Provenance": "producerCell"
+          }
+        },
+        {
+          "RowSourceIndex": 1,
+          "ColumnSourceIndex": 2,
+          "Value": {
+            "Kind": "null",
+            "Value": null,
+            "Provenance": "producerCell"
+          }
+        }
+      ],
+      "Totals": {
+        "State": "materialized",
+        "Values": [
+          {
+            "RowSourceIndex": -1,
+            "ColumnSourceIndex": 0,
+            "Value": {
+              "Kind": "decimal",
+              "Value": "82",
+              "Provenance": "presentationTotal"
+            }
+          },
+          {
+            "RowSourceIndex": -1,
+            "ColumnSourceIndex": 1,
+            "Value": {
+              "Kind": "null",
+              "Value": null,
+              "Provenance": "presentationTotal"
+            }
+          },
+          {
+            "RowSourceIndex": -1,
+            "ColumnSourceIndex": 2,
+            "Value": {
+              "Kind": "null",
+              "Value": null,
+              "Provenance": "presentationTotal"
+            }
+          }
+        ],
+        "Groups": [
+          {
+            "Level": 0,
+            "RowSourceIndex": 1,
+            "RowCount": 1,
+            "Values": [
+              {
+                "RowSourceIndex": 1,
+                "ColumnSourceIndex": 0,
+                "Value": {
+                  "Kind": "decimal",
+                  "Value": "10",
+                  "Provenance": "presentationTotal"
+                }
+              },
+              {
+                "RowSourceIndex": 1,
+                "ColumnSourceIndex": 1,
+                "Value": {
+                  "Kind": "null",
+                  "Value": null,
+                  "Provenance": "presentationTotal"
+                }
+              },
+              {
+                "RowSourceIndex": 1,
+                "ColumnSourceIndex": 2,
+                "Value": {
+                  "Kind": "null",
+                  "Value": null,
+                  "Provenance": "presentationTotal"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "workbookPresentation": {
+        "version": 2,
+        "resultSha256": "ec540752c25aabdabe1f2c42c8776eb7c99203238c7b1105bf47583e4efb9df7",
+        "selection": {
+          "version": 2,
+          "additionalFields": [
+            66,
+            2,
+            65,
+            3
+          ],
+          "ordering": null
+        },
+        "fields": [
+          {
+            "type": 66,
+            "caption": "Розмір (поточний товар)",
+            "placement": "column"
+          },
+          {
+            "type": 2,
+            "caption": "Артикул (поточний товар)",
+            "placement": "column"
+          },
+          {
+            "type": 65,
+            "caption": "Опис (поточний товар)",
+            "placement": "column"
+          },
+          {
+            "type": 3,
+            "caption": "TOP (поточний товар)",
+            "placement": "column"
+          }
+        ],
+        "rows": [
+          {
+            "rowSourceIndex": 1,
+            "rowKeySha256": "038966de9f6b9a901b20b4c6ca8b2a46009feebe031babc842d43690c0bc222b",
+            "values": [
+              {
+                "type": 66,
+                "state": "null",
+                "values": [],
+                "inputSha256": "2a966f01ae61770fd94490d9f3043ba5a76d0f78649f89f213f5865f256ed40d"
+              },
+              {
+                "type": 2,
+                "state": "known",
+                "values": [
+                  "A-2"
+                ],
+                "inputSha256": "9a938fc4a345eca35cb33a2d4e784d5f6ce2ce83c1d8588772e8d61f0bb906df"
+              },
+              {
+                "type": 65,
+                "state": "null",
+                "values": [],
+                "inputSha256": "166bc716f221ace692d9ab87650362e141a45a2d6d0d6924ca1c4ca93395b54d"
+              },
+              {
+                "type": 3,
+                "state": "known",
+                "values": [
+                  "C"
+                ],
+                "inputSha256": "dc3aa0439dfc46e668eca3c2dbdc4ec64b46bc136f76188c29b3397624db3d80"
+              }
+            ],
+            "currencyWitnesses": []
+          }
+        ]
+      },
+      "constructorPresentation": {
+        "version": 1,
+        "negativeRed": true,
+        "grandTotals": true
+      },
+      "valueSemantics": [
+        {
+          "columnSourceIndex": 0,
+          "measureType": 4,
+          "semantics": {
+            "kind": "money",
+            "currencyPolicy": "EUR",
+            "unitPolicy": "currency",
+            "aggregation": "sum",
+            "scalable": true,
+            "defaultDecimalPlaces": 2,
+            "defaultMinimumDecimalPlaces": 2
+          }
+        },
+        {
+          "columnSourceIndex": 1,
+          "measureType": 6,
+          "semantics": {
+            "kind": "money",
+            "currencyPolicy": "EUR",
+            "unitPolicy": "currency",
+            "aggregation": "sum",
+            "scalable": true,
+            "defaultDecimalPlaces": 2,
+            "defaultMinimumDecimalPlaces": 2
+          }
+        },
+        {
+          "columnSourceIndex": 2,
+          "measureType": 0,
+          "semantics": {
+            "kind": "quantity",
+            "currencyPolicy": "notApplicable",
+            "unitPolicy": "confirmedCompatibleUnit",
+            "aggregation": "sumWithinCompatibleUnit",
+            "scalable": false,
+            "defaultDecimalPlaces": 3,
+            "defaultMinimumDecimalPlaces": 0
+          }
+        }
+      ]
+    },
+    "PreviewVersion": 2,
+    "ResultId": "855e50f9-5006-4e92-b0af-352efebf70a3",
+    "ExpiresAtUtc": "2026-10-29T16:54:19.651806",
+    "RequestSha256": "27c196c2bfdff58a4aa4407d8df38ac932bdf009f53f90522eb29d65a2b91b75",
+    "ResultSha256": "ec540752c25aabdabe1f2c42c8776eb7c99203238c7b1105bf47583e4efb9df7"
+  }
+}

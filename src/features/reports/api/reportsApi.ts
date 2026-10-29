@@ -5,7 +5,7 @@ import { bindAnalysisPreview, requestCurrentVparivanieAnalysis, upgradeCurrentVp
 import { bindMovementPreview } from '../data/currentVparivanieMovements'
 import { reportConfigurationError } from '../data/reportConfiguration'
 import { numberPresentationError, readNumberPresentation, requestNumberPresentation } from '../data/reportNumberPresentation'
-import { workbookConfigurationError } from '../data/workbookPresentation'
+import { workbookConfigurationError, isSalesProductProfile, readWorkbookSelection, requestWorkbookPresentation } from '../data/workbookPresentation'
 import { bindProfitPreviewGrouping, bindWorkbookPreview } from '../data/workbookPreview'
 import { settlementAttributeKey } from '../data/settlementSourceAttributes'
 import { settlementPeriodConfigurationError } from '../data/settlementPeriod'
@@ -66,6 +66,12 @@ export async function createStockReport(body: ReportRequestBody, dataset?: Repor
   return normalizeReportResult(result)
 }
 
+/** Long current-product text stays inside the bounded preview; cached/exported report is unchanged. */
+function reportPreviewRowLimit(request: ReportRequestBody): number {
+  const selection = readWorkbookSelection(requestWorkbookPresentation(request))
+  return isSalesProductProfile(request) && selection?.version === 2 && selection.additionalFields.length > 0 ? 5 : 50
+}
+
 /** Calculates one bounded on-screen page and file links from the same report run. */
 export async function previewStockReport(body: ReportRequestBody, dataset?: ReportDataset): Promise<{ result: ReportResult; preview: NativeReportPreview }> {
   const request = prepareStockReportRequest(body, dataset)
@@ -76,7 +82,7 @@ export async function previewStockReport(body: ReportRequestBody, dataset?: Repo
   const response = await apiRequest<unknown>('/report/stocks/preview', {
     method: 'POST',
     dedupe: false,
-    query: { rowOffset: 0, rowLimit: 50, ...(version2 ? { previewVersion: 2, ...columns } : {}) },
+    query: { rowOffset: 0, rowLimit: reportPreviewRowLimit(request), ...(version2 ? { previewVersion: 2, ...columns } : {}) },
     body: request,
   })
   const preview = normalizeNativeReportPreview(response, currentVparivanieFullScope(request))
@@ -157,7 +163,7 @@ export async function getStockReportPreviewPage(session: ReportResultSession, re
     || !Number.isInteger(columns.limit) || columns.limit < 1 || columns.limit > 256)) throw new Error('Некоректне вікно колонок звіту.')
   try {
     const response = await apiRequest<unknown>(`/report/stocks/preview/${session.ResultId}`, {
-      query: { rowOffset: offset, rowLimit: 50, ...(columns ? { columnOffset: columns.offset, columnLimit: columns.limit } : {}) }, signal })
+      query: { rowOffset: offset, rowLimit: reportPreviewRowLimit(request), ...(columns ? { columnOffset: columns.offset, columnLimit: columns.limit } : {}) }, signal })
     const preview = normalizeNativeReportPreview(response, currentVparivanieFullScope(request))
     preview.ResultSession = readReportResultSession(response, preview)
     assertSameResult(session, preview.ResultSession)

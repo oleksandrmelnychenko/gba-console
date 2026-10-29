@@ -5,7 +5,7 @@ import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate }
 import { productDataset, productPreview, productRequest } from '../data/currentProductFields.test-fixtures'
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
 const api = vi.mocked(apiRequest)
-beforeEach(() => api.mockReset())
+beforeEach(() => { api.mockReset() })
 it('binds a normal preview and export to the selected ordered product fields without rewriting financial axes', async () => {
   api.mockResolvedValue([productDataset]); await expect(getReportDatasets()).resolves.toEqual([productDataset])
   const request = productRequest('grossProfit'), original = structuredClone(request)
