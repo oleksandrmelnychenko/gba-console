@@ -14,6 +14,7 @@ import './report-inline-preview.css'
 import { workbookAttributeText, type WorkbookRow } from '../data/workbookPreview'
 import { deskRowsText } from '../data/reportCountPresentation'
 import type { SalesConstructorProfile } from '../data/salesConstructorProfiles'
+import { reportQuantityExplanations } from '../data/reportQuantityExplanations'
 
 export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, embedded = false, showPageNote = true, previewReportProfile }: { preview: NativeReportPreview; embedded?: boolean; showPageNote?: boolean; previewReportProfile?: SalesConstructorProfile }) {
   const cells = new Map(preview.Cells.map(cell => [`${cell.RowSourceIndex}:${cell.ColumnSourceIndex}`, cell.Value]))
@@ -52,10 +53,9 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
         ? previewNumberText(currentVparivanieQuantityText(value.Value))
         : amountColumns.has(columnSourceIndex) && value?.Kind === 'decimal' && typeof value.Value === 'string'
           ? previewAmountText(value.Value) : previewCellText(value)
-  const quantityColumns = new Set(preview.Request?.DataSource === 'NativeSalesNet' && (previewReportProfile === 'sales' || previewReportProfile === 'grossProfit')
-    ? preview.valueSemantics?.filter(item => item.measureType === 0 && item.semantics.kind === 'quantity').map(item => item.columnSourceIndex) : [])
+  const quantityExplanations = reportQuantityExplanations(preview, previewReportProfile)
   const quantityDescription = (value: NativeReportPreviewScalar | undefined, column: number) =>
-    value?.Kind === 'null' && quantityColumns.has(column) ? 'Кількість не підтверджена для вибраних рядків.' : undefined
+    value?.Kind === 'null' ? quantityExplanations.get(column) : undefined
   const totalCells = (values: NativeReportPreviewCell[]) => {
     const byColumn = new Map(values.map(cell => [cell.ColumnSourceIndex, cell.Value]))
     return preview.Columns.map(column => {

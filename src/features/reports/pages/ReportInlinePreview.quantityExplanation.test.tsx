@@ -79,3 +79,54 @@ it('keeps the applied result profile while a different draft profile is edited',
   expect(screen.getByText('Чернетка без профілю')).toBeTruthy()
   expect(screen.getAllByRole('cell', { description: explanation })).toHaveLength(3)
 })
+
+const comparisonExplanation = 'Без підтвердженої одиниці документа кількість та її відхилення не визначено.'
+const comparisonRequest = (): ReportRequestBody => ({ ...request(), dataSource: 44,
+  customerGroups: { Version: 1, Groups: [{ Name: 'Еталон', ClientIds: [1] }, { Name: 'Другий', ClientIds: [2] }] } })
+function customerPreview(measure = 109, value: unknown = missing) {
+  const result = preview('NativeCustomerGroupComparison', value)
+  result.valueSemantics![0].measureType = measure
+  return result
+}
+
+it.each([109, 110])('explains source44 measure%i null in leaf and totals without exposing server notes', measure => {
+  const view = show(customerPreview(measure), comparisonRequest())
+  const cells = screen.getAllByRole('cell', { description: comparisonExplanation })
+  expect(cells).toHaveLength(3)
+  for (const cell of cells) { expect(cell.textContent).toBe('∅'); expect(cell.title).toBe(comparisonExplanation) }
+  expect(view.container.textContent).not.toContain('Службова примітка')
+  expect(view.container.textContent).not.toContain(comparisonExplanation)
+})
+
+it.each([111, 112, 113, 114])('does not attribute source44 measure%i null to a missing document unit', measure => {
+  show(customerPreview(measure), comparisonRequest())
+  expect(screen.queryByRole('cell', { description: comparisonExplanation })).toBeNull()
+  expect(screen.getAllByRole('cell', { name: '∅' })).toHaveLength(6)
+})
+
+it('keeps source44 known empty-set zero as zero and does not infer a reason from a translated caption', () => {
+  const value = customerPreview(109, { Kind: 'decimal', Value: '0', Provenance: 'producerCell' })
+  const view = show(value, comparisonRequest())
+  expect(screen.queryByRole('cell', { description: comparisonExplanation })).toBeNull()
+  expect(screen.getAllByRole('cell', { name: '0' })).toHaveLength(3)
+  view.unmount()
+  const unknown = customerPreview(); delete unknown.valueSemantics
+  show(unknown, comparisonRequest())
+  expect(screen.queryByRole('cell', { description: comparisonExplanation })).toBeNull()
+})
+
+it('keeps the rendered source44 explanation when a different report is edited but not generated', () => {
+  const value = customerPreview()
+  function AppliedComparison() {
+    const [draft, setDraft] = useState(comparisonRequest())
+    const settings = useAppliedReportSettings('comparison-workspace', { name: '', data: draft, measurements: [], activeTemplate: null,
+      previousPeriod: { from: draft.from, to: draft.to } }, draft)
+    return <><button onClick={() => settings.apply()}>Застосувати</button><button onClick={() => setDraft(request('sales'))}>Чернетка продажів</button>
+      <output>{draft.dataSource}</output><ReportPreviewPages initial={value} request={settings.appliedRequest ?? draft} /></>
+  }
+  render(<MantineProvider env="test"><AppliedComparison /></MantineProvider>)
+  fireEvent.click(screen.getByRole('button', { name: 'Застосувати' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Чернетка продажів' }))
+  expect(screen.getByRole('status').textContent).toBe('2')
+  expect(screen.getAllByRole('cell', { description: comparisonExplanation })).toHaveLength(3)
+})
