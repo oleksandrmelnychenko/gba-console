@@ -1,4 +1,4 @@
-import fixture from '../data/customerGroupOrganization.server-fixture.json'
+import fixture from '../data/customerGroupRegion.server-fixture.json'
 import { MantineProvider } from '@mantine/core'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
@@ -14,7 +14,7 @@ vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => tr
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(), getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn(), saveServerReportTemplate: vi.fn() }))
 vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(), searchDatasetReportValues: vi.fn() }))
-const dataset = parseReportDatasets([{ ...fixture.dataset, Filters: [...fixture.dataset.Filters, { Type: 7, Name: 'Поточний регіон клієнта', Selectable: true }] }])[0]
+const dataset = parseReportDatasets([fixture.dataset])[0]
 function template(condition = 2, checked = true): ReportTemplate {
   const data = defaultDatasetRequest(dataset, '2026-10-01', '2026-10-27')
   data.customerGroups = { Version: 1, Groups: [{ Name: 'Еталон', ClientIds: [71, 72] }, { Name: 'Набір B', ClientIds: [72, 73] }] }
