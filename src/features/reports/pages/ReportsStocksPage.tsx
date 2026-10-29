@@ -1,3 +1,5 @@
+import { CustomerGroupExactChoicePicker } from './CustomerGroupExactChoicePicker'
+import { customerGroupSelectionsError, isCustomerGroupExactSelection } from '../data/customerGroupSelections'
 import { CustomerGroupRegionPicker } from './CustomerGroupRegionPicker'
 import { customerGroupRegionError, isCustomerGroupRegion } from '../data/customerGroupRegion'
 import { CustomerGroupOrganizationPicker } from './CustomerGroupOrganizationPicker'
@@ -512,6 +514,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     : null
   const organizationConfigurationError = customerGroupOrganizationError(dataSource, selections)
     ?? customerGroupRegionError(dataSource, selections)
+    ?? customerGroupSelectionsError(dataSource, selections)
   const templateConfigurationError = configurationError ?? organizationConfigurationError
   const generationConfigurationError = configurationError ?? currentMatrixError ?? receiptWarehouseCardinalityError
     ?? organizationConfigurationError
@@ -2304,7 +2307,7 @@ function InlineReportSelection({ dataset, request, selection, selections, index,
   const hierarchyStatus = useAnalysisHierarchyStatus(needsHierarchyStatus(descriptor))
   const itemSearch = useDatasetItemSearch(dataSource, selection.SelectedField.Type, documentLookup.mode)
   const valueError = analysis ? hierarchyStatusError(descriptor, selection.FilterCondition.Type, hierarchyStatus) ?? analysisSelectionValueError(selection, descriptor)
-    : hierarchyStatusError(descriptor, selection.FilterCondition.Type, hierarchyStatus) ?? reportSelectionCardinalityError(selection) ?? datasetGroupSelectionError(dataset, selection)
+    : hierarchyStatusError(descriptor, selection.FilterCondition.Type, hierarchyStatus) ?? (dataSource === 44 && selection.SelectedField.Type === 1 ? null : reportSelectionCardinalityError(selection)) ?? datasetGroupSelectionError(dataset, selection)
   const fields = analysis ? [...new Set(analysis.filters.map(field => field.path.join(' / ')))].map(group => ({ group,
     items: analysis.filters.filter(field => field.path.join(' / ') === group).map(field => ({ value: String(field.type), label: field.name,
       disabled: field.available === false })) })) : filterFieldOptions
@@ -2577,6 +2580,10 @@ type SelectionValuePickerProps = {
 const EMPTY_LOOKUP_OPTIONS: ReportEntity[] = []
 
 export function SelectionValuePicker(props: SelectionValuePickerProps) {
+  const exactField = props.selection.SelectedField.Type
+  if (isCustomerGroupExactSelection(props.dataSource, exactField) && (exactField === 1 || exactField === 8 || exactField === 10))
+    return <CustomerGroupExactChoicePicker key={exactField} field={exactField} selection={props.selection} label={props.label}
+      disabled={props.lookupProfitUnavailable} error={props.error} onChange={props.onChange} />
   return isCustomerGroupOrganization(props.dataSource, props.selection.SelectedField.Type)
     ? <CustomerGroupOrganizationPicker selection={props.selection} label={props.label} disabled={props.lookupProfitUnavailable}
         error={props.error} onChange={props.onChange} />

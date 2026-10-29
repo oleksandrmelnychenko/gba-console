@@ -1,0 +1,38 @@
+[
+  {
+    "FirstName": "Тест",
+    "LastName": "Приклад",
+    "MiddleName": "Довідниковий",
+    "Abbreviation": "ТЕСТ",
+    "Email": "example@example.invalid",
+    "PhoneNumber": "000000000",
+    "Region": "TEST",
+    "UserRoleId": 800,
+    "UserDetailsId": null,
+    "IsActive": true,
+    "UserRole": {
+      "Name": "Приклад",
+      "Dashboard": "Приклад",
+      "UserRoleType": 700,
+      "DashboardNodeModules": [],
+      "Users": [],
+      "UserRoleTranslations": [],
+      "UserRoleDashboardNodeModules": [],
+      "DashboardNodes": [],
+      "Permissions": [],
+      "RolePermissions": [],
+      "Id": 700,
+      "NetUid": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+      "Created": "2026-01-01T00:00:00",
+      "Updated": "2026-01-01T00:00:00",
+      "Deleted": false
+    },
+    "UserDetails": null,
+    "Clients": [],
+    "Id": 20,
+    "NetUid": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+    "Created": "2026-01-01T00:00:00",
+    "Updated": "2026-01-01T00:00:00",
+    "Deleted": false
+  }
+]
