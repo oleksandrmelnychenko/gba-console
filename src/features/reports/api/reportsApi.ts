@@ -69,7 +69,7 @@ export async function createStockReport(body: ReportRequestBody, dataset?: Repor
 /** Long current-product text stays inside the bounded preview; cached/exported report is unchanged. */
 function reportPreviewRowLimit(request: ReportRequestBody): number {
   const selection = readWorkbookSelection(requestWorkbookPresentation(request))
-  return isSalesProductProfile(request) && selection?.version === 2 && selection.additionalFields.length > 0 ? 5 : 50
+  return isSalesProductProfile(request) && (selection?.version === 2 || selection?.version === 3) && selection.additionalFields.length > 0 ? 5 : 50
 }
 
 /** Calculates one bounded on-screen page and file links from the same report run. */

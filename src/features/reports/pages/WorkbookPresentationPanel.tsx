@@ -4,7 +4,7 @@ import { ArrowDownWideNarrow, ListPlus, RotateCcw } from 'lucide-react'
 import { TableChip } from '../../../shared/ui/TableChip'
 import '../../../shared/ui/selection-surface.css'
 import type { ReportDataset, ReportRequestBody } from '../types'
-import { readWorkbookCapability, readWorkbookSelection, workbookConfigurationError, type WorkbookSelection } from '../data/workbookPresentation'
+import { currentProductCapability, readWorkbookCapability, readWorkbookSelection, workbookConfigurationError, type WorkbookSelection } from '../data/workbookPresentation'
 
 export function WorkbookPresentationPanel({ dataset, request, value, disabled, onChange }: {
   dataset?: ReportDataset; request: ReportRequestBody; value: unknown; disabled: boolean
@@ -13,7 +13,7 @@ export function WorkbookPresentationPanel({ dataset, request, value, disabled, o
   const capability = dataset ? readWorkbookCapability(dataset.workbookPresentation, dataset.DataSource) : null
   const selection = value == null ? null : readWorkbookSelection(value)
   const invalid = value != null ? workbookConfigurationError({ ...request, workbookPresentation: value }, dataset) : null
-  if (dataset?.DataSource === 2) return <CurrentProductFieldsPanel capability={capability} request={request} value={value} disabled={disabled} onChange={onChange} />
+  if (dataset?.DataSource === 2) return <CurrentProductFieldsPanel capability={currentProductCapability(dataset)} request={request} value={value} disabled={disabled} onChange={onChange} />
   if (!capability && value == null) return null
   return <Card className="workbook-presentation" withBorder radius="md" padding="md">
     <Stack gap="xs">

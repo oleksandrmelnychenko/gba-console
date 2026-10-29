@@ -1,20 +1,22 @@
+import { readProductGroupAttribute } from './currentProductGroupReferences'
 import type { NativeReportPreview } from './nativeReportPreview'
 import type { WorkbookPreview, WorkbookRow } from './workbookPreview'
-import { currentProductFields, readWorkbookSelection, workbookHasText, workbookText, type WorkbookField } from './workbookPresentation'
+import { currentProductFields, currentProductGroupFields, readWorkbookSelection, workbookHasText, workbookText, type WorkbookField } from './workbookPresentation'
 
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
 const keys = (value: Record<string, unknown>, names: string[]) => Object.keys(value).sort().join(',') === names.toSorted().join(',')
 const hash = (value: unknown): value is string => typeof value === 'string' && /^[a-f\d]{64}$/.test(value)
 const fail = (): never => { throw new Error('Сервер не підтвердив поточні поля товару та їхню прив’язку до результату.') }
 
-/** Version2 has product evidence, never relaxed version1 currency witnesses. */
+/** Product versions have exact product evidence, never relaxed version1 currency witnesses. */
 export function readCurrentProductPreview(raw: Record<string, unknown>, preview: NativeReportPreview): WorkbookPreview {
+  const expectedFields = raw.version === 3 ? currentProductGroupFields : currentProductFields
   if (preview.Request?.DataSource !== 'NativeSalesNet' || !keys(raw, ['version', 'resultSha256', 'selection', 'fields', 'rows'])
-    || raw.version !== 2 || raw.resultSha256 !== preview.ResultSha256 || !hash(raw.resultSha256)
+    || (raw.version !== 2 && raw.version !== 3) || raw.resultSha256 !== preview.ResultSha256 || !hash(raw.resultSha256)
     || new TextEncoder().encode(JSON.stringify(raw)).length > 1048576) return fail()
   const selection = record(raw.selection) && keys(raw.selection, ['version', 'additionalFields', 'ordering']) ? readWorkbookSelection(raw.selection) : null
-  if (!selection || selection.version !== 2 || selection.ordering !== null
-    || selection.additionalFields.some(type => !currentProductFields.some(field => field[0] === type))
+  if (!selection || selection.version !== raw.version || selection.ordering !== null
+    || selection.additionalFields.some(type => !expectedFields.some(field => field[0] === type))
     || !Array.isArray(raw.fields) || raw.fields.length !== selection.additionalFields.length
     || !Array.isArray(raw.rows) || raw.rows.length !== preview.Rows.length) return fail()
   const schema = preview.RowSchema as Array<{ Identity?: string; KeyKind?: string }>
@@ -38,6 +40,7 @@ export function readCurrentProductPreview(raw: Record<string, unknown>, preview:
     if (positive.some(Boolean) && (positive.some(id => id === null) || new Set(positive).size !== 1)) return fail()
     const exactProduct = positive.every(Boolean)
     const values = row.values.map((value, fieldIndex) => {
+      if (raw.version === 3 && fields[fieldIndex].type === 67) return readProductGroupAttribute(value, exactProduct)
       if (!record(value) || !keys(value, ['type', 'state', 'values', 'inputSha256']) || value.type !== fields[fieldIndex].type
         || !['known', 'null', 'unavailable'].includes(String(value.state)) || !hash(value.inputSha256)
         || !Array.isArray(value.values) || !value.values.every(workbookText)
@@ -47,5 +50,5 @@ export function readCurrentProductPreview(raw: Record<string, unknown>, preview:
     })
     return { rowSourceIndex: row.rowSourceIndex as number, rowKeySha256: row.rowKeySha256, values, currencyWitnesses: [] }
   })
-  return { version: 2, resultSha256: raw.resultSha256, selection, fields, rows }
+  return { version: raw.version, resultSha256: raw.resultSha256, selection, fields, rows }
 }

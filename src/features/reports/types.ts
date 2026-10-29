@@ -371,6 +371,7 @@ export type ReportDataset = {
   configuration?: unknown
   numberPresentation?: unknown
   workbookPresentation?: unknown
+  currentProductGroupLists?: unknown
   customerReturnFilters?: boolean
   returnsOnly?: boolean
   groupedSettlementPeriod?: unknown

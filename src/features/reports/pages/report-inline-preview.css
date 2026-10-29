@@ -43,3 +43,10 @@
 .report-inline-preview--wide thead .is-sticky-row-header { z-index: 3; }
 .report-inline-preview--wide .report-inline-preview__group-total > th, .report-inline-preview--wide tfoot th { position: sticky; left: 0; z-index: 2; }
 .report-inline-preview--wide tfoot th { z-index: 4; }
+
+.report-current-product-groups {
+  margin: 0;
+  padding-inline-start: 1.15rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

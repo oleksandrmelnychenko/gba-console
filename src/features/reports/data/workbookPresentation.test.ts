@@ -17,7 +17,7 @@ it('accepts ordered distinct subsets and exact Pascal/camel selector fields with
   expect(readWorkbookSelection({ version: 1, additionalFields: ['30'], ordering: null })).toBeNull()
 })
 it('refuses unknown versions, repeated properties/fields, missing ordering and unknown settings', () => {
-  for (const value of [{ version: 3, additionalFields: [], ordering: null }, { version: 1, additionalFields: [30, 30], ordering: null },
+  for (const value of [{ version: 4, additionalFields: [], ordering: null }, { version: 1, additionalFields: [30, 30], ordering: null },
     { version: 1, Version: 1, additionalFields: [], ordering: null }, { version: 1, additionalFields: [] },
     { version: 1, additionalFields: [], ordering: null, future: true }]) expect(readWorkbookSelection(value)).toBeNull()
 })

@@ -14,6 +14,7 @@ import './report-inline-preview.css'
 import { workbookAttributeText, type WorkbookRow } from '../data/workbookPreview'
 import { deskRowsText } from '../data/reportCountPresentation'
 import type { SalesConstructorProfile } from '../data/salesConstructorProfiles'
+import { CurrentProductGroupsValue } from './CurrentProductGroupsValue'
 import { reportQuantityExplanations } from '../data/reportQuantityExplanations'
 
 export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, embedded = false, showPageNote = true, previewReportProfile }: { preview: NativeReportPreview; embedded?: boolean; showPageNote?: boolean; previewReportProfile?: SalesConstructorProfile }) {
@@ -126,9 +127,11 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
             const isOrganization = !products && index < levelCount
               && /^(Організація|Организация|Організація партії)$/iu.test(preview.RowSchema[index]?.Caption?.trim() ?? '')
             const sticky = stickyRowHeader(index)
+            const productGroups = workbookColumns[index - preview.RowSchema.length]?.type === 67
             return <th scope="row" key={header} data-level={index < levelCount ? index : undefined} style={sticky.style}
               className={[repeated[rowIndex]?.[index] ? 'is-repeat' : '', sticky.className ?? ''].filter(Boolean).join(' ') || undefined}>
-              {isOrganization && !repeated[rowIndex]?.[index] ? <TableChip tone="product" value={caption} /> : caption}
+              {productGroups ? <CurrentProductGroupsValue value={workbookRows.get(row.SourceIndex)?.values.find(value => value.type === 67)} />
+                : isOrganization && !repeated[rowIndex]?.[index] ? <TableChip tone="product" value={caption} /> : caption}
             </th>
           })}
           {preview.Columns.map(column => {
@@ -264,5 +267,5 @@ function kyivTimestamp(value: string): string {
 }
 
 function CurrentProductFieldsNotice({ version }: { version?: number }) {
-  return version === 2 ? <Text size="sm">Поточні поля товару з довідника на час формування звіту. ∅ означає незаповнене поле, тире — недоступне значення.</Text> : null
+  return version === 2 || version === 3 ? <Text size="sm">Поточні поля товару з довідника на час формування звіту. ∅ означає незаповнене поле, тире — недоступне значення.</Text> : null
 }
