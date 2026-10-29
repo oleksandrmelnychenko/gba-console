@@ -43,6 +43,7 @@ import { nativeExactFiltersConfigurationError } from '../data/nativeExactFilters
 import { isOneCTurnoverScope } from '../data/oneCTurnoverScopes'
 import { EXACT_ONE_C_BUYER_ROOT_ID } from '../data/oneCTurnoverReport'
 import { priceTypeSalesComparisonConfigurationError, priceTypeSalesSourceId } from '../data/priceTypeSalesComparison'
+import { isNativePricingId } from '../data/nativePriceComparison'
 import { oneCSpecialSettingsError } from '../data/oneCSpecialReports'
 import { requestProfitReadMode } from '../data/profitReadMode'
 import { requestSettlementReadMode } from '../data/settlementReadMode'
@@ -274,6 +275,11 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
     : dataSource === 41 && [60, 61].includes(field) ? settlementAttributeKey(field, item) === item.Id
     : dataSource === 39 && field === 60
     ? typeof item.Id === 'string' && currentVparivanieManagerReference(item) === item.Id
+    : dataSource === 46 && field === 46
+    ? params.value.trim().startsWith('legacy:')
+      ? typeof item.Id === 'string' && /^[0-9a-f]{32}$/i.test(item.Id) && !/^0{32}$/.test(item.Id)
+        && item.Id.toUpperCase() === params.value.trim().slice(7).toUpperCase()
+      : isNativePricingId(item.Id)
     : dataSource === 27
     ? priceTypeSalesSourceId(item.Id) !== null
     : [23, 24, 25, 28].includes(dataSource) ? typeof item.Id === 'string' && item.Id.length > 0 && item.Id.length <= 512 && !/\p{Cc}/u.test(item.Id)
