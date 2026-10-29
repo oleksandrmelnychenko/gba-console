@@ -1,3 +1,5 @@
+import { CustomerGroupOrganizationPicker } from './CustomerGroupOrganizationPicker'
+import { customerGroupOrganizationError, isCustomerGroupOrganization } from '../data/customerGroupOrganization'
 import { appendBeforeDocumentDetail, DOCUMENT_DETAIL_GROUPING } from '../data/reportDocumentDetails'
 import { ReportDocumentDetailsPanel } from './ReportDocumentDetailsPanel'
 import { searchNativeSalesDocuments, usesSalesDocumentLookup, salesDocumentSelectedEntity, salesDocumentKey } from '../api/nativeSalesDocumentLookup'
@@ -506,7 +508,10 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       && selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.warehouse)
       .map(reportSelectionCardinalityError).find(Boolean) ?? null
     : null
+  const organizationConfigurationError = customerGroupOrganizationError(dataSource, selections)
+  const templateConfigurationError = configurationError ?? organizationConfigurationError
   const generationConfigurationError = configurationError ?? currentMatrixError ?? receiptWarehouseCardinalityError
+    ?? organizationConfigurationError
   const reportIsReady = !generationConfigurationError && !periodError && !incompleteSelectionMessage && checkedMeasurements > 0 && !missingRowGrouping
   const canSubmit = canGenerateReport && reportIsReady
   const submitBlockedReason = !canGenerateReport
@@ -668,7 +673,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
 
   async function saveTemplate(): Promise<TemplateMutationResult> {
     setTemplateNotice(null)
-    if (configurationError) return { ok: false }
+    if (templateConfigurationError) return { ok: false }
     const saved = await templateStorage.save(templateName, templateBody)
     if (saved.ok && saved.template) setActiveTemplate(structuredClone(saved.template))
     return saved
@@ -681,7 +686,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
 
   async function updateTemplate(): Promise<TemplateMutationResult> {
     setTemplateNotice(null)
-    if (configurationError || !activeTemplate) return { ok: false }
+    if (templateConfigurationError || !activeTemplate) return { ok: false }
     const saved = await templateStorage.update(activeTemplate, templateBody)
     if (saved.ok && saved.template) setActiveTemplate(structuredClone(saved.template))
     return saved
@@ -1168,7 +1173,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           closeButtonProps={{ disabled: templateStorage.busy }} size={820} title={t('Шаблони звіту')}
           onClose={() => setDeskTemplatesOpened(false)}>
           <ReportTemplatesPanel ordering={templateStorage.ordering} storage={templateStorage} datasets={datasetStorage.datasets}
-            dataSources={BUG_1274_ACTIVE_DATA_SOURCES} callerKey={ownerId} requireReadMode configurationReady={!configurationError && !workbookResolving}
+            dataSources={BUG_1274_ACTIVE_DATA_SOURCES} callerKey={ownerId} requireReadMode configurationReady={!templateConfigurationError && !workbookResolving}
             configurationName={deskTitle} key={`${ownerId}:${templateIntent.revision}`} initiallyCreating={templateIntent.create}
             notice={templateNotice ?? templateStorage.notice} templateName={templateName} activeTemplate={activeTemplate}
             disabled={!canGenerateReport || isLoading} onRenamed={renamedTemplate} onClearNotice={() => { setTemplateNotice(null); templateStorage.clearNotice() }}
@@ -2568,7 +2573,14 @@ type SelectionValuePickerProps = {
 
 const EMPTY_LOOKUP_OPTIONS: ReportEntity[] = []
 
-export function SelectionValuePicker({ dataSource, lookupProfitReadMode, lookupProfitUnavailable, lookupSourceWorld, lookupSalesBasis, lookupProvidedDiscountBasis, error, from, label, selection, selections, to, width = 320, onChange }: SelectionValuePickerProps) {
+export function SelectionValuePicker(props: SelectionValuePickerProps) {
+  return isCustomerGroupOrganization(props.dataSource, props.selection.SelectedField.Type)
+    ? <CustomerGroupOrganizationPicker selection={props.selection} label={props.label} disabled={props.lookupProfitUnavailable}
+        error={props.error} onChange={props.onChange} />
+    : <CommonSelectionValuePicker {...props} />
+}
+
+function CommonSelectionValuePicker({ dataSource, lookupProfitReadMode, lookupProfitUnavailable, lookupSourceWorld, lookupSalesBasis, lookupProvidedDiscountBasis, error, from, label, selection, selections, to, width = 320, onChange }: SelectionValuePickerProps) {
   const { t } = useI18n()
   const [search, setSearch] = useValueState('')
   const [manualValue, setManualValue] = useValueState('')

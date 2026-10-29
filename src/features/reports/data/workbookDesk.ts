@@ -47,7 +47,7 @@ const TYPICAL_SECONDS: Readonly<Record<number, readonly [number, number]>> = {
   35: [15, 25], 38: [10, 20], 39: [5, 10], 40: [5, 15], 41: [10, 30], 43: [2, 20],
 }
 
-const ORGANIZATION_FILTER_FIELDS: Readonly<Record<number, number>> = { 2: 0, 35: 0, 38: 0, 40: 32, 41: 0, 43: 0 }
+const ORGANIZATION_FILTER_FIELDS: Readonly<Record<number, number>> = { 2: 0, 35: 0, 38: 0, 40: 32, 41: 0, 43: 0, 44: 0 }
 
 const SAVED_ORGANIZATION_NAMES = 'ТОВ «АМГ «КОНКОРД», Фенікс, ФОП Самолюк А.Д., ФОП Самолюк Ю.М.'
 
