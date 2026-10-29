@@ -111,6 +111,27 @@ async function expandSale() {
   return screen.findAllByRole('button', { name: product.VendorCode, exact: true })
 }
 
+describe('BUG-1484 carrier comment heading in the sales registry', () => {
+  it('aligns the heading with its comment and allows the heading to wrap', async () => {
+    mocks.getSalesUkraine.mockResolvedValue([{
+      ...sale,
+      NetUid: '22fb6f46-50c1-4e8e-8685-0a8b7a2ee11b',
+      SaleNumber: { Value: 'КОк00002696' },
+      Comment: '4546',
+      Order: undefined,
+      HasDetails: false,
+    }])
+    await renderRegistry()
+    const heading = screen.getByText('Коментар по перевізнику')
+    const comment = screen.getByText('4546')
+    expect(getComputedStyle(heading).textAlign).toBe('left')
+    expect(getComputedStyle(heading).whiteSpace).toBe('normal')
+    expect(getComputedStyle(heading).flexBasis).toBe(getComputedStyle(comment).flexBasis)
+    expect(getComputedStyle(heading).flexShrink).toBe('0')
+    expect(screen.getByText('КОк00002696')).not.toBeNull()
+  })
+})
+
 describe('BUG-1394 identifiers in the sales registry and its product card', () => {
   it('enlarges the client code without enlarging document metadata', async () => {
     const code = await renderRegistry()

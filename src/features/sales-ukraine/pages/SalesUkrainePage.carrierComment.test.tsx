@@ -84,6 +84,17 @@ describe('SalesUkrainePage carrier comment in the registry', () => {
     expect(document.querySelector('.sales-grid-expand')).toBeNull()
   })
 
+  it('labels the carrier comment area in the registry header before the amount columns', async () => {
+    renderPage()
+    const row = await findRow()
+    const header = document.querySelector('.sales-grid-head') as HTMLElement
+    const heading = within(header).getByText('Коментар по перевізнику')
+    expect(heading.parentElement).toBe(header.firstElementChild)
+    expect(within(header.firstElementChild as HTMLElement).getByText('Продаж / клієнт')).not.toBeNull()
+    expect(header.children[1].textContent).toBe('Сума')
+    expect(within(row).getByText(liveComment)).not.toBeNull()
+  })
+
   it('exposes the full multiline unbroken comment on keyboard focus and keeps carrier details available', async () => {
     const comment = `Передзвонити перед доставкою\n${'1234567890'.repeat(50)}`
     mocks.getSalesUkraine.mockResolvedValue([{ ...sale, Comment: comment }])
@@ -109,6 +120,7 @@ describe('SalesUkrainePage carrier comment in the registry', () => {
     }])
     renderPage()
     const row = await findRow()
+    expect(within(document.querySelector('.sales-grid-head') as HTMLElement).getByText('Коментар по перевізнику')).not.toBeNull()
     expect(within(row).queryByLabelText('Коментар')).toBeNull()
     expect(within(row).queryByText('Старий коментар')).toBeNull()
     expect(within(row).getByRole('button', { name: 'Автолюкс' })).not.toBeNull()

@@ -735,14 +735,36 @@
   gap: 2px;
 }
 
+.sg-client-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sg-client-heading-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sg-carrier-comment-heading,
+.sg-carrier-comment {
+  flex: 0 0 min(240px, 28%);
+  min-width: 0;
+}
+
+.sales-grid-head span.sg-carrier-comment-heading {
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .sg-carrier-comment {
   color: var(--mantine-color-gray-7);
   display: -webkit-box;
-  flex: 0 1 240px;
   font-size: 12px;
   line-height: 16px;
-  max-width: 28%;
-  min-width: 0;
   overflow: hidden;
   overflow-wrap: anywhere;
   white-space: pre-wrap;

@@ -1336,8 +1336,13 @@ function SalesUkrainePageContent() {
               <>
                 <div className="sales-grid-head">
                   {SALES_GRID_HEAD_LABELS.map((label, columnIndex) => (
-                    <span key={label}>
-                      {t(label)}
+                    <span key={label} className={columnIndex === 0 ? 'sg-client-heading' : undefined}>
+                      {columnIndex === 0 ? (
+                        <>
+                          <span className="sg-client-heading-label">{t(label)}</span>
+                          <span className="sg-carrier-comment-heading">{t('Коментар по перевізнику')}</span>
+                        </>
+                      ) : t(label)}
                       {columnIndex < SALES_GRID_HEAD_LABELS.length - 1 && (
                         <span
                           aria-hidden="true"
