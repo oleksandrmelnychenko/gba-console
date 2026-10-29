@@ -2578,7 +2578,8 @@ export function SelectionValuePicker({ dataSource, lookupProfitReadMode, lookupP
   const nativeLookup = usesNativeReportLookup(dataSource)
   // Current reservations resolve exact ClientAgreement identities from their own
   // facts; the sales-only dependent customer-agreement picker must not run here.
-  const lookupMode = nativeLookup || nativeSalesDocument ? 'search' : getSelectionLookupMode(selection.SelectedField.Type)
+  const lookupMode = usesSharedProductTopLookup(dataSource, selection.SelectedField.Type) ? 'static'
+    : nativeLookup || nativeSalesDocument ? 'search' : getSelectionLookupMode(selection.SelectedField.Type)
   const isSaleDocumentFilter = !nativeLookup && !nativeSalesDocument && PERIOD_SCOPED_FILTER_FIELD_TYPES.has(selection.SelectedField.Type)
   const saleDocumentFilters = useMemo(
     () => ({
@@ -3080,6 +3081,10 @@ function setAllMeasurements(
 // filter — there the whole catalogue is in the browser and the filtering is the search.
 const keepServerLookupResults: OptionsFilter = ({ options }) => options
 
+function usesSharedProductTopLookup(dataSource: number, fieldType: number): boolean {
+  return (dataSource === 3 || dataSource === 45) && fieldType === REPORT_FILTER_FIELD_TYPES.productTop
+}
+
 function getSelectionLookupMode(fieldType: number): 'manual' | 'search' | 'static' | 'dependent' {
   switch (fieldType) {
     case REPORT_FILTER_FIELD_TYPES.organization:
@@ -3149,6 +3154,7 @@ async function loadSelectionLookupOptions(
   lookupProvidedDiscountBasis?: 0,
   lookupProfitReadMode?: 0 | 1,
 ): Promise<ReportEntity[]> {
+  if (usesSharedProductTopLookup(dataSource, fieldType)) return getReportProductTop()
   if (usesSalesDocumentLookup(dataSource, fieldType))
     return searchNativeSalesDocuments(fieldType, from, to, {limit: LOOKUP_SEARCH_LIMIT, offset: 0, value}, signal)
   if (dataSource === 35 && fieldType === 60) {
