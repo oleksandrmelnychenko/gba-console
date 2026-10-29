@@ -7,10 +7,12 @@ import { isPartialColumnWindow, previewColumnWindow, type NativeReportPreview } 
 import { columnWindowText } from '../data/reportWideColumns'
 import type { ReportRequestBody } from '../types'
 import { ReportInlinePreview } from './ReportInlinePreview'
+import { readReportProfile, requestReportProfile } from '../data/salesConstructorProfiles'
 
 type PendingPage = { rows: boolean; columns: boolean; forward: boolean }
 
 export const ReportPreviewPages = memo(function ReportPreviewPages({ initial, request, embedded = false }: { initial: NativeReportPreview; request: ReportRequestBody; embedded?: boolean }) {
+  const previewReportProfile = request.dataSource === 2 ? readReportProfile(requestReportProfile(request)) : undefined
   const [preview, setPreview] = useState(initial)
   const [columnHistory, setColumnHistory] = useState<number[]>([])
   const [pending, setPending] = useState<PendingPage | null>(null)
@@ -57,7 +59,7 @@ export const ReportPreviewPages = memo(function ReportPreviewPages({ initial, re
   }
   return <>
     {error ? <Alert color="red">{error}</Alert> : null}
-    <ReportInlinePreview preview={preview} embedded={embedded} showPageNote={!initial.ResultSession} />
+    <ReportInlinePreview preview={preview} embedded={embedded} showPageNote={!initial.ResultSession} {...(previewReportProfile ? { previewReportProfile } : {})} />
     {initial.ResultSession ? <footer className="report-preview-footer">
       <Text size="xs" className="report-preview-footer__note">
         {preview.Totals ? `Підсумок за всіма рядками: ${preview.Page.TotalVisibleRows}. ` : ''}

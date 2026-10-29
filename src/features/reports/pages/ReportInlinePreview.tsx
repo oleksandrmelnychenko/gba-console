@@ -13,8 +13,9 @@ import { currentVparivanieSecondTier } from '../data/currentVparivanieColumns'
 import './report-inline-preview.css'
 import { workbookAttributeText, type WorkbookRow } from '../data/workbookPreview'
 import { deskRowsText } from '../data/reportCountPresentation'
+import type { SalesConstructorProfile } from '../data/salesConstructorProfiles'
 
-export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, embedded = false, showPageNote = true }: { preview: NativeReportPreview; embedded?: boolean; showPageNote?: boolean }) {
+export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, embedded = false, showPageNote = true, previewReportProfile }: { preview: NativeReportPreview; embedded?: boolean; showPageNote?: boolean; previewReportProfile?: SalesConstructorProfile }) {
   const cells = new Map(preview.Cells.map(cell => [`${cell.RowSourceIndex}:${cell.ColumnSourceIndex}`, cell.Value]))
   const products = preview.CurrentVparivanieProducts
   const regions = preview.ClientDiscountRecipientRegions
@@ -51,11 +52,15 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
         ? previewNumberText(currentVparivanieQuantityText(value.Value))
         : amountColumns.has(columnSourceIndex) && value?.Kind === 'decimal' && typeof value.Value === 'string'
           ? previewAmountText(value.Value) : previewCellText(value)
+  const quantityColumns = new Set(preview.Request?.DataSource === 'NativeSalesNet' && (previewReportProfile === 'sales' || previewReportProfile === 'grossProfit')
+    ? preview.valueSemantics?.filter(item => item.measureType === 0 && item.semantics.kind === 'quantity').map(item => item.columnSourceIndex) : [])
+  const quantityDescription = (value: NativeReportPreviewScalar | undefined, column: number) =>
+    value?.Kind === 'null' && quantityColumns.has(column) ? 'Кількість не підтверджена для вибраних рядків.' : undefined
   const totalCells = (values: NativeReportPreviewCell[]) => {
     const byColumn = new Map(values.map(cell => [cell.ColumnSourceIndex, cell.Value]))
     return preview.Columns.map(column => {
       const value = byColumn.get(column.SourceIndex)
-      return <td key={column.SourceIndex} className={valueClass(value)}>{value === undefined ? '' : valueText(value, column.SourceIndex)}</td>
+      return <td key={column.SourceIndex} className={valueClass(value)} title={quantityDescription(value, column.SourceIndex)} aria-description={quantityDescription(value, column.SourceIndex)}>{value === undefined ? '' : valueText(value, column.SourceIndex)}</td>
     })
   }
   const rowHeaders = products ? CURRENT_VPARIVANIE_PRODUCT_CAPTIONS : [...preview.RowSchema.map((level, index) => [level.Caption || `Рівень ${index + 1}`,
@@ -127,7 +132,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
           })}
           {preview.Columns.map(column => {
             const value = cells.get(`${row.SourceIndex}:${column.SourceIndex}`)
-            return <td key={column.SourceIndex} className={valueClass(value)} title={value === undefined ? 'Клітинка відсутня' : value.Kind === 'null' ? 'Явне значення NULL' : undefined}>
+            return <td key={column.SourceIndex} className={valueClass(value)} title={quantityDescription(value, column.SourceIndex) ?? (value === undefined ? 'Клітинка відсутня' : value.Kind === 'null' ? 'Значення не визначено.' : undefined)} aria-description={quantityDescription(value, column.SourceIndex)}>
               {valueText(value, column.SourceIndex)}
             </td>
           })}
