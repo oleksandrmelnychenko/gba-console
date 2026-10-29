@@ -70,8 +70,13 @@ it("submits all four selected identities through the existing inline sales-style
     const row = within(screen.getByRole("group", { name: `Умова відбору ${index + 1}` }))
     fireEvent.click(row.getByRole("combobox", { name: "Поле" }))
     fireEvent.click(await screen.findByRole("option", { name: choice.label }))
+    // The date fields update before their debounced lookup scope. Do not select
+    // an option from the previous period while its replacement is arriving.
+    await waitFor(() => expect(searchAnalysisValues).toHaveBeenCalledWith(choice.field, "", "2026-10-01", "2026-10-27",
+      index > 2 ? "630804" : undefined, expect.any(AbortSignal)))
     fireEvent.click(row.getByRole("combobox", { name: "Значення" }))
-    fireEvent.click(await screen.findByRole("option", { name: choice.name }))
+    fireEvent.click(await row.findByRole("option", { name: choice.name }))
+    await waitFor(() => expect(row.getByRole("button", { name: "Вибрано: 1" })).toBeTruthy())
   }
   fireEvent.click(screen.getByRole("button", { name: "Застосувати й показати" }))
   await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())

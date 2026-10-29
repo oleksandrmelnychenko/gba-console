@@ -4,7 +4,7 @@ import { currentVparivanieAnalysisCapability } from '../data/currentVparivanieAn
 import { groupDescriptor, mixedDataset } from '../data/currentVparivanieAnalysis.group-selection.test-fixtures'
 import type { ReportSelectedValue } from '../types'
 import { MantineProvider } from '@mantine/core'
-import { render,screen,fireEvent,waitFor } from '@testing-library/react'
+import { act,render,screen,fireEvent,waitFor } from '@testing-library/react'
 import { expect,it,vi } from 'vitest'
 import { CurrentVparivanieAnalysisValuePicker } from './CurrentVparivanieAnalysisValuePicker'
 import { searchAnalysisValues } from '../api/currentVparivanieAnalysisApi'
@@ -140,3 +140,30 @@ it.each(availableFields.flatMap(descriptor => [0, 1].map(condition => ({ descrip
     expect(onChange).toHaveBeenCalledWith([first, second])
   },
 )
+
+
+it.each([0, 2])('ignores a detached old-period option and accepts only the replacement lookup for condition %i', async condition => {
+  const oldValue = { id: '1', name: 'Old period buyer', data: { Id: 1 } }
+  const newValue = { id: '2', name: 'Current period buyer', data: { Id: 2 } }
+  let resolveCurrent!: (values: typeof oldValue[]) => void
+  vi.mocked(searchAnalysisValues).mockReset().mockResolvedValueOnce([oldValue])
+    .mockImplementationOnce(() => new Promise(resolve => { resolveCurrent = resolve }))
+  const onChange = vi.fn()
+  const props = { selection: { IsChecked: true, SelectedField: { Type: 5, Name: 'Buyer' },
+    FilterCondition: { Type: condition, Name: 'Condition' }, Values: [] }, selections: [], to: '2026-10-27', onChange }
+  const view = render(<MantineProvider env="test"><I18nProvider>
+    <CurrentVparivanieAnalysisValuePicker {...props} from="2026-10-29" />
+  </I18nProvider></MantineProvider>)
+  fireEvent.click(screen.getByRole('combobox', { name: 'Значення' }))
+  const staleOption = await screen.findByRole('option', { name: oldValue.name })
+  view.rerender(<MantineProvider env="test"><I18nProvider>
+    <CurrentVparivanieAnalysisValuePicker {...props} from="2026-10-01" />
+  </I18nProvider></MantineProvider>)
+  await waitFor(() => expect(searchAnalysisValues).toHaveBeenLastCalledWith(5, '', '2026-10-01', '2026-10-27', undefined, expect.any(AbortSignal)))
+  expect(staleOption.isConnected).toBe(false)
+  fireEvent.click(staleOption)
+  expect(onChange).not.toHaveBeenCalled()
+  await act(async () => { resolveCurrent([newValue]) })
+  fireEvent.click(await screen.findByRole('option', { name: newValue.name }))
+  expect(onChange).toHaveBeenCalledExactlyOnceWith([{ Data: newValue.data, Name: newValue.name, Value: 0 }])
+})
