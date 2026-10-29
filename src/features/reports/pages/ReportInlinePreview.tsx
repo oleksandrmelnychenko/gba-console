@@ -82,6 +82,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
         {columnWindowText(columnWindow.ColumnOffset, columnWindow.ReturnedColumns, columnWindow.TotalColumns)}</Text> : null}
     </div>
     <ReportAttributionWarnings request={preview.Request} />
+    <CurrentProductFieldsNotice version={workbook?.version} />
     {preview.Request?.presentationCurrency ? <Text size="sm">Валюта звіту: {preview.Request.presentationCurrency.code}. Комерційний курс GBA на дату кожного документа, включно з поверненнями.</Text> : null}
     {preview.currentVparivanieAnalysis ? <Alert color={preview.currentVparivanieAnalysis.fieldCoverage.some(f => f.unknownFacts > 0) ? 'yellow' : 'blue'} title="Розрізи та покриття звіту">
       <Text size="sm">{ANALYSIS_SCOPE_NOTICE}</Text>
@@ -260,4 +261,8 @@ function kyivTimestamp(value: string): string {
   const parts = Object.fromEntries(new Intl.DateTimeFormat('uk-UA', { timeZone: 'Europe/Kyiv', year: 'numeric', month: '2-digit',
     day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(date).map(part => [part.type, part.value]))
   return `${parts.day}.${parts.month}.${parts.year} ${parts.hour}:${parts.minute}`
+}
+
+function CurrentProductFieldsNotice({ version }: { version?: number }) {
+  return version === 2 ? <Text size="sm">Поточні поля товару з довідника на час формування звіту. ∅ означає незаповнене поле, тире — недоступне значення.</Text> : null
 }

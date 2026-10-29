@@ -228,7 +228,7 @@ export function workbookRequestSummary(request: ReportRequestBody, dataset: Repo
   if (view?.additionalFields.length) {
     const captions = view.additionalFields.map(type => capability?.additionalFields.find(field => field.type === type)?.caption)
       .filter((caption): caption is string => Boolean(caption)).map(fieldShortCaption)
-    if (captions.length) chips.push({ kind: 'view', label: `Додаткові поля: ${captions.join(', ')}`, title: 'Додаткові поля книги 1С' })
+    if (captions.length) chips.push({ kind: 'view', label: `Додаткові поля: ${captions.join(', ')}`, title: view.version === 2 ? 'Поточні поля товару' : 'Додаткові поля книги 1С' })
   }
   if (view?.ordering === 'MonthAscending') chips.push({ kind: 'view', label: 'Сортування по місяцях', title: 'Як у книзі 1С: по місяцях за зростанням' })
   return {

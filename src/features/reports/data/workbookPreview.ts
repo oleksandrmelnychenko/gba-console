@@ -1,3 +1,4 @@
+import { readCurrentProductPreview } from './currentProductFieldsPreview'
 import { validFinancialAxes } from './financialAxes'
 import { validCurrentFinancialAxes, usesCurrentFinancialAxes } from './currentFinancialAxes'
 import { hasFinancialProductTimeAxes, validCurrentFinancialProductTimeAxes } from './currentFinancialProductTimeAxes'
@@ -8,12 +9,12 @@ import type { NativeReportPreview } from './nativeReportPreview'
 import { readWorkbookSelection, sameWorkbookSelection, workbookSources, workbookText, workbookHasText,
   type WorkbookField, type WorkbookSelection } from './workbookPresentation'
 import type { ReportRequestBody } from '../types'
-import { requestWorkbookPresentation } from './workbookPresentation'
+import { requestWorkbookPresentation, workbookConfigurationError } from './workbookPresentation'
 
 export type WorkbookAttribute = { type: number; state: 'known' | 'mixed' | 'unavailable' | 'null'; values: string[]; inputSha256: string | null }
 export type WorkbookCurrency = { id: string; netUid: string; name: string | null; code: string | null; available: boolean }
 export type WorkbookRow = { rowSourceIndex: number; rowKeySha256: string; values: WorkbookAttribute[]; currencyWitnesses: WorkbookCurrency[] }
-export type WorkbookPreview = { version: 1; resultSha256: string; selection: WorkbookSelection; fields: WorkbookField[]; rows: WorkbookRow[] }
+export type WorkbookPreview = { version: 1 | 2; resultSha256: string; selection: WorkbookSelection; fields: WorkbookField[]; rows: WorkbookRow[] }
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
 const keys = (value: Record<string, unknown>, names: string[]) => Object.keys(value).sort().join(',') === [...names].sort().join(',')
 const hash = (value: unknown): value is string => typeof value === 'string' && /^[a-f\d]{64}$/.test(value)
@@ -44,6 +45,7 @@ function attribute(value: unknown): WorkbookAttribute {
 /** Validate server attribution; typed server row hashes must never be recomputed from JavaScript numbers. */
 export function readWorkbookPreview(raw: unknown, preview: NativeReportPreview): WorkbookPreview | undefined {
   if (raw === undefined || raw === null) return undefined
+  if (record(raw) && raw.version === 2) return readCurrentProductPreview(raw, preview)
   const source = sources.get(preview.Request?.DataSource ?? '')
   const expected = source === undefined ? undefined : workbookSources.get(source)
   if (!source || !expected || !record(raw) || !keys(raw, ['version', 'resultSha256', 'selection', 'fields', 'rows'])
@@ -51,7 +53,7 @@ export function readWorkbookPreview(raw: unknown, preview: NativeReportPreview):
     || new TextEncoder().encode(JSON.stringify(raw)).length > 1048576) return fail()
   const selected = record(raw.selection) && keys(raw.selection, ['version', 'additionalFields', 'ordering'])
     ? readWorkbookSelection(raw.selection) : null
-  if (!selected || selected.additionalFields.some(type => !expected.some(field => field[0] === type))
+  if (!selected || selected.version !== 1 || selected.additionalFields.some(type => !expected.some(field => field[0] === type))
     || selected.ordering !== null && source !== 35 || !Array.isArray(raw.fields)
     || raw.fields.length !== selected.additionalFields.length || !Array.isArray(raw.rows)) return fail()
   const fields: WorkbookField[] = raw.fields.map((field, index) => {
@@ -112,6 +114,7 @@ function validateCurrencyAttribution(values: WorkbookAttribute[], witnesses: Wor
 export function bindWorkbookPreview(request: ReportRequestBody, preview: NativeReportPreview): void {
   const raw = requestWorkbookPresentation(request)
   const selection = raw == null ? null : readWorkbookSelection(raw)
+  if (selection?.version === 2 && workbookConfigurationError(request)) fail()
   if (raw != null && selection === null || (selection === null) !== (preview.WorkbookPresentation === undefined)
     || selection && (!preview.WorkbookPresentation || !sameWorkbookSelection(selection, preview.WorkbookPresentation.selection))) fail()
 }

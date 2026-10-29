@@ -1,12 +1,18 @@
 import type { ReportDataset, ReportRequestBody } from '../types'
 
-export type WorkbookSelection = { version: 1; additionalFields: number[]; ordering: null | 'MonthAscending' }
+export type WorkbookSelection = { version: 1 | 2; additionalFields: number[]; ordering: null | 'MonthAscending' }
 export type WorkbookField = { type: number; caption: string; placement: 'inline' | 'column' | 'retainedSetting' }
-export type WorkbookCapability = { version: 1; additionalFields: WorkbookField[]; orderings: string[] }
+export type WorkbookCapability = { version: 1 | 2; additionalFields: WorkbookField[]; orderings: string[]
+  attributeKind?: 'currentProductScalar'; requiredRowGroupings?: number[]; supportedReportProfiles?: string[] }
+export const currentProductFields = [[2, 'column'], [3, 'column'], [65, 'column'], [66, 'column']] as const
+export const isSalesProductProfile = (request: ReportRequestBody) => request.dataSource === 2
+  && ['sales', 'grossProfit'].includes(String(request.reportProfile ?? request.ReportProfile))
+export const hasProductRow = (request: ReportRequestBody) => request.sorted?.Row?.some(row => row.type === 5 || row.type === 7) === true
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
 const aliases = (value: object) => Object.keys(value).filter(key => key.toLowerCase() === 'workbookpresentation')
 const exactKeys = (value: Record<string, unknown>, keys: string[]) => Object.keys(value).sort().join(',') === [...keys].sort().join(',')
-export const workbookSources: ReadonlyMap<number, readonly [number, WorkbookField['placement']][]> = new Map<number, readonly [number, WorkbookField['placement']][]>([
+export const workbookSources: ReadonlyMap<number, ReadonlyArray<readonly [number, WorkbookField['placement']]>> = new Map<number, ReadonlyArray<readonly [number, WorkbookField['placement']]>>([
+  [2, currentProductFields],
   [35, [[2, 'retainedSetting'], [3, 'retainedSetting']]],
   [40, [[30, 'inline'], [33, 'inline']]],
   [41, [[30, 'inline'], [60, 'column'], [61, 'column']]],
@@ -37,10 +43,10 @@ export function readWorkbookSelection(value: unknown): WorkbookSelection | null 
   }
   const additional = fields.get('additionalFields')
   const ordering = fields.get('ordering')
-  if (fields.size !== 3 || fields.get('version') !== 1 || !Array.isArray(additional) || additional.length > 3
+  if (fields.size !== 3 || (fields.get('version') !== 1 && fields.get('version') !== 2) || !Array.isArray(additional) || additional.length > (fields.get('version') === 2 ? 4 : 3)
     || additional.some(type => !Number.isSafeInteger(type)) || new Set(additional).size !== additional.length
     || !(ordering === null || ordering === 'MonthAscending')) return null
-  return { version: 1, additionalFields: [...additional], ordering }
+  return { version: fields.get('version') as 1 | 2, additionalFields: [...additional], ordering }
 }
 
 export function requestWorkbookPresentation(value: object): unknown {
@@ -52,6 +58,7 @@ export function cloneWorkbookAliases(value: object): Record<string, unknown> {
 }
 export function readWorkbookCapability(value: unknown, source: number): WorkbookCapability | null {
   const expected = workbookSources.get(source)
+  if (source === 2) return readCurrentProductCapability(value)
   if (!expected || !record(value) || !exactKeys(value, ['version', 'additionalFields', 'orderings'])
     || value.version !== 1 || !Array.isArray(value.additionalFields) || value.additionalFields.length !== expected.length
     || !Array.isArray(value.orderings) || (source === 35
@@ -66,6 +73,24 @@ export function readWorkbookCapability(value: unknown, source: number): Workbook
   }
   return { version: 1, additionalFields: fields, orderings: [...value.orderings] }
 }
+function readCurrentProductCapability(value: unknown): WorkbookCapability | null {
+  if (!record(value) || !exactKeys(value, ['version', 'additionalFields', 'orderings', 'attributeKind', 'requiredRowGroupings', 'supportedReportProfiles'])
+    || value.version !== 2 || value.attributeKind !== 'currentProductScalar'
+    || JSON.stringify(value.requiredRowGroupings) !== '[5,7]'
+    || JSON.stringify(value.supportedReportProfiles) !== '["sales","grossProfit"]'
+    || !Array.isArray(value.orderings) || value.orderings.length !== 0
+    || !Array.isArray(value.additionalFields) || value.additionalFields.length !== currentProductFields.length) return null
+  const fields: WorkbookField[] = []
+  for (const [index, expected] of currentProductFields.entries()) {
+    const field = value.additionalFields[index]
+    if (!record(field) || !exactKeys(field, ['type', 'caption', 'placement']) || field.type !== expected[0]
+      || field.placement !== expected[1] || !workbookText(field.caption) || !workbookHasText(field.caption)) return null
+    fields.push({ type: expected[0], caption: field.caption, placement: 'column' })
+  }
+  return { version: 2, additionalFields: fields, orderings: [], attributeKind: 'currentProductScalar',
+    requiredRowGroupings: [5, 7], supportedReportProfiles: ['sales', 'grossProfit'] }
+}
+
 export function normalizeWorkbookDataset(value: Record<string, unknown>): ReportDataset | null {
   const keys = aliases(value)
   if (keys.length > 1 || keys.some(key => key !== 'workbookPresentation')) return null
@@ -101,10 +126,14 @@ export function workbookConfigurationError(data: ReportRequestBody, dataset?: Re
   if (raw == null) return null
   const selected = readWorkbookSelection(raw)
   const expected = workbookSources.get(data.dataSource ?? -1)
-  if (!selected || !expected || selected.additionalFields.some(type => !expected.some(field => field[0] === type))
-    || selected.ordering !== null && data.dataSource !== 35) return 'Непідтверджені додаткові поля або порядок форми версії 1.'
+  if (!selected || !expected || selected.version !== (data.dataSource === 2 ? 2 : 1) || selected.additionalFields.some(type => !expected.some(field => field[0] === type))
+    || selected.ordering !== null && data.dataSource !== 35) return 'Непідтверджені додаткові поля або порядок форми.'
   if (dataset && (dataset.DataSource !== data.dataSource || !readWorkbookCapability(dataset.workbookPresentation, data.dataSource ?? -1)))
     return 'Поточний сервер не підтвердив ці налаштування форми.'
+  if (data.dataSource === 2 && !isSalesProductProfile(data))
+    return 'Поточні поля товару доступні лише у звітах продажів і валового прибутку.'
+  if (data.dataSource === 2 && !hasProductRow(data))
+    return 'Додайте «Товар» або «Назва товару» до рядків або приберіть додаткові поля товару.'
   if (dataset && data.dataSource === 40 && !cashWorkbookPresentationSupported(dataset))
     return 'Сервер ще не підтвердив форму коштів із рядками лише за рахунком / касою.'
   if (data.dataSource === 35 && option(data, 'dayOrganizationBasis') !== 0)

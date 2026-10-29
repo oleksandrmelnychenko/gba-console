@@ -1,3 +1,4 @@
+import { CurrentProductFieldsPanel } from './CurrentProductFieldsPanel'
 import { Alert, Button, Card, Checkbox, Group, Select, Stack, Text } from '@mantine/core'
 import { ArrowDownWideNarrow, ListPlus, RotateCcw } from 'lucide-react'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -12,6 +13,7 @@ export function WorkbookPresentationPanel({ dataset, request, value, disabled, o
   const capability = dataset ? readWorkbookCapability(dataset.workbookPresentation, dataset.DataSource) : null
   const selection = value == null ? null : readWorkbookSelection(value)
   const invalid = value != null ? workbookConfigurationError({ ...request, workbookPresentation: value }, dataset) : null
+  if (dataset?.DataSource === 2) return <CurrentProductFieldsPanel capability={capability} request={request} value={value} disabled={disabled} onChange={onChange} />
   if (!capability && value == null) return null
   return <Card className="workbook-presentation" withBorder radius="md" padding="md">
     <Stack gap="xs">
