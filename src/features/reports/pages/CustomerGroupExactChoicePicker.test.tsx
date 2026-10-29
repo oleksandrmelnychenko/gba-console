@@ -1,3 +1,4 @@
+import userEvent from '@testing-library/user-event'
 import { MantineProvider } from '@mantine/core'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { useState } from 'react'
@@ -109,4 +110,36 @@ it('aborts a product lookup when field changes and never exposes its late respon
  search('manager');await screen.findByRole('option',{name:'Новий менеджер [80]'})
  oldResolve([{Id:90,Name:'Запізнілий товар'}]);await waitFor(()=>expect(screen.queryByRole('option',{name:'Запізнілий товар'})).toBeNull())
  expect(selected()).toEqual([])
+})
+
+it.each([0,2])('loads the next Product name page with real pointer focus/blur events for condition%d',async condition=>{
+ api.mockImplementation(async(_path,options)=>options?.query?.offset===30?[{Id:40,Name:'Наступний товар'}]:Array.from({length:30},(_,i)=>({Id:i+10,Name:'Товар '+i})))
+ render(<Form condition={condition} values={[]}/>);search('товар');await screen.findByRole('option',{name:'Товар 0'})
+ await userEvent.click(screen.getByRole('button',{name:'Ще значення'}))
+ await waitFor(()=>expect(api.mock.calls.map(call=>call[1]?.query?.offset)).toEqual([0,30]))
+ expect(screen.getByRole('combobox',{name:'Значення'})).toHaveProperty('value','товар')
+})
+
+it.each([0,2])('keeps query while keyboard Tab/Enter loads next page for condition%d',async condition=>{
+ api.mockImplementation(async(_path,options)=>options?.query?.offset===30?[{Id:40,Name:'Наступний товар'}]:Array.from({length:30},(_,i)=>({Id:i+10,Name:'Товар '+i})))
+ render(<Form condition={condition} values={[]}/>);search('товар');await screen.findByRole('option',{name:'Товар 0'})
+ await userEvent.tab();expect(screen.getByRole('button',{name:'Ще значення'})).toBe(document.activeElement)
+ expect(screen.getByRole('combobox',{name:'Значення'})).toHaveProperty('value','товар')
+ await userEvent.keyboard('{Enter}');await waitFor(()=>expect(api.mock.calls.map(call=>call[1]?.query?.offset)).toEqual([0,30]))
+ await userEvent.click(screen.getByRole('combobox',{name:'Значення'}));await screen.findByRole('option',{name:'Наступний товар'})
+ expect(selected()).toEqual([])
+})
+it('selects a verified exact ID with keyboard arrows/Enter and Escape retains search without creating a choice',async()=>{
+ api.mockResolvedValue([{Id:20,Name:'Точний товар'}]);render(<Form condition={0} values={[]}/>);search('id:20')
+ await screen.findByRole('option',{name:'Точний товар'});await userEvent.keyboard('{ArrowDown}{Enter}')
+ expect(selected()).toEqual([{Data:{Id:20},Name:'Точний товар',Value:0}])
+ search('інше');await screen.findByRole('option',{name:'Точний товар'});await userEvent.keyboard('{Escape}')
+ expect(screen.getByRole('combobox',{name:'Значення'})).toHaveProperty('ariaExpanded','false')
+ expect(screen.getByRole('combobox',{name:'Значення'})).toHaveProperty('value','інше')
+ expect(selected()).toEqual([{Data:{Id:20},Name:'Точний товар',Value:0}])
+})
+it('keeps remote choices disabled and exposes a labelled query error without inventing an ID',async()=>{
+ const view=render(<Form condition={0} values={[]} disabled/>);expect(screen.getByRole('combobox',{name:'Значення'})).toHaveProperty('disabled',true)
+ view.rerender(<Form condition={0} values={[]}/>);search('id:0')
+ expect(screen.getByText(/Вкажіть точний ID товару/)).toBeTruthy();expect(api).not.toHaveBeenCalled();expect(selected()).toEqual([])
 })
