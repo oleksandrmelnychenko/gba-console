@@ -16,12 +16,20 @@ it.each([0, 1])('requires exactly one checked parent region for condition%i with
 it.each([2, 4])('preserves duplicate saved list identities condition%i', condition => {
   const value = selection(condition); value.Values.push(value.Values[0]); expect(customerGroupRegionError(44, [value])).toBeNull(); expect(value.Values).toHaveLength(3)
 })
-it.each([{}, { RegionId: 11 }, { NetUid: 'same' }, { Id: '9007199254740993' }, '{"Id":1.00000000000000001}', '{"Id":11,"id":22}'])('rejects missing/unsafe parent identity without guessing from other keys %j', Data => {
-  const value = selection(); value.Values = [{ Data, Value: 0, Name: 'Назва' }]
+// These are retained JSON wire values; the declared internal Data type does not describe old JSON-string payloads.
+it.each([
+  "[{\"Data\":{},\"Value\":0,\"Name\":\"Назва\"}]",
+  "[{\"Data\":{\"RegionId\":11},\"Value\":0,\"Name\":\"Назва\"}]",
+  "[{\"Data\":{\"NetUid\":\"same\"},\"Value\":0,\"Name\":\"Назва\"}]",
+  "[{\"Data\":{\"Id\":\"9007199254740993\"},\"Value\":0,\"Name\":\"Назва\"}]",
+  "[{\"Data\":\"{\\\"Id\\\":1.00000000000000001}\",\"Value\":0,\"Name\":\"Назва\"}]",
+  "[{\"Data\":\"{\\\"Id\\\":11,\\\"id\\\":22}\",\"Value\":0,\"Name\":\"Назва\"}]"
+])('rejects missing/unsafe parent identity without guessing from other keys %s', wire => {
+  const value = selection(); value.Values = JSON.parse(wire)
   expect(customerGroupRegionError(44, [value])).toContain('ідентифікатор'); value.IsChecked = false; expect(customerGroupRegionError(44, [value])).toBeNull()
 })
 it('retains canonical saved JSON and enforces bounded flat selection only', () => {
-  const value = selection(); value.Values[0].Data = '{"Id":"11"}'; expect(customerGroupRegionError(44, [value])).toBeNull()
+  const value = selection(); value.Values = JSON.parse("[{\"Data\":\"{\\\"Id\\\":\\\"11\\\"}\",\"Name\":\"Стара назва\",\"Value\":0}]"); expect(customerGroupRegionError(44, [value])).toBeNull()
   value.FilterCondition.Type = 5; expect(customerGroupRegionError(44, [value])).toContain('чотирьох')
   value.FilterCondition.Type = 2; value.Values = Array.from({length:101},()=>value.Values[0]); expect(customerGroupRegionError(44,[value])).toContain('100')
 })

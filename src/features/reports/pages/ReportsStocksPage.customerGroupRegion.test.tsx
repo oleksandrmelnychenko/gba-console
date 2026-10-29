@@ -42,18 +42,18 @@ async function ready() {
 async function restore() {
   await ready(); fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
   fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Набори з регіонами' }))
-  await screen.findByRole('group', { name: 'Умова відбору 2', exact: true })
+  await screen.findByRole('group', { name: 'Умова відбору 2' })
 }
 it('gates Region7 by server metadata without promoting RegionCode8 on old servers', async () => {
   vi.mocked(getReportDatasets).mockResolvedValue([{ ...dataset, Filters: dataset.Filters.filter(field => field.Type !== 7) }])
-  await ready(); fireEvent.click(screen.getByRole('button', { name: 'Додати умову', exact: true }))
-  fireEvent.click(screen.getByRole('combobox', { name: 'Поле', exact: true }))
-  expect(screen.queryByRole('option', { name: 'Поточний регіон клієнта', exact: true })).toBeNull()
-  expect(screen.queryByRole('option', { name: 'Код регіону', exact: true })).toBeNull()
+  await ready(); fireEvent.click(screen.getByRole('button', { name: 'Додати умову' }))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Поле' }))
+  expect(screen.queryByRole('option', { name: 'Поточний регіон клієнта' })).toBeNull()
+  expect(screen.queryByRole('option', { name: 'Код регіону' })).toBeNull()
 })
 it('offers four flat conditions and saves dates, exact stale IDs, overlapping sets and row/measure order intact', async () => {
   await restore()
-  fireEvent.click(within(screen.getByRole('group', { name: 'Умова відбору 2', exact: true })).getByRole('combobox', { name: 'Умова' }))
+  fireEvent.click(within(screen.getByRole('group', { name: 'Умова відбору 2' })).getByRole('combobox', { name: 'Умова' }))
   expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(['Дорівнює', 'Не дорівнює', 'У списку', 'Не у списку'])
   fireEvent.click(screen.getByRole('option', { name: 'У списку' }))
   changeReportPeriod({ from: '2026-09-01', to: '2026-09-30' })
@@ -74,7 +74,7 @@ it.each([0, 1])('keeps two saved IDs for condition%i blocked until explicit list
   expect(screen.getByRole('button', { name: 'Новий шаблон' })).toHaveProperty('disabled', true)
   expect(saveServerReportTemplate).not.toHaveBeenCalled()
   fireEvent.click(screen.getByRole('button', { name: 'Закрити' }))
-  fireEvent.click(within(screen.getByRole('group', { name: 'Умова відбору 2', exact: true })).getByRole('combobox', { name: 'Умова' })); fireEvent.click(screen.getByRole('option', { name: 'У списку' }))
+  fireEvent.click(within(screen.getByRole('group', { name: 'Умова відбору 2' })).getByRole('combobox', { name: 'Умова' })); fireEvent.click(screen.getByRole('option', { name: 'У списку' }))
   expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toHaveProperty('disabled', false)
   fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(screen.getByRole('button', { name: 'Оновити шаблон' }))
   await waitFor(() => expect(saveServerReportTemplate).toHaveBeenCalledOnce())
@@ -87,7 +87,7 @@ it.each([0, 1])('ignores disabled invalid single-value condition%i without rewri
 })
 
 it('preserves unsafe saved Region identity for explicit correction and blocks Generate and Save', async () => {
-  const saved=template(); saved.Data.selections[1].Values=[{Data:'{"Id":"9007199254740993"}',Name:'Старий регіон',Value:0}]
+  const saved=template(); saved.Data.selections[1].Values=JSON.parse("[{\"Data\":\"{\\\"Id\\\":\\\"9007199254740993\\\"}\",\"Name\":\"Старий регіон\",\"Value\":0}]")
   vi.mocked(getServerReportTemplates).mockResolvedValue([saved]); await restore()
   expect(screen.getByRole('button',{name:'Застосувати й показати'})).toHaveProperty('disabled',true)
   expect(screen.getByText('Повторно оберіть регіон клієнта: збережений ідентифікатор не підтверджено.')).toBeTruthy()

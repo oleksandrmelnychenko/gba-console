@@ -19,8 +19,8 @@ it('binds actual source44 current-region request and cached pages without changi
   const sent = api.mock.calls.find(([path]) => path === '/report/stocks/preview')?.[1]?.body
   expect(sent).toMatchObject({ customerGroups: fixture.request.CustomerGroups, selections: fixture.request.Selections, dataSource: 44 })
   expect(preview.Cells).toEqual(fixture.page0.Preview.Cells)
-  expect(preview.Request.IsCurrentSnapshot).toBe(false)
-  expect(preview.Request.Notes).toContain('Відбір використовує поточний регіон у картці клієнта; його зміна впливає й на звіти за минулі періоди.')
+  expect(preview.Request?.IsCurrentSnapshot).toBe(false)
+  expect(preview.Request?.Notes).toContain('Відбір використовує поточний регіон у картці клієнта; його зміна впливає й на звіти за минулі періоди.')
   expect(dataset.Filters.find(field => field.Type === 8)).toBeUndefined()
   expect(preview.Totals?.Values.map(cell => cell.Value.Kind === 'null' ? null : Number(cell.Value.Value))).toEqual([null,null,null,70,0,0, 0,null,null,0,-70,-100, null,null,null,70,0,0, 0,null,null,0,-70,-100])
   expect(fixture.page1.ResultSha256).toBe(fixture.page0.ResultSha256)

@@ -40,6 +40,8 @@ const source = () => (screen.getByRole('combobox', { name: 'Джерело ро�
 async function submitted(view: ReturnType<typeof render>, count: number) {
   fireEvent.submit(view.container.querySelector('form')!)
   await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(count))
+  // The API invocation precedes completion; mode controls stay disabled until the report run settles.
+  await waitFor(() => expect(screen.getByRole('combobox', { name: 'Джерело розрахунку' })).toHaveProperty('disabled', false))
   return vi.mocked(createStockReport).mock.calls[count - 1][0]
 }
 it.each(['Валовий прибуток за днем', 'Валовий прибуток за постачальниками'])('opens %s on current documents, then keeps deliberate registers and opt-out choices', async name => {
