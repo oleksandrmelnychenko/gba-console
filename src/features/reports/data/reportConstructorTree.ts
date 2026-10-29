@@ -1,4 +1,4 @@
-import type { ReportMeasurementGroup, ReportMeasurementSelection } from '../types'
+import type { ReportMeasurementGroup, ReportMeasurementItem, ReportMeasurementSelection } from '../types'
 
 /** Presentation categories only: the dataset still decides which fields are executable. */
 export function reportGroupingPath(type: number): string[] {
@@ -36,4 +36,14 @@ export function reorderMeasurementItem(groups: ReportMeasurementGroup[], type: n
     const SubList = [...group.SubList]; [SubList[index], SubList[target]] = [SubList[target], SubList[index]]
     return { ...group, SubList }
   })
+}
+
+const ukrainianMeasureOrder = new Intl.Collator('uk-UA', { numeric: true, sensitivity: 'base' })
+
+/** One-shot tree ordering: keep membership, selection and equal-label manual order. */
+export function alphabetizeMeasurements(groups: ReportMeasurementGroup[], direction: -1 | 1,
+  groupLabel: (group: ReportMeasurementGroup) => string, itemLabel: (item: ReportMeasurementItem) => string): ReportMeasurementGroup[] {
+  return groups.map(group => ({ ...group,
+    SubList: group.SubList.toSorted((a, b) => direction * ukrainianMeasureOrder.compare(itemLabel(a), itemLabel(b))),
+  })).toSorted((a, b) => direction * ukrainianMeasureOrder.compare(groupLabel(a), groupLabel(b)))
 }

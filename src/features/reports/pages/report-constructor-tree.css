@@ -1,4 +1,5 @@
 .report-measure-tree { display: grid; gap: 8px; }
+.report-measure-tree__toolbar > .mantine-TextInput-root { flex: 1; min-width: 0; }
 .report-measure-tree__list { max-height: 420px; overflow: auto; }
 .report-measure-tree__group { padding: 4px 0; }
 .report-measure-tree__row { display: flex; align-items: center; gap: 5px; min-height: 30px; }

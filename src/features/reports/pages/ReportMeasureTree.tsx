@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { ActionIcon, Checkbox, Group, Text, TextInput } from '@mantine/core'
-import { ArrowDown, ArrowUp, Search } from 'lucide-react'
+import { ActionIcon, Button, Checkbox, Group, Text, TextInput } from '@mantine/core'
+import { ArrowDown, ArrowDownAZ, ArrowUp, ArrowUpAZ, Search } from 'lucide-react'
 import type { ReportMeasurementGroup, ReportMeasurementItem } from '../types'
-import { reorderMeasurementGroup, reorderMeasurementItem } from '../data/reportConstructorTree'
+import { alphabetizeMeasurements, reorderMeasurementGroup, reorderMeasurementItem } from '../data/reportConstructorTree'
 import './report-constructor-tree.css'
 
 type Props = {
@@ -23,6 +23,9 @@ function OrderButtons({ label, first, last, onMove }: { label: string; first: bo
 export function ReportMeasureTree({ groups, onChange, groupLabel, itemLabel, itemUnit }: Props) {
   const [query, setQuery] = useState('')
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
+  const canSort = groups.length > 1 || groups.some(group => group.SubList.length > 1)
+  const visibleItemLabel = (item: ReportMeasurementItem) => item.Name.endsWith('WithoutVAT') ? 'Без ПДВ'
+    : item.Name.endsWith('WithVAT') ? 'З ПДВ' : item.Name.endsWith('VAT') ? 'ПДВ' : itemLabel(item)
   const normalized = query.trim().toLocaleLowerCase('uk-UA')
   const matches = (text: string) => !normalized || text.toLocaleLowerCase('uk-UA').includes(normalized)
   function toggle(groupName: string, type?: number) {
@@ -34,8 +37,20 @@ export function ReportMeasureTree({ groups, onChange, groupLabel, itemLabel, ite
     }))
   }
   return <div className="report-measure-tree">
-    <TextInput aria-label="Пошук показника" placeholder="Пошук показника" leftSection={<Search size={15} aria-hidden="true" />}
-      value={query} onChange={event => setQuery(event.currentTarget.value)} />
+    <Group gap="xs" wrap="nowrap" className="report-measure-tree__toolbar">
+      <TextInput aria-label="Пошук показника" placeholder="Пошук показника" leftSection={<Search size={15} aria-hidden="true" />}
+        value={query} onChange={event => setQuery(event.currentTarget.value)} />
+      <Group gap={4} wrap="nowrap" role="group" aria-label="Порядок усіх показників">
+        <Button type="button" variant="default" size="compact-xs" disabled={!canSort}
+          aria-label="Упорядкувати всі показники від А до Я" title="Упорядкувати всі показники від А до Я"
+          leftSection={<ArrowDownAZ size={14} aria-hidden="true" />}
+          onClick={() => onChange(alphabetizeMeasurements(groups, 1, groupLabel, visibleItemLabel))}>А–Я</Button>
+        <Button type="button" variant="default" size="compact-xs" disabled={!canSort}
+          aria-label="Упорядкувати всі показники від Я до А" title="Упорядкувати всі показники від Я до А"
+          leftSection={<ArrowUpAZ size={14} aria-hidden="true" />}
+          onClick={() => onChange(alphabetizeMeasurements(groups, -1, groupLabel, visibleItemLabel))}>Я–А</Button>
+      </Group>
+    </Group>
     <div className="report-measure-tree__list">
       {groups.map((group, groupIndex) => {
         const label = groupLabel(group)
@@ -54,7 +69,7 @@ export function ReportMeasureTree({ groups, onChange, groupLabel, itemLabel, ite
           {children && expanded ? <div className="report-measure-tree__children">{visible.map(item => {
             const index = group.SubList.indexOf(item), caption = itemLabel(item)
             return <div className="report-measure-tree__row" key={item.Type}>
-              <Checkbox label={item.Name.endsWith('WithoutVAT') ? 'Без ПДВ' : item.Name.endsWith('WithVAT') ? 'З ПДВ' : item.Name.endsWith('VAT') ? 'ПДВ' : caption}
+              <Checkbox label={visibleItemLabel(item)}
                 aria-label={caption} checked={item.IsChecked} onChange={() => toggle(group.Name, item.Type)} />
               <OrderButtons label={caption} first={index === 0} last={index === group.SubList.length - 1} onMove={direction => onChange(reorderMeasurementItem(groups, item.Type, direction))} />
             </div>
