@@ -1,3 +1,5 @@
+import { CustomerGroupRegionPicker } from './CustomerGroupRegionPicker'
+import { customerGroupRegionError, isCustomerGroupRegion } from '../data/customerGroupRegion'
 import { CustomerGroupOrganizationPicker } from './CustomerGroupOrganizationPicker'
 import { customerGroupOrganizationError, isCustomerGroupOrganization } from '../data/customerGroupOrganization'
 import { appendBeforeDocumentDetail, DOCUMENT_DETAIL_GROUPING } from '../data/reportDocumentDetails'
@@ -509,6 +511,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       .map(reportSelectionCardinalityError).find(Boolean) ?? null
     : null
   const organizationConfigurationError = customerGroupOrganizationError(dataSource, selections)
+    ?? customerGroupRegionError(dataSource, selections)
   const templateConfigurationError = configurationError ?? organizationConfigurationError
   const generationConfigurationError = configurationError ?? currentMatrixError ?? receiptWarehouseCardinalityError
     ?? organizationConfigurationError
@@ -2577,7 +2580,10 @@ export function SelectionValuePicker(props: SelectionValuePickerProps) {
   return isCustomerGroupOrganization(props.dataSource, props.selection.SelectedField.Type)
     ? <CustomerGroupOrganizationPicker selection={props.selection} label={props.label} disabled={props.lookupProfitUnavailable}
         error={props.error} onChange={props.onChange} />
-    : <CommonSelectionValuePicker {...props} />
+    : isCustomerGroupRegion(props.dataSource, props.selection.SelectedField.Type)
+      ? <CustomerGroupRegionPicker selection={props.selection} label={props.label} disabled={props.lookupProfitUnavailable}
+          error={props.error} onChange={props.onChange} />
+      : <CommonSelectionValuePicker {...props} />
 }
 
 function CommonSelectionValuePicker({ dataSource, lookupProfitReadMode, lookupProfitUnavailable, lookupSourceWorld, lookupSalesBasis, lookupProvidedDiscountBasis, error, from, label, selection, selections, to, width = 320, onChange }: SelectionValuePickerProps) {
