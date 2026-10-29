@@ -501,8 +501,13 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           position: incompleteSelectionIndex + 1,
         })
   const currentMatrixError = currentVparivanieConfigurationError(reportBody, dataset)
-  const generationConfigurationError = configurationError ?? currentMatrixError
-  const reportIsReady = !configurationError && !currentMatrixError && !periodError && !incompleteSelectionMessage && checkedMeasurements > 0 && !missingRowGrouping
+  const receiptWarehouseCardinalityError = dataSource === 3
+    ? selections.filter(selection => selection.IsChecked !== false
+      && selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.warehouse)
+      .map(reportSelectionCardinalityError).find(Boolean) ?? null
+    : null
+  const generationConfigurationError = configurationError ?? currentMatrixError ?? receiptWarehouseCardinalityError
+  const reportIsReady = !generationConfigurationError && !periodError && !incompleteSelectionMessage && checkedMeasurements > 0 && !missingRowGrouping
   const canSubmit = canGenerateReport && reportIsReady
   const submitBlockedReason = !canGenerateReport
     ? t('Немає права формувати звіт залишків')
@@ -2578,7 +2583,7 @@ export function SelectionValuePicker({ dataSource, lookupProfitReadMode, lookupP
   const [docSelfSales, setDocSelfSales] = useValueState(false)
   const [organizationOptions, setOrganizationOptions] = useValueState<ReportEntity[]>([])
   const [debouncedSearch] = useDebouncedValue(search, LOOKUP_SEARCH_DEBOUNCE_MS)
-  const nativeLookup = usesNativeReportLookup(dataSource)
+  const nativeLookup = usesNativeReportLookup(dataSource) || usesPurchaseReceiptWarehouseLookup(dataSource, selection.SelectedField.Type)
   // Current reservations resolve exact ClientAgreement identities from their own
   // facts; the sales-only dependent customer-agreement picker must not run here.
   const lookupMode = usesSharedProductTopLookup(dataSource, selection.SelectedField.Type) ? 'static'
@@ -3084,6 +3089,10 @@ function setAllMeasurements(
 // filter — there the whole catalogue is in the browser and the filtering is the search.
 const keepServerLookupResults: OptionsFilter = ({ options }) => options
 
+function usesPurchaseReceiptWarehouseLookup(dataSource: number, fieldType: number): boolean {
+  return dataSource === 3 && fieldType === REPORT_FILTER_FIELD_TYPES.warehouse
+}
+
 function usesSharedProductTopLookup(dataSource: number, fieldType: number): boolean {
   return (dataSource === 3 || dataSource === 45) && fieldType === REPORT_FILTER_FIELD_TYPES.productTop
 }
@@ -3172,7 +3181,7 @@ async function loadSelectionLookupOptions(
     return searchDatasetReportValues(dataSource, fieldType, { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
   if ((dataSource === 2 || dataSource === 44) && [6, 1, 2, 21, 64].includes(fieldType))
     return searchDatasetReportValues(dataSource, fieldType, { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
-  if (usesNativeReportLookup(dataSource)) {
+  if (usesNativeReportLookup(dataSource) || usesPurchaseReceiptWarehouseLookup(dataSource, fieldType)) {
     const params = { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }
     if ((dataSource === 35 || dataSource === 38) && lookupProfitReadMode !== undefined)
       return searchDatasetReportValues(dataSource, fieldType, params, signal, undefined, undefined, undefined, lookupProfitReadMode)
