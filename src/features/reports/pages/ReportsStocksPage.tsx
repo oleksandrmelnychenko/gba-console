@@ -1,3 +1,5 @@
+import { appendBeforeDocumentDetail, DOCUMENT_DETAIL_GROUPING } from '../data/reportDocumentDetails'
+import { ReportDocumentDetailsPanel } from './ReportDocumentDetailsPanel'
 import { searchNativeSalesDocuments, usesSalesDocumentLookup, salesDocumentSelectedEntity, salesDocumentKey } from '../api/nativeSalesDocumentLookup'
 import { NativePriceComparisonPanel } from './NativePriceComparisonPanel'
 import { nativePriceComparisonError, type NativePriceComparison } from '../data/nativePriceComparison'
@@ -1844,7 +1846,7 @@ function LegacyReportBuilder({
   const rowsOnly = policy.rowsOnly
   const currentAxesError = request ? financialAxesConfigurationError(request, dataset) : null
   const allowedGroupingTypes = new Set(groupingOptions.map(item => item.type))
-  const lockedGroupingTypes = new Set(analysis ? [74] : [])
+  const lockedGroupingTypes = new Set([DOCUMENT_DETAIL_GROUPING, ...(analysis ? [74] : [])])
   const selectedGroupingTypes = new Set([...rowGroups, ...colGroups].map(item => item.type))
 
   const transferGrouping = (axis: ReportGroupingAxis, type: number) => {
@@ -1858,7 +1860,7 @@ function LegacyReportBuilder({
 
   const addGroupingFromPicker = (value: string) => {
     const item = groupingOptions.find((option) => String(option.type) === value)
-    if (fixedAxes || !item || !groupingPickerTarget || (rowsOnly && groupingPickerTarget === 'columns') || selectedGroupingTypes.has(item.type) || (groupingPickerTarget === 'columns' && item.type === ABC_CLASS_GROUPING)) return
+    if (fixedAxes || !item || item.type === DOCUMENT_DETAIL_GROUPING || !groupingPickerTarget || (rowsOnly && groupingPickerTarget === 'columns') || selectedGroupingTypes.has(item.type) || (groupingPickerTarget === 'columns' && item.type === ABC_CLASS_GROUPING)) return
 
     if (groupingPickerTarget === 'rows') {
       onRowGroupsChange((current) => addGrouping(current, item))
@@ -1930,6 +1932,7 @@ function LegacyReportBuilder({
   const groupingSection = fixedAxes && part === 'grouping' && (dataSource === 40 || dataSource === 41) ? null : (
     <section className="app-section-card reports-stocks-structure">
       <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Групування')}</Text>
+      {request ? <ReportDocumentDetailsPanel dataset={dataset} request={request} onChange={onGroupingLayoutChange} /> : null}
       {fixedAxes ? part === 'grouping' ? (dataSource === 39
         ? <Text size="sm">Товари у рядках; залишки, продажі й контрагенти у стовпцях.</Text> : dataSource === 40 || dataSource === 41 ? null : <Text size="sm">{rowGroups.map(group => group.label).join(' → ')}</Text>)
         : <Text size="sm">{dataSource === 39
@@ -1956,7 +1959,7 @@ function LegacyReportBuilder({
 
   const pickerAllowed = policy.config ? new Set(groupingPickerTarget === 'columns' ? policy.config.allowedColumns : policy.config.allowedRows) : null
   const pickerExcluded = new Set(policy.config?.mutuallyExclusiveRows.filter(group => group.some(type => selectedGroupingTypes.has(type))).flat())
-  const pickerOptions = groupingSelectData.filter(item => !selectedGroupingTypes.has(Number(item.value))
+  const pickerOptions = groupingSelectData.filter(item => Number(item.value) !== DOCUMENT_DETAIL_GROUPING && !selectedGroupingTypes.has(Number(item.value))
     && (!analysis || Number(item.value) !== 74) && (!pickerAllowed || pickerAllowed.has(Number(item.value)))
     && !pickerExcluded.has(Number(item.value)) && (groupingPickerTarget !== 'columns' || Number(item.value) !== ABC_CLASS_GROUPING))
   const groupingPicker = <ReportFieldPicker key={groupingPickerTarget ?? 'closed'}
@@ -2925,7 +2928,7 @@ function isIncompleteSelection(selection: ReportSelection): boolean {
 function addGrouping(current: ReportGroupingItem[], item: ReportGroupingItem): ReportGroupingItem[] {
   const isTaken = current.some((group) => group.type === item.type)
 
-  return isTaken ? current : [...current, item]
+  return isTaken ? current : appendBeforeDocumentDetail(current, item)
 }
 
 // The controller used to answer EVERY failure — its own crashes included — with HTTP 400 and the raw .NET

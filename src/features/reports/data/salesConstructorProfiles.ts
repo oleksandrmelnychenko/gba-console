@@ -1,3 +1,4 @@
+import { documentDetailsError, readDocumentDetails } from './reportDocumentDetails'
 import { constructorPresentationError } from './constructorPresentation'
 import type { ReportDataset, ReportDatasetField, ReportRequestBody } from '../types'
 
@@ -31,9 +32,9 @@ export function readSalesProfileGroupings(value: unknown): Partial<Record<SalesC
   const result: Partial<Record<SalesConstructorProfile, ReportDatasetField[]>> = {}
   for (const [key, fields] of Object.entries(value)) {
     const profile = readReportProfile(key)
-    if (!profile || !Array.isArray(fields) || fields.length > 1) return undefined
+    if (!profile || !Array.isArray(fields) || fields.length > 2 || new Set(fields.map(field => field?.Type)).size !== fields.length) return undefined
     if (fields.some(field => !field || typeof field !== 'object' || Array.isArray(field)
-      || field.Type !== 21 || typeof field.Name !== 'string' || !field.Name.trim() || field.Selectable !== true)) return undefined
+      || ![21, 84].includes(field.Type) || typeof field.Name !== 'string' || !field.Name.trim() || field.Selectable !== true)) return undefined
     result[profile] = fields.map(field => ({ Type: field.Type, Name: field.Name, Selectable: true }))
   }
   return result
@@ -41,7 +42,7 @@ export function readSalesProfileGroupings(value: unknown): Partial<Record<SalesC
 export function salesProfileGroupingFields(dataset: ReportDataset | undefined, value: unknown): ReportDatasetField[] {
   const profile = readReportProfile(value)
   return dataset && profile && salesConstructorSupported(dataset, profile)
-    ? readSalesProfileGroupings(dataset.profileGroupings)?.[profile] ?? [] : []
+    ? (readSalesProfileGroupings(dataset.profileGroupings)?.[profile] ?? []).filter(field => field.Type !== 84 || !!readDocumentDetails(dataset.documentDetails)) : []
 }
 export function salesConstructorDataset(dataset: ReportDataset | undefined, profile: unknown): ReportDataset | undefined {
   if (!dataset || !readReportProfile(profile)) return dataset
@@ -51,6 +52,8 @@ export function salesConstructorDataset(dataset: ReportDataset | undefined, prof
   return { ...dataset, Groupings: [...dataset.Groupings, ...additions.filter(field => !baseTypes.has(field.Type))], Measurements: dataset.Measurements.filter(field => allowed.has(field.Type)), Filters: dataset.Filters.filter(field => ![21, 64].includes(field.Type)) }
 }
 export function salesConstructorError(request: ReportRequestBody, dataset?: ReportDataset): string | null {
+  const detailError = documentDetailsError(request, dataset)
+  if (detailError) return detailError
   const raw = requestReportProfile(request)
   if (raw === undefined) return constructorPresentationError(request, dataset)
   const profile = readReportProfile(raw)

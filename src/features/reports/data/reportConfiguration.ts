@@ -1,3 +1,4 @@
+import { documentDetailsSupported, hasDocumentDetails } from './reportDocumentDetails'
 import { currentFinancialBuyerManagerFilterError, currentFinancialBuyerManagerFilterSupported } from './currentFinancialBuyerManagerFilter'
 import { currentFinancialDocumentFilterError, currentFinancialDocumentFilterSupported } from './currentFinancialDocumentFilter'
 import { presentationCurrencyError } from './reportPresentationCurrency'
@@ -75,7 +76,8 @@ export function effectiveReportConfiguration(dataset: ReportDataset | undefined,
     maximumTotalDimensions: 'maximumTotalDimensionsWithColumns' in financial && financial.maximumTotalDimensionsWithColumns !== undefined && (data.sorted?.Col?.length ?? 0) > 0
       ? financial.maximumTotalDimensionsWithColumns : 'maximumTotalDimensions' in financial ? financial.maximumTotalDimensions : undefined }
   const profileFields = data.dataSource === 2 ? salesProfileGroupingFields(dataset, requestReportProfile(data)).map(field => field.Type) : []
-  if (profileFields.length) result = { ...result, allowedRows: [...new Set([...result.allowedRows, ...profileFields])], allowedColumns: [...new Set([...result.allowedColumns, ...profileFields])] }
+  if (profileFields.length) result = { ...result, allowedRows: [...new Set([...result.allowedRows, ...profileFields])], allowedColumns: [...new Set([...result.allowedColumns, ...profileFields.filter(type => type !== 84)])] }
+  if (hasDocumentDetails(data) && documentDetailsSupported(dataset, data)) result = { ...result, maximumRows: 3, maximumColumns: 1, maximumTotalDimensions: 4 }
   if (currentFinancialDocumentFilterSupported(dataset, data) && result.filters)
     result = { ...result, filters: [...new Set([...result.filters, 12])] }
   if (currentFinancialBuyerManagerFilterSupported(dataset, data) && result.filters)

@@ -1,3 +1,4 @@
+import { appendBeforeDocumentDetail, DOCUMENT_DETAIL_GROUPING } from './reportDocumentDetails'
 import { ABC_CLASS_GROUPING } from './reportAbcClassification'
 import type { ReportGroupingItem } from '../types'
 
@@ -16,7 +17,7 @@ export function reorderReportGrouping(groups: ReportGroupingItem[], type: number
 
 export function canTransferReportGrouping(layout: ReportGroupingLayout, source: ReportGroupingAxis, type: number, allowed: ReadonlySet<number>) {
   const destination = source === 'Row' ? 'Col' : 'Row'
-  return type !== ABC_CLASS_GROUPING && allowed.has(type) && layout[source].filter(group => group.type === type).length === 1
+  return type !== DOCUMENT_DETAIL_GROUPING && type !== ABC_CLASS_GROUPING && allowed.has(type) && layout[source].filter(group => group.type === type).length === 1
     && !layout[destination].some(group => group.type === type) && (source !== 'Row' || layout.Row.length > 1)
 }
 
@@ -24,5 +25,5 @@ export function transferReportGrouping(layout: ReportGroupingLayout, source: Rep
   if (!canTransferReportGrouping(layout, source, type, allowed)) return layout
   const destination = source === 'Row' ? 'Col' : 'Row'
   const group = layout[source].find(item => item.type === type)!
-  return { ...layout, [source]: layout[source].filter(item => item.type !== type), [destination]: [...layout[destination], group] }
+  return { ...layout, [source]: layout[source].filter(item => item.type !== type), [destination]: appendBeforeDocumentDetail(layout[destination], group) }
 }
