@@ -16,6 +16,7 @@ vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
 describe('report workspace wire contract', () => {
   it.each([
     [44, 'CustomerGroups', 'customerGroups', {Version:1,Groups:[{Name:'Еталон',ClientIds:[71]},{Name:'Порівняння',ClientIds:[72]}]}],
+    [46, 'NativePriceComparison', 'nativePriceComparison', {Version:2,PricingId:'9007199254740993'}],
     [46, 'NativePriceComparison', 'nativePriceComparison', {Version:1,PriceTypeId:'11111111111111111111111111111111'}],
   ] as const)('preserves special-report %i options through server save and reload', async (source, wireKey, key, options) => {
     const preset=createSalesReportPreset('daily','2026-10-01','2026-10-20',[])
@@ -26,6 +27,8 @@ describe('report workspace wire contract', () => {
     expect(retainStoredTemplateFields(normalized.Data,normalized.Data)).toHaveProperty(key,options)
     vi.mocked(apiRequest).mockResolvedValue(wire)
     expect((await saveServerReportTemplate(normalized)).Data).toHaveProperty(key,options)
+    expect(apiRequest).toHaveBeenLastCalledWith('/report/templates/save', {method:'POST', body:{
+      Id:normalized.Id,Revision:normalized.Revision,Name:normalized.Name,Data:normalized.Data}})
   })
   it('saves and reloads the original matrix full period without changing its group or enabling current-report execution', async () => {
     const template = { ...originalScopeWireTemplate(), Id: crypto.randomUUID(), Name: 'Оригінальна матриця', Data: originalScopeRequest() }
