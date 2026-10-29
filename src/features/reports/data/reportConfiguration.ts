@@ -6,6 +6,7 @@ import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis }
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { hasFixedReportAxes } from './nativeReportProfiles'
+import { requestReportProfile, salesProfileGroupingFields } from './salesConstructorProfiles'
 
 export type ReportConfiguration = {
   version: 1; axisMode: 'flexible' | 'rowsOnly' | 'fixedLayouts' | 'profitRows'
@@ -73,6 +74,8 @@ export function effectiveReportConfiguration(dataset: ReportDataset | undefined,
     minimumRows: financial.minimumRows, maximumRows: financial.maximumRows, maximumColumns: financial.maximumColumns,
     maximumTotalDimensions: 'maximumTotalDimensionsWithColumns' in financial && financial.maximumTotalDimensionsWithColumns !== undefined && (data.sorted?.Col?.length ?? 0) > 0
       ? financial.maximumTotalDimensionsWithColumns : 'maximumTotalDimensions' in financial ? financial.maximumTotalDimensions : undefined }
+  const profileFields = data.dataSource === 2 ? salesProfileGroupingFields(dataset, requestReportProfile(data)).map(field => field.Type) : []
+  if (profileFields.length) result = { ...result, allowedRows: [...new Set([...result.allowedRows, ...profileFields])], allowedColumns: [...new Set([...result.allowedColumns, ...profileFields])] }
   if (currentFinancialDocumentFilterSupported(dataset, data) && result.filters)
     result = { ...result, filters: [...new Set([...result.filters, 12])] }
   if (currentFinancialBuyerManagerFilterSupported(dataset, data) && result.filters)

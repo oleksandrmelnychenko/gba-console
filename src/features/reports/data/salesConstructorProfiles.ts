@@ -1,5 +1,5 @@
 import { constructorPresentationError } from './constructorPresentation'
-import type { ReportDataset, ReportRequestBody } from '../types'
+import type { ReportDataset, ReportDatasetField, ReportRequestBody } from '../types'
 
 export type SalesConstructorProfile = 'sales' | 'grossProfit'
 export const SALES_CONSTRUCTOR_WORKBOOK = 'gba:sales-constructor:v1'
@@ -25,10 +25,30 @@ export function cloneReportProfile(data: object): Pick<ReportRequestBody, 'repor
 export function salesConstructorSupported(dataset: ReportDataset | undefined, profile: SalesConstructorProfile): boolean {
   return dataset?.DataSource === 2 && Array.isArray(dataset.reportProfiles) && dataset.reportProfiles.includes(profile)
 }
+/** Additive server capabilities, scoped to the named native sales profile. */
+export function readSalesProfileGroupings(value: unknown): Partial<Record<SalesConstructorProfile, ReportDatasetField[]>> | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
+  const result: Partial<Record<SalesConstructorProfile, ReportDatasetField[]>> = {}
+  for (const [key, fields] of Object.entries(value)) {
+    const profile = readReportProfile(key)
+    if (!profile || !Array.isArray(fields) || fields.length > 1) return undefined
+    if (fields.some(field => !field || typeof field !== 'object' || Array.isArray(field)
+      || field.Type !== 21 || typeof field.Name !== 'string' || !field.Name.trim() || field.Selectable !== true)) return undefined
+    result[profile] = fields.map(field => ({ Type: field.Type, Name: field.Name, Selectable: true }))
+  }
+  return result
+}
+export function salesProfileGroupingFields(dataset: ReportDataset | undefined, value: unknown): ReportDatasetField[] {
+  const profile = readReportProfile(value)
+  return dataset && profile && salesConstructorSupported(dataset, profile)
+    ? readSalesProfileGroupings(dataset.profileGroupings)?.[profile] ?? [] : []
+}
 export function salesConstructorDataset(dataset: ReportDataset | undefined, profile: unknown): ReportDataset | undefined {
   if (!dataset || !readReportProfile(profile)) return dataset
+  const additions = salesProfileGroupingFields(dataset, profile)
+  const baseTypes = new Set(dataset.Groupings.map(field => field.Type))
   const allowed = new Set<number>(profile === 'grossProfit' ? GROSS_PROFIT_CONSTRUCTOR_MEASURES : SALES_CONSTRUCTOR_MEASURES)
-  return { ...dataset, Measurements: dataset.Measurements.filter(field => allowed.has(field.Type)), Filters: dataset.Filters.filter(field => ![21, 64].includes(field.Type)) }
+  return { ...dataset, Groupings: [...dataset.Groupings, ...additions.filter(field => !baseTypes.has(field.Type))], Measurements: dataset.Measurements.filter(field => allowed.has(field.Type)), Filters: dataset.Filters.filter(field => ![21, 64].includes(field.Type)) }
 }
 export function salesConstructorError(request: ReportRequestBody, dataset?: ReportDataset): string | null {
   const raw = requestReportProfile(request)

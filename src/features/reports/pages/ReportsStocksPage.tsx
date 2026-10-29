@@ -427,7 +427,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   }
   const [shownReport, setShownReport] = useState<string | null>(null)
   const workbookLaunchToken = useRef(0)
-  const groupingOptions = useMemo(() => datasetGroupings(priceTypeDataset, { dataSource, profitReadMode, dayOrganizationBasis }).filter(field => field.type !== ABC_CLASS_GROUPING || abcClassification != null), [abcClassification, priceTypeDataset, dataSource, profitReadMode, dayOrganizationBasis])
+  const groupingOptions = useMemo(() => datasetGroupings(priceTypeDataset, { dataSource, profitReadMode, dayOrganizationBasis, reportProfile }).filter(field => field.type !== ABC_CLASS_GROUPING || abcClassification != null), [abcClassification, priceTypeDataset, dataSource, profitReadMode, dayOrganizationBasis, reportProfile])
   const workbook = useWorkbookPresentation({ dataSource, groupingOptions, setRowGroups, setGroupedCashPeriod })
   const groupingSelectData = useMemo(
     () =>

@@ -365,6 +365,7 @@ export type ReportDatasetField = { Type: number; Name: string; Selectable?: bool
 export type ReportDataset = {
   constructorPresentation?: unknown
   reportProfiles?: unknown
+  profileGroupings?: unknown
   currentFinancialPresentationCurrency?: unknown
   configuration?: unknown
   numberPresentation?: unknown

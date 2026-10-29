@@ -1,5 +1,5 @@
 import { cloneConstructorPresentation } from '../data/constructorPresentation'
-import { cloneReportProfile, salesConstructorError } from '../data/salesConstructorProfiles'
+import { cloneReportProfile, readSalesProfileGroupings, salesConstructorError } from '../data/salesConstructorProfiles'
 import { currentFinancialBuyerManagerFilterCapability } from '../data/currentFinancialBuyerManagerFilter'
 import { currentFinancialDocumentFilterCapability } from '../data/currentFinancialDocumentFilter'
 import { clonePresentationCurrencyAliases, presentationCurrencySupported } from '../data/reportPresentationCurrency'
@@ -66,6 +66,7 @@ function isDataset(value: unknown): value is ReportDataset {
   const fieldsValid = [item.Groupings, item.Measurements, item.Filters].every(fields =>
     Array.isArray(fields) && fields.every(isDatasetField) && new Set(fields.map(field => field.Type)).size === fields.length)
   return Number.isSafeInteger(item.DataSource) && item.DataSource! >= 0 && item.DataSource !== 1 && typeof item.Name === 'string' && !!item.Name.trim()
+    && (item.profileGroupings === undefined || item.DataSource === 2 && !!readSalesProfileGroupings(item.profileGroupings))
     && (item.financialAxes === undefined || !!financialAxesCapability(item as ReportDataset))
     && (item.currentFinancialAxes === undefined || !!currentFinancialAxesCapability(item as ReportDataset))
     && (item.currentFinancialProductTimeAxes === undefined || !!currentFinancialProductTimeAxesCapability(item as ReportDataset))

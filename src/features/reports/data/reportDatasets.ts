@@ -1,5 +1,5 @@
 import { cloneConstructorPresentation } from './constructorPresentation'
-import { cloneReportProfile, salesConstructorError } from './salesConstructorProfiles'
+import { cloneReportProfile, requestReportProfile, salesConstructorDataset, salesConstructorError } from './salesConstructorProfiles'
 import { retainMeasurementOrder } from './reportConstructorTree'
 import { SALES_BY_RESPONSIBLES_COLUMNS, SALES_BY_RESPONSIBLES_MEASURES, SALES_BY_RESPONSIBLES_ROWS, SALES_BY_RESPONSIBLES_SOURCE } from './salesByResponsibles'
 import { currentFinancialBuyerManagerFilterCapability, currentFinancialBuyerManagerFilterSupported } from './currentFinancialBuyerManagerFilter'
@@ -143,7 +143,8 @@ export function datasetGroupings(dataset: ReportDataset | undefined, data?: obje
   if (analysis) return analysis.groupings.map(field => ({ key: GROUPING_KEYS.get(field.type) ?? field.name, label: field.name, type: field.type }))
   const current = data && usesCurrentFinancialAxes(data) ? currentFinancialProductTimeAxesCapability(dataset) ?? currentFinancialAxesCapability(dataset) : undefined
   const document = data && usesCurrentFinancialAxes(data) ? currentFinancialDocumentAxesCapability(dataset) : undefined
-  const fields = new Map([...(dataset?.Groupings ?? []), ...(current?.groupings ?? []), ...(document?.groupings ?? [])].map(field => [field.Type, field]))
+  const profiled = data ? salesConstructorDataset(dataset, requestReportProfile(data)) : dataset
+  const fields = new Map([...(profiled?.Groupings ?? []), ...(current?.groupings ?? []), ...(document?.groupings ?? [])].map(field => [field.Type, field]))
   return [...fields.values()].map(field => ({ key: GROUPING_KEYS.get(field.Type) ?? field.Name, label: field.Name, type: field.Type }))
 }
 
