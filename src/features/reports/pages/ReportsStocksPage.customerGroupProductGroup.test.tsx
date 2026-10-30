@@ -5,7 +5,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { getReportDatasets, getServerReportTemplates, parseReportDatasets, saveServerReportTemplate } from '../api/reportWorkspaceApi'
-import { searchDatasetReportValues } from '../api/reportsApi'
+import { previewStockReport, searchDatasetReportValues } from '../api/reportsApi'
 import { defaultDatasetRequest } from '../data/reportDatasets'
 import type { ReportTemplate } from '../types'
 import { changeReportPeriod } from '../testing/reportPeriod'
@@ -13,7 +13,7 @@ import { ReportsStocksPage } from './ReportsStocksPage'
 vi.mock('../../auth/useAuth',()=>({useAuth:()=>({hasPermission:()=>true})}))
 vi.mock('../../../shared/api/apiClient',()=>({apiRequest:vi.fn()}))
 vi.mock('../api/reportWorkspaceApi',async original=>({...await original<typeof import('../api/reportWorkspaceApi')>(),getReportDatasets:vi.fn(),getServerReportTemplates:vi.fn(),saveServerReportTemplate:vi.fn()}))
-vi.mock('../api/reportsApi',async original=>({...await original<typeof import('../api/reportsApi')>(),searchDatasetReportValues:vi.fn()}))
+vi.mock('../api/reportsApi',async original=>({...await original<typeof import('../api/reportsApi')>(),searchDatasetReportValues:vi.fn(),previewStockReport:vi.fn()}))
 // Provisional additive metadata only; replace with actual serialized backend fixture after SQL passes.
 const dataset=parseReportDatasets([{...fixture.dataset,Filters:[...fixture.dataset.Filters,{Type:4,Name:'Поточні прямі групи товару',Selectable:true}]}])[0]
 function template(condition=2,checked=true):ReportTemplate{
@@ -53,4 +53,12 @@ it.each([0,1])('blocks invalid group condition%d Apply and Save while permitting
 it('retains a disabled invalid group row without blocking Apply or template save',async()=>{
  const t=template(0,false);t.Data.selections[0].Values=JSON.parse('[{"Data":{"Id":"9223372036854775808"},"Name":"Архів","Value":0}]');vi.mocked(getServerReportTemplates).mockResolvedValue([t]);await restore();expect(screen.getByRole('button',{name:'Застосувати й показати'})).toHaveProperty('disabled',false)
  fireEvent.click(screen.getByRole('button',{name:'Шаблони'}));fireEvent.click(screen.getByRole('button',{name:'Оновити шаблон'}));await waitFor(()=>expect(saveServerReportTemplate).toHaveBeenCalledOnce());expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data.selections).toEqual(t.Data.selections)
+})
+
+it('shows missing-master generation refusal without replacing the saved group or presenting an empty financial result',async()=>{
+ const message='Вибрану товарну групу не знайдено в довіднику GBA. Відбір не застосовано; оновіть вибір груп.'
+ vi.mocked(previewStockReport).mockRejectedValueOnce(new Error(message));await restore();fireEvent.click(screen.getByRole('button',{name:'Застосувати й показати'}));await screen.findByText(message)
+ expect(previewStockReport).toHaveBeenCalledOnce();expect(screen.queryByRole('table')).toBeNull();expect(screen.getByRole('button',{name:'Застосувати й показати'})).toHaveProperty('disabled',false)
+ fireEvent.click(screen.getByRole('button',{name:'Шаблони'}));fireEvent.click(screen.getByRole('button',{name:'Оновити шаблон'}));await waitFor(()=>expect(saveServerReportTemplate).toHaveBeenCalledOnce())
+ expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data).toMatchObject({customerGroups:template().Data.customerGroups,selections:template().Data.selections,from:'2026-10-01',to:'2026-10-27'})
 })
