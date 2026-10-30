@@ -1,10 +1,11 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { getProductCoPurchaseRecommendations } from '../../../clients/api/clientRecommendationsApi'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { CROSS_SELL_AGREEMENT_UNAVAILABLE, crossSellFailure, type CrossSellFailure } from './crossSellFailure'
 import type { WizardSaleProduct } from './wizardSaleProduct'
 
 const EMPTY_PRODUCTS: WizardSaleProduct[] = []
-type Snapshot = { scopeKey: string; products: WizardSaleProduct[]; isLoading: boolean; failed: boolean }
+type Snapshot = { scopeKey: string; products: WizardSaleProduct[]; isLoading: boolean; failure: CrossSellFailure | null }
 
 export function useWizardCrossSellProducts({ agreementNetId, clientNetId, productNetId, opened }: {
   agreementNetId: string | null
@@ -27,7 +28,7 @@ export function useWizardCrossSellProducts({ agreementNetId, clientNetId, produc
 
     const request = { controller: new AbortController(), pending: true }
     requestRef.current = request
-    setSnapshot({ scopeKey, products: EMPTY_PRODUCTS, isLoading: true, failed: false })
+    setSnapshot({ scopeKey, products: EMPTY_PRODUCTS, isLoading: true, failure: null })
     let started = false
     const timer = setTimeout(() => {
       started = true
@@ -36,11 +37,11 @@ export function useWizardCrossSellProducts({ agreementNetId, clientNetId, produc
         signal: request.controller.signal,
       }).then(products => {
         if (!request.controller.signal.aborted) {
-          setSnapshot({ scopeKey, products: products as WizardSaleProduct[], isLoading: false, failed: false })
+          setSnapshot({ scopeKey, products: products as WizardSaleProduct[], isLoading: false, failure: null })
         }
-      }).catch(() => {
+      }).catch((error: unknown) => {
         if (!request.controller.signal.aborted) {
-          setSnapshot({ scopeKey, products: EMPTY_PRODUCTS, isLoading: false, failed: true })
+          setSnapshot({ scopeKey, products: EMPTY_PRODUCTS, isLoading: false, failure: crossSellFailure(error) })
         }
       }).finally(() => { request.pending = false })
     }, 0)
@@ -54,6 +55,6 @@ export function useWizardCrossSellProducts({ agreementNetId, clientNetId, produc
   return {
     products: current?.products ?? EMPTY_PRODUCTS,
     isLoading: Boolean(opened && agreementNetId && clientNetId && (!current || current.isLoading)),
-    error: current?.failed ? t('Не вдалося завантажити кросс-продажі') : null,
+    error: current?.failure ? t(current.failure === 'agreementUnavailable' ? CROSS_SELL_AGREEMENT_UNAVAILABLE : 'Не вдалося завантажити кросс-продажі') : null,
   }
 }

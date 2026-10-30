@@ -2,6 +2,8 @@ import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import type { ReactNode } from 'react'
+import { ApiError } from '../../../../shared/api/apiClient'
+import { CROSS_SELL_AGREEMENT_UNAVAILABLE } from './crossSellFailure'
 import type { RecommendationProduct } from '../../../clients/recommendationsTypes'
 
 const mocks = vi.hoisted(() => ({ load: vi.fn(), t: (text: string) => text }))
@@ -103,4 +105,22 @@ it('retries a failed read on reopening without retaining its error or stale prod
   await tick()
   expect(screen.getByText('Related')).toBeTruthy()
   expect(mocks.load).toHaveBeenCalledTimes(2)
+})
+
+const agreementError = () => new ApiError('upstream message must not be rendered',404,{Body:null,Status:false,StatusCode:404,ErrorCode:'ai_agreement_unavailable'})
+it('explains the exact agreement refusal and retries on reopening without switching the agreement',async()=>{
+ mocks.load.mockRejectedValueOnce(agreementError());const view=render(ui());await tick()
+ expect(screen.getByText(CROSS_SELL_AGREEMENT_UNAVAILABLE)).toBeTruthy();expect(screen.queryByText('Пов’язаних товарів поки немає')).toBeNull();expect(screen.queryByText('upstream message must not be rendered')).toBeNull()
+ expect(mocks.load).toHaveBeenLastCalledWith('seed','c',false,expect.objectContaining({clientAgreementNetId:'a'}));expect(props.onPick).not.toHaveBeenCalled()
+ view.rerender(ui({opened:false}));view.rerender(ui());expect(screen.queryByText(CROSS_SELL_AGREEMENT_UNAVAILABLE)).toBeNull();await tick();expect(screen.getByText('Related')).toBeTruthy();expect(mocks.load).toHaveBeenLastCalledWith('seed','c',false,expect.objectContaining({clientAgreementNetId:'a'}))
+})
+it.each([404,503])('does not mislabel untyped HTTP%d as an agreement failure',async status=>{
+ mocks.load.mockRejectedValueOnce(new ApiError('not found',status,{Message:'not found'}));render(ui());await tick();expect(screen.getByText('Не вдалося завантажити кросс-продажі')).toBeTruthy();expect(screen.queryByText(CROSS_SELL_AGREEMENT_UNAVAILABLE)).toBeNull()
+})
+it('retains the successful empty recommendation state independently of agreement refusal',async()=>{
+ mocks.load.mockResolvedValueOnce([]);render(ui());await tick();expect(screen.getByText('Пов’язаних товарів поки немає')).toBeTruthy();expect(screen.queryByText(CROSS_SELL_AGREEMENT_UNAVAILABLE)).toBeNull();expect(screen.queryByText('Не вдалося завантажити кросс-продажі')).toBeNull()
+})
+it.each([{agreementNetId:'next-agreement'},{clientNetId:'next-client'},{seedProduct:{NetUid:'next-seed'}}])('ignores late typed refusal after exact request context changes (%j)',async next=>{
+ let reject!:(error:unknown)=>void;const pending=new Promise<RecommendationProduct[]>((_resolve,fail)=>{reject=fail});mocks.load.mockReturnValueOnce(pending);const view=render(ui());await tick();const signal=mocks.load.mock.calls[0][3].signal as AbortSignal
+ view.rerender(ui(next));await tick();expect(signal.aborted).toBe(true);expect(screen.getByText('Related')).toBeTruthy();await act(async()=>reject(agreementError()));expect(screen.queryByText(CROSS_SELL_AGREEMENT_UNAVAILABLE)).toBeNull();expect(screen.getByText('Related')).toBeTruthy()
 })
