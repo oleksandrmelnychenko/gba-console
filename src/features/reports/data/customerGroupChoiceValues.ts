@@ -1,8 +1,10 @@
 import type { CustomerGroupChoice } from '../api/customerGroupSelectionsApi'
 import type { ReportSelectedValue } from '../types'
+import { customerGroupAgreementId } from './customerGroupAgreement'
 import { customerGroupDirectoryId } from './customerGroupDirectory'
-export function customerGroupChoiceValues(values: ReportSelectedValue[], options: CustomerGroupChoice[]) {
-  const entries = values.map((value, index) => ({ value: customerGroupDirectoryId(value.Data)?.toString() ?? `invalid:${index}`, label: value.Name || 'Збережене значення без назви' }))
+export function customerGroupChoiceValues(values: ReportSelectedValue[], options: CustomerGroupChoice[], field?: number) {
+  const identity = field === 9 ? customerGroupAgreementId : customerGroupDirectoryId
+  const entries = values.map((value, index) => ({ value: identity(value.Data)?.toString() ?? `invalid:${index}`, label: value.Name || 'Збережене значення без назви' }))
   const selected = [...new Map(entries.map(item => [item.value, item])).values()]
   const previous = new Set(selected.map(item => item.value))
   const data = options.map(item => selected.find(saved => saved.value === String(item.Id)) ?? { value: String(item.Id), label: item.Name })

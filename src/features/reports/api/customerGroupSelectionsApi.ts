@@ -1,6 +1,7 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { canonicalCustomerAgreementId, customerGroupAgreementQueryError } from '../data/customerGroupAgreement'
 import { customerGroupProductQueryError } from '../data/customerGroupSelections'
-export type CustomerGroupChoice = { Id: number; Name: string }
+export type CustomerGroupChoice = { Id: number | string; Name: string }
 function record(value: unknown): value is Record<string, unknown> { return !!value && typeof value === 'object' && !Array.isArray(value) }
 function positiveId(value: unknown): value is number { return typeof value === 'number' && Number.isSafeInteger(value) && value > 0 }
 function choices(value: unknown, caption: (item: Record<string, unknown>) => string): CustomerGroupChoice[] {
@@ -32,10 +33,11 @@ export async function getCustomerGroupRegionCodes(signal?: AbortSignal): Promise
   }
   return options
 }
-export async function searchCustomerGroupChoices(field: 1 | 10, value: string, offset: number, signal?: AbortSignal): Promise<CustomerGroupChoice[]> {
+export async function searchCustomerGroupChoices(field: 1 | 9 | 10, value: string, offset: number, signal?: AbortSignal): Promise<CustomerGroupChoice[]> {
   const query = value.trim()
   if (!Number.isInteger(offset) || offset < 0 || offset > 10000 || query.length > 120) throw new Error('Некоректні параметри пошуку.')
   if (field === 1 && (customerGroupProductQueryError(query) || query.startsWith('id:') && offset !== 0)) throw new Error('Некоректний точний ID товару.')
+  if (field === 9) return searchAgreementChoices(query, offset, signal)
   if (!query) return []
   const response = await apiRequest<unknown>(field === 1 ? '/report/datasets/lookup' : '/usermanagement/profiles/search/lookup', {
     query: { ...(field === 1 ? { dataSource: 44, field: 1 } : {}), value: query, offset, limit: 30 }, signal,
@@ -45,4 +47,21 @@ export async function searchCustomerGroupChoices(field: 1 | 10, value: string, o
   if (field === 1 && query.startsWith('id:') && (result.length > 1 || result.some(item => item.Id !== Number(query.slice(3)))))
     throw new Error('Сервер не підтвердив точний ID товару.')
   return result
+}
+
+async function searchAgreementChoices(query: string, offset: number, signal?: AbortSignal): Promise<CustomerGroupChoice[]> {
+  if (customerGroupAgreementQueryError(query) || query.startsWith('id:') && offset !== 0) throw new Error('Некоректний точний ID договору.')
+  if (!query) return []
+  const response = await apiRequest<unknown>('/report/datasets/lookup', { query: { dataSource: 44, field: 9, value: query, offset, limit: 30 }, signal })
+  if (!Array.isArray(response) || response.length > 30) throw new Error('Некоректний список договорів.')
+  const exact = query.startsWith('id:') ? query.slice(3) : null
+  const seen = new Set<string>()
+  return response.map(item => {
+    if (!record(item)) throw new Error('Ідентифікатор договору не підтверджено.')
+    const id = canonicalCustomerAgreementId(item.Id)
+    if (!id || seen.has(id) || exact && id !== exact || typeof item.Name !== 'string' || !item.Name.trim())
+      throw new Error('Ідентифікатор договору не підтверджено.')
+    seen.add(id)
+    return { Id: id, Name: item.Name }
+  })
 }

@@ -2581,7 +2581,7 @@ const EMPTY_LOOKUP_OPTIONS: ReportEntity[] = []
 
 export function SelectionValuePicker(props: SelectionValuePickerProps) {
   const exactField = props.selection.SelectedField.Type
-  if (isCustomerGroupExactSelection(props.dataSource, exactField) && (exactField === 1 || exactField === 8 || exactField === 10))
+  if (isCustomerGroupExactSelection(props.dataSource, exactField) && (exactField === 1 || exactField === 8 || exactField === 9 || exactField === 10))
     return <CustomerGroupExactChoicePicker key={exactField} field={exactField} selection={props.selection} label={props.label}
       disabled={props.lookupProfitUnavailable} error={props.error} onChange={props.onChange} />
   return isCustomerGroupOrganization(props.dataSource, props.selection.SelectedField.Type)
