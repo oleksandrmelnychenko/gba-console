@@ -1,3 +1,4 @@
+import { customerGroupProductGroupQueryError } from '../data/customerGroupProductGroup'
 import { customerGroupAgreementQueryError } from '../data/customerGroupAgreement'
 import { useState } from 'react'
 import { useDebouncedValue } from '@mantine/hooks'
@@ -7,13 +8,13 @@ import { useCustomerGroupCodeCatalogue } from './useCustomerGroupCodeCatalogue'
 import { useCustomerGroupChoicePage } from './useCustomerGroupChoicePage'
 const EMPTY_CHOICES: CustomerGroupChoice[] = []
 function searchPolicy(field: number, query: string, debounced: string, disabled: boolean | undefined) {
-  const queryError = query.length > 120 ? 'Введіть не більше 120 символів.' : field === 1 ? customerGroupProductQueryError(query) : field === 9 ? customerGroupAgreementQueryError(query) : null
-  return { queryError, ready: !disabled && !queryError && query.length >= 2 && debounced === query,
-    waiting: !disabled && query.length >= 2 && debounced !== query }
+  const queryError = query.length > 120 ? 'Введіть не більше 120 символів.' : field === 1 ? customerGroupProductQueryError(query) : field === 4 ? customerGroupProductGroupQueryError(query) : field === 9 ? customerGroupAgreementQueryError(query) : null
+  return { queryError, ready: !disabled && !queryError && (field === 4 || query.length >= 2) && debounced === query,
+    waiting: !disabled && (field === 4 || query.length >= 2) && debounced !== query }
 }
-export function useCustomerGroupChoiceOptions(field:1|8|9|10, disabled:boolean|undefined) {
+export function useCustomerGroupChoiceOptions(field:1|4|8|9|10, disabled:boolean|undefined) {
   const [searchState, setSearchState] = useState({ query: '', count: 30 })
-  const query = searchState.query.trim()
+  const query = field === 4 ? searchState.query : searchState.query.trim()
   const [debounced] = useDebouncedValue(query, 250)
   const policy = searchPolicy(field, query, debounced, disabled)
   const catalogue = useCustomerGroupCodeCatalogue(field === 8 && !disabled)
