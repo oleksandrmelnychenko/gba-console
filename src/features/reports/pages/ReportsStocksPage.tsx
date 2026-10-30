@@ -1,3 +1,5 @@
+import { isReturnItemStatusSelection, returnItemStatusSelectionError, returnItemStatusesError } from '../data/returnItemStatuses'
+import { ReturnItemStatusPicker } from './ReturnItemStatusPicker'
 import { CustomerGroupTopPicker } from './CustomerGroupTopPicker'
 import { CustomerGroupExactChoicePicker } from './CustomerGroupExactChoicePicker'
 import { customerGroupSelectionsError, isCustomerGroupExactSelection } from '../data/customerGroupSelections'
@@ -516,9 +518,10 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const organizationConfigurationError = customerGroupOrganizationError(dataSource, selections)
     ?? customerGroupRegionError(dataSource, selections)
     ?? customerGroupSelectionsError(dataSource, selections)
-  const templateConfigurationError = configurationError ?? organizationConfigurationError
+  const returnStatusError = returnItemStatusesError(reportBody, dataset)
+  const templateConfigurationError = configurationError ?? organizationConfigurationError ?? returnStatusError
   const generationConfigurationError = configurationError ?? currentMatrixError ?? receiptWarehouseCardinalityError
-    ?? organizationConfigurationError
+    ?? organizationConfigurationError ?? returnStatusError
   const reportIsReady = !generationConfigurationError && !periodError && !incompleteSelectionMessage && checkedMeasurements > 0 && !missingRowGrouping
   const canSubmit = canGenerateReport && reportIsReady
   const submitBlockedReason = !canGenerateReport
@@ -2084,7 +2087,7 @@ function ReportSelectionsCard({
   const documentLookup = financialDocumentLookupPolicy(dataset, request, draftSelection?.SelectedField.Type, managerLookup.mode, managerLookup.unavailable)
   const financialConditions = dataSource === 35 ? new Set(financialFilterConditionTypes(dataset, request, draftSelection?.SelectedField.Type)) : null
   const draftField = draftSelection?.SelectedField.Type
-  const filterConditions = analysis ? analysisFilterConditions(dataset, draftField ?? 0) : dataSource === 39 ? currentVparivanieFilterConditions(draftField ?? 0)
+  const filterConditions = isReturnItemStatusSelection(request, draftField ?? -1) ? REPORT_FILTER_CONDITIONS.filter(condition => [0, 1, 2, 4].includes(condition.Type) || condition.Type === draftSelection?.FilterCondition.Type) : analysis ? analysisFilterConditions(dataset, draftField ?? 0) : dataSource === 39 ? currentVparivanieFilterConditions(draftField ?? 0)
     : withCurrentGroupCondition(withDatasetGroupConditions(dataset, draftField, financialConditions ? REPORT_FILTER_CONDITIONS.filter(condition => (financialConditions.has(condition.Type) || condition.Type === draftSelection?.FilterCondition.Type)) : REPORT_FILTER_CONDITIONS,
       financialConditions ?? REPORT_FILTER_CONDITIONS.map(condition => condition.Type)), draftSelection)
   const admittedConditions = financialConditions ? new Set([...financialConditions, ...datasetGroupConditionTypes(dataset, draftField, financialConditions)]) : null
@@ -2092,9 +2095,9 @@ function ReportSelectionsCard({
     : draftSelection ? datasetHierarchyDescriptor(dataset, draftSelection.SelectedField.Type, draftSelection.SelectedField.Name) : undefined
   const hierarchyStatus = useAnalysisHierarchyStatus(needsHierarchyStatus(draftDescriptor))
   const draftItemSearch = useDatasetItemSearch(dataSource, draftField, documentLookup.mode)
-  const draftValueError = draftSelection ? (analysis
+  const draftValueError = draftSelection ? returnItemStatusSelectionError(request, dataset, draftSelection) ?? (analysis
     ? hierarchyStatusError(draftDescriptor, draftSelection.FilterCondition.Type, hierarchyStatus) ?? analysisSelectionValueError(draftSelection, draftDescriptor)
-    : hierarchyStatusError(draftDescriptor, draftSelection.FilterCondition.Type, hierarchyStatus) ?? reportSelectionCardinalityError(draftSelection)
+    : hierarchyStatusError(draftDescriptor, draftSelection.FilterCondition.Type, hierarchyStatus) ?? (isReturnItemStatusSelection(request, draftSelection.SelectedField.Type) ? null : reportSelectionCardinalityError(draftSelection))
       ?? datasetGroupSelectionError(dataset, draftSelection)) : null
   const visibleCount = filter ? selections.filter(filter).length : selections.length
   const resolvedDescription = description === undefined
@@ -2254,6 +2257,8 @@ function ReportSelectionsCard({
               />
               {analysis ? draftSelection.SelectedField.Name ? <CurrentVparivanieAnalysisValuePicker selection={draftSelection} selections={editorSelections} descriptor={draftDescriptor} status={hierarchyStatus} from={from} to={to}
                 onChange={Values => setDraftSelection(current => current ? changeAnalysisSelectionValues(current, Values, analysis.filters.find(field => field.type === current.SelectedField.Type)) : current)} /> : <Text size="sm">Оберіть поле відбору.</Text>
+                : isReturnItemStatusSelection(request, draftSelection.SelectedField.Type) ? <ReturnItemStatusPicker dataset={dataset} selection={draftSelection}
+                  onChange={Values => setDraftSelection(current => current ? { ...current, Values } : current)} />
                 : isDatasetGroupSelection(dataset, draftSelection) ? <CurrentVparivanieAnalysisValuePicker selection={draftSelection} selections={editorSelections}
                   descriptor={draftDescriptor} status={hierarchyStatus} from={from} to={to} searchItems={draftItemSearch}
                   onChange={Values => setDraftSelection(current => current ? { ...current, Values } : current)} /> : <SelectionValuePicker
@@ -2297,7 +2302,7 @@ function InlineReportSelection({ dataset, request, selection, selections, index,
   const managerLookup = financialBuyerManagerLookupPolicy(dataset, request, selection.SelectedField.Type, lookupProfitReadMode, lookupProfitUnavailable)
   const documentLookup = financialDocumentLookupPolicy(dataset, request, selection.SelectedField.Type, managerLookup.mode, managerLookup.unavailable)
   const financialConditions = dataSource === 35 ? new Set(financialFilterConditionTypes(dataset, request, selection.SelectedField.Type)) : null
-  const conditions = analysis ? analysisFilterConditions(dataset, selection.SelectedField.Type)
+  const conditions = isReturnItemStatusSelection(request, selection.SelectedField.Type) ? REPORT_FILTER_CONDITIONS.filter(condition => [0, 1, 2, 4].includes(condition.Type) || condition.Type === selection.FilterCondition.Type) : analysis ? analysisFilterConditions(dataset, selection.SelectedField.Type)
     : dataSource === 39 ? currentVparivanieFilterConditions(selection.SelectedField.Type)
       : withCurrentGroupCondition(withDatasetGroupConditions(dataset, selection.SelectedField.Type, financialConditions ? REPORT_FILTER_CONDITIONS.filter(condition => (financialConditions.has(condition.Type) || condition.Type === selection.FilterCondition.Type)) : REPORT_FILTER_CONDITIONS,
         financialConditions ?? REPORT_FILTER_CONDITIONS.map(condition => condition.Type)), selection)
@@ -2307,8 +2312,8 @@ function InlineReportSelection({ dataset, request, selection, selections, index,
     : datasetHierarchyDescriptor(dataset, selection.SelectedField.Type, selection.SelectedField.Name)
   const hierarchyStatus = useAnalysisHierarchyStatus(needsHierarchyStatus(descriptor))
   const itemSearch = useDatasetItemSearch(dataSource, selection.SelectedField.Type, documentLookup.mode)
-  const valueError = analysis ? hierarchyStatusError(descriptor, selection.FilterCondition.Type, hierarchyStatus) ?? analysisSelectionValueError(selection, descriptor)
-    : hierarchyStatusError(descriptor, selection.FilterCondition.Type, hierarchyStatus) ?? (dataSource === 44 && selection.SelectedField.Type === 1 ? null : reportSelectionCardinalityError(selection)) ?? datasetGroupSelectionError(dataset, selection)
+  const valueError = returnItemStatusSelectionError(request, dataset, selection) ?? (analysis ? hierarchyStatusError(descriptor, selection.FilterCondition.Type, hierarchyStatus) ?? analysisSelectionValueError(selection, descriptor)
+    : hierarchyStatusError(descriptor, selection.FilterCondition.Type, hierarchyStatus) ?? (isReturnItemStatusSelection(request, selection.SelectedField.Type) || dataSource === 44 && selection.SelectedField.Type === 1 ? null : reportSelectionCardinalityError(selection)) ?? datasetGroupSelectionError(dataset, selection))
   const fields = analysis ? [...new Set(analysis.filters.map(field => field.path.join(' / ')))].map(group => ({ group,
     items: analysis.filters.filter(field => field.path.join(' / ') === group).map(field => ({ value: String(field.type), label: field.name,
       disabled: field.available === false })) })) : filterFieldOptions
@@ -2340,6 +2345,7 @@ function InlineReportSelection({ dataset, request, selection, selections, index,
       : analysis ? <CurrentVparivanieAnalysisValuePicker selection={selection} selections={selections}
         descriptor={descriptor} status={hierarchyStatus} from={from} to={to}
         onChange={Values => change(changeAnalysisSelectionValues(selection, Values, analysis.filters.find(field => field.type === selection.SelectedField.Type)))} />
+      : isReturnItemStatusSelection(request, selection.SelectedField.Type) ? <ReturnItemStatusPicker dataset={dataset} selection={selection} onChange={Values => change({ ...selection, Values })} />
       : isDatasetGroupSelection(dataset, selection) ? <CurrentVparivanieAnalysisValuePicker selection={selection} selections={selections}
         descriptor={descriptor} status={hierarchyStatus} from={from} to={to} searchItems={itemSearch} onChange={Values => change({ ...selection, Values })} />
       : <SelectionValuePicker dataSource={dataSource} lookupProfitReadMode={documentLookup.mode} lookupProfitUnavailable={documentLookup.unavailable}
@@ -2387,7 +2393,7 @@ function cloneReportSelection(selection: ReportSelection, dataSource: number): R
     Values: selection.Values.map((value) => {
       const reference = dataSource === 35 && selection.SelectedField.Type === 60 ? financialBuyerManagerReference(value.Data)
         : selection.SelectedField.Type === 12 ? financialDocumentReference(value.Data) : null
-      return { ...value, Data: reference ?? { ...value.Data } }
+      return { ...value, Data: dataSource === 2 && selection.SelectedField.Type === 64 ? value.Data : reference ?? { ...value.Data } }
     }),
   }
 }
