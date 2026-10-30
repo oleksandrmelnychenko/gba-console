@@ -1,4 +1,4 @@
-import fixture from '../data/customerGroupAgreement.server-fixture.json'
+import fixture from '../data/customerGroupProductGroup.server-fixture.json'
 import { MantineProvider } from '@mantine/core'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
@@ -14,8 +14,7 @@ vi.mock('../../auth/useAuth',()=>({useAuth:()=>({hasPermission:()=>true})}))
 vi.mock('../../../shared/api/apiClient',async original=>({...await original<typeof import('../../../shared/api/apiClient')>(),apiRequest:vi.fn()}))
 vi.mock('../api/reportWorkspaceApi',async original=>({...await original<typeof import('../api/reportWorkspaceApi')>(),getReportDatasets:vi.fn(),getServerReportTemplates:vi.fn(),saveServerReportTemplate:vi.fn()}))
 vi.mock('../api/reportsApi',async original=>({...await original<typeof import('../api/reportsApi')>(),searchDatasetReportValues:vi.fn(),previewStockReport:vi.fn()}))
-// Provisional additive metadata only; replace with actual serialized backend fixture after SQL passes.
-const dataset=parseReportDatasets([{...fixture.dataset,Filters:[...fixture.dataset.Filters,{Type:4,Name:'Поточні прямі групи товару',Selectable:true}]}])[0]
+const dataset=parseReportDatasets([fixture.dataset])[0]
 function template(condition=2,checked=true):ReportTemplate{
  const data=defaultDatasetRequest(dataset,'2026-10-01','2026-10-27')
  data.customerGroups={Version:1,Groups:[{Name:'Еталон',ClientIds:[71,72]},{Name:'Набір B',ClientIds:[72,73]}]}
@@ -56,8 +55,8 @@ it('retains a disabled invalid group row without blocking Apply or template save
 })
 
 it('shows missing-master generation refusal without replacing the saved group or presenting an empty financial result',async()=>{
- const message='Вибрану товарну групу не знайдено в довіднику GBA. Відбір не застосовано; оновіть вибір груп.'
- vi.mocked(previewStockReport).mockRejectedValueOnce(new ApiError(message,400,{Message:message,Body:null}));await restore();fireEvent.click(screen.getByRole('button',{name:'Застосувати й показати'}));await screen.findByText(message)
+ const message=fixture.missingMasterHttp.body.Message
+ vi.mocked(previewStockReport).mockRejectedValueOnce(new ApiError(message,fixture.missingMasterHttp.status,fixture.missingMasterHttp.body));await restore();fireEvent.click(screen.getByRole('button',{name:'Застосувати й показати'}));await screen.findByText(message)
  expect(previewStockReport).toHaveBeenCalledOnce();expect(screen.queryByRole('table')).toBeNull();expect(screen.getByRole('button',{name:'Застосувати й показати'})).toHaveProperty('disabled',false)
  fireEvent.click(screen.getByRole('button',{name:'Шаблони'}));fireEvent.click(screen.getByRole('button',{name:'Оновити шаблон'}));await waitFor(()=>expect(saveServerReportTemplate).toHaveBeenCalledOnce())
  expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data).toMatchObject({customerGroups:template().Data.customerGroups,selections:template().Data.selections,from:'2026-10-01',to:'2026-10-27'})
