@@ -31,3 +31,23 @@ it('refuses run and save for wrong measure or column grouping before any dispatc
   await expect(createStockReport(request)).rejects.toThrow('показник')
   expect(api).not.toHaveBeenCalled()
 })
+
+it('restores a lot draft intact and blocks both generation and template save with the lot reason until explicit repair', async () => {
+  const request = { ...stockQuantityRequest(), stockQuantityFilter: positiveClosingQuantity }
+  request.sorted.Row.push({ type: 33, key: 'StockConsignmentItem', label: 'Партія GBA' })
+  const dataset = { ...stockQuantityDataset, Groupings: [...stockQuantityDataset.Groupings, { Type: 33, Name: 'Партія GBA' }] }
+  const wire = { Id: 'stock-lots', Revision: 1, Name: 'Партії', Data: { DataSource: 45, From: request.from, To: request.to,
+    Sorted: request.sorted, Selections: [], StockQuantityFilter: positiveClosingQuantity } }
+  api.mockResolvedValue([wire]); const [saved] = await getServerReportTemplates()
+  expect(saved.Data.sorted.Row).toEqual(request.sorted.Row)
+  saved.Data.from = '2026-08-01'; saved.Data.to = '2026-10-27'
+  const before = structuredClone(saved.Data); api.mockClear()
+  const reason = 'Відбір кінцевої кількості більше 0 поки не підтримує групування за партіями GBA. Приберіть цей відбір або групування за партією.'
+  await expect(createStockReport(saved.Data)).rejects.toThrow(reason)
+  await expect(saveServerReportTemplate(saved, undefined, dataset)).rejects.toThrow(reason)
+  expect(api).not.toHaveBeenCalled(); expect(saved.Data).toEqual(before)
+  saved.Data.sorted.Row = saved.Data.sorted.Row.filter(group => group.type !== 33)
+  api.mockResolvedValue({ ...wire, Revision: 2, Data: { ...wire.Data, From: saved.Data.from, To: saved.Data.to, Sorted: saved.Data.sorted } })
+  await saveServerReportTemplate(saved, undefined, dataset)
+  expect(api).toHaveBeenLastCalledWith('/report/templates/save', expect.objectContaining({ body: expect.objectContaining({ Data: saved.Data }) }))
+})

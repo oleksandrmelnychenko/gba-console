@@ -37,3 +37,16 @@ it('restricts active filter date axes while preserving ordinary date grouping an
  const request={...stockQuantityRequest(),stockQuantityFilter:positiveClosingQuantity,from:'2020-01-01',to:'2026-10-27'}
  expect(stockQuantityFilterError(request,stockQuantityDataset)).toBeNull()
 })
+
+it.each(['Row','Col'] as const)('explains the lot incompatibility in %s without changing saved choices or dates',axis=>{
+ const request=stockQuantityRequest();request.sorted[axis].push({type:33,key:'StockConsignmentItem',label:'Партія GBA'})
+ expect(stockQuantityFilterError(request,stockQuantityDataset)).toBeNull()
+ const active={...request,stockQuantityFilter:positiveClosingQuantity};const before=structuredClone(active)
+ expect(stockQuantityFilterError(active,stockQuantityDataset)).toMatch(/не підтримує групування за партіями GBA/)
+ expect(active).toEqual(before)
+ active.from='2026-08-01';active.to='2026-10-27'
+ expect(stockQuantityFilterError(active,stockQuantityDataset)).toMatch(/за партіями GBA/)
+ expect(active.sorted).toEqual(before.sorted);expect(active.stockQuantityFilter).toEqual(before.stockQuantityFilter)
+ active.sorted[axis]=active.sorted[axis].filter(group=>group.type!==33)
+ expect(stockQuantityFilterError(active,stockQuantityDataset)).toBeNull()
+})

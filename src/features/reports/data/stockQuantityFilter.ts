@@ -35,6 +35,9 @@ export function stockQuantityFilterError(request: ReportRequestBody, dataset?: R
   if (dataset && !stockQuantityFilterSupported(dataset)) return 'Сервер ще не підтримує відбір кінцевої кількості більше 0. Вимкніть цей відбір або оновіть сервер.'
   if (!request.sorted.Measurements.some(measure => measure.Type === 106 && measure.IsChecked !== false))
     return 'Для цього відбору виберіть показник «Кінцевий залишок: кількість» або вимкніть відбір.'
+  if (!request.sorted.Row.some(row => row.type != null && row.type >= 0 && row.type <= 3)
+    && [...request.sorted.Row, ...request.sorted.Col].some(group => group.type === 33))
+    return 'Відбір кінцевої кількості більше 0 поки не підтримує групування за партіями GBA. Приберіть цей відбір або групування за партією.'
   if (request.sorted.Col.length !== 0 || request.sorted.Row.length < 1 || request.sorted.Row.length > 3)
     return 'Для цього відбору залиште 1–3 групування рядків без групування колонок або вимкніть відбір.'
   if (request.sorted.Row.some(row => !positiveStockRowGroupings.includes(row.type ?? -1)))
