@@ -5,7 +5,7 @@ import type { CustomerGroupChoice } from '../api/customerGroupSelectionsApi'
 import type { CustomerGroupDirectoryPickerProps } from './CustomerGroupDirectoryPicker'
 import { CustomerGroupChoiceCombobox } from './CustomerGroupChoiceCombobox'
 export function CustomerGroupChoiceControl({ selection, label, disabled, error, onChange, field, options, loading, search, setSearch }: CustomerGroupDirectoryPickerProps & {
- field:1|4|8|9|10;options:CustomerGroupChoice[];loading:boolean;search:string;setSearch:(value:string)=>void
+ field:1|4|8|9|10|21;options:CustomerGroupChoice[];loading:boolean;search:string;setSearch:(value:string)=>void
 }) {
  const model=customerGroupChoiceValues(selection.Values,options,field)
  const change=(keys:string[])=>onChange(model.change(keys))

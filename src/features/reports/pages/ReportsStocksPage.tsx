@@ -2584,7 +2584,7 @@ export function SelectionValuePicker(props: SelectionValuePickerProps) {
   if (props.dataSource === 44 && props.selection.SelectedField.Type === 3)
     return <CustomerGroupTopPicker selection={props.selection} label={props.label} disabled={props.lookupProfitUnavailable} error={props.error} onChange={props.onChange} />
   const exactField = props.selection.SelectedField.Type
-  if (isCustomerGroupExactSelection(props.dataSource, exactField) && (exactField === 1 || exactField === 4 || exactField === 8 || exactField === 9 || exactField === 10))
+  if (isCustomerGroupExactSelection(props.dataSource, exactField) && (exactField === 1 || exactField === 4 || exactField === 8 || exactField === 9 || exactField === 10 || exactField === 21))
     return <CustomerGroupExactChoicePicker key={exactField} field={exactField} selection={props.selection} label={props.label}
       disabled={props.lookupProfitUnavailable} error={props.error} onChange={props.onChange} />
   return isCustomerGroupOrganization(props.dataSource, props.selection.SelectedField.Type)

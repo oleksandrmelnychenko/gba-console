@@ -3,21 +3,21 @@ import { customerGroupTopName } from './customerGroupTop'
 import { customerGroupInt64Id } from './customerGroupInt64'
 import { customerGroupDirectoryId } from './customerGroupDirectory'
 import { reportSelectionCardinalityError } from './reportOptions'
-export const isCustomerGroupExactSelection = (source: number, field: number) => source === 44 && [1, 4, 8, 9, 10].includes(field)
+export const isCustomerGroupExactSelection = (source: number, field: number) => source === 44 && [1, 4, 8, 9, 10, 21].includes(field)
 export const CUSTOMER_GROUP_CURRENT_FIELDS_NOTE = 'Регіон, код регіону та основний менеджер у відборах — поточні дані картки клієнта; їх зміна впливає і на минулі періоди.'
 export const CUSTOMER_GROUP_MANAGER_NOTE = 'Основний менеджер із поточної картки клієнта, а не автор продажу.'
 export function customerGroupSelectionsError(source: number, selections: ReportSelection[]): string | null {
   if (source !== 44) return null
   for (const selection of selections) {
     const field = selection.SelectedField.Type
-    if (selection.IsChecked === false || ![1, 3, 4, 8, 9, 10].includes(field)) continue
+    if (selection.IsChecked === false || ![1, 3, 4, 8, 9, 10, 21].includes(field)) continue
     // Product equality already supports a saved exact set; do not narrow this existing financial contract.
     const cardinality = field === 1 ? null : reportSelectionCardinalityError(selection)
     if (cardinality) return cardinality
     if (!selection.Values.length) return 'Оберіть значення або вимкніть цю умову.'
     if (selection.Values.length > 100 || ![0, 1, 2, 4].includes(selection.FilterCondition.Type))
       return 'Оберіть до 100 значень і одну з чотирьох умов відбору.'
-    if (selection.Values.some(value => (field === 3 ? customerGroupTopName(value.Data) : field === 4 || field === 9 ? customerGroupInt64Id(value.Data) : customerGroupDirectoryId(value.Data)) === null))
+    if (selection.Values.some(value => (field === 3 ? customerGroupTopName(value.Data) : field === 4 || field === 9 || field === 21 ? customerGroupInt64Id(value.Data) : customerGroupDirectoryId(value.Data)) === null))
       return field === 3 ? 'Повторно оберіть TOP: збережений код не підтверджено.' : 'Повторно оберіть значення: збережений ідентифікатор не підтверджено.'
   }
   return null

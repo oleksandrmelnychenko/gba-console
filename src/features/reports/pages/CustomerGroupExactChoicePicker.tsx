@@ -1,3 +1,4 @@
+import { CUSTOMER_GROUP_WAREHOUSE_NOTE } from '../data/customerGroupWarehouse'
 import { CUSTOMER_GROUP_PRODUCT_GROUP_NOTE } from '../data/customerGroupProductGroup'
 import { CUSTOMER_GROUP_AGREEMENT_NOTE } from '../data/customerGroupAgreement'
 import { Alert, Box, Button, Group, Stack, Text } from '@mantine/core'
@@ -16,6 +17,7 @@ function ChoicePageActions({ choices, disabled, label }: {
 }
 const CHOICE_BUSINESS_HELP: Partial<Record<number, string>> = {
   4: CUSTOMER_GROUP_PRODUCT_GROUP_NOTE,
+  21: CUSTOMER_GROUP_WAREHOUSE_NOTE,
   8: CUSTOMER_GROUP_CURRENT_FIELDS_NOTE,
   9: CUSTOMER_GROUP_AGREEMENT_NOTE,
   10: CUSTOMER_GROUP_CURRENT_FIELDS_NOTE,
@@ -26,7 +28,7 @@ function ChoiceBusinessHelp({field, active}: {field: number; active: boolean}) {
   return <>{note ? <Text size="sm" c="dimmed">{note}</Text> : null}
     {field === 10 ? <Text size="sm" c="dimmed">{CUSTOMER_GROUP_MANAGER_NOTE}</Text> : null}</>
 }
-export function CustomerGroupExactChoicePicker({ selection, label, disabled, error, onChange, field }: CustomerGroupDirectoryPickerProps & { field: 1 | 4 | 8 | 9 | 10 }) {
+export function CustomerGroupExactChoicePicker({ selection, label, disabled, error, onChange, field }: CustomerGroupDirectoryPickerProps & { field: 1 | 4 | 8 | 9 | 10 | 21 }) {
   const choices = useCustomerGroupChoiceOptions(field, disabled)
   return <Stack gap="xs">
     <Group wrap="nowrap" align="flex-start" gap="xs">
@@ -35,6 +37,7 @@ export function CustomerGroupExactChoicePicker({ selection, label, disabled, err
       <ChoicePageActions choices={choices} disabled={disabled} label={label} />
     </Group>
     {field === 4 ? <Text size="xs" c="dimmed">Шукайте за назвою або точним ID групи: id:123.</Text> : null}
+    {field === 21 ? <Text size="xs" c="dimmed">Шукайте за назвою або точним ID складу: id:123.</Text> : null}
     {field === 9 ? <Text size="xs" c="dimmed">Шукайте за клієнтом, назвою, номером або точним ID договору: id:123.</Text> : null}
     {field === 1 ? <Text size="xs" c="dimmed">Шукайте за назвою або точним ID товару: id:123.</Text> : null}
     {choices.capped ? <Text size="sm">Уточніть пошук, щоб побачити решту значень.</Text> : null}
