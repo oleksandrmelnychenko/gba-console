@@ -1,8 +1,18 @@
 import { revenueExactId } from '../data/revenueComparison'
 import { apiRequest } from '../../../shared/api/apiClient'
-import type { ReportEntity, ReportSearchParams, ReportSelectedValue } from '../types'
+import type { ReportDataset, ReportEntity, ReportSearchParams, ReportSelectedValue } from '../types'
+import { customerGroupSalesDocumentLookup } from '../data/salesDocumentLookupCapability'
 
-export const usesSalesDocumentLookup = (source: number, field: number) => source === 2 && [12, 14].includes(field)
+export const usesSalesDocumentLookup = (source: number, field: number, dataset?: ReportDataset | null) =>
+  [12, 14].includes(field) && (source === 2 || source === 44 && !!customerGroupSalesDocumentLookup(dataset))
+/** A missing source44 capability must never fall through to the legacy document picker. */
+export function salesDocumentLookupPolicy(source: number, field: number, dataset: ReportDataset | null | undefined,
+  unavailable: boolean | undefined, from: string, to: string) {
+  const native = usesSalesDocumentLookup(source, field, dataset)
+  const customerDocument = source === 44 && (field === 12 || field === 14)
+  const period = native || source === 35 && field === 12 ? [from, to] : []
+  return { native, unavailable: unavailable || customerDocument && !native, legacyAllowed: !customerDocument, period }
+}
 export function salesDocumentId(value: unknown): string | null {
   const id = typeof value === 'number' && Number.isSafeInteger(value) ? String(value) : value
   return typeof id === 'string' && /^[1-9][0-9]{0,18}$/.test(id) && BigInt(id) <= 9223372036854775807n ? id : null

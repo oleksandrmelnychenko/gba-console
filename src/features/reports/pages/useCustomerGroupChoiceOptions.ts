@@ -3,17 +3,18 @@ import { customerGroupProductGroupQueryError } from '../data/customerGroupProduc
 import { customerGroupAgreementQueryError } from '../data/customerGroupAgreement'
 import { useState } from 'react'
 import { useDebouncedValue } from '@mantine/hooks'
-import { customerGroupProductQueryError } from '../data/customerGroupSelections'
+import { customerGroupProductQueryError, type CustomerGroupExactChoiceField } from '../data/customerGroupSelections'
+import { customerGroupAuthorQueryError } from '../data/customerGroupAuthors'
 import type { CustomerGroupChoice } from '../api/customerGroupSelectionsApi'
 import { useCustomerGroupCodeCatalogue } from './useCustomerGroupCodeCatalogue'
 import { useCustomerGroupChoicePage } from './useCustomerGroupChoicePage'
 const EMPTY_CHOICES: CustomerGroupChoice[] = []
 function searchPolicy(field: number, query: string, debounced: string, disabled: boolean | undefined) {
-  const queryError = query.length > 120 ? 'Введіть не більше 120 символів.' : field === 1 ? customerGroupProductQueryError(query) : field === 4 ? customerGroupProductGroupQueryError(query) : field === 9 ? customerGroupAgreementQueryError(query) : field === 21 ? customerGroupWarehouseQueryError(query) : null
+  const queryError = query.length > 120 ? 'Введіть не більше 120 символів.' : field === 1 ? customerGroupProductQueryError(query) : field === 4 ? customerGroupProductGroupQueryError(query) : field === 9 ? customerGroupAgreementQueryError(query) : field === 21 ? customerGroupWarehouseQueryError(query) : field === 15 || field === 16 ? customerGroupAuthorQueryError(query) : null
   return { queryError, ready: !disabled && !queryError && (field === 4 || field === 21 || query.length >= 2) && debounced === query,
     waiting: !disabled && (field === 4 || field === 21 || query.length >= 2) && debounced !== query }
 }
-export function useCustomerGroupChoiceOptions(field:1|4|8|9|10|21, disabled:boolean|undefined) {
+export function useCustomerGroupChoiceOptions(field:CustomerGroupExactChoiceField, disabled:boolean|undefined) {
   const [searchState, setSearchState] = useState({ query: '', count: 30 })
   const query = field === 4 || field === 21 ? searchState.query : searchState.query.trim()
   const [debounced] = useDebouncedValue(query, 250)

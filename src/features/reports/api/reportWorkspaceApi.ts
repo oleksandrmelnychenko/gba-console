@@ -1,4 +1,6 @@
 import { cloneStockQuantityFilter, stockQuantityFilterError } from '../data/stockQuantityFilter'
+import { customerGroupSalesDocumentLookup } from '../data/salesDocumentLookupCapability'
+import { customerGroupSelectionsError } from '../data/customerGroupSelections'
 import { readDocumentDetails } from '../data/reportDocumentDetails'
 import { cloneConstructorPresentation } from '../data/constructorPresentation'
 import { cloneReportProfile, readSalesProfileGroupings, salesConstructorError } from '../data/salesConstructorProfiles'
@@ -68,6 +70,8 @@ function isDataset(value: unknown): value is ReportDataset {
   const fieldsValid = [item.Groupings, item.Measurements, item.Filters].every(fields =>
     Array.isArray(fields) && fields.every(isDatasetField) && new Set(fields.map(field => field.Type)).size === fields.length)
   return Number.isSafeInteger(item.DataSource) && item.DataSource! >= 0 && item.DataSource !== 1 && typeof item.Name === 'string' && !!item.Name.trim()
+    && !Object.hasOwn(item, 'SalesDocumentLookup')
+    && (item.salesDocumentLookup === undefined || !!customerGroupSalesDocumentLookup(item as ReportDataset))
     && (item.documentDetails === undefined || item.DataSource === 2 && !!readDocumentDetails(item.documentDetails))
     && (item.profileGroupings === undefined || item.DataSource === 2 && !!readSalesProfileGroupings(item.profileGroupings))
     && (item.financialAxes === undefined || !!financialAxesCapability(item as ReportDataset))
@@ -341,12 +345,14 @@ export async function getServerReportTemplates(signal?: AbortSignal): Promise<Re
 }
 
 export async function saveServerReportTemplate(template: ReportTemplate, signal?: AbortSignal, dataset?: ReportDataset): Promise<ReportTemplate> {
-  const request = (template.Data.dataSource === 2 || template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21 || template.Data.dataSource === 22 || template.Data.dataSource === 23 || template.Data.dataSource === 24 || template.Data.dataSource === 25 || template.Data.dataSource === 27 || template.Data.dataSource === 28 || template.Data.dataSource === 35 || template.Data.dataSource === 39 || template.Data.dataSource === 40 || template.Data.dataSource === 41) ? structuredClone(template) : template
+  const request = (template.Data.dataSource === 2 || template.Data.dataSource === 44 || template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21 || template.Data.dataSource === 22 || template.Data.dataSource === 23 || template.Data.dataSource === 24 || template.Data.dataSource === 25 || template.Data.dataSource === 27 || template.Data.dataSource === 28 || template.Data.dataSource === 35 || template.Data.dataSource === 39 || template.Data.dataSource === 40 || template.Data.dataSource === 41) ? structuredClone(template) : template
   request.Data = withCurrentVparivanieMovementScope(request.Data)
   const numericError = salesConstructorError(request.Data) ?? numberPresentationError(request.Data) ?? reportConfigurationError(request.Data, request.Data.dataSource === 35 ? dataset : undefined)
   if (numericError) throw new Error(numericError)
   const stockError = stockQuantityFilterError(request.Data, dataset)
   if (stockError) throw new Error(stockError)
+  const customerSelectionsError = customerGroupSelectionsError(request.Data.dataSource, request.Data.selections, dataset)
+  if (customerSelectionsError) throw new Error(customerSelectionsError)
   const workbookError = workbookConfigurationError(request.Data)
   if (workbookError) throw new Error(workbookError)
   const exactFilterError = nativeExactFiltersConfigurationError(request.Data)

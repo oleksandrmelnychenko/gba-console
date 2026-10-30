@@ -9,8 +9,9 @@ export const MAXIMUM_GROUP_VALUES = 100
 
 export function datasetFieldHierarchy(dataset: ReportDataset | null | undefined, field: number | undefined): AnalysisHierarchy | undefined {
   if (!dataset || dataset.DataSource === 39 || field === undefined) return undefined
+  if (dataset.DataSource === 44 && field !== 1) return undefined
   const hierarchy = dataset.Filters.find(item => item.Type === field)?.hierarchy
-  return hierarchy && isAnalysisHierarchy(hierarchy, field) ? hierarchy : undefined
+  return hierarchy && isAnalysisHierarchy(hierarchy, field) && (dataset.DataSource !== 44 || hierarchy.itemField === 1) ? hierarchy : undefined
 }
 
 export function datasetHierarchyDescriptor(dataset: ReportDataset | null | undefined, field: number, name: string): AnalysisFieldDescriptor | undefined {

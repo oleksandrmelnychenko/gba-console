@@ -4,6 +4,7 @@ import { customerGroupProductGroupQueryError } from '../data/customerGroupProduc
 import { apiRequest } from '../../../shared/api/apiClient'
 import { customerGroupAgreementQueryError } from '../data/customerGroupAgreement'
 import { customerGroupProductQueryError } from '../data/customerGroupSelections'
+import { customerGroupAuthorQueryError } from '../data/customerGroupAuthors'
 export type CustomerGroupChoice = { Id: number | string; Name: string }
 function record(value: unknown): value is Record<string, unknown> { return !!value && typeof value === 'object' && !Array.isArray(value) }
 function positiveId(value: unknown): value is number { return typeof value === 'number' && Number.isSafeInteger(value) && value > 0 }
@@ -36,11 +37,11 @@ export async function getCustomerGroupRegionCodes(signal?: AbortSignal): Promise
   }
   return options
 }
-export async function searchCustomerGroupChoices(field: 1 | 4 | 9 | 10 | 21, value: string, offset: number, signal?: AbortSignal): Promise<CustomerGroupChoice[]> {
+export async function searchCustomerGroupChoices(field: 1 | 4 | 9 | 10 | 15 | 16 | 21, value: string, offset: number, signal?: AbortSignal): Promise<CustomerGroupChoice[]> {
   const query = field === 4 || field === 21 ? value : value.trim()
   if (!Number.isInteger(offset) || offset < 0 || offset > 10000 || query.length > 120) throw new Error('Некоректні параметри пошуку.')
   if (field === 1 && (customerGroupProductQueryError(query) || query.startsWith('id:') && offset !== 0)) throw new Error('Некоректний точний ID товару.')
-  if (field === 4 || field === 9 || field === 21) return searchInt64Choices(field, query, offset, signal)
+  if (field === 4 || field === 9 || field === 15 || field === 16 || field === 21) return searchInt64Choices(field, query, offset, signal)
   if (!query) return []
   const response = await apiRequest<unknown>(field === 1 ? '/report/datasets/lookup' : '/usermanagement/profiles/search/lookup', {
     query: { ...(field === 1 ? { dataSource: 44, field: 1 } : {}), value: query, offset, limit: 30 }, signal,
@@ -56,11 +57,13 @@ const INT64_CHOICE_POLICY = {
   4: { queryError: customerGroupProductGroupQueryError, identityError: 'Ідентифікатор групи не підтверджено.', exactError: 'Некоректний точний ID групи.', listError: 'Некоректний список груп.' },
   9: { queryError: customerGroupAgreementQueryError, identityError: 'Ідентифікатор договору не підтверджено.', exactError: 'Некоректний точний ID договору.', listError: 'Некоректний список договорів.' },
   21: { queryError: customerGroupWarehouseQueryError, identityError: 'Ідентифікатор складу не підтверджено.', exactError: 'Некоректний точний ID складу.', listError: 'Некоректний список складів.' },
+  15: { queryError: customerGroupAuthorQueryError, identityError: 'Ідентифікатор автора не підтверджено.', exactError: 'Некоректний точний ID автора.', listError: 'Некоректний список авторів.' },
+  16: { queryError: customerGroupAuthorQueryError, identityError: 'Ідентифікатор користувача підтвердження не підтверджено.', exactError: 'Некоректний точний ID користувача підтвердження.', listError: 'Некоректний список користувачів підтвердження.' },
 } as const
-async function searchInt64Choices(field: 4 | 9 | 21, query: string, offset: number, signal?: AbortSignal): Promise<CustomerGroupChoice[]> {
+async function searchInt64Choices(field: 4 | 9 | 15 | 16 | 21, query: string, offset: number, signal?: AbortSignal): Promise<CustomerGroupChoice[]> {
   const { queryError, identityError, exactError, listError } = INT64_CHOICE_POLICY[field]
   if (queryError(query) || query.startsWith('id:') && offset !== 0) throw new Error(exactError)
-  if (!query && field === 9) return []
+  if (!query && (field === 9 || field === 15 || field === 16)) return []
   const response = await apiRequest<unknown>('/report/datasets/lookup', { query: { dataSource: 44, field, value: query, offset, limit: 30 }, signal })
   if (!Array.isArray(response) || response.length > 30) throw new Error(listError)
   const exact = query.startsWith('id:') ? query.slice(3) : null

@@ -16,6 +16,8 @@ import { reportAbcClassificationError } from '../data/reportAbcClassification'
 import { reportTopGroupsError } from '../data/reportTopGroups'
 import type { ReportDataset, ReportRequestBody, ReportTemplate } from '../types'
 
+const CAPABILITY_VALIDATED_SOURCES = new Set([35, 44])
+
 export type TemplateMutationResult = { ok: true; template?: ReportTemplate } | { ok: false }
 
 /** Browser variants remain untouched; importing one never sanitizes away its filters. */
@@ -220,10 +222,10 @@ export function useServerReportTemplates(enabled: boolean, datasets: ReportDatas
         if (hideZeroError) throw new Error(hideZeroError)
         controller.signal.throwIfAborted()
         if (!isCurrent()) return { ok: false }
-        const financialDataset = request.Data.dataSource === 35
-          ? datasets.find(item => item.DataSource === 35) : undefined
-        const saved = financialDataset
-          ? await saveServerReportTemplate(request, controller.signal, financialDataset)
+        const validationDataset = CAPABILITY_VALIDATED_SOURCES.has(request.Data.dataSource ?? -1)
+          ? datasets.find(item => item.DataSource === request.Data.dataSource) : undefined
+        const saved = validationDataset
+          ? await saveServerReportTemplate(request, controller.signal, validationDataset)
           : await saveServerReportTemplate(request, controller.signal)
         if (isCurrent()) {
           const message = operation.kind === 'import' ? 'Шаблон імпортовано.'
