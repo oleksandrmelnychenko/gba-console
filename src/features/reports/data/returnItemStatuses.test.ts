@@ -4,8 +4,13 @@ import { defaultDatasetRequest } from './reportDatasets'
 import { returnItemStatus, returnItemStatusesCapability, returnItemStatusesError } from './returnItemStatuses'
 import type { ReportRequestBody } from '../types'
 import { returnStatusDataset } from './returnItemStatuses.test-fixtures'
-const request = (Data: unknown): ReportRequestBody => ({ ...defaultDatasetRequest(returnStatusDataset,'2026-10-01','2026-10-27'), returnsOnly:true,
-  selections:[{IsChecked:true,SelectedField:{Type:64,Name:'Причина повернення'},FilterCondition:{Type:0,Name:'Дорівнює'},Values:[{Data:JSON.parse(JSON.stringify(Data)),Name:'Збережена назва',Value:0}]}] })
+function request(Data: unknown): ReportRequestBody {
+ const body: ReportRequestBody = { ...defaultDatasetRequest(returnStatusDataset,'2026-10-01','2026-10-27'), returnsOnly:true,
+  selections:[{IsChecked:true,SelectedField:{Type:64,Name:'Причина повернення'},FilterCondition:{Type:0,Name:'Дорівнює'},Values:[{Data:{},Name:'Збережена назва',Value:0}]}] }
+ // Deliberately model the untyped saved-wire boundary, including malformed payloads.
+ Reflect.set(body.selections[0].Values[0], 'Data', Data)
+ return body
+}
 it.each([0,6,8])('admits enum %s without using legacy dictionary identity', value => {
  expect(returnItemStatus({ReturnItemStatus:value})).toBe(value)
  expect(returnItemStatus(JSON.stringify({ReturnItemStatus:value}))).toBe(value)
