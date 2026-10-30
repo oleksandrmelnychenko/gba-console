@@ -1,14 +1,17 @@
 import type { ReportDataset, ReportRequestBody } from '../types'
 
-export type WorkbookSelection = { version: 1 | 2 | 3; additionalFields: number[]; ordering: null | 'MonthAscending' }
+export type WorkbookSelection = { version: 1 | 2 | 3 | 4; additionalFields: number[]; ordering: null | 'MonthAscending' }
 export type WorkbookField = { type: number; caption: string; placement: 'inline' | 'column' | 'retainedSetting' }
-export type WorkbookCapability = { version: 1 | 2 | 3; additionalFields: WorkbookField[]; orderings: string[]
+export type WorkbookCapability = { version: 1 | 2 | 3 | 4; additionalFields: WorkbookField[]; orderings: string[]
   attributeKind?: 'currentProductScalar' | 'currentProductFields'; requiredRowGroupings?: number[]; supportedReportProfiles?: string[] }
 export const currentProductFields = [[2, 'column'], [3, 'column'], [65, 'column'], [66, 'column']] as const
 export const currentProductGroupFields = [...currentProductFields, [67, 'column'] as const]
-export const isCurrentProductVersion = (version: unknown): version is 2 | 3 => version === 2 || version === 3
+export const currentProductColumnFields = [...currentProductGroupFields, ...[68, 69, 70, 73, 74].map(type => [type, 'column'] as const)]
+export const productFieldsForVersion = (version: unknown) => version === 4 ? currentProductColumnFields : version === 3 ? currentProductGroupFields : currentProductFields
+export const isCurrentProductVersion = (version: unknown): version is 2 | 3 | 4 => version === 2 || version === 3 || version === 4
 export const isSalesProductProfile = (request: ReportRequestBody) => request.dataSource === 2
   && ['sales', 'grossProfit'].includes(String(request.reportProfile ?? request.ReportProfile))
+  && request.returnsOnly == null && request.ReturnsOnly == null
 export const hasProductRow = (request: ReportRequestBody) => request.sorted?.Row?.some(row => row.type === 5 || row.type === 7) === true
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
 const aliases = (value: object) => Object.keys(value).filter(key => key.toLowerCase() === 'workbookpresentation')
@@ -45,10 +48,10 @@ export function readWorkbookSelection(value: unknown): WorkbookSelection | null 
   }
   const additional = fields.get('additionalFields')
   const ordering = fields.get('ordering')
-  if (fields.size !== 3 || ![1, 2, 3].includes(Number(fields.get('version'))) || !Number.isInteger(fields.get('version')) || !Array.isArray(additional) || additional.length > (fields.get('version') === 3 ? 5 : fields.get('version') === 2 ? 4 : 3)
+  if (fields.size !== 3 || ![1, 2, 3, 4].includes(Number(fields.get('version'))) || !Number.isInteger(fields.get('version')) || !Array.isArray(additional) || additional.length > (fields.get('version') === 4 ? 10 : fields.get('version') === 3 ? 5 : fields.get('version') === 2 ? 4 : 3)
     || additional.some(type => !Number.isSafeInteger(type)) || new Set(additional).size !== additional.length
     || !(ordering === null || ordering === 'MonthAscending')) return null
-  return { version: fields.get('version') as 1 | 2 | 3, additionalFields: [...additional], ordering }
+  return { version: fields.get('version') as 1 | 2 | 3 | 4, additionalFields: [...additional], ordering }
 }
 
 export function requestWorkbookPresentation(value: object): unknown {
@@ -75,9 +78,9 @@ export function readWorkbookCapability(value: unknown, source: number): Workbook
   }
   return { version: 1, additionalFields: fields, orderings: [...value.orderings] }
 }
-function readCurrentProductCapability(value: unknown, version: 2 | 3 = 2): WorkbookCapability | null {
-  const expectedFields = version === 3 ? currentProductGroupFields : currentProductFields
-  const attributeKind = version === 3 ? 'currentProductFields' : 'currentProductScalar'
+function readCurrentProductCapability(value: unknown, version: 2 | 3 | 4 = 2): WorkbookCapability | null {
+  const expectedFields = productFieldsForVersion(version)
+  const attributeKind = version !== 2 ? 'currentProductFields' : 'currentProductScalar'
   if (!record(value) || !exactKeys(value, ['version', 'additionalFields', 'orderings', 'attributeKind', 'requiredRowGroupings', 'supportedReportProfiles'])
     || value.version !== version || value.attributeKind !== attributeKind
     || JSON.stringify(value.requiredRowGroupings) !== '[5,7]'
@@ -99,9 +102,12 @@ function readCurrentProductCapability(value: unknown, version: 2 | 3 = 2): Workb
 export function readProductGroupListCapability(value: unknown): WorkbookCapability | null {
   return readCurrentProductCapability(value, 3)
 }
+export function readProductColumnsCapability(value: unknown): WorkbookCapability | null {
+  return readCurrentProductCapability(value, 4)
+}
 export function currentProductCapability(dataset?: ReportDataset): WorkbookCapability | null {
   if (dataset?.DataSource !== 2) return null
-  return readProductGroupListCapability(dataset.currentProductGroupLists) ?? readWorkbookCapability(dataset.workbookPresentation, 2)
+  return readProductColumnsCapability(dataset.currentProductColumns) ?? readProductGroupListCapability(dataset.currentProductGroupLists) ?? readWorkbookCapability(dataset.workbookPresentation, 2)
 }
 
 export function normalizeWorkbookDataset(value: Record<string, unknown>): ReportDataset | null {
@@ -138,10 +144,10 @@ export function workbookConfigurationError(data: ReportRequestBody, dataset?: Re
   const raw = requestWorkbookPresentation(data)
   if (raw == null) return null
   const selected = readWorkbookSelection(raw)
-  const expected = data.dataSource === 2 && selected?.version === 3 ? currentProductGroupFields : workbookSources.get(data.dataSource ?? -1)
+  const expected = data.dataSource === 2 ? productFieldsForVersion(selected?.version) : workbookSources.get(data.dataSource ?? -1)
   if (!selected || !expected || (data.dataSource === 2 ? !isCurrentProductVersion(selected.version) : selected.version !== 1) || selected.additionalFields.some(type => !expected.some(field => field[0] === type))
     || selected.ordering !== null && data.dataSource !== 35) return 'Непідтверджені додаткові поля або порядок форми.'
-  if (dataset && (dataset.DataSource !== data.dataSource || !(selected.version === 3
+  if (dataset && (dataset.DataSource !== data.dataSource || !(selected.version === 4 ? readProductColumnsCapability(dataset.currentProductColumns) : selected.version === 3
     ? readProductGroupListCapability(dataset.currentProductGroupLists) : readWorkbookCapability(dataset.workbookPresentation, data.dataSource ?? -1))))
     return 'Поточний сервер не підтвердив ці налаштування форми.'
   if (data.dataSource === 2 && !isSalesProductProfile(data))
@@ -167,4 +173,17 @@ export function workbookConfigurationError(data: ReportRequestBody, dataset?: Re
 export function sameWorkbookSelection(left: WorkbookSelection, right: WorkbookSelection): boolean {
   return left.version === right.version && left.ordering === right.ordering
     && left.additionalFields.join(',') === right.additionalFields.join(',')
+}
+
+/** Validate the rest of a valid v4 template before opening it for repair on an older server.
+ * The original request is still applied untouched, and full run/save validation still rejects it. */
+export function editableProductColumnsTemplate(data: ReportRequestBody, dataset?: ReportDataset): ReportRequestBody {
+  const selection = readWorkbookSelection(requestWorkbookPresentation(data))
+  const capability = currentProductCapability(dataset)
+  if (selection?.version !== 4 || !capability || capability.version === 4
+    || workbookConfigurationError(data) !== null) return data
+  const editable = { ...data }
+  delete editable.workbookPresentation
+  delete editable.WorkbookPresentation
+  return editable
 }

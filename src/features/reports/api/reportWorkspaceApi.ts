@@ -1,3 +1,4 @@
+import { cloneStockQuantityFilter, stockQuantityFilterError } from '../data/stockQuantityFilter'
 import { readDocumentDetails } from '../data/reportDocumentDetails'
 import { cloneConstructorPresentation } from '../data/constructorPresentation'
 import { cloneReportProfile, readSalesProfileGroupings, salesConstructorError } from '../data/salesConstructorProfiles'
@@ -161,6 +162,8 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
   Data: {
     workbookPresentation?: unknown
     WorkbookPresentation?: unknown
+    stockQuantityFilter?: unknown
+    StockQuantityFilter?: unknown
     constructorPresentation?: unknown
     ConstructorPresentation?: unknown
     reportProfile?: unknown
@@ -288,7 +291,7 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     ...cloneSourceCounterpartyGroupAliases(value.Data),
     ...cloneGroupedCashAliases(value.Data),
     ...cloneCashReadModeAliases(value.Data),
-    ...cloneConstructorPresentation(value.Data), ...cloneReportProfile(value.Data),
+    ...cloneStockQuantityFilter(value.Data), ...cloneConstructorPresentation(value.Data), ...cloneReportProfile(value.Data),
     ...cloneWorkbookAliases(value.Data),
     ...cloneNumberPresentationAliases(value.Data),
     ...clonePresentationCurrencyAliases(value.Data),
@@ -342,6 +345,8 @@ export async function saveServerReportTemplate(template: ReportTemplate, signal?
   request.Data = withCurrentVparivanieMovementScope(request.Data)
   const numericError = salesConstructorError(request.Data) ?? numberPresentationError(request.Data) ?? reportConfigurationError(request.Data, request.Data.dataSource === 35 ? dataset : undefined)
   if (numericError) throw new Error(numericError)
+  const stockError = stockQuantityFilterError(request.Data, dataset)
+  if (stockError) throw new Error(stockError)
   const workbookError = workbookConfigurationError(request.Data)
   if (workbookError) throw new Error(workbookError)
   const exactFilterError = nativeExactFiltersConfigurationError(request.Data)

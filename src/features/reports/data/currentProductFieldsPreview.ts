@@ -1,7 +1,7 @@
 import { readProductGroupAttribute } from './currentProductGroupReferences'
 import type { NativeReportPreview } from './nativeReportPreview'
 import type { WorkbookPreview, WorkbookRow } from './workbookPreview'
-import { currentProductFields, currentProductGroupFields, readWorkbookSelection, workbookHasText, workbookText, type WorkbookField } from './workbookPresentation'
+import { productFieldsForVersion, isCurrentProductVersion, readWorkbookSelection, workbookHasText, workbookText, type WorkbookField } from './workbookPresentation'
 
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
 const keys = (value: Record<string, unknown>, names: string[]) => Object.keys(value).sort().join(',') === names.toSorted().join(',')
@@ -10,9 +10,9 @@ const fail = (): never => { throw new Error('Сервер не підтверд�
 
 /** Product versions have exact product evidence, never relaxed version1 currency witnesses. */
 export function readCurrentProductPreview(raw: Record<string, unknown>, preview: NativeReportPreview): WorkbookPreview {
-  const expectedFields = raw.version === 3 ? currentProductGroupFields : currentProductFields
+  const expectedFields = productFieldsForVersion(raw.version)
   if (preview.Request?.DataSource !== 'NativeSalesNet' || !keys(raw, ['version', 'resultSha256', 'selection', 'fields', 'rows'])
-    || (raw.version !== 2 && raw.version !== 3) || raw.resultSha256 !== preview.ResultSha256 || !hash(raw.resultSha256)
+    || !isCurrentProductVersion(raw.version) || raw.resultSha256 !== preview.ResultSha256 || !hash(raw.resultSha256)
     || new TextEncoder().encode(JSON.stringify(raw)).length > 1048576) return fail()
   const selection = record(raw.selection) && keys(raw.selection, ['version', 'additionalFields', 'ordering']) ? readWorkbookSelection(raw.selection) : null
   if (!selection || selection.version !== raw.version || selection.ordering !== null
@@ -40,7 +40,7 @@ export function readCurrentProductPreview(raw: Record<string, unknown>, preview:
     if (positive.some(Boolean) && (positive.some(id => id === null) || new Set(positive).size !== 1)) return fail()
     const exactProduct = positive.every(Boolean)
     const values = row.values.map((value, fieldIndex) => {
-      if (raw.version === 3 && fields[fieldIndex].type === 67) return readProductGroupAttribute(value, exactProduct)
+      if (raw.version !== 2 && fields[fieldIndex].type === 67) return readProductGroupAttribute(value, exactProduct)
       if (!record(value) || !keys(value, ['type', 'state', 'values', 'inputSha256']) || value.type !== fields[fieldIndex].type
         || !['known', 'null', 'unavailable'].includes(String(value.state)) || !hash(value.inputSha256)
         || !Array.isArray(value.values) || !value.values.every(workbookText)

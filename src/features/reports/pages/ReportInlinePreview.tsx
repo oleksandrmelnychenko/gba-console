@@ -267,5 +267,5 @@ function kyivTimestamp(value: string): string {
 }
 
 function CurrentProductFieldsNotice({ version }: { version?: number }) {
-  return version === 2 || version === 3 ? <Text size="sm">Поточні поля товару з довідника на час формування звіту. ∅ означає незаповнене поле, тире — недоступне значення.</Text> : null
+  return version === 2 || version === 3 || version === 4 ? <Text size="sm">Поточні поля товару з довідника на час формування звіту. ∅ означає незаповнене поле, тире — недоступне значення.</Text> : null
 }

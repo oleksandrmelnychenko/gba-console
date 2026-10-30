@@ -6,7 +6,7 @@ import { validFinancialProductTimeIdentity } from './currentFinancialProductTime
 import { hasFinancialDocumentAxes, validCurrentFinancialDocumentAxes } from './currentFinancialDocumentAxes'
 import { validFinancialDocumentIdentity } from './currentFinancialDocumentPreview'
 import type { NativeReportPreview } from './nativeReportPreview'
-import { readWorkbookSelection, sameWorkbookSelection, workbookSources, workbookText, workbookHasText,
+import { isCurrentProductVersion, readWorkbookSelection, sameWorkbookSelection, workbookSources, workbookText, workbookHasText,
   type WorkbookField, type WorkbookSelection } from './workbookPresentation'
 import type { ReportRequestBody } from '../types'
 import { requestWorkbookPresentation, workbookConfigurationError } from './workbookPresentation'
@@ -15,7 +15,7 @@ export type WorkbookReference = { id: string; netUid: string; caption: string | 
 export type WorkbookAttribute = { type: number; state: 'known' | 'mixed' | 'unavailable' | 'null'; values: string[]; inputSha256: string | null; references?: WorkbookReference[] }
 export type WorkbookCurrency = { id: string; netUid: string; name: string | null; code: string | null; available: boolean }
 export type WorkbookRow = { rowSourceIndex: number; rowKeySha256: string; values: WorkbookAttribute[]; currencyWitnesses: WorkbookCurrency[] }
-export type WorkbookPreview = { version: 1 | 2 | 3; resultSha256: string; selection: WorkbookSelection; fields: WorkbookField[]; rows: WorkbookRow[] }
+export type WorkbookPreview = { version: 1 | 2 | 3 | 4; resultSha256: string; selection: WorkbookSelection; fields: WorkbookField[]; rows: WorkbookRow[] }
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
 const keys = (value: Record<string, unknown>, names: string[]) => Object.keys(value).sort().join(',') === [...names].sort().join(',')
 const hash = (value: unknown): value is string => typeof value === 'string' && /^[a-f\d]{64}$/.test(value)
@@ -46,7 +46,7 @@ function attribute(value: unknown): WorkbookAttribute {
 /** Validate server attribution; typed server row hashes must never be recomputed from JavaScript numbers. */
 export function readWorkbookPreview(raw: unknown, preview: NativeReportPreview): WorkbookPreview | undefined {
   if (raw === undefined || raw === null) return undefined
-  if (record(raw) && (raw.version === 2 || raw.version === 3)) return readCurrentProductPreview(raw, preview)
+  if (record(raw) && isCurrentProductVersion(raw.version)) return readCurrentProductPreview(raw, preview)
   const source = sources.get(preview.Request?.DataSource ?? '')
   const expected = source === undefined ? undefined : workbookSources.get(source)
   if (!source || !expected || !record(raw) || !keys(raw, ['version', 'resultSha256', 'selection', 'fields', 'rows'])
@@ -115,7 +115,7 @@ function validateCurrencyAttribution(values: WorkbookAttribute[], witnesses: Wor
 export function bindWorkbookPreview(request: ReportRequestBody, preview: NativeReportPreview): void {
   const raw = requestWorkbookPresentation(request)
   const selection = raw == null ? null : readWorkbookSelection(raw)
-  if ((selection?.version === 2 || selection?.version === 3) && workbookConfigurationError(request)) fail()
+  if (isCurrentProductVersion(selection?.version) && workbookConfigurationError(request)) fail()
   if (raw != null && selection === null || (selection === null) !== (preview.WorkbookPresentation === undefined)
     || selection && (!preview.WorkbookPresentation || !sameWorkbookSelection(selection, preview.WorkbookPresentation.selection))) fail()
 }

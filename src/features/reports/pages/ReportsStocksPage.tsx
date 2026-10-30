@@ -1,3 +1,6 @@
+import { editableProductColumnsTemplate } from '../data/workbookPresentation'
+import { StockQuantityFilterPanel } from './StockQuantityFilterPanel'
+import { requestStockQuantityFilter, stockQuantityFilterError } from '../data/stockQuantityFilter'
 import { isReturnItemStatusSelection, returnItemStatusSelectionError, returnItemStatusesError } from '../data/returnItemStatuses'
 import { ReturnItemStatusPicker } from './ReturnItemStatusPicker'
 import { CustomerGroupTopPicker } from './CustomerGroupTopPicker'
@@ -372,6 +375,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const [dayOrganizationBasis, setDayOrganizationBasis] = useValueState<unknown>(undefined)
   const [supplierWarehouse, setSupplierWarehouse] = useValueState<unknown>(undefined)
   const [presentationCurrency, setPresentationCurrency] = useValueState<unknown>(undefined)
+  const [stockQuantityFilter, setStockQuantityFilter] = useValueState<unknown>(undefined)
   const [constructorPresentation, setConstructorPresentation] = useValueState<unknown>(undefined)
   const [reportProfile, setReportProfile] = useValueState<unknown>(undefined)
   const [numberPresentation, setNumberPresentation] = useValueState<unknown>(undefined)
@@ -456,8 +460,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const settlementDataset = useMemo(() => settlementFormDataset(priceTypeDataset, groupedSettlementPeriod, settlementReadMode), [priceTypeDataset, groupedSettlementPeriod, settlementReadMode])
   const cashDataset = useMemo(() => cashFormDataset(settlementDataset, groupedCashPeriod), [settlementDataset, groupedCashPeriod])
   const reportBody = useMemo<ReportRequestBody>(
-    () => upgradeCurrentVparivanieAnalysis(withCurrentVparivanieMovementScope({ ...(dataSource === 46 ? {nativePriceComparison} : {}), ...(dataSource === 44 ? {customerGroups} : {}), ...(currentVparivanieAnalysisCapability(dataset) ? { currentVparivanieAnalysis: { version: 1 } } : {}), ...buildReportBuilderRequest({ constructorPresentation, reportProfile, supplierWarehouse, presentationCurrency, numberPresentation, dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && (movementQuantities.Incoming || movementQuantities.Outgoing) ? { currentVparivanieMovements: movementQuantities } : {}), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }), dataset),
-    [dataset, nativePriceComparison, constructorPresentation, customerGroups, reportProfile, supplierWarehouse, presentationCurrency, numberPresentation, movementQuantities, fullCurrentVparivanie, abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbook.value, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => upgradeCurrentVparivanieAnalysis(withCurrentVparivanieMovementScope({ ...(dataSource === 46 ? {nativePriceComparison} : {}), ...(dataSource === 44 ? {customerGroups} : {}), ...(currentVparivanieAnalysisCapability(dataset) ? { currentVparivanieAnalysis: { version: 1 } } : {}), ...buildReportBuilderRequest({ stockQuantityFilter, constructorPresentation, reportProfile, supplierWarehouse, presentationCurrency, numberPresentation, dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && (movementQuantities.Incoming || movementQuantities.Outgoing) ? { currentVparivanieMovements: movementQuantities } : {}), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }), dataset),
+    [dataset, nativePriceComparison, stockQuantityFilter, constructorPresentation, customerGroups, reportProfile, supplierWarehouse, presentationCurrency, numberPresentation, movementQuantities, fullCurrentVparivanie, abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbook.value, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
   )
   const effectiveConfiguration = effectiveReportConfiguration(dataset, reportBody)
   const effectiveFilterTypes = effectiveConfiguration?.filters
@@ -519,8 +523,9 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     ?? customerGroupRegionError(dataSource, selections)
     ?? customerGroupSelectionsError(dataSource, selections)
   const returnStatusError = returnItemStatusesError(reportBody, dataset)
-  const templateConfigurationError = configurationError ?? organizationConfigurationError ?? returnStatusError
-  const generationConfigurationError = configurationError ?? currentMatrixError ?? receiptWarehouseCardinalityError
+  const stockQuantityError = stockQuantityFilterError(templateBody, dataset)
+  const templateConfigurationError = stockQuantityError ?? configurationError ?? organizationConfigurationError ?? returnStatusError
+  const generationConfigurationError = stockQuantityError ?? configurationError ?? currentMatrixError ?? receiptWarehouseCardinalityError
     ?? organizationConfigurationError ?? returnStatusError
   const reportIsReady = !generationConfigurationError && !periodError && !incompleteSelectionMessage && checkedMeasurements > 0 && !missingRowGrouping
   const canSubmit = canGenerateReport && reportIsReady
@@ -648,6 +653,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setDayOrganizationBasis(snapshotDefaults?.dayOrganizationBasis)
     setSupplierWarehouse(snapshotDefaults?.supplierWarehouse)
     setPresentationCurrency(snapshotDefaults ? requestPresentationCurrency(snapshotDefaults) : undefined)
+    setStockQuantityFilter(snapshotDefaults ? structuredClone(requestStockQuantityFilter(snapshotDefaults)) : undefined)
     setConstructorPresentation(snapshotDefaults?.constructorPresentation)
     setReportProfile(snapshotDefaults?.reportProfile)
     setNumberPresentation(snapshotDefaults?.numberPresentation)
@@ -716,7 +722,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     const nextDataset = datasetStorage.datasets.find(item => item.DataSource === (template.Data.dataSource ?? 0))
     template = { ...template, Data: upgradeCurrentVparivanieAnalysis(withUnifiedSource(template.Data, nextDataset), nextDataset) }
     const reviewed = productClassificationReviewError(template.Data, nextDataset) ? withoutProductClassification(template.Data) : template.Data
-    const incompatible = (consoleScope && !BUG_1274_ACTIVE_DATA_SOURCES.has(template.Data.dataSource ?? 0) ? BUG_1274_DISABLED_MESSAGE : null) ?? datasetConfigurationError(reviewed, nextDataset, 'workspace')
+    const incompatible = (consoleScope && !BUG_1274_ACTIVE_DATA_SOURCES.has(template.Data.dataSource ?? 0) ? BUG_1274_DISABLED_MESSAGE : null) ?? datasetConfigurationError(editableProductColumnsTemplate(reviewed, nextDataset), nextDataset, 'workspace')
     if (incompatible || !nextDataset) {
       setTemplateNotice(incompatible)
       return false
@@ -774,6 +780,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setCashReadMode(structuredClone(requestCashReadMode(data)))
     setSupplierWarehouse(structuredClone(data.supplierWarehouse ?? data.SupplierWarehouse))
     setPresentationCurrency(structuredClone(requestPresentationCurrency(data)))
+    setStockQuantityFilter(structuredClone(requestStockQuantityFilter(data)))
     setConstructorPresentation(structuredClone(requestConstructorPresentation(data)))
     setReportProfile(structuredClone(requestReportProfile(data)))
     setNumberPresentation(structuredClone(requestNumberPresentation(data)))
@@ -859,6 +866,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setCashReadMode(structuredClone(requestCashReadMode(data)))
     setSupplierWarehouse(structuredClone(data.supplierWarehouse ?? data.SupplierWarehouse))
     setPresentationCurrency(structuredClone(requestPresentationCurrency(data)))
+    setStockQuantityFilter(structuredClone(requestStockQuantityFilter(data)))
     setConstructorPresentation(structuredClone(requestConstructorPresentation(data)))
     setReportProfile(structuredClone(requestReportProfile(data)))
     setNumberPresentation(structuredClone(requestNumberPresentation(data)))
@@ -1056,6 +1064,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         selectionTitle={t('Відбір організацій')} addSelectionLabel={t('Додати організацію')} /> : null}
     </> : null
     const filtersContent = <>
+      <StockQuantityFilterPanel dataset={dataset} request={templateBody} disabled={comparisonSettingsDisabled} onChange={setStockQuantityFilter} />
       {dataSource === 46 ? <NativePriceComparisonPanel value={nativePriceComparison} onChange={setNativePriceComparison} disabled={comparisonSettingsDisabled} /> : null}
       {dataSource === 44 ? <CustomerGroupsPanel value={customerGroups} onChange={setCustomerGroups} disabled={comparisonSettingsDisabled} /> : null}
       {dataSource === 35 ? <div className="workbook-desk__group">{dayProfitControls('filters')}</div> : null}

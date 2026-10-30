@@ -254,6 +254,8 @@ export type ReportSourceBuyerSubtreeCapabilities = {
 }
 
 export type ReportRequestBody = {
+  stockQuantityFilter?: unknown
+  StockQuantityFilter?: unknown
   constructorPresentation?: unknown
   ConstructorPresentation?: unknown
   reportProfile?: unknown
@@ -365,6 +367,8 @@ export type ReportDatasetField = { Type: number; Name: string; Selectable?: bool
 export type ReportDataset = {
   returnItemStatuses?: unknown
   documentDetails?: unknown
+  stockQuantityFilter?: unknown
+  StockQuantityFilter?: unknown
   constructorPresentation?: unknown
   reportProfiles?: unknown
   profileGroupings?: unknown
@@ -373,6 +377,7 @@ export type ReportDataset = {
   numberPresentation?: unknown
   workbookPresentation?: unknown
   currentProductGroupLists?: unknown
+  currentProductColumns?: unknown
   customerReturnFilters?: boolean
   returnsOnly?: boolean
   groupedSettlementPeriod?: unknown

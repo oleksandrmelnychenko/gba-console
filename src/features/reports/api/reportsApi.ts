@@ -1,3 +1,4 @@
+import { stockQuantityFilterError } from '../data/stockQuantityFilter'
 import { salesConstructorError } from '../data/salesConstructorProfiles'
 import { isSalesResponsibleKey, SALES_BY_RESPONSIBLES_RESPONSIBLE_FILTERS, SALES_BY_RESPONSIBLES_SOURCE } from '../data/salesByResponsibles'
 import { bindPresentationCurrency, requestPresentationCurrency } from '../data/reportPresentationCurrency'
@@ -69,7 +70,8 @@ export async function createStockReport(body: ReportRequestBody, dataset?: Repor
 /** Long current-product text stays inside the bounded preview; cached/exported report is unchanged. */
 function reportPreviewRowLimit(request: ReportRequestBody): number {
   const selection = readWorkbookSelection(requestWorkbookPresentation(request))
-  return isSalesProductProfile(request) && (selection?.version === 2 || selection?.version === 3) && selection.additionalFields.length > 0 ? 5 : 50
+  if (!isSalesProductProfile(request) || !selection?.additionalFields.length) return 50
+  return selection.version === 4 ? 2 : selection.version === 2 || selection.version === 3 ? 5 : 50
 }
 
 /** Calculates one bounded on-screen page and file links from the same report run. */
@@ -198,6 +200,8 @@ function prepareStockReportRequest(body: ReportRequestBody, dataset?: ReportData
   const presentationError = salesConstructorError(body, dataset) ?? numberPresentationError(body, dataset) ?? reportConfigurationError(body, dataset)
   if (presentationError) throw new Error(presentationError)
   const request = (body.dataSource === 2 || body.dataSource === 17 || body.dataSource === 18 || body.dataSource === 19 || body.dataSource === 20 || body.dataSource === 21 || body.dataSource === 22 || body.dataSource === 23 || body.dataSource === 24 || body.dataSource === 25 || body.dataSource === 27 || body.dataSource === 28 || body.dataSource === 35 || body.dataSource === 38 || body.dataSource === 39 || body.dataSource === 40 || body.dataSource === 41) ? structuredClone(body) : body
+  const stockError = stockQuantityFilterError(request)
+  if (stockError) throw new Error(stockError)
   const workbookError = workbookConfigurationError(request)
   if (workbookError) throw new Error(workbookError)
   const exactFilterError = nativeExactFiltersConfigurationError(request)
