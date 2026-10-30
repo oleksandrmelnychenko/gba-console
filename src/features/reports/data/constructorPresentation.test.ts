@@ -19,7 +19,7 @@ it('keeps absent legacy flags omitted and preserves raw malformed or unsupported
   expect(cloneConstructorPresentation(request)).toEqual({})
   expect(constructorPresentationError(request, { ...dataset, constructorPresentation: undefined })).toBeNull()
   for (const value of [null, { ...flags, version: 2 }, { ...flags, negativeRed: 'false' }, { ...flags, extra: true }]) {
-    const saved = normalizeSavedTemplate({ Id:'p', Revision:1, Name:'Порівняння', Data:{ DataSource:44, From:request.from, To:request.to, Sorted:request.sorted, Selections:[], ConstructorPresentation:value } })
+    const saved = normalizeSavedTemplate({ Id:'p', Revision:1, UpdatedAtUtc:'2026-10-30T00:00:00Z', Name:'Порівняння', Data:{ DataSource:44, From:request.from, To:request.to, Sorted:request.sorted, Selections:[], ConstructorPresentation:value } })
     expect(saved.Data.constructorPresentation).toEqual(value)
     expect(constructorPresentationError(saved.Data, dataset)).toBeTruthy()
     expect(readConstructorPresentation(value)).toBeUndefined()
