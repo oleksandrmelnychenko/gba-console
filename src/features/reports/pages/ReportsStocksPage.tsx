@@ -1,3 +1,4 @@
+import { CustomerGroupTopPicker } from './CustomerGroupTopPicker'
 import { CustomerGroupExactChoicePicker } from './CustomerGroupExactChoicePicker'
 import { customerGroupSelectionsError, isCustomerGroupExactSelection } from '../data/customerGroupSelections'
 import { CustomerGroupRegionPicker } from './CustomerGroupRegionPicker'
@@ -2580,6 +2581,8 @@ type SelectionValuePickerProps = {
 const EMPTY_LOOKUP_OPTIONS: ReportEntity[] = []
 
 export function SelectionValuePicker(props: SelectionValuePickerProps) {
+  if (props.dataSource === 44 && props.selection.SelectedField.Type === 3)
+    return <CustomerGroupTopPicker selection={props.selection} label={props.label} disabled={props.lookupProfitUnavailable} error={props.error} onChange={props.onChange} />
   const exactField = props.selection.SelectedField.Type
   if (isCustomerGroupExactSelection(props.dataSource, exactField) && (exactField === 1 || exactField === 8 || exactField === 9 || exactField === 10))
     return <CustomerGroupExactChoicePicker key={exactField} field={exactField} selection={props.selection} label={props.label}

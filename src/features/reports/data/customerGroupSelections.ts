@@ -1,4 +1,5 @@
 import type { ReportSelection } from '../types'
+import { customerGroupTopName } from './customerGroupTop'
 import { customerGroupAgreementId } from './customerGroupAgreement'
 import { customerGroupDirectoryId } from './customerGroupDirectory'
 import { reportSelectionCardinalityError } from './reportOptions'
@@ -9,15 +10,15 @@ export function customerGroupSelectionsError(source: number, selections: ReportS
   if (source !== 44) return null
   for (const selection of selections) {
     const field = selection.SelectedField.Type
-    if (selection.IsChecked === false || ![1, 8, 9, 10].includes(field)) continue
+    if (selection.IsChecked === false || ![1, 3, 8, 9, 10].includes(field)) continue
     // Product equality already supports a saved exact set; do not narrow this existing financial contract.
     const cardinality = field === 1 ? null : reportSelectionCardinalityError(selection)
     if (cardinality) return cardinality
     if (!selection.Values.length) return 'Оберіть значення або вимкніть цю умову.'
     if (selection.Values.length > 100 || ![0, 1, 2, 4].includes(selection.FilterCondition.Type))
       return 'Оберіть до 100 значень і одну з чотирьох умов відбору.'
-    if (selection.Values.some(value => (field === 9 ? customerGroupAgreementId(value.Data) : customerGroupDirectoryId(value.Data)) === null))
-      return 'Повторно оберіть значення: збережений ідентифікатор не підтверджено.'
+    if (selection.Values.some(value => (field === 3 ? customerGroupTopName(value.Data) : field === 9 ? customerGroupAgreementId(value.Data) : customerGroupDirectoryId(value.Data)) === null))
+      return field === 3 ? 'Повторно оберіть TOP: збережений код не підтверджено.' : 'Повторно оберіть значення: збережений ідентифікатор не підтверджено.'
   }
   return null
 }
