@@ -1,11 +1,11 @@
-import fixture from '../data/customerGroupProductGroup.server-fixture.json'
+import fixture from '../data/customerGroupWarehouse.server-fixture.json'
 import { MantineProvider } from '@mantine/core'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
-import { apiRequest } from '../../../shared/api/apiClient'
+import { ApiError, apiRequest } from '../../../shared/api/apiClient'
 import { getReportDatasets, getServerReportTemplates, parseReportDatasets, saveServerReportTemplate } from '../api/reportWorkspaceApi'
-import { searchDatasetReportValues } from '../api/reportsApi'
+import { previewStockReport, searchDatasetReportValues } from '../api/reportsApi'
 import { defaultDatasetRequest } from '../data/reportDatasets'
 import type { ReportTemplate } from '../types'
 import { changeReportPeriod } from '../testing/reportPeriod'
@@ -14,7 +14,7 @@ vi.mock('../../auth/useAuth',()=>({useAuth:()=>({hasPermission:()=>true})}))
 vi.mock('../../../shared/api/apiClient',async original=>({...await original<typeof import('../../../shared/api/apiClient')>(),apiRequest:vi.fn()}))
 vi.mock('../api/reportWorkspaceApi',async original=>({...await original<typeof import('../api/reportWorkspaceApi')>(),getReportDatasets:vi.fn(),getServerReportTemplates:vi.fn(),saveServerReportTemplate:vi.fn()}))
 vi.mock('../api/reportsApi',async original=>({...await original<typeof import('../api/reportsApi')>(),searchDatasetReportValues:vi.fn(),previewStockReport:vi.fn()}))
-const dataset=parseReportDatasets([{...fixture.dataset,Filters:[...fixture.dataset.Filters,{Type:21,Name:'Фактичний склад руху',Selectable:true}]}])[0]
+const dataset=parseReportDatasets([fixture.dataset])[0]
 function template(condition=2,checked=true):ReportTemplate{
  const data=defaultDatasetRequest(dataset,'2026-10-01','2026-10-27')
  data.customerGroups={Version:1,Groups:[{Name:'Еталон',ClientIds:[71,72]},{Name:'Набір B',ClientIds:[72,73]}]}
@@ -52,4 +52,12 @@ it.each([0,1])('blocks invalid warehouse condition%d Apply and Save while permit
 it('retains a disabled invalid warehouse row without blocking Apply or template save',async()=>{
  const t=template(0,false);t.Data.selections[0].Values=JSON.parse('[{"Data":{"Id":"9223372036854775808"},"Name":"Архів","Value":0}]');vi.mocked(getServerReportTemplates).mockResolvedValue([t]);await restore();expect(screen.getByRole('button',{name:'Застосувати й показати'})).toHaveProperty('disabled',false)
  fireEvent.click(screen.getByRole('button',{name:'Шаблони'}));fireEvent.click(screen.getByRole('button',{name:'Оновити шаблон'}));await waitFor(()=>expect(saveServerReportTemplate).toHaveBeenCalledOnce());expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data.selections).toEqual(t.Data.selections)
+})
+
+it('preserves missing saved warehouse and settings when actual physical coverage refuses generation',async()=>{
+ const message=fixture.coverageHttp.body.Message
+ vi.mocked(previewStockReport).mockRejectedValueOnce(new ApiError(message,fixture.coverageHttp.status,fixture.coverageHttp.body));await restore();fireEvent.click(screen.getByRole('button',{name:'Застосувати й показати'}));await screen.findByText(message)
+ expect(previewStockReport).toHaveBeenCalledOnce();expect(screen.queryByRole('table')).toBeNull();expect(screen.getByRole('button',{name:'Застосувати й показати'})).toHaveProperty('disabled',false)
+ fireEvent.click(screen.getByRole('button',{name:'Шаблони'}));fireEvent.click(screen.getByRole('button',{name:'Оновити шаблон'}));await waitFor(()=>expect(saveServerReportTemplate).toHaveBeenCalledOnce())
+ expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data).toMatchObject({customerGroups:template().Data.customerGroups,selections:template().Data.selections,from:'2026-10-01',to:'2026-10-27'})
 })
