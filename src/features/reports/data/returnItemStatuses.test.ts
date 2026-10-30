@@ -28,3 +28,13 @@ it('does not admit capability in another source or apply returns picker policy t
  expect(returnItemStatusesCapability({...returnStatusDataset,DataSource:44})).toBeNull()
  const raw=request({Name:'legacy untouched'});raw.returnsOnly=false;expect(returnItemStatusesError(raw,returnStatusDataset)).toBeNull()
 })
+
+it('accepts a single escaped canonical key but rejects duplicate decoded keys',()=>{
+ expect(returnItemStatus(String.raw`{"ReturnItemStat\u0075s":0}`)).toBe(0)
+ expect(returnItemStatus(String.raw`{"ReturnItemStat\u0075s":0,"ReturnItemStatus":6}`)).toBeNull()
+})
+it.each([0,1,2,4])('preserves valid existing multi-values with condition %s',condition=>{
+ const raw=request({ReturnItemStatus:0});raw.selections[0].FilterCondition.Type=condition
+ raw.selections[0].Values.push({Data:{ReturnItemStatus:6},Name:'Брак',Value:0})
+ expect(returnItemStatusesError(raw,returnStatusDataset)).toBeNull()
+})

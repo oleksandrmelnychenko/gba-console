@@ -23,8 +23,9 @@ export function isReturnItemStatusSelection(request: ReportRequestBody | undefin
 export function returnItemStatus(raw: unknown): number | null {
   if (typeof raw === 'string') {
     // Only one canonical numeric member: no duplicate keys, extra fields, exponent or fractional tokens.
-    const match = /^\s*\{\s*"ReturnItemStatus"\s*:\s*([0-8])\s*\}\s*$/.exec(raw)
-    return match ? Number(match[1]) : null
+    const match = /^\s*\{\s*("(?:\\.|[^"\\])*")\s*:\s*([0-8])\s*\}\s*$/.exec(raw)
+    if (!match) return null
+    try { return JSON.parse(match[1]) === 'ReturnItemStatus' ? Number(match[2]) : null } catch { return null }
   }
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null
   const item = raw as Record<string, unknown>

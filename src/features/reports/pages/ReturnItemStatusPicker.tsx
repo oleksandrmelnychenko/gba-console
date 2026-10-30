@@ -20,6 +20,8 @@ export function ReturnItemStatusPicker({ dataset, selection, onChange }: {
     }))
   }
   return <Stack gap="xs">
+    {!legacy && selection.Values.length > 0 && (!statuses || !isMultiValueReportCondition(selection.FilterCondition.Type) && selection.Values.length > 1)
+      ? <Text size="sm">Збережені причини: {selection.Values.map(value => statuses?.find(status => status.value === returnItemStatus(value.Data))?.name ?? value.Name).join(', ')}</Text> : null}
     {legacy ? <Text size="sm">Збережені значення: {selection.Values.map(value => value.Name).join(', ')}. Щоб вибрати нові причини, спочатку очистіть ці значення.</Text>
       : isMultiValueReportCondition(selection.FilterCondition.Type)
         ? <MultiSelect label="Причини повернення" data={options} value={selected} onChange={change} searchable disabled={!statuses} nothingFoundMessage="Причину не знайдено" />
