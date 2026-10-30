@@ -11,7 +11,7 @@ import type { ReportTemplate } from '../types'
 import { changeReportPeriod } from '../testing/reportPeriod'
 import { ReportsStocksPage } from './ReportsStocksPage'
 vi.mock('../../auth/useAuth',()=>({useAuth:()=>({hasPermission:()=>true})}))
-vi.mock('../../../shared/api/apiClient',()=>({apiRequest:vi.fn()}))
+vi.mock('../../../shared/api/apiClient',async original=>({...await original<typeof import('../../../shared/api/apiClient')>(),apiRequest:vi.fn()}))
 vi.mock('../api/reportWorkspaceApi',async original=>({...await original<typeof import('../api/reportWorkspaceApi')>(),getReportDatasets:vi.fn(),getServerReportTemplates:vi.fn(),saveServerReportTemplate:vi.fn()}))
 vi.mock('../api/reportsApi',async original=>({...await original<typeof import('../api/reportsApi')>(),searchDatasetReportValues:vi.fn(),previewStockReport:vi.fn()}))
 // Provisional additive metadata only; replace with actual serialized backend fixture after SQL passes.
