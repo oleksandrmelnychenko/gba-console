@@ -1,3 +1,4 @@
+import { normalizeSavedTemplate } from '../api/reportWorkspaceApi'
 import { expect, it } from 'vitest'
 import { netDataset } from './reportDatasets.test-fixtures'
 import { defaultDatasetRequest } from './reportDatasets'
@@ -42,4 +43,11 @@ it.each([0,1,2,4])('preserves valid existing multi-values with condition %s',con
  const raw=request({ReturnItemStatus:0});raw.selections[0].FilterCondition.Type=condition
  raw.selections[0].Values.push({Data:{ReturnItemStatus:6},Name:'Брак',Value:0})
  expect(returnItemStatusesError(raw,returnStatusDataset)).toBeNull()
+})
+
+it.each(['{"Id":71,"Name":"Стара назва"}','{"ReturnItemStatus":0}'])('restores saved raw JSON without rewriting it: %s', raw=>{
+ const body=request(raw)
+ const restored=normalizeSavedTemplate({Id:'return-status',Revision:1,Name:'Повернення',UpdatedAtUtc:'2026-10-30T00:00:00Z',Data:{DataSource:2,ReturnsOnly:true,From:body.from,To:body.to,Sorted:body.sorted,Selections:body.selections}})
+ expect(restored.Data.selections[0].Values[0].Data).toBe(raw)
+ expect(returnItemStatusesError(restored.Data,returnStatusDataset)).toBeNull()
 })
