@@ -44,5 +44,6 @@ it.each(variants)('binds actual source44 $name presentation without changing coh
 it('rejects presentation flags from other result namespaces and malformed explicit settings',()=>{
  const fixture=variants[4].page0
  expect(()=>normalizeNativeReportPreview({...fixture,Preview:{...fixture.Preview,Request:{...fixture.Preview.Request,DataSource:'NativeStockMovement'}}})).toThrow('Непідтримуване оформлення результату.')
+ expect(()=>normalizeNativeReportPreview({...fixture,Preview:{...fixture.Preview,Request:{...fixture.Preview.Request,DataSource:['NativeCustomerGroupComparison']}}})).toThrow('Непідтримуване оформлення результату.')
  expect(()=>normalizeNativeReportPreview({...fixture,Preview:{...fixture.Preview,constructorPresentation:{version:1,negativeRed:'true',grandTotals:true}}})).toThrow('Непідтримуване оформлення результату.')
 })
