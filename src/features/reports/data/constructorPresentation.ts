@@ -17,14 +17,20 @@ export function cloneConstructorPresentation(data: object): Pick<ReportRequestBo
 }
 export function constructorPresentationSupported(dataset?: ReportDataset): boolean {
   const value = dataset?.constructorPresentation
-  return dataset?.DataSource === 2 && object(value) && value.version === 1
+  return [2, 44].includes(dataset?.DataSource ?? -1) && object(value) && value.version === 1
     && Array.isArray(value.fields) && value.fields.join(',') === 'negativeRed,grandTotals'
+}
+export function constructorPresentationRequestSupported(request: ReportRequestBody): boolean {
+  if (request.dataSource === 44) return request.reportProfile === undefined && request.ReportProfile === undefined
+    && request.returnsOnly === undefined && request.ReturnsOnly === undefined
+  return request.dataSource === 2 && ['sales', 'grossProfit'].includes(String(request.reportProfile ?? request.ReportProfile))
 }
 export function constructorPresentationError(request: ReportRequestBody, dataset?: ReportDataset): string | null {
   const value = requestConstructorPresentation(request)
   if (value === undefined) return null
-  const profile = request.reportProfile ?? request.ReportProfile
-  if (!readConstructorPresentation(value) || request.dataSource !== 2 || !['sales', 'grossProfit'].includes(String(profile)))
-    return 'Непідтримуване оформлення конструктора продажів.'
-  return dataset && !constructorPresentationSupported(dataset) ? 'Сервер ще не підтримує оформлення конструктора продажів.' : null
+  const customerComparison = request.dataSource === 44
+  if (!readConstructorPresentation(value) || !constructorPresentationRequestSupported(request))
+    return customerComparison ? 'Непідтримуване оформлення порівняння роботи клієнтів.' : 'Непідтримуване оформлення конструктора продажів.'
+  return dataset && (dataset.DataSource !== request.dataSource || !constructorPresentationSupported(dataset))
+    ? customerComparison ? 'Сервер ще не підтримує оформлення порівняння роботи клієнтів.' : 'Сервер ще не підтримує оформлення конструктора продажів.' : null
 }

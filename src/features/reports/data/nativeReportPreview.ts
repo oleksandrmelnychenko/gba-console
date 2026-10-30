@@ -184,7 +184,7 @@ export function normalizeNativeReportPreview(response: unknown, fullCurrentVpari
   const columnWindow = readColumnWindow(preview.Page, preview.Columns.length)
   const columnBound = columnWindow ? MAXIMUM_RESULT_COLUMNS : LEGACY_PREVIEW_COLUMNS
 
-  if (preview.constructorPresentation != null && (!readConstructorPresentation(preview.constructorPresentation) || !record(preview.Request) || preview.Request.DataSource !== 'NativeSalesNet')) throw new Error('Непідтримуване оформлення результату.')
+  if (preview.constructorPresentation != null && (!readConstructorPresentation(preview.constructorPresentation) || !record(preview.Request) || !['NativeSalesNet', 'NativeCustomerGroupComparison'].includes(String(preview.Request.DataSource)))) throw new Error('Непідтримуване оформлення результату.')
   if (preview.numberPresentation != null && !readNumberPresentation(preview.numberPresentation)) throw new Error('Непідтримуваний формат чисел результату.')
   if (preview.valueSemantics !== undefined && (!Array.isArray(preview.valueSemantics) || preview.valueSemantics.some(item => !record(item) || !Number.isInteger(item.columnSourceIndex) || !readValueSemantics(item.semantics)
     || columnWindow && !((item.columnSourceIndex as number) >= columnWindow.ColumnOffset && (item.columnSourceIndex as number) < columnWindow.ColumnOffset + columnWindow.ReturnedColumns)))) throw new Error('Некоректні одиниці показників результату.')

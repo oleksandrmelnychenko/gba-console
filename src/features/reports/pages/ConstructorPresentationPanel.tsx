@@ -1,10 +1,10 @@
 import { Checkbox, Group } from '@mantine/core'
 import type { ReportDataset, ReportRequestBody } from '../types'
-import { constructorPresentationSupported, defaultConstructorPresentation, readConstructorPresentation, requestConstructorPresentation, type ConstructorPresentation } from '../data/constructorPresentation'
+import { constructorPresentationSupported, constructorPresentationRequestSupported, defaultConstructorPresentation, readConstructorPresentation, requestConstructorPresentation, type ConstructorPresentation } from '../data/constructorPresentation'
 export function ConstructorPresentationPanel({ dataset, request, disabled, onChange }: {
   dataset?: ReportDataset; request: ReportRequestBody; disabled: boolean; onChange: (value: ConstructorPresentation) => void
 }) {
-  if (!constructorPresentationSupported(dataset) || !['sales', 'grossProfit'].includes(String(request.reportProfile))) return null
+  if (!constructorPresentationSupported(dataset) || dataset?.DataSource !== request.dataSource || !constructorPresentationRequestSupported(request)) return null
   const value = readConstructorPresentation(requestConstructorPresentation(request)) ?? defaultConstructorPresentation
   return <Group gap="md" role="group" aria-label="Оформлення звіту">
     <Checkbox label="Від’ємні значення червоним" checked={value.negativeRed} disabled={disabled}
