@@ -3,7 +3,7 @@ import { MantineProvider } from '@mantine/core'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
-import { apiRequest } from '../../../shared/api/apiClient'
+import { ApiError, apiRequest } from '../../../shared/api/apiClient'
 import { getReportDatasets, getServerReportTemplates, parseReportDatasets, saveServerReportTemplate } from '../api/reportWorkspaceApi'
 import { previewStockReport, searchDatasetReportValues } from '../api/reportsApi'
 import { defaultDatasetRequest } from '../data/reportDatasets'
@@ -57,7 +57,7 @@ it('retains a disabled invalid group row without blocking Apply or template save
 
 it('shows missing-master generation refusal without replacing the saved group or presenting an empty financial result',async()=>{
  const message='Вибрану товарну групу не знайдено в довіднику GBA. Відбір не застосовано; оновіть вибір груп.'
- vi.mocked(previewStockReport).mockRejectedValueOnce(new Error(message));await restore();fireEvent.click(screen.getByRole('button',{name:'Застосувати й показати'}));await screen.findByText(message)
+ vi.mocked(previewStockReport).mockRejectedValueOnce(new ApiError(message,400,{Message:message,Body:null}));await restore();fireEvent.click(screen.getByRole('button',{name:'Застосувати й показати'}));await screen.findByText(message)
  expect(previewStockReport).toHaveBeenCalledOnce();expect(screen.queryByRole('table')).toBeNull();expect(screen.getByRole('button',{name:'Застосувати й показати'})).toHaveProperty('disabled',false)
  fireEvent.click(screen.getByRole('button',{name:'Шаблони'}));fireEvent.click(screen.getByRole('button',{name:'Оновити шаблон'}));await waitFor(()=>expect(saveServerReportTemplate).toHaveBeenCalledOnce())
  expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data).toMatchObject({customerGroups:template().Data.customerGroups,selections:template().Data.selections,from:'2026-10-01',to:'2026-10-27'})
