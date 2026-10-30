@@ -5,7 +5,8 @@ export function ConstructorPresentationPanel({ dataset, request, disabled, onCha
   dataset?: ReportDataset; request: ReportRequestBody; disabled: boolean; onChange: (value: ConstructorPresentation) => void
 }) {
   if (!constructorPresentationSupported(dataset) || dataset?.DataSource !== request.dataSource || !constructorPresentationRequestSupported(request)) return null
-  const value = readConstructorPresentation(requestConstructorPresentation(request)) ?? defaultConstructorPresentation
+  const value = readConstructorPresentation(requestConstructorPresentation(request))
+    ?? (request.dataSource === 44 ? { ...defaultConstructorPresentation, negativeRed: false } : defaultConstructorPresentation)
   return <Group gap="md" role="group" aria-label="Оформлення звіту">
     <Checkbox label="Від’ємні значення червоним" checked={value.negativeRed} disabled={disabled}
       onChange={event => onChange({ ...value, negativeRed: event.currentTarget.checked })} />

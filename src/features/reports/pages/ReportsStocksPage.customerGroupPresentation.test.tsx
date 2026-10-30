@@ -51,3 +51,11 @@ it.each([null,{...flags,version:2}])('shows saved invalid presentation error wit
 it('rejects explicit saved options on an old server without loading or replacing them',async()=>{
  vi.mocked(getReportDatasets).mockResolvedValue([{...dataset,constructorPresentation:undefined}]);const original=template();vi.mocked(getServerReportTemplates).mockResolvedValue([original]);await restore(true);await screen.findByText('Сервер ще не підтримує оформлення порівняння роботи клієнтів.');expect(screen.queryByRole('checkbox',{name:'Загальний підсумок'})).toBeNull();expect(original.Data.constructorPresentation).toEqual(flags);expect(saveServerReportTemplate).not.toHaveBeenCalled();expect(previewStockReport).not.toHaveBeenCalled()
 })
+
+it('shows legacy44 defaults without emitting flags; explicit total toggle does not silently turn negative red on',async()=>{
+ const t=template();delete t.Data.constructorPresentation;vi.mocked(getServerReportTemplates).mockResolvedValue([t]);await restore()
+ expect(screen.getByRole('checkbox',{name:'Від’ємні значення червоним'})).toHaveProperty('checked',false)
+ expect(screen.getByRole('checkbox',{name:'Загальний підсумок'})).toHaveProperty('checked',true)
+ fireEvent.click(screen.getByRole('checkbox',{name:'Загальний підсумок'}));fireEvent.click(screen.getByRole('button',{name:'Застосувати й показати'}));await waitFor(()=>expect(previewStockReport).toHaveBeenCalledOnce())
+ expect(vi.mocked(previewStockReport).mock.calls[0][0].constructorPresentation).toEqual({version:1,negativeRed:false,grandTotals:false})
+})
