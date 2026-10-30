@@ -9,7 +9,7 @@ import type { ReportSelectedValue } from '../types'
 import { SelectionValuePicker } from './ReportsStocksPage'
 vi.mock('../../../shared/api/apiClient',()=>({apiRequest:vi.fn()}))
 const api=vi.mocked(apiRequest),max='9223372036854775807'
-const saved:ReportSelectedValue[]=[{Data:JSON.stringify({Id:'9007199254740993'}),Name:'Стара група',Value:0},{Data:{Id:max},Name:'Відсутня група',Value:0}]
+const saved:ReportSelectedValue[]=JSON.parse(String.raw`[{"Data":"{\"Id\":\"9007199254740993\"}","Name":"Стара група","Value":0},{"Data":{"Id":"9223372036854775807"},"Name":"Відсутня група","Value":0}]`)
 function Form({field=4,condition=2,values=saved,from='2026-10-01',disabled=false,checked=true}:{field?:number;condition?:number;values?:ReportSelectedValue[];from?:string;disabled?:boolean;checked?:boolean}){
  const [selected,setSelected]=useState(values)
  return <MantineProvider env="test"><I18nProvider><SelectionValuePicker dataSource={44} from={from} to="2026-10-27" label="Значення" lookupProfitUnavailable={disabled} selection={{IsChecked:checked,SelectedField:{Type:field,Name:'Поточні прямі групи товару'},FilterCondition:{Type:condition,Name:'Умова'},Values:selected}} selections={[]} onChange={setSelected}/><output data-testid="selected">{JSON.stringify(selected)}</output></I18nProvider></MantineProvider>
@@ -24,7 +24,7 @@ it('loads bounded empty group catalogue and selects exact maxInt64 without hiera
 })
 it('pages same-caption IDs by normal pointer without losing raw missing choices or date state',async()=>{
  api.mockImplementation(async(_path,options)=>Number(options?.query?.offset)>0?[{Id:'9007199254741999',Name:'Одна назва'}]:Array.from({length:30},(_,i)=>({Id:(9007199254740993n+BigInt(i)).toString(),Name:i===0?'Нова назва':'Одна назва'})))
- const view=render(<Form/>);await userEvent.click(screen.getByRole('combobox',{name:'Значення'}));await screen.findByRole('option',{name:'Стара група'});await userEvent.click(screen.getByRole('button',{name:'Ще значення'}));await waitFor(()=>expect(api).toHaveBeenCalledTimes(2));await userEvent.click(screen.getByRole('combobox',{name:'Значення'}));await waitFor(()=>expect(screen.getAllByRole('option')).toHaveLength(31));await userEvent.click(screen.getAllByRole('option',{name:'Одна назва'}).at(-1)!)
+ const view=render(<Form/>);await userEvent.click(screen.getByRole('combobox',{name:'Значення'}));await screen.findByRole('option',{name:'Стара група'});await userEvent.click(screen.getByRole('button',{name:'Ще значення'}));await waitFor(()=>expect(api).toHaveBeenCalledTimes(2));await userEvent.click(screen.getByRole('combobox',{name:'Значення'}));await waitFor(()=>expect(screen.getAllByRole('option',{name:'Одна назва'})).toHaveLength(30));expect(screen.getByRole('option',{name:'Відсутня група'})).toBeTruthy();await userEvent.click(screen.getAllByRole('option',{name:'Одна назва'}).at(-1)!)
  const expected=[...saved,{Data:{Id:'9007199254741999'},Name:'Одна назва',Value:0}];expect(selected()).toEqual(expected);view.rerender(<Form from="2026-09-01"/>);expect(selected()).toEqual(expected);expect(api.mock.calls.map(x=>x[1]?.query?.offset)).toEqual([0,30])
 })
 it('rejects stale group response after changing field without widening numeric manager identity',async()=>{
