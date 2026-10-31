@@ -16,6 +16,7 @@ import { deskRowsText } from '../data/reportCountPresentation'
 import type { SalesConstructorProfile } from '../data/salesConstructorProfiles'
 import { CurrentProductGroupsValue } from './CurrentProductGroupsValue'
 import { reportQuantityExplanations } from '../data/reportQuantityExplanations'
+import { reportAxisCaption, type ReportCaptionAxisSchema } from '../data/reportAxisCaption'
 
 export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, embedded = false, showPageNote = true, previewReportProfile }: { preview: NativeReportPreview; embedded?: boolean; showPageNote?: boolean; previewReportProfile?: SalesConstructorProfile }) {
   const cells = new Map(preview.Cells.map(cell => [`${cell.RowSourceIndex}:${cell.ColumnSourceIndex}`, cell.Value]))
@@ -175,13 +176,11 @@ function dimensionCaptions(schema: readonly { Caption: string; Identity?: string
   }
 }
 
-/** Current source46 attributes are raw text, not entity captions with an appended ID. */
+/** Typed raw text axes keep their business captions; entity and legacy labels retain their path. */
 function rowDimensionCaption(preview: NativeReportPreview, index: number, caption: string, sharedNames?: ReadonlySet<string>): string {
-  const schema: readonly { Caption: string; Identity?: string }[] = preview.RowSchema
-  const identity = schema[index]?.Identity
-  const currentProductText = preview.Request?.DataSource === 'NativePriceComparison'
-    && (identity === 'ProductDescription' || identity === 'ProductTop')
-  return currentProductText ? caption : previewCaptionText(caption, sharedNames)
+  // The normalizer preserves these optional wire fields; no DTO or request schema is changed.
+  const schema: readonly ReportCaptionAxisSchema[] = preview.RowSchema
+  return reportAxisCaption(preview.Request?.DataSource, schema[index], caption, sharedNames)
 }
 
 function rowHeaderText({ index, row, preview, products, product, regions, region, attributes, workbookRow, workbookColumns, sharedNames, caption }: {

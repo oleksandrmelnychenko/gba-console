@@ -130,3 +130,34 @@ it('keeps the rendered source44 explanation when a different report is edited bu
   expect(screen.getByRole('status').textContent).toBe('2')
   expect(screen.getAllByRole('cell', { description: comparisonExplanation })).toHaveLength(3)
 })
+
+
+const historicalUnitReason = 'Кількість не визначено без підтвердженої історичної одиниці виміру документа.'
+const priceRequest = (): ReportRequestBody => ({ ...request(), dataSource: 46 })
+it('explains source46 unknown quantity in leaf, subtotal and grand without attributing money or showing raw notes', () => {
+  const view = show(preview('NativePriceComparison'), priceRequest())
+  const quantities = screen.getAllByRole('cell', { description: historicalUnitReason })
+  expect(quantities).toHaveLength(3)
+  for (const cell of quantities) { expect(cell.textContent).toBe('∅'); expect(cell.title).toBe(historicalUnitReason) }
+  expect(view.container.querySelector('tbody tr:not(.report-inline-preview__group-total) td:last-child')?.getAttribute('title')).toBe('Значення не визначено.')
+  expect(view.container.querySelectorAll('td[aria-description]')).toHaveLength(3)
+  expect(view.container.textContent).not.toContain(historicalUnitReason)
+  expect(view.container.textContent).not.toContain('Службова примітка')
+})
+it('preserves a supplied source46 quantity zero without a missing-unit tooltip or changing monetary unknowns', () => {
+  show(preview('NativePriceComparison', { Kind: 'decimal', Value: '0', Provenance: 'producerCell' }), priceRequest())
+  expect(screen.queryByRole('cell', { description: historicalUnitReason })).toBeNull()
+  expect(screen.getAllByRole('cell', { name: '0' })).toHaveLength(3)
+  expect(screen.getAllByRole('cell', { name: '∅' })).toHaveLength(3)
+})
+it('keeps legacy source46 quantity without typed semantics as generic unknown', () => {
+  const value = preview('NativePriceComparison'); delete value.valueSemantics
+  show(value, priceRequest())
+  expect(screen.queryByRole('cell', { description: historicalUnitReason })).toBeNull()
+  expect(screen.getAllByRole('cell', { name: '∅' })).toHaveLength(6)
+})
+it('uses rendered source attribution rather than a source46 draft to explain quantity', () => {
+  show(preview('NativePurchases'), priceRequest())
+  expect(screen.queryByRole('cell', { description: historicalUnitReason })).toBeNull()
+  expect(screen.getAllByRole('cell', { name: '∅' })).toHaveLength(6)
+})

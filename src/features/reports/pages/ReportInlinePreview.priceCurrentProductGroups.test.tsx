@@ -43,7 +43,7 @@ const fields = [
   ['OneCPriceTypeValue', 'За типом ціни'], ['OneCPriceTypeDifference', 'Різниця'],
 ]
 function fixture(identity = 'ProductDescription', caption = 'Опис [123]', source = 'NativePriceComparison') {
-  const rowSchema: Array<{ Identity?: string; Caption: string }> = [{ ...currentAxisMetadata.Product }, { ...currentAxisMetadata[identity] }, { Identity: 'SaleDocument', Caption: 'Документ продажу' }]
+  const rowSchema: Array<{ Identity?: string; Caption: string; DisplayKind?: string; KeyKind?: string; Captioned?: boolean }> = [{ ...currentAxisMetadata.Product }, { ...currentAxisMetadata[identity] }, { Identity: 'SaleDocument', Caption: 'Документ продажу' }]
   const row = { Ordinal: 0, SourceIndex: 0, Values: [axisValue('Товар [38242326]', '38242326', 'signedInteger'), axisValue(caption), axisValue('Продаж 0003 [2132458]', '2132458', 'signedInteger')] }
   const totals = (rowIndex: number) => fields.map((_, column) => ({ RowSourceIndex: rowIndex, ColumnSourceIndex: column,
     Value: scalar(column === 1 ? '66.00' : null, 'presentationTotal') }))
@@ -118,12 +118,25 @@ it('keeps decorated product, customer and document captions on the legacy source
   expect(screen.getByRole('rowheader', { name: 'Продаж 0003' })).toBeTruthy()
   expect(screen.queryByRole('rowheader', { name: 'Товар [38242326]' })).toBeNull()
 })
-it.each(rawAxes)('leaves source2 %s caption normalization unchanged in this scope', (identity, caption) => {
-  show(fixture(identity, caption, 'NativeSalesNet'))
+it.each(rawAxes)('preserves audited typed raw source2 %s captions in leaf and subtotal', (identity, caption) => {
+  const view = show(fixture(identity, caption, 'NativeSalesNet'))
+  expect(screen.getByRole('rowheader', { name: caption })).toBeTruthy()
+  expect(screen.getByRole('rowheader', { name: 'Підсумок: ' + caption })).toBeTruthy()
+  for (const row of view.container.querySelectorAll('tbody tr, tfoot tr'))
+    expect(within(row as HTMLElement).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['∅', '66,00', '∅', '∅'])
+})
+const legacySource2Axes = rawAxes.flatMap(([identity, caption]) => ['missing', 'contradictory'].map(mode => [identity, caption, mode]))
+it.each(legacySource2Axes)('keeps the source2 %s legacy caption path for %s with %s semantics', (identity, caption, mode) => {
+  const wire = fixture(identity, caption, 'NativeSalesNet')
+  wire.RowSchema[1] = mode === 'missing' ? { Identity: identity, Caption: wire.RowSchema[1].Caption }
+    : { ...wire.RowSchema[1], Captioned: true, KeyKind: 'Numeric' }
+  const view = show(wire)
   const oldCaption = caption.replace(/ \[\d+\]$/, '')
   expect(screen.getByRole('rowheader', { name: oldCaption })).toBeTruthy()
   expect(screen.getByRole('rowheader', { name: 'Підсумок: ' + oldCaption })).toBeTruthy()
   expect(screen.queryByRole('rowheader', { name: caption })).toBeNull()
+  for (const row of view.container.querySelectorAll('tbody tr, tfoot tr'))
+    expect(within(row as HTMLElement).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['∅', '66,00', '∅', '∅'])
 })
 it.each(['missing', 'foreign'])('keeps the legacy caption path for a source46 %s schema identity', mode => {
   const wire = fixture()
