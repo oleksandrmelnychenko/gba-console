@@ -1,3 +1,4 @@
+import { salesProductLookupCapability } from '../data/salesProductLookupCapability'
 import { cloneStockQuantityFilter, stockQuantityFilterError } from '../data/stockQuantityFilter'
 import { customerGroupSalesDocumentLookup } from '../data/salesDocumentLookupCapability'
 import { customerGroupSelectionsError } from '../data/customerGroupSelections'
@@ -70,6 +71,8 @@ function isDataset(value: unknown): value is ReportDataset {
   const fieldsValid = [item.Groupings, item.Measurements, item.Filters].every(fields =>
     Array.isArray(fields) && fields.every(isDatasetField) && new Set(fields.map(field => field.Type)).size === fields.length)
   return Number.isSafeInteger(item.DataSource) && item.DataSource! >= 0 && item.DataSource !== 1 && typeof item.Name === 'string' && !!item.Name.trim()
+    && !Object.hasOwn(item, 'SalesProductLookup')
+    && (item.salesProductLookup === undefined || !!salesProductLookupCapability(item as ReportDataset))
     && !Object.hasOwn(item, 'SalesDocumentLookup')
     && (item.salesDocumentLookup === undefined || !!customerGroupSalesDocumentLookup(item as ReportDataset))
     && (item.documentDetails === undefined || item.DataSource === 2 && !!readDocumentDetails(item.documentDetails))

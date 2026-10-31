@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+import type { NativeProductItemPickerContext } from './NativeSalesProductPicker'
 import { ListPlus } from 'lucide-react'
 import { AnalysisGroupBrowser } from './AnalysisGroupBrowser'
 import { AnalysisTopEntry } from './AnalysisTopEntry'
@@ -26,10 +28,25 @@ function analysisValueLabel(field: number, value: ReportSelectedValue, itemKind?
 
 export type AnalysisItemSearch = (value: string, offset: number, signal: AbortSignal) => Promise<AnalysisLookupValue[]>
 
-export function CurrentVparivanieAnalysisValuePicker({ selection, selections, descriptor, from, to, onChange, status, searchItems }: {
+type AnalysisInputOption = { value: string; label: string }
+function AnalysisValueInput({ injectedItem, renderItemPicker, context, unavailable, multiple, options, selected, search, query, setSearch, changeMultiple, add, loading, groupsOnly }: {
+  injectedItem: boolean; renderItemPicker?: (context: NativeProductItemPickerContext) => ReactNode
+  context: NativeProductItemPickerContext; unavailable: string | null; multiple: boolean
+  options: AnalysisInputOption[]; selected: AnalysisInputOption[]; search: string; query: string
+  setSearch: (value: string) => void; changeMultiple: (keys: string[]) => void; add: (key: string | null) => void
+  loading: boolean; groupsOnly: boolean
+}) {
+  if (injectedItem) return renderItemPicker?.(context)
+  if (unavailable) return <Alert color="yellow">{unavailable}</Alert>
+  if (multiple) return <ReportValueAutocomplete label="Значення" data={search !== query ? [] : options} selected={selected} onChange={changeMultiple} search={search} onSearchChange={setSearch} loading={loading || search !== query} />
+  return <Select comboboxProps={{ withinPortal: false }} label="Значення" placeholder={groupsOnly ? 'Знайти групу' : 'Знайти значення'} searchable filter={({ options }) => options} searchValue={search} onSearchChange={setSearch} data={options} value={null} onChange={add} rightSection={loading ? <Loader size="xs" /> : undefined} nothingFoundMessage="Нічого не знайдено" />
+}
+
+export function CurrentVparivanieAnalysisValuePicker({ selection, selections, descriptor, from, to, onChange, status, searchItems, renderItemPicker }: {
   selection: ReportSelection; selections: ReportSelection[]; descriptor?: AnalysisFieldDescriptor
   from: string; to: string; onChange: (values: ReportSelectedValue[]) => void; status?: AnalysisHierarchyStatus | null
   searchItems?: AnalysisItemSearch
+  renderItemPicker?: (context: NativeProductItemPickerContext) => ReactNode
 }) {
   const [search, setSearch] = useState('')
   const [query] = useDebouncedValue(search, 400)
@@ -48,6 +65,7 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
   const scope = JSON.stringify([field, condition, choice, sourceKind, lookupField, from, to, buyerId ?? null, query, unavailable])
   const [result, setResult] = useState<{ scope: string; values: AnalysisLookupValue[]; nextOffset: number; hasMore: boolean; loadingMore?: boolean; error?: string } | null>(null)
   const moreRequest = useRef<AbortController | null>(null)
+  const injectedItem = choice === 'item' && !!renderItemPicker
   const itemSearch = choice === 'item' ? searchItems : undefined
   const fetchPage = useCallback((offset: number, signal: AbortSignal): Promise<{ values: AnalysisLookupValue[]; hasMore: boolean }> => sourceKind
     ? getAnalysisHierarchyPage(sourceKind, null, offset, 30, query, signal)
@@ -57,13 +75,13 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
       .then(values => ({ values, hasMore: values.length === 30 })),
   [sourceKind, itemSearch, query, lookupField, from, to, buyerParam])
   useEffect(() => {
-    if (unavailable) return
+    if (unavailable || injectedItem) return
     const controller = new AbortController()
     void fetchPage(0, controller.signal)
       .then(page => { if (!controller.signal.aborted) setResult({ scope, values: page.values, nextOffset: page.values.length, hasMore: page.hasMore }) })
       .catch(error => { if (!controller.signal.aborted) setResult({ scope, values: [], nextOffset: 0, hasMore: false, error: error instanceof Error ? error.message : 'Не вдалося прочитати значення.' }) })
     return () => { controller.abort(); moreRequest.current?.abort() }
-  }, [fetchPage, scope, unavailable])
+  }, [fetchPage, scope, unavailable, injectedItem])
   const current = result?.scope === scope ? result : null
   const loadMore = async () => {
     if (!current?.hasMore || current.loadingMore || current.nextOffset >= 4080) return
@@ -118,23 +136,21 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
     {mixed && hierarchy && !unavailable ? <SegmentedControl aria-label="Тип значення" value={choiceKind}
       data={[{ value: 'group', label: 'Групи' }, { value: 'item', label: ITEM_LABELS[hierarchy.itemKind][1] }]}
       onChange={value => { setChoiceKind(value as 'group' | 'item'); setSearch('') }} /> : null}
-    {unavailable ? <Alert color="yellow">{unavailable}</Alert> : multiple ? <ReportValueAutocomplete label="Значення" data={search !== query ? [] : options}
+    <AnalysisValueInput injectedItem={injectedItem} renderItemPicker={renderItemPicker}
+      context={{ selection, onChange, multiple, createData: encode, selectedLabel: label, identity: data => analysisValueIdentity(field, data) }}
+      unavailable={unavailable} multiple={multiple} options={options}
       selected={selection.Values.map(value => ({ value: analysisValueIdentity(field, value.Data), label: label(value) }))}
-      onChange={changeMultiple} search={search} onSearchChange={setSearch} loading={!current || search !== query} />
-      : <Select comboboxProps={{ withinPortal: false }} label="Значення" placeholder={groupsOnly ? 'Знайти групу' : 'Знайти значення'}
-        searchable filter={({ options }) => options} searchValue={search} onSearchChange={setSearch}
-        data={options} value={null} onChange={add}
-        rightSection={!current ? <Loader size="xs" /> : undefined} nothingFoundMessage="Нічого не знайдено" />}
+      search={search} query={query} setSearch={setSearch} changeMultiple={changeMultiple} add={add} loading={!current} groupsOnly={groupsOnly} />
     <Group gap={6} className="report-analysis-values__actions">
-    {!unavailable && current?.hasMore ? current.nextOffset < 4080
+    {!injectedItem && !unavailable && current?.hasMore ? current.nextOffset < 4080
       ? <Button type="button" variant="default" size="compact-sm" leftSection={<ListPlus size={15} aria-hidden="true" />} loading={current.loadingMore} onClick={() => void loadMore()}>Ще значення</Button>
       : <Text size="xs" c="dimmed">Показано 4080 значень. Звузьте пошук, щоб знайти потрібне.</Text> : null}
     {descriptor && hierarchy && !unavailable && (field === 4 ? !!descriptor.hierarchyBrowse : groupCondition)
       ? <AnalysisGroupBrowser descriptor={descriptor} selection={selection} onChange={onChange} /> : null}
     </Group>
     {descriptor?.textEntry && field === 3 ? <AnalysisTopEntry capability={descriptor.textEntry} selection={selection} multiple={multiple} onChange={onChange} /> : null}
-    {current?.error ? <Alert color="red">{current.error}</Alert> : null}
-    {!multiple ? <div className="report-analysis-values__selected">{selection.Values.map((v, index) => {
+    {!injectedItem && current?.error ? <Alert color="red">{current.error}</Alert> : null}
+    {!injectedItem && !multiple ? <div className="report-analysis-values__selected">{selection.Values.map((v, index) => {
       const text = label(v)
       return <Group key={analysisValueIdentity(field, v.Data)} className="report-analysis-values__chip" gap={4} wrap="nowrap">
         <Text size="sm">{text}</Text><TableRowAction action="delete" label={`Видалити значення ${text}`}

@@ -365,6 +365,7 @@ export type ReportRequestBody = {
 export type ReportDatasetField = { Type: number; Name: string; Selectable?: boolean; valueSemantics?: import('./data/reportNumberPresentation').ReportValueSemantics; hierarchy?: import('./data/currentVparivanieAnalysis').AnalysisHierarchy }
 
 export type ReportDataset = {
+  salesProductLookup?: unknown
   salesDocumentLookup?: unknown
   returnItemStatuses?: unknown
   documentDetails?: unknown

@@ -1,3 +1,5 @@
+import { salesProductLookupCapability } from '../data/salesProductLookupCapability'
+import { NativeSalesProductPicker } from './NativeSalesProductPicker'
 import { editableProductColumnsTemplate } from '../data/workbookPresentation'
 import { StockQuantityFilterPanel } from './StockQuantityFilterPanel'
 import { requestStockQuantityFilter, stockQuantityFilterError } from '../data/stockQuantityFilter'
@@ -2269,7 +2271,7 @@ function ReportSelectionsCard({
                 : isReturnItemStatusSelection(request, draftSelection.SelectedField.Type) ? <ReturnItemStatusPicker dataset={dataset} selection={draftSelection}
                   onChange={Values => setDraftSelection(current => current ? { ...current, Values } : current)} />
                 : isDatasetGroupSelection(dataset, draftSelection) ? <CurrentVparivanieAnalysisValuePicker selection={draftSelection} selections={editorSelections}
-                  descriptor={draftDescriptor} status={hierarchyStatus} from={from} to={to} searchItems={draftItemSearch}
+                  descriptor={draftDescriptor} status={hierarchyStatus} from={from} to={to} searchItems={draftItemSearch} renderItemPicker={nativeProductItemRenderer(dataSource, dataset, draftSelection)}
                   onChange={Values => setDraftSelection(current => current ? { ...current, Values } : current)} /> : <SelectionValuePicker
                 dataSource={dataSource}
                 dataset={dataset}
@@ -2357,7 +2359,7 @@ function InlineReportSelection({ dataset, request, selection, selections, index,
         onChange={Values => change(changeAnalysisSelectionValues(selection, Values, analysis.filters.find(field => field.type === selection.SelectedField.Type)))} />
       : isReturnItemStatusSelection(request, selection.SelectedField.Type) ? <ReturnItemStatusPicker dataset={dataset} selection={selection} onChange={Values => change({ ...selection, Values })} />
       : isDatasetGroupSelection(dataset, selection) ? <CurrentVparivanieAnalysisValuePicker selection={selection} selections={selections}
-        descriptor={descriptor} status={hierarchyStatus} from={from} to={to} searchItems={itemSearch} onChange={Values => change({ ...selection, Values })} />
+        descriptor={descriptor} status={hierarchyStatus} from={from} to={to} searchItems={itemSearch} renderItemPicker={nativeProductItemRenderer(dataSource, dataset, selection)} onChange={Values => change({ ...selection, Values })} />
       : <SelectionValuePicker dataSource={dataSource} dataset={dataset} lookupProfitReadMode={documentLookup.mode} lookupProfitUnavailable={documentLookup.unavailable}
         lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis}
         from={from} to={to} label={t('Значення')} selection={selection} selections={selections} width="100%"
@@ -2598,7 +2600,14 @@ type SelectionValuePickerProps = {
 
 const EMPTY_LOOKUP_OPTIONS: ReportEntity[] = []
 
+function nativeProductItemRenderer(dataSource: number, dataset: ReportDataset | undefined, selection: ReportSelection) {
+  return dataSource === 2 && selection.SelectedField.Type === 1 && !!salesProductLookupCapability(dataset)
+    ? (context: import('./NativeSalesProductPicker').NativeProductItemPickerContext) => <NativeSalesProductPicker dataset={dataset} {...context} /> : undefined
+}
+
 export function SelectionValuePicker(props: SelectionValuePickerProps) {
+  if (props.dataSource === 2 && props.selection.SelectedField.Type === 1 && props.dataset?.salesProductLookup !== undefined && [0, 1, 2, 4].includes(props.selection.FilterCondition.Type))
+    return <NativeSalesProductPicker dataset={props.dataset} selection={props.selection} onChange={props.onChange} label={props.label} error={props.error} disabled={props.lookupProfitUnavailable} />
   if (props.dataSource === 44 && props.selection.SelectedField.Type === 3)
     return <CustomerGroupTopPicker selection={props.selection} label={props.label} disabled={props.lookupProfitUnavailable} error={props.error} onChange={props.onChange} />
   const exactField = props.selection.SelectedField.Type
