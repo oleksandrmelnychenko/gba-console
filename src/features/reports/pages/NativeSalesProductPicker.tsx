@@ -146,6 +146,8 @@ function ProductSearchInput({
   if (multiple)
     return (
       <ReportValueAutocomplete
+        withinPortal
+        clearSearchOnClose={false}
         label={inputLabel}
         data={data}
         selected={selected}
@@ -161,12 +163,13 @@ function ProductSearchInput({
     <Select
       label={inputLabel}
       searchable
-      comboboxProps={{ withinPortal: false }}
       placeholder={mode === 'id' ? 'Введіть ID товару' : 'Назва або артикул'}
       data={data}
       filter={({ options: items }) => items}
       searchValue={search}
       onSearchChange={setSearch}
+      // Mantine clears a null-valued Select on blur; keep this remote query for paging.
+      onBlur={() => setSearch(search)}
       value={null}
       disabled={disabled}
       error={error}

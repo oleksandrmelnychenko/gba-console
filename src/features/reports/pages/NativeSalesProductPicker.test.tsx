@@ -1,4 +1,4 @@
-import { MantineProvider } from '@mantine/core'
+import { Card, MantineProvider } from '@mantine/core'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
@@ -27,21 +27,31 @@ const api = vi.mocked(apiRequest),
   saved = [
     { Data: JSON.stringify({ Id: '9007199254740993' }), Name: 'Збережений', Value: 0 },
   ] as unknown as ReportSelectedValue[]
-function Form({ condition = 2, initial = saved }: { condition?: number; initial?: ReportSelectedValue[] }) {
+function Form({
+  condition = 2,
+  initial = saved,
+  portalEnvironment = false,
+}: {
+  condition?: number
+  initial?: ReportSelectedValue[]
+  portalEnvironment?: boolean
+}) {
   const [values, setValues] = useState(initial)
   return (
-    <MantineProvider env="test">
+    <MantineProvider env={portalEnvironment ? undefined : 'test'}>
       <I18nProvider>
-        <NativeSalesProductPicker
-          dataset={productDataset}
-          selection={{
-            IsChecked: true,
-            SelectedField: { Type: 1, Name: 'Товар' },
-            FilterCondition: { Type: condition, Name: 'Умова' },
-            Values: values,
-          }}
-          onChange={setValues}
-        />
+        <Card data-testid="filter-card" style={{ overflow: 'hidden' }}>
+          <NativeSalesProductPicker
+            dataset={productDataset}
+            selection={{
+              IsChecked: true,
+              SelectedField: { Type: 1, Name: 'Товар' },
+              FilterCondition: { Type: condition, Name: 'Умова' },
+              Values: values,
+            }}
+            onChange={setValues}
+          />
+        </Card>
         <output data-testid="values">{JSON.stringify(values)}</output>
       </I18nProvider>
     </MantineProvider>
@@ -52,7 +62,16 @@ beforeEach(() => {
   api.mockReset()
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
 })
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.restoreAllMocks()
+})
+function mockPortalGeometry() {
+  // Match the shared640x320 DOMRect/offset fixture so FloatingUI does not
+  // mistake jsdom's zero client area for a detached reference.
+  vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(640)
+  vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(320)
+}
 it('pages65 real identities and chooses page3 while retaining raw saved data', async () => {
   api.mockImplementation(async (_path, options) =>
     Array.from({ length: 65 }, (_, i) => ({ Id: String(i + 1), Name: 'Одна назва', VendorCode: 'SKU' + i })).slice(
@@ -115,4 +134,86 @@ it('offers a focusable retry after failure and retains selected raw values', asy
   await waitFor(() => expect(api).toHaveBeenCalledTimes(2))
   expect(values()).toEqual(saved)
   expect(screen.queryByText(/Не вдалося завантажити товари/)).toBeNull()
+})
+
+it('portals scalar options outside a clipping Card and keeps exact string identity on keyboard selection', async () => {
+  mockPortalGeometry()
+  api.mockResolvedValue([{ Id: '9007199254740993', Name: 'Товар над 2^53', VendorCode: 'SKU1' }])
+  render(<Form condition={0} initial={[]} portalEnvironment />)
+  await waitFor(() => expect(api).toHaveBeenCalledOnce())
+  await userEvent.click(screen.getByRole('combobox', { name: 'Значення' }))
+  const option = await screen.findByRole('option', { name: 'Товар над 2^53 · SKU1 [9007199254740993]' })
+  const card = screen.getByTestId('filter-card')
+  expect(card.style.overflow).toBe('hidden')
+  expect(card.contains(option)).toBe(false)
+  await userEvent.keyboard('{ArrowDown}{Enter}')
+  expect(values()).toEqual([{ Data: { Id: '9007199254740993' }, Name: 'Товар над 2^53 · SKU1', Value: 0 }])
+})
+it('portals multi options outside a clipping Card and preserves saved raw data on normal click', async () => {
+  mockPortalGeometry()
+  api.mockResolvedValue([{ Id: '9223372036854775807', Name: 'Великий товар', VendorCode: 'MAX' }])
+  render(<Form portalEnvironment />)
+  await waitFor(() => expect(api).toHaveBeenCalledOnce())
+  await userEvent.click(screen.getByRole('combobox', { name: 'Значення' }))
+  const option = await screen.findByRole('option', { name: 'Великий товар · MAX [9223372036854775807]' })
+  const card = screen.getByTestId('filter-card')
+  expect(card.style.overflow).toBe('hidden')
+  expect(card.contains(option)).toBe(false)
+  await userEvent.click(option)
+  expect(values()).toEqual([...saved, { Data: { Id: '9223372036854775807' }, Name: 'Великий товар · MAX', Value: 0 }])
+})
+
+function mockTypedSearchPages(query: string) {
+  api.mockImplementation(async (_path, options) => {
+    if (options?.query?.value !== query) return []
+    if (options.query.offset === 0)
+      return Array.from({ length: 30 }, (_, index) => ({
+        Id: String(1000 + index),
+        Name: query + ' ' + index,
+        VendorCode: 'SKU' + index,
+      }))
+    return [{ Id: '2000', Name: query + ' друга сторінка', VendorCode: 'NEXT' }]
+  })
+}
+const lookupQueries = () => api.mock.calls.map((call) => call[1]?.query)
+it('keeps typed scalar search when clicking More and preserves saved raw IDs', async () => {
+  const query = 'Пошук'
+  mockTypedSearchPages(query)
+  render(<Form condition={0} />)
+  await waitFor(() => expect(api).toHaveBeenCalledOnce())
+  const input = screen.getByRole('combobox', { name: 'Значення' })
+  await userEvent.type(input, query)
+  const more = await screen.findByRole('button', { name: 'Ще товари' })
+  await userEvent.click(more)
+  expect(values()).toEqual(saved)
+  await waitFor(() =>
+    expect(lookupQueries(), 'Lookup requests after pointer More: ' + JSON.stringify(lookupQueries())).toContainEqual({
+      value: query,
+      offset: 30,
+      limit: 30,
+    }),
+  )
+  expect((input as HTMLInputElement).value).toBe(query)
+})
+it('keeps typed multi search when keyboard-focusing More and preserves saved raw IDs', async () => {
+  const query = 'Пошук'
+  mockTypedSearchPages(query)
+  render(<Form />)
+  await waitFor(() => expect(api).toHaveBeenCalledOnce())
+  const input = screen.getByRole('combobox', { name: 'Значення' })
+  await userEvent.type(input, query)
+  const more = await screen.findByRole('button', { name: 'Ще товари' })
+  await userEvent.tab()
+  if (document.activeElement !== more) await userEvent.tab()
+  expect(values()).toEqual(saved)
+  expect(
+    document.activeElement,
+    'Focus after normal Tab navigation; requests: ' +
+      JSON.stringify(lookupQueries()) +
+      '; search: ' +
+      (input as HTMLInputElement).value,
+  ).toBe(more)
+  await userEvent.keyboard('{Enter}')
+  await waitFor(() => expect(lookupQueries()).toContainEqual({ value: query, offset: 30, limit: 30 }))
+  expect((input as HTMLInputElement).value).toBe(query)
 })

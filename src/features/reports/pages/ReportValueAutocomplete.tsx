@@ -6,21 +6,21 @@ type Option = { value: string; label: string }
 
 /** The selected identities are independent of the current lookup page and search. */
 export function ReportValueAutocomplete({ data, selected, search, onSearchChange, onChange, label, loading,
-  disabled, remote = true, emptyMessage, error,
+  disabled, remote = true, emptyMessage, error, withinPortal = false, clearSearchOnClose = true,
 }: {
   data: Option[]; selected: Option[]; search: string; onSearchChange: (value: string) => void
   onChange: (keys: string[]) => void; label?: string; loading?: boolean; disabled?: boolean
-  remote?: boolean; emptyMessage?: string; error?: string
+  remote?: boolean; emptyMessage?: string; error?: string; withinPortal?: boolean; clearSearchOnClose?: boolean
 }) {
   const { t } = useI18n()
   const [selectedOnly, setSelectedOnly] = useState(false)
-  const combobox = useCombobox({ onDropdownClose: () => { onSearchChange(''); setSelectedOnly(false); combobox.resetSelectedOption() } })
+  const combobox = useCombobox({ onDropdownClose: () => { if (clearSearchOnClose) onSearchChange(''); setSelectedOnly(false); combobox.resetSelectedOption() } })
   const keys = new Set(selected.map(item => item.value))
   const query = search.trim().toLocaleLowerCase('uk')
   const options = selectedOnly ? selected : query ? data : [...new Map([...selected, ...data].map(item => [item.value, item])).values()]
   const visible = selectedOnly || !remote ? options.filter(item => item.label.toLocaleLowerCase('uk').includes(query)) : options
   return <Stack gap={4}>
-    <Combobox store={combobox} withinPortal={false} onOptionSubmit={key => {
+    <Combobox store={combobox} withinPortal={withinPortal} onOptionSubmit={key => {
       onChange(keys.has(key) ? selected.filter(item => item.value !== key).map(item => item.value) : [...keys, key])
       combobox.updateSelectedOptionIndex()
     }}>
