@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { searchNativeSalesProducts, type NativeSalesProduct } from '../api/nativeSalesProductLookup'
+import { searchNativeReportProducts } from '../api/nativeReportProductLookup'
+import type { ReportProductLookupSource } from '../data/productLookupCapability'
 import { positiveProductId } from '../data/salesProductLookupCapability'
 export type ProductSearchMode = 'text' | 'id'
-type LookupScope = { enabled: boolean; mode: ProductSearchMode; query: string }
+type LookupScope = { enabled: boolean; mode: ProductSearchMode; query: string; sharedSource: ReportProductLookupSource | null }
 type PageState = {
   scope: LookupScope
   items: NativeSalesProduct[]
@@ -13,9 +15,9 @@ type PageState = {
   restart?: boolean
 }
 const EMPTY: NativeSalesProduct[] = []
-export function useNativeSalesProductOptions(mode: ProductSearchMode, query: string, enabled: boolean) {
+export function useNativeSalesProductOptions(mode: ProductSearchMode, query: string, enabled: boolean, sharedSource?: ReportProductLookupSource) {
   const normalizedQuery = mode === 'id' ? query : query.trim()
-  const scope = useMemo(() => ({ enabled, mode, query: normalizedQuery }), [enabled, mode, normalizedQuery])
+  const scope = useMemo(() => ({ enabled, mode, query: normalizedQuery, sharedSource: sharedSource ?? null }), [enabled, mode, normalizedQuery, sharedSource])
   const sequence = useRef(0),
     controller = useRef<AbortController | null>(null),
     busy = useRef<LookupScope | null>(null)
@@ -29,10 +31,10 @@ export function useNativeSalesProductOptions(mode: ProductSearchMode, query: str
       const request = new AbortController(),
         token = ++sequence.current
       controller.current = request
-      void searchNativeSalesProducts(
-        mode === 'id' ? { exactId: query, offset: 0, limit: 30 } : { value: query, offset, limit: 30 },
-        request.signal,
-      )
+      const parameters = mode === 'id' ? { exactId: query, offset: 0, limit: 30 } : { value: query, offset, limit: 30 }
+      const response = sharedSource === undefined ? searchNativeSalesProducts(parameters, request.signal)
+        : searchNativeReportProducts(sharedSource, parameters, request.signal)
+      void response
         .then((items) => {
           if (request.signal.aborted || sequence.current !== token) return
           setState((previous) => {
@@ -71,7 +73,7 @@ export function useNativeSalesProductOptions(mode: ProductSearchMode, query: str
           if (sequence.current === token) busy.current = null
         })
     },
-    [mode, query, scope],
+    [mode, query, scope, sharedSource],
   )
   useEffect(() => {
     sequence.current++

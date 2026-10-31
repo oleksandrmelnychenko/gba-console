@@ -1,4 +1,4 @@
-import { salesProductLookupCapability } from '../data/salesProductLookupCapability'
+import { productLookupBinding, productLookupCapability } from '../data/productLookupCapability'
 import { NativeSalesProductPicker } from './NativeSalesProductPicker'
 import { editableProductColumnsTemplate } from '../data/workbookPresentation'
 import { StockQuantityFilterPanel } from './StockQuantityFilterPanel'
@@ -2601,13 +2601,15 @@ type SelectionValuePickerProps = {
 const EMPTY_LOOKUP_OPTIONS: ReportEntity[] = []
 
 function nativeProductItemRenderer(dataSource: number, dataset: ReportDataset | undefined, selection: ReportSelection) {
-  return dataSource === 2 && selection.SelectedField.Type === 1 && !!salesProductLookupCapability(dataset)
-    ? (context: import('./NativeSalesProductPicker').NativeProductItemPickerContext) => <NativeSalesProductPicker dataset={dataset} {...context} /> : undefined
+  return selection.SelectedField.Type === 1 && !!productLookupBinding(dataset, dataSource)
+    ? (context: import('./NativeSalesProductPicker').NativeProductItemPickerContext) => <NativeSalesProductPicker dataSource={dataSource} dataset={dataset} {...context} /> : undefined
 }
 
 export function SelectionValuePicker(props: SelectionValuePickerProps) {
+  if (props.selection.SelectedField.Type === 1 && [0, 1, 2, 4].includes(props.selection.FilterCondition.Type) && productLookupCapability(props.dataset, props.dataSource))
+    return <NativeSalesProductPicker dataSource={props.dataSource} dataset={props.dataset ?? undefined} selection={props.selection} onChange={props.onChange} label={props.label} error={props.error} disabled={props.lookupProfitUnavailable} />
   if (props.dataSource === 2 && props.selection.SelectedField.Type === 1 && props.dataset?.salesProductLookup !== undefined && [0, 1, 2, 4].includes(props.selection.FilterCondition.Type))
-    return <NativeSalesProductPicker dataset={props.dataset} selection={props.selection} onChange={props.onChange} label={props.label} error={props.error} disabled={props.lookupProfitUnavailable} />
+    return <NativeSalesProductPicker dataSource={props.dataSource} dataset={props.dataset} selection={props.selection} onChange={props.onChange} label={props.label} error={props.error} disabled={props.lookupProfitUnavailable} />
   if (props.dataSource === 44 && props.selection.SelectedField.Type === 3)
     return <CustomerGroupTopPicker selection={props.selection} label={props.label} disabled={props.lookupProfitUnavailable} error={props.error} onChange={props.onChange} />
   const exactField = props.selection.SelectedField.Type

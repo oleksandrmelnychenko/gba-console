@@ -9,7 +9,9 @@ import {
   searchNativeSalesProducts,
   type NativeSalesProduct,
 } from '../api/nativeSalesProductLookup'
-import { positiveProductId, salesProductLookupCapability } from '../data/salesProductLookupCapability'
+import { positiveProductId } from '../data/salesProductLookupCapability'
+import { productLookupBinding } from '../data/productLookupCapability'
+import { searchNativeReportProducts } from '../api/nativeReportProductLookup'
 import { isMultiValueReportCondition } from '../data/reportOptions'
 import type { ReportDataset, ReportEntity, ReportSelectedValue, ReportSelection } from '../types'
 
@@ -41,6 +43,7 @@ export type NativeProductItemPickerContext = {
   identity: (data: ReportEntity) => string
 }
 type Props = {
+  dataSource?: number
   dataset?: ReportDataset
   selection: ReportSelection
   onChange: (values: ReportSelectedValue[]) => void
@@ -54,7 +57,7 @@ type Props = {
 }
 type Option = { value: string; label: string }
 type ProductChoice = { key: string; item: NativeSalesProduct; value: ReportSelectedValue }
-type SavedRecheck = { id: string; message: string } | null
+type SavedRecheck = { lookupKey: string; id: string; message: string } | null
 function defaultIdentity(data: ReportEntity): string {
   return savedProductId(data) ? `product:${savedProductId(data)}` : `saved:${JSON.stringify(data)}`
 }
@@ -85,36 +88,34 @@ function changedSelection(
     .map((choice) => choice.value)
   return [...retained, ...added]
 }
-function useSavedProductRecheck(dataset: ReportDataset | undefined, field: number) {
+function useSavedProductRecheck(dataset: ReportDataset | undefined, field: number, requestedSource: number | undefined) {
+  const binding = productLookupBinding(dataset, requestedSource)
+  const lookupKey = field === 1 && binding ? `${binding.kind}:${binding.dataSource}` : null
   const [recheck, setRecheck] = useState<SavedRecheck>(null)
   const savedCheck = useRef<AbortController | null>(null)
-  useEffect(
-    () => () => {
-      savedCheck.current?.abort()
-    },
-    [dataset?.DataSource, dataset?.salesProductLookup, field],
-  )
+  useEffect(() => () => savedCheck.current?.abort(), [lookupKey])
   const checkSaved = async (id: string) => {
+    if (!lookupKey || !binding) return
     savedCheck.current?.abort()
     const controller = new AbortController()
     savedCheck.current = controller
-    setRecheck({ id, message: 'Перевірка…' })
+    setRecheck({ lookupKey, id, message: 'Перевірка…' })
     try {
-      const result = await searchNativeSalesProducts({ exactId: id }, controller.signal)
+      const result = await (binding.kind === 'report'
+        ? searchNativeReportProducts(binding.dataSource, { exactId: id }, controller.signal)
+        : searchNativeSalesProducts({ exactId: id }, controller.signal))
       if (controller.signal.aborted) return
-      setRecheck({
-        id,
-        message: result.length
-          ? 'Товар доступний у довіднику.'
-          : 'Товар недоступний у довіднику. Збережений відбір залишено.',
-      })
+      setRecheck({ lookupKey, id, message: result.length
+        ? 'Товар доступний у довіднику.'
+        : 'Товар недоступний у довіднику. Збережений відбір залишено.' })
     } catch {
       if (controller.signal.aborted) return
-      setRecheck({ id, message: 'Не вдалося перевірити товар. Збережений відбір залишено.' })
+      setRecheck({ lookupKey, id, message: 'Не вдалося перевірити товар. Збережений відбір залишено.' })
     }
   }
-  return { recheck, checkSaved }
+  return { recheck: recheck?.lookupKey === lookupKey ? recheck : null, checkSaved }
 }
+
 function ProductSearchInput({
   multiple,
   mode,
@@ -266,6 +267,7 @@ function SelectedProductValue({
   )
 }
 export function NativeSalesProductPicker({
+  dataSource,
   dataset,
   selection,
   onChange,
@@ -280,9 +282,12 @@ export function NativeSalesProductPicker({
   const [mode, setMode] = useState<ProductSearchMode>('text'),
     [search, setSearch] = useState('')
   const [query] = useDebouncedValue(search, 350)
-  const { recheck, checkSaved } = useSavedProductRecheck(dataset, selection.SelectedField.Type)
-  const admitted = !!salesProductLookupCapability(dataset) && selection.SelectedField.Type === 1
-  const options = useNativeSalesProductOptions(mode, query, admitted && !disabled)
+  const requestedSource = dataSource ?? dataset?.DataSource
+  const binding = productLookupBinding(dataset, requestedSource)
+  const { recheck, checkSaved } = useSavedProductRecheck(dataset, selection.SelectedField.Type, requestedSource)
+  const admitted = !!binding && selection.SelectedField.Type === 1
+  const sharedSource = binding?.kind === 'report' ? binding.dataSource : undefined
+  const options = useNativeSalesProductOptions(mode, query, admitted && !disabled, sharedSource)
   const multiple = explicitMultiple ?? isMultiValueReportCondition(selection.FilterCondition.Type)
   const choices = productChoices(options.items, createData, identity)
   const selected = selection.Values.map((value) => ({ value: identity(value.Data), label: selectedLabel(value) }))
