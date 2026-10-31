@@ -1,6 +1,6 @@
 import { documentDetailsError, readDocumentDetails } from './reportDocumentDetails'
 import { constructorPresentationError } from './constructorPresentation'
-import type { ReportDataset, ReportDatasetField, ReportRequestBody } from '../types'
+import type { ReportDataset, ReportDatasetField, ReportRequestBody, ReportSelection } from '../types'
 
 export type SalesConstructorProfile = 'sales' | 'grossProfit'
 export const SALES_CONSTRUCTOR_WORKBOOK = 'gba:sales-constructor:v1'
@@ -44,14 +44,24 @@ export function salesProfileGroupingFields(dataset: ReportDataset | undefined, v
   return dataset && profile && salesConstructorSupported(dataset, profile)
     ? (readSalesProfileGroupings(dataset.profileGroupings)?.[profile] ?? []).filter(field => field.Type !== 84 || !!readDocumentDetails(dataset.documentDetails)) : []
 }
+export const NAMED_SALES_PRICE_TYPE_UNAVAILABLE = 'Відбір «Тип ціни» потребує збереженого історичного типу документа. Поточний тип договору його не замінює. Вимкніть або вилучіть цей відбір.'
+export function isRetainedNamedSalesPriceType(request: ReportRequestBody | undefined, selection: ReportSelection): boolean {
+  return request?.dataSource === 2 && !!readReportProfile(requestReportProfile(request)) && selection.SelectedField.Type === 11
+}
+export function namedSalesPriceTypeSelectionError(request: ReportRequestBody | undefined, selection: ReportSelection): string | null {
+  return selection.IsChecked !== false && isRetainedNamedSalesPriceType(request, selection) ? NAMED_SALES_PRICE_TYPE_UNAVAILABLE : null
+}
+export function namedSalesPriceTypeError(request: ReportRequestBody): string | null {
+  return request.selections?.some(selection => namedSalesPriceTypeSelectionError(request, selection)) ? NAMED_SALES_PRICE_TYPE_UNAVAILABLE : null
+}
 export function salesConstructorDataset(dataset: ReportDataset | undefined, profile: unknown): ReportDataset | undefined {
   if (!dataset || !readReportProfile(profile)) return dataset
   const additions = salesProfileGroupingFields(dataset, profile)
   const baseTypes = new Set(dataset.Groupings.map(field => field.Type))
   const allowed = new Set<number>(profile === 'grossProfit' ? GROSS_PROFIT_CONSTRUCTOR_MEASURES : SALES_CONSTRUCTOR_MEASURES)
-  return { ...dataset, Groupings: [...dataset.Groupings, ...additions.filter(field => !baseTypes.has(field.Type))], Measurements: dataset.Measurements.filter(field => allowed.has(field.Type)), Filters: dataset.Filters.filter(field => ![21, 64].includes(field.Type)) }
+  return { ...dataset, Groupings: [...dataset.Groupings, ...additions.filter(field => !baseTypes.has(field.Type))], Measurements: dataset.Measurements.filter(field => allowed.has(field.Type)), Filters: dataset.Filters.filter(field => ![21, 64].includes(field.Type) && (dataset.DataSource !== 2 || field.Type !== 11)) }
 }
-export function salesConstructorError(request: ReportRequestBody, dataset?: ReportDataset): string | null {
+export function salesConstructorError(request: ReportRequestBody, dataset?: ReportDataset, recovering = false): string | null {
   const detailError = documentDetailsError(request, dataset)
   if (detailError) return detailError
   const raw = requestReportProfile(request)
@@ -59,6 +69,7 @@ export function salesConstructorError(request: ReportRequestBody, dataset?: Repo
   const profile = readReportProfile(raw)
   if (!profile || request.dataSource !== 2) return 'Невідомий профіль конструктора продажів.'
   if (dataset && !salesConstructorSupported(dataset, profile)) return 'Цей сервер ще не підтримує вибраний конструктор продажів.'
+  if (!recovering && namedSalesPriceTypeError(request)) return NAMED_SALES_PRICE_TYPE_UNAVAILABLE
   const measures = new Set<number>(profile === 'grossProfit' ? GROSS_PROFIT_CONSTRUCTOR_MEASURES : SALES_CONSTRUCTOR_MEASURES)
   if (!Array.isArray(request.sorted?.Measurements) || request.sorted.Measurements.some(item => !measures.has(item.Type))) return 'Показник не належить до вибраного звіту.'
   return constructorPresentationError(request, dataset)

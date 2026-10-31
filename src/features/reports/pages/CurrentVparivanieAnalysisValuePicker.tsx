@@ -42,6 +42,10 @@ function AnalysisValueInput({ injectedItem, renderItemPicker, context, unavailab
   return <Select comboboxProps={{ withinPortal: false }} label="Значення" placeholder={groupsOnly ? 'Знайти групу' : 'Знайти значення'} searchable filter={({ options }) => options} searchValue={search} onSearchChange={setSearch} data={options} value={null} onChange={add} rightSection={loading ? <Loader size="xs" /> : undefined} nothingFoundMessage="Нічого не знайдено" />
 }
 
+function analysisLookupPeriod(sourceKind: string | null, from: string, to: string): [string, string] {
+  return sourceKind ? ['', ''] : [from, to]
+}
+
 export function CurrentVparivanieAnalysisValuePicker({ selection, selections, descriptor, from, to, onChange, status, searchItems, renderItemPicker }: {
   selection: ReportSelection; selections: ReportSelection[]; descriptor?: AnalysisFieldDescriptor
   from: string; to: string; onChange: (values: ReportSelectedValue[]) => void; status?: AnalysisHierarchyStatus | null
@@ -58,11 +62,12 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
   const choice: 'group' | 'item' = mixed ? choiceKind : groupCondition || field === 4 ? 'group' : 'item'
   const unavailable = groupCondition ? analysisHierarchyUnavailableReason(descriptor, status) : null
   const sourceKind = choice === 'group' && hierarchy && hierarchy.groupKind !== 'productGroup' ? hierarchy.groupKind : null
+  const [lookupFrom, lookupTo] = analysisLookupPeriod(sourceKind, from, to)
   const lookupField = choice === 'group' ? 4 : hierarchy?.itemField ?? field
   const buyer = selections.find(s => s.IsChecked !== false && [5, 6].includes(s.SelectedField.Type) && s.FilterCondition.Type === 0 && s.Values.length === 1)
   const buyerId = buyer?.Values[0].Data.Id
   const buyerParam = typeof buyerId === 'string' || typeof buyerId === 'number' && Number.isSafeInteger(buyerId) ? String(buyerId) : undefined
-  const scope = JSON.stringify([field, condition, choice, sourceKind, lookupField, from, to, buyerId ?? null, query, unavailable])
+  const scope = JSON.stringify([field, condition, choice, sourceKind, lookupField, lookupFrom, lookupTo, buyerId ?? null, query, unavailable])
   const [result, setResult] = useState<{ scope: string; values: AnalysisLookupValue[]; nextOffset: number; hasMore: boolean; loadingMore?: boolean; error?: string } | null>(null)
   const moreRequest = useRef<AbortController | null>(null)
   const injectedItem = choice === 'item' && !!renderItemPicker
@@ -71,9 +76,9 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
     ? getAnalysisHierarchyPage(sourceKind, null, offset, 30, query, signal)
       .then(page => ({ values: page.items.map(item => ({ id: item.id, name: item.path, data: item.data })), hasMore: page.hasMore }))
     : itemSearch ? itemSearch(query, offset, signal).then(values => ({ values, hasMore: false }))
-    : (offset ? searchAnalysisValues(lookupField, query, from, to, buyerParam, signal, offset) : searchAnalysisValues(lookupField, query, from, to, buyerParam, signal))
+    : (offset ? searchAnalysisValues(lookupField, query, lookupFrom, lookupTo, buyerParam, signal, offset) : searchAnalysisValues(lookupField, query, lookupFrom, lookupTo, buyerParam, signal))
       .then(values => ({ values, hasMore: values.length === 30 })),
-  [sourceKind, itemSearch, query, lookupField, from, to, buyerParam])
+  [sourceKind, itemSearch, query, lookupField, lookupFrom, lookupTo, buyerParam])
   useEffect(() => {
     if (unavailable || injectedItem) return
     const controller = new AbortController()

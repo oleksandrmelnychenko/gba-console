@@ -33,7 +33,7 @@ export function reportWorkspaceDraftCompatibility(snapshot: ReportWorkspaceSnaps
   }
   const scopeError = currentVparivanieScopeError(data, dataset)
   if (scopeError) return `${scopeError} Чернетка збережена без змін.`
-  const metadataError = salesConstructorError(data, dataset) ?? numberPresentationError(data, dataset) ?? reportConfigurationError(data, dataset, true)
+  const metadataError = salesConstructorError(data, dataset, true) ?? numberPresentationError(data, dataset) ?? reportConfigurationError(data, dataset, true)
   if (metadataError) return `${metadataError} Чернетка збережена без змін.`
   const capabilityLayout = effectiveReportConfiguration(dataset, data) !== undefined
   const legacyLayout = dataset.DataSource === 40 ? cashPeriodConfigurationError(data, dataset) === null

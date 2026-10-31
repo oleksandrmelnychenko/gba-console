@@ -1,3 +1,6 @@
+import { NativePriceFilterValuePicker } from './NativePriceFilterValuePicker'
+import { RetainedNamedSalesPriceType } from './RetainedNamedSalesPriceType'
+import { isNativePriceFilterField, nativePriceFilterSelectionError } from '../data/nativePriceFilterLookup'
 import { productLookupBinding, productLookupCapability } from '../data/productLookupCapability'
 import { NativeSalesProductPicker } from './NativeSalesProductPicker'
 import { editableProductColumnsTemplate } from '../data/workbookPresentation'
@@ -21,7 +24,7 @@ import { CustomerGroupsPanel } from './CustomerGroupsPanel'
 import { customerGroupsError, type CustomerGroups } from '../data/customerGroups'
 import { ConstructorPresentationPanel } from './ConstructorPresentationPanel'
 import { requestConstructorPresentation } from '../data/constructorPresentation'
-import { readReportProfile, requestReportProfile, salesConstructorDataset, salesConstructorTitle, salesConstructorWorkbook } from '../data/salesConstructorProfiles'
+import { isRetainedNamedSalesPriceType, namedSalesPriceTypeError, namedSalesPriceTypeSelectionError, readReportProfile, requestReportProfile, salesConstructorDataset, salesConstructorTitle, salesConstructorWorkbook } from '../data/salesConstructorProfiles'
 import { searchCurrentFinancialBuyerManagers } from '../api/currentFinancialBuyerManagerLookup'
 import { financialBuyerManagerReference, financialBuyerManagerEntityReference, financialBuyerManagerSelectedEntity, financialBuyerManagerLookupPolicy } from '../data/currentFinancialBuyerManagerFilter'
 import { searchCurrentFinancialDocuments } from '../api/currentFinancialDocumentLookup'
@@ -521,9 +524,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       && selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.warehouse)
       .map(reportSelectionCardinalityError).find(Boolean) ?? null
     : null
-  const organizationConfigurationError = customerGroupOrganizationError(dataSource, selections)
-    ?? customerGroupRegionError(dataSource, selections)
-    ?? customerGroupSelectionsError(dataSource, selections, dataset)
+  const organizationConfigurationError = selectionConfigurationError(dataSource, selections, dataset, reportBody)
   const returnStatusError = returnItemStatusesError(reportBody, dataset)
   const stockQuantityError = stockQuantityFilterError(templateBody, dataset)
   const templateConfigurationError = stockQuantityError ?? configurationError ?? organizationConfigurationError ?? returnStatusError
@@ -2043,6 +2044,14 @@ type FilterFieldOption = {
   value: string
 }
 
+function scopedSelectionValueError(source: number, selection: ReportSelection, dataset?: ReportDataset, request?: ReportRequestBody) {
+  return namedSalesPriceTypeSelectionError(request, selection) ?? nativePriceFilterSelectionError(source, [selection], dataset) ?? customerGroupSelectionsError(source, [selection], dataset)
+}
+function selectionConfigurationError(source: number, selections: ReportSelection[], dataset: ReportDataset | undefined, request: ReportRequestBody) {
+  return customerGroupOrganizationError(source, selections) ?? customerGroupRegionError(source, selections)
+    ?? customerGroupSelectionsError(source, selections, dataset) ?? nativePriceFilterSelectionError(source, selections, dataset) ?? namedSalesPriceTypeError(request)
+}
+
 type ReportSelectionsCardProps = {
   request?: ReportRequestBody
   inline?: boolean
@@ -2067,7 +2076,7 @@ type ReportSelectionsCardProps = {
   addLabel?: string
 }
 
-function ReportSelectionsCard({
+export function ReportSelectionsCard({
   request,
   inline = false,
   selectionKeys,
@@ -2108,7 +2117,7 @@ function ReportSelectionsCard({
   const draftItemSearch = useDatasetItemSearch(dataSource, draftField, documentLookup.mode)
   const draftValueError = draftSelection ? returnItemStatusSelectionError(request, dataset, draftSelection) ?? (analysis
     ? hierarchyStatusError(draftDescriptor, draftSelection.FilterCondition.Type, hierarchyStatus) ?? analysisSelectionValueError(draftSelection, draftDescriptor)
-    : customerGroupSelectionsError(dataSource, [draftSelection], dataset) ?? hierarchyStatusError(draftDescriptor, draftSelection.FilterCondition.Type, hierarchyStatus) ?? reportSelectionEditorCardinalityError(dataSource, request, draftSelection)
+    : scopedSelectionValueError(dataSource, draftSelection, dataset, request) ?? hierarchyStatusError(draftDescriptor, draftSelection.FilterCondition.Type, hierarchyStatus) ?? reportSelectionEditorCardinalityError(dataSource, request, draftSelection)
       ?? datasetGroupSelectionError(dataset, draftSelection)) : null
   const visibleCount = filter ? selections.filter(filter).length : selections.length
   const resolvedDescription = description === undefined
@@ -2127,7 +2136,7 @@ function ReportSelectionsCard({
 
   function openEditor(index: number, selection: ReportSelection) {
     setEditorIndex(index)
-    setDraftSelection(cloneReportSelection(selection, dataSource))
+    setDraftSelection(cloneReportSelection(selection, dataSource, request))
   }
 
   function saveDraft() {
@@ -2135,7 +2144,7 @@ function ReportSelectionsCard({
       return
     }
 
-    const savedSelection = cloneReportSelection(draftSelection, dataSource)
+    const savedSelection = cloneReportSelection(draftSelection, dataSource, request)
     onChange(editorIndex === -1 ? { kind: 'append', selection: savedSelection } : { kind: 'replace', index: editorIndex, selection: savedSelection })
     closeEditor()
   }
@@ -2272,7 +2281,7 @@ function ReportSelectionsCard({
                   onChange={Values => setDraftSelection(current => current ? { ...current, Values } : current)} />
                 : isDatasetGroupSelection(dataset, draftSelection) ? <CurrentVparivanieAnalysisValuePicker selection={draftSelection} selections={editorSelections}
                   descriptor={draftDescriptor} status={hierarchyStatus} from={from} to={to} searchItems={draftItemSearch} renderItemPicker={nativeProductItemRenderer(dataSource, dataset, draftSelection)}
-                  onChange={Values => setDraftSelection(current => current ? { ...current, Values } : current)} /> : <SelectionValuePicker
+                  onChange={Values => setDraftSelection(current => current ? { ...current, Values } : current)} /> : <SelectionValuePicker request={request}
                 dataSource={dataSource}
                 dataset={dataset}
                 lookupProfitReadMode={documentLookup.mode} lookupProfitUnavailable={documentLookup.unavailable} lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis}
@@ -2305,7 +2314,7 @@ function ReportSelectionsCard({
   )
 }
 
-function InlineReportSelection({ dataset, request, selection, selections, index, dataSource, from, to, filterFieldOptions,
+export function InlineReportSelection({ dataset, request, selection, selections, index, dataSource, from, to, filterFieldOptions,
   lookupProfitReadMode, lookupProfitUnavailable, lookupSourceWorld, lookupSalesBasis, lookupProvidedDiscountBasis, onChange,
 }: Pick<ReportSelectionsCardProps, 'dataset' | 'request' | 'selections' | 'dataSource' | 'from' | 'to' | 'filterFieldOptions' | 'lookupProfitReadMode'
   | 'lookupProfitUnavailable' | 'lookupSourceWorld' | 'lookupSalesBasis' | 'lookupProvidedDiscountBasis' | 'onChange'> & { selection: ReportSelection; index: number }) {
@@ -2325,7 +2334,7 @@ function InlineReportSelection({ dataset, request, selection, selections, index,
   const hierarchyStatus = useAnalysisHierarchyStatus(needsHierarchyStatus(descriptor))
   const itemSearch = useDatasetItemSearch(dataSource, selection.SelectedField.Type, documentLookup.mode)
   const valueError = returnItemStatusSelectionError(request, dataset, selection) ?? (analysis ? hierarchyStatusError(descriptor, selection.FilterCondition.Type, hierarchyStatus) ?? analysisSelectionValueError(selection, descriptor)
-    : customerGroupSelectionsError(dataSource, [selection], dataset) ?? hierarchyStatusError(descriptor, selection.FilterCondition.Type, hierarchyStatus) ?? reportSelectionEditorCardinalityError(dataSource, request, selection) ?? datasetGroupSelectionError(dataset, selection))
+    : scopedSelectionValueError(dataSource, selection, dataset, request) ?? hierarchyStatusError(descriptor, selection.FilterCondition.Type, hierarchyStatus) ?? reportSelectionEditorCardinalityError(dataSource, request, selection) ?? datasetGroupSelectionError(dataset, selection))
   const fields = analysis ? [...new Set(analysis.filters.map(field => field.path.join(' / ')))].map(group => ({ group,
     items: analysis.filters.filter(field => field.path.join(' / ') === group).map(field => ({ value: String(field.type), label: field.name,
       disabled: field.available === false })) })) : filterFieldOptions
@@ -2360,7 +2369,7 @@ function InlineReportSelection({ dataset, request, selection, selections, index,
       : isReturnItemStatusSelection(request, selection.SelectedField.Type) ? <ReturnItemStatusPicker dataset={dataset} selection={selection} onChange={Values => change({ ...selection, Values })} />
       : isDatasetGroupSelection(dataset, selection) ? <CurrentVparivanieAnalysisValuePicker selection={selection} selections={selections}
         descriptor={descriptor} status={hierarchyStatus} from={from} to={to} searchItems={itemSearch} renderItemPicker={nativeProductItemRenderer(dataSource, dataset, selection)} onChange={Values => change({ ...selection, Values })} />
-      : <SelectionValuePicker dataSource={dataSource} dataset={dataset} lookupProfitReadMode={documentLookup.mode} lookupProfitUnavailable={documentLookup.unavailable}
+      : <SelectionValuePicker request={request} dataSource={dataSource} dataset={dataset} lookupProfitReadMode={documentLookup.mode} lookupProfitUnavailable={documentLookup.unavailable}
         lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis}
         from={from} to={to} label={t('Значення')} selection={selection} selections={selections} width="100%"
         onChange={Values => change({ ...selection, Values })} />}</div>
@@ -2397,7 +2406,8 @@ function groupConditionsNotice(descriptor: AnalysisFieldDescriptor | undefined, 
   return reason ? `Умови «У групі…» недоступні: ${reason}` : undefined
 }
 
-function cloneReportSelection(selection: ReportSelection, dataSource: number): ReportSelection {
+function cloneReportSelection(selection: ReportSelection, dataSource: number, request?: ReportRequestBody): ReportSelection {
+  if (isNativePriceFilterField(dataSource, selection.SelectedField.Type) || isRetainedNamedSalesPriceType(request, selection)) return structuredClone(selection)
   return {
     ...selection,
     FilterCondition: { ...selection.FilterCondition },
@@ -2581,6 +2591,7 @@ function ReportResultSection({
 }
 
 type SelectionValuePickerProps = {
+  request?: ReportRequestBody
   dataSource: number
   dataset?: ReportDataset | null
   lookupProfitReadMode?: 0 | 1
@@ -2606,6 +2617,14 @@ function nativeProductItemRenderer(dataSource: number, dataset: ReportDataset | 
 }
 
 export function SelectionValuePicker(props: SelectionValuePickerProps) {
+  if (isRetainedNamedSalesPriceType(props.request, props.selection))
+    return <RetainedNamedSalesPriceType request={props.request} selection={props.selection} />
+  if (isNativePriceFilterField(props.dataSource, props.selection.SelectedField.Type))
+    return <NativePriceFilterValuePicker dataSource={props.dataSource} dataset={props.dataset} selection={props.selection} from={props.from} to={props.to} label={props.label} error={props.error} disabled={props.lookupProfitUnavailable} onChange={props.onChange} />
+  return <LegacySelectionValuePicker {...props} />
+}
+
+function LegacySelectionValuePicker(props: SelectionValuePickerProps) {
   if (props.selection.SelectedField.Type === 1 && [0, 1, 2, 4].includes(props.selection.FilterCondition.Type) && productLookupCapability(props.dataset, props.dataSource))
     return <NativeSalesProductPicker dataSource={props.dataSource} dataset={props.dataset ?? undefined} selection={props.selection} onChange={props.onChange} label={props.label} error={props.error} disabled={props.lookupProfitUnavailable} />
   if (props.dataSource === 2 && props.selection.SelectedField.Type === 1 && props.dataset?.salesProductLookup !== undefined && [0, 1, 2, 4].includes(props.selection.FilterCondition.Type))

@@ -220,7 +220,7 @@ export function withDefaultReadModes(data: ReportRequestBody, dataset?: ReportDa
 
 /** Refuse incompatible saved settings before mutating the form. Never remove or remap a filter. */
 export function datasetConfigurationError(data: ReportRequestBody, dataset: ReportDataset | undefined, purpose: 'current' | 'workspace' = 'current'): string | null {
-  const metadataError = salesConstructorError(data, dataset) ?? numberPresentationError(data, dataset) ?? reportConfigurationError(data, dataset)
+  const metadataError = salesConstructorError(data, dataset, purpose === 'workspace') ?? numberPresentationError(data, dataset) ?? reportConfigurationError(data, dataset)
   if (metadataError) return metadataError
   if (data.dataSource !== 38 && (data.supplierSourceWorld !== undefined || data.SupplierSourceWorld !== undefined))
     return 'Вибір бази Fenix або AMG доступний лише для партійного прибутку за постачальниками.'
