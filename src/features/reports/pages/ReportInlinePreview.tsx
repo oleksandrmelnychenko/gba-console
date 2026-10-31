@@ -114,7 +114,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
           {(groupTotals.get(row.SourceIndex) ?? []).map(group => <tr key={`group-${group.Level}`}
             className="report-inline-preview__group-total" data-level={group.Level}>
             <th scope="row" colSpan={rowHeaders.length}>
-              {`Підсумок: ${previewCaptionText(rowCaption(row, group.Level), sharedNames[group.Level])}`}
+              {`Підсумок: ${rowDimensionCaption(preview, group.Level, rowCaption(row, group.Level), sharedNames[group.Level])}`}
             </th>
             {totalCells(group.Values)}
           </tr>)}
@@ -175,6 +175,15 @@ function dimensionCaptions(schema: readonly { Caption: string; Identity?: string
   }
 }
 
+/** Current source46 attributes are raw text, not entity captions with an appended ID. */
+function rowDimensionCaption(preview: NativeReportPreview, index: number, caption: string, sharedNames?: ReadonlySet<string>): string {
+  const schema: readonly { Caption: string; Identity?: string }[] = preview.RowSchema
+  const identity = schema[index]?.Identity
+  const currentProductText = preview.Request?.DataSource === 'NativePriceComparison'
+    && (identity === 'ProductDescription' || identity === 'ProductTop')
+  return currentProductText ? caption : previewCaptionText(caption, sharedNames)
+}
+
 function rowHeaderText({ index, row, preview, products, product, regions, region, attributes, workbookRow, workbookColumns, sharedNames, caption }: {
   index: number; row: NativeReportPreviewAxis; preview: NativeReportPreview; products: boolean
   product?: CurrentVparivanieProduct; regions: boolean; region?: string | null; attributes?: SettlementCounterpartyAttribute
@@ -182,7 +191,7 @@ function rowHeaderText({ index, row, preview, products, product, regions, region
   sharedNames: readonly ReadonlySet<string>[]; caption: (row: NativeReportPreviewAxis, index: number) => string
 }): string {
   if (products) return product?.[CURRENT_VPARIVANIE_PRODUCT_FIELDS[index]] ?? '—'
-  if (index < preview.RowSchema.length) return previewCaptionText(caption(row, index), sharedNames[index])
+  if (index < preview.RowSchema.length) return rowDimensionCaption(preview, index, caption(row, index), sharedNames[index])
   if (workbookColumns.length) return workbookAttributeText(workbookRow?.values
     .find(value => value.type === workbookColumns[index - preview.RowSchema.length]?.type))
   if (regions) return region ?? '∅'
