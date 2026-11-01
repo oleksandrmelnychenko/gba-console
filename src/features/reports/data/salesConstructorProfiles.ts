@@ -1,5 +1,5 @@
 import { documentDetailsError, readDocumentDetails } from './reportDocumentDetails'
-import { constructorPresentationError } from './constructorPresentation'
+import { constructorPresentationError, requestConstructorPresentation } from './constructorPresentation'
 import type { ReportDataset, ReportDatasetField, ReportRequestBody, ReportSelection } from '../types'
 
 export type SalesConstructorProfile = 'sales' | 'grossProfit'
@@ -66,6 +66,8 @@ export function salesConstructorError(request: ReportRequestBody, dataset?: Repo
   if (detailError) return detailError
   const raw = requestReportProfile(request)
   if (raw === undefined) return constructorPresentationError(request, dataset)
+  if (raw === null && request.dataSource !== undefined && [3, 45, 46].includes(request.dataSource) && requestConstructorPresentation(request) !== undefined)
+    return constructorPresentationError(request, dataset)
   const profile = readReportProfile(raw)
   if (!profile || request.dataSource !== 2) return 'Невідомий профіль конструктора продажів.'
   if (dataset && !salesConstructorSupported(dataset, profile)) return 'Цей сервер ще не підтримує вибраний конструктор продажів.'

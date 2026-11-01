@@ -1,6 +1,7 @@
 import type { ReportDataset, ReportRequestBody } from '../types'
 export type ConstructorPresentation = { version: 1; negativeRed: boolean; grandTotals: boolean }
 export const defaultConstructorPresentation: ConstructorPresentation = { version: 1, negativeRed: true, grandTotals: true }
+const nativePresentationSource = (source: number | undefined) => source !== undefined && [3, 45, 46].includes(source)
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
 export function readConstructorPresentation(value: unknown): ConstructorPresentation | undefined {
   return object(value) && Object.keys(value).sort().join(',') === 'grandTotals,negativeRed,version'
@@ -17,10 +18,14 @@ export function cloneConstructorPresentation(data: object): Pick<ReportRequestBo
 }
 export function constructorPresentationSupported(dataset?: ReportDataset): boolean {
   const value = dataset?.constructorPresentation
-  return [2, 44].includes(dataset?.DataSource ?? -1) && object(value) && value.version === 1
+  const source = dataset?.DataSource ?? -1
+  return ([2, 44].includes(source) || nativePresentationSource(source)) && object(value) && value.version === 1
     && Array.isArray(value.fields) && value.fields.join(',') === 'negativeRed,grandTotals'
+    && (!nativePresentationSource(source) || Object.keys(value).sort().join(',') === 'fields,version')
 }
 export function constructorPresentationRequestSupported(request: ReportRequestBody): boolean {
+  if (nativePresentationSource(request.dataSource)) return request.reportProfile == null && request.ReportProfile == null
+    && request.returnsOnly == null && request.ReturnsOnly == null
   if (request.dataSource === 44) return request.reportProfile === undefined && request.ReportProfile === undefined
     && request.returnsOnly === undefined && request.ReturnsOnly === undefined
   return request.dataSource === 2 && ['sales', 'grossProfit'].includes(String(request.reportProfile ?? request.ReportProfile))
@@ -29,8 +34,9 @@ export function constructorPresentationError(request: ReportRequestBody, dataset
   const value = requestConstructorPresentation(request)
   if (value === undefined) return null
   const customerComparison = request.dataSource === 44
+  const ownNative = nativePresentationSource(request.dataSource)
   if (!readConstructorPresentation(value) || !constructorPresentationRequestSupported(request))
-    return customerComparison ? 'Непідтримуване оформлення порівняння роботи клієнтів.' : 'Непідтримуване оформлення конструктора продажів.'
+    return customerComparison ? 'Непідтримуване оформлення порівняння роботи клієнтів.' : ownNative ? 'Непідтримуване оформлення цього звіту.' : 'Непідтримуване оформлення конструктора продажів.'
   return dataset && (dataset.DataSource !== request.dataSource || !constructorPresentationSupported(dataset))
-    ? customerComparison ? 'Сервер ще не підтримує оформлення порівняння роботи клієнтів.' : 'Сервер ще не підтримує оформлення конструктора продажів.' : null
+    ? customerComparison ? 'Сервер ще не підтримує оформлення порівняння роботи клієнтів.' : ownNative ? 'Сервер ще не підтримує оформлення цього звіту.' : 'Сервер ще не підтримує оформлення конструктора продажів.' : null
 }

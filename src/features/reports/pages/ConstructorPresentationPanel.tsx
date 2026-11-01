@@ -6,7 +6,7 @@ export function ConstructorPresentationPanel({ dataset, request, disabled, onCha
 }) {
   if (!constructorPresentationSupported(dataset) || dataset?.DataSource !== request.dataSource || !constructorPresentationRequestSupported(request)) return null
   const value = readConstructorPresentation(requestConstructorPresentation(request))
-    ?? (request.dataSource === 44 ? { ...defaultConstructorPresentation, negativeRed: false } : defaultConstructorPresentation)
+    ?? (request.dataSource !== undefined && [3, 44, 45, 46].includes(request.dataSource) ? { ...defaultConstructorPresentation, negativeRed: false } : defaultConstructorPresentation)
   return <Group gap="md" role="group" aria-label="Оформлення звіту">
     <Checkbox label="Від’ємні значення червоним" checked={value.negativeRed} disabled={disabled}
       onChange={event => onChange({ ...value, negativeRed: event.currentTarget.checked })} />

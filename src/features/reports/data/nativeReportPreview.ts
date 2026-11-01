@@ -71,6 +71,8 @@ export type NativeReportPreview = {
   WorkbookPresentation?: WorkbookPreview
 }
 
+const constructorPreviewSources: ReadonlySet<unknown> = new Set(['NativeSalesNet', 'NativeCustomerGroupComparison', 'NativePurchases', 'NativeStockPeriod', 'NativePriceComparison'])
+
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
 const boundedInteger = (value: unknown, max: number): value is number => Number.isSafeInteger(value) && (value as number) >= 0 && (value as number) <= max
 const scalar = (value: unknown): value is NativeReportPreviewScalar => record(value)
@@ -184,7 +186,7 @@ export function normalizeNativeReportPreview(response: unknown, fullCurrentVpari
   const columnWindow = readColumnWindow(preview.Page, preview.Columns.length)
   const columnBound = columnWindow ? MAXIMUM_RESULT_COLUMNS : LEGACY_PREVIEW_COLUMNS
 
-  if (preview.constructorPresentation != null && (!readConstructorPresentation(preview.constructorPresentation) || !record(preview.Request) || (preview.Request.DataSource !== 'NativeSalesNet' && preview.Request.DataSource !== 'NativeCustomerGroupComparison'))) throw new Error('Непідтримуване оформлення результату.')
+  if (preview.constructorPresentation != null && (!readConstructorPresentation(preview.constructorPresentation) || !record(preview.Request) || !constructorPreviewSources.has(preview.Request.DataSource))) throw new Error('Непідтримуване оформлення результату.')
   if (preview.numberPresentation != null && !readNumberPresentation(preview.numberPresentation)) throw new Error('Непідтримуваний формат чисел результату.')
   if (preview.valueSemantics !== undefined && (!Array.isArray(preview.valueSemantics) || preview.valueSemantics.some(item => !record(item) || !Number.isInteger(item.columnSourceIndex) || !readValueSemantics(item.semantics)
     || columnWindow && !((item.columnSourceIndex as number) >= columnWindow.ColumnOffset && (item.columnSourceIndex as number) < columnWindow.ColumnOffset + columnWindow.ReturnedColumns)))) throw new Error('Некоректні одиниці показників результату.')

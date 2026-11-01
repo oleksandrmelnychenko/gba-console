@@ -25,6 +25,7 @@ const suppliedEntityAxes: Readonly<Record<string, ReadonlySet<string>>> = {
     'SupplierContract', 'ProductMeasureUnit', 'StockWarehouse']),
   NativeStockPeriod: new Set(['Product', 'ProductName', 'PurchaseDocument', 'ProductMeasureUnit',
     'StockWarehouse', 'StockConsignmentItem', 'StockOrganization']),
+  NativePriceComparison: new Set(['CustomerRegion', 'CustomerRegionCode', 'CustomerManager', 'SaleReturnDocument', 'SaleDocumentManagerPosted']),
 }
 function isSuppliedEntityCaption(source: string | undefined, schema: ReportCaptionAxisSchema | undefined): boolean {
   if (typeof source !== 'string' || typeof schema?.Identity !== 'string') return false
@@ -32,9 +33,20 @@ function isSuppliedEntityCaption(source: string | undefined, schema: ReportCapti
     && schema.Captioned === true && schema.KeyKind === 'Numeric' && schema.DisplayKind === 'Text'
 }
 
+// ProductGroup is a complete-set text key, not a single numeric entity or a raw name axis.
+function isPriceGroupSetCaption(source: string | undefined, schema: ReportCaptionAxisSchema | undefined): boolean {
+  return (source === 'NativePriceComparison' || source === 'NativeSalesNet' || source === 'NativeCustomerGroupComparison')
+    && schema?.Identity === 'ProductGroup'
+    && schema.Captioned === true && schema.KeyKind === 'Text' && schema.DisplayKind === 'Text'
+}
+
+function isSuppliedCaption(source: string | undefined, schema: ReportCaptionAxisSchema | undefined): boolean {
+  return isSuppliedEntityCaption(source, schema) || isPriceGroupSetCaption(source, schema)
+}
+
 export function reportAxisCaption(source: string | undefined, schema: ReportCaptionAxisSchema | undefined,
   caption: string, sharedNames?: ReadonlySet<string>): string {
-  if (isSuppliedEntityCaption(source, schema)) return caption
+  if (isSuppliedCaption(source, schema)) return caption
   const identity = schema?.Identity
   const admitted = typeof source === 'string' && typeof identity === 'string'
     && Object.hasOwn(rawTextAxes, source) && rawTextAxes[source]?.has(identity) === true
