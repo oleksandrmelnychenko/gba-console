@@ -2,9 +2,9 @@ import { Alert, Button, Group, SegmentedControl, Select, Stack, Text } from '@ma
 import { useDebouncedValue } from '@mantine/hooks'
 import { useState } from 'react'
 import type { ReportDataset, ReportSelectedValue, ReportSelection } from '../types'
-import type { NativePriceFilterOption } from '../api/nativePriceFilterLookup'
+import { priceFilterQueryError, type NativePriceFilterOption } from '../api/nativePriceFilterLookup'
 import { isNativePriceFilterField, nativePriceFilterDescriptor, nativePriceSavedKey, PRICE_FILTER_HELP, PRICE_FILTER_UNAVAILABLE, type NativePriceFilterField } from '../data/nativePriceFilterLookup'
-import { isMultiValueReportCondition } from '../data/reportOptions'
+import { isMultiValueReportCondition, reportSelectionCardinalityError } from '../data/reportOptions'
 import { ReportValueAutocomplete } from './ReportValueAutocomplete'
 import { useNativePriceFilterOptions, type PriceFilterSearchMode } from './useNativePriceFilterOptions'
 
@@ -46,6 +46,15 @@ function SelectedPriceValues({ multiple, selected, disabled, remove }: { multipl
   return <Group gap="xs">{selected.map(item => <Group gap={4} key={item.value}><Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>{item.label}</Text>
     <Button type="button" variant="subtle" size="compact-xs" disabled={disabled} aria-label={`Видалити ${item.label}`} onClick={() => remove(item.value)}>Видалити</Button></Group>)}</Group>
 }
+/** A cleared exact-search input is not a failed selection. Validate the stored key without a transport/hydration request. */
+function priceSelectionQueryError(props: Props, field: NativePriceFilterField, mode: PriceFilterSearchMode, search: string, error: string | null): string | undefined {
+  if (mode !== 'exact' || search !== '' || !props.selection.Values.length || ![0, 1, 2, 4].includes(props.selection.FilterCondition.Type) || reportSelectionCardinalityError(props.selection)) return error ?? undefined
+  const keys = props.selection.Values.map(value => nativePriceSavedKey(field, value))
+  if (keys.some(key => key === null)) return error ?? undefined
+  const query = { ...(field === 3 ? { exactValue: keys[0]! } : { exactId: keys[0]! }),
+    ...(field === 12 || field === 14 ? { from: props.from, to: props.to } : {}), offset: 0, limit: 30 }
+  return priceFilterQueryError(props.dataSource, field, query) ? error ?? undefined : undefined
+}
 function NativePriceFieldPicker({ field, ...props }: Props & { field: NativePriceFilterField }) {
   const [mode, setMode] = useState<PriceFilterSearchMode>('text'), [search, setSearch] = useState('')
   const [debounced] = useDebouncedValue(search, 250)
@@ -59,7 +68,7 @@ function NativePriceFieldPicker({ field, ...props }: Props & { field: NativePric
     <SegmentedControl aria-label="Спосіб пошуку значення" value={mode} onChange={value => { setMode(value as PriceFilterSearchMode); setSearch('') }}
       disabled={disabled} data={[{ value: 'text', label: 'Пошук' }, { value: 'exact', label: field === 3 ? 'Збережена позначка' : 'Точний ID' }]} />
     <PriceSearchControl multiple={multiple} label={label} search={search} setSearch={setSearch} data={page.items.length ? model.data : []} selected={model.selected}
-      onChange={keys => props.onChange(model.change(keys))} disabled={disabled} error={props.error || page.queryError || undefined} loading={page.loading || !disabled && search !== debounced} />
+      onChange={keys => props.onChange(model.change(keys))} disabled={disabled} error={props.error || priceSelectionQueryError(props, field, mode, search, page.queryError)} loading={page.loading || !disabled && search !== debounced} />
     <SelectedPriceValues multiple={multiple} selected={model.selected} disabled={props.disabled}
       remove={key => props.onChange(model.change(model.selected.filter(value => value.value !== key).map(value => value.value)))} />
     <PricePageActions page={page} disabled={disabled} />

@@ -24,7 +24,7 @@ function preview(source = 'NativeSalesNet', quantity: unknown = missing): Native
     Cells: [{ RowSourceIndex: 1, ColumnSourceIndex: 5, Value: quantity }, { RowSourceIndex: 1, ColumnSourceIndex: 6, Value: missing }],
     Totals: { State: 'materialized', Values: [{ RowSourceIndex: -1, ColumnSourceIndex: 5, Value: quantity }, { RowSourceIndex: -1, ColumnSourceIndex: 6, Value: missing }],
       Groups: [{ Level: 0, RowSourceIndex: 1, RowCount: 1, Values: [{ RowSourceIndex: 1, ColumnSourceIndex: 5, Value: quantity }, { RowSourceIndex: 1, ColumnSourceIndex: 6, Value: missing }] }] },
-    valueSemantics: [{ columnSourceIndex: 5, measureType: 0, semantics: { kind: 'quantity', currencyPolicy: 'notApplicable', unitPolicy: 'confirmedCompatibleUnit', aggregation: 'sumWithinCompatibleUnit', scalable: false, defaultDecimalPlaces: 3 } },
+    valueSemantics: [{ columnSourceIndex: 5, measureType: 0, semantics: { kind: 'quantity', currencyPolicy: 'notApplicable', unitPolicy: 'confirmedCompatibleUnit', aggregation: 'sumWithinCompatibleUnit', scalable: false, defaultDecimalPlaces: 3, defaultMinimumDecimalPlaces: 0 } },
       { columnSourceIndex: 6, measureType: 2, semantics: { kind: 'money', currencyPolicy: 'EUR', unitPolicy: 'currency', aggregation: 'sum', scalable: true, defaultDecimalPlaces: 2 } }],
   } })
 }

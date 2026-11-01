@@ -1,7 +1,7 @@
 import { ANALYSIS_SCOPE_NOTICE } from '../data/currentVparivanieAnalysis'
 import { MOVEMENT_FILTER_NOTICE } from '../data/currentVparivanieMovements'
 import { ReportTableScrollArea } from './ReportTableScrollArea'
-import { formatReportDecimal, moneyScaleLabel, reportValueUnit } from '../data/reportNumberPresentation'
+import { effectiveConstructorNumberPresentation, formatReportDecimal, moneyScaleLabel, reportValueUnit } from '../data/reportNumberPresentation'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { settlementAttributeText, type SettlementCounterpartyAttribute } from '../data/settlementSourceAttributes'
 import { Fragment, memo } from 'react'
@@ -39,6 +39,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
   const sharedNames = preview.RowSchema.map((_, index) => previewSharedNames(preview.Rows.map(row => rowCaption(row, index))))
   const amountColumns = new Set(preview.Columns.filter(column => isAmountColumn(column)).map(column => column.SourceIndex))
   const semanticsByColumn = new Map(preview.valueSemantics?.map(item => [item.columnSourceIndex, item.semantics]))
+  const numberPresentation = effectiveConstructorNumberPresentation(preview.Request?.DataSource, previewReportProfile, preview.numberPresentation)
   const blanksZero = previewBlanksZero(preview.Request?.DataSource)
   const negativeRed = preview.constructorPresentation?.negativeRed ?? previewNegativeRed(preview.Request?.DataSource)
   const valueClass = (value: NativeReportPreviewScalar | undefined) => negativeRed && isNegativePreviewScalar(value) ? 'is-negative' : undefined
@@ -49,8 +50,8 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
     .sort((left, right) => left.Level - right.Level))
   const valueText = (value: NativeReportPreviewScalar | undefined, columnSourceIndex: number) =>
     blanksZero && isZeroPreviewScalar(value) ? ''
-      : preview.numberPresentation && semanticsByColumn.has(columnSourceIndex) && value?.Kind === 'decimal' && typeof value.Value === 'string'
-        ? formatReportDecimal(value.Value, semanticsByColumn.get(columnSourceIndex)!, preview.numberPresentation)
+      : numberPresentation && semanticsByColumn.has(columnSourceIndex) && value?.Kind === 'decimal' && typeof value.Value === 'string'
+        ? formatReportDecimal(value.Value, semanticsByColumn.get(columnSourceIndex)!, numberPresentation)
       : products && value?.Kind === 'decimal' && typeof value.Value === 'string'
         ? previewNumberText(currentVparivanieQuantityText(value.Value))
         : amountColumns.has(columnSourceIndex) && value?.Kind === 'decimal' && typeof value.Value === 'string'

@@ -358,6 +358,11 @@ export function grossProfitMeasureGroupLabel(dataSource: number, name: string): 
   return dataSource === 35 || dataSource === 38 ? GROSS_PROFIT_MEASURE_GROUPS[name] : undefined
 }
 
+/** Group vocabulary follows the explicit report source, while caller-owned labels still win. */
+export function nativeConstructorMeasureGroupLabel(dataSource: number, name: string): string | undefined {
+  return dataSource === 3 && name === 'SalesValue' ? 'Вартість закупівлі' : grossProfitMeasureGroupLabel(dataSource, name)
+}
+
 export function createDefaultMeasurementGroups(): ReportMeasurementGroup[] {
   return [
     {

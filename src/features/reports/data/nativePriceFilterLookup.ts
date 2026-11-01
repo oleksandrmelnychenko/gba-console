@@ -3,7 +3,7 @@ import { canonicalCustomerGroupInt64Id, customerGroupInt64Id } from './customerG
 import { customerGroupTopName, validCustomerGroupTopName } from './customerGroupTop'
 import { reportSelectionCardinalityError } from './reportOptions'
 
-export const NATIVE_PRICE_FILTER_FIELDS = [3, 4, 7, 8, 10, 12, 14, 15, 16] as const
+export const NATIVE_PRICE_FILTER_FIELDS = [3, 4, 7, 8, 10, 12, 14, 15, 16, 21] as const
 export type NativePriceFilterField = typeof NATIVE_PRICE_FILTER_FIELDS[number]
 export type NativePriceFilterDescriptor = {
   fieldType: NativePriceFilterField
@@ -41,10 +41,12 @@ export function nativePriceFilterCapability(dataset: ReportDataset | null | unde
   const value = dataset.priceFilterLookup
   if (!record(value) || !exactKeys(value, CAP_KEYS) || value.version !== 1 || value.dataSource !== source
     || value.endpoint !== PRICE_FILTER_ENDPOINT || value.paging !== 'offset' || value.maximumPageSize !== 50
-    || !Array.isArray(value.fields) || value.fields.length !== NATIVE_PRICE_FILTER_FIELDS.length
+    || !Array.isArray(value.fields) || ![9, 10].includes(value.fields.length)
     || !value.fields.every(validDescriptor)) return null
   const fields = value.fields
-  if (new Set(fields.map(field => field.fieldType)).size !== NATIVE_PRICE_FILTER_FIELDS.length
+  const expected = fields.length === 9 ? NATIVE_PRICE_FILTER_FIELDS.filter(field => field !== 21) : NATIVE_PRICE_FILTER_FIELDS
+  if (new Set(fields.map(field => field.fieldType)).size !== expected.length
+    || expected.some(type => !fields.some(field => field.fieldType === type))
     || fields.some(field => !dataset.Filters.some(filter => filter && filter.Type === field.fieldType && filter.Selectable !== false))) return null
   return fields
 }
@@ -81,4 +83,5 @@ export const PRICE_FILTER_HELP: Record<NativePriceFilterField, string> = {
   14: 'Власний документ повернення за його датою у вибраному періоді, а не перше пов’язане повернення.',
   15: 'Користувач, який додав товар у первинний продаж. Для повернення — автор початкового рядка, а не автор повернення.',
   16: 'Користувач, який провів накладну первинного продажу. Для повернення — підтверджувач початкового продажу.',
+  21: 'Фактичні склади підтвердженого списання GBA, а не склад у заголовку продажу. Назви поточні; архівні записи доступні за назвою та точним ID. Повернення — за власним складом. За цим відбором сума до знижки та похідні показники знижки порожні без підтвердженого розподілу.',
 }

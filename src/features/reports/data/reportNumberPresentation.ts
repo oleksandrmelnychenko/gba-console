@@ -80,3 +80,13 @@ export function cloneNumberPresentationAliases(value: object): Partial<ReportReq
   const keys = Object.keys(value).filter(key => key.toLowerCase() === 'numberpresentation' || key.toLowerCase() === 'supplierwarehouse')
   return Object.fromEntries(keys.map(key => [key === 'NumberPresentation' && !Object.hasOwn(value, 'numberPresentation') ? 'numberPresentation' : key === 'SupplierWarehouse' && !Object.hasOwn(value, 'supplierWarehouse') ? 'supplierWarehouse' : key, structuredClone((value as Record<string, unknown>)[key])]))
 }
+
+const CONSTRUCTOR_NUMBER_DEFAULTS: ReportNumberPresentation = Object.freeze({ version: 1, moneyScale: 1 })
+/** Local display choice only: no default is injected into the applied request or cached DTO. */
+export function effectiveConstructorNumberPresentation(source: string | undefined, profile: string | undefined,
+  explicit?: ReportNumberPresentation): ReportNumberPresentation | undefined {
+  if (explicit) return explicit
+  return source === 'NativePurchases' || source === 'NativeStockPeriod' || source === 'NativeCustomerGroupComparison'
+    || source === 'NativePriceComparison' || source === 'NativeSalesNet' && (profile === 'sales' || profile === 'grossProfit')
+    ? CONSTRUCTOR_NUMBER_DEFAULTS : undefined
+}

@@ -28,7 +28,7 @@ it('renders the actual source44 HTTP response with unknown quantities, known emp
     expect(cells[index].textContent).toBe('∅')
     expect(cells[index].getAttribute('aria-description')).toBeNull()
   }
-  expect(cells[6].textContent).toBe('0')
+  expect(cells[6].textContent).toBe('0,00000000')
   expect(cells[6].getAttribute('aria-description')).toBeNull()
   expect(cells[3].textContent).toBe('60,00')
   expect(screen.queryByText(/Грошові показники розраховано окремо/)).toBeNull()

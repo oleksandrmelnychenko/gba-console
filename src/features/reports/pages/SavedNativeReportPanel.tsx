@@ -10,9 +10,12 @@ import { DocumentExportModal } from '../../../shared/ui/document-export-modal/Do
 import { generateSavedNativeReport, previewSavedNativeReport, savedNativeReportError,
   type SavedNativeReportBinding } from '../api/savedNativeReportApi'
 import { savedNativeReportConfigurationError } from '../data/savedNativeReport'
+import { readReportProfile, requestReportProfile, type SalesConstructorProfile } from '../data/salesConstructorProfiles'
 import { useReportRunState } from '../hooks/useReportRunState'
 import type { ReportDataset, ReportTemplate } from '../types'
 import { ReportInlinePreview } from './ReportInlinePreview'
+
+type AppliedSavedNativeRun = SavedNativeReportBinding & { previewReportProfile?: SalesConstructorProfile }
 
 export function SavedNativeReportPanel({ template, datasets, callerKey, enabled, current, requireReadMode = false, onClose }: {
   template: ReportTemplate
@@ -27,7 +30,7 @@ export function SavedNativeReportPanel({ template, datasets, callerKey, enabled,
   const configurationError = useMemo(() => savedNativeReportConfigurationError(template, datasets, requireReadMode),
     [template, datasets, requireReadMode])
   const scope = JSON.stringify([callerKey, enabled, current, template, datasets])
-  const run = useReportRunState<SavedNativeReportBinding>(scope)
+  const run = useReportRunState<AppliedSavedNativeRun>(scope)
   const controller = useRef<AbortController | null>(null)
   useEffect(() => () => { controller.current?.abort() }, [scope])
   const canRun = Boolean(enabled && callerKey && current && !configurationError && !run.isLoading)
@@ -42,11 +45,13 @@ export function SavedNativeReportPanel({ template, datasets, callerKey, enabled,
     controller.current = attempt
     const target = { id: template.Id, revision: template.Revision, dataSource: template.Data.dataSource ?? 0,
       ...(run.lastRun ? { expectedDefinitionSha256: run.lastRun.definitionSha256 } : {}) }
+    const previewReportProfile = target.dataSource === 2 ? readReportProfile(requestReportProfile(template.Data)) : undefined
     const updateAttempt = run.begin()
     try {
       const operation = preview ? previewSavedNativeReport : generateSavedNativeReport
       const response = await operation(target, { session: { userNetUid: callerKey, csrfToken: session.csrfToken }, signal: attempt.signal })
-      updateAttempt({ result: response.result, preview: response.preview ?? null, lastRun: response.binding,
+      updateAttempt({ result: response.result, preview: response.preview ?? null,
+        lastRun: { ...response.binding, ...(previewReportProfile ? { previewReportProfile } : {}) },
         downloadModalOpened: !preview && Boolean(response.result.document.DocumentURL || response.result.document.PdfDocumentURL) })
     } catch (cause) {
       if (!attempt.signal.aborted) updateAttempt({ error: savedNativeReportError(cause) })
@@ -76,7 +81,8 @@ export function SavedNativeReportPanel({ template, datasets, callerKey, enabled,
     </Group>
     {run.isLoading ? <RunProgress dataSource={template.Data.dataSource ?? 0} title={template.Name}
       period={[template.Data.from, template.Data.to].filter(Boolean).map(formatDate).join(' – ') || t('поточний період')} /> : null}
-    {run.preview ? <ReportInlinePreview preview={run.preview} /> : null}
+    {run.preview ? <ReportInlinePreview preview={run.preview}
+      previewReportProfile={run.lastRun?.previewReportProfile} /> : null}
     <DocumentExportModal document={run.result?.document} opened={run.downloadModalOpened}
       title={template.Name} onClose={() => run.update({ downloadModalOpened: false })} />
   </Stack>

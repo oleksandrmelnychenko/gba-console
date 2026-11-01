@@ -146,7 +146,7 @@ import {
   createDefaultMeasurementGroups,
   flattenCheckedMeasurements,
   getReportFieldLabel,
-  grossProfitMeasureGroupLabel,
+  nativeConstructorMeasureGroupLabel,
   measurementGroupCaption,
 } from '../data/reportOptions'
 import type {
@@ -1953,7 +1953,7 @@ function LegacyReportBuilder({
 
       <ReportMeasureTree groups={measurements} onChange={onMeasurementsChange}
         groupLabel={group => {
-          const label = group.Label || grossProfitMeasureGroupLabel(dataSource, group.Name) || getReportFieldLabel(group.Name)
+          const label = group.Label || nativeConstructorMeasureGroupLabel(dataSource, group.Name) || getReportFieldLabel(group.Name)
           return measurementGroupCaption(group.Name, useReportCurrency && group.SubList.every(item => isPresentationCurrencyMoneyMeasure(item.Type)) ? currencyNeutralMeasureLabel(label) : label)
         }}
         itemLabel={item => measurementLabel(item.Type, item.Label || getReportFieldLabel(item.Name))}
