@@ -20,6 +20,18 @@ describe('report numeric presentation', () => {
     expect(formatReportDecimal('10', { ...money, kind: 'count', scalable: false, defaultDecimalPlaces: 0 }, { version: 1, moneyScale: 1000 })).toBe('10')
     expect(reportValueUnit({ ...money, kind: 'percent', unitPolicy: 'percentagePoints' })).toBe('в.п.')
     expect(reportValueUnit(money, { version: 1, moneyScale: 1000 })).toBe('тис. EUR')
+    // Exact quantity/kilogram semantics already returned by the source3 measure96 metadata; only the help label changes.
+    const weight: ReportValueSemantics = { kind: 'quantity', currencyPolicy: 'notApplicable', unitPolicy: 'kilogram',
+      aggregation: 'sum', scalable: false, defaultDecimalPlaces: 3, defaultMinimumDecimalPlaces: 0 }
+    const beforeWeight = structuredClone(weight)
+    expect(reportValueUnit(weight)).toBe('кг')
+    expect(reportValueUnit({ ...weight, unitPolicy: 'sourceStorageUnit' })).toBe('Одиниці зберігання')
+    for (const unitPolicy of ['confirmedCompatibleUnit', 'unknown', '__proto__'])
+      expect(reportValueUnit({ ...weight, unitPolicy })).toBe('Одиниці товару')
+    expect(reportValueUnit({ ...money, unitPolicy: 'kilogram' })).toBe('EUR')
+    expect(reportValueUnit({ ...weight, kind: 'percent' })).toBe('%')
+    expect(formatReportDecimal('4.806', weight, { version: 1, moneyScale: 1000000 })).toBe('4,806')
+    expect(weight).toEqual(beforeWeight)
   })
   it('rejects unsupported versions and precision while keeping absence canonical and clearing deliberate settings', () => {
     for (const value of [{ version: 2, moneyScale: 1 }, { version: 1, moneyScale: 100 }, { version: 1, moneyScale: 1, decimalPlacesByKind: { money: 7 } }, { version: 1, moneyScale: 1, decimalPlacesByKind: { count: 2 } }]) expect(readNumberPresentation(value)).toBeUndefined()

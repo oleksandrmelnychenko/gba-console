@@ -23,7 +23,7 @@ it.each(['Captioned','KeyKind','DisplayKind'] as const)('keeps old cleanup when 
   expect(reportAxisCaption('NativePriceComparison', incomplete, 'Business [2025]')).toBe('Business')
 })
 it.each([{...schema,Captioned:false},{...schema,Captioned:'true'},{...schema,KeyKind:'Text'},{...schema,DisplayKind:'Numeric'},
-  {...schema,Identity:'SaleDocumentManagerInput'},{...schema,Identity:'Supplier'}])('does not trust conflicting or deferred source46 metadata %#', invalid => {
+  {...schema,Identity:'SaleDocumentManagerInput',Captioned:false},{...schema,Identity:'Supplier',Captioned:false}])('does not trust conflicting or deferred source46 metadata %#', invalid => {
   expect(reportAxisCaption('NativePriceComparison', invalid, 'Business [2025]')).toBe('Business')
 })
 it.each(['NativeSalesNet','NativeCustomerGroupComparison','NativePurchases','NativeStockPeriod'])('does not broaden %s posting captions', source => {

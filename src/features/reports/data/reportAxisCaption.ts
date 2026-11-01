@@ -25,7 +25,7 @@ const suppliedEntityAxes: Readonly<Record<string, ReadonlySet<string>>> = {
     'SupplierContract', 'ProductMeasureUnit', 'StockWarehouse']),
   NativeStockPeriod: new Set(['Product', 'ProductName', 'PurchaseDocument', 'ProductMeasureUnit',
     'StockWarehouse', 'StockConsignmentItem', 'StockOrganization']),
-  NativePriceComparison: new Set(['CustomerRegion', 'CustomerRegionCode', 'CustomerManager', 'SaleReturnDocument', 'SaleDocumentManagerPosted']),
+  NativePriceComparison: new Set(['CustomerRegion', 'CustomerRegionCode', 'CustomerManager', 'SaleReturnDocument', 'SaleDocumentManagerInput', 'SaleDocumentManagerPosted', 'Supplier']),
 }
 function isSuppliedEntityCaption(source: string | undefined, schema: ReportCaptionAxisSchema | undefined): boolean {
   if (typeof source !== 'string' || typeof schema?.Identity !== 'string') return false

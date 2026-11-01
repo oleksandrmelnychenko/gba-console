@@ -36,8 +36,8 @@ const conflicting: ReportCaptionAxisSchema[] = [
   descriptor('CustomerRegionCode', 'Text'), descriptor('CustomerManager', 'Text'),
   descriptor('SaleReturnDocument', 'Text'), { ...descriptor('CustomerManager', 'Numeric'), Captioned: 'true' },
   { ...descriptor('ProductGroup', 'Text'), DisplayKind: 'Numeric' },
-  descriptor('UnknownFutureAxis', 'Numeric'), descriptor('SaleDocumentManagerInput', 'Numeric'),
-  descriptor('SaleDocumentManagerPosted', 'Text'), descriptor('Supplier', 'Numeric'),
+  descriptor('UnknownFutureAxis', 'Numeric'), descriptor('SaleDocumentManagerInput', 'Text'),
+  descriptor('SaleDocumentManagerPosted', 'Text'), descriptor('Supplier', 'Text'),
 ]
 it.each(conflicting)('keeps legacy behavior for contradictory or unadmitted source46 semantics %#', schema => {
   expect(reportAxisCaption('NativePriceComparison', schema, 'Бізнес [2025]')).toBe('Бізнес')
