@@ -79,8 +79,8 @@ export function salesConstructorError(request: ReportRequestBody, dataset?: Repo
 export function salesConstructorRequest(request: ReportRequestBody, marker: string, dataset: ReportDataset): ReportRequestBody {
   const profile = profileForWorkbook(marker)
   if (!profile || !salesConstructorSupported(dataset, profile)) return request
-  const rows = profile === 'sales' ? [4, 7] : [4, 10, 7]
-  const columns = profile === 'sales' ? [] : [2]
+  const rows = profile === 'sales' ? [4, 20] : [4, 10, 7]
+  const columns = profile === 'sales' ? [19] : [2]
   const measures = profile === 'sales' ? [0, 2, 6, 10, 14] : [2, 6, 10]
   const axis = (types: number[]) => types.flatMap(type => dataset.Groupings.filter(field => field.Type === type).map(field => ({ type, key: field.Name, label: field.Name })))
   return { ...request, reportProfile: profile, sorted: { Row: axis(rows), Col: axis(columns),

@@ -26,22 +26,23 @@ it('applies alphabetic then manual measure order to preview while retaining peri
   await waitFor(() => expect(within(tabs).getByRole('button', { name: 'Відкрити Звіт по продажам' })).toHaveProperty('ariaCurrent', 'true'))
   changeReportPeriod({ from: '2026-10-18', to: '2026-10-27' })
   const rowsBefore = screen.getByRole('region', { name: 'Групування рядків' }).textContent
-  const columnsBefore = screen.getByRole('region', { name: 'Групування стовпців' }).textContent
+  const columnsBefore = screen.getByRole('region', { name: 'Групування колонок' }).textContent
   fireEvent.click(screen.getByRole('button', { name: 'Упорядкувати всі показники від А до Я' }))
   expect(previewStockReport).not.toHaveBeenCalled()
   await act(async () => fireEvent.submit(container.querySelector('form')!))
   await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
   const sorted = vi.mocked(previewStockReport).mock.calls[0][0]
-  expect(sorted.sorted.Measurements.map(item => item.Type)).toEqual([0, 10, 2, 14, 6])
+  expect(sorted.sorted.Measurements.map(item => item.Type)).toEqual([2, 0, 10, 14, 6])
   expect(sorted).toMatchObject({ dataSource: 2, reportProfile: 'sales', from: '2026-10-18', to: '2026-10-27', selections: [] })
+  fireEvent.click(within(screen.getByRole('region', { name: 'Показники' })).getByRole('button', { name: 'Собівартість', pressed: false }))
   fireEvent.click(screen.getByRole('button', { name: 'Перемістити Собівартість вище' }))
   await act(async () => fireEvent.submit(container.querySelector('form')!))
   await waitFor(() => expect(previewStockReport).toHaveBeenCalledTimes(2))
   const manual = vi.mocked(previewStockReport).mock.calls[1][0]
-  expect(manual.sorted.Measurements.map(item => item.Type)).toEqual([0, 10, 2, 6, 14])
+  expect(manual.sorted.Measurements.map(item => item.Type)).toEqual([2, 0, 10, 6, 14])
   expect(manual.sorted.Row).toEqual(sorted.sorted.Row)
   expect(manual.sorted.Col).toEqual(sorted.sorted.Col)
   expect(manual.selections).toEqual(sorted.selections)
   expect(screen.getByRole('region', { name: 'Групування рядків' }).textContent).toBe(rowsBefore)
-  expect(screen.getByRole('region', { name: 'Групування стовпців' }).textContent).toBe(columnsBefore)
+  expect(screen.getByRole('region', { name: 'Групування колонок' }).textContent).toBe(columnsBefore)
 })

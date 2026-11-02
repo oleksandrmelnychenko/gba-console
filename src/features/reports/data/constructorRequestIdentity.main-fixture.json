@@ -1,0 +1,468 @@
+[
+ {
+  "dataSource": 2,
+  "from": "2026-10-01",
+  "to": "2026-10-31",
+  "constructorPresentation": {
+   "version": 1,
+   "negativeRed": false,
+   "grandTotals": true
+  },
+  "reportProfile": "sales",
+  "sorted": {
+   "Col": [
+    {
+     "key": "Month",
+     "label": "По місяцях",
+     "type": 2
+    }
+   ],
+   "Row": [
+    {
+     "key": "Organization",
+     "label": "Організація",
+     "type": 4
+    },
+    {
+     "key": "SaleDocument",
+     "label": "Документ продажу",
+     "type": 17
+    }
+   ],
+   "Measurements": [
+    {
+     "Name": "SalesQuantity",
+     "IsChecked": true,
+     "Type": 0,
+     "Label": "Кількість з урахуванням повернень",
+     "parentName": "SalesQuantity"
+    },
+    {
+     "Name": "SalesValueWithoutVAT",
+     "IsChecked": true,
+     "Type": 2,
+     "Label": "Продажі без ПДВ з урахуванням повернень",
+     "parentName": "SalesValue"
+    },
+    {
+     "Name": "CostWithoutVAT",
+     "IsChecked": true,
+     "Type": 6,
+     "Label": "Собівартість без ПДВ",
+     "parentName": "Cost"
+    },
+    {
+     "Name": "MarkupWithoutVAT",
+     "IsChecked": true,
+     "Type": 10,
+     "Label": "Націнка без ПДВ",
+     "parentName": "Markup"
+    },
+    {
+     "Name": "ProfitabilityPercentWithoutVAT",
+     "IsChecked": true,
+     "Type": 14,
+     "Label": "Рентабельність без ПДВ, %",
+     "parentName": "Profitability"
+    }
+   ]
+  },
+  "selections": [
+   {
+    "IsChecked": true,
+    "SelectedField": {
+     "Type": 0,
+     "Name": "Organization"
+    },
+    "FilterCondition": {
+     "Type": 2,
+     "Name": "У списку"
+    },
+    "Values": [
+     {
+      "Data": {
+       "Id": 10561,
+       "Name": "Організація 10561"
+      },
+      "Name": "Організація 10561",
+      "Value": 10561
+     },
+     {
+      "Data": {
+       "Id": 10562,
+       "Name": "Організація 10562"
+      },
+      "Name": "Організація 10562",
+      "Value": 10562
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "dataSource": 2,
+  "from": "2026-10-01",
+  "to": "2026-10-31",
+  "constructorPresentation": {
+   "version": 1,
+   "negativeRed": true,
+   "grandTotals": false
+  },
+  "reportProfile": "grossProfit",
+  "numberPresentation": {
+   "version": 1,
+   "moneyScale": 1000
+  },
+  "sorted": {
+   "Col": [
+    {
+     "key": "Month",
+     "label": "По місяцях",
+     "type": 2
+    }
+   ],
+   "Row": [
+    {
+     "key": "Organization",
+     "label": "Організація",
+     "type": 4
+    },
+    {
+     "key": "ProductGroup",
+     "label": "Група товару",
+     "type": 10
+    },
+    {
+     "key": "ProductName",
+     "label": "Назва товару",
+     "type": 7
+    }
+   ],
+   "Measurements": [
+    {
+     "Name": "SalesValueWithoutVAT",
+     "IsChecked": true,
+     "Type": 2,
+     "Label": "Продажі без ПДВ з урахуванням повернень",
+     "parentName": "SalesValue"
+    },
+    {
+     "Name": "CostWithoutVAT",
+     "IsChecked": true,
+     "Type": 6,
+     "Label": "Собівартість без ПДВ",
+     "parentName": "Cost"
+    },
+    {
+     "Name": "MarkupWithoutVAT",
+     "IsChecked": true,
+     "Type": 10,
+     "Label": "Націнка без ПДВ",
+     "parentName": "Markup"
+    }
+   ]
+  },
+  "selections": [
+   {
+    "IsChecked": true,
+    "SelectedField": {
+     "Type": 0,
+     "Name": "Organization"
+    },
+    "FilterCondition": {
+     "Type": 2,
+     "Name": "У списку"
+    },
+    "Values": [
+     {
+      "Data": {
+       "Id": 10562,
+       "Name": "Організація 10562"
+      },
+      "Name": "Організація 10562",
+      "Value": 10562
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "dataSource": 3,
+  "from": "2026-10-01",
+  "to": "2026-10-31",
+  "constructorPresentation": {
+   "version": 1,
+   "negativeRed": true,
+   "grandTotals": true
+  },
+  "sorted": {
+   "Col": [
+    {
+     "key": "SupplierContract",
+     "label": "Договір постачальника",
+     "type": 25
+    }
+   ],
+   "Row": [
+    {
+     "key": "Supplier",
+     "label": "Постачальник",
+     "type": 21
+    },
+    {
+     "key": "PurchaseDocument",
+     "label": "Документ надходження",
+     "type": 24
+    }
+   ],
+   "Measurements": [
+    {
+     "Name": "SalesQuantity",
+     "IsChecked": true,
+     "Type": 0,
+     "Label": "Кількість надходження",
+     "parentName": "SalesQuantity"
+    },
+    {
+     "Name": "SalesValueWithoutVAT",
+     "IsChecked": true,
+     "Type": 2,
+     "Label": "Вартість надходження без ПДВ, EUR",
+     "parentName": "SalesValue"
+    }
+   ]
+  },
+  "selections": []
+ },
+ {
+  "dataSource": 45,
+  "from": "2026-10-01",
+  "to": "2026-10-31",
+  "constructorPresentation": {
+   "version": 1,
+   "negativeRed": true,
+   "grandTotals": true
+  },
+  "sorted": {
+   "Col": [],
+   "Row": [
+    {
+     "key": "Warehouse",
+     "label": "Склад",
+     "type": 29
+    },
+    {
+     "key": "Product",
+     "label": "Товар",
+     "type": 5
+    },
+    {
+     "key": "PurchaseDocument",
+     "label": "Документ надходження",
+     "type": 24
+    }
+   ],
+   "Measurements": [
+    {
+     "Name": "Початковий залишок: кількість",
+     "Label": "Початковий залишок: кількість",
+     "Type": 97,
+     "IsChecked": true,
+     "parentName": "Початковий залишок: кількість"
+    },
+    {
+     "Name": "Початковий залишок: собівартість з витратами без ПДВ, EUR",
+     "Label": "Початковий залишок: собівартість з витратами без ПДВ, EUR",
+     "Type": 98,
+     "IsChecked": true,
+     "parentName": "Початковий залишок: собівартість з витратами без ПДВ, EUR"
+    },
+    {
+     "Name": "Початковий залишок: ПДВ, EUR",
+     "Label": "Початковий залишок: ПДВ, EUR",
+     "Type": 99,
+     "IsChecked": true,
+     "parentName": "Початковий залишок: ПДВ, EUR"
+    },
+    {
+     "Name": "Прихід: кількість",
+     "Label": "Прихід: кількість",
+     "Type": 100,
+     "IsChecked": true,
+     "parentName": "Прихід: кількість"
+    },
+    {
+     "Name": "Прихід: собівартість з витратами без ПДВ, EUR",
+     "Label": "Прихід: собівартість з витратами без ПДВ, EUR",
+     "Type": 101,
+     "IsChecked": true,
+     "parentName": "Прихід: собівартість з витратами без ПДВ, EUR"
+    },
+    {
+     "Name": "Прихід: ПДВ, EUR",
+     "Label": "Прихід: ПДВ, EUR",
+     "Type": 102,
+     "IsChecked": true,
+     "parentName": "Прихід: ПДВ, EUR"
+    },
+    {
+     "Name": "Розхід: кількість",
+     "Label": "Розхід: кількість",
+     "Type": 103,
+     "IsChecked": true,
+     "parentName": "Розхід: кількість"
+    },
+    {
+     "Name": "Розхід: собівартість з витратами без ПДВ, EUR",
+     "Label": "Розхід: собівартість з витратами без ПДВ, EUR",
+     "Type": 104,
+     "IsChecked": true,
+     "parentName": "Розхід: собівартість з витратами без ПДВ, EUR"
+    },
+    {
+     "Name": "Розхід: ПДВ, EUR",
+     "Label": "Розхід: ПДВ, EUR",
+     "Type": 105,
+     "IsChecked": true,
+     "parentName": "Розхід: ПДВ, EUR"
+    },
+    {
+     "Name": "Кінцевий залишок: кількість",
+     "Label": "Кінцевий залишок: кількість",
+     "Type": 106,
+     "IsChecked": true,
+     "parentName": "Кінцевий залишок: кількість"
+    },
+    {
+     "Name": "Кінцевий залишок: собівартість з витратами без ПДВ, EUR",
+     "Label": "Кінцевий залишок: собівартість з витратами без ПДВ, EUR",
+     "Type": 107,
+     "IsChecked": true,
+     "parentName": "Кінцевий залишок: собівартість з витратами без ПДВ, EUR"
+    },
+    {
+     "Name": "Кінцевий залишок: ПДВ, EUR",
+     "Label": "Кінцевий залишок: ПДВ, EUR",
+     "Type": 108,
+     "IsChecked": true,
+     "parentName": "Кінцевий залишок: ПДВ, EUR"
+    }
+   ]
+  },
+  "selections": []
+ },
+ {
+  "customerGroups": {
+   "Version": 1,
+   "Groups": [
+    {
+     "Name": "Еталон",
+     "ClientIds": [
+      71,
+      72
+     ]
+    },
+    {
+     "Name": "Набір B",
+     "ClientIds": [
+      73
+     ]
+    }
+   ]
+  },
+  "dataSource": 44,
+  "from": "2026-10-01",
+  "to": "2026-10-31",
+  "sorted": {
+   "Col": [
+    {
+     "key": "Джерело даних",
+     "label": "Джерело даних",
+     "type": 82
+    }
+   ],
+   "Row": [
+    {
+     "key": "Номенклатура.Розмір",
+     "label": "Номенклатура.Розмір",
+     "type": 83
+    },
+    {
+     "key": "ProductArticle",
+     "label": "Артикул",
+     "type": 6
+    }
+   ],
+   "Measurements": [
+    {
+     "Name": "Кількість",
+     "Label": "Кількість",
+     "Type": 109,
+     "IsChecked": true,
+     "parentName": "Кількість"
+    },
+    {
+     "Name": "Вартість без ПДВ, EUR",
+     "Label": "Вартість без ПДВ, EUR",
+     "Type": 112,
+     "IsChecked": true,
+     "parentName": "Вартість без ПДВ, EUR"
+    }
+   ]
+  },
+  "selections": []
+ },
+ {
+  "nativePriceComparison": {
+   "Version": 2,
+   "PricingId": "5"
+  },
+  "dataSource": 46,
+  "from": "2026-10-01",
+  "to": "2026-10-31",
+  "sorted": {
+   "Col": [],
+   "Row": [
+    {
+     "key": "CustomerName",
+     "label": "Клієнт",
+     "type": 12
+    },
+    {
+     "key": "Month",
+     "label": "По місяцях",
+     "type": 2
+    },
+    {
+     "key": "ProductArticle",
+     "label": "Артикул",
+     "type": 6
+    }
+   ],
+   "Measurements": [
+    {
+     "Name": "SalesValueWithVAT",
+     "IsChecked": true,
+     "Type": 4,
+     "Label": "Продажі з ПДВ, EUR",
+     "parentName": "SalesValue"
+    },
+    {
+     "Name": "Сума за глобальним типом цін, EUR",
+     "Label": "Сума за глобальним типом цін, EUR",
+     "Type": 70,
+     "IsChecked": true,
+     "parentName": "Сума за глобальним типом цін, EUR"
+    },
+    {
+     "Name": "Різниця із сумою за типом цін, EUR",
+     "Label": "Різниця із сумою за типом цін, EUR",
+     "Type": 71,
+     "IsChecked": true,
+     "parentName": "Різниця із сумою за типом цін, EUR"
+    }
+   ]
+  },
+  "selections": []
+ }
+]

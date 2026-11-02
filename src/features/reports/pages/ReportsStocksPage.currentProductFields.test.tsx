@@ -8,6 +8,7 @@ import { productDataset, productPreview, productRequest } from '../data/currentP
 import { normalizeNativeReportPreview } from '../data/nativeReportPreview'
 import { changeReportPeriod } from '../testing/reportPeriod'
 import { ReportsStocksPage } from './ReportsStocksPage'
+import { generateButton, removeGrouping, applyOrganizationProductSalesLayout } from '../testing/constructorDesk'
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ user: null, hasPermission: () => true }) }))
 vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(), previewStockReport: vi.fn(), searchDatasetReportValues: vi.fn() }))
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(), getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn() }))
@@ -23,7 +24,8 @@ async function ready() {
   const view = render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>)
   const tabs = await screen.findByRole('navigation', { name: 'Звіти' })
   await waitFor(() => expect(within(tabs).getByRole('button', { name: 'Відкрити Звіт по продажам' })).toHaveProperty('ariaCurrent', 'true'))
-  fireEvent.click(screen.getByText('Додатково', { exact: true }))
+  applyOrganizationProductSalesLayout()
+  fireEvent.click(screen.getByRole('button', { name: 'Додаткові налаштування' }))
   return view
 }
 it('retains field order and all settings across dates and refuses a removed product row without clearing saved selection', async () => {
@@ -36,10 +38,10 @@ it('retains field order and all settings across dates and refuses a removed prod
   const request = vi.mocked(previewStockReport).mock.calls[0][0]
   expect(request.workbookPresentation).toEqual({ version: 2, additionalFields: [66, 2], ordering: null })
   expect(request).toMatchObject({ from: '2026-10-18', to: '2026-10-27', reportProfile: 'sales' })
-  fireEvent.click(screen.getByRole('button', { name: 'Видалити Назва товару' }))
+  removeGrouping('Назва товару')
   expect(screen.getAllByText(/Додайте «Товар» або «Назва товару»/).length).toBeGreaterThan(0)
   expect(screen.getByRole('checkbox', { name: 'Розмір (поточний товар)' })).toHaveProperty('checked', true)
-  expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toHaveProperty('disabled', true)
+  expect(generateButton()).toHaveProperty('disabled', true)
   fireEvent.click(screen.getByRole('checkbox', { name: 'Розмір (поточний товар)' }))
   fireEvent.click(screen.getByRole('checkbox', { name: 'Артикул (поточний товар)' }))
   expect(screen.queryByRole('button', { name: 'Прибрати поточні поля товару' })).toBeNull()

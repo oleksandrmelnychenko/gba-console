@@ -15,7 +15,7 @@ import { CustomerGroupRegionPicker } from './CustomerGroupRegionPicker'
 import { customerGroupRegionError, isCustomerGroupRegion } from '../data/customerGroupRegion'
 import { CustomerGroupOrganizationPicker } from './CustomerGroupOrganizationPicker'
 import { customerGroupOrganizationError, isCustomerGroupOrganization } from '../data/customerGroupOrganization'
-import { appendBeforeDocumentDetail, DOCUMENT_DETAIL_GROUPING } from '../data/reportDocumentDetails'
+import { appendBeforeDocumentDetail, DOCUMENT_DETAIL_GROUPING, DOCUMENT_DETAIL_LABEL, documentDetailsError, documentDetailsSupported, hasDocumentDetails } from '../data/reportDocumentDetails'
 import { ReportDocumentDetailsPanel } from './ReportDocumentDetailsPanel'
 import { searchNativeSalesDocuments, usesSalesDocumentLookup, salesDocumentLookupPolicy, salesDocumentSelectedEntity, salesDocumentKey } from '../api/nativeSalesDocumentLookup'
 import { NativePriceComparisonPanel } from './NativePriceComparisonPanel'
@@ -98,7 +98,7 @@ import { FINANCIAL_EXPORT_LAYOUT_OPTIONS, financialExportLayoutQuery, financialE
   type FinancialExportLayout } from '../data/financialExportLayout'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
-import { CheckCheck, CircleAlert, LayoutTemplate, MonitorPlay, Plus, RotateCcw, Save, Trash2 } from 'lucide-react'
+import { CheckCheck, CircleAlert, Ellipsis, LayoutTemplate, MonitorPlay, Plus, RotateCcw, Save, Trash2 } from 'lucide-react'
 import { IconFileSpreadsheet } from '@tabler/icons-react'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
@@ -156,6 +156,7 @@ import type {
   ReportFilterField,
   ReportGroupingItem,
   ReportMeasurementGroup,
+  ReportMeasurementItem,
   ReportRequestBody,
   ReportSelection,
   ReportSelectedValue,
@@ -198,6 +199,12 @@ import { reportGroupingPath } from '../data/reportConstructorTree'
 import { ReportConstructorHeader, ReportConstructorNavigation, ReportConstructorResultEmpty, ReportSectionPanel, type ReportConstructorSection } from './ReportConstructorNavigation'
 import { ReportQuickPresets } from './ReportQuickPresets'
 import { ReportGroupingPanel } from './ReportGroupingPanel'
+import { constructorConditionLabel, constructorFilterGroups, constructorGroupingCaption, constructorGroupingField, constructorMeasureGroupCaption, constructorMeasureItemCaption, constructorProfile, PROPERTIES_AND_CATEGORIES_UNAVAILABLE, usesConstructorDesk, type ConstructorField } from '../data/constructorDesk'
+import { ConstructorDesk } from './constructor-desk/ConstructorDesk'
+import { ConstructorGroupingPanels } from './constructor-desk/ConstructorGrouping'
+import { ConstructorMeasures } from './constructor-desk/ConstructorMeasures'
+import { ConstructorFilters } from './constructor-desk/ConstructorFilters'
+import { defaultConstructorPresentation, readConstructorPresentation, type ConstructorPresentation } from '../data/constructorPresentation'
 import { reorderReportGrouping, transferReportGrouping, type ReportGroupingAxis } from '../data/reportGroupingLayout'
 
 import { useServerReportTemplates, type TemplateMutationResult } from '../hooks/useServerReportTemplates'
@@ -1097,6 +1104,42 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         {analysisPanels.ordering}
       </> : dataSource === 26 ? analysisPanels.abc : null}
     </div>
+    const constructorDesk = usesConstructorDesk(dataset, reportBody) && !selectionOnly
+    const constructorCaptions = constructorMeasureCaptions(dataset, reportBody, dataSource, t)
+    const constructorReportSettings = dataSource === 46 ? <NativePriceComparisonPanel value={nativePriceComparison} onChange={setNativePriceComparison} disabled={comparisonSettingsDisabled} />
+      : dataSource === 44 ? <CustomerGroupsPanel value={customerGroups} onChange={setCustomerGroups} disabled={comparisonSettingsDisabled} /> : null
+    const constructorContent = constructorDesk ? {
+      parameters: <>
+        <ConstructorPresentationParameters dataset={dataset} request={reportBody} disabled={comparisonSettingsDisabled}
+          onPresentationChange={setConstructorPresentation} onLayoutChange={groupingOrdering.changeLayout} />
+        {constructorReportSettings ? <div className="constructor-parameters__report">{constructorReportSettings}</div> : null}
+      </>,
+      panels: <ConstructorGroupingWorkspace {...builder} disabled={comparisonSettingsDisabled}
+        measures={<ConstructorMeasures groups={measurements} onChange={setMeasurements} disabled={comparisonSettingsDisabled} {...constructorCaptions} />} />,
+      filters: <ConstructorFilters count={selections.length} rowKeys={filterLogic.selectionKeys} disabled={comparisonSettingsDisabled}
+        onAdd={() => filterLogic.editSelection({ kind: 'append', selection: createEmptySelection() })}
+        onDelete={index => filterLogic.editSelection({ kind: 'delete', index })}
+        onCopy={index => { if (selections[index]) filterLogic.editSelection({ kind: 'append', selection: cloneReportSelection(selections[index], dataSource, reportBody) }) }}
+        footer={<StockQuantityFilterPanel dataset={dataset} request={templateBody} disabled={comparisonSettingsDisabled} onChange={setStockQuantityFilter} />}
+        renderRow={({ index, selected, onSelect }) => <InlineReportSelection variant="row" selected={selected} onSelect={onSelect} dataset={dataset} request={reportBody}
+          selection={selections[index]} selections={selections} index={index} dataSource={dataSource} from={lookup.from} to={lookup.to}
+          filterFieldOptions={filterFieldOptions} lookupProfitReadMode={lookup.profitReadMode} lookupProfitUnavailable={lookup.profitUnavailable}
+          lookupSourceWorld={lookup.sourceWorld} lookupSalesBasis={lookup.salesBasis} lookupProvidedDiscountBasis={lookup.providedDiscountBasis}
+          onChange={filterLogic.editSelection} />} />,
+      extras: <>
+        <div className="constructor-extras__item"><ReportNumberPresentationPanel value={numberPresentation} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setNumberPresentation} /></div>
+        <ReportPresentationCurrencyPanel dataset={dataset} request={reportBody} disabled={comparisonSettingsDisabled} onChange={setPresentationCurrency} />
+        {workbook.panel(dataset, reportBody, comparisonSettingsDisabled)}
+        {analysisPanels.filterExpression}
+        {!hasFixedReportAxes(dataSource) ? <>
+          {analysisPanels.topGroups}
+          {analysisPanels.threshold}
+          {analysisPanels.hideZero}
+          {analysisPanels.abc}
+          {analysisPanels.ordering}
+        </> : null}
+      </>,
+    } : null
     const filterChips = deskSummary.chips.filter(chip => chip.kind === 'filter')
     const groupingLabels = (groups: ReportGroupingItem[]) => groups.map(group => group.label || getReportFieldLabel(group.key)).join(' → ')
     const deskSections: WorkbookSettingsSection[] = [
@@ -1164,6 +1207,20 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           {t('Оберіть доступний звіт у вкладках або спробуйте оновити список.')}
           <Button variant="default" size="xs" mt="xs" onClick={datasetStorage.retry}>{t('Оновити')}</Button>
         </Alert> : <form className="reports-stocks-form workbook-desk__form" onSubmit={submitReport}>
+            {constructorContent ? <ConstructorDesk title={activeProfile ? deskTitle : workbookLaunches.find(item => item.fileName === activeWorkbook)?.label ?? dataset?.Name ?? deskTitle} templateName={activeTemplate?.Name ?? ''} resolving={workbookResolving}
+              warning={catalogueNotice?.warning ?? null} disabled={comparisonSettingsDisabled}
+              period={periodSupported ? { from, to, error: periodError, disabled: isLoading || workbookResolving,
+                minDate: effectiveConfiguration?.period.minimumDate ?? (supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE), maxDate,
+                onChange: range => { setFrom(range.from); setTo(range.to) } } : null}
+              currentStateNotice={<Text size="sm">{t('Поточний стан на час читання даних. Історичний період не застосовується.')}</Text>}
+              parameters={constructorContent.parameters} panels={constructorContent.panels} filters={constructorContent.filters} extras={constructorContent.extras}
+              notices={appliedSettings.pending ? <Alert color="yellow" role="status">{t('Налаштування змінено. Застосуйте весь набір, щоб оновити звіт.')}{lastRun ? <> {t('Показаний результат та його експорт відповідають попередньому застосованому набору.')}</> : null}</Alert> : null}
+              actions={{ canSubmit: canSubmit && !workbookResolving, isLoading, blockedReason: workbookResolving ? null : submitBlockedReason || null,
+                ran: Boolean(result), previewNeedsExport: Boolean(lastRun?.previewNeedsExport), excelUrl, pdfUrl, fileBaseName: lastRun?.fileName ?? null,
+                pending: appliedSettings.pending, canExport: Boolean(lastRun) || canSubmit && !appliedSettings.pending, resetDisabled: !canGenerateReport || isLoading,
+                onPreview: () => void runReport(true), onGenerate: () => void runReport(false), onReset: resetReport,
+                onCancel: () => { restoreWorkspace(appliedSettings.cancelSnapshot(activeTemplate), true) },
+                onSaveTemplate: () => openDeskTemplates(true), onLoadTemplate: () => openDeskTemplates(false) }} /> : <>
             <WorkbookHeader title={deskTitle} showTitle={!activeWorkbook} templateName={activeTemplate?.Name ?? ''}
               resolving={workbookResolving} warning={catalogueNotice?.warning ?? null} />
             <WorkbookSettings unified sections={selectionOnly ? deskSections.filter(section => section.id === 'filters') : deskSections}
@@ -1181,7 +1238,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
               onGenerate={() => void runReport(false)} onReset={resetReport}
               pending={appliedSettings.pending} canExport={Boolean(lastRun) || canSubmit && !appliedSettings.pending} onCancel={() => { restoreWorkspace(appliedSettings.cancelSnapshot(activeTemplate), true) }}
               onSaveTemplate={() => openDeskTemplates(true)}
-              applyLabel="Застосувати й показати" />
+              applyLabel="Застосувати й показати" /></>}
             {lastRun ? <Text size="sm" role="status">{t('Період показаного результату')}: {workbookRequestSummary(resultRequest, dataset, selection => getSelectionFieldSummary(selection, filterFieldOptions, t)).period}</Text> : null}
             <WorkbookResult dataSource={dataSource} title={deskTitle} period={workbookRequestSummary(resultRequest, dataset, selection => getSelectionFieldSummary(selection, filterFieldOptions, t)).period} isLoading={isLoading}
               error={error} emptyRun={emptyRunNotice} generated={Boolean(lastRun?.hasDocument && !preview)}
@@ -1903,16 +1960,7 @@ function LegacyReportBuilder({
     closeGroupingPicker()
   }
 
-  const useReportCurrency = !!request && !!readPresentationCurrency(requestPresentationCurrency(request))
-    && presentationCurrencySupported(dataset) && presentationCurrencyModeSupported(request)
-  const measurementLabel = (type: number | undefined, label: string) => useReportCurrency && isPresentationCurrencyMoneyMeasure(type)
-    ? currencyNeutralMeasureLabel(label) : label
-  const measurementUnit = (type: number | undefined, label: string) => {
-    const semantics = readValueSemantics(dataset?.Measurements.find(field => field.Type === type)?.valueSemantics)
-    const unit = semantics ? reportValueUnit(semantics, readNumberPresentation(request?.numberPresentation))
-      : nativeReportMeasurementUnit(dataSource, label, type) ?? t('Без поділу за ПДВ')
-    return measurementLabel(type, unit)
-  }
+  const { measurementLabel, measurementUnit, groupCaption } = measureCaptionFunctions(dataset, request, dataSource, t)
 
   const selectionPanel = dataSource === 19 ? null : <section className="reports-stocks-legacy__selections">
     <ReportSelectionsCard inline={inlineSelections} selectionKeys={selectionKeys} dataset={dataset} dataSource={dataSource} description={null} filterFieldOptions={filterFieldOptions}
@@ -1952,10 +2000,7 @@ function LegacyReportBuilder({
       </div>
 
       <ReportMeasureTree groups={measurements} onChange={onMeasurementsChange}
-        groupLabel={group => {
-          const label = group.Label || nativeConstructorMeasureGroupLabel(dataSource, group.Name) || getReportFieldLabel(group.Name)
-          return measurementGroupCaption(group.Name, useReportCurrency && group.SubList.every(item => isPresentationCurrencyMoneyMeasure(item.Type)) ? currencyNeutralMeasureLabel(label) : label)
-        }}
+        groupLabel={groupCaption}
         itemLabel={item => measurementLabel(item.Type, item.Label || getReportFieldLabel(item.Name))}
         itemUnit={item => measurementUnit(item.Type, item.Label || getReportFieldLabel(item.Name))} />
     </section>
@@ -2029,6 +2074,120 @@ function LegacyReportBuilder({
 
     </section>
   )
+}
+
+function measureCaptionFunctions(dataset: ReportDataset | undefined, request: ReportRequestBody | undefined, dataSource: number, t: TranslateFunction) {
+  const useReportCurrency = !!request && !!readPresentationCurrency(requestPresentationCurrency(request))
+    && presentationCurrencySupported(dataset) && presentationCurrencyModeSupported(request)
+  const measurementLabel = (type: number | undefined, label: string) => useReportCurrency && isPresentationCurrencyMoneyMeasure(type)
+    ? currencyNeutralMeasureLabel(label) : label
+  const measurementUnit = (type: number | undefined, label: string) => {
+    const semantics = readValueSemantics(dataset?.Measurements.find(field => field.Type === type)?.valueSemantics)
+    const unit = semantics ? reportValueUnit(semantics, readNumberPresentation(request?.numberPresentation))
+      : nativeReportMeasurementUnit(dataSource, label, type) ?? t('Без поділу за ПДВ')
+    return measurementLabel(type, unit)
+  }
+  const groupCaption = (group: ReportMeasurementGroup) => {
+    const label = group.Label || nativeConstructorMeasureGroupLabel(dataSource, group.Name) || getReportFieldLabel(group.Name)
+    return measurementGroupCaption(group.Name, useReportCurrency && group.SubList.every(item => isPresentationCurrencyMoneyMeasure(item.Type)) ? currencyNeutralMeasureLabel(label) : label)
+  }
+  return { measurementLabel, measurementUnit, groupCaption }
+}
+
+function constructorMeasureCaptions(dataset: ReportDataset | undefined, request: ReportRequestBody, dataSource: number, t: TranslateFunction) {
+  const { measurementLabel, measurementUnit, groupCaption } = measureCaptionFunctions(dataset, request, dataSource, t)
+  const fullItem = (item: ReportMeasurementItem) => measurementLabel(item.Type, item.Label || getReportFieldLabel(item.Name))
+  const groupLabel = (group: ReportMeasurementGroup) => constructorMeasureGroupCaption(request, group, groupCaption(group))
+  const itemLabel = (group: ReportMeasurementGroup, item: ReportMeasurementItem) => {
+    const caption = constructorMeasureItemCaption(request, group, item)
+    if (caption) return caption
+    if (group.SubList.length === 1) return groupLabel(group)
+    return item.Name.endsWith('WithoutVAT') ? 'Без ПДВ' : item.Name.endsWith('WithVAT') ? 'З ПДВ' : item.Name.endsWith('VAT') ? 'ПДВ' : fullItem(item)
+  }
+  const itemAccessibleLabel = (group: ReportMeasurementGroup, item: ReportMeasurementItem) => {
+    const caption = constructorMeasureItemCaption(request, group, item)
+    if (caption) return `${groupLabel(group)}, ${caption}`
+    return constructorProfile(request) && group.SubList.length === 1 ? groupLabel(group) : fullItem(item)
+  }
+  const leafHint = (group: ReportMeasurementGroup) => measurementUnit(group.SubList[0]?.Type, group.SubList[0] ? fullItem(group.SubList[0]) : '')
+  return { groupLabel, itemLabel, itemAccessibleLabel, leafHint }
+}
+
+function ConstructorPresentationParameters({ dataset, request, disabled, onPresentationChange, onLayoutChange }: {
+  dataset?: ReportDataset; request: ReportRequestBody; disabled: boolean
+  onPresentationChange: (value: ConstructorPresentation) => void; onLayoutChange: (layout: ReportGroupingLayout) => void
+}) {
+  const value = readConstructorPresentation(requestConstructorPresentation(request))
+    ?? (request.dataSource !== undefined && [3, 44, 45, 46].includes(request.dataSource) ? { ...defaultConstructorPresentation, negativeRed: false } : defaultConstructorPresentation)
+  const details = hasDocumentDetails(request)
+  const detailsSupported = documentDetailsSupported(dataset, request)
+  const enabledLayout = { Row: [...request.sorted.Row, { type: DOCUMENT_DETAIL_GROUPING, key: 'GbaDocumentDetail', label: DOCUMENT_DETAIL_LABEL }], Col: request.sorted.Col }
+  const detailsError = details || detailsSupported ? documentDetailsError(details ? request : { ...request, sorted: { ...request.sorted, ...enabledLayout } }, dataset) : null
+  const detailsReason = !details && !detailsSupported ? 'Детальні записи доступні лише у звітах продажів і валового прибутку.'
+    : detailsError && !details ? `${detailsError} Налаштування не змінено.`
+    : 'Окремі рядки документів GBA. Імпортовані дані без доказу рядка залишаються окремо за документом і товаром: «Без підтвердженої деталізації».'
+  return <>
+    <Checkbox size="xs" label="Від’ємне червоним" checked={value.negativeRed} disabled={disabled}
+      onChange={event => onPresentationChange({ ...value, negativeRed: event.currentTarget.checked })} />
+    <Checkbox size="xs" label="Виводити загальні підсумки" checked={value.grandTotals} disabled={disabled}
+      onChange={event => onPresentationChange({ ...value, grandTotals: event.currentTarget.checked })} />
+    <Tooltip label={detailsReason} multiline w={320}><span className="constructor-parameter">
+      <Checkbox size="xs" label="Виводити детальні записи" checked={details} aria-describedby="constructor-details-reason"
+        disabled={disabled || !details && (!detailsSupported || !!detailsError)}
+        onChange={event => onLayoutChange(event.currentTarget.checked ? enabledLayout : {
+          Row: request.sorted.Row.filter(row => row.type !== DOCUMENT_DETAIL_GROUPING), Col: request.sorted.Col.filter(row => row.type !== DOCUMENT_DETAIL_GROUPING),
+        })} />
+      <span id="constructor-details-reason" hidden>{detailsReason}</span>
+    </span></Tooltip>
+    <Tooltip label={PROPERTIES_AND_CATEGORIES_UNAVAILABLE} multiline w={320}><span className="constructor-parameter">
+      <Checkbox size="xs" label="Використовувати властивості і категорії" checked={false} disabled aria-describedby="constructor-properties-reason" />
+      <span id="constructor-properties-reason" hidden>{PROPERTIES_AND_CATEGORIES_UNAVAILABLE}</span>
+    </span></Tooltip>
+  </>
+}
+
+function ConstructorGroupingWorkspace({ dataset, request, dataSource, rowGroups, colGroups, groupingOptions, groupingSelectData, selections,
+  onRowGroupsChange, onColGroupsChange, onGroupingLayoutChange, measures, disabled }: Pick<LegacyReportBuilderProps, 'dataset' | 'request' | 'dataSource' | 'rowGroups'
+  | 'colGroups' | 'groupingOptions' | 'groupingSelectData' | 'selections' | 'onRowGroupsChange' | 'onColGroupsChange' | 'onGroupingLayoutChange'> & { measures: ReactNode; disabled: boolean }) {
+  const layout = { Row: rowGroups, Col: colGroups }
+  const body = request ?? { dataSource, from: '', to: '', selections, sorted: { ...layout, Measurements: [] } }
+  const policy = reportAxesPolicy(dataset, body)
+  const analysis = !!currentVparivanieAnalysisCapability(dataset) && !!request && !!requestCurrentVparivanieAnalysis(request)
+  const allowed = new Set(groupingOptions.map(item => item.type))
+  const locked = new Set([DOCUMENT_DETAIL_GROUPING, ...(analysis ? [74] : [])])
+  const used = new Set([...rowGroups, ...colGroups].map(item => item.type))
+  const rowsOnly = policy.rowsOnly || policy.fixed
+  function available(axis: ReportGroupingAxis): ConstructorField[] {
+    if (policy.fixed || rowsOnly && axis === 'Col') return []
+    const permitted = policy.config ? new Set(axis === 'Col' ? policy.config.allowedColumns : policy.config.allowedRows) : null
+    const excluded = new Set(policy.config?.mutuallyExclusiveRows.filter(group => group.some(type => used.has(type))).flat())
+    return groupingSelectData.filter(item => {
+      const type = Number(item.value)
+      return type !== DOCUMENT_DETAIL_GROUPING && !used.has(type) && (!analysis || type !== 74) && (!permitted || permitted.has(type))
+        && !excluded.has(type) && (axis !== 'Col' || type !== ABC_CLASS_GROUPING)
+    }).map(item => constructorGroupingField(body, Number(item.value), item.label))
+  }
+  function add(axis: ReportGroupingAxis, types: number[]) {
+    const permitted = new Set(available(axis).map(field => field.type))
+    const added = types.filter(type => permitted.has(type)).flatMap(type => groupingOptions.filter(item => item.type === type))
+    if (!added.length) return
+    const change = axis === 'Row' ? onRowGroupsChange : onColGroupsChange
+    change(current => added.reduce((result, item) => addGrouping(result, item), current))
+  }
+  const axesError = request ? financialAxesConfigurationError(request, dataset) : null
+  return <>
+    <ConstructorGroupingPanels layout={layout} allowed={allowed} locked={locked} rowsOnly={rowsOnly} disabled={disabled} measures={measures}
+      caption={item => constructorGroupingCaption(body, item.type, item.label || getReportFieldLabel(item.key))}
+      available={available} onAdd={add}
+      onRemove={(axis, index) => (axis === 'Row' ? onRowGroupsChange : onColGroupsChange)(current => current.filter((_, position) => position !== index))}
+      onReorder={(axis, type, direction) => (axis === 'Row' ? onRowGroupsChange : onColGroupsChange)(current => reorderReportGrouping(current, type, direction, allowed))}
+      onTransfer={(axis, type) => {
+        if (rowsOnly || locked.has(type)) return
+        const next = transferReportGrouping(layout, axis, type, allowed)
+        if (next !== layout) onGroupingLayoutChange(next)
+      }} />
+    {axesError ? <Alert color="orange" title="Перевірте групування" className="constructor-desk__axes-error">{axesError}</Alert> : null}
+  </>
 }
 
 type GroupingOption = {
@@ -2316,8 +2475,10 @@ export function ReportSelectionsCard({
 
 export function InlineReportSelection({ dataset, request, selection, selections, index, dataSource, from, to, filterFieldOptions,
   lookupProfitReadMode, lookupProfitUnavailable, lookupSourceWorld, lookupSalesBasis, lookupProvidedDiscountBasis, onChange,
+  variant = 'card', selected = false, onSelect,
 }: Pick<ReportSelectionsCardProps, 'dataset' | 'request' | 'selections' | 'dataSource' | 'from' | 'to' | 'filterFieldOptions' | 'lookupProfitReadMode'
-  | 'lookupProfitUnavailable' | 'lookupSourceWorld' | 'lookupSalesBasis' | 'lookupProvidedDiscountBasis' | 'onChange'> & { selection: ReportSelection; index: number }) {
+  | 'lookupProfitUnavailable' | 'lookupSourceWorld' | 'lookupSalesBasis' | 'lookupProvidedDiscountBasis' | 'onChange'> & { selection: ReportSelection; index: number
+  variant?: 'card' | 'row'; selected?: boolean; onSelect?: () => void }) {
   const { t } = useI18n()
   const analysis = currentVparivanieAnalysisCapability(dataset)
   const managerLookup = financialBuyerManagerLookupPolicy(dataset, request, selection.SelectedField.Type, lookupProfitReadMode, lookupProfitUnavailable)
@@ -2338,19 +2499,61 @@ export function InlineReportSelection({ dataset, request, selection, selections,
   const fields = analysis ? [...new Set(analysis.filters.map(field => field.path.join(' / ')))].map(group => ({ group,
     items: analysis.filters.filter(field => field.path.join(' / ') === group).map(field => ({ value: String(field.type), label: field.name,
       disabled: field.available === false })) })) : filterFieldOptions
+  const changeField = (value: string | null) => {
+    const field = analysis ? analysis.filters.find(item => String(item.type) === value) : null
+    const option = filterFieldOptions.find(item => item.value === value)
+    change({ ...selection, SelectedField: field ? { Type: field.type, Name: field.name } : option?.field ?? { Type: 0, Name: '' },
+      FilterCondition: field ? analysisFilterConditions(dataset, field.type)[0]
+        : dataSource === 39 ? currentVparivanieFilterConditions(option?.field.Type ?? 0)[0] : conditions[0], Values: [] })
+  }
+  const changeCondition = (value: string | null) => {
+    const condition = conditions.find(item => String(item.Type) === value) ?? conditions[0]
+    change(analysis || descriptor?.hierarchy ? changeAnalysisSelectionCondition(selection, condition) : { ...selection, FilterCondition: condition })
+  }
+  const valuePicker = !selection.SelectedField.Name ? <Text size="sm">Оберіть поле відбору.</Text>
+    : analysis ? <CurrentVparivanieAnalysisValuePicker selection={selection} selections={selections}
+      descriptor={descriptor} status={hierarchyStatus} from={from} to={to}
+      onChange={Values => change(changeAnalysisSelectionValues(selection, Values, analysis.filters.find(field => field.type === selection.SelectedField.Type)))} />
+    : isReturnItemStatusSelection(request, selection.SelectedField.Type) ? <ReturnItemStatusPicker dataset={dataset} selection={selection} onChange={Values => change({ ...selection, Values })} />
+    : isDatasetGroupSelection(dataset, selection) ? <CurrentVparivanieAnalysisValuePicker selection={selection} selections={selections}
+      descriptor={descriptor} status={hierarchyStatus} from={from} to={to} searchItems={itemSearch} renderItemPicker={nativeProductItemRenderer(dataSource, dataset, selection)} onChange={Values => change({ ...selection, Values })} />
+    : <SelectionValuePicker request={request} dataSource={dataSource} dataset={dataset} lookupProfitReadMode={documentLookup.mode} lookupProfitUnavailable={documentLookup.unavailable}
+      lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis}
+      from={from} to={to} label={t('Значення')} selection={selection} selections={selections} width="100%"
+      onChange={Values => change({ ...selection, Values })} />
+  if (variant === 'row' && request) {
+    const rowFields = analysis ? fields : constructorFilterGroups(request, filterFieldOptions)
+    const rowConditions = conditions.filter(condition => condition.Type === selection.FilterCondition.Type || admittedConditions === null || admittedConditions.has(condition.Type))
+    return <div className="constructor-filter-row" role="group" aria-label={t('Умова відбору {position}', { position: index + 1 })}
+      data-selected={selected} onFocusCapture={onSelect} onMouseDown={onSelect}>
+      <div className="constructor-filter-row__check"><Checkbox size="xs" aria-label={t('Увімкнути умову {position}', { position: index + 1 })} checked={selection.IsChecked !== false}
+        onChange={event => change({ ...selection, IsChecked: event.currentTarget.checked })} /></div>
+      <div className="constructor-filter-row__field"><Select size="xs" label={t('Поле')} searchable allowDeselect={false} data={rowFields}
+        placeholder={t('Оберіть поле')} value={selection.SelectedField.Name ? String(selection.SelectedField.Type) : null} onChange={changeField} /></div>
+      <div className="constructor-filter-row__condition"><Select size="xs" label="Тип порівняння" allowDeselect={false}
+        description={groupConditionsNotice(descriptor, hierarchyStatus)}
+        data={rowConditions.map(condition => ({ value: String(condition.Type), label: constructorConditionLabel(condition.Type, condition.Name),
+          disabled: !!analysisConditionUnavailableReason(descriptor, condition.Type, hierarchyStatus) }))}
+        value={String(selection.FilterCondition.Type)} onChange={changeCondition} /></div>
+      <div className="constructor-filter-row__value">{valuePicker}</div>
+      <div className="constructor-filter-row__actions">
+        <Tooltip label={t('Вибрати значення')}><ActionIcon type="button" variant="default" size={24} disabled={!selection.SelectedField.Name}
+          aria-label={t('Вибрати значення умови {position}', { position: index + 1 })} onClick={event => {
+            const input = event.currentTarget.closest('.constructor-filter-row')?.querySelector<HTMLInputElement>('.constructor-filter-row__value input:not([type="hidden"]):not([disabled])')
+            input?.focus(); input?.click()
+          }}><Ellipsis size={14} /></ActionIcon></Tooltip>
+        <TableRowAction action="delete" label={t('Видалити умову {position}', { position: index + 1 })} onClick={() => onChange({ kind: 'delete', index })} />
+      </div>
+      {valueError && selection.IsChecked !== false ? <div className="constructor-filter-row__error"><Alert color="yellow" p="xs">{valueError}</Alert></div> : null}
+    </div>
+  }
   return <section className="workbook-inline-selection" role="group" aria-label={t('Умова відбору {position}', { position: index + 1 })}>
     <Checkbox aria-label={t('Увімкнути умову {position}', { position: index + 1 })} checked={selection.IsChecked !== false}
       onChange={event => change({ ...selection, IsChecked: event.currentTarget.checked })} />
     <div className="workbook-inline-selection__field"><Select label={t('Поле')} searchable allowDeselect={false}
       data={fields} placeholder={t('Оберіть поле')} value={selection.SelectedField.Name ? String(selection.SelectedField.Type) : null}
       renderOption={({ option }) => <span title={analysis?.filters.find(field => String(field.type) === option.value)?.unavailabilityReason ?? undefined}>{option.label}</span>}
-      onChange={value => {
-        const field = analysis ? analysis.filters.find(item => String(item.type) === value) : null
-        const option = filterFieldOptions.find(item => item.value === value)
-        change({ ...selection, SelectedField: field ? { Type: field.type, Name: field.name } : option?.field ?? { Type: 0, Name: '' },
-          FilterCondition: field ? analysisFilterConditions(dataset, field.type)[0]
-            : dataSource === 39 ? currentVparivanieFilterConditions(option?.field.Type ?? 0)[0] : conditions[0], Values: [] })
-      }} />
+      onChange={changeField} />
       {analysis?.filters.filter(field => field.available === false && selection.SelectedField.Name && field.type === selection.SelectedField.Type).map(field => <Text size="xs" c="dimmed" key={field.type}>{field.name}: {field.unavailabilityReason}</Text>)}
     </div>
     <div className="workbook-inline-selection__condition"><Select label={t('Умова')} allowDeselect={false}
@@ -2358,21 +2561,8 @@ export function InlineReportSelection({ dataset, request, selection, selections,
       data={conditions.map(condition => ({ value: String(condition.Type), label: condition.Name,
         disabled: admittedConditions !== null && !admittedConditions.has(condition.Type)
           || !!analysisConditionUnavailableReason(descriptor, condition.Type, hierarchyStatus) }))}
-      value={String(selection.FilterCondition.Type)} onChange={value => {
-        const condition = conditions.find(item => String(item.Type) === value) ?? conditions[0]
-        change(analysis || descriptor?.hierarchy ? changeAnalysisSelectionCondition(selection, condition) : { ...selection, FilterCondition: condition })
-      }} /></div>
-    <div className="workbook-inline-selection__value">{!selection.SelectedField.Name ? <Text size="sm">Оберіть поле відбору.</Text>
-      : analysis ? <CurrentVparivanieAnalysisValuePicker selection={selection} selections={selections}
-        descriptor={descriptor} status={hierarchyStatus} from={from} to={to}
-        onChange={Values => change(changeAnalysisSelectionValues(selection, Values, analysis.filters.find(field => field.type === selection.SelectedField.Type)))} />
-      : isReturnItemStatusSelection(request, selection.SelectedField.Type) ? <ReturnItemStatusPicker dataset={dataset} selection={selection} onChange={Values => change({ ...selection, Values })} />
-      : isDatasetGroupSelection(dataset, selection) ? <CurrentVparivanieAnalysisValuePicker selection={selection} selections={selections}
-        descriptor={descriptor} status={hierarchyStatus} from={from} to={to} searchItems={itemSearch} renderItemPicker={nativeProductItemRenderer(dataSource, dataset, selection)} onChange={Values => change({ ...selection, Values })} />
-      : <SelectionValuePicker request={request} dataSource={dataSource} dataset={dataset} lookupProfitReadMode={documentLookup.mode} lookupProfitUnavailable={documentLookup.unavailable}
-        lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis}
-        from={from} to={to} label={t('Значення')} selection={selection} selections={selections} width="100%"
-        onChange={Values => change({ ...selection, Values })} />}</div>
+      value={String(selection.FilterCondition.Type)} onChange={changeCondition} /></div>
+    <div className="workbook-inline-selection__value">{valuePicker}</div>
     <TableRowAction action="delete" label={t('Видалити умову {position}', { position: index + 1 })} onClick={() => onChange({ kind: 'delete', index })} />
     {valueError && selection.IsChecked !== false ? <div className="workbook-inline-selection__error"><Alert color="yellow">{valueError}</Alert></div> : null}
   </section>

@@ -28,14 +28,14 @@ async function open(profile: 'sales' | 'grossProfit') {
   return view
 }
 it.each([
-  ['sales', 'Row', 'Групування рядків'], ['sales', 'Col', 'Групування стовпців'],
-  ['grossProfit', 'Row', 'Групування рядків'], ['grossProfit', 'Col', 'Групування стовпців'],
+  ['sales', 'Row', 'Групування рядків'], ['sales', 'Col', 'Групування колонок'],
+  ['grossProfit', 'Row', 'Групування рядків'], ['grossProfit', 'Col', 'Групування колонок'],
 ] as const)('selects advertised supplier in %s/%s dialog and submits stable axis identity', async (profile, axis, label) => {
   const view = await open(profile)
   fireEvent.click(screen.getByRole('button', { name: `Додати поле: ${label}` }))
   fireEvent.change(screen.getByLabelText('Пошук поля'), { target: { value: 'постачальник' } })
   fireEvent.click(screen.getByRole('checkbox', { name: 'Вибрати Постачальник' }))
-  fireEvent.click(screen.getByRole('button', { name: 'Додати вибрані (1)' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Додати вибрані' }))
   expect(within(screen.getByRole('region', { name: label })).getByText('Постачальник')).toBeTruthy()
   await act(async () => fireEvent.submit(view.container.querySelector('form')!))
   await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
