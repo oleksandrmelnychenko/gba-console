@@ -321,6 +321,7 @@ span.constructor-tree-row__toggle {
 }
 
 .constructor-selection-row {
+  position: relative;
   align-items: start;
   border-bottom: 1px solid var(--mantine-color-gray-1);
   padding: 4px;
