@@ -69,7 +69,7 @@ it('retains an unavailable saved native identity without replacing it with a cur
   await waitFor(()=>expect(searchDatasetReportValues).toHaveBeenCalledWith(46,46,{value:`id:${id}`,offset:0,limit:2},expect.any(AbortSignal)))
   expect((screen.getByRole('combobox',{name:'Тип ціни для порівняння'}) as HTMLInputElement).value).toBe('Збережений тип ціни')
   expect(onChange).not.toHaveBeenCalled()
-  expect(screen.getByText(/порівняльна сума та різниця порожні/)).toBeTruthy()
+  expect(screen.getByText(/за поточною ціною вибраного типу/)).toBeTruthy()
 })
 
 it('ignores a late legacy resolution after the saved selection changes to a native identity',async()=>{
