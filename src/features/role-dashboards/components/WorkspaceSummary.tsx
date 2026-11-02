@@ -148,10 +148,10 @@ function MetricEvidence({ metric }: { metric: DashboardWorkspaceMetric }) {
   ]
   return <div>
     <div>{t(metricTimeLabel(metric))}</div>
-    <div>{t('Час розрахунку не підтверджує свіжість синхронізації. Повнота джерел показана окремо.')}</div>
+    <div>{t('Показник рахується за документами GBA на час розрахунку. Повнота джерел показана окремо.')}</div>
     <div>{metric.formula || t('Формулу джерела не надано')}</div>
     {details.filter(([, value]) => value).map(([label, value]) => <div key={label}>{label}: {value}</div>)}
-    <div>{metric.sourceWatermarkUtc ? `${t('Джерело оновлено')}: ${metric.sourceWatermarkUtc}` : t('Час останньої синхронізації джерела не підтверджено')}</div>
+    <div>{metric.sourceWatermarkUtc ? `${t('Джерело оновлено')}: ${metric.sourceWatermarkUtc}` : t('Час останнього оновлення джерела не вказано')}</div>
     <div>{metric.coveragePercent == null ? t('Повнота джерела невідома') : `${t('Охоплення даних')}: ${metric.coveragePercent}%`}</div>
     {metric.unknownReason && <div>{metric.unknownReason}</div>}
   </div>

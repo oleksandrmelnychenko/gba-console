@@ -57,7 +57,7 @@ const workspaceActions: Partial<Record<DashboardWorkspaceKey, WorkspaceAction[]>
   finance: [
     { description: 'Надходження та прибуткові документи', icon: Banknote, label: 'Рух коштів', route: '/accounting/income-cashflows' },
     { description: 'Витрати й видаткові документи', icon: CircleDollarSign, label: 'Вихідні платежі', route: '/accounting/outgoing-cashflow' },
-    { description: 'Синхронізовані документи та сальдо', icon: ReceiptText, label: 'Баланси', route: '/accounting/sync/documents' },
+    { description: 'Залишки на рахунках і в касах', icon: ReceiptText, label: 'Баланси', route: '/accounting/payment-accounts' },
     { description: 'Розбіжності з контрагентами', icon: FileCheck2, label: 'Акти звірки', route: '/ukraine/act/reconcoliation' },
   ],
   executive: [

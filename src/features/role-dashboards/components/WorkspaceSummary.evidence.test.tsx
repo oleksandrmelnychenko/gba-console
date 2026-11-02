@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -19,6 +19,14 @@ describe('financial evidence presentation', () => {
     expect(screen.getByText('Історичний курс відсутній')).toBeTruthy()
     expect(screen.queryByText('100%')).toBeNull()
     expect(screen.queryByText(/Час розрахунку не підтверджує/)).toBeNull()
+  })
+  it('describes metric evidence as GBA documents without synchronisation wording', async () => {
+    show()
+    fireEvent.mouseEnter(screen.getByTitle('Борги'))
+    const evidence = await screen.findByText(/Показник рахується за документами GBA на час розрахунку/)
+    const tooltip = evidence.parentElement?.textContent ?? ''
+    expect(tooltip).toContain('Час останнього оновлення джерела не вказано')
+    expect(tooltip).not.toMatch(/синхроніз/i)
   })
   it('marks expired cached values even when the last response was successful', () => {
     show({ generatedAtUtc: new Date(Date.now() - 301_000).toISOString() })
