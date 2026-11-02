@@ -905,6 +905,10 @@
 .workbook-settings__section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; background: var(--mantine-color-gray-0); border-bottom: 1px solid var(--desk-border); border-radius: 8px 8px 0 0; }
 .workbook-settings__section-head h3 { display: flex; align-items: center; gap: 8px; font: 600 13px/1.4 var(--font-mono); color: var(--desk-text); }
 .workbook-settings__section-head svg { flex-shrink: 0; }
+/* The embedded shared editor owns its heading; keep any portalled section actions. */
+.workbook-settings__unified-section--filters:has(.constructor-filters) > .workbook-settings__section-head > :is(h3, .workbook-settings__section-count) { display: none; }
+.workbook-settings__unified-section--filters:has(.constructor-filters) > .workbook-settings__section-head:not(:has(.workbook-settings__section-actions > *)) { display: none; }
+
 .workbook-settings__section-count { font: 500 11px/1.4 var(--font-mono); color: var(--desk-muted); white-space: nowrap; }
 .workbook-settings__unified-section { container-type: inline-size; }
 .workbook-settings__advanced { border: 1px solid var(--desk-border); border-radius: 8px; }

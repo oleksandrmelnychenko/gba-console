@@ -1,8 +1,18 @@
-.constructor-desk {
+.constructor-desk,
+.constructor-filters,
+.constructor-selection-row {
   --constructor-border: var(--mantine-color-gray-3);
   --constructor-muted: var(--mantine-color-gray-6);
   --constructor-selected: #fdeee3;
   --constructor-selected-border: #f3c8a8;
+}
+
+.constructor-filters,
+.constructor-selection-row {
+  font: 400 13px/1.5 var(--font-mono);
+}
+
+.constructor-desk {
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 10px;

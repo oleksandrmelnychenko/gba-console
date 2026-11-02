@@ -280,7 +280,17 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
         presets={presets} error={null} disabled={locked}
         onFromChange={value => update({ from: value })} onToChange={value => update({ to: value })} />}
       sections={[
-        { id: 'filters', title: 'Фільтри', summary: filters.join('; ') || 'Фільтрів немає',
+        { id: 'grouping', title: 'Групування рядків', summary: draft.levels.map(level => STOCK_MOVEMENT_LEVEL_LABELS[level]).join(' → '),
+          content: <LevelsEditor levels={draft.levels} disabled={locked} onChange={levels => update({ levels })} /> },
+        { id: 'measures', title: 'Показники', summary: draft.measures.map(measure => STOCK_MOVEMENT_MEASURE_LABELS[measure]).join(', '),
+          content: <Stack gap={4}>
+            {STOCK_MOVEMENT_MEASURES.map(measure => <Checkbox key={measure} size="xs" disabled={locked} checked={draft.measures.includes(measure)}
+              label={`${STOCK_MOVEMENT_MEASURE_LABELS[measure]} (Кількість)`}
+              onChange={event => update({ measures: event.currentTarget.checked ? [...draft.measures, measure] : draft.measures.filter(item => item !== measure) })} />)}
+            <Checkbox size="xs" mt={6} disabled={locked} checked={draft.negativeRed} label="Від'ємне червоним" onChange={event => update({ negativeRed: event.currentTarget.checked })} />
+            <Checkbox size="xs" disabled={locked} checked={draft.grandTotals} label="Виводити загальні підсумки" onChange={event => update({ grandTotals: event.currentTarget.checked })} />
+          </Stack> },
+        { id: 'filters', title: 'Відбори', summary: filters.join('; ') || 'Фільтрів немає',
           content: <Stack gap={6}>
             <FixedMovementFilter label="Фільтр складу" field="Склад" condition="У списку">
               <CheckboxMultiSelect label="Склад у списку" placeholder="Усі склади" disabled={locked}
@@ -332,16 +342,6 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
                 onClick={() => update({ conditions: draft.conditions.filter((_, position) => position !== index) })}><X size={14} /></ActionIcon>} />)}
             {draft.conditions.length < 4 ? <Button type="button" size="compact-xs" variant="subtle" leftSection={<Plus size={14} />} disabled={locked}
               onClick={() => update({ conditions: [...draft.conditions, { Measure: 'closing', Comparison: 'greater', Value: 0 }] })}>Умова за показником</Button> : null}
-          </Stack> },
-        { id: 'grouping', title: 'Групування рядків', summary: draft.levels.map(level => STOCK_MOVEMENT_LEVEL_LABELS[level]).join(' → '),
-          content: <LevelsEditor levels={draft.levels} disabled={locked} onChange={levels => update({ levels })} /> },
-        { id: 'measures', title: 'Показники', summary: draft.measures.map(measure => STOCK_MOVEMENT_MEASURE_LABELS[measure]).join(', '),
-          content: <Stack gap={4}>
-            {STOCK_MOVEMENT_MEASURES.map(measure => <Checkbox key={measure} size="xs" disabled={locked} checked={draft.measures.includes(measure)}
-              label={`${STOCK_MOVEMENT_MEASURE_LABELS[measure]} (Кількість)`}
-              onChange={event => update({ measures: event.currentTarget.checked ? [...draft.measures, measure] : draft.measures.filter(item => item !== measure) })} />)}
-            <Checkbox size="xs" mt={6} disabled={locked} checked={draft.negativeRed} label="Від'ємне червоним" onChange={event => update({ negativeRed: event.currentTarget.checked })} />
-            <Checkbox size="xs" disabled={locked} checked={draft.grandTotals} label="Виводити загальні підсумки" onChange={event => update({ grandTotals: event.currentTarget.checked })} />
           </Stack> },
       ]}
       advanced={<Stack gap={4}>{capability.Notes.map(note => <Text key={note} size="xs" c="dimmed">{note}</Text>)}</Stack>} />
