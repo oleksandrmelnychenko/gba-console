@@ -296,7 +296,7 @@ span.constructor-tree-row__toggle {
 }
 
 .constructor-filters__head,
-.constructor-filter-row {
+.constructor-selection-row {
   display: grid;
   gap: 4px 8px;
   grid-template-columns: 28px minmax(170px, 1.1fr) minmax(150px, 0.8fr) minmax(240px, 2.2fr) 64px;
@@ -310,33 +310,33 @@ span.constructor-tree-row__toggle {
   padding: 2px 4px;
 }
 
-.constructor-filter-row {
+.constructor-selection-row {
   align-items: start;
   border-bottom: 1px solid var(--mantine-color-gray-1);
   padding: 4px;
 }
 
-.constructor-filter-row[data-selected='true'] {
+.constructor-selection-row[data-selected='true'] {
   background: var(--constructor-selected);
 }
 
-.constructor-filter-row__check {
+.constructor-selection-row__check {
   padding-top: 6px;
 }
 
-.constructor-filter-row__actions {
+.constructor-selection-row__actions {
   align-items: center;
   display: flex;
   gap: 2px;
   justify-content: flex-end;
 }
 
-.constructor-filter-row__error {
+.constructor-selection-row__error {
   grid-column: 2 / -1;
 }
 
-.constructor-filter-row .mantine-InputWrapper-label,
-.constructor-filter-row .mantine-InputWrapper-description {
+.constructor-selection-row .mantine-InputWrapper-label,
+.constructor-selection-row .mantine-InputWrapper-description {
   border: 0;
   clip: rect(0 0 0 0);
   height: 1px;

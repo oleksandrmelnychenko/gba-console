@@ -2524,27 +2524,27 @@ export function InlineReportSelection({ dataset, request, selection, selections,
   if (variant === 'row' && request) {
     const rowFields = analysis ? fields : constructorFilterGroups(request, filterFieldOptions)
     const rowConditions = conditions.filter(condition => condition.Type === selection.FilterCondition.Type || admittedConditions === null || admittedConditions.has(condition.Type))
-    return <div className="constructor-filter-row" role="group" aria-label={t('Умова відбору {position}', { position: index + 1 })}
+    return <div className="constructor-selection-row" role="group" aria-label={t('Умова відбору {position}', { position: index + 1 })}
       data-selected={selected} onFocusCapture={onSelect} onMouseDown={onSelect}>
-      <div className="constructor-filter-row__check"><Checkbox size="xs" aria-label={t('Увімкнути умову {position}', { position: index + 1 })} checked={selection.IsChecked !== false}
+      <div className="constructor-selection-row__check"><Checkbox size="xs" aria-label={t('Увімкнути умову {position}', { position: index + 1 })} checked={selection.IsChecked !== false}
         onChange={event => change({ ...selection, IsChecked: event.currentTarget.checked })} /></div>
-      <div className="constructor-filter-row__field"><Select size="xs" label={t('Поле')} searchable allowDeselect={false} data={rowFields}
+      <div className="constructor-selection-row__field"><Select size="xs" label={t('Поле')} searchable allowDeselect={false} data={rowFields}
         placeholder={t('Оберіть поле')} value={selection.SelectedField.Name ? String(selection.SelectedField.Type) : null} onChange={changeField} /></div>
-      <div className="constructor-filter-row__condition"><Select size="xs" label="Тип порівняння" allowDeselect={false}
+      <div className="constructor-selection-row__condition"><Select size="xs" label="Тип порівняння" allowDeselect={false}
         description={groupConditionsNotice(descriptor, hierarchyStatus)}
         data={rowConditions.map(condition => ({ value: String(condition.Type), label: constructorConditionLabel(condition.Type, condition.Name),
           disabled: !!analysisConditionUnavailableReason(descriptor, condition.Type, hierarchyStatus) }))}
         value={String(selection.FilterCondition.Type)} onChange={changeCondition} /></div>
-      <div className="constructor-filter-row__value">{valuePicker}</div>
-      <div className="constructor-filter-row__actions">
+      <div className="constructor-selection-row__value">{valuePicker}</div>
+      <div className="constructor-selection-row__actions">
         <Tooltip label={t('Вибрати значення')}><ActionIcon type="button" variant="default" size={24} disabled={!selection.SelectedField.Name}
           aria-label={t('Вибрати значення умови {position}', { position: index + 1 })} onClick={event => {
-            const input = event.currentTarget.closest('.constructor-filter-row')?.querySelector<HTMLInputElement>('.constructor-filter-row__value input:not([type="hidden"]):not([disabled])')
+            const input = event.currentTarget.closest('.constructor-selection-row')?.querySelector<HTMLInputElement>('.constructor-selection-row__value input:not([type="hidden"]):not([disabled])')
             input?.focus(); input?.click()
           }}><Ellipsis size={14} /></ActionIcon></Tooltip>
         <TableRowAction action="delete" label={t('Видалити умову {position}', { position: index + 1 })} onClick={() => onChange({ kind: 'delete', index })} />
       </div>
-      {valueError && selection.IsChecked !== false ? <div className="constructor-filter-row__error"><Alert color="yellow" p="xs">{valueError}</Alert></div> : null}
+      {valueError && selection.IsChecked !== false ? <div className="constructor-selection-row__error"><Alert color="yellow" p="xs">{valueError}</Alert></div> : null}
     </div>
   }
   return <section className="workbook-inline-selection" role="group" aria-label={t('Умова відбору {position}', { position: index + 1 })}>

@@ -21,7 +21,7 @@ export function ConstructorFilters({ count, rowKeys, disabled = false, renderRow
   const selected = selectedKey === null ? -1 : rowKeys.indexOf(selectedKey)
   function edit() {
     if (selected < 0) return
-    document.querySelector<HTMLElement>(`[data-constructor-filter="${selected}"] .constructor-filter-row__field input`)?.focus()
+    document.querySelector<HTMLElement>(`[data-constructor-filter="${selected}"] .constructor-selection-row__field input`)?.focus()
   }
   const tools = [
     { label: 'Змінити вибраний відбір', icon: <Pencil size={15} />, disabled: selected < 0, onClick: edit },
