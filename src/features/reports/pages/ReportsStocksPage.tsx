@@ -1,6 +1,5 @@
 import { ReportFilterRow } from './ReportFilterRow'
 import { NativePriceFilterValuePicker } from './NativePriceFilterValuePicker'
-import { RetainedNamedSalesPriceType } from './RetainedNamedSalesPriceType'
 import { isNativePriceFilterField, nativePriceFilterSelectionError } from '../data/nativePriceFilterLookup'
 import { productLookupBinding, productLookupCapability } from '../data/productLookupCapability'
 import { NativeSalesProductPicker } from './NativeSalesProductPicker'
@@ -25,7 +24,7 @@ import { CustomerGroupsPanel } from './CustomerGroupsPanel'
 import { customerGroupsError, type CustomerGroups } from '../data/customerGroups'
 import { ConstructorPresentationPanel } from './ConstructorPresentationPanel'
 import { requestConstructorPresentation } from '../data/constructorPresentation'
-import { isRetainedNamedSalesPriceType, namedSalesPriceTypeError, namedSalesPriceTypeSelectionError, readReportProfile, requestReportProfile, salesConstructorDataset, salesConstructorTitle, salesConstructorWorkbook } from '../data/salesConstructorProfiles'
+import { readReportProfile, requestReportProfile, salesConstructorDataset, salesConstructorTitle, salesConstructorWorkbook } from '../data/salesConstructorProfiles'
 import { searchCurrentFinancialBuyerManagers } from '../api/currentFinancialBuyerManagerLookup'
 import { financialBuyerManagerReference, financialBuyerManagerEntityReference, financialBuyerManagerSelectedEntity, financialBuyerManagerLookupPolicy } from '../data/currentFinancialBuyerManagerFilter'
 import { searchCurrentFinancialDocuments } from '../api/currentFinancialDocumentLookup'
@@ -205,6 +204,7 @@ import { ConstructorDesk } from './constructor-desk/ConstructorDesk'
 import { ConstructorGroupingPanels } from './constructor-desk/ConstructorGrouping'
 import { ConstructorMeasures } from './constructor-desk/ConstructorMeasures'
 import { ConstructorFilters } from './constructor-desk/ConstructorFilters'
+import { ConstructorUnavailableFilters, unavailableConstructorFilters } from './constructor-desk/ConstructorUnavailableFilters'
 import { defaultConstructorPresentation, readConstructorPresentation, type ConstructorPresentation } from '../data/constructorPresentation'
 import { reorderReportGrouping, transferReportGrouping, type ReportGroupingAxis } from '../data/reportGroupingLayout'
 
@@ -532,7 +532,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       && selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.warehouse)
       .map(reportSelectionCardinalityError).find(Boolean) ?? null
     : null
-  const organizationConfigurationError = selectionConfigurationError(dataSource, selections, dataset, reportBody)
+  const organizationConfigurationError = selectionConfigurationError(dataSource, selections, dataset)
   const returnStatusError = returnItemStatusesError(reportBody, dataset)
   const stockQuantityError = stockQuantityFilterError(templateBody, dataset)
   const templateConfigurationError = stockQuantityError ?? configurationError ?? organizationConfigurationError ?? returnStatusError
@@ -1067,8 +1067,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     const sharedFilters = <ConstructorFilters count={selections.length} rowKeys={filterLogic.selectionKeys} disabled={comparisonSettingsDisabled}
         onAdd={() => filterLogic.editSelection({ kind: 'append', selection: createEmptySelection() })}
         onDelete={index => filterLogic.editSelection({ kind: 'delete', index })}
-        onCopy={index => { if (selections[index]) filterLogic.editSelection({ kind: 'append', selection: cloneReportSelection(selections[index], dataSource, reportBody) }) }}
-        footer={<><StockQuantityFilterPanel dataset={dataset} request={templateBody} disabled={comparisonSettingsDisabled} onChange={setStockQuantityFilter} />{dataSource !== 19 && returnsOnly !== true ? analysisPanels.filterExpression : null}</>}
+        onCopy={index => { if (selections[index]) filterLogic.editSelection({ kind: 'append', selection: cloneReportSelection(selections[index], dataSource) }) }}
+        footer={<><ConstructorUnavailableFilters fields={unavailableConstructorFilters(dataSource, typeof reportProfile === 'string' ? reportProfile : null)} /><StockQuantityFilterPanel dataset={dataset} request={templateBody} disabled={comparisonSettingsDisabled} onChange={setStockQuantityFilter} />{dataSource !== 19 && returnsOnly !== true ? analysisPanels.filterExpression : null}</>}
         renderRow={({ index, selected, onSelect }) => <InlineReportSelection variant="row" selected={selected} onSelect={onSelect} dataset={activeWorkbook === 'Впарювання.xls' ? vparivanieSelectionDataset(dataset) : dataset} request={reportBody}
           selection={selections[index]} selections={selections} index={index} dataSource={dataSource} from={lookup.from} to={lookup.to}
           filterFieldOptions={filterFieldOptions} lookupProfitReadMode={lookup.profitReadMode} lookupProfitUnavailable={lookup.profitUnavailable}
@@ -2193,12 +2193,12 @@ type FilterFieldOption = {
   value: string
 }
 
-function scopedSelectionValueError(source: number, selection: ReportSelection, dataset?: ReportDataset, request?: ReportRequestBody) {
-  return namedSalesPriceTypeSelectionError(request, selection) ?? nativePriceFilterSelectionError(source, [selection], dataset) ?? customerGroupSelectionsError(source, [selection], dataset)
+function scopedSelectionValueError(source: number, selection: ReportSelection, dataset?: ReportDataset) {
+  return nativePriceFilterSelectionError(source, [selection], dataset) ?? customerGroupSelectionsError(source, [selection], dataset)
 }
-function selectionConfigurationError(source: number, selections: ReportSelection[], dataset: ReportDataset | undefined, request: ReportRequestBody) {
+function selectionConfigurationError(source: number, selections: ReportSelection[], dataset: ReportDataset | undefined) {
   return customerGroupOrganizationError(source, selections) ?? customerGroupRegionError(source, selections)
-    ?? customerGroupSelectionsError(source, selections, dataset) ?? nativePriceFilterSelectionError(source, selections, dataset) ?? namedSalesPriceTypeError(request)
+    ?? customerGroupSelectionsError(source, selections, dataset) ?? nativePriceFilterSelectionError(source, selections, dataset)
 }
 
 type ReportSelectionsCardProps = {
@@ -2266,7 +2266,7 @@ export function ReportSelectionsCard({
   const draftItemSearch = useDatasetItemSearch(dataSource, draftField, documentLookup.mode)
   const draftValueError = draftSelection ? returnItemStatusSelectionError(request, dataset, draftSelection) ?? (analysis
     ? hierarchyStatusError(draftDescriptor, draftSelection.FilterCondition.Type, hierarchyStatus) ?? analysisSelectionValueError(draftSelection, draftDescriptor)
-    : scopedSelectionValueError(dataSource, draftSelection, dataset, request) ?? hierarchyStatusError(draftDescriptor, draftSelection.FilterCondition.Type, hierarchyStatus) ?? reportSelectionEditorCardinalityError(dataSource, request, draftSelection)
+    : scopedSelectionValueError(dataSource, draftSelection, dataset) ?? hierarchyStatusError(draftDescriptor, draftSelection.FilterCondition.Type, hierarchyStatus) ?? reportSelectionEditorCardinalityError(dataSource, request, draftSelection)
       ?? datasetGroupSelectionError(dataset, draftSelection)) : null
   const visibleCount = filter ? selections.filter(filter).length : selections.length
   const resolvedDescription = description === undefined
@@ -2285,7 +2285,7 @@ export function ReportSelectionsCard({
 
   function openEditor(index: number, selection: ReportSelection) {
     setEditorIndex(index)
-    setDraftSelection(cloneReportSelection(selection, dataSource, request))
+    setDraftSelection(cloneReportSelection(selection, dataSource))
   }
 
   function saveDraft() {
@@ -2293,7 +2293,7 @@ export function ReportSelectionsCard({
       return
     }
 
-    const savedSelection = cloneReportSelection(draftSelection, dataSource, request)
+    const savedSelection = cloneReportSelection(draftSelection, dataSource)
     onChange(editorIndex === -1 ? { kind: 'append', selection: savedSelection } : { kind: 'replace', index: editorIndex, selection: savedSelection })
     closeEditor()
   }
@@ -2485,7 +2485,7 @@ export function InlineReportSelection({ dataset, request, selection, selections,
   const hierarchyStatus = useAnalysisHierarchyStatus(needsHierarchyStatus(descriptor))
   const itemSearch = useDatasetItemSearch(dataSource, selection.SelectedField.Type, documentLookup.mode)
   const valueError = returnItemStatusSelectionError(request, dataset, selection) ?? (analysis ? hierarchyStatusError(descriptor, selection.FilterCondition.Type, hierarchyStatus) ?? analysisSelectionValueError(selection, descriptor)
-    : scopedSelectionValueError(dataSource, selection, dataset, request) ?? hierarchyStatusError(descriptor, selection.FilterCondition.Type, hierarchyStatus) ?? reportSelectionEditorCardinalityError(dataSource, request, selection) ?? datasetGroupSelectionError(dataset, selection))
+    : scopedSelectionValueError(dataSource, selection, dataset) ?? hierarchyStatusError(descriptor, selection.FilterCondition.Type, hierarchyStatus) ?? reportSelectionEditorCardinalityError(dataSource, request, selection) ?? datasetGroupSelectionError(dataset, selection))
   const fields = analysis ? [...new Set(analysis.filters.map(field => field.path.join(' / ')))].map(group => ({ group,
     items: analysis.filters.filter(field => field.path.join(' / ') === group).map(field => ({ value: String(field.type), label: field.name,
       disabled: field.available === false })) })) : filterFieldOptions
@@ -2585,8 +2585,8 @@ function groupConditionsNotice(descriptor: AnalysisFieldDescriptor | undefined, 
   return reason ? `Умови «У групі…» недоступні: ${reason}` : undefined
 }
 
-function cloneReportSelection(selection: ReportSelection, dataSource: number, request?: ReportRequestBody): ReportSelection {
-  if (isNativePriceFilterField(dataSource, selection.SelectedField.Type) || isRetainedNamedSalesPriceType(request, selection)) return structuredClone(selection)
+function cloneReportSelection(selection: ReportSelection, dataSource: number): ReportSelection {
+  if (isNativePriceFilterField(dataSource, selection.SelectedField.Type)) return structuredClone(selection)
   return {
     ...selection,
     FilterCondition: { ...selection.FilterCondition },
@@ -2796,8 +2796,6 @@ function nativeProductItemRenderer(dataSource: number, dataset: ReportDataset | 
 }
 
 export function SelectionValuePicker(props: SelectionValuePickerProps) {
-  if (isRetainedNamedSalesPriceType(props.request, props.selection))
-    return <RetainedNamedSalesPriceType request={props.request} selection={props.selection} />
   if (isNativePriceFilterField(props.dataSource, props.selection.SelectedField.Type))
     return <NativePriceFilterValuePicker dataSource={props.dataSource} dataset={props.dataset} selection={props.selection} from={props.from} to={props.to} label={props.label} error={props.error} disabled={props.lookupProfitUnavailable} onChange={props.onChange} />
   return <LegacySelectionValuePicker {...props} />

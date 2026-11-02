@@ -46,3 +46,13 @@ it('offers the advertised physical warehouse in both sales forms while hiding re
   const source = { ...dataset, Filters: [{ Type: 1, Name: 'Product' }, { Type: 21, Name: 'Warehouse' }, { Type: 64, Name: 'ReturnReason' }] }
   for (const profile of ['sales', 'grossProfit']) expect(salesConstructorDataset(source, profile)?.Filters.map(field => field.Type)).toEqual([1, 21])
 })
+it('offers the current price type and warehouse filters in both GBA sales profiles', () => {
+  const withFilters = { ...dataset, Filters: [11, 21, 64, 0].map(Type => ({ Type, Name: String(Type), Selectable: true })) }
+  for (const profile of ['sales', 'grossProfit'] as const) {
+    expect(salesConstructorDataset(withFilters, profile)?.Filters.map(field => field.Type)).toEqual([11, 21, 0])
+    const request = { ...defaultDatasetRequest(withFilters, '2026-10-01', '2026-10-31'), reportProfile: profile,
+      selections: [{ IsChecked: true, SelectedField: { Type: 11, Name: 'Тип ціни' }, FilterCondition: { Type: 2, Name: 'У списку' }, Values: [{ Data: { Id: 849 }, Name: 'ЦО2', Value: 849 }] }] }
+    request.sorted.Measurements = request.sorted.Measurements.filter(item => item.Type === 2)
+    expect(salesConstructorError(request, withFilters)).toBeNull()
+  }
+})
