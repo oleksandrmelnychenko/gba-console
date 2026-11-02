@@ -54,6 +54,7 @@ it('opens sales and gross-profit profiles, submits one GBA request and preserves
 
 it('keeps a saved customer-return template filters-only after the workbook marker is cleared', async () => {
   const dataset = { ...netDataset, returnsOnly: true, customerReturnFilters: true,
+    FilterExpression: {"Version": 1, "MaximumDepth": 8, "MaximumLeaves": 64, "MaximumNodes": 128, "Operators": [1, 2]},
     Filters: [...netDataset.Filters, { Type: 1, Name: 'Товар' }, { Type: 21, Name: 'Склад' }, { Type: 64, Name: 'Причина' }] }
   const data = customerReturnRequest(defaultDatasetRequest(dataset, '2026-10-01', '2026-10-27'), dataset)
   vi.mocked(getReportDatasets).mockResolvedValue([dataset])
@@ -63,6 +64,10 @@ it('keeps a saved customer-return template filters-only after the workbook marke
   fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
   fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Мої повернення' }))
   expect(screen.queryByRole('region', { name: 'Групування рядків' })).toBeNull()
+  expect(screen.queryByRole('button', { name: 'Налаштувати групи І/АБО' })).toBeNull()
+  expect(screen.getByRole('group', { name: 'Фільтри' })).toBeTruthy()
+  expect(screen.queryByRole('group', { name: 'Організації' })).toBeNull()
+  expect(screen.getByRole('button', { name: 'Додати відбір' })).toBeTruthy()
   changeReportPeriod({ from: '2026-09-01', to: '2026-09-30' })
   await act(async () => fireEvent.submit(container.querySelector('form')!))
   await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())

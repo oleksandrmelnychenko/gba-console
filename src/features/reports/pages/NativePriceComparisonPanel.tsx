@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useDebouncedValue } from '@mantine/hooks'
-import { Select, Stack, Text, TextInput } from '@mantine/core'
+import { Select, Stack, Text } from '@mantine/core'
 import { searchDatasetReportValues } from '../api/reportsApi'
 import { isNativePricingId, type NativePriceComparison } from '../data/nativePriceComparison'
 export function NativePriceComparisonPanel({value,onChange,disabled}:{value:NativePriceComparison|undefined;onChange:(value:NativePriceComparison)=>void;disabled:boolean}) {
@@ -38,6 +38,5 @@ export function NativePriceComparisonPanel({value,onChange,disabled}:{value:Nati
       onChange={next=>{setSelected(data.find(option=>option.value===next)??null);if(next?.startsWith('legacy:'))onChange({Version:1,PriceTypeId:next.slice(7)});else onChange({Version:2,PricingId:next??''})}} />
     {legacy && <Text size="sm" c="dimmed">Збережено попередній історичний тип ціни. Щоб вибрати тип із довідника GBA, змініть вибір.</Text>}
     <Text size="sm" c="dimmed">Продажі та повернення беруться з GBA. Ціна для порівняння потребує підтвердженої історії на точний час продажу, а для повернення — первинного продажу. Без неї порівняльна сума та різниця порожні.</Text>
-    <TextInput label="Проект / підрозділ" value="Ще не підтримуються у цьому звіті" disabled />
   </Stack>
 }

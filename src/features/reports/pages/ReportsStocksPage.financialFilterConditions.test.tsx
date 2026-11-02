@@ -82,12 +82,12 @@ it.each([false, true])('gates the actual workbook inline condition selector on s
   await findOpenedWorkbook('ВП.xls')
   await waitFor(() => expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toHaveProperty('disabled', false))
   const filters = screen.getByRole('group', { name: 'Фільтри' })
-  fireEvent.click(within(filters).getByRole('button', { name: 'Додати умову' }))
+  fireEvent.click(within(filters).getByRole('button', { name: 'Додати відбір' }))
   fireEvent.click(within(filters).getByRole('combobox', { name: 'Поле' }))
   fireEvent.click(screen.getByRole('option', { name: 'Товар' }))
-  fireEvent.click(within(filters).getByRole('combobox', { name: 'Умова' }))
-  for (const name of ['Дорівнює', 'У списку']) expect(screen.getByRole('option', { name })).toBeTruthy()
-  for (const name of ['Не дорівнює', 'Не у списку']) {
+  fireEvent.click(within(filters).getByRole('combobox', { name: 'Тип порівняння' }))
+  for (const name of ['Рівне', 'В списку']) expect(screen.getByRole('option', { name })).toBeTruthy()
+  for (const name of ['Не рівне', 'Не в списку']) {
     const option = screen.queryByRole('option', { name })
     if (admitted) expect(option).toBeTruthy()
     else expect(option).toBeNull()

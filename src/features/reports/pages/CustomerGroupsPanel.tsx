@@ -37,7 +37,6 @@ export function CustomerGroupsPanel({ value, onChange, disabled }: Props) {
     return()=>controller.abort()
   },[disabled,known,remember,selectedIds])
   return <Stack gap="sm">
-    <TextInput label="Підрозділ" value="Ще не підтримується у цьому звіті" disabled />
     <Text size="sm">Кожен стовпець — набір клієнтів. Перший набір є еталоном. Період спільний для всіх наборів; відсоток при нульовому еталоні порожній.</Text>
     {restoreError?<Text size="sm" c="red">{restoreError}</Text>:null}
     {groups.Groups.map((group,index)=><CustomerGroupEditor key={editors.keys[index]} group={group} index={index} disabled={disabled} known={known} onFound={remember}

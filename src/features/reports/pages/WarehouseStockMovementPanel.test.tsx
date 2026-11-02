@@ -45,6 +45,15 @@ describe('native warehouse stock movement', () => {
     const busy = vi.fn()
     render(panel(true, busy))
     expect(screen.queryByText(/синхронізовано/)).toBeNull()
+    const filters = await screen.findByRole('group', { name: 'Фільтри' })
+    for (const label of ['Склад у списку', 'Організація складу', 'Номенклатура у списку', 'Група товарів (з підгрупами)', 'Вид документа руху', 'Документ руху містить']) {
+      expect(within(filters).getByLabelText(label)).toBeTruthy()
+    }
+    expect(within(filters).getByRole('group', { name: 'Фільтр артикула' })).toBeTruthy()
+    for (const name of ['Склади', 'Номенклатура', 'Відбори']) {
+      expect(screen.queryByRole('group', { name })).toBeNull()
+    }
+    expect(previewStockMovement).not.toHaveBeenCalled()
     const table = await applyReport()
     expect(previews()[0]).toMatchObject({ From: '2025-01-01', To: '2026-10-26', Levels: ['warehouse', 'product', 'registrar'], Offset: 0, Limit: 200 })
     const rows = within(table).getAllByRole('row')

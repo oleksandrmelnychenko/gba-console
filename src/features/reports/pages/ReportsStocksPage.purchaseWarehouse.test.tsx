@@ -33,7 +33,7 @@ async function ready() {
   const view = render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>)
   fireEvent.click(await screen.findByRole('button', { name: 'Відкрити gba:purchases-constructor:v1' }))
   await waitFor(() => expect(screen.getByRole('button', { name: 'Відкрити gba:purchases-constructor:v1' })).toHaveProperty('ariaCurrent', 'true'))
-  await screen.findByRole('button', { name: 'Додати умову' })
+  await screen.findByRole('button', { name: 'Додати відбір' })
   return view
 }
 
@@ -47,11 +47,11 @@ it('uses the actual source3 receipt label in grouping and offers only four flat 
   fireEvent.click(within(dialog).getByRole('checkbox', { name: 'Вибрати Склад надходження' }))
   fireEvent.click(within(dialog).getByRole('button', { name: 'Додати вибрані (1)' }))
   expect(screen.getByRole('button', { name: 'Видалити Склад надходження' })).toBeTruthy()
-  fireEvent.click(screen.getByRole('button', { name: 'Додати умову' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Додати відбір' }))
   fireEvent.click(screen.getByRole('combobox', { name: 'Поле' }))
   fireEvent.click(await screen.findByRole('option', { name: 'Склад надходження' }))
-  fireEvent.click(screen.getByRole('combobox', { name: 'Умова' }))
-  expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(['Дорівнює', 'Не дорівнює', 'У списку', 'Не у списку'])
+  fireEvent.click(screen.getByRole('combobox', { name: 'Тип порівняння' }))
+  expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(['Рівне', 'Не рівне', 'В списку', 'Не в списку'])
 })
 
 it('restores and saves exact same-name IDs, row/column order and edited dates without remapping the warehouse', async () => {
@@ -90,8 +90,8 @@ it.each([0, 1])('keeps saved single-value condition%i visible but blocks generat
   expect(screen.getAllByText('Оберіть одне значення для цієї умови.').length).toBeGreaterThan(0)
   expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toHaveProperty('disabled', true)
   expect(saveServerReportTemplate).not.toHaveBeenCalled()
-  fireEvent.click(screen.getByRole('combobox', { name: 'Умова' }))
-  fireEvent.click(screen.getByRole('option', { name: 'У списку' }))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Тип порівняння' }))
+  fireEvent.click(screen.getByRole('option', { name: 'В списку' }))
   expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toHaveProperty('disabled', false)
   fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
   fireEvent.click(screen.getByRole('button', { name: 'Оновити шаблон' }))

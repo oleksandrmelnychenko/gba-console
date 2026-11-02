@@ -58,7 +58,7 @@ it("shows only selection settings on the exact special-report menu launch and af
   fireEvent.click(screen.getByRole("button", { name: "Скинути" }))
   await waitFor(() => expect(screen.getByRole("button", { name: "Особливі звіти" })).toHaveProperty("disabled", false))
   for (const name of ["Показники", "Групування"]) expect(screen.queryByRole("group", { name })).toBeNull()
-  fireEvent.click(screen.getByRole("button", { name: "Додати умову" }))
+  fireEvent.click(screen.getByRole("button", { name: "Додати відбір" }))
   fireEvent.click(within(screen.getByRole("group", { name: "Умова відбору 1" })).getByRole("combobox", { name: "Поле" }))
   expect(screen.getAllByRole("option").map(option => option.textContent)).toEqual(choices.map(choice => choice.label))
 })
@@ -66,7 +66,7 @@ it("submits all four selected identities through the existing inline sales-style
   await open()
   changeReportPeriod({ from: "2026-10-01", to: "2026-10-27" })
   for (const [index, choice] of choices.entries()) {
-    fireEvent.click(screen.getByRole("button", { name: "Додати умову" }))
+    fireEvent.click(screen.getByRole("button", { name: "Додати відбір" }))
     const row = within(screen.getByRole("group", { name: `Умова відбору ${index + 1}` }))
     fireEvent.click(row.getByRole("combobox", { name: "Поле" }))
     fireEvent.click(await screen.findByRole("option", { name: choice.label }))
@@ -93,9 +93,9 @@ it("preserves the preset product group under nomenclature and accepts several ex
   await waitFor(() => expect(searchAnalysisValues).toHaveBeenCalledWith(4, "", "2026-10-01", "2026-10-27", undefined, expect.any(AbortSignal)))
   const group = within(screen.getByRole("group", { name: "Умова відбору 1" }))
   expect(group.getByRole("combobox", { name: "Поле" })).toHaveProperty("value", "Номенклатура")
-  expect(group.getByRole("combobox", { name: "Умова" })).toHaveProperty("value", "У групі")
+  expect(group.getByRole("combobox", { name: "Тип порівняння" })).toHaveProperty("value", "В групі")
   expect(group.getByText("Група: AL-KO [4317]")).toBeTruthy()
-  fireEvent.click(screen.getByRole("button", { name: "Додати умову" }))
+  fireEvent.click(screen.getByRole("button", { name: "Додати відбір" }))
   const row = within(screen.getByRole("group", { name: "Умова відбору 2" }))
   fireEvent.click(row.getByRole("combobox", { name: "Поле" }))
   fireEvent.click(screen.getByRole("option", { name: "Склад" }))
@@ -106,7 +106,7 @@ it("preserves the preset product group under nomenclature and accepts several ex
       expect(row.getByRole("button", { name: `Вибрано: ${index + 1}` })).toBeTruthy()
     })
   }
-  expect(row.getByRole("combobox", { name: "Умова" })).toHaveProperty("value", "У списку")
+  expect(row.getByRole("combobox", { name: "Тип порівняння" })).toHaveProperty("value", "В списку")
   fireEvent.click(screen.getByRole("button", { name: "Застосувати й показати" }))
   await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
   expect(vi.mocked(previewStockReport).mock.calls[0][0].selections).toMatchObject([

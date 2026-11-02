@@ -222,7 +222,7 @@ it('shows period, filters, measures and grouping together in one settings form',
   await openDayWorkbook()
   expect(screen.queryByRole('button', { name: 'Змінити налаштування' })).toBeNull()
   expect(dateInput('Від')).toBeTruthy()
-  for (const name of ['Організації', 'Фільтри', 'Показники', 'Групування']) expect(screen.getByRole('group', { name })).toBeTruthy()
+  for (const name of ['Фільтри', 'Показники', 'Групування']) expect(screen.getByRole('group', { name })).toBeTruthy()
   expect((screen.getByRole('checkbox', { name: 'Група «Покупці»' }) as HTMLInputElement).checked).toBe(true)
 })
 
@@ -230,7 +230,7 @@ it('keeps settings available without duplicating them in an about section', asyn
   await openDayWorkbook()
   expect(screen.queryByText('Про звіт')).toBeNull()
   expect(dateInput('Від')).toBeTruthy()
-  expect(screen.getByRole('group', { name: 'Організації' })).toBeTruthy()
+  expect(screen.queryByRole('group', { name: 'Організації' })).toBeNull()
   expect(screen.getByRole('group', { name: 'Фільтри' })).toBeTruthy()
 })
 
@@ -380,7 +380,7 @@ it('keeps a newly added blank supplier filter in Filters until its field is sele
   fireEvent.click(screen.getByRole('button', { name: `Відкрити ${workbookDisplayFileName('ВП по постачальниках.xls')}` }))
   await findOpenedWorkbook('ВП по постачальниках.xls')
   const filters = screen.getByRole('group', { name: 'Фільтри' })
-  fireEvent.click(within(filters).getByRole('button', { name: 'Додати умову' }))
+  fireEvent.click(within(filters).getByRole('button', { name: 'Додати відбір' }))
   const fields = within(filters).getAllByRole('combobox', { name: 'Поле' })
   expect(fields.at(-1)).toHaveProperty('value', '')
   expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toHaveProperty('disabled', true)

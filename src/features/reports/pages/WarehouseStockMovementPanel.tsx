@@ -1,7 +1,7 @@
 import { ActionIcon, Alert, Button, Checkbox, Group, NumberInput, Select, Stack, Table, Text, Textarea, TextInput } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, MonitorPlay, Plus, X } from 'lucide-react'
-import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
+import { useEffect, useEffectEvent, useMemo, useRef, useState, type ReactNode } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
@@ -21,6 +21,7 @@ import {
   type StockMovementExport, type StockMovementLevel, type StockMovementLookupItem, type StockMovementMeasure, type StockMovementQuantity,
   type StockMovementRequest, type StockMovementResult, type StockMovementSelection,
 } from '../data/warehouseStockMovement'
+import { ReportFilterRow } from './ReportFilterRow'
 import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { WorkbookPeriodField, WorkbookSettings } from './workbook-desk/WorkbookSettings'
 import './warehouse-stock-movement.css'
@@ -70,6 +71,15 @@ function SelectionPicker({ label, placeholder, selected, search, disabled, onCha
     value={selected.map(item => String(item.id))}
     remoteSearch={{ value: search.query, onChange: search.setQuery, loading: search.loading }}
     onChange={values => onChange(values.map(value => ({ id: Number(value), label: data.find(option => option.value === value)?.label ?? value })))} />
+}
+
+function FixedMovementFilter({ label, field, condition, children }: {
+  label: string; field: string; condition: string; children: ReactNode
+}) {
+  return <ReportFilterRow label={label}
+    field={<Select label="Поле" value={field} data={[field]} readOnly />}
+    condition={<Select label="Тип порівняння" value={condition} data={[condition]} readOnly />}
+    value={children} />
 }
 
 function QuantityCell({ value, negativeRed }: { value: number; negativeRed: boolean }) {
@@ -270,51 +280,56 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
         presets={presets} error={null} disabled={locked}
         onFromChange={value => update({ from: value })} onToChange={value => update({ to: value })} />}
       sections={[
-        { id: 'warehouses', title: 'Склади', summary: draft.warehouseIds.length ? `Вибрано: ${draft.warehouseIds.length}` : 'Усі склади',
-          compactSummary: draft.warehouseIds.length ? String(draft.warehouseIds.length) : undefined, content: <Stack gap={6}>
-            <CheckboxMultiSelect label="Склад у списку" placeholder="Усі склади" disabled={locked}
-              data={warehouses.map(item => ({ value: String(item.Id), label: item.Detail ? `${item.Name} · ${item.Detail}` : item.Name }))}
-              value={draft.warehouseIds.map(String)} onChange={values => update({ warehouseIds: values.map(Number) })} />
-            <CheckboxMultiSelect label="Організація складу" placeholder="Усі організації" disabled={locked}
-              data={organizations.map(item => ({ value: String(item.Id), label: item.Name }))}
-              value={draft.organizationIds.map(String)} onChange={values => update({ organizationIds: values.map(Number) })} />
-          </Stack> },
-        { id: 'product', title: 'Номенклатура', summary: filters.filter(line => line.startsWith('Номенклатура') || line.startsWith('Група')).join('; ') || 'Усі товари',
+        { id: 'filters', title: 'Фільтри', summary: filters.join('; ') || 'Фільтрів немає',
           content: <Stack gap={6}>
-            <Group gap={6} align="flex-end" wrap="wrap">
-              <Select label="Артикул" w={150} disabled={locked} allowDeselect={false} value={draft.articleMatch}
+            <FixedMovementFilter label="Фільтр складу" field="Склад" condition="У списку">
+              <CheckboxMultiSelect label="Склад у списку" placeholder="Усі склади" disabled={locked}
+                data={warehouses.map(item => ({ value: String(item.Id), label: item.Detail ? `${item.Name} · ${item.Detail}` : item.Name }))}
+                value={draft.warehouseIds.map(String)} onChange={values => update({ warehouseIds: values.map(Number) })} />
+            </FixedMovementFilter>
+            <FixedMovementFilter label="Фільтр організації складу" field="Організація складу" condition="У списку">
+              <CheckboxMultiSelect label="Організація складу" placeholder="Усі організації" disabled={locked}
+                data={organizations.map(item => ({ value: String(item.Id), label: item.Name }))}
+                value={draft.organizationIds.map(String)} onChange={values => update({ organizationIds: values.map(Number) })} />
+            </FixedMovementFilter>
+            <ReportFilterRow label="Фільтр артикула"
+              field={<Select label="Поле" value="Номенклатура.Артикул" data={['Номенклатура.Артикул']} readOnly />}
+              condition={<Select label="Артикул" disabled={locked} allowDeselect={false} value={draft.articleMatch}
                 data={STOCK_MOVEMENT_ARTICLE_MATCHES.map(match => ({ value: match, label: STOCK_MOVEMENT_ARTICLE_LABELS[match] }))}
-                onChange={value => { if (value) update({ articleMatch: value as StockMovementArticleMatch }) }} />
-              {draft.articleMatch === 'inList' ? null : <TextInput aria-label="Значення артикула" placeholder="Напр. 94000" disabled={locked}
-                value={draft.articleText} onChange={event => update({ articleText: event.currentTarget.value })} />}
-            </Group>
-            {draft.articleMatch === 'inList' ? <Textarea aria-label="Артикули списку" placeholder="Артикули через кому або з нового рядка" autosize minRows={2} maxRows={6}
-              disabled={locked} value={articleListText} onChange={event => setArticleListText(event.currentTarget.value)} /> : null}
-            <SelectionPicker label="Номенклатура у списку" placeholder="Пошук за артикулом або назвою" selected={draft.products}
-              search={products} disabled={locked} onChange={value => update({ products: value })} />
-            <SelectionPicker label="Група товарів (з підгрупами)" placeholder="Пошук групи" selected={draft.groups}
-              search={groups} disabled={locked} onChange={value => update({ groups: value })} />
-          </Stack> },
-        { id: 'filters', title: 'Відбори', summary: [draft.documentKinds.length ? `Види документів: ${draft.documentKinds.length}` : '',
-          draft.documentText.trim() ? `Документ: ${draft.documentText.trim()}` : '', draft.conditions.length ? `Умови: ${draft.conditions.length}` : ''].filter(Boolean).join('; ') || 'Без відборів',
-          content: <Stack gap={6}>
-            <CheckboxMultiSelect label="Вид документа руху" placeholder="Усі документи" disabled={locked}
-              data={capability.DocumentKinds.map(kind => ({ value: kind.Code, label: kind.Name }))}
-              value={draft.documentKinds} onChange={values => update({ documentKinds: values })} />
-            <TextInput label="Документ руху містить" placeholder="Номер, вид або контрагент" disabled={locked}
-              value={draft.documentText} onChange={event => update({ documentText: event.currentTarget.value })} />
-            {draft.conditions.map((condition, index) => <Group key={index} gap={4} wrap="nowrap" align="flex-end">
-              <Select aria-label="Показник умови" w={150} disabled={locked} allowDeselect={false} value={condition.Measure}
+                onChange={value => { if (value) update({ articleMatch: value as StockMovementArticleMatch }) }} />}
+              value={draft.articleMatch === 'inList'
+                ? <Textarea aria-label="Артикули списку" placeholder="Артикули через кому або з нового рядка" autosize minRows={2} maxRows={6}
+                  disabled={locked} value={articleListText} onChange={event => setArticleListText(event.currentTarget.value)} />
+                : <TextInput aria-label="Значення артикула" placeholder="Напр. 94000" disabled={locked}
+                  value={draft.articleText} onChange={event => update({ articleText: event.currentTarget.value })} />} />
+            <FixedMovementFilter label="Фільтр номенклатури" field="Номенклатура" condition="У списку">
+              <SelectionPicker label="Номенклатура у списку" placeholder="Пошук за артикулом або назвою" selected={draft.products}
+                search={products} disabled={locked} onChange={value => update({ products: value })} />
+            </FixedMovementFilter>
+            <FixedMovementFilter label="Фільтр групи товарів" field="Група товарів" condition="У групі з підгрупами">
+              <SelectionPicker label="Група товарів (з підгрупами)" placeholder="Пошук групи" selected={draft.groups}
+                search={groups} disabled={locked} onChange={value => update({ groups: value })} />
+            </FixedMovementFilter>
+            <FixedMovementFilter label="Фільтр виду документа" field="Вид документа руху" condition="У списку">
+              <CheckboxMultiSelect label="Вид документа руху" placeholder="Усі документи" disabled={locked}
+                data={capability.DocumentKinds.map(kind => ({ value: kind.Code, label: kind.Name }))}
+                value={draft.documentKinds} onChange={values => update({ documentKinds: values })} />
+            </FixedMovementFilter>
+            <FixedMovementFilter label="Фільтр документа" field="Документ руху" condition="Містить">
+              <TextInput label="Документ руху містить" placeholder="Номер, вид або контрагент" disabled={locked}
+                value={draft.documentText} onChange={event => update({ documentText: event.currentTarget.value })} />
+            </FixedMovementFilter>
+            {draft.conditions.map((condition, index) => <ReportFilterRow key={index} label={`Умова за показником ${index + 1}`}
+              field={<Select label="Поле" aria-label="Показник умови" disabled={locked} allowDeselect={false} value={condition.Measure}
                 data={STOCK_MOVEMENT_MEASURES.map(measure => ({ value: measure, label: `Кількість ${STOCK_MOVEMENT_MEASURE_LABELS[measure].toLocaleLowerCase('uk')}` }))}
-                onChange={value => { if (value) update({ conditions: draft.conditions.map((item, position) => position === index ? { ...item, Measure: value as StockMovementMeasure } : item) }) }} />
-              <Select aria-label="Порівняння" w={130} disabled={locked} allowDeselect={false} value={condition.Comparison}
+                onChange={value => { if (value) update({ conditions: draft.conditions.map((item, position) => position === index ? { ...item, Measure: value as StockMovementMeasure } : item) }) }} />}
+              condition={<Select label="Тип порівняння" aria-label="Порівняння" disabled={locked} allowDeselect={false} value={condition.Comparison}
                 data={STOCK_MOVEMENT_COMPARISONS.map(comparison => ({ value: comparison, label: STOCK_MOVEMENT_COMPARISON_LABELS[comparison] }))}
-                onChange={value => { if (value) update({ conditions: draft.conditions.map((item, position) => position === index ? { ...item, Comparison: value as StockMovementComparison } : item) }) }} />
-              <NumberInput aria-label="Значення умови" w={90} disabled={locked} value={condition.Value} decimalSeparator="," allowDecimal
-                onChange={value => update({ conditions: draft.conditions.map((item, position) => position === index ? { ...item, Value: typeof value === 'number' ? value : Number.NaN } : item) })} />
-              <ActionIcon variant="subtle" color="gray" aria-label="Прибрати умову" disabled={locked}
-                onClick={() => update({ conditions: draft.conditions.filter((_, position) => position !== index) })}><X size={14} /></ActionIcon>
-            </Group>)}
+                onChange={value => { if (value) update({ conditions: draft.conditions.map((item, position) => position === index ? { ...item, Comparison: value as StockMovementComparison } : item) }) }} />}
+              value={<NumberInput label="Значення" aria-label="Значення умови" disabled={locked} value={condition.Value} decimalSeparator="," allowDecimal
+                onChange={value => update({ conditions: draft.conditions.map((item, position) => position === index ? { ...item, Value: typeof value === 'number' ? value : Number.NaN } : item) })} />}
+              action={<ActionIcon variant="subtle" color="gray" aria-label="Прибрати умову" disabled={locked}
+                onClick={() => update({ conditions: draft.conditions.filter((_, position) => position !== index) })}><X size={14} /></ActionIcon>} />)}
             {draft.conditions.length < 4 ? <Button type="button" size="compact-xs" variant="subtle" leftSection={<Plus size={14} />} disabled={locked}
               onClick={() => update({ conditions: [...draft.conditions, { Measure: 'closing', Comparison: 'greater', Value: 0 }] })}>Умова за показником</Button> : null}
           </Stack> },

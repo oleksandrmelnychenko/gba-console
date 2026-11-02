@@ -13,7 +13,7 @@ function request(extra: Partial<ReportRequestBody>): ReportRequestBody {
 }
 
 function selection(field: number, name: string, condition: number, values: string[], checked = true): ReportSelection {
-  return { IsChecked: checked, SelectedField: { Type: field, Name: name }, FilterCondition: { Type: condition, Name: condition === 2 ? 'У списку' : condition === 6 ? 'У групі' : 'Дорівнює' },
+  return { IsChecked: checked, SelectedField: { Type: field, Name: name }, FilterCondition: { Type: condition, Name: ['Дорівнює', 'Не дорівнює', 'У списку', 'У групі зі списку', 'Не у списку', 'Не у групі зі списку', 'У групі', 'Не у групі'][condition] },
     Values: values.map((value, index) => ({ Name: value, Value: 0, Data: { Id: String(index + 1), Name: value } })) }
 }
 
@@ -105,7 +105,7 @@ describe('request summary', () => {
       selection(0, 'Організація', 0, ['Вимкнена'], false),
     ] }))).toBe('Вибрано: 2')
     expect(workbookOrganizationScope(request({ dataSource: 40, selections: [
-      selection(32, 'Організація рахунку', 3, ['Фенікс']),
+      selection(32, 'Організація рахунку', 4, ['Фенікс']),
     ] }))).toBe('Виключено: 1')
     expect(workbookOrganizationScope(request({ dataSource: 38, selections: [
       selection(0, 'Організація', 2, ['Фенікс', 'Конкорд']),
@@ -168,9 +168,28 @@ describe('request summary', () => {
 
   it('reads an excluding organization condition', () => {
     const summary = workbookRequestSummary(request({ dataSource: 40, selections: [
-      selection(32, 'Організація рахунку', 3, ['Фенікс [1]']),
+      selection(32, 'Організація рахунку', 4, ['Фенікс [1]']),
     ] }), undefined, label)
     expect(summary.organizations).toBe('Усі, крім Фенікс')
     expect(summary.chips).toEqual([])
+  })
+})
+
+
+describe('typed filter summary polarity', () => {
+  it.each([
+    [0, 'Товар: Деталь'], [1, 'Товар: крім Деталь'], [2, 'Товар: Деталь'],
+    [3, 'Товар: у групі зі списку Деталь'], [4, 'Товар: крім Деталь'],
+    [5, 'Товар: не у групі зі списку Деталь'], [6, 'Товар: у групі Деталь'], [7, 'Товар: не у групі Деталь'],
+  ])('describes condition %i without changing its group or exclusion meaning', (condition, expected) => {
+    const data = request({ dataSource: 3, selections: [selection(1, 'Товар', Number(condition), ['Деталь'])] })
+    const before = structuredClone(data)
+    expect(workbookRequestSummary(data, undefined, label).chips[0].label).toBe(expected)
+    expect(data).toEqual(before)
+  })
+  it.each([1, 4])('shows excluded organizations for condition %i', condition => {
+    const data = request({ dataSource: 38, selections: [selection(0, 'Організація', condition, ['Фенікс'])] })
+    expect(workbookRequestSummary(data, undefined, label).organizations).toBe('Усі, крім Фенікс')
+    expect(workbookOrganizationScope(data)).toBe('Виключено: 1')
   })
 })

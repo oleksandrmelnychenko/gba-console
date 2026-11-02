@@ -140,7 +140,7 @@ function CounterpartyGroupsPageContent() {
   const forest = useMemo(() => buildCounterpartyGroupForest(groups), [groups])
   const visibleForest = useMemo(() => filterCounterpartyGroupForest(forest, treeSearch), [forest, treeSearch])
 
-  const toNode = useCallback((branch: CounterpartyGroupBranch): TreeViewNode => ({
+  const toNode = useCallback(function toTreeNode(branch: CounterpartyGroupBranch): TreeViewNode { return {
     id: branch.group.NetUid,
     label: branch.group.Name,
     icon: branch.children.length > 0 ? <Folders size={15} /> : <Folder size={15} />,
@@ -153,8 +153,8 @@ function CounterpartyGroupsPageContent() {
     active: branch.group.NetUid === selectedNetUid,
     onActivate: () => setSelectedNetUid(branch.group.NetUid),
     defaultExpanded: branch.group.IsSystem || treeSearch.trim().length > 0,
-    children: branch.children.map(toNode),
-  }), [selectedNetUid, setSelectedNetUid, t, treeSearch])
+    children: branch.children.map(toTreeNode),
+  } }, [selectedNetUid, setSelectedNetUid, t, treeSearch])
   const treeNodes = useMemo(() => visibleForest.map(toNode), [toNode, visibleForest])
 
   const closeForm = () => {

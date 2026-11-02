@@ -8,6 +8,7 @@ import { groupedSettlementSupplierDataset, groupedSettlementSupplierRequest } fr
 import { profitSupplierDataset } from './profitReadMode.test-fixtures'
 import { datasetFieldHierarchy, datasetGroupSelectionError, isDatasetGroupSelection, withDatasetGroupConditions } from './reportHierarchyFilters'
 import { REPORT_FILTER_CONDITIONS } from './reportOptions'
+import { reportSelectionConditions } from './reportSelectionPolicy'
 import type { AnalysisHierarchy } from './currentVparivanieAnalysis'
 import type { ReportDataset, ReportSelection } from '../types'
 
@@ -85,5 +86,18 @@ describe('dataset validators', () => {
     expect(dayOrganizationGrossProfitConfigurationError(request, dayDataset)).toBeNull()
     const negative = { ...request, selections: [selection(6, 7, group)] }
     expect(dayOrganizationGrossProfitConfigurationError(negative, dayDataset)).toMatch('«Не дорівнює» та «Не у списку»')
+  })
+})
+
+
+describe('shared constructor operator policy', () => {
+  it.each([2, 3, 45, 46])('keeps source%i flat until the exact field advertises a hierarchy', source => {
+    const dataset = { ...supplierDataset, DataSource: source }
+    const allowed = reportSelectionConditions(source, dataset, undefined, 0)!
+    expect([...allowed]).toEqual([0, 1, 2, 4])
+    expect(withDatasetGroupConditions(dataset, 0, REPORT_FILTER_CONDITIONS, allowed).map(item => item.Type)).toEqual([0, 1, 2, 4])
+    expect(withDatasetGroupConditions(dataset, 1, REPORT_FILTER_CONDITIONS, allowed).map(item => item.Type)).toEqual([0, 1, 2, 3, 4, 5, 6, 7])
+    const noHierarchy = { ...dataset, Filters: dataset.Filters.map(field => ({ ...field, hierarchy: undefined })) }
+    expect(withDatasetGroupConditions(noHierarchy, 1, REPORT_FILTER_CONDITIONS, allowed).map(item => item.Type)).toEqual([0, 1, 2, 4])
   })
 })

@@ -1,3 +1,4 @@
+import { ReportFilterRow } from './ReportFilterRow'
 import { NativePriceFilterValuePicker } from './NativePriceFilterValuePicker'
 import { RetainedNamedSalesPriceType } from './RetainedNamedSalesPriceType'
 import { isNativePriceFilterField, nativePriceFilterSelectionError } from '../data/nativePriceFilterLookup'
@@ -233,7 +234,7 @@ import { requestTopGroups } from '../data/reportTopGroups'
 import { useReportGroupingOrdering } from '../hooks/useReportGroupingOrdering'
 import type { ReportGroupingLayout } from '../data/reportGroupingLayout'
 import { DayProfitControls, SupplierProfitControls, type ProfitControlsPart } from './ProfitWorkbookControls'
-import { deskPlural, organizationFilterField, workbookDeskTitle, workbookOrganizationScope, workbookRequestSummary } from '../data/workbookDesk'
+import { deskPlural, workbookDeskTitle, workbookRequestSummary } from '../data/workbookDesk'
 import { WorkbookSwitcher } from './workbook-desk/WorkbookSwitcher'
 import { WorkbookHeader } from './workbook-desk/WorkbookHeader'
 import { WorkbookActionBar } from './workbook-desk/WorkbookActionBar'
@@ -1048,9 +1049,6 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     const deskTitle = activeProfile ? salesConstructorTitle(activeProfile) : workbookDeskTitle(activeWorkbook, dataSource)
     const deskReportKey = `${activeWorkbook ?? ''}|${dataSource}`
     const deskSummary = workbookRequestSummary(reportBody, dataset, selection => getSelectionFieldSummary(selection, filterFieldOptions, t))
-    const organizationField = organizationFilterField(dataSource)
-    const organizationOption = organizationField === null ? undefined : filterFieldOptions.find(option => option.field.Type === organizationField)
-    const isOrganizationSelection = (selection: ReportSelection) => organizationOption !== undefined && Boolean(selection.SelectedField.Name) && selection.SelectedField.Type === organizationField
     const builder = {
       inlineSelections: true, selectionKeys: filterLogic.selectionKeys, dataset, request: reportBody, dataSource, colGroups, filterFieldOptions, groupingOptions, groupingSelectData, measurements, rowGroups, selections,
       lookupFrom: lookup.from, lookupTo: lookup.to, lookupProfitReadMode: lookup.profitReadMode,
@@ -1066,22 +1064,24 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       exportLayout, onExportLayoutChange: setExportLayout,
     }
     const supplierControls = dataSource === 38 && isSupplierSourceWorldCapability(dataset?.supplierSourceWorld)
-    const organizationsContent = dataSource === 35 || organizationOption ? <>
-      {dataSource === 35 ? <div className="workbook-desk__group">{dayProfitControls('organizations')}</div> : null}
-      {organizationOption ? <LegacyReportBuilder part="selections" {...builder} selectionFilter={isOrganizationSelection}
-        newSelection={() => ({ ...createEmptySelection(), SelectedField: { ...organizationOption.field },
-          FilterCondition: { ...REPORT_FILTER_CONDITIONS[2] } })}
-        selectionTitle={t('Відбір організацій')} addSelectionLabel={t('Додати організацію')} /> : null}
-    </> : null
+    const sharedFilters = <ConstructorFilters count={selections.length} rowKeys={filterLogic.selectionKeys} disabled={comparisonSettingsDisabled}
+        onAdd={() => filterLogic.editSelection({ kind: 'append', selection: createEmptySelection() })}
+        onDelete={index => filterLogic.editSelection({ kind: 'delete', index })}
+        onCopy={index => { if (selections[index]) filterLogic.editSelection({ kind: 'append', selection: cloneReportSelection(selections[index], dataSource, reportBody) }) }}
+        footer={<><StockQuantityFilterPanel dataset={dataset} request={templateBody} disabled={comparisonSettingsDisabled} onChange={setStockQuantityFilter} />{dataSource !== 19 && returnsOnly !== true ? analysisPanels.filterExpression : null}</>}
+        renderRow={({ index, selected, onSelect }) => <InlineReportSelection variant="row" selected={selected} onSelect={onSelect} dataset={activeWorkbook === 'Впарювання.xls' ? vparivanieSelectionDataset(dataset) : dataset} request={reportBody}
+          selection={selections[index]} selections={selections} index={index} dataSource={dataSource} from={lookup.from} to={lookup.to}
+          filterFieldOptions={filterFieldOptions} lookupProfitReadMode={lookup.profitReadMode} lookupProfitUnavailable={lookup.profitUnavailable}
+          lookupSourceWorld={lookup.sourceWorld} lookupSalesBasis={lookup.salesBasis} lookupProvidedDiscountBasis={lookup.providedDiscountBasis}
+          onChange={filterLogic.editSelection} />} />
     const filtersContent = <>
-      <StockQuantityFilterPanel dataset={dataset} request={templateBody} disabled={comparisonSettingsDisabled} onChange={setStockQuantityFilter} />
+      {dataSource === 35 ? <div className="workbook-desk__group">{dayProfitControls('organizations')}</div> : null}
       {dataSource === 46 ? <NativePriceComparisonPanel value={nativePriceComparison} onChange={setNativePriceComparison} disabled={comparisonSettingsDisabled} /> : null}
       {dataSource === 44 ? <CustomerGroupsPanel value={customerGroups} onChange={setCustomerGroups} disabled={comparisonSettingsDisabled} /> : null}
       {dataSource === 35 ? <div className="workbook-desk__group">{dayProfitControls('filters')}</div> : null}
       {supplierControls ? <div className="workbook-desk__group">{supplierProfitControls('filters')}</div> : null}
       {dataSource === 41 ? cashSettlementPanels('filters') : null}
-      <LegacyReportBuilder part="selections" {...builder} dataset={activeWorkbook === 'Впарювання.xls' ? vparivanieSelectionDataset(dataset) : dataset}
-        selectionFilter={organizationOption ? selection => !isOrganizationSelection(selection) : undefined} />
+      {sharedFilters}
     </>
     const groupingContent = <>
       {dataSource === 40 || dataSource === 41 ? cashSettlementPanels('form') : null}
@@ -1095,7 +1095,6 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       {dataSource === 39 ? <CurrentVparivanieRegionalPanel dataset={dataset ?? null} request={reportBody}
         enabled={canGenerateReport} disabled={comparisonSettingsDisabled}
         fullScope={currentVparivanieFullScope(reportBody)} onFullScopeChange={setFullCurrentVparivanie} /> : null}
-      {dataSource !== 19 ? analysisPanels.filterExpression : null}
       {!hasFixedReportAxes(dataSource) ? <>
         {analysisPanels.topGroups}
         {analysisPanels.threshold}
@@ -1116,21 +1115,11 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       </>,
       panels: <ConstructorGroupingWorkspace {...builder} disabled={comparisonSettingsDisabled}
         measures={<ConstructorMeasures groups={measurements} onChange={setMeasurements} disabled={comparisonSettingsDisabled} {...constructorCaptions} />} />,
-      filters: <ConstructorFilters count={selections.length} rowKeys={filterLogic.selectionKeys} disabled={comparisonSettingsDisabled}
-        onAdd={() => filterLogic.editSelection({ kind: 'append', selection: createEmptySelection() })}
-        onDelete={index => filterLogic.editSelection({ kind: 'delete', index })}
-        onCopy={index => { if (selections[index]) filterLogic.editSelection({ kind: 'append', selection: cloneReportSelection(selections[index], dataSource, reportBody) }) }}
-        footer={<StockQuantityFilterPanel dataset={dataset} request={templateBody} disabled={comparisonSettingsDisabled} onChange={setStockQuantityFilter} />}
-        renderRow={({ index, selected, onSelect }) => <InlineReportSelection variant="row" selected={selected} onSelect={onSelect} dataset={dataset} request={reportBody}
-          selection={selections[index]} selections={selections} index={index} dataSource={dataSource} from={lookup.from} to={lookup.to}
-          filterFieldOptions={filterFieldOptions} lookupProfitReadMode={lookup.profitReadMode} lookupProfitUnavailable={lookup.profitUnavailable}
-          lookupSourceWorld={lookup.sourceWorld} lookupSalesBasis={lookup.salesBasis} lookupProvidedDiscountBasis={lookup.providedDiscountBasis}
-          onChange={filterLogic.editSelection} />} />,
+      filters: sharedFilters,
       extras: <>
         <div className="constructor-extras__item"><ReportNumberPresentationPanel value={numberPresentation} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setNumberPresentation} /></div>
         <ReportPresentationCurrencyPanel dataset={dataset} request={reportBody} disabled={comparisonSettingsDisabled} onChange={setPresentationCurrency} />
         {workbook.panel(dataset, reportBody, comparisonSettingsDisabled)}
-        {analysisPanels.filterExpression}
         {!hasFixedReportAxes(dataSource) ? <>
           {analysisPanels.topGroups}
           {analysisPanels.threshold}
@@ -1141,12 +1130,13 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
       </>,
     } : null
     const filterChips = deskSummary.chips.filter(chip => chip.kind === 'filter')
+    const organizationSummary = deskSummary.organizations && deskSummary.organizations !== t('Усі')
+      ? `${t('Організації')}: ${deskSummary.organizations}` : null
+    const filterSummary = [organizationSummary, ...filterChips.map(chip => chip.label)].filter(Boolean).join('; ')
     const groupingLabels = (groups: ReportGroupingItem[]) => groups.map(group => group.label || getReportFieldLabel(group.key)).join(' → ')
     const deskSections: WorkbookSettingsSection[] = [
-      ...(organizationsContent ? [{ id: 'organizations', title: 'Організації', summary: deskSummary.organizations ?? t('Усі'),
-        compactSummary: t(workbookOrganizationScope(reportBody)), content: organizationsContent }] : []),
-      { id: 'filters', title: 'Фільтри', summary: filterChips.length ? filterChips.map(chip => chip.label).join('; ') : t('Фільтрів немає'),
-        compactSummary: String(filterChips.length), content: filtersContent },
+      { id: 'filters', title: 'Фільтри', summary: filterSummary || t('Фільтрів немає'),
+        compactSummary: String(filterChips.length + (organizationSummary ? 1 : 0)), content: filtersContent },
       { id: 'measures', title: 'Показники', summary: checkedMeasurements
         ? `${checkedMeasurements} ${deskPlural(checkedMeasurements, ['показник', 'показники', 'показників'])}` : t('Не вибрано жодного'),
         compactSummary: String(checkedMeasurements), content: <>{dataSource === 39 ? <CurrentVparivanieMovementSettings dataset={dataset} value={movementQuantities} onChange={changeMovementQuantities} disabled={comparisonSettingsDisabled} /> : null}<LegacyReportBuilder part="measures" {...builder} /><ReportPresentationCurrencyPanel dataset={dataset} request={reportBody} disabled={comparisonSettingsDisabled} onChange={setPresentationCurrency} /><ConstructorPresentationPanel dataset={dataset} request={reportBody} disabled={comparisonSettingsDisabled} onChange={setConstructorPresentation} /><ReportNumberPresentationPanel value={numberPresentation} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setNumberPresentation} /></> },
@@ -2425,7 +2415,7 @@ export function ReportSelectionsCard({
                     || !!analysisConditionUnavailableReason(draftDescriptor, condition.Type, hierarchyStatus),
                 }))}
                 label={t('Умова')}
-                description={groupConditionsNotice(draftDescriptor, hierarchyStatus)}
+                description={groupConditionsNotice(draftDescriptor, hierarchyStatus, draftSelection.FilterCondition.Type)}
                 value={String(draftSelection.FilterCondition.Type)}
                 onChange={(value) => {
                   const condition = filterConditions.find((item) => String(item.Type) === value) || filterConditions[0]
@@ -2524,28 +2514,25 @@ export function InlineReportSelection({ dataset, request, selection, selections,
   if (variant === 'row' && request) {
     const rowFields = analysis ? fields : constructorFilterGroups(request, filterFieldOptions)
     const rowConditions = conditions.filter(condition => condition.Type === selection.FilterCondition.Type || admittedConditions === null || admittedConditions.has(condition.Type))
-    return <div className="constructor-selection-row" role="group" aria-label={t('Умова відбору {position}', { position: index + 1 })}
-      data-selected={selected} onFocusCapture={onSelect} onMouseDown={onSelect}>
-      <div className="constructor-selection-row__check"><Checkbox size="xs" aria-label={t('Увімкнути умову {position}', { position: index + 1 })} checked={selection.IsChecked !== false}
-        onChange={event => change({ ...selection, IsChecked: event.currentTarget.checked })} /></div>
-      <div className="constructor-selection-row__field"><Select size="xs" label={t('Поле')} searchable allowDeselect={false} data={rowFields}
-        placeholder={t('Оберіть поле')} value={selection.SelectedField.Name ? String(selection.SelectedField.Type) : null} onChange={changeField} /></div>
-      <div className="constructor-selection-row__condition"><Select size="xs" label="Тип порівняння" allowDeselect={false}
-        description={groupConditionsNotice(descriptor, hierarchyStatus)}
+    return <ReportFilterRow label={t('Умова відбору {position}', { position: index + 1 })}
+      selected={selected} onSelect={onSelect} toggle={
+<Checkbox size="xs" aria-label={t('Увімкнути умову {position}', { position: index + 1 })} checked={selection.IsChecked !== false}
+        onChange={event => change({ ...selection, IsChecked: event.currentTarget.checked })} />} field={<Select size="xs" label={t('Поле')} searchable allowDeselect={false} data={rowFields}
+        placeholder={t('Оберіть поле')} value={selection.SelectedField.Name ? String(selection.SelectedField.Type) : null} onChange={changeField} />} condition={<Select size="xs" label="Тип порівняння" allowDeselect={false}
+        description={groupConditionsNotice(descriptor, hierarchyStatus, selection.FilterCondition.Type)}
         data={rowConditions.map(condition => ({ value: String(condition.Type), label: constructorConditionLabel(condition.Type, condition.Name),
-          disabled: !!analysisConditionUnavailableReason(descriptor, condition.Type, hierarchyStatus) }))}
-        value={String(selection.FilterCondition.Type)} onChange={changeCondition} /></div>
-      <div className="constructor-selection-row__value">{valuePicker}</div>
-      <div className="constructor-selection-row__actions">
+          disabled: admittedConditions !== null && !admittedConditions.has(condition.Type)
+            || !!analysisConditionUnavailableReason(descriptor, condition.Type, hierarchyStatus) }))}
+        value={String(selection.FilterCondition.Type)} onChange={changeCondition} />} value={valuePicker} action={<>
         <Tooltip label={t('Вибрати значення')}><ActionIcon type="button" variant="default" size={24} disabled={!selection.SelectedField.Name}
           aria-label={t('Вибрати значення умови {position}', { position: index + 1 })} onClick={event => {
             const input = event.currentTarget.closest('.constructor-selection-row')?.querySelector<HTMLInputElement>('.constructor-selection-row__value input:not([type="hidden"]):not([disabled])')
             input?.focus(); input?.click()
           }}><Ellipsis size={14} /></ActionIcon></Tooltip>
         <TableRowAction action="delete" label={t('Видалити умову {position}', { position: index + 1 })} onClick={() => onChange({ kind: 'delete', index })} />
-      </div>
-      {valueError && selection.IsChecked !== false ? <div className="constructor-selection-row__error"><Alert color="yellow" p="xs">{valueError}</Alert></div> : null}
-    </div>
+      </>} error={selection.IsChecked !== false && (valueError || admittedConditions?.has(selection.FilterCondition.Type) === false)
+        ? <Alert color="yellow" p="xs">{valueError ?? groupConditionsNotice(descriptor, hierarchyStatus, selection.FilterCondition.Type)
+          ?? 'Ця умова недоступна для вибраного поля. Виберіть доступну умову або вимкніть відбір.'}</Alert> : null} />
   }
   return <section className="workbook-inline-selection" role="group" aria-label={t('Умова відбору {position}', { position: index + 1 })}>
     <Checkbox aria-label={t('Увімкнути умову {position}', { position: index + 1 })} checked={selection.IsChecked !== false}
@@ -2557,7 +2544,7 @@ export function InlineReportSelection({ dataset, request, selection, selections,
       {analysis?.filters.filter(field => field.available === false && selection.SelectedField.Name && field.type === selection.SelectedField.Type).map(field => <Text size="xs" c="dimmed" key={field.type}>{field.name}: {field.unavailabilityReason}</Text>)}
     </div>
     <div className="workbook-inline-selection__condition"><Select label={t('Умова')} allowDeselect={false}
-      description={groupConditionsNotice(descriptor, hierarchyStatus)}
+      description={groupConditionsNotice(descriptor, hierarchyStatus, selection.FilterCondition.Type)}
       data={conditions.map(condition => ({ value: String(condition.Type), label: condition.Name,
         disabled: admittedConditions !== null && !admittedConditions.has(condition.Type)
           || !!analysisConditionUnavailableReason(descriptor, condition.Type, hierarchyStatus) }))}
@@ -2591,7 +2578,9 @@ function hierarchyStatusError(descriptor: AnalysisFieldDescriptor | undefined, c
   return status ? analysisConditionUnavailableReason(descriptor, condition, status) : null
 }
 
-function groupConditionsNotice(descriptor: AnalysisFieldDescriptor | undefined, status: AnalysisHierarchyStatus | null): string | undefined {
+function groupConditionsNotice(descriptor: AnalysisFieldDescriptor | undefined, status: AnalysisHierarchyStatus | null, condition?: number): string | undefined {
+  if (!analysisHierarchy(descriptor) && condition !== undefined && [3, 5, 6, 7].includes(condition))
+    return 'Сервер не підтвердив групи для цього поля. Збережену умову не змінено; виберіть доступну умову або вимкніть відбір.'
   const reason = analysisHierarchyUnavailableReason(descriptor, status)
   return reason ? `Умови «У групі…» недоступні: ${reason}` : undefined
 }

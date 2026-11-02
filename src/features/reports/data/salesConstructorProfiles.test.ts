@@ -42,7 +42,7 @@ it('refuses unknown or conflicting profiles, previous-server capabilities and un
   expect(salesConstructorError({ ...data, sorted: { ...data.sorted, Measurements: [{ Type: 14, Name: 'Profitability', IsChecked: true, parentName: '' }] } }, dataset)).toContain('Показник')
 })
 
-it('hides return-only warehouse and reason filters in both sales forms', () => {
+it('offers the advertised physical warehouse in both sales forms while hiding return-only reason', () => {
   const source = { ...dataset, Filters: [{ Type: 1, Name: 'Product' }, { Type: 21, Name: 'Warehouse' }, { Type: 64, Name: 'ReturnReason' }] }
-  for (const profile of ['sales', 'grossProfit']) expect(salesConstructorDataset(source, profile)?.Filters.map(field => field.Type)).toEqual([1])
+  for (const profile of ['sales', 'grossProfit']) expect(salesConstructorDataset(source, profile)?.Filters.map(field => field.Type)).toEqual([1, 21])
 })

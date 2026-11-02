@@ -131,13 +131,14 @@ function selectionNames(selection: ReportSelection): string[] {
   return selection.Values.map(value => workbookCaption(String(value.Name ?? '')) || String(value.Name ?? ''))
 }
 
-const EXCLUDING_CONDITIONS = new Set([1, 3])
+const EXCLUDING_CONDITIONS = new Set([1, 4, 5, 7])
+const FLAT_EXCLUDING_CONDITIONS = new Set([1, 4])
 const PLAIN_CONDITIONS = new Set([0, 2])
 
 function selectionChip(selection: ReportSelection, label: string): DeskChip {
   const names = selectionNames(selection)
   const type = selection.FilterCondition.Type
-  const condition = PLAIN_CONDITIONS.has(type) ? '' : EXCLUDING_CONDITIONS.has(type) ? 'крім ' : `${selection.FilterCondition.Name.toLocaleLowerCase('uk-UA')} `
+  const condition = PLAIN_CONDITIONS.has(type) ? '' : FLAT_EXCLUDING_CONDITIONS.has(type) ? 'крім ' : `${selection.FilterCondition.Name.toLocaleLowerCase('uk-UA')} `
   return { kind: 'filter', label: `${label}: ${condition}${chipValuesText(names)}`, title: `${label} — ${selection.FilterCondition.Name}: ${names.join('; ')}` }
 }
 
@@ -158,7 +159,9 @@ function organizationsText(request: ReportRequestBody, selections: readonly Repo
   for (const selection of selections) {
     if (selection.SelectedField.Type !== field || !applied(selection, fixedAxes)) continue
     const names = selectionNames(selection)
-    parts.push(EXCLUDING_CONDITIONS.has(selection.FilterCondition.Type) ? `Усі, крім ${valuesText(names)}` : valuesText(names))
+    parts.push(FLAT_EXCLUDING_CONDITIONS.has(selection.FilterCondition.Type) ? `Усі, крім ${valuesText(names)}`
+      : PLAIN_CONDITIONS.has(selection.FilterCondition.Type) ? valuesText(names)
+        : `${selection.FilterCondition.Name}: ${valuesText(names)}`)
   }
   return parts.length ? parts.join('; ') : 'Усі'
 }
