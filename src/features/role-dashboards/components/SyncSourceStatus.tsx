@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { describeSyncSource } from './syncSourceEvidence'
 import { getSyncStatus } from '../../header-actions/api/syncApi'
 import type { DataSyncStatus } from '../../header-actions/types'
+import { useSystemOfRecordCutover } from '../../../shared/system-of-record/systemOfRecordCutover'
 
 const formatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Europe/Kyiv' })
 function displayInstant(value?: string | null) {
@@ -12,6 +13,11 @@ function displayInstant(value?: string | null) {
   return formatter.format(new Date(value))
 }
 export function SyncSourceStatus() {
+  const { isActive: afterCutover } = useSystemOfRecordCutover()
+  return afterCutover ? null : <SyncSourceStatusContent />
+}
+
+function SyncSourceStatusContent() {
   const [status, setStatus] = useState<DataSyncStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
   useEffect(() => {
