@@ -1,74 +1,58 @@
 {
-  "provenance": "Actual GbaJsonOptions serializer output, DashboardPayablesSerializationTests, Europe/Kyiv, 2026-10-23; synthetic data, not live balances",
+  "provenance": "Actual GbaJsonOptions serializer output, DashboardPayablesSerializationTests, Europe/Kyiv, 2026-11-02; synthetic data, not live balances",
   "snapshot": {
-    "ReadAtUtc": "2026-10-23T06:06:00Z",
-    "Worlds": [
+    "ReadAtUtc": "2026-11-02T10:00:00Z",
+    "AsOfDate": "2026-11-02",
+    "Buckets": [
       {
-        "World": "fenix",
-        "Status": "confirmed",
-        "Reason": null,
-        "PublicationId": "627d491a-5792-430c-92a5-a965a3ae6924",
-        "SourceCutoffUtc": "2026-10-22T21:00:00Z",
-        "CapturedAtUtc": "2026-10-23T06:00:00Z",
-        "PublishedAtUtc": "2026-10-23T06:05:00Z",
-        "ScopeComplete": true,
-        "Scope": "registered-canonical-supplier-agreements",
-        "RequestedKeys": 1,
-        "ReturnedKeys": 1,
-        "ExcludedKeys": 2,
-        "Buckets": [
-          {
-            "CurrencyCode": "830",
-            "CurrencyLabel": null,
-            "RowCount": 1,
-            "SignedBalance": -1527.0,
-            "Payable": 1527.0,
-            "Advance": 0
-          }
-        ]
-      },
-      {
-        "World": "amg",
-        "Status": "unavailable",
-        "Reason": "Missing confirmed publication",
-        "PublicationId": null,
-        "SourceCutoffUtc": null,
-        "CapturedAtUtc": null,
-        "PublishedAtUtc": null,
-        "ScopeComplete": false,
-        "Scope": "registered-canonical-supplier-agreements",
-        "RequestedKeys": null,
-        "ReturnedKeys": null,
-        "ExcludedKeys": null,
-        "Buckets": []
+        "CurrencyCode": "UAH",
+        "RowCount": 2,
+        "GoodsRowCount": 1,
+        "ServiceRowCount": 1,
+        "UnknownRowCount": 0,
+        "SignedBalance": -1487,
+        "Payable": 1527,
+        "Advance": 40
       }
     ]
   },
   "rows": {
-    "World": "fenix",
-    "PublicationId": "627d491a-5792-430c-92a5-a965a3ae6924",
-    "CurrencyCode": "830",
-    "SourceCutoffUtc": "2026-10-22T21:00:00Z",
+    "CurrencyCode": "UAH",
+    "AsOfDate": "2026-11-02",
     "Offset": 0,
     "Limit": 50,
-    "Total": 1,
+    "Total": 2,
     "Aggregate": {
-      "SignedBalance": -1527,
+      "SignedBalance": -1487,
       "Payable": 1527,
-      "Advance": 0
+      "Advance": 40
     },
     "Rows": [
       {
-        "Id": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "Id": "2-101",
         "PartyKind": 2,
-        "SupplierCode": "1001",
+        "SupplierNetUid": "a0000000-0000-0000-0000-000000000101",
         "SupplierName": "Fixture supplier",
-        "AgreementId": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+        "AgreementNetUid": "b0000000-0000-0000-0000-000000000101",
         "AgreementName": "Fixture agreement",
         "OrganizationName": "Fixture organization",
+        "Known": true,
         "SignedBalance": -1527,
         "Payable": 1527,
         "Advance": 0
+      },
+      {
+        "Id": "3-201",
+        "PartyKind": 3,
+        "SupplierNetUid": "a0000000-0000-0000-0000-000000000201",
+        "SupplierName": "Fixture carrier",
+        "AgreementNetUid": "b0000000-0000-0000-0000-000000000201",
+        "AgreementName": "Fixture service agreement",
+        "OrganizationName": "Fixture organization",
+        "Known": true,
+        "SignedBalance": 40,
+        "Payable": 0,
+        "Advance": 40
       }
     ]
   }

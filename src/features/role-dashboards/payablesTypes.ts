@@ -1,5 +1,5 @@
 export type PayablesWorkspace = 'finance' | 'executive'
-export type PayablesWorldKey = 'fenix' | 'amg'
+export type PayablesPartyKind = 2 | 3
 
 export type PayablesAmounts = {
   signedBalance: number
@@ -9,32 +9,17 @@ export type PayablesAmounts = {
 
 export type PayablesBucket = PayablesAmounts & {
   currencyCode: string
-  currencyLabel: string | null
   rowCount: number
+  goodsRowCount: number
+  serviceRowCount: number
+  unknownRowCount: number
 }
 
-export type PayablesWorld = {
-  world: PayablesWorldKey
-  status: 'unavailable' | 'confirmed'
-  reason: string | null
-  publicationId: string | null
-  sourceCutoffUtc: string | null
-  capturedAtUtc: string | null
-  publishedAtUtc: string | null
-  scopeComplete: boolean
-  scope: string
-  requestedKeys: number | null
-  returnedKeys: number | null
-  excludedKeys: number | null
-  buckets: PayablesBucket[]
-}
-
-export type PayablesSnapshot = { readAtUtc: string; worlds: PayablesWorld[] }
+export type PayablesSnapshot = { readAtUtc: string; asOfDate: string; buckets: PayablesBucket[] }
 
 export type PayablesRowsRequest = {
   workspace: PayablesWorkspace
-  world: PayablesWorldKey
-  publicationId: string
+  asOfDate: string
   currencyCode: string
   offset: number
   limit: number
@@ -42,19 +27,18 @@ export type PayablesRowsRequest = {
 
 export type PayablesRow = PayablesAmounts & {
   id: string
-  partyKind: number
-  supplierCode: string
+  partyKind: PayablesPartyKind
+  supplierNetUid: string
   supplierName: string | null
-  agreementId: string
+  agreementNetUid: string
   agreementName: string | null
   organizationName: string | null
+  known: boolean
 }
 
 export type PayablesRows = {
-  world: PayablesWorldKey
-  publicationId: string
+  asOfDate: string
   currencyCode: string
-  sourceCutoffUtc: string
   offset: number
   limit: number
   total: number
@@ -62,4 +46,4 @@ export type PayablesRows = {
   rows: PayablesRow[]
 }
 
-export type PayablesSelection = { world: PayablesWorld; bucket: PayablesBucket }
+export type PayablesSelection = { asOfDate: string; bucket: PayablesBucket }

@@ -1,20 +1,24 @@
-import type { PayablesAmounts, PayablesBucket, PayablesRows, PayablesSelection } from '../payablesTypes'
+import type { PayablesAmounts, PayablesRow, PayablesRows, PayablesSelection } from '../payablesTypes'
 
 const money = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 4 })
-const time = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Europe/Kyiv' })
 
 export const formatPayablesAmount = (value: number) => money.format(value)
-export const formatPayablesTime = (value: string) => `${time.format(new Date(value))} (Київ)`
-export const payablesCurrencyLabel = (bucket: PayablesBucket) => bucket.currencyLabel && bucket.currencyLabel !== bucket.currencyCode ? `${bucket.currencyLabel} (${bucket.currencyCode})` : bucket.currencyCode
-export const payablesScopeLabel = (scope: string) => scope === 'registered-canonical-supplier-agreements' ? 'Зареєстровані договори постачальників за організацією та валютою' : scope
+export const formatPayablesDate = (value: string) => value.split('-').reverse().join('.')
+export const payablesSettlementRoute = (row: PayablesRow) => row.partyKind === 2
+  ? `/suppliers/accounting-cash-flow/${row.supplierNetUid}`
+  : `/accounting/supplier-organizations/cash-flow/${row.supplierNetUid}`
+
+export function payablesGridFromDate(asOfDate: string) {
+  const next = new Date(`${asOfDate}T00:00:00Z`)
+  next.setUTCDate(next.getUTCDate() + 1)
+  return formatPayablesDate(next.toISOString().slice(0, 10))
+}
 
 function sameAmounts(left: PayablesAmounts, right: PayablesAmounts) {
   return left.signedBalance === right.signedBalance && left.payable === right.payable && left.advance === right.advance
 }
 
 export function matchesPayablesSelection(data: PayablesRows, selected: PayablesSelection) {
-  return data.world === selected.world.world && data.publicationId === selected.world.publicationId
-    && data.currencyCode === selected.bucket.currencyCode && data.total === selected.bucket.rowCount
-    && Date.parse(data.sourceCutoffUtc) === Date.parse(selected.world.sourceCutoffUtc ?? '')
-    && sameAmounts(data.aggregate, selected.bucket)
+  return data.asOfDate === selected.asOfDate && data.currencyCode === selected.bucket.currencyCode
+    && data.total === selected.bucket.rowCount && sameAmounts(data.aggregate, selected.bucket)
 }

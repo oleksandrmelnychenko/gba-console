@@ -1,16 +1,21 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { renderWithMantine } from '../../../test/renderWithMantine'
 import { getPayablesRows, getPayablesSnapshot } from '../api/dashboardPayablesApi'
-import { payablesRows, payablesSnapshot, payablesWorld } from '../payablesTestData'
+import { payablesBucket, payablesRows, payablesSnapshot } from '../payablesTestData'
 import { PayablesSnapshotPanel } from './PayablesSnapshotPanel'
 import { PayablesRowsModal } from './PayablesRowsModal'
 
 vi.mock('../api/dashboardPayablesApi', () => ({ getPayablesSnapshot: vi.fn(), getPayablesRows: vi.fn() }))
 
 function renderPanel() {
-  return renderWithMantine(<I18nProvider><PayablesSnapshotPanel workspace="finance" /></I18nProvider>)
+  return renderWithMantine(<MemoryRouter><I18nProvider><PayablesSnapshotPanel workspace="finance" /></I18nProvider></MemoryRouter>)
+}
+
+function renderModal(selected = { asOfDate: '2026-11-02', bucket: payablesBucket() }, workspace: 'finance' | 'executive' = 'finance') {
+  return renderWithMantine(<MemoryRouter><I18nProvider><PayablesRowsModal workspace={workspace} selected={selected} onClose={vi.fn()} /></I18nProvider></MemoryRouter>)
 }
 
 beforeEach(() => {
@@ -19,87 +24,74 @@ beforeEach(() => {
   vi.mocked(getPayablesRows).mockResolvedValue(payablesRows())
 })
 
-describe('payables source presentation', () => {
-  it('shows unavailable AMG without fabricated zero and Fenix liability without netting the advance', async () => {
+describe('payables from GBA supplier documents', () => {
+  it('shows the business day, debt and advances without netting and without any 1C world switch', async () => {
     renderPanel()
-    const fenix = await screen.findByTestId('payables-world-fenix')
-    expect(within(fenix).getByText('100,00')).toBeTruthy()
-    expect(within(fenix).getByText('20,00')).toBeTruthy()
-    expect(within(fenix).getByText('Свіжість після цього зрізу не підтверджена.')).toBeTruthy()
-    expect(within(fenix).getByText(/Станом на/).textContent).toContain('03:00')
-    const amg = screen.getByTestId('payables-world-amg')
-    expect(within(amg).getByText('Валюту боргу не підтверджено')).toBeTruthy()
-    expect(within(amg).queryByText('0,00')).toBeNull()
-    expect(within(amg).queryByRole('button', { name: /Розшифровка/ })).toBeNull()
-    expect(screen.getByText(/Обраний період продажів на нього не впливає/)).toBeTruthy()
+    const usd = await screen.findByTestId('payables-currency-USD')
+    expect(within(usd).getByText('100,00')).toBeTruthy()
+    expect(within(usd).getByText('20,00')).toBeTruthy()
+    expect(screen.getByText(/Станом на кінець дня/).textContent).toContain('02.11.2026')
+    expect(screen.getByText(/з датою «з» 03.11.2026/)).toBeTruthy()
+    expect(screen.queryByText(/Fenix|AMG|1С/)).toBeNull()
   })
 
-  it('distinguishes source movements, verified empty replies and excluded source scope', async () => {
+  it('keeps currencies separate and warns about agreements whose receipt amount is unconfirmed', async () => {
     const data = payablesSnapshot()
-    data.worlds[0] = payablesWorld({ requestedKeys: 4, returnedKeys: 2, excludedKeys: 3 })
+    data.buckets.push(payablesBucket({ currencyCode: 'UAH', rowCount: 3, goodsRowCount: 3, serviceRowCount: 0, unknownRowCount: 1, signedBalance: -500, payable: 500, advance: 0 }))
     vi.mocked(getPayablesSnapshot).mockResolvedValue(data)
     renderPanel()
-    await screen.findByText('З рухом у джерелі: 2')
-    expect(screen.getByText(/Підтверджених порожніх відповідей: 2/)).toBeTruthy()
-    expect(screen.getByText(/Поза обсягом цього джерела: 3/)).toBeTruthy()
+    const uah = await screen.findByTestId('payables-currency-UAH')
+    expect(within(uah).getByText('500,00')).toBeTruthy()
+    expect(within(uah).getByText(/Договорів без підтвердженої суми приходу: 1/)).toBeTruthy()
+    expect(within(screen.getByTestId('payables-currency-USD')).queryByText(/без підтвердженої/)).toBeNull()
   })
 
-  it('keeps worlds and source currencies separate and opens only the selected immutable slice', async () => {
-    const data = payablesSnapshot()
-    data.worlds[0].buckets.push({ currencyCode: 'UAH', currencyLabel: 'Гривня', rowCount: 1, signedBalance: -500, payable: 500, advance: 0 })
-    data.worlds[1] = payablesWorld({ world: 'amg', publicationId: 'b0000000-0000-0000-0000-000000000001', buckets: [{ currencyCode: 'USD', currencyLabel: 'USD', rowCount: 1, signedBalance: -900, payable: 900, advance: 0 }] })
-    vi.mocked(getPayablesSnapshot).mockResolvedValue(data)
+  it('opens the drilldown for the same day and currency and links each row to its settlement grid', async () => {
     renderPanel()
-    const fenix = await screen.findByTestId('payables-world-fenix')
-    expect(within(fenix).getByText('Гривня (UAH)')).toBeTruthy()
-    expect(within(screen.getByTestId('payables-world-amg')).getByText('900,00')).toBeTruthy()
-    fireEvent.click(within(fenix).getByRole('button', { name: 'Розшифровка · 2 записів' }))
-    expect(await screen.findByText('Постачальник один')).toBeTruthy()
-    expect(getPayablesRows).toHaveBeenCalledWith(expect.objectContaining({ workspace: 'finance', world: 'fenix', publicationId: data.worlds[0].publicationId, currencyCode: 'USD', offset: 0, limit: 50 }), expect.any(AbortSignal))
+    fireEvent.click(await screen.findByRole('button', { name: 'Розшифровка · 2 договорів' }))
+    const link = (await screen.findByText('Постачальник один')).closest('a')
+    expect(link?.getAttribute('href')).toBe('/suppliers/accounting-cash-flow/a0000000-0000-0000-0000-000000000011')
+    expect(screen.getByText('Перевізник два').closest('a')?.getAttribute('href')).toBe('/accounting/supplier-organizations/cash-flow/a0000000-0000-0000-0000-000000000012')
+    expect(getPayablesRows).toHaveBeenCalledWith({ workspace: 'finance', asOfDate: '2026-11-02', currencyCode: 'USD', offset: 0, limit: 50 }, expect.any(AbortSignal))
   })
 
-  it('replaces previous confirmed values with an explicit refresh error and supports retry', async () => {
+  it('replaces previous values with an explicit refresh error and supports retry', async () => {
     vi.mocked(getPayablesSnapshot).mockResolvedValueOnce(payablesSnapshot()).mockRejectedValueOnce(new Error('Джерело недоступне')).mockResolvedValue(payablesSnapshot())
     renderPanel()
-    await screen.findByTestId('payables-world-fenix')
+    await screen.findByTestId('payables-currency-USD')
     fireEvent.click(screen.getByRole('button', { name: 'Оновити відображення' }))
     await screen.findByText('Джерело недоступне')
-    expect(screen.queryByTestId('payables-world-fenix')).toBeNull()
+    expect(screen.queryByTestId('payables-currency-USD')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Оновити відображення' }))
-    await screen.findByTestId('payables-world-fenix')
+    await screen.findByTestId('payables-currency-USD')
     expect(screen.queryByText('Джерело недоступне')).toBeNull()
   })
 
-  it('allows an explicitly scoped partial snapshot drilldown without implying all-source coverage', async () => {
-    const data = payablesSnapshot()
-    data.worlds[0].scopeComplete = false
-    vi.mocked(getPayablesSnapshot).mockResolvedValue(data)
-    renderPanel()
-    await screen.findByText('Покриття зареєстрованих ключів неповне. Наведені суми охоплюють лише підтверджені записи.')
-    fireEvent.click(screen.getByRole('button', { name: /Розшифровка/ }))
-    await screen.findByText('Постачальник один')
-    expect(screen.getByText('Покриття неповне; наведено лише підтверджену область.')).toBeTruthy()
-  })
-
-  it('does not display mismatched pinned-source aggregates as a valid drilldown', async () => {
+  it('does not display a drilldown whose aggregate differs from the tile', async () => {
     vi.mocked(getPayablesRows).mockResolvedValue({ ...payablesRows(), aggregate: { signedBalance: -81, payable: 101, advance: 20 } })
-    const world = payablesWorld()
-    renderWithMantine(<I18nProvider><PayablesRowsModal workspace="finance" selected={{ world, bucket: world.buckets[0] }} onClose={vi.fn()} /></I18nProvider>)
-    await screen.findByText('Розшифровка не відповідає обраному зрізу або його підсумкам. Закрийте її та оновіть відображення.')
+    renderModal()
+    await screen.findByText('Розшифровка не відповідає підсумкам панелі. Закрийте її та оновіть відображення.')
     expect(screen.queryByText('Постачальник один')).toBeNull()
   })
 
-  it('pages the full source population with the same publication, world and currency', async () => {
-    const world = payablesWorld()
-    world.buckets[0].rowCount = 51
+  it('marks an unconfirmed agreement instead of showing it as zero', async () => {
+    const rows = payablesRows()
+    rows.rows[1] = { ...rows.rows[1], known: false, signedBalance: 0, payable: 0, advance: 0 }
+    rows.aggregate = { signedBalance: -100, payable: 100, advance: 0 }
+    vi.mocked(getPayablesRows).mockResolvedValue(rows)
+    renderModal({ asOfDate: '2026-11-02', bucket: payablesBucket({ unknownRowCount: 1, signedBalance: -100, payable: 100, advance: 0 }) })
+    expect(await screen.findByText('Сума приходу не підтверджена')).toBeTruthy()
+  })
+
+  it('pages the full population with the same day and currency', async () => {
     vi.mocked(getPayablesRows).mockImplementation(async request => ({
       ...payablesRows(), offset: request.offset, total: 51,
       rows: Array.from({ length: request.offset === 0 ? 50 : 1 }, (_, index) => ({ ...payablesRows().rows[0], id: `row-${request.offset + index}`, supplierName: `Постачальник ${request.offset + index}` })),
     }))
-    renderWithMantine(<I18nProvider><PayablesRowsModal workspace="executive" selected={{ world, bucket: world.buckets[0] }} onClose={vi.fn()} /></I18nProvider>)
+    renderModal({ asOfDate: '2026-11-02', bucket: payablesBucket({ rowCount: 51, goodsRowCount: 50 }) }, 'executive')
     await screen.findByText('Постачальник 0')
     fireEvent.click(screen.getByRole('button', { name: '2' }))
     await screen.findByText('Постачальник 50')
-    await waitFor(() => expect(getPayablesRows).toHaveBeenLastCalledWith({ workspace: 'executive', world: 'fenix', publicationId: world.publicationId, currencyCode: 'USD', offset: 50, limit: 50 }, expect.any(AbortSignal)))
+    await waitFor(() => expect(getPayablesRows).toHaveBeenLastCalledWith({ workspace: 'executive', asOfDate: '2026-11-02', currencyCode: 'USD', offset: 50, limit: 50 }, expect.any(AbortSignal)))
   })
 })
