@@ -1,6 +1,6 @@
 import { ActionIcon, Button, Group, Popover, TextInput, Tooltip } from '@mantine/core'
 import { DatePicker, type DatePickerPreset } from '@mantine/dates'
-import { CalendarDays } from 'lucide-react'
+import { CalendarDays, Ellipsis } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useI18n } from '../i18n/useI18n'
 import { formatKyivBusinessDate } from '../date/dateTime'
@@ -15,6 +15,7 @@ type Props = {
   required?: boolean
   fromLabel?: string
   toLabel?: string
+  trigger?: 'calendar' | 'more'
   onChange: (range: { from: string; to: string }) => void
 }
 
@@ -54,7 +55,7 @@ function buildPresets(t: (key: string) => string, today: string): DatePickerPres
   ]
 }
 
-export function ToolbarDateRangeFilter({ from, to, min, max, disabled, required = false, fromLabel, toLabel, onChange }: Props) {
+export function ToolbarDateRangeFilter({ from, to, min, max, disabled, required = false, fromLabel, toLabel, trigger = 'calendar', onChange }: Props) {
   const { t } = useI18n()
   const [opened, setOpened] = useState(false)
   const [draft, setDraft] = useState({ from, to })
@@ -88,7 +89,7 @@ export function ToolbarDateRangeFilter({ from, to, min, max, disabled, required 
               aria-expanded={opened}
               onClick={() => changeOpened(!opened)}
             >
-              <CalendarDays size={18} />
+              {trigger === 'more' ? <Ellipsis size={18} /> : <CalendarDays size={18} />}
             </ActionIcon>
           </Tooltip>
         </Popover.Target>
