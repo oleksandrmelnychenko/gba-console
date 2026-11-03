@@ -19,6 +19,10 @@ function sameAmounts(left: PayablesAmounts, right: PayablesAmounts) {
 }
 
 export function matchesPayablesSelection(data: PayablesRows, selected: PayablesSelection) {
-  return data.asOfDate === selected.asOfDate && data.currencyCode === selected.bucket.currencyCode
+  return (data.partyKind ?? null) === (selected.partyKind ?? null)
+    && (selected.partyKind === undefined || data.rows.every(row => row.partyKind === selected.partyKind))
+    && data.asOfDate === selected.asOfDate && data.currencyCode === selected.bucket.currencyCode
     && data.total === selected.bucket.rowCount && sameAmounts(data.aggregate, selected.bucket)
 }
+
+export const payablesScopeTitle = (kind?: 2 | 3) => kind === 2 ? 'Постачальники товарів' : kind === 3 ? 'Послуги та інші розрахунки' : 'Розрахунки за договорами'

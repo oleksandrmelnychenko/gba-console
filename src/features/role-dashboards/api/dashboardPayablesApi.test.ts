@@ -1,7 +1,7 @@
 import wire from '../payables-wire.testData.json'
 import { describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { payablesBucket, payablesRows, payablesSnapshot } from '../payablesTestData'
+import { payablesBucket, payablesRows, payablesSnapshot, scopedPayablesSnapshot, scopedPayablesRows } from '../payablesTestData'
 import type { PayablesRowsRequest } from '../payablesTypes'
 import { getPayablesRows, getPayablesSnapshot, normalizePayablesRows, normalizePayablesSnapshot } from './dashboardPayablesApi'
 
@@ -43,6 +43,27 @@ describe('payables GBA document contract', () => {
     expect(() => normalizePayablesSnapshot({ ...snapshot, buckets: [payablesBucket({ currencyCode: '' })] })).toThrow()
     expect(() => normalizePayablesSnapshot({ ...snapshot, asOfDate: '02.11.2026' })).toThrow()
     expect(() => normalizePayablesSnapshot({ ...snapshot, readAtUtc: '2026-11-02T10:00:00' })).toThrow()
+  })
+
+  it('requires an exact echoed category and rejects a mixed snapshot or drilldown', () => {
+    const selected = { ...request, partyKind: 2 as const }
+    expect(normalizePayablesSnapshot(scopedPayablesSnapshot(2), 2).partyKind).toBe(2)
+    expect(normalizePayablesRows(scopedPayablesRows(2), selected).partyKind).toBe(2)
+    expect(() => normalizePayablesSnapshot(payablesSnapshot(), 2)).toThrow()
+    expect(() => normalizePayablesSnapshot(scopedPayablesSnapshot(3), 2)).toThrow()
+    expect(() => normalizePayablesSnapshot({ ...payablesSnapshot(), partyKind: 2 }, 2)).toThrow()
+    expect(() => normalizePayablesRows(payablesRows(), selected)).toThrow()
+    expect(() => normalizePayablesRows({ ...payablesRows(), partyKind: 2 }, selected)).toThrow()
+    expect(() => normalizePayablesRows(scopedPayablesRows(3), selected)).toThrow()
+    expect(() => normalizePayablesSnapshot({ ...scopedPayablesSnapshot(2), partyKind: 7 }, 2)).toThrow()
+  })
+
+  it('sends the same explicit category for snapshot and drilldown', async () => {
+    vi.mocked(apiRequest).mockResolvedValueOnce(scopedPayablesSnapshot(3)).mockResolvedValueOnce(scopedPayablesRows(3))
+    await getPayablesSnapshot('finance', undefined, 3)
+    await getPayablesRows({ ...request, partyKind: 3 })
+    expect(apiRequest).toHaveBeenCalledWith('/dashboards/payables', { query: { workspace: 'finance', partyKind: 3 }, signal: undefined })
+    expect(apiRequest).toHaveBeenCalledWith('/dashboards/payables/rows', { query: { ...request, partyKind: 3 }, signal: undefined })
   })
 
   it('sends the day and currency and no sales-period parameters', async () => {

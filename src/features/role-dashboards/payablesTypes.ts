@@ -15,10 +15,11 @@ export type PayablesBucket = PayablesAmounts & {
   unknownRowCount: number
 }
 
-export type PayablesSnapshot = { readAtUtc: string; asOfDate: string; buckets: PayablesBucket[] }
+export type PayablesSnapshot = { partyKind?: PayablesPartyKind | null; readAtUtc: string; asOfDate: string; buckets: PayablesBucket[] }
 
 export type PayablesRowsRequest = {
   workspace: PayablesWorkspace
+  partyKind?: PayablesPartyKind
   asOfDate: string
   currencyCode: string
   offset: number
@@ -37,6 +38,7 @@ export type PayablesRow = PayablesAmounts & {
 }
 
 export type PayablesRows = {
+  partyKind?: PayablesPartyKind | null
   asOfDate: string
   currencyCode: string
   offset: number
@@ -46,4 +48,4 @@ export type PayablesRows = {
   rows: PayablesRow[]
 }
 
-export type PayablesSelection = { asOfDate: string; bucket: PayablesBucket }
+export type PayablesSelection = { partyKind?: PayablesPartyKind; asOfDate: string; bucket: PayablesBucket }
