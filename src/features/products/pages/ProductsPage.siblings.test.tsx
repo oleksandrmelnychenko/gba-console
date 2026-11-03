@@ -279,7 +279,7 @@ describe('ProductsPage sibling cards', () => {
     await waitFor(() => expect(load).toHaveBeenLastCalledWith(expect.objectContaining({
       includeSiblings: true,
       productNetId: currentNetId,
-    })))
+    }), expect.any(Function)))
     await screen.findByText(waitForCardRows)
 
     expect(tableHeaders()[0]).toBe('Картка')

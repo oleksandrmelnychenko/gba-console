@@ -1,3 +1,4 @@
+import { partialPhysicalCoverage } from '../../../shared/ui/product-movement-history/physicalCoverage.test-fixtures'
 // @ts-expect-error The app build excludes Node types; Vitest runs this test in Node.
 import { readFileSync } from 'node:fs'
 import { MantineProvider } from '@mantine/core'
@@ -133,7 +134,7 @@ describe('ProductsPage income price columns', () => {
   it('loads the whole receipt history by default so old lots that hold stock are listed', async () => {
     await openIncomeTab()
 
-    expect(getProductIncomeMovementsMock).toHaveBeenCalledWith(expect.objectContaining({ from: '2000-01-01' }))
+    expect(getProductIncomeMovementsMock).toHaveBeenCalledWith(expect.objectContaining({ from: '2000-01-01' }), expect.any(Function))
   })
 
   it('replaces the English and mixed-language headings with Ukrainian terms', async () => {
@@ -258,7 +259,7 @@ describe('ProductsPage inline movement table width', () => {
       const table = document.querySelector('.product-inline-tab-pane .data-table-table')!
       const headers = Array.from(table.querySelectorAll('thead th'))
       const widths = Array.from(table.querySelectorAll('col')).map(col => Number.parseFloat(col.style.width))
-      expect(headers[0].textContent).toContain('Номер')
+      expect(headers.filter(header => !/^(Собівартість руху|ПДВ руху)/u.test(header.textContent ?? ''))[0].textContent).toContain('Номер')
       for (const [label, minimum] of [['Номер', 140], ['Відповідальний', 170], ['Ціна', 100], ['Кількість', 110]] as const) {
         const index = headers.findIndex(header => header.querySelector('.data-table-header-label')?.textContent === label)
         expect(index).toBeGreaterThanOrEqual(0)
@@ -271,7 +272,7 @@ describe('ProductsPage inline movement table width', () => {
 
   it.each([
     { viewportWidth: 1560, shouldScroll: true },
-    { viewportWidth: 2200, shouldScroll: false },
+    { viewportWidth: 3000, shouldScroll: false },
   ])('renders the Розхід columns with horizontal overflow=$shouldScroll at $viewportWidth px', async ({ viewportWidth, shouldScroll }) => {
     vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
       return this.classList.contains('data-table-scroll') ? viewportWidth : 0
@@ -355,7 +356,7 @@ describe('BUG-1276 product outcome bottom control', () => {
     fireEvent.change(screen.getByLabelText('По'), { target: { value: '2026-10-20' } })
     fireEvent.click(screen.getByRole('button', { name: 'Застосувати' }))
     await screen.findByText('КОк00001761')
-    expect(getProductOutcomeMovements).toHaveBeenLastCalledWith({ from: '2026-09-20', to: '2026-10-20', productNetId: netId })
+    expect(getProductOutcomeMovements).toHaveBeenLastCalledWith({ from: '2026-09-20', to: '2026-10-20', productNetId: netId }, expect.any(Function))
 
     const scroll = document.querySelector<HTMLElement>('.product-inline-tab-pane .data-table-scroll')!
     const table = scroll.querySelector('table')!
@@ -366,7 +367,9 @@ describe('BUG-1276 product outcome bottom control', () => {
     expect(tableStyles).toMatch(/\.data-table\[data-sticky-horizontal-scrollbar\] > \.data-table-scroll\s*\{[^}]*scrollbar-width:\s*auto\s*;/)
     expect(tableStyles).toMatch(/\.data-table\[data-sticky-horizontal-scrollbar\] > \.data-table-scroll\s*\{[^}]*scrollbar-gutter:\s*auto\s*;/)
     expect(tableStyles).toMatch(/\.data-table-sticky-scrollbar::-webkit-scrollbar\s*\{[^}]*height:\s*18px\s*;/)
-    expect(table.querySelectorAll('thead th')).toHaveLength(14)
+    expect(table.querySelectorAll('thead th')).toHaveLength(16)
+    expect(within(table).getByRole('columnheader', { name: /Собівартість руху/ })).toBeTruthy()
+    expect(within(table).getByRole('columnheader', { name: /ПДВ руху/ })).toBeTruthy()
     expect(table.querySelectorAll('tbody tr')).toHaveLength(rowCount)
     const firstRow = table.querySelector('tbody tr')!
     expect(firstRow.querySelector('td:nth-last-child(2)')?.textContent).toBe('16,14')
@@ -439,7 +442,7 @@ describe('ProductsPage movement audit regressions', () => {
     fireEvent.change(screen.getByLabelText('З'), { target: { value: '2020-07-13' } })
     fireEvent.change(screen.getByLabelText('По'), { target: { value: '2020-07-13' } })
     fireEvent.click(screen.getByRole('button', { name: 'Застосувати' }))
-    await waitFor(() => expect(load).toHaveBeenCalledExactlyOnceWith({ productNetId: 'product-42', from: '2020-07-13', to: '2020-07-13' }))
+    await waitFor(() => expect(load).toHaveBeenCalledExactlyOnceWith({ productNetId: 'product-42', from: '2020-07-13', to: '2020-07-13' }, expect.any(Function)))
   })
 
   it('reloads a successful empty income response after synchronization without changing the dates', async () => {
@@ -452,7 +455,7 @@ describe('ProductsPage movement audit regressions', () => {
     await waitFor(() => expect((refresh as HTMLButtonElement).disabled).toBe(false))
     fireEvent.click(refresh)
     await screen.findByText('AFTER-SYNC')
-    expect(getProductIncomeMovementsMock).toHaveBeenLastCalledWith(original)
+    expect(getProductIncomeMovementsMock).toHaveBeenLastCalledWith(original, expect.any(Function))
   })
 
   it('discards an income export completed after its date interval changed', async () => {
@@ -542,3 +545,14 @@ function openDatePicker() {
   const toolbar = document.querySelector('.product-movement-toolbar') as HTMLElement
   fireEvent.click(within(toolbar).getByRole('button', { name: /^Період:/, hidden: true }))
 }
+
+
+it.each(['Прихід', 'Розхід'] as const)('keeps partial physical coverage visible for empty inline %s', async tab => {
+  getProductIncomeMovementsMock.mockImplementation(async (_params, onCoverage) => { onCoverage?.([partialPhysicalCoverage]); return [] })
+  vi.mocked(getProductOutcomeMovements).mockImplementation(async (_params, onCoverage) => { onCoverage?.([partialPhysicalCoverage]); return [] })
+  await openIncomeTab()
+  if (tab === 'Розхід') fireEvent.click(screen.getByRole('button', { name: tab }))
+  expect(await screen.findByText('Імпортована історія не покриває весь вибраний період')).toBeTruthy()
+  expect(screen.getByText(/01.01.2025 — 02.11.2026/)).toBeTruthy()
+  expect(document.body.textContent).not.toMatch(/private-publication|private-receipt/)
+})

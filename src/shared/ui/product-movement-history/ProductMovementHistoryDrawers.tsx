@@ -1,3 +1,5 @@
+import { PhysicalCoverageNotice } from './PhysicalCoverageNotice'
+import { physicalMovementResponse, type PhysicalCoverage } from './physicalCoverage'
 import { ToolbarDateRangeFilter } from '../ToolbarDateRangeFilter'
 import { getProductMovementRowKey, withProductSourceHistoryColumns, type ProductSourceHistoryRow } from './productSourceHistory'
 import { withMovementDocumentStateColumns } from './movementDocumentState'
@@ -240,6 +242,7 @@ type MovementDateState = {
 type MovementDateAction = { type: 'set-date-range'; from: string; to: string }
 
 type MovementRowsState<TRow> = {
+  physicalCoverage: PhysicalCoverage[]
   error: string | null
   isLoading: boolean
   rows: TRow[]
@@ -249,7 +252,7 @@ type MovementRowsAction<TRow> =
   | { type: 'clear-error' }
   | { type: 'load-failed'; error: string }
   | { type: 'load-started' }
-  | { type: 'load-succeeded'; rows: TRow[] }
+  | { type: 'load-succeeded'; rows: TRow[]; physicalCoverage?: PhysicalCoverage[] }
   | { type: 'set-error'; error: string }
 
 type ProductMovementExportModalState = {
@@ -457,6 +460,7 @@ function createMovementRowsState<TRow>(): MovementRowsState<TRow> {
     error: null,
     isLoading: false,
     rows: [],
+    physicalCoverage: [],
   }
 }
 
@@ -476,6 +480,7 @@ function movementRowsReducer<TRow>(
         error: action.error,
         isLoading: false,
         rows: [],
+        physicalCoverage: [],
       }
     case 'load-started':
       return {
@@ -483,12 +488,14 @@ function movementRowsReducer<TRow>(
         error: null,
         isLoading: true,
         rows: [],
+        physicalCoverage: [],
       }
     case 'load-succeeded':
       return {
         ...state,
         isLoading: false,
         rows: action.rows,
+        physicalCoverage: action.physicalCoverage ?? [],
       }
     case 'set-error':
       return {
@@ -875,7 +882,7 @@ function ProductMovementPanel({
         }, requestPath)
 
         if (!cancelled) {
-          dispatchRowsState({ rows: nextRows, type: 'load-succeeded' })
+          dispatchRowsState({ ...nextRows, type: 'load-succeeded' })
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -979,6 +986,7 @@ function ProductMovementPanel({
           {activeError}
         </Alert>
       ) : null}
+      {!activeError && <PhysicalCoverageNotice coverage={rowsState.physicalCoverage} />}
       <DataTable
         columns={columns}
         data={activeError ? [] : rows}
@@ -1783,7 +1791,7 @@ function ProductIncomeMovementPanel({
         }, requestPath)
 
         if (!cancelled) {
-          dispatchRowsState({ rows: nextRows, type: 'load-succeeded' })
+          dispatchRowsState({ ...nextRows, type: 'load-succeeded' })
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -1863,6 +1871,7 @@ function ProductIncomeMovementPanel({
           {t('Знайдено дві активні складські гілки одного приходу з AMG і Fenix. Записи показано окремо, оскільки обидва впливають на залишок.')}
         </Alert>
       ) : null}
+      {!activeError && <PhysicalCoverageNotice coverage={rowsState.physicalCoverage} />}
       <DataTable
         columns={columns}
         data={activeError ? [] : treeRows}
@@ -1992,7 +2001,7 @@ function ProductOutcomeMovementPanel({
         }, requestPath)
 
         if (!cancelled) {
-          dispatchRowsState({ rows: nextRows, type: 'load-succeeded' })
+          dispatchRowsState({ ...nextRows, type: 'load-succeeded' })
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -2067,6 +2076,7 @@ function ProductOutcomeMovementPanel({
           {activeError}
         </Alert>
       ) : null}
+      {!activeError && <PhysicalCoverageNotice coverage={rowsState.physicalCoverage} />}
       <DataTable
         columns={columns}
         data={activeError ? [] : rows}
@@ -2712,8 +2722,9 @@ function useStorageLocationHistoryColumns(): DataTableColumn<ProductStorageLocat
   )
 }
 
-async function getProductMovements(params: ProductMovementParams, requestPath: string): Promise<ProductMovement[]> {
+async function getProductMovements(params: ProductMovementParams, requestPath: string): Promise<{ rows: ProductMovement[]; physicalCoverage: PhysicalCoverage[] }> {
   const result = await apiRequest<unknown>(requestPath, {
+    responseMode: 'envelope',
     query: {
       from: params.from,
       movementType: params.movementType,
@@ -2727,7 +2738,8 @@ async function getProductMovements(params: ProductMovementParams, requestPath: s
     },
   })
 
-  return normalizeArray(result) as ProductMovement[]
+  const response = physicalMovementResponse(result)
+  return { rows: normalizeArray(response.body) as ProductMovement[], physicalCoverage: response.coverage }
 }
 
 async function getHistoricalSourceMovements(
@@ -2774,8 +2786,9 @@ async function getInformationalMovements(
 async function getProductIncomeMovements(
   params: ProductIncomeOutcomeMovementParams,
   requestPath: string,
-): Promise<ProductIncomeMovement[]> {
+): Promise<{ rows: ProductIncomeMovement[]; physicalCoverage: PhysicalCoverage[] }> {
   const result = await apiRequest<unknown>(requestPath, {
+    responseMode: 'envelope',
     query: {
       from: params.from,
       productNetId: params.productNetId,
@@ -2787,14 +2800,16 @@ async function getProductIncomeMovements(
     },
   })
 
-  return normalizeArray(result) as ProductIncomeMovement[]
+  const response = physicalMovementResponse(result)
+  return { rows: normalizeArray(response.body) as ProductIncomeMovement[], physicalCoverage: response.coverage }
 }
 
 async function getProductOutcomeMovements(
   params: ProductIncomeOutcomeMovementParams,
   requestPath: string,
-): Promise<ProductOutcomeMovement[]> {
+): Promise<{ rows: ProductOutcomeMovement[]; physicalCoverage: PhysicalCoverage[] }> {
   const result = await apiRequest<unknown>(requestPath, {
+    responseMode: 'envelope',
     query: {
       from: params.from,
       productNetId: params.productNetId,
@@ -2806,7 +2821,8 @@ async function getProductOutcomeMovements(
     },
   })
 
-  return normalizeArray(result) as ProductOutcomeMovement[]
+  const response = physicalMovementResponse(result)
+  return { rows: normalizeArray(response.body) as ProductOutcomeMovement[], physicalCoverage: response.coverage }
 }
 
 async function getProductStorageLocationHistory(

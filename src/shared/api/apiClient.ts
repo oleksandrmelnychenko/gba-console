@@ -45,6 +45,7 @@ export type ApiRequestOptions = Omit<RequestInit, 'body' | 'credentials'> & {
   errorMessages?: ApiErrorMessages
   query?: QueryParams
   language?: string
+  responseMode?: 'body' | 'envelope'
 }
 
 export class ApiError extends Error {
@@ -133,7 +134,7 @@ function getMutationRequestKey(path: string, options: ApiRequestOptions): string
         ? options.body
         : JSON.stringify(options.body)
 
-  return `${method}:${url}:${bodyKey}`
+  return `${method}:${url}:${bodyKey}:${options.responseMode || 'body'}`
 }
 
 function deduplicatedMutation<T>(path: string, options: ApiRequestOptions): Promise<T> {
@@ -244,7 +245,7 @@ function releaseGetRequest(request: InFlightGetRequest) {
 
 async function sendApiRequest<T>(path: string, options: ApiRequestOptions, allowRefresh: boolean): Promise<T> {
   const auth = options.auth !== false
-  const { auth: _auth, body, errorMessages, language, query, ...requestOptions } = options
+  const { auth: _auth, body, errorMessages, language, query, responseMode, ...requestOptions } = options
   void _auth
 
   let response: Response
@@ -289,7 +290,7 @@ async function sendApiRequest<T>(path: string, options: ApiRequestOptions, allow
     )
   }
 
-  return unwrapApiResponse<T>(payload)
+  return responseMode === 'envelope' ? payload as T : unwrapApiResponse<T>(payload)
 }
 
 function shouldDeduplicateGetRequest(options: ApiRequestOptions): boolean {
@@ -302,7 +303,7 @@ function shouldDeduplicateGetRequest(options: ApiRequestOptions): boolean {
 function getGetRequestKey(path: string, options: ApiRequestOptions): string {
   const authKey = options.auth === false ? 'anon' : 'auth'
 
-  return `${authKey}:${apiUrl(path, options.language || getApiLanguage(), options.query)}`
+  return `${authKey}:${apiUrl(path, options.language || getApiLanguage(), options.query)}:${options.responseMode || 'body'}`
 }
 
 function withCallerSignal<T>(

@@ -1,3 +1,4 @@
+import { PhysicalCoverageNotice } from '../../../shared/ui/product-movement-history/PhysicalCoverageNotice'
 import { ANALYSIS_SCOPE_NOTICE } from '../data/currentVparivanieAnalysis'
 import { MOVEMENT_FILTER_NOTICE } from '../data/currentVparivanieMovements'
 import { ReportTableScrollArea } from './ReportTableScrollArea'
@@ -84,6 +85,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
       {wide && columnWindow ? <Text size="sm" className="report-inline-preview__count" data-testid="report-preview-column-window">
         {columnWindowText(columnWindow.ColumnOffset, columnWindow.ReturnedColumns, columnWindow.TotalColumns)}</Text> : null}
     </div>
+    {preview.PhysicalCoverage?.some(item => !item.ImportedPeriodComplete) ? <PhysicalCoverageNotice coverage={preview.PhysicalCoverage} /> : null}
     <ReportAttributionWarnings request={preview.Request} />
     <CurrentProductFieldsNotice version={workbook?.version} />
     {preview.Request?.presentationCurrency ? <Text size="sm">Валюта звіту: {preview.Request.presentationCurrency.code}. Комерційний курс GBA на дату кожного документа, включно з поверненнями.</Text> : null}

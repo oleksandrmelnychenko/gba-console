@@ -1,3 +1,5 @@
+import { PhysicalCoverageNotice } from '../../../shared/ui/product-movement-history/PhysicalCoverageNotice'
+import type { PhysicalCoverage } from '../../../shared/ui/product-movement-history/physicalCoverage'
 import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
@@ -3174,6 +3176,7 @@ function ProductInlineMovementsTab({
   const productNetUid = product.NetUid?.trim()
   const [dateFrom, setDateFrom] = useState(() => direction === 'income' ? PRODUCT_INCOME_HISTORY_START : getDateDaysAgo(30))
   const [dateTo, setDateTo] = useState(getTodayDate)
+  const [physicalCoverage, setPhysicalCoverage] = useState<PhysicalCoverage[]>([])
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [state, dispatch] = useReducer(inlineMovementReducer, {
     document: null,
@@ -3206,6 +3209,7 @@ function ProductInlineMovementsTab({
 
     async function loadRows() {
       dispatch({ type: 'loading' })
+      setPhysicalCoverage([])
 
       try {
         const params = {
@@ -3214,9 +3218,10 @@ function ProductInlineMovementsTab({
           to: dateTo,
           ...(includeSiblings ? { includeSiblings: true } : {}),
         }
+        const onCoverage = (coverage: PhysicalCoverage[]) => { if (!cancelled) setPhysicalCoverage(coverage) }
         const nextRows = direction === 'income'
-          ? await getProductIncomeMovements(params)
-          : await getProductOutcomeMovements(params)
+          ? await getProductIncomeMovements(params, onCoverage)
+          : await getProductOutcomeMovements(params, onCoverage)
 
         if (!cancelled) {
           dispatch({
@@ -3315,6 +3320,7 @@ function ProductInlineMovementsTab({
           </Stack>
         </Alert>
       )}
+      {!filterError && <PhysicalCoverageNotice coverage={physicalCoverage} />}
       {productNetUid && !filterError && (direction === 'income' ? (
         <ProductIncomeMovementsGrid toolbarPortalTarget={tableToolbarSlot} emptyText={state.error ? '' : t(labels.empty)} includeSiblings={includeSiblings} isLoading={state.isLoading} rows={state.rows as ProductIncomeMovement[]} />
       ) : (

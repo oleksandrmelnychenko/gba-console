@@ -1,3 +1,4 @@
+import { physicalMovementResponse, type PhysicalCoverageListener } from '../../../shared/ui/product-movement-history/physicalCoverage'
 import {
   canEditNativeProductClassification,
   hasNativeProductClassificationChoice,
@@ -419,9 +420,10 @@ export async function getProductConsignmentRemainings(netId: string, signal?: Ab
   return normalizeArray(result) as ProductConsignmentRemaining[]
 }
 
-export async function getProductMovements(params: ProductMovementsParams, signal?: AbortSignal): Promise<ProductMovement[]> {
+export async function getProductMovements(params: ProductMovementsParams, signal?: AbortSignal, onCoverage?: PhysicalCoverageListener): Promise<ProductMovement[]> {
   const result = await apiRequest<unknown>('/consignments/info/assortment/movement/filtered', {
     ...(signal ? { signal } : {}),
+    responseMode: 'envelope',
     query: {
       from: params.from,
       movementType: params.movementType,
@@ -436,13 +438,17 @@ export async function getProductMovements(params: ProductMovementsParams, signal
     },
   })
 
-  return normalizeArray(result) as ProductMovement[]
+  const response = physicalMovementResponse(result)
+  onCoverage?.(response.coverage)
+  return normalizeArray(response.body) as ProductMovement[]
 }
 
 export async function getProductIncomeMovements(
   params: ProductIncomeOutcomeMovementParams,
+  onCoverage?: PhysicalCoverageListener,
 ): Promise<ProductIncomeMovement[]> {
   const result = await apiRequest<unknown>('/consignments/info/assortment/income/filtered', {
+    responseMode: 'envelope',
     query: {
       from: params.from,
       productNetId: params.productNetId,
@@ -455,13 +461,17 @@ export async function getProductIncomeMovements(
     },
   })
 
-  return normalizeArray(result) as ProductIncomeMovement[]
+  const response = physicalMovementResponse(result)
+  onCoverage?.(response.coverage)
+  return normalizeArray(response.body) as ProductIncomeMovement[]
 }
 
 export async function getProductOutcomeMovements(
   params: ProductIncomeOutcomeMovementParams,
+  onCoverage?: PhysicalCoverageListener,
 ): Promise<ProductOutcomeMovement[]> {
   const result = await apiRequest<unknown>('/consignments/info/assortment/outcome/filtered', {
+    responseMode: 'envelope',
     query: {
       from: params.from,
       productNetId: params.productNetId,
@@ -474,7 +484,9 @@ export async function getProductOutcomeMovements(
     },
   })
 
-  return normalizeArray(result) as ProductOutcomeMovement[]
+  const response = physicalMovementResponse(result)
+  onCoverage?.(response.coverage)
+  return normalizeArray(response.body) as ProductOutcomeMovement[]
 }
 
 export async function getProductSiblings(

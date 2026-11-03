@@ -1,3 +1,4 @@
+import { readPhysicalCoverage, type PhysicalCoverage } from '../../../shared/ui/product-movement-history/physicalCoverage'
 import { readConstructorPresentation, type ConstructorPresentation } from './constructorPresentation'
 import { readResolvedPresentationCurrency, type ResolvedReportPresentationCurrency } from './reportPresentationCurrency'
 import { isAnalysisRequest, readAnalysisMetadata, type CurrentVparivanieAnalysisMetadata, type CurrentVparivanieAnalysisRequest } from './currentVparivanieAnalysis'
@@ -47,6 +48,7 @@ export type NativeReportPreviewColumnWindow = { ColumnOffset: number; ColumnLimi
 export type NativeReportPreviewPage = { Offset: number; Limit: number; TotalVisibleRows: number; ReturnedRows: number; HasMore: boolean }
   & Partial<NativeReportPreviewColumnWindow>
 export type NativeReportPreview = {
+  PhysicalCoverage?: PhysicalCoverage[]
   constructorPresentation?: ConstructorPresentation
   numberPresentation?: ReportNumberPresentation
   valueSemantics?: Array<{ columnSourceIndex: number; measureType: number | null; semantics: ReportValueSemantics }>
@@ -238,7 +240,7 @@ export function normalizeNativeReportPreview(response: unknown, fullCurrentVpari
   const productDisplay = analysis ? undefined : normalizeCurrentVparivanieProducts(preview, request, fullCurrentVparivanie)
   const totals = normalizeTotals(preview.Totals, preview.Rows as NativeReportPreviewAxis[], columnIds, preview.RowSchema.length, columnBound)
   const movements = analysis ? undefined : readMovementCoverage({ ...preview, Request: request } as NativeReportPreview)
-  return { ...preview, Request: request, Totals: totals, ...(analysis ? { currentVparivanieAnalysis: analysis } : {}), ...(movements ? { CurrentVparivanieMovements: movements } : {}), ...(workbook ? { WorkbookPresentation: workbook } : {}), ...(productDisplay ? { CurrentVparivanieProducts: productDisplay } : {}), ...(attributes ? { SettlementCounterpartyAttributes: attributes } : {}), ...(regions ? { ClientDiscountRecipientRegions: regions } : {}) } as NativeReportPreview
+  return { ...preview, ...(preview.PhysicalCoverage != null ? { PhysicalCoverage: readPhysicalCoverage(preview.PhysicalCoverage) } : {}), Request: request, Totals: totals, ...(analysis ? { currentVparivanieAnalysis: analysis } : {}), ...(movements ? { CurrentVparivanieMovements: movements } : {}), ...(workbook ? { WorkbookPresentation: workbook } : {}), ...(productDisplay ? { CurrentVparivanieProducts: productDisplay } : {}), ...(attributes ? { SettlementCounterpartyAttributes: attributes } : {}), ...(regions ? { ClientDiscountRecipientRegions: regions } : {}) } as NativeReportPreview
 }
 
 function readColumnWindow(page: Record<string, unknown>, returned: number): NativeReportPreviewColumnWindow | null {

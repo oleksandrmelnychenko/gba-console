@@ -1,3 +1,5 @@
+import { PhysicalCoverageNotice } from '../../../shared/ui/product-movement-history/PhysicalCoverageNotice'
+import type { PhysicalCoverage } from '../../../shared/ui/product-movement-history/physicalCoverage'
 import { useProductImageDraft } from '../useProductImageDraft'
 import { useProductDetailData } from '../useProductDetailData'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
@@ -2062,6 +2064,7 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
   const hasSiblings = hasProductSiblingCards(siblingCards)
   const includeSiblings = hasSiblings && siblingScope === 'all'
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const [physicalCoverage, setPhysicalCoverage] = useState<PhysicalCoverage[]>([])
   const [rows, setRows] = useState<ProductMovement[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(false)
@@ -2100,6 +2103,7 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
 
     async function loadRows() {
       setLoading(true)
+      setPhysicalCoverage([])
       setError(null)
 
       try {
@@ -2110,7 +2114,7 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
           to: dateTo,
           types,
           ...(includeSiblings ? { includeSiblings: true } : {}),
-        }, controller.signal)
+        }, controller.signal, (coverage) => { if (!cancelled) setPhysicalCoverage(coverage) })
 
         if (!cancelled) {
           setRows(nextRows)
@@ -2218,6 +2222,7 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
       {activeError && <Alert className="product-data-alert" color={filterError || missingNetUidError || typesError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">{activeError}</Alert>}
       {!activeError && (
         <div className="product-data-table-body">
+          <PhysicalCoverageNotice coverage={physicalCoverage} />
           <DataTable
             columns={movementColumns}
             data={rows}

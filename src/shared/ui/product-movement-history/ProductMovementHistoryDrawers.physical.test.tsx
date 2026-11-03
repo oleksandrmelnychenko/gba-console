@@ -1,3 +1,4 @@
+import { partialPhysicalCoverage } from './physicalCoverage.test-fixtures'
 import { MantineProvider } from '@mantine/core'
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
@@ -39,9 +40,9 @@ beforeEach(() => {
 })
 afterEach(() => { cleanup(); vi.restoreAllMocks() })
 
-function show(panel: 'income' | 'outcome' | 'movement' | 'detail', row: object) {
+function show(panel: 'income' | 'outcome' | 'movement' | 'detail', row: object | null, withCoverage = false) {
   const path = assortmentMovementRequestPaths[panel === 'detail' ? 'movement' : panel]
-  vi.mocked(apiRequest).mockImplementation(async requestPath => requestPath === path ? [row] : [])
+  vi.mocked(apiRequest).mockImplementation(async requestPath => requestPath === path ? withCoverage ? { Body: row ? [row] : [], PhysicalCoverage: [partialPhysicalCoverage] } : [row] : [])
   return render(<MemoryRouter><MantineProvider env="test"><I18nProvider>
     {panel === 'detail'
       ? <ProductActionDrawer activePanel="movement" product={product} onClose={vi.fn()} onProductSaved={vi.fn()} onReload={vi.fn()} />
@@ -84,5 +85,23 @@ describe('physical movements in real product tables', () => {
     expect(cell('Собівартість руху, EUR').textContent).toBe('0')
     expect(cell('ПДВ руху, EUR').textContent).toBe('—')
     expect(row.textContent).not.toMatch(/999|UNCONFIRMED/)
+  })
+})
+
+
+describe('physical coverage in actual product panels', () => {
+  it.each(['income', 'outcome', 'movement', 'detail'] as const)('%s explains empty partial history without exposing technical identities', async panel => {
+    show(panel, null, true)
+    const notice = await screen.findByText('Імпортована історія не покриває весь вибраний період')
+    expect(notice.closest('[role="alert"]')?.textContent).toContain('01.01.2025 — 02.11.2026')
+    expect(document.body.textContent).not.toMatch(/private-publication|private-receipt/)
+  })
+  it.each(['income', 'outcome', 'movement', 'detail'] as const)('%s keeps later native GBA rows next to the coverage warning', async panel => {
+    show(panel, { ...base, PhysicalSource: undefined, ValuationKnown: undefined,
+      Id: 991, NetUid: 'native-document', DocumentNumber: 'NATIVE-LATER', IncomeToStorageNumber: 'NATIVE-LATER',
+      DocumentFromDate: '2026-11-03T09:00:00Z', FromDate: '2026-11-03T09:00:00Z', IncomeToStorageDate: '2026-11-03T09:00:00Z',
+    }, true)
+    expect(await screen.findByText('NATIVE-LATER')).toBeTruthy()
+    expect(screen.getByText('Імпортована історія не покриває весь вибраний період')).toBeTruthy()
   })
 })
