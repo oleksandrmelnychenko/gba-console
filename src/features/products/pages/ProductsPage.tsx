@@ -1,5 +1,6 @@
 import { PhysicalCoverageNotice } from '../../../shared/ui/product-movement-history/PhysicalCoverageNotice'
 import type { PhysicalCoverage } from '../../../shared/ui/product-movement-history/physicalCoverage'
+import { SYNC_DATA_RANGE_START } from '../../../shared/date/dateTime'
 import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
@@ -3174,7 +3175,7 @@ function ProductInlineMovementsTab({
   const { hasPermission } = useAuth()
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const productNetUid = product.NetUid?.trim()
-  const [dateFrom, setDateFrom] = useState(() => direction === 'income' ? PRODUCT_INCOME_HISTORY_START : getDateDaysAgo(30))
+  const [dateFrom, setDateFrom] = useState(() => direction === 'income' ? SYNC_DATA_RANGE_START : getDateDaysAgo(30))
   const [dateTo, setDateTo] = useState(getTodayDate)
   const [physicalCoverage, setPhysicalCoverage] = useState<PhysicalCoverage[]>([])
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
@@ -3806,7 +3807,6 @@ function getTodayDate(): string {
   return localDate.toISOString().slice(0, 10)
 }
 
-const PRODUCT_INCOME_HISTORY_START = '2000-01-01'
 
 function getDateDaysAgo(days: number): string {
   const now = new Date()

@@ -134,7 +134,7 @@ describe('ProductsPage income price columns', () => {
   it('loads the whole receipt history by default so old lots that hold stock are listed', async () => {
     await openIncomeTab()
 
-    expect(getProductIncomeMovementsMock).toHaveBeenCalledWith(expect.objectContaining({ from: '2000-01-01' }), expect.any(Function))
+    expect(getProductIncomeMovementsMock).toHaveBeenCalledWith(expect.objectContaining({ from: '2025-01-01' }), expect.any(Function))
   })
 
   it('replaces the English and mixed-language headings with Ukrainian terms', async () => {
