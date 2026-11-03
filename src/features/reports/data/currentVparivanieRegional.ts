@@ -1,4 +1,5 @@
 import type { ReportDataset, ReportRequestBody } from '../types'
+import { readPhysicalCoverage, type PhysicalCoverage } from '../../../shared/ui/product-movement-history/physicalCoverage'
 import { isCurrentVparivanieDataset, currentVparivanieFullScope, CURRENT_VPARIVANIE_FULL_NOTE,
   isCurrentVparivanieStockAnchor, type CurrentVparivanieStockAnchor } from './currentVparivanie'
 import { CURRENT_VPARIVANIE_V2_COLUMNS, type CurrentVparivanieV2Cell,
@@ -9,6 +10,7 @@ export type CurrentRegionalSummary = {
   Filters: Array<{ Field: string; Condition: string; Values: string[] }>; Notes: string[]
 }
 export type CurrentVparivanieRegionalResult = {
+  PhysicalCoverage?: PhysicalCoverage[]
   FullScopeVersion?: 1
   Version: 3; From: string; To: string; StockAnchor: CurrentVparivanieStockAnchor
   ProductCount: number; StockFacts: number; SaleFacts: number; ReturnFacts: number; CounterpartyFacts: number
@@ -106,5 +108,6 @@ export function normalizeCurrentVparivanieRegional(value: unknown,
     const columns = 7 + financial.size
     if (financial.size > 256 || rows.length * columns > 1000000) fail()
   }
-  return { ...value, Rows: rows } as CurrentVparivanieRegionalResult
+  return { ...value, Rows: rows, ...(value.PhysicalCoverage != null
+    ? { PhysicalCoverage: readPhysicalCoverage(value.PhysicalCoverage) } : {}) } as CurrentVparivanieRegionalResult
 }

@@ -102,6 +102,8 @@ describe('warehouse stock movement responses', () => {
     expect(formatStockQuantity(1234567.5)).toBe('1 234 567,5')
     expect(formatStockQuantity(-1280)).toBe('-1 280')
     expect(formatStockQuantity(0.125)).toBe('0,125')
+    expect(formatStockQuantity(0.12345678)).toBe('0,12345678')
+    expect(formatStockQuantity(-0.00000001)).toBe('-0,00000001')
     expect(displayDateTime('2026-10-19 12:46:36')).toBe('19.10.2026 12:46')
     expect(displayDateTime(null)).toBe('')
   })

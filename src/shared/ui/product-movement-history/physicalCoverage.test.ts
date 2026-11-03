@@ -13,6 +13,13 @@ describe('physical coverage transport', () => {
     expect(physicalCoverageIntervals([coverage])).toEqual(['01.01.2025 — 02.11.2026'])
     expect(physicalCoverageIntervals([{ ...coverage, AvailableThroughExclusiveUtc: '2026-07-01T21:00:00Z' }])).toEqual(['01.01.2025 — 01.07.2026'])
   })
+  it.each([
+    ['2026-11-03T10:15:23Z', '03.11.2026 12:15:23'],
+    ['2026-07-01T09:15:23Z', '01.07.2026 12:15:23'],
+  ])('shows the observed intraday cutoff rather than claiming the whole day: %s', (cutoff, local) => {
+    expect(physicalCoverageIntervals([{ ...coverage, AvailableThroughExclusiveUtc: cutoff }]))
+      .toEqual([`01.01.2025 — до ${local} (Київ)`])
+  })
   it('deduplicates identical warehouse ranges and hides complete coverage notices', () => {
     expect(physicalCoverageIntervals([coverage, { ...coverage, StorageId: 2 }])).toHaveLength(1)
     expect(physicalCoverageIntervals([{ ...coverage, ImportedPeriodComplete: true }])).toEqual([])

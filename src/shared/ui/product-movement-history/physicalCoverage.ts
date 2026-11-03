@@ -43,7 +43,15 @@ export function physicalMovementResponse(value: unknown): { body: unknown; cover
 }
 
 const kyivDay = new Intl.DateTimeFormat('uk-UA', { timeZone: 'Europe/Kyiv', day: '2-digit', month: '2-digit', year: 'numeric' })
+const kyivTime = new Intl.DateTimeFormat('uk-UA', { timeZone: 'Europe/Kyiv', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' })
+function coverageThrough(value: string): string {
+  const cutoff = new Date(value)
+  const time = kyivTime.format(cutoff)
+  return time === '00:00:00' && cutoff.getMilliseconds() === 0
+    ? kyivDay.format(new Date(cutoff.getTime() - 1))
+    : `до ${kyivDay.format(cutoff)} ${time} (Київ)`
+}
 export function physicalCoverageIntervals(coverage: readonly PhysicalCoverage[]): string[] {
   return [...new Set(coverage.filter(item => !item.ImportedPeriodComplete).map(item =>
-    `${kyivDay.format(new Date(item.AvailableFromUtc))} — ${kyivDay.format(new Date(Date.parse(item.AvailableThroughExclusiveUtc) - 1))}`))]
+    `${kyivDay.format(new Date(item.AvailableFromUtc))} — ${coverageThrough(item.AvailableThroughExclusiveUtc)}`))]
 }

@@ -1,4 +1,5 @@
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import { partialPhysicalCoverage } from '../../../shared/ui/product-movement-history/physicalCoverage.test-fixtures'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { expect, it, vi } from 'vitest'
@@ -13,6 +14,21 @@ vi.mock('../api/currentVparivanieRegionalApi', () => ({ readCurrentVparivanieReg
 const panel = (request: ReportRequestBody = regionalRequest(), dataset: ReportDataset = regionalDataset, enabled = true) =>
   <MantineProvider env="test"><I18nProvider><CurrentVparivanieRegionalPanel dataset={dataset} request={request}
     enabled={enabled} disabled={false} /></I18nProvider></MantineProvider>
+
+it.each([false, true])('shows partial physical history above the regional table, empty=%s', async empty => {
+  vi.clearAllMocks()
+  const result = regionalResult()
+  if (empty) { result.Rows = []; result.ProductCount = 0 }
+  result.PhysicalCoverage = [partialPhysicalCoverage]
+  vi.mocked(readCurrentVparivanieRegional).mockResolvedValue(result)
+  render(panel())
+  fireEvent.click(screen.getByRole('button', { name: 'Показати регіональну форму' }))
+  const warning = await screen.findByText('Імпортована історія не покриває весь вибраний період')
+  expect(warning.closest('[role="alert"]')?.textContent).toContain('01.01.2025 — 02.11.2026')
+  expect(warning.closest('details')).toBeNull()
+  expect(document.body.textContent).not.toMatch(/private-publication|private-receipt/)
+  if (!empty) expect(screen.getByText('9007199254740993.00000001')).toBeTruthy()
+})
 
 it('offers the current regional form only with capability and report permission', () => {
   vi.clearAllMocks()

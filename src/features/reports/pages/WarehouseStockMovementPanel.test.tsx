@@ -2,6 +2,7 @@ import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import { partialPhysicalCoverage } from '../../../shared/ui/product-movement-history/physicalCoverage.test-fixtures'
 import {
   exportStockMovement, getStockMovementCapability, getStockMovementOrganizations, getStockMovementWarehouses, previewStockMovement,
   searchStockMovementGroups, searchStockMovementProducts,
@@ -41,6 +42,20 @@ beforeEach(() => {
 })
 
 describe('native warehouse stock movement', () => {
+  it.each([false, true])('shows physical coverage outside collapsed notes, empty=%s', async empty => {
+    vi.mocked(previewStockMovement).mockImplementation(async request => ({
+      ...stockMovementResult(request, empty ? [] : stockMovementRows),
+      PhysicalCoverage: [partialPhysicalCoverage],
+    }))
+    render(panel())
+    await applyReport()
+    const warning = screen.getByText('Імпортована історія не покриває весь вибраний період')
+    expect(warning.closest('[role="alert"]')?.textContent).toContain('01.01.2025 — 02.11.2026')
+    expect(warning.closest('details')).toBeNull()
+    expect(document.body.textContent).not.toMatch(/private-publication|private-receipt/)
+    if (!empty) expect(screen.getByText('СКЛАД -1')).toBeTruthy()
+  })
+
   it('applies all GBA history and renders the 1C layout with totals and red negatives', async () => {
     const busy = vi.fn()
     render(panel(true, busy))

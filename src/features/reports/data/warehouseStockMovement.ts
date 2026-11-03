@@ -1,3 +1,5 @@
+import { readPhysicalCoverage, type PhysicalCoverage } from '../../../shared/ui/product-movement-history/physicalCoverage'
+
 export const WAREHOUSE_STOCK_MOVEMENT_ROUTE = '/report/constructors/warehouse-stock-movement'
 export const WAREHOUSE_STOCK_MOVEMENT_TITLE = 'Рух товару — залишки, прихід і розхід'
 export const WAREHOUSE_STOCK_MOVEMENT_MIN_DATE = '2025-01-01'
@@ -120,6 +122,7 @@ export type StockMovementRow = {
   Quantity: StockMovementQuantity
 }
 export type StockMovementResult = {
+  PhysicalCoverage?: PhysicalCoverage[]
   Version: 1
   From: string
   To: string
@@ -203,7 +206,8 @@ export function normalizeStockMovementResult(raw: unknown, request: StockMovemen
     || !Array.isArray(value.Rows) || value.Rows.length > request.Limit || !value.Rows.every(row) || !strings(value.Notes)) return invalid()
   const rows = value.Rows as StockMovementRow[]
   if (rows.some((item, index) => item.Index !== request.Offset + index) || request.Offset + rows.length > (value.TotalRows as number)) return invalid()
-  return value as StockMovementResult
+  return { ...value, ...(value.PhysicalCoverage != null
+    ? { PhysicalCoverage: readPhysicalCoverage(value.PhysicalCoverage) } : {}) } as StockMovementResult
 }
 
 export function normalizeStockMovementExport(raw: unknown): StockMovementExport {
@@ -322,7 +326,7 @@ export function displayDateTime(value: string | null): string {
 export function formatStockQuantity(value: number): string {
   if (value === 0) return ''
   const negative = value < 0
-  const [integer, fraction = ''] = Math.abs(value).toFixed(3).split('.')
+  const [integer, fraction = ''] = Math.abs(value).toFixed(8).split('.')
   const decimals = fraction.replace(/0+$/, '')
   return `${negative ? '-' : ''}${integer.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')}${decimals ? `,${decimals}` : ''}`
 }

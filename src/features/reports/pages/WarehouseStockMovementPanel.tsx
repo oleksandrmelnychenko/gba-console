@@ -3,6 +3,7 @@ import { useDebouncedValue } from '@mantine/hooks'
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, MonitorPlay, Plus, X } from 'lucide-react'
 import { useEffect, useEffectEvent, useMemo, useRef, useState, type ReactNode } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
+import { PhysicalCoverageNotice } from '../../../shared/ui/product-movement-history/PhysicalCoverageNotice'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
@@ -361,6 +362,7 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
     <section className="workbook-result" aria-label="Результат">
       <h2 className="app-section-title">Результат</h2>
       {run ? <Stack gap={8}>
+        <PhysicalCoverageNotice coverage={run.result.PhysicalCoverage ?? []} />
         <Group gap={8} justify="space-between" wrap="wrap">
           <Text size="sm" fw={600}>{displayDate(run.result.From)} — {displayDate(run.result.To)}</Text>
           <Text size="xs" c="dimmed">Складів і товарів: {run.result.Keys}; документів руху: {run.result.Registrars}; сформовано {displayDateTime(run.result.ObservedAt)} (Київ)</Text>
