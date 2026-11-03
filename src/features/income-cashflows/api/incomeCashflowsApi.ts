@@ -1,3 +1,4 @@
+import { normalizeIncomePaymentAllocationSummary } from '../incomePaymentAllocationSummary'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   executeAccountingMutation,
@@ -601,6 +602,7 @@ function normalizeIncomePaymentOrder(result: unknown): IncomePaymentOrder | null
 
   return {
     ...order,
+    ...('AllocationSummary' in order ? { AllocationSummary: normalizeIncomePaymentAllocationSummary(order.AllocationSummary) } : {}),
     AssignedPaymentOrders: Array.isArray(order.AssignedPaymentOrders) ? order.AssignedPaymentOrders : [],
   }
 }

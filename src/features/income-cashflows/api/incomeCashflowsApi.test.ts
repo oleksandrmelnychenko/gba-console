@@ -1,3 +1,4 @@
+import { allocationPayment } from '../incomePaymentAllocationTestData'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { INCOME_PAYMENT_OPERATION_CODE } from '../../accounting/accountingOperationCatalog'
@@ -583,5 +584,22 @@ describe('income cashflow API lookup contracts', () => {
         method: 'POST',
       },
     )
+  })
+})
+
+
+describe('income allocation detail normalization', () => {
+  it('keeps exact typed server money separate from legacy allocation amounts', async () => {
+    const order = allocationPayment(); apiRequestMock.mockResolvedValueOnce(order)
+    const result = await getIncomeCashflowByNetId(order.NetUid!)
+    expect(result?.AllocationSummary?.UnallocatedPaymentAmount).toBe(33.57)
+    expect(result?.AllocationSummary?.Rows[0]).toMatchObject({ PaymentAmount: 639.84, AccountingBaseAmount: 12.281 })
+  })
+  it('keeps document detail readable when additive allocation proof is malformed', async () => {
+    const order = allocationPayment(); apiRequestMock.mockResolvedValueOnce({ ...order, AllocationSummary: { ...order.AllocationSummary, PaymentCurrencyCode: null } })
+    const result = await getIncomeCashflowByNetId(order.NetUid!)
+    expect(result?.Number).toBe('00000001507')
+    expect(result?.IncomePaymentOrderSales).toHaveLength(5)
+    expect(result?.AllocationSummary).toBeNull()
   })
 })

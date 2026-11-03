@@ -1,3 +1,4 @@
+import { incomePaymentAllocationView } from '../incomePaymentAllocationSummary'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
@@ -1126,7 +1127,6 @@ export function IncomeCashflowDetailDrawer({
 }) {
   const { t } = useI18n()
   const income = row?.income
-  const orderSales = income?.IncomePaymentOrderSales || []
   const currency = income?.Currency?.Code || income?.Currency?.Name || '—'
   const registerType = income?.PaymentRegister?.Type
   const registerKind = registerType === PaymentRegisterType.Cash ? t('Каса')
@@ -1224,7 +1224,7 @@ export function IncomeCashflowDetailDrawer({
                 <Text className="income-cashflow-view__comment" size="sm">{income.Comment}</Text>
               </DocumentDetailSection>
             ) : null}
-            {orderSales.length > 0 && <IncomeOrderSalesSection currency={currency} sales={orderSales} />}
+            <IncomeOrderSalesSection income={income} />
             {hasIncomeDocumentStructure(income) && <IncomeDocumentStructure income={income} structureCalculation={structureCalculation} />}
           </DocumentDetailLayout>
         </div>
@@ -1258,29 +1258,41 @@ function IncomeDetailField({ label, mono, value, chip }: {
   return <DocumentDetailRow label={label} mono={mono} value={chip ? <TableChip tone={chip} value={value} /> : value} />
 }
 
-function IncomeOrderSalesSection({ currency, sales }: { currency?: string; sales: IncomePaymentOrderSale[] }) {
+function IncomeOrderSalesSection({ income }: { income: IncomePaymentOrder }) {
   const { t } = useI18n()
+  const sales = income.IncomePaymentOrderSales ?? []
+  const view = incomePaymentAllocationView(income)
+  if (!view.applicable) return null
+  const summary = view.summary
   return (
     <DocumentDetailSection title={t('Рахунки та продажі')} subtitle={sales.length} stacked>
-      <div className="income-cashflow-view__table-scroll" role="region" aria-label={t('Рахунки та продажі')} tabIndex={0}>
+      {summary ? <>
+        <DocumentDetailRow label={t('Розподілено у валюті платежу')} value={<IncomeDetailAmount currency={summary.PaymentCurrencyCode} value={formatMoney(summary.AllocatedPaymentAmount!)} />} />
+        <DocumentDetailRow label={t('Розподілено в EUR')} value={<IncomeDetailAmount currency={summary.AccountingBaseCurrencyCode} value={formatMoney(summary.AllocatedAccountingBaseAmount!)} />} />
+        <DocumentDetailRow label={t('Нерозподілено')} value={<IncomeDetailAmount currency={summary.PaymentCurrencyCode} value={formatMoney(summary.UnallocatedPaymentAmount!)} />} />
+        {summary.UnallocatedPaymentAmount! > 0 && <Text size="sm">{t('Нерозподілена сума не прив’язана до продажів.')}</Text>}
+      </> : <Alert color="yellow">{t('Суми розподілу не підтверджені. Нерозподілений залишок не визначено.')}</Alert>}
+      {sales.length > 0 && <div className="income-cashflow-view__table-scroll" role="region" aria-label={t('Рахунки та продажі')} tabIndex={0}>
         <table className="app-static-table">
           <thead><tr>
             <th>{t('Тип')}</th><th>{t('Номер рахунку')}</th><th>{t('Дата')}</th>
-            <th className="app-table-cell-number">{t('Сума')}</th><th>{t('Оплата')}</th>
+            <th className="app-table-cell-number">{t('Розподілено у валюті платежу')}</th>
+            <th className="app-table-cell-number">{t('Розподілено в EUR')}</th><th>{t('Оплата')}</th>
           </tr></thead>
           <tbody>{sales.map((sale, index) => {
             const document = sale.Sale || sale.ReSale || null
-            const amount = firstNumber(sale.Amount, document?.TotalAmount, document?.TotalAmountLocal)
+            const proof = view.allocation(sale)
             return <tr key={getIncomeOrderSaleKey(sale, index)}>
               <td>{sale.ReSale ? t('Ресейл') : t('Продаж')}</td>
               <td><TableChip tone="document" value={document?.SaleNumber?.Value} /></td>
               <td className="income-cashflow-view__date">{formatDateTime(sale.Created || document?.Created)}</td>
-              <td className="app-table-cell-number"><IncomeDetailAmount value={hasNumber(amount) ? formatMoney(amount) : ''} currency={currency} /></td>
+              <td className="app-table-cell-number">{proof ? <IncomeDetailAmount value={formatMoney(proof.PaymentAmount!)} currency={summary!.PaymentCurrencyCode} /> : t('Не визначено')}</td>
+              <td className="app-table-cell-number">{proof ? <IncomeDetailAmount value={formatMoney(proof.AccountingBaseAmount!)} currency={summary!.AccountingBaseCurrencyCode} /> : t('Не визначено')}</td>
               <td><IncomePaymentStatusBadge value={document} /></td>
             </tr>
           })}</tbody>
         </table>
-      </div>
+      </div>}
     </DocumentDetailSection>
   )
 }
@@ -2112,10 +2124,6 @@ function formatMoney(value?: number): string {
   const amount = typeof value === 'number' && Number.isFinite(value) ? value : 0
 
   return moneyFormatter.format(amount)
-}
-
-function firstNumber(...values: Array<number | undefined>): number | undefined {
-  return values.find(hasNumber)
 }
 
 function hasNumber(value?: number): value is number {

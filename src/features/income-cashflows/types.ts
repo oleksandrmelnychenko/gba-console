@@ -158,6 +158,28 @@ export type ClientInDebt = EntityFields & {
   SaleId?: number
 }
 
+export type IncomePaymentAllocationRow = {
+  AllocationNetUid: string | null
+  SaleNetUid: string | null
+  Status: 'Allocated' | 'Unallocated'
+  PaymentAmount: number | null
+  AccountingBaseAmount: number | null
+}
+
+export type IncomePaymentAllocationSummary = {
+  Applicable: boolean
+  AccountingBaseCurrencyCode: 'EUR'
+  PaymentCurrencyCode: string
+  PaymentAmount: number
+  AccountingBaseAmountsKnown: boolean
+  AllocatedAccountingBaseAmount: number | null
+  PaymentAmountsKnown: boolean
+  AllocatedPaymentAmount: number | null
+  UnallocatedPaymentAmount: number | null
+  Reason: string | null
+  Rows: IncomePaymentAllocationRow[]
+}
+
 export type IncomePaymentOrderSale = EntityFields & {
   Amount?: number
   Created?: string
@@ -251,6 +273,7 @@ export type IncomeExchangeCalculation = {
 }
 
 export type IncomePaymentOrder = EntityFields & {
+  AllocationSummary?: IncomePaymentAllocationSummary | null
   Amount?: number
   ArrivalNumber?: string
   AssignedPaymentOrders?: AssignedPaymentOrder[]
