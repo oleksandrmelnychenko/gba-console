@@ -1,7 +1,6 @@
-import type { ProductSourceHistoryInfo } from './productSourceHistory'
+import { getPhysicalSourceMovementKey, type ProductSourceHistoryRow } from './productSourceHistory'
 
-export type ProductIncomeMovementTreeSource = {
-  SourceHistory?: ProductSourceHistoryInfo | null
+export type ProductIncomeMovementTreeSource = ProductSourceHistoryRow & {
   Currency?: string
   ImportedForAmg?: boolean | null
   IncomeQty?: number
@@ -186,6 +185,7 @@ function hasMatchingDocumentValues(
   left: ProductIncomeMovementTreeSource,
   right: ProductIncomeMovementTreeSource,
 ): boolean {
+  if (left.PhysicalSource || right.PhysicalSource) return false
   const leftCurrency = normalizeTreePart(left.Currency)
   const rightCurrency = normalizeTreePart(right.Currency)
 
@@ -220,6 +220,8 @@ function getIncomeTreeGroupKey(
   row: ProductIncomeMovementTreeSource,
   index: number,
 ): string {
+  const physicalKey = getPhysicalSourceMovementKey(row)
+  if (physicalKey) return physicalKey
   if (row.SourceHistory?.RowKey) return `source-history:${row.SourceHistory.RowKey}`
 
   const documentNumber = normalizeTreePart(row.IncomeToStorageNumber)

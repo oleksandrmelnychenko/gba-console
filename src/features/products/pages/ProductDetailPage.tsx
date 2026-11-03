@@ -1,7 +1,7 @@
 import { useProductImageDraft } from '../useProductImageDraft'
 import { useProductDetailData } from '../useProductDetailData'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
-import { withProductSourceHistoryColumns } from '../../../shared/ui/product-movement-history/productSourceHistory'
+import { getProductMovementRowKey, withProductSourceHistoryColumns } from '../../../shared/ui/product-movement-history/productSourceHistory'
 import { withMovementDocumentStateColumns } from '../../../shared/ui/product-movement-history/movementDocumentState'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -2225,7 +2225,7 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
             density={density}
             onDensityChange={setDensity}
             emptyText={t('Рух товару не знайдено')}
-            getRowId={(row, index) => getProductSiblingRowKey(row.Card, String(row.SourceHistory?.RowKey || row.NetUid || row.Id || `${row.DocumentNumber || 'movement'}-${index}`))}
+            getRowId={(row, index) => getProductSiblingRowKey(row.Card, getProductMovementRowKey(row, `${row.DocumentNumber || 'movement'}-${index}`))}
             height="100%"
             isLoading={isLoading}
             layoutVersion="product-movement-2"

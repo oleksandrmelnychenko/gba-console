@@ -1,7 +1,7 @@
 import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
-import { withProductSourceHistoryColumns } from '../../../shared/ui/product-movement-history/productSourceHistory'
+import { getProductMovementRowKey, withProductSourceHistoryColumns } from '../../../shared/ui/product-movement-history/productSourceHistory'
 import { withInlineMovementDocumentState } from '../../../shared/ui/product-movement-history/movementDocumentState'
 import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 import {
@@ -3897,16 +3897,11 @@ function formatInlineDateTime(value?: Date | string | null): string {
 }
 
 function getIncomeMovementRowKey(row: ProductIncomeMovement, index: number): string {
-  return String(
-    row.SourceHistory?.RowKey
-      || row.NetUid
-      || row.Id
-      || `${row.IncomeToStorageNumber || row.IncomeInvoiceNumber || 'income'}-${row.IncomeToStorageDate || row.IncomeInvoiceDate || ''}-${index}`,
-  )
+  return getProductMovementRowKey(row, `${row.IncomeToStorageNumber || row.IncomeInvoiceNumber || 'income'}-${row.IncomeToStorageDate || row.IncomeInvoiceDate || ''}-${index}`)
 }
 
 function getOutcomeMovementRowKey(row: ProductOutcomeMovement, index: number): string {
-  return String(row.SourceHistory?.RowKey || row.NetUid || row.Id || `${row.DocumentNumber || 'outcome'}-${row.FromDate || ''}-${index}`)
+  return getProductMovementRowKey(row, `${row.DocumentNumber || 'outcome'}-${row.FromDate || ''}-${index}`)
 }
 
 function getIncomeMovementGridRowId(row: ProductIncomeMovement, index: number): string {

@@ -1,5 +1,5 @@
 import { ToolbarDateRangeFilter } from '../ToolbarDateRangeFilter'
-import { withProductSourceHistoryColumns, type ProductSourceHistoryInfo } from './productSourceHistory'
+import { getProductMovementRowKey, withProductSourceHistoryColumns, type ProductSourceHistoryRow } from './productSourceHistory'
 import { withMovementDocumentStateColumns } from './movementDocumentState'
 import { TableChip } from '../TableChip'
 import {
@@ -73,10 +73,9 @@ type EntityFields = {
   Updated?: Date | string
 }
 
-type ProductMovement = EntityFields & {
+type ProductMovement = Omit<EntityFields, 'Id' | 'NetUid'> & ProductSourceHistoryRow & {
   DocumentState?: string | null
   InformationalQty?: number | null
-  SourceHistory?: ProductSourceHistoryInfo | null
   AccountingPrice?: number
   ClientName?: string
   Comment?: string
@@ -98,8 +97,7 @@ type ProductMovement = EntityFields & {
   UserName?: string
 }
 
-type ProductIncomeMovement = EntityFields & {
-  SourceHistory?: ProductSourceHistoryInfo | null
+type ProductIncomeMovement = Omit<EntityFields, 'Id' | 'NetUid'> & ProductSourceHistoryRow & {
   AccountingEurUnitPrice?: number
   AccountingGrossPrice?: number
   Currency?: string
@@ -130,10 +128,9 @@ type ProductIncomeMovement = EntityFields & {
   Weight?: number
 }
 
-type ProductOutcomeMovement = EntityFields & {
+type ProductOutcomeMovement = Omit<EntityFields, 'Id' | 'NetUid'> & ProductSourceHistoryRow & {
   DocumentState?: string | null
   InformationalQty?: number | null
-  SourceHistory?: ProductSourceHistoryInfo | null
   ClientName?: string
   DocumentNumber?: string | number
   DocumentTypeName?: string
@@ -987,7 +984,7 @@ function ProductMovementPanel({
         data={activeError ? [] : rows}
         defaultLayout={MOVEMENT_TABLE_DEFAULT_LAYOUT}
         emptyText={t('Рух товару не знайдено')}
-        getRowId={(row, index) => String(row.SourceHistory?.RowKey || row.NetUid || row.Id || `${row.DocumentType || 'document'}-${row.DocumentNumber || 'number'}-${index}`)}
+        getRowId={(row, index) => getProductMovementRowKey(row, `${row.DocumentType || 'document'}-${row.DocumentNumber || 'number'}-${index}`)}
         isLoading={isLoading}
         layoutVersion="product-movement-history-shared-1"
         loadingText={t('Завантаження руху товару')}
@@ -2075,7 +2072,7 @@ function ProductOutcomeMovementPanel({
         data={activeError ? [] : rows}
         defaultLayout={OUTCOME_TABLE_DEFAULT_LAYOUT}
         emptyText={t('Вихід товару не знайдено')}
-        getRowId={(row, index) => String(row.SourceHistory?.RowKey || row.NetUid || row.Id || `${row.DocumentTypeName || 'outcome'}-${row.DocumentNumber || 'number'}-${index}`)}
+        getRowId={(row, index) => getProductMovementRowKey(row, `${row.DocumentTypeName || 'outcome'}-${row.DocumentNumber || 'number'}-${index}`)}
         isLoading={isLoading}
         layoutVersion="product-outcome-movement-history-shared-1"
         loadingText={t('Завантаження виходу товару')}
@@ -2516,6 +2513,7 @@ function getIncomeSourceLabel(
   row: ProductIncomeMovement,
   t: (value: string) => string,
 ): string {
+  if (row.PhysicalSource) return t('Складський рух')
   if (row.SourceHistory) return `${t('Історія 1С')} · ${row.SourceHistory.SourceSystem}`
 
   if (row.ImportedForAmg === true) {
@@ -2533,6 +2531,7 @@ function getIncomeProjectionLabel(
   row: ProductIncomeMovement,
   t: (value: string) => string,
 ): string {
+  if (row.PhysicalSource) return t('Впливає на склад')
   if (row.SourceHistory) return row.SourceHistory.HasPhysicalMovement
     ? t('Історія документа') : t('Без складського руху')
 

@@ -1,4 +1,4 @@
-import type { ProductSourceHistoryInfo } from '../../shared/ui/product-movement-history/productSourceHistory'
+import type { ProductSourceHistoryRow } from '../../shared/ui/product-movement-history/productSourceHistory'
 export type EntityFields = {
   Created?: Date | string
   Deleted?: boolean
@@ -289,10 +289,9 @@ export type ProductConsignmentRemaining = EntityFields & {
   Weight?: number
 }
 
-export type ProductMovement = EntityFields & {
+export type ProductMovement = Omit<EntityFields, 'Id' | 'NetUid'> & ProductSourceHistoryRow & {
   DocumentState?: string | null
   InformationalQty?: number | null
-  SourceHistory?: ProductSourceHistoryInfo | null
   AccountingGrossPrice?: number
   AccountingPrice?: number
   Card?: ProductSiblingCardRef | null
@@ -319,8 +318,7 @@ export type ProductMovement = EntityFields & {
   UserName?: string
 }
 
-export type ProductIncomeMovement = EntityFields & {
-  SourceHistory?: ProductSourceHistoryInfo | null
+export type ProductIncomeMovement = Omit<EntityFields, 'Id' | 'NetUid'> & ProductSourceHistoryRow & {
   AccountingEurUnitPrice?: number
   AccountingGrossPrice?: number
   Card?: ProductSiblingCardRef | null
@@ -348,10 +346,9 @@ export type ProductIncomeMovement = EntityFields & {
   Weight?: number
 }
 
-export type ProductOutcomeMovement = EntityFields & {
+export type ProductOutcomeMovement = Omit<EntityFields, 'Id' | 'NetUid'> & ProductSourceHistoryRow & {
   DocumentState?: string | null
   InformationalQty?: number | null
-  SourceHistory?: ProductSourceHistoryInfo | null
   Card?: ProductSiblingCardRef | null
   ClientName?: string
   DocumentNumber?: string | number
