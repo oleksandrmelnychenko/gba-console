@@ -42,7 +42,7 @@ export function cloneMovementSelection(data: Record<string, unknown>): Partial<R
 export type CurrentVparivanieMovementCoverage = CurrentVparivanieMovementSelection & {
   Version: 1
   ResultSha256: string
-  ProductCoverage: Array<{ ProductId: number; Complete: boolean; Reasons: string[] }>
+  ProductCoverage: Array<{ ProductId: number; Complete: boolean; Reasons: string[]; IncomingComplete?: boolean | null; OutgoingComplete?: boolean | null }>
   TotalProducts: number
   IncompleteProducts: number
   OldestCapturedAtUtc: string | null
@@ -79,13 +79,23 @@ export function readMovementCoverage(preview: NativeReportPreview): CurrentVpari
       || !products.has(String(item.ProductId)) || typeof item.Complete !== 'boolean'
       || !Array.isArray(item.Reasons) || !item.Reasons.every(reason => typeof reason === 'string' && reason.trim())
       || new Set(item.Reasons).size !== item.Reasons.length || item.Complete !== (item.Reasons.length === 0)) return fail()
+    const hasIncoming = item.IncomingComplete != null
+    const hasOutgoing = item.OutgoingComplete != null
+    if (hasIncoming !== hasOutgoing || hasIncoming
+      && (typeof item.IncomingComplete !== 'boolean' || typeof item.OutgoingComplete !== 'boolean')) return fail()
+    const incomingComplete = hasIncoming ? item.IncomingComplete === true : item.Complete
+    const outgoingComplete = hasOutgoing ? item.OutgoingComplete === true : item.Complete
+    if (item.Complete !== (incomingComplete && outgoingComplete)
+      || !item.Complete && (incomingComplete || outgoingComplete)
+        && item.Reasons.some(reason => reason !== 'UnconfirmedBatch')) return fail()
     seen.add(item.ProductId)
     if (!item.Complete) {
       pageIncomplete++
       const rowIndex = products.get(String(item.ProductId))
       for (const column of preview.Columns.filter(column => ['4', '5'].includes(column.Values[0]?.Identity?.Value ?? ''))) {
+        const directionComplete = column.Values[0]?.Identity?.Value === '4' ? incomingComplete : outgoingComplete
         const cell = preview.Cells.find(cell => cell.RowSourceIndex === rowIndex && cell.ColumnSourceIndex === column.SourceIndex)
-        if (cell?.Value.Kind !== 'null' || cell.Value.Value !== null) return fail()
+        if (!directionComplete && (cell?.Value.Kind !== 'null' || cell.Value.Value !== null)) return fail()
       }
     }
   }

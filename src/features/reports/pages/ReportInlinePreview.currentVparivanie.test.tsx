@@ -1,3 +1,5 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import { unconfirmedBatch } from '../../../shared/ui/product-movement-history/physicalQuantityExceptions.test-fixtures'
 import { movementPreview } from '../data/currentVparivanieMovements.test-fixtures'
 import { MantineProvider } from '@mantine/core'
 import { render, screen, within } from '@testing-library/react'
@@ -9,7 +11,7 @@ import { ReportInlinePreview } from './ReportInlinePreview'
 
 it('shows the actual seven flat attributes and separate customer identities with one resource', () => {
   const preview = normalizeNativeReportPreview({ Preview: currentVparivaniePreview() })
-  const view = render(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>)
+  const view = render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
   for (const name of CURRENT_VPARIVANIE_PRODUCT_CAPTIONS) expect(screen.getByRole('columnheader', { name })).toBeTruthy()
   expect(screen.getAllByRole('columnheader', { name: 'Контрагенты' })).toHaveLength(2)
   expect(screen.getAllByRole('columnheader', { name: 'Одна назва / Результат' })).toHaveLength(2)
@@ -32,7 +34,7 @@ it('shows an unknown customer only in the customer arm, never in stock or sales 
   source.Columns[3].Values[1].Identity.Value = null
   source.Columns[3].Values[1].Caption = 'Не вказано'
   const preview = normalizeNativeReportPreview({ Preview: source })
-  render(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>)
+  render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
   expect(screen.getAllByRole('columnheader', { name: 'Результат' })).toHaveLength(2)
   expect(screen.getByRole('columnheader', { name: 'Не вказано / Результат' })).toBeTruthy()
   expect(screen.getByRole('columnheader', { name: 'Одна назва / Результат' })).toBeTruthy()
@@ -42,11 +44,27 @@ it('shows physical movement columns with explicit incomplete history rather than
   const source = movementPreview()
   source.CurrentVparivanieMovements.ProductCoverage[0].Reasons.push('MultipleSourceWorldsWithoutPhysicalOwnership')
   const preview = normalizeNativeReportPreview({ Preview: source })
-  render(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>)
+  render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
   expect(screen.getByRole('columnheader', { name: 'Прихід' })).toBeTruthy()
   expect(screen.getByRole('columnheader', { name: 'Розхід' })).toBeTruthy()
   expect(screen.getByText(/Неповне підтвердження руху: 1 із 1 товарів/)).toBeTruthy()
   expect(screen.getByText(/щоб не подвоїти рух/)).toBeTruthy()
   const row = screen.getByRole('rowheader', { name: '0000123' }).closest('tr')!
   expect(within(row).getAllByRole('cell').slice(-2).map(cell => cell.textContent)).toEqual(['∅', '∅'])
+})
+
+it.each([true, false])('shows known incoming=%s separately from the unconfirmed opposite direction', incomingKnown => {
+  const source = movementPreview()
+  Object.assign(source.CurrentVparivanieMovements.ProductCoverage[0], {
+    IncomingComplete: incomingKnown, OutgoingComplete: !incomingKnown, Reasons: ['UnconfirmedBatch'],
+  })
+  source.Cells[incomingKnown ? 4 : 5].Value = { Kind: 'decimal', Value: '12.5', Provenance: 'producerCell' }
+  const preview = normalizeNativeReportPreview({ Preview: { ...source,
+    PhysicalQuantityExceptions: [{ ...unconfirmedBatch, ProductId: 123, Direction: incomingKnown ? 'Outgoing' : 'Incoming' }],
+  } })
+  render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
+  const row = screen.getByRole('rowheader', { name: '0000123' }).closest('tr')!
+  expect(within(row).getAllByRole('cell').slice(-2).map(cell => cell.textContent)).toEqual(incomingKnown ? ['12,5', '—'] : ['—', '12,5'])
+  expect(screen.getByText('Партію не підтверджено').closest('[role="alert"]')?.textContent).toContain('ВО-00041')
+  expect(screen.getByText(/Неповне підтвердження руху: 1 із 1 товарів/)).toBeTruthy()
 })
