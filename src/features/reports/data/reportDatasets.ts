@@ -152,7 +152,9 @@ export function datasetGroupings(dataset: ReportDataset | undefined, data?: obje
 export function datasetFilters(dataset: ReportDataset | undefined, data?: object): Array<{ label: string; value: string; field: ReportFilterField }> {
   const document = currentFinancialDocumentFilterSupported(dataset, data) ? currentFinancialDocumentFilterCapability(dataset)!.field : undefined
   const manager = currentFinancialBuyerManagerFilterSupported(dataset, data) ? currentFinancialBuyerManagerFilterCapability(dataset)!.field : undefined
-  return [...(dataset?.Filters ?? []), ...(document ? [document] : []), ...(manager ? [manager] : [])].filter(field => dataset?.DataSource !== 39 || field.Type !== 60 || currentVparivanieManagerSupported(dataset)).map(field => ({ label: field.Name, value: String(field.Type), field: {
+  return [...(dataset?.Filters ?? []), ...(document ? [document] : []), ...(manager ? [manager] : [])]
+    .filter(field => dataset?.DataSource !== 44 || field.Type !== 11)
+    .filter(field => dataset?.DataSource !== 39 || field.Type !== 60 || currentVparivanieManagerSupported(dataset)).map(field => ({ label: field.Name, value: String(field.Type), field: {
     Name: FILTER_KEYS.get(field.Type) ?? field.Name, Type: field.Type,
   } }))
 }

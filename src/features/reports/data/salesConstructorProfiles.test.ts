@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import { grossDataset, netDataset } from './reportDatasets.test-fixtures'
-import { defaultDatasetRequest, datasetConfigurationError, datasetMeasurements } from './reportDatasets'
+import { defaultDatasetRequest, datasetConfigurationError, datasetMeasurements, datasetFilters } from './reportDatasets'
 import { availableBug1274WorkbookLaunches, bug1274WorkbookRequest } from './bug1274WorkbookLaunch'
 import { cloneReportProfile, GROSS_PROFIT_CONSTRUCTOR_WORKBOOK, SALES_CONSTRUCTOR_WORKBOOK, salesConstructorDataset, salesConstructorError } from './salesConstructorProfiles'
 import { normalizeSavedTemplate } from '../api/reportWorkspaceApi'
@@ -46,13 +46,28 @@ it('offers the advertised physical warehouse in both sales forms while hiding re
   const source = { ...dataset, Filters: [{ Type: 1, Name: 'Product' }, { Type: 21, Name: 'Warehouse' }, { Type: 64, Name: 'ReturnReason' }] }
   for (const profile of ['sales', 'grossProfit']) expect(salesConstructorDataset(source, profile)?.Filters.map(field => field.Type)).toEqual([1, 21])
 })
-it('offers the current price type and warehouse filters in both GBA sales profiles', () => {
+it('keeps warehouse filters but explains retained current price-type filters without silently dropping them', () => {
   const withFilters = { ...dataset, Filters: [11, 21, 64, 0].map(Type => ({ Type, Name: String(Type), Selectable: true })) }
   for (const profile of ['sales', 'grossProfit'] as const) {
-    expect(salesConstructorDataset(withFilters, profile)?.Filters.map(field => field.Type)).toEqual([11, 21, 0])
+    expect(salesConstructorDataset(withFilters, profile)?.Filters.map(field => field.Type)).toEqual([21, 0])
     const request = { ...defaultDatasetRequest(withFilters, '2026-10-01', '2026-10-31'), reportProfile: profile,
       selections: [{ IsChecked: true, SelectedField: { Type: 11, Name: 'Тип ціни' }, FilterCondition: { Type: 2, Name: 'У списку' }, Values: [{ Data: { Id: 849 }, Name: 'ЦО2', Value: 849 }] }] }
     request.sorted.Measurements = request.sorted.Measurements.filter(item => item.Type === 2)
+    const saved = structuredClone(request)
+    expect(salesConstructorError(request, withFilters)).toContain('історичного типу документа')
+    expect(request).toEqual(saved)
+    request.selections[0].IsChecked = false
     expect(salesConstructorError(request, withFilters)).toBeNull()
   }
+})
+
+it('uses the same historical price-type rule for customer comparison and preserves other dataset filters', () => {
+  const source = { ...dataset, DataSource: 44, Filters: [11, 21, 6].map(Type => ({ Type, Name: String(Type) })) }
+  expect(datasetFilters(source).map(option => option.field.Type)).toEqual([21, 6])
+  expect(datasetFilters({ ...source, DataSource: 39 }).map(option => option.field.Type)).toEqual([11, 21, 6])
+  const request = { ...defaultDatasetRequest(source, '2026-10-01', '2026-10-31'),
+    selections: [{ IsChecked: true, SelectedField: { Type: 11, Name: 'Тип ціни' }, FilterCondition: { Type: 2, Name: 'У списку' }, Values: [{ Data: { Id: 849 }, Name: 'ЦО2', Value: 849 }] }] }
+  const saved = structuredClone(request)
+  expect(datasetConfigurationError(request, source)).toContain('історичного типу документа')
+  expect(request).toEqual(saved)
 })
