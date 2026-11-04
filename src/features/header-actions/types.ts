@@ -1,10 +1,3 @@
-export const TypeOfXmlDocument = {
-  Sales: 0,
-  ProductIncomes: 1,
-} as const
-
-export type TypeOfXmlDocument = (typeof TypeOfXmlDocument)[keyof typeof TypeOfXmlDocument]
-
 export const SyncEntityType = {
   Products: 0,
   Clients: 1,

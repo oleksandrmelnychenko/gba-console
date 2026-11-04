@@ -24,7 +24,7 @@ afterEach(() => { cleanup(); delete (Element.prototype as Partial<Element>).scro
 function open() {
   render(<MantineProvider env="test"><I18nProvider><SyncControl /></I18nProvider></MantineProvider>)
   fireEvent.click(screen.getByRole('button', { name: '1С синхронізація' }))
-  const panel = within(screen.getByRole('tabpanel'))
+  const panel = within(screen.getByRole('dialog'))
   return { from: panel.getByLabelText('Дата від') as HTMLInputElement,
     to: panel.getByLabelText('Дата до') as HTMLInputElement }
 }

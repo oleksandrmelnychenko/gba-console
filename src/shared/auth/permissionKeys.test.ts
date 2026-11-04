@@ -49,9 +49,9 @@ const EXPECTED_SUPPLIER_ORGANIZATION_KEYS = [
 ] as const
 
 describe('canonical event permission set', () => {
-  it('contains exactly 499 unique canonical keys', () => {
-    expect(EVENT_PERMISSION_KEYS).toHaveLength(499)
-    expect(new Set(EVENT_PERMISSION_KEYS).size).toBe(499)
+  it('contains exactly 500 unique canonical keys', () => {
+    expect(EVENT_PERMISSION_KEYS).toHaveLength(500)
+    expect(new Set(EVENT_PERMISSION_KEYS).size).toBe(500)
     expect(EVENT_PERMISSION_KEYS.every(isEventPermissionKey)).toBe(true)
   })
 

@@ -16,6 +16,9 @@ vi.mock('./ProductWriteOffRulesControl', () => ({
 vi.mock('./SyncControl', () => ({
   SyncControl: () => <button type="button">1С синхронізація</button>,
 }))
+vi.mock('../../onec-export/components/OneCExportControl', () => ({
+  OneCExportControl: () => <button type="button">Вивантаження в 1С</button>,
+}))
 
 function renderBar() {
   return render(
@@ -44,5 +47,13 @@ describe('header sync control after the cutover', () => {
     renderBar()
 
     expect(screen.queryByRole('button', { name: '1С синхронізація' })).toBeNull()
+  })
+
+  it('keeps the 1C export available after the cutover', () => {
+    resetSystemOfRecordCutoverForTests({ cutoverUtc: '2026-11-01T00:00:00Z', isActive: true, loaded: true })
+
+    renderBar()
+
+    expect(screen.getByRole('button', { name: 'Вивантаження в 1С' })).toBeTruthy()
   })
 })

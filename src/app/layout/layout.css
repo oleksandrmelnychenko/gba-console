@@ -986,10 +986,6 @@ html[data-gba-env='qa'] .console-header {
   background: var(--mantine-color-gray-0);
 }
 
-.sync-modal .sync-direction-tabs { justify-content: center; }
-.sync-modal .sync-direction-tabs::before { display: none; }
-.sync-modal .sync-direction-tabs > .app-screen-tab { min-height: 32px; }
-.sync-modal .sync-direction-tabs .mantine-Tabs-tabLabel { font-family: var(--font-mono); font-size: 12px; }
 .sync-modal .sync-session-panel > .mantine-Group-root .mantine-Text-root:first-child { font-family: var(--font-mono); font-size: 13px; }
 .sync-modal .sync-session-meta-item > .mantine-Text-root:first-child { color: var(--mantine-color-text) !important; }
 .sync-modal .sync-config-panel > .mantine-Stack-root { gap: 10px; }

@@ -5,7 +5,6 @@ import {
   type DailyDataSyncStockMode,
   type DataSyncStatus,
   type SyncRunResponse,
-  type TypeOfXmlDocument,
   type OneCTurnoverSyncCatalog,
   type OneCTurnoverSyncFilters,
 } from '../types'
@@ -37,12 +36,6 @@ export function getOneCTurnoverSyncCatalog(signal?: AbortSignal): Promise<OneCTu
       network: 'Сервер синхронізації недоступний',
     },
   })
-}
-
-export type SyncDocumentsRequest = {
-  from: Date
-  to: Date
-  typeDocument: TypeOfXmlDocument
 }
 
 export type SyncSessionRequest = {
@@ -79,16 +72,6 @@ export function startFullSync(request: SyncFullRequest): Promise<SyncRunResponse
     query,
     errorMessages: {
       default: 'Не вдалося запустити синхронізацію з 1С',
-      network: 'Сервер синхронізації недоступний',
-    },
-  })
-}
-
-export function startGbaToOneCSync(request: SyncDocumentsRequest): Promise<SyncRunResponse> {
-  return apiRequest<SyncRunResponse>('/xml/documents/online-shop-seo/new', {
-    query: request,
-    errorMessages: {
-      default: 'Не вдалося запустити вигрузку в 1С',
       network: 'Сервер синхронізації недоступний',
     },
   })

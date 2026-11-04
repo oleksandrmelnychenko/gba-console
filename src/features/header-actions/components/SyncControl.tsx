@@ -6,12 +6,11 @@ import {
   Group,
   SegmentedControl,
   Stack,
-  Tabs,
   Text,
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowDownToLine, ArrowUpFromLine, RefreshCw, Play } from 'lucide-react'
+import { RefreshCw, Play } from 'lucide-react'
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -51,14 +50,12 @@ import { SyncSessionPanel } from './SyncSessionPanel'
 import { SyncSessionConfigurator } from './SyncSessionConfigurator'
 import { OneCTurnoverSyncPanel } from './OneCTurnoverSyncPanel'
 import { FenixGoodsDayRefreshPanel } from './FenixGoodsDayRefreshPanel'
-import { OneCExportPanel } from './OneCExportPanel'
 
 const STATUS_POLL_INTERVAL_MS = 3_000
 
 export function SyncControl() {
   const runActionOnce = useSingleFlight()
   const { t } = useI18n()
-  const [direction, setDirection] = useState<string | null>('import')
   const dataSyncProgress = useDataSyncProgress()
   const [state, dispatch] = useReducer(syncReducer, undefined, createInitialSyncState)
   const [isGoodsRefreshing, setGoodsRefreshing] = useState(false)
@@ -259,107 +256,96 @@ export function SyncControl() {
         className="sync-modal"
         centered
       >
-        <Tabs value={direction} onChange={setDirection} variant="pills">
-          <Tabs.List className="app-screen-tabs sync-direction-tabs" aria-label={t('Напрямок синхронізації')}>
-            <Tabs.Tab className={`app-screen-tab${direction === 'import' ? ' is-active' : ''}`} value="import" leftSection={<ArrowDownToLine size={16} />}>1С → GBA</Tabs.Tab>
-            <Tabs.Tab className={`app-screen-tab${direction === 'export' ? ' is-active' : ''}`} value="export" leftSection={<ArrowUpFromLine size={16} />}>GBA → 1С</Tabs.Tab>
-          </Tabs.List>
-          <Tabs.Panel value="import" pt={12}>
-            <Stack gap={10}>
-              <SyncSessionPanel
-                isRefreshing={state.isStatusRefreshing}
-                onRefresh={() => void loadStatus(true)}
-                progressMessage={isServerSyncActive ? dataSyncProgress.message : ''}
-                status={state.status}
-                statusError={state.statusError}
-              />
+        <Stack gap={10}>
+          <SyncSessionPanel
+            isRefreshing={state.isStatusRefreshing}
+            onRefresh={() => void loadStatus(true)}
+            progressMessage={isServerSyncActive ? dataSyncProgress.message : ''}
+            status={state.status}
+            statusError={state.statusError}
+          />
 
-              <SegmentedControl
-                aria-label={t('Режим синхронізації')}
-                className="sync-mode-control"
-                fullWidth
-                value={state.mode}
-                onChange={(value) => dispatch({ type: 'modeChanged', mode: value as SyncMode })}
-                data={[
-                  {
-                    value: 'full',
-                    label: <SyncModeLabel full={t('Повна синхронізація')} short={t('Повна')} />,
-                  },
-                  {
-                    value: 'daily',
-                    label: <SyncModeLabel full={t('Щоденна синхронізація')} short={t('Щоденна')} />,
-                  },
-                ]}
-              />
+          <SegmentedControl
+            aria-label={t('Режим синхронізації')}
+            className="sync-mode-control"
+            fullWidth
+            value={state.mode}
+            onChange={(value) => dispatch({ type: 'modeChanged', mode: value as SyncMode })}
+            data={[
+              {
+                value: 'full',
+                label: <SyncModeLabel full={t('Повна синхронізація')} short={t('Повна')} />,
+              },
+              {
+                value: 'daily',
+                label: <SyncModeLabel full={t('Щоденна синхронізація')} short={t('Щоденна')} />,
+              },
+            ]}
+          />
 
-              <SyncSessionConfigurator
-                dateErrors={activeRangeErrors}
-                minimumDate={minimumDate}
-                mode={state.mode}
-                range={activeRange}
-                selectedDailyDocumentTypes={state.selectedDailyDocumentTypes}
-                source={state.source}
-                today={today}
-                onDailyDocumentTypesChange={(types) =>
-                  dispatch({ type: 'dailyDocumentTypesChanged', types })
-                }
-                onDateChange={(boundary, value) =>
-                  dispatch({ type: 'dateChanged', boundary, mode: state.mode, value })
-                }
-                onSourceChange={(source) => dispatch({ type: 'sourceChanged', source })}
-              />
+          <SyncSessionConfigurator
+            dateErrors={activeRangeErrors}
+            minimumDate={minimumDate}
+            mode={state.mode}
+            range={activeRange}
+            selectedDailyDocumentTypes={state.selectedDailyDocumentTypes}
+            source={state.source}
+            today={today}
+            onDailyDocumentTypesChange={(types) =>
+              dispatch({ type: 'dailyDocumentTypesChanged', types })
+            }
+            onDateChange={(boundary, value) =>
+              dispatch({ type: 'dateChanged', boundary, mode: state.mode, value })
+            }
+            onSourceChange={(source) => dispatch({ type: 'sourceChanged', source })}
+          />
 
-              {!minimumDate ? (
-                <Text size="xs" c="dimmed" role="status">
-                  {t(state.isStatusRefreshing
-                    ? 'Завантаження межі періоду синхронізації…'
-                    : 'Межа періоду синхронізації недоступна. Оновіть статус')}
-                </Text>
-              ) : null}
+          {!minimumDate ? (
+            <Text size="xs" c="dimmed" role="status">
+              {t(state.isStatusRefreshing
+                ? 'Завантаження межі періоду синхронізації…'
+                : 'Межа періоду синхронізації недоступна. Оновіть статус')}
+            </Text>
+          ) : null}
 
-              <OneCTurnoverSyncPanel minimumDate={minimumDate} visible={state.opened && direction === 'import'} mode={state.mode} source={state.source}
-                range={activeRange} types={state.selectedDailyDocumentTypes} today={today}
-                blocked={isSessionStartBlocked || Boolean(state.pendingRun)} loading={state.isStarting} onRun={runReportSync} />
+          <OneCTurnoverSyncPanel minimumDate={minimumDate} visible={state.opened} mode={state.mode} source={state.source}
+            range={activeRange} types={state.selectedDailyDocumentTypes} today={today}
+            blocked={isSessionStartBlocked || Boolean(state.pendingRun)} loading={state.isStarting} onRun={runReportSync} />
 
-              <FenixGoodsDayRefreshPanel visible={state.opened && direction === 'import'} mode={state.mode} source={state.source}
-                range={activeRange} blocked={isStartBlocked || Boolean(state.pendingRun)}
-                onPendingChange={handleGoodsPending} />
+          <FenixGoodsDayRefreshPanel visible={state.opened} mode={state.mode} source={state.source}
+            range={activeRange} blocked={isStartBlocked || Boolean(state.pendingRun)}
+            onPendingChange={handleGoodsPending} />
 
-              {state.pendingRun ? (
-                <SyncConfirmation
-                  documentTypeCount={
-                    getSessionDocumentTypes(
-                      state.pendingRun,
-                      state.selectedDailyDocumentTypes,
-                    ).length
-                  }
-                  mode={state.pendingRun}
-                  range={state.dateRanges[state.pendingRun]}
-                  source={state.source}
-                  onCancel={() => dispatch({ type: 'confirmationCanceled' })}
-                  onConfirm={() => void runConfirmedSync()}
-                  isLoading={state.isStarting}
-                  isBlocked={isSessionStartBlocked}
-                />
-              ) : (
-                <Group justify="flex-end" className="sync-action-bar">
-                  <Button
-                    color={CREATE_ACTION_COLOR}
-                    disabled={isSessionStartBlocked}
-                    leftSection={<Play size={16} strokeWidth={1.9} />}
-                    loading={state.isStarting}
-                    onClick={() => requestSync(state.mode)}
-                  >
-                    {t(state.mode === 'full' ? 'Запустити повну синхронізацію' : 'Запустити щоденну синхронізацію')}
-                  </Button>
-                </Group>
-              )}
-            </Stack>
-          </Tabs.Panel>
-          <Tabs.Panel value="export" pt={12}>
-            <OneCExportPanel />
-          </Tabs.Panel>
-        </Tabs>
+          {state.pendingRun ? (
+            <SyncConfirmation
+              documentTypeCount={
+                getSessionDocumentTypes(
+                  state.pendingRun,
+                  state.selectedDailyDocumentTypes,
+                ).length
+              }
+              mode={state.pendingRun}
+              range={state.dateRanges[state.pendingRun]}
+              source={state.source}
+              onCancel={() => dispatch({ type: 'confirmationCanceled' })}
+              onConfirm={() => void runConfirmedSync()}
+              isLoading={state.isStarting}
+              isBlocked={isSessionStartBlocked}
+            />
+          ) : (
+            <Group justify="flex-end" className="sync-action-bar">
+              <Button
+                color={CREATE_ACTION_COLOR}
+                disabled={isSessionStartBlocked}
+                leftSection={<Play size={16} strokeWidth={1.9} />}
+                loading={state.isStarting}
+                onClick={() => requestSync(state.mode)}
+              >
+                {t(state.mode === 'full' ? 'Запустити повну синхронізацію' : 'Запустити щоденну синхронізацію')}
+              </Button>
+            </Group>
+          )}
+        </Stack>
       </AppModal>
     </>
   )
