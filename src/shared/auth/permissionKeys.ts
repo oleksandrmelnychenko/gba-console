@@ -131,6 +131,9 @@ export const PermissionKeys = {
     GbaData: {
       Read: 'integration.gba_data.dataset.read',
     },
+    OneCExport: {
+      Run: 'integration.onec_export.documents.export',
+    },
   },
   SupplyCart: {
     Document: {
@@ -1249,6 +1252,7 @@ export type OperationalPermissionKey =
   | Values<typeof PermissionKeys.Operational.SchedulerTasks>
   | Values<typeof PermissionKeys.Operational.ShopOrders>
   | Values<typeof PermissionKeys.Operational.GbaData>
+  | Values<typeof PermissionKeys.Operational.OneCExport>
 
 export type SupplyCartPermissionKey =
   | Values<typeof PermissionKeys.SupplyCart.Document>
@@ -1614,6 +1618,7 @@ const eventPermissionKeyList = [
   ...Object.values(PermissionKeys.Operational.SchedulerTasks),
   ...Object.values(PermissionKeys.Operational.ShopOrders),
   ...Object.values(PermissionKeys.Operational.GbaData),
+  ...Object.values(PermissionKeys.Operational.OneCExport),
   ...Object.values(PermissionKeys.ActReconciliations.Page),
   ...Object.values(PermissionKeys.ActReconciliations.Act),
   ...Object.values(PermissionKeys.ActReconciliations.History),

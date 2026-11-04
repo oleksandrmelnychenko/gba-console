@@ -37,8 +37,8 @@ describe('native report synchronization boundary', () => {
     fireEvent.click(screen.getByRole('radio', { name: /Щоденна/ }))
     fireEvent.click(screen.getByRole('radio', { name: 'FENIX' }))
 
-    expect(within(screen.getByRole('tabpanel')).getByLabelText('Дата від')).toBeTruthy()
-    expect(within(screen.getByRole('tabpanel')).getByLabelText('Дата до')).toBeTruthy()
+    expect(within(screen.getByRole('dialog')).getByLabelText('Дата від')).toBeTruthy()
+    expect(within(screen.getByRole('dialog')).getByLabelText('Дата до')).toBeTruthy()
     expect(screen.getByLabelText('Звітні рухи 1С — окремий запуск Fenix')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Завантажити звітні рухи 1С' })).toBeNull()
     expect(getOneCTurnoverSyncCatalog).not.toHaveBeenCalled()
