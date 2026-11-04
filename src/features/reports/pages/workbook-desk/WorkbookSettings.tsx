@@ -1,11 +1,12 @@
 import { WorkbookSectionToolbar } from './WorkbookSectionActions'
 import { ToolbarDateRangeFilter } from '../../../../shared/ui/ToolbarDateRangeFilter'
-import { Button, Select } from '@mantine/core'
+import { Button, Select, Text } from '@mantine/core'
 import { Building2, ChartNoAxesCombined, ChevronDown, ChevronRight, ChevronUp, ListFilter, ListTree, Package, SlidersHorizontal, Warehouse } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import '../../../../shared/ui/selection-surface.css'
 import type { ReportPeriodPreset } from '../../data/bug1274WorkbookGuide'
+import { formatDate } from '../../utils'
 
 const SECTION_ICONS: Record<string, ReactNode> = {
   product: <Package size={16} aria-hidden="true" />,
@@ -139,6 +140,7 @@ export function WorkbookPeriodField({ from, to, minDate, maxDate, presets, error
         const preset = presets.find(item => item.label === value)
         if (preset) { onFromChange(preset.from); onToChange(preset.to) }
       }} /> : null}
+    <Text size="sm">{t('Період')}: {formatDate(from)} — {formatDate(to)}</Text>
     <div role="group" aria-label={t('Період')} aria-describedby={error ? 'workbook-period-error' : undefined}>
       <ToolbarDateRangeFilter from={from} to={to} min={minDate} max={maxDate} disabled={disabled} required={required}
         onChange={range => { onFromChange(range.from); onToChange(range.to) }} />

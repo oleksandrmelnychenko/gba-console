@@ -1,6 +1,6 @@
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../../shared/i18n/I18nProvider'
 import { WorkbookActionBar } from './WorkbookActionBar'
@@ -120,6 +120,29 @@ it('changes both dates from the period selector without submitting a report', ()
   fireEvent.click(screen.getByRole('option', { name: 'Вчора' }))
   expect(onFromChange).toHaveBeenCalledExactlyOnceWith('2026-10-17')
   expect(onToChange).toHaveBeenCalledExactlyOnceWith('2026-10-17')
+})
+
+it('shows the selected period without opening the calendar and changes it only when applied', () => {
+  const onSubmit = vi.fn(event => event.preventDefault())
+  function PeriodForm() {
+    const [from, setFrom] = useState('2026-10-01'), [to, setTo] = useState('2026-11-02')
+    return <form onSubmit={onSubmit}><WorkbookPeriodField from={from} to={to} minDate="2025-01-01" maxDate="2026-11-04"
+      presets={[]} error={null} onFromChange={setFrom} onToChange={setTo} /></form>
+  }
+  render(wrap(<PeriodForm />))
+  const visiblePeriod = screen.getByText('Період: 01.10.2026 — 02.11.2026')
+  expect(visiblePeriod.closest('[hidden]')).toBeNull()
+  expect(screen.queryByRole('dialog')).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Період: 01.10.2026 — 02.11.2026' }))
+  fireEvent.change(screen.getByLabelText('До', { exact: true }), { target: { value: '2026-11-03' } })
+  expect(visiblePeriod.textContent).toBe('Період: 01.10.2026 — 02.11.2026')
+  fireEvent.click(screen.getByRole('button', { name: 'Скасувати' }))
+  expect(visiblePeriod.textContent).toBe('Період: 01.10.2026 — 02.11.2026')
+  fireEvent.click(screen.getByRole('button', { name: 'Період: 01.10.2026 — 02.11.2026' }))
+  fireEvent.change(screen.getByLabelText('До', { exact: true }), { target: { value: '2026-11-03' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Застосувати' }))
+  expect(screen.getByText('Період: 01.10.2026 — 03.11.2026')).toBeTruthy()
+  expect(onSubmit).not.toHaveBeenCalled()
 })
 
 it('disables settings while retaining section navigation during a run', () => {
