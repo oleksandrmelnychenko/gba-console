@@ -1,3 +1,4 @@
+import { PhysicalQuantityExceptionNotice } from '../../../shared/ui/product-movement-history/PhysicalQuantityExceptionNotice'
 import { PhysicalCoverageNotice } from '../../../shared/ui/product-movement-history/PhysicalCoverageNotice'
 import { ANALYSIS_SCOPE_NOTICE } from '../data/currentVparivanieAnalysis'
 import { MOVEMENT_FILTER_NOTICE } from '../data/currentVparivanieMovements'
@@ -50,7 +51,8 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
   for (const group of totals?.Groups ?? []) groupTotals.set(group.RowSourceIndex, [...(groupTotals.get(group.RowSourceIndex) ?? []), group]
     .sort((left, right) => left.Level - right.Level))
   const valueText = (value: NativeReportPreviewScalar | undefined, columnSourceIndex: number) =>
-    blanksZero && isZeroPreviewScalar(value) ? ''
+    preview.PhysicalQuantityExceptions?.length && value?.Kind === 'null' ? '—'
+      : blanksZero && isZeroPreviewScalar(value) ? ''
       : numberPresentation && semanticsByColumn.has(columnSourceIndex) && value?.Kind === 'decimal' && typeof value.Value === 'string'
         ? formatReportDecimal(value.Value, semanticsByColumn.get(columnSourceIndex)!, numberPresentation)
       : products && value?.Kind === 'decimal' && typeof value.Value === 'string'
@@ -85,6 +87,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
       {wide && columnWindow ? <Text size="sm" className="report-inline-preview__count" data-testid="report-preview-column-window">
         {columnWindowText(columnWindow.ColumnOffset, columnWindow.ReturnedColumns, columnWindow.TotalColumns)}</Text> : null}
     </div>
+    <PhysicalQuantityExceptionNotice exceptions={preview.PhysicalQuantityExceptions} />
     {preview.PhysicalCoverage?.some(item => !item.ImportedPeriodComplete) ? <PhysicalCoverageNotice coverage={preview.PhysicalCoverage} /> : null}
     <ReportAttributionWarnings request={preview.Request} />
     <CurrentProductFieldsNotice version={workbook?.version} />

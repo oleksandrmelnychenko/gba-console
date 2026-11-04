@@ -1,3 +1,4 @@
+import { unconfirmedBatch } from './physicalQuantityExceptions.test-fixtures'
 import { partialPhysicalCoverage } from './physicalCoverage.test-fixtures'
 import { MantineProvider } from '@mantine/core'
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
@@ -40,9 +41,9 @@ beforeEach(() => {
 })
 afterEach(() => { cleanup(); vi.restoreAllMocks() })
 
-function show(panel: 'income' | 'outcome' | 'movement' | 'detail', row: object | null, withCoverage = false) {
+function show(panel: 'income' | 'outcome' | 'movement' | 'detail', row: object | null, withCoverage = false, withException = false) {
   const path = assortmentMovementRequestPaths[panel === 'detail' ? 'movement' : panel]
-  vi.mocked(apiRequest).mockImplementation(async requestPath => requestPath === path ? withCoverage ? { Body: row ? [row] : [], PhysicalCoverage: [partialPhysicalCoverage] } : [row] : [])
+  vi.mocked(apiRequest).mockImplementation(async requestPath => requestPath === path ? withCoverage || withException ? { Body: row ? [row] : [], PhysicalCoverage: withCoverage ? [partialPhysicalCoverage] : [], PhysicalQuantityExceptions: withException ? [unconfirmedBatch] : [] } : [row] : [])
   return render(<MemoryRouter><MantineProvider env="test"><I18nProvider>
     {panel === 'detail'
       ? <ProductActionDrawer activePanel="movement" product={product} onClose={vi.fn()} onProductSaved={vi.fn()} onReload={vi.fn()} />
@@ -103,5 +104,21 @@ describe('physical coverage in actual product panels', () => {
     }, true)
     expect(await screen.findByText('NATIVE-LATER')).toBeTruthy()
     expect(screen.getByText('Імпортована історія не покриває весь вибраний період')).toBeTruthy()
+  })
+})
+
+
+describe('approved unconfirmed batch in every product panel', () => {
+  it.each(['income', 'outcome', 'movement', 'detail'] as const)('%s preserves exception when Body is empty', async panel => {
+    show(panel, null, false, true)
+    const notice = await screen.findByText('Партію не підтверджено')
+    expect(notice.closest('[role="alert"]')?.textContent).toContain('ВО-00041')
+  })
+  it.each(['income', 'outcome', 'movement', 'detail'] as const)('%s never displays stale raw quantity as admitted physical quantity', async panel => {
+    show(panel, { ...base, IncomeQty: 98765, OutcomeQty: 98765, Qty: 98765, QuantityKnown: false, QuantityStatus: 'unconfirmed_batch', UnclassifiedQuantity: 1 }, false, true)
+    const { row } = await physicalRow()
+    expect(row.textContent).not.toContain('98765')
+    expect(row.textContent).toContain('Партію не підтверджено — 1')
+    expect(row.textContent).toContain('—')
   })
 })

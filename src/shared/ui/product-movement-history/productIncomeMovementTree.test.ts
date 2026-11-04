@@ -265,3 +265,14 @@ describe('buildProductIncomeMovementTree', () => {
     expect(formatProductIncomeMovementDateTime(value)).toBe(expected)
   })
 })
+
+
+it('does not merge an unconfirmed receipt with a known complementary source projection', () => {
+  const common = { Currency: 'EUR', IncomeQty: 1, IncomeToStorageNumber: 'IN-1', SourceDocumentType: 277, NetPrice: 10 }
+  const known = { ...common, ImportedForAmg: true, IsHide: false, SourceDocumentId: 'a' }
+  const unknown = { ...common, ImportedForAmg: false, IsHide: true, SourceDocumentId: 'b', QuantityKnown: false, UnclassifiedQuantity: 1, QuantityStatus: 'unconfirmed_batch' }
+  const rows = buildProductIncomeMovementTree([known, unknown])
+  expect(rows).toHaveLength(2)
+  expect(rows[1]).toMatchObject({ QuantityKnown: false })
+  expect(rows.every(row => row.Branches.length === 1)).toBe(true)
+})

@@ -1,3 +1,5 @@
+import { PhysicalQuantityCell, PhysicalQuantityExceptionNotice } from './PhysicalQuantityExceptionNotice'
+import type { PhysicalQuantityException } from './physicalQuantityExceptions'
 import { PhysicalCoverageNotice } from './PhysicalCoverageNotice'
 import { physicalMovementResponse, type PhysicalCoverage } from './physicalCoverage'
 import { ToolbarDateRangeFilter } from '../ToolbarDateRangeFilter'
@@ -88,11 +90,11 @@ type ProductMovement = Omit<EntityFields, 'Id' | 'NetUid'> & ProductSourceHistor
   FromDate?: Date | string
   IncomeDocumentFromDate?: Date | string
   IncomeDocumentNumber?: string | number
-  IncomeQty?: number
+  IncomeQty?: number | null
   IsEdited?: boolean
   MovementType?: string
   OrganizationName?: string
-  OutcomeQty?: number
+  OutcomeQty?: number | null
   Price?: number
   Responsible?: string
   StorageName?: string
@@ -111,7 +113,7 @@ type ProductIncomeMovement = Omit<EntityFields, 'Id' | 'NetUid'> & ProductSource
   ImportedSourceMetadataResolved?: boolean | null
   IncomeInvoiceDate?: Date | string
   IncomeInvoiceNumber?: string | number
-  IncomeQty?: number
+  IncomeQty?: number | null
   IncomeToStorageDate?: Date | string
   IncomeToStorageNumber?: string | number
   IsHide?: boolean
@@ -140,7 +142,7 @@ type ProductOutcomeMovement = Omit<EntityFields, 'Id' | 'NetUid'> & ProductSourc
   HasUpdateDataCarrier?: boolean
   OrganizationName?: string
   Price?: number
-  Qty?: number
+  Qty?: number | null
   ResponsibleName?: string
   StorageName?: string
 }
@@ -243,6 +245,7 @@ type MovementDateAction = { type: 'set-date-range'; from: string; to: string }
 
 type MovementRowsState<TRow> = {
   physicalCoverage: PhysicalCoverage[]
+  physicalExceptions: PhysicalQuantityException[]
   error: string | null
   isLoading: boolean
   rows: TRow[]
@@ -252,7 +255,7 @@ type MovementRowsAction<TRow> =
   | { type: 'clear-error' }
   | { type: 'load-failed'; error: string }
   | { type: 'load-started' }
-  | { type: 'load-succeeded'; rows: TRow[]; physicalCoverage?: PhysicalCoverage[] }
+  | { type: 'load-succeeded'; rows: TRow[]; physicalCoverage?: PhysicalCoverage[]; physicalExceptions?: PhysicalQuantityException[] }
   | { type: 'set-error'; error: string }
 
 type ProductMovementExportModalState = {
@@ -461,6 +464,7 @@ function createMovementRowsState<TRow>(): MovementRowsState<TRow> {
     isLoading: false,
     rows: [],
     physicalCoverage: [],
+    physicalExceptions: [],
   }
 }
 
@@ -481,6 +485,7 @@ function movementRowsReducer<TRow>(
         isLoading: false,
         rows: [],
         physicalCoverage: [],
+        physicalExceptions: [],
       }
     case 'load-started':
       return {
@@ -489,6 +494,7 @@ function movementRowsReducer<TRow>(
         isLoading: true,
         rows: [],
         physicalCoverage: [],
+        physicalExceptions: [],
       }
     case 'load-succeeded':
       return {
@@ -496,6 +502,7 @@ function movementRowsReducer<TRow>(
         isLoading: false,
         rows: action.rows,
         physicalCoverage: action.physicalCoverage ?? [],
+        physicalExceptions: action.physicalExceptions ?? [],
       }
     case 'set-error':
       return {
@@ -986,7 +993,7 @@ function ProductMovementPanel({
           {activeError}
         </Alert>
       ) : null}
-      {!activeError && <PhysicalCoverageNotice coverage={rowsState.physicalCoverage} />}
+      {!activeError && <><PhysicalCoverageNotice coverage={rowsState.physicalCoverage} /><PhysicalQuantityExceptionNotice exceptions={rowsState.physicalExceptions} /></>}
       <DataTable
         columns={columns}
         data={activeError ? [] : rows}
@@ -1871,7 +1878,7 @@ function ProductIncomeMovementPanel({
           {t('Знайдено дві активні складські гілки одного приходу з AMG і Fenix. Записи показано окремо, оскільки обидва впливають на залишок.')}
         </Alert>
       ) : null}
-      {!activeError && <PhysicalCoverageNotice coverage={rowsState.physicalCoverage} />}
+      {!activeError && <><PhysicalCoverageNotice coverage={rowsState.physicalCoverage} /><PhysicalQuantityExceptionNotice exceptions={rowsState.physicalExceptions} /></>}
       <DataTable
         columns={columns}
         data={activeError ? [] : treeRows}
@@ -2076,7 +2083,7 @@ function ProductOutcomeMovementPanel({
           {activeError}
         </Alert>
       ) : null}
-      {!activeError && <PhysicalCoverageNotice coverage={rowsState.physicalCoverage} />}
+      {!activeError && <><PhysicalCoverageNotice coverage={rowsState.physicalCoverage} /><PhysicalQuantityExceptionNotice exceptions={rowsState.physicalExceptions} /></>}
       <DataTable
         columns={columns}
         data={activeError ? [] : rows}
@@ -2284,7 +2291,7 @@ function useProductMovementColumns(): DataTableColumn<ProductMovement>[] {
         minWidth: 96,
         align: 'right',
         accessor: (row) => row.IncomeQty,
-        cell: (row) => formatAmount(row.IncomeQty),
+        cell: (row) => <PhysicalQuantityCell row={row} value={row.IncomeQty} />,
       },
       {
         id: 'outcomeQty',
@@ -2293,7 +2300,7 @@ function useProductMovementColumns(): DataTableColumn<ProductMovement>[] {
         minWidth: 96,
         align: 'right',
         accessor: (row) => row.OutcomeQty,
-        cell: (row) => formatAmount(row.OutcomeQty),
+        cell: (row) => <PhysicalQuantityCell row={row} value={row.OutcomeQty} />,
       },
       {
         id: 'comment',
@@ -2469,7 +2476,7 @@ function useProductIncomeMovementColumns(): DataTableColumn<ProductIncomeMovemen
         minWidth: 112,
         align: 'right',
         accessor: (row) => row.IncomeQty,
-        cell: (row) => formatAmount(row.IncomeQty),
+        cell: (row) => <PhysicalQuantityCell row={row} value={row.IncomeQty} />,
       },
       {
         id: 'remainingQty',
@@ -2633,7 +2640,7 @@ function useProductOutcomeMovementColumns(): DataTableColumn<ProductOutcomeMovem
         minWidth: 96,
         align: 'right',
         accessor: (row) => row.Qty,
-        cell: (row) => formatAmount(row.Qty),
+        cell: (row) => <PhysicalQuantityCell row={row} value={row.Qty} />,
       },
     ], t), t),
     [t],
@@ -2722,7 +2729,7 @@ function useStorageLocationHistoryColumns(): DataTableColumn<ProductStorageLocat
   )
 }
 
-async function getProductMovements(params: ProductMovementParams, requestPath: string): Promise<{ rows: ProductMovement[]; physicalCoverage: PhysicalCoverage[] }> {
+async function getProductMovements(params: ProductMovementParams, requestPath: string): Promise<{ rows: ProductMovement[]; physicalCoverage: PhysicalCoverage[]; physicalExceptions: PhysicalQuantityException[] }> {
   const result = await apiRequest<unknown>(requestPath, {
     responseMode: 'envelope',
     query: {
@@ -2739,7 +2746,7 @@ async function getProductMovements(params: ProductMovementParams, requestPath: s
   })
 
   const response = physicalMovementResponse(result)
-  return { rows: normalizeArray(response.body) as ProductMovement[], physicalCoverage: response.coverage }
+  return { rows: normalizeArray(response.body) as ProductMovement[], physicalCoverage: response.coverage, physicalExceptions: response.exceptions }
 }
 
 async function getHistoricalSourceMovements(
@@ -2786,7 +2793,7 @@ async function getInformationalMovements(
 async function getProductIncomeMovements(
   params: ProductIncomeOutcomeMovementParams,
   requestPath: string,
-): Promise<{ rows: ProductIncomeMovement[]; physicalCoverage: PhysicalCoverage[] }> {
+): Promise<{ rows: ProductIncomeMovement[]; physicalCoverage: PhysicalCoverage[]; physicalExceptions: PhysicalQuantityException[] }> {
   const result = await apiRequest<unknown>(requestPath, {
     responseMode: 'envelope',
     query: {
@@ -2801,13 +2808,13 @@ async function getProductIncomeMovements(
   })
 
   const response = physicalMovementResponse(result)
-  return { rows: normalizeArray(response.body) as ProductIncomeMovement[], physicalCoverage: response.coverage }
+  return { rows: normalizeArray(response.body) as ProductIncomeMovement[], physicalCoverage: response.coverage, physicalExceptions: response.exceptions }
 }
 
 async function getProductOutcomeMovements(
   params: ProductIncomeOutcomeMovementParams,
   requestPath: string,
-): Promise<{ rows: ProductOutcomeMovement[]; physicalCoverage: PhysicalCoverage[] }> {
+): Promise<{ rows: ProductOutcomeMovement[]; physicalCoverage: PhysicalCoverage[]; physicalExceptions: PhysicalQuantityException[] }> {
   const result = await apiRequest<unknown>(requestPath, {
     responseMode: 'envelope',
     query: {
@@ -2822,7 +2829,7 @@ async function getProductOutcomeMovements(
   })
 
   const response = physicalMovementResponse(result)
-  return { rows: normalizeArray(response.body) as ProductOutcomeMovement[], physicalCoverage: response.coverage }
+  return { rows: normalizeArray(response.body) as ProductOutcomeMovement[], physicalCoverage: response.coverage, physicalExceptions: response.exceptions }
 }
 
 async function getProductStorageLocationHistory(

@@ -3,7 +3,7 @@ import { getPhysicalSourceMovementKey, type ProductSourceHistoryRow } from './pr
 export type ProductIncomeMovementTreeSource = ProductSourceHistoryRow & {
   Currency?: string
   ImportedForAmg?: boolean | null
-  IncomeQty?: number
+  IncomeQty?: number | null
   IncomeToStorageDate?: Date | string
   IncomeToStorageNumber?: string | number
   IsHide?: boolean
@@ -185,7 +185,8 @@ function hasMatchingDocumentValues(
   left: ProductIncomeMovementTreeSource,
   right: ProductIncomeMovementTreeSource,
 ): boolean {
-  if (left.PhysicalSource || right.PhysicalSource) return false
+  if (left.PhysicalSource || right.PhysicalSource || left.QuantityKnown === false || right.QuantityKnown === false
+    || left.QuantityStatus === 'unconfirmed_batch' || right.QuantityStatus === 'unconfirmed_batch') return false
   const leftCurrency = normalizeTreePart(left.Currency)
   const rightCurrency = normalizeTreePart(right.Currency)
 

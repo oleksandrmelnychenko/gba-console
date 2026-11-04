@@ -1,3 +1,4 @@
+import { PhysicalQuantityExceptionNotice } from '../../../shared/ui/product-movement-history/PhysicalQuantityExceptionNotice'
 import { ReportRowPagination } from './ReportRowPagination'
 import { PhysicalCoverageNotice } from '../../../shared/ui/product-movement-history/PhysicalCoverageNotice'
 import { requestCurrentVparivanieAnalysis } from '../data/currentVparivanieAnalysis'
@@ -121,7 +122,7 @@ export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disa
           {`Завантажити ${format.toUpperCase()}`}</Button>)}</Group>
       {rejected && !requestCurrentVparivanieAnalysis(request) ? <Text size="xs" c="gray.7" role="status">{rejected}</Text> : null}
       {error ? <Alert color="red">{error}</Alert> : null}
-      {result ? <><PhysicalCoverageNotice coverage={result.PhysicalCoverage ?? []} />
+      {result ? <><PhysicalCoverageNotice coverage={result.PhysicalCoverage ?? []} /><PhysicalQuantityExceptionNotice exceptions={result.PhysicalQuantityExceptions} />
         <Text size="xs" c="dimmed">Продажі: {result.From} — {result.To}. {currentVparivanieStockSentence(result.StockAnchor)}
         Порожня клітинка — факт відсутній; ∅ — кількість невідома.</Text><RegionalTable key={requestKey} result={result} /></> : null}
     </Stack>

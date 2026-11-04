@@ -304,15 +304,15 @@ export type ProductMovement = Omit<EntityFields, 'Id' | 'NetUid'> & ProductSourc
   FromDate?: string | Date
   IncomeDocumentFromDate?: string | Date
   IncomeDocumentNumber?: string
-  IncomeQty?: number
+  IncomeQty?: number | null
   IsEdited?: boolean
   MovementType?: string
   OrganizationName?: string
-  OutcomeQty?: number
+  OutcomeQty?: number | null
   Price?: number
   ProductName?: string
   ProductVendorCode?: string
-  Qty?: number
+  Qty?: number | null
   Responsible?: string
   StorageName?: string
   UserName?: string
@@ -330,7 +330,7 @@ export type ProductIncomeMovement = Omit<EntityFields, 'Id' | 'NetUid'> & Produc
   ImportedSourceMetadataResolved?: boolean | null
   IncomeInvoiceDate?: Date | string
   IncomeInvoiceNumber?: string | number
-  IncomeQty?: number
+  IncomeQty?: number | null
   IncomeToStorageDate?: Date | string
   IncomeToStorageNumber?: string | number
   ManagementEurUnitPrice?: number
@@ -357,7 +357,7 @@ export type ProductOutcomeMovement = Omit<EntityFields, 'Id' | 'NetUid'> & Produ
   HasUpdateDataCarrier?: boolean
   OrganizationName?: string
   Price?: number
-  Qty?: number
+  Qty?: number | null
   ResponsibleName?: string
   StorageName?: string
 }

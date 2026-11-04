@@ -1,3 +1,4 @@
+import { readPhysicalQuantityExceptions, type PhysicalQuantityException } from '../../../shared/ui/product-movement-history/physicalQuantityExceptions'
 import { readPhysicalCoverage, type PhysicalCoverage } from '../../../shared/ui/product-movement-history/physicalCoverage'
 
 export const WAREHOUSE_STOCK_MOVEMENT_ROUTE = '/report/constructors/warehouse-stock-movement'
@@ -101,7 +102,7 @@ export type StockMovementRequest = {
   Limit: number
 }
 
-export type StockMovementQuantity = { Opening: number; Incoming: number; Outgoing: number; Closing: number }
+export type StockMovementQuantity = { Opening: number | null; Incoming: number | null; Outgoing: number | null; Closing: number | null }
 export type StockMovementRow = {
   Index: number
   Depth: number
@@ -123,6 +124,7 @@ export type StockMovementRow = {
 }
 export type StockMovementResult = {
   PhysicalCoverage?: PhysicalCoverage[]
+  PhysicalQuantityExceptions?: PhysicalQuantityException[]
   Version: 1
   From: string
   To: string
@@ -180,10 +182,11 @@ export function normalizeStockMovementLookup(raw: unknown): StockMovementLookupI
 }
 
 function quantity(value: unknown): value is StockMovementQuantity {
-  return record(value) && finite(value.Opening) && finite(value.Incoming) && finite(value.Outgoing) && finite(value.Closing)
+  return record(value) && [value.Opening, value.Incoming, value.Outgoing, value.Closing].every(item => item === null || finite(item))
 }
 
 export function balances(quantity: StockMovementQuantity): boolean {
+  if (quantity.Opening === null || quantity.Incoming === null || quantity.Outgoing === null || quantity.Closing === null) return true
   return Math.abs(quantity.Opening + quantity.Incoming - quantity.Outgoing - quantity.Closing) < 1e-6
 }
 
@@ -206,7 +209,7 @@ export function normalizeStockMovementResult(raw: unknown, request: StockMovemen
     || !Array.isArray(value.Rows) || value.Rows.length > request.Limit || !value.Rows.every(row) || !strings(value.Notes)) return invalid()
   const rows = value.Rows as StockMovementRow[]
   if (rows.some((item, index) => item.Index !== request.Offset + index) || request.Offset + rows.length > (value.TotalRows as number)) return invalid()
-  return { ...value, ...(value.PhysicalCoverage != null
+  return { ...value, PhysicalQuantityExceptions: readPhysicalQuantityExceptions(value.PhysicalQuantityExceptions), ...(value.PhysicalCoverage != null
     ? { PhysicalCoverage: readPhysicalCoverage(value.PhysicalCoverage) } : {}) } as StockMovementResult
 }
 
@@ -323,7 +326,8 @@ export function displayDateTime(value: string | null): string {
   return match ? `${match[3]}.${match[2]}.${match[1]} ${match[4]}:${match[5]}` : value ?? ''
 }
 
-export function formatStockQuantity(value: number): string {
+export function formatStockQuantity(value: number | null): string {
+  if (value === null) return '—'
   if (value === 0) return ''
   const negative = value < 0
   const [integer, fraction = ''] = Math.abs(value).toFixed(8).split('.')

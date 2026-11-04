@@ -1,3 +1,5 @@
+import { PhysicalQuantityCell, PhysicalQuantityExceptionNotice } from '../../../shared/ui/product-movement-history/PhysicalQuantityExceptionNotice'
+import type { PhysicalQuantityException } from '../../../shared/ui/product-movement-history/physicalQuantityExceptions'
 import { PhysicalCoverageNotice } from '../../../shared/ui/product-movement-history/PhysicalCoverageNotice'
 import type { PhysicalCoverage } from '../../../shared/ui/product-movement-history/physicalCoverage'
 import { SYNC_DATA_RANGE_START } from '../../../shared/date/dateTime'
@@ -3177,6 +3179,7 @@ function ProductInlineMovementsTab({
   const productNetUid = product.NetUid?.trim()
   const [dateFrom, setDateFrom] = useState(() => direction === 'income' ? SYNC_DATA_RANGE_START : getDateDaysAgo(30))
   const [dateTo, setDateTo] = useState(getTodayDate)
+  const [physicalExceptions, setPhysicalExceptions] = useState<PhysicalQuantityException[]>([])
   const [physicalCoverage, setPhysicalCoverage] = useState<PhysicalCoverage[]>([])
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [state, dispatch] = useReducer(inlineMovementReducer, {
@@ -3211,6 +3214,7 @@ function ProductInlineMovementsTab({
     async function loadRows() {
       dispatch({ type: 'loading' })
       setPhysicalCoverage([])
+      setPhysicalExceptions([])
 
       try {
         const params = {
@@ -3219,7 +3223,7 @@ function ProductInlineMovementsTab({
           to: dateTo,
           ...(includeSiblings ? { includeSiblings: true } : {}),
         }
-        const onCoverage = (coverage: PhysicalCoverage[]) => { if (!cancelled) setPhysicalCoverage(coverage) }
+        const onCoverage = (coverage: PhysicalCoverage[], exceptions: PhysicalQuantityException[] = []) => { if (!cancelled) { setPhysicalCoverage(coverage); setPhysicalExceptions(exceptions) } }
         const nextRows = direction === 'income'
           ? await getProductIncomeMovements(params, onCoverage)
           : await getProductOutcomeMovements(params, onCoverage)
@@ -3321,7 +3325,7 @@ function ProductInlineMovementsTab({
           </Stack>
         </Alert>
       )}
-      {!filterError && <PhysicalCoverageNotice coverage={physicalCoverage} />}
+      {!filterError && <><PhysicalCoverageNotice coverage={physicalCoverage} /><PhysicalQuantityExceptionNotice exceptions={physicalExceptions} /></>}
       {productNetUid && !filterError && (direction === 'income' ? (
         <ProductIncomeMovementsGrid toolbarPortalTarget={tableToolbarSlot} emptyText={state.error ? '' : t(labels.empty)} includeSiblings={includeSiblings} isLoading={state.isLoading} rows={state.rows as ProductIncomeMovement[]} />
       ) : (
@@ -3498,7 +3502,7 @@ function ProductIncomeMovementsGrid({
         width: 104,
         align: 'right',
         accessor: (row) => row.IncomeQty,
-        cell: (row) => renderMovementAmount(row.IncomeQty),
+        cell: (row) => <PhysicalQuantityCell row={row} value={row.IncomeQty} />,
       },
       {
         id: 'remainingQty',
@@ -3656,7 +3660,7 @@ function ProductOutcomeMovementsGrid({
         minWidth: 110,
         align: 'right',
         accessor: (row) => row.Qty,
-        cell: (row) => renderMovementAmount(row.Qty),
+        cell: (row) => <PhysicalQuantityCell row={row} value={row.Qty} />,
       },
     ], t), 'qty', t),
     [t],

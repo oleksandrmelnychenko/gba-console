@@ -1,3 +1,4 @@
+import { unconfirmedBatch } from '../../../shared/ui/product-movement-history/physicalQuantityExceptions.test-fixtures'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -179,4 +180,22 @@ describe('native warehouse stock movement', () => {
     expect(screen.getByText('Немає права формування звітів по складу.')).toBeTruthy()
     expect(getStockMovementCapability).not.toHaveBeenCalled()
   })
+})
+
+
+it.each([false, true])('keeps unknown warehouse totals and explicit exception through export, empty=%s', async empty => {
+  vi.mocked(previewStockMovement).mockImplementation(async request => ({
+    ...stockMovementResult(request, empty ? [] : stockMovementRows.map(row => ({ ...row, Quantity: { Opening: null, Incoming: 0, Outgoing: null, Closing: null } }))),
+    Totals: { Opening: null, Incoming: 0, Outgoing: null, Closing: null }, PhysicalQuantityExceptions: [unconfirmedBatch],
+  }))
+  render(panel())
+  const table = await applyReport()
+  expect(screen.getByRole('alert').textContent).toContain('ВО-00041')
+  const footer = table.querySelector('tfoot')!
+  expect(footer.textContent).toBe('Підсумок———')
+  expect(footer.querySelector('[data-negative="true"]')).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Excel' }))
+  await waitFor(() => expect(exportStockMovement).toHaveBeenCalledOnce())
+  expect(vi.mocked(exportStockMovement).mock.calls[0][0]).toEqual({ ...previews()[0], Offset: 0, Limit: 1 })
+  expect(footer.textContent).toBe('Підсумок———')
 })

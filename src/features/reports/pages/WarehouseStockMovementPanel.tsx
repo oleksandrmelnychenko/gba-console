@@ -1,3 +1,4 @@
+import { PhysicalQuantityExceptionNotice } from '../../../shared/ui/product-movement-history/PhysicalQuantityExceptionNotice'
 import { ActionIcon, Alert, Button, Checkbox, Group, NumberInput, Select, Stack, Table, Text, Textarea, TextInput } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, MonitorPlay, Plus, X } from 'lucide-react'
@@ -83,8 +84,8 @@ function FixedMovementFilter({ label, field, condition, children }: {
     value={children} />
 }
 
-function QuantityCell({ value, negativeRed }: { value: number; negativeRed: boolean }) {
-  return <Table.Td className="app-table-cell-number" data-negative={negativeRed && value < 0 ? 'true' : undefined}>{formatStockQuantity(value)}</Table.Td>
+function QuantityCell({ value, negativeRed }: { value: number | null; negativeRed: boolean }) {
+  return <Table.Td className="app-table-cell-number" data-negative={negativeRed && value !== null && value < 0 ? 'true' : undefined}>{formatStockQuantity(value)}</Table.Td>
 }
 
 function ResultTable({ run, draftMeasures, negativeRed, grandTotals, busy, onPage }: {
@@ -121,7 +122,7 @@ function ResultTable({ run, draftMeasures, negativeRed, grandTotals, busy, onPag
           <Table.Tr>
             <Table.Th>Підсумок</Table.Th>
             {measures.map(measure => <Table.Th key={measure} className="app-table-cell-number"
-              data-negative={negativeRed && result.Totals[measureKey[measure]] < 0 ? 'true' : undefined}>{formatStockQuantity(result.Totals[measureKey[measure]])}</Table.Th>)}
+              data-negative={negativeRed && (result.Totals[measureKey[measure]] ?? 0) < 0 ? 'true' : undefined}>{formatStockQuantity(result.Totals[measureKey[measure]])}</Table.Th>)}
           </Table.Tr>
         </Table.Tfoot> : null}
       </Table>
@@ -363,6 +364,7 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
       <h2 className="app-section-title">Результат</h2>
       {run ? <Stack gap={8}>
         <PhysicalCoverageNotice coverage={run.result.PhysicalCoverage ?? []} />
+        <PhysicalQuantityExceptionNotice exceptions={run.result.PhysicalQuantityExceptions} />
         <Group gap={8} justify="space-between" wrap="wrap">
           <Text size="sm" fw={600}>{displayDate(run.result.From)} — {displayDate(run.result.To)}</Text>
           <Text size="xs" c="dimmed">Складів і товарів: {run.result.Keys}; документів руху: {run.result.Registrars}; сформовано {displayDateTime(run.result.ObservedAt)} (Київ)</Text>

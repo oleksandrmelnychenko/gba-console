@@ -1,3 +1,6 @@
+import { createElement } from 'react'
+import { PhysicalQuantityCell } from './PhysicalQuantityExceptionNotice'
+import type { PhysicalQuantityState } from './physicalQuantityExceptions'
 import type { DataTableColumn } from '../data-table/types'
 
 export type ProductSourceHistoryInfo = {
@@ -24,7 +27,7 @@ export type PhysicalSourceMovementIdentity = {
   BatchId: string
 }
 
-export type ProductSourceHistoryRow = {
+export type ProductSourceHistoryRow = PhysicalQuantityState & {
   Id?: number | null
   NetUid?: string | null
   SourceHistory?: ProductSourceHistoryInfo | null
@@ -85,7 +88,9 @@ export function withProductSourceHistoryColumns<T extends ProductSourceHistoryRo
     if (physicalQuantityColumns.has(column.id)) {
       return {
         ...column,
+        accessor: (row) => row.QuantityKnown === false || row.QuantityStatus === 'unconfirmed_batch' ? null : column.accessor?.(row),
         cell: (row) => {
+          if (row.QuantityKnown === false || row.QuantityStatus === 'unconfirmed_batch') return createElement(PhysicalQuantityCell, { row, value: null })
           if (!row.PhysicalSource) return column.cell?.(row)
           const value = column.accessor?.(row)
           return typeof value === 'number' && Number.isFinite(value) ? physicalQuantityFormat.format(value) : '—'

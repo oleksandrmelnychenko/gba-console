@@ -439,7 +439,7 @@ export async function getProductMovements(params: ProductMovementsParams, signal
   })
 
   const response = physicalMovementResponse(result)
-  onCoverage?.(response.coverage)
+  onCoverage?.(response.coverage, response.exceptions)
   return normalizeArray(response.body) as ProductMovement[]
 }
 
@@ -462,7 +462,7 @@ export async function getProductIncomeMovements(
   })
 
   const response = physicalMovementResponse(result)
-  onCoverage?.(response.coverage)
+  onCoverage?.(response.coverage, response.exceptions)
   return normalizeArray(response.body) as ProductIncomeMovement[]
 }
 
@@ -485,7 +485,7 @@ export async function getProductOutcomeMovements(
   })
 
   const response = physicalMovementResponse(result)
-  onCoverage?.(response.coverage)
+  onCoverage?.(response.coverage, response.exceptions)
   return normalizeArray(response.body) as ProductOutcomeMovement[]
 }
 

@@ -108,3 +108,14 @@ describe('warehouse stock movement responses', () => {
     expect(displayDateTime(null)).toBe('')
   })
 })
+
+
+it('preserves unknown warehouse quantities while still rejecting false complete conservation', () => {
+  const request = buildStockMovementRequest(draft())
+  const result = stockMovementResult(request)
+  const partial = { ...result, Totals: { Opening: null, Incoming: 0, Outgoing: null, Closing: null } }
+  expect(normalizeStockMovementResult(partial, request).Totals).toEqual(partial.Totals)
+  expect(formatStockQuantity(null)).toBe('—')
+  expect(formatStockQuantity(0)).toBe('')
+  expect(() => normalizeStockMovementResult({ ...result, Totals: { Opening: 0, Incoming: 0, Outgoing: 0, Closing: 1 } }, request)).toThrow()
+})

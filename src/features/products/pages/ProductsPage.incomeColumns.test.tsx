@@ -1,3 +1,4 @@
+import { unconfirmedBatch } from '../../../shared/ui/product-movement-history/physicalQuantityExceptions.test-fixtures'
 import { partialPhysicalCoverage } from '../../../shared/ui/product-movement-history/physicalCoverage.test-fixtures'
 // @ts-expect-error The app build excludes Node types; Vitest runs this test in Node.
 import { readFileSync } from 'node:fs'
@@ -555,4 +556,13 @@ it.each(['Прихід', 'Розхід'] as const)('keeps partial physical cover
   expect(await screen.findByText('Імпортована історія не покриває весь вибраний період')).toBeTruthy()
   expect(screen.getByText(/01.01.2025 — 02.11.2026/)).toBeTruthy()
   expect(document.body.textContent).not.toMatch(/private-publication|private-receipt/)
+})
+
+it.each(['Прихід', 'Розхід'] as const)('keeps unconfirmed batch visible for empty inline %s', async tab => {
+  getProductIncomeMovementsMock.mockImplementation(async (_params, onCoverage) => { onCoverage?.([], [unconfirmedBatch]); return [] })
+  vi.mocked(getProductOutcomeMovements).mockImplementation(async (_params, onCoverage) => { onCoverage?.([], [unconfirmedBatch]); return [] })
+  await openIncomeTab()
+  if (tab === 'Розхід') fireEvent.click(screen.getByRole('button', { name: tab }))
+  const warning = await screen.findByText('Партію не підтверджено')
+  expect(warning.closest('[role="alert"]')?.textContent).toContain('ВО-00041')
 })

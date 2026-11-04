@@ -1,3 +1,4 @@
+import { readPhysicalQuantityExceptions, type PhysicalQuantityException } from './physicalQuantityExceptions'
 export type PhysicalCoverage = {
   PublicationId: string
   StorageId: number
@@ -11,7 +12,7 @@ export type PhysicalCoverage = {
   ImportedPeriodComplete: boolean
 }
 
-export type PhysicalCoverageListener = (coverage: PhysicalCoverage[]) => void
+export type PhysicalCoverageListener = (coverage: PhysicalCoverage[], exceptions?: PhysicalQuantityException[]) => void
 
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
 const instant = (value: unknown): value is string => typeof value === 'string'
@@ -34,11 +35,12 @@ export function readPhysicalCoverage(value: unknown): PhysicalCoverage[] {
   })
 }
 
-export function physicalMovementResponse(value: unknown): { body: unknown; coverage: PhysicalCoverage[] } {
+export function physicalMovementResponse(value: unknown): { body: unknown; coverage: PhysicalCoverage[]; exceptions: PhysicalQuantityException[] } {
   const envelope = record(value) ? value : undefined
   return {
     body: envelope && 'Body' in envelope ? envelope.Body : value,
     coverage: readPhysicalCoverage(envelope?.PhysicalCoverage),
+    exceptions: readPhysicalQuantityExceptions(envelope?.PhysicalQuantityExceptions),
   }
 }
 

@@ -1,3 +1,5 @@
+import { PhysicalQuantityCell, PhysicalQuantityExceptionNotice } from '../../../shared/ui/product-movement-history/PhysicalQuantityExceptionNotice'
+import type { PhysicalQuantityException } from '../../../shared/ui/product-movement-history/physicalQuantityExceptions'
 import { PhysicalCoverageNotice } from '../../../shared/ui/product-movement-history/PhysicalCoverageNotice'
 import type { PhysicalCoverage } from '../../../shared/ui/product-movement-history/physicalCoverage'
 import { useProductImageDraft } from '../useProductImageDraft'
@@ -2064,6 +2066,7 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
   const hasSiblings = hasProductSiblingCards(siblingCards)
   const includeSiblings = hasSiblings && siblingScope === 'all'
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const [physicalExceptions, setPhysicalExceptions] = useState<PhysicalQuantityException[]>([])
   const [physicalCoverage, setPhysicalCoverage] = useState<PhysicalCoverage[]>([])
   const [rows, setRows] = useState<ProductMovement[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -2104,6 +2107,7 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
     async function loadRows() {
       setLoading(true)
       setPhysicalCoverage([])
+      setPhysicalExceptions([])
       setError(null)
 
       try {
@@ -2114,7 +2118,7 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
           to: dateTo,
           types,
           ...(includeSiblings ? { includeSiblings: true } : {}),
-        }, controller.signal, (coverage) => { if (!cancelled) setPhysicalCoverage(coverage) })
+        }, controller.signal, (coverage, exceptions = []) => { if (!cancelled) { setPhysicalCoverage(coverage); setPhysicalExceptions(exceptions) } })
 
         if (!cancelled) {
           setRows(nextRows)
@@ -2183,8 +2187,8 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
     { id: 'price', header: t('Собівартість'), minWidth: 120, align: 'right', accessor: (row) => row.Price, cell: (row) => <span className="app-money">{formatPrice(row.Price)}</span> },
     { id: 'accountingPrice', header: t('Облікова собівартість'), minWidth: 160, align: 'right', accessor: (row) => row.AccountingPrice, cell: (row) => <span className="app-money">{formatPrice(row.AccountingPrice)}</span> },
     { id: 'discount', header: t('Знижка'), minWidth: 110, align: 'right', accessor: (row) => row.Discount, cell: (row) => <span className="app-money">{formatPrice(row.Discount)}</span> },
-    { id: 'income', header: t('Прихід'), minWidth: 110, align: 'right', accessor: (row) => row.IncomeQty, cell: (row) => <span className="app-money">{formatAmount(row.IncomeQty)}</span> },
-    { id: 'outcome', header: t('Розхід'), minWidth: 110, align: 'right', accessor: (row) => row.OutcomeQty, cell: (row) => <span className="app-money">{formatAmount(row.OutcomeQty)}</span> },
+    { id: 'income', header: t('Прихід'), minWidth: 110, align: 'right', accessor: (row) => row.IncomeQty, cell: (row) => <PhysicalQuantityCell row={row} value={row.IncomeQty} /> },
+    { id: 'outcome', header: t('Розхід'), minWidth: 110, align: 'right', accessor: (row) => row.OutcomeQty, cell: (row) => <PhysicalQuantityCell row={row} value={row.OutcomeQty} /> },
     { id: 'comment', header: t('Коментар'), minWidth: 220, accessor: (row) => row.Comment, cell: (row) => displayValue(row.Comment) },
   ], t), t), [t])
   const movementColumns = useMemo<DataTableColumn<ProductMovement>[]>(
@@ -2222,7 +2226,7 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
       {activeError && <Alert className="product-data-alert" color={filterError || missingNetUidError || typesError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">{activeError}</Alert>}
       {!activeError && (
         <div className="product-data-table-body">
-          <PhysicalCoverageNotice coverage={physicalCoverage} />
+          <><PhysicalCoverageNotice coverage={physicalCoverage} /><PhysicalQuantityExceptionNotice exceptions={physicalExceptions} /></>
           <DataTable
             columns={movementColumns}
             data={rows}

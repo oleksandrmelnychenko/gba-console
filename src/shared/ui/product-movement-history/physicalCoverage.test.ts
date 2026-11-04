@@ -4,10 +4,10 @@ import { partialPhysicalCoverage as coverage } from './physicalCoverage.test-fix
 
 describe('physical coverage transport', () => {
   it.each([[], null])('retains coverage independently of empty Body %j', Body => {
-    expect(physicalMovementResponse({ Body, PhysicalCoverage: [coverage] })).toEqual({ body: Body, coverage: [coverage] })
+    expect(physicalMovementResponse({ Body, PhysicalCoverage: [coverage] })).toEqual({ body: Body, coverage: [coverage], exceptions: [] })
   })
   it('supports legacy arrays without inventing coverage', () => {
-    expect(physicalMovementResponse([{ Qty: 3 }])).toEqual({ body: [{ Qty: 3 }], coverage: [] })
+    expect(physicalMovementResponse([{ Qty: 3 }])).toEqual({ body: [{ Qty: 3 }], coverage: [], exceptions: [] })
   })
   it('shows the inclusive Kyiv last day without using browser timezone', () => {
     expect(physicalCoverageIntervals([coverage])).toEqual(['01.01.2025 — 02.11.2026'])
