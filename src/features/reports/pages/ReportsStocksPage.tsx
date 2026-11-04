@@ -204,7 +204,6 @@ import { ConstructorDesk } from './constructor-desk/ConstructorDesk'
 import { ConstructorGroupingPanels } from './constructor-desk/ConstructorGrouping'
 import { ConstructorMeasures } from './constructor-desk/ConstructorMeasures'
 import { ConstructorFilters } from './constructor-desk/ConstructorFilters'
-import { ConstructorUnavailableFilters, unavailableConstructorFilters } from './constructor-desk/ConstructorUnavailableFilters'
 import { defaultConstructorPresentation, readConstructorPresentation, type ConstructorPresentation } from '../data/constructorPresentation'
 import { reorderReportGrouping, transferReportGrouping, type ReportGroupingAxis } from '../data/reportGroupingLayout'
 
@@ -1068,7 +1067,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         onAdd={() => filterLogic.editSelection({ kind: 'append', selection: createEmptySelection() })}
         onDelete={index => filterLogic.editSelection({ kind: 'delete', index })}
         onCopy={index => { if (selections[index]) filterLogic.editSelection({ kind: 'append', selection: cloneReportSelection(selections[index], dataSource) }) }}
-        footer={<><ConstructorUnavailableFilters fields={unavailableConstructorFilters(dataSource, typeof reportProfile === 'string' ? reportProfile : null)} /><StockQuantityFilterPanel dataset={dataset} request={templateBody} disabled={comparisonSettingsDisabled} onChange={setStockQuantityFilter} />{dataSource !== 19 && returnsOnly !== true ? analysisPanels.filterExpression : null}</>}
+        footer={<><StockQuantityFilterPanel dataset={dataset} request={templateBody} disabled={comparisonSettingsDisabled} onChange={setStockQuantityFilter} />{dataSource !== 19 && returnsOnly !== true ? analysisPanels.filterExpression : null}</>}
         renderRow={({ index, selected, onSelect }) => <InlineReportSelection variant="row" selected={selected} onSelect={onSelect} dataset={activeWorkbook === 'Впарювання.xls' ? vparivanieSelectionDataset(dataset) : dataset} request={reportBody}
           selection={selections[index]} selections={selections} index={index} dataSource={dataSource} from={lookup.from} to={lookup.to}
           filterFieldOptions={filterFieldOptions} lookupProfitReadMode={lookup.profitReadMode} lookupProfitUnavailable={lookup.profitUnavailable}
