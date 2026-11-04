@@ -50,7 +50,10 @@ describe('1C export panel', () => {
     await waitFor(() => expect(exportFile).toHaveBeenCalledTimes(1))
     const request = exportFile.mock.calls[0][0]
     expect(request.bases).toEqual(['Fenix', 'Amg'])
-    expect(request.types).toEqual(['Sale', 'SaleReturn', 'ProductIncome', 'ProductTransfer', 'WriteOff', 'Capitalization'])
+    expect(request.types).toEqual([
+      'Sale', 'SaleReturn', 'ProductIncome', 'ProductTransfer', 'WriteOff', 'Capitalization',
+      'IncomePayment', 'OutgoingPayment', 'RegisterTransfer', 'CurrencyExchange', 'ReSale', 'ServiceIncome', 'SupplyOrder',
+    ])
     expect(request.from).toBe(request.to)
     await waitFor(() => expect(save).toHaveBeenCalledWith(file))
     expect(runs).toHaveBeenCalledTimes(2)

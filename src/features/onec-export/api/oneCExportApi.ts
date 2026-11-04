@@ -18,6 +18,13 @@ export const ONE_C_EXPORT_TYPES = [
   'ProductTransfer',
   'WriteOff',
   'Capitalization',
+  'IncomePayment',
+  'OutgoingPayment',
+  'RegisterTransfer',
+  'CurrencyExchange',
+  'ReSale',
+  'ServiceIncome',
+  'SupplyOrder',
 ] as const
 export type OneCExportDocumentType = (typeof ONE_C_EXPORT_TYPES)[number]
 
@@ -28,6 +35,13 @@ export const ONE_C_EXPORT_TYPE_LABELS: Record<OneCExportDocumentType, string> = 
   ProductTransfer: 'Переміщення товарів',
   WriteOff: 'Списання товарів',
   Capitalization: 'Оприбуткування товарів',
+  IncomePayment: 'Надходження коштів (каса, банк)',
+  OutgoingPayment: 'Витрата коштів (каса, банк)',
+  RegisterTransfer: 'Переміщення коштів між рахунками',
+  CurrencyExchange: 'Обмін валют',
+  ReSale: 'Перепродаж',
+  ServiceIncome: 'Послуги постачальників',
+  SupplyOrder: 'Замовлення постачальникам',
 }
 
 export type OneCExportRequest = {
