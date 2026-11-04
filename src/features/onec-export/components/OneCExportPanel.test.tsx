@@ -59,6 +59,14 @@ describe('1C export panel', () => {
     expect(runs).toHaveBeenCalledTimes(2)
   })
 
+  it('shows a history loading failure without initiating an export', async () => {
+    runs.mockRejectedValueOnce(new Error('Журнал тимчасово недоступний'))
+    mount()
+
+    expect(await screen.findByText('Журнал тимчасово недоступний')).toBeTruthy()
+    expect(exportFile).not.toHaveBeenCalled()
+  })
+
   it('refuses to export without a base', async () => {
     mount()
     fireEvent.click(screen.getByLabelText('Фенікс'))

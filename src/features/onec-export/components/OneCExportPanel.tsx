@@ -61,18 +61,19 @@ export function OneCExportPanel() {
   const [downloading, setDownloading] = useState<string | null>(null)
   const [isExporting, setIsExporting, tryStartIsExporting] = useBusyState()
 
-  const loadRuns = useCallback(async (signal?: AbortSignal) => {
-    setRunsLoading(true)
-    try {
-      setRuns(await getOneCExportRuns(50, signal))
+  const loadRuns = useCallback((signal?: AbortSignal) => getOneCExportRuns(50, signal)
+    .then((loadedRuns) => {
+      if (signal?.aborted) return
+      setRuns(loadedRuns)
       setRunsError(null)
-    } catch (error) {
+    })
+    .catch((error: unknown) => {
       if (signal?.aborted) return
       setRunsError(error instanceof Error ? error.message : t('Не вдалося завантажити журнал вивантажень'))
-    } finally {
+    })
+    .finally(() => {
       if (!signal?.aborted) setRunsLoading(false)
-    }
-  }, [t])
+    }), [t])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -103,6 +104,7 @@ export function OneCExportPanel() {
       const file = await exportToOneC({ bases, from: period.from, to: period.to, types })
       saveDownloadedFile(file)
       notifications.show({ color: 'green', message: t('Файл для 1С сформовано: {name}', { name: file.fileName }) })
+      setRunsLoading(true)
       void loadRuns()
     } catch (error) {
       notifications.show({
