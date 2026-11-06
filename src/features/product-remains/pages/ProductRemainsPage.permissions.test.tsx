@@ -19,6 +19,7 @@ import { ProductRemainsPage } from './ProductRemainsPage'
 const allowedPermissions = new Set<string>()
 const productRow = {
   ConsignmentItemNetId: 'item-1',
+  FromDate: '2026-02-10T00:00:00',
   Product: { Name: 'Товар', VendorCode: 'P-1' },
 } as RemainingConsignment
 
@@ -132,6 +133,28 @@ describe('Product remains canonical permission guards', () => {
     fireEvent.click(movementButton)
     await waitFor(() => expect(getProductRemainMovements).toHaveBeenCalledWith(expect.objectContaining({
       consignmentItemNetId: 'item-1',
+      from: '2026-02-10',
     })))
+  })
+
+  it('debounces the vendor code search into a single request', async () => {
+    allowedPermissions.add(PermissionKeys.SystemPages.ConsignmentBalances.View)
+    renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Товари' }))
+    const searchInput = await screen.findByPlaceholderText('Артикул')
+    await waitFor(() => expect(getProductRemains).toHaveBeenCalled())
+    vi.mocked(getProductRemains).mockClear()
+
+    fireEvent.change(searchInput, { target: { value: 'A' } })
+    fireEvent.change(searchInput, { target: { value: 'AB' } })
+    fireEvent.change(searchInput, { target: { value: 'ABC ' } })
+    expect(getProductRemains).not.toHaveBeenCalled()
+
+    await waitFor(() => expect(getProductRemains).toHaveBeenCalledWith(expect.objectContaining({
+      offset: 0,
+      searchValue: 'ABC',
+    })), { timeout: 2000 })
+    expect(vi.mocked(getProductRemains).mock.calls.map(([params]) => params.searchValue)).toEqual(['ABC'])
   })
 })

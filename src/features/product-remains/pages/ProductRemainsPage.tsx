@@ -21,6 +21,7 @@ import {
   DocumentDetailSummary,
 } from '../../../shared/ui/document-detail/DocumentDetail'
 import { ChartNoAxesCombined, Boxes, CircleAlert, Download, Package, RefreshCw, RotateCcw, Search } from 'lucide-react'
+import { useDebouncedValue } from '@mantine/hooks'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
@@ -60,6 +61,7 @@ import {
   formatDateTime,
   formatMoney,
   getProductName,
+  getProductRemainMovementDefaultRange,
   getSupplierDisplayName,
   getVendorCode,
 } from '../utils'
@@ -70,6 +72,7 @@ import './product-remains-page.css'
 type ProductRemainsTab = 'batches' | 'products'
 
 const PAGE_SIZE = 25
+const PRODUCT_SEARCH_DEBOUNCE_MS = 400
 const pageSizeOptions = ['25', '50', '100']
 
 const BATCHES_TABLE_DEFAULT_LAYOUT = {
@@ -120,6 +123,8 @@ function useProductRemainsPageModel() {
   const [dateTo, setDateTo] = useValueState(getDefaultDateTo)
   const [productSearchDraft, setProductSearchDraft] = useValueState('')
   const [productSearchValue, setProductSearchValue] = useValueState('')
+  const [debouncedProductSearchDraft] = useDebouncedValue(productSearchDraft, PRODUCT_SEARCH_DEBOUNCE_MS)
+  const [committedProductSearchDraft, setCommittedProductSearchDraft] = useValueState('')
   const [pageSize, setPageSize] = useValueState(PAGE_SIZE)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [isLoadingStorages, setLoadingStorages] = useValueState(true)
@@ -174,6 +179,16 @@ function useProductRemainsPageModel() {
   const productPage = getPageFromOffset(productOffset, pageSize)
   const batchTotalPages = getTotalPages(batchTotals, pageSize)
   const productTotalPages = getTotalPages(productTotals, pageSize)
+
+  if (debouncedProductSearchDraft !== committedProductSearchDraft) {
+    setCommittedProductSearchDraft(debouncedProductSearchDraft)
+
+    if (debouncedProductSearchDraft.trim() !== productSearchValue) {
+      resetProductData()
+      setProductSearchValue(debouncedProductSearchDraft.trim())
+    }
+  }
+
   useEffect(() => {
     const nextActiveTab = getProductRemainsInitialTab(routeTab)
 
@@ -285,9 +300,7 @@ function useProductRemainsPageModel() {
   }
 
   function updateProductSearch(nextValue: string) {
-    resetProductData()
     setProductSearchDraft(nextValue)
-    setProductSearchValue(nextValue.trim())
   }
 
   function resetFilters() {
@@ -793,7 +806,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
               <TextInput
                 leftSection={<Search size={16} />}
                 label={t('Пошук товару')}
-                placeholder={t('Код або назва')}
+                placeholder={t('Артикул')}
                 value={productSearchDraft}
                 className="product-remains-search-filter"
                 onChange={(event) => updateProductSearch(event.currentTarget.value)}
@@ -1445,7 +1458,7 @@ function ProductRemainMovementsPanel({ row }: { row: RemainingConsignment }) {
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [state, dispatch] = useReducer(
     productRemainMovementsReducer,
-    Boolean(consignmentItemNetId),
+    row,
     createInitialProductRemainMovementsState,
   )
   const { dateFrom, dateTo, error, isLoading, reloadKey, rows } = state
@@ -1561,12 +1574,14 @@ function ProductRemainMovementsPanel({ row }: { row: RemainingConsignment }) {
   )
 }
 
-function createInitialProductRemainMovementsState(hasConsignmentItemNetId: boolean): ProductRemainMovementsState {
+function createInitialProductRemainMovementsState(row: RemainingConsignment): ProductRemainMovementsState {
+  const { dateFrom, dateTo } = getProductRemainMovementDefaultRange(row.FromDate)
+
   return {
-    dateFrom: getDefaultDateTo(),
-    dateTo: getDefaultDateTo(),
+    dateFrom,
+    dateTo,
     error: null,
-    isLoading: hasConsignmentItemNetId,
+    isLoading: Boolean(row.ConsignmentItemNetId?.trim()),
     reloadKey: 0,
     rows: [],
   }

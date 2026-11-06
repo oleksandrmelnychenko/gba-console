@@ -1,3 +1,4 @@
+import { formatKyivBusinessDate } from '../../shared/date/dateTime'
 import type { ProductRemainProduct, ProductRemainSupplier } from './types'
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA')
@@ -99,6 +100,35 @@ export function getSupplierDisplayName(supplier: ProductRemainSupplier): string 
     || supplier.NetUid
     || '-'
   )
+}
+
+export function getProductRemainMovementDefaultRange(
+  batchDate?: Date | string | null,
+  now: Date = new Date(),
+): { dateFrom: string; dateTo: string } {
+  const dateTo = formatKyivBusinessDate(now)
+  const batchDay = toBusinessDateValue(batchDate)
+  const dateFrom = batchDay && batchDay <= dateTo ? batchDay : `${dateTo.slice(0, 8)}01`
+
+  return { dateFrom, dateTo }
+}
+
+function toBusinessDateValue(value?: Date | string | null): string | null {
+  if (!value) {
+    return null
+  }
+
+  if (typeof value === 'string') {
+    const datePartMatch = /^(\d{4}-\d{2}-\d{2})/.exec(value)
+
+    if (datePartMatch) {
+      return datePartMatch[1]
+    }
+  }
+
+  const date = value instanceof Date ? value : new Date(value)
+
+  return Number.isNaN(date.getTime()) ? null : formatKyivBusinessDate(date)
 }
 
 function padTwoDigits(value: number): string {
