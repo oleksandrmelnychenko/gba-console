@@ -1,6 +1,7 @@
 import { changeReportPeriod } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -32,18 +33,24 @@ async function ready() {
   return view
 }
 async function agreement(id: number) {
+  const user = userEvent.setup()
   const picker = screen.getByRole('combobox', { name: 'Договір для оцінки' })
-  fireEvent.click(picker)
-  fireEvent.change(picker, { target: { value: `Договір ${id}` } })
-  await screen.findByRole('option', { name: `Договір ${id}` })
-  // A debounced lookup can replace an option while findByRole resolves.
-  // Dispatch to the current node, without carrying a DOM reference across await.
-  fireEvent.click(screen.getByRole('option', { name: `Договір ${id}` }))
-  // The old agreement already enables Submit; wait for the new exact-ID lookup
-  // and the controlled picker label before asserting the new request's result.
+  await user.click(picker)
+  await user.keyboard('{Control>}a{/Control}')
+  await user.type(picker, `Договір ${id}`, { skipClick: true })
+  // Wait for this search, rather than selecting an option still rendered from
+  // the previous debounced query while its result is about to be replaced.
+  await waitFor(() => expect(searchValuationAgreements).toHaveBeenCalledWith(
+    { value: `Договір ${id}`, limit: 30, offset: 0 }, expect.any(AbortSignal)))
+  await user.click(await screen.findByRole('option', { name: `Договір ${id}` }))
+  // The previous agreement already enabled Submit. Require validation of this
+  // exact new ID and its controlled label before submitting the next report.
+  await waitFor(() => expect(searchValuationAgreements).toHaveBeenCalledWith(
+    { value: String(id), limit: 30, offset: 0 }, expect.any(AbortSignal)))
   await waitFor(() => expect((screen.getByRole('combobox', { name: 'Договір для оцінки' }) as HTMLInputElement).value).toBe(`Договір ${id}`))
   await waitFor(() => expect((screen.getByRole('button', { name: 'Сформувати' }) as HTMLButtonElement).disabled).toBe(false))
 }
+
 const file: ReportResult = { document: { DocumentURL: '/files/exact-contract.xlsx' }, raw: {} }
 const supplierDataset: ReportDataset = {
   DataSource: 38, Name: 'Прибуток за постачальниками', Description: 'Продажі та повернення',
