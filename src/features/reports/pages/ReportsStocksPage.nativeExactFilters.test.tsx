@@ -232,7 +232,7 @@ describe('exact Fenix filters in the report constructor', () => {
     expect(vi.mocked(createStockReport).mock.calls[0][0]).not.toHaveProperty('dayOrganizationBasis')
   })
 
-  it.each([null])('loads and updates saved basis %s without replacing it with the new default', async basis => {
+  it.each([null, 1])('drops saved non-operational basis %s without replacing it with the new default', async basis => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dayDataset])
     const data = defaultDatasetRequest(dayDataset, '2026-07-01', '2026-07-01')
     delete data.dayOrganizationBasis
@@ -248,12 +248,12 @@ describe('exact Fenix filters in the report constructor', () => {
       .toBe('Збережений спосіб розрахунку')
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
-    expect(vi.mocked(createStockReport).mock.calls[0][0].dayOrganizationBasis).toBe(basis)
+    expect(vi.mocked(createStockReport).mock.calls[0][0]).not.toHaveProperty('dayOrganizationBasis')
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(screen.getByRole('button', { name: 'Оновити шаблон' }))
     await waitFor(() => expect(saveServerReportTemplate).toHaveBeenCalledOnce())
     const saved = vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data
-    expect(saved.dayOrganizationBasis).toBe(basis)
+    expect(saved).not.toHaveProperty('dayOrganizationBasis')
     expect(saved).not.toHaveProperty('DayOrganizationBasis')
   })
 
@@ -323,7 +323,7 @@ describe('exact Fenix filters in the report constructor', () => {
     expect(submitted.sorted.Row.map(field => field.type)).toEqual([78, 4, 21])
   })
 
-  it.each([undefined, null, 1])('preserves saved supplier basis %s and receipt layout on submit and update', async basis => {
+  it.each([undefined, null, 1])('preserves saved supplier basis %s, except the retired register basis, and receipt layout on submit and update', async basis => {
     vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, ordinarySupplierDataset])
     const data = defaultDatasetRequest(supplierDataset, '2026-07-01', '2026-07-31')
     if (basis !== undefined) data.SupplierBasis = basis
@@ -333,20 +333,20 @@ describe('exact Fenix filters in the report constructor', () => {
     const { container } = await ready()
     await applySaved()
     expect((screen.getByRole('combobox', { name: 'Розрахунок за постачальниками' }) as HTMLInputElement).value)
-      .toBe(basis === 1 ? 'Продажі за партіями без повернень' : 'Збережений спосіб розрахунку')
+      .toBe('Збережений спосіб розрахунку')
     fireEvent.submit(container.querySelector('form')!)
     await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
     const submitted = vi.mocked(createStockReport).mock.calls[0][0]
-    expect(submitted.supplierBasis).toBe(basis)
+    expect(submitted.supplierBasis).toBe(basis === 1 ? undefined : basis)
     expect((screen.getByRole('checkbox', { name: 'Кількість за регістром собівартості 1С' }) as HTMLInputElement).checked).toBe(true)
     expect(submitted.sorted.Row.map(field => field.type)).toEqual([73, 4, 21])
     fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
     fireEvent.click(screen.getByRole('button', { name: 'Оновити шаблон' }))
     await waitFor(() => expect(saveServerReportTemplate).toHaveBeenCalledOnce())
     const updated = vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data
-    expect(updated.supplierBasis).toBe(basis)
+    expect(updated.supplierBasis).toBe(basis === 1 ? undefined : basis)
     expect(updated).not.toHaveProperty('SupplierBasis')
-    if (basis === undefined) expect(updated).not.toHaveProperty('supplierBasis')
+    if (basis !== null) expect(updated).not.toHaveProperty('supplierBasis')
     expect(updated.sorted.Row.map(field => field.type)).toEqual([73, 4, 21])
   })
 

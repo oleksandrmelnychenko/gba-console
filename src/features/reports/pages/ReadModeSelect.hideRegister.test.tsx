@@ -14,8 +14,6 @@ type SelectProps = { capability: unknown; value: unknown; disabled: boolean; hid
 
 describe.each([
   ['profit', ProfitReadModeSelect, profitReadModeCapability, /^Продажі та повернення з документів GBA/],
-  ['cash', CashReadModeSelect, cashReadModeCapability, /^Документи GBA .* банківських рахунків і кас/],
-  ['settlement', SettlementReadModeSelect, settlementReadModeCapability, /^Документи GBA .* контрагентів групи «Покупці»/],
 ] as const)('%s calculation source', (_, Select: ComponentType<SelectProps>, capability, currentNote) => {
   function show(value: unknown, hideRegister?: boolean) {
     const onChange = vi.fn()
@@ -66,6 +64,45 @@ describe.each([
     expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(['Поточні документи GBA', 'Збережені регістри 1С'])
     const register = screen.getByRole('option', { name: 'Збережені регістри 1С' })
     expect(register.hasAttribute('data-combobox-disabled')).toBe(true)
+    fireEvent.click(screen.getByRole('option', { name: 'Поточні документи GBA' }))
+    expect(onChange).toHaveBeenCalledWith(0)
+  })
+})
+
+describe.each([
+  ['cash', CashReadModeSelect, cashReadModeCapability, /^Документи GBA .* банківських рахунків і кас/],
+  ['settlement', SettlementReadModeSelect, settlementReadModeCapability, /^Документи GBA .* контрагентів групи «Покупці»/],
+] as const)('%s calculation source', (_, Select: ComponentType<SelectProps>, capability, currentNote) => {
+  function show(value: unknown, hideRegister?: boolean) {
+    const onChange = vi.fn()
+    render(<MantineProvider env="test"><I18nProvider>
+      <Select capability={capability} value={value} disabled={false} hideRegister={hideRegister} onChange={onChange} />
+    </I18nProvider></MantineProvider>)
+    return onChange
+  }
+
+  it('offers only current GBA documents, without the retired 1C register or saved-settings sources', () => {
+    show(0)
+    const select = screen.getByRole('combobox', { name: 'Джерело розрахунку' }) as HTMLInputElement
+    expect(select.value).toBe('Поточні документи GBA')
+    fireEvent.click(select)
+    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(['Поточні документи GBA'])
+    expect(screen.getByText(currentNote)).toBeTruthy()
+    expect(screen.queryByText(/AMG|Збережені регістри 1С|За налаштуваннями звіту/)).toBeNull()
+  })
+
+  it('hides the single current GBA documents source under the BUG-1274 surface', () => {
+    show(0, true)
+    expect(screen.queryByRole('combobox', { name: 'Джерело розрахунку' })).toBeNull()
+    expect(screen.queryByText(currentNote)).toBeNull()
+  })
+
+  it.each([undefined, 1])('lets a request with the retired source %s switch to current GBA documents', (value) => {
+    const onChange = show(value, true)
+    const select = screen.getByRole('combobox', { name: 'Джерело розрахунку' }) as HTMLInputElement
+    expect(select.value).toBe('')
+    fireEvent.click(select)
+    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(['Поточні документи GBA'])
     fireEvent.click(screen.getByRole('option', { name: 'Поточні документи GBA' }))
     expect(onChange).toHaveBeenCalledWith(0)
   })

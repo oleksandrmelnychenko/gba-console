@@ -630,10 +630,10 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     }
   }
 
-  function changeSettlementMode(mode: 'buyers' | 'agreement') {
-    const patch = settlementModePatch(mode, groupingOptions)
+  function changeSettlementMode() {
+    const patch = settlementModePatch('buyers', groupingOptions)
     setGroupedSettlementPeriod(patch.grouped)
-    setSettlementReadMode(mode === 'buyers' && isSettlementReadModeCapability(dataset?.settlementReadMode) ? 0 : undefined)
+    setSettlementReadMode(isSettlementReadModeCapability(dataset?.settlementReadMode) ? 0 : undefined)
     setSourceCounterpartyGroups(undefined)
     setSettlementPeriod(undefined)
     setSourceBuyerSubtree(patch.buyer)
@@ -982,14 +982,12 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     sourceWorld: reportLookupSourceWorld(dataSource, groupedSettlementPeriod, oneCSpecialSettings),
   }
   const cashSettlementPanels = (part?: 'source' | 'filters' | 'form') => <CashSettlementSettingsPanels dataSource={dataSource} part={part}
-    cash={{ dataset, grouped: groupedCashPeriod, exact: cashPeriod, rows: rowGroups,
-      available: groupingOptions, onRowsChange: workbook.changeCashRows, disabled: comparisonSettingsDisabled, enabled: canGenerateReport,
+    cash={{ dataset, grouped: groupedCashPeriod, rows: rowGroups,
+      available: groupingOptions, onRowsChange: workbook.changeCashRows, disabled: comparisonSettingsDisabled,
       readMode: cashReadMode, onReadModeChange: setCashReadMode, hideRegisterReadMode: bug1274Only }}
-    settlement={{ dataset, grouped: groupedSettlementPeriod, exact: settlementPeriod,
-      buyer: sourceBuyerSubtree, groups: sourceCounterpartyGroups, rows: rowGroups,
-      available: groupingOptions, from, to, disabled: comparisonSettingsDisabled, enabled: canGenerateReport,
+    settlement={{ dataset, grouped: groupedSettlementPeriod, groups: sourceCounterpartyGroups, rows: rowGroups,
+      available: groupingOptions, disabled: comparisonSettingsDisabled, enabled: canGenerateReport,
       onModeChange: changeSettlementMode,
-      onExactChange: setSettlementPeriod, onBuyerChange: setSourceBuyerSubtree,
       onRowsChange: setRowGroups, onGroupsChange: setSourceCounterpartyGroups,
       readMode: settlementReadMode, hideRegisterReadMode: bug1274Only, onReadModeChange: mode => {
         setSettlementReadMode(mode)

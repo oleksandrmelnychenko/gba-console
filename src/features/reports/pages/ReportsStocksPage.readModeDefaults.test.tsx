@@ -74,14 +74,12 @@ it('opens a saved registers profit variant on current documents and ignores its 
   expect(Object.keys(request).some(key => key.toLowerCase() === 'suppliersourceworld')).toBe(false)
 })
 
-it('reads a saved cash variant without a mode from current documents and leaves the earlier period to the opt-out', async () => {
+it('reads a saved cash variant without a mode from current documents and offers no opt-out for the earlier period', async () => {
   const view = await apply(saved(cashModeDataset, '2024-12-01', '2024-12-31'))
   expect(source()).toBe('Поточні документи GBA')
+  fireEvent.click(screen.getByRole('combobox', { name: 'Джерело розрахунку' }))
+  expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(['Поточні документи GBA'])
   expect(await blocked(view)).toBe('Оберіть коректний період від 01.01.2025 до 120 календарних місяців.')
-  mode('За налаштуваннями звіту')
-  const unmarked = await submitted(view, 1)
-  expect(Object.keys(unmarked).some(key => key.toLowerCase() === 'cashreadmode')).toBe(false)
-  expect(unmarked).toMatchObject({ from: '2024-12-01', to: '2024-12-31' })
 })
 
 it.each([[undefined, 0, 'Поточні документи GBA'], [1, 0, 'Поточні документи GBA']] as const)(

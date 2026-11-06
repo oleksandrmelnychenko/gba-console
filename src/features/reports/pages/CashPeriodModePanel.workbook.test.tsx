@@ -11,9 +11,9 @@ import { CashPeriodModePanel } from './CashPeriodModePanel'
 function show(dataset: ReportDataset, disabled = false) {
   const available = datasetGroupings(dataset), onRowsChange = vi.fn(), onModeChange = vi.fn()
   render(<MantineProvider env="test"><CashPeriodModePanel dataset={dataset} grouped={defaultGroupedCashPeriod()}
-    exact={undefined} enabled disabled={disabled} available={available}
+    disabled={disabled} available={available}
     rows={[43, 40, 42, 41].flatMap(type => available.filter(row => row.type === type))}
-    onRowsChange={onRowsChange} onModeChange={onModeChange} onExactChange={vi.fn()} /></MantineProvider>)
+    onRowsChange={onRowsChange} onModeChange={onModeChange} /></MantineProvider>)
   return { onRowsChange, onModeChange }
 }
 it('offers the actual workbook shape and sends only the declared axes after explicit selection', () => {
@@ -40,4 +40,13 @@ it('offers the per-currency-record form and sends only the currency-record row 4
   fireEvent.click(screen.getByRole('combobox', { name: 'Форма руху коштів' }))
   fireEvent.click(screen.getByRole('option', { name: 'Рахунок / каса у валюті з додатковими полями' }))
   expect(view.onRowsChange.mock.calls[0][0].map((row: { type: number }) => row.type)).toEqual([42])
+})
+it('offers no single currency-record mode and moves a restored one to all accounts', () => {
+  const available = datasetGroupings(groupedCashWorkbookDataset), onModeChange = vi.fn()
+  render(<MantineProvider env="test"><CashPeriodModePanel dataset={groupedCashWorkbookDataset} grouped={undefined}
+    disabled={false} available={available} rows={[]} onRowsChange={vi.fn()} onModeChange={onModeChange} /></MantineProvider>)
+  expect(screen.queryByText('Один валютний запис')).toBeNull()
+  expect(screen.queryByRole('radiogroup', { name: 'Рахунки звіту коштів' })).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Перейти до всіх / вибраних рахунків' }))
+  expect(onModeChange).toHaveBeenCalledOnce()
 })

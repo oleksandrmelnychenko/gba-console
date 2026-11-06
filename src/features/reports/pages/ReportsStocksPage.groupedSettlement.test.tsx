@@ -65,9 +65,9 @@ async function ready() {
 it('opens the debtor workbook directly with grouped current Buyers and no exact-agreement lookup', async () => {
   const { container } = await ready()
   fireEvent.click(screen.getByRole('button', { name: 'Відкрити ДБіторка.xls' }))
-  expect((screen.getByRole('combobox', { name: 'Обсяг взаєморозрахунків' }) as HTMLInputElement).value).toBe('Поточні договори покупців')
+  expect(screen.queryByRole('combobox', { name: 'Обсяг взаєморозрахунків' })).toBeNull()
   expect((screen.getByRole('combobox', { name: 'Форма взаєморозрахунків' }) as HTMLInputElement).value).toBe('Організація → контрагент')
-  expect((screen.getByRole('checkbox', { name: 'Контрагенти у групі «Покупці» (Fenix)' }) as HTMLInputElement).checked).toBe(true)
+  expect(screen.queryByRole('checkbox', { name: 'Контрагенти у групі «Покупці» (Fenix)' })).toBeNull()
   expect(getSettlementPeriodAgreements).not.toHaveBeenCalled()
   expect(screen.getAllByText(/^Організація → контрагент, договори контрагента в різних валютах — в одному рядку, як у 1С\. Покупці з групи «Покупці»\./).length).toBeGreaterThan(0)
   fireEvent.submit(container.querySelector('form')!)
@@ -78,28 +78,23 @@ it('opens the debtor workbook directly with grouped current Buyers and no exact-
   expect(submitted).not.toHaveProperty('settlementPeriod')
 })
 
-it.each([undefined, null])('keeps saved exact-agreement templates with grouped omission %s stable through submit/update', async grouped => {
+it.each([undefined, null])('moves a saved exact-agreement template with grouped omission %s to current agreements only on request', async grouped => {
   const data = settlementPeriodRequest()
   if (grouped === null) data.GroupedSettlementPeriod = null
   vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: crypto.randomUUID(), Revision: 2, Name: 'Exact saved settlement', Data: data }])
   const { container } = await ready()
   fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
   fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Exact saved settlement' }))
-  expect((screen.getByRole('combobox', { name: 'Обсяг взаєморозрахунків' }) as HTMLInputElement).value).toBe('Один точний договір')
-  expect(screen.queryByRole('combobox', { name: 'База взаєморозрахунків' })).toBeNull()
+  expect(screen.queryByRole('combobox', { name: 'Обсяг взаєморозрахунків' })).toBeNull()
+  expect(screen.queryByRole('combobox', { name: 'База обліку договору' })).toBeNull()
+  expect(screen.getAllByText('Один точний договір більше не підтримується').length).toBeGreaterThan(0)
+  fireEvent.click(screen.getAllByRole('button', { name: 'Перейти до поточних договорів контрагентів' })[0])
   fireEvent.submit(container.querySelector('form')!)
   await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
   const submitted = vi.mocked(createStockReport).mock.calls[0][0]
-  expect(submitted.groupedSettlementPeriod).toBe(grouped)
-  expect(submitted.settlementPeriod).toEqual(data.settlementPeriod)
-  expect(submitted.sorted.Row.map(field => field.type)).toEqual([4, 41, 76, 77])
-  fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
-  fireEvent.click(screen.getByRole('button', { name: 'Оновити шаблон' }))
-  await waitFor(() => expect(saveServerReportTemplate).toHaveBeenCalledOnce())
-  const saved = vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data
-  expect(saved.groupedSettlementPeriod).toBe(grouped)
-  expect(saved).not.toHaveProperty('GroupedSettlementPeriod')
-  if (grouped === undefined) expect(saved).not.toHaveProperty('groupedSettlementPeriod')
+  expect(submitted.groupedSettlementPeriod).toEqual({ Version: 1, SourceWorld: 'Fenix', CurrencyBasis: 'SettlementCurrency' })
+  expect(submitted.settlementPeriod).toBeUndefined()
+  expect(submitted.sorted.Row.map(field => field.type)).toEqual([4, 41, 76])
 })
 
 it('invalidates stale XLSX/PDF links when the grouped workbook layout changes and offers no Fenix/AMG base', async () => {

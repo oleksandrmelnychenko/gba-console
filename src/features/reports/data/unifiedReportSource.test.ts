@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { carriesSourceWorld, UNIFIED_SOURCE_SAVED_VARIANT_ERROR, withUnifiedSource } from './unifiedReportSource'
+import { carriesSourceWorld, UNIFIED_SOURCE_SAVED_VARIANT_ERROR, withoutRetiredReportFields, withUnifiedSource } from './unifiedReportSource'
 import { defaultDatasetRequest } from './reportDatasets'
 import { profitDayDataset, profitSupplierDataset } from './profitReadMode.test-fixtures'
 import { cashModeDataset } from './cashReadMode.test-fixtures'
@@ -89,6 +89,27 @@ it('reads the day workbook organizations of the 1C list as every GBA organizatio
   const fenixOnly = { ...request, SourceOrganizations: { ...book, OrganizationIds: [DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS[1]] } }
   expect(withUnifiedSource(fenixOnly, profitDayDataset).SourceOrganizations).toEqual(fenixOnly.SourceOrganizations)
   const registers = { ...request, profitReadMode: 1 }
-  const kept = withUnifiedSource(registers, { ...profitDayDataset, profitReadMode: undefined })
-  expect(kept.SourceOrganizations).toEqual(book)
+  const unifiedRegisters = withUnifiedSource(registers, { ...profitDayDataset, profitReadMode: undefined })
+  expect(unifiedRegisters).not.toHaveProperty('profitReadMode')
+  expect(unifiedRegisters).not.toHaveProperty('SourceOrganizations')
+})
+
+it('drops retired bases and read modes from saved settings while keeping the current ones and live filters', () => {
+  const base = defaultDatasetRequest(profitDayDataset, '2026-09-01', '2026-09-30')
+  const buyers = { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID }
+  const legacy = { ...base, DayOrganizationBasis: 1, supplierBasis: 1, CashReadMode: 1, settlementReadMode: undefined, profitReadMode: 1,
+    supplierSourceWorld: 0, sourceBuyerSubtree: buyers }
+  const cleaned = withoutRetiredReportFields(legacy)
+  for (const name of ['dayorganizationbasis', 'supplierbasis', 'cashreadmode', 'settlementreadmode', 'profitreadmode', 'suppliersourceworld'])
+    expect(Object.keys(cleaned).filter(key => key.toLowerCase() === name)).toEqual([])
+  expect(cleaned.sourceBuyerSubtree).toEqual(buyers)
+  const current = withoutRetiredReportFields({ ...base, dayOrganizationBasis: 0, supplierBasis: 0, cashReadMode: 0, profitReadMode: 0 })
+  expect(current).toMatchObject({ dayOrganizationBasis: 0, supplierBasis: 0, cashReadMode: 0, profitReadMode: 0 })
+  const settlement = { ...defaultDatasetRequest(settlementModeDataset, '2026-09-01', '2026-09-30'),
+    groupedSettlementPeriod: { Version: 1, SourceWorld: 'Amg', CurrencyBasis: 'SettlementCurrency' }, sourceBuyerSubtree: undefined }
+  delete settlement.settlementReadMode
+  const unifiedSettlement = withUnifiedSource(settlement, settlementModeDataset)
+  expect(unifiedSettlement.groupedSettlementPeriod).toEqual({ Version: 1, SourceWorld: 'Fenix', CurrencyBasis: 'SettlementCurrency' })
+  expect(unifiedSettlement.sourceBuyerSubtree).toMatchObject({ Version: 1, SourceWorld: 'fenix' })
+  expect(unifiedSettlement.settlementReadMode).toBe(0)
 })
