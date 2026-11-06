@@ -32,7 +32,9 @@ async function ready() {
   return view
 }
 async function agreement(id: number) {
-  fireEvent.click(screen.getByRole('combobox', { name: 'Договір для оцінки' }))
+  const picker = screen.getByRole('combobox', { name: 'Договір для оцінки' })
+  fireEvent.click(picker)
+  fireEvent.change(picker, { target: { value: `Договір ${id}` } })
   await screen.findByRole('option', { name: `Договір ${id}` })
   // A debounced lookup can replace an option while findByRole resolves.
   // Dispatch to the current node, without carrying a DOM reference across await.
