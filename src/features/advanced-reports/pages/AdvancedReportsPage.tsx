@@ -139,6 +139,8 @@ function AdvancedReportsPageContent() {
   const lookupRequestRef = useRef(0)
   const structureCalculationRequestRef = useRef(0)
 
+  const selectedCurrency = currencyNetId ? currencies.find((currency) => currency.NetUid === currencyNetId) : undefined
+  const selectedCurrencyCode = selectedCurrency?.Code || selectedCurrency?.Name
   const offset = (page - 1) * pageSize
   const totalRows = getTotalRows(reports)
   const totalPages = Math.max(1, Math.ceil(totalRows / pageSize))
@@ -534,12 +536,20 @@ function AdvancedReportsPageContent() {
             toolbarPortalTarget={tableToolbarSlot}
             footer={
               <Group className="advanced-reports-table-footer" gap="xs" justify="flex-end" wrap="nowrap">
-                <Badge className="app-role-pill is-green" variant="light">
-                  {t('Кредиторська заборгованість')}: <span className="app-money">{formatMoney(reports.PositiveDifferenceAmount)}</span>
-                </Badge>
-                <Badge className="app-role-pill is-red" variant="light">
-                  {t('Дебіторська заборгованість')}: <span className="app-money">{formatMoney(reports.NegativeDifferenceAmount)}</span>
-                </Badge>
+                {selectedCurrency ? (
+                  <>
+                    <Badge className="app-role-pill is-green" variant="light">
+                      {t('Кредиторська заборгованість')}: <span className="app-money">{formatMoneyWithCurrency(reports.PositiveDifferenceAmount, selectedCurrencyCode)}</span>
+                    </Badge>
+                    <Badge className="app-role-pill is-red" variant="light">
+                      {t('Дебіторська заборгованість')}: <span className="app-money">{formatMoneyWithCurrency(reports.NegativeDifferenceAmount, selectedCurrencyCode)}</span>
+                    </Badge>
+                  </>
+                ) : (
+                  <Badge className="app-role-pill" color="gray" variant="light">
+                    {t('Оберіть валюту, щоб побачити кредиторську та дебіторську заборгованість')}
+                  </Badge>
+                )}
               </Group>
             }
             onRowClick={handleRowClick}
