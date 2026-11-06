@@ -38,7 +38,14 @@ it('opens sales and gross-profit profiles, submits one GBA request and preserves
     .toEqual(['Документ продажу. Відповідальний менеджер що забив товарЕлементи'])
   fireEvent.click(within(tabs).getByRole('button', { name: 'Відкрити Валовий прибуток' }))
   const measurements = screen.getByRole('region', { name: 'Показники' })
-  expect(within(measurements).queryByRole('checkbox', { name: /Рентабельність/ })).toBeNull()
+  const ratioNames = ['Рентабельність без ПДВ, %', 'Рентабельність з ПДВ, %']
+  expect(within(measurements).getAllByRole('checkbox', { name: /^Рентабельність (?:без|з) ПДВ, %$/ })).toHaveLength(2)
+  for (const name of ratioNames) {
+    const ratio = within(measurements).getByRole('checkbox', { name })
+    expect(ratio).toHaveProperty('checked', false)
+    fireEvent.click(ratio)
+    expect(ratio).toHaveProperty('checked', true)
+  }
   expect(within(screen.getByRole('region', { name: 'Групування рядків' })).getByRole('button', { name: 'Товарна група' })).toBeTruthy()
   fireEvent.click(screen.getByRole('checkbox', { name: 'Від’ємне червоним' }))
   fireEvent.click(screen.getByRole('checkbox', { name: 'Виводити загальні підсумки' }))
@@ -50,6 +57,8 @@ it('opens sales and gross-profit profiles, submits one GBA request and preserves
   expect(vi.mocked(previewStockReport).mock.calls[1][0]).toMatchObject({ dataSource: 2, reportProfile: 'grossProfit', constructorPresentation: { version: 1, negativeRed: false, grandTotals: false }, from: '2026-09-01', to: '2026-09-30' })
   expect(vi.mocked(previewStockReport).mock.calls[1][0].sorted.Row.map(item => item.type)).toEqual([4, 10, 7])
   expect(vi.mocked(previewStockReport).mock.calls[1][0].sorted.Col.map(item => item.type)).toEqual([2])
+  expect(vi.mocked(previewStockReport).mock.calls[1][0].sorted.Measurements.map(item => item.Type))
+    .toEqual(expect.arrayContaining([14, 15]))
 })
 
 it('keeps a saved customer-return template filters-only after the workbook marker is cleared', async () => {
