@@ -16,6 +16,7 @@ import { createStockReport, exportStockReportPreview, previewStockReport, search
 import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
 import { getSettlementCounterpartyGroups } from '../api/counterpartyGroupsApi'
 import { reportDatasets } from '../data/reportDatasets.test-fixtures'
+import { defaultDatasetRequest } from '../data/reportDatasets'
 import { profitDayDataset, profitSupplierDataset } from '../data/profitReadMode.test-fixtures'
 import { cashModeDataset } from '../data/cashReadMode.test-fixtures'
 import { settlementModeDataset } from '../data/settlementReadMode.test-fixtures'
@@ -531,4 +532,46 @@ it('refuses an explicit layout without an immutable result instead of returning 
   expect(exportStockReportPreview).not.toHaveBeenCalled()
   expect(createStockReport).not.toHaveBeenCalled()
   expect(screen.queryByRole('link', { name: 'Завантажити Excel' })).toBeNull()
+})
+
+
+it('exports native price comparison region sections from the same preview when workbook layout changes', async () => {
+  const dataset = { DataSource: 46, Name: 'Продажі порівнянням за типами цін', Description: '',
+    PeriodRequired: true, PeriodSupported: true, Groupings: [5, 13].map(Type => ({ Type, Name: String(Type) })),
+    Measurements: [2, 70, 71].map(Type => ({ Type, Name: String(Type) })), Filters: [], Limitations: [] }
+  const defaults = defaultDatasetRequest(dataset, '2026-10-01', '2026-11-02')
+  const template = { Id: '11111111-2222-3333-4444-555555555555', Revision: 1, Name: 'Типи цін за регіонами',
+    UpdatedAtUtc: '2026-11-02T00:00:00Z', Data: { ...defaults,
+      sorted: { ...defaults.sorted, Row: [{ type: 5, key: 'Product', label: 'Товар' }], Col: [{ type: 13, key: 'CustomerRegion', label: 'Регіон' }] },
+      selections: [], nativePriceComparison: { Version: 2 as const, PricingId: '844' } } }
+  auth.owner = 'price-layout-owner'
+  saveSession({ userNetUid: auth.owner, csrfToken: 'price-layout-csrf' })
+  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, profitDayDataset, profitSupplierDataset,
+    currentVparivanieDataset, cashModeDataset, settlementModeDataset, dataset])
+  vi.mocked(getServerReportTemplates).mockResolvedValue([template])
+  vi.mocked(previewStockReport).mockResolvedValue({ result: { document: { DocumentURL: '', PdfDocumentURL: '' }, raw: {} },
+    preview: { ...preview, ResultSession: resultSession } })
+  vi.mocked(exportStockReportPreview).mockResolvedValue({ document: files, raw: {} })
+  await openDayWorkbook()
+  fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+  fireEvent.click(await screen.findByRole('button', { name: `Відкрити для редагування: ${template.Name}` }))
+  expect(await screen.findByRole('radio', { name: 'Окремі аркуші' })).toBeTruthy()
+  expect(screen.getByText(/Вузький звіт — одна таблиця. Широкий: до 100 регіонів/)).toBeTruthy()
+  expect(screen.getByText(/Для друку PDF оберіть окремі аркуші/)).toBeTruthy()
+  fireEvent.click(screen.getByRole('radio', { name: 'Окремі аркуші' }))
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Сформувати Excel' })).toHaveProperty('disabled', false))
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати Excel' }))
+  await waitFor(() => expect(exportStockReportPreview).toHaveBeenCalledExactlyOnceWith(resultSession, 'sheets'))
+  await screen.findByRole('link', { name: 'Завантажити Excel' })
+  fireEvent.click(screen.getByRole('radio', { name: 'Одна таблиця' }))
+  expect(screen.queryByRole('link', { name: 'Завантажити Excel' })).toBeNull()
+  expect(screen.getByRole('region', { name: 'Таблиця попереднього перегляду' })).toBeTruthy()
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Сформувати Excel' })).toHaveProperty('disabled', false))
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати Excel' }))
+  await waitFor(() => expect(vi.mocked(exportStockReportPreview).mock.calls).toEqual([[resultSession, 'sheets'], [resultSession, 'table']]))
+  expect(previewStockReport).toHaveBeenCalledOnce()
+  expect(vi.mocked(previewStockReport).mock.calls[0][0]).toMatchObject({ dataSource: 46,
+    from: '2026-10-01', to: '2026-11-02', nativePriceComparison: { Version: 2, PricingId: '844' },
+    sorted: { Row: [{ type: 5 }], Col: [{ type: 13 }], Measurements: [{ Type: 2 }] } })
+  expect(createStockReport).not.toHaveBeenCalled()
 })

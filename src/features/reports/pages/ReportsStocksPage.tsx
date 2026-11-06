@@ -32,7 +32,7 @@ import { financialDocumentReference, financialDocumentEntityReference, financial
 import { ReportPresentationCurrencyPanel } from './ReportPresentationCurrencyPanel'
 import { requestPresentationCurrency, readPresentationCurrency, presentationCurrencySupported, presentationCurrencyModeSupported, isPresentationCurrencyMoneyMeasure, currencyNeutralMeasureLabel } from '../data/reportPresentationCurrency'
 import { PublishedReportWorkspace } from './lazyReportDialogs'
-import { financialAxesCapability, financialAxesConfigurationError } from '../data/financialAxes'
+import { financialAxesConfigurationError } from '../data/financialAxes'
 import { ReportsNavigation } from './workbook-desk/ReportsNavigation'
 import { ReportsSubmenu } from './workbook-desk/ReportsSubmenu'
 import type { PublishedReportTab } from './workbook-desk/publishedReportTabs'
@@ -94,7 +94,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { FINANCIAL_EXPORT_LAYOUT_OPTIONS, financialExportLayoutQuery, financialExportLayoutText, isFinancialExportLayout,
+import { FINANCIAL_EXPORT_LAYOUT_OPTIONS, financialExportLayoutQuery, financialExportLayoutText, isFinancialExportLayout, supportsFinancialExportLayout,
   type FinancialExportLayout } from '../data/financialExportLayout'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
@@ -586,7 +586,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     if (constructorMode) setConstructorSection('result')
 
     try {
-      const layout = financialAxesCapability(dataset) && request.sorted.Col.length > 0 ? financialExportLayoutQuery(exportLayout) : undefined
+      const layout = supportsFinancialExportLayout(dataset) && request.sorted.Col.length > 0 ? financialExportLayoutQuery(exportLayout) : undefined
       const retainedPreviewRequired = selectedCurrency || layout !== undefined
       const previewResult = showPreview || retainedPreviewRequired && !existingPreview?.ResultSession ? await previewStockReport(request, dataset) : null
       if (retainedPreviewRequired && previewResult && !previewResult.preview.ResultSession) throw new Error(selectedCurrency
@@ -2024,11 +2024,12 @@ function LegacyReportBuilder({
         onRemove={(index) => onColGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
         onReorder={(type, direction) => onColGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
         onTransfer={type => transferGrouping('Col', type)} /> : <Text size="sm" c="dimmed">Вибрані показники відображаються у стовпцях.</Text>}
-      {financialAxesCapability(dataset) && colGroups.length > 0 ? <div className="reports-stocks-export-layout">
+      {supportsFinancialExportLayout(dataset) && colGroups.length > 0 ? <div className="reports-stocks-export-layout">
         {onExportLayoutChange ? <SegmentedControl size="xs" aria-label={t('Файл Excel')} value={exportLayout}
           data={FINANCIAL_EXPORT_LAYOUT_OPTIONS.map(option => ({ value: option.value, label: t(option.label) }))}
           onChange={value => { if (isFinancialExportLayout(value)) onExportLayoutChange(value) }} /> : null}
-        <Text size="sm" c="dimmed">{financialExportLayoutText(colGroups[0].type, exportLayout)}</Text>
+        <Text size="sm" c="dimmed">{financialExportLayoutText(colGroups[0].type, exportLayout, dataset?.DataSource)}</Text>
+        {dataset?.DataSource === 46 ? <Text size="sm" c="dimmed">{t('Для друку PDF оберіть окремі аркуші: кожен розділ містить свої показники й назви рядків.')}</Text> : null}
       </div> : null}
       {currentAxesError ? <Alert color="orange" title="Перевірте групування">{currentAxesError}</Alert> : null}
     </section>

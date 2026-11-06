@@ -1,3 +1,6 @@
+import type { ReportDataset } from '../types'
+import { financialAxesCapability } from './financialAxes'
+
 export type FinancialExportLayout = 'auto' | 'sheets' | 'table'
 export const FINANCIAL_EXPORT_AUTO_SHEET_LIMIT = 100
 
@@ -9,6 +12,8 @@ const nouns: Readonly<Record<number, { each: string; many: string; sheets: strin
   4: { each: 'кожна організація', many: 'організацій', sheets: 'У файлі кожна організація в колонках буде окремим аркушем.' },
   5: { each: 'кожен товар', many: 'товарів', sheets: 'У файлі кожен товар у колонках буде окремим аркушем.' },
   12: { each: 'кожен клієнт', many: 'клієнтів', sheets: 'У файлі кожен клієнт у колонках буде окремим аркушем.' },
+  13: { each: 'кожен регіон', many: 'регіонів', sheets: 'У файлі кожен регіон у колонках буде окремим аркушем.' },
+  14: { each: 'кожен код регіону', many: 'кодів регіону', sheets: 'У файлі кожен код регіону в колонках буде окремим аркушем.' },
   15: { each: 'кожен договір', many: 'договорів', sheets: 'У файлі кожен договір у колонках буде окремим аркушем.' },
   81: { each: 'кожен документ', many: 'документів', sheets: 'У файлі кожен документ у колонках буде окремим аркушем.' },
 }
@@ -19,10 +24,15 @@ export const FINANCIAL_EXPORT_LAYOUT_OPTIONS: ReadonlyArray<{ value: FinancialEx
   { value: 'table', label: 'Одна таблиця' },
 ]
 
-export function financialExportLayoutText(columnType: number, layout: FinancialExportLayout): string {
-  const noun = nouns[columnType] ?? nouns[3]
+export function supportsFinancialExportLayout(dataset?: ReportDataset): boolean {
+  return dataset?.DataSource === 46 || !!financialAxesCapability(dataset)
+}
+
+export function financialExportLayoutText(columnType: number, layout: FinancialExportLayout, dataSource?: number): string {
+  const noun = nouns[columnType] ?? { each: 'кожне значення', many: 'значень', sheets: 'У файлі кожне значення у колонках буде окремим аркушем.' }
   if (layout === 'sheets') return noun.sheets
   if (layout === 'table') return `У файлі одна таблиця: ${noun.each} займає свої колонки показників.`
+  if (dataSource === 46) return `Вузький звіт — одна таблиця. Широкий: до ${FINANCIAL_EXPORT_AUTO_SHEET_LIMIT} ${noun.many} у колонках — ${noun.each} окремим аркушем, більше — одна таблиця.`
   return `До ${FINANCIAL_EXPORT_AUTO_SHEET_LIMIT} ${noun.many} у колонках — ${noun.each} окремим аркушем, більше — одна таблиця.`
 }
 
