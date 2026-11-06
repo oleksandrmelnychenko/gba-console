@@ -25,13 +25,15 @@ it('opens two explicit profiles on GBA net sales without redirecting old saved m
 it('retains the profile and chosen indicator order through the server template wire and changed dates', () => {
   const launch = availableBug1274WorkbookLaunches([dataset])[1]
   const data = bug1274WorkbookRequest(defaultDatasetRequest(dataset, '2026-10-01', '2026-10-28'), launch)
+  data.sorted.Measurements.push(...[14, 15].map(Type => ({ Type, Name: dataset.Measurements.find(field => field.Type === Type)!.Name,
+    IsChecked: true, parentName: '' })))
   data.sorted.Measurements.reverse()
   const saved = normalizeSavedTemplate({ Id: 'profile-test', Revision: 1, UpdatedAtUtc: '2026-10-28T00:00:00Z', Name: 'Мій прибуток', Data: {
     DataSource: 2, From: data.from, To: data.to, Sorted: data.sorted, Selections: [], ReportProfile: 'grossProfit',
   } })
   const changed = { ...saved.Data, from: '2026-09-01', to: '2026-09-30' }
   expect(changed.reportProfile).toBe('grossProfit')
-  expect(flattenCheckedMeasurements(datasetMeasurements(salesConstructorDataset(dataset, changed.reportProfile), changed.sorted.Measurements)).map(item => item.Type)).toEqual([10, 6, 2])
+  expect(flattenCheckedMeasurements(datasetMeasurements(salesConstructorDataset(dataset, changed.reportProfile), changed.sorted.Measurements)).map(item => item.Type)).toEqual([15, 14, 10, 6, 2])
   expect(salesConstructorError(changed, dataset)).toBeNull()
 })
 it('refuses unknown or conflicting profiles, previous-server capabilities and unrelated resources', () => {
@@ -39,7 +41,7 @@ it('refuses unknown or conflicting profiles, previous-server capabilities and un
   expect(salesConstructorError(data, netDataset)).toContain('ще не підтримує')
   expect(salesConstructorError({ ...data, dataSource: 43 }, dataset)).toContain('Невідомий')
   expect(salesConstructorError({ ...data, ...cloneReportProfile({ reportProfile: 'sales', ReportProfile: 'grossProfit' }) }, dataset)).toContain('Невідомий')
-  expect(salesConstructorError({ ...data, sorted: { ...data.sorted, Measurements: [{ Type: 14, Name: 'Profitability', IsChecked: true, parentName: '' }] } }, dataset)).toContain('Показник')
+  expect(salesConstructorError({ ...data, sorted: { ...data.sorted, Measurements: [{ Type: 11, Name: 'MarkupVAT', IsChecked: true, parentName: '' }] } }, dataset)).toContain('Показник')
 })
 
 it('offers the advertised physical warehouse in both sales forms while hiding return-only reason', () => {
@@ -70,4 +72,24 @@ it('uses the same historical price-type rule for customer comparison and preserv
   const saved = structuredClone(request)
   expect(datasetConfigurationError(request, source)).toContain('історичного типу документа')
   expect(request).toEqual(saved)
+})
+
+it('offers both advertised profitability measures in gross profit without exposing unrelated measures', () => {
+  const filtered = salesConstructorDataset(dataset, 'grossProfit')!
+  expect(filtered.Measurements.filter(field => [14, 15].includes(field.Type)))
+    .toEqual(dataset.Measurements.filter(field => [14, 15].includes(field.Type)))
+  expect(filtered.Measurements.some(field => field.Type === 11 || field.Type === 12)).toBe(false)
+  const request = { ...defaultDatasetRequest(filtered, '2026-10-01', '2026-10-31'), reportProfile: 'grossProfit',
+    sorted: { Row: [{ type: 4, key: 'Organization', label: 'Організація' }], Col: [],
+      Measurements: [15, 14].map(Type => ({ Type, Name: dataset.Measurements.find(field => field.Type === Type)!.Name,
+        IsChecked: true, parentName: '' })) } }
+  expect(salesConstructorError(request, dataset)).toBeNull()
+  expect(datasetConfigurationError(request, dataset)).toBeNull()
+})
+
+it('does not invent profitability choices absent or unselectable in server metadata', () => {
+  const restricted = { ...dataset, Measurements: dataset.Measurements.filter(field => field.Type !== 14)
+    .map(field => field.Type === 15 ? { ...field, Selectable: false } : field) }
+  const choices = datasetMeasurements(salesConstructorDataset(restricted, 'grossProfit')).flatMap(group => group.SubList)
+  expect(choices.some(field => field.Type === 14 || field.Type === 15)).toBe(false)
 })
