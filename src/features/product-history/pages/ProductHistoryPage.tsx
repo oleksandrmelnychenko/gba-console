@@ -25,7 +25,7 @@ import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { PdfIcon } from '../../../shared/ui/PdfIcon'
-import { toDateTimeQuery } from '../../../shared/date/dateTime'
+import { formatKyivBusinessDate, toDateTimeQuery } from '../../../shared/date/dateTime'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { usePermissions } from '../../auth/usePermissions'
 import { exportProductHistory, getProductHistory, getProductHistoryStorages } from '../api/productHistoryApi'
@@ -756,15 +756,7 @@ function buildStorageOptions(storages: ProductHistoryStorage[]): { label: string
 }
 
 function getDefaultDateTo(): string {
-  return formatDateInputValue(new Date())
-}
-
-function formatDateInputValue(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-
-  return `${year}-${month}-${day}`
+  return formatKyivBusinessDate()
 }
 
 function toStartOfDayQuery(dateValue: string): string {

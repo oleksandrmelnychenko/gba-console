@@ -75,6 +75,22 @@ describe('ProductHistoryPage canonical permission guards', () => {
     expect(getProductHistory).not.toHaveBeenCalled()
   })
 
+  it('opens on the Kyiv business day and asks the server for that whole day', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-11-05T23:30:00Z'))
+    try {
+      allowedPermissions.add(PermissionKeys.ProductHistory.Page.View)
+      renderPage()
+
+      await waitFor(() => expect(getProductHistory).toHaveBeenCalledWith(expect.objectContaining({
+        from: '2026-11-06T00:00:00.000',
+        to: '2026-11-06T23:59:59.999',
+      }), expect.anything()))
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('loads the registry without exposing export on page.view alone', async () => {
     allowedPermissions.add(PermissionKeys.ProductHistory.Page.View)
     renderPage()
