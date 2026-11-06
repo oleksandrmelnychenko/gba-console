@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { render, screen, within } from '@testing-library/react'
 import { expect, it } from 'vitest'
@@ -15,7 +16,7 @@ it('formats rows and server totals using stable metadata, scaling money only and
     numberPresentation: { version: 1, moneyScale: 1000, decimalPlacesByKind: { percent: 3 } },
     valueSemantics: [{ columnSourceIndex: 0, measureType: 2, semantics: { kind: 'money', currencyPolicy: 'EUR', unitPolicy: 'currency', aggregation: 'sum', scalable: true, defaultDecimalPlaces: 2, defaultMinimumDecimalPlaces: 2 } }, { columnSourceIndex: 1, measureType: 14, semantics: { kind: 'percent', currencyPolicy: 'notApplicable', unitPolicy: 'percentAlreadyMultipliedBy100', aggregation: 'recomputeFromBase', scalable: false, defaultDecimalPlaces: 2, defaultMinimumDecimalPlaces: 2 } }],
   }
-  render(<MantineProvider><ReportInlinePreview preview={preview} /></MantineProvider>)
+  render(<MantineProvider><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
   expect(screen.getByRole('columnheader', { name: 'Сума, тис.' })).toBeTruthy()
   expect(screen.getByText('1,23')).toBeTruthy()
   expect(screen.getByText('12,346')).toBeTruthy()

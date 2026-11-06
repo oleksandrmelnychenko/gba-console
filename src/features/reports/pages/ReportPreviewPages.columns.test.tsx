@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
@@ -14,7 +15,7 @@ const session = { ResultId: WIDE_RESULT.ResultId, RequestSha256: WIDE_RESULT.Req
 const page = (offset: number, returned: number, rowOffset = 0): NativeReportPreview => ({
   ...normalizeNativeReportPreview({ Preview: widePreview({ total: 3660, offset, returned, rowOffset, rows: 2 }) }), ResultSession: session })
 const totals = (container: HTMLElement) => [...container.querySelectorAll('tfoot td')].map(cell => cell.textContent)
-const show = (initial: NativeReportPreview) => render(<MantineProvider><ReportPreviewPages initial={initial} request={request} /></MantineProvider>)
+const show = (initial: NativeReportPreview) => render(<MantineProvider><I18nProvider><ReportPreviewPages initial={initial} request={request} /></I18nProvider></MantineProvider>)
 
 beforeEach(() => {
   vi.mocked(getStockReportPreviewPage).mockReset()
@@ -63,7 +64,7 @@ it('advances by the returned columns, keeps the window while paging rows and goe
 
 it('shows group totals only for the window columns and states the window when there is no live session', () => {
   const preview = normalizeNativeReportPreview({ Preview: widePreview({ total: 3660, offset: 512, returned: 256, rows: 2 }) })
-  const view = render(<MantineProvider><ReportInlinePreview preview={preview} /></MantineProvider>)
+  const view = render(<MantineProvider><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
   const group = view.container.querySelector('.report-inline-preview__group-total')!
   const groupCells = [...group.querySelectorAll('td')].map(cell => cell.textContent)
   expect(groupCells).toHaveLength(256)
@@ -74,7 +75,7 @@ it('shows group totals only for the window columns and states the window when th
 
 it('keeps the classic layout for a complete column window', () => {
   const preview = normalizeNativeReportPreview({ Preview: widePreview({ total: 30, offset: 0, returned: 30, limit: 256, rows: 2 }) })
-  const view = render(<MantineProvider><ReportInlinePreview preview={preview} /></MantineProvider>)
+  const view = render(<MantineProvider><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
   expect(view.container.querySelector('.report-inline-preview--wide')).toBeNull()
   expect(view.container.querySelectorAll('.is-sticky-row-header')).toHaveLength(0)
   expect(screen.queryByTestId('report-preview-column-window')).toBeNull()

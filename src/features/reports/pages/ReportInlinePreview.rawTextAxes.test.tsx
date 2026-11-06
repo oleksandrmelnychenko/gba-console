@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { render, screen, within, cleanup } from '@testing-library/react'
 import { afterEach, expect, it } from 'vitest'
@@ -690,7 +691,7 @@ function fixture(source: keyof typeof wireMetadata, identity: string, caption: s
   }
 }
 function show(wire: ReturnType<typeof fixture>) {
-  return render(<MantineProvider env="test"><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: wire })} /></MantineProvider>)
+  return render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: wire })} /></I18nProvider></MantineProvider>)
 }
 const sourceRows: Array<[keyof typeof wireMetadata, string, string]> = [
   ['NativeSalesNet', 'ProductDescription', 'Опис [123]'],

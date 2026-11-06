@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { render, screen } from '@testing-library/react'
 import { expect, it, vi } from 'vitest'
@@ -15,7 +16,7 @@ it('renders the actual source44 HTTP response with unknown quantities, known emp
   api.mockResolvedValue(fixture.response)
   const { preview } = await previewStockReport(template.Data)
   expect(preview.Cells).toEqual(fixture.response.Preview.Cells)
-  const view = render(<MantineProvider env="test"><ReportPreviewPages initial={preview} request={template.Data} /></MantineProvider>)
+  const view = render(<MantineProvider env="test"><I18nProvider><ReportPreviewPages initial={preview} request={template.Data} /></I18nProvider></MantineProvider>)
   const descriptions = 'Без підтвердженої одиниці документа кількість та її відхилення не визначено.'
   const row = view.container.querySelector('tbody tr:not(.report-inline-preview__group-total)')!
   const cells = [...row.querySelectorAll('td')]

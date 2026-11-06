@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, expect, it } from 'vitest'
@@ -19,7 +20,7 @@ it.each([true, false])('applies saved negative color and grand-total visibility 
     Cells: [{ RowSourceIndex: 12, ColumnSourceIndex: 0, Value: value }],
     Totals: { State: 'materialized', Values: [{ RowSourceIndex: -1, ColumnSourceIndex: 0, Value: { ...value, Provenance: 'presentationTotal' } }],
       Groups: [{ Level: 0, RowSourceIndex: 12, RowCount: 1, Values: [{ RowSourceIndex: 12, ColumnSourceIndex: 0, Value: { ...value, Provenance: 'presentationTotal' } }] }] } } })
-  const { container } = render(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>)
+  const { container } = render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
   expect(container.querySelector('tfoot') !== null).toBe(enabled)
   expect(container.querySelector('.is-negative') !== null).toBe(enabled)
   expect(container.querySelector('.report-inline-preview__group-total')).toBeTruthy()

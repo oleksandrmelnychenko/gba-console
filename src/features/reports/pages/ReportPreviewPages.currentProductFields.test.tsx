@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
@@ -30,7 +31,7 @@ it('requests five-row pages for long current fields and moves 0→5→0 through 
   })
   const initial = await previewStockReport(request, dataset)
   expect(api).toHaveBeenLastCalledWith('/report/stocks/preview', expect.objectContaining({ query: { rowOffset: 0, rowLimit: 5, previewVersion: 2 } }))
-  render(<MantineProvider env="test"><ReportPreviewPages initial={initial.preview} request={request} /></MantineProvider>)
+  render(<MantineProvider env="test"><I18nProvider><ReportPreviewPages initial={initial.preview} request={request} /></I18nProvider></MantineProvider>)
   expect(screen.getByText('1–5 із 50')).toBeTruthy()
   fireEvent.click(screen.getByRole('button', { name: 'Наступні рядки' }))
   await screen.findByText('6–10 із 50')

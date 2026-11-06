@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { render, screen, within } from '@testing-library/react'
 import { expect, it } from 'vitest'
@@ -61,7 +62,7 @@ function fixture(identity = 'ProductDescription', caption = 'Опис [123]', so
   }
 }
 function show(wire: ReturnType<typeof fixture>) {
-  return render(<MantineProvider env="test"><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: wire })} /></MantineProvider>)
+  return render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: wire })} /></I18nProvider></MantineProvider>)
 }
 const rawAxes = [['ProductDescription', 'Опис [123]'], ['ProductTop', 'TOP [456]']]
 it.each(rawAxes)('preserves raw source46 %s suffix in leaf and subtotal while keeping money unknowns', (identity, caption) => {

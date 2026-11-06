@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { render, screen } from '@testing-library/react'
 import { expect, it } from 'vitest'
@@ -6,7 +7,7 @@ import { workbookPreview } from '../data/workbookPresentation.test-fixtures'
 import { ReportInlinePreview } from './ReportInlinePreview'
 
 it('appends selected currency/kind values to the account caption like 1C «Разом з вимірами» while leaving explicit financialNULL unchanged', () => {
-  render(<MantineProvider env="test"><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: workbookPreview() })} /></MantineProvider>)
+  render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: workbookPreview() })} /></I18nProvider></MantineProvider>)
   expect(screen.getByRole('rowheader', { name: 'Каса №1, Гривня (UAH), Каса' })).toBeTruthy()
   expect(screen.getByRole('columnheader', { name: /, Валюта рахунку \(каси\), Вид коштів$/ })).toBeTruthy()
   expect(screen.getByRole('cell', { name: '∅' })).toBeTruthy()
@@ -19,7 +20,7 @@ it('renders only selected manager columns, preserves padded descriptions and dis
   raw.workbookPresentation.selection.additionalFields = [60]
   raw.workbookPresentation.fields = [{ type: 60, caption: 'Основний менеджер покупця', placement: 'column' }]
   raw.workbookPresentation.rows[0].values = [{ type: 60, state: 'null', values: [], inputSha256: 'c'.repeat(64) }]
-  render(<MantineProvider env="test"><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: raw })} /></MantineProvider>)
+  render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: raw })} /></I18nProvider></MantineProvider>)
   expect(screen.getByRole('columnheader', { name: 'Основний менеджер покупця' })).toBeTruthy()
   expect(screen.queryByRole('columnheader', { name: 'Код по региону' })).toBeNull()
   expect(screen.getByRole('rowheader', { name: '∅' })).toBeTruthy()
@@ -30,7 +31,7 @@ it('keeps retained day settings outside row product columns without rendering te
   raw.Rows[0].Values = [{ Caption: '01.10.2026' }, { Caption: 'Організація' }]
   raw.workbookPresentation.selection = { version: 1, additionalFields: [2], ordering: 'MonthAscending' }
   raw.workbookPresentation.fields = [{ type: 2, caption: 'Артикул', placement: 'retainedSetting' }]; raw.workbookPresentation.rows = []
-  render(<MantineProvider env="test"><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: raw })} /></MantineProvider>)
+  render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: raw })} /></I18nProvider></MantineProvider>)
   expect(screen.queryByText(/Додаткові поля книги:/)).toBeNull()
   expect(screen.queryByText('Сортування: по місяцях (за зростанням), як у книзі 1С.')).toBeNull()
   expect(screen.queryByRole('columnheader', { name: 'Артикул' })).toBeNull()
@@ -47,7 +48,7 @@ it('prints each cash desk in its own currency without the id unless two records 
     rowKeySha256: String(index + 1).repeat(64), values: [{ type: 30, state: 'known' as const, values: [currency], inputSha256: null },
       { type: 33, state: 'known' as const, values: ['Каса'], inputSha256: null }],
     currencyWitnesses: [{ id: String(index + 1), netUid: `0000000${index + 1}-2222-3333-4444-555555555555`, name: currency, code: null, available: true }] }))
-  render(<MantineProvider env="test"><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: raw })} /></MantineProvider>)
+  render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: raw })} /></I18nProvider></MantineProvider>)
   expect(screen.getByRole('rowheader', { name: 'Каса А, USD, Каса' })).toBeTruthy()
   expect(screen.getByRole('rowheader', { name: 'Каса А, EUR, Каса' })).toBeTruthy()
   expect(screen.getByRole('rowheader', { name: 'Каса П [41761], USD, Каса' })).toBeTruthy()

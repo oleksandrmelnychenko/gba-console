@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
@@ -16,7 +17,7 @@ const next = (): NativeReportPreview => ({ ...initial(), Page: { Offset: 50, Lim
 beforeEach(() => vi.mocked(getStockReportPreviewPage).mockReset())
 it('reads the next immutable page, renders range and enables previous without calculating a new report', async () => {
   vi.mocked(getStockReportPreviewPage).mockResolvedValue(next())
-  render(<MantineProvider><ReportPreviewPages initial={initial()} request={request} /></MantineProvider>)
+  render(<MantineProvider><I18nProvider><ReportPreviewPages initial={initial()} request={request} /></I18nProvider></MantineProvider>)
   fireEvent.click(screen.getByRole('button', { name: 'Наступні рядки' }))
   await screen.findByText('Наступний товар')
   expect(screen.getByText('51–51 із 51')).toBeTruthy()
@@ -26,7 +27,7 @@ it('reads the next immutable page, renders range and enables previous without ca
 })
 it('retains the previous page on failure and cancels a pending page when the form/result is replaced', async () => {
   vi.mocked(getStockReportPreviewPage).mockRejectedValueOnce(new Error('Результат недоступний. Сформуйте повторно.'))
-  const view = render(<MantineProvider><ReportPreviewPages key="first" initial={initial()} request={request} /></MantineProvider>)
+  const view = render(<MantineProvider><I18nProvider><ReportPreviewPages key="first" initial={initial()} request={request} /></I18nProvider></MantineProvider>)
   fireEvent.click(screen.getByRole('button', { name: 'Наступні рядки' }))
   await screen.findByText('Результат недоступний. Сформуйте повторно.')
   expect(screen.getByText('Перший товар')).toBeTruthy()
@@ -34,7 +35,7 @@ it('retains the previous page on failure and cancels a pending page when the for
   vi.mocked(getStockReportPreviewPage).mockImplementationOnce(() => new Promise(done => { resolve = done }))
   fireEvent.click(screen.getByRole('button', { name: 'Наступні рядки' }))
   const signal = vi.mocked(getStockReportPreviewPage).mock.calls.at(-1)![3]!
-  view.rerender(<MantineProvider><ReportPreviewPages key="second" initial={initial('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')} request={request} /></MantineProvider>)
+  view.rerender(<MantineProvider><I18nProvider><ReportPreviewPages key="second" initial={initial('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')} request={request} /></I18nProvider></MantineProvider>)
   expect(signal.aborted).toBe(true)
   await act(async () => resolve(next()))
   await waitFor(() => expect(screen.queryByText('Наступний товар')).toBeNull())
@@ -50,7 +51,7 @@ it('does not rebuild 3000 unchanged cells for a pending page or an error', async
   const reads = vi.spyOn(value.Cells, 'map')
   let reject!: (reason: Error) => void
   vi.mocked(getStockReportPreviewPage).mockImplementationOnce(() => new Promise((_resolve, fail) => { reject = fail }))
-  const view = render(<MantineProvider><ReportPreviewPages initial={value} request={request} /></MantineProvider>)
+  const view = render(<MantineProvider><I18nProvider><ReportPreviewPages initial={value} request={request} /></I18nProvider></MantineProvider>)
   expect(view.container.querySelectorAll('td')).toHaveLength(3000)
   reads.mockClear()
   fireEvent.click(screen.getByRole('button', { name: 'Наступні рядки' }))

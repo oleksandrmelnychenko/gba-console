@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { render, screen } from '@testing-library/react'
 import { expect, it } from 'vitest'
@@ -13,7 +14,7 @@ it('uses producer target captions and units, preserves unknown amounts and discl
    Request: { ...wire.Request, presentationCurrency: { ...resolvedCurrency, code: 'CAD retail' } },
    valueSemantics: [{ columnSourceIndex: 0, measureType: 2, semantics: { kind: 'money', currencyPolicy: 'CAD retail', unitPolicy: 'currency', aggregation: 'sum', scalable: true, defaultDecimalPlaces: 2 } }],
  } })
- render(<MantineProvider><ReportInlinePreview preview={preview} /></MantineProvider>)
+ render(<MantineProvider><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
  expect(screen.getByText(/Валюта звіту: CAD retail/)).toBeTruthy()
  expect(screen.getByRole('columnheader', { name: /Продажі з ПДВ, CAD retail/ }).getAttribute('title')).toBe('CAD retail')
  expect(screen.getByRole('cell').textContent).toBe('∅')

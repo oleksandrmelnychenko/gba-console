@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { render, screen, within } from '@testing-library/react'
 import { expect, it } from 'vitest'
@@ -28,7 +29,7 @@ function fixture(identity = 'SaleDocumentManagerPosted', kind = 'Numeric', capti
 }
 function show(wire: ReturnType<typeof fixture>) {
   const preview = normalizeNativeReportPreview({ Preview: wire })
-  return { ...render(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>), preview }
+  return { ...render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>), preview }
 }
 function expectMoneyAndUnknowns(container: HTMLElement) {
   for (const row of container.querySelectorAll('tbody tr, tfoot tr'))
@@ -47,7 +48,7 @@ it('retains same-name posting-user IDs on actual-shaped independent one-row page
   const view=show(first);expect(screen.getByRole('rowheader',{name:'Twin [9007199254740993]'})).toBeTruthy()
   const next=fixture('SaleDocumentManagerPosted','Numeric','Twin [9223372036854775807]','9223372036854775807');next.Page.Offset=1;next.Page.TotalVisibleRows=2
   next.Rows[0].Ordinal=next.Rows[0].SourceIndex=1;next.Cells.forEach(cell=>{cell.RowSourceIndex=1});next.Totals.Groups[0].RowSourceIndex=1;next.Totals.Groups[0].Values.forEach(cell=>{cell.RowSourceIndex=1})
-  const preview=normalizeNativeReportPreview({Preview:next});view.rerender(<MantineProvider env="test"><ReportInlinePreview preview={preview}/></MantineProvider>)
+  const preview=normalizeNativeReportPreview({Preview:next});view.rerender(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview}/></I18nProvider></MantineProvider>)
   expect(screen.getByRole('rowheader',{name:'Twin [9223372036854775807]'})).toBeTruthy();expect(screen.queryByRole('rowheader',{name:'Twin [9007199254740993]'})).toBeNull()
   expect(preview.Rows[0].Values[0].Identity?.Value).toBe('9223372036854775807');expectMoneyAndUnknowns(view.container)
 })

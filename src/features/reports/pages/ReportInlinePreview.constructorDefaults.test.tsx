@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, it } from 'vitest'
@@ -12,7 +13,7 @@ function fixture():NativeReportPreview {
 }
 afterEach(cleanup)
 it('formats purchase leaves subtotal grand and zero from metadata while cache DTO bytes stay unchanged',()=>{
- const preview=fixture(),before=JSON.stringify(preview);render(<MantineProvider><ReportInlinePreview preview={preview}/></MantineProvider>)
+ const preview=fixture(),before=JSON.stringify(preview);render(<MantineProvider><I18nProvider><ReportInlinePreview preview={preview}/></I18nProvider></MantineProvider>)
  const row=screen.getByRole('rowheader',{name:'A'}).closest('tr')!;expect(within(row).getAllByRole('cell').map(cell=>cell.textContent)).toEqual(['27','4,806','12,35'])
  const subtotal=screen.getByRole('rowheader',{name:'Підсумок: 09.2026'}).closest('tr')!;expect(within(subtotal).getAllByRole('cell').map(cell=>cell.textContent)).toEqual(['27','4,806','12,35'])
  const zero=screen.getByRole('rowheader',{name:'B'}).closest('tr')!;expect(within(zero).getAllByRole('cell').map(cell=>cell.textContent)).toEqual(['0','0','0,00'])
@@ -21,11 +22,11 @@ it('formats purchase leaves subtotal grand and zero from metadata while cache DT
 })
 it('applied explicitquantity2 wins for leaf and cached totals without rewriting values',()=>{
  const preview=fixture();preview.numberPresentation={version:1,moneyScale:1,decimalPlacesByKind:{quantity:2}};const before=JSON.stringify(preview)
- const view=render(<MantineProvider><ReportInlinePreview preview={preview}/></MantineProvider>);const row=screen.getByRole('rowheader',{name:'A'}).closest('tr')!;expect(within(row).getAllByRole('cell').map(cell=>cell.textContent)).toEqual(['27,00','4,81','12,35'])
- view.rerender(<MantineProvider><ReportInlinePreview preview={structuredClone(preview)}/></MantineProvider>);const subtotal=screen.getByRole('rowheader',{name:'Підсумок: 09.2026'}).closest('tr')!;expect(within(subtotal).getAllByRole('cell').map(cell=>cell.textContent)).toEqual(['27,00','4,81','12,35']);expect(JSON.stringify(preview)).toBe(before)
+ const view=render(<MantineProvider><I18nProvider><ReportInlinePreview preview={preview}/></I18nProvider></MantineProvider>);const row=screen.getByRole('rowheader',{name:'A'}).closest('tr')!;expect(within(row).getAllByRole('cell').map(cell=>cell.textContent)).toEqual(['27,00','4,81','12,35'])
+ view.rerender(<MantineProvider><I18nProvider><ReportInlinePreview preview={structuredClone(preview)}/></I18nProvider></MantineProvider>);const subtotal=screen.getByRole('rowheader',{name:'Підсумок: 09.2026'}).closest('tr')!;expect(within(subtotal).getAllByRole('cell').map(cell=>cell.textContent)).toEqual(['27,00','4,81','12,35']);expect(JSON.stringify(preview)).toBe(before)
 })
 it('preserves NULL zero and negative-red classification independently from exact display rounding',()=>{
  const preview=fixture();preview.Cells[1].Value=scalar('-4.8060000000000000000000');preview.constructorPresentation={version:1,negativeRed:true,grandTotals:true}
- render(<MantineProvider><ReportInlinePreview preview={preview}/></MantineProvider>);const weight=within(screen.getByRole('rowheader',{name:'A'}).closest('tr')!).getByText('-4,806');expect(weight.classList.contains('is-negative')).toBe(true)
+ render(<MantineProvider><I18nProvider><ReportInlinePreview preview={preview}/></I18nProvider></MantineProvider>);const weight=within(screen.getByRole('rowheader',{name:'A'}).closest('tr')!).getByText('-4,806');expect(weight.classList.contains('is-negative')).toBe(true)
  expect(within(screen.getByRole('rowheader',{name:'C'}).closest('tr')!).getAllByText('∅')).toHaveLength(2)
 })

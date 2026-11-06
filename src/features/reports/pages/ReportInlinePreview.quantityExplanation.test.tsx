@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
@@ -29,7 +30,7 @@ function preview(source = 'NativeSalesNet', quantity: unknown = missing): Native
   } })
 }
 function show(value: NativeReportPreview, body: ReportRequestBody) {
-  return render(<MantineProvider env="test"><ReportPreviewPages initial={value} request={body} /></MantineProvider>)
+  return render(<MantineProvider env="test"><I18nProvider><ReportPreviewPages initial={value} request={body} /></I18nProvider></MantineProvider>)
 }
 
 it.each(['sales', 'grossProfit'])('explains unknown quantity in %s leaf and totals by measure ID, retaining money unknowns', profile => {
@@ -73,7 +74,7 @@ it('keeps the applied result profile while a different draft profile is edited',
       <output>{draft.reportProfile === undefined ? 'Чернетка без профілю' : 'Чернетка продажів'}</output>
       <ReportPreviewPages initial={value} request={settings.appliedRequest ?? draft} /></>
   }
-  render(<MantineProvider env="test"><AppliedResult /></MantineProvider>)
+  render(<MantineProvider env="test"><I18nProvider><AppliedResult /></I18nProvider></MantineProvider>)
   fireEvent.click(screen.getByRole('button', { name: 'Застосувати' }))
   fireEvent.click(screen.getByRole('button', { name: 'Змінити чернетку' }))
   expect(screen.getByText('Чернетка без профілю')).toBeTruthy()
@@ -124,7 +125,7 @@ it('keeps the rendered source44 explanation when a different report is edited bu
     return <><button onClick={() => settings.apply()}>Застосувати</button><button onClick={() => setDraft(request('sales'))}>Чернетка продажів</button>
       <output>{draft.dataSource}</output><ReportPreviewPages initial={value} request={settings.appliedRequest ?? draft} /></>
   }
-  render(<MantineProvider env="test"><AppliedComparison /></MantineProvider>)
+  render(<MantineProvider env="test"><I18nProvider><AppliedComparison /></I18nProvider></MantineProvider>)
   fireEvent.click(screen.getByRole('button', { name: 'Застосувати' }))
   fireEvent.click(screen.getByRole('button', { name: 'Чернетка продажів' }))
   expect(screen.getByRole('status').textContent).toBe('2')

@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
@@ -24,7 +25,7 @@ it.each(variants)('binds actual source44 $name presentation without changing coh
  expect(preview.Totals?.Values.map(c=>c.Value.Kind==='null'?null:Number(c.Value.Value))).toEqual([null,null,null,110,0,0,null,null,null,70,-40,-36.36])
  expect(preview.Totals?.Values).toHaveLength(12);expect(preview.Totals?.Values).toEqual(variants[0].page0.Preview.Totals.Values)
  expect(preview.Request?.IsCurrentSnapshot).toBe(false)
- const view=render(<MantineProvider env="test"><ReportPreviewPages initial={preview} request={template.Data}/></MantineProvider>)
+ const view=render(<MantineProvider env="test"><I18nProvider><ReportPreviewPages initial={preview} request={template.Data}/></I18nProvider></MantineProvider>)
  expect(view.container.querySelector('tfoot')!==null).toBe(fixture.expected.grand)
  const cells=Array.from(view.container.querySelectorAll('tbody tr:not(.report-inline-preview__group-total) td'))
  expect(cells).toHaveLength(12)

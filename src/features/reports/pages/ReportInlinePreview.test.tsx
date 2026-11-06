@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { render, screen, within } from '@testing-library/react'
 import { expect, it } from 'vitest'
@@ -25,7 +26,7 @@ function show(Request: unknown = request, Value: unknown = { Kind: 'null', Value
     Columns: [{ Ordinal: 0, SourceIndex: 3, Values: [{ Caption: 'Сума' }] }],
     Cells: [{ RowSourceIndex: 12, ColumnSourceIndex: 3, Value }],
   } })
-  return render(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>)
+  return render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
 }
 
 it('shows the result without technical report descriptions or tutorials', () => {
@@ -113,7 +114,7 @@ it('shows the workbook names without technical ids, money with two decimals and 
     Cells: [{ RowSourceIndex: 1, ColumnSourceIndex: 0, Value: { Kind: 'decimal', Value: '2260.3', Provenance: 'producerCell' } },
       { RowSourceIndex: 1, ColumnSourceIndex: 1, Value: { Kind: 'decimal', Value: '3527', Provenance: 'producerCell' } }],
   } })
-  render(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>)
+  render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
   const table = within(screen.getByRole('region', { name: 'Таблиця попереднього перегляду' }))
   expect(table.getByRole('rowheader', { name: 'ТОВ «АМГ «КОНКОРД»' })).toBeTruthy()
   expect(table.getByRole('columnheader', { name: 'Продажі без ПДВ, EUR' })).toBeTruthy()
@@ -134,7 +135,7 @@ function showFinancialMatrix(ids: (string | null)[], caption = 'Однакова
         { Caption: measure, Identity: { Kind: 'reportField', Value: 'SalesValueWithoutVAT', Provenance: 'columnAxisKey' } }] }))),
     Cells: [{ RowSourceIndex: 12, ColumnSourceIndex: 1, Value: { Kind: 'null', Value: null, Provenance: 'producerCell' } }],
   } })
-  return render(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>)
+  return render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
 }
 it('keeps a single organization dimension visible instead of hiding it as a shared measure group', () => {
   showFinancialMatrix(['9223372036854775807'], 'Організація [9223372036854775807]')

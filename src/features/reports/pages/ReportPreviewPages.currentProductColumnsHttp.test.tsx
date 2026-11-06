@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import stockFixture from '../data/stockQuantityFilter.server-fixture.json'
 import { stockQuantityFilterSupported } from '../data/stockQuantityFilter'
 import { currentProductCapability } from '../data/workbookPresentation'
@@ -40,7 +41,7 @@ it('binds actual ten-field escaped HTTP pages0→2→0 with exact field order, f
  const values=initial.preview.WorkbookPresentation!.rows[0].values
  expect(values.filter(value=>value.type!==67).every(value=>value.values[0].length===4096)).toBe(true)
  expect(values.find(value=>value.type===67)?.references).toEqual(first.Preview.workbookPresentation.rows[0].values.find(value=>value.type===67)?.references)
- render(<MantineProvider env="test"><ReportPreviewPages initial={initial.preview} request={request}/></MantineProvider>)
+ render(<MantineProvider env="test"><I18nProvider><ReportPreviewPages initial={initial.preview} request={request}/></I18nProvider></MantineProvider>)
  expect(screen.getByText('1–2 із 4')).toBeTruthy()
  const headers=screen.getAllByRole('columnheader').map(node=>node.textContent)
  for(const field of first.Preview.workbookPresentation.fields)expect(headers).toContain(field.caption)
@@ -58,7 +59,7 @@ it('renders actual Notes independently from Description and preserves empty stri
  expect(rows[0].values.find(value=>value.type===70)?.values).toEqual(['Comment, not description'])
  expect(rows[1].values.find(value=>value.type===69)).toMatchObject({state:'known',values:['']})
  expect(rows[1].values.find(value=>value.type===70)).toMatchObject({state:'null',values:[]})
- render(<MantineProvider env="test"><ReportPreviewPages initial={preview} request={request}/></MantineProvider>)
+ render(<MantineProvider env="test"><I18nProvider><ReportPreviewPages initial={preview} request={request}/></I18nProvider></MantineProvider>)
  expect(screen.getByRole('rowheader',{name:'Comment, not description'})).toBeTruthy()
  expect(screen.getByRole('columnheader',{name:'Нотатки (поточний товар)'})).toBeTruthy()
  expect(screen.getByRole('columnheader',{name:'Опис (поточний товар)'})).toBeTruthy()

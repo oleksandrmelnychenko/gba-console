@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { expect, it, vi } from 'vitest'
@@ -25,7 +26,7 @@ it('binds actual source44 current-region request and cached pages without changi
   expect(preview.Totals?.Values.map(cell => cell.Value.Kind === 'null' ? null : Number(cell.Value.Value))).toEqual([null,null,null,70,0,0, 0,null,null,0,-70,-100, null,null,null,70,0,0, 0,null,null,0,-70,-100])
   expect(fixture.page1.ResultSha256).toBe(fixture.page0.ResultSha256)
   expect(fixture.page1.Preview.Totals.Values).toEqual(fixture.page0.Preview.Totals.Values)
-  const view = render(<MantineProvider env="test"><ReportPreviewPages initial={preview} request={template.Data} /></MantineProvider>)
+  const view = render(<MantineProvider env="test"><I18nProvider><ReportPreviewPages initial={preview} request={template.Data} /></I18nProvider></MantineProvider>)
   const quantity = view.container.querySelector('tbody tr:not(.report-inline-preview__group-total) td')!
   expect(quantity.textContent).toBe('∅')
   expect(quantity.getAttribute('aria-description')).toContain('Без підтвердженої одиниці документа')

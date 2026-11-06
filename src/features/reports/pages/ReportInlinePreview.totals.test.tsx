@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
@@ -41,7 +42,7 @@ const materialized = {
 
 describe('1C-like totals and blank zeros in the report preview', () => {
   it('prints each group total above its rows and the grand total at the bottom, with zeros blank and unknown sums ∅', () => {
-    const view = render(<MantineProvider env="test"><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: settlementPreview(materialized) })} /></MantineProvider>)
+    const view = render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: settlementPreview(materialized) })} /></I18nProvider></MantineProvider>)
     const table = screen.getByRole('table')
     const bodyRows = within(table).getAllByRole('row').filter(tableRow => tableRow.closest('tbody'))
     expect(bodyRows.map(tableRow => tableRow.textContent)).toEqual([
@@ -53,7 +54,7 @@ describe('1C-like totals and blank zeros in the report preview', () => {
   })
 
   it('does not invent totals when the server did not materialize them', () => {
-    const view = render(<MantineProvider env="test"><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: settlementPreview({ State: 'notMaterialized', Values: [] }) })} /></MantineProvider>)
+    const view = render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: settlementPreview({ State: 'notMaterialized', Values: [] }) })} /></I18nProvider></MantineProvider>)
     expect(view.container.querySelector('tfoot')).toBeNull()
   })
 

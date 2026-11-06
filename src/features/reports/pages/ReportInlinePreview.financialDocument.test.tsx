@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { render, screen } from '@testing-library/react'
 import { expect, it } from 'vitest'
@@ -16,7 +17,7 @@ it('keeps sale42, return42 and a large ID distinct despite identical captions, w
   }))
   raw.Cells = [{ RowSourceIndex: 0, ColumnSourceIndex: 1, Value: { Kind: 'null', Value: null, Provenance: 'producerCell' } }]
   const preview = normalizeNativeReportPreview({ Preview: raw })
-  const view = render(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>)
+  const view = render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
   for (const id of ['sale:42', 'return:42', 'sale:9007199254740993'])
     expect(screen.getByRole('columnheader', { name: `${caption} [${id}] / Прибуток / Продажі` })).toBeTruthy()
   expect(view.container.querySelectorAll('td[title="Клітинка відсутня"]')).toHaveLength(2)

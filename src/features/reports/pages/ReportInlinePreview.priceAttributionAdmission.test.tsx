@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { render, screen, within } from '@testing-library/react'
 import { expect, it, vi } from 'vitest'
@@ -98,7 +99,7 @@ it('admits owned source46 author/supplier metadata and reserved minus-one row/co
   expect(preview.Cells).toEqual(before.Cells)
   expect(preview.Totals).toEqual(before.Totals)
   expect(wire).toEqual(before)
-  const view = render(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>)
+  const view = render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
   for (const name of ['Нерозподілено', authorCaption]) {
     expect(screen.getByRole('rowheader', { name })).toBeTruthy()
     expect(screen.getByRole('rowheader', { name: 'Підсумок: ' + name })).toBeTruthy()

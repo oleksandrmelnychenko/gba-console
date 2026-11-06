@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { render, screen } from '@testing-library/react'
 import { expect, it } from 'vitest'
@@ -5,7 +6,7 @@ import { normalizeNativeReportPreview } from '../data/nativeReportPreview'
 import { productPreview } from '../data/currentProductFields.test-fixtures'
 import { ReportInlinePreview } from './ReportInlinePreview'
 it('renders current attributes as independent ordered columns, with honest empty values and unchanged unknown money', () => {
-  render(<MantineProvider env="test"><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: productPreview() })} previewReportProfile="sales" /></MantineProvider>)
+  render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: productPreview() })} previewReportProfile="sales" /></I18nProvider></MantineProvider>)
   const headers = screen.getAllByRole('columnheader').map(node => node.textContent)
   expect(headers.indexOf('Розмір (поточний товар)')).toBeLessThan(headers.indexOf('Артикул (поточний товар)'))
   expect(screen.getByRole('rowheader', { name: 'SEM14631' })).toBeTruthy()

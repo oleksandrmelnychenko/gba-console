@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach,beforeEach,expect,it,vi } from 'vitest'
@@ -37,7 +38,7 @@ it('binds actual grouped positive quantities and unknown money to one cached res
   expect(first.Preview.Totals.Values.find(cell=>cell.ColumnSourceIndex===money.SourceIndex)?.Value.Kind).toBe('null')
  }
  expect(initial.preview.Request?.Filters).toContainEqual({Field:'Кінцевий залишок: кількість',Condition:'більше',Values:['0'],IgnoredReason:null})
- render(<MantineProvider env="test"><ReportPreviewPages initial={initial.preview} request={request}/></MantineProvider>)
+ render(<MantineProvider env="test"><I18nProvider><ReportPreviewPages initial={initial.preview} request={request}/></I18nProvider></MantineProvider>)
  expect(screen.getByRole('rowheader',{name:'Склад малий [8003]'})).toBeTruthy()
  expect(screen.queryByRole('rowheader',{name:'Склад малий'})).toBeNull()
  expect(initial.preview.Rows[0].Values[0].Identity).toEqual(first.Preview.Rows[0].Values[0].Identity)

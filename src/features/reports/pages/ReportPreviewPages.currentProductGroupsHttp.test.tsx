@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
@@ -42,7 +43,7 @@ it('binds actual v3 HTTP lists and five-row cached pages without changing money,
   const captions = first.Preview.workbookPresentation.rows[0].values[4].references!.map(reference => reference.caption)
   expect(captions).toHaveLength(3)
   expect(captions[0]!.length).toBe(4096)
-  render(<MantineProvider env="test"><ReportPreviewPages initial={initial.preview} request={request} /></MantineProvider>)
+  render(<MantineProvider env="test"><I18nProvider><ReportPreviewPages initial={initial.preview} request={request} /></I18nProvider></MantineProvider>)
   expect(screen.getByText('1–5 із 10')).toBeTruthy()
   const groupList = screen.getAllByRole('list', { name: 'Групи поточного товару' })[0]
   expect(within(groupList).getAllByRole('listitem').map(item => item.textContent)).toEqual(captions)
@@ -65,7 +66,7 @@ it('renders actual known empty and unavailable list states without inventing a g
   expect(states[0].references?.map(value => value.id)).toEqual(['2', '3', '4', '9'])
   expect(states[1].references).toEqual([])
   expect(states[2].references).toEqual([])
-  render(<MantineProvider env="test"><ReportPreviewPages initial={preview} request={request} /></MantineProvider>)
+  render(<MantineProvider env="test"><I18nProvider><ReportPreviewPages initial={preview} request={request} /></I18nProvider></MantineProvider>)
   expect(screen.getByText('Немає груп')).toBeTruthy()
   const list = screen.getByRole('list', { name: 'Групи поточного товару' })
   expect(within(list).getAllByRole('listitem').map(item => item.textContent)).toEqual(['Same', 'Full', 'Без назви', 'Same'])

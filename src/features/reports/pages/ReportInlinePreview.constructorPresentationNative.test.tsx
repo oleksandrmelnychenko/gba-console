@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { cleanup, render, within } from '@testing-library/react'
 import { afterEach, expect, it } from 'vitest'
@@ -10,7 +11,7 @@ const cases = ownPresentationSources.flatMap(source => presentationCombinations.
 it.each(cases)('applies source$source style $flags while all raw cells and totals stay exact', ({ source, flags }) => {
   const wire = ownPresentationPreview(source, flags), before = structuredClone(wire)
   const preview = normalizeNativeReportPreview({ Preview: wire })
-  const view = render(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>)
+  const view = render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
   expect(view.container.querySelector('tfoot') !== null).toBe(flags.grandTotals)
   expect(view.container.querySelectorAll('.is-negative')).toHaveLength(flags.negativeRed ? flags.grandTotals ? 3 : 2 : 0)
   expect(view.container.querySelector('.report-inline-preview__group-total')).toBeTruthy()
@@ -25,7 +26,7 @@ it.each(cases)('applies source$source style $flags while all raw cells and total
 it.each(ownPresentationSources)('retains absent source%i inline defaults and leaves absent options omitted', source => {
   const wire = ownPresentationPreview(source)
   const preview = normalizeNativeReportPreview({ Preview: wire })
-  const view = render(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>)
+  const view = render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
   expect(Object.hasOwn(preview, 'constructorPresentation')).toBe(false)
   expect(view.container.querySelector('.is-negative')).toBeNull()
   expect(view.container.querySelector('tfoot')).toBeTruthy()
@@ -34,7 +35,7 @@ it.each(ownPresentationSources)('retains absent source%i inline defaults and lea
 it.each(ownPresentationSources)('preserves legacy absent handling of a nullable source%i preview option', source => {
   const wire = ownPresentationPreview(source, null)
   const preview = normalizeNativeReportPreview({ Preview: wire })
-  const view = render(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>)
+  const view = render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
   expect(preview.constructorPresentation).toBeNull()
   expect(view.container.querySelector('.is-negative')).toBeNull()
   expect(view.container.querySelector('tfoot')).toBeTruthy()

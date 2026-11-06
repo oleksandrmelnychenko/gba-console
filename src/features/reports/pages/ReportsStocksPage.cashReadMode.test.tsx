@@ -96,7 +96,7 @@ it.each([[0, 'Поточні документи GBA'], [1, 'Збережені �
     Request: { DataSource: 'NativeCashPeriod', IsCurrentSnapshot: false, HasPeriod: true, CashReadMode: echo },
     Page: { Offset: 0, Limit: 50, TotalVisibleRows: 0, ReturnedRows: 0, HasMore: false },
     RowSchema: [], ColumnSchema: [], Rows: [], Columns: [], Cells: [] } })
-  render(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>)
+  render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
   expect(screen.queryByText(`Джерело розрахунку: ${label}`)).toBeNull()
   expect(screen.getByRole('table')).toBeTruthy()
 })

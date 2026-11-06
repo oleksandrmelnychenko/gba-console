@@ -1,3 +1,4 @@
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { MantineProvider } from '@mantine/core'
 import { render, screen, within } from '@testing-library/react'
 import { expect, it } from 'vitest'
@@ -32,7 +33,7 @@ function fixture(identity = 'ProductGroup', kind = 'Text', caption = 'A + B [202
 }
 function show(wire: ReturnType<typeof fixture>) {
   const preview = normalizeNativeReportPreview({ Preview: wire })
-  return { ...render(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>), preview }
+  return { ...render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>), preview }
 }
 function expectMoneyAndUnknowns(container: HTMLElement) {
   for (const row of container.querySelectorAll('tbody tr, tfoot tr'))
@@ -59,7 +60,7 @@ it.each(axes.filter(([identity]) => identity !== 'ProductGroup'))('keeps source4
   second.Totals.Groups[0].RowSourceIndex = 1
   second.Totals.Groups[0].Values.forEach(cell => { cell.RowSourceIndex = 1 })
   const preview = normalizeNativeReportPreview({ Preview: second })
-  view.rerender(<MantineProvider env="test"><ReportInlinePreview preview={preview} /></MantineProvider>)
+  view.rerender(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
   expect(screen.getByRole('rowheader', { name: captions[1] })).toBeTruthy()
   expect(screen.queryByRole('rowheader', { name: captions[0] })).toBeNull()
   expect(preview.Rows[0].Values[0].Identity?.Value).toBe('9223372036854775807')
