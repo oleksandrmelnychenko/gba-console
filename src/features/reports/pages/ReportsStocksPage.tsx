@@ -504,6 +504,14 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     [agreementVerified, canGenerateReport, reportBody, bug1274Only, settingsScope])
   const { result, preview, lastRun, error, isLoading, downloadModalOpened, update: updateRun, begin: beginRun, clear: clearRun } = useReportRunState<ReportRunOutcome>(runRequestKey)
   const comparisonSettingsDisabled = isLoading || workbookResolving || !canGenerateReport
+  function changeExportLayout(value: FinancialExportLayout) {
+    if (isLoading || value === exportLayout) return
+    setExportLayout(value)
+    if (!result) return
+    // A layout changes the files, not the applied calculation or its cached preview.
+    updateRun({ result: null, downloadModalOpened: false,
+      ...(lastRun ? { lastRun: { ...lastRun, hasDocument: false, previewNeedsExport: Boolean(preview?.ResultSession) } } : {}) })
+  }
   const workspaceDraft = useReportWorkspaceDraft({ ownerId, enabled: canGenerateReport,
     ready: datasetStorage.loaded && !datasetStorage.error && !initialWorkbookLaunch && initialWorkbook !== 'opening',
     snapshot: draftSnapshot, backgroundRecovery: bug1274Only })
@@ -578,9 +586,12 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     if (constructorMode) setConstructorSection('result')
 
     try {
-      const previewResult = showPreview || selectedCurrency && !existingPreview?.ResultSession ? await previewStockReport(request, dataset) : null
-      if (selectedCurrency && previewResult && !previewResult.preview.ResultSession) throw new Error('Сервер не підтвердив збережений результат для вибраної валюти. Файл не сформовано.')
       const layout = financialAxesCapability(dataset) && request.sorted.Col.length > 0 ? financialExportLayoutQuery(exportLayout) : undefined
+      const retainedPreviewRequired = selectedCurrency || layout !== undefined
+      const previewResult = showPreview || retainedPreviewRequired && !existingPreview?.ResultSession ? await previewStockReport(request, dataset) : null
+      if (retainedPreviewRequired && previewResult && !previewResult.preview.ResultSession) throw new Error(selectedCurrency
+        ? 'Сервер не підтвердив збережений результат для вибраної валюти. Файл не сформовано.'
+        : 'Сервер не підтвердив збережений результат для вибраного вигляду файла. Файл не сформовано.')
       const exportPreview = (session: NonNullable<NativeReportPreview['ResultSession']>) => layout ? exportStockReportPreview(session, layout) : exportStockReportPreview(session)
       const nextResult = !showPreview && previewResult?.preview.ResultSession ? await exportPreview(previewResult.preview.ResultSession) : previewResult?.result ?? (existingPreview?.ResultSession ? await exportPreview(existingPreview.ResultSession) : await createStockReport(request, dataset))
       const outcome: ReportRunOutcome = exportingApplied ? { ...lastRun!,
@@ -1060,7 +1071,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         groupingOrdering.changeAxis('Row', next)
       },
       onMeasurementsChange: setMeasurements, onSelectionsChange: filterLogic.editSelection, onGroupingLayoutChange: groupingOrdering.changeLayout,
-      exportLayout, onExportLayoutChange: setExportLayout,
+      exportLayout, onExportLayoutChange: changeExportLayout,
     }
     const supplierControls = dataSource === 38 && isSupplierSourceWorldCapability(dataset?.supplierSourceWorld)
     const sharedFilters = <ConstructorFilters count={selections.length} rowKeys={filterLogic.selectionKeys} disabled={comparisonSettingsDisabled}
@@ -1286,7 +1297,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           ? <CurrentDiscountAgreementInput value={valuationClientAgreementId} enabled={canGenerateReport} disabled={isLoading} onChange={setValuationAgreementId} />
           : null}</> : null}
       <ReportBuilderForm dataset={dataset} reportBody={reportBody}
-        exportLayout={exportLayout} onExportLayoutChange={setExportLayout}
+        exportLayout={exportLayout} onExportLayoutChange={changeExportLayout}
         constructorMode={constructorMode}
         constructorSection={constructorSection}
         onConstructorSectionChange={navigateConstructorSection}

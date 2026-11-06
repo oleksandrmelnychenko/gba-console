@@ -1,4 +1,5 @@
-import { currentFinancialDataset } from '../data/currentFinancialAxes.test-fixtures'
+import { saveSession } from '../../../shared/auth/session'
+import { currentFinancialDataset, currentFinancialRequest } from '../data/currentFinancialAxes.test-fixtures'
 import { financialDataset } from '../data/financialAxes.test-fixtures'
 import { movementDataset } from '../data/currentVparivanieMovements.test-fixtures'
 import { mixedDataset } from '../data/currentVparivanieAnalysis.group-selection.test-fixtures'
@@ -448,13 +449,26 @@ it('transposes client/agreement columns and keeps edited dates and source filter
   }
 })
 
-it('exports agreement columns in the explicitly chosen workbook layout and leaves automatic to the server', async () => {
+async function openAgreementColumnWorkbook(saved = false) {
+  const template = { Id: '88888888-7777-6666-5555-444444444444', Revision: 1, Name: 'Договори за організаціями',
+    UpdatedAtUtc: '2026-10-31T00:00:00Z', Data: { ...currentFinancialRequest([4], [15]), from: '2026-10-01', to: '2026-10-31' } }
+  if (saved) {
+    auth.owner = 'layout-owner'
+    saveSession({ userNetUid: auth.owner, csrfToken: 'layout-csrf' })
+    vi.mocked(getServerReportTemplates).mockResolvedValue([template])
+  }
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, currentFinancialDataset, profitSupplierDataset,
     currentVparivanieDataset, cashModeDataset, settlementModeDataset])
   vi.mocked(previewStockReport).mockResolvedValue({ result: { document: { DocumentURL: '', PdfDocumentURL: '' }, raw: {} },
     preview: { ...preview, ResultSession: resultSession } })
   vi.mocked(exportStockReportPreview).mockResolvedValue({ document: files, raw: {} })
   await openDayWorkbook()
+  if (saved) {
+    fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+    fireEvent.click(await screen.findByRole('button', { name: `Відкрити для редагування: ${template.Name}` }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Сформувати Excel' })).toHaveProperty('disabled', false))
+    return
+  }
   fireEvent.click(screen.getByRole('button', { name: 'Видалити Дата' }))
   for (const [axis, label] of [['стовпців', 'Договір']]) {
     fireEvent.click(screen.getByRole('button', { name: `Додати поле: Групування ${axis}` }))
@@ -462,6 +476,11 @@ it('exports agreement columns in the explicitly chosen workbook layout and leave
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Додати вибрані (1)' }))
   }
   changeReportPeriod({ from: '2026-10-01', to: '2026-10-31' })
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toHaveProperty('disabled', false))
+}
+
+it('exports agreement columns in the explicitly chosen workbook layout and leaves automatic to the server', async () => {
+  await openAgreementColumnWorkbook()
   expect(screen.getByText('До 100 договорів у колонках — кожен договір окремим аркушем, більше — одна таблиця.')).toBeTruthy()
   fireEvent.click(screen.getByRole('radio', { name: 'Одна таблиця' }))
   expect(screen.getByText('У файлі одна таблиця: кожен договір займає свої колонки показників.')).toBeTruthy()
@@ -470,9 +489,46 @@ it('exports agreement columns in the explicitly chosen workbook layout and leave
   await screen.findByRole('region', { name: 'Таблиця попереднього перегляду' })
   fireEvent.click(screen.getByRole('button', { name: 'Сформувати Excel' }))
   await waitFor(() => expect(exportStockReportPreview).toHaveBeenCalledExactlyOnceWith(resultSession, 'table'))
+  await screen.findByRole('link', { name: 'Завантажити Excel' })
+  // Unapplied date edits must not replace the snapshot exported with a new layout.
+  changeReportPeriod({ from: '2026-10-02' })
   fireEvent.click(screen.getByRole('radio', { name: 'Окремі аркуші' }))
   expect(screen.getByText('У файлі кожен договір у колонках буде окремим аркушем.')).toBeTruthy()
+  expect(screen.queryByRole('link', { name: 'Завантажити Excel' })).toBeNull()
+  expect(screen.queryByRole('link', { name: 'Завантажити PDF' })).toBeNull()
+  expect(screen.getByRole('region', { name: 'Таблиця попереднього перегляду' })).toBeTruthy()
+  expect(dateInput('Від').value).toBe('2026-10-02')
+  expect(screen.getByText(/Показаний результат та його експорт відповідають попередньому/)).toBeTruthy()
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати Excel' }))
+  await waitFor(() => expect(vi.mocked(exportStockReportPreview).mock.calls).toEqual([[resultSession, 'table'], [resultSession, 'sheets']]))
+  await screen.findByRole('link', { name: 'Завантажити Excel' })
   fireEvent.click(screen.getByRole('radio', { name: 'Автоматично' }))
+  expect(screen.queryByRole('link', { name: 'Завантажити Excel' })).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати Excel' }))
+  await waitFor(() => expect(vi.mocked(exportStockReportPreview).mock.calls).toEqual([[resultSession, 'table'], [resultSession, 'sheets'], [resultSession]]))
+  expect(createStockReport).not.toHaveBeenCalled()
   expect(vi.mocked(previewStockReport).mock.calls[0][0].sorted.Col.map(field => field.type)).toEqual([15])
   expect(previewStockReport).toHaveBeenCalledOnce()
+})
+
+it('retains a snapshot for the first direct file action with an explicit layout', async () => {
+  await openAgreementColumnWorkbook(true)
+  fireEvent.click(screen.getByRole('radio', { name: 'Окремі аркуші' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати Excel' }))
+  await waitFor(() => expect(exportStockReportPreview).toHaveBeenCalledExactlyOnceWith(resultSession, 'sheets'))
+  expect(previewStockReport).toHaveBeenCalledOnce()
+  expect(createStockReport).not.toHaveBeenCalled()
+  expect(vi.mocked(previewStockReport).mock.calls[0][0]).toMatchObject({ from: '2026-10-01', to: '2026-10-31' })
+  expect(screen.getByRole('region', { name: 'Таблиця попереднього перегляду' })).toBeTruthy()
+})
+
+it('refuses an explicit layout without an immutable result instead of returning an automatic file', async () => {
+  await openAgreementColumnWorkbook(true)
+  vi.mocked(previewStockReport).mockResolvedValueOnce({ result: { document: files, raw: {} }, preview })
+  fireEvent.click(screen.getByRole('radio', { name: 'Окремі аркуші' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати Excel' }))
+  await screen.findByText('Сервер не підтвердив збережений результат для вибраного вигляду файла. Файл не сформовано.')
+  expect(exportStockReportPreview).not.toHaveBeenCalled()
+  expect(createStockReport).not.toHaveBeenCalled()
+  expect(screen.queryByRole('link', { name: 'Завантажити Excel' })).toBeNull()
 })
