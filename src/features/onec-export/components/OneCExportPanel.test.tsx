@@ -20,7 +20,7 @@ const runs = vi.mocked(getOneCExportRuns)
 const exportFile = vi.mocked(exportToOneC)
 const redownload = vi.mocked(downloadOneCExportBatch)
 const save = vi.mocked(saveDownloadedFile)
-const file = { blob: new Blob(['x']), fileName: 'gba-1c-20261101-20261104.zip', batchNetUid: 'batch-1' }
+const file = { blob: new Blob(['x']), fileName: 'gba-1c-20261101-20261104.zip', batchNetUid: 'batch-1', warningCount: 0 }
 
 function mount() {
   return render(<MantineProvider env="test"><I18nProvider><OneCExportPanel /></I18nProvider></MantineProvider>)
@@ -82,10 +82,30 @@ describe('1C export panel', () => {
     expect(await screen.findByText('Петренко Петро')).toBeTruthy()
     expect(screen.getByText('01.11.2026 – 03.11.2026')).toBeTruthy()
     expect(screen.getByText('12 (видалено: 2)')).toBeTruthy()
+    expect(screen.getByText('04.11.2026, 10:00')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Завантажити файл gba-1c-fenix-20261101-20261103.xml' }))
 
     await waitFor(() => expect(redownload).toHaveBeenCalledWith('batch-0'))
     await waitFor(() => expect(save).toHaveBeenCalledWith(file))
+  })
+
+  it('shows the server-local run time as is and lists the warnings of the export', async () => {
+    runs.mockResolvedValue([{
+      NetUid: 'run-2', BatchNetUid: 'batch-1', CreatedAtUtc: '2026-11-05T17:30:00', UserName: 'Петренко Петро',
+      Base: 'Amg', BaseName: 'АМГ', PeriodFrom: '2026-11-05T00:00:00', PeriodTo: '2026-11-05T00:00:00',
+      DocumentTypes: ['Sale'], DocumentCount: 3, DeletedCount: 0, FirstCount: 3, ChangedCount: 0,
+      FileName: 'gba-1c-amg-20261105-20261105.xml', FileSha256: null, FileLength: 100, SkippedCount: 1,
+      Warnings: [{ Code: 'MissingStorage', Skipped: true, Type: 'Sale', NetUid: 'sale-1', Number: 'КОк1', Line: null,
+        Message: 'Не визначено склад документа.' }],
+    }])
+    exportFile.mockResolvedValue({ ...file, warningCount: 1 })
+    mount()
+    expect(await screen.findByText('05.11.2026, 17:30')).toBeTruthy()
+    expect(screen.getByText('3 (пропущено: 1)')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Вивантажити' }))
+
+    expect(await screen.findByText('Пропущено: Видаткові накладні КОк1: АМГ. Не визначено склад документа.')).toBeTruthy()
   })
 })

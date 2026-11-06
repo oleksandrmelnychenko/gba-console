@@ -18,6 +18,7 @@ import {
   type OneCExportBase,
   type OneCExportDocumentType,
   type OneCExportRun,
+  type OneCExportWarning,
 } from '../api/oneCExportApi'
 import {
   ONE_C_EXPORT_PRESET_LABELS,
@@ -37,9 +38,21 @@ const KYIV_DATE_TIME = new Intl.DateTimeFormat('uk-UA', {
   minute: '2-digit',
 })
 
+const MAX_SHOWN_WARNINGS = 50
+
 function formatRunDate(value: string): string {
-  const date = new Date(value.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(value) ? value : `${value}Z`)
-  return Number.isNaN(date.getTime()) ? value : KYIV_DATE_TIME.format(date)
+  if (value.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(value)) {
+    const date = new Date(value)
+    return Number.isNaN(date.getTime()) ? value : KYIV_DATE_TIME.format(date)
+  }
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(value)
+  return match ? `${match[3]}.${match[2]}.${match[1]}, ${match[4]}:${match[5]}` : value
+}
+
+function describeWarning(warning: OneCExportWarning): string {
+  const type = warning.Type ? ONE_C_EXPORT_TYPE_LABELS[warning.Type] ?? warning.Type : ''
+  const line = warning.Line ? `, рядок ${warning.Line}` : ''
+  return `${type} ${warning.Number ?? ''}${line}: ${warning.Message}`.trim()
 }
 
 function formatDay(value: string): string {
@@ -59,17 +72,20 @@ export function OneCExportPanel() {
   const [runsError, setRunsError] = useState<string | null>(null)
   const [runsLoading, setRunsLoading] = useState(true)
   const [downloading, setDownloading] = useState<string | null>(null)
+  const [lastWarnings, setLastWarnings] = useState<OneCExportWarning[]>([])
   const [isExporting, setIsExporting, tryStartIsExporting] = useBusyState()
 
   const loadRuns = useCallback((signal?: AbortSignal) => getOneCExportRuns(50, signal)
     .then((loadedRuns) => {
-      if (signal?.aborted) return
+      if (signal?.aborted) return [] as OneCExportRun[]
       setRuns(loadedRuns)
       setRunsError(null)
+      return loadedRuns
     })
     .catch((error: unknown) => {
-      if (signal?.aborted) return
+      if (signal?.aborted) return [] as OneCExportRun[]
       setRunsError(error instanceof Error ? error.message : t('Не вдалося завантажити журнал вивантажень'))
+      return [] as OneCExportRun[]
     })
     .finally(() => {
       if (!signal?.aborted) setRunsLoading(false)
@@ -100,12 +116,23 @@ export function OneCExportPanel() {
       return
     }
     if (!tryStartIsExporting()) return
+    setLastWarnings([])
     try {
       const file = await exportToOneC({ bases, from: period.from, to: period.to, types })
       saveDownloadedFile(file)
-      notifications.show({ color: 'green', message: t('Файл для 1С сформовано: {name}', { name: file.fileName }) })
+      notifications.show({
+        color: file.warningCount > 0 ? 'yellow' : 'green',
+        message: file.warningCount > 0
+          ? t('Файл для 1С сформовано: {name}. Попереджень: {count}', { name: file.fileName, count: file.warningCount })
+          : t('Файл для 1С сформовано: {name}', { name: file.fileName }),
+      })
       setRunsLoading(true)
-      void loadRuns()
+      const loadedRuns = await loadRuns()
+      if (file.warningCount > 0) {
+        setLastWarnings(loadedRuns
+          .filter((run) => run.BatchNetUid === file.batchNetUid)
+          .flatMap((run) => (run.Warnings ?? []).map((warning) => ({ ...warning, Message: `${t(run.BaseName)}. ${warning.Message}` }))))
+      }
     } catch (error) {
       notifications.show({
         color: 'red',
@@ -197,6 +224,20 @@ export function OneCExportPanel() {
           </Text>
         </Stack>
       </Box>
+      {lastWarnings.length > 0 && (
+        <Alert color="yellow" title={t('Не все вивантажено: перевірте документи')}>
+          <Stack gap={2}>
+            {lastWarnings.slice(0, MAX_SHOWN_WARNINGS).map((warning, index) => (
+              <Text key={`${warning.NetUid ?? ''}-${warning.Code}-${warning.Line ?? 0}-${index}`} size="sm">
+                {warning.Skipped ? `${t('Пропущено')}: ` : ''}{describeWarning(warning)}
+              </Text>
+            ))}
+            {lastWarnings.length > MAX_SHOWN_WARNINGS && (
+              <Text size="sm" c="dimmed">{t('Та ще {count}. Повний список — у заголовку файлу (Header/Warning).', { count: lastWarnings.length - MAX_SHOWN_WARNINGS })}</Text>
+            )}
+          </Stack>
+        </Alert>
+      )}
       <Group justify="flex-end" className="sync-action-bar">
         <Button
           color={CREATE_ACTION_COLOR}
@@ -245,6 +286,7 @@ export function OneCExportPanel() {
                     <Table.Td ta="right">
                       {run.DocumentCount}
                       {run.DeletedCount > 0 ? ` (${t('видалено')}: ${run.DeletedCount})` : ''}
+                      {run.SkippedCount ? ` (${t('пропущено')}: ${run.SkippedCount})` : ''}
                     </Table.Td>
                     <Table.Td>
                       <Button

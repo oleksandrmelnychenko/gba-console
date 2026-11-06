@@ -51,6 +51,16 @@ export type OneCExportRequest = {
   types: OneCExportDocumentType[]
 }
 
+export type OneCExportWarning = {
+  Code: string
+  Skipped: boolean
+  Type: OneCExportDocumentType | null
+  NetUid: string | null
+  Number: string | null
+  Line: number | null
+  Message: string
+}
+
 export type OneCExportRun = {
   NetUid: string
   BatchNetUid: string
@@ -68,15 +78,20 @@ export type OneCExportRun = {
   FileName: string
   FileSha256: string | null
   FileLength: number
+  SkippedCount?: number
+  Warnings?: OneCExportWarning[]
 }
 
 export type DownloadedFile = {
   blob: Blob
   fileName: string
   batchNetUid: string | null
+  warningCount: number
 }
 
 const BASE_PATH = '/integration/onec-export'
+const EXPORT_TIMEOUT_MS = 10 * 60 * 1000
+const REVOKE_DELAY_MS = 60 * 1000
 
 export function getOneCExportRuns(limit = 50, signal?: AbortSignal): Promise<OneCExportRun[]> {
   return apiRequest<OneCExportRun[]>(`${BASE_PATH}/runs`, {
@@ -113,8 +128,11 @@ export function saveDownloadedFile(file: DownloadedFile): void {
   const link = document.createElement('a')
   link.href = url
   link.download = file.fileName
+  link.style.display = 'none'
+  document.body.appendChild(link)
   link.click()
-  window.setTimeout(() => URL.revokeObjectURL(url), 0)
+  link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), REVOKE_DELAY_MS)
 }
 
 async function downloadFile(
@@ -136,8 +154,12 @@ async function downloadFile(
       credentials: 'include',
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
+      signal: AbortSignal.timeout(EXPORT_TIMEOUT_MS),
     })
-  } catch {
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'TimeoutError') {
+      throw new ApiError(translate('Сервер не встиг сформувати файл. Оберіть коротший період або спробуйте пізніше.'), 0, null)
+    }
     throw new ApiError(translate('Сервер недоступний. Спробуйте ще раз пізніше.'), 0, null)
   }
 
@@ -158,6 +180,7 @@ async function downloadFile(
     blob: await response.blob(),
     fileName: fileNameFromDisposition(response.headers.get('Content-Disposition'), fallbackName),
     batchNetUid: response.headers.get('X-Gba-Export-Batch'),
+    warningCount: Number(response.headers.get('X-Gba-Export-Warnings') ?? 0) || 0,
   }
 }
 
