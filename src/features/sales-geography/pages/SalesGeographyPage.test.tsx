@@ -33,8 +33,10 @@ describe('geography page', () => {
     getSummary.mockImplementation(async params => geographySummary(params?.metric))
     mount()
     await screen.findByText('€2,80')
-    expect(getSummary.mock.calls[0][0]).toEqual({ metric: 'sales', period: 'all' })
-    for (const months of [12, 24, 36]) {
+    expect(getSummary.mock.calls[0][0]).toEqual({ metric: 'sales', months: 12 })
+    fireEvent.click(screen.getByRole('radio', { name: 'Уся наявна історія' }))
+    await waitFor(() => expect(getSummary).toHaveBeenLastCalledWith({ metric: 'sales', period: 'all' }, expect.any(AbortSignal)))
+    for (const months of [24, 36]) {
       fireEvent.click(screen.getByRole('radio', { name: `${months} міс` }))
       await waitFor(() => expect(getSummary).toHaveBeenLastCalledWith({ metric: 'sales', months }, expect.any(AbortSignal)))
     }

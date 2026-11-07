@@ -26,7 +26,7 @@ export function SalesGeographyPage() {
   const { t } = useI18n()
   const [metric, setMetric] = useState<GeographyMetric>('sales')
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
-  const [period, setPeriod] = useState<SalesGeographyPeriodKey>('all')
+  const [period, setPeriod] = useState<SalesGeographyPeriodKey>('12')
   const [summary, setSummary] = useState<SalesGeographySummary | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(true)
