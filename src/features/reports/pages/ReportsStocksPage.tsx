@@ -123,6 +123,8 @@ import { useAuth } from '../../auth/useAuth'
 import {
   createStockReport,
   previewStockReport,
+  REPORT_JOB_DETACHED,
+  type ReportJobProgress,
   getReportClientAgreements,
   getReportClientTypes,
   getReportOrganizations,
@@ -453,6 +455,9 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setTemplateIntent(current => ({ create, revision: current.revision + 1 })); setDeskTemplatesOpened(true)
   }
   const [shownReport, setShownReport] = useState<string | null>(null)
+  const [jobProgress, setJobProgress] = useState<ReportJobProgress | null>(null)
+  const jobAbort = useRef<AbortController | null>(null)
+  useEffect(() => () => jobAbort.current?.abort(REPORT_JOB_DETACHED), [])
   const workbookLaunchToken = useRef(0)
   const groupingOptions = useMemo(() => datasetGroupings(priceTypeDataset, { dataSource, profitReadMode, dayOrganizationBasis, reportProfile }).filter(field => field.type !== ABC_CLASS_GROUPING || abcClassification != null), [abcClassification, priceTypeDataset, dataSource, profitReadMode, dayOrganizationBasis, reportProfile])
   const workbook = useWorkbookPresentation({ dataSource, groupingOptions, setRowGroups, setGroupedCashPeriod })
@@ -588,7 +593,11 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     try {
       const layout = supportsFinancialExportLayout(dataset) && request.sorted.Col.length > 0 ? financialExportLayoutQuery(exportLayout) : undefined
       const retainedPreviewRequired = selectedCurrency || layout !== undefined
-      const previewResult = showPreview || retainedPreviewRequired && !existingPreview?.ResultSession ? await previewStockReport(request, dataset) : null
+      const controller = new AbortController()
+      jobAbort.current = controller
+      const previewResult = showPreview || retainedPreviewRequired && !existingPreview?.ResultSession
+        ? await previewStockReport(request, dataset, { onProgress: setJobProgress, signal: controller.signal }) : null
+      setJobProgress(null)
       if (retainedPreviewRequired && previewResult && !previewResult.preview.ResultSession) throw new Error(selectedCurrency
         ? 'Сервер не підтвердив збережений результат для вибраної валюти. Файл не сформовано.'
         : 'Сервер не підтвердив збережений результат для вибраного вигляду файла. Файл не сформовано.')
@@ -626,6 +635,8 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         ...(existingPreview?.ResultSession ? { preview: existingPreview, lastRun } : {}),
         error: describeReportError(submitError, t) })
     } finally {
+      jobAbort.current = null
+      setJobProgress(null)
       updateAttempt({ isLoading: false })
     }
   }
@@ -1205,6 +1216,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           {t('Оберіть доступний звіт у вкладках або спробуйте оновити список.')}
           <Button variant="default" size="xs" mt="xs" onClick={datasetStorage.retry}>{t('Оновити')}</Button>
         </Alert> : <form className="reports-stocks-form workbook-desk__form" onSubmit={submitReport}>
+            {isLoading && jobProgress ? <ReportJobProgressNotice progress={jobProgress} onCancel={() => jobAbort.current?.abort()} /> : null}
             {constructorContent ? <ConstructorDesk title={activeProfile ? deskTitle : workbookLaunches.find(item => item.fileName === activeWorkbook)?.label ?? dataset?.Name ?? deskTitle} templateName={activeTemplate?.Name ?? ''} resolving={workbookResolving}
               warning={catalogueNotice?.warning ?? null} disabled={comparisonSettingsDisabled}
               period={periodSupported ? { from, to, error: periodError, disabled: isLoading || workbookResolving,
@@ -3251,6 +3263,21 @@ function describeReportError(error: unknown, t: TranslateFunction): string {
 
   if (error instanceof Error && isAuthoredServerMessage(error.message)) return error.message
   return t('Не вдалося сформувати звіт')
+}
+
+function ReportJobProgressNotice({ progress, onCancel }: { progress: ReportJobProgress; onCancel: () => void }) {
+  const { t } = useI18n()
+  const minutes = Math.floor(progress.elapsedSeconds / 60), seconds = progress.elapsedSeconds % 60
+  const elapsed = minutes > 0 ? t('{minutes} хв {seconds} с', { minutes, seconds }) : t('{seconds} с', { seconds })
+  return <Alert color="blue" role="status" className="workbook-desk__notice" icon={<Loader size={18} />}
+    title={progress.state === 'queued' ? t('Звіт у черзі на формування') : t('Звіт формується у фоні')}>
+    <Group justify="space-between" gap="sm" wrap="nowrap">
+      <Text size="sm">{progress.state === 'queued' && progress.queuePosition > 0
+        ? t('Позиція в черзі: {position}. Минуло {elapsed}.', { position: progress.queuePosition, elapsed })
+        : t('Великий період рахується довше. Минуло {elapsed}; результат зʼявиться тут автоматично.', { elapsed })}</Text>
+      <Button variant="default" size="xs" onClick={onCancel}>{t('Скасувати')}</Button>
+    </Group>
+  </Alert>
 }
 
 function isAuthoredServerMessage(message: string): boolean {

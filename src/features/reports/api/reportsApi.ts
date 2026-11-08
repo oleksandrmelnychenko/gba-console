@@ -75,18 +75,24 @@ function reportPreviewRowLimit(request: ReportRequestBody): number {
 }
 
 /** Calculates one bounded on-screen page and file links from the same report run. */
-export async function previewStockReport(body: ReportRequestBody, dataset?: ReportDataset): Promise<{ result: ReportResult; preview: NativeReportPreview }> {
+export const REPORT_JOB_DETACHED = 'report-job-detached'
+export type ReportJobProgress = { state: 'queued' | 'running'; elapsedSeconds: number; queuePosition: number }
+export type ReportPreviewOptions = { onProgress?: (progress: ReportJobProgress) => void; signal?: AbortSignal }
+
+export async function previewStockReport(body: ReportRequestBody, dataset?: ReportDataset, options: ReportPreviewOptions = {}): Promise<{ result: ReportResult; preview: NativeReportPreview }> {
   const request = prepareStockReportRequest(body, dataset)
   const capability = dataset?.configuration !== undefined ? await immutableReportPreviewCapability() : null
   const version2 = capability !== null
   if (requestPresentationCurrency(request) != null && !version2) throw new Error('Сервер не підтвердив збережений перегляд для вибраної валюти. Експорт не виконувався.')
   const columns = capability?.columnPaging ? { columnOffset: 0, columnLimit: capability.columnPaging.pageColumns } : {}
-  const response = await apiRequest<unknown>('/report/stocks/preview', {
-    method: 'POST',
-    dedupe: false,
-    query: { rowOffset: 0, rowLimit: reportPreviewRowLimit(request), ...(version2 ? { previewVersion: 2, ...columns } : {}) },
-    body: request,
-  })
+  const response = capability?.backgroundJobs
+    ? await runReportPreviewJob(request, reportPreviewRowLimit(request), columns, options)
+    : await apiRequest<unknown>('/report/stocks/preview', {
+      method: 'POST',
+      dedupe: false,
+      query: { rowOffset: 0, rowLimit: reportPreviewRowLimit(request), ...(version2 ? { previewVersion: 2, ...columns } : {}) },
+      body: request,
+    })
   const preview = normalizeNativeReportPreview(response, currentVparivanieFullScope(request))
   if (version2) preview.ResultSession = readReportResultSession(response, preview)
   if (capability?.columnPaging && (preview.Page.ColumnOffset !== 0 || preview.Page.ColumnLimit !== capability.columnPaging.pageColumns))
@@ -125,7 +131,52 @@ type ReportResultSession = NonNullable<NativeReportPreview['ResultSession']>
 export async function reportPreviewColumnPaging(): Promise<ReportPreviewColumnPaging | null> {
   return (await immutableReportPreviewCapability())?.columnPaging ?? null
 }
-async function immutableReportPreviewCapability(): Promise<{ columnPaging: ReportPreviewColumnPaging | null } | null> {
+type ReportPreviewJob = { JobId: string; State: string; ElapsedSeconds: number; QueuePosition: number;
+  ErrorStatus?: number | null; ErrorCode?: string | null; ErrorMessage?: string | null; Result?: unknown }
+const JOB_ID = /^[a-f\d]{8}(?:-[a-f\d]{4}){3}-[a-f\d]{12}$/i
+function readReportPreviewJob(value: unknown): ReportPreviewJob {
+  const job = value as ReportPreviewJob | null
+  if (!job || typeof job.JobId !== 'string' || !JOB_ID.test(job.JobId) || typeof job.State !== 'string'
+    || typeof job.ElapsedSeconds !== 'number') throw new Error('Сервер повернув некоректний стан формування звіту.')
+  return job
+}
+function reportJobDelay(attempt: number, signal?: AbortSignal): Promise<void> {
+  const ms = attempt < 4 ? 500 : attempt < 20 ? 1000 : 2000
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) { reject(new DOMException('Aborted', 'AbortError')); return }
+    const timer = setTimeout(() => { signal?.removeEventListener('abort', abort); resolve() }, ms)
+    function abort() { clearTimeout(timer); reject(new DOMException('Aborted', 'AbortError')) }
+    signal?.addEventListener('abort', abort, { once: true })
+  })
+}
+/** Runs the preview as a server background job with the extended budget and returns the first page of its result. */
+async function runReportPreviewJob(request: ReportRequestBody, rowLimit: number, columns: { columnOffset?: number; columnLimit?: number },
+  options: ReportPreviewOptions): Promise<unknown> {
+  let job = readReportPreviewJob(await apiRequest<unknown>('/report/stocks/preview/jobs', {
+    method: 'POST', dedupe: false, query: columns, body: request, signal: options.signal }))
+  try {
+    for (let attempt = 0; ; attempt += 1) {
+      if (job.State === 'completed') {
+        if (!job.Result) throw new Error('Сервер не повернув результат сформованого звіту.')
+        return job.Result
+      }
+      if (job.State === 'failed') throw (job.ErrorStatus ?? 500) >= 500 ? new Error(job.ErrorMessage || 'Не вдалося сформувати звіт.')
+        : new ApiError(job.ErrorMessage || 'Не вдалося сформувати звіт.', job.ErrorStatus!, { Message: job.ErrorMessage, Code: job.ErrorCode })
+      if (job.State === 'cancelled') throw new Error('Формування звіту скасовано.')
+      if (job.State !== 'queued' && job.State !== 'running') throw new Error('Сервер повернув некоректний стан формування звіту.')
+      options.onProgress?.({ state: job.State, elapsedSeconds: job.ElapsedSeconds, queuePosition: job.QueuePosition ?? 0 })
+      await reportJobDelay(attempt, options.signal)
+      job = readReportPreviewJob(await apiRequest<unknown>(`/report/stocks/preview/jobs/${job.JobId}`, {
+        query: { rowOffset: 0, rowLimit, ...columns }, dedupe: false, signal: options.signal }))
+    }
+  } catch (error) {
+    if (!options.signal?.aborted) throw error
+    if (options.signal.reason !== REPORT_JOB_DETACHED && (job.State === 'queued' || job.State === 'running'))
+      void apiRequest<unknown>(`/report/stocks/preview/jobs/${job.JobId}`, { method: 'DELETE', dedupe: false }).catch(() => undefined)
+    throw new Error('Формування звіту скасовано.', { cause: error })
+  }
+}
+async function immutableReportPreviewCapability(): Promise<{ columnPaging: ReportPreviewColumnPaging | null; backgroundJobs: boolean } | null> {
   let value: unknown
   try { value = await apiRequest<unknown>('/report/stocks/preview/capabilities') }
   catch (error) { if (error instanceof ApiError && error.status === 404) return null; throw error }
@@ -135,7 +186,7 @@ async function immutableReportPreviewCapability(): Promise<{ columnPaging: Repor
     || capability.MaximumPageRows < 50 || typeof capability.TimeToLiveSeconds !== 'number') throw new Error('Непідтримувана версія перегляду звіту.')
   const columnPaging = readPreviewColumnPaging(capability)
   if (columnPaging === undefined) throw new Error('Непідтримувана версія перегляду звіту.')
-  return { columnPaging }
+  return { columnPaging, backgroundJobs: capability.BackgroundJobs === true }
 }
 function readReportResultSession(value: unknown, preview?: NativeReportPreview): ReportResultSession {
   const item = value as Record<string, unknown> | null
