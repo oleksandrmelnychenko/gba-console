@@ -51,7 +51,7 @@ import { EMPTY_MOVEMENT_SELECTION, movementSelection, type CurrentVparivanieMove
 import { ReportPreviewPages } from './ReportPreviewPages'
 import { exportStockReportPreview } from '../api/reportsApi'
 import { ReportNumberPresentationPanel } from './ReportNumberPresentationPanel'
-import { reportSelectionConditions, reportSelectionEditorCardinalityError } from '../data/reportSelectionPolicy'
+import { reportSelectionConditions, reportSelectionEditorCardinalityError, reportSelectionListCondition } from '../data/reportSelectionPolicy'
 import { requestNumberPresentation, readNumberPresentation, readValueSemantics, reportValueUnit } from '../data/reportNumberPresentation'
 import { effectiveReportConfiguration, reportAxesPolicy, reportMaximumDate } from '../data/reportConfiguration'
 import { BUG_1274_ACTIVE_DATA_SOURCES, BUG_1274_DISABLED_MESSAGE } from '../data/reportMigration'
@@ -2461,6 +2461,7 @@ export function ReportSelectionsCard({
                 selections={editorSelections}
                 to={to}
                 width="100%"
+                onSelectionChange={setDraftSelection}
                 onChange={(values) => setDraftSelection((current) => current ? { ...current, Values: values } : current)}
               />}
             </div>
@@ -2531,6 +2532,7 @@ export function InlineReportSelection({ dataset, request, selection, selections,
     : <SelectionValuePicker request={request} dataSource={dataSource} dataset={dataset} lookupProfitReadMode={documentLookup.mode} lookupProfitUnavailable={documentLookup.unavailable}
       lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis}
       from={from} to={to} label={t('Значення')} selection={selection} selections={selections} width="100%"
+      onSelectionChange={change}
       onChange={Values => change({ ...selection, Values })} />
   if (variant === 'row' && request) {
     const rowFields = analysis ? fields : constructorFilterGroups(request, filterFieldOptions)
@@ -2807,6 +2809,7 @@ type SelectionValuePickerProps = {
   to: string
   width?: number | string
   onChange: (values: ReportSelectedValue[]) => void
+  onSelectionChange?: (selection: ReportSelection) => void
 }
 
 const EMPTY_LOOKUP_OPTIONS: ReportEntity[] = []
@@ -2817,9 +2820,16 @@ function nativeProductItemRenderer(dataSource: number, dataset: ReportDataset | 
 }
 
 export function SelectionValuePicker(props: SelectionValuePickerProps) {
+  const listCondition = props.onSelectionChange
+    ? reportSelectionListCondition(props.dataSource, props.dataset, props.request, props.selection) : undefined
+  const pickerProps = listCondition ? { ...props,
+    selection: { ...props.selection, FilterCondition: listCondition },
+    onChange: (Values: ReportSelectedValue[]) => props.onSelectionChange!({ ...props.selection, Values,
+      FilterCondition: Values.length > 1 ? listCondition : props.selection.FilterCondition }),
+  } : props
   if (isNativePriceFilterField(props.dataSource, props.selection.SelectedField.Type))
-    return <NativePriceFilterValuePicker dataSource={props.dataSource} dataset={props.dataset} selection={props.selection} from={props.from} to={props.to} label={props.label} error={props.error} disabled={props.lookupProfitUnavailable} onChange={props.onChange} />
-  return <LegacySelectionValuePicker {...props} />
+    return <NativePriceFilterValuePicker {...pickerProps} disabled={props.lookupProfitUnavailable} />
+  return <LegacySelectionValuePicker {...pickerProps} />
 }
 
 function LegacySelectionValuePicker(props: SelectionValuePickerProps) {

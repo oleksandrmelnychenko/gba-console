@@ -1,7 +1,8 @@
 import type { ReportDataset, ReportRequestBody, ReportSelection } from '../types'
+import { currentVparivanieFilterConditions } from './currentVparivanie'
 import { customerGroupConditionTypes } from './customerGroupSelections'
 import { financialFilterConditionTypes } from './currentFinancialFilterConditions'
-import { reportSelectionCardinalityError } from './reportOptions'
+import { REPORT_FILTER_CONDITIONS, reportSelectionCardinalityError } from './reportOptions'
 import { isNativePriceFilterField } from './nativePriceFilterLookup'
 import { isReturnItemStatusSelection } from './returnItemStatuses'
 
@@ -21,4 +22,14 @@ export function reportSelectionEditorCardinalityError(source: number, request: R
   // Source44 Product equality already accepts a saved exact set; its source validator checks that set.
   if (source === 44 && selection.SelectedField.Type === 1) return null
   return reportSelectionCardinalityError(selection)
+}
+
+export function reportSelectionListCondition(source: number, dataset: ReportDataset | null | undefined,
+  request: ReportRequestBody | undefined, selection: ReportSelection) {
+  const type = selection.FilterCondition.Type === 0 ? 2 : selection.FilterCondition.Type === 1 ? 4 : undefined
+  if (type === undefined) return undefined
+  const allowed = reportSelectionConditions(source, dataset, request, selection.SelectedField.Type)
+    ?? new Set((source === 39 ? currentVparivanieFilterConditions(selection.SelectedField.Type) : REPORT_FILTER_CONDITIONS).map(condition => condition.Type))
+  return allowed.has(selection.FilterCondition.Type) && allowed.has(type)
+    ? REPORT_FILTER_CONDITIONS.find(condition => condition.Type === type) : undefined
 }
