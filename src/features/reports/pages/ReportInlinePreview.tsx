@@ -41,15 +41,32 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
   const sharedNames = preview.RowSchema.map((_, index) => previewSharedNames(preview.Rows.map(row => rowCaption(row, index))))
   const amountColumns = new Set(preview.Columns.filter(column => isAmountColumn(column)).map(column => column.SourceIndex))
   const semanticsByColumn = new Map(preview.valueSemantics?.map(item => [item.columnSourceIndex, item.semantics]))
+  const semanticsByMeasure = new Map(preview.valueSemantics?.map(item => [item.columnSourceIndex, item.measureType]))
   const numberPresentation = effectiveConstructorNumberPresentation(preview.Request?.DataSource, previewReportProfile, preview.numberPresentation)
   const blanksZero = previewBlanksZero(preview.Request?.DataSource)
   const negativeRed = preview.constructorPresentation?.negativeRed ?? previewNegativeRed(preview.Request?.DataSource)
   const valueClass = (value: NativeReportPreviewScalar | undefined) => negativeRed && isNegativePreviewScalar(value) ? 'is-negative' : undefined
   const totals = preview.Totals
   const grandTotals = preview.constructorPresentation?.grandTotals !== false
+  const documentLayout = !products && preview.Request?.DataSource === 'NativeSalesNet' && previewReportProfile !== undefined
+  const rowPositions = new Map(preview.Rows.map((row, position) => [row.SourceIndex, position]))
   const groupTotals = new Map<number, NonNullable<NativeReportPreview['Totals']>['Groups']>()
-  for (const group of totals?.Groups ?? []) groupTotals.set(group.RowSourceIndex, [...(groupTotals.get(group.RowSourceIndex) ?? []), group]
-    .sort((left, right) => left.Level - right.Level))
+  for (const group of totals?.Groups ?? []) {
+    const anchor = documentLayout
+      ? preview.Rows[Math.min(preview.Rows.length - 1, (rowPositions.get(group.RowSourceIndex) ?? 0) + group.RowCount - 1)].SourceIndex
+      : group.RowSourceIndex
+    groupTotals.set(anchor, [...(groupTotals.get(anchor) ?? []), group]
+      .sort((left, right) => documentLayout ? right.Level - left.Level : left.Level - right.Level))
+  }
+  const groupTotalRows = (row: NativeReportPreviewAxis) => (groupTotals.get(row.SourceIndex) ?? []).map(group => {
+    const first = preview.Rows[rowPositions.get(group.RowSourceIndex) ?? 0] ?? row
+    return <tr key={`group-${group.Level}-${group.RowSourceIndex}`} className="report-inline-preview__group-total" data-level={group.Level}>
+      <th scope="row" colSpan={rowHeaders.length}>
+        {`Підсумок: ${rowDimensionCaption(preview, group.Level, rowCaption(first, group.Level), sharedNames[group.Level])}`}
+      </th>
+      {totalCells(group.Values)}
+    </tr>
+  })
   const valueText = (value: NativeReportPreviewScalar | undefined, columnSourceIndex: number) =>
     value?.Kind === 'null' ? '—'
       : blanksZero && isZeroPreviewScalar(value) ? ''
@@ -78,6 +95,38 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
   const columnWindow = previewColumnWindow(preview)
   const wide = isPartialColumnWindow(columnWindow)
   const stickyRowHeader = (index: number) => wide ? { className: 'is-sticky-row-header', style: { left: `${index * WIDE_ROW_HEADER_REM}rem` } } : {}
+  const columnPaths = preview.Columns.map(column => (products ? column.Values.slice(0, 1) : sharedGroup ? column.Values.slice(1) : column.Values)
+    .map((value, index) => sharedGroup ? value.Caption : columnIdentityCaption(column, index)).filter(Boolean))
+  const tiers = products || !columnPaths.some((path, position) => position > 0 && path.length > 1
+    && columnPaths[position - 1].length > 1 && path[0] === columnPaths[position - 1][0]) ? 1 : Math.max(1, ...columnPaths.map(path => path.length))
+  const columnHeading = (column: NativeReportPreviewAxis, position: number, rowSpan?: number) => {
+    const path = columnPaths[position]
+    const scale = moneyScaleLabel(preview.numberPresentation, semanticsByColumn.get(column.SourceIndex))
+    const full = `${path.join(' / ') || `Стовпець ${column.Ordinal + 1}`}${scale ? `, ${scale}` : ''}`
+    const leaf = tiers > 1 && path.length > 1
+      ? `${documentLayout ? documentMeasureCaption(path[path.length - 2], path[path.length - 1], semanticsByMeasure.get(column.SourceIndex)) : path[path.length - 1]}${scale ? `, ${scale}` : ''}`
+      : full
+    return <th scope="col" className="report-inline-preview__value-heading" key={column.SourceIndex} rowSpan={rowSpan && rowSpan > 1 ? rowSpan : undefined}
+      aria-label={leaf === full ? undefined : full}
+      title={semanticsByColumn.has(column.SourceIndex) ? reportValueUnit(semanticsByColumn.get(column.SourceIndex)!, preview.numberPresentation, preview.Request?.presentationCurrency?.code) : undefined}>
+      {leaf}
+    </th>
+  }
+  const tierCells = (tier: number) => {
+    const headings = []
+    for (let position = 0; position < preview.Columns.length;) {
+      const path = columnPaths[position], leafTier = Math.max(0, path.length - 1)
+      if (tier === leafTier) headings.push(columnHeading(preview.Columns[position], position, tiers - tier))
+      if (tier >= leafTier) { position += 1; continue }
+      let end = position
+      while (end + 1 < preview.Columns.length && columnPaths[end + 1].length - 1 > tier
+        && columnPaths[end + 1].slice(0, tier + 1).every((caption, index) => caption === path[index])) end += 1
+      headings.push(<th scope="colgroup" className="report-inline-preview__group-heading" colSpan={end - position + 1}
+        key={`group-${tier}-${preview.Columns[position].SourceIndex}`}>{path[tier]}</th>)
+      position = end + 1
+    }
+    return headings
+  }
   const repeated = preview.Rows.map((row, rowIndex) => preview.RowSchema.map((_, level) => level < levelCount - 1 && (totalledLevels.has(level)
     || rowIndex > 0 && preview.RowSchema.slice(0, level + 1).every((__, upper) => rowCaption(row, upper) === rowCaption(preview.Rows[rowIndex - 1], upper)))))
   return <section className={wide ? 'app-section-card report-inline-preview report-inline-preview--wide' : 'app-section-card report-inline-preview'} aria-label="Попередній перегляд звіту">
@@ -107,24 +156,15 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
         ? <Text size="sm">Історію прочитано: {kyivTimestamp(preview.CurrentVparivanieMovements.OldestCapturedAtUtc)} — {kyivTimestamp(preview.CurrentVparivanieMovements.NewestCapturedAtUtc)}.</Text> : null}
     </Alert> : null}
     <ReportTableScrollArea label="Таблиця попереднього перегляду">
-      <table className="app-static-table">
+      <table className={tiers > 1 ? 'app-static-table report-inline-preview__table--tiered' : 'app-static-table'}>
         <thead><tr>
-          {rowHeaders.map((header, index) => <th scope="col" rowSpan={products ? 2 : undefined} key={`row-${index}`} {...stickyRowHeader(index)}>{header}</th>)}
-          {preview.Columns.map(column => <th scope="col" className="report-inline-preview__value-heading" key={column.SourceIndex} title={semanticsByColumn.has(column.SourceIndex) ? reportValueUnit(semanticsByColumn.get(column.SourceIndex)!, preview.numberPresentation, preview.Request?.presentationCurrency?.code) : undefined}>
-            {(products ? column.Values.slice(0, 1) : sharedGroup ? column.Values.slice(1) : column.Values).map((value, index) => sharedGroup ? value.Caption : columnIdentityCaption(column, index)).filter(Boolean).join(' / ') || `Стовпець ${column.Ordinal + 1}`}
-            {moneyScaleLabel(preview.numberPresentation, semanticsByColumn.get(column.SourceIndex)) ? `, ${moneyScaleLabel(preview.numberPresentation, semanticsByColumn.get(column.SourceIndex))}` : ''}
-          </th>)}
-        </tr>{products ? <tr>{preview.Columns.map(column => <th scope="col" className="report-inline-preview__value-heading" key={column.SourceIndex}>
+          {rowHeaders.map((header, index) => <th scope="col" rowSpan={products ? 2 : tiers > 1 ? tiers : undefined} key={`row-${index}`} {...stickyRowHeader(index)}>{header}</th>)}
+          {tiers > 1 ? tierCells(0) : preview.Columns.map((column, position) => columnHeading(column, position))}
+        </tr>{Array.from({ length: tiers - 1 }, (_, index) => <tr key={`tier-${index + 1}`}>{tierCells(index + 1)}</tr>)}{products ? <tr>{preview.Columns.map(column => <th scope="col" className="report-inline-preview__value-heading" key={column.SourceIndex}>
           {currentVparivanieSecondTier(column)}
         </th>)}</tr> : null}</thead>
         <tbody>{preview.Rows.map((row, rowIndex) => <Fragment key={row.SourceIndex}>
-          {(groupTotals.get(row.SourceIndex) ?? []).map(group => <tr key={`group-${group.Level}`}
-            className="report-inline-preview__group-total" data-level={group.Level}>
-            <th scope="row" colSpan={rowHeaders.length}>
-              {`Підсумок: ${rowDimensionCaption(preview, group.Level, rowCaption(row, group.Level), sharedNames[group.Level])}`}
-            </th>
-            {totalCells(group.Values)}
-          </tr>)}
+          {documentLayout ? null : groupTotalRows(row)}
           <tr>
           {rowHeaders.map((header, index) => {
             const caption = rowHeaderText({ index, row, preview,
@@ -144,10 +184,11 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
           {preview.Columns.map(column => {
             const value = cells.get(`${row.SourceIndex}:${column.SourceIndex}`)
             return <td key={column.SourceIndex} className={valueClass(value)} title={quantityDescription(value, column.SourceIndex) ?? (value === undefined ? 'Клітинка відсутня' : value.Kind === 'null' ? 'Значення не визначено.' : undefined)} aria-description={quantityDescription(value, column.SourceIndex)}>
-              {valueText(value, column.SourceIndex)}
+              {documentLayout && value === undefined ? '' : valueText(value, column.SourceIndex)}
             </td>
           })}
           </tr>
+          {documentLayout ? groupTotalRows(row) : null}
         </Fragment>)}</tbody>
         {totals && grandTotals ? <tfoot><tr className="report-inline-preview__grand-total">
           <th scope="row" colSpan={rowHeaders.length}>Загальний підсумок</th>
@@ -163,6 +204,19 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
 })
 
 const WIDE_ROW_HEADER_REM = 12
+
+const DOCUMENT_MEASURE_CAPTIONS: readonly (readonly [string, Readonly<Record<number, string>>])[] = [
+  ['Кількість продажу', { 0: 'Кількість' }],
+  ['Вартість продажу, ', { 2: 'Без ПДВ', 3: 'ПДВ', 4: 'З ПДВ' }],
+  ['Собівартість, ', { 6: 'Без ПДВ', 7: 'ПДВ', 8: 'З ПДВ' }],
+  ['Націнка, ', { 10: 'Без ПДВ', 11: 'ПДВ', 12: 'З ПДВ' }],
+  ['Рентабельність, %', { 14: 'Без ПДВ', 15: 'З ПДВ' }],
+]
+
+function documentMeasureCaption(parent: string, caption: string, measureType: number | null | undefined): string {
+  if (measureType == null) return caption
+  return DOCUMENT_MEASURE_CAPTIONS.find(([category, items]) => parent.startsWith(category) && items[measureType] !== undefined)?.[1][measureType] ?? caption
+}
 
 // Labels are presentation only: distinct organizations, clients and agreements remain distinguishable even
 // when the source gives them identical names. Existing captioned IDs remain intact.

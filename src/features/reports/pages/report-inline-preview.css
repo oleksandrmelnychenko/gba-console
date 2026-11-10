@@ -28,6 +28,10 @@
 .report-inline-preview table:has(th[rowspan="2"]) thead th { position: static; }
 .report-inline-preview table:has(th[rowspan="2"]) thead tr > :first-child { position: sticky; left: 0; }
 .report-inline-preview table:has(th[rowspan="2"]) tbody th:nth-child(3) { white-space: pre-wrap; }
+.report-inline-preview .report-inline-preview__table--tiered thead th { position: static; }
+.report-inline-preview .report-inline-preview__table--tiered thead tr:first-child > :first-child { position: sticky; left: 0; }
+.report-inline-preview--wide .report-inline-preview__table--tiered thead .is-sticky-row-header { position: sticky; }
+.report-inline-preview .report-inline-preview__group-heading { text-align: center; border-right-color: var(--mantine-color-gray-4); }
 .report-inline-preview__group-total th, .report-inline-preview__group-total td,
 .report-inline-preview__grand-total th, .report-inline-preview__grand-total td { font-weight: 700; }
 

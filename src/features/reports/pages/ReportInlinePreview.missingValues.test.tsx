@@ -37,7 +37,7 @@ function show(quantity: string | null) {
   return view
 }
 
-it('shows dashes for unknown sales quantities in the screenshot layout, retaining money and missing intersections', () => {
+it('shows dashes for unknown sales quantities in the screenshot layout, retaining money and leaving missing intersections blank', () => {
   const view = show(null)
   expect(view.container.querySelector('table')?.textContent).not.toContain('∅')
   const quantities = screen.getAllByRole('cell', { description: 'Кількість не підтверджена для вибраних рядків.' })
@@ -46,7 +46,7 @@ it('shows dashes for unknown sales quantities in the screenshot layout, retainin
   const detail = screen.getByRole('rowheader', { name: 'Баранов Віталій' }).closest('tr')!
   expect(within(detail).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['—', '14\u00a0990,61', '11\u00a0954,96', '3\u00a0035,65', '25,39'])
   const absent = screen.getByRole('rowheader', { name: 'Грель Христина' }).closest('tr')!
-  expect(within(absent).getAllByRole('cell').map(cell => cell.textContent)).toEqual(Array(5).fill('—'))
+  expect(within(absent).getAllByRole('cell').map(cell => cell.textContent)).toEqual(Array(5).fill(''))
   expect(screen.getAllByRole('cell', { name: '14\u00a0990,61' })).toHaveLength(3)
 })
 
