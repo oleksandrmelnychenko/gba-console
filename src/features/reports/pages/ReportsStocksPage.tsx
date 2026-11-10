@@ -105,7 +105,7 @@ import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowActi
 import { requestProfitReadMode } from '../data/profitReadMode'
 import { isSettlementReadModeCapability, requestSettlementReadMode } from '../data/settlementReadMode'
 import { requestCashReadMode } from '../data/cashReadMode'
-import { Suspense, type FormEvent, type ReactNode, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
+import { Suspense, type FormEvent, type ReactNode, useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -2461,7 +2461,7 @@ export function ReportSelectionsCard({
                 selections={editorSelections}
                 to={to}
                 width="100%"
-                onSelectionChange={setDraftSelection}
+                onSelectionChange={next => setDraftSelection(current => current ? { ...current, Values: next.Values, FilterCondition: next.FilterCondition } : current)}
                 onChange={(values) => setDraftSelection((current) => current ? { ...current, Values: values } : current)}
               />}
             </div>
@@ -2822,11 +2822,11 @@ function nativeProductItemRenderer(dataSource: number, dataset: ReportDataset | 
 export function SelectionValuePicker(props: SelectionValuePickerProps) {
   const listCondition = props.onSelectionChange
     ? reportSelectionListCondition(props.dataSource, props.dataset, props.request, props.selection) : undefined
-  const pickerProps = listCondition ? { ...props,
-    selection: { ...props.selection, FilterCondition: listCondition },
-    onChange: (Values: ReportSelectedValue[]) => props.onSelectionChange!({ ...props.selection, Values,
-      FilterCondition: Values.length > 1 ? listCondition : props.selection.FilterCondition }),
-  } : props
+  const { selection, onSelectionChange } = props
+  const listSelection = useMemo(() => listCondition ? { ...selection, FilterCondition: listCondition } : selection, [selection, listCondition])
+  const changeList = useCallback((Values: ReportSelectedValue[]) => onSelectionChange?.({ ...selection, Values,
+    FilterCondition: Values.length > 1 && listCondition ? listCondition : selection.FilterCondition }), [selection, listCondition, onSelectionChange])
+  const pickerProps = listCondition ? { ...props, selection: listSelection, onChange: changeList } : props
   if (isNativePriceFilterField(props.dataSource, props.selection.SelectedField.Type))
     return <NativePriceFilterValuePicker {...pickerProps} disabled={props.lookupProfitUnavailable} />
   return <LegacySelectionValuePicker {...pickerProps} />

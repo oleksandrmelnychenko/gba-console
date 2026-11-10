@@ -45,6 +45,7 @@ it('uses the capability through the actual page picker and submits a native Int6
   await waitFor(() => expect(searchDatasetReportValues).toHaveBeenCalledWith(38, 1, { limit: 30, offset: 0, value: '' }, expect.any(AbortSignal), undefined, undefined, undefined, 0))
   fireEvent.click(within(view.dialog).getByRole('combobox', { name: 'Значення' }))
   fireEvent.click(await screen.findByRole('option', { name: 'Новий товар GBA' }))
+  await within(view.dialog).findByText('Новий товар GBA')
   fireEvent.click(within(view.dialog).getByRole('button', { name: 'Зберегти' }))
   fireEvent.submit(view.container.querySelector('form')!)
   await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
