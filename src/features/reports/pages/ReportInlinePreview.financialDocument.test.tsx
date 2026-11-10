@@ -21,5 +21,5 @@ it('keeps sale42, return42 and a large ID distinct despite identical captions, w
   for (const id of ['sale:42', 'return:42', 'sale:9007199254740993'])
     expect(screen.getByRole('columnheader', { name: `${caption} [${id}] / Прибуток / Продажі` })).toBeTruthy()
   expect(view.container.querySelectorAll('td[title="Клітинка відсутня"]')).toHaveLength(2)
-  expect(screen.getByRole('cell', { name: '∅' })).toBeTruthy()
+  expect(screen.getByTitle('Значення не визначено.').textContent).toBe('—')
 })

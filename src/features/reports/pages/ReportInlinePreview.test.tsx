@@ -39,7 +39,7 @@ it('shows the result without technical report descriptions or tutorials', () => 
   expect(view.container.querySelector('details')).toBeNull()
   expect(view.container.textContent).not.toContain('NativeDayOrganizationGrossProfit')
   expect(view.container.textContent).not.toContain('a'.repeat(64))
-  expect(screen.getByRole('cell', { name: '∅' })).toBeTruthy()
+  expect(screen.getByTitle('Значення не визначено.').textContent).toBe('—')
 })
 
 it('warns explicitly about ignored filters and their server reason', () => {
@@ -148,7 +148,7 @@ it('distinguishes equal organization captions by exact Int64 identity and keeps 
     expect(screen.getByRole('columnheader', { name: `Однакова організація [${id}] / Прибуток / Продажі` })).toBeTruthy()
   }
   expect(view.container.querySelectorAll('td[title="Клітинка відсутня"]')).toHaveLength(3)
-  expect(screen.getByRole('cell', { name: '∅' })).toBeTruthy()
+  expect(screen.getByTitle('Значення не визначено.').textContent).toBe('—')
 })
 
 it.each(['CustomerName', 'CustomerContract'])('keeps distinct %s identities visible even with equal names and an unknown identity', dimension => {
@@ -158,5 +158,5 @@ it.each(['CustomerName', 'CustomerContract'])('keeps distinct %s identities visi
   expect(screen.getByRole('columnheader', { name: 'Не вказано / Прибуток / Продажі' })).toBeTruthy()
   expect(view.container.textContent).not.toContain('[0]')
   expect(view.container.querySelectorAll('td[title="Клітинка відсутня"]')).toHaveLength(5)
-  expect(screen.getByRole('cell', { name: '∅' })).toBeTruthy()
+  expect(screen.getByTitle('Значення не визначено.').textContent).toBe('—')
 })

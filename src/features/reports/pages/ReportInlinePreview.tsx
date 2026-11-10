@@ -51,7 +51,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
   for (const group of totals?.Groups ?? []) groupTotals.set(group.RowSourceIndex, [...(groupTotals.get(group.RowSourceIndex) ?? []), group]
     .sort((left, right) => left.Level - right.Level))
   const valueText = (value: NativeReportPreviewScalar | undefined, columnSourceIndex: number) =>
-    preview.PhysicalQuantityExceptions?.length && value?.Kind === 'null' ? '—'
+    value?.Kind === 'null' ? '—'
       : blanksZero && isZeroPreviewScalar(value) ? ''
       : numberPresentation && semanticsByColumn.has(columnSourceIndex) && value?.Kind === 'decimal' && typeof value.Value === 'string'
         ? formatReportDecimal(value.Value, semanticsByColumn.get(columnSourceIndex)!, numberPresentation)
@@ -100,7 +100,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
     </Alert> : null}
     {preview.CurrentVparivanieMovements ? <Alert color={preview.CurrentVparivanieMovements.IncompleteProducts ? 'yellow' : 'blue'} title="Покриття руху товару">
       <Text size="sm">{MOVEMENT_FILTER_NOTICE}</Text>
-      <Text size="sm">Неповне підтвердження руху: {preview.CurrentVparivanieMovements.IncompleteProducts} із {preview.CurrentVparivanieMovements.TotalProducts} товарів. ∅ — кількість невідома.</Text>
+      <Text size="sm">Неповне підтвердження руху: {preview.CurrentVparivanieMovements.IncompleteProducts} із {preview.CurrentVparivanieMovements.TotalProducts} товарів. Прочерк — кількість невідома або клітинка відсутня.</Text>
       {preview.CurrentVparivanieMovements.ProductCoverage.some(product => product.Reasons.includes('MultipleSourceWorldsWithoutPhysicalOwnership'))
         ? <Text size="sm">Для частини товарів на цій сторінці фізичний рух між контурами обліку не розмежовано. Їхні кількості не додаються, щоб не подвоїти рух.</Text> : null}
       {preview.CurrentVparivanieMovements.OldestCapturedAtUtc && preview.CurrentVparivanieMovements.NewestCapturedAtUtc

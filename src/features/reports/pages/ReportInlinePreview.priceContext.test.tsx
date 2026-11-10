@@ -33,7 +33,7 @@ function show(wire: ReturnType<typeof fixture>) {
 }
 function expectMoneyAndUnknowns(container: HTMLElement) {
   for (const row of container.querySelectorAll('tbody tr, tfoot tr'))
-    expect(within(row as HTMLElement).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['∅', '66,00', '∅', '∅'])
+    expect(within(row as HTMLElement).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['—', '66,00', '—', '—'])
 }
 it('preserves a real business numeric tail on the supplied posting-user row and subtotal while all money/unknowns remain exact', () => {
   const wire=fixture(),before=structuredClone(wire),view=show(wire)

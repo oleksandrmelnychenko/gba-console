@@ -17,7 +17,7 @@ it('formats purchase leaves subtotal grand and zero from metadata while cache DT
  const row=screen.getByRole('rowheader',{name:'A'}).closest('tr')!;expect(within(row).getAllByRole('cell').map(cell=>cell.textContent)).toEqual(['27','4,806','12,35'])
  const subtotal=screen.getByRole('rowheader',{name:'Підсумок: 09.2026'}).closest('tr')!;expect(within(subtotal).getAllByRole('cell').map(cell=>cell.textContent)).toEqual(['27','4,806','12,35'])
  const zero=screen.getByRole('rowheader',{name:'B'}).closest('tr')!;expect(within(zero).getAllByRole('cell').map(cell=>cell.textContent)).toEqual(['0','0','0,00'])
- const grand=screen.getByRole('rowheader',{name:'Загальний підсумок'}).closest('tr')!;expect(within(grand).getAllByRole('cell').map(cell=>cell.textContent)).toEqual(['28','∅','∅'])
+ const grand=screen.getByRole('rowheader',{name:'Загальний підсумок'}).closest('tr')!;expect(within(grand).getAllByRole('cell').map(cell=>cell.textContent)).toEqual(['28','—','—'])
  expect(JSON.stringify(preview)).toBe(before);expect(preview.numberPresentation).toBeUndefined()
 })
 it('applied explicitquantity2 wins for leaf and cached totals without rewriting values',()=>{
@@ -28,5 +28,5 @@ it('applied explicitquantity2 wins for leaf and cached totals without rewriting 
 it('preserves NULL zero and negative-red classification independently from exact display rounding',()=>{
  const preview=fixture();preview.Cells[1].Value=scalar('-4.8060000000000000000000');preview.constructorPresentation={version:1,negativeRed:true,grandTotals:true}
  render(<MantineProvider><I18nProvider><ReportInlinePreview preview={preview}/></I18nProvider></MantineProvider>);const weight=within(screen.getByRole('rowheader',{name:'A'}).closest('tr')!).getByText('-4,806');expect(weight.classList.contains('is-negative')).toBe(true)
- expect(within(screen.getByRole('rowheader',{name:'C'}).closest('tr')!).getAllByText('∅')).toHaveLength(2)
+ expect(within(screen.getByRole('rowheader',{name:'C'}).closest('tr')!).getAllByText('—')).toHaveLength(2)
 })

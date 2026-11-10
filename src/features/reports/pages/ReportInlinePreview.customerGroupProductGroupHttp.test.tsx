@@ -32,7 +32,7 @@ it('binds actual direct Group4 string identity through saved all-eight-filter re
  expect(fixture.page0.Preview.Totals.Groups[0].Values[3].Value.Value).toBe('60');expect(fixture.page1.Preview.Totals.Groups[0].Values[3].Value.Value).toBe('10')
  const view=render(<MantineProvider env="test"><I18nProvider><ReportPreviewPages initial={preview} request={template.Data}/></I18nProvider></MantineProvider>)
  const quantity=view.container.querySelector('tbody tr:not(.report-inline-preview__group-total) td')!
- expect(quantity.textContent).toBe('∅');expect(quantity.getAttribute('aria-description')).toContain('Без підтвердженої одиниці документа')
+ expect(quantity.textContent).toBe('—');expect(quantity.getAttribute('aria-description')).toContain('Без підтвердженої одиниці документа')
  api.mockResolvedValue(fixture.page1);fireEvent.click(screen.getByRole('button',{name:'Наступні рядки'}));await screen.findByText('2–2 із 2')
  expect(api).toHaveBeenLastCalledWith(expect.stringContaining('/report/stocks/preview/'),expect.objectContaining({query:expect.objectContaining({rowOffset:1})}))
  api.mockResolvedValue(fixture.page0);fireEvent.click(screen.getByRole('button',{name:'Попередні рядки'}));await screen.findByText('1–1 із 2')

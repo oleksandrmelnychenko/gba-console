@@ -11,7 +11,7 @@ it('renders current attributes as independent ordered columns, with honest empty
   expect(headers.indexOf('Розмір (поточний товар)')).toBeLessThan(headers.indexOf('Артикул (поточний товар)'))
   expect(screen.getByRole('rowheader', { name: 'SEM14631' })).toBeTruthy()
   expect(screen.getByRole('rowheader', { name: '∅' })).toBeTruthy()
-  expect(screen.getByRole('cell', { name: '∅' })).toBeTruthy()
+  expect(screen.getByRole('cell', { name: '—' })).toBeTruthy()
   expect(screen.getByText(/Поточні поля товару з довідника/)).toBeTruthy()
   expect(screen.queryByText('b'.repeat(64))).toBeNull()
 })

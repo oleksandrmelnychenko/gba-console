@@ -10,7 +10,7 @@ it('appends selected currency/kind values to the account caption like 1C «Ра�
   render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: workbookPreview() })} /></I18nProvider></MantineProvider>)
   expect(screen.getByRole('rowheader', { name: 'Каса №1, Гривня (UAH), Каса' })).toBeTruthy()
   expect(screen.getByRole('columnheader', { name: /, Валюта рахунку \(каси\), Вид коштів$/ })).toBeTruthy()
-  expect(screen.getByRole('cell', { name: '∅' })).toBeTruthy()
+  expect(screen.getByRole('cell', { name: '—' })).toBeTruthy()
   expect(screen.queryByRole('columnheader', { name: 'Основний менеджер покупця' })).toBeNull()
 })
 it('renders only selected manager columns, preserves padded descriptions and distinguishes explicit unassigned', () => {

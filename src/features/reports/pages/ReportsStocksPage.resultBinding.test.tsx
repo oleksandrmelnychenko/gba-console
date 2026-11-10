@@ -152,7 +152,7 @@ describe('constructor result and export request identity', () => {
     fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
     fireEvent.click(await screen.findByRole('option', { name: supplierDataset.Name }))
     fireEvent.click(screen.getByRole('button', { name: 'Показати на екрані' }))
-    expect(await screen.findByRole('cell', { name: '∅' })).toBeTruthy()
+    expect(await screen.findByRole('cell', { name: '—' })).toBeTruthy()
     expect(screen.getByRole('rowheader', { name: 'Склад не визначено' })).toBeTruthy()
     expect(screen.getByRole('rowheader', { name: 'Постачальника повернення не визначено' })).toBeTruthy()
     expect(screen.queryByRole('cell', { name: '0' })).toBeNull()

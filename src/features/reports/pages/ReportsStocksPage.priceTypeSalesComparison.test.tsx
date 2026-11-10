@@ -119,7 +119,7 @@ describe('source27 report constructor wire', () => {
   it('binds preview and export to the same basis0 request, displays missing price as null, and clears both after basis change', async () => {
     const { container } = await currentForm()
     fireEvent.click(screen.getByRole('button', { name: 'Показати на екрані' }))
-    expect(await screen.findByRole('cell', { name: '∅' })).toBeTruthy()
+    expect(await screen.findByRole('cell', { name: '—' })).toBeTruthy()
     expect(screen.queryByRole('cell', { name: '0' })).toBeNull()
     fireEvent.submit(container.querySelector('form')!)
     await screen.findByRole('dialog', { name: 'Файли сформованого звіту' })

@@ -22,11 +22,11 @@ it('renders the actual source44 HTTP response with unknown quantities, known emp
   const cells = [...row.querySelectorAll('td')]
   expect(cells).toHaveLength(12)
   for (const index of [0, 1, 7]) {
-    expect(cells[index].textContent).toBe('∅')
+    expect(cells[index].textContent).toBe('—')
     expect(cells[index].getAttribute('aria-description')).toBe(descriptions)
   }
   for (const index of [2, 8]) {
-    expect(cells[index].textContent).toBe('∅')
+    expect(cells[index].textContent).toBe('—')
     expect(cells[index].getAttribute('aria-description')).toBeNull()
   }
   expect(cells[6].textContent).toBe('0,00000000')

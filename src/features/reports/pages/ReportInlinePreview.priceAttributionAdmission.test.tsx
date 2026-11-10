@@ -44,7 +44,6 @@ function previewExample() {
     Ordinal: member * measures.length + index, SourceIndex: member * measures.length + index,
     Values: [axis(member === 0 ? 'Нерозподілено' : supplierCaption, id, 'columnAxisKey'), measure],
   })))
-  // Missing cells stay the existing — marker; explicit null remains ∅. Neither may become a financial zero.
   wire.Cells = [cell(0, 1, '66.00'), cell(0, 2, null), cell(0, 3, null), cell(1, 4, '66.00')]
   wire.Totals = { State: 'materialized',
     Values: wire.Columns.map(column => cell(-1, column.SourceIndex, [1, 4].includes(column.SourceIndex) ? '66.00' : null)),
@@ -108,9 +107,9 @@ it('admits owned source46 author/supplier metadata and reserved minus-one row/co
     expect(screen.getByRole('columnheader', { name: name + ' / ' + before.Columns[0].Values[1].Caption })).toBeTruthy()
   const leafRows = Array.from(view.container.querySelectorAll('tbody tr:not(.report-inline-preview__group-total)'))
   expect(leafRows.map(row => within(row as HTMLElement).getAllByRole('cell').map(value => value.textContent))).toEqual([
-    ['—', '66,00', '∅', '∅', '—', '—', '—', '—'], ['—', '—', '—', '—', '66,00', '—', '—', '—'],
+    ['—', '66,00', '—', '—', '—', '—', '—', '—'], ['—', '—', '—', '—', '66,00', '—', '—', '—'],
   ])
   expect(within(view.container.querySelector('tfoot tr') as HTMLElement).getAllByRole('cell').map(value => value.textContent))
-    .toEqual(['∅', '66,00', '∅', '∅', '66,00', '∅', '∅', '∅'])
+    .toEqual(['—', '66,00', '—', '—', '66,00', '—', '—', '—'])
   expect(api.mock.calls.map(([path]) => path)).toEqual(['/report/datasets', '/report/stocks/preview/capabilities', '/report/stocks/preview'])
 })

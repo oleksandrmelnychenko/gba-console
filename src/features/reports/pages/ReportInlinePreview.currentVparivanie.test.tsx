@@ -17,7 +17,7 @@ it('shows the actual seven flat attributes and separate customer identities with
   expect(screen.getAllByRole('columnheader', { name: 'Одна назва / Результат' })).toHaveLength(2)
   expect(screen.getAllByRole('columnheader', { name: 'Результат' })).toHaveLength(2)
   const row = screen.getByRole('rowheader', { name: '0000123' }).closest('tr')!
-  expect(within(row).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['', '-2', '∅', '3,00000001'])
+  expect(within(row).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['', '-2', '—', '3,00000001'])
   expect(within(row).getAllByRole('rowheader')).toHaveLength(7)
   expect(view.container.querySelectorAll('script')).toHaveLength(0)
   expect(screen.getByText('<script>name</script>')).toBeTruthy()
@@ -50,7 +50,7 @@ it('shows physical movement columns with explicit incomplete history rather than
   expect(screen.getByText(/Неповне підтвердження руху: 1 із 1 товарів/)).toBeTruthy()
   expect(screen.getByText(/щоб не подвоїти рух/)).toBeTruthy()
   const row = screen.getByRole('rowheader', { name: '0000123' }).closest('tr')!
-  expect(within(row).getAllByRole('cell').slice(-2).map(cell => cell.textContent)).toEqual(['∅', '∅'])
+  expect(within(row).getAllByRole('cell').slice(-2).map(cell => cell.textContent)).toEqual(['—', '—'])
 })
 
 it.each([true, false])('shows known incoming=%s separately from the unconfirmed opposite direction', incomingKnown => {

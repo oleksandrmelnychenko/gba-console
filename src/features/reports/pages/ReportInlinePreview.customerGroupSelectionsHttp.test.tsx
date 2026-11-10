@@ -32,7 +32,7 @@ it('binds actual source44 product/current-code/manager request and cached pages 
   expect(fixture.page1.Preview.Totals.Values).toEqual(fixture.page0.Preview.Totals.Values)
   const view = render(<MantineProvider env="test"><I18nProvider><ReportPreviewPages initial={preview} request={template.Data} /></I18nProvider></MantineProvider>)
   const quantity = view.container.querySelector('tbody tr:not(.report-inline-preview__group-total) td')!
-  expect(quantity.textContent).toBe('∅')
+  expect(quantity.textContent).toBe('—')
   expect(quantity.getAttribute('aria-description')).toContain('Без підтвердженої одиниці документа')
   api.mockResolvedValue(fixture.page1)
   fireEvent.click(screen.getByRole('button', { name: 'Наступні рядки' }))

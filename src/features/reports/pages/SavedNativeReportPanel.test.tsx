@@ -61,7 +61,7 @@ describe('saved native version result isolation', () => {
 
   it('keeps NULL and the preview file links from one run, opening files without a second calculation', async () => {
     view(); preview()
-    expect(await screen.findByRole('cell', { name: '∅' })).toBeTruthy()
+    expect(await screen.findByRole('cell', { name: '—' })).toBeTruthy()
     expect(screen.queryByRole('dialog')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Файли збереженого звіту' }))
     expect(screen.getByRole('dialog').textContent).toContain('/files/saved.xlsx')
@@ -72,7 +72,7 @@ describe('saved native version result isolation', () => {
   })
 
   it('binds a repeated file generation to the definition accepted by the prior preview', async () => {
-    view(); preview(); await screen.findByRole('cell', { name: '∅' })
+    view(); preview(); await screen.findByRole('cell', { name: '—' })
     fireEvent.click(screen.getByRole('button', { name: 'Сформувати збережений варіант' }))
     await screen.findByRole('dialog')
     expect(vi.mocked(generateSavedNativeReport).mock.calls[0][0]).toEqual({ id: template.Id, revision: 7,
@@ -81,7 +81,7 @@ describe('saved native version result isolation', () => {
   })
 
   it('shows a saved revision refusal and clears prior files rather than retaining them', async () => {
-    view(); preview(); await screen.findByRole('cell', { name: '∅' })
+    view(); preview(); await screen.findByRole('cell', { name: '—' })
     vi.mocked(previewSavedNativeReport).mockRejectedValueOnce(new ApiError('stale revision', 409, null))
     preview()
     expect((await screen.findByRole('alert')).textContent).toContain('Оновіть список шаблонів')
@@ -98,15 +98,15 @@ describe('saved native version result isolation', () => {
     rendered.change({ current: true })
     await act(async () => complete(outcome()))
     expect(oldSignal.aborted).toBe(true); noResult()
-    preview(); expect(await screen.findByRole('cell', { name: '∅' })).toBeTruthy()
+    preview(); expect(await screen.findByRole('cell', { name: '—' })).toBeTruthy()
     expect(previewSavedNativeReport).toHaveBeenCalledTimes(2)
   })
 
   it('clears accepted files when the saved revision changes and starts a new binding', async () => {
-    const rendered = view(); preview(); await screen.findByRole('cell', { name: '∅' })
+    const rendered = view(); preview(); await screen.findByRole('cell', { name: '—' })
     rendered.change({ template: { ...template, Revision: 8 } }); noResult()
     vi.mocked(previewSavedNativeReport).mockResolvedValueOnce(outcome(8))
-    preview(); await screen.findByRole('cell', { name: '∅' })
+    preview(); await screen.findByRole('cell', { name: '—' })
     expect(vi.mocked(previewSavedNativeReport).mock.calls[1][0]).toEqual({ id: template.Id, revision: 8, dataSource: 0 })
   })
 

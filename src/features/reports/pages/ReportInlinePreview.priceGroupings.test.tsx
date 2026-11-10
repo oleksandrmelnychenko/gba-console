@@ -37,7 +37,7 @@ function show(wire: ReturnType<typeof fixture>) {
 }
 function expectMoneyAndUnknowns(container: HTMLElement) {
   for (const row of container.querySelectorAll('tbody tr, tfoot tr'))
-    expect(within(row as HTMLElement).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['∅', '66,00', '∅', '∅'])
+    expect(within(row as HTMLElement).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['—', '66,00', '—', '—'])
 }
 it.each(axes)('keeps source46 %s supplied business brackets in the leaf and subtotal', (identity, kind) => {
   const caption = 'Бізнес [2025]', key = kind === 'Text' ? '["2","10"]' : '9007199254740993'
@@ -107,8 +107,8 @@ it('keeps the own-return NULL sales bucket and two own returns as distinct rows 
   expect(view.container.querySelectorAll('tbody tr')).toHaveLength(3)
   const leaves = Array.from(view.container.querySelectorAll('tbody tr'))
   expect(leaves.map(row => within(row as HTMLElement).getAllByRole('cell').map(cell => cell.textContent))).toEqual([
-    ['∅', '66,00', '∅', '∅'], ['∅', '-26,00', '∅', '∅'], ['∅', '-40,00', '∅', '∅']])
-  expect(within(view.container.querySelector('tfoot tr') as HTMLElement).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['∅', '0,00', '∅', '∅'])
+    ['—', '66,00', '—', '—'], ['—', '-26,00', '—', '—'], ['—', '-40,00', '—', '—']])
+  expect(within(view.container.querySelector('tfoot tr') as HTMLElement).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['—', '0,00', '—', '—'])
 })
 it('keeps NULL sales and separate own-return members in columns without merging captioned keys', () => {
   const wire = fixture('SaleReturnDocument', 'Numeric', 'Продажі', null)

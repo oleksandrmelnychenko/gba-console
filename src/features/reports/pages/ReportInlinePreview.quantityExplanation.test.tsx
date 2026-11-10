@@ -37,7 +37,7 @@ it.each(['sales', 'grossProfit'])('explains unknown quantity in %s leaf and tota
   const view = show(preview(), request(profile))
   const quantities = screen.getAllByRole('cell', { description: explanation })
   expect(quantities).toHaveLength(3)
-  for (const cell of quantities) { expect(cell.textContent).toBe('∅'); expect(cell.title).toBe(explanation) }
+  for (const cell of quantities) { expect(cell.textContent).toBe('—'); expect(cell.title).toBe(explanation) }
   expect(view.container.querySelector('tbody tr:not(.report-inline-preview__group-total) td:last-child')?.getAttribute('title')).toBe('Значення не визначено.')
   expect(view.container.textContent).not.toContain('Службова примітка')
   expect(view.container.textContent).not.toContain(explanation)
@@ -94,7 +94,7 @@ it.each([109, 110])('explains source44 measure%i null in leaf and totals without
   const view = show(customerPreview(measure), comparisonRequest())
   const cells = screen.getAllByRole('cell', { description: comparisonExplanation })
   expect(cells).toHaveLength(3)
-  for (const cell of cells) { expect(cell.textContent).toBe('∅'); expect(cell.title).toBe(comparisonExplanation) }
+  for (const cell of cells) { expect(cell.textContent).toBe('—'); expect(cell.title).toBe(comparisonExplanation) }
   expect(view.container.textContent).not.toContain('Службова примітка')
   expect(view.container.textContent).not.toContain(comparisonExplanation)
 })
@@ -102,7 +102,7 @@ it.each([109, 110])('explains source44 measure%i null in leaf and totals without
 it.each([111, 112, 113, 114])('does not attribute source44 measure%i null to a missing document unit', measure => {
   show(customerPreview(measure), comparisonRequest())
   expect(screen.queryByRole('cell', { description: comparisonExplanation })).toBeNull()
-  expect(screen.getAllByRole('cell', { name: '∅' })).toHaveLength(6)
+  expect(screen.getAllByRole('cell', { name: '—' })).toHaveLength(6)
 })
 
 it('keeps source44 known empty-set zero as zero and does not infer a reason from a translated caption', () => {
@@ -139,7 +139,7 @@ it('explains source46 unknown quantity in leaf, subtotal and grand without attri
   const view = show(preview('NativePriceComparison'), priceRequest())
   const quantities = screen.getAllByRole('cell', { description: historicalUnitReason })
   expect(quantities).toHaveLength(3)
-  for (const cell of quantities) { expect(cell.textContent).toBe('∅'); expect(cell.title).toBe(historicalUnitReason) }
+  for (const cell of quantities) { expect(cell.textContent).toBe('—'); expect(cell.title).toBe(historicalUnitReason) }
   expect(view.container.querySelector('tbody tr:not(.report-inline-preview__group-total) td:last-child')?.getAttribute('title')).toBe('Значення не визначено.')
   expect(view.container.querySelectorAll('td[aria-description]')).toHaveLength(3)
   expect(view.container.textContent).not.toContain(historicalUnitReason)
@@ -149,16 +149,16 @@ it('preserves a supplied source46 quantity zero without a missing-unit tooltip o
   show(preview('NativePriceComparison', { Kind: 'decimal', Value: '0', Provenance: 'producerCell' }), priceRequest())
   expect(screen.queryByRole('cell', { description: historicalUnitReason })).toBeNull()
   expect(screen.getAllByRole('cell', { name: '0' })).toHaveLength(3)
-  expect(screen.getAllByRole('cell', { name: '∅' })).toHaveLength(3)
+  expect(screen.getAllByRole('cell', { name: '—' })).toHaveLength(3)
 })
 it('keeps legacy source46 quantity without typed semantics as generic unknown', () => {
   const value = preview('NativePriceComparison'); delete value.valueSemantics
   show(value, priceRequest())
   expect(screen.queryByRole('cell', { description: historicalUnitReason })).toBeNull()
-  expect(screen.getAllByRole('cell', { name: '∅' })).toHaveLength(6)
+  expect(screen.getAllByRole('cell', { name: '—' })).toHaveLength(6)
 })
 it('uses rendered source attribution rather than a source46 draft to explain quantity', () => {
   show(preview('NativePurchases'), priceRequest())
   expect(screen.queryByRole('cell', { description: historicalUnitReason })).toBeNull()
-  expect(screen.getAllByRole('cell', { name: '∅' })).toHaveLength(6)
+  expect(screen.getAllByRole('cell', { name: '—' })).toHaveLength(6)
 })

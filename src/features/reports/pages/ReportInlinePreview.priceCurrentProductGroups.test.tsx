@@ -73,7 +73,7 @@ it.each(rawAxes)('preserves raw source46 %s suffix in leaf and subtotal while ke
   expect(screen.getByRole('rowheader', { name: 'Підсумок: Товар' })).toBeTruthy()
   expect(view.container.querySelector('tfoot th')?.textContent).toBe('Загальний підсумок')
   for (const row of view.container.querySelectorAll('tbody tr, tfoot tr')) {
-    expect(within(row as HTMLElement).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['∅', '66,00', '∅', '∅'])
+    expect(within(row as HTMLElement).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['—', '66,00', '—', '—'])
   }
 })
 it('retains source46 NULL and empty current attributes as separate axes without inventing a caption', () => {
@@ -124,7 +124,7 @@ it.each(rawAxes)('preserves audited typed raw source2 %s captions in leaf and su
   expect(screen.getByRole('rowheader', { name: caption })).toBeTruthy()
   expect(screen.getByRole('rowheader', { name: 'Підсумок: ' + caption })).toBeTruthy()
   for (const row of view.container.querySelectorAll('tbody tr, tfoot tr'))
-    expect(within(row as HTMLElement).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['∅', '66,00', '∅', '∅'])
+    expect(within(row as HTMLElement).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['—', '66,00', '—', '—'])
 })
 const legacySource2Axes = rawAxes.flatMap(([identity, caption]) => ['missing', 'contradictory'].map(mode => [identity, caption, mode]))
 it.each(legacySource2Axes)('keeps the source2 %s legacy caption path for %s with %s semantics', (identity, caption, mode) => {
@@ -137,7 +137,7 @@ it.each(legacySource2Axes)('keeps the source2 %s legacy caption path for %s with
   expect(screen.getByRole('rowheader', { name: 'Підсумок: ' + oldCaption })).toBeTruthy()
   expect(screen.queryByRole('rowheader', { name: caption })).toBeNull()
   for (const row of view.container.querySelectorAll('tbody tr, tfoot tr'))
-    expect(within(row as HTMLElement).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['∅', '66,00', '∅', '∅'])
+    expect(within(row as HTMLElement).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['—', '66,00', '—', '—'])
 })
 it.each(['missing', 'foreign'])('keeps the legacy caption path for a source46 %s schema identity', mode => {
   const wire = fixture()

@@ -41,14 +41,14 @@ const materialized = {
 }
 
 describe('1C-like totals and blank zeros in the report preview', () => {
-  it('prints each group total above its rows and the grand total at the bottom, with zeros blank and unknown sums ∅', () => {
+  it('prints each group total above its rows and the grand total at the bottom, with zeros blank and unknown sums —', () => {
     const view = render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: settlementPreview(materialized) })} /></I18nProvider></MantineProvider>)
     const table = screen.getByRole('table')
     const bodyRows = within(table).getAllByRole('row').filter(tableRow => tableRow.closest('tbody'))
     expect(bodyRows.map(tableRow => tableRow.textContent)).toEqual([
-      'Підсумок: Фенікс7,50∅', 'ФеніксСкляр10,50', 'ФеніксСкляр (постачальник)-3,00∅', 'Підсумок: ФОП Самолюк4,00', 'ФОП СамолюкАБІКС ТОВ4,00'])
+      'Підсумок: Фенікс7,50—', 'ФеніксСкляр10,50', 'ФеніксСкляр (постачальник)-3,00—', 'Підсумок: ФОП Самолюк4,00', 'ФОП СамолюкАБІКС ТОВ4,00'])
     const footer = view.container.querySelector('tfoot tr')
-    expect(footer?.textContent).toBe('Загальний підсумок7,50∅')
+    expect(footer?.textContent).toBe('Загальний підсумок7,50—')
     expect(within(table).queryByRole('cell', { name: '0,00' })).toBeNull()
     expect(view.container.textContent).not.toContain('На екрані показано рядки без підсумків')
   })

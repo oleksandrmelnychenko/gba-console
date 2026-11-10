@@ -16,7 +16,7 @@ it.each(cases)('applies source$source style $flags while all raw cells and total
   expect(view.container.querySelectorAll('.is-negative')).toHaveLength(flags.negativeRed ? flags.grandTotals ? 3 : 2 : 0)
   expect(view.container.querySelector('.report-inline-preview__group-total')).toBeTruthy()
   for (const row of view.container.querySelectorAll('tbody tr, tfoot tr'))
-    expect(within(row as HTMLElement).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['8,125','-5,125','0,000','∅'])
+    expect(within(row as HTMLElement).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['8,125','-5,125','0,000','—'])
   expect(preview.Cells).toEqual(before.Cells)
   expect(preview.Totals).toEqual(before.Totals)
   expect(preview.Rows).toEqual(before.Rows)

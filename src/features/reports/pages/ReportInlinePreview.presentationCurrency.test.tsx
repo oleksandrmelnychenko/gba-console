@@ -17,6 +17,6 @@ it('uses producer target captions and units, preserves unknown amounts and discl
  render(<MantineProvider><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
  expect(screen.getByText(/Валюта звіту: CAD retail/)).toBeTruthy()
  expect(screen.getByRole('columnheader', { name: /Продажі з ПДВ, CAD retail/ }).getAttribute('title')).toBe('CAD retail')
- expect(screen.getByRole('cell').textContent).toBe('∅')
+ expect(screen.getByRole('cell').textContent).toBe('—')
  expect(screen.queryByText(/EUR/)).toBeNull()
 })
