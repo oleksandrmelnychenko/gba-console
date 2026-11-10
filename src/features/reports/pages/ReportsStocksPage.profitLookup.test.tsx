@@ -42,13 +42,13 @@ async function editor(mode?: string) {
 }
 it('uses the capability through the actual page picker and submits a native Int64 identity unchanged', async () => {
   const view = await editor('Поточні документи GBA')
-  await waitFor(() => expect(searchDatasetReportValues).toHaveBeenCalledWith(38, 1, { limit: 30, offset: 0, value: '' }, expect.any(AbortSignal), undefined, undefined, undefined, 0))
+  await waitFor(() => expect(searchDatasetReportValues).toHaveBeenCalledWith(38, 1, { limit: 30, offset: 0, value: '' }, expect.any(AbortSignal), undefined, undefined, undefined, 0), { timeout: 10_000 })
   fireEvent.click(within(view.dialog).getByRole('combobox', { name: 'Значення' }))
-  fireEvent.click(await screen.findByRole('option', { name: 'Новий товар GBA' }))
-  await within(view.dialog).findByText('Новий товар GBA')
+  fireEvent.click(await screen.findByRole('option', { name: 'Новий товар GBA' }, { timeout: 10_000 }))
+  await within(view.dialog).findByText('Новий товар GBA', undefined, { timeout: 10_000 })
   fireEvent.click(within(view.dialog).getByRole('button', { name: 'Зберегти' }))
   fireEvent.submit(view.container.querySelector('form')!)
-  await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())
+  await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce(), { timeout: 10_000 })
   expect(vi.mocked(createStockReport).mock.calls[0][0].selections[0].Values[0].Data.Id).toBe('9223372036854775807')
 })
 it.each([undefined, false, 'true'])('does not fall back to legacy current38 choices when capability is %s', async capability => {

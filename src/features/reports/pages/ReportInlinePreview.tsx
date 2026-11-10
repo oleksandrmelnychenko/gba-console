@@ -95,8 +95,10 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
   const columnWindow = previewColumnWindow(preview)
   const wide = isPartialColumnWindow(columnWindow)
   const stickyRowHeader = (index: number) => wide ? { className: 'is-sticky-row-header', style: { left: `${index * WIDE_ROW_HEADER_REM}rem` } } : {}
-  const columnPaths = preview.Columns.map(column => (products ? column.Values.slice(0, 1) : sharedGroup ? column.Values.slice(1) : column.Values)
-    .map((value, index) => sharedGroup ? value.Caption : columnIdentityCaption(column, index)).filter(Boolean))
+  const columnPaths = preview.Columns.map(column => documentMeasurePath(preview.Request?.DataSource, semanticsByMeasure.get(column.SourceIndex),
+    (products ? column.Values.slice(0, 1) : sharedGroup ? column.Values.slice(1) : column.Values)
+      .map((value, index) => sharedGroup ? value.Caption : columnIdentityCaption(column, index)).filter(Boolean))
+    .filter((caption, index, path) => index === 0 || caption !== path[index - 1]))
   const tiers = products || !columnPaths.some((path, position) => position > 0 && path.length > 1
     && columnPaths[position - 1].length > 1 && path[0] === columnPaths[position - 1][0]) ? 1 : Math.max(1, ...columnPaths.map(path => path.length))
   const columnHeading = (column: NativeReportPreviewAxis, position: number, rowSpan?: number) => {
@@ -212,6 +214,19 @@ const DOCUMENT_MEASURE_CAPTIONS: readonly (readonly [string, Readonly<Record<num
   ['Націнка, ', { 10: 'Без ПДВ', 11: 'ПДВ', 12: 'З ПДВ' }],
   ['Рентабельність, %', { 14: 'Без ПДВ', 15: 'З ПДВ' }],
 ]
+
+const STOCK_PERIOD_GROUPS = ['Початковий залишок', 'Прихід', 'Розхід', 'Кінцевий залишок'] as const
+const STOCK_PERIOD_MEASURES = ['Кількість', 'Собівартість без ПДВ, EUR', 'ПДВ, EUR'] as const
+const PURCHASE_MEASURES: Readonly<Record<number, string>> = { 0: 'Кількість', 2: 'Вартість без ПДВ, EUR', 3: 'ПДВ, EUR', 96: 'Вага (нетто), кг' }
+
+function documentMeasurePath(source: string | undefined, measureType: number | null | undefined, path: string[]): string[] {
+  if (measureType == null || path.length < 2) return path
+  if (source === 'NativeStockPeriod' && measureType >= 97 && measureType <= 108)
+    return [...path.slice(0, -2), STOCK_PERIOD_GROUPS[Math.floor((measureType - 97) / 3)], STOCK_PERIOD_MEASURES[(measureType - 97) % 3]]
+  if (source === 'NativePurchases' && PURCHASE_MEASURES[measureType] !== undefined)
+    return [...path.slice(0, -2), 'Надходження', PURCHASE_MEASURES[measureType]]
+  return path
+}
 
 function documentMeasureCaption(parent: string, caption: string, measureType: number | null | undefined): string {
   if (measureType == null) return caption

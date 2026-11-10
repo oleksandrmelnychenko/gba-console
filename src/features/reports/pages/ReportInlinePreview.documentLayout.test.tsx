@@ -63,3 +63,45 @@ it('keeps subtotals above the rows and full measure captions outside the sales d
     .toEqual(['Кількість з урахуванням повернень', 'Продажі без ПДВ з урахуванням повернень'])
   expect(within(body[2]).getAllByRole('cell')[0].textContent).toBe('—')
 })
+
+function measurePreview(source: string, columns: [number, string[]][]) {
+  return normalizeNativeReportPreview({ Preview: {
+    Version: 1, ResultSha256: 'd'.repeat(64), PresentationOnly: true,
+    Request: { DataSource: source, IsCurrentSnapshot: false, HasPeriod: true, PeriodFrom: '01.10.2026', PeriodTo: '31.10.2026',
+      RowGroupings: ['Склад'], ColumnGroupings: [], Measures: columns.map(column => column[1].at(-1)), Filters: [], IgnoredFilters: [], Notes: [] },
+    Page: { Offset: 0, Limit: 50, TotalVisibleRows: 1, ReturnedRows: 1, HasMore: false },
+    RowSchema: [{ Caption: 'Склад' }], ColumnSchema: columns[0][1].map((_, index) => ({ Caption: `Рівень ${index + 1}` })),
+    Rows: [{ Ordinal: 0, SourceIndex: 0, Values: [{ Caption: 'СКЛАД' }] }],
+    Columns: columns.map(([, values], index) => ({ Ordinal: index, SourceIndex: index, Values: values.map(Caption => ({ Caption })) })),
+    Cells: columns.map((_, index) => ({ RowSourceIndex: 0, ColumnSourceIndex: index, Value: scalar(String(index + 1)) })),
+    valueSemantics: columns.map(([measureType], index) => ({ columnSourceIndex: index, measureType,
+      semantics: { kind: 'money', currencyPolicy: 'EUR', unitPolicy: 'currency', aggregation: 'sum', scalable: true,
+        defaultDecimalPlaces: 2, defaultMinimumDecimalPlaces: 2 } })),
+  } })
+}
+const tiersOf = (container: HTMLElement) => [...container.querySelectorAll('thead tr')].map(row => [...row.querySelectorAll('th')].map(heading =>
+  `${heading.textContent}${heading.colSpan > 1 ? `×${heading.colSpan}` : ''}${heading.rowSpan > 1 ? `↓${heading.rowSpan}` : ''}`))
+
+it('groups the stock period measures under opening, incoming, outgoing and closing like the exported document', () => {
+  const names = ['Початковий залишок', 'Прихід', 'Розхід', 'Кінцевий залишок'].flatMap(group => ['кількість', 'собівартість з витратами без ПДВ, EUR', 'ПДВ, EUR']
+    .map(measure => `${group}: ${measure}`))
+  const view = render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={measurePreview('NativeStockPeriod',
+    names.map((name, index) => [97 + index, [name, name]]))} /></I18nProvider></MantineProvider>)
+  expect(tiersOf(view.container)).toEqual([
+    ['Склад↓2', 'Початковий залишок×3', 'Прихід×3', 'Розхід×3', 'Кінцевий залишок×3'],
+    Array.from({ length: 4 }, () => ['Кількість', 'Собівартість без ПДВ, EUR', 'ПДВ, EUR']).flat(),
+  ])
+})
+
+it('groups purchase measures under each supplier contract without repeating the measure caption', () => {
+  const view = render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={measurePreview('NativePurchases',
+    [[0, ['Договір А', 'Кількість надходження', 'Кількість надходження']], [2, ['Договір А', 'Вартість надходження без ПДВ, EUR', 'Вартість надходження без ПДВ, EUR']],
+      [96, ['Договір А', 'Вага (нетто), кг', 'Вага (нетто), кг']]])} /></I18nProvider></MantineProvider>)
+  expect(tiersOf(view.container)).toEqual([['Склад↓3', 'Договір А×3'], ['Надходження×3'], ['Кількість', 'Вартість без ПДВ, EUR', 'Вага (нетто), кг']])
+})
+
+it('does not repeat a measure caption that equals its group caption', () => {
+  const view = render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={measurePreview('NativeCustomerGroupComparison',
+    [[109, ['Еталон', 'Кількість', 'Кількість']], [110, ['Еталон', 'Вартість без ПДВ, EUR', 'Вартість без ПДВ, EUR']]])} /></I18nProvider></MantineProvider>)
+  expect(tiersOf(view.container)).toEqual([['Склад↓2', 'Еталон×2'], ['Кількість', 'Вартість без ПДВ, EUR']])
+})
