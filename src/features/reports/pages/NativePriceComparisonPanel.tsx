@@ -37,6 +37,6 @@ export function NativePriceComparisonPanel({value,onChange,disabled}:{value:Nati
       searchValue={search} onSearchChange={setSearch} value={id} filter={({options})=>options} error={error}
       onChange={next=>{setSelected(data.find(option=>option.value===next)??null);if(next?.startsWith('legacy:'))onChange({Version:1,PriceTypeId:next.slice(7)});else onChange({Version:2,PricingId:next??''})}} />
     {legacy && <Text size="sm" c="dimmed">Збережено попередній історичний тип ціни. Щоб вибрати тип із довідника GBA, змініть вибір.</Text>}
-    <Text size="sm" c="dimmed">Продажі та повернення беруться з GBA. Для порівняння використовується підтверджена ціна вибраного типу на точний час продажу; для повернення — на час первинного продажу. Якщо історичну ціну або одиницю документа не підтверджено, сума за типом ціни, різниця та їхні неповні підсумки залишаються порожніми.</Text>
+    <Text size="sm" c="dimmed">Продажі та повернення беруться з GBA — усі за період, незалежно від типу ціни договору. Сума по типу цін — кількість, помножена на ціну вибраного типу на день продажу (для повернення — на день повернення) зі збереженої історії цін; різниця — продажі з ПДВ мінус ця сума. Якщо ціни вибраного типу для товару на цей день немає, сума по типу цін і різниця в рядку порожні.</Text>
   </Stack>
 }
