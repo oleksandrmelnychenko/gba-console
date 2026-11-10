@@ -43,7 +43,7 @@ beforeEach(() => {
 afterEach(cleanup)
 
 describe('1C export panel', () => {
-  it('exports both bases and all document types by default and saves the file', async () => {
+  it('exports both bases and the confirmed document types by default and saves the file', async () => {
     mount()
     fireEvent.click(screen.getByRole('button', { name: 'Вивантажити' }))
 
@@ -52,7 +52,7 @@ describe('1C export panel', () => {
     expect(request.bases).toEqual(['Fenix', 'Amg'])
     expect(request.types).toEqual([
       'Sale', 'SaleReturn', 'ProductIncome', 'ProductTransfer', 'WriteOff', 'Capitalization',
-      'IncomePayment', 'OutgoingPayment', 'RegisterTransfer', 'CurrencyExchange', 'ReSale', 'ServiceIncome', 'SupplyOrder',
+      'IncomePayment', 'OutgoingPayment', 'RegisterTransfer', 'CurrencyExchange', 'ReSale',
     ])
     expect(request.from).toBe(request.to)
     await waitFor(() => expect(save).toHaveBeenCalledWith(file))

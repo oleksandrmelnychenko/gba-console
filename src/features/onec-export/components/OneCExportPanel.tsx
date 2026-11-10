@@ -14,6 +14,7 @@ import {
   ONE_C_EXPORT_BASES,
   ONE_C_EXPORT_TYPE_LABELS,
   ONE_C_EXPORT_TYPES,
+  ONE_C_EXPORT_UNCONFIRMED_TYPES,
   saveDownloadedFile,
   type OneCExportBase,
   type OneCExportDocumentType,
@@ -64,7 +65,9 @@ export function OneCExportPanel() {
   const { t } = useI18n()
   const today = formatKyivBusinessDate()
   const [bases, setBases] = useState<OneCExportBase[]>([...ONE_C_EXPORT_BASES])
-  const [types, setTypes] = useState<OneCExportDocumentType[]>([...ONE_C_EXPORT_TYPES])
+  const [types, setTypes] = useState<OneCExportDocumentType[]>(
+    ONE_C_EXPORT_TYPES.filter((type) => !ONE_C_EXPORT_UNCONFIRMED_TYPES.includes(type)),
+  )
   const [preset, setPreset] = useState<OneCExportPreset>('today')
   const [customFrom, setCustomFrom] = useState(today)
   const [customTo, setCustomTo] = useState(today)
@@ -215,7 +218,14 @@ export function OneCExportPanel() {
           >
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={6} mt={6}>
               {ONE_C_EXPORT_TYPES.map((type) => (
-                <Checkbox key={type} value={type} label={t(ONE_C_EXPORT_TYPE_LABELS[type])} />
+                <Checkbox
+                  key={type}
+                  value={type}
+                  label={t(ONE_C_EXPORT_TYPE_LABELS[type])}
+                  description={
+                    ONE_C_EXPORT_UNCONFIRMED_TYPES.includes(type) ? t('Вигляд у 1С ще не підтверджено адміністратором 1С') : undefined
+                  }
+                />
               ))}
             </SimpleGrid>
           </Checkbox.Group>

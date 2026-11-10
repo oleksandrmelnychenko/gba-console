@@ -28,6 +28,8 @@ export const ONE_C_EXPORT_TYPES = [
 ] as const
 export type OneCExportDocumentType = (typeof ONE_C_EXPORT_TYPES)[number]
 
+export const ONE_C_EXPORT_UNCONFIRMED_TYPES: readonly OneCExportDocumentType[] = ['ServiceIncome', 'SupplyOrder']
+
 export const ONE_C_EXPORT_TYPE_LABELS: Record<OneCExportDocumentType, string> = {
   Sale: 'Видаткові накладні',
   SaleReturn: 'Повернення від покупців',
