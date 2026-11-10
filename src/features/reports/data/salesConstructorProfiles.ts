@@ -50,13 +50,13 @@ export function salesConstructorDataset(dataset: ReportDataset | undefined, prof
   const additions = salesProfileGroupingFields(dataset, profile)
   const baseTypes = new Set(dataset.Groupings.map(field => field.Type))
   const allowed = new Set<number>(profile === 'grossProfit' ? GROSS_PROFIT_CONSTRUCTOR_MEASURES : SALES_CONSTRUCTOR_MEASURES)
-  return { ...dataset, Groupings: [...dataset.Groupings, ...additions.filter(field => !baseTypes.has(field.Type))], Measurements: dataset.Measurements.filter(field => allowed.has(field.Type)), Filters: dataset.Filters.filter(field => field.Type !== 64 && field.Type !== 11) }
+  return { ...dataset, Groupings: [...dataset.Groupings, ...additions.filter(field => !baseTypes.has(field.Type))], Measurements: dataset.Measurements.filter(field => allowed.has(field.Type)), Filters: dataset.Filters.filter(field => field.Type !== 64) }
 }
 export function salesConstructorError(request: ReportRequestBody, dataset?: ReportDataset): string | null {
   const detailError = documentDetailsError(request, dataset)
   if (detailError) return detailError
   const raw = requestReportProfile(request)
-  if ((request.dataSource === 44 || request.dataSource === 2 && readReportProfile(raw))
+  if (request.dataSource === 44
     && request.selections?.some(selection => selection.IsChecked !== false && selection.SelectedField.Type === 11))
     return HISTORICAL_PRICE_TYPE_REQUIRED
   if (raw === undefined) return constructorPresentationError(request, dataset)
