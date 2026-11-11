@@ -10,20 +10,6 @@ const configureForwardedHeaders: ProxyConfigure = (proxy) => {
   })
 }
 
-function stripSignalRPureAnnotations() {
-  return {
-    name: 'strip-signalr-pure-annotations',
-    enforce: 'pre' as const,
-    transform(code: string, id: string) {
-      if (!id.includes('@microsoft/signalr/dist/esm/Utils.js')) {
-        return null
-      }
-
-      return code.replaceAll('/*#__PURE__*/ function ', 'function ')
-    },
-  }
-}
-
 function emitBuildInfo(buildNumber: string): Plugin {
   return {
     name: 'emit-build-info',
@@ -57,7 +43,7 @@ export default defineConfig(({ mode }) => {
   define: {
     __BUILD_NUMBER__: JSON.stringify(buildNumber),
   },
-  plugins: [uiActionGuardPlugin(), stripSignalRPureAnnotations(), emitBuildInfo(buildNumber), react()],
+  plugins: [uiActionGuardPlugin(), emitBuildInfo(buildNumber), react()],
   build: {
     rolldownOptions: {
       output: {
