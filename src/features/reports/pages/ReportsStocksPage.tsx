@@ -396,6 +396,11 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const [numberPresentation, setNumberPresentation] = useValueState<unknown>(undefined)
   const [supplierBasis, setSupplierBasis] = useValueState<unknown>(undefined)
   const [nativePriceComparison, setNativePriceComparison] = useValueState<NativePriceComparison | undefined>(undefined)
+  const [nativePriceComparisonChanged, setNativePriceComparisonChanged] = useState(false)
+  const changeNativePriceComparison = (value: NativePriceComparison) => {
+    setNativePriceComparisonChanged(true)
+    setNativePriceComparison(value)
+  }
   const [customerGroups, setCustomerGroups] = useValueState<CustomerGroups | undefined>(undefined)
   const [returnsOnly, setReturnsOnly] = useValueState<boolean | undefined>(undefined)
   const [priceTypeSalesComparison, setPriceTypeSalesComparison] = useValueState<unknown>(undefined)
@@ -556,7 +561,9 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const submitBlockedReason = !canGenerateReport
     ? t('Немає права формувати звіт залишків')
     : generationConfigurationError
-      ? generationConfigurationError
+      ? dataSource === 46 && !nativePriceComparisonChanged
+        && !nativePriceComparison?.PricingId && !nativePriceComparison?.PriceTypeId
+        && generationConfigurationError === nativePriceComparisonError(nativePriceComparison) ? '' : generationConfigurationError
       : periodError
       ? periodError
       : checkedMeasurements === 0
@@ -654,6 +661,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   }
 
   function resetReport() {
+    setNativePriceComparisonChanged(false)
     setSettingsRevision(value => value + 1)
     const workbookLaunch = activeWorkbook ? workbookLaunches.find(item => item.fileName === activeWorkbook) : undefined
     if (workbookLaunch && openWorkbook(workbookLaunch)) return
@@ -799,6 +807,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setProfitReadMode(structuredClone(requestProfitReadMode(data)))
     setDayOrganizationBasis(structuredClone(requestDayOrganizationBasis(data)))
     setSupplierBasis(structuredClone(requestSupplierBasis(data)))
+    setNativePriceComparisonChanged(false)
     setNativePriceComparison(data.nativePriceComparison ?? data.NativePriceComparison)
     setCustomerGroups(data.customerGroups ?? data.CustomerGroups)
     setReturnsOnly(data.returnsOnly ?? data.ReturnsOnly)
@@ -885,6 +894,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     setProfitReadMode(structuredClone(requestProfitReadMode(data)))
     setDayOrganizationBasis(structuredClone(requestDayOrganizationBasis(data)))
     setSupplierBasis(structuredClone(requestSupplierBasis(data)))
+    setNativePriceComparisonChanged(false)
     setNativePriceComparison(data.nativePriceComparison ?? data.NativePriceComparison)
     setCustomerGroups(data.customerGroups ?? data.CustomerGroups)
     setReturnsOnly(data.returnsOnly ?? data.ReturnsOnly)
@@ -1096,7 +1106,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           onChange={filterLogic.editSelection} />} />
     const filtersContent = <>
       {dataSource === 35 ? <div className="workbook-desk__group">{dayProfitControls('organizations')}</div> : null}
-      {dataSource === 46 ? <NativePriceComparisonPanel value={nativePriceComparison} onChange={setNativePriceComparison} disabled={comparisonSettingsDisabled} /> : null}
+      {dataSource === 46 ? <NativePriceComparisonPanel value={nativePriceComparison} onChange={changeNativePriceComparison} disabled={comparisonSettingsDisabled} /> : null}
       {dataSource === 44 ? <CustomerGroupsPanel value={customerGroups} onChange={setCustomerGroups} disabled={comparisonSettingsDisabled} /> : null}
       {dataSource === 35 ? <div className="workbook-desk__group">{dayProfitControls('filters')}</div> : null}
       {supplierControls ? <div className="workbook-desk__group">{supplierProfitControls('filters')}</div> : null}
@@ -1125,7 +1135,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     </div>
     const constructorDesk = usesConstructorDesk(dataset, reportBody) && !selectionOnly
     const constructorCaptions = constructorMeasureCaptions(dataset, reportBody, dataSource, t)
-    const constructorReportSettings = dataSource === 46 ? <NativePriceComparisonPanel value={nativePriceComparison} onChange={setNativePriceComparison} disabled={comparisonSettingsDisabled} />
+    const constructorReportSettings = dataSource === 46 ? <NativePriceComparisonPanel value={nativePriceComparison} onChange={changeNativePriceComparison} disabled={comparisonSettingsDisabled} />
       : dataSource === 44 ? <CustomerGroupsPanel value={customerGroups} onChange={setCustomerGroups} disabled={comparisonSettingsDisabled} /> : null
     const constructorContent = constructorDesk ? {
       parameters: <>
