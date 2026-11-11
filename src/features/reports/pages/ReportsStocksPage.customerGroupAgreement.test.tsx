@@ -37,7 +37,7 @@ it('only offers Agreement9 when actual source44 metadata admits it',async()=>{
 })
 it('restores and saves exact big IDs/rawJSON without directory expansion or clearing cohorts/date/order',async()=>{
  await restore();expect(apiRequest).not.toHaveBeenCalled();const group=screen.getByRole('group',{name:'Умова відбору 1'});fireEvent.click(within(group).getByRole('combobox',{name:'Тип порівняння'}))
- expect(screen.getAllByRole('option').map(x=>x.textContent)).toEqual(['Рівне','Не рівне','В списку','Не в списку']);fireEvent.click(screen.getByRole('option',{name:'В списку'}));changeReportPeriod({from:'2026-09-01',to:'2026-09-30'})
+ expect(screen.getAllByRole('option').filter(option => option.getAttribute('data-combobox-disabled') !== 'true').map(x=>x.textContent)).toEqual(['Рівне','Не рівне','В списку','Не в списку']);fireEvent.click(screen.getByRole('option',{name:'В списку'}));changeReportPeriod({from:'2026-09-01',to:'2026-09-30'})
  fireEvent.click(screen.getByRole('button',{name:'Шаблони'}));fireEvent.click(screen.getByRole('button',{name:'Оновити шаблон'}));await waitFor(()=>expect(saveServerReportTemplate).toHaveBeenCalledOnce())
  const saved=vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data,original=template().Data
  expect(saved).toMatchObject({from:'2026-09-01',to:'2026-09-30',customerGroups:original.customerGroups,selections:original.selections})

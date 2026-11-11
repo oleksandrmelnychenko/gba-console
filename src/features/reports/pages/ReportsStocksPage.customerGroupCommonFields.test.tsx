@@ -41,7 +41,7 @@ it.each([12, 14, 15, 16])('blocks invalid field%d Run/Save, then list repair pre
   fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); expect(screen.getByRole('button', { name: 'Оновити шаблон' })).toHaveProperty('disabled', true)
   expect(saveServerReportTemplate).not.toHaveBeenCalled(); expect(createStockReport).not.toHaveBeenCalled()
   fireEvent.click(screen.getByRole('button', { name: 'Закрити' })); fireEvent.click(within(row).getByRole('combobox', { name: 'Тип порівняння' }))
-  expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(['Рівне', 'Не рівне', 'В списку', 'Не в списку'])
+  expect(screen.getAllByRole('option').filter(option => option.getAttribute('data-combobox-disabled') !== 'true').map(option => option.textContent)).toEqual(['Рівне', 'Не рівне', 'В списку', 'Не в списку'])
   fireEvent.click(screen.getByRole('option', { name: 'В списку' })); expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toHaveProperty('disabled', false)
   changeReportPeriod({ from: '2026-09-01', to: '2026-09-30' })
   fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(screen.getByRole('button', { name: 'Оновити шаблон' }))

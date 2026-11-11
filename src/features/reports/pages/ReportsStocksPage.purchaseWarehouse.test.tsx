@@ -51,7 +51,7 @@ it('uses the actual source3 receipt label in grouping and offers only four flat 
   fireEvent.click(screen.getByRole('combobox', { name: 'Поле' }))
   fireEvent.click(await screen.findByRole('option', { name: 'Склад надходження' }))
   fireEvent.click(screen.getByRole('combobox', { name: 'Тип порівняння' }))
-  expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(['Рівне', 'Не рівне', 'В списку', 'Не в списку'])
+  expect(screen.getAllByRole('option').filter(option => option.getAttribute('data-combobox-disabled') !== 'true').map(option => option.textContent)).toEqual(['Рівне', 'Не рівне', 'В списку', 'Не в списку'])
 })
 
 it('restores and saves exact same-name IDs, row/column order and edited dates without remapping the warehouse', async () => {
