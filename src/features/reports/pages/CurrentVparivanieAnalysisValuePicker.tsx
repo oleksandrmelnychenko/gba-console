@@ -39,7 +39,7 @@ function AnalysisValueInput({ injectedItem, renderItemPicker, context, unavailab
   if (injectedItem) return renderItemPicker?.(context)
   if (unavailable) return <Alert color="yellow">{unavailable}</Alert>
   if (multiple) return <ReportValueAutocomplete label="Значення" data={search !== query ? [] : options} selected={selected} onChange={changeMultiple} search={search} onSearchChange={setSearch} loading={loading || search !== query} />
-  return <Select comboboxProps={{ withinPortal: false }} label="Значення" placeholder={groupsOnly ? 'Знайти групу' : 'Знайти значення'} searchable filter={({ options }) => options} searchValue={search} onSearchChange={setSearch} data={options} value={null} onChange={add} rightSection={loading ? <Loader size="xs" /> : undefined} nothingFoundMessage="Нічого не знайдено" />
+  return <Select label="Значення" placeholder={groupsOnly ? 'Знайти групу' : 'Знайти значення'} searchable filter={({ options }) => options} searchValue={search} onSearchChange={setSearch} data={options} value={null} onChange={add} rightSection={loading ? <Loader size="xs" /> : undefined} nothingFoundMessage="Нічого не знайдено" />
 }
 
 function analysisLookupPeriod(sourceKind: string | null, from: string, to: string): [string, string] {
