@@ -465,6 +465,36 @@
   .reports-stocks-template-period { font-size: 10px; }
 }
 
+.report-value-picker__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 260px;
+  min-height: 22px;
+  padding: 0 4px 0 8px;
+  border-radius: 4px;
+  background: var(--mantine-color-gray-1);
+  color: var(--mantine-color-gray-8);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.report-value-picker__pill[data-disabled] {
+  padding-right: 8px;
+  opacity: 0.6;
+}
+
+.report-value-picker__pill-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-value-picker__action {
+  color: var(--mantine-color-blue-7);
+  font-weight: 500;
+}
+
 .reports-stocks-selected-value {
   max-width: 100%;
 }
