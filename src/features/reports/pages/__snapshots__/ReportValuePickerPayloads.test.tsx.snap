@@ -1,0 +1,481 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`sends the same selection for 2/1 sales product c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":2,"selections":[{"IsChecked":true,"SelectedField":{"Type":1,"Name":"Поле 1"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA · A-1","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":2,"selections":[{"IsChecked":true,"SelectedField":{"Type":1,"Name":"Поле 1"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"102"},"Name":"BETA · B-2","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 2/1 sales product c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":2,"selections":[{"IsChecked":true,"SelectedField":{"Type":1,"Name":"Поле 1"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA · A-1","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":2,"selections":[{"IsChecked":true,"SelectedField":{"Type":1,"Name":"Поле 1"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA · A-1","Value":0},{"Data":{"Id":"102"},"Name":"BETA · B-2","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 2/6 common c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":2,"selections":[{"IsChecked":true,"SelectedField":{"Type":6,"Name":"Поле 6"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":101,"Name":"ALFA"},"Name":"ALFA","Value":101}]}]}",
+  "afterSecondChoice": "{"dataSource":2,"selections":[{"IsChecked":true,"SelectedField":{"Type":6,"Name":"Поле 6"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":102,"Name":"BETA"},"Name":"BETA","Value":102}]}]}",
+}
+`;
+
+exports[`sends the same selection for 2/6 common c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":2,"selections":[{"IsChecked":true,"SelectedField":{"Type":6,"Name":"Поле 6"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":101,"Name":"ALFA"},"Name":"ALFA","Value":101}]}]}",
+  "afterSecondChoice": "{"dataSource":2,"selections":[{"IsChecked":true,"SelectedField":{"Type":6,"Name":"Поле 6"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":101,"Name":"ALFA"},"Name":"ALFA","Value":101},{"Data":{"Id":102,"Name":"BETA"},"Name":"BETA","Value":102}]}]}",
+}
+`;
+
+exports[`sends the same selection for 3/1 report product c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":3,"selections":[{"IsChecked":true,"SelectedField":{"Type":1,"Name":"Поле 1"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA · A-1","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":3,"selections":[{"IsChecked":true,"SelectedField":{"Type":1,"Name":"Поле 1"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"102"},"Name":"BETA · B-2","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 3/1 report product c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":3,"selections":[{"IsChecked":true,"SelectedField":{"Type":1,"Name":"Поле 1"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA · A-1","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":3,"selections":[{"IsChecked":true,"SelectedField":{"Type":1,"Name":"Поле 1"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA · A-1","Value":0},{"Data":{"Id":"102"},"Name":"BETA · B-2","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 3/3 shared TOP list c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":3,"selections":[{"IsChecked":true,"SelectedField":{"Type":3,"Name":"Поле 3"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":1,"Name":"ALFA"},"Name":"ALFA","Value":1}]}]}",
+  "afterSecondChoice": "{"dataSource":3,"selections":[{"IsChecked":true,"SelectedField":{"Type":3,"Name":"Поле 3"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":2,"Name":"BETA"},"Name":"BETA","Value":2}]}]}",
+}
+`;
+
+exports[`sends the same selection for 3/3 shared TOP list c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":3,"selections":[{"IsChecked":true,"SelectedField":{"Type":3,"Name":"Поле 3"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":1,"Name":"ALFA"},"Name":"ALFA","Value":1}]}]}",
+  "afterSecondChoice": "{"dataSource":3,"selections":[{"IsChecked":true,"SelectedField":{"Type":3,"Name":"Поле 3"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":1,"Name":"ALFA"},"Name":"ALFA","Value":1},{"Data":{"Id":2,"Name":"BETA"},"Name":"BETA","Value":2}]}]}",
+}
+`;
+
+exports[`sends the same selection for 3/21 common c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":3,"selections":[{"IsChecked":true,"SelectedField":{"Type":21,"Name":"Поле 21"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":101,"Name":"ALFA"},"Name":"ALFA","Value":101}]}]}",
+  "afterSecondChoice": "{"dataSource":3,"selections":[{"IsChecked":true,"SelectedField":{"Type":21,"Name":"Поле 21"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":102,"Name":"BETA"},"Name":"BETA","Value":102}]}]}",
+}
+`;
+
+exports[`sends the same selection for 3/21 common c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":3,"selections":[{"IsChecked":true,"SelectedField":{"Type":21,"Name":"Поле 21"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":101,"Name":"ALFA"},"Name":"ALFA","Value":101}]}]}",
+  "afterSecondChoice": "{"dataSource":3,"selections":[{"IsChecked":true,"SelectedField":{"Type":21,"Name":"Поле 21"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":101,"Name":"ALFA"},"Name":"ALFA","Value":101},{"Data":{"Id":102,"Name":"BETA"},"Name":"BETA","Value":102}]}]}",
+}
+`;
+
+exports[`sends the same selection for 35/17 common c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":35,"selections":[{"IsChecked":true,"SelectedField":{"Type":17,"Name":"Поле 17"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"101","Name":"ALFA","NetUid":"net-101"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":35,"selections":[{"IsChecked":true,"SelectedField":{"Type":17,"Name":"Поле 17"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"102","Name":"BETA","NetUid":"net-102"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 35/17 common c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":35,"selections":[{"IsChecked":true,"SelectedField":{"Type":17,"Name":"Поле 17"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101","Name":"ALFA","NetUid":"net-101"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":35,"selections":[{"IsChecked":true,"SelectedField":{"Type":17,"Name":"Поле 17"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101","Name":"ALFA","NetUid":"net-101"},"Name":"ALFA","Value":0},{"Data":{"Id":"102","Name":"BETA","NetUid":"net-102"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 38/17 common c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":38,"selections":[{"IsChecked":true,"SelectedField":{"Type":17,"Name":"Поле 17"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"101","Name":"ALFA","NetUid":"net-101"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":38,"selections":[{"IsChecked":true,"SelectedField":{"Type":17,"Name":"Поле 17"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"102","Name":"BETA","NetUid":"net-102"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 38/17 common c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":38,"selections":[{"IsChecked":true,"SelectedField":{"Type":17,"Name":"Поле 17"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101","Name":"ALFA","NetUid":"net-101"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":38,"selections":[{"IsChecked":true,"SelectedField":{"Type":17,"Name":"Поле 17"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101","Name":"ALFA","NetUid":"net-101"},"Name":"ALFA","Value":0},{"Data":{"Id":"102","Name":"BETA","NetUid":"net-102"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 39/3 analysis value c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":39,"selections":[{"IsChecked":true,"SelectedField":{"Type":3,"Name":"Поле 3"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"name":"ALFA"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":39,"selections":[{"IsChecked":true,"SelectedField":{"Type":3,"Name":"Поле 3"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"name":"BETA"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 39/3 analysis value c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":39,"selections":[{"IsChecked":true,"SelectedField":{"Type":3,"Name":"Поле 3"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"name":"ALFA"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":39,"selections":[{"IsChecked":true,"SelectedField":{"Type":3,"Name":"Поле 3"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"name":"ALFA"},"Name":"ALFA","Value":0},{"Data":{"name":"BETA"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 39/4 analysis groups c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":39,"selections":[{"IsChecked":true,"SelectedField":{"Type":4,"Name":"Поле 4"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":101},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":39,"selections":[{"IsChecked":true,"SelectedField":{"Type":4,"Name":"Поле 4"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":101},"Name":"ALFA","Value":0},{"Data":{"Id":102},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 39/4 analysis groups c3 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":39,"selections":[{"IsChecked":true,"SelectedField":{"Type":4,"Name":"Поле 4"},"FilterCondition":{"Type":3,"Name":"Умова 3"},"Values":[{"Data":{"kind":"productGroup","id":101},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":39,"selections":[{"IsChecked":true,"SelectedField":{"Type":4,"Name":"Поле 4"},"FilterCondition":{"Type":3,"Name":"Умова 3"},"Values":[{"Data":{"kind":"productGroup","id":101},"Name":"ALFA","Value":0},{"Data":{"kind":"productGroup","id":102},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 40/30 common c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":40,"selections":[{"IsChecked":true,"SelectedField":{"Type":30,"Name":"Поле 30"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"101","Name":"ALFA","NetUid":"net-101"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":40,"selections":[{"IsChecked":true,"SelectedField":{"Type":30,"Name":"Поле 30"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"102","Name":"BETA","NetUid":"net-102"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 40/30 common c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":40,"selections":[{"IsChecked":true,"SelectedField":{"Type":30,"Name":"Поле 30"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101","Name":"ALFA","NetUid":"net-101"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":40,"selections":[{"IsChecked":true,"SelectedField":{"Type":30,"Name":"Поле 30"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101","Name":"ALFA","NetUid":"net-101"},"Name":"ALFA","Value":0},{"Data":{"Id":"102","Name":"BETA","NetUid":"net-102"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 41/17 common c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":41,"selections":[{"IsChecked":true,"SelectedField":{"Type":17,"Name":"Поле 17"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"101","Name":"ALFA","NetUid":"net-101"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":41,"selections":[{"IsChecked":true,"SelectedField":{"Type":17,"Name":"Поле 17"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"102","Name":"BETA","NetUid":"net-102"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 41/17 common c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":41,"selections":[{"IsChecked":true,"SelectedField":{"Type":17,"Name":"Поле 17"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101","Name":"ALFA","NetUid":"net-101"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":41,"selections":[{"IsChecked":true,"SelectedField":{"Type":17,"Name":"Поле 17"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101","Name":"ALFA","NetUid":"net-101"},"Name":"ALFA","Value":0},{"Data":{"Id":"102","Name":"BETA","NetUid":"net-102"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 43/17 common c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":43,"selections":[{"IsChecked":true,"SelectedField":{"Type":17,"Name":"Поле 17"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"101","Name":"ALFA","NetUid":"net-101"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":43,"selections":[{"IsChecked":true,"SelectedField":{"Type":17,"Name":"Поле 17"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"102","Name":"BETA","NetUid":"net-102"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 43/17 common c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":43,"selections":[{"IsChecked":true,"SelectedField":{"Type":17,"Name":"Поле 17"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101","Name":"ALFA","NetUid":"net-101"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":43,"selections":[{"IsChecked":true,"SelectedField":{"Type":17,"Name":"Поле 17"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101","Name":"ALFA","NetUid":"net-101"},"Name":"ALFA","Value":0},{"Data":{"Id":"102","Name":"BETA","NetUid":"net-102"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/0 customer group c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":0,"Name":"Поле 0"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":101},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":0,"Name":"Поле 0"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":102},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/0 customer group c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":0,"Name":"Поле 0"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":101},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":0,"Name":"Поле 0"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":101},"Name":"ALFA","Value":0},{"Data":{"Id":102},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/1 customer group c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":1,"Name":"Поле 1"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":101},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":1,"Name":"Поле 1"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":102},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/1 customer group c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":1,"Name":"Поле 1"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":101},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":1,"Name":"Поле 1"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":101},"Name":"ALFA","Value":0},{"Data":{"Id":102},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/1 report product c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":1,"Name":"Поле 1"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA · A-1","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":1,"Name":"Поле 1"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"102"},"Name":"BETA · B-2","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/1 report product c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":1,"Name":"Поле 1"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA · A-1","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":1,"Name":"Поле 1"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA · A-1","Value":0},{"Data":{"Id":"102"},"Name":"BETA · B-2","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/2 common c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":2,"Name":"Поле 2"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":101,"Name":"ALFA"},"Name":"ALFA","Value":101}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":2,"Name":"Поле 2"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":102,"Name":"BETA"},"Name":"BETA","Value":102}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/2 common c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":2,"Name":"Поле 2"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":101,"Name":"ALFA"},"Name":"ALFA","Value":101}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":2,"Name":"Поле 2"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":101,"Name":"ALFA"},"Name":"ALFA","Value":101},{"Data":{"Id":102,"Name":"BETA"},"Name":"BETA","Value":102}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/3 customer group c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":3,"Name":"Поле 3"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Name":"ALFA"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":3,"Name":"Поле 3"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Name":"BETA"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/3 customer group c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":3,"Name":"Поле 3"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Name":"ALFA"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":3,"Name":"Поле 3"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Name":"ALFA"},"Name":"ALFA","Value":0},{"Data":{"Name":"BETA"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/4 customer group c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":4,"Name":"Поле 4"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":4,"Name":"Поле 4"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"102"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/4 customer group c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":4,"Name":"Поле 4"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":4,"Name":"Поле 4"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA","Value":0},{"Data":{"Id":"102"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/7 customer group c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":7,"Name":"Поле 7"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":101},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":7,"Name":"Поле 7"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":102},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/7 customer group c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":7,"Name":"Поле 7"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":101},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":7,"Name":"Поле 7"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":101},"Name":"ALFA","Value":0},{"Data":{"Id":102},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/8 customer group c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":8,"Name":"Поле 8"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":201},"Name":"ALFA-1 — ALFA [201]","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":8,"Name":"Поле 8"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":202},"Name":"BETA-2 — ALFA [202]","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/8 customer group c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":8,"Name":"Поле 8"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":201},"Name":"ALFA-1 — ALFA [201]","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":8,"Name":"Поле 8"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":201},"Name":"ALFA-1 — ALFA [201]","Value":0},{"Data":{"Id":202},"Name":"BETA-2 — ALFA [202]","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/9 customer group c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":9,"Name":"Поле 9"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":9,"Name":"Поле 9"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"102"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/9 customer group c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":9,"Name":"Поле 9"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":9,"Name":"Поле 9"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA","Value":0},{"Data":{"Id":"102"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/10 customer group c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":10,"Name":"Поле 10"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":101},"Name":"ALFA [101]","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":10,"Name":"Поле 10"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":102},"Name":"BETA [102]","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/10 customer group c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":10,"Name":"Поле 10"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":101},"Name":"ALFA [101]","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":10,"Name":"Поле 10"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":101},"Name":"ALFA [101]","Value":0},{"Data":{"Id":102},"Name":"BETA [102]","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/15 customer group c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":15,"Name":"Поле 15"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":15,"Name":"Поле 15"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"102"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/15 customer group c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":15,"Name":"Поле 15"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":15,"Name":"Поле 15"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA","Value":0},{"Data":{"Id":"102"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/16 customer group c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":16,"Name":"Поле 16"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":16,"Name":"Поле 16"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"102"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/16 customer group c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":16,"Name":"Поле 16"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":16,"Name":"Поле 16"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA","Value":0},{"Data":{"Id":"102"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/21 customer group c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":21,"Name":"Поле 21"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":21,"Name":"Поле 21"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"102"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 44/21 customer group c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":21,"Name":"Поле 21"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":21,"Name":"Поле 21"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA","Value":0},{"Data":{"Id":"102"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 45/1 report product c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":45,"selections":[{"IsChecked":true,"SelectedField":{"Type":1,"Name":"Поле 1"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA · A-1","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":45,"selections":[{"IsChecked":true,"SelectedField":{"Type":1,"Name":"Поле 1"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"102"},"Name":"BETA · B-2","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 45/1 report product c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":45,"selections":[{"IsChecked":true,"SelectedField":{"Type":1,"Name":"Поле 1"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA · A-1","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":45,"selections":[{"IsChecked":true,"SelectedField":{"Type":1,"Name":"Поле 1"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA · A-1","Value":0},{"Data":{"Id":"102"},"Name":"BETA · B-2","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 45/17 common c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":45,"selections":[{"IsChecked":true,"SelectedField":{"Type":17,"Name":"Поле 17"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":101,"Name":"ALFA"},"Name":"ALFA","Value":101}]}]}",
+  "afterSecondChoice": "{"dataSource":45,"selections":[{"IsChecked":true,"SelectedField":{"Type":17,"Name":"Поле 17"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":102,"Name":"BETA"},"Name":"BETA","Value":102}]}]}",
+}
+`;
+
+exports[`sends the same selection for 45/17 common c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":45,"selections":[{"IsChecked":true,"SelectedField":{"Type":17,"Name":"Поле 17"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":101,"Name":"ALFA"},"Name":"ALFA","Value":101}]}]}",
+  "afterSecondChoice": "{"dataSource":45,"selections":[{"IsChecked":true,"SelectedField":{"Type":17,"Name":"Поле 17"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":101,"Name":"ALFA"},"Name":"ALFA","Value":101},{"Data":{"Id":102,"Name":"BETA"},"Name":"BETA","Value":102}]}]}",
+}
+`;
+
+exports[`sends the same selection for 46/1 report product c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":46,"selections":[{"IsChecked":true,"SelectedField":{"Type":1,"Name":"Поле 1"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA · A-1","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":46,"selections":[{"IsChecked":true,"SelectedField":{"Type":1,"Name":"Поле 1"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"102"},"Name":"BETA · B-2","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 46/1 report product c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":46,"selections":[{"IsChecked":true,"SelectedField":{"Type":1,"Name":"Поле 1"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA · A-1","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":46,"selections":[{"IsChecked":true,"SelectedField":{"Type":1,"Name":"Поле 1"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA · A-1","Value":0},{"Data":{"Id":"102"},"Name":"BETA · B-2","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 46/3 price filter c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":46,"selections":[{"IsChecked":true,"SelectedField":{"Type":3,"Name":"Поле 3"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Name":"ALFA"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":46,"selections":[{"IsChecked":true,"SelectedField":{"Type":3,"Name":"Поле 3"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Name":"BETA"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 46/3 price filter c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":46,"selections":[{"IsChecked":true,"SelectedField":{"Type":3,"Name":"Поле 3"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Name":"ALFA"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":46,"selections":[{"IsChecked":true,"SelectedField":{"Type":3,"Name":"Поле 3"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Name":"ALFA"},"Name":"ALFA","Value":0},{"Data":{"Name":"BETA"},"Name":"BETA","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 46/4 price filter c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":46,"selections":[{"IsChecked":true,"SelectedField":{"Type":4,"Name":"Поле 4"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA [101]","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":46,"selections":[{"IsChecked":true,"SelectedField":{"Type":4,"Name":"Поле 4"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"102"},"Name":"BETA [102]","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 46/4 price filter c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":46,"selections":[{"IsChecked":true,"SelectedField":{"Type":4,"Name":"Поле 4"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA [101]","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":46,"selections":[{"IsChecked":true,"SelectedField":{"Type":4,"Name":"Поле 4"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA [101]","Value":0},{"Data":{"Id":"102"},"Name":"BETA [102]","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 46/6 common c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":46,"selections":[{"IsChecked":true,"SelectedField":{"Type":6,"Name":"Поле 6"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":101,"Name":"ALFA"},"Name":"ALFA","Value":101}]}]}",
+  "afterSecondChoice": "{"dataSource":46,"selections":[{"IsChecked":true,"SelectedField":{"Type":6,"Name":"Поле 6"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":102,"Name":"BETA"},"Name":"BETA","Value":102}]}]}",
+}
+`;
+
+exports[`sends the same selection for 46/6 common c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":46,"selections":[{"IsChecked":true,"SelectedField":{"Type":6,"Name":"Поле 6"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":101,"Name":"ALFA"},"Name":"ALFA","Value":101}]}]}",
+  "afterSecondChoice": "{"dataSource":46,"selections":[{"IsChecked":true,"SelectedField":{"Type":6,"Name":"Поле 6"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":101,"Name":"ALFA"},"Name":"ALFA","Value":101},{"Data":{"Id":102,"Name":"BETA"},"Name":"BETA","Value":102}]}]}",
+}
+`;
+
+exports[`sends the same selection for 46/10 price filter c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":46,"selections":[{"IsChecked":true,"SelectedField":{"Type":10,"Name":"Поле 10"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA [101]","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":46,"selections":[{"IsChecked":true,"SelectedField":{"Type":10,"Name":"Поле 10"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"102"},"Name":"BETA [102]","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 46/10 price filter c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":46,"selections":[{"IsChecked":true,"SelectedField":{"Type":10,"Name":"Поле 10"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA [101]","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":46,"selections":[{"IsChecked":true,"SelectedField":{"Type":10,"Name":"Поле 10"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA [101]","Value":0},{"Data":{"Id":"102"},"Name":"BETA [102]","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 46/15 price filter c0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":46,"selections":[{"IsChecked":true,"SelectedField":{"Type":15,"Name":"Поле 15"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA [101]","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":46,"selections":[{"IsChecked":true,"SelectedField":{"Type":15,"Name":"Поле 15"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":"102"},"Name":"BETA [102]","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for 46/15 price filter c2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":46,"selections":[{"IsChecked":true,"SelectedField":{"Type":15,"Name":"Поле 15"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA [101]","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":46,"selections":[{"IsChecked":true,"SelectedField":{"Type":15,"Name":"Поле 15"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":"101"},"Name":"ALFA [101]","Value":0},{"Data":{"Id":"102"},"Name":"BETA [102]","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for a free-text field condition 0 1`] = `"{"dataSource":3,"selections":[{"IsChecked":true,"SelectedField":{"Type":22,"Name":"Поле 22"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Name":"A-15","Value":"A-15"},"Name":"A-15","Value":0}]}]}"`;
+
+exports[`sends the same selection for a free-text field condition 2 1`] = `"{"dataSource":3,"selections":[{"IsChecked":true,"SelectedField":{"Type":22,"Name":"Поле 22"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Name":"4711","Value":"4711"},"Name":"4711","Value":0},{"Data":{"Name":"A-15","Value":"A-15"},"Name":"A-15","Value":0}]}]}"`;
+
+exports[`sends the same selection for the return status condition 0 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":2,"selections":[{"IsChecked":true,"SelectedField":{"Type":64,"Name":"Поле 64"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"ReturnItemStatus":0},"Name":"Причина 0","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":2,"selections":[{"IsChecked":true,"SelectedField":{"Type":64,"Name":"Поле 64"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"ReturnItemStatus":6},"Name":"Брак","Value":0}]}]}",
+}
+`;
+
+exports[`sends the same selection for the return status condition 2 1`] = `
+{
+  "afterFirstChoice": "{"dataSource":2,"selections":[{"IsChecked":true,"SelectedField":{"Type":64,"Name":"Поле 64"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"ReturnItemStatus":0},"Name":"Причина 0","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":2,"selections":[{"IsChecked":true,"SelectedField":{"Type":64,"Name":"Поле 64"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"ReturnItemStatus":0},"Name":"Причина 0","Value":0},{"Data":{"ReturnItemStatus":6},"Name":"Брак","Value":0}]}]}",
+}
+`;
