@@ -116,7 +116,7 @@ export function ReportValuePicker({
                     <span>{item.label}</span>
                   </Group>
                 </Combobox.Option>)}
-                {failed ? <Combobox.Empty role="alert" c="red">{lookupError}</Combobox.Empty>
+                {failed ? combobox.dropdownOpened ? <Combobox.Empty role="alert" c="red">{lookupError}</Combobox.Empty> : null
                   : !visible.length ? <Combobox.Empty>{busy ? t('Завантаження…') : emptyMessage ?? t('Нічого не знайдено')}</Combobox.Empty> : null}
                 {paging ? <Combobox.Option value={MORE_OPTION} disabled={loadingMore} className="report-value-picker__action">
                   <Group gap="xs" wrap="nowrap">{loadingMore ? <Loader size="xs" /> : null}<span>{t('Ще значення')}</span></Group>

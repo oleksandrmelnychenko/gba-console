@@ -67,3 +67,12 @@ it('ignores an aborted old catalogue response after the picker is disabled and r
   expect(screen.getByRole('option', { name: 'Актуальна організація' })).toBeTruthy()
   expect(JSON.parse(screen.getByTestId('selected').textContent!)).toEqual([])
 })
+it('offers a retry after a failed directory load and then lists the organizations', async () => {
+  api.mockRejectedValueOnce(new Error('offline')); render(<Form values={[]} />)
+  expect((await screen.findByRole('alert')).textContent).toBe('Не вдалося завантажити організації. Збережений відбір залишено без змін.')
+  fireEvent.click(screen.getByRole('combobox', { name: 'Організація' }))
+  fireEvent.click(await screen.findByRole('option', { name: 'Спробувати ще раз' }))
+  expect(await screen.findAllByRole('option', { name: 'Нова назва' })).toHaveLength(2)
+  expect(api).toHaveBeenCalledTimes(2)
+  expect(screen.queryByRole('alert')).toBeNull()
+})
