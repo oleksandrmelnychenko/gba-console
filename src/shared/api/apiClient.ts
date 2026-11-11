@@ -539,6 +539,10 @@ function getErrorMessage(payload: unknown, status: number, errorMessages?: ApiEr
     }
   }
 
+  if (status === 502 || status === 503 || status === 504) {
+    return errorMessages?.network || translate('Сервер недоступний. Спробуйте ще раз пізніше.')
+  }
+
   if (status === 401) {
     return translate('Сесію завершено. Увійдіть повторно.')
   }

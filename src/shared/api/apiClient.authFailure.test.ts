@@ -32,6 +32,17 @@ describe('apiRequest auth failure handling', () => {
     vi.unstubAllGlobals()
   })
 
+  it('says the server is unavailable when a gateway answers 502 without a body', async () => {
+    fetchMock.mockResolvedValueOnce(new Response('', { status: 502 }))
+
+    await expect(apiRequest('/supplies/orders/ukraine/all/filtered')).rejects.toMatchObject({
+      message: 'Сервер недоступний. Спробуйте ще раз пізніше.',
+      status: 502,
+    })
+
+    expect(localStorage.getItem(STORAGE_KEY)).not.toBeNull()
+  })
+
   it('keeps the session and surfaces the server message on 403', async () => {
     fetchMock.mockResolvedValueOnce(
       jsonResponse(403, { Message: 'Дана операція недоступна для Вашої ролі в системі' }),
