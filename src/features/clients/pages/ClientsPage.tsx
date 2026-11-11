@@ -278,6 +278,7 @@ function useClientsPageModel() {
   const clientColumns = useClientColumns(
     openClientActions,
     solvencyScores,
+    solvencyScoresError,
     identityAttention,
     openIdentityAttention,
     sourceQuality,
@@ -352,12 +353,10 @@ function useClientsPageModel() {
 
         setSolvencyScores(nextScores)
         setSolvencyScoresError(null)
-      } catch (loadError) {
+      } catch {
         if (!cancelled) {
           setSolvencyScores(new Map())
-          setSolvencyScoresError(
-            loadError instanceof Error ? loadError.message : t('Оцінки платоспроможності недоступні'),
-          )
+          setSolvencyScoresError(t('Оцінки платоспроможності недоступні'))
         }
       }
     }
@@ -748,7 +747,6 @@ function useClientsPageModel() {
     searchInputRef,
     searchValue,
     selectedClient,
-    solvencyScoresError,
     sourceQualityError,
     sorting,
     structureClient,
@@ -841,7 +839,6 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
     searchInputRef,
     searchValue,
     selectedClient,
-    solvencyScoresError,
     sourceQualityError,
     sorting,
     structureClient,
@@ -931,11 +928,6 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
         {error && (
           <Alert className="clients-page__alert" color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
-          </Alert>
-        )}
-        {solvencyScoresError && (
-          <Alert className="clients-page__alert" color="orange" icon={<CircleAlert size={18} />} variant="light">
-            {solvencyScoresError}
           </Alert>
         )}
         {identityAttentionError && (
@@ -1198,6 +1190,7 @@ function ClientDocumentModal({
 function useClientColumns(
   onOpenActions: (client: Client) => void,
   solvencyScores: Map<number, SolvencyScore>,
+  solvencyScoresError: string | null,
   identityAttention: Map<string, ClientIdentityAttentionSummary>,
   onOpenIdentityAttention: (client: Client, attention: ClientIdentityAttentionSummary) => void,
   sourceQuality: Map<string, ClientSourceQualitySummary>,
@@ -1281,6 +1274,7 @@ function useClientColumns(
         cell: (client) => (
           <SolvencyGaugeCell
             notApplicableLabel={t('Оцінка незастосовна — не покупець')}
+            unavailableLabel={solvencyScoresError ?? undefined}
             score={typeof client.Id === 'number' ? solvencyScores.get(client.Id) : undefined}
           />
         ),
@@ -1397,6 +1391,7 @@ function useClientColumns(
       onOpenIdentityAttention,
       onOpenStructure,
       solvencyScores,
+      solvencyScoresError,
       sourceQuality,
       t,
     ],
