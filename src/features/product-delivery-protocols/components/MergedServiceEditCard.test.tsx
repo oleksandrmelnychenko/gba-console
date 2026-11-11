@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MergedService } from '../detailTypes'
@@ -56,6 +56,90 @@ describe('MergedServiceEditCard validation', () => {
     mocks.getUnifiedServiceEditResponsibleUsers.mockReturnValue(new Promise(() => {}))
     mocks.getSupplyServiceConsumableProducts.mockReturnValue(new Promise(() => {}))
     mocks.searchUnifiedServiceEditSupplyOrganizations.mockResolvedValue([])
+  })
+
+  it('labels all three empty document pickers for the reported logistics service', () => {
+    render(
+      <MantineProvider>
+        <MergedServiceEditCard
+          isSaving={false}
+          opened
+          service={{
+            ...service,
+            NetUid: '1060ed12-6b4f-4684-80f1-a55c28dfa5f6',
+            Number: '888',
+            Name: '6546544545455',
+            GrossPrice: 1000,
+            AccountingGrossPrice: 1500,
+            InvoiceDocuments: [],
+            SupplyServiceAccountDocument: null,
+            ActProvidingServiceDocument: null,
+            SupplyPaymentTask: null,
+          }}
+          onClose={vi.fn()}
+          onSave={vi.fn()}
+        />
+      </MantineProvider>,
+    )
+
+    for (const label of ['Рахунок', 'Акт надання послуг', 'Інші файли']) {
+      const picker = screen.getByRole('button', { name: label })
+      expect(within(picker).getByText('Оберіть файл')).toBeTruthy()
+    }
+    expect(screen.getAllByText('Оберіть файл')).toHaveLength(3)
+    expect(getInput('Номер інвойса').value).toBe('888')
+  })
+
+  it('shows selected filenames, restores hints after clearing and saves files in their categories', () => {
+    const onSave = vi.fn().mockResolvedValue(undefined)
+    const { container } = render(
+      <MantineProvider>
+        <MergedServiceEditCard
+          isSaving={false}
+          opened
+          service={{
+            ...service,
+            SupplyPaymentTask: null,
+            InvoiceDocuments: [{ NetUid: 'existing-document', FileName: 'existing.pdf', DocumentUrl: 'https://example.com/existing.pdf' }],
+          }}
+          onClose={vi.fn()}
+          onSave={onSave}
+        />
+      </MantineProvider>,
+    )
+    const labels = ['Рахунок', 'Акт надання послуг', 'Інші файли']
+    const selectedFiles = labels.map((_, index) => new File(['document'], `document-${index}.pdf`, { type: 'application/pdf' }))
+    const inputs = container.querySelectorAll('input[type="file"]')
+    expect(inputs).toHaveLength(3)
+
+    selectedFiles.forEach((file, index) => {
+      fireEvent.change(inputs[index], { target: { files: [file] } })
+      const picker = screen.getByRole('button', { name: labels[index] })
+      expect(within(picker).getByText(file.name)).toBeTruthy()
+      expect(within(picker).queryByText('Оберіть файл')).toBeNull()
+    })
+
+    const clearButtons = container.querySelectorAll('.mantine-FileInput-root .mantine-CloseButton-root')
+    expect(clearButtons).toHaveLength(3)
+    clearButtons.forEach((button) => fireEvent.click(button))
+    expect(screen.getAllByText('Оберіть файл')).toHaveLength(3)
+
+    selectedFiles.forEach((file, index) => {
+      fireEvent.change(inputs[index], { target: { files: [file] } })
+    })
+    expect(screen.getByRole('link', { name: 'existing.pdf' }).getAttribute('href')).toBe('https://example.com/existing.pdf')
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+    expect(onSave).toHaveBeenCalledOnce()
+    expect(onSave.mock.calls[0][1]).toEqual({
+      accountDocuments: [selectedFiles[0]],
+      actDocuments: [selectedFiles[1]],
+      files: [selectedFiles[2]],
+      taskDocuments: [],
+      accountingTaskDocuments: [],
+    })
+    expect(onSave.mock.calls[0][0].InvoiceDocuments).toEqual([
+      expect.objectContaining({ NetUid: 'existing-document', Deleted: false }),
+    ])
   })
 
   it('shows the agreement currency and automatic fallback on both rate overrides', () => {

@@ -1,3 +1,4 @@
+import { ReportComparisonSelect } from './ReportComparisonSelect'
 import { ReportFilterRow } from './ReportFilterRow'
 import { NativePriceFilterValuePicker } from './NativePriceFilterValuePicker'
 import { isNativePriceFilterField, nativePriceFilterSelectionError } from '../data/nativePriceFilterLookup'
@@ -2427,7 +2428,7 @@ export function ReportSelectionsCard({
               }}
             />}
             <div className="reports-stocks-selection-modal__controls">
-              <Select
+              <ReportComparisonSelect
                 allowDeselect={false}
                 data={filterConditions.map((condition) => ({
                   label: condition.Name,
@@ -2541,7 +2542,7 @@ export function InlineReportSelection({ dataset, request, selection, selections,
       selected={selected} onSelect={onSelect} toggle={
 <Checkbox size="xs" aria-label={t('Увімкнути умову {position}', { position: index + 1 })} checked={selection.IsChecked !== false}
         onChange={event => change({ ...selection, IsChecked: event.currentTarget.checked })} />} field={<Select size="xs" label={t('Поле')} searchable allowDeselect={false} data={rowFields}
-        placeholder={t('Оберіть поле')} value={selection.SelectedField.Name ? String(selection.SelectedField.Type) : null} onChange={changeField} />} condition={<Select size="xs" label="Тип порівняння" allowDeselect={false}
+        placeholder={t('Оберіть поле')} value={selection.SelectedField.Name ? String(selection.SelectedField.Type) : null} onChange={changeField} />} condition={<ReportComparisonSelect constructorLabels size="xs" label="Тип порівняння" allowDeselect={false}
         description={groupConditionsNotice(descriptor, hierarchyStatus, selection.FilterCondition.Type)}
         data={rowConditions.map(condition => ({ value: String(condition.Type), label: constructorConditionLabel(condition.Type, condition.Name),
           disabled: admittedConditions !== null && !admittedConditions.has(condition.Type)
@@ -2566,7 +2567,7 @@ export function InlineReportSelection({ dataset, request, selection, selections,
       onChange={changeField} />
       {analysis?.filters.filter(field => field.available === false && selection.SelectedField.Name && field.type === selection.SelectedField.Type).map(field => <Text size="xs" c="dimmed" key={field.type}>{field.name}: {field.unavailabilityReason}</Text>)}
     </div>
-    <div className="workbook-inline-selection__condition"><Select label={t('Умова')} allowDeselect={false}
+    <div className="workbook-inline-selection__condition"><ReportComparisonSelect label={t('Умова')} allowDeselect={false}
       description={groupConditionsNotice(descriptor, hierarchyStatus, selection.FilterCondition.Type)}
       data={conditions.map(condition => ({ value: String(condition.Type), label: condition.Name,
         disabled: admittedConditions !== null && !admittedConditions.has(condition.Type)

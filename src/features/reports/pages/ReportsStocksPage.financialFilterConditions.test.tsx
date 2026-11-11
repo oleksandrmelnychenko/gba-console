@@ -40,13 +40,13 @@ async function editor(admitted: boolean) {
   fireEvent.click(within(dialog).getByRole('combobox', { name: 'Поле' }));fireEvent.click(screen.getByRole('option', { name: 'Товар' }))
   return { ...view, dialog }
 }
-it('shows only admitted conditions with an old server', async () => {
+it('shows all conditions but enables only admitted ones with an old server', async () => {
   const view = await editor(false)
   fireEvent.click(within(view.dialog).getByRole('combobox', { name: 'Умова' }))
   expect(screen.getByRole('option', { name: 'Дорівнює' })).toBeTruthy()
   expect(screen.getByRole('option', { name: 'У списку' })).toBeTruthy()
-  expect(screen.queryByRole('option', { name: 'Не дорівнює' })).toBeNull()
-  expect(screen.queryByRole('option', { name: 'Не у списку' })).toBeNull()
+  expect(screen.getByRole('option', { name: 'Не дорівнює' }).getAttribute('data-combobox-disabled')).toBe('true')
+  expect(screen.getByRole('option', { name: 'Не у списку' }).getAttribute('data-combobox-disabled')).toBe('true')
 })
 it('submits an exact negative filter, preserves it after date edits and refuses incompatible mode without changing it', async () => {
   const view = await editor(true)
@@ -88,8 +88,7 @@ it.each([false, true])('gates the actual workbook inline condition selector on s
   fireEvent.click(within(filters).getByRole('combobox', { name: 'Тип порівняння' }))
   for (const name of ['Рівне', 'В списку']) expect(screen.getByRole('option', { name })).toBeTruthy()
   for (const name of ['Не рівне', 'Не в списку']) {
-    const option = screen.queryByRole('option', { name })
-    if (admitted) expect(option).toBeTruthy()
-    else expect(option).toBeNull()
+    const option = screen.getByRole('option', { name })
+    expect(option.getAttribute('data-combobox-disabled')).toBe(admitted ? null : 'true')
   }
 })

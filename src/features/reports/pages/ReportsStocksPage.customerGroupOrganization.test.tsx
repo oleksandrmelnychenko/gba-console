@@ -53,7 +53,7 @@ it('gates organization choices in the shared filter editor by server metadata', 
 it('offers four flat conditions and saves dates, exact stale IDs, overlapping sets and row/measure order intact', async () => {
   await restore()
   fireEvent.click(screen.getByRole('combobox', { name: 'Тип порівняння' }))
-  expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(['Рівне', 'Не рівне', 'В списку', 'Не в списку'])
+  expect(screen.getAllByRole('option').filter(option => option.getAttribute('data-combobox-disabled') !== 'true').map(option => option.textContent)).toEqual(['Рівне', 'Не рівне', 'В списку', 'Не в списку'])
   fireEvent.click(screen.getByRole('option', { name: 'В списку' }))
   changeReportPeriod({ from: '2026-09-01', to: '2026-09-30' })
   fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(screen.getByRole('button', { name: 'Оновити шаблон' }))

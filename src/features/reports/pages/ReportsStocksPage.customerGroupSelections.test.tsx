@@ -53,7 +53,7 @@ it('gates code and manager fields by actual metadata; old server stays repairabl
 it.each([8,10])('keeps dates, stale raw IDs, cohorts, and sorted measures when saving field%d', async field => {
  vi.mocked(getServerReportTemplates).mockResolvedValue([template(2,true,field)]);await restore()
  fireEvent.click(within(screen.getByRole('group',{name:'Умова відбору 2'})).getByRole('combobox',{name:'Тип порівняння'}))
- expect(screen.getAllByRole('option').map(option=>option.textContent)).toEqual(['Рівне','Не рівне','В списку','Не в списку'])
+ expect(screen.getAllByRole('option').filter(option => option.getAttribute('data-combobox-disabled') !== 'true').map(option=>option.textContent)).toEqual(['Рівне','Не рівне','В списку','Не в списку'])
  fireEvent.click(screen.getByRole('option',{name:'В списку'}))
  changeReportPeriod({from:'2026-09-01',to:'2026-09-30'})
  fireEvent.click(screen.getByRole('button',{name:'Шаблони'}));fireEvent.click(screen.getByRole('button',{name:'Оновити шаблон'}))
