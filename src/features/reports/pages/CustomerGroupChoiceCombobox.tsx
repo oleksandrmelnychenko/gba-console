@@ -16,7 +16,7 @@ export function CustomerGroupChoiceCombobox({ label, search, onSearchChange, dat
    if (multiple) { onChange(keys.has(key)?selected.filter(item=>item.value!==key).map(item=>item.value):[...keys,key]);combobox.updateSelectedOptionIndex();return }
    onChange([key]);onSearchChange('');combobox.closeDropdown()
  }
- return <Stack gap={4}><Combobox store={combobox} withinPortal={false} onOptionSubmit={choose}>
+ return <Stack gap={4}><Combobox store={combobox} onOptionSubmit={choose}>
    <Combobox.Target withExpandedAttribute><InputBase role="combobox" label={label} value={search} disabled={disabled} error={error}
      placeholder={placeholder} rightSection={loading && !selectedOnly ? <Loader size="xs"/> : <Combobox.Chevron/>} rightSectionPointerEvents="none"
      onFocus={()=>combobox.openDropdown()} onClick={()=>combobox.openDropdown()} onBlur={()=>combobox.closeDropdown()}

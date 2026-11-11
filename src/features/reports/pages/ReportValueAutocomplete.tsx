@@ -6,7 +6,7 @@ type Option = { value: string; label: string }
 
 /** The selected identities are independent of the current lookup page and search. */
 export function ReportValueAutocomplete({ data, selected, search, onSearchChange, onChange, label, loading,
-  disabled, remote = true, emptyMessage, error, withinPortal = false, clearSearchOnClose = true,
+  disabled, remote = true, emptyMessage, error, withinPortal = true, clearSearchOnClose = true,
 }: {
   data: Option[]; selected: Option[]; search: string; onSearchChange: (value: string) => void
   onChange: (keys: string[]) => void; label?: string; loading?: boolean; disabled?: boolean
