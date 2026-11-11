@@ -177,7 +177,7 @@ function ProtocolIncomePlacementDrawerContent({
 
     const excludedQty = draft.editing ? sumQtyExcept(placements, draft.editing) : placedQty
 
-    if (!draft.qty || draft.qty <= 0 || draft.qty % 1 !== 0) {
+    if (!Number.isFinite(draft.qty) || draft.qty <= 0) {
       setError(t('Невірна кількість'))
       return
     }
@@ -217,11 +217,16 @@ function ProtocolIncomePlacementDrawerContent({
 
     setPlacements((current) => {
       if (draft.editing) {
-        return current.map((entry) =>
+        const updated = current.map((entry) =>
           entry === draft.editing
             ? { ...entry, Qty: draft.qty, StorageNumber: storageNumber, RowNumber: rowNumber, CellNumber: cellNumber }
             : entry,
         )
+        const remainder = (draft.editing.Qty || 0) - draft.qty
+
+        return remainder > 0
+          ? [...updated, { Qty: remainder, StorageNumber: 'N', RowNumber: 'N', CellNumber: 'N', IsApplied: false }]
+          : updated
       }
 
       return [
@@ -240,7 +245,6 @@ function ProtocolIncomePlacementDrawerContent({
       return
     }
 
-    // The row qty becomes the placements sum — no back-filling to a target qty.
     onApply(placements.map((placement) => ({ ...placement })))
   }
 
@@ -374,10 +378,9 @@ function ProtocolIncomePlacementDrawerContent({
             )}
 
             <NumberInput w={140} maw="100%"
-              allowDecimal={false}
               className="protocol-income-placement-qty-input"
               label={t('Кількість')}
-              min={1}
+              min={0}
               value={draft.qty}
               onChange={(value) => setDraft({ ...draft, qty: typeof value === 'number' ? value : Number(value) || 0 })}
             />

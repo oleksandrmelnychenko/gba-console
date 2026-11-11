@@ -152,4 +152,44 @@ describe('ProtocolIncomePlacementDrawer', () => {
     expect(onApply).toHaveBeenCalledExactlyOnceWith([first, { ...edited, Qty: 6 }])
   })
 
+  it('keeps a partial column allocation when splitting it instead of filling the item capacity', () => {
+    const onApply = vi.fn()
+    renderWithMantine(<I18nProvider><ProtocolIncomePlacementDrawer
+      opened columnId="column-1" item={{ ...item, Qty: 222.6 }} maxQty={222.6}
+      row={{ ...row, Qty: 60, DynamicProductPlacements: [{ ...row.DynamicProductPlacements[0], Qty: 60 }] }}
+      selectedStorage={null} onApply={onApply} onClose={vi.fn()}
+    /></I18nProvider>)
+    fireEvent.click(screen.getByText('60'))
+    fireEvent.change(screen.getByLabelText('Кількість'), { target: { value: '20' } })
+    fireEvent.click(screen.getByTestId('placement-accept-draft'))
+    expect(screen.getByText('40')).not.toBeNull()
+    fireEvent.click(screen.getByTestId('placement-apply'))
+    expect(onApply).toHaveBeenCalledExactlyOnceWith([
+      { ...row.DynamicProductPlacements[0], Qty: 20 },
+      { Qty: 40, StorageNumber: 'N', RowNumber: 'N', CellNumber: 'N', IsApplied: false },
+    ])
+  })
+
+  it('accepts a fractional split below one and rejects zero and over-capacity edits', () => {
+    const onApply = vi.fn()
+    renderWithMantine(<I18nProvider><ProtocolIncomePlacementDrawer
+      opened columnId="column-1" item={item} maxQty={7}
+      row={row} selectedStorage={null} onApply={onApply} onClose={vi.fn()}
+    /></I18nProvider>)
+    fireEvent.click(screen.getByText('7'))
+    for (const value of ['0', '8']) {
+      fireEvent.change(screen.getByLabelText('Кількість'), { target: { value } })
+      fireEvent.click(screen.getByTestId('placement-accept-draft'))
+      expect(screen.getByText('Невірна кількість')).not.toBeNull()
+      expect(onApply).not.toHaveBeenCalled()
+    }
+    fireEvent.change(screen.getByLabelText('Кількість'), { target: { value: '0.5' } })
+    fireEvent.click(screen.getByTestId('placement-accept-draft'))
+    fireEvent.click(screen.getByTestId('placement-apply'))
+    expect(onApply).toHaveBeenCalledExactlyOnceWith([
+      { ...row.DynamicProductPlacements[0], Qty: 0.5 },
+      { Qty: 6.5, StorageNumber: 'N', RowNumber: 'N', CellNumber: 'N', IsApplied: false },
+    ])
+  })
+
 })

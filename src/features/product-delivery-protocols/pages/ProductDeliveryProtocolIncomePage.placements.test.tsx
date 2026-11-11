@@ -15,7 +15,7 @@ import {
   updatePackingListInInvoice,
   updateDynamicPlacementRow,
 } from '../api/protocolProductIncomeApi'
-import { ProductDeliveryProtocolIncomePage } from './ProductDeliveryProtocolIncomePage'
+import { ProductDeliveryProtocolIncomePage, ProductDeliveryProtocolIncomeSheet } from './ProductDeliveryProtocolIncomePage'
 
 const allowedPermissions = new Set<string>()
 
@@ -49,8 +49,8 @@ vi.mock('../../supply-ukraine-orders/api/supplyUkraineOrdersApi', () => ({
 }))
 
 vi.mock('../../../shared/ui/AppDrawer', () => ({
-  AppDrawer: ({ children, footer, opened }: { children: ReactNode; footer: ReactNode; opened: boolean }) =>
-    opened ? <section data-testid="placement-drawer">{children}{footer}</section> : null,
+  AppDrawer: ({ children, footer, opened, title }: { children: ReactNode; footer: ReactNode; opened: boolean; title: ReactNode }) =>
+    opened ? <section data-testid={title === 'Розміщення' ? 'placement-drawer' : 'income-sheet'}>{children}{footer}</section> : null,
   AppDrawerFooter: ({ children }: { children: ReactNode }) => <footer>{children}</footer>,
 }))
 
@@ -116,7 +116,7 @@ const PROTOCOL = {
   SupplyInvoices: [INVOICE],
 }
 
-function renderPage() {
+function renderPage(embedded = false) {
   return render(
     <MantineProvider>
       <I18nProvider>
@@ -124,7 +124,7 @@ function renderPage() {
           <Routes>
             <Route
               path="/product-delivery-protocols/:id/product-income"
-              element={<ProductDeliveryProtocolIncomePage />}
+              element={embedded ? <ProductDeliveryProtocolIncomeSheet sourceId="protocol-1" /> : <ProductDeliveryProtocolIncomePage />}
             />
           </Routes>
         </MemoryRouter>
@@ -183,5 +183,58 @@ describe('Product delivery protocol placement-to-receipt flow', () => {
     expect(screen.getByRole('alert').textContent).toContain('Для решти товару додайте нову колонку')
     expect(screen.queryByTestId('placement-apply')).toBeNull()
     expect(updateDynamicPlacementRow).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    { name: 'splits 222.6 into 20 plus the unassigned remainder', qty: '20', expected: [20, 202.6] },
+    { name: 'preserves fractional quantity when only the address changes', qty: null, expected: [222.6] },
+  ])('$name in the protocol income sheet and subsequent capitalization', async ({ qty, expected }) => {
+    for (const permission of [PermissionKeys.ProductDeliveryProtocols.ProductIncome.Open, PermissionKeys.ProductDeliveryProtocols.ProductIncome.EditPlacement, PermissionKeys.ProductDeliveryProtocols.ProductIncome.Capitalize]) allowedPermissions.add(permission)
+    const packingList = structuredClone(PACKING_LIST)
+    const item = packingList.PackingListPackageOrderItems[0]
+    item.Id = 5339226
+    item.Qty = 222.6
+    item.SupplyInvoiceOrderItem.Product.VendorCode = 'CH1110-SF'
+    const row = packingList.DynamicProductPlacementColumns[0].DynamicProductPlacementRows[0]
+    row.Id = 44528
+    row.PackingListPackageOrderItemId = item.Id
+    row.Qty = 222.6
+    row.DynamicProductPlacements = [{ Id: 44977, Qty: 222.6, StorageNumber: 'N', RowNumber: 'N', CellNumber: 'N', IsApplied: false }]
+    const invoice = { ...INVOICE, Number: '4412', PackingLists: [packingList] }
+    vi.mocked(getSupplyOrderInvoiceItems).mockResolvedValue(invoice as never)
+    vi.mocked(getPackingListSpecificationProducts).mockResolvedValue(packingList as never)
+    vi.mocked(updateDynamicPlacementRow).mockImplementation(async (_source, payload) => ({
+      ...payload,
+      DynamicProductPlacements: payload.DynamicProductPlacements.map((placement, index) => ({ ...placement, Id: placement.Id || 50000 + index })),
+    }))
+
+    renderPage(true)
+    fireEvent.click(await screen.findByTestId('placement-cell'))
+    fireEvent.click(within(screen.getByTestId('placement-drawer')).getByText('222.6'))
+    for (const [label, value] of [['Склад', '4454'], ['Ряд', 'N545'], ['Полиця', 'N545']]) {
+      fireEvent.change(within(screen.getByTestId('placement-drawer')).getByLabelText(label), { target: { value } })
+    }
+    if (qty) fireEvent.change(screen.getByLabelText('Кількість'), { target: { value: qty } })
+    fireEvent.click(screen.getByTestId('placement-accept-draft'))
+    expect(screen.queryByText('Невірна кількість')).toBeNull()
+    fireEvent.click(screen.getByTestId('placement-apply'))
+    await waitFor(() => expect(updateDynamicPlacementRow).toHaveBeenCalledOnce())
+    const payload = vi.mocked(updateDynamicPlacementRow).mock.calls[0][1]
+    expect(payload.Qty).toBe(222.6)
+    expect(payload.PackingListPackageOrderItem?.Qty).toBe(222.6)
+    expect(payload.DynamicProductPlacements.map(p => p.Qty)).toEqual(expected)
+    expect(payload.DynamicProductPlacements[0]).toMatchObject({ Id: 44977, StorageNumber: '4454', RowNumber: 'N545', CellNumber: 'N545' })
+    if (qty) expect(payload.DynamicProductPlacements[1]).toMatchObject({ Qty: 202.6, StorageNumber: 'N', RowNumber: 'N', CellNumber: 'N', IsApplied: false })
+    await waitFor(() => expect(screen.getByTestId('placement-cell').getAttribute('data-placed-qty')).toBe('222.6'))
+
+    fireEvent.click(screen.getByTestId('placement-cell'))
+    const drawer = within(screen.getByTestId('placement-drawer'))
+    for (const value of expected) expect(drawer.getByText(String(value))).not.toBeNull()
+    fireEvent.click(drawer.getByRole('button', { name: 'Скасувати' }))
+    fireEvent.click(screen.getByTestId('income-capitalize'))
+    await waitFor(() => expect(createProductIncomeFromPackingListDynamic).toHaveBeenCalledOnce())
+    const saved = vi.mocked(createProductIncomeFromPackingListDynamic).mock.calls[0][4].DynamicProductPlacementColumns[0].DynamicProductPlacementRows[0]
+    expect(saved.Qty).toBe(222.6)
+    expect(saved.DynamicProductPlacements.map(p => [p.Id, p.Qty])).toEqual(expected.map((value, index) => [index ? 50000 + index : 44977, value]))
   })
 })
