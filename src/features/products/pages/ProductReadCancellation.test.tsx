@@ -16,7 +16,7 @@ it.each([
   ['storage-history', getProductStorageLocationHistory, 1], ['movement', getProductMovements, 1],
 ] as const)('retires the %s read on close and ignores a late result', async (panel, load, signalIndex) => {
   let finish!: (value: never[]) => void
-  vi.mocked(load).mockImplementation(() => new Promise(resolve => { finish = resolve }))
+  vi.mocked(load).mockImplementation(() => new Promise<never[]>(resolve => { finish = resolve }))
   const view = (activePanel: ProductDetailPanel | null) => <MantineProvider><I18nProvider><MemoryRouter>
     <ProductActionDrawer activePanel={activePanel} product={{ NetUid: 'product', VendorCode: 'CODE' }} onClose={() => {}} onProductSaved={() => {}} onReload={() => {}} />
   </MemoryRouter></I18nProvider></MantineProvider>
