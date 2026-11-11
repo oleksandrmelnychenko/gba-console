@@ -1158,6 +1158,8 @@ function DocumentFileSection({
   onToggleDeleted: (document: SupplyDocument, index: number) => void
   uploadLabel?: string
 }) {
+  const { t } = useI18n()
+
   return (
     <Stack gap={8}>
       <DocumentToggleList
@@ -1167,7 +1169,7 @@ function DocumentFileSection({
         label={label}
         onToggleDeleted={onToggleDeleted}
       />
-      <FileInput clearable disabled={disabled} label={uploadLabel} multiple value={files} onChange={onChangeFiles} />
+      <FileInput clearable disabled={disabled} label={uploadLabel} placeholder={t('Оберіть файл')} multiple value={files} onChange={onChangeFiles} />
     </Stack>
   )
 }
