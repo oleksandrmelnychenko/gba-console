@@ -45,13 +45,13 @@ it('keeps old-server warehouse unavailable without fallback or changing saved ra
  render(<Form dataset={legacyDataset()}/>);expect(screen.getByText(PRICE_FILTER_UNAVAILABLE)).toBeTruthy();expect(JSON.parse(screen.getByTestId('values').textContent!)).toEqual(retained);expect(api).not.toHaveBeenCalled()
 })
 it('keeps warehouse403 on the own endpoint and preserves saved values',async()=>{
- api.mockRejectedValue(new Error('403'));render(<Form/>);await screen.findByRole('button',{name:'Спробувати ще раз'});expect(api).toHaveBeenCalledOnce();expect(api.mock.calls[0][0]).toBe(route);expect(JSON.parse(screen.getByTestId('values').textContent!)).toEqual(retained)
+ api.mockRejectedValue(new Error('403'));render(<Form/>);expect((await screen.findByRole('alert')).textContent).toBe('Не вдалося завантажити довідник. Повторіть спробу.');await userEvent.click(screen.getByRole('combobox',{name:'Значення'}));expect(await screen.findByRole('option',{name:'Спробувати ще раз'})).toBeTruthy();expect(api).toHaveBeenCalledOnce();expect(api.mock.calls[0][0]).toBe(route);expect(JSON.parse(screen.getByTestId('values').textContent!)).toEqual(retained)
 })
 it('does not refetch a date-independent warehouse directory after the report period changes',async()=>{
  api.mockResolvedValue([]);const view=render(<Form/>);await waitFor(()=>expect(api).toHaveBeenCalledOnce());view.rerender(<Form from="2026-09-01"/>);expect(api).toHaveBeenCalledOnce()
 })
 it('selects a new exactInt64 warehouse through the visible picker and preserves old rawJSON',async()=>{
  const row={Id:'9223372036854775807',Name:'Склад [9223372036854775807]'};api.mockImplementation(async(_path,options)=>options?.query?.exactId?[row]:[])
- render(<Form/>);await waitFor(()=>expect(api).toHaveBeenCalledOnce());await userEvent.click(screen.getByRole('radio',{name:'Точний ID'}));await userEvent.type(screen.getByRole('combobox',{name:'Точний ID значення'}),row.Id)
+ render(<Form/>);await waitFor(()=>expect(api).toHaveBeenCalledOnce());expect(screen.queryByRole('radio')).toBeNull();await userEvent.type(screen.getByRole('combobox',{name:'Значення'}),'id:'+row.Id)
  await userEvent.click(await screen.findByRole('option',{name:row.Name}));expect(JSON.parse(screen.getByTestId('values').textContent!)).toEqual([...retained,{Data:{Id:row.Id},Name:row.Name,Value:0}]);expect(api.mock.calls.at(-1)?.[1]?.query).toEqual({dataSource:46,field:21,exactId:row.Id,offset:0,limit:30})
 })

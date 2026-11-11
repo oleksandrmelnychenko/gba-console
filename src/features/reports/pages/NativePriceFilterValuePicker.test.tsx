@@ -34,14 +34,14 @@ it('preserves padded TOP saved identity exactly and explains that restoration do
  api.mockResolvedValue([{Id:'01',Name:'01'}]);render(<Form field={3} condition={2} initial={initial}/>)
  await screen.findByText(new RegExp('Пошук точного коду TOP'))
  expect(screen.getByText(text=>text.includes(PRICE_TOP_REFERENCE_NOTE))).toBeTruthy();expect(values()).toEqual(initial)
- await userEvent.click(screen.getByRole('radio',{name:'Збережена позначка'}));await userEvent.type(screen.getByRole('combobox',{name:'Збережена позначка TOP'}),'01')
+ await userEvent.type(screen.getByRole('combobox',{name:'Значення'}),'id:01')
  await waitFor(()=>expect(api.mock.calls.at(-1)?.[1]?.query).toMatchObject({exactValue:'01',field:3,offset:0}))
  await userEvent.click(await screen.findByRole('option',{name:'01'}));expect(values()).toEqual([...initial,{Data:{Name:'01'},Name:'01',Value:0}]);expect(values()[0].Data).toBe(raw)
 })
 it('selects an explicit Int64 maximum by keyboard and trusts the complete supplied caption once',async()=>{
  const row={Id:'9223372036854775807',Name:'Підтверджувач [9223372036854775807]'};api.mockImplementation(async(_path,options)=>options?.query?.exactId?[row]:[])
- render(<Form field={16}/>);await waitFor(()=>expect(api).toHaveBeenCalledOnce());await userEvent.click(screen.getByRole('radio',{name:'Точний ID'}))
- await userEvent.type(screen.getByRole('combobox',{name:'Точний ID значення'}),row.Id);await screen.findByRole('option',{name:row.Name});await userEvent.keyboard('{ArrowDown}{Enter}')
+ render(<Form field={16}/>);await waitFor(()=>expect(api).toHaveBeenCalledOnce());
+ await userEvent.type(screen.getByRole('combobox',{name:'Значення'}),'id:'+row.Id);await screen.findByRole('option',{name:row.Name});await userEvent.keyboard('{ArrowDown}{Enter}')
  expect(values()).toEqual([{Data:{Id:row.Id},Name:row.Name,Value:0}]);expect(api.mock.calls.at(-1)?.[1]?.query).toEqual({dataSource:46,field:16,exactId:row.Id,offset:0,limit:30})
 })
 it('preserves archived JSON and date-independent directory scope without hydration',async()=>{
@@ -50,7 +50,7 @@ it('preserves archived JSON and date-independent directory scope without hydrati
 })
 it('retains archived values after a403 and retries only the same source46 route',async()=>{
  api.mockRejectedValueOnce(new Error('403')).mockResolvedValueOnce([]);render(<Form field={15} condition={2} initial={saved}/>)
- await userEvent.click(await screen.findByRole('button',{name:'Спробувати ще раз'}));await waitFor(()=>expect(api).toHaveBeenCalledTimes(2));expect(values()).toEqual(saved);expect(api.mock.calls.every(call=>call[0]===route&&call[1]?.query?.field===15)).toBe(true)
+ expect((await screen.findByRole('alert')).textContent).toBe('Не вдалося завантажити довідник. Повторіть спробу.');await userEvent.click(screen.getByRole('combobox',{name:'Значення'}));await userEvent.click(await screen.findByRole('option',{name:'Спробувати ще раз'}));await waitFor(()=>expect(api).toHaveBeenCalledTimes(2));expect(values()).toEqual(saved);expect(api.mock.calls.every(call=>call[0]===route&&call[1]?.query?.field===15)).toBe(true)
 })
 it('shows missing capability as unavailable without any legacy request or saved-value mutation',()=>{
  render(<Form field={4} condition={2} initial={saved} dataset={{...priceDatasetFixture(),priceFilterLookup:undefined}}/>);expect(screen.getByText(/Сервер не підтвердив довідник/)).toBeTruthy();expect(values()).toEqual(saved);expect(api).not.toHaveBeenCalled()
@@ -63,10 +63,10 @@ it.each([0,2])('portals condition%i options outside a clipping Card and keeps la
 })
 function typedPages(){api.mockImplementation(async(_path,options)=>options?.query?.value==='Ім’я'?(options.query.offset===0?Array.from({length:30},(_,index)=>({Id:String(index+1),Name:'Користувач '+index+' ['+(index+1)+']'})):[{Id:'31',Name:'Наступний [31]'}]):[])}
 it('keeps a nonempty scalar query when clicking More and preserves raw saved selection',async()=>{
- typedPages();render(<Form field={15} condition={0} initial={saved}/>);await waitFor(()=>expect(api).toHaveBeenCalledOnce());const input=screen.getByRole('combobox',{name:'Значення'});await userEvent.type(input,'Ім’я');await userEvent.click(await screen.findByRole('button',{name:'Ще значення'}))
+ typedPages();render(<Form field={15} condition={0} initial={saved}/>);await waitFor(()=>expect(api).toHaveBeenCalledOnce());const input=screen.getByRole('combobox',{name:'Значення'});await userEvent.type(input,'Ім’я');await userEvent.click(await screen.findByRole('option',{name:'Ще значення'}))
  await waitFor(()=>expect(api.mock.calls.map(call=>call[1]?.query)).toContainEqual({dataSource:46,field:15,value:'Ім’я',offset:30,limit:30}));expect((input as HTMLInputElement).value).toBe('Ім’я');expect(values()).toEqual(saved)
 })
-it('keeps a nonempty multi query on normal Tab→More→Enter without a blank reset',async()=>{
- typedPages();render(<Form field={15} condition={2} initial={saved}/>);await waitFor(()=>expect(api).toHaveBeenCalledOnce());const input=screen.getByRole('combobox',{name:'Значення'});await userEvent.type(input,'Ім’я');const more=await screen.findByRole('button',{name:'Ще значення'});await userEvent.tab();if(document.activeElement!==more)await userEvent.tab();expect(document.activeElement).toBe(more);await userEvent.keyboard('{Enter}')
+it('keeps a nonempty multi query when More is chosen with ArrowUp and Enter',async()=>{
+ typedPages();render(<Form field={15} condition={2} initial={saved}/>);await waitFor(()=>expect(api).toHaveBeenCalledOnce());const input=screen.getByRole('combobox',{name:'Значення'});await userEvent.type(input,'Ім’я');await screen.findByRole('option',{name:'Ще значення'});await userEvent.keyboard('{ArrowUp}{Enter}')
  await waitFor(()=>expect(api.mock.calls.map(call=>call[1]?.query)).toContainEqual({dataSource:46,field:15,value:'Ім’я',offset:30,limit:30}));expect((input as HTMLInputElement).value).toBe('Ім’я');expect(values()).toEqual(saved)
 })
