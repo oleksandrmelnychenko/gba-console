@@ -59,6 +59,16 @@ describe('dropdown', () => {
     expect(screen.getByTestId('filters-table').contains(option)).toBe(false)
     expect(screen.getByRole('listbox', { name: 'Значення' })).toBeTruthy()
     expect(box().getAttribute('aria-expanded')).toBe('true')
+    await userEvent.click(option)
+    expect(keys()).toEqual(['1'])
+  })
+
+  it('selects the highlighted option of the portalled list with the keyboard', async () => {
+    render(<Harness portals />)
+    await userEvent.type(box(), 'AKK')
+    await screen.findByRole('option', { name: options[0].label })
+    await userEvent.keyboard('{ArrowDown}{Enter}')
+    expect(keys()).toEqual(['1'])
   })
 
   it('shows a loading line instead of stale or empty results while a lookup is running', async () => {
