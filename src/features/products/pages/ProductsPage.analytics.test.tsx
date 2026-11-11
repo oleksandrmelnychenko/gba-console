@@ -47,6 +47,7 @@ const getProductByNetIdMock = vi.mocked(getProductByNetId)
 const getProductReservationByNetIdMock = vi.mocked(getProductReservationByNetId)
 const getProductsMock = vi.mocked(getProducts)
 const productsStyles = readFileSync('src/features/products/pages/products.css', 'utf8')
+const DIMMED_COLOR = 'rgb(134, 142, 150)'
 let testStyles: HTMLStyleElement
 
 beforeEach(() => {
@@ -56,7 +57,7 @@ beforeEach(() => {
   getProductsMock.mockReset()
   getProductsMock.mockResolvedValue([])
   testStyles = document.createElement('style')
-  testStyles.textContent = productsStyles
+  testStyles.textContent = `:root { --mantine-color-dimmed: ${DIMMED_COLOR}; }\n${productsStyles}`
   document.head.appendChild(testStyles)
 })
 
@@ -102,7 +103,7 @@ describe('ProductsPage', () => {
       const label = container.querySelector(selector) as HTMLElement
       expect((label.querySelector('.app-table-chip.is-product') ?? label).textContent).toBe('Код відсутній')
       expect(label.dataset.codeMissing).toBe('true')
-      expect(getComputedStyle(label).color).toBe('var(--mantine-color-dimmed)')
+      expect(getComputedStyle(label).color).toBe(DIMMED_COLOR)
     }
 
     const selected = container.querySelector('.product-assortment-selected') as HTMLButtonElement
