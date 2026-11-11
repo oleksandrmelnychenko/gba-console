@@ -72,6 +72,7 @@ export type SalesReturnPaymentStatus = {
 }
 
 export type SalesReturnOrderItem = EntityFields & {
+  HasCompleteReturnMovement?: boolean | null
   Created?: Date | string
   IsSelected?: boolean
   Order?: SalesReturnOrder | null

@@ -147,6 +147,7 @@ export async function getSalesForReturn(
 
   const result = await apiRequest<unknown>('/sales/all/returns/search', {
     query: {
+      includeUnavailable: true,
       from: toDateTimeQuery(params.from, 'start'),
       limit,
       netId: params.clientNetId || '',

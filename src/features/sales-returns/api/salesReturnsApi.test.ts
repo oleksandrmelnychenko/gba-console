@@ -138,6 +138,7 @@ describe('sales returns API', () => {
 
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/all/returns/search', {
       query: {
+        includeUnavailable: true,
         from: '2021-09-30T00:00:00.000',
         limit: 50,
         netId: 'client-1',
@@ -188,6 +189,7 @@ describe('sales returns API', () => {
 
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/all/returns/search', {
       query: {
+        includeUnavailable: true,
         from: '2021-08-08T00:00:00.000',
         limit: 50,
         netId: '',
@@ -211,6 +213,7 @@ describe('sales returns API', () => {
 
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/all/returns/search', {
       query: {
+        includeUnavailable: true,
         from: '2021-08-08T00:00:00.000',
         limit: 10,
         netId: '',
