@@ -1,20 +1,21 @@
-import { Button, Group, Stack } from '@mantine/core'
 import { customerGroupChoiceValues } from '../data/customerGroupChoiceValues'
 import { isMultiValueReportCondition } from '../data/reportOptions'
-import type { CustomerGroupChoice } from '../api/customerGroupSelectionsApi'
 import type { CustomerGroupDirectoryPickerProps } from './CustomerGroupDirectoryPicker'
-import { CustomerGroupChoiceCombobox } from './CustomerGroupChoiceCombobox'
+import { ReportValuePicker } from './ReportValuePicker'
+import { REPORT_VALUE_EXACT_ID_PLACEHOLDER } from './reportValueSearch'
 import type { CustomerGroupExactChoiceField } from '../data/customerGroupSelections'
-export function CustomerGroupChoiceControl({ selection, label, disabled, error, onChange, field, options, loading, search, setSearch }: CustomerGroupDirectoryPickerProps & {
- field:CustomerGroupExactChoiceField;options:CustomerGroupChoice[];loading:boolean;search:string;setSearch:(value:string)=>void
+import type { useCustomerGroupChoiceOptions } from './useCustomerGroupChoiceOptions'
+const EXACT_ID_FIELDS = new Set<number>([1, 4, 9, 15, 16, 21])
+export const CUSTOMER_GROUP_CHOICE_FAILURE = 'Не вдалося завантажити значення. Збережений відбір залишено без змін.'
+export function CustomerGroupChoiceControl({ selection, label, disabled, error, onChange, field, choices }: CustomerGroupDirectoryPickerProps & {
+ field:CustomerGroupExactChoiceField;choices:ReturnType<typeof useCustomerGroupChoiceOptions>
 }) {
- const model=customerGroupChoiceValues(selection.Values,options,field)
- const change=(keys:string[])=>onChange(model.change(keys))
- const multiple=isMultiValueReportCondition(selection.FilterCondition.Type)
- const emptyMessage=field!==8 && field!==4 && search.trim().length<2?'Введіть мінімум 2 символи':'Нічого не знайдено'
- return <Stack gap="xs"><CustomerGroupChoiceCombobox label={label} search={search} onSearchChange={setSearch} data={loading?[]:model.data} selected={model.selected}
-   multiple={multiple} onChange={change} loading={loading} disabled={disabled} error={error} placeholder={field===1 || field===4 || field===9 || field===15 || field===16?'Назва або id:123':'Пошук значення'} emptyMessage={emptyMessage}/>
-   {!multiple?<Group gap="xs">{model.selected.map(item=><Button key={item.value} type="button" variant="subtle" size="compact-sm" disabled={disabled}
-     aria-label={`Видалити ${item.label}`} onClick={()=>change(model.selected.filter(other=>other.value!==item.value).map(other=>other.value))}>{item.label} ×</Button>)}</Group>:null}
- </Stack>
+ const model=customerGroupChoiceValues(selection.Values,choices.options,field)
+ const emptyMessage=field!==8 && field!==4 && field!==21 && !choices.search.trim()?'Почніть вводити назву':'Нічого не знайдено'
+ return <ReportValuePicker mode={isMultiValueReportCondition(selection.FilterCondition.Type)?'multi':'single'} label={label}
+   search={choices.search} onSearchChange={choices.setSearch} data={choices.loading?[]:model.data} selected={model.selected}
+   onChange={keys=>onChange(model.change(keys))} loading={choices.loading} disabled={disabled} error={error || choices.queryError || undefined}
+   placeholder={EXACT_ID_FIELDS.has(field)?REPORT_VALUE_EXACT_ID_PLACEHOLDER:undefined} emptyMessage={emptyMessage}
+   lookupError={choices.failure?CUSTOMER_GROUP_CHOICE_FAILURE:undefined} onRetry={()=>void choices.retry()}
+   hasMore={choices.more} onLoadMore={()=>void choices.loadMore()}/>
 }

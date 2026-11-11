@@ -8,16 +8,17 @@ import { customerGroupAuthorQueryError } from '../data/customerGroupAuthors'
 import type { CustomerGroupChoice } from '../api/customerGroupSelectionsApi'
 import { useCustomerGroupCodeCatalogue } from './useCustomerGroupCodeCatalogue'
 import { useCustomerGroupChoicePage } from './useCustomerGroupChoicePage'
+import { REPORT_VALUE_SEARCH_DEBOUNCE_MS } from './reportValueSearch'
 const EMPTY_CHOICES: CustomerGroupChoice[] = []
 function searchPolicy(field: number, query: string, debounced: string, disabled: boolean | undefined) {
   const queryError = query.length > 120 ? 'Введіть не більше 120 символів.' : field === 1 ? customerGroupProductQueryError(query) : field === 4 ? customerGroupProductGroupQueryError(query) : field === 9 ? customerGroupAgreementQueryError(query) : field === 21 ? customerGroupWarehouseQueryError(query) : field === 15 || field === 16 ? customerGroupAuthorQueryError(query) : null
-  return { queryError, ready: !disabled && !queryError && (field === 4 || field === 21 || query.length >= 2) && debounced === query,
-    waiting: !disabled && (field === 4 || field === 21 || query.length >= 2) && debounced !== query }
+  return { queryError, ready: !disabled && !queryError && (field === 4 || field === 21 || query.length >= 1) && debounced === query,
+    waiting: !disabled && (field === 4 || field === 21 || query.length >= 1) && debounced !== query }
 }
 export function useCustomerGroupChoiceOptions(field:CustomerGroupExactChoiceField, disabled:boolean|undefined) {
   const [searchState, setSearchState] = useState({ query: '', count: 30 })
   const query = field === 4 || field === 21 ? searchState.query : searchState.query.trim()
-  const [debounced] = useDebouncedValue(query, 250)
+  const [debounced] = useDebouncedValue(query, REPORT_VALUE_SEARCH_DEBOUNCE_MS)
   const policy = searchPolicy(field, query, debounced, disabled)
   const catalogue = useCustomerGroupCodeCatalogue(field === 8 && !disabled)
   const page = useCustomerGroupChoicePage(field, query, policy.ready)
