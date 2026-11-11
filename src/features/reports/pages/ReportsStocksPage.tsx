@@ -3045,13 +3045,12 @@ function CommonSelectionValuePicker({ dataSource, dataset, lookupProfitReadMode,
     onChange([...selection.Values, createSelectedValue(entity, dataSource, selection.SelectedField.Type, nativeSalesDocument)])
   }
 
-  function changeKeys(keys: string[]) {
+  function changeKeys(keys: string[], chosen?: string) {
     const desired = new Set(keys)
     const previous = new Set(selection.Values.map(value => selectedValueKey(value)))
-    const removal = keys.length < selection.Values.length && keys.every(key => previous.has(key))
-    if (!multiple && !removal) {
+    if (chosen !== undefined) {
       const entity = mergeReportEntities([...selection.Values.map(value => financialSelectionEntity(value, dataSource, selection.SelectedField.Type, nativeSalesDocument)), ...options])
-        .find(option => entityKey(option) === keys[0])
+        .find(option => entityKey(option) === chosen)
       if (entity) addEntity(entity)
       return
     }

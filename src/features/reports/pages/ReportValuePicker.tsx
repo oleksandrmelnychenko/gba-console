@@ -15,7 +15,7 @@ export type ReportValuePickerProps = {
   selected: ReportValueOption[]
   search: string
   onSearchChange: (value: string) => void
-  onChange: (keys: string[]) => void
+  onChange: (keys: string[], chosen?: string) => void
   label?: string
   placeholder?: string
   loading?: boolean
@@ -65,7 +65,7 @@ export function ReportValuePicker({
       combobox.updateSelectedOptionIndex()
       return
     }
-    onChange([key])
+    onChange([key], key)
     onSearchChange('')
     combobox.closeDropdown()
   }

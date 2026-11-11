@@ -173,13 +173,12 @@ export function NativeSalesProductPicker({
   const multiple = explicitMultiple ?? isMultiValueReportCondition(selection.FilterCondition.Type)
   const choices = productChoices(options.items, createData, identity)
   const selected = selection.Values.map((value) => ({ value: identity(value.Data), label: selectedLabel(value) }))
-  const change = (keys: string[]) => {
-    const removal = keys.length < selected.length && keys.every((key) => selected.some((item) => item.value === key))
-    if (multiple || removal) {
+  const change = (keys: string[], chosen?: string) => {
+    if (chosen === undefined) {
       onChange(changedSelection(selection.Values, choices, keys, identity))
       return
     }
-    const choice = choices.find((item) => item.key === keys[0])
+    const choice = choices.find((item) => item.key === chosen)
     if (choice) onChange([choice.value])
   }
   return (
