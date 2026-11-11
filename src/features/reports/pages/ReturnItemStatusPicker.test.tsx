@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { MantineProvider } from '@mantine/core'
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, expect, it, vi } from 'vitest'
@@ -11,7 +12,7 @@ const selection=(Values:ReportSelectedValue[],condition=2):ReportSelection=>({Is
 it('list choices commit only canonical options, including zero; typed search cannot create a value',async()=>{
  const changed=vi.fn();const user=userEvent.setup()
  function Fixture(){const [values,setValues]=useState<ReportSelectedValue[]>([]);return <ReturnItemStatusPicker dataset={returnStatusDataset} selection={selection(values)} onChange={next=>{setValues(next);changed(next)}}/>}
- render(<MantineProvider env="test"><Fixture/></MantineProvider>)
+ render(<MantineProvider env="test"><I18nProvider><Fixture/></I18nProvider></MantineProvider>)
  const input=screen.getByRole('combobox',{name:'Причини повернення'})
  await user.type(input,'Вигадана причина');await user.keyboard('{Enter}');expect(changed).not.toHaveBeenCalled()
  await user.clear(input);await user.click(await screen.findByRole('option',{name:'Причина 0'}))
@@ -21,7 +22,7 @@ it('list choices commit only canonical options, including zero; typed search can
 it('retains legacy multi-equality and switches namespaces only after explicit clear',async()=>{
  const changed=vi.fn();const user=userEvent.setup();const legacy=[{Data:{Id:71},Name:'Старий71',Value:0},{Data:{Id:72},Name:'Старий72',Value:0}]
  function Fixture(){const [values,setValues]=useState<ReportSelectedValue[]>(legacy);return <ReturnItemStatusPicker dataset={returnStatusDataset} selection={selection(values,0)} onChange={next=>{changed(next);setValues(next)}}/>}
- render(<MantineProvider env="test"><Fixture/></MantineProvider>)
+ render(<MantineProvider env="test"><I18nProvider><Fixture/></I18nProvider></MantineProvider>)
  expect(screen.getByText(/Старий71, Старий72/)).toBeTruthy();expect(changed).not.toHaveBeenCalled();expect(screen.queryByRole('combobox')).toBeNull()
  await user.click(screen.getByRole('button',{name:'Очистити причини'}));expect(changed).toHaveBeenLastCalledWith([])
  await user.click(screen.getByRole('combobox',{name:'Причина повернення'}));await user.click(await screen.findByRole('option',{name:'Брак'}))
