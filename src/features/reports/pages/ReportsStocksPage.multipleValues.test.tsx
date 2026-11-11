@@ -105,7 +105,7 @@ it('appends manual values, ignores duplicates and removes one without losing the
   }
   expect(selected().Values.map(value => value.Name)).toEqual(['A', 'B'])
   expect(selected().FilterCondition.Type).toBe(2)
-  fireEvent.click(screen.getAllByRole('button', { name: /^Видалити$/ })[0])
+  fireEvent.click(screen.getByRole('button', { name: 'Видалити A' }))
   expect(selected().Values.map(value => value.Name)).toEqual(['B'])
 })
 

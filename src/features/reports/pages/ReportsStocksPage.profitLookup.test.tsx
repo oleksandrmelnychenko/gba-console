@@ -107,7 +107,7 @@ it('clears old scope immediately, aborts it and ignores a delayed response while
   expect(screen.getAllByText('Вибраний товар').length).toBeGreaterThan(0)
   view.rerender(picker(undefined, true))
   expect(screen.queryByRole('option', { name: 'Актуальний 1С' })).toBeNull()
-  expect(view.container.querySelector('.reports-stocks-selected-value')?.textContent).toBe('Вибраний товар')
+  expect(view.container.querySelector('.report-value-picker__pill-label')?.textContent).toBe('Вибраний товар')
   expect(onChange).not.toHaveBeenCalled()
   expect(searchDatasetReportValues).toHaveBeenCalledTimes(3)
 })

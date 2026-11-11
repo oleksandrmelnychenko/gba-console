@@ -26,7 +26,7 @@ it('tells a failed value lookup apart from an empty answer', async () => {
   vi.mocked(searchDatasetReportValues).mockRejectedValue(new ApiError('Сервер недоступний. Спробуйте ще раз пізніше.', 0, null))
   render(picker())
   fireEvent.click(screen.getByRole('combobox', { name: 'Значення' }))
-  expect(await screen.findByText('Не вдалося завантажити значення. Змініть пошук, щоб спробувати ще раз.')).toBeTruthy()
+  expect(await screen.findByText('Не вдалося завантажити значення.')).toBeTruthy()
   expect(screen.queryByText('Нічого не знайдено')).toBeNull()
 })
 
@@ -44,9 +44,22 @@ it('retries with the next search and drops the failure once values arrive', asyn
   render(picker())
   const input = screen.getByRole('combobox', { name: 'Значення' })
   fireEvent.click(input)
-  await screen.findByText('Не вдалося завантажити значення. Змініть пошук, щоб спробувати ще раз.')
+  await screen.findByText('Не вдалося завантажити значення.')
   await userEvent.setup().type(input, 'BEN')
   expect(await screen.findByRole('option', { name: 'BENEFIT OTOMOTIV' })).toBeTruthy()
   expect(vi.mocked(searchDatasetReportValues).mock.calls.at(-1)?.[2]).toEqual({ limit: 30, offset: 0, value: 'BEN' })
+  expect(screen.queryByText(/Не вдалося завантажити значення/)).toBeNull()
+})
+
+it('repeats the same lookup from «Спробувати ще раз» without changing the search', async () => {
+  vi.mocked(searchDatasetReportValues).mockRejectedValueOnce(new Error('offline'))
+    .mockResolvedValue([{ Id: '9007199254740993', Name: 'BENEFIT OTOMOTIV' }])
+  render(picker())
+  fireEvent.click(screen.getByRole('combobox', { name: 'Значення' }))
+  fireEvent.click(await screen.findByRole('option', { name: 'Спробувати ще раз' }))
+  expect(await screen.findByRole('option', { name: 'BENEFIT OTOMOTIV' })).toBeTruthy()
+  expect(vi.mocked(searchDatasetReportValues).mock.calls.map(call => call[2])).toEqual([
+    { limit: 30, offset: 0, value: '' }, { limit: 30, offset: 0, value: '' },
+  ])
   expect(screen.queryByText(/Не вдалося завантажити значення/)).toBeNull()
 })

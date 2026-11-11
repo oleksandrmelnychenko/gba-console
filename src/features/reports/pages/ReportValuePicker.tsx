@@ -49,7 +49,8 @@ export function ReportValuePicker({
   const visible = selectedOnly || !remote ? options.filter(item => item.label.toLocaleLowerCase('uk').includes(query)) : options
   const busy = !!loading && !selectedOnly
   const paging = !selectedOnly && !busy && !!hasMore && !!onLoadMore
-  const retrying = !selectedOnly && !busy && !!lookupError && !!onRetry
+  const failed = !selectedOnly && !busy && !!lookupError
+  const retrying = failed && !!onRetry
 
   function remove(key: string) {
     onChange(selected.filter(item => item.value !== key).map(item => item.value))
@@ -94,7 +95,7 @@ export function ReportValuePicker({
     onFocus={open} onClick={open} onBlur={blur} onKeyDown={keyDown}
     onChange={event => {
       onSearchChange(event.currentTarget.value)
-      if (!freeText) { setSelectedOnly(false); combobox.openDropdown(); combobox.updateSelectedOptionIndex() }
+      if (!freeText) { combobox.openDropdown(); combobox.updateSelectedOptionIndex() }
     }} />
 
   return <Stack gap={4} className="report-value-picker" data-mode={freeText ? 'text' : mode}>
@@ -115,8 +116,8 @@ export function ReportValuePicker({
                     <span>{item.label}</span>
                   </Group>
                 </Combobox.Option>)}
-                {!visible.length ? <Combobox.Empty>{busy ? t('Завантаження…')
-                  : !selectedOnly && lookupError ? lookupError : emptyMessage ?? t('Нічого не знайдено')}</Combobox.Empty> : null}
+                {failed ? <Combobox.Empty role="alert" c="red">{lookupError}</Combobox.Empty>
+                  : !visible.length ? <Combobox.Empty>{busy ? t('Завантаження…') : emptyMessage ?? t('Нічого не знайдено')}</Combobox.Empty> : null}
                 {paging ? <Combobox.Option value={MORE_OPTION} disabled={loadingMore} className="report-value-picker__action">
                   <Group gap="xs" wrap="nowrap">{loadingMore ? <Loader size="xs" /> : null}<span>{t('Ще значення')}</span></Group>
                 </Combobox.Option> : null}
@@ -125,7 +126,8 @@ export function ReportValuePicker({
             </Combobox.Options>
           </Combobox.Dropdown>
         </Combobox>}
-    {lookupError ? <Text size="xs" c="red" role="alert" className="report-value-picker__lookup-error">{lookupError}</Text> : null}
+    {lookupError && !(failed && combobox.dropdownOpened)
+      ? <Text size="xs" c="red" role="alert" className="report-value-picker__lookup-error">{lookupError}</Text> : null}
     {selected.length ? <Group gap={4} className="report-value-picker__selected">
       <Button type="button" variant="subtle" size="compact-sm" disabled={disabled || freeText} aria-pressed={selectedOnly}
         onMouseDown={event => event.preventDefault()}

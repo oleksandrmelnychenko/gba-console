@@ -37,7 +37,8 @@ import { financialAxesConfigurationError } from '../data/financialAxes'
 import { ReportsNavigation } from './workbook-desk/ReportsNavigation'
 import { ReportsSubmenu } from './workbook-desk/ReportsSubmenu'
 import type { PublishedReportTab } from './workbook-desk/publishedReportTabs'
-import { ReportValueAutocomplete } from './ReportValueAutocomplete'
+import { ReportValuePicker } from './ReportValuePicker'
+import { REPORT_VALUE_LOOKUP_FAILED, REPORT_VALUE_SEARCH_DEBOUNCE_MS } from './reportValueSearch'
 import { WorkbookSectionActions } from './workbook-desk/WorkbookSectionActions'
 import type { ReportFilterCondition } from '../types'
 import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis, analysisFilterConditions, analysisSelectionValueError, changeAnalysisSelectionCondition, changeAnalysisSelectionValues, analysisConditionUnavailableReason, analysisHierarchy, analysisHierarchyUnavailableReason, type AnalysisFieldDescriptor, type AnalysisHierarchyStatus } from '../data/currentVparivanieAnalysis'
@@ -86,7 +87,6 @@ import {
   Checkbox,
   Group,
   Loader,
-  type OptionsFilter,
   SegmentedControl,
   Select,
   Stack,
@@ -99,7 +99,7 @@ import { FINANCIAL_EXPORT_LAYOUT_OPTIONS, financialExportLayoutQuery, financialE
   type FinancialExportLayout } from '../data/financialExportLayout'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
-import { CheckCheck, CircleAlert, Ellipsis, LayoutTemplate, MonitorPlay, Plus, RotateCcw, Save, Trash2 } from 'lucide-react'
+import { CheckCheck, CircleAlert, Ellipsis, LayoutTemplate, MonitorPlay, Plus, RotateCcw, Save } from 'lucide-react'
 import { IconFileSpreadsheet } from '@tabler/icons-react'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
@@ -257,7 +257,6 @@ import {
   currentPriceTypeSalesLookupBasis,
   PRICE_TYPE_SALES_COMPARISON_SOURCE,
 } from '../data/priceTypeSalesComparison'
-const LOOKUP_SEARCH_DEBOUNCE_MS = 400
 const LOOKUP_SEARCH_LIMIT = 30
 const DATE_INPUT_DEBOUNCE_MS = 400
 // A native <input type="date"> carries no bounds of its own and reports every intermediate value while the
@@ -2866,7 +2865,6 @@ function LegacySelectionValuePicker(props: SelectionValuePickerProps) {
 function CommonSelectionValuePicker({ dataSource, dataset, lookupProfitReadMode, lookupProfitUnavailable, lookupSourceWorld, lookupSalesBasis, lookupProvidedDiscountBasis, error, from, label, selection, selections, to, width = 320, onChange }: SelectionValuePickerProps) {
   const { t } = useI18n()
   const [search, setSearch] = useValueState('')
-  const [manualValue, setManualValue] = useValueState('')
   const documentLookup = salesDocumentLookupPolicy(dataSource, selection.SelectedField.Type, dataset, lookupProfitUnavailable, from, to)
   const nativeSalesDocument = documentLookup.native
   const lookupUnavailable = documentLookup.unavailable
@@ -2879,7 +2877,8 @@ function CommonSelectionValuePicker({ dataSource, dataset, lookupProfitReadMode,
   const [docOrganisationIds, setDocOrganisationIds] = useValueState<string[]>([])
   const [docSelfSales, setDocSelfSales] = useValueState(false)
   const [organizationOptions, setOrganizationOptions] = useValueState<ReportEntity[]>([])
-  const [debouncedSearch] = useDebouncedValue(search, LOOKUP_SEARCH_DEBOUNCE_MS)
+  const [debouncedSearch] = useDebouncedValue(search, REPORT_VALUE_SEARCH_DEBOUNCE_MS)
+  const [lookupAttempt, setLookupAttempt] = useValueState(0)
   const nativeLookup = usesNativeReportLookup(dataSource) || usesPurchaseReceiptWarehouseLookup(dataSource, selection.SelectedField.Type)
   // Current reservations resolve exact ClientAgreement identities from their own
   // facts; the sales-only dependent customer-agreement picker must not run here.
@@ -2908,14 +2907,6 @@ function CommonSelectionValuePicker({ dataSource, dataset, lookupProfitReadMode,
   const minSearchLength = nativeLookup || nativeSalesDocument ? 0 : getSelectionLookupMinLength(selection.SelectedField.Type)
   const needsPeriod = nativeSalesDocument || isSaleDocumentFilter || dataSource === 35 && selection.SelectedField.Type === 12
   const dependentClientNetId = lookupMode === 'dependent' ? getDependentClientNetId(selections) : ''
-  const selectOptions = useMemo(
-    () =>
-      mergeReportEntities([...selection.Values.map((value) => financialSelectionEntity(value, dataSource, selection.SelectedField.Type, nativeSalesDocument)), ...options]).map((entity) => ({
-        label: getEntityDisplayName(entity),
-        value: getReportEntityKey(entity, getEntityDisplayName(entity)),
-      })),
-    [options, selection.Values, dataSource, selection.SelectedField.Type, nativeSalesDocument],
-  )
 
   useEffect(() => {
     if (!isSaleDocumentFilter) {
@@ -3020,6 +3011,7 @@ function CommonSelectionValuePicker({ dataSource, dataset, lookupProfitReadMode,
     lookupProvidedDiscountBasis,
     dependentClientNetId,
     from,
+    lookupAttempt,
     lookupMode,
     minSearchLength,
     nativeSalesDocument,
@@ -3032,6 +3024,10 @@ function CommonSelectionValuePicker({ dataSource, dataset, lookupProfitReadMode,
     setOptionResult,
     to,
   ])
+
+  const multiple = isMultiValueReportCondition(selection.FilterCondition.Type)
+  const lookupPending = isLoading || lookupMode === 'search' && search.trim() !== normalizedSearch
+  const entityKey = (entity: ReportEntity) => getReportEntityKey(entity, getEntityDisplayName(entity))
 
   function selectedValueKey(value: ReportSelectedValue) {
     return getReportEntityKey(financialSelectionEntity(value, dataSource, selection.SelectedField.Type, nativeSalesDocument), value.Name)
@@ -3049,19 +3045,19 @@ function CommonSelectionValuePicker({ dataSource, dataset, lookupProfitReadMode,
     onChange([...selection.Values, createSelectedValue(entity, dataSource, selection.SelectedField.Type, nativeSalesDocument)])
   }
 
-  function addManualValue() {
-    const value = manualValue.trim()
-
-    if (!value) {
+  function changeKeys(keys: string[]) {
+    const desired = new Set(keys)
+    const previous = new Set(selection.Values.map(value => selectedValueKey(value)))
+    const removal = keys.length < selection.Values.length && keys.every(key => previous.has(key))
+    if (!multiple && !removal) {
+      const entity = mergeReportEntities([...selection.Values.map(value => financialSelectionEntity(value, dataSource, selection.SelectedField.Type, nativeSalesDocument)), ...options])
+        .find(option => entityKey(option) === keys[0])
+      if (entity) addEntity(entity)
       return
     }
-
-    addEntity({ Name: value, Value: value })
-    setManualValue('')
-  }
-
-  function removeValue(valueIndex: number) {
-    onChange(selection.Values.filter((_, index) => index !== valueIndex))
+    const added = options.filter(entity => desired.has(entityKey(entity)) && !previous.has(entityKey(entity)))
+      .map(entity => createSelectedValue(entity, dataSource, selection.SelectedField.Type, nativeSalesDocument))
+    onChange([...selection.Values.filter(value => desired.has(selectedValueKey(value))), ...added])
   }
 
   if (!selection.SelectedField.Name) {
@@ -3104,103 +3100,16 @@ function CommonSelectionValuePicker({ dataSource, dataset, lookupProfitReadMode,
           />
         </Stack>
       ) : null}
-      {lookupMode === 'manual' ? (
-        <Group align="end" gap={6} wrap="nowrap">
-          <TextInput
-            error={error}
-            label={label}
-            placeholder={t('Значення')}
-            value={manualValue}
-            onChange={(event) => setManualValue(event.currentTarget.value)}
-          />
-          <Button color={CREATE_ACTION_COLOR} size="sm" type="button" onClick={addManualValue}>
-            {t('Додати')}
-          </Button>
-        </Group>
-      ) : isMultiValueReportCondition(selection.FilterCondition.Type) ? (
-        <ReportValueAutocomplete label={label} search={search} onSearchChange={setSearch}
-          data={isLoading || lookupMode === 'search' && search.trim() !== normalizedSearch ? [] : selectOptions.filter(option =>
-            lookupMode !== 'search' || !search.trim() || options.some(entity => getReportEntityKey(entity, getEntityDisplayName(entity)) === option.value))}
-          selected={selection.Values.map(value => ({ value: selectedValueKey(value), label: value.Name }))}
-          loading={isLoading || lookupMode === 'search' && search.trim() !== normalizedSearch} disabled={lookupUnavailable}
-          remote={lookupMode === 'search'} error={error}
-          emptyMessage={lookupFailed ? t('Не вдалося завантажити значення. Змініть пошук, щоб спробувати ще раз.')
-            : needsPeriod && (!from || !to) ? t('Спочатку вкажіть коректний період')
-            : lookupMode === 'search' && normalizedSearch.length < minSearchLength ? t('Введіть мінімум 2 символи')
-            : lookupMode === 'dependent' && !dependentClientNetId ? t('Спочатку оберіть клієнта') : undefined}
-          onChange={keys => {
-            const desired = new Set(keys)
-            const previous = new Set(selection.Values.map(value => selectedValueKey(value)))
-            const added = options.filter(entity => {
-              const key = getReportEntityKey(entity, getEntityDisplayName(entity))
-              return desired.has(key) && !previous.has(key)
-            }).map(entity => createSelectedValue(entity, dataSource, selection.SelectedField.Type, nativeSalesDocument))
-            onChange([...selection.Values.filter(value => desired.has(selectedValueKey(value))), ...added])
-          }} />
-      ) : (
-        <Select
-          clearable
-          searchable
-          disabled={lookupUnavailable}
-          data={selectOptions}
-          error={error}
-          filter={lookupMode === 'search' ? keepServerLookupResults : undefined}
-          label={label}
-          nothingFoundMessage={
-            lookupFailed
-              ? t('Не вдалося завантажити значення. Змініть пошук, щоб спробувати ще раз.')
-              : needsPeriod && (!from || !to)
-              ? t('Спочатку вкажіть коректний період')
-              : lookupMode === 'search' && normalizedSearch.length < minSearchLength
-                ? t('Введіть мінімум 2 символи')
-                : lookupMode === 'dependent' && !dependentClientNetId
-                  ? t('Спочатку оберіть клієнта')
-                  : t('Нічого не знайдено')
-          }
-          placeholder={t('Пошук значення')}
-          rightSection={isLoading ? <Loader size="xs" /> : null}
-          searchValue={search}
-          value={null}
-          onChange={(value) => {
-            const entity = value
-              ? mergeReportEntities([...selection.Values.map((selectedValue) => financialSelectionEntity(selectedValue, dataSource, selection.SelectedField.Type, nativeSalesDocument)), ...options])
-                  .find((option) => getReportEntityKey(option, getEntityDisplayName(option)) === value)
-              : undefined
-
-            if (entity) {
-              addEntity(entity)
-              setSearch('')
-            }
-          }}
-          onSearchChange={setSearch}
-        />
-      )}
-      {selection.Values.length && (lookupMode === 'manual' || !isMultiValueReportCondition(selection.FilterCondition.Type)) ? (
-        <Group gap={4}>
-          {selection.Values.map((value, valueIndex) => (
-            <Badge
-              className="app-role-pill is-gray reports-stocks-selected-value"
-              key={selectedValueKey(value)}
-              radius="sm"
-              rightSection={(
-                <ActionIcon
-                  aria-label={t('Видалити')}
-                  color="gray"
-                  size="xs"
-                  type="button"
-                  variant="transparent"
-                  onClick={() => removeValue(valueIndex)}
-                >
-                  <Trash2 size={12} />
-                </ActionIcon>
-              )}
-              variant="light"
-            >
-              {value.Name}
-            </Badge>
-          ))}
-        </Group>
-      ) : null}
+      <ReportValuePicker label={label} mode={multiple ? 'multi' : 'single'} search={search} onSearchChange={setSearch}
+        data={lookupMode === 'manual' || lookupPending ? [] : options.map(entity => ({ label: getEntityDisplayName(entity), value: entityKey(entity) }))}
+        selected={selection.Values.map(value => ({ value: selectedValueKey(value), label: value.Name }))}
+        loading={lookupMode !== 'manual' && lookupPending} disabled={lookupUnavailable} remote={lookupMode === 'search'} error={error}
+        lookupError={lookupFailed ? t(REPORT_VALUE_LOOKUP_FAILED) : undefined} onRetry={() => setLookupAttempt(attempt => attempt + 1)}
+        emptyMessage={needsPeriod && (!from || !to) ? t('Спочатку вкажіть коректний період')
+          : lookupMode === 'search' && normalizedSearch.length < minSearchLength ? t(minSearchLength > 1 ? 'Введіть мінімум 2 символи' : 'Почніть вводити назву')
+          : lookupMode === 'dependent' && !dependentClientNetId ? t('Спочатку оберіть клієнта') : undefined}
+        onAddText={lookupMode === 'manual' ? text => addEntity({ Name: text, Value: text }) : undefined}
+        onChange={changeKeys} />
     </Stack>
   )
 }
@@ -3396,13 +3305,6 @@ function setAllMeasurements(
 
 
 
-// The searched lookups match on fields the option label never shows — a user's по батькові, e-mail or phone
-// number, a client's ЄДРПОУ or code of region — and Mantine's default filter then drops those very rows because
-// the typed text is not in the label, so a hit the server just found reads as «Нічого не знайдено». Everything
-// the server returned is already the answer to the query; show it unfiltered. The static lists keep the default
-// filter — there the whole catalogue is in the browser and the filtering is the search.
-const keepServerLookupResults: OptionsFilter = ({ options }) => options
-
 function usesPurchaseReceiptWarehouseLookup(dataSource: number, fieldType: number): boolean {
   return dataSource === 3 && fieldType === REPORT_FILTER_FIELD_TYPES.warehouse
 }
@@ -3448,7 +3350,8 @@ function getSelectionLookupMode(fieldType: number): 'manual' | 'search' | 'stati
 }
 
 function getSelectionLookupMinLength(fieldType: number): number {
-  return fieldType === REPORT_FILTER_FIELD_TYPES.productGroup || fieldType === REPORT_FILTER_FIELD_TYPES.productMeasureUnit ? 0 : 2
+  if (fieldType === REPORT_FILTER_FIELD_TYPES.productGroup || fieldType === REPORT_FILTER_FIELD_TYPES.productMeasureUnit) return 0
+  return fieldType === REPORT_FILTER_FIELD_TYPES.product || fieldType === REPORT_FILTER_FIELD_TYPES.productArticle ? 2 : 1
 }
 
 function getDependentClientNetId(selections: ReportSelection[]): string {

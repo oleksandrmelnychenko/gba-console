@@ -495,15 +495,6 @@
   font-weight: 500;
 }
 
-.reports-stocks-selected-value {
-  max-width: 100%;
-}
-
-.reports-stocks-selected-value .mantine-Badge-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .reports-stocks-legacy {
   min-width: 0;
 }

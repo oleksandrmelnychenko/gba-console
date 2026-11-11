@@ -48,7 +48,7 @@ it('shows a failed lookup without presenting invalid numeric identities as selec
   api.mockResolvedValue([{ Id: 9007199254740992, Name: 'Склад' }])
   render(<Picker />)
   fireEvent.click(screen.getByRole('combobox', { name: 'Склад надходження' }))
-  expect(await screen.findByText('Не вдалося завантажити значення. Змініть пошук, щоб спробувати ще раз.')).toBeTruthy()
+  expect(await screen.findByText('Не вдалося завантажити значення.')).toBeTruthy()
   expect(screen.queryByRole('option', { name: 'Склад' })).toBeNull()
   expect(selected()).toEqual([])
 })
