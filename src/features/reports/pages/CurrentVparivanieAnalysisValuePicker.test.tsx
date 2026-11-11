@@ -12,7 +12,7 @@ vi.mock('../api/currentVparivanieAnalysisApi',()=>({searchAnalysisValues:vi.fn()
 it('selects canonical Top',async()=>{
 vi.mocked(searchAnalysisValues).mockResolvedValue([{id:'top:A',name:'A',data:{name:'A'}}])
 const onChange=vi.fn()
-render(<MantineProvider env="test"><CurrentVparivanieAnalysisValuePicker selection={{IsChecked:true,SelectedField:{Type:3,Name:'Топ'},FilterCondition:{Type:0,Name:'Дорівнює'},Values:[]}} selections={[]} from="" to="" onChange={onChange}/></MantineProvider>)
+render(<MantineProvider env="test"><I18nProvider><CurrentVparivanieAnalysisValuePicker selection={{IsChecked:true,SelectedField:{Type:3,Name:'Топ'},FilterCondition:{Type:0,Name:'Дорівнює'},Values:[]}} selections={[]} from="" to="" onChange={onChange}/></I18nProvider></MantineProvider>)
 fireEvent.click(screen.getByRole('combobox'))
 fireEvent.click(await screen.findByRole('option',{name:'A'}))
 await waitFor(()=>expect(onChange).toHaveBeenCalledWith([{Data:{name:'A'},Name:'A',Value:0}]))
@@ -25,8 +25,8 @@ it('discards lookup values from a previous period while the replacement request 
     .mockImplementationOnce(() => new Promise(() => {}))
   const onChange = vi.fn()
   const props = { selection: { IsChecked: true, SelectedField: { Type: 3, Name: 'Топ' }, FilterCondition: { Type: 0, Name: 'Дорівнює' }, Values: [] }, selections: [], to: '2026-10-23', onChange }
-  const view = render(<MantineProvider env="test"><CurrentVparivanieAnalysisValuePicker {...props} from="2026-01-01" /></MantineProvider>)
-  view.rerender(<MantineProvider env="test"><CurrentVparivanieAnalysisValuePicker {...props} from="2026-10-01" /></MantineProvider>)
+  const view = render(<MantineProvider env="test"><I18nProvider><CurrentVparivanieAnalysisValuePicker {...props} from="2026-01-01" /></I18nProvider></MantineProvider>)
+  view.rerender(<MantineProvider env="test"><I18nProvider><CurrentVparivanieAnalysisValuePicker {...props} from="2026-10-01" /></I18nProvider></MantineProvider>)
   resolveOld([{ id: 'top:A', name: 'Old period', data: { name: 'A' } }])
   await waitFor(() => expect(searchAnalysisValues).toHaveBeenCalledTimes(2))
   fireEvent.click(screen.getByRole('combobox'))
@@ -64,10 +64,10 @@ it.each([3, 5])('selects products and groups with overlapping IDs independently 
 it('uses group-only lookup and allows explicit replacement of preserved multiple values for a one-group condition', async () => {
   vi.mocked(searchAnalysisValues).mockReset().mockResolvedValue([{ id: '1', name: 'Group one', data: { Id: 1 } }])
   const onChange = vi.fn()
-  render(<MantineProvider env="test"><CurrentVparivanieAnalysisValuePicker descriptor={groupDescriptor}
+  render(<MantineProvider env="test"><I18nProvider><CurrentVparivanieAnalysisValuePicker descriptor={groupDescriptor}
     selection={{ IsChecked: true, SelectedField: { Type: 4, Name: 'Group' }, FilterCondition: { Type: 6, Name: 'У групі' },
       Values: [{ Data: { Id: 1 }, Name: 'Group one', Value: 0 }, { Data: { Id: 2 }, Name: 'Group two', Value: 0 }] }}
-    selections={[]} from="" to="" onChange={onChange} /></MantineProvider>)
+    selections={[]} from="" to="" onChange={onChange} /></I18nProvider></MantineProvider>)
   expect(screen.queryByRole('radio', { name: 'Товари' })).toBeNull()
   fireEvent.click(screen.getByRole('combobox', { name: 'Значення' }))
   fireEvent.click(await screen.findByRole('option', { name: 'Group one' }))
@@ -97,10 +97,10 @@ it('browses all 51 managers through bounded pages and keeps the original selecte
   render(<MantineProvider env="test"><I18nProvider><CurrentVparivanieAnalysisValuePicker
     selection={{ IsChecked: true, SelectedField: { Type: 60, Name: 'Manager' }, FilterCondition: { Type: 2, Name: 'У списку' }, Values: [{ Data: values[0].data, Name: values[0].name, Value: 0 }] }}
     selections={[]} from="2026-01-01" to="2026-10-20" onChange={onChange} /></I18nProvider></MantineProvider>)
-  fireEvent.click(await screen.findByRole('button', { name: 'Ще значення' }))
-  await waitFor(() => expect(searchAnalysisValues).toHaveBeenLastCalledWith(60, '', '2026-01-01', '2026-10-20', undefined, expect.any(AbortSignal), 30))
-  await waitFor(() => expect(screen.queryByRole('button', { name: 'Ще значення' })).toBeNull())
   fireEvent.click(screen.getByRole('combobox', { name: 'Значення' }))
+  fireEvent.click(await screen.findByRole('option', { name: 'Ще значення' }))
+  await waitFor(() => expect(searchAnalysisValues).toHaveBeenLastCalledWith(60, '', '2026-01-01', '2026-10-20', undefined, expect.any(AbortSignal), 30))
+  await waitFor(() => expect(screen.queryByRole('option', { name: 'Ще значення' })).toBeNull())
   fireEvent.click(await screen.findByRole('option', { name: 'Manager 51' }))
   expect(screen.queryByRole('option', { name: 'Всі' })).toBeNull()
   expect(onChange).toHaveBeenCalledWith([{ Data: values[0].data, Name: values[0].name, Value: 0 }, { Data: values[50].data, Name: values[50].name, Value: 0 }])
@@ -112,9 +112,10 @@ it('discards a previous period’s pending lookup page and does not merge stale 
     .mockImplementationOnce(() => new Promise(resolve => { resolvePage = resolve }))
     .mockResolvedValueOnce([{ id: '100', name: 'New period', data: { Id: 100 } }])
   const props = { selection: { IsChecked: true, SelectedField: { Type: 5, Name: 'Buyer' }, FilterCondition: { Type: 0, Name: 'Дорівнює' }, Values: [] }, selections: [], to: '2026-10-20', onChange: vi.fn() }
-  const view = render(<MantineProvider env="test"><CurrentVparivanieAnalysisValuePicker {...props} from="2026-01-01" /></MantineProvider>)
-  fireEvent.click(await screen.findByRole('button', { name: 'Ще значення' }))
-  view.rerender(<MantineProvider env="test"><CurrentVparivanieAnalysisValuePicker {...props} from="2026-10-01" /></MantineProvider>)
+  const view = render(<MantineProvider env="test"><I18nProvider><CurrentVparivanieAnalysisValuePicker {...props} from="2026-01-01" /></I18nProvider></MantineProvider>)
+  fireEvent.click(screen.getByRole('combobox', { name: 'Значення' }))
+  fireEvent.click(await screen.findByRole('option', { name: 'Ще значення' }))
+  view.rerender(<MantineProvider env="test"><I18nProvider><CurrentVparivanieAnalysisValuePicker {...props} from="2026-10-01" /></I18nProvider></MantineProvider>)
   resolvePage([{ id: '99', name: 'Stale manager', data: { Id: 99 } }])
   await waitFor(() => expect(searchAnalysisValues).toHaveBeenCalledTimes(3))
   fireEvent.click(screen.getByRole('combobox', { name: 'Значення' }))

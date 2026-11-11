@@ -944,12 +944,8 @@
 
 .workbook-settings--unified .reports-stocks-structure { grid-template-columns: minmax(0, 1fr); }
 .report-analysis-values { --app-multi-select-width: 100%; min-width: 0; }
-.report-analysis-values__actions:empty, .report-analysis-values__selected:empty { display: none; }
+.report-analysis-values__actions:empty { display: none; }
 .report-analysis-values__actions > .mantine-Button-root { width: auto; }
-.report-analysis-values__selected { display: flex; flex-wrap: wrap; gap: 6px; max-height: 160px; overflow: auto; scrollbar-width: thin; }
-.report-analysis-values__chip { min-width: 0; max-width: 100%; border: 1px solid var(--mantine-color-gray-3); border-radius: 6px; padding: 2px 4px 2px 8px; background: var(--mantine-color-white); }
-.report-analysis-values__chip .mantine-Text-root { font: 500 12px/1.4 var(--font-mono); color: var(--mantine-color-gray-8); overflow-wrap: anywhere; }
-.report-analysis-values__chip button { flex-shrink: 0; }
 
 @media (max-width: 600px) {
   .workbook-toolbar .workbook-actions__buttons { justify-content: flex-start; gap: 6px; }

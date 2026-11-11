@@ -1,13 +1,11 @@
 import type { ReactNode } from 'react'
 import type { NativeProductItemPickerContext } from './NativeSalesProductPicker'
-import { ListPlus } from 'lucide-react'
 import { AnalysisGroupBrowser } from './AnalysisGroupBrowser'
 import { AnalysisTopEntry } from './AnalysisTopEntry'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Alert, Button, Group, Loader, SegmentedControl, Select, Stack, Text } from '@mantine/core'
-import { useDebouncedValue } from '@mantine/hooks'
-import { ReportValueAutocomplete } from './ReportValueAutocomplete'
-import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
+import { Alert, Group, SegmentedControl, Stack, Text } from '@mantine/core'
+import { ReportValuePicker } from './ReportValuePicker'
+import { useReportValueSearch } from './reportValueSearch'
 import { getAnalysisHierarchyPage, searchAnalysisValues, type AnalysisLookupValue } from '../api/currentVparivanieAnalysisApi'
 import { analysisGroupIdentity, analysisHierarchy, analysisHierarchyIdentity, analysisHierarchyUnavailableReason, analysisListCondition, analysisValueIdentity,
   type AnalysisFieldDescriptor, type AnalysisHierarchyStatus, type AnalysisItemKind } from '../data/currentVparivanieAnalysis'
@@ -28,20 +26,6 @@ function analysisValueLabel(field: number, value: ReportSelectedValue, itemKind?
 
 export type AnalysisItemSearch = (value: string, offset: number, signal: AbortSignal) => Promise<AnalysisLookupValue[]>
 
-type AnalysisInputOption = { value: string; label: string }
-function AnalysisValueInput({ injectedItem, renderItemPicker, context, unavailable, multiple, options, selected, search, query, setSearch, changeMultiple, add, loading, groupsOnly }: {
-  injectedItem: boolean; renderItemPicker?: (context: NativeProductItemPickerContext) => ReactNode
-  context: NativeProductItemPickerContext; unavailable: string | null; multiple: boolean
-  options: AnalysisInputOption[]; selected: AnalysisInputOption[]; search: string; query: string
-  setSearch: (value: string) => void; changeMultiple: (keys: string[]) => void; add: (key: string | null) => void
-  loading: boolean; groupsOnly: boolean
-}) {
-  if (injectedItem) return renderItemPicker?.(context)
-  if (unavailable) return <Alert color="yellow">{unavailable}</Alert>
-  if (multiple) return <ReportValueAutocomplete label="Значення" data={search !== query ? [] : options} selected={selected} onChange={changeMultiple} search={search} onSearchChange={setSearch} loading={loading || search !== query} />
-  return <Select label="Значення" placeholder={groupsOnly ? 'Знайти групу' : 'Знайти значення'} searchable filter={({ options }) => options} searchValue={search} onSearchChange={setSearch} data={options} value={null} onChange={add} rightSection={loading ? <Loader size="xs" /> : undefined} nothingFoundMessage="Нічого не знайдено" />
-}
-
 function analysisLookupPeriod(sourceKind: string | null, from: string, to: string): [string, string] {
   return sourceKind ? ['', ''] : [from, to]
 }
@@ -52,8 +36,8 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
   searchItems?: AnalysisItemSearch
   renderItemPicker?: (context: NativeProductItemPickerContext) => ReactNode
 }) {
-  const [search, setSearch] = useState('')
-  const [query] = useDebouncedValue(search, 400)
+  const { search, setSearch, query, pending } = useReportValueSearch()
+  const [attempt, setAttempt] = useState(0)
   const [choiceKind, setChoiceKind] = useState<'group' | 'item'>('group')
   const field = selection.SelectedField.Type, condition = selection.FilterCondition.Type
   const hierarchy = analysisHierarchy(descriptor)
@@ -67,7 +51,7 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
   const buyer = selections.find(s => s.IsChecked !== false && [5, 6].includes(s.SelectedField.Type) && s.FilterCondition.Type === 0 && s.Values.length === 1)
   const buyerId = buyer?.Values[0].Data.Id
   const buyerParam = typeof buyerId === 'string' || typeof buyerId === 'number' && Number.isSafeInteger(buyerId) ? String(buyerId) : undefined
-  const scope = JSON.stringify([field, condition, choice, sourceKind, lookupField, lookupFrom, lookupTo, buyerId ?? null, query, unavailable])
+  const scope = JSON.stringify([field, condition, choice, sourceKind, lookupField, lookupFrom, lookupTo, buyerId ?? null, query, unavailable, attempt])
   const [result, setResult] = useState<{ scope: string; values: AnalysisLookupValue[]; nextOffset: number; hasMore: boolean; loadingMore?: boolean; error?: string } | null>(null)
   const moreRequest = useRef<AbortController | null>(null)
   const injectedItem = choice === 'item' && !!renderItemPicker
@@ -121,46 +105,37 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
   })
   const optionMap = new Map(optionValues.map(value => [analysisValueIdentity(field, value.Data), value]))
   const selectedKeys = selection.Values.map(value => analysisValueIdentity(field, value.Data))
-  const add = (id: string | null) => {
-    const selected = id === null ? undefined : optionMap.get(id)
-    if (!selected) return
-    onChange([selected])
-    setSearch('')
-  }
   const changeMultiple = (keys: string[]) => {
     const desired = new Set(keys), previous = new Set(selectedKeys)
     const retained = selection.Values.filter(value => desired.has(analysisValueIdentity(field, value.Data)))
     const added = keys.filter(key => !previous.has(key)).flatMap(key => optionMap.get(key) ? [optionMap.get(key)!] : [])
     onChange([...retained, ...added])
   }
+  const change = (keys: string[], chosen?: string) => {
+    if (chosen === undefined) { changeMultiple(keys); return }
+    const value = optionMap.get(chosen)
+    if (value) onChange([value])
+  }
   const options = [...optionMap].map(([value, selected]) => ({ value, label: selected.Name }))
   const itemKind = hierarchy && (groupCondition || field === 4) ? hierarchy.itemKind : undefined
   const label = (value: ReportSelectedValue) => analysisValueLabel(field, value, itemKind)
-  const groupsOnly = choice === 'group'
   return <Stack gap={6} className="report-analysis-values">
     {mixed && hierarchy && !unavailable ? <SegmentedControl aria-label="Тип значення" value={choiceKind}
       data={[{ value: 'group', label: 'Групи' }, { value: 'item', label: ITEM_LABELS[hierarchy.itemKind][1] }]}
       onChange={value => { setChoiceKind(value as 'group' | 'item'); setSearch('') }} /> : null}
-    <AnalysisValueInput injectedItem={injectedItem} renderItemPicker={renderItemPicker}
-      context={{ selection, onChange, multiple, createData: encode, selectedLabel: label, identity: data => analysisValueIdentity(field, data) }}
-      unavailable={unavailable} multiple={multiple} options={options}
-      selected={selection.Values.map(value => ({ value: analysisValueIdentity(field, value.Data), label: label(value) }))}
-      search={search} query={query} setSearch={setSearch} changeMultiple={changeMultiple} add={add} loading={!current} groupsOnly={groupsOnly} />
+    {injectedItem ? renderItemPicker?.({ selection, onChange, multiple, createData: encode, selectedLabel: label, identity: data => analysisValueIdentity(field, data) })
+      : unavailable ? <Alert color="yellow">{unavailable}</Alert>
+      : <ReportValuePicker mode={multiple ? 'multi' : 'single'} label="Значення"
+          data={pending ? [] : options} selected={selection.Values.map(value => ({ value: analysisValueIdentity(field, value.Data), label: label(value) }))}
+          search={search} onSearchChange={setSearch} onChange={change} loading={!current || pending}
+          lookupError={pending ? undefined : current?.error} onRetry={() => { if (current?.values.length) void loadMore(); else setAttempt(value => value + 1) }}
+          hasMore={!pending && !!current?.hasMore && current.nextOffset < 4080} loadingMore={current?.loadingMore} onLoadMore={() => void loadMore()} />}
     <Group gap={6} className="report-analysis-values__actions">
-    {!injectedItem && !unavailable && current?.hasMore ? current.nextOffset < 4080
-      ? <Button type="button" variant="default" size="compact-sm" leftSection={<ListPlus size={15} aria-hidden="true" />} loading={current.loadingMore} onClick={() => void loadMore()}>Ще значення</Button>
-      : <Text size="xs" c="dimmed">Показано 4080 значень. Звузьте пошук, щоб знайти потрібне.</Text> : null}
+    {!injectedItem && !unavailable && current?.hasMore && current.nextOffset >= 4080
+      ? <Text size="xs" c="dimmed">Показано 4080 значень. Звузьте пошук, щоб знайти потрібне.</Text> : null}
     {descriptor && hierarchy && !unavailable && (field === 4 ? !!descriptor.hierarchyBrowse : groupCondition)
       ? <AnalysisGroupBrowser descriptor={descriptor} selection={selection} onChange={onChange} /> : null}
     </Group>
     {descriptor?.textEntry && field === 3 ? <AnalysisTopEntry capability={descriptor.textEntry} selection={selection} multiple={multiple} onChange={onChange} /> : null}
-    {!injectedItem && current?.error ? <Alert color="red">{current.error}</Alert> : null}
-    {!injectedItem && !multiple ? <div className="report-analysis-values__selected">{selection.Values.map((v, index) => {
-      const text = label(v)
-      return <Group key={analysisValueIdentity(field, v.Data)} className="report-analysis-values__chip" gap={4} wrap="nowrap">
-        <Text size="sm">{text}</Text><TableRowAction action="delete" label={`Видалити значення ${text}`}
-          onClick={() => onChange(selection.Values.filter((_, i) => i !== index))} />
-      </Group>
-    })}</div> : null}
   </Stack>
 }
