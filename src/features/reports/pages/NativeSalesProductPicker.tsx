@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { Alert, Button, Group, SegmentedControl, Select, Stack, Text } from '@mantine/core'
-import { useDebouncedValue } from '@mantine/hooks'
-import { ReportValueAutocomplete } from './ReportValueAutocomplete'
+import { Alert, Button, Group, Stack, Text } from '@mantine/core'
+import { ReportValuePicker } from './ReportValuePicker'
+import { reportValueExactId, useReportValueSearch } from './reportValueSearch'
 import { useNativeSalesProductOptions, type ProductSearchMode } from './useNativeSalesProductOptions'
 import {
   productBusinessName,
@@ -55,7 +55,6 @@ type Props = {
   selectedLabel?: NativeProductItemPickerContext['selectedLabel']
   identity?: NativeProductItemPickerContext['identity']
 }
-type Option = { value: string; label: string }
 type ProductChoice = { key: string; item: NativeSalesProduct; value: ReportSelectedValue }
 type SavedRecheck = { lookupKey: string; id: string; message: string } | null
 function defaultIdentity(data: ReportEntity): string {
@@ -116,152 +115,35 @@ function useSavedProductRecheck(dataset: ReportDataset | undefined, field: numbe
   return { recheck: recheck?.lookupKey === lookupKey ? recheck : null, checkSaved }
 }
 
-function ProductSearchInput({
-  multiple,
-  mode,
-  label,
-  data,
-  selected,
-  search,
-  setSearch,
-  select,
-  addSingle,
-  loading,
-  disabled,
-  error,
-}: {
-  multiple: boolean
-  mode: ProductSearchMode
-  label: string
-  data: Option[]
-  selected: Option[]
-  search: string
-  setSearch: (value: string) => void
-  select: (keys: string[]) => void
-  addSingle: (key: string | null) => void
-  loading: boolean
-  disabled?: boolean
-  error?: string
-}) {
-  const inputLabel = mode === 'id' ? 'Точний ID товару' : label
-  if (multiple)
-    return (
-      <ReportValueAutocomplete
-        withinPortal
-        clearSearchOnClose={false}
-        label={inputLabel}
-        data={data}
-        selected={selected}
-        search={search}
-        onSearchChange={setSearch}
-        onChange={select}
-        loading={loading}
-        disabled={disabled}
-        error={error}
-      />
-    )
-  return (
-    <Select
-      label={inputLabel}
-      searchable
-      placeholder={mode === 'id' ? 'Введіть ID товару' : 'Назва або артикул'}
-      data={data}
-      filter={({ options: items }) => items}
-      searchValue={search}
-      onSearchChange={setSearch}
-      // Mantine clears a null-valued Select on blur; keep this remote query for paging.
-      onBlur={() => setSearch(search)}
-      value={null}
-      disabled={disabled}
-      error={error}
-      onChange={addSingle}
-      nothingFoundMessage="Нічого не знайдено"
-    />
-  )
+function ProductSearchNotice({ admitted }: { admitted: boolean }) {
+  return admitted ? null : <Alert color="yellow">Вибір товарів зараз недоступний. Оновіть сторінку.</Alert>
 }
-function ProductSearchFeedback({
-  admitted,
-  invalidId,
-  error,
-  retry,
-  more,
-  loading,
-  loadMore,
-}: {
-  admitted: boolean
-  invalidId: boolean
-  error?: string
-  retry: () => void
-  more: boolean
-  loading: boolean
-  loadMore: () => void
-}) {
-  return (
-    <>
-      {!admitted ? <Alert color="yellow">Вибір товарів зараз недоступний. Оновіть сторінку.</Alert> : null}
-      {invalidId ? (
-        <Text size="xs" c="red">
-          Вкажіть правильний позитивний ID товару.
-        </Text>
-      ) : null}
-      {error ? (
-        <Alert color="red">
-          {error}
-          <Button type="button" variant="subtle" onClick={retry}>
-            Повторити пошук
-          </Button>
-        </Alert>
-      ) : null}
-      {more ? (
-        <Button type="button" variant="default" loading={loading} onClick={loadMore}>
-          Ще товари
-        </Button>
-      ) : null}
-    </>
-  )
-}
-function SelectedProductValue({
+function SavedProductRecheck({
   value,
-  label,
   disabled,
   admitted,
   recheck,
   checkSaved,
-  remove,
 }: {
   value: ReportSelectedValue
-  label: string
   disabled?: boolean
   admitted: boolean
   recheck: SavedRecheck
   checkSaved: (id: string) => Promise<void>
-  remove: () => void
 }) {
   const id = savedProductId(value.Data)
+  if (!id) return null
   return (
     <Group gap={4}>
-      <Text size="sm">{label}</Text>
       <Button
         type="button"
         variant="subtle"
         size="compact-xs"
-        disabled={disabled}
-        aria-label={`Видалити ${label}`}
-        onClick={remove}
+        disabled={disabled || !admitted}
+        onClick={() => void checkSaved(id)}
       >
-        Видалити
+        Перевірити ID {id}
       </Button>
-      {id ? (
-        <Button
-          type="button"
-          variant="subtle"
-          size="compact-xs"
-          disabled={disabled || !admitted}
-          onClick={() => void checkSaved(id)}
-        >
-          Перевірити ID {id}
-        </Button>
-      ) : null}
       {recheck?.id === id ? <Text size="xs">{recheck.message}</Text> : null}
     </Group>
   )
@@ -279,74 +161,56 @@ export function NativeSalesProductPicker({
   selectedLabel = defaultSelectedLabel,
   identity = defaultIdentity,
 }: Props) {
-  const [mode, setMode] = useState<ProductSearchMode>('text'),
-    [search, setSearch] = useState('')
-  const [query] = useDebouncedValue(search, 350)
+  const { search, setSearch, query, pending } = useReportValueSearch()
+  const exactId = reportValueExactId(query)
+  const mode: ProductSearchMode = exactId === null ? 'text' : 'id'
   const requestedSource = dataSource ?? dataset?.DataSource
   const binding = productLookupBinding(dataset, requestedSource)
   const { recheck, checkSaved } = useSavedProductRecheck(dataset, selection.SelectedField.Type, requestedSource)
   const admitted = !!binding && selection.SelectedField.Type === 1
   const sharedSource = binding?.kind === 'report' ? binding.dataSource : undefined
-  const options = useNativeSalesProductOptions(mode, query, admitted && !disabled, sharedSource)
+  const options = useNativeSalesProductOptions(mode, exactId ?? query, admitted && !disabled && exactId !== '', sharedSource)
   const multiple = explicitMultiple ?? isMultiValueReportCondition(selection.FilterCondition.Type)
   const choices = productChoices(options.items, createData, identity)
   const selected = selection.Values.map((value) => ({ value: identity(value.Data), label: selectedLabel(value) }))
-  const data =
-    search !== query ? [] : choices.map((choice) => ({ value: choice.key, label: productOptionName(choice.item) }))
-  const addSingle = (key: string | null) => {
-    const choice = choices.find((item) => item.key === key)
-    if (!choice) return
-    onChange([choice.value])
-    setSearch('')
+  const change = (keys: string[]) => {
+    const removal = keys.length < selected.length && keys.every((key) => selected.some((item) => item.value === key))
+    if (multiple || removal) {
+      onChange(changedSelection(selection.Values, choices, keys, identity))
+      return
+    }
+    const choice = choices.find((item) => item.key === keys[0])
+    if (choice) onChange([choice.value])
   }
   return (
     <Stack gap={6}>
-      <SegmentedControl
-        aria-label="Спосіб пошуку товару"
-        value={mode}
-        disabled={disabled || !admitted}
-        data={[
-          { value: 'text', label: 'Назва або артикул' },
-          { value: 'id', label: 'Точний ID' },
-        ]}
-        onChange={(value) => {
-          setMode(value === 'id' ? 'id' : 'text')
-          setSearch('')
-        }}
-      />
-      <ProductSearchInput
-        multiple={multiple}
-        mode={mode}
+      <ReportValuePicker
+        mode={multiple ? 'multi' : 'single'}
         label={label}
-        data={data}
+        placeholder="Назва, артикул або id:123"
+        data={pending ? [] : choices.map((choice) => ({ value: choice.key, label: productOptionName(choice.item) }))}
         selected={selected}
         search={search}
-        setSearch={setSearch}
-        select={(keys) => onChange(changedSelection(selection.Values, choices, keys, identity))}
-        addSingle={addSingle}
-        loading={options.loading}
+        onSearchChange={setSearch}
+        onChange={change}
+        loading={pending || options.loading}
         disabled={disabled || !admitted}
-        error={error}
+        error={error ?? (!pending && !!exactId && options.invalid ? 'Вкажіть правильний позитивний ID товару.' : undefined)}
+        emptyMessage={exactId === '' ? 'Введіть ID товару після id:' : undefined}
+        lookupError={pending ? undefined : options.error}
+        onRetry={options.retry}
+        hasMore={!pending && options.more}
+        onLoadMore={options.loadMore}
       />
-      <ProductSearchFeedback
-        admitted={admitted}
-        invalidId={mode === 'id' && !!search && options.invalid}
-        error={options.error}
-        retry={options.retry}
-        more={search === query && options.more}
-        loading={options.loading}
-        loadMore={options.loadMore}
-      />
-      {selection.Values.map((value, index) => (
-        <SelectedProductValue
+      <ProductSearchNotice admitted={admitted} />
+      {selection.Values.map((value) => (
+        <SavedProductRecheck
           key={identity(value.Data)}
           value={value}
-          label={selected[index].label}
           disabled={disabled}
           admitted={admitted}
           recheck={recheck}
           checkSaved={checkSaved}
-          remove={() => onChange(selection.Values.filter((_, position) => index !== position))}
         />
       ))}
     </Stack>

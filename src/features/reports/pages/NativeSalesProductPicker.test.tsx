@@ -80,16 +80,15 @@ it('pages65 real identities and chooses page3 while retaining raw saved data', a
     ),
   )
   render(<Form />)
-  await screen.findByRole('button', { name: 'Ще товари' })
-  await userEvent.click(screen.getByRole('button', { name: 'Ще товари' }))
-  await waitFor(() => expect(api).toHaveBeenCalledTimes(2))
-  await userEvent.click(screen.getByRole('button', { name: 'Ще товари' }))
-  await waitFor(() => expect(api).toHaveBeenCalledTimes(3))
   await userEvent.click(screen.getByRole('combobox', { name: 'Значення' }))
+  await userEvent.click(await screen.findByRole('option', { name: 'Ще значення' }))
+  await waitFor(() => expect(api).toHaveBeenCalledTimes(2))
+  await userEvent.click(await screen.findByRole('option', { name: 'Ще значення' }))
+  await waitFor(() => expect(api).toHaveBeenCalledTimes(3))
   await userEvent.click(await screen.findByRole('option', { name: 'Одна назва · SKU64 [65]' }))
   expect(values()).toEqual([...saved, { Data: { Id: '65' }, Name: 'Одна назва · SKU64', Value: 0 }])
   expect(api.mock.calls.map((x) => x[1]?.query?.offset)).toEqual([0, 30, 60])
-  expect(screen.queryByRole('button', { name: 'Ще товари' })).toBeNull()
+  expect(screen.queryByRole('option', { name: 'Ще значення' })).toBeNull()
 })
 it('explicit archived recheck never erases raw selected values and is never automatic', async () => {
   api.mockResolvedValue([])
@@ -104,9 +103,9 @@ it('invalid exact ID hides old options and never requests a rounded ID', async (
   api.mockResolvedValue([{ Id: '1', Name: 'Старий', VendorCode: '' }])
   render(<Form initial={[]} condition={0} />)
   await waitFor(() => expect(api).toHaveBeenCalledOnce())
-  await userEvent.click(screen.getByRole('radio', { name: 'Точний ID' }))
-  const box = screen.getByRole('combobox', { name: 'Точний ID товару' })
-  await userEvent.type(box, '01')
+  expect(screen.queryByRole('radio')).toBeNull()
+  const box = screen.getByRole('combobox', { name: 'Значення' })
+  await userEvent.type(box, 'id:01')
   await screen.findByText(/правильний позитивний ID/)
   expect(api).toHaveBeenCalledOnce()
   expect(screen.queryByRole('option', { name: 'Старий [1]' })).toBeNull()
@@ -118,8 +117,7 @@ it('selects an exact Int64 maximum by keyboard without changing its identity', a
   )
   render(<Form initial={[]} condition={0} />)
   await waitFor(() => expect(api).toHaveBeenCalledOnce())
-  await userEvent.click(screen.getByRole('radio', { name: 'Точний ID' }))
-  await userEvent.type(screen.getByRole('combobox', { name: 'Точний ID товару' }), '9223372036854775807')
+  await userEvent.type(screen.getByRole('combobox', { name: 'Значення' }), 'id:9223372036854775807')
   await screen.findByRole('option', { name: 'Максимум · MAX [9223372036854775807]' })
   await userEvent.keyboard('{ArrowDown}{Enter}')
   expect(values()).toEqual([{ Data: { Id: '9223372036854775807' }, Name: 'Максимум · MAX', Value: 0 }])
@@ -128,9 +126,10 @@ it('selects an exact Int64 maximum by keyboard without changing its identity', a
 it('offers a focusable retry after failure and retains selected raw values', async () => {
   api.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce([])
   render(<Form />)
-  const retry = await screen.findByRole('button', { name: 'Повторити пошук' })
-  retry.focus()
-  await userEvent.keyboard('{Enter}')
+  expect((await screen.findByRole('alert')).textContent).toBe('Не вдалося завантажити товари. Повторіть спробу.')
+  await userEvent.click(screen.getByRole('combobox', { name: 'Значення' }))
+  await screen.findByRole('option', { name: 'Спробувати ще раз' })
+  await userEvent.keyboard('{ArrowUp}{Enter}')
   await waitFor(() => expect(api).toHaveBeenCalledTimes(2))
   expect(values()).toEqual(saved)
   expect(screen.queryByText(/Не вдалося завантажити товари/)).toBeNull()
@@ -183,7 +182,7 @@ it('keeps typed scalar search when clicking More and preserves saved raw IDs', a
   await waitFor(() => expect(api).toHaveBeenCalledOnce())
   const input = screen.getByRole('combobox', { name: 'Значення' })
   await userEvent.type(input, query)
-  const more = await screen.findByRole('button', { name: 'Ще товари' })
+  const more = await screen.findByRole('option', { name: 'Ще значення' })
   await userEvent.click(more)
   expect(values()).toEqual(saved)
   await waitFor(() =>
@@ -195,24 +194,16 @@ it('keeps typed scalar search when clicking More and preserves saved raw IDs', a
   )
   expect((input as HTMLInputElement).value).toBe(query)
 })
-it('keeps typed multi search when keyboard-focusing More and preserves saved raw IDs', async () => {
+it('keeps typed multi search when choosing More with the keyboard and preserves saved raw IDs', async () => {
   const query = 'Пошук'
   mockTypedSearchPages(query)
   render(<Form />)
   await waitFor(() => expect(api).toHaveBeenCalledOnce())
   const input = screen.getByRole('combobox', { name: 'Значення' })
   await userEvent.type(input, query)
-  const more = await screen.findByRole('button', { name: 'Ще товари' })
-  await userEvent.tab()
-  if (document.activeElement !== more) await userEvent.tab()
+  await screen.findByRole('option', { name: 'Ще значення' })
   expect(values()).toEqual(saved)
-  expect(
-    document.activeElement,
-    'Focus after normal Tab navigation; requests: ' +
-      JSON.stringify(lookupQueries()) +
-      '; search: ' +
-      (input as HTMLInputElement).value,
-  ).toBe(more)
+  await userEvent.keyboard('{ArrowUp}')
   await userEvent.keyboard('{Enter}')
   await waitFor(() => expect(lookupQueries()).toContainEqual({ value: query, offset: 30, limit: 30 }))
   expect((input as HTMLInputElement).value).toBe(query)

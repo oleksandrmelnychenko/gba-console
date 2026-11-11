@@ -63,7 +63,7 @@ it('retains the P8 legacy source2 API when new metadata is absent',async()=>{
 })
 it('does not try an advanced or legacy route after a valid shared source3 capability returns403',async()=>{
  api.mockRejectedValue(new Error('403'));render(<Form initial={saved}/>)
- await screen.findByRole('button',{name:'Повторити пошук'})
+ expect((await screen.findByRole('alert')).textContent).toBe('Не вдалося завантажити товари. Повторіть спробу.')
  expect(api).toHaveBeenCalledOnce();expect(api.mock.calls[0][0]).toBe(route);expect(values()).toEqual(saved)
 })
 it('period edits and cloned metadata preserve archived raw values without hydration or another request',async()=>{
@@ -75,9 +75,9 @@ it('period edits and cloned metadata preserve archived raw values without hydrat
 it('selects the second page above2^53 without rounding or rewriting a saved raw reference',async()=>{
  const first=Array.from({length:30},(_,i)=>({Id:String(9007199254740993n+BigInt(i)),Name:'Позиція',VendorCode:'SKU'+i})),last={Id:'9007199254741023',Name:'Друга сторінка',VendorCode:'NEXT'}
  api.mockImplementation(async(path,options)=>{if(path!==route)throw Error('Unexpected transport');return options?.query?.offset===0?first:[last]})
- render(<Form condition={2} initial={saved}/>);await screen.findByRole('button',{name:'Ще товари'})
- await userEvent.click(screen.getByRole('button',{name:'Ще товари'}));await waitFor(()=>expect(api).toHaveBeenCalledTimes(2))
- await userEvent.click(screen.getByRole('combobox',{name:'Значення'}));await userEvent.click(await screen.findByRole('option',{name:'Друга сторінка · NEXT [9007199254741023]'}))
+ render(<Form condition={2} initial={saved}/>);await userEvent.click(screen.getByRole('combobox',{name:'Значення'}))
+ await userEvent.click(await screen.findByRole('option',{name:'Ще значення'}));await waitFor(()=>expect(api).toHaveBeenCalledTimes(2))
+ await userEvent.click(await screen.findByRole('option',{name:'Друга сторінка · NEXT [9007199254741023]'}))
  expect(values()).toEqual([...saved,{Data:{Id:'9007199254741023'},Name:'Друга сторінка · NEXT',Value:0}])
  expect(api.mock.calls.map(call=>[call[1]?.query?.dataSource,call[1]?.query?.offset])).toEqual([[3,0],[3,30]])
 })
