@@ -312,7 +312,17 @@ function ReportAttributionWarnings({ request }: { request: NativeReportPreviewRe
   return <>
     <SnapshotAttribution request={request} />
     <IgnoredFilterAttribution filters={request.IgnoredFilters} />
+    <ReturnParentGapAttribution notes={request.Notes} />
   </>
+}
+
+const RETURN_PARENT_GAP_NOTE = 'Повернень без підтвердженого первинного продажу в GBA:'
+function ReturnParentGapAttribution({ notes }: { notes: string[] | null }) {
+  const gaps = (notes ?? []).filter(note => note.startsWith(RETURN_PARENT_GAP_NOTE))
+  if (gaps.length === 0) return null
+  return <Alert color="yellow" title="Частину повернень не віднесено до первинного продажу">
+    {gaps.map(note => <Text key={note} size="sm">{note}</Text>)}
+  </Alert>
 }
 
 function SnapshotAttribution({ request }: { request: NativeReportPreviewRequest }) {

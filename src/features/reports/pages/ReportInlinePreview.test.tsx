@@ -49,6 +49,16 @@ it('warns explicitly about ignored filters and their server reason', () => {
   expect(within(warning).getByText('Договір Дорівнює: Обраний договір (Цей відбір не застосовано до результату.)')).toBeTruthy()
 })
 
+it('shows the non-blocking note about returns without a confirmed original sale and keeps other notes hidden', () => {
+  const gap = 'Повернень без підтвердженого первинного продажу в GBA: 1 (рядків: 1), сума 1.22 EUR з ПДВ. Їх не віднесено до жодного менеджера первинного продажу, тому до цього відбору вони не входять і звіт не блокують; у звіті без відбору вони показані в групі «Не вказано».'
+  show({ ...request, Notes: [...request.Notes!, gap] })
+  const warning = screen.getByRole('alert')
+  expect(within(warning).getByText('Частину повернень не віднесено до первинного продажу')).toBeTruthy()
+  expect(within(warning).getByText(gap)).toBeTruthy()
+  for (const note of request.Notes!) expect(screen.queryByText(note)).toBeNull()
+  expect(screen.getByText('12.09.2026')).toBeTruthy()
+})
+
 it('renders server HTML as text in ignored-filter warnings', () => {
   const html = '<img src=x onerror=alert(1)>'
   const view = show({ ...request, PeriodFrom: html, Notes: [html],
