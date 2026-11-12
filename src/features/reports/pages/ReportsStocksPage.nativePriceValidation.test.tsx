@@ -14,6 +14,7 @@ vi.mock('../api/reportsApi', async original => ({ ...await original<typeof impor
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(), getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn() }))
 
 const warning = 'Оберіть тип ціни з довідника GBA.'
+const hint = 'Оберіть тип ціни для порівняння, щоб сформувати звіт.'
 const prices = [{ Id: '844', Name: 'ЦЗ' }, { Id: '846', Name: 'ЦЗ (Фіксована націнка)' },
   { Id: '852', Name: 'ЦО1' }, { Id: '847', Name: 'ЦО1 (НДС)' }, { Id: '849', Name: 'ЦО2' },
   { Id: '845', Name: 'ЦО2 (НДС)' }, { Id: '853', Name: 'ЦР' }, { Id: '848', Name: 'ЦР (НДС)' }]
@@ -89,4 +90,17 @@ it('keeps catalogue loading failures visible before a price has been selected', 
   await openReport()
   expect(await screen.findByText('Не вдалося завантажити типи цін GBA.')).toBeTruthy()
   expectBlocked()
+})
+
+it('explains the inactive button with a neutral hint before the first touch and drops it once a price is chosen', async () => {
+  await openReport()
+  expect(screen.getByText(hint).className).toContain('mantine-Select-description')
+  expect(screen.queryByText(warning)).toBeNull()
+  expectBlocked()
+  await selectPrice()
+  await waitFor(() => expect(screen.queryByText(hint)).toBeNull())
+  const input = screen.getByRole('combobox', { name: 'Тип ціни для порівняння' })
+  fireEvent.click(input.closest('.mantine-Select-wrapper')!.querySelector('button')!)
+  expect(await screen.findByText(warning)).toBeTruthy()
+  expect(screen.getByText(hint)).toBeTruthy()
 })

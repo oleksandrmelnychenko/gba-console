@@ -33,7 +33,8 @@ export function NativePriceComparisonPanel({value,onChange,disabled}:{value:Nati
   },[id,legacy,disabled,selected])
   const data=options.some(option=>option.value===id)||!id?options:[...options,selected?.value===id?selected:{value:id,label:'Збережений тип ціни'}]
   return <Stack gap="sm">
-    <Select label="Тип ціни для порівняння" placeholder="Знайдіть тип ціни" searchable clearable disabled={disabled} data={data}
+    <Select label="Тип ціни для порівняння" withAsterisk aria-required placeholder="Знайдіть тип ціни" searchable
+      description={id?undefined:'Оберіть тип ціни для порівняння, щоб сформувати звіт.'} clearable disabled={disabled} data={data}
       searchValue={search} onSearchChange={setSearch} value={id} filter={({options})=>options} error={error}
       onChange={next=>{setSelected(data.find(option=>option.value===next)??null);if(next?.startsWith('legacy:'))onChange({Version:1,PriceTypeId:next.slice(7)});else onChange({Version:2,PricingId:next??''})}} />
     {legacy && <Text size="sm" c="dimmed">Збережено попередній історичний тип ціни. Щоб вибрати тип із довідника GBA, змініть вибір.</Text>}
