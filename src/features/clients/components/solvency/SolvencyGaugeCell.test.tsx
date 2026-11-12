@@ -73,4 +73,30 @@ describe('SolvencyGaugeCell', () => {
     expect(getByText('82')).toBeTruthy()
     expect(container.querySelector('svg')).toBeTruthy()
   })
+
+  it('renders a slim list row and names the policy behind a rating', () => {
+    const { getByText, getByLabelText } = renderWithMantine(
+      <SolvencyGaugeCell
+        notApplicableLabel={NA_LABEL}
+        score={{
+          applicable: true,
+          data_sufficiency: 'ok',
+          score: 0,
+          rating: 'D',
+          policy_reason: 'Клієнт у групі безнадійної заборгованості',
+        }}
+      />,
+    )
+
+    expect(getByText('0')).toBeTruthy()
+    expect(getByLabelText('0 / 100 · D · Клієнт у групі безнадійної заборгованості')).toBeTruthy()
+  })
+
+  it('keeps the plain score tooltip when no policy applies', () => {
+    const { getByLabelText } = renderWithMantine(
+      <SolvencyGaugeCell notApplicableLabel={NA_LABEL} score={makeScore({ score: 82 })} />,
+    )
+
+    expect(getByLabelText('82 / 100 · A')).toBeTruthy()
+  })
 })

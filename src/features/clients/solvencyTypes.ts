@@ -82,6 +82,29 @@ export type SolvencyScore = SolvencyCurrentObservation & {
   history_complete: boolean
   window_months: 12
   model_version: string
+  policy_reason_code?: string | null
+  policy_reason?: string | null
+}
+
+export type SolvencyScoreSlim = {
+  client_id: number
+  applicable: boolean
+  score: number | null
+  rating: SolvencyRating | null
+  pd: number | null
+  risk_90d: Risk90d | null
+  data_sufficiency: 'insufficient' | 'ok'
+  data_sufficiency_reason: string | null
+  caps_applied: string[]
+  policy_reason_code: string | null
+  policy_reason: string | null
+}
+
+export type SolvencySlimBatch = {
+  results: SolvencyScoreSlim[]
+  errors: SolvencyBatchError[]
+  count: number
+  failed: number
 }
 
 export type SolvencyBatchError = {

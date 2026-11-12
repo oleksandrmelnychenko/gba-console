@@ -9,6 +9,8 @@ import type {
   SolvencyCharts,
   SolvencyCurrentObservation,
   SolvencyScore,
+  SolvencyScoreSlim,
+  SolvencySlimBatch,
   TurnoverExposurePoint,
   TrendPoint,
 } from '../solvencyTypes'
@@ -58,6 +60,43 @@ export async function getClientSolvencyScoresBatch(
   clientIds: number[],
   signal?: AbortSignal,
 ): Promise<SolvencyBatch> {
+  const requestedIds = requireBatchIds(clientIds)
+
+  const result = await apiRequest<unknown>('/solvency/scores/batch', {
+    method: 'POST',
+    body: clientIds,
+    ...(signal ? { signal } : {}),
+  })
+
+  return normalizeBatch(result, requestedIds, (value, path) => normalizeScore(value, null, path))
+}
+
+export async function getClientSolvencyGaugeScores(
+  clientIds: number[],
+  signal?: AbortSignal,
+): Promise<SolvencySlimBatch> {
+  const requestedIds = requireBatchIds(clientIds)
+
+  const result = await apiRequest<unknown>('/solvency/scores/batch', {
+    method: 'POST',
+    query: { slim: true },
+    body: clientIds,
+    ...(signal ? { signal } : {}),
+  })
+
+  const payload = requireRecord(result, 'batch')
+  if (payload.meta !== null && payload.meta !== undefined) {
+    const meta = requireRecord(payload.meta, 'batch.meta') as Partial<SolvencyScore>
+    normalizeCurrentObservation(meta, 'batch.meta')
+    if (meta.window_months !== 12) {
+      throw new SolvencyContractError('batch.meta.window_months', 'must equal 12')
+    }
+  }
+
+  return normalizeBatch(result, requestedIds, normalizeSlimScore)
+}
+
+function requireBatchIds(clientIds: number[]): Set<number> {
   if (clientIds.length === 0 || clientIds.length > 500) {
     throw new SolvencyContractError('request.client_ids', 'must contain from 1 to 500 IDs')
   }
@@ -70,19 +109,68 @@ export async function getClientSolvencyScoresBatch(
     requestedIds.add(clientId)
   })
 
-  const result = await apiRequest<unknown>('/solvency/scores/batch', {
-    method: 'POST',
-    body: clientIds,
-    ...(signal ? { signal } : {}),
-  })
-
-  return normalizeBatch(result, requestedIds)
+  return requestedIds
 }
 
-function normalizeBatch(result: unknown, requestedIds: Set<number>): SolvencyBatch {
+function normalizeSlimScore(value: unknown, path: string): SolvencyScoreSlim {
+  const score = requireRecord(value, path)
+  const clientId = requirePositiveInteger(score.client_id, `${path}.client_id`)
+  if (typeof score.applicable !== 'boolean') {
+    throw new SolvencyContractError(`${path}.applicable`, 'expected a boolean')
+  }
+  if (score.data_sufficiency !== 'ok' && score.data_sufficiency !== 'insufficient') {
+    throw new SolvencyContractError(`${path}.data_sufficiency`, 'expected ok or insufficient')
+  }
+  const points = requireNullableNumberInRange(score.score, `${path}.score`, 0, 100, true)
+  const pd = requireNullableNumberInRange(score.pd, `${path}.pd`, 0, 1)
+  const rating = score.rating
+  if (rating !== null && rating !== 'A' && rating !== 'B' && rating !== 'C' && rating !== 'D') {
+    throw new SolvencyContractError(`${path}.rating`, 'expected A, B, C, D or null')
+  }
+  const risk90d = normalizeRisk90d(score.risk_90d, `${path}.risk_90d`)
+  const scored = score.applicable && score.data_sufficiency === 'ok'
+  if (scored
+    ? points === null || rating === null || pd === null || risk90d === null
+    : points !== null || rating !== null || pd !== null || risk90d !== null) {
+    throw new SolvencyContractError(
+      path,
+      scored ? 'applicable score is incomplete' : 'unscored client contains a fabricated score',
+    )
+  }
+  const capsApplied = requireArray(score.caps_applied, `${path}.caps_applied`).map((cap, index) =>
+    requireNonEmptyString(cap, `${path}.caps_applied[${index}]`))
+
+  return {
+    client_id: clientId,
+    applicable: score.applicable,
+    score: points,
+    rating,
+    pd,
+    risk_90d: risk90d,
+    data_sufficiency: score.data_sufficiency,
+    data_sufficiency_reason: optionalText(score.data_sufficiency_reason, `${path}.data_sufficiency_reason`),
+    caps_applied: capsApplied,
+    policy_reason_code: optionalText(score.policy_reason_code, `${path}.policy_reason_code`),
+    policy_reason: optionalText(score.policy_reason, `${path}.policy_reason`),
+  }
+}
+
+function optionalText(value: unknown, path: string): string | null {
+  if (value === null || value === undefined) {
+    return null
+  }
+
+  return requireNonEmptyString(value, path)
+}
+
+function normalizeBatch<Row extends { client_id: number }>(
+  result: unknown,
+  requestedIds: Set<number>,
+  normalizeRow: (value: unknown, path: string) => Row,
+): { results: Row[]; errors: SolvencyBatchError[]; count: number; failed: number } {
   const payload = requireRecord(result, 'batch')
   const results = requireArray(payload.results, 'batch.results').map((value, index) =>
-    normalizeScore(value, null, `batch.results[${index}]`))
+    normalizeRow(value, `batch.results[${index}]`))
   const errors = requireArray(payload.errors, 'batch.errors').map((value, index) =>
     normalizeBatchError(value, `batch.errors[${index}]`))
   const count = requireNonNegativeInteger(payload.count, 'batch.count')

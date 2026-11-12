@@ -129,6 +129,26 @@ describe('SolvencyPanel', () => {
     expect(queryByText(/99\.7%/)).toBeNull()
   })
 
+  it('explains a policy rating and does not repeat its code as a cap badge', async () => {
+    getClientSolvencyScore.mockResolvedValue({
+      ...v3Score,
+      score: 0,
+      rating: 'D',
+      pd: 1,
+      contributions: [],
+      caps_applied: ['hopeless_debt_role'],
+      policy_reason_code: 'hopeless_debt_role',
+      policy_reason: 'Клієнт у групі безнадійної заборгованості',
+    })
+    getClientSolvencyCharts.mockRejectedValue(new Error('no charts'))
+
+    const { findByText, queryByText } = renderPanel(<SolvencyPanel clientNetId="abc" />)
+
+    expect(await findByText('Клієнт у групі безнадійної заборгованості')).toBeTruthy()
+    expect(await findByText('D')).toBeTruthy()
+    expect(queryByText('hopeless_debt_role')).toBeNull()
+  })
+
   it('shows source-bounded insufficient data and does not request charts', async () => {
     getClientSolvencyScore.mockResolvedValue({
       ...v3Score,

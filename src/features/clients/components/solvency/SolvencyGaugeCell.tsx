@@ -1,5 +1,5 @@
 import { RingProgress, Text, Tooltip } from '@mantine/core'
-import type { SolvencyScore } from '../../solvencyTypes'
+import type { SolvencyScoreSlim } from '../../solvencyTypes'
 
 const SOLVENCY_RATING_COLOR: Record<string, string> = {
   A: 'green',
@@ -8,7 +8,7 @@ const SOLVENCY_RATING_COLOR: Record<string, string> = {
   D: 'red',
 }
 
-function solvencyScoreColor(score: SolvencyScore): string {
+function solvencyScoreColor(score: GaugeScore): string {
   const rating = score.rating
   const ratingColor = rating ? SOLVENCY_RATING_COLOR[rating] : undefined
   if (ratingColor) {
@@ -28,10 +28,15 @@ function solvencyScoreColor(score: SolvencyScore): string {
   return 'red'
 }
 
+type GaugeScore = Pick<SolvencyScoreSlim, 'applicable' | 'score' | 'rating'> & {
+  data_sufficiency?: 'insufficient' | 'ok' | null
+  policy_reason?: string | null
+}
+
 type SolvencyGaugeCellProps = {
   notApplicableLabel: string
   unavailableLabel?: string
-  score?: SolvencyScore
+  score?: GaugeScore
 }
 
 export function SolvencyGaugeCell({ notApplicableLabel, score, unavailableLabel }: SolvencyGaugeCellProps) {
@@ -40,7 +45,7 @@ export function SolvencyGaugeCell({ notApplicableLabel, score, unavailableLabel 
   const hasScore = Boolean(score) && !notApplicable && !insufficientData && score?.score != null
   const value = hasScore ? Math.min(100, Math.max(0, score?.score ?? 0)) : 0
   const tooltipLabel = hasScore
-    ? `${score?.score} / 100 · ${score?.rating}`
+    ? [`${score?.score} / 100`, score?.rating, score?.policy_reason].filter(Boolean).join(' · ')
     : insufficientData
       ? 'Недостатньо даних для оцінки'
       : notApplicable

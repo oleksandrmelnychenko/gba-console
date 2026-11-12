@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   getClientSolvencyCharts,
+  getClientSolvencyGaugeScores,
   getClientSolvencyScore,
   getClientSolvencyScoresBatch,
   SolvencyContractError,
@@ -334,5 +335,145 @@ describe('current observation proof for every serving response', () => {
       pd: null, raw_score: null, contributions: null, risk_90d: null, currency_breakdown: null,
     })
     await expect(getClientSolvencyScore(CLIENT_NET_ID)).resolves.toMatchObject({ applicable, score: null, pd: null, window_months: 12 })
+  })
+})
+
+describe('slim batch for the clients list gauge', () => {
+  beforeEach(() => {
+    apiRequestMock.mockReset()
+  })
+
+  const meta = {
+    state_basis: 'current_observation',
+    business_timezone: 'Europe/Kyiv',
+    fx_date: '2026-11-12',
+    as_of_date: '2026-11-12',
+    window_months: 12,
+    model_version: 'creditscore-v3',
+    source_history_start: '2025-01-01',
+    effective_start: '2025-11-12',
+    history_complete: true,
+  }
+  const risk = { horizon_days: 90, threshold_days: 90, band: 'low', exposure_eur: 0, reason_code: 'no_debt' }
+
+  function slimRow(overrides: Record<string, unknown> = {}) {
+    return {
+      client_id: 42,
+      applicable: true,
+      score: 92,
+      rating: 'A',
+      pd: 0.003069,
+      risk_90d: risk,
+      data_sufficiency: 'ok',
+      data_sufficiency_reason: null,
+      caps_applied: [],
+      policy_reason_code: null,
+      policy_reason: null,
+      ...overrides,
+    }
+  }
+
+  it('asks the server for slim rows and keeps only the gauge fields', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      results: [
+        slimRow(),
+        slimRow({
+          client_id: 43,
+          score: 0,
+          rating: 'D',
+          pd: 1,
+          caps_applied: ['hopeless_debt_role'],
+          policy_reason_code: 'hopeless_debt_role',
+          policy_reason: 'Клієнт у групі безнадійної заборгованості',
+        }),
+        slimRow({
+          client_id: 44, score: null, rating: null, pd: null, risk_90d: null,
+          data_sufficiency: 'insufficient', data_sufficiency_reason: 'no sales',
+        }),
+        slimRow({
+          client_id: 45, applicable: false, score: null, rating: null, pd: null, risk_90d: null,
+          data_sufficiency: 'insufficient', data_sufficiency_reason: 'client has no buyer role',
+        }),
+      ],
+      errors: [{ client_id: 46, error: 'client_id not found: 46' }],
+      count: 4,
+      failed: 1,
+      slim: true,
+      meta,
+    })
+
+    const batch = await getClientSolvencyGaugeScores([42, 43, 44, 45, 46])
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/solvency/scores/batch', {
+      method: 'POST',
+      query: { slim: true },
+      body: [42, 43, 44, 45, 46],
+    })
+    expect(batch.results.map((row) => [row.client_id, row.score, row.rating])).toEqual([
+      [42, 92, 'A'], [43, 0, 'D'], [44, null, null], [45, null, null],
+    ])
+    expect(batch.results[1].policy_reason).toBe('Клієнт у групі безнадійної заборгованості')
+    expect(batch.errors).toEqual([{ client_id: 46, error: 'client_id not found: 46' }])
+    expect(Object.keys(batch.results[0]).sort()).toEqual([
+      'applicable', 'caps_applied', 'client_id', 'data_sufficiency', 'data_sufficiency_reason',
+      'pd', 'policy_reason', 'policy_reason_code', 'rating', 'risk_90d', 'score',
+    ])
+  })
+
+  it('accepts full rows from a server that ignores the slim flag', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      results: [score(42, null)],
+      errors: [],
+      count: 1,
+      failed: 0,
+    })
+
+    await expect(getClientSolvencyGaugeScores([42])).resolves.toEqual({
+      results: [{
+        client_id: 42,
+        applicable: true,
+        score: 80,
+        rating: 'B',
+        pd: 0.2,
+        risk_90d: {
+          horizon_days: 90, threshold_days: 90, band: 'medium', exposure_eur: 100.01,
+          reason_code: 'current_debt',
+        },
+        data_sufficiency: 'ok',
+        data_sufficiency_reason: null,
+        caps_applied: [],
+        policy_reason_code: null,
+        policy_reason: null,
+      }],
+      errors: [],
+      count: 1,
+      failed: 0,
+    })
+  })
+
+  it.each([
+    ['a scored row without a rating', slimRow({ rating: null })],
+    ['an unknown rating', slimRow({ rating: 'E' })],
+    ['a fabricated score on insufficient data', slimRow({ data_sufficiency: 'insufficient' })],
+    ['a score for a non-buyer', slimRow({ applicable: false })],
+    ['a 90-day control whose proof disagrees', slimRow({ risk_90d: { ...risk, band: 'critical' } })],
+    ['a row for a client that was not requested', slimRow({ client_id: 7 })],
+  ])('rejects %s', async (_name, row) => {
+    apiRequestMock.mockResolvedValueOnce({ results: [row], errors: [], count: 1, failed: 0, slim: true, meta })
+    await expect(getClientSolvencyGaugeScores([42])).rejects.toBeInstanceOf(SolvencyContractError)
+  })
+
+  it('rejects slim metadata that is not a current observation', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      results: [slimRow()], errors: [], count: 1, failed: 0, slim: true,
+      meta: { ...meta, fx_date: '2026-11-11' },
+    })
+    await expect(getClientSolvencyGaugeScores([42])).rejects.toBeInstanceOf(SolvencyContractError)
+
+    apiRequestMock.mockResolvedValueOnce({
+      results: [slimRow()], errors: [], count: 1, failed: 0, slim: true,
+      meta: { ...meta, window_months: 6 },
+    })
+    await expect(getClientSolvencyGaugeScores([42])).rejects.toThrow('window_months')
   })
 })

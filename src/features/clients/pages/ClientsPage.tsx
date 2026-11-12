@@ -64,10 +64,10 @@ import type {
   ClientSourceQualitySummary,
   ClientType,
 } from '../types'
-import { getClientSolvencyScoresBatch } from '../api/clientSolvencyApi'
+import { getClientSolvencyGaugeScores } from '../api/clientSolvencyApi'
 import { SolvencyGaugeCell } from '../components/solvency/SolvencyGaugeCell'
 import { ClientSourceQualityBadge } from '../components/structure/ClientSourceQualityBadge'
-import type { SolvencyScore } from '../solvencyTypes'
+import type { SolvencyScoreSlim } from '../solvencyTypes'
 import { clientNetUidKey, indexByClientNetUid } from '../clientNetUidIndex'
 import { getClientIdentityAttentionTitle } from '../clientIdentityAttentionMessage'
 import { getClientFolderSelection, isClientFolder } from '../clientFolder'
@@ -166,7 +166,7 @@ function useClientsPageModel() {
   const hasLoadedClientsRef = useRef(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [clients, setClients] = useValueState<Client[]>([])
-  const [solvencyScores, setSolvencyScores] = useValueState<Map<number, SolvencyScore>>(() => new Map())
+  const [solvencyScores, setSolvencyScores] = useValueState<Map<number, SolvencyScoreSlim>>(() => new Map())
   const [solvencyScoresError, setSolvencyScoresError] = useValueState<string | null>(null)
   const [identityAttention, setIdentityAttention] = useValueState<Map<string, ClientIdentityAttentionSummary>>(
     () => new Map(),
@@ -340,13 +340,13 @@ function useClientsPageModel() {
 
     async function loadSolvencyScores() {
       try {
-        const { results } = await getClientSolvencyScoresBatch(ids, controller.signal)
+        const { results } = await getClientSolvencyGaugeScores(ids, controller.signal)
 
         if (cancelled) {
           return
         }
 
-        const nextScores = new Map<number, SolvencyScore>()
+        const nextScores = new Map<number, SolvencyScoreSlim>()
         for (const result of results) {
           nextScores.set(result.client_id, result)
         }
@@ -1189,7 +1189,7 @@ function ClientDocumentModal({
 
 function useClientColumns(
   onOpenActions: (client: Client) => void,
-  solvencyScores: Map<number, SolvencyScore>,
+  solvencyScores: Map<number, SolvencyScoreSlim>,
   solvencyScoresError: string | null,
   identityAttention: Map<string, ClientIdentityAttentionSummary>,
   onOpenIdentityAttention: (client: Client, attention: ClientIdentityAttentionSummary) => void,

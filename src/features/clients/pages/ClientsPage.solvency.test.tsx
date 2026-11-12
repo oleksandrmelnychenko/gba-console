@@ -4,8 +4,8 @@ import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { getClientsForRegistry } from '../api/clientsApi'
-import { getClientSolvencyScoresBatch } from '../api/clientSolvencyApi'
-import type { SolvencyScore } from '../solvencyTypes'
+import { getClientSolvencyGaugeScores } from '../api/clientSolvencyApi'
+import type { SolvencyScoreSlim } from '../solvencyTypes'
 import type { Client } from '../types'
 import { ClientsPage } from './ClientsPage'
 
@@ -24,7 +24,7 @@ vi.mock('../api/clientsApi', async (importOriginal) => ({
 }))
 
 vi.mock('../api/clientSolvencyApi', () => ({
-  getClientSolvencyScoresBatch: vi.fn(),
+  getClientSolvencyGaugeScores: vi.fn(),
 }))
 
 const clientName = 'Чернівці - ФОП Мартинюк Сергій Анатолійович'
@@ -51,14 +51,14 @@ function renderRegistry() {
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(getClientsForRegistry).mockResolvedValue([client])
-  vi.mocked(getClientSolvencyScoresBatch).mockRejectedValue(new Error(unavailable))
+  vi.mocked(getClientSolvencyGaugeScores).mockRejectedValue(new Error(unavailable))
 })
 
 describe('BUG-1527 clients registry optional solvency', () => {
   it('keeps clients and role-filtered search without a global service warning', async () => {
     renderRegistry()
     expect(await screen.findByText(clientName)).toBeTruthy()
-    await waitFor(() => expect(getClientSolvencyScoresBatch).toHaveBeenCalledWith(
+    await waitFor(() => expect(getClientSolvencyGaugeScores).toHaveBeenCalledWith(
       [632206], expect.any(AbortSignal),
     ))
     expect(screen.queryByText(unavailable)).toBeNull()
@@ -74,8 +74,8 @@ describe('BUG-1527 clients registry optional solvency', () => {
   })
 
   it('shows a valid score when the optional service succeeds', async () => {
-    vi.mocked(getClientSolvencyScoresBatch).mockResolvedValue({
-      results: [{ client_id: client.Id, applicable: true, data_sufficiency: 'ok', score: 82, rating: 'A' } as SolvencyScore],
+    vi.mocked(getClientSolvencyGaugeScores).mockResolvedValue({
+      results: [{ client_id: client.Id, applicable: true, data_sufficiency: 'ok', score: 82, rating: 'A' } as SolvencyScoreSlim],
       errors: [], count: 1, failed: 0,
     })
     renderRegistry()
@@ -89,6 +89,6 @@ describe('BUG-1527 clients registry optional solvency', () => {
     renderRegistry()
     expect(await screen.findByRole('alert')).toBeTruthy()
     expect(screen.getByText('Не вдалося завантажити клієнтів')).toBeTruthy()
-    expect(getClientSolvencyScoresBatch).not.toHaveBeenCalled()
+    expect(getClientSolvencyGaugeScores).not.toHaveBeenCalled()
   })
 })

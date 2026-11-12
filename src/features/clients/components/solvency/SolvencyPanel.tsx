@@ -217,6 +217,11 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
       <Card className="app-section-card" padding="lg" radius="md" withBorder>
         <Stack gap="sm">
           <ScoreHeader score={score} />
+          {score.policy_reason && (
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+              {score.policy_reason}
+            </Alert>
+          )}
           <Group className="client-solvency-risk" align="center" gap="xs" wrap="wrap">
             <Text c="dimmed" fw={600} size="sm">
               {t('Контроль боргу на 90 днів')}:
@@ -455,7 +460,7 @@ function ScoreNotes({ score }: { score: SolvencyScore }) {
           {t('Неповне вікно операцій')}
         </Badge>
       )}
-      {score.caps_applied.map((cap) => (
+      {score.caps_applied.filter((cap) => cap !== score.policy_reason_code).map((cap) => (
         <Badge color="orange" key={cap} size="sm" variant="light">
           {cap}
         </Badge>
