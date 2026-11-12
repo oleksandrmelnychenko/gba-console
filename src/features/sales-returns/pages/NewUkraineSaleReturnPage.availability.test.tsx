@@ -15,16 +15,19 @@ vi.mock('../../sales-ukraine/persistentSalesMutation', () => ({
 
 const apiMock = vi.mocked(apiRequest)
 let childReady: boolean | undefined
+let childSale: { IsAcceptedToPacking?: boolean; IsImported?: boolean; IsVatSale?: boolean }
 
 beforeEach(() => {
   vi.clearAllMocks()
   childReady = false
+  childSale = {}
   apiMock.mockImplementation(async (path) => {
     if (path === '/sales/all/returns/search') return [
       ['1176741e-9e17-45fb-9ac9-7ac61c1111d5', 'КНо00002560', 'aa43cf38-f8c1-4b9d-807e-cfe8cff78b3e', true],
       ['2f2fa9ff-2ba6-4ea8-927f-e6a1247ed154', 'КНо00002561', '955b3ec2-0ee3-4dbe-a470-bc2238ec941f', childReady],
     ].map(([NetUid, number, itemNetUid, ready]) => ({
       NetUid,
+      ...(number === 'КНо00002561' ? childSale : {}),
       SaleNumber: { Value: number },
       ClientAgreement: {
         Client: { NetUid: 'b14c6692-be12-445b-8964-b554b8a808a8', FullName: 'МЕЛЬНИК ЮРІЙ ВІТАЛІЙОВИЧ' },
@@ -93,4 +96,23 @@ it('does not interpret missing stock readiness as permission to return', async (
   const results = await search()
   expect(results.getByText('Складську готовність не підтверджено')).toBeTruthy()
   expect((results.getAllByText('Додати', { exact: true }).map((label) => label.closest('button')!)[1] as HTMLButtonElement).disabled).toBe(true)
+})
+
+it.each([
+  { name: 'VAT invoice not released for shipment', sale: { IsAcceptedToPacking: false, IsImported: false, IsVatSale: true },
+    label: 'Не допущено до відвантаження', hint: /Накладна КНо00002561, до повернення 1\. Накладну ще не допущено до відвантаження.*Оплатіть накладну або розблокуйте її для відвантаження у «Продажі»/ },
+  { name: 'non-VAT invoice not released for shipment', sale: { IsAcceptedToPacking: false, IsImported: false, IsVatSale: false },
+    label: 'Не допущено до відвантаження', hint: /Накладну ще не допущено до відвантаження.*Повернення стане доступним після оплати накладної\.$/ },
+  { name: 'released but stock write-off incomplete', sale: { IsAcceptedToPacking: true, IsImported: false },
+    label: 'Складське проведення не завершено', hint: /Накладна КНо00002561, до повернення 1\. Складське списання цієї позиції ще не проведено повністю/ },
+  { name: 'imported from 1C without a complete write-off', sale: { IsAcceptedToPacking: true, IsImported: true },
+    label: 'Немає складського списання', hint: /Накладна КНо00002561, до повернення 1\. Накладну імпортовано з 1С/ },
+])('explains an unavailable row: $name', async ({ sale, label, hint }) => {
+  childSale = sale
+  const results = await search()
+  const status = results.getByText(label)
+  expect(results.getByText('КНо00002561')).toBeTruthy()
+  fireEvent.mouseEnter(status)
+  expect(await screen.findByText(hint)).toBeTruthy()
+  expect((results.getAllByText('Додати', { exact: true }).map((item) => item.closest('button')!)[1] as HTMLButtonElement).disabled).toBe(true)
 })

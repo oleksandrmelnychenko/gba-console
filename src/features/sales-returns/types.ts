@@ -97,6 +97,8 @@ export type SalesReturnSale = EntityFields & {
   BaseSalePaymentStatus?: SalesReturnPaymentStatus | null
   ClientAgreement?: SalesReturnClientAgreement | null
   Created?: Date | string
+  IsAcceptedToPacking?: boolean
+  IsImported?: boolean
   IsSaleExpanded?: boolean
   IsVatSale?: boolean
   Order?: SalesReturnOrder | null

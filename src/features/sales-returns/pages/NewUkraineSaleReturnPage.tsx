@@ -1425,6 +1425,36 @@ function getReturnUserName(user?: SalesReturn['CreatedBy']): string {
   return user?.FullName?.trim() || [user?.LastName, user?.Name].filter(Boolean).join(' ').trim()
 }
 
+function getReturnUnavailableReason(row: SaleItemRow): { label: string; hint: string } {
+  if (row.item.HasCompleteReturnMovement !== false) {
+    return {
+      label: 'Складську готовність не підтверджено',
+      hint: 'Сервер не повідомив, чи проведено накладну по складу. Оновіть пошук; до підтвердження повернення недоступне.',
+    }
+  }
+
+  if (row.sale.IsImported === true) {
+    return {
+      label: 'Немає складського списання',
+      hint: 'Накладну імпортовано з 1С, і для цієї позиції немає повного складського списання або її вже повністю повернено. Повернення за нею недоступне.',
+    }
+  }
+
+  if (row.sale.IsAcceptedToPacking === false) {
+    return {
+      label: 'Не допущено до відвантаження',
+      hint: row.sale.IsVatSale === true
+        ? 'Накладну ще не допущено до відвантаження, тому товар за нею не списано зі складу. Оплатіть накладну або розблокуйте її для відвантаження у «Продажі» — після цього повернення стане доступним.'
+        : 'Накладну ще не допущено до відвантаження, тому товар за нею не списано зі складу. Повернення стане доступним після оплати накладної.',
+    }
+  }
+
+  return {
+    label: 'Складське проведення не завершено',
+    hint: 'Складське списання цієї позиції ще не проведено повністю. Повернення стане доступним після складського проведення накладної.',
+  }
+}
+
 function useSaleItemColumns({
   drafts,
   onEdit,
@@ -1577,9 +1607,18 @@ function useSaleItemColumns({
           const draft = drafts.find((item) => getOrderItemKey(item.orderItem) === getOrderItemKey(row.item))
 
           if (row.item.HasCompleteReturnMovement !== true) {
-            return <Text size="xs" c="dimmed">{t(row.item.HasCompleteReturnMovement === false
-              ? 'Складське проведення не завершено'
-              : 'Складську готовність не підтверджено')}</Text>
+            const reason = getReturnUnavailableReason(row)
+            const remainingQty = (row.item.Qty || 0) - (row.item.ReturnedQty || 0)
+
+            return (
+              <Tooltip
+                multiline
+                w={340}
+                label={`${t('Накладна')} ${displayValue(row.sale.SaleNumber?.Value)}, ${t('до повернення')} ${formatAmount(remainingQty)}. ${t(reason.hint)}`}
+              >
+                <Text size="xs" c="dimmed" tabIndex={0} className="new-sale-return-create-unavailable">{t(reason.label)}</Text>
+              </Tooltip>
+            )
           }
 
           return draft ? (
