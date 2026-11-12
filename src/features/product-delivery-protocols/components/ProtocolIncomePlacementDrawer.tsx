@@ -57,6 +57,19 @@ function sumQtyExcept(placements: DynamicProductPlacement[], excluded: DynamicPr
   return placements.reduce((total, placement) => total + (placement === excluded ? 0 : placement.Qty || 0), 0)
 }
 
+function isUnplaced(placement: DynamicProductPlacement): boolean {
+  return (
+    !placement.IsApplied &&
+    (placement.StorageNumber || 'N') === 'N' &&
+    (placement.RowNumber || 'N') === 'N' &&
+    (placement.CellNumber || 'N') === 'N'
+  )
+}
+
+function roundQty(value: number): number {
+  return Math.round(value * 1e6) / 1e6
+}
+
 function placementKey(placement: DynamicProductPlacement, index: number): string {
   if (placement.NetUid || placement.Id) {
     return String(placement.NetUid || placement.Id)
@@ -224,9 +237,22 @@ function ProtocolIncomePlacementDrawerContent({
         )
         const remainder = (draft.editing.Qty || 0) - draft.qty
 
-        return remainder > 0
+        if (remainder <= 0) return updated
+
+        const editedIndex = current.indexOf(draft.editing)
+        const otherUnplacedIndex = updated.findIndex((entry, index) => index !== editedIndex && isUnplaced(entry))
+        const unplacedIndex =
+          otherUnplacedIndex >= 0
+            ? otherUnplacedIndex
+            : editedIndex >= 0 && isUnplaced(updated[editedIndex])
+              ? editedIndex
+              : undefined
+
+        return unplacedIndex === undefined
           ? [...updated, { Qty: remainder, StorageNumber: 'N', RowNumber: 'N', CellNumber: 'N', IsApplied: false }]
-          : updated
+          : updated.map((entry, index) =>
+              index === unplacedIndex ? { ...entry, Qty: roundQty((entry.Qty || 0) + remainder) } : entry,
+            )
       }
 
       return [

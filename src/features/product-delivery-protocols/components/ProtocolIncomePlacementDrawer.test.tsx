@@ -192,4 +192,47 @@ describe('ProtocolIncomePlacementDrawer', () => {
     ])
   })
 
+  it('merges the remainder of a reduced cell into the existing N-N-N row instead of adding a second one', () => {
+    const onApply = vi.fn()
+    const placed = { Id: 31, Qty: 20, StorageNumber: '4', RowNumber: '4', CellNumber: '4', IsApplied: false }
+    const unplaced = { Id: 32, Qty: 40, StorageNumber: 'N', RowNumber: 'N', CellNumber: 'N', IsApplied: false }
+    renderWithMantine(<I18nProvider><ProtocolIncomePlacementDrawer
+      opened columnId="column-1" item={{ ...item, Qty: 60 }} maxQty={60}
+      row={{ ...row, Qty: 60, DynamicProductPlacements: [placed, unplaced] }}
+      selectedStorage={null} onApply={onApply} onClose={vi.fn()}
+    /></I18nProvider>)
+    fireEvent.click(screen.getByText('20'))
+    fireEvent.change(screen.getByLabelText('Кількість'), { target: { value: '12.5' } })
+    fireEvent.click(screen.getByTestId('placement-accept-draft'))
+    expect(screen.getAllByText('N')).toHaveLength(3)
+    expect(screen.getByText('47.5')).not.toBeNull()
+    fireEvent.click(screen.getByTestId('placement-apply'))
+    expect(onApply).toHaveBeenCalledExactlyOnceWith([{ ...placed, Qty: 12.5 }, { ...unplaced, Qty: 47.5 }])
+  })
+
+  it('keeps one N-N-N row across repeated reductions and when the N-N-N row itself is reduced', () => {
+    const onApply = vi.fn()
+    const placed = { Id: 31, Qty: 60, StorageNumber: '4', RowNumber: '4', CellNumber: '4', IsApplied: false }
+    renderWithMantine(<I18nProvider><ProtocolIncomePlacementDrawer
+      opened columnId="column-1" item={{ ...item, Qty: 60 }} maxQty={60}
+      row={{ ...row, Qty: 60, DynamicProductPlacements: [placed] }}
+      selectedStorage={null} onApply={onApply} onClose={vi.fn()}
+    /></I18nProvider>)
+    for (const [from, to] of [['60', '45'], ['45', '40'], ['40', '10']]) {
+      fireEvent.click(screen.getByText(from))
+      fireEvent.change(screen.getByLabelText('Кількість'), { target: { value: to } })
+      fireEvent.click(screen.getByTestId('placement-accept-draft'))
+    }
+    expect(screen.getAllByText('N')).toHaveLength(3)
+    fireEvent.click(screen.getByText('50'))
+    fireEvent.change(screen.getByLabelText('Кількість'), { target: { value: '5' } })
+    fireEvent.click(screen.getByTestId('placement-accept-draft'))
+    expect(screen.getAllByText('N')).toHaveLength(3)
+    fireEvent.click(screen.getByTestId('placement-apply'))
+    expect(onApply).toHaveBeenCalledExactlyOnceWith([
+      { ...placed, Qty: 10 },
+      { Qty: 50, StorageNumber: 'N', RowNumber: 'N', CellNumber: 'N', IsApplied: false },
+    ])
+  })
+
 })
