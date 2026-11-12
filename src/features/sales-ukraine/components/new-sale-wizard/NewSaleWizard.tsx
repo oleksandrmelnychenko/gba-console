@@ -1287,8 +1287,11 @@ function NewSaleWizardContent({
     }
 
     if (event.key === 'F2' || event.key === 'F3') {
+      dispatchWizardKey(event)
       event.preventDefault()
       event.stopPropagation()
+
+      return
     }
 
     if (dispatchWizardKey(event)) {

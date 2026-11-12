@@ -191,6 +191,9 @@ export function restorePreviousProductKeyboardState(): void {
 
 export function consumeNextWizardEscape(): void {
   store.skipNextEscape = true
+  setTimeout(() => {
+    store.skipNextEscape = false
+  }, 0)
 }
 
 export function resetWizardKeyboard(): void {
