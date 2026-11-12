@@ -108,6 +108,22 @@ describe('clientRecommendationsApi recommendation evidence', () => {
     }))
   })
 
+  it.each([
+    ['/recommendations/get', getMostPurchasedProductsByClientId],
+    ['/recommendations/get/product', null],
+  ] as const)('asks %s to skip the analogue lists nothing renders', async (path, getRecommendations) => {
+    apiRequestMock.mockResolvedValueOnce([])
+    const options = { clientAgreementNetId: agreementId }
+
+    await (getRecommendations
+      ? getRecommendations('client', false, options)
+      : getProductCoPurchaseRecommendations('product', 'client', false, options))
+
+    expect(apiRequestMock).toHaveBeenCalledWith(path, expect.objectContaining({
+      query: expect.objectContaining({ includeAnalogues: false, includeMeta: true }),
+    }))
+  })
+
   it('sends negative feedback through the client-card permission facade', async () => {
     apiRequestMock.mockResolvedValueOnce({})
 

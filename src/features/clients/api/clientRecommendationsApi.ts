@@ -28,6 +28,7 @@ export async function getMostPurchasedProductsByClientId(
       // Legacy clients read this route as a bare product list; the metadata wrapper
       // ({Product, Score, Rank, Source}) is opt-in via includeMeta.
       includeMeta: true,
+      includeAnalogues: false,
       // With an agreement the server hydrates availability (AvailableQty* + rows),
       // so the sale wizard shows real quantities on recommendations.
       ...(options?.clientAgreementNetId ? { clientAgreementNetId: options.clientAgreementNetId } : {}),
@@ -52,6 +53,7 @@ export async function getProductCoPurchaseRecommendations(
       clientNetId,
       byRegion,
       includeMeta: true,
+      includeAnalogues: false,
       // Empty productNetId must be omitted — the server binds it as Guid?.
       ...(productNetId ? { productNetId } : {}),
       ...(options?.clientAgreementNetId ? { clientAgreementNetId: options.clientAgreementNetId } : {}),
