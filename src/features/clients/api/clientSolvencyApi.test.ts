@@ -312,6 +312,71 @@ describe('current observation proof for every serving response', () => {
     expect(payload).toEqual(original)
   })
 
+  it('keeps the over-limit gauge ratio with its debt, limit and currency', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      ...charts(),
+      limit_utilization_gauge: {
+        value: 4.4012, status: 'ok', debt_amount: 44012.34, limit_amount: 10000, currency_id: 2,
+        threshold_soft: 0.9, threshold_hard: 1, label: 'limit_utilization',
+      },
+    })
+    await expect(getClientSolvencyCharts(42)).resolves.toMatchObject({
+      limit_utilization_gauge: {
+        value: 4.4012, status: 'ok', debt_amount: 44012.34, limit_amount: 10000, currency_id: 2,
+      },
+    })
+  })
+
+  it.each([
+    ['no_limit', 'no_credit_limit'],
+    ['not_applicable', 'limit_utilization'],
+  ])('keeps the %s gauge without a value', async (status, label) => {
+    apiRequestMock.mockResolvedValueOnce({
+      ...charts(),
+      limit_utilization_gauge: {
+        value: null, status, debt_amount: null, limit_amount: null, currency_id: null,
+        threshold_soft: 0.9, threshold_hard: 1, label,
+      },
+    })
+    await expect(getClientSolvencyCharts(42)).resolves.toMatchObject({
+      limit_utilization_gauge: { value: null, status, debt_amount: null, limit_amount: null, label },
+    })
+  })
+
+  it('accepts a gauge from an older server without the new fields', async () => {
+    apiRequestMock.mockResolvedValueOnce(charts())
+    await expect(getClientSolvencyCharts(42)).resolves.toMatchObject({
+      limit_utilization_gauge: {
+        value: 0.5, status: null, debt_amount: null, limit_amount: null, currency_id: null,
+      },
+    })
+    apiRequestMock.mockResolvedValueOnce({
+      ...charts(),
+      limit_utilization_gauge: { value: null, threshold_soft: 0.9, threshold_hard: 1, label: 'no_credit_limit' },
+    })
+    await expect(getClientSolvencyCharts(42)).resolves.toMatchObject({
+      limit_utilization_gauge: { value: null, status: null, label: 'no_credit_limit' },
+    })
+  })
+
+  it.each([
+    { value: 0.5, status: 'no_limit' },
+    { value: null, status: 'ok' },
+    { value: -0.1 },
+    { value: '0.5' },
+    { debt_amount: -1 },
+    { threshold_soft: undefined },
+    { label: '' },
+  ])('rejects an inconsistent gauge %j', async (overrides) => {
+    apiRequestMock.mockResolvedValueOnce({
+      ...charts(),
+      limit_utilization_gauge: { ...charts().limit_utilization_gauge, ...overrides },
+    })
+    await expect(getClientSolvencyCharts(42)).rejects.toThrow('limit_utilization_gauge')
+    apiRequestMock.mockResolvedValueOnce({ ...charts(), limit_utilization_gauge: null })
+    await expect(getClientSolvencyCharts(42)).rejects.toThrow('limit_utilization_gauge')
+  })
+
   it('accepts exact unavailable and nonbuyer pairs and retains the producer explanation', async () => {
     apiRequestMock.mockResolvedValueOnce(charts())
     await expect(getClientSolvencyCharts(42)).resolves.toMatchObject({

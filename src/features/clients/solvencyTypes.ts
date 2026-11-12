@@ -119,8 +119,14 @@ export type SolvencyBatch = {
   failed: number
 }
 
+export type GaugeStatus = 'ok' | 'no_limit' | 'not_applicable'
+
 export type GaugeChart = {
-  value: number
+  value: number | null
+  status?: GaugeStatus | null
+  debt_amount?: number | null
+  limit_amount?: number | null
+  currency_id?: number | null
   threshold_soft: number
   threshold_hard: number
   label: string

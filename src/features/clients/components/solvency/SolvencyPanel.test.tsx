@@ -239,8 +239,93 @@ describe('current-state display', () => {
     expect(queryByText(/Версія моделі/)).toBeNull()
     expect(queryByText(/Курс валют на/)).toBeNull()
     expect(await findByText(/Вікно операцій.*12/)).toBeTruthy()
-    expect(await findByText('0%')).toBeTruthy()
+    expect(await findByText('0 %')).toBeTruthy()
     expect(container.querySelector('.mantine-Sparkline-root')).toBeNull()
+  })
+
+  function gaugeCharts(gauge: SolvencyCharts['limit_utilization_gauge']): SolvencyCharts {
+    return { ...currentCharts, limit_utilization_gauge: gauge }
+  }
+
+  async function renderGauge(gauge: SolvencyCharts['limit_utilization_gauge']) {
+    getClientSolvencyScore.mockResolvedValue(v3Score)
+    getClientSolvencyCharts.mockResolvedValue(gaugeCharts(gauge))
+    const view = renderPanel(<SolvencyPanel clientNetId="abc" />)
+    await view.findByText('Використання ліміту', { selector: '.client-section-title' })
+    return view
+  }
+
+  it('shows «Ліміт не встановлено» instead of a percent when the client has no credit limit', async () => {
+    const { getByText, queryByText, queryByRole } = await renderGauge({
+      value: null, status: 'no_limit', debt_amount: null, limit_amount: null, currency_id: null,
+      threshold_soft: 0.9, threshold_hard: 1, label: 'no_credit_limit',
+    })
+    expect(getByText('Ліміт не встановлено')).toBeTruthy()
+    expect(queryByText(/^\d+(,\d)?\s%$/)).toBeNull()
+    expect(queryByText(/Поріг/)).toBeNull()
+    expect(queryByRole('progressbar', { name: 'Використання ліміту' })).toBeNull()
+  })
+
+  it('keeps the not-applicable wording when the gauge is not applicable', async () => {
+    const { container, queryByText, queryByRole } = await renderGauge({
+      value: null, status: 'not_applicable', threshold_soft: 0.9, threshold_hard: 1, label: 'limit_utilization',
+    })
+    expect(container.querySelector('[data-gauge-state="not_applicable"]')?.textContent)
+      .toBe('не покупець — оцінка платоспроможності незастосовна')
+    expect(queryByText('Ліміт не встановлено')).toBeNull()
+    expect(queryByRole('progressbar', { name: 'Використання ліміту' })).toBeNull()
+  })
+
+  it('prints the real over-limit percent in the over-limit colour and caps the bar at 100', async () => {
+    const { container, getByText, getByRole } = await renderGauge({
+      value: 4.4, status: 'ok', debt_amount: 44000.5, limit_amount: 10000, currency_id: 2,
+      threshold_soft: 0.9, threshold_hard: 1, label: 'limit_utilization',
+    })
+    const percent = getByText('440 %')
+    expect(percent.getAttribute('data-gauge-zone')).toBe('over')
+    expect(percent.style.getPropertyValue('--text-color') || percent.getAttribute('style')).toContain('orange')
+    expect(getByRole('progressbar', { name: 'Використання ліміту' }).getAttribute('aria-valuenow')).toBe('100')
+    expect(container.querySelector('.client-solvency-gauge-debt')?.textContent?.replace(/\s/g, ' '))
+      .toBe('борг 44 000,50 із ліміту 10 000,00')
+  })
+
+  it('formats a regular percent with at most one decimal and no over-limit colour', async () => {
+    const { container, getByText, getByRole } = await renderGauge({
+      value: 0.4567, status: 'ok', debt_amount: 456.7, limit_amount: 1000, currency_id: 2,
+      threshold_soft: 0.9, threshold_hard: 1, label: 'limit_utilization',
+    })
+    const percent = getByText('45,7 %')
+    expect(percent.getAttribute('data-gauge-zone')).toBe('green')
+    expect(percent.getAttribute('style') ?? '').not.toContain('orange')
+    expect(getByRole('progressbar', { name: 'Використання ліміту' }).getAttribute('aria-valuenow')).toBe('45.67')
+    expect(container.querySelector('.client-solvency-gauge-debt')?.textContent?.replace(/\s/g, ' '))
+      .toBe('борг 456,70 із ліміту 1 000,00')
+  })
+
+  it('shows the percent without a debt line when an older server omits the new fields', async () => {
+    const { container, getByText } = await renderGauge({
+      value: 0.5, threshold_soft: 0.9, threshold_hard: 1, label: 'limit_utilization',
+    })
+    expect(getByText('50 %')).toBeTruthy()
+    expect(getByText(/Поріг/)).toBeTruthy()
+    expect(container.querySelector('.client-solvency-gauge-debt')).toBeNull()
+  })
+
+  it('shows a dash, not 0 %, when an older server sends a null value without a status', async () => {
+    const { container, queryByText } = await renderGauge({
+      value: null, threshold_soft: 0.9, threshold_hard: 1, label: 'limit_utilization',
+    })
+    expect(container.querySelector('[data-gauge-state="unknown"]')?.textContent).toBe('—')
+    expect(queryByText('0 %')).toBeNull()
+    expect(queryByText('Ліміт не встановлено')).toBeNull()
+  })
+
+  it('reads the no-limit label from an older server that drops the status', async () => {
+    const { getByText, queryByText } = await renderGauge({
+      value: null, threshold_soft: 0.9, threshold_hard: 1, label: 'no_credit_limit',
+    })
+    expect(getByText('Ліміт не встановлено')).toBeTruthy()
+    expect(queryByText('0 %')).toBeNull()
   })
 
   it('keeps a valid current score when chart contract fails and does not repair history for display', async () => {

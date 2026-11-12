@@ -21,6 +21,7 @@ import { getClientSolvencyCharts, getClientSolvencyScore } from '../../api/clien
 import './solvency-panel.css'
 import type {
   Contribution,
+  GaugeChart,
   Risk90d,
   Risk90dBand,
   SolvencyCharts,
@@ -51,6 +52,12 @@ const eurFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
   minimumFractionDigits: 2,
 })
+
+const utilizationFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 1,
+})
+
+const GAUGE_OVER_LIMIT_TEXT_COLOR = 'orange.7'
 
 const initialSolvencyState: SolvencyState = {
   charts: null,
@@ -478,8 +485,9 @@ function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
   const { t } = useI18n()
 
   const gauge = charts.limit_utilization_gauge
-  const utilizationPercent = Number.isFinite(gauge.value) ? clampPercent(gauge.value * 100) : 0
+  const gaugeState = resolveGaugeState(gauge)
   const gaugeZone = utilizationZone(gauge.value, gauge.threshold_soft, gauge.threshold_hard)
+  const gaugeDebtLine = gaugeState === 'value' ? formatGaugeDebtLine(t, gauge) : null
 
   const donutData = charts.payment_discipline_donut.reduce<Array<{ color: string; name: string; value: number }>>(
     (items, slice, index) => {
@@ -514,19 +522,49 @@ function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
             <Text className="client-section-title" fw={600} size="sm">
               {t('Використання ліміту')}
             </Text>
-            <Text className="client-solvency-value" fw={700} size="xl">
-              {utilizationPercent.toFixed(0)}%
-            </Text>
-            <Progress
-              aria-label={t('Використання ліміту')}
-              color={GAUGE_ZONE_COLOR[gaugeZone]}
-              radius="xl"
-              size={8}
-              value={utilizationPercent}
-            />
-            <Text c="dimmed" size="xs">
-              {t('Поріг')}: {formatPercent(gauge.threshold_soft)} / {formatPercent(gauge.threshold_hard)}
-            </Text>
+            {gaugeState === 'value' && gauge.value != null ? (
+              <>
+                <Text
+                  c={gaugeZone === 'over' ? GAUGE_OVER_LIMIT_TEXT_COLOR : undefined}
+                  className="client-solvency-value"
+                  data-gauge-zone={gaugeZone}
+                  fw={700}
+                  size="xl"
+                >
+                  {formatUtilizationPercent(gauge.value)}
+                </Text>
+                <Progress
+                  aria-label={t('Використання ліміту')}
+                  color={GAUGE_ZONE_COLOR[gaugeZone]}
+                  radius="xl"
+                  size={8}
+                  value={clampPercent(gauge.value * 100)}
+                />
+                {gaugeDebtLine ? (
+                  <Text className="client-solvency-gauge-debt" size="xs">
+                    {gaugeDebtLine}
+                  </Text>
+                ) : null}
+                <Text c="dimmed" size="xs">
+                  {t('Поріг')}: {formatPercent(gauge.threshold_soft)} / {formatPercent(gauge.threshold_hard)}
+                </Text>
+              </>
+            ) : (
+              <Text
+                c="dimmed"
+                className={gaugeState === 'unknown' ? 'client-solvency-value' : undefined}
+                data-gauge-state={gaugeState}
+                fw={gaugeState === 'unknown' ? 700 : undefined}
+                py={gaugeState === 'unknown' ? undefined : 'md'}
+                size={gaugeState === 'unknown' ? 'xl' : 'sm'}
+              >
+                {gaugeState === 'no_limit'
+                  ? t('Ліміт не встановлено')
+                  : gaugeState === 'not_applicable'
+                    ? t('не покупець — оцінка платоспроможності незастосовна')
+                    : '—'}
+              </Text>
+            )}
           </Stack>
         </Card>
 
@@ -618,8 +656,36 @@ function translateDebtSource(t: (value: string) => string, source: string): stri
   return source
 }
 
-function utilizationZone(value: number, soft: number, hard: number): string {
-  if (!Number.isFinite(value)) {
+type GaugeState = 'no_limit' | 'not_applicable' | 'unknown' | 'value'
+
+function resolveGaugeState(gauge: GaugeChart): GaugeState {
+  if (gauge.status === 'no_limit' || gauge.status === 'not_applicable') {
+    return gauge.status
+  }
+
+  if (gauge.value != null && Number.isFinite(gauge.value)) {
+    return 'value'
+  }
+
+  return gauge.label === 'no_credit_limit' ? 'no_limit' : 'unknown'
+}
+
+function formatUtilizationPercent(ratio: number): string {
+  return `${utilizationFormatter.format(ratio * 100)}\u00a0%`
+}
+
+function formatGaugeDebtLine(t: (value: string) => string, gauge: GaugeChart): string | null {
+  const debt = gauge.debt_amount
+  const limit = gauge.limit_amount
+  if (debt == null || limit == null || !Number.isFinite(debt) || !Number.isFinite(limit)) {
+    return null
+  }
+
+  return `${t('борг')} ${eurFormatter.format(debt)} ${t('із ліміту')} ${eurFormatter.format(limit)}`
+}
+
+function utilizationZone(value: number | null, soft: number, hard: number): string {
+  if (value == null || !Number.isFinite(value)) {
     return 'green'
   }
 

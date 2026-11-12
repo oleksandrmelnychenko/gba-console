@@ -3,6 +3,8 @@ import type {
   CurrencyExposure,
   ForwardRisk,
   ForwardRiskStatus,
+  GaugeChart,
+  GaugeStatus,
   Risk90d,
   SolvencyBatch,
   SolvencyBatchError,
@@ -465,10 +467,41 @@ function normalizeCharts(result: unknown, expectedClientId: number): SolvencyCha
     ...observation,
     ...historyAvailability,
     window_months: windowMonths,
+    limit_utilization_gauge: normalizeGauge(charts.limit_utilization_gauge, 'charts.limit_utilization_gauge'),
     open_invoice_aging_bars: agingBars,
     turnover_vs_exposure: turnoverVsExposure,
     turnover_trend: turnoverTrend,
   }
+}
+
+const GAUGE_STATUSES: readonly GaugeStatus[] = ['ok', 'no_limit', 'not_applicable']
+
+function normalizeGauge(value: unknown, path: string): GaugeChart {
+  const gauge = requireRecord(value, path)
+  const ratio = gauge.value == null ? null : requireRatio(gauge.value, `${path}.value`)
+  const status = GAUGE_STATUSES.find((item) => item === gauge.status) ?? null
+  if (status !== null && (ratio === null) !== (status !== 'ok')) {
+    throw new SolvencyContractError(`${path}.status`, 'status and value disagree')
+  }
+
+  return {
+    value: ratio,
+    status,
+    debt_amount: gauge.debt_amount == null ? null : requireMoney(gauge.debt_amount, `${path}.debt_amount`),
+    limit_amount: gauge.limit_amount == null ? null : requireMoney(gauge.limit_amount, `${path}.limit_amount`),
+    currency_id: gauge.currency_id == null ? null : requirePositiveInteger(gauge.currency_id, `${path}.currency_id`),
+    threshold_soft: requireRatio(gauge.threshold_soft, `${path}.threshold_soft`),
+    threshold_hard: requireRatio(gauge.threshold_hard, `${path}.threshold_hard`),
+    label: requireNonEmptyString(gauge.label, `${path}.label`),
+  }
+}
+
+function requireRatio(value: unknown, path: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    throw new SolvencyContractError(path, 'must be a finite non-negative number')
+  }
+
+  return value
 }
 
 function normalizeCurrentObservation(
