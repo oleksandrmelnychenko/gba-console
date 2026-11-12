@@ -44,7 +44,8 @@ export function ReportValuePicker({
   const locked = !!disabled || !!readOnly
   const keys = new Set(selected.map(item => item.value))
   const query = search.trim().toLocaleLowerCase('uk')
-  const merged = mode === 'multi' && !query ? [...new Map([...selected, ...data].map(item => [item.value, item])).values()] : data
+  const available = new Map(data.map(item => [item.value, item]))
+  const merged = mode === 'multi' && !query ? [...available.values(), ...selected.filter(item => !available.has(item.value))] : data
   const options = selectedOnly ? selected : merged
   const visible = selectedOnly || !remote ? options.filter(item => item.label.toLocaleLowerCase('uk').includes(query)) : options
   const busy = !!loading && !selectedOnly

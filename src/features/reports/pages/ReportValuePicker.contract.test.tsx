@@ -91,6 +91,17 @@ describe('dropdown', () => {
 })
 
 describe('choosing', () => {
+  it('keeps the lower keyboard selection in place so ArrowUp reaches its original neighbour', async () => {
+    render(<Harness portals />)
+    await userEvent.click(box())
+    await userEvent.keyboard('{ArrowUp}{Enter}')
+    expect(keys()).toEqual(['3'])
+    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(options.map(option => option.label))
+    await userEvent.keyboard('{ArrowUp}{Enter}')
+    expect(keys()).toEqual(['3', '2'])
+    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(options.map(option => option.label))
+  })
+
   it('multi: mouse toggles values, keeps the list open and keeps the typed text', async () => {
     render(<Harness />)
     await userEvent.type(box(), 'a')
@@ -140,6 +151,19 @@ describe('choosing', () => {
 })
 
 describe('selected values', () => {
+  it('keeps directory labels and order, appends missing saved values once, and can remove them', async () => {
+    render(<Harness initial={['saved', '3']} data={options.map(option => ({ ...option, label: `${option.label} current` }))} />)
+    await userEvent.click(box())
+    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual([
+      ...options.map(option => `${option.label} current`), 'Збережене saved',
+    ])
+    await userEvent.click(screen.getByRole('option', { name: 'Збережене saved' }))
+    expect(keys()).toEqual(['3'])
+    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(options.map(option => `${option.label} current`))
+    await userEvent.click(screen.getByRole('button', { name: 'Вибрано: 1' }))
+    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual([options[2].label])
+  })
+
   it.each(['multi', 'single'] as const)('%s: shows «Вибрано: N» with removable pills', async mode => {
     render(<Harness mode={mode} initial={['1', '2']} />)
     expect(screen.getByRole('button', { name: 'Вибрано: 2' })).toBeTruthy()
