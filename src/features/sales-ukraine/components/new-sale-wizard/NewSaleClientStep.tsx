@@ -31,6 +31,7 @@ export function NewSaleClientStep({
   clientNetId,
   headerClose,
   headerTools,
+  initialAgreementNetId,
   initialClient,
   onClientChange,
   onClientResolved,
@@ -49,6 +50,7 @@ export function NewSaleClientStep({
   canOpenDetails?: boolean
   canViewAudit?: boolean
   clientNetId: string | null
+  initialAgreementNetId?: string | null
   headerClose?: ReactNode
   headerTools?: ReactNode
   initialClient?: Client | null
@@ -80,7 +82,7 @@ export function NewSaleClientStep({
     confirmClient, unselectClient, selectAgreement, selectNextAgreement, selectPreviousAgreement, refreshGroupedDebts,
     retryAgreements, retryGroupedDebts,
   } = useWizardClientSelection({
-    clientNetId, initialClient, permissionFlow, hasRegistryItems: registryItems.length > 0,
+    clientNetId, initialAgreementNetId, initialClient, permissionFlow, hasRegistryItems: registryItems.length > 0,
     onClientChange, onClientResolved, onAgreementChange, resetRegister, fetchRegister,
     onShowClient: navigation.showClient,
   })

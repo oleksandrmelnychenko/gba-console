@@ -56,6 +56,26 @@ describe('wizard client selection', () => {
     expect(mocks.agreements).toHaveBeenCalledOnce()
   })
 
+  it('restores the agreement chosen before the step was left instead of the default one', async () => {
+    const props = { ...options(), clientNetId: 'client-1', initialAgreementNetId: 'AGREEMENT-1', initialClient: client(1) }
+    const { result } = renderHook(useWizardClientSelection, { initialProps: props })
+    await act(async () => { await Promise.resolve() })
+    expect(result.current.selectedAgreement).toBe(first)
+    expect(props.onAgreementChange).toHaveBeenLastCalledWith('agreement-1', first)
+    await act(async () => result.current.confirmClient(client(2)))
+    expect(result.current.selectedAgreement).toBe(active)
+    await act(async () => result.current.confirmClient(client(1)))
+    expect(result.current.selectedAgreement).toBe(active)
+  })
+
+  it('falls back to the default agreement when the remembered one belongs to another client', async () => {
+    const props = { ...options(), clientNetId: 'client-1', initialAgreementNetId: 'agreement-9', initialClient: client(1) }
+    const { result } = renderHook(useWizardClientSelection, { initialProps: props })
+    await act(async () => { await Promise.resolve() })
+    expect(result.current.selectedAgreement).toBe(active)
+    expect(props.onAgreementChange).toHaveBeenLastCalledWith('agreement-2', active)
+  })
+
   it('uses a trailing preview and flushes it on Enter without duplicating requests', async () => {
     const props = options()
     const { result } = renderHook(useWizardClientSelection, { initialProps: props })
