@@ -1,4 +1,5 @@
 import { memo, useEffect, useRef, useState } from 'react'
+import { deskCount } from '../data/reportCountPresentation'
 import { ActionIcon, Alert, Group, Text } from '@mantine/core'
 import { ChevronLeft, ChevronRight, ChevronsLeft } from 'lucide-react'
 import '../../../shared/ui/paginator/paginator.css'
@@ -62,7 +63,7 @@ export const ReportPreviewPages = memo(function ReportPreviewPages({ initial, re
     <ReportInlinePreview preview={preview} embedded={embedded} showPageNote={!initial.ResultSession} {...(previewReportProfile ? { previewReportProfile } : {})} />
     {initial.ResultSession ? <footer className="report-preview-footer">
       <Text size="xs" className="report-preview-footer__note">
-        {preview.Totals ? `Підсумок за всіма рядками: ${preview.Page.TotalVisibleRows}. ` : ''}
+        {preview.Totals ? `Підсумок за всіма рядками: ${deskCount(preview.Page.TotalVisibleRows)}. ` : ''}
         {preview.Page.TotalVisibleRows > preview.Page.ReturnedRows || partialColumns ? 'Повний звіт — Excel / PDF.' : ''}
       </Text>
       {columnWindow && partialColumns ? <Group className="app-paginator report-preview-footer__pagination" gap={4} wrap="nowrap" role="navigation" aria-label="Колонки звіту">
@@ -72,7 +73,7 @@ export const ReportPreviewPages = memo(function ReportPreviewPages({ initial, re
         <ActionIcon variant="subtle" color="gray" size={30} aria-label="Наступні колонки" title="Наступні колонки" disabled={loading || !columnWindow.HasMoreColumns} loading={!!pending?.columns && pending.forward} onClick={nextColumns}><ChevronRight size={16} /></ActionIcon>
       </Group> : null}
       <Group className="app-paginator report-preview-footer__pagination" gap={4} wrap="nowrap" role="navigation" aria-label="Сторінки звіту">
-        <Text size="xs" className="report-preview-footer__range" aria-live="polite">{pending?.rows ? `Завантаження…` : preview.Page.TotalVisibleRows === 0 ? '0 рядків' : `${preview.Page.Offset + 1}–${preview.Page.Offset + preview.Page.ReturnedRows} із ${preview.Page.TotalVisibleRows}`}</Text>
+        <Text size="xs" className="report-preview-footer__range" aria-live="polite">{pending?.rows ? `Завантаження…` : preview.Page.TotalVisibleRows === 0 ? '0 рядків' : `${deskCount(preview.Page.Offset + 1)}–${deskCount(preview.Page.Offset + preview.Page.ReturnedRows)} із ${deskCount(preview.Page.TotalVisibleRows)}`}</Text>
         <ActionIcon variant="subtle" color="gray" size={30} aria-label="Попередні рядки" title="Попередні рядки" disabled={loading || preview.Page.Offset === 0} onClick={() => pageRows(Math.max(0, preview.Page.Offset - preview.Page.Limit))}><ChevronLeft size={16} /></ActionIcon>
         <ActionIcon variant="subtle" color="gray" size={30} aria-label="Наступні рядки" title="Наступні рядки" disabled={loading || !preview.Page.HasMore} loading={!!pending?.rows} onClick={() => pageRows(preview.Page.Offset + preview.Page.Limit)}><ChevronRight size={16} /></ActionIcon>
       </Group>

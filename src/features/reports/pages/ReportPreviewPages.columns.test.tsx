@@ -80,3 +80,10 @@ it('keeps the classic layout for a complete column window', () => {
   expect(view.container.querySelectorAll('.is-sticky-row-header')).toHaveLength(0)
   expect(screen.queryByTestId('report-preview-column-window')).toBeNull()
 })
+
+it('groups thousands in the row range and the totals note', () => {
+  const view = show({ ...normalizeNativeReportPreview({ Preview: widePreview({ total: 3660, offset: 0, returned: 256, rowOffset: 16000, rows: 2, totalRows: 98664 }) }), ResultSession: session })
+  const ranges = [...view.container.querySelectorAll('.report-preview-footer__range')].map(node => node.textContent)
+  expect(ranges).toContain('16 001–16 002 із 98 664')
+  expect(view.container.querySelector('.report-preview-footer__note')?.textContent).toContain('Підсумок за всіма рядками: 98 664.')
+})

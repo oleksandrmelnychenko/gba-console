@@ -1,4 +1,5 @@
 import { PhysicalQuantityExceptionNotice } from '../../../shared/ui/product-movement-history/PhysicalQuantityExceptionNotice'
+import { deskCount } from '../data/reportCountPresentation'
 import { ActionIcon, Alert, Button, Checkbox, Group, NumberInput, Select, Stack, Table, Text, Textarea, TextInput } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, MonitorPlay, Plus, X } from 'lucide-react'
@@ -141,7 +142,7 @@ function ResultTable({ run, draftMeasures, negativeRed, grandTotals, busy, onPag
     <footer className="report-preview-footer">
       <Group className="app-paginator report-preview-footer__pagination" gap={4} wrap="nowrap" role="navigation" aria-label="Сторінки звіту">
         <Text size="xs" className="report-preview-footer__range" aria-live="polite">
-          {result.TotalRows ? `${start + 1}–${end} із ${result.TotalRows}` : 'Немає рядків'}
+          {result.TotalRows ? `${deskCount(start + 1)}–${deskCount(end)} із ${deskCount(result.TotalRows)}` : 'Немає рядків'}
         </Text>
         <ActionIcon variant="subtle" color="gray" size={30} aria-label="Попередні рядки" disabled={busy || start === 0}
           onClick={() => onPage(Math.max(0, start - WAREHOUSE_STOCK_MOVEMENT_PAGE_SIZE))}><ChevronLeft size={16} /></ActionIcon>
