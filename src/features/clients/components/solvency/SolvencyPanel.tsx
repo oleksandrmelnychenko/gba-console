@@ -469,11 +469,21 @@ function ScoreNotes({ score }: { score: SolvencyScore }) {
       )}
       {score.caps_applied.filter((cap) => cap !== score.policy_reason_code).map((cap) => (
         <Badge color="orange" key={cap} size="sm" variant="light">
-          {cap}
+          {SOLVENCY_CAP_LABEL[cap] ?? cap}
         </Badge>
       ))}
     </Group>
   )
+}
+
+const SOLVENCY_CAP_LABEL: Record<string, string> = {
+  utilization_hard_40: 'Перевищення кредитного ліміту',
+  utilization_soft_60: 'Високе завантаження ліміту',
+  blocked_half: 'Клієнт заблокований',
+  current_sev180_pd_floor: 'Прострочка понад 180 днів',
+  hopeless_debt_role: 'Група безнадійної заборгованості',
+  overdue_90_plus: 'Прострочка понад 90 днів',
+  overdue_30_plus: 'Прострочка понад 30 днів',
 }
 
 function formatIsoDate(value: string): string {
