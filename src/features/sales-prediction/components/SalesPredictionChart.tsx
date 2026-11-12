@@ -8,6 +8,7 @@ import './sales-prediction-chart.css'
 
 type SalesPredictionChartProps = {
   color?: string
+  coveragePct?: number
   data: SalesPredictionChartPoint[]
   isLoading?: boolean
   title: string
@@ -27,12 +28,20 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 
 export function SalesPredictionChart({
   color = 'orange.6',
+  coveragePct,
   data,
   isLoading = false,
   title,
 }: SalesPredictionChartProps) {
   const { t } = useI18n()
   const summary = getSummary(data)
+  const hasRange = coveragePct !== undefined && data.length > 0 && data.every(hasRangeBounds)
+  const rangeSeries = hasRange
+    ? [
+        { color: 'gray.5', label: t('Верхня межа, EUR'), name: 'high', strokeDasharray: '4 4' },
+        { color: 'gray.5', label: t('Нижня межа, EUR'), name: 'low', strokeDasharray: '4 4' },
+      ]
+    : []
 
   return (
     <Card className="sales-prediction-chart-card" withBorder radius="md" padding="md">
@@ -59,12 +68,19 @@ export function SalesPredictionChart({
               data={data}
               dataKey="month"
               h={260}
-              series={[{ color, label: t('Сума продажів, EUR'), name: 'amount' }]}
+              series={[{ color, label: t('Сума продажів, EUR'), name: 'amount' }, ...rangeSeries]}
               valueFormatter={formatMoney}
               withDots
               withLegend={false}
               yAxisProps={{ tick: MONEY_AXIS_TICK }}
             />
+            {hasRange && (
+              <Text className="sales-prediction-range-note">
+                {t('Пунктир — діапазон, у який потрапляв факт приблизно у {coverage}% минулих місяців для схожих рядів', {
+                  coverage: coveragePct,
+                })}
+              </Text>
+            )}
             <PredictionSummary
               average={summary.average}
               peak={summary.peak}
@@ -186,6 +202,10 @@ function buildComparisonRows(series: PredictionSeries[]): Array<Record<string, n
 
     return row
   })
+}
+
+function hasRangeBounds(point: SalesPredictionChartPoint): boolean {
+  return typeof point.low === 'number' && typeof point.high === 'number'
 }
 
 function getSummary(data: SalesPredictionChartPoint[]): { average: number; peak: number; total: number } {

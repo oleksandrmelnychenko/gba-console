@@ -24,6 +24,9 @@ function toChartPoints(points: SalesPredictionPoint[]): SalesPredictionChartPoin
   return points.map((point) => ({
     amount: typeof point.SaleAmount === 'number' ? point.SaleAmount : 0,
     month: point.MonthNameUK || '',
+    ...(typeof point.SaleAmountLow === 'number' && typeof point.SaleAmountHigh === 'number'
+      ? { high: point.SaleAmountHigh, low: point.SaleAmountLow }
+      : {}),
   }))
 }
 
@@ -536,6 +539,7 @@ function PredictionCharts({
         <SalesPredictionChart
           color="blue.6"
           data={byClient}
+          coveragePct={forecastLineage?.interval?.coverage_pct}
           isLoading={isLoadingClient}
           title={t('Прогноз продажів по клієнту: {customer} на {monthCount} місяців', {
             customer: clientFullName,
@@ -548,6 +552,7 @@ function PredictionCharts({
         <SalesPredictionChart
           color="orange.6"
           data={byProduct}
+          coveragePct={forecastLineage?.interval?.coverage_pct}
           isLoading={isLoadingProduct}
           title={t('Прогноз продажів по продукту: {product} на {monthCount} місяців', {
             monthCount: byProduct.length,
@@ -560,6 +565,7 @@ function PredictionCharts({
         <SalesPredictionChart
           color="teal.6"
           data={combined}
+          coveragePct={forecastLineage?.interval?.coverage_pct}
           isLoading={isLoadingCombined}
           title={
             isLoadingCombined

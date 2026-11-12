@@ -1,6 +1,16 @@
 export type SalesPredictionPoint = {
   MonthNameUK: string
   SaleAmount: number
+  SaleAmountLow?: number
+  SaleAmountHigh?: number
+}
+
+export type SalesForecastInterval = {
+  coverage_pct: number
+  lower_quantile: number
+  upper_quantile: number
+  basis: string
+  table_version: string
 }
 
 export type SalesPredictionClientOption = {
@@ -17,6 +27,8 @@ export type SalesPredictionProductOption = {
 export type SalesPredictionChartPoint = {
   amount: number
   month: string
+  low?: number
+  high?: number
 }
 
 export type SalesForecastScope = 'ByClient' | 'ByProduct' | 'ByClientAndProduct'
@@ -71,6 +83,7 @@ export type SalesForecastMeta = AiHistoryLineage & {
   history_window_months: number
   minimum_non_zero_months: number
   history: Record<SalesForecastScope, SalesForecastHistoryItem>
+  interval?: SalesForecastInterval
 }
 
 export type SalesForecastResponse = Record<SalesForecastScope, SalesPredictionPoint[]> & {

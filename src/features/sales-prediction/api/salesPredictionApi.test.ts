@@ -23,6 +23,31 @@ function unavailable(status = 'not_requested') {
   }
 }
 
+type RangedPoint = { SaleAmount: number; MonthNameUK: string; SaleAmountLow?: number; SaleAmountHigh?: number }
+
+function rangedClientForecast() {
+  const forecast = canonicalClientForecast()
+  const points: RangedPoint[] = [
+    { SaleAmount: 10.01, MonthNameUK: 'Сер 2026', SaleAmountLow: 4.2, SaleAmountHigh: 16.85 },
+    { SaleAmount: 20.02, MonthNameUK: 'Вер 2026', SaleAmountLow: 0, SaleAmountHigh: 41.5 },
+  ]
+
+  return {
+    ...forecast,
+    ByClient: points,
+    meta: {
+      ...forecast.meta,
+      interval: {
+        coverage_pct: 80,
+        lower_quantile: 0.1,
+        upper_quantile: 0.9,
+        basis: 'rolling_origin_relative_error',
+        table_version: '2026-11-12',
+      },
+    },
+  }
+}
+
 function canonicalClientForecast() {
   return {
     ByClient: [
@@ -156,5 +181,57 @@ describe('salesPredictionApi canonical AI contract', () => {
     apiRequestMock.mockResolvedValueOnce(wrongHistory)
 
     await expect(getPredictionByClient(CLIENT_NET_ID)).rejects.toBeInstanceOf(SalesForecastContractError)
+  })
+
+  it('keeps the prediction range and its metadata when the service sends them', async () => {
+    apiRequestMock.mockResolvedValueOnce(rangedClientForecast())
+
+    const response = await getSalesForecast(CLIENT_NET_ID)
+
+    expect(response.ByClient).toEqual([
+      { SaleAmount: 10.01, MonthNameUK: 'Сер 2026', SaleAmountLow: 4.2, SaleAmountHigh: 16.85 },
+      { SaleAmount: 20.02, MonthNameUK: 'Вер 2026', SaleAmountLow: 0, SaleAmountHigh: 41.5 },
+    ])
+    expect(response.meta.interval).toEqual({
+      coverage_pct: 80,
+      lower_quantile: 0.1,
+      upper_quantile: 0.9,
+      basis: 'rolling_origin_relative_error',
+      table_version: '2026-11-12',
+    })
+  })
+
+  it('accepts a response without a range and leaves the interval undefined', async () => {
+    apiRequestMock.mockResolvedValueOnce(canonicalClientForecast())
+
+    const response = await getSalesForecast(CLIENT_NET_ID)
+
+    expect(response.meta.interval).toBeUndefined()
+    expect(response.ByClient[0]).toEqual({ SaleAmount: 10.01, MonthNameUK: 'Сер 2026' })
+  })
+
+  it('fails closed on a range that is partial, inverted, or sent without metadata', async () => {
+    const inverted = rangedClientForecast()
+    inverted.ByClient[0].SaleAmountLow = 10.02
+    apiRequestMock.mockResolvedValueOnce(inverted)
+    await expect(getSalesForecast(CLIENT_NET_ID)).rejects.toBeInstanceOf(SalesForecastContractError)
+
+    const partial = rangedClientForecast()
+    delete partial.ByClient[1].SaleAmountHigh
+    apiRequestMock.mockResolvedValueOnce(partial)
+    await expect(getSalesForecast(CLIENT_NET_ID)).rejects.toBeInstanceOf(SalesForecastContractError)
+
+    const withoutMetadata = canonicalClientForecast() as ReturnType<typeof canonicalClientForecast> & {
+      ByClient: RangedPoint[]
+    }
+    withoutMetadata.ByClient[0].SaleAmountLow = 4.2
+    withoutMetadata.ByClient[0].SaleAmountHigh = 16.85
+    apiRequestMock.mockResolvedValueOnce(withoutMetadata)
+    await expect(getSalesForecast(CLIENT_NET_ID)).rejects.toBeInstanceOf(SalesForecastContractError)
+
+    const badCoverage = rangedClientForecast()
+    badCoverage.meta.interval.coverage_pct = 100
+    apiRequestMock.mockResolvedValueOnce(badCoverage)
+    await expect(getSalesForecast(CLIENT_NET_ID)).rejects.toBeInstanceOf(SalesForecastContractError)
   })
 })

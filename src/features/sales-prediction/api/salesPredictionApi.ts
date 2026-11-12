@@ -4,6 +4,7 @@ import type {
   SalesForecastHistoryItem,
   SalesForecastHistoryStatus,
   SalesForecastIdentityStatus,
+  SalesForecastInterval,
   SalesForecastRequestOptions,
   SalesForecastResponse,
   SalesForecastResponseStatus,
@@ -142,10 +143,11 @@ type ExpectedForecastRequest = {
 
 function normalizeSalesForecast(result: unknown, expected: ExpectedForecastRequest): SalesForecastResponse {
   const payload = requireRecord(typeof result === 'string' ? safeParse(result) : result, 'response')
-  const series = Object.fromEntries(
-    FORECAST_SCOPES.map((scope) => [scope, normalizeForecastPoints(payload[scope], scope)]),
-  ) as Record<SalesForecastScope, SalesPredictionPoint[]>
   const meta = requireRecord(payload.meta, 'meta')
+  const interval = normalizeInterval(meta.interval)
+  const series = Object.fromEntries(
+    FORECAST_SCOPES.map((scope) => [scope, normalizeForecastPoints(payload[scope], scope, interval !== undefined)]),
+  ) as Record<SalesForecastScope, SalesPredictionPoint[]>
   const requested = requireRecord(meta.requested, 'meta.requested')
   const resolved = requireRecord(meta.resolved, 'meta.resolved')
   const identity = requireRecord(meta.identity, 'meta.identity')
@@ -265,8 +267,39 @@ function normalizeSalesForecast(result: unknown, expected: ExpectedForecastReque
       history_window_months: historyWindowMonths,
       minimum_non_zero_months: minimumNonZeroMonths,
       history,
+      ...(interval ? { interval } : {}),
     },
   }
+}
+
+function normalizeInterval(value: unknown): SalesForecastInterval | undefined {
+  if (value === undefined || value === null) {
+    return undefined
+  }
+
+  const interval = requireRecord(value, 'meta.interval')
+  const coverage = requireInteger(interval.coverage_pct, 'meta.interval.coverage_pct', 1, 99)
+  const lower = requireQuantile(interval.lower_quantile, 'meta.interval.lower_quantile')
+  const upper = requireQuantile(interval.upper_quantile, 'meta.interval.upper_quantile')
+  if (lower >= upper) {
+    throw new SalesForecastContractError('meta.interval', 'lower quantile must be below the upper one')
+  }
+
+  return {
+    coverage_pct: coverage,
+    lower_quantile: lower,
+    upper_quantile: upper,
+    basis: requireNonEmptyString(interval.basis, 'meta.interval.basis'),
+    table_version: requireNonEmptyString(interval.table_version, 'meta.interval.table_version'),
+  }
+}
+
+function requireQuantile(value: unknown, path: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 1) {
+    throw new SalesForecastContractError(path, 'must be a number from 0 to 1')
+  }
+
+  return value
 }
 
 function createSalesForecastContractError(
@@ -276,7 +309,7 @@ function createSalesForecastContractError(
   return new SalesForecastContractError(path, reason)
 }
 
-function normalizeForecastPoints(value: unknown, path: string): SalesPredictionPoint[] {
+function normalizeForecastPoints(value: unknown, path: string, withRange: boolean): SalesPredictionPoint[] {
   const seenMonths = new Set<string>()
 
   return requireArray(value, path).map((item, index) => {
@@ -289,9 +322,29 @@ function normalizeForecastPoints(value: unknown, path: string): SalesPredictionP
     }
     seenMonths.add(month)
 
+    const amount = requireMoney(point.SaleAmount, `${itemPath}.SaleAmount`)
+    const hasLow = point.SaleAmountLow !== undefined && point.SaleAmountLow !== null
+    const hasHigh = point.SaleAmountHigh !== undefined && point.SaleAmountHigh !== null
+
+    if (!withRange) {
+      if (hasLow || hasHigh) {
+        throw new SalesForecastContractError(itemPath, 'range requires meta.interval')
+      }
+
+      return { MonthNameUK: month, SaleAmount: amount }
+    }
+
+    const low = requireMoney(point.SaleAmountLow, `${itemPath}.SaleAmountLow`)
+    const high = requireMoney(point.SaleAmountHigh, `${itemPath}.SaleAmountHigh`)
+    if (low > amount || high < amount) {
+      throw new SalesForecastContractError(itemPath, 'range must bracket the forecast amount')
+    }
+
     return {
       MonthNameUK: month,
-      SaleAmount: requireMoney(point.SaleAmount, `${itemPath}.SaleAmount`),
+      SaleAmount: amount,
+      SaleAmountLow: low,
+      SaleAmountHigh: high,
     }
   })
 }
