@@ -104,6 +104,122 @@ describe('wizard cart mutation controller', () => {
     expect(mocks.remove.mock.calls.every((call) => call[1].operationId === operationId)).toBe(true)
   })
 
+  it('keeps the shell locked while the first add is in flight and the draft placeholder is rebuilt', async () => {
+    const pending = deferred<null>()
+    mocks.remove.mockReturnValueOnce(pending.promise)
+    const draft: SalesUkraineSale = { NetUid: '00000000-0000-0000-0000-000000000000' }
+    const props = { ...options(), sale: draft, orderItems: [] }
+    const { result, rerender } = renderHook(useWizardCartMutation, { initialProps: props })
+    let context!: string
+    let request!: Promise<boolean>
+    act(() => {
+      context = result.current.beginBusy() as string
+      request = result.current.runCartMutation(context, deletion(result.current, context))
+    })
+    await waitFor(() => expect(mocks.remove).toHaveBeenCalledOnce())
+    props.onBusyChange.mockClear()
+    props.onPendingMutationChange.mockClear()
+
+    rerender({ ...props, sale: { ...draft } })
+    rerender({ ...props, sale: { ...draft } })
+    await act(async () => { await Promise.resolve() })
+
+    expect(props.onBusyChange).not.toHaveBeenCalled()
+    expect(props.onPendingMutationChange).not.toHaveBeenCalled()
+    expect(result.current.pendingMutationError).toBeNull()
+    expect(result.current.busy).toBe(true)
+    expect(loadSalesPendingMutation({ ...scope, context: 'agreement-1:' })).toMatchObject({ phase: 'submitted' })
+
+    await act(async () => {
+      pending.resolve(null)
+      await request
+      result.current.endBusy(context)
+    })
+
+    expect(props.onBusyChange).toHaveBeenLastCalledWith(false)
+    expect(result.current.busy).toBe(false)
+    expect(loadSalesPendingMutation({ ...scope, context: 'agreement-1:' })).toBeNull()
+  })
+
+  it('shows an unknown first add in place and blocks further changes until it is checked', async () => {
+    mocks.remove.mockRejectedValueOnce(new ApiError('Сервер не відповів вчасно', 503, null))
+    const draft: SalesUkraineSale = { NetUid: '00000000-0000-0000-0000-000000000000' }
+    const props = { ...options(), sale: draft, orderItems: [] }
+    props.onCartChanged.mockResolvedValue(null as unknown as SalesUkraineSale)
+    const { result, rerender } = renderHook(useWizardCartMutation, { initialProps: props })
+    await act(async () => {
+      const context = result.current.beginBusy() as string
+      expect(await result.current.runCartMutation(context, deletion(result.current, context))).toBe(false)
+      result.current.endBusy(context)
+    })
+    rerender({ ...props, sale: { ...draft } })
+    await waitFor(() => expect(result.current.pendingMutationError).not.toBeNull())
+
+    expect(props.onPendingMutationChange).toHaveBeenLastCalledWith(true)
+    expect(props.onBusyChange).toHaveBeenLastCalledWith(false)
+    expect(loadSalesPendingMutation({ ...scope, context: 'agreement-1:' })).toMatchObject({ phase: 'unknown' })
+
+    act(() => { expect(result.current.beginBusy()).toBeNull() })
+    expect(mocks.notify).toHaveBeenCalledWith(expect.objectContaining({ message: 'Спочатку перевірте незавершену операцію' }))
+  })
+
+  it('closes a stored draft operation once the loaded bill carries its marker', async () => {
+    mocks.remove.mockRejectedValueOnce(new ApiError('response lost', 503, null))
+    const draft: SalesUkraineSale = { NetUid: '00000000-0000-0000-0000-000000000000' }
+    const props = { ...options(), sale: draft, orderItems: [] }
+    props.onCartChanged.mockResolvedValue(null as unknown as SalesUkraineSale)
+    const first = renderHook(useWizardCartMutation, { initialProps: props })
+    let operationId!: string
+    await act(async () => {
+      const context = first.result.current.beginBusy() as string
+      const operation = first.result.current.createCartMutation(context, {
+        expectation: { kind: 'operation-marker' },
+        fallbackMessage: 'add failed', request: { kind: 'delete', orderItemNetId: 'row-1' },
+      })
+      operationId = operation.operationId
+      expect(await first.result.current.runCartMutation(context, operation)).toBe(false)
+      first.result.current.endBusy(context)
+    })
+    first.unmount()
+    const draftScope = { ...scope, context: 'agreement-1:' }
+    expect(loadSalesPendingMutation(draftScope)).toMatchObject({ operationId, phase: 'unknown' })
+
+    const createdBill: SalesUkraineSale = {
+      NetUid: 'sale-9',
+      Order: { OrderItems: [{ NetUid: 'row-9', OperationNetUid: operationId, Qty: 1 }] },
+    }
+    const second = renderHook(useWizardCartMutation, { initialProps: { ...options(), sale: createdBill, orderItems: [] } })
+
+    await waitFor(() => expect(loadSalesPendingMutation(draftScope)).toBeNull())
+    expect(second.result.current.pendingMutationError).toBeNull()
+  })
+
+  it('keeps a stored draft operation when the loaded bill does not prove it', async () => {
+    mocks.remove.mockRejectedValueOnce(new ApiError('response lost', 503, null))
+    const draft: SalesUkraineSale = { NetUid: '00000000-0000-0000-0000-000000000000' }
+    const props = { ...options(), sale: draft, orderItems: [] }
+    props.onCartChanged.mockResolvedValue(null as unknown as SalesUkraineSale)
+    const first = renderHook(useWizardCartMutation, { initialProps: props })
+    await act(async () => {
+      const context = first.result.current.beginBusy() as string
+      const operation = first.result.current.createCartMutation(context, {
+        expectation: { kind: 'operation-marker' },
+        fallbackMessage: 'add failed', request: { kind: 'delete', orderItemNetId: 'row-1' },
+      })
+      expect(await first.result.current.runCartMutation(context, operation)).toBe(false)
+      first.result.current.endBusy(context)
+    })
+    first.unmount()
+    const otherBill: SalesUkraineSale = {
+      NetUid: 'sale-9',
+      Order: { OrderItems: [{ NetUid: 'row-9', OperationNetUid: 'another-operation', Qty: 1 }] },
+    }
+    renderHook(useWizardCartMutation, { initialProps: { ...options(), sale: otherBill, orderItems: [] } })
+    await act(async () => { await Promise.resolve() })
+
+    expect(loadSalesPendingMutation({ ...scope, context: 'agreement-1:' })).toMatchObject({ phase: 'unknown' })
+  })
+
   it('settles an acknowledged operation without refreshing a different sale after a context switch', async () => {
     const pending = deferred<null>()
     mocks.remove.mockReturnValueOnce(pending.promise)

@@ -550,6 +550,8 @@ export function NewUkraineSaleReturnPage() {
   }
 
   function openEditor(row: SaleItemRow) {
+    if (row.item.HasCompleteReturnMovement !== true) return
+
     editorRequestIdRef.current += 1
     storageRequestIdRef.current += 1
     setLoadingEditorStorages(false)
@@ -1449,6 +1451,7 @@ function useSaleItemColumns({
           return (
             <Checkbox
               aria-label={t('Обрати позицію')}
+              disabled={row.item.HasCompleteReturnMovement !== true}
               checked={Boolean(draft)}
               onChange={() => (draft ? onRemove(row) : onEdit(row))}
             />
@@ -1573,6 +1576,12 @@ function useSaleItemColumns({
         cell: (row) => {
           const draft = drafts.find((item) => getOrderItemKey(item.orderItem) === getOrderItemKey(row.item))
 
+          if (row.item.HasCompleteReturnMovement !== true) {
+            return <Text size="xs" c="dimmed">{t(row.item.HasCompleteReturnMovement === false
+              ? 'Складське проведення не завершено'
+              : 'Складську готовність не підтверджено')}</Text>
+          }
+
           return draft ? (
             <Badge className="app-role-pill" variant="light">
               <span className="app-table-number">{formatAmount(draft.qty)}</span> ·{' '}
@@ -1590,7 +1599,7 @@ function useSaleItemColumns({
           const isAdded = drafts.some((draft) => getOrderItemKey(draft.orderItem) === getOrderItemKey(row.item))
 
           return (
-            <Button color="brand" size="xs" variant={isAdded ? 'default' : 'filled'} onClick={() => onEdit(row)}>
+            <Button disabled={row.item.HasCompleteReturnMovement !== true} color="brand" size="xs" variant={isAdded ? 'default' : 'filled'} onClick={() => onEdit(row)}>
               {isAdded ? t('Змінити') : t('Додати')}
             </Button>
           )

@@ -132,6 +132,16 @@ export function useWizardCartMutation({
   useLayoutEffect(() => {
     let cancelled = false
     mutationContextRef.current = mutationContextKey
+
+    if (busyRef.current && activeMutationContextRef.current === mutationContextKey) {
+      return
+    }
+
+    const releaseShell = () => {
+      if (!busyRef.current) {
+        onBusyChange?.(false)
+      }
+    }
     const scope = getPendingCartMutationScope(mutationContextKey)
 
     try {
@@ -166,7 +176,7 @@ export function useWizardCartMutation({
           persistSplitItems(localCommit.failureSplitItems, localCommit.agreementNetId)
         }
 
-        onBusyChange?.(false)
+        releaseShell()
         onPendingMutationChange?.(true)
         queueMicrotask(() => {
           if (!cancelled && mountedRef.current && mutationContextRef.current === mutationContextKey) {
@@ -191,14 +201,14 @@ export function useWizardCartMutation({
                 },
               ).catch(() => {
                 if (!cancelled && mountedRef.current && mutationContextRef.current === mutationContextKey) {
-                  setPendingMutationError(t('Операція не була підтверджена. Перевірте результат і повторіть з тим самим ключем'))
+                  setPendingMutationError(t('Сервер не підтвердив попередню зміну кошика. Натисніть «Перевірити та повторити»: зміна не задвоїться'))
                 }
               })
 
               return
             }
 
-            setPendingMutationError(t('Операція не була підтверджена. Перевірте результат і повторіть з тим самим ключем'))
+            setPendingMutationError(t('Сервер не підтвердив попередню зміну кошика. Натисніть «Перевірити та повторити»: зміна не задвоїться'))
           }
         })
 
@@ -208,7 +218,7 @@ export function useWizardCartMutation({
       }
     } catch (storageError) {
       pendingMutationRef.current = null
-      onBusyChange?.(false)
+      releaseShell()
       onPendingMutationChange?.(true)
       queueMicrotask(() => {
         if (!cancelled && mountedRef.current && mutationContextRef.current === mutationContextKey) {
@@ -226,7 +236,7 @@ export function useWizardCartMutation({
 
     pendingMutationRef.current = null
 
-    onBusyChange?.(false)
+    releaseShell()
     onPendingMutationChange?.(false)
     queueMicrotask(() => {
       if (!cancelled && mountedRef.current && mutationContextRef.current === mutationContextKey) {
@@ -238,6 +248,41 @@ export function useWizardCartMutation({
       cancelled = true
     }
   }, [getPendingCartMutationScope, mutationContextKey, mutationStorageRevision, onBusyChange, onPendingMutationChange, pendingMutationUserKey, persistSplitItems, sale, t])
+
+  useEffect(() => {
+    const draftContext = getWizardMutationContextKey(agreementNetId, null)
+
+    if (!sale || draftContext === mutationContextKey || busyRef.current) {
+      return
+    }
+
+    const scope = getPendingCartMutationScope(draftContext)
+
+    if (!scope) {
+      return
+    }
+
+    let stored: ReturnType<typeof loadSalesPendingMutation<PersistedWizardCartMutation>>
+
+    try {
+      stored = loadSalesPendingMutation<PersistedWizardCartMutation>(scope)
+    } catch {
+      return
+    }
+
+    if (
+      !stored ||
+      !isPersistedWizardCartMutation(stored.payload) ||
+      stored.payload.localCommit.kind !== 'none' ||
+      inspectWizardCartMutation(sale, stored.operationId, stored.payload.expectation) !== 'committed'
+    ) {
+      return
+    }
+
+    void withSalesPendingMutationLock(scope, stored.operationId, stored.payload, async (lease) => {
+      resolveSalesPendingMutation(lease, 'committed')
+    }).catch(() => undefined)
+  }, [agreementNetId, getPendingCartMutationScope, mutationContextKey, mutationStorageRevision, sale])
 
   function beginBusy(options?: { allowPendingMutation?: boolean }): string | null {
     if (busyRef.current) {
