@@ -151,6 +151,20 @@ describe('native warehouse stock movement', () => {
     expect(searchStockMovementGroups).not.toHaveBeenCalled()
   })
 
+  it('sends the chosen warehouses, organizations, document kinds and groups', async () => {
+    render(panel())
+    fireEvent.click(await screen.findByLabelText('Група товарів (з підгрупами)'))
+    fireEvent.change(openSearch(), { target: { value: 'Філ' } })
+    fireEvent.click(await screen.findByText('Фільтри'))
+    for (const [label, option] of [['Склад у списку', 'СКЛАД -1 · Фенікс'], ['Склад у списку', 'СКЛАД Н/П · Фенікс'],
+      ['Організація складу', 'Фенікс'], ['Вид документа руху', 'Переміщення'], ['Вид документа руху', 'Продаж']]) {
+      fireEvent.click(await screen.findByLabelText(label))
+      fireEvent.click((await screen.findAllByText(option)).at(-1)!)
+    }
+    await applyReport()
+    expect(JSON.stringify(previews()[0])).toMatchInlineSnapshot(`"{"Version":1,"From":"2025-01-01","To":"2026-10-26","WarehouseIds":[2968,2975],"OrganizationIds":[1],"ProductIds":[],"ArticleMatch":"","Articles":[],"ProductGroupIds":[7],"DocumentKinds":["sale","transfer"],"DocumentText":null,"Conditions":[],"Levels":["warehouse","product","registrar"],"Measures":["opening","incoming","outgoing","closing"],"GrandTotals":true,"NegativeRed":true,"Offset":0,"Limit":200}"`)
+  })
+
   it('validates grouping before calling the server', async () => {
     render(panel())
     fireEvent.click(await screen.findByLabelText('Склад'))
