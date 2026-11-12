@@ -8,9 +8,38 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { theme } from '../../../shared/theme/theme'
 import { getBudgetCartSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
 import { getBudgetCartPlan } from '../api/procurementApi'
+import type { CartPlan } from '../procurementTypes'
 import { BudgetCartTab } from './BudgetCartTab'
 
 const canMock = vi.fn<(permissionKey: string) => boolean>()
+
+function emptyPlan(): CartPlan {
+  return {
+    as_of_date: '2026-07-25',
+    source_history_start: '2025-01-01',
+    effective_start: '2025-07-25',
+    effective_history_days: 365,
+    history_complete: true,
+    history_not_applicable: ['inventory', 'reservations', 'purchase_costs'],
+    ...fixtureCostContext(),
+    budget_eur: 50_000,
+    budget_used_eur: 0,
+    deferred_count: 0,
+    duplicate_supplier_options_removed: 0,
+    is_truncated: false,
+    item_count: 0,
+    items: [],
+    method_used: 'greedy',
+    model_version: 'test',
+    priced_cost_eur: 0,
+    selected_count: 0,
+    total_cost_eur: 0,
+    total_item_count: 0,
+    total_suggested_qty: 0,
+    unpriced_item_count: 0,
+    ...fixtureNoBudget,
+  }
+}
 
 vi.mock('../../auth/usePermissions', () => ({
   usePermissions: () => ({ can: canMock, isLoading: false }),
@@ -79,31 +108,7 @@ describe('BudgetCartTab', () => {
   })
 
   it('replaces zero summaries with one actionable empty result', async () => {
-    vi.mocked(getBudgetCartPlan).mockResolvedValue({
-      as_of_date: '2026-07-25',
-      source_history_start: '2025-01-01',
-      effective_start: '2025-07-25',
-      effective_history_days: 365,
-      history_complete: true,
-      history_not_applicable: ['inventory', 'reservations', 'purchase_costs'],
-      ...fixtureCostContext(),
-      budget_eur: 50_000,
-      budget_used_eur: 0,
-      deferred_count: 0,
-      duplicate_supplier_options_removed: 0,
-      is_truncated: false,
-      item_count: 0,
-      items: [],
-      method_used: 'greedy',
-      model_version: 'test',
-      priced_cost_eur: 0,
-      selected_count: 0,
-      total_cost_eur: 0,
-      total_item_count: 0,
-      total_suggested_qty: 0,
-      unpriced_item_count: 0,
-      ...fixtureNoBudget,
-    })
+    vi.mocked(getBudgetCartPlan).mockResolvedValue(emptyPlan())
 
     render(
       <MantineProvider env="test" theme={{ ...theme, respectReducedMotion: true }}>
@@ -130,5 +135,31 @@ describe('BudgetCartTab', () => {
     expect(screen.getByRole('button', { name: 'Перерахувати план' })).not.toBeNull()
     expect(screen.queryByText('Результат оптимізації')).toBeNull()
     expect(screen.queryByText('Дата зрізу', { selector: '.procure-workspace-state__fact span' })).toBeNull()
+  })
+
+  it.each([
+    [{ built_at: '2026-07-25T06:15:00Z', stale: true }, 'Дані на 09:15, оновлюються'],
+    [{ built_at: '2026-07-25T06:15:00Z', stale: false }, null],
+    [{}, null],
+  ])('marks only a stale cart %j as refreshing', async (freshness, note) => {
+    vi.mocked(getBudgetCartPlan).mockResolvedValue({ ...emptyPlan(), ...freshness })
+
+    render(
+      <MantineProvider env="test" theme={{ ...theme, respectReducedMotion: true }}>
+        <MemoryRouter>
+          <I18nProvider>
+            <BudgetCartTab />
+          </I18nProvider>
+        </MemoryRouter>
+      </MantineProvider>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Сформувати план' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Закупівля на цю дату не потрібна')).not.toBeNull()
+    })
+
+    expect(screen.queryByText(/оновлюються/)?.textContent ?? null).toBe(note)
   })
 })

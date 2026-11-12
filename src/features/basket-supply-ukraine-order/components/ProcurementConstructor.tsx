@@ -5,6 +5,7 @@ import { formatUnitCost } from '../procurementMoneyFormat'
 import { procurementLoadError } from '../procurementLoadError'
 import type { ProcurementCostContext } from '../procurementCostTypes'
 import { exactDisplayedLineAmount } from '../procurementDecimals'
+import { ProcurementCartFreshnessNote } from './ProcurementCartFreshnessNote'
 import { ProcurementCostBadge } from './ProcurementCostProof'
 import { BarChart, DonutChart } from '@mantine/charts'
 import { MONEY_AXIS_TICK } from '../../../shared/ui/charts/chartTheme'
@@ -79,7 +80,7 @@ import {
   type ProcurementDraftQuantities,
 } from '../procurementConstructorModel'
 import { procurementQuantityFormat as quantity } from '../procurementQuantityFormat'
-import type { ProcurementUrgency, ReorderSuggestion } from '../procurementTypes'
+import type { CartPlan, ProcurementUrgency, ReorderSuggestion } from '../procurementTypes'
 import { ProcurementProductCell } from './ProcurementProductCell'
 import { ProcurementWorkspaceState } from './ProcurementWorkspaceState'
 import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
@@ -225,6 +226,7 @@ function ProcurementConstructorContent() {
 
   const [rows, setRows] = useState<ReorderSuggestion[]>([])
   const [costContext, setCostContext] = useState<ProcurementCostContext | null>(null)
+  const [cartFreshness, setCartFreshness] = useState<Pick<CartPlan, 'built_at' | 'stale'> | null>(null)
   const costSnapshotKey = useMemo(() => procurementCostSnapshotKey(costContext), [costContext])
   const currentRowsByKey = useMemo(() => new Map(rows.map(row => [procurementLineKey(row), row])), [rows])
   const [isLoading, setLoading] = useState(true)
@@ -335,6 +337,7 @@ function ProcurementConstructorContent() {
       setHasLoadedPlan(false)
       setRows([])
       setCostContext(null)
+      setCartFreshness(null)
       setError(null)
       const producerId = selectedProducerId ? Number(selectedProducerId) : null
 
@@ -349,6 +352,7 @@ function ProcurementConstructorContent() {
         .then((loaded) => {
           if (!signal.aborted) {
             setCostContext(loaded)
+            setCartFreshness(loaded && 'total_item_count' in loaded ? { built_at: loaded.built_at, stale: loaded.stale } : null)
             setRows((loaded?.items ?? []).filter((item) => item.suggested_qty > 0))
             setHasLoadedPlan(true)
           }
@@ -817,6 +821,10 @@ function ProcurementConstructorContent() {
             <TableChip tone={emptyState.pillClass === 'is-red' ? 'danger' : emptyState.pillClass === 'is-green' ? 'success' : 'neutral'} value={emptyState.status} />
           )}
         </div>
+
+        {hasPlanData && cartFreshness && (
+          <ProcurementCartFreshnessNote className="procure-cockpit__freshness" plan={cartFreshness} />
+        )}
 
         <Collapse expanded={isAnalyticsOpen && Boolean(hasPlanData)}>
           <div className="procure-cockpit__charts">

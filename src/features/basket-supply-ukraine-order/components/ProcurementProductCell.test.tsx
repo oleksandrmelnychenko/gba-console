@@ -111,4 +111,16 @@ describe('ProcurementProductCell', () => {
       'https://concord-shop.com/userdata/shop/product/br-2048_water.jpg',
     )
   })
+
+  it('marks thin-demand lines as on request and leaves regular lines unmarked', () => {
+    const row = { image_url: null, oe_number: null, product_id: 42, product_name: 'Сайлентблок', vendor_code: null }
+    const regular = render(<ProcurementProductCell row={{ ...row, demand_evidence: 'regular' }} t={t} />)
+
+    expect(screen.queryByText('за запитом')).toBeNull()
+    regular.unmount()
+
+    render(<ProcurementProductCell row={{ ...row, demand_evidence: 'on_request' }} t={t} />)
+
+    expect(screen.getByText('за запитом')).not.toBeNull()
+  })
 })

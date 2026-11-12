@@ -1339,3 +1339,150 @@ function buildCockpitDraftResult(
     Items: items,
   }
 }
+
+describe('cart freshness, cost estimate and demand evidence fields', () => {
+  beforeEach(() => {
+    apiRequestMock.mockReset()
+  })
+
+  function cartBody(overrides: Record<string, unknown> = {}, itemOverrides: Record<string, unknown> = {}) {
+    const body: Record<string, unknown> & { items: Record<string, unknown>[] } = buildFullCartPlan()
+
+    return { Body: { ...body, ...overrides, items: body.items.map((item) => ({ ...item, ...itemOverrides })) } }
+  }
+
+  it('treats a payload without the fields as a fresh cart with no estimate', async () => {
+    apiRequestMock.mockResolvedValueOnce(buildFullCartPlan())
+
+    const plan = await getBudgetCartPlan({ budgetEur: 50000, method: 'milp' })
+
+    expect(plan.stale).toBe(false)
+    expect(plan.built_at).toBeNull()
+    expect(plan.source_changed_at).toBeNull()
+    expect(plan.estimated_total_cost_eur).toBeNull()
+    expect(plan.certified_cost_eur).toBeNull()
+    expect(plan.uncertified_cost_eur).toBeNull()
+    expect(plan.unestimated_item_count).toBeNull()
+    expect(plan.items[0]).toMatchObject({
+      cost_source: null,
+      demand_evidence: null,
+      estimated_line_cost_eur: null,
+      estimated_unit_cost_eur: null,
+    })
+  })
+
+  it('keeps a stale same-day cart with its build stamp, estimate split and line evidence', async () => {
+    apiRequestMock.mockResolvedValueOnce(cartBody({
+      stale: true,
+      built_at: '2026-06-15T06:15:00.123456+00:00',
+      source_changed_at: '2026-06-15T07:02:11Z',
+      estimated_total_cost_eur: 310.5,
+      certified_cost_eur: 285,
+      uncertified_cost_eur: 25.5,
+      unestimated_item_count: 1,
+    }, {
+      cost_source: 'last_receipt_fallback',
+      estimated_unit_cost_eur: 4.5,
+      estimated_line_cost_eur: 135,
+      demand_evidence: 'on_request',
+    }))
+
+    const plan = await getBudgetCartPlan({ budgetEur: 50000, method: 'milp', asOfDate: '2026-06-15' })
+
+    expect(plan).toMatchObject({
+      stale: true,
+      built_at: '2026-06-15T06:15:00.123456+00:00',
+      source_changed_at: '2026-06-15T07:02:11Z',
+      estimated_total_cost_eur: 310.5,
+      certified_cost_eur: 285,
+      uncertified_cost_eur: 25.5,
+      unestimated_item_count: 1,
+    })
+    expect(plan.items[0]).toMatchObject({
+      cost_source: 'last_receipt_fallback',
+      demand_evidence: 'on_request',
+      estimated_line_cost_eur: 135,
+      estimated_unit_cost_eur: 4.5,
+    })
+  })
+
+  it('accepts explicit nulls for every new field', async () => {
+    apiRequestMock.mockResolvedValueOnce(cartBody({
+      stale: false,
+      built_at: null,
+      source_changed_at: null,
+      estimated_total_cost_eur: null,
+      certified_cost_eur: null,
+      uncertified_cost_eur: null,
+      unestimated_item_count: null,
+    }, {
+      cost_source: null,
+      estimated_unit_cost_eur: null,
+      estimated_line_cost_eur: null,
+      demand_evidence: null,
+    }))
+
+    const plan = await getBudgetCartPlan({ budgetEur: 50000, method: 'milp' })
+
+    expect(plan.stale).toBe(false)
+    expect(plan.items[0]?.cost_source).toBeNull()
+  })
+
+  it.each([
+    ['stale', 'yes'],
+    ['built_at', 1760000000],
+    ['built_at', '2026-06-15 06:15:00'],
+    ['built_at', '2026-06-15T06:15:00'],
+    ['source_changed_at', 'soon'],
+    ['estimated_total_cost_eur', '310.50'],
+    ['certified_cost_eur', -1],
+    ['uncertified_cost_eur', true],
+    ['unestimated_item_count', 1.5],
+    ['unestimated_item_count', 99],
+  ])('rejects cart.%s = %j', async (field, value) => {
+    apiRequestMock.mockResolvedValueOnce(cartBody({ [field]: value }))
+
+    await expect(getBudgetCartPlan({ budgetEur: 50000, method: 'milp' })).rejects.toThrow(`cart.${field}`)
+  })
+
+  it.each([
+    ['cost_source', 'guess'],
+    ['cost_source', 3],
+    ['estimated_unit_cost_eur', '4.5'],
+    ['estimated_line_cost_eur', -135],
+    ['demand_evidence', 'sometimes'],
+    ['demand_evidence', false],
+  ])('rejects item.%s = %j', async (field, value) => {
+    apiRequestMock.mockResolvedValueOnce(cartBody({}, { [field]: value }))
+
+    await expect(getBudgetCartPlan({ budgetEur: 50000, method: 'milp' })).rejects.toThrow(`cart.items[0].${field}`)
+  })
+
+  it('carries line evidence through the producer plan and defaults it to null', async () => {
+    const full = buildFullPlan()
+    apiRequestMock.mockResolvedValueOnce({ Body: full })
+    apiRequestMock.mockResolvedValueOnce({
+      Body: {
+        ...full,
+        items: full.items.map((item) => ({
+          ...item,
+          cost_source: 'receipt_history',
+          estimated_unit_cost_eur: 4.5,
+          estimated_line_cost_eur: 135,
+          demand_evidence: 'regular',
+        })),
+      },
+    })
+
+    const legacy = await getProducerPlan(42, '2026-06-15')
+    const current = await getProducerPlan(42, '2026-06-15')
+
+    expect(legacy.items[0]).toMatchObject({ cost_source: null, demand_evidence: null })
+    expect(current.items[0]).toMatchObject({
+      cost_source: 'receipt_history',
+      demand_evidence: 'regular',
+      estimated_line_cost_eur: 135,
+      estimated_unit_cost_eur: 4.5,
+    })
+  })
+})

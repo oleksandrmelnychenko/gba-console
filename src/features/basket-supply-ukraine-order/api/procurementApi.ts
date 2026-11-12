@@ -17,6 +17,8 @@ import type {
   FeedbackInput,
   ProcurementCharts,
   ProcurementChartsQuery,
+  ProcurementCostSource,
+  ProcurementDemandEvidence,
   ProcurementUrgency,
   ProducerPlan,
   ProducerProductTerms,
@@ -32,6 +34,9 @@ import type {
 
 const KNOWN_URGENCIES: ProcurementUrgency[] = ['critical', 'high', 'normal', 'none']
 const KNOWN_CART_METHODS: CartOptimizeMethod[] = ['greedy', 'milp']
+const KNOWN_COST_SOURCES: ProcurementCostSource[] = ['receipt_history', 'buyer_supplied', 'last_receipt_fallback', 'none']
+const KNOWN_DEMAND_EVIDENCE: ProcurementDemandEvidence[] = ['regular', 'on_request']
+const OFFSET_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})$/
 const MAX_DRAFT_ITEMS = 500
 const MAX_DRAFT_QTY = 1_000_000
 const DRAFT_QTY_SCALE = 3
@@ -789,6 +794,18 @@ async function normalizeCartPlan(
     selected_count: selectedCount,
     deferred_count: deferredCount,
     method_used: methodUsed,
+    stale: requireNullableBoolean(data.stale, 'cart.stale') ?? false,
+    built_at: requireNullableTimestamp(data.built_at, 'cart.built_at'),
+    source_changed_at: requireNullableTimestamp(data.source_changed_at, 'cart.source_changed_at'),
+    estimated_total_cost_eur: requireNullableMoney(data.estimated_total_cost_eur, 'cart.estimated_total_cost_eur'),
+    certified_cost_eur: requireNullableMoney(data.certified_cost_eur, 'cart.certified_cost_eur'),
+    uncertified_cost_eur: requireNullableMoney(data.uncertified_cost_eur, 'cart.uncertified_cost_eur'),
+    unestimated_item_count: requireNullableInteger(
+      data.unestimated_item_count,
+      'cart.unestimated_item_count',
+      0,
+      totalItemCount,
+    ),
   }
 }
 
@@ -980,6 +997,10 @@ function normalizeReorderSuggestion(value: unknown, path: string, manifest: Proc
     learned_factor: requireNullableNumber(entry.learned_factor, `${path}.learned_factor`, 0),
     value_density: null,
     within_budget: requireNullableBoolean(entry.within_budget, `${path}.within_budget`),
+    cost_source: requireNullableOneOf(entry.cost_source, `${path}.cost_source`, KNOWN_COST_SOURCES),
+    estimated_unit_cost_eur: requireNullableMoney(entry.estimated_unit_cost_eur, `${path}.estimated_unit_cost_eur`),
+    estimated_line_cost_eur: requireNullableMoney(entry.estimated_line_cost_eur, `${path}.estimated_line_cost_eur`),
+    demand_evidence: requireNullableOneOf(entry.demand_evidence, `${path}.demand_evidence`, KNOWN_DEMAND_EVIDENCE),
   }
 }
 
@@ -1410,6 +1431,32 @@ function requireNullableString(value: unknown, path: string): string | null {
   }
 
   return value
+}
+
+function requireNullableOneOf<T extends string>(value: unknown, path: string, allowed: readonly T[]): T | null {
+  const text = requireNullableString(value, path)
+
+  if (text === null) {
+    return null
+  }
+  if (!allowed.includes(text as T)) {
+    throw new ProcurementContractError(path, `must be one of ${allowed.join(', ')}`)
+  }
+
+  return text as T
+}
+
+function requireNullableTimestamp(value: unknown, path: string): string | null {
+  const text = requireNullableString(value, path)
+
+  if (text === null) {
+    return null
+  }
+  if (!OFFSET_TIMESTAMP.test(text) || Number.isNaN(Date.parse(text))) {
+    throw new ProcurementContractError(path, 'must be an ISO-8601 timestamp with a UTC offset')
+  }
+
+  return text
 }
 
 function requireMoney(value: unknown, path: string, allowZero = true): number {

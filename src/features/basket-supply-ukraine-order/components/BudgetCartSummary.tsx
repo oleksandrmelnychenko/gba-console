@@ -82,6 +82,14 @@ export function BudgetCartSummary({
           <div className="budget-cart-summary__secondary">
             <SummaryItem label={t('Маржа та очікуваний прибуток')} value={t('Недоступні: податковий склад ціни продажу не підтверджено')} />
             <SummaryItem label={t('Виробників')} money value={countFormatter.format(financials.selectedProducerCount)} />
+            {typeof plan.estimated_total_cost_eur === 'number' && (
+              <SummaryItem
+                hint={getEstimateSplit(plan, t)}
+                label={`${t('Оцінка всього плану')} (EUR)`}
+                money
+                value={`≈ €${eurFormatter.format(plan.estimated_total_cost_eur)}`}
+              />
+            )}
           </div>
         </Stack>
 
@@ -124,6 +132,22 @@ function SummaryItem({
       </Text>
     </Stack>
   )
+}
+
+function getEstimateSplit(plan: CartPlan, t: (value: string) => string): string {
+  const parts: string[] = []
+
+  if (typeof plan.certified_cost_eur === 'number') {
+    parts.push(`${t('Підтверджено')}: €${eurFormatter.format(plan.certified_cost_eur)}`)
+  }
+  if (typeof plan.uncertified_cost_eur === 'number') {
+    parts.push(`${t('За останнім приходом')}: €${eurFormatter.format(plan.uncertified_cost_eur)}`)
+  }
+  if (typeof plan.unestimated_item_count === 'number' && plan.unestimated_item_count > 0) {
+    parts.push(`${t('Без оцінки')}: ${countFormatter.format(plan.unestimated_item_count)} ${t('позицій')}`)
+  }
+
+  return parts.join(' · ')
 }
 
 function getMethodLabel(plan: CartPlan, t: (value: string) => string): string {

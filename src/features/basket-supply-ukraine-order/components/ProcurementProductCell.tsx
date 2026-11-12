@@ -6,6 +6,7 @@ import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { getProductShopImageUrlByCode } from '../../products/utils'
 type ProcurementProductCellProps = {
   row: {
+    demand_evidence?: string | null
     image_url?: string | null
     oe_number?: string | null
     product_id: number
@@ -28,6 +29,7 @@ export function ProcurementProductCell({ row, t }: ProcurementProductCellProps) 
   )
   const imageSrc = imageCandidates.find((candidate) => !failedSources.has(candidate)) ?? ''
   const canShowImage = Boolean(imageSrc)
+  const isOnRequest = row.demand_evidence === 'on_request'
 
   return (
     <div className="procure-cockpit-product">
@@ -60,7 +62,7 @@ export function ProcurementProductCell({ row, t }: ProcurementProductCellProps) 
         <span className="procure-cockpit-product__name" title={productName}>
           {productName}
         </span>
-        {(showVendorCode || row.oe_number) && (
+        {(showVendorCode || row.oe_number || isOnRequest) && (
           <span className="procure-cockpit-product__meta">
             {showVendorCode && (
               <span className="procure-cockpit-product__code"><TableChip tone="product" value={row.vendor_code} /></span>
@@ -73,6 +75,9 @@ export function ProcurementProductCell({ row, t }: ProcurementProductCellProps) 
                 <span className="procure-cockpit-product__oe-label">OE</span>
                 <span className="procure-cockpit-product__oe-value">{row.oe_number}</span>
               </span>
+            )}
+            {isOnRequest && (
+              <TableChip title={t('Попит нерегулярний: закупівля за запитом')} tone="warning" value={t('за запитом')} />
             )}
           </span>
         )}

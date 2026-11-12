@@ -122,6 +122,18 @@ describe('ProcurementConstructor', () => {
     expect(getPurchaseCockpitCharts).not.toHaveBeenCalled()
   })
 
+  it('notes a stale warehouse cart with its Kyiv build time and stays silent for a current one', async () => {
+    const plan = await vi.mocked(getPurchaseCockpitWarehousePlan)({ budgetEur: 0, method: 'greedy' })
+    const first = render(<MantineProvider theme={theme}><I18nProvider><ProcurementConstructor /></I18nProvider></MantineProvider>)
+    expect((await screen.findAllByText('Meyle')).length).toBeGreaterThan(0)
+    expect(screen.queryByText(/оновлюються/)).toBeNull()
+    first.unmount()
+
+    vi.mocked(getPurchaseCockpitWarehousePlan).mockResolvedValue({ ...plan, built_at: '2026-07-24T06:15:00Z', stale: true })
+    render(<MantineProvider theme={theme}><I18nProvider><ProcurementConstructor /></I18nProvider></MantineProvider>)
+    expect(await screen.findByText('Дані на 09:15, оновлюються')).not.toBeNull()
+  })
+
   it('restores legacy basket quantities with unknown cost and sends only exact IDs/quantity to the mocked draft endpoint', async () => {
     const legacy = { ...suggestion({ producer_id: 501, producer_name: 'Meyle' }) } as Record<string, unknown>
     delete legacy.cost_provenance

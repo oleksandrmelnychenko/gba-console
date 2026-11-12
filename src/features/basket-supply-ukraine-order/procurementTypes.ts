@@ -92,6 +92,10 @@ export type ReorderCheaperAlt = {
   comparison_basis: 'historical_net_goods'
 }
 
+export type ProcurementCostSource = 'receipt_history' | 'buyer_supplied' | 'last_receipt_fallback' | 'none'
+
+export type ProcurementDemandEvidence = 'regular' | 'on_request'
+
 export type ReorderSuggestion = {
   product_id: number
   product_name: string | null
@@ -131,6 +135,10 @@ export type ReorderSuggestion = {
   learned_factor: number | null
   value_density: null
   within_budget: boolean | null
+  cost_source?: ProcurementCostSource | null
+  estimated_unit_cost_eur?: number | null
+  estimated_line_cost_eur?: number | null
+  demand_evidence?: ProcurementDemandEvidence | null
 }
 
 export type ProducerPlan = ProcurementHistoryContract & {
@@ -164,6 +172,13 @@ export type CartPlan = ProcurementHistoryContract & {
   selected_count: number
   deferred_count: number
   method_used: CartOptimizeMethod | null
+  stale?: boolean
+  built_at?: string | null
+  source_changed_at?: string | null
+  estimated_total_cost_eur?: number | null
+  certified_cost_eur?: number | null
+  uncertified_cost_eur?: number | null
+  unestimated_item_count?: number | null
 }
 
 export type CartPlanQuery = {

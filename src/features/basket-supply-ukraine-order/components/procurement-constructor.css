@@ -148,6 +148,10 @@
   padding: 10px 12px;
 }
 
+.procure-cockpit .procure-cockpit__freshness {
+  padding: 6px 12px 0;
+}
+
 .procure-cockpit .procure-cockpit__metrics {
   flex: 1 1 auto;
   gap: 10px 24px;

@@ -26,6 +26,7 @@ import { getBudgetCartSuppliers } from '../../supply-ukraine-orders/api/supplyUk
 import type { Client } from '../../supply-ukraine-orders/types'
 import { getBudgetCartPlan } from '../api/procurementApi'
 import type { CartOptimizeMethod, CartPlan, ReorderSuggestion } from '../procurementTypes'
+import { ProcurementCartFreshnessNote } from './ProcurementCartFreshnessNote'
 import { ProcurementCostSnapshot } from './ProcurementCostProof'
 import { BudgetCartSummary, type BudgetCartFinancials } from './BudgetCartSummary'
 import { BudgetCartTable } from './BudgetCartTable'
@@ -320,6 +321,8 @@ function BudgetCartTabContent() {
           title={t('Формуємо план закупівлі')}
         />
       )}
+
+      {hasPlan && plan && <ProcurementCartFreshnessNote plan={plan} />}
 
       {hasPlan && plan && !isEmpty && (
         <>
