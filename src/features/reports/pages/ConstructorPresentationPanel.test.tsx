@@ -23,7 +23,7 @@ it.each([true, false])('applies saved negative color and grand-total visibility 
   const { container } = render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
   expect(container.querySelector('tfoot') !== null).toBe(enabled)
   expect(container.querySelector('.is-negative') !== null).toBe(enabled)
-  expect(container.querySelector('.report-inline-preview__group-total')).toBeTruthy()
+  expect(container.querySelector('.report-inline-preview__group-total')).toBeNull()
   expect(preview.Cells[0].Value.Value).toBe('-5')
 })
 it('preserves flags through template casing and refuses details or use in legacy reports', () => {

@@ -1153,6 +1153,7 @@ export function NewSaleProductsStep({
         busy={busy}
         initialComment={qtyModal?.item.Comment ?? ''}
         initialQty={getWizardProductNumber(qtyModal?.item.Qty) ?? 0}
+        mode={qtyModal && qtyModal.kind !== 'add' ? 'edit' : 'add'}
         opened={Boolean(qtyModal)}
         sessionKey={`${qtyModal?.kind}:${qtyModal?.item.NetUid ?? qtyModal?.item.Id}:${qtyModal?.item.Product?.NetUid}`}
         onAccept={acceptQtyModal}

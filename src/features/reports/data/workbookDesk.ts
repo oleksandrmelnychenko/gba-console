@@ -104,6 +104,7 @@ export function deskPeriodKind(period: DeskPeriod, today: string): string | null
   const yesterday = previousKyivDay(today)
   if (period.from === period.to) return period.from === yesterday ? 'Вчора' : period.from === today ? 'Сьогодні' : null
   if (period.from === `${today.slice(0, 4)}-01-01` && period.to === today) return 'З початку року до сьогодні'
+  if (period.to === today && period.from === `${today.slice(0, 7)}-01`) return 'З 1-го числа до сьогодні'
   if (period.to === yesterday && period.from === `${yesterday.slice(0, 7)}-01`) return 'З 1-го числа до вчора'
   return null
 }

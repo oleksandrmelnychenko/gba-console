@@ -170,3 +170,24 @@ it.each(['CustomerName', 'CustomerContract'])('keeps distinct %s identities visi
   expect(view.container.querySelectorAll('td[title="Клітинка відсутня"]')).toHaveLength(5)
   expect(screen.getByTitle('Значення не визначено.').textContent).toBe('—')
 })
+
+it('shows no per-group subtotal under single-level rows and keeps the grand total', () => {
+  const amount = (Value: string) => ({ Kind: 'decimal', Value, Provenance: 'producerCell' })
+  const preview = normalizeNativeReportPreview({ Preview: {
+    Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true, Request: request,
+    Page: { Offset: 0, Limit: 50, TotalVisibleRows: 2, ReturnedRows: 2, HasMore: false },
+    RowSchema: [{ Caption: 'День' }], ColumnSchema: [{ Caption: 'Сума' }],
+    Rows: [{ Ordinal: 0, SourceIndex: 12, Values: [{ Caption: '12.09.2026' }] }, { Ordinal: 1, SourceIndex: 13, Values: [{ Caption: '13.09.2026' }] }],
+    Columns: [{ Ordinal: 0, SourceIndex: 3, Values: [{ Caption: 'Сума' }] }],
+    Cells: [{ RowSourceIndex: 12, ColumnSourceIndex: 3, Value: amount('10') }, { RowSourceIndex: 13, ColumnSourceIndex: 3, Value: amount('20') }],
+    Totals: { State: 'materialized', Values: [{ RowSourceIndex: -1, ColumnSourceIndex: 3, Value: amount('30') }], Groups: [
+      { Level: 0, RowSourceIndex: 12, RowCount: 1, Values: [{ RowSourceIndex: 12, ColumnSourceIndex: 3, Value: amount('10') }] },
+      { Level: 0, RowSourceIndex: 13, RowCount: 1, Values: [{ RowSourceIndex: 13, ColumnSourceIndex: 3, Value: amount('20') }] },
+    ] },
+  } })
+  const view = render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
+  expect(view.container.querySelectorAll('.report-inline-preview__group-total')).toHaveLength(0)
+  expect(view.container.querySelectorAll('tbody tr')).toHaveLength(2)
+  expect(view.container.querySelector('tbody th.is-repeat')).toBeNull()
+  expect(screen.getByRole('rowheader', { name: 'Загальний підсумок' })).toBeTruthy()
+})

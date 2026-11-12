@@ -234,7 +234,7 @@ describe('BUG-1533 actual F2 cart editor', () => {
     expect(apiMocks.getProductAvailabilityBuckets).toHaveBeenCalledWith('249c4c35-2fb3-4bb4-bd0b-1328786bd609', agreementNetId, expect.any(AbortSignal))
     fireEvent.change(quantity, { target: { value: '12' } })
     fireEvent.change(screen.getByRole('textbox', { name: 'Коментар' }), { target: { value: 'уточнено' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Додати' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
     await waitFor(() => expect(apiMocks.updateOrderItem).toHaveBeenCalledOnce())
     expect(apiMocks.updateOrderItem.mock.calls[0][0]).toMatchObject({ NetUid: '45c1535d-17c4-4d28-b3e9-771340f1a449', Qty: 12, Comment: 'уточнено' })
     expect(apiMocks.updateOrderItem.mock.calls[0][1].operationId).toBeTruthy()
@@ -257,7 +257,7 @@ describe('BUG-1533 actual F2 cart editor', () => {
     fireEvent.click(within(editor).getByRole('button', { name: 'Редагувати кількість · 2003-HC' }))
     const quantity = await screen.findByRole('textbox', { name: 'Кількість' })
     fireEvent.change(quantity, { target: { value: '24' } })
-    expect((screen.getByRole('button', { name: 'Додати' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: 'Зберегти' }) as HTMLButtonElement).disabled).toBe(true)
     expect(apiMocks.updateOrderItem).not.toHaveBeenCalled()
   })
 

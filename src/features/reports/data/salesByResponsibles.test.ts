@@ -29,8 +29,8 @@ describe('sales by responsibles workbook', () => {
     expect(bug1274WorkbookGuide(SALES_BY_RESPONSIBLES_WORKBOOK_FILE)?.summary).toContain('Пархоменко')
     expect(organizationFilterField(43)).toBe(0)
     expect(usesNativeReportLookup(43)).toBe(true)
-    expect(bug1274WorkbookPeriod(SALES_BY_RESPONSIBLES_WORKBOOK_FILE, '2026-10-26')).toEqual({ from: '2026-10-01', to: '2026-10-25' })
-    expect(reportPeriodPresets(43, '2026-10-26').map(preset => preset.label)).toEqual(['Вчора', 'Поточний місяць', 'Минулий місяць', 'Поточний рік'])
+    expect(bug1274WorkbookPeriod(SALES_BY_RESPONSIBLES_WORKBOOK_FILE, '2026-10-26')).toEqual({ from: '2026-10-01', to: '2026-10-26' })
+    expect(reportPeriodPresets(43, '2026-10-26').map(preset => preset.label)).toEqual(['Сьогодні', 'Поточний місяць', 'Минулий місяць', 'Поточний рік'])
 
     const request = defaultDatasetRequest(salesByResponsiblesDataset, '2026-10-01', '2026-10-25')
     expect(request.sorted.Row.map(row => row.type)).toEqual([4, 22])

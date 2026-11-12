@@ -3,6 +3,7 @@ import { ActionIcon, Text, TextInput, Tooltip } from '@mantine/core'
 import { ChartColumnBig, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Plus, Search, Trash2 } from 'lucide-react'
 import { canTransferReportGrouping, type ReportGroupingAxis, type ReportGroupingLayout } from '../../data/reportGroupingLayout'
 import type { ConstructorField } from '../../data/constructorDesk'
+import { columnGroupingLimitHint } from '../../data/reportWideColumns'
 import type { ReportGroupingItem } from '../../types'
 import { ConstructorFieldDialog } from './ConstructorFieldDialog'
 
@@ -71,6 +72,7 @@ function GroupingPanel({ axis, layout, allowed, locked, disabled = false, captio
   const normalized = query.trim().toLocaleLowerCase('uk-UA')
   const groups = layout[axis]
   const title = TITLES[axis]
+  const limitHint = axis === 'Col' ? columnGroupingLimitHint(groups.map(group => ({ type: group.type, label: caption(group) }))) : null
   const index = selected?.axis === axis ? groups.findIndex(item => item.type === selected.type) : -1
   const item = index >= 0 ? groups[index] : undefined
   const label = item ? caption(item) : ''
@@ -114,5 +116,6 @@ function GroupingPanel({ axis, layout, allowed, locked, disabled = false, captio
     </ul>
     {!groups.length ? <Text size="sm" className="constructor-panel__empty">{axis === 'Row' ? 'Додайте поле для групування рядків' : 'Без поділу на колонки'}</Text>
       : !visible.length ? <Text size="sm" role="status" className="constructor-panel__empty">Нічого не знайдено</Text> : null}
+    {limitHint ? <Text size="xs" c="orange.9" role="note" data-testid="column-grouping-limit-hint">{limitHint}</Text> : null}
   </section>
 }

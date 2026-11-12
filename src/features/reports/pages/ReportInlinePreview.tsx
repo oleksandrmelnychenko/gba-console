@@ -14,7 +14,7 @@ import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, CURRENT_VPARIVANIE_PRODUCT_FIELDS,
 import { currentVparivanieSecondTier } from '../data/currentVparivanieColumns'
 import './report-inline-preview.css'
 import { workbookAttributeText, type WorkbookRow } from '../data/workbookPreview'
-import { deskRowsText } from '../data/reportCountPresentation'
+import { deskCount, deskRowsText } from '../data/reportCountPresentation'
 import type { SalesConstructorProfile } from '../data/salesConstructorProfiles'
 import { CurrentProductGroupsValue } from './CurrentProductGroupsValue'
 import { reportQuantityExplanations } from '../data/reportQuantityExplanations'
@@ -51,7 +51,8 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
   const documentLayout = !products && preview.Request?.DataSource === 'NativeSalesNet' && previewReportProfile !== undefined
   const rowPositions = new Map(preview.Rows.map((row, position) => [row.SourceIndex, position]))
   const groupTotals = new Map<number, NonNullable<NativeReportPreview['Totals']>['Groups']>()
-  for (const group of totals?.Groups ?? []) {
+  const totalGroups = (totals?.Groups ?? []).filter(group => group.Level < preview.RowSchema.length - 1)
+  for (const group of totalGroups) {
     const anchor = documentLayout
       ? preview.Rows[Math.min(preview.Rows.length - 1, (rowPositions.get(group.RowSourceIndex) ?? 0) + group.RowCount - 1)].SourceIndex
       : group.RowSourceIndex
@@ -91,7 +92,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
     ...(attributes ? ['Основний менеджер покупця', 'Код по региону'] : []), ...(regions ? ['Код по региону'] : []),
     ...workbookColumns.map(field => field.caption)]
   const levelCount = products ? 0 : preview.RowSchema.length
-  const totalledLevels = new Set(totals?.Groups.map(group => group.Level))
+  const totalledLevels = new Set(totalGroups.map(group => group.Level))
   const columnWindow = previewColumnWindow(preview)
   const wide = isPartialColumnWindow(columnWindow)
   const stickyRowHeader = (index: number) => wide ? { className: 'is-sticky-row-header', style: { left: `${index * WIDE_ROW_HEADER_REM}rem` } } : {}
@@ -198,8 +199,8 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
         </tr></tfoot> : null}
       </table>
     </ReportTableScrollArea>
-    {showPageNote && preview.Page.HasMore ? <Text size="xs" c="dimmed" className="report-inline-preview__more">Показано рядки {preview.Page.Offset + 1}–{preview.Page.Offset + preview.Page.ReturnedRows}. Повний результат доступний у Excel або PDF.{totals && grandTotals
-      ? ` Загальний підсумок — за всіма ${preview.Page.TotalVisibleRows} рядками звіту.` : ''}</Text> : null}
+    {showPageNote && preview.Page.HasMore ? <Text size="xs" c="dimmed" className="report-inline-preview__more">Показано рядки {deskCount(preview.Page.Offset + 1)}–{deskCount(preview.Page.Offset + preview.Page.ReturnedRows)}. Повний результат доступний у Excel або PDF.{totals && grandTotals
+      ? ` Загальний підсумок — за всіма ${deskCount(preview.Page.TotalVisibleRows)} рядками звіту.` : ''}</Text> : null}
     {showPageNote && wide && columnWindow ? <Text size="xs" c="dimmed" className="report-inline-preview__more">
       {columnWindowText(columnWindow.ColumnOffset, columnWindow.ReturnedColumns, columnWindow.TotalColumns)}. Решта колонок — у Excel.</Text> : null}
   </section>

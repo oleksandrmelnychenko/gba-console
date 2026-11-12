@@ -13,6 +13,7 @@ export function ChangeQtyModal({
   busy = false,
   initialComment,
   initialQty,
+  mode = 'add',
   opened,
   sessionKey,
   zIndex,
@@ -23,6 +24,7 @@ export function ChangeQtyModal({
   busy?: boolean
   initialComment?: string
   initialQty?: number
+  mode?: 'add' | 'edit'
   opened: boolean
   sessionKey?: string
   zIndex?: number
@@ -41,7 +43,7 @@ export function ChangeQtyModal({
       size={420}
       opened={opened}
       zIndex={zIndex}
-      title={t('Додати в кошик')}
+      title={t(mode === 'edit' ? 'Змінити кількість' : 'Додати в кошик')}
       onClose={cancel}
       onKeyDown={handleKeyDown}
       closeOnEscape={false}
@@ -83,7 +85,7 @@ export function ChangeQtyModal({
               {t('Скасувати')}
             </Button>
             <Button color={CREATE_ACTION_COLOR} disabled={showError} loading={isBusy} onClick={confirm}>
-              {t('Додати')}
+              {t(mode === 'edit' ? 'Зберегти' : 'Додати')}
             </Button>
           </AppModalFooter>
         </Stack>

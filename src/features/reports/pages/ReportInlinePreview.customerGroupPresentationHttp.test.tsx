@@ -32,7 +32,7 @@ it.each(variants)('binds actual source44 $name presentation without changing coh
  cells.forEach((cell,index)=>expect(cell.classList.contains('is-negative')).toBe(fixture.expected.red===true&&index>=10))
  expect(cells.filter(c=>c.textContent==='—')).toHaveLength(6)
  expect(cells[4].textContent).toMatch(/^0(?:[.,]0+)?$/);expect(cells[5].textContent).toMatch(/^0(?:[.,]0+)?$/);expect(cells[0].getAttribute('aria-description')).toContain('Без підтвердженої одиниці документа')
- expect(view.container.querySelector('.report-inline-preview__group-total')).toBeTruthy()
+ expect(view.container.querySelector('.report-inline-preview__group-total')).toBeNull()
  const requestBefore=structuredClone(template.Data)
  api.mockResolvedValue(fixture.page1);fireEvent.click(screen.getByRole('button',{name:'Наступні рядки'}));await screen.findByText('2–2 із 2')
  expect(api).toHaveBeenLastCalledWith(expect.stringContaining('/report/stocks/preview/'),expect.objectContaining({query:expect.objectContaining({rowOffset:1})}))

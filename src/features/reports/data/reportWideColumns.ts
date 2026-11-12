@@ -22,6 +22,16 @@ export function readPreviewColumnPaging(capability: Record<string, unknown>): Re
     resultColumns: Math.min((resultColumns as number | undefined) ?? MAXIMUM_RESULT_COLUMNS, MAXIMUM_RESULT_COLUMNS) }
 }
 
+const HIGH_CARDINALITY_GROUPING_TYPES: ReadonlySet<number> = new Set([5, 6, 7, 8, 12, 15, 17, 18, 24, 33])
+
+export function columnGroupingLimitHint(groups: ReadonlyArray<{ type: number; label: string }>): string | null {
+  const risky = groups.filter(group => HIGH_CARDINALITY_GROUPING_TYPES.has(group.type))
+  if (!risky.length) return null
+  const limit = MAXIMUM_RESULT_COLUMNS.toLocaleString('uk-UA').replace(/\s/g, '\u00a0')
+  const fields = risky.map(group => `«${group.label}»`).join(', ')
+  return `Групування колонок за ${risky.length > 1 ? 'полями' : 'полем'} ${fields} може перевищити ліміт ${limit} колонок. Перенесіть його в рядки або додайте відбір.`
+}
+
 export function columnWindowText(offset: number, returned: number, total: number): string {
   const number = (value: number) => String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
   if (total === 0) return '0 колонок'

@@ -95,6 +95,18 @@ describe('cart modal keyboard and dismissal', () => {
     expect((ui.getByLabelText('Кількість для переміщення') as HTMLInputElement).value).toBe('')
   })
 
+  it('names the quantity editor by its mode', () => {
+    const props = { opened: true, availableQty: 10, initialQty: 2, onAccept: vi.fn(), onCancel: vi.fn() }
+    const ui = render(<ChangeQtyModal {...props} />, { wrapper })
+    expect(ui.getByText('Додати в кошик')).toBeTruthy()
+    expect(ui.getByRole('button', { name: 'Додати' })).toBeTruthy()
+    ui.rerender(<ChangeQtyModal {...props} mode="edit" />)
+    expect(ui.getByText('Змінити кількість')).toBeTruthy()
+    expect(ui.getByRole('button', { name: 'Зберегти' })).toBeTruthy()
+    expect(ui.queryByText('Додати в кошик')).toBeNull()
+    expect(ui.queryByRole('button', { name: 'Додати' })).toBeNull()
+  })
+
   it('keeps invoice actions separate from editable cart rows', () => {
     const item = { NetUid: 'row-a', Product: { Name: 'Product' } }
     const props = { item, isInvoice: false, onChangeQty: vi.fn(), onRemove: vi.fn(), onActEdit: vi.fn(), onClose: vi.fn() }

@@ -52,6 +52,17 @@ it('selects, reorders, deletes and moves groupings between rows and columns with
   expect(within(rows).getAllByRole('listitem').map(node => node.textContent)).toEqual(['Група товаруЕлементи'])
 })
 
+it('warns under the column grouping only when a very wide field is grouped by columns', () => {
+  const panels = (layout: ReportGroupingLayout) => <ConstructorGroupingPanels layout={layout} allowed={new Set([2, 5])} locked={new Set()} rowsOnly={false}
+    measures={null} caption={group => group.label} available={() => []} onAdd={vi.fn()} onRemove={vi.fn()} onReorder={vi.fn()} onTransfer={vi.fn()} />
+  const view = wrap(panels({ Row: [item(5, 'Товар')], Col: [item(2, 'По місяцях')] }))
+  expect(screen.queryByTestId('column-grouping-limit-hint')).toBeNull()
+  view.rerender(<MantineProvider env="test"><I18nProvider>{panels({ Row: [item(2, 'По місяцях')], Col: [item(5, 'Товар')] })}</I18nProvider></MantineProvider>)
+  expect(screen.getByTestId('column-grouping-limit-hint').textContent)
+    .toBe('Групування колонок за полем «Товар» може перевищити ліміт 16\u00a0000 колонок. Перенесіть його в рядки або додайте відбір.')
+  expect(within(screen.getByRole('region', { name: 'Групування рядків' })).queryByTestId('column-grouping-limit-hint')).toBeNull()
+})
+
 it('adds several fields from the searchable category tree of the add-field dialog', () => {
   const onAdd = vi.fn()
   wrap(<GroupingHarness onAdd={onAdd} />)

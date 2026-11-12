@@ -16,10 +16,10 @@ function preview(source = 'NativeSalesNet', quantity: unknown = missing): Native
   return normalizeNativeReportPreview({ Preview: {
     Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true,
     Request: { DataSource: source, IsCurrentSnapshot: false, HasPeriod: true, PeriodFrom: '19.10.2026', PeriodTo: '27.10.2026',
-      RowGroupings: ['Товар'], ColumnGroupings: [], Measures: ['Перейменований показник', 'Кількість'], Filters: [], IgnoredFilters: [], Notes: ['Службова примітка не для показу'] },
+      RowGroupings: ['Група', 'Товар'], ColumnGroupings: [], Measures: ['Перейменований показник', 'Кількість'], Filters: [], IgnoredFilters: [], Notes: ['Службова примітка не для показу'] },
     Page: { Offset: 0, Limit: 50, TotalVisibleRows: 1, ReturnedRows: 1, HasMore: false },
-    RowSchema: [{ Caption: 'Товар' }], ColumnSchema: [{ Caption: 'Показник' }],
-    Rows: [{ Ordinal: 0, SourceIndex: 1, Values: [{ Caption: 'Товар А' }] }],
+    RowSchema: [{ Caption: 'Група' }, { Caption: 'Товар' }], ColumnSchema: [{ Caption: 'Показник' }],
+    Rows: [{ Ordinal: 0, SourceIndex: 1, Values: [{ Caption: 'Група А' }, { Caption: 'Товар А' }] }],
     Columns: [{ Ordinal: 0, SourceIndex: 5, Values: [{ Caption: 'Перейменований показник' }] },
       { Ordinal: 1, SourceIndex: 6, Values: [{ Caption: 'Кількість' }] }],
     Cells: [{ RowSourceIndex: 1, ColumnSourceIndex: 5, Value: quantity }, { RowSourceIndex: 1, ColumnSourceIndex: 6, Value: missing }],

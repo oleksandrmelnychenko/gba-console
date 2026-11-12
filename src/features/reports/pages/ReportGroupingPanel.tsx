@@ -7,6 +7,7 @@ import { TableChip } from '../../../shared/ui/TableChip'
 import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
 import { canTransferReportGrouping, type ReportGroupingAxis, type ReportGroupingLayout } from '../data/reportGroupingLayout'
 import { getReportFieldLabel } from '../data/reportOptions'
+import { columnGroupingLimitHint } from '../data/reportWideColumns'
 
 type Props = {
   locked?: ReadonlySet<number>
@@ -26,6 +27,7 @@ export function ReportGroupingPanel({ locked, layout, axis, allowed, onOpenPicke
   const normalized = query.trim().toLocaleLowerCase('uk-UA')
   const isRows = axis === 'Row', groups = layout[axis]
   const title = isRows ? 'Групування рядків' : 'Групування стовпців'
+  const limitHint = isRows ? null : columnGroupingLimitHint(groups.map(group => ({ type: group.type, label: group.label || getReportFieldLabel(group.key) })))
   return <section className="reports-stocks-grouping-field" aria-label={t(title)}>
     <div className="reports-stocks-legacy-panel__header">
       <Group className="reports-stocks-legacy-panel__title" gap={6} wrap="nowrap">
@@ -60,5 +62,6 @@ export function ReportGroupingPanel({ locked, layout, axis, allowed, onOpenPicke
       }) : <div className="reports-stocks-legacy-group-list__empty"><Text size="sm" c="gray.9">{isRows ? t('Додайте день, товар або інше поле') : t('Без поділу на стовпці')}</Text></div>}
       {groups.length > 0 && !groups.some(group => (group.label || getReportFieldLabel(group.key)).toLocaleLowerCase('uk-UA').includes(normalized)) ? <Text size="sm" role="status">Нічого не знайдено</Text> : null}
     </div>
+    {limitHint ? <Text size="xs" c="orange.9" role="note" data-testid="column-grouping-limit-hint">{limitHint}</Text> : null}
   </section>
 }

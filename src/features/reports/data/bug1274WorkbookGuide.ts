@@ -57,8 +57,9 @@ export function bug1274WorkbookGuide(fileName: string): WorkbookGuide | undefine
   return GUIDES[fileName]
 }
 
-const MONTH_PERIOD_WORKBOOKS: ReadonlySet<string> = new Set(['ВП.xls', 'ВП по постачальниках.xls', 'ДБіторка.xls',
-  SALES_BY_RESPONSIBLES_WORKBOOK_FILE])
+const MONTH_PERIOD_WORKBOOKS: ReadonlySet<string> = new Set(['ВП.xls', 'ВП по постачальниках.xls', 'ДБіторка.xls'])
+const CURRENT_MONTH_WORKBOOKS: ReadonlySet<string> = new Set([SALES_BY_RESPONSIBLES_WORKBOOK_FILE])
+const THROUGH_TODAY_SOURCES: ReadonlySet<number> = new Set([39, SALES_BY_RESPONSIBLES_SOURCE])
 
 function monthStart(day: string): string {
   return `${day.slice(0, 7)}-01`
@@ -73,7 +74,8 @@ export function bug1274WorkbookPeriod(fileName: string, today: string): { from: 
   const yesterday = previousKyivDay(today)
   if (!yesterday) return null
   if (fileName === 'Впарювання.xls') return { from: `${today.slice(0, 4)}-01-01`, to: today }
-  if (profileForWorkbook(fileName) || MONTH_PERIOD_WORKBOOKS.has(fileName)) return { from: monthStart(yesterday), to: yesterday }
+  if (profileForWorkbook(fileName) || CURRENT_MONTH_WORKBOOKS.has(fileName)) return { from: monthStart(today), to: today }
+  if (MONTH_PERIOD_WORKBOOKS.has(fileName)) return { from: monthStart(yesterday), to: yesterday }
   return null
 }
 
@@ -81,10 +83,11 @@ export function reportPeriodPresets(dataSource: number, today: string): ReportPe
   if (![35, 38, 39, 40, 41, SALES_BY_RESPONSIBLES_SOURCE].includes(dataSource)) return []
   const yesterday = previousKyivDay(today)
   if (!yesterday) return []
-  const end = dataSource === 39 ? today : yesterday
+  const throughToday = THROUGH_TODAY_SOURCES.has(dataSource)
+  const end = throughToday ? today : yesterday
   const last = previousMonth(end)
   const presets: ReportPeriodPreset[] = [
-    dataSource === 39 ? { label: 'Сьогодні', from: today, to: today } : { label: 'Вчора', from: yesterday, to: yesterday },
+    throughToday ? { label: 'Сьогодні', from: today, to: today } : { label: 'Вчора', from: yesterday, to: yesterday },
     { label: 'Поточний місяць', from: monthStart(end), to: end },
     { label: 'Минулий місяць', ...last },
   ]
