@@ -9282,24 +9282,56 @@
 @media (max-width: 1760px) {
   .new-sale-client-hero.new-sale-client-hero--refined {
     grid-template-columns: minmax(0, 1fr);
-    row-gap: 8px;
+    row-gap: 6px;
+    padding-block: 8px;
+  }
+  .new-sale-client-hero--refined .new-sale-client-hero__copy {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 6px 12px;
+    min-width: 0;
+  }
+  .new-sale-client-hero--refined .new-sale-client-hero__name {
+    flex: 0 1 auto;
+    flex-wrap: nowrap;
+    min-width: 0;
+    width: auto;
+    overflow: hidden;
+  }
+  .new-sale-client-hero--refined .new-sale-client-hero__title {
+    min-width: 0;
+    overflow: hidden;
+    overflow-wrap: normal;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .new-sale-client-hero--refined .new-sale-client-hero__details {
+    flex: 0 0 auto;
+    max-width: 70%;
   }
   .new-sale-client-hero--refined .new-sale-client-hero__side {
     flex-wrap: wrap;
     justify-content: flex-start;
-    row-gap: 6px;
+    align-items: center;
+    gap: 2px 0;
+    padding: 4px 10px 4px 0;
   }
   .new-sale-client-hero--refined .new-sale-client-hero__metrics,
-  .new-sale-client-hero--refined .new-sale-wizard-header-balances,
   .new-sale-client-hero--refined .new-sale-client-hero__tools,
-  .new-sale-client-hero--refined .new-sale-wizard-inline-tools {
-    flex-wrap: wrap;
-    row-gap: 6px;
+  .new-sale-client-hero--refined .new-sale-client-hero__tools > .mantine-Group-root,
+  .new-sale-client-hero--refined .new-sale-wizard-inline-tools,
+  .new-sale-client-hero--refined .new-sale-wizard-header-balances {
+    display: contents;
   }
-  .new-sale-client-hero--refined .new-sale-client-hero__tools,
-  .new-sale-client-hero--refined .new-sale-client-hero__tools > * {
-    flex-wrap: wrap;
-    max-width: 100%;
-    min-width: 0;
+  .new-sale-client-hero--refined :is(.new-sale-client-metric, .new-sale-wizard-header-badge) {
+    min-height: 38px;
+    padding: 2px 14px;
+    gap: 2px;
+  }
+  .new-sale-client-hero--refined .new-sale-wizard-inline-tools > .mantine-Group-root:not(.new-sale-wizard-header-balances) {
+    flex-wrap: nowrap;
+    margin-left: auto;
+    padding-left: 14px;
   }
 }
