@@ -1111,6 +1111,7 @@ export function NewSaleProductsStep({
           currentItems={orderItems}
           isSplit={editCart.isSplit}
           onClose={() => void exitEditCart()}
+          onEdit={editSelectedCartRow}
           selected={editCart.selected}
           splitItems={editCart.splitItems}
         />

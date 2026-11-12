@@ -14,6 +14,7 @@ export function EditShoppingCartOverlay({
   currentItems,
   isSplit,
   onClose,
+  onEdit,
   selected,
   splitItems,
 }: {
@@ -21,6 +22,7 @@ export function EditShoppingCartOverlay({
   currentItems: SalesUkraineOrderItem[]
   isSplit: boolean
   onClose: () => void
+  onEdit: (selection: WizardCartSelection) => void
   selected: WizardCartSelection | null
   splitItems: WizardSplitOrderItem[]
 }) {
@@ -62,16 +64,20 @@ export function EditShoppingCartOverlay({
         </ActionIcon>
         <Box className="new-sale-cart-edit-overlay__content">
           <WizardCartEditTable
+            busy={busy}
             discountHeader={t('Ручна знижка')}
             list="current"
+            onEdit={onEdit}
             rows={currentRows}
             selectedIndex={selected?.list === 'current' ? selected.index : null}
             title=""
           />
           {isSplit && (
             <WizardCartEditTable
+              busy={busy}
               discountHeader={t('Знижка')}
               list="split"
+              onEdit={onEdit}
               rows={splitRows}
               selectedIndex={selected?.list === 'split' ? selected.index : null}
               title={t('Нова накладна з рахунку')}

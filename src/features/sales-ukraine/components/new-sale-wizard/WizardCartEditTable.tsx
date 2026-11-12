@@ -1,10 +1,12 @@
-import { Box, Group, Text } from '@mantine/core'
+import { Box, Button, Group, Text } from '@mantine/core'
+import { Pencil } from 'lucide-react'
 import { memo, useMemo } from 'react'
 import { TableChip } from '../../../../shared/ui/TableChip'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { DataTable } from '../../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../../shared/ui/data-table/types'
 import { getWizardCartEditTotals, type WizardCartEditRow } from './wizardCartEditModel'
+import type { WizardCartSelection } from './wizardCartMutation'
 
 const qtyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
 const priceFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
@@ -29,14 +31,18 @@ const CART_EDIT_TABLE_LAYOUT: DataTableDefaultLayout = {
 }
 
 export const WizardCartEditTable = memo(function WizardCartEditTable({
+  busy,
   discountHeader,
   list,
+  onEdit,
   rows,
   selectedIndex,
   title,
 }: {
+  busy: boolean
   discountHeader: string
   list: 'current' | 'split'
+  onEdit: (selection: WizardCartSelection) => void
   rows: WizardCartEditRow[]
   selectedIndex: number | null
   title: string
@@ -98,7 +104,18 @@ export const WizardCartEditTable = memo(function WizardCartEditTable({
       id: 'qty',
       header: t('К-сть'),
       accessor: (row) => row.qty,
-      cell: (row) => <CartValueCell value={qtyFormatter.format(row.qty)} />,
+      cell: (row) => (
+        <Button
+          aria-label={`${t('Редагувати кількість')} · ${row.vendorCode}`}
+          disabled={busy}
+          onClick={() => onEdit({ list, index: row.index })}
+          rightSection={<Pencil size={12} />}
+          size="compact-xs"
+          variant="subtle"
+        >
+          {qtyFormatter.format(row.qty)}
+        </Button>
+      ),
       width: 92,
       minWidth: 76,
     },
@@ -142,7 +159,7 @@ export const WizardCartEditTable = memo(function WizardCartEditTable({
       width: 132,
       minWidth: 112,
     },
-  ], [discountHeader, list, t])
+  ], [busy, discountHeader, list, onEdit, t])
 
   return (
     <Box className="new-sale-cart new-sale-cart-edit">

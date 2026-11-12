@@ -19,6 +19,7 @@ import { useWizardCartQuantityPreparation, type WizardCartQuantityModalState } f
 import { prepareWizardSplitItemRestore, type WizardSplitItemRestoreAction } from './wizardSplitItemRestore'
 import { getPreviousProductKeyboardState, type useWizardKeyboard } from './wizardKeyboard'
 import type { WizardCartMutationExpectation } from './wizardMutationOperation'
+import type { WizardCartSelection } from './wizardCartMutation'
 import {
   getWizardProductNumber,
   normalizeWizardProductAvailability,
@@ -352,10 +353,10 @@ export function useWizardCartOperations({
     }
   }
 
-  async function editSelectedCartRow() {
+  async function editSelectedCartRow(selection: WizardCartSelection | null = editCart?.selected ?? null) {
     const cart = editCart
 
-    if (!cart?.selected) {
+    if (!cart || !selection || busy) {
       return
     }
 
@@ -363,14 +364,16 @@ export function useWizardCartOperations({
       return
     }
 
-    if (cart.selected.list === 'current') {
-      const item = orderItems[cart.selected.index]
+    setEditCart((current) => current ? { ...current, selected: selection } : current)
+
+    if (selection.list === 'current') {
+      const item = orderItems[selection.index]
 
       if (item) {
         await onEditOrderItem(item)
       }
     } else {
-      const item = cart.splitItems[cart.selected.index]
+      const item = cart.splitItems[selection.index]
 
       if (item) {
         setQtyModal({ available: item.Qty, item, kind: 'edit-split' })

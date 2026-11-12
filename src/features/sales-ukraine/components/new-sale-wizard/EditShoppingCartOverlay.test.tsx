@@ -33,10 +33,23 @@ function wrapper({ children }: { children: ReactNode }) {
 const splitItem: WizardSplitOrderItem = { Product: { NameUA: 'Split' }, Qty: 1, TotalAmount: 2, TotalAmountEurToUah: 80, TotalAmountLocal: 80 }
 function props() {
   return { currentItems: [{ Product: { NameUA: 'First', VendorCode: 'A' }, Qty: 1 }, { Product: { NameUA: 'Second', VendorCode: 'A' }, Qty: 2 }],
-    splitItems: [splitItem], isSplit: true, selected: { list: 'current' as const, index: 0 }, onClose: vi.fn() }
+    splitItems: [splitItem], isSplit: true, selected: { list: 'current' as const, index: 0 }, onClose: vi.fn(), onEdit: vi.fn() }
 }
 
 describe('cart edit overlay', () => {
+  it('edits the clicked source row and disables quantity actions while busy', () => {
+    const initial = props()
+    const ui = render(<EditShoppingCartOverlay {...initial} />, { wrapper })
+    fireEvent.click(ui.getAllByRole('button', { name: 'Редагувати кількість · A' })[1])
+    expect(initial.onEdit).toHaveBeenLastCalledWith({ list: 'current', index: 1 })
+    fireEvent.click(ui.getByRole('button', { name: 'Редагувати кількість ·' }))
+    expect(initial.onEdit).toHaveBeenLastCalledWith({ list: 'split', index: 0 })
+    initial.onEdit.mockClear()
+    ui.rerender(<EditShoppingCartOverlay {...initial} busy />)
+    fireEvent.click(ui.getAllByRole('button', { name: 'Редагувати кількість · A' })[0])
+    expect(initial.onEdit).not.toHaveBeenCalled()
+  })
+
   it('reuses rows and columns during navigation and updates only the changed source', () => {
     const initial = props()
     const ui = render(<EditShoppingCartOverlay {...initial} />, { wrapper })
