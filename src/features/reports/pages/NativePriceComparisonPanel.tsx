@@ -3,7 +3,7 @@ import { useDebouncedValue } from '@mantine/hooks'
 import { Select, Stack, Text } from '@mantine/core'
 import { searchDatasetReportValues } from '../api/reportsApi'
 import { isNativePricingId, type NativePriceComparison } from '../data/nativePriceComparison'
-export function NativePriceComparisonPanel({value,onChange,disabled}:{value:NativePriceComparison|undefined;onChange:(value:NativePriceComparison)=>void;disabled:boolean}) {
+export function NativePriceComparisonPanel({value,onChange,disabled,missing=false}:{value:NativePriceComparison|undefined;onChange:(value:NativePriceComparison)=>void;disabled:boolean;missing?:boolean}) {
   const [search,setSearch]=useState('')
   const [query]=useDebouncedValue(search.trim(),250)
   const [options,setOptions]=useState<Array<{value:string;label:string}>>([])
@@ -35,7 +35,7 @@ export function NativePriceComparisonPanel({value,onChange,disabled}:{value:Nati
   return <Stack gap="sm">
     <Select label="Тип ціни для порівняння" withAsterisk aria-required placeholder="Знайдіть тип ціни" searchable
       description={id?undefined:'Оберіть тип ціни для порівняння, щоб сформувати звіт.'} clearable disabled={disabled} data={data}
-      searchValue={search} onSearchChange={setSearch} value={id} filter={({options})=>options} error={error}
+      searchValue={search} onSearchChange={setSearch} value={id} filter={({options})=>options} error={error??missing}
       onChange={next=>{setSelected(data.find(option=>option.value===next)??null);if(next?.startsWith('legacy:'))onChange({Version:1,PriceTypeId:next.slice(7)});else onChange({Version:2,PricingId:next??''})}} />
     {legacy && <Text size="sm" c="dimmed">Збережено попередній історичний тип ціни. Щоб вибрати тип із довідника GBA, змініть вибір.</Text>}
     <Text size="sm" c="dimmed">Продажі та повернення беруться з GBA — усі за період, незалежно від типу ціни договору. Сума по типу цін — кількість, помножена на ціну вибраного типу на день продажу (для повернення — на день повернення) зі збереженої історії цін; різниця — продажі з ПДВ мінус ця сума. Якщо ціни вибраного типу для товару на цей день немає, сума по типу цін і різниця в рядку порожні.</Text>

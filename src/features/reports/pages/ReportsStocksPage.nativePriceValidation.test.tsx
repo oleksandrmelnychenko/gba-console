@@ -7,13 +7,14 @@ import { previewStockReport, searchDatasetReportValues } from '../api/reportsApi
 import { getReportDatasets, getServerReportTemplates, parseReportDatasets } from '../api/reportWorkspaceApi'
 import { NATIVE_PRICE_COMPARISON_WORKBOOK } from '../data/nativePriceComparison'
 import { workbookDisplayFileName } from '../data/bug1274WorkbookGuide'
+import { changeReportPeriod } from '../testing/reportPeriod'
 import { ReportsStocksPage } from './ReportsStocksPage'
 
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ user: null, hasPermission: () => true }) }))
 vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(), previewStockReport: vi.fn(), searchDatasetReportValues: vi.fn() }))
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(), getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn() }))
 
-const warning = 'Оберіть тип ціни з довідника GBA.'
+const warning = 'Оберіть тип ціни для порівняння.'
 const hint = 'Оберіть тип ціни для порівняння, щоб сформувати звіт.'
 const prices = [{ Id: '844', Name: 'ЦЗ' }, { Id: '846', Name: 'ЦЗ (Фіксована націнка)' },
   { Id: '852', Name: 'ЦО1' }, { Id: '847', Name: 'ЦО1 (НДС)' }, { Id: '849', Name: 'ЦО2' },
@@ -103,4 +104,25 @@ it('explains the inactive button with a neutral hint before the first touch and 
   fireEvent.click(input.closest('.mantine-Select-wrapper')!.querySelector('button')!)
   expect(await screen.findByText(warning)).toBeTruthy()
   expect(screen.getByText(hint)).toBeTruthy()
+})
+
+it('names the missing price type next to the changed-settings notice instead of asking to apply the set', async () => {
+  await openReport()
+  changeReportPeriod({ from: '2026-09-02' })
+  expect((await screen.findByText(`Налаштування змінено. Звіт поки не можна сформувати: ${warning}`)).closest('[role=status]')).toBeTruthy()
+  expect(screen.queryByText(/Застосуйте весь набір/)).toBeNull()
+  expect(screen.getByRole('combobox', { name: 'Тип ціни для порівняння' }).getAttribute('aria-invalid')).toBe('true')
+  expectBlocked()
+  expect(screen.getByRole('button', { name: 'Скасувати зміни' })).toHaveProperty('disabled', false)
+})
+
+it('lets a changed valid set be formed and exported straight away', async () => {
+  await openReport()
+  changeReportPeriod({ from: '2026-09-02' })
+  await selectPrice()
+  const notice = await screen.findByText('Налаштування змінено. Натисніть «Сформувати», щоб оновити звіт.')
+  expect(notice).toBeTruthy()
+  expect(screen.getByRole('combobox', { name: 'Тип ціни для порівняння' }).getAttribute('aria-invalid')).not.toBe('true')
+  for (const button of screen.getAllByRole('button', { name: /^Сформувати(?: Excel| PDF)?$/ }))
+    expect(button).toHaveProperty('disabled', false)
 })

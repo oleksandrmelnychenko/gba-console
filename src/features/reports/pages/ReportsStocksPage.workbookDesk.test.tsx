@@ -158,7 +158,7 @@ it('shows the table with its row count and turns Excel and PDF into direct downl
   earlier.setUTCDate(earlier.getUTCDate() - 1)
   changeReportPeriod({ from: earlier.toISOString().slice(0, 10) })
   expect(screen.getByRole('region', { name: 'Таблиця попереднього перегляду' })).toBeTruthy()
-  expect(screen.getByText(/Налаштування змінено\. Застосуйте/)).toBeTruthy()
+  expect(screen.getByText(/Налаштування змінено\. Натисніть «Застосувати й показати», щоб оновити звіт\./)).toBeTruthy()
   expect(screen.getByRole('link', { name: 'Завантажити Excel' })).toBeTruthy()
 })
 

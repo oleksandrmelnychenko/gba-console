@@ -11,7 +11,7 @@ export function nativePriceComparisonError(value: NativePriceComparison | undefi
   const valid = value?.Version === 2
     ? isNativePricingId(value.PricingId) && value.PriceTypeId == null
     : value?.Version === 1 && value.PricingId == null && /^[0-9a-f]{32}$/i.test(value.PriceTypeId) && !/^0{32}$/.test(value.PriceTypeId)
-  return valid ? null : 'Оберіть тип ціни з довідника GBA.'
+  return valid ? null : 'Оберіть тип ціни для порівняння.'
 }
 export function nativePriceComparisonRequest(request: ReportRequestBody, dataset: ReportDataset): ReportRequestBody {
   const groups=datasetGroupings(dataset)

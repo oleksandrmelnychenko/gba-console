@@ -555,14 +555,15 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
   const templateConfigurationError = stockQuantityError ?? configurationError ?? organizationConfigurationError ?? returnStatusError
   const generationConfigurationError = stockQuantityError ?? configurationError ?? currentMatrixError ?? receiptWarehouseCardinalityError
     ?? organizationConfigurationError ?? returnStatusError
+  const nativePriceMissing = dataSource === 46 && !!generationConfigurationError && generationConfigurationError === nativePriceComparisonError(nativePriceComparison)
+  const nativePriceUntouched = nativePriceMissing && !nativePriceComparisonChanged
+    && !nativePriceComparison?.PricingId && !nativePriceComparison?.PriceTypeId
   const reportIsReady = !generationConfigurationError && !periodError && !incompleteSelectionMessage && checkedMeasurements > 0 && !missingRowGrouping
   const canSubmit = canGenerateReport && reportIsReady
   const submitBlockedReason = !canGenerateReport
     ? t('Немає права формувати звіт залишків')
     : generationConfigurationError
-      ? dataSource === 46 && !nativePriceComparisonChanged
-        && !nativePriceComparison?.PricingId && !nativePriceComparison?.PriceTypeId
-        && generationConfigurationError === nativePriceComparisonError(nativePriceComparison) ? '' : generationConfigurationError
+      ? nativePriceUntouched ? '' : generationConfigurationError
       : periodError
       ? periodError
       : checkedMeasurements === 0
@@ -570,6 +571,15 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
         : missingRowGrouping
           ? t('Додайте хоча б одне групування рядків')
           : incompleteSelectionMessage
+  const pendingSettingsNotice = (action: string) => {
+    if (!appliedSettings.pending) return null
+    const blockedBy = canSubmit ? '' : submitBlockedReason || generationConfigurationError
+    return <Alert color="yellow" role="status">
+      {blockedBy ? t('Налаштування змінено. Звіт поки не можна сформувати: {reason}', { reason: blockedBy })
+        : workbookResolving ? t('Налаштування змінено.') : t('Налаштування змінено. Натисніть «{action}», щоб оновити звіт.', { action: t(action) })}
+      {lastRun ? <> {t('Показаний результат та його експорт відповідають попередньому застосованому набору.')}</> : null}
+    </Alert>
+  }
   const emptyRunNotice =
     lastRun && !lastRun.hasDocument && !preview
       ? lastRun.rateComparison ? 'Сервер не повернув файл історичних курсів. Перевірте обрану серію.' : !lastRun.periodSupported ? t(dataSource === 11 ? 'Сервер не повернув файл записаних залишків рахунків. Спробуйте послабити умови відбору.' : dataSource === 10 ? 'Сервер не повернув файл поточної заборгованості. Спробуйте послабити умови відбору.' : 'Сервер не повернув файл поточних залишків. Спробуйте послабити умови відбору.')
@@ -1105,7 +1115,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
           onChange={filterLogic.editSelection} />} />
     const filtersContent = <>
       {dataSource === 35 ? <div className="workbook-desk__group">{dayProfitControls('organizations')}</div> : null}
-      {dataSource === 46 ? <NativePriceComparisonPanel value={nativePriceComparison} onChange={changeNativePriceComparison} disabled={comparisonSettingsDisabled} /> : null}
+      {dataSource === 46 ? <NativePriceComparisonPanel value={nativePriceComparison} onChange={changeNativePriceComparison} disabled={comparisonSettingsDisabled} missing={nativePriceMissing && (!nativePriceUntouched || appliedSettings.pending)} /> : null}
       {dataSource === 44 ? <CustomerGroupsPanel value={customerGroups} onChange={setCustomerGroups} disabled={comparisonSettingsDisabled} /> : null}
       {dataSource === 35 ? <div className="workbook-desk__group">{dayProfitControls('filters')}</div> : null}
       {supplierControls ? <div className="workbook-desk__group">{supplierProfitControls('filters')}</div> : null}
@@ -1134,7 +1144,7 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
     </div>
     const constructorDesk = usesConstructorDesk(dataset, reportBody) && !selectionOnly
     const constructorCaptions = constructorMeasureCaptions(dataset, reportBody, dataSource, t)
-    const constructorReportSettings = dataSource === 46 ? <NativePriceComparisonPanel value={nativePriceComparison} onChange={changeNativePriceComparison} disabled={comparisonSettingsDisabled} />
+    const constructorReportSettings = dataSource === 46 ? <NativePriceComparisonPanel value={nativePriceComparison} onChange={changeNativePriceComparison} disabled={comparisonSettingsDisabled} missing={nativePriceMissing && (!nativePriceUntouched || appliedSettings.pending)} />
       : dataSource === 44 ? <CustomerGroupsPanel value={customerGroups} onChange={setCustomerGroups} disabled={comparisonSettingsDisabled} /> : null
     const constructorContent = constructorDesk ? {
       parameters: <>
@@ -1234,10 +1244,10 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
                 onChange: range => { setFrom(range.from); setTo(range.to) } } : null}
               currentStateNotice={<Text size="sm">{t('Поточний стан на час читання даних. Історичний період не застосовується.')}</Text>}
               parameters={constructorContent.parameters} panels={constructorContent.panels} filters={constructorContent.filters} extras={constructorContent.extras}
-              notices={appliedSettings.pending ? <Alert color="yellow" role="status">{t('Налаштування змінено. Застосуйте весь набір, щоб оновити звіт.')}{lastRun ? <> {t('Показаний результат та його експорт відповідають попередньому застосованому набору.')}</> : null}</Alert> : null}
+              notices={pendingSettingsNotice('Сформувати')}
               actions={{ canSubmit: canSubmit && !workbookResolving, isLoading, blockedReason: workbookResolving ? null : submitBlockedReason || null,
                 ran: Boolean(result), previewNeedsExport: Boolean(lastRun?.previewNeedsExport), excelUrl, pdfUrl, fileBaseName: lastRun?.fileName ?? null,
-                pending: appliedSettings.pending, canExport: Boolean(lastRun) || canSubmit && !appliedSettings.pending, resetDisabled: !canGenerateReport || isLoading,
+                pending: appliedSettings.pending, canExport: Boolean(lastRun) || canSubmit && !workbookResolving, resetDisabled: !canGenerateReport || isLoading,
                 onPreview: () => void runReport(true), onGenerate: () => void runReport(false), onReset: resetReport,
                 onCancel: () => { restoreWorkspace(appliedSettings.cancelSnapshot(activeTemplate), true) },
                 onSaveTemplate: () => openDeskTemplates(true), onLoadTemplate: () => openDeskTemplates(false) }} /> : <>
@@ -1250,13 +1260,13 @@ function ReportsStocksWorkspace({ ownerId, constructorMode, consoleScope }: { ow
                 presets={reportPeriodPresets(dataSource, today)} error={periodError} disabled={isLoading || workbookResolving}
                 onFromChange={setFrom} onToChange={setTo} />
                 : <Text size="sm">{t('Поточний стан на час читання даних. Історичний період не застосовується.')}</Text>} />
-            {appliedSettings.pending ? <Alert color="yellow" role="status">{t('Налаштування змінено. Застосуйте весь набір, щоб оновити звіт.')}{lastRun ? <> {t('Показаний результат та його експорт відповідають попередньому застосованому набору.')}</> : null}</Alert> : null}
+            {pendingSettingsNotice('Застосувати й показати')}
             <WorkbookActionBar canSubmit={canSubmit && !workbookResolving} isLoading={isLoading}
               blockedReason={workbookResolving ? null : submitBlockedReason || null}
               ran={Boolean(result)} previewNeedsExport={Boolean(lastRun?.previewNeedsExport)} excelUrl={excelUrl} pdfUrl={pdfUrl} fileBaseName={lastRun?.fileName ?? null}
               resetDisabled={!canGenerateReport || isLoading} onPreview={() => void runReport(true)}
               onGenerate={() => void runReport(false)} onReset={resetReport}
-              pending={appliedSettings.pending} canExport={Boolean(lastRun) || canSubmit && !appliedSettings.pending} onCancel={() => { restoreWorkspace(appliedSettings.cancelSnapshot(activeTemplate), true) }}
+              pending={appliedSettings.pending} canExport={Boolean(lastRun) || canSubmit && !workbookResolving} onCancel={() => { restoreWorkspace(appliedSettings.cancelSnapshot(activeTemplate), true) }}
               onSaveTemplate={() => openDeskTemplates(true)}
               applyLabel="Застосувати й показати" /></>}
             {lastRun ? <Text size="sm" role="status">{t('Період показаного результату')}: {workbookRequestSummary(resultRequest, dataset, selection => getSelectionFieldSummary(selection, filterFieldOptions, t)).period}</Text> : null}
