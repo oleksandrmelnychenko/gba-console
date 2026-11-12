@@ -1,9 +1,10 @@
-import { Alert, Autocomplete, Badge, Combobox, createTheme, Drawer, Loader, Modal, MultiSelect, Select, Tooltip, parseThemeColor, type MantineColorsTuple } from '@mantine/core'
+import { Alert, Autocomplete, Badge, Combobox, createTheme, Drawer, FileInput, Loader, Modal, MultiSelect, Select, Tooltip, parseThemeColor, type MantineColorsTuple } from '@mantine/core'
 import './alerts.css'
 import './table-chips.css'
 import './static-tables.css'
 import './comboboxes.css'
 import './segmented-controls.css'
+import { translate } from '../i18n/translate'
 import { IosLoader } from '../ui/IosLoader'
 
 const violet: MantineColorsTuple = [
@@ -83,6 +84,9 @@ export const theme = createTheme({
     }),
     Alert: Alert.extend({
       classNames: { root: 'app-alert' },
+    }),
+    FileInput: FileInput.extend({
+      defaultProps: { placeholder: translate('Оберіть файл') },
     }),
     Loader: Loader.extend({
       defaultProps: {
