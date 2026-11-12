@@ -23,7 +23,6 @@ vi.mock('../api/warehouseStockMovementApi', () => ({
 const panel = (allowed = true, onBusyChange?: (busy: boolean) => void) => <MantineProvider env="test"><I18nProvider>
   <WarehouseStockMovementPanel callerKey={allowed ? 'owner' : null} canGenerate={allowed} onBusyChange={onBusyChange} />
 </I18nProvider></MantineProvider>
-const openSearch = () => screen.getAllByPlaceholderText('Пошук').filter(input => !input.closest('[style*="display: none"]'))[0]
 const previews = () => vi.mocked(previewStockMovement).mock.calls.map(call => call[0])
 
 async function applyReport() {
@@ -137,15 +136,18 @@ describe('native warehouse stock movement', () => {
     expect(dialog.innerHTML).toContain('/files/rukh.xlsx?sig=1')
   })
 
-  it('searches products remotely after 400 ms and sends the chosen ids', async () => {
+  it('searches products remotely after the shared delay and sends the chosen ids', async () => {
     render(panel())
-    fireEvent.click(await screen.findByLabelText('Номенклатура у списку'))
-    fireEvent.change(openSearch(), { target: { value: '94' } })
-    fireEvent.change(openSearch(), { target: { value: '940' } })
+    const products = await screen.findByRole('combobox', { name: 'Номенклатура у списку' })
+    fireEvent.focus(products)
+    expect((await screen.findAllByText('Почніть вводити назву')).length).toBeGreaterThan(0)
+    fireEvent.change(products, { target: { value: '94' } })
+    fireEvent.change(products, { target: { value: '940' } })
     expect(searchStockMovementProducts).not.toHaveBeenCalled()
     await waitFor(() => expect(searchStockMovementProducts).toHaveBeenCalledOnce())
     expect(vi.mocked(searchStockMovementProducts).mock.calls[0][0]).toBe('940')
-    fireEvent.click(await screen.findByText('94000 — Фільтр масляний'))
+    fireEvent.click(await screen.findByRole('option', { name: '94000 — Фільтр масляний' }))
+    expect(screen.getByRole('button', { name: 'Видалити 94000 — Фільтр масляний' })).toBeTruthy()
     await applyReport()
     expect(previews()[0]).toMatchObject({ ProductIds: [38221591] })
     expect(searchStockMovementGroups).not.toHaveBeenCalled()
@@ -153,16 +155,28 @@ describe('native warehouse stock movement', () => {
 
   it('sends the chosen warehouses, organizations, document kinds and groups', async () => {
     render(panel())
-    fireEvent.click(await screen.findByLabelText('Група товарів (з підгрупами)'))
-    fireEvent.change(openSearch(), { target: { value: 'Філ' } })
-    fireEvent.click(await screen.findByText('Фільтри'))
+    fireEvent.change(await screen.findByRole('combobox', { name: 'Група товарів (з підгрупами)' }), { target: { value: 'Філ' } })
+    fireEvent.click(await screen.findByRole('option', { name: 'Фільтри' }))
     for (const [label, option] of [['Склад у списку', 'СКЛАД -1 · Фенікс'], ['Склад у списку', 'СКЛАД Н/П · Фенікс'],
       ['Організація складу', 'Фенікс'], ['Вид документа руху', 'Переміщення'], ['Вид документа руху', 'Продаж']]) {
-      fireEvent.click(await screen.findByLabelText(label))
-      fireEvent.click((await screen.findAllByText(option)).at(-1)!)
+      fireEvent.click(screen.getByRole('combobox', { name: label }))
+      fireEvent.click(await screen.findByRole('option', { name: option }))
     }
     await applyReport()
     expect(JSON.stringify(previews()[0])).toMatchInlineSnapshot(`"{"Version":1,"From":"2025-01-01","To":"2026-10-26","WarehouseIds":[2968,2975],"OrganizationIds":[1],"ProductIds":[],"ArticleMatch":"","Articles":[],"ProductGroupIds":[7],"DocumentKinds":["sale","transfer"],"DocumentText":null,"Conditions":[],"Levels":["warehouse","product","registrar"],"Measures":["opening","incoming","outgoing","closing"],"GrandTotals":true,"NegativeRed":true,"Offset":0,"Limit":200}"`)
+  })
+
+  it('shows a failed product lookup with a retry instead of an empty list', async () => {
+    vi.mocked(searchStockMovementProducts).mockRejectedValueOnce(new Error('offline'))
+    render(panel())
+    const products = await screen.findByRole('combobox', { name: 'Номенклатура у списку' })
+    fireEvent.focus(products)
+    fireEvent.change(products, { target: { value: '940' } })
+    expect((await screen.findByRole('alert')).textContent).toBe('Не вдалося завантажити значення.')
+    expect(screen.queryByText('Нічого не знайдено')).toBeNull()
+    fireEvent.click(screen.getByRole('option', { name: 'Спробувати ще раз' }))
+    expect(await screen.findByRole('option', { name: '94000 — Фільтр масляний' })).toBeTruthy()
+    expect(vi.mocked(searchStockMovementProducts).mock.calls.map(call => call[0])).toEqual(['940', '940'])
   })
 
   it('validates grouping before calling the server', async () => {

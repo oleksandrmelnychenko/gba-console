@@ -108,7 +108,7 @@ export function ReportValuePicker({
       : <Combobox store={combobox} withinPortal readOnly={locked} onOptionSubmit={submit}>
           <Combobox.Target withExpandedAttribute>{field}</Combobox.Target>
           <Combobox.Dropdown>
-            <Combobox.Options aria-label={label ?? t('Значення')}>
+            <Combobox.Options>
               <ScrollArea.Autosize mah={260} type="auto" viewportProps={{ tabIndex: -1 }}>
                 {visible.map(item => <Combobox.Option key={item.value} value={item.value} active={keys.has(item.value)} disabled={locked}>
                   <Group gap="xs" wrap="nowrap">

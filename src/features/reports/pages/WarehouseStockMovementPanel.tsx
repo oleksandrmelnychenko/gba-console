@@ -2,10 +2,9 @@ import { PhysicalQuantityExceptionNotice } from '../../../shared/ui/product-move
 import { ActionIcon, Alert, Button, Checkbox, Group, NumberInput, Select, Stack, Table, Text, Textarea, TextInput } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, MonitorPlay, Plus, X } from 'lucide-react'
-import { useEffect, useEffectEvent, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useEffectEvent, useRef, useState, type ReactNode } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { PhysicalCoverageNotice } from '../../../shared/ui/product-movement-history/PhysicalCoverageNotice'
-import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -24,6 +23,8 @@ import {
   type StockMovementRequest, type StockMovementResult, type StockMovementSelection,
 } from '../data/warehouseStockMovement'
 import { ReportFilterRow } from './ReportFilterRow'
+import { ReportValuePicker } from './ReportValuePicker'
+import { REPORT_VALUE_LOOKUP_FAILED, useReportValueSearch } from './reportValueSearch'
 import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { WorkbookPeriodField, WorkbookSettings } from './workbook-desk/WorkbookSettings'
 import './warehouse-stock-movement.css'
@@ -44,35 +45,45 @@ function errorText(failure: unknown, fallback: string): string {
 }
 
 function useLookupSearch(search: (query: string, signal: AbortSignal) => Promise<StockMovementLookupItem[]>, enabled: boolean) {
-  const [query, setQuery] = useState('')
-  const [debounced] = useDebouncedValue(query, 400)
-  const [state, setState] = useState<{ query: string; items: StockMovementLookupItem[] }>({ query: '', items: [] })
+  const { search: query, setSearch: setQuery, query: debounced, pending } = useReportValueSearch()
+  const [attempt, setAttempt] = useState(0)
+  const [state, setState] = useState<{ key: string; items: StockMovementLookupItem[]; failed: boolean }>({ key: '', items: [], failed: false })
   const term = debounced.trim()
+  const key = `${attempt}:${term}`
   useEffect(() => {
     if (!enabled || !term) return
     const controller = new AbortController()
     search(term, controller.signal)
-      .then(items => { if (!controller.signal.aborted) setState({ query: term, items }) })
-      .catch(() => { if (!controller.signal.aborted) setState({ query: term, items: [] }) })
+      .then(items => { if (!controller.signal.aborted) setState({ key, items, failed: false }) })
+      .catch(() => { if (!controller.signal.aborted) setState({ key, items: [], failed: true }) })
     return () => controller.abort()
-  }, [term, enabled, search])
-  const settled = !term || state.query === term
-  return { query, setQuery, items: term && settled ? state.items : [], loading: !!query.trim() && (query.trim() !== term || !settled) }
+  }, [term, key, enabled, search])
+  const settled = !term || state.key === key
+  return { query, setQuery, items: term && settled && !pending ? state.items : [], failed: !!term && settled && !pending && state.failed,
+    loading: !!query.trim() && pending || !settled, retry: () => setAttempt(value => value + 1) }
 }
 
 function SelectionPicker({ label, placeholder, selected, search, disabled, onChange }: {
   label: string; placeholder: string; selected: StockMovementSelection[]; disabled: boolean
   search: ReturnType<typeof useLookupSearch>; onChange: (value: StockMovementSelection[]) => void
 }) {
-  const data = useMemo(() => {
-    const options = new Map<string, string>(selected.map(item => [String(item.id), item.label]))
-    for (const item of search.items) options.set(String(item.Id), item.Detail ? `${item.Name} — ${item.Detail}` : item.Name)
-    return [...options].map(([value, text]) => ({ value, label: text }))
-  }, [selected, search.items])
-  return <CheckboxMultiSelect label={label} placeholder={placeholder} disabled={disabled} data={data}
-    value={selected.map(item => String(item.id))}
-    remoteSearch={{ value: search.query, onChange: search.setQuery, loading: search.loading }}
-    onChange={values => onChange(values.map(value => ({ id: Number(value), label: data.find(option => option.value === value)?.label ?? value })))} />
+  const options = search.items.map(item => ({ value: String(item.Id), label: item.Detail ? `${item.Name} — ${item.Detail}` : item.Name }))
+  const chosen = selected.map(item => ({ value: String(item.id), label: item.label }))
+  return <ReportValuePicker mode="multi" label={label} placeholder={placeholder} data={options} selected={chosen}
+    search={search.query} onSearchChange={search.setQuery} loading={search.loading} disabled={disabled}
+    emptyMessage={search.query.trim() ? undefined : 'Почніть вводити назву'}
+    lookupError={search.failed ? REPORT_VALUE_LOOKUP_FAILED : undefined} onRetry={search.retry}
+    onChange={values => onChange(values.map(value => ({ id: Number(value), label: [...options, ...chosen].find(option => option.value === value)?.label ?? value })))} />
+}
+
+function ListPicker({ label, placeholder, data, value, disabled, onChange }: {
+  label: string; placeholder: string; data: { value: string; label: string }[]; value: string[]; disabled: boolean
+  onChange: (value: string[]) => void
+}) {
+  const [search, setSearch] = useState('')
+  return <ReportValuePicker mode="multi" remote={false} label={label} placeholder={placeholder} data={data}
+    selected={value.map(key => data.find(option => option.value === key) ?? { value: key, label: key })}
+    search={search} onSearchChange={setSearch} disabled={disabled} onChange={onChange} />
 }
 
 function FixedMovementFilter({ label, field, condition, children }: {
@@ -295,12 +306,12 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
         { id: 'filters', title: 'Відбори', summary: filters.join('; ') || 'Фільтрів немає',
           content: <Stack gap={6}>
             <FixedMovementFilter label="Фільтр складу" field="Склад" condition="У списку">
-              <CheckboxMultiSelect label="Склад у списку" placeholder="Усі склади" disabled={locked}
+              <ListPicker label="Склад у списку" placeholder="Усі склади" disabled={locked}
                 data={warehouses.map(item => ({ value: String(item.Id), label: item.Detail ? `${item.Name} · ${item.Detail}` : item.Name }))}
                 value={draft.warehouseIds.map(String)} onChange={values => update({ warehouseIds: values.map(Number) })} />
             </FixedMovementFilter>
             <FixedMovementFilter label="Фільтр організації складу" field="Організація складу" condition="У списку">
-              <CheckboxMultiSelect label="Організація складу" placeholder="Усі організації" disabled={locked}
+              <ListPicker label="Організація складу" placeholder="Усі організації" disabled={locked}
                 data={organizations.map(item => ({ value: String(item.Id), label: item.Name }))}
                 value={draft.organizationIds.map(String)} onChange={values => update({ organizationIds: values.map(Number) })} />
             </FixedMovementFilter>
@@ -323,7 +334,7 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
                 search={groups} disabled={locked} onChange={value => update({ groups: value })} />
             </FixedMovementFilter>
             <FixedMovementFilter label="Фільтр виду документа" field="Вид документа руху" condition="У списку">
-              <CheckboxMultiSelect label="Вид документа руху" placeholder="Усі документи" disabled={locked}
+              <ListPicker label="Вид документа руху" placeholder="Усі документи" disabled={locked}
                 data={capability.DocumentKinds.map(kind => ({ value: kind.Code, label: kind.Name }))}
                 value={draft.documentKinds} onChange={values => update({ documentKinds: values })} />
             </FixedMovementFilter>
