@@ -150,6 +150,64 @@ describe('choosing', () => {
   })
 })
 
+describe('list stability', () => {
+  const many = Array.from({ length: 30 }, (_, index) => ({ value: `m${index + 1}`, label: `Значення ${String(index + 1).padStart(2, '0')}` }))
+  const labels = () => screen.getAllByRole('option').map(option => option.textContent)
+  const viewport = () => screen.getByRole('listbox').querySelector<HTMLElement>('.mantine-ScrollArea-viewport')!
+  const ticked = () => screen.getAllByRole('option').filter(option => option.querySelector<HTMLInputElement>('input[type=checkbox]')?.checked).map(option => option.textContent)
+
+  it('ticking the 25th of 30 options leaves the order, the scroll position and the option itself where they were', async () => {
+    render(<Harness data={many} />)
+    await userEvent.click(box())
+    const before = labels()
+    const target = screen.getByRole('option', { name: many[24].label })
+    viewport().scrollTop = 480
+    await userEvent.click(target)
+    expect(keys()).toEqual(['m25'])
+    expect(labels()).toEqual(before)
+    expect(screen.getAllByRole('option')[24]).toBe(target)
+    expect(ticked()).toEqual([many[24].label])
+    expect(viewport().scrollTop).toBe(480)
+    expect(HTMLElement.prototype.scrollIntoView).not.toHaveBeenCalled()
+    await userEvent.click(target)
+    expect(keys()).toEqual([])
+    expect(labels()).toEqual(before)
+    expect(viewport().scrollTop).toBe(480)
+  })
+
+  it('opens with already selected values in their own places, not moved to the top', async () => {
+    render(<Harness data={many} initial={['m25', 'm7']} />)
+    await userEvent.click(box())
+    expect(labels()).toEqual(many.map(item => item.label))
+    expect(ticked()).toEqual([many[6].label, many[24].label])
+  })
+
+  it('keeps the keyboard highlight on the option that was just ticked', async () => {
+    render(<Harness data={many} />)
+    await userEvent.click(box())
+    await userEvent.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}{Enter}')
+    expect(keys()).toEqual(['m3'])
+    const highlighted = screen.getAllByRole('option').filter(option => option.hasAttribute('data-combobox-selected'))
+    expect(highlighted.map(option => option.textContent)).toEqual([many[2].label])
+    await userEvent.keyboard('{ArrowDown}{Enter}')
+    expect(keys()).toEqual(['m3', 'm4'])
+    expect(labels().slice(0, 4)).toEqual(many.slice(0, 4).map(item => item.label))
+  })
+
+  it('keeps the order and the scroll position when the pills row grows and the next page arrives', async () => {
+    const view = render(<Harness data={many.slice(0, 20)} hasMore />)
+    await userEvent.click(box())
+    viewport().scrollTop = 300
+    for (const index of [17, 18, 19]) await userEvent.click(screen.getByRole('option', { name: many[index].label }))
+    expect(screen.getByRole('button', { name: 'Вибрано: 3' })).toBeTruthy()
+    view.rerender(<Harness data={many} hasMore />)
+    expect(labels()).toEqual([...many.map(item => item.label), 'Ще значення'])
+    expect(ticked()).toEqual(many.slice(17, 20).map(item => item.label))
+    expect(viewport().scrollTop).toBe(300)
+    expect(HTMLElement.prototype.scrollIntoView).not.toHaveBeenCalled()
+  })
+})
+
 describe('selected values', () => {
   it('keeps directory labels and order, appends missing saved values once, and can remove them', async () => {
     render(<Harness initial={['saved', '3']} data={options.map(option => ({ ...option, label: `${option.label} current` }))} />)

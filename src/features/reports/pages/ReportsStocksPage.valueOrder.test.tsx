@@ -64,6 +64,12 @@ it('keeps a lower product group in place when checked and unchecked in the sales
   const row = await screen.findByRole('group', { name: 'Умова відбору 1' })
   const input = within(row).getByPlaceholderText('Пошук значення')
   await userEvent.click(input)
+  let lookups = -1
+  await waitFor(() => {
+    const settled = vi.mocked(apiRequest).mock.calls.length === lookups
+    lookups = vi.mocked(apiRequest).mock.calls.length
+    expect(settled).toBe(true)
+  }, { interval: 600 })
   await waitFor(() => expect(screen.getByRole('option', { name: hobi.Name }).closest('.mantine-ScrollArea-viewport')).toBeTruthy())
   const option = screen.getByRole('option', { name: hobi.Name })
   const viewport = option.closest('.mantine-ScrollArea-viewport') as HTMLElement
