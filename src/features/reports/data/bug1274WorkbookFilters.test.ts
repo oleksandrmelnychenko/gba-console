@@ -99,6 +99,14 @@ it('resolves the matrix workbook group, buyer and buyer manager by exact current
   expect(withoutManager.unresolved).toEqual(['Крицький Олег Русланович'])
 })
 
+it('still resolves the matrix workbook buyer by its name when the lookup label starts with the client code', async () => {
+  const lookup: WorkbookLookup = async (_source, field) => field === 4 ? [{ Id: '3996', Name: 'AL-KO [3996]' }]
+    : field === 5 ? [{ Id: '613989', Name: 'BRI00104 — АФРАКО ТЗОВ [613989]' }, { Id: '613990', Name: 'BRI00105 — АФРАКО ТЗОВ ФІЛІЯ [613990]' }] : []
+  const resolved = await resolveBug1274WorkbookFilters(VPARIVANIE_WORKBOOK_FILE, currentVparivanieDataset, lookup)
+  expect(resolved.selections.map(selection => [selection.SelectedField.Type, selection.Values.map(value => [value.Data.Id, value.Name])])).toEqual([
+    [4, [['3996', 'AL-KO [3996]']]], [5, [['613989', 'BRI00104 — АФРАКО ТЗОВ [613989]']]]])
+})
+
 it('limits runtime resolution to the two workbooks with printed local filters', () => {
   expect([SUPPLIER_WORKBOOK_FILE, VPARIVANIE_WORKBOOK_FILE, 'ВП.xls', 'ДБіторка.xls'].map(resolvesWorkbookFilters))
     .toEqual([true, true, false, false])

@@ -107,7 +107,8 @@ function searchText(name: string): string {
 
 function exactMatch(entities: readonly ReportEntity[], name: string): ReportEntity | null {
   const wanted = workbookCaption(name)
-  const matches = entities.filter(entity => typeof entity.Name === 'string' && workbookCaption(entity.Name) === wanted)
+  const matches = entities.filter(entity => typeof entity.Name === 'string'
+    && [workbookCaption(entity.Name), workbookCaption(entity.Name).replace(/^\S+ — /, '')].includes(wanted))
   return matches.length === 1 && matches[0].Id !== undefined && matches[0].Id !== null ? matches[0] : null
 }
 
