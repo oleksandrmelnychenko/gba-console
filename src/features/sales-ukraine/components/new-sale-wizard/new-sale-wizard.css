@@ -9278,3 +9278,28 @@
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+@media (max-width: 1760px) {
+  .new-sale-client-hero.new-sale-client-hero--refined {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 8px;
+  }
+  .new-sale-client-hero--refined .new-sale-client-hero__side {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    row-gap: 6px;
+  }
+  .new-sale-client-hero--refined .new-sale-client-hero__metrics,
+  .new-sale-client-hero--refined .new-sale-wizard-header-balances,
+  .new-sale-client-hero--refined .new-sale-client-hero__tools,
+  .new-sale-client-hero--refined .new-sale-wizard-inline-tools {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+  .new-sale-client-hero--refined .new-sale-client-hero__tools,
+  .new-sale-client-hero--refined .new-sale-client-hero__tools > * {
+    flex-wrap: wrap;
+    max-width: 100%;
+    min-width: 0;
+  }
+}
