@@ -33,6 +33,7 @@ type SelectionSession = {
 }
 type Options = {
   clientNetId: string | null
+  initialAgreementNetId?: string | null
   initialClient?: Client | null
   permissionFlow: WizardSalesPermissionFlow
   hasRegistryItems: boolean
@@ -54,6 +55,11 @@ export function useWizardClientSelection(options: Options) {
   const generationRef = useRef(0)
   const bootstrappedRef = useRef(false)
   const restoringRef = useRef(false)
+  const restoreAgreementRef = useRef(
+    options.clientNetId && options.initialAgreementNetId
+      ? { agreementNetId: options.initialAgreementNetId.trim().toLowerCase(), clientNetId: options.clientNetId }
+      : null,
+  )
   useLayoutEffect(() => { latestRef.current = options })
 
   const publish = useCallback((patch: Partial<Selection>) => {
@@ -122,7 +128,12 @@ export function useWizardClientSelection(options: Options) {
     session.agreementsPromise = getWizardClientAgreements(netId, session.controller.signal).then((list) => {
       if (sessionRef.current !== session) return false
       session.agreementsLoaded = true
-      const active = list.find((item) => item.Agreement?.IsActive) ?? list[0]
+      const restore = restoreAgreementRef.current
+      restoreAgreementRef.current = null
+      const restored = restore && restore.clientNetId === netId
+        ? list.find((item) => item.NetUid?.trim().toLowerCase() === restore.agreementNetId)
+        : undefined
+      const active = restored ?? list.find((item) => item.Agreement?.IsActive) ?? list[0]
       publish({ agreements: list, agreementsError: false, selectedAgreementKey: active ? getWizardAgreementKey(active) : '' })
       latestRef.current.onAgreementChange(active?.NetUid ?? null, active ? toSalesAgreement(active) : null)
       return true

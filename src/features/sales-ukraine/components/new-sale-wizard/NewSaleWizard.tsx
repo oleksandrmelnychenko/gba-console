@@ -81,6 +81,18 @@ function getWizardRequestErrorMessage(error: unknown, fallback: string): string 
   return fallback
 }
 
+function isSameWizardNetUid(left: string | null | undefined, right: string | null | undefined): boolean {
+  const normalizedLeft = left?.trim().toLowerCase() ?? ''
+
+  return normalizedLeft !== '' && normalizedLeft === (right?.trim().toLowerCase() ?? '')
+}
+
+type WizardReturnSale = {
+  agreementNetId: string | null
+  flow: 'create' | 'edit'
+  sale: SalesUkraineSale
+}
+
 function requireHydratedWizardSale(sale: SalesUkraineSale | null): SalesUkraineSale {
   if (!sale || sale.HasDetails === false || !sale.Order) {
     throw new Error('Не вдалося завантажити повні дані продажу. Перехід заблоковано')
@@ -523,6 +535,7 @@ function NewSaleWizardContent({
   const [navigationGuard] = useState(createWizardAsyncGenerationGuard)
   const [reassignOpen, setReassignOpen] = useState(false)
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false)
+  const returnSaleRef = useRef<WizardReturnSale | null>(null)
   const splitItems = useWizardSplitOrderItems()
   const shellBusy = isWizardShellBusy(busy, productsBusy, reviewBusy)
   const loadCreateCurrentCart = permissionScopedSalesUkraineApi
@@ -869,6 +882,18 @@ function NewSaleWizardContent({
     }
 
     const agreementNetId = state.agreementNetId
+    const remembered = returnSaleRef.current
+    const sameAgreement = Boolean(remembered) && isSameWizardNetUid(remembered?.agreementNetId, agreementNetId)
+    returnSaleRef.current = null
+
+    if (remembered && sameAgreement && remembered.flow === 'edit') {
+      if (!(await openRegistrySale(remembered.sale))) {
+        returnSaleRef.current = remembered
+      }
+
+      return
+    }
+
     setPermissionFlow('create')
     invalidateCartReloads()
     const token = navigationGuard.begin(`products:${agreementNetId.toLowerCase()}`)
@@ -890,14 +915,34 @@ function NewSaleWizardContent({
       setState(updated)
       bumpWizardDebtRefresh()
       setActive(1)
+
+      if (remembered && !sameAgreement) {
+        notifications.show({
+          color: 'blue',
+          message: cart?.NetUid
+            ? t('Клієнта або договір змінено: відкрито поточний рахунок за вибраним договором')
+            : t('Клієнта або договір змінено: рахунок за вибраним договором буде створено з першим товаром'),
+        })
+      } else if (remembered && !isSameWizardNetUid(cart?.NetUid, remembered.sale.NetUid)) {
+        notifications.show({
+          color: 'orange',
+          message: cart?.NetUid
+            ? t('Попередній рахунок більше не є поточним за цим договором: відкрито актуальний рахунок')
+            : t('Попередній рахунок більше не є поточним за цим договором: новий буде створено з першим товаром'),
+        })
+      }
     } catch (loadError) {
       if (token.signal.aborted || !navigationGuard.isCurrent(token, token.context)) {
         return
       }
 
+      returnSaleRef.current = remembered
       notifications.show({
+        autoClose: 10_000,
         color: 'red',
-        message: loadError instanceof Error ? t(loadError.message) : t('Не вдалося виконати запит'),
+        id: 'new-sale-wizard-cart-load',
+        title: t('Рахунок не завантажено'),
+        message: `${getWizardRequestErrorMessage(loadError, t('Не вдалося виконати запит'))}. ${t('Натисніть «Далі», щоб повторити')}`,
       })
     } finally {
       if (navigationGuard.isCurrent(token, token.context)) {
@@ -1072,6 +1117,10 @@ function NewSaleWizardContent({
       return
     }
 
+    const leaving = stateRef.current
+    returnSaleRef.current = leaving.sale?.NetUid && !getWizardMergedSale()
+      ? { agreementNetId: leaving.agreementNetId, flow: permissionFlow, sale: leaving.sale }
+      : null
     invalidateCartReloads()
     setPermissionFlow('create')
     clearWizardMergedSale()
@@ -1085,6 +1134,20 @@ function NewSaleWizardContent({
       invalidateCartReloads()
       setActive(2)
     }
+  }
+
+  function explainMissingSale() {
+    notifications.show(active === 1
+      ? {
+          color: 'orange',
+          id: 'new-sale-wizard-missing-sale',
+          message: t('Додайте товар у кошик: рахунок створюється з першою позицією'),
+        }
+      : {
+          color: 'red',
+          id: 'new-sale-wizard-missing-sale',
+          message: t('Потрібно створити рахунок, або вибрати рахунок'),
+        })
   }
 
   function handleReviewSaved(savedSale: SalesUkraineSale | null) {
@@ -1170,7 +1233,11 @@ function NewSaleWizardContent({
     if (index === 1) {
       void goToProducts()
     } else if (index === 2) {
-      goToReview()
+      if (canAdvanceToReview(state)) {
+        goToReview()
+      } else if (canAdvanceToProducts(state)) {
+        explainMissingSale()
+      }
     }
   }
 
@@ -1179,12 +1246,14 @@ function NewSaleWizardContent({
     (active === 0 && !canAdvanceToProducts(state)) ||
     (active === 1 && getCartItemCount(state.sale) === 0)
   const nextLabel = active === 2 ? t('Створити продаж') : t('Далі')
-  const productsCart: SalesUkraineSale =
-    state.sale ?? {
+  const productsCart = useMemo<SalesUkraineSale>(
+    () => state.sale ?? {
       ClientAgreement: state.agreement ? omitDocumentaryAgreementRead(state.agreement) : undefined,
       IsVatSale: Boolean(state.agreement?.Agreement?.WithVATAccounting),
       NetUid: EMPTY_GUID,
-    }
+    },
+    [state.agreement, state.sale],
+  )
 
   function handleRootKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
     const helpTarget = event.target instanceof Element ? event.target.closest('[data-wizard-keyboard-help]') : null
@@ -1265,7 +1334,7 @@ function NewSaleWizardContent({
           if (canAdvanceToReview(state)) {
             goToReview()
           } else {
-            notifications.show({ color: 'red', message: t('Потрібно створити рахунок, або вибрати рахунок') })
+            explainMissingSale()
           }
         }
       }
@@ -1288,6 +1357,7 @@ function NewSaleWizardContent({
   )
   const onSaleReassigned = useCallback((movedSale: SalesUkraineSale | null) => {
     reloadGuard.invalidate()
+    returnSaleRef.current = null
     clearWizardMergedSale()
     setState((current) => ({ ...current, sale: movedSale ?? current.sale }))
     bumpWizardDebtRefresh()
@@ -1350,6 +1420,7 @@ function NewSaleWizardContent({
             canViewAudit={canViewAudit}
             clientNetId={state.clientNetId}
             headerTools={wizardHeaderTools}
+            initialAgreementNetId={state.agreementNetId}
             initialClient={selectedClient}
             permissionFlow={permissionFlow}
             permissionScopedSalesUkraineApi={permissionScopedSalesUkraineApi}

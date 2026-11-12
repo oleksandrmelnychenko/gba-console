@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Group, Select, Stack, Text } from '@mantine/core'
+import { Alert, Box, Button, Group, Loader, Select, Stack, Text } from '@mantine/core'
 import { useUncontrolled } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { Search, Sparkles } from 'lucide-react'
@@ -898,6 +898,12 @@ export function NewSaleProductsStep({
           </Group>
         </Alert>
       ) : null}
+      {busy && (
+        <Box aria-live="polite" className="new-sale-products-step__saving" role="status">
+          <Loader size={14} />
+          <span>{t('Запит виконується. Зачекайте: кроки майстра тимчасово заблоковано')}</span>
+        </Box>
+      )}
       <Box className="new-sale-products-step__body">
         {/* LEFT: search controls + vertical product carousel (mirrors the client step layout) */}
         <Box className="new-sale-products-step__picker-rail">
