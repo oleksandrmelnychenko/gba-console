@@ -174,7 +174,7 @@ export function DepreciatedOrderCreateModal({
                 disabled={isCreating}
                 label={t('Завантажте документ')}
                 leftSection={<FileSpreadsheet size={16} />}
-                placeholder={t('XLS або XLSX')}
+                placeholder={t('Оберіть файл')}
                 value={form.file}
                 onChange={(file) => setForm((current) => ({ ...current, file }))}
               />

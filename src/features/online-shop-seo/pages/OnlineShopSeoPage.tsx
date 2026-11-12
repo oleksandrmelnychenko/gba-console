@@ -2188,7 +2188,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                 disabled={isSaving || isImageUploading}
                 label={t('Фото')}
                 leftSection={<Image size={16} />}
-                placeholder={t('Обрати файл')}
+                placeholder={t('Оберіть файл')}
                 style={{ flex: '1 1 auto' }}
                 onChange={handleContactImageChange}
               />

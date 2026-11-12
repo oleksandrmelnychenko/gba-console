@@ -685,7 +685,7 @@ export function AdvanceReportConsumableOrderModal({
               disabled={isBusy}
               label={t('Документи')}
               multiple
-              placeholder={t('Завантажити файли')}
+              placeholder={t('Оберіть файли')}
               value={[]}
               onChange={addDocumentFiles}
             />

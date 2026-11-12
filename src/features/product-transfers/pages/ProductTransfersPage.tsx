@@ -853,7 +853,7 @@ function ProductTransferCreateModal({ model }: { model: ReturnType<typeof usePro
               disabled={isCreating}
               label={t('Файл')}
               leftSection={<FileSpreadsheet size={16} />}
-              placeholder={t('XLS або XLSX')}
+              placeholder={t('Оберіть файл')}
               value={createForm.file}
               onChange={(file) => setCreateForm((current) => ({ ...current, file }))}
             />

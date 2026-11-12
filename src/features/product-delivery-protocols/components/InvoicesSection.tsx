@@ -259,7 +259,7 @@ function InvoiceViewCard({
             <FileInput
               clearable
               aria-label={t('Додати документи доставки')}
-              placeholder={t('Обрати файли')}
+              placeholder={t('Оберіть файли')}
               leftSection={<Upload size={16} />}
               multiple
               disabled={isSaving}

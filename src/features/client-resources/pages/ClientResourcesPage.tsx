@@ -2295,7 +2295,7 @@ function TransporterEditorModal({
             accept="image/*"
             clearable
             label={translate("Файл зображення")}
-            placeholder={translate("Обрати файл")}
+            placeholder={translate("Оберіть файл")}
             leftSection={<Upload size={16} />}
             value={values.ImageFile}
             onChange={(file) => setField('ImageFile', file)}

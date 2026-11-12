@@ -156,7 +156,7 @@ export function NewSaleReviewStep({
                 aria-label={t('Повторно оберіть файл для звірки')}
                 clearable
                 leftSection={<Upload size={16} />}
-                placeholder={t('Завантажити')}
+                placeholder={t('Оберіть файл')}
                 value={value.ttnFile}
                 onChange={selectTtnFile}
               />
@@ -333,7 +333,7 @@ export function NewSaleReviewStep({
                         classNames={reviewFieldClassNames}
                         label={t('Файл ТТН')}
                         leftSection={<Upload size={16} />}
-                        placeholder={t('Завантажити')}
+                        placeholder={t('Оберіть файл')}
                         value={value.ttnFile}
                         onChange={selectTtnFile}
                       />
