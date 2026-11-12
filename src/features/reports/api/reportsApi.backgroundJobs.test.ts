@@ -32,6 +32,19 @@ describe('background report preview jobs', () => {
     expect(api).toHaveBeenCalledWith(`/report/stocks/preview/jobs/${jobId}`, expect.objectContaining({ query: { rowOffset: 0, rowLimit: 50 } }))
   })
 
+  it('fetches the result of an already completed job when the same report is formed again', async () => {
+    const pages = [job('completed', { Result: result() })]
+    api.mockImplementation(async (path, options) => {
+      if (path === '/report/stocks/preview/capabilities') return capability
+      if (path === '/report/stocks/preview/jobs' && options?.method === 'POST') return job('completed')
+      if (path === `/report/stocks/preview/jobs/${jobId}`) return pages.shift() ?? job('completed')
+      throw new Error(`unexpected ${path}`)
+    })
+    const { preview } = await previewStockReport(documentRequest(), documentDataset)
+    expect(preview.ResultSession).toEqual(session)
+    await expect(previewStockReport(documentRequest(), documentDataset)).rejects.toThrow('Сервер не повернув результат сформованого звіту.')
+  })
+
   it('shows the server explanation of a failed job and keeps request refusals as API errors', async () => {
     api.mockImplementation(async path => path === '/report/stocks/preview/capabilities' ? capability
       : job('failed', { ErrorStatus: 503, ErrorCode: 'native_report_timeout', ErrorMessage: 'Звіт не встиг сформуватися навіть у фоновому режимі.' }))

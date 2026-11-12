@@ -154,11 +154,16 @@ async function runReportPreviewJob(request: ReportRequestBody, rowLimit: number,
   options: ReportPreviewOptions): Promise<unknown> {
   let job = readReportPreviewJob(await apiRequest<unknown>('/report/stocks/preview/jobs', {
     method: 'POST', dedupe: false, query: columns, body: request, signal: options.signal }))
+  let resultRequested = false
   try {
     for (let attempt = 0; ; attempt += 1) {
       if (job.State === 'completed') {
-        if (!job.Result) throw new Error('Сервер не повернув результат сформованого звіту.')
-        return job.Result
+        if (job.Result) return job.Result
+        if (resultRequested) throw new Error('Сервер не повернув результат сформованого звіту.')
+        resultRequested = true
+        job = readReportPreviewJob(await apiRequest<unknown>(`/report/stocks/preview/jobs/${job.JobId}`, {
+          query: { rowOffset: 0, rowLimit, ...columns }, dedupe: false, signal: options.signal }))
+        continue
       }
       if (job.State === 'failed') throw (job.ErrorStatus ?? 500) >= 500 ? new Error(job.ErrorMessage || 'Не вдалося сформувати звіт.')
         : new ApiError(job.ErrorMessage || 'Не вдалося сформувати звіт.', job.ErrorStatus!, { Message: job.ErrorMessage, Code: job.ErrorCode })
