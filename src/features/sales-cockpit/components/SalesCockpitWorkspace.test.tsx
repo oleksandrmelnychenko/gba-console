@@ -180,6 +180,7 @@ describe('Sales cockpit workspace', () => {
     expect(await screen.findByText(/Дата документа не визначена: 3 · €250/)).toBeTruthy()
     expect(screen.getByText('Відомий прострочений борг')).toBeTruthy()
     expect(screen.getByText('€0')).toBeTruthy()
+    expect(screen.getByText(/Поточний зріз: 24\.07\.2026\./)).toBeTruthy()
     expect(screen.queryByTestId('aging-chart')).toBeNull()
   })
 
@@ -263,7 +264,8 @@ describe('Sales cockpit workspace', () => {
       ],
     })
     renderWithTheme(<HeadDashboardChartsPanel reloadKey={0} rows={[]} />)
-    expect(await screen.findByText(/Дата документа не визначена: 3 · €250/)).toBeTruthy()
+    expect(await screen.findByText(/Дата документа не визначена: 3 · 250\sEUR/)).toBeTruthy()
+    expect(screen.getByText('Поточний зріз: 24.07.2026')).toBeTruthy()
     expect(screen.getByText('Відомий прострочений борг за менеджером')).toBeTruthy()
     expect(screen.getAllByTestId('aging-chart')[0].textContent).toBe('[{"manager":"#1","value":100},{"manager":"#2","value":0}]')
   })

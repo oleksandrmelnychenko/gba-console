@@ -55,7 +55,7 @@ function salesTrend(points: Point[]) {
   const recent = comparison.slice(3).reduce((total, point) => total + point.units!, 0)
   if (previous === 0) return { label: recent > 0 ? 'Продажі відновилися' : 'Без продажів', tone: recent > 0 ? 'success' as const : 'neutral' as const }
   const change = Math.round((recent / previous - 1) * 100)
-  return { label: `Тренд 3 міс.: ${change > 0 ? '+' : change < 0 ? '−' : ''}${Math.abs(change)}%`, tone: change < 0 ? 'danger' as const : change > 0 ? 'success' as const : 'neutral' as const }
+  return { label: `Тренд 3 міс.: ${change > 0 ? '+' : change < 0 ? '−' : ''}${Math.abs(change)}\u00a0%`, tone: change < 0 ? 'danger' as const : change > 0 ? 'success' as const : 'neutral' as const }
 }
 
 export function ProductSalesAnalytics({ analytics, error }: { analytics: ProductAnalytics | null; error: string | null }) {

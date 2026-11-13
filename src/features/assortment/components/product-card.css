@@ -135,6 +135,7 @@
 .assort-related-table th { position: sticky; top: 0; z-index: 1; background: var(--mantine-color-gray-0); color: var(--mantine-color-gray-7); font-weight: 500; }
 .assort-related-table :is(th, td) { padding: 7px 8px; border-bottom: 1px solid var(--mantine-color-gray-2); text-align: left; vertical-align: middle; }
 .assort-related-table :is(th, td):not(:first-child) { text-align: right; white-space: nowrap; font-family: var(--font-mono); }
+.assort-related-table--wrap-head th:not(:first-child) { white-space: normal; overflow-wrap: break-word; vertical-align: bottom; }
 .assort-related-table tbody tr:last-child td { border-bottom: 0; }
 .assort-related-table tbody tr:nth-child(even) { background: var(--mantine-color-gray-0); }
 .assort-related-table tr[aria-current='true'] td:first-child { box-shadow: inset 2px 0 var(--brand-orange); }

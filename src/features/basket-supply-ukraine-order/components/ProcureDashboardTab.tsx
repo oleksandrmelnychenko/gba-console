@@ -29,6 +29,7 @@ import { UrgencyDonut } from '../../../shared/ui/charts/UrgencyDonut'
 import type { UrgencyLevel } from '../../../shared/ui/charts/chartTheme'
 import type { UrgencySliceInput } from '../../../shared/ui/charts/donutData'
 import { usePermissions } from '../../auth/usePermissions'
+import { formatBusinessDate } from '../../exchange-rates/utils'
 import { getSupplyDashboardSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
 import type { Client } from '../../supply-ukraine-orders/types'
 import { getSupplyDashboardCharts } from '../api/procurementApi'
@@ -352,7 +353,7 @@ function ProcureDashboardTabContent() {
         <Text size="sm" c="dimmed">{charts?.population
           ? `${t(charts.population.scope === 'needed_cart' ? 'Повний кошик позицій, що потребують поповнення' : 'Повний асортимент вибраного постачальника')}: ${charts.population.item_count} ${t('позицій')}, ${charts.population.unique_product_count} ${t('унікальних товарів')}. ${t('Рекомендовано загалом')}: ${formatSuggestedQtyByUnit(charts.population.suggested_qty_by_unit, t) ?? qtyFormatter.format(charts.population.total_suggested_qty)}. ${t('Без вартості')}: ${charts.population.unpriced_item_count}. ${t('Не підтверджено для бюджету')}: ${charts.population.budget_ineligible_item_count}.`
           : t('Повний обсяг рекомендованої кількості та покриття вартості в цьому зрізі не надано.')}</Text>
-        <Text size="sm" c="dimmed">{t('Зріз попиту')}: {charts?.as_of_date ?? '—'}. {t('Кількості — в одиницях виміру кожного товару; загальні суми кількостей складають різні одиниці.')} {t('Запаси й резерви — стан на момент розрахунку, не історичний залишок на цю дату. Перед замовленням перевірте актуальність у конструкторі.')}</Text>
+        <Text size="sm" c="dimmed">{t('Зріз попиту')}: {formatAsOfDate(charts?.as_of_date)}. {t('Кількості — в одиницях виміру кожного товару; загальні суми кількостей складають різні одиниці.')} {t('Запаси й резерви — стан на момент розрахунку, не історичний залишок на цю дату. Перед замовленням перевірте актуальність у конструкторі.')}</Text>
         <Text size="sm" c="dimmed">{t('Бюджет')}: {charts?.population?.budget_eur == null ? t('не задано') : `${qtyFormatter.format(charts.population.budget_eur)} ${t('EUR без ПДВ')}`}. {t('Стан погодження не надходить із джерела. Рекомендація не є погодженим замовленням.')}</Text>
         <div className="procurement-dashboard__metrics" aria-label={t('Поточні показники')}>
           <DashboardMetric label={t('Всього позицій')} value={summary.totalPositions} active={mode === 'urgency' && urgencyFilter === 'all'} onClick={() => selectUrgency('all')} icon={<Layers3 size={16} />} />
@@ -464,6 +465,10 @@ function enrichDemandSeries(charts: ProcurementCharts | null): ProcurementDemand
 
 function normalizeTopN(value: number | ''): number {
   return typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.min(100, Math.max(1, Math.round(value))) : 15
+}
+
+function formatAsOfDate(value: string | null | undefined): string {
+  return value ? formatBusinessDate(value) || value : '—'
 }
 
 function formatSnapshotDate(value: string | null, t: (value: string) => string): string {

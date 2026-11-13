@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { departmentPaceColor } from './metricPresentation'
+import { departmentPaceColor, formatEur } from './metricPresentation'
 
 describe('Department working-day pace', () => {
   it('does not mark 20% of the month red when only 10% was expected by today', () => {
@@ -11,5 +11,12 @@ describe('Department working-day pace', () => {
   it('separates on-pace and missing historical baseline', () => {
     expect(departmentPaceColor(1000, 500, 500)).toBe('orange')
     expect(departmentPaceColor(0, 500, 0)).toBe('gray')
+  })
+})
+
+describe('formatEur', () => {
+  it('prints the amount followed by the currency code', () => {
+    expect(formatEur(178674).replace(/\s/g, ' ')).toBe('178 674 EUR')
+    expect(formatEur(0)).toBe('0\u00a0EUR')
   })
 })

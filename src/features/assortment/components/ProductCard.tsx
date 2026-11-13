@@ -1,4 +1,5 @@
 import { financialPeriod } from '../financials'
+import { formatRatioPercent } from '../percent'
 import { ACTION_LABELS, REASON_LABELS } from '../assortmentLabels'
 import {
   Alert,
@@ -130,7 +131,7 @@ function formatScore(score: number | null | undefined): string {
 }
 
 function formatPercent(value: number | null | undefined): string {
-  return value == null ? 'Немає даних' : `${new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 1 }).format(value * 100)}%`
+  return value == null ? 'Немає даних' : formatRatioPercent(value, 1)
 }
 
 function formatNullableNumber(value: number | null | undefined): string {
@@ -544,7 +545,7 @@ function RegionsPanel({ error, productRegions, regionId, t }: {
         <Text className="assort-related-empty" c="dimmed" size="sm">{t('За обраний період продажів у регіонах не було.')}</Text>
       ) : (
         <>
-          <div className="assort-related-table" data-expanded={expanded} tabIndex={0} role="region" aria-label={t('Де купують товар')}>
+          <div className="assort-related-table assort-related-table--wrap-head" data-expanded={expanded} tabIndex={0} role="region" aria-label={t('Де купують товар')}>
             <table>
               <thead><tr><th scope="col">{t('Регіон')}</th><th scope="col">{t('К-сть')}</th><th scope="col" title={t('Накладні')}>{t('Накл.')}</th><th scope="col">{t('Клієнти')}</th><th scope="col">{t('До повернень')} <TableChip tone="source" value={t('EUR з ПДВ')} /></th><th scope="col">{t('Мінус повернення')} <TableChip tone="source" value={t('EUR з ПДВ')} /></th></tr></thead>
               <tbody>{visible.map(region => (

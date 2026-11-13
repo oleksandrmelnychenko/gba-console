@@ -6,12 +6,10 @@ import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AgingBars, type AgingSeries } from '../../../shared/ui/charts/AgingBars'
+import { formatBusinessDate } from '../../exchange-rates/utils'
 import { getHeadDashboard } from '../api/salesCockpitApi'
+import { formatEur } from '../metricPresentation'
 import type { HeadDashboard, HeadTeamRow } from '../types'
-
-const moneyFormatter = new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: 0,
-})
 
 type ChartsState = {
   dashboard: HeadDashboard | null
@@ -144,7 +142,7 @@ export function HeadDashboardChartsPanel({
   )
 
   const valueSeries = useMemo<AgingSeries[]>(
-    () => [{ name: 'value', label: t('Відомий прострочений борг, €'), color: 'red.6' }],
+    () => [{ name: 'value', label: t('Відомий прострочений борг, EUR'), color: 'red.6' }],
     [t],
   )
 
@@ -175,7 +173,7 @@ export function HeadDashboardChartsPanel({
           <div>
             <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Аналітика навантаження')}</Text>
           </div>
-          {dashboard?.as_of && <Text className="cockpit-workday-asof" title={t('Це дата розрахунку, не підтвердження свіжості синхронізації.')}>{t('Поточний зріз')}: {dashboard.as_of}</Text>}
+          {dashboard?.as_of && <Text className="cockpit-workday-asof" title={t('Це дата розрахунку, не підтвердження свіжості синхронізації.')}>{t('Поточний зріз')}: {formatBusinessDate(dashboard.as_of) || dashboard.as_of}</Text>}
         </div>
 
         {error && (
@@ -197,7 +195,7 @@ export function HeadDashboardChartsPanel({
           {t('Без курсу до EUR')}: {dashboard?.teams.reduce((sum, team) => sum + (team.debt_unconverted_count ?? 0), 0)}. {t('Ці документи не входять до сум у EUR.')}
         </Alert>}
         {(dashboard?.teams.reduce((sum, team) => sum + (team.debt_unknown_date_count ?? 0), 0) ?? 0) > 0 && <Alert color="yellow">
-          {t('Дата документа не визначена')}: {dashboard?.teams.reduce((sum, team) => sum + (team.debt_unknown_date_count ?? 0), 0)} · {formatMoney(dashboard?.teams.reduce((sum, team) => sum + (team.debt_unknown_date_eur ?? 0), 0) ?? 0)}. {t('Ці документи показано окремо від відомого простроченого боргу.')}
+          {t('Дата документа не визначена')}: {dashboard?.teams.reduce((sum, team) => sum + (team.debt_unknown_date_count ?? 0), 0)} · {formatEur(dashboard?.teams.reduce((sum, team) => sum + (team.debt_unknown_date_eur ?? 0), 0) ?? 0)}. {t('Ці документи показано окремо від відомого простроченого боргу.')}
         </Alert>}
 
         <div className="cockpit-analytics-grid">
@@ -231,7 +229,7 @@ export function HeadDashboardChartsPanel({
               isLoading={isLoading}
               loadingLabel={t('Завантаження')}
               series={valueSeries}
-              valueFormatter={formatMoney}
+              valueFormatter={formatEur}
             />
             )}
           </Stack>
@@ -255,8 +253,4 @@ export function HeadDashboardChartsPanel({
       </Stack>
     </section>
   )
-}
-
-function formatMoney(value: number): string {
-  return `€${moneyFormatter.format(value)}`
 }

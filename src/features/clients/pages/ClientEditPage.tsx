@@ -60,6 +60,7 @@ import { applyPendingDiscountDraft } from '../components/pricing/pendingDiscount
 import type { DiscountsTreeDraft } from '../components/pricing/DiscountsTree'
 import { RecommendationsPanel } from '../components/recommendations/RecommendationsPanel'
 import { SolvencyPanel } from '../components/solvency/SolvencyPanel'
+import { agreementCurrencyCodes } from '../components/solvency/solvencyCurrency'
 import { SalesPanel } from '../components/sales/SalesPanel'
 import { ClientCommercialStructureView } from '../components/structure/ClientCommercialStructureView'
 import { ClientStructurePanel } from '../components/structure/ClientStructurePanel'
@@ -1904,7 +1905,7 @@ function EditStepContent({
   }
 
   if (step === 'solvency') {
-    return <SolvencyPanel clientNetId={client.NetUid} />
+    return <SolvencyPanel clientNetId={client.NetUid} currencyCodes={agreementCurrencyCodes(client.ClientAgreements)} />
   }
 
   if (step !== 'general-information') {

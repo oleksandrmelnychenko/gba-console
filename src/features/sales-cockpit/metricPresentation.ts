@@ -1,3 +1,9 @@
+const eurFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
+
+export function formatEur(value: number): string {
+  return `${eurFormatter.format(value)}\u00a0EUR`
+}
+
 /** Pace compares actual with the working-calendar expectation, not the full month. */
 export function departmentPaceColor(target: number, actual: number, expected: number): 'gray' | 'green' | 'orange' | 'red' {
   if (target <= 0) return 'gray'

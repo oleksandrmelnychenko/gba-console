@@ -10,7 +10,7 @@ describe('ProductSalesAnalytics', () => {
     renderAnalytics(buildAnalytics())
     const metrics = screen.getByRole('group', { name: 'Показник продажів' })
     expect(within(metrics).getByRole('button', { name: 'Продано 95' })).toBeTruthy()
-    expect(screen.getByText('Тренд 3 міс.: +100%')).toBeTruthy()
+    expect(screen.getByText(/^Тренд 3 міс\.: \+100\s%$/).textContent).toBe('Тренд 3 міс.: +100\u00a0%')
     expect(screen.getByRole('group', { name: 'Графік: Продано' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '3 міс.' }))
     expect(within(metrics).getByRole('button', { name: 'Продано 45' })).toBeTruthy()
@@ -44,7 +44,7 @@ describe('ProductSalesAnalytics', () => {
     analytics.sales_series[6] = buildPoint(7, 1000, false)
     renderAnalytics(analytics)
     expect(screen.getByRole('button', { name: /Продано 1\s090/ })).toBeTruthy()
-    expect(screen.getByText('Тренд 3 міс.: +100%')).toBeTruthy()
+    expect(screen.getByText(/^Тренд 3 міс\.: \+100\s%$/).textContent).toBe('Тренд 3 міс.: +100\u00a0%')
     expect(screen.getByText('Неповний місяць').closest('[title]')?.getAttribute('title')).toContain('09.07.2026')
   })
 

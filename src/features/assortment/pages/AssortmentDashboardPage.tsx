@@ -1,4 +1,5 @@
 import { financialPeriod } from '../financials'
+import { formatRatioPercent } from '../percent'
 import { requireMatchingAssortmentScopes } from '../snapshotScope'
 import { ACTION_LABELS, REASON_LABELS, abcMixChips, abcUnclassifiedLabel, classLabel, regionDisplayName } from '../assortmentLabels'
 import {
@@ -126,7 +127,7 @@ function healthPill(health: number): string {
 /* Missing values render blank everywhere (§5/§7.2) — never a dash, and never
    a fabricated zero (a green «0 €» is indistinguishable from real zero). */
 function pct(value: number | null | undefined): string {
-  return value == null ? '' : `${(value * 100).toFixed(0)}%`
+  return value == null ? '' : formatRatioPercent(value, 0)
 }
 
 function formatMoney(value: number | null | undefined): string {

@@ -1,4 +1,4 @@
-import { departmentPaceColor } from '../metricPresentation'
+import { departmentPaceColor, formatEur } from '../metricPresentation'
 import { CockpitSourceStatus } from '../components/CockpitSourceStatus'
 import {
   Alert,
@@ -48,10 +48,6 @@ const URGENCY_LABEL: Record<CockpitUrgency, string> = {
 const PROGRESS_TONE: Record<string, TableChipTone> = {
   gray: 'neutral', green: 'success', orange: 'warning', red: 'danger',
 }
-
-const moneyFormatter = new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: 0,
-})
 
 const EMPTY_TEAM: HeadTeam = {
   is_head: false,
@@ -225,7 +221,7 @@ function HeadDashboardPageContent() {
                   <OutcomeMetric
                     accent="success"
                     label={t('Сума продажів зі слів менеджерів')}
-                    primary={formatMoney(team.totals.revenue_month)}
+                    primary={formatEur(team.totals.revenue_month)}
                     secondary={t('Ручні результати задач; без звірки з документами продажу')}
                   />
                 </div>
@@ -285,10 +281,10 @@ function DepartmentMetric({
         <span className="cockpit-head-kpi__label">{label}</span>
         <TableChip tone={PROGRESS_TONE[progressColor] ?? 'neutral'} title={t('Частка історичного орієнтира')} value={target > 0 ? `${percent}%` : t('Орієнтир відсутній')} />
       </Group>
-      <div className="cockpit-head-kpi__value">{formatMoney(value)}</div>
+      <div className="cockpit-head-kpi__value">{formatEur(value)}</div>
       <Group gap="xs" justify="space-between" wrap="nowrap">
         <span className="cockpit-head-kpi__sub">
-          {t('Орієнтир')}: <span className="app-money">{formatMoney(target)}</span>
+          {t('Орієнтир')}: <span className="app-money">{formatEur(target)}</span>
         </span>
       </Group>
       <Progress color={progressColor} radius="xl" size={4} value={Math.min(percent, 100)} />
@@ -432,10 +428,6 @@ function managerName(row: HeadTeamRow): string {
 
 function urgencyLabel(urgency: CockpitUrgency | undefined, t: (key: string) => string): string {
   return t(urgency ? URGENCY_LABEL[urgency] : URGENCY_LABEL.normal)
-}
-
-function formatMoney(value: number): string {
-  return `€${moneyFormatter.format(value)}`
 }
 
 function formatRate(value: number): string {

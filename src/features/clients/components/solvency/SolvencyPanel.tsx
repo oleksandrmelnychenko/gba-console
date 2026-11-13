@@ -32,9 +32,11 @@ import type {
   SubFactors,
   UnconvertedDebt,
 } from '../../solvencyTypes'
+import { resolveCurrencyCode, type CurrencyCodeLookup } from './solvencyCurrency'
 
 type SolvencyPanelProps = {
   clientNetId?: string
+  currencyCodes?: CurrencyCodeLookup
 }
 
 type SolvencyState = {
@@ -111,7 +113,7 @@ const GAUGE_ZONE_COLOR: Record<string, string> = {
   red: 'red',
 }
 
-export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
+export function SolvencyPanel({ clientNetId, currencyCodes }: SolvencyPanelProps) {
   const { t } = useI18n()
   const [state, dispatch] = useReducer(solvencyReducer, initialSolvencyState)
   const { charts, chartsError, error, isLoading, score } = state
@@ -263,7 +265,17 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
           {chartsError}
         </Alert>
       )}
-      {charts && <SolvencyChartsView charts={charts} />}
+      {charts && (
+        <SolvencyChartsView
+          charts={charts}
+          gaugeCurrencyCode={resolveCurrencyCode(
+            charts.limit_utilization_gauge.currency_id,
+            currencyCodes,
+            score?.unconverted_debt,
+            charts.unconverted_debt,
+          )}
+        />
+      )}
     </Stack>
   )
 }
@@ -599,13 +611,13 @@ function formatIsoDate(value: string): string {
   return `${day}.${month}.${year}`
 }
 
-function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
+function SolvencyChartsView({ charts, gaugeCurrencyCode }: { charts: SolvencyCharts; gaugeCurrencyCode: string | null }) {
   const { t } = useI18n()
 
   const gauge = charts.limit_utilization_gauge
   const gaugeState = resolveGaugeState(gauge)
   const gaugeZone = utilizationZone(gauge.value, gauge.threshold_soft, gauge.threshold_hard)
-  const gaugeDebtLine = gaugeState === 'value' ? formatGaugeDebtLine(t, gauge) : null
+  const gaugeDebtLine = gaugeState === 'value' ? formatGaugeDebtLine(t, gauge, gaugeCurrencyCode) : null
 
   const donutData = charts.payment_discipline_donut.reduce<Array<{ color: string; name: string; value: number }>>(
     (items, slice, index) => {
@@ -809,14 +821,16 @@ function formatUtilizationPercent(ratio: number): string {
   return `${utilizationFormatter.format(ratio * 100)}\u00a0%`
 }
 
-function formatGaugeDebtLine(t: (value: string) => string, gauge: GaugeChart): string | null {
+function formatGaugeDebtLine(t: (value: string) => string, gauge: GaugeChart, currencyCode: string | null): string | null {
   const debt = gauge.debt_amount
   const limit = gauge.limit_amount
   if (debt == null || limit == null || !Number.isFinite(debt) || !Number.isFinite(limit)) {
     return null
   }
 
-  return `${t('борг')} ${eurFormatter.format(debt)} ${t('із ліміту')} ${eurFormatter.format(limit)}`
+  const suffix = currencyCode ? ` ${currencyCode}` : ''
+
+  return `${t('борг')} ${eurFormatter.format(debt)}${suffix} ${t('із ліміту')} ${eurFormatter.format(limit)}${suffix}`
 }
 
 function utilizationZone(value: number | null, soft: number, hard: number): string {
@@ -852,7 +866,7 @@ function formatPercent(value: number): string {
     return '-'
   }
 
-  return `${(value * 100).toFixed(0)}%`
+  return `${(value * 100).toFixed(0)}\u00a0%`
 }
 
 const percent1Formatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 1, minimumFractionDigits: 1 })

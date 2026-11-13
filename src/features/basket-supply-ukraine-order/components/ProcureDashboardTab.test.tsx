@@ -113,6 +113,7 @@ describe('ProcureDashboardTab', () => {
     )
 
     expect(await screen.findByText('Дашборд постачання')).not.toBeNull()
+    expect(screen.getByText(/Зріз попиту: 24\.07\.2026\./)).not.toBeNull()
     expect(
       screen.getByText('Всього позицій').closest('article')?.textContent,
     ).toContain('25')

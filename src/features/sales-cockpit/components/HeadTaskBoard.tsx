@@ -45,6 +45,7 @@ import {
   getHeadTasks,
   regenerateHeadCockpit,
 } from '../api/salesCockpitApi'
+import { formatEur } from '../metricPresentation'
 import type { HeadTask, HeadTaskByStatus, HeadTaskManager, HeadTasksResponse } from '../types'
 import { useCockpitRealtimeReload } from '../hooks/useCockpitRealtimeReload'
 import { BoardCancelModal, BoardNoteModal } from './HeadTaskBoardModals'
@@ -111,10 +112,6 @@ const TASK_TYPE_FILTER_OPTIONS = [
 ]
 
 const dueDateFormatter = new Intl.DateTimeFormat('uk-UA', { day: '2-digit', month: '2-digit' })
-
-const moneyFormatter = new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: 0,
-})
 
 const EMPTY_RESPONSE: HeadTasksResponse = {
   IsHead: false,
@@ -592,14 +589,14 @@ function HeadTaskRow({
         {task.Status === 'done' && task.Outcome && (
           <Text c={task.Outcome.Sold ? 'green.7' : 'dimmed'} mt={4} size="xs">
             {task.Outcome.Sold
-              ? `${t('Продаж відбувся')}${task.Outcome.Amount ? `: ${formatMoney(task.Outcome.Amount)}` : ''}`
+              ? `${t('Продаж відбувся')}${task.Outcome.Amount ? `: ${formatEur(task.Outcome.Amount)}` : ''}`
               : t('Виконано без продажу')}
           </Text>
         )}
       </div>
 
       <div className="cockpit-board-row__value">
-        <strong>{task.ExpectedValue !== null ? formatMoney(task.ExpectedValue) : '—'}</strong>
+        <strong>{task.ExpectedValue !== null ? formatEur(task.ExpectedValue) : '—'}</strong>
         {chance !== null ? (
           <span className="cockpit-board-row__chance" title={t('Шанс результату')}>
             <span className="cockpit-board-row__chance-track" aria-hidden="true">
@@ -764,10 +761,6 @@ function formatDueDate(value: string | null): string | null {
   const parsed = new Date(value)
 
   return Number.isNaN(parsed.getTime()) ? null : dueDateFormatter.format(parsed)
-}
-
-function formatMoney(value: number): string {
-  return `€${moneyFormatter.format(value)}`
 }
 
 function formatPercent(value: number): string {

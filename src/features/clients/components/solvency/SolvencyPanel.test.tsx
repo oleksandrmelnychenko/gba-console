@@ -302,12 +302,24 @@ describe('current-state display', () => {
       .toBe('борг 456,70 із ліміту 1 000,00')
   })
 
+  it('names the agreement currency on the debt line when the client agreements resolve it', async () => {
+    getClientSolvencyScore.mockResolvedValue(v3Score)
+    getClientSolvencyCharts.mockResolvedValue(gaugeCharts({
+      value: 0.541, status: 'ok', debt_amount: 5410.21, limit_amount: 10000, currency_id: 2,
+      threshold_soft: 0.9, threshold_hard: 1, label: 'limit_utilization',
+    }))
+    const { container, findByText } = renderPanel(<SolvencyPanel clientNetId="abc" currencyCodes={{ 2: 'UAH' }} />)
+    await findByText('Використання ліміту', { selector: '.client-section-title' })
+    expect(container.querySelector('.client-solvency-gauge-debt')?.textContent?.replace(/\s/g, ' '))
+      .toBe('борг 5 410,21 UAH із ліміту 10 000,00 UAH')
+  })
+
   it('shows the percent without a debt line when an older server omits the new fields', async () => {
     const { container, getByText } = await renderGauge({
       value: 0.5, threshold_soft: 0.9, threshold_hard: 1, label: 'limit_utilization',
     })
     expect(getByText('50 %')).toBeTruthy()
-    expect(getByText(/Поріг/)).toBeTruthy()
+    expect(getByText(/Поріг/).textContent).toBe('Поріг: 90\u00a0% / 100\u00a0%')
     expect(container.querySelector('.client-solvency-gauge-debt')).toBeNull()
   })
 

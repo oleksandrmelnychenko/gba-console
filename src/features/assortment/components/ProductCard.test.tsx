@@ -1,5 +1,7 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, within } from '@testing-library/react'
+// @ts-expect-error Node type scope is excluded from the application compilation unit.
+import { readFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../../shared/api/apiClient'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -98,6 +100,10 @@ describe('ProductCard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Згорнути' }))
     expect(screen.queryByText('ALT-7')).toBeNull()
     const regions = screen.getByRole('region', { name: 'Де купують товар' })
+    expect(regions.classList.contains('assort-related-table--wrap-head')).toBe(true)
+    expect(substitutes.classList.contains('assort-related-table--wrap-head')).toBe(false)
+    expect(readFileSync('src/features/assortment/components/product-card.css', 'utf8'))
+      .toMatch(/\.assort-related-table--wrap-head th:not\(:first-child\) \{[^}]*white-space: normal;/)
     expect(within(regions).getByText('0,25')).toBeTruthy()
     expect(within(regions).getByText('0,49')).toBeTruthy()
     expect(within(regions).getByText('Київ').closest('tr')?.getAttribute('aria-current')).toBe('true')
