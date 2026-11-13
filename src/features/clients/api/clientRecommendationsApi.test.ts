@@ -20,6 +20,22 @@ describe('clientRecommendationsApi recommendation evidence', () => {
     apiRequestMock.mockReset()
   })
 
+  it('keeps the as-of date and the stale/degraded markers of a served snapshot', async () => {
+    const row = {
+      ClientAgreementNetId: agreementId, Product: { Id: 18487, Name: 'Амортизатор', VendorCode: 'SEM18487' },
+      Rank: 1, Score: 0.75, Source: 'repurchase', SourceDetail: 'repurchase_history',
+      SourceHistoryStart: '2025-01-01', EffectiveStart: '2025-01-01', HistoryComplete: true,
+    }
+    apiRequestMock.mockResolvedValueOnce([{ ...row, AsOfDate: '2026-11-10', Stale: true, Degraded: true, DegradedReason: 'x' }])
+    const [served] = await getMostPurchasedProductsByClientId('397abefd-aa19-4b89-96a2-2015c40eeb26', false, { clientAgreementNetId: agreementId })
+    expect(served).toMatchObject({ RecommendationAsOfDate: '2026-11-10', RecommendationStale: true, RecommendationDegraded: true })
+
+    apiRequestMock.mockResolvedValueOnce([{ ...row, AsOfDate: '2026-11-13', Stale: false, Degraded: null }])
+    const [fresh] = await getMostPurchasedProductsByClientId('397abefd-aa19-4b89-96a2-2015c40eeb26', false, { clientAgreementNetId: agreementId })
+    expect(fresh.RecommendationStale).toBeUndefined()
+    expect(fresh.RecommendationDegraded).toBeUndefined()
+  })
+
   it.each([
     ['repurchase', 'repurchase_history'],
     ['discovery', 'similar_clients'],

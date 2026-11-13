@@ -166,6 +166,11 @@ function normalizeRecommendationProducts(result: unknown, expectedAgreementNetId
       RecommendationSourceHistoryStart: source,
       RecommendationEffectiveStart: effective,
       RecommendationHistoryComplete: wrapper.HistoryComplete,
+      ...(typeof wrapper.AsOfDate === 'string' && /^\d{4}-\d{2}-\d{2}/.test(wrapper.AsOfDate)
+        ? { RecommendationAsOfDate: wrapper.AsOfDate.slice(0, 10) }
+        : {}),
+      ...(wrapper.Stale === true ? { RecommendationStale: true } : {}),
+      ...(wrapper.Degraded === true ? { RecommendationDegraded: true } : {}),
     }
   })
 }

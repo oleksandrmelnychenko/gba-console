@@ -32,4 +32,7 @@ export type RecommendationProduct = {
   RecommendationSourceHistoryStart?: string
   RecommendationEffectiveStart?: string
   RecommendationHistoryComplete?: boolean
+  RecommendationAsOfDate?: string
+  RecommendationStale?: boolean
+  RecommendationDegraded?: boolean
 }

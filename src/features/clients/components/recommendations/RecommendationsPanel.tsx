@@ -32,6 +32,7 @@ import { sendRecommendationFeedback } from '../../api/clientRecommendationsApi'
 import type { RecommendationProduct } from '../../recommendationsTypes'
 import type { Client, ClientAgreement } from '../../types'
 import { canSelectRecommendationProduct } from './recommendationAvailability'
+import { recommendationFreshnessNotes } from './recommendationFreshness'
 
 type RecommendationsPanelProps = {
   client: Client
@@ -223,6 +224,11 @@ function RecommendationsForAgreement({
             <Group role="status" gap="xs" py="md"><Loader size="sm" color="orange" /><Text size="sm" c="dimmed">{t('Завантаження рекомендацій')}</Text></Group>
           ) : !error && (
             <Stack gap="md">
+              {recommendationFreshnessNotes(products).map((note) => (
+                <Text c="yellow.8" data-testid="recommendations-freshness" key={note} role="status" size="xs">
+                  {t(note)}
+                </Text>
+              ))}
               {selectedProduct && (
                 <SelectedProductCard
                   product={selectedProduct}
