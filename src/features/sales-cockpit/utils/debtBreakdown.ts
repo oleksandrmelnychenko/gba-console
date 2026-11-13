@@ -73,7 +73,7 @@ export function collectDebtBreakdown(source: unknown): DebtBreakdownPart[] {
 const wholeEurFormat = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
 const smallEurFormat = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 
-function formatEur(value: number): string {
+export function formatDebtEur(value: number): string {
   return `${(value > 0 && value < 100 ? smallEurFormat : wholeEurFormat).format(value)} EUR`
 }
 const documentCountFormat = new Intl.NumberFormat('uk-UA')
@@ -88,5 +88,5 @@ export function describeOverdueWithOpeningBalance(
   const count = finite(openingCount)
   const amount = finite(openingEur)
   if (count <= 0 && amount <= 0) return null
-  return `Прострочений борг ${formatEur(finite(overdueEur))}, з них ввід залишків на ${OPENING_BALANCE_DATE_LABEL}: ${documentCountFormat.format(count)} док. · ${formatEur(amount)}`
+  return `Прострочений борг ${formatDebtEur(finite(overdueEur))}, з них ввід залишків на ${OPENING_BALANCE_DATE_LABEL}: ${documentCountFormat.format(count)} док. · ${formatDebtEur(amount)}`
 }

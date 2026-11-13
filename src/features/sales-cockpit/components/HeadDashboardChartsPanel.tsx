@@ -7,7 +7,7 @@ import { AgingBars, type AgingSeries } from '../../../shared/ui/charts/AgingBars
 import { getHeadDashboard } from '../api/salesCockpitApi'
 import { OPENING_BALANCE_DATE_LABEL, OVERDUE_DEBT_RULE } from '../overdueDebtRule'
 import type { HeadDashboard, HeadTeamRow } from '../types'
-import { describeOverdueWithOpeningBalance } from '../utils/debtBreakdown'
+import { describeOverdueWithOpeningBalance, formatDebtEur } from '../utils/debtBreakdown'
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 0,
@@ -39,6 +39,10 @@ function chartsReducer(state: ChartsState, action: ChartsAction): ChartsState {
     case 'loading':
       return { ...state, error: null, isLoading: true }
   }
+}
+
+function roundCents(value: number): number {
+  return Math.round(value * 100) / 100
 }
 
 export function HeadDashboardChartsPanel({
@@ -140,13 +144,16 @@ export function HeadDashboardChartsPanel({
   )
 
   const valueSeries = useMemo<AgingSeries[]>(
-    () => hasOpeningBalance
-      ? [
-          { name: 'other', label: t('Прострочений борг без вводу залишків, €'), color: 'red.6' },
-          { name: 'opening', label: `${t('Ввід залишків на')} ${OPENING_BALANCE_DATE_LABEL}, €`, color: 'gray.5' },
-        ]
-      : [{ name: 'value', label: t('Відомий прострочений борг, €'), color: 'red.6' }],
-    [hasOpeningBalance, t],
+    () => [{ name: 'value', label: t('Відомий прострочений борг, €'), color: 'red.6' }],
+    [t],
+  )
+
+  const openingSplitSeries = useMemo<AgingSeries[]>(
+    () => [
+      { name: 'other', label: t('Прострочений борг без вводу залишків, EUR'), color: 'red.6' },
+      { name: 'opening', label: `${t('Ввід залишків на')} ${OPENING_BALANCE_DATE_LABEL}, EUR`, color: 'gray.5' },
+    ],
+    [t],
   )
 
   const tasksSeries = useMemo<AgingSeries[]>(
@@ -202,10 +209,22 @@ export function HeadDashboardChartsPanel({
                 {openingBalanceNote}
               </Text>
             )}
+            {hasOpeningBalance ? (
+              <AgingBars
+                money
+                stacked
+                withLegend
+                bucketKey="manager"
+                data={valueData}
+                emptyLabel={t('Дані відсутні')}
+                isLoading={isLoading}
+                loadingLabel={t('Завантаження')}
+                series={openingSplitSeries}
+                valueFormatter={formatDebtEur}
+              />
+            ) : (
             <AgingBars
               money
-              stacked={hasOpeningBalance}
-              withLegend={hasOpeningBalance}
               bucketKey="manager"
               data={valueData}
               emptyLabel={t('Дані відсутні')}
@@ -214,6 +233,7 @@ export function HeadDashboardChartsPanel({
               series={valueSeries}
               valueFormatter={formatMoney}
             />
+            )}
           </Stack>
           </div>
 
@@ -235,10 +255,6 @@ export function HeadDashboardChartsPanel({
       </Stack>
     </section>
   )
-}
-
-function roundCents(value: number): number {
-  return Math.round(value * 100) / 100
 }
 
 function formatMoney(value: number): string {
