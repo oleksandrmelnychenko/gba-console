@@ -115,7 +115,7 @@ describe('BuyerCockpitTab draft totals', () => {
       suggestion({ product_id: 43, product_name: 'Без ціни товар', unit_cost_eur: null, line_cost_eur: null }),
     ])
 
-    await screen.findByText('#42')
+    await screen.findByText('Гальмівний диск')
     expect(screen.getByText('Чернетка замовлення, EUR без ПДВ').parentElement?.textContent?.replace(/\u00a0/g, ' ')).toContain('30,00')
     expect(screen.getAllByText('1 рядок без ціни не враховано')).toHaveLength(1)
     expect(text()).toContain('Чернетка: 2 позиції · €30,00 · 1 рядок без ціни не враховано')
@@ -132,7 +132,7 @@ describe('BuyerCockpitTab draft totals', () => {
       { lead_time_basis: 'measured', lead_time_sample_count: 14 },
     )
 
-    await screen.findByText('#42')
+    await screen.findByText('Гальмівний диск')
     expect(screen.getByTestId('lead-time-basis').textContent).toBe('виміряний за 14 поставками')
     expect(text()).toMatch(/\d шт/)
   })
@@ -140,7 +140,7 @@ describe('BuyerCockpitTab draft totals', () => {
   it('keeps the old source badge when the service sends no basis', async () => {
     renderCockpit([suggestion({ product_id: 42, unit_cost_eur: 5, line_cost_eur: 30 })])
 
-    await screen.findByText('#42')
+    await screen.findByText('Гальмівний диск')
     expect(screen.queryByTestId('lead-time-basis')).toBeNull()
     expect(screen.getByText('за замовч.')).not.toBeNull()
   })
@@ -152,11 +152,11 @@ describe('BuyerCockpitTab draft totals', () => {
       suggestion({ product_id: 44, product_name: 'Дорогий товар', unit_cost_eur: 20, line_cost_eur: 120 }),
     ])
 
-    await screen.findByText('#44')
+    await screen.findByText('Дорогий товар')
     expect(text()).toContain('Чернетка: 2 позиції · €150,00')
     expect(screen.queryByText(/без ціни не враховано/)).toBeNull()
 
-    const row = screen.getByText('#44').closest('tr')!
+    const row = screen.getByText('Дорогий товар').closest('tr')!
     fireEvent.click(row.querySelector('[aria-label="Відхилити"], [title="Відхилити"]') as HTMLElement)
 
     await waitFor(() => expect(text()).toContain('Чернетка: 1 позиція · €30,00'))

@@ -54,6 +54,7 @@ import type {
   ReorderSuggestion,
 } from '../procurementTypes'
 import { ProcurementWorkspaceState } from './ProcurementWorkspaceState'
+import { ProcurementProductCell } from './ProcurementProductCell'
 import { describeLeadTimeBasis, formatProcurementQuantity } from '../procurementQuantityFormat'
 import { ProcurementOrderTermMarkers } from './ProcurementOrderTermMarkers'
 
@@ -618,9 +619,9 @@ function BuyerCockpitTabContent() {
       {
         id: 'product',
         header: t('Товар'),
-        accessor: (item) => item.product_id,
-        cell: (item) => <span style={MONO_STYLE}>{`#${item.product_id}`}</span>,
-        width: 110,
+        accessor: (item) => item.product_name || item.vendor_code || item.product_id,
+        cell: (item) => <ProcurementProductCell row={item} t={t} />,
+        width: 280,
       },
       {
         id: 'urgency',

@@ -18,6 +18,8 @@ describe('describeLeadTimeBasis', () => {
   it('names how the lead time was obtained', () => {
     expect(describeLeadTimeBasis('measured', 14)).toBe('виміряний за 14 поставками')
     expect(describeLeadTimeBasis('measured', null)).toBe('виміряний за поставками')
+    expect(describeLeadTimeBasis('measured', 61)).toBe('виміряний за 61 поставкою')
+    expect(describeLeadTimeBasis('measured', 1)).toBe('виміряний за 1 поставкою')
     expect(describeLeadTimeBasis('default', null)).toBe('типовий')
     expect(describeLeadTimeBasis('override', 3)).toBe('задано вручну')
   })

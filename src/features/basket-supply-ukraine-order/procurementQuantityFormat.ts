@@ -1,3 +1,4 @@
+import { deskPlural } from '../reports/data/reportCountPresentation'
 /** Display fractional packs without whole-unit rounding or binary arithmetic tail digits. */
 export const procurementQuantityFormat = new Intl.NumberFormat('uk-UA', { maximumSignificantDigits: 15 })
 
@@ -45,7 +46,7 @@ export function describeLeadTimeBasis(
 ): string | null {
   if (basis === 'measured') {
     const measured = sampleCount != null && sampleCount > 0
-      ? `виміряний за ${new Intl.NumberFormat('uk-UA').format(sampleCount)} поставками`
+      ? `виміряний за ${new Intl.NumberFormat('uk-UA').format(sampleCount)} ${deskPlural(sampleCount, ['поставкою', 'поставками', 'поставками'])}`
       : 'виміряний за поставками'
     return statistic === 'trimmed_mean' ? `${measured}, усереднено без викидів` : measured
   }
