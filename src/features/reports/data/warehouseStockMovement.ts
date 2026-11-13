@@ -3,7 +3,6 @@ import { readPhysicalCoverage, type PhysicalCoverage } from '../../../shared/ui/
 
 export const WAREHOUSE_STOCK_MOVEMENT_ROUTE = '/report/constructors/warehouse-stock-movement'
 export const WAREHOUSE_STOCK_MOVEMENT_TITLE = 'Рух товару — залишки, прихід і розхід'
-export const WAREHOUSE_STOCK_MOVEMENT_MIN_DATE = '2025-01-01'
 export const WAREHOUSE_STOCK_MOVEMENT_PAGE_SIZE = 200
 
 export const STOCK_MOVEMENT_LEVELS = ['warehouse', 'product', 'month', 'day', 'registrar'] as const
@@ -43,7 +42,7 @@ export const STOCK_MOVEMENT_ARTICLE_LABELS: Record<StockMovementArticleMatch, st
   inList: 'У списку',
 }
 
-export type StockMovementDocumentKind = { Code: string; Name: string }
+type StockMovementDocumentKind = { Code: string; Name: string }
 export type StockMovementCapability = {
   Version: 1
   MinimumFrom: string
@@ -59,7 +58,7 @@ export type StockMovementCapability = {
   Notes: string[]
 }
 export type StockMovementLookupItem = { Id: number; Name: string; Detail: string | null }
-export type StockMovementCondition = { Measure: StockMovementMeasure; Comparison: StockMovementComparison; Value: number }
+type StockMovementCondition = { Measure: StockMovementMeasure; Comparison: StockMovementComparison; Value: number }
 export type StockMovementSelection = { id: number; label: string }
 
 export type StockMovementDraft = {
@@ -156,7 +155,7 @@ const isMeasure = member(STOCK_MOVEMENT_MEASURES)
 const isComparison = member(STOCK_MOVEMENT_COMPARISONS)
 const isArticleMatch = member(STOCK_MOVEMENT_ARTICLE_MATCHES)
 
-export function normalizeStockMovementWire(value: unknown): unknown {
+function normalizeStockMovementWire(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(normalizeStockMovementWire)
   if (!record(value)) return value
   return Object.fromEntries(Object.entries(value).map(([key, item]) => [key.charAt(0).toUpperCase() + key.slice(1), normalizeStockMovementWire(item)]))
@@ -185,7 +184,7 @@ function quantity(value: unknown): value is StockMovementQuantity {
   return record(value) && [value.Opening, value.Incoming, value.Outgoing, value.Closing].every(item => item === null || finite(item))
 }
 
-export function balances(quantity: StockMovementQuantity): boolean {
+function balances(quantity: StockMovementQuantity): boolean {
   if (quantity.Opening === null || quantity.Incoming === null || quantity.Outgoing === null || quantity.Closing === null) return true
   return Math.abs(quantity.Opening + quantity.Incoming - quantity.Outgoing - quantity.Closing) < 1e-6
 }
@@ -252,7 +251,7 @@ export function parseArticleList(text: string): string[] {
   })
 }
 
-export function articleFilter(draft: StockMovementDraft): { match: StockMovementArticleMatch | ''; articles: string[] } {
+function articleFilter(draft: StockMovementDraft): { match: StockMovementArticleMatch | ''; articles: string[] } {
   if (draft.articleMatch === 'inList') {
     return draft.articleList.length ? { match: 'inList', articles: draft.articleList } : { match: '', articles: [] }
   }

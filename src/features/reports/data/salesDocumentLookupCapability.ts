@@ -1,6 +1,6 @@
 import type { ReportDataset } from '../types'
 
-export type SalesDocumentLookupCapability = {
+type SalesDocumentLookupCapability = {
   version: 1; fieldTypes: [12, 14]; periodRequired: true; identityKind: 'positiveInt64String'
 }
 export function customerGroupSalesDocumentLookup(dataset: ReportDataset | undefined | null): SalesDocumentLookupCapability | null {

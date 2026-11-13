@@ -8,9 +8,8 @@ import { requestSourceBuyerSubtree, sourceBuyerSubtree } from './nativeExactFilt
 import { readFilterExpressionCapabilities, reportFilterExpressionError, requestFilterExpression } from './reportFilterExpression'
 import { requestSupplierBasis, supplierBasisConfigurationError } from './supplierBasis'
 
-export const SUPPLIER_BATCH_GROSS_PROFIT_SOURCE = 38
+const SUPPLIER_BATCH_GROSS_PROFIT_SOURCE = 38
 export const SUPPLIER_BATCH_GROSS_PROFIT_TITLE = 'Валовий прибуток GBA за постачальниками (партії)'
-export type SupplierSourceWorld = 0 | 1
 export function isSupplierSourceWorldCapability(value: unknown): boolean {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false
   const capability = value as Record<string, unknown>

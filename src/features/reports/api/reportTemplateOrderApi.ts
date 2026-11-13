@@ -2,7 +2,7 @@ import { unwrapApiResponse } from '../../../shared/api/apiClient'
 import { apiRequestStream, assertApiStreamCurrent, type ApiStreamSession } from '../../../shared/api/apiStreamClient'
 import { invalidTemplateOrder, normalizeTemplateOrder, templateOrderRequest, type ReportTemplateOrderCommand } from '../data/reportTemplateOrder'
 
-export type ReportTemplateOrderContext = { session: ApiStreamSession; signal: AbortSignal }
+type ReportTemplateOrderContext = { session: ApiStreamSession; signal: AbortSignal }
 const maximumBytes = 256 * 1024
 
 /** Only bounded metadata; reject duplicate properties and numeric tokens that would round before validation. */

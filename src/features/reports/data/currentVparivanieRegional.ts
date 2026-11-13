@@ -6,7 +6,7 @@ import { isCurrentVparivanieDataset, currentVparivanieFullScope, CURRENT_VPARIVA
 import { CURRENT_VPARIVANIE_V2_COLUMNS, type CurrentVparivanieV2Cell,
   type CurrentVparivanieV2Row } from './currentVparivanieV2'
 
-export type CurrentRegionalSummary = {
+type CurrentRegionalSummary = {
   HasPeriod: true; IsCurrentSnapshot: false; PeriodFrom: string; PeriodTo: string
   Filters: Array<{ Field: string; Condition: string; Values: string[] }>; Notes: string[]
 }

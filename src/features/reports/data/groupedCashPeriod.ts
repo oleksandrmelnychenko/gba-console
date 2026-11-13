@@ -5,7 +5,7 @@ import { cashReadModeConfigurationError, isCashReadModeCapability, requestCashRe
 
 export const CASH_WORKBOOK_ROWS = [40, 44, 43] as const
 export const GROUPED_CASH_FILTERS = [29, 30, 32, 33] as const
-export type GroupedCashPeriod = { Version: 1; CurrencyBasis: 'AccountAndManagementCurrency' }
+type GroupedCashPeriod = { Version: 1; CurrencyBasis: 'AccountAndManagementCurrency' }
 const record = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value)
 const aliases = (value: object) => Object.keys(value).filter(key => key.toLowerCase() === 'groupedcashperiod')
 const exact = (value: unknown, expected: readonly number[]) => Array.isArray(value)
@@ -27,7 +27,7 @@ export function groupedCashPeriod(value: unknown): GroupedCashPeriod | null {
   return record(value) && Object.keys(value).sort().join(',') === 'CurrencyBasis,Version'
     && value.Version === 1 && value.CurrencyBasis === 'AccountAndManagementCurrency' ? defaultGroupedCashPeriod() : null
 }
-export function isGroupedCashCapability(value: unknown): boolean {
+function isGroupedCashCapability(value: unknown): boolean {
   return record(value) && value.Version === 1 && value.MaximumDays === 31
     && value.CurrencyBasis === 'AccountAndManagementCurrency' && value.UsesCurrentNativeAccounts === true
     && value.PreservesUnavailableValues === true && value.RequiresCommonSourceObservation === false

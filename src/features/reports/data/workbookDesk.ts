@@ -1,8 +1,6 @@
 import { GROSS_PROFIT_CONSTRUCTOR_WORKBOOK, SALES_CONSTRUCTOR_WORKBOOK } from './salesConstructorProfiles'
 import type { ReportDataset, ReportRequestBody, ReportSelection } from '../types'
-import { previousKyivDay } from './cashPeriod'
-import { bug1274DatasetTitle, bug1274WorkbookGuide, bug1274WorkbookPeriod } from './bug1274WorkbookGuide'
-import { opensOnPreviousDay } from './bug1274WorkbookLaunch'
+import { bug1274DatasetTitle, bug1274WorkbookGuide } from './bug1274WorkbookGuide'
 import { workbookCaption } from './bug1274WorkbookFilters'
 import { productClassification, productServiceFilter, requestProductClassification, requestProductServiceFilter,
   requestSourceBuyerSubtree, requestSourceOrganizations, sourceBuyerSubtree, sourceOrganizations } from './nativeExactFilters'
@@ -13,16 +11,14 @@ import { currentProductCapability, readWorkbookCapability, readWorkbookSelection
 import { hasFixedReportAxes } from './nativeReportProfiles'
 import { SALES_BY_RESPONSIBLES_TITLE, SALES_BY_RESPONSIBLES_WORKBOOK_FILE } from './salesByResponsibles'
 
-export type WorkbookDeskEntry = {
+type WorkbookDeskEntry = {
   fileName: string
   name: string
   reportName: string
   description: string
 }
-
-export type DeskPeriod = { from: string; to: string }
-export type DeskChip = { label: string; title: string; kind: 'filter' | 'view' }
-export type DeskSummary = { period: string; organizations: string | null; chips: DeskChip[] }
+type DeskChip = { label: string; title: string; kind: 'filter' | 'view' }
+type DeskSummary = { period: string; organizations: string | null; chips: DeskChip[] }
 
 const ENTRIES: readonly WorkbookDeskEntry[] = [
   { fileName: SALES_CONSTRUCTOR_WORKBOOK, name: 'Звіт по продажам', reportName: 'Звіт по продажам', description: 'Продажі й повернення за датами документів.' },
@@ -55,10 +51,6 @@ export function workbookDeskEntry(fileName: string | null | undefined): Workbook
   return fileName ? ENTRIES.find(entry => entry.fileName === fileName) : undefined
 }
 
-export function workbookDeskEntries(): readonly WorkbookDeskEntry[] {
-  return ENTRIES
-}
-
 export function workbookDeskTitle(fileName: string | null | undefined, dataSource: number): string {
   return workbookDeskEntry(fileName)?.reportName ?? (fileName ? bug1274WorkbookGuide(fileName)?.title : undefined)
     ?? bug1274DatasetTitle(dataSource) ?? 'Звіт'
@@ -68,21 +60,8 @@ export function typicalRunSeconds(dataSource: number): readonly [number, number]
   return TYPICAL_SECONDS[dataSource] ?? [5, 30]
 }
 
-export function typicalRunText(dataSource: number): string {
-  const [low, high] = typicalRunSeconds(dataSource)
-  return `Зазвичай це займає ${low}–${high} с.`
-}
-
 export function organizationFilterField(dataSource: number): number | null {
   return ORGANIZATION_FILTER_FIELDS[dataSource] ?? null
-}
-
-export function workbookDefaultPeriod(fileName: string, dataSource: number, today: string): DeskPeriod | null {
-  const period = bug1274WorkbookPeriod(fileName, today)
-  if (period) return period
-  if (!opensOnPreviousDay(dataSource)) return null
-  const day = previousKyivDay(today)
-  return day ? { from: day, to: day } : null
 }
 
 export function deskDownloadName(base: string | null, url: string, format: 'excel' | 'pdf'): string | undefined {
@@ -91,22 +70,13 @@ export function deskDownloadName(base: string | null, url: string, format: 'exce
   return `${base}.${extension ? extension.toLowerCase() : format === 'excel' ? 'xlsx' : 'pdf'}`
 }
 
-export function deskDay(value: string): string {
+function deskDay(value: string): string {
   return /^\d{4}-\d\d-\d\d$/.test(value) ? value.split('-').reverse().join('.') : value
 }
 
 export function deskPeriodText(from: string, to: string): string {
   if (!from || !to) return 'не вказано'
   return from === to ? deskDay(from) : `${deskDay(from)} – ${deskDay(to)}`
-}
-
-export function deskPeriodKind(period: DeskPeriod, today: string): string | null {
-  const yesterday = previousKyivDay(today)
-  if (period.from === period.to) return period.from === yesterday ? 'Вчора' : period.from === today ? 'Сьогодні' : null
-  if (period.from === `${today.slice(0, 4)}-01-01` && period.to === today) return 'З початку року до сьогодні'
-  if (period.to === today && period.from === `${today.slice(0, 7)}-01`) return 'З 1-го числа до сьогодні'
-  if (period.to === yesterday && period.from === `${yesterday.slice(0, 7)}-01`) return 'З 1-го числа до вчора'
-  return null
 }
 
 export { deskPlural, deskCount, deskRowsText } from './reportCountPresentation'
@@ -131,8 +101,6 @@ function chipValuesText(names: readonly string[]): string {
 function selectionNames(selection: ReportSelection): string[] {
   return selection.Values.map(value => workbookCaption(String(value.Name ?? '')) || String(value.Name ?? ''))
 }
-
-const EXCLUDING_CONDITIONS = new Set([1, 4, 5, 7])
 const FLAT_EXCLUDING_CONDITIONS = new Set([1, 4])
 const PLAIN_CONDITIONS = new Set([0, 2])
 
@@ -165,27 +133,6 @@ function organizationsText(request: ReportRequestBody, selections: readonly Repo
         : `${selection.FilterCondition.Name}: ${valuesText(names)}`)
   }
   return parts.length ? parts.join('; ') : 'Усі'
-}
-
-export function workbookOrganizationScope(request: ReportRequestBody): string {
-  const field = organizationFilterField(request.dataSource ?? 0)
-  if (field === null) return 'Усі'
-  const fixedAxes = hasFixedReportAxes(request.dataSource ?? 0)
-  const selections = (request.selections ?? []).filter(selection =>
-    selection.SelectedField.Type === field && applied(selection, fixedAxes))
-  const saved = sourceOrganizations(requestSourceOrganizations(request))
-  if (saved && selections.length === 0) {
-    const ids = saved.OrganizationIds.map(id => id.toUpperCase())
-      .filter(id => !(DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS as readonly string[]).includes(id))
-    return `Вибрано: ${ids.length}`
-  }
-  if (!saved && selections.length === 0) return 'Усі'
-  if (!saved && selections.length === 1) {
-    const selection = selections[0]
-    if (PLAIN_CONDITIONS.has(selection.FilterCondition.Type)) return `Вибрано: ${selection.Values.length}`
-    if (EXCLUDING_CONDITIONS.has(selection.FilterCondition.Type)) return `Виключено: ${selection.Values.length}`
-  }
-  return 'З відбором'
 }
 
 function fieldShortCaption(caption: string): string {

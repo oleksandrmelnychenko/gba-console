@@ -1,7 +1,6 @@
 import type { ReportDataset } from '../types'
 
 export const SALES_BY_RESPONSIBLES_SOURCE = 43
-export const SALES_BY_RESPONSIBLES_SOURCE_NAME = 'NativeSalesByResponsibles'
 export const SALES_BY_RESPONSIBLES_WORKBOOK_FILE = 'Продажі по менеджерам.xls'
 export const SALES_BY_RESPONSIBLES_TITLE = 'Продажі по менеджерах'
 export const SALES_BY_RESPONSIBLES_ROWS: readonly number[] = [4, 22]

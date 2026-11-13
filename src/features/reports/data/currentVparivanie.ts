@@ -4,18 +4,10 @@ import { exactId } from './exactId'
 import { movementSelection, movementSelectionError } from './currentVparivanieMovements'
 import { originalMatrixScope } from './originalVparivanieScope'
 
-export const CURRENT_VPARIVANIE_SOURCE = 39
-export const CURRENT_VPARIVANIE_UNASSIGNED_MANAGER = '00000000000000000000000000000000'
-export const CURRENT_VPARIVANIE_FULL_TITLE = 'Аналіз залишків і продажів: повний вибір'
+const CURRENT_VPARIVANIE_SOURCE = 39
+const CURRENT_VPARIVANIE_UNASSIGNED_MANAGER = '00000000000000000000000000000000'
 export const CURRENT_VPARIVANIE_FULL_NOTE = 'Повний вибраний набір: усі сторінки прочитано до кінця в одному SQL Snapshot GBA.'
 export const CURRENT_VPARIVANIE_TITLE = 'Аналіз залишків і продажів'
-export const CURRENT_VPARIVANIE_LEGACY_TITLES = ['Впарювання', 'Впарювання: поточні залишки та продажі GBA', 'Впарювання: залишки на кінець періоду та продажі GBA'] as const
-export const CURRENT_VPARIVANIE_LEGACY_FULL_TITLES = ['Впарювання: повний вибір', 'Впарювання: повний вибір, поточні залишки та продажі GBA',
-  'Впарювання: повний вибір, залишки на кінець періоду та продажі GBA'] as const
-export const isCurrentVparivanieFullTitle = (title: string): boolean =>
-  title === CURRENT_VPARIVANIE_FULL_TITLE || (CURRENT_VPARIVANIE_LEGACY_FULL_TITLES as readonly string[]).includes(title)
-export const isCurrentVparivanieTitle = (title: string): boolean => isCurrentVparivanieFullTitle(title)
-  || title === CURRENT_VPARIVANIE_TITLE || (CURRENT_VPARIVANIE_LEGACY_TITLES as readonly string[]).includes(title)
 export type CurrentVparivanieStockAnchor = 'CurrentRecordedFree' | 'PeriodEndFree'
 export const isCurrentVparivanieStockAnchor = (value: unknown): value is CurrentVparivanieStockAnchor =>
   value === 'CurrentRecordedFree' || value === 'PeriodEndFree'
@@ -39,7 +31,7 @@ export function currentVparivanieQuantityCell(value: string): number | string {
   const text = currentVparivanieQuantityText(value), number = Number(text)
   return Number.isFinite(number) && String(number) === text ? number : text
 }
-export const CURRENT_VPARIVANIE_COUNTERPARTY_IDENTITY = 'NativeClientOrFenixSourceGroupV1'
+const CURRENT_VPARIVANIE_COUNTERPARTY_IDENTITY = 'NativeClientOrFenixSourceGroupV1'
 export function currentVparivanieNotice(managerSupported = false): string {
   return `Залишки — вільний залишок GBA на кінець періоду: поточна доступність, резерви на цю мить і складські операції GBA після неї, як у «Рух товару». Залишок на дату раніше 01.01.2025 порожній. Продажі — за вибраний включний період Europe/Kyiv. Клієнт впливає лише на колонки контрагентів, склад — лише на залишки. ${managerSupported ? 'Основний менеджер покупця з картки клієнта GBA впливає лише на колонки контрагентів.' : 'Менеджер покупця поки недоступний.'} Невідомі кількості та підсумки різних одиниць залишаються NULL.`
 }

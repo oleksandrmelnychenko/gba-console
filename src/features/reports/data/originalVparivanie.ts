@@ -12,9 +12,9 @@ export type MatrixCapability = {
   MaximumProductRows: 128; MaximumColumns: 262; QuantityEncoding: 'InvariantDecimalString'; RequiresCompleteNormalInputs: true;
   SourceParityVerified: boolean; OriginalFullTaskAccepted: boolean;
 }
-export type MatrixGroup = 'Counterparties' | 'Stock' | 'Sales'
-export type MatrixColumn = { Group: MatrixGroup; Caption: string; RegionCode: string | null; MeasureCaption: string | null }
-export type MatrixRow = { ProductReference: string; Caption: string; Values: (string | null)[] }
+type MatrixGroup = 'Counterparties' | 'Stock' | 'Sales'
+type MatrixColumn = { Group: MatrixGroup; Caption: string; RegionCode: string | null; MeasureCaption: string | null }
+type MatrixRow = { ProductReference: string; Caption: string; Values: (string | null)[] }
 export type MatrixResult = MatrixRequest & {
   AdmissionPolicy?: 'ExactCurrentInputWitnessV1'; ExactScopeAccepted?: boolean;
   AcceptedInputWitnessSha256?: string | null; AcceptanceProofSha256?: string | null;
@@ -62,7 +62,7 @@ export function matrixQuantity(value: unknown): string {
   if (BigInt(digits) > 79228162514264337593543950335n) throw invalid()
   return value
 }
-export const matrixColumnKey = (column: MatrixColumn) => JSON.stringify([column.Group, column.RegionCode])
+const matrixColumnKey = (column: MatrixColumn) => JSON.stringify([column.Group, column.RegionCode])
 function columns(values: unknown[]): MatrixColumn[] {
   const keys = new Set<string>(), totals = new Set<MatrixGroup>()
   return values.map(value => {

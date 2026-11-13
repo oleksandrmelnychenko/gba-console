@@ -5,9 +5,9 @@ const integer = (value: unknown): value is number => Number.isSafeInteger(value)
 const keys = (value: Record<string, unknown>, allowed: ReadonlySet<string>) => Object.keys(value).every(key => allowed.has(key))
 const expressionKeys = new Set(['Version', 'Root'])
 const nodeKeys = new Set(['Kind', 'Children', 'SelectionIndex'])
-export const FILTER_EXPRESSION_LIMITS = { MaximumDepth: 8, MaximumLeaves: 64, MaximumNodes: 128 } as const
+const FILTER_EXPRESSION_LIMITS = { MaximumDepth: 8, MaximumLeaves: 64, MaximumNodes: 128 } as const
 export type FilterNodePath = number[]
-export type FilterTreeEntry = { node: ReportFilterNode; path: FilterNodePath }
+type FilterTreeEntry = { node: ReportFilterNode; path: FilterNodePath }
 
 export function requestFilterExpression(data: ReportRequestBody): unknown {
   return Object.hasOwn(data, 'filterExpression') ? data.filterExpression : data.FilterExpression
@@ -53,7 +53,7 @@ export function readFilterExpressionCapabilities(dataset?: ReportDataset): Repor
   return cap as ReportFilterExpressionCapabilities
 }
 
-export function filterExpressionScopeError(tree: ReportFilterExpression, selections: ReportSelection[], cap: ReportFilterExpressionCapabilities): string | null {
+function filterExpressionScopeError(tree: ReportFilterExpression, selections: ReportSelection[], cap: ReportFilterExpressionCapabilities): string | null {
   const entries = filterTreeEntries(tree), leaves = entries.filter(entry => entry.node.Kind === 3)
   if (entries.length > cap.MaximumNodes || leaves.length > cap.MaximumLeaves || entries.some(entry => entry.path.length + 1 > cap.MaximumDepth))
     return `Логіка умов перевищує межі сервера: ${cap.MaximumDepth} рівнів, ${cap.MaximumLeaves} умов, ${cap.MaximumNodes} вузлів.`
@@ -101,7 +101,7 @@ export function removeFilterSelection(raw: unknown, index: number): unknown {
 
 export const filterPathId = (path: FilterNodePath) => path.length ? path.join('.') : 'root'
 export const filterPathContains = (parent: FilterNodePath, child: FilterNodePath) => parent.length <= child.length && parent.every((part, index) => part === child[index])
-export function filterNodeAt(tree: ReportFilterExpression, path: FilterNodePath): ReportFilterNode | null {
+function filterNodeAt(tree: ReportFilterExpression, path: FilterNodePath): ReportFilterNode | null {
   let node = tree.Root
   for (const index of path) {
     if (!integer(index) || node.Kind === 3 || !node.Children[index]) return null

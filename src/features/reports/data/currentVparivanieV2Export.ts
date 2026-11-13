@@ -100,23 +100,3 @@ export function currentVparivanieV2PdfDefinition(result: CurrentVparivanieV2Resu
       fontSize: 7, alignment: 'right', margin: [28, 0, 28, 0] }),
   }
 }
-
-export async function currentVparivanieV2Xlsx(result: CurrentVparivanieV2Result): Promise<Blob> {
-  const XLSX = await import('xlsx')
-  const sheets = currentVparivanieV2Sheets(result)
-  const book = XLSX.utils.book_new()
-  for (const [name, rows] of Object.entries({ About: sheets.about, Matrix: sheets.matrix, Cells: sheets.facts })) {
-    const sheet = XLSX.utils.aoa_to_sheet(rows)
-    XLSX.utils.book_append_sheet(book, sheet, name)
-  }
-  const bytes = XLSX.write(book, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer
-  return new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-}
-
-export async function currentVparivanieV2Pdf(result: CurrentVparivanieV2Result): Promise<Blob> {
-  const [pdfMake, fontModule] = await Promise.all([
-    import('pdfmake/build/pdfmake'), import('pdfmake/build/vfs_fonts'),
-  ])
-  pdfMake.default.addVirtualFileSystem(fontModule.default)
-  return pdfMake.default.createPdf(currentVparivanieV2PdfDefinition(result)).getBlob()
-}

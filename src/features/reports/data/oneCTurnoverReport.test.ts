@@ -1,7 +1,6 @@
-import { organizationOnlyScope } from './oneCTurnoverScopes.test-fixtures'
 import { describe, expect, it } from 'vitest'
 import type { OneCTurnoverScopeSummary } from '../types'
-import { createOneCTurnoverReport, ONE_C_REPORT_LAYOUTS, oneCReportPeriodError, oneCReportScopeError } from './oneCTurnoverReport'
+import { oneCReportPeriodError } from './oneCTurnoverReport'
 
 export const scopeFixture: OneCTurnoverScopeSummary = {
   Key: 'A'.repeat(64), Filters: { OrganizationIds: ['1'.repeat(32)], ProductKindId: '2'.repeat(32), ExcludeServices: true, BuyerRootId: '8AB2005056C0000811DEFC4535BB4D40' },
@@ -10,61 +9,13 @@ export const scopeFixture: OneCTurnoverScopeSummary = {
 }
 
 describe('consolidated 1C report payloads', () => {
-  it.each(ONE_C_REPORT_LAYOUTS)('uses explicit cloned scope and supported fields for $id', layout => {
-    const payload = createOneCTurnoverReport(scopeFixture, layout.id, '2026-09-01', '2026-09-03')
-    expect(payload.dataSource).toBe(1)
-    expect(payload.oneC).toEqual(scopeFixture.Filters)
-    expect(payload.oneC).not.toBe(scopeFixture.Filters)
-    expect(payload.selections).toEqual([])
-    expect(payload.sorted.Row.map(row => row.key)).toEqual(layout.row)
-    expect(payload.sorted.Col.map(col => col.key)).toEqual(layout.col)
-    expect(payload.sorted.Measurements.map(measure => measure.Type)).toEqual(layout.measures)
-  })
-
-  it.each([
-    ['', ''], ['2026-02-30', '2026-03-01'], ['2026-09-03', '2026-09-01'],
-    ['2025-01-01', '2026-01-02'], ['2026-09-01T00:00:00Z', '2026-09-03'], ['1999-12-31', '2000-01-01'],
-  ])('refuses invalid or unbounded dates %s to %s', (from, to) => {
-    expect(oneCReportPeriodError(from, to)).not.toBeNull()
-    expect(() => createOneCTurnoverReport(scopeFixture, 'daily', from, to)).toThrow()
-  })
 
   it('accepts a leap day and a 366-day inclusive window', () => {
     expect(oneCReportPeriodError('2024-02-29', '2024-02-29')).toBeNull()
     expect(oneCReportPeriodError('2024-01-01', '2024-12-31')).toBeNull()
   })
-
-  it('builds an exact agreement layout and refuses it for a sales-only scope', () => {
-    const payload = createOneCTurnoverReport(scopeFixture, 'agreements', '2026-09-01', '2026-09-03')
-    expect(payload.sorted.Row.map(row => row.key)).toEqual(['CustomerName', 'CustomerContract', 'Product'])
-    expect(payload.sorted.Measurements.map(measure => measure.Type)).toEqual([2, 3, 4, 6, 7, 8, 10, 12, 14, 15])
-    const salesOnly = { ...scopeFixture, Filters: { ...scopeFixture.Filters, BuyerRootId: undefined } }
-    expect(oneCReportScopeError(salesOnly, 'agreements')).toContain('собівартості')
-    expect(() => createOneCTurnoverReport(salesOnly, 'agreements', '2026-09-01', '2026-09-03')).toThrow()
-  })
-
-  it('builds the exact source-grain layout and refuses it for a sales-only scope', () => {
-    const payload = createOneCTurnoverReport(scopeFixture, 'source-grain', '2026-09-01', '2026-09-03')
-    expect(payload.sorted.Row.map(row => row.key)).toEqual([
-      'SourceProject', 'SourceDivision', 'CustomerName', 'CustomerContract', 'Product',
-      'SourceProductCharacteristic', 'SourceOrder', 'SourceSaleDocument',
-    ])
-    const salesOnly = { ...scopeFixture, Filters: { ...scopeFixture.Filters, BuyerRootId: undefined } }
-    expect(oneCReportScopeError(salesOnly, 'source-grain')).toContain('собівартості')
-  })
 })
 
 
 describe('organization-only v3 report bounds', () => {
-  it('preserves exact filters and supports31days without widening to goods-only', () => {
-    const report = createOneCTurnoverReport(organizationOnlyScope, 'responsibles', '2026-09-01', '2026-10-01')
-    expect(report.oneC).toEqual(organizationOnlyScope.Filters)
-    expect(report.sorted.Measurements.map(item => item.Type)).toEqual([2, 4])
-  })
-  it.each(['articles', 'daily', 'agreements', 'source-grain'] as const)('rejects unsupported v3 layout %s', layout => {
-    expect(() => createOneCTurnoverReport(organizationOnlyScope, layout, '2026-10-01', '2026-10-24')).toThrow('лише продажі за відповідальними')
-  })
-  it('rejects32days before sending a request', () => {
-    expect(() => createOneCTurnoverReport(organizationOnlyScope, 'responsibles', '2026-09-01', '2026-10-02')).toThrow('31 дня')
-  })
 })

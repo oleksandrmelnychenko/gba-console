@@ -1,7 +1,7 @@
 export const LEGACY_PREVIEW_COLUMNS = 256
 export const MAXIMUM_PREVIEW_PAGE_COLUMNS = 256
 export const MAXIMUM_RESULT_COLUMNS = 16000
-export const XLSX_MAXIMUM_COLUMNS = 16384
+const XLSX_MAXIMUM_COLUMNS = 16384
 
 export const validMaximumResultColumns = (value: unknown): boolean => value === undefined
   || Number.isSafeInteger(value) && (value as number) >= LEGACY_PREVIEW_COLUMNS && (value as number) <= XLSX_MAXIMUM_COLUMNS

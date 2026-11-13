@@ -9,7 +9,7 @@ import { ConstructorFieldDialog } from './ConstructorFieldDialog'
 
 type Selected = { axis: ReportGroupingAxis; type: number } | null
 
-export type ConstructorGroupingProps = {
+type ConstructorGroupingProps = {
   layout: ReportGroupingLayout
   allowed: ReadonlySet<number>
   locked: ReadonlySet<number>

@@ -15,11 +15,11 @@ import { LEGACY_PREVIEW_COLUMNS, MAXIMUM_PREVIEW_PAGE_COLUMNS, MAXIMUM_RESULT_CO
 
 export type NativeReportPreviewScalar = { Kind: string; Value: string | null; Provenance: string }
 export type CurrentVparivanieProduct = { RowSourceIndex: number } & Record<typeof CURRENT_VPARIVANIE_PRODUCT_FIELDS[number], string | null>
-export type CurrentVparivanieProducts = { Version: 1 | 2; ResultSha256: string; Rows: CurrentVparivanieProduct[] }
+type CurrentVparivanieProducts = { Version: 1 | 2; ResultSha256: string; Rows: CurrentVparivanieProduct[] }
 export type NativeReportPreviewAxis = { Ordinal: number; SourceIndex: number; Values: { Caption: string; Identity?: NativeReportPreviewScalar }[] }
 export type NativeReportPreviewCell = { RowSourceIndex: number; ColumnSourceIndex: number; Value: NativeReportPreviewScalar }
-export type NativeReportPreviewGroupTotal = { Level: number; RowSourceIndex: number; RowCount: number; Values: NativeReportPreviewCell[] }
-export type NativeReportPreviewTotals = { State: 'materialized'; Values: NativeReportPreviewCell[]; Groups: NativeReportPreviewGroupTotal[] }
+type NativeReportPreviewGroupTotal = { Level: number; RowSourceIndex: number; RowCount: number; Values: NativeReportPreviewCell[] }
+type NativeReportPreviewTotals = { State: 'materialized'; Values: NativeReportPreviewCell[]; Groups: NativeReportPreviewGroupTotal[] }
 export type NativeReportPreviewFilter = { Field: string; Condition: string; Values: string[]; IgnoredReason: string | null }
 export type NativeReportPreviewRequest = {
   presentationCurrency?: ResolvedReportPresentationCurrency
@@ -44,8 +44,8 @@ export type NativeReportPreviewRequest = {
   IgnoredFilters: NativeReportPreviewFilter[] | null
   Notes: string[] | null
 }
-export type NativeReportPreviewColumnWindow = { ColumnOffset: number; ColumnLimit: number; TotalColumns: number; ReturnedColumns: number; HasMoreColumns: boolean }
-export type NativeReportPreviewPage = { Offset: number; Limit: number; TotalVisibleRows: number; ReturnedRows: number; HasMore: boolean }
+type NativeReportPreviewColumnWindow = { ColumnOffset: number; ColumnLimit: number; TotalColumns: number; ReturnedColumns: number; HasMoreColumns: boolean }
+type NativeReportPreviewPage = { Offset: number; Limit: number; TotalVisibleRows: number; ReturnedRows: number; HasMore: boolean }
   & Partial<NativeReportPreviewColumnWindow>
 export type NativeReportPreview = {
   PhysicalCoverage?: PhysicalCoverage[]

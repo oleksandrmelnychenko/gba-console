@@ -1,12 +1,10 @@
 import type {
   ReportFilterCondition,
-  ReportFilterField,
   ReportFilterFieldGroup,
   ReportGroupingGroup,
   ReportGroupingItem,
   ReportMeasurementGroup,
   ReportMeasurementSelection,
-  ReportRequestBody,
   ReportSelection,
 } from '../types'
 
@@ -16,10 +14,6 @@ const REPORT_CONDITION_TYPES = {
   inList: 2,
   notInList: 4,
 } as const
-
-// The generic legacy engine only admits flat comparisons. Hierarchical conditions
-// are enabled separately by a dataset capability, never by this default list.
-const UNSUPPORTED_CONDITION_TYPES = new Set<number>([3, 5, 6, 7])
 
 export const REPORT_FILTER_FIELD_TYPES = {
   organization: 0,
@@ -204,34 +198,6 @@ const REPORT_GROUPING_GROUPS: ReportGroupingGroup[] = [
   },
 ]
 
-// Withheld options, and why — do not re-add them without a server change.
-//
-// SaleReturnDocument (grouping 18 / filter field 14) and Supplier (grouping 21) USED to be withheld: the server
-// projected both as «CAST(NULL AS nvarchar(50))», so grouping by either collapsed the report into one blank row,
-// and the return-document filter was a no-op («case ...SaleReturnDocument: break»). All three are implemented now
-// — the grouping and the filter read the same attributed document from one OUTER APPLY, and the supplier is
-// resolved from the consignment lot a line consumed — so all three are offered again. Withholding an option the
-// server supports is the same fault as offering one it does not: the screen and the engine must agree.
-//
-// CustomerManager (grouping 16 / filter field 10) and SaleDocumentManagerInput (19 / 15) both resolve to the very
-// same s.UserID, so «Відповідальний менеджер» promised the client's account manager and delivered whoever keyed
-// the document. Only the honest «Ввів документ» entry is offered; saved templates carrying the old one are
-// remapped rather than dropped, because the server behaviour is identical.
-//
-// The two sets are deliberately kept rather than deleted: they are the mechanism by which a saved template stops
-// asking for something the engine cannot answer, and the next option to be withdrawn belongs in them.
-const UNSUPPORTED_GROUPING_TYPES = new Set<number>([])
-
-const UNSUPPORTED_FILTER_FIELD_TYPES = new Set<number>([])
-
-const GROUPING_TYPE_REPLACEMENTS = new Map<number, number>([
-  [REPORT_GROUPING_TYPES.customerManager, REPORT_GROUPING_TYPES.saleDocumentManagerInput],
-])
-
-const FILTER_FIELD_TYPE_REPLACEMENTS = new Map<number, number>([
-  [REPORT_FILTER_FIELD_TYPES.customerManager, REPORT_FILTER_FIELD_TYPES.saleDocumentManagerInput],
-])
-
 export const REPORT_FILTER_FIELD_GROUPS: ReportFilterFieldGroup[] = [
   {
     type: REPORT_FILTER_FIELD_TYPES.organization,
@@ -364,7 +330,7 @@ const REPORT_FIELD_LABELS: Record<string, string> = {
 
 const GROSS_PROFIT_MEASURE_GROUPS: Readonly<Record<string, string>> = { SalesValue: 'Продажі', Markup: 'Валовий прибуток' }
 
-export function grossProfitMeasureGroupLabel(dataSource: number, name: string): string | undefined {
+function grossProfitMeasureGroupLabel(dataSource: number, name: string): string | undefined {
   return dataSource === 35 || dataSource === 38 ? GROSS_PROFIT_MEASURE_GROUPS[name] : undefined
 }
 
@@ -467,101 +433,4 @@ export function getReportFieldLabel(key?: string): string {
   }
 
   return REPORT_FIELD_LABELS[key] || key
-}
-
-const GROUPING_ITEMS_BY_TYPE = new Map<number, ReportGroupingItem>(
-  REPORT_GROUPING_GROUPS.flatMap((group) => group.items.map((item) => [item.type, item] as const)),
-)
-
-const FILTER_FIELDS_BY_TYPE = new Map<number, ReportFilterField>(
-  REPORT_FILTER_FIELD_GROUPS.flatMap((group) =>
-    group.children.map((child) =>
-      [child.type, { Name: child.label, Type: child.type, ParentType: group.label }] as const,
-    ),
-  ),
-)
-
-const SUPPORTED_MEASUREMENT_TYPES = new Set<number>(
-  createDefaultMeasurementGroups().flatMap((group) => group.SubList.map((item) => item.Type)),
-)
-
-export type SanitizedReportTemplate = {
-  data: ReportRequestBody
-  removedCount: number
-}
-
-// Templates live in localStorage and predate the withdrawal of the options above, so a saved one can still ask for
-// a grouping the server projects as NULL, a condition it silently drops or a measure it hardcodes to zero. Rebuild
-// the payload out of what the engine actually honours before it reaches the form — remapping where the withdrawn
-// option had an exact equivalent, dropping it otherwise, so the report never claims more than it did.
-export function sanitizeReportTemplate(data: ReportRequestBody): SanitizedReportTemplate {
-  let removedCount = 0
-
-  function sanitizeGroupings(items: ReportGroupingItem[]): ReportGroupingItem[] {
-    return items.reduce<ReportGroupingItem[]>((acc, item) => {
-      if (UNSUPPORTED_GROUPING_TYPES.has(item.type)) {
-        removedCount += 1
-
-        return acc
-      }
-
-      // Resolved against the current option list rather than trusted as stored. A template saved while an option
-      // was withheld carries whatever key and label it had then — a bare «SaleReturnDocument» where the picker
-      // now says «Повернення від клієнта» — and the report screen labels its axes from what it is handed. The
-      // TYPE is the identity; the caption comes from the option list. An unknown type is passed through
-      // untouched, so a template is never quietly emptied by a console that has simply not heard of a grouping.
-      const canonicalType = GROUPING_TYPE_REPLACEMENTS.get(item.type) ?? item.type
-
-      acc.push(GROUPING_ITEMS_BY_TYPE.get(canonicalType) ?? item)
-
-      return acc
-    }, [])
-  }
-
-  const selections = (data.selections ?? []).reduce<ReportSelection[]>((acc, selection) => {
-    const fieldType = selection.SelectedField?.Type
-    const conditionType = selection.FilterCondition?.Type
-
-    if (fieldType === undefined || UNSUPPORTED_FILTER_FIELD_TYPES.has(fieldType)) {
-      removedCount += 1
-
-      return acc
-    }
-
-    if (conditionType === undefined || UNSUPPORTED_CONDITION_TYPES.has(conditionType)) {
-      removedCount += 1
-
-      return acc
-    }
-
-    const canonicalFieldType = FILTER_FIELD_TYPE_REPLACEMENTS.get(fieldType) ?? fieldType
-    const canonicalField = FILTER_FIELDS_BY_TYPE.get(canonicalFieldType)
-
-    acc.push(canonicalField ? { ...selection, SelectedField: canonicalField } : selection)
-
-    return acc
-  }, [])
-
-  const measurements = (data.sorted?.Measurements ?? []).filter((measurement) => {
-    if (SUPPORTED_MEASUREMENT_TYPES.has(measurement.Type)) {
-      return true
-    }
-
-    removedCount += 1
-
-    return false
-  })
-
-  return {
-    data: {
-      ...data,
-      selections,
-      sorted: {
-        Col: sanitizeGroupings(data.sorted?.Col ?? []),
-        Measurements: measurements,
-        Row: sanitizeGroupings(data.sorted?.Row ?? []),
-      },
-    },
-    removedCount,
-  }
 }

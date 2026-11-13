@@ -5,7 +5,7 @@ import type { CustomerGroupDirectoryPickerProps } from './CustomerGroupDirectory
 import { ReportValuePicker } from './ReportValuePicker'
 import { useReportValueSearch } from './reportValueSearch'
 import { useCustomerGroupTopPage } from './useCustomerGroupTopPage'
-export const CUSTOMER_GROUP_TOP_FAILURE = 'Не вдалося завантажити TOP. Збережений відбір залишено без змін.'
+const CUSTOMER_GROUP_TOP_FAILURE = 'Не вдалося завантажити TOP. Збережений відбір залишено без змін.'
 export function CustomerGroupTopPicker({selection,label,disabled,error,onChange}:CustomerGroupDirectoryPickerProps){
   const {search,setSearch,pending}=useReportValueSearch()
   const queryError=search.length>120?'Введіть не більше 120 символів.':undefined

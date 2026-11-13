@@ -10,7 +10,7 @@ import { deskDownloadName } from '../../data/workbookDesk'
 import { BLOCKED_REASON_ID } from '../workbook-desk/WorkbookActionBar'
 import './constructor-desk.css'
 
-export type ConstructorDeskPeriod = {
+type ConstructorDeskPeriod = {
   from: string
   to: string
   minDate: string

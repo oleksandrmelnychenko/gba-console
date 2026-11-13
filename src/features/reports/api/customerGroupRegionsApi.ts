@@ -1,5 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-export type CustomerGroupRegionOption = { Id: number; Name: string }
+type CustomerGroupRegionOption = { Id: number; Name: string }
 /** Parent Region IDs only. RegionCodes are a different field and never become choices here. */
 export async function getCustomerGroupRegions(signal?: AbortSignal): Promise<CustomerGroupRegionOption[]> {
   const result = await apiRequest<unknown>('/regions/all/codes', { signal })

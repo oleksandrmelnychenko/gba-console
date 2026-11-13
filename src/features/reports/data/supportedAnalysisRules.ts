@@ -5,7 +5,7 @@ import { readOrderingCapabilities, requestOrdering } from './reportOrdering'
 import { readThresholdCapabilities, requestThreshold } from './reportThreshold'
 import { readTopGroupsCapabilities, requestTopGroups } from './reportTopGroups'
 
-export type SupportedAnalysisRules = { topGroups: boolean; threshold: boolean; abc: boolean; ordering: boolean; filterExpression: boolean }
+type SupportedAnalysisRules = { topGroups: boolean; threshold: boolean; abc: boolean; ordering: boolean; filterExpression: boolean }
 
 export function supportedAnalysisRules(data: ReportRequestBody, dataset?: ReportDataset, filterDataset?: ReportDataset): SupportedAnalysisRules {
   return {

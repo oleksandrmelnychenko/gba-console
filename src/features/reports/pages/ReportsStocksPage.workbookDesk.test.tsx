@@ -1,3 +1,6 @@
+import { deskPeriodText } from '../data/workbookDesk'
+import { WORKBOOK_FILES } from '../testing/workbookFiles'
+import { bug1274WorkbookPeriod } from '../data/bug1274WorkbookGuide'
 import { saveSession } from '../../../shared/auth/session'
 import { currentFinancialDataset, currentFinancialRequest } from '../data/currentFinancialAxes.test-fixtures'
 import { financialDataset } from '../data/financialAxes.test-fixtures'
@@ -23,9 +26,7 @@ import { settlementModeDataset } from '../data/settlementReadMode.test-fixtures'
 import { currentVparivanieDataset, currentVparivanieRequest } from '../data/currentVparivanie.test-fixtures'
 import { previousKyivDay } from '../data/cashPeriod'
 import type { NativeReportPreview } from '../data/nativeReportPreview'
-import { deskPeriodText, workbookDefaultPeriod } from '../data/workbookDesk'
 import { reportWorkspaceDraftKey } from '../data/reportWorkspaceDraft'
-import { WORKBOOK_FILES } from '../testing/workbookFiles'
 import { findOpenedWorkbook } from '../testing/workbookDesk'
 import { ReportsStocksPage } from './ReportsStocksPage'
 
@@ -62,10 +63,6 @@ beforeEach(() => {
 
 const page = () => <MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>
 const dateInput = readReportDateInput
-const workbookDataSources: Readonly<Record<string, number>> = {
-  'ВП.xls': 35, 'ВП по постачальниках.xls': 38, 'Впарювання.xls': 39,
-  'Ведомость по денежным средствам.xls': 40, 'Взаємороз всі.xls': 41, 'ДБіторка.xls': 41,
-}
 
 async function findOpenedDayWorkbook() {
   await findOpenedWorkbook('ВП.xls')
@@ -80,8 +77,9 @@ async function openDayWorkbook() {
 it('opens every workbook from the switcher on its default period', async () => {
   render(page())
   const switcher = await findOpenedWorkbook('ВП.xls')
+  const today = formatKyivBusinessDate()
   for (const file of Object.values(WORKBOOK_FILES)) {
-    const period = workbookDefaultPeriod(file, workbookDataSources[file], formatKyivBusinessDate())!
+    const period = bug1274WorkbookPeriod(file, today) ?? { from: previousKyivDay(today), to: previousKyivDay(today) }
     fireEvent.click(within(switcher).getByRole('button', { name: `Відкрити ${workbookDisplayFileName(file)}` }))
     await findOpenedWorkbook(file)
     await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/i)).toBeNull())

@@ -1,11 +1,9 @@
 import { ABC_CLASS_GROUPING, readAbcClassification, requestAbcClassification } from './reportAbcClassification'
 import type { ReportDataset, ReportHideZero, ReportHideZeroCapabilities, ReportRequestBody } from '../types'
 
-export const HIDE_ZERO_DATA_SOURCE = 11
+const HIDE_ZERO_DATA_SOURCE = 11
 export const HIDE_ZERO_GROUPING = 42
 export const HIDE_ZERO_MEASURE = 24
-export const HIDE_ZERO_ALL_HIDDEN_STATE = 'Стан звіту: усі підтверджені нульові записи приховано'
-export const HIDE_ZERO_NOTE_PREFIXES = ['Приховування нулів:', 'Покриття приховування нулів:', 'Видимі рядки та ресурси:', 'Підсумки при приховуванні нулів:'] as const
 const record = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value)
 const only = (value: unknown, id: number) => Array.isArray(value) && value.length === 1 && value[0] === id
 

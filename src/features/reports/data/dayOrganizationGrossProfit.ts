@@ -12,7 +12,7 @@ import { dayOrganizationBasisConfigurationError, requestDayOrganizationBasis } f
 import { productClassification, requestProductClassification, requestSourceOrganizations,
   requestSourceBuyerSubtree, sourceOrganizations, sourceBuyerSubtree } from './nativeExactFilters'
 
-export const DAY_ORGANIZATION_GROSS_PROFIT_SOURCE = 35
+const DAY_ORGANIZATION_GROSS_PROFIT_SOURCE = 35
 export const DAY_ORGANIZATION_GROSS_PROFIT_TITLE = 'Валовий прибуток GBA за днем та організацією'
 // Exact saved Fenix setting 0x1893a68ef4db1647a85309ae4c2ff7ce: "Товар", excluding services.
 export const DAY_ORGANIZATION_GOODS_KIND_ID = '8AB2005056C0000811DEF956DA4CFDA0'

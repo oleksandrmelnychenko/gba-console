@@ -4,9 +4,9 @@ export type WorkbookSelection = { version: 1 | 2 | 3 | 4; additionalFields: numb
 export type WorkbookField = { type: number; caption: string; placement: 'inline' | 'column' | 'retainedSetting' }
 export type WorkbookCapability = { version: 1 | 2 | 3 | 4; additionalFields: WorkbookField[]; orderings: string[]
   attributeKind?: 'currentProductScalar' | 'currentProductFields'; requiredRowGroupings?: number[]; supportedReportProfiles?: string[] }
-export const currentProductFields = [[2, 'column'], [3, 'column'], [65, 'column'], [66, 'column']] as const
-export const currentProductGroupFields = [...currentProductFields, [67, 'column'] as const]
-export const currentProductColumnFields = [...currentProductGroupFields, ...[68, 69, 70, 73, 74].map(type => [type, 'column'] as const)]
+const currentProductFields = [[2, 'column'], [3, 'column'], [65, 'column'], [66, 'column']] as const
+const currentProductGroupFields = [...currentProductFields, [67, 'column'] as const]
+const currentProductColumnFields = [...currentProductGroupFields, ...[68, 69, 70, 73, 74].map(type => [type, 'column'] as const)]
 export const productFieldsForVersion = (version: unknown) => version === 4 ? currentProductColumnFields : version === 3 ? currentProductGroupFields : currentProductFields
 export const isCurrentProductVersion = (version: unknown): version is 2 | 3 | 4 => version === 2 || version === 3 || version === 4
 export const isSalesProductProfile = (request: ReportRequestBody) => request.dataSource === 2

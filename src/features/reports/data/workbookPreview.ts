@@ -13,7 +13,7 @@ import { requestWorkbookPresentation, workbookConfigurationError } from './workb
 
 export type WorkbookReference = { id: string; netUid: string; caption: string | null }
 export type WorkbookAttribute = { type: number; state: 'known' | 'mixed' | 'unavailable' | 'null'; values: string[]; inputSha256: string | null; references?: WorkbookReference[] }
-export type WorkbookCurrency = { id: string; netUid: string; name: string | null; code: string | null; available: boolean }
+type WorkbookCurrency = { id: string; netUid: string; name: string | null; code: string | null; available: boolean }
 export type WorkbookRow = { rowSourceIndex: number; rowKeySha256: string; values: WorkbookAttribute[]; currencyWitnesses: WorkbookCurrency[] }
 export type WorkbookPreview = { version: 1 | 2 | 3 | 4; resultSha256: string; selection: WorkbookSelection; fields: WorkbookField[]; rows: WorkbookRow[] }
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)

@@ -5,8 +5,8 @@ import type { ReportDataset, ReportDatasetField, ReportRequestBody } from '../ty
 export type SalesConstructorProfile = 'sales' | 'grossProfit'
 export const SALES_CONSTRUCTOR_WORKBOOK = 'gba:sales-constructor:v1'
 export const GROSS_PROFIT_CONSTRUCTOR_WORKBOOK = 'gba:gross-profit-constructor:v1'
-export const SALES_CONSTRUCTOR_MEASURES = [0, 2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15, 115, 116] as const
-export const GROSS_PROFIT_CONSTRUCTOR_MEASURES = [0, 2, 3, 4, 6, 7, 8, 10, 14, 15, 115, 116] as const
+const SALES_CONSTRUCTOR_MEASURES = [0, 2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15, 115, 116] as const
+const GROSS_PROFIT_CONSTRUCTOR_MEASURES = [0, 2, 3, 4, 6, 7, 8, 10, 14, 15, 115, 116] as const
 const HISTORICAL_PRICE_TYPE_REQUIRED = 'Відбір «Тип ціни» потребує збереженого історичного типу документа. Поточний тип договору його не замінює. Вимкніть або вилучіть цей відбір.'
 export const salesConstructorTitle = (profile: SalesConstructorProfile) => profile === 'sales' ? 'Звіт по продажам' : 'Валовий прибуток'
 export const salesConstructorWorkbook = (profile: SalesConstructorProfile) => profile === 'sales' ? SALES_CONSTRUCTOR_WORKBOOK : GROSS_PROFIT_CONSTRUCTOR_WORKBOOK

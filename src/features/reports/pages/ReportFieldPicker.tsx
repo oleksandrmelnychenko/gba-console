@@ -4,7 +4,7 @@ import { Search } from 'lucide-react'
 import { TreeView, type TreeViewNode } from '../../../shared/ui/tree/TreeView'
 import { ReportModal } from './ReportModal'
 
-export type ReportFieldPickerOption = { value: string; label: string; path: string[]; disabled?: boolean; reason?: string | null }
+type ReportFieldPickerOption = { value: string; label: string; path: string[]; disabled?: boolean; reason?: string | null }
 export function ReportFieldPicker({ opened, title, options, onSelect, onSelectMany, onClose }: {
   opened: boolean; title: string; options: ReportFieldPickerOption[]; onSelect: (value: string) => void; onSelectMany?: (values: string[]) => void; onClose: () => void
 }) {

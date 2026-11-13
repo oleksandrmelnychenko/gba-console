@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { ActionIcon, Button, Text, Tooltip } from '@mantine/core'
 import { ChevronDown, ChevronUp, Copy, Pencil, Plus, Trash2 } from 'lucide-react'
 
-export type ConstructorFilterRowContext = { index: number; selected: boolean; onSelect: () => void }
+type ConstructorFilterRowContext = { index: number; selected: boolean; onSelect: () => void }
 
 type Props = {
   count: number

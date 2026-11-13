@@ -1,4 +1,4 @@
-import type { LegacyOneCTurnoverFilters, OneCTurnoverScopeSummary } from '../types'
+import type { OneCTurnoverScopeSummary } from '../types'
 export const EXACT_ONE_C_BUYER_ROOT_ID = '8AB2005056C0000811DEFC4535BB4D40'
 
 // Same exact Fenix identities as server SyncOrganizationScope.FenixBaseOrganizations.
@@ -9,11 +9,7 @@ export const ORGANIZATION_ONLY_TURNOVER_IDS = [
   '94B4005056C0000811DF1A0C73BC9A12',
 ] as const
 
-export function isLegacyTurnoverScope(scope: OneCTurnoverScopeSummary): scope is OneCTurnoverScopeSummary & { Filters: LegacyOneCTurnoverFilters } {
-  return scope.Filters.ScopeVersion == null
-}
-
-export function isOneCTurnoverScope(value: unknown): value is OneCTurnoverScopeSummary {
+function isOneCTurnoverScope(value: unknown): value is OneCTurnoverScopeSummary {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false
   const item = value as Record<string, unknown>
   const filters = item.Filters as Record<string, unknown> | undefined
@@ -45,11 +41,6 @@ export function isOrganizationOnlyTurnoverScope(value: unknown): value is OneCTu
 function validUtc(value: unknown): value is string {
   return typeof value === 'string' && /Z$/.test(value) && Number.isFinite(Date.parse(value))
 }
-
-export const ORGANIZATION_ONLY_TURNOVER_CHOICE = {
-  reportId: 'builtin:ВаловаяПрибыль', world: 'fenix',
-  sourceId: '65fb1537-c992-4962-9f97-5d9f96b9a034', dataSource: 1,
-} as const
 
 function validPublishedDays(first: unknown, last: unknown, count: unknown): boolean {
   const validDay = (value: unknown): value is string => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)

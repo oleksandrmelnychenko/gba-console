@@ -15,7 +15,7 @@ export type ProductLookupCapability = {
   paging: 'offset'
   maximumPageSize: 50
 }
-export type ProductLookupBinding = { kind: 'report'; dataSource: ReportProductLookupSource } | { kind: 'sales'; dataSource: 2 }
+type ProductLookupBinding = { kind: 'report'; dataSource: ReportProductLookupSource } | { kind: 'sales'; dataSource: 2 }
 const keys = 'dataSource,exactIdParameter,fieldTypes,identityKind,maximumPageSize,paging,periodRequired,supportsLocalizedNameSearch,supportsNameAndArticleSearch,version'
 export function isReportProductLookupSource(value: unknown): value is ReportProductLookupSource {
   return typeof value === 'number' && REPORT_PRODUCT_LOOKUP_SOURCES.includes(value as ReportProductLookupSource)

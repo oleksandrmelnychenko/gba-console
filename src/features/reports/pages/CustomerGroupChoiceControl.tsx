@@ -6,7 +6,7 @@ import { REPORT_VALUE_EXACT_ID_PLACEHOLDER } from './reportValueSearch'
 import type { CustomerGroupExactChoiceField } from '../data/customerGroupSelections'
 import type { useCustomerGroupChoiceOptions } from './useCustomerGroupChoiceOptions'
 const EXACT_ID_FIELDS = new Set<number>([1, 4, 9, 15, 16, 21])
-export const CUSTOMER_GROUP_CHOICE_FAILURE = 'Не вдалося завантажити значення. Збережений відбір залишено без змін.'
+const CUSTOMER_GROUP_CHOICE_FAILURE = 'Не вдалося завантажити значення. Збережений відбір залишено без змін.'
 export function CustomerGroupChoiceControl({ selection, label, disabled, error, onChange, field, choices }: CustomerGroupDirectoryPickerProps & {
  field:CustomerGroupExactChoiceField;choices:ReturnType<typeof useCustomerGroupChoiceOptions>
 }) {

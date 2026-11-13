@@ -1,5 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-export type CustomerGroupOrganizationOption = { Id: number; Name: string }
+type CustomerGroupOrganizationOption = { Id: number; Name: string }
 /** Same authenticated local GBA catalogue, with a strict identity boundary for source44 only. */
 export async function getCustomerGroupOrganizations(signal?: AbortSignal): Promise<CustomerGroupOrganizationOption[]> {
   const result = await apiRequest<unknown>('/organizations/all', { signal })

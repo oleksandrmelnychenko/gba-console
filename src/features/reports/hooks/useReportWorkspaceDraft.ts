@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 import { decodeReportWorkspaceDraft, encodeReportWorkspaceDraft, encodeReportWorkspaceSnapshot, reportWorkspaceDraftKey,
   type ReportWorkspaceDraft, type ReportWorkspaceSnapshot, type WorkspaceDraftFailure } from '../data/reportWorkspaceDraft'
 
-export type WorkspaceDraftStatus = 'idle' | 'saved' | 'unavailable' | 'invalid' | 'too-large'
+type WorkspaceDraftStatus = 'idle' | 'saved' | 'unavailable' | 'invalid' | 'too-large'
 type Recovery = 'loading' | 'none' | 'pending' | 'blocked'
 type State = {
   scope: object; ownerId: string | null; enabled: boolean; recovery: Recovery
@@ -12,7 +12,7 @@ type State = {
 }
 type Options = { ownerId: string | null; enabled: boolean; ready: boolean; snapshot: ReportWorkspaceSnapshot; backgroundRecovery?: boolean }
 type Apply = (snapshot: ReportWorkspaceSnapshot) => boolean
-export type ReportWorkspaceDraftRecovery = {
+type ReportWorkspaceDraftRecovery = {
   recovery: Recovery; pendingSnapshot: ReportWorkspaceSnapshot | null; previousSnapshot: ReportWorkspaceSnapshot | null
   status: WorkspaceDraftStatus; savedAt: string | null; message: string | null
   restore: (apply: Apply) => boolean; undo: (apply: Apply) => boolean

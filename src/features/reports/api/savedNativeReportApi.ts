@@ -14,7 +14,7 @@ export type SavedNativeReportTarget = {
 }
 export type SavedNativeReportBinding = { id: string; revision: number; definitionSha256: string }
 export type SavedNativeReportResult = { result: ReportResult; binding: SavedNativeReportBinding; preview?: NativeReportPreview }
-export type SavedNativeReportContext = { session: ApiStreamSession; signal: AbortSignal }
+type SavedNativeReportContext = { session: ApiStreamSession; signal: AbortSignal }
 
 const guid = /^[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}$/i
 const sha256 = /^[a-f\d]{64}$/i

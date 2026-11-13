@@ -64,7 +64,7 @@ export type ReportSelection = {
   Values: ReportSelectedValue[]
 }
 
-export type ReportFilterFieldOption = {
+type ReportFilterFieldOption = {
   label: string
   type: number
 }
@@ -408,7 +408,7 @@ export type LegacyOneCTurnoverFilters = {
   BuyerRootId?: string | null
 }
 
-export type OrganizationOnlyTurnoverFilters = {
+type OrganizationOnlyTurnoverFilters = {
   ScopeVersion: 3
   OrganizationIds: string[]
   ProductKindId?: null
@@ -476,7 +476,7 @@ export type ReportTemplate = {
 }
 
 export type ReportMigrationStatus = 'captured' | 'native_partial' | 'parity_verified'
-export type ReportDependencyStatus = 'unknown' | 'unmapped' | 'partial' | 'available'
+type ReportDependencyStatus = 'unknown' | 'unmapped' | 'partial' | 'available'
 export type ReportSourceMigration = {
   CaptureStatus: 'metadata_only' | 'assets_captured' | 'incomplete' | 'unknown'
   SourceRevisionSha256: string | null
@@ -493,71 +493,5 @@ export type ReportSourceMigration = {
     NativeRevision: string
   } | null
 }
-export type ReportMigrationSummary = {
-  CatalogueEntries: number
-  SourceImplementations: number
-  BuiltinImplementations: number
-  ByStatus: { Unassessed: number; Captured: number; NativePartial: number; ParityVerified: number }
-  FullyVerifiedEntries: number
-}
-export type ReportCatalogueMigration = {
-  Version: string
-  GeneratedAtUtc: string
-  Summary: ReportMigrationSummary
-}
-export type ReportCatalogueSource = {
-  World: string
-  SourceId: string
-  DefinitionSha256: string | null
-  Attributes: string[]
-  Migration?: ReportSourceMigration
-}
-export type ReportCatalogueEntry = {
-  Id: string
-  Name: string
-  Title: string
-  Kind: string
-  Sources: ReportCatalogueSource[]
-}
-export type ReportCatalogue = {
-  CapturedOn: string
-  Reports: ReportCatalogueEntry[]
-  Presentations: Array<{ Id: string; Title: string }>
-  Migration?: ReportCatalogueMigration
-}
 
 export type SpreadsheetCellValue = boolean | number | string | null
-
-// Our own report engine writes a pivot, not a table: «Підсумок: …» closes every group and «Загальний
-// підсумок» closes the sheet. Those rows carry the same measures as the data rows, so a viewer has to
-// tell them apart before it counts or sums anything.
-export type SpreadsheetRowKind = 'data' | 'subtotal' | 'total'
-
-export type SpreadsheetRow = {
-  cells: SpreadsheetCellValue[]
-  kind: SpreadsheetRowKind
-}
-
-// The engine now writes the request into the file, above the table: the period, the groupings of both axes, the
-// measures, every filter that was applied — and, when a measure could not be answered, the «немає даних» line that
-// says how many cells were left empty and why. That block is the only thing in a saved workbook that says which
-// question it answers, so the viewer reads it, shows it, and carries it into its own export rather than skipping
-// past it to the numbers.
-export type SpreadsheetReportHeader = {
-  columnGroupings: string[]
-  // every line of the block, in file order, exactly as the file carries it
-  lines: string[]
-  rowGroupings: string[]
-  // the lines a reader must not scroll past: a filter that was not applied, a measure with no data behind it
-  warnings: string[]
-}
-
-export type SpreadsheetSheet = {
-  presentationState?: 'all_confirmed_zero_hidden'
-  columns: string[]
-  // null for anything that is not one of our report engine's files — a plain CSV, or a workbook produced before
-  // the engine started recording its request.
-  header: SpreadsheetReportHeader | null
-  name: string
-  rows: SpreadsheetRow[]
-}

@@ -59,7 +59,7 @@ function reportPreviewRowLimit(request: ReportRequestBody): number {
 /** Calculates one bounded on-screen page and file links from the same report run. */
 export const REPORT_JOB_DETACHED = 'report-job-detached'
 export type ReportJobProgress = { state: 'queued' | 'running'; elapsedSeconds: number; queuePosition: number }
-export type ReportPreviewOptions = { onProgress?: (progress: ReportJobProgress) => void; signal?: AbortSignal }
+type ReportPreviewOptions = { onProgress?: (progress: ReportJobProgress) => void; signal?: AbortSignal }
 
 export async function previewStockReport(body: ReportRequestBody, dataset?: ReportDataset, options: ReportPreviewOptions = {}): Promise<{ result: ReportResult; preview: NativeReportPreview }> {
   const request = prepareStockReportRequest(body, dataset)

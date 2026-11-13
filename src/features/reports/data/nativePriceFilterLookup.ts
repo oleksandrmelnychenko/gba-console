@@ -5,7 +5,7 @@ import { reportSelectionCardinalityError } from './reportOptions'
 
 export const NATIVE_PRICE_FILTER_FIELDS = [3, 4, 7, 8, 10, 12, 14, 15, 16, 21] as const
 export type NativePriceFilterField = typeof NATIVE_PRICE_FILTER_FIELDS[number]
-export type NativePriceFilterDescriptor = {
+type NativePriceFilterDescriptor = {
   fieldType: NativePriceFilterField
   identityKind: 'rawString' | 'positiveInt64String'
   exactParameter: 'exactValue' | 'exactId'

@@ -1,10 +1,10 @@
 import type { ReportDataset, ReportDatasetField, ReportEntity, ReportRequestBody, ReportSelectedValue } from '../types'
 import { usesCurrentFinancialAxes } from './currentFinancialAxes'
 
-export const FINANCIAL_BUYER_MANAGER_FILTER = 60
+const FINANCIAL_BUYER_MANAGER_FILTER = 60
 export const FINANCIAL_BUYER_MANAGER_LOOKUP = '/report/datasets/current-financial/buyer-managers/lookup'
 const conditions = [0, 1, 2, 4] as const
-export type FinancialBuyerManagerReference = { Id: string }
+type FinancialBuyerManagerReference = { Id: string }
 export type CurrentFinancialBuyerManagerFilter = {
   version: 1; requiredProfitReadMode: 0; requiredDayOrganizationBasis: 0
   field: ReportDatasetField; valueKind: 'buyerManagerRef'; conditions: number[]

@@ -11,8 +11,6 @@ import { previousKyivDay } from './cashPeriod'
 import { sourceCounterpartyGroupsConfigurationError } from './sourceCounterpartyGroups'
 import { isSettlementReadModeCapability, requestSettlementReadMode, settlementReadModeConfigurationError } from './settlementReadMode'
 
-export const SETTLEMENT_CURRENCY_TOTALS_RULE = 'Як в 1С: у формі «Організація → контрагент» суми договорів контрагента в різних валютах додаються в один рядок без перерахунку, форма з валютою розділяє рядки за валютою; підсумки організацій і загальний підсумок додають суми різних валют без перерахунку.'
-
 type JsonRecord = Record<string, unknown>
 const record = (value: unknown): value is JsonRecord => value !== null && typeof value === 'object' && !Array.isArray(value)
 const aliases = (value: object, key: string) => Object.keys(value).filter(name => name.toLowerCase() === key.toLowerCase())
@@ -21,15 +19,15 @@ const exact = (value: unknown, expected: readonly number[]) => Array.isArray(val
 const capabilityFields = ['Version', 'MaximumDays', 'CurrencyBasis', 'UsesCurrentNativeBuyerAgreements',
   'PreservesUnavailableValues', 'RequiresCommonSourceObservation', 'CurrentDaySupported', 'SourceWorlds',
   'RowLayouts', 'Measurements', 'Filters', 'FilterExpression', 'BuyerSubtree'] as const
-export const GROUPED_SETTLEMENT_LAYOUTS = [[4, 41, 76], [4, 76]] as const
+const GROUPED_SETTLEMENT_LAYOUTS = [[4, 41, 76], [4, 76]] as const
 export const SINGLE_SETTLEMENT_AXES = 'Організація → Валюта → Контрагент → Договір. Один точний договір і чотири показники у валюті взаєморозрахунків; структура фіксована.'
 export const CURRENCY_SETTLEMENT_AXES = 'Організація → Валюта → Контрагент, як у «Взаємороз всі.xls». Договори контрагента за вибраними відборами; чотири показники у валюті взаєморозрахунків: поч. залишок, надходження, видаток, кін. залишок.'
 export const DEBTOR_SETTLEMENT_AXES = 'Організація → Контрагент, як у «ДБіторка.xls». Договори контрагента за вибраними відборами; чотири показники: поч. залишок, надходження, видаток, кін. залишок. Суми договорів у різних валютах додаються в один рядок без перерахунку, як у 1С.'
-export const GROUPED_SETTLEMENT_FILTERS = [0, 6, 9, 30] as const
+const GROUPED_SETTLEMENT_FILTERS = [0, 6, 9, 30] as const
 export const GROUPED_SETTLEMENT_SUPPLIER_FILTERS = [0, 6, 9, 17, 18, 30] as const
-export const GROUPED_SETTLEMENT_MEASURES = [88, 89, 90, 91] as const
-export type GroupedSettlementPeriod = { Version: 1; SourceWorld: 'Fenix' | 'Amg'; CurrencyBasis: 'SettlementCurrency' }
-export type GroupedSettlementCapability = {
+const GROUPED_SETTLEMENT_MEASURES = [88, 89, 90, 91] as const
+type GroupedSettlementPeriod = { Version: 1; SourceWorld: 'Fenix' | 'Amg'; CurrencyBasis: 'SettlementCurrency' }
+type GroupedSettlementCapability = {
   Version: 1; MaximumDays: 31; CurrencyBasis: 'SettlementCurrency'; UsesCurrentNativeBuyerAgreements: true
   OriginalNormalMaximumMonths?: 120; OriginalNormalMinimumDate?: '2025-01-01'
   UsesCurrentNativeSupplierAgreements?: true

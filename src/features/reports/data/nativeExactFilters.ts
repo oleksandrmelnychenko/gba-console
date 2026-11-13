@@ -13,9 +13,9 @@ import type {
   ReportSourceBuyerSubtreeCapabilities,
 } from '../types'
 
-export const NATIVE_EXACT_FILTER_SOURCE = 2
-export const DAY_ORGANIZATION_EXACT_FILTER_SOURCE = 35
-export const SUPPLIER_GROSS_PROFIT_EXACT_FILTER_SOURCE = 38
+const NATIVE_EXACT_FILTER_SOURCE = 2
+const DAY_ORGANIZATION_EXACT_FILTER_SOURCE = 35
+const SUPPLIER_GROSS_PROFIT_EXACT_FILTER_SOURCE = 38
 export const FENIX_BUYERS_ROOT_ID = '8AB2005056C0000811DEFC4535BB4D40'
 const SOURCE_REFERENCE = /^[0-9a-f]{32}$/i
 const ZERO_REFERENCE = /^0{32}$/
@@ -29,7 +29,7 @@ const SERVICE_FIELDS = ['Version', 'IsService'] as const
 const SERVICE_CAPABILITY_FIELDS = ['Version', 'IsServiceValues', 'GoodsKind', 'Basis'] as const
 export const GOODS_KIND_ID = '8AB2005056C0000811DEF956DA4CFDA0'
 export const PRODUCT_CLASSIFICATION_RESAVE_ERROR = 'Шаблон містить відбір виду товару 1С. Відкрийте його у формі: відбір буде замінено на рівнозначний відбір GBA «Товар без послуг». Перегляньте налаштування й збережіть шаблон повторно.'
-export type ReportProductServiceFilter = { Version: 1; IsService: boolean }
+type ReportProductServiceFilter = { Version: 1; IsService: boolean }
 export const goodsWithoutServices = (): ReportProductServiceFilter => ({ Version: 1, IsService: false })
 
 type JsonRecord = Record<string, unknown>
@@ -144,7 +144,7 @@ export function sourceBuyerSubtree(value: unknown): ReportSourceBuyerSubtree | n
   return fields as ReportSourceBuyerSubtree
 }
 
-export function isProductClassificationCapability(value: unknown): value is ReportProductClassificationCapabilities {
+function isProductClassificationCapability(value: unknown): value is ReportProductClassificationCapabilities {
   const fields = exactFields(value, PRODUCT_CAPABILITY_FIELDS)
   return fields?.Version === 1 && fields.SourceWorld === 0 && fields.RequiresIsService === true
     && fields.RequiresProductKindId === true

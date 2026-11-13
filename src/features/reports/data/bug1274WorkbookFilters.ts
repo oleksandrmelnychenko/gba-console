@@ -54,9 +54,9 @@ export const SUPPLIER_WORKBOOK_AMG_NAMES: Readonly<Partial<Record<(typeof SUPPLI
   'Aymeks Ic ve Dis Tic. Ltd. Sti.': 'AYMEKS IC VE DIS TICARET LTD. STI.,Туреччина',
 }
 
-export const VPARIVANIE_WORKBOOK_GROUP = 'AL-KO'
-export const VPARIVANIE_WORKBOOK_CUSTOMER = 'АФРАКО ТЗОВ'
-export const VPARIVANIE_WORKBOOK_MANAGER = 'Крицький Олег Русланович'
+const VPARIVANIE_WORKBOOK_GROUP = 'AL-KO'
+const VPARIVANIE_WORKBOOK_CUSTOMER = 'АФРАКО ТЗОВ'
+const VPARIVANIE_WORKBOOK_MANAGER = 'Крицький Олег Русланович'
 
 export const SUPPLIER_WORKBOOK_FILTERS_NOTICE = `Застосовано відбори книги: організації ${SUPPLIER_WORKBOOK_ORGANIZATIONS.join(', ')} (ФОП Пархоменко не синхронізується в GBA), ${SUPPLIER_WORKBOOK_SUPPLIERS.length} постачальників зі збереженого налаштування 1С «OV» з усіма їхніми картками Fenix і AMG та група «Покупці» Fenix. Їх можна змінити у формі.`
 export const VPARIVANIE_WORKBOOK_FILTERS_NOTICE = `Застосовано відбори книги: група товару ${VPARIVANIE_WORKBOOK_GROUP}, покупець ${VPARIVANIE_WORKBOOK_CUSTOMER}, основний менеджер покупця ${VPARIVANIE_WORKBOOK_MANAGER}. Їх можна змінити у формі.`

@@ -40,7 +40,7 @@ import { cloneSettlementReadModeAliases } from './settlementReadMode'
 import { cloneCashReadModeAliases } from './cashReadMode'
 import { isProfitReadModeCapability, withDefaultProfitReadMode } from './profitReadMode'
 
-export type DatasetReportPresetId = SalesReportPresetId | 'quantities-by-unit' | 'supplier-registrar-warehouse' | NativeReportPresetId
+type DatasetReportPresetId = SalesReportPresetId | 'quantities-by-unit' | 'supplier-registrar-warehouse' | NativeReportPresetId
 type DatasetReportPreset = { id: DatasetReportPresetId; name: string; description: string }
 const QUANTITY_BY_UNIT_PRESET: DatasetReportPreset = {
   id: 'quantities-by-unit', name: 'Кількість за одиницями',

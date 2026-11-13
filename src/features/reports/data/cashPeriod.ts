@@ -5,27 +5,18 @@ import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { requestCashReadMode } from './cashReadMode'
 import { originalNormalPeriodError } from './originalNormalPeriod'
 
-export const CASH_PERIOD_SOURCE = 40
+const CASH_PERIOD_SOURCE = 40
 export const CASH_PERIOD_TITLE = 'Кошти: залишки та рух за період'
 export const CASH_PERIOD_ROWS = [43, 40, 42, 41] as const
 export const CASH_PERIOD_MEASURES = [84, 85, 86, 87] as const
-export const CASH_PERIOD_MANAGEMENT_MEASURES = [92, 93, 94, 95] as const
+const CASH_PERIOD_MANAGEMENT_MEASURES = [92, 93, 94, 95] as const
 export const CASH_PERIOD_ALL_MEASURES = [...CASH_PERIOD_MEASURES, ...CASH_PERIOD_MANAGEMENT_MEASURES] as const
 
-export type CashPeriodScope = {
+type CashPeriodScope = {
   CurrencyRegisterId: string
   CurrencyRegisterNetUid: string
 } & ({ Version: 1; CurrencyBasis: 'AccountCurrency' }
   | { Version: 2; CurrencyBasis: 'AccountAndManagementCurrency' })
-
-export type CashPeriodLeg = {
-  CurrencyRegisterId: string
-  CurrencyRegisterNetUid: string
-  AccountName: string
-  CurrencyName: string
-  CurrencyCode: string
-  OrganizationName: string
-}
 
 const object = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -33,18 +24,18 @@ const exact = (value: unknown, expected: readonly number[]) => Array.isArray(val
   && value.length === expected.length && value.every((item, index) => item === expected[index])
 const sortedKeys = (value: Record<string, unknown>) => Object.keys(value).sort().join(',')
 const maxLong = 9223372036854775807n
-export function cashPeriodExactId(value: unknown): string | null {
+function cashPeriodExactId(value: unknown): string | null {
   if (typeof value !== 'string' || !/^[1-9]\d{0,18}$/.test(value)) return null
   return BigInt(value) <= maxLong ? value : null
 }
 
-export function cashPeriodExactGuid(value: unknown): string | null {
+function cashPeriodExactGuid(value: unknown): string | null {
   if (typeof value !== 'string' || !/^[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}$/i.test(value)
     || /^0{8}-(?:0{4}-){3}0{12}$/.test(value)) return null
   return value.toLowerCase()
 }
 
-export function readCashPeriodScope(value: unknown): CashPeriodScope | null {
+function readCashPeriodScope(value: unknown): CashPeriodScope | null {
   if (!object(value) || sortedKeys(value) !== 'CurrencyBasis,CurrencyRegisterId,CurrencyRegisterNetUid,Version'
     || !((value.Version === 1 && value.CurrencyBasis === 'AccountCurrency')
       || (value.Version === 2 && value.CurrencyBasis === 'AccountAndManagementCurrency'))) return null
@@ -56,21 +47,10 @@ export function readCashPeriodScope(value: unknown): CashPeriodScope | null {
     : { Version: 1, CurrencyRegisterId: id, CurrencyRegisterNetUid: guid, CurrencyBasis: 'AccountCurrency' }
 }
 
-export const cashPeriodMeasurements = (scope: CashPeriodScope | null | undefined): readonly number[] =>
+const cashPeriodMeasurements = (scope: CashPeriodScope | null | undefined): readonly number[] =>
   scope?.Version === 2 ? CASH_PERIOD_ALL_MEASURES : CASH_PERIOD_MEASURES
 
-export function readCashPeriodLeg(value: unknown): CashPeriodLeg | null {
-  if (!object(value) || sortedKeys(value) !== 'AccountName,CurrencyCode,CurrencyName,CurrencyRegisterId,CurrencyRegisterNetUid,OrganizationName') return null
-  const id = cashPeriodExactId(value.CurrencyRegisterId)
-  const guid = cashPeriodExactGuid(value.CurrencyRegisterNetUid)
-  if (!id || !guid || !['AccountName', 'CurrencyName', 'CurrencyCode', 'OrganizationName'].every(key =>
-    typeof value[key] === 'string') || !/^\d{3}$/.test(value.CurrencyCode as string)) return null
-  return { CurrencyRegisterId: id, CurrencyRegisterNetUid: guid,
-    AccountName: value.AccountName as string, CurrencyName: value.CurrencyName as string,
-    CurrencyCode: value.CurrencyCode as string, OrganizationName: value.OrganizationName as string }
-}
-
-export function isCashPeriodCapability(value: unknown): boolean {
+function isCashPeriodCapability(value: unknown): boolean {
   return object(value) && value.MaximumDays === 31 && value.PeriodCalendar === 'Europe/Kyiv'
     && value.RequiresCurrencyRegisterNetUid === true
     && value.RequiresOneCompleteClosingDayGeneration === true

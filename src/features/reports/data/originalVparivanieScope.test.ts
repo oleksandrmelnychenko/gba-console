@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { currentVparivanieConfigurationError } from './currentVparivanie'
 import { currentVparivanieDataset, exactSelection } from './currentVparivanie.test-fixtures'
-import { matrixCapability, matrixFixture, matrixWire } from '../testing/originalVparivanieFixtures'
-import { matrixBindingRequest, matrixScopeAccepted, normalizeMatrixScopeBinding, normalizeScopedMatrixResult, originalMatrixScope } from './originalVparivanieScope'
+import { originalMatrixScope } from './originalVparivanieScope'
 
-import { originalScopeBinding, originalScopeRequest, scopedMatrixFixture } from '../testing/originalVparivanieScopeFixtures'
+import { originalScopeRequest } from '../testing/originalVparivanieScopeFixtures'
 
 describe('original matrix exact scope admission', () => {
   it('derives the full saved period and local group without interpreting the ID as a Source reference', () => {
@@ -35,34 +34,5 @@ describe('original matrix exact scope admission', () => {
       expect(() => originalMatrixScope(request)).toThrow()
       expect(currentVparivanieConfigurationError(request, undefined, 'workspace')).toMatch(/366/)
     }
-  })
-  it('binds Source identity, full period, local group and the canonical normal reference', () => {
-    const binding = originalScopeBinding(), scope = originalMatrixScope(originalScopeRequest())
-    expect(normalizeMatrixScopeBinding(binding, matrixCapability(), scope)).toEqual(binding)
-    for (const patch of [{ GroupId: 3570 }, { Through: '2026-10-08' }, { World: 'amg' }, { GroupReference: '0'.repeat(32) },
-      { SchemaId: matrixWire().SourceId }, { AcceptanceProofSha256: null }])
-      expect(() => normalizeMatrixScopeBinding({ ...binding, ...patch }, matrixCapability(), scope)).toThrow()
-    expect(Object.keys(matrixBindingRequest(binding))).not.toContain('AcceptanceProofSha256')
-  })
-  it('admits only the current exact input witness while leaving global parity flags false', () => {
-    const binding = originalScopeBinding(), result = normalizeScopedMatrixResult(scopedMatrixFixture(), binding)
-    expect(matrixScopeAccepted(result)).toBe(true)
-    expect(result.SourceParityVerified).toBe(false); expect(result.OriginalFullTaskAccepted).toBe(false)
-    for (const patch of [{ InputWitnessSha256: 'c'.repeat(64) }, { AcceptanceProofSha256: 'c'.repeat(64) },
-      { AcceptedInputWitnessSha256: 'c'.repeat(64) }, { GroupCaption: 'Інша група' }])
-      expect(() => normalizeScopedMatrixResult({ ...result, ...patch }, binding)).toThrow()
-    const changed = { ...result, ExactScopeAccepted: false, InputWitnessSha256: 'c'.repeat(64) }
-    expect(matrixScopeAccepted(normalizeScopedMatrixResult(changed, binding))).toBe(false)
-    expect(matrixScopeAccepted({ ...matrixFixture(), ExactScopeAccepted: true })).toBe(false)
-  })
-  it('preserves an explicit unavailable normal read without carrying admission hashes or fabricated rows', () => {
-    const missing = { ...scopedMatrixFixture(), Available: false, ExactScopeAccepted: false,
-      Code: 'original_vparivanie_normal_party_metadata_unavailable', NormalInputsComplete: false, OurSnapshotVerified: false,
-      GroupCaption: null, InputWitnessSha256: null, Rows: [], Columns: [], AcceptedInputWitnessSha256: null, AcceptanceProofSha256: null }
-    const result = normalizeScopedMatrixResult(missing, originalScopeBinding())
-    expect(result.Code).toBe(missing.Code); expect(matrixScopeAccepted(result)).toBe(false)
-    expect(() => normalizeScopedMatrixResult({ ...missing, ExactScopeAccepted: true }, originalScopeBinding())).toThrow()
-    expect(() => normalizeScopedMatrixResult({ ...missing, AcceptanceProofSha256: 'c'.repeat(64) }, originalScopeBinding())).toThrow()
-    expect(() => normalizeScopedMatrixResult({ ...missing, Rows: scopedMatrixFixture().Rows }, originalScopeBinding())).toThrow()
   })
 })

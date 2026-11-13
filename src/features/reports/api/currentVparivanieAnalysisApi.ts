@@ -23,7 +23,7 @@ export async function searchAnalysisValues(field: number, value: string, from: s
 }
 
 export type AnalysisGroupNode = AnalysisLookupValue & { hasChildren: boolean }
-export type AnalysisGroupPage = { parentId: string | null; items: AnalysisGroupNode[]; hasMore: boolean }
+type AnalysisGroupPage = { parentId: string | null; items: AnalysisGroupNode[]; hasMore: boolean }
 export async function getAnalysisGroupPage(parentId: string | null, offset: number, limit: number, value: string, signal?: AbortSignal): Promise<AnalysisGroupPage> {
   const result = await apiRequest<unknown>(ANALYSIS_GROUPS_ENDPOINT, {
     query: { ...(parentId ? { parentId } : {}), offset, limit, value }, signal,
@@ -52,9 +52,9 @@ export async function getAnalysisGroupPage(parentId: string | null, offset: numb
   return { parentId, items, hasMore: page.hasMore }
 }
 
-export type AnalysisSourceGroupKind = Exclude<AnalysisHierarchyKind, 'productGroup'>
+type AnalysisSourceGroupKind = Exclude<AnalysisHierarchyKind, 'productGroup'>
 export type AnalysisHierarchyNode = AnalysisGroupNode & { path: string }
-export type AnalysisHierarchyPage = { parentId: string | null; items: AnalysisHierarchyNode[]; hasMore: boolean }
+type AnalysisHierarchyPage = { parentId: string | null; items: AnalysisHierarchyNode[]; hasMore: boolean }
 const NODE_ID = /^(fenix|amg):[0-9A-F]{32}$/
 export async function getAnalysisHierarchyPage(kind: AnalysisSourceGroupKind, parentId: string | null, offset: number, limit: number,
   value: string, signal?: AbortSignal): Promise<AnalysisHierarchyPage> {

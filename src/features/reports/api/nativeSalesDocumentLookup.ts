@@ -13,7 +13,7 @@ export function salesDocumentLookupPolicy(source: number, field: number, dataset
   const period = native || source === 35 && field === 12 ? [from, to] : []
   return { native, unavailable: unavailable || customerDocument && !native, legacyAllowed: !customerDocument, period }
 }
-export function salesDocumentId(value: unknown): string | null {
+function salesDocumentId(value: unknown): string | null {
   const id = typeof value === 'number' && Number.isSafeInteger(value) ? String(value) : value
   return typeof id === 'string' && /^[1-9][0-9]{0,18}$/.test(id) && BigInt(id) <= 9223372036854775807n ? id : null
 }

@@ -295,13 +295,3 @@ function presentationWorkbookRequest(request: ReportRequestBody, launch: Workboo
   return rows.length === 1 ? { ...structuredClone(request), sorted: { ...structuredClone(request.sorted), Row: rows },
     workbookPresentation: { version: 1, additionalFields: [30, 33], ordering: null } } : request
 }
-
-/** Both settlement workbooks are variants of the same source report. */
-export const BUG_1274_WORKBOOK_REPORT_IDS: Readonly<Record<string, string>> = {
-  'ВП.xls': 'builtin:ВаловаяПрибыль',
-  'ВП по постачальниках.xls': 'builtin:ВаловаяПрибыльПоПоставщикам',
-  'Впарювання.xls': 'builtin:ОтчетВпаривание',
-  'Ведомость по денежным средствам.xls': 'builtin:ВедомостьДенежныеСредства',
-  'Взаємороз всі.xls': 'builtin:ВедомостьВзаиморасчетыСКонтрагентами',
-  'ДБіторка.xls': 'builtin:ВедомостьВзаиморасчетыСКонтрагентами',
-}

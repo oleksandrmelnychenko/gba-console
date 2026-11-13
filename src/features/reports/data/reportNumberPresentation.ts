@@ -1,6 +1,6 @@
 import type { ReportDataset, ReportRequestBody } from '../types'
 
-export type ReportNumberKind = 'money' | 'unitPrice' | 'quantity' | 'count' | 'percent' | 'rate' | 'unknown'
+type ReportNumberKind = 'money' | 'unitPrice' | 'quantity' | 'count' | 'percent' | 'rate' | 'unknown'
 export type ReportValueSemantics = {
   kind: ReportNumberKind; currencyPolicy: string; unitPolicy: string; aggregation: string
   scalable: boolean; defaultDecimalPlaces: number; defaultMinimumDecimalPlaces?: number

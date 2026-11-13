@@ -4,7 +4,7 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { REPORT_VALUE_VISIBLE_PILLS } from './reportValueSearch'
 
-export type ReportValueOption = { value: string; label: string }
+type ReportValueOption = { value: string; label: string }
 
 const MORE_OPTION = '\u0000report-value-more'
 const RETRY_OPTION = '\u0000report-value-retry'

@@ -3,15 +3,15 @@ import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { groupedSettlementConfigurationError, groupedSettlementPeriod, isGroupedSettlementDataset, requestGroupedSettlementPeriod } from './groupedSettlementPeriod'
 import { sourceCounterpartyGroupsConfigurationError } from './sourceCounterpartyGroups'
 
-export const SETTLEMENT_PERIOD_SOURCE = 41
+const SETTLEMENT_PERIOD_SOURCE = 41
 export const SETTLEMENT_PERIOD_TITLE = 'Взаєморозрахунки за договором: залишки та рух'
 export const SETTLEMENT_PERIOD_ROWS = [4, 41, 76, 77] as const
 export const SETTLEMENT_PERIOD_MEASURES = [88, 89, 90, 91] as const
 
-export type SettlementSourceWorld = 'Fenix' | 'Amg'
-export type SettlementNativeFamily = 'ClientAgreement' | 'SupplyOrganizationAgreement'
-export const isSettlementWorld = (value: unknown): value is SettlementSourceWorld => value === 'Fenix' || value === 'Amg'
-export const isSettlementFamily = (value: unknown): value is SettlementNativeFamily => value === 'ClientAgreement' || value === 'SupplyOrganizationAgreement'
+type SettlementSourceWorld = 'Fenix' | 'Amg'
+type SettlementNativeFamily = 'ClientAgreement' | 'SupplyOrganizationAgreement'
+const isSettlementWorld = (value: unknown): value is SettlementSourceWorld => value === 'Fenix' || value === 'Amg'
+const isSettlementFamily = (value: unknown): value is SettlementNativeFamily => value === 'ClientAgreement' || value === 'SupplyOrganizationAgreement'
 
 export type SettlementPeriodScope = {
   Version: 1
@@ -40,18 +40,18 @@ const exact = (value: unknown, expected: readonly number[]) => Array.isArray(val
   && value.length === expected.length && value.every((item, index) => item === expected[index])
 const sortedKeys = (value: Record<string, unknown>) => Object.keys(value).sort().join(',')
 const maxLong = 9223372036854775807n
-export function settlementPeriodExactId(value: unknown): string | null {
+function settlementPeriodExactId(value: unknown): string | null {
   if (typeof value !== 'string' || !/^[1-9]\d{0,18}$/.test(value)) return null
   return BigInt(value) <= maxLong ? value : null
 }
 
-export function settlementPeriodExactGuid(value: unknown): string | null {
+function settlementPeriodExactGuid(value: unknown): string | null {
   if (typeof value !== 'string' || !/^[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}$/i.test(value)
     || /^0{8}-(?:0{4}-){3}0{12}$/.test(value)) return null
   return value.toLowerCase()
 }
 
-export function readSettlementPeriodScope(value: unknown): SettlementPeriodScope | null {
+function readSettlementPeriodScope(value: unknown): SettlementPeriodScope | null {
   if (!object(value) || sortedKeys(value) !== 'AgreementId,AgreementNetUid,CurrencyBasis,NativeFamily,SourceWorld,Version'
     || value.Version !== 1 || value.CurrencyBasis !== 'SettlementCurrency'
     || !isSettlementWorld(value.SourceWorld) || !isSettlementFamily(value.NativeFamily)) return null
@@ -61,20 +61,7 @@ export function readSettlementPeriodScope(value: unknown): SettlementPeriodScope
     CurrencyBasis: 'SettlementCurrency' } : null
 }
 
-export function readSettlementPeriodAgreement(value: unknown): SettlementPeriodAgreement | null {
-  if (!object(value) || sortedKeys(value) !== 'AgreementId,AgreementName,AgreementNetUid,CounterpartyName,CurrencyCode,CurrencyName,NativeFamily,OrganizationName,SourceWorld'
-    || !isSettlementWorld(value.SourceWorld) || !isSettlementFamily(value.NativeFamily)) return null
-  const id = settlementPeriodExactId(value.AgreementId)
-  const guid = settlementPeriodExactGuid(value.AgreementNetUid)
-  const captions = ['AgreementName', 'CounterpartyName', 'CurrencyName', 'OrganizationName'] as const
-  if (!id || !guid || !captions.every(key => value[key] === null || typeof value[key] === 'string')
-    || typeof value.CurrencyCode !== 'string' || !/^\d{3}$/.test(value.CurrencyCode) || value.CurrencyCode === '000') return null
-  return { SourceWorld: value.SourceWorld, NativeFamily: value.NativeFamily, AgreementId: id, AgreementNetUid: guid,
-    AgreementName: value.AgreementName as string ?? '', CounterpartyName: value.CounterpartyName as string ?? '',
-    CurrencyName: value.CurrencyName as string ?? '', OrganizationName: value.OrganizationName as string ?? '', CurrencyCode: value.CurrencyCode }
-}
-
-export function isSettlementPeriodCapability(value: unknown): boolean {
+function isSettlementPeriodCapability(value: unknown): boolean {
   return object(value) && value.Version === 1 && value.MaximumDays === 31
     && value.CurrencyBasis === 'SettlementCurrency' && value.PeriodCalendar === 'Europe/Kyiv'
     && value.RequiresAgreementNetUid === true
@@ -105,11 +92,6 @@ function validDay(value: string): boolean {
   if (year < 1900 || year > 7998) return false
   const date = new Date(`${value}T00:00:00Z`)
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
-}
-
-export function validSettlementPeriodDays(from: string, to: string, todayKyiv = formatKyivBusinessDate()): boolean {
-  if (!validDay(from) || !validDay(to) || !validDay(todayKyiv) || from > to || to >= todayKyiv) return false
-  return (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000 < 31
 }
 
 /** Client guard; the server remains final authority on a complete closing-day generation. */

@@ -1,10 +1,10 @@
 import type { ReportDataset, ReportDatasetField, ReportEntity, ReportRequestBody, ReportSelectedValue } from '../types'
 import { usesCurrentFinancialAxes } from './currentFinancialAxes'
 
-export const FINANCIAL_DOCUMENT_FILTER = 12
+const FINANCIAL_DOCUMENT_FILTER = 12
 export const FINANCIAL_DOCUMENT_LOOKUP = '/report/datasets/current-financial/documents/lookup'
 const conditions = [0, 1, 2, 4] as const
-export type FinancialDocumentReference = { kind: 'sale' | 'return'; id: string }
+type FinancialDocumentReference = { kind: 'sale' | 'return'; id: string }
 export type CurrentFinancialDocumentFilter = {
   version: 1; requiredProfitReadMode: 0; requiredDayOrganizationBasis: 0
   field: ReportDatasetField; valueKind: 'documentRef'; conditions: number[]

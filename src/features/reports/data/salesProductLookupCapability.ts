@@ -1,6 +1,6 @@
 import type { ReportDataset } from '../types'
 
-export type SalesProductLookupCapability = {
+type SalesProductLookupCapability = {
   version: 1
   fieldTypes: [1]
   identityKind: 'positiveInt64String'

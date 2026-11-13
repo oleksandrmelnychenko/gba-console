@@ -5,9 +5,9 @@ import type { NativeReportPreview } from './nativeReportPreview'
 
 export type CurrentVparivanieAnalysisRequest = { version: 1 }
 export const ANALYSIS_GROUPS_ENDPOINT = '/report/datasets/current-vparivanie/analysis/groups'
-export type AnalysisHierarchyBrowse = { version: 1; endpoint: typeof ANALYSIS_GROUPS_ENDPOINT; maximumPageSize: number }
+type AnalysisHierarchyBrowse = { version: 1; endpoint: typeof ANALYSIS_GROUPS_ENDPOINT; maximumPageSize: number }
 export type AnalysisTextEntry = { version: 1; allowedValues: string[] }
-export type AnalysisGroupSelection = { version: 1; itemField: 1; itemKind: 'product'; groupKind: 'productGroup'; mixedConditions: [3, 5] }
+type AnalysisGroupSelection = { version: 1; itemField: 1; itemKind: 'product'; groupKind: 'productGroup'; mixedConditions: [3, 5] }
 export const ANALYSIS_HIERARCHY_ENDPOINT = '/report/datasets/current-vparivanie/analysis/hierarchy'
 export const ANALYSIS_HIERARCHY_STATUS_ENDPOINT = '/report/datasets/current-vparivanie/analysis/hierarchy-status'
 export type AnalysisHierarchyKind = 'productGroup' | 'counterpartyGroup' | 'warehouseGroup'
@@ -22,7 +22,7 @@ export type AnalysisFieldDescriptor = {
   conditions: number[]; lookupKind: string; coverage: string; groupSelection?: AnalysisGroupSelection; hierarchyBrowse?: AnalysisHierarchyBrowse; textEntry?: AnalysisTextEntry; available?: boolean; unavailabilityReason?: string | null
   hierarchy?: AnalysisHierarchy
 }
-export type CurrentVparivanieAnalysisCapability = {
+type CurrentVparivanieAnalysisCapability = {
   version: 1; maximumDimensions: 8; requiredColumnGrouping: 74; measure: 83
   allSalesFilterScope: true; stockAllocation: 'periodEndOnly'; physicalCalendar: 'Europe/Kyiv'
   groupings: AnalysisFieldDescriptor[]; filters: AnalysisFieldDescriptor[]
@@ -75,7 +75,7 @@ export function analysisHierarchy(descriptor: AnalysisFieldDescriptor | undefine
   if (descriptor.hierarchy) return descriptor.hierarchy
   return descriptor.type === 4 && descriptor.groupSelection ? PRODUCT_HIERARCHY : undefined
 }
-export function isAnalysisGroupCondition(descriptor: AnalysisFieldDescriptor | undefined, condition: number): boolean {
+function isAnalysisGroupCondition(descriptor: AnalysisFieldDescriptor | undefined, condition: number): boolean {
   return !!analysisHierarchy(descriptor)?.groupConditions.includes(condition)
 }
 export const ANALYSIS_HIERARCHY_PENDING = 'Перевіряємо, чи є в GBA ієрархія груп для цього поля…'
@@ -92,9 +92,6 @@ export function analysisConditionUnavailableReason(descriptor: AnalysisFieldDesc
 function isAnalysisGroupSelection(value: unknown): value is AnalysisGroupSelection {
   return record(value) && value.version === 1 && value.itemField === 1 && value.itemKind === 'product'
     && value.groupKind === 'productGroup' && Array.isArray(value.mixedConditions) && value.mixedConditions.length === 2 && value.mixedConditions[0] === 3 && value.mixedConditions[1] === 5
-}
-export function mixedAnalysisSelection(descriptor: AnalysisFieldDescriptor | undefined, condition: number): boolean {
-  return !!descriptor?.groupSelection && descriptor.groupSelection.mixedConditions.some(type => type === condition)
 }
 export function currentVparivanieAnalysisCapability(dataset: ReportDataset | null | undefined): CurrentVparivanieAnalysisCapability | undefined {
   const value = record(dataset?.currentVparivanie) ? dataset.currentVparivanie.analysis : undefined
@@ -148,7 +145,7 @@ const legacyId = (value: Record<string, unknown>) => {
   const ids = Object.entries(value).filter(([key]) => key.toLowerCase() === 'id')
   return ids.length === 1 && !hasKind(value) && positiveId(ids[0][1]) ? ids[0][1] as string | number : null
 }
-export type AnalysisHierarchyIdentity = { kind: string; id: string | number; world?: 'fenix' | 'amg'; group: boolean; typed: boolean }
+type AnalysisHierarchyIdentity = { kind: string; id: string | number; world?: 'fenix' | 'amg'; group: boolean; typed: boolean }
 export function analysisHierarchyIdentity(field: number, value: ReportEntity): AnalysisHierarchyIdentity | null {
   if (field === 4) {
     const group = analysisGroupIdentity(value)

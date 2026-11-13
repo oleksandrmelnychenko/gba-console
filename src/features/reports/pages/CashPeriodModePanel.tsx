@@ -5,7 +5,7 @@ import { groupedCashSupported, groupedCashWorkbookSupported, CASH_WORKBOOK_ROWS 
 import { cashCurrencyRecordWorkbookSupported, cashWorkbookPresentationSupported } from '../data/workbookPresentation'
 import { CashReadModeSelect } from './CashReadModeSelect'
 
-export type CashPeriodPanelPart = 'source' | 'form'
+type CashPeriodPanelPart = 'source' | 'form'
 
 export function CashPeriodModePanel({ dataset, grouped, disabled, onModeChange, rows, available, onRowsChange,
   readMode, onReadModeChange, hideRegisterReadMode = false, part }: {

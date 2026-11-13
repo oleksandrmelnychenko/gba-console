@@ -2,7 +2,7 @@ import type { ReportDataset } from '../types'
 import { financialAxesCapability } from './financialAxes'
 
 export type FinancialExportLayout = 'auto' | 'sheets' | 'table'
-export const FINANCIAL_EXPORT_AUTO_SHEET_LIMIT = 100
+const FINANCIAL_EXPORT_AUTO_SHEET_LIMIT = 100
 
 const nouns: Readonly<Record<number, { each: string; many: string; sheets: string }>> = {
   0: { each: 'кожен рік', many: 'років', sheets: 'У файлі кожен рік у колонках буде окремим аркушем.' },

@@ -1,7 +1,7 @@
 import type { ReportDataset, ReportRequestBody } from '../types'
 
 type RecordValue = Record<string, unknown>
-export type SourceCounterpartyGroups = { Version: 1; SourceWorld: 'fenix'; IncludeGroupIds: string[]; ExcludeGroupIds: string[] }
+type SourceCounterpartyGroups = { Version: 1; SourceWorld: 'fenix'; IncludeGroupIds: string[]; ExcludeGroupIds: string[] }
 export type CounterpartyGroupChoice = { Id: string; Name: string }
 const aliases = (value: object) => Object.keys(value).filter(key => key.toLowerCase() === 'sourcecounterpartygroups')
 const record = (value: unknown): value is RecordValue => value !== null && typeof value === 'object' && !Array.isArray(value)

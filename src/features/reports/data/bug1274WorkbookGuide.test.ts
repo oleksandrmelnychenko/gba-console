@@ -1,17 +1,5 @@
 import { expect, it } from 'vitest'
-import { bug1274DatasetTitle, bug1274ReportTitle, bug1274WorkbookGuide, bug1274WorkbookPeriod, reportPeriodPresets } from './bug1274WorkbookGuide'
-import { BUG_1274_WORKBOOK_REPORT_IDS } from './bug1274WorkbookLaunch'
-
-it('names every workbook and its 1C report in Ukrainian without internal terms', () => {
-  for (const [fileName, reportId] of Object.entries(BUG_1274_WORKBOOK_REPORT_IDS)) {
-    const guide = bug1274WorkbookGuide(fileName)!
-    expect(guide.title).toBeTruthy()
-    expect(bug1274ReportTitle(reportId)).toBeTruthy()
-    expect(`${guide.title} ${guide.summary}`).not.toMatch(/набір даних|режим|джерел|конструктор|GUID|\[\d+\]|Fenix|AMG\b(?! —)|Часткова/i)
-  }
-  expect(bug1274WorkbookGuide('ВП.xls')?.title).toBe('Валовий прибуток')
-  expect(bug1274ReportTitle('builtin:ВедомостьДенежныеСредства')).toBe('Відомість по коштах')
-})
+import { bug1274DatasetTitle, bug1274WorkbookPeriod, reportPeriodPresets } from './bug1274WorkbookGuide'
 
 it('opens the month workbooks on the current month, the matrix on the year and the day workbooks on the last day', () => {
   expect(bug1274WorkbookPeriod('ВП.xls', '2026-10-17')).toEqual({ from: '2026-10-01', to: '2026-10-16' })

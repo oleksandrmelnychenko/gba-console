@@ -1,11 +1,11 @@
 import { analysisHierarchyIdentity, isAnalysisHierarchy, validAnalysisFilterValue, type AnalysisFieldDescriptor, type AnalysisHierarchy } from './currentVparivanieAnalysis'
 import type { ReportDataset, ReportFilterCondition, ReportSelection } from '../types'
 
-export const GROUP_CONDITION_TYPES = [3, 5, 6, 7] as const
+const GROUP_CONDITION_TYPES = [3, 5, 6, 7] as const
 const GROUP_CONDITION_NAMES: Record<number, string> = { 3: 'У групі зі списку', 5: 'Не у групі зі списку', 6: 'У групі', 7: 'Не у групі' }
 const POSITIVE_GROUPS = [3, 6]
 const NEGATIVE_GROUPS = [5, 7]
-export const MAXIMUM_GROUP_VALUES = 100
+const MAXIMUM_GROUP_VALUES = 100
 
 export function datasetFieldHierarchy(dataset: ReportDataset | null | undefined, field: number | undefined): AnalysisHierarchy | undefined {
   if (!dataset || dataset.DataSource === 39 || field === undefined) return undefined

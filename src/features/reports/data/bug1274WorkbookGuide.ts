@@ -2,13 +2,8 @@ import { GROSS_PROFIT_CONSTRUCTOR_WORKBOOK, SALES_CONSTRUCTOR_WORKBOOK, profileF
 import { previousKyivDay } from './cashPeriod'
 import { SALES_BY_RESPONSIBLES_SOURCE, SALES_BY_RESPONSIBLES_TITLE, SALES_BY_RESPONSIBLES_WORKBOOK_FILE } from './salesByResponsibles'
 
-export type WorkbookGuide = { title: string; summary: string }
+type WorkbookGuide = { title: string; summary: string }
 export type ReportPeriodPreset = { label: string; from: string; to: string }
-
-export const BUG_1274_WORKBOOKS_TITLE = 'Звіти 1С за зразками Excel'
-export const BUG_1274_WORKBOOKS_INTRO = 'Кожна форма відкривається з відборами й групуваннями книги 1С. Період і відбори можна змінити; '
-  + 'кнопка «Скинути» повертає налаштування книги. Суми розраховано з документів GBA і звірено з 1С; ТОВ «АМГ «КОНКОРД» — за базою 1С AMG. '
-  + 'Організації ХАЗ, ФОП Пархоменко, ФОП Берешвілі, ПАК, Злагода та CONCORD.PL у GBA не переносяться, тому їхніх сум у звітах немає.'
 
 const DEBT_ADJUSTMENT_NOTE = 'Документи 1С «Корректировка долга» в GBA не переносяться: у 1С надходження й видаток більші на їхню суму, залишки однакові.'
 
@@ -93,18 +88,6 @@ export function reportPeriodPresets(dataSource: number, today: string): ReportPe
   ]
   if (dataSource !== 35 && dataSource !== 38) presets.push({ label: 'Поточний рік', from: `${end.slice(0, 4)}-01-01`, to: end })
   return presets
-}
-
-const REPORT_TITLES: Readonly<Record<string, string>> = {
-  'builtin:ВаловаяПрибыль': 'Валовий прибуток',
-  'builtin:ВаловаяПрибыльПоПоставщикам': 'Валовий прибуток по постачальниках',
-  'builtin:ОтчетВпаривание': 'Аналіз залишків і продажів',
-  'builtin:ВедомостьДенежныеСредства': 'Відомість по коштах',
-  'builtin:ВедомостьВзаиморасчетыСКонтрагентами': 'Відомість по взаєморозрахунках з контрагентами',
-}
-
-export function bug1274ReportTitle(reportId: string): string | undefined {
-  return REPORT_TITLES[reportId]
 }
 
 const DATASET_TITLES: Readonly<Record<number, string>> = {
