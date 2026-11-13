@@ -42,6 +42,7 @@ it('opens sales and gross-profit profiles, submits one GBA request and preserves
   expect(within(measurements).getAllByRole('checkbox', { name: /^Рентабельність (?:без|з) ПДВ, %$/ })).toHaveLength(2)
   for (const name of ratioNames) {
     const ratio = within(measurements).getByRole('checkbox', { name })
+    if (name === ratioNames[0]) { expect(ratio).toHaveProperty('checked', true); continue }
     expect(ratio).toHaveProperty('checked', false)
     fireEvent.click(ratio)
     expect(ratio).toHaveProperty('checked', true)

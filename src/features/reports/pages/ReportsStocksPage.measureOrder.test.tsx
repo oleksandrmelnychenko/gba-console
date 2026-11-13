@@ -54,14 +54,14 @@ it('submits both gross-profit profitability choices from the real form and keeps
   await waitFor(() => expect(within(tabs).getByRole('button', { name: 'Відкрити Валовий прибуток' })).toHaveProperty('ariaCurrent', 'true'))
   const rowsBefore = screen.getByRole('region', { name: 'Групування рядків' }).textContent
   const columnsBefore = screen.getByRole('region', { name: 'Групування колонок' }).textContent
-  fireEvent.click(screen.getByRole('checkbox', { name: 'Рентабельність без ПДВ, %' }))
+  expect(screen.getByRole('checkbox', { name: 'Рентабельність без ПДВ, %' })).toHaveProperty('checked', true)
   fireEvent.click(screen.getByRole('checkbox', { name: 'Рентабельність з ПДВ, %' }))
   changeReportPeriod({ from: '2026-10-18', to: '2026-10-27' })
   await act(async () => fireEvent.submit(container.querySelector('form')!))
   await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
   const request = vi.mocked(previewStockReport).mock.calls[0][0]
   expect(request).toMatchObject({ dataSource: 2, reportProfile: 'grossProfit', from: '2026-10-18', to: '2026-10-27', selections: [] })
-  expect(request.sorted.Measurements.map(field => field.Type)).toEqual([2, 6, 10, 14, 15])
+  expect(request.sorted.Measurements.map(field => field.Type)).toEqual([2, 6, 10, 14, 15, 115])
   expect(screen.getByRole('region', { name: 'Групування рядків' }).textContent).toBe(rowsBefore)
   expect(screen.getByRole('region', { name: 'Групування колонок' }).textContent).toBe(columnsBefore)
 })

@@ -61,3 +61,5 @@
   overflow-wrap: anywhere;
 }
 .report-inline-preview td.is-quantity-breakdown { white-space: normal; max-width: 24rem; min-width: 10rem; overflow-wrap: normal; }
+.report-inline-preview--compact thead .report-inline-preview__value-heading { max-width: 10.5rem; overflow-wrap: break-word; }
+.report-inline-preview--compact td.is-quantity-breakdown { max-width: 17rem; }

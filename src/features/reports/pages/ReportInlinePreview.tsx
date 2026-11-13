@@ -1,3 +1,4 @@
+import { compactMeasureCaptions, isMeasureOnlyColumnSchema } from '../data/reportMeasureHeading'
 import { PhysicalQuantityExceptionNotice } from '../../../shared/ui/product-movement-history/PhysicalQuantityExceptionNotice'
 import { PhysicalCoverageNotice } from '../../../shared/ui/product-movement-history/PhysicalCoverageNotice'
 import { ANALYSIS_SCOPE_NOTICE } from '../data/currentVparivanieAnalysis'
@@ -91,7 +92,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
     const byColumn = new Map(values.map(cell => [cell.ColumnSourceIndex, cell.Value]))
     return preview.Columns.map(column => {
       const value = byColumn.get(column.SourceIndex)
-      return <td key={column.SourceIndex} className={valueClass(value)} title={quantityDescription(value, column.SourceIndex)} aria-description={quantityDescription(value, column.SourceIndex)}>{value === undefined ? '' : valueText(value, column.SourceIndex)}</td>
+      return <td key={column.SourceIndex} className={valueClass(value)} title={quantityDescription(value, column.SourceIndex)} aria-description={quantityDescription(value, column.SourceIndex)}>{documentLayout && value === undefined ? '' : valueText(value, column.SourceIndex)}</td>
     })
   }
   const rowHeaders = products ? CURRENT_VPARIVANIE_PRODUCT_CAPTIONS : [...preview.RowSchema.map((level, index) => [level.Caption || `Рівень ${index + 1}`,
@@ -109,13 +110,15 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
     .filter((caption, index, path) => index === 0 || caption !== path[index - 1]))
   const tiers = products || !columnPaths.some((path, position) => position > 0 && path.length > 1
     && columnPaths[position - 1].length > 1 && path[0] === columnPaths[position - 1][0]) ? 1 : Math.max(1, ...columnPaths.map(path => path.length))
+  const compactCaptions = tiers === 1 && !products && isMeasureOnlyColumnSchema(preview.ColumnSchema) ? compactMeasureCaptions(columnPaths) : null
+  const compact = !wide && tiers === 1 && rowHeaders.length + preview.Columns.length <= 8
   const columnHeading = (column: NativeReportPreviewAxis, position: number, rowSpan?: number) => {
     const path = columnPaths[position]
     const scale = moneyScaleLabel(preview.numberPresentation, semanticsByColumn.get(column.SourceIndex))
     const full = `${path.join(' / ') || `Стовпець ${column.Ordinal + 1}`}${scale ? `, ${scale}` : ''}`
     const leaf = tiers > 1 && path.length > 1
       ? `${documentLayout ? documentMeasureCaption(path[path.length - 2], path[path.length - 1], semanticsByMeasure.get(column.SourceIndex)) : path[path.length - 1]}${scale ? `, ${scale}` : ''}`
-      : full
+      : compactCaptions ? `${compactCaptions[position]}${scale ? `, ${scale}` : ''}` : full
     return <th scope="col" className="report-inline-preview__value-heading" key={column.SourceIndex} rowSpan={rowSpan && rowSpan > 1 ? rowSpan : undefined}
       aria-label={leaf === full ? undefined : full}
       title={semanticsByColumn.has(column.SourceIndex) ? reportValueUnit(semanticsByColumn.get(column.SourceIndex)!, preview.numberPresentation, preview.Request?.presentationCurrency?.code) : undefined}>
@@ -139,7 +142,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
   }
   const repeated = preview.Rows.map((row, rowIndex) => preview.RowSchema.map((_, level) => level < levelCount - 1 && (totalledLevels.has(level)
     || rowIndex > 0 && preview.RowSchema.slice(0, level + 1).every((__, upper) => rowCaption(row, upper) === rowCaption(preview.Rows[rowIndex - 1], upper)))))
-  return <section className={wide ? 'app-section-card report-inline-preview report-inline-preview--wide' : 'app-section-card report-inline-preview'} aria-label="Попередній перегляд звіту">
+  return <section className={wide ? 'app-section-card report-inline-preview report-inline-preview--wide' : compact ? 'app-section-card report-inline-preview report-inline-preview--compact' : 'app-section-card report-inline-preview'} aria-label="Попередній перегляд звіту">
     <div className="report-inline-preview__heading">
       {!embedded ? <Text component="h2" fw={600} size="sm" className="report-inline-preview__title">Таблиця на екрані</Text> : null}
       <Text size="sm" className="report-inline-preview__count">{deskRowsText(preview.Page.ReturnedRows, preview.Page.TotalVisibleRows, preview.Page.HasMore)}</Text>

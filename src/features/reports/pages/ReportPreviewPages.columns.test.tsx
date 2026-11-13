@@ -69,7 +69,7 @@ it('shows group totals only for the window columns and states the window when th
   const groupCells = [...group.querySelectorAll('td')].map(cell => cell.textContent)
   expect(groupCells).toHaveLength(256)
   expect(groupCells.slice(0, 3)).toEqual(['512,25', '513,25', '514,25'])
-  expect(groupCells.slice(3).every(text => text === '')).toBe(true)
+  expect(groupCells.slice(3).every(text => text === '—')).toBe(true)
   expect(screen.getByText('Колонки 513–768 з 3 660. Решта колонок — у Excel.')).toBeTruthy()
 })
 
