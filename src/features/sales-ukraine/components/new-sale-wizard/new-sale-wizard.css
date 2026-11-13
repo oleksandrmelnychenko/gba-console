@@ -9335,3 +9335,26 @@
     padding-left: 14px;
   }
 }
+
+.new-sale-agreement-card__metric > span,
+.new-sale-hero-agreement__metric > span {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.new-sale-register-payment-cell .app-table-chip {
+  border-radius: 10px;
+  height: auto;
+  line-height: 1.2;
+  padding-block: 2px;
+  white-space: normal;
+}
+
+.new-sale-register-payment-cell .app-table-chip-label {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
