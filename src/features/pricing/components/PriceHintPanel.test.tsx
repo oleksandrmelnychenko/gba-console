@@ -41,6 +41,15 @@ it('explains the price floor when the service sends its basis and stays silent o
     .toBe('мінімальна ціна: націнка 12 % на собівартість (маржа 10,7 %)')
   view.unmount()
 
+  const live = show({ ...recommendation, floor_markup_pct: 12.0, floor_margin_pct: 10.71, floor_basis: 'markup_on_cost' })
+  expect((await screen.findByTestId('price-floor-basis')).textContent?.replace(/\u00a0/g, ' '))
+    .toBe('мінімальна ціна: націнка 12 % на собівартість (маржа 10,7 %)')
+  live.unmount()
+
+  const other = show({ ...recommendation, floor_markup_pct: 12, floor_margin_pct: 10.7, floor_basis: 'margin_on_price' })
+  expect((await screen.findByTestId('price-floor-basis')).textContent?.replace(/\u00a0/g, ' ')).toBe('мінімальна ціна: маржа 10,7 %')
+  other.unmount()
+
   show(recommendation)
   await screen.findByText(/EUR за одиницю, як у накладних/)
   expect(screen.queryByTestId('price-floor-basis')).toBeNull()

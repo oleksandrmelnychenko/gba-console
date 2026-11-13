@@ -148,7 +148,7 @@ const percentFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits:
 
 function PriceHintCard({ recommendation }: { recommendation: PriceRecommendation }) {
   const { t } = useI18n()
-  const floorBasis = describeFloorBasis(recommendation.floor_markup_pct, recommendation.floor_margin_pct)
+  const floorBasis = describeFloorBasis(recommendation.floor_markup_pct, recommendation.floor_margin_pct, recommendation.floor_basis)
 
   const currency = recommendation.currency || 'EUR'
   const belowMargin = recommendation.rationale.toLowerCase().includes('below-margin')

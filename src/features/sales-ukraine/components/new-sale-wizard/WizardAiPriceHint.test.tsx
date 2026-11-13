@@ -57,3 +57,22 @@ it('names the comparison band as own sale prices, not the market', async () => {
   expect(screen.getByText(/маржа від ціни 12\.5%/)).toBeTruthy()
   expect(screen.queryByText(/ринок/)).toBeNull()
 })
+
+it('explains the price floor in the tooltip of the recommended price', async () => {
+  vi.useFakeTimers()
+  vi.mocked(getSalesUkrainePriceRecommendation).mockResolvedValue({
+    ...recommendation(20), price_floor: 7.15, floor_markup_pct: 12, floor_margin_pct: 10.71, floor_basis: 'markup_on_cost',
+  })
+  render(view('product'))
+  await tick()
+  expect(screen.getByTestId('wizard-ai-price').getAttribute('title')?.replace(/\u00a0/g, ' '))
+    .toBe('мінімальна ціна: націнка 12 % на собівартість (маржа 10,7 %)')
+})
+
+it('shows no floor tooltip when the service does not send the basis', async () => {
+  vi.useFakeTimers()
+  vi.mocked(getSalesUkrainePriceRecommendation).mockResolvedValue(recommendation(20))
+  render(view('product'))
+  await tick()
+  expect(screen.getByTestId('wizard-ai-price').getAttribute('title')).toBeNull()
+})

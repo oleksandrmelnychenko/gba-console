@@ -63,6 +63,7 @@ export type PriceRecommendation = AiHistoryLineage & {
   price_floor: number | null
   floor_markup_pct?: number | null
   floor_margin_pct?: number | null
+  floor_basis?: string | null
   unit_cost_eur: number | null
   discount_base_price?: number | null
   suggested_discount_pct: number | null

@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { AiFeatureBadge } from '../../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getSalesUkrainePriceRecommendation } from '../../../pricing/api/pricingApi'
+import { describeFloorBasis } from '../../../pricing/components/priceFloorBasis'
 import type { PriceRecommendation } from '../../../pricing/pricingTypes'
 
 type WizardAiPriceHintProps = {
@@ -121,12 +122,13 @@ export function WizardAiPriceHint({ productNetId, clientAgreementNetId, withVat 
   const aboveMarket = median !== null && recommendation.recommended_price > median
   const MarketIcon = belowMarket ? TrendingDown : aboveMarket ? TrendingUp : null
 
+  const floorBasis = describeFloorBasis(recommendation.floor_markup_pct, recommendation.floor_margin_pct, recommendation.floor_basis)
   const detailHref = `/pricing?productNetId=${encodeURIComponent(product)}&clientAgreementNetId=${encodeURIComponent(agreement)}`
 
   return (
     <Group gap={8} wrap="wrap">
       <AiFeatureBadge compact size="xs" tooltip={t('AI-рекомендація ціни')} />
-      <Text className="app-money" fw={600} size="sm">
+      <Text className="app-money" data-testid="wizard-ai-price" fw={600} size="sm" title={floorBasis ? t(floorBasis) : undefined}>
         {formatMoney(recommendation.recommended_price, recommendation.currency)}
       </Text>
       {recommendation.margin_pct_at_recommended !== null && (

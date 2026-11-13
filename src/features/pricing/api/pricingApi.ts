@@ -268,6 +268,7 @@ function normalizeRecommendation(
     price_floor: priceFloor,
     floor_markup_pct: optionalFiniteNumber(value.floor_markup_pct),
     floor_margin_pct: optionalFiniteNumber(value.floor_margin_pct),
+    floor_basis: typeof value.floor_basis === 'string' && value.floor_basis ? value.floor_basis : null,
     unit_cost_eur: unitCostEur,
     suggested_discount_pct: requireNullablePercent(
       value.suggested_discount_pct,
