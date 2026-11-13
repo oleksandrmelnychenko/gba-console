@@ -20,6 +20,7 @@ import { CurrentProductGroupsValue } from './CurrentProductGroupsValue'
 import { reportQuantityExplanations } from '../data/reportQuantityExplanations'
 import { reportAxisCaption, type ReportCaptionAxisSchema } from '../data/reportAxisCaption'
 import { orderReportNotes } from '../data/reportNotesOrder'
+import { QUANTITY_BREAKDOWN_PROVENANCE, quantityBreakdownText } from '../data/quantityBreakdown'
 
 export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, embedded = false, showPageNote = true, previewReportProfile }: { preview: NativeReportPreview; embedded?: boolean; showPageNote?: boolean; previewReportProfile?: SalesConstructorProfile }) {
   const cells = new Map(preview.Cells.map(cell => [`${cell.RowSourceIndex}:${cell.ColumnSourceIndex}`, cell.Value]))
@@ -46,7 +47,8 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
   const numberPresentation = effectiveConstructorNumberPresentation(preview.Request?.DataSource, previewReportProfile, preview.numberPresentation)
   const blanksZero = previewBlanksZero(preview.Request?.DataSource)
   const negativeRed = preview.constructorPresentation?.negativeRed ?? previewNegativeRed(preview.Request?.DataSource)
-  const valueClass = (value: NativeReportPreviewScalar | undefined) => negativeRed && isNegativePreviewScalar(value) ? 'is-negative' : undefined
+  const valueClass = (value: NativeReportPreviewScalar | undefined) => isQuantityBreakdown(value) ? 'is-quantity-breakdown'
+    : negativeRed && isNegativePreviewScalar(value) ? 'is-negative' : undefined
   const totals = preview.Totals
   const grandTotals = preview.constructorPresentation?.grandTotals !== false
   const documentLayout = !products && preview.Request?.DataSource === 'NativeSalesNet' && previewReportProfile !== undefined
@@ -71,6 +73,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
   })
   const valueText = (value: NativeReportPreviewScalar | undefined, columnSourceIndex: number) =>
     value?.Kind === 'null' ? '—'
+      : isQuantityBreakdown(value) ? quantityBreakdownText(value!.Value!)
       : blanksZero && isZeroPreviewScalar(value) ? ''
       : numberPresentation && semanticsByColumn.has(columnSourceIndex) && value?.Kind === 'decimal' && typeof value.Value === 'string'
         ? formatReportDecimal(value.Value, semanticsByColumn.get(columnSourceIndex)!, numberPresentation)
@@ -100,7 +103,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
   const columnWindow = previewColumnWindow(preview)
   const wide = isPartialColumnWindow(columnWindow)
   const stickyRowHeader = (index: number) => wide ? { className: 'is-sticky-row-header', style: { left: `${index * WIDE_ROW_HEADER_REM}rem` } } : {}
-  const columnPaths = preview.Columns.map(column => documentMeasurePath(preview.Request?.DataSource, semanticsByMeasure.get(column.SourceIndex), previewReportProfile,
+  const columnPaths = preview.Columns.map(column => documentMeasurePath(preview.Request?.DataSource, semanticsByMeasure.get(column.SourceIndex),
     (products ? column.Values.slice(0, 1) : sharedGroup ? column.Values.slice(1) : column.Values)
       .map((value, index) => sharedGroup ? value.Caption : columnIdentityCaption(column, index)).filter(Boolean))
     .filter((caption, index, path) => index === 0 || caption !== path[index - 1]))
@@ -212,22 +215,23 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
 
 const WIDE_ROW_HEADER_REM = 12
 
+const isQuantityBreakdown = (value: NativeReportPreviewScalar | undefined) =>
+  value?.Provenance === QUANTITY_BREAKDOWN_PROVENANCE && value.Kind === 'text' && typeof value.Value === 'string'
+
 const DOCUMENT_MEASURE_CAPTIONS: readonly (readonly [string, Readonly<Record<number, string>>])[] = [
   ['Кількість продажу', { 0: 'Кількість' }],
   ['Вартість продажу, ', { 2: 'Без ПДВ', 3: 'ПДВ', 4: 'З ПДВ' }],
   ['Собівартість, ', { 6: 'Без ПДВ', 7: 'ПДВ', 8: 'З ПДВ' }],
-  ['Націнка, ', { 10: 'Без ПДВ', 11: 'ПДВ', 12: 'З ПДВ' }],
   ['Валовий прибуток, ', { 10: 'Без ПДВ', 11: 'ПДВ', 12: 'З ПДВ' }],
-  ['Рентабельність, %', { 14: 'Без ПДВ', 15: 'З ПДВ' }],
+  ['Націнка, %', { 14: 'Без ПДВ', 15: 'З ПДВ', 117: 'Без ПДВ', 118: 'З ПДВ' }],
+  ['Маржа, %', { 115: 'Без ПДВ', 116: 'З ПДВ' }],
 ]
 
 const STOCK_PERIOD_GROUPS = ['Початковий залишок', 'Прихід', 'Розхід', 'Кінцевий залишок'] as const
 const STOCK_PERIOD_MEASURES = ['Кількість', 'Собівартість без ПДВ, EUR', 'ПДВ, EUR'] as const
 const PURCHASE_MEASURES: Readonly<Record<number, string>> = { 0: 'Кількість', 2: 'Вартість без ПДВ, EUR', 3: 'ПДВ, EUR', 96: 'Вага (нетто), кг' }
 
-function documentMeasurePath(source: string | undefined, measureType: number | null | undefined, profile: SalesConstructorProfile | undefined, path: string[]): string[] {
-  if (source === 'NativeSalesNet' && profile === 'grossProfit' && measureType != null && measureType >= 10 && measureType <= 12)
-    return path.map(caption => caption.replace(/^Націнка(?=,|\s|$)/u, 'Валовий прибуток'))
+function documentMeasurePath(source: string | undefined, measureType: number | null | undefined, path: string[]): string[] {
   if (measureType == null || path.length < 2) return path
   if (source === 'NativeStockPeriod' && measureType >= 97 && measureType <= 108)
     return [...path.slice(0, -2), STOCK_PERIOD_GROUPS[Math.floor((measureType - 97) / 3)], STOCK_PERIOD_MEASURES[(measureType - 97) % 3]]

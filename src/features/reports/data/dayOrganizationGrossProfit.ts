@@ -44,7 +44,7 @@ function validDate(value: string): boolean {
 export function isDayOrganizationGrossProfitDataset(dataset: ReportDataset): boolean {
   return dataset.DataSource === DAY_ORGANIZATION_GROSS_PROFIT_SOURCE && dataset.PeriodRequired === true
     && dataset.PeriodSupported === true && dataset.Groupings.map(field => field.Type).join(',') === '3,4'
-    && [legacyMeasures.join(','), measures.join(',')].includes(dataset.Measurements.map(field => field.Type).join(','))
+    && [legacyMeasures.join(','), measures.join(','), [...measures, 117, 118].join(',')].includes(dataset.Measurements.map(field => field.Type).join(','))
     && dataset.Filters.map(field => field.Type).join(',') === '0,1,2,6,9'
 }
 

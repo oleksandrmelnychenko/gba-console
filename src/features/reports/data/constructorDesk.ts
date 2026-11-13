@@ -146,8 +146,9 @@ const SALES_MEASURE_CAPTIONS: Readonly<Record<string, MeasureCaption>> = {
   SalesQuantity: { group: 'Кількість продажу' },
   SalesValue: { group: 'Вартість продажу', items: { 2: 'без ПДВ', 3: 'ПДВ', 4: 'з ПДВ' } },
   Cost: { group: 'Собівартість', items: { 6: 'без ПДВ', 7: 'ПДВ', 8: 'з ПДВ' } },
-  Markup: { group: 'Націнка', items: { 10: 'без ПДВ', 11: 'ПДВ', 12: 'з ПДВ' } },
-  Profitability: { group: 'Рентабельність', items: { 14: '% (без ПДВ)', 15: '% (з ПДВ)' } },
+  Markup: { group: 'Валовий прибуток', items: { 10: 'без ПДВ', 11: 'ПДВ', 12: 'з ПДВ' } },
+  Profitability: { group: 'Націнка, %', items: { 14: 'без ПДВ', 15: 'з ПДВ' } },
+  MarginPercent: { group: 'Маржа, %', items: { 115: 'без ПДВ', 116: 'з ПДВ' } },
 }
 
 const GROSS_PROFIT_MEASURE_CAPTIONS: Readonly<Record<string, MeasureCaption>> = {
@@ -155,6 +156,8 @@ const GROSS_PROFIT_MEASURE_CAPTIONS: Readonly<Record<string, MeasureCaption>> = 
   SalesValue: { group: 'Вартість продажу (EUR)', items: { 2: 'Без ПДВ', 3: 'ПДВ', 4: 'З ПДВ' } },
   Cost: { group: 'Собівартість (EUR)', items: { 6: 'Без ПДВ', 7: 'ПДВ', 8: 'З ПДВ' } },
   Markup: { group: 'Валовий прибуток (EUR)', items: { 10: 'Без ПДВ' } },
+  Profitability: { group: 'Націнка, %' },
+  MarginPercent: { group: 'Маржа, %' },
 }
 
 function profileMeasureCaptions(request: ReportRequestBody): Readonly<Record<string, MeasureCaption>> | undefined {

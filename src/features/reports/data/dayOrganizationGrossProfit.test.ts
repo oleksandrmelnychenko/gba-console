@@ -28,6 +28,14 @@ const dataset: ReportDataset = {
   Limitations: ['Відповідність XLS 1С не підтверджена.'],
 }
 
+it('turns on the markup measures next to margin when the server offers them', () => {
+  const withMarkup = { ...dataset, Measurements: [2, 3, 4, 6, 7, 8, 10, 12, 14, 15, 11, 117, 118].map(Type => ({ Type, Name: `Показник ${Type}` })) }
+  const request = defaultDatasetRequest(withMarkup, '2026-11-01', '2026-11-13')
+  expect(request.sorted.Measurements.map(item => item.Type)).toEqual([2, 3, 4, 6, 7, 8, 10, 12, 14, 15, 117, 118])
+  expect(datasetConfigurationError(request, withMarkup)).toBeNull()
+  expect(datasetPresetRequest(withMarkup, 'recorded-sale-gross-profit-by-day-organization', request)?.Data.dataSource).toBe(35)
+})
+
 it('starts with ten day and organization measures and a bounded native preset', () => {
   const request = defaultDatasetRequest(dataset, '2026-09-01', '2026-09-23')
   expect(request.sorted.Row.map(item => item.type)).toEqual([3, 4])

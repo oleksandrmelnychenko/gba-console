@@ -101,6 +101,10 @@ const REPORT_FIELD_TYPES = {
   markupWithVat: 12,
   profitabilityPercentWithoutVat: 14,
   profitabilityPercentWithVat: 15,
+  marginPercentWithoutVat: 115,
+  marginPercentWithVat: 116,
+  markupPercentWithoutVat: 117,
+  markupPercentWithVat: 118,
 } as const
 
 export const REPORT_FILTER_CONDITIONS: ReportFilterCondition[] = [
@@ -283,10 +287,16 @@ const REPORT_FIELD_LABELS: Record<string, string> = {
   Date: 'Дата',
   Day: 'По днях',
   Field: 'Поле',
-  Markup: 'Націнка',
-  MarkupVAT: 'ПДВ націнки',
-  MarkupWithVAT: 'Націнка з ПДВ',
-  MarkupWithoutVAT: 'Націнка без ПДВ',
+  Markup: 'Валовий прибуток',
+  MarginPercent: 'Маржа, %',
+  MarginPercentWithVAT: 'Маржа з ПДВ, %',
+  MarginPercentWithoutVAT: 'Маржа без ПДВ, %',
+  MarkupPercent: 'Націнка, %',
+  MarkupPercentWithVAT: 'Націнка з ПДВ, %',
+  MarkupPercentWithoutVAT: 'Націнка без ПДВ, %',
+  MarkupVAT: 'ПДВ валового прибутку',
+  MarkupWithVAT: 'Валовий прибуток з ПДВ',
+  MarkupWithoutVAT: 'Валовий прибуток без ПДВ',
   Month: 'По місяцях',
   Organization: 'Організація',
   Product: 'Товар',
@@ -411,6 +421,22 @@ export function createDefaultMeasurementGroups(): ReportMeasurementGroup[] {
           IsChecked: false,
           Type: REPORT_FIELD_TYPES.profitabilityPercentWithVat,
         },
+      ],
+    },
+    {
+      Name: 'MarginPercent',
+      IsChecked: false,
+      SubList: [
+        { Name: 'MarginPercentWithoutVAT', IsChecked: false, Type: REPORT_FIELD_TYPES.marginPercentWithoutVat },
+        { Name: 'MarginPercentWithVAT', IsChecked: false, Type: REPORT_FIELD_TYPES.marginPercentWithVat },
+      ],
+    },
+    {
+      Name: 'MarkupPercent',
+      IsChecked: false,
+      SubList: [
+        { Name: 'MarkupPercentWithoutVAT', IsChecked: false, Type: REPORT_FIELD_TYPES.markupPercentWithoutVat },
+        { Name: 'MarkupPercentWithVAT', IsChecked: false, Type: REPORT_FIELD_TYPES.markupPercentWithVat },
       ],
     },
   ]

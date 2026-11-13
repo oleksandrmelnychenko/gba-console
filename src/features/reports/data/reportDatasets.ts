@@ -40,7 +40,7 @@ import { reportFilterExpressionError } from './reportFilterExpression'
 import { ABC_CLASS_GROUPING, preserveAbcGrouping, reportAbcClassificationError } from './reportAbcClassification'
 import { reportTopGroupsError } from './reportTopGroups'
 import { valuationConfigurationError, requiresValuationAgreement } from './reportValuation'
-import { getNativeReportProfile, isNativeReportPresetId, type NativeReportPresetId } from './nativeReportProfiles'
+import { getNativeReportProfile, optionalProfileMeasures, isNativeReportPresetId, type NativeReportPresetId } from './nativeReportProfiles'
 import { applyOriginalClientDiscounts, originalClientDiscountsSupported } from './originalClientDiscounts'
 import { cloneGroupedCashAliases, defaultGroupedCashPeriod, groupedCashSupported, withDefaultCashReadMode } from './groupedCashPeriod'
 import { cashPeriodConfigurationError } from './cashPeriod'
@@ -194,7 +194,7 @@ export function defaultDatasetRequest(dataset: ReportDataset, from: string, to: 
   const available = dataset.Measurements.filter(field => field.Selectable !== false)
   const salesByResponsibles = dataset.DataSource === SALES_BY_RESPONSIBLES_SOURCE
   const preferred = available.filter(field => salesByResponsibles ? SALES_BY_RESPONSIBLES_MEASURES.includes(field.Type)
-    : profile ? profile.measurements.some(type => type === field.Type)
+    : profile ? profile.measurements.some(type => type === field.Type) || optionalProfileMeasures(dataset.DataSource).includes(field.Type)
     : field.Type === 0 || field.Type === (dataset.DataSource === 3 ? 2 : 4))
   const fields = preferred.length ? preferred : available.slice(0, 1)
   const selected = fields.map(field => ({ ...field, IsChecked: true, parentName: '' }))

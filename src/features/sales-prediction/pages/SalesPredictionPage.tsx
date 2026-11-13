@@ -19,6 +19,7 @@ import type {
   SalesPredictionPoint,
   SalesPredictionProductOption,
 } from '../types'
+import { FORECAST_EMPTY_LABEL, forecastTitle } from '../forecastTitle'
 import './sales-prediction-page.css'
 
 function toChartPoints(points: SalesPredictionPoint[]): SalesPredictionChartPoint[] {
@@ -543,10 +544,9 @@ function PredictionCharts({
           data={byClient}
           coveragePct={forecastLineage?.interval?.coverage_pct}
           isLoading={isLoadingClient}
-          title={t('Прогноз продажів по клієнту: {customer} на {monthCount} місяців', {
-            customer: clientFullName,
-            monthCount: byClient.length,
-          })}
+          emptyLabel={t(FORECAST_EMPTY_LABEL)}
+          title={forecastTitle(t('Прогноз продажів по клієнту: {customer}', { customer: clientFullName }),
+            forecastLineage?.horizon_months, byClient.length, isLoadingClient)}
         />
       )}
 
@@ -556,10 +556,9 @@ function PredictionCharts({
           data={byProduct}
           coveragePct={forecastLineage?.interval?.coverage_pct}
           isLoading={isLoadingProduct}
-          title={t('Прогноз продажів по продукту: {product} на {monthCount} місяців', {
-            monthCount: byProduct.length,
-            product: productVendorCode,
-          })}
+          emptyLabel={t(FORECAST_EMPTY_LABEL)}
+          title={forecastTitle(t('Прогноз продажів по продукту: {product}', { product: productVendorCode }),
+            forecastLineage?.horizon_months, byProduct.length, isLoadingProduct)}
         />
       )}
 
@@ -568,16 +567,16 @@ function PredictionCharts({
         <SalesPredictionChart
           color="teal.6"
           data={combined}
+          emptyLabel={t(FORECAST_EMPTY_LABEL)}
           coveragePct={forecastLineage?.interval?.coverage_pct}
           isLoading={isLoadingCombined}
           title={
             isLoadingCombined
               ? t('Завантаження')
-              : t('Прогноз продажів по клієнту: {customer} та по продукту: {product} на {monthCount} місяців', {
+              : forecastTitle(t('Прогноз продажів по клієнту: {customer} та по продукту: {product}', {
                   customer: clientFullName,
-                  monthCount: combined.length,
                   product: productVendorCode,
-                })
+                }), forecastLineage?.horizon_months, combined.length, isLoadingCombined)
           }
         />
       )}

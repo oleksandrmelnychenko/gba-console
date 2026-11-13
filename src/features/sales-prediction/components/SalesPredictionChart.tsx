@@ -11,6 +11,7 @@ type SalesPredictionChartProps = {
   color?: string
   coveragePct?: number
   data: SalesPredictionChartPoint[]
+  emptyLabel?: string
   isLoading?: boolean
   title: string
 }
@@ -31,6 +32,7 @@ export function SalesPredictionChart({
   color = 'orange.6',
   coveragePct,
   data,
+  emptyLabel,
   isLoading = false,
   title,
 }: SalesPredictionChartProps) {
@@ -60,7 +62,7 @@ export function SalesPredictionChart({
         {isLoading && data.length === 0 ? (
           <ChartState label={t('Завантаження даних')} />
         ) : data.length === 0 ? (
-          <ChartState label={t('Дані відсутні')} />
+          <ChartState label={emptyLabel ?? t('Дані відсутні')} />
         ) : (
           <>
             <LineChart

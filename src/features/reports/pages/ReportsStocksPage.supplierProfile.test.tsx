@@ -42,7 +42,7 @@ it.each([
   const request = vi.mocked(previewStockReport).mock.calls[0][0]
   expect(request).toMatchObject({ dataSource: 2, reportProfile: profile, from: '2026-10-19', to: '2026-10-27' })
   expect(request.sorted[axis].at(-1)).toMatchObject({ type: 21, label: 'Постачальник' })
-  expect(request.sorted.Measurements.map(item => item.Type)).toEqual(profile === 'sales' ? [0, 2, 6, 10, 14] : [2, 6, 10])
+  expect(request.sorted.Measurements.map(item => item.Type)).toEqual(profile === 'sales' ? [0, 2, 6, 10, 14, 115] : [2, 6, 10])
 })
 it('does not offer supplier when the current server has only base groupings', async () => {
   vi.mocked(getReportDatasets).mockResolvedValue([{ ...supplierProfileDataset, profileGroupings: undefined }])

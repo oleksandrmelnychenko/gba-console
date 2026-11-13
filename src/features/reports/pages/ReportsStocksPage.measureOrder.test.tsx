@@ -32,14 +32,14 @@ it('applies alphabetic then manual measure order to preview while retaining peri
   await act(async () => fireEvent.submit(container.querySelector('form')!))
   await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
   const sorted = vi.mocked(previewStockReport).mock.calls[0][0]
-  expect(sorted.sorted.Measurements.map(item => item.Type)).toEqual([2, 0, 10, 14, 6])
+  expect(sorted.sorted.Measurements.map(item => item.Type)).toEqual([10, 2, 0, 115, 14, 6])
   expect(sorted).toMatchObject({ dataSource: 2, reportProfile: 'sales', from: '2026-10-18', to: '2026-10-27', selections: [] })
   fireEvent.click(within(screen.getByRole('region', { name: 'Показники' })).getByRole('button', { name: 'Собівартість', pressed: false }))
   fireEvent.click(screen.getByRole('button', { name: 'Перемістити Собівартість вище' }))
   await act(async () => fireEvent.submit(container.querySelector('form')!))
   await waitFor(() => expect(previewStockReport).toHaveBeenCalledTimes(2))
   const manual = vi.mocked(previewStockReport).mock.calls[1][0]
-  expect(manual.sorted.Measurements.map(item => item.Type)).toEqual([2, 0, 10, 6, 14])
+  expect(manual.sorted.Measurements.map(item => item.Type)).toEqual([10, 2, 0, 115, 6, 14])
   expect(manual.sorted.Row).toEqual(sorted.sorted.Row)
   expect(manual.sorted.Col).toEqual(sorted.sorted.Col)
   expect(manual.selections).toEqual(sorted.selections)

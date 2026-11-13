@@ -214,7 +214,7 @@ it('shows no per-group subtotal under single-level rows and keeps the grand tota
   expect(screen.getByRole('rowheader', { name: 'Загальний підсумок' })).toBeTruthy()
 })
 
-function showProfit(profile?: 'grossProfit' | 'sales') {
+function showProfit(profile?: 'grossProfit' | 'sales', cells: unknown[] = []) {
   const money = { kind: 'money', currencyPolicy: 'EUR', unitPolicy: 'currency', aggregation: 'sum', scalable: true, defaultDecimalPlaces: 2 }
   const preview = normalizeNativeReportPreview({ Preview: {
     Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true, Request: { ...request, DataSource: 'NativeSalesNet', Notes: [] },
@@ -222,19 +222,26 @@ function showProfit(profile?: 'grossProfit' | 'sales') {
     RowSchema: [{ Caption: 'Організація' }], ColumnSchema: [{ Caption: 'Група', Identity: '$measureGroup' }, { Caption: 'Показник', Identity: '$measure' }],
     Rows: [{ Ordinal: 0, SourceIndex: 1, Values: [{ Caption: 'АМГ' }] }],
     Columns: [{ Ordinal: 0, SourceIndex: 0, Values: [{ Caption: 'Собівартість, EUR' }, { Caption: 'Без ПДВ' }] },
-      { Ordinal: 1, SourceIndex: 1, Values: [{ Caption: 'Націнка, EUR' }, { Caption: 'Без ПДВ' }] }],
-    Cells: [],
+      { Ordinal: 1, SourceIndex: 1, Values: [{ Caption: 'Валовий прибуток, EUR' }, { Caption: 'Без ПДВ' }] }],
+    Cells: cells,
     valueSemantics: [{ columnSourceIndex: 0, measureType: 6, semantics: money }, { columnSourceIndex: 1, measureType: 10, semantics: money }],
   } })
   return render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} previewReportProfile={profile} /></I18nProvider></MantineProvider>)
 }
 
-it('heads the profit column of the gross profit report as gross profit and leaves the sales report markup caption', () => {
-  const view = showProfit('grossProfit')
-  expect(screen.getByRole('columnheader', { name: 'Валовий прибуток, EUR / Без ПДВ' })).toBeTruthy()
-  expect(screen.getByRole('columnheader', { name: 'Собівартість, EUR / Без ПДВ' })).toBeTruthy()
-  expect(view.container.textContent).not.toContain('Націнка')
-  view.unmount()
-  showProfit('sales')
-  expect(screen.getByRole('columnheader', { name: 'Націнка, EUR / Без ПДВ' })).toBeTruthy()
+it('heads the profit column with the server caption «Валовий прибуток» in both constructor profiles', () => {
+  for (const profile of ['grossProfit', 'sales'] as const) {
+    const view = showProfit(profile)
+    expect(screen.getByRole('columnheader', { name: 'Валовий прибуток, EUR / Без ПДВ' })).toBeTruthy()
+    expect(view.container.textContent).not.toContain('Націнка')
+    view.unmount()
+  }
+})
+
+it('shows a mixed-unit quantity breakdown in full instead of a blank cell', () => {
+  const text = '3\u00a0420 шт · 593 компл · 35 м · 4 без одиниці'
+  const view = showProfit('sales', [{ RowSourceIndex: 1, ColumnSourceIndex: 0, Value: { Kind: 'text', Value: text, Provenance: 'quantityBreakdown' } }])
+  const cell = view.container.querySelector('td.is-quantity-breakdown')
+  expect(cell?.textContent).toBe('3\u00a0420\u00a0шт · 593\u00a0компл · 35\u00a0м · 4\u00a0без\u00a0одиниці')
+  expect(view.container.textContent).not.toContain('—')
 })

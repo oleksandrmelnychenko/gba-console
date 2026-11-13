@@ -116,6 +116,10 @@ const DOCUMENT_REPORT_PROFILES = [
 
 export type NativeReportPresetId = CurrentStockPresetId | typeof DOCUMENT_REPORT_PROFILES[number]['preset']['id']
 export const CURRENT_REPORT_TITLES: ReadonlySet<string> = new Set([...CURRENT_STOCK_REPORT_TITLES, DEBT_REPORT_TITLE, ACCOUNT_BALANCE_REPORT_TITLE, AGREEMENT_PRICES_TITLE, CURRENT_AGREEMENT_GROUP_DISCOUNT_TITLE, AGREEMENT_PRICE_COMPARISON_TITLE])
+const OPTIONAL_PROFILE_MEASURES: Readonly<Record<number, readonly number[]>> = { 35: [117, 118] }
+export function optionalProfileMeasures(dataSource: number | undefined): readonly number[] {
+  return dataSource === undefined ? [] : OPTIONAL_PROFILE_MEASURES[dataSource] ?? []
+}
 export function getNativeReportProfile(dataSource: number | undefined) {
   return getCurrentStockReport(dataSource) ?? DOCUMENT_REPORT_PROFILES.find(report => report.dataSource === dataSource)
 }

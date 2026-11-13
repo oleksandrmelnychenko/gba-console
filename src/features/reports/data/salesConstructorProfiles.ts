@@ -5,8 +5,8 @@ import type { ReportDataset, ReportDatasetField, ReportRequestBody } from '../ty
 export type SalesConstructorProfile = 'sales' | 'grossProfit'
 export const SALES_CONSTRUCTOR_WORKBOOK = 'gba:sales-constructor:v1'
 export const GROSS_PROFIT_CONSTRUCTOR_WORKBOOK = 'gba:gross-profit-constructor:v1'
-export const SALES_CONSTRUCTOR_MEASURES = [0, 2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15] as const
-export const GROSS_PROFIT_CONSTRUCTOR_MEASURES = [0, 2, 3, 4, 6, 7, 8, 10, 14, 15] as const
+export const SALES_CONSTRUCTOR_MEASURES = [0, 2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15, 115, 116] as const
+export const GROSS_PROFIT_CONSTRUCTOR_MEASURES = [0, 2, 3, 4, 6, 7, 8, 10, 14, 15, 115, 116] as const
 const HISTORICAL_PRICE_TYPE_REQUIRED = 'Відбір «Тип ціни» потребує збереженого історичного типу документа. Поточний тип договору його не замінює. Вимкніть або вилучіть цей відбір.'
 export const salesConstructorTitle = (profile: SalesConstructorProfile) => profile === 'sales' ? 'Звіт по продажам' : 'Валовий прибуток'
 export const salesConstructorWorkbook = (profile: SalesConstructorProfile) => profile === 'sales' ? SALES_CONSTRUCTOR_WORKBOOK : GROSS_PROFIT_CONSTRUCTOR_WORKBOOK
@@ -74,7 +74,7 @@ export function salesConstructorRequest(request: ReportRequestBody, marker: stri
   if (!profile || !salesConstructorSupported(dataset, profile)) return request
   const rows = profile === 'sales' ? [4, 20] : [4, 10, 7]
   const columns = profile === 'sales' ? [19] : [2]
-  const measures = profile === 'sales' ? [0, 2, 6, 10, 14] : [2, 6, 10]
+  const measures = profile === 'sales' ? [0, 2, 6, 10, 14, 115] : [2, 6, 10]
   const axis = (types: number[]) => types.flatMap(type => dataset.Groupings.filter(field => field.Type === type).map(field => ({ type, key: field.Name, label: field.Name })))
   return { ...request, reportProfile: profile, sorted: { Row: axis(rows), Col: axis(columns),
     Measurements: measures.flatMap(type => dataset.Measurements.filter(field => field.Type === type && field.Selectable !== false).map(field => ({ Type: type, Name: field.Name, Label: field.Name, IsChecked: true, parentName: '' }))) } }
