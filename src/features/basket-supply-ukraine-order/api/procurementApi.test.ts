@@ -126,6 +126,40 @@ describe('getProducerPlan', () => {
     expect(plan.lead_time_sample_count).toBe(expectedSamples)
   })
 
+  it('passes the minimum order evidence and the lead time statistic', async () => {
+    const body = buildFullPlan() as ReturnType<typeof buildFullPlan> & Record<string, unknown>
+    body.lead_time_statistic = 'trimmed_mean'
+    Object.assign(body.items[0], {
+      moq_basis: 'derived_validated',
+      pack_multiple: 5,
+      moq_evidence: { documents: 9, quantities: [10, 10, 20], source_document_date: '2026-08-06', sales_12m_units: 138 },
+    })
+    apiRequestMock.mockResolvedValueOnce({ Body: body })
+
+    const plan = await getProducerPlan(42, '2026-06-15')
+
+    expect(plan.lead_time_statistic).toBe('trimmed_mean')
+    expect(plan.items[0].moq_basis).toBe('derived_validated')
+    expect(plan.items[0].pack_multiple).toBe(5)
+    expect(plan.items[0].moq_evidence).toEqual({
+      documents: 9, quantities: [10, 10, 20], source_document_date: '2026-08-06', sales_12m_units: 138,
+    })
+  })
+
+  it('drops an unknown minimum order basis or malformed evidence instead of failing the plan', async () => {
+    const body = buildFullPlan() as ReturnType<typeof buildFullPlan> & Record<string, unknown>
+    body.lead_time_statistic = 'median'
+    Object.assign(body.items[0], { moq_basis: 'guess', pack_multiple: 'x', moq_evidence: { documents: 'many' } })
+    apiRequestMock.mockResolvedValueOnce({ Body: body })
+
+    const plan = await getProducerPlan(42, '2026-06-15')
+
+    expect(plan.lead_time_statistic).toBeNull()
+    expect(plan.items[0].moq_basis).toBeNull()
+    expect(plan.items[0].pack_multiple).toBeNull()
+    expect(plan.items[0].moq_evidence).toBeNull()
+  })
+
   it('tolerates null or absent optional enriched fields', async () => {
     apiRequestMock.mockResolvedValueOnce({
       producer_id: 42,

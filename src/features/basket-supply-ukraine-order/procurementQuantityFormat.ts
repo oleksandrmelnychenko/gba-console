@@ -16,11 +16,13 @@ export function formatProcurementQuantity(
 export function describeLeadTimeBasis(
   basis: ProcurementLeadTimeBasis | null | undefined,
   sampleCount: number | null | undefined,
+  statistic?: 'mean' | 'trimmed_mean' | null,
 ): string | null {
   if (basis === 'measured') {
-    return sampleCount != null && sampleCount > 0
+    const measured = sampleCount != null && sampleCount > 0
       ? `виміряний за ${new Intl.NumberFormat('uk-UA').format(sampleCount)} поставками`
       : 'виміряний за поставками'
+    return statistic === 'trimmed_mean' ? `${measured}, усереднено без викидів` : measured
   }
   if (basis === 'default') return 'типовий'
   if (basis === 'override') return 'задано вручну'

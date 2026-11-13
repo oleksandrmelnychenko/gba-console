@@ -52,6 +52,7 @@ import type {
 } from '../procurementTypes'
 import { ProcurementWorkspaceState } from './ProcurementWorkspaceState'
 import { describeLeadTimeBasis, formatProcurementQuantity } from '../procurementQuantityFormat'
+import { ProcurementOrderTermMarkers } from './ProcurementOrderTermMarkers'
 
 type TermsSaveStatus = 'idle' | 'saving' | 'saved'
 
@@ -813,7 +814,7 @@ function BuyerCockpitTabContent() {
 
   const hasSelection = selectedProducerId !== null
   const hasPlan = Boolean(plan) && !isLoading
-  const leadTimeBasisLabel = plan ? describeLeadTimeBasis(plan.lead_time_basis, plan.lead_time_sample_count) : null
+  const leadTimeBasisLabel = plan ? describeLeadTimeBasis(plan.lead_time_basis, plan.lead_time_sample_count, plan.lead_time_statistic) : null
   const hasItems = sortedItems.length > 0
 
   return (
@@ -1117,15 +1118,6 @@ function buildProducerOptions(producers: Client[]) {
 
 function SuggestedQtyCell({ item, t }: { item: ReorderSuggestion; t: TranslateFunction }) {
   const hasRounding = item.raw_qty !== null && item.raw_qty !== item.suggested_qty
-  const hints: string[] = []
-
-  if (item.moq !== null) {
-    hints.push(`MOQ ${qtyFormatter.format(item.moq)}`)
-  }
-
-  if (item.order_multiple !== null) {
-    hints.push(`×${qtyFormatter.format(item.order_multiple)}`)
-  }
 
   const learnedFactor = item.learned_factor
   const hasLearned = learnedFactor !== null && learnedFactor !== 1
@@ -1142,11 +1134,7 @@ function SuggestedQtyCell({ item, t }: { item: ReorderSuggestion; t: TranslateFu
           </Text>
         )}
       </Group>
-      {hasRounding && hints.length > 0 && (
-        <Badge className="app-role-pill is-gray" size="xs" variant="light">
-          {hints.join(' / ')}
-        </Badge>
-      )}
+      <ProcurementOrderTermMarkers item={item} />
       {hasLearned && (
         <Tooltip label={t('Кількість скориговано на основі попередніх рішень закупівельника')} withinPortal>
           <Badge

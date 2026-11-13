@@ -82,6 +82,7 @@ import {
 import { formatProcurementQuantity, procurementQuantityFormat as quantity } from '../procurementQuantityFormat'
 import { compareLineCostUnpricedLast, unpricedLinesNote } from '../procurementTotals'
 import type { CartPlan, ProcurementUrgency, ReorderSuggestion } from '../procurementTypes'
+import { ProcurementOrderTermMarkers } from './ProcurementOrderTermMarkers'
 import { ProcurementProductCell } from './ProcurementProductCell'
 import { ProcurementWorkspaceState } from './ProcurementWorkspaceState'
 import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
@@ -1210,6 +1211,7 @@ function usePlanColumns({
                 {t('Рекомендовано')}: {formatProcurementQuantity(row.suggested_qty, row.measure_unit, quantity)}
               </Text>
             )}
+            <ProcurementOrderTermMarkers item={row} />
           </Box>
         ),
         align: 'right',

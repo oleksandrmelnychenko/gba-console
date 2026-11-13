@@ -97,6 +97,17 @@ export type ProcurementCostSource = 'receipt_history' | 'buyer_supplied' | 'last
 
 export type ProcurementDemandEvidence = 'regular' | 'on_request'
 
+export type ProcurementMoqBasis = 'derived_validated' | 'buyer'
+
+export type ProcurementMoqEvidence = {
+  documents: number
+  quantities: number[]
+  source_document_date: string
+  sales_12m_units: number
+}
+
+export type ProcurementLeadTimeStatistic = 'mean' | 'trimmed_mean'
+
 export type ReorderSuggestion = {
   product_id: number
   product_name: string | null
@@ -141,6 +152,9 @@ export type ReorderSuggestion = {
   estimated_line_cost_eur?: number | null
   demand_evidence?: ProcurementDemandEvidence | null
   measure_unit?: string | null
+  moq_basis?: ProcurementMoqBasis | null
+  moq_evidence?: ProcurementMoqEvidence | null
+  pack_multiple?: number | null
 }
 
 export type ProducerPlan = ProcurementHistoryContract & {
@@ -150,6 +164,7 @@ export type ProducerPlan = ProcurementHistoryContract & {
   lead_time_std_days: number
   lead_time_basis?: 'measured' | 'default' | 'override' | null
   lead_time_sample_count?: number | null
+  lead_time_statistic?: ProcurementLeadTimeStatistic | null
   lead_time_source: string
   item_count: number
   items: ReorderSuggestion[]

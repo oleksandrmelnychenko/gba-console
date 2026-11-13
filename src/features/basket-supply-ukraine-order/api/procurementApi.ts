@@ -640,6 +640,7 @@ async function normalizeProducerPlan(result: unknown, expectedAsOf?: string): Pr
     ),
     lead_time_basis: normalizeLeadTimeBasis(data.lead_time_basis),
     lead_time_sample_count: normalizeLeadTimeSampleCount(data.lead_time_sample_count),
+    lead_time_statistic: normalizeLeadTimeStatistic(data.lead_time_statistic),
     item_count: itemCount,
     items,
   }
@@ -647,6 +648,10 @@ async function normalizeProducerPlan(result: unknown, expectedAsOf?: string): Pr
 
 function normalizeLeadTimeBasis(value: unknown): ProducerPlan['lead_time_basis'] {
   return value === 'measured' || value === 'default' || value === 'override' ? value : null
+}
+
+function normalizeLeadTimeStatistic(value: unknown): ProducerPlan['lead_time_statistic'] {
+  return value === 'mean' || value === 'trimmed_mean' ? value : null
 }
 
 function normalizeLeadTimeSampleCount(value: unknown): number | null {
@@ -1024,6 +1029,38 @@ function normalizeReorderSuggestion(value: unknown, path: string, manifest: Proc
     estimated_line_cost_eur: requireNullableMoney(entry.estimated_line_cost_eur, `${path}.estimated_line_cost_eur`),
     demand_evidence: requireNullableOneOf(entry.demand_evidence, `${path}.demand_evidence`, KNOWN_DEMAND_EVIDENCE),
     measure_unit: requireNullableString(entry.measure_unit, `${path}.measure_unit`),
+    moq_basis: normalizeMoqBasis(entry.moq_basis),
+    moq_evidence: normalizeMoqEvidence(entry.moq_evidence),
+    pack_multiple: normalizeOptionalPositiveNumber(entry.pack_multiple),
+  }
+}
+
+function normalizeMoqBasis(value: unknown): ReorderSuggestion['moq_basis'] {
+  return value === 'derived_validated' || value === 'buyer' ? value : null
+}
+
+function normalizeOptionalPositiveNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null
+}
+
+function normalizeMoqEvidence(value: unknown): ReorderSuggestion['moq_evidence'] {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null
+  const entry = value as Record<string, unknown>
+  const { documents, quantities, source_document_date: sourceDate, sales_12m_units: sales } = entry
+  if (
+    typeof documents !== 'number' || !Number.isInteger(documents) || documents < 0 ||
+    typeof sourceDate !== 'string' || !/^\d{4}-\d{2}-\d{2}/.test(sourceDate) ||
+    typeof sales !== 'number' || !Number.isFinite(sales) || sales < 0
+  ) {
+    return null
+  }
+  return {
+    documents,
+    quantities: Array.isArray(quantities)
+      ? quantities.filter((quantity): quantity is number => typeof quantity === 'number' && Number.isFinite(quantity))
+      : [],
+    source_document_date: sourceDate.slice(0, 10),
+    sales_12m_units: sales,
   }
 }
 

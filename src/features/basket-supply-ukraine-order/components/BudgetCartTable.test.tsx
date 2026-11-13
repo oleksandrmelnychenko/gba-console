@@ -126,6 +126,27 @@ function suggestion(): ReorderSuggestion {
   }
 }
 
+it('marks a recommended quantity that a minimum order term raised', () => {
+  render(<MantineProvider theme={theme}><I18nProvider>
+    <BudgetCartTable
+      items={[{ ...suggestion(), suggested_qty: 50, raw_qty: 7, moq: 50, moq_basis: 'buyer', pack_multiple: 2, order_multiple: 2,
+        unit_cost_eur: 1, line_cost_eur: 50 }]}
+      producerNameById={new Map([[501, 'Meyle']])}
+    />
+  </I18nProvider></MantineProvider>)
+
+  expect(screen.getByTestId('order-term-moq').textContent).toBe('мін. партія 50')
+  expect(screen.getByTestId('order-term-pack').textContent).toBe('кратність 2')
+})
+
+it('leaves an unchanged quantity without a marker', () => {
+  render(<MantineProvider theme={theme}><I18nProvider>
+    <BudgetCartTable items={[{ ...suggestion(), moq: 5, moq_basis: 'buyer' }]} producerNameById={new Map([[501, 'Meyle']])} />
+  </I18nProvider></MantineProvider>)
+
+  expect(screen.queryByTestId('order-term-markers')).toBeNull()
+})
+
 it('states that cost estimates are in EUR without VAT in the column headers', () => {
   render(<MantineProvider theme={theme}><I18nProvider>
     <BudgetCartTable items={[suggestion()]} producerNameById={new Map([[501, 'Meyle']])} />

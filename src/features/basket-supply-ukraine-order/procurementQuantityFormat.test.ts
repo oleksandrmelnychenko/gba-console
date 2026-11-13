@@ -22,6 +22,12 @@ describe('describeLeadTimeBasis', () => {
     expect(describeLeadTimeBasis('override', 3)).toBe('задано вручну')
   })
 
+  it('says when outliers were left out of the average', () => {
+    expect(describeLeadTimeBasis('measured', 14, 'trimmed_mean')).toBe('виміряний за 14 поставками, усереднено без викидів')
+    expect(describeLeadTimeBasis('measured', 14, 'mean')).toBe('виміряний за 14 поставками')
+    expect(describeLeadTimeBasis('default', null, 'trimmed_mean')).toBe('типовий')
+  })
+
   it('stays silent for an older service that does not send the basis', () => {
     expect(describeLeadTimeBasis(null, 5)).toBeNull()
     expect(describeLeadTimeBasis(undefined, undefined)).toBeNull()

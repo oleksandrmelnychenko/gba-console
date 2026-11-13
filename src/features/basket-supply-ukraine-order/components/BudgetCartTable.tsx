@@ -9,6 +9,7 @@ import { formatProcurementQuantity, procurementQuantityFormat as qtyFormatter } 
 import { isBelowReorderPoint } from '../procurementTotals'
 import type { ProcurementUrgency, ReorderSuggestion } from '../procurementTypes'
 import { ProcurementCostBadge, ProcurementCostProof } from './ProcurementCostProof'
+import { ProcurementOrderTermMarkers } from './ProcurementOrderTermMarkers'
 import { ProcurementProductCell } from './ProcurementProductCell'
 
 type DecisionSignal = {
@@ -183,12 +184,12 @@ function buildColumns(
       align: 'right',
       accessor: (item) => item.suggested_qty,
       cell: (item) => (
-        <Text
-          className="app-money"
-          size="sm"
-        >
-          {formatProcurementQuantity(item.suggested_qty, item.measure_unit, qtyFormatter)}
-        </Text>
+        <Stack align="end" gap={2}>
+          <Text className="app-money" size="sm">
+            {formatProcurementQuantity(item.suggested_qty, item.measure_unit, qtyFormatter)}
+          </Text>
+          <ProcurementOrderTermMarkers item={item} />
+        </Stack>
       ),
     },
     {
