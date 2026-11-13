@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import { formatEur } from '../metricPresentation'
-import { headChartManagerLabel } from './HeadDashboardChartsPanel'
+import { headChartManagerLabel } from './headChartManagerLabel'
 
 it('labels a manager by the team name, then the dashboard name, and by id only as the last resort', () => {
   const names = new Map([[10162, 'Олена Коваль']])

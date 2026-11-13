@@ -10,7 +10,8 @@ import { AgingBars, type AgingSeries } from '../../../shared/ui/charts/AgingBars
 import { formatBusinessDate } from '../../exchange-rates/utils'
 import { getHeadDashboard } from '../api/salesCockpitApi'
 import { formatEur } from '../metricPresentation'
-import type { HeadDashboard, HeadDashboardTeam, HeadTeamRow } from '../types'
+import type { HeadDashboard, HeadTeamRow } from '../types'
+import { headChartManagerLabel } from '../utils/headChartManagerLabel'
 
 type ChartsState = {
   dashboard: HeadDashboard | null
@@ -38,10 +39,6 @@ function chartsReducer(state: ChartsState, action: ChartsAction): ChartsState {
     case 'loading':
       return { ...state, error: null, isLoading: true }
   }
-}
-
-export function headChartManagerLabel(team: Pick<HeadDashboardTeam, 'manager_id' | 'manager_name'>, nameById: ReadonlyMap<number, string>): string {
-  return nameById.get(team.manager_id) || team.manager_name?.trim() || `#${team.manager_id}`
 }
 
 function roundCents(value: number): number {

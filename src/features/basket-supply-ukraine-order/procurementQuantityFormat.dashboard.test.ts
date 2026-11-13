@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest'
 import { formatDashboardQuantity, quantityByUnit } from './procurementQuantityFormat'
 
-const plain = (value: string) => value.replace(/ /g, ' ')
+const plain = (value: string) => value.replace(/\s/g, ' ')
 
 it('prints whole units as integers and measured units with two decimals', () => {
   expect(plain(formatDashboardQuantity(788.1, 'м'))).toBe('788,10 м')
