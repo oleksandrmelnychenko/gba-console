@@ -662,7 +662,7 @@ function BuyerCockpitTabContent() {
         header: t('Рекомендовано'),
         accessor: (item) => item.suggested_qty,
         cell: (item) => <SuggestedQtyCell item={item} t={t} />,
-        width: 150,
+        width: 172,
         align: 'right',
         enableSorting: false,
       },
@@ -759,7 +759,7 @@ function BuyerCockpitTabContent() {
         header: t('Днів покриття'),
         accessor: (item) => item.days_of_cover,
         cell: (item) => qtyFormatter.format(item.days_of_cover),
-        width: 120,
+        width: 140,
         align: 'right',
       },
       {
@@ -997,7 +997,7 @@ function BuyerCockpitTabContent() {
               getRowId={(item) => String(item.product_id)}
               isLoading={isLoading}
               maxHeight={560}
-              minWidth={1468}
+              minWidth={1510}
               rowClassName={(item) => (item.product_id === focusedProductId ? 'basket-supply-row-ai-focus' : undefined)}
               tableId="basket-supply-ukraine-order-buyer-cockpit"
             />
