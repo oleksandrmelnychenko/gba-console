@@ -6,7 +6,6 @@ import { settlementPeriodDataset as dataset, settlementPeriodRequest as request,
 import { currentVparivaniePreview } from '../data/currentVparivanie.test-fixtures'
 import { settlementPeriodConfigurationError as error } from '../data/settlementPeriod'
 import { retainStoredTemplateFields } from '../data/reportTemplateDraft'
-import { datasetPresetRequest, datasetPresets } from '../data/reportDatasets'
 
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
 const api = vi.mocked(apiRequest)
@@ -92,8 +91,6 @@ it('retains duplicate stored aliases for rejection and never resurrects a cleare
   const merged = retainStoredTemplateFields(request(), { ...request(), settlementPeriod: undefined })
   expect(merged.settlementPeriod).toBeUndefined()
   expect(error(merged, dataset, '2026-09-27')).toMatch(/точний договір/)
-  const preset = datasetPresetRequest(dataset, datasetPresets(dataset)[0].id, request())
-  expect(preset?.Data.settlementPeriod).toEqual(scope)
 })
 
 it('requires own dataset attribution for preview and freezes caller scope before awaiting the server', async () => {

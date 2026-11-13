@@ -1,3 +1,4 @@
+import { BUG_1274_ACTIVE_DATA_SOURCES } from '../data/reportMigration'
 import { AppModalFooter } from '../../../shared/ui/AppModal'
 import { ActionIcon, Alert, Badge, Button, Group, Menu, Skeleton, Stack, Text, TextInput } from '@mantine/core'
 import { ArrowLeft, ArrowRight, CalendarDays, Check, CircleAlert, Copy, Eye, LayoutTemplate, Pencil, Plus, RefreshCw, Save, Search, Trash2, X } from 'lucide-react'
@@ -9,7 +10,6 @@ import type { TemplateMutationResult, useServerReportTemplates } from '../hooks/
 import type { ReportDataset, ReportTemplate } from '../types'
 import { formatDate } from '../utils'
 import { SavedNativeReportPanel } from './SavedNativeReportPanel'
-import { ReportTemplateOrderingControls } from './ReportTemplateOrderingControls'
 
 type Action = { kind: 'rename' | 'copy' | 'delete'; template: ReportTemplate; name: string }
 const emptyDatasets: readonly ReportDataset[] = []
@@ -18,14 +18,11 @@ type Props = {
   storage: Pick<ReturnType<typeof useServerReportTemplates>, 'templates' | 'busy' | 'ready' | 'notice' | 'browserTemplates'
     | 'reload' | 'save' | 'update' | 'rename' | 'copy' | 'remove' | 'importBrowserTemplate'>
     & Partial<Pick<ReturnType<typeof useServerReportTemplates>, 'noticeKind'>>
-  ordering?: ReturnType<typeof useServerReportTemplates>['ordering']
   configurationReady: boolean
   configurationName?: string
   disabled?: boolean
   datasets?: readonly ReportDataset[]
-  dataSources?: ReadonlySet<number>
   callerKey?: string | null
-  requireReadMode?: boolean
   notice: string | null
   templateName: string
   activeTemplate: ReportTemplate | null
@@ -39,7 +36,7 @@ type Props = {
   onRefresh: () => void
 }
 
-export function ReportTemplatesPanel({ initiallyCreating = false, storage, ordering, configurationReady, configurationName, disabled = false, datasets = emptyDatasets, dataSources, callerKey = null, requireReadMode = false, notice, templateName,
+export function ReportTemplatesPanel({ initiallyCreating = false, storage, configurationReady, configurationName, disabled = false, datasets = emptyDatasets, callerKey = null, notice, templateName,
   activeTemplate, onNameChange, onApply, onSave, onUpdate, onRenamed, onDeleted, onClearNotice, onRefresh }: Props) {
   const { t } = useI18n()
   const [action, setAction] = useState<Action | null>(null)
@@ -50,7 +47,7 @@ export function ReportTemplatesPanel({ initiallyCreating = false, storage, order
   const blocked = disabled || storage.busy || !storage.ready
   const current = activeTemplate ? storage.templates.find(item => item.Id === activeTemplate.Id) : undefined
   const stale = Boolean(activeTemplate && (!current || current.Revision !== activeTemplate.Revision))
-  const listed = (template: ReportTemplate) => !dataSources || dataSources.has(template.Data.dataSource ?? 0)
+  const listed = (template: ReportTemplate) => BUG_1274_ACTIVE_DATA_SOURCES.has(template.Data.dataSource ?? 0)
   const templates = storage.templates.filter(listed)
   const browserTemplates = storage.browserTemplates.filter(listed)
   const success = notice === storage.notice && storage.noticeKind === 'success'
@@ -81,7 +78,7 @@ export function ReportTemplatesPanel({ initiallyCreating = false, storage, order
     </section> : action ? <TemplateActionController action={action} titleId={actionTitleId} blocked={blocked} storage={storage}
       onNameChange={name => setAction({ ...action, name })} onRenamed={onRenamed} onDeleted={onDeleted}
       onComplete={toList} /> : savedVariant ? <SavedNativeReportPanel template={savedVariant} datasets={datasets} callerKey={callerKey}
-      requireReadMode={requireReadMode} enabled={!blocked} current={storage.templates.some(item => item.Id === savedVariant.Id
+      enabled={!blocked} current={storage.templates.some(item => item.Id === savedVariant.Id
         && item.Revision === savedVariant.Revision && JSON.stringify(item.Data) === JSON.stringify(savedVariant.Data))}
       onClose={toList} /> : <>
       <div className="app-filter-bar reports-stocks-template-toolbar">
@@ -100,7 +97,6 @@ export function ReportTemplatesPanel({ initiallyCreating = false, storage, order
         {stale && storage.ready ? <Text className="reports-stocks-template-active__notice" size="sm" c="red.8">
           {t('Шаблон змінився або видалений. Відкрийте його знову перед збереженням змін.')}</Text> : null}
       </div> : null}
-      {ordering && !dataSources ? <ReportTemplateOrderingControls key={callerKey} ordering={ordering} blocked={blocked} busy={storage.busy} /> : null}
       <SavedTemplatesSection templates={templates} datasets={datasets} activeId={activeTemplate?.Id} search={search}
         loading={!storage.ready && !notice} failed={!storage.ready && Boolean(notice)} blocked={blocked} onApply={onApply}
         onRunSaved={template => { onClearNotice(); setSavedVariant(structuredClone(template)) }}

@@ -1,5 +1,5 @@
 import type { ReportSelection, ReportTemplate } from '../types'
-import { createDefaultMeasurementGroups, flattenCheckedMeasurements, flattenGroupingOptions } from './reportOptions'
+import { createDefaultMeasurementGroups, flattenCheckedMeasurements, flattenGroupingOptions } from '../data/reportOptions'
 
 export const SALES_REPORT_PRESETS = [
   {

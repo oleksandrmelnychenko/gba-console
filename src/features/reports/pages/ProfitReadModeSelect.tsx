@@ -2,14 +2,14 @@ import { Select, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { currentProfitMaximumDays, isProfitReadModeCapability, profitReadModeLabel } from '../data/profitReadMode'
 
-type Props = { capability: unknown; value: unknown; disabled: boolean; hideRegister?: boolean; onChange: (value: 0 | 1 | undefined) => void }
+type Props = { capability: unknown; value: unknown; disabled: boolean; onChange: (value: 0 | 1 | undefined) => void }
 
-export function ProfitReadModeSelect({ capability, value, disabled, hideRegister = false, onChange }: Props) {
+export function ProfitReadModeSelect({ capability, value, disabled, onChange }: Props) {
   const { t } = useI18n()
   if (!isProfitReadModeCapability(capability)) return null
-  const options = [{ value: '0', label: t(profitReadModeLabel(0)) }, ...(hideRegister && value !== 1 ? [] : [{ value: '1', label: t(profitReadModeLabel(1)), disabled: hideRegister }]),
-    ...(hideRegister && (value === 0 || value === 1) ? [] : [{ value: 'saved', label: t('За налаштуваннями звіту'), disabled: hideRegister }])]
-  if (hideRegister && options.length <= 1) return null
+  const options = [{ value: '0', label: t(profitReadModeLabel(0)) }, ...(value !== 1 ? [] : [{ value: '1', label: t(profitReadModeLabel(1)), disabled: true }]),
+    ...((value === 0 || value === 1) ? [] : [{ value: 'saved', label: t('За налаштуваннями звіту'), disabled: true }])]
+  if (options.length <= 1) return null
   return <>
     <Select label={t('Джерело розрахунку')} allowDeselect={false} disabled={disabled}
       value={value === 0 ? '0' : value === 1 ? '1' : 'saved'}

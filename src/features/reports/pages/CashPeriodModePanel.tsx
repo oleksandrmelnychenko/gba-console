@@ -8,17 +8,17 @@ import { CashReadModeSelect } from './CashReadModeSelect'
 type CashPeriodPanelPart = 'source' | 'form'
 
 export function CashPeriodModePanel({ dataset, grouped, disabled, onModeChange, rows, available, onRowsChange,
-  readMode, onReadModeChange, hideRegisterReadMode = false, part }: {
+  readMode, onReadModeChange, part }: {
   dataset?: ReportDataset; grouped: unknown; disabled: boolean
   rows: ReportGroupingItem[]; available: readonly ReportGroupingItem[]
   onRowsChange: (rows: ReportGroupingItem[]) => void
   onModeChange: () => void
-  readMode?: unknown; onReadModeChange?: (value: 0 | undefined) => void; hideRegisterReadMode?: boolean
+  readMode?: unknown; onReadModeChange?: (value: 0 | undefined) => void
   part?: CashPeriodPanelPart
 }) {
   const multiple = grouped != null
   const source = multiple && onReadModeChange ? <CashReadModeSelect capability={dataset?.cashReadMode} value={readMode}
-    disabled={disabled} hideRegister={hideRegisterReadMode} onChange={onReadModeChange} /> : null
+    disabled={disabled} onChange={onReadModeChange} /> : null
   if (part === 'source') return groupedCashSupported(dataset) ? source : null
   return <>
     {groupedCashSupported(dataset) ? <Card withBorder radius="md" padding="md">

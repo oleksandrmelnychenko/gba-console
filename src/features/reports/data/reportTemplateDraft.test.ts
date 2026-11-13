@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createSalesReportPreset } from './reportPresets'
+import { createSalesReportPreset } from '../testing/reportPresets'
 import { buildReportBuilderRequest } from './reportBuilderRequest'
 import { datasetMeasurements, defaultDatasetRequest } from './reportDatasets'
 import { supplierBasisFormDataset } from './supplierBasis'

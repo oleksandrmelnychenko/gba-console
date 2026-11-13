@@ -3,7 +3,7 @@ import { normalizeSavedTemplate, parseReportDatasets } from '../api/reportWorksp
 import { availableBug1274WorkbookLaunches, bug1274WorkbookRequest, SETTLEMENT_READ_MODE_NOTICE } from './bug1274WorkbookLaunch'
 import { groupedSettlementConfigurationError, settlementFormDataset } from './groupedSettlementPeriod'
 import { buildReportBuilderRequest } from './reportBuilderRequest'
-import { datasetConfigurationError, datasetMeasurements, datasetPresetRequest, defaultDatasetRequest, withDefaultReadModes } from './reportDatasets'
+import { datasetConfigurationError, datasetMeasurements, defaultDatasetRequest, withDefaultReadModes } from './reportDatasets'
 import { reportDatasets } from './reportDatasets.test-fixtures'
 import { retainStoredTemplateFields } from './reportTemplateDraft'
 import { reportWorkspaceDraftCompatibility } from './reportWorkspaceDraftCompatibility'
@@ -143,10 +143,6 @@ it.each([0, 1, null, undefined])('round trips mode %s through saved template, bu
   if (mode === undefined) expect(data).toEqual(original)
   expect(requestSettlementReadMode(retainStoredTemplateFields(normalized.Data, data))).toBe(mode)
   expect(retainStoredTemplateFields(normalized.Data, original)).not.toHaveProperty('SettlementReadMode')
-  const preset = datasetPresetRequest(dataset, 'native-settlement-period-agreement-currency', data)
-  expect(preset).not.toBeNull()
-  expect(hasMode(preset!.Data)).toBe(mode !== undefined)
-  expect(requestSettlementReadMode(preset!.Data)).toBe(mode)
   const presented = { ...data, workbookPresentation: { version: 1, additionalFields: [30], ordering: null } }
   const snapshot = { name: 'saved', data: presented, measurements: datasetMeasurements(dataset, data.sorted.Measurements),
     activeTemplate: null, previousPeriod: { from: data.from, to: data.to } }

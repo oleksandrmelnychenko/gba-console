@@ -4,7 +4,7 @@ import { groupedSettlementDataset as buyerDataset, groupedSettlementRequest } fr
 import { settlementPeriodRequest } from './settlementPeriod.test-fixtures'
 import { groupedSettlementCapability, groupedSettlementConfigurationError, groupedSettlementSupportsSuppliers,
   groupedWorkbookRequest, isGroupedSettlementDataset, requestGroupedSettlementPeriod, settlementFormDataset } from './groupedSettlementPeriod'
-import { datasetConfigurationError, datasetFilters, datasetPresetRequest, datasetPresets } from './reportDatasets'
+import { datasetConfigurationError, datasetFilters } from './reportDatasets'
 import { normalizeSavedTemplate } from '../api/reportWorkspaceApi'
 import { retainStoredTemplateFields } from './reportTemplateDraft'
 import { requestSourceBuyerSubtree } from './nativeExactFilters'
@@ -54,10 +54,6 @@ it('keeps existing grouped buyer and exact scalar saved drafts unchanged on a su
     expect(saved.Data.settlementPeriod).toEqual(original.settlementPeriod)
     expect(requestSourceBuyerSubtree(saved.Data)).toEqual(original.sourceBuyerSubtree)
     expect(datasetConfigurationError(saved.Data, dataset)).toBeNull()
-    const preset = datasetPresetRequest(dataset, datasetPresets(dataset)[0].id, saved.Data)!
-    expect(requestGroupedSettlementPeriod(preset.Data)).toEqual(original.groupedSettlementPeriod)
-    expect(preset.Data.settlementPeriod).toEqual(original.settlementPeriod)
-    expect(requestSourceBuyerSubtree(preset.Data)).toEqual(original.sourceBuyerSubtree)
   }
 })
 it('keeps the default Buyers scope for both workbook layouts until the user explicitly clears it', () => {

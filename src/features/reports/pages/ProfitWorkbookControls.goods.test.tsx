@@ -11,7 +11,7 @@ const serviceDataset: ReportDataset = { ...profitDayDataset, productServiceFilte
 
 function show(dataset: ReportDataset, productServiceFilter: unknown, setProductServiceFilter = vi.fn()) {
   render(<MantineProvider env="test"><I18nProvider>
-    <DayProfitControls part="filters" dataset={dataset} disabled={false} hideRegister profitReadMode={0} dayOrganizationBasis={0}
+    <DayProfitControls part="filters" dataset={dataset} disabled={false} profitReadMode={0} dayOrganizationBasis={0}
       productServiceFilter={productServiceFilter} sourceOrganizations={undefined} sourceBuyerSubtree={undefined}
       setProfitReadMode={vi.fn()} setDayOrganizationBasis={vi.fn()} setProductServiceFilter={setProductServiceFilter}
       setSourceOrganizations={vi.fn()} setSourceBuyerSubtree={vi.fn()} />

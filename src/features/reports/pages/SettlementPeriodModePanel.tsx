@@ -15,13 +15,13 @@ type Props = {
   onModeChange: () => void
   onRowsChange: (value: ReportGroupingItem[]) => void
   onGroupsChange: (value: unknown) => void
-  readMode?: unknown; onReadModeChange?: (value: 0 | undefined) => void; hideRegisterReadMode?: boolean
+  readMode?: unknown; onReadModeChange?: (value: 0 | undefined) => void
   part?: 'source' | 'filters' | 'form'
 }
 
 export function SettlementPeriodModePanel({ dataset, grouped, groups, available, rows,
   disabled, enabled, onModeChange, onRowsChange, onGroupsChange,
-  readMode, onReadModeChange, hideRegisterReadMode = false, part }: Props) {
+  readMode, onReadModeChange, part }: Props) {
   const { t } = useI18n()
   if (!dataset || !isSettlementPeriodDataset(dataset)) return null
   const supported = isGroupedSettlementDataset(dataset)
@@ -33,7 +33,7 @@ export function SettlementPeriodModePanel({ dataset, grouped, groups, available,
   </Alert> : null
   return <Stack gap="sm">
     {shows('source') && onReadModeChange && <SettlementReadModeSelect capability={dataset.settlementReadMode} value={readMode}
-      disabled={disabled} hideRegister={hideRegisterReadMode} onChange={onReadModeChange} />}
+      disabled={disabled} onChange={onReadModeChange} />}
     {shows('form') && <Select label={<Group component="span" gap={6} wrap="nowrap"><ArrowLeftRight size={16} aria-hidden="true" />{t('Форма взаєморозрахунків')}</Group>} disabled={disabled} allowDeselect={false}
       value={rows.map(row => row.type).join(',')} data={[
         { value: '4,41,76', label: t('Організація → валюта → контрагент') },

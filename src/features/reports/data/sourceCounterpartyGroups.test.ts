@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest'
 import { normalizeSavedTemplate } from '../api/reportWorkspaceApi'
 import { groupedSettlementDataset, groupedSettlementRequest } from './groupedSettlementPeriod.test-fixtures'
-import { datasetConfigurationError, datasetMeasurements, datasetPresetRequest, datasetPresets } from './reportDatasets'
+import { datasetConfigurationError, datasetMeasurements } from './reportDatasets'
 import { buildReportBuilderRequest } from './reportBuilderRequest'
 import { retainStoredTemplateFields } from './reportTemplateDraft'
 import { settlementPeriodRequest } from './settlementPeriod.test-fixtures'
@@ -43,9 +43,6 @@ it('preserves both independent lists through template aliases, layout presets, m
       SourceCounterpartyGroups: groupSelection } })
   expect(requestSourceCounterpartyGroups(saved.Data)).toEqual(groupSelection)
   expect(cloneSourceCounterpartyGroupAliases(saved.Data).SourceCounterpartyGroups).not.toBe(groupSelection)
-  const preset = datasetPresetRequest(groupDataset, datasetPresets(groupDataset)[0].id, saved.Data)!
-  expect(requestSourceCounterpartyGroups(preset.Data)).toEqual(groupSelection)
-  expect(datasetConfigurationError(preset.Data, groupDataset)).toBeNull()
   const built = buildReportBuilderRequest({ dataSource: 41, from: current.from, to: current.to,
     groupedSettlementPeriod: current.groupedSettlementPeriod, sourceBuyerSubtree: current.sourceBuyerSubtree,
     sourceCounterpartyGroups: groupSelection, ordering: undefined, filterExpression: undefined, topGroups: undefined,

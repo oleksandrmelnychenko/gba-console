@@ -3,14 +3,14 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import type { ComponentProps } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
-import { createSalesReportPreset } from '../data/reportPresets'
+import { createSalesReportPreset } from '../testing/reportPresets'
 import type { ReportTemplate } from '../types'
 import { chooseTemplateAction } from '../testing/templateActions'
 import { ReportTemplatesPanel } from './ReportTemplatesPanel'
 
 type Props = ComponentProps<typeof ReportTemplatesPanel>
-const first: ReportTemplate = { ...createSalesReportPreset('agreements', '', '', []), Id: 'first', Revision: 4, Name: 'Договори' }
-const second: ReportTemplate = { ...createSalesReportPreset('daily', '', '', []), Id: 'second', Revision: 2, Name: 'За днями' }
+const first: ReportTemplate = { Data: { ...createSalesReportPreset('agreements', '', '', []).Data, dataSource: 2 }, Id: 'first', Revision: 4, Name: 'Договори' }
+const second: ReportTemplate = { Data: { ...createSalesReportPreset('daily', '', '', []).Data, dataSource: 2 }, Id: 'second', Revision: 2, Name: 'За днями' }
 function props(): Props {
   return { storage: { templates: [first, second], busy: false, ready: true, notice: null, browserTemplates: [], reload: vi.fn(),
     save: vi.fn().mockResolvedValue({ ok: true }), update: vi.fn().mockResolvedValue({ ok: true }),

@@ -13,7 +13,7 @@ vi.mock('./CounterpartyGroupFilters', () => ({
   CounterpartyGroupFilters: () => <div data-testid="counterparty-groups" />,
 }))
 
-function show(dataset: ReportDataset, extra: { readMode?: 0 | 1; hideRegisterReadMode?: boolean; grouped?: unknown } = {}) {
+function show(dataset: ReportDataset, extra: { readMode?: 0 | 1; grouped?: unknown } = {}) {
   const request = defaultDatasetRequest(dataset, '2026-09-01', '2026-09-30')
   const onModeChange = vi.fn()
   const props = { dataset, grouped: request.groupedSettlementPeriod, groups: undefined, available: datasetGroupings(dataset),
@@ -46,7 +46,7 @@ it('moves a restored single-agreement form to the current counterparty agreement
 })
 
 it('keeps the form choice under the BUG-1274 surface', () => {
-  show(settlementModeDataset, { readMode: 0, hideRegisterReadMode: true })
+  show(settlementModeDataset, { readMode: 0 })
   expect(screen.queryByRole('combobox', { name: 'Джерело розрахунку' })).toBeNull()
   expect((screen.getByRole('combobox', { name: 'Форма взаєморозрахунків' }) as HTMLInputElement).disabled).toBe(false)
 })

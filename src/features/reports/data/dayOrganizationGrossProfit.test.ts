@@ -1,12 +1,11 @@
 import { expect, it } from 'vitest'
-import { datasetConfigurationError, datasetPresetRequest, defaultDatasetRequest } from './reportDatasets'
+import { datasetConfigurationError, defaultDatasetRequest } from './reportDatasets'
 import { dayOrganizationGrossProfitConfigurationError } from './dayOrganizationGrossProfit'
 import { nativeReportMeasurementUnit, usesNativeReportLookup } from './nativeReportProfiles'
-import { isDayOrganizationBasisCapability, requestDayOrganizationBasis } from './dayOrganizationBasis'
+import { isDayOrganizationBasisCapability } from './dayOrganizationBasis'
 import { normalizeNativeExactFilterDataset } from './nativeExactFilters'
 import { normalizeSavedTemplate } from '../api/reportWorkspaceApi'
 import { retainStoredTemplateFields } from './reportTemplateDraft'
-import { buildReportBuilderRequest } from './reportBuilderRequest'
 import type { ReportDataset } from '../types'
 
 const dataset: ReportDataset = {
@@ -32,7 +31,6 @@ it('turns on the markup measures next to margin when the server offers them', ()
   const request = defaultDatasetRequest(withMarkup, '2026-11-01', '2026-11-13')
   expect(request.sorted.Measurements.map(item => item.Type)).toEqual([2, 3, 4, 6, 7, 8, 10, 12, 14, 15, 117, 118])
   expect(datasetConfigurationError(request, withMarkup)).toBeNull()
-  expect(datasetPresetRequest(withMarkup, 'recorded-sale-gross-profit-by-day-organization', request)?.Data.dataSource).toBe(35)
 })
 
 it('starts with ten day and organization measures and a bounded native preset', () => {
@@ -42,7 +40,6 @@ it('starts with ten day and organization measures and a bounded native preset', 
   expect(datasetConfigurationError(request, dataset)).toBeNull()
   expect(usesNativeReportLookup(35)).toBe(true)
   expect(nativeReportMeasurementUnit(35, 'Рентабельність з ПДВ, %')).toBe('Відсотки')
-  expect(datasetPresetRequest(dataset, 'recorded-sale-gross-profit-by-day-organization', request)?.Data.dataSource).toBe(35)
 })
 
 it('accepts the complete margin VAT contract while preserving older templates and server capabilities', () => {
@@ -163,14 +160,6 @@ it.each([null, 1])('preserves saved PascalCase basis %s through normalization, l
   const saved = normalizeSavedTemplate(wire)
   expect(saved.Data.DayOrganizationBasis).toBe(basis)
   expect(saved.Data).not.toHaveProperty('dayOrganizationBasis')
-  const preset = datasetPresetRequest(dataset, 'recorded-sale-gross-profit-by-day-organization', saved.Data)!
-  expect(preset.Data.DayOrganizationBasis).toBe(basis)
-  expect(preset.Data).not.toHaveProperty('dayOrganizationBasis')
-  const built = buildReportBuilderRequest({ dataSource: 35, from: request.from, to: request.to,
-    ordering: undefined, filterExpression: undefined, topGroups: undefined,
-     rowGroups: request.sorted.Row, colGroups: [], measurements: [], selections: [],
-    dayOrganizationBasis: requestDayOrganizationBasis(preset.Data) })
-  expect(built.dayOrganizationBasis).toBe(basis)
   const updated = retainStoredTemplateFields(saved.Data, { ...request, dayOrganizationBasis: basis })
   expect(updated.dayOrganizationBasis).toBe(basis)
   expect(updated).not.toHaveProperty('DayOrganizationBasis')
@@ -178,9 +167,6 @@ it.each([null, 1])('preserves saved PascalCase basis %s through normalization, l
     .not.toHaveProperty('DAYORGANIZATIONBASIS')
   const absent = { ...saved.Data }
   delete absent.DayOrganizationBasis
-  const absentPreset = datasetPresetRequest(dataset, 'recorded-sale-gross-profit-by-day-organization', absent)!
-  expect(absentPreset.Data).not.toHaveProperty('dayOrganizationBasis')
-  expect(absentPreset.Data).not.toHaveProperty('DayOrganizationBasis')
 })
 
 it('accepts a complete journal period only for the explicit original normal form', () => {

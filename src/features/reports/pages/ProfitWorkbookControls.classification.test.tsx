@@ -14,7 +14,7 @@ const otherGoodsKind = { Version: 1, SourceWorld: 0, ProductKindId: '8AB2005056C
 function show(productClassification: unknown) {
   const setProductClassification = vi.fn(), setProductServiceFilter = vi.fn()
   render(<MantineProvider env="test"><I18nProvider>
-    <DayProfitControls part="filters" dataset={serviceDataset} disabled={false} hideRegister profitReadMode={0} dayOrganizationBasis={0}
+    <DayProfitControls part="filters" dataset={serviceDataset} disabled={false} profitReadMode={0} dayOrganizationBasis={0}
       productClassification={productClassification} productServiceFilter={undefined} sourceOrganizations={undefined} sourceBuyerSubtree={undefined}
       setProfitReadMode={vi.fn()} setDayOrganizationBasis={vi.fn()} setProductClassification={setProductClassification}
       setProductServiceFilter={setProductServiceFilter} setSourceOrganizations={vi.fn()} setSourceBuyerSubtree={vi.fn()} />

@@ -324,7 +324,7 @@ export type ReportRequestBody = {
   SupplierBasis?: unknown
   supplierSourceWorld?: unknown
   SupplierSourceWorld?: unknown
-  oneC?: OneCTurnoverFilters
+  oneC?: unknown
   from: string
   selections: ReportSelection[]
   sorted: {
@@ -398,35 +398,6 @@ export type ReportDataset = {
   Measurements: ReportDatasetField[]
   Filters: ReportDatasetField[]
   Limitations: string[]
-}
-
-export type LegacyOneCTurnoverFilters = {
-  ScopeVersion?: null
-  OrganizationIds: string[]
-  ProductKindId: string
-  ExcludeServices: boolean
-  BuyerRootId?: string | null
-}
-
-type OrganizationOnlyTurnoverFilters = {
-  ScopeVersion: 3
-  OrganizationIds: string[]
-  ProductKindId?: null
-  ExcludeServices?: null
-  BuyerRootId?: null
-}
-
-export type OneCTurnoverFilters = LegacyOneCTurnoverFilters | OrganizationOnlyTurnoverFilters
-
-export type OneCTurnoverScopeSummary = {
-  Key: string
-  Filters: OneCTurnoverFilters
-  OrganizationNames: string[]
-  FirstDay: string
-  LastDay: string
-  LoadedDayCount: number
-  OldestReadCompletedUtc: string
-  NewestReadCompletedUtc: string
 }
 
 export type ReportDocument = {

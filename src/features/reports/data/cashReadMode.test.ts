@@ -9,7 +9,7 @@ import { cashModeDataset as dataset, cashReadModeCapability as capability } from
 import { groupedCashDataset, groupedCashWorkbookDataset } from './groupedCashPeriod.test-fixtures'
 import { settlementMaximumDate } from './groupedSettlementPeriod'
 import { buildReportBuilderRequest } from './reportBuilderRequest'
-import { datasetConfigurationError, datasetMeasurements, datasetPresetRequest, defaultDatasetRequest, withDefaultReadModes } from './reportDatasets'
+import { datasetConfigurationError, datasetMeasurements, defaultDatasetRequest, withDefaultReadModes } from './reportDatasets'
 import { reportDatasets } from './reportDatasets.test-fixtures'
 import { retainStoredTemplateFields } from './reportTemplateDraft'
 import { reportWorkspaceDraftCompatibility } from './reportWorkspaceDraftCompatibility'
@@ -130,10 +130,6 @@ it.each([0, 1, null, undefined])('round trips mode %s through saved template, bu
   if (mode === undefined) expect(data).toEqual(original)
   expect(requestCashReadMode(retainStoredTemplateFields(normalized.Data, data))).toBe(mode)
   expect(retainStoredTemplateFields(normalized.Data, original)).not.toHaveProperty('CashReadMode')
-  const preset = datasetPresetRequest(dataset, 'native-cash-period-account-currency', data)
-  expect(preset).not.toBeNull()
-  expect(hasMode(preset!.Data)).toBe(mode !== undefined)
-  expect(requestCashReadMode(preset!.Data)).toBe(mode)
   const snapshot = { name: 'saved', data, measurements: datasetMeasurements(dataset, data.sorted.Measurements),
     activeTemplate: null, previousPeriod: { from: data.from, to: data.to } }
   expect(reportWorkspaceDraftCompatibility(snapshot, dataset)).toBeNull()

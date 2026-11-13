@@ -29,13 +29,12 @@ function usesSavedFenixOrganizations(value: unknown): boolean {
   return DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS.every(id => ids.includes(id))
 }
 
-export function DayProfitControls({ part, dataset, disabled, hideRegister, profitReadMode, dayOrganizationBasis,
+export function DayProfitControls({ part, dataset, disabled, profitReadMode, dayOrganizationBasis,
   productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, setProfitReadMode, setDayOrganizationBasis,
   setProductClassification, setProductServiceFilter, setSourceOrganizations, setSourceBuyerSubtree }: {
   part?: ProfitControlsPart
   dataset?: ReportDataset
   disabled: boolean
-  hideRegister: boolean
   profitReadMode: unknown
   dayOrganizationBasis: unknown
   productClassification?: unknown
@@ -55,12 +54,12 @@ export function DayProfitControls({ part, dataset, disabled, hideRegister, profi
   return <>
     {shows('source') ? <>
       <ProfitReadModeSelect capability={dataset?.profitReadMode} value={profitReadMode}
-        disabled={disabled} hideRegister={hideRegister} onChange={mode => {
+        disabled={disabled} onChange={mode => {
           setProfitReadMode(mode)
           if (mode != null) setDayOrganizationBasis(0)
         }} />
       <DayOrganizationBasisSelect capability={dataset?.dayOrganizationBasis} value={dayOrganizationBasis}
-        disabled={disabled || profitReadMode != null} hideLocked={hideRegister && profitReadMode != null} onChange={setDayOrganizationBasis} />
+        disabled={disabled || profitReadMode != null} hideLocked={profitReadMode != null} onChange={setDayOrganizationBasis} />
     </> : null}
     {shows('filters') && isProductServiceFilterCapability(dataset?.productServiceFilter) && productClassification != null ? (() => {
       const replacement = productServiceFromClassification(productClassification)
@@ -121,12 +120,11 @@ export function DayProfitControls({ part, dataset, disabled, hideRegister, profi
   </>
 }
 
-export function SupplierProfitControls({ part, dataset, disabled, hideRegister, profitReadMode, supplierBasis,
+export function SupplierProfitControls({ part, dataset, disabled, profitReadMode, supplierBasis,
   sourceBuyerSubtree, groupingOptions, setProfitReadMode, setSupplierBasis, setSourceBuyerSubtree, setRowGroups }: {
   part?: ProfitControlsPart
   dataset?: ReportDataset
   disabled: boolean
-  hideRegister: boolean
   profitReadMode: unknown
   supplierBasis: unknown
   sourceBuyerSubtree: unknown
@@ -141,7 +139,7 @@ export function SupplierProfitControls({ part, dataset, disabled, hideRegister, 
   return <>
     {shows('source') ? <>
       <ProfitReadModeSelect capability={dataset?.profitReadMode} value={profitReadMode}
-        disabled={disabled} hideRegister={hideRegister} onChange={mode => {
+        disabled={disabled} onChange={mode => {
           setProfitReadMode(mode)
           if (mode != null) {
             setSupplierBasis(0)
@@ -149,7 +147,7 @@ export function SupplierProfitControls({ part, dataset, disabled, hideRegister, 
           }
         }} />
       <SupplierBasisSelect capability={dataset?.supplierBasis} value={supplierBasis}
-        disabled={disabled || profitReadMode != null} hideLocked={hideRegister && profitReadMode != null} onChange={basis => {
+        disabled={disabled || profitReadMode != null} hideLocked={profitReadMode != null} onChange={basis => {
           setSupplierBasis(basis)
           setRowGroups(rows => rowGroupsForSupplierBasis(basis, rows, groupingOptions))
         }} />

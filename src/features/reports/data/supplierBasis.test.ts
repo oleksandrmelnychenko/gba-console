@@ -3,9 +3,7 @@ import { normalizeSavedTemplate } from '../api/reportWorkspaceApi'
 import type { ReportDataset } from '../types'
 import { availableBug1274WorkbookLaunches } from './bug1274WorkbookLaunch'
 import { FENIX_BUYERS_ROOT_ID, nativeExactFiltersConfigurationError, normalizeNativeExactFilterDataset } from './nativeExactFilters'
-import { buildReportBuilderRequest } from './reportBuilderRequest'
-import { datasetConfigurationError, datasetGroupings, datasetMeasurements, datasetPresetRequest, defaultDatasetRequest } from './reportDatasets'
-import { retainStoredTemplateFields } from './reportTemplateDraft'
+import { datasetConfigurationError, datasetGroupings, datasetMeasurements, defaultDatasetRequest } from './reportDatasets'
 import { isSupplierBasisCapability, requestSupplierBasis, rowGroupsForSupplierBasis, supplierBasisFormDataset } from './supplierBasis'
 import { supplierBatchGrossProfitConfigurationError } from './supplierBatchGrossProfit'
 import { decodeReportWorkspaceDraft, encodeReportWorkspaceDraft, type ReportWorkspaceSnapshot } from './reportWorkspaceDraft'
@@ -95,48 +93,6 @@ it.each([undefined, null, 1])('preserves saved basis %s through normalization, l
   } })
   expect(requestSupplierBasis(saved.Data)).toBe(basis)
   expect(saved.Data).not.toHaveProperty('supplierBasis')
-  const preset = datasetPresetRequest(dataset, 'recorded-supplier-batch-gross-profit', saved.Data)!
-  expect(preset).not.toBeNull()
-  expect(requestSupplierBasis(preset.Data)).toBe(basis)
-  expect(preset.Data.sorted.Row.map(field => field.type)).toEqual([73, 4, 21])
-  const registrar = datasetPresetRequest(dataset, 'supplier-registrar-warehouse', saved.Data)!
-  expect(requestSupplierBasis(registrar.Data)).toBe(basis)
-  expect(registrar.Data.sorted.Row.map(field => field.type)).toEqual([78, 4, 21])
-  const built = buildReportBuilderRequest({ dataSource: 38, from: legacy.from, to: legacy.to,
-    ordering: undefined, filterExpression: undefined, topGroups: undefined,
-     rowGroups: preset.Data.sorted.Row, colGroups: [], measurements: [], selections: [],
-    supplierBasis: requestSupplierBasis(preset.Data) })
-  const updated = retainStoredTemplateFields({ ...saved.Data, SUPPLIERBASIS: basis } as never, built)
-  expect(requestSupplierBasis(updated)).toBe(basis)
-  expect(updated).not.toHaveProperty('SupplierBasis')
-  expect(updated).not.toHaveProperty('SUPPLIERBASIS')
-  if (basis === undefined) expect(updated).not.toHaveProperty('supplierBasis')
-})
-
-it('preserves an ordinary calculation when applying either supplier layout', () => {
-  const current = defaultDatasetRequest(dataset, '2026-07-01', '2026-07-31')
-  for (const id of ['recorded-supplier-batch-gross-profit', 'supplier-registrar-warehouse'] as const) {
-    const preset = datasetPresetRequest(dataset, id, current)!
-    expect(preset.Data.supplierBasis).toBe(0)
-    expect(preset.Data.sorted.Row.map(field => field.type)).toEqual([78, 4, 21])
-    expect(datasetConfigurationError(preset.Data, dataset)).toBeNull()
-  }
-})
-
-it('changes supplier layout without resetting AMG, both-world omission or the saved world alias', () => {
-  const base = defaultDatasetRequest(dataset, '2026-07-01', '2026-07-31')
-  delete base.supplierSourceWorld
-  for (const world of [undefined, 1]) {
-    const current = { ...base, ...(world === undefined ? {} : { SupplierSourceWorld: world }) }
-    for (const id of ['recorded-supplier-batch-gross-profit', 'supplier-registrar-warehouse'] as const) {
-      const preset = datasetPresetRequest(dataset, id, current)!
-      expect(preset.Data).not.toHaveProperty('supplierSourceWorld')
-      expect(preset.Data.SupplierSourceWorld).toBe(world)
-      if (world === undefined) expect(preset.Data).not.toHaveProperty('SupplierSourceWorld')
-      expect(preset.Data.supplierBasis).toBe(0)
-      expect(datasetConfigurationError(preset.Data, dataset)).toBeNull()
-    }
-  }
 })
 
 it('converts only the receipt warehouse when the user explicitly chooses ordinary calculation', () => {

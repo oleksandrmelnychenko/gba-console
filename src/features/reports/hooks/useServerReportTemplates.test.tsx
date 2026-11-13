@@ -8,7 +8,7 @@ import { browserTemplateImportId, useServerReportTemplates } from './useServerRe
 import { deleteServerReportTemplate, getServerReportTemplates, saveServerReportTemplate } from '../api/reportWorkspaceApi'
 import { valuationDataset } from '../data/reportDatasets.test-fixtures'
 import { defaultDatasetRequest } from '../data/reportDatasets'
-import { createSalesReportPreset } from '../data/reportPresets'
+import { createSalesReportPreset } from '../testing/reportPresets'
 import { orderedAccountDataset, orderedAccountRequest } from '../data/reportOrdering.test-fixtures'
 
 vi.mock('../api/reportWorkspaceApi', () => ({

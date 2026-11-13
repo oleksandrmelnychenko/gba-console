@@ -2,7 +2,7 @@ import { expect, it } from 'vitest'
 import { normalizeSavedTemplate } from '../api/reportWorkspaceApi'
 import { groupedSettlementDataset as dataset, groupedSettlementRequest as request } from './groupedSettlementPeriod.test-fixtures'
 import { settlementPeriodRequest } from './settlementPeriod.test-fixtures'
-import { datasetConfigurationError, datasetGroupings, datasetPresetRequest, datasetPresets, defaultDatasetRequest, datasetMeasurements } from './reportDatasets'
+import { datasetConfigurationError, datasetGroupings, defaultDatasetRequest, datasetMeasurements } from './reportDatasets'
 import { buildReportBuilderRequest } from './reportBuilderRequest'
 import { retainStoredTemplateFields } from './reportTemplateDraft'
 import { availableBug1274WorkbookLaunches } from './bug1274WorkbookLaunch'
@@ -53,13 +53,6 @@ it.each([undefined, null])('preserves saved omitted/null grouped selector %s wit
   expect(requestGroupedSettlementPeriod(saved.Data)).toBe(basis)
   expect(datasetConfigurationError(saved.Data, dataset)).toBeNull()
   expect(settlementFormDataset(dataset, basis)?.Filters).toEqual([])
-  const preset = datasetPresetRequest(dataset, datasetPresets(dataset)[0].id, saved.Data)!
-  expect(preset.Data.sorted.Row.map(field => field.type)).toEqual([4, 41, 76, 77])
-  expect(requestGroupedSettlementPeriod(preset.Data)).toBe(basis)
-  expect(preset.Data.settlementPeriod).toEqual(legacy.settlementPeriod)
-  expect(preset.Data).not.toHaveProperty('sourceBuyerSubtree')
-  if (basis === undefined) expect(preset.Data).not.toHaveProperty('groupedSettlementPeriod')
-  expect(datasetConfigurationError(preset.Data, dataset)).toBeNull()
 })
 
 it('binds exact native include/exclude IDs and boolean trees while rejecting aliases and foreign scope', () => {

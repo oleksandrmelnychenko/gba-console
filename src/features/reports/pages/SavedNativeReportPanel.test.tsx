@@ -6,7 +6,7 @@ import { ApiError } from '../../../shared/api/apiClient'
 import { clearSession, saveSession } from '../../../shared/auth/session'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { generateSavedNativeReport, previewSavedNativeReport, type SavedNativeReportResult } from '../api/savedNativeReportApi'
-import { createSalesReportPreset } from '../data/reportPresets'
+import { createSalesReportPreset } from '../testing/reportPresets'
 import { grossDataset } from '../data/reportDatasets.test-fixtures'
 import { SavedNativeReportPanel } from './SavedNativeReportPanel'
 

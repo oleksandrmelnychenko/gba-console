@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, datasetPresetRequest, datasetPresets, defaultDatasetRequest } from './reportDatasets'
-import { grossDataset, netDataset, purchaseDataset, reportDatasets, stockDataset, currentStockDatasets, lotDataset } from './reportDatasets.test-fixtures'
+import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, defaultDatasetRequest } from './reportDatasets'
+import { grossDataset, purchaseDataset, reportDatasets, stockDataset, currentStockDatasets, lotDataset } from './reportDatasets.test-fixtures'
 import { flattenCheckedMeasurements } from './reportOptions'
-import { createSalesReportPreset } from './reportPresets'
+import { createSalesReportPreset } from '../testing/reportPresets'
 
 describe('report dataset capabilities', () => {
 
@@ -27,35 +27,12 @@ describe('report dataset capabilities', () => {
     expect(data.sorted.Measurements.map(item => item.Label)).toEqual(['Кількість надходжень', 'Вартість надходження без ПДВ, EUR'])
   })
 
-  it('offers agreement presets only when every grouping and measure is supported', () => {
-    expect(datasetPresets(netDataset).map(item => item.id)).toEqual(['quantities-by-unit', 'agreements', 'agreement-products', 'daily'])
-    expect(datasetPresets({ ...netDataset, PeriodRequired: true }).map(item => item.id)).toEqual(['quantities-by-unit', 'agreements', 'agreement-products', 'daily'])
-    expect(datasetPresets(purchaseDataset).map(item => item.id)).toEqual(['quantities-by-unit'])
-  })
-
   it.each(reportDatasets)('keeps quantities separated by unit in source $DataSource presets', dataset => {
     const current = defaultDatasetRequest(dataset, '2026-09-01', '2026-09-03')
     current.selections = [{ IsChecked: false, SelectedField: { Name: 'ProductMeasureUnit', Type: 20 },
       FilterCondition: { Name: 'Дорівнює', Type: 0 }, Values: [{ Data: { Id: 77, Name: 'м' }, Name: 'м', Value: 77 }] }]
-    const preset = datasetPresetRequest(dataset, 'quantities-by-unit', current)!
-    expect(preset.Data).toMatchObject({ dataSource: dataset.DataSource, from: current.from, to: current.to,
-      sorted: { Row: [{ type: 28, key: 'ProductMeasureUnit' }, { type: 3 }], Col: [], Measurements: [{ Type: 0 }] },
-      selections: current.selections })
-    expect(preset.Data.selections).not.toBe(current.selections)
-    expect(datasetConfigurationError(preset.Data, dataset)).toBeNull()
     expect(datasetGroupings(dataset)).toContainEqual({ type: 28, key: 'ProductMeasureUnit', label: 'Одиниця виміру' })
     expect(datasetFilters(dataset).find(field => field.field.Type === 20)?.field.Name).toBe('ProductMeasureUnit')
-  })
-
-  it('withholds the unit preset until both grouping and quantity capabilities are available', () => {
-    for (const dataset of [
-      { ...purchaseDataset, Groupings: purchaseDataset.Groupings.filter(field => field.Type !== 28) },
-      { ...purchaseDataset, Groupings: purchaseDataset.Groupings.filter(field => field.Type !== 3) },
-      { ...purchaseDataset, Measurements: purchaseDataset.Measurements.filter(field => field.Type !== 0) },
-    ]) {
-      expect(datasetPresets(dataset)).toEqual([])
-      expect(datasetPresetRequest(dataset, 'quantities-by-unit', defaultDatasetRequest(dataset, '', ''))).toBeNull()
-    }
   })
 
   it('retains published sales count16 as a source0 measurement independently of lot quantity20', () => {
@@ -84,7 +61,6 @@ describe('report dataset capabilities', () => {
     expect(defaultDatasetRequest(dataset, '', '').sorted.Row.map(item => item.type)).toEqual([28, 3])
     const withoutUnit = { ...dataset, Groupings: dataset.Groupings.filter(field => field.Type !== 28) }
     expect(defaultDatasetRequest(withoutUnit, '', '').sorted.Row.map(item => item.type)).toEqual([3])
-    expect(datasetPresets(withoutUnit).some(item => item.id === 'quantities-by-unit')).toBe(false)
   })
 
   it('refuses archived sources, unsupported conditions and disabled filters without changing data', () => {

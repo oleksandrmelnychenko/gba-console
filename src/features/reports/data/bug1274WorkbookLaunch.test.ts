@@ -18,7 +18,6 @@ import { SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS } from './sourceCounterpartyGroups'
 import { BUG_1274_AMG_PARITY_NOTICE, DAY_WORKBOOK_FILTERS_NOTICE, DEBTOR_WORKBOOK_CURRENCY_NOTICE, SETTLEMENT_WORKBOOK_CURRENCY_NOTICE,
   SETTLEMENT_WORKBOOK_EXCLUSIONS_NOTICE } from './bug1274WorkbookLaunch'
 import { BUG_1274_PARITY_NOTICE } from './reportMigration'
-import { getNativeReportProfile } from './nativeReportProfiles'
 import { resolveBug1274WorkbookFilters, SUPPLIER_WORKBOOK_FILTERS_NOTICE, VPARIVANIE_WORKBOOK_FILTERS_NOTICE,
   type ResolvedWorkbookFilters } from './bug1274WorkbookFilters'
 import { currentVparivanieConfigurationError } from './currentVparivanie'
@@ -299,7 +298,6 @@ it('states the 1C reconciliation of the gross-profit and matrix workbooks neutra
   }
   expect(launches[0].notice).toContain(BUG_1274_AMG_PARITY_NOTICE)
   expect(launches[1].notice).toContain(BUG_1274_AMG_PARITY_NOTICE)
-  for (const source of [35, 38]) expect(getNativeReportProfile(source)?.preset.description).not.toMatch(/не підтвердж/)
 })
 
 it('opens both gross-profit workbooks on the previous completed Kyiv day like the settlement and cash forms', () => {

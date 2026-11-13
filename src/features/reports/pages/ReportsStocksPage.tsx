@@ -133,7 +133,6 @@ import {
   measurementGroupCaption,
 } from '../data/reportOptions'
 import type {
-  OneCTurnoverFilters,
   ReportDataset,
   ReportEntity,
   ReportFilterField,
@@ -143,8 +142,7 @@ import type {
   ReportRequestBody,
   ReportSelection,
   ReportSelectedValue,
-  ReportTemplate,
-} from '../types'
+  ReportTemplate } from '../types'
 import {
   getEntityDisplayName,
   formatDate,
@@ -351,7 +349,6 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const [groupedCashPeriod, setGroupedCashPeriod] = useValueState<unknown>(undefined)
   const [cashReadMode, setCashReadMode] = useValueState<unknown>(undefined)
   const [cashPeriod, setCashPeriod] = useValueState<unknown>(undefined)
-  const [oneCScope, setOneCScope] = useValueState<OneCTurnoverFilters | undefined>(undefined)
   const [publishedTab, setPublishedTab] = useState<PublishedReportTab | null>(null)
   const [visitedPublished, setVisitedPublished] = useState<PublishedReportTab[]>([])
   const [publishedBusy, setPublishedBusy] = useState(false)
@@ -416,8 +413,8 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const settlementDataset = useMemo(() => settlementFormDataset(dataset, groupedSettlementPeriod, settlementReadMode), [dataset, groupedSettlementPeriod, settlementReadMode])
   const cashDataset = useMemo(() => cashFormDataset(settlementDataset, groupedCashPeriod), [settlementDataset, groupedCashPeriod])
   const reportBody = useMemo<ReportRequestBody>(
-    () => upgradeCurrentVparivanieAnalysis(withCurrentVparivanieMovementScope({ ...(dataSource === 46 ? {nativePriceComparison} : {}), ...(dataSource === 44 ? {customerGroups} : {}), ...(currentVparivanieAnalysisCapability(dataset) ? { currentVparivanieAnalysis: { version: 1 } } : {}), ...buildReportBuilderRequest({ stockQuantityFilter, constructorPresentation, reportProfile, supplierWarehouse, presentationCurrency, numberPresentation, dataSource, returnsOnly, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && (movementQuantities.Incoming || movementQuantities.Outgoing) ? { currentVparivanieMovements: movementQuantities } : {}), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }), dataset),
-    [dataset, nativePriceComparison, stockQuantityFilter, constructorPresentation, customerGroups, reportProfile, supplierWarehouse, presentationCurrency, numberPresentation, movementQuantities, fullCurrentVparivanie, abcClassification, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbook.value, colGroups, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, returnsOnly, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold],
+    () => upgradeCurrentVparivanieAnalysis(withCurrentVparivanieMovementScope({ ...(dataSource === 46 ? {nativePriceComparison} : {}), ...(dataSource === 44 ? {customerGroups} : {}), ...(currentVparivanieAnalysisCapability(dataset) ? { currentVparivanieAnalysis: { version: 1 } } : {}), ...buildReportBuilderRequest({ stockQuantityFilter, constructorPresentation, reportProfile, supplierWarehouse, presentationCurrency, numberPresentation, dataSource, returnsOnly, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && (movementQuantities.Incoming || movementQuantities.Outgoing) ? { currentVparivanieMovements: movementQuantities } : {}), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }), dataset),
+    [dataset, nativePriceComparison, stockQuantityFilter, constructorPresentation, customerGroups, reportProfile, supplierWarehouse, presentationCurrency, numberPresentation, movementQuantities, fullCurrentVparivanie, abcClassification, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbook.value, colGroups, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, returnsOnly, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold],
   )
   const effectiveConfiguration = effectiveReportConfiguration(dataset, reportBody)
   const effectiveFilterTypes = effectiveConfiguration?.filters
@@ -457,7 +454,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   }
   const workspaceDraft = useReportWorkspaceDraft({ ownerId, enabled: canGenerateReport,
     ready: datasetStorage.loaded && !datasetStorage.error && !initialWorkbookLaunch && initialWorkbook !== 'opening',
-    snapshot: draftSnapshot, backgroundRecovery: true })
+    snapshot: draftSnapshot })
   const configurationError = (dataSource === 46 ? nativePriceComparisonError(nativePriceComparison) : null) ?? (dataSource === 44 ? customerGroupsError(customerGroups) : null) ?? (!BUG_1274_ACTIVE_DATA_SOURCES.has(dataSource) ? BUG_1274_DISABLED_MESSAGE : null) ?? datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset, 'workspace'))
     ?? (null)
   const checkedMeasurements = reportBody.sorted.Measurements.length
@@ -631,7 +628,6 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     setGroupedCashPeriod(snapshotDefaults?.groupedCashPeriod)
     setCashReadMode(snapshotDefaults?.cashReadMode)
     workbook.reset(snapshotDefaults)
-    setOneCScope(snapshotDefaults?.oneC)
     setFrom(periodSupported ? resetDay : '')
     setTo(periodSupported ? resetDay : '')
     setMeasurements(snapshotDefaults ? datasetMeasurements(dataset, snapshotDefaults.sorted.Measurements) : createDefaultMeasurementGroups())
@@ -735,7 +731,6 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     setReportProfile(structuredClone(requestReportProfile(data)))
     setNumberPresentation(structuredClone(requestNumberPresentation(data)))
     workbook.restore(data)
-    setOneCScope(structuredClone(data.oneC))
     groupingOrdering.loadOrdering(requestOrdering(data))
     const groupingByType = new Map(datasetGroupings(nextDataset, data).map(item => [item.type, item]))
     if (periodSupported && !getPeriodError(from, to, maxDate, t)) setPreviousPeriod({ from, to })
@@ -809,7 +804,6 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     setReportProfile(structuredClone(requestReportProfile(data)))
     setNumberPresentation(structuredClone(requestNumberPresentation(data)))
     workbook.restore(data)
-    setOneCScope(structuredClone(data.oneC))
     setTopGroups(structuredClone(requestTopGroups(data)))
     setThreshold(structuredClone(requestThreshold(data)))
     setHideZero(structuredClone(requestHideZero(data)))
@@ -883,12 +877,12 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const cashSettlementPanels = (part?: 'source' | 'filters' | 'form') => <CashSettlementSettingsPanels dataSource={dataSource} part={part}
     cash={{ dataset, grouped: groupedCashPeriod, rows: rowGroups,
       available: groupingOptions, onRowsChange: workbook.changeCashRows, disabled: comparisonSettingsDisabled,
-      readMode: cashReadMode, onReadModeChange: setCashReadMode, hideRegisterReadMode: true }}
+      readMode: cashReadMode, onReadModeChange: setCashReadMode }}
     settlement={{ dataset, grouped: groupedSettlementPeriod, groups: sourceCounterpartyGroups, rows: rowGroups,
       available: groupingOptions, disabled: comparisonSettingsDisabled, enabled: canGenerateReport,
       onModeChange: changeSettlementMode,
       onRowsChange: setRowGroups, onGroupsChange: setSourceCounterpartyGroups,
-      readMode: settlementReadMode, hideRegisterReadMode: true, onReadModeChange: mode => {
+      readMode: settlementReadMode, onReadModeChange: mode => {
         setSettlementReadMode(mode)
         if (mode == null) return
         setGroupedSettlementPeriod(defaultGroupedSettlementPeriod())
@@ -897,13 +891,13 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     onGroupedCashChange={workbook.changeGroupedCash} onExactCashChange={setCashPeriod}
     onCashMeasurementsChange={setMeasurements} onClearCashFilters={() => filterLogic.load([])} />
   const dayProfitControls = (part?: ProfitControlsPart) => <DayProfitControls part={part} dataset={dataset}
-    disabled={comparisonSettingsDisabled} hideRegister={true} profitReadMode={profitReadMode}
+    disabled={comparisonSettingsDisabled} profitReadMode={profitReadMode}
     dayOrganizationBasis={dayOrganizationBasis} productClassification={productClassification} productServiceFilter={productServiceFilter}
     sourceOrganizations={sourceOrganizations} sourceBuyerSubtree={sourceBuyerSubtree} setProfitReadMode={setProfitReadMode}
     setDayOrganizationBasis={setDayOrganizationBasis} setProductClassification={setProductClassification} setProductServiceFilter={setProductServiceFilter}
     setSourceOrganizations={setSourceOrganizations} setSourceBuyerSubtree={setSourceBuyerSubtree} />
   const supplierProfitControls = (part?: ProfitControlsPart) => <SupplierProfitControls part={part} dataset={dataset}
-    disabled={comparisonSettingsDisabled} hideRegister={true} profitReadMode={profitReadMode}
+    disabled={comparisonSettingsDisabled} profitReadMode={profitReadMode}
     supplierBasis={supplierBasis} sourceBuyerSubtree={sourceBuyerSubtree}
     groupingOptions={groupingOptions} setProfitReadMode={setProfitReadMode} setSupplierBasis={value => { setSupplierBasis(value); if (value === 0 && supplierWarehouse !== undefined) setSupplierWarehouse(78) }}
     setSourceBuyerSubtree={setSourceBuyerSubtree} setRowGroups={setRowGroups} />
@@ -1132,8 +1126,8 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
         opened={deskTemplatesOpened} closeOnClickOutside={!templateStorage.busy} closeOnEscape={!templateStorage.busy}
         closeButtonProps={{ disabled: templateStorage.busy }} size={820} title={t('Шаблони звіту')}
         onClose={() => setDeskTemplatesOpened(false)}>
-        <ReportTemplatesPanel ordering={templateStorage.ordering} storage={templateStorage} datasets={datasetStorage.datasets}
-          dataSources={BUG_1274_ACTIVE_DATA_SOURCES} callerKey={ownerId} requireReadMode configurationReady={!templateConfigurationError && !workbookResolving}
+        <ReportTemplatesPanel storage={templateStorage} datasets={datasetStorage.datasets}
+          callerKey={ownerId} configurationReady={!templateConfigurationError && !workbookResolving}
           configurationName={deskTitle} key={`${ownerId}:${templateIntent.revision}`} initiallyCreating={templateIntent.create}
           notice={templateNotice ?? templateStorage.notice} templateName={templateName} activeTemplate={activeTemplate}
           disabled={!canGenerateReport || isLoading} onRenamed={renamedTemplate} onClearNotice={() => { setTemplateNotice(null); templateStorage.clearNotice() }}

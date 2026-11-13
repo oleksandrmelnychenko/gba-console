@@ -4,7 +4,7 @@ import { groupedCashDataset, groupedCashRequest, groupedCashWorkbookDataset } fr
 import { cashPeriodDataset, cashPeriodRequest } from './cashPeriod.test-fixtures'
 import { cashPeriodConfigurationError, isCashPeriodDataset } from './cashPeriod'
 import { cashFormDataset, defaultGroupedCashPeriod, groupedCashSupported, normalizeGroupedCashDataset } from './groupedCashPeriod'
-import { defaultDatasetRequest, datasetPresetRequest } from './reportDatasets'
+import { defaultDatasetRequest } from './reportDatasets'
 import { retainStoredTemplateFields } from './reportTemplateDraft'
 import { availableBug1274WorkbookLaunches } from './bug1274WorkbookLaunch'
 const selection = (type: number, id: string, condition = 0): ReportSelection => ({ IsChecked: true,
@@ -54,9 +54,6 @@ it('requires eight columns and a closed period while permitting empty population
 it('clears the old grouped selector when changing to exact mode and does not overwrite saved legacy meaning with a preset', () => {
   const data = groupedCashRequest()
   expect(retainStoredTemplateFields(data, { ...cashPeriodRequest(), groupedCashPeriod: undefined }).groupedCashPeriod).toBeUndefined()
-  const preset = datasetPresetRequest(groupedCashDataset, 'native-cash-period-account-currency', cashPeriodRequest())!
-  expect(preset.Data.groupedCashPeriod).toBeUndefined(); expect(preset.Data.cashPeriod).toEqual(cashPeriodRequest().cashPeriod)
-  expect(preset.Data.sorted.Measurements.map(x => x.Type)).toEqual([84, 85, 86, 87])
 })
 it('the workbook shortcut describes and defaults to the full current bank/cash form', () => {
   const choice = availableBug1274WorkbookLaunches([groupedCashDataset]).find(x => x.dataset.DataSource === 40)!

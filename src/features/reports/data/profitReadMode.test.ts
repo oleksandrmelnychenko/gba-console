@@ -3,7 +3,7 @@ import { normalizeSavedTemplate } from '../api/reportWorkspaceApi'
 import { availableBug1274WorkbookLaunches, bug1274WorkbookRequest } from './bug1274WorkbookLaunch'
 import { normalizeNativeExactFilterDataset } from './nativeExactFilters'
 import { buildReportBuilderRequest } from './reportBuilderRequest'
-import { datasetConfigurationError, datasetGroupings, datasetMeasurements, datasetPresetRequest, defaultDatasetRequest,
+import { datasetConfigurationError, datasetGroupings, datasetMeasurements, defaultDatasetRequest,
   withDefaultReadModes } from './reportDatasets'
 import { retainStoredTemplateFields } from './reportTemplateDraft'
 import { encodeReportWorkspaceSnapshot } from './reportWorkspaceDraft'
@@ -11,9 +11,6 @@ import { reportWorkspaceDraftCompatibility } from './reportWorkspaceDraftCompati
 import { isProfitReadModeCapability, profitReadModeConfigurationError, requestProfitReadMode } from './profitReadMode'
 import { profitDayDataset, profitSupplierDataset, profitReadModeCapability } from './profitReadMode.test-fixtures'
 import { FENIX_BUYERS_ROOT_ID } from './nativeExactFilters'
-
-const presetId = (dataset: typeof profitDayDataset) => dataset.DataSource === 35
-  ? 'recorded-sale-gross-profit-by-day-organization' : 'recorded-supplier-batch-gross-profit'
 const unmarked = (dataset: typeof profitDayDataset, from: string, to: string) => {
   const request = defaultDatasetRequest(dataset, from, to)
   delete request.profitReadMode
@@ -54,16 +51,6 @@ it.each([profitDayDataset, profitSupplierDataset])('opens new requests and the w
   expect(availableBug1274WorkbookLaunches([previous])[0].notice).not.toContain('Поточні документи GBA')
   const wide = { ...dataset, profitReadMode: { ...profitReadModeCapability, CurrentDocumentsMaximumDays: 62 } }
   expect(availableBug1274WorkbookLaunches([wide])[0].notice).toContain('до 62 календарних днів')
-})
-
-it.each([profitDayDataset, profitSupplierDataset])('keeps the request mode or its absence through presets for source $DataSource', dataset => {
-  for (const mode of [0, 1, undefined]) {
-    const request = mode === undefined ? unmarked(dataset, '2026-09-01', '2026-09-30')
-      : { ...defaultDatasetRequest(dataset, '2026-09-01', '2026-09-30'), profitReadMode: mode }
-    const preset = datasetPresetRequest(dataset, presetId(dataset), request)
-    expect(preset).not.toBeNull()
-    expect(requestProfitReadMode(preset!.Data)).toBe(mode)
-  }
 })
 
 it.each([profitDayDataset, profitSupplierDataset])('applies current documents to a saved request without a mode and reports its limits for source $DataSource', dataset => {

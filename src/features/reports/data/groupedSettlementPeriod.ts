@@ -2,7 +2,7 @@ import { originalNormalPeriodError } from './originalNormalPeriod'
 import { workbookConfigurationError } from './workbookPresentation'
 import type { ReportDataset, ReportFilterExpressionCapabilities, ReportGroupingItem, ReportRequestBody, ReportSourceBuyerSubtree } from '../types'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
-import { EXACT_ONE_C_BUYER_ROOT_ID } from './oneCTurnoverReport'
+import { FENIX_BUYERS_ROOT_ID } from './nativeExactFilters'
 import { readFilterExpressionCapabilities, reportFilterExpressionError } from './reportFilterExpression'
 import { exactId } from './exactId'
 import { datasetGroupSelectionError, isDatasetGroupSelection } from './reportHierarchyFilters'
@@ -70,7 +70,7 @@ export const defaultGroupedSettlementPeriod = (): GroupedSettlementPeriod => ({
   Version: 1, SourceWorld: 'Fenix', CurrencyBasis: 'SettlementCurrency',
 })
 export const defaultGroupedSettlementBuyer = (): ReportSourceBuyerSubtree => ({
-  Version: 1, SourceWorld: 'fenix', BuyerRootId: EXACT_ONE_C_BUYER_ROOT_ID,
+  Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID,
 })
 
 export function groupedSettlementCapability(value: unknown): GroupedSettlementCapability | null {
@@ -104,7 +104,7 @@ export function groupedSettlementCapability(value: unknown): GroupedSettlementCa
   if (!filter || filter.MaximumDepth !== 8 || filter.MaximumLeaves !== 64 || filter.MaximumNodes !== 128
     || filter.Operators.join(',') !== '1,2') return null
   const buyer = fields(normalized.BuyerSubtree, ['Version', 'SourceWorld', 'BuyerRootId', 'RequiresCompletePeriodLineage', 'UsesCurrentCapturedHierarchy'])
-  if (!buyer || buyer.Version !== 1 || buyer.SourceWorld !== 'fenix' || buyer.BuyerRootId !== EXACT_ONE_C_BUYER_ROOT_ID
+  if (!buyer || buyer.Version !== 1 || buyer.SourceWorld !== 'fenix' || buyer.BuyerRootId !== FENIX_BUYERS_ROOT_ID
     || buyer.RequiresCompletePeriodLineage !== false || buyer.UsesCurrentCapturedHierarchy !== true) return null
   return { ...structuredClone(normalized), FilterExpression: structuredClone(filter), BuyerSubtree: structuredClone(buyer) } as GroupedSettlementCapability
 }
@@ -249,7 +249,7 @@ export function groupedSettlementConfigurationError(data: ReportRequestBody, dat
   const selected = fields(buyer, ['Version', 'SourceWorld', 'BuyerRootId'])
   if (buyer != null && (selector.SourceWorld !== 'Fenix' || !selected || selected.Version !== 1
     || selected.SourceWorld !== 'fenix' || typeof selected.BuyerRootId !== 'string'
-    || selected.BuyerRootId.toUpperCase() !== EXACT_ONE_C_BUYER_ROOT_ID))
+    || selected.BuyerRootId.toUpperCase() !== FENIX_BUYERS_ROOT_ID))
     return 'Група «Покупці» доступна для відповідного поточного довідника Fenix.'
   const treeDataset = cap ? { ...dataset!, FilterExpression: cap.FilterExpression }
     : { FilterExpression: { Version: 1, MaximumDepth: 8, MaximumLeaves: 64, MaximumNodes: 128, Operators: [1, 2] } } as ReportDataset

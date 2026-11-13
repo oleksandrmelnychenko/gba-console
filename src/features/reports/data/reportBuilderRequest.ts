@@ -24,7 +24,6 @@ type BuilderValues = {
   dayOrganizationBasis?: unknown
   supplierBasis?: unknown
   supplierSourceWorld?: unknown
-  oneC?: ReportRequestBody['oneC']
   settlementPeriod?: unknown
   groupedSettlementPeriod?: unknown
   sourceCounterpartyGroups?: unknown
@@ -37,7 +36,7 @@ type BuilderValues = {
 
 /** Tree indices address this exact selection array; only the legacy request omits unchecked rows. */
 export function buildReportBuilderRequest(values: BuilderValues): ReportRequestBody {
-  const { dataSource, returnsOnly, from, to, ordering, filterExpression, topGroups, abcClassification, threshold, hideZero, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, oneC, settlementPeriod, groupedSettlementPeriod, cashPeriod, rowGroups, colGroups, measurements, selections } = values
+  const { dataSource, returnsOnly, from, to, ordering, filterExpression, topGroups, abcClassification, threshold, hideZero, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, settlementPeriod, groupedSettlementPeriod, cashPeriod, rowGroups, colGroups, measurements, selections } = values
   return { dataSource, from, to, ...(values.stockQuantityFilter != null ? { stockQuantityFilter: values.stockQuantityFilter } : {}), ...(values.constructorPresentation !== undefined ? { constructorPresentation: values.constructorPresentation } : {}), ...(values.reportProfile !== undefined ? { reportProfile: values.reportProfile } : {}), ...(values.presentationCurrency !== undefined ? { presentationCurrency: values.presentationCurrency } : {}), ...(values.supplierWarehouse !== undefined ? { supplierWarehouse: values.supplierWarehouse } : {}), ...(values.numberPresentation !== undefined ? { numberPresentation: values.numberPresentation } : {}), ...(returnsOnly === true ? { returnsOnly: true } : {}),
     ...(ordering !== undefined ? { ordering } : {}),
     ...(filterExpression !== undefined ? { filterExpression } : {}),
@@ -55,7 +54,6 @@ export function buildReportBuilderRequest(values: BuilderValues): ReportRequestB
     ...(dayOrganizationBasis !== undefined ? { dayOrganizationBasis } : {}),
     ...(supplierBasis !== undefined ? { supplierBasis } : {}),
     ...(supplierSourceWorld !== undefined ? { supplierSourceWorld } : {}),
-    ...(oneC !== undefined ? { oneC } : {}),
     ...(settlementPeriod !== undefined ? { settlementPeriod } : {}),
     ...(groupedSettlementPeriod !== undefined ? { groupedSettlementPeriod } : {}),
     ...(values.sourceCounterpartyGroups !== undefined ? { sourceCounterpartyGroups: values.sourceCounterpartyGroups } : {}),

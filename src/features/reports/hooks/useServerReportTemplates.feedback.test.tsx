@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { getServerReportTemplates, saveServerReportTemplate } from '../api/reportWorkspaceApi'
-import { createSalesReportPreset } from '../data/reportPresets'
+import { createSalesReportPreset } from '../testing/reportPresets'
 import { useServerReportTemplates } from './useServerReportTemplates'
 
 vi.mock('../api/reportWorkspaceApi', () => ({ getServerReportTemplates: vi.fn(), saveServerReportTemplate: vi.fn(), deleteServerReportTemplate: vi.fn() }))

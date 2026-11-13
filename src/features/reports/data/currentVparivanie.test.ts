@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { currentVparivanieConfigurationError, currentVparivanieFilterConditions, currentVparivanieQuantityCell, currentVparivanieQuantityText,
   isCurrentVparivanieCapability, isCurrentVparivanieDataset } from './currentVparivanie'
 import { currentVparivanieDataset as dataset, currentVparivanieRequest as request, exactSelection } from './currentVparivanie.test-fixtures'
-import { datasetConfigurationError, datasetFilters, datasetMeasurements, datasetPresetRequest } from './reportDatasets'
+import { datasetConfigurationError, datasetFilters, datasetMeasurements } from './reportDatasets'
 import { reportWorkspaceDraftCompatibility } from './reportWorkspaceDraftCompatibility'
 import { hasFixedReportAxes, nativeReportMeasurementUnit, supportsFullReportDateRange, usesNativeReportLookup } from './nativeReportProfiles'
 
@@ -13,8 +13,6 @@ describe('current native Vparivanie form contract', () => {
     expect(data.sorted.Col.map(col => col.type)).toEqual([74, 75])
     expect(data.sorted.Measurements.map(measure => measure.Type)).toEqual([83])
     expect(datasetConfigurationError(data, dataset)).toBeNull()
-    const preset = datasetPresetRequest(dataset, 'vparivanie-current-native-matrix', data)
-    expect(preset?.Data).toEqual(data)
     expect(hasFixedReportAxes(39)).toBe(true)
     expect(supportsFullReportDateRange(39)).toBe(true)
     expect(usesNativeReportLookup(39)).toBe(true)

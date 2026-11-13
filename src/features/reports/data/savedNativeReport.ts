@@ -21,12 +21,11 @@ export const savedNativeReportSources: Readonly<Record<number, string>> = {
   39: 'NativeCurrentVparivanie', 40: 'NativeCashPeriod', 41: 'NativeSettlementPeriod', 43: 'NativeSalesByResponsibles',
 }
 
-export function savedNativeReportConfigurationError(template: ReportTemplate, datasets: readonly ReportDataset[],
-  requireReadMode = false): string | null {
+export function savedNativeReportConfigurationError(template: ReportTemplate, datasets: readonly ReportDataset[]): string | null {
   const matches = datasets.filter(dataset => dataset.DataSource === (template.Data.dataSource ?? 0))
   if (matches.length !== 1) return 'Набір даних збереженого варіанта зараз недоступний.'
   if (carriesSourceWorld(template.Data)) return UNIFIED_SOURCE_SAVED_VARIANT_ERROR
-  if (requireReadMode && lacksCurrentReadMode(template.Data, matches[0])) return SAVED_VARIANT_WITHOUT_READ_MODE_ERROR
+  if (lacksCurrentReadMode(template.Data, matches[0])) return SAVED_VARIANT_WITHOUT_READ_MODE_ERROR
   const error = datasetConfigurationError(template.Data, matches[0])
   if (error) return error
   try { validateStockReportRequest(template.Data, matches[0]) }

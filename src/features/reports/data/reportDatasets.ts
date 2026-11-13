@@ -1,6 +1,5 @@
-import { cloneStockQuantityFilter } from './stockQuantityFilter'
-import { cloneConstructorPresentation } from './constructorPresentation'
-import { cloneReportProfile, requestReportProfile, salesConstructorDataset, salesConstructorError } from './salesConstructorProfiles'
+
+import { requestReportProfile, salesConstructorDataset, salesConstructorError } from './salesConstructorProfiles'
 import { retainMeasurementOrder } from './reportConstructorTree'
 import { SALES_BY_RESPONSIBLES_COLUMNS, SALES_BY_RESPONSIBLES_MEASURES, SALES_BY_RESPONSIBLES_ROWS, SALES_BY_RESPONSIBLES_SOURCE } from './salesByResponsibles'
 import { currentFinancialBuyerManagerFilterCapability, currentFinancialBuyerManagerFilterSupported } from './currentFinancialBuyerManagerFilter'
@@ -12,7 +11,7 @@ import { currentFinancialDocumentAxesCapability } from './currentFinancialDocume
 import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis } from './currentVparivanieAnalysis'
 import { reportConfigurationError } from './reportConfiguration'
 import { numberPresentationError } from './reportNumberPresentation'
-import { cloneWorkbookAliases, workbookConfigurationError } from './workbookPresentation'
+import { workbookConfigurationError } from './workbookPresentation'
 import { dayOrganizationGrossProfitConfigurationError } from './dayOrganizationGrossProfit'
 import { currentVparivanieConfigurationError, currentVparivanieManagerSupported } from './currentVparivanie'
 import { isSupplierSourceWorldCapability, supplierBatchGrossProfitConfigurationError } from './supplierBatchGrossProfit'
@@ -20,32 +19,20 @@ import type { ReportDataset, ReportFilterField, ReportGroupingItem, ReportMeasur
 import { reportThresholdError } from './reportThreshold'
 import { reportHideZeroError } from './reportHideZero'
 import { createDefaultMeasurementGroups, flattenCheckedMeasurements, flattenGroupingOptions, REPORT_FILTER_CONDITIONS, REPORT_FILTER_FIELD_GROUPS } from './reportOptions'
-import { createSalesReportPreset, SALES_REPORT_PRESETS, type SalesReportPresetId } from './reportPresets'
 import { reportOrderingError } from './reportOrdering'
 import { reportFilterExpressionError } from './reportFilterExpression'
-import { ABC_CLASS_GROUPING, preserveAbcGrouping, reportAbcClassificationError } from './reportAbcClassification'
+import { ABC_CLASS_GROUPING, reportAbcClassificationError } from './reportAbcClassification'
 import { reportTopGroupsError } from './reportTopGroups'
-import { getNativeReportProfile, optionalProfileMeasures, isNativeReportPresetId, type NativeReportPresetId } from './nativeReportProfiles'
-import { cloneGroupedCashAliases, defaultGroupedCashPeriod, groupedCashSupported, withDefaultCashReadMode } from './groupedCashPeriod'
+import { getNativeReportProfile, optionalProfileMeasures } from './nativeReportProfiles'
+import { defaultGroupedCashPeriod, groupedCashSupported, withDefaultCashReadMode } from './groupedCashPeriod'
 import { cashPeriodConfigurationError } from './cashPeriod'
 import { settlementPeriodConfigurationError } from './settlementPeriod'
-import { cloneSourceCounterpartyGroupAliases } from './sourceCounterpartyGroups'
 import { isDayOrganizationBasisCapability } from './dayOrganizationBasis'
-import { isSupplierBasisCapability, requestSupplierBasis } from './supplierBasis'
-import { cloneNativeExactFilterAliases, nativeExactFiltersConfigurationError } from './nativeExactFilters'
-import { cloneGroupedSettlementAliases, defaultGroupedSettlementBuyer, defaultGroupedSettlementPeriod,
-  groupedSettlementSupportsSuppliers, isGroupedSettlementDataset, requestGroupedSettlementPeriod,
-  withDefaultSettlementReadMode } from './groupedSettlementPeriod'
-import { cloneSettlementReadModeAliases } from './settlementReadMode'
-import { cloneCashReadModeAliases } from './cashReadMode'
+import { isSupplierBasisCapability } from './supplierBasis'
+import { nativeExactFiltersConfigurationError } from './nativeExactFilters'
+import { defaultGroupedSettlementBuyer, defaultGroupedSettlementPeriod,
+  isGroupedSettlementDataset, withDefaultSettlementReadMode } from './groupedSettlementPeriod'
 import { isProfitReadModeCapability, withDefaultProfitReadMode } from './profitReadMode'
-
-type DatasetReportPresetId = SalesReportPresetId | 'quantities-by-unit' | 'supplier-registrar-warehouse' | NativeReportPresetId
-type DatasetReportPreset = { id: DatasetReportPresetId; name: string; description: string }
-const QUANTITY_BY_UNIT_PRESET: DatasetReportPreset = {
-  id: 'quantities-by-unit', name: 'Кількість за одиницями',
-  description: 'Одиниця виміру → день. Окрема кількість для кожної одиниці виміру, без додавання різних одиниць.',
-}
 
 const GROUPING_KEYS = new Map(flattenGroupingOptions().map(item => [item.type, item.key]))
 GROUPING_KEYS.set(24, 'PurchaseDocument')
@@ -252,125 +239,4 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
       ? [] : [item.SelectedField?.Name || 'Умова відбору']),
   ]
   return unsupported.length ? `Набір «${dataset.Name}» не підтримує налаштування: ${unsupported.join(', ')}. Налаштування не застосовано.` : reportAbcClassificationError(data, dataset) ?? reportOrderingError(data, dataset) ?? reportFilterExpressionError(data, dataset) ?? reportTopGroupsError(data, dataset) ?? reportThresholdError(data, dataset) ?? reportHideZeroError(data, dataset)
-}
-
-export function datasetPresets(dataset: ReportDataset | undefined): DatasetReportPreset[] {
-  if (!dataset) return []
-  const profile = getNativeReportProfile(dataset.DataSource)
-  if (profile) {
-    const native = profile.rowGroupings.every(type => dataset.Groupings.some(field => field.Type === type))
-      && profile.measurements.every(type => dataset.Measurements.some(field => field.Type === type && field.Selectable !== false))
-      ? [isGroupedSettlementDataset(dataset)
-        ? { ...profile.preset, name: 'Взаєморозрахунки за період', description: `Поточні договори ${groupedSettlementSupportsSuppliers(dataset) ? 'покупців і постачальників' : 'покупців'} за вибраними відборами. Період до 31 дня може включати поточний київський день. Вибраний режим і відбори зберігаються; форму з валютою чи без неї оберіть у налаштуваннях.` }
-        : dataset.DataSource === 38 && isSupplierBasisCapability(dataset.supplierBasis)
-        ? { ...profile.preset, description: 'Склад документа або партії → організація → постачальник. Період до 31 дня; вибраний спосіб розрахунку й відбори зберігаються.' }
-        : profile.preset] : []
-    return dataset.DataSource === 38 && native.length &&
-      dataset.Groupings.map(field => field.Type).join(',') === '73,78,4,21'
-      ? [...native, { id: 'supplier-registrar-warehouse',
-        name: 'Валовий прибуток за складом продажу 1С',
-        description: isSupplierBasisCapability(dataset.supplierBasis)
-          ? 'Склад документа → організація → постачальник. Спосіб розрахунку та відбори залишаються вибраними.'
-          : 'Склад документа продажу → організація → постачальник. Сервер перевіряє всі партії періоду; неповні дані зупиняють звіт.' }]
-      : native
-  }
-  if (![0, 2, 3].includes(dataset.DataSource)) return []
-  const presets: DatasetReportPreset[] = []
-  if ([28, 3].every(type => dataset.Groupings.some(field => field.Type === type))
-    && dataset.Measurements.some(field => field.Type === 0 && field.Selectable !== false)) {
-    presets.push(QUANTITY_BY_UNIT_PRESET)
-  }
-  if (dataset.DataSource === 3) return presets
-  return [...presets, ...SALES_REPORT_PRESETS.flatMap(preset => {
-    const data = createSalesReportPreset(preset.id, '', '', []).Data
-    // Preset availability checks fields; the selected period is validated when applied.
-    if (datasetConfigurationError({ ...data, dataSource: dataset.DataSource }, { ...dataset, PeriodRequired: false })) return []
-    return [{ ...preset,
-      name: dataset.DataSource === 2 ? preset.name.replace('Продажі', 'Чисті продажі') : preset.name,
-      description: dataset.DataSource === 2 ? `${preset.description} Повернення віднімаються за правилами цього набору даних.` : preset.description,
-    }]
-  })]
-}
-
-export function datasetPresetRequest(dataset: ReportDataset, id: DatasetReportPresetId, current: ReportRequestBody) {
-  const preset = datasetPresets(dataset).find(item => item.id === id)
-  if (!preset) return null
-  // Preserve both raw aliases, including invalid imported material, without reconstructing the tree.
-  const preservedOptions = { ...(Object.hasOwn(current, 'settlementPeriod') ? { settlementPeriod: structuredClone(current.settlementPeriod) } : {}),
-    ...(Object.hasOwn(current, 'SettlementPeriod') ? { SettlementPeriod: structuredClone(current.SettlementPeriod) } : {}), ...cloneGroupedSettlementAliases(current), ...cloneSettlementReadModeAliases(current), ...cloneStockQuantityFilter(current), ...cloneConstructorPresentation(current), ...cloneReportProfile(current), ...cloneSourceCounterpartyGroupAliases(current), ...cloneGroupedCashAliases(current), ...cloneCashReadModeAliases(current), ...cloneWorkbookAliases(current),
-    ...(Object.hasOwn(current, 'cashPeriod') ? { cashPeriod: structuredClone(current.cashPeriod) } : {}),
-    ...(Object.hasOwn(current, 'CashPeriod') ? { CashPeriod: structuredClone(current.CashPeriod) } : {}),
-    ...(Object.hasOwn(current, 'hideZero') ? { hideZero: structuredClone(current.hideZero) } : {}),
-    ...(Object.hasOwn(current, 'HideZero') ? { HideZero: structuredClone(current.HideZero) } : {}),
-    ...(Object.hasOwn(current, 'threshold') ? { threshold: structuredClone(current.threshold) } : {}),
-    ...(Object.hasOwn(current, 'Threshold') ? { Threshold: structuredClone(current.Threshold) } : {}),
-    ...(Object.hasOwn(current, 'abcClassification') ? { abcClassification: structuredClone(current.abcClassification) } : {}),
-    ...(Object.hasOwn(current, 'AbcClassification') ? { AbcClassification: structuredClone(current.AbcClassification) } : {}),
-    ...(Object.hasOwn(current, 'topGroups') ? { topGroups: structuredClone(current.topGroups) } : {}),
-    ...(Object.hasOwn(current, 'TopGroups') ? { TopGroups: structuredClone(current.TopGroups) } : {}),
-    ...(Object.hasOwn(current, 'filterExpression') ? { filterExpression: structuredClone(current.filterExpression) } : {}),
-    ...(Object.hasOwn(current, 'FilterExpression') ? { FilterExpression: structuredClone(current.FilterExpression) } : {}),
-    ...cloneNativeExactFilterAliases(current),
-    ...(Object.hasOwn(current, 'supplierSourceWorld') ? { supplierSourceWorld: structuredClone(current.supplierSourceWorld) } : {}),
-    ...(Object.hasOwn(current, 'SupplierSourceWorld') ? { SupplierSourceWorld: structuredClone(current.SupplierSourceWorld) } : {}) }
-  if (id === 'supplier-registrar-warehouse') {
-    const defaults = layoutDefaults(dataset, current)
-    const registrar = datasetGroupings(dataset).find(field => field.type === 78)
-    if (!registrar || !['73,4,21', '78,4,21'].includes(defaults.sorted.Row.map(field => field.type).join(','))) return null
-    delete defaults.supplierBasis
-    delete defaults.supplierSourceWorld
-    defaults.sorted.Row[0] = registrar
-    return { Name: preset.name, Data: {
-      ...defaults, ...preservedOptions, selections: structuredClone(current.selections),
-    } }
-  }
-  if (isNativeReportPresetId(id)) {
-    const defaults = layoutDefaults(dataset, current)
-    // A preset changes layout; saved calculation inference remains unchanged.
-    if (dataset.DataSource === 35) delete defaults.dayOrganizationBasis
-    if (dataset.DataSource === 40) {
-      delete defaults.groupedCashPeriod
-      defaults.sorted.Measurements = structuredClone(current.sorted.Measurements)
-    }
-    if (dataset.DataSource === 41) {
-      delete defaults.groupedSettlementPeriod
-      delete defaults.sourceBuyerSubtree
-      if (requestGroupedSettlementPeriod(current) == null)
-        defaults.sorted.Row = profileRowsForLegacySettlement(dataset)
-    }
-    if (dataset.DataSource === 38) {
-      delete defaults.supplierBasis
-      delete defaults.supplierSourceWorld
-      // Applying a layout to a saved request must not opt it into a new calculation.
-      if (requestSupplierBasis(current) !== 0) {
-        const receipt = datasetGroupings(dataset).find(field => field.type === 73)
-        if (!receipt) return null
-        defaults.sorted.Row[0] = receipt
-      }
-    }
-    const next = { ...defaults, ...preservedOptions, selections: structuredClone(current.selections),
-    }
-    return { Name: preset.name, Data: preserveAbcGrouping(current, next) }
-  }
-  if (id === 'quantities-by-unit') {
-    const data = defaultDatasetRequest(dataset, current.from, current.to)
-    return { Name: preset.name, Data: preserveAbcGrouping(current, { ...data, ...preservedOptions, selections: structuredClone(current.selections), sorted: {
-      ...data.sorted, Measurements: data.sorted.Measurements.filter(field => field.Type === 0),
-    } }) }
-  }
-  const template = createSalesReportPreset(id, current.from, current.to, current.selections)
-  return { ...template, Name: preset.name, Data: preserveAbcGrouping(current, { ...template.Data, ...preservedOptions, dataSource: dataset.DataSource }) }
-}
-
-function layoutDefaults(dataset: ReportDataset, current: ReportRequestBody): ReportRequestBody {
-  const defaults = defaultDatasetRequest(dataset, current.from, current.to)
-  delete defaults.profitReadMode
-  delete defaults.settlementReadMode
-  delete defaults.cashReadMode
-  return defaults
-}
-
-function profileRowsForLegacySettlement(dataset: ReportDataset): ReportGroupingItem[] {
-  const available = datasetGroupings(dataset)
-  return [4, 41, 76, 77].map(type => available.find(item => item.type === type)!).filter(Boolean)
 }

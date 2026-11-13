@@ -2,11 +2,11 @@ import { Select, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { cashReadModeLabel, isCashReadModeCapability } from '../data/cashReadMode'
 
-type Props = { capability: unknown; value: unknown; disabled: boolean; hideRegister?: boolean; onChange: (value: 0) => void }
+type Props = { capability: unknown; value: unknown; disabled: boolean; onChange: (value: 0) => void }
 
-export function CashReadModeSelect({ capability, value, disabled, hideRegister = false, onChange }: Props) {
+export function CashReadModeSelect({ capability, value, disabled, onChange }: Props) {
   const { t } = useI18n()
-  if (!isCashReadModeCapability(capability) || hideRegister && value === 0) return null
+  if (!isCashReadModeCapability(capability) || value === 0) return null
   return <>
     <Select mt="sm" label={t('Джерело розрахунку')} allowDeselect={false} disabled={disabled}
       value={value === 0 ? '0' : null} placeholder={t('Оберіть джерело розрахунку')}
