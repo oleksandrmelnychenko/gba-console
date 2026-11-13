@@ -164,13 +164,13 @@ async function exportRowsToXlsx(
         [t('Позиція')]: row.inventory.position,
         [t('Днів покриття')]: row.days_of_cover >= 9999 ? '' : row.days_of_cover,
         [t('Замовити')]: q,
-        [t('Оцінка одиниці, EUR')]: row.unit_cost_eur ?? '',
+        [t('Оцінка одиниці, EUR без ПДВ')]: row.unit_cost_eur ?? '',
         [t('Покриття вартості')]: row.cost_provenance.coverage,
         [t('Джерело вартості')]: row.cost_provenance.source,
         [t('Основа вартості')]: row.cost_provenance.basis,
         [t('Придатна для бюджету')]: row.cost_provenance.budget_eligible,
         [t('Причини виключення з бюджету')]: row.cost_provenance.budget_exclusion_reasons.join('; '),
-        [t('Оцінка рядка, EUR')]: row.unit_cost_eur === null ? '' : exactDisplayedLineAmount(row.unit_cost_eur, q) ?? '',
+        [t('Оцінка рядка, EUR без ПДВ')]: row.unit_cost_eur === null ? '' : exactDisplayedLineAmount(row.unit_cost_eur, q) ?? '',
         [t('Маржа од., EUR')]: row.unit_margin_eur ?? '',
       }
     })
@@ -799,11 +799,11 @@ function ProcurementConstructorContent() {
               <strong>{hasPlanData ? qty.format(overview.criticalCount) : '—'}</strong>
             </div>
             <div className="procure-metric">
-              <span>{t('Відомі оцінки потреби, EUR')}</span>
+              <span>{t('Відомі оцінки потреби, EUR без ПДВ')}</span>
               <strong>{hasPlanData && overview.totalValue !== null ? amount.format(overview.totalValue) : '—'}</strong>
             </div>
             <div className="procure-metric">
-              <span>{t('Оцінки термінових позицій, EUR')}</span>
+              <span>{t('Оцінки термінових позицій, EUR без ПДВ')}</span>
               <strong>{hasPlanData && overview.valueAtRisk !== null ? amount.format(overview.valueAtRisk) : '—'}</strong>
             </div>
           </div>
@@ -1214,7 +1214,7 @@ function usePlanColumns({
       },
       {
         id: 'unitCost',
-        header: t('Оцінка одиниці, EUR'),
+        header: t('Оцінка одиниці, EUR без ПДВ'),
         accessor: (row) => row.unit_cost_eur,
         cell: (row) => <Stack gap={3}><ProcurementMoneyCell value={row.unit_cost_eur} unit /><ProcurementCostBadge proof={row.cost_provenance} /></Stack>,
         align: 'right',
@@ -1222,7 +1222,7 @@ function usePlanColumns({
       },
       {
         id: 'lineCost',
-        header: t('Оцінка, EUR'),
+        header: t('Оцінка, EUR без ПДВ'),
         accessor: (row) => row.unit_cost_eur === null ? null : exactDisplayedLineAmount(row.unit_cost_eur, orderQtyFor(row)),
         cell: (row) => (
           <ProcurementMoneyCell
@@ -1418,7 +1418,7 @@ function OverviewCharts({ overview, t }: { overview: Overview; t: (key: string) 
 
       <Card padding="sm" radius="md" withBorder>
         <Text c="dimmed" mb={6} size="xs">
-          {t('Відомі оцінки, EUR · топ виробників')}
+          {t('Відомі оцінки, EUR без ПДВ · топ виробників')}
         </Text>
         <BarChart
           classNames={{ tooltipItemData: 'app-money' }}

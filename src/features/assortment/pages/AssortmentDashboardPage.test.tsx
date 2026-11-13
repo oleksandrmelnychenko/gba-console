@@ -193,6 +193,16 @@ describe('AssortmentDashboardPage', () => {
     })
   })
 
+  it('states the basis of stock value, sales and profit figures', async () => {
+    renderPage()
+
+    expect(await screen.findByText('Вартість запасів за собівартістю')).not.toBeNull()
+    expect(screen.getByText('Продажі до повернень, з ПДВ')).not.toBeNull()
+    expect(screen.getByText('Продажі мінус повернення, з ПДВ')).not.toBeNull()
+    expect(screen.getAllByText('Запас за собівартістю, €').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Надлишок запасу')).toBeNull()
+  })
+
   it('translates recommendation codes and applies the selected supported row limit', async () => {
     mockAssortmentData([{ ...product, action_reasons: ['negative_margin'] }])
     renderPage()

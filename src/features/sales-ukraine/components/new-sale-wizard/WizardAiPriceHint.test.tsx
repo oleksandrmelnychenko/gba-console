@@ -45,3 +45,15 @@ it('requests only settled focus and aborts retired hints without showing another
   await tick()
   expect(getSalesUkrainePriceRecommendation).toHaveBeenCalledTimes(2)
 })
+
+it('names the comparison band as own sale prices, not the market', async () => {
+  vi.useFakeTimers()
+  vi.mocked(getSalesUkrainePriceRecommendation).mockResolvedValue({
+    ...recommendation(20), margin_pct_at_recommended: 12.5, peer_band: { p25: 18, p50: 19, p75: 21, n: 6 },
+  })
+  render(view('product'))
+  await tick()
+  expect(screen.getByText(/наші продажі/)).toBeTruthy()
+  expect(screen.getByText(/маржа від ціни 12\.5%/)).toBeTruthy()
+  expect(screen.queryByText(/ринок/)).toBeNull()
+})

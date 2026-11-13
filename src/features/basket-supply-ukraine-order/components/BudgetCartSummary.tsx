@@ -138,10 +138,10 @@ function getEstimateSplit(plan: CartPlan, t: (value: string) => string): string 
   const parts: string[] = []
 
   if (typeof plan.certified_cost_eur === 'number') {
-    parts.push(`${t('Підтверджено')}: €${eurFormatter.format(plan.certified_cost_eur)}`)
+    parts.push(`${t('За надходженнями, без ПДВ')}: €${eurFormatter.format(plan.certified_cost_eur)}`)
   }
   if (typeof plan.uncertified_cost_eur === 'number') {
-    parts.push(`${t('За останнім приходом')}: €${eurFormatter.format(plan.uncertified_cost_eur)}`)
+    parts.push(`${t('За останнім документом постачання, ПДВ не підтверджено')}: €${eurFormatter.format(plan.uncertified_cost_eur)}`)
   }
   if (typeof plan.unestimated_item_count === 'number' && plan.unestimated_item_count > 0) {
     parts.push(`${t('Без оцінки')}: ${countFormatter.format(plan.unestimated_item_count)} ${t('позицій')}`)

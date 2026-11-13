@@ -192,7 +192,7 @@ function buildColumns(
     },
     {
       id: 'unitCost',
-      header: `${t('Оцінка одиниці')} (EUR)`,
+      header: t('Оцінка одиниці, EUR без ПДВ'),
       width: 110,
       minWidth: 96,
       align: 'right',
@@ -205,7 +205,7 @@ function buildColumns(
     },
     {
       id: 'lineCost',
-      header: `${t('Оцінка рядка')} (EUR)`,
+      header: t('Оцінка рядка, EUR без ПДВ'),
       width: 118,
       minWidth: 104,
       align: 'right',

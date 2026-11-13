@@ -221,6 +221,9 @@ function CompetitorWebSearchPanelContent({
             <span aria-hidden="true" />
             UA · UAH
           </div>
+          <Text c="dimmed" size="xs">
+            {t('Ціни — грн, як на сторінці продавця; ПДВ і фасування не приведено до єдиного базису.')}
+          </Text>
         </div>
 
         <Text className="competitor-radar__lead">
@@ -405,7 +408,7 @@ function ScanningState({ selectedSources }: { selectedSources: CompetitorSourceK
       <div>
         <Text className="competitor-radar__empty-title">{t('Сканую український ринок…')}</Text>
         <Text className="competitor-radar__empty-text">
-          {t('Зіставляю артикул, відсіюю дублікати й нормалізую ціни з ПДВ.')}
+          {t('Зіставляю артикул і відсіюю дублікати. Ціни беру як на сторінці продавця.')}
         </Text>
       </div>
       <span className="competitor-radar__scan-count">{selectedSources.length} {t('джерел')}</span>

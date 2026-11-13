@@ -316,8 +316,8 @@ export function ProductCard({
       <ProductAiAction actionLabel={actionLabel} actionReasons={actionReasons} t={t} />
 
       <SimpleGrid className="assort-product-metrics" cols={{ base: 2, md: 4 }} spacing={12}>
-        <Stat label={t('Залишок на складі')} value={formatNullableNumber(detail.qty_on_hand)} />
-        <Stat label={t('Вартість залишку')} value={<>{decimal.format(detail.eur_value)} <TableChip tone="source" value="EUR" /></>} />
+        <Stat label={t('Вільний залишок, од. виміру')} value={formatNullableNumber(detail.qty_on_hand)} />
+        <Stat label={t('Вартість залишку за собівартістю')} value={<>{decimal.format(detail.eur_value)} <TableChip tone="source" value="EUR" /></>} />
         <Stat label={t('Оцінена маржа')} value={formatPercent(detail.margin_pct)} />
         <Stat
           label={t('Запасу вистачить')}
@@ -415,14 +415,14 @@ function CommercialProfile({ detail, t }: { detail: ProductDetail; t: ProductCar
         <Text size="xs" c="dimmed">{financialPeriod(detail)}</Text>
         <SimpleGrid cols={{ base: 2, md: 4 }} spacing={10}>
           <Stat label={t('Продано за період')} value={formatNullableNumber(detail.annual_units)} />
-          <Stat label={t('Продажі до повернень')} value={money.format(detail.revenue_eur)} />
-          <Stat label={t('Продажі мінус повернення')} value={detail.net_revenue_eur == null ? `${t('Відома частина')}: ${detail.known_net_revenue_eur == null ? '—' : money.format(detail.known_net_revenue_eur)}` : money.format(detail.net_revenue_eur)} />
+          <Stat label={t('Продажі до повернень, з ПДВ')} value={money.format(detail.revenue_eur)} />
+          <Stat label={t('Продажі мінус повернення, з ПДВ')} value={detail.net_revenue_eur == null ? `${t('Відома частина')}: ${detail.known_net_revenue_eur == null ? '—' : money.format(detail.known_net_revenue_eur)}` : money.format(detail.net_revenue_eur)} />
           <Stat
             label={t('Поточна собівартість одиниці')}
             value={detail.unit_cost_eur == null ? t('Немає даних') : preciseMoney.format(detail.unit_cost_eur)}
           />
           <Stat
-            label={t('Середня ціна продажу')}
+            label={t('Середня ціна продажу, з ПДВ')}
             value={detail.avg_price_eur == null ? t('Немає даних') : preciseMoney.format(detail.avg_price_eur)}
           />
         </SimpleGrid>
@@ -516,7 +516,7 @@ function RegionsPanel({ error, productRegions, regionId, t }: {
         <>
           <div className="assort-related-table" data-expanded={expanded} tabIndex={0} role="region" aria-label={t('Де купують товар')}>
             <table>
-              <thead><tr><th scope="col">{t('Регіон')}</th><th scope="col">{t('К-сть')}</th><th scope="col" title={t('Замовлення')}>{t('Зам.')}</th><th scope="col">{t('Клієнти')}</th><th scope="col">{t('До повернень')} <TableChip tone="source" value="EUR" /></th><th scope="col">{t('Мінус повернення')} <TableChip tone="source" value="EUR" /></th></tr></thead>
+              <thead><tr><th scope="col">{t('Регіон')}</th><th scope="col">{t('К-сть')}</th><th scope="col" title={t('Накладні')}>{t('Накл.')}</th><th scope="col">{t('Клієнти')}</th><th scope="col">{t('До повернень')} <TableChip tone="source" value={t('EUR з ПДВ')} /></th><th scope="col">{t('Мінус повернення')} <TableChip tone="source" value={t('EUR з ПДВ')} /></th></tr></thead>
               <tbody>{visible.map(region => (
                 <tr key={region.region_id ?? 'unassigned'} aria-current={(region.region_id ?? 0) === regionId ? 'true' : undefined}>
                   <td><TableChip tone="document" value={region.region_name || (region.region_id == null ? t('Без регіону') : `#${region.region_id}`)} /></td>

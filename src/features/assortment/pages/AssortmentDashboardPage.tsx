@@ -274,7 +274,7 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
         },
         {
           id: 'eur',
-          header: t('Запас, €'),
+          header: t('Запас за собівартістю, €'),
           align: 'right',
           minWidth: 130,
           accessor: (row) => row.eur_value,
@@ -306,7 +306,7 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
         ...baseColumns,
         {
           id: 'regionRevenue',
-          header: t('Регіон, €'),
+          header: t('Регіон, € з ПДВ'),
           align: 'right',
           minWidth: 130,
           accessor: (row) => row.regional_revenue_eur ?? 0,
@@ -692,17 +692,17 @@ function AssortmentKpis({
   return (
     <SimpleGrid className="assort-kpis" cols={{ base: 1, sm: 2, lg: 5 }} spacing={0}>
       <KpiTile
-        label={t('Вартість запасів')}
+        label={t('Вартість запасів за собівартістю')}
         sub={body?.total_skus == null ? undefined : `${t('Товарних позицій')}: ${formatInt(body.total_skus)}`}
         value={formatMoney(body?.total_eur_value)}
       />
       <KpiTile
-        label={t('Продажі до повернень')}
+        label={t('Продажі до повернень, з ПДВ')}
         sub={`${t('Увесь асортимент')} · ${period}`}
         value={formatMoney(body?.total_revenue_eur)}
       />
       <KpiTile
-        label={t('Продажі мінус повернення')}
+        label={t('Продажі мінус повернення, з ПДВ')}
         value={body?.total_net_revenue_eur === null ? t('Не визначено') : formatMoney(body?.total_net_revenue_eur)}
         sub={body?.unresolved_amount_count ? `${t('Відома частина')}: ${formatMoney(body.known_total_net_revenue_eur)} · ${body.unresolved_amount_count} ${t('сум без підтвердження')} · ${period}` : `${t('Увесь асортимент')} · ${period}`}
       />
@@ -711,7 +711,7 @@ function AssortmentKpis({
         sub={
           weightedMargin == null
             ? t('маржа невідома')
-            : `${t('За поточною собівартістю')} · ${pct(weightedMargin)} · ${formatMoney(knownMarginRevenue)}`
+            : `${t('Продажі з ПДВ мінус поточна собівартість; лише товари з відомою собівартістю')} · ${pct(weightedMargin)} · ${formatMoney(knownMarginRevenue)}`
         }
         value={formatMoney(marginProfit)}
       />
@@ -719,7 +719,7 @@ function AssortmentKpis({
         label={t('Ризики маржі та повернень')}
         sub={
           negativeMarginSkus
-            ? `${formatInt(negativeMarginSkus)} ${t('позицій у мінусі')} · ${formatMoney(negativeMarginRevenue)}`
+            ? `${formatInt(negativeMarginSkus)} ${t('позицій у мінусі; їх продажі з ПДВ')}: ${formatMoney(negativeMarginRevenue)}`
             : t('частка повернених одиниць')
         }
         value={pct(overallReturnRate)}
@@ -848,7 +848,7 @@ function AssortmentAttention({
     }
 
     rows.slice(0, 2).forEach((row) => add(t('Низьке здоровʼя'), healthPill(row.health), row, `${Math.round(row.health)}/100`))
-    frozenRows.slice(0, 2).forEach((row) => add(t('Надлишок запасу'), 'is-orange', row, formatMoney(row.eur_value)))
+    frozenRows.slice(0, 2).forEach((row) => add(t('Найбільший запас за собівартістю'), 'is-orange', row, formatMoney(row.eur_value)))
     lowMarginRows.slice(0, 2).forEach((row) => add(t('Низька маржа'), 'is-yellow', row, pct(row.margin_pct)))
     highReturnRows.slice(0, 2).forEach((row) => add(t('Повернення'), 'is-red', row, pct(row.return_rate)))
 
@@ -1021,8 +1021,8 @@ function RegionSummary({ region, period }: { region: AssortmentRegionRow; period
         </div>
       </div>
       <div className="assort-region__metrics">
-        <RegionMetric label={t('Продажі до повернень')} value={formatMoney(region.revenue_eur)} />
-        <RegionMetric label={t('Продажі мінус повернення')} value={region.net_revenue_eur === null ? `${t('Відома частина')}: ${formatMoney(region.known_net_revenue_eur)}` : formatMoney(region.net_revenue_eur)} />
+        <RegionMetric label={t('Продажі до повернень, з ПДВ')} value={formatMoney(region.revenue_eur)} />
+        <RegionMetric label={t('Продажі мінус повернення, з ПДВ')} value={region.net_revenue_eur === null ? `${t('Відома частина')}: ${formatMoney(region.known_net_revenue_eur)}` : formatMoney(region.net_revenue_eur)} />
         <RegionMetric label={t('Штуки')} value={formatInt(region.units)} />
         <RegionMetric label={t('Клієнти')} value={formatInt(region.client_count)} />
         <RegionMetric label={t('Товарні позиції')} value={formatInt(region.product_count)} />

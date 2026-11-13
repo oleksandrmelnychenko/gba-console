@@ -167,7 +167,7 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
         {dashboard && (dashboard.ai_active != null && dashboard.manual_backlog != null && dashboard.active_total != null ? (
           <Text size="sm">{t('Усі активні, включно з відкладеними')}: {dashboard.active_total} · {t('AI-рекомендації')}: {dashboard.ai_active} · {t('Ручні завдання')}: {dashboard.manual_backlog}</Text>
         ) : <Text size="xs" c="dimmed">{t('Поділ активних завдань на AI та ручні недоступний.')}</Text>)}
-        <Text size="xs" c="dimmed">{t('Борг — поточні непогашені документи; групування за днями після договірного терміну оплати. Кількість у групах — документи, не клієнти.')}</Text>
+        <Text size="xs" c="dimmed">{t('Борг — поточні непогашені документи; групування за днями після договірного терміну оплати. Кількість у групах — документи, не клієнти.')} {t('Суми — лише прострочена частина боргу, EUR з ПДВ за курсом на дату документа, без обмеження давності; це не загальний борг клієнтів.')}</Text>
         {(dashboard?.debt_unknown_date_count ?? 0) > 0 && <Alert color="yellow">
           {t('Дата документа не визначена')}: {dashboard?.debt_unknown_date_count} · {formatMoney(dashboard?.debt_unknown_date_eur ?? 0)}. {t('Ці документи показано окремо від відомого простроченого боргу.')}
         </Alert>}
@@ -221,7 +221,7 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
                 <Group justify="space-between" wrap="wrap">
                   <Text className="cockpit-subtitle">{t('Старіння заборгованості')}</Text>
                   <Text c="dimmed" size="xs">
-                    {t('Під ризиком')}: <span className="app-money">{formatMoney(dashboard?.value_at_risk_eur ?? 0)}</span>
+                    {t('Прострочений борг разом')}: <span className="app-money">{formatMoney(dashboard?.value_at_risk_eur ?? 0)}</span>
                   </Text>
                 </Group>
                 <AgingBars

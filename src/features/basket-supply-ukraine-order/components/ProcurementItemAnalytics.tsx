@@ -72,7 +72,7 @@ export function ProcurementItemAnalytics({ row, selectedQty, t, onQuantityChange
         <Metric label={t('Доступно')} value={quantity.format(row.inventory.available)} />
         <Metric label={t('Покриття, дн.')} value={row.days_of_cover === null ? '—' : quantity.format(row.days_of_cover)} />
         <Metric label={t('Рекомендовано')} value={quantity.format(row.suggested_qty)} />
-        <Metric label={t('Оцінка партії')} value={decision.selectedCostEur === null ? '—' : amount.format(decision.selectedCostEur)} currency />
+        <Metric label={t('Оцінка партії, без ПДВ')} value={decision.selectedCostEur === null ? '—' : amount.format(decision.selectedCostEur)} currency />
       </div>
       </div>
       <div className="procurement-item-analytics__navigation">
@@ -95,7 +95,7 @@ export function ProcurementItemAnalytics({ row, selectedQty, t, onQuantityChange
             : series.length === 0 ? <div className="procurement-item-analytics__state">{t('За цей період даних немає')}</div>
               : <>
                 {table ? <div className="procurement-item-analytics__table-wrap"><table className="app-static-table">
-                  <thead><tr><th>{t('Місяць')}</th><th>{t('Кількість')}</th><th>{t('Виручка, EUR')}</th><th>{t('Замовлення')}</th><th>{t('Середня ціна, EUR')}</th></tr></thead>
+                  <thead><tr><th>{t('Місяць')}</th><th>{t('Кількість')}</th><th>{t('Виручка, EUR з ПДВ')}</th><th>{t('Замовлення')}</th><th>{t('Середня ціна, EUR з ПДВ')}</th></tr></thead>
                   <tbody>{[...series].reverse().map((point) => <tr key={point.month}><td>{formatSalesMonth(point.month)} {!point.is_complete && <TableChip tone="warning" value={t('неповний')} />}</td>{tableMetrics.map((metric) => {
                     const value = salesMetricValue(point, metric)
                     const formatter = metric === 'revenue_eur' || metric === 'avg_price_eur' ? amount : quantity
@@ -116,7 +116,7 @@ export function ProcurementItemAnalytics({ row, selectedQty, t, onQuantityChange
       </section>}
       {tab === 'calculation' && <section className="procurement-item-analytics__panel" aria-label={t('Розрахунок')}>
         <div className="procurement-item-analytics__facts procurement-item-analytics__facts--calculation">
-          <Metric label={t('Цільовий рівень')} value={quantity.format(decision.orderUpTo)} />
+          <Metric label={t('Цільовий запас')} value={quantity.format(decision.orderUpTo)} />
           <Metric label={t('Позиція зараз')} value={quantity.format(row.inventory.position)} />
           <Metric label={t('Точка замовлення')} value={quantity.format(row.reorder_point)} />
           <Metric label={t('Страховий запас')} value={quantity.format(row.safety_stock)} />

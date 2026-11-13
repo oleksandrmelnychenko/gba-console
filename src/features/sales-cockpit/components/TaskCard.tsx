@@ -143,7 +143,7 @@ export function TaskCard({
           <Group gap="xs" wrap="nowrap">
             {expectedValue !== null && (
               <Text className="cockpit-task-ev" size="xs">
-                {t('Очікувана цінність')}: <span className="app-money">{formatMoney(expectedValue)}</span>
+                <span title={t(expectedValueBasis(task.task_type).hint)}>{t(expectedValueBasis(task.task_type).label)}</span>: <span className="app-money">{formatMoney(expectedValue)}</span>
               </Text>
             )}
             {pOutcome !== null && (
@@ -199,6 +199,27 @@ export function TaskCard({
       </Stack>
     </Card>
   )
+}
+
+function expectedValueBasis(taskType: CockpitTaskType | undefined): { hint: string; label: string } {
+  if (taskType === 'debt_followup') {
+    return {
+      hint: 'Боргові документи клієнта за останні 365 днів, що перейшли договірний термін оплати; EUR з ПДВ за курсом на дату боргу. Це не загальний борг клієнта.',
+      label: 'Прострочений борг',
+    }
+  }
+
+  if (taskType === 'reorder_due' || taskType === 'cross_sell') {
+    return {
+      hint: 'Середня сума одного замовлення клієнта за останні 12 місяців, EUR за цінами продажу (для продажів з ПДВ — з ПДВ).',
+      label: 'Очікувана цінність',
+    }
+  }
+
+  return {
+    hint: 'Оцінка в EUR за цінами продажу (для продажів з ПДВ — з ПДВ).',
+    label: 'Очікувана цінність',
+  }
 }
 
 function urgencyPill(urgency?: CockpitUrgency): string {

@@ -101,3 +101,12 @@ function suggestion(): ReorderSuggestion {
     xyz: 'X',
   }
 }
+
+it('states that cost estimates are in EUR without VAT in the column headers', () => {
+  render(<MantineProvider theme={theme}><I18nProvider>
+    <BudgetCartTable items={[suggestion()]} producerNameById={new Map([[501, 'Meyle']])} />
+  </I18nProvider></MantineProvider>)
+
+  expect(screen.getByText('Оцінка одиниці, EUR без ПДВ')).not.toBeNull()
+  expect(screen.getByText('Оцінка рядка, EUR без ПДВ')).not.toBeNull()
+})

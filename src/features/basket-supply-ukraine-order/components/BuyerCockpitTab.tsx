@@ -738,7 +738,7 @@ function BuyerCockpitTabContent() {
       },
       {
         id: 'unitCost',
-        header: `${t('Ціна')} (EUR)`,
+        header: t('Оцінка одиниці, EUR без ПДВ'),
         accessor: (item) => item.unit_cost_eur ?? 0,
         cell: (item) => (item.unit_cost_eur === null ? '' : <span className="app-money">{eurFormatter.format(item.unit_cost_eur)}</span>),
         width: 120,
@@ -785,9 +785,9 @@ function BuyerCockpitTabContent() {
         cell: (item) =>
           item.cheaper_alt ? (
             <Tooltip
-              label={<>{t('дешевший постачальник')}: <span className="app-money">€{eurFormatter.format(item.cheaper_alt.cost_eur)}</span></>}
+              label={<>{t('дешевше в історії надходжень, EUR без ПДВ за одиницю')}: <span className="app-money">€{eurFormatter.format(item.cheaper_alt.cost_eur)}</span></>}
             >
-              <ActionIcon aria-label={t('дешевший постачальник')} color="orange" size="sm" variant="subtle">
+              <ActionIcon aria-label={t('дешевше в історії надходжень, EUR без ПДВ за одиницю')} color="orange" size="sm" variant="subtle">
                 <TriangleAlert size={16} />
               </ActionIcon>
             </Tooltip>
@@ -909,7 +909,7 @@ function BuyerCockpitTabContent() {
               <Group align="flex-end" gap="md" wrap="nowrap">
                 <Stack align="flex-end" gap={2}>
                   <Text c="dimmed" size="xs">
-                    {t('Чернетка замовлення')} (EUR)
+                    {t('Чернетка замовлення, EUR без ПДВ')}
                   </Text>
                   <Group gap={5} justify="flex-end" wrap="nowrap">
                     <Text className="app-money" fw={600} size="lg">

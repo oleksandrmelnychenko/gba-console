@@ -40,3 +40,13 @@ it('allows a replacement product image after the previous URL failed', () => {
   view.rerender(ui('https://example.com/second.jpg'))
   expect(screen.getByRole('button', { name: 'Відкрити фото CODE' })).toBeTruthy()
 })
+
+it('states the price and stock basis once above the cards', () => {
+  const products: RecommendationProduct[] = [{ NetUid: 'p-1', VendorCode: 'CODE-1', Name: 'Product', AvailableQtyUk: 5, CurrentPrice: 10 }]
+  const ui = (isVatSale: boolean) => <MantineProvider env="test"><I18nProvider><RecommendationsList products={products}
+    selectedKeys={new Set()} isVatSale={isVatSale} selectable={false} onToggleSelect={() => {}} onPreview={() => {}} /></I18nProvider></MantineProvider>
+  const view = render(ui(false))
+  expect(screen.getAllByText(/EUR без ПДВ\. Наявність — залишок на складі організації договору та складах перепродажу/)).toHaveLength(1)
+  view.rerender(ui(true))
+  expect(screen.getByText(/EUR без ПДВ; у продажу з ПДВ податок додається зверху/)).toBeTruthy()
+})

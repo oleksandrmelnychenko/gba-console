@@ -112,6 +112,18 @@ describe('Sales cockpit workspace', () => {
     expect(screen.getByTestId('aging-chart')).not.toBeNull()
   })
 
+  it('states that the dashboard debt is the overdue part only and names its basis', async () => {
+    vi.mocked(getDashboard).mockResolvedValue(
+      dashboard({ debt_aging: [{ amount_eur: 500, bucket: '0-30', count: 2 }], value_at_risk_eur: 500 }),
+    )
+
+    renderWithTheme(<CockpitDashboardPanel reloadKey={0} />)
+
+    expect(await screen.findByText(/EUR з ПДВ за курсом на дату документа, без обмеження давності; це не загальний борг клієнтів/)).toBeTruthy()
+    expect(screen.getByText(/Прострочений борг разом/)).toBeTruthy()
+    expect(screen.queryByText(/Під ризиком/)).toBeNull()
+  })
+
   it('keeps unknown payment terms separate even when there is no known overdue debt', async () => {
     vi.mocked(getDashboard).mockResolvedValue(dashboard({ debt_unknown_terms_count: 2, debt_unknown_terms_eur: 125.5 }))
     renderWithTheme(<CockpitDashboardPanel reloadKey={0} />)

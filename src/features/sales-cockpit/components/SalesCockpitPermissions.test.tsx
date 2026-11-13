@@ -14,6 +14,23 @@ vi.mock('../../../shared/i18n/useI18n', () => ({
 const noTaskAction = vi.fn()
 
 describe('sales cockpit action permissions', () => {
+  it('labels the amount of a debt task as overdue debt with its rule, not as a generic value', () => {
+    renderTask({}, { task_type: 'debt_followup', expected_value: 1500 })
+
+    const label = screen.getByText('Прострочений борг')
+    expect(label.getAttribute('title')).toContain('за останні 365 днів')
+    expect(label.getAttribute('title')).toContain('EUR з ПДВ за курсом на дату боргу')
+    expect(label.getAttribute('title')).toContain('Це не загальний борг клієнта')
+    expect(screen.queryByText('Очікувана цінність')).toBeNull()
+  })
+
+  it('keeps the expected-value label for a reorder task', () => {
+    renderTask({}, { task_type: 'reorder_due', expected_value: 300 })
+
+    expect(screen.getByText('Очікувана цінність').getAttribute('title')).toContain('Середня сума одного замовлення')
+    expect(screen.queryByText('Прострочений борг')).toBeNull()
+  })
+
   it('does not render task business actions without their independent rights', () => {
     renderTask({})
 
@@ -72,12 +89,13 @@ describe('offer action permissions', () => {
   })
 })
 
-function renderTask(overrides: Partial<TaskPermissionProps>) {
+function renderTask(overrides: Partial<TaskPermissionProps>, taskOverrides: Partial<CockpitTask> = {}) {
   const task: CockpitTask = {
     task_key: 'task-1',
     client_id: 42,
     status: 'open',
     title: 'Подзвонити клієнту',
+    ...taskOverrides,
   }
 
   const permissions: TaskPermissionProps = {

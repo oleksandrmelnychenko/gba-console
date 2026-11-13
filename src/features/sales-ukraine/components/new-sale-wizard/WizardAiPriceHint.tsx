@@ -131,15 +131,15 @@ export function WizardAiPriceHint({ productNetId, clientAgreementNetId, withVat 
       </Text>
       {recommendation.margin_pct_at_recommended !== null && (
         <Text c="dimmed" size="xs">
-          {t('маржа')} {recommendation.margin_pct_at_recommended.toFixed(1)}%
+          {t('маржа від ціни')} {recommendation.margin_pct_at_recommended.toFixed(1)}%
         </Text>
       )}
       {median !== null && (
-        <Tooltip label={t('Медіана ринку конкурентів')} openDelay={250}>
+        <Tooltip label={t('Медіана наших цін продажу цього товару за 12 міс., EUR за одиницю, як у накладних (для продажів з ПДВ — з ПДВ). Це не ціни конкурентів. Рекомендована ціна — без ПДВ.')} openDelay={250}>
           <Group gap={2} wrap="nowrap">
             {MarketIcon && <MarketIcon color={belowMarket ? 'var(--mantine-color-teal-6)' : 'var(--mantine-color-red-6)'} size={13} />}
             <Text c="dimmed" size="xs">
-              {t('ринок')} <span className="app-money app-money-meta">{formatMoney(median, recommendation.currency)}</span>
+              {t('наші продажі')} <span className="app-money app-money-meta">{formatMoney(median, recommendation.currency)}</span>
             </Text>
           </Group>
         </Tooltip>

@@ -81,7 +81,7 @@ describe('ProductCard', () => {
     expect(screen.getByText('Рекомендація')).toBeTruthy()
     expect(screen.getByText('Перевірити залишок без продажів')).toBeTruthy()
     expect(screen.getByText('Товар давно не продавався')).toBeTruthy()
-    expect(screen.getByText('Залишок на складі')).toBeTruthy()
+    expect(screen.getByText('Вільний залишок, од. виміру')).toBeTruthy()
     expect(screen.getByText('Запасу вистачить')).toBeTruthy()
     expect(screen.getByText('Загальна оцінка товару')).toBeTruthy()
     expect(screen.getByText('Попит на товар')).toBeTruthy()

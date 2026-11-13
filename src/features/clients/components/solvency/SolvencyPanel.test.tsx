@@ -351,4 +351,32 @@ describe('current-state display', () => {
     expect(queryByText(explanation)).toBeNull()
     expect(getClientSolvencyCharts).toHaveBeenCalledTimes(1)
   })
+
+  it.each([
+    ['already_90_plus', 'critical', 'прострочено понад 90 днів:'],
+    ['will_cross_90_days', 'high', 'прострочено від 1 до 90 днів:'],
+    ['current_debt', 'medium', 'загальний борг:'],
+  ] as const)('names the 90-day amount by what it contains for %s', async (reasonCode, band, label) => {
+    getClientSolvencyScore.mockResolvedValue({
+      ...v3Score,
+      risk_90d: { horizon_days: 90, threshold_days: 90, band, exposure_eur: 12345.67, reason_code: reasonCode },
+    })
+    getClientSolvencyCharts.mockResolvedValue(null)
+    const { container, findByText } = renderPanel(<SolvencyPanel clientNetId="abc" />)
+    expect(await findByText(/12.*345,67 EUR/)).toBeTruthy()
+    expect(container.querySelector('.client-solvency-risk-amount')?.textContent?.replace(/\s/g, ' '))
+      .toBe(`${label} 12 345,67 EUR`)
+  })
+
+  it('states the turnover basis and explains the limit amounts once per block', async () => {
+    const { getByText, queryByText } = await renderGauge({
+      value: 0.4567, status: 'ok', debt_amount: 456.7, limit_amount: 1000, currency_id: 2,
+      threshold_soft: 0.9, threshold_hard: 1, label: 'limit_utilization',
+    })
+    expect(getByText('Оборот, EUR з ПДВ')).toBeTruthy()
+    expect(getByText(/повернення не віднято/)).toBeTruthy()
+    expect(getByText(/Суми у валюті договору, з ПДВ/)).toBeTruthy()
+    expect(getByText('Прострочені рахунки, документів')).toBeTruthy()
+    expect(queryByText('Оборот, EUR')).toBeNull()
+  })
 })

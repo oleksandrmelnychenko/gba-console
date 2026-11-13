@@ -198,7 +198,7 @@ function HeadDashboardPageContent() {
                 <div className="cockpit-head-kpis">
                   <DepartmentMetric
                     accent="brand"
-                    label={t('Накладні за місяць, брутто')}
+                    label={t('Накладні за місяць, брутто з ПДВ')}
                     target={team.totals.shipped_target}
                     expected={team.team.reduce((sum, row) => sum + row.target.shipped.expected_to_date, 0)}
                     value={team.totals.shipped_mtd}
@@ -360,7 +360,7 @@ function TeamMonitor({
                   <TableChip value={`${row.tasks.active} ${t('активних')}`} />
                 </Group>
                 <div className="cockpit-manager-row__metrics">
-                  <span>{t('Накладні, брутто')} <strong className={paceClass(row.target.shipped.pace_status)}>{row.target.shipped.pace_status === 'no_target' ? t('Немає орієнтира') : formatPercent(row.target.shipped.attainment_pct)}</strong></span>
+                  <span>{t('Накладні, брутто з ПДВ')} <strong className={paceClass(row.target.shipped.pace_status)}>{row.target.shipped.pace_status === 'no_target' ? t('Немає орієнтира') : formatPercent(row.target.shipped.attainment_pct)}</strong></span>
                   <span>{t('Документи оплат')} <strong className={paceClass(row.target.paid.pace_status)}>{row.target.paid.pace_status === 'no_target' ? t('Немає орієнтира') : formatPercent(row.target.paid.attainment_pct)}</strong></span>
                   <span>{t('Продано')} <strong>{row.tasks.sold_month}</strong></span>
                 </div>

@@ -12,6 +12,7 @@ import {
   SimpleGrid,
   Stack,
   Text,
+  Tooltip,
 } from '@mantine/core'
 import { CircleAlert, Info } from 'lucide-react'
 import { useEffect, useReducer } from 'react'
@@ -284,6 +285,31 @@ const RISK_90D_REASON: Record<Risk90d['reason_code'], string> = {
   will_cross_90_days: 'Якщо не сплатити, борг перейде 90 днів прострочення',
 }
 
+const TOTAL_DEBT_HINT =
+  'Загальний борг: усі відкриті борги клієнта за всіма договорами, зокрема ще не прострочені й давні. EUR з ПДВ за курсом на сьогодні.'
+
+const RISK_90D_AMOUNT_LABEL: Record<Risk90d['reason_code'], string> = {
+  already_90_plus: 'прострочено понад 90 днів',
+  current_debt: 'загальний борг',
+  no_debt: 'загальний борг',
+  will_cross_90_days: 'прострочено від 1 до 90 днів',
+}
+
+const RISK_90D_AMOUNT_HINT: Record<Risk90d['reason_code'], string> = {
+  already_90_plus:
+    'Лише частина боргу, прострочена понад 90 днів після договірного терміну оплати. Усі договори клієнта, EUR з ПДВ за курсом на сьогодні.',
+  current_debt: TOTAL_DEBT_HINT,
+  no_debt: TOTAL_DEBT_HINT,
+  will_cross_90_days:
+    'Лише частина боргу, прострочена від 1 до 90 днів після договірного терміну оплати. Усі договори клієнта, EUR з ПДВ за курсом на сьогодні.',
+}
+
+const PAYMENT_DISCIPLINE_LABEL: Record<string, string> = {
+  current: 'борги в межах терміну, документів',
+  overdue: 'прострочені борги, документів',
+  settled: 'продажі без відкритого боргу за 12 міс., документів',
+}
+
 function Risk90dSummary({ risk }: { risk: Risk90d }) {
   const { t } = useI18n()
   const color = RISK_90D_COLOR[risk.band] ?? 'gray'
@@ -297,7 +323,17 @@ function Risk90dSummary({ risk }: { risk: Risk90d }) {
       </Badge>
       <Text size="sm">
         {t(reason)}
-        {risk.exposure_eur > 0 && <> · <span className="app-money">{formatEur(risk.exposure_eur)}</span></>}
+        {risk.exposure_eur > 0 && (
+          <>
+            {' · '}
+            <Tooltip label={t(RISK_90D_AMOUNT_HINT[risk.reason_code] ?? TOTAL_DEBT_HINT)} multiline w={320} withArrow>
+              <span className="client-solvency-risk-amount">
+                {t(RISK_90D_AMOUNT_LABEL[risk.reason_code] ?? RISK_90D_AMOUNT_LABEL.current_debt)}:{' '}
+                <span className="app-money">{formatEur(risk.exposure_eur)}</span>
+              </span>
+            </Tooltip>
+          </>
+        )}
       </Text>
     </Group>
   )
@@ -504,7 +540,7 @@ function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
       if (slice.count > 0) {
         items.push({
           color: DONUT_COLORS[index % DONUT_COLORS.length],
-          name: t(slice.label),
+          name: t(PAYMENT_DISCIPLINE_LABEL[slice.label] ?? slice.label),
           value: slice.count,
         })
       }
@@ -520,7 +556,7 @@ function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
   }))
 
   const turnoverData = charts.turnover_trend.map((point) => ({
-    дохід: round2(point.turnover_eur),
+    оборот: round2(point.turnover_eur),
     період: point.period,
   }))
 
@@ -553,6 +589,11 @@ function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
                 {gaugeDebtLine ? (
                   <Text className="client-solvency-gauge-debt" size="xs">
                     {gaugeDebtLine}
+                  </Text>
+                ) : null}
+                {gaugeDebtLine ? (
+                  <Text c="dimmed" size="xs">
+                    {t('Суми у валюті договору, з ПДВ: борг за всіма договорами клієнта в цій валюті проти ліміту одного договору. Це не загальний борг у EUR.')}
                   </Text>
                 ) : null}
                 <Text c="dimmed" size="xs">
@@ -597,7 +638,10 @@ function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
       <Card className="app-section-card" padding="md" radius="md" withBorder>
         <Stack gap="xs">
           <Text className="client-section-title" fw={600} size="sm">
-            {t('Прострочені рахунки')}
+            {t('Прострочені рахунки, документів')}
+          </Text>
+          <Text c="dimmed" size="xs">
+            {t('Відкриті боргові документи за днями після договірного терміну оплати.')}
           </Text>
           {agingData.length > 0 ? (
             <BarChart
@@ -629,7 +673,10 @@ function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
         <Card className="app-section-card" padding="md" radius="md" withBorder>
           <Stack gap="xs">
             <Text className="client-section-title" fw={600} size="sm">
-              {t('Оборот, EUR')}
+              {t('Оборот, EUR з ПДВ')}
+            </Text>
+            <Text c="dimmed" size="xs">
+              {t('Проведені продажі за місяцями за курсом на дату продажу; повернення не віднято.')}
             </Text>
             {turnoverData.length > 0 ? (
               <BarChart
@@ -637,7 +684,7 @@ function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
                 data={turnoverData}
                 dataKey="період"
                 h={120}
-                series={[{ color: 'teal.6', name: 'дохід' }]}
+                series={[{ color: 'teal.6', name: 'оборот' }]}
                 yAxisProps={{ tick: MONEY_AXIS_TICK }}
               />
             ) : (

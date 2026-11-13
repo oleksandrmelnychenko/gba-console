@@ -54,6 +54,8 @@ import type { CockpitClient, CockpitClientSegment, CockpitClientsResponse } from
 import { ClientRepeatEvidence } from './ClientRepeatEvidence'
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
+const OVERDUE_DEBT_RULE =
+  'Прострочений борг: боргові документи за останні 365 днів, що перейшли договірний термін оплати; EUR з ПДВ за курсом на дату боргу. Це не загальний борг клієнта.'
 const lastOrderFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
 
 type ClientRecommendationsState = {
@@ -163,7 +165,7 @@ export function MyClientsPanel({ onContact, onTasks, revision = 0 }: { onContact
       },
       {
         id: 'turnover',
-        header: t('Оборот (12м)'),
+        header: t('Оборот (12м), з ПДВ'),
         accessor: (client) => client.turnover_eur,
         cell: (client) => (
           <Text className="app-money" size="sm">
@@ -178,7 +180,7 @@ export function MyClientsPanel({ onContact, onTasks, revision = 0 }: { onContact
         header: t('Прострочений борг'),
         accessor: (client) => client.overdue_eur,
         cell: (client) => (
-          <span className="app-money" title={client.overdue_eur > 0 ? t('Прострочено понад терміни') + ': ' + client.max_days_past_terms + ' ' + t('дн') : undefined}>
+          <span className="app-money" title={t(OVERDUE_DEBT_RULE) + (client.overdue_eur > 0 ? ' ' + t('Прострочено понад терміни') + ': ' + client.max_days_past_terms + ' ' + t('дн') : '')}>
             {formatMoney(client.overdue_eur)}
           </span>
         ),
@@ -575,7 +577,7 @@ function ClientRecommendationsForAgreement({
                       <Text size="sm">{product.NameUA || product.Name || '—'}</Text>
                     </Table.Td>
                     <Table.Td ta="right" w={110}>
-                      <Text className="app-money" size="sm">
+                      <Text className="app-money" size="sm" title={t('Ціна за одиницю за договором клієнта, EUR без ПДВ')}>
                         {typeof product.CurrentPrice === 'number' ? `€${product.CurrentPrice.toFixed(2)}` : '—'}
                       </Text>
                     </Table.Td>

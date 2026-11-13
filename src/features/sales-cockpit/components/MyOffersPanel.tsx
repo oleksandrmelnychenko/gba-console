@@ -199,12 +199,12 @@ export function MyOffersPanel() {
       },
       {
         id: 'total',
-        header: t('Сума'),
+        header: t('Сума без ПДВ'),
         accessor: (offer) => offer.TotalAmount,
         cell: (offer) => (
           <span className="app-money">
             {formatMoney(offer.TotalAmount)}{' '}
-            <TableChip tone="source" value={offer.ClientAgreement?.Agreement?.Currency?.Code ?? 'EUR'} />
+            <TableChip tone="source" value="EUR" />
           </span>
         ),
         align: 'right',

@@ -149,4 +149,16 @@ describe('CompetitorWebSearchPanel', () => {
       sources: ['strans', 'cargo_parts', 'intercars', 'omega', 'tir_market'],
     }, expect.any(AbortSignal))
   })
+
+  it('states that competitor prices are shown as listed, without a common VAT basis', () => {
+    render(
+      <MantineProvider env="test" theme={{ respectReducedMotion: true }}>
+        <I18nProvider>
+          <CompetitorWebSearchPanel product={null} />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    expect(screen.getByText(/ПДВ і фасування не приведено до єдиного базису/)).toBeTruthy()
+  })
 })

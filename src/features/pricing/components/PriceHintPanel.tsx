@@ -146,6 +146,9 @@ function PriceHintCard({ recommendation }: { recommendation: PriceRecommendation
 
   return (
     <Stack gap="sm">
+      <Text c="dimmed" size="xs">
+        {t('Ціна договору, рекомендація й мінімальна ціна — EUR без ПДВ за одиницю. Наші ціни продажу — як у накладних: для продажів з ПДВ вони містять ПДВ. Собівартість — облікова ціна партій на залишку.')}
+      </Text>
       <Group align="baseline" gap="xs" wrap="wrap">
         <Text className="app-money" fw={700} size="28px">
           {formatMoney(recommendation.recommended_price, currency)}
@@ -175,7 +178,7 @@ function PriceHintCard({ recommendation }: { recommendation: PriceRecommendation
       <Group gap="xs" wrap="wrap">
         {recommendation.margin_pct_at_recommended !== null && (
           <Badge color={belowMargin ? 'red' : 'teal'} size="sm" variant={belowMargin ? 'filled' : 'light'}>
-            {t('маржа')} {formatPercent(recommendation.margin_pct_at_recommended)}
+            {t('маржа від ціни')} {formatPercent(recommendation.margin_pct_at_recommended)}
           </Badge>
         )}
         {recommendation.price_floor !== null && (
@@ -185,14 +188,14 @@ function PriceHintCard({ recommendation }: { recommendation: PriceRecommendation
         )}
         {recommendation.suggested_discount_pct !== null && (
           <Badge className="app-role-pill" size="sm" variant="light">
-            {t('знижка')} {formatPercent(recommendation.suggested_discount_pct)}
+            {t('знижка від прайсу')} {formatPercent(recommendation.suggested_discount_pct)}
           </Badge>
         )}
       </Group>
 
       {band && (
         <Text c="dimmed" size="xs">
-          {t('діапазон знижки')}: {formatPercent(band.min_pct)} / {formatPercent(band.target_pct)} /{' '}
+          {t('діапазон знижки від прайсу (мін. / ціль / макс.)')}: {formatPercent(band.min_pct)} / {formatPercent(band.target_pct)} /{' '}
           {formatPercent(band.max_pct)}
         </Text>
       )}
@@ -216,10 +219,13 @@ function PricePositioningCharts({
   const hasPeerBand = peer.n > 0 && (isFiniteValue(peer.p25) || isFiniteValue(peer.p75))
   const thinSample = peer.n > 0 && peer.n < 4
 
+  const baselineLabel =
+    recommendation.baseline_source === 'client_world_fallback' ? t('медіана продажів клієнту') : t('ціна договору')
+
   const markers: RangeBandMarker[] = [
     { value: recommendation.price_floor, label: t('мін.'), color: 'gray.6' },
     { value: recommendation.recommended_price, label: t('реком.'), color: 'orange.7', dashed: false },
-    { value: recommendation.baseline_price, label: t('база'), color: 'orange.6' },
+    { value: recommendation.baseline_price, label: baselineLabel, color: 'orange.6' },
   ]
 
   const hasAnyMarker = markers.some((marker) => isFiniteValue(marker.value))
@@ -229,7 +235,7 @@ function PricePositioningCharts({
     { key: 'cost', label: t('собівартість'), value: recommendation.unit_cost_eur, color: 'gray.5' },
     { key: 'floor', label: t('мін. ціна'), value: recommendation.price_floor, color: 'blue.5' },
     { key: 'recommended', label: t('рекомендована'), value: recommendation.recommended_price, color: 'orange.6' },
-    { key: 'baseline', label: t('базова'), value: recommendation.baseline_price, color: 'orange.5' },
+    { key: 'baseline', label: baselineLabel, value: recommendation.baseline_price, color: 'orange.5' },
   ]
   const showWaterfall = waterfallSteps.filter((step) => isFiniteValue(step.value)).length >= 2
 
@@ -246,17 +252,17 @@ function PricePositioningCharts({
         <Stack gap={4}>
           <Group gap="xs" justify="space-between">
             <Text fw={600} size="sm">
-              {t('Позиція на ринку')}
+              {t('Позиція серед наших цін продажу за 12 міс.')}
             </Text>
             {peer.n > 0 && (
               <Text c="dimmed" size="xs">
-                {t('вибірка')}: {peer.n}
+                {t('вибірка, договорів')}: {peer.n}
               </Text>
             )}
           </Group>
           <RangeBandChart
-            bandLabel={hasPeerBand ? t('ринок p25–p75') : undefined}
-            emptyLabel={t('недостатньо даних ринку')}
+            bandLabel={hasPeerBand ? t('наші продажі p25–p75') : undefined}
+            emptyLabel={t('недостатньо наших продажів')}
             formatValue={formatEur}
             high={hasPeerBand ? peer.p75 : null}
             low={hasPeerBand ? peer.p25 : null}

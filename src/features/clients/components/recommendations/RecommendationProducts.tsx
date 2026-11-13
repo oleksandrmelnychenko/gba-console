@@ -67,13 +67,20 @@ export function RecommendationsList({
 
 
   return (
-    <div className="client-recommendations-grid">
+    <>
+      <Text c="dimmed" className="client-recommendations-basis" size="xs">
+        {isVatSale
+          ? t('Ціна — за одиницю за договором клієнта, EUR без ПДВ; у продажу з ПДВ податок додається зверху. Наявність — залишок на складі організації договору, в одиницях виміру товару.')
+          : t('Ціна — за одиницю за договором клієнта, EUR без ПДВ. Наявність — залишок на складі організації договору та складах перепродажу, в одиницях виміру товару.')}
+      </Text>
+      <div className="client-recommendations-grid">
       {products.map((product, index) => (
         <RecommendationCard key={getProductKey(product, index)} product={product} index={index}
           selected={selectedKeys.has(getProductKey(product, index))} selectable={selectable} isVatSale={isVatSale}
           onExclude={onExclude ? exclude : undefined} onPreview={preview} onToggleSelect={toggle} />
       ))}
-    </div>
+      </div>
+    </>
   )
 }
 

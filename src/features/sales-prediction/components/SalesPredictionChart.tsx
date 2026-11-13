@@ -38,8 +38,8 @@ export function SalesPredictionChart({
   const hasRange = coveragePct !== undefined && data.length > 0 && data.every(hasRangeBounds)
   const rangeSeries = hasRange
     ? [
-        { color: 'gray.5', label: t('Верхня межа, EUR'), name: 'high', strokeDasharray: '4 4' },
-        { color: 'gray.5', label: t('Нижня межа, EUR'), name: 'low', strokeDasharray: '4 4' },
+        { color: 'gray.5', label: t('Верхня межа, EUR з ПДВ'), name: 'high', strokeDasharray: '4 4' },
+        { color: 'gray.5', label: t('Нижня межа, EUR з ПДВ'), name: 'low', strokeDasharray: '4 4' },
       ]
     : []
 
@@ -68,7 +68,7 @@ export function SalesPredictionChart({
               data={data}
               dataKey="month"
               h={260}
-              series={[{ color, label: t('Сума продажів, EUR'), name: 'amount' }, ...rangeSeries]}
+              series={[{ color, label: t('Продажі мінус повернення, EUR з ПДВ'), name: 'amount' }, ...rangeSeries]}
               valueFormatter={formatMoney}
               withDots
               withLegend={false}
@@ -152,9 +152,9 @@ function PredictionSummary({ average, peak, total }: { average: number; peak: nu
 
   return (
     <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="xs">
-      <SummaryItem label={t('Разом')} value={formatMoney(total)} />
-      <SummaryItem label={t('Середнє')} value={formatMoney(average)} />
-      <SummaryItem label={t('Пік')} value={formatMoney(peak)} />
+      <SummaryItem label={t('Разом за період, з ПДВ')} value={formatMoney(total)} />
+      <SummaryItem label={t('Середнє за місяць')} value={formatMoney(average)} />
+      <SummaryItem label={t('Пік за місяць')} value={formatMoney(peak)} />
     </SimpleGrid>
   )
 }
