@@ -444,7 +444,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const appliedSettings = useAppliedReportSettings(settingsScope, draftSnapshot, reportBody)
   const resultRequest = appliedSettings.appliedRequest ?? reportBody
   const runRequestKey = useMemo(() => JSON.stringify({ request: settingsScope, allowed: canGenerateReport }),
-    [true, canGenerateReport, reportBody, true, settingsScope])
+    [canGenerateReport, settingsScope])
   const { result, preview, lastRun, error, isLoading, downloadModalOpened, update: updateRun, begin: beginRun, clear: clearRun } = useReportRunState<ReportRunOutcome>(runRequestKey)
   const comparisonSettingsDisabled = isLoading || workbookResolving || !canGenerateReport
   function changeExportLayout(value: FinancialExportLayout) {
