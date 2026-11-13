@@ -118,11 +118,11 @@ describe('BuyerCockpitTab draft totals', () => {
     await screen.findByText('#42')
     expect(screen.getByText('Чернетка замовлення, EUR без ПДВ').parentElement?.textContent?.replace(/\u00a0/g, ' ')).toContain('30,00')
     expect(screen.getAllByText('1 рядок без ціни не враховано')).toHaveLength(1)
-    expect(text()).toContain('Чернетка: 2 позицій · €30,00 · 1 рядок без ціни не враховано')
+    expect(text()).toContain('Чернетка: 2 позиції · €30,00 · 1 рядок без ціни не враховано')
 
     fireEvent.click(screen.getByRole('button', { name: 'Створити замовлення постачальнику' }))
     await screen.findByText('Створити чернетку замовлення?')
-    expect(text()).toContain('2 позицій · €30,00')
+    expect(text()).toContain('2 позиції · €30,00')
     expect(screen.getAllByText('1 рядок без ціни не враховано')).toHaveLength(2)
   })
 
@@ -153,13 +153,13 @@ describe('BuyerCockpitTab draft totals', () => {
     ])
 
     await screen.findByText('#44')
-    expect(text()).toContain('Чернетка: 2 позицій · €150,00')
+    expect(text()).toContain('Чернетка: 2 позиції · €150,00')
     expect(screen.queryByText(/без ціни не враховано/)).toBeNull()
 
     const row = screen.getByText('#44').closest('tr')!
     fireEvent.click(row.querySelector('[aria-label="Відхилити"], [title="Відхилити"]') as HTMLElement)
 
-    await waitFor(() => expect(text()).toContain('Чернетка: 1 позицій · €30,00'))
+    await waitFor(() => expect(text()).toContain('Чернетка: 1 позиція · €30,00'))
     expect(screen.getByText('Чернетка замовлення, EUR без ПДВ').parentElement?.textContent?.replace(/\u00a0/g, ' ')).toContain('30,00')
   })
 })

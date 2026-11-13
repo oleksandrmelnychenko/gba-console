@@ -1,3 +1,4 @@
+import { deskPlural } from '../../../features/reports/data/reportCountPresentation'
 import { loadProcurementWithRetry, procurementLoadError, procurementRetryNotice } from '../procurementLoadError'
 import {
   Alert,
@@ -344,7 +345,7 @@ function BudgetCartTabContent() {
         <Card className="app-section-card" padding="sm" radius="md" withBorder>
           <Group justify="space-between" wrap="nowrap">
             <Text c="gray.8" fw={600} size="sm">
-              {t('План закупівлі')} · <Text className="app-money" component="span" size="sm">{sortedItems.length}</Text> {t('позицій')}
+              {t('План закупівлі')} · <Text className="app-money" component="span" size="sm">{sortedItems.length}</Text> {t(deskPlural(sortedItems.length, ['позиція', 'позиції', 'позицій']))}
             </Text>
             <Button
               leftSection={<ChevronUp size={16} />}
@@ -368,7 +369,7 @@ function BudgetCartTabContent() {
         opened={isSheetOpen && hasPlan && !isEmpty}
         title={
           <span>
-            {t('План закупівлі')} · {sortedItems.length} {t('позицій')}
+            {t('План закупівлі')} · {sortedItems.length} {t(deskPlural(sortedItems.length, ['позиція', 'позиції', 'позицій']))}
           </span>
         }
         onClose={() => setSheetOpen(false)}

@@ -1,3 +1,4 @@
+import { deskPlural } from '../../../features/reports/data/reportCountPresentation'
 import { loadProcurementWithRetry, procurementLoadError, procurementRetryNotice } from '../procurementLoadError'
 import { userErrorText } from '../../../shared/api/userErrorText'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
@@ -1027,7 +1028,7 @@ function BuyerCockpitTabContent() {
 
             {hasItems && (
               <Text c="dimmed" size="xs" ta="right">
-                {t('Чернетка')}: {countFormatter.format(draftCost.lineCount)} {t('позицій')} ·{' '}
+                {t('Чернетка')}: {countFormatter.format(draftCost.lineCount)} {t(deskPlural(draftCost.lineCount, ['позиція', 'позиції', 'позицій']))} ·{' '}
                 <span className="app-money app-money-meta">€{eurFormatter.format(draftCost.pricedCost)}</span>
                 {draftUnpricedNote ? ` · ${draftUnpricedNote}` : ''}
               </Text>
@@ -1053,7 +1054,7 @@ function BuyerCockpitTabContent() {
           <Stack gap={4}>
             <Text size="sm">{plan?.producer_name || `#${plan?.producer_id ?? ''}`}</Text>
             <Text c="dimmed" size="sm">
-              {countFormatter.format(draftCost.lineCount)} {t('позицій')} · €{eurFormatter.format(draftCost.pricedCost)}
+              {countFormatter.format(draftCost.lineCount)} {t(deskPlural(draftCost.lineCount, ['позиція', 'позиції', 'позицій']))} · €{eurFormatter.format(draftCost.pricedCost)}
             </Text>
             {draftUnpricedNote && (
               <Text c="orange.8" size="xs">

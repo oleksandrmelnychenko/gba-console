@@ -49,7 +49,7 @@ describe('BudgetCartSummary', () => {
     const hint = screen.getByText(/Оцінка всього плану/).closest('.budget-cart-summary__metric')?.getAttribute('title')?.replace(/\u00a0/g, ' ')
     expect(hint).toContain('За надходженнями, без ПДВ — лише рядки, що входять у бюджет: €1 200,00')
     expect(hint).toContain('Решта рядків: поза бюджетом або за останнім документом постачання, ПДВ не підтверджено: €300,00')
-    expect(hint).toContain('Без оцінки: 2 позицій')
+    expect(hint).toContain('Без оцінки: 2 позиції')
   })
 
   it('renders without the estimate fields of an older service', () => {

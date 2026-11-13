@@ -229,6 +229,7 @@ describe('AssortmentDashboardPage', () => {
     expect(text).not.toContain('16 764')
     expect(text).toContain('без собівартості, не враховано: 3 поз. (960,5 од.)')
     expect(text).toContain('залишок і собівартість — на сьогодні (13.11.2026)')
+    expect(document.body.textContent?.replace(/\s/g, ' ')).toContain('16 764 товарні позиції')
   })
 
   it('names why products have no ABC class instead of a bare unknown count', async () => {

@@ -250,6 +250,7 @@ describe('ProcureDashboardTab', () => {
     await screen.findByText('Гальмівний диск')
     const summaryText = screen.getByText(/Рекомендовано загалом/).textContent?.replace(/\u00a0/g, ' ')
     expect(summaryText).toContain('Рекомендовано загалом: 22 861 шт · 2 187 компл · 3 179,19 м.')
+    expect(summaryText).toContain(': 25 позицій, 25 унікальних товарів.')
     const productRow = screen.getByText('Гальмівний диск').closest('tr')!
     const shortage = within(productRow).getByTitle('Точка замовлення мінус доступно з урахуванням резервів і замовленого')
     expect(shortage.textContent).toBe('4')

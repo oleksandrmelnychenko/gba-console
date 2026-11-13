@@ -1,3 +1,4 @@
+import { deskPlural } from '../../../features/reports/data/reportCountPresentation'
 import { Badge, Card, Group, Progress, Stack, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -144,7 +145,7 @@ function getEstimateSplit(plan: CartPlan, t: (value: string) => string): string 
     parts.push(`${t('Решта рядків: поза бюджетом або за останнім документом постачання, ПДВ не підтверджено')}: €${eurFormatter.format(plan.uncertified_cost_eur)}`)
   }
   if (typeof plan.unestimated_item_count === 'number' && plan.unestimated_item_count > 0) {
-    parts.push(`${t('Без оцінки')}: ${countFormatter.format(plan.unestimated_item_count)} ${t('позицій')}`)
+    parts.push(`${t('Без оцінки')}: ${countFormatter.format(plan.unestimated_item_count)} ${t(deskPlural(plan.unestimated_item_count, ['позиція', 'позиції', 'позицій']))}`)
   }
 
   return parts.join(' · ')

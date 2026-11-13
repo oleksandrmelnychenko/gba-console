@@ -1,3 +1,4 @@
+import { deskPlural } from '../../../features/reports/data/reportCountPresentation'
 import { userErrorText } from '../../../shared/api/userErrorText'
 import { financialPeriod } from '../financials'
 import { formatRatioPercent } from '../percent'
@@ -641,7 +642,7 @@ function AssortmentHeader({
             <AiFeatureBadge tooltip={t('AI-сервіс рейтингу асортименту')} />
           </Group>
           <Text className="assort-dash__subtitle">
-            {totalSkus == null ? t('Стан запасів') : <><b>{formatInt(totalSkus)}</b> {t('товарних позицій')}</>}
+            {totalSkus == null ? t('Стан запасів') : <><b>{formatInt(totalSkus)}</b> {t(deskPlural(totalSkus, ['товарна позиція', 'товарні позиції', 'товарних позицій']))}</>}
             {' · '}
             {t('здоровʼя')} <b>{avgHealth == null ? t('невідомо') : `${avgHealth}/100`}</b>
           </Text>
@@ -749,7 +750,7 @@ function AssortmentKpis({
       <KpiTile
         label={t('Продажі мінус повернення, з ПДВ')}
         value={body?.total_net_revenue_eur === null ? t('Не визначено') : formatMoney(body?.total_net_revenue_eur)}
-        sub={body?.unresolved_amount_count ? `${t('Відома частина')}: ${formatMoney(body.known_total_net_revenue_eur)} · ${body.unresolved_amount_count} ${t('сум без підтвердження')} · ${period}` : `${t('Увесь асортимент')} · ${period}`}
+        sub={body?.unresolved_amount_count ? `${t('Відома частина')}: ${formatMoney(body.known_total_net_revenue_eur)} · ${body.unresolved_amount_count} ${t(deskPlural(body.unresolved_amount_count, ['сума без підтвердження', 'суми без підтвердження', 'сум без підтвердження']))} · ${period}` : `${t('Увесь асортимент')} · ${period}`}
       />
       <KpiTile
         label={t('Оцінений прибуток, без ПДВ')}
