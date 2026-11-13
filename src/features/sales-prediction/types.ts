@@ -63,6 +63,7 @@ export type SalesForecastMeta = AiHistoryLineage & {
   as_of: string
   requested_as_of: string
   horizon_months: number
+  horizon_shape?: string | null
   currency: 'EUR'
   model_version: string
   source_fingerprint: string

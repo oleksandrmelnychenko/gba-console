@@ -247,6 +247,7 @@ function normalizeSalesForecast(result: unknown, expected: ExpectedForecastReque
       as_of: asOf,
       requested_as_of: requestedAsOf,
       horizon_months: horizonMonths,
+      horizon_shape: typeof meta.horizon_shape === 'string' && meta.horizon_shape ? meta.horizon_shape : null,
       currency: 'EUR',
       model_version: requireNonEmptyString(meta.model_version, 'meta.model_version'),
       source_fingerprint: requireNonEmptyString(meta.source_fingerprint, 'meta.source_fingerprint'),

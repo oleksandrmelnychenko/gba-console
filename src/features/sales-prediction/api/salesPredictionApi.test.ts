@@ -103,6 +103,17 @@ describe('salesPredictionApi canonical AI contract', () => {
     apiRequestMock.mockReset()
   })
 
+  it('keeps the horizon shape the service declares and tolerates its absence', async () => {
+    const withShape = canonicalClientForecast()
+    apiRequestMock.mockResolvedValueOnce({ ...withShape, meta: { ...withShape.meta, horizon_shape: 'flat_run_rate' } })
+    expect((await getSalesForecast(CLIENT_NET_ID, undefined, { asOfDate: '2026-07-25', months: 2 })).meta.horizon_shape)
+      .toBe('flat_run_rate')
+
+    apiRequestMock.mockResolvedValueOnce(canonicalClientForecast())
+    expect((await getSalesForecast(CLIENT_NET_ID, undefined, { asOfDate: '2026-07-25', months: 2 })).meta.horizon_shape)
+      .toBeNull()
+  })
+
   it('keeps the full proof metadata and forwards the deterministic date/cache query', async () => {
     apiRequestMock.mockResolvedValueOnce(canonicalClientForecast())
 

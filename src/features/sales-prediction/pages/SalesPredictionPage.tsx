@@ -10,6 +10,7 @@ import {
   searchPredictionClients,
   searchPredictionProducts,
 } from '../api/salesPredictionApi'
+import { ForecastHorizonShapeNote, ForecastPairCaveat } from '../components/SalesForecastNotes'
 import { SalesPredictionChart, SalesPredictionComparisonChart } from '../components/SalesPredictionChart'
 import type {
   SalesForecastMeta,
@@ -494,6 +495,7 @@ function PredictionCharts({
   return (
     <>
       {forecastLineage && <AiHistoryLineageNote lineage={forecastLineage} />}
+      <ForecastHorizonShapeNote horizonShape={forecastLineage?.horizon_shape} />
       {clientNetId && clientPredictionError && (
         <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
           {clientPredictionError}
@@ -561,6 +563,7 @@ function PredictionCharts({
         />
       )}
 
+      {clientNetId && productNetId && <ForecastPairCaveat />}
       {clientNetId && productNetId && (
         <SalesPredictionChart
           color="teal.6"
