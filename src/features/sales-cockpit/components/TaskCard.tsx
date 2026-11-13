@@ -5,6 +5,7 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { WhyThisTask } from './WhyThisTask'
 import { OVERDUE_DEBT_RULE } from '../overdueDebtRule'
 import type { CockpitTask, CockpitTaskType, CockpitUrgency } from '../types'
+import { debtAgeBandLabel } from '../utils/debtAgeBand'
 import { scoreBasisNote } from '../utils/scoreBasis'
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
@@ -80,6 +81,7 @@ export function TaskCard({
   const expectedValue = typeof task.expected_value === 'number' ? task.expected_value : null
   const pOutcome = typeof task.p_outcome === 'number' ? task.p_outcome : null
   const scoreNote = pOutcome !== null ? scoreBasisNote(task) : null
+  const debtAgeBand = task.task_type === 'debt_followup' ? debtAgeBandLabel(task.payload?.debt) : null
 
   return (
     <Card className={`cockpit-task is-${task.urgency ?? 'normal'}`} padding="sm" radius="md" withBorder>
@@ -98,6 +100,11 @@ export function TaskCard({
               {isManual && dueDateLabel && (
                 <Badge className="app-role-pill is-gray" variant="light">
                   {t('Термін')}: {dueDateLabel}
+                </Badge>
+              )}
+              {debtAgeBand && (
+                <Badge className="app-role-pill is-gray" data-testid="task-debt-age-band" title={t('Скільки днів понад договірний термін оплати має документ, за яким варто дзвонити першим')} variant="light">
+                  {t('Понад термін')}: {t(debtAgeBand)}
                 </Badge>
               )}
               {task.sla_breached && (

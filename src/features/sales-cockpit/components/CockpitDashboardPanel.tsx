@@ -7,8 +7,9 @@ import { TaskTypeDonut } from '../../../shared/ui/charts/TaskTypeDonut'
 import { UrgencyDonut } from '../../../shared/ui/charts/UrgencyDonut'
 import type { TaskTypeSliceInput, UrgencySliceInput } from '../../../shared/ui/charts/donutData'
 import { getDashboard } from '../api/salesCockpitApi'
+import { OVERDUE_DEBT_RULE } from '../overdueDebtRule'
 import type { CockpitDashboard, CockpitTaskType, CockpitUnconvertedDebt, CockpitUrgency } from '../types'
-import { collectDebtBreakdown } from '../utils/debtBreakdown'
+import { OPENING_BALANCE_KEYS, collectDebtBreakdown, describeOverdueWithOpeningBalance } from '../utils/debtBreakdown'
 
 const URGENCY_LABEL: Record<CockpitUrgency, string> = {
   critical: 'Критично',
@@ -147,7 +148,16 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
     urgencyData.some((item) => item.value > 0) ||
     taskTypeData.some((item) => item.value > 0) ||
     agingData.some((item) => item.amount > 0)
-  const debtBreakdown = dashboard ? dashboard.debt_breakdown ?? collectDebtBreakdown(dashboard) : []
+  const allDebtParts = dashboard ? dashboard.debt_breakdown ?? collectDebtBreakdown(dashboard) : []
+  const openingPart = allDebtParts.find((part) => OPENING_BALANCE_KEYS.has(part.key))
+  const openingBalanceNote = dashboard
+    ? describeOverdueWithOpeningBalance(
+        dashboard.value_at_risk_eur,
+        dashboard.debt_opening_balance_count ?? openingPart?.count,
+        dashboard.debt_opening_balance_eur ?? openingPart?.amount_eur,
+      )
+    : null
+  const debtBreakdown = openingBalanceNote ? allDebtParts.filter((part) => !OPENING_BALANCE_KEYS.has(part.key)) : allDebtParts
   const hasSummaryData =
     (dashboard?.active_total ?? 0) > 0 ||
     debtBreakdown.length > 0 ||
@@ -196,6 +206,12 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
             <StatCard label={t('Відхилено (місяць)')} value={String(completedTotals.dismissed)} />
           </div>
         ) : null}
+
+        {openingBalanceNote && (
+          <Text data-testid="debt-opening-balance" size="sm" title={t(OVERDUE_DEBT_RULE)}>
+            {openingBalanceNote}. {t('Ці документи вже входять до простроченого боргу.')}
+          </Text>
+        )}
 
         {showCharts ? (
           <div className="cockpit-analytics-grid">

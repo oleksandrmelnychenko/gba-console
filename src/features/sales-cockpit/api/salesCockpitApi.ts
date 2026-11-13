@@ -579,6 +579,7 @@ function normalizeDashboard(result: unknown, expectedAsOf?: string): CockpitDash
         }, [])
       : [],
     value_at_risk_eur: toNumber(payload.value_at_risk_eur),
+    ...openingBalanceFields(payload),
     debt_unknown_date_count: toNumber(payload.debt_unknown_date_count),
     debt_unknown_date_eur: toNumber(payload.debt_unknown_date_eur),
     ...debtBreakdownField(payload),
@@ -687,6 +688,10 @@ function normalizeHeadDashboard(result: unknown, expectedAsOf?: string): HeadDas
     teams,
     escalated_count: toNumber(payload.escalated_count),
     total_value_at_risk_eur: toNumber(payload.total_value_at_risk_eur),
+    ...(isFiniteAmount(payload.total_debt_opening_balance_eur) ? {
+      total_debt_opening_balance_eur: payload.total_debt_opening_balance_eur,
+      total_debt_opening_balance_count: toNumber(payload.total_debt_opening_balance_count),
+    } : {}),
   }
 }
 
@@ -703,6 +708,7 @@ function normalizeHeadDashboardTeam(value: unknown): HeadDashboardTeam | null {
     open_tasks: toNumber(row.open_tasks),
     critical: toNumber(row.critical),
     value_at_risk_eur: toNumber(row.value_at_risk_eur),
+    ...openingBalanceFields(row),
     debt_unknown_date_count: toNumber(row.debt_unknown_date_count),
     debt_unknown_date_eur: toNumber(row.debt_unknown_date_eur),
     ...debtBreakdownField(row),
@@ -979,6 +985,7 @@ function normalizeCockpitClient(value: unknown): CockpitClient | null {
     turnover_eur: toNumber(row.turnover_eur),
     overdue_eur: toNumber(row.overdue_eur),
     max_days_past_terms: toNumber(row.max_days_past_terms),
+    ...openingBalanceFields(row),
     ...(row.debt_unknown_date_count !== undefined ? {
       debt_unknown_date_eur: toNumber(row.debt_unknown_date_eur),
       debt_unknown_date_count: toNumber(row.debt_unknown_date_count),
@@ -1118,6 +1125,18 @@ function createSalesCockpitContractError(
   reason: string,
 ): SalesCockpitContractError {
   return new SalesCockpitContractError(path, reason)
+}
+
+function isFiniteAmount(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0
+}
+
+function openingBalanceFields(source: unknown): { debt_opening_balance_count?: number; debt_opening_balance_eur?: number } {
+  const record = source as { debt_opening_balance_count?: unknown; debt_opening_balance_eur?: unknown }
+  return isFiniteAmount(record.debt_opening_balance_eur) ? {
+    debt_opening_balance_count: toNumber(record.debt_opening_balance_count),
+    debt_opening_balance_eur: record.debt_opening_balance_eur,
+  } : {}
 }
 
 function debtBreakdownField(source: unknown): { debt_breakdown?: ReturnType<typeof collectDebtBreakdown> } {

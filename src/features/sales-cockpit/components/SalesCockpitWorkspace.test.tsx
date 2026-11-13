@@ -110,8 +110,9 @@ describe('Sales cockpit workspace', () => {
 
     expect((await screen.findByTestId('debt-breakdown-unknown_date')).textContent)
       .toContain('Дата документа не визначена: 2 ·')
-    expect(screen.getByTestId('debt-breakdown-opening_balance').textContent)
-      .toContain('У тому числі ввід залишків: 3 ·')
+    expect(screen.queryByTestId('debt-breakdown-opening_balance')).toBeNull()
+    expect(screen.getByTestId('debt-opening-balance').textContent?.replace(/\s/g, ' '))
+      .toContain('Прострочений борг 500 EUR, з них ввід залишків на 31.12.2024: 3 док. · 450 EUR')
   })
 
   it('renders all analytics when the dashboard has useful data', async () => {
@@ -180,6 +181,47 @@ describe('Sales cockpit workspace', () => {
     expect(screen.getByText('Відомий прострочений борг')).toBeTruthy()
     expect(screen.getByText('€0')).toBeTruthy()
     expect(screen.queryByTestId('aging-chart')).toBeNull()
+  })
+
+  it('explains at a glance how much of the overdue debt is opening balances and keeps the unknown-date alert', async () => {
+    vi.mocked(getDashboard).mockResolvedValue(dashboard({
+      value_at_risk_eur: 56063, debt_aging: [{ amount_eur: 56063, bucket: '90+', count: 14 }],
+      debt_opening_balance_count: 12, debt_opening_balance_eur: 55172,
+      debt_unknown_date_count: 1, debt_unknown_date_eur: 40,
+      debt_breakdown: [
+        { key: 'unknown_date', label: 'Дата документа не визначена', count: 1, amount_eur: 40, note: 'Ці документи показано окремо від відомого простроченого боргу.' },
+        { key: 'opening_balance', label: 'У тому числі ввід залишків', count: 12, amount_eur: 55172, note: 'Ці документи вже входять до простроченого боргу.' },
+      ],
+    }))
+    renderWithTheme(<CockpitDashboardPanel reloadKey={0} />)
+    const note = await screen.findByTestId('debt-opening-balance')
+    expect(note.textContent?.replace(/\s/g, ' ')).toContain('Прострочений борг 56 063 EUR, з них ввід залишків на 31.12.2024: 12 док. · 55 172 EUR')
+    expect(note.getAttribute('title')).toContain('Ввід залишків на 31.12.2024 враховано за збереженою датою документа')
+    expect(screen.queryByTestId('debt-breakdown-opening_balance')).toBeNull()
+    expect(screen.getByTestId('debt-breakdown-unknown_date').textContent).toContain('Дата документа не визначена: 1 · €40')
+  })
+
+  it('says nothing about opening balances when the service reports none', async () => {
+    vi.mocked(getDashboard).mockResolvedValue(dashboard({ value_at_risk_eur: 100, debt_opening_balance_count: 0, debt_opening_balance_eur: 0 }))
+    renderWithTheme(<CockpitDashboardPanel reloadKey={0} />)
+    await screen.findByText('Відомий прострочений борг')
+    expect(screen.queryByTestId('debt-opening-balance')).toBeNull()
+  })
+
+  it('splits the head debt chart into opening balances and the rest', async () => {
+    vi.mocked(getHeadDashboard).mockResolvedValue({
+      is_head: true, as_of: '2026-07-24', escalated_count: 0, total_value_at_risk_eur: 56163,
+      total_debt_opening_balance_eur: 55172, total_debt_opening_balance_count: 12,
+      teams: [
+        { manager_id: 1, open_tasks: 0, critical: 0, value_at_risk_eur: 56063, debt_opening_balance_count: 12, debt_opening_balance_eur: 55172 },
+        { manager_id: 2, open_tasks: 0, critical: 0, value_at_risk_eur: 100, debt_opening_balance_count: 0, debt_opening_balance_eur: 0 },
+      ],
+    })
+    renderWithTheme(<HeadDashboardChartsPanel reloadKey={0} rows={[]} />)
+    const note = await screen.findByTestId('head-debt-opening-balance')
+    expect(note.textContent?.replace(/\s/g, ' ')).toBe('Прострочений борг 56 163 EUR, з них ввід залишків на 31.12.2024: 12 док. · 55 172 EUR')
+    expect(screen.getAllByTestId('aging-chart')[0].textContent)
+      .toBe('[{"manager":"#1","other":891,"opening":55172},{"manager":"#2","other":100,"opening":0}]')
   })
 
   it('warns about debt without an exchange rate only when the service reports it', async () => {

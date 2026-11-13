@@ -781,6 +781,27 @@ describe('salesCockpitApi', () => {
     await expect(getHeadDashboard()).resolves.toMatchObject({ teams: [{ debt_breakdown: [group] }] })
   })
 
+  it('carries the opening-balance part of overdue debt on the card, the team rows and the head total', async () => {
+    const debt = { debt_opening_balance_count: 12, debt_opening_balance_eur: 55172, value_at_risk_eur: 56063 }
+    apiRequestMock.mockResolvedValueOnce({ manager_id: 7, as_of: '2026-06-08', ...history('2025-06-08'), ...debt })
+    await expect(getDashboard()).resolves.toMatchObject(debt)
+    apiRequestMock.mockResolvedValueOnce({
+      is_head: true, as_of: '2026-06-08', ...history('2025-06-08'),
+      teams: [{ manager_id: 7, open_tasks: 0, critical: 0, ...debt }],
+      total_value_at_risk_eur: 56063, total_debt_opening_balance_eur: 55172, total_debt_opening_balance_count: 12,
+    })
+    await expect(getHeadDashboard()).resolves.toMatchObject({
+      teams: [debt], total_debt_opening_balance_eur: 55172, total_debt_opening_balance_count: 12,
+    })
+    apiRequestMock.mockResolvedValueOnce({
+      is_head: true, as_of: '2026-06-08', ...history('2025-06-08'),
+      teams: [{ manager_id: 7, open_tasks: 0, critical: 0, value_at_risk_eur: 5 }], total_value_at_risk_eur: 5,
+    })
+    const older = await getHeadDashboard()
+    expect(older).not.toHaveProperty('total_debt_opening_balance_eur')
+    expect(older.teams[0]).not.toHaveProperty('debt_opening_balance_eur')
+  })
+
   it('defaults the head dashboard to a non-head empty shape on a non-object response', async () => {
     apiRequestMock.mockResolvedValueOnce(null)
 

@@ -5,7 +5,9 @@ import { useEffect, useMemo, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AgingBars, type AgingSeries } from '../../../shared/ui/charts/AgingBars'
 import { getHeadDashboard } from '../api/salesCockpitApi'
+import { OPENING_BALANCE_DATE_LABEL, OVERDUE_DEBT_RULE } from '../overdueDebtRule'
 import type { HeadDashboard, HeadTeamRow } from '../types'
+import { describeOverdueWithOpeningBalance } from '../utils/debtBreakdown'
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 0,
@@ -96,15 +98,31 @@ export function HeadDashboardChartsPanel({
     return map
   }, [rows])
 
+  const openingCount = dashboard
+    ? dashboard.total_debt_opening_balance_count ?? dashboard.teams.reduce((sum, team) => sum + (team.debt_opening_balance_count ?? 0), 0)
+    : 0
+  const openingEur = dashboard
+    ? dashboard.total_debt_opening_balance_eur ?? roundCents(dashboard.teams.reduce((sum, team) => sum + (team.debt_opening_balance_eur ?? 0), 0))
+    : 0
+  const hasOpeningBalance = openingCount > 0 || openingEur > 0
+  const openingBalanceNote = dashboard
+    ? describeOverdueWithOpeningBalance(dashboard.total_value_at_risk_eur, openingCount, openingEur)
+    : null
+
   const valueData = useMemo(
     () =>
       (dashboard?.teams ?? [])
         .toSorted((left, right) => right.value_at_risk_eur - left.value_at_risk_eur)
-        .map((team) => ({
-          manager: nameById.get(team.manager_id) ?? `#${team.manager_id}`,
-          value: team.value_at_risk_eur,
-        })),
-    [dashboard?.teams, nameById],
+        .map((team) => {
+          const opening = Math.min(team.debt_opening_balance_eur ?? 0, team.value_at_risk_eur)
+          return {
+            manager: nameById.get(team.manager_id) ?? `#${team.manager_id}`,
+            ...(hasOpeningBalance
+              ? { other: roundCents(team.value_at_risk_eur - opening), opening }
+              : { value: team.value_at_risk_eur }),
+          }
+        }),
+    [dashboard?.teams, hasOpeningBalance, nameById],
   )
 
   const hasCompleteTaskSplit = dashboard?.teams.every((team) => team.ai_active != null && team.manual_backlog != null) ?? false
@@ -122,8 +140,13 @@ export function HeadDashboardChartsPanel({
   )
 
   const valueSeries = useMemo<AgingSeries[]>(
-    () => [{ name: 'value', label: t('Відомий прострочений борг, €'), color: 'red.6' }],
-    [t],
+    () => hasOpeningBalance
+      ? [
+          { name: 'other', label: t('Прострочений борг без вводу залишків, €'), color: 'red.6' },
+          { name: 'opening', label: `${t('Ввід залишків на')} ${OPENING_BALANCE_DATE_LABEL}, €`, color: 'gray.5' },
+        ]
+      : [{ name: 'value', label: t('Відомий прострочений борг, €'), color: 'red.6' }],
+    [hasOpeningBalance, t],
   )
 
   const tasksSeries = useMemo<AgingSeries[]>(
@@ -174,8 +197,15 @@ export function HeadDashboardChartsPanel({
           <div className="cockpit-chart-card">
           <Stack gap="xs">
             <Text className="cockpit-subtitle">{t('Відомий прострочений борг за менеджером')}</Text>
+            {openingBalanceNote && (
+              <Text data-testid="head-debt-opening-balance" size="xs" title={t(OVERDUE_DEBT_RULE)}>
+                {openingBalanceNote}
+              </Text>
+            )}
             <AgingBars
               money
+              stacked={hasOpeningBalance}
+              withLegend={hasOpeningBalance}
               bucketKey="manager"
               data={valueData}
               emptyLabel={t('Дані відсутні')}
@@ -205,6 +235,10 @@ export function HeadDashboardChartsPanel({
       </Stack>
     </section>
   )
+}
+
+function roundCents(value: number): number {
+  return Math.round(value * 100) / 100
 }
 
 function formatMoney(value: number): string {

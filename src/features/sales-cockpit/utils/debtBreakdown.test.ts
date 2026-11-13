@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { collectDebtBreakdown } from './debtBreakdown'
+import { collectDebtBreakdown, describeOverdueWithOpeningBalance } from './debtBreakdown'
 
 it('keeps the unknown-date group and names it as shown apart', () => {
   expect(collectDebtBreakdown({ debt_unknown_date_count: 2, debt_unknown_date_eur: 310 })).toEqual([{
@@ -44,4 +44,13 @@ it('leaves groups with their own messages and empty groups out', () => {
     debt_aging: [],
   })).toEqual([])
   expect(collectDebtBreakdown(null)).toEqual([])
+})
+
+it('states the opening-balance part of the overdue debt in one sentence', () => {
+  expect(describeOverdueWithOpeningBalance(56063, 12, 55172)?.replace(/\s/g, ' '))
+    .toBe('Прострочений борг 56 063 EUR, з них ввід залишків на 31.12.2024: 12 док. · 55 172 EUR')
+  expect(describeOverdueWithOpeningBalance(10845.4, 31, 30.82)?.replace(/\s/g, ' '))
+    .toBe('Прострочений борг 10 845 EUR, з них ввід залишків на 31.12.2024: 31 док. · 30,82 EUR')
+  expect(describeOverdueWithOpeningBalance(100, 0, 0)).toBeNull()
+  expect(describeOverdueWithOpeningBalance(100, undefined, undefined)).toBeNull()
 })

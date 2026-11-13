@@ -1,3 +1,5 @@
+import { OPENING_BALANCE_DATE_LABEL } from '../overdueDebtRule'
+
 export type DebtBreakdownPart = {
   key: string
   label: string
@@ -66,4 +68,25 @@ export function collectDebtBreakdown(source: unknown): DebtBreakdownPart[] {
 
   return [...parts.values()].sort((left, right) =>
     Number(right.key === 'unknown_date') - Number(left.key === 'unknown_date') || left.key.localeCompare(right.key))
+}
+
+const wholeEurFormat = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
+const smallEurFormat = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
+
+function formatEur(value: number): string {
+  return `${(value > 0 && value < 100 ? smallEurFormat : wholeEurFormat).format(value)} EUR`
+}
+const documentCountFormat = new Intl.NumberFormat('uk-UA')
+
+export const OPENING_BALANCE_KEYS = new Set(['opening_balance', 'opening_balance_overdue'])
+
+export function describeOverdueWithOpeningBalance(
+  overdueEur: number,
+  openingCount: number | null | undefined,
+  openingEur: number | null | undefined,
+): string | null {
+  const count = finite(openingCount)
+  const amount = finite(openingEur)
+  if (count <= 0 && amount <= 0) return null
+  return `Прострочений борг ${formatEur(finite(overdueEur))}, з них ввід залишків на ${OPENING_BALANCE_DATE_LABEL}: ${documentCountFormat.format(count)} док. · ${formatEur(amount)}`
 }

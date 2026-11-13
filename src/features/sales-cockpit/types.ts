@@ -246,6 +246,8 @@ export type CockpitDashboard = AiHistoryLineage & {
   active_total?: number | null
   debt_unknown_terms_count?: number
   debt_unknown_terms_eur?: number
+  debt_opening_balance_count?: number
+  debt_opening_balance_eur?: number
   debt_unknown_date_count?: number
   debt_unknown_date_eur?: number
   debt_unconverted_count?: number
@@ -266,6 +268,8 @@ export type HeadDashboardTeam = {
   manual_backlog?: number | null
   debt_unknown_terms_count?: number
   debt_unknown_terms_eur?: number
+  debt_opening_balance_count?: number
+  debt_opening_balance_eur?: number
   debt_unknown_date_count?: number
   debt_unknown_date_eur?: number
   debt_unconverted_count?: number
@@ -283,6 +287,8 @@ export type HeadDashboard = Partial<AiHistoryLineage> & {
   teams: HeadDashboardTeam[]
   escalated_count: number
   total_value_at_risk_eur: number
+  total_debt_opening_balance_eur?: number
+  total_debt_opening_balance_count?: number
 }
 
 // Live team task board (GET sales/cockpit/head/tasks). Served by gba-server (.NET),
@@ -446,6 +452,8 @@ export type CockpitClient = {
   turnover_eur: number
   overdue_eur: number
   max_days_past_terms: number
+  debt_opening_balance_eur?: number
+  debt_opening_balance_count?: number
   debt_unknown_date_eur?: number
   debt_unknown_date_count?: number
   debt_breakdown?: DebtBreakdownPart[]
