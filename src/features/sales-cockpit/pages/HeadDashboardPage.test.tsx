@@ -31,4 +31,20 @@ describe('Head dashboard unavailable data', () => {
     expect(screen.queryByText('Менеджерів немає')).toBeNull()
     expect(screen.queryByText('Наживо')).toBeNull()
   })
+
+  it('shows the degraded marker of the team and of a manager', async () => {
+    const metric = { target: 0, mtd: 0, expected_to_date: 0, attainment_pct: 0, pace_status: 'no_target' as const }
+    const tasks = { active: 2, new: 0, in_progress: 0, snoozed: 0, critical: 0, generated_month: 0, done_month: 0, sold_month: 0, dismissed_month: 0, revenue_month: 0, close_rate: 0, conversion_rate: 0 }
+    vi.mocked(getHeadTeam).mockResolvedValue({
+      is_head: true, as_of: '2026-11-13', expected_manager_count: 1, returned_manager_count: 1,
+      degraded: true, degraded_reasons: ['unverified_orders'], unverified_orders: 4,
+      team: [{ manager_id: 7, manager_name: 'Олена', degraded: true, unverified_orders: 4, target: { shipped: metric, paid: metric }, tasks }],
+      totals: { shipped_target: 0, shipped_mtd: 0, paid_target: 0, paid_mtd: 0, generated_month: 0, done_month: 0, sold_month: 0, dismissed_month: 0, revenue_month: 0, close_rate: 0, conversion_rate: 0 },
+    } as never)
+    render(<MemoryRouter><MantineProvider theme={theme}><HeadDashboardPage /></MantineProvider></MemoryRouter>)
+
+    expect((await screen.findByTestId('head-team-degraded')).textContent)
+      .toBe('Неповні дані: накладні без підтвердженої дати не враховано — 4')
+    expect(screen.getByText('неповні дані: 4')).toBeTruthy()
+  })
 })

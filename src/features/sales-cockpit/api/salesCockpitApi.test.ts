@@ -768,6 +768,19 @@ describe('salesCockpitApi', () => {
     await expect(getHeadDashboard()).resolves.toMatchObject({ teams: [debt], total_value_at_risk_eur: 100 })
   })
 
+  it('keeps a debt group the console does not know yet, with its count and amount', async () => {
+    const debt = { debt_opening_balance_count: 4, debt_opening_balance_eur: 512.4, value_at_risk_eur: 100 }
+    const group = { key: 'opening_balance', label: 'У тому числі ввід залишків', count: 4, amount_eur: 512.4 }
+    apiRequestMock.mockResolvedValueOnce({ manager_id: 7, as_of: '2026-06-08', ...history('2025-06-08'), ...debt })
+    await expect(getDashboard()).resolves.toMatchObject({ debt_breakdown: [group] })
+    apiRequestMock.mockResolvedValueOnce({
+      is_head: true, as_of: '2026-06-08', ...history('2025-06-08'),
+      teams: [{ manager_id: 7, open_tasks: 0, critical: 0, ...debt }],
+      total_value_at_risk_eur: 100,
+    })
+    await expect(getHeadDashboard()).resolves.toMatchObject({ teams: [{ debt_breakdown: [group] }] })
+  })
+
   it('defaults the head dashboard to a non-head empty shape on a non-object response', async () => {
     apiRequestMock.mockResolvedValueOnce(null)
 

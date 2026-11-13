@@ -194,6 +194,13 @@ function HeadDashboardPageContent() {
                   </div>
                   {hasAiHistoryLineage(team) && <AiHistoryLineageNote lineage={team} />}
                 </div>
+                {team.degraded && (
+                  <Text c="yellow.8" data-testid="head-team-degraded" px="md" role="status" size="xs">
+                    {(team.unverified_orders ?? 0) > 0
+                      ? `${t('Неповні дані: накладні без підтвердженої дати не враховано')} — ${team.unverified_orders}`
+                      : t('Неповні дані: показники розраховано в обмеженому режимі')}
+                  </Text>
+                )}
 
                 <div className="cockpit-head-kpis">
                   <DepartmentMetric
@@ -357,6 +364,14 @@ function TeamMonitor({
               >
                 <Group gap="xs" justify="space-between" wrap="nowrap">
                   <Text className="cockpit-manager-row__name">{managerName(row)}</Text>
+                  {row.degraded && (
+                    <TableChip
+                      tone="warning"
+                      value={(row.unverified_orders ?? 0) > 0
+                        ? `${t('неповні дані')}: ${row.unverified_orders}`
+                        : t('неповні дані')}
+                    />
+                  )}
                   <TableChip value={`${row.tasks.active} ${t('активних')}`} />
                 </Group>
                 <div className="cockpit-manager-row__metrics">

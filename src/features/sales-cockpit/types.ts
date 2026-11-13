@@ -181,6 +181,8 @@ export type HeadRowTasks = {
 export type HeadTeamRow = {
   manager_id: number
   manager_name?: string | null
+  degraded?: boolean
+  unverified_orders?: number
   target: HeadRowTarget
   tasks: HeadRowTasks
 }
@@ -207,6 +209,9 @@ export type HeadTeam = Partial<AiHistoryLineage> & {
   returned_manager_count: number
   team: HeadTeamRow[]
   totals: HeadTeamTotals
+  degraded?: boolean
+  degraded_reasons?: string[]
+  unverified_orders?: number
 }
 
 export type CockpitTaskTypeMix = {
@@ -244,6 +249,7 @@ export type CockpitDashboard = AiHistoryLineage & {
   debt_unknown_date_count?: number
   debt_unknown_date_eur?: number
   debt_unconverted_count?: number
+  debt_breakdown?: DebtBreakdownPart[]
   debt_unconverted_native?: CockpitUnconvertedDebt[]
   manager_id: number
   manager_net_uid?: string
@@ -263,6 +269,7 @@ export type HeadDashboardTeam = {
   debt_unknown_date_count?: number
   debt_unknown_date_eur?: number
   debt_unconverted_count?: number
+  debt_breakdown?: DebtBreakdownPart[]
   manager_id: number
   open_tasks: number
   critical: number
@@ -441,6 +448,7 @@ export type CockpitClient = {
   max_days_past_terms: number
   debt_unknown_date_eur?: number
   debt_unknown_date_count?: number
+  debt_breakdown?: DebtBreakdownPart[]
   segments: CockpitClientSegment[]
   repeat_evidence: {
     products: CockpitRepeatProduct[]
@@ -491,3 +499,4 @@ export type CockpitGenerationResult = AiHistoryLineage & {
   crit_debt_reserved: number
 }
 import type { AiHistoryLineage } from '../../shared/ai/aiHistoryLineage'
+import type { DebtBreakdownPart } from './utils/debtBreakdown'

@@ -53,6 +53,7 @@ import { OVERDUE_DEBT_RULE } from '../overdueDebtRule'
 import type { ContactClient } from '../contactTypes'
 import type { CockpitClient, CockpitClientSegment, CockpitClientsResponse } from '../types'
 import { ClientRepeatEvidence } from './ClientRepeatEvidence'
+import { collectDebtBreakdown } from '../utils/debtBreakdown'
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
 const lastOrderFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
@@ -164,10 +165,10 @@ export function MyClientsPanel({ onContact, onTasks, revision = 0 }: { onContact
       },
       {
         id: 'turnover',
-        header: t('Оборот (12м), з ПДВ'),
+        header: t('Оборот (12м), брутто з ПДВ'),
         accessor: (client) => client.turnover_eur,
         cell: (client) => (
-          <Text className="app-money" size="sm">
+          <Text className="app-money" size="sm" title={t('повернення не віднято')}>
             {formatMoney(client.turnover_eur)}
           </Text>
         ),
@@ -183,11 +184,11 @@ export function MyClientsPanel({ onContact, onTasks, revision = 0 }: { onContact
             <span className="app-money" title={t(OVERDUE_DEBT_RULE) + (client.overdue_eur > 0 ? ' ' + t('Прострочено понад терміни') + ': ' + client.max_days_past_terms + ' ' + t('дн') : '')}>
               {formatMoney(client.overdue_eur)}
             </span>
-            {(client.debt_unknown_date_count ?? 0) > 0 && (
-              <Text c="yellow.8" size="xs" title={t('Ці документи показано окремо від відомого простроченого боргу.')}>
-                {t('Дата документа не визначена')}: {client.debt_unknown_date_count} · {formatMoney(client.debt_unknown_date_eur ?? 0)}
+            {(client.debt_breakdown ?? collectDebtBreakdown(client)).map((part) => (
+              <Text c="yellow.8" key={part.key} size="xs" title={part.note ? t(part.note) : undefined}>
+                {t(part.label)}: {part.count} · {formatMoney(part.amount_eur)}
               </Text>
-            )}
+            ))}
           </Stack>
         ),
         align: 'right',

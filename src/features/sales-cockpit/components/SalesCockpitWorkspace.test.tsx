@@ -97,6 +97,23 @@ describe('Sales cockpit workspace', () => {
     expect(getDashboard).toHaveBeenCalledTimes(3)
   })
 
+  it('lists every separate debt group the service reports, known or new', async () => {
+    vi.mocked(getDashboard).mockResolvedValue({
+      ...dashboard({ value_at_risk_eur: 500 }),
+      debt_unknown_date_count: 2,
+      debt_unknown_date_eur: 310,
+      debt_opening_balance_count: 3,
+      debt_opening_balance_eur: 450,
+    } as CockpitDashboard)
+
+    renderWithTheme(<CockpitDashboardPanel reloadKey={0} />)
+
+    expect((await screen.findByTestId('debt-breakdown-unknown_date')).textContent)
+      .toContain('Дата документа не визначена: 2 ·')
+    expect(screen.getByTestId('debt-breakdown-opening_balance').textContent)
+      .toContain('У тому числі ввід залишків: 3 ·')
+  })
+
   it('renders all analytics when the dashboard has useful data', async () => {
     vi.mocked(getDashboard).mockResolvedValue(
       dashboard({

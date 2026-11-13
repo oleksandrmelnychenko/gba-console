@@ -50,6 +50,7 @@ import type {
   HeadTeamRow,
   HeadTeamTotals,
 } from '../types'
+import { collectDebtBreakdown } from '../utils/debtBreakdown'
 
 const PACE_STATUSES: HeadPaceStatus[] = ['ahead', 'on', 'behind', 'no_target']
 const URGENCY_LEVELS: CockpitUrgency[] = ['critical', 'high', 'normal', 'low']
@@ -401,6 +402,13 @@ function normalizeHeadTeam(result: unknown, expectedAsOf?: string): HeadTeam {
     returned_manager_count: returnedManagerCount,
     team,
     totals: normalizeHeadTotals(payload.totals),
+    ...(typeof payload.degraded === 'boolean' ? {
+      degraded: payload.degraded,
+      degraded_reasons: Array.isArray(payload.degraded_reasons)
+        ? payload.degraded_reasons.filter((reason): reason is string => typeof reason === 'string')
+        : [],
+      unverified_orders: toNumber(payload.unverified_orders),
+    } : {}),
   }
 }
 
@@ -416,6 +424,10 @@ function normalizeHeadRow(value: unknown): HeadTeamRow | null {
     manager_name: typeof row.manager_name === 'string' ? row.manager_name : null,
     target: normalizeHeadTarget(row.target),
     tasks: normalizeHeadTasks(row.tasks),
+    ...(typeof row.degraded === 'boolean' ? {
+      degraded: row.degraded,
+      unverified_orders: toNumber(row.unverified_orders),
+    } : {}),
   }
 }
 
@@ -569,6 +581,7 @@ function normalizeDashboard(result: unknown, expectedAsOf?: string): CockpitDash
     value_at_risk_eur: toNumber(payload.value_at_risk_eur),
     debt_unknown_date_count: toNumber(payload.debt_unknown_date_count),
     debt_unknown_date_eur: toNumber(payload.debt_unknown_date_eur),
+    ...debtBreakdownField(payload),
     ...(payload.debt_unconverted_count !== undefined ? {
       debt_unconverted_count: toNumber(payload.debt_unconverted_count),
       debt_unconverted_native: normalizeUnconvertedDebt(payload.debt_unconverted_native),
@@ -692,6 +705,7 @@ function normalizeHeadDashboardTeam(value: unknown): HeadDashboardTeam | null {
     value_at_risk_eur: toNumber(row.value_at_risk_eur),
     debt_unknown_date_count: toNumber(row.debt_unknown_date_count),
     debt_unknown_date_eur: toNumber(row.debt_unknown_date_eur),
+    ...debtBreakdownField(row),
     ...(row.debt_unconverted_count !== undefined ? { debt_unconverted_count: toNumber(row.debt_unconverted_count) } : {}),
     ...(row.debt_unknown_terms_count !== undefined ? {
       debt_unknown_terms_count: toNumber(row.debt_unknown_terms_count),
@@ -969,6 +983,7 @@ function normalizeCockpitClient(value: unknown): CockpitClient | null {
       debt_unknown_date_eur: toNumber(row.debt_unknown_date_eur),
       debt_unknown_date_count: toNumber(row.debt_unknown_date_count),
     } : {}),
+    ...debtBreakdownField(row),
     segments: row.segments,
     repeat_evidence: evidence,
     contact_cooldown: cooldown,
@@ -1103,4 +1118,9 @@ function createSalesCockpitContractError(
   reason: string,
 ): SalesCockpitContractError {
   return new SalesCockpitContractError(path, reason)
+}
+
+function debtBreakdownField(source: unknown): { debt_breakdown?: ReturnType<typeof collectDebtBreakdown> } {
+  const parts = collectDebtBreakdown(source)
+  return parts.length > 0 ? { debt_breakdown: parts } : {}
 }

@@ -56,4 +56,20 @@ describe('overdue debt column of my clients', () => {
     const second = screen.getByTestId('overdue-2')
     expect(second.textContent).not.toContain('Дата документа не визначена')
   })
+
+  it('shows an opening-balance group when the service sends one and nothing when it is empty', async () => {
+    getClients.mockResolvedValue(clientsPage({
+      count: 2,
+      clients: [
+        { ...clientFixture(1), overdue_eur: 900, max_days_past_terms: 40, debt_opening_balance_count: 3, debt_opening_balance_eur: 450 } as CockpitClient,
+        { ...clientFixture(2), overdue_eur: 50, max_days_past_terms: 3, debt_opening_balance_count: 0, debt_opening_balance_eur: 0 } as CockpitClient,
+      ],
+    }))
+    render(<MantineProvider env="test"><I18nProvider><MemoryRouter><MyClientsPanel /></MemoryRouter></I18nProvider></MantineProvider>)
+
+    const first = await screen.findByTestId('overdue-1')
+    expect(first.textContent).toContain('У тому числі ввід залишків: 3 · €450')
+    expect(first.textContent).not.toContain('Дата документа не визначена')
+    expect(screen.getByTestId('overdue-2').textContent).not.toContain('ввід залишків')
+  })
 })
