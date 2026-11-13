@@ -6,6 +6,7 @@ const finiteNumber = (value: unknown): value is number => typeof value === 'numb
 const count = (value: unknown): value is number => finiteNumber(value) && Number.isSafeInteger(value) && value >= 0
 const record = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value)
+const CENT_ROUNDING_EUR = 0.005
 const sameAmount = (left: number, right: number) =>
   Math.abs(left - right) <= Math.max(0.000001, Number.EPSILON * Math.max(Math.abs(left), Math.abs(right)) * 8)
 
@@ -79,10 +80,8 @@ function readSummary(value: unknown, metric: GeographyMetric): SalesGeographySum
   if (
     rows.reduce((sum, row) => sum + row.ClientCount, 0) !== value.ClientCount ||
     rows.reduce((sum, row) => sum + row.UnresolvedAmountCount, 0) !== value.UnresolvedAmountCount ||
-    !sameAmount(
-      rows.reduce((sum, row) => sum + row.KnownValueEur, 0),
-      value.KnownTotalEur,
-    )
+    Math.abs(rows.reduce((sum, row) => sum + row.KnownValueEur, 0) - value.KnownTotalEur) >
+      CENT_ROUNDING_EUR * (rows.length + 1) + 0.000001
   )
     throw contractError()
   checkAmount(value.TotalEur, value.KnownTotalEur, value.UnresolvedAmountCount)

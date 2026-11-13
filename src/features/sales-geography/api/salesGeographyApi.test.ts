@@ -39,6 +39,13 @@ describe('geography summary contract', () => {
     request.mockResolvedValue(summary)
     expect(await getSalesGeography()).toEqual(summary)
   })
+  it('accepts a total that differs from its rows only by cent rounding', async () => {
+    const summary = { ...geographySummary(), TotalEur: 2.81, KnownTotalEur: 2.81 }
+    request.mockResolvedValue(summary)
+    expect(await getSalesGeography()).toEqual(summary)
+    request.mockResolvedValue({ ...summary, TotalEur: 2.83, KnownTotalEur: 2.83 })
+    await expect(getSalesGeography()).rejects.toThrow('Некоректні дані карти продажів')
+  })
   it('preserves an unknown full total and a partial known amount', async () => {
     const summary = geographySummary()
     summary.Rows[0] = { ...summary.Rows[0], RegionCode: null, ValueEur: null, UnresolvedAmountCount: 2 }
