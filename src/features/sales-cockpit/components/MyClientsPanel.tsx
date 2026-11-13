@@ -586,7 +586,7 @@ function ClientRecommendationsForAgreement({
                     </Table.Td>
                     <Table.Td ta="right" w={110}>
                       <Text className="app-money" size="sm" title={t('Ціна за одиницю за договором клієнта, EUR без ПДВ')}>
-                        {typeof product.CurrentPrice === 'number' ? `€${product.CurrentPrice.toFixed(2)}` : '—'}
+                        {typeof product.CurrentPrice === 'number' ? `${product.CurrentPrice.toFixed(2)}\u00a0EUR` : '—'}
                       </Text>
                     </Table.Td>
                     <Table.Td className="app-table-number" ta="right" w={110}>
@@ -642,7 +642,7 @@ function getProductKey(product: RecommendationProduct, index: number): string {
 }
 
 function formatMoney(value: number): string {
-  return `€${moneyFormatter.format(value)}`
+  return `${moneyFormatter.format(value)}\u00a0EUR`
 }
 
 function formatLastOrder(value: string | null | undefined): string | null {

@@ -2117,3 +2117,8 @@
   .procure-cockpit-bar .registry-caption-action .mantine-Button-label { display: none; }
   .procure-cockpit-bar .registry-caption-action .mantine-Button-section { margin: 0; }
 }
+
+.basket-supply-producer-terms .data-table-header-label {
+  line-height: 1.15;
+  white-space: normal;
+}

@@ -632,7 +632,7 @@ function BuyerCockpitTabContent() {
             {t(URGENCY_LABEL[item.urgency])}
           </Badge>
         ),
-        width: 130,
+        width: 156,
       },
       {
         id: 'quadrant',
@@ -655,7 +655,7 @@ function BuyerCockpitTabContent() {
             </Badge>
           )
         },
-        width: 110,
+        width: 132,
       },
       {
         id: 'suggestedQty',
@@ -738,21 +738,7 @@ function BuyerCockpitTabContent() {
         header: t('Оцінка одиниці, EUR без ПДВ'),
         accessor: (item) => item.unit_cost_eur ?? 0,
         cell: (item) => (item.unit_cost_eur === null ? '' : <span className="app-money">{eurFormatter.format(item.unit_cost_eur)}</span>),
-        width: 120,
-        align: 'right',
-      },
-      {
-        id: 'unitMargin',
-        header: `${t('Маржа')} (EUR)`,
-        accessor: (item) => item.unit_margin_eur ?? 0,
-        cell: (item) => {
-          if (item.unit_margin_eur === null) {
-            return ''
-          }
-
-          return <Text className="app-money" fw={600} size="sm">{eurFormatter.format(item.unit_margin_eur)}</Text>
-        },
-        width: 120,
+        width: 150,
         align: 'right',
       },
       {
@@ -782,7 +768,7 @@ function BuyerCockpitTabContent() {
         cell: (item) =>
           item.cheaper_alt ? (
             <Tooltip
-              label={<>{t('дешевше в історії надходжень, EUR без ПДВ за одиницю')}: <span className="app-money">€{eurFormatter.format(item.cheaper_alt.cost_eur)}</span></>}
+              label={<>{t('дешевше в історії надходжень, EUR без ПДВ за одиницю')}: <span className="app-money">{eurFormatter.format(item.cheaper_alt.cost_eur)}{'\u00a0EUR'}</span></>}
             >
               <ActionIcon aria-label={t('дешевше в історії надходжень, EUR без ПДВ за одиницю')} color="orange" size="sm" variant="subtle">
                 <TriangleAlert size={16} />
@@ -1002,7 +988,7 @@ function BuyerCockpitTabContent() {
       )}
 
       {hasSelection && hasPlan && (
-        <Card className="app-section-card" padding="md" radius="md" withBorder>
+        <Card className="app-section-card basket-supply-producer-terms" padding="md" radius="md" withBorder>
           <Stack gap="md">
             <DataTable
               columns={columns}
@@ -1011,7 +997,7 @@ function BuyerCockpitTabContent() {
               getRowId={(item) => String(item.product_id)}
               isLoading={isLoading}
               maxHeight={560}
-              minWidth={1510}
+              minWidth={1468}
               rowClassName={(item) => (item.product_id === focusedProductId ? 'basket-supply-row-ai-focus' : undefined)}
               tableId="basket-supply-ukraine-order-buyer-cockpit"
             />
@@ -1030,7 +1016,7 @@ function BuyerCockpitTabContent() {
             {hasItems && (
               <Text c="dimmed" size="xs" ta="right">
                 {t('Чернетка')}: {countFormatter.format(draftCost.lineCount)} {t(deskPlural(draftCost.lineCount, ['позиція', 'позиції', 'позицій']))} ·{' '}
-                <span className="app-money app-money-meta">€{eurFormatter.format(draftCost.pricedCost)}</span>
+                <span className="app-money app-money-meta">{eurFormatter.format(draftCost.pricedCost)}{'\u00a0EUR'}</span>
                 {draftUnpricedNote ? ` · ${draftUnpricedNote}` : ''}
               </Text>
             )}
@@ -1055,7 +1041,7 @@ function BuyerCockpitTabContent() {
           <Stack gap={4}>
             <Text size="sm">{plan?.producer_name || `#${plan?.producer_id ?? ''}`}</Text>
             <Text c="dimmed" size="sm">
-              {countFormatter.format(draftCost.lineCount)} {t(deskPlural(draftCost.lineCount, ['позиція', 'позиції', 'позицій']))} · €{eurFormatter.format(draftCost.pricedCost)}
+              {countFormatter.format(draftCost.lineCount)} {t(deskPlural(draftCost.lineCount, ['позиція', 'позиції', 'позицій']))} · {eurFormatter.format(draftCost.pricedCost)}{'\u00a0EUR'}
             </Text>
             {draftUnpricedNote && (
               <Text c="orange.8" size="xs">

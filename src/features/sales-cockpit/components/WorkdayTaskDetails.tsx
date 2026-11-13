@@ -68,7 +68,7 @@ function TaskOutcome({ value }: { value: unknown }) {
   if (!value || typeof value !== 'object') return null
   const outcome = value as Record<string, unknown>
   return <>
-    {typeof outcome.sold === 'boolean' && <Text size="sm">{t(outcome.sold ? 'Продаж зі слів менеджера' : 'Без продажу')}{typeof outcome.amount === 'number' ? ` · €${outcome.amount}` : ''}</Text>}
+    {typeof outcome.sold === 'boolean' && <Text size="sm">{t(outcome.sold ? 'Продаж зі слів менеджера' : 'Без продажу')}{typeof outcome.amount === 'number' ? ` · ${outcome.amount}\u00a0EUR` : ''}</Text>}
     {typeof outcome.note === 'string' && outcome.note && <Text size="sm">{outcome.note}</Text>}
   </>
 }

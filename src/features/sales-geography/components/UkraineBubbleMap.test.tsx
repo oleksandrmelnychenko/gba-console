@@ -13,10 +13,10 @@ it('scales negative returns by magnitude and distinguishes them from zero and un
     { ...base, code: 'KI', name: 'Київ', valueEur: 0, knownValueEur: 0 },
     { ...base, code: 'OD', name: 'Одеська', valueEur: null, knownValueEur: 500, unresolvedAmountCount: 1 },
   ]} />)
-  const negative = screen.getByRole('img', { name: 'Полтавська: €-100,00, 1 клієнтів' })
-  const positive = screen.getByRole('img', { name: 'Львівська: €100,00, 1 клієнтів' })
-  const zero = screen.getByRole('img', { name: 'Київ: €0,00, 1 клієнтів' })
-  const unknown = screen.getByRole('img', { name: 'Одеська: Сума не визначена, Відомо: €500,00, 1 клієнтів' })
+  const negative = screen.getByRole('img', { name: 'Полтавська: -100,00\u00a0EUR, 1 клієнтів' })
+  const positive = screen.getByRole('img', { name: 'Львівська: 100,00\u00a0EUR, 1 клієнтів' })
+  const zero = screen.getByRole('img', { name: 'Київ: 0,00\u00a0EUR, 1 клієнтів' })
+  const unknown = screen.getByRole('img', { name: 'Одеська: Сума не визначена, Відомо: 500,00\u00a0EUR, 1 клієнтів' })
   expect(negative.getAttribute('r')).toBe('56')
   expect(negative.getAttribute('r')).toBe(positive.getAttribute('r'))
   expect(negative.getAttribute('fill')).toBe('var(--mantine-color-red-6)')
@@ -27,7 +27,7 @@ it('scales negative returns by magnitude and distinguishes them from zero and un
   expect(unknown.getAttribute('stroke-dasharray')).toBe('3 2')
   fireEvent.focus(unknown)
   expect(screen.getByText('Сума не визначена')).toBeTruthy()
-  expect(screen.getByText('Відомо: €500,00')).toBeTruthy()
+  expect(screen.getByText('Відомо: 500,00 EUR')).toBeTruthy()
   fireEvent.keyDown(unknown, { key: 'Escape' })
   expect(screen.queryByText('Сума не визначена')).toBeNull()
 })

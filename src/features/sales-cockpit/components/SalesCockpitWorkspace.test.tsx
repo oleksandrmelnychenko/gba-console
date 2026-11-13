@@ -177,9 +177,9 @@ describe('Sales cockpit workspace', () => {
   it('keeps an unknown-date-only dashboard visible without adding it to known overdue debt', async () => {
     vi.mocked(getDashboard).mockResolvedValue(dashboard({ debt_unknown_date_count: 3, debt_unknown_date_eur: 250 }))
     renderWithTheme(<CockpitDashboardPanel reloadKey={0} />)
-    expect(await screen.findByText(/Дата документа не визначена: 3 · €250/)).toBeTruthy()
+    expect(await screen.findByText(/Дата документа не визначена: 3 · 250 EUR/)).toBeTruthy()
     expect(screen.getByText('Відомий прострочений борг')).toBeTruthy()
-    expect(screen.getByText('€0')).toBeTruthy()
+    expect(screen.getByText('0 EUR')).toBeTruthy()
     expect(screen.getByText(/Поточний зріз: 24\.07\.2026\./)).toBeTruthy()
     expect(screen.queryByTestId('aging-chart')).toBeNull()
   })
@@ -199,7 +199,7 @@ describe('Sales cockpit workspace', () => {
     expect(note.textContent?.replace(/\s/g, ' ')).toContain('Прострочений борг 56 063 EUR, з них ввід залишків на 31.12.2024: 12 док. · 55 172 EUR')
     expect(note.getAttribute('title')).toContain('Ввід залишків на 31.12.2024 враховано за збереженою датою документа')
     expect(screen.queryByTestId('debt-breakdown-opening_balance')).toBeNull()
-    expect(screen.getByTestId('debt-breakdown-unknown_date').textContent).toContain('Дата документа не визначена: 1 · €40')
+    expect(screen.getByTestId('debt-breakdown-unknown_date').textContent).toContain('Дата документа не визначена: 1 · 40\u00a0EUR')
   })
 
   it('says nothing about opening balances when the service reports none', async () => {

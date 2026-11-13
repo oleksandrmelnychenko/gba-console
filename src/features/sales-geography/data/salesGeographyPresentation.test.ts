@@ -19,9 +19,9 @@ describe('geography presentation', () => {
     expect(result.other.knownValueEur).toBe(10)
   })
   it('formats all money to cents including zero and negative returns', () => {
-    expect(formatGeographyMoney(1.4)).toBe('€1,40')
-    expect(formatGeographyMoney(2.8)).toBe('€2,80')
-    expect(formatGeographyMoney(0)).toBe('€0,00')
-    expect(formatGeographyMoney(-1.4)).toBe('€-1,40')
+    expect(formatGeographyMoney(1.4)).toBe('1,40\u00a0EUR')
+    expect(formatGeographyMoney(2.8)).toBe('2,80\u00a0EUR')
+    expect(formatGeographyMoney(0)).toBe('0,00\u00a0EUR')
+    expect(formatGeographyMoney(-1.4)).toBe('-1,40\u00a0EUR')
   })
 })

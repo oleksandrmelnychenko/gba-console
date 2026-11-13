@@ -33,4 +33,4 @@ export function displayCalendarDate(value: string): string {
 }
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-export const formatGeographyMoney = (value: number) => `€${moneyFormatter.format(value)}`
+export const formatGeographyMoney = (value: number) => `${moneyFormatter.format(value)}\u00a0EUR`

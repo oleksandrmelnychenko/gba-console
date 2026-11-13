@@ -45,8 +45,8 @@ describe('overdue debt column of my clients', () => {
     render(<MantineProvider env="test"><I18nProvider><MemoryRouter><MyClientsPanel /></MemoryRouter></I18nProvider></MantineProvider>)
 
     const first = await screen.findByTestId('overdue-1')
-    expect(first.textContent).toContain('€1')
-    expect(first.textContent).toContain('Дата документа не визначена: 2 · €310')
+    expect(first.textContent).toContain('1\u00a0200\u00a0EUR')
+    expect(first.textContent).toContain('Дата документа не визначена: 2 · 310\u00a0EUR')
     const title = first.querySelector('.app-money')?.getAttribute('title') ?? ''
     expect(title).toContain('без обмеження давності')
     expect(title).toContain('за курсом на дату розрахунку')
@@ -68,7 +68,7 @@ describe('overdue debt column of my clients', () => {
     render(<MantineProvider env="test"><I18nProvider><MemoryRouter><MyClientsPanel /></MemoryRouter></I18nProvider></MantineProvider>)
 
     const first = await screen.findByTestId('overdue-1')
-    expect(first.textContent).toContain('У тому числі ввід залишків: 3 · €450')
+    expect(first.textContent).toContain('У тому числі ввід залишків: 3 · 450\u00a0EUR')
     expect(first.textContent).not.toContain('Дата документа не визначена')
     expect(screen.getByTestId('overdue-2').textContent).not.toContain('ввід залишків')
   })

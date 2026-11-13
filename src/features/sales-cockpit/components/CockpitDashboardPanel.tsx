@@ -134,7 +134,7 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
     [dashboard?.debt_aging],
   )
 
-  const agingSeries = useMemo<AgingSeries[]>(() => [{ name: 'amount', label: t('Сума, €'), color: 'orange.6' }], [t])
+  const agingSeries = useMemo<AgingSeries[]>(() => [{ name: 'amount', label: t('Сума, EUR'), color: 'orange.6' }], [t])
 
   const completedTotals = useMemo(() => {
     const byStatus = new Map((dashboard?.completed_vs_open ?? []).map((item) => [item.status, item.count]))
@@ -282,7 +282,7 @@ function StatCard({ label, value, accent }: { label: string; value: string; acce
 }
 
 function formatMoney(value: number): string {
-  return `€${moneyFormatter.format(value)}`
+  return `${moneyFormatter.format(value)}\u00a0EUR`
 }
 
 function formatUnconvertedDebt(rows: CockpitUnconvertedDebt[] | undefined): string {

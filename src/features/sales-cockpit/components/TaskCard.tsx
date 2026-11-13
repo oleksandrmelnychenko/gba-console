@@ -287,7 +287,7 @@ function formatElapsed(since: string | null | undefined): string | null {
 }
 
 function formatMoney(value: number): string {
-  return `€${moneyFormatter.format(value)}`
+  return `${moneyFormatter.format(value)}\u00a0EUR`
 }
 
 function formatPercent(value: number): string {

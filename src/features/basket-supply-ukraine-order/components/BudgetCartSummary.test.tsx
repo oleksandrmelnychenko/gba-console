@@ -47,8 +47,8 @@ describe('BudgetCartSummary', () => {
     renderSummary(plan({ estimated_total_cost_eur: 1500, certified_cost_eur: 1200, uncertified_cost_eur: 300, unestimated_item_count: 2 }))
 
     const hint = screen.getByText(/Оцінка всього плану/).closest('.budget-cart-summary__metric')?.getAttribute('title')?.replace(/\u00a0/g, ' ')
-    expect(hint).toContain('За надходженнями, без ПДВ — лише рядки, що входять у бюджет: €1 200,00')
-    expect(hint).toContain('Решта рядків: поза бюджетом або за останнім документом постачання, ПДВ не підтверджено: €300,00')
+    expect(hint).toContain('За надходженнями, без ПДВ — лише рядки, що входять у бюджет: 1 200,00 EUR')
+    expect(hint).toContain('Решта рядків: поза бюджетом або за останнім документом постачання, ПДВ не підтверджено: 300,00 EUR')
     expect(hint).toContain('Без оцінки: 2 позиції')
   })
 

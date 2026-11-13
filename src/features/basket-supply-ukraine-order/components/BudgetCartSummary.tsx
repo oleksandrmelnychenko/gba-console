@@ -57,8 +57,8 @@ export function BudgetCartSummary({
       <div className="budget-cart-summary__layout">
         <Stack gap="md">
           <div className="budget-cart-summary__primary">
-            <SummaryItem label={`${t('Бюджет')} (EUR)`} money value={`€${eurFormatter.format(plan.budget_eur)}`} />
-            <SummaryItem label={`${t('Використано')} (EUR)`} money value={`€${eurFormatter.format(plan.budget_used_eur)}`} />
+            <SummaryItem label={`${t('Бюджет')} (EUR)`} money value={`${eurFormatter.format(plan.budget_eur)}\u00a0EUR`} />
+            <SummaryItem label={`${t('Використано')} (EUR)`} money value={`${eurFormatter.format(plan.budget_used_eur)}\u00a0EUR`} />
             <SummaryItem
               hint={t('Сума ваг терміновості обраних рядків; без грошової одиниці')}
               label={t('Бал терміновості')}
@@ -88,7 +88,7 @@ export function BudgetCartSummary({
                 hint={getEstimateSplit(plan, t)}
                 label={`${t('Оцінка всього плану')} (EUR)`}
                 money
-                value={`≈ €${eurFormatter.format(plan.estimated_total_cost_eur)}`}
+                value={`≈ ${eurFormatter.format(plan.estimated_total_cost_eur)}\u00a0EUR`}
               />
             )}
           </div>
@@ -139,10 +139,10 @@ function getEstimateSplit(plan: CartPlan, t: (value: string) => string): string 
   const parts: string[] = []
 
   if (typeof plan.certified_cost_eur === 'number') {
-    parts.push(`${t('За надходженнями, без ПДВ — лише рядки, що входять у бюджет')}: €${eurFormatter.format(plan.certified_cost_eur)}`)
+    parts.push(`${t('За надходженнями, без ПДВ — лише рядки, що входять у бюджет')}: ${eurFormatter.format(plan.certified_cost_eur)}\u00a0EUR`)
   }
   if (typeof plan.uncertified_cost_eur === 'number') {
-    parts.push(`${t('Решта рядків: поза бюджетом або за останнім документом постачання, ПДВ не підтверджено')}: €${eurFormatter.format(plan.uncertified_cost_eur)}`)
+    parts.push(`${t('Решта рядків: поза бюджетом або за останнім документом постачання, ПДВ не підтверджено')}: ${eurFormatter.format(plan.uncertified_cost_eur)}\u00a0EUR`)
   }
   if (typeof plan.unestimated_item_count === 'number' && plan.unestimated_item_count > 0) {
     parts.push(`${t('Без оцінки')}: ${countFormatter.format(plan.unestimated_item_count)} ${t(deskPlural(plan.unestimated_item_count, ['позиція', 'позиції', 'позицій']))}`)
