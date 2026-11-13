@@ -59,7 +59,7 @@ describe('users permission-scoped transport', () => {
     expect(apiRequest).toHaveBeenNthCalledWith(
       1,
       '/usermanagement/users/create',
-      { method: 'POST', query: { password: 'secret' }, body: user },
+      { method: 'POST', body: { ...user, Password: 'secret' } },
     )
     expect(apiRequest).toHaveBeenNthCalledWith(
       2,
@@ -76,9 +76,19 @@ describe('users permission-scoped transport', () => {
       '/usermanagement/profiles/users/password/reset',
       {
         method: 'PATCH',
-        query: { netId: 'user-net-id', password: 'new-secret' },
+        query: { netId: 'user-net-id' },
+        body: { Password: 'new-secret' },
       },
     )
+  })
+
+  it('never puts a password into the query string', async () => {
+    await createUser(user, 'secret')
+    await resetUserPassword('user-net-id', 'new-secret')
+
+    for (const [, options] of vi.mocked(apiRequest).mock.calls) {
+      expect(JSON.stringify(options?.query ?? {})).not.toMatch(/secret|password/i)
+    }
   })
 
   it('uses canonical role-management read and role CRUD façades', async () => {

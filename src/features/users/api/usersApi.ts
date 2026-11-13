@@ -37,10 +37,7 @@ export async function getUser(netId: string): Promise<UserProfile | null> {
 export async function createUser(user: UserProfile, password: string): Promise<IdentityResponse | null> {
   const result = await apiRequest<unknown>('/usermanagement/users/create', {
     method: 'POST',
-    query: {
-      password,
-    },
-    body: user,
+    body: { ...user, Password: password },
   })
 
   return normalizeIdentityResponse(result)
@@ -69,8 +66,8 @@ export async function resetUserPassword(netId: string, password: string): Promis
     method: 'PATCH',
     query: {
       netId,
-      password,
     },
+    body: { Password: password },
   })
 
   return normalizeIdentityResponse(result)
