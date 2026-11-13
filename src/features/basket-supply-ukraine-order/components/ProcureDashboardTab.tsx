@@ -309,14 +309,14 @@ function ProcureDashboardTabContent() {
     }] : []),
     {
       id: 'urgency', header: t('Терміновість'), accessor: (item) => item.urgency,
-      cell: (item) => <TableChip value={t(URGENCY_LABEL[item.urgency] ?? item.urgency)} tone={item.urgency === 'critical' ? 'danger' : item.urgency === 'high' ? 'warning' : 'neutral'} />, width: 135,
+      cell: (item) => <TableChip value={t(URGENCY_LABEL[item.urgency] ?? item.urgency)} tone={item.urgency === 'critical' ? 'danger' : item.urgency === 'high' ? 'warning' : 'neutral'} />, width: 165,
     },
     ...([
       ['suggested_qty', 'Рекомендовано'], ['on_hand', 'В наявності'], ['reorder_point', 'Точка замовлення'],
     ] as const).map(([key, label]) => ({
       id: key, header: t(label), accessor: (item: ProcurementTopItem) => item[key],
       cell: (item: ProcurementTopItem) => <span className="procurement-dashboard__number">{formatDashboardQuantity(item[key], item.measure_unit)}</span>,
-      width: 145, align: 'right' as const,
+      width: key === 'suggested_qty' ? 175 : 150, align: 'right' as const,
     })),
     {
       id: 'shortage', header: t('Бракує до точки'), accessor: (item) => topItemShortage(item),
@@ -400,7 +400,7 @@ function ProcureDashboardTabContent() {
         <DataTable columns={topItemColumns} data={filteredItems} pagination={{ pageIndex: page - 1, pageSize }}
           defaultLayout={{ columnPinning: { left: ['product'] }, density: 'normal' }} distributeAvailableWidth
           emptyText={t('У добірці таких позицій немає')} getRowId={(item) => String(item.product_id)} isLoading={isLoading}
-          layoutVersion={5} maxHeight={520} minWidth={hasProducerData ? 1130 : 960} showLayoutControls
+          layoutVersion={6} maxHeight={520} minWidth={hasProducerData ? 1200 : 1030} showLayoutControls
           tableId="basket-supply-ukraine-order-procure-top-items" toolbarPortalTarget={tableToolbarTarget}
           onSortingChange={() => setPageSelection({ page: 1, charts })}
           onRowClick={(item) => setDetailProductId(item.product_id)} />
