@@ -35,8 +35,8 @@ beforeEach(() => {
   vi.mocked(previewStockReport).mockResolvedValue({ result: { document: { DocumentURL: '/files/day.xlsx' }, raw: {} }, preview })
 })
 
-const page = (consoleScope?: boolean) => <MantineProvider env="test"><I18nProvider>
-  <ReportsStocksPage {...(consoleScope === undefined ? {} : { consoleScope })} />
+const page = () => <MantineProvider env="test"><I18nProvider>
+  <ReportsStocksPage />
 </I18nProvider></MantineProvider>
 
 it('offers the report tabs without the 1C catalogue or the 1C snapshot tab', async () => {

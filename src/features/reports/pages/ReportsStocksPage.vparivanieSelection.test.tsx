@@ -42,7 +42,7 @@ beforeEach(() => {
 })
 async function open() {
   render(<MantineProvider env="test"><I18nProvider><PageHeaderActionsProvider>
-    <PageSubmenuActionsSlot /><ReportsStocksPage consoleScope />
+    <PageSubmenuActionsSlot /><ReportsStocksPage />
   </PageHeaderActionsProvider></I18nProvider></MantineProvider>)
   await findOpenedWorkbook("ВП.xls")
   fireEvent.click(screen.getByRole("button", { name: "Особливі звіти" }))

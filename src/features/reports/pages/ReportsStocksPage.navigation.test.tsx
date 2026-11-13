@@ -31,7 +31,7 @@ beforeEach(() => {
 
 function page() {
   return <MantineProvider env="test"><I18nProvider><PageHeaderActionsProvider>
-    <PageSubmenuActionsSlot className="test-header-strip" /><ReportsStocksPage consoleScope />
+    <PageSubmenuActionsSlot className="test-header-strip" /><ReportsStocksPage />
   </PageHeaderActionsProvider></I18nProvider></MantineProvider>
 }
 

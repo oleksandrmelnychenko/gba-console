@@ -28,7 +28,7 @@ vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<type
 vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(),
   createStockReport: vi.fn(), searchDatasetReportValues: vi.fn(),
 }))
-const page = () => <MantineProvider env="test"><I18nProvider><ReportsStocksPage consoleScope /></I18nProvider></MantineProvider>
+const page = () => <MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>
 beforeEach(() => {
   allowed = true; vi.clearAllMocks(); localStorage.clear(); sessionStorage.clear()
   vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(1280)

@@ -61,26 +61,17 @@ import { lacksCurrentReadMode, TEMPLATE_WITHOUT_READ_MODE_ERROR } from '../data/
 import { withoutProductClassification, withUnifiedSource } from '../data/unifiedReportSource'
 import { useWorkbookPresentation } from '../hooks/useWorkbookPresentation'
 import './stocks-workspace.css'
-import PaymentComparisonPanel from './PaymentComparisonPanel'
 import { clonePaymentComparisonValue, paymentComparisonSummary } from '../data/paymentComparison'
-import MarginComparisonPanel from './MarginComparisonPanel'
 import { cloneMarginComparisonValue, marginComparisonSummary } from '../data/marginComparison'
-import ReportPeriodInputs from './ReportPeriodInputs'
-import RateComparisonPanel from './RateComparisonPanel'
 import { rateComparisonOptions, requestRateComparison, type RateComparisonOptions } from '../data/rateComparison'
-import ReturnComparisonPanel from './ReturnComparisonPanel'
 import { requestReturnComparison, returnComparisonOptions, returnComparisonSummary } from '../data/returnComparison'
-import BuyerSalesSharePanel from './BuyerSalesSharePanel'
 import { requestBuyerSalesShare, buyerSalesShareOptions } from '../data/buyerSalesShare'
-import RevenueComparisonPanel from './RevenueComparisonPanel'
 import { requestRevenueComparison, revenueComparisonOptions } from '../data/revenueComparison'
-import SalesXyzPanel from './SalesXyzPanel'
 import { requestXyz, xyzOptions } from '../data/salesXyz'
 import {
   ActionIcon,
   Alert,
   Badge,
-  Box,
   Button,
   Card,
   Checkbox,
@@ -98,8 +89,7 @@ import { FINANCIAL_EXPORT_LAYOUT_OPTIONS, financialExportLayoutQuery, financialE
   type FinancialExportLayout } from '../data/financialExportLayout'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
-import { CheckCheck, CircleAlert, Ellipsis, LayoutTemplate, MonitorPlay, Plus, RotateCcw, Save } from 'lucide-react'
-import { IconFileSpreadsheet } from '@tabler/icons-react'
+import { CheckCheck, CircleAlert, Ellipsis, Plus, RotateCcw, Save } from 'lucide-react'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
 import { requestProfitReadMode } from '../data/profitReadMode'
@@ -115,8 +105,6 @@ import '../../../shared/ui/selection-surface.css'
 import { AppModalFooter } from '../../../shared/ui/AppModal'
 import { ReportModal } from './ReportModal'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR, PageSubmenuActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useAuth } from '../../auth/useAuth'
@@ -170,16 +158,15 @@ import {
 } from '../utils'
 import './reports-pages.css'
 import './report-constructor.css'
-import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, datasetPresetRequest, datasetPresets, defaultDatasetRequest, withDefaultReadModes, type DatasetReportPresetId } from '../data/reportDatasets'
+import { datasetConfigurationError, datasetFilters, datasetGroupings, datasetMeasurements, defaultDatasetRequest, withDefaultReadModes } from '../data/reportDatasets'
 import { useReportDatasets } from '../hooks/useReportDatasets'
 import { usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes, nativeReportMeasurementUnit } from '../data/nativeReportProfiles'
 import { CURRENT_VPARIVANIE_NOTICE, currentVparivanieConfigurationError, currentVparivanieFilterConditions, currentVparivanieNotice, currentVparivanieFullScope, withCurrentVparivanieMovementScope } from '../data/currentVparivanie'
 import { previousKyivDay } from '../data/cashPeriod'
 import { availableBug1274WorkbookLaunches, bug1274WorkbookRequest, opensOnPreviousDay, type WorkbookLaunch } from '../data/bug1274WorkbookLaunch'
-import { workbookDisplayFileName, bug1274WorkbookGuide, bug1274WorkbookPeriod, reportPeriodPresets, type ReportPeriodPreset } from '../data/bug1274WorkbookGuide'
+import { workbookDisplayFileName, bug1274WorkbookGuide, bug1274WorkbookPeriod, reportPeriodPresets } from '../data/bug1274WorkbookGuide'
 import { supportedAnalysisRules } from '../data/supportedAnalysisRules'
 import { reportFileBaseName } from '../data/reportFileName'
-import { Bug1274WorkbookShortcuts } from './Bug1274WorkbookShortcuts'
 import { resolveBug1274WorkbookFilters, resolvesWorkbookFilters, workbookFiltersNotice, type ResolvedWorkbookFilters } from '../data/bug1274WorkbookFilters'
 import { CashSettlementSettingsPanels } from './CashSettlementSettingsPanels'
 import { cashFormDataset, requestGroupedCashPeriod } from '../data/groupedCashPeriod'
@@ -192,13 +179,9 @@ import { useReportRunState } from '../hooks/useReportRunState'
 import { useReportWorkspaceDraft } from '../hooks/useReportWorkspaceDraft'
 import type { ReportWorkspaceSnapshot } from '../data/reportWorkspaceDraft'
 import { reportWorkspaceDraftCompatibility } from '../data/reportWorkspaceDraftCompatibility'
-import { ReportDraftRecoveryPanel, ReportDraftStatus } from './ReportDraftRecoveryPanel'
 import { ReportDraftControl } from './ReportDraftControl'
-import { ValuationAgreementPicker } from './ValuationAgreementPicker'
-import { ReportDatasetPicker, ReportDatasetSummary } from './ReportDatasetPicker'
 import { ReportMeasureTree } from './ReportMeasureTree'
 import { reportGroupingPath } from '../data/reportConstructorTree'
-import { ReportQuickPresets } from './ReportQuickPresets'
 import { ReportGroupingPanel } from './ReportGroupingPanel'
 import { constructorConditionLabel, constructorFilterGroups, constructorGroupingCaption, constructorGroupingField, constructorMeasureGroupCaption, constructorMeasureItemCaption, constructorProfile, PROPERTIES_AND_CATEGORIES_UNAVAILABLE, usesConstructorDesk, type ConstructorField } from '../data/constructorDesk'
 import { ConstructorDesk } from './constructor-desk/ConstructorDesk'
@@ -216,7 +199,6 @@ import { ReportOrderingPanel } from './ReportOrderingPanel'
 import { requestOrdering } from '../data/reportOrdering'
 import { requestFilterExpression } from '../data/reportFilterExpression'
 import { CLIENT_COMPARISON_MAX_DATE, CLIENT_COMPARISON_MIN_DATE, comparisonWindow, isComparisonDate, requestComparison } from '../data/clientPeriodComparison'
-import { ClientComparisonPeriodPanel } from './ClientComparisonPeriodPanel'
 import { buildReportBuilderRequest } from '../data/reportBuilderRequest'
 import { CurrentVparivanieRegionalPanel } from './CurrentVparivanieRegionalPanel'
 import type { NativeReportPreview } from '../data/nativeReportPreview'
@@ -245,9 +227,7 @@ import { requestDayOrganizationBasis } from '../data/dayOrganizationBasis'
 import { supplierWarehouseAfterRowEdit, requestSupplierBasis, supplierBasisFormDataset } from '../data/supplierBasis'
 import { productClassificationReviewError, requestProductClassification, requestProductServiceFilter, requestSourceOrganizations, requestSourceBuyerSubtree } from '../data/nativeExactFilters'
 import { isSupplierSourceWorldCapability } from '../data/supplierBatchGrossProfit'
-import PriceTypeSalesComparisonPanel from './PriceTypeSalesComparisonPanel'
-import AgreementPriceComparisonPanel from './AgreementPriceComparisonPanel'
-import { defaultAgreementPriceComparison, requestAgreementPriceComparison } from '../data/agreementPriceComparison'
+import { requestAgreementPriceComparison } from '../data/agreementPriceComparison'
 import { currentProvidedDiscountLookupBasis, oneCSpecialSpecification, requestOneCSpecialSettings } from '../data/oneCSpecialReports'
 import {
   clonePriceTypeSalesComparisonValue,
@@ -339,13 +319,13 @@ function reportLookupSourceWorld(dataSource: number, groupedSettlement: unknown,
     && (specialSettings.SourceWorld === 1 || specialSettings.SourceWorld === 2) ? specialSettings.SourceWorld : undefined
 }
 
-export function ReportsStocksPage({ consoleScope = true }: { consoleScope?: boolean }) {
+export function ReportsStocksPage() {
   const { user, session } = useAuth()
   const ownerId = user?.NetUid ?? session?.userNetUid ?? null
-  return <ReportsStocksWorkspace key={ownerId ?? 'anonymous'} ownerId={ownerId} consoleScope={consoleScope} />
+  return <ReportsStocksWorkspace key={ownerId ?? 'anonymous'} ownerId={ownerId} />
 }
 
-function ReportsStocksWorkspace({ ownerId, consoleScope }: { ownerId: string | null; consoleScope: boolean }) {
+function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const canGenerateReport = hasPermission(
@@ -416,15 +396,13 @@ function ReportsStocksWorkspace({ ownerId, consoleScope }: { ownerId: string | n
   const retainedData = restoredData ?? activeTemplate?.Data
   const dataset = datasetStorage.datasets.find(item => item.DataSource === dataSource)
   const periodSupported = dataset?.PeriodSupported !== false
-  const bug1274Only = consoleScope
-  const datasetHidden = bug1274Only && !BUG_1274_ACTIVE_DATA_SOURCES.has(dataSource)
+  const datasetHidden = !BUG_1274_ACTIVE_DATA_SOURCES.has(dataSource)
   const [selectedMeasurements, setMeasurements] = useValueState<ReportMeasurementGroup[]>(createDefaultMeasurementGroups)
   const priceTypeDataset = useMemo(() => priceTypeSalesFormDataset(dataset, priceTypeSalesComparison), [dataset, priceTypeSalesComparison])
   const supplierDataset = useMemo(() => supplierBasisFormDataset(priceTypeDataset, supplierBasis), [priceTypeDataset, supplierBasis])
   const measurements = useMemo(() => retainStoredMeasurementLabels(retainedData, { dataSource, supplierBasis },
     datasetMeasurements(salesConstructorDataset(supplierDataset, reportProfile), flattenCheckedMeasurements(selectedMeasurements))),
   [dataSource, retainedData, reportProfile, selectedMeasurements, supplierBasis, supplierDataset])
-  const presets = useMemo(() => datasetHidden || bug1274Only ? [] : datasetPresets(dataset), [bug1274Only, dataset, datasetHidden])
   const groupingOrdering = useReportGroupingOrdering()
   const { rowGroups, setRowGroups, colGroups, setColGroups, ordering } = groupingOrdering
   const abc = useReportAbcClassification({ Row: rowGroups, Col: colGroups }, groupingOrdering.changeLayout, dataset)
@@ -444,7 +422,7 @@ function ReportsStocksWorkspace({ ownerId, consoleScope }: { ownerId: string | n
   const [initialWorkbook, setInitialWorkbook] = useState<'pending' | 'opening' | 'settled'>('pending')
   if (initialWorkbook === 'opening' && !workbookResolving) setInitialWorkbook('settled')
   const workbookLaunches = useMemo(() => availableBug1274WorkbookLaunches(datasetStorage.datasets), [datasetStorage.datasets])
-  const initialWorkbookLaunch = initialWorkbook === 'pending' && bug1274Only && canGenerateReport && datasetHidden && !activeWorkbook
+  const initialWorkbookLaunch = initialWorkbook === 'pending' && canGenerateReport && datasetHidden && !activeWorkbook
     && datasetStorage.loaded && !datasetStorage.error ? workbookLaunches[0] ?? null : null
   const [deskTemplatesOpened, setDeskTemplatesOpened] = useState(false)
   const [templateIntent, setTemplateIntent] = useState({ create: false, revision: 0 })
@@ -502,9 +480,9 @@ function ReportsStocksWorkspace({ ownerId, consoleScope }: { ownerId: string | n
   }), [activeTemplate, previousPeriod, selectedMeasurements, templateBody, templateName])
   const settingsScope = `${dataSource}|${activeWorkbook ?? ''}|${settingsRevision}`
   const appliedSettings = useAppliedReportSettings(settingsScope, draftSnapshot, reportBody)
-  const resultRequest = bug1274Only ? appliedSettings.appliedRequest ?? reportBody : reportBody
-  const runRequestKey = useMemo(() => JSON.stringify({ request: bug1274Only ? settingsScope : reportBody, allowed: canGenerateReport, agreementVerified }),
-    [agreementVerified, canGenerateReport, reportBody, bug1274Only, settingsScope])
+  const resultRequest = appliedSettings.appliedRequest ?? reportBody
+  const runRequestKey = useMemo(() => JSON.stringify({ request: settingsScope, allowed: canGenerateReport, agreementVerified }),
+    [agreementVerified, canGenerateReport, reportBody, true, settingsScope])
   const { result, preview, lastRun, error, isLoading, downloadModalOpened, update: updateRun, begin: beginRun, clear: clearRun } = useReportRunState<ReportRunOutcome>(runRequestKey)
   const comparisonSettingsDisabled = isLoading || workbookResolving || !canGenerateReport
   function changeExportLayout(value: FinancialExportLayout) {
@@ -517,8 +495,8 @@ function ReportsStocksWorkspace({ ownerId, consoleScope }: { ownerId: string | n
   }
   const workspaceDraft = useReportWorkspaceDraft({ ownerId, enabled: canGenerateReport,
     ready: datasetStorage.loaded && !datasetStorage.error && !initialWorkbookLaunch && initialWorkbook !== 'opening',
-    snapshot: draftSnapshot, backgroundRecovery: bug1274Only })
-  const configurationError = (dataSource === 46 ? nativePriceComparisonError(nativePriceComparison) : null) ?? (dataSource === 44 ? customerGroupsError(customerGroups) : null) ?? (consoleScope && !BUG_1274_ACTIVE_DATA_SOURCES.has(dataSource) ? BUG_1274_DISABLED_MESSAGE : null) ?? datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset, 'workspace'))
+    snapshot: draftSnapshot, backgroundRecovery: true })
+  const configurationError = (dataSource === 46 ? nativePriceComparisonError(nativePriceComparison) : null) ?? (dataSource === 44 ? customerGroupsError(customerGroups) : null) ?? (!BUG_1274_ACTIVE_DATA_SOURCES.has(dataSource) ? BUG_1274_DISABLED_MESSAGE : null) ?? datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset, 'workspace'))
     ?? (requiresValuationAgreement(dataSource) && valuation.agreement?.Id !== valuationClientAgreementId ? 'Підтвердіть доступний договір оцінки.' : null)
   const checkedMeasurements = reportBody.sorted.Measurements.length
   // The report engine lays the sheet out from the row groupings; without one it fails deep
@@ -528,7 +506,7 @@ function ReportsStocksWorkspace({ ownerId, consoleScope }: { ownerId: string | n
   // column against nothing, so «Дорівнює» empties the report and «Не дорівнює» drops the filter altogether. The
   // sheet that comes back looks plausible either way, so the row has to be finished before the request goes out.
   const incompleteSelectionIndex = selections.findIndex(selection => isIncompleteSelection(selection)
-    || bug1274Only && selection.IsChecked !== false && !selection.SelectedField.Name)
+    || selection.IsChecked !== false && !selection.SelectedField.Name)
   const incompleteSelectionMessage =
     incompleteSelectionIndex < 0
       ? ''
@@ -581,20 +559,19 @@ function ReportsStocksWorkspace({ ownerId, consoleScope }: { ownerId: string | n
           to: formatDate(lastRun.to),
         })
       : null
-  const resultPlaceholder = describeResultPlaceholder(lastRun, Boolean(error), t)
 
   async function submitReport(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    await runReport(bug1274Only)
+    await runReport(true)
   }
 
   async function runReport(showPreview: boolean) {
-    const exportingApplied = bug1274Only && !showPreview && !!appliedSettings.appliedRequest && !!lastRun
+    const exportingApplied = !showPreview && !!appliedSettings.appliedRequest && !!lastRun
     if (!canGenerateReport || (!exportingApplied && !reportIsReady) || isLoading) {
       return
     }
 
-    const request = exportingApplied ? resultRequest : bug1274Only ? appliedSettings.apply() : reportBody
+    const request = exportingApplied ? resultRequest : appliedSettings.apply()
     const selectedCurrency = requestPresentationCurrency(request) != null
     const existingPreview = !showPreview && (exportingApplied || !selectedCurrency && !preview?.Request?.presentationCurrency) ? preview : null
     const updateAttempt = beginRun()
@@ -763,13 +740,13 @@ function ReportsStocksWorkspace({ ownerId, consoleScope }: { ownerId: string | n
     const nextDataset = datasetStorage.datasets.find(item => item.DataSource === (template.Data.dataSource ?? 0))
     template = { ...template, Data: upgradeCurrentVparivanieAnalysis(withUnifiedSource(template.Data, nextDataset), nextDataset) }
     const reviewed = productClassificationReviewError(template.Data, nextDataset) ? withoutProductClassification(template.Data) : template.Data
-    const incompatible = (consoleScope && !BUG_1274_ACTIVE_DATA_SOURCES.has(template.Data.dataSource ?? 0) ? BUG_1274_DISABLED_MESSAGE : null) ?? datasetConfigurationError(editableProductColumnsTemplate(reviewed, nextDataset), nextDataset, 'workspace')
+    const incompatible = (!BUG_1274_ACTIVE_DATA_SOURCES.has(template.Data.dataSource ?? 0) ? BUG_1274_DISABLED_MESSAGE : null) ?? datasetConfigurationError(editableProductColumnsTemplate(reviewed, nextDataset), nextDataset, 'workspace')
     if (incompatible || !nextDataset) {
       setTemplateNotice(incompatible)
       return false
     }
     const data = withCurrentVparivanieMovementScope(withDefaultReadModes(template.Data, nextDataset))
-    if (bug1274Only && lacksCurrentReadMode(data, nextDataset)) {
+    if (lacksCurrentReadMode(data, nextDataset)) {
       setTemplateNotice(TEMPLATE_WITHOUT_READ_MODE_ERROR)
       return false
     }
@@ -855,7 +832,7 @@ function ReportsStocksWorkspace({ ownerId, consoleScope }: { ownerId: string | n
     if (!canGenerateReport || !datasetStorage.loaded) return false
     const nextDataset = datasetStorage.datasets.find(item => item.DataSource === (snapshot.data.dataSource ?? 0))
     const unified = withUnifiedSource(snapshot.data, nextDataset)
-    snapshot = { ...snapshot, data: upgradeCurrentVparivanieAnalysis(bug1274Only ? withDefaultReadModes(unified, nextDataset) : unified, nextDataset) }
+    snapshot = { ...snapshot, data: upgradeCurrentVparivanieAnalysis(withDefaultReadModes(unified, nextDataset), nextDataset) }
     const incompatible = reportWorkspaceDraftCompatibility(snapshot, nextDataset)
     if (incompatible || !nextDataset) {
       setDraftRestoreError(incompatible)
@@ -927,20 +904,13 @@ function ReportsStocksWorkspace({ ownerId, consoleScope }: { ownerId: string | n
   }
 
   function changeDataset(nextDataset: ReportDataset, workbook?: WorkbookLaunch, resolved?: ResolvedWorkbookFilters) {
-    if (consoleScope && !BUG_1274_ACTIVE_DATA_SOURCES.has(nextDataset.DataSource)) return
+    if (!BUG_1274_ACTIVE_DATA_SOURCES.has(nextDataset.DataSource)) return
     const period = periodSupported ? { from, to } : previousPeriod
     const day = opensOnPreviousDay(nextDataset.DataSource) ? previousKyivDay(today) : null
     const opened = (workbook ? bug1274WorkbookPeriod(workbook.fileName, today) : null) ?? { from: day ?? period.from, to: day ?? period.to }
     const request = bug1274WorkbookRequest(defaultDatasetRequest(nextDataset, opened.from, opened.to), workbook, resolved)
-    applyConfiguration({ Name: '', Data: bug1274Only && workbook?.fileName === 'Впарювання.xls'
+    applyConfiguration({ Name: '', Data: workbook?.fileName === 'Впарювання.xls'
       ? vparivanieSelectionRequest(request, nextDataset) : request }, nextDataset)
-  }
-
-  function pickDataset(nextDataset: ReportDataset) {
-    workbookLaunchToken.current += 1
-    setWorkbookResolving(false)
-    setActiveWorkbook(null)
-    changeDataset(nextDataset)
   }
 
   function openWorkbook(item: WorkbookLaunch): boolean {
@@ -972,12 +942,6 @@ function ReportsStocksWorkspace({ ownerId, consoleScope }: { ownerId: string | n
     return true
   }
 
-  function applyPreset(id: DatasetReportPresetId) {
-    if (!dataset) return
-    const preset = datasetPresetRequest(dataset, id, templateBody)
-    if (preset) groupingOrdering.applyPreset(preset, next => applyConfiguration(next, dataset))
-  }
-
   const initialWorkbookOpened = useRef(false)
   const openInitialWorkbook = useEffectEvent((item: WorkbookLaunch) => {
     setInitialWorkbook('opening')
@@ -989,8 +953,7 @@ function ReportsStocksWorkspace({ ownerId, consoleScope }: { ownerId: string | n
     openInitialWorkbook(initialWorkbookLaunch)
   }, [initialWorkbookLaunch])
 
-  const analysisRules = bug1274Only ? supportedAnalysisRules(templateBody, dataset, settlementDataset)
-    : { topGroups: true, threshold: true, abc: true, ordering: true, filterExpression: true }
+  const analysisRules = supportedAnalysisRules(templateBody, dataset, settlementDataset)
   const lookup: { from: string; to: string; profitReadMode: 0 | 1 | undefined; profitUnavailable: boolean
     providedDiscountBasis: 0 | undefined; salesBasis: 0 | undefined; sourceWorld: number | undefined } = {
     from: hasLookupPeriod ? debouncedFrom : '',
@@ -1005,12 +968,12 @@ function ReportsStocksWorkspace({ ownerId, consoleScope }: { ownerId: string | n
   const cashSettlementPanels = (part?: 'source' | 'filters' | 'form') => <CashSettlementSettingsPanels dataSource={dataSource} part={part}
     cash={{ dataset, grouped: groupedCashPeriod, rows: rowGroups,
       available: groupingOptions, onRowsChange: workbook.changeCashRows, disabled: comparisonSettingsDisabled,
-      readMode: cashReadMode, onReadModeChange: setCashReadMode, hideRegisterReadMode: bug1274Only }}
+      readMode: cashReadMode, onReadModeChange: setCashReadMode, hideRegisterReadMode: true }}
     settlement={{ dataset, grouped: groupedSettlementPeriod, groups: sourceCounterpartyGroups, rows: rowGroups,
       available: groupingOptions, disabled: comparisonSettingsDisabled, enabled: canGenerateReport,
       onModeChange: changeSettlementMode,
       onRowsChange: setRowGroups, onGroupsChange: setSourceCounterpartyGroups,
-      readMode: settlementReadMode, hideRegisterReadMode: bug1274Only, onReadModeChange: mode => {
+      readMode: settlementReadMode, hideRegisterReadMode: true, onReadModeChange: mode => {
         setSettlementReadMode(mode)
         if (mode == null) return
         setGroupedSettlementPeriod(defaultGroupedSettlementPeriod())
@@ -1019,27 +982,16 @@ function ReportsStocksWorkspace({ ownerId, consoleScope }: { ownerId: string | n
     onGroupedCashChange={workbook.changeGroupedCash} onExactCashChange={setCashPeriod}
     onCashMeasurementsChange={setMeasurements} onClearCashFilters={() => filterLogic.load([])} />
   const dayProfitControls = (part?: ProfitControlsPart) => <DayProfitControls part={part} dataset={dataset}
-    disabled={comparisonSettingsDisabled} hideRegister={bug1274Only} profitReadMode={profitReadMode}
+    disabled={comparisonSettingsDisabled} hideRegister={true} profitReadMode={profitReadMode}
     dayOrganizationBasis={dayOrganizationBasis} productClassification={productClassification} productServiceFilter={productServiceFilter}
     sourceOrganizations={sourceOrganizations} sourceBuyerSubtree={sourceBuyerSubtree} setProfitReadMode={setProfitReadMode}
     setDayOrganizationBasis={setDayOrganizationBasis} setProductClassification={setProductClassification} setProductServiceFilter={setProductServiceFilter}
     setSourceOrganizations={setSourceOrganizations} setSourceBuyerSubtree={setSourceBuyerSubtree} />
   const supplierProfitControls = (part?: ProfitControlsPart) => <SupplierProfitControls part={part} dataset={dataset}
-    disabled={comparisonSettingsDisabled} hideRegister={bug1274Only} profitReadMode={profitReadMode}
+    disabled={comparisonSettingsDisabled} hideRegister={true} profitReadMode={profitReadMode}
     supplierBasis={supplierBasis} sourceBuyerSubtree={sourceBuyerSubtree}
     groupingOptions={groupingOptions} setProfitReadMode={setProfitReadMode} setSupplierBasis={value => { setSupplierBasis(value); if (value === 0 && supplierWarehouse !== undefined) setSupplierWarehouse(78) }}
     setSourceBuyerSubtree={setSourceBuyerSubtree} setRowGroups={setRowGroups} />
-
-  if (!bug1274Only && canGenerateReport && ownerId && workspaceDraft.recovery !== 'none'
-    && (workspaceDraft.recovery !== 'loading' || !datasetStorage.loaded)) {
-    return <ReportDraftRecoveryPanel savedAt={workspaceDraft.savedAt}
-      loading={!datasetStorage.loaded && !datasetStorage.error}
-      error={draftRestoreError ?? datasetStorage.error ?? workspaceDraft.message}
-      canRestore={workspaceDraft.recovery === 'pending' && datasetStorage.loaded && !datasetStorage.error}
-      onRestore={() => workspaceDraft.restore(restoreWorkspace)}
-      onDiscard={() => { if (workspaceDraft.discardRecovery()) setDraftRestoreError(null) }}
-      onRetry={datasetStorage.retry} />
-  }
 
   const analysisPanels = {
     abc: !analysisRules.abc ? null : <ReportAbcClassificationPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} notice={abc.notice} onChange={abc.change} />,
@@ -1068,751 +1020,215 @@ function ReportsStocksWorkspace({ ownerId, consoleScope }: { ownerId: string | n
     />
   )
 
-  if (bug1274Only) {
-    const selectionOnly = activeWorkbook === 'Впарювання.xls' || (dataSource === 2 && returnsOnly === true)
-    const activeProfile = readReportProfile(reportProfile)
-    const deskTitle = activeProfile ? salesConstructorTitle(activeProfile) : workbookDeskTitle(activeWorkbook, dataSource)
-    const deskReportKey = `${activeWorkbook ?? ''}|${dataSource}`
-    const deskSummary = workbookRequestSummary(reportBody, dataset, selection => getSelectionFieldSummary(selection, filterFieldOptions, t))
-    const builder = {
-      inlineSelections: true, selectionKeys: filterLogic.selectionKeys, dataset, request: reportBody, dataSource, colGroups, filterFieldOptions, groupingOptions, groupingSelectData, measurements, rowGroups, selections,
-      lookupFrom: lookup.from, lookupTo: lookup.to, lookupProfitReadMode: lookup.profitReadMode,
-      lookupProfitUnavailable: lookup.profitUnavailable, lookupSourceWorld: lookup.sourceWorld, lookupSalesBasis: lookup.salesBasis,
-      lookupProvidedDiscountBasis: lookup.providedDiscountBasis,
-      onColGroupsChange: (value: ReportGroupingItem[] | ((current: ReportGroupingItem[]) => ReportGroupingItem[])) => groupingOrdering.changeAxis('Col', value),
-      onRowGroupsChange: (value: ReportGroupingItem[] | ((current: ReportGroupingItem[]) => ReportGroupingItem[])) => {
-        const next = typeof value === 'function' ? value(rowGroups) : value
-        if (dataSource === 38) setSupplierWarehouse(supplierWarehouseAfterRowEdit(supplierWarehouse, rowGroups, next))
-        groupingOrdering.changeAxis('Row', next)
-      },
-      onMeasurementsChange: setMeasurements, onSelectionsChange: filterLogic.editSelection, onGroupingLayoutChange: groupingOrdering.changeLayout,
-      exportLayout, onExportLayoutChange: changeExportLayout,
-    }
-    const supplierControls = dataSource === 38 && isSupplierSourceWorldCapability(dataset?.supplierSourceWorld)
-    const sharedFilters = <ConstructorFilters count={selections.length} rowKeys={filterLogic.selectionKeys} disabled={comparisonSettingsDisabled}
-        onAdd={() => filterLogic.editSelection({ kind: 'append', selection: createEmptySelection() })}
-        onDelete={index => filterLogic.editSelection({ kind: 'delete', index })}
-        onCopy={index => { if (selections[index]) filterLogic.editSelection({ kind: 'append', selection: cloneReportSelection(selections[index], dataSource) }) }}
-        footer={<><StockQuantityFilterPanel dataset={dataset} request={templateBody} disabled={comparisonSettingsDisabled} onChange={setStockQuantityFilter} />{dataSource !== 19 && returnsOnly !== true ? analysisPanels.filterExpression : null}</>}
-        renderRow={({ index, selected, onSelect }) => <InlineReportSelection variant="row" selected={selected} onSelect={onSelect} dataset={activeWorkbook === 'Впарювання.xls' ? vparivanieSelectionDataset(dataset) : dataset} request={reportBody}
-          selection={selections[index]} selections={selections} index={index} dataSource={dataSource} from={lookup.from} to={lookup.to}
-          filterFieldOptions={filterFieldOptions} lookupProfitReadMode={lookup.profitReadMode} lookupProfitUnavailable={lookup.profitUnavailable}
-          lookupSourceWorld={lookup.sourceWorld} lookupSalesBasis={lookup.salesBasis} lookupProvidedDiscountBasis={lookup.providedDiscountBasis}
-          onChange={filterLogic.editSelection} />} />
-    const filtersContent = <>
-      {dataSource === 35 ? <div className="workbook-desk__group">{dayProfitControls('organizations')}</div> : null}
-      {dataSource === 46 ? <NativePriceComparisonPanel value={nativePriceComparison} onChange={changeNativePriceComparison} disabled={comparisonSettingsDisabled} missing={nativePriceMissing && (!nativePriceUntouched || appliedSettings.pending)} /> : null}
-      {dataSource === 44 ? <CustomerGroupsPanel value={customerGroups} onChange={setCustomerGroups} disabled={comparisonSettingsDisabled} /> : null}
-      {dataSource === 35 ? <div className="workbook-desk__group">{dayProfitControls('filters')}</div> : null}
-      {supplierControls ? <div className="workbook-desk__group">{supplierProfitControls('filters')}</div> : null}
-      {dataSource === 41 ? cashSettlementPanels('filters') : null}
-      {sharedFilters}
-    </>
-    const groupingContent = <>
-      {dataSource === 40 || dataSource === 41 ? cashSettlementPanels('form') : null}
-      <LegacyReportBuilder part="grouping" {...builder} />
-    </>
-    const advancedContent = <div className="workbook-advanced">
+  const selectionOnly = activeWorkbook === 'Впарювання.xls' || (dataSource === 2 && returnsOnly === true)
+  const activeProfile = readReportProfile(reportProfile)
+  const deskTitle = activeProfile ? salesConstructorTitle(activeProfile) : workbookDeskTitle(activeWorkbook, dataSource)
+  const deskReportKey = `${activeWorkbook ?? ''}|${dataSource}`
+  const deskSummary = workbookRequestSummary(reportBody, dataset, selection => getSelectionFieldSummary(selection, filterFieldOptions, t))
+  const builder = {
+    inlineSelections: true, selectionKeys: filterLogic.selectionKeys, dataset, request: reportBody, dataSource, colGroups, filterFieldOptions, groupingOptions, groupingSelectData, measurements, rowGroups, selections,
+    lookupFrom: lookup.from, lookupTo: lookup.to, lookupProfitReadMode: lookup.profitReadMode,
+    lookupProfitUnavailable: lookup.profitUnavailable, lookupSourceWorld: lookup.sourceWorld, lookupSalesBasis: lookup.salesBasis,
+    lookupProvidedDiscountBasis: lookup.providedDiscountBasis,
+    onColGroupsChange: (value: ReportGroupingItem[] | ((current: ReportGroupingItem[]) => ReportGroupingItem[])) => groupingOrdering.changeAxis('Col', value),
+    onRowGroupsChange: (value: ReportGroupingItem[] | ((current: ReportGroupingItem[]) => ReportGroupingItem[])) => {
+      const next = typeof value === 'function' ? value(rowGroups) : value
+      if (dataSource === 38) setSupplierWarehouse(supplierWarehouseAfterRowEdit(supplierWarehouse, rowGroups, next))
+      groupingOrdering.changeAxis('Row', next)
+    },
+    onMeasurementsChange: setMeasurements, onSelectionsChange: filterLogic.editSelection, onGroupingLayoutChange: groupingOrdering.changeLayout,
+    exportLayout, onExportLayoutChange: changeExportLayout,
+  }
+  const supplierControls = dataSource === 38 && isSupplierSourceWorldCapability(dataset?.supplierSourceWorld)
+  const sharedFilters = <ConstructorFilters count={selections.length} rowKeys={filterLogic.selectionKeys} disabled={comparisonSettingsDisabled}
+      onAdd={() => filterLogic.editSelection({ kind: 'append', selection: createEmptySelection() })}
+      onDelete={index => filterLogic.editSelection({ kind: 'delete', index })}
+      onCopy={index => { if (selections[index]) filterLogic.editSelection({ kind: 'append', selection: cloneReportSelection(selections[index], dataSource) }) }}
+      footer={<><StockQuantityFilterPanel dataset={dataset} request={templateBody} disabled={comparisonSettingsDisabled} onChange={setStockQuantityFilter} />{dataSource !== 19 && returnsOnly !== true ? analysisPanels.filterExpression : null}</>}
+      renderRow={({ index, selected, onSelect }) => <InlineReportSelection variant="row" selected={selected} onSelect={onSelect} dataset={activeWorkbook === 'Впарювання.xls' ? vparivanieSelectionDataset(dataset) : dataset} request={reportBody}
+        selection={selections[index]} selections={selections} index={index} dataSource={dataSource} from={lookup.from} to={lookup.to}
+        filterFieldOptions={filterFieldOptions} lookupProfitReadMode={lookup.profitReadMode} lookupProfitUnavailable={lookup.profitUnavailable}
+        lookupSourceWorld={lookup.sourceWorld} lookupSalesBasis={lookup.salesBasis} lookupProvidedDiscountBasis={lookup.providedDiscountBasis}
+        onChange={filterLogic.editSelection} />} />
+  const filtersContent = <>
+    {dataSource === 35 ? <div className="workbook-desk__group">{dayProfitControls('organizations')}</div> : null}
+    {dataSource === 46 ? <NativePriceComparisonPanel value={nativePriceComparison} onChange={changeNativePriceComparison} disabled={comparisonSettingsDisabled} missing={nativePriceMissing && (!nativePriceUntouched || appliedSettings.pending)} /> : null}
+    {dataSource === 44 ? <CustomerGroupsPanel value={customerGroups} onChange={setCustomerGroups} disabled={comparisonSettingsDisabled} /> : null}
+    {dataSource === 35 ? <div className="workbook-desk__group">{dayProfitControls('filters')}</div> : null}
+    {supplierControls ? <div className="workbook-desk__group">{supplierProfitControls('filters')}</div> : null}
+    {dataSource === 41 ? cashSettlementPanels('filters') : null}
+    {sharedFilters}
+  </>
+  const groupingContent = <>
+    {dataSource === 40 || dataSource === 41 ? cashSettlementPanels('form') : null}
+    <LegacyReportBuilder part="grouping" {...builder} />
+  </>
+  const advancedContent = <div className="workbook-advanced">
+    {workbook.panel(dataset, reportBody, comparisonSettingsDisabled)}
+    {dataSource === 35 ? <div className="workbook-desk__group">{dayProfitControls('source')}</div> : null}
+    {supplierControls ? <div className="workbook-desk__group">{supplierProfitControls('source')}</div> : null}
+    {dataSource === 40 || dataSource === 41 ? cashSettlementPanels('source') : null}
+    {dataSource === 39 ? <CurrentVparivanieRegionalPanel dataset={dataset ?? null} request={reportBody}
+      enabled={canGenerateReport} disabled={comparisonSettingsDisabled}
+      fullScope={currentVparivanieFullScope(reportBody)} onFullScopeChange={setFullCurrentVparivanie} /> : null}
+    {!hasFixedReportAxes(dataSource) ? <>
+      {analysisPanels.topGroups}
+      {analysisPanels.threshold}
+      {analysisPanels.hideZero}
+      {analysisPanels.abc}
+      {analysisPanels.ordering}
+    </> : dataSource === 26 ? analysisPanels.abc : null}
+  </div>
+  const constructorDesk = usesConstructorDesk(dataset, reportBody) && !selectionOnly
+  const constructorCaptions = constructorMeasureCaptions(dataset, reportBody, dataSource, t)
+  const constructorReportSettings = dataSource === 46 ? <NativePriceComparisonPanel value={nativePriceComparison} onChange={changeNativePriceComparison} disabled={comparisonSettingsDisabled} missing={nativePriceMissing && (!nativePriceUntouched || appliedSettings.pending)} />
+    : dataSource === 44 ? <CustomerGroupsPanel value={customerGroups} onChange={setCustomerGroups} disabled={comparisonSettingsDisabled} /> : null
+  const constructorContent = constructorDesk ? {
+    parameters: <>
+      <ConstructorPresentationParameters dataset={dataset} request={reportBody} disabled={comparisonSettingsDisabled}
+        onPresentationChange={setConstructorPresentation} onLayoutChange={groupingOrdering.changeLayout} />
+      {constructorReportSettings ? <div className="constructor-parameters__report">{constructorReportSettings}</div> : null}
+    </>,
+    panels: <ConstructorGroupingWorkspace {...builder} disabled={comparisonSettingsDisabled}
+      measures={<ConstructorMeasures groups={measurements} onChange={setMeasurements} disabled={comparisonSettingsDisabled} {...constructorCaptions} />} />,
+    filters: sharedFilters,
+    extras: <>
+      <div className="constructor-extras__item"><ReportNumberPresentationPanel value={numberPresentation} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setNumberPresentation} /></div>
+      <ReportPresentationCurrencyPanel dataset={dataset} request={reportBody} disabled={comparisonSettingsDisabled} onChange={setPresentationCurrency} />
       {workbook.panel(dataset, reportBody, comparisonSettingsDisabled)}
-      {dataSource === 35 ? <div className="workbook-desk__group">{dayProfitControls('source')}</div> : null}
-      {supplierControls ? <div className="workbook-desk__group">{supplierProfitControls('source')}</div> : null}
-      {dataSource === 40 || dataSource === 41 ? cashSettlementPanels('source') : null}
-      {dataSource === 39 ? <CurrentVparivanieRegionalPanel dataset={dataset ?? null} request={reportBody}
-        enabled={canGenerateReport} disabled={comparisonSettingsDisabled}
-        fullScope={currentVparivanieFullScope(reportBody)} onFullScopeChange={setFullCurrentVparivanie} /> : null}
       {!hasFixedReportAxes(dataSource) ? <>
         {analysisPanels.topGroups}
         {analysisPanels.threshold}
         {analysisPanels.hideZero}
         {analysisPanels.abc}
         {analysisPanels.ordering}
-      </> : dataSource === 26 ? analysisPanels.abc : null}
-    </div>
-    const constructorDesk = usesConstructorDesk(dataset, reportBody) && !selectionOnly
-    const constructorCaptions = constructorMeasureCaptions(dataset, reportBody, dataSource, t)
-    const constructorReportSettings = dataSource === 46 ? <NativePriceComparisonPanel value={nativePriceComparison} onChange={changeNativePriceComparison} disabled={comparisonSettingsDisabled} missing={nativePriceMissing && (!nativePriceUntouched || appliedSettings.pending)} />
-      : dataSource === 44 ? <CustomerGroupsPanel value={customerGroups} onChange={setCustomerGroups} disabled={comparisonSettingsDisabled} /> : null
-    const constructorContent = constructorDesk ? {
-      parameters: <>
-        <ConstructorPresentationParameters dataset={dataset} request={reportBody} disabled={comparisonSettingsDisabled}
-          onPresentationChange={setConstructorPresentation} onLayoutChange={groupingOrdering.changeLayout} />
-        {constructorReportSettings ? <div className="constructor-parameters__report">{constructorReportSettings}</div> : null}
-      </>,
-      panels: <ConstructorGroupingWorkspace {...builder} disabled={comparisonSettingsDisabled}
-        measures={<ConstructorMeasures groups={measurements} onChange={setMeasurements} disabled={comparisonSettingsDisabled} {...constructorCaptions} />} />,
-      filters: sharedFilters,
-      extras: <>
-        <div className="constructor-extras__item"><ReportNumberPresentationPanel value={numberPresentation} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setNumberPresentation} /></div>
-        <ReportPresentationCurrencyPanel dataset={dataset} request={reportBody} disabled={comparisonSettingsDisabled} onChange={setPresentationCurrency} />
-        {workbook.panel(dataset, reportBody, comparisonSettingsDisabled)}
-        {!hasFixedReportAxes(dataSource) ? <>
-          {analysisPanels.topGroups}
-          {analysisPanels.threshold}
-          {analysisPanels.hideZero}
-          {analysisPanels.abc}
-          {analysisPanels.ordering}
-        </> : null}
-      </>,
-    } : null
-    const filterChips = deskSummary.chips.filter(chip => chip.kind === 'filter')
-    const organizationSummary = deskSummary.organizations && deskSummary.organizations !== t('Усі')
-      ? `${t('Організації')}: ${deskSummary.organizations}` : null
-    const filterSummary = [organizationSummary, ...filterChips.map(chip => chip.label)].filter(Boolean).join('; ')
-    const groupingLabels = (groups: ReportGroupingItem[]) => groups.map(group => group.label || getReportFieldLabel(group.key)).join(' → ')
-    const deskSections: WorkbookSettingsSection[] = [
-      { id: 'filters', title: 'Фільтри', summary: filterSummary || t('Фільтрів немає'),
-        compactSummary: String(filterChips.length + (organizationSummary ? 1 : 0)), content: filtersContent },
-      { id: 'measures', title: 'Показники', summary: checkedMeasurements
-        ? `${checkedMeasurements} ${deskPlural(checkedMeasurements, ['показник', 'показники', 'показників'])}` : t('Не вибрано жодного'),
-        compactSummary: String(checkedMeasurements), content: <>{dataSource === 39 ? <CurrentVparivanieMovementSettings dataset={dataset} value={movementQuantities} onChange={changeMovementQuantities} disabled={comparisonSettingsDisabled} /> : null}<LegacyReportBuilder part="measures" {...builder} /><ReportPresentationCurrencyPanel dataset={dataset} request={reportBody} disabled={comparisonSettingsDisabled} onChange={setPresentationCurrency} /><ConstructorPresentationPanel dataset={dataset} request={reportBody} disabled={comparisonSettingsDisabled} onChange={setConstructorPresentation} /><ReportNumberPresentationPanel value={numberPresentation} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setNumberPresentation} /></> },
-      { id: 'grouping', title: 'Групування', summary: reportAxesPolicy(dataset, reportBody).fixed ? t('За формою')
-        : rowGroups.length ? `${groupingLabels(rowGroups)}${colGroups.length ? ` · ${t('стовпці')}: ${groupingLabels(colGroups)}` : ''}` : t('Не вибрано'),
-        compactSummary: reportAxesPolicy(dataset, reportBody).fixed ? t('За формою')
-          : colGroups.length ? `${rowGroups.length} ${t('ряд.')} · ${colGroups.length} ${t('стовп.')}`
-          : rowGroups.length ? `${rowGroups.length} ${deskPlural(rowGroups.length, ['рівень', 'рівні', 'рівнів'])}` : t('Немає'),
-        content: groupingContent },
-    ]
-    const submenuProps = { onTemplates: () => openDeskTemplates(false), templatesDisabled: !canGenerateReport || isLoading || !!publishedTab,
-      templatesOpened: deskTemplatesOpened, onCatalogue: () => setPublishedTab(null), catalogueDisabled: isLoading || publishedBusy }
-    const quietActions = <>
-      {canGenerateReport && ownerId ? <ReportDraftControl renderTrigger={trigger => <ReportsSubmenu {...submenuProps} onDraft={trigger.onOpen} draftDisabled={trigger.disabled} draftOpened={trigger.opened} />}
-        pending={workspaceDraft.recovery === 'pending' || workspaceDraft.recovery === 'blocked'}
-        canRestore={workspaceDraft.recovery === 'pending' && datasetStorage.loaded && !datasetStorage.error}
-        canUndo={Boolean(workspaceDraft.previousSnapshot)} disabled={isLoading || !datasetStorage.loaded || !!publishedTab}
-        savedAt={workspaceDraft.savedAt} error={draftRestoreError ?? workspaceDraft.message}
-        onRestore={() => workspaceDraft.restore(restoreWorkspace)} onUndo={() => workspaceDraft.undo(restoreWorkspace)}
-        onDiscard={() => { const discarded = workspaceDraft.discardRecovery(); if (discarded) setDraftRestoreError(null); return discarded }} /> : <ReportsSubmenu {...submenuProps} />}
-    </>
-    const navigationDisabled = isLoading || workbookResolving || !canGenerateReport || publishedBusy
-    const openNavigationWorkbook = (item: WorkbookLaunch) => {
-      setPublishedTab(null)
-      if (item.fileName !== activeWorkbook) openWorkbook(item)
-    }
-    const openPublishedReport = (tab: PublishedReportTab) => {
-      setPublishedTab(tab)
-      setVisitedPublished(current => current.includes(tab) ? current : [...current, tab])
-    }
-    const excelUrl = result?.document.DocumentURL || null
-    const pdfUrl = result?.document.PdfDocumentURL || null
-    return (
-      <Stack className="reports-stocks-page workbook-desk" gap={6}>
-        <PageSubmenuActions>
-          <ReportsNavigation launches={workbookLaunches} active={activeWorkbook} movement={publishedTab === 'movement'}
-            disabled={navigationDisabled} onOpen={openNavigationWorkbook} onStocks={() => openPublishedReport('movement')} />
-        </PageSubmenuActions>
-        {canGenerateReport && catalogueNotice?.failed ? <Alert color="red" className="workbook-desk__notice" icon={<CircleAlert size={18} />}
-          title={catalogueNotice.title ?? t('Не вдалося відкрити звіт')}
-          withCloseButton closeButtonLabel={t('Закрити повідомлення')} onClose={() => setCatalogueNotice(null)}>{catalogueNotice.text}</Alert> : null}
-        <WorkbookSwitcher compact launches={workbookLaunches} active={publishedTab ? null : activeWorkbook} disabled={navigationDisabled}
-          published={publishedTab} onOpenPublished={openPublishedReport} extra={quietActions} onOpen={openNavigationWorkbook} />
-        {canGenerateReport && ownerId ? visitedPublished.map(tab => <div key={tab} style={{ display: publishedTab === tab ? undefined : 'none' }}>
-          <Suspense fallback={<Group role="status" gap="xs"><Loader size="sm" /><Text>{t('Завантаження звіту…')}</Text></Group>}>
-            <PublishedReportWorkspace tab={tab} callerKey={ownerId} onBusyChange={setPublishedBusy} />
-          </Suspense>
-        </div>) : null}
-        <div style={{ display: publishedTab && canGenerateReport ? 'none' : undefined }}>
-        {!canGenerateReport ? <Alert color="yellow" icon={<CircleAlert size={18} />} title={t('Немає доступу до звітів')}>
-          {t('Ваша роль не дозволяє формувати звіти. Зверніться до адміністратора.')}
-        </Alert> : datasetStorage.error ? <Alert color="red" icon={<CircleAlert size={18} />} title={t('Не вдалося завантажити список звітів')}>
-          <Text size="sm">{datasetStorage.error}</Text>
-          <Button variant="default" size="xs" mt="xs" onClick={datasetStorage.retry}>{t('Спробувати ще раз')}</Button>
-        </Alert> : !datasetStorage.loaded || (datasetHidden && workbookResolving) ? <Group justify="center" p="xl" role="status">
-          <Loader size="sm" /><Text size="sm">{t('Завантаження звіту…')}</Text>
-        </Group> : datasetHidden ? <Alert color="gray" icon={<CircleAlert size={18} />} title={t('Звіти зараз недоступні')}>
-          {t('Оберіть доступний звіт у вкладках або спробуйте оновити список.')}
-          <Button variant="default" size="xs" mt="xs" onClick={datasetStorage.retry}>{t('Оновити')}</Button>
-        </Alert> : <form className="reports-stocks-form workbook-desk__form" onSubmit={submitReport}>
-            {isLoading && jobProgress ? <ReportJobProgressNotice progress={jobProgress} onCancel={() => jobAbort.current?.abort()} /> : null}
-            {constructorContent ? <ConstructorDesk title={activeProfile ? deskTitle : workbookLaunches.find(item => item.fileName === activeWorkbook)?.label ?? dataset?.Name ?? deskTitle} templateName={activeTemplate?.Name ?? ''} resolving={workbookResolving}
-              warning={catalogueNotice?.warning ?? null} disabled={comparisonSettingsDisabled}
-              period={periodSupported ? { from, to, error: periodError, disabled: isLoading || workbookResolving,
-                minDate: effectiveConfiguration?.period.minimumDate ?? (supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE), maxDate,
-                onChange: range => { setFrom(range.from); setTo(range.to) } } : null}
-              currentStateNotice={<Text size="sm">{t('Поточний стан на час читання даних. Історичний період не застосовується.')}</Text>}
-              parameters={constructorContent.parameters} panels={constructorContent.panels} filters={constructorContent.filters} extras={constructorContent.extras}
-              notices={pendingSettingsNotice('Сформувати')}
-              actions={{ canSubmit: canSubmit && !workbookResolving, isLoading, blockedReason: workbookResolving ? null : submitBlockedReason || null,
-                ran: Boolean(result), previewNeedsExport: Boolean(lastRun?.previewNeedsExport), excelUrl, pdfUrl, fileBaseName: lastRun?.fileName ?? null,
-                pending: appliedSettings.pending, canExport: Boolean(lastRun) || canSubmit && !workbookResolving, resetDisabled: !canGenerateReport || isLoading,
-                onPreview: () => void runReport(true), onGenerate: () => void runReport(false), onReset: resetReport,
-                onCancel: () => { restoreWorkspace(appliedSettings.cancelSnapshot(activeTemplate), true) },
-                onSaveTemplate: () => openDeskTemplates(true), onLoadTemplate: () => openDeskTemplates(false) }} /> : <>
-            <WorkbookHeader title={deskTitle} showTitle={!activeWorkbook} templateName={activeTemplate?.Name ?? ''}
-              resolving={workbookResolving} warning={catalogueNotice?.warning ?? null} />
-            <WorkbookSettings unified sections={selectionOnly ? deskSections.filter(section => section.id === 'filters') : deskSections}
-              advanced={selectionOnly ? null : advancedContent} disabled={comparisonSettingsDisabled}
-              period={periodSupported ? <WorkbookPeriodField from={from} to={to}
-                minDate={effectiveConfiguration?.period.minimumDate ?? (supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE)} maxDate={maxDate}
-                presets={reportPeriodPresets(dataSource, today)} error={periodError} disabled={isLoading || workbookResolving}
-                onFromChange={setFrom} onToChange={setTo} />
-                : <Text size="sm">{t('Поточний стан на час читання даних. Історичний період не застосовується.')}</Text>} />
-            {pendingSettingsNotice('Застосувати й показати')}
-            <WorkbookActionBar canSubmit={canSubmit && !workbookResolving} isLoading={isLoading}
-              blockedReason={workbookResolving ? null : submitBlockedReason || null}
-              ran={Boolean(result)} previewNeedsExport={Boolean(lastRun?.previewNeedsExport)} excelUrl={excelUrl} pdfUrl={pdfUrl} fileBaseName={lastRun?.fileName ?? null}
-              resetDisabled={!canGenerateReport || isLoading} onPreview={() => void runReport(true)}
-              onGenerate={() => void runReport(false)} onReset={resetReport}
-              pending={appliedSettings.pending} canExport={Boolean(lastRun) || canSubmit && !workbookResolving} onCancel={() => { restoreWorkspace(appliedSettings.cancelSnapshot(activeTemplate), true) }}
-              onSaveTemplate={() => openDeskTemplates(true)}
-              applyLabel="Застосувати й показати" /></>}
-            {lastRun ? <Text size="sm" role="status">{t('Період показаного результату')}: {workbookRequestSummary(resultRequest, dataset, selection => getSelectionFieldSummary(selection, filterFieldOptions, t)).period}</Text> : null}
-            <WorkbookResult dataSource={dataSource} title={deskTitle} period={workbookRequestSummary(resultRequest, dataset, selection => getSelectionFieldSummary(selection, filterFieldOptions, t)).period} isLoading={isLoading}
-              error={error} emptyRun={emptyRunNotice} generated={Boolean(lastRun?.hasDocument && !preview)}
-              stale={!preview && !lastRun && !isLoading && !error && shownReport === deskReportKey}
-              table={preview ? <ReportPreviewPages key={preview.ResultSession?.ResultId ?? preview.ResultSha256} initial={preview} request={resultRequest} embedded /> : null}
-              excelUrl={excelUrl} pdfUrl={pdfUrl} fileBaseName={lastRun?.fileName ?? null} />
-          </form>}
-        </div>
-        <ReportModal centered classNames={{ body: 'reports-stocks-template-modal__body', title: 'reports-stocks-modal-title' }}
-          opened={deskTemplatesOpened} closeOnClickOutside={!templateStorage.busy} closeOnEscape={!templateStorage.busy}
-          closeButtonProps={{ disabled: templateStorage.busy }} size={820} title={t('Шаблони звіту')}
-          onClose={() => setDeskTemplatesOpened(false)}>
-          <ReportTemplatesPanel ordering={templateStorage.ordering} storage={templateStorage} datasets={datasetStorage.datasets}
-            dataSources={BUG_1274_ACTIVE_DATA_SOURCES} callerKey={ownerId} requireReadMode configurationReady={!templateConfigurationError && !workbookResolving}
-            configurationName={deskTitle} key={`${ownerId}:${templateIntent.revision}`} initiallyCreating={templateIntent.create}
-            notice={templateNotice ?? templateStorage.notice} templateName={templateName} activeTemplate={activeTemplate}
-            disabled={!canGenerateReport || isLoading} onRenamed={renamedTemplate} onClearNotice={() => { setTemplateNotice(null); templateStorage.clearNotice() }}
-            onApply={template => { if (applyTemplate(template)) setDeskTemplatesOpened(false) }}
-            onDeleted={deletedTemplate} onNameChange={setTemplateName} onRefresh={loadTemplates}
-            onSave={saveTemplate} onUpdate={updateTemplate} />
-        </ReportModal>
-        {exportModal}
-      </Stack>
-    )
+      </> : null}
+    </>,
+  } : null
+  const filterChips = deskSummary.chips.filter(chip => chip.kind === 'filter')
+  const organizationSummary = deskSummary.organizations && deskSummary.organizations !== t('Усі')
+    ? `${t('Організації')}: ${deskSummary.organizations}` : null
+  const filterSummary = [organizationSummary, ...filterChips.map(chip => chip.label)].filter(Boolean).join('; ')
+  const groupingLabels = (groups: ReportGroupingItem[]) => groups.map(group => group.label || getReportFieldLabel(group.key)).join(' → ')
+  const deskSections: WorkbookSettingsSection[] = [
+    { id: 'filters', title: 'Фільтри', summary: filterSummary || t('Фільтрів немає'),
+      compactSummary: String(filterChips.length + (organizationSummary ? 1 : 0)), content: filtersContent },
+    { id: 'measures', title: 'Показники', summary: checkedMeasurements
+      ? `${checkedMeasurements} ${deskPlural(checkedMeasurements, ['показник', 'показники', 'показників'])}` : t('Не вибрано жодного'),
+      compactSummary: String(checkedMeasurements), content: <>{dataSource === 39 ? <CurrentVparivanieMovementSettings dataset={dataset} value={movementQuantities} onChange={changeMovementQuantities} disabled={comparisonSettingsDisabled} /> : null}<LegacyReportBuilder part="measures" {...builder} /><ReportPresentationCurrencyPanel dataset={dataset} request={reportBody} disabled={comparisonSettingsDisabled} onChange={setPresentationCurrency} /><ConstructorPresentationPanel dataset={dataset} request={reportBody} disabled={comparisonSettingsDisabled} onChange={setConstructorPresentation} /><ReportNumberPresentationPanel value={numberPresentation} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setNumberPresentation} /></> },
+    { id: 'grouping', title: 'Групування', summary: reportAxesPolicy(dataset, reportBody).fixed ? t('За формою')
+      : rowGroups.length ? `${groupingLabels(rowGroups)}${colGroups.length ? ` · ${t('стовпці')}: ${groupingLabels(colGroups)}` : ''}` : t('Не вибрано'),
+      compactSummary: reportAxesPolicy(dataset, reportBody).fixed ? t('За формою')
+        : colGroups.length ? `${rowGroups.length} ${t('ряд.')} · ${colGroups.length} ${t('стовп.')}`
+        : rowGroups.length ? `${rowGroups.length} ${deskPlural(rowGroups.length, ['рівень', 'рівні', 'рівнів'])}` : t('Немає'),
+      content: groupingContent },
+  ]
+  const submenuProps = { onTemplates: () => openDeskTemplates(false), templatesDisabled: !canGenerateReport || isLoading || !!publishedTab,
+    templatesOpened: deskTemplatesOpened, onCatalogue: () => setPublishedTab(null), catalogueDisabled: isLoading || publishedBusy }
+  const quietActions = <>
+    {canGenerateReport && ownerId ? <ReportDraftControl renderTrigger={trigger => <ReportsSubmenu {...submenuProps} onDraft={trigger.onOpen} draftDisabled={trigger.disabled} draftOpened={trigger.opened} />}
+      pending={workspaceDraft.recovery === 'pending' || workspaceDraft.recovery === 'blocked'}
+      canRestore={workspaceDraft.recovery === 'pending' && datasetStorage.loaded && !datasetStorage.error}
+      canUndo={Boolean(workspaceDraft.previousSnapshot)} disabled={isLoading || !datasetStorage.loaded || !!publishedTab}
+      savedAt={workspaceDraft.savedAt} error={draftRestoreError ?? workspaceDraft.message}
+      onRestore={() => workspaceDraft.restore(restoreWorkspace)} onUndo={() => workspaceDraft.undo(restoreWorkspace)}
+      onDiscard={() => { const discarded = workspaceDraft.discardRecovery(); if (discarded) setDraftRestoreError(null); return discarded }} /> : <ReportsSubmenu {...submenuProps} />}
+  </>
+  const navigationDisabled = isLoading || workbookResolving || !canGenerateReport || publishedBusy
+  const openNavigationWorkbook = (item: WorkbookLaunch) => {
+    setPublishedTab(null)
+    if (item.fileName !== activeWorkbook) openWorkbook(item)
   }
-
+  const openPublishedReport = (tab: PublishedReportTab) => {
+    setPublishedTab(tab)
+    setVisitedPublished(current => current.includes(tab) ? current : [...current, tab])
+  }
+  const excelUrl = result?.document.DocumentURL || null
+  const pdfUrl = result?.document.PdfDocumentURL || null
   return (
-    <Stack className={`reports-stocks-page${' reports-stocks-workspace'}`} gap={6}>
-      {canGenerateReport && ownerId ? <ReportDraftStatus savedAt={workspaceDraft.status === 'saved' ? workspaceDraft.savedAt : null}
-        notice={draftRestoreError ?? workspaceDraft.message} canUndo={Boolean(workspaceDraft.previousSnapshot)}
-        disabled={isLoading || !datasetStorage.loaded || Boolean(datasetStorage.error)}
-        onUndo={() => workspaceDraft.undo(restoreWorkspace)} /> : null}
-      <div className={'stocks-workspace-header'}>
-        {<div className="stocks-workspace-heading">
-          <span className="stocks-workspace-heading__icon"><IconFileSpreadsheet size={24} aria-hidden="true" /></span>
-          <div><Text component="h2">{t('Налаштування звіту')}</Text>
-            <Text size="xs" c="dimmed">{t(bug1274Only ? 'Відкрийте звіт 1С, за потреби змініть період і відбори, потім «Показати на екрані» або «Сформувати» файл Excel / PDF.'
-              : 'Оберіть набір даних, налаштуйте структуру та сформуйте звіт.')}</Text></div>
-        </div>}
-      <Group justify="flex-end" gap={8}>
-        {consoleScope && !bug1274Only ? <Badge color="green">Готово</Badge> : null}
-      </Group>
-      </div>
-      {canGenerateReport && datasetStorage.loaded && !datasetStorage.error && workbookLaunches.length > 0
-        ? <Bug1274WorkbookShortcuts launches={workbookLaunches} active={activeWorkbook && !datasetHidden ? activeWorkbook : null}
-          disabled={isLoading || workbookResolving} onOpen={item => { openWorkbook(item) }} /> : null}
-      {canGenerateReport && templateName.trim() ? <Text fw={600} aria-label={t('Назва поточного звіту')}>{templateName}</Text> : null}
-      {canGenerateReport && catalogueNotice ? <Alert color={catalogueNotice.failed ? 'red' : 'blue'} style={{ flexShrink: 0 }}
-        title={catalogueNotice.title ?? t(catalogueNotice.failed ? 'Не вдалося відкрити звіт' : 'Звіт відкрито')}
+    <Stack className="reports-stocks-page workbook-desk" gap={6}>
+      <PageSubmenuActions>
+        <ReportsNavigation launches={workbookLaunches} active={activeWorkbook} movement={publishedTab === 'movement'}
+          disabled={navigationDisabled} onOpen={openNavigationWorkbook} onStocks={() => openPublishedReport('movement')} />
+      </PageSubmenuActions>
+      {canGenerateReport && catalogueNotice?.failed ? <Alert color="red" className="workbook-desk__notice" icon={<CircleAlert size={18} />}
+        title={catalogueNotice.title ?? t('Не вдалося відкрити звіт')}
         withCloseButton closeButtonLabel={t('Закрити повідомлення')} onClose={() => setCatalogueNotice(null)}>{catalogueNotice.text}</Alert> : null}
-      {!datasetHidden ? <>{dataSource === 31 ? <AgreementPriceComparisonPanel value={agreementPriceComparison ?? defaultAgreementPriceComparison()} disabled={comparisonSettingsDisabled} onChange={setAgreementPriceComparison} />
-        : requiresValuationAgreement(dataSource) ? <ValuationAgreementPicker purpose={dataSource === 22 ? 'prices' : 'stock'} value={valuationClientAgreementId} enabled={canGenerateReport} disabled={isLoading}
-        agreement={valuation.agreement} validating={valuation.loading} validationError={valuation.error}
-        onChange={setValuationAgreementId} onRetry={valuation.retry} /> : dataSource === 29
-          ? <CurrentDiscountAgreementInput value={valuationClientAgreementId} enabled={canGenerateReport} disabled={isLoading} onChange={setValuationAgreementId} />
-          : null}</> : null}
-      <ReportBuilderForm dataset={dataset} reportBody={reportBody}
-        exportLayout={exportLayout} onExportLayoutChange={changeExportLayout}
-        analysisCount={[topGroups, threshold, hideZero, abcClassification, ordering].filter(value => value != null).length}
-        datasetPanel={<ReportDatasetPicker compact activeDataSources={consoleScope ? BUG_1274_ACTIVE_DATA_SOURCES : undefined}
-          datasets={bug1274Only ? datasetStorage.datasets.filter(item => BUG_1274_ACTIVE_DATA_SOURCES.has(item.DataSource)) : datasetStorage.datasets} selected={dataSource}
-          disabled={!canGenerateReport || isLoading} loaded={datasetStorage.loaded} error={datasetStorage.error}
-          onChange={pickDataset} onRetry={datasetStorage.retry} />}
-        datasetSummary={bug1274Only ? null : <><ReportDatasetSummary dataset={dataset} />
-          {<details className="stocks-workspace-dataset-help"><summary>{t('Що змінює вибір набору даних')}</summary>
-            <Text size="xs" c="dimmed">{t('Зміна набору застосує початкові групування й показники та очистить відбори, групи І/АБО, TOP, ABC-класифікацію і правила сортування. Набори поточного стану очищують період; після повернення до набору з періодом попередні дати відновляться.')}</Text>
-          </details>}</>}
-        agreementPanel={null}
-        priceTypeSalesComparisonPanel={<PriceTypeSalesComparisonPanel dataSource={dataSource} value={priceTypeSalesComparison}
-          scope={oneCScope} capability={dataset?.priceTypeSalesComparison} disabled={comparisonSettingsDisabled} onChange={setPriceTypeSalesComparison} onScopeChange={setOneCScope} />}
-        classificationPanel={<><ConstructorPresentationPanel dataset={dataset} request={reportBody} disabled={comparisonSettingsDisabled} onChange={setConstructorPresentation} />{workbook.panel(dataset, reportBody, comparisonSettingsDisabled)}
-          <ReportPresentationCurrencyPanel dataset={dataset} request={reportBody} disabled={comparisonSettingsDisabled} onChange={setPresentationCurrency} />
-          {dataSource === 39 ? <><CurrentVparivanieMovementSettings dataset={dataset} value={movementQuantities} onChange={changeMovementQuantities} disabled={comparisonSettingsDisabled} />
-          <CurrentVparivanieRegionalPanel dataset={dataset ?? null} request={reportBody}
-          enabled={canGenerateReport} disabled={comparisonSettingsDisabled}
-          fullScope={currentVparivanieFullScope(reportBody)} onFullScopeChange={setFullCurrentVparivanie} /></> : dataSource === 41 || dataSource === 40 ? cashSettlementPanels() : dataSource === 35 ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
-          {dayProfitControls()}
-        </Card> : dataSource === 38 && isSupplierSourceWorldCapability(dataset?.supplierSourceWorld)
-          ? <Card className="app-section-card" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
-            {supplierProfitControls()}
-          </Card> : null}</>}
-        dataSource={dataSource}
-        rateComparisonPanel={<RateComparisonPanel dataSource={dataSource} value={rateComparison} disabled={comparisonSettingsDisabled} onChange={setRateComparison} />}
-        paymentComparisonPanel={<PaymentComparisonPanel dataSource={dataSource} value={paymentComparison} disabled={comparisonSettingsDisabled} onChange={setPaymentComparison} />}
-        marginComparisonPanel={<MarginComparisonPanel dataSource={dataSource} value={marginComparison} disabled={comparisonSettingsDisabled} onChange={setMarginComparison} />}
-        returnComparisonPanel={<ReturnComparisonPanel dataSource={dataSource} value={returnComparison} disabled={comparisonSettingsDisabled} onChange={setReturnComparison} />}
-        buyerSalesSharePanel={dataSource === 17 ? <BuyerSalesSharePanel value={buyerSalesShare} disabled={comparisonSettingsDisabled} onChange={setBuyerSalesShare} /> : null}
-        revenueComparisonPanel={dataSource === 16 ? <RevenueComparisonPanel value={revenueComparison} disabled={comparisonSettingsDisabled} onChange={setRevenueComparison} /> : null}
-        xyzPanel={dataSource === 15 ? <SalesXyzPanel value={xyz} disabled={comparisonSettingsDisabled} onChange={setXyz} /> : null}
-        comparisonPanel={dataSource === 13 ? <ClientComparisonPeriodPanel value={comparison} disabled={comparisonSettingsDisabled} onChange={setComparison} /> : null}
-        periodSupported={periodSupported}
-        datasetHidden={datasetHidden}
-        showBlockedReason={bug1274Only}
-        periodPresets={bug1274Only ? reportPeriodPresets(dataSource, today) : undefined}
-        templateDataSources={bug1274Only ? BUG_1274_ACTIVE_DATA_SOURCES : undefined}
-        presets={presets}
-        configurationReady={!configurationError}
-        onApplyPreset={applyPreset}
-        canSubmit={canSubmit}
-        colGroups={colGroups}
-        filterFieldOptions={filterFieldOptions}
-        from={from}
-        groupingOptions={groupingOptions}
-        groupingSelectData={groupingSelectData}
-        incompleteSelectionMessage={incompleteSelectionMessage}
-        isLoading={isLoading}
-        lastRun={lastRun}
-        lookupFrom={lookup.from}
-        lookupTo={lookup.to}
-        lookupProfitReadMode={lookup.profitReadMode}
-        lookupProfitUnavailable={lookup.profitUnavailable}
-        lookupProvidedDiscountBasis={lookup.providedDiscountBasis}
-        lookupSalesBasis={lookup.salesBasis}
-        lookupSourceWorld={lookup.sourceWorld}
-        maxDate={maxDate}
-        measurements={measurements}
-        notices={{ emptyRun: emptyRunNotice, error, period: periodError }}
-        resultHasFiles={Boolean(result?.document.DocumentURL || result?.document.PdfDocumentURL)}
-        preview={preview}
-        resultPlaceholder={resultPlaceholder}
-        rowGroups={rowGroups}
-        selections={selections}
-        submitBlockedReason={submitBlockedReason}
-        templateName={templateName}
-        templateNotice={templateNotice ?? templateStorage.notice}
-        templateStorage={templateStorage}
-        templateDatasets={datasetStorage.datasets}
-        templateCallerKey={ownerId}
-        activeTemplate={activeTemplate}
-        templatesDisabled={!canGenerateReport || isLoading}
-        onRenamedTemplate={renamedTemplate}
-        onClearTemplateNotice={() => { setTemplateNotice(null); templateStorage.clearNotice() }}
-        to={to}
-        onApplyTemplate={applyTemplate}
-        onDeleteTemplate={deletedTemplate}
-        onFromChange={setFrom}
-        onMeasurementsChange={setMeasurements}
-        onOpenFiles={() => updateRun({ downloadModalOpened: true })}
-        onPreview={() => void runReport(true)}
-        onRefreshTemplates={loadTemplates}
-        onReset={resetReport}
-        onRowGroupsChange={value => groupingOrdering.changeAxis('Row', value)}
-        onColGroupsChange={value => groupingOrdering.changeAxis('Col', value)}
-        onGroupingLayoutChange={groupingOrdering.changeLayout}
-        abcPanel={analysisPanels.abc}
-        hideZeroPanel={analysisPanels.hideZero}
-        thresholdPanel={analysisPanels.threshold}
-        topGroupsPanel={analysisPanels.topGroups}
-        filterExpressionPanel={analysisPanels.filterExpression}
-        orderingPanel={analysisPanels.ordering}
-        onSaveTemplate={saveTemplate}
-        onSelectionsChange={filterLogic.editSelection}
-        onSubmit={submitReport}
-        onTemplateNameChange={setTemplateName}
-        onToChange={setTo}
-        onUpdateTemplate={updateTemplate}
-      />
-
+      <WorkbookSwitcher compact launches={workbookLaunches} active={publishedTab ? null : activeWorkbook} disabled={navigationDisabled}
+        published={publishedTab} onOpenPublished={openPublishedReport} extra={quietActions} onOpen={openNavigationWorkbook} />
+      {canGenerateReport && ownerId ? visitedPublished.map(tab => <div key={tab} style={{ display: publishedTab === tab ? undefined : 'none' }}>
+        <Suspense fallback={<Group role="status" gap="xs"><Loader size="sm" /><Text>{t('Завантаження звіту…')}</Text></Group>}>
+          <PublishedReportWorkspace tab={tab} callerKey={ownerId} onBusyChange={setPublishedBusy} />
+        </Suspense>
+      </div>) : null}
+      <div style={{ display: publishedTab && canGenerateReport ? 'none' : undefined }}>
+      {!canGenerateReport ? <Alert color="yellow" icon={<CircleAlert size={18} />} title={t('Немає доступу до звітів')}>
+        {t('Ваша роль не дозволяє формувати звіти. Зверніться до адміністратора.')}
+      </Alert> : datasetStorage.error ? <Alert color="red" icon={<CircleAlert size={18} />} title={t('Не вдалося завантажити список звітів')}>
+        <Text size="sm">{datasetStorage.error}</Text>
+        <Button variant="default" size="xs" mt="xs" onClick={datasetStorage.retry}>{t('Спробувати ще раз')}</Button>
+      </Alert> : !datasetStorage.loaded || (datasetHidden && workbookResolving) ? <Group justify="center" p="xl" role="status">
+        <Loader size="sm" /><Text size="sm">{t('Завантаження звіту…')}</Text>
+      </Group> : datasetHidden ? <Alert color="gray" icon={<CircleAlert size={18} />} title={t('Звіти зараз недоступні')}>
+        {t('Оберіть доступний звіт у вкладках або спробуйте оновити список.')}
+        <Button variant="default" size="xs" mt="xs" onClick={datasetStorage.retry}>{t('Оновити')}</Button>
+      </Alert> : <form className="reports-stocks-form workbook-desk__form" onSubmit={submitReport}>
+          {isLoading && jobProgress ? <ReportJobProgressNotice progress={jobProgress} onCancel={() => jobAbort.current?.abort()} /> : null}
+          {constructorContent ? <ConstructorDesk title={activeProfile ? deskTitle : workbookLaunches.find(item => item.fileName === activeWorkbook)?.label ?? dataset?.Name ?? deskTitle} templateName={activeTemplate?.Name ?? ''} resolving={workbookResolving}
+            warning={catalogueNotice?.warning ?? null} disabled={comparisonSettingsDisabled}
+            period={periodSupported ? { from, to, error: periodError, disabled: isLoading || workbookResolving,
+              minDate: effectiveConfiguration?.period.minimumDate ?? (supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE), maxDate,
+              onChange: range => { setFrom(range.from); setTo(range.to) } } : null}
+            currentStateNotice={<Text size="sm">{t('Поточний стан на час читання даних. Історичний період не застосовується.')}</Text>}
+            parameters={constructorContent.parameters} panels={constructorContent.panels} filters={constructorContent.filters} extras={constructorContent.extras}
+            notices={pendingSettingsNotice('Сформувати')}
+            actions={{ canSubmit: canSubmit && !workbookResolving, isLoading, blockedReason: workbookResolving ? null : submitBlockedReason || null,
+              ran: Boolean(result), previewNeedsExport: Boolean(lastRun?.previewNeedsExport), excelUrl, pdfUrl, fileBaseName: lastRun?.fileName ?? null,
+              pending: appliedSettings.pending, canExport: Boolean(lastRun) || canSubmit && !workbookResolving, resetDisabled: !canGenerateReport || isLoading,
+              onPreview: () => void runReport(true), onGenerate: () => void runReport(false), onReset: resetReport,
+              onCancel: () => { restoreWorkspace(appliedSettings.cancelSnapshot(activeTemplate), true) },
+              onSaveTemplate: () => openDeskTemplates(true), onLoadTemplate: () => openDeskTemplates(false) }} /> : <>
+          <WorkbookHeader title={deskTitle} showTitle={!activeWorkbook} templateName={activeTemplate?.Name ?? ''}
+            resolving={workbookResolving} warning={catalogueNotice?.warning ?? null} />
+          <WorkbookSettings unified sections={selectionOnly ? deskSections.filter(section => section.id === 'filters') : deskSections}
+            advanced={selectionOnly ? null : advancedContent} disabled={comparisonSettingsDisabled}
+            period={periodSupported ? <WorkbookPeriodField from={from} to={to}
+              minDate={effectiveConfiguration?.period.minimumDate ?? (supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE)} maxDate={maxDate}
+              presets={reportPeriodPresets(dataSource, today)} error={periodError} disabled={isLoading || workbookResolving}
+              onFromChange={setFrom} onToChange={setTo} />
+              : <Text size="sm">{t('Поточний стан на час читання даних. Історичний період не застосовується.')}</Text>} />
+          {pendingSettingsNotice('Застосувати й показати')}
+          <WorkbookActionBar canSubmit={canSubmit && !workbookResolving} isLoading={isLoading}
+            blockedReason={workbookResolving ? null : submitBlockedReason || null}
+            ran={Boolean(result)} previewNeedsExport={Boolean(lastRun?.previewNeedsExport)} excelUrl={excelUrl} pdfUrl={pdfUrl} fileBaseName={lastRun?.fileName ?? null}
+            resetDisabled={!canGenerateReport || isLoading} onPreview={() => void runReport(true)}
+            onGenerate={() => void runReport(false)} onReset={resetReport}
+            pending={appliedSettings.pending} canExport={Boolean(lastRun) || canSubmit && !workbookResolving} onCancel={() => { restoreWorkspace(appliedSettings.cancelSnapshot(activeTemplate), true) }}
+            onSaveTemplate={() => openDeskTemplates(true)}
+            applyLabel="Застосувати й показати" /></>}
+          {lastRun ? <Text size="sm" role="status">{t('Період показаного результату')}: {workbookRequestSummary(resultRequest, dataset, selection => getSelectionFieldSummary(selection, filterFieldOptions, t)).period}</Text> : null}
+          <WorkbookResult dataSource={dataSource} title={deskTitle} period={workbookRequestSummary(resultRequest, dataset, selection => getSelectionFieldSummary(selection, filterFieldOptions, t)).period} isLoading={isLoading}
+            error={error} emptyRun={emptyRunNotice} generated={Boolean(lastRun?.hasDocument && !preview)}
+            stale={!preview && !lastRun && !isLoading && !error && shownReport === deskReportKey}
+            table={preview ? <ReportPreviewPages key={preview.ResultSession?.ResultId ?? preview.ResultSha256} initial={preview} request={resultRequest} embedded /> : null}
+            excelUrl={excelUrl} pdfUrl={pdfUrl} fileBaseName={lastRun?.fileName ?? null} />
+        </form>}
+      </div>
+      <ReportModal centered classNames={{ body: 'reports-stocks-template-modal__body', title: 'reports-stocks-modal-title' }}
+        opened={deskTemplatesOpened} closeOnClickOutside={!templateStorage.busy} closeOnEscape={!templateStorage.busy}
+        closeButtonProps={{ disabled: templateStorage.busy }} size={820} title={t('Шаблони звіту')}
+        onClose={() => setDeskTemplatesOpened(false)}>
+        <ReportTemplatesPanel ordering={templateStorage.ordering} storage={templateStorage} datasets={datasetStorage.datasets}
+          dataSources={BUG_1274_ACTIVE_DATA_SOURCES} callerKey={ownerId} requireReadMode configurationReady={!templateConfigurationError && !workbookResolving}
+          configurationName={deskTitle} key={`${ownerId}:${templateIntent.revision}`} initiallyCreating={templateIntent.create}
+          notice={templateNotice ?? templateStorage.notice} templateName={templateName} activeTemplate={activeTemplate}
+          disabled={!canGenerateReport || isLoading} onRenamed={renamedTemplate} onClearNotice={() => { setTemplateNotice(null); templateStorage.clearNotice() }}
+          onApply={template => { if (applyTemplate(template)) setDeskTemplatesOpened(false) }}
+          onDeleted={deletedTemplate} onNameChange={setTemplateName} onRefresh={loadTemplates}
+          onSave={saveTemplate} onUpdate={updateTemplate} />
+      </ReportModal>
       {exportModal}
     </Stack>
-  )
-}
-
-type ReportBuilderFormProps = {
-  dataset?: ReportDataset
-  reportBody: ReportRequestBody
-  exportLayout: FinancialExportLayout
-  onExportLayoutChange: (layout: FinancialExportLayout) => void
-  analysisCount: number
-  datasetPanel: ReactNode
-  datasetSummary: ReactNode
-  agreementPanel: ReactNode
-  priceTypeSalesComparisonPanel: ReactNode
-  classificationPanel: ReactNode
-  rateComparisonPanel: ReactNode
-  paymentComparisonPanel: ReactNode
-  marginComparisonPanel: ReactNode
-  returnComparisonPanel: ReactNode
-  buyerSalesSharePanel: ReactNode
-  revenueComparisonPanel: ReactNode
-  xyzPanel: ReactNode
-  comparisonPanel: ReactNode
-  abcPanel: ReactNode
-  hideZeroPanel: ReactNode
-  thresholdPanel: ReactNode
-  topGroupsPanel: ReactNode
-  filterExpressionPanel: ReactNode
-  orderingPanel: ReactNode
-  onGroupingLayoutChange: (layout: ReportGroupingLayout) => void
-  dataSource: number
-  periodSupported: boolean
-  datasetHidden: boolean
-  showBlockedReason?: boolean
-  periodPresets?: readonly ReportPeriodPreset[]
-  templateDataSources?: ReadonlySet<number>
-  presets: ReturnType<typeof datasetPresets>
-  configurationReady: boolean
-  templateStorage: ReturnType<typeof useServerReportTemplates>
-  templateDatasets: readonly ReportDataset[]
-  templateCallerKey: string | null
-  onApplyPreset: (id: DatasetReportPresetId) => void
-  canSubmit: boolean
-  colGroups: ReportGroupingItem[]
-  filterFieldOptions: FilterFieldOption[]
-  from: string
-  groupingOptions: ReportGroupingItem[]
-  groupingSelectData: GroupingOption[]
-  incompleteSelectionMessage: string
-  isLoading: boolean
-  lastRun: ReportRunOutcome | null
-  lookupFrom: string
-  lookupTo: string
-  lookupProfitReadMode?: 0 | 1
-  lookupProfitUnavailable?: boolean
-  lookupSourceWorld?: number
-  lookupProvidedDiscountBasis?: 0
-  lookupSalesBasis?: 0
-  maxDate: string
-  measurements: ReportMeasurementGroup[]
-  notices: { emptyRun: string | null; error: string | null; period: string | null }
-  resultHasFiles: boolean
-  preview: NativeReportPreview | null
-  resultPlaceholder: { description: string; title: string }
-  rowGroups: ReportGroupingItem[]
-  selections: ReportSelection[]
-  submitBlockedReason: string
-  templateName: string
-  templateNotice: string | null
-  activeTemplate: ReportTemplate | null
-  templatesDisabled: boolean
-  onRenamedTemplate: (template: ReportTemplate, source: ReportTemplate) => void
-  onClearTemplateNotice: () => void
-  to: string
-  onApplyTemplate: (template: ReportTemplate) => boolean
-  onColGroupsChange: StateSetter<ReportGroupingItem[]>
-  onDeleteTemplate: (name: string) => void
-  onFromChange: StateSetter<string>
-  onMeasurementsChange: StateSetter<ReportMeasurementGroup[]>
-  onOpenFiles: () => void
-  onPreview: () => void
-  onRefreshTemplates: () => void
-  onReset: () => void
-  onRowGroupsChange: StateSetter<ReportGroupingItem[]>
-  onSaveTemplate: () => Promise<TemplateMutationResult>
-  onSelectionsChange: (edit: ReportSelectionEdit) => void
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void
-  onTemplateNameChange: StateSetter<string>
-  onToChange: StateSetter<string>
-  onUpdateTemplate: () => Promise<TemplateMutationResult>
-}
-
-function CurrentDiscountAgreementInput({ value, enabled, disabled, onChange }: {
-  value: number | undefined
-  enabled: boolean
-  disabled: boolean
-  onChange: (value: number | undefined) => void
-}) {
-  const { t } = useI18n()
-  const [search, setSearch] = useState('')
-  const [query] = useDebouncedValue(search, 300)
-  const [options, setOptions] = useState<ReportEntity[]>([])
-  const [selected, setSelected] = useState<ReportEntity | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  useEffect(() => {
-    if (!enabled) return
-    const controller = new AbortController()
-    searchDatasetReportValues(29, REPORT_FILTER_FIELD_TYPES.customerContract,
-      { value: query, offset: 0, limit: 25 }, controller.signal)
-      .then(items => { setOptions(items); setError(null) })
-      .catch(cause => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Не вдалося завантажити договори.') })
-    return () => controller.abort()
-  }, [enabled, query])
-  const data = useMemo(() => {
-    const choices = new Map(options.map(item => [String(item.Id), { value: String(item.Id), label: item.Name ?? String(item.Id) }]))
-    if (value !== undefined && !choices.has(String(value))) choices.set(String(value), {
-      value: String(value), label: selected?.Id === value ? selected.Name ?? `Договір [${value}]` : `Договір [${value}]`,
-    })
-    return [...choices.values()]
-  }, [options, selected, value])
-  return <Stack gap={4} p="sm">
-    <Select label={t('Договір клієнта для чинних знижок')}
-      description={t('Пошук за назвою або локальним ID договору з чинними ставками.')}
-      searchable clearable data={data} value={value?.toString() ?? null} searchValue={search}
-      onSearchChange={setSearch} filter={({ options: items }) => items} maxLength={120}
-      disabled={!enabled || disabled} nothingFoundMessage={t('Договір не знайдено')}
-      onChange={next => {
-        setSelected(options.find(item => String(item.Id) === next) ?? null)
-        setSearch('')
-        onChange(next === null ? undefined : Number(next))
-      }} />
-    {error ? <Text size="xs" c="red">{t(error)}</Text> : null}
-  </Stack>
-}
-
-function ReportBuilderForm(props: ReportBuilderFormProps) {
-  const {
-    datasetPanel,
-    comparisonPanel,
-    dataSource,
-    periodSupported,
-    presets,
-    configurationReady,
-    onApplyPreset,
-    canSubmit,
-    from,
-    isLoading,
-    maxDate,
-    submitBlockedReason,
-    templateName,
-    templateNotice,
-    activeTemplate,
-    templatesDisabled,
-    onRenamedTemplate,
-    onClearTemplateNotice,
-    templateStorage,
-    to,
-    onApplyTemplate,
-    onDeleteTemplate,
-    onFromChange,
-    onRefreshTemplates,
-    onReset,
-    onSaveTemplate,
-    onSubmit,
-    onPreview,
-    onTemplateNameChange,
-    onToChange,
-    onUpdateTemplate,
-  } = props
-  const { t } = useI18n()
-  const [templatesOpened, setTemplatesOpened] = useValueState(false)
-
-  return (
-    <Card className="reports-stocks-shell" radius="md" padding={0}>
-      <form className="reports-stocks-form" onSubmit={onSubmit}>
-        <div className="reports-stocks-filter-scroll">
-        <div className="app-filter-bar reports-stocks-filter-bar">
-          <div className="app-filter-fields reports-stocks-toolbar-fields">
-          {datasetPanel}
-          <ReportPeriodInputs dataSource={dataSource} supported={periodSupported} from={from} to={to} maxDate={maxDate}
-            presets={props.periodPresets} onFromChange={onFromChange} onToChange={onToChange} />
-          {!props.datasetHidden && comparisonPanel ? <div className="reports-stocks-toolbar-comparison">{comparisonPanel}</div> : null}
-          <div className="app-filter-actions reports-stocks-actions">
-            <Button color="brand" variant="filled" size="sm" className="app-filter-primary-action"
-              disabled={templatesDisabled}
-              aria-label={t('Шаблони')} title={t('Шаблони')}
-              leftSection={<LayoutTemplate size={16} />}
-              type="button"
-              onClick={() => { onClearTemplateNotice(); setTemplatesOpened(true) }}
-            >
-              {t('Шаблони')}
-            </Button>
-            <Tooltip label={t('Скинути')}>
-              <Button aria-label={t('Скинути')} disabled={templatesDisabled} type="button" onClick={onReset} className="reports-toolbar-action" variant="default" leftSection={<RotateCcw size={17} />} title={t('Скинути')}>{t('Скинути')}</Button>
-            </Tooltip>
-          </div>
-          </div>
-          <Button type="button" variant="default" className="reports-stocks-preview" leftSection={<MonitorPlay size={16} />}
-            aria-label={t('Показати на екрані')} title={t('Показати на екрані')} disabled={!canSubmit || isLoading}
-            onClick={onPreview}>{t('Показати на екрані')}</Button>
-          <Tooltip label={t('Сформувати')}>
-            <Button
-              className="reports-stocks-generate"
-              aria-label={t('Сформувати')}
-              color={CREATE_ACTION_COLOR}
-              leftSection={<IconFileSpreadsheet size={16} />}
-              loading={isLoading}
-              disabled={!canSubmit}
-              title={submitBlockedReason}
-              aria-describedby={!canSubmit && submitBlockedReason ? 'report-constructor-blocked-reason' : undefined}
-              type="submit"
-            >
-              {t('Сформувати')}
-            </Button>
-          </Tooltip>
-        </div>
-        </div>
-        {props.showBlockedReason && !canSubmit && !isLoading && submitBlockedReason && !props.datasetHidden && submitBlockedReason !== props.notices.period
-            && submitBlockedReason !== props.incompleteSelectionMessage ? <Alert id="report-constructor-blocked-reason"
-            className="reports-page-alert" color="yellow" icon={<CircleAlert size={18} />}>{submitBlockedReason}</Alert> : null}
-        {presets.length ? <ReportQuickPresets disabled={isLoading || !configurationReady} presets={presets} onApply={onApplyPreset} /> : null}
-
-        {props.datasetHidden ? <Alert className="reports-page-alert" color="blue" icon={<CircleAlert size={18} />}>
-          {t('Відкрийте звіт 1С за зразком Excel вище або оберіть звіт у полі «Звіт».')}
-        </Alert> : <ReportBuilderContent {...props} />}
-
-        <ReportModal
-          centered
-          classNames={{ body: 'reports-stocks-template-modal__body', title: 'reports-stocks-modal-title' }}
-          opened={templatesOpened}
-          closeOnClickOutside={!templateStorage.busy}
-          closeOnEscape={!templateStorage.busy}
-          closeButtonProps={{ disabled: templateStorage.busy }}
-          size={820}
-          title={t('Шаблони звіту')}
-          onClose={() => setTemplatesOpened(false)}
-        >
-          <ReportTemplatesPanel
-            key={props.templateCallerKey}
-            ordering={props.templateStorage.ordering}
-            storage={templateStorage}
-            datasets={props.templateDatasets}
-            dataSources={props.templateDataSources}
-            callerKey={props.templateCallerKey}
-            requireReadMode={props.templateDataSources != null}
-            configurationReady={configurationReady}
-            notice={templateNotice}
-            templateName={templateName}
-            activeTemplate={activeTemplate}
-            disabled={templatesDisabled}
-            onRenamed={onRenamedTemplate}
-            onClearNotice={onClearTemplateNotice}
-            onApply={(template) => {
-              if (onApplyTemplate(template)) setTemplatesOpened(false)
-            }}
-            onDeleted={onDeleteTemplate}
-            onNameChange={onTemplateNameChange}
-            onRefresh={onRefreshTemplates}
-            onSave={onSaveTemplate}
-            onUpdate={onUpdateTemplate}
-          />
-        </ReportModal>
-      </form>
-    </Card>
-  )
-}
-
-function ReportBuilderContent(props: ReportBuilderFormProps) {
-  const { dataset, reportBody,
-    datasetSummary,
-    abcPanel,
-    topGroupsPanel,
-    hideZeroPanel,
-    thresholdPanel,
-    filterExpressionPanel,
-    orderingPanel,
-    onGroupingLayoutChange,
-    dataSource,
-    colGroups,
-    filterFieldOptions,
-    groupingOptions,
-    groupingSelectData,
-    lastRun,
-    lookupFrom,
-    lookupTo,
-    measurements,
-    resultHasFiles,
-    preview,
-    resultPlaceholder,
-    rowGroups,
-    selections,
-    onColGroupsChange,
-    onMeasurementsChange,
-    onOpenFiles,
-    onRowGroupsChange,
-    onSelectionsChange,
-  } = props
-  return (
-        <div>
-        <div className="reports-stocks-body">
-          {datasetSummary}
-          <ReportSourceSettings {...props} />
-          <ReportBuilderNotices {...props} />
-          <fieldset className="report-constructor-fields">
-          <LegacyReportBuilder dataset={dataset} request={reportBody}
-            filterExpressionPanel={filterExpressionPanel}
-            onGroupingLayoutChange={onGroupingLayoutChange}
-            dataSource={dataSource}
-            colGroups={colGroups}
-            filterFieldOptions={filterFieldOptions}
-            groupingOptions={groupingOptions}
-            groupingSelectData={groupingSelectData}
-            lookupFrom={lookupFrom}
-            lookupTo={lookupTo}
-            lookupProfitReadMode={props.lookupProfitReadMode} lookupProfitUnavailable={props.lookupProfitUnavailable}
-            lookupSourceWorld={props.lookupSourceWorld} lookupSalesBasis={props.lookupSalesBasis} lookupProvidedDiscountBasis={props.lookupProvidedDiscountBasis}
-            measurements={measurements}
-            rowGroups={rowGroups}
-            selections={selections}
-            onColGroupsChange={onColGroupsChange}
-            onMeasurementsChange={onMeasurementsChange}
-            onRowGroupsChange={onRowGroupsChange}
-            onSelectionsChange={onSelectionsChange}
-            exportLayout={props.exportLayout} onExportLayoutChange={props.onExportLayoutChange}
-          />
-          {dataSource !== 19 ? filterExpressionPanel : null}
-          <div className="stocks-workspace-analysis">
-          {!hasFixedReportAxes(dataSource) ? <>
-            {topGroupsPanel}
-            {thresholdPanel}
-            {hideZeroPanel}
-            {abcPanel}
-            {orderingPanel}
-          </> : dataSource === 26 ? abcPanel
-            : null}
-          </div>
-          </fieldset>
-          <div>
-          <ReportResultSection
-            hasFiles={resultHasFiles}
-            lastRun={lastRun}
-            placeholder={resultPlaceholder}
-            onOpenFiles={onOpenFiles}
-          />
-          {preview ? <ReportPreviewPages key={preview.ResultSession?.ResultId ?? preview.ResultSha256} initial={preview} request={reportBody} /> : null}
-          </div>
-        </div>
-        </div>
-  )
-}
-
-function ReportSourceSettings(props: ReportBuilderFormProps) {
-  const {
-    agreementPanel,
-    priceTypeSalesComparisonPanel,
-    classificationPanel,
-    xyzPanel,
-    rateComparisonPanel,
-    paymentComparisonPanel,
-    marginComparisonPanel,
-    returnComparisonPanel,
-    buyerSalesSharePanel,
-    revenueComparisonPanel,
-  } = props
-  return (
-          <div>
-          {agreementPanel}
-          {priceTypeSalesComparisonPanel}
-          {classificationPanel}
-          {rateComparisonPanel}
-          {paymentComparisonPanel}
-          {marginComparisonPanel}
-          {returnComparisonPanel}
-          {buyerSalesSharePanel ? <Card className="app-section-card reports-buyer-sales-share-settings" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>{buyerSalesSharePanel}</Card> : null}
-          {revenueComparisonPanel ? <Card className="app-section-card reports-revenue-comparison-settings" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>{revenueComparisonPanel}</Card> : null}
-          {xyzPanel ? <Card className="app-section-card reports-sales-xyz-settings" withBorder radius="md" padding="md" style={{ minWidth: 0 }}>{xyzPanel}</Card> : null}
-          </div>
-  )
-}
-
-function ReportBuilderNotices(props: ReportBuilderFormProps) {
-  const { incompleteSelectionMessage, notices } = props
-  return (
-    <>
-          {notices.period || incompleteSelectionMessage ? (
-            <Alert className="reports-page-alert" color={notices.period ? 'red' : 'yellow'} icon={<CircleAlert size={18} />}>
-              {notices.period || incompleteSelectionMessage}
-            </Alert>
-          ) : null}
-
-          {notices.error ? (
-            <Alert className="reports-page-alert" color="red" icon={<CircleAlert size={18} />}>{notices.error}</Alert>
-          ) : null}
-          {notices.emptyRun ? (
-            <Alert className="reports-page-alert" color="yellow" icon={<CircleAlert size={18} />}>
-              {notices.emptyRun}
-            </Alert>
-          ) : null}
-    </>
   )
 }
 
@@ -2617,141 +2033,6 @@ function getSelectionFieldSummary(
   return groupLabel === fieldLabel ? fieldLabel : label
 }
 
-type ReportResultSectionProps = {
-  hasFiles: boolean
-  lastRun: ReportRunOutcome | null
-  placeholder: { description: string; title: string }
-  onOpenFiles: () => void
-}
-
-function reportRunScopeLabel(run: ReportRunOutcome, t: TranslateFunction): string {
-  if (run.rateComparison) return `${formatDate(run.rateComparison.CurrentAsOf)} / ${formatDate(run.rateComparison.PreviousAsOf)}`
-  return run.periodSupported ? `${formatDate(run.from)} – ${formatDate(run.to)}` : t('Поточний стан')
-}
-
-function ReportResultSection({
-  hasFiles,
-  lastRun,
-  placeholder,
-  onOpenFiles,
-}: ReportResultSectionProps) {
-  const { t } = useI18n()
-  const resultRows = useMemo(() => (lastRun ? [lastRun] : []), [lastRun])
-  const resultColumns = useMemo<DataTableColumn<ReportRunOutcome>[]>(
-    () => [
-      {
-        id: 'period',
-        header: lastRun?.rateComparison ? 'Дати курсів' : lastRun?.periodSupported === false ? t('Стан') : t('Період'),
-        minWidth: 180,
-        accessor: (row) => reportRunScopeLabel(row, t),
-        cell: (row) => (
-          <span className="reports-stocks-result__period">
-            {reportRunScopeLabel(row, t)}
-          </span>
-        ),
-      },
-      {
-        id: 'measures',
-        header: t('Показники'),
-        minWidth: 260,
-        fill: true,
-        accessor: (row) => row.measures.join(', '),
-        cell: (row) => row.measures.join(', '),
-      },
-      {
-        id: 'rowGroupings',
-        header: t('Групування рядків'),
-        minWidth: 220,
-        accessor: (row) => row.rowGroupings.join(', '),
-        cell: (row) => (
-          <span className="reports-stocks-result__grouping">
-            {row.rowGroupings.join(', ')}
-          </span>
-        ),
-      },
-      {
-        id: 'colGroupings',
-        header: t('Групування стовпців'),
-        minWidth: 220,
-        accessor: (row) => row.colGroupings.join(', '),
-        cell: (row) => (
-          <span className="reports-stocks-result__grouping">
-            {row.colGroupings.join(', ')}
-          </span>
-        ),
-      },
-      {
-        id: 'status',
-        header: t('Статус'),
-        minWidth: 150,
-        align: 'center',
-        accessor: (row) => row.hasDocument,
-        cell: (row) => (
-          <Badge className={`app-role-pill ${row.hasDocument ? 'is-green' : 'is-orange'}`} variant="light">
-            {row.hasDocument ? t('Готово') : t('Файл не сформовано')}
-          </Badge>
-        ),
-      },
-      {
-        id: 'actions',
-        header: '',
-        width: 170,
-        rowActions: true,
-        enableHiding: false,
-        enableReorder: false,
-        enableResizing: false,
-        cell: (row) => (
-          <TableRowAction
-            action="download"
-            disabled={!row.hasDocument || !hasFiles}
-            label={t('Завантажити')}
-            onClick={onOpenFiles}
-          />
-        ),
-      },
-    ],
-    [hasFiles, lastRun?.periodSupported, lastRun?.rateComparison, onOpenFiles, t],
-  )
-
-  if (!lastRun) return null
-
-  return (
-    <section className="app-section-card reports-stocks-result reports-stocks-panel" aria-labelledby="reports-stocks-result-title">
-      <Group className="reports-stocks-result__header" justify="space-between" wrap="nowrap">
-        <Box className="reports-stocks-result__heading">
-          <Text className="app-section-title" component="h2" fw={600} size="sm" id="reports-stocks-result-title">
-            {t('Результат')}
-          </Text>
-          <Text className="reports-stocks-result__meta" size="xs" c="gray.9">
-            {lastRun
-              ? `${reportRunScopeLabel(lastRun, t)} · ${t('Показників')}: ${lastRun.measures.length}`
-              : t('Після формування тут з’являться файли Excel і PDF.')}
-          </Text>
-        </Box>
-      </Group>
-      <DataTable
-        columns={resultColumns}
-        data={resultRows}
-        density="normal"
-        distributeAvailableWidth
-        emptyText={(
-          <Box className="reports-stocks-result__empty" role="status">
-            <Text fw={600}>{placeholder.title}</Text>
-            <Text c="gray.9" size="sm">{placeholder.description}</Text>
-          </Box>
-        )}
-        getRowId={(row) => `${row.from}-${row.to}`}
-        height={156}
-        layoutVersion="reports-stocks-result-v1"
-        minWidth={1080}
-        showDensityToggle={false}
-        showLayoutControls={false}
-        tableId="reports-stocks-result"
-      />
-    </section>
-  )
-}
-
 type SelectionValuePickerProps = {
   request?: ReportRequestBody
   dataSource: number
@@ -3182,61 +2463,6 @@ function describeReportRun(run: ReportRunOutcome, t: TranslateFunction): string 
   }
 
   return parts.join(' · ')
-}
-
-function describeResultPlaceholder(
-  lastRun: ReportRunOutcome | null,
-  hasError: boolean,
-  t: TranslateFunction,
-): { description: string; title: string } {
-  if (hasError) {
-    return {
-      description: t('Причина — у повідомленні вище. Змініть параметри та сформуйте звіт ще раз.'),
-      title: t('Звіт не сформовано'),
-    }
-  }
-
-  if (!lastRun) {
-    return {
-      description: t('Оберіть показники, додайте групування рядків і сформуйте звіт.'),
-      title: t('Результат ще не сформовано'),
-    }
-  }
-
-  const period = `${formatDate(lastRun.from)} – ${formatDate(lastRun.to)}`
-  const measures = lastRun.measures.join(', ')
-
-  if (lastRun.rateComparison) return { title: lastRun.hasDocument ? 'Звіт сформовано у файл' : 'Файл звіту не сформовано', description: describeReportRun(lastRun, t) }
-  if (!lastRun.periodSupported) {
-    return {
-      description: lastRun.hasDocument
-        ? t('Поточний стан. Показники: {measures}. Час читання даних і залишки — у файлі звіту.', { measures })
-        : t('Поточний стан. Показники: {measures}. Спробуйте послабити умови відбору.', { measures }),
-      title: lastRun.hasDocument ? t('Звіт сформовано у файл') : t('Файл звіту не сформовано'),
-    }
-  }
-
-  if (!lastRun.hasDocument) {
-    return {
-      description: t('Період {period}. Показники: {measures}. Спробуйте інший період або послабте умови відбору.', {
-        measures,
-        period,
-      }),
-      title: t('Файл звіту не сформовано'),
-    }
-  }
-
-  // The file itself records neither the period nor the measures it was built from, so the screen keeps them.
-  // Whether the period actually held any data is visible only inside the sheet: «/report/get/all/filtered» hands
-  // back the two file links and nothing else, and the writer closes even a data-less sheet with «Загальний
-  // підсумок», so the screen must not claim either way — it says where the answer is instead.
-  return {
-    description: t('Період {period}. Показники: {measures}. Дані — у файлі: сервер не повертає рядки для перегляду.', {
-      measures,
-      period,
-    }),
-    title: t('Звіт сформовано у файл'),
-  }
 }
 
 function setAllMeasurements(

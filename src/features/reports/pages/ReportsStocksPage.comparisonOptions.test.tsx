@@ -25,7 +25,7 @@ beforeEach(() => {
 })
 
 it('shows all eight comparisons when adding an empty filter on the actual sales report page', async () => {
-  render(page(<ReportsStocksPage consoleScope />))
+  render(page(<ReportsStocksPage />))
   fireEvent.click(await screen.findByRole('button', { name: 'Додати відбір' }))
   const row = screen.getByRole('group', { name: 'Умова відбору 1' })
   expect(within(row).getByRole('combobox', { name: 'Поле' })).toHaveProperty('value', '')

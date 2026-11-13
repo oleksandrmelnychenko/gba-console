@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport, searchDatasetReportValues } from '../api/reportsApi'
@@ -11,8 +11,6 @@ import { searchCurrentFinancialBuyerManagers } from '../api/currentFinancialBuye
 import { useState } from 'react'
 import type { ReportSelection } from '../types'
 import { ReportsStocksPage, SelectionValuePicker } from './ReportsStocksPage'
-import { WORKBOOK_FILES } from '../testing/workbookFiles'
-import { changeReportPeriod } from '../testing/reportPeriod'
 import { findOpenedWorkbook } from '../testing/workbookDesk'
 
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true, user: { NetUid: 'financial-filter-test' } }) }))
@@ -33,18 +31,6 @@ function dataset(admitted: boolean) {
     Filters: profitDayDataset.Filters.map(field => ({ ...field, Name: field.Type === 1 ? 'Товар' : field.Name })),
     currentFinancialBuyerManagerFilter: admitted ? buyerManagerCapability : undefined }
 }
-async function editor(admitted: boolean) {
-  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dataset(admitted)])
-  const view = render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage consoleScope={false} /></I18nProvider></MantineProvider>)
-  await screen.findByRole('button', { name: 'Продажі за днями' })
-  fireEvent.click(screen.getByRole('button', { name: `Відкрити ${WORKBOOK_FILES['Валовий прибуток за днем']}` }))
-  await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/i)).toBeNull())
-  changeReportPeriod({ from: '2026-10-17', to: '2026-10-23' })
-  fireEvent.click(screen.getByRole('button', { name: 'Додати умову' }))
-  const dialog = await screen.findByRole('dialog', { name: 'Додати умову відбору' })
-  fireEvent.click(within(dialog).getByRole('combobox', { name: 'Поле' }));fireEvent.click(screen.getByRole('option', { name: 'Поточний основний менеджер покупця' }))
-  return { ...view, dialog }
-}
 it('does not offer manager filtering when the optional capability is absent', async () => {
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dataset(false)])
   render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>)
@@ -55,45 +41,6 @@ it('does not offer manager filtering when the optional capability is absent', as
   fireEvent.click(within(filters).getByRole('combobox', { name: 'Поле' }))
   expect(screen.queryByRole('option', { name: 'Поточний основний менеджер покупця' })).toBeNull()
   expect(searchCurrentFinancialBuyerManagers).not.toHaveBeenCalled()
-})
-it('submits explicit unassigned buyer manager, preserves it after date changes, and blocks historical mode without silently clearing it', async () => {
-  const view = await editor(true)
-  fireEvent.click(within(view.dialog).getByRole('combobox', { name: 'Умова' }))
-  for (const name of ['Дорівнює', 'Не дорівнює', 'У списку', 'Не у списку']) expect(screen.getByRole('option', { name })).toBeTruthy()
-  fireEvent.click(screen.getByRole('option', { name: 'Не дорівнює' }))
-  await waitFor(() => expect(searchCurrentFinancialBuyerManagers).toHaveBeenLastCalledWith(expect.any(Object), expect.any(AbortSignal)))
-  await waitFor(() => expect(view.dialog.querySelector('.mantine-Loader-root')).toBeNull())
-  fireEvent.click(within(view.dialog).getByRole('combobox', { name: 'Значення' }))
-  fireEvent.click(await screen.findByRole('option', { name: 'Без основного менеджера покупця' }))
-  expect(within(view.dialog).getByRole('button', { name: 'Зберегти' })).toHaveProperty('disabled', false)
-  fireEvent.click(within(view.dialog).getByRole('button', { name: 'Зберегти' }))
-  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Додати умову відбору' })).toBeNull())
-  expect(screen.getByText('Без основного менеджера покупця')).toBeTruthy()
-  await waitFor(() => {
-    const key = Object.keys(sessionStorage).find(item => item.startsWith('report-workspace-draft:v1:'))
-    expect(key).toBeTruthy()
-    const draft = JSON.parse(sessionStorage.getItem(key!)!)
-    expect(draft.snapshot.data.selections[0].Values[0].Data).toEqual({ Id: unassignedManagerId })
-  })
-  changeReportPeriod({ from: '2026-10-18', to: '2026-10-23' })
-  await act(async () => { fireEvent.submit(view.container.querySelector('form')!) })
-  await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(1))
-  const before = vi.mocked(createStockReport).mock.calls[0][0]
-  expect(before.selections, JSON.stringify(before)).toHaveLength(1)
-  expect(before.selections[0]).toEqual({ IsChecked: true, SelectedField: { Type: 60, Name: 'SourceBuyerManager' }, FilterCondition: { Type: 1, Name: 'Не дорівнює' },
-    Values: [{ Data: { Id: unassignedManagerId }, Name: 'Без основного менеджера покупця', Value: 0 }] })
-  fireEvent.click(screen.getByRole('combobox', { name: 'Джерело розрахунку' }))
-  fireEvent.click(screen.getByRole('option', { name: 'Збережені регістри 1С' }))
-  expect(screen.getByRole('button', { name: 'Сформувати' })).toHaveProperty('disabled', true)
-  expect(screen.getByRole('button', { name: 'Сформувати' }).getAttribute('title')).toContain('Відбір за поточним основним менеджером покупця доступний лише')
-  await act(async () => { fireEvent.submit(view.container.querySelector('form')!) })
-  expect(createStockReport).toHaveBeenCalledTimes(1)
-  fireEvent.click(screen.getByRole('combobox', { name: 'Джерело розрахунку' }))
-  fireEvent.click(screen.getByRole('option', { name: 'Поточні документи GBA' }))
-  await waitFor(() => expect(screen.getByRole('button', { name: 'Сформувати' })).toHaveProperty('disabled', false))
-  await act(async () => { fireEvent.submit(view.container.querySelector('form')!) })
-  await waitFor(() => expect(createStockReport).toHaveBeenCalledTimes(2))
-  expect(vi.mocked(createStockReport).mock.calls[1][0]).toEqual(before)
 })
 it('offers the manager and all four conditions in the actual workbook inline editor', async () => {
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dataset(true)])
