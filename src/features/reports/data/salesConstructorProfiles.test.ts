@@ -17,7 +17,7 @@ it('opens two explicit profiles on GBA net sales without redirecting old saved m
   expect(profit).toMatchObject({ dataSource: 2, reportProfile: 'grossProfit', selections: [] })
   expect(profit.sorted.Row.map(item => item.type)).toEqual([4, 10, 7])
   expect(profit.sorted.Col.map(item => item.type)).toEqual([2])
-  expect(profit.sorted.Measurements.map(item => item.Type)).toEqual([2, 6, 10])
+  expect(profit.sorted.Measurements.map(item => item.Type)).toEqual([2, 6, 10, 14, 115])
   expect(datasetConfigurationError(profit, dataset)).toBeNull()
   expect(profit).not.toHaveProperty('oneC')
   expect(profit).not.toHaveProperty('profitReadMode')
@@ -25,6 +25,7 @@ it('opens two explicit profiles on GBA net sales without redirecting old saved m
 it('retains the profile and chosen indicator order through the server template wire and changed dates', () => {
   const launch = availableBug1274WorkbookLaunches([dataset])[1]
   const data = bug1274WorkbookRequest(defaultDatasetRequest(dataset, '2026-10-01', '2026-10-28'), launch)
+  data.sorted.Measurements = data.sorted.Measurements.filter(item => item.Type !== 14 && item.Type !== 115)
   data.sorted.Measurements.push(...[14, 15].map(Type => ({ Type, Name: dataset.Measurements.find(field => field.Type === Type)!.Name,
     IsChecked: true, parentName: '' })))
   data.sorted.Measurements.reverse()
@@ -35,6 +36,13 @@ it('retains the profile and chosen indicator order through the server template w
   expect(changed.reportProfile).toBe('grossProfit')
   expect(flattenCheckedMeasurements(datasetMeasurements(salesConstructorDataset(dataset, changed.reportProfile), changed.sorted.Measurements)).map(item => item.Type)).toEqual([15, 14, 10, 6, 2])
   expect(salesConstructorError(changed, dataset)).toBeNull()
+})
+it('keeps a saved gross-profit template without the percentage measures as the user saved it', () => {
+  const saved = normalizeSavedTemplate({ Id: 'profile-plain', Revision: 1, UpdatedAtUtc: '2026-10-28T00:00:00Z', Name: 'Без відсотків', Data: {
+    DataSource: 2, From: '2026-10-01', To: '2026-10-28', Selections: [], ReportProfile: 'grossProfit',
+    Sorted: { Row: [], Col: [], Measurements: [2, 6, 10].map(Type => ({ Type, Name: dataset.Measurements.find(field => field.Type === Type)!.Name, IsChecked: true, parentName: '' })) },
+  } })
+  expect(flattenCheckedMeasurements(datasetMeasurements(salesConstructorDataset(dataset, saved.Data.reportProfile), saved.Data.sorted.Measurements)).map(item => item.Type)).toEqual([2, 6, 10])
 })
 it('refuses unknown or conflicting profiles, previous-server capabilities and unrelated resources', () => {
   const data = bug1274WorkbookRequest(defaultDatasetRequest(dataset, '', ''), availableBug1274WorkbookLaunches([dataset])[1])
