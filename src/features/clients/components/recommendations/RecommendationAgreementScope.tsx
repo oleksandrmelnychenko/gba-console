@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../../shared/api/userErrorText'
 import { Alert, Card, Loader, Select, Stack, Text } from '@mantine/core'
 import { Fragment, useEffect, useState, type ReactNode } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -34,7 +35,7 @@ function AgreementScope({ clientNetId, children }: Props) {
         }
       } catch (error) {
         if (!cancelled) {
-          setState({ agreements: [], error: error instanceof Error ? error.message : t('Не вдалося завантажити договори'), loading: false })
+          setState({ agreements: [], error: userErrorText(error, t('Не вдалося завантажити договори')), loading: false })
         }
       }
     }

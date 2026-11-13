@@ -1,3 +1,4 @@
+import { userErrorText } from '../../shared/api/userErrorText'
 import { notifications } from '@mantine/notifications'
 import { useCallback, useState } from 'react'
 import { useI18n } from '../../shared/i18n/useI18n'
@@ -47,7 +48,7 @@ export function useOfferFromRecommendations() {
       } catch (error) {
         notifications.show({
           color: 'red',
-          message: error instanceof Error ? error.message : t('Не вдалося створити пропозицію'),
+          message: userErrorText(error, t('Не вдалося створити пропозицію')),
         })
         return false
       } finally {

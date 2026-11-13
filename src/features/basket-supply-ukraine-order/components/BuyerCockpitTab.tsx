@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../shared/api/userErrorText'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
   ActionIcon,
@@ -217,7 +218,7 @@ function BuyerCockpitTabContent() {
       } catch (loadError) {
         if (!cancelled) {
           setProducers([])
-          setProducersError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити виробників'))
+          setProducersError(userErrorText(loadError, t('Не вдалося завантажити виробників')))
         }
       } finally {
         if (!cancelled) {
@@ -272,7 +273,7 @@ function BuyerCockpitTabContent() {
 
         if (!cancelled) {
           dispatch({
-            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити план поповнення'),
+            error: userErrorText(loadError, t('Не вдалося завантажити план поповнення')),
             type: 'failed',
           })
         }
@@ -408,7 +409,7 @@ function BuyerCockpitTabContent() {
         setTermsStatus((current) => ({ ...current, [item.product_id]: 'idle' }))
         notifications.show({
           color: 'red',
-          message: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти умови'),
+          message: userErrorText(saveError, t('Не вдалося зберегти умови')),
         })
       }
     },
@@ -456,7 +457,7 @@ function BuyerCockpitTabContent() {
       } catch (feedbackError) {
         notifications.show({
           color: 'red',
-          message: feedbackError instanceof Error ? feedbackError.message : t('Не вдалося зберегти рішення'),
+          message: userErrorText(feedbackError, t('Не вдалося зберегти рішення')),
         })
       } finally {
         setFeedbackPending((current) => ({ ...current, [item.product_id]: false }))
@@ -514,7 +515,7 @@ function BuyerCockpitTabContent() {
         setEditStatus((current) => ({ ...current, [item.product_id]: 'idle' }))
         notifications.show({
           color: 'red',
-          message: feedbackError instanceof Error ? feedbackError.message : t('Не вдалося зберегти рішення'),
+          message: userErrorText(feedbackError, t('Не вдалося зберегти рішення')),
         })
       }
     },
@@ -552,7 +553,7 @@ function BuyerCockpitTabContent() {
     } catch (saveError) {
       notifications.show({
         color: 'red',
-        message: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти налаштування виробника'),
+        message: userErrorText(saveError, t('Не вдалося зберегти налаштування виробника')),
       })
     } finally {
       setProfileSaving(false)
@@ -602,7 +603,7 @@ function BuyerCockpitTabContent() {
     } catch (createError) {
       notifications.show({
         color: 'red',
-        message: createError instanceof Error ? createError.message : t('Не вдалося створити чернетку'),
+        message: userErrorText(createError, t('Не вдалося створити чернетку')),
       })
     } finally {
       setCreatingOrder(false)

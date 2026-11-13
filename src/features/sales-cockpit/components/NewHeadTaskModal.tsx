@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../shared/api/userErrorText'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Button, Group, Select, Stack, TextInput, Textarea } from '@mantine/core'
 import { UserPlus } from 'lucide-react'
@@ -133,7 +134,7 @@ export function NewHeadTaskModal({
     } catch (error) {
       notifications.show({
         color: 'red',
-        message: error instanceof Error ? error.message : t('Не вдалося створити задачу'),
+        message: userErrorText(error, t('Не вдалося створити задачу')),
       })
     } finally {
       setSaving(false)

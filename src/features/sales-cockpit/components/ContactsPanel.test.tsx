@@ -71,7 +71,7 @@ describe('server paginated contact commitments', () => {
   })
   it('shows load failures instead of an empty success state', async () => {
     vi.mocked(getContacts).mockRejectedValue(new Error('Contacts unavailable'))
-    mount(); expect(await screen.findByText('Contacts unavailable')).toBeTruthy()
+    mount(); expect(await screen.findByText('Не вдалося завантажити контакти. Спробуйте пізніше.')).toBeTruthy()
     expect(screen.queryByText('Контактів за цими умовами немає')).toBeNull()
   })
 })

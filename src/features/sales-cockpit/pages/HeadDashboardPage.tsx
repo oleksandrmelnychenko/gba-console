@@ -1,7 +1,7 @@
+import { isUserReadableText, technicalErrorText, userErrorText } from '../../../shared/api/userErrorText'
 import { departmentPaceColor, formatEur } from '../metricPresentation'
 import { CockpitSourceStatus } from '../components/CockpitSourceStatus'
 import {
-  Alert,
   Button,
   Card,
   Group,
@@ -10,7 +10,7 @@ import {
   Text,
   UnstyledButton,
 } from '@mantine/core'
-import { CircleAlert, Info, Map, RefreshCw, RotateCcw } from 'lucide-react'
+import { Info, Map, RefreshCw, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ApiError } from '../../../shared/api/apiClient'
@@ -70,11 +70,12 @@ const EMPTY_TEAM: HeadTeam = {
   },
 }
 
-const EMPTY_ESCALATED: EscalatedResponse = {
-  is_head: false,
-  requested_limit: 100,
-  count: 0,
-  tasks: [],
+type BlockError = { text: string; details: string }
+
+function blockError(cause: unknown, fallback: string): BlockError {
+  const text = userErrorText(cause, fallback)
+  const technical = technicalErrorText(cause)
+  return { text, details: technical && technical !== text && !isUserReadableText(technical) ? technical : '' }
 }
 
 export function HeadDashboardPage() {
@@ -89,12 +90,14 @@ function HeadDashboardPageContent() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const [team, setTeam] = useValueState<HeadTeam>(EMPTY_TEAM)
-  const [escalated, setEscalated] = useValueState<EscalatedResponse>(EMPTY_ESCALATED)
+  const [escalated, setEscalated] = useState<EscalatedResponse | null>(null)
   const [selectedManagerId, setSelectedManagerId] = useState<number | null>(null)
-  const [error, setError] = useValueState<string | null>(null)
+  const [teamError, setTeamError] = useState<BlockError | null>(null)
+  const [escalatedError, setEscalatedError] = useState<BlockError | null>(null)
   const [forbidden, setForbidden] = useState(false)
   const [isLoading, setLoading] = useState(true)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const error = teamError ?? escalatedError
 
   const triggerReload = useCallback(() => {
     setLoading(true)
@@ -105,41 +108,41 @@ function HeadDashboardPageContent() {
   useEffect(() => {
     let active = true
 
-    async function loadTeam() {
-      try {
-        const [result, escalatedResult] = await Promise.all([getHeadTeam(), getEscalated()])
+    async function loadBlocks() {
+      const [teamResult, escalatedResult] = await Promise.allSettled([getHeadTeam(), getEscalated()])
+      if (!active) return
 
-        if (active) {
-          setTeam(result)
-          setEscalated(escalatedResult)
-          setForbidden(result.is_head === false)
-          setError(null)
-        }
-      } catch (loadError) {
-        if (!active) return
+      if (teamResult.status === 'fulfilled') {
+        setTeam(teamResult.value)
+        setForbidden(teamResult.value.is_head === false)
+        setTeamError(null)
+      } else {
         setTeam(EMPTY_TEAM)
-        setEscalated(EMPTY_ESCALATED)
-
-        if (loadError instanceof ApiError && loadError.status === 403) {
-          setForbidden(true)
-          setError(null)
-        } else {
-          setForbidden(false)
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити дашборд'))
-        }
-      } finally {
-        if (active) setLoading(false)
+        const denied = teamResult.reason instanceof ApiError && teamResult.reason.status === 403
+        setForbidden(denied)
+        setTeamError(denied ? null : blockError(teamResult.reason, t('Не вдалося завантажити показники команди')))
       }
+
+      if (escalatedResult.status === 'fulfilled') {
+        setEscalated(escalatedResult.value)
+        setEscalatedError(null)
+      } else {
+        setEscalated(null)
+        const denied = escalatedResult.reason instanceof ApiError && escalatedResult.reason.status === 403
+        setEscalatedError(denied ? null : blockError(escalatedResult.reason, t('Не вдалося завантажити ескальовані задачі')))
+      }
+
+      setLoading(false)
     }
 
-    void loadTeam()
-    const interval = window.setInterval(() => void loadTeam(), POLL_INTERVAL_MS)
+    void loadBlocks()
+    const interval = window.setInterval(() => void loadBlocks(), POLL_INTERVAL_MS)
 
     return () => {
       active = false
       window.clearInterval(interval)
     }
-  }, [reloadKey, setError, setEscalated, setTeam, t])
+  }, [reloadKey, setTeam, t])
 
   const rows = useMemo(
     () => team.team.toSorted((left, right) => right.tasks.active - left.tasks.active || left.manager_id - right.manager_id),
@@ -178,9 +181,7 @@ function HeadDashboardPageContent() {
           </Card>
         ) : (
           <>
-            {error ? (
-              <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>
-            ) : null}
+            {teamError ? <BlockLoadError error={teamError} onRetry={triggerReload} testId="head-team-error" /> : null}
 
             {team.as_of && <Card className="app-section-card cockpit-head-summary" withBorder radius="md" padding={0}>
               <Stack gap={0}>
@@ -236,7 +237,9 @@ function HeadDashboardPageContent() {
                   selectedManagerId={selectedManagerId}
                   onSelect={setSelectedManagerId}
                 />}
-                {team.as_of && <EscalationsPanel escalated={escalated} />}
+                {escalatedError
+                  ? <BlockLoadError error={escalatedError} onRetry={triggerReload} testId="head-escalated-error" />
+                  : escalated ? <EscalationsPanel escalated={escalated} /> : null}
                 <HeadAiFleetStatus />
               </Stack>
 
@@ -255,6 +258,25 @@ function HeadDashboardPageContent() {
         )}
       </div>
     </Stack>
+  )
+}
+
+function BlockLoadError({ error, onRetry, testId }: { error: BlockError; onRetry: () => void; testId: string }) {
+  const { t } = useI18n()
+
+  return (
+    <Card className="app-section-card cockpit-block-error" data-testid={testId} withBorder radius="md" padding="sm" role="alert">
+      <Group gap="xs" justify="space-between" wrap="nowrap">
+        <Text className="cockpit-block-error__text" size="sm">{error.text}</Text>
+        <Button leftSection={<RotateCcw size={13} />} size="compact-xs" variant="default" onClick={onRetry}>{t('Повторити')}</Button>
+      </Group>
+      {error.details ? (
+        <details className="cockpit-block-error__details">
+          <summary>{t('Деталі')}</summary>
+          <Text c="dimmed" size="xs">{error.details}</Text>
+        </details>
+      ) : null}
+    </Card>
   )
 }
 

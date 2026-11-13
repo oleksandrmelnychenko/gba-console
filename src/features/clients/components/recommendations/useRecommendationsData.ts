@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../../shared/api/userErrorText'
 import { useEffect, useReducer } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getMostPurchasedProductsByClientId, getProductById, getProductCoPurchaseRecommendations } from '../../api/clientRecommendationsApi'
@@ -100,7 +101,7 @@ export function useRecommendationsData({ agreementNetId, clientNetId, productNet
     void request.then(products => {
       if (!controller.signal.aborted) dispatch({ type: 'loadedRecommendations', products })
     }).catch(error => {
-      if (!controller.signal.aborted) dispatch({ type: 'failed', error: error instanceof Error ? error.message : t('Не вдалося завантажити рекомендації') })
+      if (!controller.signal.aborted) dispatch({ type: 'failed', error: userErrorText(error, t('Не вдалося завантажити рекомендації')) })
     })
     return () => controller.abort()
   }, [agreementNetId, clientNetId, productNetId, scopeKey, t])

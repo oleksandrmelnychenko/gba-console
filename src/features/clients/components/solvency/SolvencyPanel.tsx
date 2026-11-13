@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../../shared/api/userErrorText'
 import { BarChart, DonutChart } from '@mantine/charts'
 import { MONEY_AXIS_TICK } from '../../../../shared/ui/charts/chartTheme'
 import {
@@ -150,7 +151,7 @@ export function SolvencyPanel({ clientNetId, currencyCodes }: SolvencyPanelProps
             }
             loadedCharts = null
             loadedChartsError =
-              chartsLoadError instanceof Error ? chartsLoadError.message : t('Графіки платоспроможності недоступні')
+              userErrorText(chartsLoadError, t('Графіки платоспроможності недоступні'))
           }
         }
 
@@ -164,7 +165,7 @@ export function SolvencyPanel({ clientNetId, currencyCodes }: SolvencyPanelProps
 
         if (!cancelled) {
           dispatch({
-            error: loadError instanceof Error ? loadError.message : t('Дані недоступні'),
+            error: userErrorText(loadError, t('Дані недоступні')),
             type: 'failed',
           })
         }

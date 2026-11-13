@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../shared/api/userErrorText'
 import { Alert, Badge, Button, Card, Group, SegmentedControl, Stack, Text, Tooltip } from '@mantine/core'
 import { CircleAlert, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
@@ -49,7 +50,7 @@ export function SalesGeographyPage() {
       } catch (loadError) {
         if (active) {
           setSummary(null)
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити карту'))
+          setError(userErrorText(loadError, t('Не вдалося завантажити карту')))
         }
       } finally {
         if (active) setLoading(false)

@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../shared/api/userErrorText'
 import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import {
   Alert,
@@ -99,7 +100,7 @@ export function MyClientsPanel({ onContact, onTasks, revision = 0 }: { onContact
         }
       } catch (loadError) {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити клієнтів'))
+          setError(userErrorText(loadError, t('Не вдалося завантажити клієнтів')))
         }
       } finally {
         if (!cancelled) {
@@ -362,7 +363,7 @@ function ClientRecommendationsForAgreement({
         if (!cancelled && !controller.signal.aborted) {
           setState({
             agreement: null,
-            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити рекомендації'),
+            error: userErrorText(loadError, t('Не вдалося завантажити рекомендації')),
             isLoading: false,
             products: [],
           })
@@ -472,7 +473,7 @@ function ClientRecommendationsForAgreement({
       } catch (feedbackError) {
         notifications.show({
           color: 'red',
-          message: feedbackError instanceof Error ? feedbackError.message : t('Не вдалося зберегти відгук'),
+          message: userErrorText(feedbackError, t('Не вдалося зберегти відгук')),
         })
       }
     })

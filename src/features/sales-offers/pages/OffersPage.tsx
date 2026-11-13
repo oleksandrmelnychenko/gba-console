@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../shared/api/userErrorText'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Alert, Button, Stack, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
@@ -178,7 +179,7 @@ function OffersPageContent() {
     } catch (error) {
       notifications.show({
         color: 'red',
-        message: error instanceof Error ? error.message : t('Не вдалося перезапустити пропозицію'),
+        message: userErrorText(error, t('Не вдалося перезапустити пропозицію')),
       })
     }
   }

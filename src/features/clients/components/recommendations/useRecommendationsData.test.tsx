@@ -62,7 +62,7 @@ it.each(['agreementNetId', 'clientNetId', 'productNetId'] as const)('retires bot
 it('uses only the client endpoint without a seed and reports recommendation failures', async () => {
   mocks.client.mockRejectedValueOnce(new Error('offline'))
   const { result } = renderHook(() => useRecommendationsData({ agreementNetId: 'a', clientNetId: 'c' }))
-  await waitFor(() => expect(result.current.state.error).toBe('offline'))
+  await waitFor(() => expect(result.current.state.error).toBe('Не вдалося завантажити рекомендації. Спробуйте пізніше.'))
   expect(mocks.client).toHaveBeenCalledOnce()
   expect(mocks.related).not.toHaveBeenCalled()
   expect(mocks.seed).not.toHaveBeenCalled()

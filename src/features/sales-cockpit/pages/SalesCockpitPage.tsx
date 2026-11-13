@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../shared/api/userErrorText'
 import { CockpitSourceStatus } from '../components/CockpitSourceStatus'
 import { Button, Stack } from '@mantine/core'
 import { ClipboardList, FileText, ListPlus, MessagesSquare, RefreshCw, Users } from 'lucide-react'
@@ -88,7 +89,7 @@ function SalesCockpitPageContent() {
       } catch (actionError) {
         notifications.show({
           color: 'red',
-          message: actionError instanceof Error ? actionError.message : t('Не вдалося оновити завдання'),
+          message: userErrorText(actionError, t('Не вдалося оновити завдання')),
         })
       } finally {
         setPendingTaskKey(null)
@@ -113,7 +114,7 @@ function SalesCockpitPageContent() {
       } catch (actionError) {
         notifications.show({
           color: 'red',
-          message: actionError instanceof Error ? actionError.message : t('Не вдалося оновити завдання'),
+          message: userErrorText(actionError, t('Не вдалося оновити завдання')),
         })
       } finally {
         setPendingTaskKey(null)
@@ -137,7 +138,7 @@ function SalesCockpitPageContent() {
       } catch (actionError) {
         notifications.show({
           color: 'red',
-          message: actionError instanceof Error ? actionError.message : t('Не вдалося оновити завдання'),
+          message: userErrorText(actionError, t('Не вдалося оновити завдання')),
         })
       } finally {
         setPendingTaskKey(null)
@@ -162,7 +163,7 @@ function SalesCockpitPageContent() {
       } catch (actionError) {
         notifications.show({
           color: 'red',
-          message: actionError instanceof Error ? actionError.message : t('Не вдалося відкласти завдання'),
+          message: userErrorText(actionError, t('Не вдалося відкласти завдання')),
         })
       } finally {
         setPendingTaskKey(null)
@@ -187,7 +188,7 @@ function SalesCockpitPageContent() {
       } catch (actionError) {
         notifications.show({
           color: 'red',
-          message: actionError instanceof Error ? actionError.message : t('Не вдалося додати нотатку'),
+          message: userErrorText(actionError, t('Не вдалося додати нотатку')),
         })
       } finally {
         setPendingTaskKey(null)
@@ -210,7 +211,7 @@ function SalesCockpitPageContent() {
     } catch (actionError) {
       notifications.show({
         color: 'red',
-        message: actionError instanceof Error ? actionError.message : t('Не вдалося згенерувати завдання'),
+        message: userErrorText(actionError, t('Не вдалося згенерувати завдання')),
       })
     } finally {
       setRegenerating(false)

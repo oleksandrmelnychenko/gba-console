@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../shared/api/userErrorText'
 import { Alert, Badge, Divider, Group, Loader, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useEffect, useReducer } from 'react'
@@ -88,7 +89,7 @@ export function PriceHintPanel({ productNetId, clientAgreementNetId }: PriceHint
 
         if (!cancelled) {
           dispatch({
-            error: loadError instanceof Error ? loadError.message : t('Рекомендація недоступна'),
+            error: userErrorText(loadError, t('Рекомендація недоступна')),
             type: 'failed',
           })
         }

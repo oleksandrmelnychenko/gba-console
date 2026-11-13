@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../shared/api/userErrorText'
 import { useEffect, useState } from 'react'
 
 // Each resource owns a single request. Cancellation also prevents an old filter response
@@ -13,7 +14,7 @@ export function useWorkdayResource<T>(load: (signal: AbortSignal) => Promise<T>,
       inFlight = true
       void load(controller.signal).then(
         (data) => { if (!controller.signal.aborted) setState({ query, data }) },
-        (error: unknown) => { if (!controller.signal.aborted) setState({ query, error: error instanceof Error ? error.message : 'Не вдалося завантажити дані' }) },
+        (error: unknown) => { if (!controller.signal.aborted) setState({ query, error: userErrorText(error, 'Не вдалося завантажити дані') }) },
       ).finally(() => { inFlight = false })
     }
     const refreshVisible = () => { if (document.visibilityState === 'visible') void refresh() }

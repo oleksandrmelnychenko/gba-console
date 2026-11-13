@@ -64,7 +64,7 @@ describe('full-population client segments', () => {
     show()
     await screen.findByText('Клієнт 1')
     fireEvent.click(screen.getByRole('button', { name: 'Оновити' }))
-    await screen.findByText('Source unavailable')
+    await screen.findByText('Не вдалося завантажити клієнтів. Спробуйте пізніше.')
     expect(screen.queryByText('Клієнт 1')).toBeNull()
     expect(screen.queryByText(/У вибраному сегменті:/)).toBeNull()
   })

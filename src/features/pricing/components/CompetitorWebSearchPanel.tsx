@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../shared/api/userErrorText'
 import { Anchor, Button, Group, Text, TextInput } from '@mantine/core'
 import {
   ArrowUpRight,
@@ -203,7 +204,7 @@ function CompetitorWebSearchPanelContent({
       }
 
       setStatus('error')
-      setError(searchError instanceof Error ? searchError.message : t('Не вдалося просканувати ринок'))
+      setError(userErrorText(searchError, t('Не вдалося просканувати ринок')))
     }
   }
 

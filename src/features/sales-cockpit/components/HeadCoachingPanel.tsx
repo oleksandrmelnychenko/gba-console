@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../shared/api/userErrorText'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Alert, Button, Card, Group, Pagination, Select, Stack, Text, Textarea } from '@mantine/core'
 import { ClipboardList, Info, RefreshCw, RotateCcw, Save, UserRoundPen } from 'lucide-react'
@@ -16,7 +17,7 @@ const statuses = [{ value: 'all', label: 'Усі активні' }, { value: 'op
 const date = (value: string | null) => value ? new Date(value).toLocaleString('uk-UA', { timeZone: 'Europe/Kyiv' }) : '—'
 function requestError(cause: unknown, status: number, statusMessage: string, fallback: string) {
   if (cause instanceof ApiError && cause.status === status) return statusMessage
-  return cause instanceof Error ? cause.message : fallback
+  return userErrorText(cause, fallback)
 }
 function ManagerFilter({ managerId, managers, onChange }: { managerId: number | null; managers: { id: number; name: string }[]; onChange?: (managerId: number | null) => void }) {
   if (!onChange) return null

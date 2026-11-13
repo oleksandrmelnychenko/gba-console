@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../shared/api/userErrorText'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
   Alert,
@@ -208,7 +209,7 @@ export function HeadTaskBoard({
           setError(null)
         } else {
           setForbidden(false)
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити дошку задач'))
+          setError(userErrorText(loadError, t('Не вдалося завантажити дошку задач')))
         }
       } finally {
         if (active) {
@@ -299,7 +300,7 @@ export function HeadTaskBoard({
       } catch (noteError) {
         notifications.show({
           color: 'red',
-          message: noteError instanceof Error ? noteError.message : t('Не вдалося додати коментар'),
+          message: userErrorText(noteError, t('Не вдалося додати коментар')),
         })
       } finally {
         setActionPending(false)
@@ -324,7 +325,7 @@ export function HeadTaskBoard({
       } catch (cancelError) {
         notifications.show({
           color: 'red',
-          message: cancelError instanceof Error ? cancelError.message : t('Не вдалося скасувати задачу'),
+          message: userErrorText(cancelError, t('Не вдалося скасувати задачу')),
         })
       } finally {
         setActionPending(false)
@@ -353,7 +354,7 @@ export function HeadTaskBoard({
     } catch (generateError) {
       notifications.show({
         color: 'red',
-        message: generateError instanceof Error ? generateError.message : t('Не вдалося перегенерувати задачі'),
+        message: userErrorText(generateError, t('Не вдалося перегенерувати задачі')),
         title: t('AI задачі продажів'),
       })
     } finally {

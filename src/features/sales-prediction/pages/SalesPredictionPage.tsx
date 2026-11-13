@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../shared/api/userErrorText'
 import {
   Button, Alert, Loader, Select, Stack, Text, Tooltip } from '@mantine/core'
 import { CircleAlert, RotateCcw, Search } from 'lucide-react'
@@ -156,7 +157,7 @@ export function SalesPredictionPage() {
         if (!controller.signal.aborted && !isAbortError(loadError)) {
           setByClient([])
           setClientPredictionError(
-            loadError instanceof Error ? loadError.message : t('Прогноз по клієнту недоступний'),
+            userErrorText(loadError, t('Прогноз по клієнту недоступний')),
           )
         }
       } finally {
@@ -195,7 +196,7 @@ export function SalesPredictionPage() {
         if (!controller.signal.aborted && !isAbortError(loadError)) {
           setByProduct([])
           setProductPredictionError(
-            loadError instanceof Error ? loadError.message : t('Прогноз по товару недоступний'),
+            userErrorText(loadError, t('Прогноз по товару недоступний')),
           )
         }
       } finally {
@@ -234,7 +235,7 @@ export function SalesPredictionPage() {
         if (!controller.signal.aborted && !isAbortError(loadError)) {
           setCombined([])
           setCombinedPredictionError(
-            loadError instanceof Error ? loadError.message : t('Прогноз по клієнту і товару недоступний'),
+            userErrorText(loadError, t('Прогноз по клієнту і товару недоступний')),
           )
         }
       } finally {

@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../shared/api/userErrorText'
 import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { Anchor, Button, Card, Group, Stack, Text, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
@@ -121,7 +122,7 @@ function OfferReasonForm({
       } catch (error) {
         notifications.show({
           color: 'red',
-          message: error instanceof Error ? error.message : t('Не вдалося зберегти причини'),
+          message: userErrorText(error, t('Не вдалося зберегти причини')),
         })
       } finally {
         onSavingChange(false)

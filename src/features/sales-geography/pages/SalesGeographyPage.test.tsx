@@ -66,7 +66,7 @@ describe('geography page', () => {
     mount()
     await screen.findByText('€2,80')
     fireEvent.click(screen.getByRole('button', { name: 'Оновити' }))
-    expect(await screen.findByText('HTTP 503')).toBeTruthy()
+    expect(await screen.findByText('Не вдалося завантажити карту. Спробуйте пізніше.')).toBeTruthy()
     expect(screen.queryByText('€2,80')).toBeNull()
     expect(screen.queryByText('€0,00')).toBeNull()
   })

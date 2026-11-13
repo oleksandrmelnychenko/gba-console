@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../shared/api/userErrorText'
 import { Alert, Button, Group, Loader, Pagination, Stack, Text } from '@mantine/core'
 import { useEffect, useReducer, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -15,7 +16,7 @@ export function ContactHistoryPanel({ clientId }: { clientId: number }) {
     const controller = new AbortController()
     void getContactHistory(clientId, (page - 1) * 20, controller.signal).then(
       (data) => { if (!controller.signal.aborted) setState({ data, query }) },
-      (error: unknown) => { if (!controller.signal.aborted) setState({ error: error instanceof Error ? error.message : t('Не вдалося завантажити історію'), query }) },
+      (error: unknown) => { if (!controller.signal.aborted) setState({ error: userErrorText(error, t('Не вдалося завантажити історію')), query }) },
     )
     return () => controller.abort()
   }, [clientId, page, query, t])

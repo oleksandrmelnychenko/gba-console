@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../shared/api/userErrorText'
 import { Alert, Button, Card, Group, Loader, Pagination, Select, Stack, Text } from '@mantine/core'
 import { FileText, Info, Link2, RefreshCw } from 'lucide-react'
 import { useCallback, useReducer, useState } from 'react'
@@ -101,7 +102,7 @@ function AttributionModal({ task, canLink, onClose }: { task: CockpitTask; canLi
     if (pending) return
     setPending(saleId); setError('')
     try { await linkAttribution(task.task_key, saleId, selectedContact?.event_id ?? null); refresh() }
-    catch (cause) { setError(cause instanceof Error ? cause.message : t('Не вдалося пов’язати продаж')) }
+    catch (cause) { setError(userErrorText(cause, t('Не вдалося пов’язати продаж'))) }
     finally { setPending(null) }
   }
   return <AppModal opened onClose={onClose} title={t('Документи результату')} size="xl" closeOnEscape={!pending} closeOnClickOutside={!pending} withCloseButton={!pending}>

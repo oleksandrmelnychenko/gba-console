@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../../shared/api/userErrorText'
 import { useSingleFlight } from '../../../../shared/hooks/useSingleFlight'
 import './recommendations-panel.css'
 import { RecommendationsList, SelectedProductCard, ProductImagePreviewModal } from './RecommendationProducts'
@@ -139,7 +140,7 @@ function RecommendationsForAgreement({
       } catch (feedbackError) {
         notifications.show({
           color: 'red',
-          message: feedbackError instanceof Error ? feedbackError.message : t('Не вдалося зберегти відгук'),
+          message: userErrorText(feedbackError, t('Не вдалося зберегти відгук')),
         })
       }
     })

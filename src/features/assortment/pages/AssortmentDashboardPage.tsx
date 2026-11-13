@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../shared/api/userErrorText'
 import { financialPeriod } from '../financials'
 import { formatRatioPercent } from '../percent'
 import { requireMatchingAssortmentScopes } from '../snapshotScope'
@@ -456,7 +457,7 @@ function AssortmentDashboardPageContent() {
         }
       } catch (loadError) {
         if (!controller.signal.aborted) {
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити асортимент'))
+          setError(userErrorText(loadError, t('Не вдалося завантажити асортимент')))
         }
       } finally {
         if (!controller.signal.aborted) {

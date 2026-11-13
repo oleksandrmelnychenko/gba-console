@@ -220,3 +220,28 @@
 .cockpit-head-page .cockpit-analytics-counts { margin-inline: 12px; }
 .cockpit-analytics-counts > span { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 11px; color: var(--mantine-color-gray-7); }
 .cockpit-head-page .cockpit-analytics-panel .mantine-Alert-root { margin-inline: 12px; }
+
+.cockpit-block-error {
+  border-color: var(--mantine-color-red-3);
+  flex: 0 0 auto;
+}
+
+.cockpit-block-error__text {
+  color: var(--mantine-color-red-8);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.cockpit-block-error__details {
+  margin-top: 6px;
+}
+
+.cockpit-block-error__details summary {
+  color: var(--mantine-color-gray-6);
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.cockpit-block-error__details .mantine-Text-root {
+  overflow-wrap: anywhere;
+}

@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../shared/api/userErrorText'
 import { Alert, Card, Group, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useReducer } from 'react'
@@ -84,7 +85,7 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
       } catch (loadError) {
         if (!cancelled) {
           dispatch({
-            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити дашборд'),
+            error: userErrorText(loadError, t('Не вдалося завантажити дашборд')),
             type: 'failed',
           })
         }

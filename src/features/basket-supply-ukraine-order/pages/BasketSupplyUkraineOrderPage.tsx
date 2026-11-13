@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../shared/api/userErrorText'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { AppModalFooter } from '../../../shared/ui/AppModal'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
@@ -309,7 +310,7 @@ function BasketCartWorkflow() {
       setNotSentTaxFreePackLists(taxFreePackLists)
       setNotSentSads(sads)
     } catch (loadError) {
-      setReferenceError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити залежні документи'))
+      setReferenceError(userErrorText(loadError, t('Не вдалося завантажити залежні документи')))
     } finally {
       setReferenceLoading(false)
     }
@@ -332,7 +333,7 @@ function BasketCartWorkflow() {
       } catch (loadError) {
         if (!cancelled) {
           setCartItems([])
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити кошик'))
+          setError(userErrorText(loadError, t('Не вдалося завантажити кошик')))
         }
       } finally {
         if (!cancelled) {
@@ -372,7 +373,7 @@ function BasketCartWorkflow() {
         }
       } catch (loadError) {
         if (!cancelled) {
-          setReferenceError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити залежні документи'))
+          setReferenceError(userErrorText(loadError, t('Не вдалося завантажити залежні документи')))
         }
       } finally {
         if (!cancelled) {
@@ -461,7 +462,7 @@ function BasketCartWorkflow() {
 
       setUploadModalOpen(false)
     } catch (uploadErrorResult) {
-      setUploadError(uploadErrorResult instanceof Error ? uploadErrorResult.message : t('Не вдалося завантажити файл'))
+      setUploadError(userErrorText(uploadErrorResult, t('Не вдалося завантажити файл')))
     } finally {
       setUploading(false)
     }
@@ -599,7 +600,7 @@ function BasketCartWorkflow() {
     } catch (updateError) {
       notifications.show({
         color: 'red',
-        message: updateError instanceof Error ? updateError.message : t('Не вдалося оновити резерв'),
+        message: userErrorText(updateError, t('Не вдалося оновити резерв')),
       })
     } finally {
       setUpdatingReserve(false)
@@ -645,7 +646,7 @@ function BasketCartWorkflow() {
         navigate(documentPath)
       }
     } catch (createDocumentError) {
-      setCreateError(createDocumentError instanceof Error ? createDocumentError.message : t('Не вдалося створити документ'))
+      setCreateError(userErrorText(createDocumentError, t('Не вдалося створити документ')))
     } finally {
       setCreatingDocument(false)
     }
@@ -1066,7 +1067,7 @@ function SalesWorkflowTab() {
       setNotSentSaleTaxFreePackLists(taxFreePackLists)
       setNotSentSaleSads(sads)
     } catch (loadError) {
-      setReferenceError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити залежні документи'))
+      setReferenceError(userErrorText(loadError, t('Не вдалося завантажити залежні документи')))
     } finally {
       setReferenceLoading(false)
     }
@@ -1089,7 +1090,7 @@ function SalesWorkflowTab() {
       } catch (loadError) {
         if (!cancelled) {
           setSales([])
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити рахунки'))
+          setError(userErrorText(loadError, t('Не вдалося завантажити рахунки')))
         }
       } finally {
         if (!cancelled) {
@@ -1295,7 +1296,7 @@ function SalesWorkflowTab() {
         navigate(documentPath)
       }
     } catch (createDocumentError) {
-      setCreateError(createDocumentError instanceof Error ? createDocumentError.message : t('Не вдалося створити документ'))
+      setCreateError(userErrorText(createDocumentError, t('Не вдалося створити документ')))
     } finally {
       setCreatingDocument(false)
     }

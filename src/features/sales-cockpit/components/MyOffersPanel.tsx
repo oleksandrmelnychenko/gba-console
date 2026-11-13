@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../shared/api/userErrorText'
 import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 import {
   Alert,
@@ -72,7 +73,7 @@ export function MyOffersPanel() {
         }
       } catch (loadError) {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити пропозиції'))
+          setError(userErrorText(loadError, t('Не вдалося завантажити пропозиції')))
         }
       } finally {
         if (!cancelled) {
@@ -151,7 +152,7 @@ export function MyOffersPanel() {
       } catch (actionError) {
         notifications.show({
           color: 'red',
-          message: actionError instanceof Error ? actionError.message : t('Не вдалося продовжити пропозицію'),
+          message: userErrorText(actionError, t('Не вдалося продовжити пропозицію')),
         })
       } finally {
         setPendingNetId(null)

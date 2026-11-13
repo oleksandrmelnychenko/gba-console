@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../shared/api/userErrorText'
 import { OPENING_BALANCE_DATE_LABEL, OVERDUE_DEBT_RULE } from '../overdueDebtRule'
 import { describeOverdueWithOpeningBalance, formatDebtEur } from '../utils/debtBreakdown'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -72,7 +73,7 @@ export function HeadDashboardChartsPanel({
       } catch (loadError) {
         if (!cancelled) {
           dispatch({
-            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити дашборд'),
+            error: userErrorText(loadError, t('Не вдалося завантажити дашборд')),
             type: 'failed',
           })
         }

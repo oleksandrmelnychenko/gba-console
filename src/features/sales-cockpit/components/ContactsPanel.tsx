@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../shared/api/userErrorText'
 import { Alert, Button, Card, Group, Loader, Pagination, Stack, Text, TextInput } from '@mantine/core'
 import { History, MessagesSquare, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -31,7 +32,7 @@ export function ContactsPanel({ onOpen, revision }: { onOpen: (client: ContactCl
         }
         setState({ data, loading: false })
       } catch (error) {
-        if (!controller.signal.aborted) setState({ error: error instanceof Error ? error.message : t('Не вдалося завантажити контакти'), loading: false })
+        if (!controller.signal.aborted) setState({ error: userErrorText(error, t('Не вдалося завантажити контакти')), loading: false })
       } finally {
         inFlight = false
       }

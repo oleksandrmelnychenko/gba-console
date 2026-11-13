@@ -65,7 +65,7 @@ describe('head coaching queues', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Передати / уточнити' }))
     fireEvent.change(screen.getByLabelText(/Уточнення \/ причина/), { target: { value: 'Контакт' } })
     fireEvent.click(screen.getByRole('button', { name: 'Зберегти призначення' }))
-    expect(await screen.findByText('task_changed_or_closed')).toBeTruthy()
+    expect(await screen.findByText('Не вдалося передати задачу. Спробуйте пізніше.')).toBeTruthy()
     expect(changed).not.toHaveBeenCalled()
   })
   it('clears obsolete counts on refresh failure', async () => {
@@ -73,7 +73,7 @@ describe('head coaching queues', () => {
     await screen.findByText('Клієнт')
     vi.mocked(getHeadCoaching).mockRejectedValue(new Error('source unavailable'))
     fireEvent.click(screen.getByRole('button', { name: 'Оновити черги' }))
-    expect(await screen.findByText('source unavailable')).toBeTruthy()
+    expect(await screen.findByText('Не вдалося завантажити чергу. Спробуйте пізніше.')).toBeTruthy()
     expect(screen.queryByText('Клієнт')).toBeNull()
     expect(screen.queryByText('Активні задачі · 41')).toBeNull()
   })

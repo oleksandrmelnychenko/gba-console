@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../shared/api/userErrorText'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { Alert, Group, Loader, Select, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
@@ -81,7 +82,7 @@ export function HeadDismissalsPanel({ managerId }: { managerId: number | null })
         }
       } catch (loadError) {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити аналітику відмов'))
+          setError(userErrorText(loadError, t('Не вдалося завантажити аналітику відмов')))
         }
       } finally {
         if (!cancelled) {

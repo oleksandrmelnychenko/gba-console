@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../shared/api/userErrorText'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { ActionIcon, Anchor, Button, Group, Loader, NumberInput, Select, Stack, Table, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
@@ -385,7 +386,7 @@ function NewOfferForm({
     } catch (error) {
       notifications.show({
         color: 'red',
-        message: error instanceof Error ? error.message : t('Не вдалося створити пропозицію'),
+        message: userErrorText(error, t('Не вдалося створити пропозицію')),
       })
     } finally {
       setCreating(false)

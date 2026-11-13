@@ -1,3 +1,4 @@
+import { userErrorText } from '../../../shared/api/userErrorText'
 import { financialPeriod } from '../financials'
 import { formatRatioPercent } from '../percent'
 import { ACTION_LABELS, REASON_LABELS } from '../assortmentLabels'
@@ -170,7 +171,7 @@ function productLoadErrorMessage(error: unknown, t: (key: string) => string): st
       ? t(reason)
       : t('Товар не знайдено в аналітиці асортименту')
   }
-  return error instanceof Error ? error.message : t('Не вдалося завантажити товар')
+  return userErrorText(error, t('Не вдалося завантажити товар'))
 }
 
 export function ProductCard({
