@@ -70,7 +70,9 @@ export function SalesPredictionPage() {
   const [byClient, setByClient] = useValueState<SalesPredictionChartPoint[]>([])
   const [byProduct, setByProduct] = useValueState<SalesPredictionChartPoint[]>([])
   const [combined, setCombined] = useValueState<SalesPredictionChartPoint[]>([])
-  const [forecastLineage, setForecastLineage] = useValueState<SalesForecastMeta | null>(null)
+  const [clientMeta, setClientMeta] = useValueState<SalesForecastMeta | null>(null)
+  const [productMeta, setProductMeta] = useValueState<SalesForecastMeta | null>(null)
+  const [combinedMeta, setCombinedMeta] = useValueState<SalesForecastMeta | null>(null)
   const [clientPredictionError, setClientPredictionError] = useValueState<string | null>(null)
   const [productPredictionError, setProductPredictionError] = useValueState<string | null>(null)
   const [combinedPredictionError, setCombinedPredictionError] = useValueState<string | null>(null)
@@ -151,7 +153,7 @@ export function SalesPredictionPage() {
 
         if (!controller.signal.aborted) {
           setByClient(toChartPoints(response.ByClient))
-          setForecastLineage(response.meta)
+          setClientMeta(response.meta)
         }
       } catch (loadError) {
         if (!controller.signal.aborted && !isAbortError(loadError)) {
@@ -172,7 +174,7 @@ export function SalesPredictionPage() {
     return () => {
       controller.abort()
     }
-  }, [clientNetId, setByClient, setClientPredictionError, setForecastLineage, setLoadingClient, t])
+  }, [clientNetId, setByClient, setClientMeta, setClientPredictionError, setLoadingClient, t])
 
   useEffect(() => {
     if (!productNetId) {
@@ -190,7 +192,7 @@ export function SalesPredictionPage() {
 
         if (!controller.signal.aborted) {
           setByProduct(toChartPoints(response.ByProduct))
-          setForecastLineage(response.meta)
+          setProductMeta(response.meta)
         }
       } catch (loadError) {
         if (!controller.signal.aborted && !isAbortError(loadError)) {
@@ -211,7 +213,7 @@ export function SalesPredictionPage() {
     return () => {
       controller.abort()
     }
-  }, [productNetId, setByProduct, setForecastLineage, setLoadingProduct, setProductPredictionError, t])
+  }, [productNetId, setByProduct, setLoadingProduct, setProductMeta, setProductPredictionError, t])
 
   useEffect(() => {
     if (!clientNetId || !productNetId) {
@@ -229,7 +231,7 @@ export function SalesPredictionPage() {
 
         if (!controller.signal.aborted) {
           setCombined(toChartPoints(response.ByClientAndProduct))
-          setForecastLineage(response.meta)
+          setCombinedMeta(response.meta)
         }
       } catch (loadError) {
         if (!controller.signal.aborted && !isAbortError(loadError)) {
@@ -250,7 +252,7 @@ export function SalesPredictionPage() {
     return () => {
       controller.abort()
     }
-  }, [clientNetId, productNetId, setCombined, setCombinedPredictionError, setForecastLineage, setLoadingCombined, t])
+  }, [clientNetId, productNetId, setCombined, setCombinedMeta, setCombinedPredictionError, setLoadingCombined, t])
 
   const clientData = clientOptions.reduce<{ label: string; value: string }[]>((acc, client) => {
     if (client.NetUid) {
@@ -273,7 +275,8 @@ export function SalesPredictionPage() {
     setCombined([])
     setClientPredictionError(null)
     setCombinedPredictionError(null)
-    setForecastLineage(null)
+    setClientMeta(null)
+    setCombinedMeta(null)
 
     if (!value) {
       setClientFullName('')
@@ -292,7 +295,8 @@ export function SalesPredictionPage() {
     setCombined([])
     setProductPredictionError(null)
     setCombinedPredictionError(null)
-    setForecastLineage(null)
+    setProductMeta(null)
+    setCombinedMeta(null)
 
     if (!value) {
       setProductVendorCode('')
@@ -320,7 +324,9 @@ export function SalesPredictionPage() {
     setClientPredictionError(null)
     setProductPredictionError(null)
     setCombinedPredictionError(null)
-    setForecastLineage(null)
+    setClientMeta(null)
+    setProductMeta(null)
+    setCombinedMeta(null)
     setLoadingClient(false)
     setLoadingProduct(false)
     setLoadingCombined(false)
@@ -353,7 +359,9 @@ export function SalesPredictionPage() {
           clientNetId={clientNetId}
           combinedPredictionError={combinedPredictionError}
           combined={combined}
-          forecastLineage={forecastLineage}
+          clientMeta={clientMeta}
+          combinedMeta={combinedMeta}
+          productMeta={productMeta}
           isLoadingClient={isLoadingClient}
           isLoadingCombined={isLoadingCombined}
           isLoadingProduct={isLoadingProduct}
@@ -459,8 +467,10 @@ function PredictionCharts({
   clientPredictionError,
   clientNetId,
   combined,
+  combinedMeta,
   combinedPredictionError,
-  forecastLineage,
+  clientMeta,
+  productMeta,
   isLoadingClient,
   isLoadingCombined,
   isLoadingProduct,
@@ -475,7 +485,9 @@ function PredictionCharts({
   clientNetId: string | null
   combined: SalesPredictionChartPoint[]
   combinedPredictionError: string | null
-  forecastLineage: SalesForecastMeta | null
+  combinedMeta: SalesForecastMeta | null
+  clientMeta: SalesForecastMeta | null
+  productMeta: SalesForecastMeta | null
   isLoadingClient: boolean
   isLoadingCombined: boolean
   isLoadingProduct: boolean
@@ -485,6 +497,7 @@ function PredictionCharts({
 }) {
   const { t } = useI18n()
   const isLoadingPrediction = isLoadingClient || isLoadingProduct || isLoadingCombined
+  const forecastLineage = (clientNetId && productNetId ? combinedMeta : null) ?? (clientNetId ? clientMeta : null) ?? (productNetId ? productMeta : null)
 
   if (!clientNetId && !productNetId) {
     return (
@@ -543,11 +556,11 @@ function PredictionCharts({
         <SalesPredictionChart
           color="blue.6"
           data={byClient}
-          coveragePct={forecastLineage?.interval?.coverage_pct}
+          coveragePct={clientMeta?.interval?.coverage_pct}
           isLoading={isLoadingClient}
           emptyLabel={t(FORECAST_EMPTY_LABEL)}
           title={forecastTitle(t('Прогноз продажів по клієнту: {customer}', { customer: clientFullName }),
-            forecastLineage?.horizon_months, byClient.length, isLoadingClient)}
+            clientMeta?.horizon_months, byClient.length, isLoadingClient)}
         />
       )}
 
@@ -555,11 +568,11 @@ function PredictionCharts({
         <SalesPredictionChart
           color="orange.6"
           data={byProduct}
-          coveragePct={forecastLineage?.interval?.coverage_pct}
+          coveragePct={productMeta?.interval?.coverage_pct}
           isLoading={isLoadingProduct}
           emptyLabel={t(FORECAST_EMPTY_LABEL)}
           title={forecastTitle(t('Прогноз продажів по продукту: {product}', { product: productVendorCode }),
-            forecastLineage?.horizon_months, byProduct.length, isLoadingProduct)}
+            productMeta?.horizon_months, byProduct.length, isLoadingProduct)}
         />
       )}
 
@@ -569,7 +582,7 @@ function PredictionCharts({
           color="teal.6"
           data={combined}
           emptyLabel={t(FORECAST_EMPTY_LABEL)}
-          coveragePct={forecastLineage?.interval?.coverage_pct}
+          coveragePct={combinedMeta?.interval?.coverage_pct}
           isLoading={isLoadingCombined}
           title={
             isLoadingCombined
@@ -577,7 +590,7 @@ function PredictionCharts({
               : forecastTitle(t('Прогноз продажів по клієнту: {customer} та по продукту: {product}', {
                   customer: clientFullName,
                   product: productVendorCode,
-                }), forecastLineage?.horizon_months, combined.length, isLoadingCombined)
+                }), combinedMeta?.horizon_months, combined.length, isLoadingCombined)
           }
         />
       )}

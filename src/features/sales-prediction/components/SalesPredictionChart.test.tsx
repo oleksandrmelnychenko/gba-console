@@ -26,6 +26,7 @@ it('states the forecast basis in the series and summary labels', () => {
   expect(screen.getByText('Разом за період, з ПДВ')).toBeTruthy()
   expect(screen.getByText('Середнє за місяць')).toBeTruthy()
   expect(screen.getByText('Пік за місяць')).toBeTruthy()
+  expect(screen.getByText(/приблизно у 80\s% минулих місяців/)).toBeTruthy()
 })
 
 it('keeps the axis amount and its currency on one line with a non-breaking space', () => {
