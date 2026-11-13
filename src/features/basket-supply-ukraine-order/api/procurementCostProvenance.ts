@@ -42,9 +42,9 @@ function receiptProof(proof: ProcurementCostProvenance, context: LineCost, manif
     && (component.supplier_id === null || component.supplier_id === context.supplierId), path, 'receipt proof belongs to another product or supplier scope', error)
   const coverage = proof.observation_count === 0 ? 'no_observations' : proof.unknown_count === 0 ? 'complete' : proof.known_count ? 'partial' : 'unknown'
   costRequire(proof.coverage === coverage, `${path}.coverage`, 'does not match observation counts', error)
-  costRequire(proof.known_count ? proof.current_unit_ids.length > 0 && proof.supplier_client_agreement_ids.length > 0 && component.publications.length > 0
+  costRequire(proof.known_count ? proof.current_unit_ids.length > 0 && proof.supplier_client_agreement_ids.length > 0
     : proof.current_unit_ids.length === 0 && proof.supplier_client_agreement_ids.length === 0 && proof.canonical_unit_cost_eur === null,
-  path, 'known unit/agreement/publication evidence does not match observation coverage', error)
+  path, 'known unit/agreement evidence does not match observation coverage', error)
   if (proof.current_unit_ids.length > 1) costRequire(proof.aggregation_reason === 'mixed_current_units' && context.unit === null && proof.canonical_unit_cost_eur === null, path, 'mixed units cannot form a scalar unit cost', error)
   else if (proof.aggregation_reason === 'mixed_current_units') throw error(path, 'mixed-unit reason contradicts known units')
   if (proof.aggregation_reason === 'cost_float_precision_unsupported') costRequire(context.unit === null && proof.canonical_unit_cost_eur !== null, path, 'unsupported scalar precision must remain unavailable', error)

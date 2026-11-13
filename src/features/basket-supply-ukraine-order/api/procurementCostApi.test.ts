@@ -26,6 +26,19 @@ it('accepts current Python producer/cart/charts proofs while preserving unknown 
   expect(dashboard.cost_observation_manifest).toEqual(plan.cost_observation_manifest)
   expect(dashboard.cost_totals_certified).toBe(false)
 })
+it('accepts a known cost certified by its own receipt document without an inbound publication, still requiring unit and agreement', async () => {
+  const raw = structuredClone(producer)
+  for (const component of raw.cost_observation_manifest.components) component.publications = []
+  vi.mocked(apiRequest).mockResolvedValueOnce(raw)
+  const plan = await getProducerPlan(7)
+  expect(plan.items[0].cost_provenance.budget_eligible).toBe(true)
+  expect(plan.cost_observation_manifest.components.every(component => component.publications.length === 0)).toBe(true)
+  const broken = structuredClone(raw)
+  const known = broken.items.find(item => item.cost_provenance.known_count > 0)!
+  known.cost_provenance.supplier_client_agreement_ids = []
+  vi.mocked(apiRequest).mockResolvedValueOnce(broken)
+  await expect(getProducerPlan(7)).rejects.toThrow('known unit/agreement evidence does not match observation coverage')
+})
 it('accepts dimensionless selected-line urgency including a verified zero-cost positive quantity', async () => {
   vi.mocked(apiRequest).mockResolvedValueOnce(budget)
   const plan = await getBudgetCartPlan({ budgetEur: budget.budget_eur!, method: 'greedy' })
