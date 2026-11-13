@@ -1,3 +1,5 @@
+import { OPENING_BALANCE_DATE_LABEL, OVERDUE_DEBT_RULE } from '../overdueDebtRule'
+import { describeOverdueWithOpeningBalance, formatDebtEur } from '../utils/debtBreakdown'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { Alert, Group, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
@@ -5,9 +7,7 @@ import { useEffect, useMemo, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AgingBars, type AgingSeries } from '../../../shared/ui/charts/AgingBars'
 import { getHeadDashboard } from '../api/salesCockpitApi'
-import { OPENING_BALANCE_DATE_LABEL, OVERDUE_DEBT_RULE } from '../overdueDebtRule'
 import type { HeadDashboard, HeadTeamRow } from '../types'
-import { describeOverdueWithOpeningBalance, formatDebtEur } from '../utils/debtBreakdown'
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 0,
