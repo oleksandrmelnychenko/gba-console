@@ -705,6 +705,7 @@ function normalizeHeadDashboardTeam(value: unknown): HeadDashboardTeam | null {
   return {
     ...normalizeActiveTaskSplit(row.ai_active, row.manual_backlog, row.open_tasks),
     manager_id: typeof row.manager_id === 'number' ? row.manager_id : 0,
+    ...(typeof row.manager_name === 'string' && row.manager_name.trim() ? { manager_name: row.manager_name.trim() } : {}),
     open_tasks: toNumber(row.open_tasks),
     critical: toNumber(row.critical),
     value_at_risk_eur: toNumber(row.value_at_risk_eur),

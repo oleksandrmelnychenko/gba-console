@@ -1,5 +1,5 @@
 import { BarChart } from '@mantine/charts'
-import { MONEY_AXIS_TICK, paletteColor } from './chartTheme'
+import { MONEY_AXIS_TICK, MONEY_AXIS_WIDTH, paletteColor } from './chartTheme'
 import { ChartEmpty, ChartFrame, ChartLoading } from './ChartState'
 
 export type AgingSeries = {
@@ -64,7 +64,7 @@ export function AgingBars({
         valueFormatter={valueFormatter}
         withLegend={withLegend}
         withTooltip={withTooltip}
-        yAxisProps={money ? { tick: MONEY_AXIS_TICK } : undefined}
+        yAxisProps={money ? { tick: MONEY_AXIS_TICK, width: MONEY_AXIS_WIDTH } : undefined}
       />
     </ChartFrame>
   )

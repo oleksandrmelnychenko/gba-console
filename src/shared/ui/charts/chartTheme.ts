@@ -24,6 +24,8 @@ export const MONEY_AXIS_TICK = {
   transform: 'translate(-10, 0)',
 }
 
+export const MONEY_AXIS_WIDTH = 92
+
 export const SERIES_PALETTE = [
   'violet.6',
   'teal.6',

@@ -275,6 +275,7 @@ export type HeadDashboardTeam = {
   debt_unconverted_count?: number
   debt_breakdown?: DebtBreakdownPart[]
   manager_id: number
+  manager_name?: string | null
   open_tasks: number
   critical: number
   value_at_risk_eur: number

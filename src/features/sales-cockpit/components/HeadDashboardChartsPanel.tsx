@@ -1,6 +1,6 @@
 import { userErrorText } from '../../../shared/api/userErrorText'
 import { OPENING_BALANCE_DATE_LABEL, OVERDUE_DEBT_RULE } from '../overdueDebtRule'
-import { describeOverdueWithOpeningBalance, formatDebtEur } from '../utils/debtBreakdown'
+import { describeOverdueWithOpeningBalance } from '../utils/debtBreakdown'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { Alert, Group, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
@@ -10,7 +10,7 @@ import { AgingBars, type AgingSeries } from '../../../shared/ui/charts/AgingBars
 import { formatBusinessDate } from '../../exchange-rates/utils'
 import { getHeadDashboard } from '../api/salesCockpitApi'
 import { formatEur } from '../metricPresentation'
-import type { HeadDashboard, HeadTeamRow } from '../types'
+import type { HeadDashboard, HeadDashboardTeam, HeadTeamRow } from '../types'
 
 type ChartsState = {
   dashboard: HeadDashboard | null
@@ -38,6 +38,10 @@ function chartsReducer(state: ChartsState, action: ChartsAction): ChartsState {
     case 'loading':
       return { ...state, error: null, isLoading: true }
   }
+}
+
+export function headChartManagerLabel(team: Pick<HeadDashboardTeam, 'manager_id' | 'manager_name'>, nameById: ReadonlyMap<number, string>): string {
+  return nameById.get(team.manager_id) || team.manager_name?.trim() || `#${team.manager_id}`
 }
 
 function roundCents(value: number): number {
@@ -96,7 +100,8 @@ export function HeadDashboardChartsPanel({
   const nameById = useMemo(() => {
     const map = new Map<number, string>()
     for (const row of rows) {
-      map.set(row.manager_id, row.manager_name?.trim() || `#${row.manager_id}`)
+      const name = row.manager_name?.trim()
+      if (name) map.set(row.manager_id, name)
     }
     return map
   }, [rows])
@@ -119,7 +124,7 @@ export function HeadDashboardChartsPanel({
         .map((team) => {
           const opening = Math.min(team.debt_opening_balance_eur ?? 0, team.value_at_risk_eur)
           return {
-            manager: nameById.get(team.manager_id) ?? `#${team.manager_id}`,
+            manager: headChartManagerLabel(team, nameById),
             ...(hasOpeningBalance
               ? { other: roundCents(team.value_at_risk_eur - opening), opening }
               : { value: team.value_at_risk_eur }),
@@ -134,7 +139,7 @@ export function HeadDashboardChartsPanel({
       (dashboard?.teams ?? [])
         .toSorted((left, right) => right.open_tasks - left.open_tasks)
         .map((team) => ({
-          manager: nameById.get(team.manager_id) ?? `#${team.manager_id}`,
+          manager: headChartManagerLabel(team, nameById),
           open: team.open_tasks,
           critical: team.critical,
           ...(team.ai_active != null && team.manual_backlog != null ? { ai: team.ai_active, manual: team.manual_backlog } : {}),
@@ -219,7 +224,7 @@ export function HeadDashboardChartsPanel({
                 isLoading={isLoading}
                 loadingLabel={t('Завантаження')}
                 series={openingSplitSeries}
-                valueFormatter={formatDebtEur}
+                valueFormatter={formatEur}
               />
             ) : (
             <AgingBars
