@@ -1,4 +1,4 @@
-import { procurementLoadError } from '../procurementLoadError'
+import { loadProcurementWithRetry, procurementLoadError, procurementRetryNotice } from '../procurementLoadError'
 import {
   Alert,
   Button,
@@ -161,10 +161,10 @@ function BudgetCartTabContent() {
       dispatch({ type: 'loading' })
 
       try {
-        const loaded = await getBudgetCartPlan(
+        const loaded = await loadProcurementWithRetry(() => getBudgetCartPlan(
           { asOfDate: activeRequest.asOfDate, budgetEur: activeRequest.budgetEur, method: activeRequest.method },
           controller.signal,
-        )
+        ), controller.signal, preparing => dispatch({ error: procurementRetryNotice(preparing, t), type: 'failed' }))
 
         if (!cancelled) {
           dispatch({ plan: loaded, type: 'loaded' })
@@ -292,7 +292,10 @@ function BudgetCartTabContent() {
 
       {error && (
         <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
-          {error}
+          <Group gap="sm" justify="space-between" wrap="nowrap">
+            <span>{error}</span>
+            <Button size="compact-sm" variant="default" onClick={() => setRequest(current => current ? { ...current } : current)}>{t('Повторити')}</Button>
+          </Group>
         </Alert>
       )}
 

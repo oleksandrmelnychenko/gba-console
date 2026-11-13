@@ -1,3 +1,4 @@
+import { loadProcurementWithRetry, procurementLoadError, procurementRetryNotice } from '../procurementLoadError'
 import { userErrorText } from '../../../shared/api/userErrorText'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import {
@@ -254,7 +255,8 @@ function BuyerCockpitTabContent() {
       dispatch({ type: 'loading' })
 
       try {
-        const loaded = await getProducerPlan(producerId, undefined, controller.signal)
+        const loaded = await loadProcurementWithRetry(() => getProducerPlan(producerId, undefined, controller.signal),
+          controller.signal, preparing => dispatch({ error: procurementRetryNotice(preparing, t), type: 'failed' }))
 
         if (!cancelled) {
           setDraftQty(buildDraftQty(loaded.items))
@@ -273,7 +275,7 @@ function BuyerCockpitTabContent() {
 
         if (!cancelled) {
           dispatch({
-            error: userErrorText(loadError, t('Не вдалося завантажити план поповнення')),
+            error: procurementLoadError(loadError, t('Не вдалося завантажити план поповнення'), t),
             type: 'failed',
           })
         }
@@ -853,7 +855,10 @@ function BuyerCockpitTabContent() {
 
       {error && (
         <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
-          {error}
+          <Group gap="sm" justify="space-between" wrap="nowrap">
+            <span>{error}</span>
+            <Button size="compact-sm" variant="default" onClick={reload}>{t('Повторити')}</Button>
+          </Group>
         </Alert>
       )}
 

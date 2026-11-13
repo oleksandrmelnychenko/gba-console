@@ -2,7 +2,7 @@ import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { procurementBasketCost, procurementCostSnapshotKey } from '../procurementBasketCost'
 import type { ProcurementSessionBasketLine } from '../procurementSessions'
 import { formatUnitCost } from '../procurementMoneyFormat'
-import { procurementLoadError } from '../procurementLoadError'
+import { loadProcurementWithRetry, procurementLoadError, procurementRetryNotice } from '../procurementLoadError'
 import type { ProcurementCostContext } from '../procurementCostTypes'
 import { exactDisplayedLineAmount } from '../procurementDecimals'
 import { ProcurementCartFreshnessNote } from './ProcurementCartFreshnessNote'
@@ -81,7 +81,7 @@ import {
 } from '../procurementConstructorModel'
 import { formatProcurementQuantity, procurementQuantityFormat as quantity } from '../procurementQuantityFormat'
 import { compareLineCostUnpricedLast, unpricedLinesNote } from '../procurementTotals'
-import type { CartPlan, ProcurementUrgency, ReorderSuggestion } from '../procurementTypes'
+import type { CartPlan, ProducerPlan, ProcurementUrgency, ReorderSuggestion } from '../procurementTypes'
 import { ProcurementOrderTermMarkers } from './ProcurementOrderTermMarkers'
 import { ProcurementProductCell } from './ProcurementProductCell'
 import { ProcurementWorkspaceState } from './ProcurementWorkspaceState'
@@ -343,12 +343,15 @@ function ProcurementConstructorContent() {
       setError(null)
       const producerId = selectedProducerId ? Number(selectedProducerId) : null
 
-      const plan =
+      const plan = loadProcurementWithRetry<CartPlan | ProducerPlan | null>(() =>
         lens === 'warehouse'
           ? getPurchaseCockpitWarehousePlan({ budgetEur: 0, method: 'greedy' }, signal)
           : producerId
             ? getProducerPlan(producerId, undefined, signal)
-            : Promise.resolve(null)
+            : Promise.resolve(null), signal, (preparing) => {
+        setError(procurementRetryNotice(preparing, t))
+        setLoading(false)
+      })
 
       plan
         .then((loaded) => {
@@ -357,6 +360,7 @@ function ProcurementConstructorContent() {
             setCartFreshness(loaded && 'total_item_count' in loaded ? { built_at: loaded.built_at, stale: loaded.stale } : null)
             setRows((loaded?.items ?? []).filter((item) => item.suggested_qty > 0))
             setHasLoadedPlan(true)
+            setError(null)
           }
         })
         .catch((loadError) => {

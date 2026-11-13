@@ -119,7 +119,7 @@ it('keeps source-not-ready as an unavailable response with retry guidance, never
   const failure = Object.assign(new Error('cart_business_data_not_ready'), { status: 503 })
   vi.mocked(apiRequest).mockRejectedValueOnce(failure)
   await expect(getBudgetCartPlan({ budgetEur: 0, method: 'greedy' })).rejects.toBe(failure)
-  expect(procurementLoadError(failure, 'fallback', value => value)).toBe('Підтверджені дані для плану поки недоступні. Повторіть запит.')
+  expect(procurementLoadError(failure, 'fallback', value => value)).toBe('План закупівлі ще готується. Повторіть запит за хвилину.')
 })
 
 it('rejects a rounded budget echo and a cent spend above the exact fractional ceiling', async () => {

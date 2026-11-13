@@ -1,4 +1,4 @@
-import { procurementLoadError } from '../procurementLoadError'
+import { loadProcurementWithRetry, procurementLoadError, procurementRetryNotice } from '../procurementLoadError'
 import {
   Alert,
   Button,
@@ -178,13 +178,13 @@ function ProcureDashboardTabContent() {
       dispatch({ type: 'loading' })
 
       try {
-        const loaded = await getSupplyDashboardCharts(
+        const loaded = await loadProcurementWithRetry(() => getSupplyDashboardCharts(
           {
             ...(typeof appliedProducerId === 'number' ? { producerId: appliedProducerId } : {}),
             topN: appliedTopN,
           },
           controller.signal,
-        )
+        ), controller.signal, preparing => dispatch({ error: procurementRetryNotice(preparing, t), type: 'failed' }))
 
         if (!cancelled) {
           dispatch({ charts: loaded, type: 'loaded' })
