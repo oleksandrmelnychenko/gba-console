@@ -147,7 +147,7 @@ function PriceHintCard({ recommendation }: { recommendation: PriceRecommendation
   return (
     <Stack gap="sm">
       <Text c="dimmed" size="xs">
-        {t('Ціна договору, рекомендація й мінімальна ціна — EUR без ПДВ за одиницю. Наші ціни продажу — як у накладних: для продажів з ПДВ вони містять ПДВ. Собівартість — облікова ціна партій на залишку.')}
+        {t('Усі ціни — EUR за одиницю, як у накладних: для договорів з ПДВ вони містять ПДВ, для договорів без ПДВ — ні. Собівартість — облікова ціна партій на залишку.')}
       </Text>
       <Group align="baseline" gap="xs" wrap="wrap">
         <Text className="app-money" fw={700} size="28px">

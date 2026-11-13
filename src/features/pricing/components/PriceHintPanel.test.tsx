@@ -26,7 +26,7 @@ function show(value: PriceRecommendation) {
 
 it('states the price basis once and names own sales instead of the market', async () => {
   show(recommendation)
-  expect(await screen.findByText(/EUR без ПДВ за одиницю/)).toBeTruthy()
+  expect(await screen.findByText(/EUR за одиницю, як у накладних/)).toBeTruthy()
   expect(screen.getByText(/маржа від ціни/)).toBeTruthy()
   expect(screen.getByText(/знижка від прайсу 10/)).toBeTruthy()
   expect(screen.getByText(/діапазон знижки від прайсу \(мін\. \/ ціль \/ макс\.\)/)).toBeTruthy()
@@ -37,7 +37,7 @@ it('states the price basis once and names own sales instead of the market', asyn
 
 it('labels the fallback baseline as the client sales median', async () => {
   const view = show({ ...recommendation, baseline_source: 'client_world_fallback' })
-  await screen.findByText(/EUR без ПДВ за одиницю/)
+  await screen.findByText(/EUR за одиницю, як у накладних/)
   expect(view.container.textContent).toContain('медіана продажів клієнту')
   expect(view.container.textContent).not.toContain('ціна договору')
 })

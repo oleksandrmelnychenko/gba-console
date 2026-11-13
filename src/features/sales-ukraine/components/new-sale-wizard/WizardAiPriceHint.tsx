@@ -135,7 +135,7 @@ export function WizardAiPriceHint({ productNetId, clientAgreementNetId, withVat 
         </Text>
       )}
       {median !== null && (
-        <Tooltip label={t('Медіана наших цін продажу цього товару за 12 міс., EUR за одиницю, як у накладних (для продажів з ПДВ — з ПДВ). Це не ціни конкурентів. Рекомендована ціна — без ПДВ.')} openDelay={250}>
+        <Tooltip label={t('Медіана наших цін продажу цього товару за 12 міс., EUR за одиницю, як у накладних (для продажів з ПДВ — з ПДВ). Це не ціни конкурентів. Рекомендована ціна — на тій самій основі.')} openDelay={250}>
           <Group gap={2} wrap="nowrap">
             {MarketIcon && <MarketIcon color={belowMarket ? 'var(--mantine-color-teal-6)' : 'var(--mantine-color-red-6)'} size={13} />}
             <Text c="dimmed" size="xs">
