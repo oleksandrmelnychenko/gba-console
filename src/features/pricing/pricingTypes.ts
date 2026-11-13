@@ -9,6 +9,9 @@ export type CompetitorPriceOffer = {
   delivery_text: string | null
   marketplace_name: string
   original_price_uah: number | null
+  currency?: string | null
+  price_basis?: string | null
+  vat_basis?: string | null
   price_uah: number
   seller_name: string | null
   similarity_score: number
@@ -20,6 +23,8 @@ export type CompetitorPriceOffer = {
 export type CompetitorPriceSearchResult = {
   ai_summary: string | null
   currency: 'UAH'
+  price_basis?: string | null
+  vat_basis?: string | null
   market: 'UA'
   offers: CompetitorPriceOffer[]
   query: string
@@ -56,6 +61,8 @@ export type PriceRecommendation = AiHistoryLineage & {
   baseline_source: string | null
   recommended_price: number | null
   price_floor: number | null
+  floor_markup_pct?: number | null
+  floor_margin_pct?: number | null
   unit_cost_eur: number | null
   discount_base_price?: number | null
   suggested_discount_pct: number | null

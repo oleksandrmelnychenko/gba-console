@@ -8,6 +8,7 @@ import { MarginWaterfall } from '../../../shared/ui/charts/MarginWaterfall'
 import { RangeBandChart } from '../../../shared/ui/charts/RangeBandChart'
 import type { RangeBandMarker } from '../../../shared/ui/charts/rangeBandData'
 import { getPriceRecommendation } from '../api/pricingApi'
+import { describeFloorBasis } from './priceFloorBasis'
 import type { PriceConfidence, PriceRecommendation } from '../pricingTypes'
 
 type PriceHintPanelProps = {
@@ -147,6 +148,7 @@ const percentFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits:
 
 function PriceHintCard({ recommendation }: { recommendation: PriceRecommendation }) {
   const { t } = useI18n()
+  const floorBasis = describeFloorBasis(recommendation.floor_markup_pct, recommendation.floor_margin_pct)
 
   const currency = recommendation.currency || 'EUR'
   const belowMargin = recommendation.rationale.toLowerCase().includes('below-margin')
@@ -188,6 +190,11 @@ function PriceHintCard({ recommendation }: { recommendation: PriceRecommendation
         </Text>
       )}
 
+      {floorBasis && (
+        <Text c="dimmed" data-testid="price-floor-basis" size="xs">
+          {t(floorBasis)}
+        </Text>
+      )}
       <Group gap="xs" wrap="wrap">
         {recommendation.margin_pct_at_recommended !== null && (
           <Badge color={belowMargin ? 'red' : 'teal'} size="sm" variant={belowMargin ? 'filled' : 'light'}>

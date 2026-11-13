@@ -159,6 +159,7 @@ describe('CompetitorWebSearchPanel', () => {
       </MantineProvider>,
     )
 
-    expect(screen.getByText(/ПДВ і фасування не приведено до єдиного базису/)).toBeTruthy()
+    expect(screen.getByTestId('competitor-price-basis').textContent)
+      .toBe('Ціни — грн, як на сторінці продавця; чи входить ПДВ — невідомо; фасування не приведено до єдиного базису.')
   })
 })

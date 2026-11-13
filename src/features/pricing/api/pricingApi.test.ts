@@ -132,8 +132,13 @@ describe('pricingApi canonical AI contract', () => {
     apiRequestMock.mockResolvedValueOnce({
       ai_summary: 'Ринкова медіана стабільна.',
       currency: 'UAH',
+      price_basis: 'shelf',
+      vat_basis: 'unknown',
       market: 'UA',
       offers: [{
+        currency: 'UAH',
+        price_basis: 'shelf',
+        vat_basis: 'unknown',
         availability: 'in_stock',
         delivery_text: '1–2 дні',
         marketplace_name: 'STRANS',
@@ -158,8 +163,10 @@ describe('pricingApi canonical AI contract', () => {
       sources: ['strans'],
     }, controller.signal)).resolves.toMatchObject({
       currency: 'UAH',
+      price_basis: 'shelf',
+      vat_basis: 'unknown',
       market: 'UA',
-      offers: [{ price_uah: 1399, similarity_score: 0.96, source: 'strans' }],
+      offers: [{ price_uah: 1399, similarity_score: 0.96, source: 'strans', price_basis: 'shelf', vat_basis: 'unknown' }],
     })
 
     expect(apiRequestMock).toHaveBeenCalledWith('/pricing/competitors/search', {

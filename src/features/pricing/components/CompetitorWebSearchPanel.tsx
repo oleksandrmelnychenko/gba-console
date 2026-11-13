@@ -24,6 +24,7 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { usePermissions } from '../../auth/usePermissions'
 import type { SalesUkraineProduct } from '../../sales-ukraine/types'
+import { competitorPriceBasisCaption } from './competitorPriceBasis'
 import { searchCompetitorPrices } from '../api/pricingApi'
 import type {
   CompetitorPriceOffer,
@@ -221,8 +222,8 @@ function CompetitorWebSearchPanelContent({
             <span aria-hidden="true" />
             UA · UAH
           </div>
-          <Text c="dimmed" size="xs">
-            {t('Ціни — грн, як на сторінці продавця; ПДВ і фасування не приведено до єдиного базису.')}
+          <Text c="dimmed" data-testid="competitor-price-basis" size="xs">
+            {t(competitorPriceBasisCaption(status === 'success' ? result : null))}
           </Text>
         </div>
 

@@ -135,6 +135,8 @@ function normalizeCompetitorSearchResult(result: unknown): CompetitorPriceSearch
   return {
     ai_summary: requireNullableString(value.ai_summary, 'competitor_search.ai_summary'),
     currency: 'UAH',
+    price_basis: optionalBasis(value.price_basis),
+    vat_basis: optionalBasis(value.vat_basis),
     market: 'UA',
     offers: value.offers.map((offer, index) => normalizeCompetitorOffer(offer, index)),
     query: requireNonEmptyString(value.query, 'competitor_search.query'),
@@ -143,6 +145,14 @@ function normalizeCompetitorSearchResult(result: unknown): CompetitorPriceSearch
       requireCompetitorSource(source, `competitor_search.sources_scanned[${index}]`)
     )),
   }
+}
+
+function optionalBasis(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value.trim() : null
+}
+
+function optionalFiniteNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
 }
 
 function normalizeCompetitorOffer(value: unknown, index: number): CompetitorPriceOffer {
@@ -154,6 +164,9 @@ function normalizeCompetitorOffer(value: unknown, index: number): CompetitorPric
     delivery_text: requireNullableString(offer.delivery_text, `${path}.delivery_text`),
     marketplace_name: requireNonEmptyString(offer.marketplace_name, `${path}.marketplace_name`),
     original_price_uah: requireNullableMoney(offer.original_price_uah, `${path}.original_price_uah`),
+    currency: optionalBasis(offer.currency),
+    price_basis: optionalBasis(offer.price_basis),
+    vat_basis: optionalBasis(offer.vat_basis),
     price_uah: requireMoney(offer.price_uah, `${path}.price_uah`),
     seller_name: requireNullableString(offer.seller_name, `${path}.seller_name`),
     similarity_score: requireScore(offer.similarity_score, `${path}.similarity_score`),
@@ -253,6 +266,8 @@ function normalizeRecommendation(
     baseline_source: requireNullableString(value.baseline_source, 'recommendation.baseline_source'),
     recommended_price: recommendedPrice,
     price_floor: priceFloor,
+    floor_markup_pct: optionalFiniteNumber(value.floor_markup_pct),
+    floor_margin_pct: optionalFiniteNumber(value.floor_margin_pct),
     unit_cost_eur: unitCostEur,
     suggested_discount_pct: requireNullablePercent(
       value.suggested_discount_pct,

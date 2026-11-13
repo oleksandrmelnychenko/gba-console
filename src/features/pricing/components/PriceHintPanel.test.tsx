@@ -35,6 +35,17 @@ it('states the price basis once and names own sales instead of the market', asyn
   expect(screen.queryByText(/ринк/)).toBeNull()
 })
 
+it('explains the price floor when the service sends its basis and stays silent otherwise', async () => {
+  const view = show({ ...recommendation, floor_markup_pct: 12, floor_margin_pct: 10.7 })
+  expect((await screen.findByTestId('price-floor-basis')).textContent?.replace(/\u00a0/g, ' '))
+    .toBe('мінімальна ціна: націнка 12 % на собівартість (маржа 10,7 %)')
+  view.unmount()
+
+  show(recommendation)
+  await screen.findByText(/EUR за одиницю, як у накладних/)
+  expect(screen.queryByTestId('price-floor-basis')).toBeNull()
+})
+
 it('labels the fallback baseline as the client sales median', async () => {
   const view = show({ ...recommendation, baseline_source: 'client_world_fallback' })
   await screen.findByText(/EUR за одиницю, як у накладних/)
